@@ -469,6 +469,51 @@ storyboard is the owner's to approve before it is built. Examples:
 The first batch (VFX-17) is the 12 of power 100+ (Tower Drop, Zero to One, Vision Fund, The Decision, Concrete Pour,
 Blast Furnace, Hallucinate, Developers!, Siu!, Full Steam, Standard Oil, Golden Caravan) and about 6 more.
 
+**VFX-17's storyboards** (written 2026-10-28 before any scene was built; taken as approved under the owner's standing
+instruction, listed for review). Each: the scene id (moves.json `anim`), the family it falls back to (3D props off,
+Reduced motion), its prop, then wind-up, hit, fade. "Repeat:" is the short version from its second use in a battle
+(and at Faster): the prop and the hit, no wind-up. Models are low-poly recipes from game/art/scene/next/models; icon
+props are icons.png cells; stamped words are drawn sound words only (rule 10). Each at most its category's `maxMs` +
+500 ms (H 1380, S 1560); the repeat within `maxMs`.
+- Tower Drop (`towerdrop`, Ground H, dive; city_tower_slab): the attacker crouches and points up; a city tower drops
+  from above onto the foe with Part 1's stretch and afterimages; a shake, a dust ring, the hit, a crack; the tower
+  erodes away. Repeat: the tower drops, the hit.
+- Library Slam (`libraryslam`, Steel H, dive; library): the library drops on the foe; pages (paper) scatter both ways;
+  a steel ring. Repeat: the drop, the hit.
+- Siu! (`siu`, Fire H, dive; no prop): a jump, two turns in the air, the landing on the foe in a fire ring, "SIU!"
+  stamped over the attacker as it lands back. Repeat: the landing ring, the stamp, the hit.
+- Full Steam (`fullsteam`, Electric H, charge; train_greenbelt): "TOOT!" stamped; a train runs in from the attacker's
+  side, through the foe and off the stage; sparks along the rails; the hit as it passes. Repeat: the train, the hit.
+- Golden Caravan (`goldencaravan`, Dragon S, storm; market_cart): the market cart rolls in on a high arc onto the foe;
+  coins rain in the Dragon's two-tone (gold and indigo); "KA-CHING!"; the hit. Repeat: the cart lands, coins, the
+  hit.
+- Developers! (`developers`, Fire H, flurry; the megaphone icon): a megaphone at the attacker; three shouts in a row,
+  a ring and a lunge each; the third lands the hit. Repeat: one shout and the hit.
+- The Decision (`thedecision`, Fire H, strike; the mic icon): a mic pops up before the attacker, a held beat; then a
+  leap and a slam down onto the foe, a fire ring. Repeat: the slam, the hit.
+- Concrete Pour (`concretepour`, Ground H, quake; wheelbarrow): a wheelbarrow tips over the foe; grey pebbles and dust
+  pour down; it sets with a shake and a ring. Repeat: the pour, the hit.
+- Blast Furnace (`blastfurnace`, Fire H, strike; fireplace as the furnace): a furnace rises behind the attacker and
+  glows; flame tongues blast toward the foe; the hit with heat. Repeat: the blast, the hit.
+- Standard Oil (`standardoil`, Fire H, strike; barrel): a drum drops beside the foe and bursts: a dark spray, then
+  flames lick over it. Repeat: the drum, the hit.
+- Zero to One (`zerotoone`, Psychic S, shot; the rocket icon): one dot blinks at the attacker (the zero), swells, and
+  flies to the foe as a rocket on an arc; one big impact. Repeat: the rocket, the hit.
+- Vision Fund (`visionfund`, Psychic S, beam; the chart icon): coins rush into the attacker from all sides; a chart
+  pops over it; a ray twice as wide; a ring. Repeat: the ray, the hit.
+- Hallucinate (`hallucinate`, Psychic S, wave; the tv, dice and phone icons): three wrong things orbit the foe while
+  rose rings travel to it; they pop, and the real pulse hits. Repeat: the rings, the hit.
+- Cut To (`cutto`, Psychic S, wave; no prop): the camera cuts hard to the foe, already reeling: a two-tone frame (the
+  impact frame, through Flashes and the limiter) and a shock ring. Repeat: the cut, the hit.
+- Open Sesame (`opensesame`, Fire S, storm; stall): a market stall rises beside the foe; its goods (bag, box, soda,
+  burger icons) pour out over the foe. Repeat: the goods, the hit.
+- Yacht Race (`yachtrace`, Water S, shot; fishing_boat): a boat skims in on a wave, turns hard and rams the foe; a
+  splash crown. Repeat: the ram, the hit.
+- Flatpack (`flatpack`, Steel S, storm; crate_goods): three crates fly in one after another and stack on the foe; one
+  chip bounces off (the screw to spare). Repeat: the crates, the hit.
+- Billions Served (`billionsserved`, Fire H, flurry; the burger icon): burgers served in a row, one per hit, three
+  hits; a coin ring at the end. Repeat: one burger, the hit.
+
 ## Move sounds (the owner's pick)
 A sound per family, layered by type, in music.json's `battle` section (the shape agreed with the sound track, "Talking
 to the sound track": voices in the cries' shape, noise voices for hits, whooshes and splashes, baked instruments
