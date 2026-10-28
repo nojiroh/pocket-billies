@@ -519,16 +519,18 @@ provide({ WALK_SHADERS }); /* to-module */
    those values read from flat varyings instead of uniforms (#defines put in before its main, so its lighting stays
    the very same text). A picture's own axes lie flat (right.y = back.y = 0, as every camera's do); one facing the
    camera takes the camera's (uCamRight, uCamBack). */
-const SPRITE_INSTANCE_VARYINGS = `flat {io} vec4 vAxes,vBaseF,vLight,vMat,vSelfS,vWear,vHsv,vTint,vMaskFol;flat {io} vec3 vFlags;`;
+/* CH-4: vSelfS.w holds the flags as one number (1 flipN, 2 fixed, 4 noRecv), so the picture's rect (vCell) fits the 15
+   varying rows */
+const SPRITE_INSTANCE_VARYINGS = `flat {io} vec4 vAxes,vBaseF,vLight,vMat,vSelfS,vWear,vHsv,vTint,vMaskFol,vCell;`;
 const SPRITE_INSTANCE_VS = `#version 300 es
 precision highp float;layout(location=0) in vec2 aC;layout(location=1) in vec3 iBase;layout(location=2) in vec4 iOff;layout(location=3) in vec4 iAxes;layout(location=4) in vec4 iBend;
-layout(location=5) in vec4 iHsv;layout(location=6) in vec4 iWear;layout(location=7) in vec4 iTint;layout(location=8) in vec4 iMaskFol;layout(location=9) in vec4 iSelfFade;layout(location=10) in vec4 iLight;layout(location=11) in uvec4 iFlags;
+layout(location=5) in vec4 iHsv;layout(location=6) in vec4 iWear;layout(location=7) in vec4 iTint;layout(location=8) in vec4 iMaskFol;layout(location=9) in vec4 iSelfFade;layout(location=10) in vec4 iLight;layout(location=11) in uvec4 iFlags;layout(location=12) in vec4 iCell;
 uniform mat4 uVP;uniform vec3 uCamRight,uCamBack,uFwd;uniform float uCurveOn;uniform vec4 uMats[8];out vec2 vUV;out vec3 vW;out float vH;out float vPx;out float vRip;${SPRITE_INSTANCE_VARYINGS.replace(/\{io\}/g, 'out')}${COMMON_GLSL}
 void main(){uint fl=iFlags.x;bool cam=(fl&16u)!=0u;vec2 R=cam?uCamRight.xz:iAxes.xy,B=cam?uCamBack.xz:iAxes.zw;float flip=(fl&8u)!=0u?-1.:1.;vec3 r=vec3(R.x,0.,R.y);
  vRip=0.;float px=(iOff.x+aC.x*iOff.z),py=(iOff.y+aC.y*iOff.w);float h=-py;float fh=clamp(h/max(.01,-iOff.y),0.,1.),sh=iBend.y*h*(.25+.75*fh);vec3 p=iBase+uFwd*iBend.z+r*(px*flip+sh)+vec3(0.,h+iBend.x*px*flip-abs(sh)*.35*fh,0.);
- p.y+=curveY(iBase.xz)*uCurveOn;vW=p;vPx=px*flip+sh;vH=fh;vUV=vec2(aC.x,aC.y*iBend.w);
- vAxes=vec4(R,B);vBaseF=vec4(iBase,iSelfFade.w);vLight=iLight;vMat=uMats[int(min(iFlags.y,7u))];vSelfS=vec4(iSelfFade.xyz,iBend.w);vWear=iWear;vHsv=iHsv;vTint=iTint;vMaskFol=iMaskFol;
- vFlags=vec3((fl&4u)!=0u?-1.:1.,float(fl&1u),float((fl>>1)&1u));gl_Position=uVP*vec4(p,1.);}`;
+ p.y+=curveY(iBase.xz)*uCurveOn;vW=p;vPx=px*flip+sh;vH=fh;vUV=iCell.xy+aC*iCell.zw;vCell=iCell;
+ vAxes=vec4(R,B);vBaseF=vec4(iBase,iSelfFade.w);vLight=iLight;vMat=uMats[int(min(iFlags.y,7u))];vWear=iWear;vHsv=iHsv;vTint=iTint;vMaskFol=iMaskFol;
+ vSelfS=vec4(iSelfFade.xyz,float(((fl>>2)&1u)|((fl&1u)<<1)|(((fl>>1)&1u)<<2)));gl_Position=uVP*vec4(p,1.);}`;
 /* each per-picture uniform of the sprite fragment shader and the varying it reads instead */
 const SPRITE_INSTANCE_DEFINES = [
   ['uRight', 'vec3(vAxes.x,0.,vAxes.y)'],
@@ -541,10 +543,10 @@ const SPRITE_INSTANCE_DEFINES = [
   ['uShade', 'vLight.w'],
   ['uMat', 'vMat'],
   ['uSelf', 'vSelfS.xyz'],
-  ['uUV', 'vec4(0.,0.,1.,vSelfS.w)'],
-  ['uFlipN', 'vFlags.x'],
-  ['uFixed', 'vFlags.y'],
-  ['uNoRecv', 'vFlags.z'],
+  ['uUV', 'vCell'],
+  ['uFlipN', '(mod(vSelfS.w,2.)>.5?-1.:1.)'],
+  ['uFixed', 'mod(floor(vSelfS.w*.5),2.)'],
+  ['uNoRecv', 'mod(floor(vSelfS.w*.25),2.)'],
   ['lookOn(c,px,h,bp)', 'lookOnP(c,px,h,bp,vWear,vHsv,vTint,vMaskFol.xy)'],
   ['seasonal(c,p)', 'seasonalF(c,p,vMaskFol.zw)'],
   ['snowOn(c,p,u)', 'snowOnF(c,p,u,vMaskFol.zw)'],

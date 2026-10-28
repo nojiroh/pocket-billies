@@ -324,8 +324,8 @@ function fittedShadowPass(items0, sun, C) {
 const SHADOW_INSTANCE_DECLS =
     'in vec2 aC;uniform mat4 uVP;uniform vec3 uBase,uRight;uniform vec4 uOff,uUV;uniform float uFlip,uShear;',
   SHADOW_INSTANCE_IN =
-    'layout(location=0) in vec2 aC;layout(location=1) in vec3 iBase;layout(location=2) in vec4 iOff;layout(location=3) in vec4 iAxes;layout(location=4) in vec4 iBend;layout(location=11) in uvec4 iFlags;uniform mat4 uVP;\n' +
-    '#define uBase iBase\n#define uRight vec3(iAxes.x,0.,iAxes.y)\n#define uOff iOff\n#define uUV vec4(0.,0.,1.,iBend.w)\n' +
+    'layout(location=0) in vec2 aC;layout(location=1) in vec3 iBase;layout(location=2) in vec4 iOff;layout(location=3) in vec4 iAxes;layout(location=4) in vec4 iBend;layout(location=11) in uvec4 iFlags;layout(location=12) in vec4 iCell;uniform mat4 uVP;\n' +
+    '#define uBase iBase\n#define uRight vec3(iAxes.x,0.,iAxes.y)\n#define uOff iOff\n#define uUV iCell\n' +
     '#define uFlip ((iFlags.x&8u)!=0u?-1.:1.)\n#define uShear iBend.y\n';
 function shadowInstanceVertex(vs) {
   if (vs.split(SHADOW_INSTANCE_DECLS).length !== 2) throw new Error('shadowI: the shadow vertex shader changed');

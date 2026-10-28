@@ -125,10 +125,16 @@ export function spriteGeometry(r, it, z = it.z, rk = 1) {
   const s = it.mpp,
     oy = rk === 1 ? it.oy : it.oy * rk;
   let h = rk === 1 ? it.h : it.h * rk;
-  r.uv[3] = 1;
+  /* CH-4: a picture in an atlas (a figure's cell, figure-atlas.js) is its rect of the atlas (u, v, width, height);
+     the share of its height shown (someone wading) comes off the rect's height */
+  const U = it.im && it.im.uv;
+  r.uv[0] = U ? U[0] : 0;
+  r.uv[1] = U ? U[1] : 0;
+  r.uv[2] = U ? U[2] : 1;
+  r.uv[3] = U ? U[3] : 1;
   if (it.cut > 0 && rk === 1 && it.cut < it.h) {
     h = it.h - it.cut;
-    r.uv[3] = h / it.h;
+    r.uv[3] *= h / it.h;
   }
   r.x = it.x;
   r.y = it.y;
