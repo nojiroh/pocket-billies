@@ -4,6 +4,7 @@
 // before both oks or without the save, receiving before the other side gave, cancelling after a give, refusing after
 // the other side received, taking back without a close, deleting midway, a third party reading.
 // Its own emulator project: node --test runs the files at once, and each clears its project between tests.
+import assert from 'node:assert/strict';
 import { test, before, after, beforeEach } from 'node:test';
 import { readFileSync } from 'node:fs';
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
@@ -241,5 +242,43 @@ test('stale: the giver closes only 7 days after giving, and only when the other 
   await assertSucceeds(upd('ann', { x: 'stale', by: 'ann' }));
   await assertFails(marked('bob', { db: true, tb: serverTimestamp() }));
   await assertSucceeds(marked('ann', { ka: true }));
+  await assertSucceeds(deleteDoc(doc(db('bob'), 'offers/' + ID)));
+});
+
+test('a whole trade as the game writes it (logic/trade.js offerNew, offerPatch, things from real saves) passes the rules', async () => {
+  /* the game's logic on its own data, as tools/test does (no packages beyond Node's) */
+  const { fn, modules, startedSave } = await import('../../tools/test/setup-real.mjs');
+  const T = modules.trade,
+    makeBilly = fn('makeBilly'),
+    now = Date.now();
+  await friends();
+  const sa = startedSave('zuck0', 20),
+    extra = makeBilly('yiming0', 14);
+  sa.team.push(extra);
+  const sb = startedSave('zuck0', 25);
+  sb.team.push(makeBilly('zuck1', 20));
+  const ga = [T.tradeThing(sa, 'b', extra.uid, { u: 'ann', n: 'Ann' }, now)],
+    gb = [T.tradeThing(sb, 'b', sb.team[0].uid, { u: 'bob', n: 'Bob' }, now)];
+  assert.ok(ga[0] && gb[0]);
+  let o = T.offerNew('ann', 'Ann', 'bob', ga, 'k' + now.toString(36));
+  await assertSucceeds(setDoc(doc(db('ann'), 'offers/' + ID), { ...o, t: serverTimestamp() }));
+  /* each step: the game's patch, written as the page writes it (t, and the server's time for a give) */
+  const step = async (who, s, arg = {}, withSave = false) => {
+    const p = T.offerPatch(o, who, s, { ...arg, now: Date.now() });
+    assert.equal(typeof p, 'object', `${who} ${s}: ${p}`);
+    const data = { ...p, t: serverTimestamp() };
+    if (s === 'gave') data['t' + T.offerSide(o, who)] = serverTimestamp();
+    if (withSave) await assertSucceeds(marked(who, data));
+    else await assertSucceeds(upd(who, data));
+    o = { ...o, ...p };
+  };
+  await step('bob', 'give', { give: gb, name: 'Bob' });
+  await step('ann', 'ok');
+  await step('bob', 'ok');
+  await step('ann', 'gave', {}, true);
+  await step('bob', 'gave', {}, true);
+  await step('bob', 'got', {}, true);
+  await step('ann', 'got', {}, true);
+  assert.equal(T.offerGone(o), true);
   await assertSucceeds(deleteDoc(doc(db('bob'), 'offers/' + ID)));
 });
