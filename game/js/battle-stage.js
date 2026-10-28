@@ -18,6 +18,7 @@ import {
   battle3dStart,
   battle3dStop,
   battleAnimPlay,
+  battleFlashGate,
   battleFreeArea,
   battleLayoutChanged,
   fighter,
@@ -598,7 +599,10 @@ function blurAt(z) {
   if (d.ap <= 0 || battleStage.q.lvl >= 3) return 0;
   return Math.min(4, d.ap * SPRITE_BLUR_SCALE * Math.abs(1 / Math.max(0.3, z) - 1 / d.zf));
 }
-function battleStageFlash(col, a, dur) {
+/* VFX-8: who: the Billie a flash belongs to, which gets a sprite flash instead when the limiter holds the full-screen
+   one back (battle-anim-run.js battleFlashGate: at most 3 in any second, 333 ms apart, no saturated red) */
+function battleStageFlash(col, a, dur, who) {
+  if (typeof battleFlashGate === 'function' && !battleFlashGate(col, a, dur, who)) return;
   const f = $('#flash');
   if (!f) return;
   f.style.transition = 'none';
@@ -1673,7 +1677,7 @@ function hitFx(ti, an, imp0 = null) {
   if (an.te > 1) {
     battleStage.shk = 8;
     afterImpact(imp, () => {
-      battleStageFlash('#FFFFFF', 0.55, 260);
+      battleStageFlash('#FFFFFF', 0.55, 260, ti);
       battleStageChromaticFlash(180);
     });
     hitStop(80);
@@ -1686,7 +1690,7 @@ function hitFx(ti, an, imp0 = null) {
     if (ts === 0) buzz(w > 0.45 ? [14, 20, 14] : 10);
   }
   if (an.crit) {
-    afterImpact(imp, () => battleStageFlash('#FFF2A8', 0.6, 300));
+    afterImpact(imp, () => battleStageFlash('#FFF2A8', 0.6, 300, ti));
     hitStop(90);
     punch(an.te > 1 ? 0.12 : 0.09, 320, ts === 1 ? 0.014 : -0.014);
   }

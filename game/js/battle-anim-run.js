@@ -23,13 +23,13 @@ expose({
   battleAnim: [() => battleAnim],
   battleAnimPlay: [() => battleAnimPlay, v => ((battleAnimPlay = v), provide({ battleAnimPlay }))],
   battleAnimSkip: [() => battleAnimSkip, v => (battleAnimSkip = v)],
-  battleFlashGate: [() => battleFlashGate, v => (battleFlashGate = v)],
+  battleFlashGate: [() => battleFlashGate, v => ((battleFlashGate = v), provide({ battleFlashGate }))],
   battleStageAt: [() => battleStageAt, v => (battleStageAt = v)],
   brightColor: [() => brightColor],
   sideFocus: [() => sideFocus],
 });
 /* eslint-enable no-func-assign */
-provide({ battleAnimPlay });
+provide({ battleAnimPlay, battleFlashGate });
 /* to-module: end */
 /** the runner's state: the full-screen flashes shown in the last second (flashGate), the move playing (its id, its
  * timeline, the quality, the flashes held back) */
