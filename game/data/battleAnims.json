@@ -51,49 +51,6 @@
   {"do":"action","on":"attacker","pose":"cast","ms":800,"if":["!protect","X","!self"]}
  ],
  "families": {
-  "legacy_hit": {
-   "about": "category H: a lunge (afterimages; a dash's ribbon, logic/smear.js), dust, the hit at 200 ms",
-   "dur": 880,
-   "hit": 200,
-   "steps": [
-    {"do":"lunge","dx":30,"dy":-4,"dur":120,"ease":"in","delay":100,"backDur":200,"backAt":240},
-    {"at":120,"do":"dust","n":5,"life":420,"color":"dust"},
-    {"at":200,"do":"toTarget","d":140},
-    {"at":200,"do":"hit","if":["dmg"]},
-    {"do":"camHome","d":460,"delay":620},
-    {"at":1050,"do":"focus","on":"wide"}
-   ]
-  },
-  "legacy_cast": {
-   "about": "category S: rings on the attacker, a straight beam (Electric, Psychic, Water), 9 type icons lobbed 34 ms apart, the hit at 500 ms",
-   "dur": 1060,
-   "hit": 500,
-   "steps": [
-    {"at":140,"do":"ring","on":"attacker","color":"type","r0":0.15,"r1":0.8,"life":300},
-    {"at":140,"do":"groundRing","on":"attacker","color":"type","r1":1.4,"life":420},
-    {"at":200,"do":"beam","types":["Electric","Psychic","Water"],"w":3,"life":420},
-    {"at":160,"n":9,"every":34,"do":"lob","time":0.32,"up":2.4,"ay":-15,"jitter":0.2,"life":320,"k":1.2},
-    {"at":330,"do":"toTarget","d":220},
-    {"at":500,"do":"hit","if":["dmg"]},
-    {"do":"camHome","d":480,"delay":820},
-    {"at":1250,"do":"focus","on":"wide"}
-   ]
-  },
-  "legacy_status": {
-   "about": "category X: 10 type icons converge on the target (on the attacker for a move on itself), a ring at 600 ms",
-   "dur": 1000,
-   "hit": 600,
-   "steps": [
-    {"at":260,"do":"toTarget","d":240,"if":["!self"]},
-    {"at":200,"n":10,"every":48,"do":"converge","on":"subject","r":0.8,"life":440},
-    {"at":600,"do":"ring","on":"subject","color":"type","r0":0.2,"r1":1.1,"life":420},
-    {"at":600,"do":"groundRing","on":"subject","color":"type","r1":1.6,"life":520},
-    {"at":600,"do":"blink","on":"target","ms":240,"if":["!self"]},
-    {"at":600,"do":"action","on":"target","pose":"dizzy","ms":700,"if":["!self"]},
-    {"do":"camHome","d":460,"delay":800},
-    {"at":1250,"do":"focus","on":"wide"}
-   ]
-  },
   "whiff": {
    "about": "a miss: the lunge (H) or 6 icons flung past (S, X); the target sidesteps, 'Miss'",
    "dur": 760,
@@ -106,18 +63,6 @@
     {"at":150,"do":"pop","on":"target","pop":"miss"},
     {"do":"camHome","d":420,"delay":560},
     {"at":900,"do":"focus","on":"wide"}
-   ]
-  },
-  "legacy_guard": {
-   "about": "Guard (a move with fx.protect): rings round the attacker",
-   "dur": 700,
-   "hit": 0,
-   "steps": [
-    {"at":140,"do":"ring","on":"attacker","color":"guard","r0":0.3,"r1":1.1,"life":600},
-    {"at":140,"do":"ring","on":"attacker","color":"white","r0":0.1,"r1":0.8,"life":450},
-    {"at":140,"do":"groundRing","on":"attacker","color":"guard","r1":1.8,"life":600},
-    {"do":"camHome","d":400,"delay":500},
-    {"at":800,"do":"focus","on":"wide"}
    ]
   },
   "blocked": {

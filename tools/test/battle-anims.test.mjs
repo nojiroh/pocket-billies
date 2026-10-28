@@ -39,11 +39,16 @@ function legacyDurHit(an, M) {
 }
 
 /* VFX-11: the gates, repeats and variants below were written against the legacy families: they run on a move with
-   no anim of its own, with the legacy families as the defaults (as before VFX-11) */
-const L = {
-  ...A,
-  defaults: { ...A.defaults, H: 'legacy_hit', S: 'legacy_cast', X: 'legacy_status', protect: 'legacy_guard' },
-};
+   no anim of its own, with the legacy families as the defaults (as before VFX-11). VFX-13 took them out of the game's
+   data (nothing named them): they are a fixture here */
+const LEGACY = JSON.parse(
+    readFileSync(new URL('./fixtures/battle-anims-legacy.json', import.meta.url), 'utf8')
+  ).families,
+  L = {
+    ...A,
+    families: { ...A.families, ...LEGACY },
+    defaults: { ...A.defaults, H: 'legacy_hit', S: 'legacy_cast', X: 'legacy_status', protect: 'legacy_guard' },
+  };
 const bare = mid => {
   const { anim: _a, ...M } = MOVES[mid];
   return M;
@@ -102,9 +107,9 @@ test('the family: a move’s own anim when it lands, else its outcome’s or cat
   assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'whiff', kind: 'family' });
   assert.deepEqual(battleAnimFor(moveAn(H, 'blocked'), M, A), { id: 'blocked', kind: 'family' });
   M.anim = 'legacy_cast';
-  assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, A), { id: 'legacy_cast', kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'whiff', kind: 'family' }, 'a miss is a miss');
-  const S = { ...A, scenes: { big: A.families.legacy_hit } };
+  assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, L), { id: 'legacy_cast', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, L), { id: 'whiff', kind: 'family' }, 'a miss is a miss');
+  const S = { ...A, scenes: { big: LEGACY.legacy_hit } };
   M.anim = 'big';
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, S), { id: 'big', kind: 'scene' });
   M.anim = 'nosuch';
@@ -193,7 +198,7 @@ test('gates, repeats, a skip’s classes and the order steps start in', () => {
 test('the Faster variant, the quality and the cap on extra time', () => {
   const H = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && (MOVES[k].p || 0) < A.longPower),
     Lg = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && (MOVES[k].p || 0) >= A.longPower),
-    fam = A.families.legacy_hit,
+    fam = LEGACY.legacy_hit,
     B = {
       ...L,
       families: {
