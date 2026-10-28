@@ -18,7 +18,6 @@ import { userFps } from './frame-scheduler.js';
 import { artLoad } from './art.js';
 import {
   closedText,
-  directionOf,
   doorLinkOf,
   doorOf,
   isOpenNow,
@@ -520,16 +519,19 @@ export function walkState() {
       if (A) {
         const o = sc.baseOff || [0, 0],
           at = /** @type {[number, number]} */ ([A.leader[0] + o[0], A.leader[1] + o[1]]);
-        return {
+        /** @type {any} */
+        const L = {
           who: T.who,
           id: T.id,
           done: !!saveData.flags[T.id],
           exit: null,
-          dir: directionOf(A.from[0] - A.leader[0], A.from[1] - A.leader[1]),
           boss: T.runFoe === 'boss',
           at,
           arena: true,
         };
+        /* CH-1: a heading (logic/person-view.js): seen facing your way, whichever way the camera looks */
+        faceToward(L, A.from[0] - A.leader[0], A.from[1] - A.leader[1]);
+        return L;
       }
       return { who: T.who, id: T.id, done: !!saveData.flags[T.id], exit, dir: 'down', boss: T.runFoe === 'boss' };
     })

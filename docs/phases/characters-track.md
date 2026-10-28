@@ -6,7 +6,7 @@ The owner's brief (2026-10-27): "Make a plan to improve the character sprite and
 resolution work? You can completely rework if you must. How could you animate them better. Do a lot of research
 online. Make suggestions. It has to be unique but look very nice." Planned and researched in one session (CH-0,
 approved in Plan Mode 2026-10-27), written on `ccr-ffb6bdf7-fya7yi` because `track/characters` didn't exist yet;
-CH-1 on starts on `track/characters`, made by the owner from main or from that branch.
+CH-1 on works on `track/characters`, made 2026-10-27 from that branch by the CH-0 session at the owner's word.
 
 "Characters" here means people: the player, townsfolk, trainers, residents, shopkeepers, Chosen and Blake. Billies,
 Kappi (a creature person, `creatureFrame`) and the bots keep their 2D rigs.
