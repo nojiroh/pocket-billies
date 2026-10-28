@@ -145,6 +145,7 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     'Side areas hold more finds',
     () => 'Finds more on each side area’s route or arena (at most 2; they show at once when taken).',
   ],
+  eventHurt: ['Events never cost your team HP', () => 'On (1): an event’s hurt command does nothing.'],
 });
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -609,7 +610,7 @@ SECTIONS.relics = () => {
        opt: 1,
        ph: 'Approved, {name}!',
      }) +
-     `<label class="fld"><span>Needs, to be offered (PK-4: team:Fire for a Billie of that type, mono; PK-5: bots, a scrapyard still ahead)</span><input type="text" data-relic-needs="${escapeHtml(k)}" value="${escapeHtml(R.needs == null ? '' : [].concat(R.needs).join(', '))}" placeholder="team:Fire"></label>` +
+     `<label class="fld"><span>Needs, to be offered (PK-4: team:Fire for a Billie of that type, mono; PK-5: bots, a scrapyard still ahead; PK-6: side, a side area still ahead)</span><input type="text" data-relic-needs="${escapeHtml(k)}" value="${escapeHtml(R.needs == null ? '' : [].concat(R.needs).join(', '))}" placeholder="team:Fire"></label>` +
      `<label class="fld"><span>Tags (PK-4: types and themes; offers lean ×${D.rules.run.perks.bias || 1} toward a match with the team’s types or a Perk held)</span><input type="text" data-relic-tags="${escapeHtml(k)}" value="${escapeHtml((R.tags || []).join(', '))}" placeholder="Fire, weather"></label>` +
      perkArtHTML(k, R) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),

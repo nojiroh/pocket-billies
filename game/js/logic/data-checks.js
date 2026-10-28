@@ -2300,6 +2300,8 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   sideOpen: [1, 1, 'times (it is on or off)'],
   /* PK-6: finds more in side areas (Rusty Key; route-finds.js ROUTE_FIND_MORE) */
   sideFind: [1, 2, 'finds'],
+  /* PK-6: an event's hurt does nothing (Ten-Foot Pole) */
+  eventHurt: [1, 1, 'times (it is on or off)'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
@@ -2339,8 +2341,9 @@ export function fxPassiveProblems(f, at, D, problem) {
  * makes them a data section) */
 export const PERK_THEMES = ['office', 'influencer', 'tech', 'lab', 'adventurer', 'weather', 'classics'];
 /** PK-4: the conditions a Perk's needs can name: those an offer knows (the team); PK-5: bots, a scrapyard still
- * ahead on the run's map (perks.js perkRunBots: needs alone, not a row's condition) */
-export const PERK_NEEDS = ['team', 'mono', 'bots'];
+ * ahead on the run's map (perks.js perkRunBots: needs alone, not a row's condition); PK-6: side, a side area still
+ * ahead (perks.js perkRunSide) */
+export const PERK_NEEDS = ['team', 'mono', 'bots', 'side'];
 /** PK-4: a Perk's needs: one condition or a list of 1-4, each a condition word (fxCondProblem) of PERK_NEEDS
  * @param {any} v @param {string} at @param {any} D @param {(what: string) => void} problem */
 export function perkNeedsProblems(v, at, D, problem) {
@@ -2348,7 +2351,8 @@ export function perkNeedsProblems(v, at, D, problem) {
   const L = Array.isArray(v) ? v : [v];
   if (!L.length || L.length > 4) problem(`${at}: one condition, or a list of 1-4`);
   for (const c of L) {
-    if (c === 'bots') continue;
+    /* PK-5, PK-6: words of the run, not a row's conditions */
+    if (c === 'bots' || c === 'side') continue;
     const why = fxCondProblem(c, D),
       key = typeof c === 'string' ? c.split(':')[0] : '';
     if (why) problem(`${at}: ${why}`);

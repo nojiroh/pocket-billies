@@ -57,6 +57,8 @@ expose({
   runBuyFx: [() => runBuyFx],
   // @ts-expect-error -- replaced on purpose
   runClinic: [() => runClinic, v => (runClinic = v)],
+  // @ts-expect-error -- replaced on purpose
+  runEventSafe: [() => runEventSafe, v => (runEventSafe = v)],
   runFoeId: [() => runFoeId],
   runFoeWinText: [() => runFoeWinText],
   // @ts-expect-error -- replaced on purpose
@@ -174,6 +176,13 @@ export function runGaveText(m) {
     ...Object.entries(m.items || {}).map(([id, n]) => plural(n, (ITEMS[id] && ITEMS[id].n) || id)),
   ];
   return L.length > 1 ? L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1] : L.join('');
+}
+/** PK-6: an event's hurt kept off (its `hurt` command; encounter-screen.js): the Perk holding an eventHurt rule (Ten-Foot
+ * Pole), whose name the sheet gives, or '' when the hurt lands @param {SaveData} s @param {Record<string, any>} perks */
+export function runEventSafe(s, perks) {
+  const fx = s.run ? fxOfRun(s.run, perks) : null,
+    f = fx && fxAt(fx, {}, { run: s.run && s.run.perkState }).find(r => r.kind === 'rule' && r.rule === 'eventHurt');
+  return f && f.n > 0 ? f.src : '';
 }
 /** PK-3: does the run hold an immune row against `what` (a status an event hands out) that holds for the team here?
  * @param {SaveData} s @param {Record<string, any>} perks @param {string} what */

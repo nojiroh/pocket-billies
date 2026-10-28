@@ -605,7 +605,7 @@ const PK4_BAD = [
   [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
   [
     { kind: 'rule', rule: 'luck', n: 1 },
-    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind (effects.js FX_RULES)',
+    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind, eventHurt (effects.js FX_RULES)',
   ],
   [{ kind: 'rule', rule: 'forecastDays', n: 20 }, 'n: a whole number of days from 1 to 14'],
   [{ kind: 'rule', rule: 'forecastDays', n: 3, if: 'lead' }, 'a rule row is read where no battle'],
@@ -689,6 +689,7 @@ const PK6_GOOD = [
   { kind: 'give', money: 150, items: { potion: 2 }, when: 'take' },
   { kind: 'rule', rule: 'sideOpen', n: 1 },
   { kind: 'rule', rule: 'sideFind', n: 2 },
+  { kind: 'rule', rule: 'eventHurt', n: 1 },
 ];
 const PK6_BAD = [
   [{ kind: 'rule', rule: 'cap', n: 3 }, 'n: a whole number of Perks from 1 to 2'],
@@ -703,6 +704,7 @@ const PK6_BAD = [
   [{ kind: 'give', items: { potion: 0 }, when: 'take' }, 'items.potion: a whole number from 1 to 99'],
   [{ kind: 'rule', rule: 'sideOpen', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
   [{ kind: 'rule', rule: 'sideFind', n: 3 }, 'n: a whole number of finds from 1 to 2'],
+  [{ kind: 'rule', rule: 'eventHurt', n: 0 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
 ];
 test('PK-6: dataPerks and the schema take Wave D’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);
@@ -729,6 +731,7 @@ test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () =
   D.perks.lucky_charm.needs = 'team:Fire';
   D.perks.clinic_card.needs = ['team:Water|Grass', 'mono'];
   D.perks.coupon_book.needs = 'bots';
+  D.perks.steady_hand.needs = 'side';
   assert.deepEqual(C.dataPerks(D), []);
   for (const [v, text] of [
     ['lead', '"lead" can\'t be known when a Perk is offered'],

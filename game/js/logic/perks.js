@@ -13,7 +13,8 @@
    RL-12); RL-11's unlocks may narrow the pool later. PK-4: a Perk with `needs` (a condition on the team, such as
    team:Fire) is offered only to a team it holds for (PokeRogue's rule: a type Perk needs a Billie of its type); the
    team is given as each Billie's types (perkTeamOf), and with none given (a preview from the seed alone) needs are
-   not asked. PK-5: `bots` holds while the run's map has a scrapyard not yet visited (perkRunBots).
+   not asked. PK-5: `bots` holds while the run's map has a scrapyard not yet visited (perkRunBots); PK-6: `side` while
+   a side area is still ahead (perkRunSide).
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { Perk } from '../../types/game-data' */
@@ -52,6 +53,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   perkRunBots: [() => perkRunBots, v => (perkRunBots = v)],
   // @ts-expect-error -- replaced on purpose
+  perkRunSide: [() => perkRunSide, v => (perkRunSide = v)],
+  // @ts-expect-error -- replaced on purpose
   perkShelf: [() => perkShelf, v => (perkShelf = v)],
   // @ts-expect-error -- replaced on purpose
   perkTake: [() => perkTake, v => (perkTake = v)],
@@ -62,7 +65,8 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /** PK-3: what a held Perk's card and row show of its marks on the run (perks-track.md rule 4: no hidden numbers): a
- * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither). A
+ * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither); PK-6: a
+ * growth as it stands ("+12%"). A
  * row's mark is run.perkState['<id>/<row>'] (effects.js fxKey: a Perk's rows come first among its source's). PK-6: a
  * held copier says which Perk it copies ("copies Rubber Stamp", or "copies nothing") and counts the copied rows
  * @param {Run | null | undefined} run @param {string} id @param {Record<string, Perk>} perks */
@@ -81,6 +85,12 @@ export function perkCount(run, id, perks) {
     const m = M[`${id}/${i}`] || {};
     if (f.once === 'run' && m.used) out.push('VOID');
     else if (f.every) out.push(`${m.n || 0}/${f.every}`);
+    /* PK-6: a growth as it stands now ("+12%" for a factor or a share, "+2" for stages or a count), "+0%" at its start */
+    if (f.grow) {
+      const v = /** @type {any} */ (m).v || 0,
+        pct = 'mult' in f || 'share' in f;
+      out.push(`${v < 0 ? '−' : '+'}${pct ? Math.round(Math.abs(v) * 100) + '%' : Math.abs(v)}`);
+    }
   });
   return [...new Set(out)].join(' · ');
 }
@@ -107,13 +117,26 @@ export function perkRunBots(run) {
   if (!run || !run.map) return true;
   return run.map.nodes.some((n, i) => n.type === 'scrapyard' && !(run.path || []).includes(i));
 }
+/** PK-6: is a side area still ahead (for `needs: side`): one not open yet whose obstacle's place is here or on a row
+ * still ahead, or one open with a place not yet visited. True when the run or its map isn't known
+ * @param {Run | null | undefined} run */
+export function perkRunSide(run) {
+  if (!run || !run.map) return true;
+  const S = run.map.side,
+    path = run.path || [];
+  if (!S) return false;
+  if (S.open) return S.nodes.some(i => !path.includes(i));
+  const cur = path[path.length - 1],
+    N = run.map.nodes;
+  return cur == null || cur === S.from || (!!N[S.from] && !!N[cur] && N[S.from].row > N[cur].row);
+}
 /** PK-4: does a Perk's `needs` hold for a team (each of its conditions, effects.js fxCond, with the team alone)?
- * True without needs, or with no team given. PK-5: `bots` asks the run (perkRunBots)
+ * True without needs, or with no team given. PK-5: `bots` asks the run (perkRunBots); PK-6: `side` too (perkRunSide)
  * @param {Perk} P @param {string[][]} [team] @param {Run} [run] */
 export function perkFits(P, team, run) {
   if (P.needs == null || !team) return true;
   return (Array.isArray(P.needs) ? P.needs : [P.needs]).every(c =>
-    c === 'bots' ? perkRunBots(run) : fxCond(c, { team })
+    c === 'bots' ? perkRunBots(run) : c === 'side' ? perkRunSide(run) : fxCond(c, { team })
   );
 }
 /** the Perks that may be drawn: in perks.json, not held, with a rarity weight above 0, in perks.json's order (RF-4:

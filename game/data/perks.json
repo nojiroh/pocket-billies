@@ -545,5 +545,130 @@
   "fx": [
    {"kind":"catch","mult":1.25,"if":"foe:spliced"}
   ]
+ },
+ "accordion_file": {
+  "name": "Accordion File",
+  "d": "Hold 7 Perks instead of 6.",
+  "rarity": "rare",
+  "img": "perks/accordion_file.svg",
+  "tags": ["office"],
+  "fx": [
+   {"kind":"rule","rule":"cap","n":1}
+  ]
+ },
+ "photocopier": {
+  "name": "Photocopier",
+  "d": "Copies the Perk just above it in your Perks list.",
+  "rarity": "rare",
+  "img": "perks/photocopier.svg",
+  "tags": ["office"],
+  "fx": [
+   {"kind":"copy"}
+  ]
+ },
+ "like_button": {
+  "name": "Like Button",
+  "d": "Your Billies hit 1% harder for every battle won this run, up to 25%.",
+  "rarity": "rare",
+  "img": "perks/like_button.svg",
+  "tags": ["influencer"],
+  "fx": [
+   {
+    "kind": "damage",
+    "side": "deal",
+    "mult": 1,
+    "grow": {"on":"win","by":0.01,"max":0.25}
+   }
+  ]
+ },
+ "streak_tracker": {
+  "name": "Streak Tracker",
+  "d": "Each battle in a row won without one of yours fainting: your Billies hit 5% harder, up to 25%. A faint starts it over.",
+  "rarity": "uncommon",
+  "img": "perks/streak_tracker.svg",
+  "tags": ["influencer"],
+  "fx": [
+   {
+    "kind": "damage",
+    "side": "deal",
+    "mult": 1,
+    "grow": {"on":"win","if":"noFaint","by":0.05,"max":0.25,"reset":"faint"}
+   }
+  ]
+ },
+ "selfie_stick": {
+  "name": "Selfie Stick",
+  "d": "Catching a Billie heals your team 10%.",
+  "rarity": "common",
+  "img": "perks/selfie_stick.svg",
+  "tags": ["influencer"],
+  "fx": [
+   {"kind":"heal","share":0.1,"when":"catch"}
+  ]
+ },
+ "coil_of_rope": {
+  "name": "Coil of Rope",
+  "d": "A side area's way opens with its badge alone: no Billie of its type needed.",
+  "rarity": "uncommon",
+  "img": "perks/coil_of_rope.svg",
+  "tags": ["adventurer"],
+  "needs": "side",
+  "fx": [
+   {"kind":"rule","rule":"sideOpen","n":1}
+  ]
+ },
+ "ten_foot_pole": {
+  "name": "Ten-Foot Pole",
+  "d": "Event choices never cost your team HP.",
+  "rarity": "common",
+  "img": "perks/ten_foot_pole.svg",
+  "tags": ["adventurer"],
+  "fx": [
+   {"kind":"rule","rule":"eventHurt","n":1}
+  ]
+ },
+ "rusty_key": {
+  "name": "Rusty Key",
+  "d": "Side areas hold one more find.",
+  "rarity": "uncommon",
+  "img": "perks/rusty_key.svg",
+  "tags": ["adventurer"],
+  "needs": "side",
+  "fx": [
+   {"kind":"rule","rule":"sideFind","n":1}
+  ]
+ },
+ "time_card": {
+  "name": "Time Card",
+  "d": "Every 5th place you walk into is a day off: your team heals fully.",
+  "rarity": "common",
+  "img": "perks/time_card.svg",
+  "tags": ["office"],
+  "fx": [
+   {"kind":"heal","share":1,"when":"arrive","every":5}
+  ]
+ },
+ "boarding_pass": {
+  "name": "Boarding Pass",
+  "d": "Take it: 150 Moneys and 2 Potions at once. Then it's a souvenir.",
+  "rarity": "common",
+  "img": "perks/boarding_pass.svg",
+  "fx": [
+   {
+    "kind": "give",
+    "money": 150,
+    "items": {"potion":2},
+    "when": "take"
+   }
+  ]
+ },
+ "travel_pillow": {
+  "name": "Travel Pillow",
+  "d": "Walking into a town heals your team 25%.",
+  "rarity": "common",
+  "img": "perks/travel_pillow.svg",
+  "fx": [
+   {"kind":"heal","share":0.25,"when":"arrive","if":"place:town"}
+  ]
  }
 }

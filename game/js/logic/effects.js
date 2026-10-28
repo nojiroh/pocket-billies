@@ -30,7 +30,8 @@
              picks show n more cards, rewards.js rewardOfferMake; rerollFree, the first n rerolls of a reward pick are free,
              rewards.js rewardRerollCost; mapReveal, the run map shows what every place is, run-map.js runRevealAll; PK-6:
              cap, n more Perks held, perks.js perkCap; sideOpen, a side area's obstacle opens with its badge alone,
-             run-side.js fieldRope; sideFind, side areas hold n more finds, route-finds.js routeFindsMore) (PK-4,
+             run-side.js fieldRope; sideFind, side areas hold n more finds, route-finds.js routeFindsMore; eventHurt,
+             an event's hurt does nothing, run-loop.js runEventSafe) (PK-4,
              run-map.js
              runForecastDays; later waves add rules)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
@@ -486,6 +487,7 @@ export const FX_RULES = /** @type {const} */ ([
   'cap',
   'sideOpen',
   'sideFind',
+  'eventHurt',
 ]);
 /** PK-4: what a run's rule rows add to rule `id` (their n summed, with growth; 0 when none). Read on the run where no
  * battle or team is known, so a row with `if` never counts @param {any} run @param {string} id
