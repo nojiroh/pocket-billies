@@ -30,7 +30,7 @@ const RIGS = join(ART, 'next', 'rigs-next.js');
 const PRINTS = join(ROOT, 'tools', 'test', 'kit-bake.json');
 
 /** the rigs a placeholder Billie owns (bodyPlans.json forms): the kit baker leaves them alone */
-export const placeholderRigs = () => new Set((readJson('bodyPlans.json').forms || []).map(f => f.rig));
+export const sketchRigs = () => new Set((readJson('bodyPlans.json').forms || []).map(f => f.rig));
 
 /** a bake as fingerprints: the sheet's shown pixels (size, alpha, colour where alpha is not 0) and the rig */
 export function kitFingerprint(made) {
@@ -86,7 +86,7 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
     pics = kitPics(K),
     forms = only ? B.forms.filter(f => only.includes(f.name)) : B.forms,
     changed = [],
-    kept = placeholderRigs(),
+    kept = sketchRigs(),
     { head, rigs } = readRigs();
   if (only)
     for (const n of only) if (!B.forms.some(f => f.name === n)) throw new Error(`no form ${n} in kitBuilds.json`);

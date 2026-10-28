@@ -50,11 +50,11 @@ function sameShown(a, b) {
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
 /** the data the baker needs */
-export function placeholderData() {
+export function sketchData() {
   return { P: readJson('bodyPlans.json'), D: readJson('kitBuilds.json').bake };
 }
 /** a sample Billie on a plan (its sheet before any Billie is on it) */
-export const samplePlaceholder = plan => ({
+export const sampleSketch = plan => ({
   name: `sample-${plan}`,
   rig: `sample-${plan}`,
   plan,
@@ -79,8 +79,8 @@ function readRigs() {
 }
 
 /** bakes the forms and returns what changed, writing it unless `check` */
-export function bakePlaceholders({ only = null, check = false, log = console.log } = {}) {
-  const { P, D } = placeholderData(),
+export function bakeSketches({ only = null, check = false, log = console.log } = {}) {
+  const { P, D } = sketchData(),
     forms = only ? P.forms.filter(f => only.includes(f.name)) : P.forms,
     changed = [],
     { head, rigs } = readRigs();
@@ -116,7 +116,7 @@ function sheetForms(P, what) {
     const plan = what.slice(5);
     if (!P.plans[plan]) throw new Error(`no body plan ${plan} (${Object.keys(P.plans).join(', ')})`);
     const forms = P.forms.filter(f => f.plan === plan);
-    return { forms: forms.length ? forms : [samplePlaceholder(plan)], named: true, file: `${plan}-plan.png` };
+    return { forms: forms.length ? forms : [sampleSketch(plan)], named: true, file: `${plan}-plan.png` };
   }
   const f = P.forms.find(x => x.name === what);
   if (!f) throw new Error(`no form ${what} in bodyPlans.json`);
@@ -125,7 +125,7 @@ function sheetForms(P, what) {
 
 /** writes a drawing sheet and returns its path */
 export function exportSheet(what, { out = OUT, scale = 1 } = {}) {
-  const { P } = placeholderData(),
+  const { P } = sketchData(),
     { forms, named, file } = sheetForms(P, what),
     cells = Object.fromEntries(forms.map(f => [f.name, formCells(P, f)]));
   mkdirSync(out, { recursive: true });
@@ -136,7 +136,7 @@ export function exportSheet(what, { out = OUT, scale = 1 } = {}) {
 
 /** reads a drawn sheet, stores its cells per Billie (as a Billie's sheet at scale 1) and returns the Billies */
 export function importSheet(path, what = null) {
-  const { P } = placeholderData(),
+  const { P } = sketchData(),
     name = basename(path, '.png');
   what ||= name.endsWith('-plan') ? `plan:${name.slice(0, -5)}` : name;
   const { forms, named } = sheetForms(P, what);
@@ -161,11 +161,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     } else if (arg('import')) {
       const names = importSheet(arg('import'), arg('for'));
       console.log(`stored ${names.join(', ')} in game/art/next/placeholders`);
-      bakePlaceholders({ only: names });
+      bakeSketches({ only: names });
     } else {
       const o = arg('only'),
         check = process.argv.includes('--check'),
-        changed = bakePlaceholders({ only: o ? o.split(',').filter(Boolean) : null, check });
+        changed = bakeSketches({ only: o ? o.split(',').filter(Boolean) : null, check });
       if (!changed.length) console.log('every placeholder Billie bakes as committed');
       else if (check) {
         console.log(

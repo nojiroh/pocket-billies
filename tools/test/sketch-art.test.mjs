@@ -9,7 +9,7 @@ import { test } from 'node:test';
 import { readJson } from '../data-files.mjs';
 import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import * as PA from '../../game/js/logic/sketch-art.js';
-import { bakePlaceholders, samplePlaceholder } from '../bake-placeholders.mjs';
+import { bakeSketches, sampleSketch } from '../bake-placeholders.mjs';
 
 const P = readJson('bodyPlans.json');
 const D = readJson('kitBuilds.json').bake;
@@ -18,7 +18,7 @@ const POSE = {
   ...{ hov: { dx: 0, dy: 0, r: 0 }, k: 0, act: 'idle', flap: 1, fall: 0, sy: 1 },
 };
 const PLANS = Object.keys(POSES_BY_PLAN);
-const sample = plan => samplePlaceholder(plan);
+const sample = plan => sampleSketch(plan);
 const sameCells = (a, b) =>
   PA.SKETCH_VIEWS.every(
     v =>
@@ -160,5 +160,5 @@ test('placeholders never paint near the magenta a sheet is cut by', () => {
 });
 
 test('every committed placeholder Billie bakes as committed', () => {
-  assert.deepEqual(bakePlaceholders({ check: true, log: () => {} }), []);
+  assert.deepEqual(bakeSketches({ check: true, log: () => {} }), []);
 });

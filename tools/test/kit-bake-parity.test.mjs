@@ -27,7 +27,7 @@ const RIGS = (() => {
   return box.window.RIGS_NEXT;
 })();
 const PRINTS = JSON.parse(readFileSync(join(ROOT, 'tools/test/kit-bake.json'), 'utf8'));
-const PLACEHOLDER = new Set(
+const SKETCH = new Set(
   JSON.parse(readFileSync(join(ROOT, 'game/data/bodyPlans.json'), 'utf8')).forms.map(f => f.rig)
 );
 const cache = new Map();
@@ -92,7 +92,7 @@ test('every kit Billie bakes as committed (the retired Python builder, number fo
     for (const k of ['sheet', 'rig'])
       if (print[k] !== PRINTS[form.name]?.[k])
         problems.push(`${where} ${k}: fingerprint ${print[k]}, kit-bake.json has ${PRINTS[form.name]?.[k]}`);
-    if (!PLACEHOLDER.has(form.rig)) {
+    if (!SKETCH.has(form.rig)) {
       const sheet = pixelDiff(made.sheet, readPng(join(ROOT, `game/art/next/billionaires/${form.name}.png`)));
       if (sheet) problems.push(`${where} sheet: ${sheet}`);
       for (const d of jsonDiff(JSON.parse(JSON.stringify(made.rig)), RIGS[form.rig], 'rig'))

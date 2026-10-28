@@ -1,5 +1,5 @@
 // Roster track RO-3c: placeholder Billies grafted by slot across body plans (game/js/logic/graft-art.js,
-// graftPlaceholder). Tested on sample Billies (tools/bake-placeholders.mjs samplePlaceholder), one per plan, until the
+// graftPlaceholder). Tested on sample Billies (tools/bake-placeholders.mjs sampleSketch), one per plan, until the
 // roster's own are placeholders. A slot's groups per plan; every plan gives every other plan its front, back and sig,
 // inside the stage box, the same twice; the grafted bones wear the donor's colour and the rest keep their pixels; a
 // mirrored twin is its bone flipped; a chain takes the donor's bones spread along it, so every bone draws; a slot one
@@ -11,7 +11,7 @@ import { POSES_BY_PLAN } from '../../game/js/body-plan-animation.js';
 import * as G from '../../game/js/logic/graft-art.js';
 import { kitFlipX } from '../../game/js/logic/kit-pixels.js';
 import * as PA from '../../game/js/logic/sketch-art.js';
-import { samplePlaceholder } from '../bake-placeholders.mjs';
+import { sampleSketch } from '../bake-placeholders.mjs';
 
 const P = readJson('bodyPlans.json');
 const D = readJson('kitBuilds.json').bake;
@@ -22,8 +22,8 @@ const bake = (plan, donor = false) => {
   const key = plan + (donor ? '+' : '');
   if (!baked.has(key)) {
     const form = donor
-      ? { ...samplePlaceholder(plan), name: `donor-${plan}`, rig: `donor-${plan}`, colours: { main: '#4a79c8' } }
-      : samplePlaceholder(plan);
+      ? { ...sampleSketch(plan), name: `donor-${plan}`, rig: `donor-${plan}`, colours: { main: '#4a79c8' } }
+      : sampleSketch(plan);
     baked.set(key, { form, ...PA.sketchBake(P, form, D) });
   }
   return baked.get(key);
@@ -35,7 +35,7 @@ const blue = pic => {
 };
 const same = (a, b) =>
   a.width === b.width && a.height === b.height && Buffer.compare(Buffer.from(a.data), Buffer.from(b.data)) === 0;
-const bonesOf = plan => PA.sketchBones(P, samplePlaceholder(plan));
+const bonesOf = plan => PA.sketchBones(P, sampleSketch(plan));
 
 test('graftGroups: a slot as chains of its own bones, mirrors left out', () => {
   const g = (plan, slot) => G.graftGroups(bonesOf(plan), slot);
@@ -140,10 +140,10 @@ test('a slot one side lacks is refused; donors are other lines with the slot', (
   assert.throws(() => G.graftPlaceholder(P, D, bake('octo'), { head: bake('biped', true) }), /octo.*has no head/);
   assert.throws(() => G.graftPlaceholder(P, D, bake('biped'), { head: bake('blob', true) }), /blob.*no head to give/);
   const forms = [
-    { ...samplePlaceholder('biped'), line: 'a' },
-    { ...samplePlaceholder('quad'), line: 'b' },
-    { ...samplePlaceholder('blob'), line: 'c' },
-    { ...samplePlaceholder('octo'), line: 'a', rig: 'octo-a' },
+    { ...sampleSketch('biped'), line: 'a' },
+    { ...sampleSketch('quad'), line: 'b' },
+    { ...sampleSketch('blob'), line: 'c' },
+    { ...sampleSketch('octo'), line: 'a', rig: 'octo-a' },
   ];
   assert.deepEqual(G.graftPlaceholderDonors(P, forms, 'sample-biped', 'front'), ['sample-quad', 'sample-blob']);
   assert.deepEqual(G.graftPlaceholderDonors(P, forms, 'sample-biped', 'head'), ['sample-quad']);

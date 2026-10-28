@@ -1,6 +1,6 @@
 // @ts-check
 'use strict';
-/* ================= PLACEHOLDER ART (roster track RO-3a) =================
+/* ================= SKETCH ART (roster track RO-3a) =================
    Billies on any of the 14 body plans (game/data/bodyPlans.json, the plans body-plan-animation.js animates), drawn
    as very obvious placeholders: flat shapes in the Billie's colours, a thick outline, a diagonal hatch and the part's
    name inside where it fits. Each picture is a cell: the part with room round it, its pivot at a fixed spot. The

@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { ROOT } from './data-files.mjs';
 import { encodePng, readPng } from './test/png.mjs';
 import { sketchBones, sketchCellSpecs, sketchSheet } from '../game/js/logic/sketch-art.js';
-import { bakePlaceholders, placeholderData } from './bake-placeholders.mjs';
+import { bakeSketches, sketchData } from './bake-placeholders.mjs';
 
 const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 /* warm browns, darker from behind */
@@ -256,14 +256,14 @@ function preview(rig, sheet, k = 4) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { P } = placeholderData(),
+  const { P } = sketchData(),
     form = P.forms.find(f => f.name === 'kappi');
   if (!form) throw new Error('no form kappi in bodyPlans.json');
   const cells = paintKappi(P, form),
     dir = join(ROOT, 'game', 'art', 'next', 'placeholders');
   mkdirSync(dir, { recursive: true });
   writeFileSync(join(dir, 'kappi.png'), encodePng(sketchSheet(P, [form], { kappi: cells })));
-  bakePlaceholders({ only: ['kappi'] });
+  bakeSketches({ only: ['kappi'] });
   const pv = process.argv.find(a => a.startsWith('--preview='));
   if (pv) {
     const box = { window: {} };
