@@ -475,6 +475,12 @@ export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
 export function jinglePlay(id, o = {}) {
   const J = MUSIC.jingles[id];
   if (!J || !initSound() || soundEngine.ctx.state !== 'running') return 0;
+  const T = soundEngine.tracker,
+    ens = T.jingleEnsemble(J);
+  soundEngine.lastJingle = {
+    id,
+    as: !ens ? 'gb' : T.gbOn() ? 'gb (GB Sounds)' : T.jingleReady(J) ? J.ensemble : 'gb (baking)',
+  };
   const out = o.bus || soundEngine.fx,
     end =
       soundEngine.tracker.jingle(J.notes, o.bpm || J.bpm || 150, J.wave || 'p25', out, {
@@ -1350,6 +1356,8 @@ function musicEnsembleLine() {
     playing: sg ? (sg.ensOn ? 'ensemble' : 'gb') : null,
     gbSounds: !!soundPreferences().gbSounds,
     prepared: soundEngine.prepared || null,
+    /* SND-17: the last jingle: its id and what played it (its ensemble, or gb: GB Sounds, none, its notes baking) */
+    jingle: soundEngine.lastJingle || null,
   };
 }
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
