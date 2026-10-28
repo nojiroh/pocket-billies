@@ -517,6 +517,9 @@ function battleMusicStart() {
   /* SND-17: its fanfares baked while it plays */
   jinglesPrepare(st.battle === 'boss' ? [...MUSIC_JINGLES_BATTLE, ...MUSIC_JINGLES_BOSS] : MUSIC_JINGLES_BATTLE);
   music(name, { intro: true, hold: true, restart: true });
+  /* SND-13: its peak's parts baked now (a KO's peak lasts a line or two: too short to bake on its first want) */
+  const T = soundEngine.tracker;
+  if (T && T.layersPrepare) T.layersPrepare(name, ['peak']);
   const sg = soundEngine.song;
   soundLog('battle ' + st.battle + ': ' + name + (sg && sg.name === name && sg.D.introSteps ? ', its intro' : ''));
 }
