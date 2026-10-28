@@ -6,6 +6,7 @@
    ids held into one list; each point asks only for its kind:
      money   a won battle's money (battle-rewards.js); PK-5: at `when: arrive`, a share of the Moneys carried, at most
              `max` (run-loop.js runFxMoment)                   price   a run shop's prices, a run clinic's charge
+                                                               (PK-8: `perk`, a run shop's Perk, perks.js perkShopPrice)
      catch   a coin's chance to catch (catchOdds)              stat    stat stages for your Billies as a battle starts
      damage  what your Billies deal or take (calcDamage)       heal    a share of HP on walking into a place
      payout  the payout's Research, or the share items count at
@@ -302,8 +303,9 @@ export const fxMoney = (fx, n) => {
   return k === 1 ? n : Math.round(n * k);
 };
 
-/** a price on the run with the price rows of `what` (whole $, never below 0)
- * @param {Fx[] | null | undefined} fx @param {'shop' | 'heal'} what @param {number} n */
+/** a price on the run with the price rows of `what` (whole $, never below 0); PK-8: `perk`, a run shop's Perk (on top
+ * of the shop's own rows: perks.js perkShopPrice)
+ * @param {Fx[] | null | undefined} fx @param {'shop' | 'heal' | 'perk'} what @param {number} n */
 export const fxPrice = (fx, what, n) => {
   const k = fxMult(fx, f => f.kind === 'price' && f.what === what);
   return k === 1 ? n : Math.max(0, Math.round(n * k));
@@ -311,7 +313,7 @@ export const fxPrice = (fx, what, n) => {
 
 /** Studio plan T3.2: a price on a run with its Perks' price rows of `what` (the page's clinic and shops, and the
  * run's simulation): the price itself with no run or none held @param {{ perks: string[] } | null | undefined} run
- * @param {Record<string, Perk>} perks @param {'shop' | 'heal'} what @param {number} n */
+ * @param {Record<string, Perk>} perks @param {'shop' | 'heal' | 'perk'} what @param {number} n */
 export const fxRunPrice = (run, perks, what, n) => fxPrice(fxOfRun(run, perks), what, n);
 
 /** what multiplies a coin's chance to catch (the chance itself stays at most 1) @param {Fx[] | null | undefined} fx */

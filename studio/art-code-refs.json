@@ -1589,7 +1589,7 @@
    "game/js/person-art.js:339",
    "game/js/person-art.js:344",
    "game/js/reward-screen.js:273",
-   "game/js/shop.js:276",
+   "game/js/shop.js:277",
    "game/js/ui-run-kit.js:113",
    "game/js/ui-run-kit.js:120",
    "game/js/ui.js:82",
@@ -1686,9 +1686,9 @@
    "game/js/lore.js:209",
    "game/js/shop.js:66",
    "game/js/shop.js:86",
-   "game/js/shop.js:179",
-   "game/js/shop.js:189",
-   "game/js/shop.js:258",
+   "game/js/shop.js:180",
+   "game/js/shop.js:190",
+   "game/js/shop.js:259",
    "game/js/sound.js:522",
    "game/js/sound.js:1768",
    "game/js/town-square.js:159",
@@ -1759,8 +1759,8 @@
    "game/js/boot.js:163",
    "game/js/logic/battle-anims.js:17",
    "game/js/logic/battle-anims.js:172",
-   "game/js/logic/perks.js:250",
-   "game/js/logic/perks.js:262",
+   "game/js/logic/perks.js:259",
+   "game/js/logic/perks.js:271",
    "game/js/logic/ui-dials.js:147",
    "game/js/map-tab.js:152",
    "game/js/walk-tab.js:324"
@@ -1913,7 +1913,7 @@
    "game/js/billie-sheet.js:197",
    "game/js/boot.js:156",
    "game/js/map-tab.js:69",
-   "game/js/shop.js:183"
+   "game/js/shop.js:184"
   ],
   "pow": [
    "game/js/game-data.js:165",

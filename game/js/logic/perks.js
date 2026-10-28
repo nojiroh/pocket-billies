@@ -28,7 +28,7 @@ import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
 import { runFoesSync, runFxMoment, runGaveText } from './run-loop.js';
-import { fxAt, fxCond, fxCopyOf, fxOfRun, fxPerkRows, fxRunRule } from './effects.js';
+import { fxAt, fxCond, fxCopyOf, fxOfRun, fxPerkRows, fxPrice, fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -60,6 +60,8 @@ expose({
   perkRunSide: [() => perkRunSide, v => (perkRunSide = v)],
   // @ts-expect-error -- replaced on purpose
   perkShelf: [() => perkShelf, v => (perkShelf = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkShopPrice: [() => perkShopPrice, v => (perkShopPrice = v)],
   // @ts-expect-error -- replaced on purpose
   perkTake: [() => perkTake, v => (perkTake = v)],
   perkTeamOf: [() => perkTeamOf],
@@ -244,6 +246,13 @@ export function perkDropOk(run, drop, id, perks, rule) {
 
 /** what a shop asks for a Perk ($, by its rarity) @param {Perk} R @param {PerkRules} rule */
 export const perkPrice = (R, rule) => rule.price[R.rarity] || 0;
+/** PK-8: what a run shop asks for a Perk on this run: its price (perkPrice) with the run's price rows of the shop, then
+ * those of a Perk (`what: perk`: the Office Supplies set's half price) @param {Run | null | undefined} run
+ * @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule */
+export function perkShopPrice(run, id, perks, rule) {
+  const fx = run ? fxOfRun(run, perks) : null;
+  return fxPrice(fx, 'perk', fxPrice(fx, 'shop', perkPrice(perks[id], rule)));
+}
 
 /**
  * Hold a Perk: '' when done, or why not: 'none' (no such Perk), 'held' (already), 'full' (at the cap and no

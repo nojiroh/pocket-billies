@@ -18,7 +18,7 @@ import {
   runStallStock,
 } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
-import { perkBuy, perkCap, perkPrice, perkShelf, perkTeamOf } from './logic/perks.js';
+import { perkBuy, perkCap, perkShelf, perkShopPrice, perkTeamOf } from './logic/perks.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbGainFly, recentPress } from './ui-motion.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -118,7 +118,8 @@ function shopPerk(sh) {
   if (sh.runNode == null || !run || sh.stall) return null;
   const id = run.shelf[sh.runNode + ':' + run.clock];
   if (!id || !PERKS[id]) return null;
-  return { id, price: fxRunPrice(run, PERKS, 'shop', perkPrice(PERKS[id], RULES.run.perks)) };
+  /* PK-8: with the run's Perk price rows too (the Office Supplies set) */
+  return { id, price: perkShopPrice(run, id, PERKS, RULES.run.perks) };
 }
 /** RL-12: the Perk's row: what it does, its rarity and price, Buy */
 function shopPerkHTML(id, sh) {

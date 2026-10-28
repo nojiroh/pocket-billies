@@ -289,6 +289,8 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         selectField('Which price', `${p}.what`, [
           ['shop', 'A run shop’s wares'],
           ['heal', 'A run town’s clinic'],
+          /* PK-8: a run shop's Perk (after the shop's rows) */
+          ['perk', 'A run shop’s Perk'],
         ]),
         mult('Price ×'),
       ],
