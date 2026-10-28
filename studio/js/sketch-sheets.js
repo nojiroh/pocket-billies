@@ -16,42 +16,42 @@ import { artSteps, pictureImage } from './pixel-canvas.js';
 import { atlasGet, downloadCanvas, fileToCanvas, markArt, pickFile } from './sprites.js';
 /* eslint-disable no-func-assign */
 expose({
-  PH_DRAWN: [() => PH_DRAWN],
-  PH_SHEET: [() => PH_SHEET],
-  phCanvas: [() => phCanvas, v => (phCanvas = v)],
-  phCells: [() => phCells, v => (phCells = v)],
-  phDownload: [() => phDownload, v => (phDownload = v)],
-  phFormFrom: [() => phFormFrom],
-  phPixels: [() => phPixels],
-  phSheetForms: [() => phSheetForms, v => (phSheetForms = v)],
-  phUpload: [() => phUpload, v => (phUpload = v)],
-  phWrite: [() => phWrite, v => (phWrite = v)],
+  SKETCH_DRAWN: [() => SKETCH_DRAWN],
+  SKETCH_SHEET: [() => SKETCH_SHEET],
+  sketchCanvas: [() => sketchCanvas, v => (sketchCanvas = v)],
+  sketchCells: [() => sketchCells, v => (sketchCells = v)],
+  sketchDownload: [() => sketchDownload, v => (sketchDownload = v)],
+  sketchFormFrom: [() => sketchFormFrom],
   sketchFormOf: [() => sketchFormOf, v => (sketchFormOf = v)],
   sketchPanelHTML: [() => sketchPanelHTML, v => (sketchPanelHTML = v)],
+  sketchPixels: [() => sketchPixels],
+  sketchSheetForms: [() => sketchSheetForms, v => (sketchSheetForms = v)],
   sketchUi: [() => sketchUi],
+  sketchUpload: [() => sketchUpload, v => (sketchUpload = v)],
+  sketchWrite: [() => sketchWrite, v => (sketchWrite = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const PH_DRAWN = name => `art/next/placeholders/${name}.png`;
-const PH_SHEET = name => `art/next/billionaires/${name}.png`;
+const SKETCH_DRAWN = name => `art/next/placeholders/${name}.png`;
+const SKETCH_SHEET = name => `art/next/billionaires/${name}.png`;
 const sketchUi = { plan: 'biped', scale: 1 };
 /** the placeholder recipe of a species' rig */
 export function sketchFormOf(sp) {
   return (studioState.D?.bodyPlans?.forms || []).find(f => f.rig === sp) || null;
 }
-const phPixels = c => c.getContext('2d').getImageData(0, 0, c.width, c.height);
-function phCanvas(p) {
+const sketchPixels = c => c.getContext('2d').getImageData(0, 0, c.width, c.height);
+function sketchCanvas(p) {
   const c = makeCanvas(p.width, p.height);
   c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(p.data), p.width, p.height), 0, 0);
   return c;
 }
 /** a form's cells: painted, with its stored drawing (this session's or the repository's) on top */
-async function phCells(P, form) {
-  const drawn = await atlasGet(PH_DRAWN(form.name)).catch(() => null);
-  return sketchCellsWith(P, form, drawn ? sketchSheetCut(P, [form], phPixels(drawn))[form.name] : null);
+async function sketchCells(P, form) {
+  const drawn = await atlasGet(SKETCH_DRAWN(form.name)).catch(() => null);
+  return sketchCellsWith(P, form, drawn ? sketchSheetCut(P, [form], sketchPixels(drawn))[form.name] : null);
 }
 /** the forms a sheet holds: a Billie's, or every one on a plan (a sample when none is) */
-function phSheetForms(P, what) {
+function sketchSheetForms(P, what) {
   if (what.plan) {
     const forms = P.forms.filter(f => f.plan === what.plan);
     return {
@@ -72,15 +72,15 @@ function phSheetForms(P, what) {
   }
   return { forms: [what.form], named: false, file: `${what.form.name}.png`, sample: false };
 }
-async function phDownload(what) {
+async function sketchDownload(what) {
   const P = studioState.D.bodyPlans,
-    { forms, named, file } = phSheetForms(P, what),
+    { forms, named, file } = sketchSheetForms(P, what),
     cells = {};
-  for (const f of forms) cells[f.name] = await phCells(P, f);
-  downloadCanvas(phCanvas(sketchSheet(P, forms, cells, named, sketchUi.scale)), file);
+  for (const f of forms) cells[f.name] = await sketchCells(P, f);
+  downloadCanvas(sketchCanvas(sketchSheet(P, forms, cells, named, sketchUi.scale)), file);
 }
 /** bakes forms from their cells and writes the stored drawings, sheets and rigs as one undo step */
-async function phWrite(P, list) {
+async function sketchWrite(P, list) {
   commit(true);
   const S = studioState,
     D = S.D.kitBuilds.bake,
@@ -89,15 +89,15 @@ async function phWrite(P, list) {
   for (const { form, cells, store } of list) {
     const made = sketchBake(P, form, D, cells);
     if (store) {
-      const path = PH_DRAWN(form.name),
+      const path = SKETCH_DRAWN(form.name),
         old = await atlasGet(path).catch(() => null),
-        c = phCanvas(sketchSheet(P, [form], { [form.name]: cells }));
+        c = sketchCanvas(sketchSheet(P, [form], { [form.name]: cells }));
       steps.push([path, old && pictureImage(old), pictureImage(c)]);
       markArt(path, c);
     }
-    const path = PH_SHEET(form.name),
+    const path = SKETCH_SHEET(form.name),
       old = await atlasGet(path).catch(() => null),
-      c = phCanvas(made.sheet);
+      c = sketchCanvas(made.sheet);
     steps.push([path, old && pictureImage(old), pictureImage(c)]);
     markArt(path, c);
     const rig = JSON.parse(JSON.stringify(made.rig));
@@ -111,20 +111,20 @@ async function phWrite(P, list) {
   artSteps(steps, snapshotParts());
   render();
 }
-async function phUpload(what) {
+async function sketchUpload(what) {
   const P = studioState.D.bodyPlans,
-    { forms, named, sample } = phSheetForms(P, what);
+    { forms, named, sample } = sketchSheetForms(P, what);
   if (sample)
     return toast(`No Billie is on the ${what.plan} plan yet: there is nothing to store its drawing in.`, 'err');
   const f = await pickFile('image/png');
   if (!f) return;
   let cut;
   try {
-    cut = sketchSheetCut(P, forms, phPixels(await fileToCanvas(f)), named);
+    cut = sketchSheetCut(P, forms, sketchPixels(await fileToCanvas(f)), named);
   } catch (e) {
     return toast('Not read: ' + e.message, 'err');
   }
-  await phWrite(
+  await sketchWrite(
     P,
     forms.map(form => ({ form, cells: sketchCellsWith(P, form, cut[form.name]), store: true }))
   );
@@ -155,25 +155,25 @@ document.addEventListener('change', ev => {
   if (el.dataset.ph === 'plan') sketchUi.plan = el.value;
   if (el.dataset.ph === 'scale') sketchUi.scale = Number(el.value) || 1;
 });
-const phFormFrom = el => sketchFormOf(el.closest('[data-ph-sp]')?.dataset.phSp || '');
+const sketchFormFrom = el => sketchFormOf(el.closest('[data-ph-sp]')?.dataset.phSp || '');
 ACTIONS.phDownload = (d, el) => {
-  const form = phFormFrom(el);
-  if (form) phDownload({ form });
+  const form = sketchFormFrom(el);
+  if (form) sketchDownload({ form });
 };
 ACTIONS.phUpload = (d, el) => {
-  const form = phFormFrom(el);
-  if (form) phUpload({ form });
+  const form = sketchFormFrom(el);
+  if (form) sketchUpload({ form });
 };
 ACTIONS.phWrite = async (d, el) => {
-  const form = phFormFrom(el),
+  const form = sketchFormFrom(el),
     P = studioState.D.bodyPlans;
   if (!form) return;
   try {
-    await phWrite(P, [{ form, cells: await phCells(P, form), store: false }]);
+    await sketchWrite(P, [{ form, cells: await sketchCells(P, form), store: false }]);
     toast(`${form.name} baked. Undo takes it back.`);
   } catch (e) {
     toast('Not baked: ' + e.message, 'err');
   }
 };
-ACTIONS.phPlanDownload = () => phDownload({ plan: sketchUi.plan });
-ACTIONS.phPlanUpload = () => phUpload({ plan: sketchUi.plan });
+ACTIONS.phPlanDownload = () => sketchDownload({ plan: sketchUi.plan });
+ACTIONS.phPlanUpload = () => sketchUpload({ plan: sketchUi.plan });
