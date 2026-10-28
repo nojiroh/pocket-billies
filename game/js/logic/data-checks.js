@@ -63,6 +63,8 @@ import {
   FX_WEATHER,
   FX_WHEN,
   FX_WHEN_BATTLE,
+  HELD_IFS,
+  HELD_WHEN,
 } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { BANTER_WHO } from './story-pick.js';
@@ -78,6 +80,7 @@ expose({
   FX_TIMING: [() => FX_TIMING],
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
   GENE_KINDS: [() => GENE_KINDS],
+  HELD_WHEN_KINDS: [() => HELD_WHEN_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
   PERK_NEEDS: [() => PERK_NEEDS],
   PERK_THEMES: [() => PERK_THEMES],
@@ -186,6 +189,8 @@ expose({
   fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   fxWhenProblems: [() => fxWhenProblems, v => (fxWhenProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldRowProblems: [() => heldRowProblems, v => (heldRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   perkNeedsProblems: [() => perkNeedsProblems, v => (perkNeedsProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2481,11 +2486,41 @@ export function dataHeldItems(D) {
       problem(`${k}.rarity: one of ${RARITY_TIERS.join(', ')}`);
     for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp', 'repair'])
       if (/** @type {any} */ (I)[use] != null) problem(`${k}: a held item can't also be used (${use})`);
-    H.forEach((/** @type {any} */ f, /** @type {number} */ n) =>
-      fxRowProblems(f, `${k}.hold[${n}]`, HOLD_KINDS, D, problem)
-    );
+    H.forEach((/** @type {any} */ f, /** @type {number} */ n) => heldRowProblems(f, `${k}.hold[${n}]`, D, problem));
   }
   return out;
+}
+/** PK-10: the kinds a hold row may give a when, and at which moments (effects.js HELD_WHEN) */
+export const HELD_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({ stat: HELD_WHEN });
+/** RL-12c, PK-10: one hold row: its kind and numbers (fxRowProblems, the timing set aside), then its timing: a `when`
+ * of HELD_WHEN_KINDS, and only with one an `if` of what that moment knows (HELD_IFS) and `once: battle`; no every,
+ * grow or per (a holder keeps no count over the run) @param {any} f @param {string} at @param {any} D
+ * @param {(what: string) => void} problem */
+export function heldRowProblems(f, at, D, problem) {
+  if (!f || typeof f !== 'object') return fxRowProblems(f, at, HOLD_KINDS, D, problem);
+  const plain = { ...f };
+  for (const key of ['when', 'if', 'once']) delete plain[key];
+  fxRowProblems(plain, at, HOLD_KINDS, D, problem);
+  for (const key of ['every', 'grow', 'per'])
+    if (key in f) problem(`${at}.${key}: a held item's row can say when, if and once only`);
+  if (f.when != null && !(HELD_WHEN_KINDS[f.kind] || []).includes(f.when))
+    problem(
+      `${at}.when: a held ${f.kind} row can't act at ${f.when} (${HELD_WHEN_KINDS[f.kind] ? HELD_WHEN_KINDS[f.kind].join(', ') : 'no moment'})`
+    );
+  if (f.when == null)
+    for (const key of ['if', 'once']) if (key in f) problem(`${at}.${key}: only with a when (${HELD_WHEN.join(', ')})`);
+  if (f.once != null && f.once !== 'battle') problem(`${at}.once: battle (a held item's marks last one battle)`);
+  if (f.if != null) {
+    const L = Array.isArray(f.if) ? f.if : [f.if];
+    if (!L.length || L.length > 4) problem(`${at}.if: one condition, or a list of 1-4`);
+    for (const c of L) {
+      const why = fxCondProblem(c, D),
+        key = typeof c === 'string' ? (c.startsWith('hp<') ? 'hp<' : c.split(':')[0]) : '';
+      if (why) problem(`${at}.if: ${why}`);
+      else if (!(/** @type {readonly string[]} */ (HELD_IFS).includes(key)))
+        problem(`${at}.if: "${c}" isn't known at a held item's moment (${HELD_IFS.join(', ')})`);
+    }
+  }
 }
 // SP-2: genes.json: the schema; every kind is a part kind of partKits.json with a trait that exists, and every kind a
 // recipe's slot bone uses (the parts a splice swaps) has one; a part's dominant type and move exist; a trait's rows are

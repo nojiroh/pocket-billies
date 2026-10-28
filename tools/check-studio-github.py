@@ -2714,6 +2714,10 @@ def items_steps(pg, errs):
     E(f"ACTIONS.heldRowAdd({{ k: {json.dumps(hk)} }})"); time.sleep(0.3)
     if E(f"studioState.D.items[{json.dumps(hk)}].hold.length") != 2 or E(f"({row % json.dumps(hk)}).querySelectorAll('[data-held-row]').length") != 2:
         errs.append('items: + Add an effect did not add a held row')
+    # every kind a hold row can be has its fields and a new row (HELD_ROW_NEW), and a stat row at a moment its If and Once
+    bad = E(f"HOLD_KINDS.filter(q => !HELD_ROW_NEW[q] || heldRowHTML({json.dumps(hk)}, HELD_ROW_NEW[q](), 0, []).includes('No such kind'))")
+    if bad: errs.append(f'items: no held row editor for {bad}')
+    if 'data-held-if' not in E(f"heldRowHTML({json.dumps(hk)}, {{ kind: 'stat', stat: 'lev', stages: 2, when: 'hurt' }}, 0, [])"): errs.append('items: a held stat row at hurt has no If')
     plain = E("Object.keys(studioState.D.items).find(k => !studioState.D.items[k].hold && !studioState.D.items[k].hp && !studioState.D.items[k].revive && !studioState.D.items[k].cure && !studioState.D.items[k].hpAll)") or 'bell'
     E(f"ACTIONS.heldMake({{ k: {json.dumps(plain)} }})"); time.sleep(0.3)
     if not E(f"!!({row % json.dumps(plain)}).querySelector('select[data-held-kind]')"): errs.append(f'items: Make it a held item did not give {plain} a row')

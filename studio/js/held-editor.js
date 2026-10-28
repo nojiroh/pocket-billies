@@ -8,17 +8,19 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide } from '../../game/js/hooks.js';
-import { FX_LIMIT, FX_STAGES } from '../../game/js/logic/effects.js';
+import { FX_LIMIT, FX_STAGES, HELD_IFS } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
-import { HOLD_KINDS, RARITY_TIERS, dataHeldItems } from '../../game/js/logic/data-checks.js';
+import { HELD_WHEN_KINDS, HOLD_KINDS, RARITY_TIERS, dataHeldItems } from '../../game/js/logic/data-checks.js';
 import { ACTIONS, changed, grid, numberField, render, selectField, studioState } from './studio-app.js';
 /* eslint-disable no-func-assign */
 expose({
   HELD_KIND_NAMES: [() => HELD_KIND_NAMES],
   HELD_ROW_NEW: [() => HELD_ROW_NEW],
+  HELD_WHEN_NAMES: [() => HELD_WHEN_NAMES],
   heldItemHTML: [() => heldItemHTML, v => ((heldItemHTML = v), provide({ heldItemHTML }))],
   heldProblems: [() => heldProblems],
   heldRowHTML: [() => heldRowHTML, v => (heldRowHTML = v)],
+  heldTimingHTML: [() => heldTimingHTML, v => (heldTimingHTML = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ heldItemHTML });
@@ -26,7 +28,7 @@ provide({ heldItemHTML });
 /** what each kind does for its holder, for the kind select */
 const HELD_KIND_NAMES = {
   money: 'A win pays more while its holder stands',
-  stat: 'Stat stages as its holder comes in',
+  stat: 'Stat stages as its holder comes in (or at a hit, its When)',
   damage: 'What its holder deals or takes',
   xp: 'Its holder’s XP',
   turnHeal: 'A share of HP at each turn’s end',
@@ -51,6 +53,33 @@ const heldProblems = (/** @type {string} */ k) => {
     return [`the check stopped: ${e.message || e}`];
   }
 };
+
+/** PK-10: what each moment means, for a hold row's When */
+const HELD_WHEN_NAMES = { hit: 'its holder lands a hit', hurt: 'its holder is hit' };
+/** PK-10: a hold row's When, and with one its If and Once (data-checks.js HELD_WHEN_KINDS, effects.js HELD_IFS)
+ * @param {string} k @param {any} f @param {number} n */
+function heldTimingHTML(k, f, n) {
+  const p = `items.${k}.hold.${n}`,
+    whens = HELD_WHEN_KINDS[f.kind] || [],
+    out = [];
+  if (!whens.length) return '';
+  out.push(
+    selectField(
+      'When',
+      `${p}.when`,
+      whens.map(w => [w, `${w}: ${/** @type {any} */ (HELD_WHEN_NAMES)[w] || w}`]),
+      { none: 'Where its kind always acts', opt: 1, rr: 1 }
+    )
+  );
+  if (f.when) {
+    const ifs = f.if == null ? '' : Array.isArray(f.if) ? f.if.join(', ') : f.if;
+    out.push(
+      `<label class="fld"><span>If (all must hold)</span><input type="text" data-held-if="${escapeHtml(k)}" data-n="${n}" value="${escapeHtml(ifs)}" placeholder="${HELD_IFS.join(', ')}"></label>`,
+      selectField('Once', `${p}.once`, [['battle', 'Once a battle']], { none: 'Every time', opt: 1 })
+    );
+  }
+  return `<div class="relic-when">${grid(...out)}</div>`;
+}
 
 /** one hold row's fields, by its kind @param {string} k @param {any} f @param {number} n @param {string[]} P */
 function heldRowHTML(k, f, n, P) {
@@ -110,7 +139,7 @@ function heldRowHTML(k, f, n, P) {
       `<option value="${v}"${v === f.kind ? ' selected' : ''}>${v}: ${escapeHtml(/** @type {any} */ (HELD_KIND_NAMES)[v] || v)}</option>`
   ).join(
     ''
-  )}</select>${rows.length > 1 ? `<button class="x" data-act="heldRowDel" data-k="${escapeHtml(k)}" data-n="${n}" title="Remove this effect">✕</button>` : ''}</div>${fields ? grid(...fields()) : `<p class="err">No such kind: ${escapeHtml(String(f.kind))}</p>`}${err}</div>`;
+  )}</select>${rows.length > 1 ? `<button class="x" data-act="heldRowDel" data-k="${escapeHtml(k)}" data-n="${n}" title="Remove this effect">✕</button>` : ''}</div>${heldTimingHTML(k, f, n)}${fields ? grid(...fields()) : `<p class="err">No such kind: ${escapeHtml(String(f.kind))}</p>`}${err}</div>`;
 }
 
 /** a held item's tier and rows, or the button that makes a plain item a held one @param {string} k @param {any} I */
@@ -139,6 +168,24 @@ document.addEventListener('change', ev => {
     make = /** @type {any} */ (HELD_ROW_NEW)[el.value];
   if (!I || !I.hold || !make) return;
   I.hold[+(el.dataset.n || 0)] = make();
+  changed();
+  render();
+});
+/* PK-10: a hold row's If: words split at commas (one is kept as a word, more as a list, none removes it) */
+document.addEventListener('change', ev => {
+  const el = /** @type {HTMLInputElement} */ (ev.target);
+  if (!el.dataset || !el.dataset.heldIf) return;
+  const I = studioState.D.items[el.dataset.heldIf],
+    f = I && I.hold && I.hold[+(el.dataset.n || 0)];
+  if (!f) return;
+  const was = JSON.stringify(f),
+    L = el.value
+      .split(',')
+      .map(w => w.trim())
+      .filter(Boolean);
+  if (!L.length) delete f.if;
+  else f.if = L.length === 1 ? L[0] : L;
+  if (JSON.stringify(f) === was) return;
   changed();
   render();
 });

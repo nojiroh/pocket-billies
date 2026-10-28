@@ -451,14 +451,40 @@ test('PK-1: dataPerks checks when, if, every, grow, per, once and say; other row
   const E = structuredClone(GAME_DATA);
   E.perks.lucky_charm.say = 'x'.repeat(41);
   assert.ok(C.dataPerks(E).some(p => p[1].includes('lucky_charm.say')));
-  /* a held item's rows are a Billie's own: no timing there (it would be ignored) */
+  /* a held item's rows are a Billie's own: PK-10: a when only where a held row can act (a stat row at hit or hurt) */
   const F = structuredClone(GAME_DATA),
-    held = Object.keys(F.items).find(k => F.items[k].hold);
+    held = Object.keys(F.items).find(k => F.items[k].hold && F.items[k].hold[0].kind !== 'stat');
   F.items[held].hold[0].when = 'hit';
   assert.ok(
-    C.dataHeldItems(F).some(p => p[1].includes(`${held}.hold[0].when: only a run's rows`)),
+    C.dataHeldItems(F).some(p =>
+      p[1].includes(`${held}.hold[0].when: a held ${F.items[held].hold[0].kind} row can't act at hit`)
+    ),
     JSON.stringify(C.dataHeldItems(F))
   );
+});
+
+test("data checks: PK-10: a held item's row says when (a stat row at hit or hurt), if (what the hit knows) and once: battle", () => {
+  const ok = { kind: 'stat', stat: 'lev', stages: 2, when: 'hurt', if: ['superEffective', 'cat:H'], once: 'battle' };
+  for (const [row, text] of [
+    [ok, ''],
+    [{ ...ok, when: 'ko' }, "can't act at ko"],
+    [{ ...ok, if: 'lead' }, `"lead" isn't known at a held item's moment`],
+    [{ ...ok, if: 'hp<2' }, 'hp<x: a share of HP'],
+    [{ ...ok, once: 'run' }, 'once: battle'],
+    [{ ...ok, every: 2 }, 'can say when, if and once only'],
+    [{ kind: 'stat', stat: 'lev', stages: 1, if: 'superEffective' }, 'if: only with a when'],
+    [{ kind: 'stat', stat: 'lev', stages: 1, once: 'battle' }, 'once: only with a when'],
+  ]) {
+    const F = structuredClone(GAME_DATA);
+    F.items.iron_vest.hold = [row];
+    const all = C.dataHeldItems(F).map(p => p[1]);
+    if (!text) assert.deepEqual(all, [], JSON.stringify(all));
+    else
+      assert.ok(
+        all.some(w => w.startsWith('iron_vest.hold[0]') && w.includes(text)),
+        `${text} in ${JSON.stringify(all)}`
+      );
+  }
 });
 
 // PK-3: the battle kit's kinds (crit, immune, inflict, chip, first, revive): good rows pass check-data and the schema,

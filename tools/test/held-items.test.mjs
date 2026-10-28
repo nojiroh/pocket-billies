@@ -90,3 +90,26 @@ test('held items: the game data passes dataHeldItems; planted mistakes are named
     'i.rarity',
   ]);
 });
+
+test("held items: PK-10: a row with a when isn't one of the Billie's always-on rows; fxHeldAt gives it at its moment", () => {
+  const items = {
+    form: {
+      hold: [
+        { kind: 'damage', side: 'take', mult: 0.9 },
+        { kind: 'stat', stat: 'lev', stages: 2, when: 'hurt' },
+      ],
+    },
+  };
+  assert.deepEqual(E.fxOfBillie({ held: 'form' }, items), [
+    { kind: 'damage', side: 'take', mult: 0.9, src: 'held:form' },
+  ]);
+  assert.deepEqual(E.fxHeldAt({ held: 'form' }, items, 'hurt'), [
+    { kind: 'stat', stat: 'lev', stages: 2, when: 'hurt', src: 'held:form', row: 1 },
+  ]);
+  assert.deepEqual(E.fxHeldAt({ held: 'form' }, items, 'hit'), []);
+  assert.deepEqual(E.fxHeldAt(null, items, 'hurt'), []);
+  assert.equal(
+    E.fxOfBillie({ held: 'x' }, { x: { hold: [{ kind: 'stat', stat: 'lev', stages: 1, when: 'hit' }] } }),
+    null
+  );
+});
