@@ -692,7 +692,7 @@ Water and nature, synthesized:
 | SND-12 | Arrangements | A/B forms of 16-32 bars (`prog` loses its fixed 8), fills, new lines; every song re-voiced as named placeholders, in batches the owner approves | SND-11 | the songs rewritten |
 | SND-14 | Nature and weather | rain by intensity (a wash, patter, roofs), thunder by a bolt counter and distance (not the visual flash), wind and gusts, leaves, birds by biome and hour (a dawn chorus), insects, frogs, fire, footsteps by surface, town life instead of a murmur, room tones | SND-10 | none |
 | SND-15 | Mix and phone pass | about −18 LUFS through the master, the compressor and a limiter; ducking (jingles, cries, talk); slider defaults; the owner's phone; Studio polish | all | as needed |
-| SND-16 (optional) | Effects pass | battle hits, throws and catches with body and space; sounds for things that have none (the airship's engine, the sky train and its rail, the world map, steam vents, wells) | SND-9 | the effects |
+| SND-16 (optional) | Effects pass | sounds for things that have none: the airship's engine, the sky train and its rail, the world map, steam vents, wells. Battle sounds (moves, hits, throws, catches, hurt sounds, the recall) are the VFX track's VFX-19, on this track's tools (agreed 2026-10-28, "How the sessions run") | SND-9 | the effects |
 
 SND-17 needs only SND-11's instruments, so the jingles come early. SND-13 may come before SND-12 (layers work on the
 first ensembles; arrangements are long and go in batches), and the world (SND-10, SND-14) and music (SND-11..SND-13)
@@ -724,6 +724,18 @@ plans." So, as the UI track's Part 2 does:
   in-game full test broken) stops the chain, says why in its HANDOFF entry and its message, and the planning session
   asks the owner.
 - Merges to main stay the owner's.
+
+**With the VFX track** (agreed 2026-10-28 between the two planning sessions; the VFX track's planning session is
+`session_019UpAFxvWEMwGebptZbvUuW`):
+- **VFX-19** makes the battle sounds (moves, hits, throws, catches, hurt sounds, the recall) on this track's tools: a
+  top-level music.json `battle` section (families, types, hurt, recall; voices in the cries' shape; `inst` from
+  SND-11), on the Sound effects bus, with a Battle card on the Studio's Sounds tab.
+- **SND-16** keeps the airship, the sky train, the world map, steam vents and wells.
+- **SND-13** reads `hitTier(an)` and `koAhead(events, i)` from the VFX track's logic/battle-anims.js for a battle's
+  intensity.
+- Both tracks message each other (claude-code-remote `send_message`) before and after touching `battleSoundEffect`,
+  `soundEffect`'s battle recipes or music.json's top-level shape: what will change, where and why before; the commit
+  after the push. A session that hears of the other track's change merges it first once it lands on main.
 
 ## The listening page (SND-7)
 A private artifact for the owner's phone (nothing committed): https://claude.ai/artifact/GuTVE9L1WfjFWVc4NPe9oh.
