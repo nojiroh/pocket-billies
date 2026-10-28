@@ -15,6 +15,7 @@
      dna     a Gene Sample's DNA (battle-rewards.js spliceSample)    splice  the wild splice odds (rules.js, a run
      unstable  an Unstable splice's turn-end hurt (battle-engine.js)          place's stocking)   (SP-6, Perks)
      crit    critical-hit stages for yours hitting (calcDamage); at `when: move` the move is a critical hit (PK-3)
+     immune  yours can't get a status (brn, slp, par), or aren't hurt by the Sandstorm or sharp stones (PK-3)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -39,6 +40,7 @@ expose({
   FX_FOES: [() => FX_FOES],
   FX_IF_KEYS: [() => FX_IF_KEYS],
   FX_IF_WORDS: [() => FX_IF_WORDS],
+  FX_IMMUNE: [() => FX_IMMUNE],
   FX_KINDS: [() => FX_KINDS],
   FX_LIMIT: [() => FX_LIMIT],
   FX_ONCE: [() => FX_ONCE],
@@ -58,6 +60,7 @@ expose({
   fxFire: [() => fxFire, v => ((fxFire = v), provide({ fxFire }))],
   fxHealShare: [() => fxHealShare],
   fxIfs: [() => fxIfs],
+  fxImmune: [() => fxImmune],
   fxKey: [() => fxKey],
   // @ts-expect-error -- replaced on purpose
   fxLive: [() => fxLive, v => (fxLive = v)],
@@ -115,6 +118,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'splice',
   'unstable',
   'crit',
+  'immune',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -295,6 +299,14 @@ export const fxCrit = fx =>
       (fx || []).reduce((a, f) => a + (f.kind === 'crit' && !f.when ? f.stages || 0 : 0), 0)
     )
   );
+
+/** PK-3: what an immune row can keep off your Billies: a status (statuses.json), the Sandstorm's buffeting (a move's
+ * storm, rules.json battle.shockName) and sharp stones on switching in */
+export const FX_IMMUNE = /** @type {const} */ (['brn', 'slp', 'par', 'sandstorm', 'stones']);
+/** PK-3: the immune rows against `what` (their sources name the line; none: []) @param {Fx[] | null | undefined} fx
+ * @param {string} what */
+export const fxImmune = (fx, what) => (fx || []).filter(f => f.kind === 'immune' && f.what === what);
+provide({ fxImmune }); /* to-module */
 
 /** RL-12c: a holder's once-a-battle heal when low: the first pinchHeal row, or null
  * @param {Fx[] | null | undefined} fx @returns {{ at: number, share: number } | null} */

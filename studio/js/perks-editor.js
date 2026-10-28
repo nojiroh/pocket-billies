@@ -91,6 +91,7 @@ const PERK_KINDS = {
   level: 'Foes’ levels on the run (PK-1)',
   bossHp: 'The run’s boss’s HP (PK-1)',
   crit: 'Critical hits: more often, or a move that is one (PK-3)',
+  immune: 'A status, the Sandstorm or sharp stones can’t touch your Billies (PK-3)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -128,6 +129,7 @@ const PERK_ROW_NEW = {
   level: () => ({ kind: 'level', n: 1 }),
   bossHp: () => ({ kind: 'bossHp', mult: 1.1 }),
   crit: () => ({ kind: 'crit', stages: 1 }),
+  immune: () => ({ kind: 'immune', what: 'brn' }),
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -246,6 +248,15 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
                 help: `1 to ${FX_CRIT} (effects.js FX_CRIT; the chance steps of rules.json battle.critChances).`,
               }),
             ],
+      immune: () => [
+        selectField('Keeps off', `${p}.what`, [
+          ['brn', 'Burns'],
+          ['slp', 'Sleep'],
+          ['par', 'Paralysis'],
+          ['sandstorm', 'The Sandstorm’s buffeting'],
+          ['stones', 'Sharp stones on switching in'],
+        ]),
+      ],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(
     PERK_KINDS

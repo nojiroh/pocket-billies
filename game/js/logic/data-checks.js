@@ -45,6 +45,7 @@ import {
   FX_FOES,
   FX_IF_KEYS,
   FX_IF_WORDS,
+  FX_IMMUNE,
   FX_KINDS,
   FX_LIMIT,
   FX_ONCE,
@@ -155,6 +156,7 @@ expose({
   dataUnderscoreKeys: [() => dataUnderscoreKeys, v => (dataUnderscoreKeys = v)],
   // @ts-expect-error -- replaced on purpose
   dataUnlocks: [() => dataUnlocks, v => (dataUnlocks = v)],
+  fxA: [() => fxA],
   // @ts-expect-error -- replaced on purpose
   fxCondProblem: [() => fxCondProblem, v => (fxCondProblem = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2003,7 +2005,7 @@ export function fxRowProblems(f, at, kinds, D, problem, timing = false) {
   if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
 }
 /** PK-3: the battle kit's kinds (perks-track.md 5.2): crit gives 1 to FX_CRIT stages without a when, and none at
- * when: move (that move is critical) @param {any} f @param {string} at @param {(what: string) => void} problem */
+ * when: move (that move is critical); immune names what it keeps off (FX_IMMUNE) @param {any} f @param {string} at @param {(what: string) => void} problem */
 export function fxKindProblems(f, at, problem) {
   if (!f || typeof f !== 'object') return;
   if (f.kind === 'crit') {
@@ -2012,6 +2014,8 @@ export function fxKindProblems(f, at, problem) {
     if (f.when != null && f.stages != null)
       problem(`${at}.stages: a crit row at ${f.when} makes that move a critical hit: no stages`);
   }
+  if (f.kind === 'immune' && !(/** @type {readonly string[]} */ (FX_IMMUNE).includes(f.what)))
+    problem(`${at}.what: ${FX_IMMUNE.join(', ')} (effects.js FX_IMMUNE)`);
 }
 /** PK-1: the timing fields of an effect row (logic/effects.js) */
 export const FX_TIMING = ['when', 'if', 'every', 'grow', 'per', 'once'];
@@ -2059,6 +2063,8 @@ export function fxCondProblem(c, D) {
   const bad = any.filter(a => !known[k].includes(a));
   return bad.length ? `${k}: no "${bad.join('", "')}" (${known[k].join(', ')})` : '';
 }
+/** PK-3: a kind with its article ("a crit", "an immune") @param {string} kind */
+export const fxA = kind => (/^[aeiou]/.test(kind) ? 'an ' : 'a ') + kind;
 /** PK-1: an effect row's when, if, every, grow, per and once (logic/effects.js) @param {any} f @param {string} at
  * @param {any} D @param {(what: string) => void} problem */
 export function fxWhenProblems(f, at, D, problem) {
@@ -2076,7 +2082,7 @@ export function fxWhenProblems(f, at, D, problem) {
     if (!whens.includes(f.when)) problem(`${at}.when: no moment "${f.when}" (${FX_WHEN.join(', ')})`);
     else if (!(FX_WHEN_KINDS[f.kind] || []).includes(f.when))
       problem(
-        `${at}.when: a ${f.kind} row can't act at ${f.when} (${FX_WHEN_KINDS[f.kind] ? FX_WHEN_KINDS[f.kind].join(', ') : 'no moment yet'})`
+        `${at}.when: ${fxA(f.kind)} row can't act at ${f.when} (${FX_WHEN_KINDS[f.kind] ? FX_WHEN_KINDS[f.kind].join(', ') : 'no moment yet'})`
       );
     if (f.kind === 'damage' && ['hit', 'crit'].includes(f.when) && f.side !== 'deal')
       problem(`${at}.side: deal, at ${f.when} (a hit of yours)`);
@@ -2090,7 +2096,7 @@ export function fxWhenProblems(f, at, D, problem) {
     for (const key of FX_PLAIN[f.kind])
       if (f[key] != null)
         problem(
-          `${at}.${key}: a ${f.kind} row is read where no battle, Billie or team is known (no ${FX_PLAIN[f.kind].join(', ')})`
+          `${at}.${key}: ${fxA(f.kind)} row is read where no battle, Billie or team is known (no ${FX_PLAIN[f.kind].join(', ')})`
         );
   if (f.every != null) {
     if (!(Number.isInteger(f.every) && f.every >= 2 && f.every <= FX_EVERY))
@@ -2109,11 +2115,11 @@ export function fxWhenProblems(f, at, D, problem) {
         problem(`${at}.grow.max: a number of the same sign as by`);
       conds(g.if, `${at}.grow.if`);
     }
-    if (!numbered) problem(`${at}.grow: a ${f.kind} row has no number to grow`);
+    if (!numbered) problem(`${at}.grow: ${fxA(f.kind)} row has no number to grow`);
   }
   if (f.per != null) {
     if (!(/** @type {readonly string[]} */ (FX_PER).includes(f.per))) problem(`${at}.per: ${FX_PER.join(' or ')}`);
-    if (!numbered) problem(`${at}.per: a ${f.kind} row has no number to count`);
+    if (!numbered) problem(`${at}.per: ${fxA(f.kind)} row has no number to count`);
   }
   if (f.once != null) {
     if (!(/** @type {readonly string[]} */ (FX_ONCE).includes(f.once))) problem(`${at}.once: ${FX_ONCE.join(', ')}`);

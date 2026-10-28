@@ -116,6 +116,11 @@
        "description": "crit (PK-3): without a when, critical-hit stages for your Billies' hits (rules.json battle.critChances; 1-3, and 3 at most together); at when: move (no stages), that move is a critical hit",
        "type": "object", "additionalProperties": false, "required": ["kind"],
        "properties": {"kind": {"const": "crit"}, "stages": {"type": "integer", "minimum": 1, "maximum": 3}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "immune (PK-3): your Billies can't get a status (brn, slp, par: in battle, and from an event), or aren't hurt by the Sandstorm (sandstorm) or sharp stones (stones)",
+       "type": "object", "additionalProperties": false, "required": ["kind", "what"],
+       "properties": {"kind": {"const": "immune"}, "what": {"enum": ["brn", "slp", "par", "sandstorm", "stones"]}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       }
      ]
     }

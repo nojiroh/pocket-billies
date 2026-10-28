@@ -150,3 +150,74 @@ test('PK-3 crit at a move with every: each Nth attack of yours is a critical hit
     assert.equal(marks['test_pen/0'].n, 0);
   });
 });
+
+/* ---------- immune ---------- */
+
+test('PK-3 immune: a status can’t land on yours (with a line), the foe still gets it', () => {
+  const { P, fx } = perks(
+    { id: 'test_mitts', name: 'Test Mitts', fx: [{ kind: 'immune', what: 'brn' }] },
+    { id: 'test_muffs', name: 'Test Muffs', fx: [{ kind: 'immune', what: 'slp', if: 'lead' }] }
+  );
+  withPerks(P, () => {
+    const b = battle(fx);
+    fn('inflict')(0, 'brn', true);
+    assert.equal(mine(b).status ?? null, null);
+    assert.ok(
+      lines(b).some(t => /^Test Mitts kept .* from being burned\.$/.test(t)),
+      lines(b).join('\n')
+    );
+    fn('inflict')(0, 'slp', true);
+    assert.equal(mine(b).status ?? null, null, 'the lead');
+    assert.ok(lines(b).some(t => /^Test Muffs kept .* from falling asleep\.$/.test(t)));
+    fn('inflict')(0, 'par', true);
+    assert.equal(mine(b).status, 'par', 'nothing against paralysis');
+    fn('inflict')(1, 'brn', true);
+    assert.equal(foe(b).status, 'brn', 'the foe');
+  });
+  const b = battle(null);
+  fn('inflict')(0, 'brn', true);
+  assert.equal(mine(b).status, 'brn', 'no Perk');
+});
+
+test('PK-3 immune: the Sandstorm and sharp stones don’t hurt yours; without the Perk they do', () => {
+  const { P, fx } = perks({
+    id: 'test_suit',
+    fx: [
+      { kind: 'immune', what: 'sandstorm' },
+      { kind: 'immune', what: 'stones' },
+    ],
+  });
+  const shock = data.RULES.battle.shockType;
+  for (const held of [true, false])
+    withPerks(P, () => {
+      const b = battle(held ? fx : null),
+        notShock = m => !fn('billyTypes')(m).includes(shock);
+      if (!notShock(mine(b)) || !notShock(foe(b))) return;
+      const hp = mine(b).hp,
+        foeHp = foe(b).hp;
+      b.market = { k: 'sand', n: 3 };
+      fn('endTurn')();
+      assert.equal(mine(b).hp === hp, held, `sandstorm, held ${held}`);
+      assert.ok(foe(b).hp < foeHp, 'the foe is buffeted');
+      b.market = null;
+      b.sides[0].stones = true;
+      const next = b.sides[0].team[1],
+        hp2 = next.hp;
+      fn('doSwitch')(0, 1);
+      assert.equal(
+        next.hp === hp2,
+        held || fn('hasPassive')(fn('billyTypes')(next), 'bedrock'),
+        `stones, held ${held}`
+      );
+    });
+});
+
+test('PK-3 immune: an event’s status skips a team holding the Perk (runImmune)', () => {
+  const { P } = perks({ id: 'test_mitts', fx: [{ kind: 'immune', what: 'brn' }] });
+  const s = startedSave(starter(), 10);
+  s.run = { perks: ['test_mitts'] };
+  assert.equal(fn('runImmune')(s, P, 'brn'), true);
+  assert.equal(fn('runImmune')(s, P, 'par'), false);
+  s.run = { perks: [] };
+  assert.equal(fn('runImmune')(s, P, 'brn'), false);
+});

@@ -44,6 +44,7 @@ import { META_MAX } from './logic/meta-state.js';
 import { residentCandidate, residentInvite } from './logic/residents.js';
 import { runHome } from './logic/run-state.js';
 import { runMapNode } from './logic/run-map.js';
+import { runImmune } from './logic/run-loop.js';
 import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
 import {
   encChanges,
@@ -322,7 +323,8 @@ function encounterStage(id, i) {
       encHurt(team(), +s, maxHp);
     },
     status: ([sid]) => {
-      encStatus(team(), sid);
+      /* PK-3: a Perk that keeps the status off (Oven Mitts) keeps it off the whole team */
+      if (!runImmune(saveData, PERKS, sid)) encStatus(team(), sid);
     },
     fx: ([n, ...row]) => {
       encBoon(saveData.run, [fxRowOf(row)], +n, id);

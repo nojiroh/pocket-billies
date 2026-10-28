@@ -1956,7 +1956,9 @@ export type FxKindRow =
   | { kind: 'splice'; mult: number }
   | { kind: 'unstable'; mult: number }
   /** PK-3: critical-hit stages for your Billies' hits (without a when); at `when: move` that move is critical */
-  | { kind: 'crit'; stages?: number };
+  | { kind: 'crit'; stages?: number }
+  /** PK-3: your Billies can't get a status, or aren't hurt by the Sandstorm or sharp stones */
+  | { kind: 'immune'; what: 'brn' | 'slp' | 'par' | 'sandstorm' | 'stones' };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

@@ -20,6 +20,7 @@ import {
   fxAt,
   fxFire,
   fxHealShare,
+  fxImmune,
   fxOfRun,
   fxRunBossHp,
   fxRunFoeLevels,
@@ -66,6 +67,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runHealCost: [() => runHealCost, v => (runHealCost = v)],
   runHurt: [() => runHurt],
+  // @ts-expect-error -- replaced on purpose
+  runImmune: [() => runImmune, v => (runImmune = v)],
   runItemPrice: [() => runItemPrice],
   runKept: [() => runKept],
   // @ts-expect-error -- replaced on purpose
@@ -138,6 +141,12 @@ export function runFxMoment(s, perks, when, more, only) {
   let hp = 0;
   for (const f of rows) if (f.kind === 'heal') hp += runArriveHeal(s.team, f.share);
   return { rows, hp };
+}
+/** PK-3: does the run hold an immune row against `what` (a status an event hands out) that holds for the team here?
+ * @param {SaveData} s @param {Record<string, any>} perks @param {string} what */
+export function runImmune(s, perks, what) {
+  const fx = s.run ? fxOfRun(s.run, perks) : null;
+  return !!fx && fxImmune(fxAt(fx, fxRunCtx(s), { run: s.run && s.run.perkState }), what).length > 0;
 }
 /** PK-1: something bought in a run shop (shop.js, and the run's simulation): the buy moment
  * @param {SaveData} s @param {Record<string, any>} perks */

@@ -95,6 +95,7 @@ import {
   fxCrit,
   fxDamage,
   fxFire,
+  fxImmune,
   fxLive,
   fxOfBillie,
   fxPeek,
@@ -199,6 +200,10 @@ expose({
   fxHitMoments: [() => fxHitMoments, v => (fxHitMoments = v)],
   // @ts-expect-error -- replaced on purpose
   fxHitMult: [() => fxHitMult, v => (fxHitMult = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxImmuneSay: [() => fxImmuneSay, v => (fxImmuneSay = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxImmuneTo: [() => fxImmuneTo, v => (fxImmuneTo = v)],
   // @ts-expect-error -- replaced on purpose
   fxMoment: [() => fxMoment, v => (fxMoment = v)],
   fxNames: [() => fxNames],
@@ -517,6 +522,8 @@ export function inflict(tk, st, loud) {
     if (loud) battleSay(`But ${billyName(t)} is already ${(STATUS_NAMES[t.status] || 'affected').toLowerCase()}.`);
     return;
   }
+  /* PK-3: a run's immune rows keep the status off yours (Oven Mitts) */
+  if (fxImmuneSay(tk, st)) return;
   if (t.boss && st === 'slp' && battleRoll() < (BATTLE_RULES.alphaSleepResist ?? 0.5)) {
     battleSay(`${billyName(t)} shrugged it off. Alphas don’t nod off easily.`);
     return;
@@ -744,7 +751,13 @@ export function useMove(k, mid, tk0, part) {
   }
   if (fx.delay || (!spread && ev.an && (ev.an.miss || ev.an.blocked))) return;
   if (fx.selfStage && (!fx.selfChance || battleRoll() * 100 < fx.selfChance)) applyStatStages(k, fx.selfStage);
-  if (fx.selfStatus && u.hp > 0 && !u.status && battleRoll() * 100 < (fx.selfChance || 100)) {
+  if (
+    fx.selfStatus &&
+    u.hp > 0 &&
+    !u.status &&
+    battleRoll() * 100 < (fx.selfChance || 100) &&
+    !fxImmuneSay(k, fx.selfStatus)
+  ) {
     u.status = fx.selfStatus;
     battleSay(`${billyName(u)} hurt itself and is now ${(STATUS_NAMES[fx.selfStatus] || 'troubled').toLowerCase()}.`, {
       k: 'status',
@@ -793,7 +806,7 @@ export function endTurn() {
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'brn', dmg: d });
     }
-    if (m.hp > 0 && battleNow().market && !ty.includes(BATTLE_RULES.shockType)) {
+    if (m.hp > 0 && battleNow().market && !ty.includes(BATTLE_RULES.shockType) && !fxImmuneTo(k, 'sandstorm').length) {
       const d = Math.max(1, Math.floor(mx / fr));
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} is buffeted by the ${shockName().toLowerCase()}.`, {
@@ -978,7 +991,7 @@ export function doSwitch(k, idx, b) {
       for (const [t, an] of fxStageLines(fxFieldStages(k), [k])) battleSay(t, an);
       fxMoment('switchIn', k);
     }
-    if (sd.stones && !hasPassive(billyTypes(m), 'bedrock')) {
+    if (sd.stones && !hasPassive(billyTypes(m), 'bedrock') && !fxImmuneTo(k, 'stones').length) {
       const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.stonesFraction)));
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} was hurt by the sharp stones.`, { k: 'hurt', si: k, fx: 'stones', dmg: d });
@@ -1451,6 +1464,22 @@ export function fxTurnEnd(k) {
     m.hp -= d;
     battleSay(`${fxNames(hurt)}: ${billyName(m)} lost a little HP.`, { k: 'hurt', si: k, dmg: d });
   }
+}
+/** PK-3: the run's immune rows against `what` that hold for one of yours (none for a foe, or without Perks)
+ * @param {number} k @param {string} what @returns {any[]} */
+export function fxImmuneTo(k, what) {
+  const b = battleNow();
+  if (!b || !b.fx || ACTOR_SIDE[k] !== 0 || !fighter(k)) return [];
+  return fxImmune(fxAt(b.fx, fxBattleCtx(k), fxBattleState(b)), what);
+}
+/** PK-3: a status kept off one of yours by the run's immune rows, with its line ("Oven Mitts kept Emberox from being
+ * burned."); false when nothing keeps it off @param {number} k @param {string} st */
+export function fxImmuneSay(k, st) {
+  const rows = fxImmuneTo(k, st);
+  if (!rows.length) return false;
+  const what = { brn: 'being burned', slp: 'falling asleep', par: 'being paralyzed' }[st] || 'that';
+  battleSay(`${fxNames(rows)} kept ${billyName(fighter(k))} from ${what}.`, { k: 'block', si: k });
+  return true;
 }
 /** RL-12: a run's Perks that raised stats as the battle started (fxBattleStart): one line each, after the sides
  * come out */

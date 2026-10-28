@@ -413,12 +413,17 @@ test('PK-1: dataPerks checks when, if, every, grow, per, once and say; other row
 const PK3_GOOD = [
   { kind: 'crit', stages: 1 },
   { kind: 'crit', when: 'move', every: 8, if: 'cat:H|S' },
+  { kind: 'immune', what: 'brn' },
+  { kind: 'immune', what: 'stones', if: 'lead' },
 ];
 const PK3_BAD = [
   [{ kind: 'crit', stages: 4 }, 'stages: a whole number of critical-hit stages from 1 to 3'],
   [{ kind: 'crit' }, 'stages: a whole number of critical-hit stages'],
   [{ kind: 'crit', stages: 1, when: 'move' }, 'makes that move a critical hit: no stages'],
   [{ kind: 'crit', when: 'hit' }, "a crit row can't act at hit"],
+  [{ kind: 'immune', what: 'frz' }, 'what: brn, slp, par, sandstorm, stones'],
+  [{ kind: 'immune', what: 'brn', when: 'hit' }, "an immune row can't act at hit"],
+  [{ kind: 'immune', what: 'brn', once: 'battle' }, 'once: battle needs a moment in battle'],
 ];
 test('PK-3: dataPerks and the schema take the battle kit’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);
