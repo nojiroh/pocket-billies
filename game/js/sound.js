@@ -212,7 +212,8 @@ function initSound() {
          (Settings -> Sound) plays every song on today's four chip voices; the music's reverb stays off at Graphics Off */
       instruments: MUSIC.instruments,
       ensembles: MUSIC.ensembles,
-      gb: () => !!soundPreferences().gbSounds,
+      /* the Sound test's own choice (soundEngine.testGb) while it plays a song */
+      gb: () => (soundEngine.testGb != null ? soundEngine.testGb : !!soundPreferences().gbSounds),
       reverb: () => soundPreferences().aim !== 'off',
       levels: () => soundEngine.L,
       fx: soundEngine.fx,
