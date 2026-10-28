@@ -4,6 +4,7 @@
    walk-view-gl.js as it was. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { figureSpriteUniforms } from '../hooks.js';
 import { walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuState } from '../engine/webgl.js';
@@ -45,6 +46,8 @@ export function useWalkProgram(name, C, X) {
   if (p.U.uVP && C) gl.uniformMatrix4fv(p.U.uVP, false, C.vp);
   if (X) setLightUniforms(p, X);
   if (p.U.uRock && C) setRockUniforms(p, C);
+  /* CH-4: a sprite program lights the figures' cells (figure-atlas.js figureSpriteUniforms) */
+  if (p.U.uFigRamp != null && X && typeof figureSpriteUniforms === 'function') figureSpriteUniforms(p, X);
   return p;
 }
 /* terrain TR-3: what the walk programs with ROCK_GLSL (walk-shaders.js) need to thin out rock between the camera and

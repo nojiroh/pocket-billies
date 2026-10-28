@@ -960,6 +960,8 @@ export function setTextureParams(o = {}) {
 /* an image or canvas as a texture. Small or far sprites use mipmaps (no shimmer); a soft normal map ("pillow" shading
    from the outline) is made in the background, a few per frame, so a new scene never freezes */
 export function imageTexture(im, o = {}) {
+  /* CH-4: a figure's cell of the live atlas: the atlas's own textures (figure-atlas.js), its rect in im.uv */
+  if (im && im.atlasT) return im.atlasT;
   if (!imageReady(im)) return null;
   const v = typeof artCacheVersion === 'function' ? artCacheVersion() : 0,
     dv = im.__v;

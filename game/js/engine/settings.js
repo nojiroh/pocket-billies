@@ -257,7 +257,16 @@ export const ENGINE_DEFAULTS = {
   /* characters track CH-2 and CH-3 (the spike): people as small 3D figures baked into pixel pictures
      (game/js/figures.js), off; which figure you are, the style (the pixel puppet or the plain 3D figure), how many
      pixels a metre they are baked at, how many ways round, their outline, and townsfolk as figures too */
-  people: { figures: false, figure: 'look', style: 'gnight', density: 48, yawSteps: 16, outline: true, folk: true },
+  people: {
+    figures: false,
+    figure: 'look',
+    style: 'gnight',
+    density: 48,
+    yawSteps: 16,
+    outline: true,
+    folk: true,
+    atlas: true,
+  },
   camera: {
     pitch: null,
     pitchAdd: -3,
@@ -1174,6 +1183,12 @@ export const ENGINE_SPEC = [
         'Everyone else as figures',
         'bool',
         'Everyone else is a figure too, each their own look: townsfolk, people on the maps, trainers, Kappi, cutscenes.',
+      ],
+      [
+        'atlas',
+        'Live atlas',
+        'bool',
+        'Figures drawn each step into one shared picture by the game’s own renderer and lit where they stand by the sun, the sky, every lamp and the shadows. Off: each picture baked on its own, as before.',
       ],
     ],
   ],

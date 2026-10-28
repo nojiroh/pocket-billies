@@ -12,6 +12,7 @@ import '../../game/js/logic/ambience-sound.js';
 import '../../game/js/logic/arena-gen.js';
 import '../../game/js/logic/art-refs.js';
 import '../../game/js/logic/art-search.js';
+import '../../game/js/logic/atlas-pack.js';
 import '../../game/js/logic/atlas-rects.js';
 import '../../game/js/logic/augments.js';
 import '../../game/js/logic/battle-anims.js';

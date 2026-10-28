@@ -24,7 +24,7 @@
    The renderer never calls this with the switch off, and a model's file is only fetched when one is first wanted. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { PEOPLE, provide } from './hooks.js';
+import { PEOPLE, figureAtlasOn, figureAtlasPicture, figureAtlasReport, provide } from './hooks.js';
 import {
   FIGURE_BANDS,
   FIGURE_LIGHT,
@@ -350,7 +350,7 @@ function figureFromFile(name, j) {
   };
 }
 
-const FIGURE_VS = `#version 300 es
+export const FIGURE_VS = `#version 300 es
 layout(location=0) in vec3 aP;layout(location=1) in vec3 aN;layout(location=2) in float aJ;layout(location=3) in float aC;
 layout(location=4) in vec2 aUV;uniform mat4 uJ[32];uniform mat4 uM;uniform mat3 uR;uniform mat4 uLS;
 out vec3 vN;out vec2 vUV;out vec3 vLS;out vec3 vP;flat out int vC;
@@ -631,7 +631,7 @@ function figureTarget(gl, w, h) {
  * the outline's width, ink and inner lines, the mesh's detail, the proportions (the kit's chibi) and the density.
  * 'pixel' is where CH-3b's fidelity pass stood.
  */
-const FIGURE_LOOKS = {
+export const FIGURE_LOOKS = {
   pixel: { mode: 0, ramp: 'props', outline: 1, ink: 0, inner: 0.016, detail: 1, ppm: 48 },
   /* Link's Awakening (2019): a figurine in a diorama, chunky, glossy, no line */
   toy: {
@@ -804,7 +804,7 @@ FIGURE_LOOKS.gnight = {
   },
 };
 /** the matrices of a figure's moving parts, in its GPU mesh's slot order (logic/figure-pose.js figureGpuMesh) */
-function figureSlotMatrices(J, slots) {
+export function figureSlotMatrices(J, slots) {
   const out = new Float32Array(slots.length * 16);
   slots.forEach((i, k) => out.set(J.subarray(i * 16, i * 16 + 16), k * 16));
   return out;
@@ -934,7 +934,7 @@ function figureLookRamp(b, ramp) {
   return figureRamp(b);
 }
 /** a code figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
-function figurePalette(F, colours, ramp = 'props', LK = null) {
+export function figurePalette(F, colours, ramp = 'props', LK = null) {
   /* FIGURE_PAL_MAX colours, five shades each (the shader's uPal[140]): the deep shadow, the shadow, the base, the
      light and the shine, which only a glossy colour (F.gloss: hair, shoes, lenses) has; the rest keep their light */
   const out = new Float32Array(FIGURE_PAL_MAX * 5 * 3),
@@ -1100,7 +1100,7 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = 
  * its edge only, so the eye shows through; an oval (an eye, a pupil, a shine) or a smile's arc pixel by pixel, the
  * arc as thick as the density allows (a portrait's close-up gets proper shapes, not blocks)
  */
-function figurePaintMark(x, m, ppm) {
+export function figurePaintMark(x, m, ppm) {
   const th = Math.max(1, Math.round(0.02 * ppm));
   if (m.shape === 'oval' || m.shape === 'arc' || m.shape === 'cap') {
     /* an arc is the lower rim of an ellipse centred on the mark's top, a cap the upper rim of one centred on its
@@ -1192,6 +1192,16 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
       /* CH-3b: lit by the scene (its sun, sky and lamps), kept by that light too */
       light = smooth ? null : figureLightNow(at),
       key = figureKey(Fig.name, clip, frame, V, steps, ppm, outline, style + (light ? '~' + light.key : ''));
+    /* CH-4: the live atlas (figure-atlas.js): a kit figure in the world drawn by the game's renderer each step and
+       lit where it stands (not a battle's close-up, nor the plain 3D style, which keep their baked pictures) */
+    if (!ppmAt && !smooth && Fig.kind === 'code' && typeof figureAtlasOn === 'function' && figureAtlasOn()) {
+      const p = figureAtlasPicture(rec, Fig, clip, frame, V, steps, ppm, outline, style);
+      if (p) {
+        if (rec && typeof rec === 'object') figureLast.set(rec, p);
+        return p;
+      }
+      return rec && typeof rec === 'object' ? figureLast.get(rec) || null : null;
+    }
     im = FIGURE_CACHE.get(key) || null;
     if (im) {
       /* kept the longest by the last use */
@@ -1312,6 +1322,8 @@ export function figureReport() {
     figures: Object.keys(FIGURE_DEFS).filter(k => FIGURE_DEFS[k]).length,
     /* CH-4: the meshes' helper thread: its builds and their ms, any built on the page, waiting, kept */
     meshes: figureMeshReport(),
+    /* CH-4: the live atlas: people in it, cells, draws and their ms */
+    atlas: typeof figureAtlasReport === 'function' ? figureAtlasReport() : null,
   };
 }
 /** the checks: lose the baker's context on purpose, back after `ms` (WEBGL_lose_context); false if it can't */

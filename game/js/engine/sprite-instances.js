@@ -32,6 +32,7 @@ expose({
   halfBits: [() => halfBits, v => (halfBits = v)],
   halfValue: [() => halfValue, v => (halfValue = v)],
   materialIndex: [() => materialIndex, v => (materialIndex = v)],
+  packCell: [() => packCell, v => (packCell = v)],
   packShadowInstance: [() => packShadowInstance, v => (packShadowInstance = v)],
   packSpriteInstance: [() => packSpriteInstance, v => (packSpriteInstance = v)],
   packSpriteInstances: [() => packSpriteInstances, v => (packSpriteInstances = v)],
@@ -64,7 +65,8 @@ const SPRITE_INSTANCE_LAYOUT = [
 ];
 export const SPRITE_INSTANCE_STRIDE = 100;
 /* the flags byte */
-const SPRITE_FLAG = { fixed: 1, noRecv: 2, flipN: 4, flip: 8, cam: 16 };
+/* CH-4: fig, a figure's cell of the live atlas (lit by walk-shaders.js FIGURE_SPRITE_GLSL) */
+const SPRITE_FLAG = { fixed: 1, noRecv: 2, flipN: 4, flip: 8, cam: 16, fig: 32 };
 /* the materials by index (the instanced programs' uniform table holds them in this order) */
 const SPRITE_MATERIALS = Object.keys(SURFACE_MATERIALS);
 const MATERIAL_INDEX = new Map();
@@ -177,7 +179,8 @@ export function packSpriteInstance(i, r, cam) {
     (r.noRecv ? SPRITE_FLAG.noRecv : 0) |
     (r.flipN < 0 ? SPRITE_FLAG.flipN : 0) |
     (r.flip < 0 ? SPRITE_FLAG.flip : 0) |
-    (cam ? SPRITE_FLAG.cam : 0);
+    (cam ? SPRITE_FLAG.cam : 0) |
+    (r.fig ? SPRITE_FLAG.fig : 0);
   b[o + 89] = materialIndex(r.mt);
   b[o + 90] = 0;
   b[o + 91] = 0;
@@ -255,6 +258,7 @@ function unpackSpriteInstance(i) {
     flipN: fl & SPRITE_FLAG.flipN ? -1 : 1,
     flip: fl & SPRITE_FLAG.flip ? -1 : 1,
     cam: !!(fl & SPRITE_FLAG.cam),
+    fig: fl & SPRITE_FLAG.fig ? 1 : 0,
     mat: SPRITE_MATERIALS[B.u8[o + 89]],
     cell: [0, 1, 2, 3].map(k => B.u16[o2 + 46 + k] / 65535),
   };

@@ -241,6 +241,15 @@ const FIGURE_SWITCHES = [
     ],
   ],
   [
+    'figatlas',
+    'atlas',
+    'Atlas',
+    [
+      [true, 'live'],
+      [false, 'baked'],
+    ],
+  ],
+  [
     'figfolk',
     'folk',
     'Everyone else',

@@ -273,6 +273,7 @@ function newSpriteRecord(cross) {
     cr: cross ? newSpriteRecord(false) : null,
     inst: 0,
     cam: false,
+    fig: 0,
   };
 }
 const SPRITE_RECORDS = [];
@@ -328,6 +329,8 @@ function spriteRecord(it, F, r) {
   r.emit = it.glow ? it.glow * 1.6 : 0;
   /* VFX-9: a battle rig's hit flash ([r, g, b, amount], battle-3d.js), drawn on this program alone */
   r.hit = it.hit && it.hit[3] > 0.001 ? it.hit : null;
+  /* CH-4: a figure's cell of the live atlas, lit where it stands (figure-atlas.js) */
+  r.fig = it.im && it.im.figAtlas ? 1 : 0;
   r.rim = it.person ? 0.4 : 0.12;
   r.lit = it.glow ? Math.max(0, 1 - it.glow) : it.far ? 0.75 : 1;
   r.shade = it.person ? 0.45 : it.far ? 0.3 : 0.55;
@@ -397,6 +400,7 @@ function setSpriteRecord(p, r) {
   gl.uniform1f(U.uRim, r.rim);
   gl.uniform1f(U.uLit, r.lit);
   gl.uniform1f(U.uShade, r.shade);
+  if (U.uFig) gl.uniform1f(U.uFig, r.fig);
   gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, r.T.t);

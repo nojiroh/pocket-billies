@@ -1620,7 +1620,7 @@
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1763",
-   "game/js/walk-view-gl.js:719"
+   "game/js/walk-view-gl.js:726"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1657,7 +1657,7 @@
    "game/js/walk/prop-look.js:55",
    "game/js/walk/prop-look.js:65",
    "game/js/walk/prop-look.js:418",
-   "game/js/walk/sprites.js:931",
+   "game/js/walk/sprites.js:935",
    "game/js/world-bowl.js:1737",
    "game/js/world-bowl.js:1767"
   ],
@@ -1877,7 +1877,7 @@
    "game/js/battle-stage.js:2117"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:681",
+   "game/js/walk-view-gl.js:688",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
