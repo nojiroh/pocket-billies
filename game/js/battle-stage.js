@@ -457,6 +457,7 @@ export function battleStageResize() {
 export function battleStageStart(area) {
   battleStage.area = AREAS[area] ? area : 'grass';
   const A = AREAS[battleStage.area];
+  if (battleStage.parts.length > 220) return;
   battleStage.cv = $('#cvWorld');
   battleStage.fgc = $('#cvFg');
   battleStage.props = [];
@@ -741,7 +742,6 @@ function battleStageFrame(ts, rawDt) {
 const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
 function spawnAmbientParticles(dt) {
   const A = AREAS[battleStage.area];
-  if (battleStage.parts.length > 220) return;
   if (battleStage.oil && random() < dt / 18)
     addParticle({
       x: GROUND_CENTER_X - 7 + random() * 3,
@@ -1372,13 +1372,14 @@ function drawParticles(c, layer) {
   const L = [];
   battleStage.parts.forEach(p => {
     if ((p.layer || 2) !== layer) return;
+    /* VFX-9: drawn in the 3D world instead (walk/battle-fx.js), all but a bot's dropped part (a picture) */
+    if (battleStage.gl && !p.img) return;
     const q = battleStageProject(p.x, p.y, p.z);
     if (q) L.push([q, p]);
   });
   L.sort((a, b) => b[0].z - a[0].z);
   L.forEach(([q, p]) => {
-    if (battleStage.gl && p.spr) return;
-    /* drawn in the 3D world instead */ let fade = p.fade === false ? 1 : 1 - p.age / p.life;
+    let fade = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) fade *= 0.5 + 0.5 * Math.sin(p.age / 120);
     c.globalAlpha = Math.max(0, Math.min(1, fade));
     if (p.glow) c.globalCompositeOperation = 'lighter';

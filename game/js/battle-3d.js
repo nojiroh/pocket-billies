@@ -14,6 +14,7 @@ import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from '
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   AREAS,
+  EASE,
   FOCAL_LENGTH,
   PYRAMID_HIGH,
   PYRAMID_LIFT,
@@ -34,7 +35,6 @@ import {
   battleSmearCount,
   battleStage,
   battleStretch,
-  particleSprite,
   trainerBattleFrame,
   trainerMetersPerPixel,
 } from './battle-stage.js';
@@ -42,14 +42,17 @@ import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
+import { BATTLE_FX_KIND } from './walk/battle-fx.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
+  BATTLE_RGB: [() => BATTLE_RGB],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
+  battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
@@ -342,27 +345,42 @@ function battle3dFrame() {
       c: [(c[0] / 255) * 1.1 * k, (c[1] / 255) * 1.1 * k, (c[2] / 255) * 1.1 * k],
     });
   }
-  /* icon particles (sparks, stars, coins of effect) live in the world */
-  const parts = battle3d.parts || (battle3d.parts = []);
-  parts.length = 0;
+  /* VFX-9: the particles in one pool (walk/battle-fx.js: one cutout draw and the white cores'); a bot's dropped part
+     (a picture) stays on battle-stage.js's canvas */
+  const fx = battle3d.fx || (battle3d.fx = []);
+  fx.length = 0;
   for (const p of battleStage.parts) {
-    if (!p.spr) continue;
+    if (p.img) continue;
     let a = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) a *= 0.5 + 0.5 * Math.sin(p.age / 120);
-    const im = particleSprite(p.spr);
-    if (!im || a <= 0.01) continue;
-    const s = (p.k || 1) / 30;
-    const [px, pz] = T(p.x, p.z);
-    parts.push({
-      im,
-      x: px,
-      y: battle3d.gy + p.y,
-      z: pz,
-      w: im.width * s,
-      h: im.height * s,
-      a: clamp(a, 0, 1),
-      glow: !!p.glow,
-    });
+    if (a <= 0.01) continue;
+    const [px, pz] = T(p.x, p.z),
+      q = { k: 0, x: px, y: battle3d.gy + p.y, z: pz, a: clamp(a, 0, 1), glow: !!p.glow };
+    if (p.spr) {
+      q.k = BATTLE_FX_KIND.sprite;
+      q.key = p.spr;
+      q.s = (p.k || 1) / 30;
+    } else if (p.ring) {
+      q.k = BATTLE_FX_KIND.ring;
+      q.r = (p.r0 + (p.r1 - p.r0) * EASE.out(p.age / p.life)) / 30;
+      q.col = battle3dRgb(p.col);
+      q.ground = !!p.ground;
+      q.th = p.ground ? 2 : 1;
+      if (p.ground) q.y = standingHeightAt(px, pz) + 0.03;
+    } else if (p.beam) {
+      const [x2, z2] = T(p.x2, p.z2);
+      q.k = BATTLE_FX_KIND.beam;
+      q.x2 = x2;
+      q.y2 = battle3d.gy + p.y2;
+      q.z2 = z2;
+      q.w = (p.w || 1) / 30;
+      q.col = battle3dRgb(p.col);
+    } else {
+      q.k = BATTLE_FX_KIND.square;
+      q.size = Math.max(1, (p.size || 2) * 0.6) / 30;
+      q.col = battle3dRgb(p.col);
+    }
+    fx.push(q);
   }
   /* RF-2: the thrown pyramid, a lit 3D model; battle-stage.js draws its flat icon instead while it can't be */
   const py = battleStage.coin && battleStage.coin.show ? pyramidItem(battleStage.coin, T) : null;
@@ -404,7 +422,7 @@ function battle3dFrame() {
   }
   const d = battleStage.dof;
   return {
-    parts,
+    fx,
     cam: battle3d.yaw ? battle3dTurnedCam() : battleStage.V,
     L: battleStage.L,
     foc: FOCAL_LENGTH,
@@ -420,6 +438,16 @@ function battle3dFrame() {
     blur: reducedMotion ? 0 : clamp(d.ap / 1.35, 0, 1) * 0.8,
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
+}
+/* VFX-9: a particle's colour (a hex) as the pool takes it, 0..1, made once a colour */
+const BATTLE_RGB = new Map();
+function battle3dRgb(col) {
+  let c = BATTLE_RGB.get(col);
+  if (!c) {
+    const h = typeof col === 'string' && col[0] === '#' ? hexToRgb(col) : [255, 255, 255];
+    BATTLE_RGB.set(col, (c = [h[0] / 255, h[1] / 255, h[2] / 255]));
+  }
+  return c;
 }
 /* WA-7: the battle camera turned with the battle (walk/camera.js battleCamera adds battle3d.off to its place) */
 function battle3dTurnedCam() {
