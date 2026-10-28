@@ -138,7 +138,7 @@ export function runSimOn(env) {
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runTownSize, runWorldNode, runWeather } = modules['run-map'],
-    { fieldBadgeKey, fieldMoveState, runSideOpen } = modules['run-side'],
+    { fieldBadgeKey, fieldMoveState, fieldRope, runSideOpen } = modules['run-side'],
     MOVES = (GAME_DATA.fieldMoves && GAME_DATA.fieldMoves.moves) || {},
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
@@ -151,7 +151,7 @@ export function runSimOn(env) {
     { runUnlocks } = modules.unlocks,
     { routeTrainerTally, runRouteTrainers } = modules['route-trainers'],
     { rewardDataGame, rewardTake } = modules.rewards,
-    { perkBuy, perkChoose, perkPrice, perkShelf, perkTeamOf } = modules.perks,
+    { perkBuy, perkCap, perkChoose, perkPrice, perkShelf, perkTeamOf } = modules.perks,
     { pointBudget, pointPick } = modules['starter-points'],
     { modTypeFits } = modules.modifiers,
     { residentCandidate } = modules.residents,
@@ -402,9 +402,21 @@ export function runSimOn(env) {
           const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks, perkTeamOf(s.team));
           if (shelf) {
             const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
-              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.perks, data.PERKS, R.perks, P) : null;
+              c =
+                s.se >= cost + P.reserve
+                  ? simPerkChoice(
+                      [shelf],
+                      run.perks,
+                      data.PERKS,
+                      { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+                      P
+                    )
+                  : null;
             at.relic = { id: shelf, price: cost };
+            const se0 = s.se;
             if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop, s)) {
+              /* PK-6: a give row's Moneys on taking it (Boarding Pass) */
+              stats.moneyIn.perks += s.se - se0;
               s.se -= cost;
               /* PK-1: the buy moment (shop.js shopPerkBuy); PK-5: a free row gives the price back */
               stats.moneyIn.perks += runBuyFx(s, data.PERKS, cost).free;
@@ -579,9 +591,18 @@ export function runSimOn(env) {
           stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simPerkChoice(run.offer, run.perks, data.PERKS, R.perks, P);
+            const c = simPerkChoice(
+              run.offer,
+              run.perks,
+              data.PERKS,
+              { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+              P
+            );
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
+            const se0 = s.se;
             perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined, s);
+            /* PK-6: a give row's Moneys on taking it (Boarding Pass) */
+            stats.moneyIn.perks += s.se - se0;
           }
           if (node.type === 'boss') {
             stats.won = true;
@@ -591,7 +612,7 @@ export function runSimOn(env) {
         /* on: into the side area when its field move can be used here (the policy takes it), out by its way out
            at its last place, else a lane drawn from the seed */
         const next = runNext(run.map, i),
-          side = simSideNext(run.map, i, s.meta.badges, simTypes());
+          side = simSideNext(run.map, i, s.meta.badges, simTypes(), fieldRope(run));
         if (side) {
           if (side.open) {
             runSideOpen(run.map);
@@ -738,12 +759,13 @@ export function runSimOn(env) {
    * RL-R2b: the policy at a side area: from the obstacle's place into the side when its field move can be used (the
    * badge kept and a Billie of the type standing: `open`), from its last place out by its way out; else null (the
    * lane as usual) @param {any} map @param {number} i @param {Record<string, number>} badges
-   * @param {{ name: string, types: string[] }[]} team @returns {{ to: number, open?: boolean } | null}
+   * @param {{ name: string, types: string[] }[]} team @param {boolean} [rope] PK-6: a sideOpen rule held (Coil of
+   * Rope: the badge alone) @returns {{ to: number, open?: boolean } | null}
    */
-  function simSideNext(map, i, badges, team) {
+  function simSideNext(map, i, badges, team, rope = false) {
     const S = map.side;
     if (!S) return null;
-    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team).state === 'ask')
+    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team, rope).state === 'ask')
       return { to: S.nodes[0], open: true };
     if (i === S.nodes[S.nodes.length - 1] && S.to >= 0) return { to: S.to };
     return null;

@@ -26,7 +26,7 @@
 /** @import { FieldMove, RunSideRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
+import { fxRunRule, provide } from '../hooks.js';
 import { rngFrom } from './rng.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -36,6 +36,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fieldMoveState: [() => fieldMoveState, v => ((fieldMoveState = v), provide({ fieldMoveState }))],
   fieldMoveText: [() => fieldMoveText],
+  fieldMoveUser: [() => fieldMoveUser],
+  fieldRope: [() => fieldRope],
   // @ts-expect-error -- replaced on purpose
   runSideAdd: [() => runSideAdd, v => (runSideAdd = v)],
   // @ts-expect-error -- replaced on purpose
@@ -253,16 +255,27 @@ export function runSideOpen(map) {
 }
 /**
  * what the obstacle says and whether it opens, Pokémon's way: without the type's badge kept, needBadge; with it but
- * no Billie of the type in the team, needType; with both, ask (and `billie`, the team's first of the type, uses it)
+ * no Billie of the type in the team, needType; with both, ask (and `billie`, the team's first of the type, uses it).
+ * PK-6: with `anyone` (a side area's obstacle while a sideOpen rule is held: Coil of Rope, fieldRope) the badge alone
+ * opens it: any Billie standing uses it (the team's first of the type, else its first)
  * @param {FieldMove} M @param {Record<string, number> | undefined} badges meta.badges
  * @param {{ name: string, types: string[] }[]} team the team's Billies standing (their names and types)
- * @returns {{ state: 'needBadge' | 'needType' | 'ask', billie: string }}
+ * @param {boolean} [anyone] @returns {{ state: 'needBadge' | 'needType' | 'ask', billie: string }}
  */
-export function fieldMoveState(M, badges, team) {
+export function fieldMoveState(M, badges, team, anyone = false) {
   if (!(badges || {})[fieldBadgeKey(M.type)]) return { state: 'needBadge', billie: '' };
-  const B = team.find(m => m.types.includes(M.type));
+  const B = fieldMoveUser(M, team, anyone);
   return B ? { state: 'ask', billie: B.name } : { state: 'needType', billie: '' };
 }
+/** PK-6: who of the team uses a field move: its first of the move's type; with `anyone`, else its first (null: none)
+ * @template {{ types: string[] }} T @param {FieldMove} M @param {T[]} team @param {boolean} [anyone]
+ * @returns {T | null} */
+export const fieldMoveUser = (M, team, anyone = false) =>
+  team.find(m => m.types.includes(M.type)) || (anyone ? team[0] || null : null);
+/** PK-6: does the run hold a sideOpen rule (Coil of Rope): its side area's obstacle opens with the badge alone, no
+ * Billie of the type needed (not a route's brambles, nor Surf) @param {any} run */
+export const fieldRope = run => !!run && typeof fxRunRule === 'function' && fxRunRule(run, 'sideOpen') > 0;
+provide({ fieldRope }); /* to-module */
 /** a field move's line with its {badge} and {billie} filled in @param {FieldMove} M
  * @param {'look' | 'needBadge' | 'needType' | 'ask' | 'used' | 'out'} which @param {string} [billie] */
 export const fieldMoveText = (M, which, billie = '') =>
