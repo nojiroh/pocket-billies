@@ -61,7 +61,8 @@ session's last commit. PR #292. Details: sound-track.md "SND-14 as built". The w
   SND-11's 4-5 new ensemble parts as not in the baseline). `check-studio-github.py --only=music`: ok (steps on gravel
   on the World sounds card). The full `npm run check:quick` on 323fc0c2: 38 of 42 in 2152 s; every sound step passed;
   Terraces, RL-8 and "Walking left and right..." fail on main too; Song fingerprints as above (SND-11's baseline).
-  CI on the pushes: see below.
+  CI on 4874a99d (the session's merge push): lint and rules green; smoke still running when this entry was
+  written (locally: smoke 7 of 7, the full quick check as above). Tag `snd-14-done` on this entry's commit.
 - **Decided for the owner, to review**:
   - Thunder: from a bolt counter in environment.js (the thin hook; its flash unchanged); distances 0.4-4.5 km, more
     far than near; the speed of sound for the delay (1.2-13 s); a crack only within 1.2 km; at most two rolling; none
