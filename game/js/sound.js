@@ -112,6 +112,7 @@ expose({
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   soundPreferences: [() => soundPreferences],
   soundStarts: [() => soundStarts],
+  soundWake: [() => soundWake, v => (soundWake = v)],
   soundWaterBuckets: [() => soundWaterBuckets],
   synthKick: [() => synthKick, v => (synthKick = v)],
   synthNoise: [() => synthNoise, v => (synthNoise = v)],
@@ -228,8 +229,7 @@ export function unlockSound() {
       if (soundEngine.states.length > 12) soundEngine.states.shift();
     });
   }
-  const st = soundEngine.ctx.state;
-  if (st !== 'running' && st !== 'closed') soundEngine.ctx.resume().catch(() => {});
+  soundWake();
   if (soundEngine.want && !soundEngine.song) {
     /* SND-4: the night level first (updateAmbience), so a night starts on the night version, not a second of day */
     if (!soundEngine.L && soundEngine.ctx.state === 'running')
@@ -240,6 +240,18 @@ export function unlockSound() {
     music(w.includes('@') ? w : songVariant(w, musicState(), SONGS, null, MUSIC.run));
   }
 }
+/* SND-8b: wakes the context. iOS Safari can leave it 'interrupted' after a call or Siri, where resume() alone does
+   nothing (WebKit bug 276016): suspend it first, then resume. Otherwise resume, even when it reads 'running' (a
+   suspend() from hiding the page may still be on its way) */
+function soundWake() {
+  const c = soundEngine.ctx,
+    st = c.state;
+  if (st === 'interrupted')
+    c.suspend()
+      .then(() => c.resume())
+      .catch(() => {});
+  else if (st !== 'closed') c.resume().catch(() => {});
+}
 ['pointerdown', 'keydown', 'touchend'].forEach(e => addEventListener(e, unlockSound, { capture: true, passive: true }));
 document.addEventListener('visibilitychange', () => {
   if (!soundEngine.ctx) return;
@@ -249,7 +261,7 @@ document.addEventListener('visibilitychange', () => {
     soundEngine.ctx.suspend();
     if (T) T.idle();
   } else {
-    soundEngine.ctx.resume();
+    soundWake();
     if (T) T.wake();
   }
   soundEngine.timer = T ? T.timer : null;
