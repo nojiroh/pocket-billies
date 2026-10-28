@@ -298,10 +298,10 @@ function battle3dFrame() {
       aoR: Math.max(0.3, G.hw * mpp * 0.9),
       fade: B.s.a,
       person: 1,
-      /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
-      hit: battle3dHit(B.s, i),
       /* style track SY-6: a coated Billie's foil, on the scene's clock */
       foil: B.s.coat ? battleFoil(B.s.coat, `b${i}:${B.s.seed || 0}`) : null,
+      /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
+      hit: battle3dHit(B.s, i),
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
@@ -319,8 +319,8 @@ function battle3dFrame() {
         fade: g.fade * B.s.a,
         glow: g.glow,
         ghost: true,
-        hit: null,
         foil: null,
+        hit: null,
       });
     }
     /* VFX-5: a dash's motion lines (walk/effects.js ribbonPass, as a thrown pyramid's) */
