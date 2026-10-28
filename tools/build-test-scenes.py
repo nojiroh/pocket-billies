@@ -431,6 +431,11 @@ def t_people():
     L += [{'figure': 'rogue', 'x': round(12 + (i - 3.5) * 1.2, 2), 'z': 13.8, 'face': i * 45} for i in range(8)]
     L += [{'figure': 'rogue', 'x': 6.0, 'z': 11.4, 'dir': 'side', 'walk': True},
           {'figure': 'rogue', 'x': 18.0, 'z': 11.4, 'dir': 'sideR', 'walk': True, 'run': True}]
+    # CH-3b: nearest the camera, the cast as their own figures (the figure kit), only with the figures on: the
+    # professor, the rival, Kappi, the leaders and bosses, the Bureau's clerk
+    cast3b = ['chosen', 'chad', 'kappi', 'vault', 'morel', 'poppy', 'marina', 'alta', 'carat', 'crude', 'markdown', 'clerk']
+    L += [{'figure': 'look', 'who': w, 'x': round(12 + (i - (len(cast3b) - 1) / 2) * 0.95, 2), 'z': 0.7, 'dir': 'down'}
+          for i, w in enumerate(cast3b)]
     s.d['lineup'] = L
     # lantern posts light the night (a street lamp would also fill the distance: grass-build.js buildFarProps takes
     # props whose group matches 'tree', and 'streetlamp' does)

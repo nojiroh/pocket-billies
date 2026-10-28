@@ -75,7 +75,19 @@
   {"figure":"rogue","x":15,"z":13.8,"face":270},
   {"figure":"rogue","x":16.2,"z":13.8,"face":315},
   {"figure":"rogue","x":6,"z":11.4,"dir":"side","walk":true},
-  {"figure":"rogue","x":18,"z":11.4,"dir":"sideR","walk":true,"run":true}
+  {"figure":"rogue","x":18,"z":11.4,"dir":"sideR","walk":true,"run":true},
+  {"figure":"look","who":"chosen","x":6.78,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"chad","x":7.73,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"kappi","x":8.68,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"vault","x":9.62,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"morel","x":10.57,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"poppy","x":11.53,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"marina","x":12.47,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"alta","x":13.43,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"carat","x":14.38,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"crude","x":15.32,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"markdown","x":16.27,"z":0.7,"dir":"down"},
+  {"figure":"look","who":"clerk","x":17.23,"z":0.7,"dir":"down"}
  ],
  "tiles": [
   "gggggggggggggggggggggggg",
