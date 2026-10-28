@@ -638,7 +638,7 @@ export function rigPreload(list) {
    part (kitBakeWhole, the baker `npm run bake:kits` and the Studio use), once per species and graft, kept for the
    last GRAFT_KEEP of them. Until its bake is done rigParts gives null (as for a sheet still loading); a bake that fails
    draws the plain species. Each bake's times and sizes go to the debug log (graftReport) for the art spike's verdict:
-   runtime baking on the phone, or grafts baked offline. RO-3c: a placeholder Billie (bodyPlans.json) is grafted by
+   runtime baking on the phone, or grafts baked offline. RO-3c: a sketch Billie (bodyPlans.json) is grafted by
    slot across body plans from its donors' baked sheets and rigs instead (graftSketch). */
 const GRAFT_KEEP = 12;
 const GRAFT_BAKES = new Map(); /* sp~graft -> { wait, rig, sheet, bytes, bad, keys: its rigParts cache keys } */
@@ -689,7 +689,7 @@ function graftBake(sp, graft) {
       graftStats.bad++;
       if (typeof debugLog !== 'undefined') debugLog.add('graft', `bake failed: ${sp} ${graft}: ${err}`);
     };
-  /* RO-3c: a placeholder Billie is grafted by slot from its donors' baked sheets (logic/graft-art.js); SP-2: a slot
+  /* RO-3c: a sketch Billie is grafted by slot from its donors' baked sheets (logic/graft-art.js); SP-2: a slot
      holds a Gene id ("part@donor"), the donor its rig (a bare species id, as the debug menu sets, is the donor too) */
   const donors = Object.fromEntries(Object.entries(g).map(([slot, v]) => [slot, (geneSplit(v) || { donor: v }).donor]));
   if ([sp, ...Object.values(donors)].some(graftSketchRig))
@@ -719,16 +719,16 @@ function graftBake(sp, graft) {
     });
   return e.wait;
 }
-/* RO-3c: a species whose rig is a placeholder (bodyPlans.json), and its form there */
+/* RO-3c: a species whose rig is a sketch (bodyPlans.json), and its form there */
 const graftSketchRig = sp =>
   !!(typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp].front && RIGS[sp].front.sketch);
 const graftSketchForm = sp => ((gameData.bodyPlans && gameData.bodyPlans.forms) || []).find(f => f.rig === sp);
-/* RO-3c: a placeholder Billie grafted from its donors' sheets and rigs; a kit Billie with a placeholder donor (or the
+/* RO-3c: a sketch Billie grafted from its donors' sheets and rigs; a kit Billie with a sketch donor (or the
    other way round) isn't grafted */
 function graftBakeSketch(id, e, sp, graft, g, fail) {
   const all = [sp, ...Object.values(g)];
   if (!all.every(s => graftSketchRig(s) && graftSketchForm(s))) {
-    fail('a kit Billie and a placeholder one, or no placeholder form');
+    fail('a kit Billie and a sketch one, or no sketch form');
     return Promise.resolve();
   }
   const t0 = performance.now();

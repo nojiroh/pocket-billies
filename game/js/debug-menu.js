@@ -477,7 +477,7 @@ function debugFps() {
   el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${frameScheduler.hz} Hz`;
 }
 /* SP-1: a random graft for a species (one slot, a random donor with a part that fits it), '' when none fits; RO-3c:
-   a placeholder Billie takes a slot from any placeholder Billie of another line, whatever its body plan */
+   a sketch Billie takes a slot from any sketch Billie of another line, whatever its body plan */
 function debugGraftFor(sp) {
   const ph = s => !!(RIGS[s] && RIGS[s].front && RIGS[s].front.sketch),
     donors = slot =>
