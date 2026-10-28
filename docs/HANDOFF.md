@@ -2,6 +2,62 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-3: bubbles (skins, shout/whisper/think shapes, tilt, pop-in and grow spring, the stamp) - 2026-10-28
+Branch `track/dialogue` (DL-2's code fast-forwarded in before the first edit; origin/track/dialogue with DL-2's
+handoff and main merged in later: conflicts in the generated studio/art-code-refs.json, regenerated, and the ui-lint
+ceilings, the lower one kept). Plan approved in Plan Mode. Code, CSS, data, a schema, tests, a look tool, docs. No
+session tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-3".
+- Decided by the owner (Ask me before 2): **the mockup's skins as they are**. Asked "does the player even talk?": no,
+  every `talkLine('me', …)` is a field move's prompt or result, so the player's lines wear a **narration** skin (a
+  quiet tail-less note, no tilt); the neon "you" skin stays in talkSkins.json, unused.
+- Changed:
+  - logic/motion.js: `springAt`, `springMs`, `springEase(response, damping)` (a damped spring as a CSS `linear()`),
+    tested. The Studio page now loads motion.js before ui-theme.js (ui-theme writes the spring).
+  - logic/ui-theme.js: the `jag` kind (seeded zigzags, `seededRandom`, 3 held variants as
+    `--clip-bubbleShout-0..2` / `--edge-…`, the top spike is the tail), `familyOf`, `shapeVariants`, a `lift` flag
+    (no tail, top edge the tail's height down); families `bubbleSoft` (Kappi), `bubbleNote` (narration),
+    `bubbleShout`, `bubbleThink`; `BUBBLE_MOTION` and `--bubble-spring`, `-spring-ms`, `-pop`, `-tilt`, `-idle`.
+    tokens.css fallbacks regenerated (it grew about 600 lines: the bursts' polygons) plus a `--z-under` layer token.
+  - logic/ui-dials.js and studio/js/ui-editor.js: the families' labels, a "Jagged burst" shape, spike depth and count
+    dials, five Motion dials (Bubble spring, damping, pop-in size, tilt, idle). uiTheme.json and its schema (a
+    `jagShape` def). ui-dials.test's "every dial writes a variable" also tries an all-cut look.
+  - New game/data/talkSkins.json + schema + `dataTalkSkins` (check-data, the Studio's checks); game-data.js
+    `TALK_SKINS`. New logic/talk-skins.js: `talkSkinOf` (o.skin, the speaker, a run trainer's class, the default),
+    `talkSeed`, `talkTilt`, `talkVariant`, `talkAccentHue`; tests in talk-skins.test.mjs and data-checks.test.mjs.
+  - talk.js: `talkDress` (data-skin, data-shape, `--talk-clip`/`--talk-edge`, `--tilt-k`, `--talk-slant`,
+    `--talk-hue`, the Bureau's form number from factions.json), `talkArrive` (the pop-in from the speaker's side on
+    the spring, Kappi soft, narration a fade; the grow to fit by `--grow`; the shout's squash and shake; Chosen's
+    shine; Reduced: a fade on opening only), `talkStamp` (a `[stamp=…]` lands as pb-stamp on a skin with `stamp`, the
+    bubble thumps). New `.talk-deco` and `.talk-dots` in the box. story-stage.js passes the trainer's class (`cls`).
+  - CSS: dialogue.css (the layers read `--skin-*`, the tilt and slant as a `transform` on the layers, `@property
+    --grow`, whisper's dashed edge, the shout's bold line, the thought's dots, csUp off); new talk-skins.css (each
+    skin only sets `--skin-*`); motion.css (the bubble's idle loops times `--bubble-idle`, the deco layer gated with
+    them).
+  - sound.js: a `voice` on the blip: the Bureau's typewriter clack, `calm` (Kappi's purr).
+  - `?fixture=talk&skin=<skin>&style=<shout|whisper|think>`; tools/look-talk.py (pictures of every skin and shape);
+    studio/gallery.html's new `talk-skins` section and its baseline (its own commit).
+- Found, not changed / corrections: Blake's speaker id is `chad` (story.json `speakers`), not `blake`;
+  `UI_FAMILY_LABELS` lives in logic/ui-dials.js; the Bureau's agents do speak through `talkLine` (banter `bureau_*`
+  via story-stage.js), so the skin keys on the trainer class. The grow scales from the bottom edge, not the tail (the
+  box is anchored at the bottom). Kappi's bubble is rounded, not a true leaf. The fixture plays its line while the
+  loading screen is still up, so its pop-in happens unseen.
+- Risky: the fixed-colour skins (Chosen, Kappi, Blake, the Bureau) keep light paper in the dark theme; DL-2's colour
+  tags use theme text shades, so a `[c=…]` word on them in dark mode may read weakly (not checked). `@property` and
+  animating `--grow` need Safari 16.4+ (older: no grow, same box). The pop-in and grow springs are not measured on a
+  phone. tokens.css is bigger by the bursts' polygons.
+- Verified: lint, typecheck, format:check, check:modules, check:data (180 files), build clean. Unit tests 1955: 1953
+  pass, then the 2 failures fixed or re-run: the expressions test read the fixture's style list as an expression
+  (fixed, 145d2cd1), the 1,000-maps timing test went over 1.5 s with check-fast running alongside and passes alone.
+  check-fast 42 of 42. Smoke 7 of 7 in 290 s (the in-game full test step and the phone run among them). The full
+  quick check was started and stopped from outside the session before it finished: not run to the end. Gallery
+  `talk-skins` and `dialogue` at 320/390, light and dark: dialogue unchanged, talk-skins judged and saved. Pictures in
+  the game at 390×844 (look-talk.py) of every skin, the folk shout and thought: judged.
+- Next: DL-4 (the stack) on `track/dialogue`; the owner asked for it to start in a new session right after this one.
+- For the owner on the phone: `?fixture=talk&skin=chosen` (then `kappi`, `blake`, `bureau`, `folk`, `narration`), and
+  each with `&style=shout`, `&style=whisper`, `&style=think`: is every bubble right, the tilt subtle, the pop-in not
+  seasick? The Bureau's line ends in an APPROVED stamp. Then Settings, Animation: Calm (no breathing) and Reduced (a
+  fade only).
+
 ### Dialogue track DL-2: letters that act (spans, effects, pauses, beats, Text speed, blip styles) - 2026-10-28
 Branch `track/dialogue` (the session started on a detached HEAD at its tip; checked out the branch, merged main
 4423a457 (PK-6) first and main 6acee223 (UI fixes #309) at the end; both times the conflicts were the HANDOFF top,

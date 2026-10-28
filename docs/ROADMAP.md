@@ -345,7 +345,10 @@ town node needs it.
   emotes, the frame bouncing). DL-0 (the plan, with research) done 2026-10-28 on `ccr-2d53c4cf-8w7kd2`; DL-1 (markup:
   logic/line-markup.js, plain text on every surface, script errors for bad tags) done 2026-10-28 on `track/dialogue`;
   DL-2 (letters: the letter spans and effects, logic/talk-type.js timing, Text speed, blip styles, Oxanium 700 for
-  bold) done 2026-10-28; next DL-3 (bubbles). About 8 sessions. Branch `track/dialogue`.
+  bold) done 2026-10-28; DL-3 (bubbles: each speaker's skin from talkSkins.json, shout, whisper and think shapes, the
+  tilt, the pop-in and grow spring, the Bureau's stamp, the bubble's dials; the owner kept the mockup's skins and gave
+  the player's lines a narration skin) done 2026-10-28; next DL-4 (the stack). About 8 sessions. Branch
+  `track/dialogue`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
