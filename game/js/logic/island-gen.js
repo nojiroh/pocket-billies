@@ -138,9 +138,11 @@ export const SKY_RAIL = {
 };
 /** cutscenes track A: the station's landmarks from its plot (x, z its middle, a its front's angle in radians, y its
     level): `rail`, the track every 2 m from its left-hand end to the buffer stop [x, z, height], and `portal`, the
-    portal's middle [x, z, height]
-    @param {{ x: number, z: number, a: number, y: number }} L @returns {{ rail: number[][], portal: number[] }} */
-export function stationLandmarks(L) {
+    portal's middle [x, z, height]; `rail` (optional) in place of SKY_RAIL's `looks` and `tear` (a placement of its own:
+    the hub's inland station has no piece out of its right-hand end and its portal over the cove, tools/patch-station.mjs)
+    @param {{ x: number, z: number, a: number, y: number }} L @param {{ looks?: string[], tear?: number[] }} [rail]
+    @returns {{ rail: number[][], portal: number[] }} */
+export function stationLandmarks(L, rail = {}) {
   const fx = Math.cos(L.a),
     fz = Math.sin(L.a),
     /* u metres toward the right-hand end from the plot's middle, w metres behind it */
@@ -149,13 +151,15 @@ export function stationLandmarks(L) {
       mapgenRound2(L.z + fx * u - fz * w),
       mapgenRound2(L.y + h),
     ],
-    end = SKY_RAIL.piece * SKY_RAIL.looks.length,
+    looks = rail.looks || SKY_RAIL.looks,
+    tear = rail.tear || SKY_RAIL.tear,
+    end = SKY_RAIL.piece * looks.length,
     ss = [];
   for (let u = -SKY_RAIL.back; u < end; u += 2) ss.push(u);
   ss.push(end);
   return {
     rail: ss.map(u => at(SKY_RAIL.from[0] + u, SKY_RAIL.from[1], SKY_RAIL.height)),
-    portal: at(SKY_RAIL.from[0] + SKY_RAIL.tear[0], SKY_RAIL.from[1] - SKY_RAIL.tear[1], SKY_RAIL.tear[2]),
+    portal: at(SKY_RAIL.from[0] + tear[0], SKY_RAIL.from[1] - tear[1], tear[2]),
   };
 }
 export const ISLAND_TOWN_EXTRA = {

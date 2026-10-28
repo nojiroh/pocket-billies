@@ -206,7 +206,7 @@ test('Use this island: the generator’s ground, the locked zones as they were, 
   assert.equal(sc.plots, undefined);
 });
 
-test('the walking checks: copperleaf (the hub island) walks; a summit out at sea is caught', () => {
+test('the walking checks: copperleaf (the hub island) walks; a summit out at sea is caught when a trail goes up', () => {
   /* the check is for a generator draft, which has no props: since IS-5 the hub's buildings and gardens stand on its
      plots, so the island is checked as the generator made it */
   const sc = Object.assign(isleMap(), { props: [] });
@@ -214,7 +214,14 @@ test('the walking checks: copperleaf (the hub island) walks; a summit out at sea
   const S = sc.spots.find(p => p.kind === 'summit');
   S.x = 1;
   S.z = 1;
-  assert.match(H.hubGenWalkProblems(sc, GD.scenery).join(), /the summit can't be walked to/);
+  /* the hub's mountain has no trail (the owner, 2026-10-28): its summit is not walked to */
+  const dials = sc.islandGen.dials,
+    withTrail = t => ({
+      ...sc,
+      islandGen: { ...sc.islandGen, dials: { ...dials, mountain: { ...dials.mountain, trail: t } } },
+    });
+  assert.doesNotMatch(H.hubGenWalkProblems(withTrail(0), GD.scenery).join(), /summit/);
+  assert.match(H.hubGenWalkProblems(withTrail(1), GD.scenery).join(), /the summit can't be walked to/);
   assert.deepEqual(H.hubGenWalkProblems({ w: 1 }, GD.scenery), ['no hub to walk from']);
 });
 
