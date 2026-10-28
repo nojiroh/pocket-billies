@@ -327,7 +327,8 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     for (let i = 0; i < BT.lights.length; i++) {
       const l = BT.lights[i];
       l.src = BT;
-      l.kind = i;
+      /* VFX-9: battle-3d.js gives each its fixed kind (so Steady lamps keeps each lit where it was) */
+      if (l.kind == null) l.kind = 16 + i;
       L.push(l);
     }
   nearestFirst(ao, P.x, P.z, AO_NEAR, 64);

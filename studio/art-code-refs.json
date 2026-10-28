@@ -58,7 +58,7 @@
   {
    "p": "coins/*.json",
    "at": [
-    "game/js/battle-3d.js:467",
+    "game/js/battle-3d.js:504",
     "game/js/logic/data-checks.js:2140"
    ]
   },

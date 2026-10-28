@@ -47,9 +47,12 @@ import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_RGB: [() => BATTLE_RGB],
+  EFFECT_LIGHT_BUDGET: [() => EFFECT_LIGHT_BUDGET],
+  PHONE_BATTLE: [() => PHONE_BATTLE],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
+  battle3dEffectLights: [() => battle3dEffectLights, v => (battle3dEffectLights = v)],
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
   battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
@@ -307,19 +310,23 @@ function battle3dFrame() {
       person: 1,
     });
   }
-  /* v33: a warm light picks out the one choosing */
+  /* VFX-9: battle lights have fixed keys (walk/lighting.js, engine/light-pick.js: the selection 0, an Alpha's light
+     and its shield 1-4, the thrown pyramid 5, effects 8-10 from a pool), so with Steady lamps on none swaps with
+     another when one comes or goes */
   if (battleStage.sel != null && battleStage.s[battleStage.sel] && battleStage.s[battleStage.sel].show) {
     const w = actorWorldPoint(battleStage.sel),
       k = 0.5 + 0.12 * Math.sin(battleStage.t / 300);
-    lights.push({ p: at3(w.x, battle3d.gy + 1.4, w.z), r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k] });
+    lights.push({ p: at3(w.x, battle3d.gy + 1.4, w.z), r: 2.2, c: [1.1 * k, 0.9 * k, 0.45 * k], kind: 0 });
   }
   /* v33: an Alpha glows from below */
+  let bossN = 0;
   for (let i = 0; i < battleStage.s.length; i++) {
     const s = battleStage.s[i];
-    if (!s.boss || !s.show || s.a < 0.4) continue;
+    if (!s.boss || !s.show || s.a < 0.4 || bossN >= 2) continue;
     const w = actorWorldPoint(i),
-      k = 0.55 + 0.2 * Math.sin(battleStage.t / 260);
-    lights.push({ p: at3(w.x, battle3d.gy + 0.5, w.z), r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k] });
+      k = 0.55 + 0.2 * Math.sin(battleStage.t / 260),
+      key = 1 + 2 * bossN++;
+    lights.push({ p: at3(w.x, battle3d.gy + 0.5, w.z), r: 3.2, c: [1.2 * k, 0.25 * k, 0.45 * k], kind: key });
     /* v34: its shield, while it holds: a gold light round it */ const fv =
       typeof fieldState === 'function' && typeof activeBattle !== 'undefined' && activeBattle
         ? (() => {
@@ -331,20 +338,14 @@ function battle3dFrame() {
           })()
         : null;
     if (fv && fv.shield > 0)
-      lights.push({ p: at3(w.x, battle3d.gy + 1.2, w.z - 0.6), r: 2.6, c: [1.3 * k, 1.05 * k, 0.35 * k] });
+      lights.push({
+        p: at3(w.x, battle3d.gy + 1.2, w.z - 0.6),
+        r: 2.6,
+        c: [1.3 * k, 1.05 * k, 0.35 * k],
+        kind: key + 1,
+      });
   }
-  /* glowing move effects light what's around them */
-  for (let i = battleStage.parts.length - 1; i >= 0 && lights.length < 6; i--) {
-    const p = battleStage.parts[i];
-    if (!p.glow || typeof p.col !== 'string' || p.col[0] !== '#') continue;
-    const k = Math.max(0, 1 - p.age / p.life),
-      c = hexToRgb(p.col);
-    lights.push({
-      p: at3(p.x, battle3d.gy + Math.max(0.1, p.y), p.z),
-      r: 2.4,
-      c: [(c[0] / 255) * 1.1 * k, (c[1] / 255) * 1.1 * k, (c[2] / 255) * 1.1 * k],
-    });
-  }
+  battle3dEffectLights(lights, at3);
   /* VFX-9: the particles in one pool (walk/battle-fx.js: one cutout draw and the white cores'); a bot's dropped part
      (a picture) stays on battle-stage.js's canvas */
   const fx = battle3d.fx || (battle3d.fx = []);
@@ -397,7 +398,7 @@ function battle3dFrame() {
       py.smear = { d: [x1 - x0, S.d[1], z1 - z0], seed: S.seed };
     }
     items.push(py);
-    if (py.light) lights.push(py.light);
+    if (py.light) lights.push(Object.assign(py.light, { kind: 5 }));
     /* VFX-1: its afterimages, the same model at its older places, dithered and brighter in its own colours (the
        low-poly shader's look, walk/prop-look.js; a voxel recipe's emission), casting no shadow */
     for (const g of smearGhosts(battleStage.coin.trail, battleStage.t, battleSmearCount(), battleStage.V)) {
@@ -448,6 +449,42 @@ function battle3dRgb(col) {
     BATTLE_RGB.set(col, (c = [h[0] / 255, h[1] / 255, h[2] / 255]));
   }
   return c;
+}
+/* VFX-9: the effect lights (glowing move particles with a colour, the newest first): 3 / 2 / 1 / 0 by the battle's
+   quality, at most 2 on a phone and 6 battle lights in all; 2.4 m. Each keeps its key (8, 9 or 10) while it shines */
+const PHONE_BATTLE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
+const EFFECT_LIGHT_BUDGET = [3, 2, 1, 0];
+function battle3dEffectLights(lights, at3) {
+  const P = battleStage.parts,
+    max = Math.min(
+      EFFECT_LIGHT_BUDGET[clamp(battleStage.q.lvl | 0, 0, 3)],
+      PHONE_BATTLE ? 2 : 3,
+      Math.max(0, 6 - lights.length)
+    ),
+    pick = [];
+  for (let i = P.length - 1; i >= 0 && pick.length < max; i--) {
+    const p = P[i];
+    if (p.glow && !p.amb && typeof p.col === 'string' && p.col[0] === '#') pick.push(p);
+  }
+  /* a slot stays with its particle; a new one takes a free slot */
+  const taken = new Set();
+  for (const p of pick)
+    if (p.lk && !taken.has(p.lk)) taken.add(p.lk);
+    else p.lk = 0;
+  for (const p of pick) {
+    if (!p.lk) {
+      p.lk = [8, 9, 10].find(k => !taken.has(k)) || 10;
+      taken.add(p.lk);
+    }
+    const k = Math.max(0, 1 - p.age / p.life),
+      c = battle3dRgb(p.col);
+    lights.push({
+      p: at3(p.x, battle3d.gy + Math.max(0.1, p.y), p.z),
+      r: 2.4,
+      c: [c[0] * 1.1 * k, c[1] * 1.1 * k, c[2] * 1.1 * k],
+      kind: p.lk,
+    });
+  }
 }
 /* WA-7: the battle camera turned with the battle (walk/camera.js battleCamera adds battle3d.off to its place) */
 function battle3dTurnedCam() {
