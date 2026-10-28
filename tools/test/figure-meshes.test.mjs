@@ -23,7 +23,7 @@ async function workerBuild(msg) {
   globalThis.self = workerSelf;
   await import('../../game/js/figure-worker.js');
   const sent = (workerSelf.sent = []);
-  workerSelf.onmessage({ data: msg });
+  await workerSelf.onmessage({ data: msg });
   return sent;
 }
 

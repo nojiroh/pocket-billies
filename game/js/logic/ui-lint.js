@@ -286,7 +286,7 @@ export const uiLintReads = (/** @type {string} */ f) =>
   !f.endsWith('/hooks.js') &&
   !f.endsWith('logic/ui-lint.js') &&
   /* LD-4: the run's helper thread is on no page and draws nothing; LD-5: nor the world map's (bowl-worker.js); CH-4:
-     nor the figures' (figure-worker.js) */
+     nor the figures' (figure-worker.js and its modules) */
   !/\/(run|bowl|figure)-worker(-modules)?\.js$/.test(f);
 
 /** every file the lint reads, by following the pages: read(path) gives a file's text (fetch or fs) */

@@ -82,8 +82,8 @@ function figureMeshMessage(m) {
   M.ids.delete(m.id);
   M.jobs.delete(key);
   if (m.kind === 'failed') {
-    M.failed++;
-    if (typeof debugLog !== 'undefined') debugLog.add('figures', 'mesh ' + key + ': ' + m.error);
+    /* the thread can't build (its modules didn't load, or a figure it can't make): the page builds from now on */
+    figureMeshFail('mesh ' + key + ': ' + m.error);
     return;
   }
   M.builds++;

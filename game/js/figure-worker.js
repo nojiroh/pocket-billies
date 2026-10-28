@@ -6,15 +6,15 @@
    Messages: page -> worker { kind: 'mesh', id, F, detail, extent }; worker -> page { kind: 'mesh', id, ext, data,
    count, colours, slots, ms } (data handed over, not copied) or { kind: 'failed', id, error }. Nothing here reads or
    sends a save. */
-import { kitBuild } from './logic/figure-kit.js';
-import { figureGpuMesh } from './logic/figure-pose.js';
-
-self.onmessage = ev => {
+let figureWorkerMods = null;
+self.onmessage = async ev => {
   const d = ev.data || {};
   if (d.kind !== 'mesh') return;
   try {
-    const t0 = performance.now(),
-      R = d.extent ? kitBuild(d.F, d.detail) : { ext: null, ...figureGpuMesh(d.F, d.detail) };
+    /* the kit's modules (one bundled file in the built site: figure-worker-modules.js) */
+    const m = await (figureWorkerMods || (figureWorkerMods = import('./figure-worker-modules.js'))),
+      t0 = performance.now(),
+      R = d.extent ? m.kitBuild(d.F, d.detail) : { ext: null, ...m.figureGpuMesh(d.F, d.detail) };
     self.postMessage({ kind: 'mesh', id: d.id, ...R, ms: performance.now() - t0 }, [R.data.buffer]);
   } catch (e) {
     self.postMessage({ kind: 'failed', id: d.id, error: String((e && e.message) || e) });

@@ -224,6 +224,7 @@ export default [
       'studio/js/logic-worker-modules.js',
       'studio/js/logic-worker-page.js',
       'game/js/figure-worker.js',
+      'game/js/figure-worker-modules.js',
     ],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.worker },
     rules: bugRules,
