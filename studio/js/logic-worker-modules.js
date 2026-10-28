@@ -25,6 +25,7 @@ import '../../game/js/logic/bowl-things.js';
 import '../../game/js/logic/bowl-weather.js';
 import '../../game/js/logic/bowl.js';
 import '../../game/js/logic/breeding.js';
+import '../../game/js/logic/bureau-battle.js';
 import '../../game/js/logic/camera-follow.js';
 import '../../game/js/logic/camera-interest.js';
 import '../../game/js/logic/camera-moments.js';
