@@ -135,6 +135,7 @@ import { clampZoom } from './walk/camera.js';
 import { loadPropModelRecipe, lowPolyFromRecipe } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
+  BOWL_FAMILIES: [() => BOWL_FAMILIES],
   BOWL_HAZE: [() => BOWL_HAZE],
   BOWL_INDEX: [() => BOWL_INDEX],
   BOWL_KIND_GROUND: [() => BOWL_KIND_GROUND],
@@ -181,6 +182,7 @@ expose({
   worldBowlExitAt: [() => worldBowlExitAt, v => (worldBowlExitAt = v)],
   worldBowlFallNow: [() => worldBowlFallNow, v => (worldBowlFallNow = v)],
   worldBowlFallsMesh: [() => worldBowlFallsMesh, v => (worldBowlFallsMesh = v)],
+  worldBowlFill: [() => worldBowlFill, v => (worldBowlFill = v)],
   worldBowlFilm: [() => worldBowlFilm, v => (worldBowlFilm = v)],
   worldBowlFlag: [() => worldBowlFlag, v => (worldBowlFlag = v)],
   worldBowlFlagImage: [() => worldBowlFlagImage, v => (worldBowlFlagImage = v)],
@@ -3543,7 +3545,7 @@ function worldBowlOverlay(t) {
     } else if (tags && i !== sel && i !== saveData.trip.node) {
       /* close in, the ground speaks for itself: a small tag instead of a pin (the picked place and yours keep theirs) */
       top = { x: base.x, y: base.y - 6, z: base.z };
-      worldBowlDot(c, base.x, base.y - 3, 3, canEnter(i) ? (l.town ? '#ffb46b' : '#8fd18a') : '#9a93a6');
+      worldBowlDot(c, base.x, base.y - 3, 3, worldBowlFill(canEnter(i) ? (l.town ? 'good' : 'neutral') : 'muted'));
     } else worldBowlPin(c, base.x, base.y, l, i);
     worldBowl.marks.push({ i, base, top, z: base.z });
     const here = i === saveData.trip.node,
@@ -3713,18 +3715,21 @@ export function worldBowlRunMark(i) {
       i === saveData.trip.node ? 'current' : seen < 2 ? 'hidden' : run.path.includes(l.runNode) ? 'visited' : 'seen';
   return { seen, type: node.type, state };
 }
-/* the marker's colours from the UI's look (uiTheme.json through the page's custom properties), as the run parts' own
-   markers take them (ui-run-kit.js pb-node): a fill per role and a darker edge. Read again when the look changes */
-const runPinColors = { key: '', colors: /** @type {Record<string, {fill: string, edge: string}>} */ ({}) };
+/* the map's colours from the UI's look (uiTheme.json through the page's custom properties). UI-18: one colour per
+   meaning everywhere (ui-track.md, the colour code): each family's fill (--sig-*) with a darker edge, for the run's flat
+   markers (before their icons load) and the hub's pins; neutral for plain places and roads, muted for locked ones.
+   Read again when the look changes */
+const BOWL_FAMILIES = ['good', 'bad', 'caution', 'value', 'special', 'growth', 'machine', 'bio'];
+const runPinColors = { key: '', at: -1e9, colors: /** @type {Record<string, {fill: string, edge: string}>} */ ({}) };
 function worldBowlRunColors() {
+  /* read again at most once a second (a palette change), not for every pin of every frame */
+  const now = performance.now();
+  if (runPinColors.key && now - runPinColors.at < 1000) return runPinColors.colors;
+  runPinColors.at = now;
   const cs = getComputedStyle(document.documentElement),
     v = (/** @type {string} */ k) => cs.getPropertyValue(k).trim(),
-    P = v('--c-primary'),
-    D = v('--c-danger'),
-    G = v('--gold-b'),
-    S = v('--c-surface'),
-    T = v('--c-text'),
-    key = [P, D, G, S, T].join('|');
+    fam = BOWL_FAMILIES.map(f => v(`--sig-${f}`)),
+    key = fam.join('|');
   if (runPinColors.key !== key) {
     const rgb = (/** @type {string} */ col) => {
         const x = worldMap.ctx || document.createElement('canvas').getContext('2d');
@@ -3742,15 +3747,22 @@ function worldBowlRunColors() {
         return `rgb(${A.map((c, n) => Math.round(c * k + B[n] * (1 - k))).join(',')})`;
       };
     runPinColors.key = key;
+    /* neutral and muted in the icon set's own fixed colours (the road badge's cream, the list icon's greys), since the
+       bowl is the world, not the chrome: the theme's dark surface would vanish on the ground at night */
     runPinColors.colors = {
-      primary: { fill: P, edge: mix(P, '#000', 0.55) },
-      danger: { fill: D, edge: mix(D, '#000', 0.55) },
-      gold: { fill: G, edge: mix(G, '#000', 0.5) },
-      surface: { fill: S, edge: T },
-      muted: { fill: mix(T, S, 0.22), edge: mix(T, S, 0.45) },
+      neutral: { fill: '#FFF8E6', edge: '#8A6C25' },
+      muted: { fill: '#9AA7B4', edge: '#394644' },
     };
+    BOWL_FAMILIES.forEach((f, n) => {
+      if (fam[n]) runPinColors.colors[f] = { fill: fam[n], edge: mix(fam[n], '#000', 0.5) };
+    });
   }
   return runPinColors.colors;
+}
+/** a family's fill on the map (neutral when the page doesn't define it) @param {string} k */
+function worldBowlFill(k) {
+  const C = worldBowlRunColors();
+  return (C[k] || C.neutral).fill;
 }
 /* RL-7: a run's place's pin: the stalk, and its node's marker for a head (a '?' while the map shows only its row).
    UI-8c: the head is the place's pixel icon (art/ui/node-<shape>.svg, Badges) for its state, 28 px, 34 where you
@@ -3888,7 +3900,9 @@ function worldBowlPin(c, x, y, l, i) {
   const locked = !canEnter(i),
     here = i === saveData.trip.node,
     head = y - BOWL_PIN,
-    col = locked ? '#9a93a6' : here ? '#FFE27A' : l.town ? '#ffb46b' : '#8fd18a';
+    /* UI-18: on the colour code: towns the good family's teal, where you stand value gold, other places neutral, locked
+       muted (towns were orange here, teal on the run's map) */
+    col = worldBowlFill(locked ? 'muted' : here ? 'value' : l.town ? 'good' : 'neutral');
   c.fillStyle = 'rgba(20,10,40,.3)';
   c.beginPath();
   c.ellipse(x, y, 5, 2, 0, 0, 7);
