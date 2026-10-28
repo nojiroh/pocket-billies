@@ -73,6 +73,7 @@ expose({
   FX_ONCE_KINDS: [() => FX_ONCE_KINDS],
   FX_PASSIVE_ALL: [() => FX_PASSIVE_ALL],
   FX_PLAIN: [() => FX_PLAIN],
+  FX_RULE_N: [() => FX_RULE_N],
   FX_TIMING: [() => FX_TIMING],
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
   GENE_KINDS: [() => GENE_KINDS],
@@ -2184,14 +2185,20 @@ export function fxKindProblems(f, at, D, problem) {
     problem(`${at}.n: a whole number of levels from 1 to ${FX_CATCH_LEVEL} (effects.js FX_CATCH_LEVEL)`);
   if (f.kind === 'benchXp' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
     problem(`${at}.share: a share of XP above 0, at most 1`);
-  /* PK-4: a run rule of FX_RULES and how much it changes (forecastDays: 1 to 14 more days) */
+  /* PK-4: a run rule of FX_RULES and how much it changes (FX_RULE_N: forecastDays 1 to 14 more days...) */
   if (f.kind === 'rule') {
-    if (!(/** @type {readonly string[]} */ (FX_RULES).includes(f.rule)))
+    const R = FX_RULE_N[f.rule];
+    if (!(/** @type {readonly string[]} */ (FX_RULES).includes(f.rule)) || !R)
       problem(`${at}.rule: ${FX_RULES.join(', ')} (effects.js FX_RULES)`);
-    else if (f.rule === 'forecastDays' && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= 14))
-      problem(`${at}.n: a whole number of days from 1 to 14`);
+    else if (!(Number.isInteger(f.n) && f.n >= R[0] && f.n <= R[1]))
+      problem(`${at}.n: a whole number of ${R[2]} from ${R[0]} to ${R[1]}`);
   }
 }
+/** PK-4, PK-5: each run rule's n, the least and the most, and what it counts */
+export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */ ({
+  forecastDays: [1, 14, 'days'],
+  rewardPick: [1, 2, 'cards'],
+});
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
 /** PK-4: a passive row: a passive one of types.json's types has, only the numbers that passive takes, and enough of

@@ -25,7 +25,7 @@ import {
 } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
-import { FX_ONCE_KINDS, FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
+import { FX_ONCE_KINDS, FX_PLAIN, FX_RULE_N, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -52,6 +52,7 @@ expose({
   PERK_PASSIVE_FIELDS: [() => PERK_PASSIVE_FIELDS],
   PERK_RARITIES: [() => PERK_RARITIES],
   PERK_ROW_NEW: [() => PERK_ROW_NEW],
+  PERK_RULES: [() => PERK_RULES],
   PERK_WHEN: [() => PERK_WHEN],
   perkArtHTML: [() => perkArtHTML, v => (perkArtHTML = v)],
   perkCoverage: [() => perkCoverage, v => (perkCoverage = v)],
@@ -108,12 +109,23 @@ const PERK_KINDS = {
   passive: 'A type passive works better for your Billies that have it (PK-4)',
   weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
   benchXp: 'Billies who sat out get more of a foe’s XP (PK-4)',
-  rule: 'A run rule: the forecast shows more days (PK-4)',
+  rule: 'A run rule: the forecast shows more days, reward picks more cards (PK-4, PK-5)',
   catchLevel: 'A Billie you catch joins levels higher (PK-5)',
   refund: 'A pyramid that missed comes back (PK-5)',
   free: 'What you just bought is free (PK-5)',
   salvage: 'Beaten bots leave more salvage (PK-5)',
 };
+/** PK-4, PK-5: each run rule's name and what its By counts (data-checks.js FX_RULE_N has its range) */
+const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
+  forecastDays: [
+    'The forecast shows more days',
+    () => `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
+  ],
+  rewardPick: [
+    'Reward picks show more cards',
+    () => `Cards more than rules.json’s ${studioState.D.rules.run.rewards.pick}.`,
+  ],
+});
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
   battleStart: 'as a battle starts',
@@ -365,13 +377,19 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           `Share of a foe’s XP more for those who sat out (rules.json gives them ${studioState.D.rules.progression.teamXpShare}; at most all of it)`
         ),
       ],
+      /* PK-5: each rule's own range (data-checks.js FX_RULE_N) and words */
       rule: () => [
-        selectField('Rule', `${p}.rule`, [['forecastDays', 'The forecast shows more days']], { rr: 1 }),
+        selectField(
+          'Rule',
+          `${p}.rule`,
+          Object.keys(FX_RULE_N).map(r => [r, PERK_RULES[r] ? PERK_RULES[r][0] : r]),
+          { rr: 1 }
+        ),
         numberField('By', `${p}.n`, {
-          min: 1,
-          max: 14,
+          min: (FX_RULE_N[f.rule] || [1])[0],
+          max: (FX_RULE_N[f.rule] || [1, 1])[1],
           step: 1,
-          help: `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
+          help: PERK_RULES[f.rule] ? PERK_RULES[f.rule][1]() : '',
         }),
       ],
       salvage: () => [mult('Parts offered and Scrap ×')],

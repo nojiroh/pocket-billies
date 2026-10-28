@@ -30,6 +30,7 @@ import { moveSlotCount, newUid } from './rules.js';
 import { salvageCards, salvageParts } from './factions.js';
 import { heldGive, heldIds } from './held.js';
 import { encOf } from './run-enc.js';
+import { fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   evoUsable: [() => evoUsable],
@@ -145,12 +146,13 @@ export function rewardDraw(g, D, o = {}) {
  * saves before showing it @param {Run} run @param {string} from who left it (a trainer's id, 'event:<id>')
  * @param {RewardData} D @param {{ kind?: string, n?: number }} [o] @returns {RunReward | null} */
 export function rewardOfferMake(run, from, D, o = {}) {
+  /* PK-5: the run's rewardPick rule rows (Gift Receipt) show more cards; the pick keeps its count for a reroll */
+  const more = fxRunRule(run, 'rewardPick'),
+    n = more > 0 ? (o.n || D.rules.pick) + more : o.n;
   const e = encOf(run),
-    cards = rewardDraw(rngFrom(run.seed, 'reward|' + e.rewardN + '|0'), D, o);
+    cards = rewardDraw(rngFrom(run.seed, 'reward|' + e.rewardN + '|0'), D, { ...o, n });
   e.rewardN++;
-  e.reward = cards.length
-    ? { cards, rolls: 0, from, ...(o.kind ? { kind: o.kind } : {}), ...(o.n ? { n: o.n } : {}) }
-    : null;
+  e.reward = cards.length ? { cards, rolls: 0, from, ...(o.kind ? { kind: o.kind } : {}), ...(n ? { n } : {}) } : null;
   return e.reward;
 }
 

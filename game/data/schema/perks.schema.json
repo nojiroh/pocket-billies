@@ -161,9 +161,9 @@
        "properties": {"kind": {"const": "benchXp"}, "share": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
-       "description": "rule (PK-4): a run rule changed by n (effects.js FX_RULES: forecastDays, the forecast shows n more days; later waves add rules)",
+       "description": "rule (PK-4): a run rule changed by n (effects.js FX_RULES: forecastDays, the forecast shows n more days; PK-5: rewardPick, reward picks show n more cards)",
        "type": "object", "additionalProperties": false, "required": ["kind", "rule", "n"],
-       "properties": {"kind": {"const": "rule"}, "rule": {"enum": ["forecastDays"]}, "n": {"type": "integer", "minimum": -30, "maximum": 30}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+       "properties": {"kind": {"const": "rule"}, "rule": {"enum": ["forecastDays", "rewardPick"]}, "n": {"type": "integer", "minimum": -30, "maximum": 30}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
        "description": "catchLevel (PK-5): a Billie you catch joins n levels higher (its moves learned on the way; at most 10 together)",

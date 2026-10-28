@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:231",
     "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2517"
+    "game/js/logic/data-checks.js:2524"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2517"
+    "game/js/logic/data-checks.js:2524"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:440",
-    "game/js/logic/data-checks.js:2519"
+    "game/js/logic/data-checks.js:2526"
    ]
   },
   {
@@ -1639,7 +1639,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2673",
+   "game/js/logic/data-checks.js:2680",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1865,10 +1865,10 @@
    "game/js/battle.js:1093",
    "game/js/gene-bank-screen.js:207",
    "game/js/gene-bank-screen.js:229",
-   "game/js/logic/data-checks.js:876",
-   "game/js/logic/data-checks.js:996",
-   "game/js/logic/data-checks.js:1037",
-   "game/js/logic/data-checks.js:2067",
+   "game/js/logic/data-checks.js:877",
+   "game/js/logic/data-checks.js:997",
+   "game/js/logic/data-checks.js:1038",
+   "game/js/logic/data-checks.js:2068",
    "game/js/logic/script.js:234",
    "game/js/logic/story-checks.js:353",
    "game/js/ranch-screen.js:210",
@@ -1966,11 +1966,11 @@
    "game/js/fishing.js:171",
    "game/js/logic/bowl.js:133",
    "game/js/logic/cutscene-set.js:38",
-   "game/js/logic/data-checks.js:727",
-   "game/js/logic/data-checks.js:893",
-   "game/js/logic/data-checks.js:909",
-   "game/js/logic/data-checks.js:934",
-   "game/js/logic/data-checks.js:978",
+   "game/js/logic/data-checks.js:728",
+   "game/js/logic/data-checks.js:894",
+   "game/js/logic/data-checks.js:910",
+   "game/js/logic/data-checks.js:935",
+   "game/js/logic/data-checks.js:979",
    "game/js/logic/marks.js:109",
    "game/js/logic/music-studio.js:71",
    "game/js/logic/online-legal.js:242",

@@ -232,3 +232,33 @@ test('PK-5 salvage: beaten bots leave their parts offered and Scrap times mult; 
   assert.equal(twice.at(-1).n, 2 * S.scrap + 2 * S.scrapPerBot);
   assert.equal(fn('fxSalvage')(null, S), S);
 });
+
+/* ---------- rule rewardPick ---------- */
+
+/** a run on the game's data, its team of these species */
+function runSave(perkIds, sp = ofType('Water')) {
+  reseed(3);
+  const s = startedSave(sp, 30);
+  s.run = modules['run-state'].newRun('WAVECSEED1', 1, 1, { team: [] });
+  s.run.perks = perkIds;
+  return s;
+}
+
+test('PK-5 rule rewardPick: reward picks show n more cards, rerolls too; as before without the row', () => {
+  const W = modules.rewards,
+    { P } = perks({ id: 'test_receipt', fx: [{ kind: 'rule', rule: 'rewardPick', n: 1 }] }),
+    pick = GAME_DATA.rules.run.rewards.pick;
+  withPerks(P, () => {
+    const s = runSave(['test_receipt']);
+    s.se = 9999;
+    const R = W.rewardOfferMake(s.run, 'test', W.rewardDataGame(s.team));
+    assert.equal(R.cards.length, pick + 1);
+    assert.equal(W.rewardReroll(s.run, s, W.rewardDataGame(s.team)), '');
+    assert.equal(s.run.enc.reward.cards.length, pick + 1, 'a reroll shows as many');
+    /* an event's pick of n: one more too */
+    assert.equal(W.rewardOfferMake(s.run, 'event:x', W.rewardDataGame(s.team), { n: 2 }).cards.length, 3);
+    const t = runSave([]);
+    assert.equal(W.rewardOfferMake(t.run, 'test', W.rewardDataGame(t.team)).cards.length, pick);
+    assert.equal(t.run.enc.reward.n, undefined, 'no count kept without the row');
+  });
+});
