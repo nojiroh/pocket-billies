@@ -24,7 +24,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "iron_vest": 0,
         "quick_laces": 0,
         "brass_knuckles": 0,
-        "smart_specs": 0
+        "smart_specs": 0,
+        "matchbook": 0,
+        "water_bottle": 0,
+        "seed_packet": 0,
+        "spare_battery": 0,
+        "garden_trowel": 0,
+        "paper_plane": 0,
+        "tarot_card": 0,
+        "socket_wrench": 0,
+        "dragon_fruit": 0,
+        "seatbelt": 0,
+        "cactus_keyring": 0,
+        "complaint_form": 0,
+        "party_balloon": 0,
+        "costume_fangs": 0,
+        "express_pass": 0,
+        "ankle_weights": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -607,7 +623,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "iron_vest": 0,
         "quick_laces": 0,
         "brass_knuckles": 0,
-        "smart_specs": 0
+        "smart_specs": 0,
+        "matchbook": 0,
+        "water_bottle": 0,
+        "seed_packet": 0,
+        "spare_battery": 0,
+        "garden_trowel": 0,
+        "paper_plane": 0,
+        "tarot_card": 0,
+        "socket_wrench": 0,
+        "dragon_fruit": 0,
+        "seatbelt": 0,
+        "cactus_keyring": 0,
+        "complaint_form": 0,
+        "party_balloon": 0,
+        "costume_fangs": 0,
+        "express_pass": 0,
+        "ankle_weights": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -1194,7 +1226,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "iron_vest": 0,
         "quick_laces": 0,
         "brass_knuckles": 0,
-        "smart_specs": 0
+        "smart_specs": 0,
+        "matchbook": 0,
+        "water_bottle": 0,
+        "seed_packet": 0,
+        "spare_battery": 0,
+        "garden_trowel": 0,
+        "paper_plane": 0,
+        "tarot_card": 0,
+        "socket_wrench": 0,
+        "dragon_fruit": 0,
+        "seatbelt": 0,
+        "cactus_keyring": 0,
+        "complaint_form": 0,
+        "party_balloon": 0,
+        "costume_fangs": 0,
+        "express_pass": 0,
+        "ankle_weights": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -1526,6 +1574,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "a0ac7b2e882f4e66d09810ce01133a520191396f733664a25422b972ee5bda4f"
+  "all": "0e66f16eef60b87a5e1cfa1577656c8d25dfee879ae569c7161829c87ff3aa25"
 }
 `;

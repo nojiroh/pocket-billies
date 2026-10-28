@@ -90,3 +90,104 @@ test('battle held: money rows count for the holders still standing', () => {
   assert.equal(fn('battleMoneyFx')(B), B.fx, 'a fainted holder pays nothing more');
   assert.equal(fn('battleMoneyFx')(battle(null).B), battle(null).B.fx);
 });
+
+// PK-10 (perks-track.md 5.8): the 16 new held items, each in a battle by its own name
+const BOOSTERS = {
+  matchbook: 'Fire',
+  water_bottle: 'Water',
+  seed_packet: 'Grass',
+  spare_battery: 'Electric',
+  garden_trowel: 'Ground',
+  paper_plane: 'Flying',
+  tarot_card: 'Psychic',
+  socket_wrench: 'Steel',
+  dragon_fruit: 'Dragon',
+};
+const moveOf = (t, not) =>
+  Object.keys(data.MOVES).find(
+    m => data.MOVES[m].p > 0 && data.MOVES[m].c !== 'X' && (not ? data.MOVES[m].t !== t : data.MOVES[m].t === t)
+  );
+const dmgWith = (held, mid, foeHeld) => {
+  battle(held, foeHeld);
+  reseed(9);
+  hooks.activeBattle.rng = null;
+  return fn('calcDamage')(0, 1, mid).dmg;
+};
+
+test('battle held PK-10: each type booster makes its holder’s moves of its type hit 20% harder, no others', () => {
+  for (const [id, t] of Object.entries(BOOSTERS)) {
+    const mid = moveOf(t),
+      other = moveOf(t, true);
+    assert.ok(mid, `a ${t} move to try ${id} with`);
+    const base = dmgWith(null, mid),
+      up = dmgWith(id, mid);
+    assert.ok(up > base && up <= Math.ceil(base * 1.2) + 1, `${id}: ${base} -> ${up}`);
+    assert.equal(dmgWith(id, other), dmgWith(null, other), `${id} leaves a non-${t} move alone`);
+  }
+});
+
+test('battle held PK-10: Ankle Weights hits 30% harder and moves last', () => {
+  const mid = moveOf('Fire'),
+    base = dmgWith(null, mid),
+    up = dmgWith('ankle_weights', mid);
+  assert.ok(up > base * 1.2, `${base} -> ${up}`);
+  battle('ankle_weights');
+  assert.equal(fn('heldLastActs')([{ who: 0 }, { who: 1 }]).size, 1);
+});
+
+test('battle held PK-10: Seatbelt holds on once from full HP', () => {
+  const { me } = battle('seatbelt'),
+    r = { dmg: 999 };
+  assert.equal(fn('heldSurvives')(0, r), true);
+  assert.equal(r.dmg, me.hp - 1);
+  assert.equal(fn('heldSurvives')(0, { dmg: 999 }), false);
+});
+
+test('battle held PK-10: Cactus Keyring hurts a physical hitter by an eighth', () => {
+  const { B } = battle('cactus_keyring'),
+    foe = fighter(1),
+    mx = fn('maxHp')(foe);
+  fn('heldAfterHit')(1, 0, { c: 'H' }, { dmg: 4 });
+  assert.equal(foe.hp, mx - Math.max(1, Math.floor(mx / 8)));
+  assert.match(texts(B), /Cactus Keyring/);
+});
+
+test('battle held PK-10: Complaint Form raises Attack and Sp. Atk sharply at the first super-effective hit', () => {
+  const { B } = battle('complaint_form'),
+    v = B.sides[0].f[0].v;
+  fn('heldHitMoments')(1, 0, { c: 'H', t: 'Water' }, { te: 1 });
+  assert.equal(v.st.lev || 0, 0);
+  fn('heldHitMoments')(1, 0, { c: 'H', t: 'Water' }, { te: 2 });
+  assert.deepEqual([v.st.lev, v.st.lob], [2, 2]);
+  fn('heldHitMoments')(1, 0, { c: 'H', t: 'Water' }, { te: 2 });
+  assert.deepEqual([v.st.lev, v.st.lob], [2, 2], 'once a battle');
+  assert.match(texts(B), /Complaint Form: .*Sp\. Atk rose sharply/);
+});
+
+test('battle held PK-10: Party Balloon keeps Ground moves off until its holder is hit', () => {
+  battle('party_balloon');
+  assert.equal(fn('heldFloats')(0, 'Ground'), true);
+  fn('heldAfterHit')(1, 0, { c: 'S' }, { dmg: 2 });
+  assert.equal(fn('heldFloats')(0, 'Ground'), false);
+});
+
+test('battle held PK-10: Costume Fangs heals an eighth of the damage dealt', () => {
+  const { me } = battle('costume_fangs');
+  me.hp = 3;
+  fn('heldAfterHit')(0, 1, { c: 'H' }, { dmg: 16 });
+  assert.equal(me.hp, 5);
+});
+
+test('battle held PK-10: Express Pass puts its holder first on about a fifth of turns', () => {
+  let won = 0;
+  for (let i = 0; i < 200; i++) {
+    reseed(300 + i);
+    const { B } = battle('express_pass'),
+      acts = [{ who: 0 }, { who: 1 }],
+      early = new Set();
+    B.rng = null;
+    fn('heldFirstActs')(acts, early);
+    if (early.has(acts[0])) won++;
+  }
+  assert.ok(won > 20 && won < 65, `${won} of 200`);
+});

@@ -126,5 +126,151 @@
   "hold": [
    {"kind":"damage","side":"deal","cat":"S","mult":1.2}
   ]
+ },
+ "matchbook": {
+  "n": "Matchbook",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Fire moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Fire","mult":1.2}
+  ]
+ },
+ "water_bottle": {
+  "n": "Water Bottle",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Water moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Water","mult":1.2}
+  ]
+ },
+ "seed_packet": {
+  "n": "Seed Packet",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Grass moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Grass","mult":1.2}
+  ]
+ },
+ "spare_battery": {
+  "n": "Spare Battery",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Electric moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Electric","mult":1.2}
+  ]
+ },
+ "garden_trowel": {
+  "n": "Garden Trowel",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Ground moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Ground","mult":1.2}
+  ]
+ },
+ "paper_plane": {
+  "n": "Paper Plane",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Flying moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Flying","mult":1.2}
+  ]
+ },
+ "tarot_card": {
+  "n": "Tarot Card",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Psychic moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Psychic","mult":1.2}
+  ]
+ },
+ "socket_wrench": {
+  "n": "Socket Wrench",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Steel moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Steel","mult":1.2}
+  ]
+ },
+ "dragon_fruit": {
+  "n": "Dragon Fruit",
+  "price": 800,
+  "rarity": "common",
+  "d": "Held: its holder’s Dragon moves hit 20% harder.",
+  "hold": [
+   {"kind":"damage","side":"deal","type":"Dragon","mult":1.2}
+  ]
+ },
+ "seatbelt": {
+  "n": "Seatbelt",
+  "price": 1200,
+  "rarity": "uncommon",
+  "d": "Held: once a battle, at full HP, its holder survives a knockout hit with 1 HP.",
+  "hold": [
+   {"kind":"survive"}
+  ]
+ },
+ "cactus_keyring": {
+  "n": "Cactus Keyring",
+  "price": 1000,
+  "rarity": "uncommon",
+  "d": "Held: Billies that hit its holder with a physical move lose 1/8 of their HP.",
+  "hold": [
+   {"kind":"reflect","share":0.125,"cat":"H"}
+  ]
+ },
+ "complaint_form": {
+  "n": "Complaint Form",
+  "price": 1000,
+  "rarity": "uncommon",
+  "d": "Held: when a super-effective hit lands on its holder, its Attack and Sp. Atk rise sharply, once a battle.",
+  "hold": [
+   {"kind":"stat","stat":"lev","stages":2,"when":"hurt","if":"superEffective","once":"battle"},
+   {"kind":"stat","stat":"lob","stages":2,"when":"hurt","if":"superEffective","once":"battle"}
+  ]
+ },
+ "party_balloon": {
+  "n": "Party Balloon",
+  "price": 1000,
+  "rarity": "uncommon",
+  "d": "Held: Ground moves miss its holder until it is hit.",
+  "hold": [
+   {"kind":"immune","type":"Ground","until":"hurt"}
+  ]
+ },
+ "costume_fangs": {
+  "n": "Costume Fangs",
+  "price": 1000,
+  "rarity": "uncommon",
+  "d": "Held: its holder heals 1/8 of the damage it deals.",
+  "hold": [
+   {"kind":"drain","share":0.125}
+  ]
+ },
+ "express_pass": {
+  "n": "Express Pass",
+  "price": 1000,
+  "rarity": "uncommon",
+  "d": "Held: a 20% chance each turn that its holder moves first.",
+  "hold": [
+   {"kind":"first","chance":0.2}
+  ]
+ },
+ "ankle_weights": {
+  "n": "Ankle Weights",
+  "price": 1000,
+  "rarity": "uncommon",
+  "d": "Held: its holder moves after the others, but hits 30% harder.",
+  "hold": [
+   {"kind":"last"},
+   {"kind":"damage","side":"deal","mult":1.3}
+  ]
  }
 }
