@@ -720,8 +720,7 @@ function graftBake(sp, graft) {
   return e.wait;
 }
 /* RO-3c: a species whose rig is a sketch (bodyPlans.json), and its form there */
-const graftSketchRig = sp =>
-  !!(typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp].front && RIGS[sp].front.sketch);
+const graftSketchRig = sp => !!(typeof RIGS !== 'undefined' && RIGS[sp] && RIGS[sp].front && RIGS[sp].front.sketch);
 const graftSketchForm = sp => ((gameData.bodyPlans && gameData.bodyPlans.forms) || []).find(f => f.rig === sp);
 /* RO-3c: a sketch Billie grafted from its donors' sheets and rigs; a kit Billie with a sketch donor (or the
    other way round) isn't grafted */

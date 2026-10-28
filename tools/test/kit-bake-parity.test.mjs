@@ -27,9 +27,7 @@ const RIGS = (() => {
   return box.window.RIGS_NEXT;
 })();
 const PRINTS = JSON.parse(readFileSync(join(ROOT, 'tools/test/kit-bake.json'), 'utf8'));
-const SKETCH = new Set(
-  JSON.parse(readFileSync(join(ROOT, 'game/data/bodyPlans.json'), 'utf8')).forms.map(f => f.rig)
-);
+const SKETCH = new Set(JSON.parse(readFileSync(join(ROOT, 'game/data/bodyPlans.json'), 'utf8')).forms.map(f => f.rig));
 const cache = new Map();
 const pics = (id, view) => {
   const key = id + '|' + view;
