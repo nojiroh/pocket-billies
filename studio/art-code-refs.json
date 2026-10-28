@@ -1855,6 +1855,7 @@
    "game/js/logic/ui-dials.js:219"
   ],
   "sheet": [
+   "game/js/logic/ui-sounds.js:23",
    "game/js/ui-kit.js:535"
   ],
   "spark": [

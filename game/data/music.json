@@ -524,7 +524,7 @@
   }
  },
  "ui": {
-  "about": "SND-6: the buttons' four sounds (logic/ui-sounds.js). sounds: each a few notes (at and len in s, midi, wave, vol, slide: where the note ends, x its frequency). A disabled button makes cant; one whose data-a or class cancel names makes cancel, then confirm the same way; any other select",
+  "about": "SND-6: the buttons' four sounds (logic/ui-sounds.js); UI-16a: sheet, flip, count and toast for the UI's motions (ui-motion.js plays them). sounds: each a few notes (at and len in s, midi, wave, vol, slide: where the note ends, x its frequency). A disabled button makes cant; one whose data-a or class cancel names makes cancel, then confirm the same way; any other select",
   "sounds": {
    "select": {
     "name": "the tick (as before)",
@@ -551,6 +551,33 @@
     "notes": [
      {"at":0,"midi":43,"len":0.13,"wave":"square","vol":0.05,"slide":0.97},
      {"at":0,"midi":44,"len":0.13,"wave":"p25","vol":0.035}
+    ]
+   },
+   "sheet": {
+    "name": "placeholder: a soft rising sweep (Claude's draft, UI-16a)",
+    "notes": [
+     {"at":0,"midi":64,"len":0.09,"wave":"triangle","vol":0.04,"slide":1.5}
+    ]
+   },
+   "flip": {
+    "name": "placeholder: a quick two-step flick (Claude's draft, UI-16a)",
+    "notes": [
+     {"at":0,"midi":84,"len":0.02,"wave":"p12","vol":0.035},
+     {"at":0.04,"midi":91,"len":0.03,"wave":"p12","vol":0.03}
+    ]
+   },
+   "count": {
+    "name": "placeholder: a bright ping (Claude's draft, UI-16a)",
+    "notes": [
+     {"at":0,"midi":93,"len":0.06,"wave":"p25","vol":0.035},
+     {"at":0.02,"midi":100,"len":0.08,"wave":"triangle","vol":0.025}
+    ]
+   },
+   "toast": {
+    "name": "placeholder: a soft two-note chime (Claude's draft, UI-16a)",
+    "notes": [
+     {"at":0,"midi":79,"len":0.06,"wave":"triangle","vol":0.035},
+     {"at":0.07,"midi":84,"len":0.1,"wave":"triangle","vol":0.03}
     ]
    }
   },
