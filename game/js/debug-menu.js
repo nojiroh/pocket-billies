@@ -84,7 +84,7 @@ import { heldIds } from './logic/held.js';
 import { RUN_SIDE_MOD } from './logic/run-side.js';
 import { MAPGEN_LAYOUTS } from './logic/mapgen.js';
 import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { perkOfferMake, perkTake, perkTeamOf } from './logic/perks.js';
+import { perkCap, perkOfferMake, perkTake, perkTeamOf } from './logic/perks.js';
 import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { buildingLevel, unlockGrant } from './logic/unlocks.js';
@@ -851,7 +851,7 @@ function debugAction(x) {
         id,
         PERKS,
         RULES.run.perks,
-        run.perks.length >= RULES.run.perks.cap ? run.perks[0] : undefined,
+        run.perks.length >= perkCap(run, RULES.run.perks, PERKS) ? run.perks[0] : undefined,
         saveData
       );
       if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Perk can’t be given.');
