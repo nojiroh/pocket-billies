@@ -50,8 +50,9 @@ BLUR_BUDGET = 3
 BLUR_CEILING = {'shop': 5}
 # UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps, lowered when
 # a screen sheds pieces. Set from UI-15's counts (before it: walk 27, map 25, team 28, guide 39, profile 55, shop 73,
-# battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in
-ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 28, 'guide': 39, 'profile': 55, 'shop': 66, 'battle': 23}
+# battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in. Team 28 -> 29 in the UI
+# checks session: UI-14b's rarity pill on the lead's card (the owner's answer 9: rarity on Billie cards, common too)
+ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 29, 'guide': 39, 'profile': 55, 'shop': 66, 'battle': 23}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
