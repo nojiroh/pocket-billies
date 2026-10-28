@@ -356,8 +356,8 @@ unused-art gate.
   letters as accents), shaded by `iconBlockKeyed` and written by `pixelsToSvg`: a 36x36 SVG. One object per icon,
   a silhouette that reads filled with one colour, at most 4-5 colour letters, 45-degree lines, octagons for circles,
   main strokes of 3 px. The same colours on both themes; a cream or pale shape must not sit alone on the background
-  (PK-0 found a cream sparkle vanishing on the light panel). The samples (docs/samples/perk-icons.png, grids in
-  docs/samples/perk-icon-samples.json): Lucky Charm, Rubber Stamp, Click Pen, Warranty Card, Bellows, Mic Drop,
+  (PK-0 found a cream sparkle vanishing on the light panel). PK-0's eight samples (now real grids in
+  tools/art/icon-grids/perks.json): Lucky Charm, Rubber Stamp, Click Pen, Warranty Card, Bellows, Mic Drop,
   Umbrella, Glass Trophy. Lucky Charm is a horseshoe: the clover read as a gem at 36 px.
 - **Folders**: `game/art/perks/`, `game/art/items/`, `game/art/boons/` (art/ui stays 51). File names are the ids.
 - **Data**: an `img` field with the path (`"perks/rubber_stamp.svg"`), as items already have, so art-refs and the

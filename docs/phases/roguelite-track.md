@@ -1313,7 +1313,7 @@ Answered by the owner, 2026-10-23:
 
 ### 9.7 Running sessions in parallel (the owner, 2026-10-23)
 
-Split by the files a session owns, as docs/phases/test-cleanup-track.md does: each session is its own branch and PR
+Split by the files a session owns, as docs/archive/tracks/test-cleanup-track.md does: each session is its own branch and PR
 with its own HANDOFF entry. Every PR conflicts on `docs/HANDOFF.md`, `docs/ROADMAP.md`, the changelog,
 `game/js/hooks.js` and often `rules.json`: merge one PR at a time and merge main into the next before merging it;
 regenerate hooks.js with `npm run modules`, never by hand. One SAVE_VERSION bump per round.

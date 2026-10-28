@@ -5,7 +5,7 @@ Branch: track/test-cleanup
 A side track, like the camera track. The owner asked (2026-10-23) how much work it would be to make every check and
 test fit the current game, and which are outdated or useless. This file is the answer as a plan: four sessions, about
 one phase, most of it deleting. Each session is tagged `tc-N-done` (the owner pushes tags). It finishes what phase 13b
-set out to do (docs/phases/13-testing-and-debugging.md, tasks 9-17) for the roguelite game.
+set out to do (docs/archive/13-testing-and-debugging.md, tasks 9-17) for the roguelite game.
 
 Before proposing anything in a session: read the latest HANDOFF.md entries and recent merges, then check the facts
 below against main and report what differs. They come from a read-only audit on 2026-10-23 (main at 29e66011).

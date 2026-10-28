@@ -1,7 +1,29 @@
 # Phase 07 plan: portraits from a part kit, edited in the Studio
 
-Started 2026-10-18/19 on the branch `phase-07-portraits`. The phase itself is [07-portraits.md](07-portraits.md); this
-file records what the owner decided since, what exists, the data format and what is left. Status is at the bottom.
+Started 2026-10-18/19 on the branch `phase-07-portraits` (merged into main). The phase's brief (07-portraits.md) was
+merged into this file on 2026-10-28: "The brief" below. This file records the brief, what the owner decided since,
+what exists, the data format and what is left. Status is at the bottom. Parked: after the first cut is fun (ROADMAP).
+
+## The brief (from 07-portraits.md)
+- **Goal:** a new portrait system, replacing the old one. Only the eyes and mouth animate; the head may move a little
+  (the owner's decisions below replace the brief's whole-pixel motion). 32-bit pixel art (full colour with
+  transparency).
+- **Verify first:** how portraits work in the current build and what depends on them (talk.js, cutscene.js, story.js,
+  opening.js, ui.js). Dialogue lines carry expression tags ([happy], [angry], [sad]): keep that mechanism. A test on
+  one AI expression sheet showed generators don't keep cells pixel-aligned: never cut expressions straight out of
+  generated sheets.
+- **Design:** draw order body, head (skin, ears, hair back), eyes with brows, mouth, front (bangs, glasses frames).
+  Expressions are an eye frame plus a mouth frame; tags map to idle, happy, sad, angry, surprised, talking, hurt.
+  Random blink every 3-5 s; the mouth cycles about 8 fps while text types. A "reduce motion" setting stops head
+  motion (blink and mouth stay).
+- **Tasks:** audit the old portraits and list what to delete; the renderer, data format and tag mapping; the shared
+  face kit; a Studio screen to place and preview parts; replace every use of the old portraits, then delete them;
+  tests (every portrait x expression, anchors inside the head, talking stops with the text, reduce motion, phone
+  frame time).
+- **Ask me before:** the portrait pixel size (answered: 64); how the face kit is made (answered: below); deleting the
+  old system.
+- **Done when:** dialogue, trainer cards and battles use the new portraits, the old system is gone, the Studio tool
+  works.
 
 ## Decisions the owner made
 - **Size: 64×64 art pixels** (the phase file's "ask me"). 96 was also cut and tried; 64 was chosen.
@@ -21,21 +43,18 @@ file records what the owner decided since, what exists, the data format and what
   slot, or draw the portrait to a canvas with smoothing off at the slot's device pixels (the head is sub-pixel
   anyway, the body is not).
 
-## What exists (on the branch)
+## What exists (on main)
 | Path | What |
 |---|---|
-| `tools/art-source/portrait-kit/*.png` | the 15 source sheets (never shipped) |
-| `tools/art-source/portrait-kit/kit.json` | each sheet's kind, grid and the id of every cell (null skips a cell) |
-| `tools/slice-portrait-kit.py` | cuts the sheets: `python3 tools/slice-portrait-kit.py [--reset]` (Pillow, numpy, scipy) |
-| `game/art/next/portraits/*.png` | 311 pictures at 64 px, made by the tool |
+| `game/art/next/portraits/*.png` | 311 pictures at 64 px, cut from the kit by the slicer |
 | `game/data/portraits.json` | the editable data (below); registered in `index.json` after `wardrobe` |
 | `game/data/schema/portraits.schema.json` | its schema; `npm run check:data` validates it and checks every picture, part and frame it names exists |
 | `game/types/game-data.d.ts` | `PortraitData`, `PortraitHead`, `PortraitItem`, `PortraitExpression`, `PortraitFace` |
-| `tools/art-source/portrait-kit/prototype/` | the prototype renderer and test page (reference only, see below) |
 
-Running the tool again re-cuts every picture but **keeps the data**: only parts the data doesn't have yet are added
-with first-guess placement. `--reset` throws the data away and starts from the guesses. A new sheet: add it to
-`kit.json` (a known `kind`), run the tool, then place the new parts in the Studio.
+The kit's sources were deleted on 2026-10-28 (clean-up track, lane T): the 15 source sheets and `kit.json` in
+`tools/art-source/portrait-kit/`, the prototype in its `prototype/` folder and the slicer `tools/slice-portrait-kit.py`
+(which re-cut the pictures and kept the data; `--reset` started the data over).
+`git log --diff-filter=D --oneline -- tools/art-source/portrait-kit` finds them; restore them from there to cut again.
 
 ## The data format (`portraits.json`)
 All positions are art px in the 64×64 frame.
@@ -88,7 +107,7 @@ decaying 11 Hz wobble). Blink every 2.6-5.2 s (half, closed, half over 200 ms); 
 set) with the head following; mouth frames ~8/s while text types, shut on punctuation pauses. Reduce motion: no
 head motion, blinking and talking stay.
 
-## The prototype (reference only)
+## The prototype (reference only; deleted 2026-10-28, in git history)
 `tools/art-source/portrait-kit/prototype/portrait.js` (renderer, tinting, expression table) and `portrait-lab.html`
 (the test page: picker, dialogue with tags, head rig in `stepPose()` and `loop()`). It predates `portraits.json`:
 its placement constants (HAIR_PAD, HAT_BRIM, the beard/accessory positions) are what the tool wrote into the data as

@@ -19,8 +19,8 @@ the plan.
 3. **Read only this**, in order:
    - docs/VISION.md (short).
    - The track's rows of docs/ROADMAP.md: `grep -n "<ID or track>" docs/ROADMAP.md`, then read around the hits.
-   - The track's newest entries of docs/HANDOFF.md. Never read the file whole: it is over 14,000 lines.
-     `grep -n "^### " docs/HANDOFF.md | grep -i "<track name or ID>" | head -3`, then read from the first hit for
+   - The track's newest entries of docs/HANDOFF.md. Never read the file whole; older
+     entries are in docs/archive/HANDOFF-2026-10.md. `grep -n "^### " docs/HANDOFF.md | grep -i "<track name or ID>" | head -3`, then read from the first hit for
      about 60 lines (Read with offset and limit). Entries are newest first; the top 2-3 entries of any track show
      what else changed lately.
    - The phase or track file the owner named (docs/phases/). Long ones (roguelite-track.md is over 1,300 lines):

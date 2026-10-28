@@ -1091,7 +1091,7 @@ Otherwise the field goes into an existing generic card.
   - No other section moves (no cosmetic churn).
 - **Effort:** S.
 - **Acceptance:** `SECTION_GROUPS` updated, Find still finds everything, `studio-layout` tests pass.
-- **Done in the Studio art track SA-4 (2026-10-27, docs/phases/studio-art-track.md):** the Runs workspace (Run Lab,
+- **Done in the Studio art track SA-4 (2026-10-27, docs/archive/tracks/studio-art-track.md):** the Runs workspace (Run Lab,
   Perks, Unlocks & hub, Economy, with Robots and Items & pyramids); Rules says it holds the game-wide numbers; Town
   shops and Jobs were removed in SA-3, not moved; World & encounters already said what runs read. `SECTION_GROUPS` is
   `STUDIO_WORKSPACES` in logic/studio-layout.js, unit-tested; the Studio self-test checks Find finds every section.
