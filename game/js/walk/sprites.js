@@ -8,6 +8,7 @@ import { gameData, loadingScreen, provide, questMarked, reducedMotion, talkBox }
 import { clamp } from '../util.js';
 import { pictureFacing, pictureRight } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
+import { personPicture } from '../logic/person-view.js';
 import { pixelLightness } from '../logic/pixel-facts.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { gpuTag } from '../engine/gpu-counters.js';
@@ -73,10 +74,12 @@ expose({
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
   byImageId: [() => byImageId],
+  clearSpriteHit: [() => clearSpriteHit, v => (clearSpriteHit = v)],
   copySpriteLook: [() => copySpriteLook, v => (copySpriteLook = v)],
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
   drawFlatItem: [() => drawFlatItem, v => (drawFlatItem = v)],
+  drawFoilRecord: [() => drawFoilRecord, v => (drawFoilRecord = v)],
   drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawReflectionRuns: [() => drawReflectionRuns, v => ((drawReflectionRuns = v), provide({ drawReflectionRuns }))],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
@@ -235,6 +238,7 @@ function setSpriteShadeUniforms(U, it, F) {
 function newSpriteRecord(cross) {
   return {
     it: null,
+    hit: null,
     mode: 'none',
     T: null,
     x: 0,
@@ -322,6 +326,8 @@ function spriteRecord(it, F, r) {
   r.self[1] = F.selfD[0] * (it.flip || 1);
   r.self[2] = F.selfD[1];
   r.emit = it.glow ? it.glow * 1.6 : 0;
+  /* VFX-9: a battle rig's hit flash ([r, g, b, amount], battle-3d.js), drawn on this program alone */
+  r.hit = it.hit && it.hit[3] > 0.001 ? it.hit : null;
   r.rim = it.person ? 0.4 : 0.12;
   r.lit = it.glow ? Math.max(0, 1 - it.glow) : it.far ? 0.75 : 1;
   r.shade = it.person ? 0.45 : it.far ? 0.3 : 0.55;
@@ -398,6 +404,11 @@ function setSpriteRecord(p, r) {
   gl.bindTexture(gl.TEXTURE_2D, r.T.n);
   setSpriteGeometry(p, r);
   if (r.dz) gl.uniform1f(U.uDZ, r.dz);
+  if (r.hit && U.uHit) gl.uniform4fv(U.uHit, r.hit);
+}
+/* VFX-9: the hit flash off again after its picture */
+function clearSpriteHit(p, r) {
+  if (r.hit && p.U.uHit) gpuState.gl.uniform4f(p.U.uHit, 0, 0, 0, 0);
 }
 /* a crossing picture's: only what differs from its tree's */
 function setSpriteCrossRecord(p, c) {
@@ -519,6 +530,18 @@ function flushSpriteRun(ip) {
 }
 /* a picture whose blades or clock hands are drawn right after it */
 const spriteHasParts = it => !!(it.M && (it.M.blades || (it.M.hands && !it.far && !it.layer)));
+/* style track SY-6: a coated Billie while its foil's band crosses it (item.foil, logic/coat-foil.js) is drawn on its own
+   on the sprite program, with uFoil, which goes back to 0 after it; between sweeps it stays in its run */
+function drawFoilRecord(p, r) {
+  const gl = gpuState.gl,
+    U = p.U;
+  setSpriteRecord(p, r);
+  if (U.uFoil) gl.uniform4fv(U.uFoil, r.it.foil);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  if (U.uFoil) gl.uniform4f(U.uFoil, 0, 0, 0, 0);
+  if (r.dz) gl.uniform1f(U.uDZ, 0);
+  clearSpriteHit(p, r);
+}
 function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
   const gl = gpuState.gl,
     R = SPRITE_RUN;
@@ -537,8 +560,21 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
   for (let i = 0; i < L.length; i++) {
     const r = spriteRecordAt(i),
       it = r.it,
-      tag = it.voxImg || it.vox ? 'modelPic' : 0;
-    if (r.mode === 'quad') {
+      tag = it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0;
+    if (r.mode === 'quad' && ((it.foil && !r.crossOn) || r.hit)) {
+      /* SY-6's coat foil and VFX-9's hit flash (uHit) leave the run for the plain program */
+      flushSpriteRun(ip);
+      if (R.on) gl.useProgram(p.p);
+      R.on = false;
+      gpuTag(tag);
+      if (it.foil && !r.crossOn) drawFoilRecord(p, r);
+      else {
+        setSpriteRecord(p, r);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        if (r.dz) gl.uniform1f(p.U.uDZ, 0);
+        clearSpriteHit(p, r);
+      }
+    } else if (r.mode === 'quad') {
       if (R.n && R.T !== r.T) flushSpriteRun(ip);
       if (!R.n) {
         R.T = r.T;
@@ -600,13 +636,15 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       const it = L[i],
         r = spriteRecordAt(i);
       /* R1 measure: a model's picture layers (and a modelled clock's hands) counted apart (engine/gpu-counters.js) */
-      gpuTag(it.voxImg || it.vox ? 'modelPic' : 0);
+      gpuTag(it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0);
       const mode = spriteRecord(it, F, r);
       if (mode === 'wave') drawSpriteWave(p, r);
+      else if (mode === 'quad' && it.foil && !r.crossOn) drawFoilRecord(p, r);
       else if (mode === 'quad') {
         setSpriteRecord(p, r);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         if (r.dz) gl.uniform1f(U.uDZ, 0);
+        clearSpriteHit(p, r);
         if (r.crossOn) {
           setSpriteCrossRecord(p, r.cr);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
@@ -722,6 +760,8 @@ export function drawPlayerSilhouette(C, items, X) {
     p = useWalkProgram('sprite', C, X),
     U = p.U;
   readHideQueries(gl);
+  /* CH-1: your outline and the one you talk to are people's draws (engine/gpu-counters.js) */
+  gpuTag('person');
   bindQuad();
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
@@ -771,6 +811,7 @@ export function drawPlayerSilhouette(C, items, X) {
   gl.depthMask(true);
   gl.uniform4f(U.uGhost, 0, 0, 0, 0);
   gl.uniform4f(U.uGhostV, 0, 0, 0, 0);
+  gpuTag(0);
   easeHidden(true);
   return walkRenderer.hidT ? 1 : 0;
 }
@@ -1282,7 +1323,7 @@ function drawReflectionRuns(RC, C, X, pics, F) {
     if (!R.n) {
       R.T = r.T;
       R.first = r.inst;
-      R.tag = r.it.voxImg ? 'modelPic' : 0;
+      R.tag = r.it.voxImg ? 'modelPic' : personPicture(r.it.im) ? 'person' : 0;
     }
     R.n++;
   }

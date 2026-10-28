@@ -59,6 +59,10 @@ export interface GameData {
   nodeTypes?: Record<DataId, NodeType>;
   /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
   music?: Music;
+  /** sound track SND-10: the world's sounds as recipes (game/data/soundscape.json; sound.js plays them) */
+  soundscape?: { about?: string; beds: Record<string, import('../js/logic/ambience-sound.js').AmbienceBed> } & Partial<
+    import('../js/logic/soundscape.js').SoundscapeWater
+  >;
   /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
   perks?: Record<DataId, Perk>;
   /** RL-12b: events.json */
@@ -90,6 +94,8 @@ export interface GameData {
   setPieces?: SetPiecesData;
   /** WM-7: the leaders' arenas */
   arenas?: ArenasData;
+  /** VFX-8: how the battle plays a move */
+  battleAnims: BattleAnimsData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
   /** RL-14: the runs' enemy factions and their bots */
@@ -241,6 +247,8 @@ export interface Move {
   fx?: MoveEffect;
   /** the line whose signature move it is */
   sig?: string;
+  /** VFX-8: its animation, a battleAnims.json family or scene id (missing: its outcome's or category's default) */
+  anim?: string;
 }
 
 export interface MoveEffect {
@@ -2133,6 +2141,10 @@ export interface FactionLook {
   emblem: string;
   stamps: Record<StampMoment, string>;
   forms: string[];
+  /** SY-5: the title of its boss's join notice */
+  notice?: string;
+  /** SY-5: the red line on its bots' plates in battle */
+  property?: string;
 }
 /** RL-14b: bosses.json: one boss phase, fired once when its HP falls to `at` of the most */
 export interface BossPhase {
@@ -2154,6 +2166,8 @@ export interface BossDef {
   /** the battle's first line ({name}) */
   call?: string;
   join?: string;
+  /** SY-5: the factions.json faction it fights for (its look in battle) */
+  faction?: string;
   /** the join intro's glow (else its gem's colour) */
   glow?: string;
   win?: string;
@@ -2317,6 +2331,12 @@ export interface RunEvent {
   options: RunEventOption[];
   /** residents track RS-2: only while the run's resident can be met at an event; `invite` invites them */
   resident?: true;
+  /** style track SY-4: one of the Bureau's events, opened as a case file (logic/case-file.js) */
+  bureau?: 1;
+  /** SY-4: the form number its case file shows (else one of bureau.look.forms) */
+  form?: string;
+  /** SY-4: flavour words of the intro under redaction bars until you choose */
+  redact?: string[];
 }
 export interface RunEventOption {
   text: string;
@@ -2325,6 +2345,8 @@ export interface RunEventOption {
   cost?: number;
   /** SP-6: DNA paid when it is picked */
   dna?: number;
+  /** SY-4: in a Bureau event, the moment its result is stamped */
+  stamp?: StampMoment;
   then: string[];
 }
 /** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */
@@ -2526,6 +2548,51 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** VFX-8: battleAnims.json: how the battle plays a move (logic/battle-anims.js, battle-anim-run.js) */
+export interface BattleAnimsData {
+  about?: string;
+  /** the power80 gate's power */
+  bigPower: number;
+  /** a move this strong (or a scene) may run extraMs longer */
+  longPower: number;
+  extraMs: number;
+  /** a family's short variant plays at this battle speed or more */
+  shortSpeed: number;
+  /** the longest a move may play by outcome and category, stage ms (the times before VFX-8) */
+  maxMs: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', number>;
+  /** the full-screen flash limiter */
+  flashes: { perSecond: number; gapMs: number; redShare: number };
+  colors: Record<string, Color>;
+  defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
+  intro: BattleAnimStep[];
+  families: Record<DataId, BattleAnimFamily>;
+  scenes: Record<DataId, BattleAnimFamily>;
+}
+export interface BattleAnimTimeline {
+  dur: number;
+  hit: number;
+  steps: BattleAnimStep[];
+}
+export interface BattleAnimFamily extends BattleAnimTimeline {
+  about?: string;
+  short?: BattleAnimTimeline;
+}
+/** a step: what it does, when (stage ms), its gates and its own numbers */
+export interface BattleAnimStep {
+  do: string;
+  at?: number;
+  n?: number;
+  every?: number;
+  if?: string[];
+  types?: string[];
+  on?: 'attacker' | 'target' | 'subject' | 'wide';
+  color?: string;
+  pop?: 'miss' | 'hedged';
+  pose?: string;
+  ease?: string;
+  cam?: Record<string, number>;
+  [k: string]: unknown;
 }
 /** WM-7: arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's
  * (logic/arena-gen.js) */

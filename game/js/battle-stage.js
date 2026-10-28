@@ -12,16 +12,19 @@ import { expose } from './test-globals.js';
 import {
   BATTLE_STAGES,
   HIT_EFFECTS_BY_TYPE,
-  MOVES,
   TYPE_COLORS,
-  TYPE_GLOW,
   activeBattle,
   battle3dLayout,
   battle3dStart,
   battle3dStop,
+  battleAnimPlay,
+  battleFlashGate,
   battleFreeArea,
   battleLayoutChanged,
   fighter,
+  figureBattlePicture,
+  figureFolk,
+  figuresOn,
   hudHit,
   hudPop,
   maxHp,
@@ -34,8 +37,10 @@ import {
   robotPartDef,
   saveData,
   soundEffect,
+  styleNote,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
+import { hashString, rngFn } from './logic/rng.js';
 import { graftLookSplit } from './logic/graft-art.js';
 import {
   LUNGE_GHOSTS,
@@ -64,13 +69,14 @@ import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './fra
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES, robotArmCanvas, robotLegsCanvas, robotTorsoCanvas } from './robot-art.js';
 import { personBattleFrames, personBattlePose, wardrobeData } from './person-art.js';
-import { drawRig, rigFrame, rigFrameKey, rigParts, rigTint } from './skeleton-rig.js';
+import { drawRig, rigFrame, rigFrameKey, rigParts } from './skeleton-rig.js';
 /* eslint-disable no-func-assign */
 expose({
   ACTOR_RIG_SCALES: [() => ACTOR_RIG_SCALES],
   AREAS: [() => AREAS],
   BATTLE_STAGE_ART: [() => BATTLE_STAGE_ART],
   BAYER4: [() => BAYER4],
+  BURST_BUDGET: [() => BURST_BUDGET],
   CAMERA_KEYS: [() => CAMERA_KEYS],
   CANVAS_FILTER_WORKS: [() => CANVAS_FILTER_WORKS],
   CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
@@ -90,6 +96,7 @@ expose({
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF_COLORS: [() => LEAF_COLORS],
   MONEY_ICON: [() => MONEY_ICON],
+  PARTICLE_BUDGET: [() => PARTICLE_BUDGET],
   PULL_BACK_CAMERA: [() => PULL_BACK_CAMERA],
   PYRAMID_HIGH: [() => PYRAMID_HIGH],
   PYRAMID_LIFT: [() => PYRAMID_LIFT],
@@ -114,17 +121,22 @@ expose({
   adaptBattleStageQuality: [() => adaptBattleStageQuality, v => (adaptBattleStageQuality = v)],
   addParticle: [() => addParticle, v => (addParticle = v)],
   afterImpact: [() => afterImpact, v => (afterImpact = v)],
+  ambientSpawning: [() => ambientSpawning, v => (ambientSpawning = v)],
+  battleFxRandom: [() => battleFxRandom],
+  battleFxSeed: [() => battleFxSeed, v => (battleFxSeed = v)],
   battleImpact: [() => battleImpact, v => (battleImpact = v)],
   battleLunge: [() => battleLunge, v => (battleLunge = v)],
   battleLungeGhosts: [() => battleLungeGhosts, v => (battleLungeGhosts = v)],
   battleLungeLean: [() => battleLungeLean, v => (battleLungeLean = v)],
   battleLungeRecord: [() => battleLungeRecord, v => (battleLungeRecord = v)],
   battleLungeRibbon: [() => battleLungeRibbon, v => (battleLungeRibbon = v)],
+  battleQuality: [() => battleQuality],
   battleRibbonCells: [() => battleRibbonCells, v => (battleRibbonCells = v)],
   battleSmearCount: [() => battleSmearCount, v => (battleSmearCount = v)],
   battleStage: [() => battleStage],
   battleStageCatch: [() => battleStageCatch, v => (battleStageCatch = v)],
   battleStageChromaticFlash: [() => battleStageChromaticFlash, v => (battleStageChromaticFlash = v)],
+  battleStageChromaticPulse: [() => battleStageChromaticPulse, v => (battleStageChromaticPulse = v)],
   battleStageDraw: [() => battleStageDraw, v => (battleStageDraw = v)],
   battleStageDrawEffects: [() => battleStageDrawEffects, v => (battleStageDrawEffects = v)],
   battleStageFlash: [() => battleStageFlash, v => (battleStageFlash = v)],
@@ -133,6 +145,7 @@ expose({
   battleStageFormat: [() => battleStageFormat, v => (battleStageFormat = v)],
   battleStageFrame: [() => battleStageFrame, v => (battleStageFrame = v)],
   battleStageJoin3d: [() => battleStageJoin3d, v => (battleStageJoin3d = v)],
+  battleStageKit: [() => battleStageKit],
   battleStageLayout: [() => battleStageLayout, v => (battleStageLayout = v)],
   battleStagePlay: [() => battleStagePlay, v => (battleStagePlay = v)],
   battleStagePrepare: [() => battleStagePrepare, v => (battleStagePrepare = v)],
@@ -172,6 +185,7 @@ expose({
   dueEvents: [() => dueEvents],
   flashesOff: [() => flashesOff, v => (flashesOff = v)],
   formatFocus: [() => formatFocus],
+  fxRandom: [() => fxRandom, v => (fxRandom = v)],
   groundRing: [() => groundRing, v => (groundRing = v)],
   handheld: [() => handheld, v => (handheld = v)],
   hitFx: [() => hitFx, v => (hitFx = v)],
@@ -284,7 +298,7 @@ const GROUND_CENTER_X = 0.55,
   GROUND_TEXTURE_SIZE = 512,
   GROUND_TEXTURE_PX_PER_METER = 16;
 /* ---------- scene state ---------- */
-const EASE = {
+export const EASE = {
   lin: t => t,
   out: t => 1 - (1 - t) * (1 - t),
   in: t => t * t,
@@ -320,6 +334,8 @@ export const battleStage = {
   t: 0,
   last: 0,
   hold: 0,
+  /* VFX-9: the chromatic flash playing ({t0, ms} in real time), or null */
+  ca: null,
   area: 'grass',
   u: 2,
   L: null,
@@ -544,7 +560,7 @@ function tween(o, p, to, dur, ease = 'out', delay = 0) {
 function scheduleAt(ms, fn) {
   battleStage.evs.push({ t: battleStage.t + ms, fn });
 }
-/* skip to the end of whatever is still playing. Camera, lens and zoom glide to where they were headed instead of cutting there */
+/* skip to the end of whatever is still playing (a tap, or the next line). Camera, lens and zoom glide to where they were headed instead of cutting there */
 function battleStageFlush() {
   const glide = new Map(),
     G = [battleStage.cam, battleStage.css, battleStage.dof, battleStage.hand];
@@ -568,7 +584,9 @@ function battleStageFlush() {
   });
   const ev = battleStage.evs.sort((a, b) => a.t - b.t);
   battleStage.evs = [];
-  ev.forEach(e => e.fn());
+  /* VFX-8: a runner's step (battle-anim-run.js) does what its skip says (its end framing, the hit's numbers, or
+     nothing: pictures and sounds still to come are dropped); any other event still runs at once */
+  ev.forEach(e => ('onSkip' in e ? e.onSkip && e.onSkip() : e.fn()));
 }
 function setActorAction(i, k, dur = 1000) {
   battleStage.s[i].act = { k, t0: battleStage.t, dur };
@@ -603,10 +621,18 @@ function blurAt(z) {
 function flashesOff() {
   return (saveData.preferences || {}).flashes === 'off';
 }
-function battleStageFlash(col, a, dur) {
-  const f = $('#flash'),
-    F = flashFor(col, a, !!reducedMotion, flashesOff());
-  if (!f || !F) return;
+/* VFX-8: who: the Billie a flash belongs to, which gets a sprite flash instead when the limiter holds the full-screen
+   one back (battle-anim-run.js battleFlashGate: at most 3 in any second, 333 ms apart, no saturated red). SY-1's
+   flashFor first: under Reduced motion nothing is shown, sprite-flashed or counted; with Flashes off the gate sees the
+   capped flash (and a held one's sprite flash uses its colour and amount) */
+function battleStageFlash(col, a, dur, who) {
+  const F = flashFor(col, a, !!reducedMotion, flashesOff());
+  /* SY-8: what ran, for the debug log: at its strength, held by Flashes off, or none (the Studio has no theme sheet) */
+  if (a > 0 && typeof styleNote === 'function') styleNote(!F ? 'flashSkipped' : F.a < a ? 'flashHeld' : 'flash');
+  if (!F) return;
+  if (typeof battleFlashGate === 'function' && !battleFlashGate(F.col, F.a, dur, who)) return;
+  const f = $('#flash');
+  if (!f) return;
   f.style.transition = 'none';
   f.style.background = F.col;
   f.style.opacity = F.a;
@@ -614,11 +640,20 @@ function battleStageFlash(col, a, dur) {
   f.style.transition = `opacity ${dur}ms ease-out`;
   f.style.opacity = 0;
 }
+/* VFX-9: a pulse of the grade pass's chromatic aberration (engine/post-effects.js uCAP; battleStageChromaticPulse
+   reads it each frame), no longer a CSS filter over the whole canvas. Timed on real time, as the filter was. SY-1's
+   rule: none under Reduced motion and none with Flashes off */
 function battleStageChromaticFlash(ms = 160) {
-  const w = $('#camWorld');
-  if (!w || reducedMotion || flashesOff()) return;
-  w.classList.add('ca');
-  setTimeout(() => w.classList.remove('ca'), ms);
+  if (reducedMotion || flashesOff()) return;
+  battleStage.ca = { t0: performance.now(), ms };
+}
+/* the pulse now: 1 while it lasts, 0 after */
+export function battleStageChromaticPulse() {
+  const A = battleStage.ca;
+  if (!A) return 0;
+  if (performance.now() - A.t0 < A.ms) return 1;
+  battleStage.ca = null;
+  return 0;
 }
 function hitStop(ms) {
   if (!reducedMotion) battleStage.hold = performance.now() + ms;
@@ -723,7 +758,16 @@ function battleStageFrame(ts, rawDt) {
     P[n++] = p;
   }
   P.length = n;
-  if (dt > 0 && !reducedMotion) spawnAmbientParticles(dt);
+  let amb = 0;
+  for (let i = 0; i < n; i++) if (P[i].amb) amb++;
+  if (dt > 0 && !reducedMotion && amb < PARTICLE_BUDGET[battleQuality()] / 4) {
+    ambientSpawning = true;
+    try {
+      spawnAmbientParticles(dt);
+    } finally {
+      ambientSpawning = false;
+    }
+  }
   battleStage.shk = Math.max(0, battleStage.shk - dt * 0.02);
   if (!battleStage.gl && battleStage.waitT) battleStageJoin3d();
   if (battleStage.cv && battleStage.cv.isConnected) {
@@ -743,7 +787,6 @@ function battleStageFrame(ts, rawDt) {
 const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
 function spawnAmbientParticles(dt) {
   const A = AREAS[battleStage.area];
-  if (battleStage.parts.length > 220) return;
   if (battleStage.oil && random() < dt / 18)
     addParticle({
       x: GROUND_CENTER_X - 7 + random() * 3,
@@ -1316,11 +1359,11 @@ export function actorBuffer(i) {
     tau = a ? battleStage.t - a.t0 : 0,
     ak = a && (a.k === 'faint' || tau < a.dur) ? a.k : null,
     t16 = Math.floor(battleStage.t / 16) * 16;
-  /* phase 20 R3: the same rig, pose, face, build, faint parts and tints as the last frame drawn here is the same
+  /* phase 20 R3: the same rig, pose, face, build, faint parts as the last frame drawn here is the same
      picture: the canvas stays, its counter too, so nothing is uploaded again */
   const key =
     rigFrameKey(R, ak, tau, t16, s.seed) +
-    `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}|${s.white}|${s.dark}`;
+    `|${view}|${s.build ? JSON.stringify(s.build) : ''}|${s.dim ? s.dim.join() : ''}`;
   if (buf.__R === R && buf.__key === key && buf.width === R.BW && buf.height === R.BH) {
     rigStats.ms += performance.now() - t0;
     return { s, k, R, P: buf.__P, ak, buf };
@@ -1336,9 +1379,8 @@ export function actorBuffer(i) {
   const P = rigFrame(R, ak, tau, t16, s.seed);
   if (s.build) P.build = s.build;
   if (s.dim) P.dim = s.dim;
+  /* VFX-9: the white and dark flashes are laid on by the GPU (battle-3d.js battle3dHit, walk/sprites.js uHit) */
   drawRig(bx, R, P, view);
-  rigTint(bx, buf.width, buf.height, '#FFFFFF', s.white);
-  rigTint(bx, buf.width, buf.height, '#0C0A16', s.dark);
   buf.__v = (buf.__v || 0) + 1;
   buf.__R = R;
   buf.__key = key;
@@ -1355,6 +1397,13 @@ export function trainerBattleFrame(i) {
   const T = battleStage.tr[i];
   if (!T || !T.who) return null;
   const view = i === 0 ? 'back' : 'front';
+  /* characters track CH-3: with Engine > People > Figures on, you are your figure here too (figures.js, 64 px a metre),
+     and the rival with Townsfolk as figures on; today's picture until it is baked */
+  if (typeof figuresOn === 'function' && figuresOn() && (i === 0 || figureFolk())) {
+    const on = T.act && battleStage.t - T.t0 < T.dur,
+      f = figureBattlePicture(T, i, battleStage.t, on ? T.act : null, on ? (battleStage.t - T.t0) / T.dur : 0);
+    if (f) return f;
+  }
   if (T.act && battleStage.t - T.t0 < T.dur && typeof personBattlePose === 'function')
     return personBattlePose(T.who, view, T.act, (battleStage.t - T.t0) / T.dur, battleStage.t - T.t0);
   const fr = personBattleFrames(T.who, view);
@@ -1384,13 +1433,14 @@ function drawParticles(c, layer) {
   const L = [];
   battleStage.parts.forEach(p => {
     if ((p.layer || 2) !== layer) return;
+    /* VFX-9: drawn in the 3D world instead (walk/battle-fx.js), all but a bot's dropped part (a picture) */
+    if (battleStage.gl && !p.img) return;
     const q = battleStageProject(p.x, p.y, p.z);
     if (q) L.push([q, p]);
   });
   L.sort((a, b) => b[0].z - a[0].z);
   L.forEach(([q, p]) => {
-    if (battleStage.gl && p.spr) return;
-    /* drawn in the 3D world instead */ let fade = p.fade === false ? 1 : 1 - p.age / p.life;
+    let fade = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) fade *= 0.5 + 0.5 * Math.sin(p.age / 120);
     c.globalAlpha = Math.max(0, Math.min(1, fade));
     if (p.glow) c.globalCompositeOperation = 'lighter';
@@ -1488,7 +1538,7 @@ function drawSelectionRing(c, i, col, pulse) {
   if (!g) return;
   const s = battleStage.s[i],
     R = s && s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat, s.graft) : null,
-    hw = R ? (R.geo.hw * actorMetersPerPixel[i] * (s.big || 1) * (s.fs || 1) * 0.8) / R.k2 : 0.5;
+    hw = R ? (R.geo.hw * actorMetersPerPixel[i] * (s.big || 1) * (s.fs || 1) * 0.8) / R.k : 0.5;
   const r = Math.max(6, hw * g.s * (1 + 0.06 * Math.sin(battleStage.t / 180) * pulse)),
     ry = r * clamp(battleStage.V.y / g.z, 0.2, 0.6);
   c.globalAlpha = 0.85;
@@ -1598,8 +1648,24 @@ function battleStageDrawEffects(c, skip0) {
 export const battleStageRingPhase = () =>
   battleStage.ring ? ((battleStage.t - battleStage.ring.t0) % 1300) / 1300 : 0;
 /* ---------- effects (world space, y up) ---------- */
+/* VFX-9: the budgets (docs/phases/vfx-track.md "Budgets"): particles alive in the one pool at quality 0-3, a burst's
+   most, and the ambient ones at most a quarter of the pool. A move's particle over the budget takes an ambient one's
+   place (the oldest), else it isn't made; an ambient one over its share isn't made */
+const PARTICLE_BUDGET = [256, 160, 96, 48],
+  BURST_BUDGET = [24, 16, 10, 6];
+const battleQuality = () => clamp(battleStage.q.lvl | 0, 0, 3);
+let ambientSpawning = false;
 function addParticle(o) {
-  battleStage.parts.push(Object.assign({ vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0, age: 0, life: 600, layer: 2 }, o));
+  const P = battleStage.parts;
+  if (P.length >= PARTICLE_BUDGET[battleQuality()]) {
+    if (ambientSpawning) return;
+    const j = P.findIndex(p => p.amb);
+    if (j < 0) return;
+    P.splice(j, 1);
+  }
+  const p = Object.assign({ vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0, age: 0, life: 600, layer: 2 }, o);
+  if (ambientSpawning) p.amb = 1;
+  P.push(p);
 }
 const HIT_SPRITES_BY_TYPE = HIT_EFFECTS_BY_TYPE;
 const GLOWING_PARTICLES = { spark: 1, star: 1, bolt: 1, bit: 1, gem: 1, pow: 1, up: 1 };
@@ -1607,11 +1673,20 @@ const typeSprite = (t, i) => {
   const l = HIT_SPRITES_BY_TYPE[t] || HIT_SPRITES_BY_TYPE.None;
   return l[i % l.length];
 };
+/* VFX-9: the move effects' own random numbers (logic/rng.js), seeded per event (battleFxSeed, from battleAnimPlay), so
+   a move looks the same each time it plays from the same place in a battle and films repeat without Math.random;
+   ambient life keeps util.js random */
+let fxRandom = random;
+function battleFxSeed(key) {
+  fxRandom = rngFn(hashString(key), 'battleFx');
+}
+const battleFxRandom = () => fxRandom();
 function burst(P, t, n = 10, sp = 2.2, k = 1) {
+  n = Math.min(n, BURST_BUDGET[battleQuality()]);
   for (let i = 0; i < n; i++) {
-    const a = random() * Math.PI * 2,
-      b = (random() - 0.3) * Math.PI * 0.6,
-      v = sp * (0.5 + random()),
+    const a = fxRandom() * Math.PI * 2,
+      b = (fxRandom() - 0.3) * Math.PI * 0.6,
+      v = sp * (0.5 + fxRandom()),
       key = typeSprite(t, i);
     addParticle({
       x: P.x,
@@ -1621,7 +1696,7 @@ function burst(P, t, n = 10, sp = 2.2, k = 1) {
       vy: Math.sin(b) * v + 1.2,
       vz: Math.sin(a) * Math.cos(b) * v,
       ay: -5,
-      life: 460 + random() * 300,
+      life: 460 + fxRandom() * 300,
       spr: key,
       k,
       glow: GLOWING_PARTICLES[key],
@@ -1689,7 +1764,7 @@ function hitFx(ti, an, imp0 = null) {
   if (an.te > 1) {
     battleStage.shk = 8;
     afterImpact(imp, () => {
-      battleStageFlash('#FFFFFF', 0.55, 260);
+      battleStageFlash('#FFFFFF', 0.55, 260, ti);
       battleStageChromaticFlash(180);
     });
     hitStop(80);
@@ -1702,7 +1777,7 @@ function hitFx(ti, an, imp0 = null) {
     if (ts === 0) buzz(w > 0.45 ? [14, 20, 14] : 10);
   }
   if (an.crit) {
-    afterImpact(imp, () => battleStageFlash('#FFF2A8', 0.6, 300));
+    afterImpact(imp, () => battleStageFlash('#FFF2A8', 0.6, 300, ti));
     hitStop(90);
     punch(an.te > 1 ? 0.12 : 0.09, 320, ts === 1 ? 0.014 : -0.014);
   }
@@ -2019,197 +2094,9 @@ export function battleStagePlay(an, ev) {
       scheduleAt(1100, () => battleStageFocus('wide'));
       return { dur: 1050, hit: 0 };
     }
-    case 'move': {
-      const si = an.si,
-        ti = an.ti ?? 1 - si,
-        ss = actorTeam(si),
-        M = MOVES[an.mid],
-        dir = ss === 0 ? 1 : -1;
-      an.t = M.t;
-      const A = actorCenter(si),
-        T = actorCenter(ti),
-        kk = 1;
-      battleStageFocus(ss === 0 ? 'me' : 'foe');
-      camAt(si, 0.32, 0.08, ss === 0 ? -0.012 : 0.012, 200);
-      if ((M.p || 0) >= 80 && !an.miss && !an.blocked && !an.protect) handheld(M.c === 'H' ? 700 : 950, 0.8);
-      /* on the 3D stage a big move gets a camera sweep: low behind the attacker, then across to the target */
-      if (battleStage.gl && !reducedMotion && (M.p || 0) >= 80 && !an.miss && !an.blocked && !an.protect) {
-        const m = ss === 0 ? 1 : -1;
-        camTo({ x: -0.7 * m, y: 1.05, z: 0.5, yaw: 0.16 * m, hz: 5 }, 300, 'out3');
-        camTo({ x: 0.9 * m, y: 1.35, z: 1.3, yaw: -0.1 * m, hz: -3 }, 420, 'io', 420);
-      }
-      const ak = an.protect ? 'block' : M.c === 'H' ? 'attack' : M.c === 'S' ? 'cast' : an.self ? 'buff' : 'cast';
-      setActorAction(si, ak, ak === 'attack' ? 620 : 800);
-      const toT = (d = 180) => {
-        battleStageFocus(actorTeam(ti) === 0 ? 'me' : 'foe');
-        camAt(ti, 0.45, 0.15, actorTeam(ti) === 1 ? 0.022 : -0.022, d, 'out3');
-      };
-      if (an.miss) {
-        if (M.c === 'H')
-          battleLunge(si, { dx: dir * 22, dur: 110, backDur: 160, backAt: 120, ...lungeKind(an.mid, M.t) });
-        else
-          for (let i = 0; i < 6; i++)
-            scheduleAt(i * 45, () =>
-              addParticle({
-                x: A.x,
-                y: A.y,
-                z: A.z,
-                vx: (T.x - A.x) * 3.2 + (random() - 0.5),
-                vy: (T.y - A.y) * 3.2 + 1.5,
-                vz: (T.z - A.z) * 3.2 + 1.2,
-                life: 380,
-                spr: typeSprite(M.t, i),
-                k: kk,
-              })
-            );
-        const ts = battleStage.s[ti];
-        scheduleAt(150, () => {
-          toT();
-          tween(ts, 'ox', ts.ox - dir * 18, 100);
-          tween(ts, 'ox', 0, 180, 'out', 160);
-          if (typeof hudPop === 'function') hudPop(ti, 'Miss', 'miss');
-        });
-        camHome(420, 560);
-        scheduleAt(900, () => battleStageFocus('wide'));
-        return { dur: 760, hit: 999 };
-      }
-      if (an.protect) {
-        scheduleAt(140, () => {
-          ringFx(A, '#8FD8FF', 0.3, 1.1, 600);
-          ringFx(A, '#FFFFFF', 0.1, 0.8, 450);
-          groundRing(si, '#8FD8FF', 1.8, 600);
-        });
-        camHome(400, 500);
-        scheduleAt(800, () => battleStageFocus('wide'));
-        return { dur: 700, hit: 0 };
-      }
-      if (an.blocked) {
-        scheduleAt(170, () => {
-          toT();
-          ringFx(T, '#8FD8FF', 0.4, 0.9, 420);
-          setActorAction(ti, 'block', 500);
-          if (typeof hudPop === 'function') hudPop(ti, 'Hedged', 'miss');
-        });
-        camHome(400, 520);
-        scheduleAt(900, () => battleStageFocus('wide'));
-        return { dur: 740, hit: 999 };
-      }
-      if (M.c === 'H') {
-        /* VFX-5: leaning in, with afterimages (and a dash's ribbon) */
-        battleLunge(si, {
-          dx: dir * 30,
-          dy: -4,
-          dur: 120,
-          ease: 'in',
-          delay: 100,
-          backDur: 200,
-          backAt: 240,
-          ...lungeKind(an.mid, M.t),
-        });
-        scheduleAt(120, () => {
-          for (let i = 0; i < 5; i++)
-            addParticle({
-              x: A.x,
-              y: 0.15,
-              z: A.z,
-              vx: (random() - 0.5) * 1.2,
-              vy: 0.6 + random() * 0.6,
-              vz: (random() - 0.5) * 1.2,
-              life: 420,
-              col: '#E8DCC8',
-              size: 2,
-              floor: 1,
-            });
-        });
-        scheduleAt(200, () => {
-          toT(140);
-          if (an.dmg) hitFx(ti, an);
-        });
-        camHome(460, 620);
-        scheduleAt(1050, () => battleStageFocus('wide'));
-        return { dur: 880, hit: 200 };
-      }
-      if (M.c === 'S') {
-        const n = 9,
-          beamy = M.t === 'Electric' || M.t === 'Psychic' || M.t === 'Water';
-        scheduleAt(140, () => {
-          ringFx(A, TYPE_GLOW[M.t], 0.15, 0.8, 300);
-          groundRing(si, TYPE_GLOW[M.t], 1.4, 420);
-        });
-        if (beamy)
-          scheduleAt(200, () =>
-            addParticle({
-              x: A.x,
-              y: A.y,
-              z: A.z,
-              x2: T.x,
-              y2: T.y,
-              z2: T.z,
-              beam: 1,
-              col: TYPE_GLOW[M.t],
-              w: 3,
-              life: 420,
-              glow: 1,
-            })
-          );
-        for (let i = 0; i < n; i++)
-          scheduleAt(160 + i * 34, () => {
-            const v = 1 / 0.32,
-              key = typeSprite(M.t, i);
-            addParticle({
-              x: A.x + (random() - 0.5) * 0.2,
-              y: A.y + (random() - 0.5) * 0.2,
-              z: A.z,
-              vx: (T.x - A.x) * v,
-              vy: (T.y - A.y) * v + 2.4,
-              vz: (T.z - A.z) * v,
-              ay: -15,
-              life: 320,
-              spr: key,
-              k: 1.2,
-              fade: false,
-              glow: GLOWING_PARTICLES[key],
-            });
-          });
-        scheduleAt(330, () => toT(220));
-        if (an.dmg) scheduleAt(500, () => hitFx(ti, an));
-        camHome(480, 820);
-        scheduleAt(1250, () => battleStageFocus('wide'));
-        return { dur: 1060, hit: 500 };
-      }
-      const tgt = an.self ? si : ti,
-        Pp = an.self ? A : T,
-        tk = 1;
-      if (!an.self) scheduleAt(260, () => toT(240));
-      for (let i = 0; i < 10; i++)
-        scheduleAt(200 + i * 48, () => {
-          const a = (i / 10) * Math.PI * 2,
-            key = typeSprite(M.t, i);
-          addParticle({
-            x: Pp.x + Math.cos(a) * 0.8,
-            y: Pp.y + Math.sin(a * 2) * 0.3,
-            z: Pp.z + Math.sin(a) * 0.8,
-            vx: -Math.cos(a) * 1.2,
-            vy: 0.8,
-            vz: -Math.sin(a) * 1.2,
-            life: 440,
-            spr: key,
-            k: tk,
-            glow: GLOWING_PARTICLES[key],
-          });
-        });
-      scheduleAt(600, () => {
-        ringFx(Pp, TYPE_GLOW[M.t], 0.2, 1.1, 420);
-        groundRing(tgt, TYPE_GLOW[M.t], 1.6);
-        if (!an.self) {
-          blinkActor(tgt, 240);
-          setActorAction(tgt, 'dizzy', 700);
-        }
-      });
-      camHome(460, 800);
-      scheduleAt(1250, () => battleStageFocus('wide'));
-      return { dur: 1000, hit: 600 };
-    }
+    case 'move':
+      /* VFX-8: played from the data (battleAnims.json) by battle-anim-run.js */
+      return battleAnimPlay(an, ev);
     case 'hurt': {
       const T = actorCenter(an.si),
         kk = 1;
@@ -2635,3 +2522,23 @@ export function battleStageCatch(kind, res, spin, done) {
     spin
   );
 }
+/* VFX-8: what the move runner (battle-anim-run.js) plays its steps with */
+export const battleStageKit = {
+  tween,
+  flush: battleStageFlush,
+  setActorAction,
+  camTo,
+  handheld,
+  addParticle,
+  ringFx,
+  groundRing,
+  hitFx,
+  blinkActor,
+  typeSprite,
+  battleLunge,
+  lungeKind,
+  actorTeam,
+  GLOWING_PARTICLES,
+  fxSeed: battleFxSeed,
+  fxRandom: battleFxRandom,
+};

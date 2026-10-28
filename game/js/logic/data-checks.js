@@ -20,6 +20,7 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
+import { caseFile, redactProblem } from './case-file.js';
 import {
   RUN_GRID,
   runGridExits,
@@ -87,6 +88,8 @@ expose({
   dataArenas: [() => dataArenas, v => (dataArenas = v)],
   // @ts-expect-error -- replaced on purpose
   dataBanter: [() => dataBanter, v => (dataBanter = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataBattleAnims: [() => dataBattleAnims, v => (dataBattleAnims = v)],
   // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1383,6 +1386,46 @@ export function dataSetPieces(D, valid = () => true) {
   if (S.perPlace[1] > 0 && !drawn) problem('no piece has a weight above 0, so no place gets one');
   return out;
 }
+// VFX-8: battleAnims.json (how the battle plays a move): the schema; every default a family; every step's colour a
+// named colour or `type`, its types types (types.json); every move's `anim` a family or a scene, and moves.json has no
+// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit)
+/** VFX-8: battleAnims.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBattleAnims(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    F = 'battleAnims.json',
+    problem = (/** @type {string} */ what, file = F) => out.push([file, what]),
+    A = D.battleAnims;
+  if (!A) return [[F, 'missing']];
+  if (!valid('battleAnims.schema.json', A, F)) return out;
+  const types = new Set((Array.isArray(D.types) ? D.types : []).map((/** @type {any} */ t) => (t && t.id) || t)),
+    fam = (/** @type {string} */ id) => !!(A.families[id] || A.scenes[id]),
+    steps = (/** @type {string} */ where, /** @type {any[]} */ L) =>
+      L.forEach((S, i) => {
+        if (S.color && S.color !== 'type' && !A.colors[S.color])
+          problem(`${where}[${i}].color: no colour "${S.color}" in colors`);
+        for (const t of S.types || [])
+          if (types.size && !types.has(t)) problem(`${where}[${i}].types: no type "${t}" (types.json)`);
+      });
+  for (const [k, id] of Object.entries(/** @type {Record<string, string>} */ (A.defaults)))
+    if (!A.families[id]) problem(`defaults.${k}: no family "${id}"`);
+  steps('intro', A.intro);
+  for (const sec of ['families', 'scenes'])
+    for (const [id, T] of Object.entries(/** @type {Record<string, any>} */ (A[sec]))) {
+      for (const [w, V] of [
+        ['', T],
+        ['.short', T.short],
+      ])
+        if (V) {
+          steps(`${sec}.${id}${w}.steps`, V.steps);
+          if (V.hit !== 999 && V.hit > V.dur) problem(`${sec}.${id}${w}: hits at ${V.hit} ms, after its ${V.dur} ms`);
+        }
+    }
+  for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
+    if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
+      problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');
+  return out;
+}
 // WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds
 // scenery.json terrains; its fence and gate props with a box (logic/arena-gen.js lays them along the rim), its posts and
 // dressing props
@@ -1454,7 +1497,8 @@ export function dataFactions(D, valid = () => true) {
   return out;
 }
 // RL-14b: bosses.json: the schema; its fighter is a gem and the right kind of part in each slot (robots.json); its
-// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's
+// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's;
+// SY-5: its faction is a factions.json faction
 /** RL-14b: bosses.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataBosses(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1468,6 +1512,7 @@ export function dataBosses(D, valid = () => true) {
     scripts = (D.story && D.story.scripts) || {},
     exps = ((D.modifiers && D.modifiers.expeditions) || []).length,
     stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    factions = (D.factions && D.factions.factions) || {},
     /** @type {Record<number, string>} */
     taken = {};
   for (const [k, X] of Object.entries(/** @type {Record<string, any>} */ (B.bosses))) {
@@ -1484,6 +1529,7 @@ export function dataBosses(D, valid = () => true) {
         if (stats.size && !stats.has(s)) problem(`${k}.phases[${i}].stages: no stat "${s}" (stats.json)`);
     });
     if (X.story && !scripts[X.story]) problem(`${k}.story: no script "${X.story}" (story.json scripts)`);
+    if (X.faction && !factions[X.faction]) problem(`${k}.faction: no faction "${X.faction}" (factions.json)`);
     for (const n of X.expeditions) {
       if (exps && n > exps) problem(`${k}.expeditions: no Expedition ${n} (modifiers.json)`);
       if (taken[n]) problem(`${k}.expeditions: Expedition ${n} is already ${taken[n]}'s`);
@@ -1841,6 +1887,17 @@ export function dataEvents(D, valid = () => true) {
       }
     }
   };
+  /* SY-4: words a redaction bar never covers: what a cost or an outcome is named (currencies, items, pyramids) */
+  const guarded = new Set(
+    [
+      ...Object.values(/** @type {Record<string, any>} */ (D.currencies || {})).flatMap(c => [c.name, c.one, c.long]),
+      ...Object.values(/** @type {Record<string, any>} */ (items)).map(x => x.n),
+      ...Object.values(/** @type {Record<string, any>} */ (pyramids)).map(x => x.n),
+    ]
+      .filter(x => typeof x === 'string')
+      .flatMap(x => x.toLowerCase().split(/[^a-z]+/))
+      .filter(x => x.length > 2)
+  );
   for (const [k, V] of Object.entries(E.events)) {
     const ev = /** @type {any} */ (V);
     for (const b of ev.biomes || []) if (biomes.size && !biomes.has(b)) problem(`events.${k}.biomes: no biome "${b}"`);
@@ -1857,6 +1914,18 @@ export function dataEvents(D, valid = () => true) {
         parseScript(ev.intro),
         n => n.k !== 'say' && problem(`events.${k}.intro: lines only, no "${n.name || n.k}"`)
       );
+    /* SY-4: a Bureau event's case file: the Bureau has a look to show it; its redaction bars cover flavour words of the
+       intro only (never an option's words, a cost or an outcome); a stamp moment only in a Bureau event */
+    if (ev.bureau === 1 && D.factions && !caseFile(k, ev, D.factions))
+      problem(`events.${k}.bureau: the Bureau has no look in factions.json (factions.bureau.look)`);
+    if (ev.redact && ev.bureau !== 1) problem(`events.${k}.redact: only a Bureau event (bureau: 1) is a case file`);
+    for (const w of ev.redact || []) {
+      const why = redactProblem(ev, w, guarded);
+      if (why) problem(`events.${k}.redact: "${w}": ${why}`);
+    }
+    ev.options.forEach((/** @type {any} */ o, i) => {
+      if (o.stamp && ev.bureau !== 1) problem(`events.${k}.options[${i}].stamp: only a Bureau event is stamped`);
+    });
     inviting = !!ev.resident;
     invites = 0;
     ev.options.forEach((/** @type {any} */ o, i) => {

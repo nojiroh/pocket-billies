@@ -84,6 +84,358 @@ first and carried out. Details and the brief's corrections: perks-track.md 5.10,
 - Next: PK-10 (held items: 16 new, the 8 existing redrawn, the held kinds, rarity tiers) on `track/perks-items`; it
   retires i_pretzel, i_trailmix, i_bell and the other held rectangles the same way. Main moved on during this
   session (5b0d43e, #305: the Style track and the Perks PR #301 merged): PK-10 merges it first.
+### Fix - the fast-check failures red on main - 2026-10-28
+Branch `fix/main-red-checks` (a one-session fix, BRANCHES.md), made from main at 07c9b284, main merged in three times (last a3bc2421).
+Plan approved in Plan Mode. One cause per commit. No test skipped or loosened; one dead step removed (below).
+- Found (CI logs of main's 5 push runs to 07c9b284, then reproduced here with the real check):
+  - **The two Studio checks (5/5, real):** the world map look's last step opened the Route stops tab and its landmark
+    picker, both removed in SA-3. The unknown tab fell back to Wild encounters, which drew every Billie; the check's
+    data helper set `studioState.rigs={}`, so each one 404'd at `art/billionaires/<id>.png` (2077 here). The loads
+    still failing spilled into the Camera section's error window (alone it had 0 errors).
+  - **The Studio's Model mode, `reading 'banter'` (1/5, real):** HB-10d's `squareChat` read `gameData.banter` and
+    called `squareMood`/`squareTalk`, none loaded on the Studio page; a square folk speaking in a Studio preview threw
+    in the draw loop. Reproduced by forcing it.
+  - **Timing on the CI runner** (wall-clock limits on what moves by frames; the game clock moves at most 60 ms a frame):
+    the run's seam (4/5: the next view is held until built, about 140 frames, 61 s at ~2 fps, limit 60 s); the bowl's
+    zoom out (2/5, 10 s); the orbit's hold-right (2/5: 67 frames measured, 60 s); Tall ground's `drawing()` (1/5: 3
+    frames in 40 s, beside the Studio's 404 storm) and, seen on this PR's runs, its silhouette (20 s) and `stand()` (30
+    frames in 60 s; a runner at under 0.5 fps).
+  - **The pasture (2/5, the test's clock):** its Billies walk to the town square on a schedule by the page's clock
+    (HB-10c), which starts at 12:30 on every check page: one leaves 73 s in. A slow run reached the last step after
+    that and saw two leave, not one. Reproduced by waiting past 80 s.
+  - **The job's 30-minute limit (this PR's push run):** the Studio's page (about 6 min of checks one after another)
+    ran last, alone.
+  - **Behind things (2/5), not reproduced** (3 of 3 passed): 85 frames drew and you were still "hidden", so not
+    slowness. Measured: the buddy stays within a metre of you, sometimes just between the camera and you.
+- Changed (tools/check-fast.py unless said): the dead landmark step removed; the Studio data helper keeps the piece
+  sheets (`RIGS_NEXT`, as studio-app.js); `squareChat` returns no lines without the game data or the square's logic
+  (game/js/walk-view.js); the seam wait calls `groundPrepWork(50)` (as check-quick.py's `cross(prep_ms)`);
+  `until_drawn` (seconds and frames, capped) for the bowl (10 s + 10 map frames) and Tall ground's silhouette (20 s +
+  60 frames); the orbit walk 60 s + up to 300 frames; the pasture check turns the square's visits off (a first commit
+  that gave it frames was reverted: wrong cause); the Studio's page runs first; `drawing()` and `stand()` in tools/browser_check.py wait longer (60 s, 120 s) while the
+  draw loop is alive and frames come (a dead loop or no frame still fails); Behind things turns the buddy off and its
+  failure lists the buddy and the nearest folk against the camera line.
+- Risky: `drawing()` and `stand()` are shared by every browser check (more lenient only when the loop is alive and frames advance).
+  A seam view that never builds now fails only if 60 s of extra build time don't finish it.
+- Verified: each failing check reproduced with check-fast.py `--only=` (or the page driven by script), then passed
+  after its fix; lint, typecheck, format, check:modules, 1633 unit tests; smoke (no problems). CI on the PR (#306):
+  green twice (17.5 min), then two runs on slow runners found the pasture's clock, the page order, `stand()` and
+  the silhouette wait above. A full local run in this 4-core container took 2100 s and
+  had 5 failures (pasture, Breeding, a battle stuck at choose, Tall ground's boot, the screens' Trainer card); the
+  pasture passed 2 of 2 alone and the other four passed on main's own CI, so read them as this container's load.
+- For the owner: the smoke job's 30-minute limit is close on slow runners (the fast check took 17-27 min today); a
+  pull request touching studio/ or game/js/logic/ adds 6-8 min of Studio checks. Raising it to 45 is your call.
+- Next: open PRs merge main to pick this up. If Behind things fails again, its note now names what stood in front.
+
+### VFX track VFX-9 - One draw for effects: the GPU pool, the budgets, fixed light keys, uHit, the uCA pulse - 2026-10-28
+Branch `track/vfx` (it held main and PR #290's branch when the step began; main then moved 246 commits, #279, #283,
+#302, and was merged in mid-step, c0470e76). Run under the owner's standing instruction (2026-10-28): no Plan Mode,
+the plan written here, recommended options taken and listed below. Draft PR #295 updated. Per main's CLAUDE.md
+(updated by #283) sessions no longer ask for per-session tags; `vfx-9-done` would sit on this entry's commit.
+- The plan: measure first (a `--measure` mode for the film tool, run on the old build in a worktree); then, one cause
+  per commit, the pool and its atlas with every particle kind but the bot parts' pictures, the budgets, fixed light
+  keys and the effect light budget, the rig's flash on the GPU, the chromatic pulse, the effects' own random stream;
+  merge main (it moved); measure after, side by side with the old build; films and contact sheets; the full check.
+- Changed:
+  - game/js/walk/battle-fx.js (new; both pages load it after walk/effects.js): `battleFxPass`, one instanced quad
+    (copied from `weatherBatch`) over one atlas: icons.png's 119 cells packed with `kitPack` (128 px wide) plus a
+    white block for the flat kinds, uploaded through `gpuTexture` and again on a new context (`gpuState.gen`), the
+    program in walk-view-gl.js's warm-up list. Kinds: sprite (an icon), square (dust, motes), ring (whole stage pixels
+    at its depth: z/170 m a cell; a ground ring lies on the ground), beam (a strip across the line of sight, white
+    core). Draw 1, cutout: discard or keep, depth written, no sorting, alpha 0 out (no ink outline), a fade is erosion
+    against a 4x4 Bayer pattern on the effect's own texels (screen pixels for squares and beams); lit (ambient, sun,
+    point lights) unless glowing, fogged. Draw 2, only when something glows: the white cores (texels whose darkest
+    channel is over .75, beam cores, glowing squares) added at .6 in HDR, so the bloom catches them.
+  - battle-3d.js lists every particle for it (`fx`, in walk-scene metres); battle-stage.js's 2D canvas now draws only
+    a bot's dropped part (a picture), the selection and target rings and the catch ring, as before. walk/effects.js
+    calls the pass inside the effects pass where the icons' loop was (see Risky). GPU counters: a `battleFx` tag.
+  - Budgets (battle-stage.js `PARTICLE_BUDGET`, `BURST_BUDGET`): 256 / 160 / 96 / 48 alive by `battleStage.q.lvl`,
+    bursts 24 / 16 / 10 / 6, ambient life (tagged `amb`) only while under a quarter of the pool; a move's particle
+    over the budget takes the oldest ambient one's place, else it isn't made (was: ambient stopped at 220 in all).
+  - Fixed light keys (battle-3d.js, walk/lighting.js keeps a given `kind`): the selection 0, an Alpha's light and its
+    shield 1-4, the thrown pyramid 5, effect lights 8-10 from a pool (a particle keeps its key while it shines).
+    Effect lights: glowing move particles with a colour, newest first, 3 / 2 / 1 / 0 by quality, 2 on a phone, and 6
+    battle lights in all.
+  - `uHit` (walk/walk-shaders.js sprite fragment shader, after the light and vRip, before fog; spriteI has the same
+    text, unset): battle-3d.js `battle3dHit` folds a Billie's `white` and `dark` into one colour and amount; a
+    flashing rig draws on the plain sprite program (walk/sprites.js); actorBuffer no longer tints the canvas and
+    white/dark left the rig's frame key. The limiter's held-back sprite flash (s.white) shows through it.
+  - The chromatic flash: `battleStage.ca` (real time, 160 ms) read by battle-3d.js as `caPulse`, applied in the grade
+    pass (engine/post-effects.js `uCAP`: red and blue 2 CSS px apart across the picture, as the CSS drop-shadows
+    were); the `#camWorld.ca` rule is gone. Guard: none under Reduced motion or with Flashes off (main's SY-1 rule).
+  - Effects' random numbers: `battleFxSeed` (logic/rng.js `rngFn`) from the move, its sides and the event's place in
+    the battle, set by battleAnimPlay; the runner's dust, lobs, flings and jitter and hitFx's bursts read it. Ambient
+    life keeps util.js random; never `b.rng`.
+  - The merge with main: battleStageFlash runs SY-1's `flashFor` first, then the VFX-8 gate on F (as agreed); the
+    runner's type colour and beam follow main's TYPE_GLOW (main had moved the old case 'move' to it).
+  - tools/look-battle-anims.py: `--measure` (effects draws a frame, the `battleFx` tag, rigStats, time a frame with
+    gl.finish, against the stage at rest), `--outcomes=`, `--sides=`, sheets with the menu, ticker and plates hidden
+    (they covered most of the stage).
+- Where the track file was wrong or vague (checked in the code):
+  - "a hit flash bakes white or dark into the canvas ... so a tweened flash redraws and uploads every frame": hitFx
+    never sets `white` or `dark`. The tinted flashes are send-out, the boss's join, recall, heal, a status starting,
+    the wild intro's dark silhouette and the limiter's held flash. So most moves had no flash redraws to save; the super crits (held flash) did.
+  - Line numbers had moved: `battleStageFlash` BS 604 (not 1228's neighbourhood), actorBuffer's key 1310, drawParticles
+    1371, addParticle 1589, the icons' GL loop FX 787-808 (right), lighting.js `l.kind = i` 330 (not 326-332), the
+    grade pass's `uCA` PE 297 and 731 (right), the sprite fragment shader WS 181-213, the warm-up list WVG 329-345.
+  - icons.png holds 119 cells, all 12 x 11 px or smaller: the atlas is 128 px wide.
+  - The near Billie isn't in the film tool's frames (the camera frames the foe); both builds alike.
+- Decided for the owner, to review:
+  - Bloom and the old soft glow: the icons were drawn additive at 1.6 over everything (a warm haze in bloom); now they
+    are cut out at their own colour and only their white cores add (.6). Crisper and in the art rules (hard edges, no
+    soft glows), but less glow on dark stages: judge on the phone. Depth of field now reads each particle's own depth
+    (they write depth), so a near spark blurs as the near Billie does. The impact frame's two-tone covers them too (it
+    tones the whole picture). Kept all three.
+  - The white flash on a rig is after the light (always pure white, even in shade); the dark flash likewise.
+  - Ring and beam widths: a ground ring 2 stage pixels, an air ring 1, a beam `w`/30 m (3 px at 30 px/m); squares
+    0.6 x size / 30 m.
+  - Effect lights: ambient glows (motes) never light; at most 2 on phones as the budget says.
+  - The selection, target and catch rings stay 2D (UI markers; VFX-11 or VFX-16 can move them).
+  - The effects' random stream is seeded per event, so the same move from the same place in a battle looks the same.
+- Measurements (headless, software GPU; before = e904ad77 in a worktree, after = this branch, run side by side):
+  - Effects pass draws a frame, the most while a move plays: before 97-111 (the stage at rest 86-88: a move added
+    9-23), after 90 (rest 87-89: the move's effects are 2 draws, the `battleFx` tag's maximum in every film). Mean
+    over 9 films (overload, deepdrill, tos; hit, super, super crit): 102.7 -> 90.0. Within the 3-draw budget.
+  - Rig redraws a 70-frame film (rigStats): unchanged where nothing flashes (10-21); super crits 29 -> 15 (overload)
+    and 33 -> 20 (deepdrill); mean over 9 films 18.1 -> 15.1 redraws, 1159 -> 967 KB uploaded.
+  - Time a frame during a move (stage and renderer tasks plus gl.finish; overload and deepdrill, super and super crit):
+    before 1878 ms mean, 5394 p90; after 1019 ms, 3848 p90. Not worse; software rendering, so only the direction
+    counts. The Graphics bench was not run: headless its numbers mean nothing (graphics-bench-test.js says so): phone.
+- Risky:
+  - Drawn as the last thing before the post pass (walk-view-gl.js, after effectsPass), the pool's draw spoiled the
+    reflection and shadow maps that the next frame reuses on the slow quality steps (QE >= 2: every other frame):
+    white sky reflections over the ground and Billies, a dark blob. Bisected to the draw call itself (even with every
+    pixel discarded); the GL state after it was the same as without it. Drawn inside the effects pass before its
+    glows, every frame was clean. Not understood: if the phone shows white patches or a stray shadow in battle, look
+    here first (debug: films with `--sheets`).
+  - CI's smoke time and the frame-rate-bound steps: see Verified.
+- Phone checks (listed, not waited for): the rings and dust sitting in the scene (hidden behind things, fogged, lit);
+  a super-effective crit's held flash on the target (white, through uHit); a beam move (Overload, Headline); frame
+  time in a battle with a big move (no slower than before); glow on a dark stage (enough?); no white patches.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build after each change and on each commit's
+  own state (each commit's files rebuilt in a scratch worktree and checked); `npm test` 1641 of 1642 after the merge
+  (the run-map-checks timing test, "1,000 maps in under a second", fails only inside the parallel run in this
+  container and passes alone, before and after my changes). Smoke: no problems (401 s) on the merged head. Films:
+  contact sheets of tos, overload and deepdrill (super, super crit, both sides) before and after; the battle-anims
+  tests keep every move's {dur, hit} (no move is longer; `maxMs` untouched). The golden record untouched (the engine
+  isn't changed). Sound files untouched (no message to the sound track needed). Full quick check (at 1f5dfee7, before
+  the second main merge; the merge's unit tests ran beside it, so the machine was loaded): 34 of 42 in 2516 s. Every
+  other battle step passed (doubles, Alpha at 4x, weather, the phone's battle, the debug log). The 8 problems, each
+  rerun alone on this branch and on main: Terraces, RL-8's seam and room light/settings tabs (main's, as UI checks'
+  entry lists); Ground tiles' lab room (fails on main too, alone); Starters' rig buffers, RT-2's double and Granny
+  Juniper pass alone on both; Battle music passed twice alone here (the wild drums 4.8-7.3 s after the flash, near
+  the 8 s fallback: the step races under load either way). The two frame-rate-bound fast-check steps, alone, after the
+  second merge (897dcd48): the island's orbit passes here (151 s) and fails on main (0.51 rad in 60 s); Tall ground
+  fails the same way on both ("the walk view never got ready"). CI's smoke at 1f5dfee7 failed only main's and the
+  frame-rate-bound steps (7 of 42; every battle step passed); its lint, on a docs-only commit, failed only the
+  run-map-checks timing test (1016 ms; main has since raised that budget to 1.5 s). Main merged again at 897dcd48
+  (#293, #303: Characters, cloud tooling, Sound; conflicts as the sound track's recipe said, plus the GPU tags and
+  walk/sprites.js); lint, typecheck, check:modules, format:check, check:data and unit tests (1742 of 1743, the same
+  timing test under load) there. CI at 89417b01 (run 40673477151): lint and rules green; smoke cancelled at its
+  30-minute limit during the Studio checks, after main's reds (a run's seam, the Studio's world map look and Camera
+  section) and Tall ground ("w:run_0_7i5p* isn't drawing": the run world the failed seam step left behind; alone it
+  fails the same way on main); every battle step that ran passed.
+- Next: VFX-10 (effect art), started by the planning session. It adds the strips to battle-fx.js's atlas (pack them
+  after the icons in `battleFxAtlasSheet`) and the ramps; the families stay `legacy_*` until VFX-11.
+
+### VFX track VFX-8 - Anims as data: battleAnims.json, the resolver, the runner, the tap that skips - 2026-10-28
+Branch `track/vfx` (main was already in; `ccr-7526d712-gliikp`, PR #290, merged in: clean). Run under the owner's
+standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below.
+Draft PR #295 updated. Tag `vfx-8-done` for the owner (sessions can't push tags) on this entry's commit.
+- The plan: film today's moves first (a new look tool), then the data and the browser-free resolver with tests, then
+  the runner playing today's choreographies from the data (films before and after equal), then, one cause per
+  commit, the tap that skips, sounds on the stage clock, the flash limiter, the rings; docs. No move gets longer.
+- Changed:
+  - tools/look-battle-anims.py: films every move from both sides in 8 outcomes (hit, super x2, x4, not very
+    effective, crit, super crit, miss, blocked) on the real stage of a wild battle in Copperleaf: Math.random seeded
+    per film (and before the battle starts), the battle's quality locked at 0, the stage's frame task stepped by
+    hand at 16 ms on a clock of its own. A trace of the stage's state every third frame (Billies' offsets, poses,
+    tints, every particle, the camera, shake, hit-stop, the flash, the impact frame, the pops) and what
+    battleStagePlay returns; `--compare=DIR`; `--sheets` (with `--only=`) for contact sheets. About 15-25 minutes
+    for all 1952 films. validation/look-battle-anims*/ gitignored.
+  - game/data/battleAnims.json (+ schema, `BattleAnimsData`, `BATTLE_ANIMS`, index.json, `dataBattleAnims` in
+    check-data and the Studio's Check, the check-data snapshot with a planted copy, the Studio's type rename): the
+    `intro` steps every move starts with, six legacy families (`legacy_hit`, `legacy_cast`, `legacy_status`,
+    `legacy_miss`, `legacy_guard`, `legacy_blocked`: today's choreographies step for step), `defaults` by outcome and
+    category, gates (`if`), named colours (the hexes left the JS: ui-lint's ceiling lowered), `maxMs` (the longest a
+    move may play by outcome: today's times), `extraMs` 500 for a long move or a scene, `shortSpeed` 2.2 (Faster),
+    the flash rule, `scenes` (empty). moves.json may name an `anim` (a family or a scene); the check requires it to
+    resolve (no move names one yet: VFX-11 tags them).
+  - game/js/logic/battle-anims.js (browser-free, exported, pure): `battleAnimFor`, `hitTier` (none, resisted,
+    neutral, super, super4, crit), `koAhead(events, i)` (a faint of the target, any foe for a spread move, before the
+    next move; last: no later enter on that side and no later move), `battleAnimGates`, `battleAnimTimeline` (gates,
+    types, repeats spread out, the short variant, quality, the cap: `maxMs` plus `extraMs` only for a scene or power
+    100+ and not under Reduced motion), `flashGate`, `redShare`, `battleAnimLogLine`. Loaded in the game, the Studio
+    and its logic worker. tools/test/battle-anims.test.mjs: every move x 8 outcomes x 3D or not keeps today's
+    {dur, hit}; families, tiers, KOs ahead, gates, repeats, skip classes, the Faster variant, the cap, the limiter,
+    the log line; a snapshot of every move x outcome's timeline.
+  - game/js/battle-anim-run.js (loaded after battle-stage.js): `battleAnimPlay` builds and plays the timeline with
+    the stage's own helpers (`battleStageKit`, one export from battle-stage.js) and returns {dur, hit}; case 'move'
+    is one line. hitFx gets the move's type on a copy of the event (`an.t = M.t` into the engine's event is gone).
+    VFX-5's `battleLunge` is its lunge step; the dash list stays in logic/smear.js until VFX-11.
+  - The tap that skips (battle.js `tapMessage`, `lineReady`; battle-stage.js `battleStageFlush`): a tap while a line
+    plays drops what the animation still had to show (pictures, camera moves, poses, sounds), keeps its end framing
+    (focus) and the hit's numbers (hudHit), paints the line's plates, shows its text whole and marks the line ready;
+    a second tap moves on (or it moves on by itself as before). The next line's flush skips the same way. Events
+    other cases schedule (send-out, catch, faint...) still run at once on a flush, as before.
+  - sound.js `battleSoundEffect`: its delays go through `battleStageAt` (the stage clock; setTimeout as before when
+    the stage isn't running), so they keep step with hit-stop and a skip drops them. Agreed with the sound track's
+    planning session before; check-sound.py 194 fingerprints, 0 changed.
+  - The flash limiter: `battleStageFlash(col, a, dur, who)` asks `battleFlashGate` first (3 in any second, 333 ms
+    apart, no R/(R+G+B) >= 0.8); one held back becomes a white sprite flash on `who` (bright colours only), never a
+    late one, and is named in the anim line. hitFx passes `ti`. Told the style track's planning session before and
+    after.
+  - The selection and target rings: `R.k2` -> `R.k` (they never drew).
+  - The debug log: an `anim` event per move, written when its time is up or a skip ends it: `<move id>
+    <family|scene>:<id> <tier> <full|short> q<quality>[ long][ held:<why>,...]`. No names, no save data.
+- Where the track file was wrong or vague (checked in the code):
+  - moves.json has no schema, so "moves.json's optional `anim` key in the schema" became types (`Move.anim`) and the
+    data check (`dataBattleAnims` checks every move's `anim`).
+  - Line numbers moved with VFX-5: `battleStagePlay` started at BS 1778 (not 1685), case 'move' 2003-2193 (not
+    1910-2095), `battleStageFlush` 544-567 (not 528-547), the rings' `R.k2` at 1472 (not 1379). sound.js 609,
+    battle.js `tapMessage` 492-501 and check-quick.py's 4x speed (780) were right.
+  - The H lunge starts 100 ms in (VFX-5 found it); a status move (X) never calls hitFx; Guard's dur is 700 with hit 0
+    (the plates repaint at once).
+  - Flashes off is already SY-1's (`flashFor`), but #289 isn't on main yet: the limiter sits in front of
+    `battleStageFlash` alone; nothing reads Flashes or Reduced for battle flashes here.
+  - The rule for whichever session merges #289 (or main with it) into track/vfx (agreed with the style track):
+    `battleStageFlash` runs `flashFor` FIRST and `battleFlashGate(F.col, F.a, dur, who)` on what it returns, so under
+    Reduced motion a flash is neither shown, sprite-flashed nor counted, and with Flashes off the gate sees the capped
+    one. Expect a small conflict in battleStageFlash's first lines; keep both.
+  - "Effects use their own seeded random numbers": kept as `random()` (util.js, Math.random, never `b.rng`), so the
+    films before and after could be equal; the films seed Math.random. A per-event stream belongs with the new art
+    (VFX-9/11), when the films change anyway.
+  - Today a super-effective crit started two full-screen flashes at the same moment (white .55 and warm .6); rule 9's
+    peak .55 isn't met by the crit's .6 (left to SY-1 and VFX-13).
+- Decided for the owner, to review:
+  - The rings on (recommended), seen on a film first: a gold ring at the choosing Billie's feet, white under the foes
+    it may aim at.
+  - The limiter as in rule 9 (recommended), on every battle flash (also the Alpha's, the boss's, the catch's), timed
+    on real time (what the eye sees), a held flash a white sprite flash on the hit Billie, a dark one dropped. Its one
+    visible effect today: a super-effective crit's warm flash becomes the target's white flash.
+  - What a skip keeps: the end framing (focus) and the hit's damage numbers and tags; a Miss / Hedged pop still shows.
+    Dropped: particles, rings, beams, camera pushes, poses, blinks, the hit's shake and flashes, pending sounds.
+  - A tap now skips even while the text types (before it only finished the text): one tap shows the whole line and
+    its result, the next moves on.
+  - The short variant keys on speed 2.2 and up (Faster; the debug 4x too); no family has one yet.
+  - Normal hit-stop unchanged (recommended); no move longer (recommended): `maxMs` caps every family at today's times.
+- Risky: battle.js and battle-stage.js are shared with UI-15/16b/17 and RL-14b (merge main first next session). The
+  tap that skips changes how the quick check's battles flow (it taps every 150-250 ms): rechecked in the full quick
+  check below. A legacy event from another case (a catch's arc step) still reschedules itself on a flush, as before.
+- Phone checks (listed, not waited for): tap during a move: the picture stops cleanly, the plates and the damage
+  number show, a second tap moves on; the hit sound in step with the hit (hit-stop); the rings when choosing and
+  aiming in a double battle; a super-effective crit (one flash, the target flashes white); nothing longer than before.
+- Verified: lint, typecheck, `npm test` 1584 of 1584, check:modules, format:check, check:data (its two bridge
+  warnings are main's), check-data-text, build, after each change; the smoke check (6 of 6) before each commit that
+  touched game/. Films (tools/look-battle-anims.py, 1952: 122 moves x 2 sides x 8 outcomes): the old stage (worktree
+  at d7225fdc) and the runner equal in every film, {dur, hit} included; two runs of the same code equal; after the
+  limiter only the 188 super crits differ (as above). The golden record (battle-golden.test.mjs) untouched (the
+  engine isn't changed). check-sound.py: 194 fingerprints, 0 changed. A tap mid-move in a real battle: 16 pending
+  steps dropped to the legacy one, the line ready, its text whole, focus wide, the next tap moved on; the anim line
+  `post3am family:legacy_cast resisted full q0 long`. Full quick check: 37 of 41 in 1380 s; every battle step passed
+  (double and Alpha at 4x, starters, weather, the phone's battle and debug log, battle music, the debug menu). Fails:
+  terraces (`train_station` in the air), RL-8's run (crossed into Thicket Route, never shown) and the walking step
+  (room light), which fail on main too (VFX-5's entry); and Sound effects (no low-HP cry within 20 s): the send-out
+  cry now waits on the stage clock, slower on a loaded machine; the wait is 45 s now (6dc70295) and the step passes
+  alone (103 s) and beside two other pages (133 s). Python Playwright 1.63.0 installed (1.56.0 can't find the
+  container's Chromium). Not run: the in-game full test (25 min; its first step passes in the smoke check).
+- Next: VFX-9 (one draw for effects), started by the planning session. It moves the runner's ring, dust, beam and
+  icon steps into the GL pool; the families stay `legacy_*` until VFX-11.
+### Perks track PK-4 - Wave B, types, team and weather - 2026-10-28
+Branch `track/perks` (this session's outcome branch, from PK-3's bbdcad5; main had nothing new at the start, then
+moved to 5f6d01ae during the session: merged near the end at the planning and merge sessions' request, 8af07402). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 8,
+"Corrected in PK-4".
+- The plan (as set at the start): (1) the four kinds Wave B needs, one kind per commit with tests, schema, data
+  checks, types and the Studio's inputs: passive (one parameter set per type passive), weather (noWeaken, boost),
+  benchXp, rule forecastDays; (2) offers: `needs` (a condition on the team; unmet, weight 0), then `tags` with
+  rules.json `run.perks.bias` (2) in perkPool/perkDraw on the same seeded streams, the game's callers passing the team;
+  (3) the 13 other pictures as grids; (4) the 15 Perks in perks.json with their pictures, perks.test.mjs:41 rewritten
+  for a large filtered pool; (5) a test per Perk and all Wave A and B at once; (6) the contact sheets; (7) the Studio
+  check; (8) docs. Matching Hoodies, Rainbow Lanyard and Barometer's heal use PK-1's fields.
+- Changed (15 commits and a merge):
+  - **effects.js**: kinds `passive` (`FX_PASSIVE_KEYS`, `fxPassive`: each passive's numbers merged), `weather`
+    (`FX_WEATHER`, `fxWeather`), `benchXp` (`fxBenchXp`), `rule` (`FX_RULES` forecastDays, `fxRunRule`).
+  - **Battle** (battle-engine.js): `fxPassiveOf` read at Kindling (effectiveStat), Live Wire, Wild Mind, Alloy and
+    Undertow (calcDamage), Bedrock (bedrockHolds: uses, from an HP share), Regrowth (endTurn), Parting Roar (inherit,
+    doSwitch: more stages) and Slipstream (runTurn: every switch); `fxWeatherFor` in calcDamage and the move tiles'
+    arrows (battle.js); award adds benchXp to the bench's share. Yours only; without the rows nothing changes.
+  - **Run**: run-map.js `runForecastDays` (rolled and shown rules' days plus the rows'; the Map tab too).
+  - **Offers** (perks.js): `perkTeamOf`, `perkFits` (needs), `perkWeight` (the bias), perkPool/perkDraw/perkOffer/
+    perkOfferMake/perkShelf/perkOfferOrder and encounters.js encPerk take the team; battle-rewards, shop,
+    encounter-screen, the debug menu, the fixture and the run sim pass it.
+  - **Data**: perks.json the 15 Wave B Perks (6 common, 8 uncommon, 1 rare) with `img`, the 9 type Perks with
+    `needs` and a type tag, theme tags on 17 existing Perks; rules.json `run.perks.bias` 2; perks.schema.json the
+    four kinds, `needs`, `tags`; data-checks.js `fxPassiveProblems`, weather/benchXp/rule checks, `FX_PLAIN.rule`,
+    `perkNeedsProblems` (`PERK_NEEDS`), tags (`PERK_THEMES`), bias; game-data.d.ts the kinds, `Perk.needs`,
+    `Perk.tags`, `bias`.
+  - **Studio**: the Perks editor's inputs for the four kinds, Needs and Tags per Perk, the bias in the rarity card;
+    type-rename.js `renameTypeConds` (tags, needs and the type names in conditions); check-studio-github.py
+    `--only=relics` opens the 15 Wave B Perks and checks Bellows's Needs and Tags.
+  - **Art**: tools/art/icon-grids/perks.json the 13 new grids; game/art/perks/ 15 SVGs; the contact sheets.
+  - Tests: battle-perks-wave-b.test.mjs (new, 23 tests), perks.test.mjs (needs, tags, coverage per rarity over 300
+    picks, relevance in a pick, a shelf and an event, the bias), data-checks, type-rename, battle-perks-wave-a (its
+    Perk count moved to Wave B's test).
+  - Docs: perks-track.md (PK-4 done, "Corrected in PK-4"), ROADMAP, STUDIO.md, TESTING.md.
+  - **The merge of main** (UI Part 2 UI-11..UI-18, the style track, the repo clean-up #283; 15 files conflicted, both
+    sides kept): UI-14b's rarity frame, pill and tags on the Perk pick card, the Perks tab row and the shop's Perk row
+    with PK-2's pictures and PK-3's counter (a card's caption is "Perk · 5/8"; on the tab the counter is a note after
+    the rarity pill, check-fast's expectation now "5/8"/"VOID"); UI-16a's fly-to with perkChoose's save; art.js's
+    `iconTag` takes a url for `artIconHTML`; UI-16b's blips: the start's stat lines carry theirs through `b.fxSay`,
+    and a hit's Perk blips come from the rows that counted (`fxHitRows`, split out of fxHitMult) rather than every
+    row held (main's read all, so Plot Armor would have blipped when not alone); Parting Roar's blip kept with
+    Heirloom Locket's stages; `moveWeatherMark` reads fxWeatherFor.
+- Risky:
+  - Every seed's offers changed (15 more Perks in the pool, the needs and the bias); accepted as SP-6 did.
+  - A run with a held theme draws its theme twice as often: with 2 or 3 of one theme held, the offers can feel
+    samey; the bias is a placeholder (rules.json `run.perks.bias`).
+  - The Studio's offer order and run-preview give no team, so they show type Perks the game wouldn't offer.
+  - Mood Ring adds a roll on the battle's stream for its holder's hits (replays stay the same per seed and Perks).
+  - The Map tab fills the forecast as it draws (deterministic, saved with the next save).
+  - The merge with UI Part 2 is checked by the tests, smoke, check:fast's Perks step and the full quick check, not on a
+    phone: the Perk card's caption and the tab's counter moved (see the merge above).
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck and
+  `npm test` (1630 at the start, 1666 before the merge, 1725 on the merged tree, all passing); before every commit
+  check:modules, format:check, check:data (176 files fine; its two bridge warnings are main's) and build;
+  `check:smoke` on every commit touching game/ (6/6; 7/7 on the merge; Python Playwright 1.63.0). Golden battles
+  unchanged (no snapshot remade). Faults planted once and seen red: Kite's every switch removed (2 tests). `check:fast
+  --only=perks` ok before and after the merge (the tab's counter expectation moved with UI-14b's pill).
+  `check-studio-github.py --only=relics` ok before and after the merge, with its new Wave B step. `npm run test:slow`
+  passed (before the merge). `node tools/build-icons.mjs perks --check` fine (closest new pair 86%: Matching Hoodies
+  and Barometer). **The run sim**: `--runs=50` stops in scene mode with "runSceneParams: node 8 has no exit south2"
+  as on main (PK-3's record); `--balance` finishes its 50 runs. **Full quick check** on 8af07402 (merged): 42 steps,
+  35 passed; the 7 PROBLEMs: Terraces, RL-8's view and room light are main's (PK-1..PK-3); RT-2's double, Granny
+  Juniper, Postcards and Run map music each passed when run alone on this head (Postcards twice), so the long run's
+  timing. **CI on #301** (8af07402): lint and rules green; smoke red on 7 steps: 5 red on main's own CI at 5f6d01ae
+  (Behind things, a run's world seam, the Studio's world map look and Camera with 404s for
+  game/art/billionaires/*.png; the train ride there) plus "A battle plays to the end: stuck at playing", which fails
+  locally on main 5f6d01ae too; the world map's buttons and the island's orbit passed locally on this head and on
+  main (CI's runner timing). Recorded in a PR comment.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **Group Chat**: the bench already got half (teamXpShare 0.5), so it gives the full XP ("Your Billies on the
+    bench get the full XP from each foe, not half."), not the draft's "half".
+  - **The 13 new pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Snorkel (a blue mask, ice lenses, a gold tube), Watering Can (one-colour green, a handle over the top,
+    a long spout, blue drops, a leaf label), Static Socks (gold with cream stripes, a gold-dark spark: the boxiest),
+    Knee Pads (wood, a stone cap, steel straps: reads a little like a robot head), Kite (blue and red diamond, wood
+    spars, slate tail with bows), Mood Ring (steel band, violet gem), Union Card (a steel card on its end with a clip
+    and a red stripe), Heirloom Locket (gold on a loop, a deep-violet scale), Matching Hoodies (one-colour teal, a
+    dark hood opening that turns greyish in the pale half, a cream heart), Rainbow Lanyard (four-colour straps, a
+    blue holder, a cream card), Group Chat (slate phone, green bubble out, cream bubble in), Snow Globe (ice globe,
+    tree, snow, wood base), Barometer (gold dial on a loop, cream face, red needle). Bellows and Umbrella are PK-0's
+    samples as drawn.
+  - Texts from the drafts: Snorkel "from half their HP", Knee Pads "from 75% of their HP", Kite "on every switch, not
+    just the first", Union Card "not only Steel ones", Heirloom Locket "raises the next one's Speed too", Barometer
+    "walking into a place in rain or a storm". Rarities as the plan (type Perks uncommon, Snow Globe rare, the rest
+    common). No `say` lines (the passives already say their own).
+  - Static Socks doubles Live Wire's stage (1 to 2: 12.5% to 25%); Bellows counts each turn twice to the same top.
+  - Theme tags on the 17 existing Perks of 5.7's sets now, before PK-8 (the bias needs them); bias 2.
+  - Needs ignored where no team is given (previews); `needs` limited to team and mono until later waves.
+- Phone checks to do (listed, not waited for): a Fire team after a mini-boss is never offered Snorkel or the other
+  type Perks but Bellows; Barometer taken: the Map tab's forecast shows 10 days at once; Umbrella in rain: a Fire
+  move's down arrow is gone; Kite: two free switches in a battle; the 13 new pictures at 72 and 36 px, light and dark.
+- Next: PK-5 (Wave C: catching, cash and maps; 12 Perks of 5.4) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-4-done` on this entry's commit.
 
 ### Perks track PK-3 - Wave A, the battle kit - 2026-10-28
 Branch `track/perks` (this session's outcome branch, from PK-2's d6649d4; main already merged: nothing new at
@@ -372,6 +724,815 @@ docs/phases/perks-track.md.
 - Next: PK-1 (the effects core) in a new session on `track/perks`.
 - Tag to suggest (sessions can't push tags): `pk-0-done` on this entry's last commit.
 
+### Style track SY-8 - tuning and docs: the style dials, the debug log's style line; the track is done - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-7, adb683c1) was
+already in; main had nothing new at the start (07c9b284) and moved during the step (merged in: below). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-8,
+plus UI-16a/b from SY-5); **the style track is complete** and waits on #289 (the owner merges). PR #279
+(`ccr-86dc9cb1-odx2za`, the plan and SY-1) was superseded by #289; the merge session merged #279 into main during
+this step, so nothing is left to close. Tags `sy-8-done`
+and `style-done` are for the owner to push (the git proxy refuses tags). The VFX session (session_019UpAFxvWEMwGebptZbvUuW)
+was messaged before `battleStageFlash` got its counter line; the sprite shader, hitFx and the join intro were not touched.
+- Changed:
+  - **The dials as data** (uiTheme.json `style`, schema, logic/style-dials.js, the Studio's UI section, new group
+    **Style**): Stamp size (x1, 0.5-2), Stamp slant (8°, 0-20), HP roll (380 ms, 0-1500), Damage number smallest and
+    largest (24 and 40 px), Foil every (3,500 ms), Foil sweep time (700 ms), Foil band width (half width 0.2). Every
+    default is the number SY-2 to SY-6 shipped: nothing looks different until a dial moves. A palette preset can set
+    them too. The theme sheet writes them as `--stamp-scale`, `--stamp-slant`, `--hp-roll`, `--pop-min`, `--pop-max`,
+    `--foil-period`, `--foil-sweep`, `--foil-half` (`styleVarsCss` in logic/ui-theme.js sharedVars).
+  - **Readers:** `pb-stamp` (ui-run-kit.js) sizes its font by `--stamp-scale` and turns by its page's tilt x
+    `--stamp-slant` / 8 (so -7 and -8 stay apart); battle-screen.css's HP fill moves in `--hp-roll`; battle.js's pop
+    (`popSize` takes min and max now) and the roll (`rollValue`'s ms) read theme-sheet.js `styleDials()`; the foil
+    (`coatFoil`/`foilBand` take an optional tune) does too, in world-billies.js `worldFoil` and battle-3d.js
+    `battleFoil`. `styleDials()` reads the variables at most twice a second (the foil asks every frame) and again
+    after `applyUiTheme`.
+  - **The debug log's style line** (debug-log.js `state().style`, from theme-sheet.js `styleLog()`): `now` (e.g.
+    "flashes off, calm", from html data-flash and data-motion) and `ran`: for each state that ran this session, counts
+    of `flash` (at its strength), `flashHeld` (held to 15% by Flashes off), `flashSkipped` (none: Reduced), `stamp`,
+    `pop`, `roll` and `foil` (frames a Billie had its band). Counts only: no save data, names or places.
+  - Tests: tools/test/style-dials.test.mjs (6: defaults equal today's constants and the data, schema ranges equal the
+    logic's, reading and clamping, the sheet's lines, the counts, popSize/foilBand with dials).
+  - Docs: the track file (SY-8 done, the track done, **one list of every "Decided for the owner" item from SY-1 to
+    SY-8**), ROADMAP (SY-8 and the track done), BRANCHES (a `track/style` row: done, waiting on #289).
+- Found (claims checked):
+  - "the pop's sizes" were constants in logic/hit-numbers.js (POP_MIN 24, POP_MAX 40, ROLL_MS 380) and the fill's
+    .38 s was a separate CSS number: now one dial drives both, so number and bar land together.
+  - The foil's numbers were in logic/coat-foil.js (FOIL_PERIOD_MS 3500, FOIL_SWEEP_MS 700, FOIL_HALF 0.2): right.
+  - The stamp's slant was each page's own `tilt` (-7 on the win line, -8 elsewhere), with no shared number; the dial
+    scales them rather than replacing them.
+  - The debug log already logged the Animation setting and level (`preferences.motion`, `motionLevel`), but not
+    Flashes; the style line adds it.
+  - The Studio loads battle-stage.js and battle-3d.js but not theme-sheet.js: both guard the reader
+    (`typeof styleDials === 'function'`), so the Studio's battle preview uses today's numbers and counts nothing.
+  - "Run map music ... 1400, not 1400": passes alone on main (07c9b284) and alone on this branch (SY-8), and passed
+    in this step's full quick check; it failed alone on SY-6 and SY-7 tips by SY-7's report. It looks like a timing race in the check (the ambience timer sets
+    the music filter every few seconds, so the "last cut" can change between the wait and the message), not the
+    style track's: nothing here touches sound.js. Not fixed.
+- Risky:
+  - A dial set far from its default is untested on a phone (a 2x stamp may overflow a narrow sheet; a 0 ms roll
+    jumps, as before SY-2).
+  - `styleDials()` lags a Studio preview change by up to 0.5 s for the pop, roll and foil (the CSS-read dials are
+    immediate).
+  - `foil` counts frames, so it grows fast (about 60 a second per coated Billie in view); it is a number, cheap.
+  - UI-17's menu foil (`pb-foil`, logic/idle-life.js, from main) keeps its own timing: the Style dials drive the
+    Billie's foil only. Matching the two is a small follow-up if the owner wants one sweep everywhere.
+- Main merged in (at the planning session's and the merge session's request; a merge, 970a9094): main 5f6d01ae (#279,
+  #283, #302: UI-17, UI-18, WM-6, the UI checks). Ten files conflicted; both sides kept (index.html's scripts,
+  battle.js's imports, ui-run-kit.js's elements, the gallery's sections and imports). **MAPGEN_VERSION 26:** main's
+  WM-6 had taken 25, so SY-7's sign and forms are 26 now (the rng scene hash and the run-start snapshot remade with
+  their tools; both differ from main's only by gen.v / mapgenV, checked by setting the version back). art-code-refs
+  regenerated, `npm run modules`. HANDOFF: both sides' entries; SY-3's entry was on both sides, kept once.
+  Then main moved again (48ded9d2, #293 the worldmap track): merged too; only art-code-refs.json conflicted
+  (regenerated); lint, types, modules, format, data checks, `npm test` (1,661 pass) and `npm run check:smoke` (6 of
+  6, the Phone count passing) after it.
+- Verified: lint, typecheck, check:modules, format:check, check-data, check-data-text, art-code-refs; `npm test` 1,660
+  pass after the merge (before it, only the timing test "1,000 maps ... in under a second", which passed alone).
+  `npm run check:smoke` after the merge: 5 of 6; the Phone step's "walk 20 (at most 18)" failed three times and
+  then passed twice on the same code (15 pieces): the count catches the place title and the postcard while they are
+  still on screen; main passed it once. Timing, not this step's (nothing here adds a DOM piece to the walk screen).
+  `npm run check:quick`: 37 of 42; the five are the known ones (Terraces train_station, RL-8 "Meadow Route view never
+  showed", RT-2 "the pair talked but no battle started", Granny Juniper, room light). The UI-16a sound fingerprints,
+  the Phone count and "Run map music" all passed in it. Headless dial check (the gallery): a stamp is 22 px at 8° by
+  default and 44 px at 16° with size x2 and slant 16; `styleDials()` reads the new pop and foil values; no page
+  errors.
+- Decided for the owner, to review (this step's; **every step's list, SY-1 to SY-8, is in docs/phases/style-track.md,
+  "Decided for the owner, to review"**):
+  - **The dials live in uiTheme.json `style`** (the UI section's Style group), so presets can set them and the
+    Studio's live preview shows them; not factions.json or engine.json.
+  - **Stamp size is a multiplier (x1); slant is degrees (8) that scales each page's own tilt.**
+  - **One HP roll dial for the number and the fill.**
+  - **Foil dials: period, sweep time, band half width**; its strength, brightness step and hue stay in code.
+  - **The log counts foil per frame drawn.**
+  - **MAPGEN_VERSION 26** for SY-7's change after merging main (WM-6 had 25).
+  - Not added: a Studio card for the Bureau's words and forms (edit factions.json `bureau.look`); it fits a
+    factions editor when there is one.
+- Next: the style track is complete. The owner reviews and merges PR #289 (draft)
+  and pushes the tags `sy-8-done` and `style-done` (and the earlier `sy-N-done` tags) on the merge commit. Optional
+  SY-9 (Laminated) only if the owner reopens it.
+
+### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28
+Branch `track/characters`, the same session as CH-2, straight on at the owner's word ("Automatically follow the plan
+until you finished ch3 then stop"): the track file's CH-3 is the plan, and the "Ask me before" calls it touches were
+made by the track's own recommendations (written below). CH-1's last two commits (its HANDOFF entry, a run's leader
+turned through faceToward) merged in before the end-of-phase checks (c684d805, a merge; BRANCHES the only conflict).
+Draft PR #277 (`track/characters` -> main) carries CH-1 to CH-3. Tag `ch-3-done` (the owner's) on this entry's commit;
+`ch-2-done` on d642f6ba.
+- Changed (one cause per commit):
+  - tools/gltf-figure.mjs (7ee19071; plain Node, no new packages) and tools/test/gltf-figure.test.mjs (4 tests, on a
+    small rigged model the test builds):
+    - each vertex on its strongest joint (the Studio's rule: jointed parts, no skinning); a mesh that rides a bone
+      (a hat, a cape) on that bone; what a hand holds (under a `handslot` bone) left out unless named;
+    - only the joints that move something kept (the Rogue: 20 of 41); per clip and frame, each joint's 3 x 4 matrix,
+      the hips' lift (snapped to whole texels at bake time), a walk's metres a cycle from its feet, and the room every
+      pose takes;
+    - 1.75 m to the top, x flipped: glTF is right-handed and the game's camera mirrors x (walk/camera.js), so without
+      the flip a model is drawn as its mirror image (RP-3's prop converter, tools/glb-to-recipe.py, keeps x: whether
+      its props show mirrored is worth a look on an asymmetric one);
+    - the texture point-sampled to 128 x 128 (the source is a swatch atlas) and snapped to the master palette
+      (game/art/next/palette.js, 164 colours) in OKLab; its own PNG reader and writer.
+  - The stand-in (84092308): KayKit's Rogue (Adventurers 1.0, CC0; validation/cc0-src/LICENSES.md has the
+    repository, commit, path and licence text; the 3.6 MB .glb is not copied in), game/art/figures/rogue.json
+    (319 KB: 3,567 vertices, 4,347 triangles, 20 joints; idle 6 frames at 6 fps, walk 13 at 12, run 10, cheer 20,
+    throw 16, sit 22 at 6) and rogue.png (1.4 KB). Its body, head and cape; no knives or crossbows.
+  - The baker (figures.js) draws figures made from a model beside the code-built mannequin: fetched the first time
+    one is wanted (a data: link in a single-file build), triangles by index, coloured by the texture and ramped in
+    the shader as the props' ramp does it; each figure's buffers and texture in the baker's context, made again after
+    a loss. A picture is as big as the figure's poses reach (logic/figure-pose.js cardSize from an extent), so the
+    cheer's raised arm isn't cut off.
+  - A model's clip (logic/figure-pose.js meshClipFrame, meshClipMatrices): a walk or a run by the distance walked at
+    its own cadence, an idle or a sit on twos, a cheer or a throw on ones.
+  - The plain 3D figure (B) is a style of the same figure: a soft light, no outline, baked at 128 px a metre and
+    left to the GPU's mipmaps.
+  - Engine > People: Your figure (the stand-in by default, or the mannequin), Style (pixel puppet or plain 3D),
+    Townsfolk as figures, Figure turns up to 32. You are your figure anywhere; townsfolk with the dial on (strolling,
+    cheering for their wave); in battle (battle-stage.js trainerBattleFrame, battle-3d.js) you at 64 px a metre from
+    behind, throwing with the figure's throw, the rival too with Townsfolk on, as tall as today's trainers.
+  - The bench (4c7364f9): test_people's front row, side by side facing the camera: the stand-in cheering, the
+    mannequin, today's person (folk:3), the stand-in as the pixel puppet (C), as the plain 3D figure (B), a Billie
+    (Carnegiant), the stand-in throwing; the stand-in turned eight ways behind the walkers; walking and running at
+    their ends. The schema's lineup: `figure` rogue, `style`, `act`, `run`, `billie`. look-people: dusk, --figure,
+    --style, --folk, --sheet with density lists and the stand-in's clips, --battle.
+  - The debug menu's figure switches (2911aac7): the player's Expert dials are a set list of sliders, so Engine >
+    People can't be reached from Settings on a phone. A row of buttons steps each People dial for the session (the
+    game data's engine defaults, as TR-4's terrain switches do). The debug log's people section says which figure,
+    style, density and turns were on.
+  - Pictures kept by their bytes too, at most 48 MB (b6315f04): a plain 3D picture of the stand-in is about 340 KB.
+  - The baker keeps to the frame's work budget (c36bc4f0): the first bake of a frame always, up to 4 only while the
+    budget lasts (walk/quality-cull.js frameBudgetLeft), as a bake in the scene waits on the scene's own drawing (the
+    numbers below). Its header comment brought up to date (8d003c22, comments only).
+  - look-people --battle shoots the intro while both trainers stand on the stage (59c17a67: at the move menu they
+    have already left it); --no-shots skips the zoom stops' shots, for --battle or --lose alone.
+  - Docs: the track file (CH-2 and CH-3 done, "Ask me before" 2, 3, 5 and 7 answered, key files), ROADMAP,
+    BRANCHES, CHANGELOG ("Figures to try"), this entry and CH-2's.
+- Calls made by the track's recommendations (the owner said to follow the plan):
+  - No face decal from the wardrobe's pixels on the stand-in: its own painted face reads at 32 px a metre (its head
+    is about 26 pixels wide), and the owner said the new people don't have to look like today's. CH-6 does faces.
+  - The walk's feet slide: KayKit's stride is 0.62 m a cycle and you move at 3.4 m/s, so a walk keyed to the
+    distance would race through 70 frames a second. It plays at its own cadence at walking speed instead. A stride
+    that fits the game's speed is CH-9's problem (and the art's: short chibi legs).
+  - The stand-in is about 2.2 heads, not 2.75: a stand-in only.
+  - The figure's file is game/art/figures/ (fetched only with the figures on), not game/data/figures.json.
+- Found:
+  - `--selftest` stops when the in-game full test fails, and headless it always does (rooms' first frames late, the
+    fall's 1 frame): its Diagnostics test hasn't run there. Run on its own, the Diagnostics test passes 11 of 12
+    steps; its dawn fog step (AIR-4) reports a graphics error, 1282 (an invalid operation), with or without the
+    figures, and on CH-1's head (0ac32751) before them. For the Air track.
+  - The Studio check's blocked Propose waits 10 s for its dialog, which comes only after game/data/legacy's files
+    are read: it ran out once here and passed on the next run.
+- The numbers (look-people, the 390 x 844 phone at DPR 3; quality step 0; means over 6 frames; counts only):
+  - test_people with the figures on (you the stand-in, the townsfolk dial on, no crowd), the Normal stop: 53 people
+    drawn (today's 24, the 12 mannequins, the stand-ins, you). By day 171 draws, 138 of them people's (53 sprites, 42
+    in each sun shadow map, your outline about 1); at dusk the same; at night 250 (215 people's: the two lamps' maps
+    add 40 and 36). People's pictures 293-298, 11.2-11.4 MB. The camera turned 0, 35 and 90 degrees: the same counts;
+    1.55, 1.54 and 1.52 buffer pixels a figure pixel.
+  - The zoom stops, by day, unturned: Close 3.02 buffer pixels a figure pixel, Normal 1.55, Far 0.81 (CH-0 worked
+    out 3.0, 1.55 and 0.8 for 32 px a metre). The same 138 people's draws at each; pictures 343, 385 and 473 (12.9 to
+    17.6 MB), as each stop's tilt is baked anew.
+  - Crowds (test_people and N townsfolk as figures, Normal, by day): 10: 63 people, 189 draws (156 people's), 337
+    pictures, 12.6 MB; 20: 73, 203 (170), 330, 12.3 MB; 40: 93, 225 (192: 93 sprites, 49 in each shadow map), 348,
+    12.9 MB. CH-1's crowd of 40 with today's people: 65 people, 217 draws (184), 112 pictures, 8.4 MB. A figure costs
+    what a person costs in draws (one sprite, the shadow maps instanced); it has more pictures (more views).
+  - Copperleaf, the townsfolk as figures, every stop by day, at dusk and at night: 11 people drawn; the town's own
+    810-1,225 draws a frame, people's 25 by day, 29-32 at dusk, 30-36 at night (a lamp's map 5-7); pictures 70 to 384
+    (2.1 to 12 MB) over the nine shots.
+  - A forced loss of the game's context (forceContextLoss) and then of the baker's (figureBakerLose), the figures
+    on: everyone drawn again after each (53 people, 170-171 draws); the baker restored (1 loss counted) and baking
+    again in the battle after it.
+  - Bakes, headless (software drawing; the phone's will differ): on a sheet with nothing else drawn 0.65 ms a bake
+    (the mannequin, 160 in 105 ms) and 0.76 ms (the stand-in, 208 in 159 ms); in the scene 25 ms a bake (257 in 6,408
+    ms), as the read-back waits on the scene's own drawing. Hence c36bc4f0: one bake a frame, more only within the
+    frame's work budget.
+  - In battle (the intro, by day and at dusk, the townsfolk dial on): both trainers' figures 120 x 129 pixels at 64
+    px a metre, you from behind and the rival facing you; 31 draws in the battle's frame. By then 222 pictures had
+    been baked (test_people's and the battle's), 5.5 MB, in 9.3 s: 42 ms a bake headless in a scene.
+  - Sheets for the dials (look-people --sheet; in validation/look-people/ when made there): the stand-in at 16, 24,
+    32, 40, 48 and 64 px a metre, 8, 16 and 32 turns, without the outline, as the plain 3D figure, at the Far tilt
+    (36 degrees); the mannequin at 32 and 48. Faces read from 24 up; at 48 and 64 the 1-pixel outline thins against
+    the figure.
+- Risky or unfinished:
+  - Nothing is on by default: the switch, its dials and the debug menu's row only. With it off no figure code runs
+    and no figure file is fetched.
+  - Pictures still go through today's path: each figure picture is its own texture, uploaded with mip levels (CH-4's
+    live atlas is the fix). A figure has more pictures than today's person (one a view), and a picture the baker's
+    cache drops keeps its texture until the graphics card's picture cap (128 MB on a phone) trims the longest unused,
+    as any picture does; a plain 3D picture is about 15 times a pixel one. The baker reads its pictures back
+    (drawImage from its WebGL canvas) on the CPU: the phone's milliseconds will say what that costs.
+  - A second WebGL context on the phone (the baker's). Its loss and restore are handled and tested.
+  - A single-file build (art.js: its art inline in window.NW_ART) has the stand-in only if it inlines
+    figures/rogue.json and rogue.png; if not, you stay today's picture there, and the debug log says the figure wasn't
+    loaded.
+- Verified (the end-of-phase checks on 59c17a67, the last game commit, each in a worktree of it, one at a time):
+  - After each change: lint, typecheck, `npm test` (1,611 at CH-3's end, all passing; 11 of them new: gltf-figure 4,
+    figures 4, figure-pose 3), check:modules, format:check, check:data and build.
+  - Smoke: 6 of 6 each on 84092308, 4c7364f9, 2911aac7 and 59c17a67, each in a worktree of the commit (b6315f04's
+    byte cap and c36bc4f0's bake budget only through 59c17a67's run and CI's).
+  - The full quick check with the switch off, against "before" pictures made just before from CH-1's head (0ac32751):
+    38 of 41 steps. Its three problems are the baseline's own (Terraces, RL-8, room light); the baseline run failed
+    those, and RT-2 and Granny Juniper after RL-8, as CH-1 found. 6 of its 44 pictures differ, each another moment
+    and none a person's look: the battle camera's drift (battle-rain, battle-double), the station's sheet and the
+    battle's menu caught loading (phone-mast, phone-battle), the bottom bar growing in (world-buddy), the camera
+    still on its way to you in the every-prop scene (props-lowpoly).
+  - `--selftest` with nothing beside it: the in-game full test's three problems (the clinic's first frames later
+    than 3 s, a room in place changing the town's walking grid, the opening's fall drawing 1 frame). CH-1's head,
+    run the same way, fails the same steps (two rooms late there: the Gene Bank and the barn): headless software
+    drawing, not this branch's. `--selftest` stops when the full test fails, so its Diagnostics test never runs.
+  - The game's Diagnostics test on its own (check-quick.py's run_in_game_test from a scratch script, the town
+    fixture), with the figures switched on as the debug menu does (you the stand-in, the townsfolk as figures),
+    twice: 11 of 12 steps each time; 207 and 231 pictures baked (5.2 and 5.7 MB, 279 and 304 ms of baking); no page
+    errors. The debug log, built as its export builds it (680 KB), has the figures' numbers in its people section
+    and not the player's name. Its one problem, a graphics error (1282) in the dawn fog step, comes with the figures
+    off too, and on CH-1's head (0ac32751): the same 11 of 12 each time, so not this branch's.
+  - The Studio check (`sections`, `studio_test`, `checks`): ok on a second run. The first stopped on its 10 s wait
+    for the blocked Propose's dialog (the Check reads game/data/legacy's files before it shows). CH-1's head passes
+    it too.
+  - look-people's runs above (the normal set, the stops, Copperleaf, the crowds, the sheets, the losses, the battle):
+    no page errors.
+  - CI on 4c02b044, 59c17a67 and dcacc8b4: lint and rules green; smoke fails only checks main fails too (the two
+    Studio checks' 404s for legacy Billie pictures; a run's world) and, in one run of a pair, timing checks that
+    passed on the same commit in the other run (PR #277's comment).
+- For the owner on the phone:
+  - Open the debug menu, tap "Figures: off" to turn them on: you are the stand-in. Walk, run, turn the camera.
+  - Step "Style" to "plain 3D" for B, "Figure" to the mannequin, "Townsfolk" to figures (then a trainer battle shows
+    both trainers as figures), "Pixels a metre" 32 / 40 / 48 / 64, "Turns" 16 / 32 / 8, "Outline".
+  - In a battle: you from behind at 64 px a metre; the throw is the figure's own.
+  - Run the Diagnostics test with the figures on, and export a debug log: its people section has the bakes, their
+    milliseconds and the pictures' MB.
+  - Then the pick ("Ask me before" 1): C (the pixel puppet), B (the plain 3D figure), A (classic 2D redrawn) or more
+    tuning; and whether the KayKit look is a direction for your own models.
+- Next: the owner's phone and pick. If C: CH-4 (the live atlas) on `track/characters`.
+
+### Characters track CH-2 - Spike 1: the figure baker - 2026-10-28
+Branch `track/characters`. Started at the owner's word from the CH-1 session; planned read-only until CH-1's HANDOFF
+entry was on the branch; the plan approved ("Go") with the owner's answers to "Ask me before" 2 (jointed rigid parts,
+no skinning), 3 (32 px a metre, with a 16-64 dial), 5 (2.75 heads at 1.75 m) and 7 (a code-built mannequin first),
+and my recommendations taken for the rest (the baker in its own WebGL context, 16 turns, you as a figure behind the
+switch). Built on a0e4b141 while CH-1 finished; nothing pushed until its entry landed. Tag `ch-2-done` (the owner's)
+on d642f6ba.
+- Changed (one cause per commit):
+  - game/js/logic/figure-pose.js (413e30cf; on both pages and in the Studio's logic worker;
+    tools/test/figure-pose.test.mjs):
+    - the oblique projection: a point's height on the upright card is its height plus its depth into the view
+      times tan(tilt), so the camera's shortening gives back what it would see (no double squash; the test checks it
+      against a tilted camera); the heading seen from the camera in steps, the tilt in 2-degree steps (the tilt
+      changes with the zoom stop: 26 degrees at Normal, about 36 at Far); the lift snapped to whole texels;
+    - the 12 fps clock: an idle on twos, a walk by the distance walked, read once a tick;
+    - the scene props' ramps and outline (tools/build-scene-props.py ramp and olc, the same to the unit, checked
+      against Python's output) and three toon bands from a top-left light.
+  - Engine > People (334d1583): Figures (off), density, turns, outline.
+  - game/js/figures.js, the baker (46c1427d; both pages; tools/test/figures.test.mjs against a stand-in WebGL2
+    context):
+    - its own WebGL2 context (the owner's pick): pass 1 the figure with its depth in alpha; pass 2 at the same
+      pixels the plum outline (olc of the neighbour's colour) and a lighter line inside where a part stands well in
+      front of another; then a copy into a 2D canvas tagged `ax`/`ay`/`ppm`/`noNormal`, down today's sprite path;
+    - pictures kept by view (at most 600), at most 4 baked a frame, a person keeping their last one meanwhile;
+    - a lost baker context bakes nothing until it is back, then makes its programs again (figureBakerLose forces
+      one); the game's own lost context only drops textures, and the canvases go up again;
+    - you as the mannequin with the switch on (idle; walking by the distance walked; turned to personHeading);
+      peopleReport has the baker's numbers.
+  - The bench (814f9329): the lineup's `figure` entries (the schema's new key), test_people's mannequins (each end
+    of the cast, eight turns, two walkers), look-people --figures (with the dials) and --lose.
+  - The mannequin rounder and more charming (48fdab9d), at the owner's word ("They should be less boxy and have more
+    charming style"): rounded low-poly shapes (ellipsoids, a lathe, capsules, cones, a torus) smooth-shaded so the
+    bands follow their curves: an egg of a head under a hair cap with a three-point fringe and a cowlick, a bean
+    body with a coral scarf, capsule limbs, mitten hands, bean shoes. Its face painted on the picture in whole
+    pixels where the head faces the camera (logic/figure-pose.js figureFaceMarks): 3 x 4 eyes with a glint toward
+    the light, a line on the blink, one narrow eye side-on, a small mouth, blush. The idle nods; the walk bounces.
+  - look-people --sheet (d642f6ba): a figure's every turn and frame on one sheet, enlarged.
+- Found:
+  - The tilt changes with the zoom stop, so a bake is keyed by a tilt step as well as a turn: a single 26-degree view
+    would be squashed at Far.
+  - `renderTarget` is at webgl.js:1324 (the track said 1274).
+  - The player's Expert dials are a set list (settings-screen.js GRAPHICS_DIALS), not every engine dial: CH-3's
+    debug-menu row is how the owner reaches the figures on a phone.
+  - Running tools/build-test-scenes.py with `--help` runs the whole rebuild (CH-1's warning): it rewrote the
+    generated gamedata.js only (no source file), mended by `npm run data`.
+- The numbers: the mannequin at 32 px a metre is drawn at 1.55 buffer pixels a pixel at Normal (CH-0's figure for
+  32 px/m; today's people 0.74), the same grid as the ground (1.66) and props (1.56). test_people with the figures
+  on (Normal, day, unturned): 37 people drawn (today's 24, 12 mannequins, you), 129 draws (96 people's: 37 sprites,
+  29 in each sun shadow map, your outline 1.3), 159 pictures, 5.1 MB. A sheet of 160 bakes took 105 ms in headless
+  software drawing (0.65 ms a bake; the phone's will differ).
+- Verified:
+  - After each change: lint, typecheck, `npm test` (1,600 at CH-2's end, 18 of them new: figure-pose 12, figures 6),
+    check:modules, format:check, check:data, build.
+  - Smoke on each game commit: 6 of 6 each (413e30cf and 334d1583 on the working tree just before their commits;
+    46c1427d, 814f9329 and 48fdab9d in a worktree of the commit).
+  - The full quick check on 48fdab9d with the switch off: 38 of 41. Its three problems are CH-1's baseline's
+    (Terraces: the station prop in the air; RL-8: a run's seam crossing never shows the next view; the walking step's
+    room light or settings tabs): run alone on a0e4b141 (before CH-2) and here, the same three fail.
+  - `--selftest` on 48fdab9d, with unit tests running beside it: three frame-timing problems (the clinic "not
+    drawing", the walking grid after a room, the fall's 1 frame); CH-1 found the last two on main under load. Run
+    again at CH-3's end with nothing beside it (CH-3's entry).
+- Next: CH-3 (straight on, the owner's word).
+
+### Characters track CH-1 - the bench and the fixes - 2026-10-27
+Branch `track/characters`, made 2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word. Plan
+approved in Plan Mode, with the owner's answers: the sprite-sheet exporter is retired ("Ask me before" 10); cutscene
+walks turn for real; the proposed `face Kappi you` went with the plan. Main merged in twice, as merges: before the work
+(37f7b8dc: PRs #268 and #272, HANDOFF's top the only conflict) and before the PR's checks (a0e4b141: #270, CH-0's own,
+#273, #274 and #275; HANDOFF as main had it, the generated files remade). Draft PR #277. Tag `ch-1-done` (the
+owner's) on this entry's commit. No art changed and no new renderer.
+- Changed (one cause per commit):
+  - Room exit: `leaveRoom` set `P.dir` to `'right'`/`'left'`, words no walk frame has, so an east or west door
+    (Kappi's lab, rot 90) left you facing down. The in-game test's Room phase expected the same wrong words
+    (self-test.js); fixed in the same commit.
+  - game/js/logic/person-view.js (new; on both pages and in the Studio's logic worker;
+    tools/test/person-view.test.mjs, 11 tests):
+    - `copiedAnchor`: the director's dark and mirrored copies keep ax, ay, ppm and noNormal. Before, the city
+      scene's silhouette was 1.58 times too tall and sunk into the ground.
+    - `facingWord`: directionOf's rule, moved, no change.
+    - `faceToward`, `faceWay`, `faceWord`: a heading per person (`head`, radians, 0 along +z, with `headDir`),
+      written on runtime records only, never on scene data.
+    - `seenFacing`, `seenToward`, `seenWord`: the side a camera sees. `personHeading`: the heading CH-2's figures
+      will turn to.
+    - `personPicture`: a person's picture is one with a `ppm` (Billies carry the items' `person` flag too).
+  - A cutscene's reach is mirrored for `side`. It mirrored `sideR`, but a side view as drawn faces right.
+  - Facing relative to the camera, in three commits (only the third changes a picture):
+    - every writer goes through the helpers;
+    - walk/camera.js returns `turn`, its yaw without the phone's tilt, so the tilt's sway never turns anyone. With
+      the camera unturned, every picture is today's;
+    - walk-view.js `seenYaw`, and the views picked by it: frame-items.js (map people, folk, you), prop-look.js (your
+      mount), friends.js, and director.js (its shot's own yaw, read before it builds its people).
+    - Plain words stay screen words: maps', rooms' and keepers' `dir`, a fresh view's `down`, cutscene and
+      story-scene words, the train ride. docs/CUTSCENES.md says which is which.
+    - A run's leader in its arena (WM-7, which came in with main's second merge) turns the same way, in a commit of
+      its own.
+  - opening.json: `face Kappi you`, once you are up.
+  - People in the debug log:
+    - a `person` draw tag (gpu-counters.js) in the sprites pass, the shadow maps, the reflection (both paths) and
+      your outline;
+    - walk-view-gl.js counts the people each frame draws. `peopleReport()` gives drawn, draws in all and by pass,
+      pictures and MB (webgl.js `gpuPictureBytes`: uploads only, with mip levels, and a normal map only where one
+      exists);
+    - debug-log.js: a `people` section, and `ppl: [drawn, draws, MB]` in the samples. Smoke checks the exported log
+      has the section, numbers only.
+  - Test maps' `lineup` (frame-items.js, map.schema.json): people who are only drawn (kind `line`: no taps, no talk,
+    no turning to you). Each faces a plain word (`dir`) or a world way (`face`, in degrees, as set pieces turn), and
+    can `walk` on the spot.
+  - `test_people` (build-test-scenes.py `t_people`, built with `--only=test_people`; the check-data snapshot
+    remade):
+    - the front row, the cast facing the camera: Chosen, Blake, Kappi, Juniper, Mo, Bertha, a clerk, an intern, two
+      folk, a boy, a girl;
+    - the middle row: one look at 8 world headings, 45 degrees apart, with you in its middle gap at the hub, so the
+      camera centres on the lineup at every turn;
+    - the back row: four people walking on the spot;
+    - two lantern posts for the night.
+  - tools/look-people.py (its output, validation/look-people/, is gitignored).
+  - Retired at the owner's word: tools/export-trainer-sprite-sheets.py, .github/workflows/trainer-sprite-sheets.yml
+    and docs/EDIT-TRAINER-SPRITES.md. ART-NOTES.md's wardrobe path is now game/data/wardrobe.json.
+  - Docs: the track file, ROADMAP, BRANCHES (the `track/characters` row), CHANGELOG, this entry.
+- The bench (look-people.py; a 390 x 844 phone at DPR 3, so the scene buffer is 860 x 1861, as CH-0 worked out; 25
+  people: the lineup's 24 and you; auto quality and depth of field off, quality step 0; means over 6 frames; counts
+  only, no timings):
+
+  | Stop (zoom) | Buffer px per art px, camera turned 0 / 35 / 90 degrees | A 1.75 m person, buffer px tall | Draws by day (people's) | By night (people's) |
+  | --- | --- | --- | --- | --- |
+  | Close (0.55) | 1.46 / 1.45 / 1.40 | 169 | 92-97 (64) | 131-136 (101) |
+  | Normal (1) | 0.74 / 0.74 / 0.73 | 86.5 | 97 (64) | 136 (101) |
+  | Far (1.7) | 0.39 / 0.39 / 0.39 | 45 | 97 (64) | 136 (101) |
+
+  - CH-0's arithmetic holds: 0.74 at Normal, 1.45 at Close, 0.39 at Far.
+  - People's draws, by pass: the sprites pass 25 (one each); the sun's two shadow maps 19 each (a shadow map draws
+    each picture once, as instances, for everyone showing it); your outline about 1. At night the two nearest lamps'
+    shadow maps add 19 and 18.
+  - People's pictures on the GPU: 41 uploaded (the walk frames drawn so far), 3 MB, the same at every shot.
+  - With 40 townsfolk wandering round them as well (`--crowd=40`, Normal, the camera unturned), 65 people drawn:
+    217 draws by day (184 people's: 65 sprites, 59 in each shadow map) and 332 at night (297 people's: the lamps'
+    maps add 57 and 56); 112 pictures, 8.4 MB (119 and 8.9 MB at night, as more walk frames are drawn). So a person
+    costs about 3 draws by day and 5 by lamplight, and a crowd under lamps is where people's draws add up.
+- Found (the brief and CH-0, checked):
+  - The exporter's cause: `game/data/gamedata.js` isn't gone. It is built by `npm run data` and gitignored, and the
+    workflow never built it, so all 30 runs failed (2026-10-24 to 27). SA-5's deletion of `game/art/people/` broke
+    nothing. CH-0's entry and the track file said otherwise; the track file is corrected.
+  - Room exit: only east and west doors were wrong, and the in-game test encoded the bug.
+  - Subtracting the camera's yaw everywhere would have broken the opening: its cameras look along -90 to -161
+    degrees, and its `face X down` means "toward the camera". Hence plain words stay screen words.
+  - Test maps draw no named people (the bench state has no map people), and tapping one can offer a Bean (a save
+    write). Hence the draw-only `lineup`.
+  - build-test-scenes.py without `--only` deletes 13 test maps other tools make (and gallery.json).
+  - Not fixed (outside this session): grass-build.js buildFarProps (:306) pools any prop whose group matches 'tree',
+    and 'streetlamp' does. So a scene with street lamps and no trees gets a ring of distant lamps (test_people showed
+    147 before it got lanterns; run towns with street lamps likely do too). A one-word fix for a renderer or towns
+    session.
+  - Not fixed (outside this session): the Studio's world map look and Camera section fail in CI's smoke on main as
+    here, with 404s for `game/art/billionaires/<species>.png` (musk0, kardashian0, ...): for a species with no rig
+    sheet, skeleton-rig.js `rigAtlas` (:501) falls back to a legacy picture the repo doesn't have. No fix exists yet;
+    PR #277's comment says so.
+  - Not fixed (not CH-1's): once a run's seam crossing fails on a page (the quick check's RL-8), a trainer battle
+    there never starts and a talk never opens: the quick check's RT-2 and Granny Juniper steps, which follow RL-8 on
+    its page, fail that way on main (07c9b284) too, and pass when run alone. The in-game test's "A run's road" fails
+    on main as here ("arrived but the view is still ...").
+  - Noted, not changed: the picture cap (`gpuState.texB`, webgl.js `trackTexture`) counts every picture with a
+    normal map, so people's pictures, which have none, count twice toward it.
+  - gamedata.js is 0.84 MB, not CLAUDE.md's 13 MB.
+  - In this container, Python Playwright must be 1.63.0: with the pinned 1.56.0, smoke skips its browser steps and
+    still passes.
+  - The quick check's picture baseline is not in git. One was made here from a worktree of the start (37f7b8dc, 42
+    pictures); it stays in this container.
+  - The edit hook gives `npm test` 50 s, and it takes about 94 s here, so the hook reports a failure that is only
+    its timeout.
+- Risky:
+  - Visible changes, for the owner's phone: the hub island's people and you, as the orbit camera turns; turned
+    rooms; the opening's walks and Kappi; leaving the lab. A person whose heading sits near the line between two
+    views turns as the orbit camera turns: correct, but new.
+  - Test maps can now draw named people, but only test maps (`test`) read `lineup`.
+  - Merges with other tracks that edit frame-items.js, walk-view.js or director.js.
+- Verified:
+  - After each change: lint, typecheck and `npm test` (1,582 unit tests on the merged tree, 13 of them new:
+    person-view 11, sprite-records 2). Smoke before each game commit, one at a time, its browser steps checked to
+    have run: 6 of 6 every time (3456d127, 09e00e64, 3a652cec, d56d41ad, a31f2d85, 6c9975f6, 0ee8ada7,
+    0a5b92b7, 912cfce2, df92c0bc, c98ad5aa).
+  - CI: the lint job green on every push (lint, types, unit and slow unit tests, data, modules, format, build).
+    Smoke on a0e4b141: 39 of 41, the two Studio checks failing as on main (see Found). Its two runs on c98ad5aa also
+    failed checks that passed on a0e4b141 and pass here on c98ad5aa: Behind things, Tall ground (it waits 20 s for
+    the GPU's answer on whether you're hidden) and the Studio's Model mode; on the slower run (28 minutes) also the
+    orbit, the pasture and a run's world (which main fails too).
+  - At the end of the phase, in this container (Python Playwright 1.63.0):
+    - look-people: the 18 shots and the crowd's 2, no page errors.
+    - A page check (a scratch script, not kept): the dark and mirrored copies of you and Chosen keep the frame's
+      width, anchor (mirrored: the width less ax), 66.5 px a metre and noNormal.
+    - The quick check against the "before" baseline (made from the start, 37f7b8dc): 36 of 41 steps pass. Its five
+      problems:
+      - three also in the baseline: Terraces (a prop in the air at the station), RL-8 (a run's seam crossing never
+        shows the next view) and room light;
+      - two new, not CH-1's: RT-2 (the pair talked but no battle started) and Granny Juniper (said nothing). They run
+        on the same page after RL-8 fails. Run alone on this branch, both pass; main (07c9b284) fails the same
+        three in a row the same way.
+      - The baseline's other two problems (the lab's room in place, the battle music's drums) passed here.
+      - Picture notes: 5 pictures differ (battle-double, battle-rain, phone-battle, phone-mast, room-lab); a re-run of
+        their steps flagged another 5 (battle-double, battle-rain, env-day, phone-battle, phone-walk). The ones
+        looked at show other moments (the battle camera's drift, the postcard, a battle menu still loading), not
+        people.
+    - The in-game full test (`--selftest`), here and on main (07c9b284) side by side under the same load: both fail
+      "A run's road" (arrived, but the view never changed) and "A room that opens in place" (the town's walking grid
+      changed after the room, 236 cells); that step's facing check, before it, passes, and run alone the step passes
+      on both. Here the opening's fall also drew 1 frame once: run alone three times each, the fall drew 19, 6 and 18
+      frames here and 18, 5 and 7 on main (the check wants 3), so that is the machine's load. The diagnostics test
+      didn't run on either (the full test's problems end the step first).
+    - The Studio check (`--only=sections,studio_test,checks`): ok, 32 sections, 0 errors on the game data.
+    - check:modules, format:check, check:data and build pass.
+- For the owner on the phone:
+  - New game: Chosen runs out of the lab face first, and Kappi turns to you once you're up.
+  - Walk round the hub island away from the camera: you show your back.
+  - Come out of Kappi's lab: you face out of the door.
+  - Turn the camera with people about.
+  - Export a debug log: its `people` section, and the samples' `ppl`.
+- Next: CH-2 (Spike 1, the figure baker) on `track/characters`. `personHeading` is the heading its figures turn to;
+  test_people and look-people are its bench. Its session was started at the owner's word; it plans only until this
+  entry is on the branch and the owner approves. Tag `ch-1-done` (the owner's).
+### Sound track SND-10 - water: soundscape.json, emitters from the scene, a recipe per water kind, falls by height, the surf on the tide, rain on water, wading, Surf, fishing - 2026-10-28
+Branch `track/sound` (main merged first: already up to date; the local clone was stale and was reset to
+origin/track/sound before any edit). Started by the planning session under the owner's standing instruction
+(2026-10-27): no Plan Mode, plan below, recommended options taken. 12 change commits, one cause each, plus docs; tag
+`snd-10-done` (for the owner to push) on this session's last commit. PR #292. Details: sound-track.md "SND-10 as built".
+- **Plan**: (a) the beds' recipes to game/data/soundscape.json in a commit that changes nothing (the loudness report
+  identical), then its water half: banks, a recipe per water kind, river lines, falls, fountain, wake, rain on water;
+  (b) logic/soundscape.js (pure, seeded): cells from the renderer's water grid (or the tiles), emitters (shores, river
+  lines, falls by height and their pools, cascades, fountains), the nearest few per recipe in buckets, level by
+  distance, the air's low-pass; (c) water banks baked by logic/sound-bake.js through the tracker's bank (van den Doel
+  bubbles, Farnell's babble), a player in audio/, sound.js keeping thin calls; (d) wading, Surf, fishing, plops, rain on
+  water; (e) the Sound test's rows and the report's water rows at 1, 3 and 10 m, trims from it; (f) the Studio card;
+  check-sound on every commit in a worktree; docs.
+- **Changed**: new game/data/soundscape.json and game/data/schema/soundscape.schema.json (index.json, check-data.mjs,
+  game-data.js `SOUNDSCAPE`, the GameData type); new game/js/logic/soundscape.js, game/js/audio/soundscape-player.js,
+  game/js/soundscape-here.js (script tags on both pages where they are used; studio/js/logic-worker-modules.js);
+  game/js/logic/sound-bake.js (`bubble` and `babble` zones); game/js/audio/tracker.js (`bankAdd`, `bankBuffer`,
+  `sampleShot`, the World reverb send); game/js/logic/ambience-sound.js (`AMBIENCE_BEDS` moved to data,
+  `AMBIENCE_SOURCES` the fire alone); game/js/sound.js (thin calls: the player at initAmbience, `soundscapeHere` in
+  updateAmbience, the preview, `splash` and `fish` effects, wading in the footstep loop and no steps on Surf, plops by
+  size, the debug log's `water` line; `nearestWaterSound` gone); game/js/sound-test.js (a row per water recipe);
+  thin hooks in walk-view.js (surfMount), fishing.js, walk/effects.js, walk/water.js, town-square.js;
+  studio/js/music-editor.js (the World sounds card); tools/check-sound.py (the water rows), tools/check-studio-github.py
+  (the card), tools/test/ (soundscape.test.mjs new; sound-bake, tracker, ambience-sound, the check-data snapshot);
+  studio/art-code-refs.json.
+- **Fingerprints**: 194, **0 changed** on every commit (`check-sound.py --loudness`, each commit in its own worktree).
+  The move commit's report identical to the commit before; the next five too; from the player commit on, the report's
+  water lines change on purpose.
+- **Water loudness** (LU under the route song at 1 m / 3 m / 10 m; every one 12 LU or more under at 1 m, every loudest
+  3 s 8 or more; the full table in sound-track.md): brook -13.6/-15.9/-26.1; river -13.5/-15.7/-23.5; rapids
+  -13.1/-15.3/-23.3; a 6 m fall -13.5/-17.0/-27.9 and its pool -14.0/-17.7/-31.6; a 1.5 m fall -14.0/-18.5; the surf
+  -14.2/-16.3/-23.4 (its loudest 3 s -9.9); fountain -14.0/-17.9; hot spring -15.0/-19.4; reef -15.3/-17.5; lake
+  -15.8/-18.3; cave drips -15.9/-19.8; lava -15.9/-20.0; canal -18.0; rain on water -18.0; spring, marsh, pond, oasis
+  -19.0 to -19.6; bog -20.0; ice -28.2; Surf's wake -14.1. Copperleaf's square -12.8 (-11.2 before).
+- **Memory and cost** (headless Chromium, 44.1 kHz): the water's banks 1.32 MB; with the beds' noise and the tracker's
+  3.84 MB of the 6 MB budget (about 5.5 MB with SND-9's harp and impulse). Their bake about 75 ms of work in Node,
+  every step under 1.7 ms there; in a busy headless page a step ran 15-33 ms. Copperleaf's emitters (14,010 water
+  cells): 20.7 ms the first time, 2.3 ms warm, once per scene; the nearest voices 0.1 ms an update. Events about 45 a
+  second at the foot of test_water's fall.
+- **Risky or unfinished**:
+  - Claude can't hear: every water recipe is a port of SND-7's listening page judged by numbers; the owner's ears decide
+    (the debug menu's Sound test and the Studio's World sounds card play each).
+  - The first build of a big scene's emitters (Copperleaf 20.7 ms in headless Chromium, cold) runs in one go on the
+    main thread on arrival; a phone may take longer. Slice it if the Load track's hitch list shows it.
+  - A bake step ran 15-33 ms in a busy headless page although the same steps are under 2 ms in Node (the page's own
+    pauses, as SND-9 saw); the debug log's `bank.stepMaxMs` and `lastSlicesMs` show the phone's.
+  - Cave drips make the tracker's convolver (SND-9: 8-12 ms on the main thread once) the first time a cave's water is
+    heard.
+  - Copperleaf has no `falls` entry yet (WA-11 waits for the owner's yes on pictures): its fall sounds from the
+    recipe once placed; falls were tested in test_water and in the Sound test.
+  - Frogs, insects and birds by water stay SND-14's.
+  - Intermediate commit ef3ef5bc fails lint's art-code-refs check (studio/art-code-refs.json); the next commit
+    refreshes it. Every other check passes on each commit.
+  - CI `smoke` on PR #292: the failures that also fail on main (RL-8, the Studio's missing
+    `game/art/billionaires/*.png`, the landmark field's Auto) are explained on the PR already.
+  - Merging with the VFX track (VFX-8, e904ad77, PR #295; the planning session's trial merge): docs/HANDOFF.md (keep
+    both), studio/art-code-refs.json (`node tools/art-code-refs.mjs`) and the check-data snapshot (`node --test
+    --test-update-snapshots tools/test/check-data-snapshot.test.mjs`, said in the commit) conflict; whichever reaches
+    main second resolves them that way.
+  - The sound track now runs two lanes on `track/sound` (the planning session, 2026-10-28): this world lane and SND-11's
+    music lane. 8e5ecb67 (the sound baseline's ui.json) was written just before that rule reached this session.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit (the one art-code-refs exception above);
+  `npm test` 1627 of 1627 before the merge of main (after it 1689 of 1690: "1,000 maps in under a second" at 1045 ms,
+  timing on a loaded machine, as in SND-8a; CI's lint job failed on the same test); `npm run check:modules`,
+  `format:check`, `check:data` (177 files fine), `tools/check-data-text.py` (CI's fast check caught backticks in
+  soundscape.json's about text: fixed in 1bd0e58f). `check-sound.py --loudness` on every commit in a worktree: 194, 0
+  changed; the first six reports identical to the base's; no ceiling warning from fbb3ec3e on; after merging main
+  (653ba92c, the merge session's; 8e5ecb67 gives main's new UI sounds their brightness, RMS unchanged): 199, 0 changed,
+  no warning. `npm run check:smoke`: no problems on e5dafaaf and 4eaf48bc. `check-quick.py --steps=sound,song,music,
+  "debug menu",shoreline,animals` on 4eaf48bc: 9 of 10 (every sound step; "Walking left and right..." fails on main
+  too). The full `npm run check:quick` on 1bd0e58f: 36 of 41 (1630 s); every sound step passed; Terraces, RL-8 and
+  "Walking left and right..." fail on main too; RT-2's route trainers and Granny Juniper failed under load and passed
+  run alone on the merged head (as in SND-8b). `check-fast.py --only=pasture` passed alone (CI's fast check failed it
+  once on 1bd0e58f, beside Tall ground and Copperleaf's orbit walk, which SND-8b saw fail and pass the same way).
+  `check-studio-github.py --only=music`: ok (the World sounds card). Browser probes on test_water and Copperleaf.
+- **Decided for the owner, to review**:
+  - WA-8's water sounds moved here (recommended, already decided in SND-8a); WA-8 keeps the water phone pass and the
+    quick-check baseline (water-track.md's WA-8 row and Ask line say so).
+  - The Studio card made in this session (recommended), as a list of recipes with ▶ 1 m / 3 m / 10 m.
+  - Mine: the emitters read the renderer's water grid (as drawn), the tiles only without one; one voice per recipe, two
+    for the lines (brook, river, rapids, lake, reef, surf), at least 8 m apart; level 1 within 2 m, then 6 dB a doubling
+    (3.6 for lines), 0 at the range; air 16 kHz / (1 + d/4), at least 900 Hz; a fall's height √(h/3), at most 1.6× as
+    loud and 1.8× as far; falls from 3 m are "tall"; a river is a line 2.5 m wide or more; at most 48 events an update,
+    a bubble under 0.003 of its voice's level never made; banks: `drop` (rise 0.12) and `bubble` (0.7) zones every 6
+    semitones from midi 50 to 115, a 4 s babble loop; the coast-wide sea bed kept (SND-8a's, 0.2) under the surf; the
+    surf on the tide by the hour (9:00 and 21:00 highs, WA-4's cycle); the water rides the World slider; cave drips
+    send 0.65 to the reverb and set the cave's place, everything else the open air's; rain on water on every surface
+    but lava and ice; wading a splash by depth (0.12 at the edge to 0.5 at full depth) on the World bus; no footsteps
+    on Surf (the wake instead); fishing's sounds on the World bus like the steps; plops by size (a coin 0.12, a frog
+    0.3, a fish 0.4, a diving bird 0.55); the cave kind's recipe `drips`; the report's falls at 1.5 and 6 m.
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test, then the places): a brook, a
+  river and rapids at 1, 3 and 10 m; the sea at the shore and from far off (Copperleaf's beach, then inland); a
+  waterfall (6 m and 12 m) at its foot and from the top (and test_water's fall); a pond at night (the pond row with
+  "Crickets at night" after it); wading in and out of shallows; Surf on and off and riding; fishing (cast, a nibble,
+  the bite, reeling, the catch); "Rain on a lake" and real rain on Copperleaf's pond; cave drips. Listen for: far water
+  soft and low, near water bright but never louder than the music, no clicks or hiss, the river in front of you as
+  you walk beside it. Then export a debug log and check `audio`: `water` (voices, sources, events, dropped; the
+  scene's emitters and their ms) and `bank` (babble, bubble, drop all baked; stepMaxMs).
+- **Next**: SND-11 (stems and ensembles: the tick's patterns as pure functions, stems, `instruments` and `ensembles` in
+  music.json, `gb` reserved for today's code, GB Sounds, the first ensembles, the Studio's Instruments tab).
+
+### Sound track SND-9 - bake and reverb: instruments from numbers, the tracker's bank, one reverb, a harp in the Sound test, a brightness fingerprint - 2026-10-28
+Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
+standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 9 change commits and the
+baseline commit, one cause each, plus docs; tag `snd-9-done` (for the owner to push) on this session's last commit.
+PR #292. Details: sound-track.md "SND-9 as built".
+- **Plan**: (a) brightness (zero crossings per 50 ms) beside the RMS in check-sound.py, a tool-only commit, RMS
+  identical, then the baseline once with plain `--baseline`; (b) logic/sound-bake.js, pure DSP, reusing the beds' seeded
+  noise, its Node tests, script tags on both pages; (c) the tracker's bank (a module-level cache by instrument and rate,
+  `bankReady`, setTimeout slices, the least recently used zone dropped within 6 MB with the beds' noise) and
+  `T.sampleVoice`; (d) one lazy reverb with the tracker, post-fader sends, places by send level; (e) a harp in the
+  Sound test, the bake's figures in the debug log; check-sound on every commit; docs.
+- **Changed**: new game/js/logic/sound-bake.js, tools/test/sound-bake.test.mjs; game/js/audio/tracker.js (the bank,
+  `T.bankReady`, `T.bankStats`, `T.sampleVoice`, the reverb: `T.reverbSend`, `T.reverbReady`, `T.reverbLevels`,
+  `T.reverbPlace`, `T.reverbStats`); game/js/sound.js (the beds' noise bytes and the master to the tracker, the sends
+  in `applyVolumes`, `bank` and `reverb` in `soundDebugLines`); game/js/sound-test.js (the harp row);
+  game/index.html and studio/index.html (script tags; the Studio also loads ambience-sound.js now);
+  studio/js/logic-worker-modules.js; tools/check-sound.py; tools/test/tracker.test.mjs (+4 tests);
+  validation/sound-baseline/ (brightness added); studio/art-code-refs.json.
+- **Fingerprints**: 194, **0 changed** on every commit (`check-sound.py --loudness`; the intermediate commits in a
+  worktree). The baseline commit (7f4faf22) adds a `zc:<part>` array beside each RMS array; the RMS values checked
+  against the commit before (0 differ) and a second run after writing it: 194, with brightness, 0 changed. No song,
+  jingle, cry, bed or UI sound changed; the loudness report is the same as SND-8b's.
+- **Memory and bake time** (headless Chromium at 44.1 kHz; the phone's log will say what it is there): the harp 10
+  zones, 1.16 MB (1.26 MB at 48 kHz); with the beds' noise (2,412 KB), the tracker's noise and the impulse (413 KB)
+  4.09 MB of the 6 MB budget. The bake 36-57 ms of work in 17-23 slices, most 2.1 ms, the slowest 2.7-4.4 ms (12.7 ms
+  with a second browser beside it); the impulse's own work 11-18 ms in slices; the convolver's buffer assignment 8-12
+  ms in one go (63 ms under load). The harp -33.6 LUFS alone (1.8 LU under the route song), Copperleaf's room about 12
+  dB under it, a cave's about 2.5 dB.
+- **Risky or unfinished**:
+  - Claude can't hear: the harp (a Karplus-Strong pluck, warm low-pass, its tail looped) and the room are judged by
+    numbers; the owner's ears decide.
+  - The convolver's buffer assignment is one main-thread step (8-12 ms here; a phone may take longer) on the harp's
+    first press; SND-11 should make the room at a quiet moment (a load) or keep it off the low graphics tier if the
+    hitch list shows it.
+  - A slice can run past 4 ms by one step on a busy page (the slowest step 0.9-4.1 ms in Chromium, under 1 ms in Node);
+    the debug log's `bank.lastSlicesMs` and `stepMaxMs` show the phone's.
+  - Nothing bakes on arrival yet (no song names an instrument until SND-11); the bank and reverb are heard only in the
+    Sound test.
+  - `fm` and `osc` zones render in one step (tested, unused); SND-11 slices them when an instrument uses them.
+  - CI `smoke` on PR #292: the failures that also fail on main (the Studio's missing `game/art/billionaires/*.png`,
+    the landmark field's Auto, RL-8) are explained on the PR already.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `node --test tools/test/tracker.test.mjs
+  tools/test/sound.test.mjs tools/test/sound-bake.test.mjs` (54 pass: sound-bake 13, tracker +4); `npm test` 1605 of
+  1605; `npm run check:modules` (0 changed), `npm run format:check`, `npm run check:data` (176 files fine; its
+  Copperleaf bridge warning is main's too). `check-sound.py --loudness` on every commit (above: 0 changed, no loudness
+  warning). `npm run check:smoke`: no problems (6 of 6). `check-quick.py --steps=sound,song,music,"debug menu"`: 9 of
+  9 (Song fingerprints: 194, with brightness, 0 changed). `check-studio-github.py --only=music`: ok. Browser probes
+  (headless Chromium): the Sound test's harp from its own section HTML bakes 10/10 zones in slices, makes the reverb,
+  plays 55-72 notes, and Stop leaves `soundEngine.test` false and the harp gone; the debug log's `bank` and `reverb`
+  lines filled; offline renders at 48 kHz with no NaN. The full `npm run check:quick`: 38 of 41 (1489 s); every sound
+  step passed. The three problems fail on main too, as in SND-8a's and SND-8b's entries: Terraces (train_station
+  floats in Copperleaf), RL-8 (a run's seam view) and "Walking left and right..." (room light). CI on PR #292: lint and
+  rules green; smoke red on the three failures already explained on the PR (RL-8, the Studio's missing
+  `game/art/billionaires/*.png`, the landmark field's Auto). Not fixed: outside SND-9.
+- **Decided for the owner, to review**:
+  - Bake on the main thread in setTimeout slices (already decided as recommended); the slice budget 2 ms so a slice
+    stays under the 4 ms rule with one step over; a Worker only if the phone's log shows hitches.
+  - Mine: the proof instrument is a harp (Part 2's Copperleaf palette), one zone every 6 semitones, a 40 ms looped tail;
+    the bank's budget counts the beds' noise, the tracker's noise and the impulse; a dropped zone plays from the
+    nearest zone left and is baked again; the reverb's places as send levels (open 0.6, town 0.8, forest 1, room 0.7,
+    cave 1.8) and no second convolver for caves; the room's return ×3.5 so a send reads as the room's level; the
+    harp's send 0.35; the Studio loads ambience-sound.js (sound-bake.js reuses its noise); the brightness tolerance 2 %
+    or 2 crossings; the Sound test's harp plays alone (the place's song stops for it, as a test song does).
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test): "Play the harp" in Copperleaf
+  (a little room), then in a cave (more), on a route and with no reverb: a soft, warm pluck in tune high and low, no
+  click at a note's start or as a long note holds, the room fading smoothly; Stop and closing the menu fade it out.
+  Then export a debug log and check `audio`: `bank` (bakeMs, mb and withOtherMb, slices, sliceMaxMs, stepMaxMs,
+  lastSlicesMs) and `reverb` (bakeMs, setMs); and the Load track's hitch list shows no hitch at the first press.
+- **Next**: SND-10 (water: `soundscape.json` and emitters, a recipe per water kind, falls by height, rain on water,
+  wading, Surf, fishing and water life; WA-8's water sounds).
+
+### Sound track SND-8b - mix fixes: the echo bugs, a trim per song (the hub song up), the rain's muffle, iOS "interrupted" - 2026-10-28
+Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
+standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 8 change commits and the
+baseline commit, one cause each, plus docs; tag `snd-8b-done` (for the owner to push) on this session's last commit.
+PR #292. Details: sound-track.md "SND-8b as built".
+- **Plan**: (1) `D.echo ?? 0.15`; (2) a song's echo send after its fader, one helper for play, crossfade, stop and
+  duck; (3) the effects' own echo (jingles, heal, seal); (4) `old.fade` removed; (5) `trim` per song, both schema
+  places; (6) Copperleaf's trim from the loudness report, about 1.5 LU under the route song; (7) the rain's music
+  low-pass to 4 kHz; (8) iOS "interrupted"; each commit rendered against the one before in a worktree; (9) the baseline
+  once, plain `--baseline`; (10) docs; the VFX track told before and after.
+- **Changed**: game/js/audio/tracker.js (`fader`, `unplug`, `level`; `sg.echo`, `sg.level`; `synthVoice`'s `echoTo`;
+  `echoLine`, `T.echoFx` from `opts.fx`; `old.fade` gone; `refresh` applies a new trim); game/js/sound.js (`fx` to the
+  tracker; heal and seal on `echoFx`; the rain cut 4000; `soundWake`); music.json (copperleaf `trim: 13.5`); the music
+  schema (`trim` in `$defs.recipe` and the song's list); studio/js/music-editor.js ("Level trim (dB)" on the Recipe
+  card); tools/test/tracker.test.mjs (+5 tests); validation/sound-baseline/ (written again); studio/art-code-refs.json.
+- **Fingerprints changed, and why** (each commit rendered against the one before it with `check-sound.py
+  --loudness`): `D.echo ??` none; the echo after the fader **20** (cave, hazel, fall, meadow, spore, crystal, every
+  part, from 0.35 s: the fade-in now reaches the echo; other songs move under the 1 % tolerance); the effects' echo
+  **the 12 jingles** (their tails: the Sound effects bus, not Music's); `old.fade` none; `trim` none (no song wrote
+  one: the level is exactly 1); Copperleaf's trim **copperleaf day and night**; the rain cut none; `soundWake` none.
+  Baseline written once with plain `--baseline` (b63734f4); cries.json kept as committed (only its key order differed).
+- **Loudness**: copperleaf -15.2 -> **-1.7 LU** under the route song (-33.6 LUFS, peak -16.1 dBFS); the coast-wide sea
+  (-18.0) and a fountain at 3 m (-15.2) now 13-16 LU under the hub song. Every other song as before.
+- **Risky or unfinished**:
+  - Claude can't hear: the hub song +13.5 dB is from the K-weighted report; the owner's ears decide (the Studio's new
+    "Level trim (dB)" slider changes it live).
+  - Jingle echo tails now follow the Sound effects slider and sit a little louder at default sliders (the effects bus
+    is above Music's); the echo returns to the effects bus unpanned.
+  - `soundWake` resumes on every touch even when running (a no-op promise); 'interrupted' was probed with a faked
+    state in headless Chromium, not on an iPhone.
+  - CI `smoke` on PR #292 is red from two Studio steps that fail on main too (the Studio asks for
+    `game/art/billionaires/*.png`, gone; "the landmark field doesn't offer Auto (the great oak)"); Tall ground, Behind
+    things and "Copperleaf is the island" (its timed orbit walk) each failed in one run and passed in another of the same
+    commit or on main; A run's world (RL-8) fails on main. Explained
+    on the PR; not fixed (outside SND-8b).
+  - Merging with the VFX track (VFX-8, c1a9f00b on track/vfx): the planning session's trial merge into b63734f4 leaves
+    sound.js and hooks.js clean; docs/HANDOFF.md (keep both entries) and studio/art-code-refs.json (regenerate with
+    `node tools/art-code-refs.mjs`) conflict. Whichever track reaches main second resolves it that way.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `node --test tools/test/tracker.test.mjs
+  tools/test/sound.test.mjs` (37 pass); `npm test` 1591 of 1592 (the one failure, "1,000 maps in under a second",
+  is timing on a loaded machine, as in SND-8a; not touched here); `npm run check:modules` (`soundWake` exposed);
+  `npm run check:data` (176 files fine; its Copperleaf bridge warning is main's too). `check-sound.py --loudness` on
+  each commit against the one before it (above); after the baseline commit 194, 0 changed. `npm run check:smoke`: no
+  problems (6 of 6). A browser probe of `soundWake` with a faked state: 'interrupted' suspends then resumes, 'running'
+  resumes, 'closed' does nothing, no page errors. `check-studio-github.py --only=music`: ok. The full `npm run
+  check:quick`: 35 of 41 (1975 s); every sound step passed (Sound settings, Animals and world sounds, Sound effects and
+  jingles, Run music, Run map music, Battle music, Debug menu, Song fingerprints 0 changed). Of the six problems,
+  Terraces (train_station floats), RL-8 (a run's seam view) and "Walking left and right..." (room light) fail on main
+  too (SND-8a's entry); RT-2's route trainers, Granny Juniper's line and the lab's room in place failed under load and
+  passed run alone (`--steps="route trainers","Granny Juniper","rooms laid in"`, 3 of 3).
+- **Decided for the owner, to review**:
+  - The music's rain low-pass softened to 4 kHz (recommended, already decided); the run map's forecast cut-offs
+    (music.json `run.weather`, rain 2200) left as they are.
+  - Levels by internal trims, the sliders' defaults kept (recommended, already decided): copperleaf +13.5 dB.
+  - Mine: the hub song 1.7 LU under the route song (the brief said about 1.5; 13.5 is the Studio slider's 0.5 dB step);
+    the trim's range -24..+24 dB; a "Level trim (dB)" slider on the Studio's Recipe card; the effects' echo is a second
+    copy of the music's (same 0.27 s, 0.28, 0.16), and a jingle played on the music bus (Settings' Music test) keeps
+    the music's echo; `old.fade` simply removed; `soundWake` also on showing the page.
+- **The owner's listening list** (phone, silent switch OFF): with Sound effects at 0, a victory or level-up leaves no
+  echo; a jingle over a song ducks the song's echo too; after Siri or a call, a tap brings sound back; Copperleaf's song
+  now sits above the sea and the fountain (walk the square and the shore; the Sound test's Copperleaf scene); a song's
+  start fades in with its echo (cave or crystal); rain muffles the music less.
+- **Next**: SND-9 (bake and reverb: `logic/sound-bake.js`, the tracker's bank, one reverb bus, a brightness
+  fingerprint).
+
+### Sound track SND-8a - calm beds: their own soft noise, drift, start and stop, re-voiced; a loudness report; a Sound test - 2026-10-28
+Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
+standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 27 commits, one cause each;
+tag `snd-8a-done` (for the owner to push) on this session's last commit. Details: sound-track.md "SND-8a as built".
+- **Plan**: (1) the after-edit hook runs the sound tests; (2) a BS.1770 meter and `check-sound.py --loudness`, measured
+  on the code before any change; (3) logic/ambience-sound.js with the beds as recipes on their own seeded pink and
+  brown loops, today's filters kept; (4) drift for the LFOs, then start and stop, then a preview entry point, then
+  water buckets; (5) one commit per re-voiced bed (rain, stream, fountain, leaves, town, wind, sea, fire, crickets);
+  (6) birds, rooms' night, footsteps (varied, then the World bus); (7) trims from the report; (8) the debug log's
+  audio lines; (9) the Sound test and the quick check's two steps; (10) docs.
+- **Changed**: see the list in sound-track.md. New files: game/js/logic/ambience-sound.js, game/js/sound-test.js,
+  tools/sound-loudness.mjs, tools/test/ambience-sound.test.mjs, tools/test/sound-loudness.test.mjs. Touched:
+  sound.js, audio/tracker.js (two counters only), debug-log.js, debug-menu.js, game/index.html (two script tags),
+  studio/js/logic-worker-modules.js, studio/art-code-refs.json, tools/check-sound.py, tools/check-quick.py,
+  tools/after-edit.mjs.
+- **Loudness, LU under the route song** (before -> after): rain +4.6 -> -13.9; falls at 3 m -5.2 -> -13.0; leaves
+  -7.1 -> -18.2; crickets -7.4 -> -19.0; fountain -8.3 -> -15.2; stream -10.1 -> -14.7; fire -12.3 -> -16.8; the sea
+  coast-wide -13.5 -> -18.0; birds' loudest 3 s -20.0 -> -27.1; steps -29.5 -> -27.4 (softer, and now heard in a
+  phone's band). Every bed is 12 LU or more under; the 2-6 kHz share of rain fell from 50 to 11 %. Copperleaf's
+  square as a scene: -7.1 -> -11.2 (the hub song itself is still 15 LU under the route song: SND-8b).
+- **Risky or unfinished**:
+  - Claude can't hear: every re-voicing is a sketch judged by numbers and the listening page. The owner's ears decide.
+  - Commits from the beds' recipes up to the debug lines fail lint's art-code-refs check (sound.js line numbers in
+    studio/art-code-refs.json); the Sound test commit refreshes it. Every other check passes on each.
+  - Footsteps now follow the World slider and its fade-in and duck: on arrival in a place the first steps are
+    quieter for about 3 s.
+  - The loudness scenes are made-up mixes of beds, not readings of the real places; the report renders at 44.1 kHz.
+  - The debug log's late-step count is high in headless Chromium (168 in 13 s, from software-rendered frames); the
+    phone's log will say what it is there.
+- **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules` (0 changed); `node --test
+  tools/test/tracker.test.mjs tools/test/sound.test.mjs` (33 pass), `ambience-sound.test.mjs` (13),
+  `sound-loudness.test.mjs` (6); `npm test`: all pass but run-map-checks' "1,000 maps in under a second" (1036 ms,
+  timing on a loaded machine; not touched here). `python3 tools/check-sound.py --loudness`: 194 fingerprints, 0
+  changed, no loudness warning. `check-quick.py --steps=sound,song,music,"debug menu",animals`: 8 of 9 passed; Battle
+  music failed once ("wild: no battle cue") while a second browser ran beside it with 13-27 s shader stalls, and passed
+  alone. Browser probes: the bucketed water lookup equals the scan at 2,400 positions; the Sound test plays a song and
+  a bed, stops on close and leaves the save unchanged, buttons 56 px tall; the debug log's audio lines filled.
+  `npm run check:smoke`: no problems (Phone, Actions sheet, the in-game full test's one step).
+  The full `npm run check:quick`: 38 of 41 steps passed (1383 s). The three problems fail on main (07c9b284) too, run
+  the same way: Terraces (train_station floats in Copperleaf), RL-8 (a run's seam crossing never shows the next view)
+  and "Walking left and right..." (here at room light's night value; on main it stops earlier, at the settings tabs'
+  sizes, so room light isn't reached there; this session touched no lighting code). Noted, not fixed: outside SND-8a.
+- **Decided for the owner, to review**:
+  - WA-8's water sounds move to SND-10 (recommended; nothing built here).
+  - The music's rain low-pass softens to about 4 kHz in SND-8b (recommended; untouched here).
+  - Levels by internal trims, the sliders' defaults kept (done: bed trims in AMBIENCE_BEDS, the coast-wide sea 0.35 to
+    0.2).
+  - Footsteps on the World bus (done).
+  - Mine: the meter lives in tools/ (not logic/); the report's scenes are made-up mixes; wind was re-voiced too (not in
+    the draft's list: rain and wind bother the owner); falls, still water, lava, cave and room keep today's filters with
+    drift and a trim (SND-10 rebuilds water); the cave keeps its 49 Hz tone (only while the cave bed plays); the
+    Sound test sits after "Places and test scenes".
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test): rain, storm wind, crickets,
+  birds, a campfire at 1 m and 3 m, a stream and a fountain at 3 m, the sea, Copperleaf's square with the route song
+  playing; steps on a lawn, stone and boards. Then in play: Copperleaf (the sea never covers the hub song once SND-8b
+  lifts it), forced rain, a night, a forest, walking and running. Listen for hiss, whine or buzz (there should be
+  none), one bird at a time, soft varied steps; export a debug log and check `audio`: few beds live, late steps near 0.
+- **Next**: SND-8b (mix fixes: the echo bugs, the songs' trims with copperleaf up about 15 LU, the rain's music
+  low-pass, iOS "interrupted"; the baseline written again).
+
+### Sound track SND-7 - Part 2 planned: layered music, gentle world sounds, water (research, a listening page) - 2026-10-27
+Branch `ccr-1e8a9924-tt5x1q`, at main 07c9b284 (`track/sound` doesn't exist yet). Plan Mode, plan approved after four
+questions. Docs only: no game code, data or art changed; plus a private listening page (nothing committed). Tag
+`snd-7-done` (for the owner to push) on this session's last commit. PR #285 (draft).
+- The owner's brief: expand the sound system with more layers and complexity; music with more style and layers, not
+  fully 8-bit; environment sounds never too loud or obnoxious; better water "and stuff"; research online, suggest.
+  Answers: music **a mix of Chip+ and DS-era Pokémon**; **synth only**; **all four** environment groups bother them
+  (water; rain and wind; birds and crickets; steps, fire, the town's murmur); **all four** layer ideas (a walking beat,
+  street musicians, weather and night, building intensity).
+- Changed (one cause per commit):
+  - docs/phases/sound-track.md: Part 1's corrections (the deadline version gone since RL-R2; 194 fingerprints, not
+    143; footsteps every 1.12 m of gait, not 0.33 m); **Part 2** (a `Branch: track/sound` line; the answers; what the
+    code does today; the research with links; the design; sessions SND-8a, 8b, 9-16; draft steps for 8a, 8b and 9;
+    SND-11's seams; Ask me before; risks; key files; verification); then refined by a code review (SND-8 split so
+    8a changes no fingerprint; "stems", since `musicParts` already means versions; `logic/sound-bake.js`; the
+    reverb's post-fader sends; SND-13 may run before SND-12); then the page's measurements and link.
+  - TESTING (the deadline version gone, 194 fingerprints), water-track (WA-8's water sounds point at SND-10), ROADMAP
+    (Part 2), BRANCHES (this branch; `sound`'s tip 8f5d43eb is in main, so nothing is left on it).
+- **The listening page** (private, the owner's): https://claude.ai/artifact/GuTVE9L1WfjFWVc4NPe9oh. Today vs Calm for
+  nine world sounds (sound.js ported line for line), eleven new water sounds with a distance slider, and Copperleaf
+  and Route (the game's tracker.js copied in unchanged) as GB, GB level-matched, Chip+ and Chip+ DS, with the four
+  layer ideas as switches. Levels shown in LU against the route song.
+- Found, measured on the page's ports (K-weighted, the game's default mix, beds 3 dB under a song):
+  - Rain is **7.8 LU louder than the route song** (while the music is low-passed to 2.2 kHz); crickets −4.1 LU; a
+    fountain at 3 m −5.1; a stream at 3 m −6.8. The hub song is **15 LU under the route song** (19 dB by RMS), so in
+    Copperleaf the sea sits 5.1 LU and a fountain 9.9 LU over it.
+  - Every bed is one 1-second white-noise loop with a sine tremolo (depths over 0.5 swing the gain negative); the 14
+    beds keep ~120 nodes running even silent; `updateAmbience` scans 14,010 water cells in Copperleaf every 200 ms.
+  - Placed waterfalls (`sc.falls`) are silent; every still water kind plays one 520 Hz "pond"; a sea scene plays the
+    sea for rivers too; fishing's cast and bite play a grass footstep; about 5 thunderclaps in 6 are silent, and none
+    plays with reduced motion or flashes off; rooms read night as 0 (daytime birds at night, no rain on the roof).
+  - Echo: jingles and the heal and seal effects echo on the music bus; echo tails skip crossfades and ducks;
+    `echo: 0` would play as 0.15 (no song writes 0).
+- Risky or unfinished:
+  - Nothing in the game changed. The page's calm and new sounds are sketches for listening, not SND-8a's final code;
+    its bands are its own code, not the SND-9/11 engine.
+  - Levels were measured offline in Chromium at 48 kHz, not on a phone; a phone speaker drops most of the lows, so
+    the sea, the tall fall and the bass read lighter there.
+  - The page uses one ConvolverNode per room it plays; its cost on the owner's phone is unmeasured.
+- Verified: `git diff` reviewed; research links opened or returned by search; the page's sounds rendered offline in
+  headless Chromium (no NaN, peaks −14 dBFS or lower), then clicked through at 390 px in light and dark with no console
+  errors and no sideways scroll. No game check applies to a docs-only change.
+- Decisions (from the code review, written into Part 2): SND-8a first (beds, the loudness report, the debug log's
+  audio lines, a Sound Test v1; no fingerprint changes), SND-8b after (the mix fixes, the baseline written again);
+  new names `musicStem*`, `musicLayer*`, `soundBake*`; the bake module in `logic/`.
+- Questions waiting for the owner (Ask me before, the first four before SND-8a): WA-8's water sounds to SND-10; the
+  music's rain low-pass (soften to ~4 kHz); levels by internal trims, keeping your sliders; footsteps on the World bus.
+- Next session starts with: the owner listens to the page on the phone (silent switch off) and answers those four;
+  makes `track/sound` from main (or this branch before PR #285 merges); SND-8a starts there.
+- **The owner afterwards** (2026-10-27): asked whether the jingles improve too. They didn't (Part 2 only moved their
+  echo and tuned their duck), so **SND-17, jingles and stingers**, joins the plan after SND-11. Then: "Continue with
+  next steps in this plan automatically in new sessions. Automatically approve plans." Part 2's "How the sessions run"
+  says how, as the UI track's Part 2 does: this session starts each step in a new cloud session on `track/sound`; a
+  step takes the recommended option for every open choice and "Ask me before" item and lists it under "Decided for
+  the owner, to review"; phone checks are listed, not waited for; merges to main stay the owner's. So the four asks
+  above are taken as recommended unless the owner says otherwise.
+- `track/sound` made by this session at that word, from this branch's head (so it carries Part 2 before PR #285
+  merges); SND-8a started in a new session on it.
 ### UI track - Part 2 checked: every skipped check on all of Part 2 merged, and the fixes (UI-8b..UI-18, WM-5b, WM-6, SY-1..SY-3, VFX-5) - 2026-10-28
 Branch `claude/ui-checks-all`, made from UI-17's `claude/ui-17-idle-life` (#300), which held main and every Part 2
 step. Merged in (merges, not rebases): main (nothing new); `track/ui` (UI-8b, #276: docs conflicts, the newer lines
@@ -615,6 +1776,269 @@ on the HUD; a boss's name slams in).
 - Next: the session that runs every skipped check and fixes what they find (the UI plan's end); SY-6 can reuse
   `<pb-foil>`'s look; VFX-16 and RL-14b can call `pbNameBanner`.
 - Tag to suggest (sessions can't push tags): `ui-17-done` on this entry's commit.
+### Style track SY-7 - the Bureau in the world: red tape, its checkpoint sign with the emblem, loose forms - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-6, 9c5fbe5d) was
+fast-forwarded in; main had nothing new. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-7, plus
+UI-16a/b from SY-5). Tag `sy-7-done` is for the owner to push (the git proxy refuses tags). Nothing in battle was
+touched (no hitFx, join intro, battleStageFlash or sprite shader), so the VFX session wasn't messaged.
+- Changed:
+  - **Red tape** (tools/build-props-routes.py, the props' own build script; rerun, models and baked pictures remade):
+    `bureau_barrier` gets two red wraps round its board, a hanging end and a tape strung between its legs in a stepped
+    sag; `bureau_crate` gets two bands crossed over it like a parcel and one over the small crate. The tape is the
+    scenery's red (#DE4048, `TAPE`), the wax seal's family.
+  - **`bureau_sign`** (new prop, same script): a slate board on two posts, mustard edges, a red tape strip at its
+    foot, and the emblem as a fixed decal (`face: 'fixed'`, never mirrored). The decal,
+    scene/next/decals/bureau_emblem.png, is made from art/ui/bureau.svg by the script (`emblem_decal`), at 1 px a
+    pixel (36 px, 1.1 m on the board); the baked fallback picture gets the emblem pasted on, since the bake draws no
+    decals. On the route props showcase map's Bureau row.
+  - **The checkpoint** (setPieces.json `bureau_checkpoint`): its sign is `bureau_sign`, same spot, same words.
+    **MAPGEN_VERSION 25** (the route props track bumped it for its set piece change too); the rng scene hash and the
+    run-start snapshot change only by `mapgenV` (checked by setting it back).
+  - **Loose forms** (ambient-life.js kind `form`: `fly` plus a new `drift` flag): lies flat (frame 1 a corner lifting
+    now and then), lifts on a gust (more often than a gull takes off) or when you come within 1.6 m, blows along low
+    (1.2 m) and sideways across the view (one way per scene), wobbling, for 2.5-4.5 s, and comes down ahead of itself
+    inside its piece's area. Never walks, leaves no footprints, rustles instead of calling. art/scene/life/form.png
+    (4 frames, 20 x 14) and scenery.json `life.form` from tools/build-bureau-forms.py (new). setPieces.schema.json's
+    life enum takes `form`. Three in the checkpoint's `life`, two in the scrap heap's (its sign is the Bureau's
+    "Unclaimed property"); `extra` life, so fewer on lower graphics and none with Graphics Off (RT-4b).
+- Claims checked against the code:
+  - Right: setPieces.json's checkpoint (123-142) and the scrap heap's Bureau sign; scenery.json `bureau_barrier` and
+    `bureau_crate` (both low-poly models with baked pictures, not flat props).
+  - Wrong-ish: "the emblem on the checkpoint's sign": the checkpoint had no sign of its own, only the shared
+    `signpost` (every exit's sign uses it). Branding that would put the emblem everywhere, so the checkpoint got its
+    own prop.
+  - Partly: "an ambient-life kind with the `fly` flag": `fly` is the gull's (wheels 4.5 m up for 4-7 s, picks a far
+    landing spot, walks about when landed, calls). Paper needed its own behaviour on top: the `drift` flag.
+  - "Art from the Studio": the props here are built by their build scripts (as every low-poly prop is); the models,
+    the decal and the strip are ordinary art the Studio paints and moves. Rerunning the scripts overwrites Studio
+    edits to those files, as for every scripted prop.
+- Found, not changed: tools/build-props-routes.py's header said "no logo: the Bureau's look is the owner's call";
+  updated now that SY-3 made the emblem.
+- Risky:
+  - The forms are small (a sheet about 0.37 m) and placeholder pixel art; never seen on a phone.
+  - MAPGEN_VERSION 25: a run saved mid-way records 24; it carries on with today's generator either way (the version
+    is recorded, not branched on).
+  - A form's gust direction is per scene (from its id); forms in one scene all blow the same way, by design.
+- Verified: lint, typecheck, check:modules (`npm run modules` for `lifeGust`), format:check, check:data,
+  check-data-text, art-code-refs regenerated, `npm test` (1,643 pass). `npm run check:smoke`: 5 of 6 (the known Phone
+  "team 30"). Headless look (900 x 600, the route props showcase's Bureau row): the three props draw as low-poly
+  models, the sign's emblem shows, four forms lie about and then blow along at 1.2 m with the flutter frames; no page
+  errors.`npm run check:quick`: 34 of 41. Five are the
+  known ones (Terraces train_station, RL-8 "Lakeside Route view never showed", room light, Phone "team 30", UI-16a's
+  four sounds). Postcards ("no postcard came") passes alone. "Run map music ... 1400, not 1400" fails alone too, and
+  fails the same on SY-6's tip (9c5fbe5d) with none of this step's changes: not SY-7's (a float compare in the check,
+  it seems; for the sound track).
+- Decided for the owner, to review:
+  - **A new prop `bureau_sign`** for the checkpoint in place of putting the emblem on the shared signpost.
+  - **The tape is the scenery's red #DE4048**, not the UI's red family (#EA5974): it sits beside the props' wax seal
+    and the tollbooth's red; one shade of red per palette.
+  - **Forms also in the scrap heap** (its sign is the Bureau's), not only the checkpoint; 3 and 2.
+  - **The `drift` flag** (new behaviour) rather than reusing the gull's flight; **size 0.95**, lift 1.6 m away.
+  - **MAPGEN_VERSION bumped** to 25.
+  - **The emblem decal is made from art/ui/bureau.svg by the build script**: repaint the emblem in the Studio's icon
+    editor, then rerun `python3 tools/build-props-routes.py` to carry it onto the sign.
+  - Not added: a unit test for the forms' flight (ambient-life.js runs on the walk view; the headless look covered it).
+- Next: SY-8 (tuning and docs: the Studio dials, a debug-log line with the Flashes and Animation states, HANDOFF; tag
+  `style-done`), in its own session on `track/style`.
+
+### Style track SY-6 - the coat's foil in the world: a dithered sheen band on coated Billies, maps and battle - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-5) was fast-forwarded
+in; main (07c9b284) had nothing new. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-6, plus
+UI-16a/b from SY-5). Tag `sy-6-done` is for the owner to push (the git proxy refuses tags). The VFX session
+(session_019UpAFxvWEMwGebptZbvUuW) was told before the sprite shader was touched; VFX-9's `uHit` is not on
+`track/vfx` yet, so `uFoil` went in first, small and on its own (vfx-track.md notes where `uHit` can go).
+- Changed:
+  - **game/js/logic/coat-foil.js** (new; index.html, the Studio's page and its logic worker list; 7 tests):
+    `foilOn` (off under Reduced motion, with Flashes off, with Graphics Off, at quality level 2 and up), `foilBand`
+    (a sweep every 3.5 s that crosses in 0.7 s, one place per 24 fps cell, each Billie offset by a hash of its seed;
+    null between sweeps), `foilHue` (each coat its own hue turn, 0.2-0.45 of the wheel), `coatFoil` (the shader's
+    `uFoil` for a coat at a time, or null; a regional form's coat (`form: true`) never has foil).
+  - **The sprite shader** (walk/walk-shaders.js, the sprite fragment shader): `uniform vec4 uFoil` (strength, the
+    band's middle, its half width, the hue turn) and one block after lighting, before the fog: a band along x + .6 y of
+    the picture, stepped in art pixels, its outer 40 % Bayer-dithered, only on pixels whose colour is above luma 0.3,
+    the lit colour turned round the hue wheel and lifted (x1.25 + .06), mixed in at 0.55.
+  - **walk/sprites.js** `drawFoilRecord`: an item with `foil` is drawn on its own on the sprite program with `uFoil`,
+    which goes back to 0 right after. In the instanced pass it ends the run and the next run starts after it. The
+    instanced program carries the same shader text but never sets `uFoil`. 2 tests in sprite-records.test.mjs (both
+    passes); the pass's recorded calls (snapshots) are unchanged.
+  - **The items:** world-billies.js `worldBillyItem` (the buddy, the wild ones, companions, pets: the walk's clock)
+    and battle-3d.js `battle3dFrame` (the battle's clock, `battleStage.q.lvl`; afterimages get none) set `item.foil`.
+- Claims checked against the code:
+  - Wrong path: the shader is game/js/walk/walk-shaders.js (181 and the instanced one at 511 are right).
+  - Wrong: "`uFoil` set in walk/sprites.js from the Billie's coat": sprites.js only sees items, not Billies; the
+    coat is turned into `item.foil` where the items are made, and sprites.js sends it.
+  - Partly wrong: "off at quality 2 and up": only battle has a quality level (`battleStage.q.lvl`). The maps have
+    none; there the foil follows the Graphics preset (off with Graphics Off).
+  - Not built yet: UI-17's menu foil. Menus show a still four-hue gradient (units.css `.u-tag.coat`), so "the same
+    look" is for UI-17 to match.
+  - Right: battle Billies go through the same sprite program as the maps (`k: 'rig'` items, the rig's canvas
+    uploaded), so one shader term covers both.
+- Found, not changed: there is no finished Billie art in this base (every Billie draws as a labelled placeholder
+  rig, "HEAD", "TORSO"; the known 404s on art/billionaires). The foil could only be judged on placeholders.
+- Risky:
+  - Never seen on a phone. A foiled Billie costs one more draw while its band crosses (0.7 s of 3.5 s), and every
+    sprite pixel pays one uniform branch. **Graphics bench before and after: not run** (the bench is only run by
+    players; headless numbers mean nothing, docs/graphics-bench.md), so that is for the owner's phone.
+  - The lift (x1.25 + .06) under the battle's bloom may read as too bright. Width, speed and strength are constants
+    in coat-foil.js for SY-8's dials.
+  - The first commit's test checks the shader for `uFoil`, which only the second commit adds (fine at the branch tip).
+- Verified: lint, typecheck, check:modules, format:check, `npm test` (1,643 pass). `npm run check:smoke`: 5 of 6
+  (the known Phone "team 30"). Headless battle at 600 x 700 with a Midnight foe, band pinned at 0.4, 0.8 and 1.2:
+  the band crosses the picture, dithered at its edges, and turns warm pixels green; with Flashes off `battleFoilOn()`
+  is false and the items carry no foil. No page errors. `npm run check:quick`: 33 of 41. Seven reds are the known
+  ones: Terraces train_station, RL-8 "Meadow Route view never showed", RT-2 "no battle started", Granny Juniper, room
+  light, Phone "walk 20, team 30", UI-16a's four sounds. "Run map music ... 1400, not 1400" failed once and passes
+  alone (36 s).
+- Decided for the owner, to review:
+  - **Maps: off with Graphics Off** in place of "quality 2 and up" (the maps have no level).
+  - **Regional forms' coats have no foil** (foil means "has a coat"; a form's coat is the form's own look).
+  - **Brightness step 0.3** (0.42 left most mid-tone Billies bare), **sweep 3.5 s / 0.7 s**, **band along x + .6 y**,
+    **hue turn per coat from a hash of its id** (no new data field), **lift x1.25 + .06 at 0.55**.
+  - **Not in the instanced program's instance data**: a foiled Billie leaves its run while its band crosses. That
+    keeps the instance layout and its tests unchanged.
+  - **Reflections get no foil.**
+- Next: SY-7 (the Bureau in the world: red tape on `bureau_barrier` and `bureau_crate`, the emblem on the
+  checkpoint's sign, loose forms blowing past), in its own session on `track/style`. The owner: the Graphics bench on
+  the phone with a coated buddy, before and after.
+
+### Style track SY-5 - the Bureau in battle: stamps on knockouts and wins, the Notice of Retrieval, ID plates - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-4) and main
+(07c9b284, nothing new) were merged in, then **`origin/claude/ui-16b-battle-events` (UI-16a and UI-16b), as a merge
+(22b68a20), for UI-16b's plates. So PR #289 now also carries the UI track's UI-8b, UI-8c, UI-11 to UI-16b commits
+and `track/vfx`'s VFX-5 and VFX-7: merging #289 brings them too.** Conflicts: HANDOFF (both kept), gallery.js and
+ui-run-kit.js imports (both kept, to-module remade), art-code-refs.json (regenerated). Plan pre-approved (the owner,
+2026-10-27). PR #289 (draft; SY-1 to SY-5). Tag `sy-5-done` is for the owner to push (the git proxy refuses tags).
+The VFX session (session_019UpAFxvWEMwGebptZbvUuW) was told before the join intro was touched: battle-stage.js
+itself is unchanged.
+- Changed:
+  - **Data** (schema, types, data check, a planted fault): bosses.json `faction` (the Retrieval Unit is `bureau`);
+    factions.json `look.notice` ("Notice of Retrieval") and `look.property` ("Property of the Bureau").
+  - **game/js/logic/bureau-battle.js** (new; index.html, the Studio's page and its logic worker list; 7 tests):
+    `battleFactionOf` (a bot whose build is one of a faction's bots, or a boss whose `faction` names it; only a faction
+    with a look), `factionSerial` (a bot's serial from its id: "No. 1120-AU"), `koBy` (who landed the last hit on the
+    fallen: a move, or a spread hit's move; a burn, the stones, recoil or a delayed hit is no one's), `koStampMoment`,
+    `noticeOf`, `noticeTimes`, `JOIN_LOCK_MS` (1300; a test reads battle-stage.js's join LOCK so they can't drift).
+  - **battle.js "THE BUREAU IN BATTLE"**: one stamp at a time (`pb-stamp` on a paper slip in #pops, so the red reads
+    on any stage; a new one replaces the old): VOID 220 ms into a Bureau bot's faint, RETRIEVED when a Bureau bot's hit
+    knocks out yours, DENIED when the battle ends in your win over the Bureau. PENDING on the Retrieval Unit's win line
+    on the sheet after the battle (slams once; a redraw shows it still). The Notice of Retrieval during the join: the
+    emblem, the title, a form number, the four bots as numbered lines coming in one by one, FILED stamped, sliding
+    away so it is gone by the lock (1,300 ms on the scene's clock, so battle speed scales it). It sits just above the
+    message box. A tap, the next line or the battle's end closes it. Reduced motion: no slide, all lines, the stamp
+    still. **ID plates:** a Bureau bot's plate (`.bplate.form`) is the case files' paper with ruled lines, dark ink,
+    the serial beside the tag row (UI-16b's room in `.pl-bot`), and "Property of the Bureau" in red under a red rule; a
+    boss's plate keeps its red edge.
+  - **game/css/bureau-battle.css** (new; the game and the gallery page): tokens only, ui-lint's ceilings hold.
+  - **The in-game full test**: the Bureau bot's step checks its ID plate; the Voltron's step checks the notice listed
+    its four bots and was gone by the menu.
+- Claims checked against the code:
+  - Wrong: "the join intro's 900 ms": the join is LOCK 1,300 + 900 = 2,200 ms (900 is the plain send-out). The
+    notice fits in the 1,300 before the lock, with no added time.
+  - Wrong: "a tap skips both": a tap during the join only finishes the text; the next line waits for the join's
+    time (battleStageFlush runs at the next play). A tap now hides the notice; the join itself is unchanged.
+  - Wrong: factions.schema.json said `pending` is "its boss wins"; the win line ("Retrieval suspended. Claim filed as
+    pending.") is said when you beat it. Fixed the description.
+  - Right: UI-16b's `markRow`/`pb-tag` row and room for a faction label in `.pl-bot`; pb-stamp on the shared m-stamp.
+  - The Retrieval Unit's build is not a factions.json bot, so nothing tied it to the Bureau before `faction`.
+- Found, not changed (not this step's):
+  - The smoke's Phone step fails "team 30 (at most 28)": the same on the merge commit before any SY-5 code and on
+    `claude/ui-16b-battle-events` itself ("walk 20, team 30"). UI-16b listed the counts as skipped until UI-18.
+  - The quick check's song fingerprints: UI-16a's four UI sounds (sheet, flip, count, toast) aren't in
+    validation/sound-baseline. Came in with the merge; for the UI track.
+- Risky: the Bureau's look shows in every battle with its bots now, and the plate grows by one line (the property).
+  Nothing here has been seen on a phone. The win's DENIED shows over the "You won" moment for 2.2 s (no added wait).
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, `npm test` (1,634 pass).
+  `npm run check:smoke`: 5 of 6 (the Phone step, above). Headless runs (390 x 844, light, and dark with Reduced motion):
+  the bot's ID plate, VOID then DENIED, RETRIEVED from a strong bot's hit, the notice's lines and stamp at a slowed
+  join speed, PENDING on the win sheet; no page errors. `npm run check:quick`: 36 of 41: the three known (Terraces
+  train_station, RL-8 "Thicket Route view never showed", room light) and the two above from the UI merge.
+- Decided for the owner, to review:
+  - **Merged UI-16a/b into `track/style`** (the step's instruction), so #289 carries them.
+  - **The notice's stamp is FILED** (look.stamps.filed); the moment list had no "notice" word.
+  - **RETRIEVED only on a Bureau bot's own hit** (or a spread hit from its move); a burn or stones that finish yours
+    stamp nothing.
+  - **The boss fight gets DENIED in battle and PENDING on its sheet** (two screens, one stamp each).
+  - **Stamps land on a paper slip** (the case files' paper), not straight on the stage.
+  - **Serial format** "No. NNNN-XX" (a hash of the bot's id and its first two letters); the property line's words
+    are factions.json `look.property`.
+  - **The plate's paper is the case files' tokens** (light and dark), with the page's ink, though the battle's glass
+    is always dark.
+  - Not added: a UI gallery section for the plate and notice (the gallery's battle pictures wait for UI-18, as UI-16b
+    noted); the VFX VS splash (VFX-16) will fit around the notice (told to their session).
+- Next: SY-6 (the coat's foil in the world: `uFoil` in the sprite shader), in its own session on `track/style`. It
+  touches walk-shaders.js: message the VFX session first and merge main.
+
+### Style track SY-4 - case files: the Bureau's events in a manila folder, typed in, redacted, stamped - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-3, 06d0baae) and main
+(07c9b284) were already in it (no merge needed). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-4).
+Tag `sy-4-done` is for the owner to push (the git proxy refuses tags).
+- Changed:
+  - **events.json** (schema, `RunEvent` types, data check): `bureau: 1` marks a Bureau event (as classes already do);
+    `redact` lists flavour words of its intro to cover; `form` is the form number when the intro names one; an option's
+    `stamp` names the moment its result is stamped. Nine events marked: the checkpoint, Form 27-B, the beans crate, the
+    pyramid cart, the auction, the surveyor, the field lab, the gene recall and the dig site. The back-alley splicer
+    stays plain ("no forms, no Bureau").
+  - **game/js/logic/case-file.js** (new; index.html, the Studio's page and its logic worker list): `caseFile` (null for a
+    plain event), `caseForm` (a stable pick from `look.forms` by the event's id), `caseStampMoment` (the option's own;
+    else the last option, the one that walks away, is denied and any other filed), `redactSplit` (whole words only),
+    `caseTyped` (20 ms a letter), `redactProblem` (the data check's rule: letters only, a whole word of the intro, never
+    a word of an option, nor a currency's, item's or pyramid's name, plurals included). tools/test/case-file.test.mjs
+    (5 tests) and 6 planted faults in data-checks.test.mjs.
+  - **`pb-typed`** (ui-run-kit.js): light DOM around a sheet's lines. The lines after `skip` type in one after another.
+    Where it is comes from the clock since its `key` first showed, so the overlay's redraws carry on, not restart. A tap
+    on the sheet's body shows it all. Reduced motion shows it at once. A tap on a bar once it's typed lifts it.
+  - **encounter-screen.js:** a Bureau event's sheets carry the folder's tab (the emblem, the Bureau's name, the form
+    number). Its intro types in with the bars on. Once you choose, the intro stays on file above the script's lines
+    (smaller, grey, its bars lifted), and only new lines type in. The end sheet stamps the result under the summary
+    (`pb-stamp`, the look's word; it slams once, and a redraw shows it `still`). The debug log adds "(case file, Form
+    ...)" and "stamped <moment>" (data ids only). A no-op commit first gathered the sheet's lines into `encLinesHTML`.
+  - **game/css/case-file.css** (new; the game and the gallery): manila paper by setting the sheet's own `--g-bg` and
+    `--g-blur` (no `!important`, ui-lint's ceilings hold), the tab, a red margin rule, the lines in Oxanium (its own
+    `@font-face`, since only the main look loads it), black bars, the lifted bar's faint tint. Light and dark tokens.
+  - **The UI gallery's "Case file"**: the checkpoint before the choice (bars) and its end (on file, FILED), with the
+    data's form number and word; pictured like the stamps (320 and 390, light and dark, Stepped and alpha 0.5): 8 baselines.
+  - **The in-game full test's** set-piece step now checks the checkpoint opens as a case file (a form on its tab) and
+    that walking on stamps the look's denied word.
+- Claims checked against the code:
+  - Right: `encSheet` (encounter-screen.js 116) and `encounterStage` (294); the checkpoint at events.json 295; no logo
+    on events before SY-3; events use one plain sheet.
+  - Wrong: no event had `bureau: 1` (only trainer classes, RL-S1); I added it. "About eight" Bureau events: nine, with
+    Form 27-B, whose text never says "Bureau". "An event in a Bureau set piece": the only set piece with an event is the
+    checkpoint, now marked, so no code path was needed. Oxanium is the main look's prose font (uiTheme.json), not loaded
+    by base.css. "Verify in `encChoose`": the options are built in `encounterOpen` (text, Moneys and DNA cost, the
+    greyed reason); `encChoose` is SP-6's in-script pick. Outcomes show only in the end summary. None of these are
+    covered: only intro words are.
+- Found, not changed: the gallery's `loading-*` pictures are still flaky (100% at 320 every run; 390 passes alone), as
+  in SY-3, on SY-3's own commit too.
+- Risky: low. The folder needs `:has()` (Chrome 105+, Safari 15.4+); without it the sheet stays glass with the tab on
+  top. The margin rule and the lifted tint need `color-mix` (Chrome 111+, Safari 16.2+). Typing follows the clock, so a
+  slow phone jumps ahead, never runs long. The buttons work while it types, so no event gets longer.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, `npm test` (1,586 pass),
+  `npm run check:smoke` (6 of 6). check-ui-gallery: 109 pictures, only the flaky `loading` ones differ. Headless runs:
+  the checkpoint types in about 2 s (a redraw at 111 letters left carried on at 42, a tap showed all), Reduced
+  motion shows it at once; Walk on stamps DENIED, Declare everything FILED (light and dark); a plain event (ring_light)
+  has no tab, typing or stamp; no page errors. The in-game full test's set-piece and Dig Site steps pass alone.
+  `npm run check:quick`: 38 of 41, the three known reds (Terraces train_station, RL-8 "node 7 has no exit north2", a
+  seed the map generator can't build as in SY-3, room light). CI's smoke: the two known Studio reds only.
+- Decided for the owner, to review:
+  - **Which events are the Bureau's:** the nine above (edit `bureau` in events.json). Form 27-B is in: a grey clerk
+    and a form number.
+  - **The redaction words** (one or two each: tollbooth, clipboard, cardigan, property, handcart, unclaimed, square,
+    centrifuge, unlicensed, humming). Edit `redact`.
+  - **The stamp rule:** the last option is DENIED and any other FILED, unless an option names its own. Named: in the
+    beans crate, opening or prying it is DENIED and filing it FILED; taking from the pyramid cart DENIED, reporting it
+    FILED; swiping at the field lab and refusing the recall DENIED.
+  - **Form numbers from the intro:** Form 27-B, Form 9-C (the surveyor's complaint) and Form 9-G (the field lab) are
+    events' own `form`, not in `look.forms`; the rest pick from `look.forms`.
+  - **"Lift when you choose":** the bars lift when the intro is shown again on file after your choice; a tap on a bar
+    after the typing also lifts it early.
+  - **The buttons work while it types** ("Ask me before" 6: no event gets longer).
+  - **The stamp sits under the summary,** never over it (costs and outcomes are never hidden).
+  - **The manila colours are this file's own tokens** (`--case-paper` ...), not palette tokens: UI-11/12 may take them.
+  - **The lines are in Oxanium** even in the look whose prose font is Chakra Petch.
+- Next: SY-5 (the Bureau in battle: stamps on KOs and wins, the Notice of Retrieval in the join intro, ID plates), in
+  its own session on `track/style`. It touches the join intro: message the VFX session first.
+
 
 ### UI track UI-16b - alive: battle events (the plates' marks, stamps, rises and falls, blips, effect pips, banners; one stamp motion; Calm) - 2026-10-28
 Branch `claude/ui-16b-battle-events`, made from UI-16a's `claude/ui-16a-motion` (main plus UI-8b, UI-8c, UI-11 to
@@ -1849,6 +3273,58 @@ Tag `sy-0-done` (for the owner to push) on this session's last commit.
 - The owner's answers (2026-10-27, after the PR): the emblem is a bean on a lost-property tag; Laminated not now;
   the foil shows in battle too; the placeholder stamp words stay. Recorded in the track file.
 - Next: the owner makes `track/style`; SY-1 (the flashes) starts there in Plan Mode.
+### Tooling - Claude Code's cloud setup: hooks, Playwright MCP, debug log reader, skills - 2026-10-27
+Branch `ccr-d18fe41a-eh3yrz` (the session's own, from main at 07c9b284). Not a phase: the owner asked what to add to
+the Claude Code environment (research online), then approved the plan in Plan Mode. No game code, data or art changed;
+no tag. How it all works: docs/TESTING.md, "Claude Code in the cloud".
+- Changed:
+  - tools/after-edit.mjs (PostToolUse): the edited area's unit test files instead of the whole quick tier, which
+    takes 104-148 s now and was stopped at 50 s, so the hook said "npm test failed" with nothing failing. A check
+    that runs out of time is reported as not finished. Hook limit 180 s.
+  - tools/session-start.mjs (new, SessionStart, cloud only): npm ci when needed, npm run data, Python Playwright at
+    the cloud image's browser version, the unit tests' starting state.
+  - tools/before-stop.mjs (new, Stop): npm test before a reply ends when game/js/logic, game-data.js, game/data or
+    tools/test changed; a failure sends Claude back once, then the owner sees it.
+  - .mcp.json and tools/mcp-playwright.mjs (new): Microsoft's Playwright MCP server (0.0.83, through npx) on the cloud
+    image's Chromium with browser_check.py's flags and page set-up, a 390x844 touch page; settings.json pre-approves
+    it. tools/read-debug-log.py (new): a debug log in one screen, its picture saved.
+  - .claude/skills (start-session, handoff, look, debug-log) and .claude/rules (game-js, game-data, python-tools).
+  - CLAUDE.md: sessions read only their track's newest HANDOFF entries; gamedata.js is 0.84 MB, generated (was "~13
+    MB"). docs/TESTING.md: tiers (a) and (b), the new section with the environment's setup script. .gitignore:
+    validation/mcp/, validation/debug-log/.
+- Not done: plan item 7, the permission allow list. The session's auto mode refused to edit permissions in
+  .claude/settings.json (it counts as Claude changing its own permissions). For the owner to add, if wanted:
+  `"permissions": {"allow": ["Bash(npm run *)", "Bash(npm test *)", "Bash(npm ci *)", "Bash(node tools/*)",
+  "Bash(node --test *)", "Bash(python3 tools/*)", "Bash(python3 -m http.server *)", "mcp__playwright__*"]}`.
+- Found, not changed:
+  - **The ground painter's worker fails every paint.** game/js/ground-paint-worker.js `paintWorkerSource` (:114)
+    sends paintGroundSteps and its helpers to the worker as source text, but not `groundTileRole`, a function since
+    e89c8131 (2026-10-26, walk-view.js:1073). The smoke run's debug log: `graphics.groundPainter` failed 25 of 25,
+    "ReferenceError: groundTileRole is not defined". The ground still draws in the checks' pictures; phones lose the
+    worker. Likely a one-line fix (add it to the list), for a session that owns the ground.
+  - The quick unit tier is 1,569 tests and 104-148 s in a cloud container (about 20 s on 23 Oct, budget 30 s): for the
+    test cleanup track. route-trainer-spots.test.mjs (slow tier) alone took about 110 s.
+  - docs/BRANCHES.md says a cloud session can only push to the branch it started on. The current docs say the GitHub
+    proxy refuses branch deletions and tag pushes but "doesn't limit which branches a push can update", and a
+    session can start from an existing branch at claude.ai/code
+    (https://code.claude.com/docs/en/cloud-environments, "GitHub proxy"). Not tried here.
+  - characters-track.md says the container reaches GitHub for KayKit's packs: a release or archive download from a
+    repository not attached to the session now gets a 403 from the GitHub proxy (raw.githubusercontent.com works).
+- Risky: the Stop hook adds the tier's 2 minutes or so to the end of a reply that changed logic, data or tests. A
+  session reads the hooks and .mcp.json only when it starts, so this one checked them by feeding them the hook JSON
+  and through a scripted MCP client, not as Claude Code runs them.
+- Verified: lint (34 s), typecheck, `npm test` 1,569 pass (144 s), check:modules, format:check, check:data, build.
+  after-edit: a logic file 19 s (lint 11-13 s, types 2.5 s, 1 test file), the most used one 27 s (12 files, a note
+  for 14 more), a test file 1 s, a data file 3 s, a doc 0 s; a failing test exits 2 with its output; a 1 s limit
+  gives the "not finished" note; no test processes left. session-start: 14 s from no node_modules and no Python
+  Playwright, then 1 s; nothing outside the cloud. before-stop: no change 0.1 s; a failing test blocks, the retry
+  lets go without re-running, a passing change records the new state. MCP: ?fixture=title and ?fixture=town drawn,
+  inline screenshots, 0 console errors (the plugin directory's own Playwright MCP fails here: "Chromium
+  distribution 'chrome' is not found"). read-debug-log.py on smoke's log. Smoke 6 of 6 in 201 s (before these
+  changes; nothing in game/ changed).
+- For the owner: paste the setup script from docs/TESTING.md into the environment (once). After the merge, a new
+  session's first message should show "Session setup: ...", and `/look` should return a screenshot.
+- Next: whichever session owns the ground fixes the painter's worker; the test cleanup track takes the unit tier's time.
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in

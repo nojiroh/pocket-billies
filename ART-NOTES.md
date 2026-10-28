@@ -105,7 +105,7 @@ No art changed. The Studio can now change three more things, all saved into `gam
   seams and expression variants of eyes, brows and mouths. The old trainer renderer and its PNGs
   are no longer used. Edit pieces in the Studio's Wardrobe section; `build-trainer-art.py` without
   `--force` never overwrites them.
-- The data is `wardrobe` in `data/gamedata.js`: `skeleton` (joints per view), `body`, `slots`,
+- The data is `wardrobe` in `game/data/wardrobe.json`: `skeleton` (joints per view), `body`, `slots`,
   `sliders`, `palettes`, `crops` (thumbnail and portrait frames) and `items`. A piece is
   `{"v":"front","b":"head","r":[x,y,w,h],"o":[ox,oy],"z":0.7,"x":"happy"}`: view, bone, its
   rectangle in the item's picture, its offset from the joint, an optional layer and an optional

@@ -64,7 +64,8 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // (and 3518383374 at MAPGEN_VERSION 22 on main, RT-4b: a pocket's mouth for Cut brambles; no layout here, so only gen.v)
   // (and 3715434692 until MAPGEN_VERSION 25, WM-6: a town's districts; this scene, a route, the same but gen.v,
   // then 2619531993 until WM-6's signposts name their exit, `exit`)
-  assert.equal(hashString(JSON.stringify(sc)), 2122470611);
+  // then 2122470611 until MAPGEN_VERSION 26, SY-7: the Bureau checkpoint's sign and loose forms; no pieces here, so only gen.v
+  assert.equal(hashString(JSON.stringify(sc)), 618072568);
 });
 
 test('rng: the helpers stay in their ranges', () => {
