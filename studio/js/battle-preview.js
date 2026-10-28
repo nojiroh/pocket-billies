@@ -398,6 +398,8 @@ async function startBattlePreview() {
     await mountBattlePreviewMap();
   }
   if (load) load.hidden = true;
+  /* VFX-12: the section may have been left while the walk scene mounted */
+  if (!$('#battle')) return;
   if (!battlePreview.ro)
     battlePreview.ro = new ResizeObserver(() => {
       if (battleStage.on && studioState.sec === 'preview' && $('#battle')) battleStageResize();
