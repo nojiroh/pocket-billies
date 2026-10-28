@@ -55,7 +55,7 @@ import { neutralPose, openSkeleton } from './skeleton.js';
 import { WB_VIEWS, workbench } from './workbench.js';
 import { wbPart, wbpColor, wbpN, wbpRefreshSide, wbpRoot } from './workbench-part.js';
 import { kitFormOf, kitRecipeHTML } from './kit-recipe.js';
-import { sketchFormOf, sketchPanelHTML } from './placeholder-sheets.js';
+import { sketchFormOf, sketchPanelHTML } from './sketch-sheets.js';
 /* eslint-disable no-func-assign */
 expose({
   WBS_CROPS: [() => WBS_CROPS],
