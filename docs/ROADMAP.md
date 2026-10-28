@@ -4,8 +4,8 @@ The game is being reworked into a roguelite: a hub (Copperleaf Town) and runs on
 walkable world, the seamless maps and the rooms kept (docs/VISION.md, "How the game plays"). The plan is
 docs/phases/roguelite-track.md (approved 2026-10-20). That track is the spine of this roadmap; the Studio, Map
 generator and Project Story tracks run alongside; the old numbered phases are listed below as done, parked or
-absorbed. Every session starts in Plan Mode, follows docs/TESTING.md, and ends with a docs/HANDOFF.md entry and a
-tag (`rl-N-done`, `st-N-done`, `mg-N-done`). Sessions can't push tags: the owner pushes them. Work-time estimates
+absorbed. Every session starts in Plan Mode, follows docs/TESTING.md, and ends with a docs/HANDOFF.md entry; a
+finished track's branch gets a `<plan>-done` tag (CLAUDE.md: no per-session tags). Work-time estimates
 are sessions of Claude's working time, not calendar time, and exclude the owner's testing.
 
 ## The roguelite track (RL)
@@ -20,13 +20,12 @@ are sessions of Claude's working time, not calendar time, and exclude the owner'
 | MG-2 | Seam agreement in mapgen (+ TR-1 smooth roads) | generated parent/child scenes pass the seam rules; roads ramp with no risers | none | 1-2 | no |
 | RL-6 | Run map and clock logic (done 2026-10-21) | `logic/run-map.js`, `nodeTypes.json`, forecast, deadline; no UI | RL-3, MG-2 | 1 | no |
 | RL-7 | Run world (done 2026-10-21) | generated scenes installed and walkable; the bowl shows the run | RL-5, RL-6 | 1-2 | no |
-| RL-8 | Run loop and payout (done 2026-10-21) | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
-| RL-8b | Run look (done 2026-10-22) | the owner's notes from the first play: rooms darker, the hub's world map Copperleaf's island alone, a run's own world map from its seed, laid across the bowl east to west | RL-8, played | 1 | yes |
 | RL-8 | Run loop and payout (done 2026-10-21, played) | airship start, a town with paid healing, a mini-boss, the payout screen, resume: **the first playable cut** | RL-4, RL-7 | 2 | yes |
+| RL-8b | Run look (done 2026-10-22) | the owner's notes from the first play: rooms darker, the hub's world map Copperleaf's island alone, a run's own world map from its seed, laid across the bowl east to west | RL-8, played | 1 | yes |
 | RL-9 | Ranch A (done 2026-10-22: the building, training, Scrap; RL-9b the mast's pick of 1 home Billie and the packed bag) | the building, store and keep, train between runs, the keep-one rule (8.2: 1 home Billie a run; a packed bag) | RL-8, played | 2 | yes |
 | RL-10 | Ranch B (RL-10a done 2026-10-22: breeding safe/risky, abominations and quirks, hatching at the ranch, the walking eggs retired; RL-10b done 2026-10-23: passive income, one ranch clock with the rollback guard, the cloud `t` anchor and skew, the saves whitelist) | breed safe/risky with abominations, hatch, passive income (cap, rollback guard, offline, server anchor) | RL-9 | 2 | yes |
 | RL-11 | Hub upgrades, currencies, unlocks (done 2026-10-22) | `currencies/buildings/unlocks.json`, the Lab board, one unlock registry | RL-8 | 1-2 | yes |
-| RL-12 | Relics and effects (RL-12a done 2026-10-22: effects, Loopholes, picks, shops; RL-12b next) | `relics.json`, `events.json`, `logic/effects.js`, picks | RL-11 (the owner: may go first, every Loophole on offer) | 1-2 | yes |
+| RL-12 | Relics and effects (RL-12a done 2026-10-22: effects, Loopholes, picks, shops) | `relics.json`, `events.json`, `logic/effects.js`, picks | RL-11 (the owner: may go first, every Loophole on offer) | 1-2 | yes |
 | RO-1 | Roster: real pools and regional forms (done 2026-10-23, branch `track/roster`) | every run pool lists real lines, no stand-ins; `forms` on lines | none (alongside) | 1 | yes |
 | RL-R1 | Region generator (done 2026-10-23, branch `track/regions`) | a themed region per seed: zones on a biome graph, a regional dex, leaders by type, the region's name | RO-1 | 1-2 | yes |
 | RL-R2 | Side areas and field moves (RL-R2a done 2026-10-23 on `track/regions`: detours and alternate paths, Surf, Rock Smash and Cut, `meta.badges`, the deadline dropped; RL-R2b done 2026-10-24: a cave biome for Rock Smash, an islet town for Surf, the way-out moment, side areas in the Run Lab, preview and sim) | detours and rare alternate paths behind Surf, Rock Smash and Cut (type + a kept badge) | RL-R1 | 2 | yes |
@@ -387,11 +386,6 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 20 | 20-renderer-batching (branch `track/renderer`) | A-C, H and rounds R1-R3 done; R4 defaults lane done (2026-10-26): models, shadows, rain, phone lamps and battle rigs on their batched paths only, three losing paths deleted; D2 built (2026-10-27): the bloom, rays and grade in `mediump` behind `quality.mediump` (off); left: Medium precision, Sky last, Pictures in batches, Steady lamps, the phone pixel budget (owner's checks), then `phase-20-done` | active: R4, the owner's checks |
 | 21 | 21-texture-atlases-and-ktx2 (branch `plan/engine-phases-19-21`) | plan only | parked: after phase 20 |
 
-## If the scope is too big
-RL-1, RL-2, RL-3, RL-4, RL-5, MG-2, RL-6, RL-7, RL-8, then play. After that: RL-9, RL-10, RL-11, RL-12, RL-13, RL-14,
-RL-15, RL-16. Inside the ranch milestone cut the server timestamp first, then risky breeding, then the walkable yard;
-never store/keep or training.
-
 ## Questions I want to be asked (do not decide these alone)
 The 20 "Ask me before" items in docs/phases/roguelite-track.md, section 8: the run's internal key (RL-3); keep-one vs
 ranch levels (answered in RL-9: 1 home Billie a run at Bracket I, and a bag packed at the mast from Copperleaf's); the hub's extent and Copperleaf's south exit (answered in RL-5: Copperleaf alone, its south exit gone); legacy by
@@ -401,8 +395,7 @@ Workshop = Scrap, Airship = Seals); menu nodes (answered in RL-12: a normal-size
 (answered in RL-8: wild single, mini-boss doubles, an Alpha boss; the turn cap was answered in RL-4: 40, a draw; a killed battle restarts from its seed); the clock's numbers (answered in
 RL-6: a day per arrival, backtracking included, deadline = the shortest walk + 3, no tick for healing or waiting; RL-R2: the owner dropped the deadline, the day clock stays); the token link, Remember me and deleting the
 versioned tools (RL-1); SAVE_VERSION 4 and the cloud key whitelist (RL-3; answered in RL-10b: yes, published after the build is live); the dex's place (RL-3); the relic
-cap (answered in RL-12: 6); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; its sea share is set in the Studio); the ranch cut order (answered in RL-9: the walkable yard and pens wait); the order after the first cut; the tuning
-cap (RL-12); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; RL-8b: as an island, worldmap.json sea.island); the ranch cut order (RL-9); the order after the first cut; the tuning
+cap (answered in RL-12: 6); the hub island's look (answered in RL-5: the bowl shows Copperleaf alone; its sea share is set in the Studio; RL-8b: as an island, worldmap.json sea.island); the ranch cut order (answered in RL-9: the walkable yard and pens wait); the order after the first cut; the tuning
 placeholders (RL-6 took the map's: 9 rows, 2 mini-bosses, two lanes on 70% of free and town rows, a lane switch on 25%
 of lane pairs, the five biomes with finished plants; reveal the next row, '?' on the row after, the boss always; RL-7
 took the scenes': dial ranges in `run.scene`, wild levels 3-5 on the landing +1 a row, 2 on a walk back, a crossing
