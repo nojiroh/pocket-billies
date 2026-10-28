@@ -391,6 +391,7 @@
    "seed": 171,
    "swing": 0.18,
    "echo": 0.25,
+   "trim": 13.5,
    "pluck": true,
    "hookName": "placeholder: Copperleaf, a music box over the motif (Claude's draft)",
    "hook": [[0,79,2],[2,83,2],[4,86,4],[8,84,2],[10,83,2],[12,81,4],[16,78,2],[18,81,2],[20,86,4],[24,84,4],[28,81,4]],
