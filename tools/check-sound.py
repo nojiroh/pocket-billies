@@ -246,7 +246,8 @@ LOUD = r"""async ({jobs, rate}) => {
     await new Promise(r => wait.call(window, r, 0));
     const buf = await oc.startRendering();
     Object.assign(ambience, amb);
-    const L = soundLoudness([buf.getChannelData(0), buf.getChannelData(1)], rate, job.song || job.jingle ? 0.5 : 1);
+    /* a song's fade-in and a bed's first second left out; a jingle whole (SND-17) */
+    const L = soundLoudness([buf.getChannelData(0), buf.getChannelData(1)], rate, job.jingle ? 0 : job.song ? 0.5 : 1);
     out.push(Object.fromEntries(Object.entries(L).map(([k, v]) => [k, typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 100) / 100 : v])));
   }
   return out;
@@ -281,18 +282,24 @@ WATER_AT = (1, 3, 10)
 WATER_HEIGHT = {'fallSmall': 1.5, 'fallTall': 6, 'plunge': 6}
 
 
-def loudness(b, base, only=None):
-    """the loudness report's lines (every song's day version, the world sounds), and its warnings"""
+def loud_page(b, base):
+    """a page of its own for loudness renders, the measure put in it; (context, page, its errors)"""
     ctx = b.new_context(viewport={'width': 390, 'height': 844})
     ctx.add_init_script(TEST_GLOBALS); ctx.add_init_script(NO_ACCOUNTS)
     pg = ctx.new_page(); errs = []
     pg.on('pageerror', lambda e: errs.append(str(e)))
+    pg.goto(base + '/index.html')
+    if not until(pg, "typeof soundEngine!=='undefined'&&typeof initSound==='function'&&typeof gameData!=='undefined'&&typeof initAmbience==='function'", 120):
+        raise Exception('the game page never loaded its sound code')
+    src = (ROOT / 'tools' / 'sound-loudness.mjs').read_text().replace('export function', 'function')
+    pg.evaluate('(() => {' + src + '\nwindow.__soundLoudness = soundLoudness;})()')
+    return ctx, pg, errs
+
+
+def loudness(b, base, only=None):
+    """the loudness report's lines (every song's day version, the world sounds), and its warnings"""
+    ctx, pg, errs = loud_page(b, base)
     try:
-        pg.goto(base + '/index.html')
-        if not until(pg, "typeof soundEngine!=='undefined'&&typeof initSound==='function'&&typeof gameData!=='undefined'&&typeof initAmbience==='function'", 120):
-            raise Exception('the game page never loaded its sound code')
-        src = (ROOT / 'tools' / 'sound-loudness.mjs').read_text().replace('export function', 'function')
-        pg.evaluate('(() => {' + src + '\nwindow.__soundLoudness = soundLoudness;})()')
         songs = [s for s in pg.evaluate("Object.keys(SONGS)") if not only or s in only or s == 'route']
         duck = pg.evaluate("Math.round(20*Math.log10(bedDuck(MUSIC.mix,true))*100)/100")
         water = pg.evaluate("typeof SOUNDSCAPE!=='undefined'&&SOUNDSCAPE.water?Object.keys(SOUNDSCAPE.water):[]")
@@ -305,13 +312,23 @@ def loudness(b, base, only=None):
         jens = pg.evaluate("typeof musicJingleParts === 'function' ? Object.keys(MUSIC.jingles).filter(j => { const J = MUSIC.jingles[j]; return J.ensemble && J.ensemble !== 'gb' && MUSIC.ensembles[J.ensemble]; }) : []")
         jens = [j for j in jens if not only or j in only]
         jobs = [{'song': s} for s in songs] + [{'song': s, 'ens': True} for s in ens] + [{'beds': B} for _, B in LOUD_BEDS + nature + LOUD_SCENES + rows_w]
-        jobs += [{'jingle': j} for j in jens] + [{'jingle': j, 'ens': True} for j in jens]
         res = []
         for i in range(0, len(jobs), 6):
             res += pg.evaluate(LOUD, {'jobs': jobs[i:i + 6], 'rate': RATE})
         if errs: raise Exception('page errors: ' + ' | '.join(errs[:3]))
     finally:
         ctx.close()
+    # SND-17: the jingles on a page of their own (a page slows as its renders pile up, and their zones would push the
+    # water's banks out of the bank)
+    if jens:
+        ctx, pg, errs = loud_page(b, base)
+        try:
+            jobs = [{'jingle': j} for j in jens] + [{'jingle': j, 'ens': True} for j in jens]
+            for i in range(0, len(jobs), 6):
+                res += pg.evaluate(LOUD, {'jobs': jobs[i:i + 6], 'rate': RATE})
+            if errs: raise Exception('page errors: ' + ' | '.join(errs[:3]))
+        finally:
+            ctx.close()
     S = dict(zip(songs, res[:len(songs)]))
     SE = dict(zip(ens, res[len(songs):len(songs) + len(ens)]))
     ref = S['route']['lufs']
