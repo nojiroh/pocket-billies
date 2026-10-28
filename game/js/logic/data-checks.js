@@ -1390,7 +1390,7 @@ export function dataSetPieces(D, valid = () => true) {
 }
 // VFX-8: battleAnims.json (how the battle plays a move): the schema; every default a family; every step's colour a
 // named colour or `type`, its types types (types.json); every move's `anim` a family or a scene, and moves.json has no
-// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit)
+// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit); VFX-12: the budgets in order, the dash ribbon's bounds
 /** VFX-8: battleAnims.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataBattleAnims(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1429,6 +1429,14 @@ export function dataBattleAnims(D, valid = () => true) {
           if (V.hit !== 999 && V.hit > V.dur) problem(`${sec}.${id}${w}: hits at ${V.hit} ms, after its ${V.dur} ms`);
         }
     }
+  /* VFX-12: a budget never grows as the quality drops, and a burst fits in the pool */
+  const B = A.budgets;
+  for (const k of ['particles', 'burst', 'lights'])
+    for (let q = 1; q < 4; q++)
+      if (B[k][q] > B[k][q - 1]) problem(`budgets.${k}: quality ${q} allows more (${B[k][q]}) than quality ${q - 1}`);
+  for (let q = 0; q < 4; q++)
+    if (B.burst[q] > B.particles[q]) problem(`budgets.burst: ${B.burst[q]} at quality ${q}, more than the pool`);
+  if (A.smears.dashRibbon.min > A.smears.dashRibbon.max) problem('smears.dashRibbon: min is above max');
   for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
     if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
       problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');
@@ -2359,6 +2367,20 @@ export function fxKindProblems(f, at, D, problem) {
     if (f.when == null) problem(`${at}.when: a money share needs a moment (arrive)`);
   } else if (f.kind === 'money' && f.when != null)
     problem(`${at}.when: a money row at ${f.when} is a share (share, max)`);
+  /* PK-6: a give row's Moneys and Bag items (items.json), given when the Perk is taken */
+  if (f.kind === 'give') {
+    const items = f.items || {},
+      ids = Object.keys(items);
+    if (f.when == null) problem(`${at}.when: a give row needs a moment (take)`);
+    if ('money' in f && !(Number.isInteger(f.money) && f.money >= 1 && f.money <= 9999))
+      problem(`${at}.money: a whole number of Moneys from 1 to 9999`);
+    if (!('money' in f) && !ids.length) problem(`${at}: a give row gives money, items or both`);
+    for (const id of ids) {
+      if (!D.items || !D.items[id]) problem(`${at}.items.${id}: no item "${id}" (items.json)`);
+      if (!(Number.isInteger(items[id]) && items[id] >= 1 && items[id] <= 99))
+        problem(`${at}.items.${id}: a whole number from 1 to 99`);
+    }
+  }
   /* PK-5: a free row acts at a purchase (Punch Card) */
   if (f.kind === 'free' && f.when == null) problem(`${at}.when: a free row needs a moment (buy)`);
   /* PK-5: what a missed throw gives back, at that moment */
@@ -2387,6 +2409,14 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   rewardPick: [1, 2, 'cards'],
   rerollFree: [1, 3, 'rerolls'],
   mapReveal: [1, 1, 'times (it is on or off)'],
+  /* PK-6: Perks held more (Accordion File) */
+  cap: [1, 2, 'Perks'],
+  /* PK-6: a side area's obstacle opens with the badge alone (Coil of Rope) */
+  sideOpen: [1, 1, 'times (it is on or off)'],
+  /* PK-6: finds more in side areas (Rusty Key; route-finds.js ROUTE_FIND_MORE) */
+  sideFind: [1, 2, 'finds'],
+  /* PK-6: an event's hurt does nothing (Ten-Foot Pole) */
+  eventHurt: [1, 1, 'times (it is on or off)'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
@@ -2426,8 +2456,9 @@ export function fxPassiveProblems(f, at, D, problem) {
  * makes them a data section) */
 export const PERK_THEMES = ['office', 'influencer', 'tech', 'lab', 'adventurer', 'weather', 'classics'];
 /** PK-4: the conditions a Perk's needs can name: those an offer knows (the team); PK-5: bots, a scrapyard still
- * ahead on the run's map (perks.js perkRunBots: needs alone, not a row's condition) */
-export const PERK_NEEDS = ['team', 'mono', 'bots'];
+ * ahead on the run's map (perks.js perkRunBots: needs alone, not a row's condition); PK-6: side, a side area still
+ * ahead (perks.js perkRunSide) */
+export const PERK_NEEDS = ['team', 'mono', 'bots', 'side'];
 /** PK-4: a Perk's needs: one condition or a list of 1-4, each a condition word (fxCondProblem) of PERK_NEEDS
  * @param {any} v @param {string} at @param {any} D @param {(what: string) => void} problem */
 export function perkNeedsProblems(v, at, D, problem) {
@@ -2435,7 +2466,8 @@ export function perkNeedsProblems(v, at, D, problem) {
   const L = Array.isArray(v) ? v : [v];
   if (!L.length || L.length > 4) problem(`${at}: one condition, or a list of 1-4`);
   for (const c of L) {
-    if (c === 'bots') continue;
+    /* PK-5, PK-6: words of the run, not a row's conditions */
+    if (c === 'bots' || c === 'side') continue;
     const why = fxCondProblem(c, D),
       key = typeof c === 'string' ? c.split(':')[0] : '';
     if (why) problem(`${at}: ${why}`);
@@ -2460,6 +2492,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   money: ['arrive'],
   /* PK-5: what was just bought, free */
   free: ['buy'],
+  /* PK-6: Moneys and items when the Perk is taken */
+  give: ['take'],
   /* PK-5: a missed throw's pyramid back */
   refund: ['throwMiss'],
 });
@@ -2472,6 +2506,8 @@ export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({
   bossHp: ['if', 'per'],
   /* PK-4: a run rule is read on the run, where no battle or team is known */
   rule: ['if', 'per'],
+  /* PK-6: a copy row stands for the rows above it; it has no timing of its own (the schema refuses any) */
+  copy: ['if', 'grow', 'per', 'once'],
 });
 /** PK-1: one condition word: '' when fine, else what is wrong @param {string} c @param {any} D */
 export function fxCondProblem(c, D) {

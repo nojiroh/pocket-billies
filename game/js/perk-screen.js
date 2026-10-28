@@ -11,7 +11,7 @@ import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
 import { PERKS, RULES } from './game-data.js';
 import { rarityTier } from './logic/marks.js';
-import { perkChoose, perkCount } from './logic/perks.js';
+import { perkCap, perkChoose, perkCount, perkDropOk } from './logic/perks.js';
 import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
@@ -101,7 +101,8 @@ export function perkPickOpen(o) {
 function perkPickTake(id) {
   const run = saveData.run;
   if (!run || !run.offer || !id) return;
-  if (run.perks.length >= RULES.run.perks.cap) perkDropOpen(id, drop => perkPickDone(id, drop), perkPickOpen);
+  if (run.perks.length >= perkCap(run, RULES.run.perks, PERKS))
+    perkDropOpen(id, drop => perkPickDone(id, drop), perkPickOpen);
   else perkPickDone(id);
 }
 /** the pick answered (a Perk, or none): saved, the sheet closed */
@@ -144,8 +145,9 @@ function perkDropOpen(id, then, back) {
     title: 'Let one go',
     cls: 'relic-drop',
     lock: true,
-    html: `<p>You can hold ${RULES.run.perks.cap} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.perks
-      .filter(k => PERKS[k])
+    html: `<p>You can hold ${perkCap(run, RULES.run.perks, PERKS)} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.perks
+      /* PK-6: not one whose going would leave too many held (Accordion File at the cap it raises) */
+      .filter(k => PERKS[k] && perkDropOk(run, k, id, PERKS, RULES.run.perks))
       .map(k => perkCardHTML(k, false, 36, run))
       .join('')}</div>`,
     btns: [
@@ -170,7 +172,7 @@ function perkDropOpen(id, then, back) {
 /** the run's Perks, each with what it does (PK-3: and its counter, perkCount) */
 export function renderPerks() {
   const run = saveData.run,
-    cap = RULES.run.perks.cap;
+    cap = perkCap(run, RULES.run.perks, PERKS);
   if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at Skyline Station.</p>`;
   const held = run.perks.filter(id => PERKS[id]);
   return `<section class="tpanel relics"><div class="sec-h"><h2>Perks</h2><span class="count tnum">${held.length} of ${cap}</span></div>${

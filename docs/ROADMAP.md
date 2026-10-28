@@ -218,7 +218,13 @@ town node needs it.
   12/24 fps frames, the eroding rim; the Art browser's ramp previews; the particle picker fixed) built 2026-10-28;
   wave 1 goes on with VFX-12 and VFX-15 on side branches. VFX-15 (the stage: a battle mood that darkens and tints on
   big moves, the row wave, heat, the weather on the stage, battle scars in VFX-10's decals) built 2026-10-28 on
-  `claude/vfx-15-stage` (PR #311 into `track/vfx`). VFX-14 (statuses and stats on the stage: burned,
+  `claude/vfx-15-stage` (PR #311 into `track/vfx`, merged by VFX-11). VFX-12 (the Studio's Battle effects editor: moves in 8 outcomes and events on
+  the real stage at any speed, quality, motion and Flashes, a 24 fps scrubber over the runner's steps, panes for the
+  budgets and Part 1's smears as battleAnims.json data, ramps and cells panes for VFX-10's sections; VFX-6 folded in)
+  built 2026-10-28 on `claude/vfx-12-studio-effects` (PR #313, merged by VFX-11). VFX-11 (families x types: 16 families with
+  Faster variants and 11 type kits in battleAnims.json, every move's `anim`, projectiles on paths, rays, impacts,
+  sprays and effect lights in VFX-9's pool, spread and aimed moves, the Moves editor's dropdown; no move longer)
+  built 2026-10-28 on `track/vfx`, the main line of wave 2 beside VFX-14 and VFX-16. VFX-14 (statuses and stats on the stage: burned,
   paralyzed, asleep and confused looks, stat chevrons with sharply, Protect's bubble, the shield's cracking dome, Soaked,
   Fork, the delayed hit's mark, sharp stones, glints; Calm and Reduced; the broken-part and stat-drop-sound bugs) built
   2026-10-28 on the side branch `claude/vfx-14-statuses` (wave 2). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
@@ -331,7 +337,9 @@ town node needs it.
   `tags` with the bias on offers, 13 new pictures) done 2026-10-28 on `track/perks`; PK-5 (Wave C: catching, cash and
   maps: 12 Perks, the kinds catchLevel, refund, free and salvage, a money share on arrival, inflict at battle start,
   the rules rewardPick, rerollFree and mapReveal, `needs: bots`, 12 new pictures) done 2026-10-28 on `track/perks`;
-  PK-6 (Wave D: rules, growth and adventure) next.
+  PK-6 (Wave D: rules, growth and adventure: 11 Perks, the kinds copy and give, the rules cap, sideOpen, sideFind and
+  eventHurt, `needs: side`, growth on the cards, 11 new pictures) done 2026-10-28 on `track/perks`; PK-7 (Fine Print)
+  next.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
