@@ -1834,6 +1834,8 @@ def pasture(pg, base):
 
 
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
+    # the Studio's page first: its four checks run one after another for about 6 minutes on CI (Model mode alone 2-4)
+    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera), ("The Studio's Model mode: a CC0 glTF read, shown, baked, written, undone (ST-7)", studio_model)]),
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('Copperleaf is the island: its walking checks, every door a tap away, the wild grass, the orbit (IS-5)', hub_island),
               ('The exported debug log holds no names, a camera line with the moment and a lens line (CAM-1, CAM-2, CAM-3)', debug_log),
@@ -1870,7 +1872,6 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera), ("The Studio's Model mode: a CC0 glTF read, shown, baked, written, undone (ST-7)", studio_model)]),
     (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
 ]
 
