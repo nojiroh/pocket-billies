@@ -264,16 +264,17 @@
    }
   },
   "flurry": {
-   "about": "VFX-11: hits in a row: three quick lunges, an impact each",
+   "about": "VFX-11: hits in a row: three quick lunges, an impact each. VFX-13: on the beat (84 ms apart, two cells), each beat a little harder (beat), the last one the hit itself, the strongest",
    "dur": 880,
    "hit": 200,
    "steps": [
-    {"at":40,"n":3,"every":150,"do":"lunge","dx":20,"dy":-2,"dur":60,"ease":"in","delay":0,"backDur":70,"backAt":70},
-    {"at":100,"do":"toTarget","d":120},
-    {"at":110,"n":3,"every":150,"do":"impact","on":"target","spr":"small","k":1,"life":260,"jitter":0.35},
-    {"at":110,"n":3,"every":150,"do":"light","on":"target","ms":120},
-    {"at":410,"do":"impact","on":"target","spr":"impact","k":1,"life":380},
-    {"at":410,"do":"kit","part":"hit","on":"target"},
+    {"at":0,"n":3,"every":84,"do":"lunge","dx":20,"dy":-2,"dur":32,"ease":"in","delay":0,"backDur":40,"backAt":40},
+    {"at":0,"do":"toTarget","d":100},
+    {"at":32,"n":2,"every":84,"do":"impact","on":"target","spr":"small","k":1,"life":260,"jitter":0.35},
+    {"at":32,"n":2,"every":84,"do":"beat","on":"target"},
+    {"at":32,"n":3,"every":84,"do":"light","on":"target","ms":120},
+    {"at":200,"do":"impact","on":"target","spr":"impact","k":1,"life":380},
+    {"at":200,"do":"kit","part":"hit","on":"target"},
     {"at":200,"do":"hit","if":["dmg"]},
     {"do":"camHome","d":460,"delay":620},
     {"at":1050,"do":"focus","on":"wide"}
@@ -282,9 +283,11 @@
     "dur": 600,
     "hit": 160,
     "steps": [
-     {"at":20,"n":2,"every":120,"do":"lunge","dx":20,"dy":-2,"dur":50,"ease":"in","delay":0,"backDur":60,"backAt":60},
-     {"at":80,"do":"toTarget","d":100},
-     {"at":80,"n":2,"every":120,"do":"impact","on":"target","spr":"small","k":1,"life":240,"jitter":0.35},
+     {"at":36,"n":2,"every":84,"do":"lunge","dx":20,"dy":-2,"dur":40,"ease":"in","delay":0,"backDur":40,"backAt":44},
+     {"at":30,"do":"toTarget","d":90},
+     {"at":76,"do":"impact","on":"target","spr":"small","k":1,"life":240,"jitter":0.35},
+     {"at":76,"do":"beat","on":"target"},
+     {"at":160,"do":"impact","on":"target","spr":"impact","k":1,"life":380},
      {"at":160,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":300},
      {"at":720,"do":"focus","on":"wide"}

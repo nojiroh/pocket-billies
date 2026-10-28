@@ -256,6 +256,20 @@ function animStep(S, c) {
     case 'pop':
       if (typeof hudPop === 'function') hudPop(i, S.pop === 'hedged' ? 'Hedged' : 'Miss', 'miss');
       return;
+    case 'beat': {
+      /* VFX-13: a flurry's hit before the last, on the beat: a knock, a shake and a one-cell flash, each a little
+         harder than the one before (the last, the hit step, the strongest); no hit-stop, so no time is added */
+      const s = battleStage.s[c.ti],
+        k = (S.i + 1) / ((S.n || 1) + 1);
+      if (!s || !c.an.dmg) return;
+      K.setActorAction(c.ti, 'hurt', 200);
+      K.tween(s, 'ox', s.ox + c.dir * (2 + 4 * k), 30);
+      K.tween(s, 'ox', 0, 90, 'out', 30);
+      if (!reducedMotion) battleStage.shk = Math.max(battleStage.shk, 1 + 2 * k);
+      s.white = Math.max(s.white || 0, 0.25 + 0.25 * k);
+      K.tween(s, 'white', 0, BATTLE_ANIMS.tiers ? BATTLE_ANIMS.tiers.cell : 42, 'in');
+      return;
+    }
     case 'hit': {
       /* VFX-13: the tier's look; a KO's extra scar */
       const Lk = K.hitFx(c.ti, c.hitAn, null, animKo(c, c.ti));
