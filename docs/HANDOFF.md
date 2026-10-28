@@ -2,6 +2,100 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-14 - nature and weather: rain by intensity, roofs, thunder from the weather's bolts, wind and gusts, birds by the hour, insects, frogs, fire by size, footsteps by surface, the town's life, rooms by kind - 2026-10-28
+Branch `track/sound`, the world lane (main merged first, 764a4fde; SND-11's work merged mid-session, 0ba9f941). Started
+by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode, plan below, recommended
+options taken. 9 change commits, one cause each, plus docs; tag `snd-14-done` (for the owner to push) on this
+session's last commit. PR #292. Details: sound-track.md "SND-14 as built". The world lane is done.
+- **Plan**: (a) a pure, seeded logic/nature-sound.js and soundscape.json `nature` (schema, check:data findings), Node
+  tests; (b) a thin bolt counter in environment.js; (c) audio/nature-player.js for the one-shots and a game-side
+  nature-here.js reading the place, sound.js keeping thin calls: rain (wash, heavy roar, patter, roofs, eaves' drips,
+  indoors), thunder by distance, wind and the grass's gusts with the leaves, birds by the hour (the owl into the
+  one-at-a-time queue), insects, frogs at SND-10's still-water voices, fire by size, steps by surface, the town's life,
+  rooms by kind; (d) the Sound test's rows, the report's nature rows, the Studio card; (e) trims from the report; docs.
+- **Changed**: new game/js/logic/nature-sound.js, game/js/audio/nature-player.js, game/js/nature-here.js,
+  tools/test/nature-sound.test.mjs; game/data/soundscape.json (`nature`; beds `rainHeavy`, `rainRoof`, `roomHum`,
+  `roomBarn`; `dry` on cave and room) and its schema; game/js/environment.js (`environment.bolts`, a few lines);
+  game/js/sound.js (thin calls: `natureStart`, `natureHere`, `naturePreviewTick`, footsteps by `natureStep`; the
+  flash-polled thunder, the fire's fixed level, the town's murmur outdoors, the owl's own random and
+  `nearestSoundSource` gone; birds by the hour); game/js/logic/ambience-sound.js (`ambienceCrackles` takes a rate);
+  game/js/soundscape-here.js (keeps its chosen water voices for the frogs); game/js/sound-test.js (rows);
+  tools/check-sound.py (nature rows); tools/check-data.mjs; studio/js/music-editor.js (the World sounds card's nature
+  rows); tools/check-studio-github.py; script tags on both pages; studio/js/logic-worker-modules.js;
+  tools/test/ambience-sound.test.mjs (13 beds); studio/art-code-refs.json.
+- **Fingerprints**: 199, **0 changed** (`check-sound.py --loudness` in a worktree on 7a3bec54, on 1fb8ee3a, and on
+  1fb8ee3a with d071cc55 and 9401f985 on top: everything of this session that a fingerprint could reach). The baseline
+  was not written.
+- **Loudness** (LU under the route song; max = loudest 3 s): light rain -20.7, rain -14.0, heavy rain -12.8, on a roof
+  at 1 m -12.9, indoors -19.5; thunder at 0.6 km -11.6 (max -11.7), at 4 km -22.2; gusts -29.9, a forest's wind -16.1;
+  dawn chorus -22.7 (max -26.3), noon -23.5 (max -29.2), owl -22.1 (max -28.0); grasshoppers max -26.8, cicadas max
+  -24.2, frogs at 3 m -19.5; fireplace 2 m -22.6, campfire 2 m -16.8, bonfire 3 m -12.7; town life -23.9 (max -27.2);
+  rooms -19.9 (house) to -25.8 (workshop); steps -23.7 (mud) to -27.2 (wood). Scenes: Copperleaf's square -14.5
+  (-12.8 before), a route in rain -12.0, a meadow at night -16.6. No warning after the second trims.
+- **Memory**: nothing new baked (the beds' noise and SND-10's drop bank); 3.84 MB of the 6 MB budget as before.
+- **Risky or unfinished**:
+  - Claude can't hear: every recipe is judged by numbers; the owner's ears decide (Sound test, the Studio card).
+  - Thunder at 0.6 km is the loudest event (-11.7 LU max): within the events' ceiling, so no exception; it rises over
+    40-500 ms. If it reads too weak as thunder on the phone, `nature.thunder.level` is the knob.
+  - The cicada is a pulsing band at 3.3 kHz, high-shelved: the kind of sound that can grate; it is rare (10-25 s
+    apart), summer afternoons in hot biomes only.
+  - Rain on rooms: a room hears its place's rain (`environment.rain` indoors, by the forced or the place's weather);
+    not checked on a run's own weather in a room.
+  - In headless Chromium the page's frames block the 200 ms timer for seconds, so in-page counts of one-shots are
+    much lower than on a phone; the offline report is the measure. The debug log's `audio.nature` line (sources
+    started, thunder rolls, the bolts heard, the last thunder's km and delay) shows the phone's.
+  - `check-sound.py --loudness` on the merged head took over 90 min here and the full fingerprint pass did not finish
+    in an hour (SND-11's ensemble parts bake per job while the game page draws in software); `--only=route` takes
+    6 s and lists the two new ensemble parts as "not in the baseline" (SND-11's to write). For the music lane.
+  - The merge of SND-11 (0ba9f941) regenerated studio/art-code-refs.json and hooks.js inside the merge commit, not in
+    a commit of their own.
+- **Verified**: `npm run lint`, `typecheck`, `check:modules`, `format:check` and `check:data` after every commit (the
+  intermediate commits checked before committing, art-code-refs refreshed where sound.js moved); `npm test` 1770 of
+  1771 after the merge of SND-11 (the timing test "1,000 maps in under 1.5 s" on a loaded machine, as in SND-10); the
+  sound tests (ambience-sound, soundscape, sound, sound-bake, tracker, nature-sound, the check-data snapshot) 118 of
+  118. `check-sound.py --loudness`: 199, 0 changed on 7a3bec54, 1fb8ee3a and 1fb8ee3a + d071cc55 + 9401f985 (in a
+  worktree); the second trims measured on their rows alone. `npm run check:smoke` on 1edb2c77: 7 of 7, no problems.
+  Browser probes (headless Chromium, Copperleaf): a storm at night (two bolts: thunder rolled, the far one 12.5 s
+  later), dawn, and every new Sound test row: no page error. `check-quick.py --steps=sound,song,music,"debug
+  menu",weather,animals`: 10 of 12 (battle music failed under load and passed alone; Song fingerprints lists only
+  SND-11's 4-5 new ensemble parts as not in the baseline). `check-studio-github.py --only=music`: ok (steps on gravel
+  on the World sounds card). The full `npm run check:quick` on 323fc0c2: 38 of 42 in 2152 s; every sound step passed;
+  Terraces, RL-8 and "Walking left and right..." fail on main too; Song fingerprints as above (SND-11's baseline).
+  CI on the pushes: see below.
+- **Decided for the owner, to review**:
+  - Thunder: from a bolt counter in environment.js (the thin hook; its flash unchanged); distances 0.4-4.5 km, more
+    far than near; the speed of sound for the delay (1.2-13 s); a crack only within 1.2 km; at most two rolling; none
+    in a cave; bolts while the walk is away not heard; muffled to half indoors. Its level within the events' ceiling
+    (no exception).
+  - Rain: the wash by a curve (0.19 at 0.3, 0.38 at 1, 0.4 at 1.6), the heavy roar from 0.6, patter 2-20 drops a second
+    outdoors only, the roof full within 1.5 m of a building's eaves (its footprint as a circle), gone by 8 m, and
+    indoors at its own level; drips only under the eaves.
+  - Wind: a light breeze everywhere outdoors (half in towns), lifted by the gust the grass shows; the leaves too.
+  - Birds: the hour's curve (dawn 0.3, noon 2.6 times the wait), the dawn chorus 4:48-7:36, the owl from night 0.6 in
+    the same one-at-a-time queue (25-60 s), none in towns.
+  - Insects: cicadas (hot biomes, summer, 11:00-19:00) before grasshoppers (meadows and the like, spring to autumn,
+    9:30-18:30); none in rain or winter; crickets as before.
+  - Frogs: by pond, marsh, bog, lake and oasis voices, from night 0.45, spring to autumn.
+  - Fire sizes: campfire 1, fireplace 0.55, bakery oven 0.45, times the prop's scale.
+  - Footstep surfaces: grass (incl. forest floor, leaf litter, pine needles, moss), sand (incl. ash, salt), dirt,
+    gravel (incl. pebbles, scrap ground), wood (every board and parquet), snow, mud (incl. marsh), carpet (carpets,
+    rubber, cork, straw floor, cloud floor), stone for everything else; wet and snow from the weather as before.
+  - The town's life replaces the murmur outdoors (the murmur now an inn's tone); five kinds, 6-16 s apart.
+  - Rooms by the map id: house, shop, library, inn, lab, clinic, gene bank, workshop, barn, else a house's.
+  - A Sound test row starts its one-shots at once; its town murmur row went.
+  - The Studio card plays nature's one-shots only (its beds need sound.js; the game's Sound test plays them).
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test, then the places): light rain,
+  rain and heavy rain; "Rain on a roof" at 1 and 6 m and "Rain on the roof, indoors"; real rain in Copperleaf, under a
+  house's eaves and inside a room; thunder near and far, and a real storm with Settings' flashes off (thunder still
+  comes); "A breeze and its gusts" and "Wind in a forest" (and a forest route: the leaves rise with the grass's
+  gusts); "A dawn chorus", "Birds at noon", "An owl at night"; "Frogs by a pond at night" and a pond at night in
+  play; grasshoppers and cicadas; a fireplace, a campfire and a bonfire; steps on each surface (and walking over grass,
+  sand, a bridge, a dock, gravel, snow, mud); "A town's life" and Copperleaf's square at midday; an inn, a library, a
+  lab, a workshop, a barn and a house. Listen for: nothing sudden or shrill, thunder that reads as thunder, the rain
+  never louder than the music. Then export a debug log and check `audio.nature` (started, thunder, bolts,
+  lastThunder).
+- **Next**: the world lane is done. SND-15 (the mix and a phone pass) after the music lane (SND-17, SND-13, SND-12).
+
 ### Sound track SND-11 - stems and ensembles: the tick's patterns as pure functions, stems, baked instruments, the first ensembles, GB Sounds, the Studio's Instruments tab - 2026-10-28
 Branch `track/sound`, the music lane (main merged first; the local clone was stale and was reset to origin/track/sound
 before any edit). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode,

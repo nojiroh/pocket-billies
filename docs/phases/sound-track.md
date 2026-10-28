@@ -690,7 +690,7 @@ Water and nature, synthesized:
 | SND-17 | Jingles and stingers | the 12 jingles given the new instruments (a DS fanfare for victory, a glockenspiel and harp run for a level-up, strings swelling into an evolution...), stingers on the song's beat and in its key, GB Sounds keeping today's 8-bit ones; added at the owner's question (2026-10-27) | SND-11 | the 12 jingles |
 | SND-13 | Layers in play | the walking beat, weather and night, building intensity, street musicians (simulated until the busker resident, RS-5) | SND-11 | the layers' renders |
 | SND-12 | Arrangements | A/B forms of 16-32 bars (`prog` loses its fixed 8), fills, new lines; every song re-voiced as named placeholders, in batches the owner approves | SND-11 | the songs rewritten |
-| SND-14 | Nature and weather | rain by intensity (a wash, patter, roofs), thunder by a bolt counter and distance (not the visual flash), wind and gusts, leaves, birds by biome and hour (a dawn chorus), insects, frogs, fire, footsteps by surface, town life instead of a murmur, room tones | SND-10 | none |
+| SND-14 (done 2026-10-28) | Nature and weather | rain by intensity (a wash, patter, roofs), thunder by a bolt counter and distance (not the visual flash), wind and gusts, leaves, birds by biome and hour (a dawn chorus), insects, frogs, fire, footsteps by surface, town life instead of a murmur, room tones | SND-10 | none |
 | SND-15 | Mix and phone pass | about −18 LUFS through the master, the compressor and a limiter; ducking (jingles, cries, talk); slider defaults; the owner's phone; Studio polish | all | as needed |
 | SND-16 (optional) | Effects pass | sounds for things that have none: the airship's engine, the sky train and its rail, the world map, steam vents, wells. Battle sounds (moves, hits, throws, catches, hurt sounds, the recall) are the VFX track's VFX-19, on this track's tools (agreed 2026-10-28, "How the sessions run") | SND-9 | the effects |
 
@@ -1103,6 +1103,103 @@ at the foot of test_water's 6 m fall about 45 a second (before the quiet ones we
 - Frogs, insects and birds by water stay SND-14's; the pond at night is the pond's laps and plops under SND-8a's
   crickets.
 
+## SND-14: nature and weather (as built)
+### SND-14 as built (2026-10-28, branch `track/sound`, tag `snd-14-done` for the owner to push)
+The world lane's last step. Nine change commits, one cause each, plus docs; no song, jingle, cry or UI sound changed
+(0 fingerprints changed on every commit; the baseline was not written).
+
+| Commit | What |
+|---|---|
+| 7a3bec54 | **logic/nature-sound.js** (pure, seeded) and soundscape.json `nature` (its schema, check:data's `natureFindings`): rain by intensity, roofs, patter, thunder by a bolt's distance, wind and gusts, birds by the hour, insects, bouts and lockouts, frogs, fire by size, footsteps by surface, the town's life, rooms by kind; four new beds made and never started (`rainHeavy`, `rainRoof`, `roomHum`, `roomBarn`); `nature-sound.test.mjs` (17) |
+| 87e67362 | environment.js counts every lightning bolt (`environment.bolts`), seen or not; the flash still shows only with motion and the flashes on (the thin hook) |
+| 3cfa7acd | **nature plays**: audio/nature-player.js (the one-shots), game/js/nature-here.js (the place); sound.js keeps thin calls and loses the flash-polled thunder, the fire's fixed level and `nearestSoundSource`; a `dry` bed in the data skips the outdoors' muffle (cave, room and the room tones); `ambienceCrackles` takes a rate |
+| 25e0792e | the Sound test's rows and the loudness report's nature rows |
+| 1edb2c77 | the Studio's World sounds card plays nature's one-shots; the Studio check plays steps on gravel |
+| 1fb8ee3a | no thunder in a cave, none stored up while the walk was away |
+| d071cc55 | a preview row starts its one-shots at once (the Sound test, the report) |
+| 9401f985 | the trims from the report (heavy rain, patter, roofs down; grasshoppers and the town's life up) |
+| 323fc0c2 | the second trims (the wash, the heavy roar and the roofs under the bed ceiling; cicadas up) |
+
+**How it works.** sound.js `updateAmbience` calls `natureHere(sc, E, T, pans, t)` after `ambienceBeds` every 200 ms; it
+sets the beds' levels and plays the one-shots 0.3 s ahead, each stream from its own seeded random (0x50d6, 0x50d7):
+- **Rain** by the weather's rain (0-1.6): the wash (`rain`, 0.2 at 0.3, 0.42 at 1, 0.44 at a storm's), the heavy roar
+  (`rainHeavy` from 0.6), patter (2-20 drops a second round you outdoors, band-passed noise 1.3-3.8 kHz, higher and
+  softer on leaves by the trees round you, one in ten a plink from the drop bank), the rain on roofs (`rainRoof`: full
+  within 1.5 m of a building's eaves, nothing past 8 m, its own level indoors, through a room's walls too) and drips
+  off the eaves you stand under (bubbles from the drop bank). SND-10's rain on water is unchanged.
+- **Thunder** after each of `environment.bolts` (so with reduced motion and the flashes off too): a distance of
+  0.4-4.5 km (more far than near), the delay at 343 m/s (1.2-13 s), rolls of brown noise through a low-pass that
+  closes as they fade, each rising over 0.04-0.5 s (never a sudden edge); within 1.2 km a soft crack first; near is
+  brighter (700 Hz) and louder, far a low (160 Hz), long and quiet rumble; at most two rolling at once; muffled
+  indoors; none in a cave; bolts while the walk was away come in silently.
+- **Wind**: a breeze in the open (0.07 times the scene's wind, half in a town), the mountains', a storm's and snow's
+  as before, all times the gust where you stand: the renderer's own wind field (engine/webgl.js `windGustAt`, the one
+  the grass bends to), 0.6 + 0.4 x gust; the leaves 0.55 + 0.45 x gust.
+- **Birds** (sound.js `ambienceBirds`, by `natureBirds` and `natureBirdWait`): still one at a time; the wait times the
+  hour's (0.3 from 5:00 to 7:00, 2.6 at noon); from 4:48 to 7:36 the dawn chorus adds song and thrush; from night 0.6
+  the owl alone (25-60 s apart, none in a town or where no bird lives).
+- **Insects** by the biome, hour and season: crickets by night as before; by day the cicada (summer, 11:00-19:00:
+  jungle, desert, badlands, canyon, mangrove, salt flat, volcano, vineyard: a pulsing swell of 3-6 s, 10-25 s apart)
+  or grasshoppers (spring to autumn, 9:30-18:30: meadow, grass, farm, golf, vineyard, blossom, park, autumn: chirrs of
+  10-24 pulses, two callers, 4-11 s gaps); none in the rain or winter.
+- **Frogs** by night (from 0.45) in the warm seasons, fewer in the rain, at the loudest still water voice
+  soundscape-here.js chose (pond, marsh, bog, lake, oasis): two callers croaking in bouts of 3-9, a low buzz through a
+  700 Hz formant.
+- **Fire by size**: the prop's group (campfire 1, fireplace 0.55, bakery oven 0.45) times its scale; range 7 m x
+  root(size), level 0.35 x size^0.6, crackles 3.5 a second x root(size).
+- **Footsteps by surface** (soundscape.json `nature.steps`: grass, sand, dirt, gravel, stone, wood, snow, mud, wet,
+  carpet; every terrain code has one, stone for the rest), played by the nature player, a little different each step.
+  The footstep loop's rules (bridges, wet ground, snow cover, wading, Surf) are unchanged.
+- **The town's life** instead of the murmur: one quiet event at a time, 6-16 s apart (2.5 times as long by night): a
+  door, a cart passing over the cobbles, a far voice, a dog, a bell; most far off (duller and quieter), the same kind
+  seldom twice running. The murmur bed stays as an inn's tone.
+- **Rooms by kind** (the map id without `int_`): a house or shop the room tone, a library quieter with a page now and
+  then, an inn the murmur low with cups, a lab, clinic or gene bank a soft hum, a workshop the hum with a tool's tick,
+  a barn its own straw-and-air tone with straw shifting; the clock still ticks where there is one.
+
+**Loudness** (LU under the route song, -31.9 LUFS, beds 3 dB under a song as in play; `check-sound.py --loudness`'s
+nature rows; the rain rows, cicadas and the scenes after the second trims, measured on those rows alone; "max" the
+loudest 3 s):
+
+| Sound | LU | max | | Sound | LU | max |
+|---|---|---|---|---|---|---|
+| light rain (0.3) | -20.7 | -20.4 | | grasshoppers | -25.9 | -26.8 |
+| rain (1) | -14.0 | -13.7 | | cicadas | — | -24.2 |
+| heavy rain (1.6) | -12.8 | -12.5 | | frogs 3 m | -19.5 | -18.9 |
+| rain on a roof 1 m | -12.9 | -12.3 | | fireplace 2 m | -22.6 | -20.8 |
+| rain indoors | -19.5 | -18.7 | | campfire 2 m | -16.8 | -15.7 |
+| thunder 0.6 km | -11.6 | -11.7 | | bonfire 3 m | -12.7 | -11.8 |
+| thunder 4 km | -22.2 | -21.7 | | town life | -23.9 | -27.2 |
+| breeze and gusts | -29.9 | -28.1 | | room: house / library / lab | -19.9 / -22.4 / -22.3 | |
+| wind in a forest | -16.1 | -13.6 | | room: inn / workshop / barn | -25.7 / -25.8 / -20.2 | |
+| dawn chorus | -22.7 | -26.3 | | steps (grass, sand, dirt, mud) | -24.7, -24.9, -24.5, -23.7 | -24.0 to -22.8 |
+| birds at noon | -23.5 | -29.2 | | steps (gravel, stone, wood, snow, wet, carpet) | -26.4 to -27.2 | -26.3 to -25.8 |
+| owl | -22.1 | -28.0 | | | | |
+
+No warning after the second trims: every bed 12 LU or more under the route song, every event's loudest 3 s 8 or more
+under (thunder at 0.6 km the closest, -11.7: no exception needed). Scenes: Copperleaf's square -14.5 (-12.8 before: the
+town's life instead of the murmur), a route in the rain -12.0 (-12.3 before; its gusts and leaves now), a meadow at
+night -16.6 (unchanged). Unchanged rows: storm wind -15.0, leaves -18.2, crickets -19.0, cave -16.0, the coast's sea
+-18.0, every water row. Steps on a lawn -24.7 (-27.4 before: the grass surface has a soft swish over the thump).
+
+**Memory and cost**: nothing new is baked (the one-shots use the beds' noise and SND-10's drop bank), so the 3.84 MB of
+the 6 MB budget stands. Per 200 ms update: the eaves and fires by a scan of the props within 12 m (as the trees'
+count already did), a few one-shots (a storm's patter at most 6, each 1 source and 3 nodes).
+
+**Corrections found in SND-14** (checked in the code and in the browser):
+- "About 5 claps in 6 are silent": the flash fades at 3.2 a second (environment.js), so it stays over 0.9 for about
+  31 ms against the 200 ms poll, as said; the bolt counter makes the question moot.
+- The owl was not one-at-a-time with the birds (its own random line, about one in 40 s at night): it is now the
+  night's only bird in the same queue.
+- `walkView.t` drives the grass's gusts (ms); with reduced motion the grass is drawn still (time 0) but the wind's
+  gusts are still heard.
+- A probe's in-page counts are not the game's rates: headless Chromium's frames block the 200 ms timer for seconds
+  (the patter looked a tenth as dense). The offline loudness report is the measure.
+- The thunder's counter first shared its name with the player's thunder method (`P.thunder`): the second bolt would
+  have thrown inside the 200 ms update's try. Caught by the browser probe before the commit.
+- `check-sound.py --loudness` took over 90 min after main's and SND-11's merge (25 before): each job now waits a
+  tick (SND-11), so the game's software-drawn frames run between jobs, and each ensemble row bakes its instruments.
+
 ## SND-11's seams (from the code review)
 - **Stems**: the tick plays into `sg.stems.*`, `drums` being the existing `sg.drums` (sound.js:1157 drives it). Plain
   gain-1 nodes change only the summing order, far under the tolerance. **No StereoPanner on the `gb` path**: a centred
@@ -1184,7 +1281,7 @@ them later.
 `game/js/audio/tracker.js`, `game/js/sound.js`, `game/js/audio/levels.js`, new `game/js/logic/sound-bake.js`,
 `game/data/music.json` and `schema/music.schema.json`, `game/data/soundscape.json` and its schema (listed in
 `game/data/index.json`; SND-10), `game/js/logic/soundscape.js`, `game/js/audio/soundscape-player.js`,
-`game/js/soundscape-here.js` (SND-10), `game/js/settings-screen.js` (GB Sounds), `game/js/debug-menu.js` and new `game/js/sound-test.js` (the Sound Test),
+`game/js/soundscape-here.js` (SND-10), `game/js/logic/nature-sound.js`, `game/js/audio/nature-player.js`, `game/js/nature-here.js` (SND-14), `game/js/settings-screen.js` (GB Sounds), `game/js/debug-menu.js` and new `game/js/sound-test.js` (the Sound Test),
 `game/js/debug-log.js` (the audio lines), `game/index.html` and `studio/index.html` (the audio script tags),
 `studio/js/music-editor.js`, `tools/check-sound.py`, `tools/check-quick.py`, `tools/test/tracker.test.mjs`,
 `tools/test/sound.test.mjs`, `tools/after-edit.mjs`, `validation/sound-baseline/`.

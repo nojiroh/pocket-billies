@@ -197,9 +197,12 @@ town node needs it.
   changed) done 2026-10-28. SND-10 (water: `soundscape.json` with a recipe per water kind, emitters from the scene
   (shores, river lines, falls by height and their pools, fountains), far water low and soft and near water bright, the
   surf on the tide, rain on water, wading, Surf, fishing and plops, a World sounds card in the Studio; WA-8's water
-  sounds, decided as recommended) done 2026-10-28. Next stems and ensembles in a
+  sounds, decided as recommended) done 2026-10-28. SND-14 (nature and weather: rain by how hard it falls with patter,
+  roofs and indoors, thunder from the weather's bolts by distance, wind with the grass's gusts, birds by the hour, insects
+  and frogs, fires by size, footsteps by surface, the town's life, rooms by kind; the world lane's last step) done
+  2026-10-28. Next stems and ensembles in a
   Chip+ and DS-era mix with a GB Sounds switch (SND-11), layers in play (SND-13: a walking beat, street musicians,
-  weather and night, building intensity), arrangements (SND-12), nature and weather (SND-14), the mix and a phone
+  weather and night, building intensity), arrangements (SND-12), the mix and a phone
   pass (SND-15); SND-17 (the jingles with the new instruments, stingers on the beat) right after SND-11, added at the
   owner's question. Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
   plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
