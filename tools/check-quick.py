@@ -1064,7 +1064,8 @@ def phone_flow(P):
     elems['shop'] = pg.evaluate('uiElementCount()')
     pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
     if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
-    shot(pg, 'phone-battle')
+    # UI-16a: the move buttons rise in one after another; picture and count them once they have
+    ui(pg); shot(pg, 'phone-battle')
     blur['battle'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['battle'] = pg.evaluate('uiBlurCount()')
     elems['battle'] = pg.evaluate('uiElementCount()')
     R['blurPerScreen'] = blur; R['blurPerScreenWithBars'] = blurAll
