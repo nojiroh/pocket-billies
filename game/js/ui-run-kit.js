@@ -8,7 +8,8 @@
      <pb-forecast items="clear:Clear,rain:Rain" from="3" value="3">   the weather by day, today marked
      <pb-node type="town" state="seen" weather="rain" label="Marrow Town">   a run map marker (js/logic/run-marks.js)
      <pb-coin kind="money|research|scrap|crests|beans|dna" value="340" label="Moneys">   a currency chip that counts to a new value
-     <pb-pick-card heading="..." facedown selected>   the relic pick and keep-one card; turning it face up flips it
+     <pb-pick-card heading="..." facedown selected rarity="rare">   the relic pick and keep-one card; turning it face up
+                                                       flips it; UI-14a: rarity shows as a frame, pill and name colour
      <pb-payout rows='[{"label":"Moneys left","value":170}]' total="420" total-label="Research">   rows slam in, the
                                                        total counts up (play() runs it again); pb-payout-row
                                                        as each row shows, pb-payout-total as the total lands
@@ -16,27 +17,38 @@
                                                        tile in the middle (slot "map"), compact while walking
      <pb-loading heading="..." sub="..." tip="..." value="0.4" stages='[{"id":"map","label":"...","state":"ready"}]'>
                                                        HB-2: the run's loading screen; slot "view" for its picture
+     <pb-stamp word="DENIED" tilt="-8" size="sm|lg" still>   SY-3: the Bureau's stamp, slammed on (pb-stamp-land as it
+                                                       lands); the words are factions.json look.stamps
    The motions here repeat css/motion.css's reward motions (m-slam, m-flip), as a component's styles can't see the
    page's; with reduced motion each one is a fade and numbers jump to their end. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
-import { runMarkLook } from './logic/run-marks.js';
-import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
+import { glyphOf, sigVar } from './logic/signals.js';
+import { chipLook, rarityTier } from './logic/marks.js';
+import { motionCountAt, motionCountMs } from './logic/motion.js';
+import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
+import { LitElement, css, html, nothing, pbSlideBar, pbSound, reduced } from './ui-kit.js';
+/* eslint-disable no-func-assign */
 expose({
   PbCoin: [() => PbCoin],
   PbDayChip: [() => PbDayChip],
   PbForecast: [() => PbForecast],
   PbLoading: [() => PbLoading],
+  PbNameBanner: [() => PbNameBanner],
   PbNavBar: [() => PbNavBar],
   PbNode: [() => PbNode],
   PbPayout: [() => PbPayout],
   PbPickCard: [() => PbPickCard],
+  PbStamp: [() => PbStamp],
   RUN_CURRENCY_ICONS: [() => RUN_CURRENCY_ICONS],
   RUN_NAV_SETS: [() => RUN_NAV_SETS],
   RUN_WEATHER_ICONS: [() => RUN_WEATHER_ICONS],
   navStep: [() => navStep],
+  pbNameBanner: [() => pbNameBanner, v => (pbNameBanner = v)],
   runIcon: [() => runIcon],
+  runIconPixels: [() => runIconPixels],
+  runIconPx: [() => runIconPx],
   runIconURL: [() => runIconURL],
   runKitBase: [() => runKitBase],
   runKitMotion: [() => runKitMotion],
@@ -46,6 +58,7 @@ expose({
   runSvg: [() => runSvg],
   unsafeCSS: [() => unsafeCSS],
 });
+/* eslint-enable no-func-assign */
 /* to-module: end */
 /* Lit's html, css, LitElement and nothing, and reduced(), come from js/ui-kit.js (one name each on the page) */
 const runSvg = /** @type {any} */ (self).PB_LIT.svg;
@@ -66,10 +79,10 @@ const runMsVar = (/** @type {Element} */ el, /** @type {string} */ name, dflt) =
   return Number.isFinite(n) ? (v.endsWith('ms') ? n : v.endsWith('s') ? n * 1000 : n) : dflt;
 };
 /** numbers as the game writes them: 12,400 */
-const runNumber = (/** @type {number} */ n) => Math.round(n).toLocaleString('en-US');
+export const runNumber = (/** @type {number} */ n) => Math.round(n).toLocaleString('en-US');
 
 /* the weather's icons and names (environment.js WEATHER_NAMES gives the game's; these are the fallbacks) */
-const RUN_WEATHER_ICONS = {
+export const RUN_WEATHER_ICONS = {
   clear: 'sun',
   cloudy: 'cloud',
   rain: 'rain',
@@ -144,7 +157,7 @@ const runKitBase = css`
   }
 `;
 /* the reward motions (css/motion.css m-slam, m-flip), repeated for the shadow styles */
-const runKitMotion = css`
+export const runKitMotion = css`
   @keyframes m-slam {
     from {
       opacity: 0;
@@ -168,6 +181,20 @@ const runKitMotion = css`
   @keyframes m-count {
     40% {
       transform: scale(1.12);
+    }
+  }
+  /* UI-16b: the stamp (motion.css m-stamp; run it as var(--m-stamp), which is m-fade under Reduced) */
+  @keyframes m-stamp {
+    from {
+      opacity: 0;
+      transform: rotate(calc(var(--tilt, 0deg) + 6deg)) scale(1.9);
+    }
+    55% {
+      opacity: var(--stamp-o, 1);
+      transform: rotate(var(--tilt, 0deg)) scale(0.94);
+    }
+    to {
+      transform: rotate(var(--tilt, 0deg)) scale(1);
     }
   }
 `;
@@ -258,6 +285,20 @@ const PbForecast = class extends LitElement {
       }
       li[aria-current='date'] .ic {
         color: var(--goldink, #3a2408);
+        /* UI-17: today's icon moves (idle life: --idle-forecast names the keyframes while it plays) */
+        animation: var(--idle-forecast, none) var(--idle-wx-ms, 3.6s) ease-in-out infinite;
+      }
+      @keyframes pb-wx-now {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0);
+        }
+        30% {
+          transform: translateY(-1px) rotate(-6deg);
+        }
+        65% {
+          transform: translateY(1px) rotate(5deg);
+        }
       }
     `,
   ];
@@ -282,72 +323,49 @@ const PbForecast = class extends LitElement {
 };
 
 /* ---------- a run map marker ---------- */
+/** UI-8c: a UI icon's pixels (36 x 36 RGBA), loaded once each */
+const runIconPx = /** @type {Record<string, Promise<Uint8ClampedArray>>} */ ({});
+const runIconPixels = (/** @type {string} */ k) =>
+  runIconPx[k] ||
+  (runIconPx[k] = new Promise((ok, no) => {
+    const im = new Image(),
+      N = RUN_MARK_ART.grid;
+    im.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = c.height = N;
+      /* read back once: kept off the GPU, so the read doesn't wait on the GPU's queue */
+      const x = /** @type {CanvasRenderingContext2D} */ (c.getContext('2d', { willReadFrequently: true }));
+      x.drawImage(im, 0, 0, N, N);
+      ok(x.getImageData(0, 0, N, N).data);
+    };
+    im.onerror = no;
+    im.src = runIconURL(k);
+  }));
+/* UI-8c: the place's pixel icon (art/ui/node-<shape>.svg, Badges) for its state, painted as the bowl paints it
+   (logic/run-marks.js runMarkPixels: the gold rim where you stand, done faded with a check, locked grey with a
+   padlock); --size is the icon's 36 grid, the rim reaches two art pixels past it */
 const PbNode = class extends LitElement {
   static properties = { type: { reflect: true }, state: { reflect: true }, weather: {}, label: {} };
   static styles = [
     runKitBase,
     css`
       :host {
-        --size: 44px;
+        --size: 36px;
         display: inline-grid;
         position: relative;
         width: var(--size);
         height: var(--size);
-        --fill: var(--c-surface);
-        --line: var(--c-text);
-        --ink: var(--c-text);
       }
-      :host([data-tone='primary']) {
-        --fill: var(--c-primary);
-        --line: color-mix(in srgb, var(--c-primary) 55%, black);
-        --ink: var(--c-surface);
-      }
-      :host([data-tone='danger']) {
-        --fill: var(--c-danger);
-        --line: color-mix(in srgb, var(--c-danger) 55%, black);
-        --ink: var(--c-surface);
-      }
-      :host([data-tone='gold']) {
-        --fill: var(--gold-b);
-        --line: color-mix(in srgb, var(--gold-b) 50%, black);
-        --ink: var(--goldink, #3a2408);
-      }
-      :host([data-tone='muted']) {
-        --fill: color-mix(in srgb, var(--c-text) 22%, var(--c-surface));
-        --line: color-mix(in srgb, var(--c-text) 45%, transparent);
-        --ink: var(--c-text2);
-      }
-      svg {
+      canvas {
         position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        overflow: visible;
+        left: calc(var(--size) / -18);
+        top: calc(var(--size) / -18);
+        width: calc(var(--size) * 40 / 36);
+        height: calc(var(--size) * 40 / 36);
+        image-rendering: pixelated;
       }
-      polygon {
-        fill: var(--fill);
-        stroke: var(--line);
-        stroke-width: 1.5px;
-        stroke-linejoin: miter;
-        vector-effect: non-scaling-stroke;
-      }
-      :host([state='current']) svg {
-        filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold-a) 80%, transparent));
-      }
-      :host([state='visited']) svg,
-      :host([state='locked']) svg {
-        opacity: 0.6;
-      }
-      .g {
-        place-self: center;
-        position: relative;
-        color: var(--ink);
-        font-size: calc(var(--size) * 0.45);
-        line-height: 1;
-      }
-      .g.ic {
-        width: calc(var(--size) * 0.4);
-        height: calc(var(--size) * 0.4);
+      :host([state='current']) canvas {
+        filter: drop-shadow(0 0 calc(var(--size) / 8) color-mix(in srgb, var(--gold-a) 80%, transparent));
       }
       .wx {
         position: absolute;
@@ -373,36 +391,47 @@ const PbNode = class extends LitElement {
     this.state = 'seen';
     this.weather = '';
     this.label = '';
+    /** the picture drawn once its icons have loaded (a promise, for the gallery's pictures) */
+    this.painted = Promise.resolve();
   }
   get look() {
     return runMarkLook(this.type, this.state);
   }
   updated() {
-    this.dataset.tone = this.look.tone;
+    const L = this.look,
+      state = this.state,
+      cv = /** @type {HTMLCanvasElement | null} */ (this.renderRoot.querySelector('canvas'));
+    if (!cv) return;
+    this.painted = Promise.all([runIconPixels(L.icon), L.badge ? runIconPixels(L.badge) : null])
+      .then(([icon, badge]) => {
+        if (this.look.icon !== L.icon || this.state !== state) return;
+        const p = runMarkPixels(icon, badge, state);
+        cv.width = p.w;
+        cv.height = p.h;
+        /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')).putImageData(
+          new ImageData(p.data, p.w, p.h),
+          0,
+          0
+        );
+      })
+      .catch(() => {});
   }
   render() {
-    const L = this.look,
-      pts = L.points.map(([x, y]) => `${x},${y}`).join(' '),
-      wx = this.weather && this.state !== 'hidden' && /** @type {any} */ (RUN_WEATHER_ICONS)[this.weather],
+    const wx = this.weather && this.state !== 'hidden' && /** @type {any} */ (RUN_WEATHER_ICONS)[this.weather],
       said =
         this.state === 'hidden'
           ? 'Not yet seen'
           : [this.label || this.type, this.state !== 'seen' ? this.state : '', this.weather].filter(Boolean).join(', ');
     return html`<span role="img" aria-label=${said} style="display:contents"
-      ><svg viewBox="0 0 100 100" aria-hidden="true">${runSvg`<polygon points=${pts}></polygon>`}</svg
-      >${
-        L.glyph === '?'
-          ? html`<span class="g" aria-hidden="true">?</span>`
-          : L.glyph
-            ? runIcon(L.glyph, 'g ic')
-            : nothing
-      }${wx ? html`<span class="wx" aria-hidden="true">${runIcon(wx)}</span>` : nothing}</span
+      ><canvas width="40" height="40" aria-hidden="true"></canvas>${
+        wx ? html`<span class="wx" aria-hidden="true">${runIcon(wx)}</span>` : nothing
+      }</span
     >`;
   }
 };
 
 /* ---------- a currency chip ---------- */
-const PbCoin = class extends LitElement {
+export const PbCoin = class extends LitElement {
   static properties = { kind: { reflect: true }, value: { type: Number }, label: {}, _shown: { state: true } };
   static styles = [
     runKitBase,
@@ -447,7 +476,11 @@ const PbCoin = class extends LitElement {
         font-variant-numeric: tabular-nums;
       }
       .n.bump {
-        animation: m-count var(--m-base) var(--spring);
+        animation: m-count var(--m-pop) var(--spring);
+      }
+      /* UI-16a: ticking up, the number takes its family's colour */
+      .n.tick {
+        color: var(--tone);
       }
       .l {
         color: var(--text2);
@@ -463,7 +496,9 @@ const PbCoin = class extends LitElement {
     this._shown = null;
     this._raf = 0;
   }
-  /** counts from what it showed to the new value over --m-slow (at once with reduced motion or the first time) */
+  /** counts from what it showed to the new value (at once with reduced motion or the first time). UI-16a: the shared
+   * count (logic/motion.js: 400-700 ms by the size of the change), the number in its family's colour while it ticks,
+   * then a small pop and the count sound; pb-chip (ui-marks-kit.js) counts with this same code */
   willUpdate(ch) {
     if (!ch.has('value')) return;
     const from = this._shown,
@@ -471,15 +506,22 @@ const PbCoin = class extends LitElement {
     cancelAnimationFrame(this._raf);
     if (from == null || from === to || reduced() || !this.isConnected) {
       this._shown = to;
+      this._ticking = false;
       return;
     }
     const t0 = performance.now(),
-      ms = Math.max(200, runMsVar(this, '--m-slow', 360) * 2);
+      ms = motionCountMs(from, to);
+    this._ticking = true;
     const step = (/** @type {number} */ t) => {
       const k = Math.min(1, (t - t0) / ms);
-      this._shown = from + (to - from) * (1 - (1 - k) ** 3);
+      this._shown = motionCountAt(from, to, k);
       if (k < 1) this._raf = requestAnimationFrame(step);
-      else this.renderRoot.querySelector('.n')?.classList.add('bump');
+      else {
+        this._ticking = false;
+        /* after the redraw, whose class binding would drop it */
+        this.updateComplete.then(() => this.renderRoot.querySelector('.n')?.classList.add('bump'));
+        pbSound('count');
+      }
     };
     this._raf = requestAnimationFrame(step);
   }
@@ -492,7 +534,10 @@ const PbCoin = class extends LitElement {
     const k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'coin',
       name = this.label || this.kind;
     return html`<span class="chip" role="img" aria-label=${`${runNumber(this.value)} ${name}`}
-      >${runIcon(k)}<span class="n" aria-hidden="true" @animationend=${e => e.target.classList.remove('bump')}
+      >${runIcon(k)}<span
+        class="n ${this._ticking ? 'tick' : ''}"
+        aria-hidden="true"
+        @animationend=${e => e.target.classList.remove('bump')}
         >${runNumber(this._shown ?? this.value)}</span
       >${this.label ? html`<span class="l" aria-hidden="true">${this.label}</span>` : nothing}</span
     >`;
@@ -505,8 +550,12 @@ const PbPickCard = class extends LitElement {
     heading: {},
     sub: {},
     facedown: { type: Boolean, reflect: true },
+    /* UI-16a: dealt face down only for the show (the offer turns over by itself): a tap turns it and picks it */
+    dealt: { type: Boolean },
     selected: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
+    rarity: { reflect: true },
+    kind: { reflect: true },
   };
   static styles = [
     runKitBase,
@@ -516,6 +565,70 @@ const PbPickCard = class extends LitElement {
         display: block;
         min-width: 0;
         --w: 100%;
+      }
+      /* UI-14a: rarity (the owner's answer 9, the loot ladder as frame and pill): a 3 px frame in the tier's fill along
+         the card's cut outline, the tier's pill at the top right, the name in the tier's text shade. The selected card
+         keeps its gold edge line over the frame */
+      .rar {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+        background: var(--rar);
+        clip-path: polygon(
+          evenodd,
+          0 8px,
+          8px 0,
+          calc(100% - 8px) 0,
+          100% 8px,
+          100% calc(100% - 8px),
+          calc(100% - 8px) 100%,
+          8px 100%,
+          0 calc(100% - 8px),
+          0 8px,
+          3px 12.24px,
+          12.24px 3px,
+          calc(100% - 12.24px) 3px,
+          calc(100% - 3px) 12.24px,
+          calc(100% - 3px) calc(100% - 12.24px),
+          calc(100% - 12.24px) calc(100% - 3px),
+          12.24px calc(100% - 3px),
+          3px calc(100% - 12.24px),
+          3px 12.24px
+        );
+      }
+      .tier {
+        position: absolute;
+        top: var(--s2);
+        right: var(--s3);
+        z-index: 2;
+      }
+      :host([rarity]) h3 {
+        color: var(--rar-t, inherit);
+      }
+      /* UI-14b: what kind of pickup (the colour code's "family colour + frame shape: the card's ribbon"): kind="..." (a
+         UI_GLYPHS.kind id: perk, held, item, candy, evo, tutor, part, scrap) draws the sub line as a slanted ribbon
+         in its family's tint with a bar of its fill and its glyph in its text shade; a neutral kind (item) stays
+         plain grey */
+      .sub.rib {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--s1);
+        margin-top: var(--s1);
+        padding: 1px var(--s2) 1px calc(var(--s2) + 3px);
+        clip-path: var(--clip-chip);
+        background:
+          linear-gradient(90deg, var(--kind, var(--text2)) 0 3px, transparent 3px),
+          color-mix(in srgb, var(--kind, var(--c-text)) 14%, transparent);
+        color: var(--kind-t, var(--text2));
+      }
+      .sub .gl {
+        flex: none;
+        width: 12px;
+        height: 12px;
+        background-color: currentColor;
+        -webkit-mask: var(--ico) center / contain no-repeat;
+        mask: var(--ico) center / contain no-repeat;
       }
       button {
         position: relative;
@@ -600,7 +713,8 @@ const PbPickCard = class extends LitElement {
         position: relative;
         display: grid;
         min-height: 168px;
-        transition: transform var(--m-slow) var(--spring);
+        /* UI-16a: --m-k is 0 under Reduced: it turns at once and reveal() fades it */
+        transition: transform calc(var(--m-slow) * var(--m-k, 1)) var(--spring);
         transform-style: preserve-3d;
       }
       :host([facedown]) .card {
@@ -623,14 +737,6 @@ const PbPickCard = class extends LitElement {
       :host([selected]) .notch {
         display: block;
       }
-      :host-context([data-motion='reduced']) .card {
-        transition: opacity var(--m-fast) linear;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .card {
-          transition: opacity var(--m-fast) linear;
-        }
-      }
     `,
   ];
   constructor() {
@@ -638,8 +744,11 @@ const PbPickCard = class extends LitElement {
     this.heading = '';
     this.sub = '';
     this.facedown = false;
+    this.dealt = false;
     this.selected = false;
     this.disabled = false;
+    this.rarity = '';
+    this.kind = '';
   }
   /** turns it face up (the flip); with reduced motion it fades instead */
   reveal() {
@@ -651,10 +760,23 @@ const PbPickCard = class extends LitElement {
   }
   _pick() {
     if (this.disabled) return;
-    if (this.facedown) return this.reveal();
+    if (this.facedown) {
+      this.reveal();
+      if (!this.dealt) return;
+    }
     this.dispatchEvent(new CustomEvent('pb-pick', { bubbles: true, composed: true }));
   }
+  /** the sub line, as the kind's ribbon when it has a kind (UI-14b) */
+  _sub() {
+    const K = this.kind ? glyphOf('kind', this.kind) : null;
+    if (!K) return html`<p class="sub">${this.sub}</p>`;
+    return html`<p class="sub rib" style=${K[1] ? `--kind:var(${sigVar(K[1])});--kind-t:var(${sigVar(K[1], true)})` : nothing}>
+      <i class="gl" style=${`--ico:url('${runIconURL(K[0])}')`} aria-hidden="true"></i>${this.sub}
+    </p>`;
+  }
   render() {
+    const t = rarityTier(this.rarity),
+      rar = t ? `--rar:var(--sig-${t});--rar-t:var(--sig-${t}-text)` : '';
     return html`<button
       part="button"
       ?disabled=${this.disabled}
@@ -663,11 +785,19 @@ const PbPickCard = class extends LitElement {
       @click=${this._pick}
     >
       <span class="card">
-        <span class="face" aria-hidden=${this.facedown ? 'true' : nothing}>
+        <span class="face" style=${rar || nothing} aria-hidden=${this.facedown ? 'true' : nothing}>
+          ${
+            t
+              ? html`<span class="rar" aria-hidden="true"></span>${
+                  /* UI-17: a rare or mythical card's foil (pb-foil: idle life) */
+                  t === 'rare' || t === 'mythical' ? html`<pb-foil></pb-foil>` : nothing
+                }<pb-rarity class="tier" tier=${t}></pb-rarity>`
+              : nothing
+          }
           <span class="art"><slot name="art"></slot></span>
           <span>
             <h3>${this.heading}</h3>
-            ${this.sub ? html`<p class="sub">${this.sub}</p>` : nothing}
+            ${this.sub ? this._sub() : nothing}
             <span class="text"><slot></slot></span>
           </span>
         </span>
@@ -711,8 +841,9 @@ const PbPayout = class extends LitElement {
         background: color-mix(in srgb, var(--c-text) 6%, transparent);
         font-size: 17px;
       }
+      /* UI-16a: under Reduced (--m-k 0) a row is there at once */
       li.in {
-        animation: m-slam var(--m-slow) var(--spring) both;
+        animation: m-slam calc(var(--m-slow) * var(--m-k, 1)) var(--spring) both;
       }
       li.wait {
         visibility: hidden;
@@ -732,8 +863,9 @@ const PbPayout = class extends LitElement {
         font-size: 20px;
         font-variant-numeric: tabular-nums;
       }
+      /* UI-14b: a cost is the bad family's text shade (4.5:1 on surfaces, the colour code's check) */
       .v.neg {
-        color: color-mix(in srgb, var(--c-danger) 70%, var(--c-text)); /* danger alone reads 3.7:1 here */
+        color: var(--sig-bad-text);
       }
       .tot {
         display: flex;
@@ -742,8 +874,8 @@ const PbPayout = class extends LitElement {
         margin-top: var(--s3);
         padding: var(--s3) var(--s4);
         clip-path: var(--clip-action);
-        background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
-        color: var(--goldink, #3a2408);
+        background: var(--tot, linear-gradient(180deg, var(--gold-a), var(--gold-b)));
+        color: var(--c-ink);
       }
       .tot .lab {
         font-size: 19px;
@@ -757,14 +889,6 @@ const PbPayout = class extends LitElement {
       .tot .ic {
         width: 24px;
         height: 24px;
-      }
-      :host-context([data-motion='reduced']) li.in {
-        animation: m-fade var(--m-fast) linear both;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        li.in {
-          animation: m-fade var(--m-fast) linear both;
-        }
       }
     `,
   ];
@@ -847,7 +971,9 @@ const PbPayout = class extends LitElement {
     const rows = this.rows || [],
       n = Math.min(this._n, rows.length),
       t = this._t ?? this.total,
-      k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'research';
+      k = /** @type {any} */ (RUN_CURRENCY_ICONS)[this.kind] || 'research',
+      /* UI-14b: the total in its currency's family (Research sky, Moneys gold: logic/marks.js chipLook) */
+      tone = chipLook(this.kind).sig;
     return html`<ol aria-label="Payout" @click=${() => this.finish()}>
         ${rows.map((r, i) => {
           const v = Number(r.value) || 0;
@@ -857,7 +983,12 @@ const PbPayout = class extends LitElement {
           </li>`;
         })}
       </ol>
-      <div class="tot" role="status" aria-label=${`${this.totalLabel}: ${runNumber(this.total)}`}>
+      <div
+        class="tot"
+        style=${tone ? `--tot:var(${sigVar(tone)})` : nothing}
+        role="status"
+        aria-label=${`${this.totalLabel}: ${runNumber(this.total)}`}
+      >
         ${runIcon(k)}<span class="lab" aria-hidden="true">${this.totalLabel}</span
         ><span class="v" aria-hidden="true" @animationend=${e => e.target.classList.remove('bump')}
           >${runNumber(t)}</span
@@ -866,24 +997,273 @@ const PbPayout = class extends LitElement {
   }
 };
 
+/* ---------- SY-3: a stamp: a word in a rough border, slammed on at a slant ---------- */
+/* The Bureau's paperwork (style-track.md: its stamp words are factions.json look.stamps; the page passes the word). Ink
+   in the red family (--redink, which follows light and dark; --stamp-ink sets another), a word plus a shape (the double
+   border), never colour alone. It slams on when it joins the page (play() again for another), and tells the page as it
+   lands (pb-stamp-land: sound.js thunks); `still` shows it already stamped, with no slam and no thunk (a sheet drawn
+   again). Reduced motion: it fades in. */
+const PbStamp = class extends LitElement {
+  static properties = {
+    word: {},
+    tilt: { type: Number },
+    size: { reflect: true },
+    still: { type: Boolean },
+    _go: { state: true },
+  };
+  static styles = [
+    runKitBase,
+    runKitMotion,
+    css`
+      :host {
+        display: inline-block;
+        vertical-align: middle;
+        line-height: 1;
+        --stamp-fs: 22px;
+      }
+      :host([size='sm']) {
+        --stamp-fs: 14px;
+      }
+      :host([size='lg']) {
+        --stamp-fs: 34px;
+      }
+      .ink {
+        position: relative;
+        display: inline-block;
+        padding: 0.3em 0.5em 0.22em;
+        border: max(2px, 0.14em) solid currentColor;
+        color: var(--stamp-ink, var(--redink));
+        font: 700 var(--stamp-fs) / 1 var(--font-voice);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        opacity: 0.92;
+        --stamp-o: 0.92;
+        transform: rotate(var(--tilt));
+        /* the rough ink: three grids of pinholes at odd steps, so the gaps never line up */
+        -webkit-mask:
+          radial-gradient(circle at 30% 40%, transparent 0 0.6px, black 1.1px) 0 0 / 7px 5px,
+          radial-gradient(circle at 70% 20%, transparent 0 0.5px, black 1px) 0 0 / 11px 9px,
+          radial-gradient(circle at 50% 80%, transparent 0 0.7px, black 1.2px) 0 0 / 17px 13px;
+        -webkit-mask-composite: source-in;
+        mask-composite: intersect;
+      }
+      .ink::before {
+        content: '';
+        position: absolute;
+        inset: max(2px, 0.12em);
+        border: max(1px, 0.05em) solid currentColor;
+        pointer-events: none;
+      }
+      /* UI-16b: the shared stamp motion (motion.css m-stamp; a fade under Reduced, through --m-stamp) */
+      .ink.go {
+        animation: var(--m-stamp, m-stamp) var(--m-base) var(--ease-stamp, ease-in) both;
+      }
+    `,
+  ];
+  constructor() {
+    super();
+    this.word = '';
+    this.tilt = -8;
+    this.size = '';
+    this.still = false;
+    this._go = 0;
+    this._timer = 0;
+  }
+  connectedCallback() {
+    super.connectedCallback();
+    if (!this.still) this.play();
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    clearTimeout(this._timer);
+  }
+  /** slams it on again; pb-stamp-land as it lands (at once under reduced motion) */
+  play() {
+    clearTimeout(this._timer);
+    this.still = false;
+    this._go++;
+    /* UI-16b: one keyframes name, so a stamp already on the page restarts it (the class off, a reflow, on again) */
+    const ink = this.renderRoot && /** @type {any} */ (this.renderRoot).querySelector?.('.ink.go');
+    if (ink) {
+      ink.classList.remove('go');
+      void ink.offsetWidth;
+      ink.classList.add('go');
+    }
+    const land = reduced() ? 0 : runMsVar(this, '--m-base', 240) * 0.55;
+    this._timer = setTimeout(
+      () =>
+        this.dispatchEvent(
+          new CustomEvent('pb-stamp-land', { detail: { word: this.word }, bubbles: true, composed: true })
+        ),
+      land
+    );
+  }
+  willUpdate() {
+    this.style.setProperty('--tilt', `${Number(this.tilt) || 0}deg`);
+  }
+  render() {
+    const go = this.still || !this._go ? '' : 'go';
+    return html`<span class="ink ${go}">${this.word}</span>`;
+  }
+};
+
+/* ---------- UI-17: a name banner, slammed in at the slant (a boss's name as its trainer comes in) ---------- */
+/* A big moment's words (ui-track.md Part 2: "a boss's name banner, shared with RL-14b's stage intro"; the VFX track's
+   VFX-16 VS splash carries the same banner: one component, whichever lands first builds it). The kicker over the name
+   ("Boss"), a bar in the family's colour (`tone`: a --sig-* name, bad by default: bosses share the red family with
+   Crests) with the main action's long hexagon, slammed in from the left on the spring, held, then gone to the right.
+   Put it in a positioned box and call play(hold) (or use pbNameBanner); it tells the page pb-banner-done and leaves.
+   Reduced motion: it fades in and out. Words only from the caller (translated there) */
+const PbNameBanner = class extends LitElement {
+  static properties = { name: {}, kicker: {}, tone: { reflect: true }, _at: { state: true } };
+  static styles = [
+    runKitBase,
+    runKitMotion,
+    css`
+      :host {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 24%;
+        z-index: 7;
+        display: grid;
+        justify-items: center;
+        pointer-events: none;
+        --tone: var(--sig-bad);
+      }
+      .bar {
+        display: grid;
+        justify-items: center;
+        gap: 2px;
+        min-width: min(70%, 260px);
+        max-width: calc(100% - 2 * var(--s4));
+        padding: var(--s2) calc(var(--s5) + 12px) var(--s3);
+        clip-path: var(--clip-action);
+        background: linear-gradient(90deg, color-mix(in srgb, var(--tone) 70%, black), var(--tone) 30% 70%, color-mix(in srgb, var(--tone) 70%, black));
+        color: white;
+        opacity: 0;
+      }
+      .k {
+        font: 600 var(--fs-caption) / 1 var(--font-voice);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.85;
+      }
+      .n {
+        font: 400 30px / 1 var(--font-voice);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+      .bar.in {
+        animation: pb-banner-in var(--m-base) var(--spring) both;
+      }
+      .bar.out {
+        animation: pb-banner-out var(--m-exit, 180ms) var(--ease-in, ease-in) both;
+      }
+      .bar.f-in {
+        animation: m-fade var(--m-fast) linear both;
+      }
+      .bar.f-out {
+        opacity: 1;
+        animation: m-fade var(--m-fast) linear reverse both;
+      }
+      @keyframes pb-banner-in {
+        from {
+          opacity: 0;
+          transform: translateX(-45%) skewX(calc(-1 * var(--slant)));
+        }
+        60% {
+          opacity: 1;
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes pb-banner-out {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+          transform: translateX(35%) skewX(calc(-1 * var(--slant)));
+        }
+      }
+    `,
+  ];
+  constructor() {
+    super();
+    this.name = '';
+    this.kicker = '';
+    this.tone = '';
+    this._at = '';
+    this._timers = /** @type {number[]} */ ([]);
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._timers.forEach(t => clearTimeout(t));
+  }
+  /** slams it in, holds it `hold` ms, then it leaves; resolves when it is gone @param {number} [hold] */
+  play(hold = 700) {
+    this._timers.forEach(t => clearTimeout(t));
+    const still = reduced(),
+      inMs = runMsVar(this, still ? '--m-fast' : '--m-base', 240),
+      outMs = runMsVar(this, still ? '--m-fast' : '--m-exit', 180);
+    this._at = still ? 'f-in' : 'in';
+    return new Promise(done => {
+      this._timers = [
+        setTimeout(() => (this._at = still ? 'f-out' : 'out'), inMs + hold),
+        setTimeout(
+          () => {
+            this._at = '';
+            this.dispatchEvent(new CustomEvent('pb-banner-done', { bubbles: true, composed: true }));
+            done(undefined);
+          },
+          inMs + hold + outMs
+        ),
+      ];
+    });
+  }
+  willUpdate() {
+    if (this.tone) this.style.setProperty('--tone', `var(${sigVar(this.tone)})`);
+  }
+  render() {
+    return html`<div class="bar ${this._at}" role="status">
+      ${this.kicker ? html`<span class="k">${this.kicker}</span>` : nothing}<span class="n">${this.name}</span>
+    </div>`;
+  }
+};
+/** UI-17: a name banner in `host` (a positioned box): kicker over name, held `hold` ms, then removed; the whole of it
+ * fits a stage intro's time (in 240 ms, out 180 ms). Returns the element; its play() promise is el.done
+ * @param {Element} host @param {{ name: string, kicker?: string, tone?: string, hold?: number }} o */
+export function pbNameBanner(host, o) {
+  const el = /** @type {any} */ (document.createElement('pb-name-banner'));
+  el.name = o.name;
+  el.kicker = o.kicker || '';
+  el.tone = o.tone || '';
+  host.appendChild(el);
+  el.done = el.updateComplete.then(() => el.play(o.hold ?? 700)).then(() => el.remove());
+  return el;
+}
+
 /* ---------- the bottom bar: the minimap in the middle, two buttons on each side (UI-8) ---------- */
-/* The set's first tab (Map) is the minimap tile, raised out of the bar; the rest go two to a side, under each other.
-   The tile's picture is the light-DOM child in slot "map" (the game's <canvas>, js/minimap.js); with none, the map
-   icon. `compact` (while walking) shrinks the bar: a small tile, icon-only buttons side by side. The outline is the
-   tab family's, stepped up round the tile with 45° shoulders: --rise is the step, --tw half the tower's width. */
+/* The set's first tab (Map) is the minimap tile; the rest go two to a side, the icon over the word. The tile's picture
+   is the light-DOM child in slot "map" (the game's <canvas>, js/minimap.js); with none, the map icon. UI-8b: the tile
+   is wide (uiTheme.json minimap tileW x tileH, 232 x 184) and stands out of the bar's frame by --rise; the bar is a
+   plain cut outline from --rise down, so the world shows on both sides of the tile's top. A narrow bar shrinks the
+   whole tile, keeping its shape, so each side keeps 60 px. `compact` (while walking): a square tile (tileCompact),
+   icon-only buttons side by side. */
 const navStep = (/** @type {number} */ i) => {
   /* the outline inset by i px (0: the outer line; 1: the edge line's inside); 45° corners move by i·tan(22.5°) */
   const k = i * 0.4142,
     c = 'var(--cut-md)',
-    R = 'var(--rise)',
-    T = 'var(--tw)';
+    R = 'var(--rise)';
   return [
     `${i}px calc(${R} + ${c} + ${k}px)`,
     `calc(${c} + ${k}px) calc(${R} + ${i}px)`,
-    `calc(50% - ${T} - ${R} + ${k}px) calc(${R} + ${i}px)`,
-    `calc(50% - ${T} + ${k}px) ${i}px`,
-    `calc(50% + ${T} - ${k}px) ${i}px`,
-    `calc(50% + ${T} + ${R} - ${k}px) calc(${R} + ${i}px)`,
     `calc(100% - ${c} - ${k}px) calc(${R} + ${i}px)`,
     `calc(100% - ${i}px) calc(${R} + ${c} + ${k}px)`,
     `calc(100% - ${i}px) calc(100% - ${i}px)`,
@@ -901,27 +1281,28 @@ const PbNavBar = class extends LitElement {
   static styles = [
     runKitBase,
     css`
+      /* the host is the container: its width (cqw) sizes the tile; a side keeps 60 px plus 8 px of margins */
       :host {
-        --rise: 20px;
-        --bar-h: 120px;
-        --tile-w: 120px;
-        --tile-h: 128px;
-        --tw: calc(var(--tile-w) / 2 + var(--s2));
+        --tile-w: min(var(--minimap-tile-w, 232px), 100cqw - 136px);
+        --tile-h: min(var(--minimap-tile-h, 184px), (100cqw - 136px) * var(--minimap-tile-aspect, 0.7931));
+        --bar-h: 128px;
+        --rise: max(0px, var(--tile-h) + var(--s2) - var(--bar-h));
         display: block;
         position: relative;
         isolation: isolate;
+        container-type: inline-size;
       }
+      /* walking: a square; a side keeps two 46 px buttons */
       :host([compact]) {
-        --rise: 10px;
-        --bar-h: 60px;
-        --tile-w: 72px;
-        --tile-h: 66px;
+        --tile-w: min(var(--minimap-tile-compact, 112px), 100cqw - 208px);
+        --tile-h: var(--tile-w);
+        --bar-h: 76px;
+        --rise: max(0px, var(--tile-h) + 4px - var(--bar-h));
       }
       nav {
         position: relative;
-        container-type: inline-size;
         height: calc(var(--rise) + var(--bar-h) + env(safe-area-inset-bottom, 0px));
-        transition: height var(--m-base) var(--ease-out);
+        transition: height calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       .glass,
       .edge {
@@ -941,19 +1322,19 @@ const PbNavBar = class extends LitElement {
         background: var(--edge);
       }
       .side {
-        --apart: var(--s7);
+        --apart: var(--s2); /* its margin and the gap to the tile: 60 px columns at the narrowest */
         position: absolute;
         top: calc(var(--rise) + var(--s1));
-        width: calc((100% - var(--tile-w) - var(--apart)) / 2);
+        width: calc((100% - var(--tile-w)) / 2 - var(--apart));
         display: flex;
         flex-direction: column;
         gap: var(--s1);
       }
       .side.l {
-        left: var(--s2);
+        left: var(--s1);
       }
       .side.r {
-        right: var(--s2);
+        right: var(--s1);
       }
       :host([compact]) .side {
         flex-direction: row;
@@ -970,36 +1351,27 @@ const PbNavBar = class extends LitElement {
         color: var(--text2);
         font: 15px/1 var(--font-voice);
       }
+      /* standing: the icon over the word */
       .tab {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: var(--s2);
+        justify-content: center;
+        gap: 2px;
         min-width: 0;
         min-height: 52px;
-        padding: 0 var(--s2);
+        padding: 0 var(--s1);
       }
       .tab .ic {
         width: 24px;
         height: 24px;
       }
       .tab span {
+        max-width: 100%;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-      }
-      /* a narrow bar (a 320 px phone): a smaller tile, the sides closer, the labels kept */
-      @container (max-width: 320px) {
-        :host(:not([compact])) nav > * {
-          --tile-w: 96px;
-          --tile-h: 116px;
-          --tw: calc(var(--tile-w) / 2 + var(--s2));
-          --apart: var(--s6);
-        }
-        :host(:not([compact])) .tab {
-          gap: var(--s1);
-          padding: 0 var(--s1);
-        }
       }
       :host([compact]) .tab {
         justify-content: center;
@@ -1027,7 +1399,7 @@ const PbNavBar = class extends LitElement {
       .badge {
         position: absolute;
         top: 2px;
-        left: 22px;
+        left: calc(50% + 4px);
         display: grid;
         place-items: center;
         min-width: 20px;
@@ -1051,11 +1423,12 @@ const PbNavBar = class extends LitElement {
         width: var(--tile-w);
         height: var(--tile-h);
         padding: 0;
+        /* UI-16a: at once under Reduced (--m-k 0) */
         transition:
-          width var(--m-base) var(--ease-out),
-          height var(--m-base) var(--ease-out),
-          left var(--m-base) var(--ease-out),
-          top var(--m-base) var(--ease-out);
+          width calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+          height calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+          left calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+          top calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       :host([compact]) .map {
         top: 2px;
@@ -1116,12 +1489,6 @@ const PbNavBar = class extends LitElement {
       .map:focus-visible .edge {
         background: var(--text);
       }
-      @media (prefers-reduced-motion: reduce) {
-        nav,
-        .map {
-          transition: none;
-        }
-      }
     `,
   ];
   constructor() {
@@ -1131,6 +1498,19 @@ const PbNavBar = class extends LitElement {
     this.badges = '';
     this.hide = '';
     this.compact = false;
+  }
+  /* UI-16a: the gold bar slides from the tab that was open to the new one (where the old one stood, before the redraw) */
+  willUpdate(ch) {
+    this._from =
+      ch.has('value') && ch.get('value') != null ? this.tabEl(ch.get('value'))?.getBoundingClientRect() : null;
+  }
+  updated() {
+    if (this._from) pbSlideBar(this._from, this.tabEl(this.value)?.getBoundingClientRect() || null);
+    this._from = null;
+  }
+  /** a tab's button (the fly-to's target for a gain: Bag, Perks) @param {string} id */
+  tabEl(id) {
+    return this.renderRoot.querySelector(`[data-t="${CSS.escape(String(id))}"]`);
   }
   /* UI-5: hide lists tabs to leave out (ids, comma-separated): a set's tab whose screen isn't built yet */
   get tabs() {
@@ -1403,5 +1783,7 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-payout', PbPayout],
   ['pb-nav-bar', PbNavBar],
   ['pb-loading', PbLoading],
+  ['pb-stamp', PbStamp],
+  ['pb-name-banner', PbNameBanner],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);

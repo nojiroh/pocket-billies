@@ -80,7 +80,7 @@ Everything is synthesized in `game/js/sound.js` (2,013 lines) with the Web Audio
 | SND-6 (done 2026-10-23) | Sound effects and jingles | a cry per species with a low-HP cry, four UI sounds, jingles for the run's beats, a mix pass | SND-4, RL-12 for relics | 1 | battle golden record untouched; phone |
 
 Budget: SND-1 to SND-3 are three to five sessions before the play test; SND-4 to SND-6 three to five after. Tiers
-and time budgets follow docs/phases/13: lint, type-check and unit tests after each change, the smoke subset after
+and time budgets follow docs/TESTING.md (then phase 13's file): lint, type-check and unit tests after each change, the smoke subset after
 each commit, the full quick check at the end of a session.
 
 ## SND-1: settings and routing (done 2026-10-22, branch `sound`, tag `snd-1-done` local)

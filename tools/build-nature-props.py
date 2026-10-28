@@ -20,7 +20,8 @@ Families (the Seamless World plan, v42):
   seasons        rowan, beech, poplar, hazel and birch in autumn, hawthorn in autumn, dry seed heads, rust tussock  8
 
 Every prop has a group (scenes and the wild-growth pass pick within a group) and the growth families below
-(GROWTH) say which terrains each one grows on; tools/grow-wild.py reads them."""
+(GROWTH) say which terrains each one grows on; game/js/logic/mapgen.js reads them from scenery.json (it took
+over from tools/grow-wild.py, deleted 2026-10-27)."""
 import gamedata  # phase 04b: the data files in game/data
 import os, sys, json, math, random, zlib, importlib.util
 from PIL import Image

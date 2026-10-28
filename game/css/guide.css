@@ -148,11 +148,6 @@
   background: var(--panel2);
 }
 @media (prefers-reduced-motion: no-preference) {
-  .fchip:active,
-  .qb:active:not(:disabled),
-  .option:active {
-    transform: scale(0.94);
-  }
   .screen.enter .fchip:nth-child(2) {
     animation-delay: 25ms;
   }

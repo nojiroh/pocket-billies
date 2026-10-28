@@ -80,7 +80,7 @@ below against main and report what differs.
 | WM-3 | Shapes and sizes (done 2026-10-27, WM-3a and WM-3b) | mapgen takes a footprint: any width and height, L-masks walled by mountain or forest, exits on any edge (more than 2 on long edges), roads that bend to a north exit; seam rules for north/south joins; a phone-time measurement | WM-2 | 1-2 |
 | WM-4 | The seamless region on the world map (done 2026-10-27: WM-4a, WM-4b on `claude/wm-4b-seamless-region`) | places stamped at their grid positions, region filler between, the run's real roads, fogged outlines for unreached places; ends the crowding | WM-3 | 1-2 |
 | WM-5 | Town streets (done 2026-10-27: WM-5a the streets in mapgen, WM-5b sizes, services and names) | street growth from the through road (T-junctions, bends, dead ends, a square at the main junction), side streets mostly east to west, lots along every street, houses mostly facing the camera; the three town sizes | WM-3 | 2 |
-| WM-6 | A region's look | districts (square, homes, park or pond, farm edge), a landmark per town from existing props, route numbers and town names on signposts at seams and on the world map | WM-4, WM-5 | 1 |
+| WM-6 | A region's look (done 2026-10-27, `claude/wm-6-region-look`) | districts (square, homes, park or pond, farm edge), a landmark per town from existing props, route numbers and town names on signposts at seams and on the world map | WM-4, WM-5 | 1 |
 | WM-7 | Leader arenas (done 2026-10-27, `claude/wm-7-leader-arenas`) | a raised, fenced ring by the leader's type on the road, a gate or Bureau barrier opening after the win, a line of trainers before it, the camera framing it; the final boss's own arena place | WM-2 | 1 |
 | WM-8 | Ledges and loops | one-way ledges and shortcuts that loop between routes | WM-3 | 1 |
 
@@ -134,6 +134,23 @@ the in-game checks. MAPGEN_VERSION 24 (22 is RT-4b's on `track/routes`, 23 left 
   a size smaller, after dropping lane switches); no step-down was needed in 5,000 maps. Names by size from
   run-scenes.js runPlaceName (the one function a place's name comes from). The stall's own shop (runStallId,
   run-loop.js runStallStock: no Perk, no fresh stock); a 3 x 2 town's second quest giver (run-quests.js questKey).
+
+## WM-6's answers and what it found (2026-10-27)
+
+Built on `claude/wm-6-region-look` with the plan approved in advance; the owner then asked to be asked about design
+choices and kept all four as built:
+- **Districts**: every size gets the square, homes, a park and a farm edge (a fenced field of crop rows); the park sits
+  by the place's own pond when it has one; sizes and extras grow with the town.
+- **Landmarks** (existing props, in the park's middle): hamlet the great oak with a swing, village the great cherry,
+  town the clock tower; the statue as the fallback.
+- **Signposts**: the existing signpost by each exit shows "Route 3" (a town its name) over it; tapped: "Route 3,
+  Meadow Route. East: Meadow Hamlet."
+- **World map**: a numbered place is labelled "Route 3", towns by name.
+
+- Found: signposts by the exits already existed (RT-3), not tied to their exit; real water can't be painted at the
+  town stage (the water stage lowers and carves it first), so the park uses an existing pond; route numbers are per
+  run, from the landing out, main path only (a side area keeps its name). On the world map your figure covers the end
+  of the label where you stand (older than WM-6).
 
 ## Risks
 

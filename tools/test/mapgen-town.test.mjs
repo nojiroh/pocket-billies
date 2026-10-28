@@ -8,7 +8,8 @@
 // has no folk, no chat and no locals. WM-5: streets grown from the through road (mapgenTownPlan) at the three sizes
 // (MAPGEN_TOWN_SIZES): a village's and a town's market stall, a town's second quest giver's spot, the houses its size
 // asks for, every one facing the camera on the north side of its street; streets and houses south of a through road
-// that runs high in a place two cells tall; the town dial.
+// that runs high in a place two cells tall; the town dial. WM-6: the districts at every size and in runs: a park on
+// lawn with the size's landmark in it, a farm edge on farm soil with crop rows, apart and off the square.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { data, GAME_DATA, modules } from './setup-real.mjs';
@@ -397,6 +398,76 @@ test('WM-5: a town is sized by its cells, and the town dial asks for its houses,
   assert.deepEqual(notes, []);
   assert.equal(sc.props.filter((/** @type {any} */ p) => p.k === 'stall').length, 1);
   assert.equal((sc.spots || []).filter((/** @type {any} */ p) => p.kind === 'giver').length, 2);
+});
+
+/* ---------- WM-6: the districts: a park with the town's landmark, a farm edge ---------- */
+test('WM-6: every size gets a park with its landmark and a farm edge, off the roads and apart', () => {
+  const S = G.MAPGEN_TOWN_SET,
+    T = G.MAPGEN_TOWN;
+  let n = 0,
+    parks = 0,
+    farms = 0;
+  for (const size of Object.keys(SIZES))
+    for (const way of ['E', 'N', 'S'])
+      for (let s = 0; s < 8; s++) {
+        const { scene: sc } = townAt(size, s, way),
+          where = `${size}, way on ${way}, seed ${s}`,
+          D = sc.town.districts,
+          tile = (/** @type {number} */ x, /** @type {number} */ z) =>
+            (sc.tiles[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)];
+        n++;
+        assert.ok(D, `${where}: districts`);
+        /* a district's box is the size's, inside the place, on no road and clear of the square */
+        const box = (/** @type {number[]} */ R, /** @type {number[]} */ dims, /** @type {string} */ ground) => {
+          const [x0, z0, x1, z1] = R;
+          assert.ok(Math.abs(x1 - x0 - dims[0]) < 0.05 && Math.abs(z1 - z0 - dims[1]) < 0.05, `${where}: its size`);
+          assert.ok(x0 >= 4 && z0 >= 2 && x1 <= sc.w - 4 && z1 <= sc.h - 2, `${where}: inside`);
+          for (let z = Math.ceil(z0); z < z1; z += 2)
+            for (let x = Math.ceil(x0); x < x1; x += 2)
+              assert.equal(tile(x, z), ground, `${where}: ${ground} at ${x},${z}`);
+          const [q0, r0, q1, r1] = sc.town.square;
+          assert.ok(x1 <= q0 || x0 >= q1 || z1 <= r0 || z0 >= r1, `${where}: off the square`);
+        };
+        if (D.park) {
+          parks++;
+          box(D.park, T.park[size], 'l');
+          /* its landmark, the size's first, in it */
+          assert.equal(D.landmark, S.landmarks[size][0], where);
+          const L = sc.props.find((/** @type {any} */ p) => p.k === D.landmark);
+          assert.ok(
+            L && L.x > D.park[0] && L.x < D.park[2] && L.z > D.park[1] && L.z < D.park[3],
+            `${where}: landmark`
+          );
+        }
+        if (D.farm) {
+          farms++;
+          box(D.farm, T.farm[size], 'o');
+          const [x0, z0, x1, z1] = D.farm;
+          assert.ok(
+            sc.props.some((/** @type {any} */ p) => p.k === S.crop && p.x > x0 && p.x < x1 && p.z > z0 && p.z < z1),
+            `${where}: crops`
+          );
+        }
+        if (D.park && D.farm) {
+          const [a0, b0, a1, b1] = D.park,
+            [c0, d0, c1, d1] = D.farm;
+          assert.ok(a1 <= c0 || a0 >= c1 || b1 <= d0 || b0 >= d1, `${where}: the park and the farm apart`);
+        }
+        assert.deepEqual(G.mapgenUnreachable(sc, C), [], `${where}: nothing unreachable`);
+      }
+  assert.ok(parks >= n * 0.95 && farms >= n * 0.9, `${parks} parks, ${farms} farm edges in ${n} towns`);
+});
+
+test('WM-6: a run town has its districts too', () => {
+  let towns = 0,
+    both = 0;
+  for (const seed of ['TW1A', 'TW1B', 'TW1C', 'TW1D'])
+    for (const { node, scene: sc } of runScenes(seed)) {
+      if (node.type !== 'town' || !sc.town) continue;
+      towns++;
+      if (sc.town.districts.park && sc.town.districts.farm) both++;
+    }
+  assert.ok(towns >= 8 && both >= towns * 0.9, `${both} of ${towns} run towns with a park and a farm edge`);
 });
 
 test("WM-5b: an Expedition II run's last town is a 3 x 2 town: its market stall, two quest givers with names of their own, its houses and folk", () => {

@@ -201,9 +201,74 @@
         "maximum": 20
        }
       }
+     },
+     "look": {
+      "description": "style track SY-3: its paperwork look, shown only where it is (its events, bots, boss and props): its emblem, its stamp words and its form numbers",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "emblem",
+       "stamps",
+       "forms"
+      ],
+      "properties": {
+       "emblem": {
+        "description": "a UI icon (game/art/ui/<emblem>.svg; the Studio's icon editor paints it)",
+        "type": "string",
+        "pattern": "^[a-z][a-z0-9-]*$"
+       },
+       "stamps": {
+        "description": "the word stamped for each moment (pb-stamp): retrieved (its bot knocks out one of yours), void (you knock out its bot), denied (your win, a refused event), pending (its boss wins), filed (an event's result); the owner's to edit",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+         "retrieved",
+         "void",
+         "denied",
+         "pending",
+         "filed"
+        ],
+        "properties": {
+         "retrieved": {
+          "$ref": "#/$defs/stampWord"
+         },
+         "void": {
+          "$ref": "#/$defs/stampWord"
+         },
+         "denied": {
+          "$ref": "#/$defs/stampWord"
+         },
+         "pending": {
+          "$ref": "#/$defs/stampWord"
+         },
+         "filed": {
+          "$ref": "#/$defs/stampWord"
+         }
+        }
+       },
+       "forms": {
+        "description": "form numbers its paperwork carries ('Form 7B'), one picked for each case file (SY-4)",
+        "type": "array",
+        "minItems": 1,
+        "uniqueItems": true,
+        "items": {
+         "type": "string",
+         "minLength": 1,
+         "maxLength": 16
+        }
+       }
+      }
      }
     }
    }
+  }
+ },
+ "$defs": {
+  "stampWord": {
+   "description": "a stamp's word: short enough to fit the stamp on a phone",
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 12
   }
  }
 }
