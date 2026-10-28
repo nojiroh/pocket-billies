@@ -1971,6 +1971,8 @@ export type FxRow = FxTiming & FxKindRow;
 /** one effect row's kind and numbers */
 export type FxKindRow =
   | { kind: 'money'; mult: number }
+  /** PK-5: at arrive, this share of the Moneys carried, at most max */
+  | { kind: 'money'; share: number; max: number }
   | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
   | { kind: 'catch'; mult: number }
   | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
@@ -2031,8 +2033,17 @@ export type FxKindRow =
   | { kind: 'weather'; what: 'noWeaken' | 'boost'; mult?: number }
   /** PK-4: your Billies who sat out get this share of a foe's XP more (added to progression.teamXpShare, at most 1) */
   | { kind: 'benchXp'; share: number }
-  /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days); later waves add rules */
-  | { kind: 'rule'; rule: 'forecastDays'; n: number };
+  /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
+   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place) */
+  | { kind: 'rule'; rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal'; n: number }
+  /** PK-5: a Billie you catch joins n levels higher */
+  | { kind: 'catchLevel'; n: number }
+  /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
+  | { kind: 'refund'; what: 'pyramid' }
+  /** PK-5: what was just bought in a run shop is free (its price back), at buy */
+  | { kind: 'free' }
+  /** PK-5: what beaten bots leave (their parts offered, the Scrap), times mult */
+  | { kind: 'salvage'; mult: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

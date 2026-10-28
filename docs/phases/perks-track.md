@@ -521,6 +521,34 @@ unused-art gate.
 - `node tools/test/sim/run-sim.mjs --runs=50` stops on **main** too (07c9b28: "runSceneParams: node 8 has no exit
   south2", from the first runs, in scene mode); `--balance` finishes its 50 runs on this branch (none reaches a pick).
 
+**Corrected in PK-5** (built 2026-10-28; where the code or the plan above was wrong or vague):
+- Section 5.4's claims checked at bbe0abe4 (main 485674b5 merged): Bug Net's `newSpecies` and Lab Goggles'
+  `foe:spliced`, and Bounty Poster's `foe:leader|rival` on a money row, already worked through PK-1's conditions
+  (catchOdds and battleMoneyFx read `fxBattleRows`): those three needed data only. `newSpecies` is "not on your team",
+  so Bug Net's text says that, not "you haven't caught this run".
+- **catchLevel** feeds the levels as a Protein Bar does (rules.js `feedLevels`: moves learned on the way, HP up by
+  what it gained) in `catchKeep`, so the page and the run sim both get it; one line names the Perk instead of a line a
+  level. At most `FX_CATCH_LEVEL` (10) together.
+- **refund** (`what: pyramid`) acts at throwMiss; catchRoll returns `refund` (the Perk's name) and the caller puts the
+  pyramid back (battle.js finishThrow, which says the line, since finishThrow clears what catchRoll said; the run
+  sim). Pyramid Pouch's text: "the first pyramid that misses in each battle" (a hit spends nothing).
+- **Music Box** needed no new kind: inflict rows may act at battleStart too. Their roll waits until the sides have
+  come out (`b.fxStartInflict`, rolled in sayBattleFx): one roll each foe on the field.
+- **Tip Jar's money share** is a money row with `share`, `max` and `when: arrive` (no `mult`); fxMoney ignores it.
+  Each such row pays from what was carried as the moment came. A money row at any other moment is refused.
+- **free** gives back the price of **one** of what was bought (several of one ware at once are one buy since PK-1, so
+  a stack of ten isn't free); a shop Perk counts as a thing bought. In a currency shop nothing comes back. Punch Card
+  says "in a run shop".
+- **salvage** multiplies the parts offered, the Scrap and the Scrap per bot (still only the beaten bots' own parts).
+- **rule** ranges live in data-checks.js `FX_RULE_N` (forecastDays 1-14, rewardPick 1-2, rerollFree 1-3, mapReveal
+  1). rewardPick adds to every reward pick (an event's own count too), kept on the pick (`n`) for its rerolls; Gift
+  Receipt says "one more card". rerollFree: the first n rerolls of each pick cost nothing, then the price starts at
+  rules.json's and grows as before. mapReveal shows every main place (side areas still open by their obstacle), at
+  the map's start, every arrival and when the Perk is taken (`runRevealAll` in perkTake).
+- **needs: bots** holds while the run's map has a scrapyard not yet visited (`perkRunBots`); it is a needs word only,
+  not a row's condition. The run sim's ledger gained `moneyIn.perks` (Tip Jar, Punch Card), so money still adds up.
+- `run-sim.mjs --runs=50` still stops in scene mode on main too ("node 8 has no exit north3" at 485674b5).
+
 ## 8. Offers (PK-4, PK-7)
 - `needs` on a Perk (a condition: `team:Fire`, `bots`, `side`, `spliced`): unmet, its weight is 0, so a Fire Perk is
   never offered to a team without a Fire Billie. `tags` (types and themes): a tag matching the team's types, or a set
@@ -576,7 +604,7 @@ unused-art gate.
 | PK-2 | Art pipeline (**done 2026-10-28**, `track/perks`; "Corrected in PK-2" in section 6) | `tools/build-icons.mjs` and its test, `img` on Perks (schema, checks, types), cards at 72 px and rows at 36 px, the Studio's icon editor and art browser on the new folders, the 13 existing Perks drawn | 13 pictures in game, contact sheets committed |
 | PK-3 | Wave A (**done 2026-10-28**, `track/perks`; "Corrected in PK-3" in section 7) | 15 Perks of 5.2: data, kinds, art, tests | every Wave A Perk works in a battle test |
 | PK-4 | Wave B (**done 2026-10-28**, `track/perks`; "Corrected in PK-4" in section 8) | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
-| PK-5 | Wave C | 12 Perks of 5.4 | catching, shop, reward and map rules tested |
+| PK-5 | Wave C (**done 2026-10-28**, `track/perks`; "Corrected in PK-5" in section 7) | 12 Perks of 5.4 | catching, shop, reward and map rules tested |
 | PK-6 | Wave D | 11 Perks of 5.5 (Correction Fluid waits for PK-9) | growth and copy tested over a simulated run |
 | PK-7 | Fine Print | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
 | PK-8 | Sets | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |

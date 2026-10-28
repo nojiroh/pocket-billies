@@ -414,6 +414,12 @@ same phase:
   picks with a team of every type, no type Perk offered without its type in a pick, a shelf or an event, a tagged
   Perk about bias times as often); `type-rename.test.mjs` a Perk's tags, needs and conditions renamed;
   `data-checks.test.mjs` the kinds' rows, needs, tags and the bias.
+  PK-5: `tools/test/battle-perks-wave-c.test.mjs` checks Wave C's kinds with test-only Perks (catchLevel; refund at a
+  missed throw, once a battle; inflict at battleStart after the sides come out; a money share on arrival up to its
+  most; free every Nth buy; salvage; the rules rewardPick, rerollFree and mapReveal), then each of the 12 Wave C Perks
+  of perks.json (catch odds, a catch, a throw, arrivals, purchases, reward picks, the map, a leader's pay, salvage),
+  and battles holding all 42 Wave A-C Perks; `perks.test.mjs` needs bots (a scrapyard ahead, behind, none);
+  `data-checks.test.mjs` the kinds' rows; the run sim's money ledger counts what Perks pay (moneyIn.perks).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the

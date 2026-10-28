@@ -49,7 +49,8 @@ test('PK-4 relics: with a team of every type, every Perk of each rarity turns up
 });
 
 test('PK-4 relics: a Perk that needs a type is never offered without it, in a pick, a shelf or an event', () => {
-  const needy = Object.keys(PERKS).filter(id => PERKS[id].needs);
+  /* PK-5: the Perks that need a type (Magnet on a String needs bots: perks.test's own test) */
+  const needy = Object.keys(PERKS).filter(id => PERKS[id].needs && String(PERKS[id].needs).startsWith('team:'));
   assert.ok(needy.length >= 9, 'the type Perks need their types');
   for (const T of GAME_DATA.types.map(t => t.id)) {
     const team = [[T]],
@@ -61,7 +62,7 @@ test('PK-4 relics: a Perk that needs a type is never offered without it, in a pi
       got.add(R.perkShelf(r, 1, 1, PERKS, RULE, team));
       got.add(modules.encounters.encPerk(r, undefined, PERKS, RULE, team));
     }
-    for (const id of got) assert.ok(!PERKS[id] || !PERKS[id].needs || ok.has(id), `${id} offered to a ${T} team`);
+    for (const id of got) assert.ok(!PERKS[id] || !needy.includes(id) || ok.has(id), `${id} offered to a ${T} team`);
     assert.equal(ok.size, 1, `${T}: one type Perk fits`);
     assert.ok(
       [...ok].every(id => got.has(id)),
@@ -227,6 +228,27 @@ test('PK-4 needs: a Perk that needs team:Fire is drawn only for a team with a Fi
     assert.notEqual(modules.encounters.encPerk(p, undefined, NEEDY, RULE, water), 'test_fire_only', 'an event');
   }
   assert.equal(modules.encounters.encPerk(r, 'test_fire_only', NEEDY, RULE, water), 'test_fire_only', 'named: given');
+});
+
+// PK-5: needs bots: offered only while a scrapyard is still ahead on the run's map
+test('PK-5 needs bots: offered while the run’s map has a scrapyard not yet visited; with no map or team, it is', () => {
+  const P = {
+      test_magnet: { name: 'T', d: 'T.', rarity: 'common', needs: 'bots', fx: [{ kind: 'salvage', mult: 2 }] },
+      test_plain: { name: 'T', d: 'T.', rarity: 'common', fx: [{ kind: 'money', mult: 1.1 }] },
+    },
+    team = [['Water']],
+    r = run();
+  r.map = { nodes: [{ type: 'route' }, { type: 'scrapyard' }, { type: 'boss' }] };
+  r.path = [0];
+  assert.deepEqual(R.perkPool(r, P, RULE, [], team), ['test_magnet', 'test_plain']);
+  r.path = [0, 1];
+  assert.deepEqual(R.perkPool(r, P, RULE, [], team), ['test_plain'], 'the scrapyard is behind');
+  r.map.nodes[1].type = 'route';
+  r.path = [0];
+  assert.deepEqual(R.perkPool(r, P, RULE, [], team), ['test_plain'], 'no scrapyard on the map');
+  assert.deepEqual(R.perkPool(r, P, RULE), ['test_magnet', 'test_plain'], 'no team given: needs not asked');
+  assert.equal(R.perkRunBots(null), true);
+  assert.equal(R.perkFits(P.test_magnet, team), true, 'no run given: it may matter');
 });
 
 test('PK-4 tags: a Perk whose tag is a type on the team or a held Perk’s tag weighs run.perks.bias times more', () => {

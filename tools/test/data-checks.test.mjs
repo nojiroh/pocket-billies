@@ -557,7 +557,7 @@ const PK4_BAD = [
   [{ kind: 'weather', what: 'noWeaken', when: 'hit' }, "a weather row can't act at hit"],
   [{ kind: 'benchXp', share: 0 }, 'share: a share of XP above 0, at most 1'],
   [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
-  [{ kind: 'rule', rule: 'cap', n: 1 }, 'rule: forecastDays (effects.js FX_RULES)'],
+  [{ kind: 'rule', rule: 'cap', n: 1 }, 'rule: forecastDays, rewardPick, rerollFree, mapReveal (effects.js FX_RULES)'],
   [{ kind: 'rule', rule: 'forecastDays', n: 20 }, 'n: a whole number of days from 1 to 14'],
   [{ kind: 'rule', rule: 'forecastDays', n: 3, if: 'lead' }, 'a rule row is read where no battle'],
 ];
@@ -581,10 +581,64 @@ test('PK-4: dataPerks and the schema take Wave B’s kinds and name their faults
   }
 });
 
+// PK-5: Wave C's kinds (catching, cash and maps): good rows pass check-data and the schema, planted faults are named
+const PK5_GOOD = [
+  { kind: 'catchLevel', n: 2 },
+  { kind: 'catchLevel', n: 1, if: 'foe:spliced' },
+  { kind: 'refund', what: 'pyramid', when: 'throwMiss', once: 'battle' },
+  { kind: 'inflict', status: 'slp', chance: 0.2, when: 'battleStart', if: 'foe:wild' },
+  { kind: 'money', share: 0.1, max: 40, when: 'arrive' },
+  { kind: 'money', mult: 2, if: 'foe:leader|rival' },
+  { kind: 'free', when: 'buy', every: 4 },
+  { kind: 'salvage', mult: 2 },
+  { kind: 'rule', rule: 'rewardPick', n: 1 },
+  { kind: 'rule', rule: 'rerollFree', n: 1 },
+  { kind: 'rule', rule: 'mapReveal', n: 1 },
+];
+const PK5_BAD = [
+  [{ kind: 'catchLevel', n: 0 }, 'n: a whole number of levels from 1 to 10'],
+  [{ kind: 'catchLevel', n: 2, when: 'catch' }, "a catchLevel row can't act at catch"],
+  [{ kind: 'refund', what: 'coin', when: 'throwMiss' }, 'what: pyramid (effects.js FX_REFUND)'],
+  [{ kind: 'refund', what: 'pyramid', when: 'hit' }, "a refund row can't act at hit"],
+  [{ kind: 'inflict', status: 'slp', chance: 0.2, when: 'turnEnd' }, "can't act at turnEnd (hit, battleStart)"],
+  [{ kind: 'money', share: 0.1, when: 'arrive' }, 'max: a money share needs its most'],
+  [{ kind: 'money', share: 2, max: 40, when: 'arrive' }, 'share: a share of the Moneys carried'],
+  [{ kind: 'money', share: 0.1, max: 40 }, 'when: a money share needs a moment (arrive)'],
+  [{ kind: 'money', share: 0.1, max: 40, when: 'win' }, "a money row can't act at win"],
+  [{ kind: 'money', mult: 2, when: 'arrive' }, 'a money row at arrive is a share'],
+  [{ kind: 'free', when: 'win', every: 4 }, "a free row can't act at win"],
+  [{ kind: 'free' }, 'a free row needs a moment (buy)'],
+  [{ kind: 'salvage', mult: 9 }, 'mult: 9 is outside the code'],
+  [{ kind: 'salvage', mult: 2, when: 'win' }, "a salvage row can't act at win"],
+  [{ kind: 'rule', rule: 'rewardPick', n: 3 }, 'n: a whole number of cards from 1 to 2'],
+  [{ kind: 'rule', rule: 'rerollFree', n: 0 }, 'n: a whole number of rerolls from 1 to 3'],
+  [{ kind: 'rule', rule: 'mapReveal', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
+];
+test('PK-5: dataPerks and the schema take Wave C’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK5_GOOD.length; i += 4)
+    D.perks['test_pk5_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK5_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK5_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
 test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () => {
   const D = structuredClone(GAME_DATA);
   D.perks.lucky_charm.needs = 'team:Fire';
   D.perks.clinic_card.needs = ['team:Water|Grass', 'mono'];
+  D.perks.coupon_book.needs = 'bots';
   assert.deepEqual(C.dataPerks(D), []);
   for (const [v, text] of [
     ['lead', '"lead" can\'t be known when a Perk is offered'],

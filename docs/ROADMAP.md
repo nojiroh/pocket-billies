@@ -321,7 +321,10 @@ town node needs it.
   inflict, chip, first and revive, 11 new pictures, counters on the Perks tab) done 2026-10-28 on `track/perks`; PK-4
   (Wave B: types, team and weather: 15 Perks, the kinds passive, weather, benchXp and rule forecastDays, `needs` and
   `tags` with the bias on offers, 13 new pictures) done 2026-10-28 on `track/perks`; PK-5 (Wave C: catching, cash and
-  maps) next. PK-11 (Bag item icons: the 13 consumables drawn in art/items, `img` and dataItemArt, 36 px in the Bag
+  maps: 12 Perks, the kinds catchLevel, refund, free and salvage, a money share on arrival, inflict at battle start,
+  the rules rewardPick, rerollFree and mapReveal, `needs: bots`, 12 new pictures) done 2026-10-28 on `track/perks`;
+  PK-6 (Wave D: rules, growth and adventure) next.
+  PK-11 (Bag item icons: the 13 consumables drawn in art/items, `img` and dataItemArt, 36 px in the Bag
   and 72 on reward cards, the Studio's items editor with Edit art, the atlas's 9 `i_*` rectangles retired) done
   2026-10-28 on `track/perks-items` (the items lane, beside the Perk waves; PK-10 next there).
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12

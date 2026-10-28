@@ -557,6 +557,11 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   **Tags** (types and themes) per Perk, and the rarity card's **Lean toward a tag match ×** (rules.json
   run.perks.bias). The Studio's offer order gives no team, so it doesn't ask needs. `--only=relics` opens the 15
   Wave B Perks too, and checks Bellows's Needs and Tags.
+  **Wave C's kinds** (PK-5): catchLevel (levels a caught Billie joins higher), refund (a missed pyramid back, at
+  throwMiss), free (what was just bought is free, at buy with Every), salvage (beaten bots' parts and Scrap ×), a money
+  row as a **share** of the Moneys carried and its **most** (paid at arrive), inflict at battleStart, and the rules
+  rewardPick, rerollFree and mapReveal (each rule's range from data-checks.js FX_RULE_N). Needs take **bots** (a
+  scrapyard still ahead). `--only=relics` opens the 12 Wave C Perks, Tip Jar's share and most, Magnet's Needs.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,
