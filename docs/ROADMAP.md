@@ -343,7 +343,9 @@ town node needs it.
   12 trade-off Perks of the `fine` rarity, offered only at leader wins, the kinds recoil and loot, a money add, xp on a
   Perk, the rules noDrop and faintPaysNothing, foe levels and the boss's HP moved at once when taken mid-run, the
   reward pick's Perk card, the orange cards with a red stamp, 11 new pictures) done 2026-10-28 on `track/perks`; PK-8
-  (Perk sets) next.
+  (Perk sets: the `perkSets` data section and its 7 sets, a set's Perks from their tags, a bonus while 3 are held, the
+  kinds heldBoost, a Perk's price row, the condition unstable, the rules unstableSafe and sidePerk, the cards' set line,
+  the Perks tab grouped by set, the Studio's sets) done 2026-10-28 on `track/perks`; PK-9 (boons and curses) next.
   PK-11 (Bag item icons: the 13 consumables drawn in art/items, `img` and dataItemArt, 36 px in the Bag
   and 72 on reward cards, the Studio's items editor with Edit art, the atlas's 9 `i_*` rectangles retired) done
   2026-10-28 on `track/perks-items` (the items lane, beside the Perk waves); PK-10 (held items: 16 new, the 8 existing

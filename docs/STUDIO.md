@@ -571,6 +571,11 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   loot (an events.json loot table, items 1-3, at arrive), xp (the XP from a battle), a money row's **add** (Moneys paid,
   or charged below 0, at arrive) and the rules noDrop and faintPaysNothing. `--only=relics` opens the 12 Fine Print
   Perks (rows, kinds, rarity fine), Subscription Box's loot table and charge.
+  **Perk sets** (PK-8, perkSets.json): a Perk's **Set** (the set's id written in its Tags; one set at most) and a
+  **Perk sets** card under each Perk: every set's name, bonus title, Perks needed and text as fields, its Perks and its
+  rows in words (the rows are edited in perkSets.json), with dataPerkSets's messages. Kinds heldBoost (held items work
+  ×), a price row's **perk** (a run shop's Perk) and the rules unstableSafe and sidePerk. `--only=relics` reads Running
+  Shoes's set, swaps it and undoes it, proposes a set's title and undoes it, and names a need past a set's Perks.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,

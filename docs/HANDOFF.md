@@ -19,6 +19,68 @@ perks-track.md 5.7, "Corrected in PK-8".
   Perks tab grouped by set with each set's bonus; (5) the Studio's Perks editor: a Perk's set, and the sets' names,
   titles and texts; (6) tests: a set's bonus starts and stops with its third member (taken, let go, swapped), each
   set's bonus, every Perk and every set at once finite, golden battles unchanged; (7) docs.
+- Changed (10 commits of code and tests, besides the plan, this docs commit and the merge of main):
+  - **Kinds** (effects.js, schema, game-data.d.ts, data-checks.js, the Studio's rows, tests): a price row's `what:
+    perk` (perks.js `perkShopPrice`, read by shop.js and the run sim); `heldBoost` (`fxHeldBoost`, `fxBoostRow`;
+    fxOfBillie and fxHeldAt take a boost; battle-engine.js `heldBoostOf`/`heldFx` for yours only, battle-state.js's
+    start stages, battle-rewards.js's money rows); the condition `unstable` (fxBattleCtx); the rules `unstableSafe`
+    (endTurn) and `sidePerk` (route-finds.js `routeFindsPerk` and the Perk's find on a side place, perks.js
+    `perkFindMake`, walk-view.js's pickup and propShown).
+  - **Data**: game/data/perkSets.json (the 7 sets), perkSets.schema.json, index.json, `PerkSet`, game-data.js
+    `PERK_SETS`; data-checks.js `dataPerkSets` and `perkRowProblems` (dataPerks' row checks moved, same words),
+    `PERK_THEMES` gone (tags read the sets); check-data.mjs and studio/js/check.js run it.
+  - **The bonus**: effects.js `fxSetHeld`, `fxSetsOn`, `fxSetRows`, fxOfRun adds them (src `set:<id>`);
+    battle-engine.js fxSrcName and battle.js's blips name a set by its title; debug-log.js `relicSets`.
+  - **Page**: perks.js `perkSetOf`, `perkSetLine`, `perkGroups`; perk-screen.js (the card's set line, the Perks tab
+    grouped by set), reward-screen.js and shop.js (the set line).
+  - **Studio**: perks-editor.js a Perk's Set select and the Perk sets card; check-studio-github.py `--only=relics`'s
+    set step.
+  - Tests: battle-perk-sets.test.mjs (new, 20), perks.test.mjs (perkShopPrice; perkSetOf, perkSetLine, perkGroups),
+    data-checks.test.mjs (the kinds, dataPerkSets; a PK-4 message that pinned the whole rule list now checks its
+    start), battle-perks-wave-d.test.mjs (the sideFind test leaves the Perk's find out of the place's own); the
+    check-data snapshots count 180 files. check-fast.py's relics step expects Old School's catch row.
+  - Docs: perks-track.md (PK-8 done, "Corrected in PK-8" in 5.7, section 8's tags), ROADMAP, STUDIO.md, TESTING.md.
+- Merged main 6ca60be6 (track/vfx VFX-5..12 and VFX-15, #295/#326) after the Studio commit: HANDOFF kept every entry,
+  art-code-refs.json and hooks.js regenerated, VFX-12's new check-data snapshot counts 180 files.
+- Risky:
+  - Sets change balance at once for runs holding three of a set (the relics fixture holds three Trainer Classics, so
+    Old School is on there). Numbers are placeholders.
+  - heldBoost scales every held number of yours, take rows too (Iron Vest's ×0.85 becomes ×0.775) and Seatbelt-like
+    rows with no number not at all; +1 stage becomes +2 (rounded half up), so Quick Laces doubles.
+  - The side area's Perk find is put in every side place's scene, shown only with the rule; a pick of one reopened
+    after a reload reads the mini-boss's line. If a pick is already open, walking onto the find does nothing until it
+    is answered.
+  - Influencer's critical first attack spends its once-a-battle mark on the first attack that moves (a miss spends it
+    too, as Rubber Stamp's PK-3 rule).
+  - The Studio's need field shows its message after the section redraws (a number field doesn't redraw it).
+- Verified: after every change lint, typecheck and `npm test` (1973 at the start, 2020 with main's tests after the
+  merge); before every commit check:modules, format:check, check:data (180 files fine; its two bridge warnings are
+  main's) and build; `check:smoke` on every commit touching game/ (no problems each, run in a second worktree on the
+  exact commit; Python Playwright 1.63.0), and on the merged head. Golden battles unchanged (no snapshot remade).
+  `check:fast --only=perks` ok (after its expectation took the set's catch row). `check-studio-github.py
+  --only=relics` ok with the set step. `npm run test:slow` 109 passed. A phone-sized look at the relics fixture: the
+  pick's cards read "Perk · Weather Kit 3/3" and "Perk · Office Supplies 1/3"; the Perks tab groups Office Supplies
+  2/3 and Weather Kit 3/3 ("Weather Person (on)") then "No set". **The run sim**: `--runs=50` stops in scene mode with
+  "runSceneParams: node 8 has no exit north3", main's (PK-5..PK-7); `--balance` finishes its 50 runs.
+  **Full quick check** on 01d8472a: running at the time of this commit (its result follows in the next docs commit).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **A copy doesn't count toward a set**; a Photocopier counts as itself (Office Supplies). Non-Refundable Ticket is
+    in no set.
+  - **The 7 bonuses and their texts** as listed in perks-track.md 5.7 "Corrected in PK-8"; where the plan's draft
+    didn't fit the code: Office's "stocks a Perk" was already true (half price kept); Lab's "lose no HP" needed its own
+    rule; Weather's "any weather but clear" lists rain, storms, snow, fog and ash; Adventurer's Perk lies on the
+    ground as a find (a pick of one), drawn like a pick's (ordinary rarities, the bias).
+  - **heldBoost's rounding**: stages round half up (+1 to +2), chances stop at FX_CHANCE (0.5).
+  - **The set line counts with the card's Perk** ("3/3" on the card that would complete a set), never past the need.
+  - **The Perks tab**: sets in perkSets.json's order with their bonus text, "(on)" in bold once held, then "No set".
+  - No set picture (section 6 asks none); the Studio edits a set's words and need, its rows in perkSets.json.
+- Phone checks to do (listed, not waited for): the Perks tab grouped (a set's head, "(on)"), light and dark; a pick
+  card's and a shop row's set line; a side area with three Adventurer's Pack Perks: the pyramid on the ground and its
+  pick of one; Tech Gear with Quick Laces (+2 Speed) and Express Pass; an Unstable splice under the Lab Kit (no
+  "unstable cells" line); Influencer's first attack critical.
+- Next: PK-9 (boons and curses: the `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the
+  fountain by id, the appeal, 4-5 Bureau events, Correction Fluid) on `track/perks`; Permit Revoked must keep a
+  muted Perk out of a set's count (effects.js fxSetHeld).
 
 ### Perks track PK-7 - Fine Print - 2026-10-28
 Branch `track/perks` (this session's outcome branch; PR #318 had merged PK-6 into main, so main 4423a457 came in first

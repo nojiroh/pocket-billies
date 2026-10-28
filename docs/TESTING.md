@@ -441,6 +441,12 @@ same phase:
   `data-checks.test.mjs` the kinds' rows, the leader rule and an event never naming Fine Print; `ui-marks.test.mjs` the
   Fine Print tier. The in-game full test checks the mini-boss's pick is all Fine Print; the run sim's "first item"
   policy skips a Perk card and counts what Perks charge on arrival (moneyOut.perks).
+  PK-8: `tools/test/battle-perk-sets.test.mjs` checks the sets' kinds (heldBoost on yours only, the condition unstable,
+  the rules unstableSafe and sidePerk, a side area's Perk find and its pick of one), then the 7 sets of perkSets.json:
+  their Perks, a bonus starting with the third and stopping when one is let go or swapped, copies (a Photocopier counts
+  as itself), Non-Refundable Ticket, each set's bonus, and every Perk and set at once in whole, replayable battles;
+  `perks.test.mjs` perkShopPrice, perkSetLine and perkGroups; `data-checks.test.mjs` dataPerkSets and the kinds' rows.
+  check-fast's relics step expects the fixture's Trainer Classics set (its catch row).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
