@@ -1229,6 +1229,39 @@ questions. Docs only: no game code, data or art changed; plus a private listenin
   above are taken as recommended unless the owner says otherwise.
 - `track/sound` made by this session at that word, from this branch's head (so it carries Part 2 before PR #285
   merges); SND-8a started in a new session on it.
+### Fix - the fast-check failures red on main - 2026-10-28
+Branch `fix/main-red-checks` (a one-session fix, BRANCHES.md), made from main at 07c9b284, main (48ded9d2) merged in.
+Plan approved in Plan Mode. One cause per commit. No test skipped or loosened; one dead step removed (below).
+- Found (CI logs of main's 5 push runs to 07c9b284, then reproduced here with the real check):
+  - **The two Studio checks (5/5, real):** the world map look's last step opened the Route stops tab and its landmark
+    picker, both removed in SA-3. The unknown tab fell back to Wild encounters, which drew every Billie; the check's
+    data helper set `studioState.rigs={}`, so each one 404'd at `art/billionaires/<id>.png` (2077 here). The loads
+    still failing spilled into the Camera section's error window (alone it had 0 errors).
+  - **The Studio's Model mode, `reading 'banter'` (1/5, real):** HB-10d's `squareChat` read `gameData.banter` and
+    called `squareMood`/`squareTalk`, none loaded on the Studio page; a square folk speaking in a Studio preview threw
+    in the draw loop. Reproduced by forcing it.
+  - **Timing on the CI runner** (wall-clock limits on what moves by frames; the game clock moves at most 60 ms a frame):
+    the run's seam (4/5: the next view is held until built, about 140 frames, 61 s at ~2 fps, limit 60 s); the bowl's
+    zoom out (2/5, 10 s); the orbit's hold-right (2/5: 67 frames measured, 60 s); the pasture's field (2/5, 10 s); Tall
+    ground's `drawing()` (1/5: 3 frames in 40 s, beside the Studio's 404 storm).
+  - **Behind things (2/5), not reproduced** (3 of 3 passed): 85 frames drew and you were still "hidden", so not
+    slowness. Measured: the buddy stays within a metre of you, sometimes just between the camera and you.
+- Changed (tools/check-fast.py unless said): the dead landmark step removed; the Studio data helper keeps the piece
+  sheets (`RIGS_NEXT`, as studio-app.js); `squareChat` returns no lines without the game data or the square's logic
+  (game/js/walk-view.js); the seam wait calls `groundPrepWork(50)` (as check-quick.py's `cross(prep_ms)`);
+  `until_drawn` (seconds and frames, capped) for the bowl (10 s + 10 map frames) and the pasture (10 s + 5 frames);
+  the orbit walk 60 s + up to 300 frames; `drawing()` in tools/browser_check.py waits up to 60 s more while the draw
+  loop is alive and frames come (a dead loop or no frame still fails); Behind things turns the buddy off and its
+  failure lists the buddy and the nearest folk against the camera line.
+- Risky: `drawing()` is shared by every browser check (more lenient only when the loop is alive and frames advance).
+  A seam view that never builds now fails only if 60 s of extra build time don't finish it.
+- Verified: each failing check reproduced with check-fast.py `--only=` (or the page driven by script), then passed
+  after its fix; lint, typecheck, format, check:modules, 1633 unit tests; smoke (no problems). CI on the PR (#306):
+  every job green, the fast check's 42 checks in 17.5 min. A full local run in this 4-core container took 2100 s and
+  had 5 failures (pasture, Breeding, a battle stuck at choose, Tall ground's boot, the screens' Trainer card); the
+  pasture passed 2 of 2 alone and the other four passed on main's own CI, so read them as this container's load.
+- Next: open PRs merge main to pick this up. If Behind things fails again, its note now names what stood in front.
+
 ### UI track - Part 2 checked: every skipped check on all of Part 2 merged, and the fixes (UI-8b..UI-18, WM-5b, WM-6, SY-1..SY-3, VFX-5) - 2026-10-28
 Branch `claude/ui-checks-all`, made from UI-17's `claude/ui-17-idle-life` (#300), which held main and every Part 2
 step. Merged in (merges, not rebases): main (nothing new); `track/ui` (UI-8b, #276: docs conflicts, the newer lines

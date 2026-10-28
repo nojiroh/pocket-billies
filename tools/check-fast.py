@@ -48,6 +48,16 @@ def nav_tap(t):
     return f"(()=>{{const b={NAV_BUTTON.format(t=t)};if(!b)return false;b.click();return true}})()"
 
 
+def until_drawn(pg, cond, frames, sec, n, cap=300):
+    """wait for the JS condition cond for sec seconds and, on a slow machine, until n more frames (the JS count frames)
+    have drawn, at most cap seconds: what the game does in its own time moves by frames (its clock moves at most 60 ms
+    a frame), so a fast page keeps the limit of sec seconds and a slow one gets the frames the game needs"""
+    f0 = pg.evaluate(frames)
+    if until(pg, cond, sec): return True
+    until(pg, f"({cond})||({frames})>={f0 + n}", max(1, cap - sec))
+    return bool(pg.evaluate(f"!!({cond})"))
+
+
 def no_errors(errs):
     if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
 
@@ -127,7 +137,11 @@ def run_world(pg, base):
     n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
     if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
-    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
+    # the next view is held (seamless-world.js seamlessGate) until it is built, a few ms a frame: about 140 frames, a
+    # minute or more at this machine's frame rate and 2 s on a phone. While waiting, give it the build time a phone's
+    # frames would (check-quick.py's cross(prep_ms=...) does the same)
+    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60, poke='groundPrepWork(50)'):
+        raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
     return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
@@ -168,7 +182,8 @@ def bowl_map(pg, base):
     pg.evaluate("uiState.mapSel=null;0"); pg.evaluate(nav_tap('map'))
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
         raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
-    if not until(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 10): raise Exception('the zoom out from the walk scene never settled')
+    # the zoom out lasts 1.5 s and ends on a drawn frame of the map
+    if not until_drawn(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 'worldBowl.frames', 10, 10): raise Exception('the zoom out from the walk scene never settled')
     # touches must reach the map: its layer fills the screen and some of it is not under the card or the buttons (on a
     # phone-sized page: this page's 300 px are mostly card)
     pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.5)
@@ -298,6 +313,7 @@ WRAP = "((a)=>a-2*Math.PI*Math.floor((a+Math.PI)/(2*Math.PI)))"
 # the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026): holding right from the south
 # keeps to 30 m for the 0.7 rad the check needs; nearer the summit (12-20 m) the slopes slide you 1-3 m in
 ORBIT_R = 30
+ORBIT_FRAMES = 300   # the hold-right walk's frames on a slow machine, four times what it needs
 
 
 def hub_orbit_walk(pg, c):
@@ -329,14 +345,16 @@ def hub_orbit_walk(pg, c):
     f0 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>={f0 + 2}', 30)
     pg.evaluate("walkView.stick={x:1,y:0};walkView.run=true;0")
     gone = f"Math.abs(Math.atan2(walkView.pl.x-{cx},walkView.pl.z-{cz}))"
-    t0 = time.time(); ys = []
-    while time.time() - t0 < 60:
+    # the walk is game time (67 frames measured, at the game clock's 60 ms a frame): 60 s, and on a slow machine up to
+    # ORBIT_FRAMES frames (at most 300 s)
+    t0 = time.time(); ys = []; f0 = pg.evaluate('walkRenderer.frames')
+    while time.time() - t0 < 300 and (time.time() - t0 < 60 or pg.evaluate('walkRenderer.frames') < f0 + ORBIT_FRAMES):
         ys.append(pg.evaluate("walkView.C.yaw"))
         if pg.evaluate(f"{gone}<Math.PI*0.75"): break
         pg.wait_for_timeout(100)
     pg.evaluate("walkView.stick=null;walkView.run=false;0")
     turned = pg.evaluate(f"Math.PI-{gone}")
-    if turned < 0.7: raise Exception(f'holding right walked only {turned:.2f} rad round in 60 s')
+    if turned < 0.7: raise Exception(f'holding right walked only {turned:.2f} rad round in {time.time() - t0:.0f} s ({pg.evaluate("walkRenderer.frames") - f0} frames)')
     r = pg.evaluate(f"Math.hypot(walkView.pl.x-{cx},walkView.pl.z-{cz})")
     if abs(r - R) > 1: raise Exception(f'holding right drifted from the {R} m circle to {r:.2f} m')
     jump = max((abs((ys[k] - ys[k - 1] + math.pi) % (2 * math.pi) - math.pi) for k in range(1, len(ys))), default=0)
@@ -604,6 +622,9 @@ def behind_things(pg, base):
     silhouette is shown and the see-through circle is on, frame after frame; back where you started, in the open,
     none of it"""
     drawing(pg)
+    # your buddy off: it stays within a metre of you and, now and then just between the camera and you, covers you
+    # (anything does), so "in the open nothing" would depend on where it happens to stand (the pasture check does the same)
+    pg.evaluate("saveData.preferences.buddyWalk='off';0")
     home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     stand(pg, home[0], home[1], 30)
     if pg.evaluate('walkRenderer.hidK || 0') > 0.05: raise Exception('hidden where the player starts, in the open')
@@ -628,8 +649,11 @@ def behind_things(pg, base):
     until(pg, '(walkRenderer.hidK||0)<=0.05&&rockUniformsFor(walkView.C).rock[2]<=0', 30)
     k, circle = pg.evaluate('[walkRenderer.hidK || 0, rockUniformsFor(walkView.C).rock[2]]')
     if k > 0.05 or circle > 0:
-        seen = pg.evaluate(f"""(()=>{{const P=walkView.pl,near=(walkView.folkAll||walkView.folk||[]).map(f=>Math.hypot(f.x-P.x,f.z-P.z)).sort((a,b)=>a-b)[0];
-          return {{frames:walkRenderer.frames-{f0},hidT:walkRenderer.hidT,queries:hideQuery.q.length,at:[P.x,P.z],home:{json.dumps(home)},nearestFolk:near}}}})()""")
+        # what stands near the line from the camera to you: t is how far along it (1 = you), off how far beside it
+        seen = pg.evaluate(f"""(()=>{{const P=walkView.pl,e=walkView.C.eye,dx=P.x-e[0],dz=P.z-e[2],L=dx*dx+dz*dz,
+            line=(x,z)=>{{const t=((x-e[0])*dx+(z-e[2])*dz)/L;return {{t:+t.toFixed(2),off:+Math.hypot(x-e[0]-dx*t,z-e[2]-dz*t).toFixed(2),d:+Math.hypot(x-P.x,z-P.z).toFixed(2)}}}},
+            b=worldBillies.bud,folk=(walkView.folkAll||walkView.folk||[]).map(f=>line(f.x,f.z)).sort((a,b)=>a.d-b.d).slice(0,3);
+          return {{frames:walkRenderer.frames-{f0},hidT:walkRenderer.hidT,queries:hideQuery.q.length,at:[P.x,P.z],home:{json.dumps(home)},buddy:b?line(b.x,b.z):null,folk}}}})()""")
         raise Exception(f'back in the open, still hidden ({k}) or the circle on ({circle}): {seen}')
     return f'hidden behind {len(hid)} of {len(spots)} ({", ".join(hid)}); in the open not'
 
@@ -1151,16 +1175,19 @@ def studio(pg, base):
     return 'scripts and the shared renderer loaded, the GitHub sign-in is there'
 
 
+# the Studio as it loads the repository (studio-app.js): the data files and the Billies' piece sheets (art/next/rigs-next.js),
+# so a section that draws Billies finds their pictures
 STUDIO_DATA = """(async()=>{const ix=await (await fetch('../game/data/index.json')).json(),paths=[];
  for(const k of ix.keys){const sp=ix.split&&ix.split[k];if(!sp)paths.push(k+'.json');else for(const id of sp.ids)paths.push(k+'/'+id+'.json')}
  const F={};await Promise.all(paths.map(async p=>{F[p]=await (await fetch('../game/data/'+p)).json()}));
- const D=PB_DATA.assemble(ix,p=>F[p]);studioState.D=D;studioState.rigs={};studioState.files=[];studioState.last=null;commit(true);
+ const D=PB_DATA.assemble(ix,p=>F[p]);studioState.D=D;studioState.rigs=window.RIGS={...(window.RIGS_NEXT||{})};studioState.files=[];studioState.last=null;commit(true);
  document.querySelectorAll('.dlg,.modal,.overlay').forEach(e=>e.remove());return Object.keys(D).length})()"""
 
 
 def studio_worldmap(pg, base):
     """phase 10, session 5: World & encounters → World map look: the picture of the bowl from the game's own code, a
-    land brush stroke that is one undo step, and each place's landmark field"""
+    land brush stroke that is one undo step (each place's landmark picker went with Route stops in SA-3; studio/js/check.js
+    still checks the landmark)"""
     if not until(pg, "typeof openSection==='function'&&typeof PB_DATA==='object'", 60): raise Exception('the Studio never loaded')
     pg.evaluate(STUDIO_DATA)
     pg.evaluate("studioState.sel.wtab='look';openSection('world');0")
@@ -1175,10 +1202,7 @@ def studio_worldmap(pg, base):
     if n1 != n0 + 1: raise Exception(f'a land brush stroke made {n1 - n0} strokes')
     pg.evaluate("undo();0")
     if pg.evaluate("(studioState.D.worldmap.sea.paint||[]).length") != n0: raise Exception('Undo didn’t take the stroke back')
-    pg.evaluate("studioState.sel.wtab='route';studioState.sel.stop=LOCATIONS_STUDIO_PROBE=studioState.D.locations.findIndex(l=>l.id==='copperleaf');render();0")
-    if not until(pg, "[...document.querySelectorAll('select[data-p$=\".landmark\"]')].some(s=>s.options[0].textContent.includes('Great oak'))", 10):
-        raise Exception('the landmark field doesn’t offer Auto (the great oak) for Copperleaf')
-    return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo, the landmark field'
+    return f'the bowl drawn ({round(share * 100)}% sea), a brush stroke and its undo'
 
 
 # CAM-4a: the camera dials the Camera section shows, by key, and how many times each (after opening every folder)
@@ -1803,7 +1827,8 @@ def pasture(pg, base):
     if pg.evaluate("!!uiState.inside"): raise Exception('the gate walked you into the barn')
     pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];0")
     pg.evaluate(f"toTeam(saveData.box.find(m=>m.uid==='{uid}'));0")
-    if not until(pg, f"!worldBillies.pasture.mons['{uid}']&&Object.keys(worldBillies.pasture.mons).length===2", 10):
+    # the field looks at storage again once a real second, in a drawn frame
+    if not until_drawn(pg, f"!worldBillies.pasture.mons['{uid}']&&Object.keys(worldBillies.pasture.mons).length===2", 'walkRenderer.frames', 10, 5):
         raise Exception('a Billie moved to the team still wanders in the pasture')
     return 'three Billies wander inside the fence; tapping one and tapping the gate open the ranch’s sheet; one moved to the team left the field'
 
