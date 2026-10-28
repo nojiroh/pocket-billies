@@ -39,7 +39,12 @@ const H = (i, j) => +M.heights[h - j][i] || 0,
   smooth = f => f * f * (3 - 2 * f);
 const notes = [];
 
-if (args.includes('--river')) {
+/* the terrain patch's fall (tools/patch-copperleaf-terrain.mjs --pond) stands at the river's head: no ramp there */
+const fallAtHead =
+  M.streams[0] && (M.falls || []).some(f => Math.hypot(f.x - M.streams[0].pts[0][0], f.z - M.streams[0].pts[0][1]) < 4);
+if (fallAtHead)
+  notes.push('the river leaves the pond over its fall (patch-copperleaf-terrain.mjs --pond): its outflow stays');
+if (args.includes('--river') && !fallAtHead) {
   const st = M.streams[0],
     p = st.pts,
     pond = M.spots.find(s => s.kind === 'pond');

@@ -13,6 +13,7 @@ lighthouse, the windmill and the town from a free camera, and a flat ground map 
     python3 tools/island-shots.py OUT_DIR --last=won     # as after a won (or lost) run: the square's reactions (HB-10d)
     python3 tools/island-shots.py OUT_DIR --chapter=2    # the story at this chapter: the fountain's look (HB-10d)
     python3 tools/island-shots.py OUT_DIR --festival=lantern_walk  # a festival on (festivals.json): its decorations (HB-10e)
+    python3 tools/island-shots.py OUT_DIR --only=pond,pond-fall,mountain   # the pond's terrace and fall, the mountain
 
 Run `npm run data` first (the page reads game/data/gamedata.js). Writes OUT_DIR/<name>.png and OUT_DIR/shots.json
 (the names, where you stood, the frame count). Nothing is sent anywhere."""
@@ -150,9 +151,11 @@ def main():
         if want('overview-se'): shot('overview-se', 'Overview from the south-east, high up')
         # hub placing: the landmarks from a free camera: [name, label, prop key, the eye's offset from it, the target's]
         for name, label, k, eye, tgt in (
-                ('station', 'Skyline Station on its headland, the sky rail out to sea and the portal', 'train_station', [-6, 26, -46], [30, 6, 6]),
-                ('station-rail', 'The sky rail climbing to the portal, from the headland', 'train_station', [-4, 4, -10], [60, 14, 6]),
-                ('station-near', 'Skyline Station and the rail out of its right-hand end, close', 'train_station', [4, 9, -22], [8, 2, 3]),
+                # the owner, 2026-10-28: the station inland, facing east (its track behind it, north-south), the portal
+                # high over the sea to the east
+                ('station', 'Skyline Station inland, from the east, and the portal over the sea', 'train_station', [34, 16, -26], [-2, 3, 2]),
+                ('station-rail', 'From the station toward the portal over the sea', 'train_station', [-5, 5, -6], [60, 20, 4]),
+                ('station-near', 'Skyline Station, its steps and platform, close', 'train_station', [12, 4, -9], [-2, 2, 1]),
                 ('lighthouse', 'The lighthouse on the cove', 'lighthouse', [-14, 10, -18], [0, 4, 0]),
                 ('windmill', 'The windmill by the farm', 'windmill', [-12, 8, -16], [0, 3, 0]),
                 ('town', 'The town round the square, from above', 'fountain', [-10, 34, -40], [0, 0, 4]),
@@ -166,6 +169,19 @@ def main():
             # beside a fountain, not in its basin (HB-10a: the hub's own spot is 3 m east of it)
             sx = p['x'] + (3 if k == 'fountain' else 0)
             fast.stand(pg, *pg.evaluate(f"walkablePointNear({sx},{p['z']})"), frames=4)
+            y = pg.evaluate(f"standingHeightAt({p['x']},{p['z']})")
+            pg.evaluate(f"walkView.opt.look=()=>({{eye:[{p['x'] + eye[0]},{y + eye[1]},{p['z'] + eye[2]}],tgt:[{p['x'] + tgt[0]},{y + tgt[1]},{p['z'] + tgt[2]}],fov:55}})")
+            shot(name, label, [p['x'], p['z']])
+        # the owner, 2026-10-28: the mountain, and the pond on its terrace with its fall and the river, from a free camera
+        # by their marked spots: [name, label, spot kind, the eye's offset from it, the target's]
+        for name, label, kind, eye, tgt in (
+                ('pond', 'The pond on its terrace, its fall and the river, from the path', 'pond', [16, 7, -14], [1, 1, -2]),
+                ('pond-fall', 'The fall into its pool by the bridge, close', 'fall', [7, 2.5, -5], [0, -1, 0]),
+                ('mountain', 'The mountain from the town side', 'summit', [42, 6, -58], [0, -6, 0])):
+            p = pg.evaluate(f"(((mapById(walkView.sc.baseId||walkView.id)||walkView.sc).spots||[]).find(s=>s.kind==='{kind}')||null)")
+            if not p or not want(name): continue
+            pg.evaluate('delete walkView.opt.look')
+            fast.stand(pg, *pg.evaluate(f"walkablePointNear({p['x'] + eye[0] * 0.5},{p['z'] + eye[2] * 0.5})"), frames=4)
             y = pg.evaluate(f"standingHeightAt({p['x']},{p['z']})")
             pg.evaluate(f"walkView.opt.look=()=>({{eye:[{p['x'] + eye[0]},{y + eye[1]},{p['z'] + eye[2]}],tgt:[{p['x'] + tgt[0]},{y + tgt[1]},{p['z'] + tgt[2]}],fov:55}})")
             shot(name, label, [p['x'], p['z']])

@@ -409,7 +409,9 @@ test("the game's island is the generator's own output for its stored dials and s
      ground, its spots, streams, plots and landmarks by hand; the rest must still be the generator's own. A rebuild
      (build-island) writes a fresh islandGen, which clears the list. */
   const patched = Array.isArray(sc.islandGen.patched) && sc.islandGen.patched.length > 0,
-    HAND = ['tiles', 'heights', 'spots', 'streams', 'plots'];
+    /* the terrain patch (tools/patch-copperleaf-terrain.mjs) clears the old mountain's steps in the town zone */
+    terrain = patched && sc.islandGen.patched.some(t => t.startsWith('terrain ')),
+    HAND = ['tiles', 'heights', 'spots', 'streams', 'plots', ...(terrain ? ['steps', 'stepm'] : [])];
   for (const k of [
     'w',
     'h',
