@@ -2273,20 +2273,20 @@ def leaders_steps(pg, errs):
 
 def economy_steps(pg, errs):
     """Studio plan T4.4: the Economy page lists a line per source and sink with its value; a link opens the field;
-    the simulator's numbers are a placeholder that says so."""
+    the simulator's numbers are a notice that says so."""
     n = len(errs)
     pg.evaluate("void openSection('economy')")
     pg.wait_for_selector('#main .eco', timeout=20000)
     rows = pg.evaluate("document.querySelectorAll('#main [data-eco]').length")
     want = pg.evaluate("economyLines(studioState.D).length")
     if rows != want or rows < 20: errs.append(f'economy: {rows} lines shown, economyLines gives {want}')
-    if not pg.locator('#main [data-eco-sim="none"]').count(): errs.append('economy: no placeholder for the simulator numbers')
+    if not pg.locator('#main [data-eco-sim="none"]').count(): errs.append('economy: no notice for the simulator numbers')
     pg.click('#main [data-act="ecoGo"][data-path="unlocks.ranch_2.cost"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec") != 'unlocks' or not pg.locator('#main [data-p="unlocks.ranch_2.cost"]').count(): errs.append('economy: the ranch_2 cost link did not open its field')
     pg.evaluate("void openSection('economy')"); time.sleep(0.3)
     pg.click('#main [data-act="ecoGo"][data-path="perks.lucky_charm.fx.0.mult"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:lucky_charm': errs.append('economy: the Lucky Charm link did not open that Perk')
-    if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
+    if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator notice shown', flush=True)
 
 
 # Studio plan Phase 6 (T6.7): every WebGL context the page makes is counted (a canvas that gets one), and the GPU's
