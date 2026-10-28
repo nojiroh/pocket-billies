@@ -545,6 +545,11 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   **Its picture** (PK-2): the Perk's `img` (`perks/<id>.svg`) at the game's 72 and 36 px, and **Edit art**, which opens
   it in the icon editor (below). A Perk without one shows the relic icon in the game (check:data warns); **Draw one**
   makes a blank `art/perks/<id>.svg`, names it in the Perk and opens it (two steps of the undo; Propose sends both).
+  **The battle kit's kinds** (PK-3): crit (critical-hit stages, or with a When of move that move is critical), immune
+  (a status, the Sandstorm or sharp stones), inflict (a status and a chance at a hit; chances acting together count at
+  most 0.5), chip (what a burn takes, times), first (yours move first where its If holds) and revive (a wiped team
+  gets back up with a share of HP; it needs Once). check-studio-github.py `--only=relics` opens the 15 Wave A Perks
+  and checks every row shows its inputs with no error.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,

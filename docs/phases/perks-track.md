@@ -470,6 +470,35 @@ unused-art gate.
 - The take moment needs the save: `perkTake`, `perkChoose` and `perkBuy` take an optional last `s`; the page's
   callers and the simulation pass it.
 
+**Corrected in PK-3** (built 2026-10-28; where the code or the plan above was wrong or vague):
+- The hook points' line numbers above are 07c9b28's; PK-1 and PK-3 moved them. In battle-engine.js now: `calcDamage`
+  :434, `inflict` :527, `useMove` :557, `endTurn` :800, `doSwitch` :980, `checkFaints` :1019, `runTurn` :1754 (the
+  turn's order :1802); PK-3's own `fxFirstActs`, `fxRevive`, `fxImmuneTo`/`fxImmuneSay`, `fxInflict`.
+- **crit** has no `force` field: a crit row without a when gives stages (1-3, `FX_CRIT`, the steps of
+  `critChances`); a crit row at `when: move` makes that move critical (the roll is still made, so the stream is the
+  same). Click Pen counts only attacks (`if: cat:H|S`: a status move would waste the crit), so its text says
+  "attack", not "move".
+- **inflict** takes the existing condition `if: cat:H` instead of a `cat` field. Rows acting at one hit share one
+  roll: their chances laid end to end, scaled to 0.5 together (`FX_CHANCE`, `fxInflictPick`). It needs a when (hit;
+  PK-5 adds battleStart for Music Box). Its line: "Joy Buzzer kicked in!", then the status's own.
+- **immune**: the Sandstorm is only a move's storm (`battle.market`, rules.json `shockName`); no forecast weather
+  hurts. A status from an event (`status` command) also skips a team holding the Perk (run-loop.js `runImmune`); a
+  move's self-status too. Status guards say "Oven Mitts kept X from being burned."; the Sandstorm and stones are kept
+  off silently (as a Ground type's are).
+- **chip** has `what: burn` only (`FX_CHIP`), a factor on the burn's turn-end hurt of yours.
+- **first** puts yours ahead within a move's priority (a foe's priority move still goes first), so Alarm Clock's
+  text drops "always". Its line: "Alarm Clock: X moves first."
+- **revive** needs `once` (battle or run: without one a team would get up at every wipe). The kinds that can be once
+  without a when are now `FX_ONCE_KINDS` (stat, pinchHeal, revive). The revived Billies are sent out again where they
+  stood (doSwitch: "Go, X!", their held and Perk stages).
+- Power Bank is a pinchHeal row, read at a turn's end: its text says "ends a turn below a quarter".
+- The counters (rule 4): `perks.js perkCount` shows "n/every" or "VOID" (any spent once-a-run row) after the rarity
+  on the Perks tab's row and the "Let one go" cards; a pick or shop card shows a Perk not held, so none.
+- Section 2's tests: `perks.test.mjs:41` now looks over 120 runs (28 Perks); no other test pinned a seed's offer;
+  the golden battles are unchanged.
+- `node tools/test/sim/run-sim.mjs --runs=50` stops on **main** too (07c9b28: "runSceneParams: node 8 has no exit
+  south2", from the first runs, in scene mode); `--balance` finishes its 50 runs on this branch (none reaches a pick).
+
 ## 8. Offers (PK-4, PK-7)
 - `needs` on a Perk (a condition: `team:Fire`, `bots`, `side`, `spliced`): unmet, its weight is 0, so a Fire Perk is
   never offered to a team without a Fire Billie. `tags` (types and themes): a tag matching the team's types, or a set
@@ -486,7 +515,7 @@ unused-art gate.
 | PK-0 | Plan (done 2026-10-27) | this file, the 8 art samples, ROADMAP, BRANCHES, HANDOFF | merged by the owner |
 | PK-1 | Effects core (**done 2026-10-28**, `track/perks`; "Corrected in PK-1" in section 7) | section 7's fields and state, the switch-in fix, run rows of every kind read, schema, data checks, types, the Studio's row inputs, battle lines; tests for each trigger, counter, growth and condition (test-only Perks) | a battle without Perks unchanged; every tier green |
 | PK-2 | Art pipeline (**done 2026-10-28**, `track/perks`; "Corrected in PK-2" in section 6) | `tools/build-icons.mjs` and its test, `img` on Perks (schema, checks, types), cards at 72 px and rows at 36 px, the Studio's icon editor and art browser on the new folders, the 13 existing Perks drawn | 13 pictures in game, contact sheets committed |
-| PK-3 | Wave A | 15 Perks of 5.2: data, kinds, art, tests | every Wave A Perk works in a battle test |
+| PK-3 | Wave A (**done 2026-10-28**, `track/perks`; "Corrected in PK-3" in section 7) | 15 Perks of 5.2: data, kinds, art, tests | every Wave A Perk works in a battle test |
 | PK-4 | Wave B | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
 | PK-5 | Wave C | 12 Perks of 5.4 | catching, shop, reward and map rules tested |
 | PK-6 | Wave D | 11 Perks of 5.5 (Correction Fluid waits for PK-9) | growth and copy tested over a simulated run |
