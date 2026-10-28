@@ -340,7 +340,7 @@ export function runSimOn(env) {
         /** the lost place's row on the map (null: not lost there) @type {number | null} */
         lostRow: null,
         /** money in by where it came from, and out by what it paid for (Studio plan T3.4) */
-        moneyIn: { prize: 0, reward: 0 },
+        moneyIn: { prize: 0, reward: 0, perks: 0 },
         moneyOut: { heal: 0, shop: 0, perks: 0 },
         /** each run foe fought: its leader, its node's type, won or not @type {any[]} */
         foes: [],
@@ -406,8 +406,8 @@ export function runSimOn(env) {
             at.relic = { id: shelf, price: cost };
             if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop, s)) {
               s.se -= cost;
-              /* PK-1: the buy moment (shop.js shopPerkBuy) */
-              runBuyFx(s, data.PERKS);
+              /* PK-1: the buy moment (shop.js shopPerkBuy); PK-5: a free row gives the price back */
+              stats.moneyIn.perks += runBuyFx(s, data.PERKS, cost).free;
               stats.spent += cost;
               stats.moneyOut.perks += cost;
               at.relic.bought = c.drop ? { drop: c.drop } : 1;
@@ -423,8 +423,8 @@ export function runSimOn(env) {
           ) {
             s.se -= price;
             s.pyramids.pyramid = (s.pyramids.pyramid || 0) + 1;
-            /* PK-1: the buy moment (shop.js shopBuy) */
-            runBuyFx(s, data.PERKS);
+            /* PK-1: the buy moment (shop.js shopBuy); PK-5: a free row gives the price back */
+            stats.moneyIn.perks += runBuyFx(s, data.PERKS, price).free;
             stats.spent += price;
             stats.moneyOut.shop += price;
           }
@@ -518,6 +518,8 @@ export function runSimOn(env) {
               if (q.graft) stats.caughtSpliced++;
               res = { over: 'caught', turns: B.turn };
             } else {
+              /* PK-5: a refund row's pyramid comes back (battle.js finishThrow) */
+              if (c.refund) s.pyramids.pyramid++;
               /* a miss: the foe's turn */
               fn('enemyOnly')();
             }
@@ -600,7 +602,10 @@ export function runSimOn(env) {
         else i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
         /* walking in: the Perks' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
-        fxHealed = runArriveFx(s, data.PERKS);
+        const paid = { money: 0 };
+        fxHealed = runArriveFx(s, data.PERKS, paid);
+        /* PK-5: a money share row (Tip Jar) */
+        stats.moneyIn.perks += paid.money || 0;
       }
     } finally {
       data.worldHubBack();

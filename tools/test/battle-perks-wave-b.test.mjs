@@ -443,7 +443,7 @@ test('PK-4 Wave B: all 15 are in perks.json with a picture; the type Perks need 
     assert.ok(data.PERKS[id], id);
     assert.equal(data.PERKS[id].img, `perks/${id}.svg`);
   }
-  assert.equal(Object.keys(data.PERKS).length, 43, '13 + Wave A’s 15 + Wave B’s 15');
+  assert.deepEqual(Object.keys(data.PERKS).slice(28, 43), WAVE_B, 'after the 13 and Wave A’s 15');
   const typed = WAVE_B.filter(id => data.PERKS[id].needs);
   assert.equal(typed.length, 9);
   for (const id of typed) {
@@ -583,7 +583,7 @@ test('PK-4 Barometer: 3 more forecast days; walking in in rain or a storm heals 
 });
 
 test('PK-4 all Wave A and B Perks at once: whole battles end, every number finite, the stream replayable', () => {
-  const ids = Object.keys(data.PERKS).slice(13);
+  const ids = Object.keys(data.PERKS).slice(13, 43);
   assert.equal(ids.length, 30);
   const team = [ofType('Fire'), ofType('Water'), ofType('Grass')];
   const play = seed => {
