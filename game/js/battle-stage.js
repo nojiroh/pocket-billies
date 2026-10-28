@@ -12,12 +12,12 @@ import { expose } from './test-globals.js';
 import {
   BATTLE_STAGES,
   HIT_EFFECTS_BY_TYPE,
-  MOVES,
   TYPE_COLORS,
   activeBattle,
   battle3dLayout,
   battle3dStart,
   battle3dStop,
+  battleAnimPlay,
   battleFreeArea,
   battleLayoutChanged,
   fighter,
@@ -131,6 +131,7 @@ expose({
   battleStageFormat: [() => battleStageFormat, v => (battleStageFormat = v)],
   battleStageFrame: [() => battleStageFrame, v => (battleStageFrame = v)],
   battleStageJoin3d: [() => battleStageJoin3d, v => (battleStageJoin3d = v)],
+  battleStageKit: [() => battleStageKit],
   battleStageLayout: [() => battleStageLayout, v => (battleStageLayout = v)],
   battleStagePlay: [() => battleStagePlay, v => (battleStagePlay = v)],
   battleStagePrepare: [() => battleStagePrepare, v => (battleStagePrepare = v)],
@@ -2000,197 +2001,9 @@ export function battleStagePlay(an, ev) {
       scheduleAt(1100, () => battleStageFocus('wide'));
       return { dur: 1050, hit: 0 };
     }
-    case 'move': {
-      const si = an.si,
-        ti = an.ti ?? 1 - si,
-        ss = actorTeam(si),
-        M = MOVES[an.mid],
-        dir = ss === 0 ? 1 : -1;
-      an.t = M.t;
-      const A = actorCenter(si),
-        T = actorCenter(ti),
-        kk = 1;
-      battleStageFocus(ss === 0 ? 'me' : 'foe');
-      camAt(si, 0.32, 0.08, ss === 0 ? -0.012 : 0.012, 200);
-      if ((M.p || 0) >= 80 && !an.miss && !an.blocked && !an.protect) handheld(M.c === 'H' ? 700 : 950, 0.8);
-      /* on the 3D stage a big move gets a camera sweep: low behind the attacker, then across to the target */
-      if (battleStage.gl && !reducedMotion && (M.p || 0) >= 80 && !an.miss && !an.blocked && !an.protect) {
-        const m = ss === 0 ? 1 : -1;
-        camTo({ x: -0.7 * m, y: 1.05, z: 0.5, yaw: 0.16 * m, hz: 5 }, 300, 'out3');
-        camTo({ x: 0.9 * m, y: 1.35, z: 1.3, yaw: -0.1 * m, hz: -3 }, 420, 'io', 420);
-      }
-      const ak = an.protect ? 'block' : M.c === 'H' ? 'attack' : M.c === 'S' ? 'cast' : an.self ? 'buff' : 'cast';
-      setActorAction(si, ak, ak === 'attack' ? 620 : 800);
-      const toT = (d = 180) => {
-        battleStageFocus(actorTeam(ti) === 0 ? 'me' : 'foe');
-        camAt(ti, 0.45, 0.15, actorTeam(ti) === 1 ? 0.022 : -0.022, d, 'out3');
-      };
-      if (an.miss) {
-        if (M.c === 'H')
-          battleLunge(si, { dx: dir * 22, dur: 110, backDur: 160, backAt: 120, ...lungeKind(an.mid, M.t) });
-        else
-          for (let i = 0; i < 6; i++)
-            scheduleAt(i * 45, () =>
-              addParticle({
-                x: A.x,
-                y: A.y,
-                z: A.z,
-                vx: (T.x - A.x) * 3.2 + (random() - 0.5),
-                vy: (T.y - A.y) * 3.2 + 1.5,
-                vz: (T.z - A.z) * 3.2 + 1.2,
-                life: 380,
-                spr: typeSprite(M.t, i),
-                k: kk,
-              })
-            );
-        const ts = battleStage.s[ti];
-        scheduleAt(150, () => {
-          toT();
-          tween(ts, 'ox', ts.ox - dir * 18, 100);
-          tween(ts, 'ox', 0, 180, 'out', 160);
-          if (typeof hudPop === 'function') hudPop(ti, 'Miss', 'miss');
-        });
-        camHome(420, 560);
-        scheduleAt(900, () => battleStageFocus('wide'));
-        return { dur: 760, hit: 999 };
-      }
-      if (an.protect) {
-        scheduleAt(140, () => {
-          ringFx(A, '#8FD8FF', 0.3, 1.1, 600);
-          ringFx(A, '#FFFFFF', 0.1, 0.8, 450);
-          groundRing(si, '#8FD8FF', 1.8, 600);
-        });
-        camHome(400, 500);
-        scheduleAt(800, () => battleStageFocus('wide'));
-        return { dur: 700, hit: 0 };
-      }
-      if (an.blocked) {
-        scheduleAt(170, () => {
-          toT();
-          ringFx(T, '#8FD8FF', 0.4, 0.9, 420);
-          setActorAction(ti, 'block', 500);
-          if (typeof hudPop === 'function') hudPop(ti, 'Hedged', 'miss');
-        });
-        camHome(400, 520);
-        scheduleAt(900, () => battleStageFocus('wide'));
-        return { dur: 740, hit: 999 };
-      }
-      if (M.c === 'H') {
-        /* VFX-5: leaning in, with afterimages (and a dash's ribbon) */
-        battleLunge(si, {
-          dx: dir * 30,
-          dy: -4,
-          dur: 120,
-          ease: 'in',
-          delay: 100,
-          backDur: 200,
-          backAt: 240,
-          ...lungeKind(an.mid, M.t),
-        });
-        scheduleAt(120, () => {
-          for (let i = 0; i < 5; i++)
-            addParticle({
-              x: A.x,
-              y: 0.15,
-              z: A.z,
-              vx: (random() - 0.5) * 1.2,
-              vy: 0.6 + random() * 0.6,
-              vz: (random() - 0.5) * 1.2,
-              life: 420,
-              col: '#E8DCC8',
-              size: 2,
-              floor: 1,
-            });
-        });
-        scheduleAt(200, () => {
-          toT(140);
-          if (an.dmg) hitFx(ti, an);
-        });
-        camHome(460, 620);
-        scheduleAt(1050, () => battleStageFocus('wide'));
-        return { dur: 880, hit: 200 };
-      }
-      if (M.c === 'S') {
-        const n = 9,
-          beamy = M.t === 'Electric' || M.t === 'Psychic' || M.t === 'Water';
-        scheduleAt(140, () => {
-          ringFx(A, TYPE_COLORS[M.t][0], 0.15, 0.8, 300);
-          groundRing(si, TYPE_COLORS[M.t][0], 1.4, 420);
-        });
-        if (beamy)
-          scheduleAt(200, () =>
-            addParticle({
-              x: A.x,
-              y: A.y,
-              z: A.z,
-              x2: T.x,
-              y2: T.y,
-              z2: T.z,
-              beam: 1,
-              col: TYPE_COLORS[M.t][0],
-              w: 3,
-              life: 420,
-              glow: 1,
-            })
-          );
-        for (let i = 0; i < n; i++)
-          scheduleAt(160 + i * 34, () => {
-            const v = 1 / 0.32,
-              key = typeSprite(M.t, i);
-            addParticle({
-              x: A.x + (random() - 0.5) * 0.2,
-              y: A.y + (random() - 0.5) * 0.2,
-              z: A.z,
-              vx: (T.x - A.x) * v,
-              vy: (T.y - A.y) * v + 2.4,
-              vz: (T.z - A.z) * v,
-              ay: -15,
-              life: 320,
-              spr: key,
-              k: 1.2,
-              fade: false,
-              glow: GLOWING_PARTICLES[key],
-            });
-          });
-        scheduleAt(330, () => toT(220));
-        if (an.dmg) scheduleAt(500, () => hitFx(ti, an));
-        camHome(480, 820);
-        scheduleAt(1250, () => battleStageFocus('wide'));
-        return { dur: 1060, hit: 500 };
-      }
-      const tgt = an.self ? si : ti,
-        Pp = an.self ? A : T,
-        tk = 1;
-      if (!an.self) scheduleAt(260, () => toT(240));
-      for (let i = 0; i < 10; i++)
-        scheduleAt(200 + i * 48, () => {
-          const a = (i / 10) * Math.PI * 2,
-            key = typeSprite(M.t, i);
-          addParticle({
-            x: Pp.x + Math.cos(a) * 0.8,
-            y: Pp.y + Math.sin(a * 2) * 0.3,
-            z: Pp.z + Math.sin(a) * 0.8,
-            vx: -Math.cos(a) * 1.2,
-            vy: 0.8,
-            vz: -Math.sin(a) * 1.2,
-            life: 440,
-            spr: key,
-            k: tk,
-            glow: GLOWING_PARTICLES[key],
-          });
-        });
-      scheduleAt(600, () => {
-        ringFx(Pp, TYPE_COLORS[M.t][0], 0.2, 1.1, 420);
-        groundRing(tgt, TYPE_COLORS[M.t][0], 1.6);
-        if (!an.self) {
-          blinkActor(tgt, 240);
-          setActorAction(tgt, 'dizzy', 700);
-        }
-      });
-      camHome(460, 800);
-      scheduleAt(1250, () => battleStageFocus('wide'));
-      return { dur: 1000, hit: 600 };
-    }
+    case 'move':
+      /* VFX-8: played from the data (battleAnims.json) by battle-anim-run.js */
+      return battleAnimPlay(an, ev);
     case 'hurt': {
       const T = actorCenter(an.si),
         kk = 1;
@@ -2615,3 +2428,21 @@ export function battleStageCatch(kind, res, spin, done) {
     spin
   );
 }
+/* VFX-8: what the move runner (battle-anim-run.js) plays its steps with */
+export const battleStageKit = {
+  tween,
+  flush: battleStageFlush,
+  setActorAction,
+  camTo,
+  handheld,
+  addParticle,
+  ringFx,
+  groundRing,
+  hitFx,
+  blinkActor,
+  typeSprite,
+  battleLunge,
+  lungeKind,
+  actorTeam,
+  GLOWING_PARTICLES,
+};

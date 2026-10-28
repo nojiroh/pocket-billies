@@ -3,6 +3,7 @@
 // names). The module that declares the name hands it over with provide(): functions before it runs, everything
 // else once it has loaded. A slot no module of the page fills stays undefined (typeof checks still work).
 export let ALTERNATE_PROPS,
+  BATTLE_ANIMS,
   BATTLE_STAGES,
   BODY_TEMPLATES,
   BUILDING_SHADERS,
@@ -78,6 +79,7 @@ export let ALTERNATE_PROPS,
   battle3dLayout,
   battle3dStart,
   battle3dStop,
+  battleAnimPlay,
   battleFreeArea,
   battleLayoutChanged,
   battleSoundEffect,
@@ -486,6 +488,7 @@ export let ALTERNATE_PROPS,
   xpProgress;
 const set = {
   ALTERNATE_PROPS: v => (ALTERNATE_PROPS = v),
+  BATTLE_ANIMS: v => (BATTLE_ANIMS = v),
   BATTLE_STAGES: v => (BATTLE_STAGES = v),
   BODY_TEMPLATES: v => (BODY_TEMPLATES = v),
   BUILDING_SHADERS: v => (BUILDING_SHADERS = v),
@@ -561,6 +564,7 @@ const set = {
   battle3dLayout: v => (battle3dLayout = v),
   battle3dStart: v => (battle3dStart = v),
   battle3dStop: v => (battle3dStop = v),
+  battleAnimPlay: v => (battleAnimPlay = v),
   battleFreeArea: v => (battleFreeArea = v),
   battleLayoutChanged: v => (battleLayoutChanged = v),
   battleSoundEffect: v => (battleSoundEffect = v),

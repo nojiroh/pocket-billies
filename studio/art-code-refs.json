@@ -1573,8 +1573,8 @@
    "game/js/opening-fall.js:922"
   ],
   "bolt": [
-   "game/js/battle-stage.js:831",
-   "game/js/battle-stage.js:2286",
+   "game/js/battle-stage.js:832",
+   "game/js/battle-stage.js:2099",
    "game/js/battle.js:515",
    "game/js/boot.js:142",
    "game/js/run-loading.js:396",
@@ -1630,8 +1630,8 @@
   ],
   "coin": [
    "game/js/art.js:180",
-   "game/js/battle-stage.js:1504",
-   "game/js/battle-stage.js:2231",
+   "game/js/battle-stage.js:1505",
+   "game/js/battle-stage.js:2044",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
    "game/js/logic/smear.js:339",
@@ -1665,7 +1665,7 @@
    "game/js/logic/placeholder-art.js:280"
   ],
   "down": [
-   "game/js/battle-stage.js:2273",
+   "game/js/battle-stage.js:2086",
    "game/js/cutscene/director.js:130",
    "game/js/cutscene/director.js:163",
    "game/js/cutscene/stage.js:118",
@@ -1707,9 +1707,9 @@
    "game/js/map-tab.js:127"
   ],
   "flame": [
-   "game/js/battle-stage.js:831",
-   "game/js/battle-stage.js:2223",
-   "game/js/battle-stage.js:2286",
+   "game/js/battle-stage.js:832",
+   "game/js/battle-stage.js:2036",
+   "game/js/battle-stage.js:2099",
    "game/js/walk-view.js:395",
    "game/js/walk/effects.js:371"
   ],
@@ -1802,7 +1802,7 @@
    "game/js/opening-fall.js:922"
   ],
   "pebble": [
-   "game/js/battle-stage.js:2210"
+   "game/js/battle-stage.js:2023"
   ],
   "phone": [
    "game/js/walk-view-gl.js:647",
@@ -1830,7 +1830,7 @@
    "game/js/self-test.js:3186"
   ],
   "plus": [
-   "game/js/battle-stage.js:2250",
+   "game/js/battle-stage.js:2063",
    "game/js/billie-sheet.js:194",
    "game/js/boot.js:156",
    "game/js/shop.js:162"
@@ -1840,7 +1840,7 @@
    "game/js/game-data.js:161"
   ],
   "ring": [
-   "game/js/battle-anim-run.js:98",
+   "game/js/battle-anim-run.js:121",
    "game/js/engine/webgl.js:784",
    "game/js/walk/map-cache.js:78",
    "game/js/walk/map-cache.js:415"
@@ -1857,16 +1857,16 @@
   ],
   "spark": [
    "game/js/bag.js:28",
-   "game/js/battle-stage.js:798",
-   "game/js/battle-stage.js:812",
-   "game/js/battle-stage.js:831",
-   "game/js/battle-stage.js:1823",
-   "game/js/battle-stage.js:2250",
-   "game/js/battle-stage.js:2383",
-   "game/js/battle-stage.js:2412",
-   "game/js/battle-stage.js:2452",
-   "game/js/battle-stage.js:2475",
-   "game/js/battle-stage.js:2574",
+   "game/js/battle-stage.js:799",
+   "game/js/battle-stage.js:813",
+   "game/js/battle-stage.js:832",
+   "game/js/battle-stage.js:1824",
+   "game/js/battle-stage.js:2063",
+   "game/js/battle-stage.js:2196",
+   "game/js/battle-stage.js:2225",
+   "game/js/battle-stage.js:2265",
+   "game/js/battle-stage.js:2288",
+   "game/js/battle-stage.js:2387",
    "game/js/battle.js:1133",
    "game/js/billie-sheet.js:82",
    "game/js/billie-sheet.js:156",
@@ -1890,8 +1890,8 @@
    "game/js/walk/effects.js:341"
   ],
   "star": [
-   "game/js/battle-stage.js:2320",
-   "game/js/battle-stage.js:2589",
+   "game/js/battle-stage.js:2133",
+   "game/js/battle-stage.js:2402",
    "game/js/cutscene/opening.js:344",
    "game/js/game-data.js:158",
    "game/js/game-data.js:161"
@@ -1906,7 +1906,7 @@
    "game/js/audio/tracker.js:577",
    "game/js/augment-screen.js:142",
    "game/js/augment-screen.js:253",
-   "game/js/battle-stage.js:2273",
+   "game/js/battle-stage.js:2086",
    "game/js/battle.js:533",
    "game/js/battle.js:1189",
    "game/js/cutscene/director.js:163",
@@ -1942,8 +1942,8 @@
    "game/js/walk/lighting.js:243"
   ],
   "zz": [
-   "game/js/battle-stage.js:831",
-   "game/js/battle-stage.js:2286"
+   "game/js/battle-stage.js:832",
+   "game/js/battle-stage.js:2099"
   ]
  }
 }

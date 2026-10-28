@@ -432,6 +432,7 @@ export const SET_PIECES = /** @type {import('../types/game-data').SetPiecesData 
 export const ARENAS = /** @type {import('../types/game-data').ArenasData | null} */ (gameData.arenas || null);
 /* VFX-8: how the battle plays a move, as data (battleAnims.json; logic/battle-anims.js, battle-anim-run.js) */
 export const BATTLE_ANIMS = /** @type {import('../types/game-data').BattleAnimsData} */ (gameData.battleAnims);
+provide({ BATTLE_ANIMS }); /* to-module */
 /* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
 export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} */ (
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
