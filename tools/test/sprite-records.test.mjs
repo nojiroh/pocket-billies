@@ -366,3 +366,46 @@ test('the reflection as instances: the runs are its old draws grouped by picture
   });
   t.assert.snapshot(record(gl).filter(c => !c.startsWith('bufferSubData')));
 });
+
+// style track SY-6: a coated Billie while its foil's band crosses it (item.foil) is drawn on its own on the sprite
+// program with uFoil, put back to 0 right after; in both passes, the instanced one leaving its run for it
+for (const inst of [false, true])
+  test(`the coat's foil${inst ? ' as instances' : ''}: the Billie drawn alone with uFoil, then uFoil back to 0`, () => {
+    const gl = inst ? setupInstanced() : setup(),
+      im = pic(32, 48),
+      man = (id, x, foil) => ({
+        k: 'npc',
+        id,
+        im,
+        x,
+        y: 0,
+        z: 6,
+        mpp: 1 / 32,
+        ox: -16,
+        oy: -48,
+        w: 32,
+        h: 48,
+        flip: 1,
+        person: true,
+        foil,
+      }),
+      F = [0.55, 0.7, 0.2, 0.3];
+    G.drawSprites(camera(), [man('a', 1, null), man('b', 2, F), man('c', 3, null)], X, [], [], 32);
+    const c = gl.calls.map(q => q.map(round).join(' ')),
+      on = c.indexOf('uniform4fv uFoil ' + F.join(',')),
+      off = c.indexOf('uniform4f uFoil 0 0 0 0');
+    assert.ok(on >= 0, 'uFoil set');
+    assert.ok(off > on, 'and put back');
+    const between = c.slice(on, off);
+    assert.equal(between.filter(q => q.startsWith('drawArrays ')).length, 1, 'one draw with the foil');
+    assert.ok(!between.some(q => q.startsWith('drawArraysInstanced')), 'never an instanced draw');
+    assert.equal(c.filter(q => q.startsWith('uniform4fv uFoil')).length, 1, 'only the coated one');
+    if (inst) {
+      const { out } = draws(gl.calls);
+      assert.deepEqual(out, [
+        [out[0][0], 1],
+        [out[0][0], 1],
+        [out[0][0], 1],
+      ]);
+    }
+  });
