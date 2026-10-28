@@ -1995,6 +1995,30 @@ def music_steps(pg, errs):
     if not until(pg, "Object.keys(musicStudio.scape.P.stats().voices).length===0", 15):
         errs.append(f'music: the World sounds card left {pg.evaluate("JSON.stringify(musicStudio.scape.P.stats().voices)")} playing after Stop')
     if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing a world sound changed the data')
+    # SND-11: the player is on the game's chain (music.json mix's compressor); the Instruments tab: an instrument bakes
+    # and plays its run, an ensemble's song plays as the ensemble (its parts' stems, no chip drums), GB Sounds puts it
+    # back on gb from the next bar, a part's level edited and undone
+    if pg.evaluate("[musicStudio.chain.comp.threshold.value, musicStudio.chain.comp.ratio.value]") != [-14, 3]:
+        errs.append(f'music: the player\'s compressor is {pg.evaluate("[musicStudio.chain.comp.threshold.value, musicStudio.chain.comp.ratio.value]")}, not the mix\'s')
+    pg.click('[data-act=musTab][data-t=instruments]')
+    pg.wait_for_selector('[data-act=musInst][data-k=harp]', timeout=10000)
+    pg.evaluate("(() => { const T = musicStudio.tracker, f = T.sampleVoice; window.__sv = []; T.sampleVoice = (o, v) => { const r = f(o, v); window.__sv.push([v.inst, !!r]); return r; }; window.__svf = f })()")
+    pg.click('[data-act=musInst][data-k=celesta]')
+    if not until(pg, "window.__sv.filter(([i, ok]) => i === 'celesta' && ok).length >= 7", 20): errs.append(f'music: celesta played {pg.evaluate("JSON.stringify(window.__sv)")}')
+    pg.evaluate("window.__sv = []; document.getElementById('musEns_route').open = true")
+    pg.click('[data-act=musEnsPlay][data-song=route]')
+    if not until(pg, "musicPlaying() === 'route' && musicStudio.tracker.song.ensOn && window.__sv.some(([i, ok]) => i === 'pizz' && ok)", 30):
+        errs.append(f'music: route did not play as its ensemble ({pg.evaluate("[musicPlaying(), !!(musicStudio.tracker.song && musicStudio.tracker.song.ensOn), JSON.stringify(window.__sv.slice(0, 6))]")})')
+    pg.check('#musGb')
+    if not until(pg, "musicStudio.tracker.song && !musicStudio.tracker.song.ensOn", 10): errs.append('music: GB Sounds did not put route on gb')
+    pg.uncheck('#musGb')
+    pg.evaluate("void (musicStudio.tracker.sampleVoice = window.__svf)")
+    box = pg.locator('#main input[data-p="music.ensembles.route.parts.1.level"]')
+    box.fill('0.5'); box.press('Tab')
+    if pg.evaluate("studioState.D.music.ensembles.route.parts[1].level") != 0.5: errs.append('music: an ensemble part\'s level did not change')
+    pg.click('#undoBtn')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: undoing the part\'s level left something to propose')
+    pg.click('.list-head [data-act=musStop]')
     # a Billy's cry (the Billies page; SND-6: every stage has one): a new pitch keeps its base and plays the base's
     # notes from it, and its low-HP version a third down; undone, nothing to propose
     pg.evaluate("void openSection('billionaires')")
@@ -2022,7 +2046,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped; SND-11: the game’s compressor, an instrument and an ensemble played on the Instruments tab, GB Sounds, a part’s level undone; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
