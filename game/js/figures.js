@@ -9,16 +9,16 @@
    person-art.js frame, and nothing else in the renderer changes.
    - The baker draws in its own small WebGL2 context (the owner's pick: kept apart from the game's renderer state).
      Pass 1 draws the figure with its depth into a texture: each face in one of three toon bands from a top-left light,
-     the scene props' ramps (a code figure's from its palette, a model's from its texture); the depth goes in alpha. Pass 2, at the same pixels: the dark plum outline round it (each
-     outside pixel next to the figure takes the outline of its colour, as tools/build-scene-props.py olc) and inside it
-     where a part stands well in front of another. Then the pixels are copied to a 2D canvas, and the face is painted
-     on it in whole pixels (eyes, mouth, blush: logic/figure-pose.js figureFaceMarks).
+     the scene props' ramps (a code figure's from its palette, a model's from its texture); the depth goes in alpha.
+     Pass 2, at the same pixels: the dark plum outline round it (each outside pixel next to the figure takes the
+     outline of its colour, as tools/build-scene-props.py olc) and inside it where a part stands well in front of
+     another. Then the pixels go to a 2D canvas, and a code figure's face is painted on it in whole pixels (eyes,
+     mouth, blush: logic/figure-pose.js figureFaceMarks).
    - Two styles (Engine > People > Style): 'pixel', the pixel puppet (C) described here, and 'smooth', the plain 3D
      figure (B): a soft light and no outline, baked at FIGURE_SMOOTH_PPM and left to the GPU's mipmaps.
-   - Pictures are kept by figure, clip, frame, the view's steps, the density, the outline and the style (figureKey), at most
-     FIGURE_CACHE_BYTES of them and
-     FIGURE_CACHE_MAX, and at most FIGURE_BAKES_A_FRAME are baked a frame: until a person's picture is ready they keep
-     the last one they had (or today's picture, or nobody, on a test map).
+   - Pictures are kept by figure, clip, frame, the view's steps, the density, the outline and the style (figureKey):
+     at most FIGURE_CACHE_MAX of them and FIGURE_CACHE_BYTES. One is baked a frame, up to FIGURE_BAKES_A_FRAME while
+     the frame's work budget lasts; until then a person keeps their last picture (or today's, or none on a test map).
    - A lost baker context bakes nothing until it is back, then rebuilds; the game's own lost context only drops the
      textures, and the canvases are uploaded again. figureBakerLose forces a loss for the checks.
    The renderer never calls this with the switch off, and a model's file is only fetched when one is first wanted. */
