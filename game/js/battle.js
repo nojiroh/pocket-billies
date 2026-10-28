@@ -158,6 +158,7 @@ expose({
   floatPos: [() => floatPos],
   floatTick: [() => floatTick, v => (floatTick = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
+  hudBanner: [() => hudBanner, v => (hudBanner = v)],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
