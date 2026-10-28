@@ -13,6 +13,7 @@ import {
   BATTLE_ANIMS,
   BATTLE_STAGES,
   HIT_EFFECTS_BY_TYPE,
+  MOVES,
   TYPE_COLORS,
   activeBattle,
   battle3dLayout,
@@ -22,6 +23,9 @@ import {
   battleFlashGate,
   battleFreeArea,
   battleLayoutChanged,
+  battleSandGust,
+  battleScarAt,
+  battleStageLookReset,
   fighter,
   figureBattlePicture,
   figureFolk,
@@ -50,7 +54,6 @@ import {
   impactAt,
   impactFrame,
   impactLength,
-  lungeDash,
   lungeGhostCount,
   lungeLean,
   lungeLeanOn,
@@ -66,6 +69,7 @@ import {
   smearStretch,
   throwArcEase,
 } from './logic/smear.js';
+import { battlePathAt } from './logic/battle-anims.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES, robotArmCanvas, robotLegsCanvas, robotTorsoCanvas } from './robot-art.js';
@@ -162,6 +166,7 @@ expose({
   blinkActor: [() => blinkActor, v => (blinkActor = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
+  burstMax: [() => burstMax],
   buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
   calmMotion: [() => calmMotion],
   camApply: [() => camApply, v => (camApply = v)],
@@ -173,6 +178,7 @@ expose({
   cameraGuardPose: [() => cameraGuardPose],
   cameraOverflow: [() => cameraOverflow, v => (cameraOverflow = v)],
   catchSound: [() => catchSound],
+  delayedMoveType: [() => delayedMoveType, v => (delayedMoveType = v)],
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
@@ -505,6 +511,8 @@ export function battleStageStart(area) {
   battleStage.shk = 0;
   battleStage.hold = 0;
   battleStage.focusK = null;
+  /* VFX-15: the stage's mood and the Sandstorm's gust start at rest */
+  if (typeof battleStageLookReset === 'function') battleStageLookReset();
   battleStage.q.since = performance.now();
   battleStage.gl = typeof battle3dStart === 'function' && battle3dStart();
   document.body.classList.toggle('battle-3d', !!battleStage.gl);
@@ -743,6 +751,15 @@ function battleStageFrame(ts, rawDt) {
     const p = P[i];
     p.age += dt;
     if (p.age >= p.life) continue;
+    /* VFX-11: a particle on a path (a projectile, an orbit: logic/battle-anims.js battlePathAt) is where its path says */
+    if (p.path) {
+      const q = battlePathAt(p.path, p.age / p.life);
+      p.x = q[0];
+      p.y = q[1];
+      p.z = q[2];
+      P[n++] = p;
+      continue;
+    }
     p.vx += p.ax * s;
     p.vy += p.ay * s;
     p.vz += p.az * s;
@@ -787,17 +804,7 @@ function battleStageFrame(ts, rawDt) {
 const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
 function spawnAmbientParticles(dt) {
   const A = AREAS[battleStage.area];
-  if (battleStage.oil && random() < dt / 18)
-    addParticle({
-      x: GROUND_CENTER_X - 7 + random() * 3,
-      y: 0.1 + random() * 2.6,
-      z: GROUND_CENTER_Z + (random() - 0.3) * 7,
-      vx: 6 + random() * 4,
-      vy: (random() - 0.4) * 0.6,
-      life: 1500,
-      col: random() < 0.5 ? '#E8CF96' : '#C9A866',
-      size: 1,
-    });
+  /* VFX-15: the Sandstorm's streaks are the weather's now (walk/fountains-weather.js drawBattleSand) */
   if (random() < dt / 150) {
     const am = A.amb,
       x = GROUND_CENTER_X + (random() - 0.5) * 12,
@@ -945,9 +952,10 @@ function battleLunge(i, o) {
   s.trail = smearHistory();
   return backAt + backDur;
 }
-/* VFX-5: a move's lunge kind: a dash (logic/smear.js LUNGE_DASH) leaves a ribbon in its type's colour */
-function lungeKind(mid, type) {
-  const c = lungeDash(mid) && TYPE_COLORS[type] && TYPE_COLORS[type][0];
+/* VFX-5: a move's lunge kind: a dash leaves a ribbon in its type's colour. VFX-11: a dash is the dash family's lunge
+   (the step's `dash`), which took over logic/smear.js LUNGE_DASH's moves */
+function lungeKind(dash, type) {
+  const c = dash && TYPE_COLORS[type] && TYPE_COLORS[type][0];
   return typeof c === 'string' && c[0] === '#' ? { dash: true, col: c } : {};
 }
 /* VFX-5: keeps each lunging Billie's place on the smear grid (the battle's frame, after its tweens) */
@@ -1432,7 +1440,8 @@ export function particleSprite(key) {
 function drawParticles(c, layer) {
   const L = [];
   battleStage.parts.forEach(p => {
-    if ((p.layer || 2) !== layer) return;
+    /* VFX-11: a light with nothing to show (the runner's light step) */
+    if ((p.layer || 2) !== layer || p.hide) return;
     /* VFX-9: drawn in the 3D world instead (walk/battle-fx.js), all but a bot's dropped part (a picture) */
     if (battleStage.gl && !p.img) return;
     const q = battleStageProject(p.x, p.y, p.z);
@@ -2081,6 +2090,8 @@ export function battleStagePlay(an, ev) {
         s = battleStage.s[i],
         si = actorTeam(i);
       setActorAction(i, 'faint', 99999);
+      /* VFX-15: one more scar on a KO */
+      if (typeof battleScarAt === 'function') battleScarAt(i, { ko: true });
       battleStageFocus(si === 0 ? 'me' : 'foe');
       camAt(i, 0.3, 0.08, si === 0 ? 0.02 : -0.02, 500);
       if (!reducedMotion) camTo(PULL_BACK_CAMERA, 520, 'io', 480);
@@ -2110,6 +2121,8 @@ export function battleStagePlay(an, ev) {
       battleStage.shk = 2.5;
       if (an.dmg && typeof hudPop === 'function')
         scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg', hitWeight(an.si, an)));
+      /* VFX-15: the Sandstorm's hurt leaves a sand drift */
+      if (an.fx === 'oil' && typeof battleScarAt === 'function') battleScarAt(an.si, { sandstorm: true });
       if (an.fx === 'oil')
         for (let i = 0; i < 7; i++)
           addParticle({
@@ -2140,7 +2153,8 @@ export function battleStagePlay(an, ev) {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
         pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_ICON, C => {
           C.show = false;
-          hitFx(an.si, { te: an.te, t: 'Retail' }, impactFx(T, 'coin'));
+          /* VFX-11: it read 'Retail', not a type (the bug list), so it fell back to None's: the delayed move's own */
+          hitFx(an.si, { te: an.te, t: delayedMoveType() }, impactFx(T, 'coin'));
         });
         scheduleAt(1000, () => battleStageFocus('wide'));
         return { dur: 900, hit: 400 };
@@ -2252,17 +2266,8 @@ export function battleStagePlay(an, ev) {
     }
     case 'market': {
       battleStage.oil = true;
-      for (let i = 0; i < 40; i++)
-        addParticle({
-          x: GROUND_CENTER_X - 8 + random() * 4,
-          y: 0.1 + random() * 3,
-          z: GROUND_CENTER_Z + (random() - 0.4) * 7,
-          vx: 8 + random() * 5,
-          vy: (random() - 0.3) * 0.8,
-          life: 1300,
-          col: random() < 0.5 ? '#E8CF96' : '#C9A866',
-          size: 1 + (random() < 0.3 ? 1 : 0),
-        });
+      /* VFX-15: its gust in the weather's batch (battle-stage-look.js), not 40 particles */
+      if (typeof battleSandGust === 'function') battleSandGust();
       battleStageFlash('#C8A060', 0.35, 500);
       battleStage.shk = 3;
       return { dur: 760, hit: 0 };
@@ -2527,6 +2532,14 @@ export function battleStageCatch(kind, res, spin, done) {
     spin
   );
 }
+/* VFX-11: the type of the delayed hit's move (fx.delay; the engine's 'mail' hurt names no move), None without one */
+function delayedMoveType() {
+  const M = Object.values(MOVES).find(m => m && m.fx && m.fx.delay);
+  return (M && M.t) || 'None';
+}
+/* VFX-11: a burst's most particles at the battle's quality (battleAnims.json budgets.burst, VFX-12), for the runner's
+   sprays */
+const burstMax = () => fxBudget('burst');
 /* VFX-8: what the move runner (battle-anim-run.js) plays its steps with */
 export const battleStageKit = {
   tween,
@@ -2546,4 +2559,9 @@ export const battleStageKit = {
   GLOWING_PARTICLES,
   fxSeed: battleFxSeed,
   fxRandom: battleFxRandom,
+  /* VFX-15: a hit's weight, for its scar */
+  hitWeight,
+  /* VFX-11 */
+  burstMax,
+  actorWorldPoint,
 };

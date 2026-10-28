@@ -445,6 +445,137 @@ art/items was touched.
   Name Tags' level line after a catch; the 12 new pictures at 72 and 36 px, light and dark.
 - Next: PK-6 (Wave D: rules, growth and adventure; 11 Perks of 5.5, Correction Fluid waits for PK-9) on
   `track/perks`.
+### VFX track VFX-15 - The stage: a battle mood, the row wave, heat, weather on the stage, battle scars - 2026-10-28
+Side branch `claude/vfx-15-stage` (wave 1, beside VFX-10 on `track/vfx` and VFX-12 on `claude/vfx-12-studio-effects`),
+made from `track/vfx` at 1f5dfee7; draft PR #311 into `track/vfx`. Run under the owner's standing instruction
+(2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tag (main's CLAUDE.md).
+- The plan: measure first (the film tool gains `--weather`, `--bot` and `--bench`; the old build in a worktree); the
+  data in keys of my own (`moods`, `weather`, `scars` in battleAnims.json) and a browser-free logic file with tests;
+  then, one cause per commit, the mood (grade pass), the weather on the stage, the scars (one draw); measure after,
+  side by side; films; the full check. Siblings told before touching shared files (VFX-12 the keys and the commit;
+  the planning session asked to pass the decal proposal to VFX-10, which had not started).
+- Changed:
+  - game/data/battleAnims.json: `moods` (dark .2, tint .3, in 160 / out 360 ms, superEffective, the Bureau's ink,
+    `wave` {Psychic, the Bureau, 2 px, 3 on a big move, rows 4 px}, `heat` {Fire, .8}), `weather` (rain splashes 16 a
+    second within 4 m, settling 1.6 s within 5 m at most 48, sunny warm .35 and shafts x1.4, sand 90 streaks, a 1.6x
+    gust over 1.3 s), `scars` (cap [12, 8, 4, 0], maxM 1.2, fade 400 ms in 4 steps, heavy .35, six kinds with their
+    types, size, sprite id and tint). Schema, types (`BattleMoods`, `BattleStageWeather`, `BattleScars`), checks in
+    `dataBattleAnims` (real types, one type per scar kind, sizes under maxM, one Sandstorm and one heavy kind) and the
+    Studio's type rename (logic/type-rename.js) for their type lists.
+  - game/js/logic/battle-stage-look.js (browser-free, in the game, the Studio and its worker): `battleMoodFor` (only a
+    landed move; power bigPower or a super-effective hit darkens and tints; the wave for the listed types and a Bureau
+    bot; heat for Fire's big ones; Reduced motion: the darken and tint, stepped, no wave, no heat), `scarKindFor`,
+    `scarCap`, `scarAdd` (the oldest replaced), `scarFadeShare` (1, .75, .5, .25, 0), `scarSize`.
+    tools/test/battle-stage-look.test.mjs: the decal cap at every quality, 1.2 m, the kinds, the four steps over
+    400 ms, the mood's rules (20% at most, only landed moves, the wave, the Bureau's ink, Reduced motion).
+  - game/js/battle-stage-look.js (new, after battle-anim-run.js): `battleMoodPlay` from `battleAnimPlay` tweens
+    `stageLook` (dark, tint, wave, heat) on the stage clock: in over 160 ms up to the move's hit, out over 360 ms to its
+    end, so hit-stop holds it, the speed scales it, a skip ends it, and no move is longer; `battleSandGust`;
+    `battleScarAt` (the scar a hit leaves at Billie i's feet, placed by a hash of the battle's place so the effects'
+    random stream is left as it was); `battleStageLookFrame` (what battle3dFrame hands the renderer as `stageLook`).
+  - engine/post-effects.js grade pass: the battle mood multiplies the grade's gain (darker by `dark`, at most .2;
+    tinted by `tint` toward the type's glow at full brightness), adds the sun's warmth; `uWave` (new, beside `uHeat`;
+    in the Medium precision pass's highp list): rows `uWave.y` pixels tall shift sideways by whole pixels, CSS pixels
+    as the picture is seen; the sun's shafts times `stageLook.rays`. walk-view-gl.js passes `stageLook` and takes the
+    larger of the place's heat and the move's. VFX-9's `uCAP` and its guard are untouched.
+  - Weather (walk/fountains-weather.js): in a battle, more rain splashes on the stage's ground (ripples where it's
+    water), snow and ash that land near the stage lie flat for 1.6 s and go in four steps; `drawBattleSand`: the
+    Sandstorm's streaks in the weather's batch (one draw), indoors too, with its gust when it starts. battle-stage.js:
+    the Sandstorm's 40 stage particles and its ambient stream are gone (the pool is freer); walk/effects.js: the cheap
+    shafts brighter under the battle's sun.
+  - Scars (walk/battle-scars.js, new, after battle-fx.js): its own program (`battleScar`, in the warm-up list), each
+    scar 24 vertices from a 3x3 grid on `standingHeightAt` with normals from the ground's slope, lit with the face
+    program's light (shade, shadowAtN, contactAO, points, fog), cutout with a 4x4 Bayer step on its own texels, alpha
+    0 out (no ink), depth offset, all in one draw inside the effects pass before the pool's (under the `battleFx`
+    tag); never on water (its middle or a corner); one per landed hit (a skipped hit too), one more on a KO (a dent),
+    a sand drift on the Sandstorm's hurt; the oldest replaced past the cap; battle3dStop starts the 400 ms fade, a new
+    battle clears them. The art: VFX-10's six decals (they landed on `track/vfx` during this step, under the ids
+    proposed to it: `scar_scorch` ... `scar_dent`, sprites with `ground`), their greys coloured by a ramp per kind
+    (`scars.kinds.*.ramp`: Fire, Water, Ground, Grass, Ground, None; VFX-10's `battleRampRgb`), sized by the picture at
+    32 px a metre (the puddle and sand drift 36x24 px, so 1.125 x 0.75 m); a procedural stand-in (`scarPlaceholder`)
+    only where a picture is missing. A scar's vertices are made once the decals have loaded.
+  - tools/look-battle-anims.py: `--weather=rain|storm|snow|ash|fog|clear|sand`, `--bot` (the foe a Bureau bot),
+    `--bench` (frame time and draws on the Graphics bench), and `--measure` counts the whole frame's draws.
+- Where the track file was wrong or vague (checked in the code):
+  - "a battle mood on top of the place mood (PE 724-772)": the place mood is eased in walk/quality-cull.js
+    `easedMood` (171-190, the 2 s ease) and added to the grade at PE ~790; `uHeat` PE 292-296 is right (294).
+  - "lit as the `face` program is (WS 478-486)": WS 480-489, and it draws one quad a call from uniforms, so one draw
+    for all scars needed a program of its own (same light functions).
+  - "Sandstorm moves into the weather batch (no 2D streaks)": the Sandstorm is the engine's `market` / `marketEnd`
+    events (`battleStage.oil`); since VFX-9 its streaks were already GL pool particles, not 2D. Moved anyway: out of
+    the particle pool into the weather batch.
+  - "rain splashes on the battle's ground": the walk weather already splashed where drops land (35% of them, 40 at
+    most, round you or the stage); VFX-15 adds splashes on the stage itself.
+  - "the Bureau's wave": the Bureau has no type; its moves are a bot's (sp `bot:`; every robot is the Bureau's today).
+  - The Graphics bench is a walk scene: only the grade pass's new branch (`uWave` 0) reaches it.
+- Decided for the owner, to review:
+  - A full-scene darken on big moves: at most 20% darker, on power 80+ moves and super-effective hits (recommended),
+    with a 30% tint toward the type's glow (the Bureau's bots: the stamp ink #EA5974). Strong in rose and blue on the
+    films; a dial for the Studio (VFX-12).
+  - Scars outliving the battle: no (recommended); they fade in four steps over 400 ms when it ends.
+  - The row wave on every landed Psychic move (2 px, 3 on a big one) and every Bureau bot's move, rows 4 px; heat .8
+    on Fire's big moves; none under Reduced motion (the tint and darken stay, stepped).
+  - Types with no scar kind (Electric, Psychic, Steel, Flying, Dragon, None) leave a dent only on a heavy hit (hitWeight
+    .35 or more); a KO's extra scar is always a dent (the faint doesn't know the move).
+  - A skipped hit still leaves its scar (it lasts the battle, like the plates' numbers a skip keeps).
+  - Calm: nothing VFX-15 adds loops while idle (the mood, wave and heat come with a move; the weather is the world's),
+    so Calm changes nothing here; Reduced motion turns off the stage's extra splashes and settling.
+  - The Sandstorm's 40-particle start became a 1.3 s gust of its streaks; its streaks show indoors too.
+  - The sun in battle: warmth +.35 and shafts x1.4.
+  - Scars count under the `battleFx` GPU tag: a move's effects are now 3 draws at most (2 pool + scars), the budget.
+- Measurements (headless, software GPU, quality 0, the town fixture; before = 1f5dfee7 in a worktree, after = this
+  branch, run one after the other; means over Inferno, Riptide and Vision Fund, super effective, side 0):
+  - The battle effects' draws (`battleFx` tag, most in a film): 2 -> 3 (the scars). The effects pass a frame (most):
+    90 -> 91 clear, 82.3 -> 83.3 in rain, 90 -> 92 in the Sandstorm (its streaks' draw and the scars'); a Bureau
+    bot's Inferno in rain 82 -> 83. The whole frame's draws vary with each film's framing (731-1230 in the same
+    build); means 898 / 891 / 965 before and 858 / 901 / 852 after (clear, rain, sand): no rise. These are the
+    desktop settings in software; the phone's 400 is with its lower quality settings, where VFX-15 adds at most 2
+    draws (scars, sand) and only while a battle has them.
+  - Rig redraws in a film: unchanged (15 or 25, the same spread in both builds).
+  - Frame time during a move (stage and renderer tasks with gl.finish): before 613-799 ms mean over the runs, after
+    625-735 ms; p90 1850-4392 before, 2899-3669 after. Software rendering and very noisy; no slowdown shows.
+  - Graphics bench (test_graphics, 120 frames, desktop settings): before 514 / 513 / 505 ms mean (three runs), 903
+    draws; after 531 / 532 ms, 903 draws; after with the wave's shader line taken out, 554 ms. Same draws; the time
+    moves 5-10% between runs of one build in software, and the bench (a walk scene) runs nothing of VFX-15's but the
+    grade pass's wave test (0 outside a battle). So the frame budget holds as far as headless can tell; the phone's
+    33 ms is a phone check.
+- Films (validation-style contact sheets made in the scratchpad, not committed): Inferno (Fire), Riptide (Water),
+  Vision Fund (Psychic) super effective with no weather, rain and snow; a Bureau bot's Inferno and Riptide with no
+  weather and in rain; the Sandstorm. The darken and tint ease in to the hit and out by the move's end; the scorch
+  under the hit Billie; a probe page showed all six placeholder decals on the cobbles, lit and depth-tested.
+- Risky:
+  - Scars lie 2 cm over the ground with a depth offset: on steep or broken ground a patch's edge may sink or float.
+  - The scar draw sits in the effects pass beside the pool's (VFX-9 found drawing after the pass spoiled the reused
+    reflection and shadow maps); if white patches show in battle on the phone, check here too.
+  - The tint at .3 may be too strong on some types (the films' rose and blue are clear); dial it down if so.
+  - Merging: hooks.js (`npm run modules`) and studio/art-code-refs.json (`node tools/art-code-refs.mjs`) regenerate;
+    battleAnims.json's new keys sit after `scenes`.
+- Phone checks (listed, not waited for): the darken and tint on a big move (power 80+) and on a super-effective hit,
+  gone by the move's end; the row wave on a Psychic move and a Bureau bot's move (and none under Reduced motion); heat
+  shimmer on a big Fire move; rain splashing on the battle's ground; snow settling; the Sandstorm's streaks; scars
+  after a few hits (scorch, puddle, crack, leaves, a dent on a heavy hit, one more on a KO) fading when the battle
+  ends; frame time in a battle with weather.
+- Verified: lint, typecheck, `npm test` (1648 of 1648 at the end; the run-map timing test failed once inside the
+  parallel run, as in VFX-9's entry), check:modules, format:check, check:data, build after each change; the smoke
+  check before each game/ commit (7 of 7, twice). The battle-anims tests keep every move's {dur, hit} (no move longer;
+  `maxMs` untouched). The golden record untouched (the engine isn't changed). Sound files untouched (no message to the
+  sound track needed); `uCAP`, battleStageFlash, the sprite shader and hitFx untouched (none to the style track).
+  Full quick check: 37 of 42 in 1541 s. Fails: terraces (`train_station` in the air), RL-8's run (crossed into Thicket
+  Route, never shown) and the walking step's room light, all on the known list; and two that pass alone on this
+  branch (run again side by side with the base build): Phone (the walk screen counted 20 pieces against 18, a
+  wandering Billie's hint) and Battle music (the drums waited past the 8 s fallback on the loaded machine). Every battle
+  step passed (double and Alpha at 4x, starters, weather, the phone's battle and debug log, the debug menu), and the
+  Studio's steps. Song fingerprints 199, 0 changed. Not run: the in-game full test (its first step passes in the
+  smoke check; nothing it plays changed but the battle's look).
+  Again after the merge with track/vfx and VFX-10's decals (fc7492eb): smoke 7 of 7 (twice), `npm test` 1879 of 1879,
+  the full quick check 38 of 42 in 1684 s: the same three known reds and Battle music's drums (a load flake many
+  entries record; it passed alone on this branch above).
+- Merged `origin/track/vfx` at 7f99aec5 (VFX-10's effect art and main) into this branch (a merge): conflicts kept both
+  in battleAnims.json, its schema and types, dataBattleAnims, type-rename, battle-3d.js's imports and the look tool's
+  --measure (my whole-frame draws beside VFX-10's strip count); studio/art-code-refs.json regenerated; walk/battle-fx.js
+  only gains an `export` on `battleRampRgb` (made for the scars). The next main-line session merges this branch.
+- Next: VFX-12's dials for `moods`, `weather` and `scars` (told the keys); a scar atlas made again when a decal is
+  repainted in the Studio (today: on the next page load).
 
 ### VFX track VFX-9 - One draw for effects: the GPU pool, the budgets, fixed light keys, uHit, the uCA pulse - 2026-10-28
 Branch `track/vfx` (it held main and PR #290's branch when the step began; main then moved 246 commits, #279, #283,
