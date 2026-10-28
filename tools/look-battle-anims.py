@@ -27,6 +27,13 @@ gives the same film.
     python3 tools/look-battle-anims.py --compare=DIR         # this folder's trace against DIR's
     python3 tools/look-battle-anims.py --only=zip --measure  # draws, rig uploads and frame time per film
     python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
+    python3 tools/look-battle-anims.py --only=zip --measure --weather=rain   # in a weather (VFX-15)
+    python3 tools/look-battle-anims.py --bench                # time a frame on the Graphics bench (VFX-15)
+
+VFX-15: --weather=rain|storm|snow|ash|fog|clear (forced at noon in summer before the battle; clear by day is the
+battle's sunny), or sand (clear, with the Sandstorm blowing). --bench opens the Graphics bench (test_graphics) instead
+of a battle and times 120 frames of the walk renderer at its middle (gl.finish; software GPU headless, so only builds
+side by side compare); bench.json. --bot: the foe is a Bureau bot (the courier), so side 1's films are the Bureau's.
 
 Uses the browser checks' page set-up (tools/browser_check.py)."""
 import json
@@ -46,6 +53,7 @@ OUTCOMES = ['hit', 'se', 'x4', 'nve', 'crit', 'secrit', 'miss', 'blocked']
 if OPT.get('outcomes'): OUTCOMES = str(OPT['outcomes']).split(',')
 SIDES = [int(v) for v in str(OPT.get('sides') or '0,1').split(',')]
 FRAMES, EVERY = 96, 3
+WEATHER = str(OPT.get('weather') or '')
 
 # Math.random seeded from the start (util.js keeps the Math.random it finds when it loads), reseeded per film
 SEEDED = """(()=>{let s=1;window.__seed=n=>{s=(n>>>0)%2147483646+1};Math.random=()=>{s=s*16807%2147483647;return (s-1)/2147483646}})()"""
@@ -161,6 +169,22 @@ def measure(pg, moves):
           'rig redraws', tot(lambda x: x['rig']['redraws']), 'KB', tot(lambda x: x['rig']['kb']))
 
 
+def bench(pg):
+    """VFX-15: frame time on the Graphics bench (test_graphics), the walk renderer alone, 120 frames after 30 to settle"""
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='walk';uiState.bench={id:'test_graphics',test:1};render();0")
+    if not CF.until(pg, "!!(walkView.ready&&walkView.id==='test_graphics')", 120): raise Exception('test_graphics didn’t open')
+    pg.wait_for_timeout(3000)
+    r = pg.evaluate("""(()=>{const T=frameScheduler.tasks,keep=new Map(T);T.clear();const gl=gpuState.gl,rn=performance.now.bind(performance),ms=[],draws=[];
+     let vt=rn()+1e7;const pn=performance.now;performance.now=()=>vt;
+     try{for(let i=0;i<150;i++){vt+=16;countersOn(gl);const t0=rn();for(const [,t] of keep)t.fn(vt,16);gl.finish();const dt=rn()-t0;
+      let d=0;const c=gpuCounters.cur;for(let p=0;p<c.length/FIELD_COUNT;p++)d+=c[p*FIELD_COUNT+F_DRAW];countersOff();if(i>=30){ms.push(dt);draws.push(d)}}}
+     finally{performance.now=pn;for(const [k,t] of keep)T.set(k,t)}
+     ms.sort((a,b)=>a-b);const m=L=>Math.round(L.reduce((a,b)=>a+b,0)/L.length*100)/100;
+     return {msMean:m(ms),msP90:Math.round(ms[Math.floor(ms.length*.9)]*100)/100,drawsMean:m(draws),drawsMax:Math.max(...draws)}})()""")
+    print('Graphics bench:', r, flush=True)
+    (OUT / 'bench.json').write_text(json.dumps(r, indent=1))
+
+
 def compare(a, b):
     A = json.loads((a / 'trace.json').read_text())
     B = json.loads((b / 'trace.json').read_text())
@@ -197,13 +221,23 @@ def main():
         ctx, pg = CF.new_page(b, errs, width=480, height=320, low=False, timeout=300000, init=(RENDER, SEEDED))
         pg.goto(base + '/index.html?fixture=town')
         if not CF.until(pg, READY, 300): raise Exception('the town fixture never got ready')
+        if 'bench' in OPT:
+            bench(pg)
+            ctx.close(); b.close(); srv.shutdown()
+            return
+        if WEATHER:
+            w = 'clear' if WEATHER == 'sand' else WEATHER
+            pg.evaluate(f"environment.on=true;environment.force={{time:13,weather:{json.dumps(w)},season:'summer'}};0")
+            pg.wait_for_timeout(1500)
         pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});"
-                    "__seed(20261028);const q={id:'film',sp:Object.keys(SPECIES).find(k=>SPECIES[k].stage===0),lvl:20,no:1};encountersHere().splice(0,1e9,q);startWild(q);0")
+                    "__seed(20261028);const q={id:'film',sp:Object.keys(SPECIES).find(k=>SPECIES[k].stage===0),lvl:20,no:1};encountersHere().splice(0,1e9,q);"
+                    + ("q.sp=factionBotSp(FACTIONS.bureau.bots.courier);startWildBot(q);0" if 'bot' in OPT else "startWild(q);0"))
         if not CF.until(pg, "activeBattle&&activeBattle.phase==='choose'", 120, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"):
             raise Exception('the battle never reached the move menu')
         CF.until(pg, 'battleStage.gl', 30)
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
+        if WEATHER == 'sand': pg.evaluate("battleStage.oil=true;0")
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
         if 'measure' in OPT:
             measure(pg, moves)
