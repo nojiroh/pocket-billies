@@ -1,5 +1,5 @@
 {
- "about": "Roguelite track RL-14: the runs' enemy factions (logic/factions.js). The Bureau of Lost, Found and Beans fields bots built from robots.json parts: met wild on routes from the middle rows on, fielded by its agents beside their Billies, and gathered in scrapyards. A bot is never caught or taxed; beating one leaves a salvage pick (two of its parts or a stack of Scrap). Numbers are placeholders for the sim.",
+ "about": "Roguelite track RL-14: the runs' enemy factions (logic/factions.js). The Bureau of Lost, Found and Beans fields bots built from robots.json parts: met wild on routes from the middle rows on, fielded by its agents beside their Billies, and gathered in scrapyards. A bot is never caught or taxed; beating one leaves a salvage pick (two of its parts or a stack of Scrap). Numbers are placeholders for the sim. Style track SY-3: `look` is its paperwork (the emblem, a UI icon; the stamp words, the owner's placeholders; the form numbers, placeholders to review).",
  "factions": {
   "bureau": {
    "name": "Bureau of Lost, Found and Beans",
@@ -15,7 +15,12 @@
    "wild": {"chance":0.1,"fromRow":3,"biomes":["canyon","volcano","ridge","badlands","tundra","cave"]},
    "agents": {"classes":["bureau_clerk","bureau_reclaimer"],"bots":[1,2]},
    "scrapyard": {"trainers":[1,2],"classes":["bureau_reclaimer"]},
-   "salvage": {"parts":2,"scrap":3,"scrapPerBot":1}
+   "salvage": {"parts":2,"scrap":3,"scrapPerBot":1},
+   "look": {
+    "emblem": "bureau",
+    "stamps": {"retrieved":"RETRIEVED","void":"VOID","denied":"DENIED","pending":"PENDING","filed":"FILED"},
+    "forms": ["Form 7B","Form 12-C","Form 4A-4","Form 31","Form 9-Lost","Form 0"]
+   }
   }
  }
 }
