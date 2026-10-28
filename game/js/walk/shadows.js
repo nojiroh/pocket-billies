@@ -410,6 +410,8 @@ function shadowSpriteQuads(L, sun, lamp, rest) {
   for (const it of L) {
     if (it.flat || it.far || it.k === 'enc2' || it.vol || it.k === 'flag' || it.vox) continue;
     if (it.k === 'prop' && !(it.sh > 0)) continue;
+    /* VFX-5: a lunge's afterimages cast no shadow */
+    if (it.ghost) continue;
     if (it.layer && it.M.box) continue;
     const T = imageTexture(it.im);
     if (!T) {

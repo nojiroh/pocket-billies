@@ -238,7 +238,7 @@ BUILD += [int_bakery, int_inn, int_bank, int_library, int_school, int_station, i
 # ------------------------------------------------- v47 part 4: the shop of each region town, a room of its own
 # Each is the size of the room its building had (a market hall's, the bank's, the shop's), keeps the walls it's made
 # with ("vary": 0: no colour picked by the door), and has a counter that opens the town's shop. tools/build-regions-v47.py
-# points each town's shop at its room ("room" on the shop).
+# pointed each town's shop at its room ("room" on the shop); deleted 2026-10-27, the legacy tag has an older copy.
 def own(s):
     s.d['vary'] = 0
     return s

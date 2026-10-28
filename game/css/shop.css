@@ -245,3 +245,10 @@
     grid-column: 3;
   }
 }
+/* UI-14b: a ware's tier pill under its name, and its stat rows' tags after its text */
+.w-t pb-rarity {
+  align-self: flex-start;
+}
+.w-t pb-tag {
+  margin-left: var(--s1);
+}

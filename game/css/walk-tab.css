@@ -3,12 +3,6 @@
 .gate {
   color: var(--red);
 }
-@keyframes breathe {
-  50% {
-    opacity: 0.4;
-    transform: translateX(-50%) scale(0.85);
-  }
-}
 .pipe {
   display: flex;
   align-items: center;
@@ -135,7 +129,7 @@
 .px.mon:active,
 .px.ware:active,
 .px.slot:active {
-  transform: translateY(1px) scale(0.98);
+  transform: translateY(1px);
 }
 /* ---------- (UI-5 and earlier) ---------- */
 
@@ -186,18 +180,6 @@
   font-size: 16px;
   line-height: 1.1;
 }
-.enc.gp {
-  background: linear-gradient(160deg, #fff6cf, #f2d27a 60%, #e2a72e);
-  color: #3a2408;
-}
-.enc.gp::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.6) 48%, transparent 60%);
-  animation: sheen 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
 .enc.enc-new {
   animation: pop 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) backwards;
 }
@@ -218,18 +200,6 @@
   position: relative;
   overflow: hidden;
 }
-.slot::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 50%;
-  width: 70px;
-  height: 70px;
-  transform: translateX(-50%);
-  background: radial-gradient(circle, var(--glow), transparent 66%);
-  animation: breathe 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
 .slot b {
   font-family: var(--font-voice);
   font-weight: 400;
@@ -241,9 +211,6 @@
 }
 .slot img {
   position: relative;
-}
-.slot.empty::before {
-  display: none;
 }
 .enc .stage-glow {
   opacity: 0.45;
@@ -342,6 +309,8 @@ body.on-walk .wh-foot > * {
   flex-direction: column;
   align-items: center;
   gap: var(--s2);
+  /* UI-15: stays at the bottom when the place card has folded away */
+  margin-top: auto;
 }
 .wh-hint {
   margin: 0;
@@ -372,12 +341,16 @@ body.on-walk .wh-foot > * {
   border-radius: var(--r-pill);
   padding: var(--s2) var(--s4) var(--s2);
   font: 400 13px/1 var(--font-voice);
-  color: var(--text);
+  /* the checks session after UI-18: dark ink on the gold in every palette (it was --text, light in dark mode: 1.9:1) */
+  color: var(--c-ink);
   background: var(--gold);
   box-shadow:
     0 0 0 2px var(--line),
     0 10px 24px -12px var(--shadow);
   cursor: pointer;
+}
+/* UI-15: it bobs only while its sheet holds something you haven't opened it for (a new place, a Billie wandering in) */
+.wh-down.new {
   animation: whBob 2.4s ease-in-out infinite;
 }
 .wh-down .uico {
@@ -470,8 +443,11 @@ html:has(> body.on-walk) {
   width: 84px;
   height: 56px;
   image-rendering: pixelated;
-  animation: rustle 1.8s ease-in-out infinite;
   transform-origin: 50% 100%;
+}
+/* UI-16a: the grass rustles three times when a hidden Billie wanders in (the card's first showing), not forever */
+.enc.hidden-enc.enc-new .enc-hide img {
+  animation: rustle 1.8s ease-in-out 3;
 }
 .enc.hidden-enc .enc-hide i {
   position: absolute;
@@ -495,6 +471,10 @@ html:has(> body.on-walk) {
   .enc.hidden-enc .enc-hide img {
     animation: none;
   }
+}
+/* UI-16a: and under the game's own Reduced */
+[data-motion='reduced'] :is(.wh-down, .enc.hidden-enc .enc-hide img) {
+  animation: none;
 }
 @media (max-height: 520px) {
   .walk-hero {
