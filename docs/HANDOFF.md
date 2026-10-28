@@ -3,8 +3,8 @@
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
 ### Online track ON-4: friend trades (Billies, eggs, parts), trade evolutions, Form 99-A - 2026-10-28
-Branch `track/online` (level with main 5f6d01ae at the start: ON-3 had merged in #268). PR #307 (draft). Tag to
-suggest: `on-4-done`. Both halves in one session at the owner's word. Details: docs/phases/online-track.md, "Facts
+Branch `track/online` (level with main 5f6d01ae at the start: ON-3 had merged in #268). PR #307 (draft). No session
+tag (CLAUDE.md: the track gets `online-done` when it ends). Both halves in one session at the owner's word. Details: docs/phases/online-track.md, "Facts
 corrected at ON-4's start" and "Done in ON-4".
 - The owner's answers: start now (RO-3g, the Swift rebuild, still open: the Swift line kept out); Cliplet→Tiktokferret
   and Feedopus→Metapus evolve by trade; no obedience, traded Billies gain 1.5x XP; the solo route is Form 99-A from
