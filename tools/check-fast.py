@@ -295,9 +295,11 @@ def hub_orbit(pg, base):
 
 # IS-1: the camera's yaw (0 looking north) and the wrapped difference between two angles, in the page
 WRAP = "((a)=>a-2*Math.PI*Math.floor((a+Math.PI)/(2*Math.PI)))"
-# the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026): holding right from the south
-# keeps to 30 m for the 0.7 rad the check needs; nearer the summit (12-20 m) the slopes slide you 1-3 m in
-ORBIT_R = 30
+# the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026, again on 28 Oct after the hub's
+# wider mountain and the pond's terrace): holding right from the south keeps to 32 m for the 0.7 rad the check needs
+# (its radial slope under 0.15 the whole way); at 30 m it ends at the terrace's rock face, nearer the summit the
+# mountain's foot slides you in
+ORBIT_R = 32
 
 
 def hub_orbit_walk(pg, c):
