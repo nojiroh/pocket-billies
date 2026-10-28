@@ -98,7 +98,7 @@
   {
    "p": "items/*",
    "at": [
-    "game/js/logic/atlas-rects.js:100"
+    "game/js/logic/atlas-rects.js:101"
    ]
   },
   {

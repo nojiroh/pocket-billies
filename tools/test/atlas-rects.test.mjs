@@ -54,7 +54,7 @@ test('a rename keeps the order; the data’s item icons and type particles follo
   ]);
   const D = structuredClone({ items: GAME_DATA.items, types: GAME_DATA.types }),
     icons = A.manifestParse(TEXT).icons,
-    item = Object.keys(D.items).find(k => icons['i_' + (D.items[k].icon || k)]),
+    item = Object.keys(D.items).find(k => !D.items[k].img && icons['i_' + (D.items[k].icon || k)]),
     key = 'i_' + (D.items[item].icon || item),
     type = D.types.find(t => (t.fx || []).length);
   assert.ok(item && type);
@@ -70,4 +70,13 @@ test('a rename keeps the order; the data’s item icons and type particles follo
   assert.equal(A.atlasRenameData(D, fx, 'fx_renamed'), n);
   assert.ok(D.types.find(t => t.id === type.id).fx.includes('fx_renamed'));
   assert.ok(A.atlasKeyOk('i_potion') && !A.atlasKeyOk('a-b') && !A.atlasKeyOk('1a'));
+});
+
+test('PK-11: an item with its own picture uses no atlas key, its icon or not', () => {
+  const D = { items: { a: { icon: 'x' }, b: { icon: 'x', img: 'items/b.svg' }, c: { img: 'items/c.svg' } } };
+  assert.deepEqual(
+    A.atlasUses('i_x', D).map(u => u.at),
+    ['items/a']
+  );
+  assert.deepEqual(A.atlasUses('i_c', D), []);
 });

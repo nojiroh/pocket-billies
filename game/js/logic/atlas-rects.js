@@ -5,8 +5,8 @@
    in art/manifest.js: `window.ARTMAN={"icons":{"<key>":[x,y,w,h],...},"battle":{...}};`, one line (art.js iconCanvas
    reads them). The Studio's atlas editor (studio/js/atlas-editor.js) moves, resizes, adds, renames and deletes them;
    this is its arithmetic: the file's text, the problems a sheet can have, a free spot, a rename that keeps the order,
-   and what in the data names a key: an item's icon is `i_` + (its `icon` or its id), a type's battle particles are its
-   `fx` list. The code names some keys as words too (art-code-refs.json `atlas`).
+   and what in the data names a key: an item's icon is `i_` + (its `icon` or its id) unless it has its own picture
+   (`img`, PK-11), a type's battle particles are its `fx` list. The code names some keys as words too (art-code-refs.json `atlas`).
    Logic only: no DOM, runs in Node (tools/test/atlas-rects.test.mjs). */
 /** @typedef {[number, number, number, number]} Rect */
 /** @typedef {Record<string, Rect>} Rects */
@@ -95,9 +95,10 @@ export const atlasKeyOk = k => /^[a-z][a-z0-9_]*$/i.test(k);
  * @param {string} key @param {{ items?: Record<string, any>, types?: any[] }} D */
 export function atlasUses(key, D) {
   const out = [];
+  /* PK-11: an item with its own picture (img, art/items) draws no rectangle, so it uses none */
   if (key.startsWith('i_'))
     for (const [id, I] of Object.entries(D.items || {}))
-      if (I && 'i_' + (I.icon || id) === key) out.push({ at: 'items/' + id, kind: 'item icon' });
+      if (I && !I.img && 'i_' + (I.icon || id) === key) out.push({ at: 'items/' + id, kind: 'item icon' });
   for (const t of D.types || [])
     if (t && (t.fx || []).includes(key)) out.push({ at: 'types/' + t.id, kind: 'battle particle' });
   return out;

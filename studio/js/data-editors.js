@@ -1062,7 +1062,10 @@ function itemArtKey(I) {
    else its rectangle of the old atlas at 3x */
 function itemPicHTML(k, I) {
   const key = itemArtKey(I);
-  if (!key) return `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`;
+  if (!key)
+    return ARTMAN.icons['i_' + (I.icon || k)]
+      ? `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`
+      : '<span class="help">No picture</span>';
   const src = escapeHtml(iconSrc(key));
   return `<img class="pix item-art" src="${src}" alt="" width="72" height="72"><img class="pix item-art" src="${src}" alt="" width="36" height="36">`;
 }
@@ -1118,7 +1121,8 @@ ACTIONS.pyrPaint = d => artPaint(d.p, { label: 'Items & pyramids', fn: () => ope
 ACTIONS.itemNew = () => {
   const D = studioState.D,
     k = uniqueKey('item', x => !!D.items[x]);
-  D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'potion', mint: true };
+  /* PK-11: no atlas icon: Draw one gives it its picture */
+  D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', mint: true };
   changed();
   render();
 };
