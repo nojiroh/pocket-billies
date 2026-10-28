@@ -84,6 +84,7 @@ export const MUSIC_CHOICES = {
     ['drive', 'Drive'],
     ['march', 'March'],
     ['bossa', 'Bossa'],
+    ['walk', 'Walk (a light backbeat: the walking beat)'],
     ['none', 'None'],
   ],
   /* SND-11: what an ensemble's part plays (music.schema.json ensemblePart.line) */

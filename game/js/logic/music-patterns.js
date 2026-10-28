@@ -63,7 +63,7 @@ export const MUSIC_PATTERN_BASS = ['bounce', 'gallop', 'long', 'walk', 'drive', 
 /** the arpeggio patterns (recipe.arp) */
 export const MUSIC_PATTERN_ARP = ['up', 'updown', 'drip', 'chord7', 'none'];
 /** the drum patterns (recipe.drums) */
-export const MUSIC_PATTERN_DRUMS = ['soft', 'skip', 'drive', 'march', 'bossa', 'none'];
+export const MUSIC_PATTERN_DRUMS = ['soft', 'skip', 'drive', 'march', 'bossa', 'walk', 'none'];
 
 /**
  * the bass note that starts at step i of bar b, or null: the root two octaves under the chord, moved by the pattern
@@ -151,6 +151,10 @@ export function musicDrumsAt(style, i) {
   } else if (style === 'bossa') {
     if (i === 0 || i === 6 || i === 8 || i === 14) out.push({ hit: 'kick', vol: 0.2 });
     if ([3, 6, 10, 13].includes(i)) out.push({ hit: 'rim', vol: 0.05, gb: { dur: 0.03, bp: 3500, q: 2 } });
+  } else if (style === 'walk') {
+    /* SND-13: the walking beat (a tambourine or a snare as you walk): a light backbeat, the off-beats and a pickup */
+    if (i === 4 || i === 12) out.push({ hit: 'snare', vol: 0.07, gb: { dur: 0.06, bp: 2600, q: 0.9 } });
+    if (i % 4 === 2 || i === 15) out.push({ hit: 'hat', vol: i === 15 ? 0.02 : 0.03, gb: { dur: 0.02, hp: 8000 } });
   }
   return out;
 }
@@ -158,7 +162,8 @@ export function musicDrumsAt(style, i) {
 /* ---------- SND-11: ensembles (music.json `ensembles`) ---------- */
 /**
  * @typedef {{line: string, inst?: string, wave?: string, oct?: number, pan?: number, verb?: number, level?: number,
- *   style?: string, centre?: number, kit?: Record<string, string>}} MusicEnsemblePart
+ *   style?: string, centre?: number, kit?: Record<string, string>, layer?: string,
+ *   dim?: Record<string, number>}} MusicEnsemblePart SND-13: layer and dim, logic/music-layers.js
  * @typedef {{name?: string, trim?: number, parts: MusicEnsemblePart[]}} MusicEnsemble
  * @typedef {{part: number, m: number, len: number, vel: number, inst?: string, wave?: string, hit?: string}}
  *   MusicEnsembleNote
@@ -216,8 +221,9 @@ export function musicChordNear(D, b, centre) {
  *   introNotes?: ([number, number] | null)[], introSteps?: number}} D
  * @param {MusicEnsemble} E
  * @param {number} st
- * @param {{held?: boolean, instruments?: Record<string, {lo: number, hi: number}>}} [o] held: the drums wait (a
- *   battle's intro, until the throw)
+ * @param {{held?: boolean, instruments?: Record<string, {lo: number, hi: number}>, skip?: (part: number) => boolean}} [o]
+ *   held: the drums wait (a battle's intro, until the throw); skip (SND-13): parts that play nothing this step (a layer
+ *   that is out)
  * @returns {MusicEnsembleNote[]}
  */
 export function musicEnsembleStep(D, E, st, o = {}) {
@@ -229,6 +235,7 @@ export function musicEnsembleStep(D, E, st, o = {}) {
     b = Math.floor(s / 16),
     i = s % 16;
   E.parts.forEach((P, part) => {
+    if (o.skip && o.skip(part)) return;
     const lv = P.level ?? 1,
       up = 12 * (P.oct || 0),
       base = /** @type {Record<string, number>} */ (MUSIC_ENSEMBLE_VEL)[P.line] || 0.1,
@@ -287,17 +294,20 @@ export function musicEnsembleStep(D, E, st, o = {}) {
 
 /**
  * every baked note an ensemble plays in a composed song (its intro too): instrument -> the midi notes, so the bank can
- * bake the zones that play and no others
+ * bake the zones that play and no others. SND-13: the parts every bar needs (a layer's parts are baked when the layer
+ * comes, o.part: one part's alone)
  * @param {Parameters<typeof musicEnsembleStep>[0]} D
  * @param {MusicEnsemble} E
  * @param {Record<string, {lo: number, hi: number}>} [instruments]
+ * @param {{part?: number}} [o]
  * @returns {Record<string, number[]>}
  */
-export function musicEnsembleNeeds(D, E, instruments) {
+export function musicEnsembleNeeds(D, E, instruments, o = {}) {
   /** @type {Record<string, Set<number>>} */
   const need = {};
+  const skip = (/** @type {number} */ i) => (o.part != null ? i !== o.part : !!E.parts[i].layer);
   for (let st = -(D.introSteps || 0); st < D.steps; st++)
-    for (const N of musicEnsembleStep(D, E, st, { instruments }))
+    for (const N of musicEnsembleStep(D, E, st, { instruments, skip }))
       if (N.inst) (need[N.inst] = need[N.inst] || new Set()).add(N.m);
   return Object.fromEntries(Object.entries(need).map(([k, v]) => [k, [...v].sort((a, c) => a - c)]));
 }
@@ -363,6 +373,8 @@ export function musicJingleParts(J, E, o = {}) {
     perc = J.perc || [];
   let steps = (J.notes || []).reduce((a, n) => a + n[1], 0);
   E.parts.forEach((P, part) => {
+    /* SND-13: a layer's part plays in a song only */
+    if (P.layer) return;
     const lv = P.level ?? 1,
       up = 12 * (P.oct || 0) + shift,
       base = /** @type {Record<string, number>} */ (MUSIC_ENSEMBLE_VEL)[P.line] || 0.1,

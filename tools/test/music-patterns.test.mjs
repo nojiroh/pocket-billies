@@ -153,6 +153,11 @@ test('drums: each pattern’s hits in the gb path’s order (kick, snare, hat), 
     [3, 6, 10, 13]
   );
   assert.equal(musicDrumsAt('march', 15)[0].hit, 'snare');
+  /* SND-13: the walking beat: a light backbeat, the off-beats and a pickup */
+  assert.deepEqual(
+    bar(i => musicDrumsAt('walk', i).map(h => h.hit)).flatMap((h, i) => (h.length ? [i + ':' + h.join('+')] : [])),
+    ['2:hat', '4:snare', '6:hat', '10:hat', '12:snare', '14:hat', '15:hat']
+  );
 });
 
 /* SND-11: what an ensemble's parts play */
@@ -359,4 +364,19 @@ test("SND-17: a stinger starts on the song's next beat, at least a moment from n
   assert.equal(musicStingerShift(67), -5);
   assert.equal(musicStingerShift(66), 6);
   assert.equal(musicStingerShift(48), 0);
+});
+
+test('SND-13: a layer part is out of the bake (the bar needs) and of a jingle; skip leaves a part out of a step; one part alone', () => {
+  const D = composed(),
+    E = { parts: [...ENS.parts, { line: 'drums', kit: { hat: 'tambourine' }, style: 'walk', layer: 'walk' }] },
+    I = { ...INST, tambourine: { lo: 60, hi: 60 } };
+  assert.deepEqual(musicEnsembleNeeds(D, E, I), musicEnsembleNeeds(D, ENS, INST));
+  assert.deepEqual(musicEnsembleNeeds(D, E, I, { part: 6 }), { tambourine: [60] });
+  assert.deepEqual(musicEnsembleNeeds(D, E, I, { part: 2 }), musicEnsembleNeeds(D, { parts: [ENS.parts[2]] }, INST));
+  const all = musicEnsembleStep(D, E, 2, { instruments: I });
+  assert.ok(all.some(n => n.part === 6 && n.inst === 'tambourine'));
+  const out = musicEnsembleStep(D, E, 2, { instruments: I, skip: p => p === 6 });
+  assert.deepEqual(out, musicEnsembleStep(D, ENS, 2, { instruments: INST }));
+  const J = musicJingleParts({ notes: [[60, 4]], perc: [[0, 42, 1]] }, E, { instruments: I });
+  assert.ok(!J.notes.some(n => n.part === 6));
 });
