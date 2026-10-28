@@ -15,7 +15,16 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { encArrive, fxHealShare, fxOfRun, fxRunBossHp, fxRunFoeLevels, unlockOpen } from '../hooks.js';
+import {
+  encArrive,
+  fxHealShare,
+  fxOfRun,
+  fxRunBossHp,
+  fxRunFoeLevels,
+  fxRunMarks,
+  fxStateful,
+  unlockOpen,
+} from '../hooks.js';
 import { BANTER, BOSSES, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
@@ -433,7 +442,8 @@ export function runSheetStatus(run, i, env) {
 }
 /** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
  * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),
- * and the Perks' effect rows when any are held (logic/effects.js fxOfRun: null when none)
+ * and the Perks' effect rows when any are held (logic/effects.js fxOfRun: null when none); PK-1: with a row that keeps
+ * state, the run's marks themselves (run.perkState, made then)
  * @param {Run} run @param {number} i the map node @param {number} k the battle's number in the run
  * @param {any} env rules.json env @param {any[] | null} fx */
 export function runBattleExtra(run, i, k, env, fx) {
@@ -441,6 +451,8 @@ export function runBattleExtra(run, i, k, env, fx) {
     seed: runBattleSeed(run, i, k),
     wx: runBattleWeather(run, i, run.clock, env),
     ...(fx ? { fx } : {}),
+    /* PK-1: the run's own marks (counters, growth, once a run), so the battle's moments count on the run */
+    ...(fx && fxStateful(fx) ? { perkState: fxRunMarks(run) } : {}),
   };
 }
 

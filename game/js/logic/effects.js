@@ -490,9 +490,11 @@ export function fxFire(fx, when, ctx, st, only) {
 
 /** does any row keep state (a counter, a growth or a once mark)? @param {any[] | null | undefined} fx */
 export const fxStateful = fx => (fx || []).some(f => f.every || f.grow || f.once);
+provide({ fxStateful }); /* to-module */
 
 /** a run's marks (run.perkState), made when first needed @param {any} run @returns {FxMarks} */
 export const fxRunMarks = run => run.perkState || (run.perkState = {});
+provide({ fxRunMarks }); /* to-module */
 
 /** PK-1: how many levels foes are up on a run: the level rows of all its rows (Perks, boons, its Expedition and
  * challenges, the hub folk's, residents'; was the Expedition's and challenges' alone, modifiers.js modFoeLevels),

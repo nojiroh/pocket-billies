@@ -139,3 +139,195 @@ test('PK-1 turn end: pinchHeal with once: battle heals one of yours once in the 
     assert.equal(n.hp, 1, 'spent for the battle');
   });
 });
+
+/** a damaging move of a fighter that never misses */
+const sureHit = m =>
+  m.moves.find(id => {
+    const M = data.MOVES[id];
+    return (
+      M && M.p > 0 && M.c !== 'X' && (!M.a || M.a >= 100) && !(M.fx && (M.fx.delay || M.fx.protect || M.fx.spread))
+    );
+  });
+const st = (b, k) => b.sides[k === 0 ? 0 : 1].f[0].v.st;
+
+test('PK-1 moments: battleStart, switchIn, move, hit, hurt, crit, ko, faint, turnEnd and throwMiss each act', () => {
+  const at = when => ({ id: 'test_' + when, name: 'At ' + when, say: 'hi', fx: [{ kind: 'heal', share: 0.01, when }] });
+  const whens = ['battleStart', 'switchIn', 'move', 'hit', 'hurt', 'crit', 'ko', 'faint', 'turnEnd', 'throwMiss'];
+  const { P, fx } = perks(...whens.map(at));
+  withPerks(P, () => {
+    const b = battle(fx, {}, 3),
+      mine = b.sides[0].team,
+      seen = () =>
+        new Set(
+          lines(b)
+            .map(t => (/^At (\w+):/.exec(t) || [])[1])
+            .filter(Boolean)
+        ),
+      hurtAll = () => mine.forEach(m => (m.hp = Math.max(1, m.hp - 5)));
+    /* the start's line waits for sayBattleFx */
+    assert.ok(!seen().has('battleStart') && b.fxSay.some(([t]) => /^At battleStart: hi$/.test(t)));
+    fn('sayBattleFx')();
+    assert.ok(seen().has('battleStart'));
+    hurtAll();
+    fn('doSwitch')(0, 1);
+    hurtAll();
+    const myMove = sureHit(fn('fighter')(0)),
+      foeMove = sureHit(fn('fighter')(1));
+    assert.ok(myMove && foeMove, 'moves that never miss');
+    const crit = data.RULES.battle.critChances.slice();
+    data.RULES.battle.critChances.fill(1);
+    try {
+      fn('useMove')(0, myMove, 1);
+    } finally {
+      data.RULES.battle.critChances.splice(0, crit.length, ...crit);
+    }
+    hurtAll();
+    fn('useMove')(1, foeMove, 0);
+    hurtAll();
+    b.sides[1].team[0].hp = 1;
+    fn('useMove')(0, myMove, 1);
+    hurtAll();
+    fn('endTurn')();
+    hurtAll();
+    for (let i = 0; i < 40 && !seen().has('throwMiss'); i++) {
+      b.sides[1].team[0].hp = fn('maxHp')(b.sides[1].team[0]);
+      fn('catchRoll')('pyramid', 0.0001, false);
+    }
+    hurtAll();
+    fn('fighter')(0).hp = 0;
+    fn('checkFaints')();
+    const got = seen();
+    for (const w of whens.slice(1)) assert.ok(got.has(w), `${w}: ${[...got].join(', ')}`);
+  });
+});
+
+test('PK-1 moments: a battle start row acts on yours on the field, its line after the sides come out', () => {
+  const { P, fx } = perks({
+    id: 'test_horn',
+    name: 'Test Horn',
+    fx: [{ kind: 'stat', stat: 'lev', stages: 1, when: 'battleStart' }],
+  });
+  withPerks(P, () => {
+    const b = battle(fx);
+    assert.equal(st(b, 0).lev, 1);
+    assert.equal(st(b, 1).lev, 0, 'not the foe');
+    assert.ok(!lines(b).some(t => t.startsWith('Test Horn')), 'waiting');
+    fn('sayBattleFx')();
+    assert.ok(
+      lines(b).some(t => /^Test Horn: .*Attack rose\.$/.test(t)),
+      lines(b).join('\n')
+    );
+  });
+});
+
+test('PK-1 moments: ko raises the knocker; every N counts moves over battles on the run’s marks; once: battle', () => {
+  const { P, fx } = perks(
+    { id: 'test_mic', name: 'Test Mic', fx: [{ kind: 'stat', stat: 'lob', stages: 1, when: 'ko' }] },
+    { id: 'test_pen', name: 'Test Pen', fx: [{ kind: 'stat', stat: 'hus', stages: 1, when: 'move', every: 3 }] },
+    {
+      id: 'test_stamp',
+      name: 'Test Stamp',
+      say: 'Approved, {name}!',
+      fx: [{ kind: 'damage', side: 'deal', mult: 3, when: 'hit', once: 'battle' }],
+    }
+  );
+  withPerks(P, () => {
+    const perkState = {},
+      b = battle(fx, { perkState }),
+      mid = sureHit(fn('fighter')(0)),
+      foe = b.sides[1].team[0];
+    /* the stamp: the first hit is three times, said once; the next is not */
+    const before = fn('maxHp')(foe);
+    foe.hp = before;
+    fn('useMove')(0, mid, 1);
+    const first = before - foe.hp;
+    assert.ok(
+      lines(b).some(t => /^Test Stamp: Approved, .+!$/.test(t)),
+      lines(b).join('\n')
+    );
+    foe.hp = before;
+    fn('useMove')(0, mid, 1);
+    const second = before - foe.hp;
+    assert.ok(first > second * 2, `${first} then ${second}`);
+    assert.equal(lines(b).filter(t => t.startsWith('Test Stamp')).length, 1);
+    /* two moves made: the pen's count is on the run's marks */
+    assert.equal(perkState['test_pen/0'].n, 2);
+    assert.equal(st(b, 0).hus, 0);
+    /* the knock out: the mic, and the pen's third move */
+    st(b, 0).lob = 0;
+    foe.hp = 1;
+    fn('useMove')(0, mid, 1);
+    assert.equal(st(b, 0).lob, 1, 'ko');
+    assert.equal(st(b, 0).hus, 1, 'the 3rd move');
+    assert.equal(perkState['test_pen/0'].n, 0);
+    /* a new battle on the same run: the stamp again, the count goes on */
+    const b2 = battle(fx, { perkState });
+    assert.deepEqual(b2.fxState || {}, {}, 'its own marks, fresh');
+    b2.sides[1].team[0].hp = before;
+    fn('useMove')(0, mid, 1);
+    assert.equal(perkState['test_pen/0'].n, 1);
+    assert.ok(b2.fxState['test_stamp/0'].used);
+  });
+});
+
+test('PK-1 moments: conditions in battle: the foe, the weather, low HP, the move’s category, super effective', () => {
+  const mult = (row, extra = {}, prep) => {
+    const { P, fx } = perks({ id: 'test_if', fx: [row] });
+    return withPerks(P, () => {
+      const b = battle(fx, extra);
+      if (prep) prep(b);
+      const mid = sureHit(fn('fighter')(0));
+      return fn('fxHitMult')(0, 1, data.MOVES[mid], { crit: false, te: 1 });
+    });
+  };
+  const deal = { kind: 'damage', side: 'deal', mult: 2 };
+  assert.equal(mult({ ...deal, if: 'foe:wild' }), 2);
+  assert.equal(mult({ ...deal, if: 'foe:trainer|leader' }), 1);
+  assert.equal(mult({ ...deal, if: 'weather:rain' }, { wx: { k: 'rain', m: {} } }), 2);
+  assert.equal(mult({ ...deal, if: 'weather:rain' }), 1, 'no weather is clear');
+  assert.equal(mult({ ...deal, if: 'hp<0.5' }), 1);
+  assert.equal(
+    mult({ ...deal, if: 'hp<0.5' }, {}, b => (b.sides[0].team[0].hp = 1)),
+    2
+  );
+  assert.equal(mult({ ...deal, if: 'lead' }), 2);
+  assert.equal(mult({ ...deal, if: 'notLead' }), 1);
+  assert.equal(mult({ ...deal, if: 'alone' }), 1, 'two of yours standing');
+  assert.equal(mult({ ...deal, if: 'turn:1' }), 1, 'turn 0 before the first');
+  const mid = data.MOVES[sureHit(fn('makeBilly')(starter(), 12))];
+  assert.equal(mult({ ...deal, if: 'cat:' + mid.c }), 2);
+  const { P, fx } = perks({ id: 'test_se', fx: [{ ...deal, if: 'superEffective' }] });
+  withPerks(P, () => {
+    battle(fx);
+    const M = data.MOVES[sureHit(fn('fighter')(0))];
+    assert.equal(fn('fxHitMult')(0, 1, M, { crit: false, te: 2 }), 2);
+    assert.equal(fn('fxHitMult')(0, 1, M, { crit: false, te: 1 }), 1);
+  });
+});
+
+test('PK-1 moments: a growth resets when one of yours faints, on the run’s marks', () => {
+  const { P, fx } = perks({
+    id: 'test_streak',
+    fx: [{ kind: 'damage', side: 'deal', mult: 1, grow: { on: 'win', by: 0.05, max: 0.25, reset: 'faint' } }],
+  });
+  withPerks(P, () => {
+    const perkState = { 'test_streak/0': { v: 0.15 } },
+      b = battle(fx, { perkState }),
+      M = data.MOVES[sureHit(fn('fighter')(0))];
+    assert.ok(Math.abs(fn('fxHitMult')(0, 1, M, { crit: false, te: 1 }) - 1.15) < 1e-9);
+    b.sides[0].team[0].hp = 0;
+    fn('checkFaints')();
+    assert.equal(perkState['test_streak/0'].v, 0);
+  });
+});
+
+test('PK-1 moments: a battle without Perks makes no marks and says no Perk line', () => {
+  const b = battle(null, {}, 3),
+    mid = sureHit(fn('fighter')(0));
+  fn('useMove')(0, mid, 1);
+  fn('endTurn')();
+  fn('doSwitch')(0, 1);
+  assert.equal(b.fxState, undefined);
+  assert.equal(b.fxSay, undefined);
+  assert.equal(fn('fxBattleRows')(b), undefined);
+});

@@ -23,7 +23,7 @@ import { runFragileDrop } from './run-loop.js';
 import { fxMoney, fxOfBillie, fxSplice } from './effects.js';
 import { perkOfferMake } from './perks.js';
 import { rewardDataGame, rewardOfferMake, salvageOfferMake } from './rewards.js';
-import { battleRoll } from './battle-engine.js';
+import { battleRoll, fxBattleRows } from './battle-engine.js';
 import { questCatch, questWin } from './run-quests.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -90,7 +90,9 @@ export function battleMoneyFx(b) {
   const held = b.sides[0].team
     .filter((/** @type {any} */ m) => m.hp > 0)
     .flatMap((/** @type {any} */ m) => (fxOfBillie(m, ITEMS) || []).filter(f => f.kind === 'money'));
-  return held.length ? [...(b.fx || []), ...held] : b.fx;
+  /* PK-1: the run's rows whose conditions hold for this battle (battle-engine.js fxBattleRows) */
+  const run = fxBattleRows(b);
+  return held.length ? [...(run || []), ...held] : run;
 }
 
 /* Studio plan T3.2: what an ended battle does to the save, the same on the page (battle.js endBattle, which shows the
@@ -105,7 +107,7 @@ export function battleMoneyFx(b) {
  */
 export function battleSettle(b, s) {
   const pay = battleRewards(
-      { kind: b.kind, over: b.over, T: b.T, tid: b.tid, foe: b.sides[1].team, fx: battleMoneyFx(b) },
+      { kind: b.kind, over: b.over, T: b.T, tid: b.tid, foe: b.sides[1].team, fx: battleMoneyFx(b) || undefined },
       s,
       battleRoll
     ),
@@ -164,7 +166,7 @@ export function battleSettleWin(b, s, pay, run) {
   if (pay.o !== 'win') return;
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   /* SP-3: a spliced wild Billie knocked out leaves DNA and a sample of its Genes (caught, it keeps them) */
-  if (b.kind === 'wild' && b.sides) Object.assign(pay, spliceSample(b.sides[1].team, s, b.fx));
+  if (b.kind === 'wild' && b.sides) Object.assign(pay, spliceSample(b.sides[1].team, s, fxBattleRows(b)));
   /* RL-14: on a run, beating bots leaves a salvage pick (their parts or Scrap) in place of a reward pick */
   const salvage = run ? battleSalvage(b, run) : false;
   if (b.kind === 'trainer') {
