@@ -1103,6 +1103,80 @@ at the foot of test_water's 6 m fall about 45 a second (before the quiet ones we
 - Frogs, insects and birds by water stay SND-14's; the pond at night is the pond's laps and plops under SND-8a's
   crickets.
 
+## SND-11: stems and ensembles (as built)
+### SND-11 as built (2026-10-28, branch `track/sound`, the music lane, tag `snd-11-done` for the owner to push)
+One cause per commit; today's fingerprints never moved (199 since main's UI sounds: 0 changed on every commit, each
+rendered with `check-sound.py --loudness` in a worktree); the five new ensemble renders were added once, in the
+baseline commit (32f497c4).
+
+| Commit | What |
+|---|---|
+| ba10a650 | logic/music-patterns.js: the tick's bass (`musicBassAt`), arpeggio (`musicArpAt`, `musicChordTones`) and drums (`musicDrumsAt`, each hit with the gb noise's shape) as pure "what plays at this step" functions; the gb path plays them (its chips' shapes in `TRACKER_GB_BASS`, `TRACKER_GB_ARP`). A Node record of every synth call of every song, version, night pad and intro (524 renders, 118,716 calls) is the same call for call |
+| 179497de | stems: `sg.stems` lead, counter, bass, harmony, pad (plain gains of 1 under the fader, `musicStemsMake`) and drums (the drums' own bus); no panner on gb; nothing plays on the fader itself |
+| 18d99630 | sound-bake.js's new kinds: `partials` (struck bars, bells, timpani: a bend and a felt thump), `stack` (detuned oscillators through two low-passes or a vowel's formants, a scoop and an opening filter for brass, a breath of noise), `wind` (harmonics, breath, a chiff), `hit` (a falling tone, filtered noise, shaken metal); a zero-delay state-variable filter (`soundBakeSvf`, stable at any cutoff); one-shots never loop and fade their last 5 ms; sustained zones are looped before their peak is set; fm and osc sliced (`soundBakeFmSteps`, `soundBakeOscSteps`, `soundBakeLoopSteps`), the harp, fm and osc the same samples as before |
+| e9f4f438 | music.json `instruments` (28; the harp moves from the code, `SOUND_BAKE_INSTRUMENTS` goes) given to every tracker as `opts.instruments`; their schema (`$defs.instrument`) |
+| 0ff40c0c | the ensembles' schema (`$defs.ensemble`, `$defs.ensemblePart`), a song's `ensemble` in `$defs.recipe` (so night, tense and arc versions may name their own) and in the song's list; `gb` reserved; `MUSIC_CHOICES` line and kind, `MUSIC_RECIPE_KEYS`; `musicFindings` (ensembles, instruments, kits and patterns that don't exist, typos in night, tense and arc versions) |
+| d82903de | the tracker's ensemble path: `musicEnsembleStep` and `musicEnsembleNeeds` (logic); a stem per part (a panner only off centre; drums through the drums' bus; a send to the song's own reverb fader that the fader moves); gb until its notes are baked or while GB Sounds is on, the switch on a bar line; `T.prepare`, `T.needs`, `T.ensembleReady`, `T.ensembleOf`, `T.gbOn`, `T.verbOk`; a note off its zone bakes that zone alone; a one-shot zone rings to its end; sound.js: `musicPrepare` on arrival, the reverb off at Graphics Off, the debug log's `ensemble` line |
+| 4304b4d7 | GB Sounds in Settings -> Sound (`preferences.gbSounds`, the same switch as Low HP beep) |
+| 741e1257 | check-sound: every existing part rendered with GB Sounds on; parts `ensemble` and `ensemble-night` for a song (or its night version) naming an ensemble, baked first; the loudness report's ensemble rows against their gb versions |
+| df415173 | the Sound test: a song as its ensemble or with GB Sounds (for the test alone), any instrument in a chosen place (a drum plays a beat) |
+| b0dd3d74 | the first ensembles: `copperleaf`, `copperleaf_night`, `route`, `battle` (wild); `spiccato`; trims from the loudness report; zones shortened so they fit |
+| 5ba79197 | the Studio: its player on the game's chain (music.json `mix` at the default sliders), GB Sounds beside Night, an Ensemble picker in a song's recipe, the Instruments tab; its check |
+| 26fc63a5 | the bank's budget 8 MB; a battle's song baked on arrival only in a run's places |
+
+**The ids** (stable; ensembles and VFX-19's battle sounds name them): instruments `harp`, `pizz`, `musicbox`, `celesta`,
+`glock`, `bell`, `epiano`, `strings`, `spiccato`, `softstrings`, `choir`, `accordion`, `brass`, `orchhit`, `drone`,
+`flute`, `clarinet`, `bass`, `timpani`, `woodblock`, `triangle`, `kick`, `snare`, `osnare`, `hat`, `shaker`,
+`tambourine`, `brush`, `sleigh`; ensembles `copperleaf`, `copperleaf_night`, `route`, `battle`. A part's `line`: lead,
+counter, bass, arp, pad, stabs, timp, drums. A kit piece is one zone (`lo = hi = 60`; the triangle 108): play it with
+`T.sampleShot` or `T.sampleVoice` at that note.
+
+**The ensembles** (Claude's drafts, named as placeholders; the owner's ears decide):
+- `copperleaf`: the chip lead (p12, its music-box pluck) doubled by a music box, a harp counter an octave up (pan
+  left), soft strings holding the bar's chord, a harp's root each bar; trim -11.3 dB on top of the song's 13.5.
+- `copperleaf_night`: a flute an octave under takes the tune over a quieter chip; the harp and soft strings stay.
+  Copperleaf's `night` is now written out as exactly the automatic night (80 bpm, key 62, no drums) plus the ensemble.
+- `route`: the chip lead (p25) over strings, a pizzicato arpeggio (its updown) and bass (its gallop, an octave up),
+  kick, orchestral snare and a shaker on its skip pattern; trim -1.4.
+- `battle` (wild): the chip lead over a spiccato ostinato (its up arpeggio), a warm bass on its drive, brass stabs on
+  beats 1 and the and of 3, timpani on bars 1 and 5 and a roll into the loop, a full kit; trim -3.8.
+- Every other song stays gb until SND-12. The tense and arc versions inherit the song's ensemble.
+
+**Loudness** (the report, stereo, K-weighted, the route song -31.9 LUFS): each ensemble within 0.1 LU of its gb
+version after the trims (route 0.0, battle +0.1, Copperleaf 0.0 after its trim went from -10.5 to -11.3); peaks -14 to -20 dBFS.
+
+**Memory and bake time**: only the notes a song plays are baked (`musicEnsembleNeeds`). At 48 kHz: Copperleaf 10
+zones, 1.4 MB; its night 8 zones, 1.0 MB; the route 13 zones, 1.2 MB; the battle 12 zones, 1.6 MB (Node: 50-130 ms of
+work each). In headless Chromium at 44.1 kHz, Copperleaf and the battle prepared together: 0.6 s and 3.0 s of wall time
+in the slices, 455 ms of work, 54 zones; with the water's banks, the beds' noise and the reverb that was 5.8 MB, over
+SND-9's 6 MB budget once the water was counted (22 zones dropped and baked again), hence 8 MB and no battle bake in
+the hub. The reverb made at arrival: its impulse 12.8 ms of work in slices, its assignment 7.2 ms in one go.
+Bake steps: 0.1-0.4 ms on average in Chromium, single steps up to 5-30 ms with two other browsers rendering beside it
+(GC or the CPU, at random places in a bake; under 2.5 ms in Node): the phone's debug log (`bank.stepMaxMs`,
+`lastSlicesMs`) says what they are there.
+
+**Corrections found in SND-11** (checked in the code):
+- `gb` stays a code path, not data: `ensemble: "gb"` names it (a night version can go back to it), and no ensemble may
+  take the id (the schema's propertyNames).
+- The seams' "plain gain-1 nodes change only the summing order": they changed nothing measurable (0 of 199, and the
+  call record identical).
+- A sustained zone's loop flattening could lift its end over the peak (an accordion reached 1.37): sustained zones now
+  set their peak after the loop.
+- A Chamberlin state-variable filter goes unstable near a quarter of the rate (brass's opening filter made NaN): the
+  zero-delay form replaced it.
+- A detuned stack beats (its chorus): a 0.5 s loop would wobble at 2 Hz; strings loop 0.6 s with a 0.12 s crossfade.
+- The bank's 6 MB (SND-9) counted the beds' noise and the reverb but the water's banks (SND-10) arrived after: with an
+  ensemble it overflowed. 8 MB, decided for the owner.
+- A fake AudioContext whose catch-all node looks like a promise never lets the reverb's ready settle (a test artifact,
+  tracker.test.mjs gives its band a plain convolver).
+- Copperleaf by day plus a battle's ensemble cannot both be baked in the hub, and needn't: the hub has no battles.
+- SND-17's jingles can use `woodblock` (the day jingle's tock), `glock`, `harp`, `brass`, `timpani`, `strings`,
+  `celesta`, `musicbox`; SND-13's layers: `tambourine` (walking, Copperleaf), `osnare` or `snare` (routes), `celesta`
+  and `brush` (rain), `sleigh` (snow), `accordion` (the busker), all baked on demand.
+
+**Not done here (SND-13 and later)**: layers (the stems exist, nothing moves them yet); the busker's stem; battles'
+intensity; more songs' ensembles (SND-12).
+
 ## SND-11's seams (from the code review)
 - **Stems**: the tick plays into `sg.stems.*`, `drums` being the existing `sg.drums` (sound.js:1157 drives it). Plain
   gain-1 nodes change only the summing order, far under the tolerance. **No StereoPanner on the `gb` path**: a centred

@@ -48,6 +48,12 @@ kept aside in the browser).
   splash when you land the fish, and frogs, fish and diving birds splash. All of it sits well under the music. The
   debug menu's Sound test plays each at a distance, and so does the Studio's Sounds tab.
 
+- **A fuller band** (sound track SND-11): Copperleaf, the routes and wild battles now have a band around the chip
+  tune: in Copperleaf a music box, a harp and soft strings (a flute at night); on a route strings, plucked strings and
+  an orchestral snare; in a wild battle quick strings, brass, timpani and a full drum kit. All of it is made by the
+  game itself, no sound files. Settings -> Sound -> **GB Sounds** plays every song the old way, on the four Game Boy
+  voices. The debug menu's Sound test plays any song either way and any of the 29 instruments.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)

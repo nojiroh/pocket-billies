@@ -197,11 +197,13 @@ town node needs it.
   changed) done 2026-10-28. SND-10 (water: `soundscape.json` with a recipe per water kind, emitters from the scene
   (shores, river lines, falls by height and their pools, fountains), far water low and soft and near water bright, the
   surf on the tide, rain on water, wading, Surf, fishing and plops, a World sounds card in the Studio; WA-8's water
-  sounds, decided as recommended) done 2026-10-28. Next stems and ensembles in a
-  Chip+ and DS-era mix with a GB Sounds switch (SND-11), layers in play (SND-13: a walking beat, street musicians,
-  weather and night, building intensity), arrangements (SND-12), nature and weather (SND-14), the mix and a phone
-  pass (SND-15); SND-17 (the jingles with the new instruments, stingers on the beat) right after SND-11, added at the
-  owner's question. Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
+  sounds, decided as recommended) done 2026-10-28. SND-11 (stems and ensembles: the tick's patterns as pure
+  functions, a stem per line, 29 baked instruments and the first ensembles in music.json, Copperleaf by day and night,
+  the route and a wild battle in a Chip+ and DS-era mix, GB Sounds in Settings -> Sound, the Studio's Instruments tab
+  and its player on the game's chain; today's songs unchanged under GB Sounds) done 2026-10-28. Two lanes on the
+  branch since 2026-10-28: music (next SND-17, the jingles with the new instruments and stingers on the beat; then
+  layers in play, SND-13, and arrangements, SND-12) and world (nature and weather, SND-14); then the mix and a phone
+  pass (SND-15). Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
   plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
   art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the

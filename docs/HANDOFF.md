@@ -5,7 +5,10 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 ### Sound track SND-11 - stems and ensembles: the tick's patterns as pure functions, stems, baked instruments, the first ensembles, GB Sounds, the Studio's Instruments tab - 2026-10-28
 Branch `track/sound`, the music lane (main merged first; the local clone was stale and was reset to origin/track/sound
 before any edit). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode,
-plan below, recommended options taken. Work in progress: this entry is finished at the session's end.
+plan below, recommended options taken. 13 change commits, one cause each, the baseline commit, the generated files in
+their own commits and the docs; tag `snd-11-done` (for the owner to push) on this session's last commit. PR #292.
+Details: sound-track.md "SND-11 as built". Merged mid-session: main (twice) and the world lane's SND-10 and SND-14
+pushes (only art-code-refs conflicted: made again).
 - **Plan**: (a) bass, arpeggio and drums as pure "what plays at this step" functions (logic/music-patterns.js) the gb
   path plays exactly as before (a Node record of every synth call, beside the fingerprints); (b) stems: each line into
   its own plain gain under the fader, no panner on gb; (c) sound-bake.js's new kinds (partials, stack, wind, hit; fm
@@ -15,6 +18,67 @@ plan below, recommended options taken. Work in progress: this entry is finished 
   then; (d) Copperleaf (day and night), the route and the wild battle as ensembles; (e) GB Sounds in Settings -> Sound;
   (f) the Studio's Instruments tab and its player on the game's chain; (g) the reverb at a load, off at Graphics Off;
   check-sound: today's 194 (199 with main's UI sounds) unchanged, the ensembles as new parts; the baseline once.
+- **Changed**: new game/js/logic/music-patterns.js, tools/test/music-patterns.test.mjs; game/js/audio/tracker.js (gb
+  on the patterns, stems, the ensemble path, `T.prepare`, `T.needs`, `T.ensembleReady`, per-zone baking, one-shots,
+  the budget 8 MB); game/js/logic/sound-bake.js (partials, stack, wind, hit; fm and osc sliced; the TPT filter; the
+  harp's recipe to the data); game/data/music.json (`instruments` 29, `ensembles` 4, songs copperleaf, route and wild
+  naming one, Copperleaf's night written out) and its schema; game/js/logic/music-studio.js (`MUSIC_CHOICES` line and
+  kind, `MUSIC_RECIPE_KEYS`, `musicFindings`); game/js/sound.js (the tracker's options, `musicPrepare`, `musicParts`'
+  ensemble parts, the debug log's `ensemble` line); game/js/settings-screen.js (GB Sounds); game/js/sound-test.js (a
+  song as its ensemble or GB, any instrument); studio/js/music-editor.js (the chain, GB Sounds, the Ensemble picker,
+  the Instruments tab), studio/index.html (levels.js, music-patterns.js before music-studio.js), game/index.html;
+  tools/check-sound.py, tools/check-studio-github.py; tests (tracker, sound-bake, music-studio);
+  validation/sound-baseline/ (copperleaf, route, wild).
+- **Fingerprints**: 199 (194 and main's five UI sounds) **0 changed** on every commit (`check-sound.py --loudness` in a
+  worktree, commit by commit); the ensembles' commit listed exactly the five planned additions (copperleaf and route
+  `ensemble` and `ensemble-night`, wild `ensemble`); the baseline written once with plain `--baseline` (32f497c4),
+  every old value byte for byte the same (checked file by file); then 204, with brightness, 0 changed. A Node record of
+  every gb synth call (524 renders, 118,716 calls) was the same call for call after the patterns and the stems.
+- **Loudness**: each ensemble within 0.1 LU of its gb version (route 0.0, wild +0.1, Copperleaf 0.0), peaks -14 to -21
+  dBFS; every other row as before.
+- **Memory and bake time**: only the notes a song plays bake. At 48 kHz Copperleaf 1.4 MB (10 zones), its night 1.0,
+  the route 1.2, the battle 1.6. Headless Chromium, 44.1 kHz, a quiet machine: every ensemble and the water baked
+  together 7.8 of the new 8 MB (nothing dropped), 236 ms of work in 106 slices, the slowest slice 4.9 ms, the slowest
+  step 3.2 ms; Copperleaf ready 0.34 s after arrival. The reverb at arrival: its impulse 9 ms of work, its assignment
+  7.7 ms in one go. With two other browsers rendering beside it single steps reached 25 ms (GC or the CPU).
+- **Risky or unfinished**:
+  - Claude can't hear: 29 instruments and four ensembles are judged by numbers (in tune within a quarter tone, no NaN,
+    seamless loops, levels); the owner's ears decide (the listening list below). The ensembles are named placeholders.
+  - A song naming an ensemble plays gb until its notes are baked (about a third of a second after arrival), then
+    switches on a bar line; a battle that starts before its bake finishes begins on gb.
+  - The bank's budget went from 6 to 8 MB (decided below): the phone's debug log (`bank`) shows what it holds.
+  - The smoke check's walk screen counted 20 pieces against its ceiling of 18 in two runs: an arrival postcard
+    ("Greetings from Copperleaf Town") was still on screen when it counted (its screenshot shows it). main's smoke run
+    passed the same step; nothing of this session draws on the walk screen. Noted, not fixed (UI track's ceiling).
+  - Tense and arc versions inherit the song's ensemble; the arc's run versions (`@mid`, `@late`) are rendered only as
+    gb (no `ensemble` part for them yet: SND-13 turns the arc into layers).
+- **Decided for the owner, to review**:
+  - The instruments per place, as Part 2's design and the listening page proposed: Copperleaf a music box doubling the
+    chip, a harp counter, soft strings, a harp's root each bar, and at night a flute taking the tune; a route the chip
+    lead with strings, pizzicato arpeggio and bass, kick, orchestral snare and shaker; a wild battle the chip lead over
+    a spiccato ostinato, a warm bass, brass stabs, timpani and a full kit. Towns, caves and bosses stay gb until
+    SND-12 (their instruments are in music.json: accordion, epiano, bell, drone, choir, orchhit).
+  - 29 instruments (the palette's two dozen and a spiccato for battles, a woodblock for SND-17's day jingle, a drone for
+    caves); their ids stable.
+  - The bank's budget 8 MB (SND-9's 6 could not hold Copperleaf beside the water's banks; recommended over dropping
+    zones on every arrival).
+  - A battle's song bakes on arrival only in a run's places (the hub has no battles); a song's night version from dusk.
+  - The reverb off at Graphics Off (`preferences.aim` 'off', the game's lowest tier) and made at arrival otherwise.
+  - GB Sounds off by default (the new band plays); it switches from the next bar.
+  - Each ensemble's trim set so it sits level with its gb version (Copperleaf -11.3 dB, route -1.4, battle -3.8).
+  - The Studio's player plays at the game's default sliders (so its balance is the game's), and its Instruments tab
+    edits an ensemble's parts (instrument, level, pan, reverb) but not an instrument's recipe (edit music.json).
+  - The Sound test's harp row became an instrument row (the harp first).
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test):
+  - Copperleaf and the route as their ensembles, by day and at night, each against GB Sounds (the new "As" choice);
+    wild as its ensemble. Then in the game: Copperleaf's square, a route, a wild battle (the drums come in on the
+    throw), Settings -> Sound -> GB Sounds on and off while a song plays (it switches at the next bar).
+  - The instruments: each in the instrument row, in Copperleaf's room and in a cave; listen for clicks at a held
+    note's loop (strings, flute, accordion), tuning, and the drums' punch.
+  - The reverb's first use: no hitch on arriving in Copperleaf or a route.
+  - Export a debug log and read `audio`: `bank` (instruments, mb, withOtherMb under 8, dropped 0, sliceMaxMs,
+    stepMaxMs), `reverb` (setMs) and `ensemble` (the song, its ensemble, playing ensemble or gb).
+- **Next**: SND-17 (jingles and stingers with the new instruments; GB Sounds keeps today's 8-bit jingles).
 
 ### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28
 Branch `track/characters`, the same session as CH-2, straight on at the owner's word ("Automatically follow the plan

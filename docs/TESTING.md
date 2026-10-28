@@ -528,6 +528,14 @@ same phase:
   schema and `soundscapeFindings` (a kind without a recipe, a recipe or bank named that doesn't exist).
   `check-studio-github.py --only=music` plays a brook 3 m away on the Sounds tab's World sounds card and stops it. The
   Animals step's "at least 9 beds" holds exactly (the 14 beds became 9; the water is the soundscape's player).
+  SND-11: check-sound renders every existing part with GB Sounds on (today's sound whatever a song's ensemble) and adds
+  parts `ensemble` and `ensemble-night` for a song (or its night version) naming an ensemble, its notes and the reverb
+  baked first (204 fingerprints: Copperleaf and the route by day and night, wild); `--loudness` adds each ensemble's
+  row against its gb version. Unit tests: `music-patterns.test.mjs` (the patterns, the ensembles' steps and needs),
+  `sound-bake.test.mjs` the new kinds and every music.json instrument, `tracker.test.mjs` the stems and the ensemble
+  path (gb until baked, GB Sounds, only the zones played), `music-studio.test.mjs` the new choices and findings.
+  `check-studio-github.py --only=music` checks the player's compressor, an instrument, an ensemble and GB Sounds on
+  the Instruments tab. A Node record of every gb synth call (scratch, not committed) proved the refactor call for call.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
