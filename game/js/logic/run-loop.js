@@ -62,6 +62,7 @@ expose({
   runRerollsLeft: [() => runRerollsLeft],
   // @ts-expect-error -- replaced on purpose
   runSheetStatus: [() => runSheetStatus, v => (runSheetStatus = v)],
+  runShopKey: [() => runShopKey],
   // @ts-expect-error -- replaced on purpose
   runShopOpen: [() => runShopOpen, v => (runShopOpen = v)],
   // @ts-expect-error -- replaced on purpose
@@ -125,12 +126,12 @@ export function runClinic(s, each) {
 }
 
 /** a run town's wares on a day: `always`, then `more` drawn by weight from `pick` (none twice, none already there),
- * as shop stock rows ({item} or {coin}); WM-5: `stream` 'stall' for a town's market stall (a stream of its own, no
- * fresh stock) @param {Run} run @param {number} i the map node @param {number} day
+ * as shop stock rows ({item} or {coin}); WM-5: `stream` 'stall' for a town's market stall (a stream of its own, and
+ * a fresh stock of its own) @param {Run} run @param {number} i the map node @param {number} day
  * @param {{ always: string[], more: number, pick: Record<string, number> }} rule @param {string} [stream] */
 export function runShopStock(run, i, day, rule, stream = 'shop') {
   /* RS-4: a shop asked for a fresh stock that day draws from a stream of its own (runShopReroll) */
-  const again = stream === 'shop' && runShopRerolled(run, i, day),
+  const again = runShopRerolled(run, i, day, stream),
     g = rngFrom(runNodeSeed(run.seed, i), stream + '|' + day + (again ? '|r1' : '')),
     out = rule.always.slice(),
     left = Object.fromEntries(Object.entries(rule.pick).filter(([w, n]) => n > 0 && !out.includes(w)));
@@ -142,17 +143,23 @@ export function runShopStock(run, i, day, rule, stream = 'shop') {
   return out.map(w => (w.startsWith('coin:') ? { coin: w.slice(5) } : { item: w }));
 }
 
-/** RS-4: whether a run shop was asked for a fresh stock on that day @param {Run} run @param {number} i @param {number} day */
-export const runShopRerolled = (run, i, day) => !!run.reshop && run.reshop.includes(i + ':' + day);
+/** RS-4: what run.reshop keeps for a shop's fresh stock: 'node:day', WM-5: 'node:day:s' for a town's market stall (the
+ * owner: Mo's word works there too) @param {number} i @param {number} day @param {string} [stream] */
+export const runShopKey = (i, day, stream = 'shop') => i + ':' + day + (stream === 'stall' ? ':s' : '');
+/** RS-4: whether a run shop (WM-5: or its town's stall, `stream` 'stall') was asked for a fresh stock on that day
+ * @param {Run} run @param {number} i @param {number} day @param {string} [stream] */
+export const runShopRerolled = (run, i, day, stream = 'shop') =>
+  !!run.reshop && run.reshop.includes(runShopKey(i, day, stream));
 /** RS-4: the fresh stocks a run has left (Mo's service, logic/residents.js resRerolls, less those used)
  * @param {Run} run @param {Record<string, any>} R residents.json */
 export const runRerollsLeft = (run, R) => Math.max(0, resRerolls(run, R) - (run.reshop || []).length);
 /** RS-4: ask a run shop for a fresh stock today: once a shop a day, while the run has one left; its `more` wares are
- * drawn again (the always-stocked ones stay). Returns whether it was done @param {Run} run @param {number} i
- * @param {number} day @param {Record<string, any>} R residents.json */
-export function runShopReroll(run, i, day, R) {
-  if (runShopRerolled(run, i, day) || runRerollsLeft(run, R) < 1) return false;
-  (run.reshop || (run.reshop = [])).push(i + ':' + day);
+ * drawn again (the always-stocked ones stay). WM-5: `stream` 'stall', a town's market stall (one of the same
+ * rerolls). Returns whether it was done @param {Run} run @param {number} i @param {number} day
+ * @param {Record<string, any>} R residents.json @param {string} [stream] */
+export function runShopReroll(run, i, day, R, stream = 'shop') {
+  if (runShopRerolled(run, i, day, stream) || runRerollsLeft(run, R) < 1) return false;
+  (run.reshop || (run.reshop = [])).push(runShopKey(i, day, stream));
   return true;
 }
 /** Studio plan T3.3: a run town's wares on a day as its shop opens them (shop.js openShop, and the run's simulation):
@@ -169,7 +176,7 @@ export function runShopOpen(run, i, day, rule, unlockData) {
   return runShopStock(run, i, day, { ...rule, always, pick });
 }
 /** WM-5: a village's or a town's market stall's wares on a day (rules.json run.town.stall: `more` held items drawn by
- * weight, from the node's 'stall' stream; the owner: no Perk, and no fresh stock on Mo's word) @param {Run} run
+ * weight, from the node's 'stall' stream; the owner: no Perk, and a fresh stock on Mo's word as at the shop) @param {Run} run
  * @param {number} i @param {number} day @param {{ more: number, pick: Record<string, number> }} rule */
 export const runStallStock = (run, i, day, rule) =>
   runShopStock(run, i, day, { always: [], more: rule.more, pick: rule.pick }, 'stall');

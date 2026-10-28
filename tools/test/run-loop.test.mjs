@@ -421,7 +421,7 @@ test("RL-13: a region whose dex has only a type's final forms: the leader looks 
   for (const e of team) assert.equal(fn('speciesStep')(data.SPECIES[e.sp]), 0, `${e.sp} at ${e.lvl}`);
 });
 
-test("WM-5: a market stall: 2 held items a day (rules.json run.town.stall) from a stream of its own, the same on a reload, untouched by Mo's fresh stock", () => {
+test("WM-5: a market stall: 2 held items a day (rules.json run.town.stall) from a stream of its own, the same on a reload, a fresh stock of its own on Mo's word", () => {
   const run = runOf('STALLRUN'),
     S = R.town.stall,
     held = new Set(Object.keys(GAME_DATA.items).filter(k => (GAME_DATA.items[k].hold || []).length)),
@@ -440,10 +440,19 @@ test("WM-5: a market stall: 2 held items a day (rules.json run.town.stall) from 
     stocks.add(JSON.stringify(a));
   }
   assert.ok(stocks.size > 4, 'the wares change by day');
-  /* a fresh stock on Mo's word re-rolls the town's shop, not its stall */
-  const before = L.runStallStock(run, 3, 2, S),
-    shop = L.runShopStock(run, 3, 2, R.shop);
-  run.reshop = ['3:2'];
-  assert.deepEqual(L.runStallStock(run, 3, 2, S), before);
-  assert.notDeepEqual(L.runShopStock(run, 3, 2, R.shop), shop);
+  /* a fresh stock on Mo's word re-rolls the town's shop or its stall (the owner), each apart, each one of the run's
+     rerolls (Mo's Lv 3: one a run) */
+  const RES = GAME_DATA.residents,
+    names = (/** @type {any[]} */ st) => st.map(w => w.item || 'coin:' + w.coin).join(),
+    r = { seed: 'STALLRUN', res: { mo: 3 }, unlocks: [] };
+  let i = 1;
+  while (names(L.runStallStock(r, i, 1, S)) === names(L.runStallStock({ ...r, reshop: [i + ':1:s'] }, i, 1, S))) i++;
+  const stall = names(L.runStallStock(r, i, 1, S)),
+    shop = names(L.runShopStock(r, i, 1, R.shop));
+  assert.equal(L.runShopReroll(r, i, 1, RES, 'stall'), true);
+  assert.deepEqual(r.reshop, [i + ':1:s']);
+  assert.notEqual(names(L.runStallStock(r, i, 1, S)), stall, "the stall's fresh stock");
+  assert.equal(names(L.runShopStock(r, i, 1, R.shop)), shop, "the shop's stock stays");
+  assert.equal(L.runShopReroll(r, i, 1, RES, 'stall'), false, 'once a day');
+  assert.equal(L.runShopReroll(r, i, 1, RES), false, "one of the run's rerolls: none left for the shop");
 });
