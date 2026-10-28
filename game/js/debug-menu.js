@@ -672,6 +672,7 @@ function debugAction(x) {
     case 'figon':
     case 'figwho':
     case 'figstyle':
+    case 'figatlas':
     case 'figfolk':
     case 'figppm':
     case 'figturns':
