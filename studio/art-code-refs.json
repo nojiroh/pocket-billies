@@ -1831,7 +1831,7 @@
    "game/js/unit-card.js:178"
   ],
   "key": [
-   "game/js/logic/music-studio.js:114",
+   "game/js/logic/music-studio.js:115",
    "game/js/ui-run-kit.js:1794"
   ],
   "leaf": [
@@ -1916,7 +1916,7 @@
    "game/js/walk/quality-cull.js:185"
   ],
   "scale": [
-   "game/js/logic/music-studio.js:115",
+   "game/js/logic/music-studio.js:116",
    "game/js/logic/ui-dials.js:219"
   ],
   "sheet": [
