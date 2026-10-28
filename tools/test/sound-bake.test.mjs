@@ -260,14 +260,14 @@ const crossings = (d, rate, ms) => {
 
 test('a bubble rings at its pitch, rises a little and dies away; smaller ones shorter', () => {
   const f0 = 1000,
-    b = soundBakeBubble(f0, 0.12, RATE);
+    b = soundBakeRun(soundBakeBubble(f0, 0.12, RATE));
   /* the first 5 ms near f0 (the rise is small that early) */
   const hz = crossings(b, RATE, 5);
   assert.ok(Math.abs(hz - f0) < 0.12 * f0, `${hz} Hz`);
   assert.ok(b.every(Number.isFinite));
   assert.ok(Math.abs(b[0]) < 1e-6 && Math.abs(b[b.length - 1]) < 1e-3, 'no click at either end');
-  const big = soundBakeBubble(220, 0.7, RATE),
-    small = soundBakeBubble(4000, 0.1, RATE);
+  const big = soundBakeRun(soundBakeBubble(220, 0.7, RATE)),
+    small = soundBakeRun(soundBakeBubble(4000, 0.1, RATE));
   assert.ok(big.length > b.length && b.length > small.length, `${big.length} ${b.length} ${small.length}`);
   assert.ok(big.length <= Math.ceil(0.7 * RATE));
 });

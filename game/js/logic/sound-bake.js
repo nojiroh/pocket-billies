@@ -397,8 +397,7 @@ export function* soundBakeZoneSteps(R, rate, z) {
   let data, loopStart, tau;
   if (R.kind === 'bubble') {
     /* SND-10: one bubble, played once: no loop (loopStart is its end) */
-    data = soundBakeBubble(f, R.xi, rate);
-    yield 0;
+    data = yield* soundBakeBubble(f, R.xi, rate);
     yield* soundBakePeak(data, R.level);
     return { root, lo, hi, rate, data, loopStart: data.length, loopEnd: data.length, tau: 0 };
   }
@@ -454,13 +453,13 @@ export function* soundBakeZoneSteps(R, rate, z) {
 /**
  * SND-10: a bubble ringing at f0 Hz (van den Doel, "Physically-based models for liquid sounds", 2005): radius r =
  * 3 / f0 m, falling away at d = 0.13 / r + 0.0072 r^-1.5 a second, its pitch rising as f0 (1 + xi d t); a 0.6 ms ramp
- * in and the last 4 ms faded out, so it never clicks. At most 0.7 s; peak about 1
+ * in and the last 4 ms faded out, so it never clicks. At most 0.7 s; peak about 1. A bake generator
  * @param {number} f0
  * @param {number} xi the rise (0.1 a raindrop, 0.5-1 a bigger bubble)
  * @param {number} rate
- * @returns {Float32Array}
+ * @returns {Generator<number, Float32Array, void>}
  */
-export function soundBakeBubble(f0, xi, rate) {
+export function* soundBakeBubble(f0, xi, rate) {
   const r = 3 / f0,
     d = 0.13 / r + 0.0072 * Math.pow(r, -1.5),
     n = Math.ceil(Math.min(0.7, 6.9 / d + 0.004) * rate),
@@ -473,6 +472,7 @@ export function soundBakeBubble(f0, xi, rate) {
     const t = i / rate;
     ph += (2 * Math.PI * Math.min(fMax, f0 * (1 + xi * d * t))) / rate;
     out[i] = Math.sin(ph) * Math.exp(-d * t) * Math.min(1, i / ramp) * Math.min(1, (n - i) / tail);
+    if (i % SOUND_BAKE_CHUNK === SOUND_BAKE_CHUNK - 1) yield i;
   }
   return out;
 }
@@ -529,8 +529,12 @@ export function* soundBakeBabble(rate, R) {
     const th = (i / fade) * (Math.PI / 2);
     o[i] = a[i] * Math.sin(th) + a[len + i] * Math.cos(th);
   }
+  yield 0;
   let s = 0;
-  for (let i = 0; i < len; i++) s += o[i] * o[i];
+  for (let i = 0; i < len; i++) {
+    s += o[i] * o[i];
+    if (i % (SOUND_BAKE_CHUNK * 8) === SOUND_BAKE_CHUNK * 8 - 1) yield i;
+  }
   const k = R.level / (Math.sqrt(s / Math.max(1, len)) || 1);
   for (let i = 0; i < len; i++) {
     o[i] *= k;
