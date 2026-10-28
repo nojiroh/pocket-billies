@@ -157,8 +157,10 @@ town node needs it.
   rarity on held items, Augments, Genes and Billies, pb-coin's screens on pb-chip, the Colour shapes switch; the
   battle plates left to UI-16b) done 2026-10-27 on `claude/ui-14b-marks-screens`; UI-15 (less clutter in battle and
   walking: the field strip, plates' "+N", long-press move details, quiet commands, dark battle glass; the place card
-  as a title, the fading hint, the Actions bob) done 2026-10-27 on `claude/ui-15-less-clutter`; the browser and phone
-  checks wait until UI-18 (the owner's word).
+  as a title, the fading hint, the Actions bob) done 2026-10-27 on `claude/ui-15-less-clutter`; UI-18 (less clutter
+  on the Map: no blurred panels, Give up in a ⋯ menu, the folded place card, towns teal on the bowl, names clear of
+  your figure) done 2026-10-28 on `claude/ui-18-map-clutter`; the browser and phone checks wait until the UI plan is
+  done (the owner's word).
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.

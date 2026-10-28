@@ -2,6 +2,95 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-18 - less clutter on the Map (solid panels, Give up in ⋯, the folded place card, towns teal, names clear of you) - 2026-10-28
+Branch `claude/ui-18-map-clutter`, made from WM-6's `claude/wm-6-region-look` (main plus `track/worldmap` with WM-5b,
+#293, and WM-6, #296). Merged in, in order (merges, not rebases): main (nothing new); UI-14b's
+`claude/ui-14b-marks-screens` (UI-11, UI-12, UI-13, UI-14a, UI-14b, UI-8c: only HANDOFF and the generated
+art-code-refs.json conflicted, remade with its tool; hooks.js remade with `npm run modules`); UI-15's
+`claude/ui-15-less-clutter` (UI-15 and UI-8b). The UI-15 merge conflicted in docs (all entries and rows kept), in
+uiTheme.json (UI-8b's minimap tile dials beside UI-11's signals: both kept), theme-sheet.js (both bridges kept),
+battle.js (UI-15's field strip replaces the ticker and the storm chip; its chips drew Sandstorm with the bolt and the
+stones with scrap "until UI-13", so a commit of its own gives them UI-13's effect glyphs: the owner's answer 7),
+ui-lint.js (ceilings set to the merged tree's counts: colour 581, shadow 160, keyframes 52, duration 247, zindex 59,
+blur 24, innerHtml 54), art-code-refs.json (remade) and the four gallery pictures `run-nodes-*` (UI-8c's kept: they
+show the badges; remade with the gallery run). Draft PR into main; it shows the earlier steps' and the world map
+track's commits until their PRs merge. No Plan Mode (the owner's standing instruction for the UI plan); the browser
+checks are skipped until the UI plan is done (listed below). Suggested tag `ui-18-done` (sessions can't push tags).
+- **Claims checked against the code:**
+  - "The Map draws 10 blurred surfaces": true on 2026-10-26 (header, place card, the look-around group's glass panel,
+    seven `.mbtn` buttons). UI-8c had already removed 8 of them, leaving 2 that smoke counts. `uiBlurCount` counts page
+    elements only: the top bar's glass is a `::before` and the bottom bar's is inside pb-nav-bar's shadow tree, so smoke
+    never saw them. Real surfaces: 4 before UI-18 (5 with the places list open), **2 after** (the top and bottom bars).
+  - "Towns orange on the hub map (world-bowl.js 3666-3671)": the colour was `#ffb46b` in `worldBowlPin` and the
+    close-in dots, now at 3543 and 3877 before this session. The flat fallback still used `RUN_MARK_TONES` roles.
+  - "Give up, trip status and quests" in the header: true; "a place card of up to 8 blocks": up to 11 (name and kind,
+    zone, rumour, words, ride, status, buttons, forecast, Billies, roads, services).
+  - WM-6's find: true. Names were drawn in the places' loop and your figure after it, over the end of the name.
+- **Built** (one cause per commit):
+  - map-tab.css/js: the header, the place card and the places list are solid semigloss (`--g-solid` with a Team card's
+    sheen), with no `.glass`/`.px`. check-quick.py's `BLUR_CEILING` loses its `map: 10`, so the budget of 3 applies.
+  - Give up the run in a ⋯ menu: a `<details>` on the header's row beside the day chip, a 44 px chip with the new
+    36 px `more` icon (game/art/ui/more.svg, three bevelled dots in the list icon's greys; icon count 89 -> 90,
+    preloaded in boot.js). Opened, it shows Give up the run as a red button in the header's flow. The confirm sheet is
+    unchanged.
+  - The place card opens folded. It shows the name, today's weather (a run place: its forecast's first day, glyph and
+    word; ui-run-kit.js now exports `RUN_WEATHER_ICONS`), the kind chip, one line of what's there (shops, a clinic,
+    trainers, how many kinds of Billie), the status and the main action. More / Less (a 40 px row, `aria-expanded`)
+    unfolds the rest: the place's words, zone, rumour, the 7-day forecast, its Billies, roads and the place's own
+    buttons (shop, clinic, trainers). `uiState.mapCardOpen` holds the one unfolded place. The `mcfold` action goes
+    through ui.js to `mapTabAction`. + and − stay.
+  - world-bowl.js `worldBowlNames`: names are gathered in the loop and drawn after your figure. A name that would
+    touch the figure rises just clear of its head, using the head's highest point so the name doesn't bob.
+  - Colours: the hub's pins and close-in dots use the colour code. Towns are the good family's teal, where you stand
+    is value gold, plain places use the road badge's cream (#FFF8E6), and locked places use the list icon's grey
+    (#9AA7B4). The run's flat markers take their family: `runMarkLook().tone` is now the family (neutral for the
+    landing and roads, muted while locked; where you stand keeps its family and the glow marks it). `RUN_MARK_TONES`
+    is gone. `worldBowlRunColors` reads the `--sig-*` fills at most once a second (`worldBowlFill`). The run-marks
+    test was updated, and ui-lint's game-js colour ceiling went from 634 to 629.
+  - Small fix: more.svg ends in a newline (the svg-pixels round-trip test).
+- **Decided for the owner, to review:**
+  - **Where you stand on the hub map stays gold** (the value family), while a run place where you stand keeps its
+    family with UI-8c's gold rim. Both read as gold. The plan says "you are here" is its own pin (UI-17 adds its bob).
+  - **Neutral and locked on the bowl are fixed icon-set colours, not the palette's surface and text.** The bowl is
+    the world, not the chrome, and a dark palette's surface would vanish on the ground.
+  - **The ⋯ menu opens in the header's flow, not as a floating popover.** The header is clipped to its cut outline,
+    and a `<details>` needs no script.
+  - **The folded card keeps the status and the main action** (Travel here, the trip's buttons). Hiding the main action
+    behind More would cost a tap on the screen's one gold button. The place's own buttons (shop, clinic, trainers)
+    unfold with the rest.
+  - **"What's there" is a generated line** (shops, clinic, trainers, kinds of Billie). The place's words (its blurb)
+    unfold with More. A hub place has no weather on its card: only run places have a forecast. The top bar shows
+    the hub's weather where you stand.
+  - **The places list is solid too**, so opening it adds no blur.
+  - The new-place dot (pink `#ff9ec4`) and the lift marker (`#9fd3ff`) on the hub map are left as they are: no family
+    claims them yet.
+- **For UI-16a / UI-17:** the More/Less chevron turns with no motion (UI-16a owns motion; a turn of the `.mc-fold
+  .uico` fits its "press" or a short rotate). The ⋯ menu opens with no motion either. UI-17's breathing nodes and the
+  pin's bob go in world-bowl.js `worldBowlOverlay`: the names are now drawn last by `worldBowlNames`, so a bobbing
+  figure should feed its rest position into `meBox` (as now) to keep names still.
+- **Found, not fixed:** `uiBlurCount` misses pseudo-elements and shadow trees, so the top bar and bottom bar never
+  count on any screen. Counting them would put walk at about 5, over the budget, so it's left for the planning
+  session to decide. One commit (the names fix) left art-code-refs.json's line numbers stale; the next commit remade
+  them (no interactive rebase in sessions).
+- **Risky:** nobody has seen any of this in a browser (the owner's rule). The ⋯ chip's size beside the day chip on a
+  320 px phone, the solid panels' sheen in the three palettes, and the folded card's height (the look-around group
+  rides on `--mapcard-h`, so it should follow).
+- **Verified:** lint (ceilings at the merged tree's counts, then 629), typecheck, format:check, `npm test` 1603 of
+  1603, check:data, check:modules, art-code-refs, after the merges and after every change.
+- **Skipped until the UI plan is done (what each should show):**
+  - smoke: blurred surfaces per screen with **map 0** (was 2; budget 3, no ceiling); elements: map at or under 25,
+    likely fewer (the folded card).
+  - check-fast's map steps: the bowl opens, the place card names the picked place (check-fast.py 241, the name is in
+    the folded card), and the look-around group sits above the card (184).
+  - check-quick and its picture baselines: the Map's header and card change look (solid), so their pictures are
+    remade on purpose. The `run-nodes-*` gallery pictures are remade too (they were UI-8c's and UI-15's on two
+    branches).
+  - The Studio check: unchanged by UI-18 (the icon editor lists `more`).
+  - Phone: header and card solid in Field Guide, Copper Grove+ and Bureau Night, light and dark; ⋯ then Give up; More
+    and Less; towns teal on the hub map; "Route 1" and towns' names whole beside your figure; frame time on the Map.
+- **Next:** the planning session; after all of the UI plan, one session runs the skipped browser checks. UI-17 adds the
+  breathing nodes and the pin's bob.
+
 ### Region map track WM-6 - a region's look: town districts, landmarks, route numbers on signposts and the map - 2026-10-27
 Branch `claude/wm-6-region-look` (made from main at 07c9b284, which held WM-3a/3b, WM-4a/4b, WM-5a and WM-7;
 `track/worldmap` with WM-5b merged in before the PR), PR into `track/worldmap`. Run with the plan approved in advance
