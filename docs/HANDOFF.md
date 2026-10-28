@@ -2,6 +2,90 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-12b - arrangements, batch 2: the cave, the seven biome songs and the run's map on ensembles in forms, with peak parts so the run's arc is heard, and walk, rain and snow layers - 2026-10-28
+Branch `track/sound`, the music lane (main merged first at 62c20703, a merge: HANDOFF kept both entries, art-code-refs
+made again in its own commit; no sound files from main). Started by the planning session under the owner's standing
+instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per commit; the baseline in its
+own commit; the docs. Tag `snd-12b-done` (for the owner to push) on this session's last commit. PR #292. Details:
+sound-track.md "SND-12b as built".
+- **Plan**: (a) forms (ABA or AABA, 24-32 bars) and an ensemble each for cave, meadow, spore, trench, hills, innersun,
+  crystal, spire and map, by the moods in Part 2's palette, as named placeholders; (b) `peak` parts in each (the arc:
+  rows 3-5 at 0.6, 6-8 full) and walk, rain and snow layers; (c) the quick check's Run music step in the same commit;
+  (d) memory measured in Node, instruments dropped to fit, budget unchanged; (e) levels within 1 LU by trims; (f) the
+  Starters step alone; then the baseline once with plain `--baseline`, the docs.
+- **Changed**: game/data/music.json (the nine songs' `form`, `sections.B`, `ensemble`; nine new ensembles with trims);
+  tools/check-quick.py (Run music: an ensemble song keeps its name in a band and hears it as its peak layer);
+  tools/test/music-form.test.mjs (two batch-2 tests); validation/sound-baseline/ (the nine songs); docs. No code.
+- **Batch 2** (Claude's drafts, named as placeholders; B a seeded walk over its own chords, each with a placeholder
+  hook name; every ensemble keeps the song's chip lead):
+  - cave ABA (24 bars, 72 s): bells, a drone, a pizzicato drip, a flute in B, heavy reverb; peak a choir and timpani.
+  - meadow AABA (32, 69 s): a harp, a flute in B, soft strings, pizzicato bass, brushes; peak a march snare, strings.
+  - spore ABA (24, 69 s): bells, soft strings, a pizzicato drip, a warm bass; peak a choir and timpani.
+  - trench ABA (24, 69 s): a drone and a deep pad, pizzicato, a warm bass, a clarinet in B; peak brass and timpani.
+  - hills AABA (32, 77 s): an accordion (the tune in B), a walking bass, a bossa kit and woodblock; peak brass, timpani.
+  - innersun AABA (32, 55 s): brass stabs, timpani, spiccato (an ostinato in B), a warm bass, a full kit; peak a choir
+    and orchestra hits (the wild battle's own).
+  - crystal ABA (24, 64 s): bells, a pizzicato arpeggio, soft strings, a warm bass; peak a choir and timpani.
+  - spire AABA (32, 62 s): a celesta chime, pizzicato, strings, spiccato in B, an orchestral-snare kit; peak brass, timpani.
+  - map AABA (32, 80 s): a harp, strings, pizzicato bass, brushes, a flute in B; peak a march snare and timpani.
+  - Layers: walk a tambourine (cave a woodblock, spire the orchestral snare); rain brushes and a pizzicato drip; snow
+    sleigh bells; the kit to 0.7 standing still, 0.6 at night.
+- **Fingerprints**: pending: the plain `--baseline` run (started 23:28 UTC after a container restart killed the first one, with the `--only` run beside it).
+- **Levels** (the loudness report's song rows run alone, K-weighted, whole songs; gb before -> ensemble after its
+  trim): cave -35.2 -> -35.1 LUFS (+0.4 dB), meadow -34.3 -> -34.3 (-2.8), spore -34.4 -> -34.4 (-1.8), trench -32.8 ->
+  -32.8 (+0.4), hills -31.3 -> -31.3 (-0.7), innersun -29.6 -> -29.6 (-4.0), crystal -34.5 -> -34.5 (-1.8), spire -30.9 ->
+  -30.9 (+0.5), map -31.9 -> -31.8 (+3.2): all within 0.1 LU. Their gb versions in the forms moved 0.0-0.2 LU. Peaks
+  -14.9 to -23.9 dBFS. The trims are the ensembles' (no song trim moved: a song's moves its gb version too).
+- **Memory** (Node, 48 kHz): each song's bars 1.22-2.11 MB, 2.02-2.96 with every layer, at night 1.11-2.05; in a run's
+  place (its bars, walk, rain and peak with the wild battle's) each adds 0.28 (innersun) to 2.07 MB (trench) over the
+  wild battle's 2.30. A run's place now holds about 5.4-7.2 MB before stingers (with SND-11's ~2.8 MB of water, beds and
+  reverb), so few or none of the stingers bake ahead there (they bake on first play, 8-bit until then). The budget
+  stays 8 MB; dropped to fit: the rain's celesta (a pizzicato drip instead), the cave's soft strings, spore's and
+  crystal's glockenspiel, crystal's pizzicato bass, spire's celesta arpeggio (a chime instead), meadow's glockenspiel.
+- **The Starters step** ("battle rig buffers nearly empty" in SND-12's partial full check): run alone on this branch,
+  it passed (99 s; both puppets drawn, 1351 / 3074 px), so main was not needed. A load effect of the full check (the
+  buffers are read 20 s after the move menu), not the sound's: noted for SND-15's full check. Battle music also failed
+  once beside another step and the level renders and passed alone (62 s): SND-12's known timing flake under load.
+- **Risky or unfinished**:
+  - Claude can't hear: the arrangements are judged by numbers (levels, memory, no NaN, the tests); placeholders and first
+    guesses, the owner's ears decide.
+  - Memory: a run's place is near the budget before stingers; on the map tab the map song's zones (1.3 MB) push the
+    least recently played out, so going back to the walk tab may re-bake a few zones (gb until ready, on a bar line).
+    Estimated in Node, not measured in a browser; SND-15 reads the phone's debug log `bank`.
+  - The arc at 0.6 has no render (the fingerprints hear peak 1 as `layer:intensity3`).
+  - No storm layer for the run's songs (left out for the bank's room).
+- **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules`, `npm run check:data` (179 files fine; the
+  check-data snapshot unchanged), the music unit tests (136 with the two new), `npm test` 2004 of 2004 (the two new
+  tests included); `check-sound.py --only=<the nine>` (killed by the container restart; replaced by the baseline's own diff, below); the baseline pending;
+  `check-quick.py --steps="Run music"` ok (15 places: 5 bands at 0.6 and 3 full heard as layers), "Run map music" ok,
+  "Battle music" ok alone, "Starters" ok alone; `npm run check:smoke` pending.
+  CI on PR #292: green at 35fb3153 (the main merge); smoke red at a6d24c52 (docs only) on the bowl map's zoom ("never
+  settled"), the frame-timed step SND-13 already explained on the PR; not re-commented.
+- **Skipped at the owner's word** (2026-10-28 21:18 UTC, "You can skip the checks"): the full `npm run check:quick` and
+  the whole `check-sound.py --loudness` report (the levels above are its song rows run alone), and with them the
+  layered loudness rows and `check-studio-github.py --only=music` (no Studio code changed).
+- **Decided for the owner, to review**:
+  - The nine arrangements and their forms (above; sound-track.md "SND-12b as built"): Claude's drafts as named
+    placeholders you edit in the Studio's Form card and Instruments tab; GB Sounds compares.
+  - Slow songs (cave, spore, trench, crystal) in ABA of 24 bars, the rest AABA of 32 (renders and memory both grow with
+    length).
+  - The peak parts: a march snare (meadow, map; the gb arc marches too), brass or a choir, timpani; leaning on the
+    battle's instruments so the zones are shared.
+  - Memory: instruments dropped rather than the budget raised (as the brief said); the stingers give way in a run's
+    place.
+  - Trims on the ensembles, not the songs.
+  - No storm layer for the run's songs; the cave keeps no night (its song has none).
+- **The owner's listening list** (phone, silent switch OFF; the debug menu's Sound test -> a song "As its ensemble",
+  then GB Sounds; or in a run):
+  - The cave, then each biome song (meadow, spore, trench, hills, the inner sun, crystal, the spire), against GB Sounds:
+    A, B with its own chords and colour, A again; the fills into each section.
+  - The run's arc on a biome song as you go deeper: rows 3-5 (the first mini-boss's row on) bring the peak parts in at
+    0.6 (a march snare, strings, brass or a choir, timpani), rows 6-8 full. The Sound test's layer row plays them too.
+  - The run's map song on the map tab, and its rain muffle as before.
+  - Walking (a light beat), rain and snow on any of them.
+- **Next**: SND-12c (battles, bosses and the rest: wild in a form, trainer, rival, leader, boss, then mall, hazel,
+  title, fall, variants; tell the VFX planning session when it lands), then SND-15.
+
 ### Sound track SND-12 (part 1) - arrangements: song forms (sections A and B, 16-32 bars), fills and turnarounds, varied repeats, new lines; batch 1 re-voiced: Copperleaf, the route, town and city - 2026-10-28
 Branch `track/sound`, the music lane (main already merged at the start; the branch fast-forwarded to SND-13's last
 push; main merged again at 641d18c0 with Perks PK-6: HANDOFF kept both entries, art-code-refs made again at f5cae841;
