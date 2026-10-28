@@ -35,6 +35,7 @@ expose({
   TRADE_HISTORY_MOST: [() => TRADE_HISTORY_MOST],
   TRADE_STALE_MS: [() => TRADE_STALE_MS],
   TRADE_TEXT_MOST: [() => TRADE_TEXT_MOST],
+  TRADE_XP: [() => TRADE_XP],
   // @ts-expect-error -- replaced on purpose
   arrive: [() => arrive, v => (arrive = v)],
   offerGone: [() => offerGone],
@@ -82,7 +83,9 @@ export const TRADE_CAP = 3,
   /** the trades meta.trades remembers */
   TRADE_HISTORY_MOST = 20,
   /** one thing's JSON text at most (the rules' cap) */
-  TRADE_TEXT_MOST = 16000;
+  TRADE_TEXT_MOST = 16000,
+  /** a traded Billie's XP from battles (battle-engine.js heldXp; the owner chose this over obedience) */
+  TRADE_XP = 1.5;
 
 /** the pair's offer id: the two uids, the smaller first @param {string} u @param {string} v */
 export const offerId = (u, v) => (u < v ? `${u}_${v}` : `${v}_${u}`);

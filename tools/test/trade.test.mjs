@@ -241,3 +241,48 @@ test('the save’s trade history: newest first, at most 20, checked on load; a b
   assert.deepEqual(filled.trades, []);
   assert.equal(filled.runs, s.meta.runs);
 });
+
+test('trade evolutions: Cliplet and Feedopus evolve when acquired, or with the Form 99-A; never by level now', () => {
+  const s = startedSave('yiming0', 30),
+    canEvolve = fn('canEvolve'),
+    evolve = fn('evolve'),
+    E = GAME_DATA.events.events;
+  for (const [sp, min, to] of [
+    ['yiming0', 14, 'yiming1'],
+    ['zuck1', 20, 'zuck2'],
+  ]) {
+    assert.deepEqual(SPECIES[sp].evo, { k: 'acquire', item: 'transfer', min });
+    const m = makeBilly(sp, min);
+    assert.equal(canEvolve(m), false, `${sp} doesn't evolve by level`);
+    assert.equal(canEvolve(makeBilly(sp, 100)), false);
+    assert.equal(T.tradeAcquire(m), true);
+    assert.equal(T.tradeAcquire(makeBilly(sp, min - 1)), false);
+    s.team.push(m);
+    evolve(m);
+    assert.equal(m.sp, to);
+  }
+  assert.equal(T.tradeAcquire(makeBilly(sp0 === 'yiming0' ? 'zuck0' : sp0, 50)), false);
+  /* the route without a trade: the item, evolving by use, from two Bureau events */
+  assert.equal(GAME_DATA.items.transfer.evoItem, 1);
+  const gives = Object.keys(E).filter(k => E[k].weight > 0 && JSON.stringify(E[k].options).includes('give transfer'));
+  assert.deepEqual(gives.sort(), ['bureau_checkpoint', 'form_27b']);
+  /* a Billie that arrives by trade is told apart by its mark (the 1.5x XP and the acquire evolution go by it) */
+  const sa = saveOf('ann'),
+    sb = saveOf('bob'),
+    cl = makeBilly('yiming0', 14);
+  cl.uid = 'ann-cl';
+  sa.box.push(cl);
+  const o = T.offerNew('ann', 'Ann', 'bob', [T.tradeThing(sa, 'b', 'ann-cl', ann, NOW)], 'k');
+  const came = T.tradeTake(sb, { ...o, gb: [], nb: 'Bob' }, 'bob', NOW);
+  assert.equal(came.length, 1);
+  assert.equal(T.tradeAcquire(came[0]), true);
+});
+
+test('a traded Billie gains 1.5x XP from battles; its own Billies don’t', () => {
+  const heldXp = modules['battle-engine'].heldXp,
+    m = makeBilly(sp0, 20);
+  assert.equal(heldXp(m, 100), 100);
+  m.traded = { at: NOW, from: 'bob' };
+  assert.equal(heldXp(m, 100), 150);
+  assert.equal(T.TRADE_XP, 1.5);
+});
