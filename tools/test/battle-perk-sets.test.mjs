@@ -219,3 +219,226 @@ test('PK-8 perkFindMake: the find’s Perk as a pick of one, the same for the sa
   assert.ok(r.perks.includes(id));
   assert.equal(r.offer, null);
 });
+
+/* ---------- the sets (perkSets.json) ---------- */
+
+const PERKS = data.PERKS,
+  SETS = data.gameData.perkSets,
+  RULE = data.RULES.run.perks,
+  newRun = (...ids) => {
+    const r = modules['run-state'].newRun('PERKSETS01', 1, 1, { team: [] });
+    r.perks = ids;
+    return r;
+  },
+  members = id => Object.keys(PERKS).filter(k => (PERKS[k].tags || []).includes(id)),
+  setRows = run => (E.fxOfRun(run, PERKS) || []).filter(f => f.src.startsWith('set:'));
+
+test('PK-8 the 7 sets: their Perks as 5.7 lists them, need 3, each Perk in one set at most', () => {
+  assert.deepEqual(Object.keys(SETS), ['office', 'influencer', 'tech', 'lab', 'adventurer', 'weather', 'classics']);
+  assert.deepEqual(members('office'), [
+    'rubber_stamp',
+    'click_pen',
+    'punch_card',
+    'accordion_file',
+    'photocopier',
+    'time_card',
+  ]);
+  assert.deepEqual(members('lab'), ['petri_dish', 'gene_lure', 'stabilizer_gel', 'lab_goggles']);
+  assert.deepEqual(members('weather'), ['rubber_boots', 'umbrella', 'snow_globe', 'barometer']);
+  for (const id of ['influencer', 'tech', 'adventurer', 'classics']) assert.equal(members(id).length, 5, id);
+  for (const [id, T] of Object.entries(SETS)) {
+    assert.equal(T.need, 3, id);
+    assert.ok(T.name && T.title && T.d.length <= 160, id);
+  }
+  for (const k of Object.keys(PERKS)) assert.ok((PERKS[k].tags || []).filter(t => SETS[t]).length <= 1, k);
+});
+
+test('PK-8 a set’s bonus starts with its third Perk and stops when one goes: taken, let go, swapped', () => {
+  const [a, b, c, d] = members('classics'),
+    other = 'lucky_charm',
+    PK = modules.perks,
+    run = newRun(a, b);
+  assert.equal(E.fxSetHeld(run.perks, 'classics', PERKS), 2);
+  assert.deepEqual(E.fxSetsOn(run.perks, PERKS), []);
+  assert.deepEqual(setRows(run), [], 'two held: nothing');
+  assert.equal(PK.perkTake(run, c, PERKS, RULE), '');
+  assert.deepEqual(E.fxSetsOn(run.perks, PERKS), ['classics'], 'the third');
+  assert.deepEqual(
+    setRows(run).map(f => [f.src, f.kind]),
+    SETS.classics.fx.map(f => ['set:classics', f.kind])
+  );
+  assert.equal(PK.perkTake(run, d, PERKS, RULE), '');
+  assert.equal(setRows(run).length, SETS.classics.fx.length, 'a fourth adds nothing more');
+  /* let go at the cap (perkTake with a drop): swapped for a Perk of no set */
+  run.perks = [a, b, c, other, 'coupon_book', 'clinic_card'];
+  assert.equal(setRows(run).length, SETS.classics.fx.length);
+  assert.equal(PK.perkTake(run, 'bubble_wrap', PERKS, RULE, c), '');
+  assert.deepEqual([run.perks.includes(c), setRows(run).length], [false, 0], 'swapped out: stops');
+  /* swapped back in for a member: starts again */
+  assert.equal(PK.perkTake(run, d, PERKS, RULE, 'bubble_wrap'), '');
+  assert.equal(setRows(run).length, SETS.classics.fx.length);
+  /* the set's rows keep their own marks' places (once: battle) */
+  const inf = newRun(...members('influencer').slice(0, 3));
+  const crit = E.fxOfRun(inf, PERKS).find(f => f.src === 'set:influencer' && f.kind === 'crit');
+  assert.equal(E.fxKey(crit), 'set:influencer/1');
+});
+
+test('PK-8 copies: a Photocopier counts as itself (Office Supplies), never as the Perk it copies', () => {
+  const [a, b] = members('classics');
+  /* Photocopier just below Running Shoes copies it: still two Trainer Classics */
+  const run = newRun(a, b, 'photocopier');
+  assert.equal(E.fxCopyOf(run.perks, 2, PERKS), b);
+  assert.equal(E.fxSetHeld(run.perks, 'classics', PERKS), 2);
+  assert.equal(E.fxSetHeld(run.perks, 'office', PERKS), 1);
+  assert.deepEqual(E.fxSetsOn(run.perks, PERKS), []);
+  /* with two more Office Supplies the Photocopier makes the third */
+  run.perks.push('rubber_stamp', 'click_pen');
+  assert.deepEqual(E.fxSetsOn(run.perks, PERKS), ['office']);
+  /* the same Perk twice (never held so, but a list may say it) counts once */
+  assert.equal(E.fxSetHeld(['rubber_stamp', 'rubber_stamp', 'click_pen'], 'office', PERKS), 2);
+});
+
+test('PK-8 Non-Refundable Ticket: in no set; with it held a set’s Perk can’t be let go, so the bonus stays', () => {
+  const PK = modules.perks,
+    T = 'nonrefundable_ticket',
+    [a, b, c] = members('tech');
+  assert.equal(E.fxSetHeld([T], 'office', PERKS), 0);
+  const run = newRun(a, b, c, T, 'lucky_charm', 'coupon_book', 'clinic_card', 'bubble_wrap');
+  assert.equal(run.perks.length, PK.perkCap(run, RULE, PERKS));
+  assert.equal(PK.perkTake(run, 'umbrella', PERKS, RULE, a), 'noDrop');
+  assert.deepEqual(E.fxSetsOn(run.perks, PERKS), ['tech']);
+  /* a Photocopier below the Ticket copies its rules, not a set */
+  assert.deepEqual(E.fxSetsOn([T, 'photocopier'], PERKS), []);
+});
+
+test('PK-8 Office Supplies (Middle Management): a run shop’s Perk at half price', () => {
+  const PK = modules.perks,
+    [a, b, c] = members('office'),
+    base = PK.perkPrice(PERKS.lucky_charm, RULE);
+  assert.equal(PK.perkShopPrice(newRun(a, b), 'lucky_charm', PERKS, RULE), base);
+  assert.equal(PK.perkShopPrice(newRun(a, b, c), 'lucky_charm', PERKS, RULE), Math.round(base * 0.5));
+  assert.equal(E.fxRunPrice(newRun(a, b, c), PERKS, 'shop', 100), 100, 'the shop’s wares as they are');
+});
+
+test('PK-8 Influencer Kit (Verified): wins pay 25% more; the team’s first attack of a battle is critical, once', () => {
+  const ids = members('influencer')
+      .filter(k => k !== 'like_button' && k !== 'streak_tracker')
+      .slice(0, 3),
+    fx = E.fxOfRun(newRun(...ids), PERKS),
+    own = E.fxOfRun({ perks: ids }, { ...PERKS }).filter(f => !f.src.startsWith('set:')),
+    money = rows => E.fxMoney(rows, 1000);
+  assert.equal(money(own), 1000, 'these three pay nothing more themselves');
+  assert.equal(money(fx), 1250);
+  /* in battle: the first attack is critical, the second not */
+  const { B } = battle(null, null, fx);
+  const H = Object.keys(data.MOVES).find(id => {
+    const M = data.MOVES[id];
+    return M.p > 0 && M.c === 'H' && (!M.a || M.a >= 100) && !M.pr && !M.fx;
+  });
+  B.sides[1].team[0].hp = 99999;
+  B.perkState = {};
+  const rng = B.rng;
+  B.rng = () => 0.99;
+  try {
+    B.events.length = 0;
+    fn('useMove')(0, H, 1);
+    const first = JSON.stringify(B.events).includes('A critical hit!');
+    B.events.length = 0;
+    fn('useMove')(0, H, 1);
+    const second = JSON.stringify(B.events).includes('A critical hit!');
+    assert.deepEqual([first, second], [true, false]);
+  } finally {
+    B.rng = rng;
+  }
+});
+
+test('PK-8 Tech Gear (Power User): held items work 50% better in battle', () => {
+  const fx = E.fxOfRun(newRun(...members('tech').slice(0, 3)), PERKS);
+  assert.equal(E.fxHeldBoost(fx), 1.5);
+  assert.equal(battle('quick_laces', null, fx).B.sides[0].f[0].v.st.hus, 2);
+  const two = E.fxOfRun(newRun(...members('tech').slice(0, 2)), PERKS);
+  assert.equal(battle('quick_laces', null, two).B.sides[0].f[0].v.st.hus, 1, 'two held: as before');
+});
+
+test('PK-8 Lab Kit (Mad Science): Unstable Billies hit 20% harder and their cells never hurt them', () => {
+  const fx = E.fxOfRun(newRun(...members('lab').slice(0, 3)), PERKS),
+    { me } = unstableBattle(fx),
+    mx = fn('maxHp')(me);
+  const rows = E.fxAt(fx, fn('fxBattleCtx')(0), {}).filter(f => f.src === 'set:lab' && f.kind === 'damage');
+  assert.equal(rows.length, 1);
+  assert.equal(E.fxDamage(rows, { cat: 'H', type: 'None', deal: true, take: false }), 1.2);
+  me.hp = mx;
+  fn('endTurn')();
+  assert.equal(me.hp, mx, 'no HP lost (Stabilizer Gel alone halves it)');
+  battle(null, null, fx);
+  assert.equal(
+    E.fxAt(fx, fn('fxBattleCtx')(0), {}).filter(f => f.src === 'set:lab' && f.kind === 'damage').length,
+    0,
+    'a stable Billie: no boost'
+  );
+});
+
+test('PK-8 Adventurer’s Pack (Seasoned Adventurer): side areas show their Perk on the ground', () => {
+  const F = modules['route-finds'],
+    [a, b, c] = members('adventurer');
+  assert.equal(F.routeFindsPerk(newRun(a, b)), false);
+  assert.equal(F.routeFindsPerk(newRun(a, b, c)), true);
+});
+
+test('PK-8 Weather Kit (Weather Person): 15% harder in rain, storms, snow, fog and ash; not in clear or sun', () => {
+  const fx = E.fxOfRun(newRun(...members('weather').slice(0, 3)), PERKS),
+    at = w =>
+      E.fxDamage(
+        E.fxAt(fx, { weather: w }, {}).filter(f => f.src === 'set:weather'),
+        { cat: 'H', type: 'None', deal: true, take: false }
+      );
+  for (const w of ['rain', 'storm', 'snow', 'fog', 'ash']) assert.equal(at(w), 1.15, w);
+  for (const w of ['clear', 'sunny']) assert.equal(at(w), 1, w);
+});
+
+test('PK-8 Trainer Classics (Old School): 25% more XP, catching 10% easier', () => {
+  const rows = setRows(newRun(...members('classics').slice(0, 3)));
+  assert.equal(E.fxXp(rows, 100), 125);
+  assert.equal(E.fxCatch(rows).toFixed(2), '1.10');
+});
+
+test('PK-8 every Perk and every set at once: all 7 bonuses on, whole battles end, every number finite', () => {
+  const ids = Object.keys(PERKS);
+  assert.deepEqual(E.fxSetsOn(ids, PERKS), Object.keys(SETS));
+  const run = newRun(...ids),
+    fx = E.fxOfRun(run, PERKS);
+  assert.equal(fx.filter(f => f.src.startsWith('set:')).length, Object.values(SETS).flatMap(T => T.fx).length);
+  for (const f of E.fxAt(fx, {}, { run: {} }))
+    for (const k of ['mult', 'share', 'n', 'stages', 'add', 'chance'])
+      if (k in f) assert.ok(Number.isFinite(f[k]), `${f.src} ${k}`);
+  const play = seed => {
+    reseed(7);
+    const s = startedSave(starter(), 20);
+    s.team[0].held = 'brass_knuckles';
+    s.team.push(fn('makeBilly')(starter(), 20));
+    assert.ok(
+      fn('newBattle')('wild', [fn('makeBilly')(wildSpecies(), 20)], { fmt: 'single', seed, fx, perkState: {} })
+    );
+    const b = hooks.activeBattle,
+      out = [];
+    for (let t = 0; t < 200 && !b.over; t++) {
+      if ((b.needSwitch || []).length) {
+        const i = fn('benchCandidates')(0)[0];
+        if (i == null) break;
+        fn('doSwitch')(b.needSwitch.shift(), i);
+        continue;
+      }
+      const m = fn('fighter')(0),
+        mid = m.moves.find(id => data.MOVES[id] && data.MOVES[id].p > 0) || m.moves[0];
+      fn('runTurn')([{ who: 0, k: 'move', mid, tk: 1 }], b);
+      for (const side of b.sides)
+        for (const q of side.team) assert.ok(Number.isInteger(q.hp) && q.hp >= 0, `hp ${q.hp}`);
+      out.push(b.events.length);
+    }
+    assert.ok(b.over || (b.needSwitch || []).length, `${seed}: over within 200 turns`);
+    return [b.over, ...out].join();
+  };
+  for (const seed of ['sets-a', 'sets-b']) assert.equal(play(seed), play(seed), seed);
+  assert.ok(Number.isFinite(modules.perks.perkShopPrice(run, 'lucky_charm', PERKS, RULE)));
+  assert.equal(modules['route-finds'].routeFindsPerk(run), true);
+});

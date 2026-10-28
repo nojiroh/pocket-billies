@@ -69,7 +69,7 @@
 /** @typedef {FxRow & { src: string, row?: number }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { PERKS, RELATIONS, RESIDENTS, billyGeneFx, provide } from '../hooks.js';
+import { PERKS, PERK_SETS, RELATIONS, RESIDENTS, billyGeneFx, provide } from '../hooks.js';
 import { relFxRows } from './relations.js';
 import { modFxRows } from './modifiers.js';
 import { resFxRows } from './residents.js';
@@ -158,6 +158,9 @@ expose({
   fxRunRule: [() => fxRunRule],
   // @ts-expect-error -- replaced on purpose
   fxSalvage: [() => fxSalvage, v => (fxSalvage = v)],
+  fxSetHeld: [() => fxSetHeld],
+  fxSetRows: [() => fxSetRows],
+  fxSetsOn: [() => fxSetsOn],
   fxSources: [() => fxSources],
   // @ts-expect-error -- replaced on purpose
   fxSpend: [() => fxSpend, v => (fxSpend = v)],
@@ -248,8 +251,24 @@ export function fxCopyOf(ids, i, perks) {
 export const fxRows = (ids, perks) =>
   ids.flatMap((id, i) => fxPerkRows(ids, i, perks).map(f => /** @type {Fx} */ ({ ...f, src: id })));
 
-/** the effect rows of a run's Perks, its events' boons, its Expedition and challenges and (RL-S2) the hub folk's level
- * bonuses it took off with (null in the hub, or with
+/** PK-8: how many of set `id`'s Perks are among those held: the ids tagged with it (perks.json `tags`), each once. A
+ * Photocopier counts as the Perk it is (an Office Supplies one), never as the Perk it copies
+ * @param {string[]} ids @param {string} id @param {Record<string, Perk>} perks */
+export const fxSetHeld = (ids, id, perks) =>
+  new Set(ids.filter(k => perks[k] && (perks[k].tags || []).includes(id))).size;
+/** PK-8: the sets whose bonus holds: `need` of their Perks held (fxSetHeld), in perkSets.json's order
+ * @param {string[]} ids @param {Record<string, Perk>} perks
+ * @param {Record<string, import('../../types/game-data').PerkSet>} [sets] @returns {string[]} */
+export const fxSetsOn = (ids, perks, sets = PERK_SETS) =>
+  Object.keys(sets || {}).filter(id => fxSetHeld(ids, id, perks) >= sets[id].need);
+/** PK-8: the rows of the sets whose bonus holds, each tagged `set:<id>` @param {string[]} ids
+ * @param {Record<string, Perk>} perks @param {Record<string, import('../../types/game-data').PerkSet>} [sets]
+ * @returns {Fx[]} */
+export const fxSetRows = (ids, perks, sets = PERK_SETS) =>
+  fxSetsOn(ids, perks, sets).flatMap(id => sets[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: 'set:' + id })));
+
+/** the effect rows of a run's Perks (PK-8: and of the sets they make, fxSetRows), its events' boons, its Expedition and
+ * challenges and (RL-S2) the hub folk's level bonuses it took off with (null in the hub, or with
  * none) @param {{ perks: string[], expedition?: number, mods?: string[] } | null | undefined} run
  * @param {Record<string, Perk>} perks @returns {Fx[] | null} */
 export const fxOfRun = (run, perks) => {
@@ -257,6 +276,8 @@ export const fxOfRun = (run, perks) => {
   const rows = run
     ? [
         ...fxRows(run.perks || [], perks),
+        /* PK-8: the bonuses of the Perk sets whose `need` is held (perkSets.json), after the Perks' own rows */
+        ...fxSetRows(run.perks || [], perks),
         ...encBoonRows(/** @type {any} */ (run)),
         .../** @type {Fx[]} */ (modFxRows(run)),
         /* RL-S2: the hub folk's level bonuses (logic/relations.js) */

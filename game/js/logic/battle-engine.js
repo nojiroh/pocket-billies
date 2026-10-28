@@ -34,6 +34,7 @@ import {
   MOVES,
   PASSIVE,
   PERKS,
+  PERK_SETS,
   PYRAMIDS,
   RESIDENTS,
   RULES,
@@ -1599,7 +1600,8 @@ export function startTrainer(id, o = {}) {
   battleHost().open();
 }
 /** PK-1: what a row's source is called in battle (fxOfRun's src): a Perk's name, an event's boon by its event's
- * title, the fountain's wish, the Expedition, a challenge's name, a hub person's or a resident's name (else the id)
+ * title, the fountain's wish, the Expedition, a challenge's name, a hub person's or a resident's name, PK-8: a Perk
+ * set's title (else the id)
  * @param {string} src */
 export function fxSrcName(src) {
   if (PERKS[src]) return PERKS[src].name;
@@ -1613,6 +1615,8 @@ export function fxSrcName(src) {
     return E && E.title ? E.title : cap(id.replace(/_/g, ' '));
   }
   if (kind === 'rel') return cap(id);
+  /* PK-8: a Perk set's bonus, by its title ("Middle Management") */
+  if (kind === 'set') return (PERK_SETS && PERK_SETS[id] && PERK_SETS[id].title) || cap(id);
   if (kind === 'res') return (RESIDENTS && RESIDENTS[id] && RESIDENTS[id].name) || cap(id);
   if (src === 'expedition') return 'The Expedition';
   const C = MODIFIERS && MODIFIERS.challenges && MODIFIERS.challenges[src];

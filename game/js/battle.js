@@ -41,6 +41,7 @@ import {
   PASSIVE,
   PASSIVE_INFO,
   PERKS,
+  PERK_SETS,
   PYRAMIDS,
   STATUS_NAMES,
   STAT_NAMES,
@@ -1730,6 +1731,8 @@ function blipLook(b) {
     pct = b.mult && b.mult !== 1 ? ` ${b.mult > 1 ? '+' : '−'}${Math.round(Math.abs(b.mult - 1) * 100)}%` : '',
     o = { stat: b.stat || '', stages: b.stat ? b.stages || 1 : 0 };
   if (kind === 'perk') return { ...o, group: 'kind', mark: 'perk', text: ((PERKS[id] || {}).name || id) + pct };
+  /* PK-8: a Perk set's bonus, by its title */
+  if (kind === 'set') return { ...o, group: 'kind', mark: 'perk', text: ((PERK_SETS[id] || {}).title || id) + pct };
   if (kind === 'held') return { ...o, group: 'kind', mark: 'held', text: ((ITEMS[id] || {}).n || id) + pct };
   if (kind === 'gene')
     return { ...o, group: 'family', mark: 'bio', text: (((GENES.traits || {})[id] || {}).name || id) + pct };

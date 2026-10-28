@@ -537,6 +537,8 @@ debugLog.state = () => {
             relics: (run.perks || []).slice(),
             /* PK-1: the Perks' counters, growth and once marks (logic/effects.js fxStateLog: numbers only) */
             relicState: GAME.fxStateLog ? GAME.fxStateLog(run) : null,
+            /* PK-8: the Perk sets whose bonus holds (perkSets.json ids) */
+            relicSets: GAME.fxSetsOn && GAME.PERKS ? GAME.fxSetsOn(run.perks || [], GAME.PERKS) : [],
             offer: run.offer ? run.offer.length : 0,
             offers: run.offerN || 0,
             /* RL-12b: events (ids played, the one playing, draws so far), the boons on, reward picks made and the
