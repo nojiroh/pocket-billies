@@ -42,6 +42,7 @@ import {
   ambienceRandom,
   ambienceStep,
 } from './logic/ambience-sound.js';
+import { musicLayerWalk, musicLayerWeather } from './logic/music-layers.js';
 import { soundscapePreview } from './logic/soundscape.js';
 import { natureBetween, natureBirdWait, natureBirds, natureStep, natureStepSurface } from './logic/nature-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
@@ -109,6 +110,8 @@ expose({
   music: [() => music, v => (music = v)],
   musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
+  musicLayersNow: [() => musicLayersNow, v => (musicLayersNow = v)],
+  musicLayersPrepare: [() => musicLayersPrepare, v => (musicLayersPrepare = v)],
   musicMapCut: [() => musicMapCut, v => (musicMapCut = v)],
   musicParts: [() => musicParts, v => (musicParts = v)],
   musicPrepare: [() => musicPrepare, v => (musicPrepare = v)],
@@ -225,7 +228,11 @@ function initSound() {
       /* the Sound test's own choice (soundEngine.testGb) while it plays a song */
       gb: () => (soundEngine.testGb != null ? soundEngine.testGb : !!soundPreferences().gbSounds),
       reverb: () => soundPreferences().aim !== 'off',
-      levels: () => soundEngine.L,
+      /* SND-13: the Sound test's layer switches while it plays a song (soundEngine.testLayers) */
+      levels: () =>
+        soundEngine.testLayers && soundEngine.test
+          ? { ...soundEngine.L, layers: soundEngine.testLayers }
+          : soundEngine.L,
       fx: soundEngine.fx,
       /* SND-9: the beds' noise counts toward the baked buffers' budget (the tracker's bank) */
       memory: () => (ambience.noise ? (ambience.noise.pink.length + ambience.noise.brown.length) * 4 : 0),
@@ -420,7 +427,7 @@ function musicPrepare(st, name) {
     /* the night version once evening comes (by day its zones would only crowd the bank) */
     want = new Set([name, st.night > 0 ? songVariant(base, { ...st, night: 1 }, SONGS, null, MUSIC.run) : null]);
   if (wild) want.add(songVariant(songFor(wild, MUSIC.where, SONGS), wild, SONGS, null, MUSIC.run));
-  for (const n of want) if (n) T.prepare(n);
+  for (const n of want) if (n) T.prepare(n).then(ok => ok && musicLayersPrepare(n));
   /* SND-17: the jingles this place can play: a run's stingers in its places, the title's motif in the hub (a run
      starts there) */
   jinglesPrepare(st.nodeType ? MUSIC_JINGLES_RUN : MUSIC_JINGLES_HUB);
@@ -1304,26 +1311,56 @@ export function updateAmbience() {
   }
   ambienceApply(T, pans, t);
   soundscapeHere(sc, E, t);
-  /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
+  /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain. SND-13: a
+     song playing its ensemble hears its layers instead (musicLayersNow): the walking beat, the weather, night */
   const night = E ? (E.raw || E).night : 0,
     moving = sc && walkView.pl && walkView.pl.walk;
   soundEngine.L = {
     drums: (moving || (typeof activeBattle !== 'undefined' && activeBattle) ? 1 : 0.45) * (1 - night * 0.4),
     pad: sc && !sc.indoor ? night : 0,
     night: sc && !sc.indoor ? night : 0,
+    layers: musicLayersNow(sc, E, !!moving, sc && !sc.indoor ? night : 0),
   };
+  const ens = !!(soundEngine.song && soundEngine.song.ensOn);
+  /* SND-13: on an ensemble the walking beat and the night's dims replace the drums' bus level (gb keeps it) */
   if (soundEngine.song && soundEngine.song.drums)
-    soundEngine.song.drums.gain.setTargetAtTime(soundEngine.L.drums, t, 0.6);
+    soundEngine.song.drums.gain.setTargetAtTime(ens ? 1 : soundEngine.L.drums, t, 0.6);
   if (soundEngine.musLP) {
     const cut = musicMapCut();
     soundEngine.musLP.frequency.setTargetAtTime(
-      /* SND-8b: the rain's muffle softened from 2.2 to 4 kHz (the owner's pick, 2026-10-27; SND-13's rain layer
-         replaces it) */
-      cut != null ? cut : E && sc && !sc.indoor && E.rain > 0.3 ? 4000 : 20000,
+      /* SND-8b: the rain's muffle softened from 2.2 to 4 kHz (the owner's pick, 2026-10-27). SND-13: an ensemble has
+         its rain layer instead; gb keeps the muffle */
+      cut != null ? cut : !ens && E && sc && !sc.indoor && E.rain > 0.3 ? 4000 : 20000,
       t,
       0.8
     );
   }
+}
+/* SND-13: the layer levels the music hears (logic/music-layers.js; the tracker moves an ensemble's layered parts on
+   their beat or bar line): walk (as you walk, a moment after you stop), the weather and night where you are (outdoors;
+   the environment's rain, snow and storm, as the rain's muffle reads them), build full and no peak (a battle's
+   intensity and the run's arc set them, below) */
+function musicLayersNow(sc, E, moving, night) {
+  const now = performance.now();
+  if (moving || soundEngine.walkAt == null) soundEngine.walkAt = now;
+  const W = musicLayerWeather(E, !sc || !!sc.indoor);
+  return {
+    walk: sc ? musicLayerWalk(moving, (now - soundEngine.walkAt) / 1000) : 0,
+    rain: W.rain,
+    snow: W.snow,
+    storm: W.storm,
+    night: Math.round(night * 50) / 50,
+    build: 1,
+    peak: 0,
+  };
+}
+/* SND-13: the walking beat, the weather and night a song's ensemble has layers for, baked ahead on arrival (the rest
+   bake when they first come) */
+function musicLayersPrepare(name) {
+  const T = soundEngine.tracker,
+    lv = soundEngine.L && soundEngine.L.layers;
+  if (!T || !T.layersPrepare) return;
+  T.layersPrepare(name, ['walk', ...['rain', 'snow', 'storm', 'night', 'busker'].filter(k => lv && lv[k] > 0)]);
 }
 setInterval(() => {
   try {
@@ -1397,6 +1434,9 @@ function musicEnsembleLine() {
     prepared: soundEngine.prepared || null,
     /* SND-17: the last jingle: its id and what played it (its ensemble, or gb: GB Sounds, none, its notes baking) */
     jingle: soundEngine.lastJingle || null,
+    /* SND-13: the layer levels the music hears, and each layered part's gain now (its layer, baked or not) */
+    layers: soundEngine.L && soundEngine.L.layers ? soundEngine.L.layers : null,
+    parts: T && T.layerStats ? T.layerStats() : null,
   };
 }
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
