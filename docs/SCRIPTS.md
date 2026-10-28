@@ -74,7 +74,7 @@ a style in the middle of a line. A choice's option may use `[b]` only. Brackets 
 
 Since DL-1 every surface shows the line's plain text (the tags taken out). Since DL-2 the dialogue box draws the
 effects: `[b]` in Oxanium 700 with a small pop, `[big]` in the voice font, wave, shake and the colours
-(game/css/talk-text.css). The face, emote, stamp and cut tags are read but act from DL-4 and DL-5
+(game/css/talk-text.css). The face, emote and cut tags are read but act from DL-4 and DL-5
 (docs/phases/dialogue-track.md). The battle box, the walk speech, event intros and the opening's hot takes stay plain
 until DL-8.
 
@@ -84,6 +84,14 @@ letters' time after `, ; :` and 8 after `. ! ?` when a space follows (none insid
 end); an ellipsis (`…` or `...`) types three times slower. So write `[p]` only for a beat the punctuation doesn't
 give. A tap shows the rest of the line at once, pauses included. The voice follows the style: a shout blips higher
 and louder, a whisper softer, a thought not at all.
+
+Since DL-3 each speaker has a bubble of their own (game/data/talkSkins.json, game/css/talk-skins.css): Professor
+Chosen gold, Kappi a soft green one, Blake a slanted pop-art one, the Bureau's agents form paper with a form number
+and a typewriter voice, townsfolk the cream bubble in a colour each, and lines said as "me" (the field moves'
+prompts) a quiet note with no tail. A line's style changes the shape: `[shout]` a jagged burst with bold letters and a
+squash as it lands, `[whisper]` a dashed edge and fainter letters, `[think]` a cloud with a trail of dots. Each line
+tilts its bubble a little its own way (the letters stay level). `[stamp=approved]` (or denied, pending, filed, void)
+stamps the word on a Bureau bubble when the letters reach it; on anyone else's it does nothing yet.
 
 ## Blocks
 

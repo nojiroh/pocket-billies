@@ -372,6 +372,23 @@ skill), its HANDOFF entry, and the owner's phone check.
   but act in DL-4/DL-5.
 - **DL-3 Bubbles.** Pop-in from the side, the grow spring, the tilt, shout, whisper and think, the skins and the
   stamp, the dials. Tests: ui-theme, the skins' schema and data, springEase. On the phone: every character's bubble.
+  **Done in DL-3** (2026-10-28, `track/dialogue`): the owner's answers to Ask me before 2: **the mockup's skins as
+  they are**, and the player's lines (every `talkLine('me', …)` is a field move's prompt or result; no story line is
+  the player's) wear a **narration** skin: a quiet tail-less note that never tilts; the neon "you" skin stays in
+  talkSkins.json for when the player has lines. Built: `springEase`/`springAt`/`springMs` in logic/motion.js (a damped
+  spring as `linear()`); the `jag` kind (seeded, 3 held variants `--clip-bubbleShout-0..2`, its top spike the tail)
+  and the families `bubbleSoft` (Kappi), `bubbleNote` (narration), `bubbleShout`, `bubbleThink` with their Studio
+  labels and spike dials; game/data/talkSkins.json + schema + `dataTalkSkins`; logic/talk-skins.js (`talkSkinOf`:
+  the caller's `o.skin`, the speaker, a run trainer's class, the default; `talkSeed`, `talkTilt`, `talkVariant`,
+  `talkAccentHue`); game/css/talk-skins.css (each skin sets only `--skin-*`; dialogue.css reads them); the bubble's
+  dials `bubbleResponse`, `bubbleDamping`, `bubblePop`, `bubbleTilt`, `bubbleIdle` (uiTheme.json motion, written as
+  `--bubble-*`, tokens.css fallbacks, a test keeps them equal); a `--z-under` layer token for the thick edges.
+  Corrections to this file: Blake's speaker id is `chad` (story.json speakers), not `blake`; `UI_FAMILY_LABELS` is in
+  logic/ui-dials.js; the Bureau's agents do talk through `talkLine` (banter `bureau_*` lines, played by
+  story-stage.js with the trainer, whose class now picks the skin). Choices made: the grow scales the layers from the
+  bottom edge (the box is anchored there), not from the tail; the tilt and slant are a `transform` on the layers (the
+  idle loops own `translate`, `rotate`, `scale`); Kappi's bubble is rounded, not a true leaf shape. Pictures:
+  tools/look-talk.py (every skin and shape at 390×844) and the gallery's new `talk-skins` section.
 - **DL-4 The stack.** Sides, links, interruptions, the "…" bubble, choices, the Log, the height budget, the gallery.
   Tests: talk-stack; check-fast and the quick check (element ceilings). On the phone: three bubbles at most; the
   speaker stays in view; a choice in a stack.
@@ -390,7 +407,8 @@ Tags `dl-N-done` are not asked for per session (CLAUDE.md); the track gets `dial
 ## Ask me before
 1. Bold: add Oxanium 700 (one small woff2), or show stressed words in the voice font. **Answered 2026-10-28 (DL-2):
    Oxanium 700.**
-2. Each skin's final look, after the mockup (DL-0) and again on the phone (DL-3).
+2. Each skin's final look, after the mockup (DL-0) and again on the phone (DL-3). **Answered 2026-10-28 (DL-3): the
+   mockup's skins as they are; the player's lines wear a narration skin.** The phone check is still the owner's.
 3. The lines in DL-7, and any change to the approved opening text.
 4. Whether the "…" bubble and the stamp also show outside Kappi and the Bureau.
 
