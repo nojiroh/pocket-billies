@@ -106,7 +106,10 @@ the plan written here, recommended options taken and listed below. Draft PR #295
   run-map-checks timing test (1016 ms; main has since raised that budget to 1.5 s). Main merged again at 897dcd48
   (#293, #303: Characters, cloud tooling, Sound; conflicts as the sound track's recipe said, plus the GPU tags and
   walk/sprites.js); lint, typecheck, check:modules, format:check, check:data and unit tests (1742 of 1743, the same
-  timing test under load) there.
+  timing test under load) there. CI at 89417b01 (run 40673477151): lint and rules green; smoke cancelled at its
+  30-minute limit during the Studio checks, after main's reds (a run's seam, the Studio's world map look and Camera
+  section) and Tall ground ("w:run_0_7i5p* isn't drawing": the run world the failed seam step left behind; alone it
+  fails the same way on main); every battle step that ran passed.
 - Next: VFX-10 (effect art), started by the planning session. It adds the strips to battle-fx.js's atlas (pack them
   after the icons in `battleFxAtlasSheet`) and the ramps; the families stay `legacy_*` until VFX-11.
 
