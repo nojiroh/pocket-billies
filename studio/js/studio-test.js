@@ -2,7 +2,7 @@
 /* ================= STUDIO SELF-TEST (studio track ST-T) =================
    Check → Run the Studio test, or studio/?selftest. A test of the Studio itself, not the game: it opens
    every section (both panes), makes an edit in each that has a field and undoes it, opens the tools, opens everything
-   a second time, and times all of it, for the sessions that make the Studio faster (docs/phases/studio-self-test.md).
+   a second time, and times all of it, for the sessions that make the Studio faster (docs/STUDIO.md (Self-test)).
    About 90 seconds, on a desktop browser or an iPad.
    It loads only when it starts (studio-test-start.js), and reaches the Studio only through what that hands it (G),
    so its only import is the report's rules (game/js/logic/studio-test-report.js).

@@ -4,7 +4,7 @@
    The Studio self-test's rules, as numbers in and words out: a set of times as p50/p95/worst, the "Look here first"
    list made from a report, the change from an earlier run, a resource's address cut down to its file path, and the
    check that a report holds no token and no planted name. Logic only: no DOM, runs in Node
-   (tools/test/studio-test-report.test.mjs). studio/js/studio-test.js makes the report; docs/phases/studio-self-test.md
+   (tools/test/studio-test-report.test.mjs). studio/js/studio-test.js makes the report; docs/STUDIO.md (Self-test)
    says what is in it. On no page: the test imports it when it starts. */
 
 /** the report format: a change to its shape adds one, and the comparison only compares the same format (2: the

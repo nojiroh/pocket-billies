@@ -2,7 +2,7 @@
 /* ================= STUDIO SELF-TEST: the start (studio track ST-T) =================
    Check → Run the Studio test, and studio/?selftest (it starts once the data has loaded). The test itself
    (studio-test.js) loads only now, and gets what it reads from here: the Studio's own functions and state, and of
-   the GitHub sign-in only whether it is on (never the token or the name). docs/phases/studio-self-test.md. */
+   the GitHub sign-in only whether it is on (never the token or the name). docs/STUDIO.md (Self-test). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $ } from '../../game/js/util.js';
