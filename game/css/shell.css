@@ -556,7 +556,15 @@ pb-nav-bar#nav[hidden] {
    inherited), so what sits above the bar (the Actions button) glides with it instead of jumping */
 :root {
   --nav-kr: 0;
-  transition: --nav-kr calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
+  /* the Actions bar open (walk-tab.css .walk-tray): what sits above it is lifted by its height, eased the same way */
+  --tray-k: 0;
+  --tray-lift: calc(68px * var(--tray-k));
+  transition:
+    --nav-kr calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+    --tray-k calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
+}
+:root.tray-open {
+  --tray-k: 1;
 }
 :root:has(pb-nav-bar#nav:not([hidden])) {
   --nav-bar-w: min(100vw - 16px, 480px);

@@ -3,16 +3,17 @@
 /* UI-5: the Walk tab (the place card over the scene and its sheet: encounters, the clinic, eggs, your buddy), moved from ui.js as it was; its buttons in walkTabAction, called from ui.js's click switch at the same place */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, render, roomState } from './hooks.js';
+import { provide, render, roomState, walkPick } from './hooks.js';
 import { $, $$ } from './util.js';
 import { LOCATIONS, NODE_TYPES, RULES, SHOPS, locationSubtitle, trainersAt } from './game-data.js';
-import { encounterStock, encountersHere, formatNumber, healAll, plural } from './logic/rules.js';
+import { encountersHere, formatNumber, healAll, plural } from './logic/rules.js';
+import { faceToward } from './logic/person-view.js';
 import { modHas } from './logic/modifiers.js';
 import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { artURL, moneyHTML, uiIconHTML } from './art.js';
-import { mapById, walkView } from './walk-view.js';
+import { moneyHTML, uiIconHTML } from './art.js';
+import { approachPoint, mapById, walkTo, walkView } from './walk-view.js';
 import { WEATHER_NAMES, environment, environmentHint, environmentIcon, environmentLabel } from './environment.js';
 import { runClinicEach, runGiveUp, runStartSheet } from './run.js';
 import { residentCardHTML } from './lab-board.js';
@@ -24,14 +25,12 @@ expose({
   PLACE_TITLE_MS: [() => PLACE_TITLE_MS],
   WALK_HINT_MS: [() => WALK_HINT_MS],
   WEATHER_ICONS: [() => WEATHER_ICONS],
-  boardNote: [() => boardNote, v => (boardNote = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
-  encounterCardHTML: [() => encounterCardHTML, v => (encounterCardHTML = v)],
-  encountersHTML: [() => encountersHTML, v => (encountersHTML = v)],
+  dataAttrs: [() => dataAttrs],
+  encountersNearest: [() => encountersNearest, v => (encountersNearest = v)],
   environmentLine: [() => environmentLine, v => (environmentLine = v)],
-  hereHTML: [() => hereHTML, v => (hereHTML = v)],
-  hubHTML: [() => hubHTML, v => (hubHTML = v)],
   locationCardHTML: [() => locationCardHTML, v => (locationCardHTML = v)],
+  nodeActionItems: [() => nodeActionItems, v => (nodeActionItems = v)],
   nodeActions: [() => nodeActions, v => ((nodeActions = v), provide({ nodeActions }))],
   nowMs: [() => nowMs],
   placeCardState: [() => placeCardState, v => (placeCardState = v)],
@@ -40,31 +39,30 @@ expose({
   placeTitleFold: [() => placeTitleFold, v => (placeTitleFold = v)],
   renderWalk: [() => renderWalk, v => (renderWalk = v)],
   roomHero: [() => roomHero, v => (roomHero = v)],
-  runStatusHTML: [() => runStatusHTML, v => (runStatusHTML = v)],
   tripButtons: [() => tripButtons, v => ((tripButtons = v), provide({ tripButtons }))],
   tripDest: [() => tripDest],
   tripStatus: [() => tripStatus, v => ((tripStatus = v), provide({ tripStatus }))],
   walkAfterRender: [() => walkAfterRender, v => (walkAfterRender = v)],
+  walkDayToast: [() => walkDayToast, v => (walkDayToast = v)],
   walkHero: [() => walkHero, v => (walkHero = v)],
   walkHintHTML: [() => walkHintHTML, v => (walkHintHTML = v)],
   walkMarkTo: [() => walkMarkTo, v => (walkMarkTo = v)],
   walkNewKey: [() => walkNewKey],
+  walkRunStatus: [() => walkRunStatus, v => (walkRunStatus = v)],
   walkSheetClose: [() => walkSheetClose, v => (walkSheetClose = v)],
   walkSheetHTML: [() => walkSheetHTML, v => (walkSheetHTML = v)],
   walkSheetOpen: [() => walkSheetOpen, v => (walkSheetOpen = v)],
   walkSheetSync: [() => walkSheetSync, v => (walkSheetSync = v)],
+  walkSheetToggle: [() => walkSheetToggle, v => (walkSheetToggle = v)],
   walkSheetWanted: [() => walkSheetWanted],
   walkTabAction: [() => walkTabAction, v => (walkTabAction = v)],
   walkTipOnce: [() => walkTipOnce, v => (walkTipOnce = v)],
+  walkToEncounter: [() => walkToEncounter, v => (walkToEncounter = v)],
+  walkTrayItems: [() => walkTrayItems, v => (walkTrayItems = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ nodeActions, tripButtons, tripStatus });
 /* to-module: end */
-function encounterCardHTML(q) {
-  const nu = !uiState.seenEnc.has(q.id);
-  uiState.seenEnc.add(q.id);
-  return `<button class="enc px k-card hidden-enc${nu ? ' enc-new' : ''}" data-a="enc" data-id="${q.id}" aria-label="Unknown Billie, level ${q.lvl}"><span class="no tnum">No. ${q.no}</span><span class="denom tnum">Lv ${q.lvl}</span><span class="stage-glow"></span><span class="enc-hide"><img class="pxi" src="${artURL('scene/props/tallgrass.png')}" alt=""><i>?</i></span><b>Unknown</b></button>`;
-}
 const tripDest = () => (saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null);
 provide({ tripDest }); /* to-module */
 /* one line about travel: where you're headed (the gold arrows guide you), or where you are */
@@ -126,37 +124,77 @@ export function clinicHeal(say) {
     ],
   });
 }
-function nodeActions(i) {
+/** what a place offers, one item a button (the map's card: nodeActions; the Actions bar: walkTrayItems): a shop, the
+    clinic, its trainers or a run's mini-boss. `long` is the map card's words, `label` the bar's short ones */
+function nodeActionItems(i) {
   const n = LOCATIONS[i],
-    node = saveData.trip.node;
-  let x = '';
-  if (i !== node) return '';
+    node = saveData.trip.node,
+    it = [];
+  if (i !== node) return it;
   if (n.shop && SHOPS[n.shop])
-    x += `<button class="pb small gold" data-a="shop" data-s="${n.shop}">${uiIconHTML('mint', 16)} ${escapeHtml(SHOPS[n.shop].name)}</button>`;
+    it.push({
+      a: 'shop',
+      d: { s: n.shop },
+      icon: 'shop',
+      tone: 'gold',
+      label: 'Shop',
+      long: `${uiIconHTML('mint', 16)} ${escapeHtml(SHOPS[n.shop].name)}`,
+    });
   if (n.boutique && SHOPS[n.boutique])
-    x += `<button class="pb small" data-a="shop" data-s="${n.boutique}">${uiIconHTML('profile', 16)} ${escapeHtml(SHOPS[n.boutique].name)}</button>`;
+    it.push({
+      a: 'shop',
+      d: { s: n.boutique },
+      icon: 'profile',
+      tone: '',
+      label: 'Clothes',
+      long: `${uiIconHTML('profile', 16)} ${escapeHtml(SHOPS[n.boutique].name)}`,
+    });
   /* RL-8: on a run the clinic charges for each hurt Billie and there is no rest stop on the road */
   if (saveData.run) {
     if (n.town) {
       const { hurt, cost } = runHealCost(saveData.team, runClinicEach());
-      x += hurt
-        ? `<button class="pb small" data-a="clinic">Clinic: heal ${plural(hurt, 'Billie')} for ${moneyHTML(cost)}</button>`
-        : '<button class="pb small quiet" data-a="clinic">Clinic: everyone is fine</button>';
+      it.push(
+        hurt
+          ? {
+              a: 'clinic',
+              d: {},
+              icon: 'heart',
+              tone: '',
+              label: `Heal ×${hurt}`,
+              long: `Clinic: heal ${plural(hurt, 'Billie')} for ${moneyHTML(cost)}`,
+            }
+          : { a: 'clinic', d: {}, icon: 'heart', tone: 'quiet', label: 'Clinic', long: 'Clinic: everyone is fine' }
+      );
     }
-  } else if (n.town) x += '<button class="pb small" data-a="clinic">Rest at the clinic, free</button>';
+  } else if (n.town)
+    it.push({ a: 'clinic', d: {}, icon: 'heart', tone: '', label: 'Clinic', long: 'Rest at the clinic, free' });
   trainersAt(i).forEach(T => {
     const done = saveData.flags[T.id];
     if (T.blocks && done && !T.seat) return;
-    x += `<button class="pb small ${done ? 'quiet' : 'red'}" data-a="trainer" data-t="${T.id}">${done ? 'Rematch' : T.seat ? 'Challenge' : 'Battle'} ${escapeHtml(T.name)}</button>`;
+    const verb = done ? 'Rematch' : T.seat ? 'Challenge' : 'Battle';
+    it.push({
+      a: 'trainer',
+      d: { t: T.id },
+      icon: 'fight',
+      tone: done ? 'quiet' : 'red',
+      label: escapeHtml(T.name),
+      aria: `${verb} ${T.name}`,
+      long: `${verb} ${escapeHtml(T.name)}`,
+    });
   });
-  return `<div class="racts">${x}</div>`;
+  return it;
 }
-function boardNote(i) {
-  if (saveData.trip.node !== i) return '';
-  return trainersAt(i)
-    .filter(T => T.hint && !saveData.flags[T.id])
-    .map(T => `<p class="note">${escapeHtml(T.hint)}</p>`)
+const dataAttrs = d =>
+  Object.entries(d || {})
+    .map(([k, v]) => ` data-${k}="${escapeHtml(String(v))}"`)
     .join('');
+function nodeActions(i) {
+  const x = nodeActionItems(i)
+    .map(
+      o => `<button class="pb small${o.tone ? ' ' + o.tone : ''}" data-a="${o.a}"${dataAttrs(o.d)}>${o.long}</button>`
+    )
+    .join('');
+  return `<div class="racts">${x}</div>`;
 }
 function roomHero() {
   const I = uiState.inside,
@@ -270,111 +308,171 @@ function walkHero() {
     q = encountersHere();
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine(), '')}
  <div class="wh-foot">${walkHintHTML(q.length)}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass k-btn${walkNewKey() !== uiState.walkSeen ? ' new' : ''}" data-a="walkdown" aria-label="Show actions">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass k-btn${uiState.walkSheet ? ' open' : walkNewKey() !== uiState.walkSeen ? ' new' : ''}" data-a="walkdown" aria-expanded="${!!uiState.walkSheet}" aria-label="${uiState.walkSheet ? 'Hide actions' : 'Show actions'}">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 export function renderWalk() {
   return walkHero();
 }
-/* the Actions sheet: a <pb-sheet> of its own on the page (ui-kit.js), opened only by the Actions button. It used to be
-   part of the page under the scene, so any scroll (a mouse wheel, a trackpad) slid it into view. Its content is made
-   again on every render while it is open; leaving the world (another tab, a battle) closes it */
-function walkSheetHTML() {
-  return `${runStatusHTML()}${hubHTML()}${hereHTML()}${encountersHTML()}${
-    saveData.run
-      ? `<button class="pb gold wide ws-move" data-a="tab" data-t="map">${uiIconHTML('map', 16)} Open the map to move on</button>`
-      : ''
-  }`;
-}
-/* the hub's buildings the sheet can point you to (a marker in the world: walkMarkTo), by their act */
+/* the Actions bar (the owner, 2026-10-28: "a bar on top of the navbar with some quick little icons with text"): one row
+   of small buttons right over the bottom bar, opened by the Actions button. It used to be a sheet over half the
+   screen. Its element stays on the page (so it slides in and out once); its buttons are made again on every render
+   while it is open; leaving the world (another tab, a battle) closes it */
+/* the hub's buildings the bar can point you to (a marker in the world: walkMarkTo), by their act */
 const HUB_MARKS = [
-  ['ranch', 'Ranch', 'Train and breed your Billies'],
-  ['lab', 'Chosen’s lab', 'Talk to the professor'],
-  ['genebank', 'Gene Bank', 'Splice Genes onto your Billies'],
-  ['workshop', 'Workshop', 'Fit bot parts on your Billies'],
+  ['ranch', 'Ranch', 'leaf'],
+  ['lab', 'Lab', 'spark'],
+  ['genebank', 'Gene Bank', 'drop'],
+  ['workshop', 'Workshop', 'gear'],
 ];
-/** in the hub: start a run (the mast's sheet, opened here), and the ranch and the lab, marked in the world to walk to */
-function hubHTML() {
-  if (saveData.run) return '';
-  const props = (walkView.sc && walkView.sc.props) || [],
-    can = saveData.team.length + saveData.box.length > 0,
-    marks = HUB_MARKS.filter(([act]) => props.some(p => p.act === act))
-      .map(
-        ([act, name, what]) =>
-          `<button class="pb ws-go" data-a="walkmark" data-k="${act}">${uiIconHTML('walk', 16)}<span><b>${escapeHtml(name)}</b><small>${escapeHtml(what)} · show me the way</small></span></button>`
-      )
-      .join('');
-  return `<section class="ws-hub"><button class="pb gold wide ws-move" data-a="walkrun"${can ? '' : ' disabled'}>${uiIconHTML('map', 16)} Start a run</button>${can ? '' : '<p class="note">Someone has to come along: a Billie in your team or in storage.</p>'}${marks ? `<div class="ws-gos">${marks}</div>` : ''}</section>`;
-}
-/** mark a hub building in the world (walk-view.js drawWalkMark) and close the sheet so you can walk there */
+/** mark a hub building in the world (walk-view.js drawWalkMark); the bar closes so you can walk there */
 function walkMarkTo(act) {
   const H = HUB_MARKS.find(([a]) => a === act),
     p = H && walkView.sc && (walkView.sc.props || []).find(q => q.act === act);
   if (!p) return;
   walkView.mark = { act, label: H[1] };
 }
-/** what this place offers: its line, a trainer's hint, and its buttons (nodeActions: a shop, the clinic, its trainers
-    or a run's mini-boss) */
-function hereHTML() {
-  const node = saveData.trip.node,
-    here = LOCATIONS[node],
-    acts = nodeActions(node).replace('<div class="racts"></div>', '');
-  return `<section class="ws-here"><div class="sec-h"><h2>What’s here</h2></div>${here.blurb ? `<p class="note">${here.blurb}</p>` : ''}${boardNote(node)}${acts || '<p class="note">Nothing to buy or fight here. Look around, then move on.</p>'}</section>`;
-}
-/** the wild Billies hiding here, each a card that starts its battle; nothing where none live */
-function encountersHTML() {
-  const q = encountersHere(),
-    cap = encounterStock(saveData.trip.node);
-  if (!cap) return '';
-  return `<section class="pending"><div class="sec-h"><h2>Wild Billies here</h2><span class="count tnum">${q.length}/${cap}</span></div>
-  <p class="note">${q.length >= cap ? 'This place is full. Battle or catch a few to make room.' : 'Another one wanders over about every minute.'} You only see their level until the battle starts.</p>
-  ${q.length ? `<div class="queue">${q.map(encounterCardHTML).join('')}</div>` : '<div class="empty px">No Billies nearby. Give it a minute and one will wander over.</div>'}</section>`;
-}
 /* the forecast's word to a UI icon (environment.js environmentIcon's, by day) */
 const WEATHER_ICONS = { rain: 'rain', storm: 'rain', snow: 'snow', fog: 'fog', ash: 'ash', cloudy: 'cloud' };
-/** on a run: the day, the place's type, and its weather today and tomorrow with what it does to moves
-    (logic/run-loop.js runSheetStatus) */
-function runStatusHTML() {
+/** on a run: the day, the place's type, its weather today and tomorrow (logic/run-loop.js runSheetStatus), or null */
+function walkRunStatus() {
   const run = saveData.run,
-    L = LOCATIONS[saveData.trip.node],
-    st = run && run.map && L && L.runNode != null ? runSheetStatus(run, L.runNode, RULES.env) : null;
-  if (!st) return '';
+    L = LOCATIONS[saveData.trip.node];
+  return run && run.map && L && L.runNode != null ? runSheetStatus(run, L.runNode, RULES.env) : null;
+}
+/** the run's day chip, tapped: the place's type and what today's and tomorrow's weather do to moves */
+function walkDayToast() {
+  const st = walkRunStatus();
+  if (!st) return;
   const T = NODE_TYPES[st.type],
-    rows = st.days
-      .map(d => {
-        const fx = weatherEffectText(d.wx);
-        /* UI-17: today's icon moves (idle life: ui-idle.js; motion.css .wx-now) */
-        const ic = uiIconHTML(WEATHER_ICONS[d.w] || 'sun', 16);
-        return `<li>${d.day === st.day ? `<span class="wx-now">${ic}</span>` : ic}<b>${d.day === st.day ? 'Today' : 'Tomorrow'}</b><span>${escapeHtml(WEATHER_NAMES[d.w] || d.w)}</span><small>${fx ? escapeHtml(fx) : 'No effect on moves'}</small></li>`;
-      })
-      .join('');
-  return `<section class="ws-status k-card"><div class="ws-top"><pb-day-chip day="${st.day}"></pb-day-chip><span class="ws-type">${escapeHtml(T ? T.name : st.type)}</span></div>${rows ? `<ul class="ws-wx">${rows}</ul>` : ''}</section>`;
+    days = st.days.map(d => {
+      const fx = weatherEffectText(d.wx);
+      return `${d.day === st.day ? 'Today' : 'Tomorrow'}: ${WEATHER_NAMES[d.w] || d.w}, ${fx || 'no effect on moves'}.`;
+    });
+  toast(`Day ${st.day} · ${T ? T.name : st.type}. ${days.join(' ')}`);
+}
+/** the wild Billies hiding here, nearest first (where each waits in the world: walkView.enc; unplaced ones last) */
+function encountersNearest() {
+  const P = walkView.pl,
+    far = q => {
+      const e = walkView.enc && walkView.enc[q.id];
+      return e && P ? Math.hypot(e.x - P.x, e.z - P.z) : Infinity;
+    };
+  return encountersHere()
+    .map((q, i) => ({ q, i, d: far(q) }))
+    .sort((A, B) => A.d - B.d || A.i - B.i)
+    .map(o => o.q);
+}
+/** a wild Billie's chip, tapped: walk up to it and the battle starts when you get there, as a tap on its "?" in the
+    world does (walk-view.js handleWalkClick); where it isn't placed (or you can't walk here), at once */
+function walkToEncounter(id) {
+  const q = encountersHere().find(x => x.id === id);
+  if (!q) return;
+  const e = walkView.enc && walkView.enc[id],
+    P = walkView.pl;
+  if (!e || !P || !(walkView.st && walkView.st.roam)) {
+    startWild(q);
+    return;
+  }
+  walkTo(approachPoint(e.x, e.z), () => {
+    const at = walkView.enc[id] || e;
+    faceToward(P, at.x - P.x, at.z - P.z);
+    walkPick({ k: 'enc', e: { id }, look: [at.x, at.z] });
+  });
+}
+/** the bar's buttons, in order: the run's day and the map, or the hub's run and buildings; what this place offers;
+    the wild Billies, nearest first. Each {a, d, icon, label, tone, aria, keep (the bar stays open), off} */
+function walkTrayItems() {
+  const it = [],
+    st = walkRunStatus();
+  if (st) {
+    const today = st.days.find(d => d.day === st.day) || st.days[0];
+    it.push({
+      a: 'wtday',
+      d: {},
+      icon: WEATHER_ICONS[today ? today.w : ''] || 'sun',
+      wx: true,
+      label: `Day ${st.day}`,
+      aria: `Day ${st.day}: the weather`,
+      keep: true,
+    });
+  }
+  if (saveData.run)
+    it.push({ a: 'tab', d: { t: 'map' }, icon: 'map', tone: 'gold', label: 'Map', aria: 'Open the map to move on' });
+  else {
+    const can = saveData.team.length + saveData.box.length > 0,
+      props = (walkView.sc && walkView.sc.props) || [];
+    it.push({ a: 'walkrun', d: {}, icon: 'flag', tone: 'gold', label: 'Start a run', off: !can });
+    HUB_MARKS.filter(([act]) => props.some(p => p.act === act)).forEach(([act, name, icon]) =>
+      it.push({ a: 'walkmark', d: { k: act }, icon, label: name, aria: `${name}: show me the way` })
+    );
+  }
+  it.push(...nodeActionItems(saveData.trip.node));
+  encountersNearest().forEach(q => {
+    const nu = !uiState.seenEnc.has(q.id);
+    uiState.seenEnc.add(q.id);
+    it.push({
+      a: 'encgo',
+      d: { id: q.id },
+      q: true,
+      nu,
+      label: `Lv ${q.lvl}`,
+      aria: `Wild Billie, level ${q.lvl}: walk to it`,
+    });
+  });
+  return it;
+}
+function walkSheetHTML() {
+  return walkTrayItems()
+    .map(o => {
+      const ic = o.q
+        ? '<i class="wt-q" aria-hidden="true">?</i>'
+        : o.wx
+          ? `<span class="wx-now">${uiIconHTML(o.icon, 20)}</span>`
+          : uiIconHTML(o.icon, 20);
+      return `<button class="wt-act${o.tone ? ' ' + o.tone : ''}${o.nu ? ' new' : ''}" data-a="${o.a}"${dataAttrs(o.d)}${o.keep ? ' data-keep="1"' : ''}${o.off ? ' aria-disabled="true"' : ''}${o.aria ? ` aria-label="${escapeHtml(o.aria)}"` : ''}>${ic}<span>${o.label}</span></button>`;
+    })
+    .join('');
 }
 const walkSheetWanted = () =>
   uiState.walkSheet && uiState.tab === 'walk' && !!saveData.started && !activeBattle && !uiState.title;
 export function walkSheetSync() {
-  let el = /** @type {any} */ ($('#walkSheet'));
+  let el = /** @type {HTMLElement | null} */ ($('#walkSheet'));
   if (!el && !walkSheetWanted()) return;
   if (!el) {
-    el = document.createElement('pb-sheet');
+    el = document.createElement('div');
     el.id = 'walkSheet';
-    el.addEventListener('pb-close', () => {
-      uiState.walkSheet = false;
-      walkSheetSync();
-    });
+    el.className = 'walk-tray';
+    el.setAttribute('role', 'toolbar');
+    el.setAttribute('aria-label', 'Actions');
     document.body.appendChild(el);
   }
-  if (!walkSheetWanted()) {
+  const on = walkSheetWanted(),
+    btn = $('.wh-down');
+  document.documentElement.classList.toggle('tray-open', on);
+  if (btn) {
+    btn.classList.toggle('open', on);
+    if (on) btn.classList.remove('new');
+    btn.setAttribute('aria-expanded', String(on));
+    btn.setAttribute('aria-label', on ? 'Hide actions' : 'Show actions');
+  }
+  if (!on) {
     uiState.walkSheet = false;
-    el.open = false;
-    el.replaceChildren();
+    el.classList.remove('open');
+    el.inert = true;
     return;
   }
-  /* made again on every render: the keyboard's place is kept (the same button, by its place in the sheet) */
-  const keys = () => $$('button:not(:disabled),[role=button],summary', el),
-    had = keys().indexOf(/** @type {any} */ (document.activeElement));
-  el.heading = LOCATIONS[saveData.trip.node].name;
+  /* made again on every render: the keyboard's place is kept (the same button, by its place in the bar) */
+  const keys = () => $$('button', el),
+    had = keys().indexOf(/** @type {any} */ (document.activeElement)),
+    sx = el.scrollLeft;
   el.innerHTML = walkSheetHTML();
-  el.open = true;
+  el.scrollLeft = sx;
+  el.inert = false;
+  if (!el.classList.contains('open')) {
+    /* in from where it rests (closed), so the slide plays */
+    void el.offsetWidth;
+    el.classList.add('open');
+  }
   if (had >= 0) {
     const b = keys()[had];
     if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
@@ -394,6 +492,11 @@ export function walkSheetOpen() {
   uiState.walkSeen = walkNewKey();
   uiState.walkSheet = true;
   walkSheetSync();
+}
+/** the Actions button: opens the bar, or closes it when open */
+export function walkSheetToggle() {
+  if (uiState.walkSheet) walkSheetClose();
+  else walkSheetOpen();
 }
 export function walkSheetClose() {
   if (!uiState.walkSheet) return;
@@ -439,7 +542,14 @@ export function walkTabAction(a, d) {
       runGiveUp();
       break;
     case 'walkrun':
-      runStartSheet();
+      if (saveData.team.length + saveData.box.length > 0) runStartSheet();
+      else toast('Someone has to come along: a Billie in your team or in storage.');
+      break;
+    case 'wtday':
+      walkDayToast();
+      break;
+    case 'encgo':
+      walkToEncounter(d.id);
       break;
     case 'walkmark':
       walkMarkTo(d.k);

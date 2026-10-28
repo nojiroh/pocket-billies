@@ -449,13 +449,14 @@ SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Ch
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
-@step('Actions sheet: a wheel never opens it; its button and Tab do; Esc, Tab and its buttons close it; the hub marker; a run\'s status', 150)
+@step('Actions bar: a wheel never opens it; its button and Tab do; Esc, Tab and its buttons close it; the hub marker; a wild Billie walks you there; a run\'s day', 150)
 def actions_sheet_step(P):
-    """the Actions sheet (walk-tab.js walkSheetSync) is a <pb-sheet> over the world: it used to be page content under the
-    scene, so a mouse wheel scrolled it into view. In the hub: wheel, button, Esc, Tab, a "show me the way" that closes
-    it and marks the ranch. The full check also opens a run's sheet for its day, type and weather"""
+    """the Actions bar (walk-tab.js walkSheetSync): a row of small buttons right on top of the bottom bar (it was a
+    sheet over half the screen, and before that page content a mouse wheel scrolled into view). In the hub: wheel,
+    button, Esc, Tab, a "show me the way" that closes it and marks the ranch, a wild Billie's button that walks you
+    to it (the battle starts there, not at once). The full check also opens a run's bar for its day and the map"""
     pg = P.pg
-    is_open = "[uiState.walkSheet,!!document.querySelector('#walkSheet[open]')]"
+    is_open = "[uiState.walkSheet,!!document.querySelector('#walkSheet.open')]"
     def ready(fix):
         if fix != P.fixture: P.goto(fix)
         pg.wait_for_function("typeof walkView!=='undefined'&&walkView.ready&&!!document.querySelector('.wh-down')", timeout=90000)
@@ -465,35 +466,60 @@ def actions_sheet_step(P):
     pg.mouse.move(640, 400)
     for dy in (400, 400, -400, 400): pg.mouse.wheel(0, dy); ui(pg)
     if pg.evaluate(is_open) != [False, False] or pg.evaluate('scrollY') != 0:
-        raise Exception(f'a mouse wheel opened the sheet or scrolled the page: {pg.evaluate(is_open)}, scrollY {pg.evaluate("scrollY")}')
+        raise Exception(f'a mouse wheel opened the bar or scrolled the page: {pg.evaluate(is_open)}, scrollY {pg.evaluate("scrollY")}')
     pg.evaluate("document.querySelector('.wh-down').click()")
-    if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('the Actions button did not open the sheet')
+    if not until(pg, "!!document.querySelector('#walkSheet.open')", 5): raise Exception('the Actions button did not open the bar')
     acts = pg.evaluate("[...document.querySelectorAll('#walkSheet [data-a]')].map(e=>e.dataset.a)")
     for want in ('walkrun', 'walkmark'):
-        if want not in acts: raise Exception(f'the hub sheet has no {want} button: {acts}')
+        if want not in acts: raise Exception(f'the hub bar has no {want} button: {acts}')
     for gone in ('stoptrip', 'rest', 'customize'):
-        if gone in acts: raise Exception(f'the sheet still has {gone}: {acts}')
+        if gone in acts: raise Exception(f'the bar still has {gone}: {acts}')
+    # a bar, not a sheet: one row, its top in the screen's lower part, over the bottom bar (once it has slid in)
+    until(pg, "document.querySelector('#walkSheet').getAnimations().length===0", 5)
+    box = pg.evaluate("(()=>{const t=document.querySelector('#walkSheet').getBoundingClientRect(),n=document.querySelector('#nav').getBoundingClientRect();return [t.top,t.bottom,n.top,innerHeight]})()")
+    if box[0] < box[3] * 0.6 or box[1] > box[2] + 1: raise Exception(f'the Actions bar is not a row over the bottom bar: top {box[0]:.0f}, bottom {box[1]:.0f}, the bar at {box[2]:.0f} of {box[3]}')
+    pg.evaluate("document.querySelector('.wh-down').click()")
+    if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet.open')", 5): raise Exception('the Actions button did not close the bar')
+    pg.evaluate("document.querySelector('.wh-down').click()")
+    if not until(pg, "!!document.querySelector('#walkSheet.open')", 5): raise Exception('the Actions button did not open the bar again')
     pg.keyboard.press('Escape')
-    if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet[open]')", 5): raise Exception('Esc did not close the sheet')
+    if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet.open')", 5): raise Exception('Esc did not close the bar')
     pg.evaluate("document.activeElement&&document.activeElement.blur&&document.activeElement.blur();0")
     pg.keyboard.press('Tab')
-    if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('Tab did not open the sheet')
-    if not until(pg, "!!document.activeElement&&!!document.activeElement.closest('#walkSheet')", 5): raise Exception('Tab opened the sheet without its first button taking the focus')
+    if not until(pg, "!!document.querySelector('#walkSheet.open')", 5): raise Exception('Tab did not open the bar')
+    if not until(pg, "!!document.activeElement&&!!document.activeElement.closest('#walkSheet')", 5): raise Exception('Tab opened the bar without its first button taking the focus')
     pg.keyboard.press('Tab')
-    if not until(pg, "!uiState.walkSheet", 5): raise Exception('Tab did not close the sheet')
+    if not until(pg, "!uiState.walkSheet", 5): raise Exception('Tab did not close the bar')
     pg.evaluate("document.querySelector('.wh-down').click()"); until(pg, "!!document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]')", 5)
     pg.evaluate("document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]').click()")
     m = pg.evaluate("[uiState.walkSheet, walkView.mark&&walkView.mark.act]")
-    if m != [False, 'ranch']: raise Exception(f'"show me the way" to the ranch: sheet open, marker {m}')
-    out = ['wheel ×4: closed, no scroll', 'button, Esc, Tab, Tab', 'the ranch marked, the sheet closed']
+    if m != [False, 'ranch']: raise Exception(f'"show me the way" to the ranch: bar open, marker {m}')
+    out = ['wheel ×4: closed, no scroll', 'a row over the bottom bar', 'button ×3, Esc, Tab, Tab', 'the ranch marked, the bar closed']
+    # a wild Billie: nearest first; its button walks you there (a route, no battle yet)
+    pg.evaluate("document.querySelector('.wh-down').click()"); until(pg, "!!document.querySelector('#walkSheet.open')", 5)
+    ids = pg.evaluate("[...document.querySelectorAll('#walkSheet [data-a=encgo]')].map(e=>e.dataset.id)")
+    if ids:
+        far = pg.evaluate("(ids=>ids.map(id=>{const e=walkView.enc[id],P=walkView.pl;return e?Math.hypot(e.x-P.x,e.z-P.z):1e9}))", ids)
+        if far != sorted(far): raise Exception(f'the wild Billies are not nearest first: {far}')
+        pg.evaluate("walkView.pl.route=null;document.querySelector('#walkSheet [data-a=encgo]').click();0")
+        w = pg.evaluate("[uiState.walkSheet, !!walkView.pl.route, !!activeBattle]")
+        if w != [False, True, False]: raise Exception(f"a wild Billie's button: [bar open, walking there, battle at once] = {w}")
+        pg.evaluate("walkView.pl.route=null;walkView.pl.goal=null;0")
+        out.append(f'{len(ids)} wild Billies nearest first, the first walked to')
+    else:
+        pg.keyboard.press('Escape')
+        out.append('no wild Billies placed here')
     if not SMOKE:
         ready('run')
         pg.evaluate("document.querySelector('.wh-down').click()")
-        if not until(pg, "!!document.querySelector('#walkSheet .ws-status pb-day-chip')", 5): raise Exception("a run's sheet has no day chip")
-        t = pg.evaluate("document.querySelector('#walkSheet .ws-status').innerText")
-        if 'Today' not in t or not pg.evaluate("!!document.querySelector('#walkSheet [data-a=tab][data-t=map]')"):
-            raise Exception(f"a run's sheet lacks today's weather or the way on: {t!r}")
-        out.append("a run's day, type and weather: " + ' / '.join(x for x in t.splitlines() if x.strip())[:120])
+        if not until(pg, "!!document.querySelector('#walkSheet.open [data-a=wtday]')", 5): raise Exception("a run's bar has no day button")
+        t = pg.evaluate("document.querySelector('#walkSheet [data-a=wtday]').innerText")
+        if 'Day' not in t or not pg.evaluate("!!document.querySelector('#walkSheet [data-a=tab][data-t=map]')"):
+            raise Exception(f"a run's bar lacks the day or the way on: {t!r}")
+        pg.evaluate("document.querySelector('#walkSheet [data-a=wtday]').click()")
+        said = pg.evaluate("[uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text).join(' ')")
+        if 'Today' not in said or not pg.evaluate("uiState.walkSheet"): raise Exception(f"the day button: the bar closed or no weather said: {said!r}")
+        out.append("a run's day and the map; the day says: " + said.strip()[:100])
     return '; '.join(out)
 
 

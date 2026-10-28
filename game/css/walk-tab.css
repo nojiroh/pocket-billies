@@ -60,30 +60,9 @@
     transform: translateY(-2px);
   }
 }
-@media (min-width: 960px) {
-  .enc {
-    flex-basis: 150px;
-  }
-}
 @keyframes whBob {
   50% {
     transform: translateY(3px);
-  }
-}
-@keyframes rustle {
-  0%,
-  70%,
-  100% {
-    transform: skewX(0);
-  }
-  76% {
-    transform: skewX(6deg);
-  }
-  84% {
-    transform: skewX(-6deg);
-  }
-  92% {
-    transform: skewX(3deg);
   }
 }
 /* empty states: dashed "slot" outline */
@@ -134,55 +113,6 @@
 /* ---------- (UI-5 and earlier) ---------- */
 
 /* ---------- UI-5: from style.css, as it was ---------- */
-/* encounters */
-.queue {
-  display: flex;
-  gap: var(--s3);
-  overflow-x: auto;
-  padding: var(--s3) var(--s4) var(--s4);
-  margin: var(--s1) calc(var(--s4) * -1) 0;
-  scroll-snap-type: x mandatory;
-  scroll-padding: 0 18px;
-  scrollbar-width: none;
-}
-.queue::-webkit-scrollbar {
-  display: none;
-}
-.enc .no {
-  font-size: 12px;
-  color: var(--text2);
-  font-weight: 600;
-}
-.enc .denom {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-  font: 400 20px/1 var(--font-voice);
-  color: var(--gold2);
-}
-.enc .stage-glow {
-  position: absolute;
-  left: 50%;
-  top: 58%;
-  width: 90px;
-  height: 20px;
-  transform: translateX(-50%);
-  background: radial-gradient(ellipse, rgba(0, 0, 0, 0.22), transparent 70%);
-  pointer-events: none;
-}
-.enc canvas.rig {
-  align-self: center;
-  margin: var(--s1) 0 0;
-}
-.enc b {
-  font-family: var(--font-voice);
-  font-weight: 400;
-  font-size: 16px;
-  line-height: 1.1;
-}
-.enc.enc-new {
-  animation: pop 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) backwards;
-}
 /* seed rounds */
 .slots {
   display: grid;
@@ -212,12 +142,6 @@
 .slot img {
   position: relative;
 }
-.enc .stage-glow {
-  opacity: 0.45;
-}
-.queue {
-  gap: var(--s3);
-}
 @media (min-width: 960px) {
   .s-walk .cols {
     display: grid;
@@ -231,24 +155,6 @@
   .s-walk .col > section:first-child {
     margin-top: var(--s3);
   }
-  .queue {
-    margin: var(--s1) 0 0;
-    padding: var(--s3) var(--s1) var(--s4);
-    flex-wrap: wrap;
-  }
-}
-.enc b {
-  position: relative;
-  z-index: 1;
-  margin-top: var(--s2);
-  text-shadow:
-    0 1px 0 var(--panel-s),
-    0 -1px 0 var(--panel-s),
-    1px 0 0 var(--panel-s),
-    -1px 0 0 var(--panel-s);
-}
-.enc canvas.rig {
-  margin-bottom: var(--s2) !important;
 }
 body.on-walk #bgfx {
   display: none;
@@ -276,7 +182,7 @@ body.on-walk .wh-foot > * {
   flex-direction: column;
   justify-content: space-between;
   gap: var(--s3);
-  padding: 2px 0 calc(var(--nav-h) - var(--s1) + env(safe-area-inset-bottom, 0px));
+  padding: 2px 0 calc(var(--nav-h) - var(--s1) + var(--tray-lift, 0px) + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
 }
 .wh-card {
@@ -354,112 +260,122 @@ body.on-walk .wh-foot > * {
   animation: whBob 2.4s ease-in-out infinite;
 }
 .wh-down .uico {
+  transform: rotate(-90deg);
+}
+/* the Actions button: its chevron points up (the bar opens upward) and turns down while it's open */
+.wh-down .uico {
+  transition: transform calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
+}
+.wh-down.open .uico {
   transform: rotate(90deg);
 }
-/* the Actions sheet (walk-tab.js walkSheetSync): the kit's <pb-sheet>, about half the screen tall; the world under
-   it doesn't scroll, so a mouse wheel or a trackpad never brings it up */
-#walkSheet {
-  --sheet-max: 58vh;
-}
-/* on a run: the day and deadline, the place's type, today's and tomorrow's weather (walk-tab.js runStatusHTML) */
-.ws-status {
-  display: grid;
-  gap: var(--s2);
-  margin: 0 0 var(--s3);
-  padding: var(--s3);
-}
-.ws-top {
+/* the Actions bar (walk-tab.js walkSheetSync): one row of small buttons right on top of the bottom bar, as wide as it.
+   It follows the bar's shrink (--nav-h) and lifts the Actions button by its height while open (--tray-k, eased on
+   the page: shell.css) */
+.walk-tray {
+  position: fixed;
+  left: var(--s2);
+  right: var(--s2);
+  bottom: calc(var(--nav-h) - 26px + var(--s1) + env(safe-area-inset-bottom, 0px));
+  max-width: 480px;
+  margin-inline: auto;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--s2);
-}
-.ws-type {
-  font-size: var(--fs-caption);
-  letter-spacing: 1.6px;
-  text-transform: uppercase;
-  color: var(--text2);
-}
-.ws-wx {
-  display: grid;
   gap: var(--s1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
+  padding: var(--s1);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--panel-s) 90%, transparent);
+  box-shadow: var(--depth-float);
+  opacity: 0;
+  transform: translateY(var(--s3)) scale(0.97);
+  transform-origin: 50% 100%;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+    transform calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+    visibility 0s linear calc(var(--m-base) * var(--m-k, 1));
 }
-.ws-wx li {
-  display: grid;
-  grid-template-columns: auto auto 1fr;
-  align-items: center;
-  column-gap: var(--s2);
+.walk-tray::-webkit-scrollbar {
+  display: none;
 }
-.ws-wx small {
-  grid-column: 2 / -1;
-  font-size: var(--fs-caption);
-  color: var(--text2);
+.walk-tray.open {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+  pointer-events: auto;
+  transition-delay: 0s;
 }
-.ws-here .note {
-  margin: 0 0 var(--s2);
-}
-.ws-move {
+/* a button: the icon over a short word, soft corners */
+.wt-act {
+  position: relative;
+  flex: 0 0 auto;
   display: flex;
+  flex-direction: column;
+  align-items: center;
   justify-content: center;
-  width: 100%;
-  margin: var(--s3) 0 0;
+  gap: 2px;
+  min-width: 64px;
+  max-width: 96px;
+  height: 56px;
+  padding: 0 var(--s2);
+  border: 0;
+  border-radius: var(--r-sm);
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+  color: var(--text);
+  font: 12px/1.1 var(--font-voice);
+  cursor: pointer;
 }
-.ws-hub .ws-move {
-  margin: 0 0 var(--s2);
+.wt-act span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.ws-gos {
-  display: grid;
-  gap: var(--s2);
-  margin: var(--s2) 0 var(--s3);
+.wt-act.gold {
+  background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+  color: var(--c-ink);
 }
-.ws-go {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  text-align: left;
+.wt-act.red {
+  background: color-mix(in srgb, var(--c-danger) 22%, transparent);
 }
-.ws-go span {
-  display: grid;
-}
-.ws-go small {
-  font-size: var(--fs-caption);
+.wt-act.quiet {
   color: var(--text2);
+}
+.wt-act[aria-disabled='true'] {
+  opacity: 0.5;
+}
+.wt-act:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+/* a wild Billie: a "?" for its picture (you only see its level until the battle), a dot while it's new */
+.wt-q {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--c-ink);
+  font: 400 15px/1 var(--font-voice);
+  font-style: normal;
+}
+.wt-act.new::after {
+  content: '';
+  position: absolute;
+  top: var(--s1);
+  right: var(--s1);
+  width: var(--s2);
+  height: var(--s2);
+  border-radius: var(--r-pill);
+  background: var(--c-danger);
 }
 html:has(> body.on-walk) {
   overflow: hidden;
-}
-.enc.hidden-enc .enc-hide {
-  position: relative;
-  display: grid;
-  place-items: center;
-  width: 84px;
-  height: 68px;
-  margin: var(--s2) auto 2px;
-}
-.enc.hidden-enc .enc-hide img {
-  width: 84px;
-  height: 56px;
-  image-rendering: pixelated;
-  transform-origin: 50% 100%;
-}
-/* UI-16a: the grass rustles three times when a hidden Billie wanders in (the card's first showing), not forever */
-.enc.hidden-enc.enc-new .enc-hide img {
-  animation: rustle 1.8s ease-in-out 3;
-}
-.enc.hidden-enc .enc-hide i {
-  position: absolute;
-  top: -2px;
-  font: 400 24px/1 var(--font-voice);
-  font-style: normal;
-  color: #ffe27a;
-  text-shadow:
-    0 2px 0 #2a2238,
-    2px 0 0 #2a2238,
-    -2px 0 0 #2a2238,
-    0 -2px 0 #2a2238;
 }
 @media (min-width: 900px) {
   .walk-hero {
@@ -467,13 +383,12 @@ html:has(> body.on-walk) {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .wh-down,
-  .enc.hidden-enc .enc-hide img {
+  .wh-down {
     animation: none;
   }
 }
 /* UI-16a: and under the game's own Reduced */
-[data-motion='reduced'] :is(.wh-down, .enc.hidden-enc .enc-hide img) {
+[data-motion='reduced'] .wh-down {
   animation: none;
 }
 @media (max-height: 520px) {

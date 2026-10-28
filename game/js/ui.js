@@ -51,6 +51,7 @@ import {
   walkSheetClose,
   walkSheetOpen,
   walkSheetSync,
+  walkSheetToggle,
   walkTabAction,
   walkTipOnce,
 } from './walk-tab.js';
@@ -284,7 +285,7 @@ document.addEventListener('click', ev => {
   const a = el.dataset.a,
     d = el.dataset;
   /* a button in the Actions sheet closes it first, then does its thing (a shop, the clinic, a battle, the map) */
-  if (el.closest('#walkSheet')) walkSheetClose();
+  if (el.closest('#walkSheet') && !el.dataset.keep) walkSheetClose();
   if (a === 'scrim') {
     if (ev.target === el && uiState.modal && !uiState.modal.lock) {
       const c =
@@ -326,7 +327,7 @@ document.addEventListener('click', ev => {
       if (d.r && typeof residentHomeTalk === 'function') residentHomeTalk({ res: d.r });
       break;
     case 'walkdown':
-      walkSheetOpen();
+      walkSheetToggle();
       break;
     case 'settings':
       openSettings();
@@ -342,6 +343,8 @@ document.addEventListener('click', ev => {
     case 'rungiveup':
     case 'walkrun':
     case 'walkmark':
+    case 'wtday':
+    case 'encgo':
       walkTabAction(a, d);
       break;
     case 'mon':
@@ -413,7 +416,8 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && uiState.modal && !uiState.modal.lock) {
     const c = uiState.modal.btns && uiState.modal.btns.find(b => b.l === 'Close' || b.l === 'Done' || b.l === 'Cancel');
     if (c) c.f();
-  } else if (ev.key === 'Escape' && !uiState.modal && !activeBattle && !uiState.title && saveData.started)
+  } else if (ev.key === 'Escape' && uiState.walkSheet && !uiState.modal) walkSheetClose();
+  else if (ev.key === 'Escape' && !uiState.modal && !activeBattle && !uiState.title && saveData.started)
     /* UI-5: no Walk tab: Esc goes back to the world */
     openTab('walk');
   if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('[role=button][data-a]')) {
@@ -484,18 +488,18 @@ document.addEventListener('keydown', ev => {
     first.focus();
   }
 });
-/* the Actions sheet on a computer: Tab opens and closes it while the world shows and nothing else has the focus (once
+/* the Actions bar on a computer: Tab opens and closes it while the world shows and nothing else has the focus (once
    a button outside it has the focus, Tab moves on as usual; Shift+Tab is never taken); open, Tab closes it. Opened by Tab, its first button
    takes the focus; the arrow keys move between its buttons */
 document.addEventListener('keydown', ev => {
   const sh = $('#walkSheet'),
     a = document.activeElement;
-  if (uiState.walkSheet && sh && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) {
+  if (uiState.walkSheet && sh && /^Arrow(Down|Up|Left|Right)$/.test(ev.key)) {
     const els = $$('button:not(:disabled),[role=button],summary', sh).filter(e => e.getClientRects().length);
     if (!els.length) return;
     ev.preventDefault();
     const i = els.indexOf(/** @type {any} */ (a)),
-      j = i < 0 ? 0 : (i + (ev.key === 'ArrowDown' ? 1 : -1) + els.length) % els.length;
+      j = i < 0 ? 0 : (i + (ev.key === 'ArrowDown' || ev.key === 'ArrowRight' ? 1 : -1) + els.length) % els.length;
     /** @type {HTMLElement} */ (els[j]).focus();
     return;
   }
@@ -509,12 +513,9 @@ document.addEventListener('keydown', ev => {
     return;
   }
   walkSheetOpen();
-  const el = /** @type {any} */ ($('#walkSheet'));
-  if (el)
-    el.updateComplete.then(() => {
-      const b = $$('button:not(:disabled),[role=button]', el).find(e => e.getClientRects().length);
-      if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
-    });
+  const el = $('#walkSheet'),
+    b = el && $$('button:not(:disabled),[role=button]', el).find(e => e.getClientRects().length);
+  if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
 });
 // Enter in the nickname field saves it.
 document.addEventListener('keydown', ev => {

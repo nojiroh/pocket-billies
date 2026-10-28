@@ -1574,9 +1574,9 @@
    "game/js/shop.js:263",
    "game/js/ui-run-kit.js:109",
    "game/js/ui-run-kit.js:116",
-   "game/js/ui.js:81",
-   "game/js/ui.js:132",
-   "game/js/ui.js:227"
+   "game/js/ui.js:82",
+   "game/js/ui.js:133",
+   "game/js/ui.js:228"
   ],
   "barrel": [
    "game/js/prop-models.js:224",
@@ -1677,8 +1677,8 @@
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:96",
    "game/js/ui-run-kit.js:534",
-   "game/js/ui.js:89",
-   "game/js/ui.js:166",
+   "game/js/ui.js:90",
+   "game/js/ui.js:167",
    "game/js/walk-view.js:3163"
   ],
   "cowboy": [
@@ -1742,7 +1742,8 @@
    "game/js/logic/perks.js:104",
    "game/js/logic/perks.js:112",
    "game/js/logic/ui-dials.js:147",
-   "game/js/map-tab.js:148"
+   "game/js/map-tab.js:148",
+   "game/js/walk-tab.js:324"
   ],
   "eye": [
    "game/js/figures.js:429",
@@ -1817,7 +1818,10 @@
    "game/js/minimap.js:78",
    "game/js/unit-card.js:163",
    "game/js/unit-card.js:172",
-   "game/js/unit-card.js:178"
+   "game/js/unit-card.js:178",
+   "game/js/walk-tab.js:161",
+   "game/js/walk-tab.js:166",
+   "game/js/walk-tab.js:170"
   ],
   "leaf": [
    "game/js/battle.js:356",
@@ -1827,6 +1831,7 @@
    "game/js/minimap.js:82",
    "game/js/minimap.js:83",
    "game/js/self-test.js:3501",
+   "game/js/walk-tab.js:322",
    "game/js/walk-view.js:397",
    "game/js/walk-view.js:4028",
    "game/js/walk/effects.js:518",
@@ -1931,7 +1936,8 @@
    "game/js/map-tab.js:99",
    "game/js/showcase.js:286",
    "game/js/ui-run-kit.js:117",
-   "game/js/walk-tab.js:233"
+   "game/js/walk-tab.js:271",
+   "game/js/walk-tab.js:323"
   ],
   "sparkle": [
    "game/js/cutscene/director.js:266",
@@ -1952,8 +1958,8 @@
   "tag": [
    "game/js/battle.js:665",
    "game/js/opening-fall.js:922",
-   "game/js/ui.js:236",
-   "game/js/ui.js:237"
+   "game/js/ui.js:237",
+   "game/js/ui.js:238"
   ],
   "up": [
    "game/js/audio/tracker.js:976",
