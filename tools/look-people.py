@@ -17,6 +17,12 @@
                                                     # one sheet at 4 screen pixels a pixel (figure-sheet-*.png), no shots;
                                                     # with --density (a list: 16,32,48 gives a sheet each), --steps,
                                                     # --outline, --style and --tilt=DEGREES (26: Normal)
+    python3 tools/look-people.py --cast=chosen,chad,kappi  # CH-3b: people as their figures (the figure kit), a row
+                                                    # each: today's picture, then the figure from the front, three
+                                                    # quarters, the side and the back, walking and cheering, at 4
+                                                    # screen pixels a pixel (figure-cast-*.png), no shots; --cast=npcs
+                                                    # for everyone in game/data/people, --cast=folk for 12 townsfolk,
+                                                    # 'me' for you; with --density, --tilt and --outline
     python3 tools/look-people.py --figures --battle # CH-3: a trainer battle in its intro, the trainers on the stage, you
                                                     # (and with --folk=1 the rival) as figures at 64 px a metre
                                                     # (battle-*.png); --no-shots for the battle (or --lose) alone
@@ -55,6 +61,7 @@ LOSE = '--lose' in ARGS
 BATTLE = '--battle' in ARGS
 NO_SHOTS = '--no-shots' in ARGS
 SHEET = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a.startswith('--sheet')), None)
+CAST = arg('cast')
 TILT = float(arg('tilt', 26))
 FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline')),
                                ('figure', arg('figure')), ('style', arg('style')), ('folk', arg('folk'))) if v is not None}
@@ -109,6 +116,58 @@ SHEET_JS = """((name, tilt, dials) => {const Fig=figureDef(name); if(!Fig) retur
    const im=bakeFigure(Fig,clip,f,V,ppm,outline,dials.style||'pixel'); if(!im) return 'loading'; row.push(im.toDataURL('image/png'))}
   rows.push(row)}
  return {rows, ppm, steps, report: figureReport()}})"""
+
+
+# CH-3b: each person's figure (figures.js figureFor, the figure kit) baked as the game does: today's picture first, then
+# the figure turned to the front, three quarters, the side and the back standing, walking and cheering
+CAST_JS = """((whos, tilt, dials) => {const ppm=dials.density||32, steps=16, outline=dials.outline!==false, rows=[];
+ const T=tilt*Math.PI/180, view=h=>figureView(h,0,T,steps);
+ const cols=[[Math.PI,'idle',0],[Math.PI*0.75,'idle',0],[Math.PI*0.5,'idle',0],[0,'idle',0],[Math.PI*0.75,'walk',2],[Math.PI,'cheer',1]];
+ for (const who of whos){const name=figureFor(who), Fig=figureDef(name); if(!Fig) return 'loading';
+  const fr=personWalkFrames(who), now=fr&&fr.down&&fr.down[0], row=[now&&now.toDataURL?now.toDataURL('image/png'):null];
+  for (const [h,clip,f] of cols){const im=bakeFigure(Fig,clip,f,view(h),ppm,outline,'pixel'); if(!im) return 'loading'; row.push(im.toDataURL('image/png'))}
+  rows.push({who, name, kit: Fig.F.kit||null, height: Math.round(Fig.F.height*100)/100, row})}
+ return {rows, ppm, report: figureReport()}})"""
+
+
+def cast(pg, t0):
+    """the --cast sheet: a row a person, laid out and enlarged here (today's picture shrunk to the same pixels a metre)"""
+    import base64, io
+    from PIL import Image, ImageDraw
+    dials = dial_values()
+    whos = CAST.split(',')
+    if CAST == 'npcs': whos = pg.evaluate('Object.keys(PEOPLE).sort()')
+    if CAST == 'folk': whos = [f'folk:{s}' for s in (11, 23, 37, 41, 58, 64, 77, 89, 93, 105, 118, 131)]
+    for _ in range(60):
+        r = pg.evaluate(f'{CAST_JS}({json.dumps(whos)},{TILT},{json.dumps(dials)})')
+        if r != 'loading': break
+        pg.wait_for_timeout(500)
+    if not r or r == 'loading': raise Exception(f'no figures for {CAST}')
+    S, ppm = 4, r['ppm']
+    dec = lambda u: Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1]))) if u else None
+    rows = []
+    for R in r['rows']:
+        ims = [dec(u) for u in R['row']]
+        # today's picture is drawn at its own pixels a metre (wardrobe.json ppm): shrunk to the figures' for the row
+        if ims[0] is not None:
+            k = ppm / 66.5
+            ims[0] = ims[0].resize((max(1, round(ims[0].width * k)), max(1, round(ims[0].height * k))), Image.NEAREST)
+        rows.append((R, ims))
+    cw = max(i.width for _, ims in rows for i in ims if i) + 2
+    ch = max(i.height for _, ims in rows for i in ims if i) + 2
+    lab = 14
+    out = Image.new('RGBA', (cw * 7 * S, (ch * S + lab) * len(rows)), (196, 214, 170, 255))
+    d = ImageDraw.Draw(out)
+    for y, (R, ims) in enumerate(rows):
+        oy = y * (ch * S + lab)
+        kit = R['kit'] or {}
+        d.text((4, oy + 1), f"{R['who']}  {kit.get('head', '')} {kit.get('build', '')}  {R['height']} m", fill=(36, 25, 54, 255))
+        for x, i in enumerate(ims):
+            if i: out.alpha_composite(i.resize((i.width * S, i.height * S), Image.NEAREST), (x * cw * S + (cw * S - i.width * S) // 2, oy + lab + (ch * S - i.height * S)))
+    name = f"figure-cast-{CAST.replace(',', '-').replace(':', '')[:60]}-{ppm}ppm-{int(TILT)}deg.png"
+    out.save(OUT / name)
+    print(f"[{time.time() - t0:5.0f}s] {name}: {len(rows)} people, the baker {r['report']}", flush=True)
+    return {'shot': name, 'people': [{k: R[k] for k in ('who', 'name', 'kit', 'height')} for R, _ in rows], 'figures': r['report']}
 
 
 def dial_values():
@@ -225,6 +284,12 @@ def main():
         shots.settle(pg, 4)
         # you face the camera (a plain word: logic/person-view.js faceWord), as a fresh view stands you
         pg.evaluate("(()=>{const P=walkView.pl;if(typeof faceWord==='function')faceWord(P,'down');else P.dir='down';return 0})()")
+        if CAST:
+            rows.append(cast(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'cast': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
         if SHEET:
             for d in (FIG_DIALS.get('density') or '32').split(','):
                 rows.append(sheet(pg, t0, int(d)))
