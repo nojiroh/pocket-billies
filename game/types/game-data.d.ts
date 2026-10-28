@@ -2033,8 +2033,14 @@ export type FxKindRow =
   /** PK-4: your Billies who sat out get this share of a foe's XP more (added to progression.teamXpShare, at most 1) */
   | { kind: 'benchXp'; share: number }
   /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
-   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place) */
-  | { kind: 'rule'; rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal'; n: number }
+   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place;
+   * PK-6: cap, n more Perks held; sideOpen, a side area's obstacle opens with its badge alone; sideFind, side areas hold n more finds;
+   * eventHurt, an event's hurt does nothing) */
+  | {
+      kind: 'rule';
+      rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal' | 'cap' | 'sideOpen' | 'sideFind' | 'eventHurt';
+      n: number;
+    }
   /** PK-5: a Billie you catch joins n levels higher */
   | { kind: 'catchLevel'; n: number }
   /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
@@ -2042,7 +2048,11 @@ export type FxKindRow =
   /** PK-5: what was just bought in a run shop is free (its price back), at buy */
   | { kind: 'free' }
   /** PK-5: what beaten bots leave (their parts offered, the Scrap), times mult */
-  | { kind: 'salvage'; mult: number };
+  | { kind: 'salvage'; mult: number }
+  /** PK-6: Moneys and Bag items (items.json ids) at once, when the Perk is taken */
+  | { kind: 'give'; money?: number; items?: Record<string, number> }
+  /** PK-6: stands for the rows of the Perk just above it in the list held (never itself or another copier) */
+  | { kind: 'copy' };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;
@@ -2573,6 +2583,10 @@ export interface BattleAnimsData {
   maxMs: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', number>;
   /** the full-screen flash limiter */
   flashes: { perSecond: number; gapMs: number; redShare: number };
+  /** VFX-9's budgets by the battle's quality 0-3 (data since VFX-12) */
+  budgets: BattleAnimBudgets;
+  /** Part 1's dials (logic/smear.js smearDialsSet; data since VFX-12) */
+  smears: BattleAnimSmears;
   colors: Record<string, Color>;
   defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
   intro: BattleAnimStep[];
@@ -2637,6 +2651,28 @@ export interface BattleAnimRamp {
   ramp: string | Color[];
   /** a hex, or 'type' (the type's glow) */
   light: Color | 'type';
+}
+/** VFX-12: the battle's effect budgets, each list by quality level 0-3 */
+export interface BattleAnimBudgets {
+  /** particles alive in the one pool (ambient ones at most a quarter) */
+  particles: number[];
+  /** a burst's most */
+  burst: number[];
+  /** effect lights (3 slots) */
+  lights: number[];
+  /** at most this many effect lights on a phone */
+  lightsPhone: number;
+  /** battle lights in all */
+  lightsAll: number;
+}
+/** VFX-12: Part 1's dials: the afterimages (newest first), the ribbon, a dash's ribbon, the stretch, a lunge's lean */
+export interface BattleAnimSmears {
+  ghosts: { fade: number; glow: number }[];
+  lungeGhosts: { fade: number; glow: number }[];
+  ribbon: { cells: number; half: number; twist: number; bright: number; core: number; fray: number; steps: number };
+  dashRibbon: { half: number; min: number; max: number };
+  stretch: { pace: number; k: number; max: number };
+  lean: { k: number; max: number; back: number };
 }
 /** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
 export interface BattleMoods {

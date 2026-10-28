@@ -218,10 +218,17 @@ town node needs it.
   12/24 fps frames, the eroding rim; the Art browser's ramp previews; the particle picker fixed) built 2026-10-28;
   wave 1 goes on with VFX-12 and VFX-15 on side branches. VFX-15 (the stage: a battle mood that darkens and tints on
   big moves, the row wave, heat, the weather on the stage, battle scars in VFX-10's decals) built 2026-10-28 on
-  `claude/vfx-15-stage` (PR #311 into `track/vfx`). VFX-19 (move sounds: music.json `battle`, a sound per move family
-  layered by type, hurt sounds, the recall, throws and catches with body and echo, the Studio's Battle card, check-sound
-  fingerprints; placeholders until the owner's listening pass) built 2026-10-28 on `claude/vfx-19-move-sounds` (PR #325
-  into `track/vfx`). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  `claude/vfx-15-stage` (PR #311 into `track/vfx`, merged by VFX-11). VFX-12 (the Studio's Battle effects editor: moves in 8 outcomes and events on
+  the real stage at any speed, quality, motion and Flashes, a 24 fps scrubber over the runner's steps, panes for the
+  budgets and Part 1's smears as battleAnims.json data, ramps and cells panes for VFX-10's sections; VFX-6 folded in)
+  built 2026-10-28 on `claude/vfx-12-studio-effects` (PR #313, merged by VFX-11). VFX-11 (families x types: 16 families with
+  Faster variants and 11 type kits in battleAnims.json, every move's `anim`, projectiles on paths, rays, impacts,
+  sprays and effect lights in VFX-9's pool, spread and aimed moves, the Moves editor's dropdown; no move longer)
+  built 2026-10-28 on `track/vfx`, the main line of wave 2 beside VFX-14 and VFX-16.
+  VFX-19 (move sounds: music.json `battle`, a sound per move family layered by type, hurt sounds, the recall, throws
+  and catches with body and echo, the Studio's Battle card, check-sound fingerprints; placeholders until the owner's
+  listening pass) built 2026-10-28 on `claude/vfx-19-move-sounds` (PR #325 into `track/vfx`).
+  **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
@@ -331,7 +338,9 @@ town node needs it.
   `tags` with the bias on offers, 13 new pictures) done 2026-10-28 on `track/perks`; PK-5 (Wave C: catching, cash and
   maps: 12 Perks, the kinds catchLevel, refund, free and salvage, a money share on arrival, inflict at battle start,
   the rules rewardPick, rerollFree and mapReveal, `needs: bots`, 12 new pictures) done 2026-10-28 on `track/perks`;
-  PK-6 (Wave D: rules, growth and adventure) next.
+  PK-6 (Wave D: rules, growth and adventure: 11 Perks, the kinds copy and give, the rules cap, sideOpen, sideFind and
+  eventHurt, `needs: side`, growth on the cards, 11 new pictures) done 2026-10-28 on `track/perks`; PK-7 (Fine Print)
+  next.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
