@@ -2,6 +2,181 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-14 - Statuses and stats on the stage: lasting looks, chevrons and sharply, the bubble and the dome, glints - 2026-10-28
+Side branch `claude/vfx-14-statuses` (wave 2, beside VFX-11 on `track/vfx` and VFX-16 on `claude/vfx-16-battle-flow`),
+made from `track/vfx` at VFX-10's head 868e6f30; draft PR #320 into `track/vfx`. Run under the owner's standing
+instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tag
+(main's CLAUDE.md). Told first: the sound coordinator (the stat-drop line in sound.js, before and after) and VFX-16
+(session_019UpAFvfWmFPGfiBg275J2R: the `events` key, the functions and cases touched); VFX-11 had not started. Nothing
+the style track owns was changed (`uHit`'s shader, battleStageFlash, `uCAP`, hitFx, the join intro and the HUD numbers
+untouched; battle3dHit, which feeds `uHit`, takes one more input).
+- The plan: read the engine's status, stat and effect lines and UI-16b's HUD side (both must read the same state);
+  data in a key of my own with its schema, types and checks; a browser-free logic file with tests; the two bugs, each
+  its own commit; the stage runner (lasting looks redrawn every 12 fps cell in VFX-9's pool, what each line does,
+  the rig's pose and tint, Fork's copy); films of each look through a new `--events` mode of the film tool, Calm and
+  Reduced filmed; tune from the films; measure; the full check and the in-game test; docs.
+- Changed:
+  - game/data/battleAnims.json `events` (+ `eventsAbout`): `pulseMs` 900 (Calm's pulse), `cells` [24, 16, 10, 6] (the
+    most lasting-look particles at once by quality); `brn`, `par`, `slp`, `confused`, `broken`, `soaked`, `fork`
+    (start, loop, tick, end, bonk bursts; `tint`/`tintA` for Reduced motion; `flicker`, `hold`, `edge`, `idle`, `hop`,
+    `orbit`, `dx`, `fade`); `stat` (up, down, `sharply` 2); `protect` and `shield` (hex-cell discs: frame, flashFrame,
+    crackFrame, cells by quality, `a` eroded strength, r, h, flashMs, end); `delayed`, `stones`, `glint` (ramps by
+    source kind). Schema defs `lookBurst`, `look`, `lookDome`; types `BattleAnimEvents`, `BattleLook`,
+    `BattleLookBurst`, `BattleLookDome`; `dataBattleAnims` checks every sprite, frame and ramp (`type` only for the
+    delayed hit) and that no count grows as the quality drops; the Studio's type rename moves a ramp that names a type.
+  - game/js/logic/battle-looks.js (browser-free; both pages and the Studio's logic worker): `lookSet`, `lookDiff`
+    (looks begun and ended between two lines' snapshots; a switch; a faint; the shield's turns), `lookStageChange`
+    (the stat that moved and by how many stages: sharply from the snapshots, the engine untouched), `lookChevrons`,
+    `lookStatusLine` (start, tick, or a broken part), `lookSelfHit`, `lookMoveLeaves` (stones, a delayed hit),
+    `lookGlints`, `lookCracks`, `lookDomeCells`, `lookOrbit`, `lookFlicker`, `lookForkOn`, `lookStonePlaces`,
+    `lookTint`, `lookMotion`, `lookLoopOn`, `LOOK_CELL_MS`, `BATTLE_LOOK_KEYS`. tools/test/battle-looks.test.mjs (12).
+  - game/js/battle-looks.js (new, after battle-anim-run.js on both pages): `battleLooksLine(ev)` takes a line's state
+    when its plates repaint (battle.js showEvent's hpT callback, and the tap's repaint), as UI-16b's plates and blips
+    do: ends (waking pops with a hop, a burn's smoke, confusion's stars), a shield wearing a turn (its dome flashes,
+    a cell cracks), a block (the bubble flashes), stones and a delayed hit from a landed move (and gone when it lands),
+    the report's glints one after another (`by`: a Perk, held item, Gene or passive, 140 ms apart; a passive in its
+    type's ramp). `battleLooksTick()` (the stage's frame, where the old status fizz was) redraws the still looks each
+    12 fps cell as particles living one cell (the dome, the bubble, the stones, the mark) and spawns the loops as they
+    come due (embers, sparks, Z's, drips, the orbit's three stars), and sets each sprite's tint (a burn's stepped
+    flicker; a lost turn's gold edge; Reduced motion's still tint). `battleLookStatus` and `battleLookStat` are cases
+    'status' and 'stat' (same 700 / 680 ms); `battleLookHurt` (a burn's lick of flame, a bonk star, a blocked spread
+    hit) and `battleLookBlock` (a shield taking the edge off) add to 'hurt' and 'block'; `battleLookPose` and
+    `battleLookSleepPose` in actorBuffer (a lost turn's held frame; asleep: the idle clock at half speed, 3 px lower,
+    head down, eyes shut, its own frame key); `battleLookGhost` gives battle3dFrame Fork's copy (an afterimage
+    0.14 m aside on two 12 fps cells of four). `battleLooksReset` at each battle's start.
+  - battle-3d.js: a particle can name a strip by id (`anim`), hold a `frame`, erode to `alpha` and flip (`flipY`);
+    battle3dHit folds a status tint (`s.tint`) under the white and dark flashes. walk/battle-fx.js: a flipped strip
+    (a falling stat's chevrons). battle-stage.js: the old status fizz and `stT` are gone; cases 'status' and 'stat'
+    hand over to battle-looks.js.
+  - Fixes (own commits): a broken part's status line (`{k:'status', si}` with no `st`) showed a burn's flames and wrote
+    `undefined` over the Billie's status (23e7f848); a stat drop played the rising sound (sound.js read `an.n` and
+    `an.down`; the engine sends `up: false`; ad6f804a).
+  - tools/look-battle-anims.py `--events` (EVENT_FILMS: brn, par, slp, confused, stat_up/up2/down/down2, protect,
+    shield, soaked, fork, delayed, stones, glint, broken; sheets 240 ms a frame, traces, `--measure`) and
+    `--motion=calm|reduced`.
+- Where the track file was wrong or vague (checked in the code):
+  - "Any status but par and slp shows flames": the game has only three statuses (statuses.json: par, slp, brn); the
+    flames came from a status line with no status at all, which the engine says when a broken part keeps a move from
+    a robot or an Augment (BE ~628). BS 2188 had moved to ~2199.
+  - "sound.js 643 reads an.n and an.down": it was ~731; the stat line is in applyStatStages (BE ~590, not 466-469).
+  - "Soaked", "Fork" and a shield fading are `stat` lines (up false, true, false) with no stage moved; the stage now
+    tells them apart from the snapshots and plays their own look instead of chevrons.
+  - "the shield": its turns left are in the snapshot's `fx.shield` (UI-16b's fieldEffects), so the dome cracks one
+    share for each turn used. Its golden point light (battle-3d.js) is unchanged.
+  - "the plates' tag row, pb-proc blips": UI-16b reads a line's snapshots (`st`, `stg`, `fx`) and its `by`; the stones
+    and delayed hits are side state the snapshots don't carry, so both sides read them from the lines (UI-15/16b: from
+    the `hurt` with `fx: 'stones'`/'mail' and the turn's end; the stage also from the landed move).
+  - A confused Billie hitting itself is only words to the engine (a plain `hurt`): `lookSelfHit` reads it from the
+    line before (it was confused; no move of its own just before).
+  - The Calm level is `<html data-motion="calm">` (UI-16a), read as battle-stage.js's own `calmMotion` does (not
+    exported, so read again in battle-looks.js).
+  - Found, not changed (the engine): Scatter Stones (category X) is aimed at its user, so the engine lays the stones on
+    the user's own side while saying "around their side" (BE useMove: `td` is the target's side, and an X move with no
+    foe effect targets itself). The stage mirrors what the engine does; worth an engine fix in its own commit with the
+    golden record remade.
+- Decided for the owner, to review:
+  - Lasting looks are redrawn as one-cell particles every 12 fps cell (stepped, rule 3), counted against `cells` by
+    quality and marked ambient, so a big move's particles take their place when the pool is full.
+  - Under Calm the still looks (the dome, the bubble, the stones, the mark) stay, as they don't move; the loops
+    (embers, sparks, Z's, drips, the orbit, Fork's copy, the stones' glint, the burn's flicker) pulse for 900 ms when
+    a turn's playback starts and when a look begins. Under Reduced motion nothing loops; the sprite takes the look's
+    tint (burned orange, paralyzed yellow, asleep lilac, confused and Fork purple, Soaked blue: the colour code's
+    status colours), and a status's start shows no burst (a broken part's sparks: two).
+  - Flashes off: no burn flicker (a still tint at half the Reduced one), the lost turn's gold edge at half strength,
+    the dome's and bubble's flash without its glow.
+  - Colours: Z's in the indigo ramp (`Dragon`: the Billies' ramps are keyed by type; sleep's lilac is near), stars and
+    sparks gold (`Electric`), Protect's bubble sky (`Water`), the shield gold, chevrons up teal / down crimson (VFX-10's
+    `up` and `down`), glints: Perks gold, held items steel, Genes rose, a passive its type's.
+  - The dome: up to 9 hex-cell discs (VFX-10's `shield_hex`, frame 3) round the Billie, eroded to .55 so the Billie
+    shows through (first films: at full strength it hid the foe); a worn cell shows the strip's breaking frame; a
+    flash is frame 2 at full strength; it shatters in shards when it fades. Protect's bubble: 3 discs in front, .5.
+  - Sharply: twice as many chevrons (10) and a wider teal ring for a rise; chevrons at the rigs' pixel size (k 1).
+  - Stones: 5 pebbles round each Billie's feet on that side, still, one glinting about every 1.5 s; the old Ground
+    burst on entry kept as the hit.
+  - The delayed hit's mark: VFX-10's orb in the move's type ramp, 2.6 m over the side's first Billie, until its hit
+    lands (`hurt` fx 'mail').
+  - Sleep's pose comes from the rig's own pose channels (body-plan-animation.js maps them for every body plan), so no
+    new pose was added to skeleton-rig.js.
+  - The paralysis edge is the whole sprite tinted gold for two cells (uHit has no edge mode); a true outline would be
+    a shader change (the style track's).
+  - Under Reduced motion the dome and bubble still flash on a block (a still frame swap, no glow with Flashes off);
+    the shield's first rise keeps the old alphaPhase sparks (that case is untouched).
+- Merges: origin/track/vfx merged twice (82fa34ff: VFX-10's finish, #317, VFX-15 through VFX-11's merge; 2c672752:
+  VFX-11's families and kits). Conflicts kept both sides: the pages' script tags, battle-3d.js (my strip-by-id branch
+  only for a particle with `anim` and no `spr`; VFX-11's `spr`+`anim` branch with its stutter, flip and trail after
+  it; VFX-11's `flip` mirrors across, my `flipY` turns upside down, both in battle-fx.js), type-rename.js (both
+  blocks), game-data.d.ts, battleAnims.json (VFX-11's families, defaults, colors and `types` taken whole, my
+  `eventsAbout` and `events` after `iconSprites`), look-battle-anims.py (`--events` and `--motion` beside VFX-15's
+  `--weather`, `--bench`, `--bot`), ROADMAP and vfx-track.md; hooks.js and art-code-refs.json regenerated.
+- The merge recipe with VFX-16 (`claude/vfx-16-battle-flow`, PR #319, which also adds `events`), agreed by message:
+  one `events` object with both key sets (mine: pulseMs, cells, brn, par, slp, confused, broken, stat, protect,
+  shield, soaked, fork, delayed, stones, glint; VFX-16's: about, vs, sendOut, recall, catch, faint, levelUp, victory,
+  defeat, item); the schema keeps my `required` list and `additionalProperties: false` and adds VFX-16's properties;
+  one `BattleAnimEvents` interface (VFX-16's fields optional), `events` required in BattleAnimsData; both check
+  functions (`dataBattleAnims`'s VFX-14 block and `dataBattleFlowEvents`) and both type-rename blocks; in battle-3d.js
+  my `if (p.anim && !p.spr && !p.beam)` branch, then VFX-11's / VFX-16's `p.spr || p.strip`; the rig item's `hit:`
+  (my tint is inside battle3dHit) then VFX-16's `rise:`.
+- The keys VFX-12's Studio editor can give dials (battleAnims.json `events`): `pulseMs`, `cells`; per status
+  (`brn`, `par`, `slp`, `confused`, `broken`, `soaked`, `fork`): `tint`, `tintA`, `start` / `loop` / `tick` / `end` /
+  `bonk` bursts (sprite, ramp, n, every, life, vy, spread, y, k, frame, flip, glow), `flicker`, `hold`, `edge`,
+  `idle`, `hop`, `orbit`, `dx`, `fade`; `stat.up`, `stat.down`, `stat.sharply`; `protect` and `shield` (sprite,
+  ramp, frame, flashFrame, crackFrame, cells by quality, a, r, h, flashMs, end); `delayed` (sprite, ramp, y);
+  `stones` (sprite, ramp, n, r, frame, glint); `glint` (sprite, life, k, gapMs, ramps by source).
+- Measurements (headless, software GPU, quality 0, the town fixture; the machine also ran smoke and the in-game test,
+  so frame times are noisy: only the direction counts):
+  - Moves before (track/vfx 868e6f30, a worktree) and after (40b16de9), overload and deepdrill, hit / se / secrit,
+    side 0: effects-pass draws a frame 90 max in all 12 films, before and after; the pool's own draws (`battleFx`)
+    2 max (budget 3); rig redraws 29.2 a film, 1867 KB, the same; time a frame 730 ms mean before, 653 after (p90
+    3158 -> 2489). No move longer (battle-anims tests: every move's {dur, hit} and `maxMs` unchanged; status 700,
+    stat 680 ms as before).
+  - The looks (`--events --measure`, 200 frames each): brn, slp, confused, stat_up2, protect, shield, fork, stones:
+    `battleFx` 2 max in every film (budget 3), effects-pass draws 90 max (rest 87-90); the most strips in a frame 42
+    (the shield: 9 dome cells plus its rise's sparks), 5-17 in the others; lasting-look particles capped at
+    `cells` [24, 16, 10, 6] by quality and drawn as ambient (a move takes their place when the pool is full).
+  - Sound: `python3 tools/check-sound.py`: 199 fingerprints, 0 changed (the stat-drop fix changes which variant a
+    battle line picks, not a fingerprinted recipe).
+- Films (look-battle-anims.py `--events --sheets`, in the scratchpad, not committed): all 16 under Full; brn,
+  confused and shield under Calm; brn, slp and shield under Reduced motion. Seen: embers and the warm flicker; the
+  lost turn's held frame and gold edge; Z's and the wake's stars and hop; three stars orbiting and the bonk; chevrons
+  down (flipped) and up sharply; the bubble flashing on a block ("Hedged"); the dome rising, flashing on the block
+  and on wearing down, a cracked share, shattering; drips; Fork's dithered copy on two cells of four; the delayed
+  hit's mark in its move's colour until the coin lands; pebbles at the feet and the hit on entry; glints one after
+  another; a broken part's sparks. Calm: the loops only in their pulse (confusion's stars show at its start, then
+  not; the bonk still plays). Reduced: a still orange tint while burned, no flames; the dome stands, no shards. A
+  page probe also read the sleep pose's own frame key, Fork's copy on 52% of frames, the Calm pulse and its end, the
+  Reduced tint through uHit, and no page errors.
+- Risky:
+  - Lasting looks are particles drawn again every 12 fps cell: on a slow phone frame (over 83 ms) a cell can be
+    skipped and its still look blink for a frame. They are marked ambient, so a big move at quality 3 can take their
+    place for its length (meant: the move matters more).
+  - The confused self-hit is guessed from the line before (a plain hurt on a confused Billie, not straight after its
+    own move); a Perk's plain hurt without a `by` report on a confused Billie would also bonk.
+  - A status line read with no battle around it (the Studio's preview, the films) compares with the last line the
+    stage took (or `ev.prev`); in a battle it reads the engine's line before.
+  - The sleep pose shifts pose channels (lower, head down, eyes shut); an odd body plan may look off: phone check.
+  - Merging: VFX-16 (`events`, battle-3d.js's particle loop and rig item), VFX-12 (the Studio's dials) follow the
+    recipes above.
+- Phone checks (listed, not waited for): each status's look on both sides (burned's embers and flicker, paralyzed's
+  sparks and a lost turn's gold edge, asleep's Z's and lower idle, waking's pop, confused's three stars and the bonk);
+  stat chevrons up and down, and sharply; Protect's bubble and its flash on a block; an Alpha's shield dome cracking
+  turn by turn and shattering; Soaked's drips; Fork's copy; the delayed hit's mark; stones at the feet; glints when a
+  Perk or held item fires; Calm (the loops pulse once a turn); Reduced motion (tints only); a stat drop now sounds
+  falling; frame time in a battle with a shield up.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text (added to my checks after CI
+  caught a backtick in `eventsAbout`), build before each commit; `npm test` 1935 of 1935 on the last merge (the
+  run-map timing test failed once under load and passes alone, as earlier entries record); tools/test/
+  battle-looks.test.mjs 12 of 12; the battle-anims tests (every move's {dur, hit}, `maxMs`) unchanged; the golden
+  record untouched (the engine isn't changed). Smoke before each game commit: no problems at 23e7f848, 895f4a23
+  (the runner), 82fa34ff and 2c672752 (the merges), 359-463 s. Full quick check (a2b24fda): 36 of 42 in 2216 s;
+  the problems: Terraces, RL-8's seam, room light, Battle music's drums (the known list), Ground tiles' lab room
+  (fails the same alone on track/vfx 868e6f30: main's) and Postcards (passes alone here and on the base: load).
+  In-game full test (82fa34ff): every battle step passed; two walking steps failed (the Gene Bank black, a room
+  that opens in place changing the town's grid): the same two (and "Inside the barn" black too) fail on track/vfx 868e6f30 in a worktree: not this branch's. CI: smoke red at 40b16de9 and b44bd098 for the
+  backtick (mine, fixed in c54b9d51); at 82fa34ff 41 of 42, the one red Camera follow (CAM-1, "the page stopped
+  drawing": passes alone here, 123 s; VFX-10 recorded it on CI at 868e6f30 too), re-run once, said on PR #320.
+- Next: the next main-line session merges this branch into `track/vfx` (and VFX-16's by the recipe above). VFX-12's
+  dials for `events`. Worth an engine fix (own commit, golden record remade): Scatter Stones on its user's side.
+
 ### VFX track VFX-10 - Effect art: 44 grayscale strips, ramps, the strips in the battle's pool, the Art browser's previews - 2026-10-28
 Branch `track/vfx` (main merged in first, ad43878d: SY-6's `uFoil` and VFX-9's `uHit` joined in the sprite shader,
 SY-8's tally in battleStageFlash, SY-5's notice in tapMessage; then 7f99aec5 after main took VFX-5..9 in #312, taking
