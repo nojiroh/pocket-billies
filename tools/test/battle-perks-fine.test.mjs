@@ -454,7 +454,11 @@ test('PK-7 fine: a leader rule draws that rarity alone, evenly; ordinary picks, 
     assert.equal(PK.perkOfferMake(none, data.PERKS, LEAD, undefined, 'leader'), null);
     /* without a leader rule a leader's pick is the ordinary one */
     const plain = runOf();
-    assert.deepEqual(PK.perkOffer(plain, data.PERKS, RULE, undefined, 'leader'), PK.perkOffer(plain, data.PERKS, RULE));
+    const NOLEAD = { ...RULE, leader: undefined };
+    assert.deepEqual(
+      PK.perkOffer(plain, data.PERKS, NOLEAD, undefined, 'leader'),
+      PK.perkOffer(plain, data.PERKS, NOLEAD)
+    );
     /* the Studio's offer order is the leader's pick */
     for (const o of PK.perkOfferOrder('FINEORDER1', data.PERKS, LEAD, 3))
       for (const id of o.offer) assert.equal(data.PERKS[id].rarity, 'fine');
@@ -780,4 +784,31 @@ test('PK-7 every Perk of Waves A-D and Fine Print at once: whole battles end, ev
       if (k in f) assert.ok(Number.isFinite(f[k]), `${f.src} ${k}`);
   const dm = E.fxDamage(real(ids), hit(true, true));
   assert.ok(dm >= E.FX_LIMIT.lo && dm <= E.FX_LIMIT.hi * E.FX_LIMIT.hi, String(dm));
+});
+
+test('PK-7 a leader’s win offers only Fine Print (rules.json run.perks.leader); a route trainer’s reward pick, shops and events never', () => {
+  const BR = modules['battle-rewards'],
+    PK = modules.perks,
+    R = GAME_DATA.rules.run.perks;
+  assert.deepEqual(R.leader, { rarity: 'fine', pick: 3 });
+  for (let n = 0; n < 40; n++) {
+    reseed(3);
+    const s = startedSave(ofType('Water'), 30);
+    s.run = modules['run-state'].newRun('FINELEAD' + String(n).padStart(2, '0'), 1, 1, { team: [] });
+    s.run.perks = [];
+    s.flags = s.flags || {};
+    const b = {
+      kind: 'trainer',
+      T: { runFoe: 'miniboss', reward: 0 },
+      tid: 'lead',
+      sides: [{ team: s.team }, { team: [] }],
+    };
+    BR.battleSettleWin(b, s, { o: 'win', prize: 0, reward: 0 }, s.run);
+    assert.equal(s.run.offer.length, 3);
+    for (const id of s.run.offer) assert.equal(data.PERKS[id].rarity, 'fine', id);
+    /* a shop's shelf and an event's draw stay ordinary */
+    assert.notEqual(data.PERKS[PK.perkShelf(s.run, 1, n, data.PERKS, R)].rarity, 'fine');
+    const ev = modules.encounters.encPerk(s.run, undefined, data.PERKS, R);
+    assert.ok(ev && data.PERKS[ev].rarity !== 'fine');
+  }
 });

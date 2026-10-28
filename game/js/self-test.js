@@ -2281,6 +2281,9 @@ async function runFullTest(mode) {
             pickBtn().f();
             if (!uiState.modal || uiState.modal.cls !== 'relic-pick' || !saveData.run.offer)
               throw new Error('the pick didn’t open');
+            /* PK-7: a leader's win offers Fine Print alone (rules.json run.perks.leader) */
+            if (saveData.run.offer.some(id => !PERKS[id] || PERKS[id].rarity !== 'fine'))
+              throw new Error(`the mini-boss's pick isn't all Fine Print: ${saveData.run.offer.join(', ')}`);
             const took = saveData.run.offer[0];
             uiState.relicSel = took;
             perkPickOpen();

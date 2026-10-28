@@ -162,7 +162,7 @@ test('relics: a seed’s offer order (Studio plan T4.1) is the run’s picks in 
     none = R.perkOfferOrder('ORDER1', PERKS, RULE, picks),
     r = run('ORDER1'),
     game = [];
-  for (let k = 0; k < picks; k++) game.push(R.perkOfferMake(r, PERKS, RULE) || []);
+  for (let k = 0; k < picks; k++) game.push(R.perkOfferMake(r, PERKS, RULE, undefined, 'leader') || []);
   assert.deepEqual(
     none.map(p => p.offer),
     game,
