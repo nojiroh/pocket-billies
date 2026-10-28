@@ -648,7 +648,13 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
           W,
           H,
           (i, j) => ter(i + 0.5, j + 0.5),
-          (i, j) => !!WATER_KIND_LOOKS[kindAt(i + 0.5, j + 0.5, false)].sea
+          (i, j) => !!WATER_KIND_LOOKS[kindAt(i + 0.5, j + 0.5, false)].sea,
+          /* a river's tiles (any of its half-metre cells running): the hub's river rose and fell with the tide */
+          (i, j) =>
+            runQ(2 * j * W2 + 2 * i) ||
+            runQ(2 * j * W2 + 2 * i + 1) ||
+            runQ((2 * j + 1) * W2 + 2 * i) ||
+            runQ((2 * j + 1) * W2 + 2 * i + 1)
         )
       : null;
   /* WA-5b: the shoreline is the dry scene's: a flood's banks keep their grass (the water shader lays puddles on them) */
