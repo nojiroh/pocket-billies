@@ -199,18 +199,35 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     is what CH-2's figures turn to);
   - the room-exit facing, the cutscene copies and the reach's mirror fixed;
   - the sprite-sheet exporter retired, at the owner's word.
-- **CH-2 Spike 1: the figure baker** (a switch `people.figures`, off): a WebGL renderer for jointed rigid parts (one
-  joint per vertex); an oblique projection onto the upright card, snapped to the texel grid, yaw in steps; poses on
-  the 12 fps clock; toon bands from the props' top-left light; the plum outline and sel-out drawn in the low-res
-  buffer. It **bakes canvases into today's sprite path** (tagged `ax`/`ay`/`ppm`), so shadows, AO, fog, reflections
-  and batching stay untouched. It starts with a code-built mannequin with idle and walk.
-- **CH-3 Spike 2: one figure, side by side:** a stand-in from KayKit's CC0 Adventurers (its licence recorded as in
-  validation/cc0-src/LICENSES.md), brought in by `tools/gltf-figure.mjs` (strongest joint per vertex, clips sampled
-  at 12 fps, a palette-snapped 32 px/m texture), with a face decal from the wardrobe's eye and mouth pixels; shown
-  beside today's person, the plain 3D figure (B) and a Billie, on `test_people` and in Copperleaf, by day, at dusk
-  and under lamps, at every zoom, and in battle at 64 px/m. Dials: density 16-64, yaw steps 8/16/32, outline on or
-  off; 10/20/40 figures. Headless pictures and draw counts, then the owner's phone (its milliseconds) and **the
-  owner's pick**.
+- **CH-2 Spike 1: the figure baker.** Done 2026-10-28 on `track/characters` (HANDOFF has the numbers):
+  - the switch Engine > People > Figures (`people.figures`, off), with its density (16-64, 32), turns and outline;
+  - game/js/figures.js, the baker, in its own small WebGL2 context (the owner's pick): jointed rigid parts, one joint
+    a vertex; toon bands from a top-left light in the props' ramps; the plum outline and a lighter line inside where
+    a part stands in front of another, drawn at the bake's own pixels; pictures kept by view (at most 600), at most 4
+    baked a frame; a lost context bakes nothing until it is back;
+  - game/js/logic/figure-pose.js: the oblique projection onto the upright card (no double squash), the heading seen
+    from the camera in steps, the tilt in 2-degree steps, the lift snapped to whole texels, the 12 fps clock;
+  - the baked canvases go down today's sprite path tagged `ax`/`ay`/`ppm`, so shadows, AO, fog, reflections,
+    batching and the person counters take them unchanged;
+  - the code-built mannequin with idle and walk, made rounder and more charming at the owner's word ("less boxy"): an
+    egg of a head with a hair cap, fringe and cowlick, a bean body with a scarf, capsule limbs, mitten hands, bean
+    shoes, smooth toon shading; its face painted in whole pixels (eyes with a glint, mouth, blush);
+  - the bench: the mannequins on test_people, look-people `--figures`, `--lose` and `--sheet`.
+- **CH-3 Spike 2: one figure, side by side.** Done 2026-10-28 on `track/characters` (HANDOFF has the pictures and
+  counts):
+  - `tools/gltf-figure.mjs`: a rigged .glb to a figure (the strongest joint a vertex; what a hand holds left out;
+    clips sampled on the 12 fps clock, calm ones on twos; x flipped for the game's mirrored camera; the texture
+    point-sampled to 128 x 128 and snapped to the master palette);
+  - the stand-in: KayKit's Rogue (Adventurers 1.0, CC0; validation/cc0-src/LICENSES.md), game/art/figures/rogue.*,
+    with idle, walk, run, cheer, throw and sit; its own painted face reads at 32 px a metre (its head is about 26 px
+    wide), so the wardrobe's face pixels were not laid over it (the owner: the new people don't have to look like
+    today's);
+  - the plain 3D figure (B) as a style of the same figure (smooth, no outline, 128 px a metre, smoothed by the GPU);
+  - test_people: the mannequin, today's person, the stand-in as C and as B and a Billie side by side, the stand-in
+    turned eight ways, walking, running, cheering and throwing; look-people `--battle`, dusk and density lists;
+  - you as your figure anywhere, townsfolk as figures (a dial), and in battle the trainers at 64 px a metre;
+  - the debug menu's figure switches, to try every dial on the phone; the debug log says which look was on.
+  - Waiting: **the owner's phone** (its milliseconds) and **the owner's pick** ("Ask me before" 1).
 - **After the pick (C):**
   - **CH-4 The live atlas:** figures drawn on each 12 fps step into one shared, unlit atlas (colour plus normals)
     before the shadow passes, lit in the sprite shader with a cel band; cell rects in sprite and shadow batches; one
@@ -241,14 +258,18 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
 Tags `ch-N-done` (the owner pushes them).
 
 ## Ask me before
-1. The pick after CH-3: C, B, A or more tuning.
+1. The pick after CH-3: C, B, A or more tuning. **Open: the owner's, after the phone.**
 2. Jointed parts stay (the Studio's rule). Skinning only if bending joints prove necessary; not expected at 56 px.
-3. Density: 32 px/m in the world (faces about 15 px), 40 or 48 if faces need it; 64 in battle.
+   **Answered 2026-10-27: jointed rigid parts** (CH-2).
+3. Density: 32 px/m in the world (faces about 15 px), 40 or 48 if faces need it; 64 in battle. **Answered
+   2026-10-27: 32, with a 16-64 dial** (CH-2); battle 64 (CH-3).
 4. People beside 2D Billies: two kinds of pixel art. A later track could bring the Billies to 32 px/m.
-5. Proportions (2.75 heads), and whether people grow a little against the world.
+5. Proportions (2.75 heads), and whether people grow a little against the world. **Answered 2026-10-27: 2.75 heads
+   at 1.75 m** (CH-2; the KayKit stand-in is about 2.2 heads, a stand-in only).
 6. The default zoom: people are 39 CSS px at Normal. The camera track's call, but it shapes readability.
 7. Where models come from: CC0 stand-ins for the spike, then the owner's Blockbench or Blender models, or bodies
-   built in code; which CC0 clip packs.
+   built in code; which CC0 clip packs. **Answered 2026-10-27 for the spike: a code-built mannequin first** (CH-2),
+   then KayKit's Rogue (CH-3, the track's plan); later models are still open.
 8. The player's design (the neon outsider) and the Bureau's look.
 9. Hand touch-ups on baked sheets for named people.
 10. The sprite-sheet exporter: mend or retire. **Answered 2026-10-27: retired** (CH-1).
@@ -264,8 +285,10 @@ Tags `ch-N-done` (the owner pushes them).
   game/js/engine/gpu-counters.js, game/js/self-test.js (the Diagnostics groups).
 - The bench (CH-1): game/js/logic/person-view.js (facing, headings, which pictures are people's),
   game/data/maps/test_people.json (its `lineup`), tools/look-people.py, walk-view-gl.js `peopleReport`.
-- New: game/js/figures.js (in both index.html files; `npm run modules`), tools/gltf-figure.mjs,
-  game/data/figures.json.
+- The spike (CH-2, CH-3): game/js/figures.js (the baker, on both pages), game/js/logic/figure-pose.js (the
+  mannequin, poses, the view and the clock), tools/gltf-figure.mjs (the importer), game/art/figures/ (the stand-in;
+  not game/data/figures.json, as first planned: a model's file is fetched only when the figures are on), the debug
+  menu's figure switches (debug-menu.js FIGURE_SWITCHES), battle-stage.js trainerBattleFrame.
 
 ## Verification
 - Every session: lint, typecheck and unit tests; smoke before each game commit; check:fast in CI; the full quick
