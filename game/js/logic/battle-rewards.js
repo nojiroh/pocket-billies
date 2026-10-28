@@ -20,7 +20,7 @@ import { META_GENES, META_MAX } from './meta-state.js';
 import { factionBotOf, factionOfClass } from './factions.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop, runFxMoment } from './run-loop.js';
-import { fxMoney, fxOfBillie, fxSalvage, fxSplice } from './effects.js';
+import { fxHeldBoost, fxMoney, fxOfBillie, fxSalvage, fxSplice } from './effects.js';
 import { perkOfferMake, perkTeamOf } from './perks.js';
 import { rewardDataGame, rewardOfferMake, salvageOfferMake } from './rewards.js';
 import { battleRoll, fxBattleRows, fxFoeTags } from './battle-engine.js';
@@ -96,11 +96,12 @@ export function battleRewards(b, s, roll, rules = RULES) {
 }
 
 /** RL-12c: the rows that change a battle's money: the run's (b.fx) and the money rows of the held items of yours still
- * standing (null with none) @param {any} b */
+ * standing (null with none; PK-8: worked better by the run's heldBoost rows) @param {any} b */
 export function battleMoneyFx(b) {
-  const held = b.sides[0].team
-    .filter((/** @type {any} */ m) => m.hp > 0)
-    .flatMap((/** @type {any} */ m) => (fxOfBillie(m, ITEMS) || []).filter(f => f.kind === 'money'));
+  const boost = b.fx ? fxHeldBoost(b.fx) : 1,
+    held = b.sides[0].team
+      .filter((/** @type {any} */ m) => m.hp > 0)
+      .flatMap((/** @type {any} */ m) => (fxOfBillie(m, ITEMS, boost) || []).filter(f => f.kind === 'money'));
   /* PK-1: the run's rows whose conditions hold for this battle (battle-engine.js fxBattleRows) */
   const run = fxBattleRows(b);
   return held.length ? [...(run || []), ...held] : run;

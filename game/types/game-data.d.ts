@@ -2094,7 +2094,9 @@ export type FxKindRow =
   /** PK-7: an attack of yours that deals damage costs its user this share of its HP */
   | { kind: 'recoil'; share: number }
   /** PK-7: n (1-3) items from an events.json loot table (`table`), drawn by weight, at its moment (arrive) */
-  | { kind: 'loot'; table: string; n?: number };
+  | { kind: 'loot'; table: string; n?: number }
+  /** PK-8: your Billies' held items work mult times as well (effects.js fxBoostRow; the Tech Gear set) */
+  | { kind: 'heldBoost'; mult: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

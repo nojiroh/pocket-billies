@@ -2317,6 +2317,9 @@ export function fxKindProblems(f, at, D, problem) {
   /* PK-7: what an attack of yours that deals damage costs its user, at most a half of its HP */
   if (f.kind === 'recoil' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))
     problem(`${at}.share: a share of HP above 0, at most 0.5`);
+  /* PK-8: held items work better, never worse */
+  if (f.kind === 'heldBoost' && !(typeof f.mult === 'number' && f.mult > 1))
+    problem(`${at}.mult: above 1 (held items work better)`);
   if (f.kind === 'benchXp' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
     problem(`${at}.share: a share of XP above 0, at most 1`);
   /* PK-4: a run rule of FX_RULES and how much it changes (FX_RULE_N: forecastDays 1 to 14 more days...) */
@@ -2439,6 +2442,8 @@ export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({
   rule: ['if', 'per'],
   /* PK-6: a copy row stands for the rows above it; it has no timing of its own (the schema refuses any) */
   copy: ['if', 'grow', 'per', 'once'],
+  /* PK-8: read as a battle's held items are (battle-engine.js heldBoostOf): no condition, no growth */
+  heldBoost: ['if', 'grow', 'per', 'every', 'once'],
 });
 /** PK-1: one condition word: '' when fine, else what is wrong @param {string} c @param {any} D */
 export function fxCondProblem(c, D) {

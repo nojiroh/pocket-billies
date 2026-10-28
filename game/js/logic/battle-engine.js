@@ -101,6 +101,7 @@ import {
   fxDamageBy,
   fxFire,
   fxHeldAt,
+  fxHeldBoost,
   fxHeldRow,
   fxImmune,
   fxInflictPick,
@@ -247,11 +248,14 @@ expose({
   // @ts-expect-error -- replaced on purpose
   heldAfterHit: [() => heldAfterHit, v => (heldAfterHit = v)],
   // @ts-expect-error -- replaced on purpose
+  heldBoostOf: [() => heldBoostOf, v => (heldBoostOf = v)],
+  // @ts-expect-error -- replaced on purpose
   heldCtx: [() => heldCtx, v => (heldCtx = v)],
   // @ts-expect-error -- replaced on purpose
   heldFirstActs: [() => heldFirstActs, v => (heldFirstActs = v)],
   // @ts-expect-error -- replaced on purpose
   heldFloats: [() => heldFloats, v => (heldFloats = v)],
+  heldFx: [() => heldFx],
   // @ts-expect-error -- replaced on purpose
   heldHitMoments: [() => heldHitMoments, v => (heldHitMoments = v)],
   // @ts-expect-error -- replaced on purpose
@@ -552,8 +556,8 @@ export function calcDamage(k, tk, mid, src) {
      hold for the one of yours hitting (with this hit's: hit, crit) or hit (hurt) */
   const fm = battleNow().fx ? fxHitMult(k, tk, M, { src, crit, te }) : 1;
   /* RL-12c: the attacker's held item (what it deals) and the target's (what it takes); 1 when neither holds one */
-  const hk = src ? null : fxOfBillie(fighter(k), ITEMS),
-    ht = fxOfBillie(fighter(tk), ITEMS),
+  const hk = src ? null : heldFx(fighter(k)),
+    ht = heldFx(fighter(tk)),
     hm =
       (hk ? fxDamage(hk, { cat: M.c, type: M.t, deal: true, take: false }) : 1) *
       (ht ? fxDamage(ht, { cat: M.c, type: M.t, deal: false, take: true }) : 1);
@@ -970,7 +974,7 @@ export function endTurn() {
       }).by = [{ src: 'passive:regrowth', si: k }];
     }
     /* RL-12c: a held item's heals: a share at each turn's end, and once a battle a share when low */
-    const hx = m.hp > 0 && fxOfBillie(m, ITEMS);
+    const hx = m.hp > 0 && heldFx(m);
     if (hx) {
       const name = (ITEMS[m.held || ''] || { n: 'item' }).n,
         each = fxTurnHeal(hx);
@@ -1092,17 +1096,26 @@ export function award(e) {
     battleSay(`The rest of the team gained ${formatNumber(share)} XP.`);
   }
 }
+/** PK-8: how much better a fighter's held item works: the run's heldBoost rows (the Tech Gear set) for one of yours, 1
+ * for a foe's or with none @param {any} m */
+export function heldBoostOf(m) {
+  const b = battleNow();
+  return b && b.fx && m && m.held && b.sides[0].team.includes(m) ? fxHeldBoost(b.fx) : 1;
+}
+/** PK-8: a fighter's own rows (effects.js fxOfBillie: its held item's, its genes'), the held item's worked better for
+ * one of yours by the run's heldBoost rows (heldBoostOf) @param {any} m */
+export const heldFx = m => fxOfBillie(m, ITEMS, heldBoostOf(m));
 /** RL-12c: XP with the Billie's held item's xp rows; RL-S2 part B: and the run's (b.fx: a Perk's, a hub person's level)
  * @param {any} m @param {number} n */
 export const heldXp = (m, n) => {
   const run = (battleNow() && fxBattleRows(battleNow())) || [];
   /* ON-4: a Billie that came by a friend trade learns faster, as in Pokémon (the owner's pick over obedience) */
   const traded = m && m.traded ? [{ kind: 'xp', mult: TRADE_XP }] : [];
-  return fxXp([...run, ...(fxOfBillie(m, ITEMS) || []), ...traded], n);
+  return fxXp([...run, ...(heldFx(m) || []), ...traded], n);
 };
 /** RL-12c: a held item's stat stages for a fighter as it takes the field (the battle's start: battle-state.js) */
 export function heldStages(k) {
-  const up = fxStages(fxOfBillie(fighter(k), ITEMS)),
+  const up = fxStages(heldFx(fighter(k))),
     v = fieldState(k);
   for (const s2 in up) v.st[s2] = clamp((v.st[s2] || 0) + up[s2], -BATTLE_RULES.stageMax, BATTLE_RULES.stageMax);
 }
@@ -1998,7 +2011,7 @@ export const heldName = m => (ITEMS[m.held] && ITEMS[m.held].n) || m.held;
 export function heldMoment(when, k, more) {
   const m = fighter(k);
   if (!m || !m.held || m.hp <= 0) return [];
-  const L = fxHeldAt(m, ITEMS, when);
+  const L = fxHeldAt(m, ITEMS, when, heldBoostOf(m));
   if (!L.length) return L;
   const rows = fxFire(L, when, heldCtx(k, more), { run: null, battle: heldMarks(k) });
   for (const f of rows) {
@@ -2020,7 +2033,7 @@ export function heldSurvives(tk, r) {
   const t = fighter(tk),
     mx = maxHp(t);
   if (!t.held || r.dmg < t.hp || t.hp < mx || mx < 2) return false;
-  const f = fxHeldRow(fxOfBillie(t, ITEMS), 'survive'),
+  const f = fxHeldRow(heldFx(t), 'survive'),
     M = heldMarks(tk);
   if (!f || M.survive) return false;
   M.survive = 1;
@@ -2033,7 +2046,7 @@ export function heldSurvives(tk, r) {
 export function heldFirstActs(acts, early) {
   for (const a of acts) {
     const u = fighter(a.who),
-      f = u && u.held ? fxHeldRow(fxOfBillie(u, ITEMS), 'first') : null;
+      f = u && u.held ? fxHeldRow(heldFx(u), 'first') : null;
     if (!f || !(battleRoll() < f.chance)) continue;
     early.add(a);
     battleSay(`${billyName(u)}’s ${heldName(u)} let it go first!`, null).by = [{ src: 'held:' + u.held, si: a.who }];
@@ -2045,7 +2058,7 @@ export function heldLastActs(acts) {
   const out = new Set();
   for (const a of acts) {
     const u = fighter(a.who);
-    if (u && u.held && fxHeldRow(fxOfBillie(u, ITEMS), 'last')) out.add(a);
+    if (u && u.held && fxHeldRow(heldFx(u), 'last')) out.add(a);
   }
   return out;
 }
@@ -2054,7 +2067,7 @@ export function heldLastActs(acts) {
 export function heldFloats(k, ty) {
   const t = fighter(k);
   if (!t || !t.held) return false;
-  const f = fxHeldRow(fxOfBillie(t, ITEMS), 'immune');
+  const f = fxHeldRow(heldFx(t), 'immune');
   return !!f && f.type === ty && !(f.until === 'hurt' && heldMarks(k).popped);
 }
 /** PK-10: what held items do after a hit lands: the one hit holds a reflect row (Cactus Keyring): the one hitting
@@ -2066,12 +2079,12 @@ export function heldAfterHit(k, tk, M, r) {
     t = fighter(tk);
   if (k === tk || !u || !t || !(r.dmg > 0)) return;
   /* the one hit holds an immune row that lasts until it is hit (Party Balloon): it is spent */
-  const fl = t.held ? fxHeldRow(fxOfBillie(t, ITEMS), 'immune') : null;
+  const fl = t.held ? fxHeldRow(heldFx(t), 'immune') : null;
   if (fl && fl.until === 'hurt' && !heldMarks(tk).popped) {
     heldMarks(tk).popped = 1;
     battleSay(`${billyName(t)}’s ${heldName(t)} popped!`, { k: 'stat', si: tk, up: false });
   }
-  const rf = t.held ? fxHeldRow(fxOfBillie(t, ITEMS), 'reflect') : null;
+  const rf = t.held ? fxHeldRow(heldFx(t), 'reflect') : null;
   if (rf && (!rf.cat || rf.cat === M.c) && u.hp > 0) {
     const d = Math.min(u.hp, Math.max(1, Math.floor(maxHp(u) * rf.share)));
     u.hp -= d;
@@ -2080,7 +2093,7 @@ export function heldAfterHit(k, tk, M, r) {
     ];
   }
   /* the one hitting holds a drain row (Costume Fangs): it heals its share of the damage dealt */
-  const dr = u.held && u.hp > 0 ? fxHeldRow(fxOfBillie(u, ITEMS), 'drain') : null;
+  const dr = u.held && u.hp > 0 ? fxHeldRow(heldFx(u), 'drain') : null;
   if (dr && u.hp < maxHp(u)) {
     const g = Math.min(maxHp(u) - u.hp, Math.max(1, Math.floor(r.dmg * dr.share)));
     u.hp += g;

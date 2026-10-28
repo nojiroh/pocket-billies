@@ -119,6 +119,7 @@ const PERK_KINDS = {
   give: 'Moneys and Bag items at once, when it is taken (PK-6)',
   recoil: 'An attack of yours that deals damage costs its user HP (PK-7)',
   loot: 'A random item from an events.json loot table, at its moment (PK-7)',
+  heldBoost: 'Your Billies’ held items work better (PK-8)',
 };
 /** PK-4, PK-5: each run rule's name and what its By counts (data-checks.js FX_RULE_N has its range) */
 const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
@@ -214,6 +215,7 @@ const PERK_ROW_NEW = {
   give: () => ({ kind: 'give', money: 150, when: 'take' }),
   recoil: () => ({ kind: 'recoil', share: 0.08 }),
   loot: () => ({ kind: 'loot', table: 'common', when: 'arrive' }),
+  heldBoost: () => ({ kind: 'heldBoost', mult: 1.5 }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -454,6 +456,8 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         }),
       ],
       salvage: () => [mult('Parts offered and Scrap ×')],
+      /* PK-8: a held item's factors move this many times as far from 1; its stages, shares and chances this many times */
+      heldBoost: () => [mult('Held items work ×')],
       /* PK-6: Moneys, and the items as id:n pairs */
       give: () => [
         numberField('Moneys', `${p}.money`, { min: 1, max: 9999, step: 1, opt: 1 }),

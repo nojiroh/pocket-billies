@@ -771,6 +771,36 @@ test('PK-7: dataPerks and the schema take Fine Print’s kinds and name their fa
   }
 });
 
+/* PK-8: the kinds the Perk sets' bonuses need (perks-track.md 5.7) */
+const PK8_GOOD = [
+  { kind: 'price', what: 'perk', mult: 0.5 },
+  { kind: 'heldBoost', mult: 1.5 },
+];
+const PK8_BAD = [
+  [{ kind: 'heldBoost', mult: 1 }, 'mult: above 1 (held items work better)'],
+  [{ kind: 'heldBoost', mult: 1.5, if: 'lead' }, 'a heldBoost row is read where no battle'],
+  [{ kind: 'heldBoost', mult: 1.5, when: 'hit' }, "a heldBoost row can't act at hit"],
+];
+test('PK-8: dataPerks and the schema take the sets’ kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK8_GOOD.length; i += 4)
+    D.perks['test_pk8_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK8_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK8_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
 test('PK-7: the fine rarity: a leader rule names a rarity some Perk has; an event never names Fine Print', () => {
   const D = structuredClone(GAME_DATA);
   D.perks.lucky_charm.rarity = 'fine';

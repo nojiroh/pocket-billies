@@ -53,6 +53,8 @@
              fxRecoilHurt; Overclock Chip)
      loot    n items from an events.json loot table (`table`: common...), drawn by weight, at its moment (`when:
              arrive`; Subscription Box) (PK-7, run-loop.js runLoot)
+     heldBoost  your Billies' held items work mult times as well: each number of a held row moved that much further
+             from doing nothing (fxBoostRow; the Tech Gear set) (PK-8, battle-engine.js heldFx)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -100,6 +102,8 @@ expose({
   HELD_WHEN: [() => HELD_WHEN],
   fxAt: [() => fxAt],
   fxBenchXp: [() => fxBenchXp],
+  // @ts-expect-error -- replaced on purpose
+  fxBoostRow: [() => fxBoostRow, v => (fxBoostRow = v)],
   fxCatch: [() => fxCatch],
   fxCatchLevel: [() => fxCatchLevel],
   fxChip: [() => fxChip],
@@ -116,6 +120,7 @@ expose({
   fxFire: [() => fxFire, v => ((fxFire = v), provide({ fxFire }))],
   fxHealShare: [() => fxHealShare],
   fxHeldAt: [() => fxHeldAt],
+  fxHeldBoost: [() => fxHeldBoost],
   fxHeldRow: [() => fxHeldRow],
   fxIfs: [() => fxIfs],
   fxImmune: [() => fxImmune],
@@ -207,6 +212,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'give',
   'recoil',
   'loot',
+  'heldBoost',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -273,16 +279,36 @@ provide({ fxOfRun }); /* to-module */
  * splice's (rules.js billyGeneFx: its traits', tagged `gene:<trait>`, and an Unstable splice's drawback, `unstable`);
  * null with none (SP-5: an Augment's Unstable splice too)
  * @param {{ held?: string, sp?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m
- * @param {Record<string, { hold?: import('../../types/game-data').HeldRow[] }>} items @returns {Fx[] | null} */
-export const fxOfBillie = (m, items) => {
+ * @param {Record<string, { hold?: import('../../types/game-data').HeldRow[] }>} items @param {number} [boost] PK-8:
+ * what its held item's rows are worked by (fxBoostRow; 1, as they are) @returns {Fx[] | null} */
+export const fxOfBillie = (m, items, boost = 1) => {
   const I = m && m.held ? items[m.held] : null,
     /* PK-10: a row with a when acts only at its moment (fxHeldAt), never where its kind always acts */
     rows = I && I.hold ? /** @type {import('../../types/game-data').FxRow[]} */ (I.hold.filter(f => !f.when)) : [],
-    held = rows.length ? rows.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
+    /* PK-8: `boost` (fxHeldBoost, yours only) makes a held item work better: fxBoostRow */
+    held = rows.length ? rows.map(f => /** @type {Fx} */ ({ ...fxBoostRow(f, boost), src: 'held:' + m?.held })) : null;
   if (!m || (!m.graft && !m.aug)) return held;
   const gene = /** @type {Fx[]} */ (billyGeneFx(m));
   return held || gene.length ? [...(held || []), ...gene] : null;
 };
+
+/** PK-8: how much better your Billies' held items work: the product of the heldBoost rows (1 when none; the Tech Gear
+ * set's 1.5) @param {Fx[] | null | undefined} fx */
+export const fxHeldBoost = fx => fxMult(fx, f => f.kind === 'heldBoost');
+/** PK-8: a held row worked k times as well: a factor moved k times as far from 1 (x1.2 at 1.5 is x1.3, a take of x0.8
+ * is x0.7), within FX_LIMIT; stages k times as many, rounded half up (+1 is +2), within FX_STAGES; a share k times as
+ * big, at most 1; a chance k times, at most FX_CHANCE. Anything else (pinchHeal's `at`, a type, a when) as it is; the
+ * row itself when k is 1 @template T @param {T} f @param {number} k @returns {T} */
+export function fxBoostRow(f, k) {
+  if (k === 1 || !f || typeof f !== 'object') return f;
+  const r = /** @type {any} */ ({ ...f });
+  if (typeof r.mult === 'number') r.mult = Math.min(FX_LIMIT.hi, Math.max(FX_LIMIT.lo, 1 + (r.mult - 1) * k));
+  if (typeof r.stages === 'number')
+    r.stages = Math.sign(r.stages) * Math.min(FX_STAGES, Math.round(Math.abs(r.stages) * k));
+  if (typeof r.share === 'number') r.share = Math.min(1, r.share * k);
+  if (typeof r.chance === 'number') r.chance = Math.min(FX_CHANCE, r.chance * k);
+  return r;
+}
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
  * @param {Fx[] | null | undefined} fx @param {(f: Fx) => boolean} test */
@@ -879,12 +905,14 @@ export const fxHeldRow = (fx, kind) => (fx || []).find(f => f.kind === kind) || 
 export const HELD_WHEN = /** @type {const} */ (['hit', 'hurt']);
 /** PK-10: the conditions a hold row's `if` can name: those a hit knows about its holder */
 export const HELD_IFS = /** @type {const} */ (['superEffective', 'cat', 'type', 'hp<']);
-/** PK-10: a Billie's hold rows of `when` (tagged held:<id>), for its moment; [] with none
- * @param {{ held?: string } | null | undefined} m @param {Record<string, { hold?: any[] }>} items
- * @param {string} when @returns {Fx[]} */
-export const fxHeldAt = (m, items, when) => {
+/** PK-10: a Billie's hold rows of `when` (tagged held:<id>), for its moment; [] with none. PK-8: worked `boost` times
+ * as well (fxBoostRow) @param {{ held?: string } | null | undefined} m
+ * @param {Record<string, { hold?: any[] }>} items @param {string} when @param {number} [boost] @returns {Fx[]} */
+export const fxHeldAt = (m, items, when, boost = 1) => {
   const I = m && m.held ? items[m.held] : null;
   return I && I.hold
-    ? I.hold.map((f, row) => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held, row })).filter(f => f.when === when)
+    ? I.hold
+        .map((f, row) => /** @type {Fx} */ ({ ...fxBoostRow(f, boost), src: 'held:' + m?.held, row }))
+        .filter(f => f.when === when)
     : [];
 };
