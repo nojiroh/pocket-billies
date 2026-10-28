@@ -29,6 +29,19 @@ Kappi (a creature person, `creatureFrame`) and the bots keep their 2D rigs.
   outline and master palette, springy hair and scarves; costumes that tell the story: the player as the neon outsider
   from the cyberpunk city among solarpunk locals and beige Bureau clerks.
 
+## The owner's pick (2026-10-28)
+Shown A, B and C side by side (CH-3b's session: the in-game lineup at the default and Close zooms), the owner picked
+**C, the pixel puppet, but from the code-built mannequin's simpler shapes, not the KayKit stand-in**: "I like the
+simpler shapes but you can give it more detail and variety. They can have more personality and less mannequin
+feeling. So different head shapes, heights and body types look good." Scope: every NPC (Professor Chosen, Blake, the
+leaders, route trainers, shopkeepers, residents, townsfolk), Kappi, and the player as the boy and girl looks;
+customisation (the dressing room) later. So people are **built in code by a figure kit** from the look data they
+already have (logic/figure-kit.js), not imported models; the model importer (tools/gltf-figure.mjs) and the stand-in
+stay for comparison only.
+- C looked soft in the game beside today's people. It was not the renderer: the scene's stretch to the screen blurs
+  everyone the same; the stand-in's swatch texture had little contrast and no lines inside it. The kit's figures
+  have strong bands, inner lines and painted faces, and read crisp.
+
 ## Would higher resolution work? The numbers (a 390×844 phone, DPR 3, portrait)
 | Where | Person on screen | Drawn px per art px today (66.5 px/m) | Proposed |
 |---|---|---|---|
@@ -227,20 +240,38 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     turned eight ways, walking, running, cheering and throwing; look-people `--battle`, dusk and density lists;
   - you as your figure anywhere, townsfolk as figures (a dial), and in battle the trainers at 64 px a metre;
   - the debug menu's figure switches, to try every dial on the phone; the debug log says which look was on.
-  - Waiting: **the owner's phone** (its milliseconds) and **the owner's pick** ("Ask me before" 1).
-- **After the pick (C):**
+  - The owner's pick (above): C, built from simple shapes in code.
+- **CH-3b The figure kit and the cast.** Done 2026-10-28 on `track/characters` (pushed on
+  `claude/laughing-tesla-roy32r` for review; HANDOFF has the pictures):
+  - logic/figure-kit.js: a figure from a person's look: six head shapes (round, oval, square, long, pear, heart),
+    six builds (average, slim, stocky, round, tall, small) with their own gaits, the sliders exaggerated; every
+    wardrobe slot as shapes (10 hair styles, 8 hats, tops by sleeve, jackets, long coats, the apron, skirts,
+    shorts, shoes, neckwear, bags, a headset, a beard); the face as painted marks (eyes by style with a glint and an
+    iris, lashes, brows, mouths, blush, freckles, a stache, stubble, glasses, a name tag); Kappi as a capybara on
+    four legs in glasses;
+  - logic/figure-pose.js: squarer and tapered ellipsoids, marks of any colour, a gait per figure, cheer, throw and
+    sit, a four-legged walk;
+  - people/<id>.json `figure` (head, build, gait) for the main cast and the route trainers;
+  - figures.js: `figureFor(who)`, everyone their own figure (`look:<who>`), you `look:me#<look>`; Engine > People >
+    "Your look" by default and "Everyone else as figures" (on by default, behind Figures, still off);
+  - drawn: you, townsfolk and residents, a map's people (turned to you within 4.5 m), cutscene actors, both
+    trainers in battle; test_people's front row is the cast as figures; look-people `--cast`.
+- **CH-3c The rest of the cast and the movement pass:** every person and a crowd of townsfolk checked on sheets
+  and in the towns; shop keepers and the arena's leader in place; the walk's stride fitted to the game's speed;
+  start, stop and turns; the dressing room's pictures still today's. **Phone gate:** the owner tries Figures on.
+- **After CH-3c:**
   - **CH-4 The live atlas:** figures drawn on each 12 fps step into one shared, unlit atlas (colour plus normals)
     before the shadow passes, lit in the sprite shader with a cel band; cell rects in sprite and shadow batches; one
     texture for all people; density by distance; context-loss restore; a snapshot service for UI pictures
     (`readPixels`, after `screenSnapshot`). **Phone gate.**
-  - **CH-5 The figure format and tools:** the importer for Blockbench and Blender glTF (jointed parts); the runtime
-    format; a per-look bake (one merged mesh plus a recoloured texture, keyed by the look); the Studio's figure
-    preview (turntable, palette, colour masks).
-  - **CH-6** the base body and faces: the 8 body sliders as bone scales, with shells fitted at their extremes; skin
-    ramps; faces from the portrait kit with blinks, talking and every dialogue expression tag.
-  - **CH-7** wardrobe I: item shells with 32 px/m textures and RGB colour masks; all 84 item ids kept with shops,
-    saved outfits and the dressing room; UI pictures from snapshots; half the items.
-  - **CH-8** wardrobe II: the rest; Chosen, Blake, residents and folk looks; the old pieces to `art/legacy`.
+  - **CH-5 The kit's data:** the figure kit's shapes as data the Studio can edit (head shapes, builds, hair, hats
+    and clothes as shape lists, not code), a per-look bake cached by the look; the Studio's figure preview
+    (turntable, head and build pickers). (Was: the glTF importer; the owner picked code-built figures.)
+  - **CH-6** faces: talking mouths and every dialogue expression tag as marks; the portrait kit's eye and brow
+    styles matched; skin ramps.
+  - **CH-7** the dressing room: customisation on the figure (the sliders, every item, colours) with UI pictures from
+    snapshots; saved outfits and shops kept.
+  - **CH-8** the old pieces to `art/legacy` once nothing draws them.
   - **CH-9** getting around: walk, run, start and stop, turns; slopes (lean as a spine bone), stairs, hops, wading,
     Surf, mounts; every NPC alive; the train ride, friends and the world-map pin. **Phone gate.**
   - **CH-10** battle and close-ups: trainers at 64 px/m, intros, the throw, the dressing room turntable.
@@ -258,7 +289,8 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
 Tags `ch-N-done` (the owner pushes them).
 
 ## Ask me before
-1. The pick after CH-3: C, B, A or more tuning. **Open: the owner's, after the phone.**
+1. The pick after CH-3: C, B, A or more tuning. **Answered 2026-10-28: C, from the mannequin's simpler shapes,
+   with more detail, variety and personality** (CH-3b).
 2. Jointed parts stay (the Studio's rule). Skinning only if bending joints prove necessary; not expected at 56 px.
    **Answered 2026-10-27: jointed rigid parts** (CH-2).
 3. Density: 32 px/m in the world (faces about 15 px), 40 or 48 if faces need it; 64 in battle. **Answered
@@ -269,8 +301,9 @@ Tags `ch-N-done` (the owner pushes them).
 6. The default zoom: people are 39 CSS px at Normal. The camera track's call, but it shapes readability.
 7. Where models come from: CC0 stand-ins for the spike, then the owner's Blockbench or Blender models, or bodies
    built in code; which CC0 clip packs. **Answered 2026-10-27 for the spike: a code-built mannequin first** (CH-2),
-   then KayKit's Rogue (CH-3, the track's plan); later models are still open.
-8. The player's design (the neon outsider) and the Bureau's look.
+   then KayKit's Rogue (CH-3, the track's plan). **Answered 2026-10-28: built in code by the figure kit** (CH-3b).
+8. The player's design (the neon outsider) and the Bureau's look. (CH-3b: the player is the boy or girl look as
+   today; the neon outsider is still open.)
 9. Hand touch-ups on baked sheets for named people.
 10. The sprite-sheet exporter: mend or retire. **Answered 2026-10-27: retired** (CH-1).
 
@@ -289,6 +322,8 @@ Tags `ch-N-done` (the owner pushes them).
   mannequin, poses, the view and the clock), tools/gltf-figure.mjs (the importer), game/art/figures/ (the stand-in;
   not game/data/figures.json, as first planned: a model's file is fetched only when the figures are on), the debug
   menu's figure switches (debug-menu.js FIGURE_SWITCHES), battle-stage.js trainerBattleFrame.
+- The kit (CH-3b): game/js/logic/figure-kit.js, people/<id>.json `figure`, figures.js `figureFor`, look-people
+  `--cast`.
 
 ## Verification
 - Every session: lint, typecheck and unit tests; smoke before each game commit; check:fast in CI; the full quick

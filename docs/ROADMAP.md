@@ -283,8 +283,11 @@ town node needs it.
   the sprite-sheet exporter retired) done 2026-10-27; the spike CH-2 (the figure baker: jointed rigid figures baked
   into pixel pictures down today's sprite path, behind Engine > People > Figures; a code-built mannequin, made rounder
   at the owner's word) and CH-3 (KayKit's CC0 Rogue through tools/gltf-figure.mjs, the plain 3D figure beside it, a
-  Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; next **the owner's phone
-  and pick** ("Ask me before" 1). About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch `track/characters` (made
+  Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; **the owner's pick
+  (2026-10-28): C, built in code from the mannequin's simpler shapes, with more variety and personality**; CH-3b (the
+  figure kit: six head shapes, six builds with their own gaits, every wardrobe slot, painted faces; every NPC, Kappi
+  as a capybara and you as your look, behind Figures) done 2026-10-28; next CH-3c (the rest of the cast, the
+  movement pass, the owner's phone). About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
   picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
