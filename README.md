@@ -7,8 +7,8 @@ in **Pocket Billies Studio**.
 
 0.1.0 alpha is a fresh base: numbering starts over here and old saves don't carry over. What changes from release to
 release is in [CHANGELOG.md](CHANGELOG.md); where the game is going is in [docs/VISION.md](docs/VISION.md). The earlier
-build (Net Worth, then Pocket Billies alpha 0.1 to 0.5) is kept on the `legacy` branch, and its changelog in
-[docs/archive/LEGACY-CHANGELOG.md](docs/archive/LEGACY-CHANGELOG.md).
+build (Net Worth, then Pocket Billies alpha 0.1 to 0.5) is kept on the `legacy` branch (its README holds the old
+changelog).
 
 ## Play
 
@@ -58,18 +58,28 @@ GitHub Actions).
 ## Pocket Billies Studio
 
 The editor for the game's data, skeletons and art, at **https://nojiroh.github.io/pocket-billies/studio/** (or
-`/studio/` on `npm run dev`). Admins sign in with a GitHub token; **Save to game** opens a pull request with the
+`/studio/` on `npm run dev`). Admins sign in with a GitHub token; **Propose changes** opens a pull request with the
 changes, and the game changes once it is merged. What each section does is in [docs/STUDIO.md](docs/STUDIO.md).
 
 ## Contribute
 
 How the code is laid out, the checks to run before a push and the conventions are in
-[CONTRIBUTING.md](CONTRIBUTING.md).
+[CONTRIBUTING.md](CONTRIBUTING.md). Who made the fonts, models and libraries the game uses is in
+[CREDITS.md](CREDITS.md).
+
+## Licence
+
+All rights reserved: the repository is public so the game can be played and followed, but its code, art, data and
+text are not licensed for reuse ([LICENSE](LICENSE)). Outside parts keep their own licences ([CREDITS.md](CREDITS.md)).
 
 ## Project layout
 
+- The root: `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `CREDITS.md`, `LICENSE`, `CLAUDE.md` (the rules for
+  Claude Code sessions), `ART-NOTES.md` (art notes), `index.html` (the site's start page), and the configs
+  (`package.json`, `vite.config.js`, `eslint.config.js`, `tsconfig*.json`, `.prettierrc.json`, `.editorconfig`,
+  `.gitattributes`, `.github/`: the CI workflows and the pull request template).
 - `game/`: the game. `index.html` (the script order; the build replaces the module tags with one bundle), `version.js` (the version, the only place it is written),
-  `sw.js` (offline cache), `css/`, `fonts/` (SIL Open Font License).
+  `sw.js` (offline cache), `css/`, `fonts/` (SIL Open Font License), `vendor/` (Lit, bundled).
   - `data/`: all game data and rules as JSON files, edited by the Studio (or by hand). `index.json` lists them;
     a file per map (`maps/`), Billie line (`lines/`), trainer (`trainers/`) and person (`people/`), and one file
     per other section (`moves.json`, `rules.json`, `locations.json`, `scenery.json`...). `schema/` has their JSON

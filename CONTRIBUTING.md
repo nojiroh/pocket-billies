@@ -29,7 +29,7 @@ npm run typecheck       # TypeScript on the files that start with // @ts-check, 
                         # again with no DOM lib (tsconfig.logic.json), a second
 npm test                # the unit tests (tools/test/), in plain Node with no browser: the logic on a small data set of
                         # their own and on the game's data, the world-map graph, the expressions in dialogue (about
-                        # 20 s); npm run check:logic is the same; npm run test:slow the slow ones (about a minute)
+                        # two minutes in a cloud container); npm run check:logic is the same; npm run test:slow the slow ones (about a minute)
 npm run check:smoke     # the quick check's smoke set, about three minutes
 npm run check:fast      # what must never break, every page booted once (about 11 minutes; CI runs it on every push)
 ```
