@@ -5,7 +5,8 @@
    steps at stage-ms times. This file turns a move event into its timeline: which family (battleAnimFor), the steps
    whose gates hold, repeats spread out, the Faster variant, the quality, and the cap on extra time; battle-anim-run.js
    plays it on the stage. Also the hit's tier (hitTier) and whether a KO follows (koAhead), which the sound track
-   (SND-13) and the UI track (UI-16b) read too, and the full-screen flash limiter (flashGate).
+   (SND-13) and the UI track (UI-16b) read too, how the hit lands by its tier (hitLook, VFX-13; the tier names stay
+   hitTier's, a KO only a flag on top), and the full-screen flash limiter (flashGate).
    The engine's events are only read, never written. Effects draw no random numbers here.
    Logic only: no DOM, runs in Node (tools/test/battle-anims.test.mjs). */
 /** @import { BattleAnimsData, BattleAnimStep, BattleAnimKit, Move } from '../../types/game-data' */
@@ -32,6 +33,7 @@ expose({
   BATTLE_KIT_ROLES: [() => BATTLE_KIT_ROLES],
   HIT_TIERS: [() => HIT_TIERS],
   IMPACT_FRAME_MS: [() => IMPACT_FRAME_MS],
+  TIER_ROWS: [() => TIER_ROWS],
   // @ts-expect-error -- replaced on purpose
   battleAnimFor: [() => battleAnimFor, v => (battleAnimFor = v)],
   // @ts-expect-error -- replaced on purpose
@@ -62,6 +64,8 @@ expose({
   battleRampColors: [() => battleRampColors, v => (battleRampColors = v)],
   // @ts-expect-error -- replaced on purpose
   flashGate: [() => flashGate, v => (flashGate = v)],
+  // @ts-expect-error -- replaced on purpose
+  hitLook: [() => hitLook, v => (hitLook = v)],
   // @ts-expect-error -- replaced on purpose
   hitTier: [() => hitTier, v => (hitTier = v)],
   // @ts-expect-error -- replaced on purpose
@@ -163,6 +167,83 @@ export function koAhead(events, i) {
     if (e && (e.k === 'move' || (e.k === 'enter' && side(e.si) === foe))) last = false;
   }
   return { ko: true, si, last };
+}
+
+/** VFX-13: the rows of battleAnims.json `tiers` a hit can add on top of its tier: a KO, and the last KO (or a boss's) */
+export const TIER_ROWS = ['resisted', 'neutral', 'super', 'super4', 'crit', 'ko', 'last'];
+
+/**
+ * @typedef {{ tier: string, ko: null | 'ko' | 'last', stop: number, shake: number, kb: number, burst: number,
+ *   spread: number, light: number, lightCol: string, ring: number, punch: number, handheld: number,
+ *   flash: { col: string, a: number, ms: number } | null, ca: number, impact: string | null,
+ *   sprite: { white: number, dark: number, ms: number, darkMs: number } | null, puff: number, scar: number }} HitLook
+ *   what a hit shows: hit-stop ms (real time: the stage holds), shake, knockback px, the burst (particles, speed),
+ *   the light's strength (times the kit's) and colour ('kit', or a battleAnims.json colour), the ground ring (m),
+ *   the zoom punch and the handheld wobble, the full-screen flash (colour 'type' or a colour key; through flashFor
+ *   and the flash gate), the chromatic pulse (ms), the impact frame's kind, the sprite flash (white then dark), a
+ *   dull puff (dust particles) and the extra scars
+ */
+/** VFX-13: how a hit lands, from the tier table (battleAnims.json `tiers`): its tier's row (hitTier) with the hit's
+ * weight w (battle-stage.js hitWeight: the share of the target's HP it took), then the KO's row on top when it knocks
+ * the target out (koAhead), then the last KO's (no one comes in after and the battle ends, or a boss falls). A super
+ * crit takes the crit's row with the super's chromatic pulse, burst and shake. Only hit-stop adds time: a KO one cell,
+ * the last KO a freeze of `freeze` ms in all. null for no damage (a miss, a block, a status move)
+ * @param {MoveAn} an @param {{ ko?: boolean, last?: boolean } | null | undefined} ka koAhead's
+ * @param {number} w @param {BattleAnimsData} A @param {boolean} [boss] the target is a boss's
+ * @returns {HitLook | null} */
+export function hitLook(an, ka, w, A, boss = false) {
+  const T = A && A.tiers,
+    tier = hitTier(an);
+  if (!T || tier === 'none') return null;
+  const R = T[/** @type {'neutral'} */ (tier)],
+    ww = Math.max(0, Math.min(1, w || 0)),
+    lin = (/** @type {number | undefined} */ a, /** @type {number | undefined} */ k) => (a || 0) + (k || 0) * ww,
+    /** @type {HitLook} */ L = {
+      tier,
+      ko: null,
+      stop: lin(R.stop, R.stopW),
+      shake: lin(R.shake, R.shakeW),
+      kb: lin(R.kb, R.kbW),
+      burst: R.burst,
+      spread: R.spread,
+      light: R.light,
+      lightCol: R.lightCol || 'kit',
+      ring: lin(R.ring, R.ringW),
+      punch: R.punch || (R.punchW && ww > R.punchW ? 0.03 + ww * 0.04 : 0),
+      handheld: R.handheld || 0,
+      flash: R.flash ? { col: R.flash.color, a: R.flash.a, ms: R.flash.ms } : null,
+      ca: R.ca || 0,
+      impact: R.impact || null,
+      sprite: R.sprite ? { white: R.sprite.white || 0, dark: R.sprite.dark || 0, ms: R.sprite.ms, darkMs: 0 } : null,
+      puff: R.puff || 0,
+      scar: 0,
+    };
+  if (tier === 'crit' && (an.te ?? 1) > 1) {
+    const S = T.super;
+    L.ca = Math.max(L.ca, S.ca || 0);
+    L.burst = Math.max(L.burst, S.burst);
+    L.shake = Math.max(L.shake, S.shake);
+    L.punch += T.superCritPunch || 0;
+  }
+  if (!ka || !ka.ko) return L;
+  /** @param {any} K */
+  const add = K => {
+    L.stop += K.stop || 0;
+    L.shake = K.shakeTo ? Math.max(L.shake + (K.shake || 0), K.shakeTo) : L.shake + (K.shake || 0);
+    L.kb += K.kb || 0;
+    L.burst += K.burst || 0;
+    L.scar += K.scar || 0;
+    if (K.sprite) L.sprite = { white: K.sprite.white, dark: K.sprite.dark, ms: K.sprite.ms, darkMs: K.sprite.darkMs };
+    if (K.impact && !L.impact) L.impact = K.impact;
+  };
+  L.ko = 'ko';
+  add(T.ko);
+  if (ka.last || boss) {
+    L.ko = 'last';
+    add(T.last);
+    L.stop = Math.max(L.stop, T.last.freeze || 0);
+  }
+  return L;
 }
 
 /** the gates that hold for a move event (battleAnims.json's `if` words)

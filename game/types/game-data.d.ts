@@ -2608,6 +2608,8 @@ export interface BattleAnimsData {
   eventsAbout?: string;
   /** VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js, battle-looks.js) */
   events: BattleAnimEvents;
+  /** VFX-13: the hit tiers (logic/battle-anims.js hitLook, battle-stage.js hitFx) */
+  tiers: BattleAnimTiers;
   /** VFX-11: the type kits, by type id, None and Bureau: what a family's steps draw with in that type */
   types?: Record<string, BattleAnimKit>;
 }
@@ -2743,6 +2745,72 @@ export interface BattleLookDome {
   h: number;
   flashMs: number;
   end?: BattleLookBurst;
+}
+/** VFX-13: a Billie's own flash for a hit: white, then dark (grey when both), for ms; dark from ms on for darkMs */
+export interface BattleTierSprite {
+  white?: number;
+  dark?: number;
+  ms: number;
+  darkMs?: number;
+}
+/** VFX-13: a hit tier's row (battleAnims.json tiers.about): each number + its W times the hit's weight */
+export interface BattleTierRow {
+  /** hit-stop ms (real time: the stage holds) */
+  stop: number;
+  stopW?: number;
+  shake: number;
+  shakeW?: number;
+  /** knockback px */
+  kb: number;
+  kbW?: number;
+  burst: number;
+  spread: number;
+  /** times the kit's light; lightCol a colours key, else the kit's */
+  light: number;
+  lightCol?: string;
+  /** the ground ring, m */
+  ring: number;
+  ringW?: number;
+  punch?: number;
+  /** a small punch from this weight on */
+  punchW?: number;
+  handheld?: number;
+  /** the full-screen flash: color 'type' or a colours key */
+  flash?: { color: string; a: number; ms: number };
+  /** the chromatic pulse, ms */
+  ca?: number;
+  impact?: 'crit' | 'ko';
+  sprite?: BattleTierSprite;
+  /** a dull puff: dust particles */
+  puff?: number;
+}
+/** VFX-13: what a KO adds to its row, and the last KO (or a boss's) again */
+export interface BattleTierKo {
+  stop?: number;
+  shake?: number;
+  /** the shake at least */
+  shakeTo?: number;
+  kb?: number;
+  burst?: number;
+  scar?: number;
+  sprite?: BattleTierSprite;
+  impact?: 'crit' | 'ko';
+  /** the last KO's hit-stop in all, ms */
+  freeze?: number;
+}
+/** VFX-13: battleAnims.json tiers */
+export interface BattleAnimTiers {
+  about?: string;
+  /** a 24 fps cell, ms */
+  cell: number;
+  resisted: BattleTierRow;
+  neutral: BattleTierRow;
+  super: BattleTierRow;
+  super4: BattleTierRow;
+  crit: BattleTierRow;
+  superCritPunch?: number;
+  ko: BattleTierKo;
+  last: BattleTierKo;
 }
 /** battleAnims.json `events`: each step adds its own keys (VFX-14: statuses and stats; VFX-16: the flow moments, optional) */
 export interface BattleAnimEvents {

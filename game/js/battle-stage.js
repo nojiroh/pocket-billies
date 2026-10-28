@@ -81,7 +81,7 @@ import {
   smearStretch,
   throwArcEase,
 } from './logic/smear.js';
-import { battlePathAt } from './logic/battle-anims.js';
+import { battlePathAt, hitLook } from './logic/battle-anims.js';
 import { FLOW_CELL_MS, lvlSlot, pyramidRamp, riseShare } from './logic/battle-flow.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
@@ -1773,45 +1773,90 @@ function hitWeight(ti, an) {
     return 0.3;
   }
 }
-/* imp: an impact frame already started for this hit (the mail move's coin); a crit starts its own */
-function hitFx(ti, an, imp0 = null) {
+/* imp: an impact frame already started for this hit (the mail move's coin); a crit (and the last KO) starts its own.
+   VFX-13: how the hit lands is its tier's row (battleAnims.json tiers; logic/battle-anims.js hitLook): hit-stop,
+   shake, knockback, the full-screen look (through battleStageFlash: flashFor, then the limiter), the burst, the ground
+   ring, the punch, the Billie's own flash. ka: koAhead's for this target (a KO adds a cell and a scar, the last KO or a
+   boss's the freeze and the impact frame). Returns the row (the runner lays its extra scars and lights by it) */
+function hitFx(ti, an, imp0 = null, ka = null) {
   const T = actorCenter(ti),
     s = battleStage.s[ti],
     ts = actorTeam(ti),
     w = hitWeight(ti, an),
-    kb = 4 + w * 9;
+    m = typeof fighter === 'function' ? fighter(ti) : null,
+    boss = !!(ka && ka.ko && m && (m.boss || m.alpha)),
+    /* a hit the engine sends no damage with (the delayed hit's coin) lands as a hit of its tier all the same */
+    L =
+      hitLook(an, ka, w, BATTLE_ANIMS, boss) ||
+      hitLook({ k: 'move', dmg: 1, te: an.te ?? 1, crit: an.crit }, ka, w, BATTLE_ANIMS, boss);
   setActorAction(ti, 'hurt', 650);
-  tween(s, 'ox', ts === 1 ? kb : -kb, 60);
-  tween(s, 'ox', 0, 200 + w * 160, 'out', 60);
-  if (an.te <= 1 && !an.crit) {
-    battleStage.shk = Math.max(battleStage.shk, 1.4 + w * 6);
-    hitStop(20 + w * 70);
-    if (w > 0.45) punch(0.03 + w * 0.04, 240, ts === 1 ? 0.008 : -0.008);
+  if (!L) {
+    if (typeof hudHit === 'function') hudHit(ti, an, w);
+    return null;
   }
-  const imp = imp0 || (an.crit ? impactFx(T, 'crit') : null);
-  if (an.te > 1) {
-    battleStage.shk = 8;
+  const col = (/** @type {string} */ k) =>
+      k === 'type' ? TYPE_GLOW[an.t] || BATTLE_ANIMS.colors.white : BATTLE_ANIMS.colors[k] || BATTLE_ANIMS.colors.white,
+    big = !!L.flash,
+    crit = L.tier === 'crit';
+  tween(s, 'ox', ts === 1 ? L.kb : -L.kb, 60);
+  tween(s, 'ox', 0, 200 + w * 160, 'out', 60);
+  battleStage.shk = Math.max(battleStage.shk, L.shake);
+  hitStop(L.stop);
+  if (L.punch)
+    punch(
+      L.punch,
+      crit ? 320 : big ? 260 : 240,
+      crit ? (ts === 1 ? 0.014 : -0.014) : big ? 0 : ts === 1 ? 0.008 : -0.008
+    );
+  const imp = imp0 || (L.impact ? impactFx(T, L.impact) : null);
+  if (L.flash || L.ca)
     afterImpact(imp, () => {
-      battleStageFlash('#FFFFFF', 0.55, 260, ti);
-      battleStageChromaticFlash(180);
+      if (L.flash) battleStageFlash(col(L.flash.col), L.flash.a, L.flash.ms, ti);
+      if (L.ca) battleStageChromaticFlash(L.ca);
     });
-    hitStop(80);
-    ringFx(T, '#FFFFFF', 0.2, 1.6);
-    groundRing(ti, '#FFFFFF', 2.2);
-    punch(0.06, 260);
+  if (big) {
+    ringFx(T, BATTLE_ANIMS.colors.white, 0.2, 1.6);
+    groundRing(ti, BATTLE_ANIMS.colors.white, L.ring);
     buzz(ts === 0 ? [18, 30, 18] : 12);
   } else {
-    groundRing(ti, '#FFFFFF', 1.2 + w * 1.2, 380);
-    if (ts === 0) buzz(w > 0.45 ? [14, 20, 14] : 10);
+    groundRing(ti, BATTLE_ANIMS.colors.white, L.ring, 380);
+    if (ts === 0) buzz(w > 0.45 || L.ko ? [14, 20, 14] : 10);
   }
-  if (an.crit) {
-    afterImpact(imp, () => battleStageFlash('#FFF2A8', 0.6, 300, ti));
-    hitStop(90);
-    punch(an.te > 1 ? 0.12 : 0.09, 320, ts === 1 ? 0.014 : -0.014);
+  if (L.handheld) handheld(520, L.handheld);
+  /* the Billie's own flash: white, then dark (grey with both); a KO's white, then ink. At most half with Flashes off */
+  if (L.sprite) {
+    const S = L.sprite,
+      k = flashesOff() ? 0.5 : 1;
+    if (S.white) {
+      s.white = Math.max(s.white || 0, S.white * k);
+      tween(s, 'white', 0, S.ms, 'in');
+    }
+    if (S.dark && S.darkMs) {
+      tween(s, 'dark', S.dark * k, 1, 'lin', S.ms);
+      tween(s, 'dark', 0, S.darkMs, 'in', S.ms + 1);
+    } else if (S.dark) {
+      s.dark = Math.max(s.dark || 0, S.dark * k);
+      tween(s, 'dark', 0, S.ms, 'in');
+    }
   }
-  if (an.crit || an.te > 1) handheld(520, an.crit && an.te > 1 ? 1.3 : 1);
-  burst(T, an.t || 'None', an.te > 1 ? 16 : 10, an.te > 1 ? 3.2 : 2.2, 1);
+  burst(T, an.t || 'None', L.burst, L.spread, 1);
+  /* a resisted hit's dull puff: grey dust where it landed */
+  for (let i = 0; i < L.puff; i++)
+    addParticle({
+      x: T.x + (fxRandom() - 0.5) * 0.4,
+      y: T.y,
+      z: T.z,
+      vx: (fxRandom() - 0.5) * 0.8,
+      vy: 0.4 + fxRandom() * 0.4,
+      vz: (fxRandom() - 0.5) * 0.6,
+      life: 420,
+      anim: 'smoke',
+      ramp: 'None',
+      spr: 'pow',
+      k: 1,
+    });
   if (typeof hudHit === 'function') hudHit(ti, an, w);
+  return L;
 }
 export function camHome(d = 420, delay = 0) {
   camTo(homeCamera, d, 'io', delay);
