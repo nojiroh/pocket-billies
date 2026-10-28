@@ -16,6 +16,11 @@ kept aside in the browser).
   and are soft on grass, sand and earth, and follow the World slider. Rooms hear the place's night outside. Sounds
   that aren't heard stop running, which saves the phone work. The debug menu has a Sound test.
 
+- **Copperleaf's music can be heard** (sound track SND-8b): the hub song was about 15 LU quieter than the others, so
+  the sea and the fountain covered it; it now sits with them. A song's echo fades and ducks with the song, jingles
+  echo with the Sound effects slider (at 0 none is left), the rain muffles the music less, and on an iPhone sound
+  comes back after a call or Siri.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)

@@ -169,7 +169,9 @@ town node needs it.
   **Part 2** (the owner's brief and answers 2026-10-27: richer music, not only 8-bit; gentle environment sounds;
   better water): SND-7 (the plan with research, a private listening page) done 2026-10-27; SND-8a (calm beds:
   their own soft noise, re-voiced, started and stopped; a loudness report; a Sound Test in the debug menu; no
-  fingerprint changes) done 2026-10-28, every bed 12 LU or more under the route song. Next SND-8b (the echo bugs, songs level-matched, the baseline written again), SND-9 (baked
+  fingerprint changes) done 2026-10-28, every bed 12 LU or more under the route song. SND-8b (the echo bugs: a song's echo follows its fader, jingles
+  echo on the effects bus; a trim per song, Copperleaf's hub song +13.5 dB to 1.7 LU under the route song; the rain's
+  music low-pass 4 kHz; iOS "interrupted"; the baseline written again) done 2026-10-28. Next SND-9 (baked
   instruments and reverb), water (SND-10, taking WA-8's water sounds if the owner agrees), stems and ensembles in a
   Chip+ and DS-era mix with a GB Sounds switch (SND-11), layers in play (SND-13: a walking beat, street musicians,
   weather and night, building intensity), arrangements (SND-12), nature and weather (SND-14), the mix and a phone

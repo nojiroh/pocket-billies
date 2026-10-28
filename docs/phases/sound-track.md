@@ -683,7 +683,7 @@ Water and nature, synthesized:
 |---|---|---|---|---|
 | SND-7 (done 2026-10-27) | Plan and listening page | this Part 2; a private listening page (Today vs Calm, new water, the music styles and layers) | none | none |
 | SND-8a | Calm beds | the beds gentle and cheap (their own pink/brown noise, drift instead of LFOs; rain, crickets, fire, stream, fountain, sea, leaves and town re-voiced; birds one at a time and rarer; footsteps varied and soft; rooms read the place's night; beds start and stop), the loudness report, the debug log's audio lines, the Sound Test v1 | none | none |
-| SND-8b | Mix fixes | the echo bugs, a level trim per song (the hub song up, from the report: data, not the player setting Part 1 ruled out), the rain's music low-pass, iOS's "interrupted"; the baseline written again in its own commit | SND-8a | the jingles; every song's first ~1.5 s; copperleaf |
+| SND-8b (done 2026-10-28) | Mix fixes | the echo bugs, a level trim per song (the hub song up, from the report: data, not the player setting Part 1 ruled out), the rain's music low-pass, iOS's "interrupted"; the baseline written again in its own commit | SND-8a | the jingles; every song's first ~1.5 s; copperleaf |
 | SND-9 | Bake and reverb | `logic/sound-bake.js` (pure DSP, Node-tested), the tracker's bank and `sampleVoice`, the reverb bus, one proof instrument in the Sound Test, bake time and memory in the debug log, a brightness fingerprint (a tool commit first) | SND-8b | none (brightness added) |
 | SND-10 | Water | `soundscape.json` and emitters, a recipe per water kind, the placed falls by height, rain on water, wading, Surf, fishing and water life; takes WA-8's water sounds if the owner agrees | SND-9 (WA-11 for the hub's fall) | none |
 | SND-11 | Stems and ensembles | the tick's patterns factored into pure functions; stems; `instruments` and `ensembles` in music.json; `gb` reserved for today's code; GB Sounds; the first ensembles; the Studio's Instruments tab and its mix on the game's chain | SND-9 | none: the new `gb` must equal the old by day and night |
@@ -879,6 +879,36 @@ Each commit rendered against the one before it in a worktree, as SND-6 did; then
 | The baseline written again | (the list above) |
 Phone: with Sound effects at 0, no jingle echo is left; the echo ducks under a jingle; sound comes back after Siri or
 a call (the silent switch still mutes everything).
+
+### SND-8b as built (2026-10-28, branch `track/sound`, tag `snd-8b-done` for the owner to push)
+Eight change commits, one cause each, each rendered against the one before it in a worktree (`check-sound.py
+--loudness` on commit N with commit N-1's render as the baseline), then the baseline written once with plain
+`--baseline`.
+
+| Commit | What | Fingerprints that changed |
+|---|---|---|
+| b717843d | `D.echo ?? 0.15` (an `echo: 0` song sends nothing) | none |
+| a9ddc0e8 | each song has its own echo send (`sg.echo`) after its fader; one helper, `fader(sg, f)`, moves the gain and the send together for the fade-in, a crossfade, a stop and a jingle's duck; `synthVoice` takes `echoTo` | 20: cave, hazel, fall, meadow, spore and crystal (every part), from 0.35 s |
+| 747adc6a | a second echo, `T.echoFx` (the same 0.27 s, 0.28, 0.16), on the Sound effects bus (`trackerCreate`'s `opts.fx`); jingles echo there (on the music bus, Settings' Music test, the music's echo); heal and seal pass `echoTo: soundEngine.tracker.echoFx` | the 12 jingles, in their tails |
+| 376aec94 | `old.fade` removed | none |
+| b2f74787 | a `trim` (dB) per song: `$defs.recipe` and the song's `allOf` list, a "Level trim (dB)" slider on the Studio's Recipe card; the fader rises to 10^(trim/20), a jingle ducks to 0.15 of it, night and tense keep it, a Studio edit is heard at once (`refresh`) | none |
+| 09197449 | copperleaf `trim: 13.5` | copperleaf day and night |
+| 0b6c144f | the rain's low-pass on the music 2.2 to 4 kHz (sound.js, walking outdoors in rain over 0.3); music.json `run.weather` (the run map's forecast) unchanged | none |
+| cca2df86 | `soundWake()`: 'interrupted' (iOS after a call or Siri) suspends, then resumes; on a touch and on showing the page | none |
+
+Loudness: copperleaf -15.2 to **-1.7 LU** under the route song (-33.6 LUFS, peak -16.1 dBFS); every other song as
+before. In Copperleaf the coast-wide sea (-18.0) and a fountain at 3 m (-15.2) now sit 13-16 LU under the hub song
+(after SND-8a's beds and before this trim they sat level with it or up to 3 LU under; before SND-8a, 5-10 LU over).
+
+**Corrections found in SND-8b** (checked in the code and the renders):
+- "Every song, the first ~1.5 s" for the echo commit: every song's first second does change, but only the six songs
+  with a strong echo (drip arps, echo 0.5-0.7) cross check-sound's 1 % tolerance, from 0.35 s (the first echo's
+  return during the 0.6 s fade-in).
+- studio/art-code-refs.json records tracker.js line numbers too, not only sound.js's: run `node
+  tools/art-code-refs.mjs` after moving lines in either.
+- A per-song trim needs no new node: it is the fader's top value, so a song without one plays at exactly 1 and its
+  fingerprint can't move.
+- The draft's "both schema places" holds: night and tense versions are `$defs.recipe`, so they may write a trim too.
 
 ## SND-9: bake and reverb (draft)
 1. A brightness fingerprint (zero crossings per 50 ms) beside the RMS, in a tool-only commit; the RMS arrays identical.

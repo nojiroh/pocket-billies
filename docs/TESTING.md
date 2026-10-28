@@ -465,6 +465,9 @@ same phase:
   `ambience-sound.test.mjs`; the after-edit hook runs `tracker.test.mjs` and `sound.test.mjs` for `audio/` and sound.js.
   The full check's Debug menu step expects eleven sections (`sound` after `places`); the Animals step names the live
   beds (never all 14, never the crickets by day).
+  SND-8b: the baseline was written again on purpose (a song's echo after its fader, the jingles' own echo, Copperleaf's
+  trim); each commit was rendered against the one before it in a worktree. `tracker.test.mjs` adds `echo: 0`, the
+  echo send moving with the fader, the jingles' echo bus and a song's `trim`.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
