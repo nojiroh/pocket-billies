@@ -204,7 +204,7 @@
    "properties": {
     "name": {
      "type": "string",
-     "maxLength": 120,
+     "maxLength": 200,
      "description": "what it is, for the Studio"
     },
     "kind": {
@@ -610,7 +610,7 @@
    }
   },
   "ensemblePart": {
-   "description": "SND-11: one part of an ensemble: a line of the song played on an instrument (inst, baked) or on a chip voice (wave, as the gb path plays it), into its own stem",
+   "description": "SND-11: one part of an ensemble: a line of the song played on an instrument (inst, baked), on a chip voice (wave, as the gb path plays it) or, for drums, on a kit, into its own stem",
    "type": "object",
    "additionalProperties": false,
    "required": [
@@ -625,6 +625,11 @@
     {
      "required": [
       "wave"
+     ]
+    },
+    {
+     "required": [
+      "kit"
      ]
     }
    ],
@@ -715,7 +720,7 @@
    "properties": {
     "name": {
      "type": "string",
-     "maxLength": 120,
+     "maxLength": 200,
      "description": "what it is, for the Studio"
     },
     "trim": {
