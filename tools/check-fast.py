@@ -587,7 +587,7 @@ def tall_ground(pg, base):
     stand(pg, spot['x'], spot['z'])
     # the silhouette counts once the GPU's occlusion query says you're hidden (walk/sprites.js readHideQueries): its
     # results come back a number of frames later, more on a busy machine's software drawing, so wait for it
-    until(pg, "window.__sil>0", 20)
+    until_drawn(pg, "window.__sil>0", 'walkRenderer.frames', 20, 60)
     rise, k, circle, sil = pg.evaluate("[walkRenderer.occT, walkView.C.rockK, rockUniformsFor(walkView.C).rock[1], window.__sil]")
     if not (rise > 1): raise Exception(f'the camera didn’t rise at the foot of {spot["up"]} m of rock: {rise}')
     if not (k > 0.9 and circle > 0): raise Exception(f'the rock fade isn’t on there: rockK {k}, circle {circle}')
