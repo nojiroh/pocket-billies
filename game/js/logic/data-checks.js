@@ -2199,6 +2199,7 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   forecastDays: [1, 14, 'days'],
   rewardPick: [1, 2, 'cards'],
   rerollFree: [1, 3, 'rerolls'],
+  mapReveal: [1, 1, 'times (it is on or off)'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];

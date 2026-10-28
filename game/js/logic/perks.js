@@ -22,7 +22,7 @@ import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
 import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
-import { runNodeSeed } from './run-map.js';
+import { runNodeSeed, runRevealAll } from './run-map.js';
 import { runFxMoment } from './run-loop.js';
 import { fxCond } from './effects.js';
 /* eslint-disable no-func-assign */
@@ -182,6 +182,8 @@ export function perkTake(run, id, perks, rule, drop, s) {
     run.perks.push(id);
   }
   if (s && s.run === run) runFxMoment(s, perks, 'take', undefined, id);
+  /* PK-5: a mapReveal rule (Tour Brochure) shows the map at once */
+  runRevealAll(run, perks);
   return '';
 }
 

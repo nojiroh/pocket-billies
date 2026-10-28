@@ -2027,8 +2027,8 @@ export type FxKindRow =
   /** PK-4: your Billies who sat out get this share of a foe's XP more (added to progression.teamXpShare, at most 1) */
   | { kind: 'benchXp'; share: number }
   /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
-   * show n more cards; rerollFree, the first n rerolls of each reward pick are free) */
-  | { kind: 'rule'; rule: 'forecastDays' | 'rewardPick' | 'rerollFree'; n: number }
+   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place) */
+  | { kind: 'rule'; rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal'; n: number }
   /** PK-5: a Billie you catch joins n levels higher */
   | { kind: 'catchLevel'; n: number }
   /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */

@@ -287,3 +287,29 @@ test('PK-5 rule rerollFree: the first n rerolls of each reward pick are free, th
     assert.equal(W.rewardRerollCost(t.run.enc.reward, RULE, W.rewardRerollFree(t.run)), RULE.reroll);
   });
 });
+
+/* ---------- rule mapReveal ---------- */
+
+test('PK-5 rule mapReveal: the run map shows every main place from the start, and at once when taken mid-run', () => {
+  const RM = modules['run-map'],
+    PK = modules.perks,
+    G = GAME_DATA,
+    MAPDATA = { nodeTypes: G.nodeTypes, biomes: G.biomes, rules: G.rules.run },
+    { P } = perks({ id: 'test_brochure', rarity: 'common', fx: [{ kind: 'rule', rule: 'mapReveal', n: 1 }] });
+  withPerks(P, () => {
+    const plain = modules['run-state'].newRun('MAPRVSEED1', 1, 1, { team: [] });
+    RM.runMapStart(plain, MAPDATA);
+    assert.ok(
+      plain.map.nodes.some(n => (n.seen || 0) < 2),
+      'without it some places are ? or hidden'
+    );
+    const run = modules['run-state'].newRun('MAPRVSEED1', 1, 1, { team: [] });
+    run.perks = ['test_brochure'];
+    RM.runMapStart(run, MAPDATA);
+    for (const n of run.map.nodes.filter(modules['run-side'].runSideMain)) assert.equal(n.seen, 2);
+    /* taken mid-run: shown at once */
+    plain.perks = [];
+    assert.equal(PK.perkTake(plain, 'test_brochure', data.PERKS, G.rules.run.perks), '');
+    for (const n of plain.map.nodes.filter(modules['run-side'].runSideMain)) assert.equal(n.seen, 2);
+  });
+});

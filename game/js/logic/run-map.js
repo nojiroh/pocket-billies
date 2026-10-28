@@ -100,6 +100,8 @@ expose({
   runNodeSeed: [() => runNodeSeed],
   // @ts-expect-error -- replaced on purpose
   runReveal: [() => runReveal, v => (runReveal = v)],
+  // @ts-expect-error -- replaced on purpose
+  runRevealAll: [() => runRevealAll, v => (runRevealAll = v)],
   runSegDist: [() => runSegDist],
   // @ts-expect-error -- replaced on purpose
   runShapeSize: [() => runShapeSize, v => (runShapeSize = v)],
@@ -1040,6 +1042,13 @@ export function runReveal(map, row, reveal) {
     n.seen = Math.max(n.seen || 0, want);
   }
 }
+/** PK-5: a run's mapReveal rule rows (Tour Brochure): every place of the main map shows what it is (its type), as
+ * the map is made, at each arrival and when such a Perk is taken (logic/perks.js perkTake); a side area still shows
+ * once its obstacle is open. Nothing without a row @param {Run} run @param {Record<string, any>} [perks] */
+export function runRevealAll(run, perks) {
+  if (!run || !run.map || typeof fxRunRule !== 'function' || !(fxRunRule(run, 'mapReveal', perks) > 0)) return;
+  for (const n of run.map.nodes.filter(runSideMain)) n.seen = 2;
+}
 /** a map node's seed, which its scene, wild stock, shop and weather streams are salted from (roguelite-track.md 2c:
  * the map's numbering) @param {string} seed @param {number} i */
 export const runNodeSeed = (seed, i) => `${seed}|n${i}`;
@@ -1093,6 +1102,7 @@ export function runMapStart(run, data) {
   if (data.ghost && data.rules.ghost) runMapGhost(run.seed, run.map, data.rules.ghost);
   run.forecast = [];
   runReveal(run.map, 0, data.rules.reveal);
+  runRevealAll(run);
   runForecastDays(run, data.biomes, data.rules.clock.ahead);
   return run.map;
 }
@@ -1122,6 +1132,7 @@ export function runArrive(s, i, data) {
     map.nodes[i].side && map.side && map.side.to >= 0 ? map.nodes[map.side.to].row - 1 : map.nodes[i].row,
     data.rules.reveal
   );
+  runRevealAll(run);
   runForecastDays(run, data.biomes, data.rules.clock.ahead);
   return run.clock;
 }
