@@ -398,14 +398,15 @@ export function musicSync() {
   musicPrepare(st, name);
 }
 /* SND-11: baked on arrival: where you are changes (the song asked for does), the ensembles of the song, its night
-   version (from dusk) and a wild battle's song here are baked in the bank's slices (only the notes they play), and the reverb is
+   version (from dusk) and, in a run's place, a wild battle's song are baked in the bank's slices (only the notes they play), and the reverb is
    made then, at a load, not on a song's first note. Songs on gb bake nothing */
 function musicPrepare(st, name) {
   const T = soundEngine.tracker;
   if (!T || !T.prepare || !name || soundEngine.prepared === name) return;
   soundEngine.prepared = name;
   const base = name.split('@')[0],
-    wild = st.battle ? null : { ...st, battle: 'wild' },
+    /* a battle's song only where battles happen (a run's places; never the hub) */
+    wild = st.battle || !st.nodeType ? null : { ...st, battle: 'wild' },
     /* the night version once evening comes (by day its zones would only crowd the bank) */
     want = new Set([name, st.night > 0 ? songVariant(base, { ...st, night: 1 }, SONGS, null, MUSIC.run) : null]);
   if (wild) want.add(songVariant(songFor(wild, MUSIC.where, SONGS), wild, SONGS, null, MUSIC.run));

@@ -234,7 +234,9 @@ export function trackerRecipe(songs, name, run) {
    bank and the other baked buffers (the beds' noise, the tracker's noise, the reverb's impulse) stay within
    SOUND_BAKE_BUDGET together: past it the least recently played zone is dropped (a note then plays from the nearest
    zone left, and the dropped one is baked again) */
-const SOUND_BAKE_BUDGET = 6 * 1024 * 1024;
+/* SND-11: 8 MB (SND-9's 6): Copperleaf's ensemble with the water's banks, or a route's with a battle's and a river's,
+   beside the beds' noise and the reverb (about 3 MB of those), measured in the browser */
+const SOUND_BAKE_BUDGET = 8 * 1024 * 1024;
 const SOUND_BAKE_SLICE_MS = 2;
 /* SND-9: the reverb. One ConvolverNode (a phone's costliest node: one, short), made the first time something sends to
    it, so a song that never asks (all of today's: the future `gb` ensemble) never makes it. Its impulse: 1.2 s of
