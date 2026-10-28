@@ -168,6 +168,7 @@ import '../../game/js/logic/style-dials.js';
 import '../../game/js/logic/surf.js';
 import '../../game/js/logic/svg-pixels.js';
 import '../../game/js/logic/talk-skins.js';
+import '../../game/js/logic/talk-stack.js';
 import '../../game/js/logic/talk-type.js';
 import '../../game/js/logic/time-of-day.js';
 import '../../game/js/logic/trade.js';
