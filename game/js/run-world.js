@@ -49,10 +49,10 @@ import { questDataOf, residentPlan } from './logic/run-quests.js';
 import { bowlXY } from './logic/bowl.js';
 import { bowlTreeStyle } from './logic/bowl-things.js';
 import { saveData, uiState } from './game-state.js';
-import { mapById, stopWalkView, walkView } from './walk-view.js';
+import { stopWalkView, walkView } from './walk-view.js';
 import { environment } from './environment.js';
 import { walkRenderer } from './walk/walk-state.js';
-import { seamlessWorld } from './seamless-world.js';
+import { seamlessDropViewsOf, seamlessWorld } from './seamless-world.js';
 import { worldBowl, worldBowlReset } from './world-bowl.js';
 import { airshipFlight } from './airship.js';
 /* eslint-disable no-func-assign */
@@ -213,27 +213,30 @@ function runWaterWeatherSync(putting = false) {
   const key = run.seed + '|' + run.clock;
   if (runWaterWx.key === key) return false;
   runWaterWx.key = key;
-  const said = [];
+  const said = [],
+    changed = new Set();
   for (const L of Object.values(LOCATIONS)) {
     const sc = L && L.runNode != null ? gameData.maps[L.mapId] : null;
     if (!sc) continue;
     const was = sc.wx || '',
       now = waterWeatherApply(sc, runWeather(run, L.runNode, run.clock), gameData.scenery);
-    if (now !== was) said.push(`${L.name} ${now || 'as made'}`);
+    if (now !== was) {
+      said.push(`${L.name} ${now || 'as made'}`);
+      changed.add(L.mapId);
+    }
   }
   if (!said.length) return false;
   if (typeof debugLog !== 'undefined') debugLog.add('scene', 'water by the weather: ' + said.join(', '));
-  seamlessWorld.gen++;
-  seamlessWorld.cache.clear();
-  if (typeof walkView !== 'undefined' && walkView.id) {
-    const sc = mapById(walkView.id);
-    if (sc) {
-      walkView.sc = sc;
-      walkView.gkey = '';
-      walkView.nav = null;
-      walkView.cand = null;
-      if (typeof walkRenderer !== 'undefined') walkRenderer.hkey = '';
-    }
+  /* the crossing hitch (2026-10-28: a frame of 3.2 s as the day turned on a seam): only the views that show a changed
+     place are made again, the one on screen in the background, swapped in once ready (seamless-world.js
+     seamlessDropViewsOf). The seams' memo holds heights, not water, so it stays (no gen++) */
+  seamlessDropViewsOf(changed);
+  /* a place shown as itself (not a joined view) changed in place: laid again at once, as before */
+  if (typeof walkView !== 'undefined' && walkView.id && walkView.sc && changed.has(walkView.id)) {
+    walkView.gkey = '';
+    walkView.nav = null;
+    walkView.cand = null;
+    if (typeof walkRenderer !== 'undefined') walkRenderer.hkey = '';
   }
   return true;
 }

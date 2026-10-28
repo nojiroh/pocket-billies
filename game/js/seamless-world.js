@@ -64,6 +64,7 @@ expose({
   seamlessCompose: [() => seamlessCompose, v => (seamlessCompose = v)],
   seamlessCornerHeight: [() => seamlessCornerHeight, v => (seamlessCornerHeight = v)],
   seamlessDelta: [() => seamlessDelta, v => (seamlessDelta = v)],
+  seamlessDropViewsOf: [() => seamlessDropViewsOf, v => (seamlessDropViewsOf = v)],
   seamlessEasedGround: [() => seamlessEasedGround, v => (seamlessEasedGround = v)],
   seamlessExitRaise: [() => seamlessExitRaise, v => (seamlessExitRaise = v)],
   seamlessGate: [() => seamlessGate, v => (seamlessGate = v)],
@@ -84,6 +85,7 @@ expose({
     () => seamlessPrepareAhead,
     v => ((seamlessPrepareAhead = v), provide({ seamlessPrepareAhead })),
   ],
+  seamlessRemakeTick: [() => seamlessRemakeTick, v => (seamlessRemakeTick = v)],
   seamlessRoadExit: [() => seamlessRoadExit, v => (seamlessRoadExit = v)],
   seamlessRoamView: [() => seamlessRoamView, v => (seamlessRoamView = v)],
   seamlessRoomId: [() => seamlessRoomId, v => (seamlessRoomId = v)],
@@ -96,19 +98,27 @@ expose({
   seamlessTrimCache: [() => seamlessTrimCache, v => (seamlessTrimCache = v)],
   seamlessUndergroundVeil: [() => seamlessUndergroundVeil, v => (seamlessUndergroundVeil = v)],
   seamlessViewReady: [() => seamlessViewReady, v => (seamlessViewReady = v)],
+  seamlessViewUses: [() => seamlessViewUses, v => ((seamlessViewUses = v), provide({ seamlessViewUses }))],
   seamlessWorld: [() => seamlessWorld],
   shiftWalkView: [() => shiftWalkView, v => (shiftWalkView = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ seamlessLookTick, seamlessMapById, seamlessPrepareAhead });
+provide({ seamlessLookTick, seamlessMapById, seamlessPrepareAhead, seamlessViewUses });
 /* to-module: end */
 /* stats (phase 08b, for the debug log): crossings that waited for the next view (held, their total and longest wait in
-   ms), ones built on the spot because it wasn't ready (late), and views made ready ahead of an exit (ahead) */
+   ms), ones built on the spot because it wasn't ready (late), and views made ready ahead of an exit (ahead); the
+   crossing hitch (2026-10-28): views on screen made again for the day's water and swapped in once ready (remade, and
+   the work it took in ms), crossings into a view's earlier version while its remake was still being made (early).
+   remake: the view on screen whose newer version is being made ready; was: views dropped for the day's water that
+   were ready, kept for a crossing that can't wait for their remake (seamlessDropViewsOf) */
 export const seamlessWorld = {
   cache: new Map(),
   max: 5,
   gen: 0,
-  stats: { held: 0, heldMs: 0, heldMaxMs: 0, late: 0, ahead: 0 },
+  stats: { held: 0, heldMs: 0, heldMaxMs: 0, late: 0, ahead: 0, remade: 0, remadeMs: 0, early: 0 },
+  remake: /** @type {string | null} */ (null),
+  remakeT: 0,
+  was: new Map(),
 };
 provide({ seamlessWorld }); /* to-module */
 function seamlessHash(x, y, s) {
@@ -1603,6 +1613,63 @@ export function seamlessDelta(fromId, toId) {
   }
   return null;
 }
+/* the crossing hitch (2026-10-28): does view v show any of the places in ids (map ids)? A room laid into a place's view
+   shows that view's ground (groundOf) */
+function seamlessViewUses(v, ids) {
+  if (!v || typeof v !== 'object') return false;
+  if (ids.has(v.id) || ids.has(v.baseId) || ids.has(v.aId) || ids.has(v.bId)) return true;
+  if ((v.parts || []).some(p => p && ids.has(p.id))) return true;
+  return !!(v.groundOf && v.groundOf !== v && seamlessViewUses(v.groundOf, ids));
+}
+/* the crossing hitch (2026-10-28: a frame of 3.2 s on a seam): places whose water the day's weather changed
+   (run-world.js runWaterWeatherSync). Only the views that show one are made again; the others stay as they are, with
+   their ground prepared on the card and their walking grids. The one on screen stays drawn until its new version is
+   ready (seamlessRemakeTick); one that was ready keeps its old version for a crossing that can't wait (seamlessGate).
+   Returns whether the view on screen is to be made again */
+export function seamlessDropViewsOf(ids) {
+  const S = ids instanceof Set ? ids : new Set(ids),
+    was = new Map();
+  for (const [k, v] of [...seamlessWorld.cache]) {
+    if (!seamlessViewUses(v, S)) continue;
+    seamlessWorld.cache.delete(k);
+    if (v.id && v.comp && v !== walkView.sc && !v.roomScene && seamlessViewReady(v.id, v)) was.set(v.id, v);
+  }
+  seamlessWorld.was = was;
+  seamlessWorld.aheadFor = null;
+  const here = !!(walkView.id && walkView.sc && walkView.sc.comp && seamlessViewUses(walkView.sc, S));
+  if (here && seamlessWorld.remake !== walkView.id) {
+    seamlessWorld.remake = walkView.id;
+    seamlessWorld.remakeT = performance.now();
+  }
+  return here;
+}
+/* the crossing hitch: the view on screen has a newer version (seamlessDropViewsOf): it is made ready in the background
+   (painted, built on the card a few ms a frame, its walking grid) and swapped in once it is: a swap of references
+   (walk/map-cache.js swapMapCache finds its ground, navGrid its grid), not a build in one frame */
+function seamlessRemakeTick() {
+  const id = seamlessWorld.remake;
+  if (!id) return;
+  if (id !== walkView.id || !walkView.ready || !walkView.sc || !walkView.pl) {
+    /* (left for another view: the next crossing makes that one ready) */
+    if (id !== walkView.id) seamlessWorld.remake = null;
+    return;
+  }
+  const sc = mapById(id);
+  if (!sc || sc === walkView.sc) {
+    seamlessWorld.remake = null;
+    return;
+  }
+  if (!seamlessGetReady(id, false, [walkView.pl.x, walkView.pl.z], sc)) return;
+  walkView.sc = sc;
+  walkView.cand = null;
+  seamlessWorld.remake = null;
+  const S = seamlessWorld.stats,
+    ms = performance.now() - (seamlessWorld.remakeT || performance.now());
+  S.remade++;
+  S.remadeMs += ms;
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('scene', `remade ${id} for the day's water: swapped in ${Math.round(ms)} ms after the change`);
+}
 /* --- what the walk shows (called by walkState in ui.js) --- */
 /* roaming at a stop: v46: always the place's hub view (the scene with a band of each neighbour), so walking
    round a place and up to its exits never switches views. RL-5: a place with no exits too (the hub alone, Pearlantis
@@ -1618,9 +1685,10 @@ export function seamlessRoamView(node, pos) {
 }
 /* v46: is a view ready to be shown at once (its ground painted and, in 3D, built on the card)? seamlessGetReady also starts
    whatever is missing: the painting in slices of about 8 ms, then the building on the card a few ms a frame (prepareMapGround) */
-function seamlessViewReady(id) {
-  if (id === walkView.id) return true;
-  const sc = mapById(id);
+function seamlessViewReady(id, view) {
+  /* the crossing hitch: a view given is that version (the one on screen may be older than mapById's) */
+  if (view ? view === walkView.sc : id === walkView.id) return true;
+  const sc = view || mapById(id);
   if (!sc) return false;
   /* phase 08b: a room needs only its own floor (the place's ground is the one on screen) */
   if (sc.roomScene) return typeof roomFloorReady === 'function' && roomFloorReady(sc.roomScene);
@@ -1633,9 +1701,9 @@ function seamlessViewReady(id) {
     isGroundPrepared(id, sc, key)
   );
 }
-export function seamlessGetReady(id, urgent, focus) {
-  if (seamlessViewReady(id)) return true;
-  const sc = mapById(id);
+export function seamlessGetReady(id, urgent, focus, view) {
+  if (seamlessViewReady(id, view)) return true;
+  const sc = view || mapById(id);
   if (!sc || sc.roomScene) return false;
   const key = groundKey(sc),
     G = GROUND_CACHE.get(key);
@@ -1672,6 +1740,16 @@ export function seamlessGate(v) {
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
     return v;
   }
+  /* the crossing hitch (2026-10-28): the next view was made again for the day's water while you walked to it (the
+     day turns as you cross). Its earlier version, ready, is shown now; the new one is swapped in once it is ready
+     (seamlessRemakeTick), so the crossing never waits for a remake */
+  const old = seamlessWorld.was.get(v.id);
+  if (old && seamlessViewReady(v.id, old)) {
+    if (seamlessWorld.heldFor === v.id) seamlessHeldEnds();
+    seamlessWorld.heldFor = null;
+    if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;
+    return Object.assign({}, v, { was: old });
+  }
   const d = seamlessDelta(walkView.id, v.id);
   if (!d) return v;
   const x = v.pos[0] - d[0],
@@ -1702,6 +1780,7 @@ export function seamlessGate(v) {
    the exit is the one most in line with the way you walked since (within 45 degrees; the nearest may be beside you) */
 const AHEAD_M = 40;
 function seamlessPrepareAhead(now) {
+  seamlessRemakeTick();
   if (now - (seamlessWorld.aheadAt || 0) < 500) return;
   seamlessWorld.aheadAt = now;
   const sc = walkView.sc,
@@ -1768,9 +1847,16 @@ function seamlessUndergroundVeil() {
   v.style.transition = 'opacity .6s ease-in';
   v.style.opacity = '0';
 }
-export function shiftWalkView(id, dx, dz) {
-  const sc = mapById(id);
+export function shiftWalkView(id, dx, dz, view) {
+  /* the crossing hitch: view, a ready earlier version of the view (seamlessGate), is made again in the background */
+  const sc = view || mapById(id);
   if (!sc) return false;
+  if (view && view !== mapById(id)) {
+    seamlessWorld.remake = id;
+    seamlessWorld.remakeT = performance.now();
+    seamlessWorld.stats.early++;
+  }
+  seamlessWorld.was.delete(id);
   const P = walkView.pl;
   if (!!(walkView.sc && walkView.sc.under) !== !!sc.under) seamlessUndergroundVeil();
   P.x += dx;

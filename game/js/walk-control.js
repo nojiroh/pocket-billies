@@ -935,7 +935,8 @@ export function walkMapSync() {
       !ws.pos ||
       !walkView.pl ||
       Math.hypot(walkView.pl.x + d[0] - ws.pos[0], walkView.pl.z + d[1] - ws.pos[1]) < 25;
-    if (d && walking && shiftWalkView(id, d[0], d[1])) {
+    /* (ws.was: the crossing hitch, a ready earlier version of the view, seamless-world.js seamlessGate) */
+    if (d && walking && shiftWalkView(id, d[0], d[1], ws.was)) {
       artLoad(mapArtPaths(walkView.sc)).catch(() => {});
       return;
     }

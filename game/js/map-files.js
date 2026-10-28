@@ -13,7 +13,7 @@
 /** @import { LocationNode, MapFileField } from '../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, saveData, seamlessWorld } from './hooks.js';
+import { provide, saveData, seamlessViewUses, seamlessWorld } from './hooks.js';
 import { LOCATIONS, ROADS_BY_NODE, START_NODE, gameData } from './game-data.js';
 import { chapterMap } from './logic/script.js';
 /* eslint-disable no-func-assign */
@@ -91,12 +91,9 @@ export function loadMapFile(id) {
 /* a view put together while this map was still without its ground: make the views again */
 function remakeViewsOfMap(id) {
   if (!mapFiles.touched.has(id) || typeof seamlessWorld === 'undefined') return;
-  const uses = v =>
-    v &&
-    typeof v === 'object' &&
-    (v.baseId === id || v.aId === id || v.bId === id || (v.parts || []).some(p => p && p.id === id));
-  const all = [...seamlessWorld.cache.values(), ...(seamlessWorld.fix ? seamlessWorld.fix.values() : [])];
-  if (all.some(uses)) seamlessWorld.gen++;
+  const ids = new Set([id]),
+    all = [...seamlessWorld.cache.values(), ...(seamlessWorld.fix ? seamlessWorld.fix.values() : [])];
+  if (all.some(v => seamlessViewUses(v, ids))) seamlessWorld.gen++;
 }
 const needMaps = ids => Promise.all([...new Set(ids)].filter(Boolean).map(loadMapFile));
 provide({ needMaps }); /* to-module */

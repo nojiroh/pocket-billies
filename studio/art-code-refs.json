@@ -1989,9 +1989,9 @@
    "game/js/workshop.js:102"
   ],
   "window": [
-   "game/js/seamless-world.js:1183",
-   "game/js/walk-control.js:997",
-   "game/js/walk-control.js:1007",
+   "game/js/seamless-world.js:1193",
+   "game/js/walk-control.js:998",
+   "game/js/walk-control.js:1008",
    "game/js/walk/effects.js:383",
    "game/js/walk/lighting.js:243"
   ],
