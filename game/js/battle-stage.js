@@ -36,6 +36,7 @@ import {
   soundEffect,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
+import { hashString, rngFn } from './logic/rng.js';
 import { graftLookSplit } from './logic/graft-art.js';
 import {
   LUNGE_GHOSTS,
@@ -116,6 +117,8 @@ expose({
   addParticle: [() => addParticle, v => (addParticle = v)],
   afterImpact: [() => afterImpact, v => (afterImpact = v)],
   ambientSpawning: [() => ambientSpawning, v => (ambientSpawning = v)],
+  battleFxRandom: [() => battleFxRandom],
+  battleFxSeed: [() => battleFxSeed, v => (battleFxSeed = v)],
   battleImpact: [() => battleImpact, v => (battleImpact = v)],
   battleLunge: [() => battleLunge, v => (battleLunge = v)],
   battleLungeGhosts: [() => battleLungeGhosts, v => (battleLungeGhosts = v)],
@@ -175,6 +178,7 @@ expose({
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
   dueEvents: [() => dueEvents],
   formatFocus: [() => formatFocus],
+  fxRandom: [() => fxRandom, v => (fxRandom = v)],
   groundRing: [() => groundRing, v => (groundRing = v)],
   handheld: [() => handheld, v => (handheld = v)],
   hitFx: [() => hitFx, v => (hitFx = v)],
@@ -1636,12 +1640,20 @@ const typeSprite = (t, i) => {
   const l = HIT_SPRITES_BY_TYPE[t] || HIT_SPRITES_BY_TYPE.None;
   return l[i % l.length];
 };
+/* VFX-9: the move effects' own random numbers (logic/rng.js), seeded per event (battleFxSeed, from battleAnimPlay), so
+   a move looks the same each time it plays from the same place in a battle and films repeat without Math.random;
+   ambient life keeps util.js random */
+let fxRandom = random;
+function battleFxSeed(key) {
+  fxRandom = rngFn(hashString(key), 'battleFx');
+}
+const battleFxRandom = () => fxRandom();
 function burst(P, t, n = 10, sp = 2.2, k = 1) {
   n = Math.min(n, BURST_BUDGET[battleQuality()]);
   for (let i = 0; i < n; i++) {
-    const a = random() * Math.PI * 2,
-      b = (random() - 0.3) * Math.PI * 0.6,
-      v = sp * (0.5 + random()),
+    const a = fxRandom() * Math.PI * 2,
+      b = (fxRandom() - 0.3) * Math.PI * 0.6,
+      v = sp * (0.5 + fxRandom()),
       key = typeSprite(t, i);
     addParticle({
       x: P.x,
@@ -1651,7 +1663,7 @@ function burst(P, t, n = 10, sp = 2.2, k = 1) {
       vy: Math.sin(b) * v + 1.2,
       vz: Math.sin(a) * Math.cos(b) * v,
       ay: -5,
-      life: 460 + random() * 300,
+      life: 460 + fxRandom() * 300,
       spr: key,
       k,
       glow: GLOWING_PARTICLES[key],
@@ -2493,4 +2505,6 @@ export const battleStageKit = {
   lungeKind,
   actorTeam,
   GLOWING_PARTICLES,
+  fxSeed: battleFxSeed,
+  fxRandom: battleFxRandom,
 };

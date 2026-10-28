@@ -9,8 +9,7 @@
    (battleFlashGate) and the debug log's `anim` line per move (no names, no save data). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { BATTLE_ANIMS, MOVES, TYPE_COLORS, hudHit, hudPop, provide, reducedMotion } from './hooks.js';
-import { random } from './util.js';
+import { BATTLE_ANIMS, MOVES, TYPE_COLORS, activeBattle, hudHit, hudPop, provide, reducedMotion } from './hooks.js';
 import { battleAnimLogLine, battleAnimTimeline, flashGate } from './logic/battle-anims.js';
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
@@ -108,9 +107,9 @@ function animStep(S, c) {
         x: A.x,
         y: 0.15,
         z: A.z,
-        vx: (random() - 0.5) * 1.2,
-        vy: 0.6 + random() * 0.6,
-        vz: (random() - 0.5) * 1.2,
+        vx: (K.fxRandom() - 0.5) * 1.2,
+        vy: 0.6 + K.fxRandom() * 0.6,
+        vz: (K.fxRandom() - 0.5) * 1.2,
         life: S.life,
         col: animColor(c, S.color),
         size: 2,
@@ -148,8 +147,8 @@ function animStep(S, c) {
         v = 1 / S.time,
         key = K.typeSprite(c.type, S.i);
       K.addParticle({
-        x: A.x + (random() - 0.5) * S.jitter,
-        y: A.y + (random() - 0.5) * S.jitter,
+        x: A.x + (K.fxRandom() - 0.5) * S.jitter,
+        y: A.y + (K.fxRandom() - 0.5) * S.jitter,
         z: A.z,
         vx: (T.x - A.x) * v,
         vy: (T.y - A.y) * v + S.up,
@@ -170,7 +169,7 @@ function animStep(S, c) {
         x: A.x,
         y: A.y,
         z: A.z,
-        vx: (T.x - A.x) * S.speed + (random() - 0.5),
+        vx: (T.x - A.x) * S.speed + (K.fxRandom() - 0.5),
         vy: (T.y - A.y) * S.speed + S.up,
         vz: (T.z - A.z) * S.speed + S.side,
         life: S.life,
@@ -256,6 +255,10 @@ function battleAnimPlay(an, ev) {
       idx: { attacker: si, target: ti, subject: an.self ? si : ti },
     },
     C = (battleAnim.cur = { mid: an.mid, T, q, held: [], logged: false });
+  /* VFX-9: the effects' random numbers for this event: the move, its sides and the event's place in the battle */
+  battleStageKit.fxSeed(
+    `${an.mid}|${si}|${ti}|${typeof activeBattle !== 'undefined' && activeBattle ? activeBattle.events.length : 0}`
+  );
   for (const S of T.steps) {
     const run = () => animStep(S, c);
     if (S.sync) run();
