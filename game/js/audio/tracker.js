@@ -19,6 +19,7 @@ expose({
   SOUND_BAKE_BUDGET: [() => SOUND_BAKE_BUDGET],
   SOUND_BAKE_IMPULSE_SEC: [() => SOUND_BAKE_IMPULSE_SEC],
   SOUND_BAKE_PLACES: [() => SOUND_BAKE_PLACES],
+  SOUND_BAKE_ROOM_GAIN: [() => SOUND_BAKE_ROOM_GAIN],
   SOUND_BAKE_SLICE_MS: [() => SOUND_BAKE_SLICE_MS],
   midiToFrequency: [() => midiToFrequency],
   songRandom: [() => songRandom, v => (songRandom = v)],
@@ -232,6 +233,9 @@ const SOUND_BAKE_SLICE_MS = 2;
    stereo decaying noise (logic/sound-bake.js). A place changes how much is sent, not the room: open air, a town, a
    forest, a room, a cave (no second convolver for caves until a cave needs a longer room) */
 const SOUND_BAKE_IMPULSE_SEC = 1.2;
+/* the normalised room comes back about 11 dB under what is sent (measured: noise through the 1.2 s impulse in
+   Chromium); the return makes a send of 1 come back about level, so a send's gain reads as the room's level */
+const SOUND_BAKE_ROOM_GAIN = 3.5;
 const SOUND_BAKE_PLACES = { open: 0.6, town: 0.8, forest: 1, room: 0.7, cave: 1.8 };
 const soundBakeBank = {
   /** 'harp@48000' -> { id, R, rate, ctx, zones: (zone | null)[], used: number[], queued: Set, wait: [] } */
@@ -245,6 +249,8 @@ const soundBakeBank = {
   /* the other baked buffers' bytes (the beds' noise, the tracker's noise, the impulse), from the last tracker made */
   other: () => 0,
   ms: 0,
+  /* the last impulse's own work (ms), for the reverb's line */
+  impulseMs: 0,
   zones: 0,
   dropped: 0,
   slices: 0,
@@ -350,7 +356,8 @@ function soundBakeImpulseFor(c) {
       new Promise(res => {
         B.queue.push({
           make: () => soundBakeImpulse(c.sampleRate, { sec: SOUND_BAKE_IMPULSE_SEC }),
-          keep: ([L, R]) => {
+          keep: ([L, R], ms) => {
+            B.impulseMs = Math.round(ms * 10) / 10;
             const b = c.createBuffer(2, L.length, c.sampleRate);
             [L, R].forEach((d, ch) => (b.copyToChannel ? b.copyToChannel(d, ch) : b.getChannelData(ch).set(d)));
             res(b);
@@ -584,7 +591,16 @@ export function trackerCreate(ctx, bus, opts = {}) {
      gain; each send is scaled by its slider (reverbLevels, from sound.js applyVolumes: post-fader, so a slider at 0
      leaves no reverb behind) and by the place (reverbPlace), and the room returns to the master (opts.master; the
      Studio, which has none, to the bus). Made on the first send */
-  const room = { conv: null, sends: null, level: { music: 1, sfx: 1 }, place: 'town', bakeMs: 0, setMs: 0, sec: 0 };
+  const room = {
+    conv: null,
+    sends: null,
+    level: { music: 1, sfx: 1 },
+    place: 'town',
+    bakeMs: 0,
+    readyMs: 0,
+    setMs: 0,
+    sec: 0,
+  };
   const roomGain = k => room.level[k] * (SOUND_BAKE_PLACES[room.place] ?? 1);
   const roomApply = () => {
     if (room.sends)
@@ -594,6 +610,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (!room.conv) {
       room.conv = c.createConvolver();
       const ret = c.createGain();
+      ret.gain.value = SOUND_BAKE_ROOM_GAIN;
       room.conv.connect(ret);
       ret.connect(opts.master || bus);
       room.sends = {};
@@ -604,7 +621,9 @@ export function trackerCreate(ctx, bus, opts = {}) {
       }
       const t0 = soundBakeNow();
       room.ready = soundBakeImpulseFor(c).then(b => {
-        room.bakeMs = Math.round(soundBakeNow() - t0);
+        /* readyMs: from the first send to the impulse in place (it waits its turn in the slices); bakeMs: its own work */
+        room.readyMs = Math.round(soundBakeNow() - t0);
+        room.bakeMs = soundBakeBank.impulseMs;
         const t1 = soundBakeNow();
         room.conv.buffer = b;
         room.setMs = Math.round((soundBakeNow() - t1) * 100) / 100;
@@ -631,6 +650,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           place: room.place,
           sec: room.sec,
           bakeMs: room.bakeMs,
+          readyMs: room.readyMs,
           setMs: room.setMs,
           kb: Math.round((T.reverbBytes || 0) / 1024),
         }
