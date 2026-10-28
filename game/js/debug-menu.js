@@ -54,7 +54,7 @@ import {
   UNLOCK_DATA,
   gameData,
 } from './game-data.js';
-import { GRAFT_SLOTS, graftDonors, graftKey, graftParse, graftPlaceholderDonors } from './logic/graft-art.js';
+import { GRAFT_SLOTS, graftDonors, graftKey, graftParse, graftSketchDonors } from './logic/graft-art.js';
 import { augChoices, augWords } from './logic/augments.js';
 import { wildSplice } from './logic/genes.js';
 import { isRobot, speciesOf } from './logic/fighters.js';
@@ -482,7 +482,7 @@ function debugGraftFor(sp) {
   const ph = s => !!(RIGS[s] && RIGS[s].front && RIGS[s].front.placeholder),
     donors = slot =>
       ph(sp)
-        ? graftPlaceholderDonors(gameData.bodyPlans, gameData.bodyPlans.forms, sp, slot).filter(ph)
+        ? graftSketchDonors(gameData.bodyPlans, gameData.bodyPlans.forms, sp, slot).filter(ph)
         : graftDonors(gameData.kitBuilds, gameData.partKits, sp, slot).filter(s => !ph(s)),
     slots = GRAFT_SLOTS.filter(slot => donors(slot).length);
   if (!slots.length) return '';
