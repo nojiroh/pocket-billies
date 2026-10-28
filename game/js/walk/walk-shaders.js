@@ -213,7 +213,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
     turn): a band across the picture along x + .6 y in art pixels, its outer edge dithered, on the brighter pixels
     only, the lit colour turned round the hue wheel. 0 between sweeps and in the instanced program */
  if(uFoil.x>0.){vec2 tz=vec2(textureSize(uTex,0)),ap=floor(vUV*tz),lf=((ap+.5)/tz-uUV.xy)/uUV.zw;float fd=abs(lf.x+lf.y*.6-uFoil.y)/uFoil.z;
-  if(fd<1.&&dot(c.rgb,vec3(.3,.59,.11))>.42&&(fd<.6||bayer(ap)>(fd-.6)/.4)){const vec3 hk=vec3(.57735);float ha=uFoil.w*6.2832;vec3 hc=col*cos(ha)+cross(hk,col)*sin(ha)+hk*dot(hk,col)*(1.-cos(ha));col=mix(col,hc*1.25+.06,uFoil.x);}}
+  if(fd<1.&&dot(c.rgb,vec3(.3,.59,.11))>.3&&(fd<.6||bayer(ap)>(fd-.6)/.4)){const vec3 hk=vec3(.57735);float ha=uFoil.w*6.2832;vec3 hc=col*cos(ha)+cross(hk,col)*sin(ha)+hk*dot(hk,col)*(1.-cos(ha));col=mix(col,hc*1.25+.06,uFoil.x);}}
  o=vec4(fogit(col,vW),uAlpha);}`,
   ],
   shadow: [
