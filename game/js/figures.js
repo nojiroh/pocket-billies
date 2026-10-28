@@ -16,6 +16,7 @@
    - Two styles (Engine > People > Style): 'pixel', the pixel puppet (C) described here, and 'smooth', the plain 3D
      figure (B): a soft light and no outline, baked at FIGURE_SMOOTH_PPM and left to the GPU's mipmaps.
    - Pictures are kept by figure, clip, frame, the view's steps, the density, the outline and the style (figureKey), at most
+     FIGURE_CACHE_BYTES of them and
      FIGURE_CACHE_MAX, and at most FIGURE_BAKES_A_FRAME are baked a frame: until a person's picture is ready they keep
      the last one they had (or today's picture, or nobody, on a test map).
    - A lost baker context bakes nothing until it is back, then rebuilds; the game's own lost context only drops the
@@ -53,6 +54,7 @@ expose({
   FIGURE_BAKES_A_FRAME: [() => FIGURE_BAKES_A_FRAME],
   FIGURE_BATTLE_PPM: [() => FIGURE_BATTLE_PPM],
   FIGURE_CACHE: [() => FIGURE_CACHE],
+  FIGURE_CACHE_BYTES: [() => FIGURE_CACHE_BYTES],
   FIGURE_CACHE_MAX: [() => FIGURE_CACHE_MAX],
   FIGURE_DEFS: [() => FIGURE_DEFS],
   FIGURE_FILES: [() => FIGURE_FILES],
@@ -92,6 +94,8 @@ expose({
 provide({ figureBattlePicture, figureFolk, figuresOn });
 /* to-module: end */
 const FIGURE_CACHE_MAX = 600,
+  /** and at most this many bytes of them (a plain 3D picture at 128 px a metre is about 340 KB, a pixel one 23 KB) */
+  FIGURE_CACHE_BYTES = 48 * 1048576,
   FIGURE_BAKES_A_FRAME = 4,
   /** the plain 3D figure (B, the style "smooth") is baked this fine and left to the GPU's mipmaps to smooth */
   FIGURE_SMOOTH_PPM = 128,
@@ -118,6 +122,7 @@ const figureBaker = {
   res: new Map(),
   bakes: 0,
   ms: 0,
+  bytes: 0,
   losses: 0,
   frame: -1,
   frameBakes: 0,
@@ -549,7 +554,14 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
         im = bakeFigure(Fig, clip, frame, V, ppm, outline, smooth ? 'smooth' : 'pixel');
         if (im) {
           FIGURE_CACHE.set(key, im);
-          while (FIGURE_CACHE.size > FIGURE_CACHE_MAX) FIGURE_CACHE.delete(FIGURE_CACHE.keys().next().value);
+          B.bytes += im.width * im.height * 4;
+          /* the longest unused go first, past the count or the bytes */
+          while (FIGURE_CACHE.size > FIGURE_CACHE_MAX || (B.bytes > FIGURE_CACHE_BYTES && FIGURE_CACHE.size > 1)) {
+            const k = FIGURE_CACHE.keys().next().value,
+              old = FIGURE_CACHE.get(k);
+            B.bytes -= old.width * old.height * 4;
+            FIGURE_CACHE.delete(k);
+          }
         }
       }
     }
@@ -623,6 +635,7 @@ export function figureReport() {
     turns: e('yawSteps'),
     folk: figureFolk(),
     pictures: FIGURE_CACHE.size,
+    mb: Math.round((B.bytes / 1048576) * 10) / 10,
     bakes: B.bakes,
     ms: Math.round(B.ms * 10) / 10,
     lost: B.lost,
@@ -643,4 +656,5 @@ function figureBakerLose(ms = 1500) {
 /** forget every baked picture (the checks; a picture already in the world stays drawn until it's replaced) */
 function figureCacheClear() {
   FIGURE_CACHE.clear();
+  figureBaker.bytes = 0;
 }

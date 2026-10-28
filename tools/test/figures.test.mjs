@@ -99,7 +99,7 @@ function freshBaker(opts) {
   const D = fakeDocument(opts),
     B = G.figureBaker;
   Object.assign(B, { cv: null, gl: null, ready: false, lost: 0, failed: '', fb: null, size: [0, 0], res: new Map() });
-  Object.assign(B, { bakes: 0, ms: 0, losses: 0, frame: -1, frameBakes: 0 });
+  Object.assign(B, { bakes: 0, ms: 0, losses: 0, frame: -1, frameBakes: 0, bytes: 0 });
   G.figureCacheClear();
   G.document.createElement = D.createElement;
   G.gpuState.fr = 1000;
@@ -322,5 +322,32 @@ test('figures: a model’s file is fetched once, and none is drawn until it is i
     G.document.createElement = was;
     delete G.FIGURE_DEFS.rogue;
     delete G.FIGURE_DEFS.nobody;
+  }
+});
+
+test('figures: at most 48 MB of pictures kept: big plain 3D pictures go sooner', () => {
+  try {
+    freshBaker();
+    /* the mannequin's plain 3D pictures are about 0.19 MB each: 400 of them would be 74 MB */
+    for (let i = 0; i < 400; i++) {
+      G.gpuState.fr++;
+      G.figurePicture(
+        {},
+        'mannequin',
+        'walk',
+        i % 8,
+        (Math.floor(i / 8) % 16) * (Math.PI / 8),
+        0,
+        TILT + Math.floor(i / 128) * G.TILT_STEP * 2,
+        'smooth'
+      );
+    }
+    const R = G.figureReport();
+    assert.ok(R.mb <= 48 && R.mb > 46, `${R.mb} MB`);
+    assert.ok(R.pictures < 300, `${R.pictures} pictures`);
+    G.figureCacheClear();
+    assert.equal(G.figureReport().mb, 0);
+  } finally {
+    G.document.createElement = was;
   }
 });
