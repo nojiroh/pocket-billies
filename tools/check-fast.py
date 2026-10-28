@@ -1315,15 +1315,16 @@ def salvage(pg, base):
 
 
 def run_town_life(pg, base):
-    """TW-2: the run fixture's first town (a jump): its folk are there, as many as its houses give (2-6), drawn no more
-    than the graphics cap; they walk, and sent home (their hour moved to the evening) at least one goes indoors; its
-    animals, chat and a named local who talks by their own name"""
+    """TW-2: the run fixture's first town (a jump): its folk are there, as many as its houses give (WM-5: 2 and one for
+    every 2 houses, at most 10), drawn no more than the graphics cap; they walk, and sent home (their hour moved to the
+    evening) at least one goes indoors; its animals, chat and a named local who talks by their own name"""
     i = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='town')")
     if i < 0: raise Exception("the run fixture's map has no town")
     node = pg.evaluate(f"runWorldNode({i})")
     go_scene(pg, node, 90)
-    want = pg.evaluate(f"mapById(LOCATIONS[{node}].mapId).folk")
-    if not 2 <= want <= 6: raise Exception(f'the town has {want} folk, not 2-6')
+    want, houses = pg.evaluate(f"(()=>{{const m=mapById(LOCATIONS[{node}].mapId);return [m.folk,(m.town||{{}}).houses??-1]}})()")
+    if not 2 <= want <= 10: raise Exception(f'the town has {want} folk, not 2-10')
+    if houses >= 0 and want != min(10, 2 + houses // 2): raise Exception(f'{want} folk for {houses} houses, not {min(10, 2 + houses // 2)}')
     if not until(pg, f"(walkView.folkAll||[]).length==={want}", 60): raise Exception(f'the folk never came out: {pg.evaluate("(walkView.folkAll||[]).length")} of {want}')
     cap = pg.evaluate("folkCap(engineSetting('quality','townFolk')??10,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
     if not until(pg, f"walkView.folk.length<={cap}", 20): raise Exception(f'{pg.evaluate("walkView.folk.length")} folk drawn, over the cap of {cap}')
@@ -1388,6 +1389,32 @@ def run_town_quests(pg, base):
     if not until(pg, "!(uiState.modal&&uiState.modal.cls==='reward-pick')", 10): raise Exception('the pick didn’t close')
     pg.evaluate("uiState.tab='walk';render();0")
     return f'{name} gave a {held[0]} quest in town {i}; handed in at town {j}'
+
+
+def run_village_stall(pg, base):
+    """WM-5: the run fixture's village (Expedition I's last town): its name says Village; its market stall, tapped,
+    opens a shop of its own with 2 held items at their prices, no Perk and no fresh stock; the town's shop is another"""
+    i = pg.evaluate("saveData.run.map.nodes.findIndex((n,i)=>!!LOCATIONS[runWorldNode(i)].stall)")
+    if i < 0: raise Exception("no town on the run fixture's map has a market stall")
+    node = pg.evaluate(f"runWorldNode({i})")
+    name = pg.evaluate(f"LOCATIONS[{node}].name")
+    if not name.endswith(' Village'): raise Exception(f'the town with a stall is called {name}')
+    go_scene(pg, node, 120)
+    if not pg.evaluate("walkView.sc.props.some(p=>p.act==='stall')"): raise Exception('the village has no market stall')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();"
+                "(()=>{const p=walkView.sc.props.find(q=>q.act==='stall');walkPick({k:'act',p,act:'stall'});return 0})()")
+    if not until(pg, "uiState.modal&&uiState.modal.shop&&document.querySelectorAll('#ov .shop-sheet .ware2').length>0", 15):
+        raise Exception('tapping the market stall opened no shop')
+    sid = pg.evaluate("uiState.modal.shop")
+    if sid != pg.evaluate(f"LOCATIONS[{node}].stall") or sid == pg.evaluate(f"LOCATIONS[{node}].shop"):
+        raise Exception(f'the stall opened {sid}, not its own shop')
+    wares = pg.evaluate(f"SHOPS['{sid}'].stock.map(w=>w.item)")
+    if len(wares) != 2 or not pg.evaluate(f"{json.dumps(wares)}.every(k=>ITEMS[k]&&(ITEMS[k].hold||[]).length)"):
+        raise Exception(f'the stall sells {wares}, not 2 held items')
+    if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the stall offers a Perk')
+    if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shopreroll]')"): raise Exception('the stall offers a fresh stock')
+    pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    return f'{name}: its stall sells {", ".join(wares)}'
 
 
 def waystations(pg, base):
@@ -1756,7 +1783,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items),
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
-             ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests)]),
+             ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests),
+             ("A run's village: its name, its market stall's own shop of 2 held items, no Perk (WM-5)", run_village_stall)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),

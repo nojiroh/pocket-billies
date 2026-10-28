@@ -280,11 +280,11 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2,
             "at": [
               10,
-              -1
+              -2
             ],
             "size": [
               2,
-              1
+              2
             ],
             "ways": [
               -42
@@ -306,7 +306,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             ],
             "size": [
               2,
-              1
+              2
             ],
             "ways": [
               656
@@ -324,7 +324,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2,
             "at": [
               12,
-              -2
+              -1
             ],
             "size": [
               1,
@@ -346,14 +346,14 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2,
             "at": [
               10,
-              1
+              2
             ],
             "size": [
               2,
               1
             ],
             "ways": [
-              108
+              172
             ]
           },
           {
@@ -366,7 +366,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2,
             "at": [
               12,
-              1
+              2
             ],
             "size": [
               2,
@@ -869,11 +869,11 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2,
             "at": [
               10,
-              -1
+              -2
             ],
             "size": [
               2,
-              1
+              2
             ],
             "ways": [
               -42
@@ -895,7 +895,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             ],
             "size": [
               2,
-              1
+              2
             ],
             "ways": [
               656
@@ -913,7 +913,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2,
             "at": [
               12,
-              -2
+              -1
             ],
             "size": [
               1,
@@ -935,14 +935,14 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2,
             "at": [
               10,
-              1
+              2
             ],
             "size": [
               2,
               1
             ],
             "ways": [
-              108
+              172
             ]
           },
           {
@@ -955,7 +955,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
             "zone": 2,
             "at": [
               12,
-              1
+              2
             ],
             "size": [
               2,
@@ -1526,6 +1526,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "58ac5de4303ad6792d106d94b9c2ed24f421eb1f1fe1d09f234f968a09090fcf"
+  "all": "5c6c66e9e3123ce79ce548ee2d85d65559cc6438b9f573b2454f35e30d006459"
 }
 `;

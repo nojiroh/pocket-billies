@@ -17,7 +17,7 @@ import { data, GAME_DATA, modules } from './setup-real.mjs';
 const G = modules.mapgen;
 const { runMapStart } = modules['run-map'];
 const { newRun } = modules['run-state'];
-const { runSceneMake } = modules['run-scenes'];
+const { runSceneMake, runStallId, runTownOf } = modules['run-scenes'];
 const C = GAME_DATA.scenery,
   R = GAME_DATA.rules.run,
   MAP_DATA = { nodeTypes: GAME_DATA.nodeTypes, biomes: GAME_DATA.biomes, rules: R },
@@ -72,6 +72,7 @@ test('a route has no square and no houses', () => {
 test("every run town has a square with the clinic and the shop on it, streets and its size's shut houses", () => {
   let towns = 0,
     full = 0;
+  const sizes = /** @type {Record<string, number>} */ ({});
   for (const seed of ['TW1A', 'TW1B', 'TW1C', 'TW1D', 'TW1E', 'TW1F']) {
     for (const { node, i, scene: sc, notes, run } of runScenes(seed)) {
       const where = `${seed} node ${i}`;
@@ -124,11 +125,20 @@ test("every run town has a square with the clinic and the shop on it, streets an
         assert.ok(G.mapgenReached(reach, ...step), `${where}: the ${k}'s door step can't be walked to`);
         assert.ok(step[0] >= 7 && step[0] <= sc.w - 7 && p.z <= sc.h - 10.4, `${where}: the ${k}'s room fits`);
       }
-      /* the houses: its size's (WM-5: a run's towns are 2 x 1 hamlets until WM-5b), shut (no act, no room of their
+      /* the houses: its size's (WM-5b: by its footprint, rules.json run.town.sizes), shut (no act, no room of their
          own), facing the camera, each a walk from the hub */
       const houses = sc.props.filter(p => HOUSE.test(p.k)),
-        Z = G.MAPGEN_TOWN_SIZES[sc.town.size];
-      assert.equal(sc.town.size, 'hamlet', where);
+        Z = G.MAPGEN_TOWN_SIZES[sc.town.size],
+        want = runTownOf(run.map, i, WORLD_DATA);
+      assert.equal(sc.town.size, want.size, where);
+      sizes[want.size] = (sizes[want.size] || 0) + 1;
+      assert.ok(sc.name.endsWith(' ' + want.word), `${where}: ${sc.name} says it is a ${want.word}`);
+      /* WM-5b: a village's and a town's market stall opens its own shop; a town's second quest giver */
+      const stalls = sc.props.filter(p => p.act === 'stall');
+      assert.equal(stalls.length, want.stall, `${where}: market stalls`);
+      for (const p of stalls) assert.equal(p.shop, runStallId(i), `${where}: the stall's own shop`);
+      assert.equal(sc.town.givers, want.givers, `${where}: quest givers' spots`);
+      assert.equal((sc.people || []).filter(p => p.quest).length, want.givers, `${where}: quest givers on their spots`);
       assert.equal(sc.town.houses, houses.length, where);
       assert.ok(houses.length >= 1 && houses.length <= Z.houses[1], `${where}: ${houses.length} houses`);
       if (houses.length >= Z.houses[0]) full++;
@@ -211,6 +221,8 @@ test("every run town has a square with the clinic and the shop on it, streets an
   }
   assert.ok(towns >= 15, `${towns} towns`);
   assert.ok(full >= towns * 0.9, `${full} of ${towns} towns with their size's houses`);
+  /* Expedition I: a hamlet, then a village (rules.json run.map.townSizes) */
+  assert.deepEqual(Object.keys(sizes).sort(), ['hamlet', 'village'], JSON.stringify(sizes));
 });
 
 test('the same seed makes the same town', () => {
@@ -456,4 +468,41 @@ test('WM-6: a run town has its districts too', () => {
       if (sc.town.districts.park && sc.town.districts.farm) both++;
     }
   assert.ok(towns >= 8 && both >= towns * 0.9, `${both} of ${towns} run towns with a park and a farm edge`);
+});
+
+test("WM-5b: an Expedition II run's last town is a 3 x 2 town: its market stall, two quest givers with names of their own, its houses and folk", () => {
+  const { runMapLength } = modules['run-map'];
+  let seen = 0;
+  for (const seed of ['WM5B1', 'WM5B2', 'WM5B3']) {
+    const run = newRun(seed, 2, G.MAPGEN_VERSION, START);
+    runMapStart(run, { ...MAP_DATA, rules: { ...R, map: { ...R.map, ...runMapLength(seed, R.map, 2) } } });
+    const made = /** @type {any[]} */ ([]);
+    run.map.nodes.forEach((node, i) => {
+      const { scene: sc, notes } = runSceneMake(run, i, made, WORLD_DATA);
+      made[i] = sc;
+      const want = runTownOf(run.map, i, WORLD_DATA);
+      if (!want || want.size !== 'town') return;
+      seen++;
+      const where = `${seed} node ${i}`;
+      assert.deepEqual(node.size, [3, 2], where);
+      assert.deepEqual(notes, [], where);
+      assert.equal(sc.w * sc.h, 6 * 64 * 64, `${where}: 192 x 128`);
+      assert.ok(sc.name.endsWith(' Town'), sc.name);
+      assert.equal(sc.town.size, 'town');
+      const givers = (sc.people || []).filter(p => p.quest);
+      assert.deepEqual(
+        givers.map(p => [p.id, p.quest]),
+        [
+          ['quest', 1],
+          ['quest2', 2],
+        ],
+        where
+      );
+      assert.notEqual(givers[0].name, givers[1].name, `${where}: two names`);
+      assert.equal(sc.props.filter(p => p.act === 'stall' && p.shop === runStallId(i)).length, 1, where);
+      assert.ok(sc.town.houses >= 10 && sc.town.houses <= 16, `${where}: ${sc.town.houses} houses`);
+      assert.ok(sc.folk >= 7 && sc.folk <= 10, `${where}: ${sc.folk} folk`);
+    });
+  }
+  assert.ok(seen >= 3, `${seen}: one town a run at least (two on a row of two)`);
 });

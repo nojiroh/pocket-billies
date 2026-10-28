@@ -33,6 +33,7 @@ import {
   runNodeSeed,
   runSideLay,
   runSpot,
+  runTownSize,
 } from './run-map.js';
 import { MAPGEN_LAYOUTS, MAPGEN_SIDE_NAME, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 import { arenaGenGates } from './arena-gen.js';
@@ -95,8 +96,13 @@ expose({
   runSideLand: [() => runSideLand, v => (runSideLand = v)],
   // @ts-expect-error -- replaced on purpose
   runSignposts: [() => runSignposts, v => (runSignposts = v)],
+  runStallId: [() => runStallId],
+  // @ts-expect-error -- replaced on purpose
+  runTownDial: [() => runTownDial, v => (runTownDial = v)],
   // @ts-expect-error -- replaced on purpose
   runTownLife: [() => runTownLife, v => (runTownLife = v)],
+  // @ts-expect-error -- replaced on purpose
+  runTownOf: [() => runTownOf, v => (runTownOf = v)],
   // @ts-expect-error -- replaced on purpose
   runTownQuest: [() => runTownQuest, v => (runTownQuest = v)],
   // @ts-expect-error -- replaced on purpose
@@ -111,7 +117,8 @@ expose({
 /**
  * @typedef {{ nodeTypes: Record<string, NodeType>, biomes: Record<string, Biome>, pools: Record<string, Pool>,
  *   scenery: any, rules: { scene: RunSceneRules, layouts?: Record<string, Record<string, number>>,
- *   wild: { lv: [number, number], perRow: number, back: number }, town?: import('../../types/game-data').RunTownRules },
+ *   wild: { lv: [number, number], perRow: number, back: number }, town?: import('../../types/game-data').RunTownRules,
+ *   map?: import('../../types/game-data').RunMapRules },
  *   dex?: string[] | null, fieldMoves?: Record<string, import('../../types/game-data').FieldMove>,
  *   setPieces?: import('../../types/game-data').SetPiecesData | null,
  *   arenas?: import('../../types/game-data').ArenasData | null, region?: { leaders: { id: string, type: string }[] } }} RunWorldData
@@ -122,6 +129,8 @@ expose({
 export const runPlaceId = i => `run_${i}`;
 /** RL-8: a run town's shop id @param {number} i */
 export const runShopId = i => `run_${i}_shop`;
+/** WM-5: a village's or a town's market stall's shop id @param {number} i */
+export const runStallId = i => `run_${i}_stall`;
 /** a run node's map id: its place id and a tag of the run's seed, so no cache keyed by map id mixes two runs
  * @param {string} seed @param {number} i */
 export const runMapIdOf = (seed, i) => `run_${i}_${(hashString(seed) % 1679616).toString(36)}`;
@@ -289,6 +298,8 @@ export function runSceneParams(run, i, scenes, data) {
     ...(node.type === 'scrapyard' ? { site: 'scrapyard' } : {}),
     /* TW-1: a town node is a town (mapgen.js mapgenStageTown: a street, a square, houses) */
     kind: node.type === 'town' ? 'town' : 'route',
+    /* WM-5: and its size's houses, market stall and quest givers (rules.json run.town.sizes) */
+    ...(node.type === 'town' ? runTownDial(map, i, data) : {}),
     biome: node.biome || Object.keys(data.biomes)[0],
     w: size.w,
     h: size.h,
@@ -456,15 +467,31 @@ export function runAlongBack(path, d) {
   }
   return path[0].slice();
 }
+/** WM-5: town node i's size (logic/run-map.js runTownSize: by its footprint, rules.json run.map.townSizes) and what it
+ * has (run.town.sizes), or null without the tables @param {RunMap} map @param {number} i @param {RunWorldData} data */
+export function runTownOf(map, i, data) {
+  const node = map.nodes[i],
+    size = node && node.type === 'town' ? runTownSize(node, data.rules.map && data.rules.map.townSizes) : '',
+    Z = size && data.rules.town && data.rules.town.sizes ? data.rules.town.sizes[size] : null;
+  return Z ? { size, ...Z } : null;
+}
+/** WM-5: town node i's `town` dial for mapgen (mapgen.js mapgenTownDial: its size, houses, market stall and quest
+ * givers), none without the tables @param {RunMap} map @param {number} i @param {RunWorldData} data */
+export function runTownDial(map, i, data) {
+  const Z = runTownOf(map, i, data);
+  return Z ? { town: { size: Z.size, houses: Z.houses.slice(), stall: Z.stall, givers: Z.givers } } : {};
+}
 /** a run node's name (a placeholder, the owner's call: its biome and its type, "Meadow Route"; RL-S2: the type's
- * `place` word when it has one)
+ * `place` word when it has one; WM-5: a town's size, "Meadow Hamlet", "Meadow Village", "Meadow Town"). The one place
+ * a run place's name is made: the world map, signposts and shops read it
  * @param {RunMap} map @param {number} i @param {RunWorldData} data */
 export function runPlaceName(map, i, data) {
   const node = map.nodes[i],
     B = data.biomes[node.biome || ''],
-    T = data.nodeTypes[node.type];
-  /* RL-S2: a type's own word for its place, when it has one (a rival's place is a Route) */
-  const word = T ? T.place || T.name : 'Route';
+    T = data.nodeTypes[node.type],
+    Z = runTownOf(map, i, data);
+  /* RL-S2: a type's own word for its place, when it has one (a rival's place is a Route); WM-5: a town's, its size's */
+  const word = Z ? Z.word : T ? T.place || T.name : 'Route';
   /* RL-R2: a side area's places carry its name ("Bramble Grove Town") */
   if (node.side && map.side) return `${map.side.name} ${word}`;
   return `${B ? B.name : 'Wild'} ${word}`;
@@ -546,6 +573,8 @@ export function runSceneMake(run, i, scenes, data) {
   if (scene.kind === 'town') {
     runTownLife(run, i, scene, data);
     runTownQuest(run, i, scene, data);
+    /* WM-5: its market stall opens the stall's own shop (walk-control.js: a prop's `shop` first) */
+    for (const p of scene.props || []) if (p.act === 'stall') p.shop = runStallId(i);
   }
   return { scene, notes };
 }
@@ -587,20 +616,32 @@ export function runTownLife(run, i, scene, data) {
 /** TW-3: a run town's quest giver (scene.people id 'quest', `quest: 1`: quest-board.js offers the town's quest),
  * from the node's own stream ('town|quest', so the locals' draws stay as they were): on the giver's spot by the notice
  * board (mapgen.js), a seeded townsfolk look and a name from run.town.names that none of the town's locals has. None
- * when the town has no board (its square didn't fit) @param {Run} run @param {number} i @param {any} scene
- * @param {RunWorldData} data */
+ * when the town has no board (its square didn't fit). WM-5: a town's (3 x 2) second giver on its second spot (id
+ * 'quest2', `quest: 2`: the town's second offer, run-quests.js questOffer slot 1), from its own stream ('town|quest2')
+ * @param {Run} run @param {number} i @param {any} scene @param {RunWorldData} data */
 export function runTownQuest(run, i, scene, data) {
   const T = data.rules.town,
-    at = (scene.spots || []).find((/** @type {any} */ s) => s.kind === 'giver');
-  if (!T || !at) return;
-  const rnd = rngFrom(runNodeSeed(run.seed, i), 'town|quest'),
-    taken = new Set((scene.people || []).map((/** @type {any} */ p) => p.name)),
-    names = T.names.filter(n => !taken.has(n));
-  if (!names.length) return;
-  const name = names[rnd.int(0, names.length - 1)];
-  scene.people = (scene.people || []).concat([
-    { id: 'quest', who: 'folk:' + rnd.int(1000, 99999), name, x: at.x, z: at.z, dir: 'down', lines: [], quest: 1 },
-  ]);
+    spots = (scene.spots || []).filter((/** @type {any} */ s) => s.kind === 'giver');
+  if (!T) return;
+  spots.slice(0, 2).forEach((/** @type {any} */ at, /** @type {number} */ k) => {
+    const rnd = rngFrom(runNodeSeed(run.seed, i), k ? 'town|quest' + (k + 1) : 'town|quest'),
+      taken = new Set((scene.people || []).map((/** @type {any} */ p) => p.name)),
+      names = T.names.filter(n => !taken.has(n));
+    if (!names.length) return;
+    const name = names[rnd.int(0, names.length - 1)];
+    scene.people = (scene.people || []).concat([
+      {
+        id: k ? 'quest' + (k + 1) : 'quest',
+        who: 'folk:' + rnd.int(1000, 99999),
+        name,
+        x: at.x,
+        z: at.z,
+        dir: 'down',
+        lines: [],
+        quest: k + 1,
+      },
+    ]);
+  });
 }
 /** RS-2: a run's resident standing in a town (scene.people id 'resident', `resident: <id>`: quest-board.js offers
  * their favour or their invite), on the first of the town's local spots nobody stands on (mapgen.js: the square's
@@ -724,6 +765,20 @@ export function runWorldTables(run, hub, data) {
         greeting: town ? 'New stock every morning. Have a look.' : 'Fresh off the cart this morning. Have a look.',
         stock: [],
         runNode: i,
+      };
+    }
+    /* WM-5: a village's and a town's market stall, a shop of its own (held items: run-loop.js runStallStock) */
+    const Z = town ? runTownOf(map, i, data) : null;
+    if (Z && Z.stall) {
+      row.stall = runStallId(i);
+      shops[row.stall] = {
+        name: `${row.name} Market Stall`,
+        keeper: 'The stallholder',
+        who: 'clerk',
+        greeting: 'Something for your Billies to hold? Two new pieces every morning.',
+        stock: [],
+        runNode: i,
+        stall: 1,
       };
     }
     return row;
