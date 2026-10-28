@@ -25,7 +25,7 @@ Studio plan Phase 5 (T5.1): a kit Billie's recipe edited in Part mode bakes at o
 carries its sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and its line.
 Roster track RO-3b: every kit Billie is a sketch (bodyPlans.json), its recipe kept. So the kit steps still run
 on a kit Billie, the stand-in serves the first recipe's Billie off its sketch: bodyPlans.json without its form,
-its sheet and rig as `npm run bake:kits` bakes them (kit_off_placeholder). Nothing on disk changes.
+its sheet and rig as `npm run bake:kits` bakes them (kit_off_sketch). Nothing on disk changes.
 Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
 and a head swapped keeps a blink as one undo step.
 Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
@@ -3335,7 +3335,7 @@ def hub_checks(b, url, errs):
     ctx.close()
 
 
-def kit_off_placeholder():
+def kit_off_sketch():
     """RO-3b: the files the stand-in serves in place of the repository's so the first kit recipe's Billie is a kit
     Billie again: {path from the root: bytes}, and that recipe's name and rig"""
     node = r"""
@@ -3367,7 +3367,7 @@ def kit_off_placeholder():
 
 def main():
     _srv, base = serve(ROOT)
-    kit_files, kit_name, kit_rig = kit_off_placeholder()
+    kit_files, kit_name, kit_rig = kit_off_sketch()
     print(f'stand-in: {kit_name} ({kit_rig}) served off its sketch, as its kit recipe bakes', flush=True)
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game').rglob('*') if p.is_file()]
