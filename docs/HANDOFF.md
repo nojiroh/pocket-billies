@@ -2,6 +2,106 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-13 - layers in play: the walking beat, rain, snow, a storm and night, a battle that builds, the run's arc, the busker as you pass, the Sound test's layer switches - 2026-10-28
+Branch `track/sound`, the music lane (main merged first, 948eaa0f: HANDOFF kept both entries, art-code-refs made
+again; the world lane's last push merged at 9348a6ed). Started by the planning session under the owner's standing
+instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per commit, the generated
+files in their own commits, the baseline commit, the docs; tag `snd-13-done` (for the owner to push) on this session's
+last commit. PR #292. Details: sound-track.md "SND-13 as built".
+- **Plan**: (a) pure logic first (logic/music-layers.js): a part's gain from the game's layer levels, beat and bar
+  lines, walking, the weather, the busker by distance with hysteresis, a battle's build and peak from its lines
+  (hitTier, koAhead), the arc; (b) the schema (a part's `layer` and `dim`) and the `walk` drum pattern; (c) the
+  tracker's controller: a gain of its own per layered part after the part's (the stingers keep theirs), ramps at step
+  times, layer parts out of the bar's bake; (d) sound.js: the levels from where the music read them (walking, the
+  environment's weather, the night), on ensembles the drums' bus at 1 and no rain muffle (gb keeps both), a battle's
+  intensity, the arc as layers, the busker's stem and listening; (e) check-sound's `layer:<name>` renders; (f) the
+  placeholder layer parts; (g) the Sound test; the baseline once, plain `--baseline`.
+- **Changed**: new game/js/logic/music-layers.js and tools/test/music-layers.test.mjs; game/js/logic/music-patterns.js
+  (the `walk` pattern, `skip`, needs by part); game/js/logic/music-studio.js (the Walk choice); game/js/logic/music-where.js
+  (`songVariant`: an ensemble song's arc as layers); game/data/schema/music.schema.json (`$defs.layer`, a part's `layer`,
+  `dim`, the drums' `walk`); game/js/audio/tracker.js (the layer controller, `T.layersPrepare`, `T.layerStats`);
+  game/js/sound.js (`musicLayersNow`, `musicLayersIntensity`, `musicBuskerNow`, `buskerCase`, `musicLayersPrepare`,
+  `buskerSongNear` only when listening, musicState's `gb`, the drums' bus and the muffle on ensembles, musicParts'
+  layer parts, a battle's peak baked as it starts, the debug log's `ensemble.layers` and `ensemble.parts`);
+  game/data/music.json (layer parts in copperleaf, copperleaf_night, route, battle); game/js/sound-test.js (the layer
+  row); game/index.html, studio/index.html, studio/js/logic-worker-modules.js (the new module); tools/check-sound.py;
+  tests (music-patterns, tracker, sound); validation/sound-baseline/ (copperleaf, route, wild).
+- **Fingerprints**: 216 before, **0 changed** at the last code commit (`check-sound.py` at c5bff6af, 1349 s: 234
+  fingerprints, exactly the 18 planned additions and nothing else); after the first draft of the data, at 836c2110's
+  parent, `--only=copperleaf,route,wild` showed the same additions (19 then: Copperleaf's day `layer:night` was dropped
+  in the tuning, its render being the plain ensemble's). The baseline written once with plain `--baseline` (ccdb06eb),
+  every old value byte for byte the same (checked file by file); then `check-quick.py`'s Song fingerprints: 234, with
+  brightness, 0 changed. The code commits before the data were not rendered one by one (a render of the tracker's
+  commit in a worktree was stopped at its 30-minute limit on the busy machine): no ensemble part named a layer or a
+  dim before 836c2110, so the controller made no node and moved nothing; the render at the last commit covers them.
+- **Levels** (mono RMS of the fingerprint renders, against the plain ensemble, by day): LEVELS_LINE. The K-weighted
+  `--loudness` report was not run whole (90+ minutes here; see Risky).
+- **Seen in the game** (headless Chromium, a real AudioContext, the town fixture): Copperleaf on its ensemble; the
+  stick held: walk 1, the tambourine's gain 1 (baked when first wanted), still 1 a second after letting go, 0 six
+  seconds later (a bar line, then its fade); the drums' bus 1 on the ensemble (0.45 → 1 → 0.45 on gb, as before); the
+  busker 12 m off 0, 6 m 0.28, 3 m 0.8, its pan moving with the camera, listening after 3 s still within 5 m (no theme
+  played: the fixture has no last run); no page errors.
+- **Risky or unfinished**:
+  - Claude can't hear: the layer parts are judged by numbers (levels, windows that differ, no NaN); they are named
+    placeholders, and the levels are first guesses: the owner's ears decide (the listening list).
+  - The arc's layers are wired and tested but heard nowhere yet: no biome song names an ensemble (SND-12).
+  - The busker is simulated at its case (no resident busks in the data yet, RS-5). Arriving home (6.6 m from the
+    case) you hear its accordion faintly (0.2).
+  - A layer's notes bake on first want (on arrival for walking and the weather and night there, as a battle starts
+    for its peak): until baked it stays out. In a slow headless page the bank's slices ran about once a second (the
+    page's software rendering), so the first walk there passed before the tambourine was baked; on a phone a zone
+    bakes in milliseconds. The debug log's `ensemble.parts` says each layered part's gain and whether it is baked.
+  - Memory: the layers add instruments to a place's bank (Copperleaf's walk, rain, snow, storm and busker parts
+    together 0.84 MB at 48 kHz, 7 zones: walk 0.05, rain 0.26, snow 0.08, storm 0.36, busker 0.09; the route's 0.85,
+    the battle's peak 0.29; Node, 100-225 ms of work each; only those wanted are baked). A run's place is near the 8 MB budget (SND-17); the
+    bank drops the least recently played zones first. SND-15's call.
+  - `check-sound.py --loudness` as a whole still takes over 90 minutes (the planning session relayed SND-14's
+    measure: the ensemble parts bake again in each render job while the page draws in software). Not fixed here (not
+    cheap to prove the numbers identical in this session); for SND-15. Its new layered rows are in the code, not run.
+  - CI on PR #292: lint failed at 5b2201c8 on the logic worker's module list (fixed, c5bff6af); smoke at 1ab98c5c on
+    the bowl map's zoom and Camera follow (frame-timed; both pass here, `check-fast.py --only="bowl,Camera follow"`);
+    commented on the PR.
+- **Verified**: VERIFIED_LINE
+- **Decided for the owner, to review**:
+  - The busker plays an accordion stem inside Copperleaf's song as you pass (earshot 8 m, out past 9, full within 2
+    m, panned from where it stands), and its last run's theme only when you stop to listen (still within rules.json
+    `square.busk.near`, 5 m, for 3 s, until 2 m further off); today's switch within 5 m goes. As recommended.
+  - A battle's intensity: build = 0.25 a turn + 0.3 a KO + 0.35 a boss's phase + 0.15 a crit or 4× hit (full after
+    about four turns); peak in the red zone, as a KO lands (the line that knocks out) and once a boss or leader has
+    changed phase. The red zone's tense version stays (it is a version, not a layer).
+  - The music's rain low-pass gives way to the rain layer on ensemble songs; gb keeps its 4 kHz low-pass. As
+    recommended. The run map's forecast cut stays.
+  - The run's arc on an ensemble song is layers (its `peak` parts: rows 3-5 at 0.6, 6-8 full); gb songs and GB Sounds
+    keep `@mid` and `@late` (the quick check's Run music step unchanged).
+  - Walking: in on the next beat over a beat; out from the next bar line over two beats; 0.4 s still never drops it.
+    Weather, night and intensity move on bar lines over a bar; the busker on beats.
+  - On an ensemble the drums' bus stays at 1 (the walking beat and the dims replace `L.drums`); the route's kit goes to
+    0.65 standing and 0.6 at night; gb keeps 1/0.45 × (1 − 0.4·night).
+  - Night: the route's flute takes the tune (the chip to 0.35); Copperleaf keeps its night version (its own ensemble),
+    with its own softer layers. No e-piano yet.
+  - The placeholder parts (sound-track.md "SND-13 as built"): Copperleaf's tambourine, celesta and brushes, sleigh
+    bells, storm strings and timpani, accordion; the route's walking snare, flute, the same weather; the battle's brass,
+    timpani, spiccato and kit dimmed at the intro, a choir and orchestra hits at the peak.
+  - The weather layers start at 0.2 of the environment's rain, snow or storm and are full at 0.8, outdoors only.
+  - Simulated busker: at the case while no resident in the data busks; a resident who busks (RS-5) takes over.
+  - The Sound test's "busker distance slider" is a select of 1-10 m (the debug menu's 40 px controls); the layers are
+    set with "Set the layers" and move on the next beat or bar.
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test, the layer row, then Play the
+  song "As its ensemble"; or in the game):
+  - Copperleaf and a route: walk, stop, walk (the tambourine or snare comes in on the beat, goes about a bar after you
+    stop; on the route the kit thins standing).
+  - Rain, snow and a storm over Copperleaf and the route (the Sound test's weather; in the game, a rainy day).
+  - Night on the route (the flute takes the tune) and Copperleaf at night (its night version with its own layers).
+  - A wild battle: lean at the start, building over the turns; the choir and hits as a KO lands and in the red zone
+    (Sound test: wild, intensity 1, 2, 3).
+  - The run's arc: nothing to hear yet (no run song on an ensemble until SND-12).
+  - Copperleaf's busker: walk past the case (the accordion comes and goes, from its side), stop within 5 m for 3 s
+    after a run (its theme), walk away (Copperleaf's song again). Sound test: the busker at 1-10 m.
+  - GB Sounds on: every song as before (the drums soften standing, the rain muffles).
+  - Export a debug log and read `audio.ensemble.layers` and `.parts` (each layered part's gain and whether baked).
+- **Next**: SND-12 (arrangements: A/B forms, every song re-voiced as placeholders, in batches the owner approves; the
+  biome songs' ensembles then hear the arc as layers).
+
 ### Sound track SND-14 - nature and weather: rain by intensity, roofs, thunder from the weather's bolts, wind and gusts, birds by the hour, insects, frogs, fire by size, footsteps by surface, the town's life, rooms by kind - 2026-10-28
 Branch `track/sound`, the world lane (main merged first, 764a4fde; SND-11's work merged mid-session, 0ba9f941). Started
 by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode, plan below, recommended
