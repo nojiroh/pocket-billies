@@ -16,6 +16,8 @@
                                                        tile in the middle (slot "map"), compact while walking
      <pb-loading heading="..." sub="..." tip="..." value="0.4" stages='[{"id":"map","label":"...","state":"ready"}]'>
                                                        HB-2: the run's loading screen; slot "view" for its picture
+     <pb-stamp word="DENIED" tilt="-8" size="sm|lg" still>   SY-3: the Bureau's stamp, slammed on (pb-stamp-land as it
+                                                       lands); the words are factions.json look.stamps
    The motions here repeat css/motion.css's reward motions (m-slam, m-flip), as a component's styles can't see the
    page's; with reduced motion each one is a fade and numbers jump to their end. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -32,6 +34,7 @@ expose({
   PbNode: [() => PbNode],
   PbPayout: [() => PbPayout],
   PbPickCard: [() => PbPickCard],
+  PbStamp: [() => PbStamp],
   RUN_CURRENCY_ICONS: [() => RUN_CURRENCY_ICONS],
   RUN_NAV_SETS: [() => RUN_NAV_SETS],
   RUN_WEATHER_ICONS: [() => RUN_WEATHER_ICONS],
@@ -866,6 +869,148 @@ const PbPayout = class extends LitElement {
   }
 };
 
+/* ---------- SY-3: a stamp: a word in a rough border, slammed on at a slant ---------- */
+/* The Bureau's paperwork (style-track.md: its stamp words are factions.json look.stamps; the page passes the word). Ink
+   in the red family (--redink, which follows light and dark; --stamp-ink sets another), a word plus a shape (the double
+   border), never colour alone. It slams on when it joins the page (play() again for another), and tells the page as it
+   lands (pb-stamp-land: sound.js thunks); `still` shows it already stamped, with no slam and no thunk (a sheet drawn
+   again). Reduced motion: it fades in. */
+const PbStamp = class extends LitElement {
+  static properties = {
+    word: {},
+    tilt: { type: Number },
+    size: { reflect: true },
+    still: { type: Boolean },
+    _go: { state: true },
+  };
+  static styles = [
+    runKitBase,
+    runKitMotion,
+    css`
+      :host {
+        display: inline-block;
+        vertical-align: middle;
+        line-height: 1;
+        --stamp-fs: 22px;
+      }
+      :host([size='sm']) {
+        --stamp-fs: 14px;
+      }
+      :host([size='lg']) {
+        --stamp-fs: 34px;
+      }
+      .ink {
+        position: relative;
+        display: inline-block;
+        padding: 0.3em 0.5em 0.22em;
+        border: max(2px, 0.14em) solid currentColor;
+        color: var(--stamp-ink, var(--redink));
+        font: 700 var(--stamp-fs) / 1 var(--font-voice);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        opacity: 0.92;
+        transform: rotate(var(--tilt));
+        /* the rough ink: three grids of pinholes at odd steps, so the gaps never line up */
+        -webkit-mask:
+          radial-gradient(circle at 30% 40%, transparent 0 0.6px, black 1.1px) 0 0 / 7px 5px,
+          radial-gradient(circle at 70% 20%, transparent 0 0.5px, black 1px) 0 0 / 11px 9px,
+          radial-gradient(circle at 50% 80%, transparent 0 0.7px, black 1.2px) 0 0 / 17px 13px;
+        -webkit-mask-composite: source-in;
+        mask-composite: intersect;
+      }
+      .ink::before {
+        content: '';
+        position: absolute;
+        inset: max(2px, 0.12em);
+        border: max(1px, 0.05em) solid currentColor;
+        pointer-events: none;
+      }
+      .ink.a {
+        animation: pb-stamp-a var(--m-base) cubic-bezier(0.5, 0, 0.9, 0.5) both;
+      }
+      .ink.b {
+        animation: pb-stamp-b var(--m-base) cubic-bezier(0.5, 0, 0.9, 0.5) both;
+      }
+      :host-context([data-motion='reduced']) .ink.a,
+      :host-context([data-motion='reduced']) .ink.b {
+        animation: m-fade var(--m-fast) linear both;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .ink.a,
+        .ink.b {
+          animation: m-fade var(--m-fast) linear both;
+        }
+      }
+      /* two names for one slam, so play() can start it again */
+      @keyframes pb-stamp-a {
+        from {
+          opacity: 0;
+          transform: rotate(calc(var(--tilt) + 6deg)) scale(1.9);
+        }
+        55% {
+          opacity: 0.92;
+          transform: rotate(var(--tilt)) scale(0.94);
+        }
+        to {
+          transform: rotate(var(--tilt)) scale(1);
+        }
+      }
+      @keyframes pb-stamp-b {
+        from {
+          opacity: 0;
+          transform: rotate(calc(var(--tilt) + 6deg)) scale(1.9);
+        }
+        55% {
+          opacity: 0.92;
+          transform: rotate(var(--tilt)) scale(0.94);
+        }
+        to {
+          transform: rotate(var(--tilt)) scale(1);
+        }
+      }
+    `,
+  ];
+  constructor() {
+    super();
+    this.word = '';
+    this.tilt = -8;
+    this.size = '';
+    this.still = false;
+    this._go = 0;
+    this._timer = 0;
+  }
+  connectedCallback() {
+    super.connectedCallback();
+    if (!this.still) this.play();
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    clearTimeout(this._timer);
+  }
+  /** slams it on again; pb-stamp-land as it lands (at once under reduced motion) */
+  play() {
+    clearTimeout(this._timer);
+    this.still = false;
+    this._go++;
+    const land = reduced() ? 0 : runMsVar(this, '--m-base', 240) * 0.55;
+    this._timer = setTimeout(
+      () =>
+        this.dispatchEvent(
+          new CustomEvent('pb-stamp-land', { detail: { word: this.word }, bubbles: true, composed: true })
+        ),
+      land
+    );
+  }
+  willUpdate() {
+    this.style.setProperty('--tilt', `${Number(this.tilt) || 0}deg`);
+  }
+  render() {
+    const go = this.still || !this._go ? '' : this._go % 2 ? 'a' : 'b';
+    return html`<span class="ink ${go}">${this.word}</span>`;
+  }
+};
+
 /* ---------- the bottom bar: the minimap in the middle, two buttons on each side (UI-8) ---------- */
 /* The set's first tab (Map) is the minimap tile, raised out of the bar; the rest go two to a side, under each other.
    The tile's picture is the light-DOM child in slot "map" (the game's <canvas>, js/minimap.js); with none, the map
@@ -1403,5 +1548,6 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-payout', PbPayout],
   ['pb-nav-bar', PbNavBar],
   ['pb-loading', PbLoading],
+  ['pb-stamp', PbStamp],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);
