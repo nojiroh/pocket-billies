@@ -3093,22 +3093,38 @@ function navAheadOf(sc, G) {
 }
 /* start building view sc's walking grid ahead, a slice a frame (navPrepWork), unless it is ready or on its way. The
    next view's and a view on screen made again can be on their way together (a list, the oldest let go past three).
+   urgent: a crossing waits for it (seamless-world.js seamlessGate): built first, with the ground's urgent budget.
    Returns whether it is ready */
-export function navPrepare(sc) {
+export function navPrepare(sc, urgent) {
   const G = groundKey(sc);
   if (navReady(sc, G)) return true;
-  if (navAheadOf(sc, G)) return false;
+  const J = navAheadOf(sc, G);
+  if (J) {
+    if (urgent) J.urgent = 1;
+    return false;
+  }
   /* (an older build of this view, for ground or props it no longer has: let go) */
   const L = walkView.navAhead.filter(a => a.sc !== sc);
-  L.push({ sc, G, P: (sc.props || []).length, T: timedPropsKey(sc), it: navGridSteps(sc), nav: null, ms: 0 });
+  L.push({
+    sc,
+    G,
+    P: (sc.props || []).length,
+    T: timedPropsKey(sc),
+    it: navGridSteps(sc),
+    nav: null,
+    ms: 0,
+    urgent: urgent ? 1 : 0,
+  });
   walkView.navAhead = L.slice(-3);
   return false;
 }
-/* a slice of the walking grids built ahead (the oldest first), in budget ms; their heights and bridges are held only
-   while one runs */
+/* a slice of the walking grids built ahead (one a crossing waits for first, then the oldest), in budget ms (one a
+   crossing waits for: as the ground's, twice that times the gate's boost, walk/map-cache.js groundPrepWork); their
+   heights and bridges are held only while one runs */
 export function navPrepWork(budget) {
-  const A = walkView.navAhead.find(a => a.it);
+  const A = walkView.navAhead.find(a => a.it && a.urgent) || walkView.navAhead.find(a => a.it);
   if (!A || !(budget > 0)) return;
+  if (A.urgent) budget *= 2 * (walkRenderer.prepBoost || 1);
   const t0 = performance.now(),
     was = walkView.navBuilding;
   walkView.navBuilding = A.sc;

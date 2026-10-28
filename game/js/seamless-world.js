@@ -1734,7 +1734,7 @@ export function seamlessGetReady(id, urgent, focus, view) {
     return false;
   }
   /* then its walking grid, a slice a frame (the crossing hitch) */
-  if (seamlessGroundReady(id, sc)) return navPrepare(sc);
+  if (seamlessGroundReady(id, sc)) return navPrepare(sc, urgent);
   if (typeof prepareMapGround === 'function')
     prepareMapGround(id, sc, G, urgent, focus || sc.hub || [sc.w / 2, sc.h / 2]);
   return false;

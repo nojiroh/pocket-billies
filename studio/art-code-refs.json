@@ -1611,7 +1611,7 @@
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1757",
-   "game/js/walk-view-gl.js:721"
+   "game/js/walk-view-gl.js:719"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1679,7 +1679,7 @@
    "game/js/ui-run-kit.js:534",
    "game/js/ui.js:89",
    "game/js/ui.js:166",
-   "game/js/walk-view.js:3265"
+   "game/js/walk-view.js:3281"
   ],
   "cowboy": [
    "game/js/person-art.js:264"
@@ -1730,9 +1730,9 @@
    "game/js/walk-control.js:536",
    "game/js/walk-control.js:554",
    "game/js/walk-view.js:341",
-   "game/js/walk-view.js:3845",
-   "game/js/walk-view.js:3956",
-   "game/js/walk-view.js:4277",
+   "game/js/walk-view.js:3861",
+   "game/js/walk-view.js:3972",
+   "game/js/walk-view.js:4293",
    "game/js/walk/frame-items.js:319",
    "game/js/walk/frame-items.js:448",
    "game/js/walk/frame-items.js:466"
@@ -1828,7 +1828,7 @@
    "game/js/minimap.js:83",
    "game/js/self-test.js:3501",
    "game/js/walk-view.js:409",
-   "game/js/walk-view.js:4131",
+   "game/js/walk-view.js:4147",
    "game/js/walk/effects.js:518",
    "game/js/walk/effects.js:672",
    "game/js/walk/effects.js:780",
@@ -1854,7 +1854,7 @@
    "game/js/battle-stage.js:2240"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:683",
+   "game/js/walk-view-gl.js:681",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1983,8 +1983,8 @@
    "game/js/train-ride.js:272",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
-   "game/js/walk-view.js:3843",
-   "game/js/walk-view.js:3845",
+   "game/js/walk-view.js:3859",
+   "game/js/walk-view.js:3861",
    "game/js/walk/prop-look.js:154",
    "game/js/workshop.js:102"
   ],
