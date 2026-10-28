@@ -339,11 +339,25 @@ export function runMapGrid(seed, nodes, nodeTypes = {}, want = []) {
     const south = nodes.findIndex((m, j) => j < i && m.row === n.row && m.lane === n.lane - 1);
     return !(south >= 0 && put[south] && /** @type {any} */ (put[south]).at[1] >= f.at[1]);
   };
+  /** WM-5b: spots(i, size) kept by all it reads (where node i's parents stand and their sizes, and an L parent's own
+   * parent), so stepping back doesn't build and sort them again (bigger towns step back more) @type {Map<string,
+   * number[][]>} */
+  const spotsKept = new Map(),
+    at = (/** @type {number} */ j) => {
+      const f = /** @type {any} */ (put[j]);
+      return f ? `${f.at}/${f.size}` : '-';
+    },
+    spotsOf = (/** @type {number} */ i, /** @type {number[]} */ size) => {
+      const k = `${i}|${size}|${from[i].map(j => at(j) + (shape[j] === 'L' && from[j].length ? ':' + at(from[j][0]) : '')).join('|')}`;
+      let v = spotsKept.get(k);
+      if (!v) spotsKept.set(k, (v = spots(i, size)));
+      return v;
+    };
   /** @param {number} i @returns {boolean} */
   const place = i => {
     if (i >= nodes.length) return true;
     for (const size of sizes[i])
-      for (const [x, y] of spots(i, size)) {
+      for (const [x, y] of spotsOf(i, size)) {
         if (++tries > RUN_GRID.tries) return false;
         const f = { at: [x, y], size: size.slice() };
         if (!fits(i, f)) continue;
