@@ -135,10 +135,7 @@ body.on-map #bgfx {
   max-width: min(360px, calc(100% - 90px));
   padding: var(--s2) var(--s4) var(--s3);
   border-radius: var(--r-md);
-  background: color-mix(in srgb, var(--panel-s) 84%, transparent);
-  box-shadow:
-    0 0 0 2px var(--line),
-    0 12px 28px -18px var(--shadow);
+  box-shadow: var(--g-in);
 }
 .map-head .sub {
   letter-spacing: 1.6px;
@@ -197,7 +194,15 @@ body.on-map #bgfx {
   margin: 0;
   padding: var(--s3) var(--s4);
   border-radius: var(--r-md);
-  background: color-mix(in srgb, var(--panel-s) 92%, transparent);
+  box-shadow: var(--g-in);
+}
+/* UI-18: the Map's header, place card and places list are solid semigloss, the surface colour with its sheen (as a
+   Team card has it), not blurred glass: the bowl under them is busy, and each blur is redrawn over it every frame
+   (ui-track.md, less clutter and the blur budget). The top bar and the bottom bar keep theirs */
+.map-full :is(.map-head, .mapcard, .mplaces) {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--g-solid) 92%, white), var(--g-solid));
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
 }
 .map-full .mapcard .racts {
   margin-top: var(--s2);
@@ -266,8 +271,8 @@ body.map-gl #dioui {
   display: flex;
   flex-direction: column;
   border-radius: var(--r-md);
-  background: color-mix(in srgb, var(--panel-s) 94%, transparent);
   box-shadow:
+    var(--g-in),
     0 0 0 2px var(--line),
     0 18px 40px -18px var(--shadow);
   z-index: 3;
