@@ -1049,6 +1049,10 @@ def phone_flow(P):
     # TC-4: the screens as the opening left them (play() gave the team, money and encounters the old step counter
     # brought; nothing below needs them): only the messages and toasts are cleared, as play() did
     pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
+    # PK-5: Copperleaf's postcard comes after 3 s of calm walking in town (postcards.js postcardCheck); held off while the
+    # screens are pictured and counted, so whether it slid in yet doesn't move the walk screen's count (it did after
+    # main's style track met PK-5: walk 20 of 18, the card's four pieces); let go after the battle's count
+    pg.evaluate("if(typeof postcardState!=='undefined')postcardState.on=true;0")
     # UI-1: how many surfaces blur what's behind them on each screen; UI-6b: a failure above the budget (BLUR_BUDGET), or
     # for a screen already over it, above its count when UI-6b began (BLUR_CEILING)
     blur, blurAll, elems = {}, {}, {}
@@ -1068,6 +1072,7 @@ def phone_flow(P):
     ui(pg); shot(pg, 'phone-battle')
     blur['battle'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['battle'] = pg.evaluate('uiBlurCount()')
     elems['battle'] = pg.evaluate('uiElementCount()')
+    pg.evaluate("if(typeof postcardState!=='undefined')postcardState.on=false;0")
     R['blurPerScreen'] = blur; R['blurPerScreenWithBars'] = blurAll
     # UI-15: the pieces each screen shows (uiElementCount: words and icons on screen), logged so clutter is seen going
     # down; a screen may not show more than its ceiling (ELEMENT_CEILING, lowered when a screen sheds pieces)
