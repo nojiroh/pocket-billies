@@ -1,0 +1,13 @@
+# Text files are stored and checked out with LF line endings.
+* text=auto eol=lf
+
+# Binary files: no line-ending changes, no text diffs.
+*.png binary
+*.webp binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.woff2 binary
+*.bin binary
+*.glb binary
+*.vox binary
