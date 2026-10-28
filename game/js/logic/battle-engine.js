@@ -869,10 +869,13 @@ export function useMove(k, mid, tk0, part) {
     }
   }
   if (fx.stones) {
-    if (td.stones) {
+    /* VFX-13: always on the foe's side, as the line says: a status move's target was the user itself (onFoe false),
+       so Scatter Stones laid them on its own side */
+    const sd = battleNow().sides[ACTOR_SIDE[k] ^ 1];
+    if (sd.stones) {
       if (M.c === 'X') battleSay('Sharp stones are already scattered there.');
     } else {
-      td.stones = true;
+      sd.stones = true;
       battleSay(`Sharp stones are scattered around ${ACTOR_SIDE[k] === 0 ? 'their' : 'your'} side.`);
     }
   }
