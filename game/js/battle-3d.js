@@ -22,7 +22,7 @@ import {
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
-import { battleAnimFrame, battleIconSprite } from './logic/battle-anims.js';
+import { battleAnimFrame, battleIconSprite, battlePathAt } from './logic/battle-anims.js';
 import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
@@ -69,6 +69,7 @@ expose({
   RIG_DARK: [() => RIG_DARK],
   RIG_HITS: [() => RIG_HITS],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
+  TRAIL_CELL_MS: [() => TRAIL_CELL_MS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
   battle3dEffectLights: [() => battle3dEffectLights, v => (battle3dEffectLights = v)],
@@ -79,6 +80,7 @@ expose({
   battle3dScenePoint: [() => battle3dScenePoint, v => ((battle3dScenePoint = v), provide({ battle3dScenePoint }))],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
+  battle3dTrail: [() => battle3dTrail, v => (battle3dTrail = v)],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
   battleFoil: [() => battleFoil, v => (battleFoil = v)],
@@ -403,27 +405,36 @@ function battle3dFrame() {
   const fx = battle3d.fx || (battle3d.fx = []);
   fx.length = 0;
   for (const p of battleStage.parts) {
-    if (p.img) continue;
+    /* VFX-11: a light step's particle shows nothing */
+    if (p.img || p.hide) continue;
     let a = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) a *= 0.5 + 0.5 * Math.sin(p.age / 120);
     if (a <= 0.01) continue;
     const [px, pz] = T(p.x, p.z),
       q = { k: 0, x: px, y: battle3d.gy + p.y, z: pz, a: clamp(a, 0, 1), glow: !!p.glow };
-    if (p.spr) {
+    if (p.spr && !p.beam) {
       q.k = BATTLE_FX_KIND.sprite;
       q.key = p.spr;
       q.s = (p.k || 1) / 30;
       /* VFX-10: an icon with a strip like it (battleAnims.json iconSprites) is drawn as that strip, in its type's ramp
          (else the icon's), its frame stepped on the stage clock; a strip that plays once carries its own fade (its
-         last frames erode), so only a looping one also erodes by its age */
-      const I = battleIconSprite(BATTLE_ANIMS, p.spr, p.ramp);
+         last frames erode), so only a looping one also erodes by its age. VFX-11: a particle may name its strip
+         (anim) itself; Electric's hold each frame twice (a stutter); a flipped one (flip -1) is mirrored */
+      const I =
+        p.anim && battleFxHasAnim(p.anim)
+          ? { sprite: p.anim, ramp: p.ramp }
+          : battleIconSprite(BATTLE_ANIMS, p.spr, p.ramp);
       if (I && battleFxHasAnim(I.sprite)) {
-        const S = BATTLE_ANIMS.sprites[I.sprite];
+        const S = BATTLE_ANIMS.sprites[I.sprite],
+          age = p.stutter ? p.age - (p.age % 167) : p.age;
         q.anim = I.sprite;
         q.ramp = I.ramp;
-        q.f = battleAnimFrame(S, p.age, p.life);
+        q.f = battleAnimFrame(S, age, p.life);
         q.scale = p.k || 1;
+        q.flip = p.flip < 0 ? -1 : 1;
         if (!S.loop) q.a = p.twinkle ? clamp(0.5 + 0.5 * Math.sin(p.age / 120), 0, 1) : 1;
+        /* VFX-11: a projectile's trail: copies of it where its path had it a cell (42 ms) ago, and before, eroding */
+        if (p.path && p.trail) battle3dTrail(fx, p, q, T);
       }
     } else if (p.ring) {
       q.k = BATTLE_FX_KIND.ring;
@@ -440,6 +451,13 @@ function battle3dFrame() {
       q.z2 = z2;
       q.w = (p.w || 1) / 30;
       q.col = battle3dRgb(p.col);
+      /* VFX-11: a ray's strip (beam_strip), tiled along it in its ramp; else VFX-9's flat beam */
+      if (p.anim && battleFxHasAnim(p.anim)) {
+        q.anim = p.anim;
+        q.ramp = p.ramp;
+        q.f = battleAnimFrame(BATTLE_ANIMS.sprites[p.anim], p.age, p.life);
+        q.scale = p.k || 1;
+      }
     } else {
       q.k = BATTLE_FX_KIND.square;
       q.size = Math.max(1, (p.size || 2) * 0.6) / 30;
@@ -526,6 +544,18 @@ function battle3dHit(s, i) {
   H[3] = a;
   return H;
 }
+/* VFX-11: a projectile's trail: copies of its strip where its path had it 1, 2... cells (42 ms) ago, each eroded a
+   little more (the pool's fade), so it reads as Part 1's afterimages without a draw of its own */
+const TRAIL_CELL_MS = 42;
+function battle3dTrail(fx, p, q, T) {
+  for (let j = 1; j <= p.trail; j++) {
+    const u = (p.age - j * TRAIL_CELL_MS) / p.life;
+    if (u <= 0) break;
+    const w = battlePathAt(p.path, u),
+      [x, z] = T(w[0], w[2]);
+    fx.push({ ...q, x, y: battle3d.gy + w[1], z, a: q.a * (1 - j / (p.trail + 1)), glow: false });
+  }
+}
 /* VFX-9: a particle's colour (a hex) as the pool takes it, 0..1, made once a colour */
 const BATTLE_RGB = new Map();
 function battle3dRgb(col) {
@@ -562,7 +592,8 @@ function battle3dEffectLights(lights, at3) {
       p.lk = [8, 9, 10].find(k => !taken.has(k)) || 10;
       taken.add(p.lk);
     }
-    const k = Math.max(0, 1 - p.age / p.life),
+    /* VFX-11: a kit's light strength (lightK), and a flicker (Fire, Electric) stepped at 12 fps */
+    const k = Math.max(0, 1 - p.age / p.life) * (p.lightK || 1) * (p.flick && Math.floor(p.age / 83) % 2 ? 0.6 : 1),
       c = battle3dRgb(p.col);
     lights.push({
       p: at3(p.x, battle3d.gy + Math.max(0.1, p.y), p.z),

@@ -2591,6 +2591,27 @@ export interface BattleAnimsData {
   ramps: Record<string, BattleAnimRamp>;
   /** VFX-10: icons.png particles drawn with a strip instead, and the ramp an untyped one takes */
   iconSprites: Record<string, { sprite: DataId; ramp: string }>;
+  /** VFX-11: the type kits, by type id, None and Bureau: what a family's steps draw with in that type */
+  types?: Record<string, BattleAnimKit>;
+}
+/** VFX-11: a type kit: its sprites (strips) by role, its ramp, its path and motion, its light, and steps of its own a
+ * family plays at its wind-up (cast) and its hit */
+export interface BattleAnimKit {
+  about?: string;
+  ramp: string;
+  /** a second ramp every other sprite takes (Dragon's two-tone) */
+  ramp2?: string;
+  shot: DataId;
+  impact: DataId;
+  small?: DataId;
+  bits: DataId[];
+  /** icons.png particles sprayed beside the strips (cog, scale, pow) */
+  icons?: string[];
+  path: 'straight' | 'arc' | 'zigzag' | 'spiral' | 'wave' | 'stamp';
+  motion: 'flicker' | 'arc' | 'spiral' | 'zigzag' | 'thud' | 'sweep' | 'wave' | 'rings' | 'twotone' | 'plain' | 'stamp';
+  light: { k: number; ms: number; flicker?: boolean };
+  cast?: BattleAnimStep[];
+  hit?: BattleAnimStep[];
 }
 /** VFX-10: a strip: frames side by side in 8 greys (index 7 the white core) */
 export interface BattleAnimSprite {
@@ -2681,6 +2702,13 @@ export interface BattleAnimStep {
   pose?: string;
   ease?: string;
   cam?: Record<string, number>;
+  /** VFX-11: a strip (or a kit role: shot, impact, small, bits), or several taken in turn */
+  spr?: string | string[];
+  ramp?: string;
+  ramp2?: string;
+  path?: string;
+  part?: 'cast' | 'hit';
+  icon?: string;
   [k: string]: unknown;
 }
 /** WM-7: arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's

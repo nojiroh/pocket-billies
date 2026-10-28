@@ -12,6 +12,7 @@ import { expose } from './test-globals.js';
 import {
   BATTLE_STAGES,
   HIT_EFFECTS_BY_TYPE,
+  MOVES,
   TYPE_COLORS,
   activeBattle,
   battle3dLayout,
@@ -52,7 +53,6 @@ import {
   impactAt,
   impactFrame,
   impactLength,
-  lungeDash,
   lungeGhostCount,
   lungeLean,
   lungeLeanOn,
@@ -68,6 +68,7 @@ import {
   smearStretch,
   throwArcEase,
 } from './logic/smear.js';
+import { battlePathAt } from './logic/battle-anims.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES, robotArmCanvas, robotLegsCanvas, robotTorsoCanvas } from './robot-art.js';
@@ -166,6 +167,7 @@ expose({
   blinkActor: [() => blinkActor, v => (blinkActor = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
+  burstMax: [() => burstMax],
   buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
   calmMotion: [() => calmMotion],
   camApply: [() => camApply, v => (camApply = v)],
@@ -177,6 +179,7 @@ expose({
   cameraGuardPose: [() => cameraGuardPose],
   cameraOverflow: [() => cameraOverflow, v => (cameraOverflow = v)],
   catchSound: [() => catchSound],
+  delayedMoveType: [() => delayedMoveType, v => (delayedMoveType = v)],
   drawForegrounds: [() => drawForegrounds, v => (drawForegrounds = v)],
   drawList: [() => drawList],
   drawListLength: [() => drawListLength, v => (drawListLength = v)],
@@ -748,6 +751,15 @@ function battleStageFrame(ts, rawDt) {
     const p = P[i];
     p.age += dt;
     if (p.age >= p.life) continue;
+    /* VFX-11: a particle on a path (a projectile, an orbit: logic/battle-anims.js battlePathAt) is where its path says */
+    if (p.path) {
+      const q = battlePathAt(p.path, p.age / p.life);
+      p.x = q[0];
+      p.y = q[1];
+      p.z = q[2];
+      P[n++] = p;
+      continue;
+    }
     p.vx += p.ax * s;
     p.vy += p.ay * s;
     p.vz += p.az * s;
@@ -940,9 +952,10 @@ function battleLunge(i, o) {
   s.trail = smearHistory();
   return backAt + backDur;
 }
-/* VFX-5: a move's lunge kind: a dash (logic/smear.js LUNGE_DASH) leaves a ribbon in its type's colour */
-function lungeKind(mid, type) {
-  const c = lungeDash(mid) && TYPE_COLORS[type] && TYPE_COLORS[type][0];
+/* VFX-5: a move's lunge kind: a dash leaves a ribbon in its type's colour. VFX-11: a dash is the dash family's lunge
+   (the step's `dash`), which took over logic/smear.js LUNGE_DASH's moves */
+function lungeKind(dash, type) {
+  const c = dash && TYPE_COLORS[type] && TYPE_COLORS[type][0];
   return typeof c === 'string' && c[0] === '#' ? { dash: true, col: c } : {};
 }
 /* VFX-5: keeps each lunging Billie's place on the smear grid (the battle's frame, after its tweens) */
@@ -1427,7 +1440,8 @@ export function particleSprite(key) {
 function drawParticles(c, layer) {
   const L = [];
   battleStage.parts.forEach(p => {
-    if ((p.layer || 2) !== layer) return;
+    /* VFX-11: a light with nothing to show (the runner's light step) */
+    if ((p.layer || 2) !== layer || p.hide) return;
     /* VFX-9: drawn in the 3D world instead (walk/battle-fx.js), all but a bot's dropped part (a picture) */
     if (battleStage.gl && !p.img) return;
     const q = battleStageProject(p.x, p.y, p.z);
@@ -2140,7 +2154,8 @@ export function battleStagePlay(an, ev) {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
         pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_ICON, C => {
           C.show = false;
-          hitFx(an.si, { te: an.te, t: 'Retail' }, impactFx(T, 'coin'));
+          /* VFX-11: it read 'Retail', not a type (the bug list), so it fell back to None's: the delayed move's own */
+          hitFx(an.si, { te: an.te, t: delayedMoveType() }, impactFx(T, 'coin'));
         });
         scheduleAt(1000, () => battleStageFocus('wide'));
         return { dur: 900, hit: 400 };
@@ -2518,6 +2533,13 @@ export function battleStageCatch(kind, res, spin, done) {
     spin
   );
 }
+/* VFX-11: the type of the delayed hit's move (fx.delay; the engine's 'mail' hurt names no move), None without one */
+function delayedMoveType() {
+  const M = Object.values(MOVES).find(m => m && m.fx && m.fx.delay);
+  return (M && M.t) || 'None';
+}
+/* VFX-11: a burst's most particles at the battle's quality (BURST_BUDGET), for the runner's sprays */
+const burstMax = () => BURST_BUDGET[battleQuality()];
 /* VFX-8: what the move runner (battle-anim-run.js) plays its steps with */
 export const battleStageKit = {
   tween,
@@ -2539,4 +2561,7 @@ export const battleStageKit = {
   fxRandom: battleFxRandom,
   /* VFX-15: a hit's weight, for its scar */
   hitWeight,
+  /* VFX-11 */
+  burstMax,
+  actorWorldPoint,
 };
