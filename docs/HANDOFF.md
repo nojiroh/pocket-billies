@@ -2,6 +2,54 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-2: letters that act (spans, effects, pauses, beats, Text speed, blip styles) - 2026-10-28
+Branch `track/dialogue` (the session started on a detached HEAD at its tip; checked out the branch, merged main
+4423a457 (PK-6) first and main 6acee223 (UI fixes #309) at the end; both times the conflicts were the HANDOFF top,
+both sides kept, and the generated studio/art-code-refs.json, regenerated). Plan approved in Plan Mode. Code, CSS, a
+font, tests and docs. No session tag (CLAUDE.md: the track gets `dialogue-done`). Details: docs/phases/dialogue-track.md,
+"Done in DL-2".
+- Decided by the owner: Ask me before 1, bold is **Oxanium 700** (game/fonts/oxanium-700.woff2, 8.8 KB, the latin
+  subset from Google Fonts; a row in ui-theme.js `UI_FONTS`; it loads only when a bold word shows).
+- Changed:
+  - New game/js/logic/talk-type.js: `TEXT_SPEEDS` (slow 42, normal 28, fast 14, instant 0 ms a letter) and
+    `letterTimes(parsed, speed)`: [slow] ×2, [fast] ×0.5, [p] seconds, a beat of 4 letters after `, ; :` and 8 after
+    `. ! ? …` only where a space follows (past a closing quote), an ellipsis typed ×3. In the pages and the Studio's
+    logic worker (alphabetical: logic-worker.test checks it).
+  - talk.js `talkLetters`: the line as `.talk-line[data-one-piece]` > `span.talk-sr` (the plain line, visually
+    hidden) + `span.talk-glyphs[aria-hidden]` > `span.w` (a word, no break) > `span.l` (`--i`, `fx-*`), with
+    `createElement`/`textContent` only. `step` adds `.on` on the times; a tap still ends the typing (pauses too);
+    `onType` still fires per letter; Reduced types at once as before. `talkBox.cur.text` stays plain.
+  - New game/css/talk-text.css: the arrival (fade and a 2 px rise), `[b]` 700 with a pop, `[i]` slant, `[big]` voice
+    font 1.3 em, `[small]`, the colours (the colour code's text shades), `[shake]` once in whole pixels, `[wave]`. The
+    effects stack through `--talk-pop`, `--talk-shake`, `--talk-wave`. Keyframes and the Reduced rule in motion.css
+    (ui-lint keeps keyframes there); wave is the signal loop `.talk-glyphs .fx-wave` in idle-life.js.
+  - theme-sheet.js `uiElementCount`: a `[data-one-piece]` element counts as one piece.
+  - Settings, Game: a Text speed row (Slow, Normal, Fast, Instant) under Battle speed; `textSpeed: 'normal'` in
+    saves.js's preferences.
+  - sound.js blip: `style` and `big`: shout +5 semitones and 1.5× louder, whisper 0.45×, a [big] letter +2 and 1.3×;
+    a thought never blips (talk.js). Kappi's purr follows.
+  - Docs: SCRIPTS.md (the effects, how a line types, Text speed), the track file (Done in DL-2, Ask me before 1
+    answered), ROADMAP, BRANCHES.
+- Found, not changed: Battle speed's default is in settings-screen.js:394 (`|| 'normal'`), not saves.js as the track
+  said. There was no visually hidden class in game/css (`.talk-sr` is the first). Face, emote, stamp and cut events
+  are parsed but act in DL-4/DL-5.
+- Risky: letters as inline-blocks lose kerning between them (slight in Oxanium); a `[big]` word makes its line a bit
+  taller. Long lines are about 100 spans; only new letters change each frame. Not measured on a phone.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build clean; unit tests 1944 (1943 pass before
+  the logic-worker order fix, then that test and the map-check timing test pass on re-run; the timing test went over
+  1.5 s while a browser ran alongside). In headless Chromium at `?fixture=talk`: a line with every effect drew right
+  (screenshot judged), a hostile name and `<img>` in a line stayed text, Instant shows the line whole, Reduced stops
+  the wave, Oxanium 700 loads, the Text speed row fits at 390 px. check-fast: cut off by my own 25-min timeout after
+  24 of 42 (the machine was slow); 22 ok, the ranch and Perks steps failed, both pass on re-run. Full quick check: 36
+  of 42 in 2522 s, the Safety step and the talk steps passing. Of the 6 problems, Terraces, RL-8 and room light fail
+  on main too (DL-1's entry); Starters, Ground tiles and Run map music pass on re-run. After merging main 6acee223:
+  lint, typecheck, check:modules, check:data clean; unit tests 1944 of 1944 pass.
+- Next: DL-3 (bubbles) on `track/dialogue`, already started by the owner's word in its own session (it merges this
+  push before its first edit); Ask me before 2 (each skin's look) is its question.
+- For the owner on the phone: in a Studio script played in its story preview, a line `I am [b]very[/b] [c=gold]important[/c],
+  [wave]obviously[/wave].[p] [shake]Watch[/shake] [big]this[/big]...` and play it; try Settings, Game, Text speed
+  (Slow and Instant) and Animation Reduced (letters just appear, no wave). Send a debug log if typing stutters.
+
 ### Dialogue track DL-1: line markup (bracket tags), plain text everywhere, script errors - 2026-10-28
 Branch `track/dialogue` (made by the owner from `ccr-2d53c4cf-8w7kd2`, so it carries DL-0; main 76aea599 already in,
 nothing to merge). Plan approved in Plan Mode. Code, tests and docs; nothing in the game looks different. No session
@@ -77,6 +125,58 @@ page. Planned in Plan Mode and approved by the owner. Details: docs/phases/dialo
   errors; pictures checked. No game code touched, so lint and tests were not needed (the docs aren't formatted or
   linted).
 - Next: DL-1 (markup) on `track/dialogue`.
+
+### UI fixes - the bottom bar, the Actions bar, battles on wide screens - 2026-10-28
+Branch `claude/determined-meitner-r58xng` (the session's own; made from main at 485674b5, main 5b0d43e1 merged in at
+7a341ed6). Plan approved in Plan Mode; one session from the owner's phone notes, no phase file. UI and layout only (no
+save or data change but one preference). No tag: not a phase or track step. Draft PR #309 into main.
+- Changed:
+  - The bottom bar (ui-run-kit.js pb-nav-bar, shell.css, tokens.css): one registered value, `--nav-k` (`@property`,
+    0 full, 1 compact), eases on `--m-base`. The tile, the bar's height and outline (`--rise`), and each tab's place,
+    size and word size are mixes by it, so the shrink is one smooth motion. Before, the tabs' layout, the words, the
+    outline and `--nav-h` snapped. The page's `--nav-h` follows its own `--nav-kr` (not inherited). Compact tabs keep
+    their words: 60x56 px, the compact bar 84 px (was 46 px, icon only, a 76 px bar).
+  - The open tab: a rounded gold pill that fades and grows in. Before, a slanted bar with `pbSlideBar`'s slanted
+    ghost; the owner called them angular. Pressing a tab squashes that tab, not the whole bar (ui-motion.js
+    `PRESS_INNER`).
+  - Settings > Controls: "Shrink the bar while walking" (`preferences.navShrink`, 'off' keeps it full; on by
+    default). minimap.js `minimapCompact` reads it.
+  - Actions (walk-tab.js, walk-tab.css, ui.js): `#walkSheet` is now a fixed row of small buttons (`.walk-tray`, a
+    `role=toolbar` div, not a `<pb-sheet>`) right over the bottom bar. It follows the shrink. While it's open, the
+    Actions button is lifted by its height (`--tray-k`), and the button toggles it. Buttons, in order:
+    - on a run: the day (a tap toasts today's and tomorrow's weather; the bar stays open) and the map;
+    - in the hub: Start a run (a toast when nobody can come), and the buildings' markers;
+    - the place's shops, clinic and trainers (`nodeActionItems`, which the map card's `nodeActions` now draws from);
+    - one per wild Billie, nearest first (`walkView.enc`). A tap walks you up to it and the battle starts there, as
+      a tap on its "?" does (`walkToEncounter`). The owner asked for this.
+    Esc closes it, Tab opens and closes it, and the arrows (now left and right too) move between buttons. The old
+    sheet's notes (blurb, trainers' hints) and the encounter cards' CSS are gone.
+  - Battles on wide screens (battle-stage.js `battleStageLayout`, battle.js `battleCardColumn`, `floatTick`): in
+    landscape with the cards in the scene, the fighters' frame and the card column next to it (32 px apart) are
+    centred together, and the camera keeps the fighters inside the frame (`L.free` narrowed to it, `L.beside`).
+    Before, at 1920 px the cards stood at x 1376-1862, ~300 px from the action. A phone on its side has no spare
+    room and is laid out as before.
+  - check-quick's Actions step ("Actions bar: ...") and TESTING.md follow. The step now also checks the bar is a row
+    over the bottom bar, nearest-first order, and the walk to a wild Billie. CHANGELOG, BRANCHES.
+- Found, not changed (fail on main 5b0d43e1 too, checked in a clean worktree):
+  - "Terraces ... nothing floats": copperleaf train_station@167.3,100.8 in the air.
+  - The phone step's walk screen shows 21 pieces on main against a ceiling of 18 (this branch: 20).
+  - "Walking left and right ...": every settings tab overflows the phone by 7 px (more than 4).
+  - RL-8: "crossed into Thicket Route but its view never showed".
+  RT-2 and Granny Juniper failed once under the full run's load and passed alone.
+- Risky: `@property` and `:has()` need iOS 16.4+; older iOS shrinks at once, as before. The battle's new layout
+  wasn't seen on a tablet in landscape (1024x768 and the like). Frame cost of easing `--nav-k` (an inherited value
+  restyles the bar's shadow tree for 240 ms) not measured on a phone.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build clean; unit tests 1854 pass (after the
+  merge); the Actions step alone passes; full quick check before the merge 35 of 42, the rest as above; smoke after
+  the merge 7 of 7 in 344 s (the phone step's piece counts within their ceilings this time). Screenshots: phone 390x844 (the bar full, part way and compact; Actions open in the hub
+  and on a run), battle at 1280x720, 1920x1080, 2560x1080 and 844x390.
+- Next: the owner's phone check. Then, if the labels in the compact bar feel busy, the words could go back to
+  icon-only at the new size.
+- For the owner on the phone: walk a few seconds and stop (the bar should fold and unfold smoothly, its buttons
+  still worded); Settings > Controls > Shrink the bar while walking off; tap Actions in Copperleaf and on a run, tap
+  a "?" button (you walk to it, then battle); a battle on a wide screen or a tablet on its side. Send a debug log
+  if anything stutters.
 
 ### Perks track PK-6 - Wave D, rules, growth and adventure - 2026-10-28
 Branch `track/perks` (this session's outcome branch; main 2d862040, which holds PK-1..PK-5 through #316, merged first:
