@@ -5,10 +5,11 @@
    No picture carries its own layout beside it; the frames are where the game reads them:
      the walk effects (art/scene/fx/<kind>.png): walk-view.js EFFECT_FRAMES, [frame width, height, frames]
      the animals and cars (art/scene/life/*.png): the data's scenery.life rows, { img, w, h, frames }
+     the battle's effect strips (art/battle/anims/<id>.png, VFX-10): battleAnims.json sprites, { cell, frames, fps }
    (art/scene/fx.json misses four of the effects; the game never reads it.)
    The Studio's strip player (studio/js/strip-player.js) and the Art browser use this.
    Logic only: no DOM, runs in Node (tools/test/frame-strips.test.mjs). Every table comes in as an argument. */
-/** @typedef {{ w: number, h: number, n: number, from: string, name?: string, where?: string }} Strip */
+/** @typedef {{ w: number, h: number, n: number, from: string, name?: string, where?: string, fps?: number }} Strip */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
@@ -24,13 +25,24 @@ expose({
 /* to-module: end */
 /** a picture's frames, or null when it isn't a strip the game animates
  * @param {string} path under art/ (scene/fx/bee.png), or with art/ in front (the file list's)
- * @param {{ effects?: Record<string, number[]>, life?: Record<string, { img?: string, w?: number, h?: number, frames?: number, name?: string, where?: string }> }} tables
+ * @param {{ effects?: Record<string, number[]>, life?: Record<string, { img?: string, w?: number, h?: number, frames?: number, name?: string, where?: string }>, anims?: Record<string, { cell?: number[], frames?: number, fps?: number, about?: string }> }} tables
  * @returns {Strip | null} */
 export function stripOf(path, tables) {
   const p = String(path || '').replace(/^art\//, '');
   const fx = /^scene\/fx\/([\w-]+)\.png$/.exec(p),
     E = fx && tables.effects && tables.effects[fx[1]];
   if (E && E[2] > 1) return { w: E[0], h: E[1], n: E[2], from: 'effects' };
+  const an = /^battle\/anims\/([\w-]+)\.png$/.exec(p),
+    S = an && tables.anims && tables.anims[an[1]];
+  if (S && (S.frames || 0) > 1 && S.cell)
+    return {
+      w: S.cell[0],
+      h: S.cell[1],
+      n: /** @type {number} */ (S.frames),
+      from: 'battleAnims',
+      name: an[1],
+      fps: S.fps || 12,
+    };
   for (const [id, r] of Object.entries(tables.life || {}))
     if (r && r.img === p && (r.frames || 0) > 1 && r.w && r.h)
       return { w: r.w, h: r.h, n: /** @type {number} */ (r.frames), from: 'life', name: r.name || id, where: r.where };

@@ -10,6 +10,7 @@ import { sheetIslands } from '../../game/js/logic/sheet-slice.js';
 import { mapgenParams, mapgenScene } from '../../game/js/logic/mapgen.js';
 import { gpuCountBegin, gpuCountEnd } from '../../game/js/engine/gpu-counters.js';
 import { frameScheduler } from '../../game/js/frame-scheduler.js';
+import { battleStage } from '../../game/js/battle-stage.js';
 import { applyGroundTone, bigTilePaths, groundToneAt } from '../../game/js/walk-view.js';
 import { gpuState } from '../../game/js/engine/webgl.js';
 import { escapeHtml } from './game-stand-ins.js';
@@ -52,6 +53,7 @@ import { pictureImage } from './pixel-canvas.js';
 import { atlasGet, loadedAtlas, openPixelEditor, textGet } from './sprites.js';
 import { runCheck } from './check.js';
 import { openSkeleton } from './skeleton.js';
+import { battleFx, battleFxPause, battleFxPlay, battleFxSeek, battlePreview } from './battle-preview.js';
 import { sceneryCatalog } from './map-editor.js';
 import { buildSearchIndex, findRun } from './find.js';
 import { connectionsHTML } from './connections.js';
@@ -144,6 +146,12 @@ function studioTestHandles() {
     pixelsToSvg,
     manifestParse,
     atlasProblems,
+    battleStage,
+    battlePreview,
+    battleFx,
+    battleFxPlay,
+    battleFxSeek,
+    battleFxPause,
     githubOn: !!githubMode.on,
   };
 }
