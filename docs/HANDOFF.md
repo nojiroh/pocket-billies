@@ -7,7 +7,7 @@ Branch `track/characters`, the same session as CH-2, straight on at the owner's 
 until you finished ch3 then stop"): the track file's CH-3 is the plan, and the "Ask me before" calls it touches were
 made by the track's own recommendations (written below). CH-1's last two commits (its HANDOFF entry, a run's leader
 turned through faceToward) merged in before the end-of-phase checks (c684d805, a merge; BRANCHES the only conflict).
-Draft PR #277 (`track/characters` -> main) carries CH-0 to CH-3. Tag `ch-3-done` (the owner's) on this entry's commit;
+Draft PR #277 (`track/characters` -> main) carries CH-1 to CH-3. Tag `ch-3-done` (the owner's) on this entry's commit;
 `ch-2-done` on d642f6ba.
 - Changed (one cause per commit):
   - tools/gltf-figure.mjs (7ee19071; plain Node, no new packages) and tools/test/gltf-figure.test.mjs (4 tests, on a
@@ -64,6 +64,13 @@ Draft PR #277 (`track/characters` -> main) carries CH-0 to CH-3. Tag `ch-3-done`
     that fits the game's speed is CH-9's problem (and the art's: short chibi legs).
   - The stand-in is about 2.2 heads, not 2.75: a stand-in only.
   - The figure's file is game/art/figures/ (fetched only with the figures on), not game/data/figures.json.
+- Found:
+  - `--selftest` stops when the in-game full test fails, and headless it always does (rooms' first frames late, the
+    fall's 1 frame): its Diagnostics test hasn't run there. Run on its own, the Diagnostics test passes 11 of 12
+    steps; its dawn fog step (AIR-4) reports a graphics error, 1282 (an invalid operation), with or without the
+    figures, and on CH-1's head (0ac32751) before them. For the Air track.
+  - The Studio check's blocked Propose waits 10 s for its dialog, which comes only after game/data/legacy's files
+    are read: it ran out once here and passed on the next run.
 - The numbers (look-people, the 390 x 844 phone at DPR 3; quality step 0; means over 6 frames; counts only):
   - test_people with the figures on (you the stand-in, the townsfolk dial on, no crowd), the Normal stop: 53 people
     drawn (today's 24, the 12 mannequins, the stand-ins, you). By day 171 draws, 138 of them people's (53 sprites, 42
@@ -106,17 +113,35 @@ Draft PR #277 (`track/characters` -> main) carries CH-0 to CH-3. Tag `ch-3-done`
   - A single-file build (art.js: its art inline in window.NW_ART) has the stand-in only if it inlines
     figures/rogue.json and rogue.png; if not, you stay today's picture there, and the debug log says the figure wasn't
     loaded.
-- Verified:
-  - After each change: lint, typecheck, `npm test`, check:modules, format:check, check:data and build.
-  - Smoke on each game commit, in a worktree of the commit: 6 of 6 each (84092308, 4c7364f9, 2911aac7).
+- Verified (the end-of-phase checks on 59c17a67, the last game commit, each in a worktree of it, one at a time):
+  - After each change: lint, typecheck, `npm test` (1,611 at CH-3's end, all passing; 11 of them new: gltf-figure 4,
+    figures 4, figure-pose 3), check:modules, format:check, check:data and build.
+  - Smoke: 6 of 6 each on 84092308, 4c7364f9, 2911aac7 and 59c17a67, each in a worktree of the commit (b6315f04's
+    byte cap and c36bc4f0's bake budget only through 59c17a67's run and CI's).
+  - The full quick check with the switch off, against "before" pictures made just before from CH-1's head (0ac32751):
+    38 of 41 steps. Its three problems are the baseline's own (Terraces, RL-8, room light); the baseline run failed
+    those, and RT-2 and Granny Juniper after RL-8, as CH-1 found. 6 of its 44 pictures differ, each another moment
+    and none a person's look: the battle camera's drift (battle-rain, battle-double), the station's sheet and the
+    battle's menu caught loading (phone-mast, phone-battle), the bottom bar growing in (world-buddy), the camera
+    still on its way to you in the every-prop scene (props-lowpoly).
+  - `--selftest` with nothing beside it: the in-game full test's three problems (the clinic's first frames later
+    than 3 s, a room in place changing the town's walking grid, the opening's fall drawing 1 frame). CH-1's head,
+    run the same way, fails the same steps (two rooms late there: the Gene Bank and the barn): headless software
+    drawing, not this branch's. `--selftest` stops when the full test fails, so its Diagnostics test never runs.
+  - The game's Diagnostics test on its own (check-quick.py's run_in_game_test from a scratch script, the town
+    fixture), with the figures switched on as the debug menu does (you the stand-in, the townsfolk as figures),
+    twice: 11 of 12 steps each time; 207 and 231 pictures baked (5.2 and 5.7 MB, 279 and 304 ms of baking); no page
+    errors. The debug log, built as its export builds it (680 KB), has the figures' numbers in its people section
+    and not the player's name. Its one problem, a graphics error (1282) in the dawn fog step, comes with the figures
+    off too, and on CH-1's head (0ac32751): the same 11 of 12 each time, so not this branch's.
+  - The Studio check (`sections`, `studio_test`, `checks`): ok on a second run. The first stopped on its 10 s wait
+    for the blocked Propose's dialog (the Check reads game/data/legacy's files before it shows). CH-1's head passes
+    it too.
   - look-people's runs above (the normal set, the stops, Copperleaf, the crowds, the sheets, the losses, the battle):
     no page errors.
-  - CI on 4c02b044 and 59c17a67: lint and rules green; smoke fails only the two Studio checks main fails too (404s for
-    legacy Billie pictures) and, in one run of each pair, timing checks that passed on the same commit in the other
-    run (PR #277's comment).
-  - Still running at this commit: the end-of-phase checks on 59c17a67 with the switch off (smoke, the full quick
-    check against CH-1's pictures from 0ac32751, --selftest with nothing beside it, the Studio check) and the game's
-    Diagnostics test with the figures on. Their results replace this line in the next commit.
+  - CI on 4c02b044, 59c17a67 and dcacc8b4: lint and rules green; smoke fails only checks main fails too (the two
+    Studio checks' 404s for legacy Billie pictures; a run's world) and, in one run of a pair, timing checks that
+    passed on the same commit in the other run (PR #277's comment).
 - For the owner on the phone:
   - Open the debug menu, tap "Figures: off" to turn them on: you are the stand-in. Walk, run, turn the camera.
   - Step "Style" to "plain 3D" for B, "Figure" to the mannequin, "Townsfolk" to figures (then a trainer battle shows
@@ -179,8 +204,8 @@ on d642f6ba.
   29 in each sun shadow map, your outline 1.3), 159 pictures, 5.1 MB. A sheet of 160 bakes took 105 ms in headless
   software drawing (0.65 ms a bake; the phone's will differ).
 - Verified:
-  - After each change: lint, typecheck, `npm test` (1,600 at CH-2's end, 23 of them new: figure-pose 13, figures 8,
-    plus the logic worker's list), check:modules, format:check, check:data, build.
+  - After each change: lint, typecheck, `npm test` (1,600 at CH-2's end, 18 of them new: figure-pose 12, figures 6),
+    check:modules, format:check, check:data, build.
   - Smoke on each game commit: 6 of 6 each (413e30cf and 334d1583 on the working tree just before their commits;
     46c1427d, 814f9329 and 48fdab9d in a worktree of the commit).
   - The full quick check on 48fdab9d with the switch off: 38 of 41. Its three problems are CH-1's baseline's
