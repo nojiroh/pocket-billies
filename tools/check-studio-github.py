@@ -2095,7 +2095,24 @@ def relics_steps(pg, errs):
     if pg.evaluate("JSON.stringify(studioState.D.perks.running_shoes.fx)") != '[{"kind":"stat","stat":"hus","stages":1}]':
         errs.append(f"perks: undo left {pg.evaluate('JSON.stringify(studioState.D.perks.running_shoes.fx)')}")
     if pending_files(pg, 'perks\\.json$'): errs.append('perks: after every undo Propose would still send perks.json')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone", flush=True)
+    # PK-2: a Perk's picture at the game's 72 and 36 px; Edit art opens it in the icon editor with the other Perks'
+    pg.evaluate("void openSection('relics', { relic: 'lucky_charm' })")
+    if not wait_js(pg, "(()=>{const a=[...document.querySelectorAll('#main .perk-art img')];return a.length===2&&a.every(i=>i.complete&&i.naturalWidth>0)})()", 10):
+        errs.append('perks: Lucky Charm shows no picture (or it did not load)')
+    pic = pg.evaluate("[...document.querySelectorAll('#main .perk-art img')].map(i=>i.width+' '+i.getAttribute('src').replace(/^.*\\/art\\//,''))")
+    if pic != ['72 perks/lucky_charm.svg', '36 perks/lucky_charm.svg']: errs.append(f'perks: the picture shows as {pic}')
+    pg.click('#main .perk-art [data-act=icOpen]')
+    if not wait_js(pg, "artBrowser.icon==='perks/lucky_charm'&&!!document.querySelector('#icStage .pc-art')", 10):
+        errs.append(f"perks: Edit art opened {pg.evaluate('artBrowser.icon')!r}, not perks/lucky_charm in the painter")
+    others = pg.evaluate("document.querySelectorAll('#main .ic-others .ic-other').length")
+    if others != pg.evaluate("Object.keys(studioState.D.perks).length"): errs.append(f'perks: the icon editor shows {others} pictures beside it, not the Perks’')
+    pg.evaluate("ACTIONS.icClose()")
+    # a Perk without a picture says it shows the relic icon (and offers Draw one)
+    pg.evaluate("delete studioState.D.perks.petri_dish.img;void openSection('relics', { relic: 'petri_dish' })")
+    time.sleep(0.3)
+    if 'relic icon' not in pg.evaluate("(document.querySelector('#main .perk-art')||{}).textContent||''"): errs.append('perks: a Perk without img doesn’t say it shows the relic icon')
+    pg.evaluate("studioState.D.perks.petri_dish.img='perks/petri_dish.svg'")
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor", flush=True)
 
 
 def unlocks_steps(pg, errs):

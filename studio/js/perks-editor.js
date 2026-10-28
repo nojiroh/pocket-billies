@@ -16,6 +16,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import { FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
 import { FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
 import {
   ACTIONS,
@@ -33,6 +34,9 @@ import {
   textField,
   uniqueKey,
 } from './studio-app.js';
+import { textStep } from './pixel-canvas.js';
+import { artPictures } from './art-browser.js';
+import { iconEditOpen, iconSrc } from './icon-editor.js';
 import { logicAsk } from './logic-client.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -40,6 +44,7 @@ expose({
   PERK_RARITIES: [() => PERK_RARITIES],
   PERK_ROW_NEW: [() => PERK_ROW_NEW],
   PERK_WHEN: [() => PERK_WHEN],
+  perkArtHTML: [() => perkArtHTML, v => (perkArtHTML = v)],
   perkCoverage: [() => perkCoverage, v => (perkCoverage = v)],
   perkEd: [() => perkEd],
   perkFill: [() => perkFill, v => (perkFill = v)],
@@ -328,6 +333,19 @@ function perkRarityHTML(/** @type {any} */ D, /** @type {any} */ cov, /** @type 
   );
 }
 
+/** PK-2: a Perk's picture (its img, drawn as the UI icons are) at the game's 72 and 36 px, and Edit art; without one, a
+ * way to draw one (or to name the file already in art/perks) */
+function perkArtHTML(k, R) {
+  const own = `art/perks/${k}.svg`,
+    key = R.img ? svgIconKey('art/' + R.img) : '',
+    there = (/** @type {string} */ p) => artPictures().includes(p) || studioState.textDirty.has(p);
+  if (key && there('art/' + R.img)) {
+    const src = escapeHtml(iconSrc(key));
+    return `<div class="seg-row perk-art"><img class="pix" src="${src}" alt="" width="72" height="72"><img class="pix" src="${src}" alt="" width="36" height="36"><span class="help mono">${escapeHtml(R.img)}</span><button class="btn sm" data-act="icOpen" data-n="${escapeHtml(key)}">Edit art</button></div>`;
+  }
+  return `<div class="seg-row perk-art"><p class="help">${R.img ? `Its picture, art/${escapeHtml(R.img)}, isn’t there.` : 'No picture yet:'} the game shows the relic icon.</p><button class="btn sm" data-act="relicArt">${there(own) ? `Use ${escapeHtml(own)}` : 'Draw one'}</button></div>`;
+}
+
 SECTIONS.relics = () => {
   const D = studioState.D,
     L = (D.perks = D.perks || {}),
@@ -372,6 +390,7 @@ SECTIONS.relics = () => {
        opt: 1,
        ph: 'Approved, {name}!',
      }) +
+     perkArtHTML(k, R) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
      sub: `${escapeHtml(R.rarity)}: ${perkPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.perks.price[R.rarity] || 0} Moneys.`,
@@ -595,6 +614,19 @@ ACTIONS.relicDel = async () => {
   delete studioState.D.perks[k];
   changed();
   render();
+};
+/* PK-2: the Perk's own picture, art/perks/<id>.svg: named in its img, made blank first when it isn't there, then open
+   in the icon editor (the new file and the img are two steps of the undo; Propose sends both) */
+ACTIONS.relicArt = () => {
+  const k = studioState.sel.relic,
+    R = studioState.D.perks[k],
+    path = `art/perks/${k}.svg`;
+  if (!R) return;
+  if (!artPictures().includes(path) && !studioState.textDirty.has(path))
+    textStep(path, null, pixelsToSvg(new Uint8ClampedArray(36 * 36 * 4), 36, 36));
+  R.img = `perks/${k}.svg`;
+  changed();
+  iconEditOpen(`perks/${k}`);
 };
 ACTIONS.relicRowAdd = () => {
   const R = studioState.D.perks[studioState.sel.relic];
