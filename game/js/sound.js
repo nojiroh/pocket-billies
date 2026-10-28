@@ -96,8 +96,8 @@ expose({
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
-  jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
-  jinglePlay: [() => jinglePlay, v => (jinglePlay = v)],
+  jingle: [() => jingle, v => (jingle = v)],
+  jinglePlay: [() => jinglePlay, v => ((jinglePlay = v), provide({ jinglePlay }))],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
   musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
@@ -139,7 +139,7 @@ provide({
   applyAmbienceVolume,
   applyVolumes,
   battleSoundEffect,
-  jingle,
+  jinglePlay,
   soundEffect,
   soundEffectAt,
   testVolume,
@@ -494,7 +494,6 @@ export function runArriveSound(revealed) {
 }
 /* SND-2: the jingles are data (music.json jingles); here each is its note list, as jingle() takes it */
 export const JINGLES = Object.fromEntries(Object.entries(MUSIC.jingles).map(([k, J]) => [k, J.notes]));
-provide({ JINGLES }); /* to-module */
 /* ---------- sound effects ---------- */
 /* SND-2: the base cries are data (music.json cries.bases); a species picks one by its name */
 const CRIES = MUSIC.cries.bases;
@@ -775,10 +774,10 @@ function battleSoundEffect(an, r, ev) {
       at(r.hit || 300, () => soundEffect(an.crit ? 'crit' : an.te > 1 ? 'super' : an.te < 1 ? 'weak' : 'hit'));
       break;
     case 'caught':
-      jingle(JINGLES.caught);
+      jinglePlay('caught');
       break;
     case 'lvl':
-      jingle(JINGLES.levelup, 180);
+      jinglePlay('levelup', { bpm: 180 });
       break;
     case 'run':
       soundEffect('run');
@@ -1811,7 +1810,7 @@ function testVolume(k) {
       [72, 79].forEach((n, i) =>
         synthVoice(soundEngine.master, { type: 'p25', freq: midiToFrequency(n), t: t + i * 0.12, dur: 0.14, vol: 0.06 })
       );
-    else if (k === 'music') jingle(JINGLES.levelup, 150, 'p25', soundEngine.mus);
+    else if (k === 'music') jinglePlay('levelup', { bus: soundEngine.mus });
     else if (k === 'sfx') soundEffect('coin');
     else if (k === 'world') {
       synthNoise(ambience.bus, { t, dur: 1.2, vol: 0.35, bp: 1500, q: 0.9 });

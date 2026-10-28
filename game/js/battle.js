@@ -5,7 +5,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
-  JINGLES,
   WEATHER_BATTLE_NOTES,
   battleSoundEffect,
   battleTipHide,
@@ -13,7 +12,7 @@ import {
   battleWeather,
   closeModal,
   fieldBadgeLine,
-  jingle,
+  jinglePlay,
   limbPipsHTML,
   modal,
   perkPickOpen,
@@ -1426,7 +1425,7 @@ export function endBattle() {
     o = pay.o;
   /* TW-3: a run's quests done or failed in this battle (quest-board.js) */
   if (run && typeof questToasts === 'function') questToasts(quests);
-  if (o === 'win' && typeof jingle === 'function') jingle(JINGLES.victory);
+  if (o === 'win' && typeof jinglePlay === 'function') jinglePlay('victory');
   if (typeof battleTipHide === 'function') battleTipHide();
   /* v47: Blake's first battle, in the opening: no fee and no sheet, win or lose; the story picks it up (story.js) */
   if (T && T.tutorial) {

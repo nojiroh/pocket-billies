@@ -14,7 +14,6 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
-  JINGLES,
   breedName,
   coatRoll,
   environmentOdds,
@@ -24,7 +23,7 @@ import {
   fieldMoveText,
   fxOfRun,
   fxSplice,
-  jingle,
+  jinglePlay,
   provide,
   ranchNow,
   ranchStop,
@@ -864,7 +863,7 @@ export function evolutionHint(m) {
 /* phase 08: a split line's middle stage takes the path you pick when it evolves: Build (A, its next stage) or Hype
    (B, the other final) */
 export function evolve(m, path = 'A') {
-  if (typeof jingle === 'function') jingle(JINGLES.evolve, 140);
+  if (typeof jinglePlay === 'function') jinglePlay('evolve', { bpm: 140 });
   const old = maxHp(m),
     from = billyName(m),
     s0 = speciesOf(m);

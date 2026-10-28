@@ -64,7 +64,7 @@ import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './ga
 import { pyramidHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
-import { JINGLES, jingle } from './sound.js';
+import { jinglePlay } from './sound.js';
 import { standByMast } from './airship.js';
 import { runWorld, runWorldAheadStart, runWorldMake, runWorldSync } from './run-world.js';
 import { trainOfRun, trainRide, trainRideDepart, trainRideHome, trainVeil } from './train-ride.js';
@@ -617,7 +617,7 @@ export function runTakeOff(seed, map, mods, pick, expedition, board) {
   runCatch.m = null;
   if (uiState.modal && uiState.modal.cls === 'fly-sheet run-start') closeModal();
   /* SND-4: the run's first bookend, the title's motif as the train leaves the station (the payout is the other) */
-  if (typeof jingle === 'function' && JINGLES.motif) jingle(JINGLES.motif);
+  if (typeof jinglePlay === 'function') jinglePlay('motif');
   const train = trainOfRun(s.run);
   trainRideDepart(train, () => {
     if (saveData !== s || !s.run) return trainVeil(false);
