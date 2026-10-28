@@ -28,7 +28,7 @@ import { glyphOf, sigVar } from './logic/signals.js';
 import { chipLook, rarityTier } from './logic/marks.js';
 import { motionCountAt, motionCountMs } from './logic/motion.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
-import { LitElement, css, html, nothing, pbSlideBar, pbSound, reduced } from './ui-kit.js';
+import { LitElement, css, html, nothing, pbSound, reduced } from './ui-kit.js';
 /* eslint-disable no-func-assign */
 expose({
   PbCoin: [() => PbCoin],
@@ -1255,7 +1255,7 @@ export function pbNameBanner(host, o) {
    is wide (uiTheme.json minimap tileW x tileH, 232 x 184) and stands out of the bar's frame by --rise; the bar is a
    plain cut outline from --rise down, so the world shows on both sides of the tile's top. A narrow bar shrinks the
    whole tile, keeping its shape, so each side keeps 60 px. `compact` (while walking): a square tile (tileCompact),
-   icon-only buttons side by side. */
+   the two buttons of a side side by side, still with their words; the change eases (--nav-k). */
 const navStep = (/** @type {number} */ i) => {
   /* the outline inset by i px (0: the outer line; 1: the edge line's inside); 45° corners move by i·tan(22.5°) */
   const k = i * 0.4142,
@@ -1281,28 +1281,32 @@ const PbNavBar = class extends LitElement {
   static styles = [
     runKitBase,
     css`
-      /* the host is the container: its width (cqw) sizes the tile; a side keeps 60 px plus 8 px of margins */
+      /* the host is the container: its width (cqw) sizes the tile. --nav-k runs 0 (full) to 1 (compact, while
+         walking): every size below is a mix of the two by it, so the tile, the bar, its outline and the tabs move
+         together. It is registered in tokens.css (@property), so it eases on --m-base; unregistered it just jumps.
+         Full: the wide tile, a side keeps 60 px; compact: a square tile, a side keeps two 58 px tabs side by side. */
       :host {
-        --tile-w: min(var(--minimap-tile-w, 232px), 100cqw - 136px);
-        --tile-h: min(var(--minimap-tile-h, 184px), (100cqw - 136px) * var(--minimap-tile-aspect, 0.7931));
-        --bar-h: 128px;
-        --rise: max(0px, var(--tile-h) + var(--s2) - var(--bar-h));
+        --nav-k: 0;
+        --tile-fw: min(var(--minimap-tile-w, 232px), 100cqw - 136px);
+        --tile-fh: min(var(--minimap-tile-h, 184px), (100cqw - 136px) * var(--minimap-tile-aspect, 0.7931));
+        --tile-cw: min(var(--minimap-tile-compact, 112px), 100cqw - 256px);
+        --tile-w: calc(var(--tile-fw) + (var(--tile-cw) - var(--tile-fw)) * var(--nav-k));
+        --tile-h: calc(var(--tile-fh) + (var(--tile-cw) - var(--tile-fh)) * var(--nav-k));
+        --bar-h: calc(128px - 44px * var(--nav-k));
+        --rise: max(0px, var(--tile-h) + var(--s2) - var(--s1) * var(--nav-k) - var(--bar-h));
         display: block;
         position: relative;
         isolation: isolate;
         container-type: inline-size;
+        /* UI-16a: at once under Reduced (--m-k 0) */
+        transition: --nav-k calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
-      /* walking: a square; a side keeps two 46 px buttons */
       :host([compact]) {
-        --tile-w: min(var(--minimap-tile-compact, 112px), 100cqw - 208px);
-        --tile-h: var(--tile-w);
-        --bar-h: 76px;
-        --rise: max(0px, var(--tile-h) + 4px - var(--bar-h));
+        --nav-k: 1;
       }
       nav {
         position: relative;
         height: calc(var(--rise) + var(--bar-h) + env(safe-area-inset-bottom, 0px));
-        transition: height calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       .glass,
       .edge {
@@ -1321,26 +1325,18 @@ const PbNavBar = class extends LitElement {
         clip-path: polygon(evenodd, ${unsafeCSS(navStep(0))}, ${unsafeCSS(navStep(1))});
         background: var(--edge);
       }
+      /* a side: two tabs, one over the other (full) sliding to side by side (compact) */
       .side {
-        --apart: var(--s2); /* its margin and the gap to the tile: 60 px columns at the narrowest */
         position: absolute;
         top: calc(var(--rise) + var(--s1));
-        width: calc((100% - var(--tile-w)) / 2 - var(--apart));
-        display: flex;
-        flex-direction: column;
-        gap: var(--s1);
+        width: calc((100% - var(--tile-w)) / 2 - var(--s2));
+        height: calc(var(--bar-h) - var(--s2));
       }
       .side.l {
         left: var(--s1);
       }
       .side.r {
         right: var(--s1);
-      }
-      :host([compact]) .side {
-        flex-direction: row;
-      }
-      :host([compact]) .side.r {
-        justify-content: flex-end;
       }
       button {
         position: relative;
@@ -1351,16 +1347,28 @@ const PbNavBar = class extends LitElement {
         color: var(--text2);
         font: 15px/1 var(--font-voice);
       }
-      /* standing: the icon over the word */
+      /* the icon over the word, in both sizes; the word gets smaller, never hidden */
       .tab {
+        position: absolute;
+        top: 0;
+        left: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 2px;
         min-width: 0;
-        min-height: 52px;
+        width: calc(100% - (50% + var(--s1) / 2) * var(--nav-k));
+        height: calc(52px + var(--s1) * var(--nav-k));
         padding: 0 var(--s1);
+        font-size: calc(15px - 3px * var(--nav-k));
+      }
+      .tab.t1 {
+        top: calc((52px + var(--s1)) * (1 - var(--nav-k)));
+        left: calc((50% + var(--s1) / 2) * var(--nav-k));
+      }
+      .tab.solo {
+        width: 100%;
       }
       .tab .ic {
         width: 24px;
@@ -1373,28 +1381,26 @@ const PbNavBar = class extends LitElement {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      :host([compact]) .tab {
-        justify-content: center;
-        width: 46px;
-        min-height: 46px;
-        padding: 0;
-      }
-      :host([compact]) .tab span {
-        display: none;
-      }
+      /* the open tab: a soft gold pill that fades and grows in (no slant: it read as angular on the owner's phone) */
       .tab::before {
-        content: none; /* only the current tab has the gold bar */
+        content: '';
         position: absolute;
-        inset: 3px 4px;
+        inset: 2px;
         z-index: var(--z-below);
-        transform: skewX(calc(var(--slant) * -1));
+        border-radius: var(--r-md);
         background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+        opacity: 0;
+        transform: scale(0.86);
+        transition:
+          opacity calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+          transform calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       .tab[aria-current='page'] {
         color: var(--goldink, #3a2408);
       }
       .tab[aria-current='page']::before {
-        content: '';
+        opacity: 1;
+        transform: none;
       }
       .badge {
         position: absolute;
@@ -1410,28 +1416,14 @@ const PbNavBar = class extends LitElement {
         color: var(--c-surface);
         font-size: 12px;
       }
-      :host([compact]) .badge {
-        left: auto;
-        right: 0;
-        top: 0;
-      }
       /* the minimap tile: the card family's outline (four small cuts), its edge gold and a gold notch when open */
       .map {
         position: absolute;
-        top: var(--s1);
+        top: calc(var(--s1) - 2px * var(--nav-k));
         left: calc(50% - var(--tile-w) / 2);
         width: var(--tile-w);
         height: var(--tile-h);
         padding: 0;
-        /* UI-16a: at once under Reduced (--m-k 0) */
-        transition:
-          width calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
-          height calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
-          left calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
-          top calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
-      }
-      :host([compact]) .map {
-        top: 2px;
       }
       .map .face {
         position: absolute;
@@ -1499,15 +1491,6 @@ const PbNavBar = class extends LitElement {
     this.hide = '';
     this.compact = false;
   }
-  /* UI-16a: the gold bar slides from the tab that was open to the new one (where the old one stood, before the redraw) */
-  willUpdate(ch) {
-    this._from =
-      ch.has('value') && ch.get('value') != null ? this.tabEl(ch.get('value'))?.getBoundingClientRect() : null;
-  }
-  updated() {
-    if (this._from) pbSlideBar(this._from, this.tabEl(this.value)?.getBoundingClientRect() || null);
-    this._from = null;
-  }
   /** a tab's button (the fly-to's target for a gain: Bag, Perks) @param {string} id */
   tabEl(id) {
     return this.renderRoot.querySelector(`[data-t="${CSS.escape(String(id))}"]`);
@@ -1536,9 +1519,10 @@ const PbNavBar = class extends LitElement {
       map = all.find(t => t.id === 'map'),
       rest = all.filter(t => t !== map),
       half = Math.ceil(rest.length / 2);
-    const tab = t =>
+    /* a tab's place in its side: t0 first, t1 second (stacked, or side by side when compact); alone, the whole side */
+    const tab = (t, i, side) =>
       html`<button
-        class="tab"
+        class=${`tab t${i}${side.length === 1 ? ' solo' : ''}`}
         part="tab"
         data-t=${t.id}
         aria-label=${say(t.label)}

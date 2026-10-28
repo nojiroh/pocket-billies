@@ -3,6 +3,18 @@
    set them (v05.css: --text, --g-*, --gold-*, --t-*); this file names them for the new components and adds the
    scales. Loaded after every other stylesheet. On its own it changes nothing visible: older rules move onto these
    names screen by screen (sessions 06-2 to 06-4). */
+/* the bottom bar's shrink (ui-run-kit.js pb-nav-bar --nav-k, shell.css --nav-kr): registered so it can ease; every
+   size of the bar is a mix by it. Without @property (iOS before 16.4) the bar still shrinks, at once */
+@property --nav-k {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+@property --nav-kr {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
 :root {
   /* space: one scale; panels breathe at --s5, sections at --s6 */
   --s1: 4px;

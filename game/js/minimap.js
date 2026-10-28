@@ -253,10 +253,16 @@ function minimapOK() {
   );
 }
 
-/** the bar compact while you walk (a few seconds in), full again once you stop */
+/** the bar compact while you walk (a few seconds in), full again once you stop; never with Settings' "Shrink the bar
+    while walking" off (preferences.navShrink) */
 function minimapCompact(/** @type {number} */ now, /** @type {ReturnType<typeof minimapDials>} */ D) {
   const nav = /** @type {any} */ (minimap.cv && minimap.cv.parentElement);
   if (!nav) return;
+  if ((saveData.preferences || {}).navShrink === 'off') {
+    minimap.walkT = minimap.stopT = 0;
+    if (nav.compact) nav.compact = false;
+    return;
+  }
   const walking = uiState.tab === 'walk' && !!walkView.pl && !!walkView.pl.walk;
   if (walking) {
     minimap.stopT = 0;
