@@ -60,7 +60,8 @@ was messaged before `battleStageFlash` got its counter line; the sprite shader, 
   their tools; both differ from main's only by gen.v / mapgenV, checked by setting the version back). art-code-refs
   regenerated, `npm run modules`. HANDOFF: both sides' entries; SY-3's entry was on both sides, kept once.
   Then main moved again (48ded9d2, #293 the worldmap track): merged too; only art-code-refs.json conflicted
-  (regenerated); lint, types, modules, format, data checks and `npm test` (1,661 pass) after it.
+  (regenerated); lint, types, modules, format, data checks, `npm test` (1,661 pass) and `npm run check:smoke` (6 of
+  6, the Phone count passing) after it.
 - Verified: lint, typecheck, check:modules, format:check, check-data, check-data-text, art-code-refs; `npm test` 1,660
   pass after the merge (before it, only the timing test "1,000 maps ... in under a second", which passed alone).
   `npm run check:smoke` after the merge: 5 of 6; the Phone step's "walk 20 (at most 18)" failed three times and
