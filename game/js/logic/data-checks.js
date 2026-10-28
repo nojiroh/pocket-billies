@@ -1440,6 +1440,9 @@ export function dataBattleAnims(D, valid = () => true) {
         seen.set(t, k);
       }
       if (S.m > A.scars.maxM) problem(`scars.kinds.${k}.m: ${S.m} m, over maxM ${A.scars.maxM}`);
+      if (S.ramp && A.ramps && !A.ramps[S.ramp]) problem(`scars.kinds.${k}.ramp: no ramp "${S.ramp}"`);
+      if (A.sprites && A.sprites[S.sprite] && !A.sprites[S.sprite].ground)
+        problem(`scars.kinds.${k}.sprite: "${S.sprite}" is no mark on the ground`);
     }
     for (const f of ['sandstorm', 'heavy'])
       if (K.filter(([, S]) => S[f]).length > 1) problem(`scars.kinds: more than one ${f} kind`);

@@ -151,7 +151,12 @@ export function renameTypeIn(D, from, to) {
       o.types = o.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
   };
   if (BA && BA.moods) [BA.moods.wave, BA.moods.heat].forEach(swapTypes);
-  if (BA && BA.scars) Object.values(BA.scars.kinds).forEach(swapTypes);
+  if (BA && BA.scars)
+    for (const K of Object.values(BA.scars.kinds)) {
+      swapTypes(K);
+      /* its decal's ramp, which a type names (a deleted one's: None's) */
+      if (/** @type {any} */ (K).ramp === from) /** @type {any} */ (K).ramp = to || 'None';
+    }
   /* VFX-10: a type's ramp moves with it (a deleted type's goes), and an icon's ramp that named it names the new id, or
      None */
   if (BA && BA.ramps && Object.hasOwn(BA.ramps, from)) {

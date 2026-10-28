@@ -51,21 +51,21 @@
    "at": [
     "game/js/art.js:231",
     "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2594"
+    "game/js/logic/data-checks.js:2597"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2594"
+    "game/js/logic/data-checks.js:2597"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:590",
-    "game/js/logic/data-checks.js:2596"
+    "game/js/logic/data-checks.js:2599"
    ]
   },
   {
@@ -1651,7 +1651,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2750",
+   "game/js/logic/data-checks.js:2753",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1846,7 +1846,7 @@
    "game/js/self-test.js:3526",
    "game/js/walk-view.js:397",
    "game/js/walk-view.js:4028",
-   "game/js/walk/battle-scars.js:141",
+   "game/js/walk/battle-scars.js:146",
    "game/js/walk/effects.js:527",
    "game/js/walk/effects.js:681",
    "game/js/walk/effects.js:791",
@@ -1886,7 +1886,7 @@
    "game/js/logic/data-checks.js:877",
    "game/js/logic/data-checks.js:997",
    "game/js/logic/data-checks.js:1038",
-   "game/js/logic/data-checks.js:2171",
+   "game/js/logic/data-checks.js:2174",
    "game/js/logic/script.js:234",
    "game/js/logic/story-checks.js:353",
    "game/js/ranch-screen.js:210",

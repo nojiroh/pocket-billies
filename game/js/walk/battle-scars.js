@@ -7,16 +7,18 @@
    cutout (each texel kept or not, alpha 0 out so the ink outlines skip it, as they skip the ground), never on water.
    At most 12 / 8 / 4 / 0 by the battle's quality, the oldest replaced; when the battle ends they go in four dithered
    steps over 400 ms (a hard step against a 4x4 Bayer pattern on their own texels).
-   The art: VFX-10 draws the six decals (32 px a metre, grayscale, coloured by each kind's `color`). Until they are in,
-   scarPlaceholder draws stand-ins here; scarArtPixels is the one place to change when they land. */
+   The art: VFX-10's six decals (game/art/battle/anims/scar_*.png, battleAnims.json sprites with `ground`, 32 px a
+   metre, 8 greys), coloured by each kind's ramp (VFX-10's ramps; its `color` where the ramp doesn't resolve); a
+   procedural stand-in (scarPlaceholder) only where a picture is missing. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { BATTLE_ANIMS, provide } from '../hooks.js';
 import { kitBlank } from '../logic/kit-pixels.js';
 import { kitPack } from '../logic/kit-assemble.js';
+import { BATTLE_ANIM_ART_DIR } from '../logic/battle-anims.js';
 import { scarAdd, scarCap, scarFadeShare, scarSize } from '../logic/battle-stage-look.js';
 import { gpuTag } from '../engine/gpu-counters.js';
-import { hexToRgb } from '../art.js';
+import { ART_CACHE, artLoad, hexToRgb, makeCanvas } from '../art.js';
 import {
   LIGHT_GLSL,
   bindQuad,
@@ -31,10 +33,12 @@ import {
 import { standingHeightAt } from './heights.js';
 import { useWalkProgram, worldCurveDrop } from './draw-common.js';
 import { waterAt } from './water.js';
+import { battleRampRgb } from './battle-fx.js';
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_SCAR_SHADERS: [() => BATTLE_SCAR_SHADERS],
   SCAR_FLOATS: [() => SCAR_FLOATS],
+  SCAR_GREYS: [() => SCAR_GREYS],
   SCAR_LIFT: [() => SCAR_LIFT],
   SCAR_PX_PER_M: [() => SCAR_PX_PER_M],
   SCAR_VERTS: [() => SCAR_VERTS],
@@ -44,6 +48,7 @@ expose({
   battleScarsClear: [() => battleScarsClear, v => ((battleScarsClear = v), provide({ battleScarsClear }))],
   battleScarsEnd: [() => battleScarsEnd, v => (battleScarsEnd = v)],
   onWater: [() => onWater],
+  scarArtPicture: [() => scarArtPicture, v => (scarArtPicture = v)],
   scarArtPixels: [() => scarArtPixels, v => (scarArtPixels = v)],
   scarAtlas: [() => scarAtlas],
   scarAtlasSheet: [() => scarAtlasSheet, v => (scarAtlasSheet = v)],
@@ -152,20 +157,78 @@ function scarPlaceholder(kind, px) {
   }
   return P;
 }
-/** a kind's decal pixels, px square (32 px a metre): VFX-10's art when it lands, the stand-in until then */
-function scarArtPixels(kind, px) {
-  return scarPlaceholder(kind, px);
+/* VFX-10's strips are 8 greys, darkest first (index 7 the white core) */
+const SCAR_GREYS = [36, 64, 96, 128, 160, 192, 224, 255];
+/** a kind's decal: VFX-10's picture (battleAnims.json sprites, a mark on the ground), loaded through artLoad (so a
+ * repaint in the Studio's Art browser is the one used); undefined while it loads, null when there is none */
+function scarArtPicture(kind) {
+  const K = BATTLE_ANIMS.scars.kinds[kind],
+    S = BATTLE_ANIMS.sprites && BATTLE_ANIMS.sprites[K.sprite];
+  if (!S || !S.ground) return null;
+  const path = `${BATTLE_ANIM_ART_DIR}${K.sprite}.png`,
+    im = ART_CACHE.img[path];
+  if (!im) {
+    artLoad([path]);
+    return undefined;
+  }
+  if (!im.complete) return undefined;
+  return im.naturalWidth ? { im, S } : null;
 }
-/** the atlas: every kind's decal packed once (rects in texels: x, y, size) */
-const scarAtlas = { sheet: null, rects: /** @type {Record<string, number[]>} */ ({}), t: null, gl: null, gen: -1 };
+/** a kind's decal pixels at 32 px a metre: VFX-10's picture, its greys coloured by the kind's ramp (baked: the tint is
+ * then none), or by its colour where the ramp doesn't resolve; the stand-in (scarPlaceholder) where the picture is
+ * missing; undefined while it loads */
+function scarArtPixels(kind) {
+  const S = BATTLE_ANIMS.scars,
+    K = S.kinds[kind],
+    a = scarArtPicture(kind);
+  if (a === undefined) return undefined;
+  if (!a) return { P: scarPlaceholder(kind, Math.max(4, Math.round(scarSize(S, kind) * SCAR_PX_PER_M))), baked: false };
+  const [w, h] = a.S.cell,
+    cv = makeCanvas(w, h),
+    x = cv.getContext('2d');
+  x.drawImage(a.im, 0, 0, w, h, 0, 0, w, h);
+  const D = x.getImageData(0, 0, w, h),
+    P = kitBlank(w, h),
+    rgb = K.ramp && typeof battleRampRgb === 'function' ? battleRampRgb(K.ramp) : null;
+  for (let i = 0; i < w * h; i++) {
+    const o = i * 4,
+      g = D.data[o];
+    if (D.data[o + 3] < 128) continue;
+    let best = 0;
+    for (let j = 1; j < 8; j++) if (Math.abs(SCAR_GREYS[j] - g) < Math.abs(SCAR_GREYS[best] - g)) best = j;
+    const c = rgb ? rgb[best] : [g, g, g];
+    P.data[o] = c[0];
+    P.data[o + 1] = c[1];
+    P.data[o + 2] = c[2];
+    P.data[o + 3] = 255;
+  }
+  return { P, baked: !!rgb };
+}
+/** the atlas: every kind's decal packed once its pictures have loaded (rects in texels: x, y, w, h; baked: coloured
+ * by its ramp already) */
+const scarAtlas = {
+  sheet: null,
+  rects: /** @type {Record<string, number[]>} */ ({}),
+  baked: /** @type {Record<string, boolean>} */ ({}),
+  t: null,
+  gl: null,
+  gen: -1,
+};
 function scarAtlasSheet() {
   if (scarAtlas.sheet) return scarAtlas;
   const S = BATTLE_ANIMS.scars;
   if (!S) return null;
   const kinds = Object.keys(S.kinds),
-    pics = kinds.map(k => scarArtPixels(k, Math.max(4, Math.round(scarSize(S, k) * SCAR_PX_PER_M)))),
-    { sheet, spots } = kitPack(pics, 128);
-  kinds.forEach((k, i) => (scarAtlas.rects[k] = [spots[i][0], spots[i][1], pics[i].width]));
+    arts = kinds.map(k => scarArtPixels(k));
+  if (arts.some(a => !a)) return null;
+  const { sheet, spots } = kitPack(
+    arts.map(a => a.P),
+    128
+  );
+  kinds.forEach((k, i) => {
+    scarAtlas.rects[k] = [spots[i][0], spots[i][1], arts[i].P.width, arts[i].P.height];
+    scarAtlas.baked[k] = arts[i].baked;
+  });
   scarAtlas.sheet = sheet;
   return scarAtlas;
 }
@@ -209,10 +272,9 @@ function battleScarAdd(kind, x, z, q, turn = 0, flip = false) {
     battleScars.list.length = 0;
     battleScars.ended = 0;
   }
-  const A = scarAtlasSheet(),
-    r = A && A.rects[kind];
-  if (!r) return null;
-  const sc = { kind, x, z, m, turn: turn & 3, flip, v: scarVertices(kind, x, z, m, turn & 3, flip, r, A.sheet) };
+  /* its vertices once the atlas is made (the decals may still be loading: battleScarPass) */
+  scarAtlasSheet();
+  const sc = { kind, x, z, m, turn: turn & 3, flip, v: null };
   scarAdd(battleScars.list, sc, cap);
   return sc;
 }
@@ -225,10 +287,16 @@ function battleScarsClear() {
   battleScars.list.length = 0;
   battleScars.ended = 0;
 }
-/* the 24 vertices of a scar's 3x3 grid, laid on the ground, without its shown share (filled each frame) */
-function scarVertices(kind, x, z, m, turn, flip, r, sheet) {
-  const K = BATTLE_ANIMS.scars.kinds[kind],
-    c = hexToRgb(K.color),
+/* the 24 vertices of a scar's 3x3 grid, laid on the ground, without its shown share (filled each frame): its
+   decal's size at 32 px a metre (at most maxM a side), its tint none when the ramp coloured it */
+function scarVertices(sc, A) {
+  const { kind, x, z, turn, flip } = sc,
+    r = A.rects[kind],
+    sheet = A.sheet,
+    S = BATTLE_ANIMS.scars,
+    mx = Math.min(S.maxM, r[2] / SCAR_PX_PER_M),
+    mz = Math.min(S.maxM, r[3] / SCAR_PX_PER_M),
+    c = A.baked[kind] ? [128, 128, 128] : hexToRgb(S.kinds[kind].color),
     col = [c[0] / 255, c[1] / 255, c[2] / 255],
     ca = [1, 0, -1, 0][turn],
     sa = [0, 1, 0, -1][turn],
@@ -236,8 +304,8 @@ function scarVertices(kind, x, z, m, turn, flip, r, sheet) {
     G = [];
   for (let j = 0; j < 3; j++)
     for (let i = 0; i < 3; i++) {
-      let lx = (i / 2 - 0.5) * m,
-        lz = (j / 2 - 0.5) * m;
+      let lx = (i / 2 - 0.5) * mx,
+        lz = (j / 2 - 0.5) * mz;
       if (flip) lx = -lx;
       const wx = x + lx * ca - lz * sa,
         wz = z + lx * sa + lz * ca,
@@ -248,7 +316,7 @@ function scarVertices(kind, x, z, m, turn, flip, r, sheet) {
         nl = Math.hypot(nx, 2 * e, nz);
       G.push({
         p: [wx, hy + SCAR_LIFT + worldCurveDrop(wx, wz), wz],
-        uv: [(r[0] + (i / 2) * r[2]) / sheet.width, (r[1] + (j / 2) * r[2]) / sheet.height],
+        uv: [(r[0] + (i / 2) * r[2]) / sheet.width, (r[1] + (j / 2) * r[3]) / sheet.height],
         n: [nx / nl, (2 * e) / nl, nz / nl],
       });
     }
@@ -294,6 +362,7 @@ function battleScarPass(C, X) {
   if (battleScars.d.length < n * SCAR_FLOATS) battleScars.d = new Float32Array(n * SCAR_FLOATS * 2);
   const d = battleScars.d;
   L.forEach((sc, i) => {
+    if (!sc.v) sc.v = scarVertices(sc, A);
     d.set(sc.v, i * SCAR_VERTS * SCAR_FLOATS);
     for (let k = 0; k < SCAR_VERTS; k++) d[(i * SCAR_VERTS + k) * SCAR_FLOATS + 11] = share;
   });

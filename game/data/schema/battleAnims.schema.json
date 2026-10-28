@@ -71,7 +71,7 @@
    "fadeMs": {"type": "number", "minimum": 0},
    "fadeSteps": {"type": "integer", "minimum": 1, "maximum": 8},
    "heavy": {"type": "number", "minimum": 0, "maximum": 1},
-   "kinds": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"type": "object", "required": ["m", "sprite", "color"], "additionalProperties": false, "properties": {"types": {"type": "array", "items": {"type": "string"}}, "sandstorm": {"type": "boolean"}, "heavy": {"type": "boolean"}, "m": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.2}, "sprite": {"$ref": "#/$defs/id"}, "color": {"$ref": "#/$defs/hex"}}}}
+   "kinds": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"type": "object", "required": ["m", "sprite", "color"], "additionalProperties": false, "properties": {"types": {"type": "array", "items": {"type": "string"}}, "sandstorm": {"type": "boolean"}, "heavy": {"type": "boolean"}, "m": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.2}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "color": {"$ref": "#/$defs/hex"}}}}
   }}
 ,
   "artAbout": {"type": "string"},

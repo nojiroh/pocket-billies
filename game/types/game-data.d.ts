@@ -2631,6 +2631,8 @@ export interface BattleScarKind {
   heavy?: boolean;
   m: number;
   sprite: DataId;
+  /** VFX-10's ramp that colours its decal's greys */
+  ramp?: string;
   color: Color;
 }
 /** VFX-15: battleAnims.json `scars` */
