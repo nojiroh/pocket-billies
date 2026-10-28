@@ -1,9 +1,9 @@
 // Phase 06-4: the UI gallery's switches (theme, width, reduced motion) and its live samples. The components come from the
 // game's own js/ui-kit.js, so the gallery shows exactly what the game draws.
-import { pbFloat, typeGlyphHTML } from '../game/js/ui-kit.js';
+import { pbBurst, pbFloat, typeGlyphHTML } from '../game/js/ui-kit.js';
 import { applyUiTheme } from '../game/js/theme-sheet.js';
 // UI-4: the run parts (pb-day-chip, pb-forecast, pb-node, pb-coin, pb-pick-card, pb-payout, pb-nav-bar; HB-2 pb-loading)
-import '../game/js/ui-run-kit.js';
+import { pbNameBanner } from '../game/js/ui-run-kit.js';
 // UI-14a: the marks (pb-tag, pb-chip, pb-proc, pb-info, pb-rarity)
 import '../game/js/ui-marks-kit.js';
 
@@ -15,7 +15,7 @@ const press = (group, value) =>
 
 document.addEventListener('click', ev => {
   const b = /** @type {HTMLElement} */ (ev.target).closest(
-    '[data-g],[data-m],#gToastMore,#gFloat,#gSheetBtn,#gPayoutPlay,#gPickFlip,#gCoinUp,#gChipUp,#gInfoTag,#gStampPlay'
+    '[data-g],[data-m],#gToastMore,#gFloat,#gSheetBtn,#gPayoutPlay,#gPickFlip,#gCoinUp,#gChipUp,#gInfoTag,#gStampPlay,#gIdlePlay,#gBurstPlay,#gBannerPlay'
   );
   if (!b) return;
   const d = b.dataset;
@@ -67,6 +67,21 @@ document.addEventListener('click', ev => {
     document
       .querySelectorAll('#gStamps pb-stamp')
       .forEach((el, i) => setTimeout(() => /** @type {any} */ (el).play(), i * 160));
+  // UI-17: the idle loops (the game's ui-idle.js picks two of them; here all three kinds) and the big moments
+  else if (b.id === 'gIdlePlay') {
+    const on = root.dataset.idle ? '' : 'foil glint forecast';
+    root.dataset.idle = on;
+    root.style.setProperty('--sheen-a', on ? '1' : '0');
+    b.textContent = on ? 'Stop the idle loops' : 'Play the idle loops';
+  } else if (b.id === 'gBurstPlay') {
+    const box = /** @type {HTMLElement} */ (document.getElementById('gAliveBox'));
+    pbBurst(box.clientWidth * 0.3, 80, { tone: 'var(--sig-good)', size: 96, in: box });
+    setTimeout(() => pbBurst(box.clientWidth * 0.7, 80, { tone: 'var(--sig-growth)', size: 56, in: box }), 300);
+  } else if (b.id === 'gBannerPlay')
+    pbNameBanner(/** @type {HTMLElement} */ (document.getElementById('gAliveBox')), {
+      name: 'Voltron',
+      kicker: 'Boss',
+    });
   else if (b.id === 'gCoinUp') {
     const c = /** @type {any} */ (document.querySelector('pb-coin[kind="research"]'));
     c.value += 1000;
