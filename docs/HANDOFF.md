@@ -71,13 +71,26 @@ origin/track/sound before any edit). Started by the planning session under the o
     refreshes it. Every other check passes on each commit.
   - CI `smoke` on PR #292: the failures that also fail on main (RL-8, the Studio's missing
     `game/art/billionaires/*.png`, the landmark field's Auto) are explained on the PR already.
-- **Verified** (so far; the last checks are running and this line is updated when they finish): `npm run lint` and
-  `npm run typecheck` after every commit (the one art-code-refs exception above); `npm test` 1627 of 1627;
-  `npm run check:modules`, `npm run format:check`, `npm run check:data` (177 files fine); `check-sound.py --loudness`
-  on every commit up to fbb3ec3e: 194, 0 changed, the first six reports identical to the base's, no ceiling warning
-  from fbb3ec3e on; `npm run check:smoke` on e5dafaaf: no problems; `check-studio-github.py --only=music`: ok (the
-  World sounds card plays and stops); browser probes on test_water and Copperleaf (voices by place, every touch sound,
-  rain on water, no page errors).
+  - Merging with the VFX track (VFX-8, e904ad77, PR #295; the planning session's trial merge): docs/HANDOFF.md (keep
+    both), studio/art-code-refs.json (`node tools/art-code-refs.mjs`) and the check-data snapshot (`node --test
+    --test-update-snapshots tools/test/check-data-snapshot.test.mjs`, said in the commit) conflict; whichever reaches
+    main second resolves them that way.
+  - The sound track now runs two lanes on `track/sound` (the planning session, 2026-10-28): this world lane and SND-11's
+    music lane. 8e5ecb67 (the sound baseline's ui.json) was written just before that rule reached this session.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit (the one art-code-refs exception above);
+  `npm test` 1627 of 1627 before the merge of main (after it 1689 of 1690: "1,000 maps in under a second" at 1045 ms,
+  timing on a loaded machine, as in SND-8a; CI's lint job failed on the same test); `npm run check:modules`,
+  `format:check`, `check:data` (177 files fine), `tools/check-data-text.py` (CI's fast check caught backticks in
+  soundscape.json's about text: fixed in 1bd0e58f). `check-sound.py --loudness` on every commit in a worktree: 194, 0
+  changed; the first six reports identical to the base's; no ceiling warning from fbb3ec3e on; after merging main
+  (653ba92c, the merge session's; 8e5ecb67 gives main's new UI sounds their brightness, RMS unchanged): 199, 0 changed,
+  no warning. `npm run check:smoke`: no problems on e5dafaaf and 4eaf48bc. `check-quick.py --steps=sound,song,music,
+  "debug menu",shoreline,animals` on 4eaf48bc: 9 of 10 (every sound step; "Walking left and right..." fails on main
+  too). The full `npm run check:quick` on 1bd0e58f: 36 of 41 (1630 s); every sound step passed; Terraces, RL-8 and
+  "Walking left and right..." fail on main too; RT-2's route trainers and Granny Juniper failed under load and passed
+  run alone on the merged head (as in SND-8b). `check-fast.py --only=pasture` passed alone (CI's fast check failed it
+  once on 1bd0e58f, beside Tall ground and Copperleaf's orbit walk, which SND-8b saw fail and pass the same way).
+  `check-studio-github.py --only=music`: ok (the World sounds card). Browser probes on test_water and Copperleaf.
 - **Decided for the owner, to review**:
   - WA-8's water sounds moved here (recommended, already decided in SND-8a); WA-8 keeps the water phone pass and the
     quick-check baseline (water-track.md's WA-8 row and Ask line say so).
@@ -1070,12 +1083,18 @@ dial, so MAPGEN_VERSION stays 24.
 - **The grid** (run-map.js): runMapLength gives the run's `sizes`; runMapMake asks runMapGrid for each town's cells with
   no 2x1 fallback (`want`); if the map can't be laid out even without its lane switches, every town steps down a size
   at once, then again. runTownSize reads a town's size off its footprint (a side area's town, with none: a hamlet).
+  Bigger towns made the search step back more: run-map-checks' 1,000-maps sweep went from about 310 ms to 490 here and
+  over its 1 s on CI (1095 ms); runMapGrid now keeps each node's spot list by what it reads (69f2f933): about 355 ms,
+  the same maps byte for byte. Still 1034-1105 ms on CI's busy runner after rngFirst (about 335 ms here), so the owner chose
+  (2026-10-28) to raise that test's limit to 1.5 s.
 - **Scenes and names** (run-scenes.js): runTownOf / runTownDial pass size, houses, stall and givers to mapgen;
   **runPlaceName** is the one function a place's name comes from (WM-6 reads it): "Meadow Hamlet", "Thicket Village",
   "Meadow Town"; a side area's town "Bramble Grove Hamlet"; a town's shop "Thicket Village Shop".
 - **The market stall**: a shop of its own (`run_<i>_stall`, LocationData `stall`, the prop's `shop`), "<name> Market
   Stall"; run-loop.js runStallStock draws 2 held items a day on the node's 'stall' stream at their items.json prices
-  (Perks' price rows apply as in any run shop); shop.js gives it no Perk and no fresh stock on Mo's word.
+  (Perks' price rows apply as in any run shop); shop.js gives it no Perk. The owner's answer after the PR: Mo's fresh
+  stock works there too, one of the run's rerolls, apart from the shop's (run.reshop 'node:day:s', run-loop.js
+  runShopKey; validRun allows it).
 - **The second quest giver**: run-scenes.js runTownQuest puts a giver on each of mapgen's giver spots (a 3x2 town has
   two; the second `quest2`, `quest: 2`, its own stream and name). run-quests.js questOffer/questTake take the giver's
   slot: the second's offer draws on 'quest|2' and takes another kind than the first's when one can be done (in 90%+ of
@@ -1084,8 +1103,8 @@ dial, so MAPGEN_VERSION stays 24.
 - **The sim**: each town walked into logs its size and a stall's wares (looked at, not bought); stats and the report
   count towns by size and stalls. Outcomes unchanged (balance, Expedition II: 5 of 40 won and 5.7 places, before and
   after).
-- **check-fast**: a new run-page step, "A run's village" (its name, the stall's own shop of 2 held items, no Perk, no
-  fresh stock); the town's life step asks for 2 + houses/2 folk, at most 10 (was 2-6).
+- **check-fast**: a new run-page step, "A run's village" (its name, the stall's own shop of 2 held items, no Perk, Mo's
+  fresh stock with Mo at Lv 3); the town's life step asks for 2 + houses/2 folk, at most 10 (was 2-6).
 - **Fixed, not WM-5's** (each its own commit):
   - The ground painter's helper thread (0dd42c1e): `groundTileRole` and `GROUND_DETAIL_TILES` added to
     ground-paint-worker.js `paintWorkerSource` (GROUND_DETAIL_TILES now exported); new ground-paint-worker.test.mjs runs
@@ -1107,14 +1126,12 @@ dial, so MAPGEN_VERSION stays 24.
   before. Python Playwright 1.63; `npm ci` and `npm run data` first in a fresh container.
 - **PRs #263, #267, #271**: all three are closed and none is open, but GitHub lists them as closed, not merged; every
   head commit (b38c8504, bdd119a0, 0f4046a7) is in `track/worldmap`. Not closed or reopened by this session.
+- **The owner's answers after the PR (2026-10-28)**: lane switches give way before town sizes (as built); Mo's fresh
+  stock works at the stall too (built after); a side area's town stays a hamlet, "<side> Hamlet" (as built); the stall's
+  name "<town> Market Stall" and greeting kept (as built).
 - **Decided for the owner, to review**:
-  - The step-down order: lane switches dropped first, then every town a size smaller at once (never needed in 5,000
-    maps). The alternative (step down before dropping switches) keeps more lane switches and fewer big towns.
-  - The stall's wares: all 8 held items at weight 1; their names "<town> Market Stall", greeting "Something for your
-    Billies to hold? Two new pieces every morning." (player-facing, yours to reword). Perks' shop price rows apply.
-  - No fresh stock (Mo's word) at the stall: his reroll stays the town shop's.
+  - The stall's wares: all 8 held items at weight 1. Perks' shop price rows apply.
   - The second giver offers another kind than the first when it can; its offer is keyed node + 64 in run.quests.took.
-  - A side area's town (no footprint) is a hamlet, named "<side> Hamlet" (was "<side> Town").
   - The sim's bot looks at the stall and buys nothing (the policy object unchanged, so reports compare).
   - The ground painter fix on this branch: no session owns that code now (WM-5a asked which branch should take it).
   - The trainers' stacking fix (WM-7's code), and its new fallback (ordinary spots, some past the gate).
