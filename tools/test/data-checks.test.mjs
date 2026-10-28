@@ -695,6 +695,39 @@ test('PK-7: dataPerks and the schema take Fine Print’s kinds and name their fa
   }
 });
 
+test('PK-7: the fine rarity: a leader rule names a rarity some Perk has; an event never names Fine Print', () => {
+  const D = structuredClone(GAME_DATA);
+  D.perks.lucky_charm.rarity = 'fine';
+  D.rules.run.perks.leader = { rarity: 'fine', pick: 3 };
+  assert.deepEqual(C.dataPerks(D), []);
+  for (const [leader, text] of [
+    [{ rarity: 'gold', pick: 3 }, 'run.perks.leader.rarity: one of common, uncommon, rare, fine'],
+    [{ rarity: 'fine', pick: 9 }, 'run.perks.leader.pick is not a whole number from 1 to 5'],
+    [{ rarity: 'fine', pick: 3, n: 1 }, 'run.perks.leader.n: no such rule'],
+  ]) {
+    const E = structuredClone(D);
+    E.rules.run.perks.leader = leader;
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes(text)),
+      `${text} in ${JSON.stringify(all)}`
+    );
+  }
+  const F = structuredClone(GAME_DATA);
+  F.rules.run.perks.leader = { rarity: 'fine', pick: 3 };
+  assert.ok(C.dataPerks(F).some(p => p.join(': ').includes('no Perk in perks.json is fine')));
+  /* fine has no weight or price of its own */
+  F.rules.run.perks.rarity.fine = 1;
+  assert.ok(C.dataPerks(F).some(p => p.join(': ').includes('run.perks.rarity.fine: no such rarity')));
+  /* an event's perk command never names Fine Print */
+  const G = structuredClone(D);
+  G.events.events.form_27b.options[0].then[0] = 'perk lucky_charm';
+  assert.ok(
+    C.dataEvents(G).some(p => p.join(': ').includes('lucky_charm is Fine Print, offered only at a leader’s win')),
+    JSON.stringify(C.dataEvents(G))
+  );
+});
+
 test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () => {
   const D = structuredClone(GAME_DATA);
   D.perks.lucky_charm.needs = 'team:Fire';

@@ -1835,6 +1835,9 @@ export function dataEvents(D, valid = () => true) {
       case 'perk':
         if (a != null && !['common', 'uncommon', 'rare'].includes(a) && !perks[a])
           problem(`${at}: not a rarity (common, uncommon, rare) or a Perk (perks.json)`);
+        /* PK-7: Fine Print comes only from a leader's win */
+        else if (a != null && perks[a] && perks[a].rarity === 'fine')
+          problem(`${at}: ${a} is Fine Print, offered only at a leader’s win`);
         return;
       case 'status':
         if (statuses.size && !statuses.has(a)) problem(`${at}: no status "${a}" (statuses.json)`);
@@ -2136,7 +2139,7 @@ export function dataPerks(D, valid = () => true) {
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.perks missing');
     else {
       for (const k of Object.keys(RR))
-        if (!['cap', 'pick', 'rarity', 'price', 'bias'].includes(k))
+        if (!['cap', 'pick', 'rarity', 'price', 'bias', 'leader'].includes(k))
           problem('rules.json', `run.perks.${k}: no such rule`);
       /* PK-4: the lean toward a Perk whose tags match (1 is none) */
       if (RR.bias != null && !(typeof RR.bias === 'number' && RR.bias >= 1 && RR.bias <= 10))
@@ -2156,6 +2159,22 @@ export function dataPerks(D, valid = () => true) {
       }
       if (D.perks && !Object.values(D.perks).some(R => (RR.rarity || {})[R.rarity] > 0))
         problem('rules.json', 'run.perks.rarity gives every Perk in perks.json a weight of 0: nothing can be offered');
+      /* PK-7: a leader's win offers one rarity alone (Fine Print); fine itself has no weight or price (never in an
+         ordinary pick, a shop, an event or a reward pick) */
+      const LR = RR.leader;
+      if (LR != null) {
+        if (!LR || typeof LR !== 'object' || Array.isArray(LR))
+          problem('rules.json', 'run.perks.leader: {rarity, pick}, the pick after a leader’s win');
+        else {
+          for (const k of Object.keys(LR))
+            if (!['rarity', 'pick'].includes(k)) problem('rules.json', `run.perks.leader.${k}: no such rule`);
+          if (![...RARITIES, 'fine'].includes(LR.rarity))
+            problem('rules.json', `run.perks.leader.rarity: one of ${[...RARITIES, 'fine'].join(', ')}`);
+          else if (D.perks && !Object.values(D.perks).some(R => R.rarity === LR.rarity))
+            problem('rules.json', `run.perks.leader.rarity: no Perk in perks.json is ${LR.rarity}`);
+          if (!whole(LR.pick, 1, 5)) problem('rules.json', 'run.perks.leader.pick is not a whole number from 1 to 5');
+        }
+      }
     }
   }
   return out;

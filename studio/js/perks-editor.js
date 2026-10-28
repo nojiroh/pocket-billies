@@ -606,7 +606,7 @@ SECTIONS.relics = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'perks.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${escapeHtml(L[x].rarity)} · weight ${D.rules.run.perks.rarity[L[x].rarity] || 0} · ${perkPct(cov.chance[x])} first</small></span></button>`
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'perks.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${L[x].rarity === 'fine' ? 'fine · a leader’s win only' : `${escapeHtml(L[x].rarity)} · weight ${D.rules.run.perks.rarity[L[x].rarity] || 0} · ${perkPct(cov.chance[x])} first`}</small></span></button>`
     )
     .join('');
   const head = `<div class="list-head"><button class="btn primary" data-act="relicNew">+ New Perk</button></div>`;
@@ -628,7 +628,8 @@ SECTIONS.relics = () => {
      selectField(
        'Rarity',
        `${p}.rarity`,
-       PERK_RARITIES.map(r => [r, r]),
+       /* PK-7: fine, Fine Print: offered only at a leader's win (rules.json run.perks.leader) */
+       [...PERK_RARITIES.map(r => [r, r]), ['fine', 'fine (Fine Print: a leader’s win only)']],
        { rr: 1 }
      )
    ) +
@@ -643,7 +644,11 @@ SECTIONS.relics = () => {
      perkArtHTML(k, R) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
-     sub: `${escapeHtml(R.rarity)}: ${perkPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.perks.price[R.rarity] || 0} Moneys.`,
+     sub:
+       R.rarity === 'fine'
+         ? /* PK-7: Fine Print: a leader's win's pick only, every one of its rarity as likely */
+           `fine (Fine Print): offered only at a leader’s win, one of ${Object.values(L).filter(q => q.rarity === 'fine').length} there; never in a shop, an event or a reward pick.`
+         : `${escapeHtml(R.rarity)}: ${perkPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.perks.price[R.rarity] || 0} Moneys.`,
    }
  )}
  ${card(

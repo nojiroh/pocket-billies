@@ -18,7 +18,8 @@
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { Perk } from '../../types/game-data' */
-/** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number>, bias?: number }} PerkRules */
+/** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number>, bias?: number,
+ *   leader?: { rarity: string, pick: number } }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { toast } from '../hooks.js';
@@ -43,6 +44,7 @@ expose({
   perkDropOk: [() => perkDropOk, v => (perkDropOk = v)],
   // @ts-expect-error -- replaced on purpose
   perkFits: [() => perkFits, v => (perkFits = v)],
+  perkLeaderRule: [() => perkLeaderRule],
   // @ts-expect-error -- replaced on purpose
   perkNoDrop: [() => perkNoDrop, v => (perkNoDrop = v)],
   perkOffer: [() => perkOffer],
@@ -172,19 +174,28 @@ export function perkDraw(g, pool, perks, rule, n, weigh) {
   return out;
 }
 
-/** the next pick's Perks (the run is not changed): run.offerN's stream, rule.pick of them, none held
+/** PK-7: the rules a leader's (mini-boss's) pick draws by: run.perks.leader's rarity alone (Fine Print), each Perk of
+ * it as likely, leader.pick of them; the rules themselves without a leader rule @param {PerkRules} rule
+ * @returns {PerkRules} */
+export const perkLeaderRule = rule =>
+  rule.leader ? { ...rule, rarity: { [rule.leader.rarity]: 1 }, pick: rule.leader.pick, bias: 1 } : rule;
+/** the next pick's Perks (the run is not changed): run.offerN's stream, rule.pick of them, none held. PK-7: `from`
+ * 'leader' draws a leader's win's (perkLeaderRule: Fine Print only)
  * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[][]} [team]
- * @returns {string[]} */
-export const perkOffer = (run, perks, rule, team) =>
-  perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, perks, rule, [], team), perks, rule, rule.pick, id =>
-    perkWeight(run, id, perks, rule, team)
+ * @param {'leader'} [from] @returns {string[]} */
+export const perkOffer = (run, perks, rule, team, from) => {
+  const R = from === 'leader' ? perkLeaderRule(rule) : rule;
+  return perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, perks, R, [], team), perks, R, R.pick, id =>
+    perkWeight(run, id, perks, R, team)
   );
+};
 
 /** make the next pick: run.offer is set (null when nothing is left to offer) and the counter moves on; the caller
- * saves before showing it @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule
- * @param {string[][]} [team] the team's types (perkTeamOf) */
-export function perkOfferMake(run, perks, rule, team) {
-  const ids = perkOffer(run, perks, rule, team);
+ * saves before showing it. PK-7: `from` 'leader' for a leader's win (Fine Print only, perkOffer)
+ * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule
+ * @param {string[][]} [team] the team's types (perkTeamOf) @param {'leader'} [from] */
+export function perkOfferMake(run, perks, rule, team, from) {
+  const ids = perkOffer(run, perks, rule, team, from);
   run.offerN++;
   run.offer = ids.length ? ids : null;
   return run.offer;
@@ -306,7 +317,8 @@ export function perkBuy(run, i, day, perks, rule, drop, s) {
 
 /**
  * Studio plan T4.1: a seed's Perk picks in order, as the game makes them after each mini-boss (perkOfferMake on a
- * run of that seed, then perkChoose): what is offered at each pick and what is taken. `take` is who chooses: 'none'
+ * run of that seed, then perkChoose; PK-7: a leader's pick, Fine Print only): what is offered at each pick and what is
+ * taken. `take` is who chooses: 'none'
  * takes nothing (the Run Lab's preview), 'first' the first offered, or a Perk's id, taken when offered (else
  * nothing). A taken one leaves the pool of the picks after it; past the cap nothing more is taken. Shops are left out.
  * PK-4: `team` (each Billie's types) asks the Perks' needs; without one they are not asked
@@ -317,7 +329,7 @@ export function perkOfferOrder(seed, perks, rule, picks, take = 'none', team) {
   const run = /** @type {Run} */ (/** @type {any} */ ({ seed, perks: [], offer: null, offerN: 0, shelf: {} })),
     out = [];
   for (let k = 0; k < picks; k++) {
-    const offer = (perkOfferMake(run, perks, rule, team) || []).slice(),
+    const offer = (perkOfferMake(run, perks, rule, team, 'leader') || []).slice(),
       want = take === 'first' ? offer[0] : take !== 'none' && offer.includes(take) ? take : null,
       took = want && run.perks.length < perkCap(run, rule, perks) && !perkChoose(run, want, perks, rule) ? want : null;
     if (!took && run.offer) perkChoose(run, null, perks, rule);

@@ -409,3 +409,47 @@ test('PK-7 level and bossHp rows taken mid-run move the foes at once (pools, tra
     assert.equal(L.runFoesSync(run, data.PERKS), 0, 'no run world in: nothing');
   });
 });
+
+/* ---------- the fine rarity and the leader's pick ---------- */
+
+test('PK-7 fine: a leader rule draws that rarity alone, evenly; ordinary picks, shops and events never offer fine', () => {
+  const PK = modules.perks,
+    E = modules.encounters,
+    fineIds = ['test_f1', 'test_f2', 'test_f3', 'test_f4'],
+    P = Object.fromEntries(fineIds.map(id => [id, { name: id, d: 'A test.', rarity: 'fine', fx: [] }])),
+    LEAD = { ...RULE, leader: { rarity: 'fine', pick: 3 } };
+  withPerks(P, () => {
+    const seen = Object.fromEntries(fineIds.map(id => [id, 0]));
+    for (let n = 0; n < 200; n++) {
+      const r = runOf();
+      r.offerN = n;
+      const offer = PK.perkOffer(r, data.PERKS, LEAD, undefined, 'leader');
+      assert.equal(offer.length, 3);
+      for (const id of offer) {
+        assert.ok(fineIds.includes(id), `${id} is fine`);
+        seen[id]++;
+      }
+      /* the ordinary pick, a shop's shelf and an event's draw: never fine */
+      for (const id of PK.perkOffer(r, data.PERKS, LEAD)) assert.notEqual(data.PERKS[id].rarity, 'fine');
+      assert.notEqual(data.PERKS[PK.perkShelf(r, 1, n, data.PERKS, LEAD) || 'lucky_charm'].rarity, 'fine');
+      const ev = E.encPerk(r, undefined, data.PERKS, LEAD);
+      assert.ok(!ev || data.PERKS[ev].rarity !== 'fine');
+    }
+    /* evenly: each about 3/4 of the picks */
+    for (const id of fineIds) assert.ok(seen[id] > 110 && seen[id] < 190, `${id}: ${seen[id]}`);
+    /* held ones leave the leader's pool; all held: no pick */
+    const r = runOf('test_f1', 'test_f2');
+    assert.deepEqual(PK.perkOffer(r, data.PERKS, LEAD, undefined, 'leader').sort(), ['test_f3', 'test_f4']);
+    assert.equal(PK.perkOfferMake(runOf(...fineIds), data.PERKS, LEAD, undefined, 'leader'), null);
+    /* the No Perks challenge empties it too */
+    const none = runOf();
+    none.mods = ['noperks'];
+    assert.equal(PK.perkOfferMake(none, data.PERKS, LEAD, undefined, 'leader'), null);
+    /* without a leader rule a leader's pick is the ordinary one */
+    const plain = runOf();
+    assert.deepEqual(PK.perkOffer(plain, data.PERKS, RULE, undefined, 'leader'), PK.perkOffer(plain, data.PERKS, RULE));
+    /* the Studio's offer order is the leader's pick */
+    for (const o of PK.perkOfferOrder('FINEORDER1', data.PERKS, LEAD, 3))
+      for (const id of o.offer) assert.equal(data.PERKS[id].rarity, 'fine');
+  });
+});

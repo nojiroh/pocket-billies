@@ -1111,10 +1111,12 @@ export interface Rules {
     perks: {
       cap: number;
       pick: number;
-      rarity: Record<PerkRarity, number>;
-      price: Record<PerkRarity, number>;
+      rarity: Record<PerkTier, number>;
+      price: Record<PerkTier, number>;
       /** PK-4: a Perk whose tags match the team's types or a held Perk's tags is drawn this many times as often */
       bias?: number;
+      /** PK-7: a leader's (mini-boss's) win offers `pick` Perks of this rarity alone (Fine Print), evenly */
+      leader?: { rarity: PerkRarity; pick: number };
     };
     /** RL-R2: side areas (logic/run-side.js) */
     side?: RunSideRules;
@@ -1934,8 +1936,11 @@ export interface Music {
   where: MusicWhere[];
 }
 
-/** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks) */
-export type PerkRarity = 'common' | 'uncommon' | 'rare';
+/** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks); PK-7: `fine` (Fine
+ * Print), offered only at a leader's win (rules.json run.perks.leader), never in a shop, an event or a reward pick */
+export type PerkRarity = PerkTier | 'fine';
+/** PK-7: the rarities of the ordinary picks, shops and events (their weights and prices) */
+export type PerkTier = 'common' | 'uncommon' | 'rare';
 /** PK-1: the moments a row can act at (logic/effects.js FX_WHEN) */
 export type FxWhen =
   | 'battleStart'

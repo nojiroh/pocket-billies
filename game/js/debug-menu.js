@@ -850,8 +850,9 @@ function debugAction(x) {
     }
     case 'relicpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
-      if (!perkOfferMake(saveData.run, PERKS, RULES.run.perks, perkTeamOf(saveData.team)))
-        return refreshDebugMenu('Every Perk is held.');
+      /* PK-7: a mini-boss's pick is Fine Print */
+      if (!perkOfferMake(saveData.run, PERKS, RULES.run.perks, perkTeamOf(saveData.team), 'leader'))
+        return refreshDebugMenu('Every Fine Print Perk is held.');
       saveNow();
       uiState.modal = null;
       perkPickOpen();
