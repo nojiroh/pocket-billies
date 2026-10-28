@@ -47,13 +47,15 @@ READY = "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.started&&!doc
 # the film's machinery, put on the page once: the stage's frame task taken off the loop, a clock of its own
 SETUP = r"""(()=>{
 const S=battleStage,T=frameScheduler.tasks;
-window.__film={tasks:new Map(T),init:JSON.parse(JSON.stringify({cam:S.cam,V:S.V,drift:S.drift,hand:S.hand,css:S.css,dof:S.dof,focusK:S.focusK,camT:S.camT}))};
+window.__film={tasks:new Map(T)};
 T.clear();S.lockQ=true;S.q.lvl=0;
 const r3=v=>Math.round((+v||0)*1000)/1000;
 __film.hash=k=>{let h=2166136261;for(let i=0;i<k.length;i++){h^=k.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
-__film.reset=()=>{const I=__film.init;S.tws.length=0;S.evs.length=0;S.parts.length=0;S.impact=null;S.shk=0;S.hold=0;S.coin=null;
- S.s.forEach(s=>{s.ox=0;s.oy=0;s.act=null;s.blinkUntil=0;s.white=0;s.lunge=null;s.trail=null});
- for(const k of ['cam','V','drift','hand','css','dof'])Object.assign(S[k],JSON.parse(JSON.stringify(I[k])));S.focusK=I.focusK;S.camT=I.camT;
+__film.reset=()=>{S.tws.length=0;S.evs.length=0;S.parts.length=0;S.impact=null;S.shk=0;S.hold=0;S.coin=null;S.ring=null;S.calm=false;S.t=1e5;
+ S.leafy.length=0;S.glint.length=0;
+ S.s.forEach(s=>{Object.assign(s,{ox:0,oy:0,sc:1,a:1,white:0,dark:0,act:null,blinkUntil:0,lunge:null,trail:null,seed:1})});
+ const home={x:0,y:1.6,z:0,yaw:0,hz:0};Object.assign(S.cam,home);Object.assign(S.V,home);Object.assign(S.drift,{w:0,tq:-1,x:0,y:0,z:0,yaw:0,hz:0});
+ S.hand.a=0;S.css.r=0;S.css.z=0;S.camT=0;S.focusK=null;battleStageFocus('wide',true);
  const p=document.getElementById('pops');if(p)p.innerHTML='';const f=document.getElementById('flash');if(f){f.style.transition='none';f.style.opacity=0;f.style.background=''}
  const w=document.getElementById('camWorld');if(w)w.classList.remove('ca')};
 __film.snap=(t0,vt)=>{const f=document.getElementById('flash'),w=document.getElementById('camWorld'),p=document.getElementById('pops');
