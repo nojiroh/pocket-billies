@@ -120,8 +120,9 @@ export const OUTLINE_RGB = Object.freeze([36, 25, 54]);
 /** the top-left light in the camera's frame (x to the screen's right, y up, z into the view): from the upper left
  * and a little from the viewer, as the props are painted */
 export const FIGURE_LIGHT = Object.freeze(figureUnit([-0.55, 0.7, -0.45]));
-/** where the toon bands split, on the light's dot with a face's normal: above LIGHT the light band, above BASE the base */
-export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1 });
+/** where the toon bands split, on the light's dot with a face's normal: above LIGHT the light band, above BASE the base;
+ * above SHINE a glossy colour's shine (CH-3b: hair, shoes, lenses: the anime hair highlight) */
+export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86 });
 
 /** @typedef {[number, number, number]} Vec3 */
 /** @typedef {{ front: number, side: number, back: number, bangs?: number, depth?: number }} HairCut where a hair cap
@@ -137,19 +138,24 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1 });
  * squarer, `taper` widens its bottom half and narrows its top, below 0 the other way: CH-3b's head shapes), a lathe (rings
  * round an upright axis through c at heights y, radii rx across and rz front to back; a radius of 0 closes it), a
  * capsule from a to b (radii r0 and r1), a cone from its base a to its tip b, or a torus round an upright axis */
-/** @typedef {{ id: string, parent: number, at: Vec3, shape: FigureShape, col: string }} FigurePart
- * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour */
+/** @typedef {{ id: string, parent: number, at: Vec3, shape: FigureShape, col: string,
+ *   stripe?: { col: string, every: number, from?: number } }} FigurePart
+ * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour; `stripe` bands it
+ * in a second colour every `every` metres of its height (from `from`) */
 /** @typedef {{ part: string, kind: string, at: Vec3, n: Vec3, w: number, h: number, col?: string,
- *   hollow?: boolean, min?: number }} FaceMark
+ *   hollow?: boolean, min?: number, narrow?: boolean }} FaceMark
  * a mark painted on the picture in whole pixels: on part `part` at `at`, facing `n`, w by h metres, in colour `col`
  * (else the figure's colour named as its kind); `hollow` paints only its edge (a glasses frame); `min` how much it
- * must face the camera to show (else by kind: an eye 0.15, a mouth 0.25, anything else 0.2). An 'eye' blinks and
+ * must face the camera to show (else by kind: an eye 0.15, a mouth 0.25, anything else 0.2); `narrow` makes it a
+ * pixel wide seen from the side, as an eye is. An 'eye' blinks and
  * narrows to a pixel seen from the side; an eye 2 pixels wide and 3 tall or more gets a glint (CH-3b: brows, lashes,
  * glasses, a stache, freckles, a name tag are marks too) */
-/** @typedef {{ swing?: number, arms?: number, bounce?: number, lean?: number, hang?: number }} FigureGait how a
- * figure moves (figurePose): its legs' and arms' swing and its bounce as parts of the usual (1), its lean forward
- * (radians, below 0 back) and how far out its arms hang (radians) */
+/** @typedef {{ swing?: number, arms?: number, bounce?: number, lean?: number, hang?: number, head?: number }}
+ * FigureGait how a figure moves (figurePose): its legs' and arms' swing and its bounce as parts of the usual (1), its
+ * lean forward (radians, below 0 back), how far out its arms hang (radians) and how its head is held (radians, a
+ * stoop's forward) */
 /** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3>, face?: FaceMark[],
+ *   gloss?: string[],
  *   gait?: FigureGait, kit?: { head: string, build: string } }} Figure (`kit`: the head shape and build the figure
  * kit chose, logic/figure-kit.js) */
 /** @typedef {{ rot: Vec3[], lift: Vec3[], scale: Vec3[], rootY: number, blink?: boolean }} FigurePose per part (in
@@ -397,7 +403,7 @@ export function figurePose(F, clip, frame) {
       if (i >= 0) P.rot[i][ax] = a;
     },
     rx = (/** @type {string} */ id, /** @type {number} */ a) => rot(id, 0, a),
-    G = { swing: 1, arms: 1, bounce: 1, lean: 0, hang: 0, ...(F.gait || {}) };
+    G = { swing: 1, arms: 1, bounce: 1, lean: 0, hang: 0, head: 0, ...(F.gait || {}) };
   const n = CLIP_FRAMES[/** @type {keyof typeof CLIP_FRAMES} */ (clip)] || 1,
     f = ((Math.floor(frame) % n) + n) % n;
   if (at('legFL') >= 0) return quadPose(F, P, clip, f, n, rx);
@@ -423,6 +429,7 @@ export function figurePose(F, clip, frame) {
     }
     P.rot[at('torso')][1] = 0.12 * G.swing * s;
     P.rot[at('head')][1] = -0.08 * s;
+    P.rot[at('head')][0] = G.head;
     P.rot[at('torso')][0] = -0.06 + G.lean;
     /* the body drops as the legs part and bounces up as they pass (a spring in the step) */
     P.rootY = -0.5 * (1 - Math.cos(swing * s)) + 0.02 * G.bounce * (1 - Math.abs(s));
@@ -472,7 +479,7 @@ export function figurePose(F, clip, frame) {
   P.lift[at('torso')][1] = up * 0.02;
   P.rot[at('torso')][0] = G.lean;
   /* a slow nod and a lean of the head with the breath */
-  P.rot[at('head')][0] = up ? -0.05 : 0.02;
+  P.rot[at('head')][0] = G.head + (up ? -0.05 : 0.02);
   P.rot[at('head')][2] = f >= 8 ? 0.05 : -0.03;
   for (const [k, sg] of sides) {
     P.rot[at('arm' + k)][2] = sg * (0.06 + G.hang + up * 0.03);
@@ -817,9 +824,19 @@ export function figureMesh(F) {
   const colours = [...new Set(F.parts.map(p => p.col))].filter(k => k in F.colours),
     /** @type {number[]} */ v = [];
   if (colours.length > FIGURE_PAL_MAX) throw new Error(`figure ${F.name}: ${colours.length} colours`);
+  for (const p of F.parts)
+    if (p.stripe && !colours.includes(p.stripe.col) && p.stripe.col in F.colours) colours.push(p.stripe.col);
+  if (colours.length > FIGURE_PAL_MAX) throw new Error(`figure ${F.name}: ${colours.length} colours`);
   F.parts.forEach((p, j) => {
-    const ci = Math.max(0, colours.indexOf(p.col));
-    for (const tri of shapeTriangles(p.shape)) for (const q of tri) v.push(...q, j, ci);
+    const ci = Math.max(0, colours.indexOf(p.col)),
+      S = p.stripe,
+      si = S ? colours.indexOf(S.col) : -1;
+    for (const tri of shapeTriangles(p.shape)) {
+      /* CH-3b: a striped part's triangles take the stripe's colour in every other band of its height */
+      const y = (tri[0][1] + tri[1][1] + tri[2][1]) / 3,
+        c = S && si >= 0 && Math.floor((y - (S.from || 0)) / S.every) % 2 === 1 ? si : ci;
+      for (const q of tri) v.push(...q, j, c);
+    }
   });
   return { data: new Float32Array(v), count: v.length / 8, colours };
 }
@@ -859,10 +876,8 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
     if (m.kind === 'iris' && P.blink) continue;
     let w = Math.max(1, Math.round(m.w * ppm)),
       h = Math.max(1, Math.round(m.h * ppm));
-    if (m.kind === 'eye') {
-      if (facing < 0.6) w = 1;
-      if (P.blink) h = 1;
-    }
+    if ((m.kind === 'eye' || m.narrow) && facing < 0.6) w = 1;
+    if (m.kind === 'eye' && P.blink) h = 1;
     const q = cardPoint(at, V.rel, V.tilt),
       x = Math.round(S.ax + q.u * ppm - w / 2),
       y = Math.round(S.ay - q.v * ppm - h / 2);
