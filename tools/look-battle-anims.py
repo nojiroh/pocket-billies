@@ -3,7 +3,7 @@
 checked frame by frame: nothing is judged by eye here.
 
 Every move is played from both sides in 8 outcomes (hit, super x2, super x4, not very effective, crit, super crit,
-miss, blocked) on the real battle stage of a wild battle in Copperleaf, with Math.random seeded per move and outcome
+miss, blocked) on the real battle stage of a wild battle in Copperleaf, with Math.random seeded per move and outcome (and before the battle starts, so the foe is the same)
 and the battle's quality locked at 0. The stage is stepped by hand at 16 ms a frame on a clock of its own (its frame
 task taken off the page's loop; performance.now and setTimeout read that clock while a move plays), so the same code
 gives the same film.
@@ -148,7 +148,7 @@ def main():
         pg.goto(base + '/index.html?fixture=town')
         if not CF.until(pg, READY, 300): raise Exception('the town fixture never got ready')
         pg.evaluate("uiState.toastQ=[];uiState.modal=null;uiState.mq=[];saveData.team.forEach(m=>{m.hp=maxHp(m);m.status=null});"
-                    "const q={id:'film',sp:Object.keys(SPECIES).find(k=>SPECIES[k].stage===0),lvl:20,no:1};encountersHere().splice(0,1e9,q);startWild(q);0")
+                    "__seed(20261028);const q={id:'film',sp:Object.keys(SPECIES).find(k=>SPECIES[k].stage===0),lvl:20,no:1};encountersHere().splice(0,1e9,q);startWild(q);0")
         if not CF.until(pg, "activeBattle&&activeBattle.phase==='choose'", 120, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"):
             raise Exception('the battle never reached the move menu')
         CF.until(pg, 'battleStage.gl', 30)
