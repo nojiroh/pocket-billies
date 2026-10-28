@@ -581,6 +581,11 @@ commit of its own.
   heal and seal do (747adc6a); music.json songs now have a `trim` in `$defs.recipe` (the top level is unchanged, so the
   `battle` section still goes there).
 
+- **Merging track/vfx and track/sound** (the sound track's test merge of e904ad77 into SND-10's e4c03f10, 2026-10-28):
+  conflicts only in docs/HANDOFF.md (keep both entries), studio/art-code-refs.json (`node tools/art-code-refs.mjs`) and
+  tools/test/check-data-snapshot.test.mjs.snapshot (`node --test --test-update-snapshots
+  tools/test/check-data-snapshot.test.mjs`, said in the commit message); sound.js, hooks.js and both index pages merge
+  clean. Whichever track reaches main second resolves it so.
 ## Fitting with the style track (found 2026-10-28)
 The style track (docs/phases/style-track.md, PR #279; its planning session `session_019UpAFyAJSkEVjDLuVMFQkS`, steps
 on `track/style`, merged to main through PR #289) also works in battle. How the two split, agreed with its planning
@@ -616,6 +621,10 @@ session (2026-10-28):
   as a coated rig whose band is crossing will. `uHit` shows the same sprite flashes rigTint baked in before (send-out,
   recall, heal, the limiter's held flash), under the same settings: none of them was gated by Reduced motion, and
   VFX-9 doesn't change that (VFX-13/14 can).
+- **battleStageFlash's order** (main has SY-1 since #279; VFX-9 merged it): `F = flashFor(col, a, !!reducedMotion,
+  flashesOff())` first; then SY-8's debug-log tally line (track/style, not on main yet: it counts what flashFor let
+  through); then `if (!F) return;`; then `battleFlashGate(F.col, F.a, dur, who)`; then the #flash element. A flash the
+  limiter holds back is in VFX-8's anim line (`held:`), so the two logs together are complete.
 
 ## Bugs found (VFX-7) and where they're fixed
 - Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe: fixed by the style
