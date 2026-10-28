@@ -50,6 +50,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   figureDark: [() => figureDark, v => (figureDark = v)],
   // @ts-expect-error -- replaced on purpose
+  figureDensityStep: [() => figureDensityStep, v => (figureDensityStep = v)],
+  // @ts-expect-error -- replaced on purpose
   figureFaceMarks: [() => figureFaceMarks, v => (figureFaceMarks = v)],
   // @ts-expect-error -- replaced on purpose
   figureGpuMesh: [() => figureGpuMesh, v => (figureGpuMesh = v)],
@@ -1628,6 +1630,24 @@ export function clipFrameAt(clip, t, gait = 0) {
   const tick = Math.floor(t / (1000 / FIGURE_FPS));
   /* a cheer or a throw on ones, the idle (and the sit) on twos */
   return ((Math.floor(clip === 'cheer' || clip === 'throw' ? tick : tick / 2) % n) + n) % n;
+}
+/**
+ * CH-4: density by distance: the share of the density dial a person is drawn at, by how far they stand from the camera
+ * against how far its target is (`k`: the target's distance over theirs; 1 or more at the target or nearer): 1 near, 3/4
+ * past about 1.25 times the target's distance, 1/2 past about 1.8 times. Shrunk on screen by the perspective as much,
+ * they keep at least the pixels a screen pixel the near ones have. `prev` (the step they had) holds within 0.05 of an
+ * edge, so a person walking along one doesn't flicker between steps.
+ * @param {number} k @param {number} [prev] @returns {number}
+ */
+export function figureDensityStep(k, prev = 1) {
+  const edges = [
+      [0.8, 1, 0.75],
+      [0.55, 0.75, 0.5],
+    ],
+    m = 0.05;
+  let s = 1;
+  for (const [e, hi, lo] of edges) if (k < e + (prev <= lo ? m : prev >= hi ? -m : 0)) s = lo;
+  return s;
 }
 /** the tick a time falls in on the 12 fps clock @param {number} t ms */
 export function figureTick(t) {

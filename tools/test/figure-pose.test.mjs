@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  figureDensityStep,
   CLIP_FRAMES,
   TILT_STEP,
   WALK_CYCLE_M,
@@ -533,4 +534,21 @@ test('figure pose: the scene lights a figure (CH-3b): the sun by its side, a lam
   });
   assert.ok(far.L[0] < 0);
   assert.ok(far.flat > sun([-0.7, 0.6, 0.2]).flat);
+});
+
+test('CH-4: density by distance: whole near, 3/4 then 1/2 farther off, holding near an edge', () => {
+  assert.equal(figureDensityStep(1.4), 1, 'nearer than the target');
+  assert.equal(figureDensityStep(1), 1);
+  assert.equal(figureDensityStep(0.7), 0.75, 'about 1.4 times the target distance');
+  assert.equal(figureDensityStep(0.4), 0.5, 'two and a half times');
+  /* at an edge the step held stays */
+  assert.equal(figureDensityStep(0.78, 1), 1);
+  assert.equal(figureDensityStep(0.82, 0.75), 0.75);
+  assert.equal(figureDensityStep(0.53, 0.75), 0.75);
+  assert.equal(figureDensityStep(0.57, 0.5), 0.5);
+  /* past the margin it moves */
+  assert.equal(figureDensityStep(0.74, 1), 0.75);
+  assert.equal(figureDensityStep(0.86, 0.75), 1);
+  assert.equal(figureDensityStep(0.49, 0.75), 0.5);
+  assert.equal(figureDensityStep(0.61, 0.5), 0.75);
 });

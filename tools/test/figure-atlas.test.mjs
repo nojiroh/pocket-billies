@@ -130,3 +130,18 @@ test('the atlas off (Engine > People > Live atlas): the baked pictures, as befor
   G.engineContext.look.people.atlas = false;
   assert.equal(G.figureAtlasOn(), false);
 });
+
+test('the atlas: density by distance: a person twice as far as the camera target is drawn at half the dial', () => {
+  setup();
+  const was = G.walkView.C;
+  try {
+    G.walkView.C = { ...(was || {}), eye: [0, 1, 0], df: 10, sp: Math.sin(TILT), cp: Math.cos(TILT) };
+    const near = G.figurePicture({}, 'mannequin', 'idle', 0, 0, 0, TILT, 'pixel', 0, [0, 9]),
+      far = G.figurePicture({}, 'mannequin', 'idle', 0, 0, 0, TILT, 'pixel', 0, [0, 25]);
+    G.figureAtlasPass();
+    assert.deepEqual([near.ppm, far.ppm], [32, 16]);
+    assert.ok(far.height < near.height * 0.6, 'a smaller cell');
+  } finally {
+    G.walkView.C = was;
+  }
+});

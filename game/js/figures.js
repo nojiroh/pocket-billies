@@ -35,6 +35,7 @@ import {
   codeExtent,
   figureClipMatrix,
   figureDark,
+  figureDensityStep,
   figureFaceMarks,
   figureKey,
   figureMix,
@@ -94,7 +95,9 @@ expose({
   figureChoice: [() => figureChoice, v => (figureChoice = v)],
   figureCompile: [() => figureCompile, v => (figureCompile = v)],
   figureDef: [() => figureDef, v => (figureDef = v)],
+  figureDensity: [() => figureDensity],
   figureDesign: [() => figureDesign, v => (figureDesign = v)],
+  figureFarPpm: [() => figureFarPpm, v => (figureFarPpm = v)],
   figureFolk: [() => figureFolk, v => ((figureFolk = v), provide({ figureFolk }))],
   figureFor: [() => figureFor, v => (figureFor = v)],
   figureFromFile: [() => figureFromFile, v => (figureFromFile = v)],
@@ -1195,7 +1198,7 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
     /* CH-4: the live atlas (figure-atlas.js): a kit figure in the world drawn by the game's renderer each step and
        lit where it stands (not a battle's close-up, nor the plain 3D style, which keep their baked pictures) */
     if (!ppmAt && !smooth && Fig.kind === 'code' && typeof figureAtlasOn === 'function' && figureAtlasOn()) {
-      const p = figureAtlasPicture(rec, Fig, clip, frame, V, steps, ppm, outline, style);
+      const p = figureAtlasPicture(rec, Fig, clip, frame, V, steps, figureFarPpm(rec, ppm, at), outline, style);
       if (p) {
         if (rec && typeof rec === 'object') figureLast.set(rec, p);
         return p;
@@ -1239,6 +1242,21 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
   }
   if (im && rec && typeof rec === 'object') figureLast.set(rec, im);
   return im || (rec && typeof rec === 'object' ? figureLast.get(rec) || null : null);
+}
+/** CH-4: each person's density step (logic/figure-pose.js figureDensityStep), kept so it holds near an edge */
+const figureDensity = new WeakMap();
+/**
+ * CH-4: density by distance: the dial's pixels a metre for a person standing at `at` (world x, z), stepped down by how
+ * much farther from the camera they stand than its target; the dial's own without a place or a camera
+ */
+function figureFarPpm(rec, ppm, at) {
+  const C = typeof walkView !== 'undefined' ? walkView.C : null;
+  if (!at || !C || !C.eye || !(C.df > 0) || !rec || typeof rec !== 'object') return ppm;
+  const y = typeof standingHeightAt === 'function' ? standingHeightAt(at[0], at[1]) + 1 : 1,
+    d = Math.hypot(at[0] - C.eye[0], y - C.eye[1], at[1] - C.eye[2]),
+    k = figureDensityStep(C.df / Math.max(0.01, d), figureDensity.get(rec));
+  figureDensity.set(rec, k);
+  return Math.max(16, Math.round((ppm * k) / 4) * 4);
 }
 /** each person's distance walked at the last tick of the 12 fps clock: the walk is read once a tick */
 const figureGait = new WeakMap();
