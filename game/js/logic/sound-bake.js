@@ -28,6 +28,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   soundBakeBiquad: [() => soundBakeBiquad, v => (soundBakeBiquad = v)],
   // @ts-expect-error -- replaced on purpose
+  soundBakeBiquadSteps: [() => soundBakeBiquadSteps, v => (soundBakeBiquadSteps = v)],
+  // @ts-expect-error -- replaced on purpose
   soundBakeBlep: [() => soundBakeBlep, v => (soundBakeBlep = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakeEnvelope: [() => soundBakeEnvelope, v => (soundBakeEnvelope = v)],
@@ -198,6 +200,19 @@ export function soundBakeEnvelope(data, rate, E) {
  * @returns {Float32Array} data
  */
 export function soundBakeBiquad(data, rate, type, freq, q = Math.SQRT1_2) {
+  return soundBakeRun(soundBakeBiquadSteps(data, rate, type, freq, q));
+}
+
+/**
+ * soundBakeBiquad as a bake's steps: yields every SOUND_BAKE_CHUNK samples
+ * @param {Float32Array} data
+ * @param {number} rate
+ * @param {'lowpass' | 'highpass' | 'bandpass'} type
+ * @param {number} freq
+ * @param {number} [q]
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakeBiquadSteps(data, rate, type, freq, q = Math.SQRT1_2) {
   const w = (2 * Math.PI * Math.min(freq, rate * 0.49)) / rate,
     cw = Math.cos(w),
     al = Math.sin(w) / (2 * q);
@@ -220,6 +235,7 @@ export function soundBakeBiquad(data, rate, type, freq, q = Math.SQRT1_2) {
     y2 = y1;
     y1 = y;
     data[i] = y;
+    if (i % SOUND_BAKE_CHUNK === SOUND_BAKE_CHUNK - 1) yield i;
   }
   return data;
 }
@@ -332,11 +348,24 @@ export function soundBakeLoop(data, loopStart, fade) {
   return data;
 }
 
-/** @param {Float32Array} d @param {number} peak scales d so its peak is `peak` */
-export function soundBakePeak(d, peak) {
+/**
+ * scales d so its peak is `peak`, in a bake's steps
+ * @param {Float32Array} d
+ * @param {number} peak
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakePeak(d, peak) {
   let m = 0;
-  for (let i = 0; i < d.length; i++) m = Math.max(m, Math.abs(d[i]));
-  if (m > 0) for (let i = 0; i < d.length; i++) d[i] *= peak / m;
+  for (let i = 0; i < d.length; i++) {
+    m = Math.max(m, Math.abs(d[i]));
+    if (i % (SOUND_BAKE_CHUNK * 4) === SOUND_BAKE_CHUNK * 4 - 1) yield i;
+  }
+  if (m > 0)
+    for (let i = 0; i < d.length; i++) {
+      d[i] *= peak / m;
+      if (i % (SOUND_BAKE_CHUNK * 4) === SOUND_BAKE_CHUNK * 4 - 1) yield i;
+    }
+  return d;
 }
 
 /**
@@ -365,13 +394,15 @@ export function* soundBakeZoneSteps(R, rate, z) {
       { t60, bright: R.bright, pick: R.pick, seed: R.seed },
       ambienceRandom(R.seed + z)
     );
-    soundBakeBiquad(data, rate, 'lowpass', R.tone, 0.6);
+    yield* soundBakeBiquadSteps(data, rate, 'lowpass', R.tone, 0.6);
     /* a 1.5 ms ramp in: the burst's first sample is never a click */
     const A = Math.round(rate * 0.0015);
     for (let i = 0; i < A; i++) data[i] *= i / A;
     loopStart = n - Math.round(loopOf(0.04));
     tau = t60 / 6.9;
   } else if (R.kind === 'fm') {
+    /* fm and osc zones render in one step (no instrument uses them yet: SND-11 slices them like the string when one
+       does) */
     const n = Math.round(R.sec * rate);
     data = soundBakeFm(f, rate, n, R);
     const k = -6.9 / (R.t60 * rate);
@@ -390,7 +421,7 @@ export function* soundBakeZoneSteps(R, rate, z) {
     tau = 0;
     yield 0;
   }
-  soundBakePeak(data, R.level);
+  yield* soundBakePeak(data, R.level);
   soundBakeLoop(data, loopStart, Math.min(Math.round(rate * 0.01), Math.floor((data.length - loopStart) / 2)));
   return { root, lo, hi, rate, data, loopStart, loopEnd: data.length, tau };
 }
@@ -462,7 +493,7 @@ export function* soundBakeImpulse(rate, o = {}) {
       d[i] = lp * env;
       if (i % SOUND_BAKE_CHUNK === 0) yield i;
     }
-    soundBakePeak(d, 0.9);
+    yield* soundBakePeak(d, 0.9);
     out.push(d);
   }
   return out;

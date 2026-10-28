@@ -220,13 +220,13 @@ function trackerRecipe(songs, name, run) {
 /* ---------- SND-9: the bank ----------
    Baked instruments (logic/sound-bake.js) as AudioBuffers, kept here at module level by (instrument, sample rate): a
    buffer plays in any context, so a second context (the Studio's, check-sound's) never bakes again. Every buffer is
-   made at its context's own rate. Baking runs zone by zone in setTimeout slices that stop after about 2.5 ms of work
+   made at its context's own rate. Baking runs zone by zone in setTimeout slices that stop after about 2 ms of work
    (iOS Safari has no requestIdleCallback), so no frame waits on it; each slice's time is kept for the debug log. The
    bank and the other baked buffers (the beds' noise, the tracker's noise, the reverb's impulse) stay within
    SOUND_BAKE_BUDGET together: past it the least recently played zone is dropped (a note then plays from the nearest
    zone left, and the dropped one is baked again) */
 const SOUND_BAKE_BUDGET = 6 * 1024 * 1024;
-const SOUND_BAKE_SLICE_MS = 2.5;
+const SOUND_BAKE_SLICE_MS = 2;
 /* SND-9: the reverb. One ConvolverNode (a phone's costliest node: one, short), made the first time something sends to
    it, so a song that never asks (all of today's: the future `gb` ensemble) never makes it. Its impulse: 1.2 s of
    stereo decaying noise (logic/sound-bake.js). A place changes how much is sent, not the room: open air, a town, a
@@ -249,6 +249,8 @@ const soundBakeBank = {
   dropped: 0,
   slices: 0,
   sliceMaxMs: 0,
+  /* the slowest single step (a slice can run over its budget by one step) */
+  stepMaxMs: 0,
   lastSlicesMs: [],
 };
 const soundBakeNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -297,11 +299,15 @@ function soundBakeSlice() {
     t0 = soundBakeNow();
   let job;
   while ((job = B.queue[0])) {
-    if (!job.it) job.it = job.make();
-    const r = job.it.next();
+    if (!job.it) ((job.it = job.make()), (job.ms = 0));
+    const s0 = soundBakeNow(),
+      r = job.it.next();
+    const step = soundBakeNow() - s0;
+    job.ms += step;
+    B.stepMaxMs = Math.max(B.stepMaxMs, step);
     if (r.done) {
       B.queue.shift();
-      job.keep(r.value);
+      job.keep(r.value, job.ms);
     }
     if (soundBakeNow() - t0 > SOUND_BAKE_SLICE_MS) break;
   }
@@ -389,6 +395,7 @@ function soundBakeStats() {
     queued: B.queue.length,
     slices: B.slices,
     sliceMaxMs: Math.round(B.sliceMaxMs * 100) / 100,
+    stepMaxMs: Math.round(B.stepMaxMs * 100) / 100,
     lastSlicesMs: B.lastSlicesMs.slice(),
   };
 }
