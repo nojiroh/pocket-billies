@@ -656,6 +656,8 @@ const PK7_GOOD = [
   { kind: 'recoil', share: 0.1, if: 'cat:H' },
   { kind: 'money', add: -15, when: 'arrive' },
   { kind: 'money', add: 20, when: 'arrive', every: 2 },
+  { kind: 'loot', what: 'item', when: 'arrive' },
+  { kind: 'loot', what: 'item', n: 3, when: 'arrive', if: 'place:town' },
 ];
 const PK7_BAD = [
   [{ kind: 'recoil', share: 0.6 }, 'share: a share of HP above 0, at most 0.5'],
@@ -664,6 +666,10 @@ const PK7_BAD = [
   [{ kind: 'money', add: -15 }, 'a money add needs a moment (arrive)'],
   [{ kind: 'money', add: -15, mult: 1.2, when: 'arrive' }, 'a money add has no mult'],
   [{ kind: 'money', add: -15, when: 'win' }, "a money row can't act at win"],
+  [{ kind: 'loot', what: 'gold', when: 'arrive' }, 'what: item (effects.js FX_LOOT)'],
+  [{ kind: 'loot', what: 'item', n: 4, when: 'arrive' }, 'n: a whole number of cards from 1 to 3'],
+  [{ kind: 'loot', what: 'item' }, 'a loot row needs a moment (arrive)'],
+  [{ kind: 'loot', what: 'item', when: 'win' }, "a loot row can't act at win"],
 ];
 test('PK-7: dataPerks and the schema take Fine Print’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

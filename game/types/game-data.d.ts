@@ -2056,7 +2056,9 @@ export type FxKindRow =
   /** PK-6: stands for the rows of the Perk just above it in the list held (never itself or another copier) */
   | { kind: 'copy' }
   /** PK-7: an attack of yours that deals damage costs its user this share of its HP */
-  | { kind: 'recoil'; share: number };
+  | { kind: 'recoil'; share: number }
+  /** PK-7: n (1-3) of the reward picks' item cards (rewards.json), drawn by weight, at its moment (arrive) */
+  | { kind: 'loot'; what: 'item'; n?: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

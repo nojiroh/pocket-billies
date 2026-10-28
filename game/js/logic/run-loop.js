@@ -29,7 +29,7 @@ import {
   fxStateful,
   unlockOpen,
 } from '../hooks.js';
-import { BANTER, BOSSES, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
+import { BANTER, BOSSES, ITEMS, PYRAMIDS, REWARDS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
 import { billyTypes, healAll, maxHp, plural, speciesStep } from './rules.js';
@@ -78,6 +78,8 @@ expose({
   runKept: [() => runKept],
   // @ts-expect-error -- replaced on purpose
   runLeaderTeam: [() => runLeaderTeam, v => (runLeaderTeam = v)],
+  // @ts-expect-error -- replaced on purpose
+  runLoot: [() => runLoot, v => (runLoot = v)],
   // @ts-expect-error -- replaced on purpose
   runPayoutRows: [() => runPayoutRows, v => (runPayoutRows = v)],
   // @ts-expect-error -- replaced on purpose
@@ -164,6 +166,13 @@ export function runFxMoment(s, perks, when, more, only) {
       if (f.add > 0) money += f.add;
       else cost -= f.add;
     }
+    /* PK-7: a loot row: n of the reward picks' item cards, drawn by weight (Subscription Box) */
+    if (f.kind === 'loot')
+      for (const [id, n] of Object.entries(runLoot(s, f))) {
+        if (id.startsWith('coin_')) s.pyramids[id.slice(5)] = (s.pyramids[id.slice(5)] || 0) + n;
+        else s.items[id] = (s.items[id] || 0) + n;
+        items[id] = (items[id] || 0) + n;
+      }
     /* PK-6: Boarding Pass */
     if (f.kind === 'give') {
       money += f.money || 0;
@@ -179,12 +188,38 @@ export function runFxMoment(s, perks, when, more, only) {
   s.se -= cost;
   return { rows, hp, money, cost, items };
 }
-/** PK-6: what a moment gave, in words ("150 Moneys and 2 Potions"; '' for nothing) @param {{ money: number,
- * items?: Record<string, number> }} m */
+/** PK-7: what a loot row brings as it acts: its n cards drawn by weight, none twice, from rewards.json's item cards
+ * (Bag items and pyramids, each with its stack), from the run's own stream for this row and this place
+ * (rngFrom(run.seed, 'loot|<source>/<row>|<places visited>')), so a reload brings the same. By id; a pyramid as
+ * 'coin_<id>' (as a reward card names it) @param {SaveData} s @param {any} f @returns {Record<string, number>} */
+export function runLoot(s, f) {
+  const run = /** @type {Run} */ (s.run),
+    cards = Object.values(/** @type {Record<string, any>} */ (REWARDS || {})).filter(
+      R => R.kind === 'item' && R.weight > 0 && (R.item || R.pyramid)
+    ),
+    g = rngFrom(run.seed, `loot|${f.src}/${f.row || 0}|${(run.path || []).length}`),
+    /** @type {Record<string, number>} */
+    out = {};
+  let left = cards.map((R, i) => i);
+  for (let k = 0; k < (f.n || 1) && left.length; k++) {
+    const i = +g.pick(Object.fromEntries(left.map(j => [j, cards[j].weight]))),
+      R = cards[i],
+      id = R.pyramid ? 'coin_' + R.pyramid : R.item;
+    out[id] = (out[id] || 0) + (R.n || 1);
+    left = left.filter(j => j !== i);
+  }
+  return out;
+}
+/** PK-6: what a moment gave, in words ("150 Moneys and 2 Potions"; '' for nothing); PK-7: pyramids by name too
+ * @param {{ money: number, items?: Record<string, number> }} m */
 export function runGaveText(m) {
+  const name = (/** @type {string} */ id) =>
+    id.startsWith('coin_')
+      ? (PYRAMIDS[id.slice(5)] && PYRAMIDS[id.slice(5)].n) || id.slice(5)
+      : (ITEMS[id] && ITEMS[id].n) || id;
   const L = [
     ...(m.money > 0 ? [plural(m.money, 'Money')] : []),
-    ...Object.entries(m.items || {}).map(([id, n]) => plural(n, (ITEMS[id] && ITEMS[id].n) || id)),
+    ...Object.entries(m.items || {}).map(([id, n]) => plural(n, name(id))),
   ];
   return L.length > 1 ? L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1] : L.join('');
 }
@@ -217,7 +252,8 @@ export const runBuyFx = (s, perks, price = 0) => {
  * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none). PK-1: the
  * heal rows whose conditions hold here, then the arrive moment's rows. PK-5: `out.money` gets the Moneys its money
  * share rows paid (Tip Jar); PK-7: `out.cost` what they charged (Subscription Box) @param {SaveData} s
- * @param {Record<string, any>} perks perks.json @param {{ money?: number, cost?: number }} [out] */
+ * @param {Record<string, any>} perks perks.json
+ * @param {{ money?: number, cost?: number, items?: Record<string, number> }} [out] */
 export function runArriveFx(s, perks, out) {
   /* RL-12b: an event's boons count one place down first (logic/run-enc.js) */
   if (s.run) encArrive(s.run);
@@ -227,8 +263,9 @@ export function runArriveFx(s, perks, out) {
     m = runFxMoment(s, perks, 'arrive');
   if (out) {
     out.money = m.money;
-    /* PK-7: what the Perks charged (Subscription Box) */
+    /* PK-7: what the Perks charged, and what their loot rows brought (Subscription Box) */
     out.cost = m.cost;
+    out.items = m.items;
   }
   return healed + m.hp;
 }

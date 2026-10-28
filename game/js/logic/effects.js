@@ -48,6 +48,8 @@
              copier; the rows count as the copier's own, src its id)
      recoil  an attack of yours that deals damage costs its user this share of its HP (PK-7, battle-engine.js
              fxRecoilHurt; Overclock Chip)
+     loot    n of the reward picks' item cards (rewards.json), drawn by weight, at its moment (`when: arrive`;
+             Subscription Box) (PK-7, run-loop.js runLoot)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -78,6 +80,8 @@ expose({
   FX_IMMUNE: [() => FX_IMMUNE],
   FX_KINDS: [() => FX_KINDS],
   FX_LIMIT: [() => FX_LIMIT],
+  FX_LOOT: [() => FX_LOOT],
+  FX_LOOT_N: [() => FX_LOOT_N],
   FX_ONCE: [() => FX_ONCE],
   FX_PASSIVE_KEYS: [() => FX_PASSIVE_KEYS],
   FX_PER: [() => FX_PER],
@@ -194,6 +198,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'copy',
   'give',
   'recoil',
+  'loot',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -586,6 +591,11 @@ export function fxSalvage(fx, S) {
         scrapPerBot: Math.round(S.scrapPerBot * k),
       };
 }
+
+/** PK-7: what a loot row brings (the reward picks' item cards, rewards.json) */
+export const FX_LOOT = /** @type {const} */ (['item']);
+/** PK-7: the most cards one loot row brings */
+export const FX_LOOT_N = 3;
 
 /** PK-5: what a refund row gives back (a pyramid thrown that missed) */
 export const FX_REFUND = /** @type {const} */ (['pyramid']);

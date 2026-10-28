@@ -161,3 +161,49 @@ test('PK-7 money add: walking in pays its Moneys, or charges them below 0 (never
   /* a battle's money ignores an add row */
   assert.equal(fn('fxMoney')([{ kind: 'money', add: -15, when: 'arrive', src: 'x' }], 100), 100);
 });
+
+/* ---------- loot ---------- */
+
+test('PK-7 loot: walking in brings n of the reward picks’ item cards by weight, the same on a reload; none without the row', () => {
+  const L = modules['run-loop'],
+    { P } = perks(
+      { id: 'test_box', name: 'Test Box', fx: [{ kind: 'loot', what: 'item', when: 'arrive' }] },
+      { id: 'test_crate', name: 'Test Crate', fx: [{ kind: 'loot', what: 'item', n: 3, when: 'arrive' }] }
+    );
+  const cards = Object.values(data.REWARDS).filter(R => R.kind === 'item' && R.weight > 0),
+    ids = new Set(cards.map(R => (R.pyramid ? 'coin_' + R.pyramid : R.item)));
+  const walk = (ids0, visited) => {
+    reseed(3);
+    const s = startedSave(ofType('Water'), 30);
+    s.run = modules['run-state'].newRun('FINELOOT01', 1, 1, { team: [] });
+    s.run.perks = ids0;
+    s.run.path = Array.from({ length: visited }, (_, i) => i);
+    const bag = JSON.stringify([s.items, s.pyramids]),
+      out = {};
+    L.runArriveFx(s, P, out);
+    return { out: out.items || {}, same: bag === JSON.stringify([s.items, s.pyramids]), s };
+  };
+  const a = walk(['test_box'], 3);
+  assert.equal(Object.keys(a.out).length, 1, 'one card');
+  for (const [id, n] of Object.entries(a.out)) {
+    assert.ok(ids.has(id), `${id} is a reward pick's item card`);
+    const R = cards.find(c => (c.pyramid ? 'coin_' + c.pyramid : c.item) === id);
+    assert.equal(n, R.n || 1, 'with its stack');
+    if (id.startsWith('coin_')) assert.ok(a.s.pyramids[id.slice(5)] >= n);
+    else assert.ok(a.s.items[id] >= n);
+  }
+  assert.equal(a.same, false, 'into the bag');
+  assert.deepEqual(walk(['test_box'], 3).out, a.out, 'the same place brings the same (a reload)');
+  /* over many places every card turns up, and three at once are three different cards */
+  const seen = new Set();
+  for (let v = 0; v < 120; v++) for (const id of Object.keys(walk(['test_box'], v).out)) seen.add(id);
+  assert.deepEqual([...seen].sort(), [...ids].sort());
+  assert.equal(Object.keys(walk(['test_crate'], 5).out).length, 3);
+  /* none held: nothing */
+  const none = walk([], 3);
+  assert.deepEqual(none.out, {});
+  assert.equal(none.same, true);
+  /* what it brought, in words: pyramids by name */
+  assert.match(L.runGaveText({ money: 0, items: { coin_step_pyramid: 2 } }), /^2 \S/);
+  assert.doesNotMatch(L.runGaveText({ money: 0, items: { coin_step_pyramid: 2 } }), /coin_/);
+});

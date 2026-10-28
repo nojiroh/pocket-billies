@@ -53,6 +53,8 @@ import {
   FX_IMMUNE,
   FX_KINDS,
   FX_LIMIT,
+  FX_LOOT,
+  FX_LOOT_N,
   FX_ONCE,
   FX_PASSIVE_KEYS,
   FX_PER,
@@ -2261,6 +2263,14 @@ export function fxKindProblems(f, at, D, problem) {
         problem(`${at}.items.${id}: a whole number from 1 to 99`);
     }
   }
+  /* PK-7: a loot row brings 1 to FX_LOOT_N of the reward picks' item cards, at its moment (Subscription Box) */
+  if (f.kind === 'loot') {
+    if (!(/** @type {readonly string[]} */ (FX_LOOT).includes(f.what)))
+      problem(`${at}.what: ${FX_LOOT.join(', ')} (effects.js FX_LOOT)`);
+    if (f.n != null && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= FX_LOOT_N))
+      problem(`${at}.n: a whole number of cards from 1 to ${FX_LOOT_N} (effects.js FX_LOOT_N)`);
+    if (f.when == null) problem(`${at}.when: a loot row needs a moment (arrive)`);
+  }
   /* PK-5: a free row acts at a purchase (Punch Card) */
   if (f.kind === 'free' && f.when == null) problem(`${at}.when: a free row needs a moment (buy)`);
   /* PK-5: what a missed throw gives back, at that moment */
@@ -2377,6 +2387,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   free: ['buy'],
   /* PK-6: Moneys and items when the Perk is taken */
   give: ['take'],
+  /* PK-7: a random item on walking into a place */
+  loot: ['arrive'],
   /* PK-5: a missed throw's pyramid back */
   refund: ['throwMiss'],
 });

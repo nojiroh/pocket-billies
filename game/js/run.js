@@ -42,7 +42,14 @@ import { runByExpedition, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
 import { runCardHome } from './logic/run-card.js';
 import { runWorldData } from './logic/run-world-data.js';
-import { runArriveFx, runBattleExtra, runRelease, runReleasePays, runWareHeals } from './logic/run-loop.js';
+import {
+  runArriveFx,
+  runBattleExtra,
+  runGaveText,
+  runRelease,
+  runReleasePays,
+  runWareHeals,
+} from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
 import { boardPlan, boardPlayed } from './logic/daily.js';
 import { runRecord } from './logic/run-record.js';
@@ -759,11 +766,14 @@ function runBattleAgain() {
 export const runClinicEach = () => fxRunPrice(saveData.run, PERKS, 'heal', RULES.run.healCost);
 /** walking into a place on a run: a Perk's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
-  const out = { money: 0, cost: 0 },
+  const out = { money: 0, cost: 0, items: {} },
     gained = runArriveFx(saveData, PERKS, out);
   if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
   /* PK-5: a money share row (Tip Jar) */
   if (out.money > 0) toast(`Your Perks paid out: ${plural(out.money, 'Money')}.`);
+  /* PK-7: a loot row's items (Subscription Box) */
+  const got = runGaveText({ money: 0, items: out.items });
+  if (got) toast(`Your Perks brought you ${got}.`);
   /* PK-7: a money row that charges (Subscription Box) */
   if (out.cost > 0) toast(`Your Perks charged you ${plural(out.cost, 'Money')}.`);
   /* TW-3: a parcel delivered (quest-board.js) */
