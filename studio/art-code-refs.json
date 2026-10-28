@@ -1784,6 +1784,9 @@
    "game/js/unit-card.js:172",
    "game/js/unit-card.js:178"
   ],
+  "key": [
+   "game/js/logic/music-studio.js:114"
+  ],
   "leaf": [
    "game/js/battle.js:356",
    "game/js/boot.js:137",
@@ -1865,6 +1868,7 @@
    "game/js/walk/quality-cull.js:185"
   ],
   "scale": [
+   "game/js/logic/music-studio.js:115",
    "game/js/logic/ui-dials.js:219"
   ],
   "sheet": [
@@ -1938,7 +1942,7 @@
    "game/js/logic/marks.js:109",
    "game/js/logic/music-patterns.js:41",
    "game/js/logic/music-patterns.js:93",
-   "game/js/logic/music-studio.js:71",
+   "game/js/logic/music-studio.js:75",
    "game/js/logic/online-legal.js:242",
    "game/js/person-art.js:802",
    "game/js/person-art.js:881",
