@@ -2,6 +2,33 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Clean-up track CU lane R - the root like a game repo's: LICENSE, CREDITS, CONTRIBUTING, editor and git attributes, PR template - 2026-10-28
+Branch `track/cleanup` (origin/main merged first: already up to date). The owner's answers and the plan were approved
+before the session; no questions asked. Facts checked against the branch: all held (the fonts' copyright lines, Lit
+3.3.3 BSD-3-Clause, the KayKit record, 60 layout paths all present, 0 CRLF files). No live branch changes README.md,
+boot.js, friends.js or any new root file (the section 3 check, 11 open PRs plus every `track/*`).
+- Changed: LICENSE (all rights reserved; outside parts keep theirs); CREDITS.md (the six OFL fonts with their copyright
+  lines, Lit 3.3.3, KayKit by Kay Lousberg, CC0); CONTRIBUTING.md (README's "Contribute" moved whole, plus "Where things
+  are decided": CLAUDE.md, BRANCHES, TESTING, NAMING, ROADMAP/phases/HANDOFF); .editorconfig (utf-8, LF, final newline,
+  2 spaces for js/mjs/css/html/json/ts, 4 for py, md keeps trailing spaces); .gitattributes (`* text=auto eol=lf`, 9
+  binary types); .github/pull_request_template.md (the HANDOFF headings). README: line 1 untouched; "Contribute" is two
+  lines pointing at CONTRIBUTING and CREDITS; a "Licence" section; "Propose changes" (not "Save to game"); the legacy
+  changelog is "on the `legacy` branch (its README holds the old changelog)"; the layout lists the root files and
+  `game/vendor/`. CONTRIBUTING's `npm test` time: about two minutes in a cloud container (was 20 s). Two game messages:
+  boot.js (opened from disk) "...need a local web server (README: Run it from the source)."; friends.js "...the updated
+  database rules (firebase/firestore.rules)." Prettier put boot.js's shorter setTimeout on one line (same commit).
+- Found (not changed): game/js/art.js says "Open the game through a local web server (see README)": correct, left.
+  Markdown isn't in `format:check` (README already differs from Prettier's table style), so CREDITS keeps the repo's
+  compact tables. The track's other lanes' files untouched.
+- Risky: low. The two messages are text only. .gitattributes renormalises nothing today; a future CRLF file will be
+  stored as LF. .editorconfig has no max line length on purpose (many lines run past 300 characters).
+- Verified: `git add --renormalize .` leaves nothing to commit; version-source.test.mjs 4/4; `npm run lint`,
+  `typecheck`, `check:modules` (383 modules, 0 changed), `format:check`, `check:data` (179 files), `build` all clean;
+  `npm test` 1,924/1,924 (2 min 53 s).
+- For the owner on the phone: nothing to see in the game (the two messages show only when opened from disk or with old
+  Firestore rules). On GitHub: the repo page now shows the licence and the PR form fills with the HANDOFF headings.
+- For round 2: nothing deferred. Next: lanes S, D, T, then round 2.
+
 ### Clean-up track CU-0 - the plan: a tidy main laid out like a game repo, no "placeholder" or "AI" in the Studio - 2026-10-28
 Branch `ccr-4d35b293-6rc24z` (the cloud session's own; main fast-forwarded to 3f559c3b first). Plan approved in Plan
 Mode. Docs only: the plan, research and three read-only audits; nothing deleted or renamed yet. `track/cleanup` made
