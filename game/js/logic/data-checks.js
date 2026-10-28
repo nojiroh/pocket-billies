@@ -2310,6 +2310,8 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   sideFind: [1, 2, 'finds'],
   /* PK-6: an event's hurt does nothing (Ten-Foot Pole) */
   eventHurt: [1, 1, 'times (it is on or off)'],
+  /* PK-7: no Perk held can be let go (Non-Refundable Ticket) */
+  noDrop: [1, 1, 'times (it is on or off)'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];

@@ -11,7 +11,7 @@ import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
 import { PERKS, RULES } from './game-data.js';
 import { rarityTier } from './logic/marks.js';
-import { perkCap, perkChoose, perkCount, perkDropOk } from './logic/perks.js';
+import { perkCap, perkChoose, perkCount, perkDropOk, perkNoDrop } from './logic/perks.js';
 import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
@@ -75,6 +75,8 @@ export function perkPickOpen(o) {
   const ids = run.offer.filter(id => PERKS[id]),
     /* PK-7: the run's cap (PK-6's cap rows: Accordion File), as the "Let one go" sheet and the Perks tab say */
     cap = perkCap(run, RULES.run.perks, PERKS),
+    /* PK-7: a noDrop row (Non-Refundable Ticket) */
+    stuck = perkNoDrop(run, PERKS),
     /* UI-16a: the first time this offer shows, its cards come face down and turn over one by one */
     flipKey = `perk:${ids.join(',')}`,
     flip = pbFlipFresh(flipKey),
@@ -83,7 +85,7 @@ export function perkPickOpen(o) {
     title: 'Pick a Perk',
     cls: 'relic-pick',
     lock: true,
-    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${cap}.${run.perks.length >= cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => (flip ? perkCardHTML(id, false).replace('<pb-pick-card ', '<pb-pick-card facedown dealt ') : perkCardHTML(id, id === sel))).join('')}</div>`,
+    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${cap}.${run.perks.length >= cap ? (stuck ? ` ${escapeHtml(PERKS[stuck] ? PERKS[stuck].name : stuck)} says you can never let one go.` : ' Taking one means letting another go.') : ''}</p><div class="relic-cards">${ids.map(id => (flip ? perkCardHTML(id, false).replace('<pb-pick-card ', '<pb-pick-card facedown dealt ') : perkCardHTML(id, id === sel))).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: !sel, f: () => perkPickTake(/** @type {string} */ (sel)) },
       { l: ids.length > 1 ? 'Take none' : 'Leave it', c: 'quiet', f: () => perkPickDone(null) },
@@ -136,17 +138,20 @@ function perkPickDone(id, drop) {
 
 /* ---------- past the cap: let one go ---------- */
 /**
- * Which Perk to let go for `id`: the held ones as cards; a tap answers `then(itsId)`; "Keep them" goes `back`.
+ * Which Perk to let go for `id`: the held ones as cards; a tap answers `then(itsId)`; "Keep them" goes `back`. PK-7:
+ * with a noDrop row held (Non-Refundable Ticket) it says none can go and shows no card.
  * @param {string} id @param {(drop: string) => void} then @param {() => void} back
  */
 function perkDropOpen(id, then, back) {
   const run = saveData.run;
   if (!run || !PERKS[id]) return;
+  /* PK-7: a noDrop row (Non-Refundable Ticket): none can go, so the new one can't be taken */
+  const stuck = perkNoDrop(run, PERKS);
   perkSheet({
     title: 'Let one go',
     cls: 'relic-drop',
     lock: true,
-    html: `<p>You can hold ${perkCap(run, RULES.run.perks, PERKS)} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.perks
+    html: `<p>You can hold ${perkCap(run, RULES.run.perks, PERKS)} Perks. ${stuck ? `${escapeHtml(PERKS[stuck] ? PERKS[stuck].name : stuck)} says you can never let one go, so ${escapeHtml(PERKS[id].name)} can’t be taken.` : `Tap one to let it go for ${escapeHtml(PERKS[id].name)}.`}</p><div class="relic-cards">${run.perks
       /* PK-6: not one whose going would leave too many held (Accordion File at the cap it raises) */
       .filter(k => PERKS[k] && perkDropOk(run, k, id, PERKS, RULES.run.perks))
       .map(k => perkCardHTML(k, false, 36, run))

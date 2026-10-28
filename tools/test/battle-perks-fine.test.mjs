@@ -207,3 +207,60 @@ test('PK-7 loot: walking in brings n of the reward picks’ item cards by weight
   assert.match(L.runGaveText({ money: 0, items: { coin_step_pyramid: 2 } }), /^2 \S/);
   assert.doesNotMatch(L.runGaveText({ money: 0, items: { coin_step_pyramid: 2 } }), /coin_/);
 });
+
+/* ---------- rule noDrop, with cap and copy ---------- */
+
+test('PK-7 rule noDrop: no Perk held can be let go, so at the cap nothing more is taken; with cap rows and a copier', () => {
+  const PK = modules.perks,
+    { P } = perks(
+      {
+        id: 'test_ticket',
+        name: 'Test Ticket',
+        fx: [
+          { kind: 'rule', rule: 'cap', n: 2 },
+          { kind: 'rule', rule: 'noDrop', n: 1 },
+        ],
+      },
+      { id: 'test_file', name: 'Test File', fx: [{ kind: 'rule', rule: 'cap', n: 1 }] },
+      { id: 'test_copier', name: 'Test Copier', fx: [{ kind: 'copy' }] }
+    );
+  withPerks(P, () => {
+    const fill = Object.keys(data.PERKS).filter(
+        k =>
+          !k.startsWith('test') &&
+          !data.PERKS[k].fx.some(f => f.kind === 'copy' || (f.kind === 'rule' && f.rule === 'cap'))
+      ),
+      r = runOf();
+    for (const id of fill.slice(0, RULE.cap)) assert.equal(PK.perkTake(r, id, data.PERKS, RULE), '');
+    assert.equal(PK.perkNoDrop(r, data.PERKS), '');
+    /* taking the Ticket at the cap lets one go (nothing says no yet) */
+    assert.equal(PK.perkTake(r, 'test_ticket', data.PERKS, RULE, fill[0]), '');
+    assert.equal(PK.perkNoDrop(r, data.PERKS), 'test_ticket');
+    assert.equal(PK.perkCap(r, RULE, data.PERKS), RULE.cap + 2);
+    /* two more fit, then none: nothing can be let go, not even the Ticket */
+    assert.equal(PK.perkTake(r, fill[RULE.cap], data.PERKS, RULE), '');
+    assert.equal(PK.perkTake(r, 'test_file', data.PERKS, RULE), '');
+    assert.equal(PK.perkCap(r, RULE, data.PERKS), RULE.cap + 3, 'Ticket and File together');
+    assert.equal(PK.perkTake(r, fill[RULE.cap + 1], data.PERKS, RULE), '');
+    assert.equal(r.perks.length, RULE.cap + 3);
+    assert.equal(PK.perkTake(r, fill[RULE.cap + 2], data.PERKS, RULE), 'full');
+    for (const k of r.perks) {
+      assert.equal(PK.perkDropOk(r, k, fill[RULE.cap + 2], data.PERKS, RULE), false, k);
+      assert.equal(PK.perkTake(r, fill[RULE.cap + 2], data.PERKS, RULE, k), 'noDrop', k);
+    }
+    /* a pick at the cap can still be answered with none */
+    r.offer = [fill[RULE.cap + 2]];
+    assert.equal(PK.perkChoose(r, fill[RULE.cap + 2], data.PERKS, RULE, r.perks[1]), 'noDrop');
+    assert.equal(PK.perkChoose(r, null, data.PERKS, RULE), '');
+    /* a copier just below the Ticket copies its cap and its rule: one more held, still none let go */
+    const c = runOf(...fill.slice(0, 3), 'test_ticket', 'test_copier');
+    assert.equal(PK.perkCap(c, RULE, data.PERKS), RULE.cap + 4);
+    assert.equal(PK.perkNoDrop(c, data.PERKS), 'test_ticket');
+    /* under another Perk the copier copies that one, and the Ticket alone says no */
+    const d = runOf('test_ticket', fill[0], 'test_copier');
+    assert.equal(PK.perkCap(d, RULE, data.PERKS), RULE.cap + 2);
+    assert.equal(PK.perkNoDrop(d, data.PERKS), 'test_ticket');
+    /* the copier alone under the Ticket, the Ticket gone: nothing */
+    assert.equal(PK.perkNoDrop(runOf(fill[0], 'test_copier'), data.PERKS), '');
+  });
+});

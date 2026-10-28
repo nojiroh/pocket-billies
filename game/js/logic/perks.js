@@ -27,7 +27,7 @@ import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
 import { runFxMoment, runGaveText } from './run-loop.js';
-import { fxCond, fxCopyOf, fxPerkRows, fxRunRule } from './effects.js';
+import { fxAt, fxCond, fxCopyOf, fxOfRun, fxPerkRows, fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -43,6 +43,8 @@ expose({
   perkDropOk: [() => perkDropOk, v => (perkDropOk = v)],
   // @ts-expect-error -- replaced on purpose
   perkFits: [() => perkFits, v => (perkFits = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkNoDrop: [() => perkNoDrop, v => (perkNoDrop = v)],
   perkOffer: [() => perkOffer],
   // @ts-expect-error -- replaced on purpose
   perkOfferMake: [() => perkOfferMake, v => (perkOfferMake = v)],
@@ -211,12 +213,19 @@ export function perkShelf(run, i, day, perks, rule, team) {
  * Photocopier below one copies it), at least 1. The Perks held count, so letting a cap Perk go lowers it at once
  * @param {Run | null | undefined} run @param {PerkRules} rule @param {Record<string, Perk>} perks */
 export const perkCap = (run, rule, perks) => Math.max(1, rule.cap + (run ? fxRunRule(run, 'cap', perks) : 0));
+/** PK-7: the Perk whose noDrop rule row says no Perk held can be let go (Non-Refundable Ticket; a Photocopier just below
+ * it copies that too), or '' when none does @param {Run | null | undefined} run @param {Record<string, Perk>} perks */
+export function perkNoDrop(run, perks) {
+  const fx = run ? fxOfRun(run, perks) : null,
+    f = fx && fxAt(fx, {}, { run: run && run.perkState }).find(r => r.kind === 'rule' && r.rule === 'noDrop');
+  return f && f.n > 0 ? f.src : '';
+}
 /** PK-6: may `drop` be let go for `id`: with `id` in its place the run still holds no more than its cap (letting
- * Accordion File go at 7 held would leave 7 over a cap of 6) @param {Run} run @param {string} drop @param {string} id
- * @param {Record<string, Perk>} perks @param {PerkRules} rule */
+ * Accordion File go at 7 held would leave 7 over a cap of 6); PK-7: never while a noDrop row is held (perkNoDrop)
+ * @param {Run} run @param {string} drop @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule */
 export function perkDropOk(run, drop, id, perks, rule) {
   const at = run.perks.indexOf(drop);
-  if (at < 0) return false;
+  if (at < 0 || perkNoDrop(run, perks)) return false;
   const after = run.perks.slice();
   after[at] = id;
   return after.length <= perkCap({ ...run, perks: after }, rule, perks);
@@ -228,7 +237,8 @@ export const perkPrice = (R, rule) => rule.price[R.rarity] || 0;
 /**
  * Hold a Perk: '' when done, or why not: 'none' (no such Perk), 'held' (already), 'full' (at the cap and no
  * `drop` given), 'drop' (`drop` isn't held), 'cap' (PK-6: letting `drop` go would leave more than the cap:
- * perkDropOk). With `drop`, it takes that one's place. PK-1: with the save it is
+ * perkDropOk), 'noDrop' (PK-7: a noDrop rule is held: none can be let go, perkNoDrop). With `drop`, it takes that
+ * one's place. PK-1: with the save it is
  * taken on (`s`, s.run being `run`), its rows of the take moment act (run-loop.js runFxMoment)
  * @param {Run} run @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string} [drop]
  * @param {any} [s]
@@ -239,6 +249,8 @@ export function perkTake(run, id, perks, rule, drop, s) {
   if (drop != null) {
     const at = run.perks.indexOf(drop);
     if (at < 0) return 'drop';
+    /* PK-7: Non-Refundable Ticket: nothing held is ever let go */
+    if (perkNoDrop(run, perks)) return 'noDrop';
     /* PK-6: never left over the cap (a cap Perk let go) */
     if (!perkDropOk(run, drop, id, perks, rule)) return 'cap';
     run.perks[at] = id;

@@ -529,7 +529,7 @@ const PK4_BAD = [
   [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
   [
     { kind: 'rule', rule: 'luck', n: 1 },
-    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind, eventHurt (effects.js FX_RULES)',
+    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind, eventHurt, noDrop (effects.js FX_RULES)',
   ],
   [{ kind: 'rule', rule: 'forecastDays', n: 20 }, 'n: a whole number of days from 1 to 14'],
   [{ kind: 'rule', rule: 'forecastDays', n: 3, if: 'lead' }, 'a rule row is read where no battle'],
@@ -658,6 +658,7 @@ const PK7_GOOD = [
   { kind: 'money', add: 20, when: 'arrive', every: 2 },
   { kind: 'loot', what: 'item', when: 'arrive' },
   { kind: 'loot', what: 'item', n: 3, when: 'arrive', if: 'place:town' },
+  { kind: 'rule', rule: 'noDrop', n: 1 },
 ];
 const PK7_BAD = [
   [{ kind: 'recoil', share: 0.6 }, 'share: a share of HP above 0, at most 0.5'],
@@ -670,6 +671,7 @@ const PK7_BAD = [
   [{ kind: 'loot', what: 'item', n: 4, when: 'arrive' }, 'n: a whole number of cards from 1 to 3'],
   [{ kind: 'loot', what: 'item' }, 'a loot row needs a moment (arrive)'],
   [{ kind: 'loot', what: 'item', when: 'win' }, "a loot row can't act at win"],
+  [{ kind: 'rule', rule: 'noDrop', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
 ];
 test('PK-7: dataPerks and the schema take Fine Print’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

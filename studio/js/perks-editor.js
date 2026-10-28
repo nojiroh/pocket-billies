@@ -148,6 +148,11 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     () => 'Finds more on each side area’s route or arena (at most 2; they show at once when taken).',
   ],
   eventHurt: ['Events never cost your team HP', () => 'On (1): an event’s hurt command does nothing.'],
+  /* PK-7: Non-Refundable Ticket */
+  noDrop: [
+    'No Perk held can be let go',
+    () => 'On (1): at the cap no new Perk can be taken (the “Let one go” sheet offers none).',
+  ],
 });
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
