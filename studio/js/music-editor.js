@@ -61,6 +61,7 @@ import { legacyLoad, legacyView } from './legacy-view.js';
 expose({
   MUSIC_CRY_PREVIEW: [() => MUSIC_CRY_PREVIEW],
   MUSIC_JINGLE_BPM: [() => MUSIC_JINGLE_BPM],
+  MUSIC_JINGLE_LINES: [() => MUSIC_JINGLE_LINES],
   MUSIC_NATURE: [() => MUSIC_NATURE],
   MUSIC_SCAPE_AT: [() => MUSIC_SCAPE_AT],
   MUSIC_SCAPE_HEIGHT: [() => MUSIC_SCAPE_HEIGHT],
@@ -81,6 +82,7 @@ expose({
   musicInstrumentPlay: [() => musicInstrumentPlay, v => (musicInstrumentPlay = v)],
   musicInstrumentsHTML: [() => musicInstrumentsHTML, v => (musicInstrumentsHTML = v)],
   musicJingleHTML: [() => musicJingleHTML, v => (musicJingleHTML = v)],
+  musicJingleLine: [() => musicJingleLine],
   musicJingleMount: [() => musicJingleMount, v => (musicJingleMount = v)],
   musicJinglePlay: [() => musicJinglePlay, v => (musicJinglePlay = v)],
   musicJingleSelected: [() => musicJingleSelected],
@@ -135,6 +137,7 @@ export const musicStudio = {
   shown: '',
   /** the where rule last moved, added or shown (marked in the table) */ picked: -1,
   /** the line the hook roll edits: hook, counter or (SND-5) intro */ line: 'hook',
+  /** SND-17: the line the jingle roll edits: the tune (notes), harmony, bass or perc */ jline: 'notes',
   /** Try a place: where you are, made up */
   tryState: /** @type {Record<string, any>} */ ({
     started: true,
@@ -381,7 +384,7 @@ function musicRollRows(key, scale, base, span) {
 /**
  * draw a roll and let it be edited
  * @param {HTMLCanvasElement} cv
- * @param {{steps: number, rows: number[], home?: number, notes: number[][], ghost?: number[][], labels?: string[], onChange: (notes: number[][]) => void, onNote?: (midi: number) => void}} o
+ * @param {{steps: number, rows: number[], home?: number, notes: number[][], ghost?: number[][], labels?: string[], poly?: boolean, onChange: (notes: number[][]) => void, onNote?: (midi: number) => void}} o
  */
 function musicRollMount(cv, o) {
   const W = ROLL_LEFT + o.steps * ROLL_CELL_W,
@@ -441,8 +444,9 @@ function musicRollMount(cv, o) {
     if (st < 0 || st >= o.steps || row < 0 || row >= o.rows.length) return null;
     return { st, midi: o.rows[o.rows.length - 1 - row] };
   };
-  /* a note written over others: the ones it overlaps go */
-  const place = n => notes.filter(m => m === n || m[0] + m[2] <= n[0] || m[0] >= n[0] + n[2]);
+  /* a note written over others: the ones it overlaps go (SND-17: o.poly, only on its own row: chords, kit hits) */
+  const place = n =>
+    notes.filter(m => m === n || (o.poly && m[1] !== n[1]) || m[0] + m[2] <= n[0] || m[0] >= n[0] + n[2]);
   cv.addEventListener('pointerdown', ev => {
     const c = cell(ev);
     if (!c) return;
@@ -582,6 +586,14 @@ ACTIONS.musHookFromTune = () => {
    game plays them at 150 bpm on a 25 % pulse with a triangle an octave down (the level up at 180 in battle). SND-6: a
    jingle may set its own tempo and wave (the run's beats do; sound.js jinglePlay) */
 const MUSIC_JINGLE_BPM = 150;
+/* SND-17: the lines a jingle's roll edits, with the rows each shows ([lowest midi, semitones up]) */
+const MUSIC_JINGLE_LINES = [
+  ['notes', 'Tune', 60, 31],
+  ['harmony', 'Harmony', 48, 31],
+  ['bass', 'Bass', 31, 31],
+  ['perc', 'Perc', 35, 25],
+];
+const musicJingleLine = () => (MUSIC_JINGLE_LINES.some(L => L[0] === musicStudio.jline) ? musicStudio.jline : 'notes');
 const musicJingleSelected = () => {
   const ids = Object.keys(musicData().jingles || {});
   if (!ids.includes(studioState.sel.musicJingle)) studioState.sel.musicJingle = ids[0];
@@ -591,22 +603,46 @@ function musicJingleHTML() {
   const J = musicData().jingles || {},
     cur = musicJingleSelected();
   if (!cur) return card('Jingles', '<p class="help">music.json has no jingles.</p>');
-  const len = J[cur].notes.reduce((a, n) => a + n[1], 0);
+  const len = J[cur].notes.reduce((a, n) => a + n[1], 0),
+    line = musicJingleLine();
   const picks = Object.keys(J)
     .map(
       k =>
         `<span class="mus-jpick"><button class="btn subtle mus-play" data-act="musJinglePlay" data-j="${escapeHtml(k)}" aria-label="Play ${escapeHtml(k)}" title="Play ${escapeHtml(k)}">▶</button><button class="seg ${k === cur ? 'on' : ''}" data-act="musJinglePick" data-j="${escapeHtml(k)}" aria-pressed="${k === cur}">${escapeHtml(k)}</button></span>`
     )
     .join('');
+  /* SND-17: the line the roll edits (the tune, or a line its ensemble plays) */
+  const lines = MUSIC_JINGLE_LINES.map(
+    ([k, n]) =>
+      `<button class="seg ${k === line ? 'on' : ''}" data-act="musJLine" data-l="${k}" aria-pressed="${k === line}">${n}${k !== 'notes' && (J[cur][k] || []).length ? ` (${J[cur][k].length})` : ''}</button>`
+  ).join('');
+  const ens = J[cur].ensemble && J[cur].ensemble !== 'gb' ? J[cur].ensemble : '';
   return card(
     'Jingles',
     `<div class="seg-row">${picks}</div>
-<div class="seg-row"><b>${escapeHtml(cur)}</b><small class="help">${len} sixteenths · ${J[cur].notes.filter(n => n[0]).length} notes</small><span class="grow"></span><button class="btn primary" data-act="musJinglePlay" data-j="${escapeHtml(cur)}">▶ Play</button></div>
+<div class="seg-row"><b>${escapeHtml(cur)}</b><small class="help">${len} sixteenths · ${J[cur].notes.filter(n => n[0]).length} notes</small><span class="grow"></span><button class="btn primary" data-act="musJinglePlay" data-j="${escapeHtml(cur)}">▶ Play</button><button class="btn" data-act="musJinglePlay" data-j="${escapeHtml(cur)}" data-gb="1" title="As GB Sounds plays it: the 8-bit jingle">▶ 8-bit</button></div>
 ${textField('Name', `music.jingles.${cur}.name`, { opt: 1, ph: 'unnamed', help: 'Claude’s drafts start with “placeholder”; the Check lists them until you rename them.' })}
 ${grid(numberField('Tempo', `music.jingles.${cur}.bpm`, { opt: 1, min: 40, max: 400, step: 1, unit: 'bpm', ph: `${MUSIC_JINGLE_BPM}` }), selectField('Wave', `music.jingles.${cur}.wave`, MUSIC_CHOICES.wave, { opt: 1, none: 'Pulse 25 % (as most)' }))}
-<div class="mus-roll-wrap"><canvas id="musJRoll" class="mus-roll" aria-label="${escapeHtml(cur)} roll: ${J[cur].notes.map(n => (n[0] ? musicNoteName(n[0]) : 'rest') + ' ' + n[1]).join(', ')}"></canvas></div>`,
+${grid(
+  selectField(
+    'Ensemble',
+    `music.jingles.${cur}.ensemble`,
+    [['gb', 'gb: the 8-bit jingle'], ...Object.keys(musicData().ensembles || {}).map(k => [k, k])],
     {
-      sub: 'One note at a time, in sixteenths; a gap is a rest. With a triangle an octave down, at 150 bpm on a 25 % pulse unless it sets its own tempo and wave (the battle’s level up plays at 180). They play on Sound effects.',
+      opt: 1,
+      rr: 1,
+      help: 'What plays it (the Instruments tab): lead and counter parts play the tune, pad, stabs and arp the harmony, bass the bass, drums the perc’s kit notes, timp its other notes. GB Sounds plays the 8-bit jingle.',
+    }
+  ),
+  checkboxField(
+    'Stinger (over a song: on its beat, in its key, its busy parts dropped)',
+    `music.jingles.${cur}.stinger`
+  )
+)}
+<div class="seg-row">${lines}<span class="grow"></span><small class="help">${line === 'notes' ? 'One note at a time; a gap is a rest.' : line === 'perc' ? 'Kit: 36 kick, 38 snare, 42 hat, 37 rim; other notes on the timpani.' : ens ? `Played by ${escapeHtml(ens)}’s ${line === 'bass' ? 'bass' : 'pad, stabs and arp'} parts.` : 'Plays only on an ensemble.'}</small></div>
+<div class="mus-roll-wrap"><canvas id="musJRoll" class="mus-roll" aria-label="${escapeHtml(cur)} ${line} roll: ${line === 'notes' ? J[cur].notes.map(n => (n[0] ? musicNoteName(n[0]) : 'rest') + ' ' + n[1]).join(', ') : (J[cur][line] || []).map(n => n[0] + ': ' + musicNoteName(n[1]) + ' ' + n[2]).join(', ') || 'empty'}"></canvas></div>`,
+    {
+      sub: 'In sixteenths. With a triangle an octave down, at 150 bpm on a 25 % pulse unless it sets its own tempo and wave (the battle’s level up plays at 180), or on its ensemble once its notes are baked (SND-17). They play on Sound effects.',
     }
   );
 }
@@ -614,31 +650,55 @@ function musicJingleMount() {
   const cv = /** @type {HTMLCanvasElement | null} */ (document.getElementById('musJRoll')),
     id = musicJingleSelected();
   if (!cv || !id) return;
-  const list = musicData().jingles[id].notes,
-    len = list.reduce((a, n) => a + n[1], 0);
+  const J = musicData().jingles[id],
+    line = musicJingleLine(),
+    L = MUSIC_JINGLE_LINES.find(x => x[0] === line) || MUSIC_JINGLE_LINES[0],
+    tune = musicJingleNotes(J.notes),
+    len = Math.max(
+      J.notes.reduce((a, n) => a + n[1], 0),
+      ...['harmony', 'bass', 'perc'].map(k => Math.max(0, ...(J[k] || []).map(n => n[0] + n[2])))
+    );
   musicRollMount(cv, {
     steps: Math.max(16, Math.ceil((len + 4) / 4) * 4),
-    rows: musicRollRows(60, 'major', 60, 31),
+    rows: musicRollRows(60, line === 'perc' ? 'chromatic' : 'major', L[2], L[3]),
     home: 60,
-    notes: musicJingleNotes(list),
-    onNote: m => musicNoteHear(m),
+    notes: line === 'notes' ? tune : (J[line] || []).map(n => [...n]),
+    /* the tune shows faintly behind the other lines */
+    ghost: line === 'notes' ? undefined : tune,
+    poly: line !== 'notes',
+    onNote: m => line !== 'perc' && musicNoteHear(m),
     onChange: notes => {
-      if (!notes.length) return render();
-      musicData().jingles[id].notes = musicJingleList(notes);
+      if (line === 'notes') {
+        if (!notes.length) return render();
+        J.notes = musicJingleList(notes);
+      } else if (notes.length) J[line] = [...notes].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      else delete J[line];
       changed();
       commit(true);
       render();
     },
   });
 }
-function musicJinglePlay(id) {
+/* SND-17: on its ensemble (its notes baked first) unless the 8-bit is asked for or GB Sounds is on */
+function musicJinglePlay(id, gb = false) {
   const T = musicTracker(),
     J = musicData().jingles[id];
   if (!J) return;
   if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
-  T.jingle(J.notes, J.bpm || MUSIC_JINGLE_BPM, J.wave || 'p25', T.bus);
+  const go = () => {
+    const was = musicStudio.gb;
+    musicStudio.gb = was || gb;
+    T.jingle(J.notes, J.bpm || MUSIC_JINGLE_BPM, J.wave || 'p25', T.bus, { jingle: J });
+    musicStudio.gb = was;
+  };
+  if (!gb && !musicStudio.gb && T.jingleEnsemble(J)) T.jinglePrepare(J).then(go);
+  else go();
 }
-ACTIONS.musJinglePlay = d => musicJinglePlay(d.j);
+ACTIONS.musJinglePlay = d => musicJinglePlay(d.j, !!d.gb);
+ACTIONS.musJLine = d => {
+  musicStudio.jline = d.l;
+  render();
+};
 ACTIONS.musJinglePick = d => {
   studioState.sel.musicJingle = d.j;
   render();
