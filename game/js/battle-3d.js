@@ -21,8 +21,23 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
-import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
-import { battleAnimFrame, battleIconSprite, battlePathAt } from './logic/battle-anims.js';
+import {
+  RIBBON_CORE,
+  STRETCH_PACE,
+  ribbonEdges,
+  ribbonTone,
+  smearGhosts,
+  smearRecord,
+  smearRibbon,
+  smearStretch,
+} from './logic/smear.js';
+import {
+  battleAnimFrame,
+  battleIconSprite,
+  battlePathAt,
+  battlePropAt,
+  battleSceneProps,
+} from './logic/battle-anims.js';
 import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
@@ -66,6 +81,7 @@ expose({
   BATTLE_RGB: [() => BATTLE_RGB],
   EFFECT_LIGHT_BUDGET: [() => EFFECT_LIGHT_BUDGET],
   PHONE_BATTLE: [() => PHONE_BATTLE],
+  PROP_PICS: [() => PROP_PICS],
   RIG_DARK: [() => RIG_DARK],
   RIG_HITS: [() => RIG_HITS],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
@@ -76,6 +92,7 @@ expose({
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
   battle3dHit: [() => battle3dHit, v => (battle3dHit = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
+  battle3dProps: [() => battle3dProps, v => (battle3dProps = v)],
   battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
   battle3dScenePoint: [() => battle3dScenePoint, v => ((battle3dScenePoint = v), provide({ battle3dScenePoint }))],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
@@ -85,6 +102,11 @@ expose({
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
   battleFoil: [() => battleFoil, v => (battleFoil = v)],
   battleFoilOn: [() => battleFoilOn, v => (battleFoilOn = v)],
+  battlePropPath: [() => battlePropPath],
+  battlePropsPreload: [() => battlePropsPreload, v => (battlePropsPreload = v)],
+  battlePropsReady: [() => battlePropsReady, v => ((battlePropsReady = v), provide({ battlePropsReady }))],
+  propItem: [() => propItem, v => (propItem = v)],
+  propWorldItem: [() => propWorldItem, v => (propWorldItem = v)],
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
@@ -94,7 +116,7 @@ expose({
   smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battle3dLayout, battle3dScenePoint, battle3dStart, battle3dStop, ribbonColour });
+provide({ battle3dLayout, battle3dScenePoint, battle3dStart, battle3dStop, battlePropsReady, ribbonColour });
 /* to-module: end */
 export const battle3d = {
   on: false,
@@ -130,6 +152,8 @@ export function battle3dAttach(o = {}) {
     host = $('#camWorld');
   if (!host || !cv) return false;
   battle3d.detach = !!o.detach;
+  /* VFX-17: the scenes' models are loaded at the battle's start, so a scene's first use finds them */
+  battlePropsPreload();
   const sc = walkView.sc,
     P = walkView.pl,
     C0 = walkData().sc,
@@ -431,6 +455,8 @@ function battle3dFrame() {
         q.ramp = I.ramp;
         q.f = battleAnimFrame(S, age, p.life);
         q.scale = p.k || 1;
+        /* VFX-17: a stamped word lands in steps: two sizes bigger, one bigger, its own, a 24 fps cell each */
+        if (p.stampIn) q.scale += Math.max(0, 2 - Math.floor(p.age / TRAIL_CELL_MS));
         q.flip = p.flip < 0 ? -1 : 1;
         if (!S.loop) q.a = p.twinkle ? clamp(0.5 + 0.5 * Math.sin(p.age / 120), 0, 1) : 1;
         /* VFX-11: a projectile's trail: copies of it where its path had it a cell (42 ms) ago, and before, eroding */
@@ -494,6 +520,8 @@ function battle3dFrame() {
       items.push(it);
     }
   }
+  /* VFX-17: a signature scene's summoned models (battleStage.props), with the thrown pyramid's smears */
+  battle3dProps(items, T);
   /* VFX-4: the impact frame now (battle-stage.js impactFx), its hit point in the walk scene (walk-view-gl.js projects
      it for the grade pass) */
   const IS = battleImpact();
@@ -704,31 +732,121 @@ function smearLook(glow) {
 }
 /* a catch pyramid's model as a world item, in the walk scene's metres: y its base point (the recipe's own lift
    included), spin its turn (it.spin, as prop-models.js propModelInstanceValues reads it); null while it can't be drawn (3D props off, the GPU
-   lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js) */
+   lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js). VFX-17: propWorldItem's */
 export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
-  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof PYRAMIDS === 'undefined' || !PYRAMIDS[kind])
-    return null;
-  const path = pyramidModelPath(kind),
-    rec = loadPropModelRecipe(path);
-  if (!rec || !(rec.layers || []).length) return null;
-  return {
+  if (typeof PYRAMIDS === 'undefined' || !PYRAMIDS[kind]) return null;
+  return propWorldItem(pyramidModelPath(kind), x, y, z, spin, PYRAMID_SCALE * size, PYRAMID_YAW, {
     k: 'pyramid',
     /* its icon: never drawn (a model item), but the renderer sorts and keys items by their picture */
     im: pyramidCanvas(kind, 32),
+  });
+}
+/* ================= VFX-17: SUMMONED MODELS =================
+   Any low-poly recipe (path, inside art/) as a world item, the thrown pyramid's way: x, y (its base point), z in the
+   walk scene's metres, spin its turn about its middle, s its scale, rot its heading (radians: the model's +x along
+   cos, sin). o: k (its kind), im (its picture: never drawn, but the renderer sorts and keys items by it), w, h, mpp
+   (its box for culling). null while it can't be drawn (3D props off, the GPU lost, the recipe not loaded yet) */
+const PROP_PICS = new Map();
+function propWorldItem(path, x, y, z, spin, s = 1, rot = 0, o = {}) {
+  if (typeof propModelsOn !== 'function' || !propModelsOn()) return null;
+  const rec = loadPropModelRecipe(path);
+  if (!rec || !(rec.layers || []).length) return null;
+  let im = o.im;
+  if (!im) {
+    im = PROP_PICS.get(path);
+    if (!im) {
+      im = document.createElement('canvas');
+      im.width = im.height = 1;
+      PROP_PICS.set(path, im);
+    }
+  }
+  const w = o.w || 16,
+    h = o.h || 16;
+  return {
+    k: o.k || 'battleProp',
+    im,
     vox: rec,
     voxPath: path,
-    p: { x, z, s: PYRAMID_SCALE * size, rot: PYRAMID_YAW },
+    p: { x, z, s, rot },
     x,
     y,
     z,
-    w: 16,
-    h: 16,
-    mpp: 0.03,
-    ox: -8,
-    oy: -16,
+    w,
+    h,
+    mpp: o.mpp || 0.03,
+    ox: -w / 2,
+    oy: -h,
     flip: 1,
     fade: 1,
     spin,
     light: null,
   };
+}
+/* a scene's model by its recipe id (game/art/scene/next/models; battleAnims.json scenes' prop steps) */
+const battlePropPath = id => `scene/next/models/${id}.json`;
+/* every scene's models, asked for now (prop-models.js loads them; a scene whose models aren't in yet plays its family) */
+function battlePropsPreload() {
+  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof BATTLE_ANIMS === 'undefined') return;
+  for (const id of battleSceneProps(BATTLE_ANIMS)) loadPropModelRecipe(battlePropPath(id));
+}
+/* whether every model of a scene can be drawn now (3D props on, each recipe loaded and not empty) */
+function battlePropsReady(ids) {
+  if (typeof propModelsOn !== 'function' || !propModelsOn()) return false;
+  return ids.every(id => {
+    const rec = loadPropModelRecipe(battlePropPath(id));
+    return !!rec && (rec.layers || []).length > 0;
+  });
+}
+/* one summoned model at its place now (S: logic/battle-anims.js battlePropAt, or a kept place for an afterimage) */
+function propItem(P, S, T) {
+  const [x, z] = T(S.x, S.z),
+    [x1, z1] = T(S.x + Math.cos(S.yaw), S.z + Math.sin(S.yaw)),
+    spin = S.tum ? { a: P.ax || [0, 0, 1], an: S.tum, c: [0, P.mid || 0.5, 0] } : undefined,
+    it = propWorldItem(battlePropPath(P.prop), x, battle3d.gy + S.y, z, spin, P.s || 1, Math.atan2(z1 - z, x1 - x), {
+      w: 64,
+      h: 64,
+      mpp: P.mpp || 0.04,
+    });
+  return it;
+}
+/* VFX-17: the scene's models now: each at its place on its path (logic/battle-anims.js battlePropAt), its places kept
+   on the 24 fps grid for its afterimages and, on its fastest cells, its stretch (as the thrown pyramid's); one that
+   has eroded away leaves the list */
+function battle3dProps(items, T) {
+  const L = battleStage.props;
+  if (!L || !L.length) return;
+  const t = battleStage.t,
+    n = battleSmearCount();
+  for (let i = L.length - 1; i >= 0; i--) {
+    const P = L[i];
+    if (!P || !P.path) continue;
+    if (t < P.t0) continue;
+    const S = battlePropAt(P, t);
+    if (S.gone) {
+      L.splice(i, 1);
+      continue;
+    }
+    /* k 0 marks a fast cell (smear.js reads its pace from k), 0.5 a slow one */
+    if (S.flying)
+      smearRecord(P.trail, t, { x: S.x, y: S.y, z: S.z, yaw: S.yaw, tum: S.tum, k: S.pace >= STRETCH_PACE ? 0 : 0.5 });
+    const it = propItem(P, S, T);
+    if (!it) continue;
+    it.fade = S.fade;
+    const St = S.flying ? smearStretch(P.trail, t, n > 0, battleStage.V) : null;
+    if (St) {
+      const [x0, z0] = T(S.x, S.z),
+        [x1, z1] = T(S.x + St.d[0], S.z + St.d[2]);
+      it.smear = { d: [x1 - x0, St.d[1], z1 - z0], seed: St.seed };
+    }
+    items.push(it);
+    for (const g of smearGhosts(P.trail, t, n, battleStage.V)) {
+      const G = propItem(P, g.s, T);
+      if (!G) continue;
+      G.fade = g.fade * S.fade;
+      G.glow = g.glow;
+      G.lk = smearLook(g.glow);
+      G.ghost = true;
+      items.push(G);
+    }
+  }
 }

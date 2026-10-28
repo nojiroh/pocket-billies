@@ -29,6 +29,8 @@ gives the same film.
     python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
     python3 tools/look-battle-anims.py --only=zip --measure --weather=rain   # in a weather (VFX-15)
     python3 tools/look-battle-anims.py --bench                # time a frame on the Graphics bench (VFX-15)
+    python3 tools/look-battle-anims.py --only=towerdrop --sheets --cells=20 --outcomes=hit --sides=0   # a scene (VFX-17)
+    python3 tools/look-battle-anims.py --only=towerdrop --sheets --repeat   # its second use: the short version
 
 VFX-15: --weather=rain|storm|snow|ash|fog|clear (forced at noon in summer before the battle; clear by day is the
 battle's sunny), or sand (clear, with the Sandstorm blowing). --bench opens the Graphics bench (test_graphics) instead
@@ -54,6 +56,9 @@ if OPT.get('outcomes'): OUTCOMES = str(OPT['outcomes']).split(',')
 SIDES = [int(v) for v in str(OPT.get('sides') or '0,1').split(',')]
 FRAMES, EVERY = 96, 3
 WEATHER = str(OPT.get('weather') or '')
+# VFX-17: --cells=20 for a longer sheet (a signature scene runs to 1.56 s; 16 cells show 1.2 s); --repeat films a
+# scene's second use in a battle (its short version)
+CELLS = int(OPT.get('cells') or 16)
 
 # Math.random seeded from the start (util.js keeps the Math.random it finds when it loads), reseeded per film
 SEEDED = """(()=>{let s=1;window.__seed=n=>{s=(n>>>0)%2147483646+1};Math.random=()=>{s=s*16807%2147483647;return (s-1)/2147483646}})()"""
@@ -70,6 +75,7 @@ T.clear();S.lockQ=true;S.q.lvl=0;
 const r3=v=>Math.round((+v||0)*1000)/1000;
 __film.hash=k=>{let h=2166136261;for(let i=0;i<k.length;i++){h^=k.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
 __film.reset=()=>{S.tws.length=0;S.evs.length=0;S.parts.length=0;S.impact=null;S.shk=0;S.hold=0;S.coin=null;S.ring=null;S.calm=false;S.t=1e5;
+ S.props=[];if(S.scenesSeen)S.scenesSeen.clear();
  S.leafy.length=0;S.glint.length=0;if(typeof battleAnim!=='undefined'){battleAnim.flashes.times.length=0;battleAnim.cur=null}
  S.s.forEach(s=>{Object.assign(s,{ox:0,oy:0,sc:1,a:1,white:0,dark:0,act:null,blinkUntil:0,lunge:null,trail:null,seed:1})});
  const home={x:0,y:1.6,z:0,yaw:0,hz:0};Object.assign(S.cam,home);Object.assign(S.V,home);Object.assign(S.drift,{w:0,tq:-1,x:0,y:0,z:0,yaw:0,hz:0});
@@ -82,6 +88,8 @@ __film.snap=(t0,vt)=>{const f=document.getElementById('flash'),w=document.getEle
   ['x','y','z','yaw','hz'].map(k=>r3(S.cam[k])),r3(S.css.r),r3(S.css.z),r3(S.shk),S.hold>vt?1:0,r3(S.hand.a),r3(S.dof.zf),r3(S.dof.ap),S.focusK,
   f?[f.style.opacity,f.style.background]:0,(w&&w.classList.contains('ca'))||S.ca?1:0,S.impact?1:0,
   p?[...p.children].map(e=>e.className+':'+e.textContent).join('|'):''])};
+/* VFX-17: with --repeat, the move's scene counts as played before in this battle (its short version plays) */
+__film.seen=mid=>{if(__film.rep&&MOVES[mid]&&MOVES[mid].anim){S.scenesSeen=S.scenesSeen||new Set();S.scenesSeen.add(MOVES[mid].anim)}};
 /* an outcome's move event, as the Studio's battle preview builds it */
 __film.an=(mid,si,res)=>{const M=MOVES[mid],fx=M.fx||{},onFoe=M.c!=='X'||fx.status||fx.tgtStage||fx.hype||fx.spin||fx.wipe||fx.copyTypes,an={k:'move',si,ti:1-si,mid};
  if(fx.protect)an.protect=true;else if(!onFoe)an.self=true;else if(res==='miss')an.miss=true;else if(res==='blocked')an.blocked=true;
@@ -92,12 +100,12 @@ __film.an=(mid,si,res)=>{const M=MOVES[mid],fx=M.fx||{},onFoe=M.c!=='X'||fx.stat
 __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s},pn=performance.now,st=window.setTimeout,timers=[];
  let vt=pn.call(performance)+1e7;performance.now=()=>vt;window.setTimeout=(fn,ms)=>{timers.push({t:vt+(+ms||0),fn});return 0};
  const out={key};try{__film.reset();__seed(__film.hash(key));const t0=S.t,F=__film.tasks.get('scene').fn;
-  out.r=battleStagePlay(__film.an(mid,si,res),ev);out.trace=[];
+  __film.seen(mid);out.r=battleStagePlay(__film.an(mid,si,res),ev);out.trace=[];
   for(let i=0;i<frames;i++){vt+=16;timers.sort((a,b)=>a.t-b.t);while(timers.length&&timers[0].t<=vt)timers.shift().fn();F(vt,16);if(i%every===0)out.trace.push(__film.snap(t0,vt))}
  }catch(e){out.err=String(e&&e.stack||e)}finally{performance.now=pn;window.setTimeout=st}return out};
 /* a sheet's film: the same, the walk renderer's frame task stepped with the stage's, a picture after every block */
 __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;
- const ev={s:activeBattle.events[activeBattle.events.length-1].s};return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
+ const ev={s:activeBattle.events[activeBattle.events.length-1].s};__film.seen(mid);return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
 __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=()=>__film.vt;window.setTimeout=(f,ms)=>{__film.timers.push({t:__film.vt+(+ms||0),fn:f});return 0};try{return fn()}finally{performance.now=pn;window.setTimeout=st}};
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
@@ -130,14 +138,14 @@ def sheet(pg, key, mid, si, res):
     # VFX-9: the battle's menu, ticker and plates hidden (they cover most of the stage at this size), the pops kept
     pg.evaluate(HIDE_UI)
     shots = []
-    for i in range(16):
+    for i in range(CELLS):
         pg.evaluate('__film.step(5)' if i else '__film.step(1)')
         pg.wait_for_timeout(30)
         p = OUT / '_frame.png'
         pg.screenshot(path=str(p))
         shots.append(Image.open(p).convert('RGB'))
     w, h = shots[0].size
-    W = Image.new('RGB', (w * 4, h * 4), 'black')
+    W = Image.new('RGB', (w * 4, h * ((CELLS + 3) // 4)), 'black')
     d = ImageDraw.Draw(W)
     for i, im in enumerate(shots):
         x, y = (i % 4) * w, (i // 4) * h
@@ -239,6 +247,7 @@ def main():
         CF.until(pg, 'battleStage.gl', 30)
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
+        if 'repeat' in OPT: pg.evaluate("__film.rep=true;0")
         if WEATHER == 'sand': pg.evaluate("battleStage.oil=true;0")
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
         if 'measure' in OPT:
