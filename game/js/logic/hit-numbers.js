@@ -27,12 +27,13 @@ export const POP_MAX = 40;
 /** the HP number's roll, as long as the fill's move (battle-screen.css .bplate .pl-hp .fill) */
 export const ROLL_MS = 380;
 
-/** the damage number's font size for a hit of weight w (0..1); a KO is always the largest
- * @param {number} w @param {boolean} [ko] */
-export function popSize(w, ko = false) {
-  if (ko) return POP_MAX;
+/** the damage number's font size for a hit of weight w (0..1); a KO is always the largest. SY-8: min and max are the
+ * Studio's dials (uiTheme.json style popMin, popMax)
+ * @param {number} w @param {boolean} [ko] @param {number} [min] @param {number} [max] */
+export function popSize(w, ko = false, min = POP_MIN, max = POP_MAX) {
+  if (ko) return max;
   const x = Number.isFinite(w) ? Math.min(1, Math.max(0, w)) : 0.3;
-  return Math.round(POP_MIN + x * (POP_MAX - POP_MIN));
+  return Math.round(min + x * (max - min));
 }
 
 /** the number shown t ms into a roll from `from` to `to`: whole numbers, fast first and settling (an ease out), the

@@ -2,7 +2,7 @@
 """UI-2: picture tests for the UI kit. Opens studio/gallery.html (every component in its states, from the game's own
 styles and js/ui-kit.js) and takes a picture of each section at 320 and 390 px, light and dark, then compares each with
 the committed baseline in validation/ui-gallery/; the shaped parts once more with the stepped preset (SY-3: the
-Bureau's stamps in every preset, light and dark).
+Bureau's stamps and SY-4's case file in every preset, light and dark).
 
     python3 tools/check-ui-gallery.py            # take the pictures and compare (fails when one differs)
     python3 tools/check-ui-gallery.py --update   # make this run's pictures the baseline (a look change, on purpose)
@@ -27,9 +27,9 @@ THEMES = ('light', 'dark')
 # UI-2: the shaped parts again with uiTheme.json's stepped preset (pixel-step cuts), at 390 px, light
 STEPPED = ('buttons', 'panels', 'cards', 'tabs', 'messages')
 # the other looks (uiTheme.json presets) at 390 px: (theme, preset, sections). SY-3: the Bureau's stamps in every look
-# the gallery has, light and dark (red ink on paper must read in each)
-LOOKS = (('light', 'stepped', STEPPED + ('stamps',)), ('dark', 'stepped', ('stamps',)),
-         ('light', 'alpha05', ('stamps',)), ('dark', 'alpha05', ('stamps',)))
+# the gallery has, light and dark (red ink on paper must read in each); SY-4: the case file the same way
+LOOKS = (('light', 'stepped', STEPPED + ('stamps', 'case')), ('dark', 'stepped', ('stamps', 'case')),
+         ('light', 'alpha05', ('stamps', 'case')), ('dark', 'alpha05', ('stamps', 'case')))
 # a picture differs when more than this share of its pixels moved by more than TOL in any channel (fonts antialias a
 # little differently from run to run; a reshaped part moves far more)
 SHARE, TOL = 0.0005, 24

@@ -92,6 +92,474 @@ pushes (only art-code-refs conflicted: made again).
     stepMaxMs), `reverb` (setMs) and `ensemble` (the song, its ensemble, playing ensemble or gb).
 - **Next**: SND-17 (jingles and stingers with the new instruments; GB Sounds keeps today's 8-bit jingles).
 
+### Perks track PK-4 - Wave B, types, team and weather - 2026-10-28
+Branch `track/perks` (this session's outcome branch, from PK-3's bbdcad5; main had nothing new at the start, then
+moved to 5f6d01ae during the session: merged near the end at the planning and merge sessions' request, 8af07402). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 8,
+"Corrected in PK-4".
+- The plan (as set at the start): (1) the four kinds Wave B needs, one kind per commit with tests, schema, data
+  checks, types and the Studio's inputs: passive (one parameter set per type passive), weather (noWeaken, boost),
+  benchXp, rule forecastDays; (2) offers: `needs` (a condition on the team; unmet, weight 0), then `tags` with
+  rules.json `run.perks.bias` (2) in perkPool/perkDraw on the same seeded streams, the game's callers passing the team;
+  (3) the 13 other pictures as grids; (4) the 15 Perks in perks.json with their pictures, perks.test.mjs:41 rewritten
+  for a large filtered pool; (5) a test per Perk and all Wave A and B at once; (6) the contact sheets; (7) the Studio
+  check; (8) docs. Matching Hoodies, Rainbow Lanyard and Barometer's heal use PK-1's fields.
+- Changed (15 commits and a merge):
+  - **effects.js**: kinds `passive` (`FX_PASSIVE_KEYS`, `fxPassive`: each passive's numbers merged), `weather`
+    (`FX_WEATHER`, `fxWeather`), `benchXp` (`fxBenchXp`), `rule` (`FX_RULES` forecastDays, `fxRunRule`).
+  - **Battle** (battle-engine.js): `fxPassiveOf` read at Kindling (effectiveStat), Live Wire, Wild Mind, Alloy and
+    Undertow (calcDamage), Bedrock (bedrockHolds: uses, from an HP share), Regrowth (endTurn), Parting Roar (inherit,
+    doSwitch: more stages) and Slipstream (runTurn: every switch); `fxWeatherFor` in calcDamage and the move tiles'
+    arrows (battle.js); award adds benchXp to the bench's share. Yours only; without the rows nothing changes.
+  - **Run**: run-map.js `runForecastDays` (rolled and shown rules' days plus the rows'; the Map tab too).
+  - **Offers** (perks.js): `perkTeamOf`, `perkFits` (needs), `perkWeight` (the bias), perkPool/perkDraw/perkOffer/
+    perkOfferMake/perkShelf/perkOfferOrder and encounters.js encPerk take the team; battle-rewards, shop,
+    encounter-screen, the debug menu, the fixture and the run sim pass it.
+  - **Data**: perks.json the 15 Wave B Perks (6 common, 8 uncommon, 1 rare) with `img`, the 9 type Perks with
+    `needs` and a type tag, theme tags on 17 existing Perks; rules.json `run.perks.bias` 2; perks.schema.json the
+    four kinds, `needs`, `tags`; data-checks.js `fxPassiveProblems`, weather/benchXp/rule checks, `FX_PLAIN.rule`,
+    `perkNeedsProblems` (`PERK_NEEDS`), tags (`PERK_THEMES`), bias; game-data.d.ts the kinds, `Perk.needs`,
+    `Perk.tags`, `bias`.
+  - **Studio**: the Perks editor's inputs for the four kinds, Needs and Tags per Perk, the bias in the rarity card;
+    type-rename.js `renameTypeConds` (tags, needs and the type names in conditions); check-studio-github.py
+    `--only=relics` opens the 15 Wave B Perks and checks Bellows's Needs and Tags.
+  - **Art**: tools/art/icon-grids/perks.json the 13 new grids; game/art/perks/ 15 SVGs; the contact sheets.
+  - Tests: battle-perks-wave-b.test.mjs (new, 23 tests), perks.test.mjs (needs, tags, coverage per rarity over 300
+    picks, relevance in a pick, a shelf and an event, the bias), data-checks, type-rename, battle-perks-wave-a (its
+    Perk count moved to Wave B's test).
+  - Docs: perks-track.md (PK-4 done, "Corrected in PK-4"), ROADMAP, STUDIO.md, TESTING.md.
+  - **The merge of main** (UI Part 2 UI-11..UI-18, the style track, the repo clean-up #283; 15 files conflicted, both
+    sides kept): UI-14b's rarity frame, pill and tags on the Perk pick card, the Perks tab row and the shop's Perk row
+    with PK-2's pictures and PK-3's counter (a card's caption is "Perk · 5/8"; on the tab the counter is a note after
+    the rarity pill, check-fast's expectation now "5/8"/"VOID"); UI-16a's fly-to with perkChoose's save; art.js's
+    `iconTag` takes a url for `artIconHTML`; UI-16b's blips: the start's stat lines carry theirs through `b.fxSay`,
+    and a hit's Perk blips come from the rows that counted (`fxHitRows`, split out of fxHitMult) rather than every
+    row held (main's read all, so Plot Armor would have blipped when not alone); Parting Roar's blip kept with
+    Heirloom Locket's stages; `moveWeatherMark` reads fxWeatherFor.
+- Risky:
+  - Every seed's offers changed (15 more Perks in the pool, the needs and the bias); accepted as SP-6 did.
+  - A run with a held theme draws its theme twice as often: with 2 or 3 of one theme held, the offers can feel
+    samey; the bias is a placeholder (rules.json `run.perks.bias`).
+  - The Studio's offer order and run-preview give no team, so they show type Perks the game wouldn't offer.
+  - Mood Ring adds a roll on the battle's stream for its holder's hits (replays stay the same per seed and Perks).
+  - The Map tab fills the forecast as it draws (deterministic, saved with the next save).
+  - The merge with UI Part 2 is checked by the tests, smoke, check:fast's Perks step and the full quick check, not on a
+    phone: the Perk card's caption and the tab's counter moved (see the merge above).
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck and
+  `npm test` (1630 at the start, 1666 before the merge, 1725 on the merged tree, all passing); before every commit
+  check:modules, format:check, check:data (176 files fine; its two bridge warnings are main's) and build;
+  `check:smoke` on every commit touching game/ (6/6; 7/7 on the merge; Python Playwright 1.63.0). Golden battles
+  unchanged (no snapshot remade). Faults planted once and seen red: Kite's every switch removed (2 tests). `check:fast
+  --only=perks` ok before and after the merge (the tab's counter expectation moved with UI-14b's pill).
+  `check-studio-github.py --only=relics` ok before and after the merge, with its new Wave B step. `npm run test:slow`
+  passed (before the merge). `node tools/build-icons.mjs perks --check` fine (closest new pair 86%: Matching Hoodies
+  and Barometer). **The run sim**: `--runs=50` stops in scene mode with "runSceneParams: node 8 has no exit south2"
+  as on main (PK-3's record); `--balance` finishes its 50 runs. **Full quick check** on 8af07402 (merged): 42 steps,
+  35 passed; the 7 PROBLEMs: Terraces, RL-8's view and room light are main's (PK-1..PK-3); RT-2's double, Granny
+  Juniper, Postcards and Run map music each passed when run alone on this head (Postcards twice), so the long run's
+  timing. **CI on #301** (8af07402): lint and rules green; smoke red on 7 steps: 5 red on main's own CI at 5f6d01ae
+  (Behind things, a run's world seam, the Studio's world map look and Camera with 404s for
+  game/art/billionaires/*.png; the train ride there) plus "A battle plays to the end: stuck at playing", which fails
+  locally on main 5f6d01ae too; the world map's buttons and the island's orbit passed locally on this head and on
+  main (CI's runner timing). Recorded in a PR comment.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **Group Chat**: the bench already got half (teamXpShare 0.5), so it gives the full XP ("Your Billies on the
+    bench get the full XP from each foe, not half."), not the draft's "half".
+  - **The 13 new pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Snorkel (a blue mask, ice lenses, a gold tube), Watering Can (one-colour green, a handle over the top,
+    a long spout, blue drops, a leaf label), Static Socks (gold with cream stripes, a gold-dark spark: the boxiest),
+    Knee Pads (wood, a stone cap, steel straps: reads a little like a robot head), Kite (blue and red diamond, wood
+    spars, slate tail with bows), Mood Ring (steel band, violet gem), Union Card (a steel card on its end with a clip
+    and a red stripe), Heirloom Locket (gold on a loop, a deep-violet scale), Matching Hoodies (one-colour teal, a
+    dark hood opening that turns greyish in the pale half, a cream heart), Rainbow Lanyard (four-colour straps, a
+    blue holder, a cream card), Group Chat (slate phone, green bubble out, cream bubble in), Snow Globe (ice globe,
+    tree, snow, wood base), Barometer (gold dial on a loop, cream face, red needle). Bellows and Umbrella are PK-0's
+    samples as drawn.
+  - Texts from the drafts: Snorkel "from half their HP", Knee Pads "from 75% of their HP", Kite "on every switch, not
+    just the first", Union Card "not only Steel ones", Heirloom Locket "raises the next one's Speed too", Barometer
+    "walking into a place in rain or a storm". Rarities as the plan (type Perks uncommon, Snow Globe rare, the rest
+    common). No `say` lines (the passives already say their own).
+  - Static Socks doubles Live Wire's stage (1 to 2: 12.5% to 25%); Bellows counts each turn twice to the same top.
+  - Theme tags on the 17 existing Perks of 5.7's sets now, before PK-8 (the bias needs them); bias 2.
+  - Needs ignored where no team is given (previews); `needs` limited to team and mono until later waves.
+- Phone checks to do (listed, not waited for): a Fire team after a mini-boss is never offered Snorkel or the other
+  type Perks but Bellows; Barometer taken: the Map tab's forecast shows 10 days at once; Umbrella in rain: a Fire
+  move's down arrow is gone; Kite: two free switches in a battle; the 13 new pictures at 72 and 36 px, light and dark.
+- Next: PK-5 (Wave C: catching, cash and maps; 12 Perks of 5.4) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-4-done` on this entry's commit.
+
+### Perks track PK-3 - Wave A, the battle kit - 2026-10-28
+Branch `track/perks` (this session's outcome branch, from PK-2's d6649d4; main already merged: nothing new at
+07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 7, "Corrected
+in PK-3".
+- The plan (as set at the start): (1) the six kinds Wave A needs, one kind per commit with its tests, schema, data
+  checks, types and Studio input: crit (stages; at `when: move` the move is critical, for Click Pen's every 8),
+  immune (brn, slp, par, sandstorm, stones), inflict (a status with a chance at a hit, on the battle's seeded stream,
+  chances together at most 50%), chip (Hazmat's half burn), first (Alarm Clock on turn 1), revive (Warranty Card at a
+  wipe in checkFaints); (2) the 11 other pictures as grids; (3) the 15 Perks in perks.json with their pictures, fixing
+  tests that pinned offers; (4) a battle test per Perk and all 15 at once; (5) the counters on screen ("5/8",
+  "VOID"); (6) the contact sheets; (7) the Studio check; (8) docs. Plot Armor, Rubber Stamp, Screen Protector, Power
+  Bank and Mic Drop use PK-1's kinds with conditions and once.
+- Changed (14 commits):
+  - **effects.js**: kinds `crit` (`FX_CRIT` 3, `fxCrit`), `immune` (`FX_IMMUNE`, `fxImmune`), `inflict` (`FX_CHANCE`
+    0.5, `fxInflictPick`: one roll for the rows acting at a hit), `chip` (`FX_CHIP`, `fxChip`), `first`, `revive`.
+  - **Battle** (battle-engine.js): calcDamage adds crit stages and a forced crit (`b.fxCritK`, set at the move moment;
+    the roll is still made); `inflict` and a move's self-status check `fxImmuneSay`; the Sandstorm and stones check
+    `fxImmuneTo`; endTurn's burn takes `fxChip`; `fxInflict` after the hit moment; `fxFirstActs` in the turn's order
+    (within priority); `fxRevive` before a loss in checkFaints (every Billie back with its share, sent out again).
+    With no Perks nothing changes: no new roll, the same order, the same sums.
+  - **Run**: run-loop.js `runImmune`: an event's `status` skips a team holding the guard (encounter-screen.js).
+  - **Data**: perks.json the 15 Wave A Perks (6 common, 5 uncommon, 4 rare) with `img`, three with a `say` line;
+    perks.schema.json the six kinds; data-checks.js `fxKindProblems`, `FX_WHEN_KINDS` crit (move) and inflict (hit),
+    `FX_ONCE_KINDS`, "an immune row" in the messages (`fxA`); game-data.d.ts the six kinds.
+  - **Screens**: perks.js `perkCount`; the Perks tab's row and the "Let one go" cards show it after the rarity
+    ("Uncommon · 5/8", "Rare · VOID").
+  - **Art**: tools/art/icon-grids/perks.json the 11 new grids; game/art/perks/ 15 SVGs written by build-icons;
+    validation/icon-sheets/perks-{light,dark}.png regenerated.
+  - **Studio**: the Perks editor's inputs for the six kinds (Once offered for revive); check-studio-github.py
+    `--only=relics` opens the 15 and checks every row renders with no error.
+  - Tests: battle-perks-wave-a.test.mjs (new, 25 tests), data-checks (good rows and 15 planted faults, the schema with
+    ajv), perks.test.mjs (perkCount; "most Perks turn up" over 120 runs, was 40), check-fast's Perks step (the tab's
+    counters).
+  - Docs: perks-track.md (PK-3 done, "Corrected in PK-3"), ROADMAP, STUDIO.md, TESTING.md.
+- Risky:
+  - Every run battle holding a Perk builds a context per hit for crit and per turn for first (`fxBattleCtx`); fine in
+    the tests' timing, not measured on a phone.
+  - Revive sends the Billies out again through doSwitch: the foe's sharp stones hit them, and switch-in Perks fire. In
+    a double battle both places come back (tested); the Alpha format (three of yours) is not tested.
+  - Click Pen's forced crit is spent if that attack misses or is blocked.
+  - Balance: every number is a placeholder; Hot Sauce and Joy Buzzer stack to 25% on the hits each covers, the cap
+    only matters past 50%.
+  - UI-14a/b (#286, #288) restyle the same Perks tab row and cards: whoever lands second merges `perkCardHTML` and
+    `renderPerks`.
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck and
+  `npm test` (1605 at the start, 1630 at the end, all passing); before every commit check:modules, format:check,
+  check:data (176 files fine; its two bridge warnings are main's) and build; `check:smoke` 6/6 on every commit
+  touching game/ (Python Playwright 1.63.0). Golden battles unchanged (no snapshot remade). Faults planted once and
+  seen red: Click Pen's forced crit removed (2 tests), the Studio's chip input removed ("No such kind: chip").
+  `check:fast --only=perks` ok (its new counter step was red once: the row's `data-count` attribute fed ui.js's
+  count-up, now `data-perk-count`). `check-studio-github.py --only=relics` ok with its new Wave A step. `npm run
+  test:slow` 103 of 103. `node tools/build-icons.mjs perks --check` fine (closest silhouettes 88%: Field Notebook and
+  Lost Property Form, and the new Clinic Card and Power Bank). **The run sim**: `run-sim.mjs --runs=50` stops in scene
+  mode with "runSceneParams: node 8 has no exit south2" on main 07c9b28 too (from 5 runs; not this step's, recorded
+  in a PR #301 comment); `--runs=50 --balance` finishes on this branch (50 runs, all lost before a Perk pick, as
+  before). Full quick check on beb5c39: 41 steps, 38 passed; the 3 PROBLEMs are main's as PK-1 and PK-2 recorded (Terraces "props in the air: train_station", RL-8 "crossed into Lakeside Route but its view never showed", "room light"). CI on #301: lint and rules green; smoke red only on the two Studio steps with 404s for `game/art/billionaires/*.png` (main's, PK-1's PR comment; noted again in PK-3's). One local `npm test` run while the quick check ran had the 1,000-map timing test at 1691 ms of its 1,000 ms budget (CPU shared; PK-2 saw the same on CI); it passed on every other run.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 11 new pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Laser Pointer (a steel pointer on the diagonal, a 3 px red beam, a red dot with a cream centre), Screen
+    Protector (a slate phone, an ice screen cracked across: the crack reads as an X, a candidate to redraw), Power
+    Bank (a slate brick, a gold bolt, a green light, a steel port), Joy Buzzer (a steel octagon disc, a red button,
+    two gold-dark zaps), Hot Sauce (a red bottle, green cap, a cream label with a red chili), Oven Mitts (one-colour
+    red, quilted with dark diagonals, the thumb a seamed letter, a dark cuff and loop), Noise-Cancelling Headphones
+    (one-colour violet, a band and two cups with dark cushions), Rubber Boots (one-colour gold wellington, dark band,
+    sole and pull tab, a seamed toe cap: its pale top half is the weakest read), Hazmat Suit (a gold suit, a wide hood
+    with a band of ice visor, a slate filter, a dark belt and gloves), Alarm Clock (a red octagon, cream face, slate
+    hands and feet, gold bells), Plot Armor (a steel breastplate with a gold trim and a stone ridge). The 4 PK-0
+    samples (Rubber Stamp, Click Pen, Warranty Card, Mic Drop) are written as drawn.
+  - Texts changed from the drafts: Click Pen "Every 8th attack" (status moves don't count), Power Bank "ends a turn
+    below a quarter of its HP heals 25% of it" (it is read at a turn's end), Alarm Clock without "always" (a foe's
+    priority move still goes first). Lines: "Rubber Stamp: Approved!", "Click Pen: Click! X lines up a critical
+    hit.", "Screen Protector: X took only half the hit.", "Joy Buzzer kicked in!", "Oven Mitts kept X from being
+    burned.", "Alarm Clock: X moves first.", "Warranty Card: your team got back up!".
+  - Rarities as the plan: Rubber Stamp, Laser Pointer, Screen Protector, Oven Mitts, Headphones, Rubber Boots common;
+    Click Pen, Power Bank, Joy Buzzer, Hot Sauce, Hazmat Suit uncommon; Mic Drop, Alarm Clock, Plot Armor, Warranty
+    Card rare.
+  - "VOID" for any spent once-a-run row (only Warranty Card has one now); counters on held Perks only.
+  - An event's status skips the whole team when a guard holds; the Sandstorm and stones are kept off without a line.
+  - Every seed's offers changed (the pool follows the file's order; accepted, as SP-6 did).
+- Phone checks to do (listed, not waited for): a run battle holding Click Pen: the Perks tab counts "n/8" and the 8th
+  attack is critical with its line; Warranty Card at a wipe: the team gets up, the tab says VOID; Alarm Clock against
+  a faster foe on turn 1; the 11 new pictures crisp at 72 and 36 px, light and dark.
+- Next: PK-4 (Wave B: types, team and weather; `needs`, `tags` and the bias; perks.test.mjs:41 rewritten for
+  relevance) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-3-done` on this entry's commit.
+
+### Perks track PK-2 - the art pipeline - 2026-10-28
+Branch `track/perks` (this session's outcome branch, from PK-1's c5e12cc1; main already merged: nothing new at
+07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 6, "Corrected
+in PK-2".
+- The plan (as set at the start): (1) `tools/build-icons.mjs` and its test, the grid file seeded with PK-0's 8
+  samples; (2) the 12 other existing Perks drawn as grids; (3) `img` on Perks (schema, types, a data check) and the
+  13 SVGs written; (4) the screens: 72 px on the pick card, 36 px in the Perks tab, the shop row and the "Let one go"
+  sheet, the card's back and the bar's tab kept on `relic`; (5) the Studio: the icon editor and art browser on
+  art/perks (and items, boons later), the Perks editor's picture with Edit art; (6) the contact sheets; (7) docs. One
+  cause per commit.
+- Changed (7 commits):
+  - **tools/build-icons.mjs** (new) and tools/test/build-icons.test.mjs: grids in `tools/art/icon-grids/<folder>.json`
+    (`about`, `mono`, `icons`), checked (34x34, palette letters, digits only with a `mono` hue, svgProblem, no two
+    shapes overlapping 90% or more as intersection over union), shaded by `iconBlockKeyed` and written by
+    `pixelsToSvg` to `game/art/<folder>/<id>.svg` **once the data names the picture**; never over an SVG on disk
+    without `--force` (the SVG is the source); `--check`, `--only=`, `--sheet` (contact sheets through the container's
+    Playwright). Its test shades the 51 UI icon grids back to their SVGs byte for byte.
+  - **Art**: `tools/art/icon-grids/perks.json`: the 8 PK-0 samples and 12 new grids; `game/art/perks/*.svg`: the 13
+    existing Perks. The 7 later-wave samples stay grids (nothing names them yet).
+  - **Data**: perks.json `img` on all 13; perks.schema.json `img` (`^perks/<id>.svg$`); game-data.d.ts `Perk.img`;
+    data-checks.js `dataPerkArt` (an error when the picture is missing or fails svgProblem, a warning without `img`),
+    run by check-data.
+  - **Screens**: art.js `artIconHTML` (a picture drawn as the UI icons are, `relic` without one; `uiIconHTML` now builds
+    both tags, so ui-lint's style count stays at its ceiling), `.art-ic` pixelated; perk-screen.js (pick 72 px, drop
+    sheet 36, Perks tab 36 in its 44 px tile), shop.js (the Perk row at 36). check-fast's Perks step checks every
+    card's and row's picture and size.
+  - **Studio**: svg-pixels.js `ICON_DIRS`, `svgIconKey`, `svgIconPath` (an icon outside art/ui is `perks/<id>`); the
+    icon editor opens and saves them (its folder's others beside it, previews at 18/36/72/108, an unsaved one through
+    `artURL`, New icon in the open folder with `_` ids); the art browser's Edit icon covers them ("Used by" needed no
+    change); the Perks editor shows the picture at 72 and 36 px with **Edit art**, or **Draw one** (a blank
+    `art/perks/<id>.svg` named in the Perk). check-studio-github.py: relics (the picture, Edit art), icons (a Perk's
+    picture painted and undone, a new one staged in art/perks), art_browser (Used by perks.json, Edit icon).
+  - **validation/icon-sheets/perks-{light,dark}.png**: the contact sheets (cards at 72 px, rows at 36 and 18).
+  - Docs: perks-track.md (PK-2 done, "Corrected in PK-2"), ROADMAP, STUDIO.md (icon editor, Perks editor),
+    ART-NOTES.md ("Perk pictures"), TESTING.md.
+- Risky:
+  - UI-14a/b (PRs #286, #288) restyle the same cards; whichever lands second merges (perk-screen.js `perkCardHTML`,
+    shop.js's Perk row). The art slot keeps its min-height 64; a 72 px picture makes each pick card 8 px taller.
+  - The drop sheet's 36 px picture sits in a 64 px slot (the cards are a column of six; 72 would make the sheet long).
+  - **Draw one** is checked only up to its message in the Studio check (the button's new file and img are not driven).
+  - Every icon's look is new art for the owner's eye; nothing is checked on a phone yet.
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck and
+  `npm test` (1595 at the start, 1603 at the end, all passing locally); before every commit check:modules,
+  format:check, check:data (176 files fine) and build; `check:smoke` 6/6 before each commit touching game/ (Python
+  Playwright 1.63.0). `check:fast --only=perks` passed with the new picture checks (its first try measured the tab's
+  pictures mid-animation at 35 px; it now reads the laid-out size). `check:ui` passed. `check-studio-github.py
+  --only=relics` and `--only=icons,art_browser` ok with their new PK-2 steps. `node tools/build-icons.mjs perks
+  --check` fine (closest silhouettes 88%). Full quick check on 1155c85: 41 steps, 37 passed; the 4 PROBLEMs are the
+  four PK-1 recorded as main's (Terraces "props in the air: train_station", RL-8 "crossed into Thicket Route but its
+  view never showed", "room light", Battle music "the drums never came in on a throw"). CI on #301: lint red once on
+  d47bfa0 (`run-map-checks.test.mjs`'s 1,000-map sweep took 1014 ms of its 1,000 ms budget; run-map code untouched),
+  green on the later pushes with the same code; smoke red on the two Studio steps with 404s for
+  `game/art/billionaires/*.png`, main's as PK-1's PR comment established. `npm run test:slow` not run (no scene,
+  map or run-sim code changed).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 12 new pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Clinic Loyalty Card (a paper card, red band and cross, two punched holes), Coupon Book (a green stub,
+    dashed cut line, paper coupons stacked), Steady Hand (the game's pyramid pinched by a paper-coloured thumb and
+    finger: the weakest read, a candidate to redraw), Running Shoes (a red sneaker, cream sole and stripes), Power
+    Gloves (a one-colour red mitt, the thumb parted by a seam, a cream cuff), Bubble Wrap (a one-colour blue sheet of
+    bubbles), Trail Snacks (a wood bag, crimped stone top, a paper label with a green leaf), Field Notebook (green,
+    a slate band, cream pages, a pencil), Lost Property Form (paper, text lines, a gold stamp, a slate clip), Petri
+    Dish (an ice octagon, cloud agar, green and violet spots), Gene Lure (a one-colour teal fish lure, a cream and
+    slate helix, a steel treble hook), Stabilizer Gel (a one-colour teal tube, crimped end, cream label with a teal
+    cross, steel cap).
+  - Lucky Charm stays PK-0's horseshoe (section 11, item 8).
+  - The drop sheet shows pictures at 36 px, the pick at 72.
+  - "Overlapping 90%" measured as intersection over union.
+  - A grid is written only when the data names its picture (`img`), never by a flag that writes all.
+  - check-data warns (does not fail) on a Perk without `img` (a pack's Perk may come without art, as section 6 says).
+- Phone checks to do (listed, not waited for): a mini-boss's pick shows three pictures crisp at 72 px; the Perks tab and
+  a run shop's Perk row at 36 px; light and dark themes.
+- Next: PK-3 (Wave A, the battle kit: 15 Perks of 5.2 with their kinds and art) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-2-done` on this entry's commit.
+
+### Perks track PK-1 - the effects core - 2026-10-28
+Branch `track/perks` (made in this session from `ccr-24be55e6-2bmqci`, main merged first: already up to date at
+07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 7, "Corrected
+in PK-1".
+- The plan (as set at the start): (1) effects.js gets the fields `when`, `if`, `every`, `grow`, `per`, `once` with
+  fixed lists and the functions that read them, tested alone; (2) the schema, data checks and types; (3)
+  `run.perkState` in validRun; (4) the switch-in fix; (5) a run's turnHeal, pinchHeal, turnHurt rows read; (6) level
+  and bossHp through every run row; (7) the battle moments and conditions on every battle reader; (8) the run
+  moments; (9) battle lines naming boons; (10) the Studio's row inputs; (11) the debug log's `relicState`; (12)
+  docs. One cause per commit, test-only Perks (perks.json unchanged), the golden battles as the proof that a battle
+  without Perks plays as before.
+- Changed (12 commits, each with its tests):
+  - **effects.js**: `FX_WHEN` (15 moments: battleStart, switchIn, move, hit, hurt, crit, ko, faint, turnEnd,
+    throwMiss, catch, win, arrive, buy, take), `FX_ONCE`, `FX_PER`, `FX_FOES`, the condition words; `fxCond`,
+    `fxLive`, `fxSpend`, `fxRowNow` (growth and per-type counting, within FX_LIMIT), `fxAt` (rows read at their
+    kind's point), `fxPeek`, `fxFire` (a moment: counters, growth, once marks); `fxRunFoeLevels`, `fxRunBossHp`;
+    `fxStateLog`. `fxOfRun` numbers the rows that keep state.
+  - **Battle** (battle-engine.js): `fxBattleStart` and `fxFieldStages` (a Perk's stat rows for every Billie of
+    yours that takes the field: **the switch-in fix**, Running Shoes now does what it says), `fxMoment` (each battle
+    moment; stat and heal rows act, a Perk's `say` is its line), `fxHitMult`/`fxHitMoments` (damage rows of a hit),
+    `fxTurnEnd` (a run's turnHeal, pinchHeal, turnHurt), `fxBattleRows` (money, a coin's chance, XP, DNA take only rows
+    whose conditions hold), `fxBattleCtx`, `fxFoeTags`, `fxSrcName` (lines say "Ring Light Shrine: ...", not
+    "event:ring_light"). makeBattle no longer gives the Perks' stages (the engine does, at newBattle).
+  - **Run** (run-loop.js): `runFxMoment`, `runBuyFx`, `fxRunCtx`; arrival's heal rows check their condition; the win
+    and catch moments in battleSettle; the take moment in perkTake (an optional last `s`, passed on by perkChoose and
+    perkBuy; perk-screen, the shop, the debug menu and the simulation pass it); the buy moment in shop.js and the
+    simulation; a run battle carries `run.perkState` when a row keeps state. Foes' levels and the boss's HP read every
+    run row (run-scenes, encounters, runFoes).
+  - **Data**: perks.schema.json (`$defs` for the fields on every kind, a Perk's `say` of 40 letters, the kinds
+    turnHeal, pinchHeal, turnHurt, level, bossHp); data-checks.js `fxWhenProblems`, `fxCondProblem`,
+    `FX_WHEN_KINDS`, `FX_PLAIN` (used by dataPerks; fxRowProblems refuses the fields on held items, Genes and the
+    fountain, where nothing reads them); game-data.d.ts `FxWhen`, `FxTiming`, `Perk.say`; save-data.d.ts
+    `Run.perkState`; run-state.js `validPerkState`.
+  - **Studio**: the Perks editor's When, If, Every, Grows (on, by, up to, reset), Per and Once inputs per row (only
+    those the kind can have), the Perk's battle line, the five run-read kinds; check-studio-github.py's relics step
+    sets a When and an If, sees a bad condition's message and undoes both.
+  - **Debug log**: `relicState` beside `relics` (counters only: n, v, used by '<source>/<row>').
+  - Tests: effects-when.test.mjs (new: each condition word, every, grow, per, the three once scopes, peek, the plain
+    row unchanged), battle-perks.test.mjs (new: the switch-in fix, every battle moment, ko, every counted over two
+    battles on the run's marks, once a battle with a say line, conditions in battle, a growth's reset on a faint, the
+    turn-end kinds, boon names, a battle without Perks making no marks), run-fx (the run moments, conditions on
+    arrival, buy, take, win, catch, once a run, growth with noFaint), run-state (perkState bounds), run-loop
+    (runBattleExtra's marks), encounters (a level row from a boon and a Perk), data-checks (good rows pass, 25
+    planted faults named, the schema with ajv).
+- Risky:
+  - Every battle with Perks now builds a small context per hit (`fxBattleCtx`); fine in the tests' timing, not
+    measured on the phone.
+  - **A level or bossHp row taken mid-run shows after the run's world is made again** (run-world.js builds places
+    and foes once per seed, and on a reload). Nothing has such a row yet; PK-7's Early Access Pass needs this handled.
+  - A Perk's stat stages now come after a held item's at a battle's start (they were before); the totals differ only
+    when the stage cap clips them.
+  - The start's Perk lines wait in `b.fxSay` for `sayBattleFx`; a battle begun another way says them at its first
+    turn.
+- Verified: after every change lint (eslint, names, ui-lint, unused CSS, art-code-refs), typecheck and `npm test`
+  (1569 at the start, 1595 at the end, all passing); before every commit check:modules, format:check, check:data
+  (176 files fine) and build; `check:smoke` 6/6 on every commit touching game/ (run in a second worktree on the
+  commit itself; Python Playwright 1.63.0 as UI-10's entry says). `check:fast --only=perks` passed (61 s);
+  `npm run test:slow` 103 of 103; `python3 tools/check-studio-github.py --only=relics` ok (with its new When/If step).
+  Golden battles unchanged (no snapshot remade). Faults planted once each and seen red: `every` firing one late, the
+  switch-in line removed. Full quick check on 1418be7e: 41 steps, 37 passed; the 4 PROBLEMs: Terraces "props in the
+  air: train_station", RL-8 "crossed into Thicket Route but its view never showed" and "room light" (all three red on
+  main per the HB-10 and RS entries), Battle music "the drums never came in on a throw" (passes alone here, as
+  HANDOFF records for full runs). RL-8 rerun alone: "the town's shop has no Perk" (red on main too, as the brief
+  says). `--selftest` whole: the same two failures as main's tree (a room "isn't drawing (black screen)", "the
+  town's walking grid changed after the room", 236 cells as on main's last run). Phone checks to do (listed, not
+  waited for): a run battle holding Running Shoes, then a switch: the Billie coming in gets "Running Shoes: X's
+  Speed rose."; an event's boon line says the event's name; the exported debug log has `relicState` (null with no
+  counting Perk).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - The line a firing Perk says: "<Perk name>: <say>" ({name} is the Billie, "your team" for more than one); without
+    a `say`, a stat row says "<Perk>: X's Speed rose." and a heal row "<Perk>: X restored HP."; a modifier row (a
+    damage row on a hit) says nothing without a `say`.
+  - A run's pinchHeal row heals each Billie once a battle (as a held item's), unless its `once` says otherwise.
+  - `every` counts over the whole run, and only the times its condition holds.
+  - `lead` is whoever stands in your first field place; `newSpecies` is "none of that species on your team".
+  - A growth stays between 0 and its max (a negative max for a shrinking value).
+  - Buying several of a ware at once is one `buy`; Perk purchases count too.
+  - `turnHurt` from the run says "<source>: X lost a little HP."
+- Next: PK-2 (the art pipeline: `tools/build-icons.mjs`, `img` on Perks, cards at 72 px and rows at 36 px, the 13
+  existing Perks drawn) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-1-done` on this entry's commit.
+
+### Perks track PK-0 - the plan, research and art samples - 2026-10-27
+Branch `ccr-24be55e6-2bmqci` (the session's own), made from main at 07c9b284; `track/perks` doesn't exist yet (PK-1's
+session makes it). Plan Mode, plan approved. Docs and samples only: no game code, data or art changed. Details:
+docs/phases/perks-track.md.
+- The owner's brief: "Make a plan for additions for the relics and such. There should be a lot of variety. Also make
+  it so they have their own art in a style that fits. Do research online." Answers: all four extras (held items, Bag
+  item icons, boons and curses, Perk sets), about 60 new Perks, Fine Print trade-off Perks offered at leader wins.
+- Changed: docs/phases/perks-track.md (the code today with file refs, research with sources, design rules, the
+  catalog: 66 new Perks in four waves plus Fine Print, 7 sets, 16 held items, 20 boons and curses, the Bag items; the
+  art pipeline; the effects core; sessions PK-1..PK-12; how the sessions run; Ask me before); docs/samples/
+  perk-icons.png and perk-icon-samples.json (8 sample icons); a ROADMAP line; two BRANCHES rows.
+- The samples: Lucky Charm, Rubber Stamp, Click Pen, Warranty Card, Bellows, Mic Drop, Umbrella, Glass Trophy, each a
+  flat 34x34 grid shaded by `iconBlockKeyed` and written by `pixelsToSvg` (the UI icons' own look), shown on mock
+  pick cards at 72 px and in rows at 36 and 18 px, light and dark. Drawn with a scratch painter (not committed;
+  PK-2's `tools/build-icons.mjs` takes the grids); the sheet rendered with the container's Playwright
+  (`NODE_PATH=$(npm root -g)`). Lucky Charm became a horseshoe: the clover read as a gem at 36 px. A cream sparkle
+  on the background vanished on the light panel (the track file's art rules now say so).
+- Found in the code (the plan's section 2): a Perk's stat rows skip Billies that switch in (`doSwitch` applies held
+  stages only), so Running Shoes helps the lead alone; run rows of turnHeal, pinchHeal, turnHurt, level and bossHp do
+  nothing; `sayBattleFx` prints a boon's raw source ("event:ring_light"); the Perks schema allows no art field; held
+  items borrow finance-era atlas sprites; no rarity colours exist in code yet (UI-14). Two drafts were wrong and fixed
+  before writing: a run's day moves with every arrival, so "each new day" Perks were "each place" (Time Card and
+  Subscription Box changed), and Perks are found on a run, so Boarding Pass pays when taken, not at a run's start.
+  Names checked against the data: Shredder (a bot), Filing Cabinet (the Retrieval Unit's leader), Hard Hat (a
+  wardrobe piece) and Recall Notice (an event) are taken; Hype Mic became Mic Drop (Hyped is the confusion state).
+- Risky: every number and name is a draft; the catalog's mechanisms were checked against the code's hook points but
+  not built; about 140 pictures to draw; the leader pick turning Fine Print changes `self-test.js:2215-2267`'s step.
+- Verified: `npm run lint` (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), `npm run
+  format:check`, `npm run check:data` (176 files fine; its two bridge warnings, copperleaf and test_props_island, are
+  main's). The saved grids shade back to the sample SVGs byte for byte (a scratch check). No code changed, so `npm
+  test` and the browser checks were not run.
+- The owner's standing instruction: "Automatically approve plans for next steps and start them in new sessions until
+  this plan is finished." This session starts each step (perks-track.md section 10): PK-1 from this branch with
+  outcome branch `track/perks`, the later steps from `track/perks`; each reports done with a one-shot scheduled task
+  here, and an hourly check covers a missed one.
+- Decided for the owner, to review: perks-track.md section 11 (Fine Print in the ladder's top orange with a red stamp,
+  weights 6/3/1 kept, the reward-pick Perk card at weight 2, held items' tiers, rerolls unchanged, a 50 Moneys appeal,
+  the horseshoe, existing numbers kept, the cap 6).
+- Next: PK-1 (the effects core) in a new session on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-0-done` on this entry's last commit.
+
+### Style track SY-8 - tuning and docs: the style dials, the debug log's style line; the track is done - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-7, adb683c1) was
+already in; main had nothing new at the start (07c9b284) and moved during the step (merged in: below). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-8,
+plus UI-16a/b from SY-5); **the style track is complete** and waits on #289 (the owner merges). PR #279
+(`ccr-86dc9cb1-odx2za`, the plan and SY-1) was superseded by #289; the merge session merged #279 into main during
+this step, so nothing is left to close. Tags `sy-8-done`
+and `style-done` are for the owner to push (the git proxy refuses tags). The VFX session (session_019UpAFxvWEMwGebptZbvUuW)
+was messaged before `battleStageFlash` got its counter line; the sprite shader, hitFx and the join intro were not touched.
+- Changed:
+  - **The dials as data** (uiTheme.json `style`, schema, logic/style-dials.js, the Studio's UI section, new group
+    **Style**): Stamp size (x1, 0.5-2), Stamp slant (8°, 0-20), HP roll (380 ms, 0-1500), Damage number smallest and
+    largest (24 and 40 px), Foil every (3,500 ms), Foil sweep time (700 ms), Foil band width (half width 0.2). Every
+    default is the number SY-2 to SY-6 shipped: nothing looks different until a dial moves. A palette preset can set
+    them too. The theme sheet writes them as `--stamp-scale`, `--stamp-slant`, `--hp-roll`, `--pop-min`, `--pop-max`,
+    `--foil-period`, `--foil-sweep`, `--foil-half` (`styleVarsCss` in logic/ui-theme.js sharedVars).
+  - **Readers:** `pb-stamp` (ui-run-kit.js) sizes its font by `--stamp-scale` and turns by its page's tilt x
+    `--stamp-slant` / 8 (so -7 and -8 stay apart); battle-screen.css's HP fill moves in `--hp-roll`; battle.js's pop
+    (`popSize` takes min and max now) and the roll (`rollValue`'s ms) read theme-sheet.js `styleDials()`; the foil
+    (`coatFoil`/`foilBand` take an optional tune) does too, in world-billies.js `worldFoil` and battle-3d.js
+    `battleFoil`. `styleDials()` reads the variables at most twice a second (the foil asks every frame) and again
+    after `applyUiTheme`.
+  - **The debug log's style line** (debug-log.js `state().style`, from theme-sheet.js `styleLog()`): `now` (e.g.
+    "flashes off, calm", from html data-flash and data-motion) and `ran`: for each state that ran this session, counts
+    of `flash` (at its strength), `flashHeld` (held to 15% by Flashes off), `flashSkipped` (none: Reduced), `stamp`,
+    `pop`, `roll` and `foil` (frames a Billie had its band). Counts only: no save data, names or places.
+  - Tests: tools/test/style-dials.test.mjs (6: defaults equal today's constants and the data, schema ranges equal the
+    logic's, reading and clamping, the sheet's lines, the counts, popSize/foilBand with dials).
+  - Docs: the track file (SY-8 done, the track done, **one list of every "Decided for the owner" item from SY-1 to
+    SY-8**), ROADMAP (SY-8 and the track done), BRANCHES (a `track/style` row: done, waiting on #289).
+- Found (claims checked):
+  - "the pop's sizes" were constants in logic/hit-numbers.js (POP_MIN 24, POP_MAX 40, ROLL_MS 380) and the fill's
+    .38 s was a separate CSS number: now one dial drives both, so number and bar land together.
+  - The foil's numbers were in logic/coat-foil.js (FOIL_PERIOD_MS 3500, FOIL_SWEEP_MS 700, FOIL_HALF 0.2): right.
+  - The stamp's slant was each page's own `tilt` (-7 on the win line, -8 elsewhere), with no shared number; the dial
+    scales them rather than replacing them.
+  - The debug log already logged the Animation setting and level (`preferences.motion`, `motionLevel`), but not
+    Flashes; the style line adds it.
+  - The Studio loads battle-stage.js and battle-3d.js but not theme-sheet.js: both guard the reader
+    (`typeof styleDials === 'function'`), so the Studio's battle preview uses today's numbers and counts nothing.
+  - "Run map music ... 1400, not 1400": passes alone on main (07c9b284) and alone on this branch (SY-8), and passed
+    in this step's full quick check; it failed alone on SY-6 and SY-7 tips by SY-7's report. It looks like a timing race in the check (the ambience timer sets
+    the music filter every few seconds, so the "last cut" can change between the wait and the message), not the
+    style track's: nothing here touches sound.js. Not fixed.
+- Risky:
+  - A dial set far from its default is untested on a phone (a 2x stamp may overflow a narrow sheet; a 0 ms roll
+    jumps, as before SY-2).
+  - `styleDials()` lags a Studio preview change by up to 0.5 s for the pop, roll and foil (the CSS-read dials are
+    immediate).
+  - `foil` counts frames, so it grows fast (about 60 a second per coated Billie in view); it is a number, cheap.
+  - UI-17's menu foil (`pb-foil`, logic/idle-life.js, from main) keeps its own timing: the Style dials drive the
+    Billie's foil only. Matching the two is a small follow-up if the owner wants one sweep everywhere.
+- Main merged in (at the planning session's and the merge session's request; a merge, 970a9094): main 5f6d01ae (#279,
+  #283, #302: UI-17, UI-18, WM-6, the UI checks). Ten files conflicted; both sides kept (index.html's scripts,
+  battle.js's imports, ui-run-kit.js's elements, the gallery's sections and imports). **MAPGEN_VERSION 26:** main's
+  WM-6 had taken 25, so SY-7's sign and forms are 26 now (the rng scene hash and the run-start snapshot remade with
+  their tools; both differ from main's only by gen.v / mapgenV, checked by setting the version back). art-code-refs
+  regenerated, `npm run modules`. HANDOFF: both sides' entries; SY-3's entry was on both sides, kept once.
+  Then main moved again (48ded9d2, #293 the worldmap track): merged too; only art-code-refs.json conflicted
+  (regenerated); lint, types, modules, format, data checks, `npm test` (1,661 pass) and `npm run check:smoke` (6 of
+  6, the Phone count passing) after it.
+- Verified: lint, typecheck, check:modules, format:check, check-data, check-data-text, art-code-refs; `npm test` 1,660
+  pass after the merge (before it, only the timing test "1,000 maps ... in under a second", which passed alone).
+  `npm run check:smoke` after the merge: 5 of 6; the Phone step's "walk 20 (at most 18)" failed three times and
+  then passed twice on the same code (15 pieces): the count catches the place title and the postcard while they are
+  still on screen; main passed it once. Timing, not this step's (nothing here adds a DOM piece to the walk screen).
+  `npm run check:quick`: 37 of 42; the five are the known ones (Terraces train_station, RL-8 "Meadow Route view never
+  showed", RT-2 "the pair talked but no battle started", Granny Juniper, room light). The UI-16a sound fingerprints,
+  the Phone count and "Run map music" all passed in it. Headless dial check (the gallery): a stamp is 22 px at 8° by
+  default and 44 px at 16° with size x2 and slant 16; `styleDials()` reads the new pop and foil values; no page
+  errors.
+- Decided for the owner, to review (this step's; **every step's list, SY-1 to SY-8, is in docs/phases/style-track.md,
+  "Decided for the owner, to review"**):
+  - **The dials live in uiTheme.json `style`** (the UI section's Style group), so presets can set them and the
+    Studio's live preview shows them; not factions.json or engine.json.
+  - **Stamp size is a multiplier (x1); slant is degrees (8) that scales each page's own tilt.**
+  - **One HP roll dial for the number and the fill.**
+  - **Foil dials: period, sweep time, band half width**; its strength, brightness step and hue stay in code.
+  - **The log counts foil per frame drawn.**
+  - **MAPGEN_VERSION 26** for SY-7's change after merging main (WM-6 had 25).
+  - Not added: a Studio card for the Bureau's words and forms (edit factions.json `bureau.look`); it fits a
+    factions editor when there is one.
+- Next: the style track is complete. The owner reviews and merges PR #289 (draft)
+  and pushes the tags `sy-8-done` and `style-done` (and the earlier `sy-N-done` tags) on the merge commit. Optional
+  SY-9 (Laminated) only if the owner reopens it.
+
 ### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28
 Branch `track/characters`, the same session as CH-2, straight on at the owner's word ("Automatically follow the plan
 until you finished ch3 then stop"): the track file's CH-3 is the plan, and the "Ask me before" calls it touches were
@@ -1059,6 +1527,269 @@ on the HUD; a boss's name slams in).
 - Next: the session that runs every skipped check and fixes what they find (the UI plan's end); SY-6 can reuse
   `<pb-foil>`'s look; VFX-16 and RL-14b can call `pbNameBanner`.
 - Tag to suggest (sessions can't push tags): `ui-17-done` on this entry's commit.
+### Style track SY-7 - the Bureau in the world: red tape, its checkpoint sign with the emblem, loose forms - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-6, 9c5fbe5d) was
+fast-forwarded in; main had nothing new. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-7, plus
+UI-16a/b from SY-5). Tag `sy-7-done` is for the owner to push (the git proxy refuses tags). Nothing in battle was
+touched (no hitFx, join intro, battleStageFlash or sprite shader), so the VFX session wasn't messaged.
+- Changed:
+  - **Red tape** (tools/build-props-routes.py, the props' own build script; rerun, models and baked pictures remade):
+    `bureau_barrier` gets two red wraps round its board, a hanging end and a tape strung between its legs in a stepped
+    sag; `bureau_crate` gets two bands crossed over it like a parcel and one over the small crate. The tape is the
+    scenery's red (#DE4048, `TAPE`), the wax seal's family.
+  - **`bureau_sign`** (new prop, same script): a slate board on two posts, mustard edges, a red tape strip at its
+    foot, and the emblem as a fixed decal (`face: 'fixed'`, never mirrored). The decal,
+    scene/next/decals/bureau_emblem.png, is made from art/ui/bureau.svg by the script (`emblem_decal`), at 1 px a
+    pixel (36 px, 1.1 m on the board); the baked fallback picture gets the emblem pasted on, since the bake draws no
+    decals. On the route props showcase map's Bureau row.
+  - **The checkpoint** (setPieces.json `bureau_checkpoint`): its sign is `bureau_sign`, same spot, same words.
+    **MAPGEN_VERSION 25** (the route props track bumped it for its set piece change too); the rng scene hash and the
+    run-start snapshot change only by `mapgenV` (checked by setting it back).
+  - **Loose forms** (ambient-life.js kind `form`: `fly` plus a new `drift` flag): lies flat (frame 1 a corner lifting
+    now and then), lifts on a gust (more often than a gull takes off) or when you come within 1.6 m, blows along low
+    (1.2 m) and sideways across the view (one way per scene), wobbling, for 2.5-4.5 s, and comes down ahead of itself
+    inside its piece's area. Never walks, leaves no footprints, rustles instead of calling. art/scene/life/form.png
+    (4 frames, 20 x 14) and scenery.json `life.form` from tools/build-bureau-forms.py (new). setPieces.schema.json's
+    life enum takes `form`. Three in the checkpoint's `life`, two in the scrap heap's (its sign is the Bureau's
+    "Unclaimed property"); `extra` life, so fewer on lower graphics and none with Graphics Off (RT-4b).
+- Claims checked against the code:
+  - Right: setPieces.json's checkpoint (123-142) and the scrap heap's Bureau sign; scenery.json `bureau_barrier` and
+    `bureau_crate` (both low-poly models with baked pictures, not flat props).
+  - Wrong-ish: "the emblem on the checkpoint's sign": the checkpoint had no sign of its own, only the shared
+    `signpost` (every exit's sign uses it). Branding that would put the emblem everywhere, so the checkpoint got its
+    own prop.
+  - Partly: "an ambient-life kind with the `fly` flag": `fly` is the gull's (wheels 4.5 m up for 4-7 s, picks a far
+    landing spot, walks about when landed, calls). Paper needed its own behaviour on top: the `drift` flag.
+  - "Art from the Studio": the props here are built by their build scripts (as every low-poly prop is); the models,
+    the decal and the strip are ordinary art the Studio paints and moves. Rerunning the scripts overwrites Studio
+    edits to those files, as for every scripted prop.
+- Found, not changed: tools/build-props-routes.py's header said "no logo: the Bureau's look is the owner's call";
+  updated now that SY-3 made the emblem.
+- Risky:
+  - The forms are small (a sheet about 0.37 m) and placeholder pixel art; never seen on a phone.
+  - MAPGEN_VERSION 25: a run saved mid-way records 24; it carries on with today's generator either way (the version
+    is recorded, not branched on).
+  - A form's gust direction is per scene (from its id); forms in one scene all blow the same way, by design.
+- Verified: lint, typecheck, check:modules (`npm run modules` for `lifeGust`), format:check, check:data,
+  check-data-text, art-code-refs regenerated, `npm test` (1,643 pass). `npm run check:smoke`: 5 of 6 (the known Phone
+  "team 30"). Headless look (900 x 600, the route props showcase's Bureau row): the three props draw as low-poly
+  models, the sign's emblem shows, four forms lie about and then blow along at 1.2 m with the flutter frames; no page
+  errors.`npm run check:quick`: 34 of 41. Five are the
+  known ones (Terraces train_station, RL-8 "Lakeside Route view never showed", room light, Phone "team 30", UI-16a's
+  four sounds). Postcards ("no postcard came") passes alone. "Run map music ... 1400, not 1400" fails alone too, and
+  fails the same on SY-6's tip (9c5fbe5d) with none of this step's changes: not SY-7's (a float compare in the check,
+  it seems; for the sound track).
+- Decided for the owner, to review:
+  - **A new prop `bureau_sign`** for the checkpoint in place of putting the emblem on the shared signpost.
+  - **The tape is the scenery's red #DE4048**, not the UI's red family (#EA5974): it sits beside the props' wax seal
+    and the tollbooth's red; one shade of red per palette.
+  - **Forms also in the scrap heap** (its sign is the Bureau's), not only the checkpoint; 3 and 2.
+  - **The `drift` flag** (new behaviour) rather than reusing the gull's flight; **size 0.95**, lift 1.6 m away.
+  - **MAPGEN_VERSION bumped** to 25.
+  - **The emblem decal is made from art/ui/bureau.svg by the build script**: repaint the emblem in the Studio's icon
+    editor, then rerun `python3 tools/build-props-routes.py` to carry it onto the sign.
+  - Not added: a unit test for the forms' flight (ambient-life.js runs on the walk view; the headless look covered it).
+- Next: SY-8 (tuning and docs: the Studio dials, a debug-log line with the Flashes and Animation states, HANDOFF; tag
+  `style-done`), in its own session on `track/style`.
+
+### Style track SY-6 - the coat's foil in the world: a dithered sheen band on coated Billies, maps and battle - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-5) was fast-forwarded
+in; main (07c9b284) had nothing new. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-6, plus
+UI-16a/b from SY-5). Tag `sy-6-done` is for the owner to push (the git proxy refuses tags). The VFX session
+(session_019UpAFxvWEMwGebptZbvUuW) was told before the sprite shader was touched; VFX-9's `uHit` is not on
+`track/vfx` yet, so `uFoil` went in first, small and on its own (vfx-track.md notes where `uHit` can go).
+- Changed:
+  - **game/js/logic/coat-foil.js** (new; index.html, the Studio's page and its logic worker list; 7 tests):
+    `foilOn` (off under Reduced motion, with Flashes off, with Graphics Off, at quality level 2 and up), `foilBand`
+    (a sweep every 3.5 s that crosses in 0.7 s, one place per 24 fps cell, each Billie offset by a hash of its seed;
+    null between sweeps), `foilHue` (each coat its own hue turn, 0.2-0.45 of the wheel), `coatFoil` (the shader's
+    `uFoil` for a coat at a time, or null; a regional form's coat (`form: true`) never has foil).
+  - **The sprite shader** (walk/walk-shaders.js, the sprite fragment shader): `uniform vec4 uFoil` (strength, the
+    band's middle, its half width, the hue turn) and one block after lighting, before the fog: a band along x + .6 y of
+    the picture, stepped in art pixels, its outer 40 % Bayer-dithered, only on pixels whose colour is above luma 0.3,
+    the lit colour turned round the hue wheel and lifted (x1.25 + .06), mixed in at 0.55.
+  - **walk/sprites.js** `drawFoilRecord`: an item with `foil` is drawn on its own on the sprite program with `uFoil`,
+    which goes back to 0 right after. In the instanced pass it ends the run and the next run starts after it. The
+    instanced program carries the same shader text but never sets `uFoil`. 2 tests in sprite-records.test.mjs (both
+    passes); the pass's recorded calls (snapshots) are unchanged.
+  - **The items:** world-billies.js `worldBillyItem` (the buddy, the wild ones, companions, pets: the walk's clock)
+    and battle-3d.js `battle3dFrame` (the battle's clock, `battleStage.q.lvl`; afterimages get none) set `item.foil`.
+- Claims checked against the code:
+  - Wrong path: the shader is game/js/walk/walk-shaders.js (181 and the instanced one at 511 are right).
+  - Wrong: "`uFoil` set in walk/sprites.js from the Billie's coat": sprites.js only sees items, not Billies; the
+    coat is turned into `item.foil` where the items are made, and sprites.js sends it.
+  - Partly wrong: "off at quality 2 and up": only battle has a quality level (`battleStage.q.lvl`). The maps have
+    none; there the foil follows the Graphics preset (off with Graphics Off).
+  - Not built yet: UI-17's menu foil. Menus show a still four-hue gradient (units.css `.u-tag.coat`), so "the same
+    look" is for UI-17 to match.
+  - Right: battle Billies go through the same sprite program as the maps (`k: 'rig'` items, the rig's canvas
+    uploaded), so one shader term covers both.
+- Found, not changed: there is no finished Billie art in this base (every Billie draws as a labelled placeholder
+  rig, "HEAD", "TORSO"; the known 404s on art/billionaires). The foil could only be judged on placeholders.
+- Risky:
+  - Never seen on a phone. A foiled Billie costs one more draw while its band crosses (0.7 s of 3.5 s), and every
+    sprite pixel pays one uniform branch. **Graphics bench before and after: not run** (the bench is only run by
+    players; headless numbers mean nothing, docs/graphics-bench.md), so that is for the owner's phone.
+  - The lift (x1.25 + .06) under the battle's bloom may read as too bright. Width, speed and strength are constants
+    in coat-foil.js for SY-8's dials.
+  - The first commit's test checks the shader for `uFoil`, which only the second commit adds (fine at the branch tip).
+- Verified: lint, typecheck, check:modules, format:check, `npm test` (1,643 pass). `npm run check:smoke`: 5 of 6
+  (the known Phone "team 30"). Headless battle at 600 x 700 with a Midnight foe, band pinned at 0.4, 0.8 and 1.2:
+  the band crosses the picture, dithered at its edges, and turns warm pixels green; with Flashes off `battleFoilOn()`
+  is false and the items carry no foil. No page errors. `npm run check:quick`: 33 of 41. Seven reds are the known
+  ones: Terraces train_station, RL-8 "Meadow Route view never showed", RT-2 "no battle started", Granny Juniper, room
+  light, Phone "walk 20, team 30", UI-16a's four sounds. "Run map music ... 1400, not 1400" failed once and passes
+  alone (36 s).
+- Decided for the owner, to review:
+  - **Maps: off with Graphics Off** in place of "quality 2 and up" (the maps have no level).
+  - **Regional forms' coats have no foil** (foil means "has a coat"; a form's coat is the form's own look).
+  - **Brightness step 0.3** (0.42 left most mid-tone Billies bare), **sweep 3.5 s / 0.7 s**, **band along x + .6 y**,
+    **hue turn per coat from a hash of its id** (no new data field), **lift x1.25 + .06 at 0.55**.
+  - **Not in the instanced program's instance data**: a foiled Billie leaves its run while its band crosses. That
+    keeps the instance layout and its tests unchanged.
+  - **Reflections get no foil.**
+- Next: SY-7 (the Bureau in the world: red tape on `bureau_barrier` and `bureau_crate`, the emblem on the
+  checkpoint's sign, loose forms blowing past), in its own session on `track/style`. The owner: the Graphics bench on
+  the phone with a coated buddy, before and after.
+
+### Style track SY-5 - the Bureau in battle: stamps on knockouts and wins, the Notice of Retrieval, ID plates - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-4) and main
+(07c9b284, nothing new) were merged in, then **`origin/claude/ui-16b-battle-events` (UI-16a and UI-16b), as a merge
+(22b68a20), for UI-16b's plates. So PR #289 now also carries the UI track's UI-8b, UI-8c, UI-11 to UI-16b commits
+and `track/vfx`'s VFX-5 and VFX-7: merging #289 brings them too.** Conflicts: HANDOFF (both kept), gallery.js and
+ui-run-kit.js imports (both kept, to-module remade), art-code-refs.json (regenerated). Plan pre-approved (the owner,
+2026-10-27). PR #289 (draft; SY-1 to SY-5). Tag `sy-5-done` is for the owner to push (the git proxy refuses tags).
+The VFX session (session_019UpAFxvWEMwGebptZbvUuW) was told before the join intro was touched: battle-stage.js
+itself is unchanged.
+- Changed:
+  - **Data** (schema, types, data check, a planted fault): bosses.json `faction` (the Retrieval Unit is `bureau`);
+    factions.json `look.notice` ("Notice of Retrieval") and `look.property` ("Property of the Bureau").
+  - **game/js/logic/bureau-battle.js** (new; index.html, the Studio's page and its logic worker list; 7 tests):
+    `battleFactionOf` (a bot whose build is one of a faction's bots, or a boss whose `faction` names it; only a faction
+    with a look), `factionSerial` (a bot's serial from its id: "No. 1120-AU"), `koBy` (who landed the last hit on the
+    fallen: a move, or a spread hit's move; a burn, the stones, recoil or a delayed hit is no one's), `koStampMoment`,
+    `noticeOf`, `noticeTimes`, `JOIN_LOCK_MS` (1300; a test reads battle-stage.js's join LOCK so they can't drift).
+  - **battle.js "THE BUREAU IN BATTLE"**: one stamp at a time (`pb-stamp` on a paper slip in #pops, so the red reads
+    on any stage; a new one replaces the old): VOID 220 ms into a Bureau bot's faint, RETRIEVED when a Bureau bot's hit
+    knocks out yours, DENIED when the battle ends in your win over the Bureau. PENDING on the Retrieval Unit's win line
+    on the sheet after the battle (slams once; a redraw shows it still). The Notice of Retrieval during the join: the
+    emblem, the title, a form number, the four bots as numbered lines coming in one by one, FILED stamped, sliding
+    away so it is gone by the lock (1,300 ms on the scene's clock, so battle speed scales it). It sits just above the
+    message box. A tap, the next line or the battle's end closes it. Reduced motion: no slide, all lines, the stamp
+    still. **ID plates:** a Bureau bot's plate (`.bplate.form`) is the case files' paper with ruled lines, dark ink,
+    the serial beside the tag row (UI-16b's room in `.pl-bot`), and "Property of the Bureau" in red under a red rule; a
+    boss's plate keeps its red edge.
+  - **game/css/bureau-battle.css** (new; the game and the gallery page): tokens only, ui-lint's ceilings hold.
+  - **The in-game full test**: the Bureau bot's step checks its ID plate; the Voltron's step checks the notice listed
+    its four bots and was gone by the menu.
+- Claims checked against the code:
+  - Wrong: "the join intro's 900 ms": the join is LOCK 1,300 + 900 = 2,200 ms (900 is the plain send-out). The
+    notice fits in the 1,300 before the lock, with no added time.
+  - Wrong: "a tap skips both": a tap during the join only finishes the text; the next line waits for the join's
+    time (battleStageFlush runs at the next play). A tap now hides the notice; the join itself is unchanged.
+  - Wrong: factions.schema.json said `pending` is "its boss wins"; the win line ("Retrieval suspended. Claim filed as
+    pending.") is said when you beat it. Fixed the description.
+  - Right: UI-16b's `markRow`/`pb-tag` row and room for a faction label in `.pl-bot`; pb-stamp on the shared m-stamp.
+  - The Retrieval Unit's build is not a factions.json bot, so nothing tied it to the Bureau before `faction`.
+- Found, not changed (not this step's):
+  - The smoke's Phone step fails "team 30 (at most 28)": the same on the merge commit before any SY-5 code and on
+    `claude/ui-16b-battle-events` itself ("walk 20, team 30"). UI-16b listed the counts as skipped until UI-18.
+  - The quick check's song fingerprints: UI-16a's four UI sounds (sheet, flip, count, toast) aren't in
+    validation/sound-baseline. Came in with the merge; for the UI track.
+- Risky: the Bureau's look shows in every battle with its bots now, and the plate grows by one line (the property).
+  Nothing here has been seen on a phone. The win's DENIED shows over the "You won" moment for 2.2 s (no added wait).
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, `npm test` (1,634 pass).
+  `npm run check:smoke`: 5 of 6 (the Phone step, above). Headless runs (390 x 844, light, and dark with Reduced motion):
+  the bot's ID plate, VOID then DENIED, RETRIEVED from a strong bot's hit, the notice's lines and stamp at a slowed
+  join speed, PENDING on the win sheet; no page errors. `npm run check:quick`: 36 of 41: the three known (Terraces
+  train_station, RL-8 "Thicket Route view never showed", room light) and the two above from the UI merge.
+- Decided for the owner, to review:
+  - **Merged UI-16a/b into `track/style`** (the step's instruction), so #289 carries them.
+  - **The notice's stamp is FILED** (look.stamps.filed); the moment list had no "notice" word.
+  - **RETRIEVED only on a Bureau bot's own hit** (or a spread hit from its move); a burn or stones that finish yours
+    stamp nothing.
+  - **The boss fight gets DENIED in battle and PENDING on its sheet** (two screens, one stamp each).
+  - **Stamps land on a paper slip** (the case files' paper), not straight on the stage.
+  - **Serial format** "No. NNNN-XX" (a hash of the bot's id and its first two letters); the property line's words
+    are factions.json `look.property`.
+  - **The plate's paper is the case files' tokens** (light and dark), with the page's ink, though the battle's glass
+    is always dark.
+  - Not added: a UI gallery section for the plate and notice (the gallery's battle pictures wait for UI-18, as UI-16b
+    noted); the VFX VS splash (VFX-16) will fit around the notice (told to their session).
+- Next: SY-6 (the coat's foil in the world: `uFoil` in the sprite shader), in its own session on `track/style`. It
+  touches walk-shaders.js: message the VFX session first and merge main.
+
+### Style track SY-4 - case files: the Bureau's events in a manila folder, typed in, redacted, stamped - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-3, 06d0baae) and main
+(07c9b284) were already in it (no merge needed). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-4).
+Tag `sy-4-done` is for the owner to push (the git proxy refuses tags).
+- Changed:
+  - **events.json** (schema, `RunEvent` types, data check): `bureau: 1` marks a Bureau event (as classes already do);
+    `redact` lists flavour words of its intro to cover; `form` is the form number when the intro names one; an option's
+    `stamp` names the moment its result is stamped. Nine events marked: the checkpoint, Form 27-B, the beans crate, the
+    pyramid cart, the auction, the surveyor, the field lab, the gene recall and the dig site. The back-alley splicer
+    stays plain ("no forms, no Bureau").
+  - **game/js/logic/case-file.js** (new; index.html, the Studio's page and its logic worker list): `caseFile` (null for a
+    plain event), `caseForm` (a stable pick from `look.forms` by the event's id), `caseStampMoment` (the option's own;
+    else the last option, the one that walks away, is denied and any other filed), `redactSplit` (whole words only),
+    `caseTyped` (20 ms a letter), `redactProblem` (the data check's rule: letters only, a whole word of the intro, never
+    a word of an option, nor a currency's, item's or pyramid's name, plurals included). tools/test/case-file.test.mjs
+    (5 tests) and 6 planted faults in data-checks.test.mjs.
+  - **`pb-typed`** (ui-run-kit.js): light DOM around a sheet's lines. The lines after `skip` type in one after another.
+    Where it is comes from the clock since its `key` first showed, so the overlay's redraws carry on, not restart. A tap
+    on the sheet's body shows it all. Reduced motion shows it at once. A tap on a bar once it's typed lifts it.
+  - **encounter-screen.js:** a Bureau event's sheets carry the folder's tab (the emblem, the Bureau's name, the form
+    number). Its intro types in with the bars on. Once you choose, the intro stays on file above the script's lines
+    (smaller, grey, its bars lifted), and only new lines type in. The end sheet stamps the result under the summary
+    (`pb-stamp`, the look's word; it slams once, and a redraw shows it `still`). The debug log adds "(case file, Form
+    ...)" and "stamped <moment>" (data ids only). A no-op commit first gathered the sheet's lines into `encLinesHTML`.
+  - **game/css/case-file.css** (new; the game and the gallery): manila paper by setting the sheet's own `--g-bg` and
+    `--g-blur` (no `!important`, ui-lint's ceilings hold), the tab, a red margin rule, the lines in Oxanium (its own
+    `@font-face`, since only the main look loads it), black bars, the lifted bar's faint tint. Light and dark tokens.
+  - **The UI gallery's "Case file"**: the checkpoint before the choice (bars) and its end (on file, FILED), with the
+    data's form number and word; pictured like the stamps (320 and 390, light and dark, Stepped and alpha 0.5): 8 baselines.
+  - **The in-game full test's** set-piece step now checks the checkpoint opens as a case file (a form on its tab) and
+    that walking on stamps the look's denied word.
+- Claims checked against the code:
+  - Right: `encSheet` (encounter-screen.js 116) and `encounterStage` (294); the checkpoint at events.json 295; no logo
+    on events before SY-3; events use one plain sheet.
+  - Wrong: no event had `bureau: 1` (only trainer classes, RL-S1); I added it. "About eight" Bureau events: nine, with
+    Form 27-B, whose text never says "Bureau". "An event in a Bureau set piece": the only set piece with an event is the
+    checkpoint, now marked, so no code path was needed. Oxanium is the main look's prose font (uiTheme.json), not loaded
+    by base.css. "Verify in `encChoose`": the options are built in `encounterOpen` (text, Moneys and DNA cost, the
+    greyed reason); `encChoose` is SP-6's in-script pick. Outcomes show only in the end summary. None of these are
+    covered: only intro words are.
+- Found, not changed: the gallery's `loading-*` pictures are still flaky (100% at 320 every run; 390 passes alone), as
+  in SY-3, on SY-3's own commit too.
+- Risky: low. The folder needs `:has()` (Chrome 105+, Safari 15.4+); without it the sheet stays glass with the tab on
+  top. The margin rule and the lifted tint need `color-mix` (Chrome 111+, Safari 16.2+). Typing follows the clock, so a
+  slow phone jumps ahead, never runs long. The buttons work while it types, so no event gets longer.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, `npm test` (1,586 pass),
+  `npm run check:smoke` (6 of 6). check-ui-gallery: 109 pictures, only the flaky `loading` ones differ. Headless runs:
+  the checkpoint types in about 2 s (a redraw at 111 letters left carried on at 42, a tap showed all), Reduced
+  motion shows it at once; Walk on stamps DENIED, Declare everything FILED (light and dark); a plain event (ring_light)
+  has no tab, typing or stamp; no page errors. The in-game full test's set-piece and Dig Site steps pass alone.
+  `npm run check:quick`: 38 of 41, the three known reds (Terraces train_station, RL-8 "node 7 has no exit north2", a
+  seed the map generator can't build as in SY-3, room light). CI's smoke: the two known Studio reds only.
+- Decided for the owner, to review:
+  - **Which events are the Bureau's:** the nine above (edit `bureau` in events.json). Form 27-B is in: a grey clerk
+    and a form number.
+  - **The redaction words** (one or two each: tollbooth, clipboard, cardigan, property, handcart, unclaimed, square,
+    centrifuge, unlicensed, humming). Edit `redact`.
+  - **The stamp rule:** the last option is DENIED and any other FILED, unless an option names its own. Named: in the
+    beans crate, opening or prying it is DENIED and filing it FILED; taking from the pyramid cart DENIED, reporting it
+    FILED; swiping at the field lab and refusing the recall DENIED.
+  - **Form numbers from the intro:** Form 27-B, Form 9-C (the surveyor's complaint) and Form 9-G (the field lab) are
+    events' own `form`, not in `look.forms`; the rest pick from `look.forms`.
+  - **"Lift when you choose":** the bars lift when the intro is shown again on file after your choice; a tap on a bar
+    after the typing also lifts it early.
+  - **The buttons work while it types** ("Ask me before" 6: no event gets longer).
+  - **The stamp sits under the summary,** never over it (costs and outcomes are never hidden).
+  - **The manila colours are this file's own tokens** (`--case-paper` ...), not palette tokens: UI-11/12 may take them.
+  - **The lines are in Oxanium** even in the look whose prose font is Chakra Petch.
+- Next: SY-5 (the Bureau in battle: stamps on KOs and wins, the Notice of Retrieval in the join intro, ID plates), in
+  its own session on `track/style`. It touches the join intro: message the VFX session first.
+
 
 ### UI track UI-16b - alive: battle events (the plates' marks, stamps, rises and falls, blips, effect pips, banners; one stamp motion; Calm) - 2026-10-28
 Branch `claude/ui-16b-battle-events`, made from UI-16a's `claude/ui-16a-motion` (main plus UI-8b, UI-8c, UI-11 to

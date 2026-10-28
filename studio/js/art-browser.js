@@ -37,6 +37,7 @@ import {
 } from '../../game/js/logic/art-search.js';
 import { LEGACY_DIR, artRefIndex, artRefInputs, artRefState, artReport } from '../../game/js/logic/art-refs.js';
 import { stripOf } from '../../game/js/logic/frame-strips.js';
+import { svgIconKey } from '../../game/js/logic/svg-pixels.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -433,7 +434,7 @@ function detailHTML(path, ix) {
     refs = ix ? ix.get(path) || [] : null,
     ro = artReadOnly(path),
     png = /\.png$/i.test(path) && !ro,
-    icon = !ro && /^art\/ui\/([\w-]+)\.svg$/.exec(path),
+    icon = !ro && svgIconKey(path),
     eds = ix ? artEditorsFor(path) : [];
   const used =
     refs == null
@@ -459,7 +460,7 @@ function detailHTML(path, ix) {
   <p class="mono ab-path">${escapeHtml(path)}</p>
   <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) || studioState.textDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
   ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}${ro ? '<p class="help">Legacy art (art/legacy): kept for reference, read-only here. Download it to look at it closer.</p>' : ''}
-  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon[1])}">Edit icon</button>` : ''}${path === 'art/icons/icons.png' ? '<button class="btn sm" data-act="atOpen">Edit the rectangles</button>' : ''}${ro ? '' : `<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button>`}<button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
+  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon)}">Edit icon</button>` : ''}${path === 'art/icons/icons.png' ? '<button class="btn sm" data-act="atOpen">Edit the rectangles</button>' : ''}${ro ? '' : `<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button>`}<button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
   <h4>Used by</h4>${used}`;
 }
 function gridHTML(ix) {
