@@ -1,5 +1,5 @@
 {
- "about": "Roguelite track RL-14: the runs' enemy factions (logic/factions.js). The Bureau of Lost, Found and Beans fields bots built from robots.json parts: met wild on routes from the middle rows on, fielded by its agents beside their Billies, and gathered in scrapyards. A bot is never caught or taxed; beating one leaves a salvage pick (two of its parts or a stack of Scrap). Numbers are placeholders for the sim. Style track SY-3: `look` is its paperwork (the emblem, a UI icon; the stamp words, the owner's placeholders; the form numbers, placeholders to review).",
+ "about": "Roguelite track RL-14: the runs' enemy factions (logic/factions.js). The Bureau of Lost, Found and Beans fields bots built from robots.json parts: met wild on routes from the middle rows on, fielded by its agents beside their Billies, and gathered in scrapyards. A bot is never caught or taxed; beating one leaves a salvage pick (two of its parts or a stack of Scrap). Numbers are placeholders for the sim. Style track SY-3: look is its paperwork (the emblem, a UI icon; the stamp words, the owner's placeholders; the form numbers, placeholders to review).",
  "factions": {
   "bureau": {
    "name": "Bureau of Lost, Found and Beans",
