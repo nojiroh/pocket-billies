@@ -27,6 +27,7 @@ gives the same film.
     python3 tools/look-battle-anims.py --compare=DIR         # this folder's trace against DIR's
     python3 tools/look-battle-anims.py --only=zip --measure  # draws, rig uploads and frame time per film
     python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
+    python3 tools/look-battle-anims.py --flow [--only=enter.0,caught]    # VFX-16: the flow moments' sheets
 
 Uses the browser checks' page set-up (tools/browser_check.py)."""
 import json
@@ -63,7 +64,7 @@ const r3=v=>Math.round((+v||0)*1000)/1000;
 __film.hash=k=>{let h=2166136261;for(let i=0;i<k.length;i++){h^=k.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
 __film.reset=()=>{S.tws.length=0;S.evs.length=0;S.parts.length=0;S.impact=null;S.shk=0;S.hold=0;S.coin=null;S.ring=null;S.calm=false;S.t=1e5;
  S.leafy.length=0;S.glint.length=0;if(typeof battleAnim!=='undefined'){battleAnim.flashes.times.length=0;battleAnim.cur=null}
- S.s.forEach(s=>{Object.assign(s,{ox:0,oy:0,sc:1,a:1,white:0,dark:0,act:null,blinkUntil:0,lunge:null,trail:null,seed:1})});
+ S.s.forEach(s=>{Object.assign(s,{ox:0,oy:0,sc:1,a:1,white:0,dark:0,act:null,blinkUntil:0,lunge:null,trail:null,seed:1,rise:null})});
  const home={x:0,y:1.6,z:0,yaw:0,hz:0};Object.assign(S.cam,home);Object.assign(S.V,home);Object.assign(S.drift,{w:0,tq:-1,x:0,y:0,z:0,yaw:0,hz:0});
  S.hand.a=0;S.css.r=0;S.css.z=0;S.camT=0;S.focusK=null;battleStageFocus('wide',true);
  const p=document.getElementById('pops');if(p)p.innerHTML='';const f=document.getElementById('flash');if(f){f.style.transition='none';f.style.opacity=0;f.style.background=''}
@@ -92,6 +93,26 @@ __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.v
  const ev={s:activeBattle.events[activeBattle.events.length-1].s};return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
 __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=()=>__film.vt;window.setTimeout=(f,ms)=>{__film.timers.push({t:__film.vt+(+ms||0),fn:f});return 0};try{return fn()}finally{performance.now=pn;window.setTimeout=st}};
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
+/* VFX-16: a flow moment's film (--flow): the stage call for each moment, with Reduced motion on or off; the battle's
+   own Billies (a bot stands in for the foe in faint.bot) */
+__film.flow=(kind,red)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s},S0=S.s[0],S1=S.s[1];
+ setReducedMotion(!!red);S.s.forEach((s,i)=>{if(i<2)s.show=true});if(!__film.sp1)__film.sp1=S1.sp;S1.sp=__film.sp1;S1.dim=null;
+ const shown=k=>{S.tr[0]={who:'me',show:true,x:0,a:1};return k};
+ switch(kind){
+  case 'enter.0':return battleStagePlay({k:'enter',si:0},ev);
+  case 'enter.1':return battleStagePlay({k:'enter',si:1},ev);
+  case 'recall.0':return battleStagePlay({k:'recall',si:0},ev);
+  case 'faint.1':return battleStagePlay({k:'faint',si:1},ev);
+  case 'faint.bot':S1.sp='bot:ember.bulwark.piston.auger.treads';return battleStagePlay({k:'faint',si:1},{s:ev.s.map((x,i)=>i===1&&x?{...x,sp:S1.sp,bot:{brk:['armR']}}:x)});
+  case 'lvl.0':return battleStagePlay({k:'lvl',uid:ev.s[0].uid},ev);
+  case 'item.0':return battleStagePlay({k:'item',it:'potion'},ev);
+  case 'caught':return battleStageCatch('gold_pyramid',{w:3,caught:true,edge:false},false,()=>0);
+  case 'escape':return battleStageCatch('capstone',{w:2,caught:false,edge:false},false,()=>0);
+  case 'win':return battleStageOutcome('win');
+  case 'lose':shown();return battleStageOutcome('lose');
+ }};
+__film.flowStart=(key,kind,red)=>{__film.reset();__seed(__film.hash(key));__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;
+ return __film.wrap(()=>__film.flow(kind,red))};
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
 __film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
  TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],restEff:[],restMs:[],st:[]};
@@ -116,14 +137,17 @@ def pick(moves):
     return [m for m in moves if m['id'] in ONLY or m['c'] in ONLY]
 
 
-def sheet(pg, key, mid, si, res):
+FLOWS = ['enter.0', 'enter.1', 'recall.0', 'faint.1', 'faint.bot', 'lvl.0', 'item.0', 'caught', 'escape', 'win', 'lose']
+
+
+def sheet(pg, key, mid, si, res, start=None, n=16, every=5):
     from PIL import Image, ImageDraw
-    pg.evaluate(f"__film.start({json.dumps(key)},{json.dumps(mid)},{si},{json.dumps(res)})")
+    pg.evaluate(start or f"__film.start({json.dumps(key)},{json.dumps(mid)},{si},{json.dumps(res)})")
     # VFX-9: the battle's menu, ticker and plates hidden (they cover most of the stage at this size), the pops kept
     pg.evaluate(HIDE_UI)
     shots = []
-    for i in range(16):
-        pg.evaluate('__film.step(5)' if i else '__film.step(1)')
+    for i in range(n):
+        pg.evaluate(f'__film.step({every})' if i else '__film.step(1)')
         pg.wait_for_timeout(30)
         p = OUT / '_frame.png'
         pg.screenshot(path=str(p))
@@ -134,7 +158,7 @@ def sheet(pg, key, mid, si, res):
     for i, im in enumerate(shots):
         x, y = (i % 4) * w, (i // 4) * h
         W.paste(im, (x, y))
-        d.text((x + 4, y + 4), f'{key} {16 + 80 * (i - 1) if i else 16} ms', fill='white')
+        d.text((x + 4, y + 4), f'{key} {16 + 16 * every * (i - 1) if i else 16} ms', fill='white')
     W.save(OUT / f'{key}.png')
     (OUT / '_frame.png').unlink()
 
@@ -207,6 +231,16 @@ def main():
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
+        # VFX-16: --flow films the flow moments (--only= picks some), each with motion and under Reduced motion
+        if 'flow' in OPT:
+            for kind in [k for k in FLOWS if not ONLY or k in ONLY]:
+                for red in (0, 1):
+                    key = f"flow.{kind}{'.reduced' if red else ''}"
+                    n = 20 if kind in ('caught', 'escape') else 16
+                    sheet(pg, key, '', 0, '', f"__film.flowStart({json.dumps(key)},{json.dumps(kind)},{red})", n, 4 if n == 16 else 13)
+                    print(key, 'filmed', flush=True)
+            pg.evaluate('setReducedMotion(false)')
+            moves = []
         if 'measure' in OPT:
             measure(pg, moves)
             moves = []

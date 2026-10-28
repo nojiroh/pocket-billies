@@ -117,6 +117,7 @@ import {
   battleStage,
   battleStageCatch,
   battleStageFocus,
+  battleStageOutcome,
   battleStagePlay,
   battleStagePrepare,
   battleStageResize,
@@ -944,6 +945,8 @@ function afterEvents() {
   if (activeBattle.over) {
     activeBattle.phase = 'end';
     paintActions();
+    /* VFX-16: the winners cheer with sparkles, or your side fades (no time added: the end waits on the player) */
+    battleStageOutcome(activeBattle.over);
     /* SY-5: a win over the Bureau is DENIED (it replaces a knockout's stamp: one at a time) */
     const look = activeBattle.over === 'win' && battleFactionLook();
     if (look) battleStamp(null, look.stamps.denied, true);
