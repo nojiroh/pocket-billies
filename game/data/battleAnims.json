@@ -23,7 +23,7 @@
   "lean": {"k":1,"max":0.3,"back":0.5}
  },
  "colors": {"white":"#FFFFFF","dust":"#E8DCC8","guard":"#8FD8FF","heal":"#8DE3D6"},
- "defaults": {"H":"strike","S":"shot","X":"hex","miss":"legacy_miss","protect":"guard","blocked":"legacy_blocked"},
+ "defaults": {"H":"strike","S":"shot","X":"hex","miss":"whiff","protect":"guard","blocked":"blocked"},
  "intro": [
   {"do":"focus","on":"attacker"},
   {"do":"camAt","on":"attacker","amt":0.32,"z":0.08,"roll":0.012,"d":200},
@@ -94,7 +94,7 @@
     {"at":1250,"do":"focus","on":"wide"}
    ]
   },
-  "legacy_miss": {
+  "whiff": {
    "about": "a miss: the lunge (H) or 6 icons flung past (S, X); the target sidesteps, 'Miss'",
    "dur": 760,
    "hit": 999,
@@ -120,7 +120,7 @@
     {"at":800,"do":"focus","on":"wide"}
    ]
   },
-  "legacy_blocked": {
+  "blocked": {
    "about": "a move into a Guard: a ring on the target, its block pose, 'Hedged'",
    "dur": 740,
    "hit": 999,

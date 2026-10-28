@@ -88,8 +88,10 @@ test('VFX-11: every move names one of the 16 families, the table’s counts', ()
     guard: 2,
     heal: 5,
   });
+  /* the outcome families (a miss's whiff, a block) keep today's one timing, as the legacy ones did */
   for (const [id, F] of Object.entries(A.families))
-    if (!id.startsWith('legacy_')) assert.ok(F.short, `${id} has a short variant`);
+    if (!id.startsWith('legacy_') && id !== 'whiff' && id !== 'blocked')
+      assert.ok(F.short, `${id} has a short variant`);
 });
 
 test('the family: a move’s own anim when it lands, else its outcome’s or category’s default', () => {
@@ -97,11 +99,11 @@ test('the family: a move’s own anim when it lands, else its outcome’s or cat
     M = bare(H);
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, A), { id: 'strike', kind: 'family' });
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), MOVES[H], A), { id: MOVES[H].anim, kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'legacy_miss', kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'blocked'), M, A), { id: 'legacy_blocked', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'whiff', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'blocked'), M, A), { id: 'blocked', kind: 'family' });
   M.anim = 'legacy_cast';
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, A), { id: 'legacy_cast', kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'legacy_miss', kind: 'family' }, 'a miss is a miss');
+  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'whiff', kind: 'family' }, 'a miss is a miss');
   const S = { ...A, scenes: { big: A.families.legacy_hit } };
   M.anim = 'big';
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, S), { id: 'big', kind: 'scene' });
