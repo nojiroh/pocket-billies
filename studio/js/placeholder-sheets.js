@@ -8,12 +8,7 @@
    the same way. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import {
-  placeholderBake,
-  placeholderCellsWith,
-  placeholderSheet,
-  placeholderSheetCut,
-} from '../../game/js/logic/sketch-art.js';
+import { sketchBake, sketchCellsWith, sketchSheet, sketchSheetCut } from '../../game/js/logic/sketch-art.js';
 import { makeCanvas } from '../../game/js/art.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { ACTIONS, changed, commit, render, snapshotParts, studioState, toast } from './studio-app.js';
@@ -31,17 +26,17 @@ expose({
   phSheetForms: [() => phSheetForms, v => (phSheetForms = v)],
   phUpload: [() => phUpload, v => (phUpload = v)],
   phWrite: [() => phWrite, v => (phWrite = v)],
-  placeholderFormOf: [() => placeholderFormOf, v => (placeholderFormOf = v)],
-  placeholderPanelHTML: [() => placeholderPanelHTML, v => (placeholderPanelHTML = v)],
-  placeholderUi: [() => placeholderUi],
+  sketchFormOf: [() => sketchFormOf, v => (sketchFormOf = v)],
+  sketchPanelHTML: [() => sketchPanelHTML, v => (sketchPanelHTML = v)],
+  sketchUi: [() => sketchUi],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
 const PH_DRAWN = name => `art/next/placeholders/${name}.png`;
 const PH_SHEET = name => `art/next/billionaires/${name}.png`;
-const placeholderUi = { plan: 'biped', scale: 1 };
+const sketchUi = { plan: 'biped', scale: 1 };
 /** the placeholder recipe of a species' rig */
-export function placeholderFormOf(sp) {
+export function sketchFormOf(sp) {
   return (studioState.D?.bodyPlans?.forms || []).find(f => f.rig === sp) || null;
 }
 const phPixels = c => c.getContext('2d').getImageData(0, 0, c.width, c.height);
@@ -53,7 +48,7 @@ function phCanvas(p) {
 /** a form's cells: painted, with its stored drawing (this session's or the repository's) on top */
 async function phCells(P, form) {
   const drawn = await atlasGet(PH_DRAWN(form.name)).catch(() => null);
-  return placeholderCellsWith(P, form, drawn ? placeholderSheetCut(P, [form], phPixels(drawn))[form.name] : null);
+  return sketchCellsWith(P, form, drawn ? sketchSheetCut(P, [form], phPixels(drawn))[form.name] : null);
 }
 /** the forms a sheet holds: a Billie's, or every one on a plan (a sample when none is) */
 function phSheetForms(P, what) {
@@ -82,7 +77,7 @@ async function phDownload(what) {
     { forms, named, file } = phSheetForms(P, what),
     cells = {};
   for (const f of forms) cells[f.name] = await phCells(P, f);
-  downloadCanvas(phCanvas(placeholderSheet(P, forms, cells, named, placeholderUi.scale)), file);
+  downloadCanvas(phCanvas(sketchSheet(P, forms, cells, named, sketchUi.scale)), file);
 }
 /** bakes forms from their cells and writes the stored drawings, sheets and rigs as one undo step */
 async function phWrite(P, list) {
@@ -92,11 +87,11 @@ async function phWrite(P, list) {
     steps = [];
   let rigs = null;
   for (const { form, cells, store } of list) {
-    const made = placeholderBake(P, form, D, cells);
+    const made = sketchBake(P, form, D, cells);
     if (store) {
       const path = PH_DRAWN(form.name),
         old = await atlasGet(path).catch(() => null),
-        c = phCanvas(placeholderSheet(P, [form], { [form.name]: cells }));
+        c = phCanvas(sketchSheet(P, [form], { [form.name]: cells }));
       steps.push([path, old && pictureImage(old), pictureImage(c)]);
       markArt(path, c);
     }
@@ -125,23 +120,23 @@ async function phUpload(what) {
   if (!f) return;
   let cut;
   try {
-    cut = placeholderSheetCut(P, forms, phPixels(await fileToCanvas(f)), named);
+    cut = sketchSheetCut(P, forms, phPixels(await fileToCanvas(f)), named);
   } catch (e) {
     return toast('Not read: ' + e.message, 'err');
   }
   await phWrite(
     P,
-    forms.map(form => ({ form, cells: placeholderCellsWith(P, form, cut[form.name]), store: true }))
+    forms.map(form => ({ form, cells: sketchCellsWith(P, form, cut[form.name]), store: true }))
   );
   toast(`${forms.map(x => x.name).join(', ')}: drawing stored and baked. Undo takes it back.`);
 }
 /** the card in Part mode: the Billie's own sheet (when it is a placeholder Billie) and the body plans' sheets */
-export function placeholderPanelHTML(sp) {
+export function sketchPanelHTML(sp) {
   const P = studioState.D?.bodyPlans;
   if (!P) return '';
-  const form = placeholderFormOf(sp),
+  const form = sketchFormOf(sp),
     scale = `<label class="help">drawn at <select data-ph="scale">${[1, 2, 4, 8]
-      .map(k => `<option value="${k}" ${k === placeholderUi.scale ? 'selected' : ''}>${k}×</option>`)
+      .map(k => `<option value="${k}" ${k === sketchUi.scale ? 'selected' : ''}>${k}×</option>`)
       .join('')}</select></label>`,
     own = form
       ? `<h4>Placeholder Billie <small class="mono">${escapeHtml(form.name)}</small></h4><p class="help">bodyPlans.json, on the <b>${escapeHtml(form.plan)}</b> plan. Download its drawing sheet, draw over the cells in any app (magenta stays clear; keep the labels and the grid where they are; a cell left magenta keeps its placeholder), upload it back: it is stored and the Billie baked again.</p><div class="seg-row"><button class="btn sm" data-act="phDownload">Download drawing sheet</button><button class="btn sm" data-act="phUpload">Upload drawing sheet</button><button class="btn sm primary" data-act="phWrite">Write Billie</button></div>`
@@ -149,7 +144,7 @@ export function placeholderPanelHTML(sp) {
   return `<div class="px-sec placeholder-sheets" data-ph-sp="${escapeHtml(sp)}">${own}<h4>Body plan sheets</h4><p class="help">Every Billie on a plan in one sheet: two rows each (front, back). Upload splits it back per Billie.</p><div class="seg-row"><select data-ph="plan">${Object.keys(
     P.plans
   )
-    .map(p => `<option ${p === placeholderUi.plan ? 'selected' : ''}>${escapeHtml(p)}</option>`)
+    .map(p => `<option ${p === sketchUi.plan ? 'selected' : ''}>${escapeHtml(p)}</option>`)
     .join(
       ''
     )}</select>${scale}<button class="btn sm" data-act="phPlanDownload">Download</button><button class="btn sm" data-act="phPlanUpload">Upload</button></div></div>`;
@@ -157,10 +152,10 @@ export function placeholderPanelHTML(sp) {
 document.addEventListener('change', ev => {
   const el = ev.target;
   if (!el.dataset || !el.dataset.ph) return;
-  if (el.dataset.ph === 'plan') placeholderUi.plan = el.value;
-  if (el.dataset.ph === 'scale') placeholderUi.scale = Number(el.value) || 1;
+  if (el.dataset.ph === 'plan') sketchUi.plan = el.value;
+  if (el.dataset.ph === 'scale') sketchUi.scale = Number(el.value) || 1;
 });
-const phFormFrom = el => placeholderFormOf(el.closest('[data-ph-sp]')?.dataset.phSp || '');
+const phFormFrom = el => sketchFormOf(el.closest('[data-ph-sp]')?.dataset.phSp || '');
 ACTIONS.phDownload = (d, el) => {
   const form = phFormFrom(el);
   if (form) phDownload({ form });
@@ -180,5 +175,5 @@ ACTIONS.phWrite = async (d, el) => {
     toast('Not baked: ' + e.message, 'err');
   }
 };
-ACTIONS.phPlanDownload = () => phDownload({ plan: placeholderUi.plan });
-ACTIONS.phPlanUpload = () => phUpload({ plan: placeholderUi.plan });
+ACTIONS.phPlanDownload = () => phDownload({ plan: sketchUi.plan });
+ACTIONS.phPlanUpload = () => phUpload({ plan: sketchUi.plan });

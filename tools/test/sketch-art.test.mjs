@@ -20,7 +20,7 @@ const POSE = {
 const PLANS = Object.keys(POSES_BY_PLAN);
 const sample = plan => samplePlaceholder(plan);
 const sameCells = (a, b) =>
-  PA.PLACEHOLDER_VIEWS.every(
+  PA.SKETCH_VIEWS.every(
     v =>
       Object.keys(a[v]).length === Object.keys(b[v]).length &&
       Object.entries(a[v]).every(
@@ -35,7 +35,7 @@ test('every animated plan has a template, and only those', () => {
 test("every bone is moved by its plan's animation or rides on one that is", () => {
   for (const plan of PLANS) {
     const moved = new Set(Object.keys(POSES_BY_PLAN[plan](POSE, P.plans[plan].q))),
-      bones = PA.placeholderBones(P, sample(plan)),
+      bones = PA.sketchBones(P, sample(plan)),
       byName = Object.fromEntries(bones.map(b => [b.n, b]));
     let any = 0;
     for (const b of bones) {
@@ -50,11 +50,11 @@ test("every bone is moved by its plan's animation or rides on one that is", () =
 
 test('a sample Billie on each plan bakes inside the box, the same twice, with a readable rig', () => {
   for (const plan of PLANS) {
-    const a = PA.placeholderBake(P, sample(plan), D),
-      b = PA.placeholderBake(P, sample(plan), D);
+    const a = PA.sketchBake(P, sample(plan), D),
+      b = PA.sketchBake(P, sample(plan), D);
     assert.deepEqual(JSON.parse(JSON.stringify(a.rig)), JSON.parse(JSON.stringify(b.rig)), plan);
     assert.equal(Buffer.compare(Buffer.from(a.sheet.data), Buffer.from(b.sheet.data)), 0, plan);
-    for (const v of PA.PLACEHOLDER_VIEWS) {
+    for (const v of PA.SKETCH_VIEWS) {
       const R = a.rig[v],
         seen = new Set(['root']);
       assert.equal(R.plan, plan);
@@ -77,8 +77,8 @@ test('a sample Billie on each plan bakes inside the box, the same twice, with a 
 
 test("RO-3b: a form's scale sizes the whole Billie, standing on the same ground", () => {
   for (const plan of PLANS) {
-    const full = PA.placeholderBake(P, sample(plan), D).rig.front.geo,
-      half = PA.placeholderBake(P, { ...sample(plan), scale: 0.5 }, D).rig.front.geo,
+    const full = PA.sketchBake(P, sample(plan), D).rig.front.geo,
+      half = PA.sketchBake(P, { ...sample(plan), scale: 0.5 }, D).rig.front.geo,
       tall = full.base - full.top,
       short = half.base - half.top;
     assert.equal(half.base, full.base, plan);
@@ -89,7 +89,7 @@ test("RO-3b: a form's scale sizes the whole Billie, standing on the same ground"
 
 test('every plan fills every slot (splicing maps parts by slot); the octopus and blob share one bone', () => {
   for (const plan of PLANS) {
-    const bones = PA.placeholderBones(P, sample(plan)),
+    const bones = PA.sketchBones(P, sample(plan)),
       own = new Set(bones.map(b => b.slot)),
       slots = new Set(bones.flatMap(b => [b.slot, b.also]));
     for (const s of ['head', 'body', 'front', 'back', 'sig']) assert.ok(slots.has(s), `${plan}: no ${s} slot`);
@@ -108,11 +108,11 @@ test("a Billie's sheet and a plan's sheet cut back into the same cells, at any s
   for (const plan of PLANS) {
     const f = sample(plan),
       g = { ...sample(plan), name: `other-${plan}`, colours: { main: '#4060a0' }, size: { head: 1.3 } },
-      cells = { [f.name]: PA.placeholderPaintCells(P, f), [g.name]: PA.placeholderPaintCells(P, g) };
+      cells = { [f.name]: PA.sketchPaintCells(P, f), [g.name]: PA.sketchPaintCells(P, g) };
     for (const scale of [1, 3]) {
-      const one = PA.placeholderSheetCut(P, [f], PA.placeholderSheet(P, [f], cells, false, scale));
+      const one = PA.sketchSheetCut(P, [f], PA.sketchSheet(P, [f], cells, false, scale));
       assert.ok(sameCells(one[f.name], cells[f.name]), `${plan}: a Billie's sheet at ${scale}x`);
-      const both = PA.placeholderSheetCut(P, [f, g], PA.placeholderSheet(P, [f, g], cells, true, scale), true);
+      const both = PA.sketchSheetCut(P, [f, g], PA.sketchSheet(P, [f, g], cells, true, scale), true);
       assert.ok(
         sameCells(both[f.name], cells[f.name]) && sameCells(both[g.name], cells[g.name]),
         `${plan}: a plan's sheet at ${scale}x`
@@ -123,15 +123,15 @@ test("a Billie's sheet and a plan's sheet cut back into the same cells, at any s
 
 test('a sheet that does not fit the layout is refused, with why', () => {
   const f = sample('quad'),
-    sheet = PA.placeholderSheet(P, [f], { [f.name]: PA.placeholderPaintCells(P, f) });
-  assert.throws(() => PA.placeholderSheetCut(P, [{ ...f, plan: 'crab' }], sheet), /layout/);
+    sheet = PA.sketchSheet(P, [f], { [f.name]: PA.sketchPaintCells(P, f) });
+  assert.throws(() => PA.sketchSheetCut(P, [{ ...f, plan: 'crab' }], sheet), /layout/);
 });
 
 test('a drawn cell wins over the placeholder; an empty one keeps it; magenta is clear', () => {
   const f = sample('biped'),
-    painted = PA.placeholderPaintCells(P, f),
-    sheet = PA.placeholderSheet(P, [f], { [f.name]: painted }),
-    lay = PA.placeholderSheetLayout(P, [f]),
+    painted = PA.sketchPaintCells(P, f),
+    sheet = PA.sketchSheet(P, [f], { [f.name]: painted }),
+    lay = PA.sketchSheetLayout(P, [f]),
     head = lay.cells.find(c => c.key === 'head' && c.view === 'front'),
     tail = lay.cells.find(c => c.key === 'tail' && c.view === 'front');
   /* the head drawn over as a solid green box; the tail's cell wiped to magenta */
@@ -139,23 +139,23 @@ test('a drawn cell wins over the placeholder; an empty one keeps it; magenta is 
     for (let x = 0; x < head.w; x++) sheet.data.set([20, 200, 60, 255], ((head.y + y) * sheet.width + head.x + x) * 4);
   for (let y = 0; y < tail.h; y++)
     for (let x = 0; x < tail.w; x++) sheet.data.set([255, 0, 255, 255], ((tail.y + y) * sheet.width + tail.x + x) * 4);
-  const cut = PA.placeholderSheetCut(P, [f], sheet)[f.name],
-    cells = PA.placeholderCellsWith(P, f, cut);
+  const cut = PA.sketchSheetCut(P, [f], sheet)[f.name],
+    cells = PA.sketchCellsWith(P, f, cut);
   assert.deepEqual([...cells.front.head.data.subarray(0, 4)], [20, 200, 60, 255]);
   assert.ok(
     sameCells({ front: { tail: cells.front.tail }, back: {} }, { front: { tail: painted.front.tail }, back: {} })
   );
-  const made = PA.placeholderBake(P, f, D, cells);
+  const made = PA.sketchBake(P, f, D, cells);
   assert.ok(made.rig.front.imgs.length > 0);
 });
 
 test('placeholders never paint near the magenta a sheet is cut by', () => {
   for (const plan of PLANS) {
-    const cells = PA.placeholderPaintCells(P, sample(plan));
-    for (const v of PA.PLACEHOLDER_VIEWS)
+    const cells = PA.sketchPaintCells(P, sample(plan));
+    for (const v of PA.SKETCH_VIEWS)
       for (const [k, p] of Object.entries(cells[v]))
         for (let i = 0; i < p.data.length; i += 4)
-          if (p.data[i + 3]) assert.ok(!PA.placeholderNearKey([...p.data.subarray(i, i + 3)]), `${plan} ${v} ${k}`);
+          if (p.data[i + 3]) assert.ok(!PA.sketchNearKey([...p.data.subarray(i, i + 3)]), `${plan} ${v} ${k}`);
   }
 });
 

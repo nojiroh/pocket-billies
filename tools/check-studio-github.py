@@ -1791,7 +1791,7 @@ def repack_steps(pg, errs):
     back; on a kit Billie it refuses (the recipe packs its sheet), and on a placeholder Billie (RO-3b: its body plan
     does)."""
     n = len(errs)
-    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && !placeholderFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
+    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && !sketchFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
     if not sp:
         errs.append('repack: no hand-drawn rig left to repack'); return
     pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = 'head'; workbench.mode = 'part'; void openSection('workbench')")

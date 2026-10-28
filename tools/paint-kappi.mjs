@@ -10,7 +10,7 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { ROOT } from './data-files.mjs';
 import { encodePng, readPng } from './test/png.mjs';
-import { placeholderBones, placeholderCellSpecs, placeholderSheet } from '../game/js/logic/sketch-art.js';
+import { sketchBones, sketchCellSpecs, sketchSheet } from '../game/js/logic/sketch-art.js';
 import { bakePlaceholders, placeholderData } from './bake-placeholders.mjs';
 
 const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
@@ -173,10 +173,10 @@ function ear(p, bx, by, bw, bh, back) {
 
 /** every cell of the form, both views */
 export function paintKappi(P, form) {
-  const bones = Object.fromEntries(placeholderBones(P, form).map(b => [b.n, b])),
+  const bones = Object.fromEntries(sketchBones(P, form).map(b => [b.n, b])),
     cells = { front: {}, back: {} };
   for (const view of ['front', 'back'])
-    for (const c of placeholderCellSpecs(P, form)) {
+    for (const c of sketchCellSpecs(P, form)) {
       if (view === 'back' && c.frame !== 'main') continue;
       const b = bones[c.bone],
         back = view === 'back',
@@ -262,7 +262,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const cells = paintKappi(P, form),
     dir = join(ROOT, 'game', 'art', 'next', 'placeholders');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'kappi.png'), encodePng(placeholderSheet(P, [form], { kappi: cells })));
+  writeFileSync(join(dir, 'kappi.png'), encodePng(sketchSheet(P, [form], { kappi: cells })));
   bakePlaceholders({ only: ['kappi'] });
   const pv = process.argv.find(a => a.startsWith('--preview='));
   if (pv) {

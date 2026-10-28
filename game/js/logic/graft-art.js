@@ -19,14 +19,14 @@
 /** @typedef {import('./sketch-art.js').PlaceholderBone} PlaceholderBone */
 /**
  * @typedef {{ form: PlaceholderForm, rig: Record<string, any>, sheet: Pixels }} PlaceholderBaked a placeholder Billie
- *   as baked (placeholderBake): its form, its sheet and both views' rigs
+ *   as baked (sketchBake): its form, its sheet and both views' rigs
  * @typedef {{ pic: Pixels, pv: [number, number] }} GraftPic a picture and its pivot inside it
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
-  PLACEHOLDER_BOX,
-  PLACEHOLDER_VIEWS,
+  SKETCH_BOX,
+  SKETCH_VIEWS,
   kitBlank,
   kitBounds,
   kitDrawRest,
@@ -35,8 +35,8 @@ import {
   kitPack,
   kitPaste,
   kitTurnRight,
-  placeholderBones,
   roundHalfEven,
+  sketchBones,
 } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -315,18 +315,18 @@ export function graftPicFit(d, r, k = 1) {
   return { pic: kitNearest(g.pic, w, h), pv };
 }
 /** a placeholder Billie grafted: each slot of the graft from its donor (both baked), its sheet and both views' rigs
- * as placeholderBake gives them (marked with the graft); throws, saying why, when a slot is missing on either side
+ * as sketchBake gives them (marked with the graft); throws, saying why, when a slot is missing on either side
  * or the result doesn't fit the stage box
  * @param {BodyPlans} P @param {{ sheetW: number, margin: number }} D the baker's settings (kitBuilds.json bake)
  * @param {PlaceholderBaked} recv @param {Record<string, PlaceholderBaked>} donors slot -> donor
  * @returns {{ sheet: Pixels, rig: Record<string, any> }} */
 export function graftPlaceholder(P, D, recv, donors) {
-  const bones = placeholderBones(P, recv.form),
+  const bones = sketchBones(P, recv.form),
     /** @type {Record<string, string[][]>} */ mine = {},
     /** @type {Record<string, string[][]>} */ theirs = {};
   for (const [slot, donor] of Object.entries(donors)) {
     mine[slot] = graftGroups(bones, slot);
-    theirs[slot] = graftGroups(placeholderBones(P, donor.form), slot);
+    theirs[slot] = graftGroups(sketchBones(P, donor.form), slot);
     if (!mine[slot].length) throw new Error(`${recv.form.name} (${recv.form.plan}) has no ${slot} to graft`);
     if (!theirs[slot].length) throw new Error(`${donor.form.name} (${donor.form.plan}) has no ${slot} to give`);
   }
@@ -341,9 +341,9 @@ export function graftPlaceholder(P, D, recv, donors) {
  * @param {Record<string, PlaceholderBaked>} donors @param {Record<string, string[][]>} mine
  * @param {Record<string, string[][]>} theirs @param {number} k */
 export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
-  const box = PLACEHOLDER_BOX,
+  const box = SKETCH_BOX,
     /** @type {Record<string, Record<string, GraftPic | null>>} */ put = {};
-  for (const view of PLACEHOLDER_VIEWS) {
+  for (const view of SKETCH_VIEWS) {
     /** @type {Record<string, GraftPic | null>} */
     const v = (put[view] = {});
     for (const [slot, donor] of Object.entries(donors))
@@ -367,7 +367,7 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
   /** @type {Pixels[]} */
   const pics = [],
     /** @type {any[]} */ where = [];
-  for (const view of PLACEHOLDER_VIEWS) {
+  for (const view of SKETCH_VIEWS) {
     const R = recv.rig[view];
     for (const b of R.bones) {
       if (b.n in put[view]) {
@@ -382,7 +382,7 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
   }
   const { sheet, spots } = kitPack(pics, D.sheetW),
     /** @type {Record<string, any>} */ rig = {};
-  for (const view of PLACEHOLDER_VIEWS) {
+  for (const view of SKETCH_VIEWS) {
     const R = recv.rig[view],
       imgs = [],
       out = [],
@@ -428,9 +428,9 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
  * @param {string} slot @returns {string[]} */
 export function graftPlaceholderDonors(P, forms, sp, slot) {
   const base = forms.find(f => f.rig === sp);
-  if (!base || !graftGroups(placeholderBones(P, base), slot).length) return [];
+  if (!base || !graftGroups(sketchBones(P, base), slot).length) return [];
   return forms
     .filter(f => (base.line ? f.line !== base.line : f.rig !== sp))
-    .filter(f => graftGroups(placeholderBones(P, f), slot).length)
+    .filter(f => graftGroups(sketchBones(P, f), slot).length)
     .map(f => f.rig);
 }

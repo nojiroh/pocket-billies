@@ -22,10 +22,10 @@ import vm from 'node:vm';
 import { readJson, ROOT } from './data-files.mjs';
 import { encodePng, readPng } from './test/png.mjs';
 import {
-  placeholderBake,
-  placeholderCellsWith,
-  placeholderSheet,
-  placeholderSheetCut,
+  sketchBake,
+  sketchCellsWith,
+  sketchSheet,
+  sketchSheetCut,
 } from '../game/js/logic/sketch-art.js';
 
 const ART = join(ROOT, 'game', 'art', 'next');
@@ -63,10 +63,10 @@ export const samplePlaceholder = plan => ({
 /** a form's cells: painted, with its stored drawing on top */
 export function formCells(P, form) {
   const file = join(DRAWN, `${form.name}.png`);
-  return placeholderCellsWith(
+  return sketchCellsWith(
     P,
     form,
-    existsSync(file) ? placeholderSheetCut(P, [form], readPng(file))[form.name] : null
+    existsSync(file) ? sketchSheetCut(P, [form], readPng(file))[form.name] : null
   );
 }
 
@@ -88,7 +88,7 @@ export function bakePlaceholders({ only = null, check = false, log = console.log
     for (const n of only) if (!P.forms.some(f => f.name === n)) throw new Error(`no form ${n} in bodyPlans.json`);
   let rigsChanged = false;
   for (const form of forms) {
-    const made = placeholderBake(P, form, D, formCells(P, form)),
+    const made = sketchBake(P, form, D, formCells(P, form)),
       what = [],
       png = join(SHEETS, `${form.name}.png`);
     if (!existsSync(png) || !sameShown(made.sheet, readPng(png))) {
@@ -130,7 +130,7 @@ export function exportSheet(what, { out = OUT, scale = 1 } = {}) {
     cells = Object.fromEntries(forms.map(f => [f.name, formCells(P, f)]));
   mkdirSync(out, { recursive: true });
   const path = join(out, file);
-  writeFileSync(path, encodePng(placeholderSheet(P, forms, cells, named, scale)));
+  writeFileSync(path, encodePng(sketchSheet(P, forms, cells, named, scale)));
   return path;
 }
 
@@ -141,11 +141,11 @@ export function importSheet(path, what = null) {
   what ||= name.endsWith('-plan') ? `plan:${name.slice(0, -5)}` : name;
   const { forms, named } = sheetForms(P, what);
   if (forms.some(f => !P.forms.includes(f))) throw new Error(`no Billie is on ${what.slice(5)} yet: nothing to store`);
-  const cut = placeholderSheetCut(P, forms, readPng(path), named);
+  const cut = sketchSheetCut(P, forms, readPng(path), named);
   mkdirSync(DRAWN, { recursive: true });
   for (const f of forms) {
-    const cells = placeholderCellsWith(P, f, cut[f.name]);
-    writeFileSync(join(DRAWN, `${f.name}.png`), encodePng(placeholderSheet(P, [f], { [f.name]: cells })));
+    const cells = sketchCellsWith(P, f, cut[f.name]);
+    writeFileSync(join(DRAWN, `${f.name}.png`), encodePng(sketchSheet(P, [f], { [f.name]: cells })));
   }
   return forms.map(f => f.name);
 }
