@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { UI_SIGNALS } from './signals.js';
-import { paletteFor, uiThemeCss, uiThemeLook } from './ui-theme.js';
+import { UI_SHAPE_FAMILIES, paletteFor, uiThemeCss, uiThemeLook } from './ui-theme.js';
 /* eslint-disable no-func-assign */
 expose({
   UI_DIALS: [() => UI_DIALS],
@@ -101,6 +101,8 @@ export const UI_FAMILY_LABELS = /** @type {[string, string, boolean][]} */ ([
   ['tab', 'Tabs', false],
   ['toast', 'Toasts', true],
   ['bubble', 'The dialogue bubble', false],
+  ['bubbleShout', 'A shouted line (burst)', false],
+  ['bubbleThink', 'A thought (cloud)', false],
 ]);
 export const dialEase = (/** @type {string} */ k, /** @type {string} */ label, help = '') =>
   /** @type {UiDial} */ ({ k, label, kind: 'ease', help });
@@ -472,7 +474,10 @@ export function uiDialList() {
     for (const d of G.dials || []) {
       if (d.kind === 'families')
         for (const [f, n, hex] of UI_FAMILY_LABELS)
-          for (const k of hex ? ['kind', 'size', 'radius'] : ['kind', 'size', 'corners', 'radius'])
+          for (const k of [
+            ...(hex ? ['kind', 'size', 'radius'] : ['kind', 'size', 'corners', 'radius']),
+            ...(UI_SHAPE_FAMILIES[f]?.kind === 'jag' ? ['depth', 'spikes'] : []),
+          ])
             out.push({ group: G.id, side: '', path: `shape.families.${f}.${k}`, label: `${n}: ${k}`, dial: d });
       else out.push({ group: G.id, side: '', path: `${G.id}.${d.k}`, label: d.label, dial: d });
     }

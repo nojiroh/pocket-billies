@@ -134,14 +134,17 @@ test('grades, presets and their ids', () => {
 test('every dial writes a variable, in the look or once what it depends on is on', async () => {
   const { uiDialList, uiDialReach, uiVarDials } = await import('../../game/js/logic/ui-dials.js');
   const theme = JSON.parse(readFileSync(new URL('../../game/data/uiTheme.json', import.meta.url), 'utf8'));
-  // the radius matters on a rounded family, the step on a stepped look
+  // the radius matters on a rounded family, the step on a stepped look; DL-3: the cut size and corners on a cut
+  // family (a thought is rounded and a shout jagged in the look)
   const stepped = JSON.parse(JSON.stringify(theme)),
-    rounded = JSON.parse(JSON.stringify(theme));
+    rounded = JSON.parse(JSON.stringify(theme)),
+    cut = JSON.parse(JSON.stringify(theme));
   stepped.defaults.shape.stepped = true;
   for (const f of Object.values(rounded.defaults.shape.families)) f.kind = 'rounded';
+  for (const f of Object.values(cut.defaults.shape.families)) Object.assign(f, { kind: 'cut', corners: ['tl', 'br'] });
   for (const e of uiDialList())
     assert.ok(
-      [theme, stepped, rounded].some(t => uiDialReach(t, e.path).length),
+      [theme, stepped, rounded, cut].some(t => uiDialReach(t, e.path).length),
       `${e.path} writes nothing`
     );
   assert.deepEqual(uiDialReach(theme, 'color.dark.text'), ['--c-text', '--text']);

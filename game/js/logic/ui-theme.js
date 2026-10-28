@@ -40,6 +40,9 @@ expose({
   cornerTL: [() => cornerTL, v => (cornerTL = v)],
   // @ts-expect-error -- replaced on purpose
   cssColour: [() => cssColour, v => (cssColour = v)],
+  familyOf: [() => familyOf],
+  // @ts-expect-error -- replaced on purpose
+  jagPoints: [() => jagPoints, v => (jagPoints = v)],
   // @ts-expect-error -- replaced on purpose
   mergeLook: [() => mergeLook, v => (mergeLook = v)],
   // @ts-expect-error -- replaced on purpose
@@ -55,11 +58,15 @@ expose({
   screenLook: [() => screenLook],
   screenSel: [() => screenSel],
   // @ts-expect-error -- replaced on purpose
+  seededRandom: [() => seededRandom, v => (seededRandom = v)],
+  // @ts-expect-error -- replaced on purpose
   shapeDecls: [() => shapeDecls, v => (shapeDecls = v)],
   // @ts-expect-error -- replaced on purpose
   shapeLines: [() => shapeLines, v => (shapeLines = v)],
   // @ts-expect-error -- replaced on purpose
   shapePoints: [() => shapePoints, v => (shapePoints = v)],
+  // @ts-expect-error -- replaced on purpose
+  shapeVariants: [() => shapeVariants, v => (shapeVariants = v)],
   // @ts-expect-error -- replaced on purpose
   shapeVars: [() => shapeVars, v => (shapeVars = v)],
   // @ts-expect-error -- replaced on purpose
@@ -298,6 +305,20 @@ export const UI_SHAPE_FAMILIES = {
   // the dialogue box: a panel with a speech tail on its top edge, over the portrait; the tail is 1.5 cutLg high and
   // its upright side stands x from the left. Its layers reach up over the tail (dialogue.css: top: -tail)
   bubble: { kind: 'cut', size: 'cutLg', corners: ['tl', 'br'], radius: 22, tail: { x: 52, k: 1.5 } },
+  // DL-3: a shouted line's burst: a seeded zigzag (jag) whose top spike is the tail; a few variants held still, one
+  // picked by the line (talk.js); its layers start the tail's height above the box like the bubble's
+  bubbleShout: {
+    kind: 'jag',
+    size: 'cutLg',
+    corners: [],
+    radius: 22,
+    depth: 9,
+    spikes: 8,
+    variants: 3,
+    tail: { x: 52, k: 1.5 },
+  },
+  // DL-3: a thought: a soft rounded cloud with no tail (a trail of dots stands in for it, span.talk-dots)
+  bubbleThink: { kind: 'rounded', size: 'cutLg', corners: [], radius: 30, lift: true },
 };
 export const UI_SHAPE_DEFAULTS = { cutSm: 4, cutMd: 8, cutLg: 12, slant: 10, step: 4, stepped: false };
 export const RING = 48;
@@ -339,11 +360,61 @@ export function cornerTL(kind, size, d, sh) {
 }
 /** the bubble's tail height in px (whole pixels) @param {any} sh */
 export const bubbleTail = sh => Math.round((sh.cutLg ?? UI_SHAPE_DEFAULTS.cutLg) * UI_SHAPE_FAMILIES.bubble.tail.k);
-/** a family's outline as points, inset by d @param {string} fam @param {any} sh @param {number} d @returns {Pt[]} */
-export function shapePoints(fam, sh, d = 0) {
-  const F = { .../** @type {any} */ (UI_SHAPE_FAMILIES)[fam], ...((sh.families && sh.families[fam]) || {}) };
+/** a family's shape: the defaults with the data's own laid over @param {string} fam @param {any} sh @returns {any} */
+export const familyOf = (fam, sh) => ({
+  .../** @type {any} */ (UI_SHAPE_FAMILIES)[fam],
+  ...((sh.families && sh.families[fam]) || {}),
+});
+/** a small seeded random (mulberry32), the same numbers for the same seed @param {number} seed */
+export function seededRandom(seed) {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+/** DL-3: a jagged burst (a shout): spikes along each edge, valleys F.depth px in (seeded, so each variant has its own
+ * shape that holds still), inset by d; with a tail, its spike on the top edge rises to the layer's top at F.tail.x
+ * @param {any} F @param {any} sh @param {number} d @param {number} variant @returns {Pt[]} */
+export function jagPoints(F, sh, d, variant) {
+  const R = seededRandom(0x5eed + 977 * (variant + 1)),
+    t = F.tail || F.lift ? bubbleTail(sh) : 0,
+    n = Math.max(3, Math.round(F.spikes || 8)),
+    dep = Math.max(2, F.depth || 9),
+    r2 = (/** @type {number} */ v) => Math.round(v * 100) / 100,
+    deep = () => r2(dep * (0.65 + R() * 0.55) + d),
+    jit = () => r2((R() - 0.5) * (40 / n));
+  /** @type {Pt[]} */
+  const out = [[0, d, 0, t + d]];
+  // the top edge, left to right; its first 2 spikes' room holds the tail
+  if (F.tail) {
+    const x = F.tail.x,
+      v = r2(t + dep * 0.6 + d);
+    out.push([0, x - 8, 0, v], [0, x + 4, 0, r2(d * (1 + Math.SQRT2))], [0, x + 14, 0, v]);
+  }
+  for (let i = F.tail ? 2 : 1; i < n; i++)
+    out.push([r2(((i - 0.5) * 100) / n), 0, 0, t + deep()], [r2((i * 100) / n) + jit(), 0, 0, t + d]);
+  out.push([r2(((n - 0.5) * 100) / n), 0, 0, t + deep()], [100, -d, 0, t + d]);
+  // the right side, top to bottom: a valley, a spike, a valley
+  out.push([100, -deep(), 30 + jit(), 0], [100, -d, 55 + jit(), 0], [100, -deep(), 78 + jit(), 0], [100, -d, 100, -d]);
+  // the bottom edge, right to left
+  for (let i = n - 1; i >= 1; i--)
+    out.push([r2(((i + 0.5) * 100) / n), 0, 100, -deep()], [r2((i * 100) / n) + jit(), 0, 100, -d]);
+  out.push([r2((0.5 * 100) / n), 0, 100, -deep()], [0, d, 100, -d]);
+  // the left side, bottom to top
+  out.push([0, deep(), 78 + jit(), 0], [0, d, 55 + jit(), 0], [0, deep(), 30 + jit(), 0]);
+  return out;
+}
+/** a family's outline as points, inset by d (a jag family: the variant's) @param {string} fam @param {any} sh
+ * @param {number} d @param {number} [variant] @returns {Pt[]} */
+export function shapePoints(fam, sh, d = 0, variant = 0) {
+  const F = familyOf(fam, sh);
   const kind = F.kind || 'cut',
     corners = F.corners || [];
+  if (kind === 'jag') return jagPoints(F, sh, d, variant);
   if (F.hex && kind === 'cut') {
     const h = sh[F.size] ?? /** @type {any} */ (UI_SHAPE_DEFAULTS)[F.size],
       e = d * Math.SQRT2,
@@ -373,6 +444,11 @@ export function shapePoints(fam, sh, d = 0) {
     for (const [u, v] of pts) out.push([mx ? 100 : 0, mx ? -u : u, my ? 100 : 0, my ? -v : v]);
     if (corner === 'tl') tlEnd = out.length;
   }
+  if (F.lift && !F.tail) {
+    // DL-3: drawn in the bubble's layer box with no tail: the top edge sits the tail's height down
+    const t = bubbleTail(sh);
+    for (const p of out) if (p[2] === 0) p[3] += t;
+  }
   if (F.tail) {
     // the box is the part plus the tail's height above it: the top edge moves down by t, the tail goes in after the
     // top-left corner (an upright side and a 45° side; inset by d, its tip sits d·(1 + √2) down)
@@ -390,8 +466,26 @@ export function shapePoints(fam, sh, d = 0) {
   return out;
 }
 export const ptsText = (/** @type {Pt[]} */ pts) => pts.map(([ax, ox, ay, oy]) => `${coord(ax, ox)} ${coord(ay, oy)}`);
-/** the three polygons of a family @param {string} fam @param {any} sh */
+/** how many held variants a family has (a jag family: its own count; any other: 1) @param {string} fam @param {any} sh */
+export function shapeVariants(fam, sh) {
+  const F = familyOf(fam, sh);
+  return F.kind === 'jag' ? Math.max(1, Math.min(6, Math.round(F.variants || 3))) : 1;
+}
+/** the three polygons of a family; a jag family's clip and edge once per variant (--clip-<f>-<i>), its ring from the
+ * first @param {string} fam @param {any} sh */
 export function shapeVars(fam, sh) {
+  const nv = shapeVariants(fam, sh);
+  if (familyOf(fam, sh).kind === 'jag') {
+    /** @type {Record<string, string>} */
+    const out = {};
+    for (let i = 0; i < nv; i++) {
+      const outer = ptsText(shapePoints(fam, sh, 0, i)),
+        inner = ptsText(shapePoints(fam, sh, 1, i));
+      out[`--clip-${fam}-${i}`] = `polygon(${outer.join(', ')})`;
+      out[`--edge-${fam}-${i}`] = `polygon(evenodd, ${[...outer, outer[0], ...inner, inner[0]].join(', ')})`;
+    }
+    return out;
+  }
   const outer = ptsText(shapePoints(fam, sh)),
     inner = ptsText(shapePoints(fam, sh, 1)),
     box = ptsText([

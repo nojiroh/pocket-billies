@@ -80,7 +80,9 @@
     "action": {"kind":"cut","size":"cutLg","radius":22},
     "tab": {"kind":"cut","size":"cutMd","corners":["tl","tr"],"radius":12},
     "toast": {"kind":"cut","size":"cutMd","radius":18},
-    "bubble": {"kind":"cut","size":"cutLg","corners":["tl","br"],"radius":22}
+    "bubble": {"kind":"cut","size":"cutLg","corners":["tl","br"],"radius":22},
+    "bubbleShout": {"kind":"jag","size":"cutLg","corners":[],"radius":22,"depth":9,"spikes":8},
+    "bubbleThink": {"kind":"rounded","size":"cutLg","corners":[],"radius":30}
    }
   },
   "space": {"s1":4,"s2":8,"s3":12,"s4":16,"s5":24,"s6":32,"s7":48,"gutter":16},

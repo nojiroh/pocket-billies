@@ -65,7 +65,9 @@
       "action": {"$ref": "#/$defs/familyShape"},
       "tab": {"$ref": "#/$defs/familyShape"},
       "toast": {"$ref": "#/$defs/familyShape"},
-      "bubble": {"$ref": "#/$defs/familyShape"}
+      "bubble": {"$ref": "#/$defs/familyShape"},
+      "bubbleShout": {"$ref": "#/$defs/jagShape"},
+      "bubbleThink": {"$ref": "#/$defs/familyShape"}
      }
     }
    }
@@ -74,7 +76,7 @@
    "type": "object",
    "additionalProperties": false,
    "properties": {
-    "kind": {"enum": ["cut", "rounded", "square"], "description": "cut is the look; rounded and square are for comparing"},
+    "kind": {"enum": ["cut", "rounded", "square", "jag"], "description": "cut is the look; rounded and square are for comparing; jag (DL-3) is a shout's seeded burst"},
     "size": {"enum": ["cutSm", "cutMd", "cutLg"], "description": "which cut size the family's cuts use"},
     "corners": {
      "type": "array",
@@ -86,6 +88,8 @@
     "radius": {"type": "number", "minimum": 0, "maximum": 48, "description": "px, when the family is rounded"}
    }
   },
+  "jagShape": {"type": "object", "additionalProperties": false, "description": "DL-3: a family that may be a jagged burst (a shout): a family's shape plus its spikes", "properties": {"kind": {"enum": ["cut", "rounded", "square", "jag"], "description": "cut is the look; rounded and square are for comparing; jag (DL-3) is a shout's seeded burst"}, "size": {"enum": ["cutSm", "cutMd", "cutLg"], "description": "which cut size the family's cuts use"}, "corners": {"type": "array", "uniqueItems": true, "maxItems": 4, "items": {"enum": ["tl", "tr", "br", "bl"]}, "description": "which corners are cut (the long hexagons, action and toast, cut both ends and ignore it)"}, "radius": {"type": "number", "minimum": 0, "maximum": 48, "description": "px, when the family is rounded"}, "depth": {"type": "number", "minimum": 2, "maximum": 24, "description": "DL-3: px, how deep a jagged burst's valleys go"}, "spikes": {"type": "integer", "minimum": 3, "maximum": 16, "description": "DL-3: a jagged burst's spikes along its top and bottom edges"}}},
+
   "type": {
    "type": "object",
    "additionalProperties": false,

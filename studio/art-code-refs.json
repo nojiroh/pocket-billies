@@ -1749,7 +1749,7 @@
    "game/js/logic/battle-anims.js:172",
    "game/js/logic/perks.js:230",
    "game/js/logic/perks.js:241",
-   "game/js/logic/ui-dials.js:147",
+   "game/js/logic/ui-dials.js:149",
    "game/js/map-tab.js:152"
   ],
   "eye": [
@@ -1806,7 +1806,7 @@
    "game/js/workshop.js:206"
   ],
   "glass": [
-   "game/js/logic/ui-dials.js:133",
+   "game/js/logic/ui-dials.js:135",
    "game/js/structures.js:724",
    "game/js/ui-run-kit.js:1561",
    "game/js/walk/rooms.js:273",
@@ -1913,7 +1913,7 @@
    "game/js/walk/quality-cull.js:185"
   ],
   "scale": [
-   "game/js/logic/ui-dials.js:219"
+   "game/js/logic/ui-dials.js:221"
   ],
   "sheet": [
    "game/js/logic/soundscape.js:111",
