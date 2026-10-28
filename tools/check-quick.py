@@ -771,16 +771,21 @@ def run_music_step(P):
     for every place of the run, what it picks follows its node (a town node town, the landing route, any other node its
     biome's song, the owner's mapping); on a route node, the music sync (musicSync, called there) asks for that biome's
     song. SND-5: each walkable node plays its row's arc band (music.json run.arc: 'meadow@mid' on rows 3-5,
-    '@late' on 6-8), a town node and the landing the song as written; the sync asks for the band. Nothing is
-    heard: soundEngine.want is what the game asked to play (headless, sound never starts without a touch)"""
+    '@late' on 6-8), a town node and the landing the song as written; the sync asks for the band. SND-12b: a song
+    with an ensemble (GB Sounds off) keeps its name in a band and hears the arc as its layers instead (SND-13): the
+    peak level music.json run.arc's band gives (rows 3-5 0.6, 6-8 full; musicLayerArc), and its ensemble has peak
+    parts to play it; at least one band must be heard so. Nothing is heard: soundEngine.want is what the game asked
+    to play (headless, sound never starts without a touch)"""
     pg = P.pg
     if not until(pg, "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.run", 150): raise Exception('the run fixture never opened')
     if pg.evaluate('saveData.trip.node') != 1: raise Exception('not on the landing')
     if not until(pg, "soundEngine.want==='route'", 10): raise Exception(f'the landing asked for {pg.evaluate("soundEngine.want")!r}, not route')
     places = pg.evaluate("""(()=>{const n0=saveData.trip.node,out=[];
       for(let n=1;n<LOCATIONS.length;n++){const L=LOCATIONS[n],N=saveData.run.map.nodes[L.runNode];
-        saveData.trip.node=n;const st=musicState();out.push({n,name:L.name,type:N.type,biome:N.biome||'',row:N.row,song:musicFor(),
-          plays:songVariant(musicFor(),{...st,night:0},SONGS,null,MUSIC.run)})}
+        saveData.trip.node=n;const st=musicState(),S=SONGS[musicFor()],E=S&&S.ensemble&&S.ensemble!=='gb'&&!st.gb&&MUSIC.ensembles[S.ensemble];
+        out.push({n,name:L.name,type:N.type,biome:N.biome||'',row:N.row,song:musicFor(),
+          plays:songVariant(musicFor(),{...st,night:0},SONGS,null,MUSIC.run),layered:!!E,
+          peakParts:E?E.parts.filter(p=>p.layer==='peak').length:0,peak:musicLayerArc(musicArcBand(st,MUSIC.run))})}
       saveData.trip.node=n0;return out})()""")
     bad = []; seen = {}
     for P in places:
@@ -788,8 +793,17 @@ def run_music_step(P):
         seen[P['song']] = seen.get(P['song'], 0) + 1
         if P['song'] != want: bad.append(f"{P['name']} ({P['type']}, {P['biome']}): {P['song']}, not {want}")
         band = None if P['type'] in ('town', 'landing') else 'mid' if 3 <= P['row'] <= 5 else 'late' if 6 <= P['row'] <= 8 else None
-        if P['plays'] != (want + '@' + band if band else want): bad.append(f"{P['name']} (row {P['row']}): plays {P['plays']}, not in its band {band}")
-        if band: seen['@' + band] = seen.get('@' + band, 0) + 1
+        if P['layered']:
+            # SND-12b: an ensemble song plays as written; its band is its peak layer's level (SND-13)
+            if P['plays'] != want: bad.append(f"{P['name']} (row {P['row']}): plays {P['plays']}, not {want} (an ensemble hears its band as layers)")
+            lv = {'mid': 0.6, 'late': 1}.get(band, 0)
+            if P['peak'] != lv: bad.append(f"{P['name']} (row {P['row']}): its peak layer at {P['peak']}, not {lv} for its band {band}")
+            if band and not P['peakParts']: bad.append(f"{P['name']}: {want}'s ensemble has no peak parts to hear its band {band}")
+            if band: seen['layers@' + band] = seen.get('layers@' + band, 0) + 1
+        else:
+            if P['plays'] != (want + '@' + band if band else want): bad.append(f"{P['name']} (row {P['row']}): plays {P['plays']}, not in its band {band}")
+            if band: seen['@' + band] = seen.get('@' + band, 0) + 1
+    if not any(k.startswith('layers@') for k in seen): bad.append('no band heard as an ensemble\'s layers (SND-12b: the biome songs have ensembles)')
     if bad: raise Exception('; '.join(bad[:5]))
     route = next((P for P in places if P['type'] == 'route' and P['row'] >= 3), None) or next((P for P in places if P['type'] == 'route'), None)
     if not route: raise Exception('the fixture run has no route node')

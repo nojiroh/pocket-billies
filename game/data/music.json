@@ -44,10 +44,15 @@
    "key": 57,
    "scale": "dorian",
    "prog": [0,6,5,6,0,3,6,4],
+   "form": ["A","B","A"],
+   "sections": {
+    "B": {"prog":[3,6,0,3,5,6,4,4],"hookName":"placeholder: the cave's B, a walk over IV-VII-i (dorian) (Claude's draft)"}
+   },
    "lead": "triangle",
    "bass": "long",
    "arp": "drip",
    "drums": "none",
+   "ensemble": "cave",
    "night": false,
    "seed": 21,
    "echo": 0.55,
@@ -105,10 +110,18 @@
    "key": 62,
    "scale": "mixo",
    "prog": [0,6,3,0,0,6,4,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [5,3,6,0,5,3,6,4],
+     "hookName": "placeholder: the run map's B, a walk over vi-IV-bVII (mixolydian) (Claude's draft)"
+    }
+   },
    "lead": "p25",
    "bass": "long",
    "arp": "updown",
    "drums": "soft",
+   "ensemble": "map",
    "seed": 51,
    "hookName": "placeholder: map hook (Claude's draft)",
    "hook": [[0,74,4],[4,78,4],[8,81,6],[14,79,2],[16,79,6],[22,76,2],[24,72,8]]
@@ -305,10 +318,18 @@
    "key": 64,
    "scale": "mixo",
    "prog": [0,6,3,4,0,6,5,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [3,6,0,0,3,6,4,4],
+     "hookName": "placeholder: the inner sun's B, a walk over IV-bVII-I (mixolydian) (Claude's draft)"
+    }
+   },
    "lead": "p25",
    "bass": "drive",
    "arp": "updown",
    "drums": "drive",
+   "ensemble": "innersun",
    "seed": 29
   },
   "meadow": {
@@ -316,10 +337,15 @@
    "key": 67,
    "scale": "lydian",
    "prog": [0,3,4,0,5,3,4,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {"prog":[1,1,0,0,5,3,1,4],"hookName":"placeholder: the meadow's B, a walk over II-I (lydian) (Claude's draft)"}
+   },
    "lead": "triangle",
    "bass": "bounce",
    "arp": "updown",
    "drums": "soft",
+   "ensemble": "meadow",
    "seed": 101,
    "swing": 0.1,
    "hookName": "placeholder: meadow hook (Claude's draft)",
@@ -330,10 +356,15 @@
    "key": 65,
    "scale": "mixo",
    "prog": [0,4,3,0,5,4,3,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {"prog":[6,3,0,4,6,3,1,4],"hookName":"placeholder: the hills' B, a walk over bVII-IV-I (mixolydian) (Claude's draft)"}
+   },
    "lead": "p50",
    "bass": "walk",
    "arp": "chord7",
    "drums": "bossa",
+   "ensemble": "hills",
    "seed": 111,
    "seventh": 1,
    "swing": 0.08
@@ -343,10 +374,15 @@
    "key": 59,
    "scale": "dorian",
    "prog": [0,3,6,3,0,5,6,4],
+   "form": ["A","B","A"],
+   "sections": {
+    "B": {"prog":[3,3,0,6,5,6,3,4],"hookName":"placeholder: the spore wood's B, a walk over IV-i-VII (dorian) (Claude's draft)"}
+   },
    "lead": "triangle",
    "bass": "long",
    "arp": "drip",
    "drums": "soft",
+   "ensemble": "spore",
    "seed": 121,
    "echo": 0.45,
    "hookName": "placeholder: spore hook (Claude's draft)",
@@ -357,10 +393,18 @@
    "key": 57,
    "scale": "dorian",
    "prog": [0,5,3,6,0,5,4,4],
+   "form": ["A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [3,0,6,5,3,0,4,4],
+     "hookName": "placeholder: the crystal cave's B, a walk over IV-i-VII (dorian) (Claude's draft)"
+    }
+   },
    "lead": "triangle",
    "bass": "long",
    "arp": "drip",
    "drums": "soft",
+   "ensemble": "crystal",
    "seed": 131,
    "echo": 0.5,
    "hookName": "placeholder: crystal hook (Claude's draft)",
@@ -371,10 +415,15 @@
    "key": 55,
    "scale": "minor",
    "prog": [0,6,3,4,0,6,5,4],
+   "form": ["A","B","A"],
+   "sections": {
+    "B": {"prog":[5,6,0,0,3,5,4,4],"hookName":"placeholder: the trench's B, a walk over VI-VII-i (minor) (Claude's draft)"}
+   },
    "lead": "p50",
    "bass": "long",
    "arp": "updown",
    "drums": "soft",
+   "ensemble": "trench",
    "seed": 141,
    "echo": 0.45,
    "swing": 0.06,
@@ -386,10 +435,15 @@
    "key": 62,
    "scale": "lydian",
    "prog": [0,4,5,3,0,4,1,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {"prog":[1,0,5,3,1,0,4,4],"hookName":"placeholder: the spire's B, a walk over II-I-vi (lydian) (Claude's draft)"}
+   },
    "lead": "p12",
    "bass": "bounce",
    "arp": "chord7",
    "drums": "skip",
+   "ensemble": "spire",
    "seed": 151,
    "seventh": 1,
    "hookName": "placeholder: spire hook (Claude's draft)",
@@ -1453,6 +1507,443 @@
      "verb": 0.2,
      "level": 0.45
     }
+   ]
+  },
+  "cave": {
+   "name": "placeholder: a cave (ABA): the chip triangle, bells, a drone, a pizzicato drip, a flute in B, much reverb; walk, rain, snow layers; peak: a choir and timpani (Claude's draft)",
+   "trim": 0.4,
+   "parts": [
+    {"line":"lead","wave":"triangle","verb":0.3,"level":0.8},
+    {"line":"lead","inst":"flute","oct":-1,"in":["B"],"pan":-0.15,"verb":0.45,"level":0.5},
+    {"line":"chime","inst":"bell","centre":81,"pan":0.3,"verb":0.55,"level":0.45},
+    {"line":"drone","inst":"drone","centre":45,"verb":0.35,"level":0.7},
+    {"line":"arp","inst":"pizz","style":"drip","pan":-0.3,"verb":0.5,"level":0.6},
+    {
+     "line": "drums",
+     "kit": {"snare":"woodblock","hat":"shaker"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.4
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.2,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {"line":"pad","inst":"choir","centre":57,"layer":"peak","verb":0.4,"level":0.8},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"peak","verb":0.3,"level":0.7}
+   ]
+  },
+  "meadow": {
+   "name": "placeholder: a meadow (AABA): the chip triangle, a harp, a flute in B, soft strings, pizzicato bass, a brush kit; walk, rain, snow layers; peak: a march snare and strings (Claude's draft)",
+   "trim": -2.8,
+   "parts": [
+    {"line":"lead","wave":"triangle","level":0.85},
+    {"line":"lead","inst":"flute","in":["B"],"pan":-0.15,"verb":0.3,"level":0.55},
+    {"line":"arp","inst":"harp","pan":0.3,"verb":0.3,"level":0.7},
+    {"line":"pad","inst":"softstrings","centre":62,"verb":0.3,"level":0.5},
+    {"line":"bass","inst":"pizz","oct":1,"pan":-0.1,"verb":0.1,"level":0.85},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.7
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"tambourine"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.5
+    },
+    {"line":"arp","inst":"pizz","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.4,"level":0.6},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"osnare"},
+     "style": "march",
+     "layer": "peak",
+     "verb": 0.1,
+     "level": 0.5
+    },
+    {"line":"pad","inst":"strings","centre":55,"layer":"peak","verb":0.25,"level":0.5}
+   ]
+  },
+  "spore": {
+   "name": "placeholder: a spore wood (ABA): the chip triangle, bells, soft strings, a pizzicato drip, a warm bass, brushes; walk, rain, snow layers; peak: a choir and timpani (Claude's draft)",
+   "trim": -1.8,
+   "parts": [
+    {"line":"lead","wave":"triangle","verb":0.25,"level":0.8},
+    {"line":"chime","inst":"bell","centre":79,"pan":-0.25,"verb":0.5,"level":0.45},
+    {"line":"pad","inst":"softstrings","centre":60,"verb":0.4,"level":0.6},
+    {"line":"arp","inst":"pizz","style":"drip","pan":0.3,"verb":0.45,"level":0.5},
+    {"line":"bass","inst":"bass","oct":1,"verb":0.1,"level":0.7},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.5
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"shaker"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.4
+    },
+    {"line":"arp","inst":"pizz","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.4,"level":0.5},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {"line":"pad","inst":"choir","centre":60,"layer":"peak","verb":0.35,"level":0.9},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"peak","verb":0.3,"level":0.7}
+   ]
+  },
+  "trench": {
+   "name": "placeholder: a trench (ABA): the chip lead, a deep pad, a drone, pizzicato, a warm bass, a clarinet in B, brushes; walk, rain, snow layers; peak: brass and timpani (Claude's draft)",
+   "trim": 0.4,
+   "parts": [
+    {"line":"lead","wave":"p50","verb":0.2,"level":0.85},
+    {"line":"lead","inst":"clarinet","oct":-1,"in":["B"],"pan":-0.15,"verb":0.35,"level":0.55},
+    {"line":"drone","inst":"drone","centre":43,"verb":0.3,"level":0.7},
+    {"line":"pad","inst":"softstrings","centre":50,"verb":0.4,"level":0.65},
+    {
+     "line": "arp",
+     "inst": "pizz",
+     "pan": 0.3,
+     "verb": 0.35,
+     "level": 0.5,
+     "dim": {"night":0.5}
+    },
+    {"line":"bass","inst":"bass","oct":1,"verb":0.05,"level":0.8},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.55
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"osnare","hat":"shaker"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.4
+    },
+    {"line":"arp","inst":"pizz","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.4,"level":0.5},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {"line":"stabs","inst":"brass","centre":55,"layer":"peak","pan":-0.2,"verb":0.25,"level":0.6},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"peak","verb":0.3,"level":0.7}
+   ]
+  },
+  "hills": {
+   "name": "placeholder: hills (AABA): the chip lead, an accordion (the tune in B), a walking bass, a bossa kit, a woodblock; walk, rain, snow layers; peak: brass and timpani (Claude's draft)",
+   "trim": -0.7,
+   "parts": [
+    {"line":"lead","wave":"p50","level":0.85},
+    {"line":"lead","inst":"accordion","in":["B"],"pan":-0.15,"verb":0.2,"level":0.5},
+    {"line":"arp","inst":"accordion","pan":-0.2,"verb":0.2,"level":0.6},
+    {"line":"bass","inst":"bass","oct":1,"style":"walk","verb":0.05,"level":0.9},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker","rim":"woodblock"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.7
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"tambourine"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.5
+    },
+    {"line":"arp","inst":"pizz","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.4,"level":0.6},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {"line":"stabs","inst":"brass","centre":60,"layer":"peak","pan":0.2,"verb":0.2,"level":0.6},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"peak","verb":0.3,"level":0.7}
+   ]
+  },
+  "innersun": {
+   "name": "placeholder: the inner sun (AABA): the chip lead, brass stabs, timpani, spiccato (an ostinato in B), a warm bass, a kit; walk, rain, snow layers; peak: a choir and orchestra hits (Claude's draft)",
+   "trim": -4,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.9},
+    {"line":"stabs","inst":"brass","centre":60,"pan":-0.2,"verb":0.2,"level":0.65},
+    {"line":"timp","inst":"timpani","oct":1,"verb":0.25,"level":0.7},
+    {"line":"arp","inst":"spiccato","pan":0.25,"verb":0.15,"level":0.7},
+    {"line":"ostinato","inst":"spiccato","centre":55,"in":["B"],"pan":-0.25,"verb":0.15,"level":0.45},
+    {"line":"bass","inst":"bass","oct":1,"verb":0.05,"level":0.8},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"snare","hat":"hat"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.05,
+     "level": 0.75
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"tambourine"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.5
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {"line":"pad","inst":"choir","centre":60,"layer":"peak","verb":0.3,"level":1},
+    {"line":"hits","inst":"orchhit","centre":58,"layer":"peak","pan":0.1,"verb":0.2,"level":0.7}
+   ]
+  },
+  "crystal": {
+   "name": "placeholder: crystal (ABA): the chip triangle, bells, a pizzicato arpeggio, soft strings, a warm bass, brushes; walk, rain, snow layers; peak: a choir and timpani (Claude's draft)",
+   "trim": -1.8,
+   "parts": [
+    {"line":"lead","wave":"triangle","verb":0.25,"level":0.8},
+    {"line":"chime","inst":"bell","centre":84,"pan":-0.25,"verb":0.5,"level":0.4},
+    {"line":"arp","inst":"pizz","pan":0.3,"verb":0.45,"level":0.55},
+    {"line":"pad","inst":"softstrings","centre":60,"verb":0.4,"level":0.6},
+    {"line":"bass","inst":"bass","oct":1,"verb":0.1,"level":0.65},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.45
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"shaker"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.4
+    },
+    {"line":"arp","inst":"pizz","style":"drip","oct":1,"layer":"rain","pan":-0.35,"verb":0.4,"level":0.5},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {"line":"pad","inst":"choir","centre":62,"layer":"peak","verb":0.35,"level":0.9},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"peak","verb":0.3,"level":0.7}
+   ]
+  },
+  "spire": {
+   "name": "placeholder: a spire (AABA): the chip lead, a celesta chime, pizzicato chords, strings, spiccato in B, pizzicato bass, a kit; walk, rain, snow layers; peak: brass and timpani (Claude's draft)",
+   "trim": 0.5,
+   "parts": [
+    {"line":"lead","wave":"p12","level":0.85},
+    {"line":"arp","inst":"pizz","pan":0.3,"verb":0.3,"level":0.6},
+    {"line":"chime","inst":"celesta","centre":79,"pan":-0.3,"verb":0.4,"level":0.5},
+    {"line":"pad","inst":"strings","centre":64,"verb":0.3,"level":0.65},
+    {"line":"ostinato","inst":"spiccato","centre":55,"in":["B"],"pan":-0.25,"verb":0.15,"level":0.45},
+    {"line":"bass","inst":"pizz","oct":1,"pan":-0.1,"verb":0.1,"level":0.85},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"osnare","hat":"shaker"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.7
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"osnare","hat":"osnare"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": -0.15,
+     "verb": 0.15,
+     "level": 0.5
+    },
+    {"line":"arp","inst":"pizz","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.4,"level":0.6},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {"line":"stabs","inst":"brass","centre":62,"layer":"peak","pan":-0.2,"verb":0.2,"level":0.6},
+    {"line":"timp","inst":"timpani","oct":1,"layer":"peak","verb":0.3,"level":0.7}
+   ]
+  },
+  "map": {
+   "name": "placeholder: the run's map (AABA): the chip lead, a harp arpeggio, strings, pizzicato bass, a soft kit, a flute in B; walk, rain, snow layers; peak: a march snare and timpani (Claude's draft)",
+   "trim": 3.2,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.85},
+    {"line":"lead","inst":"flute","in":["B"],"pan":-0.15,"verb":0.3,"level":0.55},
+    {"line":"arp","inst":"harp","pan":0.3,"verb":0.3,"level":0.65},
+    {"line":"pad","inst":"strings","centre":62,"verb":0.25,"level":0.6},
+    {"line":"bass","inst":"pizz","oct":1,"pan":-0.1,"verb":0.1,"level":0.85},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.6
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"shaker"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.4
+    },
+    {"line":"arp","inst":"pizz","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.4,"level":0.6},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.4
+    },
+    {
+     "line": "drums",
+     "kit": {"snare":"osnare"},
+     "style": "march",
+     "layer": "peak",
+     "verb": 0.1,
+     "level": 0.5
+    },
+    {"line":"timp","inst":"timpani","oct":1,"layer":"peak","verb":0.3,"level":0.7}
    ]
   },
   "fanfare": {

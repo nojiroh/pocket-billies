@@ -245,3 +245,34 @@ test('musicFindings: a form naming no section, a section never played, a loop ou
 function bar(f) {
   return Array.from({ length: 16 }, (_, i) => f(i));
 }
+
+/* SND-12b: batch 2, the cave, the biome songs and the run's map: each in a form on an ensemble of its own, with peak
+   parts (the run's arc, SND-13: rows 3-5 at 0.6, 6-8 full), a walking beat and weather layers; the night version (and
+   the tense and arc versions) keep it */
+const BATCH2 = ['cave', 'meadow', 'spore', 'trench', 'hills', 'innersun', 'crystal', 'spire', 'map'];
+test('batch 2: the cave, the biome songs and the map in forms of 16-32 bars, each on its own ensemble', () => {
+  for (const id of BATCH2) {
+    const S = MUSIC.songs[id];
+    assert.equal(S.ensemble, id, id);
+    assert.ok(MUSIC.ensembles[id], id);
+    const D = trackerCompose(S),
+      bars = D.steps / 16;
+    assert.ok(bars >= 16 && bars <= 32, `${id}: ${bars} bars`);
+    assert.ok(D.played && D.played.some(P => P.name === 'B'), `${id} plays its B`);
+    if (S.night !== false) assert.equal(trackerNight(S).ensemble, id, `${id} at night`);
+  }
+});
+
+test('batch 2: every ensemble has peak parts (the arc), a walking beat, rain and snow; at most 16 parts', () => {
+  for (const id of BATCH2) {
+    const E = MUSIC.ensembles[id],
+      layers = new Set(E.parts.map(P => P.layer).filter(Boolean));
+    for (const k of ['peak', 'walk', 'rain', 'snow']) assert.ok(layers.has(k), `${id}: ${k}`);
+    assert.ok(E.parts.length <= 16, id);
+    assert.ok(
+      E.parts.some(P => !P.layer && P.wave),
+      `${id} keeps a chip lead`
+    );
+    assert.match(E.name, /^placeholder: /, id);
+  }
+});
