@@ -113,8 +113,7 @@ on the bowl, and the old map code is deleted.
 - **World map test:** the new ground, models and draw time.
 
 ## The look: living diorama (chosen 2026-10-19)
-Concept sketches (top-down, offline, from the real spots and roads): `10-bowl/option-atlas.png`,
-`option-diorama.png` (chosen), `option-pixel.png`.
+Three concept sketches were drawn (atlas, diorama, pixel; deleted 2026-10-28, in git history).
 Owner's answers: **B, living diorama** (strong low-poly relief, cast shadows, animated reflective water, little 3D towns);
 the sea as an **inland sea with bays** (the open side of the bowl, about 40% of it; one continent wrapping round it);
 **slanted light** for readable shadows; clouds and weather from **the game's own weather** and time of day.
