@@ -11,6 +11,7 @@ import {
   soundscapeCellsFromTiles,
   soundscapeEmitters,
   soundscapeFallRecipe,
+  soundscapeFindings,
   soundscapeHeight,
   soundscapeLaps,
   soundscapeLevel,
@@ -21,6 +22,8 @@ import {
   soundscapeWaves,
 } from '../../game/js/logic/soundscape.js';
 import { ambienceBuckets, ambienceRandom } from '../../game/js/logic/ambience-sound.js';
+import { WATER_KINDS } from '../../game/js/logic/water-kinds.js';
+import { readFileSync } from 'node:fs';
 
 /* a small water table: the game's is game/data/soundscape.json `water` */
 const S = {
@@ -266,4 +269,23 @@ test('laps every few seconds with a plip now and then; waves bigger and closer a
   assert.equal(soundscapeTide(9), 1);
   assert.equal(soundscapeTide(21), 1);
   assert.ok(Math.abs(soundscapeTide(15)) < 1e-9);
+});
+
+test("the game's water (soundscape.json): every water kind has a recipe, every recipe and bank named exists", () => {
+  const D = JSON.parse(readFileSync(new URL('../../game/data/soundscape.json', import.meta.url), 'utf8'));
+  assert.deepEqual(soundscapeFindings(D, WATER_KINDS), []);
+  assert.equal(Object.keys(D.kinds).length, 15);
+  /* every recipe a gentle one: no white noise, filters in the audible band */
+  for (const [id, R] of Object.entries(D.water)) {
+    for (const L of R.layers) assert.ok(['pink', 'brown'].includes(L.noise), id);
+    assert.ok(R.trim > 0 && R.trim <= 2, `${id} trim ${R.trim}`);
+  }
+  /* a planted mistake of each sort is found */
+  const bad = structuredClone(D);
+  delete bad.kinds.bog;
+  bad.kinds.pond.recipe = 'nosuch';
+  bad.water.brook.texture.bank = 'drop';
+  bad.water.lake.events[0].bank = 'babble';
+  bad.water.river.layers[1].drift[0].on = 5;
+  assert.equal(soundscapeFindings(bad, WATER_KINDS).length, 5);
 });

@@ -34,6 +34,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   soundscapeFallRecipe: [() => soundscapeFallRecipe, v => (soundscapeFallRecipe = v)],
   // @ts-expect-error -- replaced on purpose
+  soundscapeFindings: [() => soundscapeFindings, v => (soundscapeFindings = v)],
+  // @ts-expect-error -- replaced on purpose
   soundscapeHeight: [() => soundscapeHeight, v => (soundscapeHeight = v)],
   // @ts-expect-error -- replaced on purpose
   soundscapeLaps: [() => soundscapeLaps, v => (soundscapeLaps = v)],
@@ -77,8 +79,51 @@ expose({
  *   trim (from the loudness report), reverb send, bed layers, a baked texture and events
  * @typedef {{about?: string, kinds: Record<string, SoundscapeKind>, running: {brook: string, river: string,
  *   rapids: string, spring: string, riverWidth: number, near: number}, falls: {small: string, tall: string,
- *   tallFrom: number, pool: string, sheet: string}, fountain: string, water: Record<string, SoundscapeRecipe>}} SoundscapeWater
+ *   tallFrom: number, pool: string, sheet: string}, fountain: string, wake?: string, rainOnWater?: string,
+ *   banks?: Record<string, any>, water: Record<string, SoundscapeRecipe>}} SoundscapeWater
+ *   game/data/soundscape.json's water half (its `beds` are logic/ambience-sound.js's)
  */
+
+/**
+ * what is wrong with soundscape.json's water (tools/check-data.mjs): a water kind with no recipe, a recipe or bank
+ * named that doesn't exist, a drift on a filter a layer hasn't got
+ * @param {SoundscapeWater} S
+ * @param {string[]} kinds every water kind (logic/water-kinds.js WATER_KINDS)
+ * @returns {string[]}
+ */
+export function soundscapeFindings(S, kinds) {
+  const out = [],
+    W = S.water || {},
+    banks = S.banks || {},
+    rec = (/** @type {string} */ id, /** @type {string} */ where) => {
+      if (!W[id]) out.push(`${where}: no water recipe "${id}"`);
+    };
+  for (const k of kinds) if (!S.kinds[k]) out.push(`kinds: the water kind "${k}" has no recipe`);
+  for (const [k, K] of Object.entries(S.kinds)) {
+    if (!kinds.includes(k)) out.push(`kinds.${k}: no such water kind`);
+    rec(K.recipe, `kinds.${k}`);
+  }
+  for (const k of ['brook', 'river', 'rapids', 'spring']) rec(/** @type {any} */ (S.running)[k], `running.${k}`);
+  for (const k of ['small', 'tall', 'pool', 'sheet']) rec(/** @type {any} */ (S.falls)[k], `falls.${k}`);
+  for (const k of ['fountain', 'wake', 'rainOnWater']) {
+    const v = /** @type {any} */ (S)[k];
+    if (v != null) rec(v, k);
+  }
+  for (const [id, R] of Object.entries(W)) {
+    if (R.texture && (!banks[R.texture.bank] || banks[R.texture.bank].kind !== 'babble'))
+      out.push(`water.${id}: its texture's bank "${R.texture.bank}" is no babble bank`);
+    for (const E of R.events || [])
+      if ('bank' in E && E.bank && (!banks[E.bank] || banks[E.bank].kind !== 'bubble'))
+        out.push(`water.${id}: its ${E.type}' bank "${E.bank}" is no bubble bank`);
+    R.layers.forEach((L, i) => {
+      for (const D of L.drift || [])
+        if (D.on !== 'gain' && !(D.on >= 0 && D.on < L.filters.length))
+          out.push(`water.${id}: layer ${i} drifts filter ${D.on}, which it hasn't got`);
+    });
+    if (!R.layers.length && !R.texture && !(R.events || []).length) out.push(`water.${id}: makes no sound`);
+  }
+  return out;
+}
 
 /** metres apart two voices of one recipe must be (so a second voice is another place, not the same river) */
 export const SOUNDSCAPE_APART = 8;

@@ -1,5 +1,5 @@
 {
- "about": "Sound track SND-10: the world's sounds as recipes (sound.js plays them; logic/ambience-sound.js and logic/soundscape.js hold the logic). beds: a place's beds of sound, each a few layers of the beds' own pink or brown noise through filters [type, Hz, Q, gain dB] at a gain, with drift (what wanders: the gain or a filter's frequency, by depth, a new value every min-max seconds); bus world or amb (the World or Ambience slider); trim from tools/check-sound.py --loudness; tone a low hum (Hz); events crickets or crackles at eventGain.",
+ "about": "Sound track SND-10: the world's sounds as recipes (sound.js plays them; logic/ambience-sound.js and logic/soundscape.js hold the logic). beds: a place's beds of sound, each a few layers of the beds' own pink or brown noise through filters [type, Hz, Q, gain dB] at a gain, with drift (what wanders: the gain or a filter's frequency, by depth, a new value every min-max seconds); bus world or amb (the World or Ambience slider); trim from tools/check-sound.py --loudness; tone a low hum (Hz); events crickets or crackles at eventGain. SND-10, water: banks are baked once (logic/sound-bake.js through the tracker's bank): bubbles (van den Doel) at every pitch, a drop's rise and a bubble's, and a babble loop (after Farnell). kinds: each water kind's recipe and which of its cells sound (its shores, or all of them); running: a river line's recipe by width and rapids; falls: a placed fall's by height, its plunge pool's and the automatic cascades'; fountain; wake (Surf riding) and rainOnWater (rain on water surfaces). water: the recipes, each heard within range m (line: a river or a shore, falling off slower), its nearest `voices` playing, with a trim from the loudness report, a reverb send, bed layers (as beds'), a baked texture played from a random point and events (bubbles, laps at a bank, the surf's waves on the tide); byHeight: a fall louder and heard further by its height.",
  "beds": {
   "crickets": {"bus":"amb","trim":0.74,"layers":[],"events":"crickets"},
   "leaves": {
@@ -213,6 +213,475 @@
       {"on":0,"base":520,"depth":0.5,"min":1.5,"max":5,"tau":1.2,"oct":true}
      ]
     }
+   ]
+  }
+ },
+ "banks": {
+  "drop": {"kind":"bubble","lo":50,"hi":115,"every":6,"xi":0.12,"level":0.9},
+  "bubble": {"kind":"bubble","lo":50,"hi":115,"every":6,"xi":0.7,"level":0.9},
+  "babble": {
+   "kind": "babble",
+   "lo": 60,
+   "hi": 60,
+   "every": 1,
+   "sec": 4,
+   "layers": [[2,800,0.2],[6,600,0.5],[12,400,0.8]],
+   "level": 0.25,
+   "seed": 45233
+  }
+ },
+ "kinds": {
+  "pond": {"recipe":"pond"},
+  "stream": {"recipe":"brook","at":"all"},
+  "canal": {"recipe":"canal","at":"all"},
+  "spring": {"recipe":"spring","at":"all"},
+  "swamp": {"recipe":"marsh"},
+  "lake": {"recipe":"lake"},
+  "sea": {"recipe":"surf"},
+  "lava": {"recipe":"lava","at":"all"},
+  "ice": {"recipe":"ice"},
+  "rapids": {"recipe":"rapids","at":"all"},
+  "hotspring": {"recipe":"hotspring","at":"all"},
+  "oasis": {"recipe":"oasis"},
+  "bog": {"recipe":"bog","at":"all"},
+  "reef": {"recipe":"reef"},
+  "cave": {"recipe":"cave","at":"all"}
+ },
+ "running": {"brook":"brook","river":"river","rapids":"rapids","spring":"spring","riverWidth":2.5,"near":3},
+ "falls": {"small":"fallSmall","tall":"fallTall","tallFrom":3,"pool":"plunge","sheet":"fallSmall"},
+ "fountain": "fountain",
+ "wake": "wake",
+ "rainOnWater": "rainOnWater",
+ "water": {
+  "brook": {
+   "range": 16,
+   "line": true,
+   "voices": 2,
+   "trim": 0.2,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.5,
+     "filters": [["bandpass",900,0.9],["highshelf",4500,0.7,-6]],
+     "drift": [
+      {"on":0,"base":900,"depth":0.45,"min":0.1,"max":0.4,"tau":0.08,"oct":true}
+     ]
+    }
+   ],
+   "texture": {"bank":"babble","rate":1,"gain":0.55},
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":28,"rMin":1.5,"rMax":6,"gamma":2,"level":0.9}
+   ]
+  },
+  "river": {
+   "range": 24,
+   "line": true,
+   "voices": 2,
+   "trim": 0.14,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 0.9,
+     "filters": [["lowpass",700]],
+     "drift": [
+      {"on":"gain","base":0.9,"depth":0.2,"min":1,"max":3,"tau":0.8}
+     ]
+    },
+    {
+     "noise": "pink",
+     "gain": 0.4,
+     "filters": [["bandpass",500,0.7]],
+     "drift": [
+      {"on":0,"base":500,"depth":0.4,"min":0.2,"max":0.8,"tau":0.2,"oct":true}
+     ]
+    }
+   ],
+   "texture": {"bank":"babble","rate":0.7,"gain":0.4},
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":14,"rMin":3,"rMax":9,"gamma":1.5,"level":1}
+   ]
+  },
+  "rapids": {
+   "range": 22,
+   "line": true,
+   "voices": 2,
+   "trim": 0.17,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.75,
+     "filters": [["bandpass",1400,0.5]],
+     "drift": [
+      {"on":0,"base":1400,"depth":0.3,"min":0.1,"max":0.4,"tau":0.1,"oct":true}
+     ]
+    },
+    {
+     "noise": "pink",
+     "gain": 0.15,
+     "filters": [["highpass",2500],["highshelf",5000,0.7,-6]]
+    },
+    {
+     "noise": "brown",
+     "gain": 0.6,
+     "filters": [["lowpass",300]],
+     "drift": [
+      {"on":"gain","base":0.6,"depth":0.25,"min":0.5,"max":2,"tau":0.4}
+     ]
+    }
+   ],
+   "texture": {"bank":"babble","rate":1.2,"gain":0.45},
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":90,"rMin":1,"rMax":5,"gamma":2,"level":0.8}
+   ]
+  },
+  "canal": {
+   "range": 12,
+   "line": true,
+   "trim": 0.5,
+   "send": 0.15,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.12,
+     "filters": [["bandpass",600,0.8],["highshelf",3000,0.7,-6]],
+     "drift": [
+      {"on":"gain","base":0.12,"depth":0.3,"min":1,"max":3,"tau":0.6}
+     ]
+    }
+   ],
+   "events": [
+    {"type":"laps","every":[2.5,6],"gain":0.8,"f":450,"plip":0.3,"bank":"drop"}
+   ]
+  },
+  "spring": {
+   "range": 8,
+   "trim": 0.5,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 0.05,
+     "filters": [["lowpass",300]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":3,"rMin":2,"rMax":6,"gamma":0.5,"beta":1.5,"level":0.7},
+    {"type":"bubbles","bank":"drop","rate":5,"rMin":0.8,"rMax":1.6,"gamma":0,"level":0.25}
+   ]
+  },
+  "pond": {
+   "range": 10,
+   "line": true,
+   "trim": 0.46,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 0.06,
+     "filters": [["lowpass",300]]
+    }
+   ],
+   "events": [
+    {"type":"laps","every":[3,7],"gain":0.5,"f":330,"plip":0.4,"bank":"drop"},
+    {"type":"bubbles","bank":"bubble","rate":0.07,"rMin":9,"rMax":11,"gamma":0,"beta":0,"level":0.45}
+   ]
+  },
+  "lake": {
+   "range": 14,
+   "line": true,
+   "voices": 2,
+   "trim": 0.63,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.08,
+     "filters": [["bandpass",350,0.7]]
+    }
+   ],
+   "events": [
+    {"type":"laps","every":[1.6,4.5],"gain":1.2,"f":380,"plip":0.7,"bank":"drop"}
+   ]
+  },
+  "marsh": {
+   "range": 10,
+   "line": true,
+   "trim": 0.5,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 0.05,
+     "filters": [["lowpass",250]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":0.4,"rMin":6,"rMax":12,"gamma":0,"beta":1,"level":0.5},
+    {"type":"laps","every":[4,9],"gain":0.4,"f":280}
+   ]
+  },
+  "bog": {
+   "range": 10,
+   "trim": 0.5,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 0.06,
+     "filters": [["lowpass",200]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":0.6,"rMin":8,"rMax":14,"gamma":0,"beta":1,"level":0.6}
+   ]
+  },
+  "oasis": {
+   "range": 10,
+   "line": true,
+   "trim": 0.5,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.05,
+     "filters": [["bandpass",400,0.7]]
+    }
+   ],
+   "events": [
+    {"type":"laps","every":[3,8],"gain":0.5,"f":400,"plip":0.3,"bank":"drop"}
+   ]
+  },
+  "hotspring": {
+   "range": 10,
+   "trim": 0.59,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.05,
+     "filters": [["highpass",3500],["highshelf",7000,0.7,-6]],
+     "drift": [
+      {"on":"gain","base":0.05,"depth":0.5,"min":1,"max":3,"tau":0.6}
+     ]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":1.6,"rMin":7,"rMax":14,"gamma":0,"beta":1,"level":1},
+    {"type":"bubbles","bank":"drop","rate":8,"rMin":0.8,"rMax":1.2,"gamma":0,"level":0.2}
+   ]
+  },
+  "lava": {
+   "range": 12,
+   "trim": 0.51,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "brown",
+     "rate": 0.6,
+     "gain": 1,
+     "filters": [["lowpass",260]],
+     "drift": [
+      {"on":"gain","base":1,"depth":0.4,"min":1,"max":3,"tau":0.6}
+     ]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":0.5,"rMin":12,"rMax":14,"gamma":0,"beta":1,"level":0.5}
+   ]
+  },
+  "ice": {
+   "range": 8,
+   "trim": 0.4,
+   "send": 0.1,
+   "layers": [],
+   "events": [
+    {"type":"bubbles","bank":"drop","rate":0.15,"rMin":1,"rMax":2,"gamma":0,"beta":1,"level":0.3}
+   ]
+  },
+  "reef": {
+   "range": 24,
+   "line": true,
+   "voices": 2,
+   "trim": 0.3,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 0.12,
+     "filters": [["lowpass",300]]
+    }
+   ],
+   "events": [
+    {"type":"waves","every":[3,8],"rise":[1.5,3],"fall":[2.5,3.5],"peak":[0.2,0.6],"fizz":80,"bank":"drop"}
+   ]
+  },
+  "surf": {
+   "range": 30,
+   "line": true,
+   "voices": 2,
+   "trim": 0.38,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 0.18,
+     "filters": [["lowpass",300]]
+    }
+   ],
+   "events": [
+    {"type":"waves","every":[5,14],"rise":[2,4.5],"fall":[3,4],"peak":[0.35,1],"fizz":60,"bank":"drop"}
+   ]
+  },
+  "cave": {
+   "range": 14,
+   "trim": 1.06,
+   "send": 0.65,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 0.12,
+     "filters": [["lowpass",120]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"drop","rate":0.9,"rMin":2,"rMax":4,"gamma":0,"beta":0.7,"level":0.5,"pan":0.6}
+   ]
+  },
+  "fallSmall": {
+   "range": 12,
+   "byHeight": true,
+   "trim": 0.26,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.75,
+     "filters": [["bandpass",1600,0.45],["highshelf",5000,0.7,-5]],
+     "drift": [
+      {"on":"gain","base":0.75,"depth":0.2,"min":0.2,"max":0.8,"tau":0.15}
+     ]
+    },
+    {
+     "noise": "brown",
+     "gain": 0.35,
+     "filters": [["lowpass",400]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"drop","rate":70,"rMin":0.8,"rMax":3,"gamma":2,"level":0.7}
+   ]
+  },
+  "fallTall": {
+   "range": 30,
+   "byHeight": true,
+   "trim": 0.17,
+   "send": 0.18,
+   "layers": [
+    {
+     "noise": "brown",
+     "gain": 1.1,
+     "filters": [["lowpass",220]],
+     "drift": [
+      {"on":"gain","base":1.1,"depth":0.2,"min":0.8,"max":2.5,"tau":0.8}
+     ]
+    },
+    {
+     "noise": "pink",
+     "gain": 0.65,
+     "filters": [["lowpass",1800],["highpass",200]],
+     "drift": [
+      {"on":"gain","base":0.65,"depth":0.2,"min":0.5,"max":2,"tau":0.6}
+     ]
+    },
+    {
+     "noise": "pink",
+     "gain": 0.08,
+     "filters": [["highpass",3500],["highshelf",6000,0.7,-6]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":4,"rMin":8,"rMax":14,"gamma":0,"beta":1.5,"level":0.9}
+   ]
+  },
+  "plunge": {
+   "range": 12,
+   "byHeight": true,
+   "trim": 0.25,
+   "send": 0.15,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.3,
+     "filters": [["bandpass",700,0.8],["highshelf",4000,0.7,-6]],
+     "drift": [
+      {"on":"gain","base":0.3,"depth":0.3,"min":0.3,"max":1.2,"tau":0.25}
+     ]
+    },
+    {
+     "noise": "brown",
+     "gain": 0.3,
+     "filters": [["lowpass",300]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"bubble","rate":25,"rMin":3,"rMax":10,"gamma":1,"level":0.8}
+   ]
+  },
+  "fountain": {
+   "range": 12,
+   "trim": 0.5,
+   "send": 0.1,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.22,
+     "filters": [["bandpass",2200,0.5],["highshelf",5000,0.7,-6]],
+     "drift": [
+      {"on":"gain","base":0.22,"depth":0.2,"min":0.2,"max":0.7,"tau":0.15}
+     ]
+    },
+    {
+     "noise": "brown",
+     "gain": 0.15,
+     "filters": [["lowpass",400]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"drop","rate":55,"rMin":1,"rMax":2.6,"gamma":1,"level":0.6}
+   ]
+  },
+  "wake": {
+   "range": 3,
+   "trim": 0.4,
+   "layers": [
+    {
+     "noise": "pink",
+     "gain": 0.6,
+     "filters": [["bandpass",900,0.7],["highshelf",3000,0.7,-6]],
+     "drift": [
+      {"on":"gain","base":0.6,"depth":0.3,"min":0.2,"max":0.8,"tau":0.2}
+     ]
+    },
+    {
+     "noise": "brown",
+     "gain": 0.3,
+     "filters": [["lowpass",350]]
+    }
+   ],
+   "events": [
+    {"type":"bubbles","bank":"drop","rate":25,"rMin":1,"rMax":4,"gamma":2,"level":0.5}
+   ]
+  },
+  "rainOnWater": {
+   "range": 12,
+   "line": true,
+   "trim": 0.5,
+   "layers": [],
+   "events": [
+    {"type":"bubbles","bank":"drop","rate":40,"rMin":1,"rMax":3.5,"gamma":3,"beta":2,"level":0.6,"pan":0.6}
    ]
   }
  }

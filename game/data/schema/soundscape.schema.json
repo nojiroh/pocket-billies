@@ -165,6 +165,287 @@
      "minimum": 0
     }
    }
+  },
+  "bank": {
+   "description": "a baked bank (logic/sound-bake.js through the tracker's bank): bubble, a van den Doel bubble at every pitch from lo to hi midi, one every `every` semitones, rising by xi; babble, running water's loop (sec s, layers [ms between jumps, centre Hz, gain], at RMS level, from a seed)",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "kind",
+    "lo",
+    "hi",
+    "every",
+    "level"
+   ],
+   "properties": {
+    "kind": {
+     "enum": [
+      "bubble",
+      "babble"
+     ]
+    },
+    "lo": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 127
+    },
+    "hi": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 127
+    },
+    "every": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "xi": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "level": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "maximum": 1
+    },
+    "sec": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "maximum": 8
+    },
+    "layers": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+     }
+    },
+    "seed": {
+     "type": "integer"
+    }
+   }
+  },
+  "range2": {
+   "type": "array",
+   "items": {
+    "type": "number",
+    "minimum": 0
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "event": {
+   "description": "a recipe's events: bubbles at random from a bank (rate a second, radii rMin-rMax mm weighted by r^-gamma, level, a random^beta, never closer than gap s, panned within +-pan), laps at a bank (every every[0]-every[1] s, gain, low-pass f Hz, a bubble from bank after some: plip, a chance) or the surf's waves (every, rise s, fall as a share of the rise, peak, fizz bubbles a second as each draws back)",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "type"
+   ],
+   "properties": {
+    "type": {
+     "enum": [
+      "bubbles",
+      "laps",
+      "waves"
+     ]
+    },
+    "bank": {
+     "type": "string"
+    },
+    "rate": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "rMin": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "rMax": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "gamma": {
+     "type": "number"
+    },
+    "xi": {
+     "type": "number",
+     "minimum": 0
+    },
+    "beta": {
+     "type": "number",
+     "minimum": 0
+    },
+    "level": {
+     "type": "number",
+     "minimum": 0
+    },
+    "gap": {
+     "type": "number",
+     "minimum": 0
+    },
+    "pan": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "every": {
+     "$ref": "#/$defs/range2"
+    },
+    "gain": {
+     "type": "number",
+     "minimum": 0
+    },
+    "f": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "plip": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "rise": {
+     "$ref": "#/$defs/range2"
+    },
+    "fall": {
+     "$ref": "#/$defs/range2"
+    },
+    "peak": {
+     "$ref": "#/$defs/range2"
+    },
+    "fizz": {
+     "type": "number",
+     "minimum": 0
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "bubbles"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "bank",
+       "rate",
+       "rMin",
+       "rMax",
+       "level"
+      ]
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "laps"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "every",
+       "gain"
+      ]
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "waves"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "every",
+       "rise",
+       "fall",
+       "peak"
+      ]
+     }
+    }
+   ]
+  },
+  "recipe": {
+   "description": "a water sound (logic/soundscape.js; sound.js plays it): heard within range m (line: a river or a shore, falling off slower than a point), the nearest `voices` of it playing; trim from the loudness report; send to the reverb; bed layers; a baked texture (a bank's loop played from a random point at a rate); events; byHeight: a fall louder and heard further by its height",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "range",
+    "trim",
+    "layers"
+   ],
+   "properties": {
+    "range": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "maximum": 80
+    },
+    "line": {
+     "type": "boolean"
+    },
+    "voices": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 3
+    },
+    "trim": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 4
+    },
+    "send": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "layers": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/layer"
+     }
+    },
+    "texture": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "bank",
+      "rate",
+      "gain"
+     ],
+     "properties": {
+      "bank": {
+       "type": "string"
+      },
+      "rate": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "gain": {
+       "type": "number",
+       "minimum": 0
+      }
+     }
+    },
+    "events": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/event"
+     }
+    },
+    "byHeight": {
+     "type": "boolean"
+    }
+   }
   }
  },
  "properties": {
@@ -176,6 +457,119 @@
    "type": "object",
    "additionalProperties": {
     "$ref": "#/$defs/bed"
+   }
+  },
+  "banks": {
+   "description": "SND-10: baked banks by id",
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$defs/bank"
+   }
+  },
+  "kinds": {
+   "description": "SND-10: each water kind's recipe (logic/water-kinds.js WATER_KINDS) and which of its cells sound: its shores (the default) or all",
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "recipe"
+    ],
+    "properties": {
+     "recipe": {
+      "type": "string"
+     },
+     "at": {
+      "enum": [
+       "shore",
+       "all"
+      ]
+     }
+    }
+   }
+  },
+  "running": {
+   "description": "SND-10: a river line's recipe: brook, river (riverWidth m or wider) or rapids (its rapids); spring at a spring's source; a running cell within near m of a line plays the line's",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "brook",
+    "river",
+    "rapids",
+    "spring",
+    "riverWidth",
+    "near"
+   ],
+   "properties": {
+    "brook": {
+     "type": "string"
+    },
+    "river": {
+     "type": "string"
+    },
+    "rapids": {
+     "type": "string"
+    },
+    "spring": {
+     "type": "string"
+    },
+    "riverWidth": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "near": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    }
+   }
+  },
+  "falls": {
+   "description": "SND-10: a placed fall's recipe by height (tall from tallFrom m), its plunge pool's, the automatic cascades'",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "small",
+    "tall",
+    "tallFrom",
+    "pool",
+    "sheet"
+   ],
+   "properties": {
+    "small": {
+     "type": "string"
+    },
+    "tall": {
+     "type": "string"
+    },
+    "tallFrom": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "pool": {
+     "type": "string"
+    },
+    "sheet": {
+     "type": "string"
+    }
+   }
+  },
+  "fountain": {
+   "description": "SND-10: a fountain's recipe",
+   "type": "string"
+  },
+  "wake": {
+   "description": "SND-10: Surf's wake (its recipe)",
+   "type": "string"
+  },
+  "rainOnWater": {
+   "description": "SND-10: rain on water surfaces (its recipe)",
+   "type": "string"
+  },
+  "water": {
+   "description": "SND-10: the water recipes by id",
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$defs/recipe"
    }
   }
  }
