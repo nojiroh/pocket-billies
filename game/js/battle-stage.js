@@ -1476,7 +1476,7 @@ function drawSelectionRing(c, i, col, pulse) {
   if (!g) return;
   const s = battleStage.s[i],
     R = s && s.sp ? rigParts(s.sp, ACTOR_RIG_SCALES[i], s.coat, s.graft) : null,
-    hw = R ? (R.geo.hw * actorMetersPerPixel[i] * (s.big || 1) * (s.fs || 1) * 0.8) / R.k2 : 0.5;
+    hw = R ? (R.geo.hw * actorMetersPerPixel[i] * (s.big || 1) * (s.fs || 1) * 0.8) / R.k : 0.5;
   const r = Math.max(6, hw * g.s * (1 + 0.06 * Math.sin(battleStage.t / 180) * pulse)),
     ry = r * clamp(battleStage.V.y / g.z, 0.2, 0.6);
   c.globalAlpha = 0.85;
