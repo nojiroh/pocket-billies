@@ -58,7 +58,16 @@ here). Tag `hub-polish-done` (for the owner to push) on this session's last comm
   - The station's old headland is now open meadow; the great oak and the dressing re-rolled with the rebuild.
   - The summit spot (the orbit's pivot) stays where it was, now on the mountain's south shoulder: the camera's middle
     is unchanged on purpose (the doors face out from it).
-- Verified: VERIFIED_HERE
+- Verified: lint, typecheck, check:modules, format:check, check:data (178 files), build; `npm test` 1856/1856 (one
+  timing test, "1,000 maps in under 1.5 seconds", failed once while two browsers drew, passed on an idle machine);
+  `npm run test:slow` 109/109; check-fast "The train ride" (departure 10421 ms, the carriage, home gold then battered),
+  the island's walking checks and the orbit (0.79 rad round at 32 m); `check:smoke` 6 of 7 (the seventh, a window
+  behind the great oak, fixed with clear-windows --fix and checked again); the full quick check 33 of 41 (2074 s): of
+  its 8 problems, "nothing floats" (the station, a check bug fixed in this session), the lab's room in place, Postcards
+  and Granny Juniper pass run alone (249 s, no problems); RL-8 "view never showed", RT-2 "no battle started", room
+  light and the battle music's drums are main's, as earlier entries record. Pictures (scratchpad, not committed):
+  island-shots pond, pond-fall, mountain, station, station-near, top-down, portal by day and at 23:00; the ride (the
+  walk up the steps and across the platform); the opening at every line (Kappi beside Chosen).
 - Next: the owner's look at the pictures and a phone test; then the ground lock (`islandGen.lock`, the Studio's "Lock
   the ground") once the island is right; HB-10f, HB-9.
 - For the owner on the phone: walk round the island (the mountain, the pond's terrace and fall, the river at low and
