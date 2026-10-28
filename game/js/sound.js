@@ -785,6 +785,8 @@ document.addEventListener(
   },
   true
 );
+/* SY-3: a stamp (ui-run-kit.js pb-stamp) thunks as it lands */
+document.addEventListener('pb-stamp-land', () => uiSound('stamp'));
 /* a disabled button gets no click, but the press still reaches it: the buzz then */
 document.addEventListener(
   'pointerdown',

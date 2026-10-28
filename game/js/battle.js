@@ -53,6 +53,7 @@ import {
 } from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
 import { typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
+import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -141,6 +142,7 @@ expose({
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
+  koThisEvent: [() => koThisEvent, v => (koThisEvent = v)],
   logLine: [() => logLine, v => (logLine = v)],
   moveInfoHide: [() => moveInfoHide, v => (moveInfoHide = v)],
   moveInfoNodes: [() => moveInfoNodes, v => (moveInfoNodes = v)],
@@ -163,6 +165,7 @@ expose({
   plateElement: [() => plateElement, v => (plateElement = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
+  rollPlateNumber: [() => rollPlateNumber, v => (rollPlateNumber = v)],
   runCatchFits: [() => runCatchFits, v => (runCatchFits = v)],
   screenWipe: [() => screenWipe, v => (screenWipe = v)],
   setEndBattle: [() => setEndBattle, v => (setEndBattle = v)],
@@ -595,8 +598,14 @@ function fieldTip(ev) {
   clearTimeout(fieldUi.tipT);
   fieldUi.tipT = setTimeout(() => (t.hidden = true), 3500);
 }
-/* floating numbers and tags over the billionaires */
-function hudPop(si, text, kind) {
+/* SY-2: did this event's hit knock fighter si out? (the event's state after it: activeBattle.events[ev].s) */
+function koThisEvent(si) {
+  const ev = activeBattle && activeBattle.events && activeBattle.events[activeBattle.ev];
+  return !!(ev && ev.s && ev.s[si] && ev.s[si].hp <= 0);
+}
+/* floating numbers and tags over the billionaires. w: a damage number's hit weight (battle-stage.js hitWeight); its
+   size follows the hit, the largest on a KO (SY-2, logic/hit-numbers.js), the kind's colour on top */
+function hudPop(si, text, kind, w) {
   const L = $('#pops');
   if (!L || !battleStage.L || (reducedMotion && kind === 'tag')) return;
   const q = battleStageToCss(actorTop(si));
@@ -604,15 +613,17 @@ function hudPop(si, text, kind) {
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
   e.textContent = text;
+  if (typeof w === 'number') e.style.fontSize = popSize(w, koThisEvent(si)) + 'px';
   e.style.left = clamp(q.x, 40, battleStage.L.vw - 40) + 'px';
   e.style.top = Math.max(30, q.y) + 'px';
   e.style.setProperty('--dx', ((random() - 0.5) * 36).toFixed(0) + 'px');
   L.appendChild(e);
   setTimeout(() => e.remove(), 1500);
 }
-function hudHit(ti, an) {
+function hudHit(ti, an, w = 0.3) {
   if (!an.dmg) return;
-  hudPop(ti, '−' + an.dmg, 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : '') + (an.te < 1 ? ' nve' : ''));
+  const kind = 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : '') + (an.te < 1 ? ' nve' : '');
+  hudPop(ti, '−' + an.dmg, kind, w);
   if (an.crit) setTimeout(() => hudPop(ti, 'Critical hit', 'tag crit'), 90);
   else if (an.te > 1) setTimeout(() => hudPop(ti, 'Super effective', 'tag se'), 90);
   else if (an.te < 1) setTimeout(() => hudPop(ti, 'Not very effective', 'tag nve'), 90);
@@ -1362,7 +1373,9 @@ function paintPlates(s, anim) {
     if (party)
       pips.innerHTML = party.map(m => `<i class="pip${m.hp <= 0 ? ' out' : ''}${m.status ? ' st' : ''}"></i>`).join('');
     const num = e.querySelector('.pl-num');
-    num.textContent = ACTOR_SIDE[k] ? (x.boss ? Math.round(p) + '%' : '') : `${Math.max(0, x.hp)}/${x.max}`;
+    if (ACTOR_SIDE[k] && !x.boss) rollPlateNumber(num, null, '', x.uid, false);
+    else if (ACTOR_SIDE[k]) rollPlateNumber(num, Math.round(p), '%', x.uid, anim);
+    else rollPlateNumber(num, Math.max(0, x.hp), '/' + x.max, x.uid, anim);
     const xp = e.querySelector('.pl-xp i');
     if (xp) xp.style.width = x.xp * 100 + '%';
     if (battleStage.s[k] && battleStage.s[k].sp === x.sp) battleStage.s[k].st = x.hp > 0 ? x.st : null;
@@ -1372,6 +1385,33 @@ function paintPlates(s, anim) {
     }
   }
   turnBar();
+}
+/* SY-2: a plate's HP number (your hp/max, a boss's %) counts to its new value over the fill's .38 s instead of jumping
+   (logic/hit-numbers.js rollValue). Display only: the battle's numbers never change. A new fighter, a repaint without
+   a hit and Reduced motion set it at once. v null: no number (a foe that isn't a boss) */
+function rollPlateNumber(el, v, tail, uid, anim) {
+  const R = el._roll || (el._roll = { v: null, uid: null, raf: 0 });
+  if (R.raf) cancelAnimationFrame(R.raf);
+  R.raf = 0;
+  const from = R.v,
+    same = R.uid === uid;
+  R.v = v;
+  R.uid = uid;
+  if (v == null) {
+    el.textContent = '';
+    return;
+  }
+  if (!anim || reducedMotion || !same || from == null || from === v) {
+    el.textContent = v + tail;
+    return;
+  }
+  const t0 = performance.now();
+  const step = () => {
+    const t = performance.now() - t0;
+    el.textContent = rollValue(from, v, t) + tail;
+    R.raf = t < ROLL_MS ? requestAnimationFrame(step) : 0;
+  };
+  step();
 }
 /* v34: the turn order bar: who moves first this turn (by speed; a fast move or a switch can still jump the queue).
    Only with more than two fighters on the field, where it's hard to keep in your head. */

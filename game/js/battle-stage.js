@@ -38,6 +38,7 @@ import { $, clamp, random } from './util.js';
 import { graftLookSplit } from './logic/graft-art.js';
 import {
   RIBBON_CORE,
+  flashFor,
   impactAt,
   impactFrame,
   impactLength,
@@ -156,6 +157,7 @@ expose({
   drawSelectionRing: [() => drawSelectionRing, v => (drawSelectionRing = v)],
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
   dueEvents: [() => dueEvents],
+  flashesOff: [() => flashesOff, v => (flashesOff = v)],
   formatFocus: [() => formatFocus],
   groundRing: [() => groundRing, v => (groundRing = v)],
   handheld: [() => handheld, v => (handheld = v)],
@@ -574,19 +576,24 @@ function blurAt(z) {
   if (d.ap <= 0 || battleStage.q.lvl >= 3) return 0;
   return Math.min(4, d.ap * SPRITE_BLUR_SCALE * Math.abs(1 / Math.max(0.3, z) - 1 / d.zf));
 }
+/* SY-1: the player's Flashes setting (Settings, Display); the switch also sets html[data-flash] for the CSS */
+function flashesOff() {
+  return (saveData.preferences || {}).flashes === 'off';
+}
 function battleStageFlash(col, a, dur) {
-  const f = $('#flash');
-  if (!f) return;
+  const f = $('#flash'),
+    F = flashFor(col, a, !!reducedMotion, flashesOff());
+  if (!f || !F) return;
   f.style.transition = 'none';
-  f.style.background = col;
-  f.style.opacity = a;
+  f.style.background = F.col;
+  f.style.opacity = F.a;
   void f.offsetWidth;
   f.style.transition = `opacity ${dur}ms ease-out`;
   f.style.opacity = 0;
 }
 function battleStageChromaticFlash(ms = 160) {
   const w = $('#camWorld');
-  if (!w || reducedMotion) return;
+  if (!w || reducedMotion || flashesOff()) return;
   w.classList.add('ca');
   setTimeout(() => w.classList.remove('ca'), ms);
 }
@@ -1527,7 +1534,7 @@ function groundRing(i, col = '#FFFFFF', r1 = 1.6, life = 520) {
    of two-tone with radial lines from P, on a catch's pyramid, the mail move's coin and a crit (whose speed lines,
    2D-canvas lines before VFX-4, follow it). Timed on real time, so it plays through the hit-stop. Returns the frame */
 function impactFx(P, kind) {
-  const F = impactFrame(kind, !!reducedMotion, battleStage.q.lvl);
+  const F = impactFrame(kind, !!reducedMotion, battleStage.q.lvl, flashesOff());
   battleStage.impact = F ? { ...F, P: { x: P.x, y: P.y, z: P.z }, t0: performance.now(), seed: random() } : null;
   return F;
 }
@@ -1596,7 +1603,7 @@ function hitFx(ti, an, imp0 = null) {
   }
   if (an.crit || an.te > 1) handheld(520, an.crit && an.te > 1 ? 1.3 : 1);
   burst(T, an.t || 'None', an.te > 1 ? 16 : 10, an.te > 1 ? 3.2 : 2.2, 1);
-  if (typeof hudHit === 'function') hudHit(ti, an);
+  if (typeof hudHit === 'function') hudHit(ti, an, w);
 }
 export function camHome(d = 420, delay = 0) {
   camTo(homeCamera, d, 'io', delay);
@@ -2099,7 +2106,8 @@ export function battleStagePlay(an, ev) {
       setActorAction(an.si, 'hurt', 600);
       blinkActor(an.si, 360);
       battleStage.shk = 2.5;
-      if (an.dmg && typeof hudPop === 'function') scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg'));
+      if (an.dmg && typeof hudPop === 'function')
+        scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg', hitWeight(an.si, an)));
       if (an.fx === 'oil')
         for (let i = 0; i < 7; i++)
           addParticle({

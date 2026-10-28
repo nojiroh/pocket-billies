@@ -1294,7 +1294,8 @@ export function dataArenas(D, valid = () => true) {
   return out;
 }
 // RL-14: factions.json: the schema; each bot is a gem and the right kind of part in each slot (robots.json); its
-// agents' and scrapyard's classes are events.json classes; its wild biomes are biomes; [least, most] in order
+// agents' and scrapyard's classes are events.json classes; its wild biomes are biomes; [least, most] in order; SY-3:
+// its look's stamp words, one word for each moment (the stamp shows it in capitals)
 /** RL-14: factions.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataFactions(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1324,6 +1325,16 @@ export function dataFactions(D, valid = () => true) {
     if (C.agents.bots[0] > C.agents.bots[1]) problem(`${k}.agents.bots: the fewest is more than the most`);
     if (C.scrapyard.trainers[0] > C.scrapyard.trainers[1])
       problem(`${k}.scrapyard.trainers: the fewest is more than the most`);
+    if (C.look) {
+      /* SY-3: one word means one moment, so two moments never stamp the same word */
+      /** @type {Record<string, string>} */
+      const seen = {};
+      for (const [m, w] of Object.entries(/** @type {Record<string, string>} */ (C.look.stamps))) {
+        const W = w.trim().toUpperCase();
+        if (seen[W]) problem(`${k}.look.stamps.${m}: "${w}" is also ${seen[W]}'s word`);
+        seen[W] = m;
+      }
+    }
   }
   return out;
 }

@@ -18,6 +18,8 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  FLASH_DARK: [() => FLASH_DARK],
+  FLASH_SOFT_MAX: [() => FLASH_SOFT_MAX],
   IMPACT_KINDS: [() => IMPACT_KINDS],
   IMPACT_LINES: [() => IMPACT_LINES],
   IMPACT_SPEED_LIFE: [() => IMPACT_SPEED_LIFE],
@@ -38,6 +40,10 @@ expose({
   STRETCH_MAX: [() => STRETCH_MAX],
   STRETCH_PACE: [() => STRETCH_PACE],
   THROW_EASE: [() => THROW_EASE],
+  // @ts-expect-error -- replaced on purpose
+  flashFor: [() => flashFor, v => (flashFor = v)],
+  // @ts-expect-error -- replaced on purpose
+  flashLuma: [() => flashLuma, v => (flashLuma = v)],
   // @ts-expect-error -- replaced on purpose
   impactAt: [() => impactAt, v => (impactAt = v)],
   // @ts-expect-error -- replaced on purpose
@@ -317,11 +323,13 @@ export const IMPACT_KINDS = ['catch', 'coin', 'crit'];
 /** @typedef {{ kind: string, cells: number, lines: number, warm: boolean, speed: boolean }} ImpactFrame */
 
 /** the impact frame for a hit of this kind, or null: none under Reduced motion; two cells, one at quality level 2,
- * none at level 3 (a crit still has its speed lines there, as before VFX-4); paper warm on a crit
- * @param {string} kind @param {boolean} reduced @param {number} lvl @returns {ImpactFrame | null} */
-export function impactFrame(kind, reduced, lvl) {
+ * none at level 3 (a crit still has its speed lines there, as before VFX-4); paper warm on a crit. SY-1: with Flashes
+ * off (noFlash) the two-tone cells go, as at level 3: a crit keeps its speed lines (motion, not a flash)
+ * @param {string} kind @param {boolean} reduced @param {number} lvl @param {boolean} [noFlash]
+ * @returns {ImpactFrame | null} */
+export function impactFrame(kind, reduced, lvl, noFlash = false) {
   if (reduced || !IMPACT_KINDS.includes(kind)) return null;
-  const cells = lvl >= 3 ? 0 : lvl >= 2 ? 1 : 2,
+  const cells = noFlash || lvl >= 3 ? 0 : lvl >= 2 ? 1 : 2,
     speed = kind === 'crit';
   if (!cells && !speed) return null;
   return { kind, cells, lines: lvl >= 2 ? 16 : IMPACT_LINES, warm: kind === 'crit', speed };
@@ -342,4 +350,30 @@ export function impactAt(F, ms) {
 /** how long the two-tone part lasts (ms): what a flash that would wash it out waits @param {ImpactFrame | null} F */
 export function impactLength(F) {
   return F ? F.cells * SMEAR_STEP : 0;
+}
+
+/* SY-1 (style track): the battle's full-screen flashes (battle-stage.js battleStageFlash) under the player's settings.
+   None under Reduced motion. With Flashes off a bright flash is held to a faint tint; a dark one (a faint's deep red)
+   stays as it is, since it doesn't flash bright. */
+/** the most a bright flash shows with Flashes off (opacity) */
+export const FLASH_SOFT_MAX = 0.15;
+/** below this luma (0..1) a flash is dark and stays as it is with Flashes off */
+export const FLASH_DARK = 0.25;
+
+/** a colour's luma 0..1 (Rec. 709), from #RGB or #RRGGBB; anything else counts as bright @param {string} col */
+export function flashLuma(col) {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(col || '').trim());
+  if (!m) return 1;
+  const h = m[1].length === 3 ? [...m[1]].map(c => c + c).join('') : m[1],
+    ch = i => parseInt(h.slice(i, i + 2), 16) / 255;
+  return 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4);
+}
+
+/** what a flash of this colour and opacity becomes under the settings, or null when nothing shows
+ * @param {string} col @param {number} a @param {boolean} reduced @param {boolean} flashesOff
+ * @returns {{ col: string, a: number } | null} */
+export function flashFor(col, a, reduced, flashesOff) {
+  if (reduced || !(a > 0)) return null;
+  if (!flashesOff || flashLuma(col) < FLASH_DARK) return { col, a };
+  return { col, a: Math.min(a, FLASH_SOFT_MAX) };
 }

@@ -2030,6 +2030,16 @@ export interface Faction {
   scrapyard: { trainers: [number, number]; classes: string[] };
   /** a salvage pick: up to `parts` of the beaten bots' parts and Scrap (scrap + scrapPerBot a bot after the first) */
   salvage: { parts: number; scrap: number; scrapPerBot: number };
+  /** SY-3: its paperwork look, only where it is: a UI icon (art/ui/<emblem>.svg), the stamp words, form numbers */
+  look?: FactionLook;
+}
+/** SY-3: a faction's stamp moments (pb-stamp) */
+export type StampMoment = 'retrieved' | 'void' | 'denied' | 'pending' | 'filed';
+/** SY-3: factions.json `look` */
+export interface FactionLook {
+  emblem: string;
+  stamps: Record<StampMoment, string>;
+  forms: string[];
 }
 /** RL-14b: bosses.json: one boss phase, fired once when its HP falls to `at` of the most */
 export interface BossPhase {
