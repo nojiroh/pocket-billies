@@ -1737,7 +1737,8 @@ def pasture(pg, base):
     if pg.evaluate("!!uiState.inside"): raise Exception('the gate walked you into the barn')
     pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];0")
     pg.evaluate(f"toTeam(saveData.box.find(m=>m.uid==='{uid}'));0")
-    if not until(pg, f"!worldBillies.pasture.mons['{uid}']&&Object.keys(worldBillies.pasture.mons).length===2", 10):
+    # the field looks at storage again once a real second, in a drawn frame
+    if not until_drawn(pg, f"!worldBillies.pasture.mons['{uid}']&&Object.keys(worldBillies.pasture.mons).length===2", 'walkRenderer.frames', 10, 5):
         raise Exception('a Billie moved to the team still wanders in the pasture')
     return 'three Billies wander inside the fence; tapping one and tapping the gate open the ranch’s sheet; one moved to the team left the field'
 
