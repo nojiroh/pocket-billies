@@ -2,6 +2,102 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-4 - Wave B, types, team and weather - 2026-10-28
+Branch `track/perks` (this session's outcome branch, from PK-3's bbdcad5; main had nothing new at the start, then
+moved to 5f6d01ae during the session: merged near the end at the planning and merge sessions' request, 8af07402). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
+the plan below written first and carried out. Details and the plan's corrections: perks-track.md section 8,
+"Corrected in PK-4".
+- The plan (as set at the start): (1) the four kinds Wave B needs, one kind per commit with tests, schema, data
+  checks, types and the Studio's inputs: passive (one parameter set per type passive), weather (noWeaken, boost),
+  benchXp, rule forecastDays; (2) offers: `needs` (a condition on the team; unmet, weight 0), then `tags` with
+  rules.json `run.perks.bias` (2) in perkPool/perkDraw on the same seeded streams, the game's callers passing the team;
+  (3) the 13 other pictures as grids; (4) the 15 Perks in perks.json with their pictures, perks.test.mjs:41 rewritten
+  for a large filtered pool; (5) a test per Perk and all Wave A and B at once; (6) the contact sheets; (7) the Studio
+  check; (8) docs. Matching Hoodies, Rainbow Lanyard and Barometer's heal use PK-1's fields.
+- Changed (15 commits and a merge):
+  - **effects.js**: kinds `passive` (`FX_PASSIVE_KEYS`, `fxPassive`: each passive's numbers merged), `weather`
+    (`FX_WEATHER`, `fxWeather`), `benchXp` (`fxBenchXp`), `rule` (`FX_RULES` forecastDays, `fxRunRule`).
+  - **Battle** (battle-engine.js): `fxPassiveOf` read at Kindling (effectiveStat), Live Wire, Wild Mind, Alloy and
+    Undertow (calcDamage), Bedrock (bedrockHolds: uses, from an HP share), Regrowth (endTurn), Parting Roar (inherit,
+    doSwitch: more stages) and Slipstream (runTurn: every switch); `fxWeatherFor` in calcDamage and the move tiles'
+    arrows (battle.js); award adds benchXp to the bench's share. Yours only; without the rows nothing changes.
+  - **Run**: run-map.js `runForecastDays` (rolled and shown rules' days plus the rows'; the Map tab too).
+  - **Offers** (perks.js): `perkTeamOf`, `perkFits` (needs), `perkWeight` (the bias), perkPool/perkDraw/perkOffer/
+    perkOfferMake/perkShelf/perkOfferOrder and encounters.js encPerk take the team; battle-rewards, shop,
+    encounter-screen, the debug menu, the fixture and the run sim pass it.
+  - **Data**: perks.json the 15 Wave B Perks (6 common, 8 uncommon, 1 rare) with `img`, the 9 type Perks with
+    `needs` and a type tag, theme tags on 17 existing Perks; rules.json `run.perks.bias` 2; perks.schema.json the
+    four kinds, `needs`, `tags`; data-checks.js `fxPassiveProblems`, weather/benchXp/rule checks, `FX_PLAIN.rule`,
+    `perkNeedsProblems` (`PERK_NEEDS`), tags (`PERK_THEMES`), bias; game-data.d.ts the kinds, `Perk.needs`,
+    `Perk.tags`, `bias`.
+  - **Studio**: the Perks editor's inputs for the four kinds, Needs and Tags per Perk, the bias in the rarity card;
+    type-rename.js `renameTypeConds` (tags, needs and the type names in conditions); check-studio-github.py
+    `--only=relics` opens the 15 Wave B Perks and checks Bellows's Needs and Tags.
+  - **Art**: tools/art/icon-grids/perks.json the 13 new grids; game/art/perks/ 15 SVGs; the contact sheets.
+  - Tests: battle-perks-wave-b.test.mjs (new, 23 tests), perks.test.mjs (needs, tags, coverage per rarity over 300
+    picks, relevance in a pick, a shelf and an event, the bias), data-checks, type-rename, battle-perks-wave-a (its
+    Perk count moved to Wave B's test).
+  - Docs: perks-track.md (PK-4 done, "Corrected in PK-4"), ROADMAP, STUDIO.md, TESTING.md.
+  - **The merge of main** (UI Part 2 UI-11..UI-18, the style track, the repo clean-up #283; 15 files conflicted, both
+    sides kept): UI-14b's rarity frame, pill and tags on the Perk pick card, the Perks tab row and the shop's Perk row
+    with PK-2's pictures and PK-3's counter (a card's caption is "Perk · 5/8"; on the tab the counter is a note after
+    the rarity pill, check-fast's expectation now "5/8"/"VOID"); UI-16a's fly-to with perkChoose's save; art.js's
+    `iconTag` takes a url for `artIconHTML`; UI-16b's blips: the start's stat lines carry theirs through `b.fxSay`,
+    and a hit's Perk blips come from the rows that counted (`fxHitRows`, split out of fxHitMult) rather than every
+    row held (main's read all, so Plot Armor would have blipped when not alone); Parting Roar's blip kept with
+    Heirloom Locket's stages; `moveWeatherMark` reads fxWeatherFor.
+- Risky:
+  - Every seed's offers changed (15 more Perks in the pool, the needs and the bias); accepted as SP-6 did.
+  - A run with a held theme draws its theme twice as often: with 2 or 3 of one theme held, the offers can feel
+    samey; the bias is a placeholder (rules.json `run.perks.bias`).
+  - The Studio's offer order and run-preview give no team, so they show type Perks the game wouldn't offer.
+  - Mood Ring adds a roll on the battle's stream for its holder's hits (replays stay the same per seed and Perks).
+  - The Map tab fills the forecast as it draws (deterministic, saved with the next save).
+  - The merge with UI Part 2 is checked by the tests, smoke, check:fast's Perks step and the full quick check, not on a
+    phone: the Perk card's caption and the tab's counter moved (see the merge above).
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck and
+  `npm test` (1630 at the start, 1666 before the merge, 1725 on the merged tree, all passing); before every commit
+  check:modules, format:check, check:data (176 files fine; its two bridge warnings are main's) and build;
+  `check:smoke` on every commit touching game/ (6/6; 7/7 on the merge; Python Playwright 1.63.0). Golden battles
+  unchanged (no snapshot remade). Faults planted once and seen red: Kite's every switch removed (2 tests). `check:fast
+  --only=perks` ok before and after the merge (the tab's counter expectation moved with UI-14b's pill).
+  `check-studio-github.py --only=relics` ok before and after the merge, with its new Wave B step. `npm run test:slow`
+  passed (before the merge). `node tools/build-icons.mjs perks --check` fine (closest new pair 86%: Matching Hoodies
+  and Barometer). **The run sim**: `--runs=50` stops in scene mode with "runSceneParams: node 8 has no exit south2"
+  as on main (PK-3's record); `--balance` finishes its 50 runs. **Full quick check** on 8af07402 (merged): 42 steps,
+  35 passed; the 7 PROBLEMs: Terraces, RL-8's view and room light are main's (PK-1..PK-3); RT-2's double, Granny
+  Juniper, Postcards and Run map music each passed when run alone on this head (Postcards twice), so the long run's
+  timing. **CI on #301** (8af07402): lint and rules green; smoke red on 7 steps: 5 red on main's own CI at 5f6d01ae
+  (Behind things, a run's world seam, the Studio's world map look and Camera with 404s for
+  game/art/billionaires/*.png; the train ride there) plus "A battle plays to the end: stuck at playing", which fails
+  locally on main 5f6d01ae too; the world map's buttons and the island's orbit passed locally on this head and on
+  main (CI's runner timing). Recorded in a PR comment.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **Group Chat**: the bench already got half (teamXpShare 0.5), so it gives the full XP ("Your Billies on the
+    bench get the full XP from each foe, not half."), not the draft's "half".
+  - **The 13 new pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Snorkel (a blue mask, ice lenses, a gold tube), Watering Can (one-colour green, a handle over the top,
+    a long spout, blue drops, a leaf label), Static Socks (gold with cream stripes, a gold-dark spark: the boxiest),
+    Knee Pads (wood, a stone cap, steel straps: reads a little like a robot head), Kite (blue and red diamond, wood
+    spars, slate tail with bows), Mood Ring (steel band, violet gem), Union Card (a steel card on its end with a clip
+    and a red stripe), Heirloom Locket (gold on a loop, a deep-violet scale), Matching Hoodies (one-colour teal, a
+    dark hood opening that turns greyish in the pale half, a cream heart), Rainbow Lanyard (four-colour straps, a
+    blue holder, a cream card), Group Chat (slate phone, green bubble out, cream bubble in), Snow Globe (ice globe,
+    tree, snow, wood base), Barometer (gold dial on a loop, cream face, red needle). Bellows and Umbrella are PK-0's
+    samples as drawn.
+  - Texts from the drafts: Snorkel "from half their HP", Knee Pads "from 75% of their HP", Kite "on every switch, not
+    just the first", Union Card "not only Steel ones", Heirloom Locket "raises the next one's Speed too", Barometer
+    "walking into a place in rain or a storm". Rarities as the plan (type Perks uncommon, Snow Globe rare, the rest
+    common). No `say` lines (the passives already say their own).
+  - Static Socks doubles Live Wire's stage (1 to 2: 12.5% to 25%); Bellows counts each turn twice to the same top.
+  - Theme tags on the 17 existing Perks of 5.7's sets now, before PK-8 (the bias needs them); bias 2.
+  - Needs ignored where no team is given (previews); `needs` limited to team and mono until later waves.
+- Phone checks to do (listed, not waited for): a Fire team after a mini-boss is never offered Snorkel or the other
+  type Perks but Bellows; Barometer taken: the Map tab's forecast shows 10 days at once; Umbrella in rain: a Fire
+  move's down arrow is gone; Kite: two free switches in a battle; the 13 new pictures at 72 and 36 px, light and dark.
+- Next: PK-5 (Wave C: catching, cash and maps; 12 Perks of 5.4) on `track/perks`.
+- Tag to suggest (sessions can't push tags): `pk-4-done` on this entry's commit.
+
 ### Perks track PK-3 - Wave A, the battle kit - 2026-10-28
 Branch `track/perks` (this session's outcome branch, from PK-2's d6649d4; main already merged: nothing new at
 07c9b284). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
