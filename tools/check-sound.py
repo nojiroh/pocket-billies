@@ -40,6 +40,10 @@ rain by how hard it falls, on a roof and indoors, thunder near and far, wind and
 frogs, fires by size, the town's life, rooms by kind, steps on each surface. A bed row warns over either ceiling, an
 event row (thunder, birds, insects, frogs, the town, steps) over the events'.
 
+SND-17: a jingle naming an ensemble (music.json jingles' `ensemble`) renders once more on it ('<name>@ensemble' in
+jingles.json: GB Sounds off, its notes baked first); every other jingle part, as every song part, with GB Sounds on,
+so it stays today's 8-bit jingle.
+
 SND-9: beside each RMS array, a brightness fingerprint (`zc:<part>` in the same file): the zero crossings in each 50 ms
 window, so a change of timbre at the same loudness shows too (a brighter sound crosses zero more often). A crossing
 counts when the signal passes from under -0.0001 to over +0.0001 or back (so a near-silent tail's rounding never
@@ -75,10 +79,15 @@ RENDER = r"""async ({jobs, rate, win}) => {
   const ens = p => p === 'ensemble' || p === 'ensemble-night';
   const prefs = typeof saveData !== 'undefined' && saveData ? saveData.preferences : null;
   let T0 = null;
-  const prepare = async (name, night) => {
+  const prepare = async (name, night, kind) => {
     const play = night ? musicVariant(name, 1) : name;
     if (!T0) { const oc0 = new OfflineAudioContext(1, rate, rate);
       T0 = trackerCreate(oc0, oc0.destination, { songs, run: MUSIC.run, instruments: MUSIC.instruments, ensembles: MUSIC.ensembles }); }
+    /* SND-17: a jingle's ensemble ('jingles' <name>@ensemble), its notes baked the same way */
+    if (kind === 'jingle') {
+      if (!(await T0.jinglePrepare(MUSIC.jingles[name])) || !T0.jingleReady(MUSIC.jingles[name])) throw new Error('the ensemble of the jingle ' + name + ' did not bake');
+      return;
+    }
     if (!(await T0.prepare(play)) || !T0.ensembleReady(play)) throw new Error('the ensemble of ' + play + ' did not bake (the budget?)');
   };
   const schedule = ({kind, name, night, part}) => {
@@ -101,7 +110,9 @@ RENDER = r"""async ({jobs, rate, win}) => {
     else if (kind === 'jingle') {
       /* SND-6: a jingle's own tempo (music.json jingles bpm), 150 when it has none */
       const J = typeof MUSIC !== 'undefined' && MUSIC.jingles[name], bpm = (typeof jinglePlay === 'function' && J && J.bpm) || 150;
-      len = 0.05 + jingles[name].reduce((a, [, l]) => a + l, 0) * 60 / bpm / 4 + 1.2; }
+      len = 0.05 + jingles[name].reduce((a, [, l]) => a + l, 0) * 60 / bpm / 4 + 1.2;
+      /* SND-17: on its ensemble, as long as its longest line, and its baked notes' tails (a bell rings 1.6 s) */
+      if (ens(part)) len = 0.05 + musicJingleParts(J, MUSIC.ensembles[J.ensemble], { instruments: MUSIC.instruments }).steps * 60 / bpm / 4 + 2; }
     const oc = new OfflineAudioContext(1, Math.ceil(len * rate), rate);
     let now = 0;
     Object.defineProperty(oc, 'currentTime', { get: () => now, configurable: true });
@@ -149,7 +160,7 @@ RENDER = r"""async ({jobs, rate, win}) => {
     return [out, zc];
   };
   const ctxs = [];
-  for (const j of jobs) { if (ens(j.part)) await prepare(j.name, j.part === 'ensemble-night'); ctxs.push(schedule(j)); }
+  for (const j of jobs) { if (ens(j.part)) await prepare(j.name, j.part === 'ensemble-night', j.kind); ctxs.push(schedule(j)); }
   /* SND-11: the reverb's impulse goes into its convolver a moment after a song starts (a promise): let it */
   await new Promise(r => setTimeout(r, 0));
   return (await Promise.all(ctxs.map(c => c.startRendering()))).map(prints);
@@ -180,7 +191,9 @@ LOUD = r"""async ({jobs, rate}) => {
     if (job.ens) {
       const oc0 = new OfflineAudioContext(2, rate, rate),
         T1 = trackerCreate(oc0, oc0.destination, { songs: SONGS, run: MUSIC.run, instruments: MUSIC.instruments, ensembles: MUSIC.ensembles });
-      if (!(await T1.prepare(job.song))) throw new Error('no ensemble for ' + job.song);
+      /* SND-17: a jingle's ensemble row */
+      if (job.jingle) { if (!(await T1.jinglePrepare(MUSIC.jingles[job.jingle]))) throw new Error('no ensemble for the jingle ' + job.jingle); }
+      else if (!(await T1.prepare(job.song))) throw new Error('no ensemble for ' + job.song);
     }
     if (job.song) {
       const D = trackerCompose(trackerRecipe(SONGS, job.song, MUSIC.run));
@@ -193,7 +206,7 @@ LOUD = r"""async ({jobs, rate}) => {
     if (E.timer) clearInterval(E.timer);
     Object.assign(E, { ctx: null, waves: {}, song: null, want: null, timer: null, voices: [], jingle: 0, L: { drums: 1, pad: 0 } });
     const prefs = saveData.preferences, amb = Object.assign({}, ambience);
-    saveData.preferences = job.song && !job.ens ? { gbSounds: true } : {};
+    saveData.preferences = (job.song || job.jingle) && !job.ens ? { gbSounds: true } : {};
     window.AudioContext = function () { return oc; };
     window.setTimeout = () => 0;   /* the one-shots' disconnects would cut a render short */
     try {
@@ -202,6 +215,8 @@ LOUD = r"""async ({jobs, rate}) => {
         music(job.song);
         now = 0.08 + (steps - 0.5) * spb - 0.14;
         E.tracker.tick();
+      } else if (job.jingle) {
+        jinglePlay(job.jingle);
       } else {
         Object.assign(ambience, { bus: null, amb: null, lpA: null, lpW: null, beds: {}, flash: 0, arrive: -9, id: null, lastCall: 0, ev: {}, birdAt: null });
         if (!initAmbience()) throw new Error('initAmbience failed on the offline context');
@@ -231,7 +246,7 @@ LOUD = r"""async ({jobs, rate}) => {
     await new Promise(r => wait.call(window, r, 0));
     const buf = await oc.startRendering();
     Object.assign(ambience, amb);
-    const L = soundLoudness([buf.getChannelData(0), buf.getChannelData(1)], rate, job.song ? 0.5 : 1);
+    const L = soundLoudness([buf.getChannelData(0), buf.getChannelData(1)], rate, job.song || job.jingle ? 0.5 : 1);
     out.push(Object.fromEntries(Object.entries(L).map(([k, v]) => [k, typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 100) / 100 : v])));
   }
   return out;
@@ -286,7 +301,11 @@ def loudness(b, base, only=None):
         # SND-11: each song whose day version names an ensemble, once more as its ensemble
         ens = pg.evaluate("Object.keys(SONGS).filter(s => { const D = trackerRecipe(SONGS, s, MUSIC.run); return D && D.ensemble && D.ensemble !== 'gb' && MUSIC.ensembles && MUSIC.ensembles[D.ensemble]; })") if pg.evaluate("typeof MUSIC !== 'undefined' && !!MUSIC.ensembles") else []
         ens = [s for s in ens if s in songs]
+        # SND-17: each jingle naming an ensemble, as its 8-bit version and on its ensemble
+        jens = pg.evaluate("typeof musicJingleParts === 'function' ? Object.keys(MUSIC.jingles).filter(j => { const J = MUSIC.jingles[j]; return J.ensemble && J.ensemble !== 'gb' && MUSIC.ensembles[J.ensemble]; }) : []")
+        jens = [j for j in jens if not only or j in only]
         jobs = [{'song': s} for s in songs] + [{'song': s, 'ens': True} for s in ens] + [{'beds': B} for _, B in LOUD_BEDS + nature + LOUD_SCENES + rows_w]
+        jobs += [{'jingle': j} for j in jens] + [{'jingle': j, 'ens': True} for j in jens]
         res = []
         for i in range(0, len(jobs), 6):
             res += pg.evaluate(LOUD, {'jobs': jobs[i:i + 6], 'rate': RATE})
@@ -303,6 +322,11 @@ def loudness(b, base, only=None):
         lines.append('  songs (SND-11: as their ensemble, against their gb version):')
         lines += [f'    {s:12} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f}   peak {L["peak"]:6.1f} dBFS   {L["lufs"] - S[s]["lufs"]:+5.1f} LU on gb' for s, L in SE.items()]
     warn = []
+    if jens:
+        J0, J1 = res[-2 * len(jens):-len(jens)], res[-len(jens):]
+        lines.append('  jingles (SND-17: on their ensemble, against their 8-bit version):')
+        lines += [f'    {j:12} {b["lufs"]:7.1f} LUFS {b["lufs"] - ref:+6.1f} LU   peak {b["peak"]:6.1f} dBFS   {b["lufs"] - a["lufs"]:+5.1f} LU on the 8-bit ({a["lufs"]:.1f})' for j, a, b in zip(jens, J0, J1)]
+        warn += [f'jingle {j}: NaN in the render' for j, b in zip(jens, J1) if b.get('nan')]
     at = len(songs) + len(ens)
     for title, rows in (('world sounds', LOUD_BEDS), ('nature (SND-14)', nature), ('scenes', LOUD_SCENES), ('water (SND-10: each recipe at 1, 3 and 10 m)', rows_w)):
         if not rows: continue
@@ -326,11 +350,14 @@ def loudness(b, base, only=None):
 def render_all(pg, only=None):
     """{file name: {part: [rms, ...]}} for every song (day and night), jingle, cry (and its low-HP version) and UI sound"""
     N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.lines || []).flatMap(L => L.names.map((n, i) => L.id + i)),"
+                    " jens: typeof musicJingleParts === 'function' ? Object.keys(JINGLES).filter(j => { const J = MUSIC.jingles[j]; return J && J.ensemble && J.ensemble !== 'gb' && MUSIC.ensembles && MUSIC.ensembles[J.ensemble]; }) : [],"
                     " low: typeof cryPlay === 'function', ui: typeof uiSound === 'function' && typeof UI_SOUND_NAMES !== 'undefined' ? UI_SOUND_NAMES : [],"
                     " parts: Object.fromEntries(Object.keys(SONGS).map(s => [s, ['day', 'night'].concat(typeof musicParts === 'function' ? musicParts(s) : [])])) })")
     keep = lambda n: not only or n in only
     jobs = [(s, p, {'kind': 'song', 'name': s, 'night': p == 'night', 'part': p}) for s in N['songs'] if keep(s) for p in N['parts'][s]]
     jobs += [(file, n, {'kind': kind, 'name': n, 'night': False}) for kind, file in (('jingle', 'jingles'), ('cry', 'cries'), ('ui', 'ui')) for n in N[file] if keep(n)]
+    # SND-17: each jingle naming an ensemble, once more on it (GB Sounds off, its notes baked first), beside it in jingles.json
+    jobs += [('jingles', n + '@ensemble', {'kind': 'jingle', 'name': n, 'night': False, 'part': 'ensemble'}) for n in N['jens'] if keep(n)]
     # SND-6: each cry's low-HP version, beside it in cries.json
     if N['low']: jobs += [('cries', n + '@low', {'kind': 'cry', 'name': n, 'night': False, 'part': 'low'}) for n in N['cries'] if keep(n)]
     out = {}
