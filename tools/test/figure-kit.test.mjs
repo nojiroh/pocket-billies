@@ -5,15 +5,14 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import {
-  FIGURE_BUILDS,
-  FIGURE_HEADS,
-  KIT_RANDOM_HEADS,
+  figureKitData,
   figureSeed,
   figureShapeFor,
   kappiFigure,
   kitBuild,
   kitExtent,
   kitHex,
+  kitRandomHeads,
   lookFigure,
 } from '../../game/js/logic/figure-kit.js';
 import {
@@ -124,9 +123,9 @@ test('figure kit: shapes, builds and heights vary; a person’s choice wins', ()
   for (let s = 0; s < 200; s++) builds.add(figureShapeFor({}, figureSeed('folk:' + s), { variety: true }).build);
   assert.equal(builds.size, 8, [...builds].join());
   assert.equal(figureShapeFor({}, 12345).build, 'average');
-  assert.deepEqual([...heads].sort(), [...KIT_RANDOM_HEADS].sort());
+  assert.deepEqual([...heads].sort(), kitRandomHeads(figureKitData()).sort());
   assert.ok(!heads.has('hero'), 'the main character’s head is never picked at random');
-  assert.ok(FIGURE_HEADS.hero);
+  assert.ok(figureKitData().heads.hero);
   /* a tall build stands taller than a small one, a round one is wider */
   const by = build => lookFigure(look, W.items, { name: 'x', figure: { build, head: 'round' } }),
     width = F => {
@@ -135,7 +134,7 @@ test('figure kit: shapes, builds and heights vary; a person’s choice wins', ()
     };
   assert.ok(by('tall').height > by('small').height + 0.25, `${by('tall').height} ${by('small').height}`);
   assert.ok(width(by('round')) > width(by('slim')) * 1.4);
-  assert.deepEqual(Object.keys(FIGURE_BUILDS), [
+  assert.deepEqual(Object.keys(figureKitData().builds), [
     'average',
     'slim',
     'stocky',

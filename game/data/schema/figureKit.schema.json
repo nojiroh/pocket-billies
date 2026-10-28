@@ -133,9 +133,10 @@
   "vary": {
    "description": "how far each person strays from their head shape",
    "type": "object",
-   "required": ["rx", "ry", "rz", "jaw", "chin", "cheek", "brow", "face", "noseK", "ears"],
+   "required": ["size", "rx", "ry", "rz", "jaw", "chin", "cheek", "brow", "face", "noseK", "ears"],
    "additionalProperties": false,
    "properties": {
+    "size": {"description": "the head's size", "$ref": "#/$defs/range"},
     "rx": {"$ref": "#/$defs/range"},
     "ry": {"$ref": "#/$defs/range"},
     "rz": {"$ref": "#/$defs/range"},

@@ -6,8 +6,8 @@
    every NPC and the player come out of one kit. The owner's brief (2026-10-28): "I like the simpler shapes but you can
    give it more detail and variety. They can have more personality and less mannequin feeling. So different head
    shapes, heights and body types."
-   - Shape: a head shape (FIGURE_HEADS) and a build (FIGURE_BUILDS) chosen in people/<id>.json `figure`, else from the
-     look's sliders and the person's seed. The look's sliders are exaggerated (FIGURE_SLIDER_GAIN) because the
+   - Shape: a head shape and a build (game/data/figureKit.json heads, builds) chosen in people/<id>.json `figure`, else
+     from the look's sliders and the person's seed. The look's sliders are exaggerated (proportions.sliderGain) because the
      wardrobe's are drawn for small changes on a flat sprite.
    - Gait: each build moves its own way (logic/figure-pose.js figurePose `gait`), and a person's `figure.gait` can
      say more.
@@ -35,15 +35,10 @@ import {
 } from './figure-pose.js';
 /* eslint-disable no-func-assign */
 expose({
-  FIGURE_BUILDS: [() => FIGURE_BUILDS],
-  FIGURE_HEADS: [() => FIGURE_HEADS],
-  FIGURE_SLIDER_GAIN: [() => FIGURE_SLIDER_GAIN],
-  KIT_CHIBI: [() => KIT_CHIBI],
   KIT_INK: [() => KIT_INK],
   KIT_JACKETS: [() => KIT_JACKETS],
   KIT_LONG_COATS: [() => KIT_LONG_COATS],
   KIT_LONG_SLEEVES: [() => KIT_LONG_SLEEVES],
-  KIT_RANDOM_HEADS: [() => KIT_RANDOM_HEADS],
   KIT_SLEEVELESS: [() => KIT_SLEEVELESS],
   // @ts-expect-error -- replaced on purpose
   figureKitData: [() => figureKitData, v => (figureKitData = v)],
@@ -70,6 +65,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitHex: [() => kitHex, v => (kitHex = v)],
   // @ts-expect-error -- replaced on purpose
+  kitRandomHeads: [() => kitRandomHeads, v => (kitRandomHeads = v)],
+  // @ts-expect-error -- replaced on purpose
   kitRnd: [() => kitRnd, v => (kitRnd = v)],
   // @ts-expect-error -- replaced on purpose
   kitTopOf: [() => kitTopOf, v => (kitTopOf = v)],
@@ -91,59 +88,16 @@ expose({
 /** @typedef {{ head?: string, build?: string, gait?: FigureGait, variety?: boolean }} FigureShapeChoice a person's
  * `figure`; `variety` (townsfolk) lets every build turn up, where anyone else's sliders decide it */
 
-/** the head shapes (CH-3b round 5, the owner: "Complete redo the heads. Use complex shapes with deformation"): each
- * a sculpted head (logic/figure-pose.js headDeform): its radii as parts of the usual head's, how V its jaw is (below 0
- * wider at the jaw than the cheeks), how far its chin drops, its cheekbones, how big the back of its skull, how flat its
- * face. `hero` is the main character's (you), never picked at random */
-export const FIGURE_HEADS = Object.freeze({
-  round: { r: [1.02, 0.98, 1], jaw: 0.2, chin: 0.25, cheek: 1.25, crown: 1, face: 0.4 },
-  oval: { r: [0.95, 1.03, 0.98], jaw: 0.55, chin: 0.5, cheek: 0.9, crown: 1.05, face: 0.55 },
-  square: { r: [1, 0.96, 0.98], jaw: -0.15, chin: 0.45, cheek: 1, crown: 0.95, face: 0.75 },
-  long: { r: [0.9, 1.1, 0.96], jaw: 0.45, chin: 0.85, cheek: 0.85, crown: 1.1, face: 0.6 },
-  pear: { r: [0.98, 0.98, 1], jaw: -0.35, chin: 0.35, cheek: 0.75, crown: 0.9, face: 0.5 },
-  heart: { r: [1.02, 1, 0.98], jaw: 0.95, chin: 0.55, cheek: 1.3, crown: 1.05, face: 0.5 },
-  /* narrow at the brow and the chin, wide at the cheekbones */
-  diamond: { r: [0.95, 1.03, 0.98], jaw: 0.8, chin: 0.7, cheek: 1.5, crown: 0.9, face: 0.55 },
-  /* wide and flat-faced, a strong jaw */
-  broad: { r: [1.08, 0.95, 1], jaw: 0.05, chin: 0.3, cheek: 1.1, crown: 0.95, face: 0.85 },
-  hero: { r: [0.97, 1.02, 0.98], jaw: 0.72, chin: 0.62, cheek: 1.1, crown: 1.12, face: 0.65 },
-});
-/** the head shapes a seed may pick (not the main character's) */
-export const KIT_RANDOM_HEADS = Object.freeze(Object.keys(FIGURE_HEADS).filter(k => k !== 'hero'));
-/** the builds: multipliers on the look's (exaggerated) sliders, and how each moves */
-export const FIGURE_BUILDS = Object.freeze({
-  average: { k: {}, gait: {} },
-  slim: { k: { body: 0.8, shoulders: 0.94, hips: 0.94, legs: 1.04 }, gait: { swing: 1.05, bounce: 1.15 } },
-  stocky: {
-    k: { body: 1.2, shoulders: 1.14, legs: 0.88, height: 0.95 },
-    gait: { swing: 0.85, hang: 0.1, lean: 0.03 },
-  },
-  round: {
-    k: { body: 1.42, shoulders: 1.02, hips: 1.1, legs: 0.84, height: 0.94, belly: 1 },
-    gait: { swing: 0.72, arms: 0.8, hang: 0.16, bounce: 0.7, lean: -0.03 },
-  },
-  tall: { k: { height: 1.1, legs: 1.14, body: 0.9, arms: 1.06, neck: 1.5 }, gait: { swing: 1.12, lean: -0.02 } },
-  small: { k: { height: 0.84, legs: 0.86, head: 1.08, neck: 0.5 }, gait: { swing: 1.15, bounce: 1.7 } },
-  /* CH-3b's second pass: forms by their masses (a wedge, a pear, a beanpole, a stoop) */
-  athletic: {
-    k: { shoulders: 1.32, hips: 0.86, waist: 0.78, legs: 1.04, arms: 1.06, chestOut: 1 },
-    gait: { swing: 1.1, arms: 1.25, lean: -0.04 },
-  },
-  pear: { k: { shoulders: 0.84, hips: 1.32, legs: 0.92, body: 1.06, waist: 1.1 }, gait: { swing: 0.9, hang: 0.08 } },
-  lanky: {
-    k: { height: 1.12, legs: 1.2, arms: 1.16, body: 0.74, shoulders: 0.96, neck: 1.8 },
-    gait: { swing: 1.15, lean: 0.07, head: 0.1, bounce: 1.25 },
-  },
-  elder: {
-    k: { height: 0.9, legs: 0.88, body: 1.06, head: 0.96, waist: 1.1 },
-    gait: { swing: 0.6, arms: 0.5, lean: 0.17, head: 0.08, bounce: 0.3, hang: 0.08 },
-  },
-});
-/** the proportions (the owner, 2026-10-28: Gen 5's style, "in that HD-2D style", then "not too chibi"): about 2.6
- * heads, a big head for the face and hair, legs, torso and arms a little short */
-export const KIT_CHIBI = Object.freeze({ head: 1.13, legs: 0.86, torso: 0.92, arms: 0.9, neck: 0.8 });
-/** how much more a look's slider counts on a figure than on the flat sprite (1 is as the wardrobe draws it) */
-export const FIGURE_SLIDER_GAIN = 2;
+/* CH-5: the head shapes (each a sculpted head's knobs: logic/figure-pose.js headDeform), how far each person strays
+   from theirs, the builds (multipliers on the look's exaggerated sliders, and how each moves), the builds townsfolk are
+   picked from and the proportions are game/data/figureKit.json's (heads, vary, builds, folk, proportions). The
+   proportions (the owner, 2026-10-28: Gen 5's style, "in that HD-2D style", then "not too chibi"): about 2.6 heads, a
+   big head for the face and hair, legs, torso and arms a little short; a look's slider counts sliderGain times more on
+   a figure than on the flat sprite */
+/** the head shapes a seed may pick (not the main character's, `hero`) @param {FigureKitData} kit @returns {string[]} */
+export function kitRandomHeads(kit) {
+  return Object.keys(kit.heads).filter(k => kit.heads[k].random !== false);
+}
 /** the eye's and the outline's dark (the props' plum) */
 export const KIT_INK = /** @type {Vec3} */ ([36, 25, 54]);
 export const KIT_SLEEVELESS = new Set(['tank', 'crop']),
@@ -188,10 +142,10 @@ export function kitHex(hex, fb) {
 /**
  * the head shape and build a person's figure has: their `figure` choice where it names one, else the build their
  * sliders lean to (a big body round, broad and big stocky, tall tall, thin slim) and a head shape from their seed
- * @param {KitLook} look @param {number} seed @param {FigureShapeChoice} [choice]
+ * @param {KitLook} look @param {number} seed @param {FigureShapeChoice} [choice] @param {FigureKitData} [kit]
  * @returns {{ head: string, build: string }}
  */
-export function figureShapeFor(look, seed, choice = {}) {
+export function figureShapeFor(look, seed, choice = {}, kit = figureKitData()) {
   const b = look.body || {},
     v = (/** @type {string} */ k, /** @type {number} */ d) => (Number.isFinite(b[k]) ? b[k] : d);
   let build = 'average';
@@ -202,14 +156,14 @@ export function figureShapeFor(look, seed, choice = {}) {
   else if (v('body', 1) <= 0.92) build = 'slim';
   else if (choice.variety) {
     /* townsfolk: every form turns up, the usual ones more often */
-    const B = ['average', 'average', 'slim', 'stocky', 'athletic', 'pear', 'lanky', 'round', 'elder'];
+    const B = kit.folk;
     build = B[Math.floor(kitRnd(seed, 1) * B.length) % B.length];
   }
-  const heads = KIT_RANDOM_HEADS,
+  const heads = kitRandomHeads(kit),
     head = heads[Math.floor(kitRnd(seed, 2) * heads.length) % heads.length];
   return {
-    head: choice.head && choice.head in FIGURE_HEADS ? choice.head : head,
-    build: choice.build && choice.build in FIGURE_BUILDS ? choice.build : build,
+    head: choice.head && choice.head in kit.heads ? choice.head : head,
+    build: choice.build && choice.build in kit.builds ? choice.build : build,
   };
 }
 
@@ -223,23 +177,25 @@ export function figureShapeFor(look, seed, choice = {}) {
  *     detail?: boolean, gloves?: boolean, gloveCol?: number[], goggles?: boolean, fur?: boolean, earrings?: boolean,
  *     ahoge?: boolean, glossy?: boolean } }} [opts]
  * `kit`: the kit's data (game/data/figureKit.json; the game's own when not given). `chibi`: proportions
- * other than KIT_CHIBI (a direction of figures.js FIGURE_LOOKS)
+ * other than the kit's (a direction of figures.js FIGURE_LOOKS)
  * @returns {Figure}
  */
 export function lookFigure(look, items, opts = {}) {
   const KIT = opts.kit || figureKitData(),
-    PR = opts.chibi || KIT_CHIBI,
+    PR = opts.chibi || KIT.proportions.chibi,
+    GAIN = KIT.proportions.sliderGain,
+    VY = /** @type {Record<string, any>} */ (KIT.vary),
     seed = opts.seed ?? figureSeed(opts.name || 'person'),
-    shape = figureShapeFor(look, seed, opts.figure),
-    HD = FIGURE_HEADS[/** @type {keyof typeof FIGURE_HEADS} */ (shape.head)],
-    BD = FIGURE_BUILDS[/** @type {keyof typeof FIGURE_BUILDS} */ (shape.build)],
+    shape = figureShapeFor(look, seed, opts.figure, KIT),
+    HD = KIT.heads[shape.head],
+    BD = KIT.builds[shape.build],
     body = look.body || {},
     wear = look.wear || {},
     /* a slider, exaggerated, times the build's */
     sl = (/** @type {string} */ k, /** @type {number} */ def = 1) => {
       const v = Number.isFinite(body[k]) ? body[k] : def,
         bk = /** @type {Record<string, number>} */ (BD.k)[k] ?? 1;
-      return (k === 'chest' ? v : 1 + (v - 1) * FIGURE_SLIDER_GAIN) * bk;
+      return (k === 'chest' ? v : 1 + (v - 1) * GAIN) * bk;
     },
     /* the tallest and shortest a build and slider make (an exaggerated tall build would tower over the town) */
     hk = Math.max(0.8, Math.min(1.14, sl('height'))),
@@ -250,7 +206,7 @@ export function lookFigure(look, items, opts = {}) {
     shK = sl('shoulders'),
     hipK = sl('hips'),
     /* heads vary a little from person to person, beyond the slider */
-    headK = sl('head') * (0.96 + 0.08 * kitRnd(seed, 3)),
+    headK = sl('head') * (VY.size[0] + VY.size[1] * kitRnd(seed, 3)),
     chest = Math.max(0, Math.min(1, sl('chest', 0.2))),
     BK = /** @type {Record<string, number>} */ (BD.k),
     belly = BK.belly || 0,
@@ -351,7 +307,7 @@ export function lookFigure(look, items, opts = {}) {
       'skin'
     );
   /* ---- the head ---- */
-  /* the head (KIT_CHIBI.head, a direction's own): room for the face, hair and expressions, and the portraits'
+  /* the head (the kit's proportions.chibi.head, a direction's own): room for the face, hair and expressions, and the portraits'
      close-ups; it grows a little with the body too, so a small figure is smaller all over and a tall one taller.
      CH-3b round 6 (the owner: "Even more complex shapes make sure they flow into each other"): one blended surface
      (logic/figure-pose.js sdfSurface) of the skull, the face, the jaw, the chin, cheekbones, the brow, eye sockets
@@ -360,21 +316,23 @@ export function lookFigure(look, items, opts = {}) {
   const hk3 = headK * PR.head * Math.sqrt(hk),
     /* each person a little wider or narrower, longer or shorter, deeper or flatter than their head shape */
     hr = /** @type {Vec3} */ ([
-      0.31 * hk3 * HD.r[0] * (0.95 + 0.1 * kitRnd(seed, 17)),
-      0.3 * hk3 * HD.r[1] * (0.95 + 0.1 * kitRnd(seed, 18)),
-      0.29 * hk3 * HD.r[2] * (0.96 + 0.08 * kitRnd(seed, 19)),
+      0.31 * hk3 * HD.r[0] * (VY.rx[0] + VY.rx[1] * kitRnd(seed, 17)),
+      0.3 * hk3 * HD.r[1] * (VY.ry[0] + VY.ry[1] * kitRnd(seed, 18)),
+      0.29 * hk3 * HD.r[2] * (VY.rz[0] + VY.rz[1] * kitRnd(seed, 19)),
     ]),
     sculpt = {
-      jaw: HD.jaw + 0.16 * (kitRnd(seed, 15) - 0.5) - (shape.build === 'round' ? 0.25 : 0),
-      chin: HD.chin * (0.85 + 0.3 * kitRnd(seed, 13)),
-      cheek: HD.cheek * (0.85 + 0.3 * kitRnd(seed, 14)),
+      /* a build may make the jaw squarer (a round build's) */
+      jaw: HD.jaw + VY.jaw * (kitRnd(seed, 15) - 0.5) + (BD.jaw || 0),
+      chin: HD.chin * (VY.chin[0] + VY.chin[1] * kitRnd(seed, 13)),
+      cheek: HD.cheek * (VY.cheek[0] + VY.cheek[1] * kitRnd(seed, 14)),
       crown: HD.crown,
-      brow: 0.8 + 0.4 * kitRnd(seed, 16),
-      face: HD.face + 0.3 * (kitRnd(seed, 20) - 0.5),
-      nose: Math.floor(kitRnd(seed, 21) * 4) % 4,
-      noseK: 0.85 + 0.4 * kitRnd(seed, 11),
+      brow: VY.brow[0] + VY.brow[1] * kitRnd(seed, 16),
+      face: HD.face + VY.face * (kitRnd(seed, 20) - 0.5),
+      /* a head shape's own nose, else the person's */
+      nose: HD.nose ?? Math.floor(kitRnd(seed, 21) * 4) % 4,
+      noseK: VY.noseK[0] + VY.noseK[1] * kitRnd(seed, 11),
       noseLong: kitRnd(seed, 12),
-      ears: 0.85 + 0.35 * kitRnd(seed, 22),
+      ears: VY.ears[0] + VY.ears[1] * kitRnd(seed, 22),
     },
     hc = /** @type {Vec3} */ ([0, hr[1] + 0.005, 0.01]),
     neckR = 0.046 * Math.sqrt(girth),
@@ -1408,7 +1366,7 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1, o = {})
  * cowboy hat, a top hat with its band, a chef's toque, a crown
  * @param {(id: string, parent: string | null, at: Vec3, sh: FigureShape, col: string) => void} add
  * @param {string} hat @param {{ c: Vec3, r: Vec3 }} H the head @param {number} [crown] how high its cranium rises
- * (FIGURE_HEADS)
+ * (figureKit.json heads) @param {FigureKitData} [kit] the kit's data
  */
 export function kitHat(add, hat, H, crown = 1, kit = figureKitData()) {
   /* the owner (2026-10-28: "hats also look weird"): a hat is its own forms fitted round the head and the hair under

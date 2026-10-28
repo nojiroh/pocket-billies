@@ -8,7 +8,7 @@ import './figure-kit-data.mjs';
 import { test } from 'node:test';
 import { createHash } from 'node:crypto';
 import { readFileSync, readdirSync } from 'node:fs';
-import { FIGURE_BUILDS, FIGURE_HEADS, kappiFigure, lookFigure } from '../../game/js/logic/figure-kit.js';
+import { figureKitData, kappiFigure, lookFigure } from '../../game/js/logic/figure-kit.js';
 
 const W = JSON.parse(readFileSync(new URL('../../game/data/wardrobe.json', import.meta.url), 'utf8'));
 const PEOPLE = Object.fromEntries(
@@ -88,8 +88,8 @@ test('figure kit golden: every hat with every hair style', t => {
 test('figure kit golden: every head with every build', t => {
   const base = PEOPLE.chosen.look,
     out = {};
-  for (const head of Object.keys(FIGURE_HEADS))
-    for (const build of Object.keys(FIGURE_BUILDS))
+  for (const head of Object.keys(figureKitData().heads))
+    for (const build of Object.keys(figureKitData().builds))
       out[head + '/' + build] = hash(lookFigure(base, W.items, { name: head + build, figure: { head, build } }));
   t.assert.snapshot(out);
 });
