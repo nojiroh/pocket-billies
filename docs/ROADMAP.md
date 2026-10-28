@@ -107,7 +107,7 @@ town node needs it.
   region grid: footprints, links east, north or south, at least 2 routes between towns, leader then town, 9-12
   places a path by Expedition, 2-3 towns; done 2026-10-27 on `claude/wm-2-region-grid`), WM-3
   (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines; side areas on the grid; done 2026-10-27),
-  WM-5 (branching town streets, three town sizes), WM-6 (districts, landmarks, route names), WM-7 (leader arenas, the
+  WM-5 (branching town streets, three town sizes, services and names; done 2026-10-27: WM-5a, WM-5b), WM-6 (districts, landmarks, route names; done 2026-10-27 on `claude/wm-6-region-look`), WM-7 (leader arenas, the
   final boss's arena place), WM-8 (ledges and loops). Tags `wm-N-done`. Branch `track/worldmap`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
@@ -146,9 +146,29 @@ town node needs it.
   Part 2, Living Semigloss (the owner's brief 2026-10-27: look and feel, one design language, less clutter, motion,
   run pickups and statuses colour coded): UI-10 (the plan, research and a palette sampler) done 2026-10-27 on
   `ccr-03a15a70-nd3yqu`, answered (Field Guide by default, three palettes in Settings; rarity as frame and pill); UI-8b (the wide
-  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) first, UI-8c (the run map's icons in the icon set's pixel style, the markers first)
-  beside it on `claude/ui-8c-map-markers`, then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
-  the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266).
+  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) done 2026-10-27 on `track/ui`, UI-8c (the run map's icons in the icon set's pixel style, the markers first)
+  beside it on `claude/ui-8c-map-markers` (done 2026-10-27, draft PR #281 into main; the owner's phone check after UI-18), then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
+  the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266). UI-11 (the colour code as data) done
+  2026-10-27 on `ccr-dab4e0cd-6re1eb` (#280); UI-12 (the palettes: Field Guide by default, a Settings Palette row)
+  done 2026-10-27 on `claude/ui-12-palettes`; UI-13 (the marks' glyphs, the types at one lightness, the teal heart,
+  the bolt for storms only) done 2026-10-27 on `claude/ui-13-glyphs-types`; UI-14a (the marks kit: `pb-tag`,
+  `pb-chip`, `pb-proc`, `pb-info`, rarity, the Colour shapes patterns; gallery only) done 2026-10-27 on
+  `claude/ui-14a-marks-kit`; UI-14b (the marks on every screen: status tags, Prime teal, Lead neutral, towns teal,
+  rarity on held items, Augments, Genes and Billies, pb-coin's screens on pb-chip, the Colour shapes switch; the
+  battle plates left to UI-16b) done 2026-10-27 on `claude/ui-14b-marks-screens`; UI-15 (less clutter in battle and
+  walking: the field strip, plates' "+N", long-press move details, quiet commands, dark battle glass; the place card
+  as a title, the fading hint, the Actions bob) done 2026-10-27 on `claude/ui-15-less-clutter`; UI-16a (alive:
+  the feedback motions wired on every screen, press squash, the sliding selection bar, tick-ups, fly-to, face-down
+  picks that turn over, the sheet, flip, count and toast sounds, Animation Calm, no `:host-context`, walking's loops
+  from five to one) done 2026-10-28 on `claude/ui-16a-motion`; UI-16b (alive: battle events: the plates' tags on the
+  marks kit, Atk..Spe, Alpha in the bad family, statuses that stamp on, boosts that rise and drops that fall, trigger
+  blips, effect pips, effectiveness banners, one stamp motion shared with SY-3's pb-stamp, Calm for the battle
+  camera) done 2026-10-28 on `claude/ui-16b-battle-events`; UI-18 (less clutter
+  on the Map: no blurred panels, Give up in a ⋯ menu, the folded place card, towns teal on the bowl, names clear of
+  your figure) done 2026-10-28 on `claude/ui-18-map-clutter`; UI-17 (alive: idle life kept to two loops a screen and
+  counted by a test, the 7 s glint, the Coats' and rare frames' foil, today's forecast icon, the Map's breathing
+  places and bobbing pin, low HP on opacity, catch and level-up bursts, the boss's name banner) done 2026-10-28 on
+  `claude/ui-17-idle-life`; Part 2 checked 2026-10-28 on `claude/ui-checks-all` (every skipped browser check run on all of Part 2 merged, the fixes they called for, the gallery's baselines remade; one draft PR into main brings every Part 2 PR); the owner's phone checks next (HANDOFF, "Part 2 checked").
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.
@@ -172,7 +192,13 @@ town node needs it.
   stretched pyramid (VFX-3), an impact frame (VFX-4), attack lunges (VFX-5), Studio dials and the debug log (VFX-6).
   VFX-0 (the plan, with research) and VFX-1 built 2026-10-26 on `ccr-a98cc267-eqso1d` at the owner's word; VFX-2
   (the ribbon) and VFX-3 (the stretched pyramid) built 2026-10-26 on `track/vfx`; VFX-4 (the impact frame) built
-  2026-10-27; VFX-5 next. Tags `vfx-N-done`. Branch `track/vfx`.
+  2026-10-27; VFX-5 (attack lunges: the lean, two afterimages, the dash moves' ribbon, as helpers Part 2's runner
+  reuses) built 2026-10-28; VFX-8 next. **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
+  lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
+  VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
+  `track/vfx` after VFX-5, each in a new session started by VFX-7's, plans approved automatically (the owner,
+  2026-10-28), sound steps agreed with the sound track's planning session. Tags `vfx-N-done`. Branch `track/vfx`.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
@@ -255,6 +281,14 @@ town node needs it.
   research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; next CH-1 (the bench and the facing fixes), then the spike CH-2
   and CH-3 and the owner's pick. About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch
   `track/characters` (the owner makes it).
+- **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
+  picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
+  events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in
+  the world), numbers you feel beyond the UI track's (your HP rolls down, damage numbers sized by the hit), and the
+  coat's prism foil carried onto Billies in battle and on the maps. First, battle flashes obey Flashes and Reduced
+  motion (they don't today). SY-0 (the plan, with research) and SY-1 (battle flashes follow Flashes and Reduced
+  motion) done 2026-10-27 on `ccr-86dc9cb1-odx2za`; SY-2 (numbers you feel) done 2026-10-27 on `track/style`; SY-3
+  (the Bureau's mark: the emblem, `bureau.look`, `pb-stamp`) done 2026-10-28 on `track/style`; next SY-4 (case files). About 8 sessions. Tags `sy-N-done`. Branch `track/style` (the owner makes it).
 - **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's
   relics) with lots of variety, each with its own picture in the UI icon set's 36 px block-and-split look, drawn as
   flat 34x34 grids and shaded by the game's own `icon-block.js`. 66 new Perks in four waves (battle kit; types, team

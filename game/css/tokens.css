@@ -43,14 +43,28 @@
   /* motion (06-plan "Motion"): transforms and opacity only */
   --m-fast: 140ms;
   --m-base: 240ms;
-  --m-slow: 420ms;
+  --m-slow: 380ms; /* UI-16a: 420 to 380, so an enter is done by 400 ms */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   /* --spring is v05's cubic-bezier(0.3, 1.6, 0.5, 1) */
   --stagger: 35ms;
+  /* UI-16a: the feedback times (docs/phases/ui-track.md "Timings"; logic/motion.js MOTION_TIMES holds the ranges) */
+  --m-press: 100ms;
+  --m-exit: 180ms;
+  --m-pop: 150ms;
+  --m-float: 600ms;
+  /* UI-15: a place's arrival title before it folds into the top bar, and a walking hint before it fades (walk-tab.js
+     PLACE_TITLE_MS and WALK_HINT_MS hold the same numbers) */
+  --m-title: 4500ms;
+  --m-linger: 6000ms;
   /* UI-8: the minimap (uiTheme.json minimap): metres across, ms of walking before the bar goes compact and standing
      before it comes back, which marks show (1 shown, 0 hidden) */
   --minimap-span: 44;
+  /* UI-8b: the tile standing (wide, out of the bar's frame) and walking (a square), in px */
+  --minimap-tile-w: 232px;
+  --minimap-tile-h: 184px;
+  --minimap-tile-aspect: 0.7931; /* tile-h / tile-w: a narrow bar shrinks the tile keeping its shape */
+  --minimap-tile-compact: 112px;
   --minimap-compact-after: 2500;
   --minimap-full-after: 700;
   --minimap-facilities: 1;
@@ -361,6 +375,12 @@
   /* shapes: end */
   /* the edge line: light on top, dark below; the drop shadows follow a cut outline (a box-shadow can't) */
   --c-shadow: #2e2140;
+  /* UI-12: dark text on gold and on the colour code's fills (the theme: the dark side's ground) */
+  --c-ink: #2e2140;
+  /* UI-14a: the Colour shapes switch (Accessibility; UI-14b wires it): the patterns' ink on tags and bars (ui-kit.js
+     patternVars), transparent until the switch sets :root[data-shapes='on'] */
+  --pat-ink: transparent;
+  --pat-ink-on: rgb(0 0 0 / 0.3);
   --edge-hi: rgba(255, 255, 255, 0.9);
   --edge-lo: color-mix(in srgb, var(--c-shadow) 30%, transparent);
   --edge: linear-gradient(180deg, var(--edge-hi), var(--edge-lo));
@@ -403,6 +423,76 @@
   --c-gold-a: var(--gold-a);
   --c-gold-b: var(--gold-b);
   --c-danger: var(--red);
+
+  /* UI-11: the colour code (uiTheme.json defaults.signals, logic/signals.js), the same in every palette: a fill for
+     tags, chips and bars on dark glass (dark text on it), and a text shade per side. The theme sheet writes the same
+     values; these keep them on a page without uiTheme.json. */
+  --sig-good: #40d9c1;
+  --sig-bad: #ea5974;
+  --sig-caution: #faab3f;
+  --sig-value: #faca59;
+  --sig-special: #ae7ee2;
+  --sig-growth: #82d7ff;
+  --sig-machine: #99aebb;
+  --sig-bio: #da5ab6;
+  --sig-brn: #ff8f49;
+  --sig-par: #ece95c;
+  --sig-slp: #b3b3dd;
+  --sig-common: #a5acb2;
+  --sig-uncommon: #4ab962;
+  --sig-rare: #629bff;
+  --sig-mythical: #f77036;
+  --sig-good-text: #007e6e;
+  --sig-bad-text: #bd2c42;
+  --sig-caution-text: #9a5505;
+  --sig-value-text: #855e11;
+  --sig-special-text: #7847a6;
+  --sig-growth-text: #1774a4;
+  --sig-machine-text: #546673;
+  --sig-bio-text: #a73189;
+  --sig-brn-text: #af4803;
+  --sig-par-text: #756700;
+  --sig-slp-text: #656390;
+  --sig-common-text: #5f6469;
+  --sig-uncommon-text: #02782e;
+  --sig-rare-text: #2f5eb9;
+  --sig-mythical-text: #aa3700;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --sig-good-text: #57d6c0;
+    --sig-bad-text: #ff8a9f;
+    --sig-caution-text: #f5ad53;
+    --sig-value-text: #f6cb69;
+    --sig-special-text: #cfa3ff;
+    --sig-growth-text: #8bd6fa;
+    --sig-machine-text: #abbeca;
+    --sig-bio-text: #ff8bdd;
+    --sig-brn-text: #ff9d61;
+    --sig-par-text: #ebe86f;
+    --sig-slp-text: #b6b6dd;
+    --sig-common-text: #b9bec4;
+    --sig-uncommon-text: #7cd68b;
+    --sig-rare-text: #8abdff;
+    --sig-mythical-text: #ff9a6b;
+  }
+}
+:root[data-theme='dark'] {
+  --sig-good-text: #57d6c0;
+  --sig-bad-text: #ff8a9f;
+  --sig-caution-text: #f5ad53;
+  --sig-value-text: #f6cb69;
+  --sig-special-text: #cfa3ff;
+  --sig-growth-text: #8bd6fa;
+  --sig-machine-text: #abbeca;
+  --sig-bio-text: #ff8bdd;
+  --sig-brn-text: #ff9d61;
+  --sig-par-text: #ebe86f;
+  --sig-slp-text: #b6b6dd;
+  --sig-common-text: #b9bec4;
+  --sig-uncommon-text: #7cd68b;
+  --sig-rare-text: #8abdff;
+  --sig-mythical-text: #ff9a6b;
 }
 @media (max-width: 359px) {
   :root {
@@ -415,4 +505,8 @@
   font-weight: 500;
   font-size: var(--fs-body);
   line-height: var(--lh-prose);
+}
+/* UI-14a: the Colour shapes switch on: tags and bars draw their patterns (ui-kit.js patternVars) */
+:root[data-shapes='on'] {
+  --pat-ink: var(--pat-ink-on);
 }

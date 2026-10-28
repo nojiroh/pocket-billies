@@ -288,7 +288,7 @@ body:has(.topbar) .toast {
       background-color 0.2s;
   }
   .tb-btn:active {
-    transform: rotate(90deg) scale(0.9);
+    transform: rotate(90deg);
   }
   /* toasts and modals */
   .toast {
@@ -379,6 +379,11 @@ button.tb-where.shut {
   color: var(--text);
   font-weight: 600;
 }
+/* UI-15: today's weather by the place's name (the folded place card) */
+button.tb-where .uico:first-child {
+  flex: none;
+  margin-right: var(--s1);
+}
 
 /* ---------- UI-5: from v05.css, as it was ---------- */
 .sheet,
@@ -389,7 +394,7 @@ button.tb-where.shut {
   backdrop-filter: var(--g-blur);
   box-shadow:
     var(--g-in),
-    0 -12px 40px -12px rgba(46, 33, 64, 0.5) !important;
+    0 -12px 40px -12px color-mix(in srgb, var(--c-shadow) 50%, transparent) !important;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) .sheet.px {
@@ -417,14 +422,14 @@ button.tb-where.shut {
   background: var(--g-bg2) !important;
   border: 1px solid var(--g-bd);
   font: 600 15px/1 var(--font-voice) !important;
-  box-shadow: 0 4px 10px -5px rgba(46, 33, 64, 0.4) !important;
+  box-shadow: 0 4px 10px -5px color-mix(in srgb, var(--c-shadow) 40%, transparent) !important;
   padding: var(--s2) var(--s3) !important;
 }
 .tb-btn {
   border-radius: var(--r-sm) !important;
   background: var(--g-bg2) !important;
   border: 1px solid var(--g-bd) !important;
-  box-shadow: 0 4px 10px -5px rgba(46, 33, 64, 0.4);
+  box-shadow: 0 4px 10px -5px color-mix(in srgb, var(--c-shadow) 40%, transparent);
 }
 .tb-me {
   position: absolute;
@@ -440,7 +445,7 @@ button.tb-where.shut {
   cursor: pointer;
   background: radial-gradient(circle at 35% 30%, #ffe7a6, #f2b84b 60%, #d99a2e);
   box-shadow:
-    0 12px 24px -6px rgba(46, 33, 64, 0.55),
+    0 12px 24px -6px color-mix(in srgb, var(--c-shadow) 55%, transparent),
     0 0 0 4px rgba(242, 184, 75, 0.35);
   display: grid;
   place-items: end center;
@@ -457,12 +462,9 @@ button.tb-where.shut {
     transform: translateY(-2px) scale(1.04);
   }
 }
-.tb-me:active {
-  transform: scale(0.95);
-}
 .tb-me[aria-current='page'] {
   box-shadow:
-    0 12px 24px -6px rgba(46, 33, 64, 0.55),
+    0 12px 24px -6px color-mix(in srgb, var(--c-shadow) 55%, transparent),
     0 0 0 4px var(--t-profile);
 }
 /* ---------- the bottom bar: every screen its own colour; the open one rises out of the glass (phase 06: on the tokens) ---------- */
@@ -547,9 +549,15 @@ pb-nav-bar#nav[hidden] {
 :root {
   --nav-h: 96px;
 }
+/* UI-8b: the bar's height is pb-nav-bar's (the tile and 8 px, or the 128 px bar on a narrow phone; walking, the square
+   and 4 px, or the 76 px bar), worked out from the same --minimap-tile-* on the bar's width (the screen less 16 px, at
+   most 480 px), plus its 6 px off the bottom and a 26 px gap: 224 px standing and 148 px walking on a 390 px phone */
 :root:has(pb-nav-bar#nav:not([hidden])) {
-  --nav-h: 172px;
+  --nav-bar-w: min(100vw - 16px, 480px);
+  --nav-h: calc(
+    max(min(var(--minimap-tile-h), (var(--nav-bar-w) - 136px) * var(--minimap-tile-aspect)) + var(--s2), 128px) + 32px
+  );
 }
 :root:has(pb-nav-bar#nav[compact]:not([hidden])) {
-  --nav-h: 102px;
+  --nav-h: calc(max(min(var(--minimap-tile-compact), var(--nav-bar-w) - 208px) + 4px, 76px) + 32px);
 }

@@ -289,3 +289,130 @@ test('the impact frame shows the negative, then the positive, then (a crit) the 
   assert.equal(impactLength(F), SMEAR_STEP * 2);
   assert.equal(impactLength(null), 0);
 });
+
+/* VFX-5: attack lunges */
+import {
+  LUNGE_DASH,
+  LUNGE_GHOSTS,
+  LUNGE_LEAN_BACK,
+  LUNGE_LEAN_MAX,
+  LUNGE_RIBBON_MAX,
+  LUNGE_RIBBON_MIN,
+  lungeDash,
+  lungeGhostCount,
+  lungeLean,
+  lungeLeanFor,
+  lungeLeanOn,
+  lungeRibbonHalf,
+} from '../../game/js/logic/smear.js';
+import { readFileSync } from 'node:fs';
+
+/** the H move's lunge as battle-stage.js plays it: 30 px toward the foe in 120 ms, eased in, after 100 ms; back in
+ * 200 ms from 240. x in metres at mpp metres a px, kept every frame of a 60 fps clock */
+function lungeHistory(mpp, until = 440, fwd = 1) {
+  const H = smearHistory(),
+    at = t => {
+      if (t < 100) return 0;
+      if (t < 220) return 30 * ((t - 100) / 120) ** 2;
+      if (t < 240) return 30;
+      const k = Math.min(1, (t - 240) / 200);
+      return 30 * (1 - (1 - (1 - k) * (1 - k)));
+    },
+    leans = [];
+  for (let t = 100; t <= until; t += 1000 / 60) {
+    const x = fwd * at(t) * mpp;
+    if (smearRecord(H, t, { x, y: 0, z: 0 })) H.list[0].lean = lungeLean(H, t, mpp, true, fwd);
+    leans.push([t, lungeLean(H, t, mpp, true, fwd)]);
+  }
+  return { H, leans };
+}
+
+test('a lunge leans into its way, held per grid cell, capped, and settles back at half', () => {
+  const { leans } = lungeHistory(2.6 / 170);
+  const max = Math.max(...leans.map(l => l[1])),
+    min = Math.min(...leans.map(l => l[1]));
+  assert.ok(max > 0.15 && max <= LUNGE_LEAN_MAX, `leans in: ${max}`);
+  assert.ok(min < 0 && min >= -LUNGE_LEAN_MAX * LUNGE_LEAN_BACK, `settles back gently: ${min}`);
+  for (const [t, l] of leans) {
+    const same = leans.filter(q => Math.floor(q[0] / SMEAR_STEP) === Math.floor(t / SMEAR_STEP));
+    assert.ok(
+      same.every(q => q[1] === l),
+      `held for its cell at ${t}`
+    );
+  }
+  /* the far side's Billie (twice the metres a px) leans the same: the speed is in stage px */
+  const far = lungeHistory(5.7 / 170).leans.map(l => l[1]);
+  assert.deepEqual(
+    far,
+    leans.map(l => l[1])
+  );
+  /* the foe lunges left: the same lean, mirrored */
+  const left = lungeHistory(2.6 / 170, 440, -1).leans.map(l => l[1]);
+  assert.deepEqual(
+    left,
+    leans.map(l => -l[1] || 0)
+  );
+});
+
+test('a lunge leans only while it is kept, and not when off', () => {
+  const { H } = lungeHistory(2.6 / 170, 200);
+  assert.equal(lungeLean(H, 200, 2.6 / 170, false, 1), 0, 'off');
+  assert.equal(lungeLean(H, 200 + SMEAR_STEP * 2, 2.6 / 170, true, 1), 0, 'a later cell with no place kept');
+  assert.equal(lungeLean(smearHistory(), 0, 1, true, 1), 0, 'no places');
+  assert.equal(lungeLeanFor(NaN), 0);
+  assert.equal(lungeLeanFor(10, 1), LUNGE_LEAN_MAX);
+  assert.equal(lungeLeanFor(-10, 1), -LUNGE_LEAN_MAX * LUNGE_LEAN_BACK);
+});
+
+test('a lunge leaves one or two afterimages at older places, gone soon after it lands', () => {
+  /* the near Billie's first cell moves under SMEAR_MIN_GAP (0.12 m, about 8 of its px), so it shows one copy */
+  const near = lungeHistory(2.6 / 170, 220).H;
+  assert.equal(smearGhosts(near, 220, 2, null, LUNGE_GHOSTS).length, 1, 'the near Billie: one');
+  const mpp = 5.7 / 170,
+    { H } = lungeHistory(mpp, 220);
+  const G = smearGhosts(H, 220, lungeGhostCount(false, 0), null, LUNGE_GHOSTS);
+  assert.equal(G.length, 2, 'two at the hit');
+  assert.ok(G[0].s.x < H.list[0].x && G[1].s.x < G[0].s.x, 'behind it, oldest farthest');
+  assert.deepEqual(
+    G.map(g => [g.fade, g.glow]),
+    LUNGE_GHOSTS.map(l => [l.fade, l.glow])
+  );
+  assert.equal(smearGhosts(H, 220, lungeGhostCount(false, 2), null, LUNGE_GHOSTS).length, 1, 'one at level 2');
+  assert.equal(smearGhosts(H, 220 + (LUNGE_GHOSTS.length + 1) * SMEAR_STEP * 2, 2, null, LUNGE_GHOSTS).length, 0);
+  /* a throw's looks are untouched by the new parameter */
+  assert.equal(smearGhosts(H, 220, 3).length <= SMEAR_GHOSTS.length, true);
+});
+
+test('the lunge smears thin out with the quality and stop under Reduced motion', () => {
+  assert.deepEqual(
+    [0, 1, 2, 3].map(l => lungeGhostCount(false, l)),
+    [2, 2, 1, 0]
+  );
+  assert.deepEqual(
+    [0, 1, 2, 3].map(l => lungeGhostCount(true, l)),
+    [0, 0, 0, 0]
+  );
+  assert.deepEqual(
+    [0, 1, 2, 3].map(l => lungeLeanOn(false, l)),
+    [true, true, true, false]
+  );
+  assert.equal(lungeLeanOn(true, 0), false);
+});
+
+test("the dash moves are real moves and their ribbon is the Billie's size", () => {
+  const moves = JSON.parse(readFileSync(new URL('../../game/data/moves.json', import.meta.url), 'utf8')),
+    list = Array.isArray(moves) ? moves : Object.entries(moves).map(([id, m]) => ({ id, ...m }));
+  for (const id of LUNGE_DASH) {
+    const m = list.find(x => x.id === id);
+    assert.ok(m, `${id} is a move`);
+    assert.equal(m.c, 'H', `${id} is a hit (it lunges)`);
+  }
+  assert.ok(lungeDash('flashsale') && !lungeDash('tackle') && !lungeDash(null));
+  assert.equal(lungeRibbonHalf(0), LUNGE_RIBBON_MIN);
+  assert.equal(lungeRibbonHalf(10), LUNGE_RIBBON_MAX);
+  assert.ok(Math.abs(lungeRibbonHalf(1) - 0.3) < 1e-12);
+  const { H } = lungeHistory(2.6 / 170, 220);
+  const R = smearRibbon(H, 220, RIBBON_CELLS, null, null, 0.3);
+  assert.ok(R.length >= 2 && Math.abs(R[0].w - 0.3) < 1e-12, 'a ribbon at the given width');
+  assert.ok(Math.abs(smearRibbon(H, 220, RIBBON_CELLS)[0].w - RIBBON_HALF) < 1e-12, "a throw's width by default");
+});

@@ -2,7 +2,9 @@
 // its agents' classes, where wild bots are met.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { GAME_DATA, modules } from './setup-real.mjs';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { GAME_DATA, ROOT, modules } from './setup-real.mjs';
 
 const F = modules.factions,
   FT = modules.fighters,
@@ -51,4 +53,21 @@ test('factions: wild bots wait on routes from their row on in their biomes, and 
   assert.equal(F.factionWildChance(BUREAU, { type: 'route', row: W.fromRow, biome: other }), 0);
   assert.equal(F.factionWildChance(BUREAU, { type: 'town', row: 8, biome }), 0);
   assert.equal(F.factionWildChance(BUREAU, { type: 'scrapyard', row: 0, biome: other }), 1);
+});
+
+// SY-3: the Bureau's look (factions.json `look`): the emblem is a UI icon, a word for each stamp moment, form numbers
+test("factions: the Bureau's look names an emblem that exists, a word for each stamp moment and its form numbers", () => {
+  const L = BUREAU.look;
+  assert.ok(existsSync(join(ROOT, 'game/art/ui', `${L.emblem}.svg`)), `art/ui/${L.emblem}.svg`);
+  assert.deepEqual(Object.keys(L.stamps).sort(), ['denied', 'filed', 'pending', 'retrieved', 'void']);
+  assert.ok(L.forms.length >= 1);
+  assert.deepEqual(modules['data-checks'].dataFactions(GAME_DATA), []);
+});
+
+test('factions: two stamp moments with the same word are a data problem', () => {
+  const D = { ...GAME_DATA, factions: structuredClone(GAME_DATA.factions) };
+  D.factions.factions.bureau.look.stamps.void = 'denied ';
+  const out = modules['data-checks'].dataFactions(D);
+  assert.equal(out.length, 1);
+  assert.match(out[0][1], /bureau\.look\.stamps\.(void|denied): .* also (denied|void)'s word/);
 });

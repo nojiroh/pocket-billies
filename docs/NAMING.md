@@ -96,7 +96,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 - PascalCase for classes and types.
 - kebab-case file names in game/ and studio/ (`walk-view-gl.js`, `game-state.js`). Data files are named after their
   section key (`battleStages.json`, `maps/`). Python modules other tools import by name keep snake_case
-  (`gamedata.py`, `pixkit.py`, `trainer_gen/`).
+  (`gamedata.py`, `trainer_gen/`).
 - Data keys are camelCase (`locationId`, `mapId`, `battleStage`).
 - Descriptive names. No top-level name of one or two characters, except `$` and `$$` (querySelector and
   querySelectorAll, as in the browser console).
