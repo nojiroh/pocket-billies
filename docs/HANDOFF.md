@@ -2,6 +2,102 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-9 - One draw for effects: the GPU pool, the budgets, fixed light keys, uHit, the uCA pulse - 2026-10-28
+Branch `track/vfx` (it held main and PR #290's branch when the step began; main then moved 246 commits, #279, #283,
+#302, and was merged in mid-step, c0470e76). Run under the owner's standing instruction (2026-10-28): no Plan Mode,
+the plan written here, recommended options taken and listed below. Draft PR #295 updated. Per main's CLAUDE.md
+(updated by #283) sessions no longer ask for per-session tags; `vfx-9-done` would sit on this entry's commit.
+- The plan: measure first (a `--measure` mode for the film tool, run on the old build in a worktree); then, one cause
+  per commit, the pool and its atlas with every particle kind but the bot parts' pictures, the budgets, fixed light
+  keys and the effect light budget, the rig's flash on the GPU, the chromatic pulse, the effects' own random stream;
+  merge main (it moved); measure after, side by side with the old build; films and contact sheets; the full check.
+- Changed:
+  - game/js/walk/battle-fx.js (new; both pages load it after walk/effects.js): `battleFxPass`, one instanced quad
+    (copied from `weatherBatch`) over one atlas: icons.png's 119 cells packed with `kitPack` (128 px wide) plus a
+    white block for the flat kinds, uploaded through `gpuTexture` and again on a new context (`gpuState.gen`), the
+    program in walk-view-gl.js's warm-up list. Kinds: sprite (an icon), square (dust, motes), ring (whole stage pixels
+    at its depth: z/170 m a cell; a ground ring lies on the ground), beam (a strip across the line of sight, white
+    core). Draw 1, cutout: discard or keep, depth written, no sorting, alpha 0 out (no ink outline), a fade is erosion
+    against a 4x4 Bayer pattern on the effect's own texels (screen pixels for squares and beams); lit (ambient, sun,
+    point lights) unless glowing, fogged. Draw 2, only when something glows: the white cores (texels whose darkest
+    channel is over .75, beam cores, glowing squares) added at .6 in HDR, so the bloom catches them.
+  - battle-3d.js lists every particle for it (`fx`, in walk-scene metres); battle-stage.js's 2D canvas now draws only
+    a bot's dropped part (a picture), the selection and target rings and the catch ring, as before. walk/effects.js
+    calls the pass inside the effects pass where the icons' loop was (see Risky). GPU counters: a `battleFx` tag.
+  - Budgets (battle-stage.js `PARTICLE_BUDGET`, `BURST_BUDGET`): 256 / 160 / 96 / 48 alive by `battleStage.q.lvl`,
+    bursts 24 / 16 / 10 / 6, ambient life (tagged `amb`) only while under a quarter of the pool; a move's particle
+    over the budget takes the oldest ambient one's place, else it isn't made (was: ambient stopped at 220 in all).
+  - Fixed light keys (battle-3d.js, walk/lighting.js keeps a given `kind`): the selection 0, an Alpha's light and its
+    shield 1-4, the thrown pyramid 5, effect lights 8-10 from a pool (a particle keeps its key while it shines).
+    Effect lights: glowing move particles with a colour, newest first, 3 / 2 / 1 / 0 by quality, 2 on a phone, and 6
+    battle lights in all.
+  - `uHit` (walk/walk-shaders.js sprite fragment shader, after the light and vRip, before fog; spriteI has the same
+    text, unset): battle-3d.js `battle3dHit` folds a Billie's `white` and `dark` into one colour and amount; a
+    flashing rig draws on the plain sprite program (walk/sprites.js); actorBuffer no longer tints the canvas and
+    white/dark left the rig's frame key. The limiter's held-back sprite flash (s.white) shows through it.
+  - The chromatic flash: `battleStage.ca` (real time, 160 ms) read by battle-3d.js as `caPulse`, applied in the grade
+    pass (engine/post-effects.js `uCAP`: red and blue 2 CSS px apart across the picture, as the CSS drop-shadows
+    were); the `#camWorld.ca` rule is gone. Guard: none under Reduced motion or with Flashes off (main's SY-1 rule).
+  - Effects' random numbers: `battleFxSeed` (logic/rng.js `rngFn`) from the move, its sides and the event's place in
+    the battle, set by battleAnimPlay; the runner's dust, lobs, flings and jitter and hitFx's bursts read it. Ambient
+    life keeps util.js random; never `b.rng`.
+  - The merge with main: battleStageFlash runs SY-1's `flashFor` first, then the VFX-8 gate on F (as agreed); the
+    runner's type colour and beam follow main's TYPE_GLOW (main had moved the old case 'move' to it).
+  - tools/look-battle-anims.py: `--measure` (effects draws a frame, the `battleFx` tag, rigStats, time a frame with
+    gl.finish, against the stage at rest), `--outcomes=`, `--sides=`, sheets with the menu, ticker and plates hidden
+    (they covered most of the stage).
+- Where the track file was wrong or vague (checked in the code):
+  - "a hit flash bakes white or dark into the canvas ... so a tweened flash redraws and uploads every frame": hitFx
+    never sets `white` or `dark`. The tinted flashes are send-out, the boss's join, recall, heal, a status starting,
+    the wild intro's dark silhouette and the limiter's held flash. So most moves had no flash redraws to save; the super crits (held flash) did.
+  - Line numbers had moved: `battleStageFlash` BS 604 (not 1228's neighbourhood), actorBuffer's key 1310, drawParticles
+    1371, addParticle 1589, the icons' GL loop FX 787-808 (right), lighting.js `l.kind = i` 330 (not 326-332), the
+    grade pass's `uCA` PE 297 and 731 (right), the sprite fragment shader WS 181-213, the warm-up list WVG 329-345.
+  - icons.png holds 119 cells, all 12 x 11 px or smaller: the atlas is 128 px wide.
+  - The near Billie isn't in the film tool's frames (the camera frames the foe); both builds alike.
+- Decided for the owner, to review:
+  - Bloom and the old soft glow: the icons were drawn additive at 1.6 over everything (a warm haze in bloom); now they
+    are cut out at their own colour and only their white cores add (.6). Crisper and in the art rules (hard edges, no
+    soft glows), but less glow on dark stages: judge on the phone. Depth of field now reads each particle's own depth
+    (they write depth), so a near spark blurs as the near Billie does. The impact frame's two-tone covers them too (it
+    tones the whole picture). Kept all three.
+  - The white flash on a rig is after the light (always pure white, even in shade); the dark flash likewise.
+  - Ring and beam widths: a ground ring 2 stage pixels, an air ring 1, a beam `w`/30 m (3 px at 30 px/m); squares
+    0.6 x size / 30 m.
+  - Effect lights: ambient glows (motes) never light; at most 2 on phones as the budget says.
+  - The selection, target and catch rings stay 2D (UI markers; VFX-11 or VFX-16 can move them).
+  - The effects' random stream is seeded per event, so the same move from the same place in a battle looks the same.
+- Measurements (headless, software GPU; before = e904ad77 in a worktree, after = this branch, run side by side):
+  - Effects pass draws a frame, the most while a move plays: before 97-111 (the stage at rest 86-88: a move added
+    9-23), after 90 (rest 87-89: the move's effects are 2 draws, the `battleFx` tag's maximum in every film). Mean
+    over 9 films (overload, deepdrill, tos; hit, super, super crit): 102.7 -> 90.0. Within the 3-draw budget.
+  - Rig redraws a 70-frame film (rigStats): unchanged where nothing flashes (10-21); super crits 29 -> 15 (overload)
+    and 33 -> 20 (deepdrill); mean over 9 films 18.1 -> 15.1 redraws, 1159 -> 967 KB uploaded.
+  - Time a frame during a move (stage and renderer tasks plus gl.finish; overload and deepdrill, super and super crit):
+    before 1878 ms mean, 5394 p90; after 1019 ms, 3848 p90. Not worse; software rendering, so only the direction
+    counts. The Graphics bench was not run: headless its numbers mean nothing (graphics-bench-test.js says so): phone.
+- Risky:
+  - Drawn as the last thing before the post pass (walk-view-gl.js, after effectsPass), the pool's draw spoiled the
+    reflection and shadow maps that the next frame reuses on the slow quality steps (QE >= 2: every other frame):
+    white sky reflections over the ground and Billies, a dark blob. Bisected to the draw call itself (even with every
+    pixel discarded); the GL state after it was the same as without it. Drawn inside the effects pass before its
+    glows, every frame was clean. Not understood: if the phone shows white patches or a stray shadow in battle, look
+    here first (debug: films with `--sheets`).
+  - CI's smoke time and the frame-rate-bound steps: see Verified.
+- Phone checks (listed, not waited for): the rings and dust sitting in the scene (hidden behind things, fogged, lit);
+  a super-effective crit's held flash on the target (white, through uHit); a beam move (Overload, Headline); frame
+  time in a battle with a big move (no slower than before); glow on a dark stage (enough?); no white patches.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build after each change and on each commit's
+  own state (each commit's files rebuilt in a scratch worktree and checked); `npm test` 1641 of 1642 after the merge
+  (the run-map-checks timing test, "1,000 maps in under a second", fails only inside the parallel run in this
+  container and passes alone, before and after my changes). Smoke: no problems (401 s) on the merged head. Films:
+  contact sheets of tos, overload and deepdrill (super, super crit, both sides) before and after; the battle-anims
+  tests keep every move's {dur, hit} (no move is longer; `maxMs` untouched). The golden record untouched (the engine
+  isn't changed). Sound files untouched (no message to the sound track needed). Full quick check: running on this
+  commit; its result follows in the next commit.
+- Next: VFX-10 (effect art), started by the planning session. It adds the strips to battle-fx.js's atlas (pack them
+  after the icons in `battleFxAtlasSheet`) and the ramps; the families stay `legacy_*` until VFX-11.
+
 ### VFX track VFX-8 - Anims as data: battleAnims.json, the resolver, the runner, the tap that skips - 2026-10-28
 Branch `track/vfx` (main was already in; `ccr-7526d712-gliikp`, PR #290, merged in: clean). Run under the owner's
 standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below.
