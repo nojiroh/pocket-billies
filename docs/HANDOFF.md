@@ -104,7 +104,10 @@ track needed); nothing the style track owns touched.
   Battle music); route trainers, Granny Juniper and the phone step's walk-screen piece count failed in mine and passed
   when rerun (3 of 3 in 206 s): flaky under load, not mine. Battle music passed in mine. CI on the head: lint and
   rules green; smoke red only on the Studio's world map look and Camera section (game/art/billionaires 404s; main's
-  known reds; commented on #313). The in-game full test (25 min) not run: its first step passes in every smoke run.
+  known reds; commented on #313). CI on the final head 6d370b5e (run 40727189243): lint and rules green; smoke cancelled
+  at its 30-minute limit with nearly every step run; its only problem was "Camera follow (CAM-1): the page stopped
+  drawing", which VFX-10 found the same on track/vfx 868e6f30 and which passes alone there and on main (it never
+  enters a battle). The Studio steps, the battle, the Voltron and the run's world passed. The in-game full test (25 min) not run: its first step passes in every smoke run.
   The look tool films with the shared outcome function (overload, 16 films, no errors).
 - Next: the planning session merges this into `track/vfx` (it holds track/vfx up to VFX-10's end, 05cfe7d8). The ramps and
   cells panes only read; editing them (and an Edit pixels link per strip) is for a later main-line step. Later
