@@ -23,7 +23,7 @@
    list (RL-11 building levels; RL-13: the run's Expedition and challenges, logic/modifiers.js; RS-4: residents').
    Logic only: no DOM, no Date, no Math.random (tools/test/effects.test.mjs). */
 /** @import { FxRow, Perk } from '../../types/game-data' */
-/** @typedef {FxRow & { src: string }} Fx */
+/** @typedef {FxRow & { src: string, row?: number }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { RELATIONS, RESIDENTS, billyGeneFx, provide } from '../hooks.js';
@@ -33,13 +33,31 @@ import { resFxRows } from './residents.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
+  FX_EVERY: [() => FX_EVERY],
+  FX_FOES: [() => FX_FOES],
+  FX_IF_KEYS: [() => FX_IF_KEYS],
+  FX_IF_WORDS: [() => FX_IF_WORDS],
   FX_KINDS: [() => FX_KINDS],
   FX_LIMIT: [() => FX_LIMIT],
+  FX_ONCE: [() => FX_ONCE],
+  FX_PER: [() => FX_PER],
+  FX_SAY: [() => FX_SAY],
   FX_STAGES: [() => FX_STAGES],
+  FX_WHEN: [() => FX_WHEN],
+  FX_WHEN_BATTLE: [() => FX_WHEN_BATTLE],
+  fxAt: [() => fxAt],
   fxCatch: [() => fxCatch],
   // @ts-expect-error -- replaced on purpose
+  fxCond: [() => fxCond, v => (fxCond = v)],
+  // @ts-expect-error -- replaced on purpose
   fxDamage: [() => fxDamage, v => (fxDamage = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxFire: [() => fxFire, v => (fxFire = v)],
   fxHealShare: [() => fxHealShare],
+  fxIfs: [() => fxIfs],
+  fxKey: [() => fxKey],
+  // @ts-expect-error -- replaced on purpose
+  fxLive: [() => fxLive, v => (fxLive = v)],
   fxMoney: [() => fxMoney],
   // @ts-expect-error -- replaced on purpose
   fxMult: [() => fxMult, v => (fxMult = v)],
@@ -47,16 +65,27 @@ expose({
   fxOfRun: [() => fxOfRun],
   // @ts-expect-error -- replaced on purpose
   fxPayoutRates: [() => fxPayoutRates, v => (fxPayoutRates = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxPeek: [() => fxPeek, v => (fxPeek = v)],
   fxPinchHeal: [() => fxPinchHeal],
   fxPrice: [() => fxPrice],
+  // @ts-expect-error -- replaced on purpose
+  fxRowNow: [() => fxRowNow, v => (fxRowNow = v)],
   fxRows: [() => fxRows],
+  fxRunMarks: [() => fxRunMarks],
   fxRunPrice: [() => fxRunPrice],
+  // @ts-expect-error -- replaced on purpose
+  fxSpend: [() => fxSpend, v => (fxSpend = v)],
   fxSplice: [() => fxSplice],
   // @ts-expect-error -- replaced on purpose
   fxStages: [() => fxStages, v => (fxStages = v)],
+  fxStateful: [() => fxStateful],
   fxTurnHeal: [() => fxTurnHeal],
   fxTurnHurt: [() => fxTurnHurt],
   fxXp: [() => fxXp],
+  growClamp: [() => growClamp],
+  mark: [() => mark],
+  runMarks: [() => runMarks],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -105,7 +134,15 @@ export const fxOfRun = (run, perks) => {
         .../** @type {Fx[]} */ (resFxRows(/** @type {any} */ (run), RESIDENTS)),
       ]
     : [];
-  return rows.length ? rows : null;
+  if (!rows.length) return null;
+  /* PK-1: a row that keeps state (a counter, a growth, a once mark) knows its place among its source's rows */
+  /** @type {Record<string, number>} */
+  const at = {};
+  return rows.map(f => {
+    const row = (at[f.src] = (at[f.src] ?? -1) + 1),
+      r = /** @type {any} */ (f);
+    return r.every || r.grow || r.once ? /** @type {Fx} */ ({ ...f, row }) : f;
+  });
 };
 provide({ fxOfRun }); /* to-module */
 
@@ -242,3 +279,215 @@ export const fxPinchHeal = fx => {
   const f = (fx || []).find(r => r.kind === 'pinchHeal');
   return f && f.kind === 'pinchHeal' ? { at: f.at, share: f.share } : null;
 };
+
+/* ---------- PK-1: when a row acts, on what condition, how often, how it grows (perks-track.md section 7) ----------
+   Optional fields on any effect row, from fixed lists (data-checks.js checks them; no script language):
+     when   the moment it acts (FX_WHEN). Without one a row acts where its kind always acts (a stat row as each of
+            your Billies takes the field, a heal row on walking into a place, a damage row on every hit...)
+     if     one condition or a list of them, all of which must hold (fxCond)
+     every  N: it acts on every Nth time its `when` comes (the count lasts the run)
+     grow   {on, by, max, reset?, if?}: a value that builds by `by` each time `on` comes (up to `max`, back to 0 at
+            `reset`) and is added to the row's number (mult, stages, share or n)
+     per    'teamTypes': its number counts once for each different type on your team ("3% for each")
+     once   'battle', 'run' or 'billie' (once a battle for each of your Billies)
+   State: the run's counters, growth and once-a-run marks are run.perkState ({'<src>/<row>': {n, v, used}}, missing
+   reads as empty); once-a-battle and per-Billie marks are the battle's own (b.fxState). Chances are rolled by the
+   caller on the battle's seeded stream. A row with none of these fields reads exactly as before. */
+/** the moments a row can act at: in battle (battleStart .. throwMiss), then on the run */
+export const FX_WHEN = /** @type {const} */ ([
+  'battleStart',
+  'switchIn',
+  'move',
+  'hit',
+  'hurt',
+  'crit',
+  'ko',
+  'faint',
+  'turnEnd',
+  'throwMiss',
+  'catch',
+  'win',
+  'arrive',
+  'buy',
+  'take',
+]);
+/** the moments that happen inside a battle (the battle's own marks exist there) */
+export const FX_WHEN_BATTLE = FX_WHEN.slice(0, 10);
+export const FX_ONCE = /** @type {const} */ (['battle', 'run', 'billie']);
+export const FX_PER = /** @type {const} */ (['teamTypes']);
+/** what a foe can be, for `if: foe:<k>` */
+export const FX_FOES = /** @type {const} */ (['wild', 'trainer', 'leader', 'rival', 'boss', 'bot', 'spliced']);
+/** the condition words with nothing after them */
+export const FX_IF_WORDS = /** @type {const} */ ([
+  'mono',
+  'alone',
+  'lead',
+  'notLead',
+  'newSpecies',
+  'superEffective',
+  'noFaint',
+]);
+/** the condition words with a value after a colon ('hp<' takes a share instead) */
+export const FX_IF_KEYS = /** @type {const} */ (['weather', 'type', 'team', 'foe', 'turn', 'place', 'cat']);
+/** the most `every` can be, and the longest line a Perk says */
+export const FX_EVERY = 99;
+export const FX_SAY = 40;
+
+/**
+ * @typedef {{ weather?: string, type?: string[], team?: string[][], lead?: boolean, alone?: boolean, hp?: number,
+ *   foe?: string[], turn?: number, newSpecies?: boolean, place?: string, superEffective?: boolean, noFaint?: boolean,
+ *   cat?: string, uid?: string }} FxCtx what a moment knows: the weather, the acting Billie's types, every type list
+ *   on your team, whether it leads or stands alone, its share of HP, what the foe is, the turn, ...
+ * @typedef {Record<string, { n?: number, v?: number, used?: 1, by?: string[] }>} FxMarks
+ * @typedef {{ run?: FxMarks | null, battle?: FxMarks | null }} FxState the run's marks and the battle's
+ */
+
+/** a row's place in the state: its source and its row number there @param {any} f */
+export const fxKey = f => `${f.src}/${f.row || 0}`;
+/** a row's (or a grow's) conditions as a list @param {{ if?: string | string[] }} f @returns {string[]} */
+export const fxIfs = f => (f.if == null ? [] : Array.isArray(f.if) ? f.if : [f.if]);
+
+/** does one condition hold? A thing the moment doesn't know makes it false @param {string} c @param {FxCtx} ctx */
+export function fxCond(c, ctx) {
+  if (c.startsWith('hp<')) return ctx.hp != null && ctx.hp < Number(c.slice(3));
+  const i = c.indexOf(':'),
+    k = i < 0 ? c : c.slice(0, i),
+    any = i < 0 ? [] : c.slice(i + 1).split('|'),
+    team = ctx.team;
+  switch (k) {
+    case 'weather':
+      return ctx.weather != null && any.includes(ctx.weather);
+    case 'type':
+      return !!ctx.type && any.some(t => /** @type {string[]} */ (ctx.type).includes(t));
+    case 'team':
+      return !!team && team.some(ty => any.some(t => ty.includes(t)));
+    case 'mono':
+      return !!team && team.length > 0 && team[0].some(t => team.every(ty => ty.includes(t)));
+    case 'alone':
+    case 'lead':
+    case 'newSpecies':
+    case 'superEffective':
+    case 'noFaint':
+      return ctx[k] === true;
+    case 'notLead':
+      return ctx.lead === false;
+    case 'foe':
+      return !!ctx.foe && any.some(t => /** @type {string[]} */ (ctx.foe).includes(t));
+    case 'turn':
+      return ctx.turn != null && any.some(n => Number(n) === ctx.turn);
+    case 'place':
+      return ctx.place != null && any.includes(ctx.place);
+    case 'cat':
+      return ctx.cat != null && any.includes(ctx.cat);
+  }
+  return false;
+}
+
+/** the marks the run's counters live in (the battle's when there is no run) @param {FxState} st */
+export const runMarks = st => st.run || st.battle || null;
+/** a mark, made when first written @param {FxMarks} o @param {string} key */
+export const mark = (o, key) => o[key] || (o[key] = {});
+
+/** may this row act now: its conditions hold and its once mark is not spent @param {any} f @param {FxCtx} ctx
+ * @param {FxState} st */
+export function fxLive(f, ctx, st) {
+  if (!fxIfs(f).every(c => fxCond(c, ctx))) return false;
+  if (!f.once) return true;
+  const key = fxKey(f),
+    M = f.once === 'run' ? runMarks(st) : st.battle,
+    m = M && M[key];
+  if (!m) return true;
+  return f.once === 'billie' ? !(m.by || []).includes(ctx.uid || '') : !m.used;
+}
+
+/** spend a row's once mark (nothing without one, or without the marks it needs) @param {any} f @param {FxCtx} ctx
+ * @param {FxState} st */
+export function fxSpend(f, ctx, st) {
+  if (!f.once) return;
+  const M = f.once === 'run' ? runMarks(st) : st.battle;
+  if (!M) return;
+  const m = mark(M, fxKey(f));
+  if (f.once === 'billie') m.by = [...(m.by || []), ctx.uid || ''];
+  else m.used = 1;
+}
+
+/** a row with its number as it is now: its growth added, then counted per team type (within FX_LIMIT for a
+ * multiplier); the row itself without grow or per @template {any} F @param {F} f @param {FxCtx} ctx
+ * @param {FxMarks | null | undefined} run the run's marks @returns {F} */
+export function fxRowNow(f, ctx, run) {
+  const r = /** @type {any} */ (f);
+  if (!r.grow && !r.per) return f;
+  const v = r.grow ? ((run && run[fxKey(r)]) || {}).v || 0 : 0,
+    n = r.per === 'teamTypes' ? new Set((ctx.team || []).flat()).size : 1,
+    o = { ...r };
+  if ('mult' in r) o.mult = Math.min(FX_LIMIT.hi, Math.max(FX_LIMIT.lo, 1 + (r.mult + v - 1) * n));
+  if ('stages' in r) o.stages = Math.trunc((r.stages + v) * n);
+  if ('share' in r) o.share = (r.share + v) * n;
+  if ('n' in r) o.n = Math.trunc((r.n + v) * n);
+  return o;
+}
+
+/** the rows that count at a reading point (a kind read where it always acts): those without `when` that may act now,
+ * each with its number as it is now. Nothing is spent @param {any[] | null | undefined} fx @param {FxCtx} ctx
+ * @param {FxState} st @returns {any[]} */
+export const fxAt = (fx, ctx, st) =>
+  (fx || []).filter(f => !f.when && fxLive(f, ctx, st)).map(f => fxRowNow(f, ctx, runMarks(st)));
+
+/** the rows of `when` that would act at its next coming, without counting or spending (a hit's damage is worked out
+ * before the hit lands; fxFire counts it after) @param {any[] | null | undefined} fx @param {string} when
+ * @param {FxCtx} ctx @param {FxState} st @returns {any[]} */
+export function fxPeek(fx, when, ctx, st) {
+  const R = runMarks(st);
+  return (fx || [])
+    .filter(
+      f =>
+        f.when === when && fxLive(f, ctx, st) && (!f.every || ((R && R[fxKey(f)] && R[fxKey(f)].n) || 0) + 1 >= f.every)
+    )
+    .map(f => fxRowNow(f, ctx, R));
+}
+
+/** a grow's value moved by `by`, kept between 0 and its max (a negative max: between max and 0)
+ * @param {number} v @param {number} max */
+export const growClamp = (v, max) => (max >= 0 ? Math.min(max, Math.max(0, v)) : Math.max(max, Math.min(0, v)));
+
+/**
+ * A moment comes: rows that grow on it grow (or reset), rows of that `when` count it (`every`), and those that act
+ * now spend their once marks and are returned, each with its number as it is now. The caller does what each kind
+ * does at that moment. `only` limits it to one source's rows (a Perk taken).
+ * @param {any[] | null | undefined} fx @param {string} when @param {FxCtx} ctx @param {FxState} st
+ * @param {string} [only] @returns {any[]}
+ */
+export function fxFire(fx, when, ctx, st, only) {
+  const out = [],
+    R = runMarks(st);
+  for (const f of fx || []) {
+    if (only != null && f.src !== only) continue;
+    const key = fxKey(f),
+      g = f.grow;
+    if (g && R) {
+      if (g.reset === when) {
+        if (R[key] && R[key].v) R[key].v = 0;
+      } else if (g.on === when && fxIfs(g).every(c => fxCond(c, ctx))) {
+        const m = mark(R, key);
+        m.v = growClamp((m.v || 0) + g.by, g.max);
+      }
+    }
+    if (f.when !== when || !fxLive(f, ctx, st)) continue;
+    if (f.every) {
+      if (!R) continue;
+      const m = mark(R, key);
+      m.n = (m.n || 0) + 1;
+      if (m.n < f.every) continue;
+      m.n = 0;
+    }
+    fxSpend(f, ctx, st);
+    out.push(fxRowNow(f, ctx, R));
+  }
+  return out;
+}
+
+/** does any row keep state (a counter, a growth or a once mark)? @param {any[] | null | undefined} fx */
+export const fxStateful = fx => (fx || []).some(f => f.every || f.grow || f.once);
+
+/** a run's marks (run.perkState), made when first needed @param {any} run @returns {FxMarks} */
+export const fxRunMarks = run => run.perkState || (run.perkState = {});
