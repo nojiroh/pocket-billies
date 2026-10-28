@@ -577,6 +577,9 @@ commit of its own.
   jingles' fingerprints; the next SND step writes this agreement into docs/phases/sound-track.md too.
 - **Shared:** SND-13 will read `hitTier` and `koAhead` from logic/battle-anims.js (VFX-8) for battle intensity
   (turns, KOs, the red zone, a boss's phases) once they are on main (accepted 2026-10-28).
+- **Echo and trim (SND-8b, track/sound):** battle sounds (VFX-19) echo with `echoTo: soundEngine.tracker.echoFx` as
+  heal and seal do (747adc6a); music.json songs now have a `trim` in `$defs.recipe` (the top level is unchanged, so the
+  `battle` section still goes there).
 
 ## Fitting with the style track (found 2026-10-28)
 The style track (docs/phases/style-track.md, PR #279; its planning session `session_019UpAFyAJSkEVjDLuVMFQkS`, steps
@@ -595,12 +598,16 @@ session (2026-10-28):
   and the Flashes-off half of rule 9. VFX-8 adds only the rate limit (at most 3 full-screen flashes in any second,
   333 ms apart, no saturated red), counting the flashes the runner asks for and passing each through `flashFor`; it
   leaves `battleStageFlash`'s settings code to SY-1 (merged from main once #289 or #279 is there).
+  When `flashFor` and the gate meet (whichever session merges #289 or main with it): `flashFor` first, the gate on
+  what it returns: under Reduced motion nothing is shown, sprite-flashed or counted; with Flashes off the gate sees the
+  capped flash (and a held flash's sprite fallback uses F's colour and amount).
 - **Numbers:** SY-2 sizes the damage pops by `hitWeight` and rolls the HP number (the HUD); VFX-13's `hitTier` is
   offered to it. Hit-stop stays this track's (the tier table).
 - **The Bureau:** SY-5 owns its words in battle (the RETRIEVED, VOID, DENIED and PENDING stamps as the kit's
   translatable `pb-stamp`), the Notice of Retrieval in the join intro and the bots' ID plates. This track's Bureau kit
   is only its bots' move effects: paper sprites, square and stamped in, in the red family (#EA5974, the stamps' ink:
-  "one meaning, one colour"), with no drawn words. VFX-16's boss intro shares the join intro's 900 ms with the Notice.
+  "one meaning, one colour"), with no drawn words. VFX-16's boss intro shares the join intro's 2200 ms (`LOCK` 1300 + 900) with SY-5's Notice, a DOM card in the
+  lower middle of the stage from 0 to 1300 ms; the VS splash fits around it.
 - **The sprite shader:** SY-6's `uFoil` (walk-shaders.js ~181 and the instanced ~511) and VFX-9's `uHit` go into the
   same fragment shader; whichever lands second merges main first and keeps both. Both are off under Reduced motion.
 

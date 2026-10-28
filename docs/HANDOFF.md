@@ -62,6 +62,10 @@ Draft PR #295 updated. Tag `vfx-8-done` for the owner (sessions can't push tags)
     (the plates repaint at once).
   - Flashes off is already SY-1's (`flashFor`), but #289 isn't on main yet: the limiter sits in front of
     `battleStageFlash` alone; nothing reads Flashes or Reduced for battle flashes here.
+  - The rule for whichever session merges #289 (or main with it) into track/vfx (agreed with the style track):
+    `battleStageFlash` runs `flashFor` FIRST and `battleFlashGate(F.col, F.a, dur, who)` on what it returns, so under
+    Reduced motion a flash is neither shown, sprite-flashed nor counted, and with Flashes off the gate sees the capped
+    one. Expect a small conflict in battleStageFlash's first lines; keep both.
   - "Effects use their own seeded random numbers": kept as `random()` (util.js, Math.random, never `b.rng`), so the
     films before and after could be equal; the films seed Math.random. A per-event stream belongs with the new art
     (VFX-9/11), when the films change anyway.
