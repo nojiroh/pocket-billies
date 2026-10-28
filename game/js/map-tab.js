@@ -11,12 +11,14 @@ import {
   POOLS,
   RESIDENTS,
   ROADS_BY_NODE,
+  RULES,
   SHOPS,
   gameData,
   locationSubtitle,
   trainersAt,
 } from './game-data.js';
 import { canEnter, canRide, distanceText, gateText, riderName, setTrip, stopTrip, tripTo } from './logic/rules.js';
+import { runForecastDays } from './logic/run-map.js';
 import { RUN_WEATHER_ICONS } from './ui-run-kit.js';
 import { kindChipHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
@@ -72,10 +74,12 @@ function poolStrip(pool) {
   if (!P) return '';
   return `<div class="poolstrip">${P.list.map(([id]) => (saveData.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
 }
-/* RL-7: a run's place's weather for a week from today (its forecast; ui-run-kit.js pb-forecast), today marked */
+/* RL-7: a run's place's weather for a week from today (its forecast; ui-run-kit.js pb-forecast), today marked; PK-4:
+   for as many days as the run shows (rules.json run.clock.ahead and Barometer's days: run-map.js runForecastDays) */
 function runForecastHTML(node) {
   const run = saveData.run,
-    days = ((run && run.forecast[node]) || []).slice(run.clock - 1, run.clock + 6);
+    n = run ? runForecastDays(run, gameData.biomes, RULES.run.clock.ahead) : 0,
+    days = ((run && run.forecast[node]) || []).slice(run.clock - 1, run.clock - 1 + n);
   return days.length
     ? `<pb-forecast class="mc-fc" label="Forecast" items="${escapeHtml(days.map(w => `${w}:${WEATHER_NAMES[w] || w}`).join(','))}" from="${run.clock}" value="${run.clock}"></pb-forecast>`
     : '';

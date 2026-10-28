@@ -70,6 +70,7 @@
      },
      "call": {"description": "the battle's first line ({name})", "type": "string"},
      "join": {"description": "the join intro's line ({name})", "type": "string"},
+     "faction": {"description": "style track SY-5: the factions.json faction it fights for (its look: the join intro's notice, its plate, its stamps)", "type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
      "glow": {"description": "the join intro's glow (else its gem's colour)", "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
      "win": {"description": "the win sheet's line", "type": "string"},
      "rewards": {

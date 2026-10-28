@@ -79,6 +79,7 @@ import {
 import { clamp } from './util.js';
 import { pointInProp, propDoor, turnedBounds, turnedPoint } from './logic/prop-turn.js';
 import { roomDoorPush, roomToLocal } from './logic/room-turn.js';
+import { faceToward, faceWay, faceWord, facingWord } from './logic/person-view.js';
 import { waterKindHeals } from './logic/water-kinds.js';
 import { WADE_COST, wadeDepthAt, wadeHere, wadeKindAt, wadeSpeed, wadeWalkable } from './logic/wading.js';
 import { WATER_HEAL_FLAG, waterHealDue, waterHurt, waterMarshOf, waterReedAt } from './logic/water-play.js';
@@ -246,6 +247,7 @@ expose({
   scaleColor: [() => scaleColor, v => (scaleColor = v)],
   scaledTilePixels: [() => scaledTilePixels, v => (scaledTilePixels = v)],
   screenToGround: [() => screenToGround, v => setScreenToGround(v)],
+  seenYaw: [() => seenYaw, v => (seenYaw = v)],
   sendFolk: [() => sendFolk, v => (sendFolk = v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
   setNavGrid: [() => setNavGrid, v => (setNavGrid = v)],
@@ -3191,6 +3193,8 @@ function surfMount(P, on, quiet) {
   P.surfId = walkView.id;
   P.surfT = walkView.t;
   if (quiet) return;
+  /* SND-10: a splash as you mount or leave (sound.js, soundscape-here.js) */
+  if (typeof soundEffect === 'function') soundEffect('splash', { size: on ? 'surfOn' : 'surfOff' });
   if (typeof debugLog !== 'undefined') debugLog.add('scene', on ? 'surf on' : 'surf off');
   if (!reducedMotion && typeof addRipple === 'function')
     for (let k = 0; k < 3; k++) setTimeout(() => addRipple(P.x, P.z - 0.05, 0.6 + k * 0.4), k * 140);
@@ -3489,7 +3493,7 @@ export function handleWalkClick(ev) {
     if (st.roam) {
       const g = approachPoint(f.x, f.z);
       walkTo(g, () => {
-        P.dir = directionOf(f.x - P.x, f.z - P.z);
+        faceToward(P, f.x - P.x, f.z - P.z);
         talkFolk(f);
       });
     } else talkFolk(f);
@@ -3504,7 +3508,7 @@ export function handleWalkClick(ev) {
         console.error(e);
       }
     walkTo(g, () => {
-      if (h.look) P.dir = directionOf(h.look[0] - P.x, h.look[1] - P.z);
+      if (h.look) faceToward(P, h.look[0] - P.x, h.look[1] - P.z);
       pickHit(h);
     });
     return;
@@ -3536,12 +3540,19 @@ export function walkTo(pt, cb) {
     t: walkView.t,
   };
 }
+/* the word for a way along the ground as a camera at yaw 0 sees it (logic/person-view.js facingWord) */
 export function directionOf(mx, mz) {
-  return Math.abs(mx) > Math.abs(mz) * 1.1 ? (mx > 0 ? 'sideR' : 'side') : mz > 0 ? 'up' : 'down';
+  return facingWord(mx, mz);
+}
+/* CH-1: the camera's turn this frame's people are seen from (walk/camera.js `turn`: its base yaw and your own turn,
+   without the phone's tilt; a look's or a battle's camera, its yaw), radians */
+export function seenYaw() {
+  const C = walkView.C;
+  return C ? (C.turn ?? C.yaw ?? 0) : 0;
 }
 export function turnToPlayer(f) {
   const P = walkView.pl;
-  f.dir = directionOf(P.x - f.x, P.z - f.z);
+  faceToward(f, P.x - f.x, P.z - f.z);
   f.wait = Math.max(f.wait, 3);
 }
 /* phase 08: the player's "Always run" (Settings → Moving about); the Studio has no save */
@@ -3683,7 +3694,7 @@ export function startFallClimb(F) {
     dur: 1.1 + Math.abs(y1 - y0) * 0.22,
     up: true,
     fall: 1,
-    face: directionOf(-dx, -dz),
+    face: [-dx, -dz],
   };
 }
 function stepClimb(dt) {
@@ -3726,7 +3737,9 @@ function stepClimb(dt) {
   P.yv = y;
   P.yId = walkView.id;
   P.walk = 1;
-  P.dir = C.face || (k >= k1 && k < k2 ? 'up' : C.up ? 'up' : 'down');
+  /* CH-1: up a waterfall you face its face; on a ladder its wall (+z, 'up'), and down it going down, as before */
+  if (C.face) faceToward(P, C.face[0], C.face[1]);
+  else faceWay(P, k >= k1 && k < k2 ? 'up' : C.up ? 'up' : 'down');
   P.hop = null;
   if (k >= 1) {
     P.climb = null;
@@ -3837,7 +3850,7 @@ function movePlayer(st, dt) {
       P.z = p[1];
       jumped = true;
       P.fresh = false;
-      P.dir = 'down';
+      faceWord(P, 'down');
     }
     const K = walkView.keys,
       J = walkView.stick;
@@ -3969,7 +3982,7 @@ function movePlayer(st, dt) {
     if (!P.walk && P.wasWalk && walkView.opt.onMove) walkView.opt.onMove(P.x, P.z);
   }
   if (P.walk && !jumped) P.gait = (P.gait || 0) + Math.hypot(P.x - ox, P.z - oz);
-  if (Math.hypot(mx, mz) > 1e-6) P.dir = directionOf(mx, mz);
+  if (Math.hypot(mx, mz) > 1e-6) faceToward(P, mx, mz);
   P.wasWalk = P.walk;
   /* grass rustle and dust */
   P.rust -= dt;
@@ -4131,7 +4144,7 @@ function folkSquareStop(S, f, h) {
   return r == null ? null : squareStopFor(S.stops, T, r);
 }
 function folkFace(f, s) {
-  if (Math.hypot(s.fx - f.x, s.fz - f.z) > 0.05) f.dir = directionOf(s.fx - f.x, s.fz - f.z);
+  if (Math.hypot(s.fx - f.x, s.fz - f.z) > 0.05) faceToward(f, s.fx - f.x, s.fz - f.z);
 }
 function initFolk(n) {
   const sc = walkView.sc,
@@ -4369,7 +4382,7 @@ function stepFolk(dt) {
           dx = tg[0] - f.x,
           dz = tg[1] - f.z,
           d = Math.hypot(dx, dz);
-        if (d > 1e-6) f.dir = directionOf(dx, dz);
+        if (d > 1e-6) faceToward(f, dx, dz);
         if (d <= left) {
           f.x = tg[0];
           f.z = tg[1];

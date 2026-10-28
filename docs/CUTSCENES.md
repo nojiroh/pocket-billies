@@ -42,6 +42,10 @@ Schema: `game/data/schema/cutscene.schema.json`. Types: `CutsceneData` in `game/
 People are named as the script names them: `you`, or a speaker from story.json (`Chosen`, `Kappi`, `Blake`, ...). A place may be
 a spot, someone in the scene (where they stand now), or a place the cutscene names itself (the opening's `starter`).
 
+Which way someone faces (characters track CH-1): the four words `up`, `down`, `side` and `sideR` are on the screen, in
+whatever shot is showing (`down`: toward the camera, `side`: to the left). A walk, or `face Kappi Blake` toward someone or
+a spot, turns them for real in the scene, and each shot then shows the side of them that faces its camera.
+
 | Command | Does | Waits? |
 |---|---|---|
 | `actor Kappi at door down` | puts someone in the scene at a spot, facing up, down, side or sideR | no |

@@ -22,12 +22,12 @@ import { expose } from '../test-globals.js';
 import { FACTIONS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { speciesStep } from './rules.js';
-import { modFoeLevels } from './modifiers.js';
 import { factionBotEntry, factionBotPick, factionOfClass } from './factions.js';
 import { runNodeSeed, runWorldNode } from './run-map.js';
 import { runWildLevels } from './run-scenes.js';
 import { encOf } from './run-enc.js';
-import { perkDraw, perkPool } from './perks.js';
+import { fxRunFoeLevels } from './effects.js';
+import { perkDraw, perkPool, perkWeight } from './perks.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -229,12 +229,14 @@ export function encPickBilly(run, team) {
 }
 
 /** the Perk an event offers: that id (if not held), else drawn by rarity weight from the events stream among those
- * not held (of that rarity when one is given); '' when none is left @param {Run} run @param {string | undefined} arg
- * @param {Record<string, Perk>} perks @param {PerkRules} rule */
-export function encPerk(run, arg, perks, rule) {
+ * not held (of that rarity when one is given); '' when none is left. PK-4: drawn only from those whose needs hold for
+ * the team (its types, perks.js perkTeamOf; an event naming an id gives it anyway) @param {Run} run
+ * @param {string | undefined} arg @param {Record<string, Perk>} perks @param {PerkRules} rule
+ * @param {string[][]} [team] */
+export function encPerk(run, arg, perks, rule, team) {
   if (arg && perks[arg]) return run.perks.includes(arg) ? '' : arg;
-  const pool = perkPool(run, perks, rule).filter(id => !arg || perks[id].rarity === arg);
-  return perkDraw(encRng(run), pool, perks, rule, 1)[0] || '';
+  const pool = perkPool(run, perks, rule, [], team).filter(id => !arg || perks[id].rarity === arg);
+  return perkDraw(encRng(run), pool, perks, rule, 1, id => perkWeight(run, id, perks, rule, team))[0] || '';
 }
 
 /** species to meet at a level: the region's dex (else every species given), the stages that fit the level (a first
@@ -254,7 +256,7 @@ export function encDexAt(run, species, lvl) {
 /** a place's top wild level @param {Run} run @param {number} i @param {{ wild: { lv: [number, number], perRow: number } }} rules */
 export const encPlaceLevel = (run, i, rules) =>
   run.map
-    ? runWildLevels(run.map, i, /** @type {any} */ ({ rules }), modFoeLevels(run))[1]
+    ? runWildLevels(run.map, i, /** @type {any} */ ({ rules }), fxRunFoeLevels(run))[1]
     : Math.max(1, rules.wild.lv[1]);
 
 /**

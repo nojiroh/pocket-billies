@@ -15,19 +15,33 @@
 /** @import { Run, RunMap, SaveData, Billy } from '../../types/save-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { encArrive, fxHealShare, fxOfRun, unlockOpen } from '../hooks.js';
+import {
+  encArrive,
+  fxAt,
+  fxFire,
+  fxHealShare,
+  fxImmune,
+  fxOfRun,
+  fxRunBossHp,
+  fxRunFoeLevels,
+  fxRunMarks,
+  fxStateful,
+  unlockOpen,
+} from '../hooks.js';
 import { BANTER, BOSSES, ITEMS, SPECIES, TRAINERS, typeEffectiveness } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { battleWeatherOf } from './weather.js';
-import { healAll, maxHp, plural, speciesStep } from './rules.js';
+import { billyTypes, healAll, maxHp, plural, speciesStep } from './rules.js';
 import { RIVAL_TRAINER, ghostTeam, rivalTeam } from './rival.js';
-import { modBossHp, modFoeLevels, modHas } from './modifiers.js';
+import { modHas } from './modifiers.js';
 import { resRerolls } from './residents.js';
 import { RUN_DAYS, runHome } from './run-state.js';
-import { runNodeSeed, runWeather, runWorldNode } from './run-map.js';
+import { runMapNode, runNodeSeed, runWeather, runWorldNode } from './run-map.js';
 import { runLeaderPicks, runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
 expose({
+  // @ts-expect-error -- replaced on purpose
+  fxRunCtx: [() => fxRunCtx, v => (fxRunCtx = v)],
   // @ts-expect-error -- replaced on purpose
   runArriveFx: [() => runArriveFx, v => (runArriveFx = v)],
   // @ts-expect-error -- replaced on purpose
@@ -39,6 +53,7 @@ expose({
   runBattleWeather: [() => runBattleWeather, v => (runBattleWeather = v)],
   // @ts-expect-error -- replaced on purpose
   runBossFor: [() => runBossFor, v => (runBossFor = v)],
+  runBuyFx: [() => runBuyFx],
   // @ts-expect-error -- replaced on purpose
   runClinic: [() => runClinic, v => (runClinic = v)],
   runFoeId: [() => runFoeId],
@@ -48,8 +63,12 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runFragileDrop: [() => runFragileDrop, v => (runFragileDrop = v)],
   // @ts-expect-error -- replaced on purpose
+  runFxMoment: [() => runFxMoment, v => (runFxMoment = v)],
+  // @ts-expect-error -- replaced on purpose
   runHealCost: [() => runHealCost, v => (runHealCost = v)],
   runHurt: [() => runHurt],
+  // @ts-expect-error -- replaced on purpose
+  runImmune: [() => runImmune, v => (runImmune = v)],
   runItemPrice: [() => runItemPrice],
   runKept: [() => runKept],
   // @ts-expect-error -- replaced on purpose
@@ -95,14 +114,55 @@ export function runArriveHeal(team, share) {
   }
   return gained;
 }
+/** PK-1: what a moment on the run knows for a row's `if` (logic/effects.js fxCond): your team's types, the place you
+ * stand in (its node type) and its weather today; `more` adds the moment's own (a won battle's foe...)
+ * @param {SaveData} s @param {any} [more] @returns {import('./effects.js').FxCtx} */
+export function fxRunCtx(s, more) {
+  const run = /** @type {Run} */ (s.run),
+    i = runMapNode(s.trip ? s.trip.node : 0),
+    node = run && run.map ? run.map.nodes[i] : null;
+  return {
+    team: s.team.map(m => billyTypes(m)),
+    ...(node ? { place: node.type, weather: runWeather(run, i, run.clock) || 'clear' } : {}),
+    ...more,
+  };
+}
+/**
+ * PK-1: a moment on the run (catch, win, arrive, buy, take): the run's rows of that `when` act (logic/effects.js
+ * fxFire, counting and growing on run.perkState): a heal row heals the team (runArriveHeal). `only`: one Perk's rows
+ * (the one taken). Returns the rows that acted (for the caller's own kinds) and the HP healed.
+ * @param {SaveData} s @param {Record<string, any>} perks @param {string} when @param {any} [more]
+ * @param {string} [only] @returns {{ rows: any[], hp: number }}
+ */
+export function runFxMoment(s, perks, when, more, only) {
+  const fx = s.run ? fxOfRun(s.run, perks) : null;
+  /* nothing of that moment: no marks made */
+  if (!fx || !fx.some(f => f.when === when || (f.grow && (f.grow.on === when || f.grow.reset === when))))
+    return { rows: [], hp: 0 };
+  const rows = fxFire(fx, when, fxRunCtx(s, more), { run: fxRunMarks(s.run) }, only);
+  let hp = 0;
+  for (const f of rows) if (f.kind === 'heal') hp += runArriveHeal(s.team, f.share);
+  return { rows, hp };
+}
+/** PK-3: does the run hold an immune row against `what` (a status an event hands out) that holds for the team here?
+ * @param {SaveData} s @param {Record<string, any>} perks @param {string} what */
+export function runImmune(s, perks, what) {
+  const fx = s.run ? fxOfRun(s.run, perks) : null;
+  return !!fx && fxImmune(fxAt(fx, fxRunCtx(s), { run: s.run && s.run.perkState }), what).length > 0;
+}
+/** PK-1: something bought in a run shop (shop.js, and the run's simulation): the buy moment
+ * @param {SaveData} s @param {Record<string, any>} perks */
+export const runBuyFx = (s, perks) => runFxMoment(s, perks, 'buy');
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
- * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none)
+ * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none). PK-1: the
+ * heal rows whose conditions hold here, then the arrive moment's rows
  * @param {SaveData} s @param {Record<string, any>} perks perks.json */
 export function runArriveFx(s, perks) {
   /* RL-12b: an event's boons count one place down first (logic/run-enc.js) */
   if (s.run) encArrive(s.run);
-  const share = fxHealShare(fxOfRun(s.run, perks));
-  return share ? runArriveHeal(s.team, share) : 0;
+  const fx = fxOfRun(s.run, perks),
+    share = fx ? fxHealShare(fxAt(fx, fxRunCtx(s), { run: s.run && s.run.perkState })) : 0;
+  return (share ? runArriveHeal(s.team, share) : 0) + runFxMoment(s, perks, 'arrive').hp;
 }
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team
  * @param {number} each @returns {{ hurt: number, cost: number }} */
@@ -276,7 +336,7 @@ export function runFoes(run, data) {
         rngFrom(runNodeSeed(run.seed, i), 'team'),
         lead,
         met++,
-        runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + RV.up,
+        runWildLevels(map, i, /** @type {any} */ (data), fxRunFoeLevels(run))[1] + RV.up,
         RV,
         SPECIES,
         (run.region && run.region.dex) || null,
@@ -317,7 +377,7 @@ export function runFoes(run, data) {
         win: `“GG! My ghost will be back stronger.”`,
         lose: `“Not bad for a ghost, right?”`,
         reward: GH.reward,
-        team: ghostTeam(G.party, runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + GH.up),
+        team: ghostTeam(G.party, runWildLevels(map, i, /** @type {any} */ (data), fxRunFoeLevels(run))[1] + GH.up),
         node: runWorldNode(i),
         blocks: false,
         runFoe: 'ghost',
@@ -336,7 +396,7 @@ export function runFoes(run, data) {
     const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
     used.add(T.id);
     const F = data.rules.foes[node.type],
-      top = runWildLevels(map, i, /** @type {any} */ (data), modFoeLevels(run))[1] + F.up,
+      top = runWildLevels(map, i, /** @type {any} */ (data), fxRunFoeLevels(run))[1] + F.up,
       high = Math.max(...T.team.map(e => e.lvl || 1)),
       lv = (/** @type {number} */ l) => Math.max(1, Math.min(100, top - (high - (l || 1)))),
       /* RL-13: the leader's team is built for the run, of its own type (its file's team sets how many and the
@@ -367,7 +427,7 @@ export function runFoes(run, data) {
         blocks: false,
         double: false,
         alpha: true,
-        ...(modBossHp(run) !== 1 ? { hpMult: modBossHp(run) } : {}),
+        ...(fxRunBossHp(run) !== 1 ? { hpMult: fxRunBossHp(run) } : {}),
         boss: bid,
         runFoe: node.type,
         runNode: i,
@@ -390,8 +450,8 @@ export function runFoes(run, data) {
       blocks: !boss,
       double: !boss,
       ...(boss ? { alpha: true } : {}),
-      /* RL-13: the Expedition's boss HP (effects.js modBossHp) */
-      ...(boss && modBossHp(run) !== 1 ? { hpMult: modBossHp(run) } : {}),
+      /* RL-13: the Expedition's boss HP; PK-1: every run row's (effects.js fxRunBossHp) */
+      ...(boss && fxRunBossHp(run) !== 1 ? { hpMult: fxRunBossHp(run) } : {}),
       runFoe: node.type,
       runNode: i,
       from: T.id,
@@ -448,7 +508,8 @@ export function runSheetStatus(run, i, env) {
 }
 /** Studio plan T3.2: what a run battle starts with, on the page (run.js runBattleStart) and in the simulation (logic/
  * run-sim.js): its seed, the place's forecast for today as the battle's weather (clear is sunny: a run has no hour),
- * and the Perks' effect rows when any are held (logic/effects.js fxOfRun: null when none)
+ * and the Perks' effect rows when any are held (logic/effects.js fxOfRun: null when none); PK-1: with a row that keeps
+ * state, the run's marks themselves (run.perkState, made then)
  * @param {Run} run @param {number} i the map node @param {number} k the battle's number in the run
  * @param {any} env rules.json env @param {any[] | null} fx */
 export function runBattleExtra(run, i, k, env, fx) {
@@ -456,6 +517,8 @@ export function runBattleExtra(run, i, k, env, fx) {
     seed: runBattleSeed(run, i, k),
     wx: runBattleWeather(run, i, run.clock, env),
     ...(fx ? { fx } : {}),
+    /* PK-1: the run's own marks (counters, growth, once a run), so the battle's moments count on the run */
+    ...(fx && fxStateful(fx) ? { perkState: fxRunMarks(run) } : {}),
   };
 }
 

@@ -4,6 +4,7 @@ import { pbBurst, pbFloat, typeGlyphHTML } from '../game/js/ui-kit.js';
 import { applyUiTheme } from '../game/js/theme-sheet.js';
 // UI-4: the run parts (pb-day-chip, pb-forecast, pb-node, pb-coin, pb-pick-card, pb-payout, pb-nav-bar; HB-2 pb-loading)
 import { pbNameBanner } from '../game/js/ui-run-kit.js';
+import { caseFile } from '../game/js/logic/case-file.js';
 // UI-14a: the marks (pb-tag, pb-chip, pb-proc, pb-info, pb-rarity)
 import '../game/js/ui-marks-kit.js';
 
@@ -117,13 +118,21 @@ document
   );
 
 // SY-3: the stamps say the data's words (factions.json look.stamps) and its first form number
-const bureauLook = /** @type {any} */ (globalThis).GAMEDATA?.factions?.factions?.bureau?.look;
+const GD = /** @type {any} */ (globalThis).GAMEDATA || {},
+  bureauLook = GD.factions?.factions?.bureau?.look;
 if (bureauLook) {
   document.querySelectorAll('#gStamps pb-stamp').forEach(el => {
     const w = bureauLook.stamps[/** @type {HTMLElement} */ (el).dataset.k];
     if (w) el.setAttribute('word', w);
   });
   document.getElementById('gForm').textContent = bureauLook.forms[0];
+  // SY-4: the case file's form number is the checkpoint's own (logic/case-file.js), its stamp the data's word
+  const C = caseFile('bureau_checkpoint', GD.events?.events?.bureau_checkpoint, GD.factions);
+  if (C) document.querySelectorAll('[data-case="form"]').forEach(el => (el.textContent = C.form));
+  document.querySelectorAll('pb-stamp[data-case]').forEach(el => {
+    const w = bureauLook.stamps[/** @type {HTMLElement} */ (el).dataset.case];
+    if (w) el.setAttribute('word', w);
+  });
 }
 
 // UI-3: the Studio's UI section shows this page in a frame (gallery.html?studio=1, without the bar) and hands it the
