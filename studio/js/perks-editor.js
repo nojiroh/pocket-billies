@@ -41,6 +41,7 @@ import { logicAsk } from './logic-client.js';
 /* eslint-disable no-func-assign */
 expose({
   PERK_KINDS: [() => PERK_KINDS],
+  PERK_PASSIVE_FIELDS: [() => PERK_PASSIVE_FIELDS],
   PERK_RARITIES: [() => PERK_RARITIES],
   PERK_ROW_NEW: [() => PERK_ROW_NEW],
   PERK_WHEN: [() => PERK_WHEN],
@@ -96,6 +97,7 @@ const PERK_KINDS = {
   chip: 'What a burn takes from your Billies at each turn’s end (PK-3)',
   first: 'Your Billies move before the foe’s (PK-3; If turn:1 for the first turn)',
   revive: 'A wiped team gets back up, once (PK-3)',
+  passive: 'A type passive works better for your Billies that have it (PK-4)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -138,6 +140,20 @@ const PERK_ROW_NEW = {
   chip: () => ({ kind: 'chip', what: 'burn', mult: 0.9 }),
   first: () => ({ kind: 'first', if: 'turn:1' }),
   revive: () => ({ kind: 'revive', share: 0.5, once: 'run' }),
+  passive: () => ({ kind: 'passive', passive: 'kindling', rate: 2 }),
+};
+/** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
+const PERK_PASSIVE_FIELDS = {
+  kindling: [['rate', 'Its turns count × (1 to 4)', { min: 1, max: 4, step: 0.5 }]],
+  undertow: [['hp', 'Kicks in at this share of HP or below', { min: 0.01, max: 1, step: 0.01 }]],
+  regrowth: [['mult', 'Heals ×', { min: 1, max: 4, step: 0.25 }]],
+  livewire: [['mult', 'Its critical-hit stages ×', { min: 1, max: 3, step: 1 }]],
+  bedrock: [
+    ['uses', 'Holds on this many times a battle', { min: 1, max: 9, step: 1, opt: 1 }],
+    ['hp', 'From this share of HP up (else full HP)', { min: 0.01, max: 1, step: 0.01, opt: 1 }],
+  ],
+  wildmind: [['rolls', 'Rolls its damage this many times, the best kept', { min: 2, max: 3, step: 1 }]],
+  partingroar: [['stages', 'The next one in also gets stages of', { min: 1, max: 6, step: 1 }]],
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -281,6 +297,26 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       chip: () => [selectField('Which hurt', `${p}.what`, [['burn', 'A burn’s, at each turn’s end']]), mult('Hurt ×')],
       first: () => [`<p class="note">Within a move’s priority, yours act before the foe’s wherever its If holds.</p>`],
       revive: () => [share('Share of HP each gets back up with')],
+      /* PK-4: the passive, then the numbers it takes; slipstream and alloy take a flag */
+      passive: () => [
+        selectField(
+          'Passive',
+          `${p}.passive`,
+          (D.types || [])
+            .filter((/** @type {any} */ t) => t.passive)
+            .map((/** @type {any} */ t) => [t.passive, `${t.passiveName || t.passive} (${t.id})`]),
+          { rr: 1 }
+        ),
+        .../** @type {any} */ (PERK_PASSIVE_FIELDS[f.passive] || []).map(
+          (/** @type {[string, string, any]} */ [key, l, o]) => numberField(l, `${p}.${key}`, o)
+        ),
+        ...(f.passive === 'partingroar' ? [selectField('Stat', `${p}.stat`, stats)] : []),
+        ...(f.passive === 'slipstream'
+          ? ['<p class="note">Every switch of its is free (always: true), not only the first.</p>']
+          : f.passive === 'alloy'
+            ? ['<p class="note">It counts every teammate on its feet (all: true), not only those of its type.</p>']
+            : []),
+      ],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(
     PERK_KINDS

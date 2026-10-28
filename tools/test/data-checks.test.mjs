@@ -460,3 +460,54 @@ test('PK-3: dataPerks and the schema take the battle kit’s kinds and name thei
     );
   }
 });
+
+// PK-4: Wave B's kinds (passive, then weather, benchXp, rule): good rows pass check-data and the schema, planted
+// faults are named
+const PK4_GOOD = [
+  { kind: 'passive', passive: 'kindling', rate: 2 },
+  { kind: 'passive', passive: 'undertow', hp: 0.5 },
+  { kind: 'passive', passive: 'regrowth', mult: 2 },
+  { kind: 'passive', passive: 'livewire', mult: 2 },
+  { kind: 'passive', passive: 'bedrock', uses: 2, hp: 0.75 },
+  { kind: 'passive', passive: 'bedrock', uses: 3 },
+  { kind: 'passive', passive: 'slipstream', always: true },
+  { kind: 'passive', passive: 'wildmind', rolls: 2 },
+  { kind: 'passive', passive: 'alloy', all: true },
+  { kind: 'passive', passive: 'partingroar', stat: 'hus', stages: 1 },
+  { kind: 'passive', passive: 'regrowth', mult: 1.5, if: 'lead' },
+];
+const PK4_BAD = [
+  [{ kind: 'passive', passive: 'overheat', rate: 2 }, 'passive: kindling, undertow'],
+  [{ kind: 'passive', passive: 'kindling' }, 'a kindling row needs rate'],
+  [{ kind: 'passive', passive: 'kindling', rate: 1 }, 'rate: above 1, at most 4'],
+  [{ kind: 'passive', passive: 'kindling', rate: 2, hp: 0.5 }, 'hp: kindling takes rate only'],
+  [{ kind: 'passive', passive: 'regrowth', mult: 0.5 }, 'mult: above 1'],
+  [{ kind: 'passive', passive: 'livewire', mult: 4 }, "Live Wire's stages times this pass 3"],
+  [{ kind: 'passive', passive: 'bedrock' }, 'a bedrock row needs uses or hp'],
+  [{ kind: 'passive', passive: 'bedrock', uses: 12 }, 'uses: a whole number from 1 to 9'],
+  [{ kind: 'passive', passive: 'undertow', hp: 1.5 }, 'hp: a share of HP above 0, at most 1'],
+  [{ kind: 'passive', passive: 'slipstream', always: false }, 'always: true'],
+  [{ kind: 'passive', passive: 'wildmind', rolls: 5 }, 'rolls: 2 or 3'],
+  [{ kind: 'passive', passive: 'partingroar', stat: 'hp', stages: 1 }, 'stat: no stat "hp"'],
+  [{ kind: 'passive', passive: 'partingroar', stat: 'hus' }, 'a partingroar row needs stat and stages'],
+  [{ kind: 'passive', passive: 'kindling', rate: 2, when: 'hit' }, "a passive row can't act at hit"],
+];
+test('PK-4: dataPerks and the schema take Wave B’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK4_GOOD.length; i += 4)
+    D.perks['test_pk4_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK4_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK4_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});

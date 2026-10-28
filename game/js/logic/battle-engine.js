@@ -100,6 +100,7 @@ import {
   fxInflictPick,
   fxLive,
   fxOfBillie,
+  fxPassive,
   fxPeek,
   fxPinchHeal,
   fxSpend,
@@ -213,6 +214,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxMoment: [() => fxMoment, v => (fxMoment = v)],
   fxNames: [() => fxNames],
+  // @ts-expect-error -- replaced on purpose
+  fxPassiveOf: [() => fxPassiveOf, v => (fxPassiveOf = v)],
   // @ts-expect-error -- replaced on purpose
   fxRevive: [() => fxRevive, v => (fxRevive = v)],
   // @ts-expect-error -- replaced on purpose
@@ -366,8 +369,11 @@ export function effectiveStat(k, s2) {
   x *= stageFactor(s);
   if (s2 === 'lev') {
     if (m.status === 'brn') x *= 0.5;
-    if (hasPassive(actorTypes(k), 'kindling'))
-      x *= 1 + BATTLE_RULES.kindlingBoost * Math.min(BATTLE_RULES.kindlingTurns, v.turnsIn);
+    if (hasPassive(actorTypes(k), 'kindling')) {
+      /* PK-4: a passive row (Bellows) counts a turn in battle `rate` times over, up to the same top */
+      const kp = fxPassiveOf(k, 'kindling');
+      x *= 1 + BATTLE_RULES.kindlingBoost * Math.min(BATTLE_RULES.kindlingTurns, v.turnsIn * ((kp && kp.rate) || 1));
+    }
   }
   if (s2 === 'hus' && m.status === 'par') x *= 0.5;
   /* phase 17: a robot with broken legs is slow */
@@ -447,29 +453,42 @@ export function calcDamage(k, tk, mid, src) {
      roll is still made, so the battle's stream is the same) */
   const fxc =
     !src && battleNow().fx && ACTOR_SIDE[k] === 0 ? fxCrit(fxAt(battleNow().fx, fxBattleCtx(k), fxBattleState())) : 0;
-  const cs = (fx.crit || 0) + (hasPassive(aty, 'livewire') ? BATTLE_RULES.liveWireCrit : 0) + fxc;
+  /* PK-4: passive rows of yours (Static Socks, Mood Ring, Union Card, Snorkel: fxPassiveOf) */
+  const pas = (/** @type {string} */ id) => (!src && hasPassive(aty, id) ? fxPassiveOf(k, id) : null),
+    lw = pas('livewire');
+  const cs =
+    (fx.crit || 0) +
+    (hasPassive(aty, 'livewire') ? Math.round(BATTLE_RULES.liveWireCrit * ((lw && lw.mult) || 1)) : 0) +
+    fxc;
   const crit =
     !src &&
     (battleRoll() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)] ||
       battleNow().fxCritK === k);
-  const roll = hasPassive(aty, 'wildmind')
-    ? BATTLE_RULES.wildMindRollMin + battleRoll() * (BATTLE_RULES.wildMindRollMax - BATTLE_RULES.wildMindRollMin)
-    : BATTLE_RULES.rollMin + battleRoll() * (1 - BATTLE_RULES.rollMin);
+  const wm = pas('wildmind'),
+    wild = () =>
+      BATTLE_RULES.wildMindRollMin + battleRoll() * (BATTLE_RULES.wildMindRollMax - BATTLE_RULES.wildMindRollMin);
+  let roll = hasPassive(aty, 'wildmind') ? wild() : BATTLE_RULES.rollMin + battleRoll() * (1 - BATTLE_RULES.rollMin);
+  /* PK-4: Wild Mind rolled `rolls` times, the best kept */
+  if (wm && wm.rolls) for (let i = 1; i < wm.rolls; i++) roll = Math.max(roll, wild());
   const mk = battleNow().market && M.t === BATTLE_RULES.shockType ? BATTLE_RULES.oilShockMult : 1;
   let eco = 1;
   if (!src) {
     const syn = aty.filter(t => PASSIVE[t] === 'alloy');
     if (syn.length) {
       const sd = battleNow().sides[ACTOR_SIDE[k]],
-        me = fighter(k);
+        me = fighter(k),
+        /* PK-4: a passive row (Union Card) counts every teammate on its feet */
+        al = pas('alloy'),
+        all = !!(al && al.all);
       eco =
         1 +
         BATTLE_RULES.alloyBoost *
-          sd.team.filter(m => m !== me && m.hp > 0 && billyTypes(m).some(t => syn.includes(t))).length;
+          sd.team.filter(m => m !== me && m.hp > 0 && (all || billyTypes(m).some(t => syn.includes(t)))).length;
     }
   }
   /* RF-3 Undertow (Water): its moves of a type with Undertow hit harder at a third of its HP or less */
-  const low = !src && fighter(k).hp <= maxHp(fighter(k)) * BATTLE_RULES.undertowHp,
+  const ut = pas('undertow'),
+    low = !src && fighter(k).hp <= maxHp(fighter(k)) * Math.max(BATTLE_RULES.undertowHp, (ut && ut.hp) || 0),
     tow = low && PASSIVE[M.t] === 'undertow' && aty.includes(M.t) ? BATTLE_RULES.undertowMult : 1;
   const wx = battleHost().weather(M.t); /* v28: the weather where you stand */
   /* phase 17: a robot's move of its gem's type hits harder */
@@ -502,8 +521,11 @@ export function bedrockHolds(tk, r) {
     sd = battleNow().sides[ACTOR_SIDE[tk]],
     at = fieldSlot(tk).act,
     mx = maxHp(t);
-  if (r.dmg < t.hp || t.hp < mx || mx < 2 || !hasPassive(actorTypes(tk), 'bedrock')) return false;
-  if ((sd.held || (sd.held = [])).includes(at)) return false;
+  if (r.dmg < t.hp || mx < 2 || !hasPassive(actorTypes(tk), 'bedrock')) return false;
+  /* PK-4: a passive row (Knee Pads) lets it hold `uses` times a battle, from `hp` of its HP up */
+  const bp = fxPassiveOf(tk, 'bedrock');
+  if (bp && bp.hp != null ? t.hp < mx * bp.hp : t.hp < mx) return false;
+  if ((sd.held || (sd.held = [])).filter(q => q === at).length >= ((bp && bp.uses) || 1)) return false;
   sd.held.push(at);
   r.dmg = t.hp - 1;
   return true;
@@ -830,7 +852,9 @@ export function endTurn() {
       });
     }
     if (m.hp > 0 && hasPassive(ty, 'regrowth') && m.hp < mx) {
-      const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx / fr)));
+      /* PK-4: a passive row (Watering Can) heals `mult` times as much */
+      const rg = fxPassiveOf(k, 'regrowth'),
+        g = Math.min(mx - m.hp, Math.max(1, Math.floor(rg && rg.mult ? (mx * rg.mult) / fr : mx / fr)));
       m.hp += g;
       battleSay(`${billyName(m)}’s ${passiveName(ty, 'regrowth')} restored a little HP.`, { k: 'heal', si: k, amt: g });
     }
@@ -957,9 +981,12 @@ export function heldStages(k) {
 export function inherit(k) {
   const ty = billyTypes(fighter(k));
   if (!hasPassive(ty, 'partingroar')) return;
+  /* PK-4: a passive row (Heirloom Locket) adds its stages too */
+  const pr = fxPassiveOf(k, 'partingroar');
   battleNow().sides[ACTOR_SIDE[k]].roar = {
     lev: 1,
     lob: 1,
+    ...(pr && pr.up ? { up: pr.up } : {}),
     from: billyName(fighter(k)),
     name: passiveName(ty, 'partingroar'),
   };
@@ -1012,6 +1039,8 @@ export function doSwitch(k, idx, b) {
     if (roar) {
       f.v.st.lev += roar.lev;
       f.v.st.lob += roar.lob;
+      for (const s2 of Object.keys(roar.up || {}))
+        f.v.st[s2] = clamp((f.v.st[s2] || 0) + roar.up[s2], -BATTLE_RULES.stageMax, BATTLE_RULES.stageMax);
       battleSay(`${roar.from}’s ${roar.name} fired up ${billyName(m)}!`, { k: 'stat', si: k, up: true });
     }
   });
@@ -1535,6 +1564,15 @@ export function fxImmuneTo(k, what) {
   if (!b || !b.fx || ACTOR_SIDE[k] !== 0 || !fighter(k)) return [];
   return fxImmune(fxAt(b.fx, fxBattleCtx(k), fxBattleState(b)), what);
 }
+/** PK-4: the run's passive rows for type passive `id` that hold for one of yours, merged into their numbers
+ * (effects.js fxPassive); null for a foe, without such a row, or with no Perks (the passive as before)
+ * @param {number} k @param {string} id */
+export function fxPassiveOf(k, id) {
+  const b = battleNow();
+  if (!b || !b.fx || ACTOR_SIDE[k] !== 0 || !fighter(k) || !b.fx.some(f => f.kind === 'passive' && f.passive === id))
+    return null;
+  return fxPassive(fxAt(b.fx, fxBattleCtx(k), fxBattleState(b)), id);
+}
 /** PK-3: a status kept off one of yours by the run's immune rows, with its line ("Oven Mitts kept Emberox from being
  * burned."); false when nothing keeps it off @param {number} k @param {string} st */
 export function fxImmuneSay(k, st) {
@@ -1769,7 +1807,9 @@ export function runTurn(plan, b) {
     for (const p of plan.filter(p => p.k === 'switch')) {
       const out = fighter(p.who);
       if (!out) continue;
-      const free = hasPassive(actorTypes(p.who), 'slipstream') && !battleNow().sides[0].slipstream;
+      /* PK-4: a passive row (Kite) makes every switch free, not only the first */
+      const ss = hasPassive(actorTypes(p.who), 'slipstream') ? fxPassiveOf(p.who, 'slipstream') : null,
+        free = hasPassive(actorTypes(p.who), 'slipstream') && (!battleNow().sides[0].slipstream || !!(ss && ss.always));
       if (free) battleNow().sides[0].slipstream = true;
       battleSay(
         free

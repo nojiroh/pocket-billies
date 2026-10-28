@@ -51,6 +51,7 @@ import {
   FX_KINDS,
   FX_LIMIT,
   FX_ONCE,
+  FX_PASSIVE_KEYS,
   FX_PER,
   FX_SAY,
   FX_STAGES,
@@ -65,6 +66,7 @@ import { svgProblem } from './svg-pixels.js';
 /* eslint-disable no-func-assign */
 expose({
   FX_ONCE_KINDS: [() => FX_ONCE_KINDS],
+  FX_PASSIVE_ALL: [() => FX_PASSIVE_ALL],
   FX_PLAIN: [() => FX_PLAIN],
   FX_TIMING: [() => FX_TIMING],
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
@@ -164,6 +166,8 @@ expose({
   fxCondProblem: [() => fxCondProblem, v => (fxCondProblem = v)],
   // @ts-expect-error -- replaced on purpose
   fxKindProblems: [() => fxKindProblems, v => (fxKindProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxPassiveProblems: [() => fxPassiveProblems, v => (fxPassiveProblems = v)],
   // @ts-expect-error -- replaced on purpose
   fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2035,6 +2039,41 @@ export function fxKindProblems(f, at, D, problem) {
     if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
       problem(`${at}.share: a share of HP above 0, at most 1`);
     if (!['battle', 'run'].includes(f.once)) problem(`${at}.once: a revive row needs once (battle or run)`);
+  }
+  if (f.kind === 'passive') fxPassiveProblems(f, at, D, problem);
+}
+/** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
+export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
+/** PK-4: a passive row: a passive one of types.json's types has, only the numbers that passive takes, and enough of
+ * them to change it @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
+export function fxPassiveProblems(f, at, D, problem) {
+  const K = /** @type {Record<string, readonly string[]>} */ (FX_PASSIVE_KEYS),
+    own = K[f.passive],
+    had = (D.types || []).map((/** @type {any} */ t) => t.passive).filter(Boolean);
+  if (!own) return problem(`${at}.passive: ${Object.keys(K).join(', ')} (effects.js FX_PASSIVE_KEYS)`);
+  if (!had.includes(f.passive)) problem(`${at}.passive: no type has ${f.passive} (types.json passive)`);
+  for (const k of FX_PASSIVE_ALL)
+    if (k in f && !own.includes(k)) problem(`${at}.${k}: ${f.passive} takes ${own.join(' and ')} only`);
+  const need = f.passive === 'bedrock' ? own.filter(k => k in f).length > 0 : own.every(k => k in f);
+  if (!need) problem(`${at}: a ${f.passive} row needs ${f.passive === 'bedrock' ? 'uses or hp' : own.join(' and ')}`);
+  if (f.passive === 'kindling' && !(typeof f.rate === 'number' && f.rate > 1 && f.rate <= 4))
+    problem(`${at}.rate: above 1, at most 4`);
+  if (['regrowth', 'livewire'].includes(f.passive) && !(typeof f.mult === 'number' && f.mult > 1))
+    problem(`${at}.mult: above 1 (it strengthens the passive)`);
+  if (f.passive === 'livewire' && Math.round(D.rules?.battle?.liveWireCrit * f.mult) > FX_CRIT)
+    problem(`${at}.mult: Live Wire's stages times this pass ${FX_CRIT} (effects.js FX_CRIT)`);
+  if ('hp' in f && !(typeof f.hp === 'number' && f.hp > 0 && f.hp <= 1))
+    problem(`${at}.hp: a share of HP above 0, at most 1`);
+  if ('uses' in f && !(Number.isInteger(f.uses) && f.uses >= 1 && f.uses <= 9))
+    problem(`${at}.uses: a whole number from 1 to 9`);
+  if ('rolls' in f && !(Number.isInteger(f.rolls) && f.rolls >= 2 && f.rolls <= 3)) problem(`${at}.rolls: 2 or 3`);
+  for (const k of ['always', 'all']) if (k in f && f[k] !== true) problem(`${at}.${k}: true`);
+  if (f.passive === 'partingroar') {
+    const stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id));
+    if (f.stat === 'hp' || !stats.has(f.stat))
+      problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+    if (!(Number.isInteger(f.stages) && f.stages >= 1 && f.stages <= FX_STAGES))
+      problem(`${at}.stages: a whole number of stages from 1 to ${FX_STAGES}`);
   }
 }
 /** PK-1: the timing fields of an effect row (logic/effects.js) */

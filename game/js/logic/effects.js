@@ -20,6 +20,8 @@
      chip    what a burn takes from yours at each turn's end, times mult (PK-3)
      first   yours move before the foe's (within a move's priority), where its `if` holds: `turn:1` (PK-3)
      revive  when your whole team has fainted, they all get back up with a share of their HP (its `once`) (PK-3)
+     passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
+             (PK-4, battle-engine.js fxPassiveOf)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -50,6 +52,7 @@ expose({
   FX_KINDS: [() => FX_KINDS],
   FX_LIMIT: [() => FX_LIMIT],
   FX_ONCE: [() => FX_ONCE],
+  FX_PASSIVE_KEYS: [() => FX_PASSIVE_KEYS],
   FX_PER: [() => FX_PER],
   FX_SAY: [() => FX_SAY],
   FX_STAGES: [() => FX_STAGES],
@@ -78,6 +81,8 @@ expose({
   fxMult: [() => fxMult, v => (fxMult = v)],
   fxOfBillie: [() => fxOfBillie],
   fxOfRun: [() => fxOfRun],
+  // @ts-expect-error -- replaced on purpose
+  fxPassive: [() => fxPassive, v => (fxPassive = v)],
   // @ts-expect-error -- replaced on purpose
   fxPayoutRates: [() => fxPayoutRates, v => (fxPayoutRates = v)],
   // @ts-expect-error -- replaced on purpose
@@ -132,6 +137,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'chip',
   'first',
   'revive',
+  'passive',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -347,6 +353,52 @@ export const fxPinchHeal = fx => {
   const f = (fx || []).find(r => r.kind === 'pinchHeal');
   return f && f.kind === 'pinchHeal' ? { at: f.at, share: f.share } : null;
 };
+
+/** PK-4: the type passives a passive row can strengthen (types.json `passive`), each with the numbers it takes:
+ *   kindling     rate    its turns in battle count this many times over (Kindling builds faster, to the same top)
+ *   undertow     hp      it kicks in at this share of HP or below (rules.json battle.undertowHp, if higher)
+ *   regrowth     mult    what it heals at each turn's end, times mult
+ *   livewire     mult    its critical-hit stages (battle.liveWireCrit), times mult
+ *   bedrock      uses    it holds on this many times a battle; hp: from this share of HP up (was full HP only)
+ *   slipstream   always  it switches out without losing the turn every time (was once a battle)
+ *   wildmind     rolls   its damage roll is made this many times, the best kept
+ *   alloy        all     it counts every teammate on its feet, not only those sharing its type
+ *   partingroar  stat, stages  the teammate who comes in next also gets these stages */
+export const FX_PASSIVE_KEYS = /** @type {const} */ ({
+  kindling: ['rate'],
+  undertow: ['hp'],
+  regrowth: ['mult'],
+  livewire: ['mult'],
+  bedrock: ['uses', 'hp'],
+  slipstream: ['always'],
+  wildmind: ['rolls'],
+  alloy: ['all'],
+  partingroar: ['stat', 'stages'],
+});
+/** PK-4: one passive's rows (those that count now, as fxAt gives them) merged into its numbers: the most of each, but
+ * bedrock's hp the least (it holds from lower down), a flag when any row sets it, and partingroar's stages summed by
+ * stat (`up`); null with no row for it @param {any[] | null | undefined} fx @param {string} id
+ * @returns {{ rate?: number, hp?: number, mult?: number, uses?: number, always?: boolean, rolls?: number,
+ *   all?: boolean, up?: Record<string, number> } | null} */
+export function fxPassive(fx, id) {
+  const L = (fx || []).filter(f => f.kind === 'passive' && f.passive === id);
+  if (!L.length) return null;
+  /** @type {any} */
+  const o = {};
+  for (const f of L) {
+    if (id === 'partingroar') {
+      if (f.stat && f.stages) (o.up || (o.up = {}))[f.stat] = (o.up[f.stat] || 0) + f.stages;
+      continue;
+    }
+    for (const k of /** @type {Record<string, readonly string[]>} */ (FX_PASSIVE_KEYS)[id] || []) {
+      const v = f[k];
+      if (typeof v === 'boolean') o[k] = o[k] || v;
+      else if (typeof v === 'number')
+        o[k] = o[k] == null ? v : id === 'bedrock' && k === 'hp' ? Math.min(o[k], v) : Math.max(o[k], v);
+    }
+  }
+  return o;
+}
 
 /* ---------- PK-1: when a row acts, on what condition, how often, how it grows (perks-track.md section 7) ----------
    Optional fields on any effect row, from fixed lists (data-checks.js checks them; no script language):

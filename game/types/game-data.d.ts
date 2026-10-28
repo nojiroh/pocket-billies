@@ -1966,7 +1966,30 @@ export type FxKindRow =
   /** PK-3: your Billies move before the foe's (within a move's priority) where its `if` holds */
   | { kind: 'first' }
   /** PK-3: when your whole team has fainted, they all get back up with this share of their HP (needs `once`) */
-  | { kind: 'revive'; share: number };
+  | { kind: 'revive'; share: number }
+  /** PK-4: a type passive works better for your Billies that have it, by its own numbers (effects.js FX_PASSIVE_KEYS) */
+  | {
+      kind: 'passive';
+      passive:
+        | 'kindling'
+        | 'undertow'
+        | 'regrowth'
+        | 'livewire'
+        | 'bedrock'
+        | 'slipstream'
+        | 'wildmind'
+        | 'alloy'
+        | 'partingroar';
+      rate?: number;
+      hp?: number;
+      mult?: number;
+      uses?: number;
+      always?: true;
+      rolls?: number;
+      all?: true;
+      stat?: 'lev' | 'law' | 'lob' | 'pr' | 'hus';
+      stages?: number;
+    };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;
