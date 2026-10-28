@@ -9,6 +9,18 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **People face the way you see them** (characters track CH-1): on Copperleaf's island, in rooms and whenever you turn
+  the camera, you and the people round you show the side that faces the camera: walking away from it shows your back,
+  and someone turning to you shows their front. Coming out of Kappi's lab, or any door that faces east or west, you
+  face out of the door, not the camera. In the opening, Chosen runs out of the lab toward you face first, and Kappi
+  turns to you once you're up.
+- **Figures to try** (characters track CH-2 and CH-3, off by default): a row of Figures switches in the debug menu
+  turns you into a small 3D figure drawn as pixel art on the world's own grid, facing any way and walking, running and
+  breathing on a 12 fps clock: a stand-in made from KayKit's free (CC0) Rogue, or a code-built mannequin. They also
+  give the same figure as plain 3D to compare, townsfolk as figures, and both trainers in battle at twice the detail.
+  The look is a test for the owner's pick.
+- **People in the debug log** (characters track CH-1): how many people are drawn, how many draw calls they cost and
+  how much graphics memory their pictures take, in each exported log.
 - **Calmer world sounds** (sound track SND-8a): rain, streams, fountains, the sea, wind, leaves, a town's murmur, a
   campfire and crickets are re-made from soft noise that wanders instead of wobbling, and sit well under the music
   (rain was louder than the songs; now every one is at least 12 LU under the route song). Crickets chirp in groups

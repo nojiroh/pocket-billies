@@ -16,6 +16,375 @@ plan below, recommended options taken. Work in progress: this entry is finished 
   (f) the Studio's Instruments tab and its player on the game's chain; (g) the reverb at a load, off at Graphics Off;
   check-sound: today's 194 (199 with main's UI sounds) unchanged, the ensembles as new parts; the baseline once.
 
+### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28
+Branch `track/characters`, the same session as CH-2, straight on at the owner's word ("Automatically follow the plan
+until you finished ch3 then stop"): the track file's CH-3 is the plan, and the "Ask me before" calls it touches were
+made by the track's own recommendations (written below). CH-1's last two commits (its HANDOFF entry, a run's leader
+turned through faceToward) merged in before the end-of-phase checks (c684d805, a merge; BRANCHES the only conflict).
+Draft PR #277 (`track/characters` -> main) carries CH-1 to CH-3. Tag `ch-3-done` (the owner's) on this entry's commit;
+`ch-2-done` on d642f6ba.
+- Changed (one cause per commit):
+  - tools/gltf-figure.mjs (7ee19071; plain Node, no new packages) and tools/test/gltf-figure.test.mjs (4 tests, on a
+    small rigged model the test builds):
+    - each vertex on its strongest joint (the Studio's rule: jointed parts, no skinning); a mesh that rides a bone
+      (a hat, a cape) on that bone; what a hand holds (under a `handslot` bone) left out unless named;
+    - only the joints that move something kept (the Rogue: 20 of 41); per clip and frame, each joint's 3 x 4 matrix,
+      the hips' lift (snapped to whole texels at bake time), a walk's metres a cycle from its feet, and the room every
+      pose takes;
+    - 1.75 m to the top, x flipped: glTF is right-handed and the game's camera mirrors x (walk/camera.js), so without
+      the flip a model is drawn as its mirror image (RP-3's prop converter, tools/glb-to-recipe.py, keeps x: whether
+      its props show mirrored is worth a look on an asymmetric one);
+    - the texture point-sampled to 128 x 128 (the source is a swatch atlas) and snapped to the master palette
+      (game/art/next/palette.js, 164 colours) in OKLab; its own PNG reader and writer.
+  - The stand-in (84092308): KayKit's Rogue (Adventurers 1.0, CC0; validation/cc0-src/LICENSES.md has the
+    repository, commit, path and licence text; the 3.6 MB .glb is not copied in), game/art/figures/rogue.json
+    (319 KB: 3,567 vertices, 4,347 triangles, 20 joints; idle 6 frames at 6 fps, walk 13 at 12, run 10, cheer 20,
+    throw 16, sit 22 at 6) and rogue.png (1.4 KB). Its body, head and cape; no knives or crossbows.
+  - The baker (figures.js) draws figures made from a model beside the code-built mannequin: fetched the first time
+    one is wanted (a data: link in a single-file build), triangles by index, coloured by the texture and ramped in
+    the shader as the props' ramp does it; each figure's buffers and texture in the baker's context, made again after
+    a loss. A picture is as big as the figure's poses reach (logic/figure-pose.js cardSize from an extent), so the
+    cheer's raised arm isn't cut off.
+  - A model's clip (logic/figure-pose.js meshClipFrame, meshClipMatrices): a walk or a run by the distance walked at
+    its own cadence, an idle or a sit on twos, a cheer or a throw on ones.
+  - The plain 3D figure (B) is a style of the same figure: a soft light, no outline, baked at 128 px a metre and
+    left to the GPU's mipmaps.
+  - Engine > People: Your figure (the stand-in by default, or the mannequin), Style (pixel puppet or plain 3D),
+    Townsfolk as figures, Figure turns up to 32. You are your figure anywhere; townsfolk with the dial on (strolling,
+    cheering for their wave); in battle (battle-stage.js trainerBattleFrame, battle-3d.js) you at 64 px a metre from
+    behind, throwing with the figure's throw, the rival too with Townsfolk on, as tall as today's trainers.
+  - The bench (4c7364f9): test_people's front row, side by side facing the camera: the stand-in cheering, the
+    mannequin, today's person (folk:3), the stand-in as the pixel puppet (C), as the plain 3D figure (B), a Billie
+    (Carnegiant), the stand-in throwing; the stand-in turned eight ways behind the walkers; walking and running at
+    their ends. The schema's lineup: `figure` rogue, `style`, `act`, `run`, `billie`. look-people: dusk, --figure,
+    --style, --folk, --sheet with density lists and the stand-in's clips, --battle.
+  - The debug menu's figure switches (2911aac7): the player's Expert dials are a set list of sliders, so Engine >
+    People can't be reached from Settings on a phone. A row of buttons steps each People dial for the session (the
+    game data's engine defaults, as TR-4's terrain switches do). The debug log's people section says which figure,
+    style, density and turns were on.
+  - Pictures kept by their bytes too, at most 48 MB (b6315f04): a plain 3D picture of the stand-in is about 340 KB.
+  - The baker keeps to the frame's work budget (c36bc4f0): the first bake of a frame always, up to 4 only while the
+    budget lasts (walk/quality-cull.js frameBudgetLeft), as a bake in the scene waits on the scene's own drawing (the
+    numbers below). Its header comment brought up to date (8d003c22, comments only).
+  - look-people --battle shoots the intro while both trainers stand on the stage (59c17a67: at the move menu they
+    have already left it); --no-shots skips the zoom stops' shots, for --battle or --lose alone.
+  - Docs: the track file (CH-2 and CH-3 done, "Ask me before" 2, 3, 5 and 7 answered, key files), ROADMAP,
+    BRANCHES, CHANGELOG ("Figures to try"), this entry and CH-2's.
+- Calls made by the track's recommendations (the owner said to follow the plan):
+  - No face decal from the wardrobe's pixels on the stand-in: its own painted face reads at 32 px a metre (its head
+    is about 26 pixels wide), and the owner said the new people don't have to look like today's. CH-6 does faces.
+  - The walk's feet slide: KayKit's stride is 0.62 m a cycle and you move at 3.4 m/s, so a walk keyed to the
+    distance would race through 70 frames a second. It plays at its own cadence at walking speed instead. A stride
+    that fits the game's speed is CH-9's problem (and the art's: short chibi legs).
+  - The stand-in is about 2.2 heads, not 2.75: a stand-in only.
+  - The figure's file is game/art/figures/ (fetched only with the figures on), not game/data/figures.json.
+- Found:
+  - `--selftest` stops when the in-game full test fails, and headless it always does (rooms' first frames late, the
+    fall's 1 frame): its Diagnostics test hasn't run there. Run on its own, the Diagnostics test passes 11 of 12
+    steps; its dawn fog step (AIR-4) reports a graphics error, 1282 (an invalid operation), with or without the
+    figures, and on CH-1's head (0ac32751) before them. For the Air track.
+  - The Studio check's blocked Propose waits 10 s for its dialog, which comes only after game/data/legacy's files
+    are read: it ran out once here and passed on the next run.
+- The numbers (look-people, the 390 x 844 phone at DPR 3; quality step 0; means over 6 frames; counts only):
+  - test_people with the figures on (you the stand-in, the townsfolk dial on, no crowd), the Normal stop: 53 people
+    drawn (today's 24, the 12 mannequins, the stand-ins, you). By day 171 draws, 138 of them people's (53 sprites, 42
+    in each sun shadow map, your outline about 1); at dusk the same; at night 250 (215 people's: the two lamps' maps
+    add 40 and 36). People's pictures 293-298, 11.2-11.4 MB. The camera turned 0, 35 and 90 degrees: the same counts;
+    1.55, 1.54 and 1.52 buffer pixels a figure pixel.
+  - The zoom stops, by day, unturned: Close 3.02 buffer pixels a figure pixel, Normal 1.55, Far 0.81 (CH-0 worked
+    out 3.0, 1.55 and 0.8 for 32 px a metre). The same 138 people's draws at each; pictures 343, 385 and 473 (12.9 to
+    17.6 MB), as each stop's tilt is baked anew.
+  - Crowds (test_people and N townsfolk as figures, Normal, by day): 10: 63 people, 189 draws (156 people's), 337
+    pictures, 12.6 MB; 20: 73, 203 (170), 330, 12.3 MB; 40: 93, 225 (192: 93 sprites, 49 in each shadow map), 348,
+    12.9 MB. CH-1's crowd of 40 with today's people: 65 people, 217 draws (184), 112 pictures, 8.4 MB. A figure costs
+    what a person costs in draws (one sprite, the shadow maps instanced); it has more pictures (more views).
+  - Copperleaf, the townsfolk as figures, every stop by day, at dusk and at night: 11 people drawn; the town's own
+    810-1,225 draws a frame, people's 25 by day, 29-32 at dusk, 30-36 at night (a lamp's map 5-7); pictures 70 to 384
+    (2.1 to 12 MB) over the nine shots.
+  - A forced loss of the game's context (forceContextLoss) and then of the baker's (figureBakerLose), the figures
+    on: everyone drawn again after each (53 people, 170-171 draws); the baker restored (1 loss counted) and baking
+    again in the battle after it.
+  - Bakes, headless (software drawing; the phone's will differ): on a sheet with nothing else drawn 0.65 ms a bake
+    (the mannequin, 160 in 105 ms) and 0.76 ms (the stand-in, 208 in 159 ms); in the scene 25 ms a bake (257 in 6,408
+    ms), as the read-back waits on the scene's own drawing. Hence c36bc4f0: one bake a frame, more only within the
+    frame's work budget.
+  - In battle (the intro, by day and at dusk, the townsfolk dial on): both trainers' figures 120 x 129 pixels at 64
+    px a metre, you from behind and the rival facing you; 31 draws in the battle's frame. By then 222 pictures had
+    been baked (test_people's and the battle's), 5.5 MB, in 9.3 s: 42 ms a bake headless in a scene.
+  - Sheets for the dials (look-people --sheet; in validation/look-people/ when made there): the stand-in at 16, 24,
+    32, 40, 48 and 64 px a metre, 8, 16 and 32 turns, without the outline, as the plain 3D figure, at the Far tilt
+    (36 degrees); the mannequin at 32 and 48. Faces read from 24 up; at 48 and 64 the 1-pixel outline thins against
+    the figure.
+- Risky or unfinished:
+  - Nothing is on by default: the switch, its dials and the debug menu's row only. With it off no figure code runs
+    and no figure file is fetched.
+  - Pictures still go through today's path: each figure picture is its own texture, uploaded with mip levels (CH-4's
+    live atlas is the fix). A figure has more pictures than today's person (one a view), and a picture the baker's
+    cache drops keeps its texture until the graphics card's picture cap (128 MB on a phone) trims the longest unused,
+    as any picture does; a plain 3D picture is about 15 times a pixel one. The baker reads its pictures back
+    (drawImage from its WebGL canvas) on the CPU: the phone's milliseconds will say what that costs.
+  - A second WebGL context on the phone (the baker's). Its loss and restore are handled and tested.
+  - A single-file build (art.js: its art inline in window.NW_ART) has the stand-in only if it inlines
+    figures/rogue.json and rogue.png; if not, you stay today's picture there, and the debug log says the figure wasn't
+    loaded.
+- Verified (the end-of-phase checks on 59c17a67, the last game commit, each in a worktree of it, one at a time):
+  - After each change: lint, typecheck, `npm test` (1,611 at CH-3's end, all passing; 11 of them new: gltf-figure 4,
+    figures 4, figure-pose 3), check:modules, format:check, check:data and build.
+  - Smoke: 6 of 6 each on 84092308, 4c7364f9, 2911aac7 and 59c17a67, each in a worktree of the commit (b6315f04's
+    byte cap and c36bc4f0's bake budget only through 59c17a67's run and CI's).
+  - The full quick check with the switch off, against "before" pictures made just before from CH-1's head (0ac32751):
+    38 of 41 steps. Its three problems are the baseline's own (Terraces, RL-8, room light); the baseline run failed
+    those, and RT-2 and Granny Juniper after RL-8, as CH-1 found. 6 of its 44 pictures differ, each another moment
+    and none a person's look: the battle camera's drift (battle-rain, battle-double), the station's sheet and the
+    battle's menu caught loading (phone-mast, phone-battle), the bottom bar growing in (world-buddy), the camera
+    still on its way to you in the every-prop scene (props-lowpoly).
+  - `--selftest` with nothing beside it: the in-game full test's three problems (the clinic's first frames later
+    than 3 s, a room in place changing the town's walking grid, the opening's fall drawing 1 frame). CH-1's head,
+    run the same way, fails the same steps (two rooms late there: the Gene Bank and the barn): headless software
+    drawing, not this branch's. `--selftest` stops when the full test fails, so its Diagnostics test never runs.
+  - The game's Diagnostics test on its own (check-quick.py's run_in_game_test from a scratch script, the town
+    fixture), with the figures switched on as the debug menu does (you the stand-in, the townsfolk as figures),
+    twice: 11 of 12 steps each time; 207 and 231 pictures baked (5.2 and 5.7 MB, 279 and 304 ms of baking); no page
+    errors. The debug log, built as its export builds it (680 KB), has the figures' numbers in its people section
+    and not the player's name. Its one problem, a graphics error (1282) in the dawn fog step, comes with the figures
+    off too, and on CH-1's head (0ac32751): the same 11 of 12 each time, so not this branch's.
+  - The Studio check (`sections`, `studio_test`, `checks`): ok on a second run. The first stopped on its 10 s wait
+    for the blocked Propose's dialog (the Check reads game/data/legacy's files before it shows). CH-1's head passes
+    it too.
+  - look-people's runs above (the normal set, the stops, Copperleaf, the crowds, the sheets, the losses, the battle):
+    no page errors.
+  - CI on 4c02b044, 59c17a67 and dcacc8b4: lint and rules green; smoke fails only checks main fails too (the two
+    Studio checks' 404s for legacy Billie pictures; a run's world) and, in one run of a pair, timing checks that
+    passed on the same commit in the other run (PR #277's comment).
+- For the owner on the phone:
+  - Open the debug menu, tap "Figures: off" to turn them on: you are the stand-in. Walk, run, turn the camera.
+  - Step "Style" to "plain 3D" for B, "Figure" to the mannequin, "Townsfolk" to figures (then a trainer battle shows
+    both trainers as figures), "Pixels a metre" 32 / 40 / 48 / 64, "Turns" 16 / 32 / 8, "Outline".
+  - In a battle: you from behind at 64 px a metre; the throw is the figure's own.
+  - Run the Diagnostics test with the figures on, and export a debug log: its people section has the bakes, their
+    milliseconds and the pictures' MB.
+  - Then the pick ("Ask me before" 1): C (the pixel puppet), B (the plain 3D figure), A (classic 2D redrawn) or more
+    tuning; and whether the KayKit look is a direction for your own models.
+- Next: the owner's phone and pick. If C: CH-4 (the live atlas) on `track/characters`.
+
+### Characters track CH-2 - Spike 1: the figure baker - 2026-10-28
+Branch `track/characters`. Started at the owner's word from the CH-1 session; planned read-only until CH-1's HANDOFF
+entry was on the branch; the plan approved ("Go") with the owner's answers to "Ask me before" 2 (jointed rigid parts,
+no skinning), 3 (32 px a metre, with a 16-64 dial), 5 (2.75 heads at 1.75 m) and 7 (a code-built mannequin first),
+and my recommendations taken for the rest (the baker in its own WebGL context, 16 turns, you as a figure behind the
+switch). Built on a0e4b141 while CH-1 finished; nothing pushed until its entry landed. Tag `ch-2-done` (the owner's)
+on d642f6ba.
+- Changed (one cause per commit):
+  - game/js/logic/figure-pose.js (413e30cf; on both pages and in the Studio's logic worker;
+    tools/test/figure-pose.test.mjs):
+    - the oblique projection: a point's height on the upright card is its height plus its depth into the view
+      times tan(tilt), so the camera's shortening gives back what it would see (no double squash; the test checks it
+      against a tilted camera); the heading seen from the camera in steps, the tilt in 2-degree steps (the tilt
+      changes with the zoom stop: 26 degrees at Normal, about 36 at Far); the lift snapped to whole texels;
+    - the 12 fps clock: an idle on twos, a walk by the distance walked, read once a tick;
+    - the scene props' ramps and outline (tools/build-scene-props.py ramp and olc, the same to the unit, checked
+      against Python's output) and three toon bands from a top-left light.
+  - Engine > People (334d1583): Figures (off), density, turns, outline.
+  - game/js/figures.js, the baker (46c1427d; both pages; tools/test/figures.test.mjs against a stand-in WebGL2
+    context):
+    - its own WebGL2 context (the owner's pick): pass 1 the figure with its depth in alpha; pass 2 at the same
+      pixels the plum outline (olc of the neighbour's colour) and a lighter line inside where a part stands well in
+      front of another; then a copy into a 2D canvas tagged `ax`/`ay`/`ppm`/`noNormal`, down today's sprite path;
+    - pictures kept by view (at most 600), at most 4 baked a frame, a person keeping their last one meanwhile;
+    - a lost baker context bakes nothing until it is back, then makes its programs again (figureBakerLose forces
+      one); the game's own lost context only drops textures, and the canvases go up again;
+    - you as the mannequin with the switch on (idle; walking by the distance walked; turned to personHeading);
+      peopleReport has the baker's numbers.
+  - The bench (814f9329): the lineup's `figure` entries (the schema's new key), test_people's mannequins (each end
+    of the cast, eight turns, two walkers), look-people --figures (with the dials) and --lose.
+  - The mannequin rounder and more charming (48fdab9d), at the owner's word ("They should be less boxy and have more
+    charming style"): rounded low-poly shapes (ellipsoids, a lathe, capsules, cones, a torus) smooth-shaded so the
+    bands follow their curves: an egg of a head under a hair cap with a three-point fringe and a cowlick, a bean
+    body with a coral scarf, capsule limbs, mitten hands, bean shoes. Its face painted on the picture in whole
+    pixels where the head faces the camera (logic/figure-pose.js figureFaceMarks): 3 x 4 eyes with a glint toward
+    the light, a line on the blink, one narrow eye side-on, a small mouth, blush. The idle nods; the walk bounces.
+  - look-people --sheet (d642f6ba): a figure's every turn and frame on one sheet, enlarged.
+- Found:
+  - The tilt changes with the zoom stop, so a bake is keyed by a tilt step as well as a turn: a single 26-degree view
+    would be squashed at Far.
+  - `renderTarget` is at webgl.js:1324 (the track said 1274).
+  - The player's Expert dials are a set list (settings-screen.js GRAPHICS_DIALS), not every engine dial: CH-3's
+    debug-menu row is how the owner reaches the figures on a phone.
+  - Running tools/build-test-scenes.py with `--help` runs the whole rebuild (CH-1's warning): it rewrote the
+    generated gamedata.js only (no source file), mended by `npm run data`.
+- The numbers: the mannequin at 32 px a metre is drawn at 1.55 buffer pixels a pixel at Normal (CH-0's figure for
+  32 px/m; today's people 0.74), the same grid as the ground (1.66) and props (1.56). test_people with the figures
+  on (Normal, day, unturned): 37 people drawn (today's 24, 12 mannequins, you), 129 draws (96 people's: 37 sprites,
+  29 in each sun shadow map, your outline 1.3), 159 pictures, 5.1 MB. A sheet of 160 bakes took 105 ms in headless
+  software drawing (0.65 ms a bake; the phone's will differ).
+- Verified:
+  - After each change: lint, typecheck, `npm test` (1,600 at CH-2's end, 18 of them new: figure-pose 12, figures 6),
+    check:modules, format:check, check:data, build.
+  - Smoke on each game commit: 6 of 6 each (413e30cf and 334d1583 on the working tree just before their commits;
+    46c1427d, 814f9329 and 48fdab9d in a worktree of the commit).
+  - The full quick check on 48fdab9d with the switch off: 38 of 41. Its three problems are CH-1's baseline's
+    (Terraces: the station prop in the air; RL-8: a run's seam crossing never shows the next view; the walking step's
+    room light or settings tabs): run alone on a0e4b141 (before CH-2) and here, the same three fail.
+  - `--selftest` on 48fdab9d, with unit tests running beside it: three frame-timing problems (the clinic "not
+    drawing", the walking grid after a room, the fall's 1 frame); CH-1 found the last two on main under load. Run
+    again at CH-3's end with nothing beside it (CH-3's entry).
+- Next: CH-3 (straight on, the owner's word).
+
+### Characters track CH-1 - the bench and the fixes - 2026-10-27
+Branch `track/characters`, made 2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word. Plan
+approved in Plan Mode, with the owner's answers: the sprite-sheet exporter is retired ("Ask me before" 10); cutscene
+walks turn for real; the proposed `face Kappi you` went with the plan. Main merged in twice, as merges: before the work
+(37f7b8dc: PRs #268 and #272, HANDOFF's top the only conflict) and before the PR's checks (a0e4b141: #270, CH-0's own,
+#273, #274 and #275; HANDOFF as main had it, the generated files remade). Draft PR #277. Tag `ch-1-done` (the
+owner's) on this entry's commit. No art changed and no new renderer.
+- Changed (one cause per commit):
+  - Room exit: `leaveRoom` set `P.dir` to `'right'`/`'left'`, words no walk frame has, so an east or west door
+    (Kappi's lab, rot 90) left you facing down. The in-game test's Room phase expected the same wrong words
+    (self-test.js); fixed in the same commit.
+  - game/js/logic/person-view.js (new; on both pages and in the Studio's logic worker;
+    tools/test/person-view.test.mjs, 11 tests):
+    - `copiedAnchor`: the director's dark and mirrored copies keep ax, ay, ppm and noNormal. Before, the city
+      scene's silhouette was 1.58 times too tall and sunk into the ground.
+    - `facingWord`: directionOf's rule, moved, no change.
+    - `faceToward`, `faceWay`, `faceWord`: a heading per person (`head`, radians, 0 along +z, with `headDir`),
+      written on runtime records only, never on scene data.
+    - `seenFacing`, `seenToward`, `seenWord`: the side a camera sees. `personHeading`: the heading CH-2's figures
+      will turn to.
+    - `personPicture`: a person's picture is one with a `ppm` (Billies carry the items' `person` flag too).
+  - A cutscene's reach is mirrored for `side`. It mirrored `sideR`, but a side view as drawn faces right.
+  - Facing relative to the camera, in three commits (only the third changes a picture):
+    - every writer goes through the helpers;
+    - walk/camera.js returns `turn`, its yaw without the phone's tilt, so the tilt's sway never turns anyone. With
+      the camera unturned, every picture is today's;
+    - walk-view.js `seenYaw`, and the views picked by it: frame-items.js (map people, folk, you), prop-look.js (your
+      mount), friends.js, and director.js (its shot's own yaw, read before it builds its people).
+    - Plain words stay screen words: maps', rooms' and keepers' `dir`, a fresh view's `down`, cutscene and
+      story-scene words, the train ride. docs/CUTSCENES.md says which is which.
+    - A run's leader in its arena (WM-7, which came in with main's second merge) turns the same way, in a commit of
+      its own.
+  - opening.json: `face Kappi you`, once you are up.
+  - People in the debug log:
+    - a `person` draw tag (gpu-counters.js) in the sprites pass, the shadow maps, the reflection (both paths) and
+      your outline;
+    - walk-view-gl.js counts the people each frame draws. `peopleReport()` gives drawn, draws in all and by pass,
+      pictures and MB (webgl.js `gpuPictureBytes`: uploads only, with mip levels, and a normal map only where one
+      exists);
+    - debug-log.js: a `people` section, and `ppl: [drawn, draws, MB]` in the samples. Smoke checks the exported log
+      has the section, numbers only.
+  - Test maps' `lineup` (frame-items.js, map.schema.json): people who are only drawn (kind `line`: no taps, no talk,
+    no turning to you). Each faces a plain word (`dir`) or a world way (`face`, in degrees, as set pieces turn), and
+    can `walk` on the spot.
+  - `test_people` (build-test-scenes.py `t_people`, built with `--only=test_people`; the check-data snapshot
+    remade):
+    - the front row, the cast facing the camera: Chosen, Blake, Kappi, Juniper, Mo, Bertha, a clerk, an intern, two
+      folk, a boy, a girl;
+    - the middle row: one look at 8 world headings, 45 degrees apart, with you in its middle gap at the hub, so the
+      camera centres on the lineup at every turn;
+    - the back row: four people walking on the spot;
+    - two lantern posts for the night.
+  - tools/look-people.py (its output, validation/look-people/, is gitignored).
+  - Retired at the owner's word: tools/export-trainer-sprite-sheets.py, .github/workflows/trainer-sprite-sheets.yml
+    and docs/EDIT-TRAINER-SPRITES.md. ART-NOTES.md's wardrobe path is now game/data/wardrobe.json.
+  - Docs: the track file, ROADMAP, BRANCHES (the `track/characters` row), CHANGELOG, this entry.
+- The bench (look-people.py; a 390 x 844 phone at DPR 3, so the scene buffer is 860 x 1861, as CH-0 worked out; 25
+  people: the lineup's 24 and you; auto quality and depth of field off, quality step 0; means over 6 frames; counts
+  only, no timings):
+
+  | Stop (zoom) | Buffer px per art px, camera turned 0 / 35 / 90 degrees | A 1.75 m person, buffer px tall | Draws by day (people's) | By night (people's) |
+  | --- | --- | --- | --- | --- |
+  | Close (0.55) | 1.46 / 1.45 / 1.40 | 169 | 92-97 (64) | 131-136 (101) |
+  | Normal (1) | 0.74 / 0.74 / 0.73 | 86.5 | 97 (64) | 136 (101) |
+  | Far (1.7) | 0.39 / 0.39 / 0.39 | 45 | 97 (64) | 136 (101) |
+
+  - CH-0's arithmetic holds: 0.74 at Normal, 1.45 at Close, 0.39 at Far.
+  - People's draws, by pass: the sprites pass 25 (one each); the sun's two shadow maps 19 each (a shadow map draws
+    each picture once, as instances, for everyone showing it); your outline about 1. At night the two nearest lamps'
+    shadow maps add 19 and 18.
+  - People's pictures on the GPU: 41 uploaded (the walk frames drawn so far), 3 MB, the same at every shot.
+  - With 40 townsfolk wandering round them as well (`--crowd=40`, Normal, the camera unturned), 65 people drawn:
+    217 draws by day (184 people's: 65 sprites, 59 in each shadow map) and 332 at night (297 people's: the lamps'
+    maps add 57 and 56); 112 pictures, 8.4 MB (119 and 8.9 MB at night, as more walk frames are drawn). So a person
+    costs about 3 draws by day and 5 by lamplight, and a crowd under lamps is where people's draws add up.
+- Found (the brief and CH-0, checked):
+  - The exporter's cause: `game/data/gamedata.js` isn't gone. It is built by `npm run data` and gitignored, and the
+    workflow never built it, so all 30 runs failed (2026-10-24 to 27). SA-5's deletion of `game/art/people/` broke
+    nothing. CH-0's entry and the track file said otherwise; the track file is corrected.
+  - Room exit: only east and west doors were wrong, and the in-game test encoded the bug.
+  - Subtracting the camera's yaw everywhere would have broken the opening: its cameras look along -90 to -161
+    degrees, and its `face X down` means "toward the camera". Hence plain words stay screen words.
+  - Test maps draw no named people (the bench state has no map people), and tapping one can offer a Bean (a save
+    write). Hence the draw-only `lineup`.
+  - build-test-scenes.py without `--only` deletes 13 test maps other tools make (and gallery.json).
+  - Not fixed (outside this session): grass-build.js buildFarProps (:306) pools any prop whose group matches 'tree',
+    and 'streetlamp' does. So a scene with street lamps and no trees gets a ring of distant lamps (test_people showed
+    147 before it got lanterns; run towns with street lamps likely do too). A one-word fix for a renderer or towns
+    session.
+  - Not fixed (outside this session): the Studio's world map look and Camera section fail in CI's smoke on main as
+    here, with 404s for `game/art/billionaires/<species>.png` (musk0, kardashian0, ...): for a species with no rig
+    sheet, skeleton-rig.js `rigAtlas` (:501) falls back to a legacy picture the repo doesn't have. No fix exists yet;
+    PR #277's comment says so.
+  - Not fixed (not CH-1's): once a run's seam crossing fails on a page (the quick check's RL-8), a trainer battle
+    there never starts and a talk never opens: the quick check's RT-2 and Granny Juniper steps, which follow RL-8 on
+    its page, fail that way on main (07c9b284) too, and pass when run alone. The in-game test's "A run's road" fails
+    on main as here ("arrived but the view is still ...").
+  - Noted, not changed: the picture cap (`gpuState.texB`, webgl.js `trackTexture`) counts every picture with a
+    normal map, so people's pictures, which have none, count twice toward it.
+  - gamedata.js is 0.84 MB, not CLAUDE.md's 13 MB.
+  - In this container, Python Playwright must be 1.63.0: with the pinned 1.56.0, smoke skips its browser steps and
+    still passes.
+  - The quick check's picture baseline is not in git. One was made here from a worktree of the start (37f7b8dc, 42
+    pictures); it stays in this container.
+  - The edit hook gives `npm test` 50 s, and it takes about 94 s here, so the hook reports a failure that is only
+    its timeout.
+- Risky:
+  - Visible changes, for the owner's phone: the hub island's people and you, as the orbit camera turns; turned
+    rooms; the opening's walks and Kappi; leaving the lab. A person whose heading sits near the line between two
+    views turns as the orbit camera turns: correct, but new.
+  - Test maps can now draw named people, but only test maps (`test`) read `lineup`.
+  - Merges with other tracks that edit frame-items.js, walk-view.js or director.js.
+- Verified:
+  - After each change: lint, typecheck and `npm test` (1,582 unit tests on the merged tree, 13 of them new:
+    person-view 11, sprite-records 2). Smoke before each game commit, one at a time, its browser steps checked to
+    have run: 6 of 6 every time (3456d127, 09e00e64, 3a652cec, d56d41ad, a31f2d85, 6c9975f6, 0ee8ada7,
+    0a5b92b7, 912cfce2, df92c0bc, c98ad5aa).
+  - CI: the lint job green on every push (lint, types, unit and slow unit tests, data, modules, format, build).
+    Smoke on a0e4b141: 39 of 41, the two Studio checks failing as on main (see Found). Its two runs on c98ad5aa also
+    failed checks that passed on a0e4b141 and pass here on c98ad5aa: Behind things, Tall ground (it waits 20 s for
+    the GPU's answer on whether you're hidden) and the Studio's Model mode; on the slower run (28 minutes) also the
+    orbit, the pasture and a run's world (which main fails too).
+  - At the end of the phase, in this container (Python Playwright 1.63.0):
+    - look-people: the 18 shots and the crowd's 2, no page errors.
+    - A page check (a scratch script, not kept): the dark and mirrored copies of you and Chosen keep the frame's
+      width, anchor (mirrored: the width less ax), 66.5 px a metre and noNormal.
+    - The quick check against the "before" baseline (made from the start, 37f7b8dc): 36 of 41 steps pass. Its five
+      problems:
+      - three also in the baseline: Terraces (a prop in the air at the station), RL-8 (a run's seam crossing never
+        shows the next view) and room light;
+      - two new, not CH-1's: RT-2 (the pair talked but no battle started) and Granny Juniper (said nothing). They run
+        on the same page after RL-8 fails. Run alone on this branch, both pass; main (07c9b284) fails the same
+        three in a row the same way.
+      - The baseline's other two problems (the lab's room in place, the battle music's drums) passed here.
+      - Picture notes: 5 pictures differ (battle-double, battle-rain, phone-battle, phone-mast, room-lab); a re-run of
+        their steps flagged another 5 (battle-double, battle-rain, env-day, phone-battle, phone-walk). The ones
+        looked at show other moments (the battle camera's drift, the postcard, a battle menu still loading), not
+        people.
+    - The in-game full test (`--selftest`), here and on main (07c9b284) side by side under the same load: both fail
+      "A run's road" (arrived, but the view never changed) and "A room that opens in place" (the town's walking grid
+      changed after the room, 236 cells); that step's facing check, before it, passes, and run alone the step passes
+      on both. Here the opening's fall also drew 1 frame once: run alone three times each, the fall drew 19, 6 and 18
+      frames here and 18, 5 and 7 on main (the check wants 3), so that is the machine's load. The diagnostics test
+      didn't run on either (the full test's problems end the step first).
+    - The Studio check (`--only=sections,studio_test,checks`): ok, 32 sections, 0 errors on the game data.
+    - check:modules, format:check, check:data and build pass.
+- For the owner on the phone:
+  - New game: Chosen runs out of the lab face first, and Kappi turns to you once you're up.
+  - Walk round the hub island away from the camera: you show your back.
+  - Come out of Kappi's lab: you face out of the door.
+  - Turn the camera with people about.
+  - Export a debug log: its `people` section, and the samples' `ppl`.
+- Next: CH-2 (Spike 1, the figure baker) on `track/characters`. `personHeading` is the heading its figures turn to;
+  test_people and look-people are its bench. Its session was started at the owner's word; it plans only until this
+  entry is on the branch and the owner approves. Tag `ch-1-done` (the owner's).
 ### Sound track SND-10 - water: soundscape.json, emitters from the scene, a recipe per water kind, falls by height, the surf on the tide, rain on water, wading, Surf, fishing - 2026-10-28
 Branch `track/sound` (main merged first: already up to date; the local clone was stale and was reset to
 origin/track/sound before any edit). Started by the planning session under the owner's standing instruction
@@ -1848,6 +2217,58 @@ Tag `sy-0-done` (for the owner to push) on this session's last commit.
 - The owner's answers (2026-10-27, after the PR): the emblem is a bean on a lost-property tag; Laminated not now;
   the foil shows in battle too; the placeholder stamp words stay. Recorded in the track file.
 - Next: the owner makes `track/style`; SY-1 (the flashes) starts there in Plan Mode.
+### Tooling - Claude Code's cloud setup: hooks, Playwright MCP, debug log reader, skills - 2026-10-27
+Branch `ccr-d18fe41a-eh3yrz` (the session's own, from main at 07c9b284). Not a phase: the owner asked what to add to
+the Claude Code environment (research online), then approved the plan in Plan Mode. No game code, data or art changed;
+no tag. How it all works: docs/TESTING.md, "Claude Code in the cloud".
+- Changed:
+  - tools/after-edit.mjs (PostToolUse): the edited area's unit test files instead of the whole quick tier, which
+    takes 104-148 s now and was stopped at 50 s, so the hook said "npm test failed" with nothing failing. A check
+    that runs out of time is reported as not finished. Hook limit 180 s.
+  - tools/session-start.mjs (new, SessionStart, cloud only): npm ci when needed, npm run data, Python Playwright at
+    the cloud image's browser version, the unit tests' starting state.
+  - tools/before-stop.mjs (new, Stop): npm test before a reply ends when game/js/logic, game-data.js, game/data or
+    tools/test changed; a failure sends Claude back once, then the owner sees it.
+  - .mcp.json and tools/mcp-playwright.mjs (new): Microsoft's Playwright MCP server (0.0.83, through npx) on the cloud
+    image's Chromium with browser_check.py's flags and page set-up, a 390x844 touch page; settings.json pre-approves
+    it. tools/read-debug-log.py (new): a debug log in one screen, its picture saved.
+  - .claude/skills (start-session, handoff, look, debug-log) and .claude/rules (game-js, game-data, python-tools).
+  - CLAUDE.md: sessions read only their track's newest HANDOFF entries; gamedata.js is 0.84 MB, generated (was "~13
+    MB"). docs/TESTING.md: tiers (a) and (b), the new section with the environment's setup script. .gitignore:
+    validation/mcp/, validation/debug-log/.
+- Not done: plan item 7, the permission allow list. The session's auto mode refused to edit permissions in
+  .claude/settings.json (it counts as Claude changing its own permissions). For the owner to add, if wanted:
+  `"permissions": {"allow": ["Bash(npm run *)", "Bash(npm test *)", "Bash(npm ci *)", "Bash(node tools/*)",
+  "Bash(node --test *)", "Bash(python3 tools/*)", "Bash(python3 -m http.server *)", "mcp__playwright__*"]}`.
+- Found, not changed:
+  - **The ground painter's worker fails every paint.** game/js/ground-paint-worker.js `paintWorkerSource` (:114)
+    sends paintGroundSteps and its helpers to the worker as source text, but not `groundTileRole`, a function since
+    e89c8131 (2026-10-26, walk-view.js:1073). The smoke run's debug log: `graphics.groundPainter` failed 25 of 25,
+    "ReferenceError: groundTileRole is not defined". The ground still draws in the checks' pictures; phones lose the
+    worker. Likely a one-line fix (add it to the list), for a session that owns the ground.
+  - The quick unit tier is 1,569 tests and 104-148 s in a cloud container (about 20 s on 23 Oct, budget 30 s): for the
+    test cleanup track. route-trainer-spots.test.mjs (slow tier) alone took about 110 s.
+  - docs/BRANCHES.md says a cloud session can only push to the branch it started on. The current docs say the GitHub
+    proxy refuses branch deletions and tag pushes but "doesn't limit which branches a push can update", and a
+    session can start from an existing branch at claude.ai/code
+    (https://code.claude.com/docs/en/cloud-environments, "GitHub proxy"). Not tried here.
+  - characters-track.md says the container reaches GitHub for KayKit's packs: a release or archive download from a
+    repository not attached to the session now gets a 403 from the GitHub proxy (raw.githubusercontent.com works).
+- Risky: the Stop hook adds the tier's 2 minutes or so to the end of a reply that changed logic, data or tests. A
+  session reads the hooks and .mcp.json only when it starts, so this one checked them by feeding them the hook JSON
+  and through a scripted MCP client, not as Claude Code runs them.
+- Verified: lint (34 s), typecheck, `npm test` 1,569 pass (144 s), check:modules, format:check, check:data, build.
+  after-edit: a logic file 19 s (lint 11-13 s, types 2.5 s, 1 test file), the most used one 27 s (12 files, a note
+  for 14 more), a test file 1 s, a data file 3 s, a doc 0 s; a failing test exits 2 with its output; a 1 s limit
+  gives the "not finished" note; no test processes left. session-start: 14 s from no node_modules and no Python
+  Playwright, then 1 s; nothing outside the cloud. before-stop: no change 0.1 s; a failing test blocks, the retry
+  lets go without re-running, a passing change records the new state. MCP: ?fixture=title and ?fixture=town drawn,
+  inline screenshots, 0 console errors (the plugin directory's own Playwright MCP fails here: "Chromium
+  distribution 'chrome' is not found"). read-debug-log.py on smoke's log. Smoke 6 of 6 in 201 s (before these
+  changes; nothing in game/ changed).
+- For the owner: paste the setup script from docs/TESTING.md into the environment (once). After the merge, a new
+  session's first message should show "Session setup: ...", and `/look` should return a screenshot.
+- Next: whichever session owns the ground fixes the painter's worker; the test cleanup track takes the unit tier's time.
 
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in

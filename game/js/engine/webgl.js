@@ -55,6 +55,7 @@ expose({
   gpuMemory: [() => gpuMemory, v => (gpuMemory = v)],
   gpuNewGeneration: [() => gpuNewGeneration, v => (gpuNewGeneration = v)],
   gpuOnRestore: [() => gpuOnRestore, v => (gpuOnRestore = v)],
+  gpuPictureBytes: [() => gpuPictureBytes, v => (gpuPictureBytes = v)],
   gpuRes: [() => gpuRes],
   gpuRestoreOwners: [() => gpuRestoreOwners, v => (gpuRestoreOwners = v)],
   gpuRetire: [() => gpuRetire, v => (gpuRetire = v)],
@@ -1488,6 +1489,19 @@ function pollGpuTimers() {
 /* v34: a cap on pictures kept on the graphics card. Every uploaded picture is counted (with its mip levels and normal
    map); past the cap (128 MB on phones since v41, 384 MB elsewhere) the ones not drawn for the longest go first (never those used
    in the last ten seconds) and are uploaded again if they come back into view. */
+/* CH-1: the uploaded pictures `pick` takes (it is handed each picture), and their bytes on the graphics card: each with
+   its mip levels, and its normal map only if it has one (the cap above counts a normal map for every picture) */
+export function gpuPictureBytes(pick) {
+  let n = 0,
+    bytes = 0;
+  for (const [im, e] of gpuState.texL || []) {
+    if (gpuState.tex.get(im) !== e || !pick(im)) continue;
+    const b = Math.round((e.sw || e.w || 1) * (e.sh || e.h || 1) * 4 * 1.34);
+    n++;
+    bytes += e.n && e.n !== gpuState.flatN ? b * 2 : b;
+  }
+  return { n, bytes };
+}
 function trackTexture(im, e) {
   const L = gpuState.texL || (gpuState.texL = new Map());
   e.bytes = Math.round((e.sw || e.w || 1) * (e.sh || e.h || 1) * 4 * 1.34 * 2);

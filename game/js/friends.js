@@ -24,11 +24,12 @@ import {
 } from './hooks.js';
 import { COATS, LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, plural } from './logic/rules.js';
+import { seenToward } from './logic/person-view.js';
 import { REPORT_REASONS, blockListClean, friendListFrom, reportHidden, reportTarget } from './logic/online.js';
 import { escapeHtml, saveData, saveHold, uiState } from './game-state.js';
 import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
-import { directionOf, walkView } from './walk-view.js';
+import { seenYaw, walkView } from './walk-view.js';
 import { personItem } from './walk/frame-items.js';
 import { buddyBilly, worldBillyItem } from './world-billies.js';
 import { worldMap, worldMapSelect } from './world-bowl.js';
@@ -626,7 +627,8 @@ function friendWorldItems(out, t, C0) {
     if (!fr) continue;
     if (typeof warmPerson === 'function') warmPerson(who);
     const P = walkView.pl,
-      dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? directionOf(P.x - x, P.z - z) : 'down',
+      /* CH-1: turned to you as the camera sees it (logic/person-view.js), else facing the camera */
+      dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? seenToward(P.x - x, P.z - z, seenYaw()) : 'down',
       set = fr[dir] || fr.down,
       im = set && set[0];
     if (im) out.push(personItem('friend', im, x, z, C0, { fr: u }));
