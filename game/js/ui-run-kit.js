@@ -514,6 +514,8 @@ const PbPickCard = class extends LitElement {
     heading: {},
     sub: {},
     facedown: { type: Boolean, reflect: true },
+    /* UI-16a: dealt face down only for the show (the offer turns over by itself): a tap turns it and picks it */
+    dealt: { type: Boolean },
     selected: { type: Boolean, reflect: true },
     disabled: { type: Boolean, reflect: true },
     rarity: { reflect: true },
@@ -706,6 +708,7 @@ const PbPickCard = class extends LitElement {
     this.heading = '';
     this.sub = '';
     this.facedown = false;
+    this.dealt = false;
     this.selected = false;
     this.disabled = false;
     this.rarity = '';
@@ -721,7 +724,10 @@ const PbPickCard = class extends LitElement {
   }
   _pick() {
     if (this.disabled) return;
-    if (this.facedown) return this.reveal();
+    if (this.facedown) {
+      this.reveal();
+      if (!this.dealt) return;
+    }
     this.dispatchEvent(new CustomEvent('pb-pick', { bubbles: true, composed: true }));
   }
   /** the sub line, as the kind's ribbon when it has a kind (UI-14b) */

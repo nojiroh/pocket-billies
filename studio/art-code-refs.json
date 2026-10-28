@@ -1552,6 +1552,7 @@
    "game/js/fixture.js:206",
    "game/js/person-art.js:339",
    "game/js/person-art.js:344",
+   "game/js/reward-screen.js:240",
    "game/js/ui-run-kit.js:102",
    "game/js/ui-run-kit.js:109",
    "game/js/ui.js:81",
@@ -1590,7 +1591,7 @@
    "game/js/prop-models.js:349",
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:965",
-   "game/js/ui-run-kit.js:1460",
+   "game/js/ui-run-kit.js:1466",
    "game/js/walk-view-gl.js:685"
   ],
   "brick": [
@@ -1754,7 +1755,7 @@
   "glass": [
    "game/js/logic/ui-dials.js:133",
    "game/js/structures.js:724",
-   "game/js/ui-run-kit.js:1258",
+   "game/js/ui-run-kit.js:1264",
    "game/js/walk/rooms.js:273",
    "game/js/walk/rooms.js:286",
    "game/js/walk/rooms.js:299"

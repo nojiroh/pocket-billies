@@ -12,7 +12,9 @@ import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
 import { PERKS, RULES } from './game-data.js';
 import { rarityTier } from './logic/marks.js';
 import { perkChoose } from './logic/perks.js';
+import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
+import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
 import { jinglePlay } from './sound.js';
@@ -69,21 +71,26 @@ export function perkPickOpen(o) {
   if (!run || !run.offer) return;
   const rule = RULES.run.perks,
     ids = run.offer.filter(id => PERKS[id]),
+    /* UI-16a: the first time this offer shows, its cards come face down and turn over one by one */
+    flipKey = `perk:${ids.join(',')}`,
+    flip = pbFlipFresh(flipKey),
     sel = ids.includes(uiState.relicSel) ? uiState.relicSel : null;
   perkSheet({
     title: 'Pick a Perk',
     cls: 'relic-pick',
     lock: true,
-    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${rule.cap}.${run.perks.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => perkCardHTML(id, id === sel)).join('')}</div>`,
+    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${rule.cap}.${run.perks.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => (flip ? perkCardHTML(id, false).replace('<pb-pick-card ', '<pb-pick-card facedown dealt ') : perkCardHTML(id, id === sel))).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: !sel, f: () => perkPickTake(/** @type {string} */ (sel)) },
       { l: ids.length > 1 ? 'Take none' : 'Leave it', c: 'quiet', f: () => perkPickDone(null) },
     ],
-    after: () =>
+    after: () => {
+      if (flip) pbFlipIn(flipKey);
       perkCardsOn(id => {
         uiState.relicSel = id;
         perkPickOpen();
-      }),
+      });
+    },
   });
   runHint('relic');
 }
@@ -98,9 +105,13 @@ function perkPickTake(id) {
 function perkPickDone(id, drop) {
   const run = saveData.run;
   if (!run) return;
-  const why = perkChoose(run, id, PERKS, RULES.run.perks, drop);
+  /* UI-16a: where the card was, before the sheet closes, for the Perk to fly from to the Perks tab */
+  const card = id ? document.querySelector(`#ov pb-pick-card[data-id="${CSS.escape(id)}"]`) : null,
+    from = card ? card.getBoundingClientRect() : null,
+    why = perkChoose(run, id, PERKS, RULES.run.perks, drop);
   if (why) {
     toast('That Perk can’t be taken.');
+    pbNudge(document.querySelector('#ov .btns .gold'), true);
     return;
   }
   uiState.relicSel = null;
@@ -109,6 +120,7 @@ function perkPickDone(id, drop) {
   closeModal();
   render();
   if (id) toast(`${PERKS[id].name}: ${PERKS[id].d}`);
+  if (id) pbGainFly(from, 'perks', 'relic');
   /* SND-6: a Perk taken has a jingle of its own */
   if (id && typeof jinglePlay === 'function') jinglePlay('relic');
   const then = perkPickThen;

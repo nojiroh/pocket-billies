@@ -168,11 +168,11 @@ export function pbEnterRows(root) {
 /* ---------- pick cards come face down and turn over, one after another, the first time an offer shows ---------- */
 const flipSeen = new Set();
 /** has this offer's cards been turned over already (a sheet drawn again keeps them face up) @param {string} key */
-function pbFlipFresh(key) {
+export function pbFlipFresh(key) {
   return !flipSeen.has(key) && !reduced();
 }
 /** turns the open sheet's face-down cards over, a beat apart, with the flip sound @param {string} key */
-function pbFlipIn(key) {
+export function pbFlipIn(key) {
   flipSeen.add(key);
   const cards = /** @type {any[]} */ ([...document.querySelectorAll('#ov pb-pick-card[facedown]')]);
   cards.forEach((c, i) =>

@@ -13,7 +13,9 @@ import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
 import { rarityTier } from './logic/marks.js';
 import { rewardDataGame, rewardReroll, rewardRerollCost, rewardTake, tutorWho } from './logic/rewards.js';
+import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML } from './ui-marks-kit.js';
+import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
 import { artURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
@@ -22,6 +24,7 @@ import { itemIcon } from './battle.js';
 expose({
   rarityAttr: [() => rarityAttr],
   rewardAnswer: [() => rewardAnswer, v => (rewardAnswer = v)],
+  rewardCardFace: [() => rewardCardFace, v => (rewardCardFace = v)],
   rewardCardHTML: [() => rewardCardHTML, v => (rewardCardHTML = v)],
   rewardDone: [() => rewardDone, v => (rewardDone = v)],
   rewardHolder: [() => rewardHolder, v => (rewardHolder = v)],
@@ -76,6 +79,10 @@ function rewardSheet(M) {
   renderOverlay();
 }
 
+/** UI-16a: a card dealt face down (pbFlipIn turns it over) @param {string} h its pb-pick-card @param {boolean} down */
+function rewardCardFace(h, down) {
+  return down ? h.replace('<pb-pick-card ', '<pb-pick-card facedown dealt ') : h;
+}
 /** the run's reward pick as a sheet (nothing when there is none) @param {() => void} [then] */
 export function rewardPickOpen(then) {
   if (then) rewardThen = then;
@@ -85,6 +92,10 @@ export function rewardPickOpen(then) {
     rewardDone();
     return;
   }
+  /* UI-16a: the first time this offer shows, its cards come face down and turn over one by one (a reroll is a new
+     offer); drawn again (a card chosen), they stay face up */
+  const flipKey = `reward:${R.from}:${R.rolls || 0}`,
+    flip = pbFlipFresh(flipKey);
   const sel = typeof uiState.rewardSel === 'number' && R.cards[uiState.rewardSel] ? uiState.rewardSel : null,
     cost = rewardRerollCost(R, RULES.run.rewards),
     /* RL-14: what the bots left (logic/rewards.js salvageOfferMake): never rerolled */
@@ -93,7 +104,7 @@ export function rewardPickOpen(then) {
     title: salvage ? 'Salvage' : 'Pick a reward',
     cls: 'reward-pick',
     lock: true,
-    html: `<p>${salvage ? 'The bots came apart. Take one piece of what is left.' : R.from.startsWith('event:') ? 'Take one.' : R.from.startsWith('quest:') ? 'A thank-you for the quest. Take one.' : 'Your opponent left a few things behind. Take one.'}</p><div class="relic-cards">${R.cards.map((c, k) => rewardCardHTML(c, k, k === sel)).join('')}</div>`,
+    html: `<p>${salvage ? 'The bots came apart. Take one piece of what is left.' : R.from.startsWith('event:') ? 'Take one.' : R.from.startsWith('quest:') ? 'A thank-you for the quest. Take one.' : 'Your opponent left a few things behind. Take one.'}</p><div class="relic-cards">${R.cards.map((c, k) => rewardCardFace(rewardCardHTML(c, k, k === sel), flip)).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: sel == null, f: () => rewardTakeTap(/** @type {number} */ (sel)) },
       ...(salvage
@@ -115,6 +126,7 @@ export function rewardPickOpen(then) {
       { l: 'Take none', c: 'quiet', f: () => rewardAnswer(null) },
     ],
     after: () => {
+      if (flip) pbFlipIn(flipKey);
       for (const c of document.querySelectorAll('#ov pb-pick-card[data-k]'))
         c.addEventListener('pb-pick', () => {
           uiState.rewardSel = +(/** @type {HTMLElement} */ (c).dataset.k);
@@ -200,9 +212,13 @@ function rewardAnswer(k, o) {
     R = run && run.enc && run.enc.reward;
   if (!R) return;
   const c = k == null ? null : R.cards[k],
+    /* UI-16a: where the card was, before the sheet closes, for what it gives to fly from */
+    card = k == null ? null : document.querySelector(`#ov pb-pick-card[data-k="${k}"]`),
+    from = card ? card.getBoundingClientRect() : null,
     why = rewardTake(run, saveData, k, rewardDataGame(saveData.team), o);
   if (why) {
     toast('That can’t be taken.');
+    pbNudge(document.querySelector('#ov .btns .gold'), true);
     return;
   }
   uiState.rewardSel = null;
@@ -220,6 +236,8 @@ function rewardAnswer(k, o) {
   } else if (c && c.kind === 'part') toast(`Into your parts, for the Workshop.`);
   else if (c && c.kind === 'scrap') toast(`${c.n || 1} Scrap sent home.`);
   else if (c && c.item) toast(`Into the bag.`);
+  /* UI-16a: an item that went into the bag flies to the Bag tab (one held by a Billie stays with it) */
+  if (c && c.item && !(c.kind === 'held' && o && o.uid)) pbGainFly(from, 'bag', 'bag');
   rewardDone();
 }
 /** an event waiting on the pick goes on */
