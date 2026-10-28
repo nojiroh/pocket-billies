@@ -12,11 +12,12 @@ import { expose } from '../test-globals.js';
 import { landingBurst } from '../hooks.js';
 import { $ } from '../util.js';
 import { CUTSCENES, STORY_DATA } from '../game-data.js';
+import { faceToward, faceWord } from '../logic/person-view.js';
 import { CUTSCENE_YOU, cutsceneOffset, cutscenePoint, cutsceneShotAt, cutsceneStep } from '../logic/cutscene-set.js';
 import { parseScript } from '../logic/script-parse.js';
 import { runScript } from '../logic/script.js';
 import { lookOf } from '../person-art.js';
-import { directionOf, walkView } from '../walk-view.js';
+import { walkView } from '../walk-view.js';
 import { environment } from '../environment.js';
 import { standingHeightAt } from '../walk/heights.js';
 import { music, soundEffect } from '../sound.js';
@@ -129,10 +130,11 @@ function cutsceneStage(extra = {}) {
     face: (/** @type {string[]} */ a) => {
       const S = step('face', a),
         A = actor(/** @type {string} */ (S.who));
-      if (S.dir) A.dir = S.dir;
+      /* a word is on the screen; toward someone or a spot turns them in the world (CH-1, logic/person-view.js) */
+      if (S.dir) faceWord(A, S.dir);
       else {
         const p = placeOrFail(/** @type {string} */ (S.toward));
-        A.dir = directionOf(p[0] - A.x, p[1] - A.z);
+        faceToward(A, p[0] - A.x, p[1] - A.z);
       }
     },
     act: (/** @type {string[]} */ a) => {

@@ -8,6 +8,7 @@ import { gameData, loadingScreen, provide, questMarked, reducedMotion, talkBox }
 import { clamp } from '../util.js';
 import { pictureFacing, pictureRight } from '../logic/prop-turn.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
+import { personPicture } from '../logic/person-view.js';
 import { pixelLightness } from '../logic/pixel-facts.js';
 import { INTEREST_DEFAULTS } from '../logic/camera-interest.js';
 import { gpuTag } from '../engine/gpu-counters.js';
@@ -537,7 +538,7 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
   for (let i = 0; i < L.length; i++) {
     const r = spriteRecordAt(i),
       it = r.it,
-      tag = it.voxImg || it.vox ? 'modelPic' : 0;
+      tag = it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0;
     if (r.mode === 'quad') {
       if (R.n && R.T !== r.T) flushSpriteRun(ip);
       if (!R.n) {
@@ -600,7 +601,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
       const it = L[i],
         r = spriteRecordAt(i);
       /* R1 measure: a model's picture layers (and a modelled clock's hands) counted apart (engine/gpu-counters.js) */
-      gpuTag(it.voxImg || it.vox ? 'modelPic' : 0);
+      gpuTag(it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0);
       const mode = spriteRecord(it, F, r);
       if (mode === 'wave') drawSpriteWave(p, r);
       else if (mode === 'quad') {
@@ -722,6 +723,8 @@ export function drawPlayerSilhouette(C, items, X) {
     p = useWalkProgram('sprite', C, X),
     U = p.U;
   readHideQueries(gl);
+  /* CH-1: your outline and the one you talk to are people's draws (engine/gpu-counters.js) */
+  gpuTag('person');
   bindQuad();
   gl.uniform3fv(U.uRight, C.right);
   gl.uniform3fv(U.uBack, C.back);
@@ -771,6 +774,7 @@ export function drawPlayerSilhouette(C, items, X) {
   gl.depthMask(true);
   gl.uniform4f(U.uGhost, 0, 0, 0, 0);
   gl.uniform4f(U.uGhostV, 0, 0, 0, 0);
+  gpuTag(0);
   easeHidden(true);
   return walkRenderer.hidT ? 1 : 0;
 }
@@ -1282,7 +1286,7 @@ function drawReflectionRuns(RC, C, X, pics, F) {
     if (!R.n) {
       R.T = r.T;
       R.first = r.inst;
-      R.tag = r.it.voxImg ? 'modelPic' : 0;
+      R.tag = r.it.voxImg ? 'modelPic' : personPicture(r.it.im) ? 'person' : 0;
     }
     R.n++;
   }

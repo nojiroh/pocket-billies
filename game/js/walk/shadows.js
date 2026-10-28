@@ -19,6 +19,7 @@ import {
   roomFloorOf,
 } from '../hooks.js';
 import { pictureRight, placedTurn } from '../logic/prop-turn.js';
+import { personPicture } from '../logic/person-view.js';
 import { gpuPass, gpuTag } from '../engine/gpu-counters.js';
 import { filterInto } from '../engine/frame-lists.js';
 import { walkView } from '../walk-view.js';
@@ -382,7 +383,7 @@ function shadowQuad(T, it, right, z, x, rest) {
   q.shown = q.uv[3];
   if (rest && it.rest !== undefined) q.shear = it.rest;
   q.T = T;
-  q.tag = it.voxImg ? 'modelPic' : 0;
+  q.tag = it.voxImg ? 'modelPic' : personPicture(it.im) ? 'person' : 0;
   q.rx = right[0];
   q.rz = right[2];
   let g = Q.groups.get(T);

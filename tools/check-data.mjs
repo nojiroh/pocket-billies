@@ -23,6 +23,8 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { musicFindings } from '../game/js/logic/music-studio.js';
+import { soundscapeFindings } from '../game/js/logic/soundscape.js';
+import { WATER_KINDS } from '../game/js/logic/water-kinds.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { islandProblems } from '../game/js/logic/island.js';
 import { POSES_BY_PLAN } from '../game/js/body-plan-animation.js';
@@ -365,6 +367,9 @@ if (D.music && check('music.schema.json', D.music, 'music.json')) {
         );
     });
 }
+// SND-10: the world's sounds (soundscape.json): the schema
+if (D.soundscape && check('soundscape.schema.json', D.soundscape, 'soundscape.json') && D.soundscape.water)
+  for (const m of soundscapeFindings(D.soundscape, WATER_KINDS)) problem('soundscape.json', m);
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
   const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));

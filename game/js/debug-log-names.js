@@ -76,7 +76,7 @@ import { setShadowPass, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround, setDrawGrass, setDrawGround } from './walk/ground-draw.js';
 import { effectsPass, setEffectsPass } from './walk/effects.js';
 import { fogGridReport } from './walk/fog-grid.js';
-import { mountWalkView, setMountWalkView } from './walk-view-gl.js';
+import { mountWalkView, peopleReport, setMountWalkView } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import { drawStructures, setDrawStructures } from './structures.js';
 import {
@@ -96,7 +96,7 @@ import { paintWorkerReport } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
 import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } from './world-bowl.js';
 import { openShop, setOpenShop } from './shop.js';
-import { ambience, soundEngine } from './sound.js';
+import { setUpdateAmbience, soundDebugLines, updateAmbience } from './sound.js';
 import { cutsceneStart, setCutsceneStart } from './cutscene/opening.js';
 import { titleScreen } from './title.js';
 import { runWorld, runWorldAhead } from './run-world.js';
@@ -111,7 +111,6 @@ Object.defineProperties(GAME, {
   TRAINERS: { get: () => TRAINERS },
   account: { get: () => account },
   activeBattle: { get: () => activeBattle },
-  ambience: { get: () => ambience },
   ambientLife: { get: () => ambientLife },
   artPixels: { get: () => artPixels, set: setArtPixels },
   battleStage: { get: () => battleStage },
@@ -171,6 +170,7 @@ Object.defineProperties(GAME, {
   openShop: { get: () => openShop, set: setOpenShop },
   paintActions: { get: () => paintActions, set: setPaintActions },
   paintWorkerReport: { get: () => paintWorkerReport },
+  peopleReport: { get: () => peopleReport },
   personBattleFrames: { get: () => personBattleFrames, set: setPersonBattleFrames },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },
   ranchSkew: { get: () => ranchSkew },
@@ -189,12 +189,13 @@ Object.defineProperties(GAME, {
   setTrip: { get: () => setTrip, set: setSetTrip },
   shadowPass: { get: () => shadowPass, set: setShadowPass },
   solidPropState: { get: () => solidPropState },
-  soundEngine: { get: () => soundEngine },
+  soundDebugLines: { get: () => soundDebugLines },
   spliceReport: { get: () => spliceReport },
   swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
   titleScreen: { get: () => titleScreen },
   toast: { get: () => toast },
   uiState: { get: () => uiState },
+  updateAmbience: { get: () => updateAmbience, set: setUpdateAmbience },
   updateFolk: { get: () => updateFolk, set: setUpdateFolk },
   updateNearRing: { get: () => updateNearRing, set: setUpdateNearRing },
   updatePlayer: { get: () => updatePlayer, set: setUpdatePlayer },

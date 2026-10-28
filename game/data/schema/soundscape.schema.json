@@ -1,0 +1,806 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "soundscape.schema.json",
+ "title": "game/data/soundscape.json: the world's sounds as recipes (sound track SND-10; game/js/sound.js plays them, game/js/logic/ambience-sound.js and logic/soundscape.js hold their logic)",
+ "type": "object",
+ "required": [
+  "beds"
+ ],
+ "additionalProperties": false,
+ "$defs": {
+  "filter": {
+   "description": "a filter: [type, frequency Hz, Q, gain dB (a shelf's)]",
+   "type": "array",
+   "prefixItems": [
+    {
+     "enum": [
+      "lowpass",
+      "highpass",
+      "bandpass",
+      "highshelf",
+      "lowshelf",
+      "peaking"
+     ]
+    },
+    {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    {
+     "type": "number"
+    }
+   ],
+   "minItems": 2,
+   "maxItems": 4
+  },
+  "drift": {
+   "description": "what wanders: the layer's gain, or the frequency of its filter number `on`, around base by depth (a fraction, or octaves with oct), a new value every min-max seconds, reached with the time constant tau",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "on",
+    "base",
+    "depth",
+    "min",
+    "max",
+    "tau"
+   ],
+   "properties": {
+    "on": {
+     "oneOf": [
+      {
+       "const": "gain"
+      },
+      {
+       "type": "integer",
+       "minimum": 0
+      }
+     ]
+    },
+    "base": {
+     "type": "number",
+     "minimum": 0
+    },
+    "depth": {
+     "type": "number",
+     "minimum": 0
+    },
+    "min": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "max": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "tau": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "oct": {
+     "type": "boolean"
+    }
+   }
+  },
+  "layer": {
+   "description": "a layer: a noise loop (the beds' own pink or brown, at a playback rate) through filters, at a gain",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "noise",
+    "gain",
+    "filters"
+   ],
+   "properties": {
+    "noise": {
+     "enum": [
+      "pink",
+      "brown"
+     ]
+    },
+    "rate": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "gain": {
+     "type": "number",
+     "minimum": 0
+    },
+    "filters": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/filter"
+     }
+    },
+    "drift": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/drift"
+     }
+    }
+   }
+  },
+  "bed": {
+   "description": "a bed: where it plays (bus world or amb: the World or Ambience slider), its trim (from tools/check-sound.py --loudness), its layers, a low hum (tone, Hz), its events (crickets or crackles) at eventGain",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "bus",
+    "trim",
+    "layers"
+   ],
+   "properties": {
+    "bus": {
+     "enum": [
+      "world",
+      "amb"
+     ]
+    },
+    "trim": {
+     "type": "number",
+     "minimum": 0
+    },
+    "layers": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/layer"
+     }
+    },
+    "tone": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "events": {
+     "enum": [
+      "crickets",
+      "crackles"
+     ]
+    },
+    "eventGain": {
+     "type": "number",
+     "minimum": 0
+    }
+   }
+  },
+  "bank": {
+   "description": "a baked bank (logic/sound-bake.js through the tracker's bank): bubble, a van den Doel bubble at every pitch from lo to hi midi, one every `every` semitones, rising by xi; babble, running water's loop (sec s, layers [ms between jumps, centre Hz, gain], at RMS level, from a seed)",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "kind",
+    "lo",
+    "hi",
+    "every",
+    "level"
+   ],
+   "properties": {
+    "kind": {
+     "enum": [
+      "bubble",
+      "babble"
+     ]
+    },
+    "lo": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 127
+    },
+    "hi": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 127
+    },
+    "every": {
+     "type": "integer",
+     "minimum": 1
+    },
+    "xi": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "level": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "maximum": 1
+    },
+    "sec": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "maximum": 8
+    },
+    "layers": {
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+     }
+    },
+    "seed": {
+     "type": "integer"
+    }
+   }
+  },
+  "range2": {
+   "type": "array",
+   "items": {
+    "type": "number",
+    "minimum": 0
+   },
+   "minItems": 2,
+   "maxItems": 2
+  },
+  "event": {
+   "description": "a recipe's events: bubbles at random from a bank (rate a second, radii rMin-rMax mm weighted by r^-gamma, level, a random^beta, never closer than gap s, panned within +-pan), laps at a bank (every every[0]-every[1] s, gain, low-pass f Hz, a bubble from bank after some: plip, a chance) or the surf's waves (every, rise s, fall as a share of the rise, peak, fizz bubbles a second as each draws back)",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "type"
+   ],
+   "properties": {
+    "type": {
+     "enum": [
+      "bubbles",
+      "laps",
+      "waves"
+     ]
+    },
+    "bank": {
+     "type": "string"
+    },
+    "rate": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "rMin": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "rMax": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "gamma": {
+     "type": "number"
+    },
+    "xi": {
+     "type": "number",
+     "minimum": 0
+    },
+    "beta": {
+     "type": "number",
+     "minimum": 0
+    },
+    "level": {
+     "type": "number",
+     "minimum": 0
+    },
+    "gap": {
+     "type": "number",
+     "minimum": 0
+    },
+    "pan": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "every": {
+     "$ref": "#/$defs/range2"
+    },
+    "gain": {
+     "type": "number",
+     "minimum": 0
+    },
+    "f": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "plip": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "rise": {
+     "$ref": "#/$defs/range2"
+    },
+    "fall": {
+     "$ref": "#/$defs/range2"
+    },
+    "peak": {
+     "$ref": "#/$defs/range2"
+    },
+    "fizz": {
+     "type": "number",
+     "minimum": 0
+    }
+   },
+   "allOf": [
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "bubbles"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "bank",
+       "rate",
+       "rMin",
+       "rMax",
+       "level"
+      ]
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "laps"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "every",
+       "gain"
+      ]
+     }
+    },
+    {
+     "if": {
+      "properties": {
+       "type": {
+        "const": "waves"
+       }
+      }
+     },
+     "then": {
+      "required": [
+       "every",
+       "rise",
+       "fall",
+       "peak"
+      ]
+     }
+    }
+   ]
+  },
+  "recipe": {
+   "description": "a water sound (logic/soundscape.js; sound.js plays it): heard within range m (line: a river or a shore, falling off slower than a point), the nearest `voices` of it playing; trim from the loudness report; send to the reverb; bed layers; a baked texture (a bank's loop played from a random point at a rate); events; byHeight: a fall louder and heard further by its height",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "range",
+    "trim",
+    "layers"
+   ],
+   "properties": {
+    "range": {
+     "type": "number",
+     "exclusiveMinimum": 0,
+     "maximum": 80
+    },
+    "line": {
+     "type": "boolean"
+    },
+    "voices": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 3
+    },
+    "trim": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 4
+    },
+    "send": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "layers": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/layer"
+     }
+    },
+    "texture": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "bank",
+      "rate",
+      "gain"
+     ],
+     "properties": {
+      "bank": {
+       "type": "string"
+      },
+      "rate": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "gain": {
+       "type": "number",
+       "minimum": 0
+      }
+     }
+    },
+    "events": {
+     "type": "array",
+     "items": {
+      "$ref": "#/$defs/event"
+     }
+    },
+    "byHeight": {
+     "type": "boolean"
+    }
+   }
+  }
+ },
+ "properties": {
+  "about": {
+   "type": "string"
+  },
+  "beds": {
+   "description": "a place's beds of sound by name (sound.js initAmbience makes them, updateAmbience sets their levels)",
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$defs/bed"
+   }
+  },
+  "banks": {
+   "description": "SND-10: baked banks by id",
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$defs/bank"
+   }
+  },
+  "kinds": {
+   "description": "SND-10: each water kind's recipe (logic/water-kinds.js WATER_KINDS) and which of its cells sound: its shores (the default) or all",
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "recipe"
+    ],
+    "properties": {
+     "recipe": {
+      "type": "string"
+     },
+     "at": {
+      "enum": [
+       "shore",
+       "all"
+      ]
+     }
+    }
+   }
+  },
+  "running": {
+   "description": "SND-10: a river line's recipe: brook, river (riverWidth m or wider) or rapids (its rapids); spring at a spring's source; a running cell within near m of a line plays the line's",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "brook",
+    "river",
+    "rapids",
+    "spring",
+    "riverWidth",
+    "near"
+   ],
+   "properties": {
+    "brook": {
+     "type": "string"
+    },
+    "river": {
+     "type": "string"
+    },
+    "rapids": {
+     "type": "string"
+    },
+    "spring": {
+     "type": "string"
+    },
+    "riverWidth": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "near": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    }
+   }
+  },
+  "falls": {
+   "description": "SND-10: a placed fall's recipe by height (tall from tallFrom m), its plunge pool's, the automatic cascades'",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "small",
+    "tall",
+    "tallFrom",
+    "pool",
+    "sheet"
+   ],
+   "properties": {
+    "small": {
+     "type": "string"
+    },
+    "tall": {
+     "type": "string"
+    },
+    "tallFrom": {
+     "type": "number",
+     "exclusiveMinimum": 0
+    },
+    "pool": {
+     "type": "string"
+    },
+    "sheet": {
+     "type": "string"
+    }
+   }
+  },
+  "fountain": {
+   "description": "SND-10: a fountain's recipe",
+   "type": "string"
+  },
+  "wake": {
+   "description": "SND-10: Surf's wake (its recipe)",
+   "type": "string"
+  },
+  "rainOnWater": {
+   "description": "SND-10: rain on water surfaces (its recipe)",
+   "type": "string"
+  },
+  "water": {
+   "description": "SND-10: the water recipes by id",
+   "type": "object",
+   "additionalProperties": {
+    "$ref": "#/$defs/recipe"
+   }
+  },
+  "splash": {
+   "description": "SND-10: a splash from small (size 0) to big (1): a low slosh (low-pass lp Hz) and a brighter one (band-pass bp Hz), each lasting and as loud as the pair's two by size; then n bubbles from the bank, radii rMin-rMax mm, spread over that many seconds, at level",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "slosh",
+    "bubbles"
+   ],
+   "properties": {
+    "slosh": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "lp",
+      "bp",
+      "dur",
+      "gain"
+     ],
+     "properties": {
+      "lp": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "bp": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "dur": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "gain": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      }
+     }
+    },
+    "bubbles": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "bank",
+      "n",
+      "rMin",
+      "rMax",
+      "spread",
+      "level"
+     ],
+     "properties": {
+      "bank": {
+       "type": "string"
+      },
+      "n": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "rMin": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "rMax": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "spread": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      },
+      "level": {
+       "type": "array",
+       "items": {
+        "type": "number",
+        "minimum": 0
+       },
+       "minItems": 2,
+       "maxItems": 2
+      }
+     }
+    }
+   }
+  },
+  "touch": {
+   "description": "SND-10: the water you touch, as splash sizes (0-1): wading at full depth (wadeMin at the edge), mounting and leaving Surf, a plop, fishing's cast, nibble, bite, fight (the fish splashing as you reel) and catch; the reel's clicks (one every `every` s while you hold) and the cast's swish (noise washes: f Hz, q, d s, gain)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "wade": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "wadeMin": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "surfOn": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "surfOff": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "plop": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "cast": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "nibble": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "bite": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "fight": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "catch": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "reel": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "f",
+      "d",
+      "gain"
+     ],
+     "properties": {
+      "every": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "f": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "q": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "d": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "gain": {
+       "type": "number",
+       "minimum": 0
+      }
+     }
+    },
+    "swish": {
+     "type": "object",
+     "additionalProperties": false,
+     "required": [
+      "f",
+      "d",
+      "gain"
+     ],
+     "properties": {
+      "every": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "f": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "q": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "d": {
+       "type": "number",
+       "exclusiveMinimum": 0
+      },
+      "gain": {
+       "type": "number",
+       "minimum": 0
+      }
+     }
+    }
+   }
+  }
+ }
+}

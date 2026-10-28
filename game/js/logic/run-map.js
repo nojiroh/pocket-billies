@@ -39,7 +39,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { fxRunRule, provide } from '../hooks.js';
-import { rngFrom } from './rng.js';
+import { rngFirst, rngFrom } from './rng.js';
 import { weatherPick } from './weather.js';
 import { RUN_DAYS } from './run-state.js';
 import { runZoneOf } from './run-region.js';
@@ -268,7 +268,7 @@ export function runMapGrid(seed, nodes, nodeTypes = {}, want = []) {
   const drawn = /** @type {Map<string, number>} */ (new Map()),
     draw = (/** @type {string} */ k) => {
       let v = drawn.get(k);
-      if (v === undefined) drawn.set(k, (v = rngFrom(seed, `map|grid|${k}`).next()));
+      if (v === undefined) drawn.set(k, (v = rngFirst(seed, `map|grid|${k}`)));
       return v;
     };
   /** the spots node i of size [w, h] can take, best first @param {number} i @param {number[]} size */
@@ -341,11 +341,25 @@ export function runMapGrid(seed, nodes, nodeTypes = {}, want = []) {
     const south = nodes.findIndex((m, j) => j < i && m.row === n.row && m.lane === n.lane - 1);
     return !(south >= 0 && put[south] && /** @type {any} */ (put[south]).at[1] >= f.at[1]);
   };
+  /** WM-5b: spots(i, size) kept by all it reads (where node i's parents stand and their sizes, and an L parent's own
+   * parent), so stepping back doesn't build and sort them again (bigger towns step back more) @type {Map<string,
+   * number[][]>} */
+  const spotsKept = new Map(),
+    at = (/** @type {number} */ j) => {
+      const f = /** @type {any} */ (put[j]);
+      return f ? `${f.at}/${f.size}` : '-';
+    },
+    spotsOf = (/** @type {number} */ i, /** @type {number[]} */ size) => {
+      const k = `${i}|${size}|${from[i].map(j => at(j) + (shape[j] === 'L' && from[j].length ? ':' + at(from[j][0]) : '')).join('|')}`;
+      let v = spotsKept.get(k);
+      if (!v) spotsKept.set(k, (v = spots(i, size)));
+      return v;
+    };
   /** @param {number} i @returns {boolean} */
   const place = i => {
     if (i >= nodes.length) return true;
     for (const size of sizes[i])
-      for (const [x, y] of spots(i, size)) {
+      for (const [x, y] of spotsOf(i, size)) {
         if (++tries > RUN_GRID.tries) return false;
         const f = { at: [x, y], size: size.slice() };
         if (!fits(i, f)) continue;

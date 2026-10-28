@@ -290,7 +290,7 @@ export function validRun(o) {
     return false;
   if (
     o.reshop !== undefined &&
-    (!list(o.reshop, 9) || !o.reshop.every(k => typeof k === 'string' && /^\d{1,3}:\d{1,3}$/.test(k)))
+    (!list(o.reshop, 9) || !o.reshop.every(k => typeof k === 'string' && /^\d{1,3}:\d{1,3}(:s)?$/.test(k)))
   )
     return false;
   /* RL-S2: Blake in the run (missing on a run from before) */

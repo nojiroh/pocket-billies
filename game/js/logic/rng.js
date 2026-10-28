@@ -13,6 +13,8 @@ expose({
   dailySeed: [() => dailySeed, v => (dailySeed = v)],
   // @ts-expect-error -- replaced on purpose
   hashString: [() => hashString, v => (hashString = v)],
+  // @ts-expect-error -- replaced on purpose
+  rngFirst: [() => rngFirst, v => (rngFirst = v)],
   rngFn: [() => rngFn],
   // @ts-expect-error -- replaced on purpose
   rngFrom: [() => rngFrom, v => (rngFrom = v)],
@@ -66,6 +68,29 @@ export function rngFrom(seed, salt = '') {
     },
   };
   return R;
+}
+
+/** WM-5b: the first next() of rngFrom(seed, salt), the same number without making the stream (the region grid draws
+ * one number a spot, many thousand a map) @param {string} seed @param {string} [salt] */
+export function rngFirst(seed, salt = '') {
+  let a = hashString(`${seed}|${salt}|a`),
+    b = hashString(`${seed}|${salt}|b`),
+    c = hashString(`${seed}|${salt}|c`),
+    d = 1,
+    t = 0;
+  for (let i = 0; i < 13; i++) {
+    a >>>= 0;
+    b >>>= 0;
+    c >>>= 0;
+    d >>>= 0;
+    t = (((a + b) | 0) + d) | 0;
+    d = (d + 1) | 0;
+    a = b ^ (b >>> 9);
+    b = (c + (c << 3)) | 0;
+    c = (c << 21) | (c >>> 11);
+    c = (c + t) | 0;
+  }
+  return (t >>> 0) / 4294967296;
 }
 
 /* value noise on a lattice, from an integer hash (no sin hash: the same in every engine) */

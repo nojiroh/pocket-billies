@@ -1,5 +1,18 @@
 {
+  "enabledMcpjsonServers": ["playwright"],
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|resume",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/tools/session-start.mjs\"",
+            "timeout": 600
+          }
+        ]
+      }
+    ],
     "PostToolUse": [
       {
         "matcher": "Edit|Write|MultiEdit",
@@ -7,7 +20,18 @@
           {
             "type": "command",
             "command": "node \"$CLAUDE_PROJECT_DIR/tools/after-edit.mjs\"",
-            "timeout": 60
+            "timeout": 180
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/tools/before-stop.mjs\"",
+            "timeout": 400
           }
         ]
       }

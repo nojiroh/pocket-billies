@@ -9,6 +9,45 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **People face the way you see them** (characters track CH-1): on Copperleaf's island, in rooms and whenever you turn
+  the camera, you and the people round you show the side that faces the camera: walking away from it shows your back,
+  and someone turning to you shows their front. Coming out of Kappi's lab, or any door that faces east or west, you
+  face out of the door, not the camera. In the opening, Chosen runs out of the lab toward you face first, and Kappi
+  turns to you once you're up.
+- **Figures to try** (characters track CH-2 and CH-3, off by default): a row of Figures switches in the debug menu
+  turns you into a small 3D figure drawn as pixel art on the world's own grid, facing any way and walking, running and
+  breathing on a 12 fps clock: a stand-in made from KayKit's free (CC0) Rogue, or a code-built mannequin. They also
+  give the same figure as plain 3D to compare, townsfolk as figures, and both trainers in battle at twice the detail.
+  The look is a test for the owner's pick.
+- **People in the debug log** (characters track CH-1): how many people are drawn, how many draw calls they cost and
+  how much graphics memory their pictures take, in each exported log.
+- **Calmer world sounds** (sound track SND-8a): rain, streams, fountains, the sea, wind, leaves, a town's murmur, a
+  campfire and crickets are re-made from soft noise that wanders instead of wobbling, and sit well under the music
+  (rain was louder than the songs; now every one is at least 12 LU under the route song). Crickets chirp in groups
+  with rests, a fire crackles, birds call one at a time about every ten seconds, footsteps differ a little each step
+  and are soft on grass, sand and earth, and follow the World slider. Rooms hear the place's night outside. Sounds
+  that aren't heard stop running, which saves the phone work. The debug menu has a Sound test.
+
+- **Copperleaf's music can be heard** (sound track SND-8b): the hub song was about 15 LU quieter than the others, so
+  the sea and the fountain covered it; it now sits with them. A song's echo fades and ducks with the song, jingles
+  echo with the Sound effects slider (at 0 none is left), the rain muffles the music less, and on an iPhone sound
+  comes back after a call or Siri.
+
+- **The first synthesized instrument and a sense of space** (sound track SND-9): the game can now build instruments
+  from numbers when it starts using them, a little at a time so nothing stutters, and play them through one shared
+  reverb. The debug menu's Sound test has a harp playing Copperleaf's tune, with the room of Copperleaf, a route, a
+  forest, a room or a cave. The songs themselves sound as before. The debug log says how long the instruments took to
+  make and how much memory they use.
+
+- **Water you can hear** (sound track SND-10): every kind of water has its own sound now: a babbling brook, a river,
+  rapids, waterfalls by their height with their splashing pool, waves on the shore that grow at high tide and in a
+  storm, a lake's laps, a pond's plops, a bubbling hot spring, a marsh, a bog, lava, a canal, a fountain and drips
+  echoing in a cave. Water far off is a soft low rumble and near water is bright; a river you walk beside sounds in
+  front of you. Rain makes little plinks on water, wading splashes by how deep you are (no more clicks), Surf
+  splashes as you get on and off with a wake while you ride, fishing has a cast, nibbles, a bite, a reel and a
+  splash when you land the fish, and frogs, fish and diving birds splash. All of it sits well under the music. The
+  debug menu's Sound test plays each at a distance, and so does the Studio's Sounds tab.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)
