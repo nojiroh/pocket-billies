@@ -572,6 +572,37 @@ art pipeline (phase 17 task 11).
   in the pale top half. To part two areas of one colour, draw one of them with the matching letter (the letter `r` is
   the red ramp's mid): a letter is its own block, so a seam is drawn between them (Power Gloves' thumb).
 
+## Bag item pictures, 36x36 (Perks track PK-11, 2026-10-28)
+- The 13 Bag items (consumables) have their own pictures in the Perks' look: `game/art/items/<id>.svg`, named by the
+  item's `img` (the ids are items.json's: `bell` is the Shining Stone, `trailmix` Trail Mix, `repairkit` the Repair
+  Kit). Same rules as "Perk pictures" above. Drawn as grids in `tools/art/icon-grids/items.json` and written by
+  `node tools/build-icons.mjs items`; contact sheets `validation/icon-sheets/items-{light,dark}.png`.
+- Shapes chosen so each reads alone at 36 px: round flask (Potion), tall square bottle (Hi-Potion), wide low tin (Burn
+  Salve), dropper bottle (Nerve Tonic), mug (Wake-Up Tea), heart (Revive), winged gold heart (Max Revive), capsule on
+  the 45-degree line (Full Remedy), cut gem (Shining Stone), wrapped bar on the 45-degree line (Protein Bar), bowl
+  (Trail Mix), knot with three holes (Pretzel), toolbox (Repair Kit). Cream only inside a shape (glints, labels, salt).
+- Shown at whole multiples: 36 px in the Bag, a shop, the battle's Bag and the Billie sheet's lists, 72 px on a reward
+  card (`itemIcon`, `.pxi` pixelated). The old atlas (`art/icons/icons.png`) keeps only what held items still draw
+  until PK-10.
+
+## Held item pictures, 36x36 (Perks track PK-10, 2026-10-28)
+- The 24 held items have their own pictures too (`game/art/items/<id>.svg`, `img` in items.json), the same rules and
+  pipeline as "Bag item pictures" above (grids in `tools/art/icon-grids/items.json`, drawn with octagons, 45-degree
+  lines and 3 px strokes). No item draws from the old atlas any more: every `i_` rectangle left `art/manifest.js` and
+  `art/icons/icons.png`.
+- Shapes: Leftover Sandwich a triangle half (lettuce, tomato), Snack Pack a puffed blue chip bag, Lucky Coin a gold
+  octagon with a clover, Study Notes a spiral notebook (rings down the side), Iron Vest a steel plated vest, Quick Laces
+  a red running shoe, Brass Knuckles four gold rings over a grip, Smart Specs slate glasses with ice lenses; the type
+  boosters Matchbook (a red book, a match alight on the 45-degree line), Water Bottle (a blue sports bottle), Seed
+  Packet (a green packet cut open, a sprout), Spare Battery (slate and gold, a plus), Garden Trowel (a steel blade, a
+  wood handle), Paper Plane (ice and blue), Tarot Card (deep violet, a gold star), Socket Wrench (steel, slate grip),
+  Dragon Fruit (red with green scales); the tricks Seatbelt (a steel buckle and red button on a slate strap), Cactus
+  Keyring (a potted cactus on a gold ring), Complaint Form (a clipboard, a red stamp), Party Balloon (red, on a
+  string), Costume Fangs (a wide mouth, cream fangs), Express Pass (a gold ticket, a red double arrow), Ankle Weights
+  (a teal cuff with steel pockets and a gold buckle).
+- `--check`'s silhouette rule made four of them change shape (the notebook, the chip bag and the seed packet were
+  three boxes alike; the fangs were the coin's octagon).
+
 ## Terrain TR-4 (2026-10-26): the biomes' cliff faces
 - `scene/build/walls.png` is now a 4 x 4 atlas (256 x 256). The first three rows are the 12 cells from before, kept
   pixel for pixel; the fourth row is new, drawn by `python3 tools/build-walls.py --extend` (from its own seed, so it

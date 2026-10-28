@@ -332,6 +332,38 @@ The 8 existing (Leftover Sandwich, Snack Pack, Lucky Coin, Study Notes, Iron Ves
 Specs) get their own pictures. Held items' rarity tiers follow UI-14's ladder (recommendation: type boosters common,
 tricks uncommon).
 
+**Corrected in PK-10** (built 2026-10-28 on `track/perks-items`, the items lane):
+- **Rarity tiers already existed** (UI-14b: `rarity` on every held item, data-checks.js `RARITY_TIERS`, the loot
+  ladder's common, uncommon, rare, mythical); the new items take the recommendation: type boosters common, tricks
+  uncommon. The reward pick's `held` card draws among held items evenly (rewards.js), not by tier; that was kept.
+- **The held kinds are not FX_KINDS**: `survive`, `reflect`, `drain` and `last` live in effects.js `HELD_FX_KINDS`
+  (no Perk, boon, modifier or event row can name them); `immune` and `first` are FX_KINDS read their own way on a
+  hold row (`HELD_OWN_FORMS`): immune names a `type` (with `until: hurt`), not a Perk's `what`; first takes a
+  `chance` (at most FX_CHANCE). data-checks.js `HOLD_KINDS` lists them; `heldKindProblems` checks their fields.
+  game-data.d.ts `HeldRow` (an FxRow or a `HeldKindRow`) types `Item.hold`. Their engine code is its own section of
+  battle-engine.js (`heldSurvives`, `heldAfterHit`, `heldFloats`, `heldFirstActs`, `heldLastActs`, `heldMoment`),
+  so merges with the Perk lane stay small.
+- **A held item acts on either side** (a foe's Billie may hold one; a trainer's could): every held kind is read for
+  the fighter holding it, unlike the run's rows (yours only). Its once-a-battle marks are the battle's `b.heldState`,
+  one set per holder.
+- **when, if and once on hold rows** (Complaint Form): a hold row may say `when` hit or hurt (stat rows only:
+  data-checks.js `HELD_WHEN_KINDS`), and only with one an `if` of what a hit knows about the holder (effects.js
+  `HELD_IFS`: superEffective, cat, type, hp<) and `once: battle`; no every, grow or per. A row with a when is left out
+  of fxOfBillie (it acts only at its moment: `fxHeldAt`). Complaint Form is two such stat rows (Attack, Sp. Atk +2).
+- Seatbelt's survive is Bedrock's rule for a held item (full HP, once a battle; Bedrock goes first). Cactus Keyring's
+  reflect takes `cat: H` ("physical"). Party Balloon blocks damaging moves of its type with no accuracy roll and is
+  spent by the first damaging hit ("popped"); the foe AI's damage estimate sees 0 while it floats. Express Pass rolls
+  once per act of its holder, after the Perks' first rows (no roll without one held). Ankle Weights' last sorts after
+  priority and the early acts, before Speed; its text says "moves after the others" (a priority move still goes
+  first, so "always" was dropped); its damage is an ordinary deal row x1.3.
+- The Studio's items editor had **no hold rows at all** (held items were edited as JSON only): studio/js/held-editor.js
+  gives a held item its tier and rows by kind (with When, If and Once), Make it a held item and back.
+- The Studio's type rename now reaches hold rows (a type booster's type, Party Balloon's, a row's `type:` condition).
+- All 24 pictures drawn (the 8 existing redrawn); every i_ item rectangle retired (i_pretzel, i_trailmix, i_bell and
+  the finance-era i_appeal, i_settlement, i_taxbreak, i_bailout, i_loophole, i_apology): no item draws from the atlas.
+  dataItemArt now warns for any item without a picture. Main's ON-4 (merged mid-step) had added Form 99-A
+  (`transfer`) on i_settlement: it got its own picture too (a stamped carbon-copy form).
+
 ### 5.9 Boons and curses (PK-9; data section `boons`; 20)
 Named from today's rows: Glittering Water (fountain, Moneys +10%, 3 places), Lucky Ripples (fountain, catch +5%, 3),
 Stamped Insufficient (fountain curse, shops +10%, 2), Camera-Ready (ring_light, Speed +1, 1), Surge Pricing
@@ -350,6 +382,28 @@ Potion, Hi-Potion, Burn Salve, Nerve Tonic, Wake-Up Tea, Revive, Max Revive, Ful
 Trail Mix, Pretzel and Repair Kit get 36 px pictures (`img: "items/<id>.svg"`); `itemIcon` already prefers `img`;
 the Bag draws 36 px (was 30), reward cards 72 px; the atlas's `i_*` rectangles retire through the Studio's
 unused-art gate.
+
+**Corrected in PK-11** (built 2026-10-28 on `track/perks-items`, the items lane beside the Perk waves):
+- **items.json has no schema** (section 2 and the step's brief said "schema"): `dataItemArt` (data-checks.js, run by
+  check-data, beside PK-2's `dataPerkArt`) checks the path's form too: an item's `img` is `items/<its id>.svg`, there,
+  and an icon (svgProblem). A Bag item without `img` warns; a held item is left alone until PK-10 draws them (eight
+  warnings would have changed every check-data snapshot). Adding a whole items schema was left out (not this step's).
+- The Shining Stone's id is `bell` and its atlas icon `stone`; `i_bell` is **Lucky Coin's** (held). So the 9
+  rectangles retired are i_potion, i_hipotion, i_salve, i_tonic, i_tea, i_revive, i_maxrevive, i_stone, i_remedy;
+  i_pretzel (Leftover Sandwich), i_trailmix (Snack Pack) and i_bell (Lucky Coin) stay for PK-10. Protein Bar drew
+  i_trailmix and the Repair Kit i_tonic (borrowed pictures).
+- The "unused-art gate" for an atlas rectangle is the atlas editor's Delete, refused while `atlasUses` finds a data
+  use; it counted an item by `i_` + (icon or id) even with an `img`. Now an item with its own picture uses no key; the
+  13 drop `icon` (`Item.icon` is optional), the 9 rectangles leave art/manifest.js and their pixels leave
+  art/icons/icons.png (so the editor's Add finds a clean spot).
+- `itemIcon` already drew `img` as `<img class="pxi">` (pixelated); only the sizes changed: the Bag 36 (was 30), a
+  reward card 72 (was 40), and also the battle's Bag 36 (was 32) and the Billie sheet's use and give lists 36 (was 34),
+  which the brief did not name. Kept: the shop 36, a town square stall 36, the Billie sheet's held line 14, the Trainer
+  card's list 24 and the run start's packing list 30 (small text rows; their held items still draw the atlas).
+- The Studio's items editor had "Upload a custom icon" (a PNG named `items/<id>.png`, which `dataItemArt` would
+  refuse): replaced by **Draw one** (a blank `art/items/<id>.svg`, as the Perks editor's) and **Edit art**; the atlas
+  Icon field shows only for an item without a picture. The icon editor and the art browser needed nothing new (`items`
+  was in `ICON_DIRS` since PK-2).
 
 ## 6. The art (every Perk, held item, Bag item and boon)
 - **Look**: exactly the UI icons'. A flat 34x34 front in `ICON_PALETTE` letters or one `ICON_RAMPS` hue (digits 1-4,
@@ -652,8 +706,8 @@ unused-art gate.
 | PK-7 | Fine Print (**done 2026-10-28**, `track/perks`; "Corrected in PK-7" in section 8) | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
 | PK-8 | Sets | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |
 | PK-9 | Boons and curses | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
-| PK-10 | Held items | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
-| PK-11 | Bag item icons | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
+| PK-10 | Held items (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-10" in 5.8) | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
+| PK-11 | Bag item icons (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-11" in 5.10) | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
 | PK-12 | Collection and wrap-up | the Field Guide's Perks tab (seen, taken, silhouettes of the unseen: the SVGs work as masks), the run sim over every Perk, the full check, the summary of every decision for the owner | the track's done-when (section 14) |
 
 About 12 sessions after this one. Each one merges main into `track/perks` first (a merge, not a rebase; `npm run

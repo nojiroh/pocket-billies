@@ -860,6 +860,18 @@ canvas.spr-prev.big {
   width: 40px;
   height: 40px;
 }
+/* PK-11: an item's own picture at the game's 72 and 36 px (data-editors.js itemPicHTML) */
+.item-ic:has(.item-art) {
+  width: 76px;
+}
+.item-ic img.item-art {
+  width: 72px;
+  height: 72px;
+}
+.item-ic img.item-art + img.item-art {
+  width: 36px;
+  height: 36px;
+}
 .keeper {
   display: grid;
   grid-template-columns: auto 1fr;

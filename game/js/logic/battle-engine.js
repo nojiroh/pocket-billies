@@ -100,6 +100,8 @@ import {
   fxDamage,
   fxDamageBy,
   fxFire,
+  fxHeldAt,
+  fxHeldRow,
   fxImmune,
   fxInflictPick,
   fxLive,
@@ -243,7 +245,26 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxWeatherFor: [() => fxWeatherFor, v => (fxWeatherFor = v)],
   // @ts-expect-error -- replaced on purpose
+  heldAfterHit: [() => heldAfterHit, v => (heldAfterHit = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldCtx: [() => heldCtx, v => (heldCtx = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldFirstActs: [() => heldFirstActs, v => (heldFirstActs = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldFloats: [() => heldFloats, v => (heldFloats = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldHitMoments: [() => heldHitMoments, v => (heldHitMoments = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldLastActs: [() => heldLastActs, v => (heldLastActs = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldMarks: [() => heldMarks, v => (heldMarks = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldMoment: [() => heldMoment, v => (heldMoment = v)],
+  heldName: [() => heldName],
+  // @ts-expect-error -- replaced on purpose
   heldStages: [() => heldStages, v => (heldStages = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldSurvives: [() => heldSurvives, v => (heldSurvives = v)],
   heldXp: [() => heldXp],
   // @ts-expect-error -- replaced on purpose
   hitPart: [() => hitPart, v => (hitPart = v)],
@@ -716,6 +737,14 @@ export function useMove(k, mid, tk0, part) {
       battleSay(`${billyName(t2)} protected itself.`, tk2 === tk ? null : { k: 'hurt', si: tk2, dmg: 0, fx: 'block' });
       continue;
     }
+    /* PK-10: a held immune row (Party Balloon): moves of its type miss the holder (no accuracy roll) */
+    if (onFoe && M.c !== 'X' && heldFloats(tk2, M.t)) {
+      if (tk2 === tk) ev.an.miss = true;
+      battleSay(`${billyName(t2)} floated clear on its ${heldName(t2)}.`, { k: 'block', si: tk2 }).by = [
+        { src: 'held:' + t2.held, si: tk2 },
+      ];
+      continue;
+    }
     if (onFoe && M.a && battleRoll() * 100 >= M.a) {
       if (tk2 === tk) ev.an.miss = true;
       battleSay(`${billyName(u)} missed${spread ? ' ' + billyName(t2) : ''}.`);
@@ -751,7 +780,9 @@ export function useMove(k, mid, tk0, part) {
         r.dmg = Math.max(1, Math.floor(r.dmg * (BATTLE_RULES.alphaShieldMult ?? 0.5)));
         r.shield = 1;
       }
-      const held = bedrockHolds(tk2, r);
+      /* PK-10: else a held survive row (Seatbelt) */
+      const held = bedrockHolds(tk2, r),
+        belt = !held && heldSurvives(tk2, r);
       t2.hp = Math.max(0, t2.hp - r.dmg);
       if (r.dmg > 0) landed = true;
       alphaPhase(tk2);
@@ -784,6 +815,10 @@ export function useMove(k, mid, tk0, part) {
           k: 'block',
           si: tk2,
         }).by = [{ src: 'passive:bedrock', si: tk2 }];
+      if (belt)
+        battleSay(`${billyName(t2)} held on with its ${heldName(t2)}!`, { k: 'block', si: tk2 }).by = [
+          { src: 'held:' + t2.held, si: tk2 },
+        ];
       if (fx.drain && u.hp < maxHp(u)) {
         const g = Math.max(1, Math.floor(r.dmg * fx.drain));
         u.hp = Math.min(maxHp(u), u.hp + g);
@@ -796,6 +831,9 @@ export function useMove(k, mid, tk0, part) {
       }
       /* PK-1: the hit's moments for the run's rows: hit, crit and ko for yours hitting, hurt for yours hit */
       if (battleNow().fx) fxHitMoments(k, tk2, M, r);
+      /* PK-10: the hit's moments for held items (either side): hit for the one hitting, hurt for the one hit */
+      heldHitMoments(k, tk2, M, r);
+      heldAfterHit(k, tk2, M, r);
     }
     if (t2.hp > 0 && onFoe) {
       if (fx.status && (M.c === 'X' || battleRoll() * 100 < (fx.chance || 100))) inflict(tk2, fx.status, M.c === 'X');
@@ -1234,7 +1272,8 @@ export function aiDamage(k, id, tk) {
   return (
     (((0.4 * L + 2) * P * effectiveStat(k, phys ? 'lev' : 'lob')) / effectiveStat(tk, phys ? 'law' : 'pr') / 50 + 2) *
     (M.t !== 'None' && actorTypes(k).includes(M.t) ? BATTLE_RULES.stab : 1) *
-    typeEffectiveness(M.t, actorTypes(tk))
+    typeEffectiveness(M.t, actorTypes(tk)) *
+    (heldFloats(tk, M.t) ? 0 : 1)
   );
 }
 export function aiScore(k, id, tk) {
@@ -1934,6 +1973,130 @@ export function fxMoment(when, k, more) {
   return rows;
 }
 
+/* ---------- PK-10: held items' own moments and kinds (effects.js; perks-track.md 5.8) ----------
+   A held item acts for its holder on either side; its once-a-battle marks are the battle's (b.heldState), one set for
+   each holder. Nothing here rolls the battle's stream unless a held row asks for a chance. */
+/** PK-10: a holder's marks in this battle, made when first needed @param {number} k @returns {any} */
+export function heldMarks(k) {
+  const b = battleNow(),
+    m = fighter(k),
+    H = b.heldState || (b.heldState = {}),
+    key = (m && m.uid) || 'at' + k;
+  return H[key] || (H[key] = {});
+}
+/** PK-10: what a hit knows about a holder, for its hold rows' if (effects.js HELD_IFS) @param {number} k
+ * @param {any} [more] the hit's (cat, superEffective) */
+export function heldCtx(k, more) {
+  const m = fighter(k);
+  return { type: actorTypes(k), hp: m.hp / maxHp(m), uid: m.uid, ...more };
+}
+/** PK-10: a holder's item's name, for its lines @param {any} m */
+export const heldName = m => (ITEMS[m.held] && ITEMS[m.held].n) || m.held;
+/** PK-10: a moment for a holder standing: its hold rows of that when act (fxFire with its marks): a stat row's stages
+ * land on the holder, with a line naming the item. Returns the rows that acted @param {string} when @param {number} k
+ * @param {any} [more] */
+export function heldMoment(when, k, more) {
+  const m = fighter(k);
+  if (!m || !m.held || m.hp <= 0) return [];
+  const L = fxHeldAt(m, ITEMS, when);
+  if (!L.length) return L;
+  const rows = fxFire(L, when, heldCtx(k, more), { run: null, battle: heldMarks(k) });
+  for (const f of rows) {
+    if (f.kind !== 'stat' || !f.stages) continue;
+    const v = fieldState(k),
+      o = v.st[f.stat] || 0;
+    v.st[f.stat] = clamp(o + f.stages, -BATTLE_RULES.stageMax, BATTLE_RULES.stageMax);
+    if (v.st[f.stat] !== o)
+      battleSay(
+        `${heldName(m)}: ${billyName(m)}’s ${STAT_NAMES[f.stat]} ${f.stages > 0 ? 'rose' : 'fell'}${Math.abs(f.stages) > 1 ? ' sharply' : ''}.`,
+        { k: 'stat', si: k, up: f.stages > 0 }
+      ).by = [{ src: f.src, si: k, stat: f.stat, stages: f.stages }];
+  }
+  return rows;
+}
+/** PK-10: a held survive row (Seatbelt): once a battle, a hit that would knock its holder out from full HP leaves it at
+ * 1 HP. Lowers r.dmg; true when it held @param {number} tk @param {{ dmg: number }} r */
+export function heldSurvives(tk, r) {
+  const t = fighter(tk),
+    mx = maxHp(t);
+  if (!t.held || r.dmg < t.hp || t.hp < mx || mx < 2) return false;
+  const f = fxHeldRow(fxOfBillie(t, ITEMS), 'survive'),
+    M = heldMarks(tk);
+  if (!f || M.survive) return false;
+  M.survive = 1;
+  r.dmg = t.hp - 1;
+  return true;
+}
+/** PK-10: the acts whose fighter holds a first row (Express Pass) and wins its roll (one of the battle's stream for
+ * each, in the acts' order: none rolled without such an item) join `early`, each with a line @param {any[]} acts
+ * @param {Set<any>} early */
+export function heldFirstActs(acts, early) {
+  for (const a of acts) {
+    const u = fighter(a.who),
+      f = u && u.held ? fxHeldRow(fxOfBillie(u, ITEMS), 'first') : null;
+    if (!f || !(battleRoll() < f.chance)) continue;
+    early.add(a);
+    battleSay(`${billyName(u)}’s ${heldName(u)} let it go first!`, null).by = [{ src: 'held:' + u.held, si: a.who }];
+  }
+}
+/** PK-10: the acts whose fighter holds a last row (Ankle Weights) and didn't win a way to go first @param {any[]} acts
+ * @returns {Set<any>} */
+export function heldLastActs(acts) {
+  const out = new Set();
+  for (const a of acts) {
+    const u = fighter(a.who);
+    if (u && u.held && fxHeldRow(fxOfBillie(u, ITEMS), 'last')) out.add(a);
+  }
+  return out;
+}
+/** PK-10: does fighter k's held immune row keep moves of type `ty` off it now (not yet spent by a hit, with `until`)?
+ * @param {number} k @param {string} ty */
+export function heldFloats(k, ty) {
+  const t = fighter(k);
+  if (!t || !t.held) return false;
+  const f = fxHeldRow(fxOfBillie(t, ITEMS), 'immune');
+  return !!f && f.type === ty && !(f.until === 'hurt' && heldMarks(k).popped);
+}
+/** PK-10: what held items do after a hit lands: the one hit holds a reflect row (Cactus Keyring): the one hitting
+ * loses its share of its HP, for a move of the row's category (any without one); the one hitting holds a drain row
+ * (Costume Fangs): it heals its share of the damage dealt @param {number} k @param {number} tk
+ * @param {any} M @param {{ dmg: number }} r */
+export function heldAfterHit(k, tk, M, r) {
+  const u = fighter(k),
+    t = fighter(tk);
+  if (k === tk || !u || !t || !(r.dmg > 0)) return;
+  /* the one hit holds an immune row that lasts until it is hit (Party Balloon): it is spent */
+  const fl = t.held ? fxHeldRow(fxOfBillie(t, ITEMS), 'immune') : null;
+  if (fl && fl.until === 'hurt' && !heldMarks(tk).popped) {
+    heldMarks(tk).popped = 1;
+    battleSay(`${billyName(t)}’s ${heldName(t)} popped!`, { k: 'stat', si: tk, up: false });
+  }
+  const rf = t.held ? fxHeldRow(fxOfBillie(t, ITEMS), 'reflect') : null;
+  if (rf && (!rf.cat || rf.cat === M.c) && u.hp > 0) {
+    const d = Math.min(u.hp, Math.max(1, Math.floor(maxHp(u) * rf.share)));
+    u.hp -= d;
+    battleSay(`${billyName(u)} was hurt by ${billyName(t)}’s ${heldName(t)}.`, { k: 'hurt', si: k, dmg: d }).by = [
+      { src: 'held:' + t.held, si: tk },
+    ];
+  }
+  /* the one hitting holds a drain row (Costume Fangs): it heals its share of the damage dealt */
+  const dr = u.held && u.hp > 0 ? fxHeldRow(fxOfBillie(u, ITEMS), 'drain') : null;
+  if (dr && u.hp < maxHp(u)) {
+    const g = Math.min(maxHp(u) - u.hp, Math.max(1, Math.floor(r.dmg * dr.share)));
+    u.hp += g;
+    battleSay(`${billyName(u)} restored HP with its ${heldName(u)}.`, { k: 'heal', si: k, amt: g }).by = [
+      { src: 'held:' + u.held, si: k },
+    ];
+  }
+}
+/** PK-10: after a hit lands: hit for the holder hitting, hurt for the holder hit @param {number} k @param {number} tk
+ * @param {any} M @param {{ te: number }} r */
+export function heldHitMoments(k, tk, M, r) {
+  const more = { cat: M.c, superEffective: r.te > 1 };
+  heldMoment('hit', k, more);
+  heldMoment('hurt', tk, more);
+}
+
 export function battleStageKey() {
   return hereLocation().battleStage;
 }
@@ -1989,10 +2152,15 @@ export function runTurn(plan, b) {
     acts.forEach(a => (a.r = battleRoll()));
     /* PK-3: a run's first rows put yours ahead of the foe's, within a move's priority (Alarm Clock) */
     const early = fxFirstActs(acts);
+    /* PK-10: a held first row (Express Pass), on either side: a roll for each of its acts */
+    heldFirstActs(acts, early);
+    /* PK-10: a held last row (Ankle Weights): after the others, within a move's priority */
+    const late = heldLastActs(acts);
     acts.sort(
       (a, b) =>
         (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
         (early.has(b) ? 1 : 0) - (early.has(a) ? 1 : 0) ||
+        (late.has(a) ? 1 : 0) - (late.has(b) ? 1 : 0) ||
         (a.boss2 ? 1 : 0) - (b.boss2 ? 1 : 0) ||
         effectiveStat(b.who, 'hus') - effectiveStat(a.who, 'hus') ||
         a.r - b.r

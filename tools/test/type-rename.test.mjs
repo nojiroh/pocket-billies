@@ -42,6 +42,18 @@ function typeFields(D, ids = new Set(D.types.map(t => t.id))) {
 const planted = () => {
   const D = copy();
   D.perks._planted = { name: 'P', d: 'P', fx: [{ kind: 'damage', side: 'deal', type: D.types[0].id, mult: 1.5 }] };
+  /* PK-10: and a held item's damage row, immune row and condition */
+  D.items._planted = {
+    n: 'H',
+    price: 1,
+    rarity: 'common',
+    d: 'H',
+    hold: [
+      { kind: 'damage', side: 'deal', type: D.types[1].id, mult: 1.2 },
+      { kind: 'stat', stat: 'lev', stages: 1, when: 'hit', if: 'type:' + D.types[2].id },
+    ],
+  };
+  D.items._planted2 = { n: 'I', price: 1, rarity: 'common', d: 'I', hold: [{ kind: 'immune', type: D.types[3].id }] };
   return D;
 };
 
@@ -132,4 +144,15 @@ test('PK-4: a rename reaches a Perk’s tags, its needs and the type names in it
   T.renameTypeIn(D, b, null);
   assert.equal(D.perks._p.needs, undefined);
   assert.equal(D.perks._p.tags, undefined);
+});
+
+test("PK-10: deleting a type: a held damage row counts for any type, a held immune row of it goes (and the item's held-ness with its last row)", () => {
+  const D = planted(),
+    gone = D.types[3].id;
+  D.items._planted.hold[0].type = gone;
+  T.renameTypeIn(D, gone, null);
+  assert.equal(D.items._planted.hold[0].type, undefined);
+  assert.equal(D.items._planted.hold.length, 2);
+  assert.equal(D.items._planted2.hold, undefined);
+  assert.equal(D.items._planted2.rarity, undefined);
 });

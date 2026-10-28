@@ -64,6 +64,10 @@ import {
   FX_WEATHER,
   FX_WHEN,
   FX_WHEN_BATTLE,
+  HELD_FX_KINDS,
+  HELD_IFS,
+  HELD_OWN_FORMS,
+  HELD_WHEN,
 } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { BANTER_WHO } from './story-pick.js';
@@ -79,6 +83,7 @@ expose({
   FX_TIMING: [() => FX_TIMING],
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
   GENE_KINDS: [() => GENE_KINDS],
+  HELD_WHEN_KINDS: [() => HELD_WHEN_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
   PERK_NEEDS: [() => PERK_NEEDS],
   PERK_THEMES: [() => PERK_THEMES],
@@ -120,6 +125,8 @@ expose({
   dataGenes: [() => dataGenes, v => (dataGenes = v)],
   // @ts-expect-error -- replaced on purpose
   dataHeldItems: [() => dataHeldItems, v => (dataHeldItems = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataItemArt: [() => dataItemArt, v => (dataItemArt = v)],
   // @ts-expect-error -- replaced on purpose
   dataModifiers: [() => dataModifiers, v => (dataModifiers = v)],
   // @ts-expect-error -- replaced on purpose
@@ -185,6 +192,10 @@ expose({
   fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   fxWhenProblems: [() => fxWhenProblems, v => (fxWhenProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldKindProblems: [() => heldKindProblems, v => (heldKindProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldRowProblems: [() => heldRowProblems, v => (heldRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   perkNeedsProblems: [() => perkNeedsProblems, v => (perkNeedsProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2530,7 +2541,16 @@ export function fxWhenProblems(f, at, D, problem) {
 }
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
 // limits, and nothing else an item does (a held item is never used up); UI-14b: each its rarity, and only they have one
-export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal'];
+export const HOLD_KINDS = [
+  'money',
+  'stat',
+  'damage',
+  'xp',
+  'turnHeal',
+  'pinchHeal',
+  ...HELD_OWN_FORMS,
+  ...HELD_FX_KINDS,
+];
 /** UI-14b: the loot ladder's tiers (the owner's answer 9): the colour code's rarity ids (logic/signals.js) */
 export const RARITY_TIERS = UI_SIGNALS.filter(s => s[2] === 'rarity').map(s => s[0]);
 /** RL-12c: items.json `hold` @param {any} D @returns {DataProblem[]} */
@@ -2553,11 +2573,77 @@ export function dataHeldItems(D) {
       problem(`${k}.rarity: one of ${RARITY_TIERS.join(', ')}`);
     for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp', 'repair'])
       if (/** @type {any} */ (I)[use] != null) problem(`${k}: a held item can't also be used (${use})`);
-    H.forEach((/** @type {any} */ f, /** @type {number} */ n) =>
-      fxRowProblems(f, `${k}.hold[${n}]`, HOLD_KINDS, D, problem)
-    );
+    H.forEach((/** @type {any} */ f, /** @type {number} */ n) => heldRowProblems(f, `${k}.hold[${n}]`, D, problem));
   }
   return out;
+}
+/** PK-10: the kinds a hold row may give a when, and at which moments (effects.js HELD_WHEN) */
+export const HELD_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({ stat: HELD_WHEN });
+/** RL-12c, PK-10: one hold row: its kind and numbers (fxRowProblems, the timing set aside), then its timing: a `when`
+ * of HELD_WHEN_KINDS, and only with one an `if` of what that moment knows (HELD_IFS) and `once: battle`; no every,
+ * grow or per (a holder keeps no count over the run) @param {any} f @param {string} at @param {any} D
+ * @param {(what: string) => void} problem */
+export function heldRowProblems(f, at, D, problem) {
+  if (!f || typeof f !== 'object') return fxRowProblems(f, at, HOLD_KINDS, D, problem);
+  const plain = { ...f };
+  for (const key of ['when', 'if', 'once']) delete plain[key];
+  fxRowProblems(plain, at, HOLD_KINDS, D, problem);
+  for (const key of ['every', 'grow', 'per'])
+    if (key in f) problem(`${at}.${key}: a held item's row can say when, if and once only`);
+  heldKindProblems(f, at, D, problem);
+  if (f.when != null && !(HELD_WHEN_KINDS[f.kind] || []).includes(f.when))
+    problem(
+      `${at}.when: a held ${f.kind} row can't act at ${f.when} (${HELD_WHEN_KINDS[f.kind] ? HELD_WHEN_KINDS[f.kind].join(', ') : 'no moment'})`
+    );
+  if (f.when == null)
+    for (const key of ['if', 'once']) if (key in f) problem(`${at}.${key}: only with a when (${HELD_WHEN.join(', ')})`);
+  if (f.once != null && f.once !== 'battle') problem(`${at}.once: battle (a held item's marks last one battle)`);
+  if (f.if != null) {
+    const L = Array.isArray(f.if) ? f.if : [f.if];
+    if (!L.length || L.length > 4) problem(`${at}.if: one condition, or a list of 1-4`);
+    for (const c of L) {
+      const why = fxCondProblem(c, D),
+        key = typeof c === 'string' ? (c.startsWith('hp<') ? 'hp<' : c.split(':')[0]) : '';
+      if (why) problem(`${at}.if: ${why}`);
+      else if (!(/** @type {readonly string[]} */ (HELD_IFS).includes(key)))
+        problem(`${at}.if: "${c}" isn't known at a held item's moment (${HELD_IFS.join(', ')})`);
+    }
+  }
+}
+/** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive and last take no number; reflect a share (at most
+ * half) and a category or none; drain a share of the damage dealt;
+ * immune a type (not a Perk's what), until: hurt or none; first a chance
+ * @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
+export function heldKindProblems(f, at, D, problem) {
+  const extra = (/** @type {string[]} */ own) =>
+    Object.keys(f)
+      .filter(key => !['kind', 'when', 'if', 'once', ...own].includes(key))
+      .forEach(key =>
+        problem(`${at}.${key}: ${fxA(f.kind)} row takes ${own.length ? own.join(', ') : 'no other field'}`)
+      );
+  if (f.kind === 'survive' || f.kind === 'last') extra([]);
+  if (f.kind === 'reflect') {
+    extra(['share', 'cat']);
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))
+      problem(`${at}.share: a share of the hitter's HP above 0, at most 0.5`);
+    if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
+  }
+  if (f.kind === 'immune') {
+    extra(['type', 'until']);
+    if (!(D.types || []).some((/** @type {any} */ t) => t.id === f.type))
+      problem(`${at}.type: a held immune row names a type its moves miss the holder with (types.json)`);
+    if (f.until != null && f.until !== 'hurt') problem(`${at}.until: hurt (until its holder is hit), or none`);
+  }
+  if (f.kind === 'first') {
+    extra(['chance']);
+    if (!(typeof f.chance === 'number' && f.chance > 0 && f.chance <= FX_CHANCE))
+      problem(`${at}.chance: a held first row's chance, above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE)`);
+  }
+  if (f.kind === 'drain') {
+    extra(['share']);
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
+      problem(`${at}.share: a share of the damage dealt above 0, at most 1`);
+  }
 }
 // SP-2: genes.json: the schema; every kind is a part kind of partKits.json with a trait that exists, and every kind a
 // recipe's slot bone uses (the parts a splice swaps) has one; a part's dominant type and move exist; a trait's rows are
@@ -2712,6 +2798,39 @@ export function dataPerkArt(perks, read) {
     else {
       const bad = svgProblem(t);
       if (bad) out.push({ lvl: 'error', where: 'perks.json', msg: `${k}.img: art/${R.img} is not an icon: ${bad}` });
+    }
+  }
+  return out;
+}
+/**
+ * PK-11: the items' pictures, as dataPerkArt checks the Perks'. items.json has no schema, so the path's form is checked
+ * here: an item's img is `items/<its id>.svg`, there, and an icon (svgProblem). An item without one draws its old atlas
+ * rectangle (`i_` + its icon; battle.js itemIcon): a warning (PK-10: held items too, now that each has its own).
+ * @param {any} items @param {(path: string) => string | null} read @returns {DataFinding[]}
+ */
+export function dataItemArt(items, read) {
+  /** @type {DataFinding[]} */
+  const out = [],
+    error = (/** @type {string} */ msg) => out.push({ lvl: 'error', where: 'items.json', msg });
+  for (const [k, I] of Object.entries(items || {})) {
+    if (!I || typeof I !== 'object') continue;
+    if (I.img === undefined) {
+      out.push({
+        lvl: 'warn',
+        where: 'items.json',
+        msg: `${k}: no img, so it draws the old atlas's i_${I.icon || k} (tools/build-icons.mjs)`,
+      });
+      continue;
+    }
+    if (I.img !== `items/${k}.svg`) {
+      error(`${k}.img: items/${k}.svg (its id, in the items folder), not ${JSON.stringify(I.img)}`);
+      continue;
+    }
+    const t = read(I.img);
+    if (t == null) error(`${k}.img: no picture art/${I.img}`);
+    else {
+      const bad = svgProblem(t);
+      if (bad) error(`${k}.img: art/${I.img} is not an icon: ${bad}`);
     }
   }
   return out;

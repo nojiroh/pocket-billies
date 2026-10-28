@@ -93,6 +93,10 @@ expose({
   FX_WEATHER: [() => FX_WEATHER],
   FX_WHEN: [() => FX_WHEN],
   FX_WHEN_BATTLE: [() => FX_WHEN_BATTLE],
+  HELD_FX_KINDS: [() => HELD_FX_KINDS],
+  HELD_IFS: [() => HELD_IFS],
+  HELD_OWN_FORMS: [() => HELD_OWN_FORMS],
+  HELD_WHEN: [() => HELD_WHEN],
   fxAt: [() => fxAt],
   fxBenchXp: [() => fxBenchXp],
   fxCatch: [() => fxCatch],
@@ -110,6 +114,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxFire: [() => fxFire, v => ((fxFire = v), provide({ fxFire }))],
   fxHealShare: [() => fxHealShare],
+  fxHeldAt: [() => fxHeldAt],
+  fxHeldRow: [() => fxHeldRow],
   fxIfs: [() => fxIfs],
   fxImmune: [() => fxImmune],
   // @ts-expect-error -- replaced on purpose
@@ -266,10 +272,12 @@ provide({ fxOfRun }); /* to-module */
  * splice's (rules.js billyGeneFx: its traits', tagged `gene:<trait>`, and an Unstable splice's drawback, `unstable`);
  * null with none (SP-5: an Augment's Unstable splice too)
  * @param {{ held?: string, sp?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m
- * @param {Record<string, { hold?: import('../../types/game-data').FxRow[] }>} items @returns {Fx[] | null} */
+ * @param {Record<string, { hold?: import('../../types/game-data').HeldRow[] }>} items @returns {Fx[] | null} */
 export const fxOfBillie = (m, items) => {
   const I = m && m.held ? items[m.held] : null,
-    held = I && I.hold && I.hold.length ? I.hold.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
+    /* PK-10: a row with a when acts only at its moment (fxHeldAt), never where its kind always acts */
+    rows = I && I.hold ? /** @type {import('../../types/game-data').FxRow[]} */ (I.hold.filter(f => !f.when)) : [],
+    held = rows.length ? rows.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
   if (!m || (!m.graft && !m.aug)) return held;
   const gene = /** @type {Fx[]} */ (billyGeneFx(m));
   return held || gene.length ? [...(held || []), ...gene] : null;
@@ -846,3 +854,35 @@ export function fxStateLog(run) {
     ])
   );
 }
+
+/* ---------- PK-10: held items' own moments and kinds (perks-track.md 5.8) ----------
+   A held item's rows act for its holder alone, on either side (a foe's Billie may hold one too). A hold row may say
+   `when` (hit: its holder lands a hit; hurt: its holder is hit), `if` (what such a moment knows about the holder and
+   the hit: HELD_IFS) and `once: battle`; its marks are the battle's, one set for each holder (battle-engine.js
+   heldMarks). */
+/** PK-10: the kinds only a held item has (not FX_KINDS: no Perk, boon or modifier gives them):
+ *   survive  once a battle, from full HP, its holder lives through a knockout hit with 1 HP (battle-engine.js
+ *            heldSurvives)
+ *   reflect  a Billie that hits its holder with a move (of its cat, if it names one) loses share of its own HP
+ *            (heldAfterHit)
+ *   drain    its holder heals share of the damage it deals (heldAfterHit)
+ *   last     its holder moves after the others, within a move's priority (battle-engine.js heldLastActs) */
+export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect', 'drain', 'last']);
+/** PK-10: the kinds of FX_KINDS a hold row reads its own way: immune names a type (its moves miss the holder, until
+ * it is hit with `until: hurt`; battle-engine.js heldFloats); first a chance its holder moves first (heldFirstActs) */
+export const HELD_OWN_FORMS = /** @type {const} */ (['immune', 'first']);
+/** PK-10: a holder's first row of a kind, or null @param {any[] | null | undefined} fx @param {string} kind */
+export const fxHeldRow = (fx, kind) => (fx || []).find(f => f.kind === kind) || null;
+/** PK-10: the moments a hold row can act at */
+export const HELD_WHEN = /** @type {const} */ (['hit', 'hurt']);
+/** PK-10: the conditions a hold row's `if` can name: those a hit knows about its holder */
+export const HELD_IFS = /** @type {const} */ (['superEffective', 'cat', 'type', 'hp<']);
+/** PK-10: a Billie's hold rows of `when` (tagged held:<id>), for its moment; [] with none
+ * @param {{ held?: string } | null | undefined} m @param {Record<string, { hold?: any[] }>} items
+ * @param {string} when @returns {Fx[]} */
+export const fxHeldAt = (m, items, when) => {
+  const I = m && m.held ? items[m.held] : null;
+  return I && I.hold
+    ? I.hold.map((f, row) => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held, row })).filter(f => f.when === when)
+    : [];
+};

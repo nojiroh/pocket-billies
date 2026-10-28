@@ -329,6 +329,12 @@ town node needs it.
   Perk, the rules noDrop and faintPaysNothing, foe levels and the boss's HP moved at once when taken mid-run, the
   reward pick's Perk card, the orange cards with a red stamp, 11 new pictures) done 2026-10-28 on `track/perks`; PK-8
   (Perk sets) next.
+  PK-11 (Bag item icons: the 13 consumables drawn in art/items, `img` and dataItemArt, 36 px in the Bag
+  and 72 on reward cards, the Studio's items editor with Edit art, the atlas's 9 `i_*` rectangles retired) done
+  2026-10-28 on `track/perks-items` (the items lane, beside the Perk waves); PK-10 (held items: 16 new, the 8 existing
+  redrawn, the held kinds survive, reflect, drain, last, immune by type and first by chance, when/if/once on hold rows,
+  the Studio's held rows, every `i_` atlas rectangle retired) done 2026-10-28 on `track/perks-items`; the items lane is
+  finished.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas

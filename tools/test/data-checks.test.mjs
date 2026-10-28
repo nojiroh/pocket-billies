@@ -325,6 +325,37 @@ test('PK-2: dataPerkArt: a missing picture or a bad SVG is an error, no img a wa
   );
 });
 
+test('PK-11: dataItemArt: an img off items/<id>.svg, missing or not an icon is an error, an item without one a warning (PK-10: held ones too)', () => {
+  const icon = readFileSync(join(import.meta.dirname, '../../game/art/ui/relic.svg'), 'utf8'),
+    files = { 'items/a.svg': icon, 'items/c.svg': '<svg viewBox="0 0 12 12"></svg>', 'items/z.svg': icon },
+    read = (/** @type {string} */ p) => files[p] ?? null,
+    I = {
+      a: { img: 'items/a.svg' },
+      b: { img: 'items/b.svg' },
+      c: { img: 'items/c.svg' },
+      d: { icon: 'tonic' },
+      e: { img: 'items/z.svg' },
+      f: { icon: 'bell', hold: [] },
+    };
+  assert.deepEqual(
+    C.dataItemArt(I, read).map(f => [f.lvl, f.msg]),
+    [
+      ['error', 'b.img: no picture art/items/b.svg'],
+      ['error', 'c.img: art/items/c.svg is not an icon: An icon’s box is viewBox="0 0 36 36".'],
+      ['warn', "d: no img, so it draws the old atlas's i_tonic (tools/build-icons.mjs)"],
+      ['error', 'e.img: items/e.svg (its id, in the items folder), not "items/z.svg"'],
+      ['warn', "f: no img, so it draws the old atlas's i_bell (tools/build-icons.mjs)"],
+    ]
+  );
+  const ART = join(import.meta.dirname, '../../game/art'),
+    disk = (/** @type {string} */ p) => (existsSync(join(ART, p)) ? readFileSync(join(ART, p), 'utf8') : null);
+  assert.deepEqual(
+    C.dataItemArt(GAME_DATA.items, disk),
+    [],
+    'every item names a picture that is there (PK-11: the 13 Bag items; PK-10: the 24 held items)'
+  );
+});
+
 test('RS-4: a resident’s service and its rows: one entry a level, one power level, names that exist, rows in order', () => {
   let D = copy();
   D.residents.mo.service.pop();
@@ -421,14 +452,59 @@ test('PK-1: dataPerks checks when, if, every, grow, per, once and say; other row
   const E = structuredClone(GAME_DATA);
   E.perks.lucky_charm.say = 'x'.repeat(41);
   assert.ok(C.dataPerks(E).some(p => p[1].includes('lucky_charm.say')));
-  /* a held item's rows are a Billie's own: no timing there (it would be ignored) */
+  /* a held item's rows are a Billie's own: PK-10: a when only where a held row can act (a stat row at hit or hurt) */
   const F = structuredClone(GAME_DATA),
-    held = Object.keys(F.items).find(k => F.items[k].hold);
+    held = Object.keys(F.items).find(k => F.items[k].hold && F.items[k].hold[0].kind !== 'stat');
   F.items[held].hold[0].when = 'hit';
   assert.ok(
-    C.dataHeldItems(F).some(p => p[1].includes(`${held}.hold[0].when: only a run's rows`)),
+    C.dataHeldItems(F).some(p =>
+      p[1].includes(`${held}.hold[0].when: a held ${F.items[held].hold[0].kind} row can't act at hit`)
+    ),
     JSON.stringify(C.dataHeldItems(F))
   );
+});
+
+test("data checks: PK-10: a held item's row says when (a stat row at hit or hurt), if (what the hit knows) and once: battle", () => {
+  const ok = { kind: 'stat', stat: 'lev', stages: 2, when: 'hurt', if: ['superEffective', 'cat:H'], once: 'battle' };
+  for (const [row, text] of [
+    [ok, ''],
+    [{ ...ok, when: 'ko' }, "can't act at ko"],
+    [{ ...ok, if: 'lead' }, `"lead" isn't known at a held item's moment`],
+    [{ ...ok, if: 'hp<2' }, 'hp<x: a share of HP'],
+    [{ ...ok, once: 'run' }, 'once: battle'],
+    [{ ...ok, every: 2 }, 'can say when, if and once only'],
+    [{ kind: 'stat', stat: 'lev', stages: 1, if: 'superEffective' }, 'if: only with a when'],
+    [{ kind: 'stat', stat: 'lev', stages: 1, once: 'battle' }, 'once: only with a when'],
+    [{ kind: 'survive' }, ''],
+    [{ kind: 'survive', share: 0.5 }, 'share: a survive row takes no other field'],
+    [{ kind: 'survive', when: 'hurt' }, "can't act at hurt"],
+    [{ kind: 'reflect', share: 0.125, cat: 'H' }, ''],
+    [{ kind: 'reflect', share: 0.75 }, 'share: a share of the hitter'],
+    [{ kind: 'reflect', share: 0.1, cat: 'X' }, 'cat: H or S'],
+    [{ kind: 'drain', share: 0.125 }, ''],
+    [{ kind: 'drain', share: 0 }, 'share: a share of the damage dealt'],
+    [{ kind: 'drain', share: 0.1, cat: 'H' }, 'cat: a drain row takes share'],
+    [{ kind: 'immune', type: 'Ground', until: 'hurt' }, ''],
+    [{ kind: 'immune', type: 'Ground' }, ''],
+    [{ kind: 'immune', what: 'brn' }, 'what: an immune row takes type, until'],
+    [{ kind: 'immune', type: 'Nope' }, 'type: a held immune row names a type'],
+    [{ kind: 'immune', type: 'Ground', until: 'win' }, 'until: hurt'],
+    [{ kind: 'first', chance: 0.2 }, ''],
+    [{ kind: 'first' }, "chance: a held first row's chance"],
+    [{ kind: 'first', chance: 0.9 }, "chance: a held first row's chance"],
+    [{ kind: 'last' }, ''],
+    [{ kind: 'last', n: 1 }, 'n: a last row takes no other field'],
+  ]) {
+    const F = structuredClone(GAME_DATA);
+    F.items.iron_vest.hold = [row];
+    const all = C.dataHeldItems(F).map(p => p[1]);
+    if (!text) assert.deepEqual(all, [], JSON.stringify(all));
+    else
+      assert.ok(
+        all.some(w => w.startsWith('iron_vest.hold[0]') && w.includes(text)),
+        `${text} in ${JSON.stringify(all)}`
+      );
+  }
 });
 
 // PK-3: the battle kit's kinds (crit, immune, inflict, chip, first, revive): good rows pass check-data and the schema,
