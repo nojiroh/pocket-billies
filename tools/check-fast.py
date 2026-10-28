@@ -300,6 +300,7 @@ WRAP = "((a)=>a-2*Math.PI*Math.floor((a+Math.PI)/(2*Math.PI)))"
 # the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026): holding right from the south
 # keeps to 30 m for the 0.7 rad the check needs; nearer the summit (12-20 m) the slopes slide you 1-3 m in
 ORBIT_R = 30
+ORBIT_FRAMES = 300   # the hold-right walk's frames on a slow machine, four times what it needs
 
 
 def hub_orbit_walk(pg, c):
@@ -331,14 +332,16 @@ def hub_orbit_walk(pg, c):
     f0 = pg.evaluate('walkRenderer.frames'); until(pg, f'walkRenderer.frames>={f0 + 2}', 30)
     pg.evaluate("walkView.stick={x:1,y:0};walkView.run=true;0")
     gone = f"Math.abs(Math.atan2(walkView.pl.x-{cx},walkView.pl.z-{cz}))"
-    t0 = time.time(); ys = []
-    while time.time() - t0 < 60:
+    # the walk is game time (67 frames measured, at the game clock's 60 ms a frame): 60 s, and on a slow machine up to
+    # ORBIT_FRAMES frames (at most 300 s)
+    t0 = time.time(); ys = []; f0 = pg.evaluate('walkRenderer.frames')
+    while time.time() - t0 < 300 and (time.time() - t0 < 60 or pg.evaluate('walkRenderer.frames') < f0 + ORBIT_FRAMES):
         ys.append(pg.evaluate("walkView.C.yaw"))
         if pg.evaluate(f"{gone}<Math.PI*0.75"): break
         pg.wait_for_timeout(100)
     pg.evaluate("walkView.stick=null;walkView.run=false;0")
     turned = pg.evaluate(f"Math.PI-{gone}")
-    if turned < 0.7: raise Exception(f'holding right walked only {turned:.2f} rad round in 60 s')
+    if turned < 0.7: raise Exception(f'holding right walked only {turned:.2f} rad round in {time.time() - t0:.0f} s ({pg.evaluate("walkRenderer.frames") - f0} frames)')
     r = pg.evaluate(f"Math.hypot(walkView.pl.x-{cx},walkView.pl.z-{cz})")
     if abs(r - R) > 1: raise Exception(f'holding right drifted from the {R} m circle to {r:.2f} m')
     jump = max((abs((ys[k] - ys[k - 1] + math.pi) % (2 * math.pi) - math.pi) for k in range(1, len(ys))), default=0)
