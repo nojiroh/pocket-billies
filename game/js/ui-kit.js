@@ -549,7 +549,7 @@ const PbSheet = class extends LitElement {
 
 /* the message under the top bar: a long hexagon of glass with a gold diamond */
 const PbToast = class extends LitElement {
-  static properties = { text: {}, n: { type: Number } };
+  static properties = { text: {}, n: { type: Number }, done: { type: Boolean } };
   static styles = [
     base,
     shaped,
@@ -591,6 +591,12 @@ const PbToast = class extends LitElement {
         margin-left: var(--s1);
         color: var(--text2);
       }
+      /* UI-16a: something done: a check that draws itself (pbDrawDone) */
+      .ok {
+        flex: none;
+        display: inline-flex;
+        color: var(--sig-good-text, currentColor);
+      }
       @keyframes drop {
         from {
           opacity: 0;
@@ -603,6 +609,7 @@ const PbToast = class extends LitElement {
     super();
     this.text = '';
     this.n = 1;
+    this.done = false;
     this._y0 = null;
     this.addEventListener('pointerdown', e => {
       this._y0 = e.clientY;
@@ -629,6 +636,7 @@ const PbToast = class extends LitElement {
   }
   /* the count bumps each time the same message comes again */
   updated(changed) {
+    if (changed.has('done') && this.done) pbDrawDone(this.renderRoot.querySelector('.ok svg'));
     const n = this.renderRoot.querySelector('.n');
     if (changed.has('n') && n && !reduced())
       n.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], {
@@ -638,7 +646,15 @@ const PbToast = class extends LitElement {
   }
   render() {
     return html`<div class="face">
-        <span class="coin" aria-hidden="true"></span><span class="t">${this.text}</span
+        ${
+          this.done
+            ? html`<span class="ok" aria-hidden="true"
+                ><svg width="18" height="18" viewBox="0 0 24 24">
+                  <path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.5" />
+                </svg></span
+              >`
+            : html`<span class="coin" aria-hidden="true"></span>`
+        }<span class="t">${this.text}</span
         >${this.n > 1 ? html`<b class="n">×${this.n}</b>` : nothing}
       </div>
       ${shadowLayer()}${edgeLayer()}`;

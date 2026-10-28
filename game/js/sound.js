@@ -739,7 +739,7 @@ document.addEventListener('input', ev => {
 });
 /* SND-6: four UI sounds instead of one tick (music.json ui, logic/ui-sounds.js): a button picks one by its data-a and
    classes, so no screen changes. k is select, confirm, cancel or cant */
-function uiSound(k) {
+export function uiSound(k) {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
   const S = (MUSIC.ui && MUSIC.ui.sounds[k]) || null;
   if (!S) return;

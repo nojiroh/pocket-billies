@@ -247,6 +247,13 @@
 .scrim:not(.still) .sheet {
   animation: m-wipe var(--m-slow) var(--ease-out) backwards;
 }
+/* UI-16a: on a phone the sheet sits at the bottom edge (shell.css; centred from 700 px): it slides up with the spring
+   (m-sheet) instead of the wipe */
+@media (max-width: 699px) {
+  .scrim:not(.still) .sheet {
+    animation: m-sheet var(--m-slow) var(--spring) backwards;
+  }
+}
 
 /* slam and flip (UI-4): the rewards (payout, relic picks, the keep-one picker; owner: showy, Balatro-like). Slam: a
    row lands from the right and settles (stagger rows with --i); flip: a card turns face up. The kit's pb-payout and

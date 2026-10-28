@@ -151,7 +151,7 @@ const ENTER_ROWS =
   '.list > *, .bag-row, .lrow, .pickrow, .set-row, .u-row, .ranch-card, .inbox-list > *, pb-pick-card, .qrow, .tpanel';
 /** marks a new screen's or sheet's rows to come in (motion.css m-enter); the screen's or sheet's own wipe carries the
  * rest. Each row's --i is its place among the rows beside it @param {ParentNode | null} root */
-function pbEnterRows(root) {
+export function pbEnterRows(root) {
   if (!root) return;
   const seen = new Map();
   for (const el of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(ENTER_ROWS))) {
