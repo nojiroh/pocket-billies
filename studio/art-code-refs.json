@@ -1921,7 +1921,6 @@
    "game/js/ui.js:237"
   ],
   "up": [
-   "game/js/audio/tracker.js:976",
    "game/js/augment-screen.js:148",
    "game/js/augment-screen.js:259",
    "game/js/battle-stage.js:2293",
@@ -1937,6 +1936,8 @@
    "game/js/logic/data-checks.js:891",
    "game/js/logic/data-checks.js:935",
    "game/js/logic/marks.js:109",
+   "game/js/logic/music-patterns.js:41",
+   "game/js/logic/music-patterns.js:93",
    "game/js/logic/music-studio.js:71",
    "game/js/logic/online-legal.js:242",
    "game/js/person-art.js:802",
