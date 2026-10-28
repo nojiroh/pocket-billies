@@ -2196,7 +2196,8 @@ export function battleStagePlay(an, ev) {
     case 'status': {
       const T = actorCenter(an.si),
         kk = 1,
-        sp = an.st === 'par' ? 'bolt' : an.st === 'slp' ? 'zz' : 'flame';
+        /* VFX-14: a status line with no status is a broken part keeping a move from it: sparks, not a burn's flames */
+        sp = an.st === 'par' ? 'bolt' : an.st === 'slp' ? 'zz' : an.st === 'brn' ? 'flame' : 'spark';
       setActorAction(an.si, 'dizzy', 800);
       for (let i = 0; i < 8; i++)
         scheduleAt(i * 60, () =>
@@ -2211,7 +2212,7 @@ export function battleStagePlay(an, ev) {
             k: kk,
           })
         );
-      battleStage.s[an.si].st = an.st;
+      if (an.st) battleStage.s[an.si].st = an.st;
       blinkActor(an.si, 300);
       return { dur: 700, hit: 0 };
     }
