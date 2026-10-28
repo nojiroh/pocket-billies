@@ -46,9 +46,6 @@
 .pop.tag.crit {
   color: #ffe27a;
 }
-.pop.tag.se {
-  color: #ffb25a;
-}
 @keyframes popup {
   0% {
     opacity: 0;
@@ -228,8 +225,26 @@
   color: #c8d0da;
   font-size: 22px;
 }
-.pop.tag.nve {
-  color: #c8d0da;
+/* UI-16b: the effectiveness banner (battle.js hudBanner): a strip at the kit's slant, turned a little, over the target */
+.bt-banner {
+  position: absolute;
+  transform: translate(-50%, -100%) rotate(-4deg);
+  pointer-events: none;
+}
+.bt-banner b {
+  display: block;
+  padding: 5px 16px 4px;
+  clip-path: var(--clip-chip);
+  background: var(--sig-caution);
+  color: var(--c-ink);
+  font: 400 21px/1 var(--font-voice);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.bt-banner.nve b {
+  background: var(--bt-glass);
+  color: var(--bt-ink);
+  font-size: 16px;
 }
 /* glass panels: frosted, with a pixel-thin rim */
 .glassy {

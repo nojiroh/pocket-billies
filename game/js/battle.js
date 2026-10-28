@@ -675,8 +675,27 @@ function hudHit(ti, an, w = 0.3) {
   const kind = 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : '') + (an.te < 1 ? ' nve' : '');
   hudPop(ti, '−' + an.dmg, kind, w);
   if (an.crit) setTimeout(() => hudPop(ti, 'Critical hit', 'tag crit'), 90);
-  else if (an.te > 1) setTimeout(() => hudPop(ti, 'Super effective', 'tag se'), 90);
-  else if (an.te < 1) setTimeout(() => hudPop(ti, 'Not very effective', 'tag nve'), 90);
+  else if (an.te > 1) setTimeout(() => hudBanner(ti, 'Super effective', 'se'), 90);
+  else if (an.te < 1) setTimeout(() => hudBanner(ti, 'Not very effective', 'nve'), 90);
+}
+/* UI-16b: an effectiveness banner over the target: a slanted strip that slams in (motion.css m-slam; a fade under
+   Reduced), holds, and fades. Super effective in the caution fill, not very effective in the plates' glass */
+function hudBanner(si, text, kind) {
+  const L = $('#pops');
+  if (!L || !battleStage.L) return;
+  const q = battleStageToCss(actorTop(si));
+  if (!q) return;
+  const e = document.createElement('div');
+  e.className = 'bt-banner ' + kind;
+  e.innerHTML = `<b class="m-slam">${escapeHtml(text)}</b>`;
+  e.style.left = clamp(q.x, 80, battleStage.L.vw - 80) + 'px';
+  e.style.top = Math.max(40, q.y - 26) + 'px';
+  L.appendChild(e);
+  setTimeout(() => {
+    const out = e.animate ? e.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, fill: 'forwards' }) : null;
+    if (out) out.onfinish = () => e.remove();
+    else e.remove();
+  }, 1100);
 }
 function afterEvents() {
   if (!activeBattle) return;
