@@ -132,7 +132,7 @@
     {"k":"bollard","x":1.7,"z":0.3},
     {"k":"flag_pole","x":2.6,"z":2.2},
     {"k":"crates","x":-1.2,"z":3},
-    {"k":"signpost","x":2.9,"z":0.6,"say":"Bureau of Lost, Found and Beans. Checkpoint. Have your forms ready."},
+    {"k":"bureau_sign","x":2.9,"z":0.6,"say":"Bureau of Lost, Found and Beans. Checkpoint. Have your forms ready."},
     {"k":"bureau_barrier","x":1.2,"z":3.3},
     {"k":"bureau_crate","x":-0.1,"z":2}
    ],
