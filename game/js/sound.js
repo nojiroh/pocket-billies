@@ -27,7 +27,14 @@ import { maxHp } from './logic/rules.js';
 import { squareBuskSong, squareBusker } from './logic/square-day.js';
 import { hitTier, koAhead } from './logic/battle-anims.js';
 import { runWeather } from './logic/run-map.js';
-import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
+import {
+  musicArcBand,
+  musicBattleKind,
+  musicRedZone,
+  musicWeatherCut,
+  songFor,
+  songVariant,
+} from './logic/music-where.js';
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import {
@@ -44,6 +51,7 @@ import {
   ambienceStep,
 } from './logic/ambience-sound.js';
 import {
+  musicLayerArc,
   musicLayerBattle,
   musicLayerFight,
   musicLayerFightStart,
@@ -385,6 +393,8 @@ function musicState() {
     map: id,
     placeKind: r && r.t === 'city' ? 'city' : r && r.town ? 'town' : null,
     placeMusic: buskerSongNear(run, sc) || (r && r.music) || null,
+    /* SND-13: GB Sounds (a song on an ensemble then takes its arc band's version, not its layers) */
+    gb: !!(soundEngine.testGb != null ? soundEngine.testGb : soundPreferences().gbSounds),
     /* a run's place: its node's type, biome and row (logic/run-map.js) */
     nodeType: node ? node.type : null,
     biome: node ? node.biome || null : null,
@@ -1369,7 +1379,8 @@ function musicLayersIntensity() {
   const B = typeof activeBattle !== 'undefined' && activeBattle;
   if (!B || !B.events) {
     soundEngine.fight = null;
-    return { build: 1, peak: 0 };
+    /* the run's arc: rows 3-5 add some of the peak's parts, 6-8 all of them (music.json run.arc's bands) */
+    return { build: 1, peak: musicLayerArc(musicArcBand(musicState(), MUSIC.run)) };
   }
   if (!soundEngine.fight || soundEngine.fight.B !== B) soundEngine.fight = { B, F: musicLayerFightStart() };
   const F = musicLayerFight(soundEngine.fight.F, B.events, B.ev || 0, { hitTier, koAhead }),
