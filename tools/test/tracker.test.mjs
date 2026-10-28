@@ -673,3 +673,95 @@ test('SND-11: the gb path plays each line into its own stem: plain gains under t
   assert.ok(seen.get(S.drums).has('kick') && seen.get(S.drums).has('noise'));
   assert.ok(!c.made.some(n => n.kind === 'panner'), 'no StereoPanner on the gb path (a centred one costs 3 dB)');
 });
+
+/* SND-11: a small ensemble: the chip lead, a pizzicato bass, a kick and a hat */
+const BAND = {
+  parts: [
+    { line: 'lead', wave: 'p25' },
+    { line: 'bass', inst: 'pizz', pan: -0.3, verb: 0.2 },
+    { line: 'drums', kit: { kick: 'kick', hat: 'hat' } },
+  ],
+};
+function bandPlay(rate, o = {}) {
+  const c = bankContext(rate);
+  /* a plain convolver (the catch-all stand-in would look like a promise to the reverb's ready) */
+  c.createConvolver = () => ({ connect() {}, buffer: null });
+  const S = { ...MUSIC.songs.route, ensemble: 'band', night: false },
+    gb = { on: !!o.gb },
+    T = trackerCreate(
+      c,
+      {},
+      { songs: { s: S, g: { ...S, ensemble: 'gb' } }, ensembles: { band: BAND }, gb: () => gb.on }
+    ),
+    seen = [];
+  T.synthVoice = (bus, v) => seen.push(['chip', T.song.step, bus, v.type]);
+  T.synthNoise = bus => seen.push(['noise', T.song.step, bus]);
+  T.synthKick = bus => seen.push(['kick', T.song.step, bus]);
+  const sample = T.sampleVoice;
+  T.sampleVoice = (bus, v) => (seen.push(['baked', T.song.step, bus, v.inst]), sample(bus, v));
+  return { c, T, seen, gb };
+}
+const run16 = (c, T, bars = 1) => {
+  for (let k = 0; k < 16 * bars; k++) {
+    c.currentTime = T.song.next - 0.13;
+    T.tick();
+  }
+  clearInterval(T.timer);
+};
+
+test('SND-11: a song with an ensemble plays gb until its notes are baked, then the ensemble from the next bar line', async () => {
+  const { c, T, seen } = bandPlay(11025);
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  assert.ok(
+    seen.some(([k]) => k === 'noise'),
+    'the first bar is gb (its noise drums)'
+  );
+  assert.ok(!seen.some(([k]) => k === 'baked'));
+  await T.prepare('s');
+  assert.ok(T.ensembleReady('s'));
+  seen.length = 0;
+  run16(c, T, 2);
+  assert.ok(!seen.some(([k]) => k === 'noise'), 'then no chip drums');
+  const baked = new Set(seen.filter(([k]) => k === 'baked').map(x => x[3]));
+  assert.deepEqual([...baked].sort(), ['hat', 'kick', 'pizz']);
+  /* each part into its own stem; the drums' through the drums' bus */
+  const sg = T.song;
+  assert.equal(sg.parts.length, 3);
+  assert.ok(seen.filter(([k, , , i]) => i === 'pizz').every(([, , bus]) => bus === sg.parts[1]));
+  assert.deepEqual(sg.parts[2].to, [sg.drums]);
+  assert.ok(
+    seen.some(([k, , bus, type]) => k === 'chip' && type === 'p25' && bus === sg.parts[0]),
+    'the chip lead'
+  );
+  /* the bass's reverb send goes to the song's own reverb fader */
+  assert.ok(sg.verb, 'a reverb fader');
+});
+
+test('SND-11: only the zones an ensemble plays are baked; GB Sounds plays gb whatever is baked; gb is reserved', async () => {
+  const { c, T, seen, gb } = bandPlay(12000, { gb: true });
+  const N = T.needs('s');
+  assert.ok(N.pizz.length >= 1 && N.kick.length === 1 && !N.harp);
+  await T.prepare('s');
+  const E = soundBakeBank.entries.get('pizz@12000');
+  assert.ok(
+    E.zones.some(z => !z),
+    'the pizz zones nothing plays stay unbaked'
+  );
+  assert.ok(E.zones.some(Boolean));
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  assert.ok(seen.some(([k]) => k === 'noise') && !seen.some(([k]) => k === 'baked'), 'GB Sounds: gb');
+  gb.on = false;
+  seen.length = 0;
+  run16(c, T);
+  assert.ok(
+    seen.some(([k]) => k === 'baked'),
+    'GB Sounds off: the ensemble from the next bar'
+  );
+  /* a song (or a version) naming gb plays today's code, with nothing to bake */
+  assert.equal(T.needs('g'), null);
+  assert.equal(await T.prepare('g'), false);
+});

@@ -12,6 +12,10 @@ import {
   musicBassAt,
   musicChordTones,
   musicDrumsAt,
+  musicChordNear,
+  musicEnsembleFit,
+  musicEnsembleNeeds,
+  musicEnsembleStep,
 } from '../../game/js/logic/music-patterns.js';
 
 const schema = JSON.parse(readFileSync(new URL('../../game/data/schema/music.schema.json', import.meta.url), 'utf8'));
@@ -143,4 +147,89 @@ test('drums: each pattern’s hits in the gb path’s order (kick, snare, hat), 
     [3, 6, 10, 13]
   );
   assert.equal(musicDrumsAt('march', 15)[0].hit, 'snare');
+});
+
+/* SND-11: what an ensemble's parts play */
+const composed = (o = {}) => {
+  const D = song({ bass: 'gallop', arp: 'up', drums: 'skip', ...o }),
+    steps = 128,
+    notes = new Array(steps).fill(null);
+  for (let st = 0; st < steps; st += 4) notes[st] = [72 + (st % 8), 2];
+  return {
+    ...D,
+    steps,
+    notes,
+    counterNotes: new Array(steps).fill(null),
+    introNotes: [[76, 1], null, [74, 1]],
+    introSteps: 3,
+  };
+};
+const ENS = {
+  parts: [
+    { line: 'lead', wave: 'p25' },
+    { line: 'lead', inst: 'musicbox', oct: 1, level: 0.5 },
+    { line: 'bass', inst: 'pizz' },
+    { line: 'pad', inst: 'strings' },
+    { line: 'drums', kit: { kick: 'kick', snare: 'osnare' } },
+    { line: 'timp', inst: 'timpani' },
+  ],
+};
+const INST = {
+  musicbox: { lo: 60, hi: 103 },
+  pizz: { lo: 31, hi: 91 },
+  strings: { lo: 36, hi: 96 },
+  kick: { lo: 60, hi: 60 },
+  osnare: { lo: 60, hi: 60 },
+  timpani: { lo: 36, hi: 60 },
+};
+
+test('ensembles: a note fits its instrument by octaves; a chord sits close round its centre', () => {
+  assert.equal(musicEnsembleFit(24, { lo: 36, hi: 60 }), 36);
+  assert.equal(musicEnsembleFit(84, { lo: 36, hi: 60 }), 60);
+  assert.equal(musicEnsembleFit(50, undefined), 50);
+  const C = musicChordNear(song(), 1, 62);
+  assert.deepEqual(C, [57, 60, 65]);
+  assert.ok(C.every(m => Math.abs(m - 62) <= 6));
+});
+
+test('ensembles: each part plays its line; the intro is the lead parts alone; held drums wait', () => {
+  const D = composed(),
+    at = (st, o) => musicEnsembleStep(D, ENS, st, { instruments: INST, ...o });
+  const s0 = at(0);
+  assert.deepEqual(
+    s0.filter(n => n.part === 0).map(n => [n.m, n.wave]),
+    [[72, 'p25']]
+  );
+  assert.deepEqual(
+    s0.filter(n => n.part === 1).map(n => n.m),
+    [84],
+    'the music box an octave up'
+  );
+  assert.ok(Math.abs(s0.find(n => n.part === 1).vel - 0.08) < 1e-9, 'its level halves the lead’s velocity');
+  assert.equal(s0.filter(n => n.part === 3).length, 3, 'the pad: the bar’s chord');
+  assert.ok(s0.some(n => n.hit === 'kick' && n.inst === 'kick'));
+  assert.ok(!at(4).some(n => n.part === 4 && n.hit === 'hat'), 'a hit the kit lacks plays nothing');
+  assert.ok(at(4).some(n => n.inst === 'osnare'));
+  assert.ok(!at(0, { held: true }).some(n => n.hit), 'held: no drums');
+  /* the timpani: the root on bars 1 and 5, a roll in the last half bar */
+  assert.equal(at(0).filter(n => n.part === 5).length, 1);
+  assert.equal(at(16).filter(n => n.part === 5).length, 0);
+  assert.ok(at(7 * 16 + 15).find(n => n.part === 5).vel > at(7 * 16 + 8).find(n => n.part === 5).vel);
+  /* the intro (steps -3..-1) */
+  assert.deepEqual(
+    at(-3).map(n => [n.part, n.m]),
+    [
+      [0, 76],
+      [1, 88],
+    ]
+  );
+  assert.deepEqual(at(-2), []);
+});
+
+test('ensembles: the needs are every baked note the song plays, intro included, and nothing for a chip part', () => {
+  const N = musicEnsembleNeeds(composed(), ENS, INST);
+  assert.deepEqual(Object.keys(N).sort(), ['kick', 'musicbox', 'osnare', 'pizz', 'strings', 'timpani']);
+  assert.ok(N.musicbox.includes(88), 'the intro’s note');
+  assert.deepEqual(N.kick, [60]);
+  assert.ok(N.timpani.every(m => m >= 36 && m <= 60));
 });

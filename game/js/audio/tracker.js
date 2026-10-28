@@ -7,7 +7,14 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { soundBakeImpulse, soundBakeRoots, soundBakeZoneFor, soundBakeZoneSteps } from '../logic/sound-bake.js';
-import { musicArpAt, musicBassAt, musicDrumsAt } from '../logic/music-patterns.js';
+import {
+  MUSIC_ENSEMBLE_VEL,
+  musicArpAt,
+  musicBassAt,
+  musicDrumsAt,
+  musicEnsembleNeeds,
+  musicEnsembleStep,
+} from '../logic/music-patterns.js';
 /* eslint-disable no-func-assign */
 expose({
   MUSIC_STEM_LINES: [() => MUSIC_STEM_LINES],
@@ -33,6 +40,8 @@ expose({
   soundBakeStart: [() => soundBakeStart, v => (soundBakeStart = v)],
   soundBakeStats: [() => soundBakeStats, v => (soundBakeStats = v)],
   soundBakeWant: [() => soundBakeWant, v => (soundBakeWant = v)],
+  soundBakeZoneIndex: [() => soundBakeZoneIndex, v => (soundBakeZoneIndex = v)],
+  soundBakeZonesFor: [() => soundBakeZonesFor, v => (soundBakeZonesFor = v)],
   trackerArc: [() => trackerArc, v => (trackerArc = v)],
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
@@ -285,10 +294,12 @@ function soundBakeEntry(id, c) {
   }
   return E;
 }
-/* bakes what an entry lacks; resolves with the entry once every zone is baked */
-function soundBakeWant(E) {
+/* bakes what an entry lacks (SND-11: or only the zones `only` lists); resolves with the entry once nothing it asked
+   for is still queued */
+function soundBakeWant(E, only = null) {
   E.zones.forEach((z, i) => {
-    if (!z && !E.queued.has(i)) {
+    /* SND-11: only the zones asked for (an ensemble's notes), else all */
+    if (!z && !E.queued.has(i) && (!only || only.includes(i))) {
       E.queued.add(i);
       soundBakeBank.queue.push({ make: () => soundBakeZoneSteps(E.R, E.rate, i), keep: Z => soundBakeKeep(E, i, Z) });
     }
@@ -296,6 +307,21 @@ function soundBakeWant(E) {
   if (!E.queued.size) return Promise.resolve(E);
   soundBakeStart();
   return new Promise(res => E.wait.push(res));
+}
+/* SND-11: the zone a note belongs to (its index), or -1 outside the instrument */
+function soundBakeZoneIndex(E, midi) {
+  if (!E.roots) E.roots = soundBakeRoots(E.R);
+  return E.roots.findIndex(z => midi >= z.lo && midi <= z.hi);
+}
+/* SND-11: the zones a list of notes plays from (each note's own; one outside the instrument, the nearest end) */
+function soundBakeZonesFor(E, notes) {
+  if (!E.roots) E.roots = soundBakeRoots(E.R);
+  const out = new Set();
+  for (const m of notes) {
+    const k = soundBakeZoneIndex(E, m);
+    out.add(k >= 0 ? k : m < E.roots[0].lo ? 0 : E.roots.length - 1);
+  }
+  return [...out];
 }
 /* the slices start (when they aren't running) */
 function soundBakeStart() {
@@ -640,20 +666,25 @@ export function trackerCreate(ctx, bus, opts = {}) {
     const E = soundBakeEntry(inst, c);
     if (!E) return null;
     const P = soundBakeZoneFor(E.zones, midi);
-    if (!P || !P.own) soundBakeWant(E);
+    /* SND-11: a note off its own zone bakes that zone alone (an ensemble bakes only the notes it plays) */
+    if (!P || !P.own) soundBakeWant(E, soundBakeZonesFor(E, [midi]));
     if (!P) return null;
     const Z = P.zone;
     E.used[Z.i] = ++soundBakeBank.clock;
     T.started++;
-    const s = c.createBufferSource(),
+    /* SND-11: a one-shot zone (a struck bar, a drum: no loop) rings to its end whatever the note's length */
+    const once = Z.loopEnd <= Z.loopStart,
+      s = c.createBufferSource(),
       g = c.createGain(),
       body = Z.loopStart / P.rate,
-      end = t + Math.max(0.01, dur);
+      end = t + Math.max(0.01, once ? Z.buffer.length / Z.buffer.sampleRate / P.rate : dur);
     s.buffer = Z.buffer;
     s.playbackRate.value = P.rate;
-    s.loop = true;
-    s.loopStart = Z.loopStart;
-    s.loopEnd = Z.loopEnd;
+    if (!once) {
+      s.loop = true;
+      s.loopStart = Z.loopStart;
+      s.loopEnd = Z.loopEnd;
+    }
     g.gain.setValueAtTime(vol, t);
     if (Z.tau && body < end - t) g.gain.setTargetAtTime(0, t + body, Z.tau / P.rate);
     g.gain.setTargetAtTime(0, end, r / 4);
@@ -661,6 +692,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     g.connect(out);
     s.start(t);
     s.stop(end + r * 1.5);
+    s.onended = () => g.disconnect();
     return { source: s, gain: g };
   };
   /* SND-9: the reverb's sends. A part that wants reverb connects to T.reverbSend('music'), ('sfx') or (SND-10) ('world') after its own
@@ -746,25 +778,145 @@ export function trackerCreate(ctx, bus, opts = {}) {
   /* SND-8b: a song's fader. Its gain and its echo send move together, so the echo follows the fade-in, a crossfade, a
      stop and a jingle's duck (the send used to be taken before the fader). f moves one AudioParam and runs for both;
      unplug disconnects both after ms */
-  const fader = (sg, f) => [sg.gain, sg.echo].forEach(n => f(n.gain)),
+  /* SND-11: and an ensemble's reverb send (sg.verb), so its room follows the fader too */
+  const fader = (sg, f) => [sg.gain, sg.echo, sg.verb].forEach(n => n && f(n.gain)),
     /* SND-8b: a song's level, its `trim` (dB, music.json) as a gain: the fader's top, and what a duck is a share of */
     level = D => Math.pow(10, (D.trim || 0) / 20),
-    unplug = (sg, ms) => setTimeout(() => [sg.gain, sg.echo].forEach(n => n.disconnect()), ms);
+    unplug = (sg, ms) => setTimeout(() => [sg.gain, sg.echo, sg.verb].forEach(n => n && n.disconnect()), ms);
   T.compose = name => {
     const D = T.recipe(name);
     if (!D) return null;
     if (!composed.has(name)) composed.set(name, trackerCompose(D));
     return composed.get(name);
   };
+  /* ---------- SND-11: ensembles ----------
+     A song whose recipe names an ensemble (music.json ensembles) plays it in place of the four chip voices once its
+     notes are baked; until then, and while GB Sounds is on (opts.gb), it plays `gb`: today's code, kept as it was
+     (`gb` is a reserved id, never data). The switch happens on a bar line. Each part plays into a stem of its own
+     (pan, a reverb send), the drums' into the drums' bus */
+  const needs = new Map();
+  /** @returns {Record<string, any>} */
+  const ensembles = () => opts.ensembles || {};
+  T.gbOn = () => !!(opts.gb && opts.gb());
+  /* the ensemble a composed song names (null: gb) */
+  T.ensembleOf = D => (D && D.ensemble && D.ensemble !== 'gb' && ensembles()[D.ensemble]) || null;
+  /* the baked notes a song's ensemble plays: instrument -> midi notes (logic/music-patterns.js musicEnsembleNeeds) */
+  T.needs = name => {
+    const D = T.compose(name),
+      E = T.ensembleOf(D);
+    if (!E) return null;
+    if (!needs.has(name)) needs.set(name, musicEnsembleNeeds(D, E, soundBakeBank.recipes));
+    return needs.get(name);
+  };
+  /* every zone a song's ensemble needs is baked at this context's rate */
+  T.ensembleReady = name => {
+    const N = T.needs(name);
+    if (!N) return false;
+    for (const [id, notes] of Object.entries(N)) {
+      const E = soundBakeEntry(id, c);
+      if (!E || soundBakeZonesFor(E, notes).some(k => !E.zones[k])) return false;
+    }
+    return true;
+  };
+  /* SND-11: a song made ready before it plays (sound.js on arrival: the scene's songs and the battle's): its
+     ensemble's zones baked in the bank's slices, and the reverb made now, at a load, not on the first note (its
+     impulse's assignment is one main-thread step). Resolves true when it is ready, false for a gb song */
+  T.prepare = name => {
+    const N = T.needs(name);
+    if (!N) return Promise.resolve(false);
+    const E = T.ensembleOf(T.compose(name)),
+      waits = Object.entries(N).map(([id, notes]) => {
+        const B = soundBakeEntry(id, c);
+        return B ? soundBakeWant(B, soundBakeZonesFor(B, notes)) : null;
+      });
+    if (T.verbOk() && E.parts.some(P => P.verb > 0)) waits.push(T.reverbReady());
+    return Promise.all(waits).then(() => true);
+  };
+  /* the reverb may be used (opts.reverb: sound.js keeps it off the low graphics tier) */
+  T.verbOk = () => !opts.reverb || !!opts.reverb();
+  /* a song's ensemble's stems: a gain each, a panner where it isn't centred, a send to the song's reverb fader */
+  const partsMake = sg => {
+    const E = sg.ens;
+    if (sg.parts) setTimeout(() => sg.parts.forEach(g => g.disconnect()), 1500);
+    sg.parts = E.parts.map(P => {
+      const g = c.createGain(),
+        to = P.line === 'drums' ? sg.drums : sg.gain;
+      if (P.pan) {
+        const pn = c.createStereoPanner();
+        pn.pan.value = P.pan;
+        g.connect(pn);
+        pn.connect(to);
+      } else g.connect(to);
+      if (P.verb > 0 && T.verbOk()) {
+        if (!sg.verb) {
+          sg.verb = c.createGain();
+          sg.verb.gain.value = sg.gain.gain.value;
+          sg.verb.connect(T.reverbSend('music'));
+        }
+        const v = c.createGain();
+        v.gain.value = P.verb;
+        g.connect(v);
+        v.connect(sg.verb);
+      }
+      return g;
+    });
+    sg.ensGain = Math.pow(10, (E.trim || 0) / 20);
+  };
+  /* whether the ensemble plays this bar: it has one, GB Sounds is off and its notes are baked (asked for if not) */
+  const ensembleNow = sg => {
+    if (!sg.ens || T.gbOn()) return false;
+    if (T.ensembleReady(sg.name)) return true;
+    T.prepare(sg.name);
+    return false;
+  };
+  /* one step of the ensemble (logic/music-patterns.js musicEnsembleStep): baked notes through sampleVoice, chip parts
+     through synthVoice as the gb lead plays (the signature), each into its part's stem */
+  const ensembleStep = (sg, st, t, spb) => {
+    const D = sg.D,
+      E = sg.ens;
+    for (const N of musicEnsembleStep(D, E, st, { held: !!sg.hold, instruments: soundBakeBank.recipes })) {
+      const P = E.parts[N.part],
+        out = sg.parts[N.part],
+        vol = N.vel * sg.ensGain;
+      if (N.inst)
+        T.sampleVoice(out, {
+          inst: N.inst,
+          midi: N.m,
+          t,
+          dur: N.len * spb * 0.92,
+          vol,
+          r: P.line === 'pad' ? 0.6 : 0.25,
+        });
+      else
+        T.synthVoice(out, {
+          type: N.wave,
+          freq: midiToFrequency(N.m),
+          t,
+          dur: N.len * spb * 0.9,
+          /* a chip at line level 1 plays as loud as the gb lead (0.075; a triangle 0.13) */
+          vol: vol * (0.075 / MUSIC_ENSEMBLE_VEL.lead) * (N.wave === 'triangle' ? 0.13 / 0.075 : 1),
+          d: D.pluck ? 0.14 : 0.1,
+          s: D.pluck ? 0.12 : 0.55,
+          r: D.pluck ? 0.12 : 0.06,
+          vib: !D.pluck && N.len >= 6 ? 1 : 0,
+          echo: P.line === 'lead' ? (D.echo ?? 0.15) : 0,
+          echoTo: sg.echo,
+        });
+    }
+  };
   /* the Studio (SND-3): after a recipe is edited, compose again; the song playing keeps its place and plays the new
      notes from the next step. A new table (after an undo) replaces the old; a song gone from it stops */
   T.refresh = table => {
     if (table) songs = table;
     composed.clear();
+    needs.clear();
     if (!T.song) return;
     const D = T.compose(T.song.name);
     if (!D) return T.stop();
     T.song.D = D;
+    /* SND-11: an ensemble edited (or a new one named) is heard from the next bar */
+    T.song.ens = T.ensembleOf(D);
+    if (T.song.ens) partsMake(T.song);
     /* SND-8b: a new trim is heard at once */
     const lv = level(D);
     if (lv !== T.song.level) {
@@ -798,6 +950,10 @@ export function trackerCreate(ctx, bus, opts = {}) {
     /* SND-11: each line plays into its own stem (the drums' is the drums' bus): plain gains of 1 under the fader, so the
        gb path sounds as before; the layers (SND-13) move them */
     T.song.stems = musicStemsMake(c, T.song.gain, T.song.drums);
+    /* SND-11: its ensemble's stems, and whether it plays from the first step */
+    T.song.ens = T.ensembleOf(D);
+    if (T.song.ens) partsMake(T.song);
+    T.song.ensOn = ensembleNow(T.song);
     const now = c.currentTime;
     fader(T.song, g => {
       g.setValueAtTime(0, now);
@@ -850,6 +1006,14 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (sg.hold && c.currentTime > sg.hold) sg.hold = 0;
     while (sg.next < c.currentTime + 0.14) {
       if (sg.next < c.currentTime - 0.005) T.late++;
+      /* SND-11: on a bar line, the ensemble or gb (GB Sounds, or its notes not baked yet) */
+      if (sg.step >= 0 && sg.step % 16 === 0) sg.ensOn = ensembleNow(sg);
+      if (sg.ensOn) {
+        ensembleStep(sg, sg.step, sg.next + (sg.step >= 0 && sg.step % 2 ? spb * (D.swing || 0) : 0), spb);
+        sg.step++;
+        sg.next += spb;
+        continue;
+      }
       /* SND-5: the intro, on the lead alone */
       if (sg.step < 0) {
         const N = D.introNotes[sg.step + D.introSteps];

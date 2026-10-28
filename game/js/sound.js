@@ -96,9 +96,11 @@ expose({
   jinglePlay: [() => jinglePlay, v => (jinglePlay = v)],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
+  musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
   musicMapCut: [() => musicMapCut, v => (musicMapCut = v)],
   musicParts: [() => musicParts, v => (musicParts = v)],
+  musicPrepare: [() => musicPrepare, v => (musicPrepare = v)],
   musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
@@ -206,8 +208,12 @@ function initSound() {
     const T = trackerCreate(c, soundEngine.mus, {
       songs: SONGS,
       run: MUSIC.run,
-      /* SND-11: the baked instruments (music.json instruments) */
+      /* SND-11: the baked instruments and the ensembles that play them (music.json instruments, ensembles); GB Sounds
+         (Settings -> Sound) plays every song on today's four chip voices; the music's reverb stays off at Graphics Off */
       instruments: MUSIC.instruments,
+      ensembles: MUSIC.ensembles,
+      gb: () => !!soundPreferences().gbSounds,
+      reverb: () => soundPreferences().aim !== 'off',
       levels: () => soundEngine.L,
       fx: soundEngine.fx,
       /* SND-9: the beds' noise counts toward the baked buffers' budget (the tracker's bank) */
@@ -386,7 +392,22 @@ export function musicSync() {
     soundEngine.cued = B;
     soundLog('battle ' + st.battle + ': no flash, the song without its intro');
   }
-  music(songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want, MUSIC.run));
+  const name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want, MUSIC.run);
+  music(name);
+  musicPrepare(st, name);
+}
+/* SND-11: baked on arrival: where you are changes (the song asked for does), the ensembles of the song, its night
+   version and a wild battle's song here are baked in the bank's slices (only the notes they play), and the reverb is
+   made then, at a load, not on a song's first note. Songs on gb bake nothing */
+function musicPrepare(st, name) {
+  const T = soundEngine.tracker;
+  if (!T || !T.prepare || !name || soundEngine.prepared === name) return;
+  soundEngine.prepared = name;
+  const base = name.split('@')[0],
+    wild = st.battle ? null : { ...st, battle: 'wild' },
+    want = new Set([name, songVariant(base, { ...st, night: 1 }, SONGS, null, MUSIC.run)]);
+  if (wild) want.add(songVariant(songFor(wild, MUSIC.where, SONGS), wild, SONGS, null, MUSIC.run));
+  for (const n of want) if (n) T.prepare(n);
 }
 /* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
    in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
@@ -1316,6 +1337,21 @@ export function soundDebugLines() {
        in ms, from the renderer's grid or the tiles, how many of each) */
     water: ambience.scape ? { ...ambience.scape.stats(), scene: ambience.scapeBuilt || null } : null,
     reverb: T && T.reverbStats ? T.reverbStats() : null,
+    /* SND-11: the music's ensemble: which one the song names, whether it plays (or gb: GB Sounds, its notes not baked
+       yet), GB Sounds, the songs made ready on arrival */
+    ensemble: musicEnsembleLine(),
+  };
+}
+/* SND-11: the debug log's ensemble line (no save data: the song's and ensemble's ids, on or off) */
+function musicEnsembleLine() {
+  const T = soundEngine.tracker,
+    sg = T && T.song;
+  return {
+    song: sg ? sg.name : null,
+    ensemble: sg && sg.D && sg.D.ensemble ? sg.D.ensemble : 'gb',
+    playing: sg ? (sg.ensOn ? 'ensemble' : 'gb') : null,
+    gbSounds: !!soundPreferences().gbSounds,
+    prepared: soundEngine.prepared || null,
   };
 }
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
