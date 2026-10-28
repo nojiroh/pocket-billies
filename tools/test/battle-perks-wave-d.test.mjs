@@ -213,3 +213,18 @@ test('PK-6 rule sideFind: a side place holds finds more that show only with the 
     assert.equal(F.routeFindsMore(runOf()), 0);
   });
 });
+
+/* ---------- rule eventHurt ---------- */
+
+test('PK-6 rule eventHurt: an event’s hurt is kept off by the Perk that holds it; it lands without', () => {
+  const L = modules['run-loop'],
+    { P } = perks({ id: 'test_pole', name: 'Test Pole', fx: [{ kind: 'rule', rule: 'eventHurt', n: 1 }] });
+  reseed(3);
+  const s = startedSave(ofType('Water'), 30);
+  s.run = { perks: ['test_pole'], perkState: {} };
+  assert.equal(L.runEventSafe(s, P), 'test_pole');
+  s.run.perks = [];
+  assert.equal(L.runEventSafe(s, P), '');
+  s.run = null;
+  assert.equal(L.runEventSafe(s, P), '');
+});
