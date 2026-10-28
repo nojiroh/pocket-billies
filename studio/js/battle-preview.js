@@ -90,6 +90,7 @@ expose({
   battleFxStep: [() => battleFxStep, v => (battleFxStep = v)],
   battleFxStepName: [() => battleFxStepName],
   battleFxStepSpan: [() => battleFxStepSpan, v => (battleFxStepSpan = v)],
+  battleFxWhatHTML: [() => battleFxWhatHTML, v => (battleFxWhatHTML = v)],
   battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   battlePreview: [() => battlePreview],
   battlePreviewDefaults: [() => battlePreviewDefaults, v => (battlePreviewDefaults = v)],
@@ -284,6 +285,19 @@ const battleFxPanes = [];
  * on the stage clock, how long it runs, whether the stage is held (paused) and the frame function a seek steps */
 export const battleFx = { clip: null, T: null, t0: 0, dur: 0, at: 0, paused: false, frame: null, raf: 0 };
 
+/* VFX-12: the Play card's move or event fields (a switch between them redraws only these, not the stage) */
+function battleFxWhatHTML() {
+  const opt = (arr, v) =>
+    arr
+      .map(
+        ([k, n]) =>
+          `<option value="${escapeHtml(k)}" ${String(k) === String(v) ? 'selected' : ''}>${escapeHtml(n)}</option>`
+      )
+      .join('');
+  return battlePreview.clip === 'move'
+    ? `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOptions(), battlePreview.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(Object.entries(BATTLE_FX_OUTCOMES), battlePreview.res)}</select></label>`
+    : `<label class="fld"><span>Event</span><select data-bp="ev">${opt(BATTLE_FX_EVENTS, battlePreview.ev)}</select></label><select data-bp="who" class="sm" aria-label="The trainer (Trainer intro)">${opt(peopleOptions(), battlePreview.who)}</select>`;
+}
 SECTIONS.preview = () => {
   const D = studioState.D;
   battlePreviewDefaults();
@@ -303,8 +317,7 @@ SECTIONS.preview = () => {
           ([v, n]) =>
             `<button class="seg sm ${String(battlePreview[k]) === String(v) ? 'on' : ''}" data-act="bfxSet" data-k="${k}" data-v="${escapeHtml(v)}" aria-pressed="${String(battlePreview[k]) === String(v)}">${escapeHtml(n)}</button>`
         )
-        .join(''),
-    isMove = battlePreview.clip === 'move';
+        .join('');
   return `<div class="ed-col solo bp"><div class="ed-head"><div><h2>Battle effects</h2><p class="sub">The game’s real battle stage, using your unsaved changes: play a move or an event at any speed, quality, motion setting and Flashes, step through it a 24 fps cell at a time, and tune battleAnims.json below. Art you replaced in the Art browser appears here after you save.</p></div></div>
  <div class="bp-wrap"><div class="bp-main"><div class="bp-stage" id="battle" data-layout="landscape"><div class="bstage" id="stage"><div class="cam" id="camWorld"><canvas id="cvWorld"></canvas></div><div class="cam" id="camFg"><canvas id="cvFg"></canvas></div><div class="bloom" id="bloom"></div><div class="vign"></div><div class="flash" id="flash"></div><div class="pops" id="pops"></div></div><div class="bp-loading" id="bpLoad">Loading the stage…</div></div>
  <section class="card bfx-player" id="bfxPlayer"><div class="seg-row"><button class="btn sm primary" data-act="bfxPlay" data-side="0" title="Play it from your side">▶ You</button><button class="btn sm primary" data-act="bfxPlay" data-side="1" title="Play it from their side">▶ They</button><button class="btn sm" data-act="bfxPause" id="bfxPause" title="Hold the stage (or go on)">❚❚</button><button class="btn sm" data-act="bfxStep" data-d="-1" title="One 24 fps cell back">◀ cell</button><button class="btn sm" data-act="bfxStep" data-d="1" title="One 24 fps cell on">cell ▶</button><output id="bfxTime" class="mono">0 ms</output></div>
@@ -317,11 +330,7 @@ SECTIONS.preview = () => {
       ['move', 'A move'],
       ['event', 'An event'],
     ])}</div>
-   ${
-     isMove
-       ? `<label class="fld"><span>Move</span><select data-bp="move">${opt(moveOptions(), battlePreview.move)}</select></label><label class="fld"><span>Outcome</span><select data-bp="res">${opt(Object.entries(BATTLE_FX_OUTCOMES), battlePreview.res)}</select></label>`
-       : `<label class="fld"><span>Event</span><select data-bp="ev">${opt(BATTLE_FX_EVENTS, battlePreview.ev)}</select></label><select data-bp="who" class="sm" aria-label="The trainer (Trainer intro)">${opt(peopleOptions(), battlePreview.who)}</select>`
-   }
+   <div id="bfxWhat">${battleFxWhatHTML()}</div>
    <div class="bfx-set"><span class="help">Speed</span><div class="seg-row">${seg('speed', BATTLE_FX_SPEEDS)}</div>
    <span class="help">Quality</span><div class="seg-row">${seg(
      'q',
@@ -875,9 +884,8 @@ ACTIONS.bfxSet = d => {
     v = d.v;
   battlePreview[k] = k === 'speed' || k === 'q' ? +v : k === 'flashes' ? v === 'true' : v;
   if (k === 'clip') {
-    battleFx.clip = null;
-    render();
-    return;
+    const w = $('#bfxWhat');
+    if (w) w.innerHTML = battleFxWhatHTML();
   }
   $$(`[data-act="bfxSet"][data-k="${k}"]`).forEach(b => {
     const on = b.dataset.v === String(battlePreview[k]);
