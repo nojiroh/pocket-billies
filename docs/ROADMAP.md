@@ -107,7 +107,7 @@ town node needs it.
   region grid: footprints, links east, north or south, at least 2 routes between towns, leader then town, 9-12
   places a path by Expedition, 2-3 towns; done 2026-10-27 on `claude/wm-2-region-grid`), WM-3
   (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines; side areas on the grid; done 2026-10-27),
-  WM-5 (branching town streets, three town sizes), WM-6 (districts, landmarks, route names; done 2026-10-27 on `claude/wm-6-region-look`), WM-7 (leader arenas, the
+  WM-5 (branching town streets, three town sizes, services and names; done 2026-10-27: WM-5a, WM-5b), WM-6 (districts, landmarks, route names; done 2026-10-27 on `claude/wm-6-region-look`), WM-7 (leader arenas, the
   final boss's arena place), WM-8 (ledges and loops). Tags `wm-N-done`. Branch `track/worldmap`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,

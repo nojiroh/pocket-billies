@@ -74,6 +74,81 @@ can't push tags).
   longer to make; frame times in a 3 x 2 town on the phone (the clock tower, the park's trees) are unmeasured.
 - Next: UI-18 (less clutter on the Map) from this branch; WM-8 (ledges and loops). The owner looks at the pictures.
 
+### Region map track WM-5b - town sizes, services and names; WM-5 done - 2026-10-28
+Branch `track/worldmap` (main fast-forwarded in, 278 commits; then `claude/wm-5-town-streets`, WM-5a's last HANDOFF
+note 0f4046a7, merged with no conflict). Draft PR into main. Run with its plan approved in advance (the owner: "Also
+start WM-5b and WM-6 in new sessions", with the UI plan's auto-approval), beside WM-6 on `claude/wm-6-region-look`.
+The owner's WM-5 answers (worldmap-track.md) cover it. Mapgen untouched: sizes and services go through WM-5a's `town`
+dial, so MAPGEN_VERSION stays 24.
+- **Claims checked**: townsfolk were already "2 and 1 for every 2 houses, at most 10" (WM-5a's mapgen, the Engine's
+  townFolk setting still trims them); the stall prop (`act: 'stall'`) existed but would have opened the town's own shop
+  (walk-control.js reads a prop's `shop` first); a town's size needs no save field: its footprint says it; the whole of
+  rules.json `run` reaches the scenes (run-world-data.js). The strict sizes claim holds: 0 failures in 5,000 maps
+  (1,000 an Expedition), so the step-down never ran there.
+- **rules.json**: `run.map.townSizes` (each size's cells: hamlet 2x1, village 2x2, town 3x2, smallest first; and by
+  Expedition the sizes of a run's 2 or 3 towns in order: I hamlet+village / hamlet+village+village, II-III
+  hamlet+town / hamlet+village+town, IV-V village+town / hamlet+village+town); `run.town.sizes` (word, houses, stall,
+  givers); `run.town.stall` (2 held items a day, the 8 held items at weight 1). Data checks for all three.
+- **The grid** (run-map.js): runMapLength gives the run's `sizes`; runMapMake asks runMapGrid for each town's cells with
+  no 2x1 fallback (`want`); if the map can't be laid out even without its lane switches, every town steps down a size
+  at once, then again. runTownSize reads a town's size off its footprint (a side area's town, with none: a hamlet).
+- **Scenes and names** (run-scenes.js): runTownOf / runTownDial pass size, houses, stall and givers to mapgen;
+  **runPlaceName** is the one function a place's name comes from (WM-6 reads it): "Meadow Hamlet", "Thicket Village",
+  "Meadow Town"; a side area's town "Bramble Grove Hamlet"; a town's shop "Thicket Village Shop".
+- **The market stall**: a shop of its own (`run_<i>_stall`, LocationData `stall`, the prop's `shop`), "<name> Market
+  Stall"; run-loop.js runStallStock draws 2 held items a day on the node's 'stall' stream at their items.json prices
+  (Perks' price rows apply as in any run shop); shop.js gives it no Perk and no fresh stock on Mo's word.
+- **The second quest giver**: run-scenes.js runTownQuest puts a giver on each of mapgen's giver spots (a 3x2 town has
+  two; the second `quest2`, `quest: 2`, its own stream and name). run-quests.js questOffer/questTake take the giver's
+  slot: the second's offer draws on 'quest|2' and takes another kind than the first's when one can be done (in 90%+ of
+  towns); run.quests.took keeps it as questKey (node + RUN_NODES), validRun allows it; the cap of three counts both.
+  quest-board.js asks by the person's slot.
+- **The sim**: each town walked into logs its size and a stall's wares (looked at, not bought); stats and the report
+  count towns by size and stalls. Outcomes unchanged (balance, Expedition II: 5 of 40 won and 5.7 places, before and
+  after).
+- **check-fast**: a new run-page step, "A run's village" (its name, the stall's own shop of 2 held items, no Perk, no
+  fresh stock); the town's life step asks for 2 + houses/2 folk, at most 10 (was 2-6).
+- **Fixed, not WM-5's** (each its own commit):
+  - The ground painter's helper thread (0dd42c1e): `groundTileRole` and `GROUND_DETAIL_TILES` added to
+    ground-paint-worker.js `paintWorkerSource` (GROUND_DETAIL_TILES now exported); new ground-paint-worker.test.mjs runs
+    the helper's source in a sandbox and fails on any walk-view.js name it uses but leaves out (it failed before the fix).
+  - A leader's line of trainers stacked on one spot (713acb9a): on a short road before the ring, route-trainers.js
+    routeArenaLine clamped every trainer to ROUTE_ARENA_IN (0.0 m apart; 2 leader places in 60 over WM7LINE0-29, on the
+    base too). It now gives up and the trainers take ordinary route spots (WM-3b's fallback): 5 of 60 places.
+- **Tests**: new or extended: run-map-real (sizes by Expedition, strict; the step-down with a 4x4 size), run-scenes
+  (names, the dial, the stall's shop), run-loop (the stall's wares, untouched by Mo's fresh stock), run-quests (the
+  second giver), mapgen-town (each run town's size, name, stall and givers; an Expedition II 3x2 town with two givers,
+  10-16 houses, 7-10 folk), run-sim (sizes, stalls), data-checks (planted faults), ground-paint-worker. Remade on
+  purpose: run-start's snapshot and run-world-real's frozen dials (towns at their cells, the town dial). Seeds swapped
+  because the maps moved: mapgen-mountains TR2MTN0 -> TR2MTN4 (a village's river note; ordinary runs have as many notes
+  as before, 11 vs 12 in 700 places), route-trainer-spots' WM-7 test WM7LINE0-2 -> 0, 2, 6.
+- **Verified**: lint, typecheck, format, check:modules, check:data; unit tests quick 1576 of 1576, slow 104 of 104;
+  check-fast 40 of 42 (the two Studio steps' 404s for `art/billionaires/*.png`, failing the same on main; "A run's
+  world" passed); smoke 6 of 6 (166 s); the full quick check 37 of 41 (1228 s): "Battle music" passed when run alone; the other three are the ones WM-3b and WM-4b found failing on `track/worldmap` before them (Copperleaf's train_station in the air, RL-8's "the town's shop has no Perk", room light at night; not re-run on the base here). Headless pictures in a run (the run fixture: Meadow Hamlet,
+  Thicket Village with its Market stall label; an Expedition II run's Meadow Town, 192 x 128): not committed, as
+  before. Python Playwright 1.63; `npm ci` and `npm run data` first in a fresh container.
+- **PRs #263, #267, #271**: all three are closed and none is open, but GitHub lists them as closed, not merged; every
+  head commit (b38c8504, bdd119a0, 0f4046a7) is in `track/worldmap`. Not closed or reopened by this session.
+- **Decided for the owner, to review**:
+  - The step-down order: lane switches dropped first, then every town a size smaller at once (never needed in 5,000
+    maps). The alternative (step down before dropping switches) keeps more lane switches and fewer big towns.
+  - The stall's wares: all 8 held items at weight 1; their names "<town> Market Stall", greeting "Something for your
+    Billies to hold? Two new pieces every morning." (player-facing, yours to reword). Perks' shop price rows apply.
+  - No fresh stock (Mo's word) at the stall: his reroll stays the town shop's.
+  - The second giver offers another kind than the first when it can; its offer is keyed node + 64 in run.quests.took.
+  - A side area's town (no footprint) is a hamlet, named "<side> Hamlet" (was "<side> Town").
+  - The sim's bot looks at the stall and buys nothing (the policy object unchanged, so reports compare).
+  - The ground painter fix on this branch: no session owns that code now (WM-5a asked which branch should take it).
+  - The trainers' stacking fix (WM-7's code), and its new fallback (ordinary spots, some past the gate).
+- **Found, not fixed** (WM-7's, on the base too): about 1 leader place in 10 has a line trainer the walk can't reach
+  with the gate shut (6 of 60 over WM7LINE0-29; 10 of 60 before this session); seeds 1, 11, 15, 17, 19, 21 show it.
+- **Risky**: bigger towns in every run (a village 128 x 128, a town 192 x 128: WM-5a measured 60-100 ms each in Node, a
+  phone 3-5 times that on LD-4's helper thread); frame times in a 3x2 town with up to 16 houses and 10 folk on the phone;
+  any run in progress resumes with new sizes (remade from its seed); WM-6 merging second takes the next MAPGEN_VERSION
+  only if it changes the generator (this session didn't).
+- Next: the owner pushes tag `wm-5-done` and plays a village and a town on the phone (the stall, the second giver,
+  frame times); WM-6 (districts, landmarks, signposts and names on the world map, reading runPlaceName); WM-8.
+
 ### Characters track CH-0 - the plan, with research - 2026-10-27
 Branch `ccr-ffb6bdf7-fya7yi`, made from main at 60eef39b (`track/characters` doesn't exist yet). Plan approved in
 Plan Mode. Docs only: no game code, data or art changed. Tag `ch-0-done` (for the owner to push) on this session's
