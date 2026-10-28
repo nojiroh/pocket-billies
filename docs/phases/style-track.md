@@ -156,7 +156,14 @@ SY-0 (this file) was written on `ccr-86dc9cb1-odx2za` because `track/style` does
     Shares the boss banner with UI-17 and RL-14b.
   - **ID plates:** a Bureau bot's plate is form paper with a serial number (from the bot's id) and "Property of the
     Bureau" in red; after UI-14b's plates. Your own bots, later, keep the plain plate.
-- **SY-6** the coat's foil in the world: the UI track's prism foil, carried onto the Billie in battle and on the maps.
+- **SY-6** the coat's foil in the world. Done 2026-10-28 on `track/style` (logic/coat-foil.js, the sprite shader's
+  `uFoil`, walk/sprites.js `drawFoilRecord`; set on the items in world-billies.js `worldBillyItem` and battle-3d.js
+  `battle3dFrame`, not in walk/sprites.js. The instanced program gets the same text but never sets `uFoil`: a coated
+  Billie leaves its run only while its band crosses it (0.7 s of every 3.5 s). "Quality 2 and up" exists only in
+  battle (`battleStage.q.lvl`); on the maps the foil is off with Graphics Off. A regional form's coat has no foil. The
+  brightness step is 0.3 (lit-colour luma). UI-17's menu foil isn't built: this goes first, so UI-17 matches it.
+  Graphics bench before and after is the owner's, on the phone (the bench is never run headless)):
+  the UI track's prism foil, carried onto the Billie in battle and on the maps.
   A sheen term in the sprite shader (walk-shaders.js 181 and the instanced 511): a band sweeping across the sprite
   every 3-4 s on the 24 fps grid, Bayer-dithered edges, only on pixels above a brightness step, hue shifted from the
   coat's own colours. A `uFoil` uniform set in walk/sprites.js from the Billie's coat; off at quality 2 and up, under
