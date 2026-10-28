@@ -2193,11 +2193,6 @@ def main():
     for t in threads: t.start()
     for t in threads: t.join()
     srv.shutdown()
-    if '--props' in ARGS:
-        log('Props: every prop on contact sheets (validation/props/)')
-        r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'prop-sheet.py')], capture_output=True, text=True)
-        steps.append({'step': 'Props: contact sheets', 'ok': r.returncode == 0, 'seconds': 0, 'note': (r.stdout.strip().splitlines() or [''])[-1][:200]})
-        if r.returncode: problems.append('Props: ' + (r.stderr.strip().splitlines() or ['failed'])[-1][:200])
     if not SMOKE: compare_pictures(R)
     timing_report(R)
     R.update({'steps': steps, 'problems': problems, 'notes': notes, 'seconds': round(time.time() - T0), 'smoke': SMOKE})

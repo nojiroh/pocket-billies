@@ -1,7 +1,7 @@
 # Phase 06 plan: the UI look and structure
 
 Drafted 2026-10-18 from a look at the current build (main at c3b5de9, phone size 390×844, light theme) and its CSS.
-No code changed for this plan. The phase itself is [06-ui-structure.md](06-ui-structure.md). It keeps the alpha 0.5
+No code changed for this plan. The phase itself is [06-ui-structure.md](../archive/06-ui-structure.md). It keeps the alpha 0.5
 look and builds on it: same fonts, colours, glass and pixel art, with more room, one motion system and quieter
 messages. Work starts from this file once the decisions at the bottom are answered: say "start 06-1".
 
