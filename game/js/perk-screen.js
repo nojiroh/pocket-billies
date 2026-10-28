@@ -13,7 +13,7 @@ import { PERKS, RULES } from './game-data.js';
 import { rarityTier } from './logic/marks.js';
 import { perkChoose } from './logic/perks.js';
 import { pbNudge } from './ui-kit.js';
-import { fxTagsHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
+import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
 import { uiIconHTML } from './art.js';
@@ -175,7 +175,7 @@ export function renderPerks() {
       ? `<div class="bag-list">${held
           .map(
             id =>
-              `<div class="bag-row k-card rar-row"${rarityRowAttr(PERKS[id].rarity)}><span class="bag-ic">${uiIconHTML('relic', 30)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}${fxTagsHTML(PERKS[id].fx)}</small></span>${rarityPillHTML(PERKS[id].rarity)}</div>`
+              `<div class="bag-row k-card rar-row"${rarityRowAttr(PERKS[id].rarity)}>${rarityFoilHTML(PERKS[id].rarity)}<span class="bag-ic">${uiIconHTML('relic', 30)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}${fxTagsHTML(PERKS[id].fx)}</small></span>${rarityPillHTML(PERKS[id].rarity)}</div>`
           )
           .join('')}</div>`
       : `<p class="note bag-empty">None yet. Beat a mini-boss for a pick of ${RULES.run.perks.pick}, or buy one in a town’s shop. They last the run.</p>`

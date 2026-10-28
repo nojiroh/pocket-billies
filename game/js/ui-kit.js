@@ -25,6 +25,7 @@ expose({
   PbButton: [() => PbButton],
   PbCard: [() => PbCard],
   PbField: [() => PbField],
+  PbFoil: [() => PbFoil],
   PbPanel: [() => PbPanel],
   PbPill: [() => PbPill],
   PbSheet: [() => PbSheet],
@@ -1037,6 +1038,50 @@ export function typeGlyphHTML(t) {
   return u ? `<i class="ty-g" style="--glyph:url('${u}')" aria-hidden="true"></i>` : '';
 }
 
+/* ---------- UI-17: the foil, a prism sheen sweeping across what wears it ---------- */
+/* One layer for every foil (ui-track.md Part 2: Coats shimmer, rare frames too; the style track's SY-6 carries the
+   same look onto the Billie in battle and on the maps): put <pb-foil></pb-foil> inside a positioned box and it fills
+   it, clipped to it (the box's own clip-path or radius clips it too). A band of the colour code's prism (special,
+   growth, good, value) sweeps across every --idle-foil-ms, transform only. It is idle life: it plays only while foil
+   is one of the screen's two idle kinds (ui-idle.js sets --idle-foil to the keyframes' name), and is as bright as
+   SY-1's flash rule lets it be (--sheen-a: softer with Flashes off, none under Calm and Reduced). --foil-delay offsets
+   one foil from its neighbours. */
+const PbFoil = class extends LitElement {
+  static styles = css`
+    :host {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    .band {
+      position: absolute;
+      top: -40%;
+      bottom: -40%;
+      left: 0;
+      width: 55%;
+      background: var(--foil-band);
+      opacity: var(--sheen-a, 0);
+      transform: translateX(-200%) skewX(-20deg);
+      animation: var(--idle-foil, none) var(--idle-foil-ms, 5.6s) linear var(--foil-delay, 0s) infinite;
+    }
+    @keyframes pb-foil-sweep {
+      0%,
+      58% {
+        transform: translateX(-200%) skewX(-20deg);
+      }
+      100% {
+        transform: translateX(300%) skewX(-20deg);
+      }
+    }
+  `;
+  render() {
+    return html`<i class="band" aria-hidden="true"></i>`;
+  }
+};
+
 for (const [tag, cls] of /** @type {const} */ ([
   ['pb-panel', PbPanel],
   ['pb-pill', PbPill],
@@ -1047,6 +1092,7 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-tabs', PbTabs],
   ['pb-stat-bar', PbStatBar],
   ['pb-field', PbField],
+  ['pb-foil', PbFoil],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);
 

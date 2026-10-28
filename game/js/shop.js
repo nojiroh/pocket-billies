@@ -12,7 +12,7 @@ import { resStock } from './logic/residents.js';
 import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled, runStallStock } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
-import { fxTagsHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
+import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbGainFly, recentPress } from './ui-motion.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { glyphHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
@@ -120,7 +120,7 @@ function shopPerkHTML(id, sh) {
   const R = PERKS[L.id],
     can = saveData.se >= L.price;
   /* UI-14b: the Perk's tier (frame, name colour, pill), its stat rows as tags, its kind by the Perk glyph (violet) */
-  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}><span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}>${rarityFoilHTML(R.rarity)}<span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 /** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
 function shopRerollHTML(id, sh) {
@@ -163,7 +163,7 @@ function shopHTML(id) {
       /* UI-14b: a held item's tier (frame, name colour, pill) and its stat rows as tags */
       const I = it.kind === 'item' ? ITEMS[it.key] : null,
         rar = I && I.hold ? I.rarity : '';
-      return `<div class="ware2 k-card${rar ? ' rar-row' : ''}${locked ? ' locked' : ''}"${rarityRowAttr(rar)}><span class="w-ic">${it.kind === 'coin' ? pyramidHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(it.n)}</b>${rarityPillHTML(rar)}<small>${escapeHtml(it.d)}${I ? fxTagsHTML(I.hold) : ''}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
+      return `<div class="ware2 k-card${rar ? ' rar-row' : ''}${locked ? ' locked' : ''}"${rarityRowAttr(rar)}>${rarityFoilHTML(rar)}<span class="w-ic">${it.kind === 'coin' ? pyramidHTML(it.key, 36) : itemIcon(it.key, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(it.n)}</b>${rarityPillHTML(rar)}<small>${escapeHtml(it.d)}${I ? fxTagsHTML(I.hold) : ''}</small><small class="w-own tnum">You have ${it.have}${deal ? ` · <em>Shop price ${moneyHTML(it.base)}</em>` : ''}</small></span>
   <span class="w-buy">${
     locked
       ? `<span class="note">Needs ${plural(it.need, 'badge')}</span>`

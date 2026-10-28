@@ -74,6 +74,9 @@
   font-weight: 400;
 }
 .u-tag.coat {
+  /* UI-17: its pb-foil shimmers across it */
+  position: relative;
+  overflow: hidden;
   color: var(--text);
   background: linear-gradient(
     100deg,

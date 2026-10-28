@@ -49,6 +49,17 @@
     rgba(255, 255, 255, 0.4) 50% 53%,
     transparent 53%
   );
+  /* the foil's band: the colour code's prism (as a Coat's tag), see-through, brightest in its middle */
+  --foil-band: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--sig-special) 45%, transparent) 25%,
+    color-mix(in srgb, var(--sig-growth) 55%, transparent) 42%,
+    color-mix(in srgb, white 60%, transparent) 50%,
+    color-mix(in srgb, var(--sig-good) 55%, transparent) 58%,
+    color-mix(in srgb, var(--sig-value) 45%, transparent) 75%,
+    transparent
+  );
   --idle-glint-ms: 7s;
   --idle-foil-ms: 5.6s;
   --idle-wx-ms: 3.6s;

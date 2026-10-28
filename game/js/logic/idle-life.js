@@ -93,6 +93,7 @@ export const IDLE_LOOPS = [
   { file: 'game/css/shell.css', sel: ".tb-chip[title='Money'] .pxi", kind: 'coin' },
   { file: 'game/css/title.css', sel: '.title-coin', kind: 'coin' },
   { file: 'game/css/title.css', sel: '.ttl-logo span', kind: 'logo' },
+  { file: 'game/js/ui-kit.js', sel: '.band', kind: 'foil' },
   { file: 'game/js/ui-kit.js', sel: ":host([kind='gold']) .face::after", kind: 'glint' },
 ];
 

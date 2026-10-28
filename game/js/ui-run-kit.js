@@ -755,7 +755,10 @@ const PbPickCard = class extends LitElement {
         <span class="face" style=${rar || nothing} aria-hidden=${this.facedown ? 'true' : nothing}>
           ${
             t
-              ? html`<span class="rar" aria-hidden="true"></span><pb-rarity class="tier" tier=${t}></pb-rarity>`
+              ? html`<span class="rar" aria-hidden="true"></span>${
+                  /* UI-17: a rare or mythical card's foil (pb-foil: idle life) */
+                  t === 'rare' || t === 'mythical' ? html`<pb-foil></pb-foil>` : nothing
+                }<pb-rarity class="tier" tier=${t}></pb-rarity>`
               : nothing
           }
           <span class="art"><slot name="art"></slot></span>
