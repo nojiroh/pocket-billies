@@ -135,13 +135,13 @@ export function sketchPanelHTML(sp) {
   const P = studioState.D?.bodyPlans;
   if (!P) return '';
   const form = sketchFormOf(sp),
-    scale = `<label class="help">drawn at <select data-ph="scale">${[1, 2, 4, 8]
+    scale = `<label class="help">drawn at <select data-sketch="scale">${[1, 2, 4, 8]
       .map(k => `<option value="${k}" ${k === sketchUi.scale ? 'selected' : ''}>${k}×</option>`)
       .join('')}</select></label>`,
     own = form
       ? `<h4>Placeholder Billie <small class="mono">${escapeHtml(form.name)}</small></h4><p class="help">bodyPlans.json, on the <b>${escapeHtml(form.plan)}</b> plan. Download its drawing sheet, draw over the cells in any app (magenta stays clear; keep the labels and the grid where they are; a cell left magenta keeps its placeholder), upload it back: it is stored and the Billie baked again.</p><div class="seg-row"><button class="btn sm" data-act="sketchDownload">Download drawing sheet</button><button class="btn sm" data-act="sketchUpload">Upload drawing sheet</button><button class="btn sm primary" data-act="sketchWrite">Write Billie</button></div>`
       : '';
-  return `<div class="px-sec placeholder-sheets" data-ph-sp="${escapeHtml(sp)}">${own}<h4>Body plan sheets</h4><p class="help">Every Billie on a plan in one sheet: two rows each (front, back). Upload splits it back per Billie.</p><div class="seg-row"><select data-ph="plan">${Object.keys(
+  return `<div class="px-sec sketch-sheets" data-sketch-sp="${escapeHtml(sp)}">${own}<h4>Body plan sheets</h4><p class="help">Every Billie on a plan in one sheet: two rows each (front, back). Upload splits it back per Billie.</p><div class="seg-row"><select data-sketch="plan">${Object.keys(
     P.plans
   )
     .map(p => `<option ${p === sketchUi.plan ? 'selected' : ''}>${escapeHtml(p)}</option>`)
@@ -151,11 +151,11 @@ export function sketchPanelHTML(sp) {
 }
 document.addEventListener('change', ev => {
   const el = ev.target;
-  if (!el.dataset || !el.dataset.ph) return;
-  if (el.dataset.ph === 'plan') sketchUi.plan = el.value;
-  if (el.dataset.ph === 'scale') sketchUi.scale = Number(el.value) || 1;
+  if (!el.dataset || !el.dataset.sketch) return;
+  if (el.dataset.sketch === 'plan') sketchUi.plan = el.value;
+  if (el.dataset.sketch === 'scale') sketchUi.scale = Number(el.value) || 1;
 });
-const sketchFormFrom = el => sketchFormOf(el.closest('[data-ph-sp]')?.dataset.phSp || '');
+const sketchFormFrom = el => sketchFormOf(el.closest('[data-sketch-sp]')?.dataset.sketchSp || '');
 ACTIONS.sketchDownload = (d, el) => {
   const form = sketchFormFrom(el);
   if (form) sketchDownload({ form });
