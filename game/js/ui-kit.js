@@ -37,6 +37,7 @@ expose({
   edgeLayer: [() => edgeLayer],
   html: [() => html],
   inboxShown: [() => inboxShown, v => (inboxShown = v)],
+  motionNow: [() => motionNow],
   nothing: [() => nothing],
   patternVars: [() => patternVars],
   pbFloat: [() => pbFloat, v => (pbFloat = v)],
@@ -52,9 +53,16 @@ expose({
 /* to-module: end */
 export const { LitElement, css, html, nothing } = /** @type {any} */ (self).PB_LIT;
 
-export const reduced = () =>
-  document.documentElement.dataset.motion === 'reduced' ||
-  (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+/* UI-16a: the Animation level the page plays at (settings-screen.js writes it on <html data-motion>: full, calm or
+   reduced); a page that never wrote one follows the phone */
+const motionNow = () => {
+  const m = document.documentElement.dataset.motion;
+  if (m === 'full' || m === 'calm' || m === 'reduced') return m;
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 'reduced'
+    : 'full';
+};
+export const reduced = () => motionNow() === 'reduced';
 
 /* shared look: glass surface, voice font, focus ring */
 const base = css`
@@ -408,7 +416,8 @@ const PbSheet = class extends LitElement {
         width: min(calc(100% - 2 * var(--gutter)), 560px);
         isolation: isolate;
         transform: translateX(-50%) translateY(var(--dy, 0px));
-        animation: wipe var(--m-slow) var(--ease-out) backwards;
+        /* UI-16a: under Reduced (--m-k 0) it is there at once, behind the scrim's fade */
+        animation: wipe calc(var(--m-slow) * var(--m-k, 1)) var(--ease-out) backwards;
       }
       .sh,
       .edge {
@@ -477,11 +486,6 @@ const PbSheet = class extends LitElement {
       @keyframes fade {
         from {
           opacity: 0;
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .frame {
-          animation: fade 120ms linear both;
         }
       }
     `,
@@ -559,7 +563,8 @@ const PbToast = class extends LitElement {
         max-width: calc(100vw - 2 * var(--gutter));
         transform: translateX(-50%) translateY(var(--dy, 0px));
         touch-action: none;
-        animation: drop var(--m-slow) var(--spring) both;
+        /* UI-16a: no drop under Reduced (--m-k 0) */
+        animation: drop calc(var(--m-slow) * var(--m-k, 1)) var(--spring) both;
         --k-clip: var(--clip-toast);
         --k-edge: var(--edge-toast);
         --k-ring: var(--ring-toast);
@@ -591,11 +596,6 @@ const PbToast = class extends LitElement {
         from {
           opacity: 0;
           transform: translateX(-50%) translateY(-24px) scale(0.92);
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        :host {
-          animation: none;
         }
       }
     `,

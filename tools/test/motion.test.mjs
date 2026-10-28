@@ -1,6 +1,6 @@
 // UI track UI-16a: the Animation setting's levels and the feedback motions' numbers (game/js/logic/motion.js).
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { test } from 'node:test';
 import {
   MOTION_CHOICES,
@@ -83,4 +83,14 @@ test('the page’s motion tokens (uiTheme.json and tokens.css) sit inside the do
     new RegExp(`min\\(var\\(--i, 0\\), ${cap}\\) \\* var\\(--stagger\\)`),
     'the enter’s cap'
   );
+});
+
+test('no :host-context anywhere in the game (Safari ignores it): the levels reach shadow roots as --m-k and --m-loop', () => {
+  const dir = new URL('../../game/js/', import.meta.url),
+    files = readdirSync(dir, { recursive: true }).filter(f => /\.js$/.test(String(f)) && !String(f).includes('vendor'));
+  for (const f of files)
+    assert.ok(!readFileSync(new URL(String(f), dir), 'utf8').includes(':host-context('), `${f} uses :host-context`);
+  const css = readFileSync(new URL('../../game/css/motion.css', import.meta.url), 'utf8');
+  assert.match(css, /\[data-motion='reduced'\] \{\s*--m-k: 0;\s*--m-loop: paused;/);
+  assert.match(css, /\[data-motion='calm'\] \{\s*--m-loop: paused;/);
 });

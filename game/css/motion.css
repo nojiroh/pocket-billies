@@ -4,6 +4,37 @@
    Reduced motion (the phone's setting, or Settings in the game: [data-motion='reduced']) turns every one into a
    short fade; idle and stagger stop. */
 
+/* UI-16a: the Animation levels (Settings; logic/motion.js; <html data-motion> is full, calm or reduced). Shadow roots
+   read them as custom properties, which cross into them (Safari ignores :host-context): --m-k is 1, or 0 when reduced
+   (multiply a move's time by it: the move happens at once and a fade carries it); --m-loop is running, or paused
+   under Calm and Reduced (an idle loop's animation-play-state). Without data-motion (a page that never runs
+   applyPreferences) the phone's setting decides */
+:root {
+  --m-k: 1;
+  --m-loop: running;
+}
+[data-motion='calm'] {
+  --m-loop: paused;
+}
+[data-motion='reduced'] {
+  --m-k: 0;
+  --m-loop: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion]) {
+    --m-k: 0;
+    --m-loop: paused;
+  }
+}
+/* Calm: Full without idle loops (things that move with no cause: breathing, swaying, glows, the dialogue bubble's
+   drift). Loops that say something stay (a Billie hiding, the Actions button's news, an egg ready, aim and hints) */
+[data-motion='calm'] :is(.m-idle, .fgcam canvas, .title-coin, .bloom),
+[data-motion='calm'] .talk-box::before,
+[data-motion='calm'] .talk-box::after,
+[data-motion='calm'] .bt.fight::before {
+  animation: none;
+}
+
 /* press: every button and tappable card */
 .m-press {
   transition: transform var(--m-fast) var(--spring);
@@ -278,30 +309,34 @@
     visibility: hidden;
   }
 }
+/* UI-16a: the phone's setting only where the game has written no level (the game's own Full wins over the phone) */
 @media (prefers-reduced-motion: reduce) {
-  .m-title {
+  :root:not([data-motion]) .m-title {
     animation-name: m-linger;
   }
-  .m-wipe,
-  .m-wipe-r,
-  .screen.enter,
-  .scrim:not(.still) .sheet,
-  .m-enter,
-  .m-sheet,
-  .m-pop,
-  .m-count,
-  .m-nudge,
-  .m-float,
-  .m-slam,
-  .m-flip {
+  :root:not([data-motion])
+    :is(
+      .m-wipe,
+      .m-wipe-r,
+      .screen.enter,
+      .scrim:not(.still) .sheet,
+      .m-enter,
+      .m-sheet,
+      .m-pop,
+      .m-count,
+      .m-nudge,
+      .m-float,
+      .m-slam,
+      .m-flip
+    ) {
     animation: m-fade 120ms linear both !important;
   }
-  .m-idle,
-  .talk-box::before,
-  .talk-box::after {
+  :root:not([data-motion]) .m-idle,
+  :root:not([data-motion]) .talk-box::before,
+  :root:not([data-motion]) .talk-box::after {
     animation: none !important;
   }
-  .m-press:active {
+  :root:not([data-motion]) .m-press:active {
     transform: none;
   }
 }

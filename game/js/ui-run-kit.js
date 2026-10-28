@@ -658,7 +658,8 @@ const PbPickCard = class extends LitElement {
         position: relative;
         display: grid;
         min-height: 168px;
-        transition: transform var(--m-slow) var(--spring);
+        /* UI-16a: --m-k is 0 under Reduced: it turns at once and reveal() fades it */
+        transition: transform calc(var(--m-slow) * var(--m-k, 1)) var(--spring);
         transform-style: preserve-3d;
       }
       :host([facedown]) .card {
@@ -680,14 +681,6 @@ const PbPickCard = class extends LitElement {
       }
       :host([selected]) .notch {
         display: block;
-      }
-      :host-context([data-motion='reduced']) .card {
-        transition: opacity var(--m-fast) linear;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .card {
-          transition: opacity var(--m-fast) linear;
-        }
       }
     `,
   ];
@@ -786,8 +779,9 @@ const PbPayout = class extends LitElement {
         background: color-mix(in srgb, var(--c-text) 6%, transparent);
         font-size: 17px;
       }
+      /* UI-16a: under Reduced (--m-k 0) a row is there at once */
       li.in {
-        animation: m-slam var(--m-slow) var(--spring) both;
+        animation: m-slam calc(var(--m-slow) * var(--m-k, 1)) var(--spring) both;
       }
       li.wait {
         visibility: hidden;
@@ -833,14 +827,6 @@ const PbPayout = class extends LitElement {
       .tot .ic {
         width: 24px;
         height: 24px;
-      }
-      :host-context([data-motion='reduced']) li.in {
-        animation: m-fade var(--m-fast) linear both;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        li.in {
-          animation: m-fade var(--m-fast) linear both;
-        }
       }
     `,
   ];
@@ -1002,7 +988,7 @@ const PbNavBar = class extends LitElement {
       nav {
         position: relative;
         height: calc(var(--rise) + var(--bar-h) + env(safe-area-inset-bottom, 0px));
-        transition: height var(--m-base) var(--ease-out);
+        transition: height calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       .glass,
       .edge {
@@ -1123,11 +1109,12 @@ const PbNavBar = class extends LitElement {
         width: var(--tile-w);
         height: var(--tile-h);
         padding: 0;
+        /* UI-16a: at once under Reduced (--m-k 0) */
         transition:
-          width var(--m-base) var(--ease-out),
-          height var(--m-base) var(--ease-out),
-          left var(--m-base) var(--ease-out),
-          top var(--m-base) var(--ease-out);
+          width calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+          height calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+          left calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+          top calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       :host([compact]) .map {
         top: 2px;
@@ -1187,12 +1174,6 @@ const PbNavBar = class extends LitElement {
       }
       .map:focus-visible .edge {
         background: var(--text);
-      }
-      @media (prefers-reduced-motion: reduce) {
-        nav,
-        .map {
-          transition: none;
-        }
       }
     `,
   ];
