@@ -551,7 +551,8 @@ commit of its own.
   dur, vol}`). New enums go in `MUSIC_CHOICES` (logic/music-studio.js; music-studio.test.mjs holds them to the
   schema), checks in `musicFindings`. The Studio: a "Battle" card on the Sounds tab beside the base cries, button
   sounds and mix (studio/js/music-editor.js ~650-758), a play button per sound. They play on the Sound effects bus
-  (`soundEngine.fx`), so SND-15's ducking covers them.
+  (`soundEngine.fx`), so SND-15's ducking covers them, and send their echo to SND-8b's effects echo (`T.echoFx`,
+  through synthVoice's `echoTo`; the heal and seal effects already do), never the music's.
 - **Names the sound track takes (avoid them):** logic/sound-bake.js (SND-9: pure DSP, zones, impulses),
   `T.sampleVoice` and a bank cache in tracker.js, the reverb living with the tracker (post-fader sends per bus), and
   the prefixes `musicStem*`, `musicLayer*`, `soundBake*`.
