@@ -4,7 +4,7 @@
    and Unstable; each part kind's trait, its word in text and the field move it counts for; the traits' names and
    text (their effect rows stay in the file); the parts with a dominant type or a field move; the wild splices' odds
    and the DNA they pay; the Gene Bank's levels (limit, slots) and a splice's price; an egg's chance to keep a Gene;
-   and rules.json's starter-point cost of a splice. Every number is a placeholder until the owner sets it. A splice
+   and rules.json's starter-point cost of a splice. Every number is a first guess until the owner sets it. A splice
    preview bakes any kit Billie with a Gene on a slot (the game's own baker, logic/kit-assemble.js, through Part
    mode's kitBakeInStudio) and shows its Stability, traits, types and price with logic/genes.js. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
@@ -265,12 +265,12 @@ SECTIONS.genes = () => {
   const preview = `${pick}<div class="parts-prev"><canvas id="genesCanvas" class="spr-prev big" width="10" height="10"></canvas></div><div id="genesRead">${genesPreviewText(G, S)}</div><p class="help" id="genesErr">${escapeHtml(genesPreview.error)}</p>`;
   setTimeout(genesBake, 0);
   return `<div class="ed-col parts-ed"><div class="ed-head"><div><small class="mono">genes.json</small><h2>Genes</h2></div></div>
-  ${card('Try a splice', preview, { sub: 'Any kit Billie with a Gene on a slot, baked with the game’s own baker. Every number below is a placeholder.' })}
+  ${card('Try a splice', preview, { sub: 'Any kit Billie with a Gene on a slot, baked with the game’s own baker. Every number below is a first guess.' })}
   ${card('Stability', stab, { sub: 'What a foreign part costs. Past the limit a Billie is Unstable; past limit + refuse the splice is refused.' })}
   ${card('Unstable', unstable)}
   ${card('Gene Bank', levels + bank, { sub: 'Its levels’ limits, a splice’s price, eggs, and the starter-point cost of a splice.' })}
   ${card('Wild splices', wild, { sub: 'The share of a run place’s wild Billies spliced, and the DNA a beaten one pays.' })}
-  ${augCard ? card('Augments', augCard, { sub: 'Bot arms and legs on Billies (the Workshop), and Escaped specimens wearing them. Placeholders.' }) : ''}
+  ${augCard ? card('Augments', augCard, { sub: 'Bot arms and legs on Billies (the Workshop), and Escaped specimens wearing them. First-guess numbers.' }) : ''}
   ${card('Part kinds', kinds, { sub: 'The trait each kind brings, its word in battle text, and the field move it counts for.' })}
   ${card('Parts', parts, { sub: 'Parts with a dominant type (the second type) or a field move of their own.' })}
   ${card('Traits', traits, { sub: 'Names and text; their effect rows are in genes.json.' })}

@@ -81,7 +81,7 @@ saved straight into `game/data`) was dropped (Studio plan, owner's decision 2026
 - A redraw of the section a pane already shows keeps the focused control (found again by its `data-p`, or its tag and
   `data-*`) and the pane's scroll.
 - **Keep an element across redraws** with `data-keep="<key>"`: before the redraw it is put aside, then it replaces
-  the new HTML's placeholder with the same key (taking the placeholder's id and classes). The 3D previews (Walk scenes,
+  the new HTML's empty slot with the same key (taking the slot's id and classes). The 3D previews (Walk scenes,
   Generate, Hub island, Props, Engine) share `walk-gl`: one canvas, so one WebGL context, for the whole session. A new
   3D section needs only `<canvas id="..." data-keep="walk-gl">`.
 - **Section hooks** (`studioState.hooks[sec]`) run on every input event of a field in that section's pane (the second
@@ -158,7 +158,7 @@ Pixels and Model buttons are gone: pixels are painted from the Art browser, mode
   an Aseprite JSON's slices (else its frames), named by them.
 - **Background.** The colour around the edge (guessed), clear pixels, magenta, or a colour you pick on the sheet; with
   how close a colour counts. "Only background that joins the edge" keeps background colour inside a part.
-- **Snap to pixels.** Art drawn big (an AI image at about 4x) is found on dropping: its pixel size and where the grid
+- **Snap to pixels.** Art drawn big (a painted image at about 4x) is found on dropping: its pixel size and where the grid
   starts, drawn over the sheet and nudgeable. Each cell becomes one pixel of its most common colour.
 - **Names.** A template: {kit} {n} {row} {col} {name} {view}; a name ending in _front or _back puts the part in that
   view (front and back on one sheet). Click a part (on the sheet or in the list) to rename it or pick its kind. Back
@@ -268,7 +268,7 @@ onion), fits its window when opened, and **Paint pixels** opens the sheet with t
 
 ## Art workbench: Model mode (studio track ST-7)
 
-A 3D model from Blender, Blockbench, MagicaVoxel or an AI generator made into a prop (studio/js/workbench-model.js;
+A 3D model from Blender, Blockbench or MagicaVoxel made into a prop (studio/js/workbench-model.js;
 the logic in game/js/logic/model-gltf.js, model-obj.js, model-vox.js, model-mesh.js, model-bake.js).
 
 - **In**: drop a **.glb**, a **.gltf** with its .bin and pictures, an **.obj** with its .mtl and pictures, or a

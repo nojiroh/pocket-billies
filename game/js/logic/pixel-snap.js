@@ -1,9 +1,9 @@
 // @ts-check
 'use strict';
 /* ================= PIXEL SNAP (studio track ST-3) =================
-   Pixel art drawn big (an AI image at about 4x, a screenshot, an upscale) back to true-scale pixels: find the size of
+   Pixel art drawn big (a painted image at about 4x, a screenshot, an upscale) back to true-scale pixels: find the size of
    its big pixels and where their grid starts, then give each cell its most common colour. Colours are counted in
-   buckets (16 shades a channel) so the noise of an AI image doesn't split a colour; the cell gets the mean of the
+   buckets (16 shades a channel) so the noise of a painted image doesn't split a colour; the cell gets the mean of the
    winning bucket. A cell mostly clear stays clear. Logic only: no DOM, runs in Node (tools/test/pixel-snap.test.mjs). */
 /** @typedef {{ width: number, height: number, data: Uint8ClampedArray }} Pixels */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */

@@ -794,7 +794,7 @@ export function render() {
   renderPane($('#main'), studioState.sec);
 }
 /* Studio plan T6.7: an element marked data-keep="<key>" outlives a redraw. Before the pane is redrawn it is put
-   aside; the new HTML's placeholder with the same key is replaced by it, taking the placeholder's id and classes. The
+   aside; the new HTML's empty slot with the same key is replaced by it, taking the slot's id and classes. The
    3D previews' canvases share the key walk-gl, so the one WebGL context (and its programs and meshes) lasts the
    session instead of a new one per redraw (F18, F19) */
 const keptElements = new Map();
