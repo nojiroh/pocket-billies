@@ -54,6 +54,7 @@ import {
   mapById,
   mapHub,
   navGrid,
+  navPrepWork,
   prepareMap,
   screenToGround,
   setScreenToGround,
@@ -536,6 +537,10 @@ function drawWalkFrame(ts, dtm) {
   pollPendingPrograms(1, document.body.classList.contains('ld-on') || document.getElementById('runload') ? 12 : 0);
   groundOcclusionWork();
   groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
+  /* the crossing hitch (2026-10-28): the next view's walking grid, built ahead in what is left (walk-view.js) */
+  navPrepWork(
+    walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())) * (walkRenderer.prepBoost || 1)
+  );
   const cssW = cv.clientWidth,
     cssH = cv.clientHeight;
   if (!cssW || !cssH) return;

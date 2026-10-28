@@ -31,6 +31,8 @@ import {
   mapArtPaths,
   mapById,
   mapMoodName,
+  navPrepare,
+  navReady,
   stepCellAt,
   stepGrid,
   walkData,
@@ -69,6 +71,7 @@ expose({
   seamlessExitRaise: [() => seamlessExitRaise, v => (seamlessExitRaise = v)],
   seamlessGate: [() => seamlessGate, v => (seamlessGate = v)],
   seamlessGetReady: [() => seamlessGetReady, v => (seamlessGetReady = v)],
+  seamlessGroundReady: [() => seamlessGroundReady, v => (seamlessGroundReady = v)],
   seamlessHash: [() => seamlessHash, v => (seamlessHash = v)],
   seamlessHeldEnds: [() => seamlessHeldEnds, v => (seamlessHeldEnds = v)],
   seamlessHubMap: [() => seamlessHubMap, v => (seamlessHubMap = v)],
@@ -1632,7 +1635,7 @@ export function seamlessDropViewsOf(ids) {
   for (const [k, v] of [...seamlessWorld.cache]) {
     if (!seamlessViewUses(v, S)) continue;
     seamlessWorld.cache.delete(k);
-    if (v.id && v.comp && v !== walkView.sc && !v.roomScene && seamlessViewReady(v.id, v)) was.set(v.id, v);
+    if (v.id && v.comp && v !== walkView.sc && !v.roomScene && seamlessGroundReady(v.id, v)) was.set(v.id, v);
   }
   seamlessWorld.was = was;
   seamlessWorld.aheadFor = null;
@@ -1692,6 +1695,11 @@ function seamlessViewReady(id, view) {
   if (!sc) return false;
   /* phase 08b: a room needs only its own floor (the place's ground is the one on screen) */
   if (sc.roomScene) return typeof roomFloorReady === 'function' && roomFloorReady(sc.roomScene);
+  /* the crossing hitch (2026-10-28): and its walking grid, built ahead (walk-view.js navPrepare) */
+  return seamlessGroundReady(id, sc) && navReady(sc, groundKey(sc));
+}
+/* its ground painted and, in 3D, built on the card */
+function seamlessGroundReady(id, sc) {
   const key = groundKey(sc);
   if (!GROUND_CACHE.has(key)) return false;
   return (
@@ -1725,6 +1733,8 @@ export function seamlessGetReady(id, urgent, focus, view) {
     }
     return false;
   }
+  /* then its walking grid, a slice a frame (the crossing hitch) */
+  if (seamlessGroundReady(id, sc)) return navPrepare(sc);
   if (typeof prepareMapGround === 'function')
     prepareMapGround(id, sc, G, urgent, focus || sc.hub || [sc.w / 2, sc.h / 2]);
   return false;
@@ -1744,7 +1754,7 @@ export function seamlessGate(v) {
      day turns as you cross). Its earlier version, ready, is shown now; the new one is swapped in once it is ready
      (seamlessRemakeTick), so the crossing never waits for a remake */
   const old = seamlessWorld.was.get(v.id);
-  if (old && seamlessViewReady(v.id, old)) {
+  if (old && seamlessGroundReady(v.id, old)) {
     if (seamlessWorld.heldFor === v.id) seamlessHeldEnds();
     seamlessWorld.heldFor = null;
     if (typeof walkRenderer !== 'undefined') walkRenderer.prepBoost = 1;

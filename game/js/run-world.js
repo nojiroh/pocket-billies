@@ -413,6 +413,9 @@ function runWorldLetGo() {
   seamlessWorld.aheadFrom = null;
   seamlessWorld.aheadFor = null;
   seamlessWorld.heldFor = null;
+  /* the crossing hitch: no view of the old world is made again or kept for a crossing */
+  seamlessWorld.remake = null;
+  seamlessWorld.was = new Map();
   /* the walk view: stopped and forgotten, so the next render mounts the new world's view of where you stand */
   if (walkView.id) {
     stopWalkView();

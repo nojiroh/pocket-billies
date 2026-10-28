@@ -12,7 +12,10 @@ import {
   mapBridges,
   mapById,
   navGrid,
+  navGridSteps,
+  navKept,
   setNavGrid,
+  setNavGridSteps,
   stepRaiseAt,
   terrainAt,
   walkData,
@@ -26,6 +29,7 @@ expose({
   WALL_COLORS: [() => WALL_COLORS],
   WALL_MATERIALS: [() => WALL_MATERIALS],
   baseNavGrid: [() => baseNavGrid],
+  baseNavGridSteps: [() => baseNavGridSteps],
   biomeCliff: [() => biomeCliff, v => (biomeCliff = v)],
   buildingPads: [() => buildingPads, v => (buildingPads = v)],
   defaultWallMaterial: [() => defaultWallMaterial, v => ((defaultWallMaterial = v), provide({ defaultWallMaterial }))],
@@ -34,6 +38,7 @@ expose({
   heightCurve: [() => heightCurve, v => (heightCurve = v)],
   heightGrid: [() => heightGrid, v => (heightGrid = v)],
   navGridSteep: [() => navGridSteep, v => (navGridSteep = v)],
+  navGridSteepSteps: [() => navGridSteepSteps, v => (navGridSteepSteps = v)],
   rawHeightAt: [() => rawHeightAt, v => ((rawHeightAt = v), provide({ rawHeightAt }))],
   standingHeightAt: [() => standingHeightAt, v => ((standingHeightAt = v), provide({ standingHeightAt }))],
   wallAtlasRows: [() => wallAtlasRows, v => (wallAtlasRows = v)],
@@ -100,7 +105,7 @@ function heightGrid(sc) {
   /* LD-5 (cutscenes session): while the walking grid is built (navGrid, one go: nothing can change meanwhile) the grid
      made at its start is the one; asked hundreds of thousands of times, the clock and the props' signature cost more
      than the grid's own sums */
-  if (walkView.navBuilding && c0 && c0.H === H) return c0;
+  if (walkView.navBuilding === sc && c0 && c0.H === H) return c0;
   const now = performance.now(),
     c = c0;
   if (c && now - c.t < 120 && c.H === H) return c;
@@ -320,22 +325,50 @@ setNavGrid(function () {
       walkView.navG === walkView.gkey &&
       walkView.navP === (sc.props || []).length
     );
-  if (!fresh || walkView.navBuilding) return navGridSteep(sc, fresh, baseNavGrid());
+  /* (a grid kept or built ahead for it: taken as it is, the crossing hitch) */
+  if (!fresh || walkView.navBuilding === sc || navKept(sc, walkView.gkey))
+    return navGridSteep(sc, fresh, baseNavGrid());
   /* LD-5: the heights and bridges looked at once, then held for the build (heightGrid, mapBridges) */
   heightGrid(sc);
   mapBridges(sc);
-  walkView.navBuilding = true;
+  const was = walkView.navBuilding;
+  walkView.navBuilding = sc;
   try {
     return navGridSteep(sc, fresh, baseNavGrid());
   } finally {
-    walkView.navBuilding = false;
+    walkView.navBuilding = was;
   }
+});
+/* the crossing hitch (2026-10-28): the same grid a step at a time, the steep ground shut a row a step. The heights and
+   bridges are looked at once here; the walking grid's ahead build (walk-view.js navPrepWork) holds them only while a
+   slice of it runs, navGrid for the whole build */
+const baseNavGridSteps = navGridSteps;
+setNavGridSteps(function* (sc) {
+  const was = walkView.navBuilding;
+  walkView.navBuilding = null;
+  try {
+    heightGrid(sc);
+    mapBridges(sc);
+  } finally {
+    walkView.navBuilding = was;
+  }
+  const n = yield* baseNavGridSteps(sc);
+  yield* navGridSteepSteps(sc, n);
+  return n;
 });
 /** the steep ground shut on a fresh walking grid (once per scene) @param {any} sc @param {boolean} fresh @param {any} n */
 function navGridSteep(sc, fresh, n) {
-  if (!fresh || !sc.heights || !sc.heights.length || n._hk) return n;
+  if (!fresh) return n;
+  const it = navGridSteepSteps(sc, n);
+  while (!it.next().done);
+  return n;
+}
+/** @param {any} sc @param {any} n */
+function* navGridSteepSteps(sc, n) {
+  if (!sc.heights || !sc.heights.length || n._hk) return;
   const { N, gw, gh, blk } = n;
-  for (let j = 0; j < gh; j++)
+  for (let j = 0; j < gh; j++) {
+    if (j) yield;
     for (let i = 0; i < gw; i++) {
       if (blk[j * gw + i]) continue; /* (already blocked: in a room, all of the place outside it) */
       const x = (i + 0.5) / N,
@@ -347,6 +380,6 @@ function navGridSteep(sc, fresh, n) {
         gz = (rawHeightAt(sc, x, z + e) - rawHeightAt(sc, x, z - e)) / (2 * e);
       if (Math.hypot(gx, gz) > 1.05) blk[j * gw + i] = 1;
     }
+  }
   n._hk = 1;
-  return n;
 }

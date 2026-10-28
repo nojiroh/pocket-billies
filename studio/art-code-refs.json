@@ -18,19 +18,19 @@
   {
    "p": "battle/cloud_0.png",
    "at": [
-    "game/js/walk-view.js:741"
+    "game/js/walk-view.js:753"
    ]
   },
   {
    "p": "battle/cloud_1.png",
    "at": [
-    "game/js/walk-view.js:742"
+    "game/js/walk-view.js:754"
    ]
   },
   {
    "p": "battle/cloud_2.png",
    "at": [
-    "game/js/walk-view.js:743"
+    "game/js/walk-view.js:755"
    ]
   },
   {
@@ -117,7 +117,7 @@
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:506"
+    "game/js/walk-view.js:518"
    ]
   },
   {
@@ -163,41 +163,41 @@
    "at": [
     "game/js/buildings.js:171",
     "game/js/prop-models.js:2150",
-    "game/js/walk-view.js:765"
+    "game/js/walk-view.js:777"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/walk-view.js:765"
+    "game/js/walk-view.js:777"
    ]
   },
   {
    "p": "scene/build/walls.png",
    "at": [
-    "game/js/walk-view.js:740",
+    "game/js/walk-view.js:752",
     "game/js/walk/ground-draw.js:90"
    ]
   },
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:522"
+    "game/js/walk-view.js:534"
    ]
   },
   {
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:775",
+    "game/js/walk-view.js:787",
     "game/js/walk/frame-items.js:200"
    ]
   },
   {
    "p": "scene/fx/*.png",
    "at": [
-    "game/js/walk-view.js:744",
+    "game/js/walk-view.js:756",
     "game/js/walk/effects.js:253"
    ]
   },
@@ -1611,7 +1611,7 @@
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1757",
-   "game/js/walk-view-gl.js:716"
+   "game/js/walk-view-gl.js:721"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1679,7 +1679,7 @@
    "game/js/ui-run-kit.js:534",
    "game/js/ui.js:89",
    "game/js/ui.js:166",
-   "game/js/walk-view.js:3163"
+   "game/js/walk-view.js:3265"
   ],
   "cowboy": [
    "game/js/person-art.js:264"
@@ -1729,10 +1729,10 @@
    "game/js/walk-control.js:424",
    "game/js/walk-control.js:536",
    "game/js/walk-control.js:554",
-   "game/js/walk-view.js:334",
-   "game/js/walk-view.js:3742",
-   "game/js/walk-view.js:3853",
-   "game/js/walk-view.js:4174",
+   "game/js/walk-view.js:341",
+   "game/js/walk-view.js:3845",
+   "game/js/walk-view.js:3956",
+   "game/js/walk-view.js:4277",
    "game/js/walk/frame-items.js:319",
    "game/js/walk/frame-items.js:448",
    "game/js/walk/frame-items.js:466"
@@ -1757,7 +1757,7 @@
    "game/js/battle-stage.js:843",
    "game/js/battle-stage.js:2253",
    "game/js/battle-stage.js:2316",
-   "game/js/walk-view.js:397",
+   "game/js/walk-view.js:409",
    "game/js/walk/effects.js:371"
   ],
   "floppy": [
@@ -1827,8 +1827,8 @@
    "game/js/minimap.js:82",
    "game/js/minimap.js:83",
    "game/js/self-test.js:3501",
-   "game/js/walk-view.js:397",
-   "game/js/walk-view.js:4028",
+   "game/js/walk-view.js:409",
+   "game/js/walk-view.js:4131",
    "game/js/walk/effects.js:518",
    "game/js/walk/effects.js:672",
    "game/js/walk/effects.js:780",
@@ -1854,7 +1854,7 @@
    "game/js/battle-stage.js:2240"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:678",
+   "game/js/walk-view-gl.js:683",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1938,7 +1938,7 @@
    "game/js/logic/cutscene-set.js:44",
    "game/js/lore.js:195",
    "game/js/lore.js:197",
-   "game/js/walk-view.js:397",
+   "game/js/walk-view.js:409",
    "game/js/walk/effects.js:337",
    "game/js/walk/effects.js:341"
   ],
@@ -1983,13 +1983,13 @@
    "game/js/train-ride.js:272",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
-   "game/js/walk-view.js:3740",
-   "game/js/walk-view.js:3742",
+   "game/js/walk-view.js:3843",
+   "game/js/walk-view.js:3845",
    "game/js/walk/prop-look.js:154",
    "game/js/workshop.js:102"
   ],
   "window": [
-   "game/js/seamless-world.js:1193",
+   "game/js/seamless-world.js:1196",
    "game/js/walk-control.js:998",
    "game/js/walk-control.js:1008",
    "game/js/walk/effects.js:383",
