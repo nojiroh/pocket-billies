@@ -183,3 +183,24 @@ test('PK-5 money share: walking in pays a share of the Moneys carried, up to its
   /* a battle's money ignores the share row */
   assert.equal(fn('fxMoney')([{ kind: 'money', share: 0.1, max: 40, when: 'arrive', src: 'x' }], 100), 100);
 });
+
+/* ---------- free ---------- */
+
+test('PK-5 free: every 4th purchase gives its price back, and the count lasts the run; none without the row', () => {
+  const L = modules['run-loop'],
+    { P } = perks({ id: 'test_card', fx: [{ kind: 'free', when: 'buy', every: 4 }] });
+  reseed(3);
+  const s = startedSave(ofType('Water'), 30);
+  s.se = 1000;
+  s.run = { perks: ['test_card'], perkState: {} };
+  const got = [];
+  for (let i = 0; i < 8; i++) {
+    s.se -= 100;
+    got.push(L.runBuyFx(s, P, 100).free);
+  }
+  assert.deepEqual(got, [0, 0, 0, 100, 0, 0, 0, 100]);
+  assert.equal(s.se, 400);
+  assert.equal(L.runBuyFx(s, P, 100).by, '');
+  s.run.perks = [];
+  assert.equal(L.runBuyFx(s, P, 100).free, 0);
+});

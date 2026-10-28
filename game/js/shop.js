@@ -257,8 +257,8 @@ function shopBuy(id, k) {
   if (typeof soundEffect === 'function') soundEffect('buy');
   if (kind === 'coin') saveData.pyramids[key] = (saveData.pyramids[key] || 0) + n;
   else saveData.items[key] = (saveData.items[key] || 0) + n;
-  /* PK-1: a run shop's purchase is the buy moment (logic/run-loop.js) */
-  if (sh.runNode != null && saveData.run) runBuyFx(saveData, PERKS);
+  /* PK-1: a run shop's purchase is the buy moment (logic/run-loop.js); PK-5: a free row gives one's price back */
+  const free = sh.runNode != null && saveData.run ? runBuyFx(saveData, PERKS, sh.currency ? 0 : price) : null;
   /* RL-8: a run's purchase is a checkpoint */
   if (saveData.run) saveNow();
   else save();
@@ -267,7 +267,11 @@ function shopBuy(id, k) {
   uiState.shopLine = lines[Math.floor(random() * lines.length)];
   uiState.shopQty[k] = 1;
   shopRefresh();
-  toast(`Bought ${n} × ${it.n}.`);
+  toast(
+    free && free.free
+      ? `Bought ${n} × ${it.n}. ${PERKS[free.by].name}: ${n > 1 ? 'one was' : 'that one was'} free.`
+      : `Bought ${n} × ${it.n}.`
+  );
   /* UI-16a: what you bought flies from the Buy button to the Bag tab */
   pbGainFly(recentPress(), 'bag', 'bag');
 }
@@ -294,13 +298,13 @@ function shopPerkBuy(id, drop) {
   }
   if (perkBuy(run, sh.runNode, run.clock, PERKS, RULES.run.perks, drop, saveData)) return;
   saveData.se -= L.price;
-  /* PK-1: the buy moment (logic/run-loop.js) */
-  runBuyFx(saveData, PERKS);
+  /* PK-1: the buy moment (logic/run-loop.js); PK-5: a free row gives its price back */
+  const free = runBuyFx(saveData, PERKS, L.price);
   if (typeof soundEffect === 'function') soundEffect('buy');
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `Perk bought: ${L.id}${drop ? ` for ${drop}` : ''}`);
   shopRefresh();
-  toast(`${PERKS[L.id].name}: ${PERKS[L.id].d}`);
+  toast(`${PERKS[L.id].name}: ${PERKS[L.id].d}${free.free ? ` (${PERKS[free.by].name}: it was free.)` : ''}`);
 }
 document.addEventListener('click', ev => {
   const el = ev.target.closest('[data-a]');

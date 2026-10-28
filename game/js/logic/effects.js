@@ -32,6 +32,8 @@
              (PK-4, battle-engine.js fxPassiveOf)
      catchLevel  a Billie you catch joins n levels higher (PK-5, battle-engine.js catchKeep)
      refund  a pyramid thrown that missed comes back (`when: throwMiss`) (PK-5, battle-engine.js catchRoll)
+     free    what was just bought in a run shop is free: its price back (`when: buy`, with `every`) (PK-5, run-loop.js
+             runBuyFx)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -166,6 +168,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'rule',
   'catchLevel',
   'refund',
+  'free',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };

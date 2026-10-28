@@ -2171,6 +2171,8 @@ export function fxKindProblems(f, at, D, problem) {
     if (f.when == null) problem(`${at}.when: a money share needs a moment (arrive)`);
   } else if (f.kind === 'money' && f.when != null)
     problem(`${at}.when: a money row at ${f.when} is a share (share, max)`);
+  /* PK-5: a free row acts at a purchase (Punch Card) */
+  if (f.kind === 'free' && f.when == null) problem(`${at}.when: a free row needs a moment (buy)`);
   /* PK-5: what a missed throw gives back, at that moment */
   if (f.kind === 'refund') {
     if (!(/** @type {readonly string[]} */ (FX_REFUND).includes(f.what)))
@@ -2258,6 +2260,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   inflict: ['hit', 'battleStart'],
   /* PK-5: a share of the Moneys carried, on walking into a place */
   money: ['arrive'],
+  /* PK-5: what was just bought, free */
+  free: ['buy'],
   /* PK-5: a missed throw's pyramid back */
   refund: ['throwMiss'],
 });

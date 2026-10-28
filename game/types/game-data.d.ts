@@ -2031,7 +2031,9 @@ export type FxKindRow =
   /** PK-5: a Billie you catch joins n levels higher */
   | { kind: 'catchLevel'; n: number }
   /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
-  | { kind: 'refund'; what: 'pyramid' };
+  | { kind: 'refund'; what: 'pyramid' }
+  /** PK-5: what was just bought in a run shop is free (its price back), at buy */
+  | { kind: 'free' };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

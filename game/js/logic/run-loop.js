@@ -159,9 +159,18 @@ export function runImmune(s, perks, what) {
   const fx = s.run ? fxOfRun(s.run, perks) : null;
   return !!fx && fxImmune(fxAt(fx, fxRunCtx(s), { run: s.run && s.run.perkState }), what).length > 0;
 }
-/** PK-1: something bought in a run shop (shop.js, and the run's simulation): the buy moment
- * @param {SaveData} s @param {Record<string, any>} perks */
-export const runBuyFx = (s, perks) => runFxMoment(s, perks, 'buy');
+/** PK-1: something bought in a run shop (shop.js, and the run's simulation): the buy moment. PK-5: when a free row
+ * acts (Punch Card's every 4th), the price paid comes back (`price`: one of what was bought; several of one ware at
+ * once are one buy, so one of them is free); `free` is what came back, `by` the Perk
+ * @param {SaveData} s @param {Record<string, any>} perks @param {number} [price] the price of one
+ * @returns {{ rows: any[], hp: number, money: number, free: number, by: string }} */
+export const runBuyFx = (s, perks, price = 0) => {
+  const m = runFxMoment(s, perks, 'buy'),
+    f = m.rows.find(r => r.kind === 'free'),
+    free = f ? Math.max(0, Math.round(price)) : 0;
+  s.se += free;
+  return { ...m, free, by: f ? f.src : '' };
+};
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
  * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none). PK-1: the
  * heal rows whose conditions hold here, then the arrive moment's rows. PK-5: `out.money` gets the Moneys its money

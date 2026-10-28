@@ -406,8 +406,8 @@ export function runSimOn(env) {
             at.relic = { id: shelf, price: cost };
             if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop, s)) {
               s.se -= cost;
-              /* PK-1: the buy moment (shop.js shopPerkBuy) */
-              runBuyFx(s, data.PERKS);
+              /* PK-1: the buy moment (shop.js shopPerkBuy); PK-5: a free row gives the price back */
+              runBuyFx(s, data.PERKS, cost);
               stats.spent += cost;
               stats.moneyOut.perks += cost;
               at.relic.bought = c.drop ? { drop: c.drop } : 1;
@@ -423,8 +423,8 @@ export function runSimOn(env) {
           ) {
             s.se -= price;
             s.pyramids.pyramid = (s.pyramids.pyramid || 0) + 1;
-            /* PK-1: the buy moment (shop.js shopBuy) */
-            runBuyFx(s, data.PERKS);
+            /* PK-1: the buy moment (shop.js shopBuy); PK-5: a free row gives the price back */
+            runBuyFx(s, data.PERKS, price);
             stats.spent += price;
             stats.moneyOut.shop += price;
           }

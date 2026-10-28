@@ -552,6 +552,7 @@ const PK5_GOOD = [
   { kind: 'inflict', status: 'slp', chance: 0.2, when: 'battleStart', if: 'foe:wild' },
   { kind: 'money', share: 0.1, max: 40, when: 'arrive' },
   { kind: 'money', mult: 2, if: 'foe:leader|rival' },
+  { kind: 'free', when: 'buy', every: 4 },
 ];
 const PK5_BAD = [
   [{ kind: 'catchLevel', n: 0 }, 'n: a whole number of levels from 1 to 10'],
@@ -564,6 +565,8 @@ const PK5_BAD = [
   [{ kind: 'money', share: 0.1, max: 40 }, 'when: a money share needs a moment (arrive)'],
   [{ kind: 'money', share: 0.1, max: 40, when: 'win' }, "a money row can't act at win"],
   [{ kind: 'money', mult: 2, when: 'arrive' }, 'a money row at arrive is a share'],
+  [{ kind: 'free', when: 'win', every: 4 }, "a free row can't act at win"],
+  [{ kind: 'free' }, 'a free row needs a moment (buy)'],
 ];
 test('PK-5: dataPerks and the schema take Wave C’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);
