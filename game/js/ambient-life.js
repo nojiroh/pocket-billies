@@ -80,7 +80,7 @@ const LIFE_KIND = {
     sh: 0.17,
     flee: 2.6,
   },
-  form: { s: 0.75, speed: 0.5, sh: 0.06, flee: 1.6, fly: 1, drift: 1 },
+  form: { s: 0.95, speed: 0.5, sh: 0.06, flee: 1.6, fly: 1, drift: 1 },
 };
 provide({ LIFE_KIND }); /* to-module */
 const lifeFrameCount = k => {
