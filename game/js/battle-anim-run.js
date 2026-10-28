@@ -9,7 +9,17 @@
    (battleFlashGate) and the debug log's `anim` line per move (no names, no save data). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { BATTLE_ANIMS, MOVES, TYPE_GLOW, activeBattle, hudHit, hudPop, provide, reducedMotion } from './hooks.js';
+import {
+  BATTLE_ANIMS,
+  MOVES,
+  TYPE_GLOW,
+  activeBattle,
+  battleMoodPlay,
+  hudHit,
+  hudPop,
+  provide,
+  reducedMotion,
+} from './hooks.js';
 import { battleAnimLogLine, battleAnimTimeline, flashGate } from './logic/battle-anims.js';
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
@@ -259,6 +269,8 @@ function battleAnimPlay(an, ev) {
   battleStageKit.fxSeed(
     `${an.mid}|${si}|${ti}|${typeof activeBattle !== 'undefined' && activeBattle ? activeBattle.events.length : 0}`
   );
+  /* VFX-15: the stage's mood for this move (battle-stage-look.js), on the stage clock, within its time */
+  if (typeof battleMoodPlay === 'function') battleMoodPlay(an, M, c, T);
   for (const S of T.steps) {
     const run = () => animStep(S, c);
     if (S.sync) run();

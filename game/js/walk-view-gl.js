@@ -781,9 +781,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       dofRef: BT ? null : 16,
       dofView: !!walkView.opt.dofView /* CAM-3: the Studio's blur heatmap */,
       plane: FP && tilt > 0 ? [FP.g[0], FP.g[1], FP.g[2], FP.h] : null /* (tilt 0: the old slab, to the bit) */,
-      heat: heatHaze(sc),
+      /* VFX-15: a battle's Fire big moves shimmer too; the battle's mood, its row wave, the sun's warmth and shafts
+         (battle-stage-look.js) */
+      heat: Math.max(heatHaze(sc), BT && BT.stageLook ? BT.stageLook.heat : 0),
       heatS: heatSources(C),
       mood: easedMood(sc),
+      stageLook: BT ? BT.stageLook || null : null,
       sun: sc.indoor ? null : litSunScreenPosition(C, sun),
       sunCol: engineSetting('sun', 'followLight') ? sun.col : null,
       X,

@@ -21,6 +21,7 @@ import {
   battleFlashGate,
   battleFreeArea,
   battleLayoutChanged,
+  battleStageLookReset,
   fighter,
   hudHit,
   hudPop,
@@ -501,6 +502,8 @@ export function battleStageStart(area) {
   battleStage.shk = 0;
   battleStage.hold = 0;
   battleStage.focusK = null;
+  /* VFX-15: the stage's mood and the Sandstorm's gust start at rest */
+  if (typeof battleStageLookReset === 'function') battleStageLookReset();
   battleStage.q.since = performance.now();
   battleStage.gl = typeof battle3dStart === 'function' && battle3dStart();
   document.body.classList.toggle('battle-3d', !!battleStage.gl);

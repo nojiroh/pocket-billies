@@ -39,6 +39,7 @@ import {
   trainerBattleFrame,
   trainerMetersPerPixel,
 } from './battle-stage.js';
+import { battleStageLookFrame } from './battle-stage-look.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -442,6 +443,8 @@ function battle3dFrame() {
     impact,
     /* VFX-9: the chromatic flash, a pulse in the grade pass */
     caPulse: battleStageChromaticPulse(),
+    /* VFX-15: the stage's mood, the battle's weather look and the Sandstorm (battle-stage-look.js) */
+    stageLook: typeof battleStageLookFrame === 'function' ? battleStageLookFrame() : null,
     hide: battle3d.hide,
     lights,
     focus: d.zf,
