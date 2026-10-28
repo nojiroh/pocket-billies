@@ -171,8 +171,10 @@ town node needs it.
   their own soft noise, re-voiced, started and stopped; a loudness report; a Sound Test in the debug menu; no
   fingerprint changes) done 2026-10-28, every bed 12 LU or more under the route song. SND-8b (the echo bugs: a song's echo follows its fader, jingles
   echo on the effects bus; a trim per song, Copperleaf's hub song +13.5 dB to 1.7 LU under the route song; the rain's
-  music low-pass 4 kHz; iOS "interrupted"; the baseline written again) done 2026-10-28. Next SND-9 (baked
-  instruments and reverb), water (SND-10, taking WA-8's water sounds if the owner agrees), stems and ensembles in a
+  music low-pass 4 kHz; iOS "interrupted"; the baseline written again) done 2026-10-28. SND-9 (logic/sound-bake.js:
+  instruments baked from numbers, the tracker's bank and `T.sampleVoice`, one reverb made on first use, a harp in the
+  debug menu's Sound test, bake time and memory in the debug log, a brightness fingerprint beside the RMS; no sound
+  changed) done 2026-10-28. Next water (SND-10, taking WA-8's water sounds if the owner agrees), stems and ensembles in a
   Chip+ and DS-era mix with a GB Sounds switch (SND-11), layers in play (SND-13: a walking beat, street musicians,
   weather and night, building intensity), arrangements (SND-12), nature and weather (SND-14), the mix and a phone
   pass (SND-15); SND-17 (the jingles with the new instruments, stingers on the beat) right after SND-11, added at the

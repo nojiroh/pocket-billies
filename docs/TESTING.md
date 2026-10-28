@@ -468,6 +468,13 @@ same phase:
   SND-8b: the baseline was written again on purpose (a song's echo after its fader, the jingles' own echo, Copperleaf's
   trim); each commit was rendered against the one before it in a worktree. `tracker.test.mjs` adds `echo: 0`, the
   echo send moving with the fader, the jingles' echo bus and a song's `trim`.
+  SND-9: each fingerprint file holds, beside every part's RMS array, its brightness `zc:<part>` (zero crossings per
+  50 ms, ±0.0001 hysteresis, 0 under 0.0001 RMS; a window may differ by 2 % or 2 crossings), so a change of timbre at
+  the same loudness fails too; the summary still counts 194 fingerprints. Written once with plain `--baseline`.
+  `sound-bake.test.mjs` (logic/sound-bake.js: the same bake every time, never `Math.random`, no NaN, peaks at most 1,
+  seamless loops, strings within 3 cents, a size budget, the impulse); `tracker.test.mjs` adds the bank (slices, once
+  per rate, the least recently played zone dropped and baked again), `sampleVoice` (one source, one gain) and the
+  reverb (made only on a send, post-fader sends, one impulse per rate).
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

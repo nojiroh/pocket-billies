@@ -21,6 +21,12 @@ kept aside in the browser).
   echo with the Sound effects slider (at 0 none is left), the rain muffles the music less, and on an iPhone sound
   comes back after a call or Siri.
 
+- **The first synthesized instrument and a sense of space** (sound track SND-9): the game can now build instruments
+  from numbers when it starts using them, a little at a time so nothing stutters, and play them through one shared
+  reverb. The debug menu's Sound test has a harp playing Copperleaf's tune, with the room of Copperleaf, a route, a
+  forest, a room or a cave. The songs themselves sound as before. The debug log says how long the instruments took to
+  make and how much memory they use.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)

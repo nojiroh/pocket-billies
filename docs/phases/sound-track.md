@@ -684,7 +684,7 @@ Water and nature, synthesized:
 | SND-7 (done 2026-10-27) | Plan and listening page | this Part 2; a private listening page (Today vs Calm, new water, the music styles and layers) | none | none |
 | SND-8a | Calm beds | the beds gentle and cheap (their own pink/brown noise, drift instead of LFOs; rain, crickets, fire, stream, fountain, sea, leaves and town re-voiced; birds one at a time and rarer; footsteps varied and soft; rooms read the place's night; beds start and stop), the loudness report, the debug log's audio lines, the Sound Test v1 | none | none |
 | SND-8b (done 2026-10-28) | Mix fixes | the echo bugs, a level trim per song (the hub song up, from the report: data, not the player setting Part 1 ruled out), the rain's music low-pass, iOS's "interrupted"; the baseline written again in its own commit | SND-8a | the jingles; every song's first ~1.5 s; copperleaf |
-| SND-9 | Bake and reverb | `logic/sound-bake.js` (pure DSP, Node-tested), the tracker's bank and `sampleVoice`, the reverb bus, one proof instrument in the Sound Test, bake time and memory in the debug log, a brightness fingerprint (a tool commit first) | SND-8b | none (brightness added) |
+| SND-9 (done 2026-10-28) | Bake and reverb | `logic/sound-bake.js` (pure DSP, Node-tested), the tracker's bank and `sampleVoice`, the reverb bus, one proof instrument in the Sound Test, bake time and memory in the debug log, a brightness fingerprint (a tool commit first) | SND-8b | none (brightness added) |
 | SND-10 | Water | `soundscape.json` and emitters, a recipe per water kind, the placed falls by height, rain on water, wading, Surf, fishing and water life; takes WA-8's water sounds if the owner agrees | SND-9 (WA-11 for the hub's fall) | none |
 | SND-11 | Stems and ensembles | the tick's patterns factored into pure functions; stems; `instruments` and `ensembles` in music.json; `gb` reserved for today's code; GB Sounds; the first ensembles; the Studio's Instruments tab and its mix on the game's chain | SND-9 | none: the new `gb` must equal the old by day and night |
 | SND-17 | Jingles and stingers | the 12 jingles given the new instruments (a DS fanfare for victory, a glockenspiel and harp run for a level-up, strings swelling into an evolution...), stingers on the song's beat and in its key, GB Sounds keeping today's 8-bit ones; added at the owner's question (2026-10-27) | SND-11 | the 12 jingles |
@@ -931,6 +931,55 @@ before. In Copperleaf the coast-wide sea (-18.0) and a fountain at 3 m (-15.2) n
 5. One proof instrument in the Sound Test; bake ms and MB in the debug log.
 Phone: the bake's time, no hitch in the Load track's hitch list, the proof instrument heard.
 
+### SND-9 as built (2026-10-28, branch `track/sound`, tag `snd-9-done` for the owner to push)
+Ten commits, one cause each; no song, jingle, cry or UI sound changed (194 RMS fingerprints, 0 changed on every
+commit, each rendered with `check-sound.py --loudness`, the intermediate ones in a worktree).
+
+| Commit | What |
+|---|---|
+| 98d45095 | `check-sound.py`: a brightness fingerprint beside each RMS array, `zc:<part>` in the same file: zero crossings per 50 ms, with ±0.0001 hysteresis, 0 in a window under 0.0001 RMS; tolerance 2 % or 2 crossings. A baseline without them compares the RMS alone and says how many it lacks |
+| 7f4faf22 | the baseline written once with plain `--baseline`: the RMS arrays the same values (checked against the commit before, 0 differ), the brightness added; a second run: 194, with brightness, 0 changed |
+| 7d941ad7 | `logic/sound-bake.js` (pure: PolyBLEP oscillators, an ADS envelope, an RBJ biquad, two-operator FM, Karplus-Strong with an all-pass, seamless loops, zone roots and the nearest-zone pick, a stereo decaying-noise impulse; bakes are generators that yield every 1024 samples); noise and PRNG from logic/ambience-sound.js; the harp recipe; script tags on both pages before tracker.js; `sound-bake.test.mjs` (13 tests) |
+| 0175e6a0 | the tracker's bank (module level, keyed by instrument and rate; `T.bankReady`, `T.bankStats`; setTimeout slices; the least recently played zone dropped past 6 MB counted with the beds' noise, the tracker's noise and the impulse) and `T.sampleVoice` (one buffer source, one gain) |
+| fa5fb79f | the reverb with the tracker: one ConvolverNode made on the first `T.reverbSend`, its impulse baked in the bank's slices once per rate; post-fader sends scaled by `applyVolumes` (`T.reverbLevels`), places by send level (`T.reverbPlace`), the return to the master |
+| 1712eea9 | slices stop after 2 ms; the bake's filter and peak passes yield too (a zone's last step had run them over the whole note: a 15 ms slice) |
+| 8f006ec6 | the reverb's return ×3.5 (the normalised convolver returns about 11 dB under the send); the impulse's work, wait and assignment timed apart |
+| fd1ab1cd | the Sound test's harp: a place (Copperleaf, a route, a forest, a room, a cave, no reverb) and "Play the harp": Copperleaf's tune once with each bar's chord plucked an octave under, alone |
+| d765677b | the debug log's `audio` lines: `bank` and `reverb` |
+| da1f88aa | the impulse made a chunk at a time (its first step had made all 1.2 s of noise: 2.9 ms) |
+
+The proof instrument, **harp**: 10 zones (one every 6 semitones, midi 43-98), 0.35-1.2 s each with a 40 ms looped
+tail, 1.16 MB at 44.1 kHz and 1.26 MB at 48 kHz. In headless Chromium (44.1 kHz) its bake is 36-57 ms of work in
+17-23 slices, most of them 2.1 ms, the slowest 2.7-4.4 ms on a quiet machine (12.7 ms with a second browser running
+beside it); the impulse's own work 11-18 ms, the convolver's buffer assignment 8-12 ms (63 ms under that load), all
+on the main thread. Memory with the beds' noise (2,412 KB), the tracker's noise and the impulse (413 KB): 4.09 MB of
+the 6 MB budget at 44.1 kHz (about 4.6 MB at 48 kHz). Loudness offline at 48 kHz (BS.1770, the route song -31.8 LUFS):
+the harp alone -33.6 LUFS (1.8 LU under, peak -18.4 dBFS); with Copperleaf's room -33.3 (the room about 12 dB under the
+harp), with a cave's -31.7 (about 2.5 dB under).
+
+**Corrections found in SND-9** (checked in the code and in the browser):
+- sound-bake.js imports from ambience-sound.js, so the Studio page now loads ambience-sound.js too (before
+  sound-bake.js, before tracker.js): to-module only imports from a module every page loading the file loads earlier.
+- A normalised ConvolverNode (the default) returns noise through this impulse about 11 dB under what is sent: the
+  return is ×3.5 so a send's gain reads as the room's level. Without it a 0.35 send left the room 22 dB under the harp
+  (inaudible: 0.03 LU).
+- "Slices of at most 4 ms" needs every step short, not only the slice's budget: the first build's last step of a
+  zone (its low-pass and peak over the whole note) and the impulse's first step (all its noise) ran 3-15 ms. Built as a
+  2 ms budget with every step yielding; a step is under 1 ms in Node.
+- Assigning the impulse to the convolver costs 8-12 ms on the main thread in headless Chromium, once per context: the
+  draft's "set once" holds, but it is a hitch on the first press; SND-11 should make the room at a quiet moment.
+- "Baked on arrival (the scene's songs and the battle ensemble)": no song names an instrument until SND-11, so nothing
+  bakes on arrival yet; `T.bankReady(ids)` is the seam, and the Sound test bakes on its first press.
+- No second convolver for caves: a cave is a send of 1.8 against a town's 0.8 (`SOUND_BAKE_PLACES`).
+- The fingerprints were mono RMS only (Risks): brightness now sits beside it, so a change of timbre at the same
+  loudness fails the check too. Zero crossings follow the strongest high partial; a pure low tone under a bright one
+  hardly moves them.
+- Constants keep the reserved prefix (`SOUND_BAKE_*`) and the bank's helpers `soundBake*` in tracker.js; the
+  tracker's methods are `T.bankReady`, `T.bankStats`, `T.sampleVoice`, `T.reverbSend`, `T.reverbReady`,
+  `T.reverbLevels`, `T.reverbPlace`, `T.reverbStats`.
+- `fm` and `osc` zones render in one step (no instrument uses them yet); SND-11 slices them like the string when one
+  does.
+
 ## SND-11's seams (from the code review)
 - **Stems**: the tick plays into `sg.stems.*`, `drums` being the existing `sg.drums` (sound.js:1157 drives it). Plain
   gain-1 nodes change only the summing order, far under the tolerance. **No StereoPanner on the `gb` path**: a centred
@@ -993,8 +1042,8 @@ them later.
 
 ## Risks
 - Claude can't hear: the listening page, the Sound Test, the loudness report and the owner's phone are the checks.
-- The fingerprints are mono RMS, each render alone: a change of timbre at the same loudness passes (SND-9 adds
-  brightness). They are fragile to the seeded random (one extra `Math.random()` in `initSound` or the tick moves every
+- The fingerprints are mono RMS and (since SND-9) zero crossings, each render alone: a change of timbre at the same
+  loudness now shows in the brightness. They are fragile to the seeded random (one extra `Math.random()` in `initSound` or the tick moves every
   drum hit) and to single-tick scheduling (ramps at step times). Renders run at 44.1 kHz, phones at 48 kHz.
 - `--baseline --only=X` rewrites X's whole file: never for a jingle or a cry.
 - A main-thread stall over ~115 ms (the 140 ms lookahead minus the 25 ms tick) drops notes: the late-step counter shows
