@@ -22,6 +22,9 @@ import {
   battleFreeArea,
   battleLayoutChanged,
   fighter,
+  figureBattlePicture,
+  figureFolk,
+  figuresOn,
   hudHit,
   hudPop,
   maxHp,
@@ -1391,6 +1394,13 @@ export function trainerBattleFrame(i) {
   const T = battleStage.tr[i];
   if (!T || !T.who) return null;
   const view = i === 0 ? 'back' : 'front';
+  /* characters track CH-3: with Engine > People > Figures on, you are your figure here too (figures.js, 64 px a metre),
+     and the rival with Townsfolk as figures on; today's picture until it is baked */
+  if (typeof figuresOn === 'function' && figuresOn() && (i === 0 || figureFolk())) {
+    const on = T.act && battleStage.t - T.t0 < T.dur,
+      f = figureBattlePicture(T, i, battleStage.t, on ? T.act : null, on ? (battleStage.t - T.t0) / T.dur : 0);
+    if (f) return f;
+  }
   if (T.act && battleStage.t - T.t0 < T.dur && typeof personBattlePose === 'function')
     return personBattlePose(T.who, view, T.act, (battleStage.t - T.t0) / T.dur, battleStage.t - T.t0);
   const fr = personBattleFrames(T.who, view);

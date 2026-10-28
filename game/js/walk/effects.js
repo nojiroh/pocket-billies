@@ -891,7 +891,8 @@ function drawDivers(quad, dt, rm, sc, g32, fps) {
         b.sp = 1;
         (walkRenderer.splash = walkRenderer.splash || []).push({ x: b.x, z: b.z, y: b.y, a: 0, bird: 1 });
         addRipple(b.x, b.z, 1);
-        if (typeof soundEffectAt === 'function') soundEffectAt('plop', b.x, b.z);
+        /* SND-10: a diving bird's splash, bigger than a frog's */
+        if (typeof soundEffectAt === 'function') soundEffectAt('plop', b.x, b.z, { size: 0.55 });
       }
       continue;
     } else if (k < C + 4) {

@@ -64,6 +64,7 @@ expose({
   SET_PIECES: [() => SET_PIECES],
   SHOPS: [() => SHOPS],
   SHOWCASE: [() => SHOWCASE],
+  SOUNDSCAPE: [() => SOUNDSCAPE],
   SPECIES: [() => SPECIES],
   SPECIES_FORMS: [() => SPECIES_FORMS],
   STAND_IN_LINES: [() => STAND_IN_LINES],
@@ -406,6 +407,8 @@ export const SHOPS = /** @type {Record<string, import('../types/game-data').Shop
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
+/* sound track SND-10: the world's sounds as recipes (soundscape.json; sound.js plays them) */
+export const SOUNDSCAPE = gameData.soundscape || { beds: {} };
 /* roguelite track RL-R2: the field moves that open a run's side areas (fieldMoves.json; logic/run-side.js) */
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
 provide({ FIELD_MOVES }); /* to-module */

@@ -396,6 +396,49 @@ def t_light_air():
     return s.out(8)
 
 
+# ---------------------------------------------------------------- people side by side (characters track CH-1)
+def t_people():
+    """people side by side on flat ground, for tools/look-people.py: the cast facing the camera in front; one look
+    turned eight ways in the world in the middle (`face`, degrees from +x toward +z, as set pieces turn), so the
+    camera's turn decides which side of each shows, with you in the gap at the hub, so the camera centres on the
+    lineup at every turn; four walking on the spot behind; two lantern posts for the night; CH-2's mannequins and CH-3's
+    stand-in, a Billie with them (only with the figures on). The `lineup` is only drawn
+    (walk/frame-items.js): nobody wanders off, turns to you or can be tapped. Later sessions of the characters track
+    stand their new figures beside these."""
+    s = base('test_people', 'Test: people side by side', 24, 20, 'g', 944)
+    hub(s, 12, 9)
+    cast = ['chosen', 'chad', 'kappi', 'juniper', 'mo', 'bertha', 'clerk', 'intern', 'folk:3', 'folk:17', 'boy', 'girl']
+    L = [{'who': w, 'x': round(12 + (i - (len(cast) - 1) / 2) * .9, 2), 'z': 6.6, 'dir': 'down'} for i, w in enumerate(cast)]
+    L += [{'who': 'folk:7', 'x': round(12 + (i - 3.5) * 1.2, 2), 'z': 9, 'face': i * 45} for i in range(8)]
+    walkers = [('chosen', 'side'), ('folk:3', 'sideR'), ('kappi', 'down'), ('girl', 'up')]
+    L += [{'who': w, 'x': round(12 + (i - 1.5) * 1.6, 2), 'z': 11.4, 'dir': d, 'walk': True} for i, (w, d) in enumerate(walkers)]
+    # characters track CH-2: the figure baker's mannequin (`figure`, no `who`: drawn only with Engine > People >
+    # Figures on): at each end of the cast facing the camera, turned eight ways in the nearest row, and walking at
+    # each end of the walkers
+    L += [{'figure': 'mannequin', 'x': x, 'z': 6.6, 'dir': 'down'} for x in (6.15, 17.85)]
+    L += [{'figure': 'mannequin', 'x': round(12 + (i - 3.5) * 1.2, 2), 'z': 4.2, 'face': i * 45} for i in range(8)]
+    L += [{'figure': 'mannequin', 'x': x, 'z': 11.4, 'dir': d, 'walk': True} for x, d in ((7.6, 'side'), (16.4, 'sideR'))]
+    # CH-3: up front, side by side facing the camera: the mannequin, today's person, the stand-in (KayKit's Rogue,
+    # CC0) as the pixel puppet and as the plain 3D figure, and a Billie; the stand-in cheering and throwing at the
+    # ends. The stand-in turned eight ways behind the walkers, and walking and running at their ends
+    L += [{'figure': 'rogue', 'x': 8.4, 'z': 1.8, 'dir': 'down', 'act': 'cheer'},
+          {'figure': 'mannequin', 'x': 9.6, 'z': 1.8, 'dir': 'down'},
+          {'who': 'folk:3', 'x': 10.8, 'z': 1.8, 'dir': 'down'},
+          {'figure': 'rogue', 'x': 12.0, 'z': 1.8, 'dir': 'down'},
+          {'figure': 'rogue', 'x': 13.2, 'z': 1.8, 'dir': 'down', 'style': 'smooth'},
+          {'billie': 'carnegie1', 'x': 14.4, 'z': 1.8},
+          {'figure': 'rogue', 'x': 15.6, 'z': 1.8, 'dir': 'down', 'act': 'throw'}]
+    L += [{'figure': 'rogue', 'x': round(12 + (i - 3.5) * 1.2, 2), 'z': 13.8, 'face': i * 45} for i in range(8)]
+    L += [{'figure': 'rogue', 'x': 6.0, 'z': 11.4, 'dir': 'side', 'walk': True},
+          {'figure': 'rogue', 'x': 18.0, 'z': 11.4, 'dir': 'sideR', 'walk': True, 'run': True}]
+    s.d['lineup'] = L
+    # lantern posts light the night (a street lamp would also fill the distance: grass-build.js buildFarProps takes
+    # props whose group matches 'tree', and 'streetlamp' does)
+    s.put('lantern', 4, 9); s.put('lantern', 20, 9)
+    shot(s, 12, 9, 'lineup')
+    return s.out(8)
+
+
 # ---------------------------------------------------------------- the graphics bench
 def t_graphics():
     """the Graphics test's place (docs/graphics-bench.md): nine stations, each built so one group of settings has
@@ -462,7 +505,7 @@ def t_graphics():
     return s.out(8)
 
 
-BUILD = [t_stairs, t_ledges, t_bridges, t_water, t_shadows, t_props, t_slopes, t_hilltown, t_camera, t_night, t_forest, t_tiny, t_huge, t_life, t_light_terrain, t_light_room, t_light_props, t_light_air, t_graphics]
+BUILD = [t_stairs, t_ledges, t_bridges, t_water, t_shadows, t_props, t_slopes, t_hilltown, t_camera, t_night, t_forest, t_tiny, t_huge, t_life, t_light_terrain, t_light_room, t_light_props, t_light_air, t_people, t_graphics]
 
 
 def main():
