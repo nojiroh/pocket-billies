@@ -4,7 +4,8 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 
 ### Sound track SND-13 - layers in play: the walking beat, rain, snow, a storm and night, a battle that builds, the run's arc, the busker as you pass, the Sound test's layer switches - 2026-10-28
 Branch `track/sound`, the music lane (main merged first, 948eaa0f: HANDOFF kept both entries, art-code-refs made
-again; the world lane's last push merged at 9348a6ed). Started by the planning session under the owner's standing
+again; the world lane's last push merged at 9348a6ed; main merged again at the end, 8bd6032d: 51 commits, no sound
+files, then Song fingerprints 234, 0 changed, and Run music, Sound effects ok). Started by the planning session under the owner's standing
 instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per commit, the generated
 files in their own commits, the baseline commit, the docs; tag `snd-13-done` (for the owner to push) on this session's
 last commit. PR #292. Details: sound-track.md "SND-13 as built".
