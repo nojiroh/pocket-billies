@@ -84,6 +84,85 @@ first and carried out. Details and the brief's corrections: perks-track.md 5.10,
 - Next: PK-10 (held items: 16 new, the 8 existing redrawn, the held kinds, rarity tiers) on `track/perks-items`; it
   retires i_pretzel, i_trailmix, i_bell and the other held rectangles the same way. Main moved on during this
   session (5b0d43e, #305: the Style track and the Perks PR #301 merged): PK-10 merges it first.
+### Online track ON-4: friend trades (Billies, eggs, parts), trade evolutions, Form 99-A - 2026-10-28
+Branch `track/online` (level with main 5f6d01ae at the start: ON-3 had merged in #268). PR #307 (draft). No session
+tag (CLAUDE.md: the track gets `online-done` when it ends). Both halves in one session at the owner's word. Details: docs/phases/online-track.md, "Facts
+corrected at ON-4's start" and "Done in ON-4".
+- The owner's answers: start now (RO-3g, the Swift rebuild, still open: the Swift line kept out); Cliplet→Tiktokferret
+  and Feedopus→Metapus evolve by trade; no obedience, traded Billies gain 1.5x XP; the solo route is Form 99-A from
+  Form 27-B and the revived Bureau Checkpoint; up to 3 things each side; ribbons travel with the Billie.
+- Facts that were wrong: no obedience exists and badges are by type, not a count; the event sheet's 3-option cap
+  (Form 27-B already had 3, so "Fill it in" became "File a transfer": the same nap and scratch, the form in place of
+  a common item).
+- Changed:
+  - Rules: `offers/<a>_<b>`, with each side's own fields, oks on the gives' version, and saves in the batch.
+  - New: `logic/trade.js` and `game/js/trade.js`.
+  - `meta.trades` (validMeta).
+  - Ribbons in `ONLINE_BILLY_KEYS` (a ghost's party drops them).
+  - The `acquire` evolution kind (rules.js, the Billie sheet, the Guide, rewards).
+  - `items.json` `transfer`, `yiming.json`, `zuck.json`.
+  - `events.json`: form_27b, and bureau_checkpoint at weight 1.
+  - `battle-engine.js heldXp` (1.5x when traded).
+  - friends.js (Trade on a friend's row, under the name; the watch starts with friends), profile.js (the Trades
+    panel), billie-sheet.js (Trade…), friends.css (one rule), the quick check's Safety step.
+  - The run-start snapshot moved: the new item and the Checkpoint's weight.
+- **For the owner**: publish the rules (SECURITY.md "ON-4 for the owner to do"); then trade between two accounts on two
+  phones: a Billie for a part, an egg, Cliplet at 14+ (it should evolve on arrival), close one page between Trade! and
+  the other side's Trade! (it should finish at the next start), and a trade called off.
+- **Risky**: never tried with real accounts. The emulator tests prove the rules accept the game's own writes, but the
+  page's Firestore calls (compat SDK, `onSnapshot`, `batch`) were only drawn with stand-in offers. A trade writes the
+  whole save JSON in the batch: a very large save near 1 MB would refuse it. Open on Spark (accepted): marking "gave"
+  and keeping the thing, or restoring an old save after a trade. Form 99-A uses the `settlement` icon for now (a
+  drawn form would be better).
+- Verified:
+  - lint, typecheck, format:check, check:modules, check:data, build.
+  - `npm test` 1642 pass; `npm run test:slow` 108 pass.
+  - Rules emulator 41 pass (8 new, one a whole trade with the game's patches and real saves).
+  - The Safety step with the trade screens.
+  - Phone-size pictures of the trade sheet (open, ready, sent, done), the picker and the Trainer card. The friend
+    row's buttons were too wide for a phone, so Trade moved under the name.
+  - Full quick check: 35 of 42 ok. Run alone after, 4 pass (RT-2, Granny Juniper, Ground tiles, Battle music).
+    Still failing, the same on main 5f6d01ae in a worktree: Terraces (train_station floats), RL-8's seam view, the
+    settings tabs 7 px wide.
+  - CI smoke: the Studio's world map look and Camera section (404 art) are red on main too. Behind things passes
+    alone here and on main (one re-run asked; PR comment).
+- Next: the owner publishes the rules and trades between two accounts; ON-5 (GTS and Surprise Trade) after RO-3g.
+
+### Terrain track TR-5 - terraces along the land's contours, their fronts, stairs up; the summit fix - 2026-10-28
+Branch `track/terrain` (made by the owner from `ccr-6e23f760-mdbx5x`; TR-4 is in main by PR #250, so main merged in as
+a fast-forward). The owner's answers, relayed from their progress-check session (checked in its transcript): option
+A, and merge `track/worldmap` in first (done: a fast-forward to its 91b45dfe, which held main 5f6d01ae). So this
+branch carries WM-3..WM-7 and WM-5b/WM-6 until `track/worldmap` reaches main. Tag to suggest: `tr-5-done`. Details:
+docs/phases/terrain-track.md, "TR-5 as built".
+- Changed (mapgen.js): terraces follow the smooth land's height (new `land.lean`, default 0; 1 = the old bands, same
+  formula; RT-1's ledge drop sets 0.7), crumbs under 16 m² merged; fronts by `land.edges` (cliff, bank, stepped, wall,
+  mixed; auto = walls in a town, mixed in the wild); `mapgenStairsUp` cuts a 1 m flight of stone steps to any stranded
+  piece of 50 m² off the massif, any summit and any building's front; a summit still cut off loses its spot;
+  `mapgenUntrap` repeats until no trap is left. `MAPGEN_VERSION` 27 (main took 26 for SY-7). Studio: Terrace lie and Terrace fronts.
+- **Found:** the summit bug was 8 of 158 places of the debug mountains run (TR2MTN0-11) at this base, not 1 in 50.
+  Causes: a town lot levelled at the road's raise left a 1 m riser inside its street (`mapgenLevelLot` on terraces,
+  WM-5), and tiers ringed by ledges and cliffs. Fixed by the stairs; the lot riser itself stays (towns/worldmap
+  track's to look at). Ordinary runs: 17 terraced places of six seeds got 48 flights (ground nobody could reach before;
+  the tests only checked exits). One pass of `mapgenUntrap` could leave a trap (630 cells, the ledge sweep's seed 8023)
+  once the terraces moved.
+- **Risky:** the look of contour terraces, banks and stepped fronts is untested on a phone (only a software picture
+  of the mountains fixture, `python3 tools/look-terrain.py`); a flight is placed by the walk rules only, so it may sit
+  in an odd spot (by a hedge, half under a bank). River falls off terraces come less often with contours (2 of a
+  sweep's 45 terraced scenes, against 5; the water track's), a massif's set-piece fall more often. The debug mountains
+  run takes about 19% longer to make (ordinary runs the same, within noise; the stairs cost 40-190 ms on a terraced
+  place, in the helper thread). A saved run made before is remade from its seed with the new terraces.
+- Verified: lint, typecheck, format, check:modules, check:data, build; `npm test` 1638 pass (mapgen-terraces 5 new);
+  `npm run test:slow` 108 pass (mountains run with TR2MTN5 back: every summit reached; the 40 ledge sets: no trap);
+  smoke 7 of 7 (333 s); check-fast `--only=tall,world,town,behind,island` all ok but "The Studio's world map
+  look" (Copperleaf's landmark field has no Auto), which fails the same on main 5f6d01ae and on `track/worldmap`.
+  Snapshots remade on purpose: the golden terraced scene, rng's scene hash (only gen.v), run-start's mapgenV.
+  Full quick check: 37 of 42 (1766 s). The five: Terraces (Copperleaf's train_station in the air: the same alone on
+  main 5f6d01ae; Copperleaf is hand-made and uses none of this code), RL-8's shop Perk, RT-2's pair, Granny Juniper
+  and room light, all four listed on main or as failing only in the long run in ON-2's and TR-4's entries.
+- Container: Python Playwright 1.63 installed for the browser checks (the pin says 1.56; its Chromium is build 1243).
+- Next: the owner on the phone: a ledge-drop route or the debug menu's "Mountains and ledges" run (contour terraces,
+  banks, walls in towns, the flights); a debug log. Then TR-6 (vines, cave doors) or, once `track/worldmap` is in
+  main, TR-2c part 2 as recipes on RT-1's plans.
 ### Fix - the fast-check failures red on main - 2026-10-28
 Branch `fix/main-red-checks` (a one-session fix, BRANCHES.md), made from main at 07c9b284, main merged in three times (last a3bc2421).
 Plan approved in Plan Mode. One cause per commit. No test skipped or loosened; one dead step removed (below).
@@ -126,6 +205,7 @@ Plan approved in Plan Mode. One cause per commit. No test skipped or loosened; o
 - For the owner: the smoke job's 30-minute limit is close on slow runners (the fast check took 17-27 min today); a
   pull request touching studio/ or game/js/logic/ adds 6-8 min of Studio checks. Raising it to 45 is your call.
 - Next: open PRs merge main to pick this up. If Behind things fails again, its note now names what stood in front.
+
 ### Perks track PK-5 - Wave C, catching, cash and maps - 2026-10-28
 Branch `track/perks` (this session's outcome branch, from PK-4's 34c884a6; main 485674b5 merged first, bbe0abe4, and
 main 5b0d43e1, which had taken PK-1..PK-4 and the style track, merged near the end, f5b925c0). Started by PK-0's
@@ -428,6 +508,7 @@ Draft PR #295 updated. Tag `vfx-8-done` for the owner (sessions can't push tags)
   container's Chromium). Not run: the in-game full test (25 min; its first step passes in the smoke check).
 - Next: VFX-9 (one draw for effects), started by the planning session. It moves the runner's ring, dust, beam and
   icon steps into the GL pool; the families stay `legacy_*` until VFX-11.
+
 ### Perks track PK-4 - Wave B, types, team and weather - 2026-10-28
 Branch `track/perks` (this session's outcome branch, from PK-3's bbdcad5; main had nothing new at the start, then
 moved to 5f6d01ae during the session: merged near the end at the planning and merge sessions' request, 8af07402). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,
@@ -1620,6 +1701,7 @@ questions. Docs only: no game code, data or art changed; plus a private listenin
   above are taken as recommended unless the owner says otherwise.
 - `track/sound` made by this session at that word, from this branch's head (so it carries Part 2 before PR #285
   merges); SND-8a started in a new session on it.
+
 ### UI track - Part 2 checked: every skipped check on all of Part 2 merged, and the fixes (UI-8b..UI-18, WM-5b, WM-6, SY-1..SY-3, VFX-5) - 2026-10-28
 Branch `claude/ui-checks-all`, made from UI-17's `claude/ui-17-idle-life` (#300), which held main and every Part 2
 step. Merged in (merges, not rebases): main (nothing new); `track/ui` (UI-8b, #276: docs conflicts, the newer lines

@@ -11,6 +11,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -50,7 +51,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 26,
+      "mapgenV": 27,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -610,6 +611,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -649,7 +651,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 26,
+      "mapgenV": 27,
       "unlocks": [
         "biome_autumn",
         "biome_ridge",
@@ -1213,6 +1215,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -1252,7 +1255,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 26,
+      "mapgenV": 27,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -1574,6 +1577,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "0e66f16eef60b87a5e1cfa1577656c8d25dfee879ae569c7161829c87ff3aa25"
+  "all": "18d5d0149756b1c4846ae91fc60ab87bb2ea9d824ec8faf82d330f6c0585d590"
 }
 `;
