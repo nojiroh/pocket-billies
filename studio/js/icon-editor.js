@@ -332,7 +332,7 @@ ACTIONS.icNew = async () => {
     'New icon',
     `<label class="fld"><span>Name (lower case, digits and -)</span><input type="text" id="icNewName" maxlength="32" placeholder="lantern"></label>
     <label class="chk"><input type="checkbox" id="icNewCopy"> Start as a copy of ${escapeHtml(artBrowser.icon)}</label>
-    <p class="help">The game finds an icon by its name (uiIconHTML('lantern')). The unit test counts the set (51 now): its owner raises that count when the new icon goes in.</p>`,
+    <p class="help">The game finds an icon by its name (uiIconHTML('lantern')). The unit test counts the set (63 now): its owner raises that count when the new icon goes in.</p>`,
     [
       { l: 'Cancel', v: null },
       {

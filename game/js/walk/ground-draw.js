@@ -339,7 +339,7 @@ function grassPushers() {
   A.fill(0);
   if (walkRenderer.bt && walkRenderer.bt.items) {
     for (const it of walkRenderer.bt.items)
-      if (it.k === 'rig') L.push([it.x, it.z, Math.max(0.45, (it.aoR || 0.4) * 1.3)]);
+      if (it.k === 'rig' && !it.ghost) L.push([it.x, it.z, Math.max(0.45, (it.aoR || 0.4) * 1.3)]);
   } else {
     if (typeof worldBillies !== 'undefined' && worldBillies.bud) L.push([worldBillies.bud.x, worldBillies.bud.z, 0.6]);
     if (walkRenderer.encPos) for (const e of walkRenderer.encPos) L.push([e[0], e[1], 0.75]);

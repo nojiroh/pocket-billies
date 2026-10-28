@@ -13,14 +13,26 @@
    the object facing away from its motion is dragged back toward its place one grid cell ago, broken up a little by
    noise (the vertex shader does the dragging: prop-models.js SMEAR_GLSL), held for the cell like everything else.
    VFX-4: the impact frame (below).
+   VFX-5: attack lunges (below): the same history kept for a Billie while it lunges, its lean, its afterimages and, on
+   a dash, its ribbon.
    Logic only: no DOM, runs in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  FLASH_DARK: [() => FLASH_DARK],
+  FLASH_SOFT_MAX: [() => FLASH_SOFT_MAX],
   IMPACT_KINDS: [() => IMPACT_KINDS],
   IMPACT_LINES: [() => IMPACT_LINES],
   IMPACT_SPEED_LIFE: [() => IMPACT_SPEED_LIFE],
+  LUNGE_DASH: [() => LUNGE_DASH],
+  LUNGE_GHOSTS: [() => LUNGE_GHOSTS],
+  LUNGE_LEAN_BACK: [() => LUNGE_LEAN_BACK],
+  LUNGE_LEAN_K: [() => LUNGE_LEAN_K],
+  LUNGE_LEAN_MAX: [() => LUNGE_LEAN_MAX],
+  LUNGE_RIBBON_HALF: [() => LUNGE_RIBBON_HALF],
+  LUNGE_RIBBON_MAX: [() => LUNGE_RIBBON_MAX],
+  LUNGE_RIBBON_MIN: [() => LUNGE_RIBBON_MIN],
   RIBBON_BRIGHT: [() => RIBBON_BRIGHT],
   RIBBON_CELLS: [() => RIBBON_CELLS],
   RIBBON_CORE: [() => RIBBON_CORE],
@@ -39,11 +51,27 @@ expose({
   STRETCH_PACE: [() => STRETCH_PACE],
   THROW_EASE: [() => THROW_EASE],
   // @ts-expect-error -- replaced on purpose
+  flashFor: [() => flashFor, v => (flashFor = v)],
+  // @ts-expect-error -- replaced on purpose
+  flashLuma: [() => flashLuma, v => (flashLuma = v)],
+  // @ts-expect-error -- replaced on purpose
   impactAt: [() => impactAt, v => (impactAt = v)],
   // @ts-expect-error -- replaced on purpose
   impactFrame: [() => impactFrame, v => (impactFrame = v)],
   // @ts-expect-error -- replaced on purpose
   impactLength: [() => impactLength, v => (impactLength = v)],
+  // @ts-expect-error -- replaced on purpose
+  lungeDash: [() => lungeDash, v => (lungeDash = v)],
+  // @ts-expect-error -- replaced on purpose
+  lungeGhostCount: [() => lungeGhostCount, v => (lungeGhostCount = v)],
+  // @ts-expect-error -- replaced on purpose
+  lungeLean: [() => lungeLean, v => (lungeLean = v)],
+  // @ts-expect-error -- replaced on purpose
+  lungeLeanFor: [() => lungeLeanFor, v => (lungeLeanFor = v)],
+  // @ts-expect-error -- replaced on purpose
+  lungeLeanOn: [() => lungeLeanOn, v => (lungeLeanOn = v)],
+  // @ts-expect-error -- replaced on purpose
+  lungeRibbonHalf: [() => lungeRibbonHalf, v => (lungeRibbonHalf = v)],
   // @ts-expect-error -- replaced on purpose
   ribbonCells: [() => ribbonCells, v => (ribbonCells = v)],
   // @ts-expect-error -- replaced on purpose
@@ -153,19 +181,20 @@ export function smearRecord(H, t, s) {
  * (the same metres), none drawn within SMEAR_NEAR of it
  * @param {SmearHistory | null | undefined} H @param {number} t @param {number} n
  * @param {{ x: number, y: number, z: number } | null} [eye]
+ * @param {{ fade: number, glow: number }[]} [looks] the copies' looks, newest first (a lunge's are LUNGE_GHOSTS)
  * @returns {{ s: SmearPlace, fade: number, glow: number }[]} */
-export function smearGhosts(H, t, n = SMEAR_GHOSTS.length, eye = null) {
+export function smearGhosts(H, t, n = SMEAR_GHOSTS.length, eye = null, looks = SMEAR_GHOSTS) {
   const out = [];
   if (!H || n <= 0) return out;
   const L = H.list,
-    life = (SMEAR_GHOSTS.length + 1) * SMEAR_STEP;
-  for (let i = 1; i < L.length && i <= n; i++) {
+    life = (looks.length + 1) * SMEAR_STEP;
+  for (let i = 1; i < L.length && i <= Math.min(n, looks.length); i++) {
     const s = L[i],
       p = L[i - 1];
     if (t - (s.t ?? t) >= life) break;
     if (Math.hypot(s.x - p.x, s.y - p.y, s.z - p.z) < SMEAR_MIN_GAP) continue;
     if (eye && Math.hypot(s.x - eye.x, s.y - eye.y, s.z - eye.z) < SMEAR_NEAR) continue;
-    out.push({ s, ...SMEAR_GHOSTS[i - 1] });
+    out.push({ s, ...looks[i - 1] });
   }
   return out;
 }
@@ -190,8 +219,9 @@ export function ribbonCells(reduced, lvl) {
  * first place within SMEAR_NEAR of the eye (a throw leaves the camera: its tail is the near end)
  * @param {SmearHistory | null | undefined} H @param {number} t @param {number} cells
  * @param {{ x: number, y: number, z: number } | null} [eye] @param {SmearPlace | null} [head]
+ * @param {number} [half] its half width at the head (metres; a dash's is the Billie's own, LUNGE_RIBBON_HALF)
  * @returns {RibbonPoint[]} */
-export function smearRibbon(H, t, cells, eye = null, head = null) {
+export function smearRibbon(H, t, cells, eye = null, head = null, half = RIBBON_HALF) {
   if (!H || cells < 2 || !H.list.length) return [];
   const L = H.list,
     /* the grid cells since the newest place was kept: 0 in flight, then one erosion step a cell */
@@ -229,7 +259,7 @@ export function smearRibbon(H, t, cells, eye = null, head = null) {
       q = at(i, j / RIBBON_SUB - i),
       u = j / n,
       e = Math.min(1, Math.round((RIBBON_FRAY * u + gone / RIBBON_STEPS) * RIBBON_STEPS) / RIBBON_STEPS);
-    out.push({ ...q, w: RIBBON_HALF * (1 - u), e });
+    out.push({ ...q, w: half * (1 - u), e });
   }
   return out;
 }
@@ -317,11 +347,13 @@ export const IMPACT_KINDS = ['catch', 'coin', 'crit'];
 /** @typedef {{ kind: string, cells: number, lines: number, warm: boolean, speed: boolean }} ImpactFrame */
 
 /** the impact frame for a hit of this kind, or null: none under Reduced motion; two cells, one at quality level 2,
- * none at level 3 (a crit still has its speed lines there, as before VFX-4); paper warm on a crit
- * @param {string} kind @param {boolean} reduced @param {number} lvl @returns {ImpactFrame | null} */
-export function impactFrame(kind, reduced, lvl) {
+ * none at level 3 (a crit still has its speed lines there, as before VFX-4); paper warm on a crit. SY-1: with Flashes
+ * off (noFlash) the two-tone cells go, as at level 3: a crit keeps its speed lines (motion, not a flash)
+ * @param {string} kind @param {boolean} reduced @param {number} lvl @param {boolean} [noFlash]
+ * @returns {ImpactFrame | null} */
+export function impactFrame(kind, reduced, lvl, noFlash = false) {
   if (reduced || !IMPACT_KINDS.includes(kind)) return null;
-  const cells = lvl >= 3 ? 0 : lvl >= 2 ? 1 : 2,
+  const cells = noFlash || lvl >= 3 ? 0 : lvl >= 2 ? 1 : 2,
     speed = kind === 'crit';
   if (!cells && !speed) return null;
   return { kind, cells, lines: lvl >= 2 ? 16 : IMPACT_LINES, warm: kind === 'crit', speed };
@@ -342,4 +374,101 @@ export function impactAt(F, ms) {
 /** how long the two-tone part lasts (ms): what a flash that would wash it out waits @param {ImpactFrame | null} F */
 export function impactLength(F) {
   return F ? F.cells * SMEAR_STEP : 0;
+}
+
+/* SY-1 (style track): the battle's full-screen flashes (battle-stage.js battleStageFlash) under the player's settings.
+   None under Reduced motion. With Flashes off a bright flash is held to a faint tint; a dark one (a faint's deep red)
+   stays as it is, since it doesn't flash bright. */
+/** the most a bright flash shows with Flashes off (opacity) */
+export const FLASH_SOFT_MAX = 0.15;
+/** below this luma (0..1) a flash is dark and stays as it is with Flashes off */
+export const FLASH_DARK = 0.25;
+
+/** a colour's luma 0..1 (Rec. 709), from #RGB or #RRGGBB; anything else counts as bright @param {string} col */
+export function flashLuma(col) {
+  const m = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(col || '').trim());
+  if (!m) return 1;
+  const h = m[1].length === 3 ? [...m[1]].map(c => c + c).join('') : m[1],
+    ch = i => parseInt(h.slice(i, i + 2), 16) / 255;
+  return 0.2126 * ch(0) + 0.7152 * ch(2) + 0.0722 * ch(4);
+}
+
+/** what a flash of this colour and opacity becomes under the settings, or null when nothing shows
+ * @param {string} col @param {number} a @param {boolean} reduced @param {boolean} flashesOff
+ * @returns {{ col: string, a: number } | null} */
+export function flashFor(col, a, reduced, flashesOff) {
+  if (reduced || !(a > 0)) return null;
+  if (!flashesOff || flashLuma(col) < FLASH_DARK) return { col, a };
+  return { col, a: Math.min(a, FLASH_SOFT_MAX) };
+}
+
+/* VFX-5: attack lunges. While a Billie lunges (battle-stage.js battleLunge, the step Part 2's runner reuses) its places
+   are kept on the same 24 fps grid as a throw's. From them: its lean (the sprite shader's uShear: the top ahead of the
+   feet, by how fast it moved over the last cell, held for the cell), one or two afterimages of its billboard at older
+   places (dithered, brighter, no shadow) and, on a dash, Part 1's ribbon at its middle's height. Nothing adds time:
+   they ride the lunge's own tweens. Off under Reduced motion; thinner as the battle's quality drops; they still play
+   under Calm (the action causes them; Part 2's rule 9). */
+/** a lunge's afterimages, newest first: fewer and fainter than a throw's (a Billie is much bigger on screen) */
+export const LUNGE_GHOSTS = [
+  { fade: 0.5, glow: 0.35 },
+  { fade: 0.28, glow: 0.6 },
+];
+/** the lean (a shear: how far the top moves sideways per metre of height) per stage pixel a millisecond of sideways
+ * speed. The H move's lunge (30 px in 120 ms, eased in) reaches about 0.25 px/ms in its last cell */
+export const LUNGE_LEAN_K = 1;
+/** at most this lean (about 17 degrees at the top) */
+export const LUNGE_LEAN_MAX = 0.3;
+/** moving back home (away from where it lunged), the lean is this share: it settles rather than leaning back hard */
+export const LUNGE_LEAN_BACK = 0.5;
+/** a dash's ribbon: its half width as a share of the Billie's height (metres), and its bounds */
+export const LUNGE_RIBBON_HALF = 0.3;
+export const LUNGE_RIBBON_MIN = 0.12;
+export const LUNGE_RIBBON_MAX = 0.45;
+/** the dash moves (vfx-track.md's family table, "dash": too fast to see), by move id, until VFX-8/VFX-11 give every
+ * move its family in battleAnims.json: Quick Strike, Zip, Dash Kick, Flame Dash, Front Run, Just Do It */
+export const LUNGE_DASH = ['flashsale', 'movefast', 'dashkick', 'pipeline', 'frontrun', 'justdoit'];
+
+/** whether a move (its id) dashes: its lunge leaves a ribbon too @param {string | null | undefined} id */
+export function lungeDash(id) {
+  return !!id && LUNGE_DASH.includes(id);
+}
+
+/** how many afterimages a lunge leaves: two, one at quality level 2, none at level 3 or under Reduced motion
+ * @param {boolean} reduced @param {number} lvl */
+export function lungeGhostCount(reduced, lvl) {
+  return reduced || lvl >= 3 ? 0 : lvl >= 2 ? 1 : LUNGE_GHOSTS.length;
+}
+
+/** whether a lunge leans: where its afterimages show (not under Reduced motion, not at quality level 3)
+ * @param {boolean} reduced @param {number} lvl */
+export function lungeLeanOn(reduced, lvl) {
+  return lungeGhostCount(reduced, lvl) > 0;
+}
+
+/** the lean for a sideways speed v (stage px a ms, + to the screen's right); fwd: the lunge's way on screen (1 or -1),
+ * so moving back home leans LUNGE_LEAN_BACK as much. Rounded to hundredths (a held, stepped value)
+ * @param {number} v @param {number} [fwd] */
+export function lungeLeanFor(v, fwd = 0) {
+  if (!Number.isFinite(v) || !v) return 0;
+  const k = fwd && Math.sign(v) !== Math.sign(fwd) ? LUNGE_LEAN_BACK : 1,
+    l = Math.max(-LUNGE_LEAN_MAX, Math.min(LUNGE_LEAN_MAX, v * LUNGE_LEAN_K)) * k;
+  return Math.round(l * 100) / 100 || 0;
+}
+
+/** the lean now, from a lunge's history: the speed between its two newest places (their x in metres; mpp the metres a
+ * stage pixel at the Billie's depth), held for the cell they were kept in; 0 once it stops being kept (the lunge is
+ * over), when off, or before two places
+ * @param {SmearHistory | null | undefined} H @param {number} t @param {number} mpp @param {boolean} on
+ * @param {number} [fwd] */
+export function lungeLean(H, t, mpp, on, fwd = 0) {
+  if (!on || !H || H.list.length < 2 || !(mpp > 0) || H.cell !== Math.floor(t / SMEAR_STEP)) return 0;
+  const [a, b] = H.list,
+    dt = (a.t ?? 0) - (b.t ?? 0);
+  if (!(dt > 0)) return 0;
+  return lungeLeanFor((a.x - b.x) / mpp / dt, fwd);
+}
+
+/** a dash's ribbon half width for a Billie h metres tall @param {number} h */
+export function lungeRibbonHalf(h) {
+  return Math.max(LUNGE_RIBBON_MIN, Math.min(LUNGE_RIBBON_MAX, (h || 0) * LUNGE_RIBBON_HALF));
 }

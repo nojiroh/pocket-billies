@@ -425,7 +425,7 @@
    }
   },
   "ui": {
-   "description": "SND-6: the buttons' four sounds and which button makes which (logic/ui-sounds.js)",
+   "description": "SND-6: the buttons' four sounds and which button makes which (logic/ui-sounds.js); UI-16a: four for the UI's motions (a sheet opening, a card flip, a count-up's end, a toast); SY-3: stamp, the thunk when a pb-stamp lands",
    "type": "object",
    "required": [
     "sounds"
@@ -441,11 +441,15 @@
       "select",
       "confirm",
       "cancel",
-      "cant"
+      "cant",
+      "sheet",
+      "flip",
+      "count",
+      "toast"
      ],
      "additionalProperties": false,
      "patternProperties": {
-      "^(select|confirm|cancel|cant)$": {
+      "^(select|confirm|cancel|cant|sheet|flip|count|toast|stamp)$": {
        "type": "object",
        "required": [
         "notes"

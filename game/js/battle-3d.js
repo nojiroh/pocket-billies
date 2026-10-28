@@ -27,6 +27,9 @@ import {
   actorPositions,
   actorWorldPoint,
   battleImpact,
+  battleLungeGhosts,
+  battleLungeLean,
+  battleLungeRibbon,
   battleRibbonCells,
   battleSmearCount,
   battleStage,
@@ -56,6 +59,7 @@ expose({
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
   ribbonColour: [() => ribbonColour, v => ((ribbonColour = v), provide({ ribbonColour }))],
   ribbonVertices: [() => ribbonVertices, v => (ribbonVertices = v)],
+  rigRibbonVertices: [() => rigRibbonVertices, v => (rigRibbonVertices = v)],
   smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
@@ -217,7 +221,9 @@ function battle3dFrame() {
       return [q[0], y, q[1]];
     },
     items = battle3d.items,
-    lights = battle3d.lights;
+    lights = battle3d.lights,
+    /** @type {{ v: number[], col: number[], core: number }[]} */
+    rigRibbons = [];
   items.length = 0;
   lights.length = 0;
   for (let i = 0; i < battleStage.s.length; i++) {
@@ -240,12 +246,34 @@ function battle3dFrame() {
       w: B.R.BW,
       h: B.R.BH,
       flip: 1,
-      shear: 0,
+      /* VFX-5: a lunge leans it by its speed (held for a 24 fps cell) */
+      shear: battleLungeLean(i),
       sh: B.ak === 'faint' || B.s.a < 0.5 ? 0 : Math.max(0.3, G.hw * mpp),
       aoR: Math.max(0.3, G.hw * mpp * 0.9),
       fade: B.s.a,
       person: 1,
     });
+    /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
+       had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
+    const rig = items[items.length - 1];
+    for (const g of battleLungeGhosts(i)) {
+      const [gx, gz] = T(g.s.x, g.s.z);
+      items.push({
+        ...rig,
+        x: gx,
+        z: gz,
+        y: standingHeightAt(gx, gz) + Math.max(0, g.s.y),
+        shear: g.s.lean || 0,
+        sh: 0,
+        aoR: 0,
+        fade: g.fade * B.s.a,
+        glow: g.glow,
+        ghost: true,
+      });
+    }
+    /* VFX-5: a dash's motion lines (walk/effects.js ribbonPass, as a thrown pyramid's) */
+    const RR = battleLungeRibbon(i);
+    if (RR) rigRibbons.push(rigRibbonVertices(RR, T));
   }
   for (let i = 0; i < 2; i++) {
     const Tr = battleStage.tr[i];
@@ -384,6 +412,7 @@ function battle3dFrame() {
     gy: battle3d.gy,
     items,
     ribbon,
+    rigRibbons,
     impact,
     hide: battle3d.hide,
     lights,
@@ -450,6 +479,17 @@ function ribbonVertices(C, T) {
       v.push(x, battle3d.gy + E[i][s][1], z, s ? 1 : -1, R[i].e);
     }
   return { v, col: ribbonTone(col), core: RIBBON_CORE };
+}
+/* VFX-5: a dash's ribbon (battle-stage.js battleLungeRibbon: points in battle metres) as ribbonPass's strip */
+function rigRibbonVertices(RR, T) {
+  const E = ribbonEdges(RR.R, battleStage.V),
+    v = [];
+  for (let i = 0; i < E.length; i++)
+    for (let s = 0; s < 2; s++) {
+      const [x, z] = T(E[i][s][0], E[i][s][2]);
+      v.push(x, battle3d.gy + E[i][s][1], z, s ? 1 : -1, RR.R[i].e);
+    }
+  return { v, col: ribbonTone(RR.col), core: RIBBON_CORE };
 }
 /* VFX-2: a pyramid's own colour for its ribbon (its recipe's first layer); the mail move's coin takes the gold
    pyramid's. null while the recipe isn't loaded (no ribbon for that moment) */

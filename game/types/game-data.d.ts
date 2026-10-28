@@ -200,6 +200,8 @@ export interface Meta {
 export interface BillyType {
   id: TypeId;
   color: Color;
+  /** UI-13: its colour in battle's 3D effects (rings, beams; default `color`) */
+  glow?: Color;
   /** the text colour on it (default '#fff') */
   text?: Color;
   /** the types it hits for double damage */
@@ -218,6 +220,8 @@ export interface BillyType {
 /** untyped.json: the colours and hit effects of 'None' */
 export interface Untyped {
   color: Color;
+  /** UI-13: its colour in battle's 3D effects (default `color`) */
+  glow?: Color;
   text?: Color;
   fx?: string[];
 }
@@ -429,6 +433,8 @@ export interface LocationData {
   music?: string;
   /** a key of SHOPS */
   shop?: DataId;
+  /** WM-5: a village's or a town's market stall's shop (logic/run-scenes.js runStallId) */
+  stall?: DataId;
   boutique?: string;
   /** a gym badge (a trainer's seat id) needed to go on */
   gate?: string;
@@ -450,6 +456,8 @@ export interface LocationData {
   side?: 1;
   /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
   waystation?: 1;
+  /** WM-6: a run's route-like place's route number (logic/run-scenes.js runRouteNumbers), on its signs and the map */
+  routeNo?: number;
   /** WA-5a: a run's place with marsh or bog water: its wild Billies weighted toward the marsh's (logic/water-play.js) */
   marsh?: string;
   v47region?: number;
@@ -507,6 +515,11 @@ export interface RunTownRules {
   locals: [number, number];
   names: string[];
   chat: Record<DataId, string[]>;
+  /** WM-5: what each town size (rules.json run.map.townSizes.cells) has: the word in its name ("Meadow Village"), its
+      houses (fewest, most), a market stall (0 or 1) and its quest givers (1 or 2) */
+  sizes?: Record<string, { word: string; houses: [number, number]; stall: number; givers: number }>;
+  /** WM-5: a market stall's wares: `more` a day drawn by weight from `pick` (held items), no Perk */
+  stall?: { more: number; pick: Record<string, number> };
 }
 
 /** RL-R1: a region theme (regions.json themes): where its zones start, the biomes it walks through, the types it
@@ -736,7 +749,11 @@ export interface Item {
   /** RL-12c: a held item: what it does for the Billie holding it (logic/effects.js fxOfBillie); given from its sheet,
       never used up, never used in battle */
   hold?: FxRow[];
+  /** UI-14b: a held item's tier on the loot ladder (frame, pill and name colour), by price and effect size */
+  rarity?: RarityTier;
 }
+/** UI-14b: the loot ladder's four tiers (logic/marks.js MARK_RARITY; the owner's answer 9) */
+export type RarityTier = 'common' | 'uncommon' | 'rare' | 'mythical';
 
 /** a shop: a run town's or stall's (logic/run-scenes.js), in SHOPS while the run's world is in */
 export interface Shop {
@@ -1222,6 +1239,12 @@ export interface RunMapRules {
   minibosses: number;
   /** WM-2: the places a path by Expedition (index 0 = Expedition I; past the end, the last): [fewest, most] */
   path?: [number, number][];
+  /** WM-5: the town sizes: each one's cells on the region grid ([wide, tall], smallest first: the step-down's order),
+      and by Expedition (index 0 = Expedition I; past the end, the last) the sizes of a run's towns in order, by how
+      many towns it has ("2", "3") */
+  townSizes?: { cells: Record<string, [number, number]>; order: Record<string, string[]>[] };
+  /** WM-5: the run's own towns' sizes in order (logic/run-map.js runMapLength, from townSizes), unless given */
+  sizes?: string[];
   /** WM-2: the fewest and most towns (each after a mini-boss) a run */
   towns?: [number, number];
   /** the nodeTypes.json types of the landing, the row before each mini-boss, the mini-bosses and the boss */
@@ -1418,7 +1441,8 @@ export interface RobotPart {
   /** which slot it fits: an arm fits either side */
   slot: 'torso' | 'arm' | 'legs';
   type: TypeId;
-  rar?: string;
+  /** UI-14b: its tier on the loot ladder (an arm or legs as an Augment), or boss (a boss's own part, never offered) */
+  rar?: RarityTier | 'boss';
   /** kg */
   wt: number;
   /** its own HP x this (default 1) */
@@ -1466,7 +1490,7 @@ export interface RobotGem {
   name: string;
   short?: string;
   type: TypeId;
-  rar?: string;
+  rar?: RarityTier;
   /** its signature move */
   move: MoveId;
   stats: Partial<Record<StatId, number>>;
@@ -1986,6 +2010,8 @@ export interface GeneTrait {
   name: string;
   d: string;
   fx: FxRow[];
+  /** UI-14b: its tier on the loot ladder, by effect size (a Gene that brings it shows it) */
+  rarity: RarityTier;
 }
 /** RL-13: modifiers.json: a run's Expedition (one row each, I first) and its challenges (logic/modifiers.js) */
 export interface Modifier {
@@ -2023,6 +2049,16 @@ export interface Faction {
   scrapyard: { trainers: [number, number]; classes: string[] };
   /** a salvage pick: up to `parts` of the beaten bots' parts and Scrap (scrap + scrapPerBot a bot after the first) */
   salvage: { parts: number; scrap: number; scrapPerBot: number };
+  /** SY-3: its paperwork look, only where it is: a UI icon (art/ui/<emblem>.svg), the stamp words, form numbers */
+  look?: FactionLook;
+}
+/** SY-3: a faction's stamp moments (pb-stamp) */
+export type StampMoment = 'retrieved' | 'void' | 'denied' | 'pending' | 'filed';
+/** SY-3: factions.json `look` */
+export interface FactionLook {
+  emblem: string;
+  stamps: Record<StampMoment, string>;
+  forms: string[];
 }
 /** RL-14b: bosses.json: one boss phase, fired once when its HP falls to `at` of the most */
 export interface BossPhase {
@@ -2291,7 +2327,9 @@ export type UiRole =
   | 'danger'
   | 'hpOk'
   | 'hpMid'
-  | 'hpLow';
+  | 'hpLow'
+  | 'mapGrass'
+  | 'mapWater';
 export interface UiSurfaceSide {
   glass?: number;
   highlight?: number;
@@ -2318,8 +2356,10 @@ export interface UiFamilyShape {
 }
 export type UiEase = [number, number, number, number];
 export interface UiLook {
-  /** a preset's name in the Studio */
+  /** a preset's name in the Studio; the defaults' and a player preset's in Settings' Palette row (UI-12) */
   name?: string;
+  /** UI-12: a preset players pick in Settings' Palette row */
+  player?: boolean;
   color?: { light?: Partial<Record<UiRole, string>>; dark?: Partial<Record<UiRole, string>> };
   surface?: { blur?: number; saturate?: number; light?: UiSurfaceSide; dark?: UiSurfaceSide };
   /** the glass panels' box shadows per side (UI-3) */
@@ -2352,6 +2392,31 @@ export interface UiLook {
     easeIn?: UiEase;
     spring?: UiEase;
   };
+  /** UI-11: the colour code; only the defaults set it */
+  signals?: UiSignals;
+}
+/** UI-11: the colour code's ids (logic/signals.js UI_SIGNALS): the eight families, the three statuses, the rarity tiers */
+export type UiSignalId =
+  | 'good'
+  | 'bad'
+  | 'caution'
+  | 'value'
+  | 'special'
+  | 'growth'
+  | 'machine'
+  | 'bio'
+  | 'brn'
+  | 'par'
+  | 'slp'
+  | 'common'
+  | 'uncommon'
+  | 'rare'
+  | 'mythical';
+/** UI-11: the colour code, the same in every palette: a fill (--sig-<id>) and a text shade per side (--sig-<id>-text) */
+export interface UiSignals {
+  fill?: Partial<Record<UiSignalId, string>>;
+  light?: Partial<Record<UiSignalId, string>>;
+  dark?: Partial<Record<UiSignalId, string>>;
 }
 export interface UiTheme {
   version: 2;

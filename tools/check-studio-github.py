@@ -36,7 +36,8 @@ Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted),
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
 and the Check's Show me reach a dial; Hold to compare shows the saved look; a cut size is left changed, so the
-proposal at the end must carry uiTheme.json with it.
+proposal at the end must carry uiTheme.json with it. UI-11: the colour code's fill in the preview and undone, its
+colour-blind preview, and a planted clash the Check finds.
 Island track IS-6a/IS-6b (a page of its own, after the proposal): the Hub island section on test_island draws (the
 orbit view and the map), a drag turns it, a stroke paints and undoes; the ground lock here and in Walk scenes; the
 dials: too big round the middle, a draft drawn, Use this island, Undo, read-only when locked.
@@ -957,6 +958,31 @@ def ui_steps(pg, errs):
     found = pg.evaluate("runCheck().filter(c => c.go === 'ui' && c.lvl === 'error').map(c => [c.msg, c.sel])")
     if len(found) != 2 or found[0][1] != {'uiFocus': {'scope': 'bag', 'rel': 'color.dark.text2'}}: errs.append(f'the Check found {found}')
     pg.evaluate("delete studioState.D.uiTheme.overrides.bag")
+    # UI-11: the colour code: a fill in the preview and undone, the colour-blind preview, a planted clash for the Check
+    pg.evaluate("uiEditor.open.signals = 1; refreshUiSettings()")
+    q = 'uiTheme.defaults.signals.fill.good'
+    sig0, undo1 = pg.evaluate(f"[{PV}('--sig-good'), studioState.undo.length]")
+    if sig0 != '#40d9c1': errs.append(f'the preview has no colour code ({sig0!r})')
+    box = pg.locator(f'#uiSet input.hex[data-p="{q}"]')
+    box.fill('#30C0B0'); box.press('Tab')
+    wait_pv('--sig-good', '#30c0b0', 'a colour code fill')
+    if not pg.evaluate("!!document.querySelector('#uiSet [data-sig=\"light.good\"]') && !!document.querySelector('#uiSet [data-sig=\"fill.good\"]')"):
+        errs.append('the colour code has no contrast badges')
+    pg.click('#undoBtn')
+    if pg.evaluate(f"readPath('{q}')") != '#40D9C1': errs.append('Undo did not put the fill back')
+    wait_pv('--sig-good', '#40d9c1', 'a colour code fill undone')
+    if pg.evaluate("studioState.undo.length") != undo1: errs.append('the fill was not one undo step')
+    sw = "document.querySelector('#uiSet [data-sig-set=battle] .ui-sig-sw i').style.background"
+    plain = pg.evaluate(sw)
+    pg.click('#uiSet [data-act=uiCvd][data-k=deutan]')
+    if pg.evaluate(sw) == plain: errs.append('the colour-blind preview did not change the swatches')
+    pg.click('#uiSet [data-act=uiCvd][data-k=""]')
+    pg.evaluate("studioState.D.uiTheme.defaults.signals.fill.bio = studioState.D.uiTheme.defaults.signals.fill.special")
+    clash = pg.evaluate("runCheck().filter(c => c.go === 'ui' && c.lvl === 'error' && /^Colour code/.test(c.msg)).map(c => [c.msg, c.sel])")
+    if not clash or not any('apart' in m for m, _ in clash) or clash[0][1] != {'uiFocus': {'scope': 'game', 'rel': 'signals.fill.special'}}:
+        errs.append(f'the Check did not find a planted colour clash: {clash}')
+    pg.evaluate("studioState.D.uiTheme.defaults.signals.fill.bio = '#DA5AB6'")
+    if pg.evaluate("runCheck().filter(c => /^Colour code/.test(c.msg)).length"): errs.append('the colour code fails the Check')
     # the large cut, compared with the saved look, and left changed for the proposal
     pg.evaluate("uiEditor.open.shape = 1; refreshUiSettings()")
     pg.evaluate("""(()=>{const r=document.querySelector('#uiSet input[data-p="uiTheme.defaults.shape.cutLg"]');r.value='20';
@@ -969,7 +995,7 @@ def ui_steps(pg, errs):
     if pg.evaluate("studioState.D.uiTheme.defaults.shape.cutLg") != 20: errs.append('the large cut did not reach the data')
     if pg.evaluate("studioState.undo.length") < undo0 + 2: errs.append('the edits are not undo steps')
     if len(errs) > n: errs[n:] = [f'ui: {e}' for e in errs[n:]]
-    else: print('ui: a colour previewed and undone, a screen colour on its screen and taken away, a preset undone, Find and the Check, compare; the large cut left at 20 px', flush=True)
+    else: print('ui: a colour previewed and undone, a screen colour on its screen and taken away, a preset undone, Find and the Check, the colour code (a fill undone, colour-blind preview, a planted clash), compare; the large cut left at 20 px', flush=True)
 
 
 def ui_tools_steps(pg, errs):
@@ -1093,7 +1119,9 @@ def ui_screens_steps(pg, errs):
         pg.click('[data-act=uiPv][data-g=mode][data-v=light]')
         # inspect a team row, and the overlays, on the game itself
         pg.click('#uiInsp')
-        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click()
+        # its top corner: since UI-8b the bottom bar stands 192 px tall (its minimap tile 60 px out of the bar), over the
+        # lead card's middle in the preview (where a plain click taps)
+        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click(position={'x': 24, 'y': 16})
         try: pg.wait_for_selector('#uiInspect tr[data-var]', timeout=10000)
         except Exception: errs.append('inspect found nothing on the Team screen')
         where = pg.evaluate("(document.querySelector('#uiInspect .ui-insp-h') || {}).textContent || ''")
@@ -1827,6 +1855,8 @@ def music_steps(pg, errs):
     stops."""
     n = len(errs)
     pg.evaluate("void openSection('music')")
+    # the section opens on the tab last used; an earlier step (the full run's) can leave it on Where they play
+    pg.click('[data-act=musTab][data-t=songs]')
     try: pg.wait_for_selector('#musList [data-act=musPlay][data-song=town]', timeout=20000)
     except Exception:
         errs.append('music: the song list never showed'); return

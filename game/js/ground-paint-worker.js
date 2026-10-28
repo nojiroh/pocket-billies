@@ -14,6 +14,7 @@ import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step
 import { hexToRgb, packHexPixel, packPixel } from './art.js';
 import {
   GROUND_BORDER_M,
+  GROUND_DETAIL_TILES,
   PAINT_WORKER_WAIT,
   TONE_AMOUNT,
   TONE_DARK,
@@ -26,6 +27,7 @@ import {
   clipSegmentToRect,
   groundKey,
   groundTileFolder,
+  groundTileRole,
   groundToneAt,
   hash2d,
   paintGroundSteps,
@@ -119,6 +121,8 @@ function paintWorkerSource() {
     applyGroundTone,
     scaleColor,
     plainTileIndex,
+    /* the tile pick paintGroundSteps calls (e89c8131 moved it out of the painter) */
+    groundTileRole,
     stableCells,
     pathWearLines,
     clipSegmentToRect,
@@ -131,6 +135,7 @@ function paintWorkerSource() {
   ];
   const consts = {
     GROUND_BORDER_M,
+    GROUND_DETAIL_TILES,
     TONE_DIRECTIONS,
     TONE_DARK,
     TONE_LIGHT,

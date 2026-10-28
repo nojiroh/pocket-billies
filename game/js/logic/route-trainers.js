@@ -230,7 +230,8 @@ export function routeTrainersPlace(run, trainers, scenes, classes) {
       sc = scenes[i];
     if (!sc) continue;
     /* WM-7: before a leader's ring they stand in a line on the road (routeArenaLine); WM-3b: on the generator's spots
-       as on any route when the ring is too near the way in for a line (3 leader places in 300) */
+       as on any route when the ring is too near the way in for a line (3 leader places in 300; WM-5b: or the road
+       there too short for them ROUTE_ARENA_MIN apart) */
     if (sc.arena && sc.arena.mode === 'leader' && list.every((_, k) => routeArenaLine(sc, k, list.length))) {
       list.sort((a, b) => a.route.k - b.route.k);
       list.forEach((T, k) => {
@@ -453,10 +454,15 @@ export function routeArenaLine(sc, k, n) {
   const line = [];
   for (let q = n - 1, d = end; q >= k; q--, d -= gap) {
     let S = dry(Math.max(ROUTE_ARENA_IN, d), q % 2 ? 1 : -1);
-    while (d > ROUTE_ARENA_IN && line.some(o => Math.hypot(o.at[0] - S.at[0], o.at[1] - S.at[1]) < ROUTE_ARENA_MIN)) {
+    const near = (/** @type {{ at: number[] }} */ T) =>
+      line.some(o => Math.hypot(o.at[0] - T.at[0], o.at[1] - T.at[1]) < ROUTE_ARENA_MIN);
+    while (d > ROUTE_ARENA_IN && near(S)) {
       d = Math.max(ROUTE_ARENA_IN, d - 0.5);
       S = dry(d, q % 2 ? 1 : -1);
     }
+    /* WM-5b: a road too short for the line (they stood on one spot at ROUTE_ARENA_IN): no line, the generator's spots
+       instead (routeTrainersPlace) */
+    if (near(S)) return null;
     line.push(S);
   }
   return line[line.length - 1];

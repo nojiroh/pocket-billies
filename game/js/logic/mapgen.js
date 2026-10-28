@@ -322,6 +322,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   mapgenTownDial: [() => mapgenTownDial, v => (mapgenTownDial = v)],
   // @ts-expect-error -- replaced on purpose
+  mapgenTownDistricts: [() => mapgenTownDistricts, v => (mapgenTownDistricts = v)],
+  // @ts-expect-error -- replaced on purpose
   mapgenTownFolk: [() => mapgenTownFolk, v => (mapgenTownFolk = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenTownFree: [() => mapgenTownFree, v => (mapgenTownFree = v)],
@@ -346,7 +348,7 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 24; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`) and animals by plan and set piece (`extra` life), RT-4b; 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b); 24: a town's streets grown from its through road (a dogleg, the square at its main junction, side streets, lots along every street), three town sizes (the `town` dial), a market stall and a second quest giver's spot (WM-5) */
+export const MAPGEN_VERSION = 25; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`) and animals by plan and set piece (`extra` life), RT-4b; 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b); 24: a town's streets grown from its through road (a dogleg, the square at its main junction, side streets, lots along every street), three town sizes (the `town` dial), a market stall and a second quest giver's spot (WM-5); 25: a town's districts, a park with its landmark and a farm edge, and an exit's signpost names its exit (`exit`, WM-6) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -3144,6 +3146,17 @@ export const MAPGEN_TOWN_SET = {
   board: 'notice_board',
   /* WM-5: a village's and a town's market stall beside the square (act 'stall': its own shop, run-scenes.js) */
   stall: 'stall',
+  /* WM-6: the town's landmark by its size, from existing props (the first the scenery has), in its park; the park's
+     flowerbeds; the farm edge's crop row, hay and scarecrow. A biome's town set may name its own */
+  landmarks: {
+    hamlet: ['tree_giant_swing', 'statue'],
+    village: ['tree_blossom_great', 'statue'],
+    town: ['clock_tower', 'statue'],
+  },
+  flowers: ['flowers_mixed', 'tulips_red', 'tulips_yellow', 'flowers_meadow'],
+  crop: 'crops',
+  hay: ['haybale', 'haystack'],
+  scarecrow: 'scarecrow',
 };
 /** a town's measures (metres): its streets' widths (the main street and a second one, a side street), the paved
  * apron between the through road and the square, the gap between two rows of side streets (a row of lots between
@@ -3165,6 +3178,11 @@ export const MAPGEN_TOWN = {
   folk: { base: 2, houses: 2, most: 10 },
   river: { south: 8, high: 40 },
   band: 14,
+  /* WM-6: the park's and the farm edge's size (width, depth) by the town's size, and how far from the road they
+     stand */
+  park: { hamlet: [10, 7], village: [13, 8], town: [16, 9] },
+  farm: { hamlet: [10, 6], village: [13, 7], town: [16, 8] },
+  districtGap: 1.5,
 };
 /** WM-5: a town's three sizes (the owner): a hamlet on 2 cells of the region grid (2 x 1), a village on 4 (2 x 2), a
  * town on 6 (3 x 2): its houses, the squares it tries (width, depth: the first that fits), the most rows of side
@@ -4078,6 +4096,12 @@ export function mapgenStageTown(G) {
     if (st.ns) mapgenPutProp(G, S.lamp, e[0] + st.w / 2 + 0.8, e[1], { road: 0.3 });
     else mapgenPutProp(G, S.lamp, e[0], e[1] + st.w / 2 + 0.8, { road: 0.3 });
   }
+  /* ---- WM-6: the districts beyond the square and the homes: a park with the town's landmark, a farm edge ---- */
+  const districts = mapgenTownDistricts(G, S, Pl);
+  if (districts.park) {
+    tx0 = Math.min(tx0, districts.park[0]);
+    tx1 = Math.max(tx1, districts.park[2]);
+  }
   /* ---- south of the road (the camera's side): 1-2 vegetable plots in farm soil, planters in two rows, a fence along
      their front; the rest stays open land and tall grass. Else south of a side street ---- */
   const nPlots = rnd.int(1, 2);
@@ -4144,7 +4168,172 @@ export function mapgenStageTown(G) {
     stall,
     givers: givers.length,
     area: [Math.max(1, area[0]), Math.max(1, area[1]), Math.min(w - 1, area[2]), Math.min(h - 1, area[3])],
+    districts,
   };
+}
+/**
+ * WM-6: a town's districts beyond its square and its homes (the owner's: the square, homes, a park or pond, a farm
+ * edge), at every size, built after the houses from existing props (no new art). The park: a lawn beside the through
+ * road (south of it, the camera's side, first; then north), as near the square as it fits but clear of it (by the
+ * place's pond first when it has one: a park by the water), trees of the biome at its back corners, flowerbeds along
+ * its front, two benches facing the camera, a lamp, and the town's landmark in its middle (MAPGEN_TOWN_SET landmarks
+ * by size, the first the scenery has). The farm edge: a field of farm soil and crop rows by the through road toward
+ * the place's far end from the square, a fence along its front, hay at its back and in a village or a town a
+ * scarecrow. Each keeps off roads, verges, water, banks, bridges, tall grass, lots, exits and an L's cut corner, on
+ * ground that spreads at most 1.5 m; a district with no room is left out (null). Its own random stream ('lots',
+ * '|districts'), so the houses and plots draw as before. Returns { park, farm: [x0, z0, x1, z1] or null, landmark }
+ * @param {any} G @param {any} S the town set @param {any} Pl the town plan
+ */
+export function mapgenTownDistricts(G, S, Pl) {
+  const { w, h, B } = G,
+    T = MAPGEN_TOWN,
+    size = Pl.size.size,
+    rnd = G.rng('lots', '|districts'),
+    M = G.road[0].pts,
+    half = G.P.road.width / 2,
+    sq = Pl.sq;
+  /** is the rectangle free for a district: inside, on no road, verge, water, bank, bridge, jetty, lot or tall grass,
+   * clear of exits and the hub, level enough */
+  const fits = (
+    /** @type {number} */ x0,
+    /** @type {number} */ z0,
+    /** @type {number} */ x1,
+    /** @type {number} */ z1
+  ) => {
+    if (x0 < 4 || z0 < 2 || x1 > w - 4 || z1 > h - 2) return false;
+    if (!mapgenLotFree(G, x0 - 0.5, z0 - 0.5, x1 + 0.5, z1 + 0.5, false)) return false;
+    for (let z = Math.floor(z0 - 0.5); z < Math.ceil(z1 + 0.5); z++)
+      for (let x = Math.floor(x0 - 0.5); x < Math.ceil(x1 + 0.5); x++)
+        if (G.F[z * w + x] & (1 | 2 | 4 | 8 | 32 | 64 | 128)) return false;
+    return mapgenCornerSpread(G, x0, z0, x1, z1) <= 1.5;
+  };
+  /** the rectangles of size [W, D] beside the through road at its samples `ks` in turn, south first then north */
+  const beside = (/** @type {number[]} */ ks, /** @type {number[]} */ dims) => {
+    const [W, D] = dims;
+    for (const k of ks) {
+      if (k < 6 || k > M.length - 7) continue;
+      const a = M[Math.max(0, k - 6)],
+        b = M[Math.min(M.length - 1, k + 6)],
+        L = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+      if (Math.abs(b[1] - a[1]) / L > 0.35) continue;
+      const [x, z] = M[k],
+        x0 = mapgenRound2(x - W / 2),
+        x1 = mapgenRound2(x + W / 2);
+      for (const sg of [-1, 1]) {
+        const near = sg < 0 ? z - half - T.districtGap : z + half + T.districtGap,
+          z0 = mapgenRound2(sg < 0 ? near - D : near),
+          z1 = mapgenRound2(sg < 0 ? near : near + D);
+        if (fits(x0, z0, x1, z1)) return [x0, z0, x1, z1];
+      }
+    }
+    return null;
+  };
+  /** else anywhere near the town: rectangles of size [W, D] on a 2 m grid within 64 m of (cx, cz), nearest first */
+  const near = (/** @type {number[]} */ dims, /** @type {number} */ cx, /** @type {number} */ cz) => {
+    const [W, D] = dims,
+      list = [];
+    for (let z = 2; z + D <= h - 2; z += 2)
+      for (let x = 4; x + W <= w - 4; x += 2) {
+        const d = Math.hypot(x + W / 2 - cx, z + D / 2 - cz);
+        if (d < 64) list.push([d, x, z]);
+      }
+    list.sort((a, b) => a[0] - b[0] || a[2] - b[2] || a[1] - b[1]);
+    for (const [, x, z] of list) if (fits(x, z, x + W, z + D)) return [x, z, x + W, z + D];
+    return null;
+  };
+  /* the samples out from the square on both sides, nearest first, clear of the square's width */
+  const out = /** @type {number[]} */ ([]),
+    from = Math.round(((sq.x1 - sq.x0) / 2 + 2) * 2);
+  for (let d = from; d < M.length; d += 4) out.push(sq.k + d, sq.k - d);
+  /* ---- the park: by the pond first, else beside the road nearest the square ---- */
+  const PD = T.park[size] || T.park.hamlet;
+  let park = /** @type {number[] | null} */ (null);
+  if (G.pond) {
+    const { x: px, z: pz, r } = G.pond;
+    for (let a = 0; a < 16 && !park; a++) {
+      const ang = (a / 16) * Math.PI * 2 + Math.PI / 2,
+        d = r + Math.max(PD[0], PD[1]) / 2 + 2,
+        cx = px + Math.cos(ang) * d,
+        cz = pz - Math.sin(ang) * d;
+      const R = [cx - PD[0] / 2, cz - PD[1] / 2, cx + PD[0] / 2, cz + PD[1] / 2].map(mapgenRound2);
+      if (Math.hypot(cx - sq.jx, cz - sq.mz) < 70 && fits(R[0], R[1], R[2], R[3])) park = R;
+    }
+  }
+  if (!park) park = beside(out, PD) || near(PD, sq.jx, sq.mz);
+  let landmark = '';
+  if (park) {
+    const [x0, z0, x1, z1] = park,
+      cx = (x0 + x1) / 2,
+      cz = (z0 + z1) / 2;
+    for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
+      for (let x = Math.floor(x0); x < Math.ceil(x1); x++) {
+        G.T[z * w + x] = 'l';
+        G.F[z * w + x] |= 16;
+      }
+    G.lots.push([x0, z0, x1, z1]);
+    /* the landmark in its middle, a little back */
+    const L = ((S.landmarks && S.landmarks[size]) || []).find((/** @type {string} */ k) => G.cat[k]);
+    if (L && mapgenPutProp(G, L, cx, cz + (z1 - z0) * 0.12, { force: true })) landmark = L;
+    /* trees of the biome at its back corners */
+    const trees = B.trees && Object.keys(B.trees).filter(k => G.cat[k]);
+    if (trees && trees.length)
+      for (const x of [x0 + 1.4, x1 - 1.4])
+        mapgenPutProp(G, rnd.pick(Object.fromEntries(trees.map(k => [k, B.trees[k]]))), x, z1 - 1.2, { force: true });
+    /* flowerbeds along its front, benches facing the camera either side of its middle, a lamp at a front corner */
+    const fl = (S.flowers || []).filter((/** @type {string} */ k) => G.cat[k]);
+    if (fl.length)
+      for (let x = x0 + 1; x <= x1 - 1 + 0.01; x += 2.2)
+        if (Math.abs(x - cx) > 2.4)
+          mapgenPutProp(G, rnd.pick(Object.fromEntries(fl.map((/** @type {string} */ k) => [k, 1]))), x, z0 + 0.6, {
+            force: true,
+          });
+    for (const dx of [-1, 1])
+      mapgenPutProp(G, S.bench, cx + dx * Math.min(3.6, (x1 - x0) / 2 - 1.6), z0 + 1.8, { force: true });
+    mapgenPutProp(G, S.lamp, rnd.chance(0.5) ? x0 + 0.5 : x1 - 0.5, z0 + 0.5, { force: true });
+  }
+  /* ---- the farm edge: by the road toward the place's far end from the square ---- */
+  const FD = T.farm[size] || T.farm.hamlet,
+    far = sq.k < M.length / 2 ? 1 : -1,
+    ends = out.filter(k => (k - sq.k) * far > 0).sort((a, b) => (b - a) * far);
+  let farm =
+    beside(ends, FD) ||
+    beside(out.filter(k => (k - sq.k) * far < 0).reverse(), FD) ||
+    near(FD, M[far > 0 ? M.length - 1 : 0][0], M[far > 0 ? M.length - 1 : 0][1]);
+  if (farm && park && farm[0] < park[2] + 2 && farm[2] > park[0] - 2 && farm[1] < park[3] + 2 && farm[3] > park[1] - 2)
+    farm = null;
+  if (farm) {
+    const [x0, z0, x1, z1] = farm;
+    for (let z = Math.floor(z0); z < Math.ceil(z1); z++)
+      for (let x = Math.floor(x0); x < Math.ceil(x1); x++) {
+        G.T[z * w + x] = 'o';
+        G.F[z * w + x] |= 16;
+      }
+    G.lots.push([x0, z0, x1, z1]);
+    /* crop rows across it, a strip at its west or east end kept for the hay */
+    const hayW = 2.6,
+      hayEast = rnd.chance(0.5),
+      cx0 = hayEast ? x0 + 1.6 : x0 + hayW + 1.6,
+      cx1 = hayEast ? x1 - hayW - 1.6 : x1 - 1.6;
+    if (G.cat[S.crop])
+      for (let z = z0 + 1; z <= z1 - 0.8 + 0.01; z += 1.4)
+        for (let x = cx0; x <= cx1 + 0.01; x += 3.2) mapgenPutProp(G, S.crop, x, z, { force: true });
+    const hx = hayEast ? x1 - hayW / 2 - 0.4 : x0 + hayW / 2 + 0.4,
+      hay = (S.hay || []).filter((/** @type {string} */ k) => G.cat[k]);
+    if (hay.length) {
+      mapgenPutProp(G, hay[0], hx, z1 - 1.4, { force: true });
+      if (size !== 'hamlet' && hay[1]) mapgenPutProp(G, hay[1], hx, (z0 + z1) / 2, { force: true });
+    }
+    if (size !== 'hamlet' && G.cat[S.scarecrow])
+      mapgenPutProp(G, S.scarecrow, mapgenRound2((cx0 + cx1) / 2 + 0.6), mapgenRound2((z0 + z1) / 2 + 0.7), {
+        force: true,
+      });
+    /* a fence along its front (the camera's side), as the plots have */
+    const F = G.cat[S.fence],
+      fw = (F && F.box && F.box[0]) || 2.2;
+    for (let fx = x0 + fw / 2; fx <= x1 - fw / 2 + 0.01; fx += fw)
+      mapgenPutProp(G, S.fence, fx, z0 - 0.3, { force: true });
+  }
+  return { park, farm, landmark };
 }
 /** TW-2: a scene's townsfolk: a town's by its houses (MAPGEN_TOWN.folk; a town whose square didn't fit, the base),
  * none elsewhere */
@@ -5288,7 +5477,10 @@ export function mapgenStageProps(G) {
   if (D.signs > 0)
     G.exits.forEach((e, x) => {
       const pts = x === 0 ? R : x === 1 ? R.slice().reverse() : G.road[x - 1].pts;
-      const r = (x < 2 ? P.road.width : G.road[x - 1].width) / 2 + 1;
+      const r = (x < 2 ? P.road.width : G.road[x - 1].width) / 2 + 1,
+        /* WM-6: it names its exit (`exit`, the edge exit's id), so a run's sign can say where that way goes
+           (run-scenes.js runSignposts) */
+        sign = G.edgeExits[x] ? { act: 'sign', exit: G.edgeExits[x].id } : { act: 'sign' };
       for (let k = Math.min(pts.length - 2, 12); k < Math.min(pts.length - 1, 60); k += 2) {
         const a = pts[k - 1],
           b = pts[k + 1],
@@ -5299,8 +5491,7 @@ export function mapgenStageProps(G) {
           const x = pts[k][0] + nx * r * sg,
             z = pts[k][1] + nz * r * sg;
           /* RT-3: tapped, it reads the place's name (walk-control.js: a sign with no words of its own) */
-          if (!mapgenInLot(G, x, z, 0.6) && mapgenPutProp(G, 'signpost', x, z, { force: true, extra: { act: 'sign' } }))
-            return;
+          if (!mapgenInLot(G, x, z, 0.6) && mapgenPutProp(G, 'signpost', x, z, { force: true, extra: sign })) return;
         }
       }
     });
@@ -5458,8 +5649,8 @@ export function mapgenBuild(P, ctx, aim) {
   if (G.grassPatches.length) sc.grassPatches = G.grassPatches;
   /* WM-5: what a town made (its size, houses, streets, market stall and quest givers, its square), for the checks */
   if (G.town) {
-    const { size, houses, streets, stall, givers, square } = G.town;
-    sc.town = { size, houses, streets, stall, givers, square };
+    const { size, houses, streets, stall, givers, square, districts } = G.town;
+    sc.town = { size, houses, streets, stall, givers, square, districts };
   }
   /* TW-2: what a town's folk say (run-scenes.js adds the region's) */
   if (P.kind === 'town' && B.town && B.town.chat) sc.chat = B.town.chat.slice();
