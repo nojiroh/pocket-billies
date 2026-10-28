@@ -2,11 +2,13 @@
 """Pictures of the speech bubbles, for picture notes (dialogue track DL-3; nothing is judged here). Opens the talk
 fixture (?fixture=talk&skin=...&style=...) phone sized, waits for the line to finish typing and the bubble to settle,
 and takes the bottom of the screen: every skin (talkSkins.json) plain, then the shapes (shout, whisper, think) on a few
-of them, then (with --motion) the Calm and Reduced levels.
+of them, then (with --motion) the Calm and Reduced levels. DL-4: then the stack (?fixture=talk&stack=1&choice=1): a
+picture after each line of an exchange, the choice in the stack and the Log open, with the stack's measures logged.
 
     python3 tools/look-talk.py                  # every picture, in validation/look-talk/
     python3 tools/look-talk.py --only=bureau    # only the pictures whose names hold these words
     python3 tools/look-talk.py --dark           # the dark theme
+    python3 tools/look-talk.py --only=stack     # only the stack
 
 Run `npm run data` first. Uses the browser checks' page set-up (tools/browser_check.py: the clock, no accounts, the
 test globals). Nothing is sent anywhere."""
@@ -41,15 +43,50 @@ def main():
                 CF.log(f'{name}: the line never finished'); ctx.close(); continue
             if DARK: pg.evaluate("document.documentElement.dataset.theme='dark'")
             pg.wait_for_timeout(900)
-            box = pg.evaluate("(()=>{const r=document.querySelector('.talk-box').getBoundingClientRect();return [r.top,r.bottom]})()")
+            box = pg.evaluate("(()=>{const r=document.querySelector('.talk-box:not(.talk-old)').getBoundingClientRect();return [r.top,r.bottom]})()")
             top = max(0, int(box[0]) - 60)
             pg.screenshot(path=str(OUT / f'{name}.png'), clip={'x': 0, 'y': top, 'width': 390, 'height': min(844 - top, int(box[1]) - top + 40)})
-            CF.log(f'{name}: skin {pg.evaluate("document.querySelector(\'.talk-box\').dataset.skin")}')
+            CF.log(f'{name}: skin {pg.evaluate("document.querySelector(\'.talk-box:not(.talk-old)\').dataset.skin")}')
             ctx.close()
+        if not ONLY or any('stack' in w for w in ONLY): stack(b, base, errs)
         b.close()
     srv.shutdown()
     for e in errs: print('error:', e)
     print(f'look-talk: pictures in {OUT.relative_to(ROOT)}')
+
+
+# DL-4: what the stack holds: bubbles, the one current name tag and line, the stack's top from the screen's bottom and its
+# height over the bar (the budget: 0.4), as shares of the screen
+STACK_STATE = """(()=>{const S=document.querySelector('.talk-stack'),r=S.getBoundingClientRect();return {bubbles:S.querySelectorAll('.talk-box').length,who:document.querySelectorAll('.talk-who').length,line:document.querySelectorAll('.talk-line').length,top:+((innerHeight-r.top)/innerHeight).toFixed(2),over:+((document.querySelector('.talk-box:not(.talk-old)').getBoundingClientRect().bottom-r.top)/innerHeight).toFixed(2),sides:[...S.querySelectorAll('.talk-box')].map(b=>b.dataset.side+(b.classList.contains('linked')?'+link':'')+(b.classList.contains('knocked')?'+knock':'')),pieces:uiElementCount()}})()"""
+
+
+def stack(b, base, errs):
+    """the stack fixture tapped through, a picture after each line settles, then the choice and the Log"""
+    ctx, pg = CF.new_page(b, errs, width=390, height=844, mobile=True)
+    pg.goto(f'{base}/?fixture=talk&stack=1&choice=1')
+    if DARK: pg.evaluate("document.documentElement.dataset.theme='dark'")
+    for i in range(1, 9):
+        if not CF.until(pg, "typeof talkBox!=='undefined'&&(!!talkBox.choice||talkBox.cur&&!talkBox.cur.typing&&!talkBox.cur.wait)&&!document.body.classList.contains('ld-on')&&loadingScreen.el===null", 120):
+            CF.log(f'stack {i}: the line never finished'); break
+        if pg.evaluate("!!talkBox.choice"): break
+        pg.wait_for_timeout(700)
+        pg.screenshot(path=str(OUT / f'3-stack-{i}.png'))
+        CF.log(f'stack {i}: {pg.evaluate(STACK_STATE)}')
+        if i == 3:
+            pg.evaluate("document.querySelector('.talk-logbtn').click()")
+            pg.wait_for_timeout(200)
+            pg.screenshot(path=str(OUT / '3-stack-log.png'))
+            pg.evaluate("document.getElementById('talk').click()")
+            if pg.evaluate("!!document.querySelector('.talk-log')"): CF.log('stack: the Log didn’t close on a tap')
+        # a cut line goes on by itself; any other is tapped on
+        pg.evaluate("window.__st=talkBox.cur;talkBox.last&&talkBox.last.cut||talkBox.cur&&talkBox.cur.tap();0")
+        CF.until(pg, "talkBox.cur!==window.__st", 10)
+    if CF.until(pg, "!!talkBox.choice", 10):
+        pg.wait_for_timeout(500)
+        pg.screenshot(path=str(OUT / '3-stack-choice.png'))
+        CF.log(f'stack choice: {pg.evaluate(STACK_STATE)}')
+    else: CF.log('stack: no choice came')
+    ctx.close()
 
 
 if __name__ == '__main__':
