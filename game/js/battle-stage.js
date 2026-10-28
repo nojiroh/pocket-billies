@@ -25,7 +25,6 @@ import {
   hudHit,
   hudPop,
   maxHp,
-  motionNow,
   platesTick,
   provide,
   reducedMotion,
@@ -152,6 +151,7 @@ expose({
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
   buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
+  calmMotion: [() => calmMotion],
   camApply: [() => camApply, v => (camApply = v)],
   camAt: [() => camAt],
   camBusy: [() => camBusy],
@@ -1033,7 +1033,7 @@ function camApply() {
     still = reducedMotion,
     /* UI-16a/b: Calm drops the idle loops: the camera's breathing zoom and slow roll (shakes and the handheld feel
        follow the action and stay) */
-    calm = still || motionNow() === 'calm';
+    calm = still || calmMotion();
   let sx = 0,
     sy = 0;
   if (battleStage.shk > 0.3 && !still) {
@@ -1063,6 +1063,9 @@ function camApply() {
   }
   if (el.bl) el.bl.style.transform = `translate(${(-V.yaw * 300 * u).toFixed(1)}px,${(V.hz * u * 0.5).toFixed(1)}px)`;
 }
+/* UI-16b: the Animation level is Calm (settings-screen.js writes it on <html data-motion>; ui-kit.js motionNow reads
+   it too, but the Studio runs this stage without the kit) */
+const calmMotion = () => typeof document !== 'undefined' && document.documentElement.dataset.motion === 'calm';
 /* ---------- camera life ----------
    battleStage.cam is the directed camera (camTo/camAt/camHome tween it); battleStage.V is the one rendered: the directed camera plus a slow idle orbit
    around the middle of the action while nothing happens. A guard keeps both billionaires inside the free frame. */
@@ -1139,7 +1142,7 @@ function camUpdate(dt) {
     /* phase 06-3: calm while the player chooses (the battle cards float in the scene and should hold still); UI-16b:
        no idle orbit under Calm */
     !reducedMotion &&
-    motionNow() !== 'calm' &&
+    !calmMotion() &&
     !busy &&
     !battleStage.calm &&
     battleStage.t - battleStage.camT > 650 &&
