@@ -133,7 +133,7 @@ export function densityReport(D, rigs, species) {
       ...densityWorld(species[sp].ht, M.geo, M.BH),
       kit: f ? f.name : '',
       fit: f ? f.scale : null,
-      placeholder: p ? p.name : '',
+      sketch: p ? p.name : '',
       plan: p ? p.plan : null,
       scale: p ? (p.scale ?? 1) : null,
       parts,
