@@ -174,7 +174,7 @@ export function figureShapeFor(look, seed, choice = {}) {
  * @param {KitLook} look @param {Record<string, KitItem>} items the wardrobe's items (their default colours)
  * @param {{ name?: string, seed?: number, figure?: FigureShapeChoice,
  *   chibi?: { head: number, legs: number, torso: number, arms: number, neck: number },
- *   flair?: { hair?: number, scarf?: boolean, cape?: boolean, col?: string, wear?: Record<string, string> } }} [opts]
+ *   flair?: { hair?: number, scarf?: boolean, cape?: boolean, col?: number[], wear?: Record<string, string> } }} [opts]
  * `chibi`: proportions
  * other than KIT_CHIBI (a direction of figures.js FIGURE_LOOKS)
  * @returns {Figure}
@@ -729,7 +729,10 @@ export function lookFigure(look, items, opts = {}) {
   kitHair(add, wear.hair || null, head, !!hat, seed, !!hat && hat !== 'hat_cap' && hat !== 'hat_beanie', FL.hair || 1);
   /* CH-3b's hybrid variants may redesign (the owner: "you don't have to base them on their original sprites"): a scarf
      with a tail that streams behind, a cape from the shoulders */
-  if (FL.scarf || FL.cape) colours.flair = kitHex(FL.col, figureMix(colours.top, [196, 64, 72], 0.6));
+  if (FL.scarf || FL.cape)
+    colours.flair = Array.isArray(FL.col)
+      ? [FL.col[0], FL.col[1], FL.col[2]]
+      : figureMix(colours.top, [196, 64, 72], 0.6);
   if (FL.scarf && !wear.neck) {
     add(
       'fscarf',

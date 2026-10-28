@@ -1692,7 +1692,7 @@
    "game/js/walk/effects.js:1090"
   ],
   "cup": [
-   "game/js/logic/figure-kit.js:791",
+   "game/js/logic/figure-kit.js:794",
    "game/js/logic/placeholder-art.js:280"
   ],
   "down": [
@@ -1747,11 +1747,11 @@
   "eye": [
    "game/js/figures.js:753",
    "game/js/figures.js:795",
-   "game/js/logic/figure-kit.js:1320",
-   "game/js/logic/figure-kit.js:1330",
-   "game/js/logic/figure-kit.js:1342",
-   "game/js/logic/figure-kit.js:1484",
-   "game/js/logic/figure-kit.js:1500",
+   "game/js/logic/figure-kit.js:1323",
+   "game/js/logic/figure-kit.js:1333",
+   "game/js/logic/figure-kit.js:1345",
+   "game/js/logic/figure-kit.js:1487",
+   "game/js/logic/figure-kit.js:1503",
    "game/js/logic/figure-pose.js:160",
    "game/js/logic/figure-pose.js:361",
    "game/js/logic/figure-pose.js:362",
@@ -1958,8 +1958,8 @@
   ],
   "tag": [
    "game/js/battle.js:665",
-   "game/js/logic/figure-kit.js:825",
-   "game/js/logic/figure-kit.js:1503",
+   "game/js/logic/figure-kit.js:828",
+   "game/js/logic/figure-kit.js:1506",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:236",
    "game/js/ui.js:237"

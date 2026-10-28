@@ -647,7 +647,7 @@ Object.assign(FIGURE_LOOKS, {
     detail: 1.3,
     ppm: 36,
     chibi: { head: 0.78, legs: 1.32, torso: 1.08, arms: 1.12, neck: 1.6 },
-    flair: { hair: 1.12, scarf: true, wear: { outer: 'labcoat' }, col: '#e8a5a0' },
+    flair: { hair: 1.12, scarf: true, wear: { outer: 'labcoat' }, col: [232, 165, 160] },
   },
   /* 3 lantern night: half the figure in deep violet shadow, a warm key, a hard cyan rim from behind, scarves */
   night: {
@@ -664,7 +664,7 @@ Object.assign(FIGURE_LOOKS, {
     detail: 1.2,
     ppm: 32,
     chibi: HD2D_BODY,
-    flair: { hair: 1.15, scarf: true, col: '#5fb7c0' },
+    flair: { hair: 1.15, scarf: true, col: [95, 183, 192] },
   },
   /* 4 Octopath travellers: chunky 24 px a metre, three and a half heads, five tones dithered hard, a thin dark
      line, everyone a traveller in a cape */
@@ -679,7 +679,7 @@ Object.assign(FIGURE_LOOKS, {
     detail: 1,
     ppm: 24,
     chibi: { head: 0.86, legs: 1.12, torso: 1.02, arms: 1.02, neck: 1.0 },
-    flair: { cape: true, col: '#b13e53' },
+    flair: { cape: true, col: [177, 62, 83] },
   },
   /* 5 gouache bold: saturated, a big head and huge hair on a small body, a coloured line, a cape and a streaming
      scarf */
@@ -696,7 +696,7 @@ Object.assign(FIGURE_LOOKS, {
     detail: 1.4,
     ppm: 40,
     chibi: { head: 1.18, legs: 0.86, torso: 0.92, arms: 0.92, neck: 0.8 },
-    flair: { hair: 1.4, scarf: true, cape: true, col: '#e63946' },
+    flair: { hair: 1.4, scarf: true, cape: true, col: [230, 57, 70] },
   },
 });
 /** the light's depth map's size (pixels square) */
