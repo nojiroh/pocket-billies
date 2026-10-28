@@ -19,6 +19,7 @@ import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed } from './run-map.js';
+import { runFxMoment } from './run-loop.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -101,20 +102,23 @@ export const perkPrice = (R, rule) => rule.price[R.rarity] || 0;
 
 /**
  * Hold a Perk: '' when done, or why not: 'none' (no such Perk), 'held' (already), 'full' (at the cap and no
- * `drop` given), 'drop' (`drop` isn't held). With `drop`, it takes that one's place.
+ * `drop` given), 'drop' (`drop` isn't held). With `drop`, it takes that one's place. PK-1: with the save it is
+ * taken on (`s`, s.run being `run`), its rows of the take moment act (run-loop.js runFxMoment)
  * @param {Run} run @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string} [drop]
+ * @param {any} [s]
  */
-export function perkTake(run, id, perks, rule, drop) {
+export function perkTake(run, id, perks, rule, drop, s) {
   if (!perks[id]) return 'none';
   if (run.perks.includes(id)) return 'held';
   if (drop != null) {
     const at = run.perks.indexOf(drop);
     if (at < 0) return 'drop';
     run.perks[at] = id;
-    return '';
+  } else {
+    if (run.perks.length >= rule.cap) return 'full';
+    run.perks.push(id);
   }
-  if (run.perks.length >= rule.cap) return 'full';
-  run.perks.push(id);
+  if (s && s.run === run) runFxMoment(s, perks, 'take', undefined, id);
   return '';
 }
 
@@ -122,13 +126,13 @@ export function perkTake(run, id, perks, rule, drop) {
  * The player's answer to the pick: one of the offer (with `drop` when at the cap), or null to take none. The offer
  * is cleared once answered; '' when done, else why not (perkTake's reasons, or 'offer': not one offered).
  * @param {Run} run @param {string | null} id @param {Record<string, Perk>} perks @param {PerkRules} rule
- * @param {string} [drop]
+ * @param {string} [drop] @param {any} [s] the save, for the take moment (perkTake)
  */
-export function perkChoose(run, id, perks, rule, drop) {
+export function perkChoose(run, id, perks, rule, drop, s) {
   if (!run.offer) return 'offer';
   if (id != null) {
     if (!run.offer.includes(id)) return 'offer';
-    const why = perkTake(run, id, perks, rule, drop);
+    const why = perkTake(run, id, perks, rule, drop, s);
     if (why) return why;
   }
   run.offer = null;
@@ -139,13 +143,13 @@ export function perkChoose(run, id, perks, rule, drop) {
  * Buy the shop's Perk for a day: '' when done (the shelf empties, the money is the caller's), or why not ('gone',
  * or perkTake's reasons).
  * @param {Run} run @param {number} i @param {number} day @param {Record<string, Perk>} perks @param {PerkRules} rule
- * @param {string} [drop]
+ * @param {string} [drop] @param {any} [s] the save, for the take moment (perkTake)
  */
-export function perkBuy(run, i, day, perks, rule, drop) {
+export function perkBuy(run, i, day, perks, rule, drop, s) {
   const key = i + ':' + day,
     id = run.shelf[key];
   if (!id) return 'gone';
-  const why = perkTake(run, id, perks, rule, drop);
+  const why = perkTake(run, id, perks, rule, drop, s);
   if (!why) run.shelf[key] = '';
   return why;
 }

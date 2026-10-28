@@ -142,7 +142,8 @@ export function runSimOn(env) {
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
     { eventAt } = modules.encounters,
-    { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
+    { runArriveFx, runBuyFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } =
+      modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
     { runRegionData } = modules['run-region'],
@@ -387,8 +388,10 @@ export function runSimOn(env) {
             const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
               c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.perks, data.PERKS, R.perks, P) : null;
             at.relic = { id: shelf, price: cost };
-            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop)) {
+            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop, s)) {
               s.se -= cost;
+              /* PK-1: the buy moment (shop.js shopPerkBuy) */
+              runBuyFx(s, data.PERKS);
               stats.spent += cost;
               stats.moneyOut.perks += cost;
               at.relic.bought = c.drop ? { drop: c.drop } : 1;
@@ -404,6 +407,8 @@ export function runSimOn(env) {
           ) {
             s.se -= price;
             s.pyramids.pyramid = (s.pyramids.pyramid || 0) + 1;
+            /* PK-1: the buy moment (shop.js shopBuy) */
+            runBuyFx(s, data.PERKS);
             stats.spent += price;
             stats.moneyOut.shop += price;
           }
@@ -558,7 +563,7 @@ export function runSimOn(env) {
           if (run.offer) {
             const c = simPerkChoice(run.offer, run.perks, data.PERKS, R.perks, P);
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
-            perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined);
+            perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined, s);
           }
           if (node.type === 'boss') {
             stats.won = true;

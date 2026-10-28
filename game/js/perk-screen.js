@@ -96,7 +96,7 @@ function perkPickTake(id) {
 function perkPickDone(id, drop) {
   const run = saveData.run;
   if (!run) return;
-  const why = perkChoose(run, id, PERKS, RULES.run.perks, drop);
+  const why = perkChoose(run, id, PERKS, RULES.run.perks, drop, saveData);
   if (why) {
     toast('That Perk can’t be taken.');
     return;

@@ -52,7 +52,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxDamage: [() => fxDamage, v => (fxDamage = v)],
   // @ts-expect-error -- replaced on purpose
-  fxFire: [() => fxFire, v => (fxFire = v)],
+  fxFire: [() => fxFire, v => ((fxFire = v), provide({ fxFire }))],
   fxHealShare: [() => fxHealShare],
   fxIfs: [() => fxIfs],
   fxKey: [() => fxKey],
@@ -90,6 +90,7 @@ expose({
   runMarks: [() => runMarks],
 });
 /* eslint-enable no-func-assign */
+provide({ fxFire });
 /* to-module: end */
 export const FX_KINDS = /** @type {const} */ ([
   'money',
@@ -434,6 +435,7 @@ export function fxRowNow(f, ctx, run) {
  * @param {FxState} st @returns {any[]} */
 export const fxAt = (fx, ctx, st) =>
   (fx || []).filter(f => !f.when && fxLive(f, ctx, st)).map(f => fxRowNow(f, ctx, runMarks(st)));
+provide({ fxAt }); /* to-module */
 
 /** the rows of `when` that would act at its next coming, without counting or spending (a hit's damage is worked out
  * before the hit lands; fxFire counts it after) @param {any[] | null | undefined} fx @param {string} when

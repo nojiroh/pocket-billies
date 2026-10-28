@@ -9,7 +9,7 @@ import { clamp, random } from './util.js';
 import { CURRENCIES, ITEMS, PERKS, PYRAMIDS, RESIDENTS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { resStock } from './logic/residents.js';
-import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled } from './logic/run-loop.js';
+import { runBuyFx, runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -233,6 +233,8 @@ function shopBuy(id, k) {
   if (typeof soundEffect === 'function') soundEffect('buy');
   if (kind === 'coin') saveData.pyramids[key] = (saveData.pyramids[key] || 0) + n;
   else saveData.items[key] = (saveData.items[key] || 0) + n;
+  /* PK-1: a run shop's purchase is the buy moment (logic/run-loop.js) */
+  if (sh.runNode != null && saveData.run) runBuyFx(saveData, PERKS);
   /* RL-8: a run's purchase is a checkpoint */
   if (saveData.run) saveNow();
   else save();
@@ -264,8 +266,10 @@ function shopPerkBuy(id, drop) {
     );
     return;
   }
-  if (perkBuy(run, sh.runNode, run.clock, PERKS, RULES.run.perks, drop)) return;
+  if (perkBuy(run, sh.runNode, run.clock, PERKS, RULES.run.perks, drop, saveData)) return;
   saveData.se -= L.price;
+  /* PK-1: the buy moment (logic/run-loop.js) */
+  runBuyFx(saveData, PERKS);
   if (typeof soundEffect === 'function') soundEffect('buy');
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `Perk bought: ${L.id}${drop ? ` for ${drop}` : ''}`);

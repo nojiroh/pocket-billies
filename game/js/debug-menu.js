@@ -736,7 +736,8 @@ function debugAction(x) {
         id,
         PERKS,
         RULES.run.perks,
-        run.perks.length >= RULES.run.perks.cap ? run.perks[0] : undefined
+        run.perks.length >= RULES.run.perks.cap ? run.perks[0] : undefined,
+        saveData
       );
       if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Perk can’t be given.');
       saveNow();

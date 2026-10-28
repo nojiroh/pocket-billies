@@ -19,11 +19,11 @@ import { runBeans } from './relations.js';
 import { META_GENES, META_MAX } from './meta-state.js';
 import { factionBotOf, factionOfClass } from './factions.js';
 import { fieldBadgeKey } from './run-side.js';
-import { runFragileDrop } from './run-loop.js';
+import { runFragileDrop, runFxMoment } from './run-loop.js';
 import { fxMoney, fxOfBillie, fxSplice } from './effects.js';
 import { perkOfferMake } from './perks.js';
 import { rewardDataGame, rewardOfferMake, salvageOfferMake } from './rewards.js';
-import { battleRoll, fxBattleRows } from './battle-engine.js';
+import { battleRoll, fxBattleRows, fxFoeTags } from './battle-engine.js';
 import { questCatch, questWin } from './run-quests.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -132,6 +132,12 @@ export function battleSettle(b, s) {
   }
   /* ON-2: a friend's ghost beaten (the run's record says so) */
   if (run && run.ghost && o === 'win' && b.T && b.T.runFoe === 'ghost') run.ghost.won = 1;
+  /* PK-1: the run's moments: a battle won, a Billie caught (the battle's foe and whether one of yours fainted) */
+  if (run && (o === 'win' || b.over === 'caught') && b.sides)
+    runFxMoment(s, PERKS, o === 'win' ? 'win' : 'catch', {
+      foe: fxFoeTags(b),
+      noFaint: !((b.fainted || 0) > 0),
+    });
   /* v36: the Hype counter */
   if (o === 'win') for (const m of s.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1;
   if (b.kind === 'wild') dropEncounter(b.qid);
