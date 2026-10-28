@@ -284,7 +284,9 @@ track needed); nothing the style track owns touched.
 ### VFX track VFX-16 - Battle flow: the VS splash, send-out, recall, catch, faint, level-up, items, victory and defeat - 2026-10-28
 Side branch `claude/vfx-16-battle-flow` (wave 2, beside VFX-11 on `track/vfx` and VFX-14 on `claude/vfx-14-statuses`),
 made from `track/vfx` at 868e6f30 (VFX-10's head); `track/vfx` merged in twice (438f9396: VFX-15 and main's #317;
-f1cc5808: VFX-11's families and type kits at 7f957898); draft PR #319 into `track/vfx`. Run under the owner's standing
+f1cc5808: VFX-11's families and type kits at 7f957898; 2de845c2: VFX-12's budgets as data and main's PK-6 at
+24d54001, the flow code's three BURST_BUDGET uses now `fxBudget('burst')`; after it unit tests 1953 of 1953, smoke
+no problems, the send-out, level-up and bot's faint filmed again); draft PR #319 into `track/vfx`. Run under the owner's standing
 instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tag
 (main's CLAUDE.md).
 - The plan: read the flow cases and their events in the code first; message VFX-14 (the shared `events` key, the
