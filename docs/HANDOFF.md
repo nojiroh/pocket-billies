@@ -34,7 +34,7 @@ last commit. PR #292. Details: sound-track.md "SND-13 as built".
   brightness, 0 changed. The code commits before the data were not rendered one by one (a render of the tracker's
   commit in a worktree was stopped at its 30-minute limit on the busy machine): no ensemble part named a layer or a
   dim before 836c2110, so the controller made no node and moved nothing; the render at the last commit covers them.
-- **Levels** (mono RMS of the fingerprint renders, against the plain ensemble, by day): LEVELS_LINE. The K-weighted
+- **Levels** (mono RMS of the fingerprint renders, against the plain ensemble, by day): Copperleaf walk +0.1 dB (the tambourine shows in the brightness: zero crossings 80 -> 118 a window), rain +1.3, snow +0.2 (80 -> 102), storm +2.0, busker +1.1; at night walk +0.1, rain +0.6, snow +0.1, storm +1.1, busker +0.5; the route walk +0.3, still -3.0, rain +0.4, snow +0.1, storm +0.9, night -2.0; the wild battle intensity 1 -4.1, intensity 3 +0.1 (brighter: 58 -> 62); every layered render differs from the plain ensemble in 83-502 windows, no NaN. The K-weighted
   `--loudness` report was not run whole (90+ minutes here; see Risky).
 - **Seen in the game** (headless Chromium, a real AudioContext, the town fixture): Copperleaf on its ensemble; the
   stick held: walk 1, the tambourine's gain 1 (baked when first wanted), still 1 a second after letting go, 0 six
@@ -61,7 +61,17 @@ last commit. PR #292. Details: sound-track.md "SND-13 as built".
   - CI on PR #292: lint failed at 5b2201c8 on the logic worker's module list (fixed, c5bff6af); smoke at 1ab98c5c on
     the bowl map's zoom and Camera follow (frame-timed; both pass here, `check-fast.py --only="bowl,Camera follow"`);
     commented on the PR.
-- **Verified**: VERIFIED_LINE
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `npm test` 1932 of 1932 (the logic worker's
+  module list fixed in c5bff6af); `node --test` music-layers 13, music-patterns 14, tracker 36, sound 17, music-studio 17,
+  sound-bake, square-day; `npm run check:modules` (0 changed), `npm run check:data` (179 files fine), the check-data
+  snapshot (unchanged). `check-sound.py` at c5bff6af (234: the 18 additions, 0 else) and the baseline (ccdb06eb), then
+  Song fingerprints 234, 0 changed. `npm run check:smoke` 7 of 7. `check-quick.py --steps=sound,song,music,"debug
+  menu"`: 8 of 9, "Battle music" failing under load and passing alone twice (drums 4.9 and 5.6 s after the flash, on
+  the throw). `check-studio-github.py --only=music`: ok on the second run (the first run's output was cut while a click
+  waited on a disabled control). `check-fast.py --only="bowl,Camera follow"` 3 of 3. The full `npm run check:quick`: 37
+  of 42 (2087 s): Copperleaf's train_station in the air, RL-8, room light at night (main's, known), Battle music (passes
+  alone), and the lab's room laid in at its door (passes alone, 122 s). The game probe above. CI on PR #292 green at
+  ccdb06eb and e6e53bf5.
 - **Decided for the owner, to review**:
   - The busker plays an accordion stem inside Copperleaf's song as you pass (earshot 8 m, out past 9, full within 2
     m, panned from where it stands), and its last run's theme only when you stop to listen (still within rules.json

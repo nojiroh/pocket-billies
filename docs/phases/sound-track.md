@@ -1391,7 +1391,8 @@ and any the bank later drops (least recently played first), bake on their first 
 
 ## SND-13: layers in play (as built)
 ### SND-13 as built (2026-10-28, branch `track/sound`, the music lane, tag `snd-13-done` for the owner to push)
-One cause per commit; today's fingerprints never moved (FINGERPRINTS_LINE); the data commit added exactly the 18
+One cause per commit; today's fingerprints never moved (`check-sound.py` at c5bff6af: 234, the 216 before unchanged; the code commits before
+the data made no node and moved nothing, no part naming a layer yet); the data commit added exactly the 18
 planned renders (`layer:<name>` parts), written once with plain `--baseline`.
 
 | Commit | What |
@@ -1447,7 +1448,9 @@ path) means layer parts silent, nothing dimmed: the ensemble as SND-11 wrote it.
 **Fingerprints** (18 new, `layer:<name>` in each song's file): copperleaf `walk`, `rain`, `snow`, `storm`, `busker`
 and each `@night`; route `walk`, `still`, `rain`, `snow`, `storm`, `night`; wild `intensity1`, `intensity3`.
 
-**Loudness and levels**: LOUDNESS_LINE
+**Levels** (mono RMS of the fingerprint renders against the plain ensemble, by day): Copperleaf walk +0.1 dB (the tambourine shows in the brightness: zero crossings 80 -> 118 a window), rain +1.3, snow +0.2 (80 -> 102), storm +2.0, busker +1.1; at night walk +0.1, rain +0.6, snow +0.1, storm +1.1, busker +0.5; the route walk +0.3, still -3.0, rain +0.4, snow +0.1, storm +0.9, night -2.0; the wild battle intensity 1 -4.1, intensity 3 +0.1 (brighter: 58 -> 62); every layered render differs from the plain ensemble in 83-502 windows, no NaN. Memory (Node, 48 kHz):
+Copperleaf's layer parts together 0.84 MB (7 zones), the route's 0.85, the battle's peak 0.29; only the layers wanted
+bake. The K-weighted `--loudness` report was not run whole (over 90 minutes; its layered rows are in the code).
 
 **Corrections found in SND-13** (checked in the code):
 - "Shares the stems with SND-17's stingers through a multiplier per owner, or the layers get their own gains": the
