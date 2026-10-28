@@ -1607,8 +1607,8 @@
   "bubble": [
    "game/js/logic/idle-life.js:50",
    "game/js/logic/idle-life.js:89",
-   "game/js/logic/sound-bake.js:101",
-   "game/js/logic/sound-bake.js:752",
+   "game/js/logic/sound-bake.js:100",
+   "game/js/logic/sound-bake.js:728",
    "game/js/logic/soundscape.js:117",
    "game/js/logic/soundscape.js:123",
    "game/js/logic/ui-dials.js:103"
@@ -1653,8 +1653,8 @@
    "game/js/shop.js:166",
    "game/js/shop.js:176",
    "game/js/shop.js:245",
-   "game/js/sound.js:521",
-   "game/js/sound.js:1763",
+   "game/js/sound.js:523",
+   "game/js/sound.js:1765",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:96",
