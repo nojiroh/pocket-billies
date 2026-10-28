@@ -1,5 +1,5 @@
 {
- "about": "HB-4a island sketches (tools/island-sketches.mjs, .py): the hub's dials and seed (copperleaf-e9) with each direction's changes on top. base: the hub's dials and seed before HB-4b built B2 into it (every direction is these with its changes on top).",
+ "about": "HB-4a island sketches (their tools, island-sketches.mjs and .py, are in git history): the hub's dials and seed (copperleaf-e9) with each direction's changes on top. base: the hub's dials and seed before HB-4b built B2 into it (every direction is these with its changes on top).",
  "base": {
   "seed": "copperleaf-e9",
   "dials": {
