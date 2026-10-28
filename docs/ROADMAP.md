@@ -278,9 +278,14 @@ town node needs it.
   Normal zoom (blurred), so higher resolution would not help in the world; the recommendation is "3D-driven pixel
   puppets" (jointed low-poly figures rendered into pixel sprites at 32 px/m in the world, 64 in battle), proven first
   by a spike beside today's people on the owner's phone, with a classic 2D redraw as the fallback. CH-0 (the plan, with
-  research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; next CH-1 (the bench and the facing fixes), then the spike CH-2
-  and CH-3 and the owner's pick. About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch
-  `track/characters` (the owner makes it).
+  research) done 2026-10-27 on `ccr-ffb6bdf7-fya7yi`; CH-1 (the bench: the test_people map, tools/look-people.py,
+  people in the debug log; people seen from the camera's turn, the room-exit facing and the cutscene copies fixed;
+  the sprite-sheet exporter retired) done 2026-10-27; the spike CH-2 (the figure baker: jointed rigid figures baked
+  into pixel pictures down today's sprite path, behind Engine > People > Figures; a code-built mannequin, made rounder
+  at the owner's word) and CH-3 (KayKit's CC0 Rogue through tools/gltf-figure.mjs, the plain 3D figure beside it, a
+  Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; next **the owner's phone
+  and pick** ("Ask me before" 1). About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch `track/characters` (made
+  2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
   picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
   events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in

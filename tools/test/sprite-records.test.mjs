@@ -366,3 +366,26 @@ test('the reflection as instances: the runs are its old draws grouped by picture
   });
   t.assert.snapshot(record(gl).filter(c => !c.startsWith('bufferSubData')));
 });
+
+// characters track CH-1: people's draws are counted apart (engine/gpu-counters.js `person`, for the debug log's people):
+// a person's picture carries its size (ppm, person-art.js); the fixture's man is one, and a Billie beside him (`person`
+// for its light, like the man) is not
+for (const instanced of [false, true])
+  test(`CH-1: a person's picture counts as a person draw in the sprites and the reflection${instanced ? ', as instances' : ''}; a Billie's doesn't`, () => {
+    const gl = instanced ? setupInstanced() : setup(),
+      L = fixture(),
+      man = L.find(it => it.id === 'man');
+    man.im.ppm = 66.5;
+    L.push({ ...man, id: 'billie', k: 'wild', im: pic(32, 32) });
+    G.countersOn(gl);
+    G.gpuPass('sprites');
+    G.drawSprites(camera(), L, X, [], [], 32);
+    G.gpuPass('reflection');
+    G.reflectionPass(L, camera(), 400, 300, X);
+    G.countersOff();
+    G.gpuFrameDone(1e9);
+    const s = G.gpuCountSummary();
+    assert.equal(s.dct.sprites.person, 1);
+    assert.equal(s.dct.reflection.person, 1);
+    assert.ok(s.dcp.sprites > 1 && s.dcp.reflection > 1, 'the rest of each pass is counted untagged');
+  });

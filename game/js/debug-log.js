@@ -234,6 +234,12 @@ debugLog.ctx = () => {
         if (g.dcu) c.dcu = g.dcu;
       }
     }
+    /* CH-1: people (walk-view-gl.js peopleReport): drawn in the last frame, their draws (the dct's `person` in all), and
+       the MB of their pictures on the graphics card */
+    if (typeof GAME.peopleReport === 'function' && typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on) {
+      const P = GAME.peopleReport();
+      if (P.drawn || P.textures) c.ppl = [P.drawn, P.draws, P.mb];
+    }
     if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.pcl && (GAME.gpuState.pcl[0] || GAME.gpuState.pcl[1]))
       c.pcl = GAME.gpuState.pcl.slice();
     if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.gpuMs)
@@ -927,6 +933,9 @@ debugLog.more = () => {
   /* air track AIR-2: the fog grid (walk/fog-grid.js): its size, how often it was built, refilled and rolled, and the
      time per upload and per fill (ms; the uploads' CPU side) */
   t('fogGrid', () => (typeof GAME.fogGridReport === 'function' ? GAME.fogGridReport() : null));
+  /* characters track CH-1: people (walk-view-gl.js peopleReport): how many the last frame drew, their draws in the last
+     counted frame (in all and by pass), their pictures on the graphics card and the MB of them. Numbers only */
+  t('people', () => (typeof GAME.peopleReport === 'function' ? GAME.peopleReport() : null));
   /* phase 20 H3: the graphics card's memory by kind (engine/webgl.js gpuMemory: MB, objects, objects dropped without
      being freed, the sign of a leak), the picture cap's own count, and how many contexts this session made */
   t('gpuMemory', () =>

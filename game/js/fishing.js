@@ -12,6 +12,7 @@ import { clamp, random } from './util.js';
 import { COATS, RULES, SPECIES, gameData } from './game-data.js';
 import { coatPrefix, encounterPoolHere, newUid, pickWeighted } from './logic/rules.js';
 import { coatRoll } from './logic/coats.js';
+import { faceWay } from './logic/person-view.js';
 import { waterKindBase } from './logic/water-kinds.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
@@ -164,8 +165,11 @@ export function fishStart() {
     q: null,
     msgT: 0,
   });
-  if (Math.abs(sp.dir[0]) > Math.abs(sp.dir[1])) P.dir = sp.dir[0] > 0 ? 'sideR' : 'side';
-  else P.dir = sp.dir[1] > 0 ? 'up' : 'down';
+  /* you face the water (CH-1: a world way, logic/person-view.js faceWay, as the cast reads it) */
+  faceWay(
+    P,
+    Math.abs(sp.dir[0]) > Math.abs(sp.dir[1]) ? (sp.dir[0] > 0 ? 'sideR' : 'side') : sp.dir[1] > 0 ? 'up' : 'down'
+  );
   P.route = null;
   fishing.bite = fishRules().biteMin + random() * (fishRules().biteMax - fishRules().biteMin);
   const el = (fishing.el = document.createElement('div'));

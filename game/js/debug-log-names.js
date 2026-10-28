@@ -75,7 +75,7 @@ import { setShadowPass, shadowPass } from './walk/shadows.js';
 import { drawGrass, drawGround, setDrawGrass, setDrawGround } from './walk/ground-draw.js';
 import { effectsPass, setEffectsPass } from './walk/effects.js';
 import { fogGridReport } from './walk/fog-grid.js';
-import { mountWalkView, setMountWalkView } from './walk-view-gl.js';
+import { mountWalkView, peopleReport, setMountWalkView } from './walk-view-gl.js';
 import { buildingItems, buildingState, drawBuildings, setBuildingItems, setDrawBuildings } from './buildings.js';
 import { drawStructures, setDrawStructures } from './structures.js';
 import {
@@ -169,6 +169,7 @@ Object.defineProperties(GAME, {
   openShop: { get: () => openShop, set: setOpenShop },
   paintActions: { get: () => paintActions, set: setPaintActions },
   paintWorkerReport: { get: () => paintWorkerReport },
+  peopleReport: { get: () => peopleReport },
   personBattleFrames: { get: () => personBattleFrames, set: setPersonBattleFrames },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },
   ranchSkew: { get: () => ranchSkew },
