@@ -549,12 +549,14 @@ const PK5_GOOD = [
   { kind: 'catchLevel', n: 2 },
   { kind: 'catchLevel', n: 1, if: 'foe:spliced' },
   { kind: 'refund', what: 'pyramid', when: 'throwMiss', once: 'battle' },
+  { kind: 'inflict', status: 'slp', chance: 0.2, when: 'battleStart', if: 'foe:wild' },
 ];
 const PK5_BAD = [
   [{ kind: 'catchLevel', n: 0 }, 'n: a whole number of levels from 1 to 10'],
   [{ kind: 'catchLevel', n: 2, when: 'catch' }, "a catchLevel row can't act at catch"],
   [{ kind: 'refund', what: 'coin', when: 'throwMiss' }, 'what: pyramid (effects.js FX_REFUND)'],
   [{ kind: 'refund', what: 'pyramid', when: 'hit' }, "a refund row can't act at hit"],
+  [{ kind: 'inflict', status: 'slp', chance: 0.2, when: 'turnEnd' }, "can't act at turnEnd (hit, battleStart)"],
 ];
 test('PK-5: dataPerks and the schema take Wave C’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

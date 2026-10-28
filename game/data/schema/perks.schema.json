@@ -125,7 +125,7 @@
        "properties": {"kind": {"const": "immune"}, "what": {"enum": ["brn", "slp", "par", "sandstorm", "stones"]}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
-       "description": "inflict (PK-3): at when: hit, a status (statuses.json) on the foe hit, with this chance (the chances of rows acting together count at most 0.5; if: cat:H for physical hits)",
+       "description": "inflict (PK-3): at when: hit, a status (statuses.json) on the foe hit, with this chance (PK-5: at battleStart, on each foe on the field) (the chances of rows acting together count at most 0.5; if: cat:H for physical hits)",
        "type": "object", "additionalProperties": false, "required": ["kind", "status", "chance", "when"],
        "properties": {"kind": {"const": "inflict"}, "status": {"enum": ["brn", "slp", "par"]}, "chance": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.5}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },

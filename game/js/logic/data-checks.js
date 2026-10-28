@@ -2143,7 +2143,7 @@ export function fxKindProblems(f, at, D, problem) {
     if (!ids.includes(f.status)) problem(`${at}.status: no status "${f.status}" (statuses.json: ${ids.join(', ')})`);
     if (!(typeof f.chance === 'number' && f.chance > 0 && f.chance <= FX_CHANCE))
       problem(`${at}.chance: above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE: chances together never pass it)`);
-    if (f.when == null) problem(`${at}.when: an inflict row needs a moment (hit)`);
+    if (f.when == null) problem(`${at}.when: an inflict row needs a moment (hit, battleStart)`);
   }
   if (f.kind === 'chip' && !(/** @type {readonly string[]} */ (FX_CHIP).includes(f.what)))
     problem(`${at}.what: ${FX_CHIP.join(', ')} (effects.js FX_CHIP)`);
@@ -2244,8 +2244,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   damage: ['hit', 'hurt', 'crit'],
   /* PK-3: a crit row at a move makes that move critical */
   crit: ['move'],
-  /* PK-3: a status on the foe hit */
-  inflict: ['hit'],
+  /* PK-3: a status on the foe hit; PK-5: on each foe on the field as a battle starts */
+  inflict: ['hit', 'battleStart'],
   /* PK-5: a missed throw's pyramid back */
   refund: ['throwMiss'],
 });

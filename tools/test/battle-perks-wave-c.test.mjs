@@ -121,3 +121,36 @@ test('PK-5 refund: the first pyramid that misses in a battle comes back (once: b
   const b = battle(null, [ofType('Fire')]);
   assert.equal(rolls(b, [0.99], () => fn('catchRoll')('pyramid', 1, false, b)).refund, undefined);
 });
+
+/* ---------- inflict at battleStart ---------- */
+
+test('PK-5 inflict at battleStart: each wild foe on the field gets the status on its roll, after the sides come out', () => {
+  const { P, fx } = perks({
+    id: 'test_box',
+    name: 'Test Box',
+    fx: [{ kind: 'inflict', status: 'slp', chance: 0.2, when: 'battleStart', if: 'foe:wild' }],
+  });
+  withPerks(P, () => {
+    /* a roll under the chance: asleep, the line after the start's */
+    const b = battle(fx, [ofType('Fire')]);
+    assert.ok(b.fxStartInflict, 'waits for the sides');
+    rolls(b, [0.1, 0], () => fn('sayBattleFx')());
+    assert.equal(foe(b).status, 'slp');
+    assert.ok(lines(b).includes('Test Box kicked in!'), lines(b).join(' | '));
+    assert.equal(b.fxStartInflict, undefined);
+    /* over it: awake */
+    const c = battle(fx, [ofType('Fire')]);
+    rolls(c, [0.5], () => fn('sayBattleFx')());
+    assert.equal(foe(c).status, null);
+    /* a trainer's: the condition doesn't hold, nothing waits */
+    reseed(7);
+    startedSave(ofType('Fire'), 20);
+    assert.ok(
+      fn('newBattle')('trainer', [fn('makeBilly')(ofType('Grass'), 20)], { fmt: 'single', seed: 'perk-test-c', fx })
+    );
+    assert.equal(hooks.activeBattle.fxStartInflict, undefined);
+  });
+  /* none held: nothing waits, no roll */
+  const d = battle(null, [ofType('Fire')]);
+  assert.equal(d.fxStartInflict, undefined);
+});

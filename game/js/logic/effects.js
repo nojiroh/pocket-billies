@@ -16,7 +16,8 @@
      unstable  an Unstable splice's turn-end hurt (battle-engine.js)          place's stocking)   (SP-6, Perks)
      crit    critical-hit stages for yours hitting (calcDamage); at `when: move` the move is a critical hit (PK-3)
      immune  yours can't get a status (brn, slp, par), or aren't hurt by the Sandstorm or sharp stones (PK-3)
-     inflict a status with a chance on the foe yours hit (`when: hit`; chances together at most FX_CHANCE) (PK-3)
+     inflict a status with a chance on the foe yours hit (`when: hit`; chances together at most FX_CHANCE) (PK-3), or
+             on each foe on the field as a battle starts (`when: battleStart`, PK-5: battle-engine.js sayBattleFx)
      chip    what a burn takes from yours at each turn's end, times mult (PK-3)
      first   yours move before the foe's (within a move's priority), where its `if` holds: `turn:1` (PK-3)
      revive  when your whole team has fainted, they all get back up with a share of their HP (its `once`) (PK-3)

@@ -1678,13 +1678,17 @@ export function fxImmuneSay(k, st) {
  * come out */
 export function sayBattleFx() {
   const b = battleNow();
-  if (!b || !b.fxSay) return;
+  if (!b || (!b.fxSay && !b.fxStartInflict)) return;
   /* UI-16b: a line may carry its blips (fxBattleStart: each Perk that raised a stat, by each of yours it raised) */
-  for (const [t, an, by] of b.fxSay) {
+  for (const [t, an, by] of b.fxSay || []) {
     const ev = battleSay(t, an);
     if (by) ev.by = by;
   }
   delete b.fxSay;
+  /* PK-5: the start's inflict rows (Music Box): one roll for each foe on the field, in order (fxInflict) */
+  const rows = b.fxStartInflict;
+  delete b.fxStartInflict;
+  if (rows) for (const k of liveActors(1)) fxInflict(k, rows);
 }
 /** the names of the Perks (PK-1: and boons, by fxSrcName) whose stat rows change stat s ("A and B") */
 export const perkNamesFor = (fx, s) =>
@@ -1783,7 +1787,9 @@ export function fxBattleStart() {
   );
   /* the battleStart moment's lines wait with them */
   b.fxSay = lines;
-  fxMoment('battleStart', null);
+  const start = fxMoment('battleStart', null).filter(f => f.kind === 'inflict');
+  /* PK-5: an inflict row at the start (Music Box) waits for the sides to come out too (sayBattleFx) */
+  if (start.length) b.fxStartInflict = start;
   if (!b.fxSay.length) delete b.fxSay;
 }
 /** PK-1: the rows read for the whole battle where its kind always acts (a win's money, a coin's chance, XP, DNA): the
