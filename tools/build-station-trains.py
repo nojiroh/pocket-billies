@@ -9,10 +9,10 @@ hub's orbit camera.
                   sleepers and two rails, running out of the station's right end (+x)
   sky_rail        cutscenes track A: the track out of the station's right end, 12 m a piece along x on a stone
                   causeway (it runs out over the beach); its look `end` has the buffer stop
-  sky_portal      the portal, floating on its own in the sky out to sea (cutscenes track A): glowing layers stacked
-                  front to back (a bright rim, a streaming swirl, the deep core, a soft halo round it all), chrome,
-                  brass and violet rings turning at their own speeds between them, crystal shards drifting round; it
-                  faces its -y (the station); its gold look a swap
+  sky_portal      the portal, floating on its own in the sky out to sea (cutscenes track A): nothing but light (the
+                  owner, 2026-10-28): glowing layers stacked front to back (a bright rim, a streaming swirl, a tighter
+                  inner swirl, the tunnel's far end), lit at every hour; its soft glow, mist and motes are the walk
+                  view's fx 'portal' (walk/effects.js); it faces its -y (the station); its gold look a swap
   train_<theme>   one per region theme (regions.json themes; a run's region is RL-R1's): the Lakeland Clipper, the
                   Greenbelt Sunrunner, the Wildwood Zephyr, the Highland Arrow, the Harvest Comet. Each rides the track
                   on hover skids over its rails, facing +x, lifted by rocket engines at its tail, and bobs a little
@@ -153,9 +153,10 @@ def livery(s, name, ink, shade):
 
 def portal_disc(name, cols, kind, m):
     """one of the portal's glowing layers, m metres across (32 px a metre), in its colours (darkest first): 'core' the
-    deep middle, spiral arms streaming in to a bright eye, specks of light; 'swirl' a ring of streaks with gaps (the core
-    shows through behind it); 'rim' the bright edge, ragged, sparks flying off it; 'halo' a soft dithered glow round it
-    all. Pixel art: every pixel is either drawn or not"""
+    far end of the tunnel: rings of light closing in on a bright eye, darker the deeper they go, specks drifting in
+    (depth, the owner 2026-10-28); 'swirl' a ring of streaks with gaps (the deeper layers show through behind it);
+    'inner' a thinner, tighter swirl turning the other way; 'rim' the bright edge, ragged, sparks flying off it. Pixel
+    art: every pixel is either drawn or not (the soft glow round it is the walk view's light, effects.js 'portal')"""
     n = int(round(m * PPM)) // 2 * 2
     a = np.zeros((n, n, 4), np.uint8)
     rng = np.random.default_rng(sum(map(ord, name)))
@@ -166,19 +167,30 @@ def portal_disc(name, cols, kind, m):
     th = np.arctan2(dy, dx)
     pal = np.array([rgb(q) for q in cols])
     top = len(cols) - 1
-    dith = ((xx + yy) % 2 == 0) | ((xx // 2 + yy // 2) % 2 == 0)  # a 3-in-4 dither
     if kind == 'core':
-        arm = (np.sin(3 * th + 10 * r) + 1) / 2
-        k = np.clip((1 - r) * top * 0.75 + arm * 1.4, 0, top).astype(int)
+        # the tunnel seen end on: rings spaced closer and closer toward the middle (each 0.72 of the one before), the
+        # deep between them dark, brighter toward the eye; spiral arms faint across it all
         inside = r < 1 - 0.04 * np.sin(th * 7)
+        arm = (np.sin(3 * th + 10 * r) + 1) / 2
+        k = np.clip(r * 1.6 + arm * 0.9, 0, 2).astype(int)  # the deep: the darkest colours
+        depth = np.log(np.maximum(r, 1e-3) / 0.95) / np.log(0.72)  # 0 at the mouth, 1 at the next ring ...
+        ring_ = np.abs(depth - np.round(depth)) < 0.07 + 0.02 * np.round(depth)
+        kr = np.clip(top - 1 - (np.round(depth) * 0.5).astype(int) + (r < 0.2), 2, top)
         a[..., :3] = pal[k]
+        a[ring_ & inside, :3] = pal[kr[ring_ & inside]]
         a[..., 3] = np.where(inside, 255, 0)
-        eye = r < 0.12
-        a[eye, :3] = pal[top]
-        for _ in range(60):  # specks
+        a[r < 0.1, :3] = pal[top]
+        a[(r >= 0.1) & (r < 0.16), :3] = pal[top - 1]
+        for _ in range(50):  # specks drifting in
             t, q = rng.uniform(0, 2 * np.pi), rng.uniform(0.15, 0.9)
             x, y = int(c + np.cos(t) * q * c), int(c + np.sin(t) * q * c)
-            a[y:y + 2, x:x + 2] = (*pal[top], 255)
+            a[y:y + 2, x:x + 2] = (*pal[top - (q > 0.5)], 255)
+    elif kind == 'inner':
+        band = ((-th / np.pi * 3 + r * 7) % 1.0) < 0.3
+        ring_ = (r > 0.45) & (r < 0.95 - 0.04 * np.sin(th * 4))
+        k = np.clip((r - 0.45) / 0.5 * top, 2, top).astype(int)
+        a[..., :3] = pal[k]
+        a[..., 3] = np.where(ring_ & band, 255, 0)
     elif kind == 'swirl':
         band = ((th / np.pi * 4 + r * 5) % 1.0) < 0.45
         ring = (r > 0.55) & (r < 1 - 0.05 * np.sin(th * 5 + 1))
@@ -195,10 +207,6 @@ def portal_disc(name, cols, kind, m):
             t, q = rng.uniform(0, 2 * np.pi), rng.uniform(0.98, 1.0)
             x, y = int(c + np.cos(t) * q * c), int(c + np.sin(t) * q * c)
             if 0 <= x < n - 1 and 0 <= y < n - 1: a[y:y + 2, x:x + 2] = (*pal[top], 255)
-    else:  # halo: thinning out from the middle, dithered
-        keep = (r < 1) & (rng.random((n, n)) < np.clip(1 - r, 0, 1) ** 2.2 * 0.6) & dith
-        a[..., :3] = pal[np.clip((1 - r) * (top - 1) + 1, 0, top).astype(int)]
-        a[..., 3] = np.where(keep, 255, 0)
     return save_decal(a, name)
 
 
@@ -342,42 +350,20 @@ RAIL_LOOKS = [('', 'Track'), ('end', 'Track (buffer stop)')]
 
 # ================================================================ the sky portal
 PORTAL_ZC = 6.5  # the portal's middle over its base point (its placement's y floats it: logic/island-gen.js)
-PORTAL_LAYERS = [('rim', 8.4, -0.6), ('swirl', 7.6, 0.0), ('core', 6.4, 0.8)]  # front to back: across, its y
-
-
-def ring(L, rad, y, zc, t, col, rps, name, n=20, studs=0):
-    """a ring round the portal's middle in its own plane (x and up), y deep, turning at rps (0: still; a model needs a
-    still part, so one ring stands still); studs lamps on it"""
-    sp = {'spin': {'axis': 'y', 'x': 0, 'y': r2(y), 'z': r2(zc), 'rps': rps}} if rps else {}
-    P = lambda a: (rad * math.cos(a), y, zc + rad * math.sin(a))
-    for i in range(n):
-        L.append(limb(P(2 * math.pi * i / n), P(2 * math.pi * (i + 1) / n), t, t, col, 'metal', name, 6) | dict(sp))
-    for i in range(studs):
-        x, yy, z = P(2 * math.pi * (i + 0.5) / studs)
-        L.append(sphere(x, yy, z - t * 1.6, t * 1.6, '#FFE6A0', 'plain', name + ' lamp', 8, 4) | {'h': r2(t * 3.2), **sp})
+PORTAL_LAYERS = [('rim', 8.4, -0.6), ('swirl', 7.6, 0.0), ('inner', 6.6, 0.9), ('core', 6.0, 2.2)]  # front to back: across, its y
 
 
 def sky_portal(pics):
-    """the portal on its own in the sky: its glowing layers (pics: rim, swirl, core, halo) stacked front to back facing
-    -y, so they shift against each other as the camera moves (depth), the halo round them always turned to the eye;
-    three rings turning at their own speeds between the layers; crystal shards drifting round the outside"""
+    """the portal on its own in the sky, nothing but light (the owner, 2026-10-28: no rings, lamps or crystals round it):
+    its glowing layers (pics: rim, swirl, inner, core) stacked front to back facing -y and lit at every hour (day 1),
+    so they shift against each other as the camera moves and the core reads as a tunnel's far end (depth). The soft
+    glow, the mist curling round its edge and the motes drawn into it are the walk view's (effects.js fx 'portal');
+    a model needs one still solid part, so a speck sits hidden behind the core"""
     L = []
     zc = PORTAL_ZC
     for (kind, m, y), pic in zip(PORTAL_LAYERS, pics):
-        L.append(img(pic, 0, y, r2(zc - m / 2), face='fixed', yaw=0, glow=1, recv=0, sway=0, name='portal ' + kind))
-    L.append(img(pics[3], 0, 1.4, r2(zc - 6.5), glow=0.7, recv=0, sway=0, name='portal halo'))
-    ring(L, 4.55, -1.0, zc, 0.13, CHROME, 0, 'portal ring', studs=8)
-    ring(L, 3.95, -0.25, zc, 0.09, A['brass'], -0.16, 'portal ring brass')
-    ring(L, 3.4, 0.45, zc, 0.07, '#7A5AE8', 0.24, 'portal ring violet')
-    ring(L, 5.0, -1.3, zc, 0.05, '#BFEFFF', 0.07, 'portal ring outer')
-    rng = np.random.default_rng(7)
-    drift = {'axis': 'y', 'x': 0, 'y': 0, 'z': zc, 'rps': 0.03}
-    for i in range(9):  # the shards: long thin crystals pointing out from the middle
-        a = 2 * math.pi * i / 9 + rng.uniform(-0.2, 0.2)
-        rr, y = rng.uniform(5.4, 6.2), rng.uniform(-1.2, 1.2)
-        p0 = (rr * math.cos(a), y, zc + rr * math.sin(a))
-        p1 = ((rr + 0.9) * math.cos(a), y, zc + (rr + 0.9) * math.sin(a))
-        L.append(limb(p0, p1, 0.16, 0.02, '#BFEFFF' if i % 2 else '#C8B4FF', 'plain', 'portal shard', 4) | {'spin': dict(drift)})
+        L.append(img(pic, 0, y, r2(zc - m / 2), face='fixed', yaw=0, glow=1, recv=0, sway=0, name='portal ' + kind) | {'day': 1})
+    L.append(sphere(0, PORTAL_LAYERS[-1][2] + 0.3, zc, 0.05, '#120C30', 'plain', 'portal anchor', 6, 3))
     return rec(L, 0.65)
 
 
@@ -697,16 +683,18 @@ def add_props(C):
                                  about='The track out of the station (cutscenes track A): 12 m pieces along x on a stone '
                                  'causeway, chained from the station\'s right-hand end; the last one (look end) has the buffer stop')
     blue_c, gold_c = ['#120C30', '#2A1E5A', '#5A3AC8', '#3A8AE8', '#8FE4FF', '#F4FCFF'], ['#3A1A0A', '#6A3A1A', '#C8702E', '#F4B44A', '#FFE08A', '#FFFCEC']
-    kinds = [k for k, *_ in PORTAL_LAYERS] + ['halo']
-    sizes = [m for _k, m, _y in PORTAL_LAYERS] + [13.0]
+    kinds = [k for k, *_ in PORTAL_LAYERS]
+    sizes = [m for _k, m, _y in PORTAL_LAYERS]
     blue = [portal_disc(f'sky_portal_{k}', blue_c, k, m) for k, m in zip(kinds, sizes)]
     gold = [portal_disc(f'sky_portal_{k}_gold', gold_c, k, m) for k, m in zip(kinds, sizes)]
     C['sky_portal'] = ISL.new_prop('sky_portal', 'Sky portal', sky_portal(blue), shadow=0, tags=('hub', 'station'),
-                                   vary=FIXED, glow={'c': '#8FD8FF', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6},
-                                   variants=[{'swap': dict(zip(blue, gold)), 'glow': {'c': '#FFC94A', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6},
+                                   vary=FIXED, glow={'c': '#8FD8FF', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6, 'light': 0.5},
+                                   fx=[{'k': 'portal', 'x': 0, 'y': -round(PORTAL_ZC * PPM), 'r': 4.2}],
+                                   variants=[{'swap': dict(zip(blue, gold)), 'glow': {'c': '#FFC94A', 'r': 9, 'y': PORTAL_ZC, 'day': 0.6, 'light': 0.5},
                                               'name': 'Sky portal (gold)'}], tunnel=TUNNEL,
                                    about='The portal (cutscenes track A): floating on its own in the sky out to sea, its '
-                                   'glowing layers stacked for depth and its rings turning; it faces its -y. The sky train rises '
+                                   'glowing layers stacked for depth, nothing but light; its glow, mist and motes are the fx portal (walk/effects.js); '
+                                   'it faces its -y. The sky train rises '
                                    'off the track on its engines and shoots into it. Its gold look for the way home after a win')
     for key, name, fn in TRAINS:
         r = fn()
