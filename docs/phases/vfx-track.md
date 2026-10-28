@@ -502,6 +502,46 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 | VFX-19 | Move sounds | music.json's battle sounds, the noise voice, family x type, hurt sounds, the Studio's Sounds tab | sounds | check-sound.py fingerprints. Phone (listen) |
 | VFX-20 | Phone pass | tuning from the owner's phone notes, the quality ladder, a flash audit of filmed frames, the old 2D effect code and types.json `fx` removed (Ask me before), docs; tag `vfx-done` | tuning | the owner's phone log |
 
+## How the sessions run (the owner, 2026-10-28)
+The owner, after VFX-7: "Continue this plan automatically until it is done. Automatically open next steps in new
+Sessions and automatically approve plans. Make sure you communicate with the sound session about soundtrack things."
+So, as the UI and sound tracks' Part 2s do:
+- The planning session (VFX-7's, `session_019UpAFxvWEMwGebptZbvUuW`) starts each step in a new cloud session on
+  `track/vfx` when the step before has pushed its HANDOFF entry. Order: VFX-5, VFX-8, VFX-9, ... VFX-20, one at a
+  time.
+- A step checks that it is on `track/vfx`, merges main into it (a merge, not a rebase) and, while PR #290 (this plan)
+  is open, merges `ccr-7526d712-gliikp` too; it reads CLAUDE.md, ROADMAP, VISION, the top of HANDOFF and this file
+  (Part 1's notes on VFX-5, all of Part 2); it writes its plan into its HANDOFF entry and goes on without waiting for
+  approval (no Plan Mode approval: the owner's standing instruction). Where it meets an open choice or an "Ask me
+  before" item it takes the recommended option (below) and lists it in its HANDOFF entry under "Decided for the owner,
+  to review"; the phone checks are listed, not waited for.
+- It commits one cause per commit, runs the checks this file and docs/TESTING.md name, pushes to `track/vfx`, keeps
+  one draft PR from `track/vfx` to main up to date (subscribed while it works, unsubscribed when it hands over), adds
+  an "as built" note to its session's row here and its ROADMAP line, and notes its tag (`vfx-N-done`) for the owner.
+- When it is done it tells the planning session with `send_message`; an hourly check in the planning session covers a
+  missed message. A step that can't finish (a check it can't make pass; Start-Game, phone mode, the Studio or the
+  in-game full test broken) stops the chain, says why in its HANDOFF entry and its message, and the planning session
+  asks the owner.
+- Merges to main stay the owner's.
+
+## Talking to the sound track (the owner, 2026-10-28)
+The sound track's Part 2 (docs/phases/sound-track.md, PR #285; SND-8a.. on `track/sound`) is run by its planning
+session, `session_019UpAFxCHyLNWb1TCD6L3vh`. Its rules that bind battle sound here: synth only (baked buffers are
+computed, never loaded); new sound code goes into game/js/audio/, logic/ and data, since sound.js is shared; one extra
+`Math.random()` in the sound's start or tick moves every fingerprint; check-sound.py's baseline is rewritten only in a
+commit of its own.
+- A VFX step that will touch sound.js, game/js/audio/, music.json (or its schema) or the check-sound baseline sends
+  that session a message first (what, where, why) and another after pushing (the commit). The steps that do: VFX-8
+  (battleSoundEffect's timing moves onto the stage clock; a tap that skips drops the pending sounds), VFX-14 (the
+  stat-down sound), VFX-16 (a recall sound), VFX-19 (move sounds).
+- VFX-19 overlaps the sound track's optional SND-16 ("battle hits, throws and catches with body and space"). Proposed
+  to the sound session (2026-10-28): VFX-19 takes the battle half (moves, hits, throws, catches, hurt sounds) on the
+  sound track's own tools (SND-9's bake and reverb, SND-11's instruments, whichever are on main by then) and its buses
+  (so SND-15's ducking applies), and SND-16 keeps the rest (the airship, the sky train, the world map, steam vents,
+  wells). Its answer is recorded here when it comes.
+- Offered to the sound track: logic/battle-anims.js's `hitTier` and `koAhead` (VFX-8) for SND-13's battle intensity
+  (turns, KOs, the red zone, a boss's phases).
+
 ## Bugs found (VFX-7) and where they're fixed
 - Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe (VFX-8).
 - The selection and target rings divide by `R.k2`, which no rig has (BS 1379; B3 228 uses `R.k`), so they never
@@ -561,17 +601,29 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 - Haptic patterns per tier (Android only, `buzz`).
 
 ## Ask me before (Part 2)
-- Hit-stop on normal hits: today's small one, 20-90 ms by damage (recommended: Sakurai's research, and it costs under
-  0.1 s), or the UI plan's "only crits, KOs and super-effective hits".
-- Turning the selection and target rings on (they have never drawn).
-- The KO's extra cell and the last KO's freeze (about 250 ms).
-- Each signature scene's storyboard; a shorter repeat of one within a battle.
-- The ramp table and the Bureau's look.
-- The VS splash's art and titles.
-- The repaint list, and when the sheet is frozen.
-- Removing types.json `fx` and the old icon particles.
-- How strict the flash limiter is.
-- Any other move getting longer; a full-scene darken on big moves; scars outliving the battle; haptic patterns.
+Since the owner's standing instruction (2026-10-28, "How the sessions run"), each session takes the recommended
+option and lists it in its HANDOFF entry under "Decided for the owner, to review"; the owner can change any later.
+- Hit-stop on normal hits: keep today's small one, 20-90 ms by damage (recommended: Sakurai's research, and it costs
+  under 0.1 s), or the UI plan's "only crits, KOs and super-effective hits".
+- Turning the selection and target rings on (they have never drawn): on (recommended: the code means them to show,
+  and they help pick a target in doubles), checked on a film first.
+- The KO's extra cell and the last KO's freeze (about 250 ms): both (recommended).
+- Each signature scene's storyboard: Claude writes the batch's one-liners into this file before building them, taken
+  as approved and listed for review (recommended). A repeat of one within a battle: its short version from the second
+  use (the prop and the hit, no wind-up; recommended).
+- The ramp table and the Bureau's look: as proposed in "How Part 2 fits the art" (recommended).
+- The VS splash's art and titles: portraits at whole-number scales, the trainer's name and title as the game already
+  shows them, the type's colour, the kit's slant (recommended).
+- The repaint list: Claude's art stands until the owner repaints; nothing is frozen; each art session lists what it
+  drew (recommended).
+- Removing types.json `fx` and the old icon particles: move the keys into battleAnims.json's `types`, then remove the
+  old 2D effect code once nothing reads it; icons.png's cells that other screens use stay (recommended).
+- How strict the flash limiter is: as in rule 9 (recommended).
+- Any other move getting longer: no (recommended). A full-scene darken on big moves: at most 20% darker, on power 80+
+  moves and super-effective hits (recommended). Scars outliving the battle: no (recommended). Haptic patterns:
+  today's unchanged (recommended).
+- Part 1's items, if a step meets them: the throw's total time and easing stay as built; no smears added to the
+  opening's throws (recommended).
 
 ## Sources (Part 2)
 - https://github.com/pret/pokeemerald/blob/master/data/battle_anim_scripts.s
