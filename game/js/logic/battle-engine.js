@@ -92,6 +92,7 @@ import { factionBotOf } from './factions.js';
 import {
   fxAt,
   fxCatch,
+  fxCrit,
   fxDamage,
   fxFire,
   fxLive,
@@ -429,8 +430,15 @@ export function calcDamage(k, tk, mid, src) {
   const base = ((0.4 * L + 2) * P * At) / Dt / 50 + 2;
   const stab = M.t !== 'None' && aty.includes(M.t) ? BATTLE_RULES.stab : 1,
     te = typeEffectiveness(M.t, actorTypes(tk));
-  const cs = (fx.crit || 0) + (hasPassive(aty, 'livewire') ? BATTLE_RULES.liveWireCrit : 0);
-  const crit = !src && battleRoll() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)];
+  /* PK-3: a run's crit rows add stages for yours hitting; a crit row at the move moment makes this move critical (the
+     roll is still made, so the battle's stream is the same) */
+  const fxc =
+    !src && battleNow().fx && ACTOR_SIDE[k] === 0 ? fxCrit(fxAt(battleNow().fx, fxBattleCtx(k), fxBattleState())) : 0;
+  const cs = (fx.crit || 0) + (hasPassive(aty, 'livewire') ? BATTLE_RULES.liveWireCrit : 0) + fxc;
+  const crit =
+    !src &&
+    (battleRoll() < BATTLE_RULES.critChances[clamp(cs, 0, BATTLE_RULES.critChances.length - 1)] ||
+      battleNow().fxCritK === k);
   const roll = hasPassive(aty, 'wildmind')
     ? BATTLE_RULES.wildMindRollMin + battleRoll() * (BATTLE_RULES.wildMindRollMax - BATTLE_RULES.wildMindRollMin)
     : BATTLE_RULES.rollMin + battleRoll() * (1 - BATTLE_RULES.rollMin);
@@ -585,8 +593,11 @@ export function useMove(k, mid, tk0, part) {
     mid,
     spread: spread || undefined,
   });
-  /* PK-1: one of yours makes a move: the run's rows of that moment */
-  if (ACTOR_SIDE[k] === 0) fxMoment('move', k, { cat: M.c });
+  /* PK-1: one of yours makes a move: the run's rows of that moment (PK-3: a crit row there makes it critical) */
+  if (ACTOR_SIDE[k] === 0 && battleNow().fx) {
+    delete battleNow().fxCritK;
+    fxMoment('move', k, { cat: M.c });
+  }
   v.holdN = fx.hold ? (v.last === mid ? v.holdN + 1 : 1) : 0;
   if (fx.protect) {
     if (v.last === mid) {
@@ -1595,6 +1606,8 @@ export function fxMoment(when, k, more) {
   if (!b || !b.fx) return [];
   const rows = fxFire(b.fx, when, fxBattleCtx(k, more), fxBattleState(b));
   if (!rows.length) return rows;
+  /* PK-3: a crit row at a move: that move of this one of yours is a critical hit (calcDamage) */
+  if (k != null && ACTOR_SIDE[k] === 0 && rows.some(f => f.kind === 'crit')) b.fxCritK = k;
   const say = (/** @type {string} */ t, /** @type {any} */ an) => (b.fxSay ? b.fxSay.push([t, an]) : battleSay(t, an)),
     on = k != null && ACTOR_SIDE[k] === 0 ? [k] : liveActors(0),
     done = new Set();

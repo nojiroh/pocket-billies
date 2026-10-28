@@ -407,3 +407,35 @@ test('PK-1: dataPerks checks when, if, every, grow, per, once and say; other row
     JSON.stringify(C.dataHeldItems(F))
   );
 });
+
+// PK-3: the battle kit's kinds (crit, immune, inflict, chip, first, revive): good rows pass check-data and the schema,
+// planted faults are named
+const PK3_GOOD = [
+  { kind: 'crit', stages: 1 },
+  { kind: 'crit', when: 'move', every: 8, if: 'cat:H|S' },
+];
+const PK3_BAD = [
+  [{ kind: 'crit', stages: 4 }, 'stages: a whole number of critical-hit stages from 1 to 3'],
+  [{ kind: 'crit' }, 'stages: a whole number of critical-hit stages'],
+  [{ kind: 'crit', stages: 1, when: 'move' }, 'makes that move a critical hit: no stages'],
+  [{ kind: 'crit', when: 'hit' }, "a crit row can't act at hit"],
+];
+test('PK-3: dataPerks and the schema take the battle kit’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK3_GOOD.length; i += 4)
+    D.perks['test_pk3_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK3_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK3_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});

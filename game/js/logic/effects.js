@@ -14,6 +14,7 @@
                                                              (RL-12c, held items; PK-1: a run's too)
      dna     a Gene Sample's DNA (battle-rewards.js spliceSample)    splice  the wild splice odds (rules.js, a run
      unstable  an Unstable splice's turn-end hurt (battle-engine.js)          place's stocking)   (SP-6, Perks)
+     crit    critical-hit stages for yours hitting (calcDamage); at `when: move` the move is a critical hit (PK-3)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -33,6 +34,7 @@ import { resFxRows } from './residents.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
+  FX_CRIT: [() => FX_CRIT],
   FX_EVERY: [() => FX_EVERY],
   FX_FOES: [() => FX_FOES],
   FX_IF_KEYS: [() => FX_IF_KEYS],
@@ -49,6 +51,7 @@ expose({
   fxCatch: [() => fxCatch],
   // @ts-expect-error -- replaced on purpose
   fxCond: [() => fxCond, v => (fxCond = v)],
+  fxCrit: [() => fxCrit],
   // @ts-expect-error -- replaced on purpose
   fxDamage: [() => fxDamage, v => (fxDamage = v)],
   // @ts-expect-error -- replaced on purpose
@@ -111,6 +114,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'dna',
   'splice',
   'unstable',
+  'crit',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -277,6 +281,20 @@ export const fxTurnHurt = fx =>
  * rows of that kind (1 when none) @param {Fx[] | null | undefined} fx @param {'dna' | 'splice' | 'unstable'} kind */
 export const fxSplice = (fx, kind) => fxMult(fx, f => f.kind === kind);
 provide({ fxSplice }); /* to-module */
+
+/** PK-3: the most critical-hit stages crit rows give (rules.json battle.critChances has 4 steps: 0 to 3) */
+export const FX_CRIT = 3;
+/** PK-3: the critical-hit stages the crit rows without a when give (summed, 0 to FX_CRIT; 0 when none). A crit row
+ * at a moment (when: move) gives no stages: it makes that move a critical hit (battle-engine.js fxMoment)
+ * @param {Fx[] | null | undefined} fx */
+export const fxCrit = fx =>
+  Math.max(
+    0,
+    Math.min(
+      FX_CRIT,
+      (fx || []).reduce((a, f) => a + (f.kind === 'crit' && !f.when ? f.stages || 0 : 0), 0)
+    )
+  );
 
 /** RL-12c: a holder's once-a-battle heal when low: the first pinchHeal row, or null
  * @param {Fx[] | null | undefined} fx @returns {{ at: number, share: number } | null} */

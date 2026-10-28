@@ -14,7 +14,7 @@
    which puts that kind's fields in with neutral values. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
+import { FX_CRIT, FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
 import { FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
@@ -90,6 +90,7 @@ const PERK_KINDS = {
   turnHurt: 'Lose a share of HP at each turn’s end (PK-1)',
   level: 'Foes’ levels on the run (PK-1)',
   bossHp: 'The run’s boss’s HP (PK-1)',
+  crit: 'Critical hits: more often, or a move that is one (PK-3)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -126,6 +127,7 @@ const PERK_ROW_NEW = {
   turnHurt: () => ({ kind: 'turnHurt', share: 0.05 }),
   level: () => ({ kind: 'level', n: 1 }),
   bossHp: () => ({ kind: 'bossHp', mult: 1.1 }),
+  crit: () => ({ kind: 'crit', stages: 1 }),
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -232,6 +234,18 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       turnHurt: () => [share('Share of HP lost at each turn’s end (at most 0.5)')],
       level: () => [numberField('Foes’ levels +', `${p}.n`, { min: -20, max: 20, step: 1 })],
       bossHp: () => [mult('Boss HP ×')],
+      /* PK-3: stages without a when; at a move (When) the move itself is a critical hit */
+      crit: () =>
+        f.when
+          ? [`<p class="note">At its moment the move is a critical hit (no stages).</p>`]
+          : [
+              numberField('Critical-hit stages +', `${p}.stages`, {
+                min: 1,
+                max: FX_CRIT,
+                step: 1,
+                help: `1 to ${FX_CRIT} (effects.js FX_CRIT; the chance steps of rules.json battle.critChances).`,
+              }),
+            ],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(
     PERK_KINDS

@@ -40,6 +40,7 @@ import {
 } from './mapgen.js';
 import { fxRowOf } from './run-enc.js';
 import {
+  FX_CRIT,
   FX_EVERY,
   FX_FOES,
   FX_IF_KEYS,
@@ -156,6 +157,8 @@ expose({
   dataUnlocks: [() => dataUnlocks, v => (dataUnlocks = v)],
   // @ts-expect-error -- replaced on purpose
   fxCondProblem: [() => fxCondProblem, v => (fxCondProblem = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxKindProblems: [() => fxKindProblems, v => (fxKindProblems = v)],
   // @ts-expect-error -- replaced on purpose
   fxRowProblems: [() => fxRowProblems, v => (fxRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1933,6 +1936,8 @@ export function dataPerks(D, valid = () => true) {
             problem('perks.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
           /* PK-1: when, if, every, grow, per and once */
           fxWhenProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
+          /* PK-3: the battle kit's kinds */
+          fxKindProblems(f, `${k}.fx[${n}]`, what => problem('perks.json', what));
         });
     /* PK-1: a Perk's battle line */
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
@@ -1997,6 +2002,17 @@ export function fxRowProblems(f, at, kinds, D, problem, timing = false) {
     problem(`${at}.share: a share of HP above 0, at most 1`);
   if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
 }
+/** PK-3: the battle kit's kinds (perks-track.md 5.2): crit gives 1 to FX_CRIT stages without a when, and none at
+ * when: move (that move is critical) @param {any} f @param {string} at @param {(what: string) => void} problem */
+export function fxKindProblems(f, at, problem) {
+  if (!f || typeof f !== 'object') return;
+  if (f.kind === 'crit') {
+    if (f.when == null && !(Number.isInteger(f.stages) && f.stages >= 1 && f.stages <= FX_CRIT))
+      problem(`${at}.stages: a whole number of critical-hit stages from 1 to ${FX_CRIT} (effects.js FX_CRIT)`);
+    if (f.when != null && f.stages != null)
+      problem(`${at}.stages: a crit row at ${f.when} makes that move a critical hit: no stages`);
+  }
+}
 /** PK-1: the timing fields of an effect row (logic/effects.js) */
 export const FX_TIMING = ['when', 'if', 'every', 'grow', 'per', 'once'];
 /** PK-1: the kinds a `when` may be given to, and at which moments: a stat row's stages land on a Billie in battle, a
@@ -2006,6 +2022,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   stat: FX_WHEN_BATTLE.filter(w => w !== 'throwMiss'),
   heal: FX_WHEN,
   damage: ['hit', 'hurt', 'crit'],
+  /* PK-3: a crit row at a move makes that move critical */
+  crit: ['move'],
 });
 /** PK-1: the timing fields a kind read outside any moment can't have */
 export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({
