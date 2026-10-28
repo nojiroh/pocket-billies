@@ -708,6 +708,38 @@ and its golden record untouched.
 - **Left for the owner's phone check:** the hold time (420 ms), the title's 4.5 s and the hint's 6 s, the glass's
   opacity (86%) by day, the details panel's place, Run's disabled look.
 
+## UI-16a as built (2026-10-28, `claude/ui-16a-motion`, into main)
+The plan approved in advance (the owner's standing instruction); the browser checks skipped until UI-18.
+- **Levels:** logic/motion.js `motionLevelOf(pref, phoneReduces)`: Device is Full unless the phone asks for reduced
+  motion; Full, Calm and Reduced win over the phone. `<html data-motion>` holds full, calm or reduced; ui-kit
+  `motionNow()` and `reduced()` read it (the phone only where no level is written). Shadow roots read two inherited
+  tokens instead of `:host-context`: `--m-k` (1, 0 under Reduced: multiply a move's time) and `--m-loop` (running,
+  paused under Calm and Reduced: an idle loop's play state). Calm drops the idle loops (m-idle, the dialogue bubble's
+  drift, the battle camera's sway, Fight's glow, the title coin, the bloom); loops that say something stay. The
+  debug log's preferences carry `motion` and `motionLevel`.
+- **Timings (checked):** press 100 ms down, 120 back (spring); enter 240 with 35 ms stagger, rows past the 4th
+  together (last in at 380); slow 420 to 380 (sheets, flips: inside 400); exit 180 (toasts); pop 150; float 600
+  after the pop (was one 1100 ms move); tick-ups 400-700 by the size of the change (pb-coin was 840 ms, the top bar
+  700 flat). uiTheme.json motion `press`, `exit`, `pop`, `float` are new dials; motion.test.mjs keeps them inside.
+- **Wired:** press (ui-motion.js: every button, tab, radio, kit part and tappable card squashes on the `scale`
+  property, so a control's own transform stays; 23 CSS `:active` scale() rules and pb-button's went); enter (a new
+  tab's rows and a new sheet's rows, `pbEnterRows`); sheet (a phone's bottom sheet slides up with the spring, the
+  centred dialog keeps the wipe; the same sheet redrawn stays still: it used to replay on every pick-card tap);
+  nudge (a press on a disabled control, `pbNudge` for refusals with the can't buzz); done (a Quest done toast draws
+  its check); flip (the reward and Perk picks deal face down the first time an offer shows, then turn over a beat
+  apart; `dealt` lets a tap turn and pick at once).
+- **Feedback:** the selection bar slides (a ghost of the slanted bar, from the old tab, segment or bottom-bar tab to
+  the new); tick-ups in the family's colour with a pop and the count sound (pb-coin, so pb-chip, and the top bar);
+  gains fly (`pbFlyTo`: a reward item and a purchase to the Bag tab, a Perk to Perks, money right after a press to
+  the Moneys chip) and the target bumps.
+- **Sounds:** music.json ui `sheet`, `flip`, `count`, `toast` (placeholders), played by sound.js's `uiSound` from
+  ui-motion.js (the kit's `pb-sound` event) and overlay.js; sound.js unchanged.
+- **Walking:** five endless loops to one: `.enc.gp`'s sheen and `.slot`'s breathe were dead (removed), the egg's wob
+  is the Ranch's, the rustle plays three times on a hidden card's first showing; the Actions bob stays (only while
+  something is new).
+- **For UI-16b and UI-17:** `--m-k`, `--m-loop`, `motionNow()`, `pbSound`, `pbBump`, `pbFlyTo`, `pbSlideBar`,
+  `pbDoneHTML`/`pbDrawDone`, the motion tokens; the low-HP pulse's filter and the evolution flashes are left to them.
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
@@ -721,7 +753,7 @@ and its golden record untouched.
 | UI-14a (built 2026-10-27; checks after UI-18) | Marks kit | `pb-tag`, `pb-chip` (on `pb-coin`'s API, ON-3 builds on it), `pb-proc` (the blip), `pb-info` (the explainer), rarity as frame, pill and name colour on `pb-pick-card` and on list rows; every state in the gallery | gallery only | gallery pictures; smoke |
 | UI-14b (built 2026-10-27, `claude/ui-14b-marks-screens`; checks after UI-18; the battle plates went to UI-16b) | Marks on every screen | one screen per commit: Team, the Billie sheet, the build tab, battle plates, shop, reward pick, Perks, Bag, map nodes (run-marks.js), payout; Atk/Def/SpA/SpD/Spe; towns, Alpha and Lead one colour everywhere; rarity on held items, Augments and Genes (a `rarity` field in items.json, robots.json's unused `rar` made real, genes.json; the tiers the owner's call) and on Billie cards | tags, marks, rarity | each screen's UI test; check:data; the owner's phone check |
 | UI-15 (done 2026-10-27, `claude/ui-15-less-clutter`) | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
-| UI-16a | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
+| UI-16a (built 2026-10-28, `claude/ui-16a-motion`; checks after UI-18) | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
 | UI-16b | Alive: battle events | UI-14b's leftovers first (UI-15 had not finished): the plates' tag row on `markRow` and `pb-tag` (Atk..Spe on the stage chips, battle.js `statShortName`), the statuses as tags on the plates, Alpha one colour (the bad family; battle-screen.css's turn bar has it gold, its plate crimson); then the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
 | UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
 | UI-18 | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |

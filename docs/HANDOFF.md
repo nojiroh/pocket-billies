@@ -2,6 +2,141 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-16a - alive: the feedback motions (press, enter, sheet, nudge, done, flip; slide, tick-ups, fly-to; four sounds; Calm) - 2026-10-28
+Branch `claude/ui-16a-motion`, made from UI-14b's `claude/ui-14b-marks-screens` (main plus UI-11, UI-12, UI-13,
+UI-14a, UI-14b and UI-8c; draft PRs #280, #282, #284, #286, #288 and #281). Main merged in first (nothing new), then
+UI-15's `claude/ui-15-less-clutter` (with UI-8b, `track/ui` #276), twice (the second time for its PR line, #294).
+The first merge conflicted in docs (both sides kept), uiTheme.json (UI-15's minimap tile dials beside UI-11's
+signals), battle.js (UI-15's field strip in the ticker's place), theme-sheet.js (both exports), ui-lint's ceilings
+(saved again), art-code-refs.json and hooks.js (remade by their tools) and four run-nodes gallery pictures (UI-14b's
+kept: the gallery waits until UI-18). After that merge the field strip's storm chip wore UI-15's icon-set bolt.
+UI-13 gives storms their own glyph, so the chip takes UI-13's Sandstorm glyph back (its own commit). Its PR goes to
+main and shows those steps' commits until their PRs merge. No Plan Mode (the owner's standing instruction); the plan
+was written as a message and carried out. Details: docs/phases/ui-track.md, "UI-16a as built". **Visible change:
+motion and sound on every screen** (nothing moved or recoloured at rest, except the walk's grass rustle stopping
+after three goes).
+- Changed:
+  - **Levels:** Settings, Display: Animation is Device / Full / Calm / Reduced. game/js/logic/motion.js (new, in the
+    Studio's logic worker) resolves it: `motionLevelOf` (Device is Full unless the phone asks for reduced motion;
+    a choice wins over the phone). `<html data-motion>` is now full, calm or reduced. ui-kit `motionNow()`;
+    `reduced()` reads the level (an explicit Full beats the phone now). The debug log's preferences carry `motion`
+    and `motionLevel` (never save data). i18n rows for Calm and the row's new hint. tools/test/motion.test.mjs
+    (5 tests: the resolution, the count's length, the stagger's cap, the tokens inside the doc's timings, no
+    `:host-context` in game/js).
+  - **Calm and the kit:** motion.css `--m-k` (0 under Reduced) and `--m-loop` (paused under Calm and Reduced), which
+    shadow roots inherit. These replace pb-pick-card's and pb-payout's `:host-context` rules and the kit's shadow
+    prefers-reduced-motion blocks (pb-sheet, pb-toast, pb-nav-bar). Calm stops the idle loops: m-idle, the dialogue
+    bubble, the battle camera's sway, Fight's glow, the title coin, the bloom. motion.css's phone rules apply only
+    where no level is written.
+  - **Timings:** uiTheme.json motion gains `press` 100, `exit` 180, `pop` 150 and `float` 600 (schema, theme sheet,
+    the Studio's Motion dials, tokens.css). `slow` goes 420 to 380. m-enter staggers only the first 5 rows. m-float is
+    a pop, then a float.
+  - **ui-motion.js (new page module, after the kits):**
+    - press: a squash and spring on the `scale` property; it replaces 23 CSS `:active` scale() rules and pb-button's
+      (their translateY presses stay; `.pb` no longer transitions its filter);
+    - a press on a disabled control nudges it;
+    - the selection bar slides between tabs and segments;
+    - the kit's `pb-sound` requests play through sound.js `uiSound`;
+    - `pbEnterRows`, `pbFlipFresh`/`pbFlipIn`, `pbGainFly`, `recentPress`.
+  - **ui-kit.js:** `pbSound`, `pbSlideBar`, `pbBump`, `pbNudge`, `pbFlyTo`, `pbDoneHTML`/`pbDrawDone`; pb-toast `done`.
+    ui-run-kit.js: pb-nav-bar's gold bar slides to the new tab, `tabEl(id)`; pb-pick-card `dealt`; pb-coin counts on
+    `motionCountMs`/`motionCountAt` in its tone, with a pop and the count sound (pb-chip inherits it, in its family's
+    text shade).
+  - **The screens:**
+    - overlay.js: a new sheet staggers its rows in and plays the sheet sound; the same sheet redrawn stays still (it
+      replayed its wipe on every pick-card tap); a phone's bottom sheet slides up (m-sheet).
+    - Toasts sound, fade up as they leave (`--m-exit`), and a Quest done toast draws its check.
+    - ui.js: a new tab's rows come in. The top bar's Moneys ticks on the shared count in the value colour, with a
+      pop and the sound, and money right after a press flies to it as a coin.
+    - The reward and Perk picks deal face down the first time an offer shows and turn over a beat apart with the
+      flip sound. A taken item flies to the Bag tab and a Perk to Perks; a shop purchase flies to the Bag. A refused
+      pick nudges Take it with the can't buzz.
+  - **Sounds:** music.json ui `sheet`, `flip`, `count`, `toast` (placeholders, the Studio's Check lists them),
+    UI_SOUND_NAMES, the schema, the Studio's Button sounds card. sound.js unchanged (the sound track's).
+  - **Walking:** walk-tab.css's five endless loops are down to one:
+    - `.enc.gp`'s sheen and `.slot`'s breathe were dead (nothing draws either class): removed, with breathe's
+      keyframes;
+    - the egg's wob is the Ranch's, not walking's;
+    - the hidden Billie's rustle plays three times on a card's first showing, not forever;
+    - the Actions bob stays (UI-15: only while something is new);
+    - the game's Reduced stops both.
+  - ui-lint ceilings lowered: motion times 247 -> 242, CSS colours 581 -> 576.
+- Found (figures checked):
+  - The doc's timings against the code. Press ran 80 ms down and `--m-fast` (140 ms) back, which is inside the
+    range only on the way down. pb-coin counted for 2 x `--m-slow` = 840 ms and the top bar a flat 700 ms (the
+    doc: 400-700). `--m-slow` 420 ms ran sheets, flips, pops and slams (the doc: at most 400).
+  - A stagger of 8 rows x 35 ms + 240 = 520 ms. m-float ran 1100 ms in one move.
+  - `.pb` transitioned its filter (the rule: never).
+  - Of the five walking loops two were dead CSS and one (the egg) is the Ranch's.
+  - Sheets replayed their wipe on every redraw with a new object (every pick-card tap). Part 2's "selection bar"
+    (`.pb-sel`) is in ui-kit.css but no screen uses it; the slide works on the tab rows, segments and the bottom bar,
+    whose selected looks differ.
+  - The doc says the kit had two `:host-context` uses; there were two (pb-pick-card, pb-payout), and five more shadow
+    prefers-reduced-motion blocks that ignored the game's own setting.
+- Decided for the owner, to review:
+  - **An explicit Full or Calm now wins over the phone's reduced motion** (Device still follows the phone, the
+    owner's answer 8). About 40 CSS rules elsewhere still sit behind `@media (prefers-reduced-motion)` and follow
+    the phone whatever the setting (as before); motion.css's and the kit's follow the setting.
+  - **Calm's list** (above) is my pick: idle loops with no cause. Loops that say something stay under Calm: the
+    Actions bob (news), the egg ready to hatch, aim and hint pulses, low HP, the loading pulse, weather.
+  - **The phone's bottom sheet slides up with the spring** (m-sheet) instead of UI-2's diagonal wipe; the centred
+    dialog from 700 px keeps the wipe. One line in motion.css to undo.
+  - **Sheets get no exit motion:** a copy left in the page while it fades would match the checks' `.scrim` and
+    `.sheet` queries. Toasts, which are found by id, fade out.
+  - **The squash:** about 8 px of give (scale 0.94 to 0.985, the width 60% of the height's), 100 ms down, 120 ms
+    back on the spring; Calm keeps it (feedback, not idle).
+  - **The selection slide is a ghost bar** over the old and new choice. It is the slanted gold bar's look in every
+    group, since the groups' own selected looks differ (tabs, segments, the bottom bar).
+  - **Fly-to sources:**
+    - money flies only when it rises within 1.5 s of a press (from what was pressed); otherwise the +N float alone;
+    - parts, Scrap and tutor moves don't fly (no tab holds them);
+    - a held item given to a Billie doesn't fly.
+  - **Face-down cards only on the reward and Perk picks,** the first time an offer shows (a reroll deals again). The
+    payout's keep-one cards and the start sheet stay face up. `dealt` makes a tap turn and pick at once, so nobody
+    waits for the deal (and the fast check's immediate taps still pick).
+  - **The done check goes on Quest done toasts only** (matched by their text); other "done" moments wait for a
+    screen that needs one.
+  - **The four sounds** are placeholder drafts, quieter than a button (vol 0.025-0.04, under 0.25 s). A few counts
+    ending together ping once (120 ms).
+  - **Left to UI-16b/17 (their rows):** the low-HP bar's filter pulse, the evolution flashes, glints, foil, breathing
+    nodes, the battle's events. The tokens and helpers above are for them.
+- Risky:
+  - The press touches every control on every screen. Elements that already animate `scale` would clash; none in the
+    game's CSS do.
+  - The fly-to and the slide put fixed elements over the page for 240-600 ms (pointer-events none, `--z-float`).
+  - pbEnterRows' row list is broad (`.list > *`, `.tpanel`, `.set-row`...): a screen may stagger more than it should,
+    though never past 380 ms.
+  - The `still` rule now keys on a sheet's class and title: two different sheets that share both won't animate
+    between them.
+  - Toasts linger 180 ms without their id while they fade.
+  - Nothing here has been seen on a phone (the owner's rule).
+- Verified:
+  - lint (ceilings lowered), typecheck, format, `npm test` (all pass), check:data, check:modules, after each change;
+  - one headless load of the relics fixture (a run with a Perk pick waiting, Node Playwright, 390 x 844), not a
+    check. It showed:
+    - the three Perk cards dealt face down, then all face up a second later;
+    - a tap picked one and the sheet stayed still;
+    - Take it sent the Perk flying;
+    - a tab change staggered rows in and slid the bar;
+    - the Moneys tick took its colour; a press squashed;
+    - the Quest done toast drew its check;
+    - Calm and Reduced resolved (`--m-loop` paused, `--m-k` 0, `motionLevel` in the debug log);
+    - one 404, the known missing art.
+    It found one bug, fixed in its own commit: the top bar's money count threw when money rose (a shadowed name).
+- Skipped until after UI-18 (the owner's rule), needed later:
+  - check-fast: the Perk pick (now face down at first; `dealt` keeps its tap), the reward pick and Salvage, the
+    shop, the toast, Settings' Display tab (four Animation choices);
+  - check-quick and smoke: every screen's entrance, the walk's loops, the element counts (a fly or slide ghost
+    shown at the moment of counting would add one);
+  - the Studio check (the Motion dials, the Button sounds card with eight rows);
+  - the gallery and its pictures (pb-coin's colour while counting, pb-pick-card face down, the toast);
+  - the Graphics bench's frame check (Part 2's "done when" for UI-16a);
+  - the owner's phone check: how the squash, slide, fly-to and tick-ups feel, the four sounds, Calm and Reduced,
+    reduced motion seen in every motion.
+- Next: UI-16b (battle events; the plates' marks first) and UI-17 (idle life and big moments); the planning session
+  starts them.
+- Tag to suggest (sessions can't push tags): `ui-16a-done` on this entry's commit.
+
 ### UI track UI-14b - the marks on every screen (status tags, rarity on held items, Augments, Genes and Billies, pb-chip, Colour shapes) - 2026-10-27
 Branch `claude/ui-14b-marks-screens`, made from UI-14a's `claude/ui-14a-marks-kit` (main plus UI-11, UI-12, UI-13 and
 UI-14a; draft PR #286); main merged in first (nothing new), then UI-8c's `claude/ui-8c-map-markers` (#281: only docs,
