@@ -22,6 +22,7 @@ import { RIG_NEUTRAL_POSE, rigGeo } from '../../game/js/logic/rig-joints.js';
 import {
   dataArenas,
   dataBanter,
+  dataBattleAnims,
   dataBattleRules,
   dataBiomes,
   dataBosses,
@@ -406,6 +407,7 @@ const STUDIO_DATA_FAMILIES = /** @type {[string, (D: any) => [string, string][]]
   ['field move', dataFieldMoves],
   ['set piece', dataSetPieces],
   ['arena', dataArenas],
+  ['battle anim', dataBattleAnims],
   ['modifier', dataModifiers],
   ['faction', dataFactions],
   ['boss', dataBosses],

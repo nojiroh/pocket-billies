@@ -1,0 +1,129 @@
+{
+ "about": "VFX-8 (the VFX track's Part 2): how the battle plays a move, as data (logic/battle-anims.js builds a move's timeline from it; battle-anim-run.js plays it on the stage). A move plays its `anim` (moves.json, a family or a scene id), else the default for its outcome or category (`defaults`). A timeline is `intro` then the family's `steps`; `at` is stage ms (the battle speed already scales the stage clock); `n` and `every` repeat a step; `if` lists gates that must all hold (a `!` in front: must not): H, S, X (the category), self, protect, dmg, landed (no miss, Guard or block), power80 (power >= bigPower), gl (the 3D stage), motion (not Reduced motion). `types` keeps a step to those move types. Colours are named in `colors`, or `type` (the move type's colour, types.json). The six legacy families are the choreographies battle-stage.js had before VFX-8, step for step (H, S and X by category; a miss, Guard and a blocked move); VFX-11 replaces them with the 16 families. A family's `short` (a variant for the Faster speed, speed >= shortSpeed) is optional. maxMs: the longest a move may play, by outcome and category (the times moves took before VFX-8; a long move or a scene may add extraMs). dur and hit: what the stage returns to battle.js (hit 999: no hit; the plates repaint at hit).",
+ "bigPower": 80,
+ "longPower": 100,
+ "extraMs": 500,
+ "shortSpeed": 2.2,
+ "maxMs": {"H":880,"S":1060,"X":1000,"miss":760,"protect":700,"blocked":740},
+ "flashes": {"perSecond":3,"gapMs":333,"redShare":0.8},
+ "colors": {"white":"#FFFFFF","dust":"#E8DCC8","guard":"#8FD8FF"},
+ "defaults": {
+  "H": "legacy_hit",
+  "S": "legacy_cast",
+  "X": "legacy_status",
+  "miss": "legacy_miss",
+  "protect": "legacy_guard",
+  "blocked": "legacy_blocked"
+ },
+ "intro": [
+  {"do":"focus","on":"attacker"},
+  {"do":"camAt","on":"attacker","amt":0.32,"z":0.08,"roll":0.012,"d":200},
+  {"do":"handheld","ms":700,"amt":0.8,"if":["H","power80","landed"]},
+  {"do":"handheld","ms":950,"amt":0.8,"if":["!H","power80","landed"]},
+  {
+   "do": "camTo",
+   "cam": {"x":-0.7,"y":1.05,"z":0.5,"yaw":0.16,"hz":5},
+   "d": 300,
+   "ease": "out3",
+   "if": ["gl","motion","power80","landed"]
+  },
+  {
+   "do": "camTo",
+   "cam": {"x":0.9,"y":1.35,"z":1.3,"yaw":-0.1,"hz":-3},
+   "d": 420,
+   "ease": "io",
+   "delay": 420,
+   "if": ["gl","motion","power80","landed"]
+  },
+  {"do":"action","on":"attacker","pose":"block","ms":800,"if":["protect"]},
+  {"do":"action","on":"attacker","pose":"attack","ms":620,"if":["!protect","H"]},
+  {"do":"action","on":"attacker","pose":"cast","ms":800,"if":["!protect","S"]},
+  {"do":"action","on":"attacker","pose":"buff","ms":800,"if":["!protect","X","self"]},
+  {"do":"action","on":"attacker","pose":"cast","ms":800,"if":["!protect","X","!self"]}
+ ],
+ "families": {
+  "legacy_hit": {
+   "about": "category H: a lunge (afterimages; a dash's ribbon, logic/smear.js), dust, the hit at 200 ms",
+   "dur": 880,
+   "hit": 200,
+   "steps": [
+    {"do":"lunge","dx":30,"dy":-4,"dur":120,"ease":"in","delay":100,"backDur":200,"backAt":240},
+    {"at":120,"do":"dust","n":5,"life":420,"color":"dust"},
+    {"at":200,"do":"toTarget","d":140},
+    {"at":200,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":460,"delay":620},
+    {"at":1050,"do":"focus","on":"wide"}
+   ]
+  },
+  "legacy_cast": {
+   "about": "category S: rings on the attacker, a straight beam (Electric, Psychic, Water), 9 type icons lobbed 34 ms apart, the hit at 500 ms",
+   "dur": 1060,
+   "hit": 500,
+   "steps": [
+    {"at":140,"do":"ring","on":"attacker","color":"type","r0":0.15,"r1":0.8,"life":300},
+    {"at":140,"do":"groundRing","on":"attacker","color":"type","r1":1.4,"life":420},
+    {"at":200,"do":"beam","types":["Electric","Psychic","Water"],"w":3,"life":420},
+    {"at":160,"n":9,"every":34,"do":"lob","time":0.32,"up":2.4,"ay":-15,"jitter":0.2,"life":320,"k":1.2},
+    {"at":330,"do":"toTarget","d":220},
+    {"at":500,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":480,"delay":820},
+    {"at":1250,"do":"focus","on":"wide"}
+   ]
+  },
+  "legacy_status": {
+   "about": "category X: 10 type icons converge on the target (on the attacker for a move on itself), a ring at 600 ms",
+   "dur": 1000,
+   "hit": 600,
+   "steps": [
+    {"at":260,"do":"toTarget","d":240,"if":["!self"]},
+    {"at":200,"n":10,"every":48,"do":"converge","on":"subject","r":0.8,"life":440},
+    {"at":600,"do":"ring","on":"subject","color":"type","r0":0.2,"r1":1.1,"life":420},
+    {"at":600,"do":"groundRing","on":"subject","color":"type","r1":1.6,"life":520},
+    {"at":600,"do":"blink","on":"target","ms":240,"if":["!self"]},
+    {"at":600,"do":"action","on":"target","pose":"dizzy","ms":700,"if":["!self"]},
+    {"do":"camHome","d":460,"delay":800},
+    {"at":1250,"do":"focus","on":"wide"}
+   ]
+  },
+  "legacy_miss": {
+   "about": "a miss: the lunge (H) or 6 icons flung past (S, X); the target sidesteps, 'Miss'",
+   "dur": 760,
+   "hit": 999,
+   "steps": [
+    {"do":"lunge","dx":22,"dur":110,"backDur":160,"backAt":120,"if":["H"]},
+    {"at":0,"n":6,"every":45,"do":"fling","speed":3.2,"up":1.5,"side":1.2,"life":380,"if":["!H"]},
+    {"at":150,"do":"toTarget","d":180},
+    {"at":150,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+    {"at":150,"do":"pop","on":"target","pop":"miss"},
+    {"do":"camHome","d":420,"delay":560},
+    {"at":900,"do":"focus","on":"wide"}
+   ]
+  },
+  "legacy_guard": {
+   "about": "Guard (a move with fx.protect): rings round the attacker",
+   "dur": 700,
+   "hit": 0,
+   "steps": [
+    {"at":140,"do":"ring","on":"attacker","color":"guard","r0":0.3,"r1":1.1,"life":600},
+    {"at":140,"do":"ring","on":"attacker","color":"white","r0":0.1,"r1":0.8,"life":450},
+    {"at":140,"do":"groundRing","on":"attacker","color":"guard","r1":1.8,"life":600},
+    {"do":"camHome","d":400,"delay":500},
+    {"at":800,"do":"focus","on":"wide"}
+   ]
+  },
+  "legacy_blocked": {
+   "about": "a move into a Guard: a ring on the target, its block pose, 'Hedged'",
+   "dur": 740,
+   "hit": 999,
+   "steps": [
+    {"at":170,"do":"toTarget","d":180},
+    {"at":170,"do":"ring","on":"target","color":"guard","r0":0.4,"r1":0.9,"life":420},
+    {"at":170,"do":"action","on":"target","pose":"block","ms":500},
+    {"at":170,"do":"pop","on":"target","pop":"hedged"},
+    {"do":"camHome","d":400,"delay":520},
+    {"at":900,"do":"focus","on":"wide"}
+   ]
+  }
+ },
+ "scenes": {}
+}

@@ -90,6 +90,8 @@ export interface GameData {
   setPieces?: SetPiecesData;
   /** WM-7: the leaders' arenas */
   arenas?: ArenasData;
+  /** VFX-8: how the battle plays a move */
+  battleAnims: BattleAnimsData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
   /** RL-14: the runs' enemy factions and their bots */
@@ -237,6 +239,8 @@ export interface Move {
   fx?: MoveEffect;
   /** the line whose signature move it is */
   sig?: string;
+  /** VFX-8: its animation, a battleAnims.json family or scene id (missing: its outcome's or category's default) */
+  anim?: string;
 }
 
 export interface MoveEffect {
@@ -2374,6 +2378,51 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** VFX-8: battleAnims.json: how the battle plays a move (logic/battle-anims.js, battle-anim-run.js) */
+export interface BattleAnimsData {
+  about?: string;
+  /** the power80 gate's power */
+  bigPower: number;
+  /** a move this strong (or a scene) may run extraMs longer */
+  longPower: number;
+  extraMs: number;
+  /** a family's short variant plays at this battle speed or more */
+  shortSpeed: number;
+  /** the longest a move may play by outcome and category, stage ms (the times before VFX-8) */
+  maxMs: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', number>;
+  /** the full-screen flash limiter */
+  flashes: { perSecond: number; gapMs: number; redShare: number };
+  colors: Record<string, Color>;
+  defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
+  intro: BattleAnimStep[];
+  families: Record<DataId, BattleAnimFamily>;
+  scenes: Record<DataId, BattleAnimFamily>;
+}
+export interface BattleAnimTimeline {
+  dur: number;
+  hit: number;
+  steps: BattleAnimStep[];
+}
+export interface BattleAnimFamily extends BattleAnimTimeline {
+  about?: string;
+  short?: BattleAnimTimeline;
+}
+/** a step: what it does, when (stage ms), its gates and its own numbers */
+export interface BattleAnimStep {
+  do: string;
+  at?: number;
+  n?: number;
+  every?: number;
+  if?: string[];
+  types?: string[];
+  on?: 'attacker' | 'target' | 'subject' | 'wide';
+  color?: string;
+  pop?: 'miss' | 'hedged';
+  pose?: string;
+  ease?: string;
+  cam?: Record<string, number>;
+  [k: string]: unknown;
 }
 /** WM-7: arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's
  * (logic/arena-gen.js) */

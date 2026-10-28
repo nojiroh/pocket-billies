@@ -58,6 +58,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBanter: [() => dataBanter, v => (dataBanter = v)],
   // @ts-expect-error -- replaced on purpose
+  dataBattleAnims: [() => dataBattleAnims, v => (dataBattleAnims = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
@@ -1258,6 +1260,46 @@ export function dataSetPieces(D, valid = () => true) {
     });
   }
   if (S.perPlace[1] > 0 && !drawn) problem('no piece has a weight above 0, so no place gets one');
+  return out;
+}
+// VFX-8: battleAnims.json (how the battle plays a move): the schema; every default a family; every step's colour a
+// named colour or `type`, its types types (types.json); every move's `anim` a family or a scene, and moves.json has no
+// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit)
+/** VFX-8: battleAnims.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBattleAnims(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    F = 'battleAnims.json',
+    problem = (/** @type {string} */ what, file = F) => out.push([file, what]),
+    A = D.battleAnims;
+  if (!A) return [[F, 'missing']];
+  if (!valid('battleAnims.schema.json', A, F)) return out;
+  const types = new Set((Array.isArray(D.types) ? D.types : []).map((/** @type {any} */ t) => (t && t.id) || t)),
+    fam = (/** @type {string} */ id) => !!(A.families[id] || A.scenes[id]),
+    steps = (/** @type {string} */ where, /** @type {any[]} */ L) =>
+      L.forEach((S, i) => {
+        if (S.color && S.color !== 'type' && !A.colors[S.color])
+          problem(`${where}[${i}].color: no colour "${S.color}" in colors`);
+        for (const t of S.types || [])
+          if (types.size && !types.has(t)) problem(`${where}[${i}].types: no type "${t}" (types.json)`);
+      });
+  for (const [k, id] of Object.entries(/** @type {Record<string, string>} */ (A.defaults)))
+    if (!A.families[id]) problem(`defaults.${k}: no family "${id}"`);
+  steps('intro', A.intro);
+  for (const sec of ['families', 'scenes'])
+    for (const [id, T] of Object.entries(/** @type {Record<string, any>} */ (A[sec]))) {
+      for (const [w, V] of [
+        ['', T],
+        ['.short', T.short],
+      ])
+        if (V) {
+          steps(`${sec}.${id}${w}.steps`, V.steps);
+          if (V.hit !== 999 && V.hit > V.dur) problem(`${sec}.${id}${w}: hits at ${V.hit} ms, after its ${V.dur} ms`);
+        }
+    }
+  for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
+    if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
+      problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');
   return out;
 }
 // WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds

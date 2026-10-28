@@ -100,6 +100,18 @@ export function renameTypeIn(D, from, to) {
     if (Array.isArray(WF.badges))
       WF.badges = [...new Set(WF.badges.map((/** @type {string} */ t) => (t === from ? left : t)))];
   }
+  /* VFX-8: a battle animation step kept to some move types (battleAnims.json `types`) */
+  const BA = D.battleAnims,
+    timelines = BA
+      ? [
+          { steps: BA.intro },
+          ...[...Object.values(BA.families), ...Object.values(BA.scenes)].flatMap(F => [F, F.short]),
+        ]
+      : [];
+  for (const T of timelines)
+    for (const S of (T && T.steps) || [])
+      if (Array.isArray(S.types))
+        S.types = S.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;
