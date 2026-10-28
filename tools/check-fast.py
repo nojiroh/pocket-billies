@@ -32,7 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 # TC-4: the set-up every browser check shares (tools/browser_check.py); the look tools reach it through this module too
 from browser_check import (CLOCK, GAME, LAUNCH, LOW_GRAPHICS, NO_ACCOUNTS, ROOT, T0, TEST_GLOBALS, console_text,  # noqa: E402,F401
-                           drawing, free_port, go_scene, log, open_game, serve, stand, until)
+                           drawing, frames, free_port, go_scene, log, open_game, serve, stand, until)
 
 ARGS = sys.argv[1:]
 WORKERS = int(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--workers=')), 2))
@@ -129,6 +129,74 @@ def run_world(pg, base):
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
     if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
     return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
+
+
+SEAM_BUILDS = "[...debugLog.marks.filter(m=>m[0]>={t0}&&/building the ground mesh/.test(m[2])).map(m=>m[2]+' '+Math.round(m[1]-m[0])+' ms'),...(walkView.navBuilds>{n0}?[(walkView.navBuilds-{n0})+' walking grid(s) built in one go']:[])]"
+SEAM_PREP = "groundPrepWork(400);if(typeof navPrepWork==='function')navPrepWork(400)"
+
+
+def run_seam_water(pg, base):
+    """the crossing hitch (the owner's log of 28 Oct 2026: one frame of 3.2 s): a seam walked on a day the weather
+    changes the water in view. Every run place has a storm on day 1 (water floods where it can) and a clear day 2; the
+    walk goes to the next place whose view holds one that floods. With the next view prepared ahead (pushed along here:
+    headless draws a frame every second or so), walking over the seam builds no ground and no walking grid in one go,
+    then or when the view takes day 2's water (made again in the background and swapped in once ready)"""
+    drawing(pg)
+    if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the run's loading screen never lifted")
+    pg.evaluate("""(() => {
+      const F = saveData.run.forecast;
+      for (const L of LOCATIONS)
+        if (L && L.runNode != null) {
+          const d = F[runWorldNode(L.runNode)];
+          d[0] = 'storm';
+          d[1] = 'clear';
+        }
+      runWaterWx.key = '';
+      return 0;
+    })()""")
+    if not until(pg, "LOCATIONS.some(L=>L&&L.runNode!=null&&(gameData.maps[L.mapId]||{}).wx==='flood')", 30): raise Exception('no run place floods in a storm')
+    n1, flooded = pg.evaluate("""(() => {
+      const wet = id => (gameData.maps[id] || {}).wx === 'flood';
+      for (const i of runNext(saveData.run.map, 0)) {
+        const n = runWorldNode(i), V = mapById('w:' + LOCATIONS[n].mapId + '*'), ids = (V && V.parts || []).map(p => p.id).filter(wet);
+        if (ids.length) return [n, ids];
+      }
+      return [null, []];
+    })()""")
+    if n1 is None: raise Exception("no place next to the landing has a view that floods")
+    nxt = pg.evaluate(f"'w:'+LOCATIONS[{n1}].mapId+'*'")
+    flood = f"{json.dumps(flooded)}.filter(id=>gameData.maps[id].wx==='flood')"
+    settled = "walkView.sc===mapById(walkView.id)&&isGroundPrepared(walkView.id,walkView.sc)"
+    if not until(pg, settled, 120, poke=SEAM_PREP): raise Exception("the landing's view never took day 1's flood")
+    walk_over(pg, n1, -20)   # 20 m short of the seam
+    if not until(pg, f"seamlessGetReady('{nxt}',false)", 120, poke=SEAM_PREP): raise Exception(f'the next view {nxt} never got ready ahead')
+    t0, n0 = pg.evaluate('[performance.now(), walkView.navBuilds]')
+    if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
+    if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
+    if not until(pg, f"walkView.ready&&walkView.id==='{nxt}'", 30): raise Exception(f'crossed, but the view is still {pg.evaluate("walkView.id")} (held for its remake?)')
+    # the walk frame lays each place's water by the new day's forecast (run-world.js runWaterWeatherSync)
+    if not until(pg, f"{flood}.length===0", 30): raise Exception(f'day 2 is clear, but {pg.evaluate(flood)} still flood')
+    if not frames(pg, 3): raise Exception('the view stopped drawing after the crossing')
+    built = pg.evaluate(SEAM_BUILDS.format(t0=t0, n0=n0))
+    if built: raise Exception(f'the crossing built in one go: {built}')
+    if not until(pg, settled, 120, poke=SEAM_PREP): raise Exception(f'the view never took day 2’s water ({pg.evaluate("walkView.id")})')
+    if not frames(pg, 3): raise Exception('the view stopped drawing after its remake')
+    built = pg.evaluate(SEAM_BUILDS.format(t0=t0, n0=n0))
+    if built: raise Exception(f'the remade view was built in one go: {built}')
+    # the grid built ahead a slice at a time is the very grid navGrid builds in one go
+    diff = pg.evaluate("""(() => {
+      const a = walkView.nav, keep = walkView.navKeep, ahead = walkView.navAhead;
+      walkView.nav = null;
+      walkView.navKeep = [];
+      walkView.navAhead = [];
+      const b = navGrid();
+      walkView.navKeep = keep;
+      walkView.navAhead = ahead;
+      return ['N', 'gw', 'gh', 'blk', 'cost', 'lv', 'hop', 'dry', 'surf'].filter(k =>
+        a[k] && a[k].length != null ? a[k].length !== b[k].length || a[k].some((v, i) => v !== b[k][i]) : a[k] !== b[k]);
+    })()""")
+    if diff: raise Exception(f'the walking grid built ahead differs from one built in one go: {diff}')
+    return f'into {pg.evaluate(f"LOCATIONS[{n1}].name")}, its view flooded at {flooded} on day 1: crossed on day 2 with nothing built in one go; the remade view swapped in'
 
 
 def run_helper(pg, base):
@@ -1824,6 +1892,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
              ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests),
              ("A run's village: its name, its market stall's own shop of 2 held items, no Perk, Mo's fresh stock (WM-5)", run_village_stall)]),
+    ('run', [("A seam on a day the weather changes the water in view: nothing built in one go, the day's water swapped in after (the crossing hitch)", run_seam_water)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),
