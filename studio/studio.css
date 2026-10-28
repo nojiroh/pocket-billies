@@ -1156,6 +1156,25 @@ canvas.spr-prev.big {
   border-radius: 8px;
   overflow: hidden;
 }
+.ab-ramps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+.ab-ramps figure {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+}
+.ab-ramps canvas {
+  display: block;
+  max-width: 100%;
+  height: 48px;
+  image-rendering: pixelated;
+  background: #241f30;
+  border-radius: 4px;
+}
 .ab-path {
   word-break: break-all;
   font-size: 12px;

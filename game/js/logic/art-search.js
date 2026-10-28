@@ -228,6 +228,7 @@ export function pngSize(b) {
 export const ART_BUILDERS = [
   [/^scene\/fx\/(bee|fish|moth)\.png$/, 'tools/build-fx-v47.py'],
   [/^scene\/life\/crow\.png$/, 'tools/build-fx-v47.py'],
+  [/^battle\/anims\/[\w-]+\.png$/, 'tools/build-battle-anims.py'],
   [/^scene\/life\/[\w-]+\.png$/, 'tools/build-life-v47.py'],
   [/^coins\/[\w-]+\.(png|json)$/, 'tools/build-pyramids.py'],
   [/^scene\/build\/walls\.png$/, 'tools/build-walls.py'],
