@@ -1120,10 +1120,12 @@ def studio(pg, base):
     return 'scripts and the shared renderer loaded, the GitHub sign-in is there'
 
 
+# the Studio as it loads the repository (studio-app.js): the data files and the Billies' piece sheets (art/next/rigs-next.js),
+# so a section that draws Billies finds their pictures
 STUDIO_DATA = """(async()=>{const ix=await (await fetch('../game/data/index.json')).json(),paths=[];
  for(const k of ix.keys){const sp=ix.split&&ix.split[k];if(!sp)paths.push(k+'.json');else for(const id of sp.ids)paths.push(k+'/'+id+'.json')}
  const F={};await Promise.all(paths.map(async p=>{F[p]=await (await fetch('../game/data/'+p)).json()}));
- const D=PB_DATA.assemble(ix,p=>F[p]);studioState.D=D;studioState.rigs={};studioState.files=[];studioState.last=null;commit(true);
+ const D=PB_DATA.assemble(ix,p=>F[p]);studioState.D=D;studioState.rigs=window.RIGS={...(window.RIGS_NEXT||{})};studioState.files=[];studioState.last=null;commit(true);
  document.querySelectorAll('.dlg,.modal,.overlay').forEach(e=>e.remove());return Object.keys(D).length})()"""
 
 
