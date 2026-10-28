@@ -45,7 +45,7 @@ function animAt(ms, fn, onSkip) {
 }
 /** VFX-8: battle sounds on the stage clock (they keep step with hit-stop and the battle speed, and a skip drops the
  * ones still to come); real time, as before, when the stage isn't running */
-function battleStageAt(ms, fn) {
+export function battleStageAt(ms, fn) {
   if (!battleStage.on) return void setTimeout(fn, Math.max(0, ms / (battleStage.speed || 1)));
   animAt(Math.max(0, ms), fn, null);
 }

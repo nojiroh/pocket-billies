@@ -20,6 +20,7 @@ import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
+import { battleStageAt } from './battle-anim-run.js';
 import {
   FOOTSTEP_M,
   baseMapId,
@@ -606,7 +607,11 @@ function musicMapCut() {
 /* battle animations make their sounds. SND-6: ev is the line they belong to (its snapshot names who cries) */
 function battleSoundEffect(an, r, ev) {
   if (!an || !soundEngine.ctx) return;
-  const at = (ms, f) => setTimeout(f, Math.max(0, ms / (typeof battleStage !== 'undefined' ? battleStage.speed : 1)));
+  /* VFX-8: on the stage clock (battle-anim-run.js battleStageAt): in step with hit-stop, and a skip drops what's to come */
+  const at = (ms, f) =>
+    typeof battleStageAt === 'function'
+      ? battleStageAt(ms, f)
+      : setTimeout(f, Math.max(0, ms / (typeof battleStage !== 'undefined' ? battleStage.speed : 1)));
   switch (an.k) {
     case 'wild':
       soundEffect('enc');
