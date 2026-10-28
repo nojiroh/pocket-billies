@@ -48,6 +48,16 @@ def nav_tap(t):
     return f"(()=>{{const b={NAV_BUTTON.format(t=t)};if(!b)return false;b.click();return true}})()"
 
 
+def until_drawn(pg, cond, frames, sec, n, cap=300):
+    """wait for the JS condition cond for sec seconds and, on a slow machine, until n more frames (the JS count frames)
+    have drawn, at most cap seconds: what the game does in its own time moves by frames (its clock moves at most 60 ms
+    a frame), so a fast page keeps the limit of sec seconds and a slow one gets the frames the game needs"""
+    f0 = pg.evaluate(frames)
+    if until(pg, cond, sec): return True
+    until(pg, f"({cond})||({frames})>={f0 + n}", max(1, cap - sec))
+    return bool(pg.evaluate(f"!!({cond})"))
+
+
 def no_errors(errs):
     if errs: raise Exception('errors: ' + ' | '.join(errs[:4]))
 
@@ -167,7 +177,8 @@ def bowl_map(pg, base):
     pg.evaluate("uiState.mapSel=null;0"); pg.evaluate(nav_tap('map'))
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
         raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
-    if not until(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 10): raise Exception('the zoom out from the walk scene never settled')
+    # the zoom out lasts 1.5 s and ends on a drawn frame of the map
+    if not until_drawn(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 'worldBowl.frames', 10, 10): raise Exception('the zoom out from the walk scene never settled')
     # touches must reach the map: its layer fills the screen and some of it is not under the card or the buttons (on a
     # phone-sized page: this page's 300 px are mostly card)
     pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.5)
