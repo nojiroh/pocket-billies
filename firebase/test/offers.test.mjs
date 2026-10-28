@@ -49,6 +49,7 @@ const fresh = (o = {}) => ({
   by: '',
   t: serverTimestamp(),
   v: 1,
+  k: 'k1700000000',
   ...o,
 });
 const save = () => ({ json: '{}', savedAt: 1, saveVersion: 4, name: 'X', game: 'pb', t: serverTimestamp() });
@@ -126,6 +127,7 @@ test('opening: only between friends both ways, not when blocked, in the sorted i
   await assertFails(setDoc(doc(db('ann'), 'offers/ann_bob'), fresh({ da: true })));
   await assertFails(setDoc(doc(db('ann'), 'offers/ann_bob'), fresh({ v: 5 })));
   await assertFails(setDoc(doc(db('ann'), 'offers/ann_bob'), fresh({ extra: 1 })));
+  await assertFails(setDoc(doc(db('ann'), 'offers/ann_bob'), fresh({ k: 'x' })));
   await assertFails(setDoc(doc(db('ann'), 'offers/ann_bob'), fresh({ ga: [thing(), thing(), thing(), thing()] })));
   await assertFails(setDoc(doc(db('ann'), 'offers/ann_bob'), fresh({ ga: [{ k: 'robot', d: '{}' }] })));
   await assertFails(setDoc(doc(db('ann'), 'offers/ann_bob'), fresh({ ga: [{ k: 'b', d: 'x'.repeat(16001) }] })));
@@ -143,6 +145,7 @@ test('each side writes only its own give and ok; a give change moves the version
   await friends();
   await assertSucceeds(setDoc(doc(db('ann'), 'offers/' + ID), fresh()));
   await assertFails(upd('bob', { ga: [], v: 2 }));
+  await assertFails(upd('ann', { k: 'k1800000000' }));
   await assertFails(upd('bob', { oa: 1 }));
   await assertFails(upd('cat', { gb: [thing()], v: 2 }));
   /* a give change must move the version by exactly one */

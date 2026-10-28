@@ -18,7 +18,8 @@ rules_version = '2';
 //   votes/<entry>_<k>_<uid> ON-3: one account's vote on one entry ({ e, k, by, t }); the entry's v goes up by one in
 //                           the same batch, and down by one when the vote is taken back
 //   offers/<a>_<b>          ON-4: a trade between two friends (a < b): what each side gives, each side's ok on the
-//                           offer's version, gave / received / took back marks; read by the two players only
+//                           offer's version, gave / received / took back marks, k (the offer's own stamp, so
+//                           each trade's record in the saves is told apart); read by the two players only
 // Nobody can list users/ or codes/, so a player is found by their code only, and only their friends see them.
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -306,8 +307,8 @@ service cloud.firestore {
     }
     function validOffer(d) {
       return d.keys().hasOnly(['a', 'b', 'na', 'nb', 'ga', 'gb', 'oa', 'ob', 'da', 'db', 'ta', 'tb', 'ra', 'rb', 'ka',
-          'kb', 'x', 'by', 't', 'v'])
-        && d.size() == 20
+          'kb', 'x', 'by', 't', 'v', 'k'])
+        && d.size() == 21 && d.k is string && d.k.size() >= 4 && d.k.size() <= 32
         && shortText(d.a, 128) && shortText(d.b, 128) && shortText(d.na, 40) && shortText(d.nb, 40)
         && offerGive(d.ga) && offerGive(d.gb)
         && d.v is int && d.oa is int && d.ob is int

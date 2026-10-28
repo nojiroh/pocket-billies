@@ -133,6 +133,27 @@ export interface Meta {
   bosses: Record<string, number>;
   /** ON-3: the Showcase (logic/showcase.js) */
   show: MetaShow;
+  /** ON-4: the latest friend trades, newest first (logic/trade.js) */
+  trades: MetaTrade[];
+}
+
+/** ON-4: one friend trade as the save keeps it: its key (the offer's id and stamp), when it began here, the friend
+    (uid and name), how far this side went (open, gave, done, back: given back after a close), and what was given and
+    got (kind b / e / p, species or part id, level or upgrade, nickname) */
+export interface MetaTrade {
+  k: string;
+  at: number;
+  u: string;
+  n: string;
+  st: 'open' | 'gave' | 'done' | 'back';
+  gave: TradeLabel[];
+  got: TradeLabel[];
+}
+export interface TradeLabel {
+  k: string;
+  sp: string;
+  lvl: number;
+  nick?: string;
 }
 
 /** ON-3: the save's Showcase record: my entries (slot, stamp, week, theme and the Billie's uid, for its ribbon), the

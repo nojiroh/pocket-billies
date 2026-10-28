@@ -97,6 +97,11 @@ export function runRecord(s, run, won, me, t) {
     .map(m => onlineCopy(m, me))
     /* a nickname typed before names were cleaned everywhere goes out cleaned, not dropped */
     .map(m => (m && typeof m.nick === 'string' ? { ...m, nick: cleanName(m.nick, LEGAL_NICK_MOST) } : m))
+    /* ON-4: ribbons go online with a traded Billie, not with a ghost (the record stays under its 8 KB) */
+    .map(m => {
+      if (m) delete m.ribbons;
+      return m;
+    })
     .filter(m => m && !legalBilly(m))
     .slice(0, 6);
   /** @type {any} */
