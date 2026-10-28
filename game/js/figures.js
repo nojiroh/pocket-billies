@@ -49,6 +49,7 @@ import { artImg, artURL, makeCanvas } from './art.js';
 import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
+import { frameBudgetLeft } from './walk/quality-cull.js';
 /* eslint-disable no-func-assign */
 expose({
   FIGURE_BAKES_A_FRAME: [() => FIGURE_BAKES_A_FRAME],
@@ -549,7 +550,13 @@ function figurePicture(rec, name, clip, frame, heading, yaw, tilt, style = 'pixe
         B.frame = fr;
         B.frameBakes = 0;
       }
-      if (B.frameBakes < FIGURE_BAKES_A_FRAME) {
+      /* the first bake of a frame always (so a figure shows up), more only while the frame's one-off work budget
+         lasts (walk/quality-cull.js frameBudgetLeft, the load track's): a bake reads its picture back, which waits on
+         the graphics card */
+      if (
+        B.frameBakes < FIGURE_BAKES_A_FRAME &&
+        (B.frameBakes === 0 || typeof frameBudgetLeft !== 'function' || frameBudgetLeft())
+      ) {
         B.frameBakes++;
         im = bakeFigure(Fig, clip, frame, V, ppm, outline, smooth ? 'smooth' : 'pixel');
         if (im) {

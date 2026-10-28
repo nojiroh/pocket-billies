@@ -103,6 +103,9 @@ function freshBaker(opts) {
   G.figureCacheClear();
   G.document.createElement = D.createElement;
   G.gpuState.fr = 1000;
+  /* the frame's one-off work budget (walk/quality-cull.js), plenty unless a test spends it */
+  G.walkRenderer.budT = performance.now();
+  G.walkRenderer.budMs = 1e9;
   return D;
 }
 const was = G.document.createElement;
@@ -175,6 +178,21 @@ test('figures: at most four bakes a frame; a person keeps their last picture mea
     assert.equal(G.figurePicture({}, 'mannequin', 'idle', 9, Math.PI, 0, TILT), null, 'someone with none yet: none');
     G.gpuState.fr++;
     assert.notEqual(G.figurePicture(rec, 'mannequin', 'idle', 4, Math.PI, 0, TILT), got[3], 'baked the next frame');
+  } finally {
+    G.document.createElement = was;
+  }
+});
+
+test('figures: with the frame’s work budget spent, one bake a frame', () => {
+  try {
+    freshBaker();
+    G.walkRenderer.budMs = -1;
+    const rec = {};
+    for (let f = 0; f < 4; f++) G.figurePicture(rec, 'mannequin', 'idle', f, Math.PI, 0, TILT);
+    assert.equal(G.figureReport().bakes, 1);
+    G.gpuState.fr++;
+    G.figurePicture(rec, 'mannequin', 'idle', 1, Math.PI, 0, TILT);
+    assert.equal(G.figureReport().bakes, 2, 'the next frame bakes the next one');
   } finally {
     G.document.createElement = was;
   }
