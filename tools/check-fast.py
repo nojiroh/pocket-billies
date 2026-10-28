@@ -183,7 +183,7 @@ def bowl_map(pg, base):
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3", 30):
         raise Exception('the map didn’t open as the bowl' + (' (the old map opened)' if pg.evaluate("worldMap.gl") else ''))
     # the zoom out lasts 1.5 s and ends on a drawn frame of the map
-    if not until_drawn(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 'worldBowl.frames', 10, 10): raise Exception('the zoom out from the walk scene never settled')
+    if not until_drawn(pg, "!worldBowl.tween&&!document.getElementById('mapfade')", 'worldBowl.frames', 10, 10): raise Exception('the zoom out from the walk scene never settled: ' + str(pg.evaluate("JSON.stringify({tween:worldBowl.tween&&{t0:worldBowl.tween.t0,dur:worldBowl.tween.dur},fadeOut:worldBowl.fadeOut,fadeAge:worldBowl.fadeAt!=null?performance.now()-worldBowl.fadeAt:null,mapfade:!!document.getElementById('mapfade'),fadeOp:(document.getElementById('mapfade')||{style:{}}).style.opacity,ready:worldBowlReady(),frames:worldBowl.frames,on:worldBowl.on,tab:uiState.tab})")))
     # touches must reach the map: its layer fills the screen and some of it is not under the card or the buttons (on a
     # phone-sized page: this page's 300 px are mostly card)
     pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.5)
@@ -587,7 +587,7 @@ def tall_ground(pg, base):
     stand(pg, spot['x'], spot['z'])
     # the silhouette counts once the GPU's occlusion query says you're hidden (walk/sprites.js readHideQueries): its
     # results come back a number of frames later, more on a busy machine's software drawing, so wait for it
-    until(pg, "window.__sil>0", 20)
+    until_drawn(pg, "window.__sil>0", 'walkRenderer.frames', 20, 60)
     rise, k, circle, sil = pg.evaluate("[walkRenderer.occT, walkView.C.rockK, rockUniformsFor(walkView.C).rock[1], window.__sil]")
     if not (rise > 1): raise Exception(f'the camera didn’t rise at the foot of {spot["up"]} m of rock: {rise}')
     if not (k > 0.9 and circle > 0): raise Exception(f'the rock fade isn’t on there: rockK {k}, circle {circle}')
@@ -1795,6 +1795,9 @@ def pasture(pg, base):
     fence (and still are a few seconds later); one brought beside you is a tap target, and tapping it opens the ranch's
     sheet; so does the gate; one moved to the team leaves the field"""
     drawing(pg)
+    # the square's visits off (HB-10c, rules.json square.visit): by the page's clock, which starts at 12:30, one of
+    # the three walks off to the square 73 s in, so a slow runner saw two leave the field, not one
+    pg.evaluate("RULES.square&&RULES.square.visit&&(RULES.square.visit.most=0);0")
     if not until(pg, "!document.getElementById('loader')&&worldBillies.pasture&&Object.keys(worldBillies.pasture.mons).length===3", 90):
         raise Exception(f"not three Billies in the pasture: {pg.evaluate('worldBillies.pasture&&worldBillies.pasture.list.length')}")
     inside = "(()=>{const L=pastureFenceLine(pastureZone(walkView.sc));return Object.values(worldBillies.pasture.mons).every(b=>pastureIn(L,b.x,b.z))})()"
@@ -1827,13 +1830,14 @@ def pasture(pg, base):
     if pg.evaluate("!!uiState.inside"): raise Exception('the gate walked you into the barn')
     pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];0")
     pg.evaluate(f"toTeam(saveData.box.find(m=>m.uid==='{uid}'));0")
-    # the field looks at storage again once a real second, in a drawn frame
-    if not until_drawn(pg, f"!worldBillies.pasture.mons['{uid}']&&Object.keys(worldBillies.pasture.mons).length===2", 'walkRenderer.frames', 10, 5):
+    if not until(pg, f"!worldBillies.pasture.mons['{uid}']&&Object.keys(worldBillies.pasture.mons).length===2", 10):
         raise Exception('a Billie moved to the team still wanders in the pasture')
     return 'three Billies wander inside the fence; tapping one and tapping the gate open the ranch’s sheet; one moved to the team left the field'
 
 
 PAGES = [   # (what the page opens, its checks in order); the longest first, so the browsers finish together
+    # the Studio's page first: its four checks run one after another for about 6 minutes on CI (Model mode alone 2-4)
+    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera), ("The Studio's Model mode: a CC0 glTF read, shown, baked, written, undone (ST-7)", studio_model)]),
     ('town', [('A town opens and draws (Copperleaf Town)', scene('copperleaf')),
               ('Copperleaf is the island: its walking checks, every door a tap away, the wild grass, the orbit (IS-5)', hub_island),
               ('The exported debug log holds no names, a camera line with the moment and a lens line (CAM-1, CAM-2, CAM-3)', debug_log),
@@ -1870,7 +1874,6 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),
     ('team', [('Every screen opens with its parts (UI-5)', screens)]),
     ('title', [('The game boots with no console or page errors', boots)]),
-    ('studio', [('The Studio loads', studio), ("The Studio's world map look", studio_worldmap), ("The Studio's Camera section", studio_camera), ("The Studio's Model mode: a CC0 glTF read, shown, baked, written, undone (ST-7)", studio_model)]),
     (RUN_TEST_URL, [('Play this seed: ?debug&run= takes off on that seed in a test run, nothing saved (Studio plan T2.6)', run_test)]),
 ]
 

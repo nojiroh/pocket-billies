@@ -1165,9 +1165,16 @@ async function runFullTest(mode) {
         const n = battleStage.parts.filter(p => p.img).length;
         if (turn) dropped = Math.max(dropped, n);
         else flew = Math.max(flew, n);
-        const N = document.querySelector('.bt-notice');
-        if (N) notice = Math.max(notice, N.querySelectorAll('li').length);
       }, 50);
+      /* the notice is counted as it goes up, not by the timer: a tap can take it down within the task that put it up,
+         and on a slow machine a long frame kept the timer from ever seeing it */
+      const seen = new MutationObserver(R => {
+        for (const r of R)
+          for (const N of r.addedNodes)
+            if (N instanceof Element && N.classList.contains('bt-notice'))
+              notice = Math.max(notice, N.querySelectorAll('li').length);
+      });
+      seen.observe(document.body, { childList: true, subtree: true });
       const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
         const end = performance.now() + ms * (selfTest.slow || 1);
@@ -1222,6 +1229,7 @@ async function runFullTest(mode) {
         return `${V.name}: joined (${flew ? 'its bots flew in' : 'reduced motion'}${notice ? `, a notice of ${notice}` : ''}), not catchable; ${foe.hp > 0 ? `${done} phases, the ${V.bots && V.bots.armR} torn loose` : 'fainted from the hit'}`;
       } finally {
         clearInterval(watch);
+        seen.disconnect();
         delete TRAINERS[id];
       }
     };
