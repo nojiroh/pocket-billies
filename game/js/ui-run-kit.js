@@ -1024,15 +1024,9 @@ const PbStamp = class extends LitElement {
       .ink.b {
         animation: pb-stamp-b var(--m-base) cubic-bezier(0.5, 0, 0.9, 0.5) both;
       }
-      :host-context([data-motion='reduced']) .ink.a,
-      :host-context([data-motion='reduced']) .ink.b {
+      /* reduced motion fades it in (render() reads the game's level: no :host-context, which Safari ignores) */
+      .ink.f {
         animation: m-fade var(--m-fast) linear both;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .ink.a,
-        .ink.b {
-          animation: m-fade var(--m-fast) linear both;
-        }
       }
       /* two names for one slam, so play() can start it again */
       @keyframes pb-stamp-a {
@@ -1098,7 +1092,7 @@ const PbStamp = class extends LitElement {
     this.style.setProperty('--tilt', `${Number(this.tilt) || 0}deg`);
   }
   render() {
-    const go = this.still || !this._go ? '' : this._go % 2 ? 'a' : 'b';
+    const go = this.still || !this._go ? '' : reduced() ? 'f' : this._go % 2 ? 'a' : 'b';
     return html`<span class="ink ${go}">${this.word}</span>`;
   }
 };
