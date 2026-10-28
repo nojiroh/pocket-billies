@@ -66,6 +66,7 @@ expose({
   PHONE_BATTLE: [() => PHONE_BATTLE],
   RIG_DARK: [() => RIG_DARK],
   RIG_HITS: [() => RIG_HITS],
+  RIG_RISES: [() => RIG_RISES],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
@@ -74,6 +75,7 @@ expose({
   battle3dHit: [() => battle3dHit, v => (battle3dHit = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
   battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
+  battle3dRise: [() => battle3dRise, v => (battle3dRise = v)],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
@@ -302,6 +304,8 @@ function battle3dFrame() {
       foil: B.s.coat ? battleFoil(B.s.coat, `b${i}:${B.s.seed || 0}`) : null,
       /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
       hit: battle3dHit(B.s, i),
+      /* VFX-16: dithering in from its feet up, or out (battle-stage.js s.rise: the share shown) */
+      rise: battle3dRise(B.s, i, G.base / B.R.BH),
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
@@ -404,14 +408,17 @@ function battle3dFrame() {
     if (a <= 0.01) continue;
     const [px, pz] = T(p.x, p.z),
       q = { k: 0, x: px, y: battle3d.gy + p.y, z: pz, a: clamp(a, 0, 1), glow: !!p.glow };
-    if (p.spr) {
+    if (p.spr || p.strip) {
       q.k = BATTLE_FX_KIND.sprite;
       q.key = p.spr;
       q.s = (p.k || 1) / 30;
       /* VFX-10: an icon with a strip like it (battleAnims.json iconSprites) is drawn as that strip, in its type's ramp
          (else the icon's), its frame stepped on the stage clock; a strip that plays once carries its own fade (its
          last frames erode), so only a looping one also erodes by its age */
-      const I = battleIconSprite(BATTLE_ANIMS, p.spr, p.ramp);
+      /* VFX-16: a particle may name a strip itself (strip, its ramp), besides the icons drawn as strips */
+      const I = p.strip
+        ? { sprite: p.strip, ramp: BATTLE_ANIMS.ramps[p.ramp] ? p.ramp : 'None' }
+        : battleIconSprite(BATTLE_ANIMS, p.spr, p.ramp);
       if (I && battleFxHasAnim(I.sprite)) {
         const S = BATTLE_ANIMS.sprites[I.sprite];
         q.anim = I.sprite;
@@ -505,6 +512,16 @@ function battle3dFrame() {
    the picture) as one colour and amount after the light: [r, g, b, a], or null with none */
 const RIG_DARK = [12 / 255, 10 / 255, 22 / 255],
   RIG_HITS = [];
+/* VFX-16: a rig's dither in or out as the sprite shader takes it ([share hidden, the feet's place down its picture]), or
+   null when it is whole */
+const RIG_RISES = /** @type {number[][]} */ ([]);
+function battle3dRise(s, i, feet) {
+  if (s.rise == null || s.rise >= 1) return null;
+  const R = RIG_RISES[i] || (RIG_RISES[i] = [0, 0]);
+  R[0] = clamp(1 - s.rise, 0, 1);
+  R[1] = clamp(feet, 0.05, 1);
+  return R;
+}
 function battle3dHit(s, i) {
   const w = clamp(s.white || 0, 0, 1),
     d = clamp(s.dark || 0, 0, 1);
@@ -598,6 +615,8 @@ function pyramidItem(C, T) {
   const it = pyramidWorldItem(C.kind, x, y, z, spin, C.sz);
   if (!it) return null;
   C.in3d = battleStage.t;
+  /* VFX-16: squashed on a catch's wobble (battle-stage.js C.sq) */
+  if (C.sq) it.squash = C.sq;
   /* the capstone glows a little; any pyramid glows as it seals */
   const glow = C.glow || 0;
   if (C.kind === 'capstone' || glow > 0.05)

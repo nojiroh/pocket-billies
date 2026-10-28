@@ -64,7 +64,7 @@
   {
    "p": "coins/*.json",
    "at": [
-    "game/js/battle-3d.js:579",
+    "game/js/battle-3d.js:596",
     "game/js/logic/data-checks.js:2638"
    ]
   },
@@ -168,7 +168,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/prop-models.js:2150",
+    "game/js/prop-models.js:2153",
     "game/js/walk-view.js:765"
    ]
   },
@@ -1660,7 +1660,7 @@
    "game/js/walk/prop-look.js:55",
    "game/js/walk/prop-look.js:65",
    "game/js/walk/prop-look.js:418",
-   "game/js/walk/sprites.js:931",
+   "game/js/walk/sprites.js:936",
    "game/js/world-bowl.js:1737",
    "game/js/world-bowl.js:1767"
   ],
