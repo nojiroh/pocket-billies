@@ -6,10 +6,15 @@
    "key": 60,
    "scale": "major",
    "prog": [0,5,3,4,0,5,1,4],
+   "form": ["A","B","A","B"],
+   "sections": {
+    "B": {"prog":[5,1,4,0,5,1,4,4],"hookName":"placeholder: the town's B, a walk over vi-ii-V-I (Claude's draft)"}
+   },
    "lead": "p25",
    "bass": "bounce",
    "arp": "up",
    "drums": "soft",
+   "ensemble": "town",
    "seed": 3,
    "swing": 0.08,
    "hookName": "placeholder: town hook (Claude's draft)",
@@ -21,6 +26,10 @@
    "key": 67,
    "scale": "major",
    "prog": [0,3,5,4,0,3,1,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {"prog":[5,3,0,4,5,3,1,4],"hookName":"placeholder: the route's B, a walk over vi-IV-I-V (Claude's draft)"}
+   },
    "lead": "p25",
    "bass": "gallop",
    "arp": "updown",
@@ -50,10 +59,15 @@
    "key": 63,
    "scale": "mixo",
    "prog": [0,3,4,3,0,5,3,4],
+   "form": ["A","B","A"],
+   "sections": {
+    "B": {"prog":[3,6,0,5,3,6,4,4],"hookName":"placeholder: the city's B, a walk over IV-bVII-I-vi (Claude's draft)"}
+   },
    "lead": "p50",
    "bass": "walk",
    "arp": "chord7",
    "drums": "skip",
+   "ensemble": "city",
    "seed": 91,
    "seventh": 1,
    "swing": 0.06
@@ -386,6 +400,13 @@
    "key": 67,
    "scale": "major",
    "prog": [0,4,5,3,0,4,3,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [3,4,2,5,3,4,1,4],
+     "hookName": "placeholder: Copperleaf's B, the music box's own walk over IV-V-iii-vi (Claude's draft)"
+    }
+   },
    "lead": "p12",
    "bass": "none",
    "arp": "none",
@@ -1155,7 +1176,7 @@
  },
  "ensembles": {
   "copperleaf": {
-   "name": "placeholder: Copperleaf, cozy: chip and music box, harp counter, soft strings; layers: walking tambourine, rain celesta and brush, snow sleigh bells, storm strings, busker accordion (Claude's draft)",
+   "name": "placeholder: Copperleaf, cozy (AABA): chip and music box, harp counter, soft strings; B adds a flute under the tune and a glockenspiel; layers as SND-13 (Claude's draft)",
    "trim": -11.3,
    "parts": [
     {"line":"lead","wave":"p12"},
@@ -1163,6 +1184,8 @@
     {"line":"counter","inst":"harp","oct":1,"pan":-0.3,"verb":0.3,"level":0.8},
     {"line":"pad","inst":"softstrings","centre":62,"verb":0.3,"level":0.9},
     {"line":"bass","inst":"harp","oct":1,"style":"long","pan":-0.1,"verb":0.2,"level":0.6},
+    {"line":"lead","inst":"flute","oct":-1,"in":["B"],"pan":-0.15,"verb":0.3,"level":0.45},
+    {"line":"chime","inst":"glock","in":["B"],"pan":0.3,"verb":0.4,"level":0.5},
     {
      "line": "drums",
      "kit": {"snare":"tambourine","hat":"tambourine"},
@@ -1196,7 +1219,7 @@
    ]
   },
   "copperleaf_night": {
-   "name": "placeholder: Copperleaf at night: a flute takes the tune over a quieter chip, the harp and soft strings stay; layers as by day, softer, brushes as you walk (Claude's draft)",
+   "name": "placeholder: Copperleaf at night (AABA): a flute takes the tune, the harp and soft strings stay, a celesta in B; layers as by day, softer (Claude's draft)",
    "trim": -11.3,
    "parts": [
     {"line":"lead","wave":"p12","level":0.5},
@@ -1204,6 +1227,7 @@
     {"line":"counter","inst":"harp","oct":1,"pan":-0.3,"verb":0.3,"level":0.7},
     {"line":"pad","inst":"softstrings","centre":60,"verb":0.3,"level":0.8},
     {"line":"bass","inst":"harp","oct":1,"style":"long","pan":-0.1,"verb":0.2,"level":0.5},
+    {"line":"chime","inst":"celesta","in":["B"],"pan":0.3,"verb":0.4,"level":0.45},
     {
      "line": "drums",
      "kit": {"snare":"brush","hat":"tambourine"},
@@ -1237,7 +1261,7 @@
    ]
   },
   "route": {
-   "name": "placeholder: a route: chip lead, strings, pizzicato, a kit; layers: walking snare (thinner standing), night flute, rain celesta and brush, snow sleigh bells, storm strings and timpani (Claude's draft)",
+   "name": "placeholder: a route (AABA): chip lead, strings, pizzicato, a kit; a spiccato ostinato in B; layers: walking snare, night flute, rain, snow, storm (Claude's draft)",
    "trim": -1.4,
    "parts": [
     {
@@ -1254,6 +1278,16 @@
      "dim": {"still":0.65,"night":0.6},
      "verb": 0.1,
      "level": 0.8
+    },
+    {
+     "line": "ostinato",
+     "inst": "spiccato",
+     "centre": 55,
+     "in": ["B"],
+     "dim": {"night":0.5},
+     "pan": -0.25,
+     "verb": 0.15,
+     "level": 0.45
     },
     {
      "line": "drums",
@@ -1328,6 +1362,97 @@
     },
     {"line":"pad","inst":"choir","centre":60,"layer":"peak","verb":0.3,"level":1.2},
     {"line":"stabs","inst":"orchhit","centre":58,"layer":"peak","pan":0.1,"verb":0.2,"level":0.8}
+   ]
+  },
+  "town": {
+   "name": "placeholder: a town (ABAB): chip lead, accordion counter (the tune in B), e-piano chords, walking bass, brush kit, glockenspiel in B; layers: walk, rain, snow (Claude's draft)",
+   "trim": 0,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.9},
+    {"line":"lead","inst":"accordion","in":["B"],"pan":-0.15,"verb":0.2,"level":0.45},
+    {"line":"counter","inst":"accordion","pan":-0.2,"verb":0.2,"level":0.8},
+    {"line":"stabs","inst":"epiano","centre":60,"pan":0.2,"verb":0.25,"level":0.8},
+    {"line":"bass","inst":"bass","oct":1,"style":"walk","pan":-0.05,"verb":0.05,"level":0.9},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.7
+    },
+    {"line":"chime","inst":"glock","in":["B"],"pan":0.3,"verb":0.35,"level":0.4},
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"tambourine"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.6
+    },
+    {"line":"arp","inst":"celesta","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.35,"level":0.7},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.45
+    }
+   ]
+  },
+  "city": {
+   "name": "placeholder: a city (ABA): chip lead over e-piano chords, walking bass, a kit; soft strings and brass stabs in B; layers: walk, rain, snow (Claude's draft)",
+   "trim": 0,
+   "parts": [
+    {"line":"lead","wave":"p50","level":0.9},
+    {"line":"stabs","inst":"epiano","centre":62,"pan":0.2,"verb":0.25,"level":0.8},
+    {"line":"pad","inst":"softstrings","centre":60,"in":["B"],"verb":0.3,"level":0.5},
+    {"line":"bass","inst":"bass","oct":1,"style":"walk","pan":-0.05,"verb":0.05,"level":0.9},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"snare","hat":"hat"},
+     "dim": {"still":0.7,"night":0.6},
+     "verb": 0.1,
+     "level": 0.7
+    },
+    {"line":"stabs","inst":"brass","centre":60,"in":["B"],"pan":-0.2,"verb":0.2,"level":0.5},
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"tambourine"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.6
+    },
+    {"line":"arp","inst":"celesta","style":"drip","oct":1,"layer":"rain","pan":0.35,"verb":0.35,"level":0.7},
+    {
+     "line": "drums",
+     "kit": {"snare":"brush","hat":"brush"},
+     "style": "soft",
+     "layer": "rain",
+     "verb": 0.1,
+     "level": 0.35
+    },
+    {
+     "line": "drums",
+     "kit": {"hat":"sleigh"},
+     "style": "skip",
+     "layer": "snow",
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.45
+    }
    ]
   },
   "fanfare": {
