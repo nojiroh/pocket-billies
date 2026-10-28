@@ -1052,6 +1052,44 @@ battleFxPanes.push(
     html: A => battleFxCellsHTML(A.sprites),
   }
 );
+/* VFX-11: the families and the type kits (battleAnims.json families, types), shown, not tuned yet: which moves play
+   each family (moves.json anim; the Moves editor's Animation picks it) and what each kit draws with */
+battleFxPanes.push(
+  {
+    id: 'families',
+    title: 'Families',
+    sub: 'Each move plays one (Moves → Animation); its type’s kit colours it. Times in stage ms; Faster plays the short one.',
+    html: (A, D) => {
+      const F = A.families || {},
+        n = id => Object.values(D.moves || {}).filter(m => m && m.anim === id).length;
+      return `<div class="bfx-tw"><table class="bfx-t"><tr><th>Family</th><th>Moves</th><th>Time / hit</th><th>Short</th></tr>${Object.keys(
+        F
+      )
+        .map(
+          id =>
+            `<tr><th title="${escapeHtml(F[id].about || '')}">${escapeHtml(id)}</th><td>${n(id)}</td><td>${F[id].dur} / ${F[id].hit}</td><td>${F[id].short ? `${F[id].short.dur} / ${F[id].short.hit}` : '—'}</td></tr>`
+        )
+        .join('')}</table></div>`;
+    },
+  },
+  {
+    id: 'kits',
+    title: 'Type kits',
+    sub: 'What a family draws with in each type: its strips by role, ramp, path, motion and light. The Bureau’s plays for a Bureau bot’s every move.',
+    html: A => {
+      const K = A.types || {};
+      return `<div class="bfx-tw"><table class="bfx-t"><tr><th>Kit</th><th>Ramp</th><th>Shot</th><th>Impact</th><th>Small</th><th>Bits</th><th>Path</th><th>Motion</th><th>Light</th></tr>${Object.keys(
+        K
+      )
+        .filter(k => k !== 'about')
+        .map(k => {
+          const T = K[k];
+          return `<tr><th>${escapeHtml(k)}</th><td>${escapeHtml(T.ramp + (T.ramp2 ? ' + ' + T.ramp2 : ''))}</td><td>${escapeHtml(T.shot)}</td><td>${escapeHtml(T.impact)}</td><td>${escapeHtml(T.small || '')}</td><td>${escapeHtml((T.bits || []).join(', ') + (T.icons ? ' + ' + T.icons.join(', ') : ''))}</td><td>${escapeHtml(T.path)}</td><td>${escapeHtml(T.motion)}</td><td>${T.light.k} · ${T.light.ms} ms${T.light.flicker ? ' · flicker' : ''}</td></tr>`;
+        })
+        .join('')}</table></div>`;
+    },
+  }
+);
 /** a section's entries, whether it is a map by id or a list (each with an id) */
 const bfxEntries = v =>
   Array.isArray(v)

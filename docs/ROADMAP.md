@@ -224,7 +224,7 @@ town node needs it.
   built 2026-10-28 on `track/vfx`, the main line of wave 2 beside VFX-14 and VFX-16. VFX-12 (the Studio's Battle effects editor: moves in 8 outcomes and events on
   the real stage at any speed, quality, motion and Flashes, a 24 fps scrubber over the runner's steps, panes for the
   budgets and Part 1's smears as battleAnims.json data, ramps and cells panes for VFX-10's sections; VFX-6 folded in)
-  built 2026-10-28 on `claude/vfx-12-studio-effects` (PR #313, merged by VFX-13). VFX-14 (statuses and stats on the stage: burned,
+  built 2026-10-28 on `claude/vfx-12-studio-effects` (PR #313, merged by VFX-11). VFX-14 (statuses and stats on the stage: burned,
   paralyzed, asleep and confused looks, stat chevrons with sharply, Protect's bubble, the shield's cracking dome, Soaked,
   Fork, the delayed hit's mark, sharp stones, glints; Calm and Reduced; the broken-part and stat-drop-sound bugs) built
   2026-10-28 on the side branch `claude/vfx-14-statuses` (wave 2; PR #320, merged by VFX-13). VFX-16 (battle flow, wave 2, side branch

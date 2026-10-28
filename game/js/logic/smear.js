@@ -25,7 +25,6 @@ expose({
   IMPACT_KINDS: [() => IMPACT_KINDS],
   IMPACT_LINES: [() => IMPACT_LINES],
   IMPACT_SPEED_LIFE: [() => IMPACT_SPEED_LIFE],
-  LUNGE_DASH: [() => LUNGE_DASH],
   LUNGE_GHOSTS: [() => LUNGE_GHOSTS, v => (LUNGE_GHOSTS = v)],
   LUNGE_LEAN_BACK: [() => LUNGE_LEAN_BACK, v => (LUNGE_LEAN_BACK = v)],
   LUNGE_LEAN_K: [() => LUNGE_LEAN_K, v => (LUNGE_LEAN_K = v)],
@@ -60,8 +59,6 @@ expose({
   impactFrame: [() => impactFrame, v => (impactFrame = v)],
   // @ts-expect-error -- replaced on purpose
   impactLength: [() => impactLength, v => (impactLength = v)],
-  // @ts-expect-error -- replaced on purpose
-  lungeDash: [() => lungeDash, v => (lungeDash = v)],
   // @ts-expect-error -- replaced on purpose
   lungeGhostCount: [() => lungeGhostCount, v => (lungeGhostCount = v)],
   // @ts-expect-error -- replaced on purpose
@@ -428,14 +425,7 @@ export let LUNGE_LEAN_BACK = 0.5;
 export let LUNGE_RIBBON_HALF = 0.3;
 export let LUNGE_RIBBON_MIN = 0.12;
 export let LUNGE_RIBBON_MAX = 0.45;
-/** the dash moves (vfx-track.md's family table, "dash": too fast to see), by move id, until VFX-8/VFX-11 give every
- * move its family in battleAnims.json: Quick Strike, Zip, Dash Kick, Flame Dash, Front Run, Just Do It */
-export const LUNGE_DASH = ['flashsale', 'movefast', 'dashkick', 'pipeline', 'frontrun', 'justdoit'];
-
-/** whether a move (its id) dashes: its lunge leaves a ribbon too @param {string | null | undefined} id */
-export function lungeDash(id) {
-  return !!id && LUNGE_DASH.includes(id);
-}
+/* VFX-11: the dash moves are battleAnims.json's `dash` family (moves.json anim); its lunge step flags the ribbon */
 
 /** how many afterimages a lunge leaves: two, one at quality level 2, none at level 3 or under Reduced motion
  * @param {boolean} reduced @param {number} lvl */
