@@ -708,6 +708,22 @@
        "$ref": "#/$defs/id"
       }
      }
+    },
+    "layer": {
+     "$ref": "#/$defs/layer",
+     "description": "SND-13: plays only with this layer, as loud as the layer is up (a part with none always plays); its notes bake when the layer first comes"
+    },
+    "dim": {
+     "description": "SND-13: how far the part goes down at a full layer (night 0.3: to 0.3 of its level at night; calm 0: out at a battle's intro), each on the layer's beat or bar line",
+     "type": "object",
+     "propertyNames": {
+      "$ref": "#/$defs/layer"
+     },
+     "additionalProperties": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+     }
     }
    }
   },
@@ -739,6 +755,21 @@
      }
     }
    }
+  },
+  "layer": {
+   "description": "SND-13: a layer the game moves (logic/music-layers.js): walk (as you walk), rain, snow, storm, night, busker (a street musician by distance), build (a battle's intensity, 0 at its intro), peak (the red zone, a KO, a boss's phase, the run's late rows); still is 1 - walk and calm 1 - build",
+   "enum": [
+    "walk",
+    "rain",
+    "snow",
+    "storm",
+    "night",
+    "busker",
+    "build",
+    "peak",
+    "still",
+    "calm"
+   ]
   }
  },
  "properties": {

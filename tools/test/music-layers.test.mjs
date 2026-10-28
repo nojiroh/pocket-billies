@@ -2,6 +2,7 @@
 // game gives, on which beat or bar it moves, walking, the weather, the busker by distance, a battle's intensity, the
 // run's arc. The sound itself is held by the fingerprints (tools/check-sound.py `layer:<name>` parts).
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import {
   MUSIC_LAYER_NAMES,
@@ -176,4 +177,10 @@ test('musicLayerTests: the renders an ensemble gets, from the layers it names', 
     'still',
     'calm',
   ]);
+});
+
+test("the schema's layer names are the logic's", () => {
+  const S = JSON.parse(readFileSync(new URL('../../game/data/schema/music.schema.json', import.meta.url), 'utf8'));
+  assert.deepEqual(S.$defs.layer.enum, MUSIC_LAYER_NAMES);
+  assert.equal(S.$defs.ensemblePart.properties.layer.$ref, '#/$defs/layer');
 });
