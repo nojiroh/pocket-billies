@@ -290,3 +290,27 @@ test('PK-3 inflict: chances acting together count at most 50%, laid end to end o
   const landed = one.split(' ').filter(x => x !== '-').length;
   assert.ok(landed > 5 && landed < 35, `about half of 40: ${one}`);
 });
+
+/* ---------- chip ---------- */
+
+test('PK-3 chip: a burn takes half as much from yours at a turn’s end; the foe’s burn is the same', () => {
+  const { P, fx } = perks({ id: 'test_suit', fx: [{ kind: 'chip', what: 'burn', mult: 0.5 }] });
+  const fr = Math.max(2, data.RULES.battle.drainFraction),
+    lost = held =>
+      withPerks(P, () => {
+        const b = battle(held ? fx : null, {}, 2, 40);
+        mine(b).status = 'brn';
+        foe(b).status = 'brn';
+        const a = mine(b).hp,
+          e = foe(b).hp;
+        fn('endTurn')();
+        return [a - mine(b).hp, e - foe(b).hp, fn('maxHp')(mine(b)), fn('maxHp')(foe(b))];
+      });
+  const [mineHeld, foeHeld, mx, fmx] = lost(true),
+    [mineNone, foeNone] = lost(false);
+  assert.equal(mineNone, Math.max(1, Math.floor(mx / fr)));
+  assert.equal(mineHeld, Math.max(1, Math.floor((mx / fr) * 0.5)));
+  assert.ok(mineHeld < mineNone, `${mineHeld} < ${mineNone}`);
+  assert.equal(foeHeld, foeNone);
+  assert.equal(foeHeld, Math.max(1, Math.floor(fmx / fr)));
+});

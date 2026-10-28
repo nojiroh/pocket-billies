@@ -417,6 +417,7 @@ const PK3_GOOD = [
   { kind: 'immune', what: 'stones', if: 'lead' },
   { kind: 'inflict', status: 'par', chance: 0.15, when: 'hit', if: 'cat:H' },
   { kind: 'inflict', status: 'brn', chance: 0.5, when: 'hit' },
+  { kind: 'chip', what: 'burn', mult: 0.5 },
 ];
 const PK3_BAD = [
   [{ kind: 'crit', stages: 4 }, 'stages: a whole number of critical-hit stages from 1 to 3'],
@@ -430,6 +431,8 @@ const PK3_BAD = [
   [{ kind: 'inflict', status: 'par', chance: 0.6, when: 'hit' }, 'chance: above 0, at most 0.5'],
   [{ kind: 'inflict', status: 'par', chance: 0.1 }, 'an inflict row needs a moment'],
   [{ kind: 'inflict', status: 'par', chance: 0.1, when: 'hurt' }, "an inflict row can't act at hurt"],
+  [{ kind: 'chip', what: 'poison', mult: 0.5 }, 'what: burn (effects.js FX_CHIP)'],
+  [{ kind: 'chip', what: 'burn', mult: 9 }, 'mult: 9 is outside the code'],
 ];
 test('PK-3: dataPerks and the schema take the battle kit’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

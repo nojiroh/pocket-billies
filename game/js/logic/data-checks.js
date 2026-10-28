@@ -41,6 +41,7 @@ import {
 import { fxRowOf } from './run-enc.js';
 import {
   FX_CHANCE,
+  FX_CHIP,
   FX_CRIT,
   FX_EVERY,
   FX_FOES,
@@ -2007,7 +2008,7 @@ export function fxRowProblems(f, at, kinds, D, problem, timing = false) {
 }
 /** PK-3: the battle kit's kinds (perks-track.md 5.2): crit gives 1 to FX_CRIT stages without a when, and none at
  * when: move (that move is critical); immune names what it keeps off (FX_IMMUNE); inflict a status of statuses.json
- * with a chance up to FX_CHANCE, at a moment @param {any} f @param {string} at @param {any} D
+ * with a chance up to FX_CHANCE, at a moment; chip a turn-end hurt of FX_CHIP @param {any} f @param {string} at @param {any} D
  * @param {(what: string) => void} problem */
 export function fxKindProblems(f, at, D, problem) {
   if (!f || typeof f !== 'object') return;
@@ -2026,6 +2027,8 @@ export function fxKindProblems(f, at, D, problem) {
       problem(`${at}.chance: above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE: chances together never pass it)`);
     if (f.when == null) problem(`${at}.when: an inflict row needs a moment (hit)`);
   }
+  if (f.kind === 'chip' && !(/** @type {readonly string[]} */ (FX_CHIP).includes(f.what)))
+    problem(`${at}.what: ${FX_CHIP.join(', ')} (effects.js FX_CHIP)`);
 }
 /** PK-1: the timing fields of an effect row (logic/effects.js) */
 export const FX_TIMING = ['when', 'if', 'every', 'grow', 'per', 'once'];

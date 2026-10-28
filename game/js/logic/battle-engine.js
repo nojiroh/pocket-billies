@@ -92,6 +92,7 @@ import { factionBotOf } from './factions.js';
 import {
   fxAt,
   fxCatch,
+  fxChip,
   fxCrit,
   fxDamage,
   fxFire,
@@ -805,7 +806,12 @@ export function endTurn() {
       if (!f.v.shield) battleSay(`${billyName(m)}’s shield fades.`, { k: 'stat', si: k, up: false });
     }
     if (m.status === 'brn') {
-      const d = Math.max(1, Math.floor(mx / fr));
+      /* PK-3: a run's chip rows soften a burn on yours (Hazmat Suit) */
+      const ch =
+          ACTOR_SIDE[k] === 0 && battleNow().fx
+            ? fxChip(fxAt(battleNow().fx, fxBattleCtx(k), fxBattleState()), 'burn')
+            : 1,
+        d = Math.max(1, Math.floor(ch === 1 ? mx / fr : (mx / fr) * ch));
       m.hp = Math.max(0, m.hp - d);
       battleSay(`${billyName(m)} is hurt by its burn.`, { k: 'hurt', si: k, fx: 'brn', dmg: d });
     }

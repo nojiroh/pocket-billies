@@ -17,6 +17,7 @@
      crit    critical-hit stages for yours hitting (calcDamage); at `when: move` the move is a critical hit (PK-3)
      immune  yours can't get a status (brn, slp, par), or aren't hurt by the Sandstorm or sharp stones (PK-3)
      inflict a status with a chance on the foe yours hit (`when: hit`; chances together at most FX_CHANCE) (PK-3)
+     chip    what a burn takes from yours at each turn's end, times mult (PK-3)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -37,6 +38,7 @@ import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
   FX_CHANCE: [() => FX_CHANCE],
+  FX_CHIP: [() => FX_CHIP],
   FX_CRIT: [() => FX_CRIT],
   FX_EVERY: [() => FX_EVERY],
   FX_FOES: [() => FX_FOES],
@@ -53,6 +55,7 @@ expose({
   FX_WHEN_BATTLE: [() => FX_WHEN_BATTLE],
   fxAt: [() => fxAt],
   fxCatch: [() => fxCatch],
+  fxChip: [() => fxChip],
   // @ts-expect-error -- replaced on purpose
   fxCond: [() => fxCond, v => (fxCond = v)],
   fxCrit: [() => fxCrit],
@@ -124,6 +127,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'crit',
   'immune',
   'inflict',
+  'chip',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -326,6 +330,12 @@ export function fxInflictPick(rows, r) {
   for (const f of L) if (r < (at += f.chance * k)) return f;
   return null;
 }
+
+/** PK-3: the turn-end hurts a chip row can change (a burn's, rules.json battle.drainFraction) */
+export const FX_CHIP = /** @type {const} */ (['burn']);
+/** PK-3: what multiplies a turn-end hurt `what` on yours: its chip rows' product (1 when none)
+ * @param {Fx[] | null | undefined} fx @param {string} what */
+export const fxChip = (fx, what) => fxMult(fx, f => f.kind === 'chip' && f.what === what);
 
 /** RL-12c: a holder's once-a-battle heal when low: the first pinchHeal row, or null
  * @param {Fx[] | null | undefined} fx @returns {{ at: number, share: number } | null} */

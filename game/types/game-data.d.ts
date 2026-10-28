@@ -1960,7 +1960,9 @@ export type FxKindRow =
   /** PK-3: your Billies can't get a status, or aren't hurt by the Sandstorm or sharp stones */
   | { kind: 'immune'; what: 'brn' | 'slp' | 'par' | 'sandstorm' | 'stones' }
   /** PK-3: at a hit of yours, a status on the foe with a chance (rows together at most 0.5) */
-  | { kind: 'inflict'; status: string; chance: number };
+  | { kind: 'inflict'; status: string; chance: number }
+  /** PK-3: what a burn takes from your Billies at each turn's end, times mult */
+  | { kind: 'chip'; what: 'burn'; mult: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;
