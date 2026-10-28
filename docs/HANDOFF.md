@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Clean-up track CU lane D - docs: the HANDOFF archive, legacy docs gone, finished plans archived, stale pointers - 2026-10-28
+Branch `track/cleanup` (origin/main merged first: up to date). The owner's answers and lane D's plan were approved
+before the session (docs/phases/cleanup-track.md sections 1, 3, 4, "Lane D"); steps 1-6 done, one cause per commit;
+pushed. Lanes R and T pushed alongside; their merges were clean.
+- Facts checked against the plan: HANDOFF had 350 entries (351 `### ` headings with the template's); 147 stay (7,733
+  lines: each group's newest 3, plus SY-0 and CH-0, which sit next to #291's and #314's hunks), 203 move (10,329
+  lines), close to the dry run's 145/205. ROADMAP and BRANCHES are "CU-0 and round 2 only" in section 3, but lane D's
+  step 5 names ROADMAP edits: I made those (outside the track rows, clear of every live hunk) and left the track rows'
+  and BRANCHES' pointers to round 2.
+- Changed:
+  - docs/HANDOFF.md -> docs/archive/HANDOFF-2026-10.md (word for word, in order, a one-line header); the stray
+    "## Entry template" dropped; CLAUDE.md line 20 and start-session's sentence point at the archive.
+  - Deleted: docs/archive/LEGACY-CHANGELOG.md, docs/archive/phase-05-renames.md (CHANGELOG, NAMING.md and
+    characters-track.md repointed), ART-NOTES.md's legacy art log (lines 1-490; the portrait kit's lines say its
+    sources and slicer were deleted), docs/phases/10-proposed-links.md, docs/phases/10-bowl/, style-track-sessions.md,
+    docs/samples/perk-icons.png and perk-icon-samples.json (docs/samples/ is empty until track/dialogue adds its
+    mockup), docs/phases/07-portraits.md (merged into 07-plan.md as "The brief"; "on the branch" now "on main").
+  - Archived (git mv): camera, route-props, routes, studio-art, test-cleanup and towns tracks and the Studio plan to
+    docs/archive/tracks/ (docs/plans/ gone); 13-testing-and-debugging.md and 14-studio.md to docs/archive/. Pointers
+    fixed in TESTING.md, roguelite-track.md, the moved files, CLAUDE.md, logic/draft-record.js, publish-plan.js,
+    type-rename.js (comment lines only), build-props-routes.py, glb-to-recipe.py, validation/cc0-src/LICENSES.md.
+  - roguelite-track.md: sections 0 (Findings A-D), 0b, 0c, 1 and 9.5 gone (1,337 -> 804 lines); its own references
+    reworded (what changed per session: the HANDOFF entries).
+  - TESTING.md: the opening in one sentence; entries 07, 11, 15, 16 gone; 12 and 17 kept with their live tests under
+    "Ranch" and "Robots"; 18's Firestore rule moved under "Online track" (decided for the owner: deleting them would
+    have dropped the docs of tests that exist).
+  - ROADMAP.md (outside the track rows): the per-session tag sentence, the duplicate RL-8 row (kept "played", in the
+    first row's place), RL-12's "RL-12b next", "## If the scope is too big", the questions' repeated items.
+  - Stale pointers: CLAUDE.md l.21-22 (the baseline sentence, the smoke subset, tiers in TESTING.md), NAMING.md's
+    `worldMap` row (world-bowl.js, logic/bowl*.js), SCRIPTS.md's chapter variant file (copperleaf__ch2.json never
+    existed: now `<map>__<chapter>.json`, none committed), project-story.md (Hazel's lines are logic/chosen.js and
+    chosen.test.mjs; docs/STORY.md not written yet), hub-track.md's island-sketches tool (deleted by lane T).
+- Verified: lint, typecheck, check:modules (383 modules, 0 changed), format:check, check:data (179 files, two old
+  bridge warnings), build, `npm test` 1,924 pass, version-source.test.mjs 4 pass, all on the branch with lanes R and
+  T merged. Dead repo paths in the docs lane D owns (my scan: game/, studio/, tools/, docs/, validation/ paths that
+  don't exist): 164 before, 126 after; the rest are history notes ("deleted, git log finds it"), files plans will make,
+  gitignored output folders, active track files and the round-2 rows. Every moved or deleted path grepped: live
+  mentions left only where listed below. A trial merge (`git merge-tree`) with each live branch: one HANDOFF conflict
+  at the top for each (two entries, as before the cut); #291 conflicts in BRANCHES, ROADMAP and perks-track as before.
+- For round 2:
+  - HANDOFF's header line (it asks for a `phase-NN-done` tag): within 3 lines of every live branch's top insertion.
+  - ROADMAP rows that cite the archived tracks (Routes, Route props, Towns, Studio art, Camera, Test cleanup) and the
+    old-phases rows 07, 13, 14; BRANCHES rows 67, 68, 72, 74, 100, 102, 107, 120.
+  - tools/after-edit.mjs:2 "docs/phases/13" -> docs/TESTING.md (lane S edits that file).
+  - tools/art/icon-grids/perks.json's `about` names docs/samples/perk-icon-samples.json (history; lane T's file).
+  - The look skill reads ART-NOTES.md for "terrain and the airship's low-poly models at 32 px/m": those notes were in
+    the legacy log; ART-NOTES keeps TR-4's 32 px/m terrain lines only. Repoint with the move to docs/ART.md.
+  - start-session says roguelite-track.md "is over 1,300 lines": now 804 (lane D owns only its HANDOFF sentence).
+  - Still waiting (section 7): ART-NOTES.md -> docs/ART.md; style-track.md to the archive with its code comments.
+- For the owner: VISION.md still says "airship", "brackets" and "relics" (now the sky train, Expeditions and Perks);
+  left alone, yours to word. Closing #291 keeps docs/samples/perk-icons.* deleted.
+- Next: round 2, alone, once lane S has pushed.
+
 ### Clean-up track CU lane R - the root like a game repo's: LICENSE, CREDITS, CONTRIBUTING, editor and git attributes, PR template - 2026-10-28
 Branch `track/cleanup` (origin/main merged first: already up to date). The owner's answers and the plan were approved
 before the session; no questions asked. Facts checked against the branch: all held (the fonts' copyright lines, Lit
