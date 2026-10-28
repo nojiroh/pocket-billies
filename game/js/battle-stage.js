@@ -19,6 +19,7 @@ import {
   battle3dLayout,
   battle3dStart,
   battle3dStop,
+  battleCardColumn,
   battleFreeArea,
   battleLayoutChanged,
   fighter,
@@ -397,8 +398,20 @@ function battleStageLayout() {
   /* big screens show more world around the action instead of ever bigger pixels */ u = clamp(u, 1.35, 5.2);
   const fw = STAGE_FRAME_WIDTH * u,
     fh = STAGE_FRAME_HEIGHT * u,
-    fx = free.x + (free.w - fw) / 2,
     fy = free.y + Math.max(0, (free.h - fh) * (lay === 'landscape' ? 0.5 : 0.42));
+  let fx = free.x + (free.w - fw) / 2,
+    beside = false;
+  /* a wide screen with the cards in the scene (owner, 2026-10-28: "too far to the right"): the fighters and the card
+     column beside them sit together in the middle, not the fighters left and the cards against the right edge. The
+     camera keeps the fighters inside the frame (free narrows to it), so the cards never cover them. A screen with no
+     room to spare (a phone on its side) stays as it was */
+  const G = lay === 'landscape' && el.classList.contains('ui3d') ? battleCardColumn(vw, true) : null;
+  if (G && fw + G.gap + G.cw <= vw - 2 * G.edge) {
+    fx = Math.round((vw - (fw + G.gap + G.cw)) / 2);
+    free.x = fx;
+    free.w = fw;
+    beside = true;
+  }
   const M = 14,
     LW = Math.ceil(vw / u) + 2 * M,
     LH = Math.ceil(vh / u) + 2 * M,
@@ -419,6 +432,7 @@ function battleStageLayout() {
     fh,
     free,
     lay,
+    beside,
     ox: fx + fw / 2,
     oy: fy + fh * 0.6,
     ver: (battleStage.L ? battleStage.L.ver : 0) + 1,

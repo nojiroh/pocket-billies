@@ -132,6 +132,7 @@ expose({
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
   backButtonHTML: [() => backButtonHTML],
+  battleCardColumn: [() => battleCardColumn, v => ((battleCardColumn = v), provide({ battleCardColumn }))],
   battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
   battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   battleLeave: [() => battleLeave, v => (battleLeave = v)],
@@ -210,7 +211,17 @@ expose({
   typeText: [() => typeText, v => (typeText = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop, openBattle, platesTick, playTurnEvents, stopTimers });
+provide({
+  battleCardColumn,
+  battleFreeArea,
+  battleLayoutChanged,
+  hudHit,
+  hudPop,
+  openBattle,
+  platesTick,
+  playTurnEvents,
+  stopTimers,
+});
 export function setPaintActions(v) {
   paintActions = v; // eslint-disable-line no-func-assign
   provide({ paintActions });
@@ -1644,6 +1655,15 @@ function turnBar() {
    readable size, stay in the lower part of the screen within thumb reach, and are page elements, so the scene's
    lighting never touches them (css/battle-ui.css) */
 const floatPos = { acts: null, msg: null };
+/** the battle cards' column (the text over the menu): its width in screen px, its zoom (big screens zoom the dock:
+    battle-screen.css), the gap to the fighters and the margin to the screen's edge. battle-stage.js lays the fighters
+    out beside it on a wide screen @param {number} vw @param {boolean} land */
+function battleCardColumn(vw, land) {
+  const dock = $('#dock'),
+    z = (dock && parseFloat(getComputedStyle(dock).zoom)) || 1,
+    cwd = Math.min((vw - 32) / z, land ? 360 : 400);
+  return { cwd, cw: cwd * z, z, gap: 32, edge: land ? Math.max(24, Math.round(vw * 0.03)) : 16 };
+}
 function floatTick() {
   const B = $('#battle'),
     acts = $('#acts'),
@@ -1680,17 +1700,16 @@ function floatTick() {
      right third in landscape), so neither card covers a fighter and both stay within thumb reach */
   /* big screens zoom the dock (style.css, 1.18 or 1.35) so the cards grow with the screen: sizes below are in screen
      pixels, and the translate is divided back into the dock's own units */
-  const z = parseFloat(getComputedStyle(acts.parentElement).zoom) || 1,
-    cwd = Math.min((vw - 2 * pad) / z, land ? 360 : 400);
+  const { cwd, cw, z, gap: apart, edge } = battleCardColumn(vw, land);
   acts.style.width = msg.style.width = cwd + 'px';
-  const cw = cwd * z,
-    ah = hasActs ? acts.offsetHeight * z : 0,
+  const ah = hasActs ? acts.offsetHeight * z : 0,
     mh = msg.offsetHeight * z,
     gap = 8 * z,
     colH = mh + (hasActs ? gap + ah : 0);
-  /* wide screens (owner, 2026-10-19): a column on the right, clear of the edge, centred top to bottom */
-  const edge = land ? Math.max(24, Math.round(vw * 0.03)) : pad;
-  let x = land ? vw - cw - edge : a ? a.x - cw * 0.3 : (vw - cw) / 2,
+  /* wide screens (owner, 2026-10-19): a column on the right, clear of the edge, centred top to bottom; where the
+     fighters were moved in to sit beside it (battle-stage.js battleStageLayout), right next to them (2026-10-28) */
+  const beside = land && L.beside ? L.fx + L.fw + apart : vw - cw - edge;
+  let x = land ? beside : a ? a.x - cw * 0.3 : (vw - cw) / 2,
     y = land ? (vh - colH) / 2 : a ? a.y + 12 : vh - colH - pad;
   x = clamp(x, edge, vw - cw - edge);
   y = clamp(y, land ? top0 : vh * 0.42, vh - colH - edge - 8);
