@@ -266,7 +266,7 @@ function trainRideFrame() {
     if (B.beat === 'glide') {
       /* from in front of the station and to its left (the station inland since 2026-10-28: clear of the shop and the
          cottages round it): it comes in along the track and settles behind the platform */
-      look = shotAt(W, [-14, -12, 5], [(at.x + W.H.x) / 2, (at.h + W.y0) / 2 + 1.5, (at.z + W.H.z) / 2], 54);
+      look = shotAt(W, [-14, -12, 13], [(at.x + W.H.x) / 2, (at.h + W.y0) / 2 + 1.5, (at.z + W.H.z) / 2], 54);
     } else if (B.beat === 'board') {
       /* you walk from where you stood to the steps, up them onto the platform, across it between the benches and
          into the train (logic/train-path.js trainBoardPath: never through the station, on its top while on it) */
