@@ -214,6 +214,7 @@ expose({
   worldBowlModelInto: [() => worldBowlModelInto, v => (worldBowlModelInto = v)],
   worldBowlModelShape: [() => worldBowlModelShape, v => (worldBowlModelShape = v)],
   worldBowlName: [() => worldBowlName, v => (worldBowlName = v)],
+  worldBowlNames: [() => worldBowlNames, v => (worldBowlNames = v)],
   worldBowlOverlay: [() => worldBowlOverlay, v => (worldBowlOverlay = v)],
   worldBowlPick: [() => worldBowlPick, v => (worldBowlPick = v)],
   worldBowlPin: [() => worldBowlPin, v => (worldBowlPin = v)],
@@ -3516,6 +3517,8 @@ function worldBowlOverlay(t) {
     tags = worldBowl.cam.dist < 0.62,
     dest = saveData.trip.plan.length ? saveData.trip.plan[saveData.trip.plan.length - 1] : null;
   worldBowl.marks = [];
+  /** @type {{ text: string, x: number, y: number, px: number, locked: boolean }[]} */
+  const names = [];
   LOCATIONS.forEach((l, i) => {
     const s = worldBowl.spots[i],
       base = at(floatPin && i === FI.i ? floatPin : s),
@@ -3569,16 +3572,11 @@ function worldBowlOverlay(t) {
     /* a run's '?' place keeps its name to itself */
     if ((!rm || rm.seen > 1) && (l.town || i === sel || here || close)) {
       const y = (s.under ? top.y + 10 : top.y - 12) + (locked ? -12 : 0);
-      c.font = worldBowlFont(l.town ? 14 : 13);
-      c.textAlign = 'center';
-      c.textBaseline = 'bottom';
-      c.lineWidth = 3.5;
-      c.strokeStyle = 'rgba(20,14,30,.75)';
-      c.strokeText(worldBowlName(l), top.x, y);
-      c.fillStyle = locked ? '#cfc8d8' : '#fff8e8';
-      c.fillText(worldBowlName(l), top.x, y);
+      names.push({ text: worldBowlName(l), x: top.x, y, px: l.town ? 14 : 13, locked });
     }
   });
+  /** @type {{ x0: number, x1: number, y0: number, y1: number } | null} */
+  let meBox = null;
   /* the airship on its way, or you standing at your place */
   if (flying && typeof flyDraw === 'function') flyDraw(c, t, (x, y, h) => bowlCamProject(v, bowlToGpu(x, y, h)));
   else {
@@ -3598,14 +3596,30 @@ function worldBowlOverlay(t) {
       c.beginPath();
       c.ellipse(pq.x + dx, pq.y, 9, 3, 0, 0, 7);
       c.fill();
-      c.drawImage(
-        f,
-        Math.round(pq.x + dx - (f.ax || f.width / 2) * k),
-        Math.round(pq.y - (f.ay || f.height) * k + bob),
-        Math.round(f.width * k),
-        Math.round(f.height * k)
-      );
+      const fx = Math.round(pq.x + dx - (f.ax || f.width / 2) * k),
+        fy = Math.round(pq.y - (f.ay || f.height) * k);
+      c.drawImage(f, fx, fy + bob, Math.round(f.width * k), Math.round(f.height * k));
+      meBox = { x0: fx, x1: fx + f.width * k, y0: fy, y1: fy + 1 + f.height * k };
     }
+  }
+  worldBowlNames(c, names, meBox);
+}
+/* the places' names, drawn last so nothing covers them. UI-18 (WM-6's find): your figure stands beside the pin and
+   used to be drawn over the end of the name where you stand ("Route 1" read "Route"); a name that would touch the
+   figure rises just clear of its head instead (the head's highest point, so the name doesn't move with the step) */
+function worldBowlNames(c, names, me) {
+  c.textAlign = 'center';
+  c.textBaseline = 'bottom';
+  c.lineWidth = 3.5;
+  c.strokeStyle = 'rgba(20,14,30,.75)';
+  for (const n of names) {
+    c.font = worldBowlFont(n.px);
+    const half = c.measureText(n.text).width / 2 + 2;
+    let y = n.y;
+    if (me && n.x + half > me.x0 && n.x - half < me.x1 && y > me.y0 && y - n.px < me.y1) y = me.y0 - 2;
+    c.strokeText(n.text, n.x, y);
+    c.fillStyle = n.locked ? '#cfc8d8' : '#fff8e8';
+    c.fillText(n.text, n.x, y);
   }
 }
 /* WM-4 (the owner: unreached places as fogged outlines, the whole region from the landing): each run place not yet
