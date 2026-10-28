@@ -52,6 +52,7 @@ import {
   trainerBattleFrame,
   trainerMetersPerPixel,
 } from './battle-stage.js';
+import { battleLookGhost } from './battle-looks.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { graphicsOff } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
@@ -73,7 +74,7 @@ expose({
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
   battle3dHit: [() => battle3dHit, v => (battle3dHit = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
-  battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
+  battle3dRgb: [() => battle3dRgb, v => ((battle3dRgb = v), provide({ battle3dRgb }))],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
@@ -89,7 +90,7 @@ expose({
   smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battle3dLayout, battle3dStart, battle3dStop, ribbonColour });
+provide({ battle3dLayout, battle3dRgb, battle3dStart, battle3dStop, ribbonColour });
 /* to-module: end */
 export const battle3d = {
   on: false,
@@ -323,6 +324,24 @@ function battle3dFrame() {
         hit: null,
       });
     }
+    /* VFX-14: Fork's flickering copy, aside of it (battle-looks.js), drawn as an afterimage */
+    const fg = typeof battleLookGhost === 'function' ? battleLookGhost(i) : null;
+    if (fg) {
+      const [kx, kz] = T(w.x + fg.dx, w.z);
+      items.push({
+        ...rig,
+        x: kx,
+        z: kz,
+        y: standingHeightAt(kx, kz) + Math.max(0, w.y),
+        sh: 0,
+        aoR: 0,
+        fade: fg.fade * B.s.a,
+        glow: 0.3,
+        ghost: true,
+        foil: null,
+        hit: null,
+      });
+    }
     /* VFX-5: a dash's motion lines (walk/effects.js ribbonPass, as a thrown pyramid's) */
     const RR = battleLungeRibbon(i);
     if (RR) rigRibbons.push(rigRibbonVertices(RR, T));
@@ -404,7 +423,19 @@ function battle3dFrame() {
     if (a <= 0.01) continue;
     const [px, pz] = T(p.x, p.z),
       q = { k: 0, x: px, y: battle3d.gy + p.y, z: pz, a: clamp(a, 0, 1), glow: !!p.glow };
-    if (p.spr) {
+    if (p.anim) {
+      /* VFX-14: a strip named by id (battleAnims.json sprites) in its ramp: its frame fixed (a still look) or stepped on
+         the stage clock; nothing until the strips have loaded */
+      if (!battleFxHasAnim(p.anim)) continue;
+      const S = BATTLE_ANIMS.sprites[p.anim];
+      q.k = BATTLE_FX_KIND.sprite;
+      q.anim = p.anim;
+      q.ramp = p.ramp || 'None';
+      q.f = p.frame ?? battleAnimFrame(S, p.age, p.life);
+      q.scale = p.k || 1;
+      q.flipY = !!p.flipY;
+      if (!S.loop || p.frame != null) q.a = p.alpha ?? 1;
+    } else if (p.spr) {
       q.k = BATTLE_FX_KIND.sprite;
       q.key = p.spr;
       q.s = (p.k || 1) / 30;
@@ -507,12 +538,26 @@ const RIG_DARK = [12 / 255, 10 / 255, 22 / 255],
   RIG_HITS = [];
 function battle3dHit(s, i) {
   const w = clamp(s.white || 0, 0, 1),
-    d = clamp(s.dark || 0, 0, 1);
-  if (w <= 0.001 && d <= 0.001) return null;
-  const a = 1 - (1 - w) * (1 - d),
-    H = RIG_HITS[i] || (RIG_HITS[i] = [0, 0, 0, 0]);
+    d = clamp(s.dark || 0, 0, 1),
+    /* VFX-14: a status's tint ([r, g, b, a], battle-looks.js: a burn's flicker, a lost turn's edge, Reduced motion's
+       still tint) under the flashes */
+    tn = s.tint,
+    ta = tn ? clamp(tn[3], 0, 1) : 0;
+  if (w <= 0.001 && d <= 0.001 && ta <= 0.001) return null;
+  const H = RIG_HITS[i] || (RIG_HITS[i] = [0, 0, 0, 0]);
+  if (w <= 0.001 && d <= 0.001) {
+    for (let j = 0; j < 3; j++) H[j] = tn[j];
+    H[3] = ta;
+    return H;
+  }
+  const a = 1 - (1 - w) * (1 - d);
   for (let j = 0; j < 3; j++) H[j] = (w * (1 - d) + RIG_DARK[j] * d) / a;
   H[3] = a;
+  if (ta > 0.001) {
+    const a2 = 1 - (1 - a) * (1 - ta);
+    for (let j = 0; j < 3; j++) H[j] = (H[j] * a + tn[j] * ta * (1 - a)) / a2;
+    H[3] = a2;
+  }
   return H;
 }
 /* VFX-9: a particle's colour (a hex) as the pool takes it, 0..1, made once a colour */

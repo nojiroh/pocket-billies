@@ -336,10 +336,12 @@ function battleFxPass(C, F, X) {
         k = Math.max(1, Math.round(q.scale || 1)),
         px = S.ground ? k / BATTLE_FX_GROUND_PX_M : (z / S0) * k,
         f = Math.min(N.n - 1, Math.max(0, q.f | 0)),
+        /* VFX-14: flipped upside down (a falling stat's chevrons): its rows the other way, its anchor still on its place */
+        fy = q.flipY ? -1 : 1,
         hw = (N.w * px) / 2,
-        hh = (N.h * px) / 2,
+        hh = ((N.h * px) / 2) * fy,
         ox = (N.w / 2 - S.anchor[0] - 0.5) * px,
-        oy = (S.anchor[1] + 0.5 - N.h / 2) * px,
+        oy = (S.anchor[1] + 0.5 - N.h / 2) * px * fy,
         row = A.rampRow[q.ramp] ?? A.rampRow.None ?? 0,
         fr = fl | BATTLE_FX_RAMP | (row << 3),
         uv = BATTLE_FX_UV;

@@ -222,7 +222,7 @@
   "zz": {"sprite":"zz","ramp":"None"},
   "sheet": {"sprite":"paper","ramp":"Bureau"}
  },
- "eventsAbout": "VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js picks what plays; battle-looks.js plays it). A burst: sprite (a strip in sprites), ramp (a ramps id, or type: the move's type), n of them every ms apart, each living life ms, rising vy m/s, spread m apart, at y (feet, mid or top of the Billie), scale k (a whole number), a fixed frame (else it plays), flip (upside down), glow (its white core adds). A status (brn, par, slp, confused) and an effect (soaked, fork): start when it begins, loop while it lasts (one every ms), tick on its turn (a burn's hurt, a lost turn, a turn asleep), end when it goes; tint and tintA: the sprite's tint under Reduced motion (the meaning without the motion); flicker: a burn's warm flicker on the sprite, an amount per 12 fps cell; hold: a lost turn's held frame (ms) and edge its flash; idle: asleep's slower (slow x the clock), lower (sink px) idle with its head down (droop); orbit: n stars round its head, r its half-heights, a turn in turnMs; bonk: hitting itself. stat: chevrons up or down, sharply times as many for a change of 2 stages or more. protect and shield: discs of hex cells (shield_hex) round it, cells by quality 0-3, r and h in its half-heights, frame (shown), flashFrame (a block, flashMs), crackFrame (a worn cell: the shield's turns used up). delayed: a mark in the sky over the side it will land on, y m up; stones: n pebbles r m round each Billie's feet on that side, glint now and then. glint: a Perk, held item, Gene or type passive firing (the battle's `by`), one after another gapMs apart, in the source's ramp (a passive: its type's). pulseMs: under Calm, a lasting loop pulses once a turn for this long; cells: the most lasting-look particles at once by quality 0-3.",
+ "eventsAbout": "VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js picks what plays; battle-looks.js plays it). A burst: sprite (a strip in sprites), ramp (a ramps id, or type: the move's type), n of them every ms apart, each living life ms, rising vy m/s, spread m apart, at y (feet, mid or top of the Billie), scale k (a whole number), a fixed frame (else it plays), flip (upside down), glow (its white core adds). A status (brn, par, slp, confused) and an effect (soaked, fork): start when it begins, loop while it lasts (one every ms), tick on its turn (a burn's hurt, a lost turn, a turn asleep), end when it goes; tint and tintA: the sprite's tint under Reduced motion (the meaning without the motion); flicker: a burn's warm flicker on the sprite, an amount per 12 fps cell; hold: a lost turn's held frame (ms) and edge its flash; idle: asleep's slower (slow x the clock), lower (sink px) idle with its head down (droop); orbit: n stars round its head, r its half-heights, a turn in turnMs; bonk: hitting itself. stat: chevrons up or down, sharply times as many for a change of 2 stages or more. protect and shield: discs of hex cells (shield_hex) round it, cells by quality 0-3, r and h in its half-heights, frame (shown, eroded to a: dithered, so the Billie shows through), flashFrame (a block, flashMs, at full strength), crackFrame (a worn cell: the shield's turns used up). delayed: a mark in the sky over the side it will land on, y m up; stones: n pebbles r m round each Billie's feet on that side, glint now and then. glint: a Perk, held item, Gene or type passive firing (the battle's `by`), one after another gapMs apart, in the source's ramp (a passive: its type's). pulseMs: under Calm, a lasting loop pulses once a turn for this long; cells: the most lasting-look particles at once by quality 0-3.",
  "events": {
   "pulseMs": 900,
   "cells": [24,16,10,6],
@@ -244,17 +244,17 @@
    "loop": {"sprite":"spark","ramp":"Electric","every":520,"life":170,"spread":0.8,"y":"mid","glow":true},
    "tick": {"sprite":"bolt","ramp":"Electric","n":4,"every":40,"life":300,"spread":0.9,"y":"mid","glow":true},
    "hold": 300,
-   "edge": {"color":"#FFD860","a":0.6,"cells":2},
+   "edge": {"color":"#FFD860","a":0.45,"cells":2},
    "end": {"sprite":"spark","ramp":"Electric","n":4,"every":40,"life":300,"vy":0.8,"spread":0.6,"y":"mid","glow":true}
   },
   "slp": {
    "about": "asleep: Z's rise from a slower, lower idle, head down; a pop on waking",
    "tint": "#B3B3DD",
    "tintA": 0.2,
-   "start": {"sprite":"zz","ramp":"None","n":3,"every":160,"life":1100,"vy":0.5,"spread":0.3,"y":"top"},
-   "loop": {"sprite":"zz","ramp":"None","every":950,"life":1500,"vy":0.35,"spread":0.25,"y":"top"},
-   "idle": {"slow":0.5,"sink":1.5,"droop":0.14},
-   "tick": {"sprite":"zz","ramp":"None","n":2,"every":200,"life":1000,"vy":0.5,"spread":0.3,"y":"top"},
+   "start": {"sprite":"zz","ramp":"Dragon","n":3,"every":160,"life":1100,"vy":0.5,"spread":0.3,"y":"top"},
+   "loop": {"sprite":"zz","ramp":"Dragon","every":950,"life":1500,"vy":0.35,"spread":0.25,"y":"top"},
+   "idle": {"slow":0.5,"sink":3,"droop":0.14},
+   "tick": {"sprite":"zz","ramp":"Dragon","n":2,"every":200,"life":1000,"vy":0.5,"spread":0.3,"y":"top"},
    "end": {"sprite":"star","ramp":"Electric","n":6,"life":420,"vy":1.4,"spread":0.6,"y":"top","glow":true},
    "hop": 5
   },
@@ -284,6 +284,7 @@
    "flashFrame": 2,
    "crackFrame": 5,
    "cells": [3,3,2,1],
+   "a": 0.5,
    "r": 0.9,
    "h": 1,
    "flashMs": 250
@@ -296,6 +297,7 @@
    "flashFrame": 2,
    "crackFrame": 5,
    "cells": [9,7,5,4],
+   "a": 0.55,
    "r": 1.1,
    "h": 1.2,
    "flashMs": 250,

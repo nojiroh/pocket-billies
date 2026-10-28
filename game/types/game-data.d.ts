@@ -2670,6 +2670,8 @@ export interface BattleLookDome {
   crackFrame: number;
   /** cells by quality 0-3 */
   cells: [number, number, number, number];
+  /** how much of a cell shows (eroded, dithered); a flash shows it all */
+  a?: number;
   /** half-heights out and up */
   r: number;
   h: number;
