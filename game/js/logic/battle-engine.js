@@ -87,12 +87,15 @@ import {
 } from './rules.js';
 import { factionBotOf } from './factions.js';
 import {
+  fxAt,
   fxCatch,
   fxDamage,
   fxOfBillie,
   fxPinchHeal,
+  fxSpend,
   fxSplice,
   fxStages,
+  fxStateful,
   fxTurnHeal,
   fxTurnHurt,
   fxXp,
@@ -173,6 +176,18 @@ expose({
   fieldState: [() => fieldState],
   fighter: [() => fighter],
   foeSide: [() => foeSide],
+  // @ts-expect-error -- replaced on purpose
+  fxBattleCtx: [() => fxBattleCtx, v => (fxBattleCtx = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxBattleStart: [() => fxBattleStart, v => (fxBattleStart = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxBattleState: [() => fxBattleState, v => (fxBattleState = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxFieldStages: [() => fxFieldStages, v => (fxFieldStages = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxFoeTags: [() => fxFoeTags, v => (fxFoeTags = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxStageLines: [() => fxStageLines, v => (fxStageLines = v)],
   // @ts-expect-error -- replaced on purpose
   heldStages: [() => heldStages, v => (heldStages = v)],
   heldXp: [() => heldXp],
@@ -917,6 +932,8 @@ export function doSwitch(k, idx, b) {
     );
     if (!isRobot(m)) battleSeen()[m.sp] = 1;
     heldStages(k);
+    /* PK-1: the run's Perks' stat stages for one of yours coming in, as for those who started (Running Shoes) */
+    if (ACTOR_SIDE[k] === 0) for (const [t, an] of fxStageLines(fxFieldStages(k), [k])) battleSay(t, an);
     if (sd.stones && !hasPassive(billyTypes(m), 'bedrock')) {
       const d = Math.max(1, Math.floor(maxHp(m) / Math.max(2, BATTLE_RULES.stonesFraction)));
       m.hp = Math.max(0, m.hp - d);
@@ -1142,6 +1159,8 @@ export function newBattle(kind, foe, extra) {
     return false;
   }
   setActiveBattle(b);
+  /* RL-12, PK-1: the run's Perks' stat stages for yours on the field (said by sayBattleFx once the sides are out) */
+  fxBattleStart();
   foe.forEach(m => {
     if (!isRobot(m)) saveData.seen[m.sp] = 1;
   });
@@ -1330,23 +1349,103 @@ export function startTrainer(id, o = {}) {
   sayBattleFx();
   battleHost().open();
 }
-/** RL-12: a run's Perks that raised stats as the battle started (makeBattle): one line each, after the sides
+/** RL-12: a run's Perks that raised stats as the battle started (fxBattleStart): one line each, after the sides
  * come out */
 export function sayBattleFx() {
   const b = battleNow();
-  if (!b || !b.fx) return;
-  const up = fxStages(b.fx),
-    K = liveActors(0);
-  for (const s in up)
-    battleSay(
-      `${perkNamesFor(b.fx, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`
-    );
+  if (!b || !b.fxSay) return;
+  for (const [t, an] of b.fxSay) battleSay(t, an);
+  delete b.fxSay;
 }
 /** the names of the Perks whose stat rows change stat s ("A and B") */
 export const perkNamesFor = (fx, s) =>
   [...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (PERKS[f.src] || { name: f.src }).name))].join(
     ' and '
   );
+/** PK-1: the marks a battle's rows keep: the run's (b.perkState, the run's own object: counters, growth, once a run)
+ * and the battle's own (b.fxState: once a battle, once for each Billie), made when a row first needs them
+ * @param {any} [b] @returns {import('./effects.js').FxState} */
+export function fxBattleState(b = battleNow()) {
+  return { run: b.perkState || null, battle: b.fxState || (fxStateful(b.fx) ? (b.fxState = {}) : null) };
+}
+/** PK-1: what a foe is, for `if: foe:<k>`: the battle's kind (wild, trainer), a run's leader (a mini-boss), rival or
+ * boss, and a bot or a spliced Billie among the foes @param {any} b @returns {string[]} */
+export function fxFoeTags(b) {
+  const T = b.T,
+    out = [b.kind];
+  if (T && T.runFoe === 'miniboss') out.push('leader');
+  if (T && T.runFoe === 'rival') out.push('rival');
+  if (T && T.runFoe === 'boss') out.push('boss');
+  for (const e of b.sides[1].team) {
+    if (isRobot(e)) out.push('bot');
+    else if (e.graft || e.aug) out.push('spliced');
+  }
+  return [...new Set(out)];
+}
+/** PK-1: what a moment in battle knows for a row's `if` (logic/effects.js fxCond): about the whole battle, and about
+ * the fighter k when one is given (its types, whether it leads, its share of HP); `more` adds the hit's
+ * @param {number | null} [k] @param {any} [more] @returns {import('./effects.js').FxCtx} */
+export function fxBattleCtx(k, more) {
+  const b = battleNow(),
+    mine = b.sides[0].team,
+    m = k != null ? fighter(k) : null;
+  /** @type {import('./effects.js').FxCtx} */
+  const ctx = {
+    /* a run battle's forecast (run-loop.js runBattleWeather: clear is sunny on a run) */
+    weather: b.wx ? b.wx.k : 'clear',
+    team: mine.map(q => billyTypes(q)),
+    alone: mine.filter(q => q.hp > 0).length === 1,
+    foe: fxFoeTags(b),
+    turn: b.turn,
+    noFaint: !(b.fainted > 0),
+    /* no Billie of the foe's species on your team (a run keeps no list of what it caught) */
+    newSpecies: b.kind === 'wild' && b.sides[1].team.some(e => !isRobot(e) && !mine.some(q => q.sp === e.sp)),
+  };
+  if (m) Object.assign(ctx, { type: actorTypes(k), lead: k === actorIndex(0, 0), hp: m.hp / maxHp(m), uid: m.uid });
+  return Object.assign(ctx, more);
+}
+/** PK-1: the run's stat rows without a when for one of yours taking the field (the battle's start, every switch in):
+ * those whose conditions hold for it raise its stages; their once marks are spent. Returns the rows given
+ * @param {number} k @returns {any[]} */
+export function fxFieldStages(k) {
+  const b = battleNow();
+  if (!b.fx || ACTOR_SIDE[k] !== 0 || !fighter(k)) return [];
+  const ctx = fxBattleCtx(k),
+    st = fxBattleState(b),
+    rows = fxAt(b.fx, ctx, st).filter(f => f.kind === 'stat');
+  for (const f of rows) fxSpend(f, ctx, st);
+  const up = fxStages(rows),
+    v = fieldState(k);
+  for (const s2 in up) v.st[s2] = clamp((v.st[s2] || 0) + up[s2], -BATTLE_RULES.stageMax, BATTLE_RULES.stageMax);
+  return rows;
+}
+/** PK-1: the lines for stat rows given to the fighters K, one a stat: "Running Shoes: Emberox’s Speed rose."
+ * ("your team’s" for more than one) @param {any[]} rows @param {number[]} K @returns {[string, any][]} */
+export function fxStageLines(rows, K) {
+  const up = fxStages(rows);
+  return Object.keys(up).map(s => [
+    `${perkNamesFor(rows, s)}: ${K.length > 1 ? 'your team’s' : `${billyName(fighter(K[0]))}’s`} ${STAT_NAMES[s]} ${up[s] > 0 ? 'rose' : 'fell'}${Math.abs(up[s]) > 1 ? ' sharply' : ''}.`,
+    K.length === 1 ? { k: 'stat', si: K[0], up: up[s] > 0 } : null,
+  ]);
+}
+/** RL-12, PK-1: as a battle starts, the run's stat rows for each of yours on the field (fxFieldStages); the lines wait
+ * in b.fxSay for sayBattleFx, after the sides come out */
+export function fxBattleStart() {
+  const b = battleNow();
+  if (!b || !b.fx) return;
+  /** @type {Record<string, { rows: any[], K: number[] }>} */
+  const by = {};
+  for (const k of liveActors(0)) {
+    const rows = fxFieldStages(k);
+    for (const s2 of Object.keys(fxStages(rows)))
+      (by[s2] || (by[s2] = { rows: rows.filter(f => f.stat === s2), K: [] })).K.push(k);
+  }
+  /* one line a stat, for the Billies it was given to (the first one's rows name the Perks) */
+  const lines = Object.values(by).flatMap(o =>
+    fxStageLines(o.rows, o.K).map(([t]) => /** @type {[string, any]} */ ([t, null]))
+  );
+  if (lines.length) b.fxSay = lines;
+}
 export function battleStageKey() {
   return hereLocation().battleStage;
 }
