@@ -2463,6 +2463,51 @@ export interface BattleAnimsData {
   intro: BattleAnimStep[];
   families: Record<DataId, BattleAnimFamily>;
   scenes: Record<DataId, BattleAnimFamily>;
+  /** VFX-15: the battle mood (logic/battle-stage-look.js battleMoodFor) */
+  moods?: BattleMoods;
+  /** VFX-15: the walk weather on the battle stage */
+  weather?: BattleStageWeather;
+  /** VFX-15: battle scars */
+  scars?: BattleScars;
+}
+/** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
+export interface BattleMoods {
+  about?: string;
+  dark: number;
+  tint: number;
+  inMs: number;
+  outMs: number;
+  superEffective: boolean;
+  bureau: Color;
+  wave: { types: string[]; bureau: boolean; px: number; bigPx: number; rowPx: number; speed: number };
+  heat: { types: string[]; amount: number };
+}
+/** VFX-15: battleAnims.json `weather` */
+export interface BattleStageWeather {
+  about?: string;
+  rain: { splash: number; r: number };
+  settle: { ms: number; cap: number; r: number };
+  sunny: { warm: number; rays: number };
+  sand: { n: number; gust: number; gustMs: number; colors: Color[] };
+}
+/** VFX-15: a kind of battle scar: the types that leave it, or the Sandstorm's, or a heavy hit's */
+export interface BattleScarKind {
+  types?: string[];
+  sandstorm?: boolean;
+  heavy?: boolean;
+  m: number;
+  sprite: DataId;
+  color: Color;
+}
+/** VFX-15: battleAnims.json `scars` */
+export interface BattleScars {
+  about?: string;
+  cap: [number, number, number, number];
+  maxM: number;
+  fadeMs: number;
+  fadeSteps: number;
+  heavy: number;
+  kinds: Record<DataId, BattleScarKind>;
 }
 export interface BattleAnimTimeline {
   dur: number;

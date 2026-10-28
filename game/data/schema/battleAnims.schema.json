@@ -45,7 +45,34 @@
   },
   "intro": {"description": "steps every move plays first", "type": "array", "items": {"$ref": "#/$defs/step"}},
   "families": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}},
-  "scenes": {"description": "signature scenes by id (VFX-17); a family's shape", "type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}}
+  "scenes": {"description": "signature scenes by id (VFX-17); a family's shape", "type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}},
+  "moods": {"description": "VFX-15: the battle mood over the place mood (logic/battle-stage-look.js battleMoodFor; the grade pass): a darken and a type tint on big moves and super-effective hits, the row wave, heat", "type": "object", "required": ["dark", "tint", "inMs", "outMs", "superEffective", "bureau", "wave", "heat"], "additionalProperties": false, "properties": {
+   "about": {"type": "string"},
+   "dark": {"description": "how much darker, at most .2 (the owner's pick)", "type": "number", "minimum": 0, "maximum": 0.2},
+   "tint": {"type": "number", "minimum": 0, "maximum": 1},
+   "inMs": {"type": "number", "minimum": 0},
+   "outMs": {"type": "number", "minimum": 0},
+   "superEffective": {"type": "boolean"},
+   "bureau": {"$ref": "#/$defs/hex"},
+   "wave": {"type": "object", "required": ["types", "bureau", "px", "bigPx", "rowPx", "speed"], "additionalProperties": false, "properties": {"types": {"type": "array", "items": {"type": "string"}}, "bureau": {"type": "boolean"}, "px": {"type": "integer", "minimum": 0, "maximum": 8}, "bigPx": {"type": "integer", "minimum": 0, "maximum": 8}, "rowPx": {"type": "integer", "minimum": 1, "maximum": 32}, "speed": {"type": "number", "minimum": 0}}},
+   "heat": {"type": "object", "required": ["types", "amount"], "additionalProperties": false, "properties": {"types": {"type": "array", "items": {"type": "string"}}, "amount": {"type": "number", "minimum": 0, "maximum": 1.5}}}
+  }},
+  "weather": {"description": "VFX-15: the walk weather on the battle stage (walk/fountains-weather.js drawWeather)", "type": "object", "required": ["rain", "settle", "sunny", "sand"], "additionalProperties": false, "properties": {
+   "about": {"type": "string"},
+   "rain": {"type": "object", "required": ["splash", "r"], "additionalProperties": false, "properties": {"splash": {"type": "number", "minimum": 0}, "r": {"type": "number", "minimum": 0}}},
+   "settle": {"type": "object", "required": ["ms", "cap", "r"], "additionalProperties": false, "properties": {"ms": {"type": "number", "minimum": 0}, "cap": {"type": "integer", "minimum": 0, "maximum": 200}, "r": {"type": "number", "minimum": 0}}},
+   "sunny": {"type": "object", "required": ["warm", "rays"], "additionalProperties": false, "properties": {"warm": {"type": "number", "minimum": 0, "maximum": 1}, "rays": {"type": "number", "minimum": 0, "maximum": 3}}},
+   "sand": {"type": "object", "required": ["n", "gust", "gustMs", "colors"], "additionalProperties": false, "properties": {"n": {"type": "integer", "minimum": 0, "maximum": 400}, "gust": {"type": "number", "minimum": 1}, "gustMs": {"type": "number", "minimum": 0}, "colors": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/hex"}}}}
+  }},
+  "scars": {"description": "VFX-15: battle scars (walk/battle-scars.js; logic/battle-stage-look.js scarKindFor, scarCap, scarAdd)", "type": "object", "required": ["cap", "maxM", "fadeMs", "fadeSteps", "heavy", "kinds"], "additionalProperties": false, "properties": {
+   "about": {"type": "string"},
+   "cap": {"description": "at most this many by the battle's quality 0-3", "type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 12}},
+   "maxM": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.2},
+   "fadeMs": {"type": "number", "minimum": 0},
+   "fadeSteps": {"type": "integer", "minimum": 1, "maximum": 8},
+   "heavy": {"type": "number", "minimum": 0, "maximum": 1},
+   "kinds": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"type": "object", "required": ["m", "sprite", "color"], "additionalProperties": false, "properties": {"types": {"type": "array", "items": {"type": "string"}}, "sandstorm": {"type": "boolean"}, "heavy": {"type": "boolean"}, "m": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.2}, "sprite": {"$ref": "#/$defs/id"}, "color": {"$ref": "#/$defs/hex"}}}}
+  }}
  },
  "$defs": {
   "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},

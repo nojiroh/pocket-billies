@@ -125,5 +125,39 @@
    ]
   }
  },
- "scenes": {}
+ "scenes": {},
+ "moods": {
+  "about": "VFX-15: the battle's mood, over the place's (engine/post-effects.js's grade pass; battle-stage-look.js tweens it on the stage clock, logic/battle-stage-look.js picks it). A landed move of power bigPower or more, or a super-effective hit, darkens the stage by dark (at most .2) and tints it to its type's glow (tint: how much) or, a Bureau bot's, to bureau; in over inMs at the hit, out over outMs to the move's end. wave: the rows of the picture swing sideways (EarthBound's battle backgrounds) for the types listed and a Bureau bot's moves: px (bigPx on a big move) whole pixels, rows rowPx tall, speed radians a stage ms. heat: the grade's heat shimmer for these types' big moves. Under Reduced motion: the darken and tint only, stepped (no wave, no shimmer).",
+  "dark": 0.2,
+  "tint": 0.3,
+  "inMs": 160,
+  "outMs": 360,
+  "superEffective": true,
+  "bureau": "#EA5974",
+  "wave": {"types":["Psychic"],"bureau":true,"px":2,"bigPx":3,"rowPx":4,"speed":0.006},
+  "heat": {"types":["Fire"],"amount":0.8}
+ },
+ "weather": {
+  "about": "VFX-15: the walk weather on the battle stage (walk/fountains-weather.js drawWeather, with battle-stage-look.js): rain's splashes on the stage's ground (splash a second at full rain, within r metres of the stage's middle; ripples instead on water), snow and ash settling there (each flake that lands within r stays ms, at most cap), the sun (the battle's sunny weather) warming the grade (warm) and its shafts (rays times), and the Sandstorm's streaks in the weather's batch (n at full strength, gust times more for gustMs when it starts, in colors).",
+  "rain": {"splash":16,"r":4},
+  "settle": {"ms":1600,"cap":48,"r":5},
+  "sunny": {"warm":0.35,"rays":1.4},
+  "sand": {"n":90,"gust":1.6,"gustMs":1300,"colors":["#E8CF96","#C9A866"]}
+ },
+ "scars": {
+  "about": "VFX-15: battle scars, marks on the ground for the battle (walk/battle-scars.js, one draw): one per hit at the target's feet of the kind its type names (types), a sand drift for the Sandstorm's hurt (sandstorm), a dent for a heavy hit of any other type (hitWeight at least heavy; heavy kinds); one more on a KO. At most cap by the battle's quality (0-3), the oldest replaced; m metres across, at most maxM; never on water. Gone in fadeSteps dithered steps over fadeMs when the battle ends. sprite: the art's id in sprites (VFX-10); color: its tint (a placeholder's colour until then).",
+  "cap": [12,8,4,0],
+  "maxM": 1.2,
+  "fadeMs": 400,
+  "fadeSteps": 4,
+  "heavy": 0.35,
+  "kinds": {
+   "scorch": {"types":["Fire"],"m":1,"sprite":"scar_scorch","color":"#3A2A24"},
+   "puddle": {"types":["Water"],"m":0.9,"sprite":"scar_puddle","color":"#5C7FA8"},
+   "crack": {"types":["Ground"],"m":1,"sprite":"scar_crack","color":"#4A3A2E"},
+   "leaf": {"types":["Grass"],"m":0.8,"sprite":"scar_leaf","color":"#5E8C3A"},
+   "sand": {"sandstorm":true,"m":1.2,"sprite":"scar_sand","color":"#D9BC86"},
+   "dent": {"heavy":true,"m":0.75,"sprite":"scar_dent","color":"#5A5048"}
+  }
+ }
 }

@@ -17,6 +17,7 @@ import '../../game/js/logic/battle-anims.js';
 import '../../game/js/logic/battle-engine.js';
 import '../../game/js/logic/battle-facing.js';
 import '../../game/js/logic/battle-rewards.js';
+import '../../game/js/logic/battle-stage-look.js';
 import '../../game/js/logic/battle-state.js';
 import '../../game/js/logic/blue-noise.js';
 import '../../game/js/logic/bowl-camera.js';

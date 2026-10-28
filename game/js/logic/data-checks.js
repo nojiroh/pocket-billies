@@ -1380,6 +1380,28 @@ export function dataBattleAnims(D, valid = () => true) {
   for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
     if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
       problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');
+  // VFX-15: the stage's moods and scars name real types; a scar no wider than maxM; one Sandstorm kind, one heavy kind
+  const ty = (/** @type {string} */ where, /** @type {string[] | undefined} */ L) => {
+    for (const t of L || []) if (types.size && !types.has(t)) problem(`${where}: no type "${t}" (types.json)`);
+  };
+  if (A.moods) {
+    ty('moods.wave.types', A.moods.wave.types);
+    ty('moods.heat.types', A.moods.heat.types);
+  }
+  if (A.scars) {
+    const K = Object.entries(/** @type {Record<string, any>} */ (A.scars.kinds)),
+      seen = new Map();
+    for (const [k, S] of K) {
+      ty(`scars.kinds.${k}.types`, S.types);
+      for (const t of S.types || []) {
+        if (seen.has(t)) problem(`scars.kinds.${k}: type "${t}" already leaves ${seen.get(t)}`);
+        seen.set(t, k);
+      }
+      if (S.m > A.scars.maxM) problem(`scars.kinds.${k}.m: ${S.m} m, over maxM ${A.scars.maxM}`);
+    }
+    for (const f of ['sandstorm', 'heavy'])
+      if (K.filter(([, S]) => S[f]).length > 1) problem(`scars.kinds: more than one ${f} kind`);
+  }
   return out;
 }
 // WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds

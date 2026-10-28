@@ -112,6 +112,13 @@ export function renameTypeIn(D, from, to) {
     for (const S of (T && T.steps) || [])
       if (Array.isArray(S.types))
         S.types = S.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  /* VFX-15: the battle stage's moods and scars (battleAnims.json moods.wave, moods.heat, scars.kinds) */
+  const swapTypes = (/** @type {any} */ o) => {
+    if (o && Array.isArray(o.types))
+      o.types = o.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  };
+  if (BA && BA.moods) [BA.moods.wave, BA.moods.heat].forEach(swapTypes);
+  if (BA && BA.scars) Object.values(BA.scars.kinds).forEach(swapTypes);
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;
