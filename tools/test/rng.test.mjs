@@ -62,7 +62,9 @@ test('rng: a generated scene hashes the same as before the move', () => {
   // (and 3200697165 until MAPGEN_VERSION 23, WM-3b: route spots turn from a bush; no layout here, so only gen.v)
   // (and 2625649843 until MAPGEN_VERSION 24, WM-5: a town's streets and sizes; this scene, a route, the same but gen.v)
   // (and 3518383374 at MAPGEN_VERSION 22 on main, RT-4b: a pocket's mouth for Cut brambles; no layout here, so only gen.v)
-  assert.equal(hashString(JSON.stringify(sc)), 3715434692);
+  // (and 3715434692 until MAPGEN_VERSION 25, WM-6: a town's districts; this scene, a route, the same but gen.v,
+  // then 2619531993 until WM-6's signposts name their exit, `exit`)
+  assert.equal(hashString(JSON.stringify(sc)), 2122470611);
 });
 
 test('rng: the helpers stay in their ranges', () => {
@@ -90,4 +92,14 @@ test('rng: the daily seed is the UTC date, the same all day everywhere', () => {
   assert.equal(dailySeed(Date.UTC(2026, 9, 22, 0, 0, 0)), 'd2026-10-22');
   assert.equal(dailySeed(new Date('2026-10-21T23:30:00-05:00')), 'd2026-10-22', 'late evening west of UTC is tomorrow');
   assert.match(dailySeed(), /^d\d{4}-\d{2}-\d{2}$/);
+});
+
+test("WM-5b: rngFirst is a stream's first number, without making the stream", () => {
+  const { rngFirst } = modules.rng;
+  for (let k = 0; k < 500; k++) {
+    const seed = 'FIRST' + k,
+      salt = `map|grid|${k % 7}|${k % 3}|E|${k % 5}|0`;
+    assert.equal(rngFirst(seed, salt), rngFrom(seed, salt).next());
+  }
+  assert.equal(rngFirst('X'), rngFrom('X').next());
 });

@@ -16,7 +16,7 @@ those sessions; until then, follow the rule next to them.
 | UI pictures (UI-2) | `npm run check:ui` | about 1.5 min | none | after a change to the kit, its CSS, uiTheme.json or studio/gallery.html |
 | style diff (UI-5) | `python3 tools/style-diff.py` (`--only=<screens>`, `--ref=<rev>`) | about 8 min (16 screens, 2 browsers) | none | a commit that moves CSS or screen code and must change nothing on screen: 0 differences against HEAD |
 | fast check | `npm run check:fast` | about 11 min on CI (677 s on 23 Oct 2026: 27 checks on 19 pages, 2 browsers); 665 s in a 4-core cloud container | 3 min, not met (see below) | every push and pull request in CI; after a change, alone with `--only=` |
-| (c) smoke | `npm run check:smoke` | about 3 min (188 s on 23 Oct 2026, a 4-core cloud container: the phone flow, the actions sheet, one in-game test step) | 1-2 min, not met | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
+| (c) smoke | `npm run check:smoke` | about 5 min (302 s on 28 Oct 2026 in a 4-core cloud container, with UI-12's palette step; 188 s on 23 Oct: the phone flow, the actions sheet, one in-game test step) | 1-2 min, not met | before every commit that touches game/, tools/check-quick.py, vite.config.js or tools/to-module.mjs |
 | (d) full | `npm run check:quick` | about 21 min (1282 s on 23 Oct 2026, all 37 steps passed, 13 pages, 2 browsers, about 500 s of the pages' time boots; 1217-1338 s over four runs; 41 min the same day before TC-4 round 3) | about 10 min, not met (see below) | at the end of a phase, nightly in CI |
 | (e) in-game test | `python3 tools/check-quick.py --selftest` | about 25 min | outside the budget | nightly in CI; at the end of a phase that touched what it plays |
 | load (LD-0) | `python3 tools/check-load.py` (`--only=cold` or `run`, `--max-hitches=N`) | about 1.5 min (92 s on 27 Oct 2026 in a cloud container, the build included) | none; a note until LD-6 makes it a gate | after a change to booting, loading or what a place builds; at the end of every load-track session |
@@ -277,9 +277,8 @@ same phase:
   of the door, nothing of the room walkable or walled outside it, out exactly at the door facing out with the camera
   as it was, the town's walking grid unchanged), v46 (every door of Copperleaf, Verdigris and Marigold: its room's
   doorway within 0.1 m) and alpha 0.1's library; check-data checks that every door opens a room.
-  `tools/measure-rooms.py` times walking into seven sample doors, cold and warm (headless; compare runs). The
-  world-map graph test must still pass (same places, roads and gates); if a road's exits move on purpose, remake the
-  snapshot and say so.
+  The world-map graph test must still pass (same places, roads and gates); if a road's exits move on purpose, remake
+  the snapshot and say so.
 - **09 Props and terrain**: the data steps (windows, water and jetties, masts, ground tiles, low-poly recipes) count
   today's kit; update them with the new one in the same commits. Pictures change on purpose: remake the picture
   baseline afterwards (Actions → Check → Run workflow → "Make the picture baseline").
@@ -338,8 +337,12 @@ same phase:
   and file next to the token uses (corners, space, shadows, keyframes, times, fonts, colours, `!important`, layers,
   blur rules; colours, `innerHTML` and `style="` in game JS). Since UI-6a `npm run lint` fails when a count rises
   above its ceiling (`UI_LINT_CEILING`; `--save` lowers them). Smoke's phone step counts the blurred surfaces on each
-  screen it visits (`uiBlurCount()`) and, since UI-6b, fails above 3, or above `BLUR_CEILING` (tools/check-quick.py:
-  map 10, shop 5) for a screen that was over it. The tap-target step (40 px, or an icon with its invisible 7 px
+  screen it visits (`uiBlurCount()`) and, since UI-6b, fails above 3. Since the UI checks session after UI-18 the
+  counter walks shadow trees and reads `::before`/`::after`, so the top and bottom bars' glass counts too; the budget
+  is 3 besides the two bars (`uiBlurCount({bars:false})`), both numbers logged, and `BLUR_CEILING` is empty. Smoke's
+  palette step (UI-12's, written in that session) opens the walk, Team, Guide and profile screens in Field Guide,
+  Copper Grove+ and Bureau Night, light and dark: no page errors, the surface colour changes, and no text under 3:1
+  against what is behind it (a note under AA; glass read as its fill over mid-grey); it adds about 110 s to smoke. The tap-target step (40 px, or an icon with its invisible 7 px
   margin) also opens a Field Guide entry and Settings' Display and Help tabs since UI-6b. The look
   comes from game/data/uiTheme.json (`tools/test/ui-theme.test.mjs`; check-data checks text reads at 4.5:1). A look
   change moves the pictures: remake the baseline on purpose afterwards.

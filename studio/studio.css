@@ -4699,6 +4699,38 @@ body.wb-dropping::after {
   background: var(--red);
   color: #fff;
 }
+/* UI-11: the colour code: its table's group rows, and each screen's colours as swatches */
+.ui-sig-head th {
+  padding-top: 10px;
+  color: var(--text);
+}
+.ui-sig-set h4 {
+  margin: 10px 0 4px;
+}
+.ui-sig-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ui-sig-sw {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: 52px;
+  font-size: 11px;
+  color: var(--text2);
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+.ui-sig-sw i {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line2);
+  border-radius: 4px;
+}
+.ui-sig-set .help.bad {
+  color: var(--red);
+}
 .ui-sides {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4792,10 +4824,11 @@ body.wb-dropping::after {
   margin-top: 10px;
   font-size: 12px;
 }
-/* the frame makes room for the panel while it shows */
+/* the frame makes room for the panel while it shows; at least 520 px, so a phone screen still shows above the bottom bar
+   (UI-8b's minimap tile makes the bar 192 px tall standing) */
 .eng-side:has(.ui-inspect:not([hidden])) .ui-pv {
-  height: calc(66vh - 230px);
-  min-height: 300px;
+  height: calc(100vh - 330px);
+  min-height: 520px;
 }
 .ui-insp-h {
   margin-bottom: 6px;

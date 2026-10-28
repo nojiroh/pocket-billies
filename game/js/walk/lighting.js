@@ -321,7 +321,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
     }
   }
   for (const it of items)
-    if (it.person || it.k === 'enc' || (it.k === 'life' && it.sh > 0))
+    if ((it.person && !it.ghost) || it.k === 'enc' || (it.k === 'life' && it.sh > 0))
       ao.push(pooledQuad(AO_POOL, ao.length, it.x, it.z, it.aoR || 0.34, (it.aoR || 0.34) * 0.76));
   if (BT)
     for (let i = 0; i < BT.lights.length; i++) {
