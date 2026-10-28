@@ -18,7 +18,7 @@ import {
   runStallStock,
 } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
-import { perkBuy, perkPrice, perkShelf, perkTeamOf } from './logic/perks.js';
+import { perkBuy, perkCap, perkPrice, perkShelf, perkTeamOf } from './logic/perks.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbGainFly, recentPress } from './ui-motion.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -285,7 +285,7 @@ function shopPerkBuy(id, drop) {
     toast('Not enough Moneys for that one.');
     return;
   }
-  if (drop == null && run.perks.length >= RULES.run.perks.cap) {
+  if (drop == null && run.perks.length >= perkCap(run, RULES.run.perks, PERKS)) {
     perkDropOpen(
       L.id,
       d => {

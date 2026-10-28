@@ -60,7 +60,7 @@ import { residentCandidate, residentInvite } from './logic/residents.js';
 import { runHome } from './logic/run-state.js';
 import { caseFile, caseStampMoment, redactSplit } from './logic/case-file.js';
 import { runMapNode } from './logic/run-map.js';
-import { runImmune } from './logic/run-loop.js';
+import { runEventSafe, runImmune } from './logic/run-loop.js';
 import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
 import { perkTeamOf } from './logic/perks.js';
 import {
@@ -395,7 +395,10 @@ function encounterStage(id, i) {
       encMoney(saveData, +n);
     },
     hurt: ([s]) => {
-      encHurt(team(), +s, maxHp);
+      /* PK-6: a Perk that keeps an event's hurt off (Ten-Foot Pole) */
+      const by = runEventSafe(saveData, PERKS);
+      if (by) encNote(`${PERKS[by] ? PERKS[by].name : by} kept your team out of harm’s way.`);
+      else encHurt(team(), +s, maxHp);
     },
     status: ([sid]) => {
       /* PK-3: a Perk that keeps the status off (Oven Mitts) keeps it off the whole team */
