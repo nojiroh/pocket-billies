@@ -1119,7 +1119,9 @@ def ui_screens_steps(pg, errs):
         pg.click('[data-act=uiPv][data-g=mode][data-v=light]')
         # inspect a team row, and the overlays, on the game itself
         pg.click('#uiInsp')
-        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click()
+        # its top corner: since UI-8b the bottom bar stands 192 px tall (its minimap tile 60 px out of the bar), over the
+        # lead card's middle in the preview (where a plain click taps)
+        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click(position={'x': 24, 'y': 16})
         try: pg.wait_for_selector('#uiInspect tr[data-var]', timeout=10000)
         except Exception: errs.append('inspect found nothing on the Team screen')
         where = pg.evaluate("(document.querySelector('#uiInspect .ui-insp-h') || {}).textContent || ''")
