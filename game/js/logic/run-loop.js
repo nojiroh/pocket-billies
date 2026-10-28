@@ -57,6 +57,8 @@ expose({
   runBuyFx: [() => runBuyFx],
   // @ts-expect-error -- replaced on purpose
   runClinic: [() => runClinic, v => (runClinic = v)],
+  // @ts-expect-error -- replaced on purpose
+  runEventSafe: [() => runEventSafe, v => (runEventSafe = v)],
   runFoeId: [() => runFoeId],
   runFoeWinText: [() => runFoeWinText],
   // @ts-expect-error -- replaced on purpose
@@ -65,6 +67,8 @@ expose({
   runFragileDrop: [() => runFragileDrop, v => (runFragileDrop = v)],
   // @ts-expect-error -- replaced on purpose
   runFxMoment: [() => runFxMoment, v => (runFxMoment = v)],
+  // @ts-expect-error -- replaced on purpose
+  runGaveText: [() => runGaveText, v => (runGaveText = v)],
   // @ts-expect-error -- replaced on purpose
   runHealCost: [() => runHealCost, v => (runHealCost = v)],
   runHurt: [() => runHurt],
@@ -133,25 +137,52 @@ export function fxRunCtx(s, more) {
  * fxFire, counting and growing on run.perkState): a heal row heals the team (runArriveHeal). `only`: one Perk's rows
  * (the one taken). PK-5: a money share row pays its share of the Moneys carried (effects.js fxMoneyShare: each row
  * from what was carried as the moment came, at most its max). Returns the rows that acted (for the caller's own
- * kinds), the HP healed and the Moneys paid.
+ * kinds), the HP healed and the Moneys paid. PK-6: a give row pays its Moneys and puts its items in the Bag (`items`:
+ * what it gave, by id; the Moneys are in `money`).
  * @param {SaveData} s @param {Record<string, any>} perks @param {string} when @param {any} [more]
- * @param {string} [only] @returns {{ rows: any[], hp: number, money: number }}
+ * @param {string} [only] @returns {{ rows: any[], hp: number, money: number, items: Record<string, number> }}
  */
 export function runFxMoment(s, perks, when, more, only) {
   const fx = s.run ? fxOfRun(s.run, perks) : null;
   /* nothing of that moment: no marks made */
   if (!fx || !fx.some(f => f.when === when || (f.grow && (f.grow.on === when || f.grow.reset === when))))
-    return { rows: [], hp: 0, money: 0 };
+    return { rows: [], hp: 0, money: 0, items: {} };
   const rows = fxFire(fx, when, fxRunCtx(s, more), { run: fxRunMarks(s.run) }, only),
-    se = s.se;
+    se = s.se,
+    /** @type {Record<string, number>} */
+    items = {};
   let hp = 0,
     money = 0;
   for (const f of rows) {
     if (f.kind === 'heal') hp += runArriveHeal(s.team, f.share);
     money += fxMoneyShare(f, se);
+    /* PK-6: Boarding Pass */
+    if (f.kind === 'give') {
+      money += f.money || 0;
+      for (const [id, n] of Object.entries(f.items || {})) {
+        s.items[id] = (s.items[id] || 0) + n;
+        items[id] = (items[id] || 0) + n;
+      }
+    }
   }
   s.se += money;
-  return { rows, hp, money };
+  return { rows, hp, money, items };
+}
+/** PK-6: what a moment gave, in words ("150 Moneys and 2 Potions"; '' for nothing) @param {{ money: number,
+ * items?: Record<string, number> }} m */
+export function runGaveText(m) {
+  const L = [
+    ...(m.money > 0 ? [plural(m.money, 'Money')] : []),
+    ...Object.entries(m.items || {}).map(([id, n]) => plural(n, (ITEMS[id] && ITEMS[id].n) || id)),
+  ];
+  return L.length > 1 ? L.slice(0, -1).join(', ') + ' and ' + L[L.length - 1] : L.join('');
+}
+/** PK-6: an event's hurt kept off (its `hurt` command; encounter-screen.js): the Perk holding an eventHurt rule (Ten-Foot
+ * Pole), whose name the sheet gives, or '' when the hurt lands @param {SaveData} s @param {Record<string, any>} perks */
+export function runEventSafe(s, perks) {
+  const fx = s.run ? fxOfRun(s.run, perks) : null,
+    f = fx && fxAt(fx, {}, { run: s.run && s.run.perkState }).find(r => r.kind === 'rule' && r.rule === 'eventHurt');
+  return f && f.n > 0 ? f.src : '';
 }
 /** PK-3: does the run hold an immune row against `what` (a status an event hands out) that holds for the team here?
  * @param {SaveData} s @param {Record<string, any>} perks @param {string} what */
