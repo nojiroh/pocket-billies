@@ -1126,14 +1126,19 @@ body.battle-3d #camFg {
     0 6px 18px rgba(244, 197, 66, 0.35);
 }
 .bplate.alpha {
-  background: linear-gradient(180deg, rgba(80, 10, 40, 0.78), rgba(30, 8, 30, 0.72));
+  /* UI-16b: an Alpha (and a boss) is the bad family everywhere: the plate's edge and tint, the turn bar's chip */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--sig-bad) 34%, var(--bt-glass)),
+    color-mix(in srgb, var(--sig-bad) 14%, var(--bt-glass))
+  );
   box-shadow:
-    0 0 0 1px rgba(255, 90, 122, 0.55),
-    0 0 18px rgba(255, 60, 110, 0.35);
+    0 0 0 1px var(--sig-bad),
+    0 0 18px color-mix(in srgb, var(--sig-bad) 40%, transparent);
   min-width: 150px;
 }
 .bplate.alpha .pl-n {
-  color: #ffd0dc;
+  color: color-mix(in srgb, var(--sig-bad) 40%, #ffffff);
 }
 .bplate.alpha .pl-hp {
   height: 9px;
@@ -1150,7 +1155,7 @@ body.battle-3d #camFg {
   animation: cardhit 0.38s;
 }
 .pick em.alpha {
-  color: #ff7a9a;
+  color: color-mix(in srgb, var(--sig-bad) 40%, #ffffff);
   font-style: normal;
   font-weight: 600;
 }
@@ -1201,8 +1206,8 @@ body.battle-3d #camFg {
   background: rgba(255, 90, 110, 0.35);
 }
 .bplates .turnbar .tb.alpha {
-  background: rgba(255, 200, 60, 0.45);
-  color: #2a1a00;
+  background: var(--sig-bad);
+  color: var(--c-ink);
 }
 @media (prefers-reduced-motion: no-preference) {
   .bplates .turnbar {
