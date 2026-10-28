@@ -397,6 +397,17 @@ function settingsHTML() {
           ['faster', 'Faster'],
         ])
       ) +
+      /* DL-2: how fast spoken lines type out (logic/talk-type.js TEXT_SPEEDS); a tap still shows the line at once */
+      settingsRowHTML(
+        'Text speed',
+        'How fast people’s lines appear. Instant shows each line whole. Tap still skips ahead.',
+        segmentedHTML('textSpeed', p.textSpeed || 'normal', [
+          ['slow', 'Slow'],
+          ['normal', 'Normal'],
+          ['fast', 'Fast'],
+          ['instant', 'Instant'],
+        ])
+      ) +
       settingsRowHTML(
         'Buddy walks with you',
         'Your buddy follows you around the world. Tap it to see how it’s doing.',
