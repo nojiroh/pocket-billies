@@ -27,5 +27,6 @@
    "hat_cowboy": ["#7A4E2A","#4E2F16"],
    "tie": ["#C8323C"]
   }
- }
+ },
+ "figure": {"head":"square","build":"stocky"}
 }

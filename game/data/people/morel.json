@@ -26,5 +26,6 @@
    "hat_bucket": ["#C64A56","#F2E8DC"],
    "scarf": ["#B8E0C8"]
   }
- }
+ },
+ "figure": {"head":"pear","build":"stocky"}
 }

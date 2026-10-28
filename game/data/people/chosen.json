@@ -34,5 +34,10 @@
    "glasses_sun": ["#1E1A22","#141820"],
    "chain": ["#EEE8D6"]
   }
+ },
+ "figure": {
+  "head": "heart",
+  "build": "small",
+  "gait": {"bounce":1.4,"lean":-0.05}
  }
 }

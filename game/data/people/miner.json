@@ -21,5 +21,6 @@
    "bag": null
   },
   "colors": {"tee":["#C8862A"],"jeans":["#3A3A44"],"sneakers":["#1E1410","#F2F0EA"],"hat_hardhat":["#F4C542"]}
- }
+ },
+ "figure": {"head":"round","build":"stocky"}
 }

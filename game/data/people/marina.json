@@ -18,5 +18,6 @@
    "neck": "chain"
   },
   "colors": {"crop":["#3AA8C8"],"denim_jacket":["#F4F2EC","#C8CED3"],"shorts":["#F2C14E"],"chain":["#E8C24A"]}
- }
+ },
+ "figure": {"head":"oval","build":"slim"}
 }

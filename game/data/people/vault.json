@@ -27,5 +27,10 @@
    "hat_tophat": ["#1E1A24","#E8B83C"],
    "chain": ["#E8B83C"]
   }
+ },
+ "figure": {
+  "head": "square",
+  "build": "round",
+  "gait": {"lean":-0.08}
  }
 }

@@ -31,5 +31,10 @@
    "track_pants": ["#5A6270","#F2EEE4"],
    "runners": ["#F07F2E","#F2EEE4"]
   }
+ },
+ "figure": {
+  "head": "long",
+  "build": "slim",
+  "gait": {"swing":1.2,"lean":0.04}
  }
 }

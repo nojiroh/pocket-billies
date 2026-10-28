@@ -7,5 +7,10 @@
   "eyes": "#3A2A1A",
   "wear": {"hair":"hair_pony","top":"tank","bottom":"shorts","shoes":"sandals","glasses":"glasses_sun","mouth":"mouth_grin"},
   "colors": {"tank":["#2A9DC8"],"shorts":["#1E2A4E"]}
+ },
+ "figure": {
+  "head": "heart",
+  "build": "slim",
+  "gait": {"swing":1.25,"lean":0.06}
  }
 }

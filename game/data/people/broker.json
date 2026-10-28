@@ -21,5 +21,10 @@
    "bag": null
   },
   "colors": {"tee":["#3A4E7A"],"jeans":["#2A2A34"],"sneakers":["#1E1410","#F2F0EA"],"tie":["#C8323C"]}
+ },
+ "figure": {
+  "head": "square",
+  "build": "stocky",
+  "gait": {"lean":0.08,"swing":1.15}
  }
 }

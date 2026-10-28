@@ -21,5 +21,10 @@
    "bag": null
   },
   "colors": {"apron":["#2A6450","#2A6450"],"longsleeve":["#3E8A6E"],"jeans":["#4A5260"],"sneakers":["#3A2A1C","#F2F0EA"]}
+ },
+ "figure": {
+  "head": "long",
+  "build": "slim",
+  "gait": {"swing":0.6,"arms":0.35,"bounce":0.3}
  }
 }

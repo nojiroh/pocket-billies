@@ -27,5 +27,6 @@
    "glasses_square": ["#1E2A36"],
    "chain": ["#BDEAF2"]
   }
- }
+ },
+ "figure": {"head":"heart","build":"average"}
 }
