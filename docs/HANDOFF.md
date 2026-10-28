@@ -2,6 +2,56 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Clean-up track CU lane T - files: scratch tools, the portrait kit, orphan art, the test map, .gitignore - 2026-10-28
+Branch `track/cleanup` (origin/main merged first: up to date). Lane T's plan and the owner's answers were approved
+before the session (docs/phases/cleanup-track.md sections 1, 3, 4, "Lane T"); steps 1-5 done, one cause per commit,
+every deletion grepped first; pushed (merged cleanly with lanes D and R).
+- Facts checked against the plan: all held (40 of 57 layer PNGs orphaned, 53 of 76 voxel recipes, the four build
+  lists read only by the Python tools). Two the plan didn't say: 4 of the 40 layer PNGs (tree_jungle and
+  tree_giant_autumn pairs) are not in layers.json but in game/art/scene/props.json, and 11 of the 53 recipes are named
+  only by props.json; build-props-batch11b.py reads the tree_jungle pair as input. Open PR #327 is CU-0's own branch;
+  no PR from track/cleanup was open when I pushed.
+- Changed:
+  - Deleted: tools/trainer_gen/pv.py, pv2.py, preview.py; tools/island-sketches.mjs and .py (hub-sketches.json's
+    `about` says they are in git history); tools/art-source/portrait-kit/ (about 20 MB) and tools/slice-portrait-kit.py.
+  - tools/art-code-refs.mjs skips the build lists (`BUILD_LISTS`: scene/props.json, layers.json, life.json,
+    build.json); studio/art-code-refs.json regenerated. Then 40 PNGs in game/art/scene/props/layers/ deleted (17 left),
+    with their 18 keys in layers.json and the two props.json `layers` fields naming the other two pairs (props.json is
+    in no lane's list and on no live branch; I edited it so no build list names a deleted file).
+    build-props-batch11b.py's docstring: restore the jungle pair from git history before rerunning it.
+  - 53 recipes in game/art/scene/vox/ deleted (23 left, all named by scenery.json); the 11 props.json `model` fields
+    naming them gone. The game loads recipes only through a prop's `model` (prop-models.js).
+  - game/data/maps/test_props_city.json and its index.json line (line 172; live hunks at 55 and 61); check-data's
+    snapshot remade (179 -> 178 files, nothing else).
+  - .gitignore: validation/look-air/, look-opening/, look-run-screens/, island-shots/, look-worldmap/,
+    tools/art-source/sketches/ added mid-block; validation/hub-sketches/ dropped (only the deleted sketch tool wrote it).
+- Kept, with the reason (so nobody re-audits it): every chained generator (build-scene-props runs scene_props_v17..v28
+  with exec; build-props-a04 loads build-buildings-v46; the batch files load each other; build-props-island is loaded
+  by eight tools; the owner's 2026-10-27 call keeps the version-stamped ones), build-solarpunk.py (its pictures half
+  redraws committed solar props), mark-cottage-roofs.py (the owner kept it 2026-10-27), every look-*.py (documented or
+  named in HANDOFF; cheap), tools/art-source/part-kit/ (CI and sheet-slice-real.test.mjs read it),
+  tools/art-source/terrain-v47/README.md, validation/cc0-src/ (glb-to-recipe, the model import test and check-fast read
+  it), validation/icon-sheets/ (the perks track remakes them), validation/sound-baseline/ and ui-gallery/ (baselines),
+  tools/data/hub-sketches.json (island-gen-doors.test.mjs reads it).
+- Verified (with lanes D and R merged): lint, typecheck, check:modules (521 names), format:check, check:data (178
+  files, the two old bridge warnings), build, `npm test` 1,924 pass (111 s), `node tools/art-unused.mjs --check` 3,803
+  pictures, 0 unused, 0 missing; art-code-refs --check up to date; check-data snapshot 17 pass; `npm run check:smoke`
+  no problems (367 s).
+- Risky: build-prop-layers.py remakes missing layer PNGs (missing files only), so rerunning it would bring the 40 back
+  and rewrite layers.json; build-props-batch11b.py needs the jungle pair restored first. studio/art-code-refs.json and
+  the check-data snapshot are live on many branches: on a conflict, take either side and regenerate (section 3).
+- For round 2:
+  - .gitignore: drop validation/rooms/ (line 21) and validation/st3/ (line 63): nothing writes them, but each is within
+    3 lines of a live hunk (claude/laughing-tesla-roy32r after line 23; track/dialogue after line 65). Then the
+    `validation/*` rewrite (section 7).
+  - eslint.config.js's `tools/art-source/` ignore (its comment names the deleted portrait prototype; #314).
+  - docs/phases/07-plan.md still lists the kit's sources and slicer as files (lane D merged 07-portraits into it; its
+    table could say they are in git history).
+  - Smoke's unused note now lists 4 more props no place uses: portal_door, portal_gate, portal_hole, portal_ring (only
+    the deleted test map placed them; airship_mast was already there). Owner's call: keep them for the hub's portal
+    work or delete them from scenery.json.
+- Next: round 2 (section 6), after lane S has pushed.
+
 ### Clean-up track CU lane D - docs: the HANDOFF archive, legacy docs gone, finished plans archived, stale pointers - 2026-10-28
 Branch `track/cleanup` (origin/main merged first: up to date). The owner's answers and lane D's plan were approved
 before the session (docs/phases/cleanup-track.md sections 1, 3, 4, "Lane D"); steps 1-6 done, one cause per commit;
