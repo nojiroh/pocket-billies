@@ -5,7 +5,21 @@
    character has their own bubble" and "Motion with a cause"). The skins are data (game/data/talkSkins.json); talk.js
    puts the answer on the box, css/talk-skins.css draws it. Logic only: no DOM, runs in Node
    (tools/test/talk-skins.test.mjs). */
-
+/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
+import { expose } from '../test-globals.js';
+/* eslint-disable no-func-assign */
+expose({
+  talkAccentHue: [() => talkAccentHue],
+  // @ts-expect-error -- replaced on purpose
+  talkSeed: [() => talkSeed, v => (talkSeed = v)],
+  // @ts-expect-error -- replaced on purpose
+  talkSkinOf: [() => talkSkinOf, v => (talkSkinOf = v)],
+  // @ts-expect-error -- replaced on purpose
+  talkTilt: [() => talkTilt, v => (talkTilt = v)],
+  talkVariant: [() => talkVariant],
+});
+/* eslint-enable no-func-assign */
+/* to-module: end */
 /** the skin a line wears: the caller's own (o.skin), the speaker's, a run trainer's class's, else the default
  * @param {any} data talkSkins.json @param {string} who the speaker id @param {{ skin?: string, cls?: string }} [o]
  * @returns {string} */

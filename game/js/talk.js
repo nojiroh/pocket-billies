@@ -7,9 +7,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { mapChatLines, playStoryScript, provide, residentHomeTalk, storyFreshTake, storyGiftOffer } from './hooks.js';
-import { PEOPLE, TRAINERS } from './game-data.js';
+import { FACTIONS, PEOPLE, TALK_SKINS, TRAINERS } from './game-data.js';
 import { parseLine, plainOf } from './logic/line-markup.js';
 import { letterTimes } from './logic/talk-type.js';
+import { talkAccentHue, talkSeed, talkSkinOf, talkTilt, talkVariant } from './logic/talk-skins.js';
 import { reducedMotion, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { drawPortrait, lookOf } from './person-art.js';
@@ -18,6 +19,7 @@ import { walkRenderer } from './walk/walk-state.js';
 import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
+  BURST_VARIANTS: [() => BURST_VARIANTS],
   FOLK_NAMES: [() => FOLK_NAMES],
   FOLK_TALK: [() => FOLK_TALK],
   SPEAKER_NAMES: [() => SPEAKER_NAMES],
@@ -25,14 +27,17 @@ expose({
   TALK_PORTRAIT_SCALE: [() => TALK_PORTRAIT_SCALE],
   drawTalkPortrait: [() => drawTalkPortrait, v => (drawTalkPortrait = v)],
   talk: [() => talk, v => (talk = v)],
+  talkArrive: [() => talkArrive, v => (talkArrive = v)],
   talkBox: [() => talkBox],
   talkChoose: [() => talkChoose, v => (talkChoose = v)],
   talkChosen: [() => talkChosen, v => (talkChosen = v)],
+  talkDress: [() => talkDress, v => (talkDress = v)],
   talkEl: [() => talkEl, v => (talkEl = v)],
   talkFolk: [() => talkFolk, v => ((talkFolk = v), provide({ talkFolk }))],
   talkHide: [() => talkHide, v => (talkHide = v)],
   talkLetters: [() => talkLetters, v => (talkLetters = v)],
   talkLine: [() => talkLine, v => (talkLine = v)],
+  talkMotion: [() => talkMotion, v => (talkMotion = v)],
   talkName: [() => talkName, v => (talkName = v)],
   talkTick: [() => talkTick, v => (talkTick = v)],
 });
@@ -51,6 +56,8 @@ export const talkBox = {
 };
 provide({ talkBox }); /* to-module */
 const SPEAKER_NAMES = { chosen: 'Professor Chosen' };
+/** DL-3: how many held shapes a shout's burst has (logic/ui-theme.js UI_SHAPE_FAMILIES bubbleShout.variants) */
+const BURST_VARIANTS = 3;
 const FOLK_NAMES = [
   'Ada',
   'Bram',
@@ -99,7 +106,7 @@ function talkEl() {
   el.hidden = true;
   el.innerHTML =
     /* phase 06-3: the portrait framed in its own 96×96 slot inside the box, a name tag over the line (css/dialogue.css) */
-    '<div class="talk-box px" role="dialog" aria-live="polite"><span class="talk-slot"><canvas class="talk-por" aria-hidden="true"></canvas></span><div class="talk-txt"><p class="talk-who"></p><p class="talk-line"></p></div><span class="talk-more" aria-hidden="true">▼</span></div>';
+    '<div class="talk-box px" role="dialog" aria-live="polite"><span class="talk-slot"><canvas class="talk-por" aria-hidden="true"></canvas></span><div class="talk-txt"><p class="talk-who"></p><p class="talk-line"></p></div><span class="talk-more" aria-hidden="true">▼</span><span class="talk-deco" aria-hidden="true"><i class="talk-shine"></i><b class="talk-form"></b></span><span class="talk-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>';
   el.addEventListener('click', ev => {
     if (ev.target.closest('button,a,input')) return;
     if (talkBox.cur) talkBox.cur.tap();
@@ -159,6 +166,70 @@ function talkLetters(line, parsed) {
   });
   return out;
 }
+/* DL-3: how a bubble moves, from the theme's --bubble-* (uiTheme.json motion; tokens.css) and the skin's entrance */
+function talkMotion(box, entrance) {
+  const css = getComputedStyle(box),
+    num = (/** @type {string} */ k, /** @type {number} */ d) => {
+      const v = parseFloat(css.getPropertyValue(k));
+      return Number.isFinite(v) ? v : d;
+    };
+  /* the theme writes the spring as an easing and its length (logic/ui-theme.js, logic/motion.js springEase) */
+  let ease = css.getPropertyValue('--bubble-spring').trim() || 'cubic-bezier(0.3, 1.6, 0.5, 1)',
+    ms = num('--bubble-spring-ms', 420);
+  /* soft (Kappi): slower and gentler, no overshoot */
+  if (entrance === 'soft') {
+    ease = 'cubic-bezier(0.25, 0.8, 0.3, 1)';
+    ms = Math.round(ms * 1.5);
+  }
+  return { ease, ms, pop: Math.min(1, Math.max(0.3, num('--bubble-pop', 0.6))) };
+}
+/* DL-3: the bubble's look for a line: its skin (talkSkins.json, logic/talk-skins.js), the shape its tone takes, the
+   tilt and the burst picked by the line, a folk speaker's accent, the Bureau's form number */
+function talkDress(box, who, text, style, o) {
+  const skin = talkSkinOf(TALK_SKINS, who, o),
+    S = /** @type {any} */ (TALK_SKINS.skins || {})[skin] || {},
+    seed = talkSeed(text, who),
+    fam =
+      style === 'shout'
+        ? `bubbleShout-${talkVariant(seed, BURST_VARIANTS)}`
+        : style === 'think'
+          ? 'bubbleThink'
+          : S.family || 'bubble';
+  box.dataset.skin = skin;
+  box.dataset.shape = style;
+  /* DL-4 puts speakers on alternating sides; until then everyone talks from the portrait's side */
+  box.dataset.side = 'left';
+  box.style.setProperty('--talk-clip', `var(--clip-${fam})`);
+  box.style.setProperty('--talk-edge', `var(--edge-${fam})`);
+  /* the frame tilts (a whole bubble's lean, picked once by the line), the letters stay level */
+  box.style.setProperty('--tilt-k', String(talkTilt(seed, 1, S.tilt ?? 1)));
+  box.style.setProperty('--talk-slant', `${S.slant || 0}deg`);
+  box.style.setProperty('--talk-hue', String(talkAccentHue(who)));
+  const forms = (S.deco || []).includes('form') ? FACTIONS.bureau?.look?.forms || [] : [];
+  box.querySelector('.talk-form').textContent = forms.length ? forms[seed % forms.length] : '';
+  for (const old of box.querySelectorAll('.talk-stamp')) old.remove();
+  return { skin, S, seed };
+}
+/* DL-3: a line's [stamp=word] lands on a bubble whose skin takes stamps (the Bureau's): the style track's pb-stamp
+   (it slams and thunks by itself, ui-run-kit.js), a little crooked by the line's seed, and the bubble gives a small
+   thump as it lands */
+function talkStamp(box, word, seed) {
+  const at = document.createElement('span');
+  at.className = 'talk-stamp';
+  const st = document.createElement('pb-stamp');
+  st.setAttribute('word', String(word).toUpperCase());
+  st.setAttribute('tilt', String((seed % 2 ? 1 : -1) * (6 + (seed % 7))));
+  at.append(st);
+  at.addEventListener(
+    'pb-stamp-land',
+    () => {
+      if (box.animate && !reducedMotion)
+        box.animate([{ translate: '0 2px' }, { translate: '0 0' }], { duration: 160, easing: 'ease-out' });
+    },
+    { once: true }
+  );
+  box.append(at);
+}
 /* one line; the box stays open for the next one until talkHide() */
 export function talkLine(who, text, expr, o = {}) {
   const el = talkEl();
@@ -173,23 +244,24 @@ export function talkLine(who, text, expr, o = {}) {
   el.classList.toggle('scrim', !!o.scrim);
   document.body.classList.add('talking');
   const box = el.querySelector('.talk-box'),
-    line = el.querySelector('.talk-line');
+    line = el.querySelector('.talk-line'),
+    /* DL-3: the bubble's height before the new line, so it can grow to fit on its spring */
+    h0 = shown ? box.offsetHeight : 0,
+    style0 = parsed.style.find(s => s === 'shout' || s === 'whisper' || s === 'think') || '';
   el.querySelector('.talk-who').textContent = o.name || talkName(who);
   box.classList.remove('done');
+  const dress = talkDress(box, who, text, style0, o);
   const letters = talkLetters(line, parsed),
     chars = [...text],
     speed = reducedMotion
       ? 'instant'
       : (typeof saveData !== 'undefined' && saveData?.preferences?.textSpeed) || 'normal',
     times = letterTimes(parsed, speed).at,
-    style = parsed.style.find(s => s === 'shout' || s === 'whisper' || s === 'think') || '';
-  /* UI-2: each new line in an open box, the bubble pops a little: a squash, then a spring back (the `scale`
-     property, so the box's own transform stays) */
-  if (shown && !reducedMotion && box.animate)
-    box.animate([{ scale: '0.975 0.95' }, { scale: '1 1' }], {
-      duration: 360,
-      easing: 'cubic-bezier(0.3, 1.6, 0.5, 1)',
-    });
+    style = style0,
+    stamps = (dress.S.deco || []).includes('stamp')
+      ? parsed.events.filter(e => e.kind === 'stamp').sort((a, b) => a.at - b.at)
+      : [];
+  talkArrive(box, shown, h0, dress);
   talkBox.on = true;
   talkBox.por = { who, expr: expr || null, t: 0 };
   if (!talkBox.loop) {
@@ -208,6 +280,8 @@ export function talkLine(who, text, expr, o = {}) {
       while (n < chars.length && times[n] <= now) n++;
       st.n = n;
       for (let i = n0; i < n; i++) letters[i]?.classList.add('on');
+      /* DL-3: a stamp lands when the letters reach it */
+      while (stamps.length && stamps[0].at <= n) talkStamp(box, stamps.shift().v, dress.seed);
       /* phase 06-3: the typing hook (phase 07's mouth animation listens here): each new character, who says it */
       if (talkBox.onType.length)
         for (let i = n0; i < n; i++)
@@ -217,7 +291,12 @@ export function talkLine(who, text, expr, o = {}) {
       if (b > blipN && n < chars.length) {
         blipN = b;
         if (typeof soundEffect === 'function' && style !== 'think' && /\w/.test(chars[n] || ''))
-          soundEffect('blip', { who, style, big: !!letters[n]?.classList.contains('fx-big') });
+          soundEffect('blip', {
+            who,
+            style,
+            big: !!letters[n]?.classList.contains('fx-big'),
+            voice: dress.S.blip,
+          });
       }
       if (n >= chars.length) {
         st.typing = false;
@@ -241,6 +320,60 @@ export function talkLine(who, text, expr, o = {}) {
       res();
     };
   });
+}
+/* DL-3: a bubble arrives. Opening, it pops in from the speaker's side on the bubble's spring (Kappi's softly, narration
+   with a fade); a new line in an open box grows the frame to fit from its old height (the line is laid out before it
+   types, so this happens once) and gives a small squash. A shout lands with a squash, a rebound and one shake; Chosen's
+   gold shines once. Only transform-like properties and opacity move (the box's `scale` and `translate`, the layers'
+   --grow); Reduced: a fade when it opens, nothing else */
+function talkArrive(box, shown, h0, dress) {
+  if (!box.animate) return;
+  const reduced = reducedMotion || document.documentElement.dataset.motion === 'reduced';
+  if (reduced) {
+    if (!shown) box.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 160, easing: 'ease-out' });
+    return;
+  }
+  const M = talkMotion(box, dress.S.entrance),
+    from = dress.S.entrance === 'still' ? 0.98 : M.pop;
+  if (!shown) {
+    const side = box.dataset.side === 'right' ? 10 : -10;
+    box.animate(
+      [
+        { opacity: 0, scale: String(from), translate: `${side}px 0` },
+        { opacity: 1, offset: 0.25 },
+        { opacity: 1, scale: '1', translate: '0 0' },
+      ],
+      { duration: M.ms, easing: M.ease }
+    );
+  } else {
+    const h1 = box.offsetHeight;
+    if (h0 && h1 && Math.abs(h1 - h0) > 1)
+      box.animate([{ '--grow': String(h0 / h1) }, { '--grow': '1' }], { duration: M.ms, easing: M.ease });
+    if (dress.S.entrance !== 'still')
+      box.animate([{ scale: '0.975 0.95' }, { scale: '1 1' }], { duration: M.ms, easing: M.ease });
+  }
+  if (box.dataset.shape === 'shout')
+    box.animate(
+      [
+        { scale: '1.15 0.85', translate: '0 0' },
+        { scale: '0.96 1.04', translate: '3px 0', offset: 0.35 },
+        { scale: '1 1', translate: '-2px 0', offset: 0.6 },
+        { scale: '1 1', translate: '0 0' },
+      ],
+      { duration: 260, easing: 'ease-out', composite: 'add' }
+    );
+  if ((dress.S.deco || []).includes('shine'))
+    box.querySelector('.talk-shine')?.animate(
+      [
+        { translate: '-120% 0', opacity: 1 },
+        { translate: '420% 0', opacity: 1 },
+      ],
+      {
+        duration: 700,
+        delay: 120,
+        easing: 'ease-in-out',
+      }
+    );
 }
 export function talkHide() {
   const el = talkBox.el;

@@ -1133,6 +1133,7 @@
     drop-shadow(0 2px 0 var(--gold-b)) drop-shadow(0 -2px 0 var(--gold-b));
 
   /* layers: today's values by name (UI-1), so moving a rule onto them changes nothing; inside a component, 1-7 */
+  --z-under: -2; /* DL-3: under a part's own under-layer (a thick-edged speech bubble's edge, under its fill) */
   --z-below: -1;
   --z-battle: 10;
   --z-scene: 20; /* cutscene people over the dressing room */

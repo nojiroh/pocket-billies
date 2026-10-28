@@ -207,8 +207,25 @@ export function fixtureStart() {
     uiState.tab = FIXTURE;
     render();
   }
-  if (FIXTURE === 'talk')
-    talkLine('chosen', 'This is the dialogue box. The Studio shows it with the look you are editing.');
+  if (FIXTURE === 'talk') {
+    /* DL-3: &skin= shows a skin's bubble with a line of its own, &style= says it as a shout, a whisper or a thought */
+    const q = new URLSearchParams(location.search),
+      pick = /** @type {Record<string, [string, string, any]>} */ ({
+        chosen: ['chosen', 'This is the dialogue box. The Studio shows it with the look you are editing.', {}],
+        kappi: ['kappi', 'Breathe in. The water always knows the way down.', {}],
+        blake: ['chad', 'Oh, it’s [b]you[/b] again. Try to keep up this time.', {}],
+        bureau: [
+          'clerk',
+          'You look lost. That is [b]our[/b] department.[stamp=approved]',
+          { cls: 'bureau_clerk', name: 'Clerk 4471' },
+        ],
+        folk: ['folk:3', 'Nice weather for a walk, isn’t it? The bridge is new.', {}],
+        narration: ['me', 'The water is calm and deep. Would you like to Surf?', {}],
+        you: ['me', 'Where am I? This doesn’t look like the city.', { skin: 'you' }],
+      })[q.get('skin') || 'chosen'] || ['chosen', 'This is the dialogue box.', {}],
+      style = (q.get('style') || '').replace(/[^a-z]/g, '');
+    talkLine(pick[0], (['shout', 'whisper', 'think'].includes(style) ? `[${style}] ` : '') + pick[1], null, pick[2]);
+  }
 }
 /* UI-3b: the Studio's UI look preview hands a fixture the look being edited: the theme sheet, and light or dark,
    reduced motion and the text size through the fixture save's own Settings (only a fixture listens) */

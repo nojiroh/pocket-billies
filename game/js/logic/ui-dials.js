@@ -498,6 +498,7 @@ export const UI_DIALS = [
 
 /** the layer scale as tokens.css has it (kept equal by tools/test/ui-dials.test.mjs) */
 export const UI_LAYERS = /** @type {[string, number, string][]} */ ([
+  ['--z-under', -2, 'Under a part’s own under-layer (a thick-edged speech bubble’s edge)'],
   ['--z-below', -1, 'Under its own part (the shapes’ shadow layers)'],
   ['--z-battle', 10, 'The battle'],
   ['--z-scene', 20, 'Cutscene people over the dressing room'],

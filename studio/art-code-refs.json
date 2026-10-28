@@ -130,7 +130,7 @@
   {
    "p": "next/palette.js",
    "at": [
-    "game/index.html:84"
+    "game/index.html:85"
    ]
   },
   {
@@ -149,7 +149,7 @@
   {
    "p": "next/rigs-next.js",
    "at": [
-    "game/index.html:83"
+    "game/index.html:84"
    ]
   },
   {
@@ -1635,7 +1635,8 @@
    "game/js/logic/sound-bake.js:398",
    "game/js/logic/soundscape.js:117",
    "game/js/logic/soundscape.js:123",
-   "game/js/logic/ui-dials.js:103"
+   "game/js/logic/ui-dials.js:103",
+   "game/js/talk.js:197"
   ],
   "building": [
    "game/js/bowl-map-test.js:344",
@@ -1677,8 +1678,8 @@
    "game/js/shop.js:179",
    "game/js/shop.js:189",
    "game/js/shop.js:258",
-   "game/js/sound.js:526",
-   "game/js/sound.js:1772",
+   "game/js/sound.js:540",
+   "game/js/sound.js:1786",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:100",

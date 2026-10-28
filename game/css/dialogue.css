@@ -17,28 +17,123 @@
   border-radius: 0;
   background: none;
   box-shadow: none;
-  filter: var(--drop-float);
+  filter: var(--skin-drop, var(--drop-float));
   isolation: isolate;
   transform-origin: 58px 0;
+  /* DL-3: talk.js opens the bubble with its own pop-in (talkArrive), so the older slide-up (talk.css csUp) is off */
+  animation: none;
+  /* DL-3: the line's tilt (talk.js --tilt-k, -1 to 1, times the Motion dial's most), the skin's slant */
+  --talk-tilt: calc(var(--tilt-k, 0) * var(--bubble-tilt, 3deg));
 }
+/* DL-3: the frame's height while it grows to fit a new line (talk.js animates it on the bubble's spring) */
+@property --grow {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+/* the fill (::before), the decorations (.talk-deco) and the edge line (::after): the line's shape (talk.js --talk-clip,
+   --talk-edge: the skin's family, or a shout's burst, a thought's cloud), tilted and slanted while the letters stay
+   level, and scaled up from the bottom edge as the frame grows */
 .talk-box::before,
-.talk-box::after {
+.talk-box::after,
+.talk-deco {
   content: '';
   position: absolute;
   inset: calc(-1 * var(--bubble-tail, 18px)) 0 0 0;
   z-index: var(--z-below);
-  clip-path: var(--clip-bubble);
-  background: var(--g-solid);
+  clip-path: var(--talk-clip, var(--clip-bubble));
   pointer-events: none;
-  transform-origin: 58px var(--bubble-tail, 18px);
+  transform: rotate(var(--talk-tilt)) skewX(var(--talk-slant, 0deg)) scale(1, var(--grow, 1));
+  transform-origin: 58px 100%;
+}
+.talk-box::before,
+.talk-box::after,
+.talk-deco {
   animation:
     m-bubble-float 5.3s ease-in-out infinite,
     m-bubble-wiggle 7.9s ease-in-out infinite,
     m-bubble-breathe 4.1s ease-in-out infinite;
 }
+.talk-box::before {
+  background: var(--skin-fill, var(--g-solid));
+}
 .talk-box::after {
-  clip-path: var(--edge-bubble);
-  background: var(--edge);
+  clip-path: var(--talk-edge, var(--edge-bubble));
+  background: var(--skin-edge, var(--edge));
+}
+/* the decorations sit between the fill and the edge, inside the shape: the shine, the form number, a halftone */
+.talk-deco {
+  overflow: hidden;
+  background: var(--skin-deco, none);
+}
+.talk-shine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 22%;
+  opacity: 0;
+  background: linear-gradient(100deg, transparent, var(--skin-shine, transparent), transparent);
+}
+.talk-form {
+  position: absolute;
+  top: calc(var(--bubble-tail, 18px) + var(--s1));
+  right: var(--s4);
+  font: 600 var(--fs-caption) / 1 var(--font-case, var(--font-prose));
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--skin-form, transparent);
+}
+/* DL-3: a whisper: the edge in dashes, the line fainter and a little smaller */
+.talk-box[data-shape='whisper']::after {
+  -webkit-mask: repeating-linear-gradient(45deg, currentColor 0 5px, transparent 5px 9px);
+  mask: repeating-linear-gradient(45deg, currentColor 0 5px, transparent 5px 9px);
+}
+.talk-box[data-shape='whisper'] .talk-line {
+  font-size: 0.94em;
+  opacity: 0.78;
+}
+/* DL-3: a shout: the burst (talk.js), the line bold and a little bigger */
+.talk-box[data-shape='shout'] .talk-line {
+  font-size: 1.06em;
+  font-weight: 700;
+}
+/* DL-3: a thought: a trail of three dots toward the portrait in place of the tail */
+.talk-dots {
+  display: none;
+}
+.talk-box[data-shape='think'] .talk-dots {
+  position: absolute;
+  left: 40px;
+  top: calc(-1 * var(--bubble-tail, 18px));
+  display: block;
+  width: 30px;
+  height: var(--bubble-tail, 18px);
+  pointer-events: none;
+}
+.talk-dots i {
+  position: absolute;
+  border-radius: var(--r-pill);
+  background: var(--skin-fill, var(--g-solid));
+  border: 1px solid var(--edge);
+}
+.talk-dots i:nth-child(1) {
+  left: 18px;
+  top: 8px;
+  width: 10px;
+  height: 10px;
+}
+.talk-dots i:nth-child(2) {
+  left: 9px;
+  top: 3px;
+  width: 7px;
+  height: 7px;
+}
+.talk-dots i:nth-child(3) {
+  left: 3px;
+  top: 0;
+  width: 4px;
+  height: 4px;
 }
 /* UI-2: the portrait's circle sits behind, and the head breaks out of its top: the picture shows whole above the
    circle's middle and only inside the circle below it (the .pb-portrait rule, at 96 px) */
@@ -88,15 +183,16 @@
   display: inline-block;
   margin: 0 0 var(--s2);
   padding: var(--s1) var(--s3);
-  clip-path: var(--clip-chip);
+  /* DL-3: a skin may give the tag its own colours and outline (css/talk-skins.css --skin-tag*) */
+  clip-path: var(--skin-tag-clip, var(--clip-chip));
   font: 700 var(--fs-caption) / 1.2 var(--font-voice);
   letter-spacing: 0.02em;
-  color: var(--goldink, #3a2408);
-  background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+  color: var(--skin-tag-ink, var(--goldink, #3a2408));
+  background: var(--skin-tag, linear-gradient(180deg, var(--gold-a), var(--gold-b)));
 }
 .talk-line {
   font: 500 var(--fs-body) / var(--lh-prose) var(--font-prose);
-  color: var(--text);
+  color: var(--skin-ink, var(--text));
 }
 .talk-more {
   right: var(--s4);

@@ -476,7 +476,21 @@ export function soundEffect(name, o = {}) {
          (a thought never blips: talk.js) */
       const loud = o.style === 'shout' ? 1.5 : o.style === 'whisper' ? 0.45 : o.big ? 1.3 : 1,
         up = o.style === 'shout' ? 5 : o.big ? 2 : 0;
-      if (o.who === 'kappi') {
+      /* DL-3: a skin's blip (talkSkins.json): the Bureau's typewriter, a key's short clack and a dull strike */
+      if (o.voice === 'typewriter') {
+        synthNoise(F, { t, dur: 0.018, vol: 0.05 * loud, bp: 2600 + Math.random() * 900, q: 2.2 });
+        synthVoice(F, {
+          type: 'square',
+          freq: midiToFrequency(40 + up),
+          t,
+          dur: 0.02,
+          vol: 0.025 * loud,
+          r: 0.01,
+          cut: 900,
+        });
+        break;
+      }
+      if (o.who === 'kappi' || o.voice === 'calm') {
         /* Kappi, a capybara: a low, soft, falling note with a small click in front, like a capybara's purr and click */
         synthNoise(F, { t, dur: 0.012, vol: 0.03 * loud, bp: 3200, q: 1.4 });
         synthVoice(F, {

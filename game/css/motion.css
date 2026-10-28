@@ -50,6 +50,7 @@
 [data-motion='calm'] :is(.m-idle, .fgcam canvas, .title-coin, .bloom),
 [data-motion='calm'] .talk-box::before,
 [data-motion='calm'] .talk-box::after,
+[data-motion='calm'] .talk-deco,
 [data-motion='calm'] .bt.fight::before {
   animation: none;
 }
@@ -98,6 +99,7 @@ html:not([data-idle~='glint']) .bdg.got .bdg-m::after,
 html:not([data-idle~='forecast']) .wx-now,
 html:not([data-idle~='bubble']) .talk-box::before,
 html:not([data-idle~='bubble']) .talk-box::after,
+html:not([data-idle~='bubble']) .talk-deco,
 html:not([data-idle~='stage']) .fgcam canvas,
 html:not([data-idle~='breathe']) .m-idle,
 html:not([data-idle~='coin']) .title-coin,
@@ -342,17 +344,18 @@ html:not([data-idle~='bloom']) .bloom {
   }
 }
 /* bubble (UI-2): the dialogue box's bubble floats, wiggles and breathes, each on its own period (dialogue.css) so the
-   three never line up the same way twice; a pixel or two, a third of a degree, a couple of percent */
+   three never line up the same way twice; a pixel or two, a third of a degree, a couple of percent. DL-3: times the
+   Bubble idle dial (--bubble-idle, 0.6: smaller than UI-2's) */
 @keyframes m-bubble-float {
   0%,
   100% {
     translate: 0 0;
   }
   30% {
-    translate: 1px -2px;
+    translate: calc(1px * var(--bubble-idle, 1)) calc(-2px * var(--bubble-idle, 1));
   }
   65% {
-    translate: -1px -1px;
+    translate: calc(-1px * var(--bubble-idle, 1)) calc(-1px * var(--bubble-idle, 1));
   }
 }
 @keyframes m-bubble-wiggle {
@@ -361,10 +364,10 @@ html:not([data-idle~='bloom']) .bloom {
     rotate: 0deg;
   }
   25% {
-    rotate: 0.35deg;
+    rotate: calc(0.35deg * var(--bubble-idle, 1));
   }
   75% {
-    rotate: -0.3deg;
+    rotate: calc(-0.3deg * var(--bubble-idle, 1));
   }
 }
 @keyframes m-bubble-breathe {
@@ -373,7 +376,7 @@ html:not([data-idle~='bloom']) .bloom {
     scale: 1 1;
   }
   50% {
-    scale: 1.008 1.018;
+    scale: calc(1 + 0.008 * var(--bubble-idle, 1)) calc(1 + 0.018 * var(--bubble-idle, 1));
   }
 }
 /* the screens and the sheets use it (the older slide-ins in v05.css and polish.css are replaced here; the Map tab's
@@ -520,7 +523,8 @@ html:not([data-idle~='bloom']) .bloom {
   }
   :root:not([data-motion]) .m-idle,
   :root:not([data-motion]) .talk-box::before,
-  :root:not([data-motion]) .talk-box::after {
+  :root:not([data-motion]) .talk-box::after,
+  :root:not([data-motion]) .talk-deco {
     animation: none !important;
   }
   :root:not([data-motion]) .m-press:active {
@@ -551,7 +555,8 @@ html:not([data-idle~='bloom']) .bloom {
 }
 [data-motion='reduced'] .m-idle,
 [data-motion='reduced'] .talk-box::before,
-[data-motion='reduced'] .talk-box::after {
+[data-motion='reduced'] .talk-box::after,
+[data-motion='reduced'] .talk-deco {
   animation: none !important;
 }
 [data-motion='reduced'] .m-press:active {
