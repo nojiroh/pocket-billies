@@ -1650,7 +1650,8 @@ export const battleStageRingPhase = () =>
 /* ---------- effects (world space, y up) ---------- */
 /* VFX-9: the budgets (docs/phases/vfx-track.md "Budgets"): particles alive in the one pool at quality 0-3, a burst's
    most, and the ambient ones at most a quarter of the pool. A move's particle over the budget takes an ambient one's
-   place (the oldest), else it isn't made; an ambient one over its share isn't made */
+   place (the oldest), else it isn't made (a picture takes the oldest plain one's, VFX-10); an ambient one over its
+   share isn't made */
 const PARTICLE_BUDGET = [256, 160, 96, 48],
   BURST_BUDGET = [24, 16, 10, 6];
 const battleQuality = () => clamp(battleStage.q.lvl | 0, 0, 3);
@@ -1659,7 +1660,10 @@ function addParticle(o) {
   const P = battleStage.parts;
   if (P.length >= PARTICLE_BUDGET[battleQuality()]) {
     if (ambientSpawning) return;
-    const j = P.findIndex(p => p.amb);
+    /* VFX-10: a picture (a bot's part dropping off, a boss's bots flying in) means something: it is always made, in
+       the place of the oldest plain particle when no ambient one is left */
+    let j = P.findIndex(p => p.amb);
+    if (j < 0 && o.img) j = P.findIndex(p => !p.img);
     if (j < 0) return;
     P.splice(j, 1);
   }
