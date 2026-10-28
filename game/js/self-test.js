@@ -2041,6 +2041,10 @@ async function runFullTest(mode) {
             walkPick({ k: 'npc', n: agent });
             if (!(await wait(() => uiState.modal && uiState.modal.cls === 'event-sheet', 5000)))
               throw new Error('tapping the agent opened no event');
+            /* SY-4: the checkpoint is the Bureau's, so a case file: its tab names the form */
+            const form = document.querySelector('#ov .event-sheet .case-tab .case-form');
+            if (!form || !(form.textContent || '').trim())
+              throw new Error('the checkpoint isn’t a case file (no form on its tab)');
             const go = uiState.modal.btns[uiState.modal.btns.length - 1];
             go.f();
             if (!(await wait(() => saveData.run.enc && saveData.run.enc.seen.includes('bureau_checkpoint'), 15000)))
@@ -2053,6 +2057,14 @@ async function runFullTest(mode) {
               await selfTestSleep(200);
             }
             if (saveData.run.enc.play) throw new Error('walking on didn’t end the event');
+            /* SY-4: walking on (the last option) stamps the Bureau's word for denied */
+            await wait(() => !!document.querySelector('#ov .event-sheet pb-stamp'), 3000);
+            const stamp = document.querySelector('#ov .event-sheet pb-stamp'),
+              denied = FACTIONS.bureau.look ? FACTIONS.bureau.look.stamps.denied : '';
+            if (!stamp || stamp.getAttribute('word') !== denied)
+              throw new Error(
+                `walking on stamped “${stamp ? stamp.getAttribute('word') : 'nothing'}”, not “${denied}”`
+              );
             uiState.modal = null;
             renderOverlay();
             walkPick({ k: 'npc', n: agent });
