@@ -766,7 +766,7 @@ files are the source** (decision 6): tools/build-ui-icons.py retired. Open one w
   that runs or loads (scripts, styles, links, outside pictures).
 - **Preview**: at 14, 22, 36 and 108 px on a light and a dark panel, and beside the other icons (click one to open it).
   An unsaved icon also shows in the Studio's own previews of the menus.
-- **New icon**: a name (lower case, digits and -), blank or a copy. `tools/test/ui-icons.test.mjs` counts the set (51):
+- **New icon**: a name (lower case, digits and -), blank or a copy. `tools/test/ui-icons.test.mjs` counts the set (52; SY-3 added `bureau`, the Bureau's emblem):
   raise the count when a new icon goes in.
 - Checks: `tools/test/svg-pixels.test.mjs`, `icon-block.test.mjs`, `ui-icons.test.mjs`, `check-studio-github.py
   --only=icons`, the self-test's "Icons" row, `studio-shots.py --views icons`.
