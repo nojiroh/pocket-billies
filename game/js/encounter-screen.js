@@ -81,6 +81,7 @@ expose({
   encHolds: [() => encHolds],
   encLineHTML: [() => encLineHTML],
   encLines: [() => encLines, v => (encLines = v)],
+  encLinesHTML: [() => encLinesHTML],
   encNote: [() => encNote],
   encPlaying: [() => encPlaying, v => (encPlaying = v)],
   encRegion: [() => encRegion],
@@ -112,6 +113,8 @@ const encWait = async (/** @type {() => boolean} */ f) => {
 /** a line as the sheet shows it: the speaker in bold */
 const encLineHTML = (/** @type {{ who: string | null, text: string }} */ l) =>
   `<p class="ev-line">${l.who ? `<b>${escapeHtml(l.who)}</b> ` : ''}${escapeHtml(l.text)}</p>`;
+/** the sheet's lines so far, as its body shows them */
+const encLinesHTML = () => `<div class="ev-lines">${encLines.join('')}</div>`;
 /** show the event's sheet (in place when it is up; ahead of any other) */
 function encSheet(M) {
   if (uiState.modal && uiState.modal.cls !== M.cls) uiState.mq.unshift(uiState.modal);
@@ -253,7 +256,7 @@ function encounterEnd(title, before) {
     title: escapeHtml(title),
     cls: 'event-sheet',
     lock: true,
-    html: `<div class="ev-lines">${encLines.join('')}</div>${
+    html: `${encLinesHTML()}${
       ch.length
         ? `<p class="ev-sum">${ch.map(([k, n]) => (k === 'money' ? `${n > 0 ? '+' : '−'}${moneyHTML(Math.abs(n), 12)}` : `${n > 0 ? '+' : '−'}${Math.abs(n)} ${escapeHtml(name(k))}`)).join(' · ')}</p>`
         : ''
@@ -268,7 +271,7 @@ function encStep(title, label) {
       title: escapeHtml(title),
       cls: 'event-sheet',
       lock: true,
-      html: `<div class="ev-lines">${encLines.join('')}</div>`,
+      html: encLinesHTML(),
       btns: [{ l: label, c: 'dark', f: () => res(undefined) }],
     })
   );
@@ -306,7 +309,7 @@ function encounterStage(id, i) {
           title: escapeHtml(title),
           cls: 'event-sheet',
           lock: true,
-          html: `<div class="ev-lines">${encLines.join('')}</div>`,
+          html: encLinesHTML(),
           btns: options.map((op, k) => ({ l: escapeHtml(op.text), c: 'dark', f: () => res(k) })),
         })
       ),
@@ -393,7 +396,7 @@ function encounterStage(id, i) {
           title: escapeHtml(title),
           cls: 'event-sheet',
           lock: true,
-          html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">Who goes back? It won’t come home.</p>`,
+          html: `${encLinesHTML()}<p class="note">Who goes back? It won’t come home.</p>`,
           btns: [
             ...L.map(m => ({
               l: `${escapeHtml(billyName(m))} <small>Lv ${m.lvl}</small>`,
@@ -439,7 +442,7 @@ function encounterStage(id, i) {
               title: escapeHtml(title),
               cls: 'event-sheet',
               lock: true,
-              html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">Your party is full. Who stays behind? It won’t come home.</p>`,
+              html: `${encLinesHTML()}<p class="note">Your party is full. Who stays behind? It won’t come home.</p>`,
               btns: [
                 ...L.map(m => ({
                   l: `${escapeHtml(billyName(m))} <small>Lv ${m.lvl}</small>`,
@@ -625,7 +628,7 @@ function encChoose(ask, options, leave) {
       title: escapeHtml(title),
       cls: 'event-sheet',
       lock: true,
-      html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">${ask}</p>`,
+      html: `${encLinesHTML()}<p class="note">${ask}</p>`,
       btns: [
         ...options.map(o => ({ l: o.l, c: 'dark', dis: !!o.dis, f: () => res(o.v) })),
         ...(leave ? [{ l: 'Not now', c: 'quiet', f: () => res(null) }] : []),
