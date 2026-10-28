@@ -342,7 +342,9 @@ function runStatusHTML() {
     rows = st.days
       .map(d => {
         const fx = weatherEffectText(d.wx);
-        return `<li>${uiIconHTML(WEATHER_ICONS[d.w] || 'sun', 16)}<b>${d.day === st.day ? 'Today' : 'Tomorrow'}</b><span>${escapeHtml(WEATHER_NAMES[d.w] || d.w)}</span><small>${fx ? escapeHtml(fx) : 'No effect on moves'}</small></li>`;
+        /* UI-17: today's icon moves (idle life: ui-idle.js; motion.css .wx-now) */
+        const ic = uiIconHTML(WEATHER_ICONS[d.w] || 'sun', 16);
+        return `<li>${d.day === st.day ? `<span class="wx-now">${ic}</span>` : ic}<b>${d.day === st.day ? 'Today' : 'Tomorrow'}</b><span>${escapeHtml(WEATHER_NAMES[d.w] || d.w)}</span><small>${fx ? escapeHtml(fx) : 'No effect on moves'}</small></li>`;
       })
       .join('');
   return `<section class="ws-status k-card"><div class="ws-top"><pb-day-chip day="${st.day}"></pb-day-chip><span class="ws-type">${escapeHtml(T ? T.name : st.type)}</span></div>${rows ? `<ul class="ws-wx">${rows}</ul>` : ''}</section>`;

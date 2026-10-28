@@ -153,7 +153,7 @@ function runTodayHTML(node) {
   const run = saveData.run,
     w = run && run.forecast && (run.forecast[node] || [])[run.clock - 1];
   return w
-    ? `<span class="mc-wx">${uiIconHTML(/** @type {any} */ (RUN_WEATHER_ICONS)[w] || 'cloud', 14)}${escapeHtml(WEATHER_NAMES[w] || w)}</span>`
+    ? `<span class="mc-wx"><span class="wx-now">${uiIconHTML(/** @type {any} */ (RUN_WEATHER_ICONS)[w] || 'cloud', 14)}</span>${escapeHtml(WEATHER_NAMES[w] || w)}</span>`
     : '';
 }
 /** UI-18: what's at a place, one line for the folded card: its shops, a clinic in a town, its trainers and how many

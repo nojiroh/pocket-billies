@@ -267,6 +267,20 @@ const PbForecast = class extends LitElement {
       }
       li[aria-current='date'] .ic {
         color: var(--goldink, #3a2408);
+        /* UI-17: today's icon moves (idle life: --idle-forecast names the keyframes while it plays) */
+        animation: var(--idle-forecast, none) var(--idle-wx-ms, 3.6s) ease-in-out infinite;
+      }
+      @keyframes pb-wx-now {
+        0%,
+        100% {
+          transform: translateY(0) rotate(0);
+        }
+        30% {
+          transform: translateY(-1px) rotate(-6deg);
+        }
+        65% {
+          transform: translateY(1px) rotate(5deg);
+        }
       }
     `,
   ];

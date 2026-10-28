@@ -99,6 +99,7 @@ html:not([data-idle~='bloom']) .bloom {
 }
 /* today's forecast icon: a small sway, a breath of wind */
 .wx-now {
+  display: inline-flex;
   animation: pb-wx-now var(--idle-wx-ms) ease-in-out infinite;
 }
 @keyframes pb-wx-now {

@@ -94,6 +94,7 @@ export const IDLE_LOOPS = [
   { file: 'game/css/title.css', sel: '.title-coin', kind: 'coin' },
   { file: 'game/css/title.css', sel: '.ttl-logo span', kind: 'logo' },
   { file: 'game/js/ui-kit.js', sel: '.band', kind: 'foil' },
+  { file: 'game/js/ui-run-kit.js', sel: "li[aria-current='date'] .ic", kind: 'forecast' },
   { file: 'game/js/ui-kit.js', sel: ":host([kind='gold']) .face::after", kind: 'glint' },
 ];
 
