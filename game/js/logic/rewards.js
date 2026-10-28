@@ -30,6 +30,7 @@ import { moveSlotCount, newUid } from './rules.js';
 import { salvageCards, salvageParts } from './factions.js';
 import { heldGive, heldIds } from './held.js';
 import { encOf } from './run-enc.js';
+import { fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   evoUsable: [() => evoUsable],
@@ -41,6 +42,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   rewardReroll: [() => rewardReroll, v => (rewardReroll = v)],
   rewardRerollCost: [() => rewardRerollCost],
+  rewardRerollFree: [() => rewardRerollFree],
   // @ts-expect-error -- replaced on purpose
   rewardTake: [() => rewardTake, v => (rewardTake = v)],
   // @ts-expect-error -- replaced on purpose
@@ -145,12 +147,13 @@ export function rewardDraw(g, D, o = {}) {
  * saves before showing it @param {Run} run @param {string} from who left it (a trainer's id, 'event:<id>')
  * @param {RewardData} D @param {{ kind?: string, n?: number }} [o] @returns {RunReward | null} */
 export function rewardOfferMake(run, from, D, o = {}) {
+  /* PK-5: the run's rewardPick rule rows (Gift Receipt) show more cards; the pick keeps its count for a reroll */
+  const more = fxRunRule(run, 'rewardPick'),
+    n = more > 0 ? (o.n || D.rules.pick) + more : o.n;
   const e = encOf(run),
-    cards = rewardDraw(rngFrom(run.seed, 'reward|' + e.rewardN + '|0'), D, o);
+    cards = rewardDraw(rngFrom(run.seed, 'reward|' + e.rewardN + '|0'), D, { ...o, n });
   e.rewardN++;
-  e.reward = cards.length
-    ? { cards, rolls: 0, from, ...(o.kind ? { kind: o.kind } : {}), ...(o.n ? { n: o.n } : {}) }
-    : null;
+  e.reward = cards.length ? { cards, rolls: 0, from, ...(o.kind ? { kind: o.kind } : {}), ...(n ? { n } : {}) } : null;
   return e.reward;
 }
 
@@ -166,8 +169,13 @@ export function salvageOfferMake(run, from, bots, S) {
   return e.reward;
 }
 
-/** what the next reroll costs (Moneys) @param {RunReward} R @param {{ reroll: number, grow: number }} rules */
-export const rewardRerollCost = (R, rules) => Math.round(rules.reroll * Math.pow(rules.grow, R.rolls));
+/** what the next reroll costs (Moneys); PK-5: the first `free` rerolls of a pick cost nothing (the run's rerollFree
+ * rule rows, Fortune Cookie: rewardRerollFree), and the price grows from there as before
+ * @param {RunReward} R @param {{ reroll: number, grow: number }} rules @param {number} [free] */
+export const rewardRerollCost = (R, rules, free = 0) =>
+  R.rolls < free ? 0 : Math.round(rules.reroll * Math.pow(rules.grow, R.rolls - free));
+/** PK-5: how many rerolls of each reward pick are free on this run (its rerollFree rule rows) @param {Run} run */
+export const rewardRerollFree = run => Math.max(0, fxRunRule(run, 'rerollFree'));
 
 /** reroll the pick: pays its cost from `s.se` and draws again from the next roll's stream; '' when done, else why not
  * ('none': no pick, 'money': not enough) @param {Run} run @param {{ se: number }} s @param {RewardData} D */
@@ -175,7 +183,7 @@ export function rewardReroll(run, s, D) {
   const R = run.enc && run.enc.reward;
   /* RL-14: a salvage pick is what the bots left: never drawn again */
   if (!R || R.kind === 'salvage') return 'none';
-  const cost = rewardRerollCost(R, D.rules);
+  const cost = rewardRerollCost(R, D.rules, rewardRerollFree(run));
   if (s.se < cost) return 'money';
   s.se -= cost;
   R.rolls++;

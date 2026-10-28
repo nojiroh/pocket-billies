@@ -175,8 +175,8 @@ town node needs it.
 - **Terrain track** (docs/phases/terrain-track.md, the owner's brief 2026-10-21): smooth roads, mountains, height as
   gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2a (mountains as the border) and
   TR-2b (mountain trails) done 2026-10-21, after the Gen 3-5 route research; TR-2c next. Runs went east to west (the
-  owner, TR-2 session; west to east since WM-1). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) next. TR-4 (the look by height and steepness: biome cliffs and strata, the snow line, scree and turf
-  edges, each behind a World switch, off) done 2026-10-26; TR-5..TR-7 alongside RL-9..RL-11 after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
+  owner, TR-2 session; west to east since WM-1). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) after `track/worldmap` reaches main, as recipes on RT-1's plans. TR-4 (the look by height and steepness: biome cliffs and strata, the snow line, scree and turf
+  edges, each behind a World switch, off) done 2026-10-26. TR-5 (terraces along the contours, their fronts, stairs up to any stranded tier, summit or door) done 2026-10-28 on `track/terrain`; TR-6..TR-7 alongside RL-9..RL-11 after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
 - **Sound track** (docs/phases/sound-track.md, planned 2026-10-21): settings fixes, the tracker as data, a Studio
   section for music and cries, then a Pokémon-style rework (four voices, written hooks, battle intros, a cry per
   species). SND-1 to SND-3 beside RL-8; SND-4 to SND-6 after the RL-8 play test. Tags `snd-N-done`. SND-1 (settings
@@ -213,10 +213,14 @@ town node needs it.
   choreographies as legacy families, the tap that skips, sounds on the stage clock, the flash limiter, the rings) built
   2026-10-28; VFX-9 (one draw for effects: the battle's particles in a GPU pool over one atlas, two draws a move,
   the budgets, fixed light keys, the rig's flash on the GPU, the chromatic flash in the grade pass) built 2026-10-28;
-  VFX-10 next. VFX-12 (the Studio's Battle effects editor: moves in 8 outcomes and events on the real stage at any
-  speed, quality, motion and Flashes, a 24 fps scrubber over the runner's steps, panes for the budgets and Part 1's
-  smears as battleAnims.json data, ramps and cells panes for VFX-10's sections; VFX-6 folded in) built 2026-10-28 on
-  the side branch `claude/vfx-12-studio-effects` (wave 1). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  VFX-10 (effect art: tools/build-battle-anims.py and 44 grayscale strips in game/art/battle/anims, battleAnims.json
+  sprites, ramps and iconSprites, the strips in the pool's atlas coloured by the type's ramp at the rigs' pixel size,
+  12/24 fps frames, the eroding rim; the Art browser's ramp previews; the particle picker fixed) built 2026-10-28;
+  wave 1 goes on with VFX-12 and VFX-15 on side branches. VFX-12 (the Studio's Battle effects editor: moves in 8
+  outcomes and events on the real stage at any speed, quality, motion and Flashes, a 24 fps scrubber over the
+  runner's steps, panes for the budgets and Part 1's smears as battleAnims.json data, ramps and cells panes for
+  VFX-10's sections; VFX-6 folded in) built 2026-10-28 on the side branch `claude/vfx-12-studio-effects`.
+  **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
@@ -324,7 +328,9 @@ town node needs it.
   inflict, chip, first and revive, 11 new pictures, counters on the Perks tab) done 2026-10-28 on `track/perks`; PK-4
   (Wave B: types, team and weather: 15 Perks, the kinds passive, weather, benchXp and rule forecastDays, `needs` and
   `tags` with the bias on offers, 13 new pictures) done 2026-10-28 on `track/perks`; PK-5 (Wave C: catching, cash and
-  maps) next.
+  maps: 12 Perks, the kinds catchLevel, refund, free and salvage, a money share on arrival, inflict at battle start,
+  the rules rewardPick, rerollFree and mapReveal, `needs: bots`, 12 new pictures) done 2026-10-28 on `track/perks`;
+  PK-6 (Wave D: rules, growth and adventure) next.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
