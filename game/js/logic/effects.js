@@ -18,6 +18,7 @@
      immune  yours can't get a status (brn, slp, par), or aren't hurt by the Sandstorm or sharp stones (PK-3)
      inflict a status with a chance on the foe yours hit (`when: hit`; chances together at most FX_CHANCE) (PK-3)
      chip    what a burn takes from yours at each turn's end, times mult (PK-3)
+     first   yours move before the foe's (within a move's priority), where its `if` holds: `turn:1` (PK-3)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -128,6 +129,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'immune',
   'inflict',
   'chip',
+  'first',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };

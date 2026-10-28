@@ -94,6 +94,7 @@ const PERK_KINDS = {
   immune: 'A status, the Sandstorm or sharp stones can’t touch your Billies (PK-3)',
   inflict: 'A chance to give the foe a status when one of yours hits it (PK-3)',
   chip: 'What a burn takes from your Billies at each turn’s end (PK-3)',
+  first: 'Your Billies move before the foe’s (PK-3; If turn:1 for the first turn)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -134,6 +135,7 @@ const PERK_ROW_NEW = {
   immune: () => ({ kind: 'immune', what: 'brn' }),
   inflict: () => ({ kind: 'inflict', status: 'par', chance: 0.1, when: 'hit' }),
   chip: () => ({ kind: 'chip', what: 'burn', mult: 0.9 }),
+  first: () => ({ kind: 'first', if: 'turn:1' }),
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -275,6 +277,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         }),
       ],
       chip: () => [selectField('Which hurt', `${p}.what`, [['burn', 'A burn’s, at each turn’s end']]), mult('Hurt ×')],
+      first: () => [`<p class="note">Within a move’s priority, yours act before the foe’s wherever its If holds.</p>`],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(
     PERK_KINDS

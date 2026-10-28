@@ -197,6 +197,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxFieldStages: [() => fxFieldStages, v => (fxFieldStages = v)],
   // @ts-expect-error -- replaced on purpose
+  fxFirstActs: [() => fxFirstActs, v => (fxFirstActs = v)],
+  // @ts-expect-error -- replaced on purpose
   fxFoeTags: [() => fxFoeTags, v => (fxFoeTags = v)],
   // @ts-expect-error -- replaced on purpose
   fxHitMoments: [() => fxHitMoments, v => (fxHitMoments = v)],
@@ -1474,6 +1476,26 @@ export function fxTurnEnd(k) {
     battleSay(`${fxNames(hurt)}: ${billyName(m)} lost a little HP.`, { k: 'hurt', si: k, dmg: d });
   }
 }
+/** PK-3: the acts of yours a run's first rows put ahead this turn (their conditions held for the one acting), with a
+ * line naming the Perks; none without Perks @param {any[]} acts @returns {Set<any>} */
+export function fxFirstActs(acts) {
+  const b = battleNow(),
+    out = new Set();
+  if (!b || !b.fx) return out;
+  /** @type {any[]} */
+  const rows = [],
+    K = [];
+  for (const a of acts) {
+    if (ACTOR_SIDE[a.who] !== 0) continue;
+    const R = fxAt(b.fx, fxBattleCtx(a.who), fxBattleState(b)).filter(f => f.kind === 'first');
+    if (!R.length) continue;
+    out.add(a);
+    rows.push(...R);
+    if (!K.includes(a.who)) K.push(a.who);
+  }
+  if (K.length) battleSay(`${fxNames(rows)}: ${joinNames(K)} ${K.length > 1 ? 'move' : 'moves'} first.`, null);
+  return out;
+}
 /** PK-3: the run's immune rows against `what` that hold for one of yours (none for a foe, or without Perks)
  * @param {number} k @param {string} what @returns {any[]} */
 export function fxImmuneTo(k, what) {
@@ -1743,9 +1765,12 @@ export function runTurn(plan, b) {
       }
     }
     acts.forEach(a => (a.r = battleRoll()));
+    /* PK-3: a run's first rows put yours ahead of the foe's, within a move's priority (Alarm Clock) */
+    const early = fxFirstActs(acts);
     acts.sort(
       (a, b) =>
         (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
+        (early.has(b) ? 1 : 0) - (early.has(a) ? 1 : 0) ||
         (a.boss2 ? 1 : 0) - (b.boss2 ? 1 : 0) ||
         effectiveStat(b.who, 'hus') - effectiveStat(a.who, 'hus') ||
         a.r - b.r

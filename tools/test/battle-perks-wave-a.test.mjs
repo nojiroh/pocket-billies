@@ -314,3 +314,32 @@ test('PK-3 chip: a burn takes half as much from yours at a turn’s end; the foe
   assert.equal(foeHeld, foeNone);
   assert.equal(foeHeld, Math.max(1, Math.floor(fmx / fr)));
 });
+
+/* ---------- first ---------- */
+
+test('PK-3 first: on turn 1 yours move before a faster foe (with a line); from turn 2 speed decides again', () => {
+  const { P, fx } = perks({ id: 'test_clock', name: 'Test Clock', fx: [{ kind: 'first', if: 'turn:1' }] });
+  const H = anyHit('H'),
+    order = b =>
+      b.events
+        .filter(e => e.an && e.an.k === 'move')
+        .map(e => e.an.si)
+        .join(',');
+  for (const held of [true, false])
+    withPerks(P, () => {
+      const b = battle(held ? fx : null);
+      tough(mine(b));
+      tough(foe(b));
+      b.sides[0].f[0].v.st.hus = -6;
+      b.sides[1].f[0].v.st.hus = 6;
+      fn('runTurn')([{ who: 0, k: 'move', mid: H, tk: 1 }], b);
+      assert.equal(b.turn, 1);
+      assert.match(order(b), held ? /^0,1/ : /^1,0/, `turn 1, held ${held}`);
+      assert.equal(
+        lines(b).some(t => /^Test Clock: .* moves first\.$/.test(t)),
+        held
+      );
+      fn('runTurn')([{ who: 0, k: 'move', mid: H, tk: 1 }], b);
+      assert.match(order(b), /^1,0/, `turn 2, held ${held}`);
+    });
+});
