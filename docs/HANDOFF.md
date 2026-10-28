@@ -2,6 +2,88 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Style track SY-8 - tuning and docs: the style dials, the debug log's style line; the track is done - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-7, adb683c1) was
+already in; main had nothing new at the start (07c9b284) and moved during the step (merged in: below). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-8,
+plus UI-16a/b from SY-5); **the style track is complete** and waits on #289 (the owner merges). PR #279
+(`ccr-86dc9cb1-odx2za`, the plan and SY-1) was superseded by #289; the merge session merged #279 into main during
+this step, so nothing is left to close. Tags `sy-8-done`
+and `style-done` are for the owner to push (the git proxy refuses tags). The VFX session (session_019UpAFxvWEMwGebptZbvUuW)
+was messaged before `battleStageFlash` got its counter line; the sprite shader, hitFx and the join intro were not touched.
+- Changed:
+  - **The dials as data** (uiTheme.json `style`, schema, logic/style-dials.js, the Studio's UI section, new group
+    **Style**): Stamp size (x1, 0.5-2), Stamp slant (8°, 0-20), HP roll (380 ms, 0-1500), Damage number smallest and
+    largest (24 and 40 px), Foil every (3,500 ms), Foil sweep time (700 ms), Foil band width (half width 0.2). Every
+    default is the number SY-2 to SY-6 shipped: nothing looks different until a dial moves. A palette preset can set
+    them too. The theme sheet writes them as `--stamp-scale`, `--stamp-slant`, `--hp-roll`, `--pop-min`, `--pop-max`,
+    `--foil-period`, `--foil-sweep`, `--foil-half` (`styleVarsCss` in logic/ui-theme.js sharedVars).
+  - **Readers:** `pb-stamp` (ui-run-kit.js) sizes its font by `--stamp-scale` and turns by its page's tilt x
+    `--stamp-slant` / 8 (so -7 and -8 stay apart); battle-screen.css's HP fill moves in `--hp-roll`; battle.js's pop
+    (`popSize` takes min and max now) and the roll (`rollValue`'s ms) read theme-sheet.js `styleDials()`; the foil
+    (`coatFoil`/`foilBand` take an optional tune) does too, in world-billies.js `worldFoil` and battle-3d.js
+    `battleFoil`. `styleDials()` reads the variables at most twice a second (the foil asks every frame) and again
+    after `applyUiTheme`.
+  - **The debug log's style line** (debug-log.js `state().style`, from theme-sheet.js `styleLog()`): `now` (e.g.
+    "flashes off, calm", from html data-flash and data-motion) and `ran`: for each state that ran this session, counts
+    of `flash` (at its strength), `flashHeld` (held to 15% by Flashes off), `flashSkipped` (none: Reduced), `stamp`,
+    `pop`, `roll` and `foil` (frames a Billie had its band). Counts only: no save data, names or places.
+  - Tests: tools/test/style-dials.test.mjs (6: defaults equal today's constants and the data, schema ranges equal the
+    logic's, reading and clamping, the sheet's lines, the counts, popSize/foilBand with dials).
+  - Docs: the track file (SY-8 done, the track done, **one list of every "Decided for the owner" item from SY-1 to
+    SY-8**), ROADMAP (SY-8 and the track done), BRANCHES (a `track/style` row: done, waiting on #289).
+- Found (claims checked):
+  - "the pop's sizes" were constants in logic/hit-numbers.js (POP_MIN 24, POP_MAX 40, ROLL_MS 380) and the fill's
+    .38 s was a separate CSS number: now one dial drives both, so number and bar land together.
+  - The foil's numbers were in logic/coat-foil.js (FOIL_PERIOD_MS 3500, FOIL_SWEEP_MS 700, FOIL_HALF 0.2): right.
+  - The stamp's slant was each page's own `tilt` (-7 on the win line, -8 elsewhere), with no shared number; the dial
+    scales them rather than replacing them.
+  - The debug log already logged the Animation setting and level (`preferences.motion`, `motionLevel`), but not
+    Flashes; the style line adds it.
+  - The Studio loads battle-stage.js and battle-3d.js but not theme-sheet.js: both guard the reader
+    (`typeof styleDials === 'function'`), so the Studio's battle preview uses today's numbers and counts nothing.
+  - "Run map music ... 1400, not 1400": passes alone on main (07c9b284) and alone on this branch (SY-8), and passed
+    in this step's full quick check; it failed alone on SY-6 and SY-7 tips by SY-7's report. It looks like a timing race in the check (the ambience timer sets
+    the music filter every few seconds, so the "last cut" can change between the wait and the message), not the
+    style track's: nothing here touches sound.js. Not fixed.
+- Risky:
+  - A dial set far from its default is untested on a phone (a 2x stamp may overflow a narrow sheet; a 0 ms roll
+    jumps, as before SY-2).
+  - `styleDials()` lags a Studio preview change by up to 0.5 s for the pop, roll and foil (the CSS-read dials are
+    immediate).
+  - `foil` counts frames, so it grows fast (about 60 a second per coated Billie in view); it is a number, cheap.
+  - UI-17's menu foil (`pb-foil`, logic/idle-life.js, from main) keeps its own timing: the Style dials drive the
+    Billie's foil only. Matching the two is a small follow-up if the owner wants one sweep everywhere.
+- Main merged in (at the planning session's and the merge session's request; a merge, 970a9094): main 5f6d01ae (#279,
+  #283, #302: UI-17, UI-18, WM-6, the UI checks). Ten files conflicted; both sides kept (index.html's scripts,
+  battle.js's imports, ui-run-kit.js's elements, the gallery's sections and imports). **MAPGEN_VERSION 26:** main's
+  WM-6 had taken 25, so SY-7's sign and forms are 26 now (the rng scene hash and the run-start snapshot remade with
+  their tools; both differ from main's only by gen.v / mapgenV, checked by setting the version back). art-code-refs
+  regenerated, `npm run modules`. HANDOFF: both sides' entries; SY-3's entry was on both sides, kept once.
+- Verified: lint, typecheck, check:modules, format:check, check-data, check-data-text, art-code-refs; `npm test` 1,660
+  pass after the merge (before it, only the timing test "1,000 maps ... in under a second", which passed alone).
+  `npm run check:smoke` after the merge: 5 of 6; the Phone step's "walk 20 (at most 18)" failed three times and
+  then passed twice on the same code (15 pieces): the count catches the place title and the postcard while they are
+  still on screen; main passed it once. Timing, not this step's (nothing here adds a DOM piece to the walk screen).
+  `npm run check:quick`: 37 of 42; the five are the known ones (Terraces train_station, RL-8 "Meadow Route view never
+  showed", RT-2 "the pair talked but no battle started", Granny Juniper, room light). The UI-16a sound fingerprints,
+  the Phone count and "Run map music" all passed in it. Headless dial check (the gallery): a stamp is 22 px at 8° by
+  default and 44 px at 16° with size x2 and slant 16; `styleDials()` reads the new pop and foil values; no page
+  errors.
+- Decided for the owner, to review (this step's; **every step's list, SY-1 to SY-8, is in docs/phases/style-track.md,
+  "Decided for the owner, to review"**):
+  - **The dials live in uiTheme.json `style`** (the UI section's Style group), so presets can set them and the
+    Studio's live preview shows them; not factions.json or engine.json.
+  - **Stamp size is a multiplier (x1); slant is degrees (8) that scales each page's own tilt.**
+  - **One HP roll dial for the number and the fill.**
+  - **Foil dials: period, sweep time, band half width**; its strength, brightness step and hue stay in code.
+  - **The log counts foil per frame drawn.**
+  - **MAPGEN_VERSION 26** for SY-7's change after merging main (WM-6 had 25).
+  - Not added: a Studio card for the Bureau's words and forms (edit factions.json `bureau.look`); it fits a
+    factions editor when there is one.
+- Next: the style track is complete. The owner reviews and merges PR #289 (draft)
+  and pushes the tags `sy-8-done` and `style-done` (and the earlier `sy-N-done` tags) on the merge commit. Optional
+  SY-9 (Laminated) only if the owner reopens it.
+
 ### UI track - Part 2 checked: every skipped check on all of Part 2 merged, and the fixes (UI-8b..UI-18, WM-5b, WM-6, SY-1..SY-3, VFX-5) - 2026-10-28
 Branch `claude/ui-checks-all`, made from UI-17's `claude/ui-17-idle-life` (#300), which held main and every Part 2
 step. Merged in (merges, not rebases): main (nothing new); `track/ui` (UI-8b, #276: docs conflicts, the newer lines
