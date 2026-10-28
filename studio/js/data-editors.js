@@ -104,6 +104,7 @@ expose({
   selectedLineIndex: [() => selectedLineIndex],
   statsCard: [() => statsCard, v => (statsCard = v)],
   trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
+  typeFxIcons: [() => typeFxIcons, v => (typeFxIcons = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
 });
 /* eslint-enable no-func-assign */
@@ -943,6 +944,17 @@ const FX_ICONS = [
   'zz',
   'down',
 ];
+/* VFX-10: the particle picker offers every icon a type uses (flame, leaf, pebble, feather, orb, cog and scale were
+   missing, so 7 types' particles showed none picked) and the icons the battle draws as strips, after the old list */
+function typeFxIcons(D) {
+  const keys = [
+    ...FX_ICONS,
+    ...(D.types || []).flatMap(t => t.fx || []),
+    ...((D.untyped && D.untyped.fx) || []),
+    ...Object.keys((D.battleAnims && D.battleAnims.iconSprites) || {}),
+  ];
+  return [...new Set(keys)].filter(k => !ARTMAN.icons || ARTMAN.icons[k]);
+}
 SECTIONS.types = () => {
   const D = studioState.D,
     T = D.types;
@@ -961,7 +973,12 @@ SECTIONS.types = () => {
       t,
       i
     ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES), textField('Ability name', `types.${i}.passiveName`, { max: 20, help: 'What the player reads in the Guide and in battle.' }), textField('What it does', `types.${i}.passiveText`, { area: 1, rows: 2, help: 'One sentence for the Guide.' }))}
-  <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
+  <div class="fxpick"><span>Battle particles</span>${typeFxIcons(D)
+    .map(
+      k =>
+        `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`
+    )
+    .join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
