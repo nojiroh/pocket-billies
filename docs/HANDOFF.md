@@ -2,6 +2,54 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Style track SY-2 - numbers you feel: the damage number sized by the hit, your HP rolls - 2026-10-27
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` wasn't on GitHub at the
+start (the local copy held SY-1's 5 commits, never merged, no PR); main (07c9b284) was already in it, so it was pushed
+back as it was, with no merge needed. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft, SY-1 and SY-2). Tag
+`sy-2-done` is for the owner to push (the git proxy refuses tags).
+- Changed:
+  - **game/js/logic/hit-numbers.js** (new): `popSize(w, ko)` (24 px at a scratch to 40 px at a one-shot, 40 on a KO;
+    a missing weight counts as `hitWeight`'s own 0.3) and `rollValue(from, to, t)` (an ease-out over `ROLL_MS` 380, whole
+    numbers, exact at the end). In index.html after smear.js and in the Studio's logic worker list (a unit test asks).
+  - **game/js/battle.js:** `hudPop(si, text, kind, w)`: a damage pop with a weight gets its size inline; a KO
+    (`koThisEvent`: the event's own state shows the target at 0 HP) gets the largest. The kind's colour is unchanged.
+    `hudHit(ti, an, w)`. `rollPlateNumber`: your `hp/max` and a boss's % count over 380 ms (requestAnimationFrame);
+    Reduced motion, a new fighter (another uid), a repaint without a hit (`anim` false) or no change sets it at once.
+  - **game/js/battle-stage.js:** `hitFx` passes its `w` to `hudHit`; the status-damage pop (`hurt`) is sized by
+    `hitWeight` too.
+  - **tools/test/hit-numbers.test.mjs** (new, 5 tests); studio/art-code-refs.json regenerated (moved lines); the track
+    file and ROADMAP mark SY-2 done.
+- Claims checked against the code: `hudPop`/`hudHit` (battle.js 566-586), the sizes 28/34/36 px (battle-screen.css),
+  the fill's .38 s and the ghost's .45 s delay, the foe's % only for bosses, and `hitFx`'s shake and hit-stop formulas
+  are all right; `hitWeight` is at battle-stage.js 1559 now (SY-1 moved it). Wrong: the track says Animation is "Full /
+  Calm / Reduced"; Settings has Device / Full / Reduced (Calm is UI-16a's, not built), so the roll follows Reduced.
+  UI-16a and UI-16b aren't built, so SY-2 is built in today's `hudPop` and plates (the track's "lands its sizes in their
+  component if they come later": UI-16b should keep `popSize`).
+- Found, not changed: the effectiveness tags are drawn large. `.pop.crit` / `.pop.se` / `.pop.nve` (battle-screen.css,
+  loaded after base.css) set font-size on the tag too, so "Critical hit" shows at 36 px on its pill, not `.pop.tag`'s
+  12.5 px (seen in the battle log below; main does the same). For UI-16b (its banners).
+- Risky: low. Display only; the battle engine, its numbers and the golden record are untouched. On a very slow device
+  the roll shows few steps (it follows the clock, so it never runs long). A pop scheduled after a tap skips ahead reads
+  the next event's state for its KO size (a size only).
+- Verified: lint, typecheck, check:modules, format:check, `npm test` (1,579 pass), `npm run check:smoke` (6 of 6).
+  A headless battle (?fixture=battle, 390 x 844) logged the pops (−2 not very effective at 24 px, −8 at 25 px, the
+  one-shot −390 and −243 and a KO crit −195 at 40 px) and your number stepping 137 → 136 → 135 and 127 → 126 → 119
+  between hits; no page errors. `npm run check:quick`: 37 of 41; the 4 problems aren't this change's: "Terraces ...
+  train_station" (main's), "Walking left and right ... room light" (known), "Battle music ... the drums never came in"
+  (passed alone), RL-8 (first "crossed into Thicket Route but its view never showed", a slow seam; alone it passed
+  its battle and seam and stopped at the known "the town's shop has no Perk").
+- Decided for the owner, to review:
+  - **No beat added before a faint.** The plan asks for "a short beat before the faint"; the faint already waits for
+    its own event (the hit's animation, then about 0.8 s before the next line), and "Ask me before" 6 forbids making a
+    battle longer. The KO's number only gets the largest size. Say if you want a real pause (an extra 150-250 ms).
+  - **Sizes replace the kind's size:** a crit or super-effective hit that takes little HP now shows small (its colour
+    still says crit), as the plan says ("the kind's colour on top"). The CSS sizes stay as the fallback for pops
+    without a weight.
+  - **Status damage is sized too** (burn, poison ticks), so a tick and a hit of the same weight look the same.
+  - A heal's plate number rolls up the same way; a heal's "+N" pop keeps its fixed size (not a hit).
+- Next: SY-3 (the Bureau's mark: the emblem, `bureau.look` in factions.json, `pb-stamp`), in its own session on
+  `track/style`.
+
 ### Style track SY-1 - battle flashes follow the Flashes and Reduced motion settings - 2026-10-27
 Branch `ccr-86dc9cb1-odx2za` (the plan's branch; `track/style` doesn't exist yet), at the owner's word ("Continue"
 after the plan; SY-0's PR #279). Main merged in first (no change: still 07c9b284). Tag `sy-1-done` (for the owner to
