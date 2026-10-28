@@ -141,3 +141,81 @@ test('PK-8 rule unstableSafe: an Unstable splice of yours loses no HP at a turn�
   assert.equal(safe.lost, 0);
   assert.doesNotMatch(safe.said, /unstable cells hurt it/);
 });
+
+/* ---------- rule sidePerk ---------- */
+
+test('PK-8 rule sidePerk: a side place holds a Perk’s find that shows only with the rule; the rest stays the same', () => {
+  const F = modules['route-finds'],
+    D = { rules: data.RULES.run.finds, cards: data.REWARDS },
+    spots = [20, 40, 60, 80, 100, 120, 140].map((x, k) => ({ kind: k % 2 ? 'pocket' : 'deadend', x, z: x })),
+    make = side => {
+      const run = { seed: 'SIDEFINDS1', map: { nodes: [{}, side ? { side: 1 } : {}] } },
+        scenes = [null, { props: [], spots: structuredClone(spots), pieces: [] }],
+        got = F.routeFindsPlace(run, { T: { runNode: 1, route: { at: [0, 0] } } }, scenes, {}, D);
+      return { got, props: scenes[1].props };
+    };
+  const main = make(false),
+    side = make(true),
+    P = side.props.filter(p => p.perk);
+  assert.equal(P.length, 1, 'one Perk find on a side place');
+  assert.equal(main.props.filter(p => p.perk).length, 0, 'none on a main place');
+  assert.deepEqual(
+    side.props.filter(p => !p.perk && !p.more),
+    main.props,
+    'the place’s own finds are the same'
+  );
+  assert.deepEqual([P[0].card, P[0].find, side.got[1].perk], ['perk', 'find.1.perk', 1]);
+  assert.ok(
+    side.props.filter(p => p !== P[0]).every(q => Math.hypot(q.x - P[0].x, q.z - P[0].z) > 6),
+    '6 m from the other finds'
+  );
+  /* picked up only with the rule */
+  const p = P[0];
+  assert.equal(F.routeFindAt({ props: [p] }, p.x, p.z, {}, 2), null);
+  assert.deepEqual(F.routeFindAt({ props: [p] }, p.x, p.z, {}, 0, true), { card: 'perk', flag: 'find.1.perk' });
+  assert.equal(F.routeFindAt({ props: [p] }, p.x, p.z, { 'find.1.perk': 1 }, 0, true), null, 'once a run');
+  const old = { ...data.PERKS };
+  data.PERKS.test_pack = { name: 'T', d: 'T.', rarity: 'common', fx: [{ kind: 'rule', rule: 'sidePerk', n: 1 }] };
+  try {
+    const r = modules['run-state'].newRun('SIDEPERK01', 1, 1, { team: [] });
+    assert.equal(F.routeFindsPerk(r), false);
+    r.perks = ['test_pack'];
+    assert.equal(F.routeFindsPerk(r), true);
+    assert.equal(F.routeFindsPerk(null), false);
+  } finally {
+    for (const k of Object.keys(data.PERKS)) if (!(k in old)) delete data.PERKS[k];
+  }
+});
+
+test('PK-8 perkFindMake: the find’s Perk as a pick of one, the same for the same find; none over an open pick', () => {
+  const PK = modules.perks,
+    RULE = data.RULES.run.perks,
+    r = modules['run-state'].newRun('SIDEPERK01', 1, 1, { team: [] }),
+    id = PK.perkFindMake(r, 'find.3.perk', data.PERKS, RULE);
+  assert.ok(data.PERKS[id] && data.PERKS[id].rarity !== 'fine', id);
+  assert.deepEqual(r.offer, [id]);
+  /* a run as runBegin starts one keeps a pick of one valid */
+  const s = startedSave('musk0', 10);
+  s.run = null;
+  const rb = modules['run-state'].runBegin(s, {
+    seed: 'SIDEPERK01',
+    expedition: 1,
+    mapgenV: 1,
+    se: 300,
+    pyramids: {},
+    items: {},
+  });
+  assert.ok(PK.perkFindMake(rb, 'find.3.perk', data.PERKS, RULE));
+  assert.equal(modules['run-state'].validRun(rb), true);
+  assert.equal(PK.perkFindMake(r, 'find.4.perk', data.PERKS, RULE), '', 'a pick already open');
+  const r2 = modules['run-state'].newRun('SIDEPERK01', 1, 1, { team: [] });
+  assert.equal(PK.perkFindMake(r2, 'find.3.perk', data.PERKS, RULE), id, 'the same run and find');
+  const r3 = modules['run-state'].newRun('SIDEPERK01', 1, 1, { team: [] });
+  r3.perks = Object.keys(data.PERKS).filter(k => data.PERKS[k].rarity !== 'fine');
+  assert.equal(PK.perkFindMake(r3, 'find.3.perk', data.PERKS, RULE), '', 'nothing left');
+  assert.equal(r3.offer, null);
+  /* it takes through the pick, as any offer */
+  assert.equal(PK.perkChoose(r, id, data.PERKS, RULE), '');
+  assert.ok(r.perks.includes(id));
+  assert.equal(r.offer, null);
+});

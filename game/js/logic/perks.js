@@ -22,7 +22,7 @@
  *   leader?: { rarity: string, pick: number } }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { toast } from '../hooks.js';
+import { provide, toast } from '../hooks.js';
 import { rngFrom } from './rng.js';
 import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
@@ -42,6 +42,8 @@ expose({
   perkDraw: [() => perkDraw, v => (perkDraw = v)],
   // @ts-expect-error -- replaced on purpose
   perkDropOk: [() => perkDropOk, v => (perkDropOk = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkFindMake: [() => perkFindMake, v => ((perkFindMake = v), provide({ perkFindMake }))],
   // @ts-expect-error -- replaced on purpose
   perkFits: [() => perkFits, v => (perkFits = v)],
   perkLeaderRule: [() => perkLeaderRule],
@@ -69,6 +71,7 @@ expose({
   perkWeight: [() => perkWeight, v => (perkWeight = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ perkFindMake });
 /* to-module: end */
 /** PK-3: what a held Perk's card and row show of its marks on the run (perks-track.md rule 4: no hidden numbers): a
  * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither); PK-6: a
@@ -116,6 +119,7 @@ export function perkWeight(run, id, perks, rule, team) {
 /** PK-4: a team as the offers see it: each Billie's types @param {any[]} team the save's team
  * @returns {string[][]} */
 export const perkTeamOf = team => (team || []).map(m => billyTypes(m));
+provide({ perkTeamOf }); /* to-module */
 /** PK-5: can the run still meet bots (for `needs: bots`): a scrapyard on its map not yet visited (every wild one
  * there is a bot: factions.js factionWildChance). True when the run or its map isn't known
  * @param {Run | null | undefined} run */
@@ -201,6 +205,21 @@ export function perkOfferMake(run, perks, rule, team, from) {
   run.offerN++;
   run.offer = ids.length ? ids : null;
   return run.offer;
+}
+
+/** PK-8: a side area's Perk lying on the ground (the sidePerk rule, the Adventurer's Pack set; route-finds.js), found:
+ * one Perk drawn (as a pick's, with the bias) from the run's stream for that find (its flag), put in run.offer as a pick
+ * of one; the caller saves and opens it (a reload shows it again). '' and nothing changed when a pick is already open or
+ * nothing is left to offer @param {Run} run @param {string} key the find's flag @param {Record<string, Perk>} perks
+ * @param {PerkRules} rule @param {string[][]} [team] the team's types (perkTeamOf) */
+export function perkFindMake(run, key, perks, rule, team) {
+  if (run.offer) return '';
+  const id = perkDraw(rngFrom(run.seed, 'relic|' + key), perkPool(run, perks, rule, [], team), perks, rule, 1, k =>
+    perkWeight(run, k, perks, rule, team)
+  )[0];
+  if (!id) return '';
+  run.offer = [id];
+  return id;
 }
 
 /** a run shop's Perk on a day ('' when bought or none is left): drawn once from the shop's node and the day, then

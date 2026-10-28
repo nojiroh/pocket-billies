@@ -161,6 +161,10 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     'Unstable splices lose no HP',
     () => 'On (1): an Unstable splice of yours loses nothing at a turn’s end (its cells never hurt it).',
   ],
+  sidePerk: [
+    'Side areas hold a Perk',
+    () => 'On (1): each side area’s place has a Perk lying on the ground (a pick of one when you walk onto it).',
+  ],
   noDrop: [
     'No Perk held can be let go',
     () => 'On (1): at the cap no new Perk can be taken (the “Let one go” sheet offers none).',

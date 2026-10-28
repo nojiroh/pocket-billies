@@ -777,6 +777,7 @@ const PK8_GOOD = [
   { kind: 'heldBoost', mult: 1.5 },
   { kind: 'damage', side: 'deal', mult: 1.2, if: 'unstable' },
   { kind: 'rule', rule: 'unstableSafe', n: 1 },
+  { kind: 'rule', rule: 'sidePerk', n: 1 },
 ];
 const PK8_BAD = [
   [{ kind: 'heldBoost', mult: 1 }, 'mult: above 1 (held items work better)'],

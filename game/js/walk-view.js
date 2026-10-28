@@ -14,6 +14,7 @@ import {
   ALTERNATE_PROPS,
   FIELD_MOVES,
   ITEMS,
+  PERKS,
   PYRAMIDS,
   RESIDENTS,
   REWARDS,
@@ -50,6 +51,9 @@ import {
   paintGroundRect,
   paintWorkerState,
   pastureTap,
+  perkFindMake,
+  perkPickOpen,
+  perkTeamOf,
   propModelArtPaths,
   provide,
   rawHeightAt,
@@ -58,6 +62,7 @@ import {
   routeFindAt,
   routeFindGive,
   routeFindsMore,
+  routeFindsPerk,
   saveData,
   saveNow,
   seamlessMapById,
@@ -629,6 +634,8 @@ export function propShown(p) {
     if (typeof saveData === 'undefined' || !saveData) return true;
     /* PK-6: a side place's find more shows while a sideFind rule says so (Rusty Key) */
     if (p.more && !(routeFindsMore(saveData.run) >= p.more)) return false;
+    /* PK-8: a side place's Perk on the ground shows while a sidePerk rule holds (the Adventurer's Pack set) */
+    if (p.perk && !routeFindsPerk(saveData.run)) return false;
     return !(saveData.flags || {})[p.cut || p.find];
   }
   /* Project Story S2: "when" / "unless": only while the story allows (logic/script.js storyAllows) */
@@ -3158,8 +3165,23 @@ export function routeFindStep(P) {
   const sc = walkView.sc;
   if (!sc || !saveData || !saveData.run || !(sc.props || []).some(p => p.find)) return;
   const F = saveData.flags || (saveData.flags = {}),
-    R = routeFindAt(sc, P.x, P.z, F, routeFindsMore(saveData.run));
+    R = routeFindAt(sc, P.x, P.z, F, routeFindsMore(saveData.run), routeFindsPerk(saveData.run));
   if (!R) return;
+  /* PK-8: a Perk lying on the ground (the sidePerk rule): a pick of one (logic/perks.js perkFindMake), saved first */
+  if (R.card === 'perk') {
+    if (saveData.run.offer) return;
+    F[R.flag] = 1;
+    const id = perkFindMake(saveData.run, R.flag, PERKS, RULES.run.perks, perkTeamOf(saveData.team));
+    if (typeof debugLog !== 'undefined') debugLog.add('scene', `find: perk ${id || '(none left)'}`);
+    if (typeof saveNow === 'function') saveNow();
+    if (!id) {
+      if (typeof toast === 'function') toast('Something lay here once. Nothing you can use.');
+      return;
+    }
+    if (typeof soundEffect === 'function') soundEffect('coin');
+    if (typeof perkPickOpen === 'function') perkPickOpen({ text: 'A Perk was tucked away here.' });
+    return;
+  }
   const got = routeFindGive(saveData, REWARDS[R.card]);
   F[R.flag] = 1;
   if (!got) return;
