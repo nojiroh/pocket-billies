@@ -468,6 +468,10 @@ debugLog.state = () => {
       effects: p.effects || 'full',
       tilt: p.tilt !== false,
     };
+    /* SY-8: the style track: the Flashes and Animation state now, and under each state that ran this session how many
+       flashes showed (flash), were held to 15% (flashHeld) or skipped (flashSkipped), stamps, damage pops, HP rolls and
+       foil frames. Counts only: no save data, names or places */
+    if (typeof GAME.styleLog === 'function') s.style = GAME.styleLog();
     s.started = !!GAME.saveData.started;
     s.tab = GAME.uiState.tab;
     s.battle = !!GAME.activeBattle;
@@ -531,6 +535,8 @@ debugLog.state = () => {
             camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
             /* RL-12: the Perks held (perks.json ids, not names), the pick waiting (how many) and offers made */
             relics: (run.perks || []).slice(),
+            /* PK-1: the Perks' counters, growth and once marks (logic/effects.js fxStateLog: numbers only) */
+            relicState: GAME.fxStateLog ? GAME.fxStateLog(run) : null,
             offer: run.offer ? run.offer.length : 0,
             offers: run.offerN || 0,
             /* RL-12b: events (ids played, the one playing, draws so far), the boons on, reward picks made and the

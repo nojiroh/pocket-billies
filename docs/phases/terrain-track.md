@@ -360,7 +360,7 @@ loops; done after `track/worldmap` reaches main, as recipes on RT-1's plans.
   worldmap track (it is the lot levelling, `mapgenLevelLot`).
 - **`mapgenUntrap` repeats** (up to six passes): taking a hop away can strand ground whose only way back went down it;
   one pass left a 630-cell trap in the ledge sweep's seed 8023 once the terraces moved.
-- `MAPGEN_VERSION` 26. Studio: Terrace lie and Terrace fronts on the Generate card.
+- `MAPGEN_VERSION` 27 (26 went to SY-7 on main). Studio: Terrace lie and Terrace fronts on the Generate card.
 - Corrections to the facts above: the terraces' ledges and stairs need south fronts, which contours give less often
   (the ledge drop keeps lean 0.7); runs get terraces only from RT-1's ledge drop, the Dig side area (fieldMoves.json)
   and the debug mountains run, so most run places don't change. River falls off terraces (water track) come less often
