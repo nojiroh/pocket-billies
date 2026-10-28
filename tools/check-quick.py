@@ -955,6 +955,65 @@ def in_game_test_whole(P):
     return '; '.join(out)
 
 
+# UI-12's smoke step (written in the UI checks session after UI-18): text against what is behind it, on the page as
+# drawn. For each visible element with words of its own (shadow trees too), its colour over the backgrounds below it,
+# blended up to the first opaque one; a picture, a gradient, a blurred surface, a ::before or ::after fill on the way,
+# or reaching the page's body (the scene is behind it) means "unknown" (skipped). A blurred surface with a fill at least
+# half opaque is read as that fill over a mid-grey scene (marked "glass"). Returns the worst readings: [ratio, what, colour, behind]
+CONTRAST_SCAN = """(()=>{const P=c=>{const m=String(c).match(/rgba?\\(([\\d.]+)[, ]+([\\d.]+)[, ]+([\\d.]+)(?:\\s*[,/]\\s*([\\d.]+%?))?/);
+if(!m)return null;let a=m[4]==null?1:m[4].endsWith('%')?parseFloat(m[4])/100:+m[4];return[+m[1],+m[2],+m[3],a]};
+const L=c=>{const f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2])};
+const over=(t,b)=>{const a=t[3]+b[3]*(1-t[3]);if(!a)return[0,0,0,0];return[0,1,2].map(i=>(t[i]*t[3]+b[i]*b[3]*(1-t[3]))/a).concat(a)};
+const up=el=>el.parentElement||(el.getRootNode&&el.getRootNode().host)||null;
+const out=[];const own=el=>{for(const c of el.childNodes)if(c.nodeType===3&&/\\S/.test(c.nodeValue||''))return true;return false};
+const walk=root=>{for(const el of root.querySelectorAll('*')){if(el.shadowRoot)walk(el.shadowRoot);if(!own(el)||el.closest('svg'))continue;
+const r=el.getBoundingClientRect();if(!(r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth))continue;
+if(typeof el.checkVisibility==='function'&&!el.checkVisibility({opacityProperty:true,visibilityProperty:true}))continue;
+const cs=getComputedStyle(el);const fg=P(cs.color);if(!fg||fg[3]<.05)continue;let bg=[0,0,0,0],e=el,known=true,glass=false;
+const odd=s=>(s.backgroundImage&&s.backgroundImage!=='none')||(s.backdropFilter&&s.backdropFilter!=='none');
+while(e&&bg[3]<.999){if(e===document.body||e===document.documentElement){known=false;break}const s=getComputedStyle(e);const gc=P(s.backgroundColor);
+if(s.backdropFilter&&s.backdropFilter!=='none'&&(!s.backgroundImage||s.backgroundImage==='none')&&gc&&gc[3]>=.5){bg=over(over(bg,gc),[128,128,128,1]);glass=true;break}
+if(odd(s)){known=false;break}
+const pb=getComputedStyle(e,'::before'),pa=getComputedStyle(e,'::after');if([pb,pa].some(q=>q.content&&q.content!=='none'&&(odd(q)||(P(q.backgroundColor)||[0,0,0,0])[3]>0))){known=false;break}
+const c=P(s.backgroundColor);if(c&&c[3]>0)bg=over(bg,c);e=up(e)}if(!known||bg[3]<.999)continue;
+const f=over(fg,bg),a=L(f),b=L(bg),k=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+const px=parseFloat(cs.fontSize),big=px>=24||(px>=18.66&&+cs.fontWeight>=700);
+out.push([Math.round(k*100)/100,big?3:4.5,(glass?'(glass) ':'')+el.tagName.toLowerCase()+'.'+[...el.classList].slice(0,2).join('.')+' '+(el.textContent||'').trim().slice(0,24),cs.color,'rgb('+bg.slice(0,3).map(Math.round)+')'])}};
+walk(document.body);return out.sort((x,y)=>x[0]/x[1]-y[0]/y[1])})()"""
+
+
+@step('Palettes: the three player palettes, light and dark (contrast, no page errors)', 240)
+def palettes_step(P):
+    """UI-12: Field Guide (the defaults), Copper Grove+ and Bureau Night, each light and dark, on the walk, Team, Guide and
+    profile screens: the palette applies (its surface colour changes), no page errors, and no text under 3:1 against a
+    known opaque background (a note lists what is under the AA minimum, 4.5:1 or 3:1 for large text)"""
+    pg, R = P.pg, P.R
+    pg.evaluate("stopTimers();activeBattle=null;battleStageStop();closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    keep = pg.evaluate("[saveData.preferences.palette||'',saveData.preferences.theme||'']")
+    bad, under, seen, surf = [], [], {}, {}
+    try:
+        for pal in ['', 'copper_grove', 'bureau_night']:
+            for theme in ['light', 'dark']:
+                pg.evaluate(f"saveData.preferences.palette='{pal}';saveData.preferences.theme='{theme}';applyPreferences();0")
+                surf[f'{pal or "field_guide"}/{theme}'] = pg.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--c-surface').trim()")
+                for tab in ['walk', 'team', 'guide', 'profile']:
+                    pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); ui(pg)
+                    rows = pg.evaluate(CONTRAST_SCAN)
+                    key = f'{pal or "field_guide"}/{theme}/{tab}'
+                    seen[key] = len(rows)
+                    for k, need, what, fg, bg in rows:
+                        if k < 3: bad.append(f'{key}: {what} {k}:1 ({fg} on {bg})')
+                        elif k < need: under.append(f'{key}: {what} {k}:1')
+                if theme == 'light' and pal == 'bureau_night': shot(pg, 'palette-bureau-night-light')
+    finally:
+        pg.evaluate(f"saveData.preferences.palette='{keep[0]}';saveData.preferences.theme='{keep[1]}';applyPreferences();uiState.tab='walk';render();0")
+    R['paletteContrast'] = {'textsRead': seen, 'surfaces': surf, 'under3': bad, 'underAA': under}
+    if len(set(surf.values())) < 4: raise Exception(f'the palettes don\u2019t change the surface colour: {surf}')
+    if bad: raise Exception(f'{len(bad)} text(s) under 3:1: ' + '; '.join(bad[:6]))
+    if under: notes.append(f'palettes: {len(under)} text(s) under the AA minimum but over 3:1, e.g. ' + '; '.join(under[:4]))
+    return f'{sum(seen.values())} texts read over 6 looks x 4 screens; none under 3:1; {len(under)} under AA (a note)'
+
+
 @step('Phone: opening, the station, screens and a battle', 260)
 def phone_flow(P):
     pg, R = P.pg, P.R
@@ -2062,7 +2121,7 @@ def timing_report(R):
 def pages():
     """[(fixture, page options, steps)] for this run: --selftest, --smoke or the full check, --steps filtering the steps"""
     if '--selftest' in ARGS: L = [('town', {}, [in_game_test_whole])]
-    elif SMOKE: L = [('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
+    elif SMOKE: L = [('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow, palettes_step]),
                      ('town', {'width': 1280, 'height': 800}, [actions_sheet_step]),
                      ('town', {}, [in_game_test_step])]
     else:
@@ -2077,7 +2136,7 @@ def pages():
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
              ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step, route_wild_step, route_finds_step]),
-             ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
+             ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow, palettes_step]),
              ('run', phone, [sound_effects_step]),
              ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),
              ('town', {'width': 1280, 'height': 800}, [actions_sheet_step]),
