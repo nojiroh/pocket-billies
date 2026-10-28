@@ -221,7 +221,10 @@ town node needs it.
   `claude/vfx-15-stage` (PR #311 into `track/vfx`, merged by VFX-11). VFX-11 (families x types: 16 families with
   Faster variants and 11 type kits in battleAnims.json, every move's `anim`, projectiles on paths, rays, impacts,
   sprays and effect lights in VFX-9's pool, spread and aimed moves, the Moves editor's dropdown; no move longer)
-  built 2026-10-28 on `track/vfx`, the main line of wave 2 beside VFX-14 and VFX-16. **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  built 2026-10-28 on `track/vfx`, the main line of wave 2 beside VFX-14 and VFX-16. VFX-12 (the Studio's Battle effects editor: moves in 8 outcomes and events on
+  the real stage at any speed, quality, motion and Flashes, a 24 fps scrubber over the runner's steps, panes for the
+  budgets and Part 1's smears as battleAnims.json data, ramps and cells panes for VFX-10's sections; VFX-6 folded in)
+  built 2026-10-28 on `claude/vfx-12-studio-effects` (PR #313, merged by VFX-13). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on

@@ -26,29 +26,29 @@ expose({
   IMPACT_LINES: [() => IMPACT_LINES],
   IMPACT_SPEED_LIFE: [() => IMPACT_SPEED_LIFE],
   LUNGE_DASH: [() => LUNGE_DASH],
-  LUNGE_GHOSTS: [() => LUNGE_GHOSTS],
-  LUNGE_LEAN_BACK: [() => LUNGE_LEAN_BACK],
-  LUNGE_LEAN_K: [() => LUNGE_LEAN_K],
-  LUNGE_LEAN_MAX: [() => LUNGE_LEAN_MAX],
-  LUNGE_RIBBON_HALF: [() => LUNGE_RIBBON_HALF],
-  LUNGE_RIBBON_MAX: [() => LUNGE_RIBBON_MAX],
-  LUNGE_RIBBON_MIN: [() => LUNGE_RIBBON_MIN],
-  RIBBON_BRIGHT: [() => RIBBON_BRIGHT],
-  RIBBON_CELLS: [() => RIBBON_CELLS],
-  RIBBON_CORE: [() => RIBBON_CORE],
-  RIBBON_FRAY: [() => RIBBON_FRAY],
-  RIBBON_HALF: [() => RIBBON_HALF],
-  RIBBON_STEPS: [() => RIBBON_STEPS],
+  LUNGE_GHOSTS: [() => LUNGE_GHOSTS, v => (LUNGE_GHOSTS = v)],
+  LUNGE_LEAN_BACK: [() => LUNGE_LEAN_BACK, v => (LUNGE_LEAN_BACK = v)],
+  LUNGE_LEAN_K: [() => LUNGE_LEAN_K, v => (LUNGE_LEAN_K = v)],
+  LUNGE_LEAN_MAX: [() => LUNGE_LEAN_MAX, v => (LUNGE_LEAN_MAX = v)],
+  LUNGE_RIBBON_HALF: [() => LUNGE_RIBBON_HALF, v => (LUNGE_RIBBON_HALF = v)],
+  LUNGE_RIBBON_MAX: [() => LUNGE_RIBBON_MAX, v => (LUNGE_RIBBON_MAX = v)],
+  LUNGE_RIBBON_MIN: [() => LUNGE_RIBBON_MIN, v => (LUNGE_RIBBON_MIN = v)],
+  RIBBON_BRIGHT: [() => RIBBON_BRIGHT, v => (RIBBON_BRIGHT = v)],
+  RIBBON_CELLS: [() => RIBBON_CELLS, v => (RIBBON_CELLS = v)],
+  RIBBON_CORE: [() => RIBBON_CORE, v => (RIBBON_CORE = v)],
+  RIBBON_FRAY: [() => RIBBON_FRAY, v => (RIBBON_FRAY = v)],
+  RIBBON_HALF: [() => RIBBON_HALF, v => (RIBBON_HALF = v)],
+  RIBBON_STEPS: [() => RIBBON_STEPS, v => (RIBBON_STEPS = v)],
   RIBBON_SUB: [() => RIBBON_SUB],
-  RIBBON_TWIST: [() => RIBBON_TWIST],
-  SMEAR_GHOSTS: [() => SMEAR_GHOSTS],
-  SMEAR_KEEP: [() => SMEAR_KEEP],
+  RIBBON_TWIST: [() => RIBBON_TWIST, v => (RIBBON_TWIST = v)],
+  SMEAR_GHOSTS: [() => SMEAR_GHOSTS, v => (SMEAR_GHOSTS = v)],
+  SMEAR_KEEP: [() => SMEAR_KEEP, v => (SMEAR_KEEP = v)],
   SMEAR_MIN_GAP: [() => SMEAR_MIN_GAP],
   SMEAR_NEAR: [() => SMEAR_NEAR],
   SMEAR_STEP: [() => SMEAR_STEP],
-  STRETCH_K: [() => STRETCH_K],
-  STRETCH_MAX: [() => STRETCH_MAX],
-  STRETCH_PACE: [() => STRETCH_PACE],
+  STRETCH_K: [() => STRETCH_K, v => (STRETCH_K = v)],
+  STRETCH_MAX: [() => STRETCH_MAX, v => (STRETCH_MAX = v)],
+  STRETCH_PACE: [() => STRETCH_PACE, v => (STRETCH_PACE = v)],
   THROW_EASE: [() => THROW_EASE],
   // @ts-expect-error -- replaced on purpose
   flashFor: [() => flashFor, v => (flashFor = v)],
@@ -81,6 +81,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   smearCount: [() => smearCount, v => (smearCount = v)],
   // @ts-expect-error -- replaced on purpose
+  smearDials: [() => smearDials, v => (smearDials = v)],
+  // @ts-expect-error -- replaced on purpose
+  smearDialsSet: [() => smearDialsSet, v => (smearDialsSet = v)],
+  // @ts-expect-error -- replaced on purpose
   smearGhosts: [() => smearGhosts, v => (smearGhosts = v)],
   // @ts-expect-error -- replaced on purpose
   smearHistory: [() => smearHistory, v => (smearHistory = v)],
@@ -101,7 +105,7 @@ expose({
 export const SMEAR_STEP = 1000 / 24;
 /** the afterimages, newest first: how much of each is drawn (the dithered fade) and how much brighter it is in its
  * own colours (battle-3d.js: the colours' value times 1 + glow) */
-export const SMEAR_GHOSTS = [
+export let SMEAR_GHOSTS = [
   { fade: 0.6, glow: 0.45 },
   { fade: 0.4, glow: 0.7 },
   { fade: 0.25, glow: 0.95 },
@@ -113,23 +117,23 @@ export const SMEAR_MIN_GAP = 0.12;
  * between the lens and the pyramid and would fill the screen */
 export const SMEAR_NEAR = 2;
 /** VFX-2: the ribbon's kept places (the owner's choice: six, about 250 ms of the arc) */
-export const RIBBON_CELLS = 6;
+export let RIBBON_CELLS = 6;
 /** how many places a history keeps: what the afterimages and the ribbon need */
-export const SMEAR_KEEP = Math.max(SMEAR_GHOSTS.length + 1, RIBBON_CELLS);
+export let SMEAR_KEEP = Math.max(SMEAR_GHOSTS.length + 1, RIBBON_CELLS);
 /** the ribbon's half width at its head (metres), tapered to nothing at its tail: about half the thrown pyramid's side
  * (battle-stage.js PYRAMID_SIDE x PYRAMID_SCALE) */
-export const RIBBON_HALF = 0.24;
+export let RIBBON_HALF = 0.24;
 /** how much of the tumble the ribbon twists by: the whole of it turned the strip nearly twice along its length, so it
  * mostly showed its edge (a thin line) */
-export const RIBBON_TWIST = 0.35;
+export let RIBBON_TWIST = 0.35;
 /** its colour's value, times this: the object's own colour, brighter (as the afterimages are) */
-export const RIBBON_BRIGHT = 1.35;
+export let RIBBON_BRIGHT = 1.35;
 /** the white core's share of its width (the rest is the object's own colour) */
-export const RIBBON_CORE = 0.4;
+export let RIBBON_CORE = 0.4;
 /** how much of the ribbon's tail is eroded in flight (0 at the head, this at the tail) */
-export const RIBBON_FRAY = 0.75;
+export let RIBBON_FRAY = 0.75;
 /** the erosion's steps: once the object stops, one more step each grid cell, gone after this many */
-export const RIBBON_STEPS = 4;
+export let RIBBON_STEPS = 4;
 /** points drawn between two kept places (a smooth curve through them; it still moves on the grid) */
 export const RIBBON_SUB = 3;
 /** how much the throw's pace varies: 0 even, below 1 always forward; 0.45 is 1.45x the mean speed at both ends and
@@ -137,11 +141,11 @@ export const RIBBON_SUB = 3;
 export const THROW_EASE = 0.45;
 /** VFX-3: a cell is stretched when the throw's pace there is at least this times its mean speed (about the first and
  * last eighth of the arc: one or two cells at each end of a 380-480 ms throw) */
-export const STRETCH_PACE = 1.3;
+export let STRETCH_PACE = 1.3;
 /** how far back the trailing side is dragged: this share of the way to the place one cell ago */
-export const STRETCH_K = 0.6;
+export let STRETCH_K = 0.6;
 /** at most this far (metres): about one and a half times the thrown pyramid's side */
-export const STRETCH_MAX = 0.8;
+export let STRETCH_MAX = 0.8;
 
 /** a throw's progress (0..1) for its time (0..1): same start, middle and end, faster at both ends
  * @param {number} k */
@@ -409,21 +413,21 @@ export function flashFor(col, a, reduced, flashesOff) {
    they ride the lunge's own tweens. Off under Reduced motion; thinner as the battle's quality drops; they still play
    under Calm (the action causes them; Part 2's rule 9). */
 /** a lunge's afterimages, newest first: fewer and fainter than a throw's (a Billie is much bigger on screen) */
-export const LUNGE_GHOSTS = [
+export let LUNGE_GHOSTS = [
   { fade: 0.5, glow: 0.35 },
   { fade: 0.28, glow: 0.6 },
 ];
 /** the lean (a shear: how far the top moves sideways per metre of height) per stage pixel a millisecond of sideways
  * speed. The H move's lunge (30 px in 120 ms, eased in) reaches about 0.25 px/ms in its last cell */
-export const LUNGE_LEAN_K = 1;
+export let LUNGE_LEAN_K = 1;
 /** at most this lean (about 17 degrees at the top) */
-export const LUNGE_LEAN_MAX = 0.3;
+export let LUNGE_LEAN_MAX = 0.3;
 /** moving back home (away from where it lunged), the lean is this share: it settles rather than leaning back hard */
-export const LUNGE_LEAN_BACK = 0.5;
+export let LUNGE_LEAN_BACK = 0.5;
 /** a dash's ribbon: its half width as a share of the Billie's height (metres), and its bounds */
-export const LUNGE_RIBBON_HALF = 0.3;
-export const LUNGE_RIBBON_MIN = 0.12;
-export const LUNGE_RIBBON_MAX = 0.45;
+export let LUNGE_RIBBON_HALF = 0.3;
+export let LUNGE_RIBBON_MIN = 0.12;
+export let LUNGE_RIBBON_MAX = 0.45;
 /** the dash moves (vfx-track.md's family table, "dash": too fast to see), by move id, until VFX-8/VFX-11 give every
  * move its family in battleAnims.json: Quick Strike, Zip, Dash Kick, Flame Dash, Front Run, Just Do It */
 export const LUNGE_DASH = ['flashsale', 'movefast', 'dashkick', 'pipeline', 'frontrun', 'justdoit'];
@@ -471,4 +475,73 @@ export function lungeLean(H, t, mpp, on, fwd = 0) {
 /** a dash's ribbon half width for a Billie h metres tall @param {number} h */
 export function lungeRibbonHalf(h) {
   return Math.max(LUNGE_RIBBON_MIN, Math.min(LUNGE_RIBBON_MAX, (h || 0) * LUNGE_RIBBON_HALF));
+}
+
+/* VFX-12: the dials above (the afterimages, the ribbon, the stretch, a lunge's lean and its dash ribbon) are
+   battleAnims.json `smears`, tuned in the Studio's Battle effects: the page sets them from the data when it loads
+   (battle-anim-run.js) and the Studio as you change them. The numbers here are what they start as (and what Node's
+   tests use). */
+/** @typedef {{ fade: number, glow: number }} SmearLook */
+/** @typedef {{ ghosts: SmearLook[], lungeGhosts: SmearLook[],
+ *   ribbon: { cells: number, half: number, twist: number, bright: number, core: number, fray: number, steps: number },
+ *   dashRibbon: { half: number, min: number, max: number }, stretch: { pace: number, k: number, max: number },
+ *   lean: { k: number, max: number, back: number } }} SmearDials */
+
+/** the dials now, in battleAnims.json's shape @returns {SmearDials} */
+export function smearDials() {
+  const look = (/** @type {SmearLook} */ g) => ({ fade: g.fade, glow: g.glow });
+  return {
+    ghosts: SMEAR_GHOSTS.map(look),
+    lungeGhosts: LUNGE_GHOSTS.map(look),
+    ribbon: {
+      cells: RIBBON_CELLS,
+      half: RIBBON_HALF,
+      twist: RIBBON_TWIST,
+      bright: RIBBON_BRIGHT,
+      core: RIBBON_CORE,
+      fray: RIBBON_FRAY,
+      steps: RIBBON_STEPS,
+    },
+    dashRibbon: { half: LUNGE_RIBBON_HALF, min: LUNGE_RIBBON_MIN, max: LUNGE_RIBBON_MAX },
+    stretch: { pace: STRETCH_PACE, k: STRETCH_K, max: STRETCH_MAX },
+    lean: { k: LUNGE_LEAN_K, max: LUNGE_LEAN_MAX, back: LUNGE_LEAN_BACK },
+  };
+}
+
+/** sets the dials from battleAnims.json `smears` (any part of it; a missing or non-number value keeps the dial as it
+ * is), and the history's length with them @param {any} d */
+export function smearDialsSet(d) {
+  if (!d || typeof d !== 'object') return;
+  const num = (/** @type {any} */ v, /** @type {number} */ was) =>
+      typeof v === 'number' && Number.isFinite(v) ? v : was,
+    looks = (/** @type {any} */ L, /** @type {SmearLook[]} */ was) =>
+      Array.isArray(L) && L.length
+        ? L.map((g, i) => ({
+            fade: num(g && g.fade, (was[i] || was[0]).fade),
+            glow: num(g && g.glow, (was[i] || was[0]).glow),
+          }))
+        : was,
+    R = d.ribbon || {},
+    W = d.dashRibbon || {},
+    S = d.stretch || {},
+    L = d.lean || {};
+  SMEAR_GHOSTS = looks(d.ghosts, SMEAR_GHOSTS);
+  LUNGE_GHOSTS = looks(d.lungeGhosts, LUNGE_GHOSTS);
+  RIBBON_CELLS = Math.max(2, Math.round(num(R.cells, RIBBON_CELLS)));
+  RIBBON_HALF = num(R.half, RIBBON_HALF);
+  RIBBON_TWIST = num(R.twist, RIBBON_TWIST);
+  RIBBON_BRIGHT = num(R.bright, RIBBON_BRIGHT);
+  RIBBON_CORE = num(R.core, RIBBON_CORE);
+  RIBBON_FRAY = num(R.fray, RIBBON_FRAY);
+  RIBBON_STEPS = Math.max(1, Math.round(num(R.steps, RIBBON_STEPS)));
+  LUNGE_RIBBON_HALF = num(W.half, LUNGE_RIBBON_HALF);
+  LUNGE_RIBBON_MIN = num(W.min, LUNGE_RIBBON_MIN);
+  LUNGE_RIBBON_MAX = num(W.max, LUNGE_RIBBON_MAX);
+  STRETCH_PACE = num(S.pace, STRETCH_PACE);
+  STRETCH_K = num(S.k, STRETCH_K);
+  STRETCH_MAX = num(S.max, STRETCH_MAX);
+  LUNGE_LEAN_K = num(L.k, LUNGE_LEAN_K);
+  LUNGE_LEAN_MAX = num(L.max, LUNGE_LEAN_MAX);
+  LUNGE_LEAN_BACK = num(L.back, LUNGE_LEAN_BACK);
+  SMEAR_KEEP = Math.max(SMEAR_GHOSTS.length + 1, RIBBON_CELLS);
 }

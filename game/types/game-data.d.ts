@@ -2583,6 +2583,10 @@ export interface BattleAnimsData {
   maxMs: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', number>;
   /** the full-screen flash limiter */
   flashes: { perSecond: number; gapMs: number; redShare: number };
+  /** VFX-9's budgets by the battle's quality 0-3 (data since VFX-12) */
+  budgets: BattleAnimBudgets;
+  /** Part 1's dials (logic/smear.js smearDialsSet; data since VFX-12) */
+  smears: BattleAnimSmears;
   colors: Record<string, Color>;
   defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
   intro: BattleAnimStep[];
@@ -2647,6 +2651,28 @@ export interface BattleAnimRamp {
   ramp: string | Color[];
   /** a hex, or 'type' (the type's glow) */
   light: Color | 'type';
+}
+/** VFX-12: the battle's effect budgets, each list by quality level 0-3 */
+export interface BattleAnimBudgets {
+  /** particles alive in the one pool (ambient ones at most a quarter) */
+  particles: number[];
+  /** a burst's most */
+  burst: number[];
+  /** effect lights (3 slots) */
+  lights: number[];
+  /** at most this many effect lights on a phone */
+  lightsPhone: number;
+  /** battle lights in all */
+  lightsAll: number;
+}
+/** VFX-12: Part 1's dials: the afterimages (newest first), the ribbon, a dash's ribbon, the stretch, a lunge's lean */
+export interface BattleAnimSmears {
+  ghosts: { fade: number; glow: number }[];
+  lungeGhosts: { fade: number; glow: number }[];
+  ribbon: { cells: number; half: number; twist: number; bright: number; core: number; fray: number; steps: number };
+  dashRibbon: { half: number; min: number; max: number };
+  stretch: { pace: number; k: number; max: number };
+  lean: { k: number; max: number; back: number };
 }
 /** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
 export interface BattleMoods {
