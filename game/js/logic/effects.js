@@ -81,6 +81,8 @@ expose({
   fxSplice: [() => fxSplice],
   // @ts-expect-error -- replaced on purpose
   fxStages: [() => fxStages, v => (fxStages = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxStateLog: [() => fxStateLog, v => (fxStateLog = v)],
   fxStateful: [() => fxStateful],
   fxTurnHeal: [() => fxTurnHeal],
   fxTurnHurt: [() => fxTurnHurt],
@@ -514,3 +516,17 @@ export const fxRunBossHp = (run, perks = PERKS) =>
     ? fxAt(fxOfRun(run, perks), {}, { run: run.perkState }).reduce((a, f) => a * (f.kind === 'bossHp' ? f.mult : 1), 1)
     : 1;
 provide({ fxRunBossHp }); /* to-module */
+
+/** PK-1: the debug log's relicState: the run's Perk marks, counters only ({'<source>/<row>': {n, v, used}}; null with
+ * none): numbers the run keeps, nothing about the player @param {any} run
+ * @returns {Record<string, { n?: number, v?: number, used?: 1 }> | null} */
+export function fxStateLog(run) {
+  const P = run && run.perkState;
+  if (!P || !Object.keys(P).length) return null;
+  return Object.fromEntries(
+    Object.entries(P).map(([k, m]) => [
+      k,
+      Object.fromEntries(['n', 'v', 'used'].filter(q => typeof m[q] === 'number').map(q => [q, m[q]])),
+    ])
+  );
+}

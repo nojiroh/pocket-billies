@@ -179,3 +179,12 @@ test('effects when: rows without the new fields read exactly as before; fxOfRun 
   const run = {};
   assert.equal(E.fxRunMarks(run), run.perkState);
 });
+
+test('effects when: the debug log’s relicState is the run’s counters only, numbers alone; null with none', () => {
+  assert.equal(E.fxStateLog(null), null);
+  assert.equal(E.fxStateLog({}), null);
+  assert.equal(E.fxStateLog({ perkState: {} }), null);
+  const run = { perkState: { 'click_pen/0': { n: 3 }, 'like_button/0': { v: 0.05, by: ['uid-1'], name: 'x' } } };
+  assert.deepEqual(E.fxStateLog(run), { 'click_pen/0': { n: 3 }, 'like_button/0': { v: 0.05 } });
+  assert.notEqual(E.fxStateLog(run)['click_pen/0'], run.perkState['click_pen/0'], 'a copy');
+});
