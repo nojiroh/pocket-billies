@@ -2,6 +2,69 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Hub track - the hub island polish: a natural mountain, the pond's fall, the station inland, boarding, the portal, Kappi framed - 2026-10-28
+Branch `claude/youthful-heisenberg-gq6ovv` (the cloud session's own; main merged in at the start). Plan approved in Plan
+Mode; the owner's notes in one session (docs/phases/hub-track.md "The hub island polish"; the water track's WA-11 done
+here). Tag `hub-polish-done` (for the owner to push) on this session's last commit.
+- Changed:
+  - Engine: a river's tiles are never the sea's in the tide (walk/sea-tide.js `tideCells` takes a running-water test,
+    ground-mesh.js passes the river's cells): the river no longer dries at low tide or floods its banks at high tide.
+    Raising the pond would not have fixed it (the cause was the tide's sea test, `kindAt(..., false)`).
+  - Island generator dials (island-gen.js, the Studio's hub editor): `mountain.smooth`, `curve`, `foot`, `rock`,
+    `shift`, `trail`; the old behaviour by default (the generator's own output for the old dials is unchanged).
+  - Copperleaf's ground, rebuilt by the tools: a broad mountain (peak about 24 m, a grassy foot to 40% of its height,
+    then a few rock ledges, lower spurs round it, no summit trail); tools/patch-copperleaf-terrain.mjs: the old
+    mountain's shelf and trail steps left in the locked town zone cleared and its edge eased, gentle rolling land (up to
+    0.9 m) faded out by plots, streets, water and sand, the pond lifted 3.2 m onto a terrace with a rock face, a 3.5 m
+    `falls` entry where the river leaves into a plunge pool by the bridge, a white-water stream down the mountain's foot
+    into the pond.
+  - Skyline Station inland (tools/patch-station.mjs): on the heather north of the library, facing east (out from the
+    island's middle, to the orbit camera), its own track only, a path from the street to its steps; the portal about
+    25 m up over the town's east side, 38 m out (at 55 m, over the sea, the haze swallowed it); station-place.mjs and
+    stationLandmarks take a placement's own rail and portal.
+  - The ride (logic/train-path.js `trainBoardPath`, `trainWalkAt`; train-ride.js): you walk from where you stand up the
+    steps onto the platform's top, between the benches, to its edge and in (3.2 s); home the same way back (2.4 s). The
+    ride's shots moved clear of the shop and the cottages (the glide-in from over the roofs).
+  - The portal (tools/build-station-trains.py, rerun): no rings, lamps or crystals; its layers lit at every hour (a
+    model layer's `day`), a tunnel-like core and an inner swirl for depth; walk/effects.js fx `portal`: a soft glow,
+    mist curling round its rim in front and behind, motes drawn in, glints; its light shines by day too (scenery
+    `glow.light` 0.5, walk/lighting.js). The dithered halo picture is gone. Tried and dropped: brighter layers that
+    cut through the haze (glow 2): the bloom whited out the whole frame.
+  - The opening (tools/data/copperleaf-town.json `opening`, opening.json): the shots aim between Chosen and Kappi
+    (`camera hazelRuns ... on hazel assist` from Kappi's entrance, `kappiTalk ... on Kappi Chosen` for Kappi's
+    introduction, `standing ... on Kappi Chosen` for the bath line); while the dressing room is up Kappi steps to a new
+    spot `beside` Chosen, clear of him from the new `kappiTalk` shot. Tried and dropped: a low close shot as Kappi
+    comes in (Kappi at 2 m faded as a near-camera sprite; at 3.5 m lost behind the door's dust). tools/look-opening.py
+    --lines: a picture at each line; its "a line on screen" test was `cutscene.say.on`, which never existed (the fall's
+    pictures always ran their 40 s out): now `cutscene.say`.
+  - Tests: sea-tide (a river into the sea), island-gen (the shape dials), hub-island (the summit walked to only with a
+    trail), hub-doors (the station inland, its portal at its landmark), island-dress (cairns only with a trail),
+    train-path (the boarding walk). Tools: island-shots pond, pond-fall, mountain and portal views; check-fast holds
+    the lift at 7.6 s and walks the orbit's circle at 32 m (at 30 m it now ends at the terrace's rock face);
+    look-train-ride's moments. After the rebuild `clear-windows --fix` moved the great oak off a cottage window (back
+    where it stood).
+- Found, not changed:
+  - tools/data/copperleaf-town.json still had Hazel in Granny Juniper's lines (the rename changed only the map); a
+    rebuild would have put Hazel back. Fixed in the source (its own commit).
+  - Chosen's opening line "See the airship at the mast? It flies out past the island" is out of date (runs leave by
+    sky train from the station); player-facing words, so left for the owner.
+  - There was never a ground lock (`islandGen.lock`); the town, barn and pasture zones' `lock` is what a rebuild keeps.
+    A patch inside the town zone stays through a rebuild, so the terrain patch refuses a map that already has the
+    pond's fall: rebuild from the map before it.
+- Risky:
+  - The portal's mist and glow are about 40 more quads a frame where it is in view; not measured on a phone.
+  - By day the portal is soft and pastel through the haze (pictures); at night it is a bright swirl. The world map
+    may show no portal now (it draws models without their picture layers; its only solid part is a hidden speck).
+  - The station's old headland is now open meadow; the great oak and the dressing re-rolled with the rebuild.
+  - The summit spot (the orbit's pivot) stays where it was, now on the mountain's south shoulder: the camera's middle
+    is unchanged on purpose (the doors face out from it).
+- Verified: VERIFIED_HERE
+- Next: the owner's look at the pictures and a phone test; then the ground lock (`islandGen.lock`, the Studio's "Lock
+  the ground") once the island is right; HB-10f, HB-9.
+- For the owner on the phone: walk round the island (the mountain, the pond's terrace and fall, the river at low and
+  high tide), start a run from the new station (the walk up the steps, the portal), come home, and New game's opening
+  (Kappi's shots); send the debug log.
+
 ### Perks track PK-4 - Wave B, types, team and weather - 2026-10-28
 Branch `track/perks` (this session's outcome branch, from PK-3's bbdcad5; main had nothing new at the start, then
 moved to 5f6d01ae during the session: merged near the end at the planning and merge sessions' request, 8af07402). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode,

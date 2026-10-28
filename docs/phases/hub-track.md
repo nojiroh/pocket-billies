@@ -686,6 +686,31 @@ market paid in Scrap; festivals give looks, lines and their market's stock, no r
 The owner looks at headless phone pictures (tools/island-shots.py extended: the station, the departure, the loading
 screen, the world map at a few hours) and plays it on the phone; the debug log carries the loading screen's timings.
 
+### The hub island polish (the owner's notes, 2026-10-28; not a numbered session)
+The owner: the island may be unlocked; subtler height differences; the pond, its waterfall and the river obviously
+from higher (and the river rose and fell with the tide); the station somewhere natural, not tucked in a corner; the
+run's start had you walk through the station; the portal with no technology round it, more glow, fog, lights and
+depth; the opening's shots barely show Kappi. Answers in Plan Mode: heights both ways (rolling lowland and a softer
+mountain), the station away from the edges, the portal pure light, the pond on a shelf with a fall and a stream
+feeding it; mid-session: the summit trail may go; the peak may stay high, the mountain wider with lower rises round
+it, natural.
+- **There was no ground lock**: Copperleaf never had `islandGen.lock`; the town, barn and pasture zones are locked
+  (`lock: true`, kept exactly by a rebuild). They stay locked: the generator's ground is made again round them.
+- **The mountain**: new generator dials (`mountain.smooth`, `curve`, `foot`, `rock`, `shift`, `trail`; island-gen.js,
+  the Studio's hub editor), the hub's: peak 25, foot radius 30, smooth 0.8, curve 1.7, rock 0.4 (a grassy foot to 40%
+  of its height, then a few rock ledges), foot 18 (a long fade by the flat zones), shift [-3, 6] (where there is room),
+  range 1, no trail. Built by `node tools/build-island.mjs --dials <file>` with those dials, then the chain below.
+- **The chain** (from the committed map; the locked town zone keeps any patch's ground through a rebuild, so the
+  terrain patch refuses a map that already has the pond's fall): build-island, build-copperleaf,
+  patch-copperleaf-water --river, patch-copperleaf-square --outline --fountain --edges --hub --folk,
+  patch-copperleaf-terrain --seam --roll --pond, patch-station, then `python3 tools/clear-windows.py --fix` (the great oak
+  re-placed by build-copperleaf can stand in front of a window).
+- **The station**: inland on the heather north of the library (plot 124, 83, facing east, out from the island's middle
+  to the orbit camera), its own track only (no piece out of its right-hand end: the inn), the portal about 25 m up over
+  the town's east side, 38 m out (patch-station.mjs RAIL; further out over the sea the haze swallowed it). The ride's
+  shots moved clear of the shop and the cottages; boarding walks up the steps and across the platform
+  (logic/train-path.js trainBoardPath).
+
 ## Ask me before (recommendation first)
 1. The loading screen's time cap: 20 s (rec) / 30 s / none.
 2. Lettering on a flipped model: mirror its place only (rec) / never flip models with lettering.
