@@ -323,7 +323,9 @@ town node needs it.
   `tags` with the bias on offers, 13 new pictures) done 2026-10-28 on `track/perks`; PK-5 (Wave C: catching, cash and
   maps: 12 Perks, the kinds catchLevel, refund, free and salvage, a money share on arrival, inflict at battle start,
   the rules rewardPick, rerollFree and mapReveal, `needs: bots`, 12 new pictures) done 2026-10-28 on `track/perks`;
-  PK-6 (Wave D: rules, growth and adventure) next.
+  PK-6 (Wave D: rules, growth and adventure: 11 Perks, the kinds copy and give, the rules cap, sideOpen, sideFind and
+  eventHurt, `needs: side`, growth on the cards, 11 new pictures) done 2026-10-28 on `track/perks`; PK-7 (Fine Print)
+  next.
   PK-11 (Bag item icons: the 13 consumables drawn in art/items, `img` and dataItemArt, 36 px in the Bag
   and 72 on reward cards, the Studio's items editor with Edit art, the atlas's 9 `i_*` rectangles retired) done
   2026-10-28 on `track/perks-items` (the items lane, beside the Perk waves); PK-10 (held items: 16 new, the 8 existing
