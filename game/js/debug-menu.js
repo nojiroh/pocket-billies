@@ -224,6 +224,7 @@ const FIGURE_SWITCHES = [
     'figure',
     'Figure',
     [
+      ['look', 'your look'],
       ['rogue', 'stand-in'],
       ['mannequin', 'mannequin'],
     ],
@@ -240,10 +241,10 @@ const FIGURE_SWITCHES = [
   [
     'figfolk',
     'folk',
-    'Townsfolk',
+    'Everyone else',
     [
-      [false, 'as they are'],
       [true, 'figures'],
+      [false, 'as they are'],
     ],
   ],
   [

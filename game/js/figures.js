@@ -24,7 +24,7 @@
    The renderer never calls this with the switch off, and a model's file is only fetched when one is first wanted. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide } from './hooks.js';
+import { PEOPLE, provide } from './hooks.js';
 import {
   FIGURE_BANDS,
   FIGURE_LIGHT,
@@ -46,7 +46,9 @@ import {
   meshClipFrame,
   meshClipMatrices,
 } from './logic/figure-pose.js';
+import { figureSeed, kappiFigure, kitExtent, lookFigure } from './logic/figure-kit.js';
 import { artImg, artURL, makeCanvas } from './art.js';
+import { lookOf, wardrobeData } from './person-art.js';
 import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
@@ -61,6 +63,7 @@ expose({
   FIGURE_DEFS: [() => FIGURE_DEFS],
   FIGURE_FILES: [() => FIGURE_FILES],
   FIGURE_FS: [() => FIGURE_FS],
+  FIGURE_LOOK_NAMES: [() => FIGURE_LOOK_NAMES],
   FIGURE_OUT_FS: [() => FIGURE_OUT_FS],
   FIGURE_OUT_VS: [() => FIGURE_OUT_VS],
   FIGURE_SMOOTH_PPM: [() => FIGURE_SMOOTH_PPM],
@@ -77,6 +80,7 @@ expose({
   figureCompile: [() => figureCompile, v => (figureCompile = v)],
   figureDef: [() => figureDef, v => (figureDef = v)],
   figureFolk: [() => figureFolk, v => ((figureFolk = v), provide({ figureFolk }))],
+  figureFor: [() => figureFor, v => (figureFor = v)],
   figureFromFile: [() => figureFromFile, v => (figureFromFile = v)],
   figureGait: [() => figureGait],
   figureGl: [() => figureGl, v => (figureGl = v)],
@@ -139,10 +143,30 @@ const FIGURE_DEFS = {};
 export function figuresOn() {
   return typeof engineSetting === 'function' && !!engineSetting('people', 'figures');
 }
-/** the figure you (and townsfolk drawn as figures) are (Engine > People > Figure) */
+/** the figure you are (Engine > People > Your figure): 'look', your own look through the figure kit (CH-3b), or
+ * the spike's mannequin or stand-in */
 export function figureChoice() {
   const v = typeof engineSetting === 'function' ? engineSetting('people', 'figure') : null;
-  return v === 'mannequin' || v in FIGURE_FILES ? v : 'rogue';
+  return v === 'mannequin' || v in FIGURE_FILES ? v : 'look';
+}
+/** the figures' names by who (an NPC's look never changes; yours is keyed by the look itself, so the dressing room's
+ * changes make a new figure) */
+const FIGURE_LOOK_NAMES = new Map();
+/**
+ * the figure a person is drawn as (CH-3b): `look:<who>` for anyone with a look (people/<id>.json, a townsperson's
+ * 'folk:<seed>', a friend), `look:me#<look>` for you ('boy', 'girl' or 'me'), or the spike's figure for you when
+ * Engine > People > Your figure picks one
+ */
+function figureFor(who) {
+  if (who === 'boy' || who === 'girl' || who === 'me') {
+    const c = figureChoice();
+    if (c !== 'look') return c;
+    const L = typeof lookOf === 'function' ? lookOf('me') : null;
+    return 'look:me#' + figureSeed(JSON.stringify(L || {})).toString(36);
+  }
+  let n = FIGURE_LOOK_NAMES.get(who);
+  if (!n) FIGURE_LOOK_NAMES.set(who, (n = 'look:' + who));
+  return n;
 }
 /** how figures are drawn (Engine > People > Style): 'pixel' (the pixel puppet, C) or 'smooth' (the plain 3D figure, B) */
 export function figureStyle() {
@@ -158,6 +182,18 @@ function figureDef(name) {
   if (name === 'mannequin') {
     const F = mannequinFigure();
     return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: codeExtent(F.height) });
+  }
+  /* CH-3b: a person's figure from their look (logic/figure-kit.js); Kappi, a creature person, as a capybara */
+  if (name.startsWith('look:')) {
+    const who = name.slice(5).split('#')[0],
+      L = typeof lookOf === 'function' ? lookOf(who) : null,
+      W = typeof wardrobeData === 'function' ? wardrobeData() : null;
+    if (!L || (!L.creature && !W)) return null;
+    const p = typeof PEOPLE !== 'undefined' && PEOPLE[who],
+      F = L.creature
+        ? kappiFigure({ name })
+        : lookFigure(L, W.items, { name, seed: figureSeed(who), figure: p && p.figure ? p.figure : undefined });
+    return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: kitExtent(F) });
   }
   if (!(name in FIGURE_FILES)) return (FIGURE_DEFS[name] = false);
   FIGURE_DEFS[name] = null;
@@ -601,8 +637,9 @@ export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'p
   let clip = act,
     frame;
   if (Fig.kind === 'code') {
-    clip = act === 'walk' || act === 'run' ? 'walk' : 'idle';
-    frame = clipFrameAt(clip, t, g.gait);
+    /* CH-3b: a kit figure cheers and sits too; each breathes at its own time, not in step with the crowd */
+    clip = act === 'walk' || act === 'run' ? 'walk' : act === 'cheer' || act === 'sit' ? act : 'idle';
+    frame = clipFrameAt(clip, t + (figureSeed(name) % 2700), g.gait);
   } else {
     if (!Fig.clips[clip]) clip = act === 'run' && Fig.clips.walk ? 'walk' : 'idle';
     if (!Fig.clips[clip]) clip = Object.keys(Fig.clips)[0];
@@ -617,18 +654,22 @@ export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'p
  * by how far through it the battle is, `progress` 0..1), else its idle by the clock. `rec` keeps their last picture.
  */
 function figureBattlePicture(rec, i, t, act, progress) {
-  const name = figureChoice(),
+  /* CH-3b: you as your figure, the rival as theirs (`who`, its look through the figure kit) */
+  const name = i === 0 ? figureFor('me') : figureFor(rec && rec.who ? rec.who : 'me'),
     Fig = figureDef(name);
   if (!Fig) return rec && typeof rec === 'object' ? figureLast.get(rec) || null : null;
   const C = Fig.kind === 'mesh' ? Fig.clips : null;
   let clip = 'idle',
     frame;
-  if (act && C && C[act]) {
+  if (Fig.kind === 'code' && (act === 'throw' || act === 'cheer')) {
+    clip = act;
+    frame = act === 'throw' ? Math.min(7, Math.floor((progress || 0) * 8)) : clipFrameAt('cheer', t);
+  } else if (act && C && C[act]) {
     clip = act;
     frame = Math.max(0, Math.min(C[act].frames - 1, Math.floor((progress || 0) * C[act].frames)));
   } else {
     if (C && !C.idle) clip = Object.keys(C)[0];
-    frame = C ? meshClipFrame(C[clip], t, 0, 0) : clipFrameAt('idle', t);
+    frame = C ? meshClipFrame(C[clip], t, 0, 0) : clipFrameAt('idle', t + (figureSeed(name) % 2700));
   }
   return figurePicture(rec, name, clip, frame, i === 0 ? 0 : Math.PI, 0, 0, figureStyle(), FIGURE_BATTLE_PPM);
 }
@@ -639,6 +680,7 @@ export function figureReport() {
   return {
     on: figuresOn(),
     figure: figureChoice(),
+    looks: Object.keys(FIGURE_DEFS).filter(k => k.startsWith('look:') && FIGURE_DEFS[k]).length,
     style: figureStyle(),
     density: e('density'),
     turns: e('yawSteps'),
