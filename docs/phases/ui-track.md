@@ -851,12 +851,25 @@ About 13 sessions in all, plus the owner's phone checks after UI-8b, UI-8c, UI-1
 and on.
 
 How the sessions run (the owner, 2026-10-27: "Start each next step of the ui plan in a new session and automatically
-approve the plans. The choices are made and I want it done."): the planning session starts each step in a new session
-on `track/ui` when the one before has pushed its HANDOFF entry. A step writes its plan and goes on without waiting for
-approval; where it meets an open choice or an "Ask me before" item it takes the recommended option and lists it in its
-HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not waited for. Each step tells
-the planning session it is done with a one-shot scheduled task, and an hourly check covers a missed one. Merges to
-main stay the owner's (the PR from `track/ui`).
+approve the plans. The choices are made and I want it done."; then parallel waves, the owner's pick): the planning
+session starts each step in a new session as soon as the steps it builds on are finished. A step writes its plan and
+goes on without waiting for approval; where it meets an open choice or an "Ask me before" item it takes the recommended
+option and lists it in its HANDOFF entry under "Decided for the owner, to review"; the phone checks are listed, not
+waited for. Each step tells the planning session it is done (a message), and an hourly check covers a missed one.
+Merges to main stay the owner's (the PR from `track/ui`, #276).
+
+The waves: one session at a time works on `track/ui` (the main line) and first merges main and every finished side
+branch; a step that runs beside it works on a side branch `claude/ui-<nn>-<words>` made from `track/ui`, with a PR into
+it (as WM-4b, WM-5 and WM-7 did on their track).
+
+| Wave | Steps | Starts when |
+| --- | --- | --- |
+| 1 | UI-11 (the owner's own session, on `ccr-dab4e0cd-6re1eb` from main), UI-8c and UI-15 (side branches) | now (UI-8b done) |
+| 2 | UI-12 (`track/ui`, merging UI-11's branch and the finished side branches) and UI-13 | UI-11 is done |
+| 3 | UI-14a; UI-16a | UI-13 is done; UI-12 and UI-15 are done |
+| 4 | UI-14b; UI-17 | UI-14a is done; UI-14a, UI-16a and UI-8c are done |
+| 5 | UI-16b | UI-14b, UI-15 and UI-16a are done |
+| 6 | UI-18 | UI-8c and the world map track's WM-6 are done |
 
 The owner, 2026-10-27, after UI-11: "Automatically start the next session after done, skip the checks until after
 all ui is done." So each step, when its HANDOFF entry is pushed, starts the next step itself in a new session (from

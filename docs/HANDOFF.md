@@ -1442,6 +1442,11 @@ Plan Mode, plan approved. Docs only, one cause per commit; nothing in the game c
   a new session (no Plan Mode; open choices take the recommended option and are listed under "Decided for the owner,
   to review"; phone checks listed, not waited for); each step reports done with a one-shot scheduled task, and an
   hourly check covers a missed one. UI-8c was restarted that way (its first, Plan Mode session stopped before any edit).
+- Then the owner chose parallel waves (ui-track.md, "How the sessions run"): wave 1 is UI-11 (in the owner's own
+  session, on `ccr-dab4e0cd-6re1eb` from main; the one the planning session started was stopped) with UI-8c and UI-15
+  on side branches (`claude/ui-8c-map-markers`, `claude/ui-15-less-clutter`, PRs into `track/ui`); then
+  UI-12 with UI-13, UI-14a with UI-16a, UI-14b with UI-17, UI-16b, and UI-18 after WM-6. UI-8b finished first
+  (`track/ui` 2b50b6e8, PR #276).
 - Tag to suggest (sessions can't push tags): `ui-10-done` on this entry's last commit.
 
 ### UI track UI-9b - parts.css gone, spacing and corners on the scale, the stat bars grow in - 2026-10-27
