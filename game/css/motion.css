@@ -35,6 +35,74 @@
   animation: none;
 }
 
+/* UI-17: idle life, kept to two kinds on screen (logic/idle-life.js; ui-idle.js writes the kinds that play on
+   <html data-idle> and the glint's and foil's strength, SY-1's flash rule, as --sheen-a). Every idle loop not picked
+   stops here; a kit part's loop (in a shadow root) takes its keyframes' name from --idle-<kind>, set only while its
+   kind plays. Without data-idle (a page that never runs ui-idle.js: the Studio, the checks) no idle loop plays */
+:root {
+  /* the gold sheen's stepped pixel band (base.css drew it first) */
+  --glint-band: linear-gradient(
+    100deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.55) 38% 46%,
+    transparent 46% 50%,
+    rgba(255, 255, 255, 0.4) 50% 53%,
+    transparent 53%
+  );
+  --idle-glint-ms: 7s;
+  --idle-foil-ms: 5.6s;
+  --idle-wx-ms: 3.6s;
+}
+[data-idle~='glint'] {
+  --idle-glint: pb-glint;
+}
+[data-idle~='foil'] {
+  --idle-foil: pb-foil-sweep;
+}
+[data-idle~='forecast'] {
+  --idle-forecast: pb-wx-now;
+}
+html:not([data-idle~='glint']) .pb.gold::after,
+html:not([data-idle~='glint']) .bt.fight::before,
+html:not([data-idle~='glint']) .bdg.got .bdg-m::after,
+html:not([data-idle~='forecast']) .wx-now,
+html:not([data-idle~='bubble']) .talk-box::before,
+html:not([data-idle~='bubble']) .talk-box::after,
+html:not([data-idle~='stage']) .fgcam canvas,
+html:not([data-idle~='breathe']) .m-idle,
+html:not([data-idle~='coin']) .title-coin,
+html:not([data-idle~='coin']) .tb-chip[title='Money'] .pxi,
+html:not([data-idle~='logo']) .ttl-logo span,
+html:not([data-idle~='bloom']) .bloom {
+  animation: none;
+}
+/* the glint: a stepped pixel sheen across the main action every 7 s (6-8 s, Part 2), the sweep in its last 0.8 s */
+@keyframes pb-glint {
+  0%,
+  88% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(120%);
+  }
+}
+/* today's forecast icon: a small sway, a breath of wind */
+.wx-now {
+  animation: pb-wx-now var(--idle-wx-ms) ease-in-out infinite;
+}
+@keyframes pb-wx-now {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0);
+  }
+  30% {
+    transform: translateY(-1px) rotate(-6deg);
+  }
+  65% {
+    transform: translateY(1px) rotate(5deg);
+  }
+}
+
 /* press: every button and tappable card */
 .m-press {
   transition: transform var(--m-fast) var(--spring);

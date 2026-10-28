@@ -1591,8 +1591,8 @@
    "game/js/prop-models.js:220",
    "game/js/prop-models.js:349",
    "game/js/prop-models.js:996",
-   "game/js/ui-kit.js:965",
-   "game/js/ui-run-kit.js:1611",
+   "game/js/ui-kit.js:986",
+   "game/js/ui-run-kit.js:1605",
    "game/js/walk-view-gl.js:685"
   ],
   "brick": [
@@ -1605,6 +1605,8 @@
    "game/js/structures.js:626"
   ],
   "bubble": [
+   "game/js/logic/idle-life.js:50",
+   "game/js/logic/idle-life.js:89",
    "game/js/logic/ui-dials.js:103"
   ],
   "building": [
@@ -1635,6 +1637,9 @@
    "game/js/battle.js:943",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
+   "game/js/logic/idle-life.js:53",
+   "game/js/logic/idle-life.js:93",
+   "game/js/logic/idle-life.js:94",
    "game/js/logic/marks.js:179",
    "game/js/logic/smear.js:321",
    "game/js/logic/story-checks.js:348",
@@ -1647,7 +1652,7 @@
    "game/js/sound.js:457",
    "game/js/sound.js:1561",
    "game/js/town-square.js:159",
-   "game/js/ui-kit.js:656",
+   "game/js/ui-kit.js:677",
    "game/js/ui-run-kit.js:92",
    "game/js/ui-run-kit.js:501",
    "game/js/ui.js:89",
@@ -1756,7 +1761,7 @@
   "glass": [
    "game/js/logic/ui-dials.js:133",
    "game/js/structures.js:724",
-   "game/js/ui-run-kit.js:1409",
+   "game/js/ui-run-kit.js:1403",
    "game/js/walk/rooms.js:273",
    "game/js/walk/rooms.js:286",
    "game/js/walk/rooms.js:299"
@@ -1861,7 +1866,7 @@
   "sheet": [
    "game/js/logic/ui-sounds.js:24",
    "game/js/overlay.js:155",
-   "game/js/ui-kit.js:534"
+   "game/js/ui-kit.js:555"
   ],
   "spark": [
    "game/js/bag.js:29",

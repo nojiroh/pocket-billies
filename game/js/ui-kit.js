@@ -63,7 +63,7 @@ export const { LitElement, css, html, nothing } = /** @type {any} */ (self).PB_L
 
 /* UI-16a: the Animation level the page plays at (settings-screen.js writes it on <html data-motion>: full, calm or
    reduced); a page that never wrote one follows the phone */
-const motionNow = () => {
+export const motionNow = () => {
   const m = document.documentElement.dataset.motion;
   if (m === 'full' || m === 'calm' || m === 'reduced') return m;
   return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -343,6 +343,27 @@ const PbButton = class extends LitElement {
       }
       :host([kind='gold']) .edge {
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), color-mix(in srgb, var(--gold-b) 60%, #000));
+      }
+      /* UI-17: the main action's glint, idle life (ui-idle.js: --idle-glint names the keyframes only while it is one of
+         the screen's two idle loops; --sheen-a is SY-1's flash rule) */
+      :host([kind='gold']) .face::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: var(--glint-band);
+        transform: translateX(-120%);
+        opacity: var(--sheen-a, 0);
+        animation: var(--idle-glint, none) var(--idle-glint-ms, 7s) linear infinite;
+      }
+      @keyframes pb-glint {
+        0%,
+        88% {
+          transform: translateX(-120%);
+        }
+        100% {
+          transform: translateX(120%);
+        }
       }
       :host([kind='dark']) .face {
         color: #fff;
