@@ -72,6 +72,7 @@ const TYPE_GLOW = liveMap(D => {
   o.None = (D.untyped || {}).glow || (D.untyped || {}).color || '#9a9a9a';
   return o;
 });
+provide({ TYPE_GLOW }); /* to-module */
 const HIT_EFFECTS_BY_TYPE = liveMap(D => {
   const o = Object.fromEntries(D.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
   o.None = (D.untyped || {}).fx || ['pow', 'star'];

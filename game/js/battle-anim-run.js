@@ -9,7 +9,7 @@
    (battleFlashGate) and the debug log's `anim` line per move (no names, no save data). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { BATTLE_ANIMS, MOVES, TYPE_COLORS, activeBattle, hudHit, hudPop, provide, reducedMotion } from './hooks.js';
+import { BATTLE_ANIMS, MOVES, TYPE_GLOW, activeBattle, hudHit, hudPop, provide, reducedMotion } from './hooks.js';
 import { battleAnimLogLine, battleAnimTimeline, flashGate } from './logic/battle-anims.js';
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
@@ -53,7 +53,7 @@ export function battleAnimSkip() {
   battleStageKit.flush();
 }
 
-const animColor = (c, col) => (col === 'type' ? TYPE_COLORS[c.type][0] : BATTLE_ANIMS.colors[col]);
+const animColor = (c, col) => (col === 'type' ? TYPE_GLOW[c.type] : BATTLE_ANIMS.colors[col]);
 const sideFocus = i => (battleStageKit.actorTeam(i) === 0 ? 'me' : 'foe');
 /** one step, on the stage now. c: the move's (its event, sides, type, the places it started from) */
 function animStep(S, c) {
@@ -134,7 +134,7 @@ function animStep(S, c) {
         y2: T.y,
         z2: T.z,
         beam: 1,
-        col: TYPE_COLORS[c.type][0],
+        col: TYPE_GLOW[c.type],
         w: S.w,
         life: S.life,
         glow: 1,
