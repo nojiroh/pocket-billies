@@ -1,24 +1,16 @@
 {
- "potion": {"n":"Potion","price":150,"hp":20,"d":"Restores 20 HP.","img":"items/potion.svg","icon":"potion"},
- "hi_potion": {"n":"Hi-Potion","price":400,"hp":60,"d":"Restores 60 HP.","img":"items/hi_potion.svg","icon":"hipotion"},
- "burn_salve": {"n":"Burn Salve","price":200,"cure":"brn","d":"Heals a burn.","img":"items/burn_salve.svg","icon":"salve"},
- "nerve_tonic": {"n":"Nerve Tonic","price":200,"cure":"par","d":"Cures paralysis.","img":"items/nerve_tonic.svg","icon":"tonic"},
- "wake_tea": {"n":"Wake-Up Tea","price":200,"cure":"slp","d":"Wakes up a sleeping Billie.","img":"items/wake_tea.svg","icon":"tea"},
- "revive": {
-  "n": "Revive",
-  "price": 600,
-  "revive": 0.5,
-  "d": "Revives a fainted Billie with half its HP.",
-  "img": "items/revive.svg",
-  "icon": "revive"
- },
+ "potion": {"n":"Potion","price":150,"hp":20,"d":"Restores 20 HP.","img":"items/potion.svg"},
+ "hi_potion": {"n":"Hi-Potion","price":400,"hp":60,"d":"Restores 60 HP.","img":"items/hi_potion.svg"},
+ "burn_salve": {"n":"Burn Salve","price":200,"cure":"brn","d":"Heals a burn.","img":"items/burn_salve.svg"},
+ "nerve_tonic": {"n":"Nerve Tonic","price":200,"cure":"par","d":"Cures paralysis.","img":"items/nerve_tonic.svg"},
+ "wake_tea": {"n":"Wake-Up Tea","price":200,"cure":"slp","d":"Wakes up a sleeping Billie.","img":"items/wake_tea.svg"},
+ "revive": {"n":"Revive","price":600,"revive":0.5,"d":"Revives a fainted Billie with half its HP.","img":"items/revive.svg"},
  "bell": {
   "n": "Shining Stone",
   "price": 2500,
   "evoItem": 1,
   "d": "A glittering stone that makes certain Billies evolve.",
-  "img": "items/bell.svg",
-  "icon": "stone"
+  "img": "items/bell.svg"
  },
  "protein_bar": {
   "n": "Protein Bar",
@@ -26,8 +18,7 @@
   "lvlUp": 1,
   "d": "Sponsored, chalky, effective. One level up for the Billie that eats it.",
   "mint": false,
-  "img": "items/protein_bar.svg",
-  "icon": "trailmix"
+  "img": "items/protein_bar.svg"
  },
  "trailmix": {
   "n": "Trail Mix",
@@ -35,10 +26,9 @@
   "hpAll": 25,
   "d": "Restores 25 HP to everyone on your team.",
   "mint": false,
-  "img": "items/trailmix.svg",
-  "icon": "trailmix"
+  "img": "items/trailmix.svg"
  },
- "pretzel": {"n":"Pretzel","price":60,"hp":35,"d":"Restores 35 HP.","mint":false,"img":"items/pretzel.svg","icon":"pretzel"},
+ "pretzel": {"n":"Pretzel","price":60,"hp":35,"d":"Restores 35 HP.","mint":false,"img":"items/pretzel.svg"},
  "full_remedy": {
   "n": "Full Remedy",
   "price": 320,
@@ -46,8 +36,7 @@
   "hp": 15,
   "d": "Cures any status and restores 15 HP.",
   "mint": false,
-  "img": "items/full_remedy.svg",
-  "icon": "remedy"
+  "img": "items/full_remedy.svg"
  },
  "max_revive": {
   "n": "Max Revive",
@@ -55,17 +44,9 @@
   "revive": 1,
   "d": "Revives a fainted Billie with full HP.",
   "mint": false,
-  "img": "items/max_revive.svg",
-  "icon": "maxrevive"
+  "img": "items/max_revive.svg"
  },
- "repairkit": {
-  "n": "Repair Kit",
-  "price": 300,
-  "repair": 1,
-  "d": "Fixes every part of one robot.",
-  "img": "items/repairkit.svg",
-  "icon": "tonic"
- },
+ "repairkit": {"n":"Repair Kit","price":300,"repair":1,"d":"Fixes every part of one robot.","img":"items/repairkit.svg"},
  "leftover_sandwich": {
   "n": "Leftover Sandwich",
   "price": 1200,
