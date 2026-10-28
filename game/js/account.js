@@ -49,7 +49,7 @@ expose({
   accountOn: [() => accountOn, v => ((accountOn = v), provide({ accountOn }))],
   accountPickSave: [() => accountPickSave, v => (accountPickSave = v)],
   accountSaveCardHTML: [() => accountSaveCardHTML, v => (accountSaveCardHTML = v)],
-  accountSaveDoc: [() => accountSaveDoc, v => (accountSaveDoc = v)],
+  accountSaveDoc: [() => accountSaveDoc, v => ((accountSaveDoc = v), provide({ accountSaveDoc }))],
   accountServerMs: [() => accountServerMs],
   accountSetAsideHTML: [() => accountSetAsideHTML, v => ((accountSetAsideHTML = v), provide({ accountSetAsideHTML }))],
   accountSettingsHTML: [() => accountSettingsHTML, v => ((accountSettingsHTML = v), provide({ accountSettingsHTML }))],
@@ -63,7 +63,15 @@ expose({
   refreshAccount: [() => refreshAccount, v => (refreshAccount = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ accountChipHTML, accountOn, accountSetAsideHTML, accountSettingsHTML, accountSignOut, flushAccountSave });
+provide({
+  accountChipHTML,
+  accountOn,
+  accountSaveDoc,
+  accountSetAsideHTML,
+  accountSettingsHTML,
+  accountSignOut,
+  flushAccountSave,
+});
 /* to-module: end */
 export const account = {
   cfg: window.PB_FIREBASE || null,
