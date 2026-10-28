@@ -66,7 +66,10 @@ can't push tags).
   helper thread's places equal to the page's, waystations, the shop, held items, salvage, the town's life and quest,
   the village's stall, the battle held, the leader's arena, Blake, Play this seed, the world map). Before the merge
   one run had "A run's world" fail after the seam crossing (the known slow-runner failure); it passed after.
-  QUICK_RESULT
+  The full quick check: 36 of 41 (1469 s). RT-2's pair and Granny Juniper passed when run again alone (2 of 2). The
+  three left fail the same way on `track/worldmap` in WM-3b's and WM-4b's runs: Copperleaf's train station "in the
+  air", RL-8's town shop with no Perk, room light at night. No snapshot or baseline picture changed. Python Playwright
+  1.63, as before.
 - Risky: a run's towns are a little bigger in props (a park and a field: about 20-40 more props) and take slightly
   longer to make; frame times in a 3 x 2 town on the phone (the clock tower, the park's trees) are unmeasured.
 - Next: UI-18 (less clutter on the Map) from this branch; WM-8 (ledges and loops). The owner looks at the pictures.
