@@ -674,7 +674,7 @@ and its golden record untouched.
 - **Dark glass:** `.battle`'s `--bt-glass` / `--bt-ink` / `--bt-ink2` (the night tokens; UI-12 can point them at each
   palette's dark side) on the message, the menu, the plates, the turn bar, the strip and the details panel, in both
   themes; inside the cards the theme's text roles read the dark side. Found: by day the team, items and pyramid lists
-  were white on the cream card. The plates' and turn bar's 6 px blurs went (ui-lint's blur rules 26 to 24).
+  were white on the cream card. The plates' and turn bar's 6 px blurs went (ui-lint's blur rules 27 to 24).
 - **Walk:** the place card plays as a title on arrival at a place or room (motion.css `m-title`, 4.5 s), then folds;
   the top bar keeps the name with today's weather glyph (not in rooms). The name unfolds the card, which then stays
   (`preferences.cardClosed` false) until × or the name. A room's Go outside moves to the foot row while folded. The
