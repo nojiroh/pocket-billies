@@ -34,6 +34,8 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
+  BOSSES,
+  FACTIONS,
   GENES,
   ITEMS,
   MOVES,
@@ -66,8 +68,18 @@ import {
   plural,
 } from './logic/rules.js';
 import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
+import { styleDials, styleNote } from './theme-sheet.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
-import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
+import { popSize, rollValue } from './logic/hit-numbers.js';
+import {
+  JOIN_LOCK_MS,
+  battleFactionOf,
+  factionSerial,
+  koBy,
+  koStampMoment,
+  noticeOf,
+  noticeTimes,
+} from './logic/bureau-battle.js';
 import { pbBurst, typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
 import { pbNameBanner } from './ui-run-kit.js';
 import {
@@ -93,7 +105,7 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
+import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML, uiIconURL } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
@@ -132,6 +144,7 @@ expose({
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
   backButtonHTML: [() => backButtonHTML],
+  battleFactionLook: [() => battleFactionLook, v => (battleFactionLook = v)],
   battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
   battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   battleLeave: [() => battleLeave, v => (battleLeave = v)],
@@ -140,18 +153,24 @@ expose({
   battleRise: [() => battleRise, v => (battleRise = v)],
   battleSeamless: [() => battleSeamless, v => (battleSeamless = v)],
   battleShell: [() => battleShell, v => (battleShell = v)],
+  battleStamp: [() => battleStamp, v => (battleStamp = v)],
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
   blipLook: [() => blipLook, v => (blipLook = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
+  bureauFaintStamp: [() => bureauFaintStamp, v => (bureauFaintStamp = v)],
+  bureauNotice: [() => bureauNotice, v => (bureauNotice = v)],
+  bureauNoticeClose: [() => bureauNoticeClose, v => (bureauNoticeClose = v)],
+  bureauUi: [() => bureauUi],
   chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
   cmdButtonHTML: [() => cmdButtonHTML, v => (cmdButtonHTML = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
   eventBlips: [() => eventBlips, v => (eventBlips = v)],
+  factionAt: [() => factionAt],
   fieldChipHTML: [() => fieldChipHTML, v => (fieldChipHTML = v)],
   fieldStripUpdate: [() => fieldStripUpdate, v => (fieldStripUpdate = v)],
   fieldTip: [() => fieldTip, v => (fieldTip = v)],
@@ -208,6 +227,7 @@ expose({
   teamPick: [() => teamPick, v => (teamPick = v)],
   turnBar: [() => turnBar, v => (turnBar = v)],
   typeText: [() => typeText, v => (typeText = v)],
+  winLineHTML: [() => winLineHTML, v => (winLineHTML = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop, openBattle, platesTick, playTurnEvents, stopTimers });
@@ -475,6 +495,8 @@ function showEvent() {
   if (!activeBattle || !$('#msg')) return;
   if (activeBattle.ev >= activeBattle.events.length) return afterEvents();
   const ev = activeBattle.events[activeBattle.ev];
+  /* SY-5: the join's notice never outlives its line */
+  bureauNoticeClose();
   logLine(activeBattle.ev);
   showSpeakerFace(ev.face);
   const tt = ev.t ? typeText(ev.t) : 0,
@@ -541,6 +563,8 @@ function showSpeakerFace(f) {
 }
 export function tapMessage() {
   if (!activeBattle || activeBattle.phase !== 'playing' || !$('#msg')) return;
+  /* SY-5: a tap hides the join's notice, as it would skip ahead */
+  if (bureauUi.notice) bureauNoticeClose();
   if (uiState.typing) {
     clearInterval(uiState.typeT);
     uiState.typing = false;
@@ -559,6 +583,9 @@ function boxAnims(ev) {
   if (an.fx === 'mail' && an.si != null) fieldUi.mail[ACTOR_SIDE[an.si]] = 0;
   if (an.k === 'wild' || an.k === 'enter')
     setTimeout(() => paintBoxes(ev.s, ev.mk, false), an.k === 'wild' ? 620 : 420);
+  /* SY-5: the Bureau's stamp on a knockout, its notice in its boss's join intro */
+  if (an.k === 'faint') bureauFaintStamp(ev);
+  if (an.k === 'join') bureauNotice(an);
 }
 /* UI-16b: Atk, Def, SpA, SpD, Spe (logic/marks.js, as Pokémon Showdown writes them; it printed "SP." for both Sp. stats) */
 const statShortName = k => (MARK_STAT_SHORT[k] || [(STAT_NAMES[k] || k).slice(0, 3)])[0];
@@ -668,7 +695,11 @@ function hudPop(si, text, kind, w) {
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
   e.textContent = text;
-  if (typeof w === 'number') e.style.fontSize = popSize(w, koThisEvent(si)) + 'px';
+  if (typeof w === 'number') {
+    const D = styleDials();
+    e.style.fontSize = popSize(w, koThisEvent(si), D.popMin, D.popMax) + 'px';
+    styleNote('pop');
+  }
   e.style.left = clamp(q.x, 40, battleStage.L.vw - 40) + 'px';
   e.style.top = Math.max(30, q.y) + 'px';
   e.style.setProperty('--dx', ((random() - 0.5) * 36).toFixed(0) + 'px');
@@ -731,6 +762,168 @@ function hudBanner(si, text, kind) {
     else e.remove();
   }, 1100);
 }
+/* ================= SY-5: THE BUREAU IN BATTLE =================
+   A faction with a look (factions.json look: the Bureau) shows its paperwork only where it is (logic/bureau-battle.js):
+   one stamp at a time on a paper slip (VOID, RETRIEVED, DENIED: pb-stamp), the Notice of Retrieval during its boss's
+   join intro, and its bots' plates on form paper. Nothing here adds time: the stamps sit beside the battle's own waits
+   and the notice is gone as the bots lock together. */
+const bureauUi = { stamp: null, notice: null, timers: [] };
+/** the faction fighter k fights for in a snapshot (one with a look), or null */
+const factionAt = (s, k) => battleFactionOf(FACTIONS, BOSSES, s && s[k], activeBattle && activeBattle.T);
+/** whether a foe of this battle fights for a faction with a look; its look, or null */
+function battleFactionLook() {
+  const T = activeBattle && activeBattle.T,
+    team = (activeBattle && activeBattle.sides && activeBattle.sides[1] && activeBattle.sides[1].team) || [];
+  for (const m of team) {
+    const f = battleFactionOf(FACTIONS, BOSSES, m, T);
+    if (f) return f.look;
+  }
+  return null;
+}
+/** a stamp slammed on a paper slip over fighter si (or the stage's middle), replacing the one before: one at a time */
+function battleStamp(si, word, big) {
+  const L = $('#pops');
+  if (!L || !battleStage.L || !word) return;
+  if (bureauUi.stamp) bureauUi.stamp.remove();
+  const q = si == null ? { x: battleStage.L.vw / 2, y: battleStage.L.vh * 0.4 } : battleStageToCss(actorTop(si));
+  if (!q) return;
+  const e = document.createElement('div');
+  e.className = 'bt-stamp' + (big ? ' big' : '');
+  const st = document.createElement('pb-stamp');
+  st.setAttribute('word', word);
+  st.setAttribute('size', 'lg');
+  st.setAttribute('tilt', String(si == null ? -6 : ACTOR_SIDE[si] ? 8 : -8));
+  e.appendChild(st);
+  e.style.left = clamp(q.x, 120, battleStage.L.vw - 120) + 'px';
+  e.style.top = clamp(q.y + (si == null ? 0 : 40), 60, battleStage.L.vh - 60) + 'px';
+  L.appendChild(e);
+  bureauUi.stamp = e;
+  setTimeout(
+    () => {
+      if (bureauUi.stamp !== e) return;
+      const out =
+        e.animate && !reducedMotion
+          ? e.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' })
+          : null;
+      const gone = () => {
+        e.remove();
+        if (bureauUi.stamp === e) bureauUi.stamp = null;
+      };
+      if (out) out.onfinish = gone;
+      else gone();
+    },
+    big ? 2200 : 1300
+  );
+}
+/** a faint's stamp: VOID when the faction's bot falls, RETRIEVED when its hit knocked out one of yours */
+function bureauFaintStamp(ev) {
+  const i = activeBattle.ev,
+    m = koStampMoment(
+      activeBattle.events,
+      i,
+      k => ACTOR_SIDE[k],
+      k => !!factionAt(ev.s, k)
+    );
+  if (!m) return;
+  const by = m === 'retrieved' ? koBy(activeBattle.events, i) : ev.an.si,
+    f = by != null && factionAt(ev.s, by);
+  if (f && f.look.stamps[m]) setTimeout(() => battleStamp(ev.an.si, f.look.stamps[m]), 220);
+}
+/** the Notice of Retrieval: a form slides up over the stage, lists the boss's bots as line items, is stamped and
+   slides away as they lock together (JOIN_LOCK_MS, on the scene's clock: a faster battle speed plays it faster). A
+   tap hides it (tapMessage); so does the next line */
+function bureauNotice(an) {
+  bureauNoticeClose();
+  const T = activeBattle && activeBattle.T,
+    D = T && T.boss && BOSSES[T.boss],
+    f = D && factionAt(activeBattle.events[activeBattle.ev].s, an.si),
+    N = f && noticeOf(f.look, D, T.boss),
+    L = $('#pops');
+  if (!N || !L) return;
+  const t = noticeTimes(JOIN_LOCK_MS, N.lines.length),
+    k = 1 / (battleStage.speed || 1),
+    at = (ms, fn) => bureauUi.timers.push(setTimeout(fn, ms * k)),
+    e = document.createElement('div');
+  e.className = 'bt-notice';
+  const head = document.createElement('p');
+  head.className = 'bn-head';
+  const em = document.createElement('img');
+  em.className = 'bn-emblem';
+  em.src = uiIconURL(f.look.emblem);
+  em.alt = '';
+  em.width = em.height = 18;
+  const title = document.createElement('b');
+  title.textContent = N.title;
+  const form = document.createElement('span');
+  form.className = 'bn-form';
+  form.textContent = N.form;
+  head.append(em, title, form);
+  const ol = document.createElement('ol');
+  for (const w of N.lines) {
+    const li = document.createElement('li');
+    li.textContent = w;
+    ol.appendChild(li);
+  }
+  e.append(head, ol);
+  L.appendChild(e);
+  bureauUi.notice = e;
+  /* just above the message box (the dock and the stage run under it), in the lower middle where your side comes out after the join */
+  const msg = $('#msg'),
+    sr = L.getBoundingClientRect(),
+    dt = msg ? msg.getBoundingClientRect().top - sr.top : sr.height * 0.8;
+  e.style.top = Math.max(48, Math.min(sr.height * 0.62, dt) - e.offsetHeight - 12) + 'px';
+  if (reducedMotion) {
+    /* Reduced: no slide, every line at once, the stamp already on */
+    e.classList.add('all');
+    const st = document.createElement('pb-stamp');
+    st.setAttribute('word', f.look.stamps.filed);
+    st.setAttribute('still', '');
+    st.setAttribute('tilt', '-10');
+    e.appendChild(st);
+  } else {
+    if (e.animate)
+      e.animate(
+        [
+          { transform: 'translate(-50%, 40px)', opacity: 0 },
+          { transform: 'translate(-50%, 0)', opacity: 1 },
+        ],
+        { duration: Math.max(1, t.up * k), easing: 'ease-out', fill: 'backwards' }
+      );
+    [...ol.children].forEach((li, n) => at(t.lines[n], () => li.classList.add('in')));
+    at(t.stamp, () => {
+      if (bureauUi.notice !== e) return;
+      const st = document.createElement('pb-stamp');
+      st.setAttribute('word', f.look.stamps.filed);
+      st.setAttribute('tilt', '-10');
+      e.appendChild(st);
+    });
+    at(t.away, () => {
+      if (bureauUi.notice !== e || !e.animate) return;
+      e.animate(
+        [
+          { transform: 'translate(-50%, 0)', opacity: 1 },
+          { transform: 'translate(-50%, -30px)', opacity: 0 },
+        ],
+        { duration: Math.max(1, (t.gone - t.away) * k), easing: 'ease-in', fill: 'forwards' }
+      );
+    });
+  }
+  at(t.gone, bureauNoticeClose);
+}
+/** the win sheet's line: a faction boss's (bosses.json faction) is stamped PENDING (its look's word) */
+function winLineHTML(T) {
+  const D = T && T.boss && BOSSES[T.boss],
+    F = D && D.faction && FACTIONS[D.faction],
+    w = F && F.look && F.look.stamps.pending;
+  if (!w || !T.win) return `<p>${escapeHtml((T && T.win) || '')}</p>`;
+  return `<p class="win-line">${escapeHtml(T.win)} <pb-stamp word="${escapeHtml(w)}" tilt="-7"></pb-stamp></p>`;
+}
+function bureauNoticeClose() {
+  bureauUi.timers.forEach(clearTimeout);
+  bureauUi.timers = [];
+  if (bureauUi.notice) bureauUi.notice.remove();
+  bureauUi.notice = null;
+}
 function afterEvents() {
   if (!activeBattle) return;
   const msg = $('#msg');
@@ -738,6 +931,9 @@ function afterEvents() {
   if (activeBattle.over) {
     activeBattle.phase = 'end';
     paintActions();
+    /* SY-5: a win over the Bureau is DENIED (it replaces a knockout's stamp: one at a time) */
+    const look = activeBattle.over === 'win' && battleFactionLook();
+    if (look) battleStamp(null, look.stamps.denied, true);
     return;
   }
   if (activeBattle.needSwitch && activeBattle.needSwitch.length) {
@@ -1222,6 +1418,7 @@ function finishThrow(res, id, lab, spin) {
 }
 export function endBattle() {
   stopTimers();
+  bureauNoticeClose();
   const kind = activeBattle.kind,
     T = activeBattle.T,
     tid = activeBattle.tid,
@@ -1307,7 +1504,11 @@ export function endBattle() {
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
         /* RL-R2: a run leader's first win of its type keeps that badge for good (logic/battle-rewards.js) */
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${extra}.</p>${pay.badge && typeof fieldBadgeLine === 'function' ? `<p class="note"><b>${escapeHtml(pay.badge)} Badge!</b> ${escapeHtml(fieldBadgeLine(pay.badge))}</p>` : ''}${pay.bossParts ? `<p class="note"><b>Salvaged:</b> ${escapeHtml(pay.bossParts.join(', '))}. It goes home with you, whatever happens.</p>` : ''}`,
+        html: `${winLineHTML(T)}<p>You earned ${moneyHTML(pay.reward)}${extra}.</p>${pay.badge && typeof fieldBadgeLine === 'function' ? `<p class="note"><b>${escapeHtml(pay.badge)} Badge!</b> ${escapeHtml(fieldBadgeLine(pay.badge))}</p>` : ''}${pay.bossParts ? `<p class="note"><b>Salvaged:</b> ${escapeHtml(pay.bossParts.join(', '))}. It goes home with you, whatever happens.</p>` : ''}`,
+        /* SY-5: PENDING slams on the boss's win line once; a redraw shows it already stamped */
+        after() {
+          this.html = this.html.replace('<pb-stamp ', '<pb-stamp still ');
+        },
         btns: [
           {
             c: 'dark',
@@ -1392,7 +1593,7 @@ function plateElement(k) {
   e.dataset.a = 'btarget';
   e.dataset.t = k;
   e.tabIndex = -1;
-  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}<span class="pl-procs"></span>`;
+  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-serial tnum" hidden></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span><span class="pl-prop" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}<span class="pl-procs"></span>`;
   L.appendChild(e);
   return e;
 }
@@ -1454,6 +1655,15 @@ function paintPlates(s, anim) {
     /* UI-2: the shared bot plate: the limb pips, and the plate itself in steel with the panel's cuts */
     pr.innerHTML = x.bot ? limbPipsHTML(x.bot.ph) : '';
     e.classList.toggle('bot', !!x.bot);
+    /* SY-5: a faction's bot (the Bureau's) has an ID plate: form paper, its serial beside the tag row, its property line */
+    const fa = factionAt(s, k),
+      sr = e.querySelector('.pl-serial'),
+      prop = e.querySelector('.pl-prop');
+    e.classList.toggle('form', !!fa);
+    sr.hidden = !fa;
+    sr.textContent = fa ? factionSerial(fa.id) : '';
+    prop.hidden = !(fa && fa.look.property);
+    prop.textContent = (fa && fa.look.property) || '';
     const pips = e.querySelector('.pl-pips'),
       party = k === 0 ? saveData.team : k === 1 && activeBattle.kind === 'trainer' ? activeBattle.sides[1].team : null;
     pips.hidden = !party || party.length < 2;
@@ -1582,6 +1792,7 @@ function plateTags(e, x, anim) {
     .join('');
 }
 /* SY-2: a plate's HP number (your hp/max, a boss's %) counts to its new value over the fill's .38 s instead of jumping
+   (SY-8: the time is the Studio's HP roll dial, uiTheme.json style rollMs, the fill's too)
    (logic/hit-numbers.js rollValue). Display only: the battle's numbers never change. A new fighter, a repaint without
    a hit and Reduced motion set it at once. v null: no number (a foe that isn't a boss) */
 function rollPlateNumber(el, v, tail, uid, anim) {
@@ -1600,11 +1811,13 @@ function rollPlateNumber(el, v, tail, uid, anim) {
     el.textContent = v + tail;
     return;
   }
-  const t0 = performance.now();
+  const t0 = performance.now(),
+    ms = styleDials().rollMs;
+  styleNote('roll');
   const step = () => {
     const t = performance.now() - t0;
-    el.textContent = rollValue(from, v, t) + tail;
-    R.raf = t < ROLL_MS ? requestAnimationFrame(step) : 0;
+    el.textContent = rollValue(from, v, t, ms) + tail;
+    R.raf = t < ms ? requestAnimationFrame(step) : 0;
   };
   step();
 }

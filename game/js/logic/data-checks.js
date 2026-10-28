@@ -20,6 +20,7 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
+import { caseFile, redactProblem } from './case-file.js';
 import {
   RUN_GRID,
   runGridExits,
@@ -1411,7 +1412,8 @@ export function dataFactions(D, valid = () => true) {
   return out;
 }
 // RL-14b: bosses.json: the schema; its fighter is a gem and the right kind of part in each slot (robots.json); its
-// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's
+// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's;
+// SY-5: its faction is a factions.json faction
 /** RL-14b: bosses.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataBosses(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1425,6 +1427,7 @@ export function dataBosses(D, valid = () => true) {
     scripts = (D.story && D.story.scripts) || {},
     exps = ((D.modifiers && D.modifiers.expeditions) || []).length,
     stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    factions = (D.factions && D.factions.factions) || {},
     /** @type {Record<number, string>} */
     taken = {};
   for (const [k, X] of Object.entries(/** @type {Record<string, any>} */ (B.bosses))) {
@@ -1441,6 +1444,7 @@ export function dataBosses(D, valid = () => true) {
         if (stats.size && !stats.has(s)) problem(`${k}.phases[${i}].stages: no stat "${s}" (stats.json)`);
     });
     if (X.story && !scripts[X.story]) problem(`${k}.story: no script "${X.story}" (story.json scripts)`);
+    if (X.faction && !factions[X.faction]) problem(`${k}.faction: no faction "${X.faction}" (factions.json)`);
     for (const n of X.expeditions) {
       if (exps && n > exps) problem(`${k}.expeditions: no Expedition ${n} (modifiers.json)`);
       if (taken[n]) problem(`${k}.expeditions: Expedition ${n} is already ${taken[n]}'s`);
@@ -1798,6 +1802,17 @@ export function dataEvents(D, valid = () => true) {
       }
     }
   };
+  /* SY-4: words a redaction bar never covers: what a cost or an outcome is named (currencies, items, pyramids) */
+  const guarded = new Set(
+    [
+      ...Object.values(/** @type {Record<string, any>} */ (D.currencies || {})).flatMap(c => [c.name, c.one, c.long]),
+      ...Object.values(/** @type {Record<string, any>} */ (items)).map(x => x.n),
+      ...Object.values(/** @type {Record<string, any>} */ (pyramids)).map(x => x.n),
+    ]
+      .filter(x => typeof x === 'string')
+      .flatMap(x => x.toLowerCase().split(/[^a-z]+/))
+      .filter(x => x.length > 2)
+  );
   for (const [k, V] of Object.entries(E.events)) {
     const ev = /** @type {any} */ (V);
     for (const b of ev.biomes || []) if (biomes.size && !biomes.has(b)) problem(`events.${k}.biomes: no biome "${b}"`);
@@ -1814,6 +1829,18 @@ export function dataEvents(D, valid = () => true) {
         parseScript(ev.intro),
         n => n.k !== 'say' && problem(`events.${k}.intro: lines only, no "${n.name || n.k}"`)
       );
+    /* SY-4: a Bureau event's case file: the Bureau has a look to show it; its redaction bars cover flavour words of the
+       intro only (never an option's words, a cost or an outcome); a stamp moment only in a Bureau event */
+    if (ev.bureau === 1 && D.factions && !caseFile(k, ev, D.factions))
+      problem(`events.${k}.bureau: the Bureau has no look in factions.json (factions.bureau.look)`);
+    if (ev.redact && ev.bureau !== 1) problem(`events.${k}.redact: only a Bureau event (bureau: 1) is a case file`);
+    for (const w of ev.redact || []) {
+      const why = redactProblem(ev, w, guarded);
+      if (why) problem(`events.${k}.redact: "${w}": ${why}`);
+    }
+    ev.options.forEach((/** @type {any} */ o, i) => {
+      if (o.stamp && ev.bureau !== 1) problem(`events.${k}.options[${i}].stamp: only a Bureau event is stamped`);
+    });
     inviting = !!ev.resident;
     invites = 0;
     ev.options.forEach((/** @type {any} */ o, i) => {

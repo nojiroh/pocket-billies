@@ -42,6 +42,8 @@
 <link rel="stylesheet" href="../game/css/battle-ui.css">
 <link rel="stylesheet" href="../game/css/dialogue.css">
 <link rel="stylesheet" href="../game/css/menus.css">
+<link rel="stylesheet" href="../game/css/case-file.css">
+<link rel="stylesheet" href="../game/css/bureau-battle.css">
 <style>
   body { margin: 0; padding: 0 0 80px; background: var(--bg); color: var(--text); }
   .g-bar { position: sticky; top: 0; z-index: 70; display: flex; flex-wrap: wrap; gap: var(--s2); align-items: center;
@@ -79,6 +81,8 @@
   .g-form { display: grid; gap: 2px; margin-right: auto; font: 600 var(--fs-caption)/1.2 var(--font-voice); color: var(--text2); }
   .g-form b { color: var(--text); font-size: 15px; }
   .g-stamps { gap: var(--s4); padding: var(--s2) var(--s1); }
+  /* SY-4: a case file's sheet, still, at the column's width */
+  .g-case { width: 100%; max-height: none; margin: 0; animation: none; }
   /* UI-17: the box the bursts and the banner play in */
   .g-alive { position: relative; height: 160px; overflow: hidden; }
   /* UI-3: inside the Studio's UI section the Studio holds the switches */
@@ -324,6 +328,13 @@
   </div>
 </section>
 
+<!-- SY-4: a case file (docs/phases/style-track.md): a Bureau event's sheet as encounter-screen.js builds it, still: the
+     intro with its redaction bars, and the end with the intro on file (bars lifted) and the result stamped. gallery.js
+     puts in the data's form number and stamp word. Change both together. -->
+<section class="g-sec" data-shot="case"><h2>Case file</h2><p>SY-4: a Bureau event (events.json bureau: 1) in a manila folder: the emblem, the Bureau's name and the form number on the tab, the lines in Oxanium (typed in, in the game), black bars over its redact words, and the result stamped under the summary. Options, costs and the summary are never covered.</p>
+  <div class="g-stack">
+    <div class="sheet px event-sheet g-case"><div class="case-tab"><img class="case-emblem" src="../game/art/ui/bureau.svg" width="36" height="36" alt=""><span class="case-who">Bureau of Lost, Found and Beans</span><span class="case-form tnum" data-case="form">Form 4A-4</span></div><h2>Bureau Checkpoint</h2><div class="body"><pb-typed key="gallery" skip="9"><div class="ev-lines"><p class="ev-line">A striped barrier, a <span class="redact">tollbooth</span> and a flag with a bean on it. An agent in a grey coat steps out with a <span class="redact">clipboard</span>.</p><p class="ev-line"><b>Agent</b> Routine check, Bureau of Lost, Found and Beans. Lost anything? Found anything? Beans of any kind?</p></div></pb-typed></div><div class="btns"><button class="pb dark wide">Declare everything</button><button class="pb dark wide">Let them inspect your team</button><button class="pb quiet wide">Walk on</button></div></div>
+    <div class="sheet px event-sheet g-case"><div class="case-tab"><img class="case-emblem" src="../game/art/ui/bureau.svg" width="36" height="36" alt=""><span class="case-who">Bureau of Lost, Found and Beans</span><span class="case-form tnum" data-case="form">Form 4A-4</span></div><h2>Bureau Checkpoint</h2><div class="body"><div class="ev-lines"><p class="ev-line case-intro">A striped barrier, a <span class="redact lifted">tollbooth</span> and a flag with a bean on it. An agent in a grey coat steps out with a <span class="redact lifted">clipboard</span>.</p><p class="ev-line">You declare everything. It takes a while. The agent stamps a form in three places.</p><p class="ev-line">You got Pretzel.</p></div><p class="ev-sum">+1 Pretzel</p><p class="case-stamp"><pb-stamp still data-case="filed" word="FILED" size="lg" tilt="-8"></pb-stamp></p></div><div class="btns"><button class="pb dark wide">Keep walking</button></div></div>
 <!-- UI-17: idle life and big moments (docs/phases/ui-track.md Part 2, "Alive, without clutter") -->
 <section class="g-sec" data-shot="alive"><h2>Idle life and big moments</h2><p>UI-17: pb-foil, the prism sheen on a Coat's tag and on a rare or mythical frame; the main action's glint; today's forecast icon. In the game at most two kinds of idle loop play at once (ui-idle.js, logic/idle-life.js), none under Calm or Reduced, and Flashes off softens the glint and the foil. Here they stay still (as in the pictures) until Play the idle loops. pbBurst (a catch, a level-up) and pb-name-banner (a boss's name) on demand.</p>
   <div class="g-stack">

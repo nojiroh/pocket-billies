@@ -2,6 +2,91 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Style track SY-8 - tuning and docs: the style dials, the debug log's style line; the track is done - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-7, adb683c1) was
+already in; main had nothing new at the start (07c9b284) and moved during the step (merged in: below). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-8,
+plus UI-16a/b from SY-5); **the style track is complete** and waits on #289 (the owner merges). PR #279
+(`ccr-86dc9cb1-odx2za`, the plan and SY-1) was superseded by #289; the merge session merged #279 into main during
+this step, so nothing is left to close. Tags `sy-8-done`
+and `style-done` are for the owner to push (the git proxy refuses tags). The VFX session (session_019UpAFxvWEMwGebptZbvUuW)
+was messaged before `battleStageFlash` got its counter line; the sprite shader, hitFx and the join intro were not touched.
+- Changed:
+  - **The dials as data** (uiTheme.json `style`, schema, logic/style-dials.js, the Studio's UI section, new group
+    **Style**): Stamp size (x1, 0.5-2), Stamp slant (8°, 0-20), HP roll (380 ms, 0-1500), Damage number smallest and
+    largest (24 and 40 px), Foil every (3,500 ms), Foil sweep time (700 ms), Foil band width (half width 0.2). Every
+    default is the number SY-2 to SY-6 shipped: nothing looks different until a dial moves. A palette preset can set
+    them too. The theme sheet writes them as `--stamp-scale`, `--stamp-slant`, `--hp-roll`, `--pop-min`, `--pop-max`,
+    `--foil-period`, `--foil-sweep`, `--foil-half` (`styleVarsCss` in logic/ui-theme.js sharedVars).
+  - **Readers:** `pb-stamp` (ui-run-kit.js) sizes its font by `--stamp-scale` and turns by its page's tilt x
+    `--stamp-slant` / 8 (so -7 and -8 stay apart); battle-screen.css's HP fill moves in `--hp-roll`; battle.js's pop
+    (`popSize` takes min and max now) and the roll (`rollValue`'s ms) read theme-sheet.js `styleDials()`; the foil
+    (`coatFoil`/`foilBand` take an optional tune) does too, in world-billies.js `worldFoil` and battle-3d.js
+    `battleFoil`. `styleDials()` reads the variables at most twice a second (the foil asks every frame) and again
+    after `applyUiTheme`.
+  - **The debug log's style line** (debug-log.js `state().style`, from theme-sheet.js `styleLog()`): `now` (e.g.
+    "flashes off, calm", from html data-flash and data-motion) and `ran`: for each state that ran this session, counts
+    of `flash` (at its strength), `flashHeld` (held to 15% by Flashes off), `flashSkipped` (none: Reduced), `stamp`,
+    `pop`, `roll` and `foil` (frames a Billie had its band). Counts only: no save data, names or places.
+  - Tests: tools/test/style-dials.test.mjs (6: defaults equal today's constants and the data, schema ranges equal the
+    logic's, reading and clamping, the sheet's lines, the counts, popSize/foilBand with dials).
+  - Docs: the track file (SY-8 done, the track done, **one list of every "Decided for the owner" item from SY-1 to
+    SY-8**), ROADMAP (SY-8 and the track done), BRANCHES (a `track/style` row: done, waiting on #289).
+- Found (claims checked):
+  - "the pop's sizes" were constants in logic/hit-numbers.js (POP_MIN 24, POP_MAX 40, ROLL_MS 380) and the fill's
+    .38 s was a separate CSS number: now one dial drives both, so number and bar land together.
+  - The foil's numbers were in logic/coat-foil.js (FOIL_PERIOD_MS 3500, FOIL_SWEEP_MS 700, FOIL_HALF 0.2): right.
+  - The stamp's slant was each page's own `tilt` (-7 on the win line, -8 elsewhere), with no shared number; the dial
+    scales them rather than replacing them.
+  - The debug log already logged the Animation setting and level (`preferences.motion`, `motionLevel`), but not
+    Flashes; the style line adds it.
+  - The Studio loads battle-stage.js and battle-3d.js but not theme-sheet.js: both guard the reader
+    (`typeof styleDials === 'function'`), so the Studio's battle preview uses today's numbers and counts nothing.
+  - "Run map music ... 1400, not 1400": passes alone on main (07c9b284) and alone on this branch (SY-8), and passed
+    in this step's full quick check; it failed alone on SY-6 and SY-7 tips by SY-7's report. It looks like a timing race in the check (the ambience timer sets
+    the music filter every few seconds, so the "last cut" can change between the wait and the message), not the
+    style track's: nothing here touches sound.js. Not fixed.
+- Risky:
+  - A dial set far from its default is untested on a phone (a 2x stamp may overflow a narrow sheet; a 0 ms roll
+    jumps, as before SY-2).
+  - `styleDials()` lags a Studio preview change by up to 0.5 s for the pop, roll and foil (the CSS-read dials are
+    immediate).
+  - `foil` counts frames, so it grows fast (about 60 a second per coated Billie in view); it is a number, cheap.
+  - UI-17's menu foil (`pb-foil`, logic/idle-life.js, from main) keeps its own timing: the Style dials drive the
+    Billie's foil only. Matching the two is a small follow-up if the owner wants one sweep everywhere.
+- Main merged in (at the planning session's and the merge session's request; a merge, 970a9094): main 5f6d01ae (#279,
+  #283, #302: UI-17, UI-18, WM-6, the UI checks). Ten files conflicted; both sides kept (index.html's scripts,
+  battle.js's imports, ui-run-kit.js's elements, the gallery's sections and imports). **MAPGEN_VERSION 26:** main's
+  WM-6 had taken 25, so SY-7's sign and forms are 26 now (the rng scene hash and the run-start snapshot remade with
+  their tools; both differ from main's only by gen.v / mapgenV, checked by setting the version back). art-code-refs
+  regenerated, `npm run modules`. HANDOFF: both sides' entries; SY-3's entry was on both sides, kept once.
+  Then main moved again (48ded9d2, #293 the worldmap track): merged too; only art-code-refs.json conflicted
+  (regenerated); lint, types, modules, format, data checks, `npm test` (1,661 pass) and `npm run check:smoke` (6 of
+  6, the Phone count passing) after it.
+- Verified: lint, typecheck, check:modules, format:check, check-data, check-data-text, art-code-refs; `npm test` 1,660
+  pass after the merge (before it, only the timing test "1,000 maps ... in under a second", which passed alone).
+  `npm run check:smoke` after the merge: 5 of 6; the Phone step's "walk 20 (at most 18)" failed three times and
+  then passed twice on the same code (15 pieces): the count catches the place title and the postcard while they are
+  still on screen; main passed it once. Timing, not this step's (nothing here adds a DOM piece to the walk screen).
+  `npm run check:quick`: 37 of 42; the five are the known ones (Terraces train_station, RL-8 "Meadow Route view never
+  showed", RT-2 "the pair talked but no battle started", Granny Juniper, room light). The UI-16a sound fingerprints,
+  the Phone count and "Run map music" all passed in it. Headless dial check (the gallery): a stamp is 22 px at 8° by
+  default and 44 px at 16° with size x2 and slant 16; `styleDials()` reads the new pop and foil values; no page
+  errors.
+- Decided for the owner, to review (this step's; **every step's list, SY-1 to SY-8, is in docs/phases/style-track.md,
+  "Decided for the owner, to review"**):
+  - **The dials live in uiTheme.json `style`** (the UI section's Style group), so presets can set them and the
+    Studio's live preview shows them; not factions.json or engine.json.
+  - **Stamp size is a multiplier (x1); slant is degrees (8) that scales each page's own tilt.**
+  - **One HP roll dial for the number and the fill.**
+  - **Foil dials: period, sweep time, band half width**; its strength, brightness step and hue stay in code.
+  - **The log counts foil per frame drawn.**
+  - **MAPGEN_VERSION 26** for SY-7's change after merging main (WM-6 had 25).
+  - Not added: a Studio card for the Bureau's words and forms (edit factions.json `bureau.look`); it fits a
+    factions editor when there is one.
+- Next: the style track is complete. The owner reviews and merges PR #289 (draft)
+  and pushes the tags `sy-8-done` and `style-done` (and the earlier `sy-N-done` tags) on the merge commit. Optional
+  SY-9 (Laminated) only if the owner reopens it.
+
 ### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28
 Branch `track/characters`, the same session as CH-2, straight on at the owner's word ("Automatically follow the plan
 until you finished ch3 then stop"): the track file's CH-3 is the plan, and the "Ask me before" calls it touches were
@@ -969,6 +1054,269 @@ on the HUD; a boss's name slams in).
 - Next: the session that runs every skipped check and fixes what they find (the UI plan's end); SY-6 can reuse
   `<pb-foil>`'s look; VFX-16 and RL-14b can call `pbNameBanner`.
 - Tag to suggest (sessions can't push tags): `ui-17-done` on this entry's commit.
+### Style track SY-7 - the Bureau in the world: red tape, its checkpoint sign with the emblem, loose forms - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-6, 9c5fbe5d) was
+fast-forwarded in; main had nothing new. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-7, plus
+UI-16a/b from SY-5). Tag `sy-7-done` is for the owner to push (the git proxy refuses tags). Nothing in battle was
+touched (no hitFx, join intro, battleStageFlash or sprite shader), so the VFX session wasn't messaged.
+- Changed:
+  - **Red tape** (tools/build-props-routes.py, the props' own build script; rerun, models and baked pictures remade):
+    `bureau_barrier` gets two red wraps round its board, a hanging end and a tape strung between its legs in a stepped
+    sag; `bureau_crate` gets two bands crossed over it like a parcel and one over the small crate. The tape is the
+    scenery's red (#DE4048, `TAPE`), the wax seal's family.
+  - **`bureau_sign`** (new prop, same script): a slate board on two posts, mustard edges, a red tape strip at its
+    foot, and the emblem as a fixed decal (`face: 'fixed'`, never mirrored). The decal,
+    scene/next/decals/bureau_emblem.png, is made from art/ui/bureau.svg by the script (`emblem_decal`), at 1 px a
+    pixel (36 px, 1.1 m on the board); the baked fallback picture gets the emblem pasted on, since the bake draws no
+    decals. On the route props showcase map's Bureau row.
+  - **The checkpoint** (setPieces.json `bureau_checkpoint`): its sign is `bureau_sign`, same spot, same words.
+    **MAPGEN_VERSION 25** (the route props track bumped it for its set piece change too); the rng scene hash and the
+    run-start snapshot change only by `mapgenV` (checked by setting it back).
+  - **Loose forms** (ambient-life.js kind `form`: `fly` plus a new `drift` flag): lies flat (frame 1 a corner lifting
+    now and then), lifts on a gust (more often than a gull takes off) or when you come within 1.6 m, blows along low
+    (1.2 m) and sideways across the view (one way per scene), wobbling, for 2.5-4.5 s, and comes down ahead of itself
+    inside its piece's area. Never walks, leaves no footprints, rustles instead of calling. art/scene/life/form.png
+    (4 frames, 20 x 14) and scenery.json `life.form` from tools/build-bureau-forms.py (new). setPieces.schema.json's
+    life enum takes `form`. Three in the checkpoint's `life`, two in the scrap heap's (its sign is the Bureau's
+    "Unclaimed property"); `extra` life, so fewer on lower graphics and none with Graphics Off (RT-4b).
+- Claims checked against the code:
+  - Right: setPieces.json's checkpoint (123-142) and the scrap heap's Bureau sign; scenery.json `bureau_barrier` and
+    `bureau_crate` (both low-poly models with baked pictures, not flat props).
+  - Wrong-ish: "the emblem on the checkpoint's sign": the checkpoint had no sign of its own, only the shared
+    `signpost` (every exit's sign uses it). Branding that would put the emblem everywhere, so the checkpoint got its
+    own prop.
+  - Partly: "an ambient-life kind with the `fly` flag": `fly` is the gull's (wheels 4.5 m up for 4-7 s, picks a far
+    landing spot, walks about when landed, calls). Paper needed its own behaviour on top: the `drift` flag.
+  - "Art from the Studio": the props here are built by their build scripts (as every low-poly prop is); the models,
+    the decal and the strip are ordinary art the Studio paints and moves. Rerunning the scripts overwrites Studio
+    edits to those files, as for every scripted prop.
+- Found, not changed: tools/build-props-routes.py's header said "no logo: the Bureau's look is the owner's call";
+  updated now that SY-3 made the emblem.
+- Risky:
+  - The forms are small (a sheet about 0.37 m) and placeholder pixel art; never seen on a phone.
+  - MAPGEN_VERSION 25: a run saved mid-way records 24; it carries on with today's generator either way (the version
+    is recorded, not branched on).
+  - A form's gust direction is per scene (from its id); forms in one scene all blow the same way, by design.
+- Verified: lint, typecheck, check:modules (`npm run modules` for `lifeGust`), format:check, check:data,
+  check-data-text, art-code-refs regenerated, `npm test` (1,643 pass). `npm run check:smoke`: 5 of 6 (the known Phone
+  "team 30"). Headless look (900 x 600, the route props showcase's Bureau row): the three props draw as low-poly
+  models, the sign's emblem shows, four forms lie about and then blow along at 1.2 m with the flutter frames; no page
+  errors.`npm run check:quick`: 34 of 41. Five are the
+  known ones (Terraces train_station, RL-8 "Lakeside Route view never showed", room light, Phone "team 30", UI-16a's
+  four sounds). Postcards ("no postcard came") passes alone. "Run map music ... 1400, not 1400" fails alone too, and
+  fails the same on SY-6's tip (9c5fbe5d) with none of this step's changes: not SY-7's (a float compare in the check,
+  it seems; for the sound track).
+- Decided for the owner, to review:
+  - **A new prop `bureau_sign`** for the checkpoint in place of putting the emblem on the shared signpost.
+  - **The tape is the scenery's red #DE4048**, not the UI's red family (#EA5974): it sits beside the props' wax seal
+    and the tollbooth's red; one shade of red per palette.
+  - **Forms also in the scrap heap** (its sign is the Bureau's), not only the checkpoint; 3 and 2.
+  - **The `drift` flag** (new behaviour) rather than reusing the gull's flight; **size 0.95**, lift 1.6 m away.
+  - **MAPGEN_VERSION bumped** to 25.
+  - **The emblem decal is made from art/ui/bureau.svg by the build script**: repaint the emblem in the Studio's icon
+    editor, then rerun `python3 tools/build-props-routes.py` to carry it onto the sign.
+  - Not added: a unit test for the forms' flight (ambient-life.js runs on the walk view; the headless look covered it).
+- Next: SY-8 (tuning and docs: the Studio dials, a debug-log line with the Flashes and Animation states, HANDOFF; tag
+  `style-done`), in its own session on `track/style`.
+
+### Style track SY-6 - the coat's foil in the world: a dithered sheen band on coated Billies, maps and battle - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-5) was fast-forwarded
+in; main (07c9b284) had nothing new. Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-6, plus
+UI-16a/b from SY-5). Tag `sy-6-done` is for the owner to push (the git proxy refuses tags). The VFX session
+(session_019UpAFxvWEMwGebptZbvUuW) was told before the sprite shader was touched; VFX-9's `uHit` is not on
+`track/vfx` yet, so `uFoil` went in first, small and on its own (vfx-track.md notes where `uHit` can go).
+- Changed:
+  - **game/js/logic/coat-foil.js** (new; index.html, the Studio's page and its logic worker list; 7 tests):
+    `foilOn` (off under Reduced motion, with Flashes off, with Graphics Off, at quality level 2 and up), `foilBand`
+    (a sweep every 3.5 s that crosses in 0.7 s, one place per 24 fps cell, each Billie offset by a hash of its seed;
+    null between sweeps), `foilHue` (each coat its own hue turn, 0.2-0.45 of the wheel), `coatFoil` (the shader's
+    `uFoil` for a coat at a time, or null; a regional form's coat (`form: true`) never has foil).
+  - **The sprite shader** (walk/walk-shaders.js, the sprite fragment shader): `uniform vec4 uFoil` (strength, the
+    band's middle, its half width, the hue turn) and one block after lighting, before the fog: a band along x + .6 y of
+    the picture, stepped in art pixels, its outer 40 % Bayer-dithered, only on pixels whose colour is above luma 0.3,
+    the lit colour turned round the hue wheel and lifted (x1.25 + .06), mixed in at 0.55.
+  - **walk/sprites.js** `drawFoilRecord`: an item with `foil` is drawn on its own on the sprite program with `uFoil`,
+    which goes back to 0 right after. In the instanced pass it ends the run and the next run starts after it. The
+    instanced program carries the same shader text but never sets `uFoil`. 2 tests in sprite-records.test.mjs (both
+    passes); the pass's recorded calls (snapshots) are unchanged.
+  - **The items:** world-billies.js `worldBillyItem` (the buddy, the wild ones, companions, pets: the walk's clock)
+    and battle-3d.js `battle3dFrame` (the battle's clock, `battleStage.q.lvl`; afterimages get none) set `item.foil`.
+- Claims checked against the code:
+  - Wrong path: the shader is game/js/walk/walk-shaders.js (181 and the instanced one at 511 are right).
+  - Wrong: "`uFoil` set in walk/sprites.js from the Billie's coat": sprites.js only sees items, not Billies; the
+    coat is turned into `item.foil` where the items are made, and sprites.js sends it.
+  - Partly wrong: "off at quality 2 and up": only battle has a quality level (`battleStage.q.lvl`). The maps have
+    none; there the foil follows the Graphics preset (off with Graphics Off).
+  - Not built yet: UI-17's menu foil. Menus show a still four-hue gradient (units.css `.u-tag.coat`), so "the same
+    look" is for UI-17 to match.
+  - Right: battle Billies go through the same sprite program as the maps (`k: 'rig'` items, the rig's canvas
+    uploaded), so one shader term covers both.
+- Found, not changed: there is no finished Billie art in this base (every Billie draws as a labelled placeholder
+  rig, "HEAD", "TORSO"; the known 404s on art/billionaires). The foil could only be judged on placeholders.
+- Risky:
+  - Never seen on a phone. A foiled Billie costs one more draw while its band crosses (0.7 s of 3.5 s), and every
+    sprite pixel pays one uniform branch. **Graphics bench before and after: not run** (the bench is only run by
+    players; headless numbers mean nothing, docs/graphics-bench.md), so that is for the owner's phone.
+  - The lift (x1.25 + .06) under the battle's bloom may read as too bright. Width, speed and strength are constants
+    in coat-foil.js for SY-8's dials.
+  - The first commit's test checks the shader for `uFoil`, which only the second commit adds (fine at the branch tip).
+- Verified: lint, typecheck, check:modules, format:check, `npm test` (1,643 pass). `npm run check:smoke`: 5 of 6
+  (the known Phone "team 30"). Headless battle at 600 x 700 with a Midnight foe, band pinned at 0.4, 0.8 and 1.2:
+  the band crosses the picture, dithered at its edges, and turns warm pixels green; with Flashes off `battleFoilOn()`
+  is false and the items carry no foil. No page errors. `npm run check:quick`: 33 of 41. Seven reds are the known
+  ones: Terraces train_station, RL-8 "Meadow Route view never showed", RT-2 "no battle started", Granny Juniper, room
+  light, Phone "walk 20, team 30", UI-16a's four sounds. "Run map music ... 1400, not 1400" failed once and passes
+  alone (36 s).
+- Decided for the owner, to review:
+  - **Maps: off with Graphics Off** in place of "quality 2 and up" (the maps have no level).
+  - **Regional forms' coats have no foil** (foil means "has a coat"; a form's coat is the form's own look).
+  - **Brightness step 0.3** (0.42 left most mid-tone Billies bare), **sweep 3.5 s / 0.7 s**, **band along x + .6 y**,
+    **hue turn per coat from a hash of its id** (no new data field), **lift x1.25 + .06 at 0.55**.
+  - **Not in the instanced program's instance data**: a foiled Billie leaves its run while its band crosses. That
+    keeps the instance layout and its tests unchanged.
+  - **Reflections get no foil.**
+- Next: SY-7 (the Bureau in the world: red tape on `bureau_barrier` and `bureau_crate`, the emblem on the
+  checkpoint's sign, loose forms blowing past), in its own session on `track/style`. The owner: the Graphics bench on
+  the phone with a coated buddy, before and after.
+
+### Style track SY-5 - the Bureau in battle: stamps on knockouts and wins, the Notice of Retrieval, ID plates - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-4) and main
+(07c9b284, nothing new) were merged in, then **`origin/claude/ui-16b-battle-events` (UI-16a and UI-16b), as a merge
+(22b68a20), for UI-16b's plates. So PR #289 now also carries the UI track's UI-8b, UI-8c, UI-11 to UI-16b commits
+and `track/vfx`'s VFX-5 and VFX-7: merging #289 brings them too.** Conflicts: HANDOFF (both kept), gallery.js and
+ui-run-kit.js imports (both kept, to-module remade), art-code-refs.json (regenerated). Plan pre-approved (the owner,
+2026-10-27). PR #289 (draft; SY-1 to SY-5). Tag `sy-5-done` is for the owner to push (the git proxy refuses tags).
+The VFX session (session_019UpAFxvWEMwGebptZbvUuW) was told before the join intro was touched: battle-stage.js
+itself is unchanged.
+- Changed:
+  - **Data** (schema, types, data check, a planted fault): bosses.json `faction` (the Retrieval Unit is `bureau`);
+    factions.json `look.notice` ("Notice of Retrieval") and `look.property` ("Property of the Bureau").
+  - **game/js/logic/bureau-battle.js** (new; index.html, the Studio's page and its logic worker list; 7 tests):
+    `battleFactionOf` (a bot whose build is one of a faction's bots, or a boss whose `faction` names it; only a faction
+    with a look), `factionSerial` (a bot's serial from its id: "No. 1120-AU"), `koBy` (who landed the last hit on the
+    fallen: a move, or a spread hit's move; a burn, the stones, recoil or a delayed hit is no one's), `koStampMoment`,
+    `noticeOf`, `noticeTimes`, `JOIN_LOCK_MS` (1300; a test reads battle-stage.js's join LOCK so they can't drift).
+  - **battle.js "THE BUREAU IN BATTLE"**: one stamp at a time (`pb-stamp` on a paper slip in #pops, so the red reads
+    on any stage; a new one replaces the old): VOID 220 ms into a Bureau bot's faint, RETRIEVED when a Bureau bot's hit
+    knocks out yours, DENIED when the battle ends in your win over the Bureau. PENDING on the Retrieval Unit's win line
+    on the sheet after the battle (slams once; a redraw shows it still). The Notice of Retrieval during the join: the
+    emblem, the title, a form number, the four bots as numbered lines coming in one by one, FILED stamped, sliding
+    away so it is gone by the lock (1,300 ms on the scene's clock, so battle speed scales it). It sits just above the
+    message box. A tap, the next line or the battle's end closes it. Reduced motion: no slide, all lines, the stamp
+    still. **ID plates:** a Bureau bot's plate (`.bplate.form`) is the case files' paper with ruled lines, dark ink,
+    the serial beside the tag row (UI-16b's room in `.pl-bot`), and "Property of the Bureau" in red under a red rule; a
+    boss's plate keeps its red edge.
+  - **game/css/bureau-battle.css** (new; the game and the gallery page): tokens only, ui-lint's ceilings hold.
+  - **The in-game full test**: the Bureau bot's step checks its ID plate; the Voltron's step checks the notice listed
+    its four bots and was gone by the menu.
+- Claims checked against the code:
+  - Wrong: "the join intro's 900 ms": the join is LOCK 1,300 + 900 = 2,200 ms (900 is the plain send-out). The
+    notice fits in the 1,300 before the lock, with no added time.
+  - Wrong: "a tap skips both": a tap during the join only finishes the text; the next line waits for the join's
+    time (battleStageFlush runs at the next play). A tap now hides the notice; the join itself is unchanged.
+  - Wrong: factions.schema.json said `pending` is "its boss wins"; the win line ("Retrieval suspended. Claim filed as
+    pending.") is said when you beat it. Fixed the description.
+  - Right: UI-16b's `markRow`/`pb-tag` row and room for a faction label in `.pl-bot`; pb-stamp on the shared m-stamp.
+  - The Retrieval Unit's build is not a factions.json bot, so nothing tied it to the Bureau before `faction`.
+- Found, not changed (not this step's):
+  - The smoke's Phone step fails "team 30 (at most 28)": the same on the merge commit before any SY-5 code and on
+    `claude/ui-16b-battle-events` itself ("walk 20, team 30"). UI-16b listed the counts as skipped until UI-18.
+  - The quick check's song fingerprints: UI-16a's four UI sounds (sheet, flip, count, toast) aren't in
+    validation/sound-baseline. Came in with the merge; for the UI track.
+- Risky: the Bureau's look shows in every battle with its bots now, and the plate grows by one line (the property).
+  Nothing here has been seen on a phone. The win's DENIED shows over the "You won" moment for 2.2 s (no added wait).
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, `npm test` (1,634 pass).
+  `npm run check:smoke`: 5 of 6 (the Phone step, above). Headless runs (390 x 844, light, and dark with Reduced motion):
+  the bot's ID plate, VOID then DENIED, RETRIEVED from a strong bot's hit, the notice's lines and stamp at a slowed
+  join speed, PENDING on the win sheet; no page errors. `npm run check:quick`: 36 of 41: the three known (Terraces
+  train_station, RL-8 "Thicket Route view never showed", room light) and the two above from the UI merge.
+- Decided for the owner, to review:
+  - **Merged UI-16a/b into `track/style`** (the step's instruction), so #289 carries them.
+  - **The notice's stamp is FILED** (look.stamps.filed); the moment list had no "notice" word.
+  - **RETRIEVED only on a Bureau bot's own hit** (or a spread hit from its move); a burn or stones that finish yours
+    stamp nothing.
+  - **The boss fight gets DENIED in battle and PENDING on its sheet** (two screens, one stamp each).
+  - **Stamps land on a paper slip** (the case files' paper), not straight on the stage.
+  - **Serial format** "No. NNNN-XX" (a hash of the bot's id and its first two letters); the property line's words
+    are factions.json `look.property`.
+  - **The plate's paper is the case files' tokens** (light and dark), with the page's ink, though the battle's glass
+    is always dark.
+  - Not added: a UI gallery section for the plate and notice (the gallery's battle pictures wait for UI-18, as UI-16b
+    noted); the VFX VS splash (VFX-16) will fit around the notice (told to their session).
+- Next: SY-6 (the coat's foil in the world: `uFoil` in the sprite shader), in its own session on `track/style`. It
+  touches walk-shaders.js: message the VFX session first and merge main.
+
+### Style track SY-4 - case files: the Bureau's events in a manila folder, typed in, redacted, stamped - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-3, 06d0baae) and main
+(07c9b284) were already in it (no merge needed). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-4).
+Tag `sy-4-done` is for the owner to push (the git proxy refuses tags).
+- Changed:
+  - **events.json** (schema, `RunEvent` types, data check): `bureau: 1` marks a Bureau event (as classes already do);
+    `redact` lists flavour words of its intro to cover; `form` is the form number when the intro names one; an option's
+    `stamp` names the moment its result is stamped. Nine events marked: the checkpoint, Form 27-B, the beans crate, the
+    pyramid cart, the auction, the surveyor, the field lab, the gene recall and the dig site. The back-alley splicer
+    stays plain ("no forms, no Bureau").
+  - **game/js/logic/case-file.js** (new; index.html, the Studio's page and its logic worker list): `caseFile` (null for a
+    plain event), `caseForm` (a stable pick from `look.forms` by the event's id), `caseStampMoment` (the option's own;
+    else the last option, the one that walks away, is denied and any other filed), `redactSplit` (whole words only),
+    `caseTyped` (20 ms a letter), `redactProblem` (the data check's rule: letters only, a whole word of the intro, never
+    a word of an option, nor a currency's, item's or pyramid's name, plurals included). tools/test/case-file.test.mjs
+    (5 tests) and 6 planted faults in data-checks.test.mjs.
+  - **`pb-typed`** (ui-run-kit.js): light DOM around a sheet's lines. The lines after `skip` type in one after another.
+    Where it is comes from the clock since its `key` first showed, so the overlay's redraws carry on, not restart. A tap
+    on the sheet's body shows it all. Reduced motion shows it at once. A tap on a bar once it's typed lifts it.
+  - **encounter-screen.js:** a Bureau event's sheets carry the folder's tab (the emblem, the Bureau's name, the form
+    number). Its intro types in with the bars on. Once you choose, the intro stays on file above the script's lines
+    (smaller, grey, its bars lifted), and only new lines type in. The end sheet stamps the result under the summary
+    (`pb-stamp`, the look's word; it slams once, and a redraw shows it `still`). The debug log adds "(case file, Form
+    ...)" and "stamped <moment>" (data ids only). A no-op commit first gathered the sheet's lines into `encLinesHTML`.
+  - **game/css/case-file.css** (new; the game and the gallery): manila paper by setting the sheet's own `--g-bg` and
+    `--g-blur` (no `!important`, ui-lint's ceilings hold), the tab, a red margin rule, the lines in Oxanium (its own
+    `@font-face`, since only the main look loads it), black bars, the lifted bar's faint tint. Light and dark tokens.
+  - **The UI gallery's "Case file"**: the checkpoint before the choice (bars) and its end (on file, FILED), with the
+    data's form number and word; pictured like the stamps (320 and 390, light and dark, Stepped and alpha 0.5): 8 baselines.
+  - **The in-game full test's** set-piece step now checks the checkpoint opens as a case file (a form on its tab) and
+    that walking on stamps the look's denied word.
+- Claims checked against the code:
+  - Right: `encSheet` (encounter-screen.js 116) and `encounterStage` (294); the checkpoint at events.json 295; no logo
+    on events before SY-3; events use one plain sheet.
+  - Wrong: no event had `bureau: 1` (only trainer classes, RL-S1); I added it. "About eight" Bureau events: nine, with
+    Form 27-B, whose text never says "Bureau". "An event in a Bureau set piece": the only set piece with an event is the
+    checkpoint, now marked, so no code path was needed. Oxanium is the main look's prose font (uiTheme.json), not loaded
+    by base.css. "Verify in `encChoose`": the options are built in `encounterOpen` (text, Moneys and DNA cost, the
+    greyed reason); `encChoose` is SP-6's in-script pick. Outcomes show only in the end summary. None of these are
+    covered: only intro words are.
+- Found, not changed: the gallery's `loading-*` pictures are still flaky (100% at 320 every run; 390 passes alone), as
+  in SY-3, on SY-3's own commit too.
+- Risky: low. The folder needs `:has()` (Chrome 105+, Safari 15.4+); without it the sheet stays glass with the tab on
+  top. The margin rule and the lifted tint need `color-mix` (Chrome 111+, Safari 16.2+). Typing follows the clock, so a
+  slow phone jumps ahead, never runs long. The buttons work while it types, so no event gets longer.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, `npm test` (1,586 pass),
+  `npm run check:smoke` (6 of 6). check-ui-gallery: 109 pictures, only the flaky `loading` ones differ. Headless runs:
+  the checkpoint types in about 2 s (a redraw at 111 letters left carried on at 42, a tap showed all), Reduced
+  motion shows it at once; Walk on stamps DENIED, Declare everything FILED (light and dark); a plain event (ring_light)
+  has no tab, typing or stamp; no page errors. The in-game full test's set-piece and Dig Site steps pass alone.
+  `npm run check:quick`: 38 of 41, the three known reds (Terraces train_station, RL-8 "node 7 has no exit north2", a
+  seed the map generator can't build as in SY-3, room light). CI's smoke: the two known Studio reds only.
+- Decided for the owner, to review:
+  - **Which events are the Bureau's:** the nine above (edit `bureau` in events.json). Form 27-B is in: a grey clerk
+    and a form number.
+  - **The redaction words** (one or two each: tollbooth, clipboard, cardigan, property, handcart, unclaimed, square,
+    centrifuge, unlicensed, humming). Edit `redact`.
+  - **The stamp rule:** the last option is DENIED and any other FILED, unless an option names its own. Named: in the
+    beans crate, opening or prying it is DENIED and filing it FILED; taking from the pyramid cart DENIED, reporting it
+    FILED; swiping at the field lab and refusing the recall DENIED.
+  - **Form numbers from the intro:** Form 27-B, Form 9-C (the surveyor's complaint) and Form 9-G (the field lab) are
+    events' own `form`, not in `look.forms`; the rest pick from `look.forms`.
+  - **"Lift when you choose":** the bars lift when the intro is shown again on file after your choice; a tap on a bar
+    after the typing also lifts it early.
+  - **The buttons work while it types** ("Ask me before" 6: no event gets longer).
+  - **The stamp sits under the summary,** never over it (costs and outcomes are never hidden).
+  - **The manila colours are this file's own tokens** (`--case-paper` ...), not palette tokens: UI-11/12 may take them.
+  - **The lines are in Oxanium** even in the look whose prose font is Chakra Petch.
+- Next: SY-5 (the Bureau in battle: stamps on KOs and wins, the Notice of Retrieval in the join intro, ID plates), in
+  its own session on `track/style`. It touches the join intro: message the VFX session first.
+
 
 ### UI track UI-16b - alive: battle events (the plates' marks, stamps, rises and falls, blips, effect pips, banners; one stamp motion; Calm) - 2026-10-28
 Branch `claude/ui-16b-battle-events`, made from UI-16a's `claude/ui-16a-motion` (main plus UI-8b, UI-8c, UI-11 to

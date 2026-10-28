@@ -2059,6 +2059,10 @@ export interface FactionLook {
   emblem: string;
   stamps: Record<StampMoment, string>;
   forms: string[];
+  /** SY-5: the title of its boss's join notice */
+  notice?: string;
+  /** SY-5: the red line on its bots' plates in battle */
+  property?: string;
 }
 /** RL-14b: bosses.json: one boss phase, fired once when its HP falls to `at` of the most */
 export interface BossPhase {
@@ -2080,6 +2084,8 @@ export interface BossDef {
   /** the battle's first line ({name}) */
   call?: string;
   join?: string;
+  /** SY-5: the factions.json faction it fights for (its look in battle) */
+  faction?: string;
   /** the join intro's glow (else its gem's colour) */
   glow?: string;
   win?: string;
@@ -2243,6 +2249,12 @@ export interface RunEvent {
   options: RunEventOption[];
   /** residents track RS-2: only while the run's resident can be met at an event; `invite` invites them */
   resident?: true;
+  /** style track SY-4: one of the Bureau's events, opened as a case file (logic/case-file.js) */
+  bureau?: 1;
+  /** SY-4: the form number its case file shows (else one of bureau.look.forms) */
+  form?: string;
+  /** SY-4: flavour words of the intro under redaction bars until you choose */
+  redact?: string[];
 }
 export interface RunEventOption {
   text: string;
@@ -2251,6 +2263,8 @@ export interface RunEventOption {
   cost?: number;
   /** SP-6: DNA paid when it is picked */
   dna?: number;
+  /** SY-4: in a Bureau event, the moment its result is stamped */
+  stamp?: StampMoment;
   then: string[];
 }
 /** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */

@@ -112,6 +112,7 @@
     "type": {"$ref": "#/$defs/type"},
     "motion": {"$ref": "#/$defs/motion"},
     "minimap": {"$ref": "#/$defs/minimap"},
+    "style": {"$ref": "#/$defs/style"},
     "signals": {"$ref": "#/$defs/signals"}
    }
   },
@@ -201,6 +202,21 @@
     "facilities": {"type": "boolean", "description": "--minimap-facilities: an icon on each facility"},
     "trainers": {"type": "boolean", "description": "--minimap-trainers: trainers not yet beaten"},
     "billies": {"type": "boolean", "description": "--minimap-billies: the wild Billies out in the world"}
+   }
+  },
+  "style": {
+   "type": "object",
+   "additionalProperties": false,
+   "description": "SY-8: the style track's dials (logic/style-dials.js; left out: today's numbers): the Bureau's stamp, the HP roll, the damage number's sizes, the coat foil",
+   "properties": {
+    "stampScale": {"type": "number", "minimum": 0.5, "maximum": 2, "description": "--stamp-scale: pb-stamp's size times its page's own (sm 14 px, 22 px, lg 34 px)"},
+    "stampSlant": {"type": "number", "minimum": 0, "maximum": 20, "description": "--stamp-slant: degrees a stamp turns (a page's tilt of -8 turns this far)"},
+    "rollMs": {"type": "number", "minimum": 0, "maximum": 1500, "description": "--hp-roll: ms the HP number rolls and the plate's fill moves"},
+    "popMin": {"type": "number", "minimum": 12, "maximum": 48, "description": "--pop-min: the damage number at a scratch, px"},
+    "popMax": {"type": "number", "minimum": 16, "maximum": 72, "description": "--pop-max: the damage number at a one-shot and a KO, px"},
+    "foilPeriod": {"type": "number", "minimum": 1000, "maximum": 10000, "description": "--foil-period: ms between the coat foil's sweeps"},
+    "foilSweep": {"type": "number", "minimum": 200, "maximum": 3000, "description": "--foil-sweep: ms a sweep takes to cross the Billie"},
+    "foilHalf": {"type": "number", "minimum": 0.05, "maximum": 0.6, "description": "--foil-half: the band's half width (the sprite is 1.6 across along its way)"}
    }
   },
   "signals": {
