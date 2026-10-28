@@ -416,3 +416,36 @@ test("the dash moves are real moves and their ribbon is the Billie's size", () =
   assert.ok(R.length >= 2 && Math.abs(R[0].w - 0.3) < 1e-12, 'a ribbon at the given width');
   assert.ok(Math.abs(smearRibbon(H, 220, RIBBON_CELLS)[0].w - RIBBON_HALF) < 1e-12, "a throw's width by default");
 });
+
+/* VFX-12: the dials are battleAnims.json `smears` (the Studio's Battle effects tunes them) */
+test('the dials are set from data and read back in its shape; what is missing stays', async () => {
+  const S = await import('../../game/js/logic/smear.js'),
+    before = S.smearDials();
+  try {
+    S.smearDialsSet({
+      ghosts: [{ fade: 0.5, glow: 0.4 }, { fade: 0.3 }],
+      ribbon: { cells: 8, half: 0.3, steps: 'x' },
+      stretch: { k: 0.5 },
+      lean: { max: 0.2 },
+    });
+    assert.deepEqual(S.SMEAR_GHOSTS, [
+      { fade: 0.5, glow: 0.4 },
+      { fade: 0.3, glow: before.ghosts[1].glow },
+    ]);
+    assert.equal(S.RIBBON_CELLS, 8);
+    assert.equal(S.RIBBON_HALF, 0.3);
+    assert.equal(S.RIBBON_STEPS, before.ribbon.steps, 'a value that is no number keeps the dial');
+    assert.equal(S.STRETCH_K, 0.5);
+    assert.equal(S.STRETCH_MAX, before.stretch.max);
+    assert.equal(S.LUNGE_LEAN_MAX, 0.2);
+    assert.equal(S.SMEAR_KEEP, 8, 'the history keeps what the ribbon needs');
+    assert.equal(S.smearCount(false, 0), 2, 'the copies drawn follow the list');
+    assert.equal(S.lungeLeanFor(10, 1), 0.2);
+    S.smearDialsSet(null);
+    assert.equal(S.RIBBON_CELLS, 8, 'nothing to set: nothing changes');
+  } finally {
+    S.smearDialsSet(before);
+  }
+  assert.deepEqual(S.smearDials(), before, 'put back');
+  assert.equal(S.SMEAR_KEEP, Math.max(before.ghosts.length + 1, before.ribbon.cells));
+});
