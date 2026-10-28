@@ -1428,11 +1428,16 @@ export function dataBattleAnims(D, valid = () => true) {
       for (const [w, V] of [
         ['', T],
         ['.short', T.short],
+        ['.miss', T.miss],
       ])
         if (V) {
           steps(`${sec}.${id}${w}.steps`, V.steps);
           if (V.hit !== 999 && V.hit > V.dur) problem(`${sec}.${id}${w}: hits at ${V.hit} ms, after its ${V.dur} ms`);
         }
+      /* VFX-13: a family's miss lasts no longer than a miss did, and hits nothing */
+      if (T.miss && T.miss.dur > A.maxMs.miss)
+        problem(`${sec}.${id}.miss: ${T.miss.dur} ms, longer than a miss (${A.maxMs.miss} ms)`);
+      if (T.miss && T.miss.hit !== 999) problem(`${sec}.${id}.miss: a miss hits nothing (hit 999)`);
     }
   /* VFX-12: a budget never grows as the quality drops, and a burst fits in the pool */
   const B = A.budgets;

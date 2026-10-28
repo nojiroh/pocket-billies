@@ -2914,6 +2914,8 @@ export interface BattleAnimTimeline {
 export interface BattleAnimFamily extends BattleAnimTimeline {
   about?: string;
   short?: BattleAnimTimeline;
+  /** VFX-13: its own miss (a whiff that fits it) */
+  miss?: BattleAnimTimeline;
 }
 /** a step: what it does, when (stage ms), its gates and its own numbers */
 export interface BattleAnimStep {
@@ -2923,7 +2925,8 @@ export interface BattleAnimStep {
   every?: number;
   if?: string[];
   types?: string[];
-  on?: 'attacker' | 'target' | 'subject' | 'wide';
+  /** VFX-13: past, a spot beside and behind the target (where a miss goes) */
+  on?: 'attacker' | 'target' | 'subject' | 'wide' | 'past';
   color?: string;
   pop?: 'miss' | 'hedged';
   pose?: string;

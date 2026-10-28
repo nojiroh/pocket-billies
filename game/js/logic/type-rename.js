@@ -138,7 +138,7 @@ export function renameTypeIn(D, from, to) {
     timelines = BA
       ? [
           { steps: BA.intro },
-          ...[...Object.values(BA.families), ...Object.values(BA.scenes)].flatMap(F => [F, F.short]),
+          ...[...Object.values(BA.families), ...Object.values(BA.scenes)].flatMap(F => [F, F.short, F.miss]),
         ]
       : [];
   for (const T of timelines)
