@@ -45,6 +45,94 @@ Plan approved in Plan Mode. One cause per commit. No test skipped or loosened; o
   pull request touching studio/ or game/js/logic/ adds 6-8 min of Studio checks. Raising it to 45 is your call.
 - Next: open PRs merge main to pick this up. If Behind things fails again, its note now names what stood in front.
 
+### Perks track PK-5 - Wave C, catching, cash and maps - 2026-10-28
+Branch `track/perks` (this session's outcome branch, from PK-4's 34c884a6; main 485674b5 merged first, bbe0abe4, and
+main 5b0d43e1, which had taken PK-1..PK-4 and the style track, merged near the end, f5b925c0). Started by PK-0's
+session under the owner's standing instruction (perks-track.md section 10): no Plan Mode, the plan below written
+first and carried out. Details and the plan's corrections: perks-track.md section 7, "Corrected in PK-5". The items
+lane (`track/perks-items`, PK-11 then PK-10) had not landed in track/perks; nothing of items.json, itemIcon, bag.js or
+art/items was touched.
+- The plan (as set at the start): (1) merge main; (2) the kinds Wave C needs, one per commit with tests, schema, data
+  checks, types and the Studio's inputs: catchLevel (in catchKeep), refund (a missed pyramid back at throwMiss), inflict
+  at battleStart (Music Box, no new kind), a money share with a cap on arrival (Tip Jar), free (Punch Card's every
+  4th buy), salvage, rule rewardPick / rerollFree / mapReveal; then `needs: bots` on offers; Bug Net, Lab Goggles and
+  Bounty Poster use PK-1's conditions as they are; (3) the 12 pictures as grids; (4) the 12 Perks in perks.json,
+  tests that pinned the pool fixed; (5) a test per Perk and all of Waves A-C at once; (6) the contact sheets; (7) the
+  Studio check; (8) docs.
+- Changed (16 commits and two merges):
+  - **effects.js**: kinds `catchLevel` (`FX_CATCH_LEVEL` 10, `fxCatchLevel`), `refund` (`FX_REFUND`), `free`,
+    `salvage` (`fxSalvage`); a money row's share (`fxMoneyShare`; fxMoney reads multipliers only); FX_RULES gains
+    rewardPick, rerollFree and mapReveal.
+  - **Battle** (battle-engine.js): `fxCatchLevelUp` in catchKeep (rules.js feedLevels, one line); catchRoll returns
+    `refund`; fxBattleStart keeps a start inflict row (`b.fxStartInflict`), sayBattleFx rolls it on each foe after the
+    sides come out. battle.js finishThrow puts a refunded pyramid back and says so.
+  - **Run**: run-loop.js runFxMoment pays money shares (`money`), runArriveFx hands them out (run.js toasts),
+    runBuyFx gives one's price back when a free row acts (shop.js passes prices, its toasts say so); battle-rewards.js
+    battleSalvage uses fxSalvage; rewards.js rewardOfferMake adds rewardPick (kept on the pick for rerolls),
+    rewardRerollCost/rewardRerollFree (reward-screen.js "Reroll free"); run-map.js `runRevealAll` (map start, each
+    arrival, perkTake).
+  - **Offers** (perks.js): `perkRunBots`, `perkFits(P, team, run)` asks `bots`.
+  - **Data**: perks.json the 12 Wave C Perks (7 common, 4 uncommon, 1 rare) with `img`, tags (Punch Card office,
+    Bounty Poster adventurer, Lab Goggles lab) and Magnet's `needs: bots`; perks.schema.json the kinds, the money share,
+    the rules, `bots` in needs; data-checks.js FX_WHEN_KINDS (money arrive, refund throwMiss, free buy, inflict
+    battleStart), `FX_RULE_N`, PERK_NEEDS bots; game-data.d.ts.
+  - **Studio**: the Perks editor's inputs (catchLevel, refund, free, salvage, the money share's share and most, each
+    rule's own range and words); check-studio-github.py `--only=relics` opens the 12 Wave C Perks.
+  - **Art**: tools/art/icon-grids/perks.json the 12 grids; game/art/perks/ 12 SVGs; the contact sheets.
+  - **Run sim**: `moneyIn.perks` (Tip Jar's money, Punch Card's refunds), so its ledger still adds up; it passes its
+    prices to runBuyFx and puts a refunded pyramid back.
+  - Tests: battle-perks-wave-c.test.mjs (new, 20 tests), perks.test.mjs (needs bots; the type relevance test takes the
+    type Perks only), data-checks (PK-5 good rows and 14 planted faults, the schema with ajv), battle-perks-wave-b
+    (Wave B's place in the file).
+  - Docs: perks-track.md (PK-5 done, "Corrected in PK-5"), ROADMAP, STUDIO.md, TESTING.md.
+  - Smoke (check-quick.py): the phone step holds Copperleaf's postcard off while it counts the screens.
+- Risky:
+  - Every seed's offers changed again (12 more Perks in the pool).
+  - Music Box adds one roll a foe at a battle's start for its holder (replays stay the same per seed and Perks).
+  - Tip Jar and Punch Card make money from nothing; the numbers (10% up to 40, every 4th) are placeholders. Punch
+    Card counts a shop Perk as a thing bought, so a 400-Moneys rare can be the free 4th.
+  - Name Tags levels a caught Billie through feedLevels: a move it would learn with its slots full waits in the learn
+    queue as a battle's XP does.
+  - Gift Receipt's fourth card makes the reward sheet one card taller (one card a row): not seen on a phone yet.
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck
+  and `npm test` (1828 at the start, 1847 before the second merge, 1875 on the merged tree; the 1,000-maps timing test
+  failed only while a smoke ran beside it, and passes alone: main's known flake); before every commit check:modules,
+  format:check, check:data (178 files fine; its two bridge warnings are main's) and build; `check:smoke` on every commit
+  touching game/ (7/7 each; Python Playwright 1.63.0). Golden battles unchanged (no snapshot remade). A fault planted
+  once (Tip Jar's cap ignored): two tests red. `check:fast --only=perks` ok before and after the second merge.
+  `check-studio-github.py --only=relics` ok before and after it, with its new Wave C step. `npm run test:slow` 108
+  passed. `node tools/build-icons.mjs perks --check` fine. **The run sim**: `--runs=50` stops in scene mode with
+  "runSceneParams: node 8 has no exit north3", the same on main 5b0d43e1; `--balance` finishes its 50 runs. **Full
+  quick check** on 76c54641 (before the second merge): 42 steps, 39 passed; the 3 PROBLEMs are main's (Terraces,
+  RL-8's view, room light). **After the second merge** smoke's phone step failed twice (the walk screen counted 20 and
+  21 pieces of 18) while main alone passed: Copperleaf's postcard had slid in before the count (a race in the check);
+  f832786c holds the postcard off while the step counts, and smoke passed (walk 14).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 12 pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Bug Net (wood hoop and pole, cream net with stone mesh), Music Box (wood box, gold lid band, plate and
+    crank), Name Tags (two red stickers with cream bands, a slate scribble), Pyramid Pouch (wood pouch tied in slate, a
+    gold pyramid), Tip Jar (ice jar, steel lid with a slot, gold coins), Punch Card (a tall cream card in stone with a
+    cut corner and three slate holes: reshaped from a wide card, which read as Coupon Book), Gift Receipt (paper
+    receipt, torn foot, red bow), Fortune Cookie (one-colour gold, a paper slip), Tour Brochure (tri-fold map, green
+    and blue panels, a red route), Bounty Poster (paper on two wood rods, red band, slate silhouette, gold pin:
+    reshaped, it read as Lost Property Form and Union Card), Magnet on a String (red horseshoe, steel tips, slate
+    string), Lab Goggles (green strap and frames, ice lenses).
+  - Texts where the code differs from the drafts: Bug Net "a species not on your team" (`newSpecies` as PK-1 built
+    it); Pyramid Pouch "the first pyramid that misses in each battle"; Music Box "fall asleep as a battle starts 20% of
+    the time"; Punch Card "in a run shop"; Gift Receipt "one more card" (an event's pick of 2 shows 3); Tour Brochure
+    "The run map shows what every place is" (a mid-run take shows it at once). Rarities as the plan.
+  - Punch Card refunds one of what was bought (not a whole stack), and a shop Perk counts.
+  - `needs: bots` means a scrapyard not yet visited on the run's map (wild bots in a biome are not counted).
+  - Music Box rolls once for each foe on the field (a double wild battle rolls twice).
+  - Tip Jar is a money row with `share` and `max` rather than a new kind.
+  - Reroll prices unchanged (section 11, item 6): Fortune Cookie only makes the first one free.
+- Phone checks to do (listed, not waited for): Gift Receipt's four reward cards on the phone's sheet; Fortune
+  Cookie's "Reroll free" button; Tour Brochure taken mid-run: the Map tab shows every place at once; Pyramid Pouch's
+  line after a miss and the pyramid count; Tip Jar's toast on walking in; Punch Card's "that one was free" toast;
+  Name Tags' level line after a catch; the 12 new pictures at 72 and 36 px, light and dark.
+- Next: PK-6 (Wave D: rules, growth and adventure; 11 Perks of 5.5, Correction Fluid waits for PK-9) on
+  `track/perks`.
+
 ### VFX track VFX-9 - One draw for effects: the GPU pool, the budgets, fixed light keys, uHit, the uCA pulse - 2026-10-28
 Branch `track/vfx` (it held main and PR #290's branch when the step began; main then moved 246 commits, #279, #283,
 #302, and was merged in mid-step, c0470e76). Run under the owner's standing instruction (2026-10-28): no Plan Mode,

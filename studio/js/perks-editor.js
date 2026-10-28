@@ -14,10 +14,18 @@
    which puts that kind's fields in with neutral values. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { FX_CHANCE, FX_CRIT, FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
+import {
+  FX_CATCH_LEVEL,
+  FX_CHANCE,
+  FX_CRIT,
+  FX_EVERY,
+  FX_LIMIT,
+  FX_STAGES,
+  FX_WHEN,
+} from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
-import { FX_ONCE_KINDS, FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
+import { FX_ONCE_KINDS, FX_PLAIN, FX_RULE_N, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -44,6 +52,7 @@ expose({
   PERK_PASSIVE_FIELDS: [() => PERK_PASSIVE_FIELDS],
   PERK_RARITIES: [() => PERK_RARITIES],
   PERK_ROW_NEW: [() => PERK_ROW_NEW],
+  PERK_RULES: [() => PERK_RULES],
   PERK_WHEN: [() => PERK_WHEN],
   perkArtHTML: [() => perkArtHTML, v => (perkArtHTML = v)],
   perkCoverage: [() => perkCoverage, v => (perkCoverage = v)],
@@ -93,15 +102,36 @@ const PERK_KINDS = {
   bossHp: 'The run’s boss’s HP (PK-1)',
   crit: 'Critical hits: more often, or a move that is one (PK-3)',
   immune: 'A status, the Sandstorm or sharp stones can’t touch your Billies (PK-3)',
-  inflict: 'A chance to give the foe a status when one of yours hits it (PK-3)',
+  inflict: 'A chance to give the foe a status when one of yours hits it, or as a battle starts (PK-3, PK-5)',
   chip: 'What a burn takes from your Billies at each turn’s end (PK-3)',
   first: 'Your Billies move before the foe’s (PK-3; If turn:1 for the first turn)',
   revive: 'A wiped team gets back up, once (PK-3)',
   passive: 'A type passive works better for your Billies that have it (PK-4)',
   weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
   benchXp: 'Billies who sat out get more of a foe’s XP (PK-4)',
-  rule: 'A run rule: the forecast shows more days (PK-4)',
+  rule: 'A run rule: the forecast, reward picks, rerolls, the map shown (PK-4, PK-5)',
+  catchLevel: 'A Billie you catch joins levels higher (PK-5)',
+  refund: 'A pyramid that missed comes back (PK-5)',
+  free: 'What you just bought is free (PK-5)',
+  salvage: 'Beaten bots leave more salvage (PK-5)',
 };
+/** PK-4, PK-5: each run rule's name and what its By counts (data-checks.js FX_RULE_N has its range) */
+const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
+  forecastDays: [
+    'The forecast shows more days',
+    () => `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
+  ],
+  rewardPick: [
+    'Reward picks show more cards',
+    () => `Cards more than rules.json’s ${studioState.D.rules.run.rewards.pick}.`,
+  ],
+  rerollFree: [
+    'The first rerolls of a reward pick are free',
+    () =>
+      `Rerolls free at each reward pick; then rules.json’s ${studioState.D.rules.run.rewards.reroll} Moneys, growing.`,
+  ],
+  mapReveal: ['The run map shows what every place is', () => 'On (1): every place of the main map shows its type.'],
+});
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
   battleStart: 'as a battle starts',
@@ -147,6 +177,10 @@ const PERK_ROW_NEW = {
   weather: () => ({ kind: 'weather', what: 'noWeaken' }),
   benchXp: () => ({ kind: 'benchXp', share: 0.25 }),
   rule: () => ({ kind: 'rule', rule: 'forecastDays', n: 3 }),
+  catchLevel: () => ({ kind: 'catchLevel', n: 2 }),
+  refund: () => ({ kind: 'refund', what: 'pyramid', when: 'throwMiss', once: 'battle' }),
+  free: () => ({ kind: 'free', when: 'buy', every: 4 }),
+  salvage: () => ({ kind: 'salvage', mult: 2 }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -203,7 +237,15 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       .filter((/** @type {any} */ s) => s.id !== 'hp')
       .map((/** @type {any} */ s) => [s.id, s.name]),
     fields = {
-      money: () => [mult('Moneys ×')],
+      /* PK-5: a money share (Tip Jar) is paid on arrival: a share of what you carry, up to its most */
+      money: () =>
+        'share' in f
+          ? [
+              share('Share of the Moneys carried'),
+              numberField('At most', `${p}.max`, { min: 1, max: 9999, step: 1, unit: '$' }),
+              `<p class="note">Paid at arrive (its When), from what you carry as you walk in.</p>`,
+            ]
+          : [mult('Moneys ×')],
       price: () => [
         selectField('Which price', `${p}.what`, [
           ['shop', 'A run shop’s wares'],
@@ -297,7 +339,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           min: 0.01,
           max: FX_CHANCE,
           step: 0.01,
-          help: `Above 0, at most ${FX_CHANCE}; the chances of rows acting at one hit count at most ${FX_CHANCE} together (effects.js FX_CHANCE). If cat:H for physical hits only.`,
+          help: `Above 0, at most ${FX_CHANCE}; the chances of rows acting at one hit count at most ${FX_CHANCE} together (effects.js FX_CHANCE). If cat:H for physical hits only. At battleStart (its When) a roll for each foe on the field.`,
         }),
       ],
       chip: () => [selectField('Which hurt', `${p}.what`, [['burn', 'A burn’s, at each turn’s end']]), mult('Hurt ×')],
@@ -341,13 +383,35 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           `Share of a foe’s XP more for those who sat out (rules.json gives them ${studioState.D.rules.progression.teamXpShare}; at most all of it)`
         ),
       ],
+      /* PK-5: each rule's own range (data-checks.js FX_RULE_N) and words */
       rule: () => [
-        selectField('Rule', `${p}.rule`, [['forecastDays', 'The forecast shows more days']], { rr: 1 }),
+        selectField(
+          'Rule',
+          `${p}.rule`,
+          Object.keys(FX_RULE_N).map(r => [r, PERK_RULES[r] ? PERK_RULES[r][0] : r]),
+          { rr: 1 }
+        ),
         numberField('By', `${p}.n`, {
-          min: 1,
-          max: 14,
+          min: (FX_RULE_N[f.rule] || [1])[0],
+          max: (FX_RULE_N[f.rule] || [1, 1])[1],
           step: 1,
-          help: `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
+          help: PERK_RULES[f.rule] ? PERK_RULES[f.rule][1]() : '',
+        }),
+      ],
+      salvage: () => [mult('Parts offered and Scrap ×')],
+      free: () => [
+        `<p class="note">At buy (its When), with Every for every Nth thing bought in a run shop: one of it comes free (several of one ware at once are one buy).</p>`,
+      ],
+      refund: () => [
+        selectField('What comes back', `${p}.what`, [['pyramid', 'The pyramid thrown']], { rr: 1 }),
+        `<p class="note">At throwMiss (its When); Once battle for the first miss a battle only.</p>`,
+      ],
+      catchLevel: () => [
+        numberField('Levels', `${p}.n`, {
+          min: 1,
+          max: FX_CATCH_LEVEL,
+          step: 1,
+          help: `Levels higher it joins at, learning its moves on the way (at most ${FX_CATCH_LEVEL} together).`,
         }),
       ],
     }[f.kind];
@@ -515,7 +579,7 @@ SECTIONS.relics = () => {
        opt: 1,
        ph: 'Approved, {name}!',
      }) +
-     `<label class="fld"><span>Needs, to be offered (PK-4: team:Fire for a Billie of that type, mono)</span><input type="text" data-relic-needs="${escapeHtml(k)}" value="${escapeHtml(R.needs == null ? '' : [].concat(R.needs).join(', '))}" placeholder="team:Fire"></label>` +
+     `<label class="fld"><span>Needs, to be offered (PK-4: team:Fire for a Billie of that type, mono; PK-5: bots, a scrapyard still ahead)</span><input type="text" data-relic-needs="${escapeHtml(k)}" value="${escapeHtml(R.needs == null ? '' : [].concat(R.needs).join(', '))}" placeholder="team:Fire"></label>` +
      `<label class="fld"><span>Tags (PK-4: types and themes; offers lean ×${D.rules.run.perks.bias || 1} toward a match with the team’s types or a Perk held)</span><input type="text" data-relic-tags="${escapeHtml(k)}" value="${escapeHtml((R.tags || []).join(', '))}" placeholder="Fire, weather"></label>` +
      perkArtHTML(k, R) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
