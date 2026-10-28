@@ -389,7 +389,7 @@ cause per commit. Details: docs/phases/ui-track.md, "The run map's icons", "Buil
 Branch `claude/ui-15-less-clutter`, made from `track/ui` after UI-8b (2b50b6e8) for the owner's parallel waves (beside
 UI-11 on `track/ui` and UI-8c on `claude/ui-8c-map-markers`; it stays out of uiTheme.json's signals, the Studio's
 colour dials, run-marks.js, world-bowl.js and the map's buttons). Main merged in first (a merge; docs conflicted only:
-both sides kept). The plan was approved in advance (the owner's standing instruction for Part 2). PR into `track/ui`.
+both sides kept). The plan was approved in advance (the owner's standing instruction for Part 2). PR #294 into main (the owner's UI sessions now go into main; it shows UI-8b's commits until #276 merges).
 Details: docs/phases/ui-track.md, "UI-15 as built".
 - Changed:
   - Counting: `uiElementCount()` (theme-sheet.js) and smoke's per-screen log and `ELEMENT_CEILING` (check-quick.py).

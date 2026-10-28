@@ -670,7 +670,7 @@ Built (UI-8c, 2026-10-27, on `claude/ui-8c-map-markers`):
 - Found: the run map never gives a place the `locked` state (world-bowl.js `worldBowlRunMark`: current, hidden,
   visited or seen), so the padlock shows only in the gallery for now.
 
-## UI-15 as built (2026-10-27, `claude/ui-15-less-clutter`, into `track/ui`)
+## UI-15 as built (2026-10-27, `claude/ui-15-less-clutter`, PR #294 into main)
 Run beside UI-11 and UI-8c (the owner's waves), the plan approved in advance. Battle and walk only; the battle engine
 and its golden record untouched.
 - **Measured:** `uiElementCount()` (theme-sheet.js, beside `uiBlurCount`): visible elements with words of their own,
