@@ -160,7 +160,10 @@ town node needs it.
   as a title, the fading hint, the Actions bob) done 2026-10-27 on `claude/ui-15-less-clutter`; UI-16a (alive:
   the feedback motions wired on every screen, press squash, the sliding selection bar, tick-ups, fly-to, face-down
   picks that turn over, the sheet, flip, count and toast sounds, Animation Calm, no `:host-context`, walking's loops
-  from five to one) done 2026-10-28 on `claude/ui-16a-motion`; the browser and phone checks wait until UI-18 (the
+  from five to one) done 2026-10-28 on `claude/ui-16a-motion`; UI-16b (alive: battle events: the plates' tags on the
+  marks kit, Atk..Spe, Alpha in the bad family, statuses that stamp on, boosts that rise and drops that fall, trigger
+  blips, effect pips, effectiveness banners, one stamp motion shared with SY-3's pb-stamp, Calm for the battle
+  camera) done 2026-10-28 on `claude/ui-16b-battle-events`; the browser and phone checks wait until UI-18 (the
   owner's word).
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5

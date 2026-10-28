@@ -740,6 +740,34 @@ The plan approved in advance (the owner's standing instruction); the browser che
 - **For UI-16b and UI-17:** `--m-k`, `--m-loop`, `motionNow()`, `pbSound`, `pbBump`, `pbFlyTo`, `pbSlideBar`,
   `pbDoneHTML`/`pbDrawDone`, the motion tokens; the low-HP pulse's filter and the evolution flashes are left to them.
 
+## UI-16b as built (2026-10-28, `claude/ui-16b-battle-events`, into main)
+The plan approved in advance (the owner's standing instruction); the browser checks skipped until UI-18. Main,
+`track/style` (SY-1..SY-3) and `track/vfx` (VFX-5) merged in first.
+- **The plates' marks (UI-14b's leftovers):** the tag row is `markRow` of the status, the stat changes (biggest
+  first) and the short effects, drawn as `pb-tag`s, 3 at most with "+N" (its words on it); the old slot says only
+  Fainted. The row is one line with room beside it in `.pl-bot` for SY-5's faction label. `statShortName` gives
+  Atk, Def, SpA, SpD, Spe (marks.js `MARK_STAT_SHORT`). Alpha is the bad family: the plate's edge and tint, the
+  turn bar's chip (it was gold) and the aim list's word.
+- **The battle's report (one engine commit, annotations only):** `actorSnapshot` has `fx` when a fighter has short
+  effects (Protect this turn, the shield, confusion, Soaked, Fork, with turns left: `fieldEffects`), and an event
+  has `by` when something fired: a hit's Perks, held items and Genes that changed its damage (effects.js
+  `fxDamageBy`, each source's own multiplier), Kindling, Undertow, Alloy and Live Wire; a held item's or Gene's heal
+  and hurt, Regrowth, Bedrock, Parting Roar, Slipstream and the Perks' stat rises at the start (`fxSources`). No roll
+  added; the golden record was remade alone and, with those two keys removed, is identical (end states equal).
+- **Events:** on a battle event a new status's tag stamps on (motion.css `m-stamp`), a boost's tag rises and a drop's
+  falls (`m-rise`, `m-fall`), a new effect pops; blips (`pb-proc`, now with `type` and `tone` for a type passive's
+  glyph) over the plate: "Bubble Wrap −10%", "Kindling ▲Atk", a boss's shield phase "Shield −50%", two at most, 1.5 s
+  each; effect pips on the plates, and on the field strip the stones' glyph and a delayed hit with its turns left;
+  Super effective and Not very effective as slanted banners that slam in over the target (m-slam), the crit keeps
+  its pop.
+- **One stamp motion:** `m-stamp` (motion.css, and the kit's copy in `runKitMotion`) run as `var(--m-stamp)`, which
+  is `m-fade` under Reduced; SY-3's `pb-stamp` uses it (its `:host-context` rule is gone) and the status tags too.
+- **Calm:** the battle camera's breathing zoom, slow roll and idle orbit stop (battle-stage.js reads
+  `<html data-motion>`; the Studio runs it without the kit). VFX-4's impact frame and VFX-5's lunges, afterimages and
+  ribbons follow the action, so they play under Calm and stop under Reduced, as their track's rules say.
+- **For UI-17:** the boss banner of the stage intro is UI-17's; the battle side gives it the boss's `alphaPhase`
+  events (each with `shield`) and the plates' Alpha look.
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
@@ -754,7 +782,7 @@ The plan approved in advance (the owner's standing instruction); the browser che
 | UI-14b (built 2026-10-27, `claude/ui-14b-marks-screens`; checks after UI-18; the battle plates went to UI-16b) | Marks on every screen | one screen per commit: Team, the Billie sheet, the build tab, battle plates, shop, reward pick, Perks, Bag, map nodes (run-marks.js), payout; Atk/Def/SpA/SpD/Spe; towns, Alpha and Lead one colour everywhere; rarity on held items, Augments and Genes (a `rarity` field in items.json, robots.json's unused `rar` made real, genes.json; the tiers the owner's call) and on Billie cards | tags, marks, rarity | each screen's UI test; check:data; the owner's phone check |
 | UI-15 (done 2026-10-27, `claude/ui-15-less-clutter`) | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
 | UI-16a (built 2026-10-28, `claude/ui-16a-motion`; checks after UI-18) | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
-| UI-16b | Alive: battle events | UI-14b's leftovers first (UI-15 had not finished): the plates' tag row on `markRow` and `pb-tag` (Atk..Spe on the stage chips, battle.js `statShortName`), the statuses as tags on the plates, Alpha one colour (the bad family; battle-screen.css's turn bar has it gold, its plate crimson); then the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
+| UI-16b (built 2026-10-28, `claude/ui-16b-battle-events`; checks after UI-18) | Alive: battle events | UI-14b's leftovers first (UI-15 had not finished): the plates' tag row on `markRow` and `pb-tag` (Atk..Spe on the stage chips, battle.js `statShortName`), the statuses as tags on the plates, Alpha one colour (the bad family; battle-screen.css's turn bar has it gold, its plate crimson); then the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
 | UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
 | UI-18 | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
 

@@ -2,6 +2,94 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-16b - alive: battle events (the plates' marks, stamps, rises and falls, blips, effect pips, banners; one stamp motion; Calm) - 2026-10-28
+Branch `claude/ui-16b-battle-events`, made from UI-16a's `claude/ui-16a-motion` (main plus UI-8b, UI-8c, UI-11 to
+UI-16a; draft PRs #276, #281, #280, #282, #284, #286, #288, #294, #297). Main merged in first (nothing new), then
+`track/style` (#289: SY-1, SY-2, SY-3) and `track/vfx` (#295: VFX-5, VFX-7), as merges. The style merge conflicted
+in docs (both kept), music.json, its schema and logic/ui-sounds.js (UI-16a's four sounds and SY-3's `stamp`: all
+five kept), battle.js's imports, the gallery (both buttons and styles), the Studio's sounds card and the icon count
+(89 + SY-3's bureau = 90). The VFX merge conflicted in docs (VFX-5's and VFX-7's entries added below UI-16a's;
+SY-3 has no HANDOFF entry on `track/style`, only style-track.md's) and logic/smear.js (SY-1's flash rules and
+VFX-5's lunge helpers, both appended at the end: both kept); battle-stage.js merged on its own with both tracks'
+calls. art-code-refs.json and hooks.js remade by their tools. Its PR goes to main and shows all those commits until
+their PRs merge. No Plan Mode (the owner's standing instruction); the plan was written as a message and carried out.
+Details: docs/phases/ui-track.md, "UI-16b as built". **Visible change: the battle's plates, events and banners.**
+- Changed:
+  - **One stamp motion:** after the style merge, UI-16a's motion test failed: SY-3's `pb-stamp` used `:host-context`.
+    Its slam is now motion.css `m-stamp` (and the kit's shadow copy in `runKitMotion`), run as `var(--m-stamp)` (m-fade
+    under Reduced) with `--ease-stamp`; pb-stamp restarts it by toggling a class. The status tags use it too.
+  - **The plates (UI-14b's leftovers):** the tag row is `markRow` + `pb-tag` (status, boosts and drops biggest first,
+    effects; 3 at most, "+N" with the hidden ones' words); `.pl-st` now only says Fainted. `statShortName` is Atk,
+    Def, SpA, SpD, Spe. Alpha in the bad family: plate, turn bar (was gold), aim list. The `.stg` chips' CSS is gone;
+    the gallery's plate shows the tags.
+  - **The battle's report** (logic/battle-engine.js, annotations only, one commit): `actorSnapshot().fx` (effects
+    with turns left; `fieldEffects`) and an event's `by` (what fired; effects.js `fxDamageBy` and `fxSources`). Then
+    the golden record remade alone (see Verified). Tests in effects.test.mjs and battle-engine-state.test.mjs.
+  - **Events** (battle.js): a new status stamps on, a boost rises, a drop falls (motion.css `m-rise`, `m-fall`), a new
+    effect pops; `pb-proc` blips over the plate from `by` ("Bubble Wrap −10%", "Kindling ▲Atk"; a type passive shows
+    its type glyph: pb-proc `type`, `tone`), a shield phase blips "Shield −50%"; the strip's stones wear UI-13's
+    glyph (were the scrap icon) and a delayed hit shows with its turns left; a new battle's strip starts clear (the
+    last battle's stones stayed until the first menu); effectiveness banners slam in at the slant (`hudBanner`;
+    they were text pops, hidden under Reduced).
+  - **Calm:** battle-stage.js's camera breathing, slow roll and idle orbit stop under Calm (`calmMotion`, reading
+    `<html data-motion>`: the Studio runs the stage without the kit, so no ui-kit import there).
+  - ui-lint ceilings lowered: CSS colours 576 -> 564.
+- Found (figures checked):
+  - `statShortName` printed "SP." for both Sp. stats (as UI-14b said); the plate's crimson and the turn bar's gold for
+    Alpha were as the doc said; the aim list's "Alpha" word was a third pink.
+  - The battle did not report short effects or triggers: the snapshot carried only `stg` and the status, and the
+    Perk, held item and Kindling multipliers were silent inside calcDamage. Reading them on the page would have
+    meant re-running the engine's maths, so the engine reports them (the row's own exception: "if an event must be
+    added").
+  - The field strip read stones from the side and showed them with the scrap icon; delayed hits ("mail") were in no
+    UI at all.
+  - VFX-4/5 already stop under Reduced (`reducedMotion`); Calm didn't exist for them (VFX-5's note), and the battle
+    camera's idle loops ignored it.
+- Decided for the owner, to review:
+  - **The engine reports `fx` and `by`** (annotations, no new rolls): the golden record changed in its own commit.
+  - **Effects go after the status and stat tags,** so a full row folds them into "+N" (markRow's order).
+  - **Protect shows as "1 turn"** during the turn it is up (it ends at the turn's end).
+  - **The delayed hit is a strip pip by side** (it lands on whoever is first on that side), shown once the turn that
+    sent it is over, gone when it lands.
+  - **Blips:** two at most per plate, 1.5 s each, over the plate (not beside it: the plates move with the camera);
+    Kindling blips on every physical hit once it has built up; the shield phase blip is mine (RL-14b's shield also
+    shows as a pip with its turns).
+  - **No thunk on a status tag's stamp:** the battle already plays a status sound; the thunk stays pb-stamp's.
+  - **Banners:** Super effective in the caution fill (dark ink), Not very effective in the plates' glass; 4 degrees
+    of slant; the crit keeps its pop (the impact frame is the VFX track's).
+  - **Under Calm, the lunges, afterimages, ribbons and the impact frame play** (they follow a move; Part 2's rule 5,
+    VFX-5's own call); under Reduced they stop, as before.
+- For UI-17 (the stage intro's boss banner, not built here): the battle gives it the boss's `alphaPhase` events (with
+  `shield`), the plates' Alpha look (`.bplate.alpha`, the bad family) and `hudBanner`'s slanted strip if it wants
+  the same shape. For SY-5: a faction label can go in `.pl-bot` beside `.pl-sg`; no Bureau looks were added.
+- Risky:
+  - pb-tags on a plate are new (16 px tall); a row of three with pips may be wider than a 118 px plate.
+  - The blips sit above the plate and may cover the Billie's head or another plate in doubles and triples.
+  - The banner is placed at the target's top like the old pop; near the top of the screen it is clamped to 40 px.
+  - The engine change touches calcDamage's return; nothing reads `by`, but a later engine change must keep it a
+    report.
+  - Nothing here has been seen on a phone.
+- Verified:
+  - lint (ceilings lowered), typecheck, format, check:data, check:modules after each change; `npm test` all pass
+    (the golden record remade). One slip, fixed in its own commit: the banner commit went over two ui-lint ceilings
+    (raw padding, one innerHTML write), which I misread in lint's output until the unit test caught it.
+  - The golden record: loaded old and new, `fx` and `by` removed: all 7 records identical, every end state equal.
+    The new keys hold the Alpha's shield 2 then 1, Kindling, Bubble Wrap x0.9, Power Gloves x1.15, Iron Vest x0.85,
+    Running Shoes' Spe +1, the Leftover Sandwich, Regrowth and Bedrock.
+  - One headless run of the battle fixture (Node Playwright, 390 x 844, not a check): won in 4 turns, a Live Wire blip,
+    two Not very effective banners, PAR stamped on, no page errors, one 404 (the known missing art).
+- Skipped until after UI-18 (the owner's rule), needed later:
+  - check-fast: "A battle plays to the end" and the Voltron (its shield phases: the pip and the blip), the relics
+    battle (Perk blips, the start's stat rises), held items (their blips);
+  - check-quick and smoke: the battle's element count (blips and banners come and go; a count taken while one shows
+    is one or two higher);
+  - the Studio check (its battle preview runs battle-stage.js: Calm reads `<html data-motion>`);
+  - the gallery: the plates section (pb-tags), pb-stamp's stamps (now on m-stamp) and their pictures;
+  - the owner's phone check: tags on the plates at 16 px, the stamp and rise and fall, the blips' place and time, the
+    banners' size and slant, Alpha's red, Calm (the camera holds still), Reduced (fades only).
+- Next: UI-18 (running) and then UI-17; the planning session starts them.
+- Tag to suggest (sessions can't push tags): `ui-16b-done` on this entry's commit.
+
 ### UI track UI-16a - alive: the feedback motions (press, enter, sheet, nudge, done, flip; slide, tick-ups, fly-to; four sounds; Calm) - 2026-10-28
 Branch `claude/ui-16a-motion`, made from UI-14b's `claude/ui-14b-marks-screens` (main plus UI-11, UI-12, UI-13,
 UI-14a, UI-14b and UI-8c; draft PRs #280, #282, #284, #286, #288 and #281). Main merged in first (nothing new), then
