@@ -377,3 +377,19 @@ test("SND-8b: a jingle echoes on the effects' own echo; on the music bus (Settin
   assert.deepEqual(to, [T.echoFx, T.echoIn]);
   assert.equal(trackerCreate(recordingContext(), music).echoFx, null, 'no effects bus, no effects echo');
 });
+
+test("SND-8b: a song's trim (dB) is its fader's top; a jingle ducks it to 0.15 of that; none written is exactly 1", () => {
+  const c = recordingContext(),
+    T = trackerCreate(c, {}, { songs: { up: { ...town, trim: 6 }, plain: town } }),
+    tops = n => n.gain.calls.filter(([m]) => m === 'linearRampToValueAtTime').map(([, v]) => Math.round(v * 1e4) / 1e4);
+  const sg = T.play('up');
+  clearInterval(T.timer);
+  const lv = Math.round(Math.pow(10, 6 / 20) * 1e4) / 1e4;
+  assert.deepEqual(tops(sg.gain), [lv]);
+  T.jingle([[72, 4]], 150, 'p25', {});
+  assert.deepEqual(tops(sg.echo), [lv, Math.round(0.15 * lv * 1e4) / 1e4, Math.round(0.15 * lv * 1e4) / 1e4, lv]);
+  const p = T.play('plain');
+  clearInterval(T.timer);
+  assert.equal(p.level, 1);
+  assert.equal(trackerNight({ ...town, trim: 6 }).trim, 6, 'the night version keeps it');
+});

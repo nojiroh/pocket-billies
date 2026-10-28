@@ -354,6 +354,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
      stop and a jingle's duck (the send used to be taken before the fader). f moves one AudioParam and runs for both;
      unplug disconnects both after ms */
   const fader = (sg, f) => [sg.gain, sg.echo].forEach(n => f(n.gain)),
+    /* SND-8b: a song's level, its `trim` (dB, music.json) as a gain: the fader's top, and what a duck is a share of */
+    level = D => Math.pow(10, (D.trim || 0) / 20),
     unplug = (sg, ms) => setTimeout(() => [sg.gain, sg.echo].forEach(n => n.disconnect()), ms);
   T.compose = name => {
     const D = T.recipe(name);
@@ -368,8 +370,14 @@ export function trackerCreate(ctx, bus, opts = {}) {
     composed.clear();
     if (!T.song) return;
     const D = T.compose(T.song.name);
-    if (D) T.song.D = D;
-    else T.stop();
+    if (!D) return T.stop();
+    T.song.D = D;
+    /* SND-8b: a new trim is heard at once */
+    const lv = level(D);
+    if (lv !== T.song.level) {
+      T.song.level = lv;
+      fader(T.song, g => g.setTargetAtTime(lv, c.currentTime, 0.05));
+    }
   };
   /* SND-5: o.intro plays the song's intro first; o.hold keeps the drums out until drumsIn() (the throw), or 8 s;
      o.restart starts the song again even when it is playing (a new battle with the same song) */
@@ -385,6 +393,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       next: c.currentTime + 0.08,
       gain: c.createGain(),
       echo: c.createGain(),
+      level: level(D),
       /* a song that takes over a held one (the red zone during the intro) keeps the drums out too */
       hold: o.hold ? c.currentTime + 8 : (T.song && T.song.hold) || 0,
     };
@@ -396,7 +405,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     const now = c.currentTime;
     fader(T.song, g => {
       g.setValueAtTime(0, now);
-      g.linearRampToValueAtTime(1, now + 0.6);
+      g.linearRampToValueAtTime(T.song.level, now + 0.6);
     });
     for (const v of T.voices) {
       fader(v, g => {
@@ -695,7 +704,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
   };
   /* a short tune that plays once over a lead and a bass an octave down, on the bus it is given; the song ducks to 0.15
-     for its length. Returns when it ends (on the context's clock). SND-6: o.shift moves it by semitones, o.duck false
+     of its level for its length. Returns when it ends (on the context's clock). SND-6: o.shift moves it by semitones, o.duck false
      leaves the song alone (a coin on the payout) */
   T.jingle = (notes, bpm, type, out, o = {}) => {
     const spb = 60 / bpm / 4,
@@ -707,7 +716,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       fader(T.song, g => {
         g.cancelScheduledValues(t0);
         g.setValueAtTime(g.value, t0);
-        g.linearRampToValueAtTime(0.15, t0 + 0.1);
+        g.linearRampToValueAtTime(0.15 * T.song.level, t0 + 0.1);
       });
     for (const [n, l] of notes) {
       if (n)
@@ -734,8 +743,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
     if (T.song && duck)
       fader(T.song, g => {
-        g.linearRampToValueAtTime(0.15, t);
-        g.linearRampToValueAtTime(1, t + 0.8);
+        g.linearRampToValueAtTime(0.15 * T.song.level, t);
+        g.linearRampToValueAtTime(T.song.level, t + 0.8);
       });
     return t;
   };

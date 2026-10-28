@@ -1900,7 +1900,7 @@
    "game/js/ui.js:206"
   ],
   "up": [
-   "game/js/audio/tracker.js:607",
+   "game/js/audio/tracker.js:616",
    "game/js/augment-screen.js:142",
    "game/js/augment-screen.js:253",
    "game/js/battle-stage.js:2175",
