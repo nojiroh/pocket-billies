@@ -1168,6 +1168,8 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', light = 
 export function figurePaintMark(x, m, ppm) {
   const th = Math.max(1, Math.round(0.02 * ppm));
   if (m.shape === 'oval' || m.shape === 'arc' || m.shape === 'cap') {
+    /* CH-6: a rim's own thickness (a brow's) where it has one */
+    const th2 = m.shape !== 'oval' && m.t ? m.t : th;
     /* an arc is the lower rim of an ellipse centred on the mark's top, a cap the upper rim of one centred on its
        bottom, each `th` pixels thick */
     const rx = m.w / 2,
@@ -1179,7 +1181,7 @@ export function figurePaintMark(x, m, ppm) {
         const dx = i + 0.5 - rx,
           dy = j + 0.5 - cy,
           out = (dx / rx) ** 2 + (dy / ry) ** 2 <= 1,
-          inner = rim && (dx / Math.max(0.5, rx - th)) ** 2 + (dy / Math.max(0.5, ry - th)) ** 2 < 1;
+          inner = rim && (dx / Math.max(0.5, rx - th2)) ** 2 + (dy / Math.max(0.5, ry - th2)) ** 2 < 1;
         if (out && !inner) x.fillRect(m.x + i, m.y + j, 1, 1);
       }
     return;
@@ -1233,7 +1235,7 @@ function figurePortrait(who, frame = 0, turn = 0.9, style = 'pixel') {
   return out;
 }
 /** CH-5: the figure the Studio's preview shows (figurePreview): its name, its figure and how long it took to build */
-const figurePreviewState = { name: '', def: /** @type {any} */ (null), ms: 0 };
+const figurePreviewState = { name: '', def: /** @type {any} */ (null), ms: 0, face: '' };
 /**
  * CH-5: the Studio's figure preview: a person's figure built from a look with the Studio's kit data (figureKit.json as
  * it is edited), baked in the studio light, turned `turn` (0 from behind, 1 facing you), as a canvas; null when the
@@ -1241,9 +1243,10 @@ const figurePreviewState = { name: '', def: /** @type {any} */ (null), ms: 0 };
  * style changes; its mesh is built on the page, the old one let go. `o`: look, items (the wardrobe's), kit, who (the
  * person: their seed and a direction's design for them), figure (their head and build), rev, style, clip ('idle'),
  * frame, turn (0.9), tilt (radians, 4 degrees), ppm (64), crop ('whole' or 'bust'). The canvas carries `ms`, the
- * figure's build time, and `kit`, the head shape and build it has.
- * @param {{ look: any, items: any, kit: any, who?: string, figure?: any, rev?: number, style?: string, clip?: string,
- *   frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
+ * figure's build time, and `kit`, the head shape and build it has. CH-6: a change of the face alone (`faceRev`, the
+ * Studio's count of its face edits, or the figure's eye and brow styles) paints the face again on the same mesh.
+ * @param {{ look: any, items: any, kit: any, who?: string, figure?: any, rev?: number, faceRev?: number,
+ *   style?: string, clip?: string, frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
  */
 export function figurePreview(o) {
   const style = o.style && (o.style === 'smooth' || o.style in FIGURE_LOOKS) ? o.style : 'pixel',
@@ -1262,7 +1265,17 @@ export function figurePreview(o) {
     P.ms = performance.now() - t0;
     P.name = name;
     P.def = { kind: 'code', name, F, height: F.height, ext: M.ext, detail };
+    P.face = '';
   }
+  const fig = o.figure || {},
+    face = JSON.stringify([fig.eyes, fig.brows, o.faceRev || 0]);
+  if (P.face && P.face !== face) {
+    /* the face's marks and colours from the edited data, on the mesh already built */
+    const F2 = figureFromLook(name, who, o.look, figureDesign(style) ? LK : null, o.items, o.kit, o.figure);
+    P.def.F.face = F2.face;
+    Object.assign(P.def.F.colours, F2.colours);
+  }
+  P.face = face;
   const ppm = o.ppm || 64,
     V = figureView(Math.PI * (o.turn ?? 0.9), 0, o.tilt ?? (4 * Math.PI) / 180, 32);
   let im = bakeFigure(P.def, o.clip || 'idle', o.frame || 0, V, ppm, true, style);

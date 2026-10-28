@@ -301,7 +301,7 @@ export const KIT_FRAME_SAMPLE = Object.freeze({
  * every build townsfolk pick and every head's build exists, some head can be picked at random, and every hair style and
  * accessory is a wardrobe item
  * @param {any} kit game/data/figureKit.json @param {Record<string, { slot?: string }>} items the wardrobe's items
- * @param {Record<string, { figure?: { head?: string, build?: string } }>} [people] people/<id>.json: their `figure`'s
+ * @param {Record<string, { figure?: { head?: string, build?: string, eyes?: string, brows?: string } }>} [people] people/<id>.json: their `figure`'s
  *   head shape and build are the kit's
  * @returns {string[]}
  */
@@ -312,6 +312,10 @@ export function figureKitProblems(kit, items, people = {}) {
     const f = (p && p.figure) || {};
     if (f.head && !(kit.heads || {})[f.head]) out.push(`people/${who}.json: figure.head ${f.head} is no head shape`);
     if (f.build && !(kit.builds || {})[f.build]) out.push(`people/${who}.json: figure.build ${f.build} is no build`);
+    if (f.eyes && !((kit.faces || {}).eyes || {})[f.eyes])
+      out.push(`people/${who}.json: figure.eyes ${f.eyes} is no eye style`);
+    if (f.brows && !((kit.faces || {}).brows || {})[f.brows])
+      out.push(`people/${who}.json: figure.brows ${f.brows} is no brow style`);
   }
   for (const b of kit.folk || []) if (!(kit.builds || {})[b]) out.push(`folk: no build ${b}`);
   if (!Object.values(kit.heads || {}).some(H => /** @type {any} */ (H).random !== false))

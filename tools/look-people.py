@@ -29,6 +29,10 @@
                                                     # density and proportions, and a portrait (figure-styles-*.png)
     python3 tools/look-people.py --styles=gnight --player=girl --cast=me
                                                     # you as the girl (or the boy) preset, not the save's look
+    python3 tools/look-people.py --faces[=chosen]    # CH-6: one person's face in every eye style, brow style,
+                                                    # expression and talking frame (figureKit.json faces), up close
+                                                    # (160 px a metre) and at walking size (48), at 4 screen pixels a
+                                                    # pixel (figure-faces-*.png), no shots
     python3 tools/look-people.py --figures --battle # CH-3: a trainer battle in its intro, the trainers on the stage, you
                                                     # (and with --folk=1 the rival) as figures at 64 px a metre
                                                     # (battle-*.png); --no-shots for the battle (or --lose) alone
@@ -69,6 +73,7 @@ NO_SHOTS = '--no-shots' in ARGS
 SHEET = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a.startswith('--sheet')), None)
 CAST = arg('cast')
 STYLES = arg('styles')
+FACES = next((a.split('=', 1)[1] if '=' in a else 'chosen' for a in ARGS if a.startswith('--faces')), None)
 PLAYER = arg('player')  # boy or girl: you in that preset (people/<id>.json's look) instead of the save's look
 TILT = float(arg('tilt', 26))
 FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline')),
@@ -150,6 +155,53 @@ STYLES_JS = """((looks, whos, tilt) => {const T=tilt*Math.PI/180, out=[];
   const pts=[]; for (const who of whos){const q=figurePortrait(who,0,0.9,L); if(!q) return 'loading'; pts.push(q.toDataURL('image/png'))}
   out.push({look:L, ppm:lk.ppm, row, portrait:pt.toDataURL('image/png'), portraits:pts})}
  return out})"""
+
+
+FACES_JS = """((who, rows, style) => {const L=lookOf(who), D=GAMEDATA, base=(PEOPLE[who]&&PEOPLE[who].figure)||{}, out=[];
+ for (const [label, fig, face] of rows){const row=[];
+  for (const [ppm, turn] of [[160,1],[160,0.85],[48,1]]){
+   const im=figurePreview({who, look:L, items:D.wardrobe.items, kit:D.figureKit, figure:{...base,...fig}, face, rev:1, style, ppm, turn, crop:'bust'});
+   if(!im) return 'loading'; row.push(im.toDataURL('image/png'))}
+  out.push({label, row})}
+ return out})"""
+
+
+def faces(pg, t0):
+    """the --faces sheet: a row a face (each eye style, brow style, expression and talking frame), up close facing and
+    three quarters on, then at walking size"""
+    import base64, io
+    from PIL import Image, ImageDraw
+    K = pg.evaluate('GAMEDATA.figureKit.faces')
+    rows = [[f'eyes {e}', {'eyes': e}, None] for e in K['eyes']]
+    rows += [[f'brows {b}', {'brows': b}, None] for b in K['brows']]
+    rows += [[f'face {x}', {}, {'expr': x}] for x in (K.get('expressions') or {})]
+    rows += [[f'mouth {m}', {}, {'mouth': m}] for m in K['mouths']]
+    style = pg.evaluate('figureStyle()')
+    for _ in range(120):
+        r = pg.evaluate(f'{FACES_JS}({json.dumps(FACES)},{json.dumps(rows)},{json.dumps(style)})')
+        if r != 'loading': break
+        pg.wait_for_timeout(500)
+    if not r or r == 'loading': raise Exception(f'no faces for {FACES}')
+    dec = lambda u: Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1])))
+    S = [2, 2, 4]
+    ims = [[dec(u) for u in R['row']] for R in r]
+    cw = [max(i[c].width for i in ims) * S[c] + 16 for c in range(3)]
+    ch = max(max(i[c].height * S[c] for c in range(3)) for i in ims) + 18
+    per = 2
+    n = (len(ims) + per - 1) // per
+    out = Image.new('RGBA', (sum(cw) * per + 20, ch * n), (228, 222, 206, 255))
+    d = ImageDraw.Draw(out)
+    for k, (R, row) in enumerate(zip(r, ims)):
+        ox, oy = (k // n) * (sum(cw) + 20), (k % n) * ch
+        d.text((ox + 6, oy + 2), R['label'], fill=(36, 25, 54, 255))
+        x = ox
+        for c, im in enumerate(row):
+            out.alpha_composite(im.resize((im.width * S[c], im.height * S[c]), Image.NEAREST), (x + 8, oy + ch - im.height * S[c] - 2))
+            x += cw[c]
+    name = f'figure-faces-{FACES}.png'
+    out.save(OUT / name)
+    print(f"[{time.time() - t0:5.0f}s] {name}: {len(r)} faces", flush=True)
+    return {'shot': name, 'faces': [R['label'] for R in r]}
 
 
 def styles(pg, t0):
@@ -376,6 +428,12 @@ def main():
             rows.append(styles(pg, t0))
             ctx.close(); b.close(); srv.shutdown()
             (OUT / 'notes.json').write_text(json.dumps({'styles': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
+        if FACES:
+            rows.append(faces(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'faces': rows, 'errors': errs[:6]}, indent=1))
             print('errors:', errs[:6])
             return
         if CAST:

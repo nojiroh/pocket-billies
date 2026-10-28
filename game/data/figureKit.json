@@ -615,20 +615,35 @@
   }
  },
  "faces": {
-  "note": "Characters track CH-6: the face, painted as marks on the head (logic/figure-kit.js kitFaceMarks). Sizes are metres on the usual head (k scales them to this one). eyes: each style's white (w, h), a heavy lid over it (lid: [y, w, h] as parts of the eye), how many lash flicks (flicks) and whether its wearer blushes (blush). brows: each style's width (w) and thickness (t). mouths: each mouth frame's marks (kind, x, y from the mouth's middle, w, h, shape oval, arc, cap or slant, dir, t, min, close, col). moods: how a resting face holds its lids (lid: where the upper lid sits, as a part of the eye's height) and brows (tilt: above 0 down to the nose, below 0 up; lift). rest: a look's resting mood, the first rule its wardrobe ids match. wardrobe: the style or mouth frame each wardrobe id draws. defaults: the style when an id isn't in wardrobe.",
+  "note": "Characters track CH-6: the face, painted as marks on the head (logic/figure-kit.js kitFaceMarks), in the portrait kit's styles (portraits.json). Sizes are metres on the usual head (k scales them to this one). eyes: each style's white (w, h); a heavy lid over it (lid: [y, w, h] as parts of the eye); how far apart (gap); the iris's size (iris); lash flicks (flicks: 0 to 3) and how long the outer one (wing); a shaded lid (shade), bags under (bags) and lines (lines, close-ups); whether its wearer blushes (blush). brows: each style's width (w) and thickness (t), how high it arches (arch), its own tilt (tilt: above 0 down to the nose, below 0 up), a peak, one side raised (uneven), a crease between (knit), tufts (bushy), flat. mouths: each mouth frame's marks (kind, x, y from the mouth's middle, w, h, shape oval, arc, cap or slant, dir, t, min, close, col). moods: how a resting face holds its lids (lid: where the upper lid sits, as a part of the eye's height). rest: a look's resting mood, the first rule its wardrobe ids match. wardrobe: the style or mouth frame each wardrobe id draws. defaults: the style when an id isn't in wardrobe.",
   "eyes": {
+   "lashes": {"w":0.072,"h":0.048,"flicks":2,"blush":true},
    "round": {"w":0.072,"h":0.048},
-   "big": {"w":0.076,"h":0.06},
-   "sharp": {"w":0.078,"h":0.034},
+   "almond": {"w":0.078,"h":0.04,"wing":1.4},
+   "sharp": {"w":0.078,"h":0.034,"wing":1.3},
+   "soft": {"w":0.07,"h":0.044,"flicks":0},
+   "small": {"w":0.062,"h":0.038,"iris":0.9},
+   "big": {"w":0.076,"h":0.06,"iris":1.08},
+   "wide_set": {"w":0.07,"h":0.046,"gap":1.16},
    "hooded": {"w":0.072,"h":0.032,"lid":[0.3,1.08,0.55]},
-   "lashes": {"w":0.072,"h":0.048,"flicks":2,"blush":true}
+   "lashy": {"w":0.074,"h":0.046,"flicks":3},
+   "shadowed": {"w":0.074,"h":0.04,"shade":true},
+   "tired": {"w":0.072,"h":0.036,"bags":true},
+   "weary": {"w":0.072,"h":0.036,"bags":true,"lines":true}
   },
   "brows": {
    "soft": {"w":0.075,"t":0.016},
-   "flat": {"w":0.09,"t":0.022},
+   "arched": {"w":0.09,"t":0.02,"arch":0.012},
+   "angled": {"w":0.092,"t":0.022,"tilt":2},
+   "slanted": {"w":0.09,"t":0.02,"tilt":-1.5},
+   "flat": {"w":0.09,"t":0.022,"flat":true},
+   "peaked": {"w":0.09,"t":0.02,"peak":true},
    "thick": {"w":0.09,"t":0.03},
-   "arched": {"w":0.09,"t":0.022},
-   "angled": {"w":0.09,"t":0.022}
+   "thin": {"w":0.085,"t":0.012},
+   "uneven": {"w":0.09,"t":0.02,"uneven":0.012},
+   "knit": {"w":0.088,"t":0.024,"tilt":1.5,"knit":true},
+   "bushy": {"w":0.094,"t":0.034,"bushy":true},
+   "sharp": {"w":0.088,"t":0.014,"tilt":-1}
   },
   "mouths": {
    "smile": [
@@ -654,14 +669,10 @@
   },
   "moods": {
    "calm": {"lid":0.46},
-   "cross": {"lid":0.46,"tilt":2,"lift":-0.004},
-   "glad": {"lid":0.52},
-   "worried": {"lid":0.52,"tilt":-2,"lift":0.006}
+   "glad": {"lid":0.52}
   },
   "rest": [
-   {"brows":["brows_stern"],"mood":"cross"},
-   {"mouth":["mouth_grin","mouth_open"],"mood":"glad"},
-   {"brows":["brows_arched"],"mood":"worried"}
+   {"mouth":["mouth_grin","mouth_open"],"mood":"glad"}
   ],
   "wardrobe": {
    "eyes_round": "round",

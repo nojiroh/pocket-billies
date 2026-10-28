@@ -4,10 +4,20 @@ import './figure-kit-data.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { figureKitData, kitFaceStyles } from '../../game/js/logic/figure-kit.js';
+import { readdirSync } from 'node:fs';
+import { figureKitData, kitFaceStyles, lookFigure } from '../../game/js/logic/figure-kit.js';
+import { cardSize, figureFaceMarks, figurePose, jointMatrices } from '../../game/js/logic/figure-pose.js';
 import { kitFaceProblems } from '../../game/js/logic/kit-shapes.js';
 
 const W = JSON.parse(readFileSync(new URL('../../game/data/wardrobe.json', import.meta.url), 'utf8'));
+const PEOPLE = Object.fromEntries(
+  readdirSync(new URL('../../game/data/people/', import.meta.url))
+    .filter(f => f.endsWith('.json'))
+    .map(f => [
+      f.slice(0, -5),
+      JSON.parse(readFileSync(new URL(`../../game/data/people/${f}`, import.meta.url), 'utf8')),
+    ])
+);
 const ids = slot => Object.keys(W.items).filter(k => W.items[k].slot === slot);
 
 test('faces: every wardrobe eyes, brows and mouth id draws a style of the kit', () => {
@@ -18,21 +28,61 @@ test('faces: every wardrobe eyes, brows and mouth id draws a style of the kit', 
   assert.deepEqual(kitFaceProblems(figureKitData(), W.items), []);
 });
 
-test('faces: a look picks its styles and resting mood; unknown ids take the defaults', () => {
+test('faces: a look picks its styles and resting mood; a person picks any kit style; unknown ids take the defaults', () => {
   const FC = figureKitData().faces;
   assert.deepEqual(kitFaceStyles({ eyes: 'eyes_sleepy', brows: 'brows_stern', mouth: 'mouth_grin' }, FC), {
     eyes: 'hooded',
     brows: 'angled',
     mouth: 'grin',
-    mood: 'cross',
+    mood: 'glad',
   });
-  assert.deepEqual(kitFaceStyles({ mouth: 'mouth_open', brows: 'brows_arched' }, FC).mood, 'glad');
-  assert.deepEqual(kitFaceStyles({ brows: 'brows_arched' }, FC).mood, 'worried');
+  assert.equal(kitFaceStyles({ brows: 'brows_arched' }, FC).mood, 'calm');
+  assert.deepEqual(kitFaceStyles({ eyes: 'eyes_round', brows: 'brows_soft' }, FC, { eyes: 'weary', brows: 'knit' }), {
+    eyes: 'weary',
+    brows: 'knit',
+    mouth: FC.defaults.mouth,
+    mood: 'calm',
+  });
+  assert.equal(kitFaceStyles({ eyes: 'eyes_round' }, FC, { eyes: 'nope' }).eyes, 'round');
   const none = kitFaceStyles({ eyes: 'eyes_nope' }, FC);
   assert.equal(none.eyes, FC.defaults.eyes);
   assert.equal(none.brows, null, 'no brows worn, none drawn');
   assert.equal(none.mouth, FC.defaults.mouth);
   assert.equal(none.mood, 'calm');
+});
+
+test('faces: the portrait kit has 13 eye and 12 brow styles; every one paints at walking size and in a close-up', () => {
+  const FC = figureKitData().faces,
+    PK = JSON.parse(readFileSync(new URL('../../game/data/portraits.json', import.meta.url), 'utf8')),
+    kitBrows = Object.keys(PK.items)
+      .filter(k => PK.items[k].slot === 'brows')
+      .map(k => k.replace(/^brows_/, ''));
+  assert.deepEqual(Object.keys(FC.eyes).sort(), Object.keys(PK.eyes).sort());
+  assert.deepEqual(Object.keys(FC.brows).sort(), kitBrows.sort());
+  const look = { ...PEOPLE.chosen.look, wear: { ...PEOPLE.chosen.look.wear, brows: 'brows_soft' } };
+  const paint = (figure, ppm) => {
+    const F = lookFigure(look, W.items, { name: 'chosen', figure }),
+      S = cardSize(ppm, 0.45, 1.9),
+      P = figurePose(F, 'idle', 0);
+    return figureFaceMarks(F, jointMatrices(F, P, ppm), P, { rel: Math.PI, tilt: 0.45 }, ppm, S);
+  };
+  const seen = new Set();
+  for (const eyes of Object.keys(FC.eyes))
+    for (const ppm of [32, 48, 96]) {
+      const m = paint({ eyes }, ppm);
+      assert.equal(m.filter(x => x.kind === 'eye').length, 2, `${eyes} at ${ppm}`);
+      assert.equal(m.filter(x => x.kind === 'iris').length, 2, `${eyes} at ${ppm}`);
+      if (ppm === 96) seen.add(JSON.stringify(m.filter(x => x.kind !== 'brow' && x.kind !== 'mouth')));
+    }
+  assert.equal(seen.size, Object.keys(FC.eyes).length, 'each eye style looks its own in a close-up');
+  seen.clear();
+  for (const brows of Object.keys(FC.brows))
+    for (const ppm of [32, 48, 96]) {
+      const m = paint({ brows }, ppm).filter(x => x.kind === 'brow');
+      assert.ok(m.length >= 2, `${brows} at ${ppm}`);
+      if (ppm === 96) seen.add(JSON.stringify(m));
+    }
+  assert.equal(seen.size, Object.keys(FC.brows).length, 'each brow style looks its own in a close-up');
 });
 
 test('faces: a broken faces section has problems', () => {

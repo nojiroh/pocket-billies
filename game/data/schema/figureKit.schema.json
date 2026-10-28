@@ -286,7 +286,7 @@
    "properties": {
     "note": {"type": "string"},
     "eyes": {
-     "description": "each eye style: its white (w, h), a heavy lid ([y, w, h] as parts of the eye), lash flicks, whether its wearer blushes",
+     "description": "each eye style: its white (w, h), a heavy lid ([y, w, h] as parts of the eye), lash flicks and the outer one's length (wing), how far apart (gap), the iris's size, a shaded lid, bags, lines, whether its wearer blushes",
      "type": "object",
      "propertyNames": {"$ref": "#/$defs/id"},
      "additionalProperties": {
@@ -298,12 +298,18 @@
        "h": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
        "lid": {"$ref": "#/$defs/vec3"},
        "flicks": {"type": "integer", "minimum": 0, "maximum": 3},
+       "wing": {"type": "number", "minimum": 0, "maximum": 3},
+       "gap": {"type": "number", "minimum": 0.6, "maximum": 1.6},
+       "iris": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+       "shade": {"type": "boolean"},
+       "bags": {"type": "boolean"},
+       "lines": {"type": "boolean"},
        "blush": {"type": "boolean"}
       }
      }
     },
     "brows": {
-     "description": "each brow style: its width (w) and thickness (t)",
+     "description": "each brow style: its width (w) and thickness (t), arch, its own tilt (above 0 down to the nose), flat, a peak, one side raised (uneven), a crease between (knit), tufts (bushy)",
      "type": "object",
      "propertyNames": {"$ref": "#/$defs/id"},
      "additionalProperties": {
@@ -312,7 +318,14 @@
       "additionalProperties": false,
       "properties": {
        "w": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
-       "t": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.1}
+       "t": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.1},
+       "arch": {"type": "number", "minimum": 0, "maximum": 0.05},
+       "tilt": {"type": "number", "minimum": -4, "maximum": 4},
+       "flat": {"type": "boolean"},
+       "peak": {"type": "boolean"},
+       "uneven": {"type": "number", "minimum": -0.05, "maximum": 0.05},
+       "knit": {"type": "boolean"},
+       "bushy": {"type": "boolean"}
       }
      }
     },

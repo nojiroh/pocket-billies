@@ -1642,8 +1642,36 @@ export interface FigureKit {
  * draws */
 export interface FigureKitFaces {
   note?: string;
-  eyes: Record<DataId, { w: number; h: number; lid?: number[]; flicks?: number; blush?: boolean }>;
-  brows: Record<DataId, { w: number; t: number }>;
+  eyes: Record<
+    DataId,
+    {
+      w: number;
+      h: number;
+      lid?: number[];
+      flicks?: number;
+      wing?: number;
+      gap?: number;
+      iris?: number;
+      shade?: boolean;
+      bags?: boolean;
+      lines?: boolean;
+      blush?: boolean;
+    }
+  >;
+  brows: Record<
+    DataId,
+    {
+      w: number;
+      t: number;
+      arch?: number;
+      tilt?: number;
+      flat?: boolean;
+      peak?: boolean;
+      uneven?: number;
+      knit?: boolean;
+      bushy?: boolean;
+    }
+  >;
   mouths: Record<DataId, FigureKitMouthMark[]>;
   moods: Record<DataId, { lid: number; tilt?: number; lift?: number }>;
   rest: { eyes?: string[]; brows?: string[]; mouth?: string[]; mood: DataId }[];

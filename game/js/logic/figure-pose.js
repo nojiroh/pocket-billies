@@ -1510,7 +1510,11 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
     if (m.hollow) o.hollow = true;
     /* CH-3b: an oval (an eye, a pupil, a shine) or a smile's arc, painted as such once it is 3 pixels or more (a
        portrait's close-up); smaller, a block */
-    if (m.shape && w >= 3 && h >= 3 && !(m.kind === 'eye' && P.blink)) o.shape = m.shape;
+    if (m.shape && w >= 3 && h >= 3 && !(m.kind === 'eye' && P.blink)) {
+      o.shape = m.shape;
+      /* CH-6: a rim (a brow's cap) as thick as its own `t` */
+      if (m.t && m.shape !== 'oval') o.t = Math.max(1, Math.round(m.t * ppm));
+    }
     /* a slant (a brow, a lash's flick) keeps its way down, mirrored when the figure is seen from behind its side */
     if (m.shape === 'slant' && w >= 2) {
       o.shape = 'slant';

@@ -1755,11 +1755,11 @@
   "eye": [
    "game/js/figures.js:966",
    "game/js/figures.js:1008",
-   "game/js/logic/figure-kit.js:1417",
-   "game/js/logic/figure-kit.js:1425",
-   "game/js/logic/figure-kit.js:1428",
-   "game/js/logic/figure-kit.js:1595",
-   "game/js/logic/figure-kit.js:1611",
+   "game/js/logic/figure-kit.js:1435",
+   "game/js/logic/figure-kit.js:1458",
+   "game/js/logic/figure-kit.js:1473",
+   "game/js/logic/figure-kit.js:1682",
+   "game/js/logic/figure-kit.js:1698",
    "game/js/logic/figure-pose.js:277",
    "game/js/logic/figure-pose.js:549",
    "game/js/logic/figure-pose.js:550",
@@ -1767,7 +1767,7 @@
    "game/js/logic/figure-pose.js:1500",
    "game/js/logic/figure-pose.js:1502",
    "game/js/logic/figure-pose.js:1513",
-   "game/js/logic/figure-pose.js:1521"
+   "game/js/logic/figure-pose.js:1525"
   ],
   "flame": [
    "game/js/battle-stage.js:883",
@@ -1912,7 +1912,7 @@
   "ring": [
    "game/js/battle-anim-run.js:120",
    "game/js/engine/webgl.js:785",
-   "game/js/logic/figure-kit.js:854",
+   "game/js/logic/figure-kit.js:856",
    "game/js/walk/map-cache.js:78",
    "game/js/walk/map-cache.js:415"
   ],
@@ -1972,14 +1972,14 @@
   ],
   "tag": [
    "game/js/battle.js:703",
-   "game/js/logic/figure-kit.js:883",
-   "game/js/logic/figure-kit.js:1614",
+   "game/js/logic/figure-kit.js:885",
+   "game/js/logic/figure-kit.js:1701",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:236",
    "game/js/ui.js:237"
   ],
   "thumb": [
-   "game/js/logic/figure-kit.js:408"
+   "game/js/logic/figure-kit.js:410"
   ],
   "up": [
    "game/js/audio/tracker.js:976",
