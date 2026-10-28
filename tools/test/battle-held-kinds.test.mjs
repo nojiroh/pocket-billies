@@ -114,3 +114,23 @@ test('held survive: a real knockout hit on the holder (useMove) leaves it at 1 H
   assert.match(texts(B), /held on with its test belt2/);
   assert.ok(foe.hp >= 1);
 });
+
+test('held reflect: a Billie hitting its holder with a move of its category loses its share of HP', () => {
+  const id = item('test_cactus', [{ kind: 'reflect', share: 0.125, cat: 'H' }]);
+  const { B, me, foe } = battle(id),
+    mx = fn('maxHp')(foe);
+  fn('heldAfterHit')(1, 0, { c: 'H' }, { dmg: 5 });
+  assert.equal(foe.hp, mx - Math.floor(mx * 0.125));
+  assert.match(texts(B), /was hurt by Emberox’s test cactus/);
+  const at = foe.hp;
+  fn('heldAfterHit')(1, 0, { c: 'S' }, { dmg: 5 });
+  assert.equal(foe.hp, at, 'not a special move');
+  fn('heldAfterHit')(1, 0, { c: 'H' }, { dmg: 0 });
+  assert.equal(foe.hp, at, 'no hit landed');
+  const mine = me.hp;
+  fn('heldAfterHit')(0, 1, { c: 'H' }, { dmg: 5 });
+  assert.equal(me.hp, mine, 'its holder hitting is left alone');
+  foe.hp = 1;
+  fn('heldAfterHit')(1, 0, { c: 'H' }, { dmg: 5 });
+  assert.equal(foe.hp, 0, 'never below 0');
+});

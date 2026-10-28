@@ -241,6 +241,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxWeatherFor: [() => fxWeatherFor, v => (fxWeatherFor = v)],
   // @ts-expect-error -- replaced on purpose
+  heldAfterHit: [() => heldAfterHit, v => (heldAfterHit = v)],
+  // @ts-expect-error -- replaced on purpose
   heldCtx: [() => heldCtx, v => (heldCtx = v)],
   // @ts-expect-error -- replaced on purpose
   heldHitMoments: [() => heldHitMoments, v => (heldHitMoments = v)],
@@ -810,6 +812,7 @@ export function useMove(k, mid, tk0, part) {
       if (battleNow().fx) fxHitMoments(k, tk2, M, r);
       /* PK-10: the hit's moments for held items (either side): hit for the one hitting, hurt for the one hit */
       heldHitMoments(k, tk2, M, r);
+      heldAfterHit(k, tk2, M, r);
     }
     if (t2.hp > 0 && onFoe) {
       if (fx.status && (M.c === 'X' || battleRoll() * 100 < (fx.chance || 100))) inflict(tk2, fx.status, M.c === 'X');
@@ -1980,6 +1983,22 @@ export function heldSurvives(tk, r) {
   M.survive = 1;
   r.dmg = t.hp - 1;
   return true;
+}
+/** PK-10: what held items do after a hit lands: the one hit holds a reflect row (Cactus Keyring): the one hitting
+ * loses its share of its HP, for a move of the row's category (any without one) @param {number} k @param {number} tk
+ * @param {any} M @param {{ dmg: number }} r */
+export function heldAfterHit(k, tk, M, r) {
+  const u = fighter(k),
+    t = fighter(tk);
+  if (k === tk || !u || !t || !(r.dmg > 0)) return;
+  const rf = t.held ? fxHeldRow(fxOfBillie(t, ITEMS), 'reflect') : null;
+  if (rf && (!rf.cat || rf.cat === M.c) && u.hp > 0) {
+    const d = Math.min(u.hp, Math.max(1, Math.floor(maxHp(u) * rf.share)));
+    u.hp -= d;
+    battleSay(`${billyName(u)} was hurt by ${billyName(t)}’s ${heldName(t)}.`, { k: 'hurt', si: k, dmg: d }).by = [
+      { src: 'held:' + t.held, si: tk },
+    ];
+  }
 }
 /** PK-10: after a hit lands: hit for the holder hitting, hurt for the holder hit @param {number} k @param {number} tk
  * @param {any} M @param {{ te: number }} r */

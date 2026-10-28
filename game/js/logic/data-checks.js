@@ -2526,7 +2526,8 @@ export function heldRowProblems(f, at, D, problem) {
     }
   }
 }
-/** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive takes no number
+/** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive takes no number; reflect a share (at most
+ * half) and a category or none
  * @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
 export function heldKindProblems(f, at, D, problem) {
   const extra = (/** @type {string[]} */ own) =>
@@ -2536,6 +2537,12 @@ export function heldKindProblems(f, at, D, problem) {
         problem(`${at}.${key}: ${fxA(f.kind)} row takes ${own.length ? own.join(', ') : 'no other field'}`)
       );
   if (f.kind === 'survive') extra([]);
+  if (f.kind === 'reflect') {
+    extra(['share', 'cat']);
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))
+      problem(`${at}.share: a share of the hitter's HP above 0, at most 0.5`);
+    if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
+  }
 }
 // SP-2: genes.json: the schema; every kind is a part kind of partKits.json with a trait that exists, and every kind a
 // recipe's slot bone uses (the parts a splice swaps) has one; a part's dominant type and move exist; a trait's rows are

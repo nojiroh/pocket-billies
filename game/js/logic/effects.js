@@ -794,8 +794,10 @@ export function fxStateLog(run) {
    heldMarks). */
 /** PK-10: the kinds only a held item has (not FX_KINDS: no Perk, boon or modifier gives them):
  *   survive  once a battle, from full HP, its holder lives through a knockout hit with 1 HP (battle-engine.js
- *            heldSurvives) */
-export const HELD_FX_KINDS = /** @type {const} */ (['survive']);
+ *            heldSurvives)
+ *   reflect  a Billie that hits its holder with a move (of its cat, if it names one) loses share of its own HP
+ *            (heldAfterHit) */
+export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect']);
 /** PK-10: a holder's first row of a kind, or null @param {any[] | null | undefined} fx @param {string} kind */
 export const fxHeldRow = (fx, kind) => (fx || []).find(f => f.kind === kind) || null;
 /** PK-10: the moments a hold row can act at */
