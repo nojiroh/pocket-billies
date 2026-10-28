@@ -128,6 +128,7 @@ expose({
   battleStage: [() => battleStage],
   battleStageCatch: [() => battleStageCatch, v => (battleStageCatch = v)],
   battleStageChromaticFlash: [() => battleStageChromaticFlash, v => (battleStageChromaticFlash = v)],
+  battleStageChromaticPulse: [() => battleStageChromaticPulse, v => (battleStageChromaticPulse = v)],
   battleStageDraw: [() => battleStageDraw, v => (battleStageDraw = v)],
   battleStageDrawEffects: [() => battleStageDrawEffects, v => (battleStageDrawEffects = v)],
   battleStageFlash: [() => battleStageFlash, v => (battleStageFlash = v)],
@@ -322,6 +323,8 @@ export const battleStage = {
   t: 0,
   last: 0,
   hold: 0,
+  /* VFX-9: the chromatic flash playing ({t0, ms} in real time), or null */
+  ca: null,
   area: 'grass',
   u: 2,
   L: null,
@@ -616,11 +619,21 @@ function battleStageFlash(col, a, dur, who) {
   f.style.transition = `opacity ${dur}ms ease-out`;
   f.style.opacity = 0;
 }
+/* VFX-9: a pulse of the grade pass's chromatic aberration (engine/post-effects.js uCAP; battleStageChromaticPulse
+   reads it each frame), no longer a CSS filter over the whole canvas. Timed on real time, as the filter was. None
+   under Reduced motion; when the style track's SY-1 (#289) is merged, none with Flashes off either
+   (`reducedMotion || flashesOff()`, as SY-1 has it) */
 function battleStageChromaticFlash(ms = 160) {
-  const w = $('#camWorld');
-  if (!w || reducedMotion) return;
-  w.classList.add('ca');
-  setTimeout(() => w.classList.remove('ca'), ms);
+  if (reducedMotion) return;
+  battleStage.ca = { t0: performance.now(), ms };
+}
+/* the pulse now: 1 while it lasts, 0 after */
+export function battleStageChromaticPulse() {
+  const A = battleStage.ca;
+  if (!A) return 0;
+  if (performance.now() - A.t0 < A.ms) return 1;
+  battleStage.ca = null;
+  return 0;
 }
 function hitStop(ms) {
   if (!reducedMotion) battleStage.hold = performance.now() + ms;

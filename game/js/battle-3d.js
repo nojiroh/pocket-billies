@@ -34,6 +34,7 @@ import {
   battleRibbonCells,
   battleSmearCount,
   battleStage,
+  battleStageChromaticPulse,
   battleStretch,
   trainerBattleFrame,
   trainerMetersPerPixel,
@@ -439,6 +440,8 @@ function battle3dFrame() {
     ribbon,
     rigRibbons,
     impact,
+    /* VFX-9: the chromatic flash, a pulse in the grade pass */
+    caPulse: battleStageChromaticPulse(),
     hide: battle3d.hide,
     lights,
     focus: d.zf,

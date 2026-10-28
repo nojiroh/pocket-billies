@@ -209,9 +209,6 @@
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
-#camWorld.ca {
-  filter: drop-shadow(2px 0 0 rgba(255, 40, 100, 0.55)) drop-shadow(-2px 0 0 rgba(40, 210, 255, 0.55));
-}
 .fgcam {
   pointer-events: none;
 }

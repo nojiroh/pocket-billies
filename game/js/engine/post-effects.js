@@ -261,7 +261,7 @@ void main(){float zq=volZ(uZ,ivec2(gl_FragCoord.xy),uF),d0=zq>=uF*.9995?1.:((uF+
     `#version 300 es
 precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec4(aC*2.-1.,0.,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol,uVolZ;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform vec3 uInkF;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
+precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol,uVolZ;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform vec3 uInkF;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uCAP,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
 float linz(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
 uniform vec4 uImp,uImpL;
 ${VOLZ_GLSL}
@@ -294,7 +294,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  if(uHeat>0.){float band=smoothstep(.12,.42,uv.y)*smoothstep(.8,.5,uv.y),w=sin(uv.y*70.+uTime*.0045)+.5*sin(uv.y*31.-uTime*.003+uv.x*14.);uv.x+=floor(w*1.6+.5)/2.*uPx.x*.9*uHeat*band;}
  /* alpha 0.4: a small shimmer just above each fire (uHeatS: where on screen, and how big) */
  for(int i=0;i<6;i++){if(float(i)>=uHeatN)break;vec4 hs=uHeatS[i];vec2 q=(uv-hs.xy)/hs.zw;float m=smoothstep(1.,.25,length(q))*step(0.,q.y+.35);if(m>0.){float w=sin(uv.y/hs.w*9.+uTime*.009+float(i)*2.3);uv.x+=floor(w*1.6+.5)/2.*uPx.x*1.1*m;}}
- vec2 d=uv-.5;vec2 ca=d*dot(d,d)*uCA*uPx*6.;vec3 s=vec3(texture(uCol,uv-ca).r,texture(uCol,uv).g,texture(uCol,uv+ca).b);
+ vec2 d=uv-.5;vec2 ca=(d*dot(d,d)*uCA*6.+vec2(uCAP,0.))*uPx;vec3 s=vec3(texture(uCol,uv-ca).r,texture(uCol,uv).g,texture(uCol,uv+ca).b);
  if(uSharp>0.){vec3 n=texture(uCol,vUV+vec2(uPx.x,0)).rgb+texture(uCol,vUV-vec2(uPx.x,0)).rgb+texture(uCol,vUV+vec2(0,uPx.y)).rgb+texture(uCol,vUV-vec2(0,uPx.y)).rgb;s+=(s-n*.25)*uSharp;}
  /* CAM-3: the blur's amount worked out here at full size from the full-size depth (the same plane of focus as the
     blur pass), so the edge between sharp and blurred follows the real edges; the half-size alpha adds only the spill
@@ -729,6 +729,13 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   gl.uniform1f(U.uWarm, engineSetting('color', 'warmth') + (MO ? MO.warm : 0));
   gl.uniform1f(U.uVig, Math.min(1, engineSetting('lens', 'vignette') + mini * 0.2));
   gl.uniform1f(U.uCA, engineSetting('lens', 'aberration'));
+  /* VFX-9: the battle's chromatic flash (battle-stage.js battleStageChromaticFlash): red and blue pulled 2 CSS pixels
+     apart across the whole picture, as the CSS filter it replaces did */
+  if (U.uCAP) {
+    const cv = gl.canvas,
+      css = (cv && /** @type {HTMLCanvasElement} */ (cv).clientWidth) || rw;
+    gl.uniform1f(U.uCAP, (o.caPulse || 0) * 2 * (rw / Math.max(1, css)));
+  }
   gl.uniform1f(U.uGrain, reducedMotion ? 0 : engineSetting('lens', 'grain'));
   gl.uniform1f(U.uSharp, engineSetting('lens', 'sharpen'));
   gl.uniform1f(U.uTime, typeof walkView !== 'undefined' ? walkView.t : 0);
