@@ -17,7 +17,12 @@ kept aside in the browser).
   Tiktokferret and Feedopus into Metapus. Without a friend, a Form 99-A does it: the Form 27-B clerk files one for you,
   and the Bureau Checkpoint is back on the roads with one after its inspection. The Trainer card lists your latest
   trades.
-
+- **Terraces that follow the land** (terrain track TR-5): on routes with terraces, a hill's top is now a terrace above
+  its foot instead of bands that always rise toward the back (the ledge-drop routes keep mostly bands, for their
+  ledges). A terrace's front may be a cliff, a grassy bank, a stepped front with a shelf halfway up, or in a town a
+  dressed-stone wall. Any terrace you couldn't get onto (or off again), and any building door or mountain summit that
+  was cut off, gets a short flight of stone steps; no summit trail is a dead end any more. In the Studio's map
+  generator: Terrace lie and Terrace fronts.
 - **People face the way you see them** (characters track CH-1): on Copperleaf's island, in rooms and whenever you turn
   the camera, you and the people round you show the side that faces the camera: walking away from it shows your back,
   and someone turning to you shows their front. Coming out of Kappi's lab, or any door that faces east or west, you
