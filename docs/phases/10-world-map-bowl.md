@@ -28,15 +28,15 @@ centre, the ground generated from region terrain, seen from above like a diorama
 - **Shape (2026-10-19):** only curves: part of a sphere, rising to 45 degrees at the rim; the land ends at the rim.
 - **Relief:** each region has its own low-poly relief (volcano peak, canyon cut, trench dip, Cloudspire terraces).
 - **Driftwreck:** Palmhaven is placed south of Driftwreck to match the walkable maps; no map data changes.
-- **New links:** allowed, but only as notes for now (`10-proposed-links.md`). Each needs edges, a story check and a
-  graph-test update before it enters the game.
+- **New links:** allowed, but only as notes for now. Each needs edges, a story check and a graph-test update before
+  it enters the game.
 - **Feel:** the layout should feel authentic and natural.
 
 ## E-map-1 result (2026-10-19): owner chose layout 1; the proposed links are kept as notes
-Copperleaf also gets proposed special links (canal to Kelpport, sky lift to Nimbus); see `10-proposed-links.md`.
-Sketches and data in `docs/phases/10-bowl/`, made by `tools/layout/`. The two layout sketches
-(`bowl-layout-1-spiral.png`, `bowl-layout-2-natural.png`) and `tools/layout/` were deleted on 2026-10-27;
-`git log --diff-filter=D -- docs/phases/10-bowl/ tools/layout/` finds them. `layouts.json` stays.
+Copperleaf also got proposed special links (canal to Kelpport, sky lift to Nimbus). The notes on the proposed links
+(`10-proposed-links.md`), the sketches and data in `docs/phases/10-bowl/` and `tools/layout/` were deleted (2026-10-27
+and 2026-10-28; every map but Copperleaf is parked since RL-5); `git log --diff-filter=D -- docs/phases/10-bowl/
+docs/phases/10-proposed-links.md tools/layout/` finds them.
 - **Layout 1, spiral (recommended).** On the bowl a map's north faces the centre and its east runs counter-clockwise.
   Today's order rolls round the bowl and rises up the wall; the Inner Sun ends high at the rim. All 56 seams point
   within 30 degrees of their exits; no roads cross. Frostcrown and Hornpass sit beside the start, so the floor gets a
@@ -113,8 +113,7 @@ on the bowl, and the old map code is deleted.
 - **World map test:** the new ground, models and draw time.
 
 ## The look: living diorama (chosen 2026-10-19)
-Concept sketches (top-down, offline, from the real spots and roads): `10-bowl/option-atlas.png`,
-`option-diorama.png` (chosen), `option-pixel.png`.
+Three concept sketches were drawn (atlas, diorama, pixel; deleted 2026-10-28, in git history).
 Owner's answers: **B, living diorama** (strong low-poly relief, cast shadows, animated reflective water, little 3D towns);
 the sea as an **inland sea with bays** (the open side of the bowl, about 40% of it; one continent wrapping round it);
 **slanted light** for readable shadows; clouds and weather from **the game's own weather** and time of day.

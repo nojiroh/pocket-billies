@@ -232,7 +232,7 @@ plans are automatically approved"): the planning session (SY-0, SY-1) starts eac
 approval. At an open choice or an "Ask me before" item it takes the recommended option and lists it in HANDOFF under
 "Decided for the owner, to review". Each step tells the planning session it is done with a one-shot scheduled task,
 and an hourly check covers a missed one. Merges to main stay the owner's (the PR from `track/style`). The prompt
-is in docs/phases/style-track-sessions.md.
+(docs/phases/style-track-sessions.md) was deleted when the track was done (2026-10-28; in git history).
 
 ## Fits with other tracks
 - **UI track:** SY-2 after UI-16a/b; SY-5's plates after UI-14b; SY-6 after UI-17's menu foil (the same look, so one
