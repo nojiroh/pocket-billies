@@ -21,6 +21,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   battleHurtKind: [() => battleHurtKind, v => (battleHurtKind = v)],
   // @ts-expect-error -- replaced on purpose
+  battleMoveFamilies: [() => battleMoveFamilies, v => (battleMoveFamilies = v)],
+  // @ts-expect-error -- replaced on purpose
   battleMoveSound: [() => battleMoveSound, v => (battleMoveSound = v)],
   // @ts-expect-error -- replaced on purpose
   battleSoundFamily: [() => battleSoundFamily, v => (battleSoundFamily = v)],
@@ -154,6 +156,18 @@ export function battleSoundFamily(M, A) {
   if (sc && typeof sc.family === 'string' && A.families[sc.family]) return sc.family;
   const d = A.defaults[M.c];
   return d && A.families[d] ? d : null;
+}
+
+/**
+ * the families a move sounds as: every family but the legacy ones and the ones only an outcome plays (a miss, a
+ * block: battleAnims.json defaults.miss and defaults.blocked; the tier's own sounds play there)
+ * @param {{families: Record<string, any>, defaults?: Record<string, string>}} A battleAnims.json
+ * @returns {string[]}
+ */
+export function battleMoveFamilies(A) {
+  const D = A.defaults || {},
+    outcome = new Set([D.miss, D.blocked]);
+  return Object.keys(A.families).filter(k => !k.startsWith('legacy_') && !outcome.has(k));
 }
 
 /**

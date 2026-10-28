@@ -7,7 +7,7 @@
    (tools/test/music-studio.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { battleSoundFindings } from './battle-sounds.js';
+import { battleMoveFamilies, battleSoundFindings } from './battle-sounds.js';
 /* eslint-disable no-func-assign */
 expose({
   MUSIC_CHOICES: [() => MUSIC_CHOICES],
@@ -181,7 +181,7 @@ export function musicSongUses(music, more = {}) {
  * placeholders; SND-6: on base cries and the species' cries (more.lines) too. VFX-19: the battle section's
  * (logic/battle-sounds.js battleSoundFindings), its families and types held to battleAnims.json (more.battleAnims)
  * @param {{songs: Record<string, any>, where: Record<string, any>[], jingles?: Record<string, any>, cries?: {bases?: Record<string, any>}, battle?: import('./battle-sounds.js').BattleSoundsData}} music
- * @param {{nodeTypes?: Record<string, unknown>, biomes?: Record<string, unknown>, locations?: any[], scriptText?: string, lines?: {id: string, names: string[], cry?: any[]}[], battleAnims?: {families?: Record<string, unknown>, types?: Record<string, unknown>}}} [more]
+ * @param {{nodeTypes?: Record<string, unknown>, biomes?: Record<string, unknown>, locations?: any[], scriptText?: string, lines?: {id: string, names: string[], cry?: any[]}[], battleAnims?: {families?: Record<string, unknown>, types?: Record<string, unknown>, defaults?: Record<string, string>}}} [more]
  * @returns {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, cry?: string, rule?: number, place?: string, battle?: string}[]}
  */
 export function musicFindings(music, more = {}) {
@@ -247,7 +247,7 @@ export function musicFindings(music, more = {}) {
   const A = more.battleAnims;
   out.push(
     ...battleSoundFindings(music.battle, {
-      families: A && A.families ? Object.keys(A.families).filter(k => !k.startsWith('legacy_')) : undefined,
+      families: A && A.families ? battleMoveFamilies({ families: A.families, defaults: A.defaults }) : undefined,
       types: A && A.types ? Object.keys(A.types).filter(k => k !== 'about') : undefined,
     })
   );

@@ -8,6 +8,7 @@ import {
   BATTLE_SOUND_HURT,
   BATTLE_SOUND_PITCH,
   battleHurtKind,
+  battleMoveFamilies,
   battleMoveSound,
   battleSoundFamily,
   battleSoundFindings,
@@ -25,7 +26,7 @@ const MUSIC = json('music.json'),
   A = json('battleAnims.json'),
   MOVES = json('moves.json'),
   S = json('schema/music.schema.json');
-const families = Object.keys(A.families).filter(k => !k.startsWith('legacy_')),
+const families = battleMoveFamilies(A),
   kits = Object.keys(A.types).filter(k => k !== 'about');
 
 test('every move family and type kit has a sound, and nothing else', () => {
@@ -115,6 +116,14 @@ test('every sound by its name is there, and lasts a second and a half at most', 
   }
   assert.equal(battleSoundGet(B, 'recall'), B.recall);
   assert.equal(battleSoundGet(B, 'hurt.nope'), null);
+});
+
+test('outcome-only families (a miss, a block) and legacy ones are not move families', () => {
+  const F = battleMoveFamilies({
+    families: { a: 1, whiff: 1, blocked: 1, legacy_hit: 1 },
+    defaults: { miss: 'whiff', blocked: 'blocked' },
+  });
+  assert.deepEqual(F, ['a']);
 });
 
 test('every move finds its family; a miss is still cast', () => {
