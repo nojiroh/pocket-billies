@@ -69,6 +69,7 @@ expose({
   BIRD_PITCH: [() => BIRD_PITCH],
   CRIES: [() => CRIES],
   JINGLES: [() => JINGLES],
+  JINGLES_ROOM_MB: [() => JINGLES_ROOM_MB],
   LIVE_VOLUMES: [() => LIVE_VOLUMES],
   MUSIC_JINGLES_BATTLE: [() => MUSIC_JINGLES_BATTLE],
   MUSIC_JINGLES_BOSS: [() => MUSIC_JINGLES_BOSS],
@@ -424,16 +425,24 @@ function musicPrepare(st, name) {
   jinglesPrepare(st.nodeType ? MUSIC_JINGLES_RUN : MUSIC_JINGLES_HUB);
 }
 /* SND-17: which jingles are baked ahead (their ensembles' notes), and when: a run's stingers on arriving in its places,
-   the battle's fanfares as a battle starts (the run's end ones too in a boss battle), the motif in the hub. Others bake
-   on their first play (which plays 8-bit) */
+   the battle's fanfares as a battle starts (the run's end ones too in a boss battle), the motif in the hub. One at a
+   time, in this order, while the bank keeps JINGLES_ROOM_MB free for the songs (a run's place already holds its songs,
+   water and beds near the budget); the rest bake on their first play, which plays 8-bit */
 const MUSIC_JINGLES_RUN = ['day', 'reveal', 'relic', 'payout_coin'],
   MUSIC_JINGLES_HUB = ['motif'],
-  MUSIC_JINGLES_BATTLE = ['victory', 'caught', 'levelup', 'evolve'],
-  MUSIC_JINGLES_BOSS = ['run_won', 'run_lost'];
+  MUSIC_JINGLES_BATTLE = ['victory', 'levelup', 'caught', 'evolve'],
+  MUSIC_JINGLES_BOSS = ['run_won', 'run_lost'],
+  JINGLES_ROOM_MB = 1.5;
 function jinglesPrepare(ids) {
   const T = soundEngine.tracker;
   if (!T || !T.jinglePrepare || (T.gbOn && T.gbOn())) return;
-  for (const id of ids) if (MUSIC.jingles[id]) T.jinglePrepare(MUSIC.jingles[id]);
+  const next = k => {
+    const S = k < ids.length && T.bankStats();
+    if (!S || S.withOtherMb > S.budgetMb - JINGLES_ROOM_MB) return;
+    const J = MUSIC.jingles[ids[k]];
+    (J ? T.jinglePrepare(J) : Promise.resolve()).then(() => next(k + 1));
+  };
+  next(0);
 }
 /* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
    in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
