@@ -60,7 +60,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from browser_check import serve  # noqa: E402  (TC-4: the browser checks' shared helpers)
+from browser_check import serve, until  # noqa: E402  (TC-4: the browser checks' shared helpers)
 
 REPO = Path(__file__).resolve().parent.parent
 POS = [a for a in sys.argv[1:] if not a.startswith('--')]
@@ -1823,7 +1823,8 @@ def density_steps(pg, errs):
 def music_steps(pg, errs):
     """SND-3: the Music & sound section (studio/js/music-editor.js): a song plays through the game's tracker on the
     Studio's own AudioContext (a real click starts it), the bar playing shows, Stop stops it, and leaving the section
-    stops it too (no scheduler left running)."""
+    stops it too (no scheduler left running). SND-10: the Sounds tab's World sounds card plays a water recipe and
+    stops."""
     n = len(errs)
     pg.evaluate("void openSection('music')")
     try: pg.wait_for_selector('#musList [data-act=musPlay][data-song=town]', timeout=20000)
@@ -1955,6 +1956,15 @@ def music_steps(pg, errs):
     pg.click('#undoBtn')
     if pg.evaluate("studioState.D.music.mix.master") != 0.9 or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
         errs.append('music: undo did not put the mix back')
+    # SND-10: the World sounds card: a water recipe 3 m away plays through the game's own player (its voice goes live),
+    # Stop fades it out; nothing in the data changes
+    pg.click('[data-act=musScape][data-k=brook][data-d="3"]')
+    if not until(pg, "!!musicStudio.scape&&('brook#0' in musicStudio.scape.P.stats().voices)", 10):
+        errs.append('music: the World sounds card never played the brook')
+    pg.click('[data-act=musScapeStop]')
+    if not until(pg, "Object.keys(musicStudio.scape.P.stats().voices).length===0", 15):
+        errs.append(f'music: the World sounds card left {pg.evaluate("JSON.stringify(musicStudio.scape.P.stats().voices)")} playing after Stop')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing a world sound changed the data')
     # a Billy's cry (the Billies page; SND-6: every stage has one): a new pitch keeps its base and plays the base's
     # notes from it, and its low-HP version a third down; undone, nothing to propose
     pg.evaluate("void openSection('billionaires')")
@@ -1982,7 +1992,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';

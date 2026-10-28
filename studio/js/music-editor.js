@@ -11,7 +11,10 @@ import { provide } from '../../game/js/hooks.js';
 import { MUSIC_BATTLE_KINDS, MUSIC_WHERE_KEYS, musicWhereMatches, songFor } from '../../game/js/logic/music-where.js';
 import { cryLowHealth, cryRecipe, cryVoices } from '../../game/js/logic/cries.js';
 import { UI_SOUND_NAMES, uiSoundVoices } from '../../game/js/logic/ui-sounds.js';
+import { ambienceNoiseLoop, ambienceRandom } from '../../game/js/logic/ambience-sound.js';
+import { soundscapePreview } from '../../game/js/logic/soundscape.js';
 import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
+import { soundscapePlayerCreate } from '../../game/js/audio/soundscape-player.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   MUSIC_CHOICES,
@@ -47,6 +50,8 @@ import { legacyLoad, legacyView } from './legacy-view.js';
 expose({
   MUSIC_CRY_PREVIEW: [() => MUSIC_CRY_PREVIEW],
   MUSIC_JINGLE_BPM: [() => MUSIC_JINGLE_BPM],
+  MUSIC_SCAPE_AT: [() => MUSIC_SCAPE_AT],
+  MUSIC_SCAPE_HEIGHT: [() => MUSIC_SCAPE_HEIGHT],
   MUSIC_TABS: [() => MUSIC_TABS],
   ROLL_CELL_H: [() => ROLL_CELL_H],
   ROLL_CELL_W: [() => ROLL_CELL_W],
@@ -79,6 +84,8 @@ expose({
   musicRollMount: [() => musicRollMount, v => (musicRollMount = v)],
   musicRollRows: [() => musicRollRows, v => (musicRollRows = v)],
   musicRunHTML: [() => musicRunHTML, v => (musicRunHTML = v)],
+  musicScape: [() => musicScape, v => (musicScape = v)],
+  musicScapeHTML: [() => musicScapeHTML, v => (musicScapeHTML = v)],
   musicSelected: [() => musicSelected],
   musicSongIds: [() => musicSongIds],
   musicSongListHTML: [() => musicSongListHTML, v => (musicSongListHTML = v)],
@@ -118,6 +125,8 @@ export const musicStudio = {
     row: 2,
     placeMusic: null,
   }),
+  /** SND-10: the World sounds card's player (audio/soundscape-player.js), what it plays and its timer */
+  /** @type {any} */ scape: null,
 };
 const musicData = () => studioState.D.music;
 /** the line the hook roll edits */
@@ -654,7 +663,7 @@ ACTIONS.musCryReset = d => {
   render();
 };
 
-/* ---------- SND-6: the Sounds tab: the base cries, the buttons' four sounds, the mix ---------- */
+/* ---------- SND-6: the Sounds tab: the base cries, the buttons' four sounds, the mix (SND-10: and the world's water) ---------- */
 const MUSIC_CRY_PREVIEW = 60;
 /** a few notes (a base cry's or a UI sound's) on the Studio's own context, from now @param {{at: number, midi: number, type: string, dur: number, vol: number, slide?: number, vib?: number}[]} V */
 function musicVoicesPlay(V) {
@@ -754,6 +763,90 @@ function musicMixHTML() {
     }
   );
 }
+/* ---------- SND-10: the world's water at a distance (soundscape.json water; audio/soundscape-player.js) ----------
+   the game's own player on the Studio's context, a recipe at 1, 3 or 10 m (a fall at its height), as the game's Sound
+   test plays it; the level is the Studio's, not the game's World slider */
+const MUSIC_SCAPE_AT = [1, 3, 10];
+const MUSIC_SCAPE_HEIGHT = /** @type {Record<string, number>} */ ({ fallSmall: 1.5, fallTall: 6, plunge: 6 });
+function musicScapeHTML() {
+  const S = studioState.D.soundscape;
+  if (!S || !S.water) return '';
+  const on = musicStudio.scape && musicStudio.scape.want;
+  const rows = Object.keys(S.water)
+    .map(
+      k =>
+        `<div class="seg-row"><b class="grow">${escapeHtml(k)}</b>${MUSIC_SCAPE_AT.map(
+          d =>
+            `<button class="btn subtle${on && on.id === k && on.d === d ? ' on' : ''}" data-act="musScape" data-k="${escapeHtml(k)}" data-d="${d}" aria-label="Play ${escapeHtml(k)} ${d} m away">▶ ${d} m</button>`
+        ).join('')}</div>`
+    )
+    .join('');
+  return card(
+    'World sounds',
+    `${rows}<div class="seg-row"><button class="btn" data-act="musScapeStop">■ Stop</button></div>`,
+    {
+      sub: 'Each water recipe in soundscape.json at a distance (a fall at its height: small 1.5 m, tall and its pool 6 m), through the game’s own player. Its level here is the Studio’s; the game’s World slider and the loudness report (tools/check-sound.py --loudness) say how it sits under a song.',
+    }
+  );
+}
+/** the player on the Studio's context, made once: the beds' noise, the water's banks baked in the tracker's slices */
+function musicScape() {
+  if (musicStudio.scape) return musicStudio.scape;
+  const T = musicTracker(),
+    c = /** @type {AudioContext} */ (musicStudio.ctx),
+    buf = (/** @type {Float32Array} */ d) => {
+      const b = c.createBuffer(1, d.length, c.sampleRate);
+      b.getChannelData(0).set(d);
+      return b;
+    },
+    env = {
+      get S() {
+        return studioState.D.soundscape;
+      },
+      noise: {
+        pink: buf(ambienceNoiseLoop('pink', c.sampleRate, 6, 0x50d1)),
+        brown: buf(ambienceNoiseLoop('brown', c.sampleRate, 8, 0x50d2)),
+      },
+      out: T.bus,
+      tracker: T,
+      rng: ambienceRandom(0x50d4),
+    };
+  T.bankAdd(env.S.banks);
+  const P = soundscapePlayerCreate(c, env);
+  T.bankReady(P.banks());
+  musicStudio.scape = { P, want: null, timer: 0 };
+  return musicStudio.scape;
+}
+ACTIONS.musScape = d => {
+  const M = musicScape(),
+    dist = +d.d;
+  if (musicStudio.ctx && musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  M.want = { id: d.k, d: dist };
+  clearInterval(M.timer);
+  /* every 200 ms, as the game's updateAmbience; off screen it stops */
+  M.timer = setInterval(() => {
+    if (!sectionShown('music') || !M.want) return ACTIONS.musScapeStop({});
+    M.P.update(
+      soundscapePreview(studioState.D.soundscape, [[M.want.id, M.want.d, MUSIC_SCAPE_HEIGHT[M.want.id] || 0]]),
+      /** @type {AudioContext} */ (musicStudio.ctx).currentTime
+    );
+  }, 200);
+  render();
+};
+ACTIONS.musScapeStop = () => {
+  const M = musicStudio.scape;
+  if (!M) return;
+  M.want = null;
+  M.P.update([], /** @type {AudioContext} */ (musicStudio.ctx).currentTime);
+  /* a few more updates, so the voices fade and stop */
+  clearInterval(M.timer);
+  let n = 0;
+  M.timer = setInterval(() => {
+    M.P.update([], /** @type {AudioContext} */ (musicStudio.ctx).currentTime);
+    if (++n > 20) clearInterval(M.timer);
+  }, 200);
+  if (sectionShown('music')) render();
+};
 ACTIONS.musBaseCry = d => {
   const B = ((musicData().cries || {}).bases || {})[d.k];
   if (!B) return;
@@ -1082,7 +1175,7 @@ SECTIONS.music = () => {
         }
       });
     }
-    return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicBaseCriesHTML()}${musicUiSoundsHTML()}${musicMixHTML()}</div></div>`;
+    return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicBaseCriesHTML()}${musicUiSoundsHTML()}${musicScapeHTML()}${musicMixHTML()}</div></div>`;
   }
   if (tab === 'where')
     return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicWhereHTML()}</div></div>`;
