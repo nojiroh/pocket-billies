@@ -2,6 +2,111 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-12 (part 1) - arrangements: song forms (sections A and B, 16-32 bars), fills and turnarounds, varied repeats, new lines; batch 1 re-voiced: Copperleaf, the route, town and city - 2026-10-28
+Branch `track/sound`, the music lane (main already merged at the start; the branch fast-forwarded to SND-13's last
+push; main merged again at 641d18c0 with Perks PK-6: HANDOFF kept both entries, art-code-refs made again at f5cae841;
+no sound files). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan
+Mode, plan below, recommended options taken. One cause per commit, the generated file in its own commit, the baseline
+commit, the docs; tag `snd-12a-done` (for the owner to push) on this session's last commit. PR #292. Details:
+sound-track.md "SND-12 as built, part 1", "SND-12b", "SND-12c".
+- **Plan**: (a) forms in the composer, pure: a song with no `form` composes exactly as today; a form lays its sections
+  (each an SND-4 song of 4-16 bars, hooks kept) end to end, a fill and a turnaround at each section's end, the loop's
+  end home, seeded variation on repeats; (b) the new lines on the stems (an ostinato, a chime, a drone, hits; pad,
+  strings, pizzicato, stabs, timpani and the kits already were lines or instruments) and a part's sections (`in`);
+  (c) the schema in both places, `musicFindings`, the Studio's Form card; (d) batch 1 (the hub, the route, towns) as
+  placeholders, levels within 1 LU (the route 0.5), memory recorded; the baseline once; (e) write SND-12b and SND-12c
+  for the rest.
+- **Changed**: game/js/audio/tracker.js (`trackerCompose` -> `trackerComposeOne` for one section, `trackerComposeForm`;
+  the night moves each section's hook; the gb drums play the fills); game/js/logic/music-patterns.js (`musicFormPlan`,
+  `musicSectionAt`, `musicFillAt`, `MUSIC_FILL_LEVEL`, `MUSIC_FORM_VARY`, `MUSIC_FORM_FILLS`; the bass's walk-up, the
+  arpeggio's lift, the timpani's roll per section; lines ostinato, chime, drone, hits; a part's `in`);
+  game/js/logic/music-studio.js (the line choices, `MUSIC_FORM_BARS`, the recipe keys, the findings, placeholder
+  arrangements); game/data/schema/music.schema.json (`form`, `sections`, `$defs.section`, `$defs.prog` of 4-16 bars, the
+  new lines, `in`); game/js/sound.js (the debug log's `ensemble.section`); studio/js/music-editor.js (the Form card, the
+  hook roll's section picker); game/data/music.json (batch 1); tools/check-studio-github.py (the Form step); tools/check-sound.py (each song's ensemble baked in an emptied
+  bank, acb53fd9: a full render with batch 1 outgrew the shared bank); tests
+  (new music-form.test.mjs; tracker.test.mjs's town without its form); validation/sound-baseline/ (the four songs).
+- **Batch 1** (Claude's drafts, named as placeholders):
+  - copperleaf: AABA (32 bars, ~87 s); B over IV-V-iii-vi-IV-V-ii-V, the music box's own walk; in B a flute an octave
+    under the tune and a glockenspiel now and then (at night a celesta). Its ensemble otherwise SND-11's and SND-13's.
+  - route: AABA (32 bars, ~63 s); B over vi-IV-I-V-vi-IV-ii-V; a spiccato ostinato in B (half at night).
+  - town: ABAB (32 bars, ~77 s); B over vi-ii-V-I-vi-ii-V-V; the new `town` ensemble: chip lead, accordion counter (the
+    tune in B), e-piano chords, walking bass, brush kit, glockenspiel in B; walk, rain and snow layers.
+  - city: ABA (24 bars, ~50 s); B over IV-bVII-I-vi-IV-bVII-V-V; the new `city` ensemble: chip lead over e-piano chords,
+    walking bass, a kit, soft strings and brass stabs in B; walk, rain and snow layers.
+- **Fingerprints**: the code commits (afca4762, dc19598f, 7934154c) moved none (`check-sound.py
+  --only=copperleaf,route,town,city,wild` at afca4762's tree: 35 fingerprints, 0 changed). The data commit (94123484) changes
+  exactly the four songs: the baseline written once with plain `--baseline` (ea4fd03f, 4259 s): 248 fingerprints,
+  copperleaf, route, town and city written again (town's and city's ensemble, night and layer renders new, 14), the
+  other 22 files byte for byte the same; no NaN; mono RMS of the re-arranged renders within 0.3-0.7 dB of before. The
+  first `--baseline` failed ("the ensemble of copperleaf did not bake (the budget?)": one shared bank for every song in
+  the page); fixed in the tool (acb53fd9), no render changed by it (the 22 files).
+- **Levels** (the loudness report's song rows, K-weighted, whole songs, before -> after): gb Copperleaf -33.6 -> -33.9
+  LUFS, the route -31.9 -> -31.7, town -31.5 -> -31.5, city -31.2 -> -31.2; on their ensembles the route -31.9 -> -31.6
+  (+0.3: within 0.5), Copperleaf -33.6 -> -33.3 (+0.3), town -31.5 (0.0 on its gb before), city -30.9 (+0.3). No trim
+  changed. The layered rows were not measured (see Risky).
+- **Memory** (Node, 48 kHz, a song's bars, then with every layer): Copperleaf 1.41 -> 2.23 MB (16 zones; 4.37 with every
+  layer), at night 1.01 -> 1.65; the route 0.83 -> 1.09 (2.83), at night 0.92 -> 1.18; town 2.10 (3.24), at night 2.36;
+  city 1.76 (2.76), at night 2.01; 50-350 ms of work each. Only the layers wanted bake.
+- **Risky or unfinished**:
+  - Claude can't hear: the arrangements are judged by numbers (levels, the plan's tests, no NaN in the renders); they are
+    named placeholders and first guesses: the owner's ears decide (the listening list).
+  - Songs are 2-4 times longer: each render in check-sound and the loudness report is too. `check-sound.py --loudness
+    --only=<songs>` (which also renders every world sound and every layer) ran past the 30-minute background limit
+    twice; the levels above come from its song rows run alone (a scratch wrapper around its `loudness`, world rows and
+    layers left out). Making the report faster is SND-15's (it was already over 90 minutes whole).
+  - Memory: a run's town node now bakes `town` (2.1 MB; it was gb), so beside a battle's zones and the stingers the
+    bank (8 MB) drops least-recently-played zones sooner there and more stingers play 8-bit on their first play. The hub
+    estimated at 5-6 MB from SND-11's browser measure, not measured in a browser here. SND-15 reads the phone's `bank`.
+  - The fills replace the drums from beat 3 or 4 of a section's last bar on every drums part with a kit but the walking
+    beat's (`walk` never fills); a layer's sleigh bells drop out for that half bar (they have no snare).
+  - The turnaround rewrites a section's last bar only when the hook didn't write it (sections of 7 bars or more).
+  - SND-13's "the arc is heard nowhere yet" still holds: the biome songs are batch 2 (SND-12b).
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `npm test` 2002 of 2002 (after main's
+  merge; an earlier run beside a render failed only the rules' 1,000-maps timing test); `node --test` tracker 36,
+  music-patterns, music-studio 17, sound, music-layers, sound-bake, music-form 14 (134 together); `npm run
+  check:modules`, `npm run check:data` (179 files fine), the check-data snapshot (unchanged). `check-sound.py
+  --only=copperleaf,route,town,city,wild` on the code (35, 0 changed); the baseline as above. `npm run check:smoke` 7
+  of 7 (at 7934154c). `check-studio-github.py --only=music`: ok (the Form step included). The full `npm run
+  check:quick` was started twice and not finished: the container restarted during the first, and the owner said to skip
+  the checks during the second, stopped at 31 minutes with 30 steps ok and 6 problems: Copperleaf's train_station in
+  the air, RL-8, room light, the lab's room at its door (main's, known), Battle music (the known timing flake under
+  load), and the Starters' battle rig buffers (not looked into). Song fingerprints, Run music and the debug menu steps
+  were not reached; `check-quick.py --steps=sound,song,music,"debug menu"` was not run. CI on PR #292: smoke red at
+  dc19598f, 7934154c and 310b9b69 on the bowl map's zoom ("never settled") and once Camera follow: the frame-timed steps
+  SND-13 already explained on the PR (main's own Check is red on its intermittent smoke steps too); nothing here touches
+  the map or the camera; not re-commented.
+- **Decided for the owner, to review**:
+  - The arrangements are Claude's drafts as named placeholders you edit in the Studio (as SND-4), loops of 16-32 bars.
+    As recommended.
+  - Batch 1 = the hub, the route and the towns: copperleaf AABA, route AABA, town ABAB, city ABA, with the B chords,
+    parts and ensembles above (sound-track.md "SND-12 as built, part 1"). Approve or change them in the Studio's Form
+    card and Instruments tab; GB Sounds compares.
+  - B sections have no written hook: their tune is the seeded walk over their chords (each has a placeholder hook name
+    so the Check lists it; draw one in the hook roll's section picker).
+  - Variation on repeats: the bar after the hook's repeat walked again and every other repeat's arpeggio an octave up
+    (not a whole new tune, which a song without a hook would become).
+  - Three fill shapes picked from the song's seed and the section's place (no random); softer in soft patterns; the
+    bass walks two scale steps up into the next chord; the tune ends a step above the next section's root.
+  - A part's `in` (sections it plays in), not in the plan: B's own instruments.
+  - Town and city get their own ensembles with walk, rain and snow layers (as the route's); no busker or storm parts.
+  - No trims changed (every song within 0.3 LU of its level before).
+  - SND-12 split: SND-12b (caves, biomes, the run's songs and their arc layers) and SND-12c (battles, bosses, the rest).
+- **The owner's listening list** (phone, silent switch OFF; the debug menu's Sound test -> a song "As its ensemble",
+  then GB Sounds; or in the game):
+  - Copperleaf (by day and at night), a route, a run's town: the A section twice, then B (its own chords and tune; the
+    flute and glockenspiel in Copperleaf's B, the string ostinato on the route), then A again; listen across each
+    section's end: the drum fill, the bass walking up, the tune leading into the next section.
+  - The second A: bar 7 differs, the arpeggio sits an octave higher.
+  - town and city on their new ensembles (accordion, e-piano, walking bass, brushes); walking, rain and snow layers.
+  - GB Sounds on: the same forms on the four chip voices.
+  - Studio (computer): the Form card on a song (+ A, + B, New section, the chords, New tune) and the hook roll's
+    section picker; the Check lists the placeholder arrangements and B sections.
+  - Export a debug log and read `audio.ensemble.section` (the section, its repeat, the bar of how many).
+  - Nothing new for the run's arc yet (SND-12b).
+- **Next**: SND-12b (batch 2: caves, biomes, the run's songs, so the arc's layers are heard), then SND-12c (battles,
+  bosses, the rest), then SND-15.
+
 ### Sound track SND-13 - layers in play: the walking beat, rain, snow, a storm and night, a battle that builds, the run's arc, the busker as you pass, the Sound test's layer switches - 2026-10-28
 Branch `track/sound`, the music lane (main merged first, 948eaa0f: HANDOFF kept both entries, art-code-refs made
 again; the world lane's last push merged at 9348a6ed; main merged again at the end, 8bd6032d: 51 commits, no sound
