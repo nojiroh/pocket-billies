@@ -90,9 +90,15 @@
   }
 }
 
-/* count: a number that just changed (the roll itself is pbCount in js/ui-kit.js) */
+/* count: a number that just changed, its pop at the end of the tick-up (UI-16a: --m-pop, the doc's small pop; the roll
+   is logic/motion.js's count, in ui.js and pb-coin). While it ticks (m-ticking) it takes its family's colour: --tick,
+   Moneys' value gold by default */
 .m-count {
-  animation: m-count var(--m-base) var(--spring);
+  animation: m-count var(--m-pop) var(--spring);
+  display: inline-block;
+}
+.m-ticking {
+  color: var(--tick, var(--sig-value-text, currentColor));
 }
 @keyframes m-count {
   40% {

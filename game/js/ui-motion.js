@@ -61,7 +61,7 @@ const pressMs = () => {
 };
 let pressed = /** @type {{ el: Element, k: { x: number, y: number }, a: Animation } | null} */ (null);
 /** where the last press was, for a gain that comes of it (coins fly from there to Moneys) */
-const lastPress = { rect: /** @type {DOMRect | null} */ (null), at: 0 };
+export const lastPress = { rect: /** @type {DOMRect | null} */ (null), at: 0 };
 function isDisabled(/** @type {Element} */ el) {
   const e = /** @type {any} */ (el);
   return !!(e.disabled || el.getAttribute('aria-disabled') === 'true' || el.hasAttribute('disabled'));
@@ -199,7 +199,7 @@ function gainTarget(k) {
 }
 /** a gain from a card or row (its rect, taken before the sheet closed) flies to its place @param {DOMRect | null} from
  * @param {string} k money, bag, perks... @param {string} icon a ui icon id */
-function pbGainFly(from, k, icon) {
+export function pbGainFly(from, k, icon) {
   const i = document.createElement('i');
   i.className = 'uico';
   i.style.cssText = `--ico:url('${uiIconURL(icon)}');width:28px;height:28px`;

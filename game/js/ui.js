@@ -7,7 +7,9 @@ import { $, $$ } from './util.js';
 import { LOCATIONS, RULES, START_NODE, TRAINERS } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
 import { formatNumber, makeBilly, plural, spawn } from './logic/rules.js';
-import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
+import { motionCountAt, motionCountMs } from './logic/motion.js';
+import { pbFloat, pbInboxDot, pbInboxPop, pbSound } from './ui-kit.js';
+import { lastPress, pbEnterRows, pbGainFly } from './ui-motion.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
   activeBattle,
@@ -23,7 +25,6 @@ import { pyramidHTML, uiIconHTML } from './art.js';
 import { LOOK_PRESETS, cleanLook, portraitHTML } from './person-art.js';
 import { openSettings } from './settings-screen.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
-import { EASE } from './battle-stage.js';
 import { environment, environmentIcon } from './environment.js';
 import { fishStart } from './fishing.js';
 import { battleResize, battleShell, tapMessage } from './battle.js';
@@ -142,6 +143,8 @@ export function render() {
   uiState.lastTab = T;
   app.innerHTML = `${topbar()}<main class="screen s-${T}${enter ? ' enter' + dir : ''}">${body}</main>`;
   updateNav(true);
+  /* UI-16a: a new tab's rows come in one after another (the Map keeps no entrance) */
+  if (enter && T !== 'map') pbEnterRows($('#app > .screen'));
   walkMapSync();
   document.body.classList.toggle('on-map', T === 'map');
   if (T === 'map') worldMapMount();
@@ -155,20 +158,31 @@ export function render() {
       to = +el.dataset.to,
       from = uiState.disp[k];
     uiState.disp[k] = to;
-    /* phase 06: money earned rises from the money chip instead of a toast */
-    if (k === 'tse' && from != null && to > from)
+    /* phase 06: money earned rises from the money chip instead of a toast. UI-16a: right after a press (a sale, a
+       reward, an event's answer) the coins fly there from what you pressed first */
+    if (k === 'tse' && from != null && to > from) {
       pbFloat(el.closest('.tb-chip') || el, '+' + plural(to - from, 'Money'));
+      if (lastPress.rect && performance.now() - lastPress.at < 1500) pbGainFly(lastPress.rect, 'money', 'coin');
+    }
     if (from == null || from === to || reducedMotion) {
       el.textContent = formatNumber(to);
       return;
     }
+    /* UI-16a: the shared count (logic/motion.js): 400-700 ms by the size of the change, in the value family's colour
+       while it ticks, a small pop and the count sound at the end */
     const t0 = performance.now(),
-      dur = 700;
+      dur = motionCountMs(from, to);
+    el.classList.add('m-ticking');
     const st = () => {
-      const q = Math.min(1, (performance.now() - t0) / dur),
-        v = from + (to - from) * EASE.out(q);
-      el.textContent = formatNumber(v);
+      const q = Math.min(1, (performance.now() - t0) / dur);
+      el.textContent = formatNumber(motionCountAt(from, to, q));
       if (q < 1 && el.isConnected) requestAnimationFrame(st);
+      else if (el.isConnected) {
+        el.classList.remove('m-ticking');
+        el.classList.add('m-count');
+        el.addEventListener('animationend', () => el.classList.remove('m-count'), { once: true });
+        pbSound('count');
+      }
     };
     st();
   });

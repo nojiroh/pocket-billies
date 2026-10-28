@@ -268,7 +268,7 @@ const GROUND_CENTER_X = 0.55,
   GROUND_TEXTURE_SIZE = 512,
   GROUND_TEXTURE_PX_PER_METER = 16;
 /* ---------- scene state ---------- */
-export const EASE = {
+const EASE = {
   lin: t => t,
   out: t => 1 - (1 - t) * (1 - t),
   in: t => t * t,
