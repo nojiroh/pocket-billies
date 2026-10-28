@@ -2,6 +2,94 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-10 - water: soundscape.json, emitters from the scene, a recipe per water kind, falls by height, the surf on the tide, rain on water, wading, Surf, fishing - 2026-10-28
+Branch `track/sound` (main merged first: already up to date; the local clone was stale and was reset to
+origin/track/sound before any edit). Started by the planning session under the owner's standing instruction
+(2026-10-27): no Plan Mode, plan below, recommended options taken. 12 change commits, one cause each, plus docs; tag
+`snd-10-done` (for the owner to push) on this session's last commit. PR #292. Details: sound-track.md "SND-10 as built".
+- **Plan**: (a) the beds' recipes to game/data/soundscape.json in a commit that changes nothing (the loudness report
+  identical), then its water half: banks, a recipe per water kind, river lines, falls, fountain, wake, rain on water;
+  (b) logic/soundscape.js (pure, seeded): cells from the renderer's water grid (or the tiles), emitters (shores, river
+  lines, falls by height and their pools, cascades, fountains), the nearest few per recipe in buckets, level by
+  distance, the air's low-pass; (c) water banks baked by logic/sound-bake.js through the tracker's bank (van den Doel
+  bubbles, Farnell's babble), a player in audio/, sound.js keeping thin calls; (d) wading, Surf, fishing, plops, rain on
+  water; (e) the Sound test's rows and the report's water rows at 1, 3 and 10 m, trims from it; (f) the Studio card;
+  check-sound on every commit in a worktree; docs.
+- **Changed**: new game/data/soundscape.json and game/data/schema/soundscape.schema.json (index.json, check-data.mjs,
+  game-data.js `SOUNDSCAPE`, the GameData type); new game/js/logic/soundscape.js, game/js/audio/soundscape-player.js,
+  game/js/soundscape-here.js (script tags on both pages where they are used; studio/js/logic-worker-modules.js);
+  game/js/logic/sound-bake.js (`bubble` and `babble` zones); game/js/audio/tracker.js (`bankAdd`, `bankBuffer`,
+  `sampleShot`, the World reverb send); game/js/logic/ambience-sound.js (`AMBIENCE_BEDS` moved to data,
+  `AMBIENCE_SOURCES` the fire alone); game/js/sound.js (thin calls: the player at initAmbience, `soundscapeHere` in
+  updateAmbience, the preview, `splash` and `fish` effects, wading in the footstep loop and no steps on Surf, plops by
+  size, the debug log's `water` line; `nearestWaterSound` gone); game/js/sound-test.js (a row per water recipe);
+  thin hooks in walk-view.js (surfMount), fishing.js, walk/effects.js, walk/water.js, town-square.js;
+  studio/js/music-editor.js (the World sounds card); tools/check-sound.py (the water rows), tools/check-studio-github.py
+  (the card), tools/test/ (soundscape.test.mjs new; sound-bake, tracker, ambience-sound, the check-data snapshot);
+  studio/art-code-refs.json.
+- **Fingerprints**: 194, **0 changed** on every commit (`check-sound.py --loudness`, each commit in its own worktree).
+  The move commit's report identical to the commit before; the next five too; from the player commit on, the report's
+  water lines change on purpose.
+- **Water loudness** (LU under the route song at 1 m / 3 m / 10 m; every one 12 LU or more under at 1 m, every loudest
+  3 s 8 or more; the full table in sound-track.md): brook -13.6/-15.9/-26.1; river -13.5/-15.7/-23.5; rapids
+  -13.1/-15.3/-23.3; a 6 m fall -13.5/-17.0/-27.9 and its pool -14.0/-17.7/-31.6; a 1.5 m fall -14.0/-18.5; the surf
+  -14.2/-16.3/-23.4 (its loudest 3 s -9.9); fountain -14.0/-17.9; hot spring -15.0/-19.4; reef -15.3/-17.5; lake
+  -15.8/-18.3; cave drips -15.9/-19.8; lava -15.9/-20.0; canal -18.0; rain on water -18.0; spring, marsh, pond, oasis
+  -19.0 to -19.6; bog -20.0; ice -28.2; Surf's wake -14.1. Copperleaf's square -12.8 (-11.2 before).
+- **Memory and cost** (headless Chromium, 44.1 kHz): the water's banks 1.32 MB; with the beds' noise and the tracker's
+  3.84 MB of the 6 MB budget (about 5.5 MB with SND-9's harp and impulse). Their bake about 75 ms of work in Node,
+  every step under 1.7 ms there; in a busy headless page a step ran 15-33 ms. Copperleaf's emitters (14,010 water
+  cells): 20.7 ms the first time, 2.3 ms warm, once per scene; the nearest voices 0.1 ms an update. Events about 45 a
+  second at the foot of test_water's fall.
+- **Risky or unfinished**:
+  - Claude can't hear: every water recipe is a port of SND-7's listening page judged by numbers; the owner's ears decide
+    (the debug menu's Sound test and the Studio's World sounds card play each).
+  - The first build of a big scene's emitters (Copperleaf 20.7 ms in headless Chromium, cold) runs in one go on the
+    main thread on arrival; a phone may take longer. Slice it if the Load track's hitch list shows it.
+  - A bake step ran 15-33 ms in a busy headless page although the same steps are under 2 ms in Node (the page's own
+    pauses, as SND-9 saw); the debug log's `bank.stepMaxMs` and `lastSlicesMs` show the phone's.
+  - Cave drips make the tracker's convolver (SND-9: 8-12 ms on the main thread once) the first time a cave's water is
+    heard.
+  - Copperleaf has no `falls` entry yet (WA-11 waits for the owner's yes on pictures): its fall sounds from the
+    recipe once placed; falls were tested in test_water and in the Sound test.
+  - Frogs, insects and birds by water stay SND-14's.
+  - Intermediate commit ef3ef5bc fails lint's art-code-refs check (studio/art-code-refs.json); the next commit
+    refreshes it. Every other check passes on each commit.
+  - CI `smoke` on PR #292: the failures that also fail on main (RL-8, the Studio's missing
+    `game/art/billionaires/*.png`, the landmark field's Auto) are explained on the PR already.
+- **Verified** (so far; the last checks are running and this line is updated when they finish): `npm run lint` and
+  `npm run typecheck` after every commit (the one art-code-refs exception above); `npm test` 1627 of 1627;
+  `npm run check:modules`, `npm run format:check`, `npm run check:data` (177 files fine); `check-sound.py --loudness`
+  on every commit up to fbb3ec3e: 194, 0 changed, the first six reports identical to the base's, no ceiling warning
+  from fbb3ec3e on; `npm run check:smoke` on e5dafaaf: no problems; `check-studio-github.py --only=music`: ok (the
+  World sounds card plays and stops); browser probes on test_water and Copperleaf (voices by place, every touch sound,
+  rain on water, no page errors).
+- **Decided for the owner, to review**:
+  - WA-8's water sounds moved here (recommended, already decided in SND-8a); WA-8 keeps the water phone pass and the
+    quick-check baseline (water-track.md's WA-8 row and Ask line say so).
+  - The Studio card made in this session (recommended), as a list of recipes with ▶ 1 m / 3 m / 10 m.
+  - Mine: the emitters read the renderer's water grid (as drawn), the tiles only without one; one voice per recipe, two
+    for the lines (brook, river, rapids, lake, reef, surf), at least 8 m apart; level 1 within 2 m, then 6 dB a doubling
+    (3.6 for lines), 0 at the range; air 16 kHz / (1 + d/4), at least 900 Hz; a fall's height √(h/3), at most 1.6× as
+    loud and 1.8× as far; falls from 3 m are "tall"; a river is a line 2.5 m wide or more; at most 48 events an update,
+    a bubble under 0.003 of its voice's level never made; banks: `drop` (rise 0.12) and `bubble` (0.7) zones every 6
+    semitones from midi 50 to 115, a 4 s babble loop; the coast-wide sea bed kept (SND-8a's, 0.2) under the surf; the
+    surf on the tide by the hour (9:00 and 21:00 highs, WA-4's cycle); the water rides the World slider; cave drips
+    send 0.65 to the reverb and set the cave's place, everything else the open air's; rain on water on every surface
+    but lava and ice; wading a splash by depth (0.12 at the edge to 0.5 at full depth) on the World bus; no footsteps
+    on Surf (the wake instead); fishing's sounds on the World bus like the steps; plops by size (a coin 0.12, a frog
+    0.3, a fish 0.4, a diving bird 0.55); the cave kind's recipe `drips`; the report's falls at 1.5 and 6 m.
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test, then the places): a brook, a
+  river and rapids at 1, 3 and 10 m; the sea at the shore and from far off (Copperleaf's beach, then inland); a
+  waterfall (6 m and 12 m) at its foot and from the top (and test_water's fall); a pond at night (the pond row with
+  "Crickets at night" after it); wading in and out of shallows; Surf on and off and riding; fishing (cast, a nibble,
+  the bite, reeling, the catch); "Rain on a lake" and real rain on Copperleaf's pond; cave drips. Listen for: far water
+  soft and low, near water bright but never louder than the music, no clicks or hiss, the river in front of you as
+  you walk beside it. Then export a debug log and check `audio`: `water` (voices, sources, events, dropped; the
+  scene's emitters and their ms) and `bank` (babble, bubble, drop all baked; stepMaxMs).
+- **Next**: SND-11 (stems and ensembles: the tick's patterns as pure functions, stems, `instruments` and `ensembles` in
+  music.json, `gb` reserved for today's code, GB Sounds, the first ensembles, the Studio's Instruments tab).
+
 ### Sound track SND-9 - bake and reverb: instruments from numbers, the tracker's bank, one reverb, a harp in the Sound test, a brightness fingerprint - 2026-10-28
 Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
 standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 9 change commits and the
