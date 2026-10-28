@@ -9,7 +9,7 @@
    hitTier's, a KO only a flag on top), and the full-screen flash limiter (flashGate).
    The engine's events are only read, never written. Effects draw no random numbers here.
    Logic only: no DOM, runs in Node (tools/test/battle-anims.test.mjs). */
-/** @import { BattleAnimsData, BattleAnimStep, BattleAnimKit, Move } from '../../types/game-data' */
+/** @import { BattleAnimsData, BattleAnimStep, BattleAnimKit, BattleAnimFamily, Move } from '../../types/game-data' */
 /**
  * @typedef {{ k: string, si?: number, ti?: number, mid?: string, dmg?: number, te?: number, crit?: boolean,
  *   miss?: boolean, blocked?: boolean, protect?: boolean, self?: boolean, spread?: boolean, part?: string }} MoveAn a move event's `an`
@@ -20,7 +20,7 @@
  * @typedef {BattleAnimStep & { at: number, i: number, sync: boolean, skip: 'run' | 'info' | 'drop' }} AnimStep a
  *   timeline's step: when, which repeat, played at once (no `at` in the data) or on the stage clock, and what a skip
  *   does to it
- * @typedef {{ id: string, kind: 'family' | 'scene', variant: 'full' | 'short', dur: number, hit: number,
+ * @typedef {{ id: string, kind: 'family' | 'scene', variant: 'full' | 'short' | 'miss', dur: number, hit: number,
  *   tier: string, long: boolean, kit: string | null, steps: AnimStep[], repeat?: boolean }} AnimTimeline the kit: the
  *   type kit it plays in (battleAnims.json types; VFX-11); repeat: a scene's short version because it played before
  *   in this battle (VFX-17)
@@ -134,13 +134,21 @@ export function battleAnimOutcome(an, M) {
 
 /** which animation a move event plays: the move's own `anim` (a family or a scene) when it lands, else its outcome's
  * or category's default. null when the data has neither
- * @param {MoveAn} an @param {Move} M @param {BattleAnimsData} A @returns {{ id: string, kind: 'family' | 'scene' } | null} */
+ * @param {MoveAn} an @param {Move} M @param {BattleAnimsData} A @returns {{ id: string, kind: 'family' | 'scene', miss?: boolean } | null} */
 export function battleAnimFor(an, M, A) {
   if (!A || !M) return null;
   const out = battleAnimOutcome(an, M);
   if (out === M.c && M.anim) {
     if (A.scenes[M.anim]) return { id: M.anim, kind: 'scene' };
     if (A.families[M.anim]) return { id: M.anim, kind: 'family' };
+  }
+  /* VFX-13: a miss plays its family's own whiff when the family has one (a scene's, its family's) */
+  if (out === 'miss' && M.anim) {
+    /* a scene names its family (VFX-17's `family`) */
+    const S = /** @type {any} */ (A.scenes[M.anim]),
+      fid = S && S.family ? S.family : M.anim,
+      F = A.families[fid];
+    if (F && F.miss) return { id: fid, kind: 'family', miss: true };
   }
   const id = A.defaults[/** @type {keyof BattleAnimsData['defaults']} */ (out)];
   return id && A.families[id] ? { id, kind: 'family' } : null;
@@ -319,7 +327,9 @@ export function stepOn(S, G, type, q) {
 export function battleAnimTimeline(an, M, ctx, A) {
   const pick = battleSceneFallback(battleAnimFor(an, M, A), ctx, A);
   if (!pick) return null;
-  const src = (pick.kind === 'scene' ? A.scenes : A.families)[pick.id],
+  const fam = (pick.kind === 'scene' ? A.scenes : A.families)[pick.id],
+    /* VFX-13: a family's miss is a timeline of its own (no Faster variant: its time is today's miss's) */
+    src = /** @type {BattleAnimFamily} */ ((pick.miss && fam.miss) || fam),
     /* VFX-17: a scene seen before in this battle plays its short version (the prop and the hit, no wind-up) */
     repeat = pick.kind === 'scene' && !!ctx.seen,
     short = !!src.short && ((ctx.speed || 1) >= A.shortSpeed || repeat),
@@ -351,7 +361,7 @@ export function battleAnimTimeline(an, M, ctx, A) {
   return {
     id: pick.id,
     kind: pick.kind,
-    variant: short ? 'short' : 'full',
+    variant: pick.miss ? 'miss' : short ? 'short' : 'full',
     dur,
     hit: V.hit >= 999 ? V.hit : Math.min(V.hit, dur),
     tier: hitTier(an),
@@ -553,8 +563,8 @@ export function battlePartOffset(part) {
    model that flies on a path (battlePathAt) to its place, holds, then erodes in 12 fps steps. */
 /** the animation a move plays once a scene's fallback is applied: a scene whose models can't be drawn, or any scene
  * under Reduced motion, plays its family
- * @param {{ id: string, kind: 'family' | 'scene' } | null} pick @param {AnimCtx} ctx @param {BattleAnimsData} A
- * @returns {{ id: string, kind: 'family' | 'scene' } | null} */
+ * @param {{ id: string, kind: 'family' | 'scene', miss?: boolean } | null} pick @param {AnimCtx} ctx
+ * @param {BattleAnimsData} A @returns {{ id: string, kind: 'family' | 'scene', miss?: boolean } | null} */
 export function battleSceneFallback(pick, ctx, A) {
   if (!pick || pick.kind !== 'scene') return pick;
   const S = A.scenes[pick.id];

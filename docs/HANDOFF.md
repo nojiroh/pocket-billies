@@ -467,6 +467,130 @@ untouched; battle3dHit, which feeds `uHit`, takes one more input).
 - Next: the next main-line session merges this branch into `track/vfx` (and VFX-16's by the recipe above). VFX-12's
   dials for `events`. Worth an engine fix (own commit, golden record remade): Scatter Stones on its user's side.
 
+### Hub track - the hub island polish: a natural mountain, the pond's fall, the station inland, boarding, the portal, Kappi framed - 2026-10-28
+Branch `claude/youthful-heisenberg-gq6ovv` (the cloud session's own; main merged in at the start). Plan approved in Plan
+Mode; the owner's notes in one session (docs/phases/hub-track.md "The hub island polish"; the water track's WA-11 done
+here). Tag `hub-polish-done` (for the owner to push) on this session's last commit.
+- Changed:
+  - Engine: a river's tiles are never the sea's in the tide (walk/sea-tide.js `tideCells` takes a running-water test,
+    ground-mesh.js passes the river's cells): the river no longer dries at low tide or floods its banks at high tide.
+    Raising the pond would not have fixed it (the cause was the tide's sea test, `kindAt(..., false)`).
+  - Island generator dials (island-gen.js, the Studio's hub editor): `mountain.smooth`, `curve`, `foot`, `rock`,
+    `shift`, `trail`; the old behaviour by default (the generator's own output for the old dials is unchanged).
+  - Copperleaf's ground, rebuilt by the tools: a broad mountain (peak about 24 m, a grassy foot to 40% of its height,
+    then a few rock ledges, lower spurs round it, no summit trail); tools/patch-copperleaf-terrain.mjs: the old
+    mountain's shelf and trail steps left in the locked town zone cleared and its edge eased, gentle rolling land (up to
+    0.9 m) faded out by plots, streets, water and sand, the pond lifted 3.2 m onto a terrace with a rock face, a 3.5 m
+    `falls` entry where the river leaves into a plunge pool by the bridge, a white-water stream down the mountain's foot
+    into the pond.
+  - Skyline Station inland (tools/patch-station.mjs): on the heather north of the library, facing east (out from the
+    island's middle, to the orbit camera), its own track only, a path from the street to its steps; the portal about
+    25 m up over the town's east side, 38 m out (at 55 m, over the sea, the haze swallowed it); station-place.mjs and
+    stationLandmarks take a placement's own rail and portal.
+  - The ride (logic/train-path.js `trainBoardPath`, `trainWalkAt`; train-ride.js): you walk from where you stand up the
+    steps onto the platform's top, between the benches, to its edge and in (3.2 s); home the same way back (2.4 s). The
+    ride's shots moved clear of the shop and the cottages (the glide-in from over the roofs).
+  - The portal (tools/build-station-trains.py, rerun): no rings, lamps or crystals; its layers lit at every hour (a
+    model layer's `day`), a tunnel-like core and an inner swirl for depth; walk/effects.js fx `portal`: a soft glow,
+    mist curling round its rim in front and behind, motes drawn in, glints; its light shines by day too (scenery
+    `glow.light` 0.5, walk/lighting.js). The dithered halo picture is gone. Tried and dropped: brighter layers that
+    cut through the haze (glow 2): the bloom whited out the whole frame.
+  - The opening (tools/data/copperleaf-town.json `opening`, opening.json): the shots aim between Chosen and Kappi
+    (`camera hazelRuns ... on hazel assist` from Kappi's entrance, `kappiTalk ... on Kappi Chosen` for Kappi's
+    introduction, `standing ... on Kappi Chosen` for the bath line); while the dressing room is up Kappi steps to a new
+    spot `beside` Chosen, clear of him from the new `kappiTalk` shot. Tried and dropped: a low close shot as Kappi
+    comes in (Kappi at 2 m faded as a near-camera sprite; at 3.5 m lost behind the door's dust). tools/look-opening.py
+    --lines: a picture at each line; its "a line on screen" test was `cutscene.say.on`, which never existed (the fall's
+    pictures always ran their 40 s out): now `cutscene.say`.
+  - Tests: sea-tide (a river into the sea), island-gen (the shape dials), hub-island (the summit walked to only with a
+    trail), hub-doors (the station inland, its portal at its landmark), island-dress (cairns only with a trail),
+    train-path (the boarding walk). Tools: island-shots pond, pond-fall, mountain and portal views; check-fast holds
+    the lift at 7.6 s and walks the orbit's circle at 32 m (at 30 m it now ends at the terrace's rock face);
+    look-train-ride's moments. After the rebuild `clear-windows --fix` moved the great oak off a cottage window (back
+    where it stood).
+- Found, not changed:
+  - tools/data/copperleaf-town.json still had Hazel in Granny Juniper's lines (the rename changed only the map); a
+    rebuild would have put Hazel back. Fixed in the source (its own commit).
+  - Chosen's opening line "See the airship at the mast? It flies out past the island" is out of date (runs leave by
+    sky train from the station); player-facing words, so left for the owner.
+  - There was never a ground lock (`islandGen.lock`); the town, barn and pasture zones' `lock` is what a rebuild keeps.
+    A patch inside the town zone stays through a rebuild, so the terrain patch refuses a map that already has the
+    pond's fall: rebuild from the map before it.
+- Risky:
+  - The portal's mist and glow are about 40 more quads a frame where it is in view; not measured on a phone.
+  - By day the portal is soft and pastel through the haze (pictures); at night it is a bright swirl. The world map
+    may show no portal now (it draws models without their picture layers; its only solid part is a hidden speck).
+  - The station's old headland is now open meadow; the great oak and the dressing re-rolled with the rebuild.
+  - The summit spot (the orbit's pivot) stays where it was, now on the mountain's south shoulder: the camera's middle
+    is unchanged on purpose (the doors face out from it).
+- Verified: lint, typecheck, check:modules, format:check, check:data (178 files), build; `npm test` 1856/1856 (one
+  timing test, "1,000 maps in under 1.5 seconds", failed once while two browsers drew, passed on an idle machine);
+  `npm run test:slow` 109/109; check-fast "The train ride" (departure 10421 ms, the carriage, home gold then battered),
+  the island's walking checks and the orbit (0.79 rad round at 32 m); `check:smoke` 6 of 7 (the seventh, a window
+  behind the great oak, fixed with clear-windows --fix and checked again); the full quick check 33 of 41 (2074 s): of
+  its 8 problems, "nothing floats" (the station, a check bug fixed in this session), the lab's room in place, Postcards
+  and Granny Juniper pass run alone (249 s, no problems); RL-8 "view never showed", RT-2 "no battle started", room
+  light and the battle music's drums are main's, as earlier entries record. Pictures (scratchpad, not committed):
+  island-shots pond, pond-fall, mountain, station, station-near, top-down, portal by day and at 23:00; the ride (the
+  walk up the steps and across the platform); the opening at every line (Kappi beside Chosen).
+- Next: the owner's look at the pictures and a phone test; then the ground lock (`islandGen.lock`, the Studio's "Lock
+  the ground") once the island is right; HB-10f, HB-9.
+- For the owner on the phone: walk round the island (the mountain, the pond's terrace and fall, the river at low and
+  high tide), start a run from the new station (the walk up the steps, the portal), come home, and New game's opening
+  (Kappi's shots); send the debug log.
+
+### UI fixes - the bottom bar, the Actions bar, battles on wide screens - 2026-10-28
+Branch `claude/determined-meitner-r58xng` (the session's own; made from main at 485674b5, main 5b0d43e1 merged in at
+7a341ed6). Plan approved in Plan Mode; one session from the owner's phone notes, no phase file. UI and layout only (no
+save or data change but one preference). No tag: not a phase or track step. Draft PR #309 into main.
+- Changed:
+  - The bottom bar (ui-run-kit.js pb-nav-bar, shell.css, tokens.css): one registered value, `--nav-k` (`@property`,
+    0 full, 1 compact), eases on `--m-base`. The tile, the bar's height and outline (`--rise`), and each tab's place,
+    size and word size are mixes by it, so the shrink is one smooth motion. Before, the tabs' layout, the words, the
+    outline and `--nav-h` snapped. The page's `--nav-h` follows its own `--nav-kr` (not inherited). Compact tabs keep
+    their words: 60x56 px, the compact bar 84 px (was 46 px, icon only, a 76 px bar).
+  - The open tab: a rounded gold pill that fades and grows in. Before, a slanted bar with `pbSlideBar`'s slanted
+    ghost; the owner called them angular. Pressing a tab squashes that tab, not the whole bar (ui-motion.js
+    `PRESS_INNER`).
+  - Settings > Controls: "Shrink the bar while walking" (`preferences.navShrink`, 'off' keeps it full; on by
+    default). minimap.js `minimapCompact` reads it.
+  - Actions (walk-tab.js, walk-tab.css, ui.js): `#walkSheet` is now a fixed row of small buttons (`.walk-tray`, a
+    `role=toolbar` div, not a `<pb-sheet>`) right over the bottom bar. It follows the shrink. While it's open, the
+    Actions button is lifted by its height (`--tray-k`), and the button toggles it. Buttons, in order:
+    - on a run: the day (a tap toasts today's and tomorrow's weather; the bar stays open) and the map;
+    - in the hub: Start a run (a toast when nobody can come), and the buildings' markers;
+    - the place's shops, clinic and trainers (`nodeActionItems`, which the map card's `nodeActions` now draws from);
+    - one per wild Billie, nearest first (`walkView.enc`). A tap walks you up to it and the battle starts there, as
+      a tap on its "?" does (`walkToEncounter`). The owner asked for this.
+    Esc closes it, Tab opens and closes it, and the arrows (now left and right too) move between buttons. The old
+    sheet's notes (blurb, trainers' hints) and the encounter cards' CSS are gone.
+  - Battles on wide screens (battle-stage.js `battleStageLayout`, battle.js `battleCardColumn`, `floatTick`): in
+    landscape with the cards in the scene, the fighters' frame and the card column next to it (32 px apart) are
+    centred together, and the camera keeps the fighters inside the frame (`L.free` narrowed to it, `L.beside`).
+    Before, at 1920 px the cards stood at x 1376-1862, ~300 px from the action. A phone on its side has no spare
+    room and is laid out as before.
+  - check-quick's Actions step ("Actions bar: ...") and TESTING.md follow. The step now also checks the bar is a row
+    over the bottom bar, nearest-first order, and the walk to a wild Billie. CHANGELOG, BRANCHES.
+- Found, not changed (fail on main 5b0d43e1 too, checked in a clean worktree):
+  - "Terraces ... nothing floats": copperleaf train_station@167.3,100.8 in the air.
+  - The phone step's walk screen shows 21 pieces on main against a ceiling of 18 (this branch: 20).
+  - "Walking left and right ...": every settings tab overflows the phone by 7 px (more than 4).
+  - RL-8: "crossed into Thicket Route but its view never showed".
+  RT-2 and Granny Juniper failed once under the full run's load and passed alone.
+- Risky: `@property` and `:has()` need iOS 16.4+; older iOS shrinks at once, as before. The battle's new layout
+  wasn't seen on a tablet in landscape (1024x768 and the like). Frame cost of easing `--nav-k` (an inherited value
+  restyles the bar's shadow tree for 240 ms) not measured on a phone.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build clean; unit tests 1854 pass (after the
+  merge); the Actions step alone passes; full quick check before the merge 35 of 42, the rest as above; smoke after
+  the merge 7 of 7 in 344 s (the phone step's piece counts within their ceilings this time). Screenshots: phone 390x844 (the bar full, part way and compact; Actions open in the hub
+  and on a run), battle at 1280x720, 1920x1080, 2560x1080 and 844x390.
+- Next: the owner's phone check. Then, if the labels in the compact bar feel busy, the words could go back to
+  icon-only at the new size.
+- For the owner on the phone: walk a few seconds and stop (the bar should fold and unfold smoothly, its buttons
+  still worded); Settings > Controls > Shrink the bar while walking off; tap Actions in Copperleaf and on a run, tap
+  a "?" button (you walk to it, then battle); a battle on a wide screen or a tablet on its side. Send a debug log
+  if anything stutters.
+
 ### VFX track VFX-11 - Families x types: 16 families, 11 type kits, every move's anim, projectiles, rays and lights in GL - 2026-10-28
 Branch `track/vfx`, the main line of wave 2 (VFX-14 on `claude/vfx-14-statuses` and VFX-16 on
 `claude/vfx-16-battle-flow` ran beside it; both were told the sections before and the commits after). Main was

@@ -45,6 +45,7 @@ expose({
   animKoAhead: [() => animKoAhead, v => (animKoAhead = v)],
   animLinePoint: [() => animLinePoint, v => (animLinePoint = v)],
   animLog: [() => animLog, v => (animLog = v)],
+  animPast: [() => animPast, v => (animPast = v)],
   animPoint: [() => animPoint, v => (animPoint = v)],
   animScar: [() => animScar, v => (animScar = v)],
   animSceneStep: [() => animSceneStep, v => (animSceneStep = v)],
@@ -465,7 +466,7 @@ function animFamilyStep(S, c, i) {
     }
     case 'ray': {
       const A = c.P.attacker,
-        T = c.P.target,
+        T = c.P[S.to || 'target'] || c.P.target,
         life = S.life || 360,
         St = { anim: 'beam_strip', ramp: S.ramp || c.type, spr: K.typeSprite(c.type, 0) };
       K.addParticle({
@@ -731,8 +732,15 @@ function battleAnimPlay(an, ev) {
       type: M.t,
       /* the move's type rides on a copy: the engine's event isn't written */
       hitAn: { ...an, t: M.t },
-      P: { attacker: A, target: Ta, subject: an.self ? A : Ta, foe: foe === ti ? Ta : actorCenter(foe) },
-      idx: { attacker: si, target: ti, subject: an.self ? si : ti, foe },
+      P: {
+        attacker: A,
+        target: Ta,
+        subject: an.self ? A : Ta,
+        foe: foe === ti ? Ta : actorCenter(foe),
+        /* VFX-13: where a miss goes: beside the target across the line of the attack, a little past it and up */
+        past: animPast(A, Ta),
+      },
+      idx: { attacker: si, target: ti, subject: an.self ? si : ti, foe, past: ti },
       foes: foes.length ? foes : [ti],
       one: false,
       kit: (T.kit && BATTLE_ANIMS.types && BATTLE_ANIMS.types[T.kit]) || null,
@@ -762,6 +770,13 @@ function battleAnimPlay(an, ev) {
   return { dur: T.dur, hit: T.hit };
 }
 
+/** VFX-13: a spot a miss goes to: 0.8 m beside the target across the line from the attacker, 0.4 m past it, 0.4 up */
+function animPast(A, T) {
+  const dx = T.x - A.x,
+    dz = T.z - A.z,
+    L = Math.hypot(dx, dz) || 1;
+  return { x: T.x + (dz / L) * 0.8 + (dx / L) * 0.4, y: T.y + 0.4, z: T.z - (dx / L) * 0.8 + (dz / L) * 0.4 };
+}
 /** VFX-13: koAhead for the line playing, read from the battle's lines; a preview's line (the Studio's Battle effects,
  * tools/look-battle-anims.py) may carry its own (`ka`) */
 function animKoAhead(ev) {

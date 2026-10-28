@@ -9,6 +9,14 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **A smoother bottom bar and a quick Actions bar** (the owner's phone notes, 2026-10-28): the bottom bar folds down
+  while you walk in one smooth motion, and its buttons keep their words when small. Settings > Controls has "Shrink the
+  bar while walking" to keep it full size. The selected tab is a soft gold pill, and pressing a tab squashes only that
+  tab. Actions now opens a row of small buttons right above the bar instead of a sheet over half the screen: the run's
+  day and the map, or Start a run and the hub's buildings, the place's shop, clinic and trainers, and every wild Billie
+  hiding here, nearest first. Tap one and you walk up to it and the battle starts.
+- **Battles on wide screens** keep the fighters and the move menu together in the middle; the menu used to sit against
+  the right edge, far from the action.
 - **Friend trades** (online track ON-4): trade Billies, ready eggs and spare robot parts with a friend, up to three
   each side. Open it from a friend's row (Trainer > Friends) or a Billie's sheet (Trade…), put in what you give, see
   what they put in, both say Ready, then Trade!. If one side's game closes midway, the trade finishes the next time

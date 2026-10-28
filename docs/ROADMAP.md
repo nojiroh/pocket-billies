@@ -71,7 +71,7 @@ town node needs it.
 - **Water track** (docs/phases/water-track.md, the owner's brief and answers 2026-10-25): pixel water on the 32 texels
   a metre grid (hybrid: banded tones, stepped frames, smooth reflections), waterfalls as set pieces with plunge pools
   and mist, rivers that run downhill, the sea and the coast, wading, Surf and a Waterfall climb, new kinds, water
-  life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done 2026-10-25; WA-1 (pixel water) done 2026-10-25; WA-2a (waterfalls drawn, the flow map) done 2026-10-25; WA-2b (waterfalls placed) done 2026-10-25; WA-3a (rivers that run downhill) done 2026-10-25; WA-6a (wading) done 2026-10-25; WA-6b (Surf and the Waterfall climb) done 2026-10-25; WA-5a (new kinds' play, weather on water, shallows for others) done 2026-10-25; WA-4 (the sea and the coast) done 2026-10-25; WA-7 (the world map's and battles' water) done 2026-10-26; WA-5b (kinds as a texture, water life) done 2026-10-26; WA-9 (the Studio's water tools: a river brush, a waterfall placer, the kind painter, kept in the dials) done 2026-10-26; WA-10 (Copperleaf's river, mouth and outflow: kinds by connectivity, estuaries, smooth river levels, the outflow and a smaller square patched) done 2026-10-26; next WA-11 (the hub island's waterfall, the owner's pick 2026-10-27), then WA-8 alone (its water sounds were made in the sound track's SND-10, 2026-10-28; WA-8 keeps the phone pass and the baseline);
+  life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done 2026-10-25; WA-1 (pixel water) done 2026-10-25; WA-2a (waterfalls drawn, the flow map) done 2026-10-25; WA-2b (waterfalls placed) done 2026-10-25; WA-3a (rivers that run downhill) done 2026-10-25; WA-6a (wading) done 2026-10-25; WA-6b (Surf and the Waterfall climb) done 2026-10-25; WA-5a (new kinds' play, weather on water, shallows for others) done 2026-10-25; WA-4 (the sea and the coast) done 2026-10-25; WA-7 (the world map's and battles' water) done 2026-10-26; WA-5b (kinds as a texture, water life) done 2026-10-26; WA-9 (the Studio's water tools: a river brush, a waterfall placer, the kind painter, kept in the dials) done 2026-10-26; WA-10 (Copperleaf's river, mouth and outflow: kinds by connectivity, estuaries, smooth river levels, the outflow and a smaller square patched) done 2026-10-26; WA-11 (the hub island's waterfall) done 2026-10-28 in the hub island polish session (the pond on a terrace, its fall into a pool by the bridge, a stream down the mountain's foot; the river no longer rises and falls with the tide); next WA-8 alone (its water sounds were made in the sound track's SND-10, 2026-10-28; WA-8 keeps the phone pass and the baseline);
   then three lanes at once (renderer, generation, play; rounds 1-4; a fourth, world map and battles, in round 3), WA-8
   alone last. Takes over TR-6's waterfalls, TR-10's water and "rivers downhill" from the terrain track. Tags
   `wa-N-done`. Branch `track/water`.
@@ -287,7 +287,11 @@ town node needs it.
   visiting) done 2026-10-26 on `track/hub`; HB-10d (win bunting, loss gossip, the fountain's Chapter 2 look, the
   notice board, the fountain's coin gamble, the busker's slot) done 2026-10-27 on `track/hub`; HB-10e (festivals: four
   seasonal weeks by the ranch clock, two milestones, a market day every 3rd return, the festival market in Scrap) done
-  2026-10-27 on `track/hub`; HB-10f next. Tags
+  2026-10-27 on `track/hub`; HB-10f next. The hub island polish (the owner's notes, 2026-10-28, on
+  `claude/youthful-heisenberg-gq6ovv`): a broad, natural mountain with no summit trail (new generator dials), gentle
+  rolling land, the pond on a terrace with its fall and a stream feeding it (WA-11), the river off the tide, Skyline
+  Station moved inland facing the town, the walk to board up its steps, the portal pure light, Kappi framed in the
+  opening. Tags
   `hb-N-done`. Branch `track/hub`.
 - **Island track** (docs/phases/island-track.md, the owner's brief 2026-10-22): Copperleaf becomes a real island, one
   map with an orbit camera round a mountain, forest, cove, beaches, room for the town and the barn's pasture. IS-0

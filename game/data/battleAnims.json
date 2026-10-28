@@ -106,6 +106,20 @@
      {"do":"camHome","d":360,"delay":260},
      {"at":680,"do":"focus","on":"wide"}
     ]
+   },
+   "miss": {
+    "about": "VFX-13: a charge that runs past: a long lunge overshoots, dust where it stops",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"do":"lunge","dx":40,"dy":-2,"dur":140,"ease":"in","delay":0,"backDur":220,"backAt":220},
+     {"at":160,"do":"dust","n":5,"life":420,"color":"dust"},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":110,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":110,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
+    ]
    }
   },
   "dash": {
@@ -134,6 +148,20 @@
      {"at":130,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":220},
      {"at":640,"do":"focus","on":"wide"}
+    ]
+   },
+   "miss": {
+    "about": "VFX-13: too fast, and nobody there: a dash past, the target already aside",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"do":"lunge","dx":44,"dy":-2,"dur":90,"ease":"in","delay":0,"backDur":200,"backAt":170,"dash":1},
+     {"at":100,"do":"dust","n":3,"life":360,"color":"dust"},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":40,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":40,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
     ]
    }
   },
@@ -168,6 +196,21 @@
      {"do":"camHome","d":360,"delay":320},
      {"at":740,"do":"focus","on":"wide"}
     ]
+   },
+   "miss": {
+    "about": "VFX-13: down from above onto empty ground: dust beside the target",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":40,"do":"jump","on":"attacker","dy":70,"up":150,"hold":80,"down":160},
+     {"at":300,"do":"impact","on":"past","spr":"dust","feet":1,"k":1,"life":420,"ramp":"None"},
+     {"at":300,"do":"groundRing","on":"target","color":"dust","r1":1.2,"life":360},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":180,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":180,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
+    ]
    }
   },
   "strike": {
@@ -198,6 +241,20 @@
      {"do":"camHome","d":360,"delay":240},
      {"at":660,"do":"focus","on":"wide"}
     ]
+   },
+   "miss": {
+    "about": "VFX-13: a jab into the air: a puff where the target was",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"do":"lunge","dx":26,"dy":-3,"dur":110,"ease":"in","delay":60,"backDur":180,"backAt":200},
+     {"at":180,"do":"impact","on":"past","spr":"small","k":1,"life":220,"ramp":"None"},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":140,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":140,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
+    ]
    }
   },
   "slash": {
@@ -226,6 +283,20 @@
      {"at":200,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":260},
      {"at":680,"do":"focus","on":"wide"}
+    ]
+   },
+   "miss": {
+    "about": "VFX-13: the arc cuts the air beside the target",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"do":"lunge","dx":18,"dy":-2,"dur":100,"ease":"in","delay":40,"backDur":180,"backAt":180},
+     {"at":170,"do":"impact","on":"past","spr":"slash_arc","k":1,"life":300},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":130,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":130,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
     ]
    }
   },
@@ -261,6 +332,22 @@
      {"do":"camHome","d":360,"delay":300},
      {"at":720,"do":"focus","on":"wide"}
     ]
+   },
+   "miss": {
+    "about": "VFX-13: a stomp the target hops over",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":40,"do":"jump","on":"attacker","dy":14,"up":80,"hold":0,"down":70},
+     {"at":190,"do":"groundRing","on":"attacker","color":"dust","r1":1.4,"life":420},
+     {"at":190,"do":"impact","on":"attacker","spr":"dust","feet":1,"k":1,"life":420,"ramp":"Ground"},
+     {"at":170,"do":"jump","on":"target","dy":18,"up":90,"hold":40,"down":90},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":170,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":170,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
+    ]
    }
   },
   "flurry": {
@@ -291,6 +378,20 @@
      {"at":160,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":300},
      {"at":720,"do":"focus","on":"wide"}
+    ]
+   },
+   "miss": {
+    "about": "VFX-13: three jabs on the beat, each one dodged",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":0,"n":3,"every":84,"do":"lunge","dx":18,"dy":-2,"dur":32,"ease":"in","delay":0,"backDur":40,"backAt":40},
+     {"at":32,"n":3,"every":84,"do":"impact","on":"past","spr":"small","k":1,"life":160,"jitter":0.4,"ramp":"None"},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":20,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":20,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
     ]
    }
   },
@@ -369,6 +470,34 @@
      {"do":"camHome","d":360,"delay":400},
      {"at":820,"do":"focus","on":"wide"}
     ]
+   },
+   "miss": {
+    "about": "VFX-13: the shot flies past the target",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":100,"do":"kit","part":"cast","on":"attacker"},
+     {
+      "at": 120,
+      "do": "projectile",
+      "spr": "shot",
+      "path": "kit",
+      "from": "attacker",
+      "to": "past",
+      "ms": 320,
+      "k": 1,
+      "trail": 3,
+      "lit": 1,
+      "h": 0.9,
+      "amp": 0.35,
+      "turns": 2
+     },
+     {"at":150,"do":"toTarget","d":180},
+     {"at":210,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":210,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
+    ]
    }
   },
   "beam": {
@@ -399,6 +528,20 @@
      {"at":360,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":400},
      {"at":820,"do":"focus","on":"wide"}
+    ]
+   },
+   "miss": {
+    "about": "VFX-13: the ray sweeps by beside the target",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":100,"do":"kit","part":"cast","on":"attacker"},
+     {"at":140,"do":"ray","to":"past","life":300,"k":1},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":120,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":120,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
     ]
    }
   },
@@ -453,6 +596,32 @@
      {"do":"camHome","d":360,"delay":400},
      {"at":820,"do":"focus","on":"wide"}
     ]
+   },
+   "miss": {
+    "about": "VFX-13: the jet goes wide",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":100,"do":"kit","part":"cast","on":"attacker"},
+     {
+      "at": 130,
+      "n": 6,
+      "every": 30,
+      "do": "spray",
+      "on": "attacker",
+      "toward": "past",
+      "spr": "bits",
+      "n2": 2,
+      "speed": 5.5,
+      "cone": 0.4,
+      "life": 320
+     },
+     {"at":150,"do":"toTarget","d":180},
+     {"at":150,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":150,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
+    ]
    }
   },
   "wave": {
@@ -483,6 +652,20 @@
      {"do":"camHome","d":360,"delay":400},
      {"at":820,"do":"focus","on":"wide"}
     ]
+   },
+   "miss": {
+    "about": "VFX-13: the pulses pass the target by",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":100,"do":"kit","part":"cast","on":"attacker"},
+     {"at":130,"n":2,"every":90,"do":"pulse","to":"past","color":"kit","r0":0.25,"r1":0.8,"ms":280},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":170,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":170,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
+    ]
    }
   },
   "storm": {
@@ -511,6 +694,20 @@
      {"at":380,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":400},
      {"at":820,"do":"focus","on":"wide"}
+    ]
+   },
+   "miss": {
+    "about": "VFX-13: it comes down beside the target",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":100,"do":"kit","part":"cast","on":"attacker"},
+     {"at":140,"n":6,"every":40,"do":"rain","on":"past","spr":"bits","r":0.6,"h":2,"life":340},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":160,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":160,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
     ]
    }
   },
@@ -597,6 +794,34 @@
      {"at":400,"do":"blink","on":"target","ms":200,"if":["!self"]},
      {"do":"camHome","d":360,"delay":340},
      {"at":760,"do":"focus","on":"wide"}
+    ]
+   },
+   "miss": {
+    "about": "VFX-13: the curse fizzles out short of the target: a puff of smoke",
+    "dur": 760,
+    "hit": 999,
+    "steps": [
+     {"at":100,"do":"kit","part":"cast","on":"attacker"},
+     {
+      "at": 140,
+      "do": "projectile",
+      "spr": "small",
+      "path": "kit",
+      "from": "attacker",
+      "to": "past",
+      "ms": 260,
+      "k": 1,
+      "trail": 2,
+      "h": 0.7,
+      "amp": 0.3,
+      "turns": 2
+     },
+     {"at":400,"do":"impact","on":"past","spr":"smoke","k":1,"life":420,"ramp":"None"},
+     {"at":150,"do":"toTarget","d":180},
+     {"at":200,"do":"dodge","dx":18,"dur":100,"backDur":180,"backAt":160},
+     {"at":200,"do":"pop","on":"target","pop":"miss"},
+     {"do":"camHome","d":420,"delay":560},
+     {"at":900,"do":"focus","on":"wide"}
     ]
    }
   },

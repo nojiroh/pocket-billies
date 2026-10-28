@@ -249,6 +249,59 @@ test('VFX-13 drain and recoil: a heal after a draining hit, a hurt after a crash
   assert.equal(lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: drain, dmg: 9 }), 0, MOVES), null, 'a move is no heal');
 });
 
+test('VFX-13 misses per family: each attacking family whiffs its own way, in a miss’s time; the rest take whiff', () => {
+  const own = [
+    'charge',
+    'dash',
+    'dive',
+    'strike',
+    'slash',
+    'quake',
+    'flurry',
+    'shot',
+    'beam',
+    'breath',
+    'wave',
+    'storm',
+    'hex',
+  ];
+  for (const [id, F] of Object.entries(A.families))
+    assert.equal(!!F.miss, own.includes(id), `${id}: a miss of its own`);
+  for (const mid of Object.keys(MOVES)) {
+    const M = MOVES[mid],
+      an = moveAn(mid, 'miss');
+    if (!an.miss) continue;
+    /* VFX-17: a scene's move whiffs as its family does */
+    const fid = A.scenes[M.anim] ? A.scenes[M.anim].family : M.anim,
+      T = battleAnimTimeline(an, M, { gl: true, q: 0, speed: 1 }, A),
+      F = A.families[fid];
+    assert.equal(T.id, F && F.miss ? fid : 'whiff', mid);
+    assert.equal(T.variant, F && F.miss ? 'miss' : 'full', mid);
+    assert.deepEqual([T.dur, T.hit], [760, 999], `${mid}: a miss’s time`);
+    assert.ok(
+      T.steps.some(S => S.do === 'pop' && S.pop === 'miss'),
+      `${mid} says Miss`
+    );
+    assert.ok(
+      T.steps.some(S => S.do === 'dodge'),
+      `${mid}: the target sidesteps`
+    );
+    assert.ok(!T.steps.some(S => S.do === 'hit'), `${mid}: hits nothing`);
+  }
+  const shot = Object.keys(MOVES).find(k => MOVES[k].anim === 'shot');
+  assert.ok(
+    battleAnimTimeline(moveAn(shot, 'miss'), MOVES[shot], {}, A).steps.some(
+      S => S.do === 'projectile' && S.to === 'past'
+    ),
+    'a shot flies past'
+  );
+  assert.equal(
+    battleAnimTimeline(moveAn(shot, 'miss'), MOVES[shot], { speed: 2.2 }, A).variant,
+    'miss',
+    'no Faster miss'
+  );
+});
+
 test('the 8 preview outcomes land in their tiers (VFX-12)', () => {
   const H = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && !(MOVES[k].fx || {}).protect),
     tiers = OUTCOMES.map(r => hitTier(moveAn(H, r)));

@@ -1728,7 +1728,10 @@ function propModelImageItems(it, out) {
       /* phase 20 R3: at rest (no wind) when the model itself stands still (walk/shadows.js, "Far shadows hold still") */
       rest: it.rest !== undefined && !(it.M && it.M.bob) ? it.rest * (L.sway ?? 1) : undefined,
       sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
-      glow: L.glow ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) : 1) : 0,
+      /* a layer's day: how much it glows by day too (1: lit at every hour, the sky portal's layers) */
+      glow: L.glow
+        ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) * (1 - (L.day || 0)) + (L.day || 0) : 1)
+        : 0,
       noRecv: L.recv === 0,
       /* phase 09 batch 10: metres toward the eye (along the camera's line of sight), so a conifer's tiers, centred on
          its modelled mast, stay in front of it from every side (walk/sprites.js uDZ) */

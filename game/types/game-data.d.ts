@@ -2914,6 +2914,8 @@ export interface BattleAnimTimeline {
 export interface BattleAnimFamily extends BattleAnimTimeline {
   about?: string;
   short?: BattleAnimTimeline;
+  /** VFX-13: its own miss (a whiff that fits it) */
+  miss?: BattleAnimTimeline;
 }
 /** VFX-17: a signature scene: a family's shape, the family it plays where its models can't be drawn or under Reduced
  * motion, and its short version (the prop and the hit) for its second use in a battle and the Faster speed */
@@ -2928,7 +2930,8 @@ export interface BattleAnimStep {
   every?: number;
   if?: string[];
   types?: string[];
-  on?: 'attacker' | 'target' | 'subject' | 'wide';
+  /** VFX-13: past, a spot beside and behind the target (where a miss goes) */
+  on?: 'attacker' | 'target' | 'subject' | 'wide' | 'past';
   color?: string;
   pop?: 'miss' | 'hedged';
   pose?: string;

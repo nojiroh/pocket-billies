@@ -75,8 +75,11 @@ test('the timeline: a scene on the 3D stage with its models; its family under Re
   /* a scene with no model plays with props off; Reduced motion still takes its family */
   assert.equal(battleAnimTimeline(hitAn('siu'), MOVES.siu, { props: false }, A).kind, 'scene');
   assert.equal(battleAnimTimeline(hitAn('siu'), MOVES.siu, { reduced: true }, A).id, 'dive');
-  /* a miss plays the miss, never the scene */
-  assert.equal(battleAnimFor({ ...hitAn('siu'), miss: true, dmg: 0 }, MOVES.siu, A).id, A.defaults.miss);
+  /* a miss never plays the scene: its family's whiff (VFX-13), else the default miss */
+  const miss = battleAnimFor({ ...hitAn('siu'), miss: true, dmg: 0 }, MOVES.siu, A),
+    F = A.families[A.scenes.siu.family];
+  assert.equal(miss.kind, 'family');
+  assert.equal(miss.id, F && F.miss ? A.scenes.siu.family : A.defaults.miss);
   assert.equal(battleSceneFallback(null, {}, A), null);
   for (const id of SCENES) {
     const any = battleAnimTimeline(hitAn(id), MOVES[id], { reduced: true }, A);
