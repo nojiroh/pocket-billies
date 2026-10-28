@@ -9,6 +9,14 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **A smoother bottom bar and a quick Actions bar** (the owner's phone notes, 2026-10-28): the bottom bar folds down
+  while you walk in one smooth motion, and its buttons keep their words when small. Settings > Controls has "Shrink the
+  bar while walking" to keep it full size. The selected tab is a soft gold pill, and pressing a tab squashes only that
+  tab. Actions now opens a row of small buttons right above the bar instead of a sheet over half the screen: the run's
+  day and the map, or Start a run and the hub's buildings, the place's shop, clinic and trainers, and every wild Billie
+  hiding here, nearest first. Tap one and you walk up to it and the battle starts.
+- **Battles on wide screens** keep the fighters and the move menu together in the middle; the menu used to sit against
+  the right edge, far from the action.
 - **People face the way you see them** (characters track CH-1): on Copperleaf's island, in rooms and whenever you turn
   the camera, you and the people round you show the side that faces the camera: walking away from it shows your back,
   and someone turning to you shows their front. Coming out of Kappi's lab, or any door that faces east or west, you
