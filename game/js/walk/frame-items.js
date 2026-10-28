@@ -69,7 +69,7 @@ import {
   stillPropState,
   windLeanAt,
 } from './prop-look.js';
-import { figureChoice, figureFolk, figurePersonPicture, figureStyle, figuresOn } from '../figures.js';
+import { figureFolk, figureFor, figurePersonPicture, figureStyle, figuresOn } from '../figures.js';
 /* eslint-disable no-func-assign */
 expose({
   SUNKEN_FOOTPRINT_PROPS: [() => SUNKEN_FOOTPRINT_PROPS],
@@ -317,8 +317,23 @@ export function gatherFrameItems(st, C, PPU, C0) {
         Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5
           ? seenToward(P.x - pos[0], P.z - pos[1], yaw)
           : seenWord(n, yaw) || 'down';
-    const nset = fr[dir] || fr.down,
-      nim = typeof pickWalkFrame === 'function' ? pickWalkFrame(nset, false, 0) : nset[0];
+    const nset = fr[dir] || fr.down;
+    let nim = typeof pickWalkFrame === 'function' ? pickWalkFrame(nset, false, 0) : nset[0];
+    /* CH-3b: with Engine > People > Figures and Everyone else on, a map's people are their own figures, turned to you
+       within 4.5 m (their own way further off), idling at their own time */
+    if (figuresOn() && figureFolk()) {
+      const near = Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5,
+        g = figurePersonPicture(
+          n,
+          figureFor(n.who),
+          t,
+          'idle',
+          0,
+          near ? Math.atan2(P.x - pos[0], P.z - pos[1]) : personHeading(n, yaw),
+          figureStyle()
+        );
+      if (g) nim = g;
+    }
     if (nim) out.push(personItem('npc', nim, pos[0], pos[1], C0, { n }));
     npcPos.push([n, pos]);
     if (n.boss && !n.done) walkRenderer.bossAt = { id: n.id, x: pos[0], z: pos[1] };
@@ -416,12 +431,12 @@ export function gatherFrameItems(st, C, PPU, C0) {
         const w = personBattlePose(who, 'front', 'cheer', 0, (1.4 - f.waveT) * 1000);
         if (w) fim = w;
       }
-      /* CH-3: townsfolk as figures too (Engine > People > Townsfolk as figures): yours, strolling by the clock, cheering
-         for the wave hello */
+      /* CH-3: townsfolk as figures too (Engine > People > Everyone else as figures), strolling by the clock, cheering
+         for the wave hello; CH-3b: each their own look (a resident theirs, a townsperson their seed's) */
       if (figuresOn() && figureFolk()) {
         const g = figurePersonPicture(
           f,
-          figureChoice(),
+          figureFor(who),
           t,
           f.waveT > 0 ? 'cheer' : f.walk ? 'walk' : 'idle',
           (figureTick(t) / FIGURE_FPS) * 1.4,
@@ -448,7 +463,9 @@ export function gatherFrameItems(st, C, PPU, C0) {
               : personHeading({ dir: L.dir || 'down' }, seenYaw()),
           act = L.walk ? (L.run ? 'run' : 'walk') : L.act || 'idle',
           pace = (figureTick(t) / FIGURE_FPS) * WALK_SPEED * (L.run ? RUN_FACTOR : 1),
-          im = figurePersonPicture(L, L.figure, t, act, pace, head, L.style === 'smooth' ? 'smooth' : 'pixel');
+          /* CH-3b: `figure: 'look'` with a `who` is that person's own figure (the figure kit) */
+          name = L.figure === 'look' && typeof L.who === 'string' ? figureFor(L.who) : L.figure,
+          im = figurePersonPicture(L, name, t, act, pace, head, L.style === 'smooth' ? 'smooth' : 'pixel');
         if (im) out.push(personItem('line', im, L.x, L.z, C0, { line: i }));
         return;
       }
@@ -502,7 +519,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
       fig = figuresOn()
         ? figurePersonPicture(
             P,
-            figureChoice(),
+            figureFor(st.who),
             t,
             P.walk || P.hop ? (P.running ? 'run' : 'walk') : 'idle',
             P.gait || 0,
@@ -533,7 +550,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
     if (mt) {
       out.push(mt.it);
       me.y += mt.lift;
-      me.im = (fig && figurePersonPicture(P, figureChoice(), t, 'sit', 0, figHead, figureStyle())) || set[0];
+      me.im = (fig && figurePersonPicture(P, figureFor(st.who), t, 'sit', 0, figHead, figureStyle())) || set[0];
       me.z -= 0.02;
     }
     out.push(me);

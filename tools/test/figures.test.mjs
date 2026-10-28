@@ -267,7 +267,8 @@ test('figures: at most 600 pictures kept, the longest unused going first', () =>
 });
 
 test('figures: a figure made from a model (the stand-in): its triangles by index, its texture, a joint each', () => {
-  const was2 = G.artImg;
+  const was2 = G.artImg,
+    wasChoice = G.figureChoice;
   try {
     const D = freshBaker(),
       file = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/art/figures/rogue.json'), 'utf8'));
@@ -306,7 +307,9 @@ test('figures: a figure made from a model (the stand-in): its triangles by index
     G.gpuState.fr++;
     assert.ok(G.figurePersonPicture({}, 'rogue', 0, 'cheer', 0, Math.PI));
     assert.ok(G.figurePersonPicture({}, 'rogue', 0, 'dance', 0, Math.PI));
-    /* in battle: at 64 px a metre, square to the level camera, the throw by how far through it the battle is */
+    /* in battle: at 64 px a metre, square to the level camera, the throw by how far through it the battle is (you
+       as the stand-in: Engine > People > Your figure; CH-3b's default is your own look) */
+    G.figureChoice = () => 'rogue';
     G.gpuState.fr++;
     const T = {},
       bp = G.figureBattlePicture(T, 0, 0, 'throw', 0.5);
@@ -324,6 +327,7 @@ test('figures: a figure made from a model (the stand-in): its triangles by index
   } finally {
     G.document.createElement = was;
     G.artImg = was2;
+    G.figureChoice = wasChoice;
     delete G.FIGURE_DEFS.rogue;
   }
 });
@@ -367,5 +371,46 @@ test('figures: at most 48 MB of pictures kept: big plain 3D pictures go sooner',
     assert.equal(G.figureReport().mb, 0);
   } finally {
     G.document.createElement = was;
+  }
+});
+
+test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, Kappi the capybara', () => {
+  const was3 = [G.lookOf, G.figureChoice, G.figureItems],
+    W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+    looks = {
+      me: { body: {}, skin: '#E6B08A', wear: { hair: 'hair_short', top: 'tee' } },
+      clerk: { body: {}, skin: '#E6B08A', wear: { hair: 'hair_bun', top: 'longsleeve', glasses: 'glasses_round' } },
+      kappi: { name: 'Kappi', creature: { rig: 'kappi', ht: 0.8 } },
+    };
+  try {
+    const D = freshBaker();
+    G.lookOf = who => looks[who === 'boy' || who === 'girl' ? 'me' : who];
+    G.figureItems = () => W.items;
+    G.figureChoice = () => 'look';
+    assert.equal(G.figureFor('clerk'), 'look:clerk');
+    assert.equal(G.figureFor('folk:12'), 'look:folk:12');
+    const me = G.figureFor('boy');
+    assert.ok(me.startsWith('look:me#'));
+    assert.equal(G.figureFor('girl'), me, 'boy, girl and me are your look');
+    looks.me = { ...looks.me, wear: { ...looks.me.wear, top: 'tank' } };
+    assert.notEqual(G.figureFor('me'), me, 'a new look, a new figure');
+    G.figureChoice = () => 'mannequin';
+    assert.equal(G.figureFor('me'), 'mannequin', 'or the spike’s figure you picked');
+    /* built by the kit, baked as a person's picture; Kappi on four legs */
+    const im = G.figurePersonPicture({}, 'look:clerk', 0, 'idle', 0, Math.PI);
+    assert.ok(im && im.ppm === 32 && im.figure === 'look:clerk');
+    assert.ok(im.x.fills.length >= 6, 'a face: eyes, glints, irises, a mouth, glasses');
+    assert.ok(G.FIGURE_DEFS['look:clerk'].F.kit, 'the head and build the kit chose');
+    G.gpuState.fr++;
+    assert.ok(G.figurePersonPicture({}, 'look:kappi', 0, 'walk', 0.6, Math.PI));
+    assert.ok(G.FIGURE_DEFS['look:kappi'].F.parts.some(p => p.id === 'legBR'));
+    /* the card fits a cheer's raised arms */
+    const ext = G.FIGURE_DEFS['look:clerk'].ext;
+    assert.ok(ext.top > G.FIGURE_DEFS['look:clerk'].F.height, `${ext.top}`);
+    assert.ok(D.made.gl.calls.some(c => c[0] === 'drawArrays'));
+  } finally {
+    G.document.createElement = was;
+    [G.lookOf, G.figureChoice, G.figureItems] = was3;
+    for (const k of Object.keys(G.FIGURE_DEFS)) if (k.startsWith('look:')) delete G.FIGURE_DEFS[k];
   }
 });

@@ -84,6 +84,7 @@ expose({
   figureFromFile: [() => figureFromFile, v => (figureFromFile = v)],
   figureGait: [() => figureGait],
   figureGl: [() => figureGl, v => (figureGl = v)],
+  figureItems: [() => figureItems, v => (figureItems = v)],
   figureLast: [() => figureLast],
   figureLoad: [() => figureLoad, v => (figureLoad = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
@@ -145,7 +146,7 @@ export function figuresOn() {
 }
 /** the figure you are (Engine > People > Your figure): 'look', your own look through the figure kit (CH-3b), or
  * the spike's mannequin or stand-in */
-export function figureChoice() {
+function figureChoice() {
   const v = typeof engineSetting === 'function' ? engineSetting('people', 'figure') : null;
   return v === 'mannequin' || v in FIGURE_FILES ? v : 'look';
 }
@@ -157,7 +158,7 @@ const FIGURE_LOOK_NAMES = new Map();
  * 'folk:<seed>', a friend), `look:me#<look>` for you ('boy', 'girl' or 'me'), or the spike's figure for you when
  * Engine > People > Your figure picks one
  */
-function figureFor(who) {
+export function figureFor(who) {
   if (who === 'boy' || who === 'girl' || who === 'me') {
     const c = figureChoice();
     if (c !== 'look') return c;
@@ -187,18 +188,23 @@ function figureDef(name) {
   if (name.startsWith('look:')) {
     const who = name.slice(5).split('#')[0],
       L = typeof lookOf === 'function' ? lookOf(who) : null,
-      W = typeof wardrobeData === 'function' ? wardrobeData() : null;
-    if (!L || (!L.creature && !W)) return null;
+      items = figureItems();
+    if (!L || (!L.creature && !items)) return null;
     const p = typeof PEOPLE !== 'undefined' && PEOPLE[who],
       F = L.creature
         ? kappiFigure({ name })
-        : lookFigure(L, W.items, { name, seed: figureSeed(who), figure: p && p.figure ? p.figure : undefined });
+        : lookFigure(L, items, { name, seed: figureSeed(who), figure: p && p.figure ? p.figure : undefined });
     return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: kitExtent(F) });
   }
   if (!(name in FIGURE_FILES)) return (FIGURE_DEFS[name] = false);
   FIGURE_DEFS[name] = null;
   figureLoad(name);
   return null;
+}
+/** the wardrobe's items (their default colours), for the figure kit; null before the game data is in */
+function figureItems() {
+  const W = typeof wardrobeData === 'function' ? wardrobeData() : null;
+  return W ? W.items : null;
 }
 /** a figure's file, fetched once (inline in a single-file build: a data: link, decoded here) */
 function figureLoad(name) {
@@ -638,7 +644,8 @@ export function figurePersonPicture(rec, name, t, act, gait, heading, style = 'p
     frame;
   if (Fig.kind === 'code') {
     /* CH-3b: a kit figure cheers and sits too; each breathes at its own time, not in step with the crowd */
-    clip = act === 'walk' || act === 'run' ? 'walk' : act === 'cheer' || act === 'sit' ? act : 'idle';
+    clip =
+      act === 'walk' || act === 'run' ? 'walk' : act === 'cheer' || act === 'sit' || act === 'throw' ? act : 'idle';
     frame = clipFrameAt(clip, t + (figureSeed(name) % 2700), g.gait);
   } else {
     if (!Fig.clips[clip]) clip = act === 'run' && Fig.clips.walk ? 'walk' : 'idle';

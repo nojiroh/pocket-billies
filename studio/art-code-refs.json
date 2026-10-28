@@ -91,13 +91,13 @@
   {
    "p": "figures/rogue.json",
    "at": [
-    "game/js/figures.js:112"
+    "game/js/figures.js:113"
    ]
   },
   {
    "p": "figures/rogue.png",
    "at": [
-    "game/js/figures.js:113"
+    "game/js/figures.js:114"
    ]
   },
   {
@@ -1697,8 +1697,8 @@
   ],
   "down": [
    "game/js/battle-stage.js:2303",
-   "game/js/cutscene/director.js:131",
-   "game/js/cutscene/director.js:167",
+   "game/js/cutscene/director.js:132",
+   "game/js/cutscene/director.js:168",
    "game/js/cutscene/stage.js:119",
    "game/js/engine/post-effects.js:470",
    "game/js/engine/post-effects.js:474",
@@ -1734,8 +1734,8 @@
    "game/js/walk-view.js:3851",
    "game/js/walk-view.js:4172",
    "game/js/walk/frame-items.js:319",
-   "game/js/walk/frame-items.js:448",
-   "game/js/walk/frame-items.js:466"
+   "game/js/walk/frame-items.js:463",
+   "game/js/walk/frame-items.js:483"
   ],
   "drop": [
    "game/js/boot.js:163",
@@ -1745,7 +1745,7 @@
    "game/js/map-tab.js:148"
   ],
   "eye": [
-   "game/js/figures.js:467",
+   "game/js/figures.js:473",
    "game/js/logic/figure-kit.js:994",
    "game/js/logic/figure-kit.js:996",
    "game/js/logic/figure-kit.js:1130",
@@ -1937,7 +1937,7 @@
    "game/js/walk-tab.js:233"
   ],
   "sparkle": [
-   "game/js/cutscene/director.js:266",
+   "game/js/cutscene/director.js:281",
    "game/js/logic/cutscene-set.js:44",
    "game/js/lore.js:195",
    "game/js/lore.js:197",
@@ -1965,7 +1965,7 @@
    "game/js/augment-screen.js:148",
    "game/js/augment-screen.js:259",
    "game/js/battle-stage.js:2303",
-   "game/js/cutscene/director.js:167",
+   "game/js/cutscene/director.js:168",
    "game/js/engine/post-effects.js:478",
    "game/js/engine/post-effects.js:580",
    "game/js/fishing.js:171",

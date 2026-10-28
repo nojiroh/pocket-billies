@@ -8,13 +8,14 @@
 import { expose } from '../test-globals.js';
 import { landing, landingFrame, openingFall, provide } from '../hooks.js';
 import { $, clamp } from '../util.js';
-import { copiedAnchor, faceToward, seenWord } from '../logic/person-view.js';
+import { copiedAnchor, faceToward, personHeading, seenWord } from '../logic/person-view.js';
 import { reducedMotion } from '../game-state.js';
 import { makeCanvas } from '../art.js';
 import { personBattlePose, personWalkFrames } from '../person-art.js';
 import { particleSprite } from '../battle-stage.js';
 import { stopWalkView, walkData, walkView } from '../walk-view.js';
 import { walkRenderer } from '../walk/walk-state.js';
+import { figureFolk, figureFor, figurePersonPicture, figureStyle, figuresOn } from '../figures.js';
 import { personItem } from '../walk/frame-items.js';
 import { talkBox, talkHide, talkLine } from '../talk.js';
 /* eslint-disable no-func-assign */
@@ -169,6 +170,20 @@ function cutscenePersonItem(a, t, C0, yaw = 0) {
     /* CH-1: a side view as drawn faces right (person-art.js personFrame; the walk frames mirror it for 'side') */
     if (seen === 'side') im = cutsceneMirrored(im);
   } else im = (personWalkFrames(a.who)[seen] || personWalkFrames(a.who).down)[0];
+  /* CH-3b: with Engine > People > Figures and Everyone else on, an actor is their own figure: walking by the distance
+     walked, throwing, cheering (a react too), else idling; turned as the shot sees them */
+  if (typeof figuresOn === 'function' && figuresOn() && figureFolk() && typeof a.who === 'string') {
+    const act = a.walk
+        ? 'walk'
+        : a.act === 'throw'
+          ? 'throw'
+          : a.act === 'cheer' || a.act === 'react'
+            ? 'cheer'
+            : 'idle',
+      gait = a.walk ? Math.hypot(a.x - a.walk.x0, a.z - a.walk.z0) : 0,
+      g = figurePersonPicture(a, figureFor(a.who), t, act, gait, personHeading(a, yaw), figureStyle());
+    if (g) im = g;
+  }
   return personItem('actor', a.dark ? cutsceneDark(im) : im, a.x, a.z, C0, {});
 }
 /* a picture of a person, flat dark (a silhouette) or mirrored, made once per picture; CH-1: the copy keeps the
