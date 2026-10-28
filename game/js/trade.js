@@ -55,6 +55,7 @@ import { friendShownName, friends, friendsDb, friendsOn } from './friends.js';
 /* eslint-disable no-func-assign */
 expose({
   TRADE_EVO_MS: [() => TRADE_EVO_MS],
+  TRADE_TICK_MS: [() => TRADE_TICK_MS],
   serverTime: [() => serverTime],
   trade: [() => trade],
   tradeAct: [() => tradeAct, v => (tradeAct = v)],
@@ -91,7 +92,8 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ tradeRowNote, tradeSheet, tradeStart });
 /* to-module: end */
-const TRADE_EVO_MS = 800;
+const TRADE_EVO_MS = 800,
+  TRADE_TICK_MS = 60000;
 const trade = {
   /** id -> the offer as read (ta / tb in ms) */
   offers: {},
@@ -103,6 +105,8 @@ const trade = {
   /** uids of Billies that arrived by trade and evolve by being acquired, waiting for the sheet to be free */
   evo: [],
   evoT: 0,
+  /** the local re-check (a step that waited for the end of a run runs once you're home; no reads) */
+  tick: 0,
 };
 
 /** whether trades may reach the database now: signed in with friends started, never during the self-test */
@@ -175,6 +179,8 @@ function tradeThingHTML(e, i = -1, mine = false) {
 function tradeStart() {
   if (!tradeLive() || trade.unsub.length) return;
   const db = friendsDb();
+  clearInterval(trade.tick);
+  trade.tick = setInterval(tradeAdvanceAll, TRADE_TICK_MS);
   for (const side of ['a', 'b'])
     trade.unsub.push(
       db
@@ -201,6 +207,7 @@ function tradeStart() {
 }
 /** stop watching (sign-out) */
 function tradeStop() {
+  clearInterval(trade.tick);
   for (const f of trade.unsub) f();
   trade.unsub = [];
   trade.offers = {};
@@ -364,6 +371,7 @@ async function tradeGiveSet(u, give) {
   const o = tradeOffer(u);
   try {
     if (o && !o.x) await tradeWrite(o, 'give', { give, name: tradeMe().n });
+    else if (o && !offerGone(o)) toast('The last trade with this friend is still settling. Try again in a moment.');
     else {
       /* a closed one goes first; a new one starts at version 1 with a fresh stamp */
       if (o) await friendsDb().collection('offers').doc(offerId(o.a, o.b)).delete();
