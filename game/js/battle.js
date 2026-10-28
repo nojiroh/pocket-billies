@@ -710,7 +710,7 @@ function koThisEvent(si) {
    size follows the hit, the largest on a KO (SY-2, logic/hit-numbers.js), the kind's colour on top */
 function hudPop(si, text, kind, w) {
   const L = $('#pops');
-  if (!L || !battleStage.L || (reducedMotion && kind === 'tag')) return;
+  if (!L || !battleStage.L || (reducedMotion && String(kind).split(' ')[0] === 'tag')) return;
   const q = battleStageToCss(actorTop(si));
   if (!q) return;
   const e = document.createElement('div');
