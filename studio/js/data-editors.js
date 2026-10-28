@@ -8,6 +8,7 @@ import {
   artPaint,
   artPicSrc,
   artPictures,
+  heldItemHTML,
   iconEditOpen,
   iconSrc,
   loadWardrobe,
@@ -1096,7 +1097,7 @@ SECTIONS.items = () => {
         )
   )}
   ${grid(numberField('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), numberField('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), selectField('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOptions()], { none: 'Nothing', opt: 1 }), numberField('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), checkboxField('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }), numberField('Repairs robot parts', `${p}.repair`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Phase 17: fixes this share of each part of one robot (1 = all).' }))}
-  ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row">${itemArtButtonsHTML(k, I)}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
+  ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}${heldItemHTML(k, I)}<div class="seg-row">${itemArtButtonsHTML(k, I)}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
     })
     .join('');
   const pyramids = Object.entries(D.pyramids)

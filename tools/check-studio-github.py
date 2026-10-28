@@ -2699,7 +2699,29 @@ def items_steps(pg, errs):
     E("undo(); undo()"); time.sleep(0.4)
     E("ACTIONS.icClose()")
     if E(f"'img' in studioState.D.items[{json.dumps(held)}]") or E("studioState.textDirty.size"): errs.append('items: undo did not take Draw one back')
-    print(f'items: the Potion’s picture at 72 and 36 px with Edit art (opens it), {held} drawn from blank with Draw one; all undone', flush=True)
+    # PK-10: a held item's tier and rows: a row's kind changed (the row takes that kind's fields), a row added, a plain
+    # item made a held one; all undone
+    E("void openSection('items')"); time.sleep(0.4)
+    hk = E("Object.keys(studioState.D.items).find(k => (studioState.D.items[k].hold || []).length === 1)")
+    if not hk: errs.append('items: no held item with one row to edit'); return
+    sel = f"({row % json.dumps(hk)}).querySelector('select[data-held-kind]')"
+    if not E(f"!!{sel}") or not E(f"!!({row % json.dumps(hk)}).querySelector('[data-p=\"items.{hk}.rarity\"]')"):
+        errs.append(f'items: the held item {hk} shows no kind select or tier'); return
+    steps0, before = E("studioState.undo.length"), E(f"JSON.stringify(studioState.D.items[{json.dumps(hk)}])")
+    E(f"(s => {{ s.value = 'xp'; s.dispatchEvent(new Event('change', {{ bubbles: true }})); }})({sel})"); time.sleep(0.4)
+    if E(f"JSON.stringify(studioState.D.items[{json.dumps(hk)}].hold[0])") != '{"kind":"xp","mult":1.1}' or not E(f"!!document.querySelector('[data-p=\"items.{hk}.hold.0.mult\"]')"):
+        errs.append(f"items: changing {hk}'s row to xp made {E(f'JSON.stringify(studioState.D.items[{json.dumps(hk)}].hold)')}")
+    E(f"ACTIONS.heldRowAdd({{ k: {json.dumps(hk)} }})"); time.sleep(0.3)
+    if E(f"studioState.D.items[{json.dumps(hk)}].hold.length") != 2 or E(f"({row % json.dumps(hk)}).querySelectorAll('[data-held-row]').length") != 2:
+        errs.append('items: + Add an effect did not add a held row')
+    plain = E("Object.keys(studioState.D.items).find(k => !studioState.D.items[k].hold && !studioState.D.items[k].hp && !studioState.D.items[k].revive && !studioState.D.items[k].cure && !studioState.D.items[k].hpAll)") or 'bell'
+    E(f"ACTIONS.heldMake({{ k: {json.dumps(plain)} }})"); time.sleep(0.3)
+    if not E(f"!!({row % json.dumps(plain)}).querySelector('select[data-held-kind]')"): errs.append(f'items: Make it a held item did not give {plain} a row')
+    time.sleep(0.6)  # the last edits' undo step is made 450 ms after them (studio-app.js commit)
+    while E("studioState.undo.length") > steps0: E("undo()"); time.sleep(0.15)
+    time.sleep(0.3)
+    if E(f"JSON.stringify(studioState.D.items[{json.dumps(hk)}])") != before or E(f"'hold' in studioState.D.items[{json.dumps(plain)}]"): errs.append('items: undo did not take the held edits back')
+    print(f'items: the Potion’s picture at 72 and 36 px with Edit art (opens it), {held} drawn from blank with Draw one; {hk}’s held row changed and added, {plain} made a held item; all undone', flush=True)
 
 
 def atlas_steps(pg, errs):
