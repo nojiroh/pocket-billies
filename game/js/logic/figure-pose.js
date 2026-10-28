@@ -28,6 +28,7 @@ expose({
   CLIP_FRAMES: [() => CLIP_FRAMES],
   FIGURE_BANDS: [() => FIGURE_BANDS],
   FIGURE_FPS: [() => FIGURE_FPS],
+  FIGURE_JOINTED: [() => FIGURE_JOINTED],
   FIGURE_LIGHT: [() => FIGURE_LIGHT],
   FIGURE_PAL_MAX: [() => FIGURE_PAL_MAX],
   OUTLINE_RGB: [() => OUTLINE_RGB],
@@ -49,6 +50,8 @@ expose({
   figureDark: [() => figureDark, v => (figureDark = v)],
   // @ts-expect-error -- replaced on purpose
   figureFaceMarks: [() => figureFaceMarks, v => (figureFaceMarks = v)],
+  // @ts-expect-error -- replaced on purpose
+  figureGpuMesh: [() => figureGpuMesh, v => (figureGpuMesh = v)],
   // @ts-expect-error -- replaced on purpose
   figureKey: [() => figureKey, v => (figureKey = v)],
   // @ts-expect-error -- replaced on purpose
@@ -112,7 +115,7 @@ export const WALK_CYCLE_M = 2.4;
 /** frames in each clip */
 export const CLIP_FRAMES = Object.freeze({ idle: 16, walk: 8, cheer: 8, throw: 8, sit: 1 });
 /** the most colours a figure's parts may use (the baker's palette: three shades each) */
-export const FIGURE_PAL_MAX = 20;
+export const FIGURE_PAL_MAX = 28;
 /** the clock poses step on (frames a second) */
 export const FIGURE_FPS = 12;
 /** the tilt is stepped by this much (radians: 2 degrees), so zooming between stops bakes a few views, not hundreds */
@@ -150,7 +153,7 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86,
  * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour; `stripe` bands it
  * in a second colour every `every` metres of its height (from `from`) */
 /** @typedef {{ part: string, kind: string, at: Vec3, n: Vec3, w: number, h: number, col?: string,
- *   hollow?: boolean, min?: number, narrow?: boolean, shut?: boolean, glint?: boolean, shape?: 'oval' | 'arc' | 'cap' }}
+ *   hollow?: boolean, min?: number, narrow?: boolean, shut?: boolean, glint?: boolean, shape?: 'oval' | 'arc' | 'cap' | 'slant', dir?: number, t?: number }}
  * FaceMark
  * a mark painted on the picture in whole pixels: on part `part` at `at`, facing `n`, w by h metres, in colour `col`
  * (else the figure's colour named as its kind); `hollow` paints only its edge (a glasses frame); `min` how much it
@@ -901,6 +904,43 @@ export function finerShape(sh, k) {
   return o;
 }
 
+/** the parts a pose moves (figurePose): the root, and these; every other part only rides its parent */
+export const FIGURE_JOINTED = /^(torso|head|body|(thigh|shin|foot|arm|forearm)[AB]|leg(FL|FR|BL|BR))$/;
+/**
+ * the figure's mesh as the baker draws it (CH-3b: a figure of 50 parts and more, its locks, buttons and goggles, ran
+ * past the shader's 32 joint matrices): a matrix only for each part a pose moves (FIGURE_JOINTED, and the root), every
+ * other part's vertices carried by its own place (its `at` and its parents' up to the first moving one) and drawn on
+ * that one's matrix. `slots`: the part each matrix is (jointMatrices' index), in the order the vertices name them.
+ * @param {Figure} F @param {number} [detail] @returns {{ data: Float32Array, count: number, colours: string[], slots: number[] }}
+ */
+export function figureGpuMesh(F, detail = 1) {
+  const M = figureMesh(F, detail),
+    jointOf = F.parts.map(() => -1),
+    off = F.parts.map(() => /** @type {Vec3} */ ([0, 0, 0])),
+    /** @type {number[]} */ slots = [];
+  F.parts.forEach((p, i) => {
+    if (p.parent < 0 || FIGURE_JOINTED.test(p.id)) {
+      jointOf[i] = slots.length;
+      slots.push(i);
+    } else {
+      jointOf[i] = jointOf[p.parent];
+      const o = off[p.parent];
+      off[i] = [o[0] + p.at[0], o[1] + p.at[1], o[2] + p.at[2]];
+    }
+  });
+  const d = M.data;
+  for (let v = 0; v < M.count; v++) {
+    const k = v * 8,
+      i = d[k + 6],
+      o = off[i];
+    d[k] += o[0];
+    d[k + 1] += o[1];
+    d[k + 2] += o[2];
+    d[k + 6] = jointOf[i];
+  }
+  return { ...M, slots };
+}
+
 /* ---------- the face ---------- */
 /**
  * the face marks to paint on a baked picture, in its pixels (x, y from the top left, w by h): each mark where its part
@@ -912,7 +952,8 @@ export function finerShape(sh, k) {
  * @returns {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean }[]}
  */
 export function figureFaceMarks(F, J, P, V, ppm, S) {
-  /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string }[]} */
+  /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string,
+   *   dir?: number, t?: number }[]} */
   const out = [];
   const c = Math.cos(V.rel),
     s = Math.sin(V.rel),
@@ -943,12 +984,19 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
       x = Math.round(S.ax + q.u * ppm - w / 2),
       y = Math.round(S.ay - q.v * ppm - h / 2);
     const rgb = F.colours[m.col || m.kind] || [OUTLINE_RGB[0], OUTLINE_RGB[1], OUTLINE_RGB[2]];
-    /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string }} */
+    /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string,
+     *   dir?: number, t?: number }} */
     const o = { x, y, w, h, rgb, kind: m.kind };
     if (m.hollow) o.hollow = true;
     /* CH-3b: an oval (an eye, a pupil, a shine) or a smile's arc, painted as such once it is 3 pixels or more (a
        portrait's close-up); smaller, a block */
     if (m.shape && w >= 3 && h >= 3 && !(m.kind === 'eye' && P.blink)) o.shape = m.shape;
+    /* a slant (a brow, a lash's flick) keeps its way down, mirrored when the figure is seen from behind its side */
+    if (m.shape === 'slant' && w >= 2) {
+      o.shape = 'slant';
+      o.dir = m.dir || 1;
+      o.t = Math.max(1, Math.round((m.t || 0.02) * ppm));
+    }
     out.push(o);
     if (m.kind === 'eye' && !P.blink && w >= 2 && h >= 3 && m.glint !== false)
       out.push({ x, y, w: 1, h: 1, rgb: F.colours.glint || [255, 255, 255], kind: 'glint' });

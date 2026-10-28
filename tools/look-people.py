@@ -144,7 +144,8 @@ STYLES_JS = """((looks, whos, tilt) => {const T=tilt*Math.PI/180, out=[];
   const bk=bakeFigure(figureDef('look:'+whos[0]+'@'+L),'walk',2,figureView(Math.PI*0.2,0,T,16),lk.ppm,true,L); if(!bk) return 'loading';
   row.push(bk.toDataURL('image/png'));
   const pt=figurePortrait(whos[0],0,0.9,L); if(!pt) return 'loading';
-  out.push({look:L, ppm:lk.ppm, row, portrait:pt.toDataURL('image/png')})}
+  const pts=[]; for (const who of whos){const q=figurePortrait(who,0,0.9,L); if(!q) return 'loading'; pts.push(q.toDataURL('image/png'))}
+  out.push({look:L, ppm:lk.ppm, row, portrait:pt.toDataURL('image/png'), portraits:pts})}
  return out})"""
 
 
@@ -186,6 +187,15 @@ def styles(pg, t0):
         out.alpha_composite(p, (0, y)); y += p.height + 12
     name = f"figure-styles-{STYLES.replace(',', '-')}.png"
     out.save(OUT / name)
+    # every person's portrait in each direction, a row a direction, at 2 screen pixels a pixel
+    for R in r:
+        ps = [dec(u) for u in R['portraits']]
+        ps = [p.resize((p.width * 2, p.height * 2), Image.NEAREST) for p in ps]
+        sheet = Image.new('RGBA', (sum(p.width + 20 for p in ps) + 20, max(p.height for p in ps) + 40), (228, 222, 206, 255))
+        x = 20
+        for p in ps:
+            sheet.alpha_composite(p, (x, sheet.height - p.height - 10)); x += p.width + 20
+        sheet.save(OUT / f"figure-portraits-{R['look']}.png")
     print(f"[{time.time() - t0:5.0f}s] {name}: {len(panels)} directions", flush=True)
     return {'shot': name, 'looks': looks, 'people': whos}
 

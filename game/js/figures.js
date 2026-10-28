@@ -36,8 +36,8 @@ import {
   figureClipMatrix,
   figureDark,
   figureFaceMarks,
+  figureGpuMesh,
   figureKey,
-  figureMesh,
   figureMix,
   figurePose,
   figureRamp,
@@ -106,6 +106,7 @@ expose({
   figurePortrait: [() => figurePortrait, v => (figurePortrait = v)],
   figureReport: [() => figureReport, v => (figureReport = v)],
   figureRes: [() => figureRes, v => (figureRes = v)],
+  figureSlotMatrices: [() => figureSlotMatrices, v => (figureSlotMatrices = v)],
   figureStyle: [() => figureStyle, v => (figureStyle = v)],
   figureTarget: [() => figureTarget, v => (figureTarget = v)],
   figureTilt: [() => figureTilt, v => (figureTilt = v)],
@@ -215,11 +216,14 @@ function figureDef(name) {
          by default: person-art.js DEFAULT_WEAR); townsfolk and you keep the bag their look picked */
       own = p && p.look && p.look.wear,
       look1 = own && !own.bag && L.wear ? { ...L, wear: { ...L.wear, bag: null } } : L,
-      /* a hybrid variant can redress everyone (its flair's wear) */
-      look =
-        look0 && look0.flair && look0.flair.wear && look1.wear
-          ? { ...look1, wear: { ...look1.wear, ...look0.flair.wear } }
-          : look1,
+      /* a hybrid variant can redress everyone (its flair's wear) and each of its cast (its cast table's) */
+      wear0 = look0
+        ? {
+            ...((look0.flair && look0.flair.wear) || {}),
+            ...((look0.cast && look0.cast[who] && look0.cast[who].wear) || {}),
+          }
+        : null,
+      look = wear0 && look1.wear && Object.keys(wear0).length ? { ...look1, wear: { ...look1.wear, ...wear0 } } : look1,
       F = L.creature
         ? kappiFigure({ name })
         : lookFigure(look, items, {
@@ -227,7 +231,8 @@ function figureDef(name) {
             seed: figureSeed(who),
             figure: p && p.figure ? p.figure : who.startsWith('folk:') ? { variety: true } : undefined,
             chibi: look0 && look0.chibi ? look0.chibi : undefined,
-            flair: look0 && look0.flair ? look0.flair : undefined,
+            /* a direction's flair, and its design for this person (its cast table) */
+            flair: look0 && look0.flair ? { ...look0.flair, ...((look0.cast && look0.cast[who]) || {}) } : undefined,
           });
     return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: kitExtent(F) });
   }
@@ -318,7 +323,7 @@ precision mediump float;out vec4 o;void main(){o=vec4(1.);}`;
    4 painterly (bands, a warm rim, each part's colour a touch off), 5 comic (flat colour, halftone dots in the shadow,
    a white rim), 6 faceted (each triangle flat) */
 const FIGURE_FS = `#version 300 es
-precision highp float;in vec3 vN;in vec2 vUV;in vec3 vLS;in vec3 vP;flat in int vC;uniform vec3 uPal[100];uniform vec3 uL;
+precision highp float;in vec3 vN;in vec2 vUV;in vec3 vLS;in vec3 vP;flat in int vC;uniform vec3 uPal[140];uniform vec3 uL;
 uniform vec4 uB;uniform float uTexOn,uSmooth,uShadowOn,uH;uniform int uMode;uniform vec4 uFx,uRim2;uniform vec3 uRimCol;
 uniform sampler2D uTx;uniform highp sampler2D uSM;
 out vec4 o;
@@ -350,7 +355,7 @@ void main(){vec3 n=normalize(vN);
   if(shd)bb=min(bb,0);else if(rim&&bb>=0)bb=max(bb,2);
   c=bb==3?sn:(bb==2?li:(bb==1?base:(bb==0?sh:dp)));
   float hy=clamp(vP.y/max(uH,.5),0.,1.);c*=mix(vec3(.9,.93,1.05),vec3(1.05,1.02,.95),mix(.5,hy,uFx.y));
-  float g=fract(sin(dot(floor(gl_FragCoord.xy),vec2(12.9898,78.233)))*43758.5453)-.5;c*=1.+g*uFx.z;
+  vec2 gp=floor(gl_FragCoord.xy*vec2(1.,.5));float g=fract(sin(dot(gp,vec2(12.9898,78.233)))*43758.5453)-.5;c*=1.+g*uFx.z;
   if(rim)c=mix(c,vec3(255.,214.,150.),.32*uFx.w);
   if(uRim2.w>0.&&dot(n,normalize(uRim2.xyz))>.5&&n.z>-.5)c=mix(c,uRimCol,uRim2.w);
   c=clamp(c,0.,255.);}
@@ -361,7 +366,7 @@ in vec2 aQ;void main(){gl_Position=vec4(aQ*2.-1.,0.,1.);}`;
 /* the outline: `uOutW` pixels thick (1 or 2), each pixel the outline of its nearest neighbour's colour (selective,
    the props' olc) or one ink (uInk); inside, where a part stands `uInner` (alpha's depth) in front of another, a line */
 const FIGURE_OUT_FS = `#version 300 es
-precision highp float;uniform sampler2D uT;uniform float uOut,uInk,uInner;uniform int uOutW;uniform vec3 uOL;uniform ivec2 uS;out vec4 o;
+precision highp float;uniform sampler2D uT;uniform float uOut,uInk,uInner,uAO;uniform int uOutW;uniform vec3 uOL;uniform ivec2 uS;out vec4 o;
 vec3 olc(vec3 c){return uInk>1.5?mix(c*.42,uOL,.35):uInk>.5?uOL*.55:mix(floor(c*255.*.45)/255.,uOL,.8);}
 vec4 at(ivec2 p){return (p.x<0||p.y<0||p.x>=uS.x||p.y>=uS.y)?vec4(0.):texelFetch(uT,p,0);}
 void main(){ivec2 p=ivec2(gl_FragCoord.xy);vec4 c=at(p);
@@ -374,7 +379,11 @@ void main(){ivec2 p=ivec2(gl_FragCoord.xy);vec4 c=at(p);
   o=best.a>0.?vec4(olc(best.rgb),1.):vec4(0.);return;}
  o=vec4(c.rgb,1.);
  /* a pixel of a part with a part well in front of it beside it: a line, half the outline's weight (ink: full) */
- if(uOut>.5&&uInner>0.){bool line=false;for(int i=0;i<4;i++)if(q[i].a>c.a+uInner)line=true;if(line)o.rgb=mix(c.rgb,olc(c.rgb),uInk>.5?.85:.6);}}`;
+ if(uOut>.5&&uInner>0.){bool line=false;for(int i=0;i<4;i++)if(q[i].a>c.a+uInner)line=true;if(line)o.rgb=mix(c.rgb,olc(c.rgb),uInk>.5?.85:.6);}
+ /* CH-3b: soft occlusion where a part tucks under a nearer one (a collar's shadow on the neck, an arm's on the
+    side): the nearer neighbours within two pixels darken it toward violet */
+ if(uAO>0.){float k=0.;for(int y=-2;y<=2;y++)for(int x=-2;x<=2;x++){vec4 v=at(p+ivec2(x,y));if(v.a>c.a+.012)k+=1.;}
+  o.rgb=mix(o.rgb,o.rgb*vec3(.62,.58,.82),uAO*min(1.,k/7.));}}`;
 
 function figureCompile(gl, vs, fs) {
   const sh = (type, src) => {
@@ -486,7 +495,7 @@ function figureRes(gl, Fig, detail = 1) {
   if (R) return R;
   if (Fig.kind === 'mesh' && !(Fig.tex && Fig.tex.complete && Fig.tex.naturalWidth > 0)) return null;
   const code = Fig.kind === 'code',
-    M = code ? figureMesh(Fig.F, detail) : null,
+    M = code ? figureGpuMesh(Fig.F, detail) : null,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const vb = gl.createBuffer();
@@ -532,7 +541,7 @@ function figureRes(gl, Fig, detail = 1) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
   gl.bindVertexArray(null);
-  R = { vao, count, indexed: !code, tex, colours: code ? M.colours : null };
+  R = { vao, count, indexed: !code, tex, colours: code ? M.colours : null, slots: code ? M.slots : null };
   B.res.set(key, R);
   return R;
 }
@@ -699,6 +708,50 @@ Object.assign(FIGURE_LOOKS, {
     flair: { hair: 1.4, scarf: true, cape: true, col: [230, 57, 70] },
   },
 });
+/* CH-3b: gouache bold crossed with lantern night (the owner: "Do a mix of gauche bold and lantern night. Completely
+   redesign their aesthetic. Make them way more detailed. Expressive detailed faces and shapes"): saturated gouache
+   colour under a lantern's warm key, deep navy and violet shadow, a hard cyan rim from behind, soft occlusion where
+   parts meet, brush grain, an anime ring of light on the hair, a coloured line; big hair, redesigned outfits */
+FIGURE_LOOKS.gnight = {
+  mode: 7,
+  ramp: 'hue',
+  palette: 'gnight',
+  sat: 1.3,
+  fx: [0.1, 0.4, 0.05, 1],
+  bands: { light: 0.46, base: 0.1, shine: 0.8, deep: -0.32 },
+  rim2: [0.85, 0.25, 0.5, 0.7],
+  rimCol: [104, 232, 244],
+  ring: 0.7,
+  ao: 0.75,
+  outline: 1,
+  ink: 2,
+  inner: 0.014,
+  detail: 1.5,
+  ppm: 48,
+  chibi: { head: 1.1, legs: 0.92, torso: 0.95, arms: 0.95, neck: 0.9 },
+  flair: { hair: 1.35, scarf: true, col: [230, 57, 70], detail: true },
+  /* each of the cast redesigned for the look (the owner: "Completely redesign their aesthetic") */
+  cast: {
+    me: { goggles: true, gloves: true, ahoge: true, col: [95, 183, 192], wear: { outer: 'denim_jacket' } },
+    chosen: { goggles: true, ahoge: true, col: [255, 209, 102], wear: { outer: 'labcoat' } },
+    chad: { gloves: true, earrings: true, col: [244, 162, 97], wear: { outer: 'track_top' } },
+    vault: { fur: true, gloves: true, gloveCol: [240, 236, 226], scarf: false, wear: { outer: 'trench' } },
+    morel: { earrings: true, col: [167, 201, 87], wear: { outer: 'trench' } },
+    poppy: { gloves: true, gloveCol: [106, 153, 78], col: [244, 162, 97] },
+    marina: { earrings: true, col: [42, 157, 143], wear: { outer: 'denim_jacket' } },
+    alta: { goggles: true, col: [168, 218, 220], wear: { outer: 'trench' } },
+    carat: { goggles: true, gloves: true, col: [255, 209, 102] },
+    crude: { gloves: true, gloveCol: [92, 58, 46], col: [231, 111, 81], wear: { outer: 'puffer' } },
+    markdown: { earrings: true, col: [199, 125, 255] },
+    clerk: { scarf: false, wear: { neck: 'tie' } },
+  },
+};
+/** the matrices of a figure's moving parts, in its GPU mesh's slot order (logic/figure-pose.js figureGpuMesh) */
+function figureSlotMatrices(J, slots) {
+  const out = new Float32Array(slots.length * 16);
+  slots.forEach((i, k) => out.set(J.subarray(i * 16, i * 16 + 16), k * 16));
+  return out;
+}
 /** the light's depth map's size (pixels square) */
 const FIGURE_SHADOW_SIZE = 512;
 /**
@@ -740,6 +793,8 @@ const FIGURE_PALETTES = {
   gouache:
     '1d3557 457b9d a8dadc f1faee e63946 f4a261 e9c46a 2a9d8f 264653 6a994e a7c957 bc4749 f2e8cf 8d5a97 c08497 6d4c41 ffbe0b 3a0ca3',
 };
+FIGURE_PALETTES.gnight =
+  '141833 1d2552 2e3a7a 4a5bb0 7d93d9 b8c9f0 2a9d8f 5fb7c0 a8e6e0 f1faee f2e8cf ffd166 f4a261 e76f51 e63946 9b2242 5c1a3a 3a0ca3 7b2cbf c77dff 6a994e a7c957 6d4c41 b07d62 e5b299';
 /** a figure's colour as a direction takes it: its saturation pushed (LK.sat), then pulled toward the nearest colour of
  * the direction's palette (LK.palette; skin only a little, eyes and shines not at all) */
 function figureLookColour(c, key, LK) {
@@ -786,7 +841,7 @@ function figureLookRamp(b, ramp) {
 }
 /** a code figure's palette for the shader: for each colour, its shadow, base and light (the props' ramp) */
 function figurePalette(F, colours, ramp = 'props', LK = null) {
-  /* FIGURE_PAL_MAX colours, five shades each (the shader's uPal[100]): the deep shadow, the shadow, the base, the
+  /* FIGURE_PAL_MAX colours, five shades each (the shader's uPal[140]): the deep shadow, the shadow, the base, the
      light and the shine, which only a glossy colour (F.gloss: hair, shoes, lenses) has; the rest keep their light */
   const out = new Float32Array(FIGURE_PAL_MAX * 5 * 3),
     gloss = new Set(F.gloss || []);
@@ -798,7 +853,7 @@ function figurePalette(F, colours, ramp = 'props', LK = null) {
       flat ? R[2] : R[1],
       R[2],
       flat ? R[2] : R[3],
-      flat ? R[2] : gloss.has(k) ? R[4] : R[3],
+      flat ? R[2] : gloss.has(k) ? (LK && LK.ring ? figureMix(R[4], [255, 252, 240], LK.ring) : R[4]) : R[3],
     ].forEach((c, b) => out.set(c, (i * 5 + b) * 3));
   });
   return out;
@@ -828,6 +883,8 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   const code = Fig.kind === 'code',
     pose = code ? figurePose(Fig.F, clip, frame) : null,
     J = code ? jointMatrices(Fig.F, pose, ppm) : meshClipMatrices(Fig.clips[clip], frame, Fig.joints.length, ppm),
+    /* the matrices the shader gets: a code figure's moving parts only (figureGpuMesh's slots) */
+    JG = code && R.slots ? figureSlotMatrices(J, R.slots) : J,
     c = Math.cos(V.rel),
     s = Math.sin(V.rel);
   /* pass 0 (CH-3b): the figure's depth from the light, in the figure's turned frame; not for the plain 3D style */
@@ -848,7 +905,7 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
     gl.enable(gl.POLYGON_OFFSET_FILL);
     gl.polygonOffset(2, 4);
     gl.useProgram(B.Sh.p);
-    gl.uniformMatrix4fv(B.Sh.U.uJ, false, J);
+    gl.uniformMatrix4fv(B.Sh.U.uJ, false, JG);
     gl.uniformMatrix3fv(B.Sh.U.uR, false, new Float32Array([c, 0, -s, 0, 1, 0, s, 0, c]));
     gl.uniformMatrix4fv(B.Sh.U.uLS, false, LS);
     gl.bindVertexArray(R.vao);
@@ -869,7 +926,7 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
   gl.useProgram(B.P.p);
   const U = B.P.U;
-  gl.uniformMatrix4fv(U.uJ, false, J);
+  gl.uniformMatrix4fv(U.uJ, false, JG);
   gl.uniformMatrix4fv(U.uM, false, figureClipMatrix(V.rel, V.tilt, ppm, S));
   /* the figure's turn in the camera's frame, for the normals (logic/figure-pose.js cardPoint) */
   gl.uniformMatrix3fv(U.uR, false, new Float32Array([c, 0, -s, 0, 1, 0, s, 0, c]));
@@ -908,6 +965,7 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   gl.uniform1i(B.O.U.uOutW, Math.max(1, LK.outline));
   gl.uniform1f(B.O.U.uInk, LK.ink || 0);
   gl.uniform1f(B.O.U.uInner, LK.inner || 0);
+  gl.uniform1f(B.O.U.uAO, LK.ao || 0);
   gl.uniform3f(B.O.U.uOL, OUTLINE_RGB[0] / 255, OUTLINE_RGB[1] / 255, OUTLINE_RGB[2] / 255);
   gl.uniform2i(B.O.U.uS, S.w, S.h);
   gl.bindVertexArray(B.oVao);
@@ -958,6 +1016,16 @@ function figurePaintMark(x, m, ppm) {
       }
     return;
   }
+  /* a slant: a stroke `t` pixels thick from the top left down to the bottom right (dir 1) or the other way */
+  if (m.shape === 'slant') {
+    const t = Math.max(1, Math.min(m.h, m.t || th));
+    for (let i = 0; i < m.w; i++) {
+      const f = m.w > 1 ? i / (m.w - 1) : 0,
+        y = Math.round((m.dir > 0 ? f : 1 - f) * (m.h - t));
+      x.fillRect(m.x + i, m.y + y, 1, t);
+    }
+    return;
+  }
   if (m.hollow && m.w > 2 && m.h > 2) {
     const t = Math.min(th, Math.floor((Math.min(m.w, m.h) - 1) / 2));
     x.fillRect(m.x, m.y, m.w, t);
@@ -981,7 +1049,8 @@ function figurePortrait(who, frame = 0, turn = 0.9, style = 'pixel') {
     style === 'pixel' ? figureFor(who) : 'look:' + (who === 'boy' || who === 'girl' ? 'me' : who) + '@' + style
   );
   if (!Fig) return null;
-  const V = figureView(Math.PI * turn, 0, (12 * Math.PI) / 180, 32),
+  /* nearly level (4 degrees), so a brim doesn't hide the face */
+  const V = figureView(Math.PI * turn, 0, (4 * Math.PI) / 180, 32),
     im = bakeFigure(Fig, 'idle', frame, V, FIGURE_PORTRAIT_PPM, true, style);
   if (!im) return null;
   /* from the first row with anything on it (a top hat's crown and all) down to just under the shoulders (the kit's

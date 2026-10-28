@@ -134,7 +134,7 @@ test('figures: one bake draws the mannequin and its outline, and gives a personâ
       'the figure from the light (CH-3b: its own shadows), the figure, then the outline pass'
     );
     const J = calls.find(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ');
-    assert.equal(J[3].length, G.mannequinFigure().parts.length * 16, 'a matrix for each part');
+    assert.equal(J[3].length, G.figureGpuMesh(G.mannequinFigure()).slots.length * 16, 'a matrix for each moving part');
     const out = calls.find(c => c[0] === 'uniform1f' && c[1] === 'uOut');
     assert.equal(out[2], 1, 'the outline on');
     /* copied from the bottom rows of the baker's canvas */

@@ -174,7 +174,9 @@ export function figureShapeFor(look, seed, choice = {}) {
  * @param {KitLook} look @param {Record<string, KitItem>} items the wardrobe's items (their default colours)
  * @param {{ name?: string, seed?: number, figure?: FigureShapeChoice,
  *   chibi?: { head: number, legs: number, torso: number, arms: number, neck: number },
- *   flair?: { hair?: number, scarf?: boolean, cape?: boolean, col?: number[], wear?: Record<string, string> } }} [opts]
+ *   flair?: { hair?: number, scarf?: boolean, cape?: boolean, col?: number[], wear?: Record<string, string>,
+ *     detail?: boolean, gloves?: boolean, gloveCol?: number[], goggles?: boolean, fur?: boolean, earrings?: boolean,
+ *     ahoge?: boolean, glossy?: boolean } }} [opts]
  * `chibi`: proportions
  * other than KIT_CHIBI (a direction of figures.js FIGURE_LOOKS)
  * @returns {Figure}
@@ -315,8 +317,9 @@ export function lookFigure(look, items, opts = {}) {
         r: hr,
         seg: 20,
         rings: 14,
-        sq: HD.sq,
-        taper: HD.taper,
+        /* a jaw and a chin, not a ball: every head narrows toward its chin and squares a little at the cheeks */
+        sq: Math.max(HD.sq, 0.2),
+        taper: HD.taper + 0.14,
       });
   /* a neck, longer on a beanpole, all but gone on a kid */
   add(
@@ -726,7 +729,15 @@ export function lookFigure(look, items, opts = {}) {
   if (hat) colours.hat2 = itemCol(hat, 1, colours.hat);
   /* a fringe shows under a cap or a beanie, not under a brim */
   const FL = opts.flair || {};
-  kitHair(add, wear.hair || null, head, !!hat, seed, !!hat && hat !== 'hat_cap' && hat !== 'hat_beanie', FL.hair || 1);
+  kitHair(
+    add,
+    wear.hair || null,
+    head,
+    !!hat,
+    seed,
+    !!hat && hat !== 'hat_cap' && hat !== 'hat_beanie',
+    hat ? 1 : FL.hair || 1
+  );
   /* CH-3b's hybrid variants may redesign (the owner: "you don't have to base them on their original sprites"): a scarf
      with a tail that streams behind, a cape from the shoulders */
   if (FL.scarf || FL.cape)
@@ -786,6 +797,160 @@ export function lookFigure(look, items, opts = {}) {
       },
       'flair'
     );
+  /* CH-3b's gouache night: the detail pass (flair.detail) and a character's own design (flair: goggles, fur, earrings,
+     gloves, an antenna lock) */
+  if (FL.detail) {
+    colours.leather = [92, 58, 46];
+    colours.gold = [232, 190, 84];
+    /* lapels down an open jacket or coat */
+    if (outer && (KIT_JACKETS.has(outer) || KIT_LONG_COATS.has(outer)) && outer !== 'puffer' && outer !== 'track_top')
+      for (const s of [1, -1])
+        add(
+          'lapel' + (s > 0 ? 'A' : 'B'),
+          'torso',
+          [0, 0, 0],
+          {
+            kind: 'tube',
+            a: [s * xAt(4) * 0.3, 0.38 * tk, zAt(4) * 1.05],
+            ctrl: [s * xAt(3) * 0.62, 0.3 * tk, zAt(3) * 1.18],
+            b: [s * xAt(3) * 0.3, 0.12 * tk, zAt(3) * 1.12],
+            r0: 0.035,
+            r1: 0.012,
+            flat: 0.3,
+            n: [0, 0, 1],
+            seg: 7,
+            steps: 6,
+          },
+          'outer2'
+        );
+    /* a long coat's tails, split behind */
+    if (outer && KIT_LONG_COATS.has(outer))
+      for (const s of [1, -1])
+        add(
+          'tail' + (s > 0 ? 'A' : 'B'),
+          'hips',
+          [s * 0.07, 0.02, -0.11 * girth],
+          {
+            kind: 'tube',
+            a: [0, 0, 0],
+            ctrl: [s * 0.05, -thighL * 0.5, -0.07],
+            b: [s * 0.09, -thighL * 1.05, -0.04],
+            r0: 0.07,
+            r1: 0.1,
+            flat: 0.22,
+            n: [0, 0, -1],
+            seg: 8,
+            steps: 6,
+          },
+          'outer'
+        );
+    /* pouches on the belt */
+    if (parts.some(q => q.id === 'belt'))
+      for (const s of [1, -1])
+        if (kitRnd(seed, 200 + s) < 0.7)
+          add(
+            'pouch' + (s > 0 ? 'A' : 'B'),
+            'hips',
+            [s * 0.14 * girth * hipK, 0.05, 0.05 * girth],
+            { kind: 'ellipsoid', c: [0, -0.02, 0], r: [0.032, 0.045, 0.035], seg: 8, rings: 5, sq: 0.8 },
+            'leather'
+          );
+    /* cuffs on boots and high tops */
+    for (const k of ['A', 'B'])
+      if (parts.some(q => q.id === 'boot' + k))
+        add(
+          'bcuff' + k,
+          'shin' + k,
+          [0, -shinL * 0.55, 0],
+          { kind: 'torus', c: [0, 0, 0], R: [legR * 1.05, legR * 1.05], r: 0.02, seg: 10, rings: 4 },
+          'sole'
+        );
+  }
+  if (FL.gloves) {
+    colours.glove = FL.gloveCol ? [FL.gloveCol[0], FL.gloveCol[1], FL.gloveCol[2]] : [52, 40, 64];
+    for (const q of parts) if (/^(hand|thumb)[AB]$/.test(q.id)) q.col = 'glove';
+  }
+  if (FL.goggles) {
+    colours.gear = colours.gear || [52, 44, 60];
+    colours.lensG = [104, 226, 236];
+    add(
+      'gband',
+      'head',
+      [0, 0, 0],
+      { kind: 'torus', c: [0, c1 + hr[1] * 0.42, 0.01], R: [hr[0] * 1.07, hr[2] * 1.07], r: 0.022, seg: 18, rings: 4 },
+      'gear'
+    );
+    for (const s of [1, -1])
+      add(
+        'goggle' + (s > 0 ? 'A' : 'B'),
+        'head',
+        [0, 0, 0],
+        {
+          kind: 'ellipsoid',
+          c: [s * hr[0] * 0.36, c1 + hr[1] * 0.5, head.c[2] + hr[2] * 0.86],
+          r: [0.06 * (hr[0] / 0.31), 0.05 * (hr[0] / 0.31), 0.035],
+          seg: 12,
+          rings: 6,
+        },
+        'lensG'
+      );
+    FL.glossy = true;
+  }
+  if (FL.fur) {
+    colours.fur = [238, 228, 208];
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2;
+      add(
+        'fur' + i,
+        'torso',
+        [0, 0.36 * tk, 0],
+        {
+          kind: 'ellipsoid',
+          c: [Math.sin(a) * 0.13 * Math.sqrt(girth), 0, Math.cos(a) * 0.11 * Math.sqrt(girth)],
+          r: [0.07, 0.055, 0.07],
+          seg: 9,
+          rings: 5,
+        },
+        'fur'
+      );
+    }
+  }
+  if (FL.earrings)
+    for (const s of [1, -1])
+      add(
+        'ring' + (s > 0 ? 'A' : 'B'),
+        'head',
+        [0, 0, 0],
+        {
+          kind: 'ellipsoid',
+          c: [s * hr[0] * 0.98, c1 - hr[1] * 0.28, 0],
+          r: [0.02, 0.028, 0.02],
+          seg: 8,
+          rings: 5,
+        },
+        'gold'
+      );
+  if (FL.earrings || FL.detail) colours.gold = [232, 190, 84];
+  /* an antenna lock standing up off the crown */
+  if (FL.ahoge && !hat)
+    add(
+      'ahoge',
+      'head',
+      [0, 0, 0],
+      {
+        kind: 'tube',
+        a: [0, c1 + hr[1] * 0.98, -0.02],
+        ctrl: [0.06, c1 + hr[1] * 1.5, 0.04],
+        b: [0.14, c1 + hr[1] * 1.35, 0.1],
+        r0: 0.03 * (hr[0] / 0.31),
+        r1: 0.004,
+        flat: 0.5,
+        n: [0, 0, 1],
+        seg: 7,
+        steps: 7,
+      },
+      'hair'
+    );
   if (hat) kitHat(add, hat, head);
   if (wear.glasses === 'headset') {
     colours.gear = itemCol('headset', 0, [40, 40, 48]);
@@ -838,7 +1003,7 @@ export function lookFigure(look, items, opts = {}) {
     gait,
     /* where a portrait's cut is (figures.js figurePortrait), metres from the ground: just under the shoulders */
     kit: { ...shape, bust: Math.round((hipY + 0.1 + 0.22 * tk) * 100) / 100 },
-    gloss: ['hair', 'hair2', 'shoe', 'sole', 'gear', 'belt'],
+    gloss: ['hair', 'hair2', 'shoe', 'sole', 'gear', 'belt', 'lensG', 'gold', 'leather', 'glove'],
   };
 }
 
@@ -1295,7 +1460,7 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
     /* every size is the spike's head's times how big this head is (KIT_CHIBI) */
     k = r[0] / 0.31,
     ex = r[0] * 0.37,
-    ey = c[1] - r[1] * 0.14,
+    ey = c[1] - r[1] * 0.17,
     eyes = wear.eyes || 'eyes_round',
     /* Sugimori's Gen 5 eyes: tall ovals; wide rounder, sharp and sleepy narrower */
     [ew, eh] = (
@@ -1304,11 +1469,37 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
         : eyes === 'eyes_sharp'
           ? [0.09, 0.095]
           : eyes === 'eyes_sleepy'
-            ? [0.09, 0.075]
-            : [0.078, 0.135]
-    ).map(v => v * k);
-  if (kitRnd(seed, 40) < 0.45 || /lashes/.test(eyes))
-    for (const s of [1, -1]) mark('blush', s * r[0] * 0.62, c[1] - r[1] * 0.4, 0.075 * k, 0.03 * k, { shape: 'oval' });
+            ? [0.09, 0.08]
+            : [0.08, 0.135]
+    ).map(v => v * k * 1.22),
+    /* the face's mood from the look's brows and mouth: -1 cross, 0 calm, 1 glad, 2 worried */
+    brows = wear.brows || null,
+    mouth = wear.mouth || 'mouth_smile',
+    mood =
+      brows === 'brows_stern'
+        ? -1
+        : mouth === 'mouth_grin' || mouth === 'mouth_open'
+          ? 1
+          : brows === 'brows_arched'
+            ? 2
+            : 0;
+  colours.irisD = figureMix(figureDark(colours.iris, 0.55), [30, 20, 70], 0.3);
+  colours.irisL = figureMix(colours.iris, [255, 255, 240], 0.45);
+  colours.blushD = figureMix(colours.blush, [200, 70, 90], 0.45);
+  colours.tongue = [214, 92, 104];
+  /* blush, hatched with three short strokes on a glad or shy face */
+  if (kitRnd(seed, 40) < 0.5 || /lashes/.test(eyes) || mood === 1)
+    for (const s of [1, -1]) {
+      mark('blush', s * r[0] * 0.6, c[1] - r[1] * 0.4, 0.085 * k, 0.034 * k, { shape: 'oval' });
+      for (let i = 0; i < 3; i++)
+        mark('hatch', s * r[0] * (0.52 + i * 0.07), c[1] - r[1] * 0.4, 0.022 * k, 0.03 * k, {
+          col: 'blushD',
+          shape: 'slant',
+          dir: -s,
+          t: 0.012 * k,
+          min: 0.4,
+        });
+    }
   if (wear.facial === 'facial_freckles')
     for (const s of [1, -1])
       for (const [dx, dy] of [
@@ -1319,9 +1510,9 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
         mark('freckle', s * r[0] * dx, c[1] + r[1] * dy, 0.022 * k, 0.022 * k);
   if (wear.facial === 'facial_stubble')
     mark('stubble', 0, c[1] - r[1] * 0.66, r[0] * 0.9, r[1] * 0.3, { min: 0.3, shape: 'oval' });
-  /* an eye, in layers: its white, the coloured iris filling most of it, a dark pupil, two shines, the upper lid as a
-     thick dark arch (the closed eye's line in a blink: the 'eye' mark) and a faint lower lash; all but the lid shut in
-     a blink */
+  /* an eye, in layers: its white; the iris, dark across its top and lit at its bottom; a pupil; two shines; the upper
+     lid as a thick arch with a flick of lashes at its outer corner (the closed eye's line in a blink: the 'eye' mark);
+     a faint lower lid */
   for (const s of [1, -1]) {
     mark('white', s * ex, ey, ew * 1.08, eh * 0.95, { col: 'sclera', shut: true, narrow: true, shape: 'oval' });
     mark('iris', s * (ex - ew * 0.04), ey - eh * 0.06, ew * 0.8, eh * 0.86, {
@@ -1329,7 +1520,20 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
       narrow: true,
       shape: 'oval',
     });
-    mark('pupil', s * (ex - ew * 0.04), ey - eh * 0.08, ew * 0.38, eh * 0.48, {
+    mark('irisD', s * (ex - ew * 0.04), ey + eh * 0.2, ew * 0.8, eh * 0.32, {
+      col: 'irisD',
+      shut: true,
+      narrow: true,
+      shape: 'cap',
+    });
+    mark('irisL', s * (ex - ew * 0.04), ey - eh * 0.3, ew * 0.5, eh * 0.24, {
+      col: 'irisL',
+      shut: true,
+      narrow: true,
+      min: 0.5,
+      shape: 'oval',
+    });
+    mark('pupil', s * (ex - ew * 0.04), ey - eh * 0.06, ew * 0.34, eh * 0.44, {
       col: 'eye',
       shut: true,
       narrow: true,
@@ -1342,46 +1546,63 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
       shape: 'oval',
     });
     mark('shine', s * (ex - ew * 0.2), ey - eh * 0.28, ew * 0.18, eh * 0.12, { col: 'glint', shut: true, min: 0.6 });
-    mark('eye', s * (ex + ew * 0.05), ey + eh * 0.42, ew * 1.35, eh * 0.4, {
-      glint: false,
-      shape: 'cap',
+    /* the lid: lower over a calm or sleepy eye, raised over a glad or worried one */
+    const lidY = ey + eh * (mood === 1 || mood === 2 ? 0.46 : 0.4);
+    mark('eye', s * (ex + ew * 0.05), lidY, ew * 1.35, eh * 0.4, { glint: false, shape: 'cap', col: 'lash' });
+    mark('flick', s * (ex + ew * 0.72), lidY + eh * 0.04, ew * 0.32, eh * 0.2, {
       col: 'lash',
+      shape: 'slant',
+      dir: s,
+      t: 0.02 * k,
+      min: 0.35,
     });
+    if (eyes === 'eyes_lashes')
+      mark('flick', s * (ex + ew * 0.86), lidY + eh * 0.16, ew * 0.3, eh * 0.24, {
+        col: 'lash',
+        shape: 'slant',
+        dir: s,
+        t: 0.02 * k,
+        min: 0.35,
+      });
     mark('under', s * ex, ey - eh * 0.5, ew * 0.7, 0.016 * k, { col: 'nose', shut: true, min: 0.5 });
-    if (eyes === 'eyes_lashes') mark('lash', s * (ex + ew * 0.8), ey + eh * 0.4, 0.028 * k, 0.045 * k, { col: 'lash' });
     if (eyes === 'eyes_sleepy') mark('lid', s * ex, ey + eh * 0.25, ew * 1.15, eh * 0.45, { col: 'skin' });
   }
   /* the nose's shadow, under its bump */
   mark('nose', r[0] * 0.04, c[1] - r[1] * 0.36, 0.024 * k, 0.016 * k, { min: 0.45 });
-  /* brows: arcs by style, stern ones slanting in */
-  const brows = wear.brows || null,
-    by = ey + eh * 0.5 + 0.032 * k;
+  /* brows that carry the mood: cross ones slant down to the nose, worried ones up, glad and calm ones arch */
+  const by = ey + eh * 0.5 + 0.036 * k;
   if (brows)
     for (const s of [1, -1]) {
-      if (brows === 'brows_stern') {
-        mark('brow', s * (ex - 0.022 * k), by - 0.015 * k, 0.05 * k, 0.026 * k, { col: 'brow' });
-        mark('brow', s * (ex + 0.025 * k), by + 0.012 * k, 0.05 * k, 0.026 * k, { col: 'brow' });
-      } else
-        mark(
-          'brow',
-          s * ex,
-          by,
-          (brows === 'brows_soft' ? 0.07 : 0.09) * k,
-          (brows === 'brows_thick' ? 0.05 : brows === 'brows_arched' ? 0.04 : 0.03) * k,
-          { col: 'brow', shape: brows === 'brows_arched' || brows === 'brows_soft' ? 'cap' : undefined }
-        );
+      const thick = brows === 'brows_thick' ? 0.042 : brows === 'brows_soft' ? 0.024 : 0.03;
+      if (mood === -1 || mood === 2)
+        mark('brow', s * ex, by + (mood === 2 ? 0.006 : 0) * k, 0.1 * k, 0.05 * k, {
+          col: 'brow',
+          shape: 'slant',
+          dir: mood === -1 ? -s : s,
+          t: thick * k,
+        });
+      else
+        mark('brow', s * ex, by, (brows === 'brows_soft' ? 0.075 : 0.095) * k, (0.03 + thick * 0.6) * k, {
+          col: 'brow',
+          shape: 'cap',
+        });
     }
-  /* the mouth: a smile's arc, a grin's teeth, an open o, a smirk to one side */
-  const mouth = wear.mouth || 'mouth_smile',
-    my = c[1] - r[1] * 0.55;
+  /* the mouth: a smile's arc; a grin open on teeth and a tongue; an open o with a tongue; a smirk tucked to one side; a
+     neutral line */
+  const my = c[1] - r[1] * 0.55;
   if (wear.facial === 'facial_stache') mark('stache', 0, my + 0.05 * k, 0.11 * k, 0.04 * k, { col: 'brow', min: 0.25 });
   if (mouth === 'mouth_grin') {
-    mark('mouth', 0, my, 0.11 * k, 0.065 * k, { shape: 'oval' });
-    mark('teeth', 0, my + 0.017 * k, 0.08 * k, 0.026 * k, { min: 0.3 });
-  } else if (mouth === 'mouth_open') mark('mouth', 0, my, 0.05 * k, 0.065 * k, { shape: 'oval' });
-  else if (mouth === 'mouth_neutral') mark('mouth', 0, my, 0.06 * k, 0.026 * k);
-  else if (mouth === 'mouth_smirk') mark('mouth', 0.025 * k, my, 0.07 * k, 0.035 * k, { shape: 'arc' });
-  else mark('mouth', 0, my, 0.09 * k, 0.04 * k, { shape: 'arc' });
+    mark('mouth', 0, my, 0.15 * k, 0.09 * k, { shape: 'oval' });
+    mark('teeth', 0, my + 0.028 * k, 0.11 * k, 0.026 * k, { min: 0.3 });
+    mark('tongue', 0.005 * k, my - 0.024 * k, 0.075 * k, 0.036 * k, { min: 0.3, shape: 'oval' });
+  } else if (mouth === 'mouth_open') {
+    mark('mouth', 0, my, 0.055 * k, 0.07 * k, { shape: 'oval' });
+    mark('tongue', 0, my - 0.018 * k, 0.04 * k, 0.026 * k, { min: 0.3, shape: 'oval' });
+  } else if (mouth === 'mouth_neutral') mark('mouth', 0, my, 0.065 * k, 0.022 * k);
+  else if (mouth === 'mouth_smirk') {
+    mark('mouth', 0.02 * k, my, 0.08 * k, 0.03 * k, { shape: 'slant', dir: -1, t: 0.018 * k });
+    mark('mouth', 0.065 * k, my + 0.02 * k, 0.02 * k, 0.02 * k);
+  } else mark('mouth', 0, my, 0.13 * k, 0.055 * k, { shape: 'arc' });
   /* glasses over the eyes */
   const g = wear.glasses;
   if (g && g !== 'headset') {

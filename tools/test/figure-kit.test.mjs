@@ -13,6 +13,7 @@ import {
   lookFigure,
 } from '../../game/js/logic/figure-kit.js';
 import {
+  figureGpuMesh,
   FIGURE_PAL_MAX,
   figureFaceMarks,
   figureMesh,
@@ -151,4 +152,33 @@ test('figure kit: colours from hex', () => {
   assert.deepEqual(kitHex('#C05A15', [0, 0, 0]), [192, 90, 21]);
   assert.deepEqual(kitHex('#abc', [0, 0, 0]), [170, 187, 204]);
   assert.deepEqual(kitHex('nope', [1, 2, 3]), [1, 2, 3]);
+});
+
+test('figure kit: the GPU mesh: a matrix only for moving parts (at most 32), every vertex where the full mesh has it', () => {
+  const apply = (M, p) => [0, 1, 2].map(r => M[r] * p[0] + M[4 + r] * p[1] + M[8 + r] * p[2] + M[12 + r]);
+  for (const who of ['chosen', 'vault', 'kappi']) {
+    const p = PEOPLE[who],
+      F = p.creature
+        ? kappiFigure({ name: who })
+        : lookFigure(p.look, W.items, {
+            name: who,
+            figure: p.figure,
+            flair: { hair: 1.3, detail: true, goggles: true, scarf: true },
+          }),
+      P = figurePose(F, 'walk', 3),
+      J = jointMatrices(F, P, 0),
+      A = figureMesh(F),
+      B = figureGpuMesh(F);
+    assert.ok(F.parts.length > 32 || who === 'kappi', `${who}: ${F.parts.length} parts`);
+    assert.ok(B.slots.length <= 32, `${who}: ${B.slots.length} matrices`);
+    for (let v = 0; v < A.count; v += 37) {
+      const a = apply(J.subarray(A.data[v * 8 + 6] * 16), [A.data[v * 8], A.data[v * 8 + 1], A.data[v * 8 + 2]]),
+        s = B.slots[B.data[v * 8 + 6]],
+        b = apply(J.subarray(s * 16), [B.data[v * 8], B.data[v * 8 + 1], B.data[v * 8 + 2]]);
+      assert.ok(
+        a.every((x, i) => Math.abs(x - b[i]) < 1e-5),
+        `${who} vertex ${v}`
+      );
+    }
+  }
 });
