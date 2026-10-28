@@ -11,7 +11,8 @@
   "star2": [159.55,82.41],
   "star3": [159.2,83.76],
   "blake": [158.05,84.81],
-  "blakeFrom": [158.65,88.66]
+  "blakeFrom": [158.65,88.66],
+  "beside": [156.45,82.04]
  },
  "shots": {
   "drop": {"eye":[159.3,22,83.31],"tgt":[157.8,0,83.31],"fov":58,"w":6},
@@ -67,6 +68,7 @@
   "screen clear",
   "dressing-room",
   "actor you at me side",
+  "actor Kappi at beside side",
   "face Kappi you",
   "face Chosen sideR",
   "camera standing",
