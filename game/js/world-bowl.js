@@ -15,7 +15,15 @@
 import { expose } from './test-globals.js';
 import { airshipFlight, flyDraw, flySkip, flyTick, paintWorldMapCard, provide, render } from './hooks.js';
 import { $ } from './util.js';
-import { LOCATIONS, LOCATION_BY_ID, ROADS, gameData, locationSubtitle, worldExtra } from './game-data.js';
+import {
+  LOCATIONS,
+  LOCATION_BY_ID,
+  ROADS,
+  ROADS_BY_NODE,
+  gameData,
+  locationSubtitle,
+  worldExtra,
+} from './game-data.js';
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { RUN_MARK_ART, runMarkDraw, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { RUN_GRID, runSpotBoxes, runSpotOutline } from './logic/run-map.js';
@@ -139,6 +147,7 @@ expose({
   BOWL_HAZE: [() => BOWL_HAZE],
   BOWL_INDEX: [() => BOWL_INDEX],
   BOWL_KIND_GROUND: [() => BOWL_KIND_GROUND],
+  BOWL_LIFE: [() => BOWL_LIFE],
   BOWL_LIGHT: [() => BOWL_LIGHT],
   BOWL_METRES: [() => BOWL_METRES],
   BOWL_MIX: [() => BOWL_MIX],
@@ -162,6 +171,7 @@ expose({
   WORLD_BOWL_LEAVES: [() => WORLD_BOWL_LEAVES],
   WORLD_BOWL_SHADERS: [() => WORLD_BOWL_SHADERS],
   bowlFont: [() => bowlFont],
+  bowlLifeOn: [() => bowlLifeOn],
   bowlWallTexture: [() => bowlWallTexture, v => ((bowlWallTexture = v), provide({ bowlWallTexture }))],
   bowlWorker: [() => bowlWorker],
   runPinArt: [() => runPinArt],
@@ -2816,7 +2826,13 @@ function worldMapLoop(ts) {
   /* the sea moves: about 30 frames a second while it shows (still with reduced motion) */
   const beat = worldBowl.ground && worldBowl.ground.water && !reducedMotion ? 33 : 600,
     breathe = Math.floor(ts / beat) !== Math.floor((ts - dt) / beat);
-  if (!moving && !worldBowl.dirty && !breathe) return;
+  if (!moving && !worldBowl.dirty && !breathe) {
+    /* UI-17: the map's idle life (reachable places breathe, your pin bobs) redraws only the flat overlay, about 24
+       times a second, while it is one of the screen's two idle loops (ui-idle.js) */
+    if (worldBowl.view && bowlLifeOn() && Math.floor(ts / BOWL_LIFE.frame) !== Math.floor((ts - dt) / BOWL_LIFE.frame))
+      worldBowlOverlay(ts);
+    return;
+  }
   worldBowl.dirty = false;
   const w0 = performance.now();
   worldMapSize();
@@ -3521,6 +3537,10 @@ function worldBowlOverlay(t) {
   worldBowl.marks = [];
   /** @type {{ text: string, x: number, y: number, px: number, locked: boolean }[]} */
   const names = [];
+  /* UI-17: the map's idle life, one beat for all of it (0..1, or null while it isn't one of the screen's idle loops):
+     the run's places you can reach next breathe, your pin bobs, the ring where you stand pulses, you step in place */
+  const life = bowlLifeOn() ? 0.5 - 0.5 * Math.cos((2 * Math.PI * t) / BOWL_LIFE.beat) : null,
+    reach = new Set((ROADS_BY_NODE[saveData.trip.node] || []).map(e => e.to));
   LOCATIONS.forEach((l, i) => {
     const s = worldBowl.spots[i],
       base = at(floatPin && i === FI.i ? floatPin : s),
@@ -3528,7 +3548,21 @@ function worldBowlOverlay(t) {
     /* RL-7: a run's place the map doesn't show yet has no pin at all */
     if (!base || s.off || (rm && !rm.seen)) return;
     let top = { x: base.x, y: base.y - BOWL_PIN, z: base.z };
-    if (rm) top.y = worldBowlRunPin(c, base.x, base.y, rm, i === sel);
+    if (rm)
+      top.y = worldBowlRunPin(
+        c,
+        base.x,
+        base.y,
+        rm,
+        i === sel,
+        life == null
+          ? 0
+          : rm.state === 'current'
+            ? -BOWL_LIFE.bob * life
+            : rm.state === 'seen' && reach.has(i)
+              ? life
+              : 0
+      );
     else if (s.under) {
       /* reached by lift: a small marker just under its parent, a dashed line up to it */
       const y = base.y + 26;
@@ -3554,7 +3588,7 @@ function worldBowlOverlay(t) {
     const ring = here && floatMe && i === FI.i ? at(floatMe) : here ? base : null;
     /* UI-8c: the ground rings as the icon set draws an edge: a dark rim of their own hue under the colour */
     if (ring) {
-      const k = 1 + 0.15 * Math.sin(t / 300);
+      const k = 1 + 0.1 * (life || 0);
       worldBowlRing(
         c,
         ring.x,
@@ -3592,7 +3626,9 @@ function worldBowlOverlay(t) {
       const fr = personWalkFrames('me'),
         f = (fr.down || fr[Object.keys(fr)[0]])[0],
         k = 0.42,
-        bob = Math.floor(t / 600) % 2;
+        /* a step in place on the life's beat (still while it isn't playing); meBox below keeps the rest position, so
+           the names never move with the step */
+        bob = life == null ? 0 : life > 0.5 ? 1 : 0;
       c.imageSmoothingEnabled = false;
       c.fillStyle = 'rgba(20,10,40,.35)';
       c.beginPath();
@@ -3769,8 +3805,17 @@ function worldBowlFill(k) {
    stand, a soft gold glow round the rim there; the flat shape until the icon has loaded. Returns the head's top, where
    the name and the marks above it go */
 const BOWL_RUN_PIN = BOWL_PIN + 4;
-function worldBowlRunPin(c, x, y, rm, picked) {
-  const head = y - BOWL_RUN_PIN,
+/* UI-17: `life` is the map's idle life for this pin: 0..1 for a place you can reach next (its head breathes, up to
+   BOWL_LIFE.grow bigger), a negative lift in px for where you stand (its head bobs); 0 still. The head's top it returns
+   stays the resting one, so names and marks above it don't move */
+const BOWL_LIFE = { beat: 2400, frame: 42, grow: 0.08, bob: 3 };
+/** whether the map's life is one of the screen's idle loops now (ui-idle.js writes them on <html data-idle>) */
+const bowlLifeOn = () => (document.documentElement.dataset.idle || '').split(' ').includes('map');
+function worldBowlRunPin(c, x, y, rm, picked, life = 0) {
+  const rest = y - BOWL_RUN_PIN,
+    lift = life < 0 ? life : 0,
+    grow = life > 0 ? 1 + BOWL_LIFE.grow * life : 1,
+    head = rest + lift,
     look = runMarkLook(rm.type, rm.state);
   c.fillStyle = 'rgba(20,10,40,.3)';
   c.beginPath();
@@ -3785,11 +3830,11 @@ function worldBowlRunPin(c, x, y, rm, picked) {
   const d = worldMap.dpr || 1,
     pic = worldBowlRunPic(look, rm.state, d);
   if (!pic) {
-    runMarkDraw(c, x, head, look.size, rm.type, rm.state, worldBowlRunColors());
-    return head - look.size / 2 + 10;
+    runMarkDraw(c, x, head, look.size * grow, rm.type, rm.state, worldBowlRunColors());
+    return rest - look.size / 2 + 10;
   }
   /* the picture is made at the canvas's own pixels: put it on whole ones */
-  const w = pic.width / d,
+  const w = (pic.width / d) * grow,
     x0 = Math.round((x - w / 2) * d) / d,
     y0 = Math.round((head - w / 2) * d) / d;
   c.save();
@@ -3800,7 +3845,7 @@ function worldBowlRunPin(c, x, y, rm, picked) {
   }
   c.drawImage(pic, x0, y0, w, w);
   c.restore();
-  return head - look.size / 2 + 10;
+  return rest - look.size / 2 + 10;
 }
 /* UI-8c: the icons' pixels (art/ui, 36 x 36), loaded once each; null while one loads */
 const runPinArt = {
