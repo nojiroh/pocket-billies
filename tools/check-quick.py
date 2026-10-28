@@ -852,7 +852,8 @@ def sound_effects_step(P):
     # a cry as each side's Billie comes out; the lead in the red zone cries low
     clear()
     pg.evaluate("screenWipe=f=>f();const q={id:'tse',sp:'swift1',lvl:3,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});saveData.team[0].hp=1;startWild(q);0")
-    if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('cry ')&&e.e.endsWith(' low'))", 20, "uiState.evReady&&nextEvent()"): raise Exception(f'no low-HP cry as the lead came out: {log()}')
+    # VFX-8: the send-out's cry waits on the battle stage's clock (frames), not real time: a busy machine draws slowly
+    if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('cry ')&&e.e.endsWith(' low'))", 45, "uiState.evReady&&nextEvent()"): raise Exception(f'no low-HP cry as the lead came out: {log()}')
     cries = [e for e in log() if e.startswith('cry ')]
     if 'cry swift1' not in cries: raise Exception(f'the wild Swift did not cry: {cries}')
     out.append('cries: ' + ', '.join(cries[:3]))
