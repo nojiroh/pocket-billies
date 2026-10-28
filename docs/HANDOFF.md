@@ -2,6 +2,94 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-17 - jingles and stingers: the 12 jingles on ensembles, stingers on the song's beat, GB Sounds keeps the 8-bit ones - 2026-10-28
+Branch `track/sound`, the music lane (main merged first, 63fe5835: HANDOFF kept both entries, art-code-refs made
+again). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode, plan below,
+recommended options taken. One cause per commit, the generated files in their own commits, the baseline commit, the
+docs; tag `snd-17-done` (for the owner to push) on this session's last commit. PR #292. Details: sound-track.md
+"SND-17 as built". The world lane (SND-14) pushed nothing during this session.
+- **Plan**: (a) pure logic first: what each ensemble part plays of a jingle and a stinger's beat and key
+  (music-patterns.js); (b) the schema (`ensemble`, `harmony`, `bass`, `perc` as a hook's lines, and `stinger`) and
+  `musicFindings`; (c) the tracker: a jingle on its ensemble once baked and GB Sounds off, else today's code; (d)
+  stingers (beat, key, busy parts dropped; the fanfares keep the duck); (e) every caller by name so its ensemble can
+  play; (f) check-sound's `<name>@ensemble` renders and loudness rows; (g) the 12 arrangements as placeholders on
+  SND-11's instruments, trims from the loudness report; (h) the Studio's Jingles card and the Sound test both ways;
+  (i) bake ahead where they play; the baseline once, plain `--baseline`.
+- **Changed**: game/js/logic/music-patterns.js (`musicJingleParts`, `musicJingleNeeds`, `musicJingleTune`,
+  `MUSIC_JINGLE_KIT`, `musicStingerAt`, `musicStingerShift`); game/data/schema/music.schema.json (the jingle's keys);
+  game/js/logic/music-studio.js (`musicFindings`); game/js/audio/tracker.js (`T.jingleEnsemble`, `T.jingleNeeds`,
+  `T.jingleReady`, `T.jinglePrepare`, the ensemble path, stingers, `synthVoice` returns its nodes); game/js/sound.js
+  (`jinglePlay` passes the jingle and `o.bpm`, `jinglesPrepare`, the debug log's last jingle, the caught and lvl cases
+  by name); game/js/battle.js, run.js, logic/rules.js (by name); game/data/music.json (11 ensembles, the jingles' lines
+  and `stinger`); game/js/sound-test.js; studio/js/music-editor.js (the Jingles card, the roll's `poly`);
+  tools/check-sound.py, tools/check-studio-github.py; tests (music-patterns, tracker, music-studio, logic);
+  validation/sound-baseline/jingles.json.
+- **Fingerprints**: at the last code commit 204, **0 changed** (`check-sound.py`, 433 s); the arrangements' commit
+  (989247b3) listed exactly the 12 planned additions (`jingles` `<name>@ensemble`), 0 else; the baseline written once
+  with plain `--baseline` (9b85433b), every old value byte for byte the same; then `check-quick.py`'s Song fingerprints step: 216, with brightness,
+  0 changed. The first commits were not rendered one by one: each changed no data a render
+  reads before the arrangements (no jingle named an ensemble), and the render at the last code commit covers them.
+- **Loudness**: every jingle on its ensemble within 0.3 LU of its 8-bit version (the report's new jingle rows,
+  measured whole); peaks -11 to -22 dBFS. The full `--loudness` run did not finish on this machine (over 90 minutes,
+  stopped; see Risky); the jingle rows were measured with the same code on a page per jingle.
+- **Memory and bake time** (Node, 48 kHz): a run's stingers 2.7 MB (21 zones, 162 ms of work), the battle's fanfares
+  3.2 MB (27, 249 ms), run_won and run_lost 2.6 MB, the motif 0.8, hatch 0.9. A run's place holds about 7 of the 8 MB
+  already, so they bake ahead one at a time while 1.5 MB stays free; the rest bake on first play (which is 8-bit).
+- **Risky or unfinished**:
+  - Claude can't hear: the twelve arrangements are judged by numbers (the notes, levels, no NaN, peaks); the owner's
+    ears decide (the listening list). They are named placeholders.
+  - Memory: in a run's places the bank can't hold every jingle beside the songs, the water and the beds: some jingles
+    play 8-bit the first time (or after the bank dropped them) and bake for the next time. The debug log's `ensemble`
+    line says how the last jingle played (`gb (baking)`). A bigger budget or smaller zones is SND-15's call.
+  - Stingers drop the busy stems by setting their gains (1 -> 0.2 -> 1); SND-13's layers will move the same stems and
+    must share them (a multiplier per owner, or the layers on their own gains).
+  - `check-sound.py --loudness` as a whole took over 90 minutes here and was stopped: a page slows as its renders pile
+    up (the world rows: water and nature, about 100). Not this session's rows (theirs now run on their own page); for
+    the world lane or SND-15.
+  - CI smoke on PR #292: the Studio's world map look and Camera section fail on main too (the landmark's Auto and 404s
+    for game/art/billionaires/*.png); the frame-timed steps (the orbit, behind things, tall ground, a run's seam, the
+    camera dial) fail on some runs and not others (tall ground at SND-11's 0ba9f941, the seam at 63fe5835, five of
+    them at a70652e0), pass here at HEAD and on main when the machine is quiet, and fail here at HEAD under load.
+    Noted on the PR; not fixed.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `npm test` 1903 of 1903; `node --test`
+  tracker 33, music-patterns 13, music-studio 17, sound 17, sound-bake 23, logic 2 (the `jinglePlay` seam); `npm run
+  check:modules` (0 changed), `npm run check:data` (178 files fine), the check-data snapshot (unchanged). `check-sound.py`
+  at the last code commit (204, 0 changed) and at the arrangements (exactly the 12 additions), then the baseline. The
+  jingle loudness rows (a page per jingle). `check-studio-github.py --only=music`: ok (hatch 8-bit and on its ensemble,
+  a harmony note drawn and undone). `check-quick.py --steps=sound,song,music,"debug menu"`: 8 of 9, including "Sound
+  effects and jingles" (the day, reveal, relic, coins and run_won in order); "Battle music" failed once under load and
+  passed alone three times (drums 4.9-6.0 s after the flash). `npm run check:smoke`: 7 of 7. The full `npm run
+  check:quick`: 36 of 42 (1963 s): Copperleaf's train_station in the air, RL-8, room light at night (main's, known),
+  Battle music (passes alone), RT-2's double and Granny Juniper (each passes alone, at HEAD and on main). CI smoke:
+  see Risky; commented on PR #292 and its failed job re-run once.
+- **Decided for the owner, to review**:
+  - The arrangements (sound-track.md "SND-17 as built"): fanfare for victory and run_won, fanfare_pizz for the catch,
+    sparkle, swell, twinkle, motif, sly, chime, tock, lament, coin; trims level with the 8-bit versions.
+  - How a jingle's lines map onto SND-11's part lines (lead and counter the tune, pad, stabs and arp the harmony, bass,
+    drums the perc's General MIDI kit notes, timp its other notes) instead of new part lines.
+  - Stingers are data (`stinger: true` on relic, reveal, day, payout_coin), written in C and moved into the song's key
+    the nearer way (-5 to +6); they start on the song's next beat after any stinger already waiting; the busy parts
+    are the tune, the counter and the arpeggio (gb's lead, counter and harmony stems; an ensemble's lead, counter and
+    arp parts), dropped to 0.2 and back over 0.4 s; the bass, pad and drums keep playing.
+  - The payout's coins (`duck: false`) still drop the busy parts (the spec lists them).
+  - GB Sounds keeps the whole 8-bit jingle: no beat, no key, the duck, as today.
+  - Baked ahead: the run's stingers on arrival in its places, the motif in the hub, the fanfares (and in a boss battle
+    run_won and run_lost) as a battle starts, while 1.5 MB stays free; hatch never (nothing in the game plays it).
+  - No instrument added: SND-11's 29 cover every arrangement.
+  - The Studio: ▶ Play plays the ensemble (its notes baked first), ▶ 8-bit beside it; the roll's harmony, bass and
+    perc lines take several notes a step.
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test):
+  - Every jingle both ways: "Every jingle both ways" (each 8-bit, then on its ensemble), or one at a time.
+  - In the game: a battle's victory, a level-up and a catch (the fanfares duck the song); an evolution.
+  - The day's tock over Copperleaf's song: in Copperleaf, the Sound test's jingle row, day, on its ensemble (on the
+    beat? in the key?); in the game it plays walking into a run's next place, over that place's song, then the reveal.
+  - A relic (a Perk taken) over a route song: the tune and arpeggio step back, the bass and drums go on (no full duck).
+  - The payout: a coin per row, a tone higher each, then run_won or run_lost.
+  - Settings -> Sound -> GB Sounds on: every jingle 8-bit as before.
+  - Export a debug log and read `audio.ensemble.jingle` (the last jingle and what played it) and `bank` (withOtherMb,
+    dropped).
+- **Next**: SND-13 (layers in play: walking, weather, the busker, a battle's intensity), then SND-12.
+
 ### Sound track SND-11 - stems and ensembles: the tick's patterns as pure functions, stems, baked instruments, the first ensembles, GB Sounds, the Studio's Instruments tab - 2026-10-28
 Branch `track/sound`, the music lane (main merged first; the local clone was stale and was reset to origin/track/sound
 before any edit). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode,
