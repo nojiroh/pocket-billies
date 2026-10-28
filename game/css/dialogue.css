@@ -2,9 +2,24 @@
    Used wherever people talk (js/talk.js). The portrait sits framed in its own 96×96 slot inside the box (phase 07
    animates its eyes and mouth), a name tag over the line, the line in the reading font. Clear of the screen's edges
    and above the bottom bar. Only tokens from css/tokens.css. */
-.talk-box {
+/* DL-4: the conversation's bubbles stack up from where the box sat: the newest at the bottom, the older ones above it
+   (talk.js talkDemote), a tail's height and a little apart */
+.talk-stack {
+  position: absolute;
+  left: 50%;
   bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  row-gap: calc(var(--bubble-tail, 18px) + var(--s2));
   width: min(560px, calc(100% - 2 * var(--gutter)));
+}
+.talk-box {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  transform: none;
+  width: auto;
   grid-template-columns: 96px minmax(0, 1fr);
   align-items: start;
   gap: var(--s4);
@@ -43,7 +58,9 @@
   z-index: var(--z-below);
   clip-path: var(--talk-clip, var(--clip-bubble));
   pointer-events: none;
-  transform: rotate(var(--talk-tilt)) skewX(var(--talk-slant, 0deg)) scale(1, var(--grow, 1));
+  /* DL-4: on the right the shape is mirrored round the tail's spot and moved back over the box (--flip), the text not */
+  transform: translateX(var(--flip-dx, 0px)) scaleX(var(--flip, 1)) rotate(var(--talk-tilt))
+    skewX(var(--talk-slant, 0deg)) scale(1, var(--grow, 1));
   transform-origin: 58px 100%;
 }
 .talk-box::before,
@@ -235,4 +252,224 @@
     gap: var(--s3);
     padding: var(--s3);
   }
+}
+
+/* ---------- DL-4: the stack (talk.js talkDemote, logic/talk-stack.js) ---------- */
+/* sides: the portrait and the tail on the speaker's side; the frame mirrored, the letters never */
+.talk-box[data-side='right'] {
+  grid-template-columns: minmax(0, 1fr) 96px;
+  --flip: -1;
+  --flip-dx: calc(100% - 116px);
+}
+.talk-box[data-side='right'] .talk-slot {
+  grid-column: 2;
+  grid-row: 1;
+}
+.talk-box[data-side='right'] .talk-txt {
+  grid-column: 1;
+  grid-row: 1;
+  padding: 0 0 0 var(--s2);
+}
+.talk-box[data-side='right'] .talk-form {
+  transform: scaleX(-1);
+}
+.talk-box[data-side='right'] .talk-dots {
+  left: auto;
+  right: 40px;
+  transform: scaleX(-1);
+}
+.talk-box[data-side='right'] .talk-more {
+  right: calc(96px + var(--s5));
+}
+.talk-box[data-side='right'] .talk-choices {
+  right: auto;
+  left: 0;
+}
+/* older bubbles: smaller and fainter the further up (the fill, edge and portrait fade; the words keep their contrast),
+   two rows at most, a small portrait, still (only the newest breathes) */
+.talk-old {
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: var(--s2);
+  width: 92%;
+  padding: var(--s2) var(--s3);
+  align-self: flex-start;
+  transform-origin: 0 100%;
+  scale: var(--was-scale, 0.88);
+  translate: var(--knock-px, 0px) 0;
+  pointer-events: none;
+}
+.talk-old.was-1 {
+  --was-scale: 0.88;
+  --was-fade: 0.85;
+}
+.talk-old.was-2 {
+  --was-scale: 0.76;
+  --was-fade: 0.6;
+}
+.talk-old[data-side='right'] {
+  grid-template-columns: minmax(0, 1fr) 40px;
+  align-self: flex-end;
+  transform-origin: 100% 100%;
+  --flip-dx: calc(100% - 116px);
+}
+.talk-old[data-side='mid'] {
+  align-self: center;
+  transform-origin: 50% 100%;
+}
+.talk-box.talk-old::before,
+.talk-box.talk-old::after,
+.talk-old .talk-deco {
+  animation: none;
+  opacity: var(--was-fade, 1);
+}
+/* the small portrait: the head, in a 40 px window (talk.js talkMiniPortrait) */
+.talk-old .talk-slot {
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  place-items: start center;
+  opacity: var(--was-fade, 1);
+}
+.talk-old .talk-slot::before {
+  left: 0;
+  right: 0;
+}
+.talk-old .talk-slot > * {
+  -webkit-mask: none;
+  mask: none;
+}
+.talk-old .talk-txt {
+  min-height: 0;
+  padding: 0;
+}
+.talk-said {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font: 500 var(--fs-body) / var(--lh-prose) var(--font-prose);
+  color: var(--skin-ink, var(--text));
+}
+.talk-was {
+  display: inline-block;
+  margin-right: var(--s1);
+  padding: 0 var(--s2);
+  clip-path: var(--skin-tag-clip, var(--clip-chip));
+  font: 700 var(--fs-caption) / 1.4 var(--font-voice);
+  color: var(--skin-tag-ink, var(--goldink, #3a2408));
+  background: var(--skin-tag, linear-gradient(180deg, var(--gold-a), var(--gold-b)));
+}
+/* one speaker's lines in a row: the older drops its portrait and name, a short bridge joins it to the newer */
+.talk-old.linked {
+  grid-template-columns: minmax(0, 1fr);
+}
+.talk-old.linked .talk-slot,
+.talk-old.linked .talk-was {
+  display: none;
+}
+.talk-bridge {
+  position: absolute;
+  left: 44px;
+  bottom: calc(-1 * (var(--bubble-tail, 18px) + var(--s2)) - 2px);
+  width: 12px;
+  height: calc(var(--bubble-tail, 18px) + var(--s2) + 4px);
+  z-index: var(--z-below);
+  border-inline: 2px solid var(--skin-edge, var(--edge));
+  background: var(--skin-fill, var(--g-solid));
+  opacity: var(--was-fade, 1);
+}
+.talk-old[data-side='right'] .talk-bridge {
+  left: auto;
+  right: 44px;
+}
+/* an interrupted bubble, knocked aside by the next: the frame turns, the words stay level */
+.talk-old.knocked {
+  --talk-tilt: calc(var(--tilt-k, 0) * var(--bubble-tilt, 3deg) + var(--knock-deg, 0deg));
+}
+/* a choice: the older bubbles make room for the options */
+.talk-stack.choosing .talk-old {
+  opacity: 0;
+}
+/* the "…" before a line: three dots in the speaker's bubble (motion.css m-talk-wait, a few bounces, then it ends) */
+.talk-wait {
+  display: none;
+}
+.talk-box.waiting .talk-wait {
+  display: flex;
+  gap: var(--s2);
+  align-items: center;
+  height: calc(var(--fs-body) * var(--lh-prose));
+}
+.talk-box.waiting .talk-line {
+  display: none;
+}
+.talk-wait i {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--skin-ink, var(--text));
+  opacity: 0.45;
+}
+/* the Log: a small button on the newest bubble; the conversation so far, scrollable, over the screen's top */
+.talk-logbtn {
+  position: absolute;
+  top: var(--s2);
+  right: var(--s3);
+  min-height: 28px;
+  padding: 0 var(--s2);
+  border: 0;
+  border-radius: var(--r-pill);
+  font: 600 var(--fs-caption) / 1 var(--font-prose);
+  color: var(--skin-ink, var(--text));
+  background: color-mix(in srgb, var(--skin-ink, var(--text)) 10%, transparent);
+  cursor: pointer;
+}
+.talk-logbtn::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+/* the name tag keeps clear of the Log button */
+.talk-box:has(> .talk-logbtn) .talk-who {
+  max-width: calc(100% - 48px);
+}
+.talk-box[data-side='right'] .talk-logbtn {
+  right: calc(96px + var(--s5));
+}
+.talk-box.waiting .talk-logbtn {
+  visibility: hidden;
+}
+.talk-log {
+  position: absolute;
+  top: calc(env(safe-area-inset-top, 0px) + var(--s4));
+  left: 50%;
+  translate: -50% 0;
+  width: min(560px, calc(100% - 2 * var(--gutter)));
+  max-height: 55%;
+  overflow-y: auto;
+  padding: var(--s3) var(--s4);
+  border-radius: var(--r-md);
+  background: var(--g-solid);
+  box-shadow: var(--drop-float);
+  color: var(--text);
+  cursor: pointer;
+}
+.talk-log-head {
+  margin: 0 0 var(--s2);
+  font: 700 var(--fs-caption) / 1.2 var(--font-voice);
+  color: var(--text2);
+}
+.talk-log ol {
+  display: grid;
+  gap: var(--s2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: 500 var(--fs-body) / var(--lh-prose) var(--font-prose);
+}
+.talk-log b {
+  font: 700 var(--fs-caption) / 1.2 var(--font-voice);
+  color: var(--text2);
 }

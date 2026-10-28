@@ -1636,7 +1636,7 @@
    "game/js/logic/soundscape.js:117",
    "game/js/logic/soundscape.js:123",
    "game/js/logic/ui-dials.js:103",
-   "game/js/talk.js:198"
+   "game/js/talk.js:221"
   ],
   "building": [
    "game/js/bowl-map-test.js:344",
@@ -1671,7 +1671,7 @@
    "game/js/logic/idle-life.js:94",
    "game/js/logic/marks.js:179",
    "game/js/logic/smear.js:345",
-   "game/js/logic/story-checks.js:348",
+   "game/js/logic/story-checks.js:365",
    "game/js/lore.js:209",
    "game/js/shop.js:66",
    "game/js/shop.js:86",
@@ -1888,7 +1888,7 @@
    "game/js/logic/data-checks.js:1043",
    "game/js/logic/data-checks.js:2164",
    "game/js/logic/script.js:234",
-   "game/js/logic/story-checks.js:353",
+   "game/js/logic/story-checks.js:370",
    "game/js/ranch-screen.js:210",
    "game/js/ranch-screen.js:235",
    "game/js/ranch-screen.js:269",

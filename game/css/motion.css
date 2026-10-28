@@ -779,3 +779,21 @@ html:not([data-idle~='bloom']) .bloom {
     transform: translateY(-3px);
   }
 }
+
+/* DL-4: the "…" bubble's dots bounce a few times, one after another (dialogue.css .talk-wait; never under Reduced:
+   talk.js skips the wait) */
+@keyframes m-talk-wait {
+  to {
+    translate: 0 -4px;
+    opacity: 1;
+  }
+}
+.talk-box.waiting .talk-wait i {
+  animation: m-talk-wait var(--m-base) ease-in-out 3 alternate both;
+}
+.talk-box.waiting .talk-wait i:nth-child(2) {
+  animation-delay: var(--m-press);
+}
+.talk-box.waiting .talk-wait i:nth-child(3) {
+  animation-delay: calc(2 * var(--m-press));
+}

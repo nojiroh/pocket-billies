@@ -41,7 +41,7 @@ import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
 import { LOOK_PRESETS, cleanLook } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { actionSpot, walkData, walkView } from './walk-view.js';
-import { talkLine } from './talk.js';
+import { talkChoose, talkHide, talkLine } from './talk.js';
 import { renderOverlay } from './overlay.js';
 import { enterRoom } from './walk-control.js';
 import { render } from './ui.js';
@@ -224,6 +224,28 @@ export function fixtureStart() {
         you: ['me', 'Where am I? This doesn’t look like the city.', { skin: 'you' }],
       })[q.get('skin') || 'chosen'] || ['chosen', 'This is the dialogue box.', {}],
       style = (q.get('style') || '').replace(/[^a-z]/g, '');
+    /* DL-4: &stack=1 plays a whole exchange (sides, a linked pair, Kappi's "…", a cut, a [wait], the stamp), tapped on
+       by the caller (tools/look-talk.py); &choice=1 ends it in a choice */
+    if (q.get('stack')) {
+      const lines = /** @type {[string, string, any][]} */ ([
+        ['chosen', 'So. You fell through the crust. Mostly [b]furniture[/b] does that.', {}],
+        ['kappi', '[whisper] They are not furniture, Professor.', {}],
+        ['kappi', 'Breathe in. The water always knows the way down.', {}],
+        ['chad', '[shout] Out of my way, I was here first, I’m next in the—', {}],
+        [
+          'clerk',
+          '[wait] Actually, the queue is [b]ours[/b].[stamp=approved]',
+          { cls: 'bureau_clerk', name: 'Clerk 4471' },
+        ],
+        ['chosen', '[think] Was it left at the fork, or right?', {}],
+      ]);
+      (async () => {
+        for (const [who, text, o] of lines) await talkLine(who, text, null, o);
+        if (q.get('choice')) await talkChoose([{ text: 'Join the queue' }, { text: 'Walk away' }]);
+        talkHide();
+      })();
+      return;
+    }
     const said = (/^(shout|whisper|think)$/.test(style) ? `[${style}] ` : '') + pick[1];
     talkLine(pick[0], said, null, pick[2]);
   }

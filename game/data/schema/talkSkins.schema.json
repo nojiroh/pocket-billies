@@ -21,6 +21,7 @@
      "family": {"enum": ["bubble", "bubbleSoft", "bubbleNote"], "description": "its shape family (logic/ui-theme.js); a shout or a thought takes its own shape over it"},
      "slant": {"type": "number", "minimum": -15, "maximum": 15, "description": "degrees the frame leans (a skew; the letters stay upright)"},
      "tilt": {"type": "number", "minimum": 0, "maximum": 2, "description": "how strongly each bubble tilts, times the Motion dial (default 1; 0: never)"},
+     "wait": {"enum": ["first"], "description": "DL-4: first: a \"…\" bubble before the skin's first line in a conversation (a [wait] line gets one from anyone)"},
      "entrance": {"enum": ["pop", "soft", "still"], "description": "pop: the spring from the speaker's side; soft: slower and gentler; still: a fade"},
      "blip": {"enum": ["voice", "typewriter", "calm"], "description": "voice: the speaker's own pitch; typewriter: a key's clack; calm: softer and lower"},
      "deco": {
