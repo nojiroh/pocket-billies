@@ -18,6 +18,7 @@ expose({
   PYRAMID_ART: [() => PYRAMID_ART],
   PYRAMID_KINDS: [() => PYRAMID_KINDS],
   artBoot: [() => artBoot, v => (artBoot = v)],
+  artIconHTML: [() => artIconHTML, v => (artIconHTML = v)],
   artImg: [() => artImg, v => (artImg = v)],
   artLoad: [() => artLoad, v => setArtLoad(v)],
   artPixels: [() => artPixels, v => setArtPixels(v)],
@@ -176,11 +177,20 @@ export const uiIconURL = k =>
     ? window.NW_ART[`ui/${k}.svg`]
     : new URL(`${ART_DIR}ui/${k}.svg`, document.baseURI).href;
 provide({ uiIconURL }); /* to-module */
-/* an icon's tag: `uico` shows the picture, `ugl` (UI-13) uses it as a mask; `vars` adds custom properties */
-const iconTag = (cls, key, size, vars = '') =>
-  `<i class="${cls}" style="--ico:url('${uiIconURL(key)}')${vars};width:${size}px;height:${size}px" aria-hidden="true"></i>`;
+/* an icon's tag: `uico` shows the picture, `ugl` (UI-13) uses it as a mask; `vars` adds custom properties; PK-2: `url`
+   another picture drawn the same way (a Perk's) */
+const iconTag = (cls, key, size, vars = '', url = uiIconURL(key)) =>
+  `<i class="${cls}" style="--ico:url('${url}')${vars};width:${size}px;height:${size}px" aria-hidden="true"></i>`;
 export function uiIconHTML(key, size = 22) {
   return iconTag('uico', key, size);
+}
+/** PK-2: a picture drawn as the UI icons are (an `img`, a Perk's SVG in art's perks folder; items and boons later) at
+ * `size` px, a whole multiple of its 36 px so no pixel blurs; without one, the UI icon `fallback`
+ * @param {string | undefined} img @param {number} [size] @param {string} [fallback] */
+export function artIconHTML(img, size = 36, fallback = 'relic') {
+  return img
+    ? iconTag('uico art-ic', fallback, size, '', new URL(artURL(img), document.baseURI).href)
+    : uiIconHTML(fallback, size);
 }
 /** UI-13: a mark's glyph (logic/signals.js UI_GLYPHS: a status, a short effect, a family, a pickup's kind), its SVG
  * as a mask filled with its colour code. `tint`: 'text' the side's text shade (light and dark screens), 'fill' the

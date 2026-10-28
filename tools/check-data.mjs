@@ -37,6 +37,7 @@ import {
   dataCameraStops,
   dataBuildings,
   dataCatchArt,
+  dataPerkArt,
   dataCurrencies,
   dataNodeTypes,
   dataRanchRules,
@@ -407,6 +408,13 @@ for (const [where, what] of dataCatchArt(D.pyramids, p => {
   return existsSync(f) ? readFileSync(f, 'utf8') : null;
 }))
   problem(where, what);
+// PK-2: the Perks' pictures (an img that is there and is an icon; a Perk without one warns)
+for (const f of dataPerkArt(D.perks, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
 // studio track ST-3: the part kits: the schema, then every picture they name is there with the size given
 // (ST-4: and the S/L pictures, turn limits that run least to most, slots the socket rules name, the part mirrored)
 if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {

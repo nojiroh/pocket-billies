@@ -1095,8 +1095,9 @@ body.battle-3d #camFg {
 .bplate .pl-hp .fill {
   /* UI-12: the plate is always dark glass, so the colour code's fills (teal, amber, red) */
   background: linear-gradient(180deg, color-mix(in srgb, var(--sig-good) 55%, #ffffff), var(--sig-good));
+  /* SY-8: the HP roll's time (uiTheme.json style rollMs), so the number and the fill land together */
   transition:
-    width 0.38s cubic-bezier(0.2, 0.9, 0.3, 1),
+    width var(--hp-roll, 380ms) cubic-bezier(0.2, 0.9, 0.3, 1),
     background 0.3s;
 }
 .bplate .pl-hp .fill.mid {

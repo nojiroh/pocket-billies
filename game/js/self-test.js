@@ -1091,6 +1091,11 @@ async function runFullTest(mode) {
       if (billyName(foe) !== B.name) throw new Error(`it goes by ${billyName(foe)}, not ${B.name}`);
       const coin = document.querySelector('[data-a=bcoins]');
       if (!coin || !(/** @type {HTMLButtonElement} */ (coin).disabled)) throw new Error('"Catch it" is open on a bot');
+      /* SY-5: the Bureau's bot has an ID plate: form paper, a serial, its property line */
+      const plate = document.querySelector('.bplate[data-k="1"]'),
+        serial = plate && plate.querySelector('.pl-serial');
+      if (FACTIONS.bureau.look && (!plate || !plate.classList.contains('form') || !serial || serial.hidden))
+        throw new Error("the Bureau's bot has no ID plate (form paper and a serial)");
       /* every limb one point from breaking, and (for this turn) every hit on a limb, so one breaks and drops off */
       const R = robotRules(),
         hw = R.hitWeights;
@@ -1152,12 +1157,16 @@ async function runFullTest(mode) {
       };
       let flew = 0,
         dropped = 0,
-        turn = false;
-      /* part pictures on the stage: its bots flying in (the intro), then the torn-off arm falling (the turn) */
+        turn = false,
+        notice = 0;
+      /* part pictures on the stage: its bots flying in (the intro), then the torn-off arm falling (the turn); SY-5:
+         the Notice of Retrieval's line items while it joins */
       const watch = setInterval(() => {
         const n = battleStage.parts.filter(p => p.img).length;
         if (turn) dropped = Math.max(dropped, n);
         else flew = Math.max(flew, n);
+        const N = document.querySelector('.bt-notice');
+        if (N) notice = Math.max(notice, N.querySelectorAll('li').length);
       }, 50);
       const g0 = selfTest.gen || 0;
       const want = async (ph, ms) => {
@@ -1181,6 +1190,10 @@ async function runFullTest(mode) {
         const foe = fighter(1);
         if (!foe || foe.kind !== 'robot' || !foe.boss || !foe.boss.phases) throw new Error('the boss is no boss robot');
         if (!joined) throw new Error('no join intro');
+        /* SY-5: the notice listed its four bots and was gone by the menu */
+        if (FACTIONS.bureau.look && notice !== Object.keys(V.bots || {}).length)
+          throw new Error(`the Notice of Retrieval listed ${notice} bots`);
+        if (document.querySelector('.bt-notice')) throw new Error('the Notice of Retrieval outlived the join');
         if (!flew && !reducedMotion) throw new Error('its bots never flew in');
         if (catchable(foe)) throw new Error('the boss can be caught');
         /* just over 30%: the next hit passes both phases (a 60% shield, then the arm-bot tears loose) */
@@ -1206,7 +1219,7 @@ async function runFullTest(mode) {
         if (foe.hp > 0 && done < 2) throw new Error(`only ${done} of its phases fired at ${foe.hp} HP`);
         if (foe.hp > 0 && !torn) throw new Error('its arm-bot never tore loose');
         if (foe.hp > 0 && !dropped && !reducedMotion) throw new Error('the arm-bot tore loose but nothing dropped');
-        return `${V.name}: joined (${flew ? 'its bots flew in' : 'reduced motion'}), not catchable; ${foe.hp > 0 ? `${done} phases, the ${V.bots && V.bots.armR} torn loose` : 'fainted from the hit'}`;
+        return `${V.name}: joined (${flew ? 'its bots flew in' : 'reduced motion'}${notice ? `, a notice of ${notice}` : ''}), not catchable; ${foe.hp > 0 ? `${done} phases, the ${V.bots && V.bots.armR} torn loose` : 'fainted from the hit'}`;
       } finally {
         clearInterval(watch);
         delete TRAINERS[id];
@@ -2042,6 +2055,10 @@ async function runFullTest(mode) {
             walkPick({ k: 'npc', n: agent });
             if (!(await wait(() => uiState.modal && uiState.modal.cls === 'event-sheet', 5000)))
               throw new Error('tapping the agent opened no event');
+            /* SY-4: the checkpoint is the Bureau's, so a case file: its tab names the form */
+            const form = document.querySelector('#ov .event-sheet .case-tab .case-form');
+            if (!form || !(form.textContent || '').trim())
+              throw new Error('the checkpoint isn’t a case file (no form on its tab)');
             const go = uiState.modal.btns[uiState.modal.btns.length - 1];
             go.f();
             if (!(await wait(() => saveData.run.enc && saveData.run.enc.seen.includes('bureau_checkpoint'), 15000)))
@@ -2054,6 +2071,14 @@ async function runFullTest(mode) {
               await selfTestSleep(200);
             }
             if (saveData.run.enc.play) throw new Error('walking on didn’t end the event');
+            /* SY-4: walking on (the last option) stamps the Bureau's word for denied */
+            await wait(() => !!document.querySelector('#ov .event-sheet pb-stamp'), 3000);
+            const stamp = document.querySelector('#ov .event-sheet pb-stamp'),
+              denied = FACTIONS.bureau.look ? FACTIONS.bureau.look.stamps.denied : '';
+            if (!stamp || stamp.getAttribute('word') !== denied)
+              throw new Error(
+                `walking on stamped “${stamp ? stamp.getAttribute('word') : 'nothing'}”, not “${denied}”`
+              );
             uiState.modal = null;
             renderOverlay();
             walkPick({ k: 'npc', n: agent });

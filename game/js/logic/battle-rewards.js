@@ -19,11 +19,11 @@ import { runBeans } from './relations.js';
 import { META_GENES, META_MAX } from './meta-state.js';
 import { factionBotOf, factionOfClass } from './factions.js';
 import { fieldBadgeKey } from './run-side.js';
-import { runFragileDrop } from './run-loop.js';
+import { runFragileDrop, runFxMoment } from './run-loop.js';
 import { fxMoney, fxOfBillie, fxSplice } from './effects.js';
-import { perkOfferMake } from './perks.js';
+import { perkOfferMake, perkTeamOf } from './perks.js';
 import { rewardDataGame, rewardOfferMake, salvageOfferMake } from './rewards.js';
-import { battleRoll } from './battle-engine.js';
+import { battleRoll, fxBattleRows, fxFoeTags } from './battle-engine.js';
 import { questCatch, questWin } from './run-quests.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -90,7 +90,9 @@ export function battleMoneyFx(b) {
   const held = b.sides[0].team
     .filter((/** @type {any} */ m) => m.hp > 0)
     .flatMap((/** @type {any} */ m) => (fxOfBillie(m, ITEMS) || []).filter(f => f.kind === 'money'));
-  return held.length ? [...(b.fx || []), ...held] : b.fx;
+  /* PK-1: the run's rows whose conditions hold for this battle (battle-engine.js fxBattleRows) */
+  const run = fxBattleRows(b);
+  return held.length ? [...(run || []), ...held] : run;
 }
 
 /* Studio plan T3.2: what an ended battle does to the save, the same on the page (battle.js endBattle, which shows the
@@ -105,7 +107,7 @@ export function battleMoneyFx(b) {
  */
 export function battleSettle(b, s) {
   const pay = battleRewards(
-      { kind: b.kind, over: b.over, T: b.T, tid: b.tid, foe: b.sides[1].team, fx: battleMoneyFx(b) },
+      { kind: b.kind, over: b.over, T: b.T, tid: b.tid, foe: b.sides[1].team, fx: battleMoneyFx(b) || undefined },
       s,
       battleRoll
     ),
@@ -130,6 +132,12 @@ export function battleSettle(b, s) {
   }
   /* ON-2: a friend's ghost beaten (the run's record says so) */
   if (run && run.ghost && o === 'win' && b.T && b.T.runFoe === 'ghost') run.ghost.won = 1;
+  /* PK-1: the run's moments: a battle won, a Billie caught (the battle's foe and whether one of yours fainted) */
+  if (run && (o === 'win' || b.over === 'caught') && b.sides)
+    runFxMoment(s, PERKS, o === 'win' ? 'win' : 'catch', {
+      foe: fxFoeTags(b),
+      noFaint: !((b.fainted || 0) > 0),
+    });
   /* v36: the Hype counter */
   if (o === 'win') for (const m of s.team) if (m.hp > 0) m.wins = (m.wins || 0) + 1;
   if (b.kind === 'wild') dropEncounter(b.qid);
@@ -164,7 +172,7 @@ export function battleSettleWin(b, s, pay, run) {
   if (pay.o !== 'win') return;
   if (b.kind === 'wild' && pay.prize > 0) s.se += pay.prize;
   /* SP-3: a spliced wild Billie knocked out leaves DNA and a sample of its Genes (caught, it keeps them) */
-  if (b.kind === 'wild' && b.sides) Object.assign(pay, spliceSample(b.sides[1].team, s, b.fx));
+  if (b.kind === 'wild' && b.sides) Object.assign(pay, spliceSample(b.sides[1].team, s, fxBattleRows(b)));
   /* RL-14: on a run, beating bots leaves a salvage pick (their parts or Scrap) in place of a reward pick */
   const salvage = run ? battleSalvage(b, run) : false;
   if (b.kind === 'trainer') {
@@ -184,7 +192,7 @@ export function battleSettleWin(b, s, pay, run) {
     /* RL-S2: a side area's leader beaten finds Beans */
     if (run && b.T && run.map && run.map.side && b.T.from && b.T.from === run.map.side.leader)
       runBeans(s, (RULES.run.beans || {}).side, run);
-    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks);
+    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks, perkTeamOf(s.team));
     /* RL-12b: a route trainer (or the rival, or ON-2's ghost) leaves a reward pick (logic/rewards.js), saved with the
        battle's end */
     if (!salvage && run && b.T && ['route', 'rival', 'ghost'].includes(b.T.runFoe))

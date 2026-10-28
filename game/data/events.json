@@ -100,7 +100,10 @@
     },
     {"text":"Leave","then":["Clerk: We will keep you on file."]}
    ],
-   "weight": 1
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["cardigan"],
+   "form": "Form 27-B"
   },
   "unpaid_intern": {
    "title": "Unpaid Intern",
@@ -129,6 +132,7 @@
    "options": [
     {
      "text": "Open it",
+     "stamp": "denied",
      "then": [
       "wager 50",
       "if wager = win",
@@ -142,15 +146,19 @@
     },
     {
      "text": "Let Alloy pry it open",
+     "stamp": "denied",
      "need": "type:Steel",
      "then": ["Your Steel Billie pries the lid up a crack, takes something out and shuts it again without looking.","perk","beans 1"]
     },
     {
      "text": "File it as Found",
+     "stamp": "filed",
      "then": ["You fill in a Found tag. A drone takes the crate away and drops a finder's fee.","money 100"]
     }
    ],
-   "weight": 1
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["property"]
   },
   "ring_light": {
    "title": "Ring Light Shrine",
@@ -269,10 +277,20 @@
    "title": "Abandoned Pyramid Cart",
    "intro": ["A handcart full of pyramids, left by the road. The tag says PROPERTY OF THE BUREAU OF LOST, FOUND AND BEANS."],
    "options": [
-    {"text":"Take three","then":["give coin:pyramid 3","Nobody stops you. Somewhere, a form is filled in."]},
-    {"text":"Report it","then":["A Bureau drone arrives, scans the cart, scans you, and pays a reward.","money 150"]}
+    {
+     "text": "Take three",
+     "stamp": "denied",
+     "then": ["give coin:pyramid 3","Nobody stops you. Somewhere, a form is filled in."]
+    },
+    {
+     "text": "Report it",
+     "stamp": "filed",
+     "then": ["A Bureau drone arrives, scans the cart, scans you, and pays a reward.","money 150"]
+    }
    ],
-   "weight": 1
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["handcart"]
   },
   "fire_sale": {
    "title": "Fire Sale",
@@ -318,7 +336,9 @@
     },
     {"text":"Walk on","then":["Agent: We'll be in touch."]}
    ],
-   "weight": 0
+   "weight": 0,
+   "bureau": 1,
+   "redact": ["tollbooth","clipboard"]
   },
   "speedrunner": {
    "title": "Speedrunner",
@@ -361,7 +381,9 @@
     },
     {"text":"Leave","then":["Auctioneer: Going once! Going twice! Gone, like you."]}
    ],
-   "weight": 1
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["unclaimed"]
   },
   "surveyor_hole": {
    "title": "Surveyor in a Hole",
@@ -385,7 +407,10 @@
      ]
     }
    ],
-   "weight": 1
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["square"],
+   "form": "Form 9-C"
   },
   "poster_grove": {
    "title": "Motivational Poster Grove",
@@ -502,6 +527,7 @@
     },
     {
      "text": "Swipe a sample",
+     "stamp": "denied",
      "then": [
       "You pocket a vial from the rack. The clerk saw that.",
       "foe bureau_clerk 1",
@@ -511,7 +537,10 @@
     },
     {"text":"Leave","then":["Clerk: We will keep your sequence on file. We always do."]}
    ],
-   "weight": 1
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["centrifuge"],
+   "form": "Form 9-G"
   },
   "gene_auction": {
    "title": "Gene Auction",
@@ -540,6 +569,7 @@
     },
     {
      "text": "Refuse",
+     "stamp": "denied",
      "then": [
       "Drone: Escalating to a clerk.",
       "foe bureau_clerk 2",
@@ -549,7 +579,9 @@
     },
     {"text":"Walk round it","then":["The drone follows you for a while, then files a report."]}
    ],
-   "weight": 1
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["unlicensed"]
   },
   "dig_site": {
    "title": "Dig Site",
@@ -573,6 +605,8 @@
     {"text":"Leave them be","then":["Archivist: Very well. I will file them under Found, Not Wanted."]}
    ],
    "weight": 1,
+   "bureau": 1,
+   "redact": ["humming"],
    "biomes": ["ridge","canyon","badlands","cave"]
   }
  }

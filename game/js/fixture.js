@@ -32,7 +32,7 @@ import { applyUiTheme } from './theme-sheet.js';
 import { runArrive } from './logic/run-map.js';
 import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
 import { runWorldData } from './logic/run-world-data.js';
-import { perkOfferMake } from './logic/perks.js';
+import { perkOfferMake, perkTeamOf } from './logic/perks.js';
 import { newSave } from './logic/saves.js';
 import { startTrainer } from './logic/battle-engine.js';
 import { runUnlocks } from './logic/unlocks.js';
@@ -155,7 +155,7 @@ function fixtureSave() {
   if (FIXTURE === 'relics') {
     s.run.perks = FIXTURE_PERKS.filter(id => PERKS[id]);
     s.se = 2000;
-    perkOfferMake(s.run, PERKS, RULES.run.perks);
+    perkOfferMake(s.run, PERKS, RULES.run.perks, perkTeamOf(s.team));
   }
   return s;
 }

@@ -12,12 +12,16 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  ICON_DIRS: [() => ICON_DIRS],
   SVG_HEAD: [() => SVG_HEAD],
   SVG_PATH: [() => SVG_PATH],
   SVG_RUN: [() => SVG_RUN],
   // @ts-expect-error -- replaced on purpose
   pixelsToSvg: [() => pixelsToSvg, v => (pixelsToSvg = v)],
   svgHex2: [() => svgHex2],
+  // @ts-expect-error -- replaced on purpose
+  svgIconKey: [() => svgIconKey, v => (svgIconKey = v)],
+  svgIconPath: [() => svgIconPath],
   // @ts-expect-error -- replaced on purpose
   svgProblem: [() => svgProblem, v => (svgProblem = v)],
   // @ts-expect-error -- replaced on purpose
@@ -29,6 +33,18 @@ export const SVG_HEAD =
   /^<svg xmlns="http:\/\/www\.w3\.org\/2000\/svg" viewBox="0 0 (\d+) (\d+)" shape-rendering="crispEdges">/;
 export const SVG_PATH = /^<path d="([^"]*)" fill="#([0-9A-F]{6})"\/>/;
 export const SVG_RUN = /M(\d+) (\d+)h(\d+)v1h-(\d+)z/y;
+
+/** PK-2: the art folders drawn as the UI icons are (36 x 36 pixel SVGs the Studio's icon editor opens): the
+ * interface's own, and the pictures of Perks, items and boons (tools/build-icons.mjs) */
+export const ICON_DIRS = ['ui', 'perks', 'items', 'boons'];
+/** an icon's key from its path: its name for art/ui/<name>.svg, perks/<id> for a Perk's picture; '' for any other path
+ * @param {string} path */
+export function svgIconKey(path) {
+  const m = /^art\/([a-z]+)\/([a-z0-9][\w-]*)\.svg$/.exec(String(path || ''));
+  return !m || !ICON_DIRS.includes(m[1]) ? '' : m[1] === 'ui' ? m[2] : m[1] + '/' + m[2];
+}
+/** an icon's path from its key (svgIconKey's other way) @param {string} key */
+export const svgIconPath = key => `art/${key.includes('/') ? key : 'ui/' + key}.svg`;
 
 export const svgHex2 = (/** @type {number} */ v) => v.toString(16).toUpperCase().padStart(2, '0');
 
