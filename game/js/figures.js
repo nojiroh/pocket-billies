@@ -49,7 +49,7 @@ import {
   meshClipFrame,
   meshClipMatrices,
 } from './logic/figure-pose.js';
-import { figureSeed, kappiFigure, lookFigure } from './logic/figure-kit.js';
+import { figureKitData, figureSeed, kappiFigure, lookFigure } from './logic/figure-kit.js';
 import { artImg, artURL, makeCanvas } from './art.js';
 import { lookOf, wardrobeData } from './person-art.js';
 import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
@@ -107,11 +107,16 @@ expose({
   figureGait: [() => figureGait],
   figureGl: [() => figureGl, v => (figureGl = v)],
   figureItems: [() => figureItems, v => (figureItems = v)],
+  figureKitNow: [() => figureKitNow, v => (figureKitNow = v)],
+  figureKitRevision: [() => figureKitRevision, v => (figureKitRevision = v)],
+  figureKitState: [() => figureKitState],
+  figureKitUse: [() => figureKitUse, v => (figureKitUse = v)],
   figureLast: [() => figureLast],
   figureLightNow: [() => figureLightNow, v => (figureLightNow = v)],
   figureLightSpace: [() => figureLightSpace, v => (figureLightSpace = v)],
   figureLoad: [() => figureLoad, v => (figureLoad = v)],
   figureLookColour: [() => figureLookColour, v => (figureLookColour = v)],
+  figureLookHash: [() => figureLookHash, v => (figureLookHash = v)],
   figureLookRamp: [() => figureLookRamp, v => (figureLookRamp = v)],
   figurePaintMark: [() => figurePaintMark, v => (figurePaintMark = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
@@ -123,6 +128,7 @@ expose({
   figureSlotMatrices: [() => figureSlotMatrices, v => (figureSlotMatrices = v)],
   figureSnapshot: [() => figureSnapshot, v => (figureSnapshot = v)],
   figureStyle: [() => figureStyle, v => (figureStyle = v)],
+  figureStyledName: [() => figureStyledName, v => (figureStyledName = v)],
   figureTarget: [() => figureTarget, v => (figureTarget = v)],
   figureTilt: [() => figureTilt, v => (figureTilt = v)],
   figuresOn: [() => figuresOn, v => ((figuresOn = v), provide({ figuresOn }))],
@@ -186,26 +192,59 @@ function figureChoice() {
   const v = typeof engineSetting === 'function' ? engineSetting('people', 'figure') : null;
   return v === 'mannequin' || v in FIGURE_FILES ? v : 'look';
 }
-/** the figures' names by who (an NPC's look never changes; yours is keyed by the look itself, so the dressing room's
- * changes make a new figure) */
+/** the figures' names by who and style (an NPC's look never changes in the game; yours is keyed by the look itself
+ * each time, so the dressing room's changes make a new figure) */
 const FIGURE_LOOK_NAMES = new Map();
+/** CH-5: the figure kit's data the figures are built with: the Studio's while it previews (figureKitUse), else the
+ * game's (game/data/figureKit.json); and its revision, a hash of it, in every figure's name */
+const figureKitState = { own: /** @type {any} */ (null), rev: '' };
+function figureKitNow() {
+  return figureKitState.own || figureKitData();
+}
+function figureKitRevision() {
+  if (!figureKitState.rev) figureKitState.rev = figureSeed(JSON.stringify(figureKitNow())).toString(36);
+  return figureKitState.rev;
+}
 /**
- * the figure a person is drawn as (CH-3b): `look:<who>` for anyone with a look (people/<id>.json, a townsperson's
- * 'folk:<seed>', a friend), `look:me#<look>` for you ('boy', 'girl' or 'me'), or the spike's figure for you when
- * Engine > People > Your figure picks one
+ * CH-5: build figures with this kit data from now on (the Studio's figure preview, as it is edited), or the game's
+ * again (null): every figure's name changes with it, so each person is built again when next drawn
+ * @param {any} kit
+ */
+function figureKitUse(kit) {
+  figureKitState.own = kit || null;
+  figureKitState.rev = '';
+  FIGURE_LOOK_NAMES.clear();
+  FIGURE_PENDING.clear();
+  for (const k of Object.keys(FIGURE_DEFS)) if (k.startsWith('look:')) delete FIGURE_DEFS[k];
+}
+/** what a person's figure is built from, as a short hash: their look, their `figure` choice and the kit's revision
+ * (CH-5: a figure is cached by what makes it, so an edit to any of them makes a new one) @param {any} look @param {string} who */
+function figureLookHash(look, who) {
+  const p = typeof PEOPLE !== 'undefined' && PEOPLE[who];
+  return figureSeed(JSON.stringify([look || {}, (p && p.figure) || null, figureKitRevision()])).toString(36);
+}
+/**
+ * the figure a person is drawn as (CH-3b): `look:<who>#<hash>` for anyone with a look (people/<id>.json, a
+ * townsperson's 'folk:<seed>', a friend), `look:me#<hash>` for you ('boy', 'girl' or 'me'), or the spike's figure for
+ * you when Engine > People > Your figure picks one. The hash is what the figure is built from (figureLookHash).
  */
 export function figureFor(who) {
   if (who === 'boy' || who === 'girl' || who === 'me') {
     const c = figureChoice();
     if (c !== 'look') return c;
     const L = typeof lookOf === 'function' ? lookOf('me') : null;
-    return 'look:me#' + figureSeed(JSON.stringify(L || {})).toString(36) + figureDesign(figureStyle());
+    return 'look:me#' + figureLookHash(L, 'me') + figureDesign(figureStyle());
   }
   /* a direction with its own designs (its cast, flair or proportions: FIGURE_LOOKS) builds everyone its way */
   const st = figureStyle(),
     k = who + '@' + st;
   let n = FIGURE_LOOK_NAMES.get(k);
-  if (!n) FIGURE_LOOK_NAMES.set(k, (n = 'look:' + who + figureDesign(st)));
+  if (!n) {
+    const L = typeof lookOf === 'function' ? lookOf(who) : null;
+    n = 'look:' + who + '#' + figureLookHash(L, who) + figureDesign(st);
+    /* kept once the look is in (before the game data is, it is asked again) */
+    if (L) FIGURE_LOOK_NAMES.set(k, n);
+  }
   return n;
 }
 /** the '@direction' a figure's name carries when the style has designs of its own (figureDef reads it), else '' */
@@ -264,9 +303,10 @@ function figureDef(name) {
       F = L.creature
         ? kappiFigure({ name })
         : lookFigure(look, items, {
+            kit: figureKitNow(),
             name,
             seed: figureSeed(who),
-            /* you: the main character's own head (figure-kit.js FIGURE_HEADS.hero) */
+            /* you: the main character's own head (figureKit.json heads.hero) */
             figure:
               p && p.figure
                 ? p.figure
@@ -1148,6 +1188,13 @@ export function figurePaintMark(x, m, ppm) {
 }
 /** CH-3b: a portrait's density (pixels a metre): a head about 120 pixels wide */
 const FIGURE_PORTRAIT_PPM = 160;
+/** a person's figure's name in a given style (a portrait's, a snapshot's): figureFor's in the pixel style, else
+ * `look:<who>#<hash>@<style>` @param {string} who @param {string} style */
+function figureStyledName(who, style) {
+  if (style === 'pixel') return figureFor(who);
+  const w = who === 'boy' || who === 'girl' ? 'me' : who;
+  return 'look:' + w + '#' + figureLookHash(typeof lookOf === 'function' ? lookOf(w) : null, w) + '@' + style;
+}
 /**
  * a person's portrait from their figure (the owner: the figures are also the character portraits): their head and
  * shoulders at FIGURE_PORTRAIT_PPM, turned three quarters to the camera with a slight tilt, idling (`frame` 14
@@ -1155,9 +1202,7 @@ const FIGURE_PORTRAIT_PPM = 160;
  * baker isn't ready. Baked every call (a dialogue keeps its own).
  */
 function figurePortrait(who, frame = 0, turn = 0.9, style = 'pixel') {
-  const Fig = figureDef(
-    style === 'pixel' ? figureFor(who) : 'look:' + (who === 'boy' || who === 'girl' ? 'me' : who) + '@' + style
-  );
+  const Fig = figureDef(figureStyledName(who, style));
   if (!Fig) return null;
   /* nearly level (4 degrees), so a brim doesn't hide the face */
   const V = figureView(Math.PI * turn, 0, (4 * Math.PI) / 180, 32),
@@ -1189,7 +1234,7 @@ function figureSnapshot(who, o = {}) {
     tilt = o.tilt ?? (4 * Math.PI) / 180,
     ppm = o.ppm || FIGURE_PORTRAIT_PPM,
     crop = o.crop === 'whole' ? 'whole' : 'bust',
-    name = style === 'pixel' ? figureFor(who) : 'look:' + (who === 'boy' || who === 'girl' ? 'me' : who) + '@' + style,
+    name = figureStyledName(who, style),
     key = [name, clip, frame, turn, Math.round(tilt * 1000), ppm, crop, style].join('|');
   let im = FIGURE_SNAPS.get(key);
   if (im) {
@@ -1372,6 +1417,8 @@ export function figureReport() {
     on: figuresOn(),
     figure: figureChoice(),
     looks: Object.keys(FIGURE_DEFS).filter(k => k.startsWith('look:') && FIGURE_DEFS[k]).length,
+    /* CH-5: the kit data's revision the figures are built from, and whether it is the Studio's */
+    kit: figureKitRevision() + (figureKitState.own ? ' (own)' : ''),
     style: figureStyle(),
     density: e('density'),
     turns: e('yawSteps'),

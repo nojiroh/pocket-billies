@@ -406,29 +406,39 @@ test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, 
     G.figureChoice = () => 'look';
     /* a direction with designs of its own builds everyone its way (its name after '@') */
     G.figureStyle = () => 'gnight';
-    assert.equal(G.figureFor('clerk'), 'look:clerk@gnight');
+    assert.match(G.figureFor('clerk'), /^look:clerk#[0-9a-z]+@gnight$/);
     assert.match(G.figureFor('me'), /^look:me#[0-9a-z]+@gnight$/);
     G.figureStyle = () => 'pixel';
-    assert.equal(G.figureFor('clerk'), 'look:clerk');
-    assert.equal(G.figureFor('folk:12'), 'look:folk:12');
+    /* CH-5: named by what each is built from (their look, figure choice and the kit's revision) */
+    const clerk = G.figureFor('clerk');
+    assert.match(clerk, /^look:clerk#[0-9a-z]+$/);
+    assert.match(G.figureFor('folk:12'), /^look:folk:12#[0-9a-z]+$/);
     const me = G.figureFor('boy');
     assert.ok(me.startsWith('look:me#'));
     assert.equal(G.figureFor('girl'), me, 'boy, girl and me are your look');
     looks.me = { ...looks.me, wear: { ...looks.me.wear, top: 'tank' } };
     assert.notEqual(G.figureFor('me'), me, 'a new look, a new figure');
+    /* CH-5: the Studio's kit data (an edit): everyone is a new figure; the game's again: the same names as before */
+    const kit = structuredClone(G.GAMEDATA.figureKit);
+    kit.heads.round.jaw += 0.1;
+    G.figureKitUse(kit);
+    assert.notEqual(G.figureFor('clerk'), clerk, 'an edited kit, a new figure');
+    assert.equal(G.figureReport().kit.endsWith(' (own)'), true);
+    G.figureKitUse(null);
+    assert.equal(G.figureFor('clerk'), clerk, 'the game’s kit again');
     G.figureChoice = () => 'mannequin';
     assert.equal(G.figureFor('me'), 'mannequin', 'or the spike’s figure you picked');
     /* built by the kit, baked as a person's picture; Kappi on four legs */
-    const im = G.figurePersonPicture({}, 'look:clerk', 0, 'idle', 0, Math.PI);
-    assert.ok(im && im.ppm === PPM && im.figure === 'look:clerk');
+    const im = G.figurePersonPicture({}, clerk, 0, 'idle', 0, Math.PI);
+    assert.ok(im && im.ppm === PPM && im.figure === clerk);
     assert.ok(im.x.fills.length >= 6, 'a face: eyes, glints, irises, a mouth, glasses');
-    assert.ok(G.FIGURE_DEFS['look:clerk'].F.kit, 'the head and build the kit chose');
+    assert.ok(G.FIGURE_DEFS[clerk].F.kit, 'the head and build the kit chose');
     G.gpuState.fr++;
     assert.ok(G.figurePersonPicture({}, 'look:kappi', 0, 'walk', 0.6, Math.PI));
     assert.ok(G.FIGURE_DEFS['look:kappi'].F.parts.some(p => p.id === 'legBR'));
     /* the card fits a cheer's raised arms */
-    const ext = G.FIGURE_DEFS['look:clerk'].ext;
-    assert.ok(ext.top > G.FIGURE_DEFS['look:clerk'].F.height, `${ext.top}`);
+    const ext = G.FIGURE_DEFS[clerk].ext;
+    assert.ok(ext.top > G.FIGURE_DEFS[clerk].F.height, `${ext.top}`);
     assert.ok(D.made.gl.calls.some(c => c[0] === 'drawArrays'));
   } finally {
     G.document.createElement = was;
