@@ -735,6 +735,13 @@ function battleSoundEffect(an, r, ev) {
     case 'stat':
       soundEffect('stat', { down: an.n < 0 || an.down });
       break;
+    /* VFX-19: a burn, recoil, a spread move's second target, the delayed hit; the recall's beam */
+    case 'hurt':
+      battleHurtSoundPlay(an, r);
+      break;
+    case 'recall':
+      battleRecallSoundPlay();
+      break;
     case 'move': {
       /* VFX-19: the move's family and type layer (music.json battle): the cast now, the hit at its hit; the tier's
          sound below stays */
@@ -750,13 +757,6 @@ function battleSoundEffect(an, r, ev) {
       at(r.hit || 300, () => soundEffect(an.crit ? 'crit' : an.te > 1 ? 'super' : an.te < 1 ? 'weak' : 'hit'));
       break;
     }
-    /* VFX-19: a burn, recoil, a spread move's second target, the delayed hit; the recall's beam */
-    case 'hurt':
-      battleHurtSoundPlay(an, r);
-      break;
-    case 'recall':
-      battleRecallSoundPlay();
-      break;
     case 'caught':
       jingle(JINGLES.caught);
       break;
