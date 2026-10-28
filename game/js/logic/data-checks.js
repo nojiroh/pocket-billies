@@ -65,6 +65,7 @@ import {
   FX_WHEN_BATTLE,
   HELD_FX_KINDS,
   HELD_IFS,
+  HELD_OWN_FORMS,
   HELD_WHEN,
 } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
@@ -2466,7 +2467,16 @@ export function fxWhenProblems(f, at, D, problem) {
 }
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
 // limits, and nothing else an item does (a held item is never used up); UI-14b: each its rarity, and only they have one
-export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal', ...HELD_FX_KINDS];
+export const HOLD_KINDS = [
+  'money',
+  'stat',
+  'damage',
+  'xp',
+  'turnHeal',
+  'pinchHeal',
+  ...HELD_OWN_FORMS,
+  ...HELD_FX_KINDS,
+];
 /** UI-14b: the loot ladder's tiers (the owner's answer 9): the colour code's rarity ids (logic/signals.js) */
 export const RARITY_TIERS = UI_SIGNALS.filter(s => s[2] === 'rarity').map(s => s[0]);
 /** RL-12c: items.json `hold` @param {any} D @returns {DataProblem[]} */
@@ -2527,7 +2537,8 @@ export function heldRowProblems(f, at, D, problem) {
   }
 }
 /** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive takes no number; reflect a share (at most
- * half) and a category or none; drain a share of the damage dealt
+ * half) and a category or none; drain a share of the damage dealt;
+ * immune a type (not a Perk's what), until: hurt or none
  * @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
 export function heldKindProblems(f, at, D, problem) {
   const extra = (/** @type {string[]} */ own) =>
@@ -2542,6 +2553,12 @@ export function heldKindProblems(f, at, D, problem) {
     if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))
       problem(`${at}.share: a share of the hitter's HP above 0, at most 0.5`);
     if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
+  }
+  if (f.kind === 'immune') {
+    extra(['type', 'until']);
+    if (!(D.types || []).some((/** @type {any} */ t) => t.id === f.type))
+      problem(`${at}.type: a held immune row names a type its moves miss the holder with (types.json)`);
+    if (f.until != null && f.until !== 'hurt') problem(`${at}.until: hurt (until its holder is hit), or none`);
   }
   if (f.kind === 'drain') {
     extra(['share']);

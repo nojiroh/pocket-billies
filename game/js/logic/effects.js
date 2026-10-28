@@ -81,6 +81,7 @@ expose({
   FX_WHEN_BATTLE: [() => FX_WHEN_BATTLE],
   HELD_FX_KINDS: [() => HELD_FX_KINDS],
   HELD_IFS: [() => HELD_IFS],
+  HELD_OWN_FORMS: [() => HELD_OWN_FORMS],
   HELD_WHEN: [() => HELD_WHEN],
   fxAt: [() => fxAt],
   fxBenchXp: [() => fxBenchXp],
@@ -799,6 +800,9 @@ export function fxStateLog(run) {
  *            (heldAfterHit)
  *   drain    its holder heals share of the damage it deals (heldAfterHit) */
 export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect', 'drain']);
+/** PK-10: the kinds of FX_KINDS a hold row reads its own way: immune names a type (its moves miss the holder, until
+ * it is hit with `until: hurt`; battle-engine.js heldFloats) */
+export const HELD_OWN_FORMS = /** @type {const} */ (['immune']);
 /** PK-10: a holder's first row of a kind, or null @param {any[] | null | undefined} fx @param {string} kind */
 export const fxHeldRow = (fx, kind) => (fx || []).find(f => f.kind === kind) || null;
 /** PK-10: the moments a hold row can act at */

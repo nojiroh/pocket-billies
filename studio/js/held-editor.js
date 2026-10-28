@@ -36,6 +36,7 @@ const HELD_KIND_NAMES = {
   survive: 'Once a battle, from full HP, lives through a knockout hit with 1 HP (PK-10)',
   reflect: 'Billies that hit its holder lose a share of their HP (PK-10)',
   drain: 'Its holder heals a share of the damage it deals (PK-10)',
+  immune: 'Moves of a type miss its holder (until it is hit) (PK-10)',
 };
 /** a new row of a kind: its fields with values that change little */
 const HELD_ROW_NEW = {
@@ -48,6 +49,7 @@ const HELD_ROW_NEW = {
   survive: () => ({ kind: 'survive' }),
   reflect: () => ({ kind: 'reflect', share: 0.125, cat: 'H' }),
   drain: () => ({ kind: 'drain', share: 0.125 }),
+  immune: () => ({ kind: 'immune', type: 'Ground', until: 'hurt' }),
 };
 /** the data checks' messages about one item's rows (dataHeldItems, as CI runs it) */
 const heldProblems = (/** @type {string} */ k) => {
@@ -154,6 +156,14 @@ function heldRowHTML(k, f, n, P) {
         ),
       ],
       drain: () => [share('Share of the damage dealt it heals')],
+      immune: () => [
+        selectField(
+          'Moves of the type miss it',
+          `${p}.type`,
+          D.types.map((/** @type {any} */ t) => [t.id, t.id])
+        ),
+        selectField('Until', `${p}.until`, [['hurt', 'It is hit (then it is spent)']], { none: 'Always', opt: 1 }),
+      ],
     })[f.kind],
     rows = D.items[k].hold;
   const err = P.filter(m => m.startsWith(`${k}.hold[${n}]`))

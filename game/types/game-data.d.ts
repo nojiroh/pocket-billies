@@ -1976,7 +1976,9 @@ export type HeldKindRow =
   /** a Billie that hits its holder (with a move of `cat`, any without) loses `share` of its own HP */
   | { kind: 'reflect'; share: number; cat?: 'H' | 'S' }
   /** its holder heals `share` of the damage it deals */
-  | { kind: 'drain'; share: number };
+  | { kind: 'drain'; share: number }
+  /** moves of `type` miss its holder (until it is hit, with `until: 'hurt'`) */
+  | { kind: 'immune'; type: string; until?: 'hurt' };
 /** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes), with PK-1's timing */
 export type FxRow = FxTiming & FxKindRow;
 /** one effect row's kind and numbers */

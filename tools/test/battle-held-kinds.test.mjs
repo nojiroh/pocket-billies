@@ -152,3 +152,28 @@ test('held drain: its holder heals its share of the damage it deals, never past 
   fn('heldAfterHit')(1, 0, { c: 'H' }, { dmg: 40 });
   assert.equal(me.hp, 5, 'being hit drains nothing');
 });
+
+test('held immune: moves of its type miss the holder until it is hit, then it is spent; the foe AI knows', () => {
+  const id = item('test_balloon', [{ kind: 'immune', type: 'Ground', until: 'hurt' }]);
+  const { B } = battle(id);
+  assert.equal(fn('heldFloats')(0, 'Ground'), true);
+  assert.equal(fn('heldFloats')(0, 'Fire'), false);
+  const ground = Object.keys(MOVES).find(m => MOVES[m].t === 'Ground' && MOVES[m].p > 0 && MOVES[m].c !== 'X');
+  assert.equal(fn('aiDamage')(1, ground, 0), 0, 'the AI sees it would miss');
+  fn('heldAfterHit')(1, 0, { c: 'H' }, { dmg: 3 });
+  assert.match(texts(B), /test balloon popped/);
+  assert.equal(fn('heldFloats')(0, 'Ground'), false, 'spent by a hit');
+  assert.ok(fn('aiDamage')(1, ground, 0) > 0);
+});
+
+test('held immune: a real Ground move on the holder misses with a line and no accuracy roll (useMove)', () => {
+  const id = item('test_balloon2', [{ kind: 'immune', type: 'Ground' }]);
+  const { B, me } = battle(id),
+    ground = Object.keys(MOVES).find(m => MOVES[m].t === 'Ground' && MOVES[m].p > 0 && MOVES[m].c !== 'X'),
+    hp = me.hp;
+  fn('useMove')(1, ground, 0);
+  assert.equal(me.hp, hp);
+  assert.match(texts(B), /Emberox floated clear on its test balloon/);
+  fn('useMove')(1, ground, 0);
+  assert.equal(me.hp, hp, 'without until it lasts');
+});

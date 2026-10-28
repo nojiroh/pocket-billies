@@ -245,6 +245,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   heldCtx: [() => heldCtx, v => (heldCtx = v)],
   // @ts-expect-error -- replaced on purpose
+  heldFloats: [() => heldFloats, v => (heldFloats = v)],
+  // @ts-expect-error -- replaced on purpose
   heldHitMoments: [() => heldHitMoments, v => (heldHitMoments = v)],
   // @ts-expect-error -- replaced on purpose
   heldMarks: [() => heldMarks, v => (heldMarks = v)],
@@ -723,6 +725,14 @@ export function useMove(k, mid, tk0, part) {
     if (onFoe && fv2.protect) {
       if (tk2 === tk) ev.an.blocked = true;
       battleSay(`${billyName(t2)} protected itself.`, tk2 === tk ? null : { k: 'hurt', si: tk2, dmg: 0, fx: 'block' });
+      continue;
+    }
+    /* PK-10: a held immune row (Party Balloon): moves of its type miss the holder (no accuracy roll) */
+    if (onFoe && M.c !== 'X' && heldFloats(tk2, M.t)) {
+      if (tk2 === tk) ev.an.miss = true;
+      battleSay(`${billyName(t2)} floated clear on its ${heldName(t2)}.`, { k: 'block', si: tk2 }).by = [
+        { src: 'held:' + t2.held, si: tk2 },
+      ];
       continue;
     }
     if (onFoe && M.a && battleRoll() * 100 >= M.a) {
@@ -1247,7 +1257,8 @@ export function aiDamage(k, id, tk) {
   return (
     (((0.4 * L + 2) * P * effectiveStat(k, phys ? 'lev' : 'lob')) / effectiveStat(tk, phys ? 'law' : 'pr') / 50 + 2) *
     (M.t !== 'None' && actorTypes(k).includes(M.t) ? BATTLE_RULES.stab : 1) *
-    typeEffectiveness(M.t, actorTypes(tk))
+    typeEffectiveness(M.t, actorTypes(tk)) *
+    (heldFloats(tk, M.t) ? 0 : 1)
   );
 }
 export function aiScore(k, id, tk) {
@@ -1984,6 +1995,14 @@ export function heldSurvives(tk, r) {
   r.dmg = t.hp - 1;
   return true;
 }
+/** PK-10: does fighter k's held immune row keep moves of type `ty` off it now (not yet spent by a hit, with `until`)?
+ * @param {number} k @param {string} ty */
+export function heldFloats(k, ty) {
+  const t = fighter(k);
+  if (!t || !t.held) return false;
+  const f = fxHeldRow(fxOfBillie(t, ITEMS), 'immune');
+  return !!f && f.type === ty && !(f.until === 'hurt' && heldMarks(k).popped);
+}
 /** PK-10: what held items do after a hit lands: the one hit holds a reflect row (Cactus Keyring): the one hitting
  * loses its share of its HP, for a move of the row's category (any without one); the one hitting holds a drain row
  * (Costume Fangs): it heals its share of the damage dealt @param {number} k @param {number} tk
@@ -1992,6 +2011,12 @@ export function heldAfterHit(k, tk, M, r) {
   const u = fighter(k),
     t = fighter(tk);
   if (k === tk || !u || !t || !(r.dmg > 0)) return;
+  /* the one hit holds an immune row that lasts until it is hit (Party Balloon): it is spent */
+  const fl = t.held ? fxHeldRow(fxOfBillie(t, ITEMS), 'immune') : null;
+  if (fl && fl.until === 'hurt' && !heldMarks(tk).popped) {
+    heldMarks(tk).popped = 1;
+    battleSay(`${billyName(t)}’s ${heldName(t)} popped!`, { k: 'stat', si: tk, up: false });
+  }
   const rf = t.held ? fxHeldRow(fxOfBillie(t, ITEMS), 'reflect') : null;
   if (rf && (!rf.cat || rf.cat === M.c) && u.hp > 0) {
     const d = Math.min(u.hp, Math.max(1, Math.floor(maxHp(u) * rf.share)));
