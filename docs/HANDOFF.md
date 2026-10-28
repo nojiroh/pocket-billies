@@ -2,6 +2,73 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Style track SY-5 - the Bureau in battle: stamps on knockouts and wins, the Notice of Retrieval, ID plates - 2026-10-28
+Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-4) and main
+(07c9b284, nothing new) were merged in, then **`origin/claude/ui-16b-battle-events` (UI-16a and UI-16b), as a merge
+(22b68a20), for UI-16b's plates. So PR #289 now also carries the UI track's UI-8b, UI-8c, UI-11 to UI-16b commits
+and `track/vfx`'s VFX-5 and VFX-7: merging #289 brings them too.** Conflicts: HANDOFF (both kept), gallery.js and
+ui-run-kit.js imports (both kept, to-module remade), art-code-refs.json (regenerated). Plan pre-approved (the owner,
+2026-10-27). PR #289 (draft; SY-1 to SY-5). Tag `sy-5-done` is for the owner to push (the git proxy refuses tags).
+The VFX session (session_019UpAFxvWEMwGebptZbvUuW) was told before the join intro was touched: battle-stage.js
+itself is unchanged.
+- Changed:
+  - **Data** (schema, types, data check, a planted fault): bosses.json `faction` (the Retrieval Unit is `bureau`);
+    factions.json `look.notice` ("Notice of Retrieval") and `look.property` ("Property of the Bureau").
+  - **game/js/logic/bureau-battle.js** (new; index.html, the Studio's page and its logic worker list; 7 tests):
+    `battleFactionOf` (a bot whose build is one of a faction's bots, or a boss whose `faction` names it; only a faction
+    with a look), `factionSerial` (a bot's serial from its id: "No. 1120-AU"), `koBy` (who landed the last hit on the
+    fallen: a move, or a spread hit's move; a burn, the stones, recoil or a delayed hit is no one's), `koStampMoment`,
+    `noticeOf`, `noticeTimes`, `JOIN_LOCK_MS` (1300; a test reads battle-stage.js's join LOCK so they can't drift).
+  - **battle.js "THE BUREAU IN BATTLE"**: one stamp at a time (`pb-stamp` on a paper slip in #pops, so the red reads
+    on any stage; a new one replaces the old): VOID 220 ms into a Bureau bot's faint, RETRIEVED when a Bureau bot's hit
+    knocks out yours, DENIED when the battle ends in your win over the Bureau. PENDING on the Retrieval Unit's win line
+    on the sheet after the battle (slams once; a redraw shows it still). The Notice of Retrieval during the join: the
+    emblem, the title, a form number, the four bots as numbered lines coming in one by one, FILED stamped, sliding
+    away so it is gone by the lock (1,300 ms on the scene's clock, so battle speed scales it). It sits just above the
+    message box. A tap, the next line or the battle's end closes it. Reduced motion: no slide, all lines, the stamp
+    still. **ID plates:** a Bureau bot's plate (`.bplate.form`) is the case files' paper with ruled lines, dark ink,
+    the serial beside the tag row (UI-16b's room in `.pl-bot`), and "Property of the Bureau" in red under a red rule; a
+    boss's plate keeps its red edge.
+  - **game/css/bureau-battle.css** (new; the game and the gallery page): tokens only, ui-lint's ceilings hold.
+  - **The in-game full test**: the Bureau bot's step checks its ID plate; the Voltron's step checks the notice listed
+    its four bots and was gone by the menu.
+- Claims checked against the code:
+  - Wrong: "the join intro's 900 ms": the join is LOCK 1,300 + 900 = 2,200 ms (900 is the plain send-out). The
+    notice fits in the 1,300 before the lock, with no added time.
+  - Wrong: "a tap skips both": a tap during the join only finishes the text; the next line waits for the join's
+    time (battleStageFlush runs at the next play). A tap now hides the notice; the join itself is unchanged.
+  - Wrong: factions.schema.json said `pending` is "its boss wins"; the win line ("Retrieval suspended. Claim filed as
+    pending.") is said when you beat it. Fixed the description.
+  - Right: UI-16b's `markRow`/`pb-tag` row and room for a faction label in `.pl-bot`; pb-stamp on the shared m-stamp.
+  - The Retrieval Unit's build is not a factions.json bot, so nothing tied it to the Bureau before `faction`.
+- Found, not changed (not this step's):
+  - The smoke's Phone step fails "team 30 (at most 28)": the same on the merge commit before any SY-5 code and on
+    `claude/ui-16b-battle-events` itself ("walk 20, team 30"). UI-16b listed the counts as skipped until UI-18.
+  - The quick check's song fingerprints: UI-16a's four UI sounds (sheet, flip, count, toast) aren't in
+    validation/sound-baseline. Came in with the merge; for the UI track.
+- Risky: the Bureau's look shows in every battle with its bots now, and the plate grows by one line (the property).
+  Nothing here has been seen on a phone. The win's DENIED shows over the "You won" moment for 2.2 s (no added wait).
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text, `npm test` (1,634 pass).
+  `npm run check:smoke`: 5 of 6 (the Phone step, above). Headless runs (390 x 844, light, and dark with Reduced motion):
+  the bot's ID plate, VOID then DENIED, RETRIEVED from a strong bot's hit, the notice's lines and stamp at a slowed
+  join speed, PENDING on the win sheet; no page errors. `npm run check:quick`: 36 of 41: the three known (Terraces
+  train_station, RL-8 "Thicket Route view never showed", room light) and the two above from the UI merge.
+- Decided for the owner, to review:
+  - **Merged UI-16a/b into `track/style`** (the step's instruction), so #289 carries them.
+  - **The notice's stamp is FILED** (look.stamps.filed); the moment list had no "notice" word.
+  - **RETRIEVED only on a Bureau bot's own hit** (or a spread hit from its move); a burn or stones that finish yours
+    stamp nothing.
+  - **The boss fight gets DENIED in battle and PENDING on its sheet** (two screens, one stamp each).
+  - **Stamps land on a paper slip** (the case files' paper), not straight on the stage.
+  - **Serial format** "No. NNNN-XX" (a hash of the bot's id and its first two letters); the property line's words
+    are factions.json `look.property`.
+  - **The plate's paper is the case files' tokens** (light and dark), with the page's ink, though the battle's glass
+    is always dark.
+  - Not added: a UI gallery section for the plate and notice (the gallery's battle pictures wait for UI-18, as UI-16b
+    noted); the VFX VS splash (VFX-16) will fit around the notice (told to their session).
+- Next: SY-6 (the coat's foil in the world: `uFoil` in the sprite shader), in its own session on `track/style`. It
+  touches walk-shaders.js: message the VFX session first and merge main.
+
 ### Style track SY-4 - case files: the Bureau's events in a manila folder, typed in, redacted, stamped - 2026-10-28
 Branch `track/style` (the session's designated branch and the track's). `origin/track/style` (SY-3, 06d0baae) and main
 (07c9b284) were already in it (no merge needed). Plan pre-approved (the owner, 2026-10-27). PR #289 (draft; SY-1 to SY-4).
