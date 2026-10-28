@@ -36,6 +36,7 @@
  "leftover_sandwich": {
   "n": "Leftover Sandwich",
   "price": 1200,
+  "rarity": "rare",
   "d": "Held: heals 1/16 of its HP at the end of each turn.",
   "icon": "pretzel",
   "hold": [
@@ -45,6 +46,7 @@
  "snack_pack": {
   "n": "Snack Pack",
   "price": 800,
+  "rarity": "common",
   "d": "Held: once a battle, heals a quarter of its HP at a turn’s end when at half HP or below.",
   "icon": "trailmix",
   "hold": [
@@ -54,6 +56,7 @@
  "lucky_coin": {
   "n": "Lucky Coin",
   "price": 1000,
+  "rarity": "common",
   "d": "Held: a win pays 25% more Moneys while its holder is standing.",
   "icon": "bell",
   "hold": [
@@ -63,6 +66,7 @@
  "study_notes": {
   "n": "Study Notes",
   "price": 1000,
+  "rarity": "common",
   "d": "Held: its holder gains 50% more XP.",
   "icon": "appeal",
   "hold": [
@@ -72,6 +76,7 @@
  "iron_vest": {
   "n": "Iron Vest",
   "price": 1200,
+  "rarity": "uncommon",
   "d": "Held: its holder takes 15% less damage.",
   "icon": "settlement",
   "hold": [
@@ -81,6 +86,7 @@
  "quick_laces": {
   "n": "Quick Laces",
   "price": 1000,
+  "rarity": "uncommon",
   "d": "Held: its holder’s Speed goes up as it comes in.",
   "icon": "taxbreak",
   "hold": [
@@ -90,6 +96,7 @@
  "brass_knuckles": {
   "n": "Brass Knuckles",
   "price": 1200,
+  "rarity": "rare",
   "d": "Held: its holder’s physical moves hit 20% harder.",
   "icon": "bailout",
   "hold": [
@@ -99,6 +106,7 @@
  "smart_specs": {
   "n": "Smart Specs",
   "price": 1200,
+  "rarity": "rare",
   "d": "Held: its holder’s special moves hit 20% harder.",
   "icon": "loophole",
   "hold": [

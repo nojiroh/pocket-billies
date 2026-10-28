@@ -476,7 +476,7 @@ export interface Trip {
 /** settings kept in the save (a new game on this device keeps them) */
 export interface Preferences {
   theme: 'system' | 'light' | 'dark';
-  motion: 'system' | 'reduced' | 'full';
+  motion: 'system' | 'reduced' | 'calm' | 'full';
   fps: 30 | 60 | 90 | 120;
   effects: 'full';
   /** graphics: 'sharp' (best) or 'smooth' */
@@ -493,6 +493,8 @@ export interface Preferences {
   bigTargets?: boolean;
   textSize?: string;
   contrast?: string;
+  /** UI-14b: the Colour shapes switch: 'on' draws patterns over the coloured marks and bars */
+  shapes?: 'on' | 'off';
   flashes?: string;
   lang?: string;
   expert?: boolean;
