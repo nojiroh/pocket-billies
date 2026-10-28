@@ -365,6 +365,9 @@ async function startBattlePreview() {
   const D = studioState.D;
   if (!$('#cvWorld')) return;
   setRobotRigData(D.robots);
+  /* VFX-12: a stage already running takes new fighters at once; its restart below waits on loading (and, in a walk
+     scene drawn in software, on slow frames) */
+  if (battleStage.on && battleStage.s) battlePreviewFighters();
   const load = $('#bpLoad');
   if (load) load.hidden = false;
   try {
