@@ -93,3 +93,13 @@ test('rng: the daily seed is the UTC date, the same all day everywhere', () => {
   assert.equal(dailySeed(new Date('2026-10-21T23:30:00-05:00')), 'd2026-10-22', 'late evening west of UTC is tomorrow');
   assert.match(dailySeed(), /^d\d{4}-\d{2}-\d{2}$/);
 });
+
+test("WM-5b: rngFirst is a stream's first number, without making the stream", () => {
+  const { rngFirst } = modules.rng;
+  for (let k = 0; k < 500; k++) {
+    const seed = 'FIRST' + k,
+      salt = `map|grid|${k % 7}|${k % 3}|E|${k % 5}|0`;
+    assert.equal(rngFirst(seed, salt), rngFrom(seed, salt).next());
+  }
+  assert.equal(rngFirst('X'), rngFrom('X').next());
+});

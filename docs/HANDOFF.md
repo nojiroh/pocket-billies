@@ -714,12 +714,18 @@ dial, so MAPGEN_VERSION stays 24.
 - **The grid** (run-map.js): runMapLength gives the run's `sizes`; runMapMake asks runMapGrid for each town's cells with
   no 2x1 fallback (`want`); if the map can't be laid out even without its lane switches, every town steps down a size
   at once, then again. runTownSize reads a town's size off its footprint (a side area's town, with none: a hamlet).
+  Bigger towns made the search step back more: run-map-checks' 1,000-maps sweep went from about 310 ms to 490 here and
+  over its 1 s on CI (1095 ms); runMapGrid now keeps each node's spot list by what it reads (69f2f933): about 355 ms,
+  the same maps byte for byte. Still 1034-1105 ms on CI's busy runner after rngFirst (about 335 ms here), so the owner chose
+  (2026-10-28) to raise that test's limit to 1.5 s.
 - **Scenes and names** (run-scenes.js): runTownOf / runTownDial pass size, houses, stall and givers to mapgen;
   **runPlaceName** is the one function a place's name comes from (WM-6 reads it): "Meadow Hamlet", "Thicket Village",
   "Meadow Town"; a side area's town "Bramble Grove Hamlet"; a town's shop "Thicket Village Shop".
 - **The market stall**: a shop of its own (`run_<i>_stall`, LocationData `stall`, the prop's `shop`), "<name> Market
   Stall"; run-loop.js runStallStock draws 2 held items a day on the node's 'stall' stream at their items.json prices
-  (Perks' price rows apply as in any run shop); shop.js gives it no Perk and no fresh stock on Mo's word.
+  (Perks' price rows apply as in any run shop); shop.js gives it no Perk. The owner's answer after the PR: Mo's fresh
+  stock works there too, one of the run's rerolls, apart from the shop's (run.reshop 'node:day:s', run-loop.js
+  runShopKey; validRun allows it).
 - **The second quest giver**: run-scenes.js runTownQuest puts a giver on each of mapgen's giver spots (a 3x2 town has
   two; the second `quest2`, `quest: 2`, its own stream and name). run-quests.js questOffer/questTake take the giver's
   slot: the second's offer draws on 'quest|2' and takes another kind than the first's when one can be done (in 90%+ of
@@ -728,8 +734,8 @@ dial, so MAPGEN_VERSION stays 24.
 - **The sim**: each town walked into logs its size and a stall's wares (looked at, not bought); stats and the report
   count towns by size and stalls. Outcomes unchanged (balance, Expedition II: 5 of 40 won and 5.7 places, before and
   after).
-- **check-fast**: a new run-page step, "A run's village" (its name, the stall's own shop of 2 held items, no Perk, no
-  fresh stock); the town's life step asks for 2 + houses/2 folk, at most 10 (was 2-6).
+- **check-fast**: a new run-page step, "A run's village" (its name, the stall's own shop of 2 held items, no Perk, Mo's
+  fresh stock with Mo at Lv 3); the town's life step asks for 2 + houses/2 folk, at most 10 (was 2-6).
 - **Fixed, not WM-5's** (each its own commit):
   - The ground painter's helper thread (0dd42c1e): `groundTileRole` and `GROUND_DETAIL_TILES` added to
     ground-paint-worker.js `paintWorkerSource` (GROUND_DETAIL_TILES now exported); new ground-paint-worker.test.mjs runs
@@ -751,14 +757,12 @@ dial, so MAPGEN_VERSION stays 24.
   before. Python Playwright 1.63; `npm ci` and `npm run data` first in a fresh container.
 - **PRs #263, #267, #271**: all three are closed and none is open, but GitHub lists them as closed, not merged; every
   head commit (b38c8504, bdd119a0, 0f4046a7) is in `track/worldmap`. Not closed or reopened by this session.
+- **The owner's answers after the PR (2026-10-28)**: lane switches give way before town sizes (as built); Mo's fresh
+  stock works at the stall too (built after); a side area's town stays a hamlet, "<side> Hamlet" (as built); the stall's
+  name "<town> Market Stall" and greeting kept (as built).
 - **Decided for the owner, to review**:
-  - The step-down order: lane switches dropped first, then every town a size smaller at once (never needed in 5,000
-    maps). The alternative (step down before dropping switches) keeps more lane switches and fewer big towns.
-  - The stall's wares: all 8 held items at weight 1; their names "<town> Market Stall", greeting "Something for your
-    Billies to hold? Two new pieces every morning." (player-facing, yours to reword). Perks' shop price rows apply.
-  - No fresh stock (Mo's word) at the stall: his reroll stays the town shop's.
+  - The stall's wares: all 8 held items at weight 1. Perks' shop price rows apply.
   - The second giver offers another kind than the first when it can; its offer is keyed node + 64 in run.quests.took.
-  - A side area's town (no footprint) is a hamlet, named "<side> Hamlet" (was "<side> Town").
   - The sim's bot looks at the stall and buys nothing (the policy object unchanged, so reports compare).
   - The ground painter fix on this branch: no session owns that code now (WM-5a asked which branch should take it).
   - The trainers' stacking fix (WM-7's code), and its new fallback (ordinary spots, some past the gate).
