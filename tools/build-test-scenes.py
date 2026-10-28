@@ -426,7 +426,7 @@ def t_people():
           {'who': 'folk:3', 'x': 10.8, 'z': 1.8, 'dir': 'down'},
           {'figure': 'rogue', 'x': 12.0, 'z': 1.8, 'dir': 'down'},
           {'figure': 'rogue', 'x': 13.2, 'z': 1.8, 'dir': 'down', 'style': 'smooth'},
-          {'billie': 'carnegie1', 'x': 14.4, 'z': 1.8},
+          {'billie': 'philanthrobite', 'x': 14.4, 'z': 1.8},
           {'figure': 'rogue', 'x': 15.6, 'z': 1.8, 'dir': 'down', 'act': 'throw'}]
     L += [{'figure': 'rogue', 'x': round(12 + (i - 3.5) * 1.2, 2), 'z': 13.8, 'face': i * 45} for i in range(8)]
     L += [{'figure': 'rogue', 'x': 6.0, 'z': 11.4, 'dir': 'side', 'walk': True},
