@@ -30,7 +30,7 @@
  ],
  "note": ["Has already seen this one.","Every loop is a little different, on purpose."],
  "evo": [
-  {"k":"lvl","at":14}
+  {"k":"acquire","item":"transfer","min":14}
  ],
  "forms": [
   {

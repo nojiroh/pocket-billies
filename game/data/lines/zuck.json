@@ -29,7 +29,7 @@
  "note": ["Moves fast. Breaks things.","Remembers your birthday; it was told.","Tries every hobby once, competitively."],
  "evo": [
   {"k":"lvl","at":16},
-  {"k":"item","item":"bell","min":20}
+  {"k":"acquire","item":"transfer","min":20}
  ],
  "forms": [
   {

@@ -47,9 +47,14 @@ test('rewards: a pick is the same for the same run, distinct, of rules.pick card
 
 test('rewards: an evolution item only when a Billie evolves with it', () => {
   const D0 = W.rewardDataGame(setup([['zuck0', 10]]).team),
-    D1 = W.rewardDataGame(setup([['zuck1', 20]]).team);
+    D1 = W.rewardDataGame(setup([['swift1', 20]]).team),
+    D2 = W.rewardDataGame(setup([['zuck1', 20]]).team);
   assert.equal(W.evoUsable('bell', D0), false, 'Facelet evolves by level');
-  assert.equal(W.evoUsable('bell', D1), true, 'Feedopus evolves with the Shining Stone');
+  assert.equal(W.evoUsable('bell', D1), true, 'the Swift line’s middle stage evolves with the Shining Stone');
+  /* ON-4: Feedopus evolves by a trade, or with the Form 99-A (the route without one); no reward card offers it */
+  assert.equal(W.evoUsable('bell', D2), false);
+  assert.equal(W.evoUsable('transfer', D2), true);
+  assert.deepEqual(W.rewardDraw({ pick: w => Object.keys(w).sort()[0], int: lo => lo }, D2, { kind: 'evo' }), []);
   const g = { pick: w => Object.keys(w).sort()[0], int: lo => lo };
   for (let k = 0; k < 20; k++) {
     for (const c of W.rewardDraw(modules.rng.rngFrom('E' + k, 'x'), D0, { n: 5 })) assert.notEqual(c.kind, 'evo');
