@@ -329,7 +329,7 @@ function spriteRecord(it, F, r) {
   r.emit = it.glow ? it.glow * 1.6 : 0;
   /* VFX-9: a battle rig's hit flash ([r, g, b, amount], battle-3d.js), drawn on this program alone */
   r.hit = it.hit && it.hit[3] > 0.001 ? it.hit : null;
-  /* VFX-16: a rig dithering in or out from its feet up ([share hidden, the feet's place down the picture]) */
+  /* VFX-16: a rig dithering in or out from its feet up ([share hidden, the feet's and the head's places down the picture]) */
   r.rise = it.rise && it.rise[0] > 0.001 ? it.rise : null;
   r.rim = it.person ? 0.4 : 0.12;
   r.lit = it.glow ? Math.max(0, 1 - it.glow) : it.far ? 0.75 : 1;
@@ -408,12 +408,12 @@ function setSpriteRecord(p, r) {
   setSpriteGeometry(p, r);
   if (r.dz) gl.uniform1f(U.uDZ, r.dz);
   if (r.hit && U.uHit) gl.uniform4fv(U.uHit, r.hit);
-  if (r.rise && U.uRise) gl.uniform2fv(U.uRise, r.rise);
+  if (r.rise && U.uRise) gl.uniform3fv(U.uRise, r.rise);
 }
 /* VFX-9: the hit flash off again after its picture */
 function clearSpriteHit(p, r) {
   if (r.hit && p.U.uHit) gpuState.gl.uniform4f(p.U.uHit, 0, 0, 0, 0);
-  if (r.rise && p.U.uRise) gpuState.gl.uniform2f(p.U.uRise, 0, 0);
+  if (r.rise && p.U.uRise) gpuState.gl.uniform3f(p.U.uRise, 0, 0, 0);
 }
 /* a crossing picture's: only what differs from its tree's */
 function setSpriteCrossRecord(p, c) {

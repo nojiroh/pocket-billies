@@ -178,7 +178,7 @@ void main(){vRip=0.;float px=(uOff.x+aC.x*uOff.z),py=(uOff.y+aC.y*uOff.w);float 
     the same pixels), so only rock clearly nearer than you shows it, not the ground at your feet */
  if(uGhostV.w>0.)p+=normalize(uGhostV.xyz-p)*uGhostV.w;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv;uniform vec4 uMat,uUV;uniform vec3 uSelf;uniform vec4 uGhost,uHit;uniform float uGhostE;uniform vec4 uFoil;uniform vec2 uRise;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}
+precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv;uniform vec4 uMat,uUV;uniform vec3 uSelf;uniform vec4 uGhost,uHit;uniform float uGhostE;uniform vec4 uFoil;uniform vec3 uRise;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}
 float bayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
  /* terrain TR-3: your silhouette through rock: a flat tint (uGhost.rgb) over uGhost.w of the pixels; player visibility:
@@ -188,9 +188,9 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
   if(!e&&bayer(gl_FragCoord.xy)>uGhost.w)discard;o=vec4(uGhost.rgb,uAlpha);return;}
  if(uFade<.99&&bayer(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
  /* VFX-16: a Billie dithering in from its feet up (a send-out) or out (a recall, a faint): uRise.x the share hidden from
-    the top, uRise.y the feet's place down the picture (0..1); a hard step against the Bayer pattern on the art's own
+    the top, uRise.y and uRise.z the feet's and the head's places down the picture (0..1); a hard step against the Bayer pattern on the art's own
     pixels, with a bright rim on the eroding edge. 0 for everything else and in the instanced program */
- float rr=0.;if(uRise.x>0.){vec2 tz=vec2(textureSize(uTex,0)),ap=floor(vUV*tz),lf=((ap+.5)/tz-uUV.xy)/uUV.zw;float h=(uRise.y-lf.y)/max(uRise.y,.001),e=1.-uRise.x+(bayer(ap)-.5)*.3;
+ float rr=0.;if(uRise.x>0.){vec2 tz=vec2(textureSize(uTex,0)),ap=floor(vUV*tz),lf=((ap+.5)/tz-uUV.xy)/uUV.zw;float h=(uRise.y-lf.y)/max(uRise.y-uRise.z,.001),e=1.-uRise.x+(bayer(ap)-.5)*.3;
   if(h>e)discard;rr=h>e-.08?.75:0.;}
  /* v47: one outline rule: a near-black texel on the picture's edge takes a deep shade of the colour beside it, so
     outlines are coloured, as the newer art draws them (the pictures themselves are not changed) */

@@ -305,7 +305,7 @@ function battle3dFrame() {
       /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
       hit: battle3dHit(B.s, i),
       /* VFX-16: dithering in from its feet up, or out (battle-stage.js s.rise: the share shown) */
-      rise: battle3dRise(B.s, i, G.base / B.R.BH),
+      rise: battle3dRise(B.s, i, G.base / B.R.BH, G.top / B.R.BH),
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
@@ -512,14 +512,15 @@ function battle3dFrame() {
    the picture) as one colour and amount after the light: [r, g, b, a], or null with none */
 const RIG_DARK = [12 / 255, 10 / 255, 22 / 255],
   RIG_HITS = [];
-/* VFX-16: a rig's dither in or out as the sprite shader takes it ([share hidden, the feet's place down its picture]), or
-   null when it is whole */
+/* VFX-16: a rig's dither in or out as the sprite shader takes it ([share hidden, the feet's and the head's places down
+   its picture]), or null when it is whole */
 const RIG_RISES = /** @type {number[][]} */ ([]);
-function battle3dRise(s, i, feet) {
+function battle3dRise(s, i, feet, head) {
   if (s.rise == null || s.rise >= 1) return null;
-  const R = RIG_RISES[i] || (RIG_RISES[i] = [0, 0]);
+  const R = RIG_RISES[i] || (RIG_RISES[i] = [0, 0, 0]);
   R[0] = clamp(1 - s.rise, 0, 1);
   R[1] = clamp(feet, 0.05, 1);
+  R[2] = clamp(head, 0, R[1] - 0.05);
   return R;
 }
 function battle3dHit(s, i) {
