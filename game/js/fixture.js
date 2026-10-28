@@ -224,7 +224,8 @@ export function fixtureStart() {
         you: ['me', 'Where am I? This doesn’t look like the city.', { skin: 'you' }],
       })[q.get('skin') || 'chosen'] || ['chosen', 'This is the dialogue box.', {}],
       style = (q.get('style') || '').replace(/[^a-z]/g, '');
-    talkLine(pick[0], (['shout', 'whisper', 'think'].includes(style) ? `[${style}] ` : '') + pick[1], null, pick[2]);
+    const said = (/^(shout|whisper|think)$/.test(style) ? `[${style}] ` : '') + pick[1];
+    talkLine(pick[0], said, null, pick[2]);
   }
 }
 /* UI-3b: the Studio's UI look preview hands a fixture the look being edited: the theme sheet, and light or dark,
