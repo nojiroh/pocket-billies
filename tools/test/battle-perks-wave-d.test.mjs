@@ -228,3 +228,33 @@ test('PK-6 rule eventHurt: an event’s hurt is kept off by the Perk that holds 
   s.run = null;
   assert.equal(L.runEventSafe(s, P), '');
 });
+
+/* ---------- needs side ---------- */
+
+test('PK-6 needs side: offered only while a side area is ahead (not open and reachable, or open and not walked)', () => {
+  const PK = modules.perks,
+    r = runOf();
+  r.map = {
+    nodes: [{ row: 0 }, { row: 1 }, { row: 2 }, { row: 2, side: 1 }, { row: 3 }],
+    side: { from: 1, nodes: [3], to: 4 },
+  };
+  r.path = [];
+  assert.equal(PK.perkRunSide(r), true, 'at the start');
+  r.path = [0];
+  assert.equal(PK.perkRunSide(r), true, 'the obstacle a row ahead');
+  r.path = [0, 1];
+  assert.equal(PK.perkRunSide(r), true, 'at the obstacle');
+  r.path = [0, 1, 2];
+  assert.equal(PK.perkRunSide(r), false, 'walked past it');
+  r.map.side.open = 1;
+  r.path = [0, 1];
+  assert.equal(PK.perkRunSide(r), true, 'open, its places ahead');
+  r.path = [0, 1, 3];
+  assert.equal(PK.perkRunSide(r), false, 'open and walked');
+  r.map.side = undefined;
+  assert.equal(PK.perkRunSide(r), false, 'no side area on this run');
+  assert.equal(PK.perkRunSide(null), true, 'a preview: not asked');
+  const P = { name: 'X', d: 'x', rarity: 'common', fx: [], needs: 'side' };
+  assert.equal(PK.perkFits(P, [['Fire']], r), false);
+  assert.equal(PK.perkFits(P, undefined, r), true, 'no team: needs not asked');
+});

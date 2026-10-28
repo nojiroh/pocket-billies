@@ -655,6 +655,7 @@ test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () =
   D.perks.lucky_charm.needs = 'team:Fire';
   D.perks.clinic_card.needs = ['team:Water|Grass', 'mono'];
   D.perks.coupon_book.needs = 'bots';
+  D.perks.steady_hand.needs = 'side';
   assert.deepEqual(C.dataPerks(D), []);
   for (const [v, text] of [
     ['lead', '"lead" can\'t be known when a Perk is offered'],
