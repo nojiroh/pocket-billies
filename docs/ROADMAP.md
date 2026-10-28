@@ -268,7 +268,9 @@ town node needs it.
   at 72 px on pick cards and 36 px in rows, the Studio's icon editor and art browser on art/perks, Edit art in the
   Perks editor) done 2026-10-28 on `track/perks`; PK-3 (Wave A, the battle kit: 15 Perks, the kinds crit, immune,
   inflict, chip, first and revive, 11 new pictures, counters on the Perks tab) done 2026-10-28 on `track/perks`; PK-4
-  (Wave B: types, team and weather; `needs`, `tags`) next.
+  (Wave B: types, team and weather: 15 Perks, the kinds passive, weather, benchXp and rule forecastDays, `needs` and
+  `tags` with the bias on offers, 13 new pictures) done 2026-10-28 on `track/perks`; PK-5 (Wave C: catching, cash and
+  maps) next.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).

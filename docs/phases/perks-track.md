@@ -509,6 +509,43 @@ unused-art gate.
 - `perks.test.mjs:41` is rewritten for a large, filtered pool (coverage per rarity over a few hundred seeds with a team
   of every type), and new tests pin relevance (no type Perk without its type) and the leader pool.
 
+**Corrected in PK-4** (built 2026-10-28; where the code or the plan above was wrong or vague):
+- **Group Chat as drafted did nothing**: the bench already gets half of a foe's XP (rules.json
+  `progression.teamXpShare` 0.5, battle-engine.js `award`). A benchXp row's share is added to that rule's (at most
+  1), so Group Chat (0.5) gives the bench the full XP; its text says so ("get the full XP from each foe, not half").
+  XP is given per foe knocked out, and "sat out" means on its feet but not on the field when the foe fell.
+- **passive** rows name the types.json passive id (`passive: kindling`) and only the numbers that passive takes
+  (effects.js `FX_PASSIVE_KEYS`, data-checks.js `fxPassiveProblems`): kindling `rate` (turns count rate times, to the
+  same top of rules.json `kindlingTurns`), undertow `hp` (from that share; the rule's 0.3334 if higher), regrowth
+  `mult`, livewire `mult` (Live Wire's crit stages times it: 1 to 2 is critChances 0.125 to 0.25, "twice as often"),
+  bedrock `uses` and `hp` (it held from full HP only), slipstream `always` and alloy `all` (flags), wildmind `rolls`,
+  partingroar `stat` and `stages` (Parting Roar's +1 Attack and Sp. Atk stay). Read for yours only
+  (battle-engine.js `fxPassiveOf`); without a row nothing changes and no roll is added (Mood Ring's second roll is
+  the only new draw on the battle's stream).
+- **weather** rows: `what: noWeaken` (no `mult`) and `what: boost` with a `mult` over 1 (a x1.3 boost with 2 is
+  x1.6: `fxWeather`). Weather only changes move damage, so the rows are read in calcDamage (`fxWeatherFor`); the
+  move tiles' up and down arrows follow them (battle.js), so Umbrella removes the down arrow.
+- **rule forecastDays**: the forecast was rolled rules.json `run.clock.ahead` (7) days ahead and the Map tab showed
+  7. `run-map.js runForecastDays` rolls and shows that plus the rows' days, also when the Map tab draws it, so a
+  Barometer taken mid-run shows its days at once (each day has its own stream: no day already rolled changes). A
+  rule row takes no `if` or `per` (read on the run).
+- **needs** takes the conditions an offer can know: `team:<Type>` and `mono` (data-checks.js `PERK_NEEDS`); `bots`,
+  `side` and `spliced` come with the waves that use them. The team is each Billie's types (perks.js `perkTeamOf`),
+  passed by every game caller (the pick, the shop, an event, the debug menu, the fixture, the run sim); a preview from
+  the seed alone (run-preview.js, the Studio's offer order) gives none, and then needs are not asked.
+- **tags** are types and themes; the themes are 5.7's set ids (data-checks.js `PERK_THEMES`) until PK-8 makes the
+  sets a data section. A tag matches a type on the team or a tag of a Perk held; the bias applies once
+  (`perkWeight`). The 17 existing Perks of a planned set got their theme as a tag (Union Card, Rainbow Lanyard and
+  the Wave A Perks without a set have none but types).
+- The Studio's **type rename** didn't reach Perk fields naming types inside conditions (`if`, `grow.if` since PK-1)
+  and now `needs` and `tags`: `renameTypeConds` (a deleted type's name, condition and tag go).
+- Matching Hoodies' `mono` and Rainbow Lanyard's `per: teamTypes` count the whole team, fainted Billies too (as PK-1
+  built them). Snorkel, Knee Pads and Union Card's texts got "of their HP", "not only Steel ones"; Kite's "not just
+  the first"; Heirloom Locket's "the next one's Speed".
+- perks.test.mjs's "most Perks over 120 runs" is now every Perk of each rarity over 300 picks with a team of every
+  type, plus relevance (no type Perk without its type, in a pick, a shelf and an event) and the bias (a matching type
+  Perk about twice as often as an untagged one of its rarity). Golden battles unchanged.
+
 ## 9. Sessions (one at a time, each on `track/perks`)
 | # | Session | Does | Done when |
 |---|---|---|---|
@@ -516,7 +553,7 @@ unused-art gate.
 | PK-1 | Effects core (**done 2026-10-28**, `track/perks`; "Corrected in PK-1" in section 7) | section 7's fields and state, the switch-in fix, run rows of every kind read, schema, data checks, types, the Studio's row inputs, battle lines; tests for each trigger, counter, growth and condition (test-only Perks) | a battle without Perks unchanged; every tier green |
 | PK-2 | Art pipeline (**done 2026-10-28**, `track/perks`; "Corrected in PK-2" in section 6) | `tools/build-icons.mjs` and its test, `img` on Perks (schema, checks, types), cards at 72 px and rows at 36 px, the Studio's icon editor and art browser on the new folders, the 13 existing Perks drawn | 13 pictures in game, contact sheets committed |
 | PK-3 | Wave A (**done 2026-10-28**, `track/perks`; "Corrected in PK-3" in section 7) | 15 Perks of 5.2: data, kinds, art, tests | every Wave A Perk works in a battle test |
-| PK-4 | Wave B | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
+| PK-4 | Wave B (**done 2026-10-28**, `track/perks`; "Corrected in PK-4" in section 8) | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
 | PK-5 | Wave C | 12 Perks of 5.4 | catching, shop, reward and map rules tested |
 | PK-6 | Wave D | 11 Perks of 5.5 (Correction Fluid waits for PK-9) | growth and copy tested over a simulated run |
 | PK-7 | Fine Print | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |

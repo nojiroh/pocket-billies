@@ -550,6 +550,13 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   most 0.5), chip (what a burn takes, times), first (yours move first where its If holds) and revive (a wiped team
   gets back up with a share of HP; it needs Once). check-studio-github.py `--only=relics` opens the 15 Wave A Perks
   and checks every row shows its inputs with no error.
+  **Wave B's kinds** (PK-4): passive (a type passive and the numbers it takes: Kindling's rate, Undertow's and
+  Bedrock's HP share, Regrowth's and Live Wire's ×, Bedrock's uses, Wild Mind's rolls, Parting Roar's stat and
+  stages; Slipstream and Alloy take a flag), weather (never weakens, or boosts counted ×), benchXp (a share more for
+  the bench) and rule (forecastDays: the forecast's days more). **Needs** (to be offered: team:Fire, mono) and
+  **Tags** (types and themes) per Perk, and the rarity card's **Lean toward a tag match ×** (rules.json
+  run.perks.bias). The Studio's offer order gives no team, so it doesn't ask needs. `--only=relics` opens the 15
+  Wave B Perks too, and checks Bellows's Needs and Tags.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,

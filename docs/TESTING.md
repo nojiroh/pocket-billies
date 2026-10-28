@@ -361,6 +361,13 @@ same phase:
   of the 15 Wave A Perks of perks.json in a battle, and battles holding all 15 that end within 200 turns, replayable;
   `data-checks.test.mjs` the kinds' rows (good ones pass check-data and the schema, planted faults named);
   `perks.test.mjs` perkCount; check-fast's Perks step the tab's counters (Click Pen 5/8, Warranty Card VOID).
+  PK-4: `tools/test/battle-perks-wave-b.test.mjs` checks Wave B's kinds with test-only Perks (passive: each of the
+  nine type passives stronger for yours, the foe's unchanged; weather noWeaken and boost; benchXp; rule
+  forecastDays, the days already rolled unchanged), then each of the 15 Wave B Perks of perks.json, and battles
+  holding all 30 Wave A and B Perks; `perks.test.mjs` needs, tags and the bias (every Perk of each rarity over 300
+  picks with a team of every type, no type Perk offered without its type in a pick, a shelf or an event, a tagged
+  Perk about bias times as often); `type-rename.test.mjs` a Perk's tags, needs and conditions renamed;
+  `data-checks.test.mjs` the kinds' rows, needs, tags and the bias.
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the
