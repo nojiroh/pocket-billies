@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Load track - the crossing hitch: the day's water remade in the background, the walking grid built ahead - 2026-10-28
+Branch `claude/new-session-bcxme1` (from main 485674b5). Plan approved in Plan Mode. The owner: "there's still a hiccup
+when moving from a route to another route", with their PC debug log (10:36, RTX 2070, DPR 2.5) and diagnostics report
+(10:30). No look changes, except when the water appears (below).
+- **Found** (the log, then the code):
+  - The full test's crossing into Thicket Route: one frame of 3238 ms ("building the ground mesh"); the second time a
+    926 ms frame, a 4.7 s hold (`crossings.heldMaxMs` 4665) at about 22 fps, then 392 ms at the switch. Both logged
+    "water by the weather" as the day turned.
+  - run-world.js `runWaterWeatherSync`: when the day's weather changed *any* run place's water, it cleared every view,
+    put a remade one on screen and set `walkRenderer.hkey = ''`, so the next frame's `swapMapCache('', hk)` could not
+    use the cache and built the visible ground in one go. The next view, prepared ahead, was thrown away too.
+  - `navGrid` built every new view's walking grid in one frame (14 slow frames in the log, 75-90 ms, worst 595 ms on
+    the PC). load-track.md said "on a seam it is prepared ahead"; it wasn't (corrected there).
+- **Changed:**
+  - seamless-world.js: `seamlessDropViewsOf` drops only the views that show a changed place (`seamlessViewUses`, now
+    also used by map-files.js); no `gen++` (the seams' memo holds heights, not water). The view on screen keeps drawing;
+    `seamlessRemakeTick` (from `seamlessPrepareAhead`) gets its new version ready and swaps it in (swapMapCache finds
+    it). `seamlessGate` crosses into a ready earlier version (`seamlessWorld.was`) rather than wait; `shiftWalkView`
+    takes it and remakes it after. Stats: `remade`, `remadeMs`, `early` (the debug log's `world.crossings`).
+  - walk-view.js: `navGridSteps` (the grid a row or 32 props a step; `navGrid` runs it in one go, the same arrays);
+    `navPrepare` / `navPrepWork` build up to three grids ahead in the frame budget (walk-view-gl.js, next to
+    `groundPrepWork`); `navReady` is part of `seamlessViewReady`. `walkView.navBuilding` holds the view being built
+    (heights.js, `mapBridges`), not `true`. `walkView.navBuilds` counts grids built in one go.
+  - heights.js: the steep pass as steps too; `navGrid`'s wrapper takes a kept or ahead grid without looking at the
+    heights again.
+  - tools/check-fast.py: "A seam on a day the weather changes the water in view" (its own run page). Fails on main
+    (the ground built in one go, 2.9 s headless, and the walking grid); passes after, and checks the grid built ahead
+    equals one built in one go. The plan's Node unit test for that became this in-browser comparison (walk-view.js
+    needs the page).
+- **Found, not changed** (the same log, for their owners):
+  - The full test failed "A room that opens in place" (the town's walking grid changed by 236 cells after the room)
+    and "Light lab" (one draw call refused, GL error 1282, also logged at "Fog in the air: dawn fog").
+  - Copperleaf's opening hitch, "setting up the ground" 3.5 s on the PC: the same `buildGroundMesh`, on a place
+    opening (behind its fade). Next for this track.
+  - The diagnostics report's `passed: false` doesn't say which step failed (self-test.js `diagnosticsSummary` keeps
+    only the walk, battle, world map and memory steps), and tools/read-debug-log.py can't read a diagnostics report.
+  - tools/check-load.py `--only=moves --site=game` didn't get ready in 300 s here (the unbundled source).
+- **Risky:**
+  - When the day's weather changes the water of a place you can see, the new water appears when its remade view is
+    ready (seconds on a phone, headless 9 s), at once, instead of in a freeze.
+  - A crossing now also waits for the next view's walking grid (built ahead in the frame's budget). Walking straight
+    at a seam fast could hold a little longer; at the view's edge it is built on the spot, as before.
+  - Not measured on a phone. Headless only ranks the causes.
+- **Verified:** lint, typecheck, check:modules, format:check, check:data and build clean; `npm test` 1,733 pass; the
+  new check before (fails) and after (passes); the full check-fast: see the PR (it was still running at the push).
+- Next: the owner's phone run below; then Copperleaf's opening hitch (the same ground build).
+- **For the owner on the phone:** start a run and walk two or three routes on foot over their seams (a day with a
+  storm or snow on the forecast shows the water change), then export the debug log. "building the ground mesh",
+  "setting up the ground" and "working out where you can walk" should be gone from the crossings, and
+  `world.crossings` shows `remade`/`early`.
+
 ### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28
 Branch `track/characters`, the same session as CH-2, straight on at the owner's word ("Automatically follow the plan
 until you finished ch3 then stop"): the track file's CH-3 is the plan, and the "Ask me before" calls it touches were

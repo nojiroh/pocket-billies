@@ -287,7 +287,9 @@ town node needs it.
   build time, canvases read back kept in memory) done 2026-10-27 on the same branch; LD-2 (shaders started together, read once, finished behind
   the loader) done 2026-10-27; LD-3 (the island in a worker, pictures per place, the bundle minified, the
   precache) done 2026-10-27; LD-4 (the run's places on a helper thread from the pick) done 2026-10-27; LD-5 in part (one frame budget, the
-  moves measured) done 2026-10-27, its other items wait on the owner's phone log; next LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
+  moves measured) done 2026-10-27, its other items wait on the owner's phone log; the crossing hitch (the day's water
+  remade in the background, the next view's walking grid built ahead) done 2026-10-28 on `claude/new-session-bcxme1`;
+  next LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
   `ld-N-done`. Branch `track/load`.
 - **Characters track** (docs/phases/characters-track.md, the owner's brief 2026-10-27): people that look like they
   belong and move like they're alive. People are 66.5 px/m and drawn at 0.74 of a screen pixel per art pixel at the
