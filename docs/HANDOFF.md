@@ -76,7 +76,7 @@ track needed); nothing the style track owns touched.
 - Measurements: the Studio self-test's row: the stage (Copperleaf) ready in 8.4 s headless, a seek to the hit
   (512 ms, 13 timeline rows, 19 steps) in 7 ms; the whole self-test 311 s, passed (22 edits undone). A previewed move
   before the fix {dur: 0, hit: 999}, after {dur: 880, hit: 200} (Rush) and 1060 / 500 (Overcharge). Smoke 343-351 s on
-  each commit here (VFX-9 noted 401 s). No move longer: the battle-anims tests keep every move x 8 outcomes' {dur,
+  each commit here, 314 s on the last (VFX-9 noted 401 s). No move longer: the battle-anims tests keep every move x 8 outcomes' {dur,
   hit}, the timelines' snapshot is unchanged, `maxMs` untouched; the game's budgets and dials are the same numbers.
 - Risky:
   - Opening Battle effects mounts a walk scene (Copperleaf): heavier than the old dark stage in the Studio, the
@@ -85,7 +85,8 @@ track needed); nothing the style track owns touched.
     merge: keep both sides (VFX-10's are merged already). battle-stage.js changed only in the budget lines, battle-3d.js
     only in battle3dEffectLights, battle-anim-run.js only `export` on battleAnim and the smears line.
   - Headless, a walk scene drawn in software keeps the Studio page busy: Playwright's real clicks right after opening
-    Battle effects can wait (my step clicks in the page). The fighters now go on a running stage at once (993cc4af).
+    Battle effects can wait (my step clicks in the page). The fighters now go on a running stage at once (993cc4af),
+    and the move/event switch redraws only its fields (e8cadd2a): every whole redraw mounts the walk scene again.
 - Phone checks (listed, not waited for): the Battle effects section on a phone-sized Studio window (the stage, the
   player under it, the timeline scrolling sideways, the panes); tuning a move: play Overcharge (super ×2), drag the
   scrubber to its hit, step a cell each way, then Faster, quality 2, Reduced motion and Flashes off; change a smear
@@ -94,7 +95,8 @@ track needed); nothing the style track owns touched.
   (1877 of 1877 after the last merge) on each change; the smoke check (no problems, 7 of 7) on every commit that
   touched game/ or studio/ and on the merged heads. check-studio-github.py: `battle_fx` passes (and proposes); the
   self-test (with its new row) passes; split passes; robot joints failed once on the walk-scene stage's slow restart
-  (fixed in 993cc4af, rerun below); the full run stops at the `story` step, which fails the same way on `track/vfx`
+  (fixed in 993cc4af; rerun: robot joints and battle_fx pass, and after e8cadd2a battle_fx with the closing proposal
+  passes); the full run stops at the `story` step, which fails the same way on `track/vfx`
   without my changes (de249bd8: a real click on #scMap times out). Full quick check on 6bfc9e3f, run alone: 36 of 42
   in 1599 s; Terraces, RL-8 and Room light fail on `track/vfx` too (its own run: 38 of 42 in 1665 s, those three and
   Battle music); route trainers, Granny Juniper and the phone step's walk-screen piece count failed in mine and passed
