@@ -2250,7 +2250,21 @@ def relics_steps(pg, errs):
     pg.evaluate("void openSection('relics', { relic: 'string_magnet' })"); time.sleep(0.3)
     mg = pg.evaluate("(document.querySelector('#main [data-relic-needs=\"string_magnet\"]')||{}).value")
     if mg != 'bots': errs.append(f'perks: Magnet on a String shows Needs as {mg!r}')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs", flush=True)
+    # PK-6: Wave D's kinds (copy, give, the rules cap, sideOpen, sideFind, eventHurt, growth with a reset): every row of
+    # the 11 Wave D Perks shows its inputs with no error; Boarding Pass shows its Moneys and Bag items; Rusty Key's
+    # Needs read side
+    wave_d = ['accordion_file', 'photocopier', 'like_button', 'streak_tracker', 'selfie_stick', 'coil_of_rope', 'ten_foot_pole', 'rusty_key', 'time_card', 'boarding_pass', 'travel_pillow']
+    for pid in wave_d:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err, #main .relic-err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
+    pg.evaluate("void openSection('relics', { relic: 'boarding_pass' })"); time.sleep(0.3)
+    bp = pg.evaluate("[!!document.querySelector('#main [data-p=\"perks.boarding_pass.fx.0.money\"], #main [data-path=\"perks.boarding_pass.fx.0.money\"]'), (document.querySelector('#main [data-relic-give=\"boarding_pass\"]')||{}).value]")
+    if bp != [True, 'potion:2']: errs.append(f'perks: Boarding Pass shows its Moneys and items as {bp}')
+    pg.evaluate("void openSection('relics', { relic: 'rusty_key' })"); time.sleep(0.3)
+    rk = pg.evaluate("(document.querySelector('#main [data-relic-needs=\"rusty_key\"]')||{}).value")
+    if rk != 'side': errs.append(f'perks: Rusty Key shows Needs as {rk!r}')
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs", flush=True)
 
 
 def unlocks_steps(pg, errs):
