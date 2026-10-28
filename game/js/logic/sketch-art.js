@@ -17,22 +17,22 @@
  *   squash?: boolean, lag?: number, mirror?: string, label?: string }} PlanBone a bone as bodyPlans.json writes it
  * @typedef {{ n: string, par: string, c: [number, number], size: [number, number] | null, pv: [number, number],
  *   shape: string, tone: string, z: number, zb: number, slot: string | null, also: string | null, rr: number, face: boolean,
- *   squash: boolean, lag: number, label: string, src: string, flip: boolean }} PlaceholderBone a bone worked out:
+ *   squash: boolean, lag: number, label: string, src: string, flip: boolean }} SketchBone a bone worked out:
  *   mirrors applied, the form's sizes on; `src` names the bone whose picture it draws (flipped when `flip`)
  * @typedef {{ name: string, rig: string, line?: string, stage?: number, form?: string, plan: string,
  *   colours: { main: string | Rgb, accent?: string | Rgb }, size?: Record<string, number>, scale?: number,
- *   add?: PlanBone[], drop?: string[], q?: Record<string, number>, talk?: boolean }} PlaceholderForm one placeholder Billie
+ *   add?: PlanBone[], drop?: string[], q?: Record<string, number>, talk?: boolean }} SketchForm one placeholder Billie
  *   (bodyPlans.json forms); `talk`: its face also gets a mouth-open frame (a talking creature person: Kappi)
- * @typedef {{ bg: Rgb, grid: Rgb, label: number, room: number, min: number }} PlaceholderSheetSet
+ * @typedef {{ bg: Rgb, grid: Rgb, label: number, room: number, min: number }} SketchSheetSet
  * @typedef {{ ink: Rgb, hatch: number, hatchDark: number, dark: number, light: number, back: number, eye: Rgb,
- *   glint: Rgb }} PlaceholderPaintSet
- * @typedef {{ sheet: PlaceholderSheetSet, paint: PlaceholderPaintSet,
- *   plans: Record<string, { q: Record<string, number>, bones: PlanBone[] }>, forms: PlaceholderForm[] }} BodyPlans
+ *   glint: Rgb }} SketchPaintSet
+ * @typedef {{ sheet: SketchSheetSet, paint: SketchPaintSet,
+ *   plans: Record<string, { q: Record<string, number>, bones: PlanBone[] }>, forms: SketchForm[] }} BodyPlans
  * @typedef {{ key: string, bone: string, frame: string, w: number, h: number, px: number, py: number, pxb: number }}
  *   CellSpec a cell: its key (`head` or `head.blink`), its size and the pivot inside it (pxb: from behind, where the
  *   part shows mirrored)
  * @typedef {Record<string, Pixels>} CellPics a view's cells' pictures by key
- * @typedef {{ front: CellPics, back: CellPics }} PlaceholderCells
+ * @typedef {{ front: CellPics, back: CellPics }} SketchCells
  * @typedef {{ x: number, y: number, w: number, h: number, key: string, view: string, form: string }} SheetCell
  * @typedef {{ width: number, height: number, cells: SheetCell[], strips: { x: number, y: number, w: number,
  *   text: string }[] }} SheetLayout
@@ -104,7 +104,7 @@ provide({ SKETCH_VIEWS }); /* to-module */
 /** a plan's bones for one form: mirrors filled in (middle, pivot and turn mirrored, the parent mirrored too when it
  * has a mirror), the form's dropped bones gone, its added ones on, its sizes applied, then its scale (RO-3b: the whole
  * Billie, middles and sizes, as a kit recipe's scale sizes a stage)
- * @param {BodyPlans} P @param {PlaceholderForm} form @returns {PlaceholderBone[]} */
+ * @param {BodyPlans} P @param {SketchForm} form @returns {SketchBone[]} */
 export function sketchBones(P, form) {
   const plan = P.plans[form.plan];
   if (!plan) throw new Error(`${form.name}: no body plan ${form.plan}`);
@@ -153,7 +153,7 @@ export function sketchBones(P, form) {
     };
   });
 }
-/** a bone's joint in the stage box at rest (from the middle of the ground line) @param {PlaceholderBone} b */
+/** a bone's joint in the stage box at rest (from the middle of the ground line) @param {SketchBone} b */
 export const sketchJoint = b =>
   b.size ? [b.c[0] + (b.pv[0] - 0.5) * b.size[0], b.c[1] + (b.pv[1] - 0.5) * b.size[1]] : [b.c[0], b.c[1]];
 
@@ -170,7 +170,7 @@ export const sketchShade = (c, k) => [Math.round(c[0] * k), Math.round(c[1] * k)
 /** @param {Rgb} c @param {Rgb} d @param {number} t @returns {Rgb} */
 export const sketchMix = (c, d, t) => /** @type {Rgb} */ ([0, 1, 2].map(i => Math.round(c[i] + (d[i] - c[i]) * t)));
 /** the four tones a form paints with: its main colour, a darker one, its accent (the main lightened if it has none)
- * and a light one @param {PlaceholderPaintSet} S @param {PlaceholderForm['colours']} colours */
+ * and a light one @param {SketchPaintSet} S @param {SketchForm['colours']} colours */
 export function sketchTones(S, colours) {
   const main = sketchRgb(colours.main),
     accent = colours.accent ? sketchRgb(colours.accent) : sketchMix(main, [255, 255, 255], 0.35);
@@ -286,7 +286,7 @@ export function sketchInside(shape, u, v) {
 }
 /** one bone's placeholder picture at its size (no room): the shape in its tone, hatched, outlined, its name inside
  * where it fits; a front face gets eyes (`blink` shuts them, `talk` opens a mouth); from behind it is darker and has no face
- * @param {PlaceholderPaintSet} S @param {PlaceholderBone} b @param {ReturnType<typeof sketchTones>} T
+ * @param {SketchPaintSet} S @param {SketchBone} b @param {ReturnType<typeof sketchTones>} T
  * @param {string} view @param {string} [frame] */
 export function sketchPaint(S, b, T, view, frame = 'main') {
   if (!b.size) throw new Error(`${b.n} has no picture`);
@@ -348,7 +348,7 @@ export function sketchPaint(S, b, T, view, frame = 'main') {
 /** the cells a form draws: one per bone with a picture that mirrors nothing, plus a front blink cell per face (and a
  * talk cell when the form talks); each
  * with room round the part (so a drawing may grow) and its pivot inside
- * @param {BodyPlans} P @param {PlaceholderForm} form @returns {CellSpec[]} */
+ * @param {BodyPlans} P @param {SketchForm} form @returns {CellSpec[]} */
 export function sketchCellSpecs(P, form) {
   const S = P.sheet,
     out = [];
@@ -369,11 +369,11 @@ export function sketchCellSpecs(P, form) {
   return out;
 }
 /** the painted cells of a form, both views (a blink cell is front only)
- * @param {BodyPlans} P @param {PlaceholderForm} form @returns {PlaceholderCells} */
+ * @param {BodyPlans} P @param {SketchForm} form @returns {SketchCells} */
 export function sketchPaintCells(P, form) {
   const T = sketchTones(P.paint, form.colours),
     bones = Object.fromEntries(sketchBones(P, form).map(b => [b.n, b])),
-    /** @type {PlaceholderCells} */ out = { front: {}, back: {} };
+    /** @type {SketchCells} */ out = { front: {}, back: {} };
   for (const view of SKETCH_VIEWS)
     for (const c of sketchCellSpecs(P, form)) {
       if (view === 'back' && c.frame !== 'main') continue;
@@ -398,7 +398,7 @@ export function sketchTrim(p) {
   return { pic: o, dx: x0, dy: y0 };
 }
 /** a form's pieces in one view, from its cells (painted, or cut from a drawn sheet), as kit-assemble.js's KitPiece
- * @param {BodyPlans} P @param {PlaceholderForm} form @param {PlaceholderCells} cells @param {string} view
+ * @param {BodyPlans} P @param {SketchForm} form @param {SketchCells} cells @param {string} view
  * @param {{ pad: number, squash: Record<string, [number, number]> }} D */
 export function sketchPieces(P, form, cells, view, D) {
   const bones = sketchBones(P, form),
@@ -448,9 +448,9 @@ export function sketchPieces(P, form, cells, view, D) {
   return pieces;
 }
 /** a form baked: its sheet and both views' rigs (as rigs-next.js holds them, marked placeholder), from its cells
- * (painted unless given) @param {BodyPlans} P @param {PlaceholderForm} form
+ * (painted unless given) @param {BodyPlans} P @param {SketchForm} form
  * @param {{ pad: number, squash: Record<string, [number, number]>, sheetW: number, margin: number }} D the kit
- * baker's settings (kitBuilds.json bake) @param {PlaceholderCells} [cells] */
+ * baker's settings (kitBuilds.json bake) @param {SketchCells} [cells] */
 export function sketchBake(P, form, D, cells = sketchPaintCells(P, form)) {
   const box = SKETCH_BOX,
     DD = /** @type {any} */ ({ ...D, box }),
@@ -533,7 +533,7 @@ export function sketchRestPieces(all, drawn) {
 /* ---------- drawing sheets ---------- */
 /** where every cell sits on a form's sheet (a column per cell, a row per view) or a plan's sheet (a column per cell,
  * two rows per form): a label strip over each row of cells, a one-pixel grid line round each cell
- * @param {BodyPlans} P @param {PlaceholderForm[]} forms one form for a Billie's sheet, all of a plan for its sheet
+ * @param {BodyPlans} P @param {SketchForm[]} forms one form for a Billie's sheet, all of a plan for its sheet
  * @param {boolean} [named] write each form's name in a strip of its own (the plan sheet) @returns {SheetLayout} */
 export function sketchSheetLayout(P, forms, named = false) {
   const L = P.sheet.label,
@@ -578,8 +578,8 @@ export function sketchSheetLayout(P, forms, named = false) {
 /** a cell's label: its bone (and frame) and the view's first letter @param {string} key @param {string} view */
 export const sketchCellLabel = (key, view) => `${key.replace('.', ' ')} ${view[0]}`;
 /** a drawing sheet: the cells' pictures on magenta, the rest grid grey, the labels, and yellow ticks on the grid line
- * at each cell's pivot @param {BodyPlans} P @param {PlaceholderForm[]} forms
- * @param {Record<string, PlaceholderCells>} cellsByForm @param {boolean} [named] @param {number} [scale] each sheet
+ * at each cell's pivot @param {BodyPlans} P @param {SketchForm[]} forms
+ * @param {Record<string, SketchCells>} cellsByForm @param {boolean} [named] @param {number} [scale] each sheet
  * pixel drawn as scale x scale */
 export function sketchSheet(P, forms, cellsByForm, named = false, scale = 1) {
   const S = P.sheet,
@@ -617,8 +617,8 @@ export function sketchScaleUp(p, k) {
 }
 /** a drawn sheet cut back into cells by the same layout: its scale found from its width (each cell read at the middle
  * of its big pixels), magenta and near-magenta made clear, alpha made hard
- * @param {BodyPlans} P @param {PlaceholderForm[]} forms @param {Pixels} sheet @param {boolean} [named]
- * @returns {Record<string, PlaceholderCells>} */
+ * @param {BodyPlans} P @param {SketchForm[]} forms @param {Pixels} sheet @param {boolean} [named]
+ * @returns {Record<string, SketchCells>} */
 export function sketchSheetCut(P, forms, sheet, named = false) {
   const lay = sketchSheetLayout(P, forms, named),
     k = sheet.width / lay.width;
@@ -627,7 +627,7 @@ export function sketchSheetCut(P, forms, sheet, named = false) {
       `the sheet is ${sheet.width} x ${sheet.height}; this layout is ${lay.width} x ${lay.height} (or a whole multiple). Was a Billie's plan or sizes changed since it was exported?`
     );
   const off = Math.floor(k / 2),
-    /** @type {Record<string, PlaceholderCells>} */ out = {};
+    /** @type {Record<string, SketchCells>} */ out = {};
   for (const f of forms) out[f.name] = { front: {}, back: {} };
   for (const c of lay.cells) {
     const pic = kitBlank(c.w, c.h);
@@ -643,7 +643,7 @@ export function sketchSheetCut(P, forms, sheet, named = false) {
   return out;
 }
 /** the painted cells for a form with its drawn ones on top (a drawn cell wins; one with no pixels keeps the
- * placeholder) @param {BodyPlans} P @param {PlaceholderForm} form @param {PlaceholderCells | null} drawn */
+ * placeholder) @param {BodyPlans} P @param {SketchForm} form @param {SketchCells | null} drawn */
 export function sketchCellsWith(P, form, drawn) {
   const out = sketchPaintCells(P, form);
   if (!drawn) return out;
