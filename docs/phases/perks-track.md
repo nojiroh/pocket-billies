@@ -351,6 +351,28 @@ Trail Mix, Pretzel and Repair Kit get 36 px pictures (`img: "items/<id>.svg"`); 
 the Bag draws 36 px (was 30), reward cards 72 px; the atlas's `i_*` rectangles retire through the Studio's
 unused-art gate.
 
+**Corrected in PK-11** (built 2026-10-28 on `track/perks-items`, the items lane beside the Perk waves):
+- **items.json has no schema** (section 2 and the step's brief said "schema"): `dataItemArt` (data-checks.js, run by
+  check-data, beside PK-2's `dataPerkArt`) checks the path's form too: an item's `img` is `items/<its id>.svg`, there,
+  and an icon (svgProblem). A Bag item without `img` warns; a held item is left alone until PK-10 draws them (eight
+  warnings would have changed every check-data snapshot). Adding a whole items schema was left out (not this step's).
+- The Shining Stone's id is `bell` and its atlas icon `stone`; `i_bell` is **Lucky Coin's** (held). So the 9
+  rectangles retired are i_potion, i_hipotion, i_salve, i_tonic, i_tea, i_revive, i_maxrevive, i_stone, i_remedy;
+  i_pretzel (Leftover Sandwich), i_trailmix (Snack Pack) and i_bell (Lucky Coin) stay for PK-10. Protein Bar drew
+  i_trailmix and the Repair Kit i_tonic (borrowed pictures).
+- The "unused-art gate" for an atlas rectangle is the atlas editor's Delete, refused while `atlasUses` finds a data
+  use; it counted an item by `i_` + (icon or id) even with an `img`. Now an item with its own picture uses no key; the
+  13 drop `icon` (`Item.icon` is optional), the 9 rectangles leave art/manifest.js and their pixels leave
+  art/icons/icons.png (so the editor's Add finds a clean spot).
+- `itemIcon` already drew `img` as `<img class="pxi">` (pixelated); only the sizes changed: the Bag 36 (was 30), a
+  reward card 72 (was 40), and also the battle's Bag 36 (was 32) and the Billie sheet's use and give lists 36 (was 34),
+  which the brief did not name. Kept: the shop 36, a town square stall 36, the Billie sheet's held line 14, the Trainer
+  card's list 24 and the run start's packing list 30 (small text rows; their held items still draw the atlas).
+- The Studio's items editor had "Upload a custom icon" (a PNG named `items/<id>.png`, which `dataItemArt` would
+  refuse): replaced by **Draw one** (a blank `art/items/<id>.svg`, as the Perks editor's) and **Edit art**; the atlas
+  Icon field shows only for an item without a picture. The icon editor and the art browser needed nothing new (`items`
+  was in `ICON_DIRS` since PK-2).
+
 ## 6. The art (every Perk, held item, Bag item and boon)
 - **Look**: exactly the UI icons'. A flat 34x34 front in `ICON_PALETTE` letters or one `ICON_RAMPS` hue (digits 1-4,
   letters as accents), shaded by `iconBlockKeyed` and written by `pixelsToSvg`: a 36x36 SVG. One object per icon,
@@ -560,7 +582,7 @@ unused-art gate.
 | PK-8 | Sets | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |
 | PK-9 | Boons and curses | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
 | PK-10 | Held items | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
-| PK-11 | Bag item icons | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
+| PK-11 | Bag item icons (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-11" in 5.10) | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
 | PK-12 | Collection and wrap-up | the Field Guide's Perks tab (seen, taken, silhouettes of the unseen: the SVGs work as masks), the run sim over every Perk, the full check, the summary of every decision for the owner | the track's done-when (section 14) |
 
 About 12 sessions after this one. Each one merges main into `track/perks` first (a merge, not a rebase; `npm run

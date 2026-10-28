@@ -572,6 +572,19 @@ art pipeline (phase 17 task 11).
   in the pale top half. To part two areas of one colour, draw one of them with the matching letter (the letter `r` is
   the red ramp's mid): a letter is its own block, so a seam is drawn between them (Power Gloves' thumb).
 
+## Bag item pictures, 36x36 (Perks track PK-11, 2026-10-28)
+- The 13 Bag items (consumables) have their own pictures in the Perks' look: `game/art/items/<id>.svg`, named by the
+  item's `img` (the ids are items.json's: `bell` is the Shining Stone, `trailmix` Trail Mix, `repairkit` the Repair
+  Kit). Same rules as "Perk pictures" above. Drawn as grids in `tools/art/icon-grids/items.json` and written by
+  `node tools/build-icons.mjs items`; contact sheets `validation/icon-sheets/items-{light,dark}.png`.
+- Shapes chosen so each reads alone at 36 px: round flask (Potion), tall square bottle (Hi-Potion), wide low tin (Burn
+  Salve), dropper bottle (Nerve Tonic), mug (Wake-Up Tea), heart (Revive), winged gold heart (Max Revive), capsule on
+  the 45-degree line (Full Remedy), cut gem (Shining Stone), wrapped bar on the 45-degree line (Protein Bar), bowl
+  (Trail Mix), knot with three holes (Pretzel), toolbox (Repair Kit). Cream only inside a shape (glints, labels, salt).
+- Shown at whole multiples: 36 px in the Bag, a shop, the battle's Bag and the Billie sheet's lists, 72 px on a reward
+  card (`itemIcon`, `.pxi` pixelated). The old atlas (`art/icons/icons.png`) keeps only what held items still draw
+  until PK-10.
+
 ## Terrain TR-4 (2026-10-26): the biomes' cliff faces
 - `scene/build/walls.png` is now a 4 x 4 atlas (256 x 256). The first three rows are the 12 cells from before, kept
   pixel for pixel; the fourth row is new, drawn by `python3 tools/build-walls.py --extend` (from its own seed, so it

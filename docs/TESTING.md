@@ -359,6 +359,9 @@ same phase:
   byte for byte; every grid file in tools/art/icon-grids passes `--check`, and every picture the data names is
   written; a grid's faults; silhouettes; never over an SVG without `--force`), `data-checks.test.mjs` the Perks'
   `img` (dataPerkArt), and check-fast's Perks step each card's and row's picture at 72 and 36 px.
+  PK-11: `data-checks.test.mjs` the Bag items' `img` (dataItemArt: items/<id>.svg, there, an icon), `atlas-rects.test.mjs`
+  that an item with its own picture uses no atlas key, check-fast's screens step the Bag rows' item pictures at 36 px,
+  and `check-studio-github.py --only=items` the items editor's picture, Edit art and Draw one.
   PK-3: `tools/test/battle-perks-wave-a.test.mjs` checks the battle kit's kinds with test-only Perks (crit, immune,
   inflict and its 50% cap on one roll of the battle's stream, chip, first, revive in singles and doubles), then each
   of the 15 Wave A Perks of perks.json in a battle, and battles holding all 15 that end within 200 turns, replayable;

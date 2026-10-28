@@ -763,6 +763,12 @@ source**: tools/build-terrain-v47.py retired (decision 1). Its rules are in `too
 - **Items & pyramids → Pyramids**: each pyramid's two icons (`coins/<id>_16.png` and `_32.png`, each drawn at its own
   size, never scaled) at their size and larger, with **Edit pixels** on each (Done comes back). Its 3D model
   (`coins/<id>.json`) is not edited here. tools/build-pyramids.py drew them all.
+- **Items & pyramids → Items** (PK-11): an item with its own picture (`img`, `art/items/<id>.svg`, drawn as the UI
+  icons are) shows it at the game's 72 and 36 px with **Edit art** (the icon editor) and no atlas Icon field; one
+  without shows its old atlas rectangle (`i_` + its icon) with the Icon field, and **Draw one** makes a blank
+  `art/items/<id>.svg` its picture and opens it (two undo steps). **Use an atlas icon** goes back only while the
+  item's rectangle is still on the sheet. (The PNG upload is gone: an item's picture is an icon, `dataItemArt`.)
+  Check: `check-studio-github.py --only=items`.
 - Checks: `check-studio-github.py --only=robot_art`, `studio-shots.py --views robots,pyramids`.
 
 ## UI icons (Studio art track SA-2b)
@@ -783,9 +789,9 @@ files are the source** (decision 6): tools/build-ui-icons.py retired. Open one w
   An unsaved icon also shows in the Studio's own previews of the menus.
 - **New icon**: a name (lower case, digits and -), blank or a copy. `tools/test/ui-icons.test.mjs` counts the set (52; SY-3 added `bureau`, the Bureau's emblem):
   raise the count when a new icon goes in.
-- **The Perks' pictures** (PK-2): `art/perks/<id>.svg` (and later `art/items/`, `art/boons/`: `ICON_DIRS` in
-  svg-pixels.js) are drawn the same way and open here too, from the Art browser's **Edit icon** or the Perks editor's
-  **Edit art**. Such an icon is known as `perks/<id>` (`svgIconKey`). Beside it are its own folder's pictures, the
+- **The Perks' pictures** (PK-2): `art/perks/<id>.svg` (PK-11: and the Bag items' `art/items/<id>.svg`; later
+  `art/boons/`: `ICON_DIRS` in svg-pixels.js) are drawn the same way and open here too, from the Art browser's **Edit
+  icon**, the Perks editor's or the items editor's **Edit art**. Such an icon is known as `perks/<id>` (`svgIconKey`). Beside it are its own folder's pictures, the
   preview shows 18, 36, 72 and 108 px (the game draws them at 36 in rows and 72 on pick cards), an unsaved one reaches
   the Studio's previews through `artURL`, and **New icon** makes one in the open folder (an id: lower case, digits and
   _). They were first drawn as grids by `tools/build-icons.mjs` (`tools/art/icon-grids/<folder>.json`); once written
@@ -848,7 +854,7 @@ beside the painter (drawn again after each stroke). Lighting is flat: the sun, s
 | **Robots** | Phase 17. Torsos, arms, legs and gems: names, types, weight, toughness, what the legs carry, the move each part gives, stats, and pictures (front and back, a torso's head, a gem's chest picture), with a colour and shape for the stand-in when a part has no picture. Rules: the stat floor, upgrades, the gem's type bonus, weight, part HP and where hits land. **Try a build** draws any gem and parts as the game does and shows its types, weight, stats and moves. A trainer's team entry can be a robot (Trainers). |
 | **Moves** | Name, type, kind, power, accuracy, priority, description and an effects builder (status, stat changes, healing, draining, hedging, hype, rent, market shock, delayed delivery and more). |
 | **Types** | Colors, the full matchup chart (click to cycle 2× / ½×), each type's battle ability and particle effects. Renaming a type updates everything that uses it. |
-| **Items & pyramids** | Prices, effects, icons (or upload your own). SA-3: Town shops and Day Jobs are gone (both were empty since RL-5; run shops stock from `run.shop`). |
+| **Items & pyramids** | Prices, effects, pictures (PK-11: a Bag item's own, Edit art or Draw one; else an atlas icon). SA-3: Town shops and Day Jobs are gone (both were empty since RL-5; run shops stock from `run.shop`). |
 | **World & encounters** | Opens on wild encounter tables; fishing; battle backdrop colors and ambience; the legacy world map and its look. Since RL-5 the game's world is one place, Copperleaf, with no roads (the rest is in Legacy); a run's places are made at run time (RL-7). SA-3: Route stops (Copperleaf's own fields are under Hub island) and the walk Eggs are gone. |
 | **Prop editor** (in Walk scenes) | Open any prop and edit everything about it on its picture: drag the base point, click to add lamp glows, lit windows, fires, smoke, water spray and sparkles exactly where they belong (drag to move, Delete to remove), set the door, see the footprint. Add **layers** (from a PNG or a copy of the main picture) and place each one in front of or behind the main picture in meters, shift it, make it face the camera, stay put as the world turns, or lie flat, and let it glow. A 3D turntable shows the prop in the game's renderer while you work. |
 | **Walk scenes** | The scene for each stop: shape the land (raise, lower, smooth, flatten); paint the ground tiles; place, move, resize and mirror props; drag the **hub** (where you stand when you stay) and the **exits** roads leave through; choose what a prop does when tapped (shop, clinic, a message), its label and its words; distant hills, townsfolk and what they say, wind, sun rays, sky, haze, shade, tilt-shift blur and camera. The live preview runs the game's renderer: walk around in it and tap things. Paint prop pictures and ground tiles pixel by pixel; set a prop's shadow, sway, solid footprint, door and walkable area; add new props (blank or from a PNG) and new ground types. **People who talk** edit each person's id, spot, facing, `when` / `unless` and script. **Story preview**: pick a start preset and switch flags; who isn't there for them is hidden in the 3D preview and faded on the map. **Play from here** opens the game in this place on the spot you pick (Pick the spot, or where the preview's walker stands), at the preview's preset and flags, with your unsaved changes. **Free camera** (🎥 under the preview, or C): the camera leaves the walker and flies over the scene like a map app: drag to move (the ground stays under the pointer), right-drag to turn and tilt, the wheel to zoom towards the pointer, double-click to look at a spot; on a phone one finger moves, pinch zooms, twist turns, two fingers up or down tilt; W A S D, Q E, R F and Page Up/Down too. **Top view**, ▲ ▼, **Walker here** and **Back to the walker**; each scene keeps its camera while the Studio is open, and Play from here starts where it looks. |
