@@ -9,6 +9,15 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Friend trades** (online track ON-4): trade Billies, ready eggs and spare robot parts with a friend, up to three
+  each side. Open it from a friend's row (Trainer > Friends) or a Billie's sheet (Trade…), put in what you give, see
+  what they put in, both say Ready, then Trade!. If one side's game closes midway, the trade finishes the next time
+  it starts. A traded Billie keeps its original trainer and ribbons, gains 1.5x XP, and waits a week before it can be
+  traded again; its held item stays in your bag. Two Billies evolve when acquired in a trade: Cliplet into
+  Tiktokferret and Feedopus into Metapus. Without a friend, a Form 99-A does it: the Form 27-B clerk files one for you,
+  and the Bureau Checkpoint is back on the roads with one after its inspection. The Trainer card lists your latest
+  trades.
+
 - **People face the way you see them** (characters track CH-1): on Copperleaf's island, in rooms and whenever you turn
   the camera, you and the people round you show the side that faces the camera: walking away from it shows your back,
   and someone turning to you shows their front. Coming out of Kappi's lab, or any door that faces east or west, you

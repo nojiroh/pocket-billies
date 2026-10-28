@@ -7,7 +7,7 @@
    HOME's legality check). A Billie's stats come from its stored facts alone (rules.js stat: species, level, sizes,
    splice, Augments, its abomination or Unstable roll), so checking those checks its stats.
    - onlineCopy: what goes online of a Billie: only the facts below, with full HP, no status, the XP of its level and
-     no held item (items aren't traded; the owner, 2026-10-26).
+     no held item (items aren't traded; the owner, 2026-10-26). ON-4: its Showcase ribbons go too (the owner).
    - legalBilly / legalEgg / legalPart: '' when legal, else the first reason (a short word for the debug log).
    - Moves: its line's (any level: a tutor teaches the line's above its level), the moves of its types that some line
      learns (a tutor's), its Augments' (augMoves), and for a quirk egg one move some line learns (a parent's).
@@ -30,6 +30,7 @@ import { augFit, augMoves } from './augments.js';
 import { graftFit, graftStability } from './genes.js';
 import { robotRules } from './fighters.js';
 import { billyTypes, cleanName, geneData, maxHp, maxLevel, moveSlotCount, partSlots, xpFor } from './rules.js';
+import { ribbonsShapeOk } from './meta-state.js';
 import { augShapeOk, billiesOk, graftShapeOk } from './saves.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -79,6 +80,7 @@ export const ONLINE_BILLY_KEYS = [
   'aug',
   'ot',
   'traded',
+  'ribbons',
 ];
 export const LEGAL_NICK_MOST = 16,
   LEGAL_NAME_MOST = 40,
@@ -219,6 +221,8 @@ export function legalBilly(m) {
     (!legalPlain(m.traded) || !Number.isFinite(m.traded.at) || !legalText(m.traded.from, LEGAL_UID_MOST))
   )
     return 'traded';
+  /* ON-4: Showcase ribbons travel with the Billie (cosmetic: a shape check, as the save's) */
+  if (!ribbonsShapeOk(m.ribbons)) return 'ribbons';
   /* and never looser than the save's own check: what arrives must load */
   return billiesOk([m]) ? '' : 'save';
 }

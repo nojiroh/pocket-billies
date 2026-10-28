@@ -11,6 +11,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -594,6 +595,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -1181,6 +1183,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -1526,6 +1529,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "a0ac7b2e882f4e66d09810ce01133a520191396f733664a25422b972ee5bda4f"
+  "all": "0c8e9611ba08f61bf8840c2b464edda2e98a7fb652aa22ee442f7357c5f51354"
 }
 `;
