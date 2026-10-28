@@ -669,6 +669,22 @@ it (as WM-4b, WM-5 and WM-7 did on their track).
 | 5 | UI-16b | UI-14b, UI-15 and UI-16a are done |
 | 6 | UI-18 | UI-8c and the world map track's WM-6 are done |
 
+As run (2026-10-27 to 28):
+- `track/ui` was about 220 commits behind main. So from UI-11 on, each step branched from the finished branch it built
+  on (`claude/ui-<nn>-<words>`), merged main and the other finished branches it needed, and opened its draft PR into
+  main. Each PR shows the earlier steps' commits until they merge.
+- After UI-11 the owner added: "Automatically start the next session after done, skip the checks until after all ui
+  is done". From then on the steps ran lint, typecheck, unit tests, check:data and check:modules, and left the browser
+  checks to one last session on `claude/ui-checks-all`.
+- They finished in this order:
+  - UI-8b (#276), UI-11 (#280), UI-12 (#282), UI-8c (#281), UI-13 (#284), UI-14a (#286);
+  - UI-14b (#288). It left the battle plates to UI-16b, because UI-15 had not pushed yet;
+  - UI-15 (#294), UI-16a (#297);
+  - UI-18 (#298), after the world map track's WM-5b (#293) and WM-6 (#296), which the owner asked to start;
+  - UI-16b (#299), with the style track's SY-1 to SY-3 (#289) and the VFX track's VFX-5 (#295) merged in;
+  - UI-17 (#300);
+  - then the check session.
+
 ## Fits with other tracks
 - UI-9b (#266, `track/ui`) goes first: it deletes parts.css into base.css, lowers the lint's ceilings (radius 0, space
   39), and edits this file, ROADMAP, BRANCHES and HANDOFF; whichever of the two PRs merges second takes a small merge.
