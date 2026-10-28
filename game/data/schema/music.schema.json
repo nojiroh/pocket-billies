@@ -70,6 +70,42 @@
     "maxItems": 3
    }
   },
+  "prog": {
+   "type": "array",
+   "items": {
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 6
+   },
+   "minItems": 4,
+   "maxItems": 16
+  },
+  "section": {
+   "description": "SND-12: a section of a song's form: its chords, and optionally its own hook and counter (steps 0-31 of the section, as the song's), its seed (the song's + 97 when left out) and the hook's name",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "prog"
+   ],
+   "properties": {
+    "prog": {
+     "$ref": "#/$defs/prog"
+    },
+    "hook": {
+     "$ref": "#/$defs/line"
+    },
+    "counter": {
+     "$ref": "#/$defs/line"
+    },
+    "seed": {
+     "type": "integer"
+    },
+    "hookName": {
+     "type": "string",
+     "maxLength": 200
+    }
+   }
+  },
   "recipe": {
    "type": "object",
    "properties": {
@@ -94,15 +130,28 @@
      ]
     },
     "prog": {
-     "description": "the chord of each bar, as a scale degree from 0 (I) to 6 (vii); eight bars",
+     "description": "the chord of each bar, as a scale degree from 0 (I) to 6 (vii); 4-16 bars (eight until SND-12). With a form, this is section A's",
+     "$ref": "#/$defs/prog"
+    },
+    "form": {
+     "description": "SND-12: the song's sections in the order they play, then it loops (\"A\" is the song's own prog, hook and counter; the others are in sections), 16-32 bars in all. A repeat is varied (its free bar walked again, every other one's arpeggio an octave up), each section's last bar has a drum fill and the bass walks into the next; the loop's last bar comes home. Left out: one section, as before",
      "type": "array",
      "items": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 6
+      "type": "string",
+      "pattern": "^[A-Z][a-z0-9]*$"
      },
-     "minItems": 8,
+     "minItems": 1,
      "maxItems": 8
+    },
+    "sections": {
+     "description": "SND-12: the sections other than A, by name (B, C...): each its own chords, and a hook and counter if written (else its tune is the seeded walk)",
+     "type": "object",
+     "propertyNames": {
+      "pattern": "^[B-Z][a-z0-9]*$"
+     },
+     "additionalProperties": {
+      "$ref": "#/$defs/section"
+     }
     },
     "lead": {
      "$ref": "#/$defs/wave"
@@ -644,9 +693,22 @@
       "pad",
       "stabs",
       "timp",
-      "drums"
+      "drums",
+      "ostinato",
+      "chime",
+      "drone",
+      "hits"
      ],
-     "description": "what it plays: lead (the tune, and a battle's intro), counter (the countermelody), bass (the bass pattern), arp (the arpeggio pattern), pad (the bar's chord, held), stabs (the chord, short, on beats 1 and the and of 3), timp (the root on the first bar of each four, a roll into the loop), drums (the drum pattern on a kit)"
+     "description": "what it plays: lead (the tune, and a battle's intro), counter (the countermelody), bass (the bass pattern), arp (the arpeggio pattern), pad (the bar's chord, held), stabs (the chord, short, on beats 1 and the and of 3), timp (the root on the first bar of each four, a roll into the loop and, SND-12, into each section), drums (the drum pattern on a kit, with a fill at each section's end). SND-12: ostinato (the chord low-high-middle-high in eighths; style sixteenth: every step), chime (a bell on every other downbeat), drone (the key's root and fifth held four bars), hits (the chord as each section starts and on a fill)"
+    },
+    "in": {
+     "description": "SND-12: the sections of the song's form it plays in (A, B...); left out: every section. A song with no form is all A",
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[A-Z][a-z0-9]*$"
+     },
+     "minItems": 1
     },
     "inst": {
      "$ref": "#/$defs/id",
@@ -682,13 +744,13 @@
     },
     "style": {
      "type": "string",
-     "description": "a pattern of its own instead of the song's: bass (bounce, gallop, long, walk, drive, pedal), arp (up, updown, drip, chord7), drums (soft, skip, drive, march, bossa)"
+     "description": "a pattern of its own instead of the song's: bass (bounce, gallop, long, walk, drive, pedal), arp (up, updown, drip, chord7), drums (soft, skip, drive, march, bossa); SND-12: ostinato (sixteenth)"
     },
     "centre": {
      "type": "integer",
      "minimum": 24,
      "maximum": 108,
-     "description": "pad, stabs: the chord sits within a fifth of this note (pad 62, stabs 58 when left out)"
+     "description": "pad, stabs: the chord sits within a fifth of this note (pad 62, stabs 58 when left out); SND-12: ostinato 55, chime 79, drone 45, hits 58"
     },
     "kit": {
      "description": "drums: the instrument for each hit",
@@ -804,6 +866,8 @@
        "key": true,
        "scale": true,
        "prog": true,
+       "form": true,
+       "sections": true,
        "lead": true,
        "bass": true,
        "arp": true,

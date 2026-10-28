@@ -13,6 +13,9 @@ import { expose } from '../test-globals.js';
 expose({
   MUSIC_ENSEMBLE_DRUM_VEL: [() => MUSIC_ENSEMBLE_DRUM_VEL],
   MUSIC_ENSEMBLE_VEL: [() => MUSIC_ENSEMBLE_VEL],
+  MUSIC_FILL_LEVEL: [() => MUSIC_FILL_LEVEL],
+  MUSIC_FORM_FILLS: [() => MUSIC_FORM_FILLS],
+  MUSIC_FORM_VARY: [() => MUSIC_FORM_VARY],
   MUSIC_JINGLE_HIT: [() => MUSIC_JINGLE_HIT],
   MUSIC_JINGLE_KIT: [() => MUSIC_JINGLE_KIT],
   MUSIC_PATTERN_ARP: [() => MUSIC_PATTERN_ARP],
@@ -34,6 +37,10 @@ expose({
   musicEnsembleNeeds: [() => musicEnsembleNeeds, v => (musicEnsembleNeeds = v)],
   // @ts-expect-error -- replaced on purpose
   musicEnsembleStep: [() => musicEnsembleStep, v => (musicEnsembleStep = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicFillAt: [() => musicFillAt, v => (musicFillAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicFormPlan: [() => musicFormPlan, v => (musicFormPlan = v)],
   musicJingleKitNote: [() => musicJingleKitNote],
   // @ts-expect-error -- replaced on purpose
   musicJingleNeeds: [() => musicJingleNeeds, v => (musicJingleNeeds = v)],
@@ -41,6 +48,8 @@ expose({
   musicJingleParts: [() => musicJingleParts, v => (musicJingleParts = v)],
   // @ts-expect-error -- replaced on purpose
   musicJingleTune: [() => musicJingleTune, v => (musicJingleTune = v)],
+  // @ts-expect-error -- replaced on purpose
+  musicSectionAt: [() => musicSectionAt, v => (musicSectionAt = v)],
   // @ts-expect-error -- replaced on purpose
   musicStingerAt: [() => musicStingerAt, v => (musicStingerAt = v)],
   // @ts-expect-error -- replaced on purpose
@@ -50,7 +59,9 @@ expose({
 /* to-module: end */
 /**
  * @typedef {{prog: number[], key: number, deg: (n: number) => number, bass?: string, arp?: string, drums?: string,
- *   seventh?: number, arpOctave?: number}} MusicPatternSong
+ *   seventh?: number, arpOctave?: number, fills?: number[], starts?: boolean[], lift?: number[]}} MusicPatternSong
+ *   SND-12: fills, starts and lift per bar (a song with a form, trackerCompose): a fill's shape (else -1), a section
+ *   starting, the arpeggio lifted an octave
  * @typedef {{m: number, len: number}} MusicPatternNote
  * @typedef {{notes: number[], len: number, kind: string}} MusicPatternChord
  * @typedef {{hit: 'kick' | 'snare' | 'hat' | 'rim', vol: number, gb?: {dur: number, hp?: number, bp?: number,
@@ -76,6 +87,12 @@ export const MUSIC_PATTERN_DRUMS = ['soft', 'skip', 'drive', 'march', 'bossa', '
 export function musicBassAt(D, b, i, style = D.bass) {
   const ch = D.prog[b],
     root = D.deg(ch) - 24;
+  /* SND-12: a section's last bar walks up into the next section's chord on beats 4 and its and */
+  if (D.fills && D.fills[b] >= 0 && i >= 12 && style !== 'none' && style !== 'pedal') {
+    const nx = D.prog[(b + 1) % D.prog.length];
+    return i === 12 ? { m: D.deg(nx - 2) - 24, len: 1.8 } : i === 14 ? { m: D.deg(nx - 1) - 24, len: 1.8 } : null;
+  }
+  if (style === 'long' && i === 0 && D.fills && D.fills[b] >= 0) return { m: root, len: 11.5 };
   if (style === 'bounce' && i % 4 === 0) return { m: i % 8 ? root + 7 : root, len: 3 };
   if (style === 'gallop' && [0, 3, 4, 8, 11, 12].includes(i)) return { m: i % 8 === 4 ? root + 12 : root, len: 1.5 };
   if (style === 'long' && i === 0) return { m: root, len: 15 };
@@ -93,8 +110,10 @@ export function musicBassAt(D, b, i, style = D.bass) {
  * @returns {number[]} four midi notes
  */
 export function musicChordTones(D, b) {
-  const ch = D.prog[b];
-  return [0, 2, 4, D.seventh ? 6 : 7].map(x => D.deg(ch + x) + 12 * (D.arpOctave || 0));
+  const ch = D.prog[b],
+    /* SND-12: a repeat's lift, never past the run's own (arpOctave) */
+    up = Math.max(D.arpOctave || 0, D.lift ? D.lift[b] || 0 : 0);
+  return [0, 2, 4, D.seventh ? 6 : 7].map(x => D.deg(ch + x) + 12 * up);
 }
 
 /**
@@ -122,14 +141,53 @@ export function musicArpAt(D, b, i, four, style = D.arp) {
   return null;
 }
 
+/** SND-12: how hard a fill hits in each pattern (a soft song's fill is soft); walk (the walking beat) never fills */
+export const MUSIC_FILL_LEVEL = { soft: 0.55, skip: 0.8, drive: 1, march: 1, bossa: 0.6 };
+/**
+ * SND-12: a fill's hits at step i of a section's last bar (from the step it starts, it replaces the pattern): shape 0
+ * four sixteenths on the snare, rising; 1 from beat 3, a tom run down (the chip noise lower each hit); 2 two eighths and
+ * a pickup with the kick. On the gb path the noise's band is the drum's pitch
+ * @param {number} shape
+ * @param {number} i
+ * @param {number} lv
+ * @returns {MusicPatternHit[] | null} null before the fill starts
+ */
+export function musicFillAt(shape, i, lv) {
+  /** @type {MusicPatternHit[]} */
+  const out = [];
+  const sn = (/** @type {number} */ vol, /** @type {number} */ bp) =>
+    out.push({ hit: 'snare', vol: vol * lv, gb: { dur: 0.07, bp, q: 0.9 } });
+  if (shape === 1) {
+    if (i < 8) return null;
+    if (i === 8) out.push({ hit: 'kick', vol: 0.35 * lv });
+    if (i % 2 === 0 || i >= 13) sn(0.07 + (i - 8) * 0.008, 1500 - (i - 8) * 110);
+  } else if (shape === 2) {
+    if (i < 12) return null;
+    if (i === 12 || i === 15) out.push({ hit: 'kick', vol: 0.35 * lv });
+    if (i === 12 || i === 14) sn(0.1, 2000);
+    if (i === 15) sn(0.12, 1700);
+  } else {
+    if (i < 12) return null;
+    if (i === 12) out.push({ hit: 'kick', vol: 0.38 * lv });
+    sn(0.07 + (i - 12) * 0.02, 1700 + (i - 12) * 150);
+  }
+  return out;
+}
+
 /**
  * the drum hits at step i, in the order the `gb` path plays them (its noise draws a random start each, so the order
- * is part of the sound)
+ * is part of the sound). SND-12: fill, a section's last bar's fill shape (musicFillAt; -1 or left out: none)
  * @param {string | undefined} style
  * @param {number} i
+ * @param {number} [fill]
  * @returns {MusicPatternHit[]}
  */
-export function musicDrumsAt(style, i) {
+export function musicDrumsAt(style, i, fill = -1) {
+  const flv = fill >= 0 && style ? /** @type {Record<string, number>} */ (MUSIC_FILL_LEVEL)[style] : 0;
+  if (flv) {
+    const F = musicFillAt(fill, i, flv);
+    if (F) return F;
+  }
   /** @type {MusicPatternHit[]} */
   const out = [];
   if (style === 'soft') {
@@ -159,11 +217,66 @@ export function musicDrumsAt(style, i) {
   return out;
 }
 
+/* ---------- SND-12: forms ---------- */
+/** a repeat's seed step (its free bar is walked from seed + 7 + this × the repeat) */
+export const MUSIC_FORM_VARY = 1009;
+/** the fills a section's last bar picks from (musicDrumsAt) */
+export const MUSIC_FORM_FILLS = 3;
+/**
+ * @typedef {{prog: number[], hook?: number[][] | null, counter?: number[][] | null, seed?: number, hookName?: string}}
+ *   MusicSection a section of a song's form (music.json songs' `sections`); "A" is the song's own prog, hook and counter
+ * @typedef {{name: string, index: number, k: number, recipe: {prog: number[], hook: number[][] | null,
+ *   counter: number[][] | null, seed: number}, fill: number, lift: number, last: boolean}} MusicFormPart
+ *   a section as the form plays it: its repeat k (0 the first time), the fill into what follows, the arpeggio's lift
+ */
+/**
+ * a song's form as played, section by section, or null when it has none (a song of one section: today's composer).
+ * Sections the song doesn't have are left out (musicFindings names them). A repeat (k > 0) is varied: its free bar is
+ * walked from another seed, and every other repeat lifts the arpeggio an octave. Each section's last bar has a fill,
+ * its shape picked from the song's seed and the section's place (no random: the same song, the same fills)
+ * @param {{form?: string[], sections?: Record<string, MusicSection>, prog: number[], hook?: number[][],
+ *   counter?: number[][], seed: number}} D
+ * @returns {MusicFormPart[] | null}
+ */
+export function musicFormPlan(D) {
+  if (!D || !Array.isArray(D.form) || !D.form.length) return null;
+  const secs = D.sections || {},
+    /** @type {Record<string, number>} */ seen = {},
+    /** @type {MusicFormPart[]} */ out = [];
+  for (const name of D.form) {
+    const S = name === 'A' ? { prog: D.prog, hook: D.hook, counter: D.counter, seed: D.seed } : secs[name];
+    if (!S || !Array.isArray(S.prog) || !S.prog.length) continue;
+    const k = (seen[name] = (seen[name] ?? -1) + 1),
+      index = out.length;
+    out.push({
+      name,
+      index,
+      k,
+      recipe: { prog: S.prog, hook: S.hook || null, counter: S.counter || null, seed: S.seed ?? D.seed + 97 },
+      fill: (((D.seed * 7 + index * 13 + k * 5) % MUSIC_FORM_FILLS) + MUSIC_FORM_FILLS) % MUSIC_FORM_FILLS,
+      lift: k % 2,
+      last: false,
+    });
+  }
+  if (!out.length) return null;
+  out[out.length - 1].last = true;
+  return out;
+}
+/**
+ * the section playing at bar b of a composed song (its form's entry), or null for a song with no form
+ * @param {{played?: {name: string, bar: number, bars: number, k: number}[]}} D
+ * @param {number} b
+ */
+export function musicSectionAt(D, b) {
+  return (D.played || []).find(S => b >= S.bar && b < S.bar + S.bars) || null;
+}
+
 /* ---------- SND-11: ensembles (music.json `ensembles`) ---------- */
 /**
  * @typedef {{line: string, inst?: string, wave?: string, oct?: number, pan?: number, verb?: number, level?: number,
  *   style?: string, centre?: number, kit?: Record<string, string>, layer?: string,
- *   dim?: Record<string, number>}} MusicEnsemblePart SND-13: layer and dim, logic/music-layers.js
+ *   dim?: Record<string, number>, in?: string[]}} MusicEnsemblePart SND-13: layer and dim, logic/music-layers.js;
+ *   SND-12: in, the sections it plays in (a song with no form is all A)
  * @typedef {{name?: string, trim?: number, parts: MusicEnsemblePart[]}} MusicEnsemble
  * @typedef {{part: number, m: number, len: number, vel: number, inst?: string, wave?: string, hit?: string}}
  *   MusicEnsembleNote
@@ -180,6 +293,11 @@ export const MUSIC_ENSEMBLE_VEL = {
   pad: 0.06,
   stabs: 0.1,
   timp: 0.16,
+  /* SND-12 */
+  ostinato: 0.09,
+  chime: 0.07,
+  drone: 0.06,
+  hits: 0.12,
 };
 /** a drum hit's velocity per unit of the pattern's own (the gb noise's levels are small) */
 export const MUSIC_ENSEMBLE_DRUM_VEL = { kick: 2, snare: 5, hat: 8, rim: 6 };
@@ -218,7 +336,8 @@ export function musicChordNear(D, b, centre) {
 /**
  * what an ensemble plays at step st of a composed song (st < 0: the intro, on its lead parts alone)
  * @param {MusicPatternSong & {steps: number, notes: ([number, number] | null)[], counterNotes?: ([number, number] | null)[],
- *   introNotes?: ([number, number] | null)[], introSteps?: number}} D
+ *   introNotes?: ([number, number] | null)[], introSteps?: number, played?: {name: string, bar: number, bars: number,
+ *   k: number}[]}} D
  * @param {MusicEnsemble} E
  * @param {number} st
  * @param {{held?: boolean, instruments?: Record<string, {lo: number, hi: number}>, skip?: (part: number) => boolean}} [o]
@@ -233,9 +352,12 @@ export function musicEnsembleStep(D, E, st, o = {}) {
     intro = st < 0,
     s = intro ? 0 : ((st % D.steps) + D.steps) % D.steps,
     b = Math.floor(s / 16),
-    i = s % 16;
+    i = s % 16,
+    /* SND-12: the section playing (A in a song with no form; the intro plays on the lead parts of every section) */
+    sec = intro ? null : (musicSectionAt(D, b) || { name: 'A' }).name;
   E.parts.forEach((P, part) => {
     if (o.skip && o.skip(part)) return;
+    if (P.in && sec && !P.in.includes(sec)) return;
     const lv = P.level ?? 1,
       up = 12 * (P.oct || 0),
       base = /** @type {Record<string, number>} */ (MUSIC_ENSEMBLE_VEL)[P.line] || 0.1,
@@ -272,10 +394,37 @@ export function musicEnsembleStep(D, E, st, o = {}) {
     } else if (P.line === 'timp') {
       const root = D.deg(D.prog[b]) - 24;
       if (i === 0 && b % 4 === 0) add(root, 12);
-      /* a roll into the loop's start, growing over the last half bar */
-      else if (b === D.prog.length - 1 && i >= 8) add(D.deg(D.prog[b]) - 24, 1, 0.3 + (i - 8) * 0.08);
+      /* a roll into the loop's start, growing over the last half bar (SND-12: into each section) */
+      else if ((D.fills ? D.fills[b] >= 0 : b === D.prog.length - 1) && i >= 8)
+        add(D.deg(D.prog[b]) - 24, 1, 0.3 + (i - 8) * 0.08);
+    } else if (P.line === 'ostinato') {
+      /* SND-12: a string ostinato, the chord low-high-middle-high in eighths (style sixteenth: every step) */
+      const six = P.style === 'sixteenth';
+      if (six || i % 2 === 0) {
+        const [lo, mid, hi] = musicChordNear(D, b, P.centre ?? 55);
+        add([lo, hi, mid, hi][(six ? i : i / 2) % 4], six ? 0.9 : 1.6, i % 4 === 0 ? 1 : 0.8);
+      }
+    } else if (P.line === 'chime') {
+      /* SND-12: a bell now and then: the chord's top on an even bar's downbeat, its middle on an odd bar's beat 3 */
+      const [, mid, hi] = musicChordNear(D, b, P.centre ?? 79);
+      if (i === 0 && b % 2 === 0) add(hi, 8);
+      else if (i === 8 && b % 2 === 1) add(mid, 6, 0.7);
+    } else if (P.line === 'drone') {
+      /* SND-12: the key's root and fifth held four bars (a cave), from each section's start */
+      if (i === 0 && (b % 4 === 0 || (D.starts && D.starts[b]))) {
+        let m = D.key;
+        while (m > (P.centre ?? 45) + 6) m -= 12;
+        while (m < (P.centre ?? 45) - 6) m += 12;
+        add(m, 63.5);
+        add(m + 7, 63.5, 0.7);
+      }
+    } else if (P.line === 'hits') {
+      /* SND-12: an orchestra hit as each section starts (the loop's start when there is no form) and on a fill's beat 4 */
+      const start = D.starts ? D.starts[b] : b === 0;
+      if ((i === 0 && start) || (i === 12 && D.fills && D.fills[b] >= 0))
+        for (const m of musicChordNear(D, b, P.centre ?? 58)) add(m, 2);
     } else if (P.line === 'drums' && P.kit && !o.held)
-      for (const h of musicDrumsAt(P.style || D.drums, i)) {
+      for (const h of musicDrumsAt(P.style || D.drums, i, D.fills ? D.fills[b] : -1)) {
         const k = P.kit[h.hit];
         if (!k) continue;
         const R = I[k];
@@ -373,8 +522,8 @@ export function musicJingleParts(J, E, o = {}) {
     perc = J.perc || [];
   let steps = (J.notes || []).reduce((a, n) => a + n[1], 0);
   E.parts.forEach((P, part) => {
-    /* SND-13: a layer's part plays in a song only */
-    if (P.layer) return;
+    /* SND-13: a layer's part plays in a song only; SND-12: a jingle is all A */
+    if (P.layer || (P.in && !P.in.includes('A'))) return;
     const lv = P.level ?? 1,
       up = 12 * (P.oct || 0) + shift,
       base = /** @type {Record<string, number>} */ (MUSIC_ENSEMBLE_VEL)[P.line] || 0.1,

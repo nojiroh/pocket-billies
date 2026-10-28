@@ -12,6 +12,7 @@ import { MUSIC_PATTERN_ARP, MUSIC_PATTERN_BASS, MUSIC_PATTERN_DRUMS, musicJingle
 expose({
   MUSIC_CHOICES: [() => MUSIC_CHOICES],
   MUSIC_CODE_SONGS: [() => MUSIC_CODE_SONGS],
+  MUSIC_FORM_BARS: [() => MUSIC_FORM_BARS],
   MUSIC_RECIPE_KEYS: [() => MUSIC_RECIPE_KEYS],
   MUSIC_SCALES: [() => MUSIC_SCALES],
   MUSIC_STYLE_OF: [() => MUSIC_STYLE_OF],
@@ -97,6 +98,11 @@ export const MUSIC_CHOICES = {
     ['stabs', 'Stabs (the chord, short)'],
     ['timp', 'Timpani (roots and a roll)'],
     ['drums', 'Drums (the drum pattern on a kit)'],
+    /* SND-12 */
+    ['ostinato', 'Ostinato (the chord in eighths)'],
+    ['chime', 'Chime (a bell now and then)'],
+    ['drone', 'Drone (root and fifth, held)'],
+    ['hits', 'Hits (as each section starts)'],
   ],
   /* SND-11: an instrument's kind (instrument.kind) */
   kind: [
@@ -129,6 +135,8 @@ export const MUSIC_RECIPE_KEYS = [
   'arpOctave',
   'counterAuto',
   'ensemble',
+  'form',
+  'sections',
 ];
 export const MUSIC_VERSION_LINES = ['hook', 'counter', 'intro'];
 /** SND-11: which patterns a part's style may name, by its line */
@@ -136,7 +144,11 @@ export const MUSIC_STYLE_OF = /** @type {Record<string, string[]>} */ ({
   bass: MUSIC_PATTERN_BASS,
   arp: MUSIC_PATTERN_ARP,
   drums: MUSIC_PATTERN_DRUMS,
+  /* SND-12 */
+  ostinato: ['sixteenth'],
 });
+/** SND-12: a loop's length a form should keep to, in bars (Part 2's design: 16-32) */
+export const MUSIC_FORM_BARS = [16, 32];
 /** the songs the game's code starts by name (title.js and story.js the title, opening-fall.js the fall), not the
     where table: tools/test/music-studio.test.mjs checks this list against the code */
 export const MUSIC_CODE_SONGS = ['title', 'fall'];
@@ -255,6 +267,36 @@ export function musicFindings(music, more = {}) {
             out.push({ lvl: 'warn', msg: `song "${id}" ${v}: "${k}" is not part of a recipe (a typo?)`, song: id });
       }
   }
+  /* SND-12: forms: sections the form names that don't exist, sections it never plays, a loop outside 16-32 bars, a
+     section's hook past its first two bars */
+  for (const [id, S] of Object.entries(songs)) {
+    const secs = /** @type {Record<string, any>} */ (S.sections || {});
+    for (const [k, X] of Object.entries(secs))
+      for (const line of ['hook', 'counter'])
+        if ((X[line] || []).some((/** @type {number[]} */ N) => N[0] > 31))
+          out.push({ lvl: 'warn', msg: `song "${id}" section ${k}: its ${line} plays only steps 0-31`, song: id });
+    if (!Array.isArray(S.form)) {
+      if (Object.keys(secs).length)
+        out.push({ lvl: 'warn', msg: `song "${id}": sections but no form plays them`, song: id });
+      continue;
+    }
+    for (const k of S.form)
+      if (k !== 'A' && !secs[k]) out.push({ lvl: 'error', msg: `song "${id}" form: no section "${k}"`, song: id });
+    for (const k of Object.keys(secs))
+      if (!S.form.includes(k))
+        out.push({ lvl: 'warn', msg: `song "${id}": the form never plays section ${k}`, song: id });
+    const bars = S.form.reduce(
+      (/** @type {number} */ a, /** @type {string} */ k) =>
+        a + ((k === 'A' ? S.prog : secs[k] && secs[k].prog) || []).length,
+      0
+    );
+    if (bars < MUSIC_FORM_BARS[0] || bars > MUSIC_FORM_BARS[1])
+      out.push({
+        lvl: 'warn',
+        msg: `song "${id}": its form loops after ${bars} bars (${MUSIC_FORM_BARS[0]}-${MUSIC_FORM_BARS[1]} keeps it from tiring)`,
+        song: id,
+      });
+  }
   ((music.run && music.run.arc) || []).forEach((/** @type {any} */ B) => {
     const ch = (B && B.changes) || {};
     if (!ensOk(ch.ensemble)) out.push({ lvl: 'error', msg: `run arc "${B.name}": no ensemble "${ch.ensemble}"` });
@@ -314,7 +356,11 @@ export function musicFindings(music, more = {}) {
   for (const [id, u] of Object.entries(uses))
     if (!u.length) out.push({ lvl: 'warn', msg: `song "${id}": no where-rule, place or script plays it`, song: id });
   /* SND-4: hooks and jingles still named as placeholders (Claude's drafts, for the owner to keep, change or rename) */
-  const songsLeft = Object.keys(songs).filter(id => isMusicPlaceholder(songs[id].hookName)),
+  const songsLeft = Object.keys(songs).filter(
+      id =>
+        isMusicPlaceholder(songs[id].hookName) ||
+        Object.values(songs[id].sections || {}).some((/** @type {any} */ X) => isMusicPlaceholder(X && X.hookName))
+    ),
     jingles = music.jingles || {},
     jinglesLeft = Object.keys(jingles).filter(id => isMusicPlaceholder(jingles[id].name));
   if (songsLeft.length)
@@ -322,6 +368,13 @@ export function musicFindings(music, more = {}) {
       lvl: 'info',
       msg: `placeholder hooks (${songsLeft.length}): ${songsLeft.join(', ')}. Keep, change or rename each`,
       song: songsLeft[0],
+    });
+  /* SND-12: arrangements (ensembles) still named as placeholders */
+  const ensLeft = Object.keys(ens).filter(k => isMusicPlaceholder(ens[k] && ens[k].name));
+  if (ensLeft.length)
+    out.push({
+      lvl: 'info',
+      msg: `placeholder arrangements (${ensLeft.length}): ${ensLeft.join(', ')}. Keep, change or rename each on the Instruments tab`,
     });
   if (jinglesLeft.length)
     out.push({

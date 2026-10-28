@@ -9,11 +9,13 @@ import { expose } from '../test-globals.js';
 import { soundBakeImpulse, soundBakeRoots, soundBakeZoneFor, soundBakeZoneSteps } from '../logic/sound-bake.js';
 import {
   MUSIC_ENSEMBLE_VEL,
+  MUSIC_FORM_VARY,
   musicArpAt,
   musicBassAt,
   musicDrumsAt,
   musicEnsembleNeeds,
   musicEnsembleStep,
+  musicFormPlan,
   musicJingleNeeds,
   musicJingleParts,
   musicStingerAt,
@@ -49,6 +51,8 @@ expose({
   soundBakeZonesFor: [() => soundBakeZonesFor, v => (soundBakeZonesFor = v)],
   trackerArc: [() => trackerArc, v => (trackerArc = v)],
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
+  trackerComposeForm: [() => trackerComposeForm, v => (trackerComposeForm = v)],
+  trackerComposeOne: [() => trackerComposeOne, v => (trackerComposeOne = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
   trackerNight: [() => trackerNight, v => (trackerNight = v)],
   trackerRecipe: [() => trackerRecipe, v => (trackerRecipe = v)],
@@ -72,8 +76,16 @@ function songRandom(seed) {
   };
 }
 /* a song's recipe (bpm, key, scale, the chords, the parts) made into notes: the lead is a seeded random walk over the
-   chord tones. Returns a new object, the recipe with notes, steps and deg (scale degree to midi note) */
+   chord tones. Returns a new object, the recipe with notes, steps and deg (scale degree to midi note).
+   SND-12: a song with a `form` (its sections in order, "A" being the song's own prog, hook and counter, the others in
+   `sections`) is each section composed as a song of its own and laid end to end (trackerComposeForm) */
 export function trackerCompose(D) {
+  const plan = musicFormPlan(D);
+  return plan ? trackerComposeForm(D, plan) : trackerComposeOne(D);
+}
+/* one section (or a song with no form): `vary` (SND-12) is the section's repeat, 0 the first time: a repeat's free
+   bar (bar 7, the walk after the hook's repeat) is walked from another seed */
+function trackerComposeOne(D, vary = 0) {
   const sc = SCALES[D.scale],
     R = songRandom(D.seed),
     deg = n => {
@@ -110,7 +122,7 @@ export function trackerCompose(D) {
   };
   /* bars 1-4 a phrase, 5-6 repeat its start, 7-8 a cadence that lands on the home note */
   const A = [0, 1, 2, 3].map(b => makeBar(b, R)),
-    R2 = songRandom(D.seed + 7);
+    R2 = songRandom(D.seed + 7 + MUSIC_FORM_VARY * vary);
   for (let b = 0; b < bars; b++) {
     let bar = b < 4 ? A[b] : b < 6 ? A[b - 4] : makeBar(b, R2);
     if (b === bars - 1)
@@ -182,6 +194,59 @@ export function trackerCompose(D) {
   for (const [st, m, l] of line) introNotes[st] = [m, Math.min(l, introSteps - st)];
   return { ...D, notes: lead, counterNotes: counter, counterBars, steps, deg, introNotes, introSteps };
 }
+/* SND-12: a song's form laid end to end: each section as trackerComposeOne made it (its repeats varied), the chords of
+   every bar in `prog`, and per bar: `fills` (a fill and a turnaround into the next section: the fill's shape, else -1),
+   `starts` (a section starts here), `lift` (the arpeggio an octave up: a repeat's colour) and `played` (the form as
+   played: name, first bar, bars, repeat). A section's last bar leads into the next with a turnaround (the tune falls
+   onto the next chord from a step above), the loop's last bar comes home as before; a bar the hook wrote is never
+   changed (a section of 7 bars or more has a free last bar) */
+function trackerComposeForm(D, plan) {
+  const parts = plan.map(o => trackerComposeOne({ ...D, ...o.recipe, intro: o.index === 0 ? D.intro : null }, o.k)),
+    first = parts[0],
+    sh = D.key >= 64 ? -12 : 0,
+    out = {
+      notes: [],
+      counterNotes: [],
+      counterBars: [],
+      prog: [],
+      fills: [],
+      starts: [],
+      lift: [],
+      played: [],
+    };
+  plan.forEach((o, j) => {
+    const C = parts[j],
+      bars = C.prog.length,
+      bar0 = out.prog.length;
+    if (!o.last && bars >= 7) {
+      const b = bars - 1,
+        ch = C.prog[b],
+        nx = plan[j + 1].recipe.prog[0];
+      C.notes.fill(null, b * 16, b * 16 + 16);
+      C.notes[b * 16] = [C.deg(ch + 9) + sh, 4];
+      C.notes[b * 16 + 4] = [C.deg(ch + 7) + sh, 4];
+      C.notes[b * 16 + 8] = [C.deg(nx + 8) + sh, 8];
+    }
+    out.notes.push(...C.notes);
+    out.counterNotes.push(...C.counterNotes);
+    out.counterBars.push(...C.counterBars);
+    out.prog.push(...C.prog);
+    for (let b = 0; b < bars; b++) {
+      out.fills.push(b === bars - 1 ? o.fill : -1);
+      out.starts.push(b === 0);
+      out.lift.push(o.lift);
+    }
+    out.played.push({ name: o.name, bar: bar0, bars, k: o.k });
+  });
+  return {
+    ...D,
+    ...out,
+    steps: out.prog.length * 16,
+    deg: first.deg,
+    introNotes: first.introNotes,
+    introSteps: first.introSteps,
+  };
+}
 export const midiToFrequency = m => 440 * Math.pow(2, (m - 69) / 12);
 /* SND-4: a song's night version, the recipe with its `night` changes; with none written, slower by 8 bpm, a fourth
    down and soft drums (a song with no drums keeps none). null when the song has `night: false` */
@@ -195,6 +260,14 @@ function trackerNight(D) {
   /* a written hook and counter move with the key, unless the night writes its own */
   if (by && D.hook && !(night && night.hook)) N.hook = move(D.hook);
   if (by && D.counter && !(night && night.counter)) N.counter = move(D.counter);
+  /* SND-12: and each section's */
+  if (by && D.sections && !(night && night.sections))
+    N.sections = Object.fromEntries(
+      Object.entries(D.sections).map(([k, S]) => [
+        k,
+        { ...S, ...(S.hook ? { hook: move(S.hook) } : {}), ...(S.counter ? { counter: move(S.counter) } : {}) },
+      ])
+    );
   return N;
 }
 /* SND-5: a battle song's tense version, for the red zone (the lead Billie under a quarter of its HP, as Black and White
@@ -1232,7 +1305,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       }
       /* drums (v27: on their own bus, softer when you stand still or at night; SND-5: out until the throw; SND-11:
          musicDrumsAt) */
-      for (const h of musicDrumsAt(sg.hold ? 'none' : D.drums, i))
+      for (const h of musicDrumsAt(sg.hold ? 'none' : D.drums, i, D.fills ? D.fills[b] : -1))
         if (h.hit === 'kick') T.synthKick(S.drums, t, h.vol);
         else T.synthNoise(S.drums, { t, ...h.gb, vol: h.vol });
       /* v27: a soft pad under the night (SND-4: an `extra` song's only; a four-voice song has its night version) */

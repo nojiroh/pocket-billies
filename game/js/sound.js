@@ -137,6 +137,7 @@ expose({
   musicMapCut: [() => musicMapCut, v => (musicMapCut = v)],
   musicParts: [() => musicParts, v => (musicParts = v)],
   musicPrepare: [() => musicPrepare, v => (musicPrepare = v)],
+  musicSectionLine: [() => musicSectionLine, v => (musicSectionLine = v)],
   musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
@@ -1518,7 +1519,15 @@ function musicEnsembleLine() {
     /* SND-13: the layer levels the music hears, and each layered part's gain now (its layer, baked or not) */
     layers: soundEngine.L && soundEngine.L.layers ? soundEngine.L.layers : null,
     parts: T && T.layerStats ? T.layerStats() : null,
+    /* SND-12: where the song is in its form: the section, its repeat (0 the first time), the bar of how many */
+    section: musicSectionLine(sg),
   };
+}
+function musicSectionLine(sg) {
+  if (!sg || !sg.D || !sg.D.played || sg.step < 0) return null;
+  const b = Math.floor((sg.step % sg.D.steps) / 16),
+    S = sg.D.played.find(x => b >= x.bar && b < x.bar + x.bars);
+  return S ? { name: S.name, k: S.k, bar: b + 1, of: sg.D.steps / 16 } : null;
 }
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
 function ambienceBeds(sc, E, T, pans, t) {

@@ -77,6 +77,8 @@ expose({
   musicCryTidy: [() => musicCryTidy, v => ((musicCryTidy = v), provide({ musicCryTidy }))],
   musicData: [() => musicData],
   musicEnsemblesHTML: [() => musicEnsemblesHTML, v => (musicEnsemblesHTML = v)],
+  musicFormEdit: [() => musicFormEdit],
+  musicFormHTML: [() => musicFormHTML, v => (musicFormHTML = v)],
   musicHookHTML: [() => musicHookHTML, v => (musicHookHTML = v)],
   musicHookMount: [() => musicHookMount, v => (musicHookMount = v)],
   musicInstrumentPlay: [() => musicInstrumentPlay, v => (musicInstrumentPlay = v)],
@@ -106,6 +108,9 @@ expose({
   musicRunHTML: [() => musicRunHTML, v => (musicRunHTML = v)],
   musicScape: [() => musicScape, v => (musicScape = v)],
   musicScapeHTML: [() => musicScapeHTML, v => (musicScapeHTML = v)],
+  musicSection: [() => musicSection],
+  musicSectionOf: [() => musicSectionOf],
+  musicSectionTune: [() => musicSectionTune],
   musicSelected: [() => musicSelected],
   musicSongIds: [() => musicSongIds],
   musicSongListHTML: [() => musicSongListHTML, v => (musicSongListHTML = v)],
@@ -138,6 +143,7 @@ export const musicStudio = {
   /** the where rule last moved, added or shown (marked in the table) */ picked: -1,
   /** the line the hook roll edits: hook, counter or (SND-5) intro */ line: 'hook',
   /** SND-17: the line the jingle roll edits: the tune (notes), harmony, bass or perc */ jline: 'notes',
+  /** SND-12: the section the hook roll edits (A: the song's own hook) */ section: 'A',
   /** Try a place: where you are, made up */
   tryState: /** @type {Record<string, any>} */ ({
     started: true,
@@ -156,7 +162,26 @@ export const musicStudio = {
 };
 const musicData = () => studioState.D.music;
 /** the line the hook roll edits */
-const musicLine = () => (['counter', 'intro'].includes(musicStudio.line) ? musicStudio.line : 'hook');
+const musicLine = () =>
+  musicStudio.line === 'counter' || (musicStudio.line === 'intro' && musicSection() === 'A')
+    ? musicStudio.line
+    : 'hook';
+/** SND-12: the section the hook roll edits, if the selected song still has it */
+const musicSection = () => {
+  const S = musicData().songs[musicSelected()];
+  return S && S.sections && S.sections[musicStudio.section] ? musicStudio.section : 'A';
+};
+/** SND-12: the object a section's lines live on (A: the song itself) */
+const musicSectionOf = (S, sec) => (sec === 'A' ? S : S.sections[sec]);
+/** SND-12: a section composed alone (its own tune, as its first time through the form plays it) */
+const musicSectionTune = (S, sec) => {
+  const X = musicSectionOf(S, sec);
+  return trackerCompose(
+    sec === 'A'
+      ? { ...S, form: undefined }
+      : { ...S, form: undefined, prog: X.prog, hook: X.hook, counter: X.counter, seed: X.seed ?? S.seed + 97 }
+  );
+};
 const musicSongIds = () => Object.keys(musicData().songs);
 const musicSelected = () => {
   const ids = musicSongIds();
@@ -351,9 +376,91 @@ function musicRecipeHTML(id) {
       `<div class="fld"><span>Seed (the tune)</span><span class="seg-row"><input type="number" data-p="${p}.seed" data-k="num" step="1" value="${S.seed}" aria-label="Seed"><button class="btn subtle" data-act="musSeed" title="Another tune over the same chords">New tune</button></span></div>`
     );
   return card('Recipe', body, {
-    sub: 'The game composes the tune from this: a seeded walk over the chords; bars 5-6 repeat 1-2, bar 8 comes home. A written hook takes bars 1-2 and 5-6, and bars 3-4 answer it on their chords.',
+    sub: 'The game composes the tune from this: a seeded walk over the chords; bars 5-6 repeat 1-2, bar 8 comes home. A written hook takes bars 1-2 and 5-6, and bars 3-4 answer it on their chords. With a form (the Form card) these chords are section A’s.',
   });
 }
+/* ---------- SND-12: the form: sections A, B... in order, 16-32 bars a loop ----------
+   A is the song's own chords, hook and counter (the Recipe and Hook cards); B and on have their own chords, seed and,
+   if written, hook (the Hook card's section picker). The composer varies each repeat, puts a fill and a turnaround at
+   each section's end and brings the loop's last bar home */
+function musicFormHTML(id) {
+  const S = musicData().songs[id],
+    p = `music.songs.${id}`,
+    secs = S.sections || {},
+    names = ['A', ...Object.keys(secs)],
+    form = S.form || [],
+    bars = form.reduce((a, k) => a + ((k === 'A' ? S.prog : secs[k] && secs[k].prog) || []).length, 0);
+  const chips = form.length
+    ? form.map((k, i) => `<span class="tag">${i + 1}. ${escapeHtml(k)}</span>`).join(' ')
+    : '<small>No form: the song is one section (A), as before.</small>';
+  const adds = names
+    .map(
+      k =>
+        `<button class="btn subtle" data-act="musFormAdd" data-s="${escapeHtml(k)}" title="Play ${escapeHtml(k)} next">+ ${escapeHtml(k)}</button>`
+    )
+    .join('');
+  const chord = (sec, deg, b) =>
+    `<label class="fld mus-chord"><span>Bar ${b + 1}</span><select data-p="${p}.sections.${sec}.prog.${b}" data-k="num">${[
+      0, 1, 2, 3, 4, 5, 6,
+    ]
+      .map(
+        d =>
+          `<option value="${d}" ${d === deg ? 'selected' : ''}>${chordNumeral(S.scale, d)} · ${musicNoteName(S.key + MUSIC_SCALES[S.scale][d]).replace(/-?\d+$/, '')}</option>`
+      )
+      .join('')}</select></label>`;
+  const sections = Object.entries(secs)
+    .map(
+      ([k, X]) =>
+        `<div class="mus-section"><div class="seg-row"><b>Section ${escapeHtml(k)}</b> <small>${X.prog.length} bars</small><span class="grow"></span><button class="btn subtle" data-act="musSectionBars" data-s="${escapeHtml(k)}" data-n="-1" ${X.prog.length <= 4 ? 'disabled' : ''}>− bar</button><button class="btn subtle" data-act="musSectionBars" data-s="${escapeHtml(k)}" data-n="1" ${X.prog.length >= 16 ? 'disabled' : ''}>+ bar</button><button class="btn subtle" data-act="musSectionSeed" data-s="${escapeHtml(k)}" title="Another tune over the same chords">New tune</button><button class="btn subtle" data-act="musSectionDel" data-s="${escapeHtml(k)}">Remove</button></div><div class="mus-chords">${X.prog.map((d, b) => chord(k, d, b)).join('')}</div>${textField('Hook name', `${p}.sections.${k}.hookName`, { opt: 1, ph: 'unnamed' })}</div>`
+    )
+    .join('');
+  const body = `<div class="seg-row">${chips}</div>
+<div class="seg-row">${adds}<button class="btn subtle" data-act="musFormPop" ${form.length ? '' : 'disabled'}>Take the last off</button><span class="grow"></span><button class="btn subtle" data-act="musSectionNew" ${names.length >= 6 ? 'disabled' : ''}>New section</button></div>
+${form.length ? `<small>${bars} bars a loop${bars < 16 || bars > 32 ? ' (16-32 keeps it from tiring)' : ''}</small>` : ''}${sections}`;
+  return card('Form', body, {
+    sub: 'The sections in the order they play, then it loops. A is the song’s own chords and hook; each repeat is varied a little, each section ends with a drum fill and the bass walking into the next, and the loop’s last bar comes home.',
+  });
+}
+const musicFormEdit = f => {
+  const id = musicSelected(),
+    S = musicData().songs[id];
+  f(S);
+  if (S.form && !S.form.length) delete S.form;
+  if (S.sections && !Object.keys(S.sections).length) delete S.sections;
+  changed();
+  commit(true);
+  if (musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
+  render();
+};
+ACTIONS.musFormAdd = d => musicFormEdit(S => (S.form = [...(S.form || []), d.s]));
+ACTIONS.musFormPop = () => musicFormEdit(S => S.form && S.form.pop());
+ACTIONS.musSectionNew = () =>
+  musicFormEdit(S => {
+    S.sections = S.sections || {};
+    const k = 'BCDEF'.split('').find(c => !S.sections[c]);
+    if (!k) return;
+    S.sections[k] = { prog: [...S.prog] };
+    if (!S.form) S.form = ['A'];
+    S.form.push(k);
+  });
+ACTIONS.musSectionDel = d =>
+  musicFormEdit(S => {
+    if (S.sections) delete S.sections[d.s];
+    if (S.form) S.form = S.form.filter(k => k !== d.s);
+    if (musicStudio.section === d.s) musicStudio.section = 'A';
+  });
+ACTIONS.musSectionBars = d =>
+  musicFormEdit(S => {
+    const X = S.sections && S.sections[d.s];
+    if (!X) return;
+    if (+d.n > 0 && X.prog.length < 16) X.prog.push(X.prog[X.prog.length - 1]);
+    else if (+d.n < 0 && X.prog.length > 4) X.prog.pop();
+  });
+ACTIONS.musSectionSeed = d =>
+  musicFormEdit(S => {
+    const X = S.sections && S.sections[d.s];
+    if (X) X.seed = Math.floor(Math.random() * 1000);
+  });
 studioState.hooks.music = path => {
   if (path.startsWith('music.songs.') && musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
 };
@@ -502,13 +609,24 @@ function musicNoteHear(midi, type = 'p25') {
 
 /* ---------- the hook card ---------- */
 function musicHookHTML(id) {
-  const S = musicData().songs[id],
+  const S0 = musicData().songs[id],
+    sec = musicSection(),
+    S = musicSectionOf(S0, sec),
     line = musicLine(),
     has = k => (S[k] || []).length;
+  /* SND-12: which section's lines the roll edits */
+  const secTabs = S0.sections
+    ? `<div class="seg-row"><span>Section</span>${['A', ...Object.keys(S0.sections)]
+        .map(
+          k =>
+            `<button class="seg ${k === sec ? 'on' : ''}" data-act="musSectionPick" data-s="${escapeHtml(k)}" aria-pressed="${k === sec}">${escapeHtml(k)}</button>`
+        )
+        .join('')}</div>`
+    : '';
   const tabs = [
     ['hook', `Hook${has('hook') ? ` (${has('hook')})` : ''}`],
     ['counter', `Countermelody${has('counter') ? ` (${has('counter')})` : ''}`],
-    ['intro', `Intro${has('intro') ? ` (${has('intro')})` : ''}`],
+    ...(sec === 'A' ? [['intro', `Intro${has('intro') ? ` (${has('intro')})` : ''}`]] : []),
   ]
     .map(
       ([k, n]) =>
@@ -517,11 +635,12 @@ function musicHookHTML(id) {
     .join('');
   return card(
     'Hook',
-    textField('Name', `music.songs.${id}.hookName`, {
+    textField('Name', `music.songs.${id}${sec === 'A' ? '' : `.sections.${sec}`}.hookName`, {
       opt: 1,
       ph: 'unnamed',
       help: 'One name for the hook, its countermelody and the intro. Claude’s drafts start with “placeholder”; the Check lists them until you rename them.',
     }) +
+      secTabs +
       `<div class="seg-row">${tabs}<span class="grow"></span><button class="btn subtle" data-act="musHookFromTune" ${line === 'hook' ? '' : 'hidden'} title="Start from the composed tune’s first two bars">Copy the tune’s bars 1-2</button><button class="btn subtle" data-act="musLineClear" ${has(line) ? '' : 'disabled'}>Clear</button></div>
 <div class="mus-roll-wrap"><canvas id="musRoll" class="mus-roll" aria-label="${line === 'hook' ? 'Hook' : line === 'intro' ? 'Intro' : 'Countermelody'} roll, 32 sixteenths: ${(S[line] || []).map(n => musicNoteName(n[1]) + ' at ' + (n[0] + 1)).join(', ') || 'empty'}"></canvas></div>`,
     {
@@ -537,9 +656,11 @@ function musicHookHTML(id) {
 function musicHookMount(id) {
   const cv = /** @type {HTMLCanvasElement | null} */ (document.getElementById('musRoll'));
   if (!cv) return;
-  const S = musicData().songs[id],
+  const S0 = musicData().songs[id],
+    sec = musicSection(),
+    S = { ...S0, ...musicSectionOf(S0, sec) },
     line = musicLine(),
-    C = trackerCompose(S),
+    C = musicSectionTune(S0, sec),
     base = S.key >= 64 ? S.key - 12 : S.key;
   const lead = [];
   for (let st = 0; st < 32; st++) if (C.notes[st]) lead.push([st, C.notes[st][0], C.notes[st][1]]);
@@ -560,7 +681,7 @@ function musicHookMount(id) {
   });
 }
 function musicLineSet(id, line, notes) {
-  const S = musicData().songs[id];
+  const S = musicSectionOf(musicData().songs[id], musicSection());
   if (notes.length) S[line] = notes.map(n => [n[0], n[1], n[2]]);
   else delete S[line];
   changed();
@@ -573,9 +694,13 @@ ACTIONS.musLine = d => {
   render();
 };
 ACTIONS.musLineClear = () => musicLineSet(musicSelected(), musicLine(), []);
+ACTIONS.musSectionPick = d => {
+  musicStudio.section = d.s;
+  render();
+};
 ACTIONS.musHookFromTune = () => {
   const id = musicSelected(),
-    C = trackerCompose(musicData().songs[id]),
+    C = musicSectionTune(musicData().songs[id], musicSection()),
     out = [];
   for (let st = 0; st < 32; st++) if (C.notes[st]) out.push([st, C.notes[st][0], C.notes[st][1]]);
   musicLineSet(id, 'hook', out);
@@ -1482,7 +1607,7 @@ SECTIONS.music = () => {
     return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicEnsemblesHTML()}${musicInstrumentsHTML()}</div></div>`;
   return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside>
  <div class="ed-col">${tabs}<div class="ed-head"><div><small class="mono">music.json · songs.${escapeHtml(id)}</small><h2>${escapeHtml(id)}</h2></div><div class="seg-row"><button class="btn primary" data-act="musPlay" data-song="${escapeHtml(id)}">▶ Play</button><button class="btn" data-act="musStop">■ Stop</button></div></div>
- ${musicRecipeHTML(id)}${musicHookHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
+ ${musicRecipeHTML(id)}${musicFormHTML(id)}${musicHookHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
 };
 const musicLoopHTML = () =>
   `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label><label class="mus-loop" title="On: the night version, as outdoors at night (slower and lower unless the song writes its own)"><input type="checkbox" id="musNight" ${musicStudio.night ? 'checked' : ''}>Night</label><label class="mus-loop" title="On: every song on the four chip voices, as the game's Settings → Sound → GB Sounds (from the next bar)"><input type="checkbox" id="musGb" ${musicStudio.gb ? 'checked' : ''}>GB Sounds</label>${musicPartHTML()}`;

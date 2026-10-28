@@ -1879,6 +1879,18 @@ def music_steps(pg, errs):
     if got != ['town', 100, 5, 100]: errs.append(f'music: undo gave {got} (playing, its tempo and second chord, the data’s tempo)')
     left = pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)")
     if left: errs.append(f'music: after the undo these still differ from GitHub: {left}')
+    # SND-12: the Form card: a new section B (A's chords copied) plays at once after A (16 bars), its chord changes
+    # reach the song playing, the hook roll's section picker shows; both undone (hills has no form)
+    pg.click('#musList [data-act=musPick][data-song=hills]'); pg.click('#musList [data-act=musPlay][data-song=hills]'); time.sleep(0.3)
+    pg.click('#main [data-act=musSectionNew]'); time.sleep(0.3)
+    got = pg.evaluate("[studioState.D.music.songs.hills.form, musicStudio.tracker.song.D.steps, (musicStudio.tracker.song.D.played || []).map(x => x.name).join(' ')]")
+    if got != [['A', 'B'], 256, 'A B']: errs.append(f'music: a new section gave {got} (the form, the song playing’s steps and sections)')
+    pg.select_option('#main select[data-p="music.songs.hills.sections.B.prog.0"]', '5'); time.sleep(0.3)
+    if pg.evaluate("musicStudio.tracker.song.D.prog[8]") != 5: errs.append('music: a section’s chord did not reach the song playing')
+    if not pg.locator('#main [data-act=musSectionPick][data-s=B]').count(): errs.append('music: the hook roll has no section picker')
+    pg.click('#undoBtn'); pg.click('#undoBtn'); time.sleep(0.3)
+    if pg.evaluate("'form' in studioState.D.music.songs.hills || 'sections' in studioState.D.music.songs.hills || musicStudio.tracker.song.D.steps !== 128"):
+        errs.append('music: undoing the new section left a form')
     # the hook roll: a click on an empty cell of the roll writes a note, a drag makes it longer, and the song playing
     # plays the hook at once; a click on the note takes it away; the countermelody is its own line; all undone
     # SND-4: on hills, whose rolls are empty (town has a placeholder hook and counter now), played and picked first
