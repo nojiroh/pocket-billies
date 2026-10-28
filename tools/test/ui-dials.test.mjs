@@ -65,7 +65,7 @@ test('every value the schema allows in a look has a dial (a long hexagon has no 
     while (n && n.$ref) n = SCHEMA.$defs[n.$ref.replace('#/$defs/', '')];
     if (n && n.type === 'object' && n.properties)
       for (const [k, c] of Object.entries(n.properties)) walk(c, p ? `${p}.${k}` : k);
-    else if (p !== 'name') assert.equal(have.has(p), !hex.has(p), `${p} has a dial`);
+    else if (p !== 'name' && p !== 'player') assert.equal(have.has(p), !hex.has(p), `${p} has a dial`);
   };
   walk(SCHEMA.$defs.look, '');
   for (const [f, , isHex] of UI_FAMILY_LABELS) assert.equal(UI_SHAPE_FAMILIES[f].hex === true, isHex, f);
@@ -74,6 +74,8 @@ test('every value the schema allows in a look has a dial (a long hexagon has no 
 test("the game's look sits inside every dial's range", () => {
   for (const { path, dial } of uiDialList()) {
     const v = uiGet(THEME.defaults, path);
+    // UI-12: danger and the HP colours are left to the colour code (logic/ui-theme.js UI_FROM_SIGNALS)
+    if (v === undefined && /^color\.(light|dark)\.(danger|hp\w+)$/.test(path)) continue;
     assert.notEqual(v, undefined, `${path} is set in the defaults`);
     if (dial.kind === 'range') assert.ok(v >= dial.min && v <= dial.max, `${path} = ${v}`);
   }

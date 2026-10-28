@@ -43,9 +43,19 @@ OUT = ROOT / 'validation' / 'quick'
 # screen (the stock Marigold's General Store had)
 CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'potion',price:150},{item:'burn_salve',price:200},{item:'nerve_tonic',price:200},{item:'wake_tea',price:200},{item:'trailmix',price:260},{coin:'pyramid',price:300}]};"
 # UI-6b: blurred surfaces a screen may have (ui-track.md: at most 3; logic/ui-inspect.js UI_BLUR_BUDGET); the screens
-# over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur)
+# over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur). The UI checks
+# session after UI-18: uiBlurCount() now sees pseudo-elements and shadow trees, so the top and bottom bars' glass
+# counts; the budget is 3 besides the two bars (uiBlurCount({bars:false})), as it was set while the bars existed
 BLUR_BUDGET = 3
-BLUR_CEILING = {'map': 10, 'shop': 5}
+# UI-18: the Map's ceiling (10) went: it has 0 blurred surfaces smoke can count (its header, card and places list are
+# solid), under the budget. The UI checks session: the shop's (5) went too, at 3 besides the bars; every screen is
+# held to the budget
+BLUR_CEILING = {}
+# UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps, lowered when
+# a screen sheds pieces. Set from UI-15's counts (before it: walk 27, map 25, team 28, guide 39, profile 55, shop 73,
+# battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in. Team 28 -> 29 in the UI
+# checks session: UI-14b's rarity pill on the lead's card (the owner's answer 9: rarity on Billie cards, common too)
+ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 29, 'guide': 39, 'profile': 55, 'shop': 66, 'battle': 23}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
@@ -947,6 +957,65 @@ def in_game_test_whole(P):
     return '; '.join(out)
 
 
+# UI-12's smoke step (written in the UI checks session after UI-18): text against what is behind it, on the page as
+# drawn. For each visible element with words of its own (shadow trees too), its colour over the backgrounds below it,
+# blended up to the first opaque one; a picture, a gradient, a blurred surface, a ::before or ::after fill on the way,
+# or reaching the page's body (the scene is behind it) means "unknown" (skipped). A blurred surface with a fill at least
+# half opaque is read as that fill over a mid-grey scene (marked "glass"). Returns the worst readings: [ratio, what, colour, behind]
+CONTRAST_SCAN = """(()=>{const P=c=>{const m=String(c).match(/rgba?\\(([\\d.]+)[, ]+([\\d.]+)[, ]+([\\d.]+)(?:\\s*[,/]\\s*([\\d.]+%?))?/);
+if(!m)return null;let a=m[4]==null?1:m[4].endsWith('%')?parseFloat(m[4])/100:+m[4];return[+m[1],+m[2],+m[3],a]};
+const L=c=>{const f=v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)};return .2126*f(c[0])+.7152*f(c[1])+.0722*f(c[2])};
+const over=(t,b)=>{const a=t[3]+b[3]*(1-t[3]);if(!a)return[0,0,0,0];return[0,1,2].map(i=>(t[i]*t[3]+b[i]*b[3]*(1-t[3]))/a).concat(a)};
+const up=el=>el.parentElement||(el.getRootNode&&el.getRootNode().host)||null;
+const out=[];const own=el=>{for(const c of el.childNodes)if(c.nodeType===3&&/\\S/.test(c.nodeValue||''))return true;return false};
+const walk=root=>{for(const el of root.querySelectorAll('*')){if(el.shadowRoot)walk(el.shadowRoot);if(!own(el)||el.closest('svg'))continue;
+const r=el.getBoundingClientRect();if(!(r.width>0&&r.height>0&&r.bottom>0&&r.top<innerHeight&&r.right>0&&r.left<innerWidth))continue;
+if(typeof el.checkVisibility==='function'&&!el.checkVisibility({opacityProperty:true,visibilityProperty:true}))continue;
+const cs=getComputedStyle(el);const fg=P(cs.color);if(!fg||fg[3]<.05)continue;let bg=[0,0,0,0],e=el,known=true,glass=false;
+const odd=s=>(s.backgroundImage&&s.backgroundImage!=='none')||(s.backdropFilter&&s.backdropFilter!=='none');
+while(e&&bg[3]<.999){if(e===document.body||e===document.documentElement){known=false;break}const s=getComputedStyle(e);const gc=P(s.backgroundColor);
+if(s.backdropFilter&&s.backdropFilter!=='none'&&(!s.backgroundImage||s.backgroundImage==='none')&&gc&&gc[3]>=.5){bg=over(over(bg,gc),[128,128,128,1]);glass=true;break}
+if(odd(s)){known=false;break}
+const pb=getComputedStyle(e,'::before'),pa=getComputedStyle(e,'::after');if([pb,pa].some(q=>q.content&&q.content!=='none'&&(odd(q)||(P(q.backgroundColor)||[0,0,0,0])[3]>0))){known=false;break}
+const c=P(s.backgroundColor);if(c&&c[3]>0)bg=over(bg,c);e=up(e)}if(!known||bg[3]<.999)continue;
+const f=over(fg,bg),a=L(f),b=L(bg),k=(Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+const px=parseFloat(cs.fontSize),big=px>=24||(px>=18.66&&+cs.fontWeight>=700);
+out.push([Math.round(k*100)/100,big?3:4.5,(glass?'(glass) ':'')+el.tagName.toLowerCase()+'.'+[...el.classList].slice(0,2).join('.')+' '+(el.textContent||'').trim().slice(0,24),cs.color,'rgb('+bg.slice(0,3).map(Math.round)+')'])}};
+walk(document.body);return out.sort((x,y)=>x[0]/x[1]-y[0]/y[1])})()"""
+
+
+@step('Palettes: the three player palettes, light and dark (contrast, no page errors)', 240)
+def palettes_step(P):
+    """UI-12: Field Guide (the defaults), Copper Grove+ and Bureau Night, each light and dark, on the walk, Team, Guide and
+    profile screens: the palette applies (its surface colour changes), no page errors, and no text under 3:1 against a
+    known opaque background (a note lists what is under the AA minimum, 4.5:1 or 3:1 for large text)"""
+    pg, R = P.pg, P.R
+    pg.evaluate("stopTimers();activeBattle=null;battleStageStop();closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    keep = pg.evaluate("[saveData.preferences.palette||'',saveData.preferences.theme||'']")
+    bad, under, seen, surf = [], [], {}, {}
+    try:
+        for pal in ['', 'copper_grove', 'bureau_night']:
+            for theme in ['light', 'dark']:
+                pg.evaluate(f"saveData.preferences.palette='{pal}';saveData.preferences.theme='{theme}';applyPreferences();0")
+                surf[f'{pal or "field_guide"}/{theme}'] = pg.evaluate("getComputedStyle(document.documentElement).getPropertyValue('--c-surface').trim()")
+                for tab in ['walk', 'team', 'guide', 'profile']:
+                    pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0"); ui(pg)
+                    rows = pg.evaluate(CONTRAST_SCAN)
+                    key = f'{pal or "field_guide"}/{theme}/{tab}'
+                    seen[key] = len(rows)
+                    for k, need, what, fg, bg in rows:
+                        if k < 3: bad.append(f'{key}: {what} {k}:1 ({fg} on {bg})')
+                        elif k < need: under.append(f'{key}: {what} {k}:1')
+                if theme == 'light' and pal == 'bureau_night': shot(pg, 'palette-bureau-night-light')
+    finally:
+        pg.evaluate(f"saveData.preferences.palette='{keep[0]}';saveData.preferences.theme='{keep[1]}';applyPreferences();uiState.tab='walk';render();0")
+    R['paletteContrast'] = {'textsRead': seen, 'surfaces': surf, 'under3': bad, 'underAA': under}
+    if len(set(surf.values())) < 4: raise Exception(f'the palettes don\u2019t change the surface colour: {surf}')
+    if bad: raise Exception(f'{len(bad)} text(s) under 3:1: ' + '; '.join(bad[:6]))
+    if under: notes.append(f'palettes: {len(under)} text(s) under the AA minimum but over 3:1, e.g. ' + '; '.join(under[:4]))
+    return f'{sum(seen.values())} texts read over 6 looks x 4 screens; none under 3:1; {len(under)} under AA (a note)'
+
+
 @step('Phone: opening, the station, screens and a battle', 260)
 def phone_flow(P):
     pg, R = P.pg, P.R
@@ -983,20 +1052,29 @@ def phone_flow(P):
     pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
     # UI-1: how many surfaces blur what's behind them on each screen; UI-6b: a failure above the budget (BLUR_BUDGET), or
     # for a screen already over it, above its count when UI-6b began (BLUR_CEILING)
-    blur = {}
+    blur, blurAll, elems = {}, {}, {}
     for tab in ['walk', 'map', 'team', 'guide', 'profile']:
         pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0")
         if tab == 'walk': drawn(pg)
         elif tab == 'map' and not until(pg, BOWL_OPEN, 30): raise Exception('the map tab didn’t open the bowl')
         ui(pg); shot(pg, f'phone-{tab}')
-        blur[tab] = pg.evaluate('uiBlurCount()')
+        blur[tab] = pg.evaluate('uiBlurCount({bars:false})'); blurAll[tab] = pg.evaluate('uiBlurCount()')
+        elems[tab] = pg.evaluate('uiElementCount()')
     pg.evaluate(CHECK_SHOP + "uiState.tab='walk';saveData.trip.node=0;render();openShop('check_shop');0"); ui(pg); shot(pg, 'phone-shop')
-    blur['shop'] = pg.evaluate('uiBlurCount()')
+    blur['shop'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['shop'] = pg.evaluate('uiBlurCount()')
+    elems['shop'] = pg.evaluate('uiElementCount()')
     pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
     if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
-    shot(pg, 'phone-battle')
-    blur['battle'] = pg.evaluate('uiBlurCount()')
-    R['blurPerScreen'] = blur
+    # UI-16a: the move buttons rise in one after another; picture and count them once they have
+    ui(pg); shot(pg, 'phone-battle')
+    blur['battle'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['battle'] = pg.evaluate('uiBlurCount()')
+    elems['battle'] = pg.evaluate('uiElementCount()')
+    R['blurPerScreen'] = blur; R['blurPerScreenWithBars'] = blurAll
+    # UI-15: the pieces each screen shows (uiElementCount: words and icons on screen), logged so clutter is seen going
+    # down; a screen may not show more than its ceiling (ELEMENT_CEILING, lowered when a screen sheds pieces)
+    R['elementsPerScreen'] = elems
+    more = [f'{k} {v} (at most {ELEMENT_CEILING[k]})' for k, v in elems.items() if k in ELEMENT_CEILING and v > ELEMENT_CEILING[k]]
+    if more: raise Exception('a screen shows more pieces than its ceiling (ui-track.md, less clutter): ' + ', '.join(more))
     over = [f'{k} {v} (at most {max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))})' for k, v in blur.items() if v > max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))]
     if over: raise Exception('more surfaces blur what is behind them than allowed (ui-track.md, the blur budget): ' + ', '.join(over))
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
@@ -1014,7 +1092,7 @@ def phone_flow(P):
     if names: raise Exception(f'the exported debug log holds a name: {names}')
     # kept for comparing logs across a phase (validation/ is not committed)
     shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
-    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}'
+    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen besides the bars (with them): {", ".join(f"{k} {v} ({blurAll[k]})" for k, v in blur.items())}; pieces per screen: {", ".join(f"{k} {v}" for k, v in elems.items())}'
 
 
 def all_maps(pg, sec=180):
@@ -2046,7 +2124,7 @@ def timing_report(R):
 def pages():
     """[(fixture, page options, steps)] for this run: --selftest, --smoke or the full check, --steps filtering the steps"""
     if '--selftest' in ARGS: L = [('town', {}, [in_game_test_whole])]
-    elif SMOKE: L = [('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
+    elif SMOKE: L = [('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow, palettes_step]),
                      ('town', {'width': 1280, 'height': 800}, [actions_sheet_step]),
                      ('town', {}, [in_game_test_step])]
     else:
@@ -2061,7 +2139,7 @@ def pages():
              ('town', {}, [walking, atmosphere, animals, frames_rooms_settings_map]),
              ('town', {}, [culling_cache_wear, buildings_and_rooms, lowpoly_props, night_lights_and_front]),
              ('town', low, [postcard_visit, run_speeds, settings, set_pieces_step, route_wild_step, route_finds_step]),
-             ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow]),
+             ('title', {'width': 390, 'height': 844, 'mobile': True}, [phone_flow, palettes_step]),
              ('run', phone, [sound_effects_step]),
              ('run', phone, [run_music_step, run_map_weather_step, battle_music_step]),
              ('town', {'width': 1280, 'height': 800}, [actions_sheet_step]),
@@ -2116,11 +2194,6 @@ def main():
     for t in threads: t.start()
     for t in threads: t.join()
     srv.shutdown()
-    if '--props' in ARGS:
-        log('Props: every prop on contact sheets (validation/props/)')
-        r = subprocess.run([sys.executable, str(ROOT / 'tools' / 'prop-sheet.py')], capture_output=True, text=True)
-        steps.append({'step': 'Props: contact sheets', 'ok': r.returncode == 0, 'seconds': 0, 'note': (r.stdout.strip().splitlines() or [''])[-1][:200]})
-        if r.returncode: problems.append('Props: ' + (r.stderr.strip().splitlines() or ['failed'])[-1][:200])
     if not SMOKE: compare_pictures(R)
     timing_report(R)
     R.update({'steps': steps, 'problems': problems, 'notes': notes, 'seconds': round(time.time() - T0), 'smoke': SMOKE})

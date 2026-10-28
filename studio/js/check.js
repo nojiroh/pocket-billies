@@ -12,7 +12,7 @@ import {
 } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
 import { formProblems, lineSpeciesIds } from '../../game/js/logic/forms.js';
-import { uiThemeContrast } from '../../game/js/logic/ui-theme.js';
+import { uiSignalProblems, uiThemeContrast } from '../../game/js/logic/ui-theme.js';
 import { storyFindings } from '../../game/js/logic/story-checks.js';
 import { animFor } from '../../game/js/body-plan-animation.js';
 import { boneSlot } from '../../game/js/skeleton-rig.js';
@@ -343,6 +343,14 @@ export function runCheck() {
         'ui',
         where ? { uiFocus: { scope: where, rel: `color.${f.side}.${f.fg}` } } : {}
       );
+    }
+  /* UI-11: the colour code (the same check check-data runs, logic/ui-theme.js uiSignalProblems): Show me opens its dial
+     (a preset's own code and two types too close go to where they live) */
+  if (D.uiTheme && D.uiTheme.defaults)
+    for (const f of uiSignalProblems(D.uiTheme, D.types || [])) {
+      const at = f.where === 'types' ? '' : f.where ? ` (${f.where.replace(':', ' ')})` : '';
+      const sel = f.where === '' && f.rel ? { uiFocus: { scope: 'game', rel: f.rel } } : {};
+      err(`Colour code${at}: ${f.msg}.`, f.where === 'types' ? 'types' : 'ui', sel);
     }
   /* UI-3b: the UI rules (game/js/logic/ui-lint.js on the game's files), one line; Show me lists every value. UI-6: an
      error when a rule is over its ceiling. T1.3: a warning, since it is the code's (npm run lint), not check-data's */

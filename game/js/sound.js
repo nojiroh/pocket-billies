@@ -88,13 +88,22 @@ expose({
   synthVoice: [() => synthVoice, v => (synthVoice = v)],
   testVolume: [() => testVolume, v => ((testVolume = v), provide({ testVolume }))],
   uiButton: [() => uiButton, v => (uiButton = v)],
-  uiSound: [() => uiSound, v => (uiSound = v)],
+  uiSound: [() => uiSound, v => ((uiSound = v), provide({ uiSound }))],
   unlockSound: [() => unlockSound, v => (unlockSound = v)],
   updateAmbience: [() => updateAmbience, v => (updateAmbience = v)],
   volumePreference: [() => volumePreference, v => (volumePreference = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ applyAmbienceVolume, applyVolumes, battleSoundEffect, jingle, soundEffect, soundEffectAt, testVolume });
+provide({
+  applyAmbienceVolume,
+  applyVolumes,
+  battleSoundEffect,
+  jingle,
+  soundEffect,
+  soundEffectAt,
+  testVolume,
+  uiSound,
+});
 /* to-module: end */
 export const soundEngine = {
   ctx: null,
@@ -735,7 +744,7 @@ document.addEventListener('input', ev => {
 });
 /* SND-6: four UI sounds instead of one tick (music.json ui, logic/ui-sounds.js): a button picks one by its data-a and
    classes, so no screen changes. k is select, confirm, cancel or cant */
-function uiSound(k) {
+export function uiSound(k) {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
   const S = (MUSIC.ui && MUSIC.ui.sounds[k]) || null;
   if (!S) return;
@@ -781,6 +790,8 @@ document.addEventListener(
   },
   true
 );
+/* SY-3: a stamp (ui-run-kit.js pb-stamp) thunks as it lands */
+document.addEventListener('pb-stamp-land', () => uiSound('stamp'));
 /* a disabled button gets no click, but the press still reaches it: the buzz then */
 document.addEventListener(
   'pointerdown',

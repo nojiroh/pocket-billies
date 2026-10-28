@@ -25,6 +25,7 @@ import {
   toTeam,
 } from './logic/rules.js';
 import { heldGive, heldIds, heldTake } from './logic/held.js';
+import { fxTagsHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { ribbonName } from './logic/showcase.js';
 import { applyItem, canUse } from './logic/battle-engine.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
@@ -278,7 +279,7 @@ function billySheet(m) {
   /* RL-12c: what it holds */
   const HI = m.held ? ITEMS[m.held] : null,
     heldR = HI
-      ? `<div class="ms-met">${itemIcon(m.held || '', 14)}<span>Holding <b>${escapeHtml(HI.n)}</b> · ${escapeHtml(HI.d.replace(/^Held: /, ''))}</span></div>`
+      ? `<div class="ms-met ms-held"${rarityRowAttr(HI.rarity)}>${itemIcon(m.held || '', 14)}<span>Holding <b class="rar-name">${escapeHtml(HI.n)}</b> · ${escapeHtml(HI.d.replace(/^Held: /, ''))}</span>${fxTagsHTML(HI.hold)}${rarityPillHTML(HI.rarity)}</div>`
       : '';
   /* ON-3: the Showcase ribbons it won (cosmetic; never shown in battle) */
   const ribR =
@@ -306,8 +307,8 @@ function billySheet(m) {
     title: escapeHtml(billyName(m)),
     cls: 'mon-sheet',
     acts,
-    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && billyPrime(m) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftLook(m) })}</div>`,
-    html: `<p class="row ms-chips">${billyTypes(m).map(typeBadgeHTML).join('')}${billyConditionHTML(m)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
+    top: `<div class="ms-plate" style="${plateVars(m)}">${lead ? '<span class="tm-ribbon lead">Lead</span>' : ''}${bud ? `<span class="tm-ribbon bud">${uiIconHTML('heart', 11)} Buddy</span>` : ''}${!isRobot(m) && billyPrime(m) ? '<span class="tm-ribbon prime">Prime</span>' : ''}${rigCanvasHTML(m.sp, 128, { build: m.build, coat: m.coat, graft: graftLook(m) })}</div>`,
+    html: `<p class="row ms-chips">${billyTypes(m).map(typeBadgeHTML).join('')}${billyConditionHTML(m)}${isRobot(m) ? '' : rarityPillHTML(s.rar)}<b class="lv tnum">Lv ${m.lvl}</b>${m.nick ? `<span class="ms-sp">${escapeHtml(s.name)}</span>` : ''}</p>
   <div class="ms-tabs" role="tablist" aria-label="About ${escapeHtml(billyName(m))}" data-on="sum">${tabs.map(([k, l]) => `<button role="tab" data-a="ms-tab" data-k="${k}" aria-selected="${k === 'sum'}">${l}</button>`).join('')}</div>
   <div class="ms-pane" data-k="sum"><div class="ms-meters">${meter('HP', hpBar(m.hp, mx), `${m.hp}/${mx}`)}${meter('XP', progressBarHTML(xpProgress(m), 'xpb'), xpLeft(m))}</div>
    <div class="ms-chart">${st}</div>${metR}${heldR}${ribR}

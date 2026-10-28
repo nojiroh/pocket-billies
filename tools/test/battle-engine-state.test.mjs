@@ -147,3 +147,13 @@ test('a battle still going at the turn cap ends as a draw', () => {
     RULES.battle.turnCap = was;
   }
 });
+
+test('UI-16b: fieldEffects reports Protect, the shield, confusion, Soaked and Fork with their turns left', () => {
+  const fe = fn('fieldEffects'),
+    v = fn('newFieldState')();
+  assert.equal(fe(v), null);
+  assert.deepEqual(fe({ ...v, protect: true, shield: 2, hyped: 3 }), { protect: 1, shield: 2, confused: 3 });
+  assert.deepEqual(fe({ ...v, ov: ['Water'], ovT: 2 }), { soaked: 2 });
+  assert.deepEqual(fe({ ...v, ov: ['Fire'], ovT: 1, ovBy: 'fork' }), { fork: 1 });
+  assert.deepEqual(fe({ ...v, ov: ['Fire'], ovT: 0 }), null);
+});

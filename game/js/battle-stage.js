@@ -41,6 +41,7 @@ import { graftLookSplit } from './logic/graft-art.js';
 import {
   LUNGE_GHOSTS,
   RIBBON_CORE,
+  flashFor,
   impactAt,
   impactFrame,
   impactLength,
@@ -159,6 +160,7 @@ expose({
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
   buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
+  calmMotion: [() => calmMotion],
   camApply: [() => camApply, v => (camApply = v)],
   camAt: [() => camAt],
   camBusy: [() => camBusy],
@@ -177,6 +179,7 @@ expose({
   drawSelectionRing: [() => drawSelectionRing, v => (drawSelectionRing = v)],
   drawShadow: [() => drawShadow, v => (drawShadow = v)],
   dueEvents: [() => dueEvents],
+  flashesOff: [() => flashesOff, v => (flashesOff = v)],
   formatFocus: [() => formatFocus],
   fxRandom: [() => fxRandom, v => (fxRandom = v)],
   groundRing: [() => groundRing, v => (groundRing = v)],
@@ -610,25 +613,32 @@ function blurAt(z) {
   if (d.ap <= 0 || battleStage.q.lvl >= 3) return 0;
   return Math.min(4, d.ap * SPRITE_BLUR_SCALE * Math.abs(1 / Math.max(0.3, z) - 1 / d.zf));
 }
+/* SY-1: the player's Flashes setting (Settings, Display); the switch also sets html[data-flash] for the CSS */
+function flashesOff() {
+  return (saveData.preferences || {}).flashes === 'off';
+}
 /* VFX-8: who: the Billie a flash belongs to, which gets a sprite flash instead when the limiter holds the full-screen
-   one back (battle-anim-run.js battleFlashGate: at most 3 in any second, 333 ms apart, no saturated red) */
+   one back (battle-anim-run.js battleFlashGate: at most 3 in any second, 333 ms apart, no saturated red). SY-1's
+   flashFor first: under Reduced motion nothing is shown, sprite-flashed or counted; with Flashes off the gate sees the
+   capped flash (and a held one's sprite flash uses its colour and amount) */
 function battleStageFlash(col, a, dur, who) {
-  if (typeof battleFlashGate === 'function' && !battleFlashGate(col, a, dur, who)) return;
+  const F = flashFor(col, a, !!reducedMotion, flashesOff());
+  if (!F) return;
+  if (typeof battleFlashGate === 'function' && !battleFlashGate(F.col, F.a, dur, who)) return;
   const f = $('#flash');
   if (!f) return;
   f.style.transition = 'none';
-  f.style.background = col;
-  f.style.opacity = a;
+  f.style.background = F.col;
+  f.style.opacity = F.a;
   void f.offsetWidth;
   f.style.transition = `opacity ${dur}ms ease-out`;
   f.style.opacity = 0;
 }
 /* VFX-9: a pulse of the grade pass's chromatic aberration (engine/post-effects.js uCAP; battleStageChromaticPulse
-   reads it each frame), no longer a CSS filter over the whole canvas. Timed on real time, as the filter was. None
-   under Reduced motion; when the style track's SY-1 (#289) is merged, none with Flashes off either
-   (`reducedMotion || flashesOff()`, as SY-1 has it) */
+   reads it each frame), no longer a CSS filter over the whole canvas. Timed on real time, as the filter was. SY-1's
+   rule: none under Reduced motion and none with Flashes off */
 function battleStageChromaticFlash(ms = 160) {
-  if (reducedMotion) return;
+  if (reducedMotion || flashesOff()) return;
   battleStage.ca = { t0: performance.now(), ms };
 }
 /* the pulse now: 1 while it lasts, 0 after */
@@ -1057,7 +1067,10 @@ function camApply() {
     L = battleStage.L,
     u = L.u,
     el = battleStage.el,
-    still = reducedMotion;
+    still = reducedMotion,
+    /* UI-16a/b: Calm drops the idle loops: the camera's breathing zoom and slow roll (shakes and the handheld feel
+       follow the action and stay) */
+    calm = still || calmMotion();
   let sx = 0,
     sy = 0;
   if (battleStage.shk > 0.3 && !still) {
@@ -1069,9 +1082,11 @@ function camApply() {
     sx += ha * (Math.sin(t * 0.0113) * 1.1 + Math.sin(t * 0.0271 + 1.7) * 0.55);
     sy += ha * (Math.sin(t * 0.0097 + 0.6) * 0.8 + Math.sin(t * 0.0233 + 2.9) * 0.45);
   }
-  const breathe = still ? 0 : 0.006 * Math.sin(t / 3100),
+  const breathe = calm ? 0 : 0.006 * Math.sin(t / 3100),
     z = 1 + (still ? 0 : battleStage.css.z) + breathe,
-    r = still ? 0 : battleStage.css.r + 0.004 * Math.sin(t / 4700) + ha * 0.0035 * Math.sin(t * 0.0079 + 0.3);
+    r = still
+      ? 0
+      : battleStage.css.r + (calm ? 0 : 0.004 * Math.sin(t / 4700)) + ha * 0.0035 * Math.sin(t * 0.0079 + 0.3);
   const V = battleStage.V,
     key =
       z.toFixed(4) + r.toFixed(4) + sx.toFixed(2) + sy.toFixed(2) + V.yaw.toFixed(4) + V.x.toFixed(3) + V.hz.toFixed(2);
@@ -1085,6 +1100,9 @@ function camApply() {
   }
   if (el.bl) el.bl.style.transform = `translate(${(-V.yaw * 300 * u).toFixed(1)}px,${(V.hz * u * 0.5).toFixed(1)}px)`;
 }
+/* UI-16b: the Animation level is Calm (settings-screen.js writes it on <html data-motion>; ui-kit.js motionNow reads
+   it too, but the Studio runs this stage without the kit) */
+const calmMotion = () => typeof document !== 'undefined' && document.documentElement.dataset.motion === 'calm';
 /* ---------- camera life ----------
    battleStage.cam is the directed camera (camTo/camAt/camHome tween it); battleStage.V is the one rendered: the directed camera plus a slow idle orbit
    around the middle of the action while nothing happens. A guard keeps both billionaires inside the free frame. */
@@ -1158,8 +1176,10 @@ function camUpdate(dt) {
     busy = camBusy();
   if (busy) battleStage.camT = battleStage.t;
   const want =
-    /* phase 06-3: calm while the player chooses (the battle cards float in the scene and should hold still) */
+    /* phase 06-3: calm while the player chooses (the battle cards float in the scene and should hold still); UI-16b:
+       no idle orbit under Calm */
     !reducedMotion &&
+    !calmMotion() &&
     !busy &&
     !battleStage.calm &&
     battleStage.t - battleStage.camT > 650 &&
@@ -1681,7 +1701,7 @@ function groundRing(i, col = '#FFFFFF', r1 = 1.6, life = 520) {
    of two-tone with radial lines from P, on a catch's pyramid, the mail move's coin and a crit (whose speed lines,
    2D-canvas lines before VFX-4, follow it). Timed on real time, so it plays through the hit-stop. Returns the frame */
 function impactFx(P, kind) {
-  const F = impactFrame(kind, !!reducedMotion, battleStage.q.lvl);
+  const F = impactFrame(kind, !!reducedMotion, battleStage.q.lvl, flashesOff());
   battleStage.impact = F ? { ...F, P: { x: P.x, y: P.y, z: P.z }, t0: performance.now(), seed: random() } : null;
   return F;
 }
@@ -1750,7 +1770,7 @@ function hitFx(ti, an, imp0 = null) {
   }
   if (an.crit || an.te > 1) handheld(520, an.crit && an.te > 1 ? 1.3 : 1);
   burst(T, an.t || 'None', an.te > 1 ? 16 : 10, an.te > 1 ? 3.2 : 2.2, 1);
-  if (typeof hudHit === 'function') hudHit(ti, an);
+  if (typeof hudHit === 'function') hudHit(ti, an, w);
 }
 export function camHome(d = 420, delay = 0) {
   camTo(homeCamera, d, 'io', delay);
@@ -2070,7 +2090,8 @@ export function battleStagePlay(an, ev) {
       setActorAction(an.si, 'hurt', 600);
       blinkActor(an.si, 360);
       battleStage.shk = 2.5;
-      if (an.dmg && typeof hudPop === 'function') scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg'));
+      if (an.dmg && typeof hudPop === 'function')
+        scheduleAt(60, () => hudPop(an.si, '−' + an.dmg, 'dmg', hitWeight(an.si, an)));
       if (an.fx === 'oil')
         for (let i = 0; i < 7; i++)
           addParticle({
