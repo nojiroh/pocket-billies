@@ -2,6 +2,77 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-9 - bake and reverb: instruments from numbers, the tracker's bank, one reverb, a harp in the Sound test, a brightness fingerprint - 2026-10-28
+Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
+standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 9 change commits and the
+baseline commit, one cause each, plus docs; tag `snd-9-done` (for the owner to push) on this session's last commit.
+PR #292. Details: sound-track.md "SND-9 as built".
+- **Plan**: (a) brightness (zero crossings per 50 ms) beside the RMS in check-sound.py, a tool-only commit, RMS
+  identical, then the baseline once with plain `--baseline`; (b) logic/sound-bake.js, pure DSP, reusing the beds' seeded
+  noise, its Node tests, script tags on both pages; (c) the tracker's bank (a module-level cache by instrument and rate,
+  `bankReady`, setTimeout slices, the least recently used zone dropped within 6 MB with the beds' noise) and
+  `T.sampleVoice`; (d) one lazy reverb with the tracker, post-fader sends, places by send level; (e) a harp in the
+  Sound test, the bake's figures in the debug log; check-sound on every commit; docs.
+- **Changed**: new game/js/logic/sound-bake.js, tools/test/sound-bake.test.mjs; game/js/audio/tracker.js (the bank,
+  `T.bankReady`, `T.bankStats`, `T.sampleVoice`, the reverb: `T.reverbSend`, `T.reverbReady`, `T.reverbLevels`,
+  `T.reverbPlace`, `T.reverbStats`); game/js/sound.js (the beds' noise bytes and the master to the tracker, the sends
+  in `applyVolumes`, `bank` and `reverb` in `soundDebugLines`); game/js/sound-test.js (the harp row);
+  game/index.html and studio/index.html (script tags; the Studio also loads ambience-sound.js now);
+  studio/js/logic-worker-modules.js; tools/check-sound.py; tools/test/tracker.test.mjs (+4 tests);
+  validation/sound-baseline/ (brightness added); studio/art-code-refs.json.
+- **Fingerprints**: 194, **0 changed** on every commit (`check-sound.py --loudness`; the intermediate commits in a
+  worktree). The baseline commit (7f4faf22) adds a `zc:<part>` array beside each RMS array; the RMS values checked
+  against the commit before (0 differ) and a second run after writing it: 194, with brightness, 0 changed. No song,
+  jingle, cry, bed or UI sound changed; the loudness report is the same as SND-8b's.
+- **Memory and bake time** (headless Chromium at 44.1 kHz; the phone's log will say what it is there): the harp 10
+  zones, 1.16 MB (1.26 MB at 48 kHz); with the beds' noise (2,412 KB), the tracker's noise and the impulse (413 KB)
+  4.09 MB of the 6 MB budget. The bake 36-57 ms of work in 17-23 slices, most 2.1 ms, the slowest 2.7-4.4 ms (12.7 ms
+  with a second browser beside it); the impulse's own work 11-18 ms in slices; the convolver's buffer assignment 8-12
+  ms in one go (63 ms under load). The harp -33.6 LUFS alone (1.8 LU under the route song), Copperleaf's room about 12
+  dB under it, a cave's about 2.5 dB.
+- **Risky or unfinished**:
+  - Claude can't hear: the harp (a Karplus-Strong pluck, warm low-pass, its tail looped) and the room are judged by
+    numbers; the owner's ears decide.
+  - The convolver's buffer assignment is one main-thread step (8-12 ms here; a phone may take longer) on the harp's
+    first press; SND-11 should make the room at a quiet moment (a load) or keep it off the low graphics tier if the
+    hitch list shows it.
+  - A slice can run past 4 ms by one step on a busy page (the slowest step 0.9-4.1 ms in Chromium, under 1 ms in Node);
+    the debug log's `bank.lastSlicesMs` and `stepMaxMs` show the phone's.
+  - Nothing bakes on arrival yet (no song names an instrument until SND-11); the bank and reverb are heard only in the
+    Sound test.
+  - `fm` and `osc` zones render in one step (tested, unused); SND-11 slices them when an instrument uses them.
+  - CI `smoke` on PR #292: the failures that also fail on main (the Studio's missing `game/art/billionaires/*.png`,
+    the landmark field's Auto, RL-8) are explained on the PR already.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `node --test tools/test/tracker.test.mjs
+  tools/test/sound.test.mjs tools/test/sound-bake.test.mjs` (54 pass: sound-bake 13, tracker +4); `npm test` 1605 of
+  1605; `npm run check:modules` (0 changed), `npm run format:check`, `npm run check:data` (176 files fine; its
+  Copperleaf bridge warning is main's too). `check-sound.py --loudness` on every commit (above: 0 changed, no loudness
+  warning). `npm run check:smoke`: no problems (6 of 6). `check-quick.py --steps=sound,song,music,"debug menu"`: 9 of
+  9 (Song fingerprints: 194, with brightness, 0 changed). `check-studio-github.py --only=music`: ok. Browser probes
+  (headless Chromium): the Sound test's harp from its own section HTML bakes 10/10 zones in slices, makes the reverb,
+  plays 55-72 notes, and Stop leaves `soundEngine.test` false and the harp gone; the debug log's `bank` and `reverb`
+  lines filled; offline renders at 48 kHz with no NaN. The full `npm run check:quick`: 38 of 41 (1489 s); every sound
+  step passed. The three problems fail on main too, as in SND-8a's and SND-8b's entries: Terraces (train_station
+  floats in Copperleaf), RL-8 (a run's seam view) and "Walking left and right..." (room light). CI on PR #292: lint and
+  rules green; smoke red on the three failures already explained on the PR (RL-8, the Studio's missing
+  `game/art/billionaires/*.png`, the landmark field's Auto). Not fixed: outside SND-9.
+- **Decided for the owner, to review**:
+  - Bake on the main thread in setTimeout slices (already decided as recommended); the slice budget 2 ms so a slice
+    stays under the 4 ms rule with one step over; a Worker only if the phone's log shows hitches.
+  - Mine: the proof instrument is a harp (Part 2's Copperleaf palette), one zone every 6 semitones, a 40 ms looped tail;
+    the bank's budget counts the beds' noise, the tracker's noise and the impulse; a dropped zone plays from the
+    nearest zone left and is baked again; the reverb's places as send levels (open 0.6, town 0.8, forest 1, room 0.7,
+    cave 1.8) and no second convolver for caves; the room's return ×3.5 so a send reads as the room's level; the
+    harp's send 0.35; the Studio loads ambience-sound.js (sound-bake.js reuses its noise); the brightness tolerance 2 %
+    or 2 crossings; the Sound test's harp plays alone (the place's song stops for it, as a test song does).
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test): "Play the harp" in Copperleaf
+  (a little room), then in a cave (more), on a route and with no reverb: a soft, warm pluck in tune high and low, no
+  click at a note's start or as a long note holds, the room fading smoothly; Stop and closing the menu fade it out.
+  Then export a debug log and check `audio`: `bank` (bakeMs, mb and withOtherMb, slices, sliceMaxMs, stepMaxMs,
+  lastSlicesMs) and `reverb` (bakeMs, setMs); and the Load track's hitch list shows no hitch at the first press.
+- **Next**: SND-10 (water: `soundscape.json` and emitters, a recipe per water kind, falls by height, rain on water,
+  wading, Surf, fishing and water life; WA-8's water sounds).
+
 ### Sound track SND-8b - mix fixes: the echo bugs, a trim per song (the hub song up), the rain's muffle, iOS "interrupted" - 2026-10-28
 Branch `track/sound` (main merged first: already up to date). Started by the planning session under the owner's
 standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. 8 change commits and the
