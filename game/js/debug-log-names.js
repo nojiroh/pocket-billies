@@ -3,6 +3,7 @@
 // object, and a setter (the module's own) for each function it wraps. The last module of the game's page.
 import { LOCATIONS, TRAINERS, gameData } from './game-data.js';
 import { encountersHere, setSetTrip, setTrip, spliceReport } from './logic/rules.js';
+import { styleLog } from './theme-sheet.js';
 import { ranchSkew } from './logic/ranch-clock.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
 import { mapFiles } from './map-files.js';
@@ -189,6 +190,7 @@ Object.defineProperties(GAME, {
   solidPropState: { get: () => solidPropState },
   soundEngine: { get: () => soundEngine },
   spliceReport: { get: () => spliceReport },
+  styleLog: { get: () => styleLog },
   swapMapCache: { get: () => swapMapCache, set: setSwapMapCache },
   titleScreen: { get: () => titleScreen },
   toast: { get: () => toast },

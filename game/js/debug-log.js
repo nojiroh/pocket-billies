@@ -462,6 +462,10 @@ debugLog.state = () => {
       effects: p.effects || 'full',
       tilt: p.tilt !== false,
     };
+    /* SY-8: the style track: the Flashes and Animation state now, and under each state that ran this session how many
+       flashes showed (flash), were held to 15% (flashHeld) or skipped (flashSkipped), stamps, damage pops, HP rolls and
+       foil frames. Counts only: no save data, names or places */
+    if (typeof GAME.styleLog === 'function') s.style = GAME.styleLog();
     s.started = !!GAME.saveData.started;
     s.tab = GAME.uiState.tab;
     s.battle = !!GAME.activeBattle;
