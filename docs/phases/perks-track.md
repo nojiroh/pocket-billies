@@ -376,6 +376,29 @@ unused-art gate.
 - **Review**: each art session commits its contact sheets and lists the new icons under "Decided for the owner";
   the owner can redraw any icon in the Studio.
 
+**Corrected in PK-2** (built 2026-10-28; where the code or the plan above was wrong or vague):
+- Section 2's screen claims held: the pick card's art slot drew `relic` at 40 px, the Perks tab at 30 px in a 44 px
+  tile, the shop row at 36 px; the bar's Perks tab and the card's back use `relic` (they still do). **The "Let one go"
+  sheet is pick cards, not rows**: its six cards show the picture at 36 px (`perkCardHTML`'s size), the pick's three
+  at 72.
+- "Two silhouettes overlapping 90%" is measured as **intersection over union** (`iconOverlap`): shared pixels over the
+  larger shape flagged boxy pictures that are nested but clearly different (Coupon Book and Petri Dish read 93%; 87%
+  as IoU). The closest pair now is Field Notebook and Lost Property Form at 88%.
+- **A grid is written only once the data names its picture** (`img`), so the later waves' samples wait as grids and
+  the unused-art gate stays green with nothing else to keep in step; `--force` is the only way over an SVG on disk.
+- In a one-colour (`mono`) picture the ramp's shades get no seam, so a detail drawn in a darker shade can vanish in the
+  pale top half (Power Gloves' thumb, Gene Lure's helix in the first drafts). A same-colour letter (`r` beside the red
+  ramp's `2`) is its own block and gets a seam: ART-NOTES.md "Perk pictures".
+- The picture check is its own data check, `dataPerkArt` (it reads files, which `dataPerks` doesn't), run by
+  check-data: an error for an `img` that isn't there or fails `svgProblem`, a warning for a Perk without one.
+- The art browser and art-refs needed no change for "Used by" (perks.json's `img` is data text naming the path);
+  the icon editor learned the folders (`ICON_DIRS`, `svgIconKey` in svg-pixels.js: `perks/<id>` keys). The folders
+  `items` and `boons` exist only in that list until a picture goes in (git keeps no empty folders).
+- `--sheet` uses the container's global Playwright for Node; it is not run in CI. The sheets are committed in
+  `validation/icon-sheets/`.
+- The 51 UI icon grids shade back to their SVGs byte for byte through the tool (its test), so the pipeline is the
+  retired builder's.
+
 ## 7. The engine
 **PK-1 (the core)**, then each wave adds only the kinds its entries need, one kind per commit:
 - Effect rows gain optional fields with fixed names (data-checked, no script language; roguelite-track.md 2d):
@@ -462,7 +485,7 @@ unused-art gate.
 |---|---|---|---|
 | PK-0 | Plan (done 2026-10-27) | this file, the 8 art samples, ROADMAP, BRANCHES, HANDOFF | merged by the owner |
 | PK-1 | Effects core (**done 2026-10-28**, `track/perks`; "Corrected in PK-1" in section 7) | section 7's fields and state, the switch-in fix, run rows of every kind read, schema, data checks, types, the Studio's row inputs, battle lines; tests for each trigger, counter, growth and condition (test-only Perks) | a battle without Perks unchanged; every tier green |
-| PK-2 | Art pipeline | `tools/build-icons.mjs` and its test, `img` on Perks (schema, checks, types), cards at 72 px and rows at 36 px, the Studio's icon editor and art browser on the new folders, the 13 existing Perks drawn | 13 pictures in game, contact sheets committed |
+| PK-2 | Art pipeline (**done 2026-10-28**, `track/perks`; "Corrected in PK-2" in section 6) | `tools/build-icons.mjs` and its test, `img` on Perks (schema, checks, types), cards at 72 px and rows at 36 px, the Studio's icon editor and art browser on the new folders, the 13 existing Perks drawn | 13 pictures in game, contact sheets committed |
 | PK-3 | Wave A | 15 Perks of 5.2: data, kinds, art, tests | every Wave A Perk works in a battle test |
 | PK-4 | Wave B | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
 | PK-5 | Wave C | 12 Perks of 5.4 | catching, shop, reward and map rules tested |

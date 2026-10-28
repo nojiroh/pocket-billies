@@ -352,6 +352,10 @@ same phase:
   this container's Chromium and fonts. `tools/test/ui-theme.test.mjs` also checks the shape polygons (tokens.css's
   copy equals the generator's) and `tools/test/ui-icons.test.mjs` checks game/art/ui/*.svg (51 icons, 36×36, the
   pixel format the Studio's icon editor writes, every icon the code names; the SVGs are the source since SA-2b).
+  PK-2: `tools/test/build-icons.test.mjs` checks tools/build-icons.mjs (the 51 UI icon grids shade back to their SVGs
+  byte for byte; every grid file in tools/art/icon-grids passes `--check`, and every picture the data names is
+  written; a grid's faults; silhouettes; never over an SVG without `--force`), `data-checks.test.mjs` the Perks'
+  `img` (dataPerkArt), and check-fast's Perks step each card's and row's picture at 72 and 36 px.
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the

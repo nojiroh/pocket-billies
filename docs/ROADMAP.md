@@ -264,7 +264,9 @@ town node needs it.
   (the plan, research and 8 sample icons) done 2026-10-27 on `ccr-24be55e6-2bmqci`; PK-1 (the effects core: when,
   if, every, grow, per and once on effect rows, run.perkState, the switch-in fix, every run row of turnHeal, pinchHeal,
   turnHurt, level and bossHp read, battle lines naming boons, the Studio's row inputs) done 2026-10-28 on
-  `track/perks`; PK-2 (the art pipeline) next.
+  `track/perks`; PK-2 (the art pipeline: tools/build-icons.mjs, `img` on Perks, the 13 existing Perks drawn, pictures
+  at 72 px on pick cards and 36 px in rows, the Studio's icon editor and art browser on art/perks, Edit art in the
+  Perks editor) done 2026-10-28 on `track/perks`; PK-3 (Wave A, the battle kit) next.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
