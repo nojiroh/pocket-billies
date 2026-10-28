@@ -116,7 +116,11 @@ so no side branch was merged. Draft PR #295 updated. No tags (CLAUDE.md since #2
   the type's ramp; traces before and after equal (the stage's state is unchanged). Full quick check (at 60360790):
   38 of 42 in 1686 s; the 4 problems: Terraces, RL-8's seam and room light (main's, as listed), Battle music (the
   wild drums vs the 8 s fallback under load: passes alone, 2 of 2). The Voltron step alone: 12 runs on this branch,
-  16 on main (see above). CI: smoke on 7f99aec5 red for the data-text check (mine, fixed in 60360790); on 60360790 red
+  16 on main (see above). CI at 868e6f30: lint and rules green; smoke cancelled at its 30-minute limit after "Every
+  screen opens", with "The world map opens as the bowl" (the map's chips, main's UI side) and "Camera follow ... the
+  page stopped drawing" (263 s) red before it: Camera follow passes alone 2 of 2 here and 2 of 2 on main 76aea599, and
+  it never enters a battle (the pool and its atlas don't run), so it's the loaded runner. Main merged again for #317
+  (c3b342b8): unit tests 1910 of 1910, smoke no problems. CI: smoke on 7f99aec5 red for the data-text check (mine, fixed in 60360790); on 60360790 red
   only for main's Studio 404s, Behind things and the Voltron (now fixed); the comments on PR #295 say so.
 - Next: wave 1 goes on: VFX-12 and VFX-15 merge the latest track/vfx into their branches and report done; the next
   main-line session merges them. VFX-11 (families x types) assigns the 16-32 px strips to moves and tags each move.
