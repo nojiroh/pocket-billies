@@ -96,7 +96,7 @@ __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=(
 __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
 /* VFX-16: a flow moment's film (--flow): the stage call for each moment, with Reduced motion on or off; the battle's
    own Billies (a bot stands in for the foe in faint.bot) */
-__film.flow=(kind,red)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s},S0=S.s[0],S1=S.s[1];
+__film.flow=(kind,red)=>{if(typeof battleStageOutcome==='undefined'&&(kind==='win'||kind==='lose'))return;const ev={s:activeBattle.events[activeBattle.events.length-1].s},S0=S.s[0],S1=S.s[1];
  setReducedMotion(!!red);S.s.forEach((s,i)=>{if(i<2)s.show=true});if(!__film.sp1)__film.sp1=S1.sp;S1.sp=__film.sp1;S1.dim=null;
  const shown=k=>{S.tr[0]={who:'me',show:true,x:0,a:1};return k};
  switch(kind){
@@ -107,7 +107,7 @@ __film.flow=(kind,red)=>{const ev={s:activeBattle.events[activeBattle.events.len
   case 'faint.bot':S1.sp='bot:ember.bulwark.piston.auger.treads';return battleStagePlay({k:'faint',si:1},{s:ev.s.map((x,i)=>i===1&&x?{...x,sp:S1.sp,bot:{brk:['armR']}}:x)});
   case 'lvl.0':return battleStagePlay({k:'lvl',uid:ev.s[0].uid},ev);
   case 'item.0':return battleStagePlay({k:'item',it:'potion'},ev);
-  case 'caught':return battleStageCatch('gold_pyramid',{w:3,caught:true,edge:false},false,()=>0);
+  case 'caught':return battleStageCatch('gold_pyramid',{w:1,caught:true,edge:false},false,()=>0);
   case 'escape':return battleStageCatch('capstone',{w:2,caught:false,edge:false},false,()=>0);
   case 'win':return battleStageOutcome('win');
   case 'lose':shown();return battleStageOutcome('lose');
@@ -124,7 +124,8 @@ __film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow
  __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
  __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
  Object.assign(rigStats,{calls:0,redraws:0,bytes:0,ms:0});
- __film.start(key,mid,si,res);
+ /* VFX-16: a flow moment's ('flow:<kind>') */
+ if(mid.startsWith('flow:'))__film.flowStart(key,mid.slice(5),0);else __film.start(key,mid,si,res);
  __film.wrap(()=>{for(let i=0;i<frames;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();one(out.eff,true)}});
  out.rig={redraws:rigStats.redraws,kb:Math.round(rigStats.bytes/1024),ms:Math.round(rigStats.ms*10)/10};return out};
 return 0})()"""
@@ -154,7 +155,7 @@ def sheet(pg, key, mid, si, res, start=None, n=16, every=5):
         pg.screenshot(path=str(p))
         shots.append(Image.open(p).convert('RGB'))
     w, h = shots[0].size
-    W = Image.new('RGB', (w * 4, h * 4), 'black')
+    W = Image.new('RGB', (w * 4, h * ((len(shots) + 3) // 4)), 'black')
     d = ImageDraw.Draw(W)
     for i, im in enumerate(shots):
         x, y = (i % 4) * w, (i // 4) * h
@@ -207,9 +208,11 @@ def vs_films(b, base, errs):
 
 def measure(pg, moves):
     rows = {}
+    # VFX-16: with --flow, the flow moments (side 0's, or the foe's where the moment is theirs)
+    if 'flow' in OPT: moves = [{'id': 'flow:' + k, 'flow': 1} for k in FLOWS if not ONLY or k in ONLY]
     for m in moves:
-        for si in SIDES:
-            for res in OUTCOMES if OPT.get('outcomes') else ['hit', 'se', 'secrit']:
+        for si in ([0] if m.get('flow') else SIDES):
+            for res in (['-'] if m.get('flow') else OUTCOMES if OPT.get('outcomes') else ['hit', 'se', 'secrit']):
                 key = f"{m['id']}.{si}.{res}"
                 r = pg.evaluate(f"__film.measure({json.dumps(key)},{json.dumps(m['id'])},{si},{json.dumps(res)},70,10)")
                 mean = lambda L: round(sum(L) / max(1, len(L)), 2)
@@ -279,7 +282,7 @@ def main():
         pg.evaluate(SETUP)
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
         # VFX-16: --flow films the flow moments (--only= picks some), each with motion and under Reduced motion
-        if 'flow' in OPT:
+        if 'flow' in OPT and 'measure' not in OPT:
             for kind in [k for k in FLOWS if not ONLY or k in ONLY]:
                 for red in (0, 1):
                     key = f"flow.{kind}{'.reduced' if red else ''}"
