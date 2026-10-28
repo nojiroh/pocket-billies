@@ -2138,7 +2138,18 @@ export function battleStagePlay(an, ev) {
         pr = pyramidRamp(E, kind);
       syncSide(i);
       battleFxSeed(`enter|${i}|${s.sp}`);
-      Object.assign(s, { show: false, ox: 0, oy: 0, sc: dith ? 1 : 0, a: 1, white: 1, dark: 0, act: null, rise: null });
+      /* under Reduced motion it appears whole (only its white tint fades), as it dithers in otherwise */
+      Object.assign(s, {
+        show: false,
+        ox: 0,
+        oy: 0,
+        sc: dith || (E && reducedMotion) ? 1 : 0,
+        a: 1,
+        white: 1,
+        dark: 0,
+        act: null,
+        rise: null,
+      });
       if (dith) s.rise = 0;
       const si = actorTeam(i),
         T = battleStage.tr[si];
@@ -2167,7 +2178,7 @@ export function battleStagePlay(an, ev) {
         if (E) flowSpray({ x: to.x, y: 0.12, z: to.z }, 'chip', pr, 6, { sp: 1.4, up: 1.6, life: 460, floor: 1 });
         battleStageFlash('#FFFFFF', 0.25, 200);
         if (dith) flowRise(s, E.riseMs, false);
-        else tween(s, 'sc', 1, 300, 'back');
+        else if (!(E && reducedMotion)) tween(s, 'sc', 1, 300, 'back');
         tween(s, 'white', 0, 320, 'lin', 120);
         setActorAction(i, 'enter', 700);
         if (E && E.glint.n) {
@@ -2273,7 +2284,8 @@ export function battleStagePlay(an, ev) {
         flowRise(s, E.outMs, true, 150);
       } else {
         tween(s, 'white', 1, 160, 'lin', 120);
-        tween(s, 'sc', 0, 220, 'in', 260);
+        /* under Reduced motion it whitens and goes, without the shrink */
+        if (!(E && reducedMotion)) tween(s, 'sc', 0, 220, 'in', 260);
       }
       scheduleAt(500, () => {
         s.show = false;
