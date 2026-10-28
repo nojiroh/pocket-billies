@@ -122,7 +122,11 @@ def run_world(pg, base):
     n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
     if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
-    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
+    # the next view is held (seamless-world.js seamlessGate) until it is built, a few ms a frame: about 140 frames, a
+    # minute or more at this machine's frame rate and 2 s on a phone. While waiting, give it the build time a phone's
+    # frames would (check-quick.py's cross(prep_ms=...) does the same)
+    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60, poke='groundPrepWork(50)'):
+        raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
     return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
