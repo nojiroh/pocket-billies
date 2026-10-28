@@ -306,8 +306,11 @@ town node needs it.
   Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; **the owner's pick
   (2026-10-28): C, built in code from the mannequin's simpler shapes, with more variety and personality**; CH-3b (the
   figure kit: six head shapes, six builds with their own gaits, every wardrobe slot, painted faces; every NPC, Kappi
-  as a capybara and you as your look, behind Figures) done 2026-10-28; next CH-3c (the rest of the cast, the
-  movement pass, the owner's phone). About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
+  as a capybara and you as your look, behind Figures) done 2026-10-28; CH-4 (the live atlas: figures drawn each
+  step by the game's renderer into one shared unlit atlas and lit where they stand; meshes on a helper thread;
+  density by distance; the snapshot service) done 2026-10-28 on `claude/laughing-tesla-roy32r` ahead of CH-3c (the
+  plan approved in Plan Mode), its phone gate owed; next CH-3c (the rest of the cast, the movement pass, the owner's phone).
+  About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's
   relics) with lots of variety, each with its own picture in the UI icon set's 36 px block-and-split look, drawn as

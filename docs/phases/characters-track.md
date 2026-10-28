@@ -287,11 +287,39 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
 - **CH-3c The rest of the cast and the movement pass:** every person and a crowd of townsfolk checked on sheets
   and in the towns; shop keepers and the arena's leader in place; the walk's stride fitted to the game's speed;
   start, stop and turns; the dressing room's pictures still today's. **Phone gate:** the owner tries Figures on.
+- **CH-4 The live atlas.** Done 2026-10-28 on `claude/laughing-tesla-roy32r` (PR #314 grows; the owner's choice),
+  ahead of CH-3c; HANDOFF has the numbers. The owner's answer to the conflict with CH-3b's scene-lit bakes (an "Ask
+  me before"): **the unlit atlas, as briefed**.
+  - Checked against the code first: a new figure's mesh was built twice on the frame (kitExtent, then the first
+    bake); renderTarget had one colour attachment; neither instanced batch had a per-picture rect.
+  - Meshes: one build per figure (figure-kit.js kitBuild), on a helper thread (figure-worker.js, figure-meshes.js;
+    bundled in the built site as figure-worker-modules.js); a person keeps today's picture until theirs is in; built
+    on the page where no worker runs.
+  - The atlas (figure-atlas.js): 2048 x 1024, colour (light-independent shading as a multiplier, or an unlit
+    pixel's colour) and normal (the picture's normal and its colour's ramp row) as two RGBA8 targets
+    (renderTarget `colors`); cells from logic/atlas-pack.js; each person drawn after the items are gathered and
+    before the shadow passes, only when their picture changes; the outline, inner line and occlusion in a cell pass;
+    the face's marks as whole-pixel rects; a shared 8 x 256 ramp texture (five shades a colour and a skin mark).
+  - Lit in the sprite shader (walk-shaders.js FIGURE_SPRITE_GLSL): each pixel banded by the key light where it
+    stands (the sun or moon by its height and every lamp by its reach, not ground pools or your lantern), the
+    world's shadow, the rims and the key's and sky's tints, from the ramp; then the sprite's own light as any person.
+    Gouache night's look carries over (side-by-side sheets by day and at night matched); its per-figure light-space
+    shadow map is replaced by the world's shadows. Nothing is cached by light any more.
+  - Cell rects: a per-instance rect (location 12, four 16-bit units; stride 100) in the sprite and shadow batches;
+    the flags packed into one varying to stay within 15 rows. A person's picture is one object carrying the atlas's
+    textures (imageTexture gives them) and its cell.
+  - Density by distance: 3/4 of the dial past about 1.25 times the camera target's distance, 1/2 past 1.8, held
+    near an edge (figure-pose.js figureDensityStep).
+  - Context loss: the atlas, ramp, programs and buffers made again on next use, everyone drawn again (forced loss
+    checked headless). The meshes are not kept on the CPU (about 4.6 MB each): a lost context asks the thread again.
+  - The snapshot service (figures.js figureSnapshot): a person's figure as a UI picture in the studio light, kept;
+    from the figure baker's own context, not `readPixels` from the game's (the atlas is unlit; the baker already
+    lights a whole picture).
+  - Engine > People > Live atlas (on; off gives CH-3b's baked pictures) and the debug menu's Atlas switch;
+    figureReport().atlas and .meshes in the debug log, read by tools/read-debug-log.py.
+  - Not in the atlas: the plain 3D style, a battle's close-ups and the CC0 stand-in (baked as before).
+  - **Phone gate (owed):** the owner turns Figures on and walks a town at night.
 - **After CH-3c:**
-  - **CH-4 The live atlas:** figures drawn on each 12 fps step into one shared, unlit atlas (colour plus normals)
-    before the shadow passes, lit in the sprite shader with a cel band; cell rects in sprite and shadow batches; one
-    texture for all people; density by distance; context-loss restore; a snapshot service for UI pictures
-    (`readPixels`, after `screenSnapshot`). **Phone gate.**
   - **CH-5 The kit's data:** the figure kit's shapes as data the Studio can edit (head shapes, builds, hair, hats
     and clothes as shape lists, not code), a per-look bake cached by the look; the Studio's figure preview
     (turntable, head and build pickers). (Was: the glTF importer; the owner picked code-built figures.)
