@@ -475,7 +475,8 @@ def actions_sheet_step(P):
     for gone in ('stoptrip', 'rest', 'customize'):
         if gone in acts: raise Exception(f'the bar still has {gone}: {acts}')
     # a bar, not a sheet: one row, its top in the screen's lower part, over the bottom bar (once it has slid in)
-    until(pg, "document.querySelector('#walkSheet').getAnimations().length===0", 5)
+    # (a busy page's animations may crawl: the slide is finished at once rather than waited for)
+    pg.evaluate("document.querySelector('#walkSheet').getAnimations().forEach(a=>a.finish());document.documentElement.getAnimations().forEach(a=>a.finish());0")
     box = pg.evaluate("(()=>{const t=document.querySelector('#walkSheet').getBoundingClientRect(),n=document.querySelector('#nav').getBoundingClientRect();return [t.top,t.bottom,n.top,innerHeight]})()")
     if box[0] < box[3] * 0.6 or box[1] > box[2] + 1: raise Exception(f'the Actions bar is not a row over the bottom bar: top {box[0]:.0f}, bottom {box[1]:.0f}, the bar at {box[2]:.0f} of {box[3]}')
     pg.evaluate("document.querySelector('.wh-down').click()")
