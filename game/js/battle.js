@@ -68,8 +68,9 @@ import {
   plural,
 } from './logic/rules.js';
 import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
+import { styleDials, styleNote } from './theme-sheet.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
-import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
+import { popSize, rollValue } from './logic/hit-numbers.js';
 import {
   JOIN_LOCK_MS,
   battleFactionOf,
@@ -690,7 +691,11 @@ function hudPop(si, text, kind, w) {
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
   e.textContent = text;
-  if (typeof w === 'number') e.style.fontSize = popSize(w, koThisEvent(si)) + 'px';
+  if (typeof w === 'number') {
+    const D = styleDials();
+    e.style.fontSize = popSize(w, koThisEvent(si), D.popMin, D.popMax) + 'px';
+    styleNote('pop');
+  }
   e.style.left = clamp(q.x, 40, battleStage.L.vw - 40) + 'px';
   e.style.top = Math.max(30, q.y) + 'px';
   e.style.setProperty('--dx', ((random() - 0.5) * 36).toFixed(0) + 'px');
@@ -1757,6 +1762,7 @@ function plateTags(e, x, anim) {
     .join('');
 }
 /* SY-2: a plate's HP number (your hp/max, a boss's %) counts to its new value over the fill's .38 s instead of jumping
+   (SY-8: the time is the Studio's HP roll dial, uiTheme.json style rollMs, the fill's too)
    (logic/hit-numbers.js rollValue). Display only: the battle's numbers never change. A new fighter, a repaint without
    a hit and Reduced motion set it at once. v null: no number (a foe that isn't a boss) */
 function rollPlateNumber(el, v, tail, uid, anim) {
@@ -1775,11 +1781,13 @@ function rollPlateNumber(el, v, tail, uid, anim) {
     el.textContent = v + tail;
     return;
   }
-  const t0 = performance.now();
+  const t0 = performance.now(),
+    ms = styleDials().rollMs;
+  styleNote('roll');
   const step = () => {
     const t = performance.now() - t0;
-    el.textContent = rollValue(from, v, t) + tail;
-    R.raf = t < ROLL_MS ? requestAnimationFrame(step) : 0;
+    el.textContent = rollValue(from, v, t, ms) + tail;
+    R.raf = t < ms ? requestAnimationFrame(step) : 0;
   };
   step();
 }

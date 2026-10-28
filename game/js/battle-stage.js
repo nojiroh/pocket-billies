@@ -34,6 +34,7 @@ import {
   robotPartDef,
   saveData,
   soundEffect,
+  styleNote,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { graftLookSplit } from './logic/graft-art.js';
@@ -606,6 +607,8 @@ function flashesOff() {
 function battleStageFlash(col, a, dur) {
   const f = $('#flash'),
     F = flashFor(col, a, !!reducedMotion, flashesOff());
+  /* SY-8: what ran, for the debug log: at its strength, held by Flashes off, or none (the Studio has no theme sheet) */
+  if (a > 0 && typeof styleNote === 'function') styleNote(!F ? 'flashSkipped' : F.a < a ? 'flashHeld' : 'flash');
   if (!f || !F) return;
   f.style.transition = 'none';
   f.style.background = F.col;

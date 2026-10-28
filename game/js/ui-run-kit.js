@@ -28,6 +28,7 @@ import { glyphOf, sigVar } from './logic/signals.js';
 import { chipLook, rarityTier } from './logic/marks.js';
 import { motionCountAt, motionCountMs } from './logic/motion.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
+import { styleNote } from './theme-sheet.js';
 import { caseTyped } from './logic/case-file.js';
 import { LitElement, css, html, nothing, pbSlideBar, pbSound, reduced } from './ui-kit.js';
 expose({
@@ -1014,7 +1015,7 @@ const PbStamp = class extends LitElement {
         padding: 0.3em 0.5em 0.22em;
         border: max(2px, 0.14em) solid currentColor;
         color: var(--stamp-ink, var(--redink));
-        font: 700 var(--stamp-fs) / 1 var(--font-voice);
+        font: 700 calc(var(--stamp-fs) * var(--stamp-scale, 1)) / 1 var(--font-voice);
         letter-spacing: 0.08em;
         text-transform: uppercase;
         white-space: nowrap;
@@ -1072,6 +1073,7 @@ const PbStamp = class extends LitElement {
       ink.classList.add('go');
     }
     const land = reduced() ? 0 : runMsVar(this, '--m-base', 240) * 0.55;
+    styleNote('stamp');
     this._timer = setTimeout(
       () =>
         this.dispatchEvent(
@@ -1081,7 +1083,8 @@ const PbStamp = class extends LitElement {
     );
   }
   willUpdate() {
-    this.style.setProperty('--tilt', `${Number(this.tilt) || 0}deg`);
+    /* SY-8: the Studio's slant dial (uiTheme.json style stampSlant, 8 by default) scales the page's tilt */
+    this.style.setProperty('--tilt', `calc(${Number(this.tilt) || 0}deg * var(--stamp-slant, 8) / 8)`);
   }
   render() {
     const go = this.still || !this._go ? '' : 'go';

@@ -16,6 +16,7 @@ import { COATS, RULES, SPECIES, STATUS_NAMES, TRAINERS, rivalSpecies, trainersAt
 import { graftLook } from './logic/graft-art.js';
 import { speciesById } from './logic/fighters.js';
 import { billyName, encountersHere, findBilly, maxHp } from './logic/rules.js';
+import { styleDials, styleNote } from './theme-sheet.js';
 import {
   pastureBillies,
   pastureIn,
@@ -63,6 +64,7 @@ expose({
   worldBillyLabels: [() => worldBillyLabels, v => ((worldBillyLabels = v), provide({ worldBillyLabels }))],
   worldBillyMetersPerPixel: [() => worldBillyMetersPerPixel, v => (worldBillyMetersPerPixel = v)],
   worldBillyRig: [() => worldBillyRig, v => (worldBillyRig = v)],
+  worldFoil: [() => worldFoil, v => (worldFoil = v)],
   worldFoilOn: [() => worldFoilOn, v => (worldFoilOn = v)],
 });
 /* eslint-enable no-func-assign */
@@ -175,6 +177,13 @@ function worldFoilOn() {
   const p = (saveData && saveData.preferences) || {};
   return foilOn({ reduced: !!reducedMotion, flashesOff: p.flashes === 'off', graphicsOff: graphicsOff() });
 }
+/** SY-8: the foil with the Studio's dials (uiTheme.json style), counted for the debug log
+ * @param {string} coat @param {string} seed */
+function worldFoil(coat, seed) {
+  const f = coatFoil(coat, COATS, walkView.t, seed, worldFoilOn(), styleDials());
+  if (f) styleNote('foil');
+  return f;
+}
 export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
   const im = worldBillyFrame(sp, view, pose, t, seed, o.build, o.coat, o.graft);
   if (!im) return null;
@@ -200,7 +209,7 @@ export function worldBillyItem(k, sp, view, pose, t, seed, x, z, o = {}) {
       aoR: Math.max(0.2, R.geo.hw * mpp * 0.7),
       person: 1,
       fade: o.fade ?? 1,
-      foil: o.coat ? coatFoil(o.coat, COATS, walkView.t, `${k}:${seed}`, worldFoilOn()) : null,
+      foil: o.coat ? worldFoil(o.coat, `${k}:${seed}`) : null,
     },
     o.extra || {}
   );

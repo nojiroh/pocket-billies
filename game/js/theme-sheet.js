@@ -6,6 +6,8 @@
    this runs. The Studio's live preview and the UI gallery call applyUiTheme with their own copy. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { provide } from './hooks.js';
+import { STYLE_DIALS, STYLE_VARS, styleCount, styleDialsOf, styleReport, styleStateOf } from './logic/style-dials.js';
 import { uiThemeCss } from './logic/ui-theme.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -15,6 +17,16 @@ expose({
   // @ts-expect-error -- replaced on purpose
   setUiPalette: [() => setUiPalette, v => (setUiPalette = v)],
   // @ts-expect-error -- replaced on purpose
+  styleDials: [() => styleDials, v => ((styleDials = v), provide({ styleDials }))],
+  styleDialsAt: [() => styleDialsAt, v => (styleDialsAt = v)],
+  styleDialsNow: [() => styleDialsNow, v => (styleDialsNow = v)],
+  // @ts-expect-error -- replaced on purpose
+  styleLog: [() => styleLog, v => (styleLog = v)],
+  // @ts-expect-error -- replaced on purpose
+  styleNote: [() => styleNote, v => ((styleNote = v), provide({ styleNote }))],
+  // @ts-expect-error -- replaced on purpose
+  styleStateNow: [() => styleStateNow, v => (styleStateNow = v)],
+  // @ts-expect-error -- replaced on purpose
   uiBlurCount: [() => uiBlurCount, v => (uiBlurCount = v)],
   // @ts-expect-error -- replaced on purpose
   uiElementCount: [() => uiElementCount, v => (uiElementCount = v)],
@@ -22,6 +34,7 @@ expose({
   uiPaletteNow: [() => uiPaletteNow],
 });
 /* eslint-enable no-func-assign */
+provide({ styleDials, styleNote });
 /* to-module: end */
 /** game/fonts/, wherever the page is (the game, or the Studio's gallery): next to the css/ folder tokens.css is in */
 const fontsUrl = () => {
@@ -58,6 +71,37 @@ export function applyUiTheme(theme, preset = uiPalette) {
     document.head.appendChild(el);
   }
   if (el.textContent !== css) el.textContent = css;
+  styleDialsAt = -1e9;
+}
+
+/* ---------- SY-8: the style track's dials and what ran ---------- */
+/** when the dials were last read, and what they were */
+let styleDialsAt = -1e9,
+  styleDialsNow = STYLE_DIALS;
+/** the style track's dials as the page has them (uiTheme.json style, through the sheet's variables; the Studio's
+ * preview writes the same sheet): read again at most twice a second, as the foil asks every frame */
+export function styleDials() {
+  const t = performance.now();
+  if (t - styleDialsAt < 500) return styleDialsNow;
+  styleDialsAt = t;
+  const cs = getComputedStyle(document.documentElement),
+    vars = new Map(STYLE_VARS.map(([k, v]) => [k, v]));
+  styleDialsNow = styleDialsOf(k => cs.getPropertyValue(/** @type {string} */ (vars.get(k))));
+  return styleDialsNow;
+}
+/** the Flashes and Animation state the page plays at now (html data-flash and data-motion, set by Settings) */
+function styleStateNow() {
+  const d = document.documentElement.dataset;
+  return styleStateOf(d.flash === 'off', d.motion);
+}
+/** one more flash, stamp, pop, roll or foil frame under the state now (the debug log's style line)
+ * @param {string} what @param {number} [n] */
+export function styleNote(what, n = 1) {
+  styleCount(styleStateNow(), what, n);
+}
+/** the debug log's style line: the state now, and what ran under each state */
+export function styleLog() {
+  return styleReport(styleStateNow());
 }
 
 /** UI-1: how many surfaces on screen blur what's behind them (the plan's budget: 3 per screen); the smoke run logs

@@ -7,7 +7,17 @@
    above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { COATS, PYRAMIDS, activeBattle, fieldState, provide, reducedMotion, saveData } from './hooks.js';
+import {
+  COATS,
+  PYRAMIDS,
+  activeBattle,
+  fieldState,
+  provide,
+  reducedMotion,
+  saveData,
+  styleDials,
+  styleNote,
+} from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
@@ -56,6 +66,7 @@ expose({
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
+  battleFoil: [() => battleFoil, v => (battleFoil = v)],
   battleFoilOn: [() => battleFoilOn, v => (battleFoilOn = v)],
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
@@ -225,6 +236,15 @@ function battleFoilOn() {
     level: battleStage.q.lvl,
   });
 }
+/** SY-8: the foil with the Studio's dials (uiTheme.json style), counted for the debug log
+ * @param {string} coat @param {string} seed */
+function battleFoil(coat, seed) {
+  /* the Studio's battle preview has no theme sheet: today's numbers, nothing counted */
+  const sheet = typeof styleDials === 'function',
+    f = coatFoil(coat, COATS, battleStage.t, seed, battleFoilOn(), sheet ? styleDials() : {});
+  if (f && sheet) styleNote('foil');
+  return f;
+}
 /* what the engine draws this frame, in walk-scene meters (battle space shifted by battle3d.off) */
 function battle3dFrame() {
   if (!battleStage.on || !battleStage.L) return null;
@@ -267,7 +287,7 @@ function battle3dFrame() {
       fade: B.s.a,
       person: 1,
       /* style track SY-6: a coated Billie's foil, on the scene's clock */
-      foil: B.s.coat ? coatFoil(B.s.coat, COATS, battleStage.t, `b${i}:${B.s.seed || 0}`, battleFoilOn()) : null,
+      foil: B.s.coat ? battleFoil(B.s.coat, `b${i}:${B.s.seed || 0}`) : null,
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */

@@ -64,26 +64,33 @@ export function foilHue(coat) {
   return 0.2 + (foilHash(String(coat)) % 1000) / 4000;
 }
 
+/** SY-8: the Studio's foil dials (uiTheme.json style foilPeriod, foilSweep, foilHalf); left out, today's numbers
+ * @typedef {{ foilPeriod?: number, foilSweep?: number, foilHalf?: number }} FoilTune */
+
 /** where the band is at time t (ms), or null between sweeps. seed spreads Billies out so they don't flash together.
  * Returns the band's middle along the sprite (FOIL_SPAN measure; it starts and ends just off the picture)
- * @param {number} t @param {number | string} [seed] */
-export function foilBand(t, seed = 0) {
+ * @param {number} t @param {number | string} [seed] @param {FoilTune} [tune] */
+export function foilBand(t, seed = 0, tune = {}) {
   if (!Number.isFinite(t)) return null;
-  const off = (foilHash(String(seed)) % 1000) * (FOIL_PERIOD_MS / 1000),
+  const period = tune.foilPeriod || FOIL_PERIOD_MS,
+    sweep = tune.foilSweep || FOIL_SWEEP_MS,
+    half = tune.foilHalf || FOIL_HALF;
+  const off = (foilHash(String(seed)) % 1000) * (period / 1000),
     cell = Math.floor((t + off) / FOIL_CELL_MS) * FOIL_CELL_MS,
-    at = ((cell % FOIL_PERIOD_MS) + FOIL_PERIOD_MS) % FOIL_PERIOD_MS;
-  if (at >= FOIL_SWEEP_MS) return null;
-  return -FOIL_HALF + (at / FOIL_SWEEP_MS) * (FOIL_SPAN + 2 * FOIL_HALF);
+    at = ((cell % period) + period) % period;
+  if (at >= sweep) return null;
+  return -half + (at / sweep) * (FOIL_SPAN + 2 * half);
 }
 
 /** the sprite shader's uFoil for a Billie with this coat at time t, or null for none:
  * [strength, the band's middle, its half width, the hue turn]
  * @param {string | null | undefined} coat @param {Record<string, { form?: boolean }>} coats
- * @param {number} t @param {number | string} seed @param {boolean} on (foilOn) @returns {number[] | null} */
-export function coatFoil(coat, coats, t, seed, on) {
+ * @param {number} t @param {number | string} seed @param {boolean} on (foilOn) @param {FoilTune} [tune]
+ * @returns {number[] | null} */
+export function coatFoil(coat, coats, t, seed, on, tune = {}) {
   if (!on || !coat) return null;
   const C = coats && coats[coat];
   if (!C || C.form) return null;
-  const pos = foilBand(t, `${coat}:${seed}`);
-  return pos == null ? null : [FOIL_STRENGTH, pos, FOIL_HALF, foilHue(coat)];
+  const pos = foilBand(t, `${coat}:${seed}`, tune);
+  return pos == null ? null : [FOIL_STRENGTH, pos, tune.foilHalf || FOIL_HALF, foilHue(coat)];
 }
