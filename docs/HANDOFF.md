@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-4 - The live atlas - 2026-10-28
+Branch `claude/laughing-tesla-roy32r` (CH-3b's branch, main merged in first at db0bbcdc; the owner chose to continue
+here, so PR #314 grows). Plan approved in Plan Mode. Engine and figure work, behind Engine > People > Figures (still
+off by default). Done ahead of CH-3c. No session tag (CLAUDE.md). docs/phases/characters-track.md (CH-4) has the
+whole design.
+- The owner's answers: continue on #314's branch; **the unlit atlas, as briefed** (over keeping CH-3b's baked
+  lighting).
+- Found (checked against the code): a new figure's mesh was built twice on the frame (figure-kit.js kitExtent, then
+  figures.js figureRes); renderTarget had one colour attachment; neither instanced batch had a picture rect. Measured
+  in Node: a gouache-night figure takes about 150 ms to measure and 230 ms to mesh at its detail (1.5), and its mesh
+  is 144k vertices (4.6 MB).
+- Changed:
+  - figure-kit.js kitBuild: one build gives the extent and the GPU mesh.
+  - figure-worker.js, figure-worker-modules.js and figure-meshes.js: meshes are built on a helper thread, bundled for
+    the built site (vite.config.js); a person keeps today's picture until theirs is in.
+  - engine/webgl.js: renderTarget `colors` (MRT) and `nearest`; imageTexture gives a cell's atlas textures.
+  - sprite-instances.js and the sprite and shadow shaders: a per-instance rect (location 12, stride 100), and the flags
+    packed into one varying.
+  - figure-atlas.js and logic/atlas-pack.js: the atlas, its cells, the ramp texture, the passes and the face marks;
+    walk-view-gl.js runs the `figures` pass before the shadows.
+  - walk-shaders.js FIGURE_SPRITE_GLSL: figures lit where they stand.
+  - Density by distance (figure-pose.js figureDensityStep, figures.js figureFarPpm).
+  - figures.js figureSnapshot: the snapshot service, from the baker's own context (the atlas is unlit).
+  - A 64 MB cap on the atlas's meshes.
+  - Engine > People > Live atlas and the debug menu's Atlas switch.
+  - The debug log's figureReport().atlas and .meshes, which tools/read-debug-log.py now prints.
+- Risky:
+  - Untested on a phone: frame times, the cost of the atlas pass, the memory. Headless, a figure's cell took about
+    0.4 ms (132 draws in 50 ms, software drawing).
+  - Meshes are big: 13 figures held 47.7 MB on the graphics card (capped at 64). Indexed or smaller meshes would cut
+    that.
+  - People still take about one draw each in the main sprite pass: runs follow the depth order, and props stand
+    between people (Copperleaf at night: 12 people, 12 draws). Their shadows did batch (5.5 draws to 1), and their
+    pictures went from 1.7 MB of textures to the shared 16 MB atlas.
+  - Lighting moved from per figure to per pixel, and from the figure's own shadow map to the world's. Side-by-side
+    sheets by day and at night matched CH-3b's bake closely, but only the test map and Copperleaf were looked at.
+  - The plain 3D style, a battle's close-ups and the CC0 stand-in still bake as before.
+- Verified:
+  - lint, both type checks, format, check:modules, check:data, build.
+  - 1,934 unit tests pass. New ones cover one build per figure, the worker against the page, MRT targets, atlas
+    packing, the cell rect, the atlas passes, density by distance, the restore, the mesh cap and snapshots. The
+    sprite-records call-log snapshots were remade for the stride and the figure uniforms.
+  - Smoke passed after each game commit (no problems, 290-350 s).
+  - Full quick check on c75c9aa9: 37 of 42 in 1,489 s. The five failures are the ones TR-5 and the Perks track
+    recorded on main: Terraces (train_station), RL-8's seam, RT-2's pair, Granny Juniper, room light.
+  - Headless probes: the test map and Copperleaf by day and at night, the live atlas against the baked pictures; a
+    forced context loss (everyone drawn again, no errors); the built site's worker (18 meshes built on the thread,
+    none on the page).
+- Next: the phone gate below. Then CH-5 (the kit's data) or CH-3c in a new session. The recommended branch is
+  `track/characters` after #314 merges.
+- For the owner on the phone: turn on Engine > People > Figures, with Everyone else as figures. Walk Copperleaf by
+  day and at night, then send a debug log; its people lines show the atlas and the meshes. The debug menu's Atlas
+  switch (live or baked) compares the two looks.
 ### Characters track CH-3b - The figure kit, the cast and its look - 2026-10-28
 Branch `claude/laughing-tesla-roy32r` (`track/characters` with main merged in), pushed for review into
 `track/characters`. The owner picked C (the 3D pixel puppet, from the mannequin's simpler shapes) and steered the
