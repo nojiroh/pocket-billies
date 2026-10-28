@@ -88,9 +88,15 @@ RENDER = r"""async ({jobs, rate, win}) => {
   const layerOf = p => (p && p.startsWith('layer:') ? MUSIC_LAYER_TESTS[p.slice(6).split('@')[0]] : null);
   const nightPart = p => p === 'ensemble-night' || (!!p && p.startsWith('layer:') && p.endsWith('@night'));
   const prefs = typeof saveData !== 'undefined' && saveData ? saveData.preferences : null;
-  let T0 = null;
+  let T0 = null, last = null;
   const prepare = async (name, night, kind) => {
     const play = night ? musicVariant(name, 1) : name;
+    /* SND-12: each song's ensemble bakes in a bank of its own: the page renders every song, and their longer forms and
+       layers together outgrow the bank's budget (the game bakes one place at a time). A zone is the same numbers every
+       time it is baked, so emptying the bank changes no render, only the time */
+    if (last !== name + '|' + kind && typeof soundBakeBank !== 'undefined')
+      for (const B of soundBakeBank.entries.values()) if (!B.queued.size) B.zones.fill(null);
+    last = name + '|' + kind;
     if (!T0) { const oc0 = new OfflineAudioContext(1, rate, rate);
       T0 = trackerCreate(oc0, oc0.destination, { songs, run: MUSIC.run, instruments: MUSIC.instruments, ensembles: MUSIC.ensembles }); }
     /* SND-17: a jingle's ensemble ('jingles' <name>@ensemble), its notes baked the same way */
