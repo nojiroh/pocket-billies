@@ -50,7 +50,12 @@ git proxy refuses tag pushes) on this entry's commit.
   warnings are main's), build. A headless film (390 x 844, phone, Quick Strike from both sides, quality locked at 0,
   the clock slowed): the lean climbs 0.02, 0.09, 0.21 into the hit and settles at -0.09 to -0.03 going home; two
   afterimages, then one, then none about 125 ms after the lunge; the ribbon shows and erodes; no page errors (one
-  404: data/gamedata.js isn't built in a checkout, and the game then reads the JSON files, data-files.js). Smoke check: 6 of 6 in 252 s. Full quick check: running at this commit; its result follows in a commit of its own.
+  404: data/gamedata.js isn't built in a checkout, and the game then reads the JSON files, data-files.js). Smoke check: 6 of 6 in 252 s. Full quick check: 38 of 41 in 1972 s, every battle step
+  passed (doubles and Alpha, starters, weather, the phone's battle, battle music); the three failures fail on main
+  too (07c9b284, those steps run alone there: 0 of 3): terraces (`train_station` in the air), RL-8's run (crossed into
+  Thicket Route but its view never showed) and the walking step (room light here; settings tabs on main). CI's fast
+  check (`smoke`) is red on three steps that are red on main's latest Check run too (a run's seam, the Studio's world
+  map look and Camera section): one comment on PR #295, one re-run.
   Python Playwright was missing: 1.63.0 installed (the pinned 1.56.0 can't find the container's Chromium).
 - Next: VFX-8 (anims as data), started by the planning session. It wraps `battleLunge` as the runner's lunge and dash
   steps and moves `LUNGE_DASH` into battleAnims.json's families.
