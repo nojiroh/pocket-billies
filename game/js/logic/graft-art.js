@@ -9,7 +9,7 @@
    for a tail): the baker places each kind its own way, so a tail can't stand in for legs. Extras and the head are
    not grafted yet. SP-2: the splice is saved on the Billie (graftOf, graftSet); its rules are logic/genes.js. Logic only: no DOM (tools/test/graft-art.test.mjs).
    RO-3c: placeholder Billies (logic/sketch-art.js, any of the 14 body plans) are grafted by slot across plans,
-   on their baked sheets and rigs (graftSketch, below; tools/test/graft-placeholder.test.mjs). */
+   on their baked sheets and rigs (graftSketch, below; tools/test/graft-sketch.test.mjs). */
 /** @import { PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-assemble.js').KitForm} KitForm */
 /** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> Gene id, "part@donor" (SP-2) */
