@@ -34,11 +34,12 @@ test('relics: an offer is the same for the same run and counter, of distinct Per
   a.perks.push(ids[0]);
   assert.ok(!R.perkOffer(a, PERKS, RULE).includes(ids[0]), 'one held is never offered');
   const seen = new Set();
-  for (let n = 0; n < 40; n++) {
+  /* PK-3: 28 Perks (rares at weight 1 of about 100): 120 runs, was 40 for 13 (PK-4 rewrites this for relevance) */
+  for (let n = 0; n < 120; n++) {
     const c = run('S' + n);
     for (const id of R.perkOffer(c, PERKS, RULE)) seen.add(id);
   }
-  assert.ok(seen.size >= Object.keys(PERKS).length - 2, `most Perks turn up over 40 runs (${seen.size})`);
+  assert.ok(seen.size >= Object.keys(PERKS).length - 2, `most Perks turn up over 120 runs (${seen.size})`);
 });
 
 test('relics: making an offer saves it on the run and moves the counter; the next differs', () => {

@@ -115,5 +115,147 @@
   "fx": [
    {"kind":"unstable","mult":0.5}
   ]
+ },
+ "rubber_stamp": {
+  "name": "Rubber Stamp",
+  "d": "The first hit your team lands in each battle deals 50% more damage.",
+  "rarity": "common",
+  "img": "perks/rubber_stamp.svg",
+  "say": "Approved!",
+  "fx": [
+   {"kind":"damage","side":"deal","mult":1.5,"when":"hit","once":"battle"}
+  ]
+ },
+ "click_pen": {
+  "name": "Click Pen",
+  "d": "Every 8th attack your team makes is a critical hit.",
+  "rarity": "uncommon",
+  "img": "perks/click_pen.svg",
+  "say": "Click! {name} lines up a critical hit.",
+  "fx": [
+   {"kind":"crit","when":"move","every":8,"if":"cat:H|S"}
+  ]
+ },
+ "laser_pointer": {
+  "name": "Laser Pointer",
+  "d": "Your Billies land critical hits more often.",
+  "rarity": "common",
+  "img": "perks/laser_pointer.svg",
+  "fx": [
+   {"kind":"crit","stages":1}
+  ]
+ },
+ "screen_protector": {
+  "name": "Screen Protector",
+  "d": "Each of your Billies takes half damage from the first hit it takes in a battle.",
+  "rarity": "common",
+  "img": "perks/screen_protector.svg",
+  "say": "{name} took only half the hit.",
+  "fx": [
+   {"kind":"damage","side":"take","mult":0.5,"when":"hurt","once":"billie"}
+  ]
+ },
+ "power_bank": {
+  "name": "Power Bank",
+  "d": "Once a battle, a Billie of yours that ends a turn below a quarter of its HP heals 25% of it.",
+  "rarity": "uncommon",
+  "img": "perks/power_bank.svg",
+  "fx": [
+   {"kind":"pinchHeal","at":0.25,"share":0.25,"once":"battle"}
+  ]
+ },
+ "mic_drop": {
+  "name": "Mic Drop",
+  "d": "When one of your Billies knocks a foe out, its Attack and Sp. Atk rise.",
+  "rarity": "rare",
+  "img": "perks/mic_drop.svg",
+  "fx": [
+   {"kind":"stat","stat":"lev","stages":1,"when":"ko"},
+   {"kind":"stat","stat":"lob","stages":1,"when":"ko"}
+  ]
+ },
+ "joy_buzzer": {
+  "name": "Joy Buzzer",
+  "d": "Your physical hits have a 15% chance to paralyze.",
+  "rarity": "uncommon",
+  "img": "perks/joy_buzzer.svg",
+  "fx": [
+   {"kind":"inflict","status":"par","chance":0.15,"when":"hit","if":"cat:H"}
+  ]
+ },
+ "hot_sauce": {
+  "name": "Hot Sauce",
+  "d": "Your special hits have a 10% chance to burn.",
+  "rarity": "uncommon",
+  "img": "perks/hot_sauce.svg",
+  "fx": [
+   {"kind":"inflict","status":"brn","chance":0.1,"when":"hit","if":"cat:S"}
+  ]
+ },
+ "oven_mitts": {
+  "name": "Oven Mitts",
+  "d": "Your Billies can’t be burned.",
+  "rarity": "common",
+  "img": "perks/oven_mitts.svg",
+  "fx": [
+   {"kind":"immune","what":"brn"}
+  ]
+ },
+ "noise_headphones": {
+  "name": "Noise-Cancelling Headphones",
+  "d": "Your Billies can’t fall asleep.",
+  "rarity": "common",
+  "img": "perks/noise_headphones.svg",
+  "fx": [
+   {"kind":"immune","what":"slp"}
+  ]
+ },
+ "rubber_boots": {
+  "name": "Rubber Boots",
+  "d": "Your Billies can’t be paralyzed.",
+  "rarity": "common",
+  "img": "perks/rubber_boots.svg",
+  "fx": [
+   {"kind":"immune","what":"par"}
+  ]
+ },
+ "hazmat_suit": {
+  "name": "Hazmat Suit",
+  "d": "Sandstorm and sharp stones don’t hurt your Billies, and burns hurt them half as much.",
+  "rarity": "uncommon",
+  "img": "perks/hazmat_suit.svg",
+  "fx": [
+   {"kind":"immune","what":"sandstorm"},
+   {"kind":"immune","what":"stones"},
+   {"kind":"chip","what":"burn","mult":0.5}
+  ]
+ },
+ "alarm_clock": {
+  "name": "Alarm Clock",
+  "d": "Your Billies move first on a battle’s first turn.",
+  "rarity": "rare",
+  "img": "perks/alarm_clock.svg",
+  "fx": [
+   {"kind":"first","if":"turn:1"}
+  ]
+ },
+ "plot_armor": {
+  "name": "Plot Armor",
+  "d": "Your last Billie standing takes 30% less damage and hits 30% harder.",
+  "rarity": "rare",
+  "img": "perks/plot_armor.svg",
+  "fx": [
+   {"kind":"damage","side":"take","mult":0.7,"if":"alone"},
+   {"kind":"damage","side":"deal","mult":1.3,"if":"alone"}
+  ]
+ },
+ "warranty_card": {
+  "name": "Warranty Card",
+  "d": "Once a run, when your whole team faints, they all get back up with half their HP. Then the card is void.",
+  "rarity": "rare",
+  "img": "perks/warranty_card.svg",
+  "fx": [
+   {"kind":"revive","share":0.5,"once":"run"}
+  ]
  }
 }
