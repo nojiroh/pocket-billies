@@ -1232,7 +1232,9 @@ export function updateAmbience() {
   if (soundEngine.musLP) {
     const cut = musicMapCut();
     soundEngine.musLP.frequency.setTargetAtTime(
-      cut != null ? cut : E && sc && !sc.indoor && E.rain > 0.3 ? 2200 : 20000,
+      /* SND-8b: the rain's muffle softened from 2.2 to 4 kHz (the owner's pick, 2026-10-27; SND-13's rain layer
+         replaces it) */
+      cut != null ? cut : E && sc && !sc.indoor && E.rain > 0.3 ? 4000 : 20000,
       t,
       0.8
     );
