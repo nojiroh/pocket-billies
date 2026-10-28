@@ -5,7 +5,8 @@
    (soundEngine; sound.js ambiencePreviewTick, the same preview tools/check-sound.py --loudness measures), never writes
    the save, and stops when the menu closes: the place's own music and world sounds come back. SND-9: and the first
    baked instrument, the harp, playing Copperleaf's tune and chords with a little reverb, as in a chosen place. SND-11:
-   any instrument (music.json instruments; a drum plays a beat), and a song as its ensemble or with GB Sounds. */
+   any instrument (music.json instruments; a drum plays a beat), and a song as its ensemble or with GB Sounds. SND-17:
+   any jingle on its ensemble or 8-bit, or every jingle both ways, over the place's song. */
 /* the world sounds it can play: [id, label, [[kind, metres or 'd' for the distance picked], ...]] */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -13,7 +14,7 @@ import { provide, toast } from './hooks.js';
 import { MUSIC } from './game-data.js';
 import { musicEnsembleFit } from './logic/music-patterns.js';
 import { uiState } from './game-state.js';
-import { SONGS, ambience, music, musicSync, musicVariant, soundEngine, unlockSound } from './sound.js';
+import { SONGS, ambience, jinglePlay, music, musicSync, musicVariant, soundEngine, unlockSound } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   SOUND_TEST_AS: [() => SOUND_TEST_AS],
@@ -27,6 +28,7 @@ expose({
   soundTestHTML: [() => soundTestHTML, v => ((soundTestHTML = v), provide({ soundTestHTML }))],
   soundTestHarp: [() => soundTestHarp, v => (soundTestHarp = v)],
   soundTestHarpStop: [() => soundTestHarpStop, v => (soundTestHarpStop = v)],
+  soundTestJingle: [() => soundTestJingle, v => (soundTestJingle = v)],
   soundTestSelect: [() => soundTestSelect],
   soundTestStop: [() => soundTestStop, v => (soundTestStop = v)],
 });
@@ -203,7 +205,16 @@ const SOUND_TEST_AS = [
   ['ensemble', 'As its ensemble'],
   ['gb', 'GB Sounds'],
 ];
-const soundTest = { song: null, world: null, timer: 0, harp: null, as: 'ensemble', inst: 'harp' };
+const soundTest = {
+  song: null,
+  world: null,
+  timer: 0,
+  harp: null,
+  as: 'ensemble',
+  inst: 'harp',
+  jingle: 'victory',
+  queue: 0,
+};
 const soundTestSelect = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${v}"${v === val ? ' selected' : ''}>${n}</option>`).join('')}</select>`;
 const soundTestButton = (x, l) => `<button class="pb small" data-a="dbg" data-x="${x}">${l}</button>`;
@@ -234,6 +245,14 @@ function soundTestHTML() {
   )}${soundTestSelect('sndPlace', SOUND_TEST_PLACES, soundTest.harp ? soundTest.harp.place : 'town')}${soundTestButton(
     'sndHarp',
     'Play the instrument'
+  )}</div>
+  <div class="dbg-row">${soundTestSelect(
+    'sndJingle',
+    Object.keys(MUSIC.jingles || {}).map(k => [k, k]),
+    soundTest.jingle
+  )}${soundTestSelect('sndJAs', SOUND_TEST_AS, soundTest.as)}${soundTestButton('sndJingle', 'Play the jingle')}${soundTestButton(
+    'sndJingles',
+    'Every jingle both ways'
   )}</div>
   <div class="dbg-row">${soundTestButton('sndStop', 'Stop the test')}</div>
   <p class="note">Plays at your sliders over the place’s sound; the song and the world sound can play together. Closing the menu stops the test. iPhones mute the game with the silent switch.</p>`;
@@ -279,6 +298,26 @@ function soundTestAction(x) {
     soundTestHarp(place, soundTest.inst);
     const P = SOUND_TEST_PLACES.find(q => q[0] === place);
     toast(`Playing the ${soundTest.inst}, ${(P ? P[1] : place).toLowerCase()}.`);
+  } else if (x === 'sndJingle') {
+    /* SND-17: a jingle over the place's song, on its ensemble (its notes baked first) or the 8-bit one */
+    const id = v('sndJingle') || 'victory';
+    soundTest.jingle = id;
+    soundTest.as = v('sndJAs') || 'ensemble';
+    const J = MUSIC.jingles[id];
+    soundTestJingle(id, soundTest.as === 'gb');
+    toast(
+      `Playing ${id}${soundTest.as === 'gb' ? ' (8-bit)' : J && J.ensemble && J.ensemble !== 'gb' ? ` on ${J.ensemble}` : ' (8-bit: it has no ensemble)'}.`
+    );
+  } else if (x === 'sndJingles') {
+    /* every jingle, the 8-bit version then its ensemble, one after another */
+    const ids = Object.keys(MUSIC.jingles || {}),
+      token = ++soundTest.queue,
+      next = k => {
+        if (token !== soundTest.queue || k >= ids.length * 2) return;
+        soundTestJingle(ids[k >> 1], !(k & 1)).then(d => setTimeout(() => next(k + 1), (d || 0) * 1000 + 700));
+      };
+    next(0);
+    toast(`Playing ${ids.length} jingles, each 8-bit then on its ensemble.`);
   } else if (x === 'sndStop') {
     soundTestStop();
     toast('Sound test stopped.');
@@ -290,8 +329,24 @@ function soundTestAction(x) {
       if (!(uiState.modal && uiState.modal.dbg)) soundTestStop();
     }, 500);
 }
+/* SND-17: a jingle by its name as the game plays it, GB Sounds as asked for the test alone; its ensemble's notes baked
+   first. Resolves how long it lasts (s) */
+function soundTestJingle(id, gb) {
+  const T = soundEngine.tracker,
+    J = MUSIC.jingles[id];
+  const play = () => {
+    const was = soundEngine.testGb;
+    soundEngine.testGb = gb;
+    const d = jinglePlay(id);
+    soundEngine.testGb = was;
+    return d;
+  };
+  if (!T || !J || gb || !T.jingleEnsemble || !T.jingleEnsemble(J)) return Promise.resolve(play());
+  return T.jinglePrepare(J).then(play);
+}
 /* back to the place's own music and world sounds */
 function soundTestStop() {
+  soundTest.queue++;
   if (soundTest.timer) clearInterval(soundTest.timer);
   soundTest.timer = 0;
   soundTest.song = null;
