@@ -90,6 +90,7 @@ import {
   fxAt,
   fxCatch,
   fxDamage,
+  fxLive,
   fxOfBillie,
   fxPinchHeal,
   fxSpend,
@@ -186,8 +187,12 @@ expose({
   fxFieldStages: [() => fxFieldStages, v => (fxFieldStages = v)],
   // @ts-expect-error -- replaced on purpose
   fxFoeTags: [() => fxFoeTags, v => (fxFoeTags = v)],
+  fxNames: [() => fxNames],
+  fxSrcName: [() => fxSrcName],
   // @ts-expect-error -- replaced on purpose
   fxStageLines: [() => fxStageLines, v => (fxStageLines = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxTurnEnd: [() => fxTurnEnd, v => (fxTurnEnd = v)],
   // @ts-expect-error -- replaced on purpose
   heldStages: [() => heldStages, v => (heldStages = v)],
   heldXp: [() => heldXp],
@@ -803,6 +808,8 @@ export function endTurn() {
         battleSay(`${billyName(m)}’s unstable cells hurt it.`, { k: 'hurt', si: k, dmg: d });
       }
     }
+    /* PK-1: the run's turnHeal, pinchHeal and turnHurt rows, for each of yours on the field */
+    if (m.hp > 0 && ACTOR_SIDE[k] === 0 && battleNow().fx) fxTurnEnd(k);
     f.v.turnsIn++;
     f.v.protect = false;
     if (f.v.ovT > 0 && --f.v.ovT === 0) {
@@ -1349,6 +1356,45 @@ export function startTrainer(id, o = {}) {
   sayBattleFx();
   battleHost().open();
 }
+/** PK-1: what a row's source is called in battle: a Perk's name (else its id) @param {string} src */
+export const fxSrcName = src => (PERKS[src] ? PERKS[src].name : src);
+/** PK-1: the sources of some rows by name ("A and B") @param {any[]} rows */
+export const fxNames = rows => [...new Set(rows.map(f => fxSrcName(f.src)))].join(' and ');
+/** PK-1: a turn's end for one of yours on the field: the run's turnHeal rows heal it, its pinchHeal rows heal it once
+ * when low (once a battle for each Billie unless the row's `once` says otherwise), its turnHurt rows hurt it
+ * @param {number} k */
+export function fxTurnEnd(k) {
+  const b = battleNow(),
+    m = fighter(k),
+    mx = maxHp(m),
+    ctx = fxBattleCtx(k),
+    st = fxBattleState(
+      b,
+      b.fx.some((/** @type {any} */ f) => f.kind === 'pinchHeal')
+    ),
+    rows = fxAt(b.fx, ctx, st),
+    heal = rows.filter(f => f.kind === 'turnHeal'),
+    each = fxTurnHeal(heal);
+  if (each > 0 && m.hp < mx) {
+    const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx * each)));
+    m.hp += g;
+    battleSay(`${fxNames(heal)}: ${billyName(m)} restored a little HP.`, { k: 'heal', si: k, amt: g });
+  }
+  const pinch = rows.find(f => f.kind === 'pinchHeal' && (f.once || fxLive({ ...f, once: 'billie' }, ctx, st)));
+  if (pinch && m.hp <= mx * pinch.at) {
+    fxSpend(pinch.once ? pinch : { ...pinch, once: 'billie' }, ctx, st);
+    const g = Math.min(mx - m.hp, Math.max(1, Math.floor(mx * pinch.share)));
+    m.hp += g;
+    battleSay(`${fxNames([pinch])}: ${billyName(m)} restored HP.`, { k: 'heal', si: k, amt: g });
+  }
+  const hurt = rows.filter(f => f.kind === 'turnHurt'),
+    lose = fxTurnHurt(hurt);
+  if (lose > 0 && m.hp > 0) {
+    const d = Math.min(m.hp, Math.max(1, Math.floor(mx * lose)));
+    m.hp -= d;
+    battleSay(`${fxNames(hurt)}: ${billyName(m)} lost a little HP.`, { k: 'hurt', si: k, dmg: d });
+  }
+}
 /** RL-12: a run's Perks that raised stats as the battle started (fxBattleStart): one line each, after the sides
  * come out */
 export function sayBattleFx() {
@@ -1363,10 +1409,10 @@ export const perkNamesFor = (fx, s) =>
     ' and '
   );
 /** PK-1: the marks a battle's rows keep: the run's (b.perkState, the run's own object: counters, growth, once a run)
- * and the battle's own (b.fxState: once a battle, once for each Billie), made when a row first needs them
- * @param {any} [b] @returns {import('./effects.js').FxState} */
-export function fxBattleState(b = battleNow()) {
-  return { run: b.perkState || null, battle: b.fxState || (fxStateful(b.fx) ? (b.fxState = {}) : null) };
+ * and the battle's own (b.fxState: once a battle, once for each Billie), made when a row first needs them (`make`:
+ * now) @param {any} [b] @param {boolean} [make] @returns {import('./effects.js').FxState} */
+export function fxBattleState(b = battleNow(), make = false) {
+  return { run: b.perkState || null, battle: b.fxState || (make || fxStateful(b.fx) ? (b.fxState = {}) : null) };
 }
 /** PK-1: what a foe is, for `if: foe:<k>`: the battle's kind (wild, trainer), a run's leader (a mini-boss), rival or
  * boss, and a bot or a spliced Billie among the foes @param {any} b @returns {string[]} */

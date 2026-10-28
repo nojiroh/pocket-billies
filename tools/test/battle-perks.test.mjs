@@ -87,3 +87,55 @@ test('PK-1 switch in: a stat row’s condition is the Billie’s own, and once: 
     assert.equal(b.sides[0].f[0].v.st.law, 0, 'the first one again: spent');
   });
 });
+
+test('PK-1 turn end: the run’s turnHeal, pinchHeal and turnHurt rows act on yours on the field, not the foe', () => {
+  const { P, fx } = perks(
+    { id: 'test_tea', name: 'Test Tea', fx: [{ kind: 'turnHeal', share: 0.1 }] },
+    { id: 'test_bank', name: 'Test Bank', fx: [{ kind: 'pinchHeal', at: 0.25, share: 0.5 }] },
+    { id: 'test_thorn', name: 'Test Thorn', fx: [{ kind: 'turnHurt', share: 0.05, if: 'turn:3' }] }
+  );
+  withPerks(P, () => {
+    const b = battle(fx),
+      m = b.sides[0].team[0],
+      e = b.sides[1].team[0],
+      mx = fn('maxHp')(m);
+    m.hp = Math.floor(mx / 2);
+    e.hp = Math.floor(fn('maxHp')(e) / 2);
+    const foeHp = e.hp;
+    b.turn = 1;
+    fn('endTurn')();
+    assert.equal(m.hp, Math.floor(mx / 2) + Math.max(1, Math.floor(mx * 0.1)), 'turnHeal');
+    assert.equal(e.hp, foeHp, 'not the foe');
+    assert.ok(lines(b).some(t => /^Test Tea: .* restored a little HP\.$/.test(t)));
+    /* low: the pinch heal, once for this Billie in this battle */
+    m.hp = 1;
+    fn('endTurn')();
+    assert.ok(m.hp > Math.floor(mx * 0.5), `pinch: ${m.hp}`);
+    assert.ok(lines(b).some(t => /^Test Bank: .* restored HP\.$/.test(t)));
+    m.hp = 1;
+    fn('endTurn')();
+    assert.ok(m.hp < mx * 0.25, 'spent for this Billie');
+    /* turnHurt on turn 3 only */
+    m.hp = mx;
+    b.turn = 3;
+    fn('endTurn')();
+    assert.equal(m.hp, mx - Math.max(1, Math.floor(mx * 0.05)));
+    assert.ok(lines(b).some(t => /^Test Thorn: .* lost a little HP\.$/.test(t)));
+  });
+});
+
+test('PK-1 turn end: pinchHeal with once: battle heals one of yours once in the battle', () => {
+  const { P, fx } = perks({ id: 'test_bank', fx: [{ kind: 'pinchHeal', at: 0.25, share: 0.25, once: 'battle' }] });
+  withPerks(P, () => {
+    const b = battle(fx),
+      m = b.sides[0].team[0];
+    m.hp = 1;
+    fn('endTurn')();
+    assert.ok(m.hp > 1);
+    fn('doSwitch')(0, 1);
+    const n = b.sides[0].team[1];
+    n.hp = 1;
+    fn('endTurn')();
+    assert.equal(n.hp, 1, 'spent for the battle');
+  });
+});
