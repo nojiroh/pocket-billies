@@ -1275,7 +1275,8 @@ setInterval(() => {
   if (soundStarts.length > 7) soundStarts.shift();
   soundEngine.perMinute = soundStarts.length > 1 ? soundStarts[soundStarts.length - 1] - soundStarts[0] : null;
 }, 10000);
-/* SND-8a: what the debug log says about the sound (no save data): live beds and their levels, the bed noise's making */
+/* SND-8a: what the debug log says about the sound (no save data): live beds and their levels, the bed noise's making;
+   SND-9: the bank and the reverb */
 export function soundDebugLines() {
   const c = soundEngine.ctx,
     T = soundEngine.tracker;
@@ -1298,6 +1299,11 @@ export function soundDebugLines() {
           kb: Math.round(((ambience.noise.pink.length + ambience.noise.brown.length) * 4) / 1024),
         }
       : null,
+    /* SND-9: the baked instruments (their bake's work in ms, MB alone and with the other baked buffers, each slice's
+       time: a Worker comes only if these show hitches on the phone) and the reverb (its impulse's bake, its wait, the
+       buffer's assignment) */
+    bank: T && T.bankStats ? T.bankStats() : null,
+    reverb: T && T.reverbStats ? T.reverbStats() : null,
   };
 }
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
