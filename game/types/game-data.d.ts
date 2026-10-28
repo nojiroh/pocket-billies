@@ -2458,11 +2458,28 @@ export interface BattleAnimsData {
   maxMs: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', number>;
   /** the full-screen flash limiter */
   flashes: { perSecond: number; gapMs: number; redShare: number };
+  /** VFX-9's budgets by the battle's quality 0-3 (data since VFX-12) */
+  budgets: BattleAnimBudgets;
   colors: Record<string, Color>;
   defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
   intro: BattleAnimStep[];
   families: Record<DataId, BattleAnimFamily>;
   scenes: Record<DataId, BattleAnimFamily>;
+}
+/** VFX-12: the battle's effect budgets, each list by quality level 0-3 */
+export interface BattleAnimBudgets {
+  /** particles alive in the one pool (ambient ones at most a quarter) */
+  particles: number[];
+  /** a burst's most */
+  burst: number[];
+  /** effect lights (3 slots) */
+  lights: number[];
+  /** at most this many effect lights on a phone */
+  lightsPhone: number;
+  /** battle lights in all */
+  lightsAll: number;
+  /** scars on the ground (VFX-15) */
+  scars: number[];
 }
 export interface BattleAnimTimeline {
   dur: number;

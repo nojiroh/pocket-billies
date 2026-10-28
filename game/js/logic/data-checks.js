@@ -1344,7 +1344,7 @@ export function dataSetPieces(D, valid = () => true) {
 }
 // VFX-8: battleAnims.json (how the battle plays a move): the schema; every default a family; every step's colour a
 // named colour or `type`, its types types (types.json); every move's `anim` a family or a scene, and moves.json has no
-// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit)
+// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit); VFX-12: the budgets in order
 /** VFX-8: battleAnims.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataBattleAnims(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1377,6 +1377,13 @@ export function dataBattleAnims(D, valid = () => true) {
           if (V.hit !== 999 && V.hit > V.dur) problem(`${sec}.${id}${w}: hits at ${V.hit} ms, after its ${V.dur} ms`);
         }
     }
+  /* VFX-12: a budget never grows as the quality drops, and a burst fits in the pool */
+  const B = A.budgets;
+  for (const k of ['particles', 'burst', 'lights', 'scars'])
+    for (let q = 1; q < 4; q++)
+      if (B[k][q] > B[k][q - 1]) problem(`budgets.${k}: quality ${q} allows more (${B[k][q]}) than quality ${q - 1}`);
+  for (let q = 0; q < 4; q++)
+    if (B.burst[q] > B.particles[q]) problem(`budgets.burst: ${B.burst[q]} at quality ${q}, more than the pool`);
   for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
     if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
       problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');

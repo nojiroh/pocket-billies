@@ -3,7 +3,7 @@
  "$id": "battleAnims.schema.json",
  "title": "game/data/battleAnims.json: how the battle plays a move, as data (VFX-8; logic/battle-anims.js, battle-anim-run.js)",
  "type": "object",
- "required": ["bigPower", "longPower", "extraMs", "shortSpeed", "maxMs", "flashes", "colors", "defaults", "intro", "families", "scenes"],
+ "required": ["bigPower", "longPower", "extraMs", "shortSpeed", "maxMs", "flashes", "budgets", "colors", "defaults", "intro", "families", "scenes"],
  "additionalProperties": false,
  "properties": {
   "about": {"type": "string"},
@@ -32,6 +32,20 @@
     "redShare": {"type": "number", "exclusiveMinimum": 0.33, "maximum": 1}
    }
   },
+  "budgets": {
+   "description": "VFX-9's budgets, by the battle's quality 0-3 (VFX-12 made them data): particles alive in the one pool (ambient ones at most a quarter), a burst's most, effect lights (3 slots: keys 8-10), at most lightsPhone on a phone and lightsAll battle lights in all, scars on the ground (VFX-15)",
+   "type": "object",
+   "required": ["particles", "burst", "lights", "lightsPhone", "lightsAll", "scars"],
+   "additionalProperties": false,
+   "properties": {
+    "particles": {"$ref": "#/$defs/byQuality"},
+    "burst": {"$ref": "#/$defs/byQuality"},
+    "lights": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 3}},
+    "lightsPhone": {"type": "integer", "minimum": 0, "maximum": 3},
+    "lightsAll": {"type": "integer", "minimum": 0, "maximum": 8},
+    "scars": {"$ref": "#/$defs/byQuality"}
+   }
+  },
   "colors": {"description": "named colours steps use (or `type`: the move type's)", "type": "object", "additionalProperties": {"$ref": "#/$defs/hex"}},
   "defaults": {
    "description": "the family for each outcome and category when a move names none",
@@ -50,6 +64,7 @@
  "$defs": {
   "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
   "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+  "byQuality": {"description": "one number for each of the battle's quality levels 0-3 (0 the best)", "type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 1024}},
   "timeline": {
    "type": "object",
    "required": ["dur", "hit", "steps"],
