@@ -132,23 +132,29 @@ function shopPerkHTML(id, sh) {
 /** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
 function shopRerollHTML(id, sh) {
   const run = saveData.run;
-  /* WM-5: Mo's word is for the town's shop, not its market stall */
-  if (sh.runNode == null || !run || sh.stall) return '';
-  const left = runRerollsLeft(run, RESIDENTS);
-  if (!left && !runShopRerolled(run, sh.runNode, run.clock)) return '';
-  return runShopRerolled(run, sh.runNode, run.clock)
+  if (sh.runNode == null || !run) return '';
+  /* WM-5: a town's market stall has a fresh stock of its own (the owner) */
+  const left = runRerollsLeft(run, RESIDENTS),
+    done = runShopRerolled(run, sh.runNode, run.clock, sh.stall ? 'stall' : 'shop');
+  if (!left && !done) return '';
+  return done
     ? '<p class="note">Fresh stock, on Mo’s word.</p>'
     : `<p class="note"><button class="pb small" data-a="shopreroll" data-s="${id}">Fresh stock, on Mo’s word (${left} left this run)</button></p>`;
 }
 function shopReroll(id) {
   const sh = SHOPS[id],
     run = saveData.run;
-  if (!sh || !run || sh.runNode == null || sh.stall) return;
-  if (!runShopReroll(run, sh.runNode, run.clock, RESIDENTS)) return;
-  sh.stock = runShopOpen(run, sh.runNode, run.clock, RULES.run.shop, UNLOCK_DATA);
+  if (!sh || !run || sh.runNode == null) return;
+  if (!runShopReroll(run, sh.runNode, run.clock, RESIDENTS, sh.stall ? 'stall' : 'shop')) return;
+  sh.stock = sh.stall
+    ? runStallStock(run, sh.runNode, run.clock, RULES.run.town.stall)
+    : runShopOpen(run, sh.runNode, run.clock, RULES.run.shop, UNLOCK_DATA);
   uiState.shopQty = {};
-  uiState.shopLine = 'The shopkeeper ducks into the back and comes out with other boxes.';
-  if (typeof debugLog !== 'undefined') debugLog.add('scene', `shop restocked: ${sh.runNode}:${run.clock}`);
+  uiState.shopLine = sh.stall
+    ? 'The stallholder rummages under the cart and lays out other pieces.'
+    : 'The shopkeeper ducks into the back and comes out with other boxes.';
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('scene', `${sh.stall ? 'stall' : 'shop'} restocked: ${sh.runNode}:${run.clock}`);
   saveNow();
   shopRefresh();
 }
