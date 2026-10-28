@@ -1060,6 +1060,10 @@ function battleFxRampsHTML(R) {
       return vv;
     });
     if (typeof v === 'string' && !hexes.length) words.push(v);
+    /* VFX-10's ramp may name an NW_PALETTE ramp (game/art/next/palette.js): its colours */
+    const named = v && typeof v === 'object' && typeof v.ramp === 'string' ? v.ramp : typeof v === 'string' ? v : null,
+      pal = typeof window !== 'undefined' && window.NW_PALETTE && window.NW_PALETTE.ramps;
+    if (named && pal && Array.isArray(pal[named])) hexes.unshift(...pal[named]);
     return `<div class="bfx-ramp"><b>${escapeHtml(k)}</b><span class="bfx-sw">${hexes.map(h => `<i style="background:${h}" title="${h}"></i>`).join('')}</span><small>${escapeHtml(words.join(' · '))}</small></div>`;
   }).join('')}</div>`;
 }
