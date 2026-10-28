@@ -2,6 +2,24 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-8 - Perk sets - 2026-10-28
+Branch `track/perks` (this session's outcome branch, at 528c321e: PK-7 with main 3f559c3b merged; main had not moved,
+so nothing to merge at the start). Started by PK-0's session under the owner's standing instruction (perks-track.md
+section 10): no Plan Mode, the plan below written first and carried out. Details and the plan's corrections:
+perks-track.md 5.7, "Corrected in PK-8".
+- The plan (as set at the start): (1) the kinds the 7 bonuses need, one per commit with tests, schema, data checks,
+  types and the Studio's row inputs: a price row for a run shop's Perk (`what: perk`, Office), `heldBoost` (Tech: your
+  held items' numbers half again), the condition `unstable` (Lab's damage), the rules `unstableSafe` (Lab: an Unstable
+  splice's cells never hurt it) and `sidePerk` (Adventurer: a side area's place holds a Perk lying on the ground);
+  (2) the `perkSets` data section: perkSets.json, its index.json key, perkSets.schema.json, `PerkSet` in
+  game-data.d.ts, `dataPerkSets` (check-data and the Studio's Check), game-data.js `PERK_SETS`; the 7 sets with drafted
+  texts; a set's members are the Perks tagged with its id, so the themes come from the section (PERK_THEMES goes);
+  (3) fxOfRun adds a set's rows (src `set:<id>`) while `need` of its members are held (copies don't count); battle
+  lines name a set by its title; (4) the card's set line ("Office Supplies 2/3") on pick cards, rows and the shop, the
+  Perks tab grouped by set with each set's bonus; (5) the Studio's Perks editor: a Perk's set, and the sets' names,
+  titles and texts; (6) tests: a set's bonus starts and stops with its third member (taken, let go, swapped), each
+  set's bonus, every Perk and every set at once finite, golden battles unchanged; (7) docs.
+
 ### Perks track PK-7 - Fine Print - 2026-10-28
 Branch `track/perks` (this session's outcome branch; PR #318 had merged PK-6 into main, so main 4423a457 came in first
 as a fast-forward, hooks.js unchanged; main 6acee223, the UI fixes #309, merged at the end: only the generated
