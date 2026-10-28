@@ -5,13 +5,15 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { readdirSync } from 'node:fs';
-import { figureKitData, kitFaceStyles, lookFigure } from '../../game/js/logic/figure-kit.js';
+import { figureKitData, kitFaceStyles, kitSkinRamp, lookFigure } from '../../game/js/logic/figure-kit.js';
 import {
   cardSize,
+  FIGURE_TALK_MS,
   figureBlinkAt,
   figureFaceMarks,
   figureFaceState,
   figurePose,
+  figureTalkFace,
   jointMatrices,
 } from '../../game/js/logic/figure-pose.js';
 import { kitFaceProblems } from '../../game/js/logic/kit-shapes.js';
@@ -186,4 +188,38 @@ test('faces: people blink on the portrait kit’s timing, each at their own time
   /* two people don't blink in step */
   const at = s => Array.from({ length: 600 }, (_, i) => figureBlinkAt(i * 100, s)).join('');
   assert.notEqual(at(11), at(12));
+});
+
+test('faces: a talking mouth changes about 8 times a second while the line types, rests on punctuation', () => {
+  const at = (t, o = {}) => figureTalkFace({ expr: 'happy', text: 'Hi, you', n: 7, typing: true, t, ...o });
+  assert.equal(at(0).talk, 0);
+  assert.equal(at(FIGURE_TALK_MS * 3 + 1).talk, 3);
+  assert.equal(at(0).expr, 'happy');
+  assert.equal(at(0, { n: 3 }).talk, undefined, 'after a comma');
+  assert.equal(at(0, { typing: false }).talk, undefined);
+  assert.equal(at(0, { reduced: true }).talk, undefined, 'Reduced motion: the expression, no talking');
+  assert.equal(at(0, { reduced: true }).expr, 'happy');
+});
+
+test('faces: every skin swatch has a hand-picked ramp; a skin between swatches takes the nearest, shifted', () => {
+  const FC = figureKitData().faces,
+    hex = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16));
+  for (const h of W.palettes.skin)
+    assert.ok(
+      FC.skin.some(R => R.base.toUpperCase() === h.toUpperCase()),
+      h
+    );
+  for (const R of FC.skin) {
+    const r = kitSkinRamp(hex(R.base), FC.skin),
+      lum = c => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+    assert.deepEqual(r[2], hex(R.base), 'the base is the swatch');
+    /* dark to light, the shadows warmer (redder) than the base */
+    for (let i = 1; i < 5; i++) assert.ok(lum(r[i]) >= lum(r[i - 1]), `${R.base} ${i}`);
+    assert.ok(r[1][0] / (r[1][2] + 1) >= hex(R.base)[0] / (hex(R.base)[2] + 1) - 0.05, `${R.base} warm shadow`);
+  }
+  const off = kitSkinRamp([200, 150, 120], FC.skin);
+  assert.deepEqual(off[2], [200, 150, 120]);
+  assert.equal(kitSkinRamp([1, 2, 3], undefined), null);
+  /* a figure carries its ramp */
+  assert.equal(lookFigure(PEOPLE.broker.look, W.items, { name: 'broker' }).skinRamp.length, 5);
 });

@@ -1691,6 +1691,8 @@ export interface FigureKitFaces {
     { eyes: DataId; mouth?: DataId; tilt?: number; lift?: number; blush?: boolean; talk?: DataId[] }
   >;
   talk: DataId[];
+  /** CH-6: hand-picked skin ramps: a swatch's five shades (deep, shadow, base, light, shine) */
+  skin?: { base: string; ramp: string[] }[];
   moods: Record<DataId, { lid: number; tilt?: number; lift?: number }>;
   rest: { eyes?: string[]; brows?: string[]; mouth?: string[]; mood: DataId }[];
   wardrobe: Record<string, DataId>;

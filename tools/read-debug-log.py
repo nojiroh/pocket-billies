@@ -62,7 +62,7 @@ def main():
                         f"({num(m.get('pageMs'))} ms), {m.get('waiting')} waiting, {m.get('kept')} kept {m.get('mb')} MB")
             a = fg.get('atlas') or {}
             if a: print(f"  atlas: {'on' if a.get('on') else 'off'}, {a.get('people')} people in {a.get('cells')} cells ({a.get('use')} of it), "
-                        f"{a.get('draws')} drawn ({num(a.get('ms'))} ms), {a.get('rows')} ramp rows, full {a.get('full')}"
+                        f"{a.get('draws')} drawn ({num(a.get('ms'))} ms; {a.get('faceDraws', 0)} for a face: talking, blinks, expressions), {a.get('rows')} ramp rows, full {a.get('full')}"
                         + (f", FAILED {a.get('failed')}" if a.get('failed') else ''))
 
     ld = d.get('load') or {}

@@ -73,6 +73,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitRnd: [() => kitRnd, v => (kitRnd = v)],
   // @ts-expect-error -- replaced on purpose
+  kitSkinRamp: [() => kitSkinRamp, v => (kitSkinRamp = v)],
+  // @ts-expect-error -- replaced on purpose
   kitTopOf: [() => kitTopOf, v => (kitTopOf = v)],
   // @ts-expect-error -- replaced on purpose
   lookFigure: [() => lookFigure, v => (lookFigure = v)],
@@ -228,6 +230,7 @@ export function lookFigure(look, items, opts = {}) {
     return kitHex(own || def, fb);
   };
   colours.skin = kitHex(look.skin, [230, 176, 138]);
+  const skinRamp = kitSkinRamp(colours.skin, KIT.faces && KIT.faces.skin);
   colours.hair = kitHex(look.hair, [59, 42, 34]);
   colours.hair2 = figureMix(figureDark(colours.hair, 0.86), [96, 74, 152], 0.06);
   colours.top = itemCol(wear.top, 0, [62, 143, 176]);
@@ -893,6 +896,8 @@ export function lookFigure(look, items, opts = {}) {
     height: Math.max(0.6, tallest),
     parts,
     face,
+    /* CH-6: the skin's hand-picked shades (figures.js figurePalette takes them) */
+    ...(skinRamp ? { skinRamp } : {}),
     /* CH-6: which tagged marks each face state shows (figure-pose.js figureFaceState) */
     faceSet: kitFaceSet(kitFaceStyles(wear, KIT.faces, opts.figure), KIT.faces),
     colours,
@@ -1358,6 +1363,30 @@ export function kitHat(add, hat, H, crown = 1, kit = figureKitData()) {
 }
 
 /**
+ * CH-6: a skin's ramp of five shades (deep, shadow, base, light, shine) from the kit's hand-picked ones
+ * (figureKit.json faces.skin): the nearest swatch's, shifted by how far this skin is from it; null with none
+ * @param {Vec3} skin @param {{ base: string, ramp: string[] }[] | undefined} rows @returns {Vec3[] | null}
+ */
+export function kitSkinRamp(skin, rows) {
+  if (!rows || !rows.length) return null;
+  let best = rows[0],
+    bd = Infinity;
+  for (const R of rows) {
+    const b = kitHex(R.base, skin),
+      d = 2 * (b[0] - skin[0]) ** 2 + 4 * (b[1] - skin[1]) ** 2 + 3 * (b[2] - skin[2]) ** 2;
+    if (d < bd) {
+      bd = d;
+      best = R;
+    }
+  }
+  const b = kitHex(best.base, skin),
+    off = [skin[0] - b[0], skin[1] - b[1], skin[2] - b[2]];
+  return best.ramp.map(h => {
+    const c = kitHex(h, skin);
+    return /** @type {Vec3} */ (c.map((v, i) => Math.max(0, Math.min(255, Math.round(v + off[i])))));
+  });
+}
+/**
  * CH-6: a figure's face set: its resting mouth, the talking frames, and each expression's eyes, mouth, blush and
  * talking frames (faces.expressions), for figure-pose.js figureFaceState
  * @param {{ mouth: string }} style @param {FigureKitData['faces']} FC @returns {import('./figure-pose.js').FaceSet}
@@ -1434,7 +1463,9 @@ export function kitFaceMarks(H, wear, look, colours, seed, kit = figureKitData()
   colours.irisD = figureMix(figureDark(colours.iris, 0.5), [30, 20, 70], 0.3);
   colours.irisL = figureMix(colours.iris, [255, 255, 240], 0.3);
   colours.tongue = [214, 92, 104];
-  colours.crease = figureMix(figureDark(colours.skin, 0.74), [120, 70, 90], 0.15);
+  /* CH-6: the face's creases in the skin's own shadow (its ramp), else a darkened skin */
+  const SR = kitSkinRamp(colours.skin, FC.skin);
+  colours.crease = SR ? figureMix(SR[1], SR[0], 0.4) : figureMix(figureDark(colours.skin, 0.74), [120, 70, 90], 0.15);
   colours.lip = figureMix(colours.skin, [196, 96, 104], 0.32);
   colours.blush = figureMix(colours.skin, [230, 120, 120], 0.3);
   /* a little colour on the cheeks, in a close-up only: some people's always, everyone's when glad (CH-6: an

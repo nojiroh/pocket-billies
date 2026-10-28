@@ -15,7 +15,7 @@ import { personBattlePose, personWalkFrames } from '../person-art.js';
 import { particleSprite } from '../battle-stage.js';
 import { stopWalkView, walkData, walkView } from '../walk-view.js';
 import { walkRenderer } from '../walk/walk-state.js';
-import { figureFolk, figureFor, figurePersonPicture, figureStyle, figuresOn } from '../figures.js';
+import { figureFaceFor, figureFolk, figureFor, figurePersonPicture, figureStyle, figuresOn } from '../figures.js';
 import { personItem } from '../walk/frame-items.js';
 import { talkBox, talkHide, talkLine } from '../talk.js';
 /* eslint-disable no-func-assign */
@@ -181,7 +181,18 @@ function cutscenePersonItem(a, t, C0, yaw = 0) {
             ? 'cheer'
             : 'idle',
       gait = a.walk ? Math.hypot(a.x - a.walk.x0, a.z - a.walk.z0) : 0,
-      g = figurePersonPicture(a, figureFor(a.who), t, act, gait, personHeading(a, yaw), figureStyle(), [a.x, a.z]);
+      g = figurePersonPicture(
+        a,
+        figureFor(a.who),
+        t,
+        act,
+        gait,
+        personHeading(a, yaw),
+        figureStyle(),
+        [a.x, a.z],
+        /* CH-6: an actor talks with their line's expression (by who they are: no place to match) */
+        figureFaceFor(a.who)
+      );
     if (g) im = g;
   }
   return personItem('actor', a.dark ? cutsceneDark(im) : im, a.x, a.z, C0, {});

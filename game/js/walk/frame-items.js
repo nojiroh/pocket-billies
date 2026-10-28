@@ -69,7 +69,7 @@ import {
   stillPropState,
   windLeanAt,
 } from './prop-look.js';
-import { figureFolk, figureFor, figurePersonPicture, figureStyle, figuresOn } from '../figures.js';
+import { figureFaceFor, figureFolk, figureFor, figurePersonPicture, figureStyle, figuresOn } from '../figures.js';
 /* eslint-disable no-func-assign */
 expose({
   SUNKEN_FOOTPRINT_PROPS: [() => SUNKEN_FOOTPRINT_PROPS],
@@ -331,7 +331,9 @@ export function gatherFrameItems(st, C, PPU, C0) {
           0,
           near ? Math.atan2(P.x - pos[0], P.z - pos[1]) : personHeading(n, yaw),
           figureStyle(),
-          pos
+          pos,
+          /* CH-6: talking, with their line's expression */
+          figureFaceFor(n.who, pos[0], pos[1])
         );
       if (g) nim = g;
     }
@@ -443,7 +445,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
           (figureTick(t) / FIGURE_FPS) * 1.4,
           personHeading(f, seenYaw()),
           figureStyle(),
-          [f.x, f.z]
+          [f.x, f.z],
+          figureFaceFor(who, f.x, f.z)
         );
         if (g) fim = g;
       }
@@ -527,7 +530,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
             P.gait || 0,
             figHead,
             figureStyle(),
-            [P.x, P.z]
+            [P.x, P.z],
+            figureFaceFor(st.who, P.x, P.z, true)
           )
         : null;
     const me = personItem(
@@ -554,7 +558,19 @@ export function gatherFrameItems(st, C, PPU, C0) {
       out.push(mt.it);
       me.y += mt.lift;
       me.im =
-        (fig && figurePersonPicture(P, figureFor(st.who), t, 'sit', 0, figHead, figureStyle(), [P.x, P.z])) || set[0];
+        (fig &&
+          figurePersonPicture(
+            P,
+            figureFor(st.who),
+            t,
+            'sit',
+            0,
+            figHead,
+            figureStyle(),
+            [P.x, P.z],
+            figureFaceFor(st.who, P.x, P.z, true)
+          )) ||
+        set[0];
       me.z -= 0.02;
     }
     out.push(me);

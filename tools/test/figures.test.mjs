@@ -504,3 +504,41 @@ test('CH-5: the Studio’s figure preview: built once per edit with its own kit 
     G.document.createElement = was;
   }
 });
+
+test('figures: CH-6 the one talking moves their mouth with their line’s expression; nobody else does', async () => {
+  const { figureFaceFor } = await import('../../game/js/figures.js');
+  const H = await import('../../game/js/hooks.js'),
+    real = H.talkBox,
+    /* the dialogue box's state (talk.js talkBox), a stand-in */
+    talkBox = { on: false, cur: null, por: null },
+    at = G.walkRenderer.talkAt;
+  H.provide({ talkBox });
+  try {
+    talkBox.on = true;
+    talkBox.cur = { who: 'broker', text: 'Hello there, friend', n: 3, typing: true };
+    talkBox.por = { who: 'broker', expr: 'happy', t: 0 };
+    G.walkRenderer.talkAt = { x: 5, z: 5, t: 0 };
+    const f = figureFaceFor('broker', 5.2, 5);
+    assert.equal(f.expr, 'happy');
+    assert.ok(Number.isInteger(f.talk));
+    /* someone else with the same look further off, another person, you: no */
+    assert.equal(figureFaceFor('broker', 9, 9), null);
+    assert.equal(figureFaceFor('concierge', 5, 5), null);
+    assert.equal(figureFaceFor('boy', 5, 5, true), null);
+    /* an actor (no place) by who they are; your own line by 'me' */
+    assert.equal(figureFaceFor('broker').expr, 'happy');
+    talkBox.cur = { who: 'me', text: 'Hi.', n: 3, typing: true };
+    talkBox.por = { who: 'me', expr: null, t: 0 };
+    const me = figureFaceFor('boy', 0, 0, true);
+    assert.ok(me && me.talk === undefined, 'a full stop rests the mouth');
+    /* the line typed out: the expression stays, the mouth rests; the box shut: nothing */
+    talkBox.cur = { who: 'broker', text: 'Hello', n: 5, typing: false };
+    talkBox.por = { who: 'broker', expr: 'sad', t: 0 };
+    assert.deepEqual(figureFaceFor('broker', 5, 5), { expr: 'sad' });
+    talkBox.on = false;
+    assert.equal(figureFaceFor('broker', 5, 5), null);
+  } finally {
+    H.provide({ talkBox: real });
+    G.walkRenderer.talkAt = at;
+  }
+});

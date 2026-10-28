@@ -401,6 +401,19 @@
       }
      }
     },
+    "skin": {
+     "description": "the skin's ramps: for a swatch (base), five shades (deep, shadow, base, light, shine)",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": ["base", "ramp"],
+      "additionalProperties": false,
+      "properties": {
+       "base": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+       "ramp": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}}
+      }
+     }
+    },
     "wardrobe": {"description": "the style or mouth frame each wardrobe id draws", "type": "object", "additionalProperties": {"$ref": "#/$defs/id"}},
     "defaults": {
      "type": "object",

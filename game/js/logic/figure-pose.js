@@ -31,6 +31,7 @@ expose({
   FIGURE_JOINTED: [() => FIGURE_JOINTED],
   FIGURE_LIGHT: [() => FIGURE_LIGHT],
   FIGURE_PAL_MAX: [() => FIGURE_PAL_MAX],
+  FIGURE_TALK_MS: [() => FIGURE_TALK_MS],
   OUTLINE_RGB: [() => OUTLINE_RGB],
   SDF_CORNERS: [() => SDF_CORNERS],
   TILT_STEP: [() => TILT_STEP],
@@ -73,6 +74,8 @@ expose({
   figureRound: [() => figureRound, v => (figureRound = v)],
   // @ts-expect-error -- replaced on purpose
   figureSceneLight: [() => figureSceneLight, v => (figureSceneLight = v)],
+  // @ts-expect-error -- replaced on purpose
+  figureTalkFace: [() => figureTalkFace, v => (figureTalkFace = v)],
   // @ts-expect-error -- replaced on purpose
   figureTick: [() => figureTick, v => (figureTick = v)],
   // @ts-expect-error -- replaced on purpose
@@ -292,7 +295,7 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86,
  * lean forward (radians, below 0 back), how far out its arms hang (radians) and how its head is held (radians, a
  * stoop's forward) */
 /** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3>, face?: FaceMark[],
- *   gloss?: string[], faceSet?: FaceSet,
+ *   gloss?: string[], faceSet?: FaceSet, skinRamp?: Vec3[],
  *   gait?: FigureGait, kit?: { head: string, build: string, bust?: number } }} Figure (`kit`: the head shape and build the figure
  * kit chose, logic/figure-kit.js) */
 /** @typedef {{ rot: Vec3[], lift: Vec3[], scale: Vec3[], rootY: number, blink?: boolean }} FigurePose per part (in
@@ -1474,9 +1477,10 @@ export function figureGpuMesh(F, detail = 1, M0) {
 /**
  * CH-6: a kit figure's face state: the expression's (faces.expressions; `idle` when it has none of that name) eyes,
  * brows, mouth and blush; a blink (1 half shut, 2 shut) over open eyes; talking (`talk`, a count) runs through the
- * expression's talking frames; `mouth` names a frame outright (the Studio); null for a figure with no face set (Kappi,
+ * expression's talking frames; `mouth` and `eyes` name a frame outright (the Studio); null for a figure with no face set (Kappi,
  * the mannequin)
- * @param {Figure} F @param {{ expr?: string | null, blink?: number, talk?: number | null, mouth?: string }} [o]
+ * @param {Figure} F @param {{ expr?: string | null, blink?: number, talk?: number | null, mouth?: string,
+ *   eyes?: string }} [o]
  * @returns {FaceState | null}
  */
 export function figureFaceState(F, o = {}) {
@@ -1485,7 +1489,8 @@ export function figureFaceState(F, o = {}) {
   const xid = o.expr && FS.expr[o.expr] ? o.expr : 'idle',
     X = FS.expr[xid] || { eyes: 'open', mouth: null, blush: false },
     /* a blink closes open eyes (half, then shut); happy and shut ones stay as they are */
-    eyes = o.blink && X.eyes !== 'happy' && X.eyes !== 'closed' ? (o.blink > 1 ? 'closed' : 'half') : X.eyes,
+    eye0 = o.eyes || X.eyes,
+    eyes = o.blink && eye0 !== 'happy' && eye0 !== 'closed' ? (o.blink > 1 ? 'closed' : 'half') : eye0,
     talk = X.talk || FS.talk,
     mouth = o.mouth
       ? o.mouth
@@ -1696,6 +1701,22 @@ export function figureDensityStep(k, prev = 1) {
   return s;
 }
 /** the tick a time falls in on the 12 fps clock @param {number} t ms */
+/** CH-6: how often a talking mouth changes (ms; the portrait kit's about 8 a second) */
+export const FIGURE_TALK_MS = 125;
+/**
+ * CH-6: the face a speaker shows for a dialogue line (talk.js talkBox): the line's expression (its [tag]) and, while
+ * its text is typing, a talking frame every FIGURE_TALK_MS; the mouth rests on punctuation (the kit's pause) and
+ * under Reduced motion
+ * @param {{ expr?: string | null, text?: string, n?: number, typing?: boolean, t: number, reduced?: boolean }} o
+ * @returns {{ expr: string | null, talk?: number }}
+ */
+export function figureTalkFace(o) {
+  const out = { expr: o.expr || null };
+  if (!o.typing || o.reduced) return out;
+  const ch = (o.text || '').charAt(Math.max(0, (o.n || 0) - 1));
+  if (/[.,!?;:\u2026\u2014-]/.test(ch)) return out;
+  return { ...out, talk: Math.floor(o.t / FIGURE_TALK_MS) };
+}
 /**
  * CH-6: a person's blink at time `t` (ms), on the portrait kit's timing: one every 2.6 to 5.2 seconds (the gap set by
  * the person's seed and varied each time), half shut, shut, half shut over 200 ms; 0 open, 1 half, 2 shut

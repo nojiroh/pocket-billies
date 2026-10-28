@@ -24,7 +24,15 @@
    The renderer never calls this with the switch off, and a model's file is only fetched when one is first wanted. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { PEOPLE, figureAtlasOn, figureAtlasPicture, figureAtlasReport, provide } from './hooks.js';
+import {
+  PEOPLE,
+  figureAtlasOn,
+  figureAtlasPicture,
+  figureAtlasReport,
+  provide,
+  reducedMotion,
+  talkBox,
+} from './hooks.js';
 import {
   FIGURE_BANDS,
   FIGURE_LIGHT,
@@ -44,6 +52,7 @@ import {
   figurePose,
   figureRamp,
   figureSceneLight,
+  figureTalkFace,
   figureTick,
   figureView,
   jointMatrices,
@@ -86,6 +95,7 @@ expose({
   FIGURE_SNAPS: [() => FIGURE_SNAPS],
   FIGURE_SNAP_MAX: [() => FIGURE_SNAP_MAX],
   FIGURE_STUDIO_LIGHT: [() => FIGURE_STUDIO_LIGHT],
+  FIGURE_TALK_NEAR: [() => FIGURE_TALK_NEAR],
   FIGURE_TEXTURES: [() => FIGURE_TEXTURES],
   FIGURE_VS: [() => FIGURE_VS],
   HD2D_BODY: [() => HD2D_BODY],
@@ -102,6 +112,7 @@ expose({
   figureDef: [() => figureDef, v => (figureDef = v)],
   figureDensity: [() => figureDensity],
   figureDesign: [() => figureDesign, v => (figureDesign = v)],
+  figureFaceFor: [() => figureFaceFor, v => (figureFaceFor = v)],
   figureFarPpm: [() => figureFarPpm, v => (figureFarPpm = v)],
   figureFolk: [() => figureFolk, v => ((figureFolk = v), provide({ figureFolk }))],
   figureFor: [() => figureFor, v => (figureFor = v)],
@@ -1006,7 +1017,11 @@ export function figurePalette(F, colours, ramp = 'props', LK = null) {
   const out = new Float32Array(FIGURE_PAL_MAX * 5 * 3),
     gloss = new Set(F.gloss || []);
   colours.forEach((k, i) => {
-    const R = figureLookRamp(figureLookColour(F.colours[k], k, LK), ramp),
+    /* CH-6: skin in its hand-picked shades (figureKit.json faces.skin), but in cel's two */
+    const R =
+        k === 'skin' && F.skinRamp && ramp !== 'cel'
+          ? F.skinRamp
+          : figureLookRamp(figureLookColour(F.colours[k], k, LK), ramp),
       flat = k === 'eye' || k === 'glint';
     [
       flat ? R[2] : R[0],
@@ -1248,7 +1263,7 @@ const figurePreviewState = { name: '', def: /** @type {any} */ (null), ms: 0, fa
  * figure's build time, and `kit`, the head shape and build it has. CH-6: a change of the face alone (`faceRev`, the
  * Studio's count of its face edits, or the figure's eye and brow styles) paints the face again on the same mesh.
  * @param {{ look: any, items: any, kit: any, who?: string, figure?: any, rev?: number, faceRev?: number,
- *   face?: { expr?: string, talk?: number, blink?: number, mouth?: string }, style?: string, clip?: string, frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
+ *   face?: { expr?: string, talk?: number, blink?: number, mouth?: string, eyes?: string }, style?: string, clip?: string, frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
  */
 export function figurePreview(o) {
   const style = o.style && (o.style === 'smooth' || o.style in FIGURE_LOOKS) ? o.style : 'pixel',
@@ -1451,6 +1466,31 @@ function figureTilt() {
   const C = typeof walkView !== 'undefined' ? walkView.C : null;
   return C && C.sp != null ? Math.atan2(C.sp, C.cp) : (26 * Math.PI) / 180;
 }
+/**
+ * CH-6: the face a person shows now from the dialogue box (talk.js talkBox): while the line on it is theirs, its
+ * expression and a talking mouth (figure-pose.js figureTalkFace); null otherwise. `who` is what the line names (a
+ * person or look id, 'folk:<seed>', 'me'); a person in the world at (x, z) must also be the one talked to (near
+ * walkRenderer.talkAt: two people may share a look); a cutscene's actor passes no place
+ * @param {string | null | undefined} who @param {number} [x] @param {number} [z] @param {boolean} [me] you
+ * @returns {{ expr: string | null, talk?: number } | null}
+ */
+export function figureFaceFor(who, x, z, me = false) {
+  const T = typeof talkBox !== 'undefined' ? talkBox : null,
+    c = T && T.on ? T.cur : null;
+  if (!c || !who || !(c.who === who || (me && c.who === 'me'))) return null;
+  const at = !me && x != null && typeof walkRenderer !== 'undefined' ? walkRenderer.talkAt : null;
+  if (at && z != null && Math.hypot(x - at.x, z - at.z) > FIGURE_TALK_NEAR) return null;
+  return figureTalkFace({
+    expr: T.por && T.por.who === c.who ? T.por.expr : null,
+    text: c.text,
+    n: c.n,
+    typing: c.typing,
+    t: performance.now(),
+    reduced: reducedMotion,
+  });
+}
+/** CH-6: how far (metres) from where the talk began the one talking may stand */
+const FIGURE_TALK_NEAR = 1.5;
 /**
  * a person drawn as figure `name` this frame, doing `act`: 'idle', 'walk' or 'run' (by the distance walked, `gait`
  * metres, as it was at the last tick), or another of the figure's clips ('cheer', 'throw', 'sit': a code figure has

@@ -122,6 +122,8 @@ const figureAtlas = {
   marks: /** @type {number[]} */ ([]),
   frame: 0,
   draws: 0,
+  /* CH-6: of them, those drawn with a face not at rest (talking, a blink, an expression) */
+  faceDraws: 0,
   drawn: 0,
   ms: 0,
   full: 0,
@@ -544,6 +546,7 @@ function figureAtlasDraw(E) {
   E.drawn = true;
   E.job = null;
   A.draws++;
+  if (J0.face && J0.face.key) A.faceDraws++;
 }
 /** the frame's face marks over their cells, in one draw */
 function figureAtlasMarks() {
@@ -612,6 +615,7 @@ function figureAtlasReport() {
     meshMb: Math.round((A.resBytes / 1048576) * 10) / 10,
     trimmed: A.trimmed,
     draws: A.draws,
+    faceDraws: A.faceDraws,
     ms: Math.round(A.ms * 10) / 10,
     full: A.full,
     mb: Math.round(((FIGURE_ATLAS_W * FIGURE_ATLAS_H * 8) / 1048576) * 10) / 10,
