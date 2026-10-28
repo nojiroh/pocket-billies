@@ -176,8 +176,25 @@ export const ISLAND_GEN_DEFAULTS = {
   /* the mountain in the middle: the radius of its foot, its peak, how tall its shelves are (0-1: 0.8-2 m, the cliffs),
      how long it runs along its ridge (0-1: up to 1.45 times its width), a shoulder peak along the ridge (0-1 of the
      peak's height, times 0.6), a range of lower peaks and ridges round it (0-1: 2 to 6 of them, a third to a half of
-     its height), kept away from the biggest zone and the cove */
-  mountain: { r: 22, peak: 24, cliffs: 0.5, stretch: 0.6, shoulder: 0.6, range: 0.9 },
+     its height), kept away from the biggest zone and the cove; smooth: the share of its height in smooth slopes (the
+     rest is the shelves' cliffs; the owner 2026-10-28: gentler on the hub), curve: how its slopes bend (1 a straight
+     cone; more: a gentle foot rising to a steep top), foot: how many metres it takes to fall away to nothing beside
+     a flat zone, rock: the share of its height (0-1) that is all smooth slope before the shelves begin (its grassy
+     foot), shift: [x, z] metres the peak moves from where it would stand, trail: 0 for no trail to the summit */
+  mountain: {
+    r: 22,
+    peak: 24,
+    cliffs: 0.5,
+    stretch: 0.6,
+    shoulder: 0.6,
+    range: 0.9,
+    smooth: 0.25,
+    curve: 1.1,
+    foot: 6,
+    rock: 0,
+    shift: [0, 0],
+    trail: 1,
+  },
   /* rolling land (0-1: up to 1.6 m) and the foot hills round the mountain */
   hills: 0.4,
   /* the cove: cut into the coast; its middle's angle, its width in degrees, its depth, the deep channel from the dock
@@ -334,6 +351,12 @@ export function islandGenDials(d) {
   D.mountain.stretch = num(D.mountain.stretch, 0, 1, 0.5);
   D.mountain.shoulder = num(D.mountain.shoulder, 0, 1, 0.6);
   D.mountain.range = num(D.mountain.range, 0, 1, 0.6);
+  D.mountain.smooth = num(D.mountain.smooth, 0.05, 1, 0.25);
+  D.mountain.curve = num(D.mountain.curve, 0.6, 3, 1.1);
+  D.mountain.foot = num(D.mountain.foot, 2, 30, 6);
+  D.mountain.rock = num(D.mountain.rock, 0, 0.9, 0);
+  D.mountain.shift = [0, 1].map(k => num((D.mountain.shift || [])[k], -40, 40, 0));
+  D.mountain.trail = D.mountain.trail === 0 ? 0 : 1;
   D.organic = num(D.organic, 0, 1, 0.7);
   D.hills = num(D.hills, 0, 1, 0.4);
   D.cove.on = D.cove.on ? 1 : 0;
@@ -899,8 +922,8 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     /* away from the town (so the stream has its length), else a little off the middle at random */
     away = D.cove.on && D.stream.on && D.town.on ? Rf * 0.8 : 0,
     peakP = [
-      c[0] + Math.cos(lean) * off - Math.cos(streamA * ISLAND_RAD) * away,
-      c[1] + Math.sin(lean) * off - Math.sin(streamA * ISLAND_RAD) * away,
+      c[0] + Math.cos(lean) * off - Math.cos(streamA * ISLAND_RAD) * away + D.mountain.shift[0],
+      c[1] + Math.sin(lean) * off - Math.sin(streamA * ISLAND_RAD) * away + D.mountain.shift[1],
     ],
     shSide = rM.chance(0.5) ? 1 : -1,
     shP = [
@@ -951,7 +974,10 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         const crag = f => 1 - ISLAND_CRAG * (1 - rr) * (1 - mapgenSmooth(mapgenBetween((f - 0.55) / 0.4, 0, 1)));
         if (dn < 1) {
           const f = Math.min(1, (1 - dn) / (1 - topF));
-          e0 = D.mountain.peak * Math.pow(f, 1.1) * (0.8 + 0.2 * mapgenRidged(i / 16, j / 16, sM + 41) * (1 - 0.6 * f));
+          e0 =
+            D.mountain.peak *
+            Math.pow(f, D.mountain.curve) *
+            (0.8 + 0.2 * mapgenRidged(i / 16, j / 16, sM + 41) * (1 - 0.6 * f));
           e = e0 * crag(f);
         }
         if (shH > 0) {
@@ -978,7 +1004,10 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         }
         if (e <= 0 && e0 <= 0) continue;
         let keep = 1;
-        for (const Z of zones) keep *= mapgenSmooth(mapgenBetween((islandPolyDist(Z.poly, i, j, 12) - 5) / 6, 0, 1));
+        for (const Z of zones)
+          keep *= mapgenSmooth(
+            mapgenBetween((islandPolyDist(Z.poly, i, j, 5 + D.mountain.foot) - 5) / D.mountain.foot, 0, 1)
+          );
         E[j * W1 + i] = e * keep * (inLand(i, j) ? 1 : 0);
         E0[j * W1 + i] = e0 * keep * (inLand(i, j) ? 1 : 0);
       }
@@ -993,10 +1022,12 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
     footR[t] = Math.max(last, 1);
   }
   const footAt = t => arrAt(footR, t);
-  const SMOOTH = 0.25,
+  const SMOOTH = D.mountain.smooth,
     band = Math.round((0.8 + D.mountain.cliffs * 1.2) * 20) / 20;
   G.S0 = Float32Array.from(G.S);
-  for (let q = 0; q < E.length; q++) G.H[q] += E0[q] * SMOOTH;
+  /* the grassy foot (mountain.rock: all smooth up to that height), then the smooth share of the rest */
+  const ROCK = D.mountain.rock * D.mountain.peak;
+  for (let q = 0; q < E.length; q++) G.H[q] += Math.min(E0[q], ROCK) + Math.max(0, E0[q] - ROCK) * SMOOTH;
   const Eat = (x, z) => {
     const i0 = mapgenBetween(Math.floor(x), 0, w - 1),
       j0 = mapgenBetween(Math.floor(z), 0, h - 1),
@@ -1019,14 +1050,14 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         /* the shelves' edges wander (not rings): an offset by noise at two sizes, none on the flat top (the look
            pass: raggeder, so they read as rock bands, not contour lines) */
         wob =
-          e > 0.3
+          e > ROCK + 0.3
             ? band *
               1.3 *
               O3 *
               (mapgenFbm(x / 5, z / 5, sM + 17) - 0.5 + 0.8 * (mapgenFbm(x / 14, z / 14, sM + 19) - 0.5)) *
               mapgenBetween(1.2 - e / D.mountain.peak, 0, 1)
             : 0,
-        n = Math.floor((e * (1 - SMOOTH) + wob) / band);
+        n = Math.floor((Math.max(0, e - ROCK) * (1 - SMOOTH) + wob) / band);
       if (n > 0) {
         G.S[j * W2 + i] += n * band;
         shelves++;
@@ -2395,10 +2426,28 @@ export function islandGenerate(dials, seed = 'island', ctx = {}, prev = null) {
         }
       }
     const sT = salt('trail');
-    let path = goal >= 0 ? mapgenTrailSearch(G, goal, k => !!footOnly[k], sT) : null;
-    if (!path && goal >= 0) path = mapgenTrailSearch(G, goal, k => !!roadAt[k], sT + 1);
-    if (path && path.length >= 4) mapgenCarveTrail(G, path, 'v');
-    else notes.push('no way up the mountain was found: no trail');
+    if (!D.mountain.trail) {
+      /* no trail (the owner, 2026-10-28): the summit is still a marked spot, the orbit's pivot (a kept town: where it
+         was, so the doors still face out from it) */
+      const old = prev && (prev.spots || []).find(S => S.kind === 'summit'),
+        gi = goal >= 0 ? goal % W1 : Math.round(peakP[0]),
+        gj = goal >= 0 ? (goal - gi) / W1 : Math.round(peakP[1]),
+        sx = old ? old.x : gi,
+        sz = old ? old.z : gj,
+        q = mapgenBetween(Math.floor(sz * 2), 0, h * 2 - 1) * W2 + mapgenBetween(Math.floor(sx * 2), 0, W2 - 1);
+      G.spots.push({
+        kind: 'summit',
+        x: mapgenRound2(sx),
+        z: mapgenRound2(sz),
+        y: mapgenRound2(G.H[mapgenBetween(Math.round(sz), 0, h) * W1 + mapgenBetween(Math.round(sx), 0, w)] + G.S[q]),
+      });
+      notes.push('no trail (mountain.trail 0)');
+    } else {
+      let path = goal >= 0 ? mapgenTrailSearch(G, goal, k => !!footOnly[k], sT) : null;
+      if (!path && goal >= 0) path = mapgenTrailSearch(G, goal, k => !!roadAt[k], sT + 1);
+      if (path && path.length >= 4) mapgenCarveTrail(G, path, 'v');
+      else notes.push('no way up the mountain was found: no trail');
+    }
   }
 
   /* ---------- the built zones flat again (the paths' flattening blends a few metres into them): level, no steps,

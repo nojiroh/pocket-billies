@@ -435,3 +435,72 @@ test("the game's island is the generator's own output for its stored dials and s
   /* HB-4b: the station's sky rail and portal, kept by build-island */
   if (!patched) assert.deepEqual(sc.landmarks, landmarks, 'landmarks (run node tools/build-island.mjs to remake it)');
 });
+
+test("the mountain's shape dials (the owner, 2026-10-28): a grassy foot below the rock line, its peak shifted, no trail when asked", () => {
+  /* the hub's own dials (a fresh island: nothing kept) with the shape dials */
+  const base = D.maps.copperleaf.islandGen.dials,
+    shape = {
+      ...base.mountain,
+      r: 30,
+      peak: 25,
+      smooth: 0.35,
+      curve: 1.7,
+      range: 1,
+      shoulder: 0.7,
+      stretch: 0.7,
+      rock: 0.4,
+      cliffs: 0,
+      foot: 18,
+      shift: [0, 0],
+      trail: 1,
+    },
+    A0 = islandGenerate({ ...base, mountain: shape }, 'copperleaf', ctx),
+    B0 = islandGenerate({ ...base, mountain: { ...shape, shift: [0, 8], trail: 0 } }, 'copperleaf', ctx),
+    a = A0.scene,
+    b = B0.scene;
+  /* the dials kept in range; the old defaults unchanged */
+  const d = islandGenDials({ mountain: { smooth: 3, curve: 9, rock: -1, foot: 0, shift: [99, 'x'], trail: 'no' } });
+  assert.deepEqual(
+    [d.mountain.smooth, d.mountain.curve, d.mountain.rock, d.mountain.foot, d.mountain.shift, d.mountain.trail],
+    [1, 3, 0, 2, [40, 0], 1]
+  );
+  assert.deepEqual(
+    [0, 1].map(k => islandGenDials({}).mountain[['smooth', 'curve'][k]]),
+    [0.25, 1.1]
+  );
+  /* the highest ground and the shelves (a step raise) */
+  const top = sc => {
+    const S = steps(sc),
+      W2 = sc.w * 2;
+    let best = [-1, 0, 0],
+      lowShelf = Infinity;
+    const all = [];
+    for (let j = 0; j < sc.h * 2; j++)
+      for (let i = 0; i < W2; i++) {
+        const g = +sc.heights[sc.h - Math.round(j / 2)][Math.round(i / 2)],
+          s = S ? S[j * W2 + i] / 20 : 0,
+          M = sc.zones.find(Z => Z.k === 'mountain');
+        if (g + s > best[0]) best = [g + s, i / 2, j / 2];
+        all.push([g + s, j / 2]);
+        if (s > 0.5 && M && islandPointIn(M.poly, i / 2, j / 2)) lowShelf = Math.min(lowShelf, g);
+      }
+    /* the massif's middle: where the ground over 60% of the top lies, on average (north-south) */
+    const hi = all.filter(q => q[0] > 0.6 * best[0]);
+    return { best, lowShelf, midZ: hi.reduce((t, q) => t + q[1], 0) / hi.length };
+  };
+  const A = top(a),
+    B = top(b),
+    peak = shape.peak;
+  /* no rock shelf starts on the grassy foot (with no trail: the trail cuts its own steps low down): the ground under the
+     lowest shelf is most of the way up the rock line */
+  assert.ok(B.lowShelf > 0.4 * peak * 0.6, `the lowest shelf stands on ${B.lowShelf} m`);
+  /* the peak moves with shift, about 8 m north */
+  assert.ok(Math.abs(B.midZ - A.midZ - 8) < 2.5, `the massif moved ${B.midZ - A.midZ} m north`);
+  /* no trail: fewer trail tiles, the summit still a marked spot (the orbit's pivot) */
+  assert.ok(!A0.notes.includes('no trail (mountain.trail 0)'), A0.notes.join('; '));
+  assert.ok(B0.notes.includes('no trail (mountain.trail 0)'), B0.notes.join('; '));
+  assert.ok(
+    (b.spots || []).some(S => S.kind === 'summit'),
+    'the summit spot'
+  );
+});
