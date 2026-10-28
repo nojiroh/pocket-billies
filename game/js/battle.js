@@ -52,8 +52,8 @@ import {
   plural,
 } from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
-import { typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
 import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
+import { typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,

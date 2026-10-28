@@ -137,6 +137,122 @@ after three goes).
   starts them.
 - Tag to suggest (sessions can't push tags): `ui-16a-done` on this entry's commit.
 
+### VFX track VFX-5 - Attack lunges: the lean, afterimages, the dash ribbon - 2026-10-28
+Branch `track/vfx` (main and `ccr-7526d712-gliikp`, PR #290, merged in first, both clean; main was a fast-forward).
+Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options
+taken and listed below. Draft PR #295 (`track/vfx` to main) opened for the track. Tag `vfx-5-done` for the owner (the
+git proxy refuses tag pushes) on this entry's commit.
+- The plan: VFX-5 as Part 1 planned it, built as helpers Part 2's runner (VFX-8) calls: logic/smear.js gets a lunge's
+  lean, its afterimages and the dash list; battle-stage.js gets one callable step (`battleLunge`) that both H-move
+  lunges (the hit and the miss) go through with their old tweens; battle-3d.js draws from it. Nothing added to any
+  move's time.
+- Changed:
+  - logic/smear.js: `LUNGE_GHOSTS` (two looks: fade .5 / .28, glow .35 / .6), `lungeGhostCount` (2 / 2 / 1 / 0 by
+    `battleStage.q.lvl`, none under Reduced motion), `lungeLeanOn`, `lungeLeanFor` / `lungeLean` (the sideways speed
+    between the two newest places, in stage px a ms, x 1, capped at 0.3, half that moving back home, rounded to
+    hundredths and held for its 24 fps cell), `LUNGE_DASH` / `lungeDash`, `lungeRibbonHalf` (0.3 of the Billie's
+    height, 0.12-0.45 m). `smearGhosts` takes the copies' looks, `smearRibbon` a half width; the throw's defaults stay.
+    Five new tests in tools/test/smear.test.mjs (the lean held per cell, the same for the near and far Billie and
+    mirrored for the foe; the afterimages; the quality ladder; the dash ids are real H moves).
+  - battle-stage.js: `battleLunge(i, {dx, dy, dur, ease, delay, backDur, backAt, dash, col})`; the Billie's
+    `lunge` (its window, its way on screen) and `trail`; `battleLungeRecord` in the stage frame after the tweens;
+    `battleLungeLean`, `battleLungeGhosts`, `battleLungeRibbon`; `battleStageFlush` drops the lunges' places (they
+    would jump to the end). The unused `me` in case `move` is gone.
+  - battle-3d.js: the rig item's `shear` is the lean; the afterimages are copies of the rig item (its own posed
+    picture) at the older places with their lean, `fade`, `glow` and `ghost`; `BT.rigRibbons` for dashes.
+    walk-view-gl.js draws them with Part 1's `ribbonPass`. walk/shadows.js, walk/lighting.js and walk/ground-draw.js
+    skip ghosts (no shadow, contact shade or grass push).
+- Where the track file was wrong or vague (checked in the code): the H lunge starts 100 ms in (+30 px in 120 ms eased
+  in, back from 240 ms in 200), not at 0; `uShear` was indeed 0 for every battle rig; there is no dash family in the
+  code or data yet (VFX-8/11), so the six dash moves are a list of ids for now; Part 1's 0.12 m gap means the near
+  Billie (65 px/m) shows one afterimage for its lunge and the far one two; Calm doesn't exist yet in the code
+  (UI-16a), so "plays under Calm" holds by nothing reading it.
+- Decided for the owner, to review:
+  - The lean: at most 0.3 (about 17 degrees at the top), into the lunge; moving back home half as much (it settles
+    rather than leaning back hard). Off at quality 3 with the afterimages (it costs nothing, but Part 1's rule is
+    "every smear thins out").
+  - Two afterimages (one at quality 2), fainter than a throw's three (a Billie is far bigger on screen).
+  - Dash moves = the family table's six (Quick Strike, Zip, Dash Kick, Flame Dash, Front Run, Just Do It): their
+    ribbon is the type's colour (`TYPE_COLORS[t][0]`, brightened) with the white core, at the Billie's middle.
+  - The miss's lunge smears too (it is the same step).
+  - Under Calm the smears play (Part 2's rule 9). No move is longer.
+- Risky: the near Billie fills much of a phone's screen, so its afterimage may read as a flicker over itself rather
+  than a copy behind; the lean on wide creatures (it bends the whole picture from the feet). A slow device drops the
+  battle's quality to 3 and turns all smears off (seen headless: films need `battleStage.lockQ` and `q.lvl = 0`).
+- Phone checks (listed, not waited for): the lean's strength; your own Billie's afterimage; the dash ribbon's width
+  (Quick Strike or Zip); a normal move's time unchanged; Reduced motion shows none of it.
+- Verified: lint, typecheck, `npm test` 1574 of 1574, check:modules, format:check, check:data (its two bridge
+  warnings are main's), build. A headless film (390 x 844, phone, Quick Strike from both sides, quality locked at 0,
+  the clock slowed): the lean climbs 0.02, 0.09, 0.21 into the hit and settles at -0.09 to -0.03 going home; two
+  afterimages, then one, then none about 125 ms after the lunge; the ribbon shows and erodes; no page errors (one
+  404: data/gamedata.js isn't built in a checkout, and the game then reads the JSON files, data-files.js). Smoke check: 6 of 6 in 252 s. Full quick check: 38 of 41 in 1972 s, every battle step
+  passed (doubles and Alpha, starters, weather, the phone's battle, battle music); the three failures fail on main
+  too (07c9b284, those steps run alone there: 0 of 3): terraces (`train_station` in the air), RL-8's run (crossed into
+  Thicket Route but its view never showed) and the walking step (room light here; settings tabs on main). CI's fast
+  check (`smoke`) is red on three steps that are red on main's latest Check run too (a run's seam, the Studio's world
+  map look and Camera section): one comment on PR #295, one re-run.
+  Python Playwright was missing: 1.63.0 installed (the pinned 1.56.0 can't find the container's Chromium).
+- Next: VFX-8 (anims as data), started by the planning session. It wraps `battleLunge` as the runner's lunge and dash
+  steps and moves `LUNGE_DASH` into battleAnims.json's families.
+
+### VFX track VFX-7 - Part 2 planned: battle effects (research, the owner's answers) - 2026-10-27
+Branch `ccr-7526d712-gliikp` (the session's own, made from main at 07c9b284; main had not moved). Plan Mode, plan
+approved. Docs only, one cause per commit; nothing in the game changed. Tag `vfx-7-done` (for the owner to push) on
+this session's last commit. Details: docs/phases/vfx-track.md, "Part 2: battle effects".
+- The owner's brief: "Make a plan to improve the art and effects of attacks and other things in battle. Do research
+  online. Make suggestions for additions."
+- The owner's answers (asked this session): Part 2 of the VFX track, VFX-6 folded in; Claude draws the effect art and
+  the owner repaints any in the Studio; all four additions (signature scenes, leader/rival/boss VS intros, battle
+  scars, move sounds); signature scenes and power 100+ moves may run up to 0.5 s longer.
+- Changed: vfx-track.md (a pointer to Part 2 in the title and header; VFX-5's lean and afterimages built as helpers the
+  runner reuses; VFX-6 folded into VFX-8 and VFX-12; Part 1's "anything longer" item answered; Part 2: what a battle
+  shows today with refs, the research, ten art rules, the build, 16 families for all 122 moves, type kits, hit tiers,
+  statuses, the stage, the flow, signature scenes, move sounds, the effect art, budgets, sessions VFX-8..VFX-20, the
+  bugs found, fits with other tracks, risks, not taken, ideas for later, Ask me before, sources); ROADMAP's VFX entry;
+  BRANCHES (this branch; Part 2 on `track/vfx`).
+- Found: the 122 moves share three choreographies picked by category (H, S, X), recoloured by type; icon particles
+  are 30 px/m beside your Billie's ~65 (twice its pixel size), fade smoothly, take a draw and a texture bind each, and
+  never lit anything (only particles with a hex `col` make light); rings, dust and beams are on the 2D canvas over
+  the GL; a rig's hit flash redraws and uploads its canvas every frame; the chromatic flash is a CSS filter over the
+  whole canvas; Flashes doesn't reach the battle; a tap only finishes the text and can't skip an animation.
+- Bugs found (none fixed here; each has its session in the track file): Flashes ignored in battle (fixed meanwhile by
+  the style track's SY-1, #279, `flashFor`; VFX-8 adds only the rate limit); the selection and
+  target rings divide by `R.k2`, which no rig has, so they never draw; a stat drop plays the rising sound (sound.js
+  643 vs the engine's `up: false`); level-up plays on slot 0 (the engine sends `uid`); every status but par and slp
+  shows flames; the XP bar moves a line late (an engine change, golden record remade alone); the reduced-motion tag
+  check misses 'tag crit'; "Dynasty" and "Retail" aren't types; the Studio's particle picker misses 7 types' sprites;
+  `an.t = M.t` writes into the engine's event.
+- Where the review against the code corrected the draft: the stage clock already multiplies by speed (timelines stay
+  in stage ms); KO can't be read from `ev.s` (`refreshLastSnapshot` refreshes only the last event): a look-ahead
+  instead; the pool needs one atlas (`kitPack`, `gpuTexture`, the warm-up) and cutout drawing in GL; the rigs' `uHit`
+  keeps the plain sprite program (the instanced one has no slot); battle lights need fixed keys for Steady lamps;
+  snapping positions buys nothing (the camera moves smoothly), so time is stepped instead; drawn words can't be
+  translated.
+- Pushback, left to the owner (Ask me before): the UI plan says hit-stop only on crits, KOs and super-effective hits;
+  Sakurai's research favours a small stop on every hit, and today's (20-90 ms) costs under 0.1 s. Recommended: keep it.
+- Risky: nothing ships. The numbers (tiers, budgets, ramps) are placeholders; the art will be placeholder art until
+  the owner's repaint; the 56 scenes need storyboards first; the tap that skips (VFX-8) changes the quick check's
+  battle timing (it plays battles at 4x).
+- Verified: every file:line the track file cites printed at this branch's head; the family table checked by script
+  against moves.json (16 families, 122 moves, each once); `npm run lint` (eslint, names, ui-lint at its ceilings,
+  unused CSS, art-code-refs), `npm test` 1569 of 1569, `npm run check:data` (176 files fine; its two warnings,
+  Copperleaf's bridge 3 and test_props_island's bridge 1, are main's). `git diff` shows docs only; no game checks
+  apply to a docs-only change.
+- The owner's standing instruction, after the plan (2026-10-28): "Continue this plan automatically until it is done.
+  Automatically open next steps in new Sessions and automatically approve plans. Make sure you communicate with the
+  sound session about soundtrack things." Recorded in vfx-track.md, "How the sessions run" and "Talking to the sound
+  track": this session starts each step in a new session on `track/vfx`; each step takes the recommended option for
+  every open choice (Ask me before now names one for each, e.g. keep the small hit-stop on normal hits, the target
+  rings on) and lists it under "Decided for the owner, to review"; steps that touch sound message the sound track's
+  planning session (`session_019UpAFxCHyLNWb1TCD6L3vh`) before and after. It agreed (2026-10-28): VFX-19 takes the
+  battle half of its optional SND-16 (moves, hits, throws, catches, hurt sounds, the recall) in a music.json `battle`
+  section of the shape it proposed; SND-16 keeps the rest; its steps message this session when they change battle
+  sounds; SND-13 will read `hitTier` and `koAhead`. Merges to main stay the owner's.
+- The style track (#279) also works in battle: SY-1's flashes, SY-2's numbers, SY-5's Bureau stamps and Notice, SY-6's
+  foil in the sprite shader. The split (vfx-track.md, "Fitting with the style track") was proposed to its planning
+  session (`session_019UpAFyAJSkEVjDLuVMFQkS`) on 2026-10-28.
+- Next: VFX-5 (attack lunges) in a new session on `track/vfx`, started by this session; then VFX-8 (anims as data).
+
 ### UI track UI-14b - the marks on every screen (status tags, rarity on held items, Augments, Genes and Billies, pb-chip, Colour shapes) - 2026-10-27
 Branch `claude/ui-14b-marks-screens`, made from UI-14a's `claude/ui-14a-marks-kit` (main plus UI-11, UI-12, UI-13 and
 UI-14a; draft PR #286); main merged in first (nothing new), then UI-8c's `claude/ui-8c-map-markers` (#281: only docs,

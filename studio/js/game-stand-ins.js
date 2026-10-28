@@ -65,6 +65,7 @@ const TYPE_COLORS = liveMap(D => {
   o.None = [(D.untyped || {}).color || '#9a9a9a', (D.untyped || {}).text || '#fff'];
   return o;
 });
+provide({ TYPE_COLORS }); /* to-module */
 /* UI-13: battle's 3D effects take a type's `glow` (game-data.js TYPE_GLOW) */
 const TYPE_GLOW = liveMap(D => {
   const o = Object.fromEntries(D.types.map(t => [t.id, t.glow || t.color]));

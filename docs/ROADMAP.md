@@ -185,7 +185,13 @@ town node needs it.
   stretched pyramid (VFX-3), an impact frame (VFX-4), attack lunges (VFX-5), Studio dials and the debug log (VFX-6).
   VFX-0 (the plan, with research) and VFX-1 built 2026-10-26 on `ccr-a98cc267-eqso1d` at the owner's word; VFX-2
   (the ribbon) and VFX-3 (the stretched pyramid) built 2026-10-26 on `track/vfx`; VFX-4 (the impact frame) built
-  2026-10-27; VFX-5 next. Tags `vfx-N-done`. Branch `track/vfx`.
+  2026-10-27; VFX-5 (attack lunges: the lean, two afterimages, the dash moves' ribbon, as helpers Part 2's runner
+  reuses) built 2026-10-28; VFX-8 next. **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
+  lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
+  VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
+  `track/vfx` after VFX-5, each in a new session started by VFX-7's, plans approved automatically (the owner,
+  2026-10-28), sound steps agreed with the sound track's planning session. Tags `vfx-N-done`. Branch `track/vfx`.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
