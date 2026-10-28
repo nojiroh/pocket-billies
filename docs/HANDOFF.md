@@ -46,8 +46,11 @@ made from `track/vfx` at 1f5dfee7; draft PR #311 into `track/vfx`. Run under the
     0 out (no ink), depth offset, all in one draw inside the effects pass before the pool's (under the `battleFx`
     tag); never on water (its middle or a corner); one per landed hit (a skipped hit too), one more on a KO (a dent),
     a sand drift on the Sandstorm's hurt; the oldest replaced past the cap; battle3dStop starts the 400 ms fade, a new
-    battle clears them. Placeholder art (`scarPlaceholder`, procedural greys tinted by each kind's colour, 32 px a
-    metre); `scarArtPixels` is the one function to change when VFX-10's decals land.
+    battle clears them. The art: VFX-10's six decals (they landed on `track/vfx` during this step, under the ids
+    proposed to it: `scar_scorch` ... `scar_dent`, sprites with `ground`), their greys coloured by a ramp per kind
+    (`scars.kinds.*.ramp`: Fire, Water, Ground, Grass, Ground, None; VFX-10's `battleRampRgb`), sized by the picture at
+    32 px a metre (the puddle and sand drift 36x24 px, so 1.125 x 0.75 m); a procedural stand-in (`scarPlaceholder`)
+    only where a picture is missing. A scar's vertices are made once the decals have loaded.
   - tools/look-battle-anims.py: `--weather=rain|storm|snow|ash|fog|clear|sand`, `--bot` (the foe a Bureau bot),
     `--bench` (frame time and draws on the Graphics bench), and `--measure` counts the whole frame's draws.
 - Where the track file was wrong or vague (checked in the code):
@@ -121,9 +124,15 @@ made from `track/vfx` at 1f5dfee7; draft PR #311 into `track/vfx`. Run under the
   step passed (double and Alpha at 4x, starters, weather, the phone's battle and debug log, the debug menu), and the
   Studio's steps. Song fingerprints 199, 0 changed. Not run: the in-game full test (its first step passes in the
   smoke check; nothing it plays changed but the battle's look).
-- Next: VFX-10's decals: `scarArtPixels` in walk/battle-scars.js reads the six sprites (`scar_scorch` ... `scar_dent`,
-  proposed as game/art/battle/anims/<id>.png and battleAnims.json `sprites` entries) instead of `scarPlaceholder`;
-  VFX-12's dials for `moods`, `weather` and `scars` (told the keys).
+  Again after the merge with track/vfx and VFX-10's decals (fc7492eb): smoke 7 of 7 (twice), `npm test` 1879 of 1879,
+  the full quick check 38 of 42 in 1684 s: the same three known reds and Battle music's drums (a load flake many
+  entries record; it passed alone on this branch above).
+- Merged `origin/track/vfx` at 7f99aec5 (VFX-10's effect art and main) into this branch (a merge): conflicts kept both
+  in battleAnims.json, its schema and types, dataBattleAnims, type-rename, battle-3d.js's imports and the look tool's
+  --measure (my whole-frame draws beside VFX-10's strip count); studio/art-code-refs.json regenerated; walk/battle-fx.js
+  only gains an `export` on `battleRampRgb` (made for the scars). The next main-line session merges this branch.
+- Next: VFX-12's dials for `moods`, `weather` and `scars` (told the keys); a scar atlas made again when a decal is
+  repainted in the Studio (today: on the next page load).
 
 ### VFX track VFX-9 - One draw for effects: the GPU pool, the budgets, fixed light keys, uHit, the uCA pulse - 2026-10-28
 Branch `track/vfx` (it held main and PR #290's branch when the step began; main then moved 246 commits, #279, #283,
