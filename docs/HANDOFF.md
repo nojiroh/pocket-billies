@@ -45,7 +45,7 @@ save or data change but one preference). No tag: not a phase or track step. Draf
   restyles the bar's shadow tree for 240 ms) not measured on a phone.
 - Verified: lint, typecheck, check:modules, format:check, check:data, build clean; unit tests 1854 pass (after the
   merge); the Actions step alone passes; full quick check before the merge 35 of 42, the rest as above; smoke after
-  the merge (see the PR). Screenshots: phone 390x844 (the bar full, part way and compact; Actions open in the hub
+  the merge 7 of 7 in 344 s (the phone step's piece counts within their ceilings this time). Screenshots: phone 390x844 (the bar full, part way and compact; Actions open in the hub
   and on a run), battle at 1280x720, 1920x1080, 2560x1080 and 844x390.
 - Next: the owner's phone check. Then, if the labels in the compact bar feel busy, the words could go back to
   icon-only at the new size.
