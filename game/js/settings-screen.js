@@ -504,6 +504,12 @@ function settingsHTML() {
         'The classic beep while your lead Billie is under a quarter of its HP. The battle music turns tense either way.',
         switchHTML('lowHpBeep', !!p.lowHpBeep, '1', '')
       ) +
+      /* SND-11: every song on the four Game Boy voices, as HeartGold's GB Sounds did (sound.js reads it at each bar) */
+      settingsRowHTML(
+        'GB Sounds',
+        'Every song on the four Game Boy voices, as they first were. Off: the fuller band (harp, strings, flute, drums).',
+        switchHTML('gbSounds', !!p.gbSounds, '1', '')
+      ) +
       `<p class="note">Sounds fade in when you arrive somewhere.</p>`;
   else if (tab === 'graphics') {
     const gp = p.aim === 'off' ? 'off' : p.aim === 'smooth' ? 'balanced' : 'best',
@@ -619,7 +625,7 @@ function changePreference(k, v) {
     return;
   }
   if (k === 'haptics') v = v !== 'off';
-  if (k === 'bigTargets' || k === 'alwaysRun' || k === 'lowHpBeep') v = v === '1';
+  if (k === 'bigTargets' || k === 'alwaysRun' || k === 'lowHpBeep' || k === 'gbSounds') v = v === '1';
   if (k === 'tilt') {
     v = v === 'on';
     if (v)
