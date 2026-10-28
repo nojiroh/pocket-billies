@@ -139,7 +139,7 @@ export function sketchPanelHTML(sp) {
       .map(k => `<option value="${k}" ${k === sketchUi.scale ? 'selected' : ''}>${k}×</option>`)
       .join('')}</select></label>`,
     own = form
-      ? `<h4>Placeholder Billie <small class="mono">${escapeHtml(form.name)}</small></h4><p class="help">bodyPlans.json, on the <b>${escapeHtml(form.plan)}</b> plan. Download its drawing sheet, draw over the cells in any app (magenta stays clear; keep the labels and the grid where they are; a cell left magenta keeps its placeholder), upload it back: it is stored and the Billie baked again.</p><div class="seg-row"><button class="btn sm" data-act="phDownload">Download drawing sheet</button><button class="btn sm" data-act="phUpload">Upload drawing sheet</button><button class="btn sm primary" data-act="phWrite">Write Billie</button></div>`
+      ? `<h4>Placeholder Billie <small class="mono">${escapeHtml(form.name)}</small></h4><p class="help">bodyPlans.json, on the <b>${escapeHtml(form.plan)}</b> plan. Download its drawing sheet, draw over the cells in any app (magenta stays clear; keep the labels and the grid where they are; a cell left magenta keeps its placeholder), upload it back: it is stored and the Billie baked again.</p><div class="seg-row"><button class="btn sm" data-act="sketchDownload">Download drawing sheet</button><button class="btn sm" data-act="sketchUpload">Upload drawing sheet</button><button class="btn sm primary" data-act="sketchWrite">Write Billie</button></div>`
       : '';
   return `<div class="px-sec placeholder-sheets" data-ph-sp="${escapeHtml(sp)}">${own}<h4>Body plan sheets</h4><p class="help">Every Billie on a plan in one sheet: two rows each (front, back). Upload splits it back per Billie.</p><div class="seg-row"><select data-ph="plan">${Object.keys(
     P.plans
@@ -147,7 +147,7 @@ export function sketchPanelHTML(sp) {
     .map(p => `<option ${p === sketchUi.plan ? 'selected' : ''}>${escapeHtml(p)}</option>`)
     .join(
       ''
-    )}</select>${scale}<button class="btn sm" data-act="phPlanDownload">Download</button><button class="btn sm" data-act="phPlanUpload">Upload</button></div></div>`;
+    )}</select>${scale}<button class="btn sm" data-act="sketchPlanDownload">Download</button><button class="btn sm" data-act="sketchPlanUpload">Upload</button></div></div>`;
 }
 document.addEventListener('change', ev => {
   const el = ev.target;
@@ -156,15 +156,15 @@ document.addEventListener('change', ev => {
   if (el.dataset.ph === 'scale') sketchUi.scale = Number(el.value) || 1;
 });
 const sketchFormFrom = el => sketchFormOf(el.closest('[data-ph-sp]')?.dataset.phSp || '');
-ACTIONS.phDownload = (d, el) => {
+ACTIONS.sketchDownload = (d, el) => {
   const form = sketchFormFrom(el);
   if (form) sketchDownload({ form });
 };
-ACTIONS.phUpload = (d, el) => {
+ACTIONS.sketchUpload = (d, el) => {
   const form = sketchFormFrom(el);
   if (form) sketchUpload({ form });
 };
-ACTIONS.phWrite = async (d, el) => {
+ACTIONS.sketchWrite = async (d, el) => {
   const form = sketchFormFrom(el),
     P = studioState.D.bodyPlans;
   if (!form) return;
@@ -175,5 +175,5 @@ ACTIONS.phWrite = async (d, el) => {
     toast('Not baked: ' + e.message, 'err');
   }
 };
-ACTIONS.phPlanDownload = () => sketchDownload({ plan: sketchUi.plan });
-ACTIONS.phPlanUpload = () => sketchUpload({ plan: sketchUi.plan });
+ACTIONS.sketchPlanDownload = () => sketchDownload({ plan: sketchUi.plan });
+ACTIONS.sketchPlanUpload = () => sketchUpload({ plan: sketchUi.plan });
