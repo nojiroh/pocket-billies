@@ -2673,16 +2673,21 @@ def icons_steps(pg, errs):
 
 def items_steps(pg, errs):
     """PK-11: the Items & pyramids editor shows a Bag item's own picture at 72 and 36 px with Edit art (no atlas Icon
-    field); Edit art opens it in the icon editor. An item without a picture keeps its atlas icon and Draw one, which
-    names art/items/<id>.svg in its img and opens it blank (two undo steps); all undone."""
+    field); Edit art opens it in the icon editor. An item without a picture (PK-10: a new one, as every item has its own)
+    has Draw one, which names art/items/<id>.svg in its img and opens it blank (two undo steps); all undone."""
     E = pg.evaluate
     E("void openSection('items')")
     pg.wait_for_selector('#main [data-act="icOpen"][data-n="items/potion"]', timeout=20000)
+    items0 = E("JSON.stringify(studioState.D.items)")
     row = "[...document.querySelectorAll('#main .item-row')].find(r => r.querySelector('.item-ic small').textContent === %s)"
     sizes = E(f"[...({row % json.dumps('potion')}).querySelectorAll('.item-ic img.item-art')].map(i => i.width)")
     if sizes != [72, 36]: errs.append(f'items: the Potion’s picture shows at {sizes}, not 72 and 36 px')
     if E(f"!!({row % json.dumps('potion')}).querySelector('[data-p=\"items.potion.icon\"]')"): errs.append('items: an item with a picture still offers the atlas Icon field')
     held = E("Object.keys(studioState.D.items).find(k => !studioState.D.items[k].img)")
+    made = False
+    if not held:  # PK-10: every item has its own picture now: a new item (no picture) is made, and undone at the end
+        E("ACTIONS.itemNew()"); time.sleep(0.7); made = True
+        held = E("Object.keys(studioState.D.items).find(k => !studioState.D.items[k].img)")
     if not held: errs.append('items: no item without a picture to try Draw one on'); return
     if not E(f"!!({row % json.dumps(held)}).querySelector('[data-act=\"itemArt\"]')"): errs.append(f'items: {held} (no picture) has no Draw one')
     pg.click('#main [data-act="icOpen"][data-n="items/potion"]')
@@ -2699,6 +2704,9 @@ def items_steps(pg, errs):
     E("undo(); undo()"); time.sleep(0.4)
     E("ACTIONS.icClose()")
     if E(f"'img' in studioState.D.items[{json.dumps(held)}]") or E("studioState.textDirty.size"): errs.append('items: undo did not take Draw one back')
+    if made:
+        E("undo()"); time.sleep(0.4)
+        if E(f"{json.dumps(held)} in studioState.D.items"): errs.append(f'items: undo did not take the new item {held} back')
     # PK-10: a held item's tier and rows: a row's kind changed (the row takes that kind's fields), a row added, a plain
     # item made a held one; all undone
     E("void openSection('items')"); time.sleep(0.4)
@@ -2725,12 +2733,13 @@ def items_steps(pg, errs):
     while E("studioState.undo.length") > steps0: E("undo()"); time.sleep(0.15)
     time.sleep(0.3)
     if E(f"JSON.stringify(studioState.D.items[{json.dumps(hk)}])") != before or E(f"'hold' in studioState.D.items[{json.dumps(plain)}]"): errs.append('items: undo did not take the held edits back')
+    if E("JSON.stringify(studioState.D.items)") != items0: errs.append('items: items.json is not as it was after the undos')
     print(f'items: the Potion’s picture at 72 and 36 px with Edit art (opens it), {held} drawn from blank with Draw one; {hk}’s held row changed and added, {plain} made a held item; all undone', flush=True)
 
 
 def atlas_steps(pg, errs):
     """Studio art track SA-2b: the icon atlas: a rectangle dragged and resized (art/manifest.js unsaved, the game's
-    ARTMAN following), undone; an item icon's key renamed with the data in the same undo step; Delete refused while the
+    ARTMAN following), undone; a key the data uses (PK-10: a type's particle; no item uses the atlas) renamed with the data in the same undo step; Delete refused while the
     data uses a key; a rectangle added in a free place."""
     E = pg.evaluate
     E("void atlasOpen('coin')")
@@ -2743,7 +2752,9 @@ def atlas_steps(pg, errs):
     if E("ARTMAN.icons.coin") != [r0[0] + 3, r0[1], r0[2] + 1, r0[3]]: errs.append(f"atlas: drag and Shift+Right made {E('ARTMAN.icons.coin')} from {r0}")
     E("undo(); undo()"); time.sleep(0.3)
     if E("loadedText('art/manifest.js')") != orig or E("studioState.textDirty.size"): errs.append('atlas: undo did not put art/manifest.js back')
-    k = E("Object.keys(ARTMAN.icons).find(k => k.startsWith('i_') && atlasUses(k, studioState.D).length)")
+    # PK-10: no item draws from the atlas any more, so a key the data uses is a type's particle
+    k = E("Object.keys(ARTMAN.icons).find(k => atlasUses(k, studioState.D).length)")
+    if not k: errs.append('atlas: no key the data uses to rename'); return
     n = E(f"atlasUses({json.dumps(k)}, studioState.D).length")
     E(f"atlasEd.key = {json.dumps(k)}; render()"); time.sleep(0.3)
     E("void ACTIONS.atRename()"); pg.wait_for_selector('#atKey'); pg.fill('#atKey', k + '_c')
