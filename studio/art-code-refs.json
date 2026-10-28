@@ -162,7 +162,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/prop-models.js:2150",
+    "game/js/prop-models.js:2153",
     "game/js/walk-view.js:772"
    ]
   },
@@ -821,7 +821,7 @@
    ]
   },
   {
-   "p": "scene/next/decals/sky_portal_halo.png",
+   "p": "scene/next/decals/sky_portal_inner.png",
    "at": [
     "game/art/scene/next/models/sky_portal.json"
    ]
@@ -1697,7 +1697,7 @@
   ],
   "crown": [
    "game/js/logic/shaft-pick.js:40",
-   "game/js/walk/effects.js:1081"
+   "game/js/walk/effects.js:1123"
   ],
   "cup": [
    "game/js/logic/placeholder-art.js:280"
@@ -1726,12 +1726,12 @@
    "game/js/logic/run-scenes.js:611",
    "game/js/logic/run-scenes.js:640",
    "game/js/logic/run-scenes.js:662",
-   "game/js/logic/train-path.js:193",
+   "game/js/logic/train-path.js:204",
    "game/js/person-art.js:801",
    "game/js/person-art.js:881",
    "game/js/story-stage.js:220",
-   "game/js/train-ride.js:313",
-   "game/js/train-ride.js:321",
+   "game/js/train-ride.js:315",
+   "game/js/train-ride.js:322",
    "game/js/walk-control.js:416",
    "game/js/walk-control.js:424",
    "game/js/walk-control.js:536",
@@ -1847,9 +1847,9 @@
    "game/js/walk-tab.js:322",
    "game/js/walk-view.js:399",
    "game/js/walk-view.js:4035",
-   "game/js/walk/effects.js:519",
-   "game/js/walk/effects.js:673",
-   "game/js/walk/effects.js:781",
+   "game/js/walk/effects.js:561",
+   "game/js/walk/effects.js:715",
+   "game/js/walk/effects.js:823",
    "game/js/walk/fountains-weather.js:517",
    "game/js/world-bowl.js:4282"
   ],
@@ -1961,7 +1961,8 @@
    "game/js/lore.js:197",
    "game/js/walk-view.js:399",
    "game/js/walk/effects.js:338",
-   "game/js/walk/effects.js:342"
+   "game/js/walk/effects.js:342",
+   "game/js/walk/effects.js:450"
   ],
   "star": [
    "game/js/battle-stage.js:2241",
@@ -2001,7 +2002,7 @@
    "game/js/logic/person-view.js:114",
    "game/js/person-art.js:802",
    "game/js/person-art.js:881",
-   "game/js/train-ride.js:272",
+   "game/js/train-ride.js:274",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
    "game/js/walk-view.js:3747",
