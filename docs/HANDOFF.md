@@ -96,7 +96,9 @@ track needed); nothing the style track owns touched.
   touched game/ or studio/ and on the merged heads. check-studio-github.py: `battle_fx` passes (and proposes); the
   self-test (with its new row) passes; split passes; robot joints failed once on the walk-scene stage's slow restart
   (fixed in 993cc4af; rerun: robot joints and battle_fx pass, and after e8cadd2a battle_fx with the closing proposal
-  passes); the full run stops at the `story` step, which fails the same way on `track/vfx`
+  passes; the self-test row's wait after the hold went from a fixed 400 ms to up to 8 s for the stage's clock, 89bec70d,
+  after CI's runner, which now runs the Studio self-test in its smoke job, drew too slowly for it; the self-test then
+  passed here again in 1035 s); the full run stops at the `story` step, which fails the same way on `track/vfx`
   without my changes (de249bd8: a real click on #scMap times out). Full quick check on 6bfc9e3f, run alone: 36 of 42
   in 1599 s; Terraces, RL-8 and Room light fail on `track/vfx` too (its own run: 38 of 42 in 1665 s, those three and
   Battle music); route trainers, Granny Juniper and the phone step's walk-screen piece count failed in mine and passed
@@ -104,7 +106,7 @@ track needed); nothing the style track owns touched.
   rules green; smoke red only on the Studio's world map look and Camera section (game/art/billionaires 404s; main's
   known reds; commented on #313). The in-game full test (25 min) not run: its first step passes in every smoke run.
   The look tool films with the shared outcome function (overload, 16 films, no errors).
-- Next: the planning session merges this into `track/vfx` (it holds track/vfx up to VFX-10's HANDOFF, 868e6f30). The ramps and
+- Next: the planning session merges this into `track/vfx` (it holds track/vfx up to VFX-10's end, 05cfe7d8). The ramps and
   cells panes only read; editing them (and an Edit pixels link per strip) is for a later main-line step. Later
   steps push their panes into `battleFxPanes`: VFX-13 the tier table, VFX-15 moods and scars, VFX-11 families and
   kits.
