@@ -98,7 +98,9 @@ def walk_over(pg, n1, past, sec=60):
 
 
 SEAM_BUILDS = "[...debugLog.marks.filter(m=>m[0]>={t0}&&/building the ground mesh/.test(m[2])).map(m=>m[2]+' '+Math.round(m[1]-m[0])+' ms'),...(walkView.navBuilds>{n0}?[(walkView.navBuilds-{n0})+' walking grid(s) built in one go']:[])]"
-SEAM_PREP = "groundPrepWork(400);if(typeof navPrepWork==='function')navPrepWork(400)"
+# pushes a held or remade view's preparation along, 150 ms of work a half second (light: the other worker's checks
+# count frames meanwhile)
+SEAM_PREP = "groundPrepWork(150);if(typeof navPrepWork==='function')navPrepWork(150)"
 
 
 def run_world(pg, base):
@@ -133,7 +135,7 @@ def run_world(pg, base):
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
     # the next view, held until it is ready (seamlessGate), prepared a few ms a frame: pushed along here, as headless
     # draws a frame every second or so (its ground alone took 5 s of work over 56 s, past the old 60 s wait)
-    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60, poke=SEAM_PREP): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
+    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60, poke=SEAM_PREP, poll=500): raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
     return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
 
 
@@ -169,9 +171,9 @@ def run_seam_water(pg, base):
     nxt = pg.evaluate(f"'w:'+LOCATIONS[{n1}].mapId+'*'")
     flood = f"{json.dumps(flooded)}.filter(id=>gameData.maps[id].wx==='flood')"
     settled = "walkView.sc===mapById(walkView.id)&&isGroundPrepared(walkView.id,walkView.sc)"
-    if not until(pg, settled, 120, poke=SEAM_PREP): raise Exception("the landing's view never took day 1's flood")
+    if not until(pg, settled, 120, poke=SEAM_PREP, poll=500): raise Exception("the landing's view never took day 1's flood")
     walk_over(pg, n1, -20)   # 20 m short of the seam
-    if not until(pg, f"seamlessGetReady('{nxt}',false)", 120, poke=SEAM_PREP): raise Exception(f'the next view {nxt} never got ready ahead')
+    if not until(pg, f"seamlessGetReady('{nxt}',false)", 120, poke=SEAM_PREP, poll=500): raise Exception(f'the next view {nxt} never got ready ahead')
     t0, n0 = pg.evaluate('[performance.now(), walkView.navBuilds]')
     if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
@@ -181,7 +183,7 @@ def run_seam_water(pg, base):
     if not frames(pg, 3): raise Exception('the view stopped drawing after the crossing')
     built = pg.evaluate(SEAM_BUILDS.format(t0=t0, n0=n0))
     if built: raise Exception(f'the crossing built in one go: {built}')
-    if not until(pg, settled, 120, poke=SEAM_PREP): raise Exception(f'the view never took day 2’s water ({pg.evaluate("walkView.id")})')
+    if not until(pg, settled, 120, poke=SEAM_PREP, poll=500): raise Exception(f'the view never took day 2’s water ({pg.evaluate("walkView.id")})')
     if not frames(pg, 3): raise Exception('the view stopped drawing after its remake')
     built = pg.evaluate(SEAM_BUILDS.format(t0=t0, n0=n0))
     if built: raise Exception(f'the remade view was built in one go: {built}')

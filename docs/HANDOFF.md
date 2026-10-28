@@ -51,7 +51,13 @@ when moving from a route to another route", with their PC debug log (10:36, RTX 
     its 60 s wait), and the walking grid added a few seconds.
 - **Verified:** lint, typecheck, check:modules, format:check, check:data and build clean; `npm test` 1,733 pass; the
   new check before (fails) and after (passes); "A run's world" and the new check pass together; `check:smoke` 7 of 7
-  (422 s). On CI and in the full check-fast, for main's owners: "The Studio's world map look" and "The Studio's Camera
+  (422 s). The full check-fast here on ca2d16d2: 38 of 43 (1,753 s); of the 5, "A battle plays to the end" and the
+  Studio's Model mode pass alone, and the pasture check (IS-8, "a Billie moved to the team still wanders in the
+  pasture") fails on main at 485674b5 too. CI's smoke on this branch ran on slow runners (1,436 s and 1,702 s in all,
+  main's 1,008 s and 1,300 s; the Studio's Camera section alone 135 s and 155 s, main's 76 s and 117 s), where the
+  frame-counting checks (the island orbit, Tall ground's silhouette, the bowl's zoom out) ran out of time; all pass
+  here. The checks' pushes (`SEAM_PREP`) were made light (150 ms a half second) so they don't take frames from the
+  other worker. On CI and in the full check-fast, for main's owners: "The Studio's world map look" and "The Studio's Camera
   section" fail on main too (404s for game/art/billionaires/*.png); "Behind things" failed once under load on CI and
   once locally beside `npm test`, and passed alone here and on main (its occlusion query answers late on a busy
   machine).
