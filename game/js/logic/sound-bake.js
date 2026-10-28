@@ -24,6 +24,8 @@ expose({
   SOUND_BAKE_CHUNK: [() => SOUND_BAKE_CHUNK],
   SOUND_BAKE_INSTRUMENTS: [() => SOUND_BAKE_INSTRUMENTS],
   // @ts-expect-error -- replaced on purpose
+  soundBakeAds: [() => soundBakeAds, v => (soundBakeAds = v)],
+  // @ts-expect-error -- replaced on purpose
   soundBakeAll: [() => soundBakeAll, v => (soundBakeAll = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakeBabble: [() => soundBakeBabble, v => (soundBakeBabble = v)],
@@ -39,13 +41,23 @@ expose({
   soundBakeEnvelope: [() => soundBakeEnvelope, v => (soundBakeEnvelope = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakeFm: [() => soundBakeFm, v => (soundBakeFm = v)],
+  // @ts-expect-error -- replaced on purpose
+  soundBakeFmSteps: [() => soundBakeFmSteps, v => (soundBakeFmSteps = v)],
+  // @ts-expect-error -- replaced on purpose
+  soundBakeHitSteps: [() => soundBakeHitSteps, v => (soundBakeHitSteps = v)],
   soundBakeHz: [() => soundBakeHz],
   // @ts-expect-error -- replaced on purpose
   soundBakeImpulse: [() => soundBakeImpulse, v => (soundBakeImpulse = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakeLoop: [() => soundBakeLoop, v => (soundBakeLoop = v)],
   // @ts-expect-error -- replaced on purpose
+  soundBakeLoopSteps: [() => soundBakeLoopSteps, v => (soundBakeLoopSteps = v)],
+  // @ts-expect-error -- replaced on purpose
   soundBakeOsc: [() => soundBakeOsc, v => (soundBakeOsc = v)],
+  // @ts-expect-error -- replaced on purpose
+  soundBakeOscSteps: [() => soundBakeOscSteps, v => (soundBakeOscSteps = v)],
+  // @ts-expect-error -- replaced on purpose
+  soundBakePartialsSteps: [() => soundBakePartialsSteps, v => (soundBakePartialsSteps = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakePeak: [() => soundBakePeak, v => (soundBakePeak = v)],
   // @ts-expect-error -- replaced on purpose
@@ -53,7 +65,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   soundBakeRun: [() => soundBakeRun, v => (soundBakeRun = v)],
   // @ts-expect-error -- replaced on purpose
+  soundBakeStackSteps: [() => soundBakeStackSteps, v => (soundBakeStackSteps = v)],
+  // @ts-expect-error -- replaced on purpose
   soundBakeString: [() => soundBakeString, v => (soundBakeString = v)],
+  // @ts-expect-error -- replaced on purpose
+  soundBakeSvf: [() => soundBakeSvf, v => (soundBakeSvf = v)],
+  // @ts-expect-error -- replaced on purpose
+  soundBakeTail: [() => soundBakeTail, v => (soundBakeTail = v)],
+  // @ts-expect-error -- replaced on purpose
+  soundBakeWindSteps: [() => soundBakeWindSteps, v => (soundBakeWindSteps = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakeZoneFor: [() => soundBakeZoneFor, v => (soundBakeZoneFor = v)],
   // @ts-expect-error -- replaced on purpose
@@ -72,8 +92,9 @@ export const SOUND_BAKE_CHUNK = 1024;
  *   at middle C; bright the excitation's low-pass (Hz), pick the plucking point (a share of the string), tone the
  *   output's low-pass (Hz), level the zone's peak
  * @typedef {{kind: 'fm', lo: number, hi: number, every: number, sec: number, ratio: number, index: number,
- *   indexEnd: number, t60: number, level: number}} SoundBakeFm
- *   a two-operator FM tone (a bell at 1:2.8, a tine at 1:14): the index falls from index to indexEnd over the zone
+ *   indexEnd: number, t60: number, level: number, tine?: number, tineRatio?: number, tineTau?: number}} SoundBakeFm
+ *   a two-operator FM tone (a bell at 1:2.8, a tine at 1:14): the index falls from index to indexEnd over the zone;
+ *   SND-11: tine a third operator's index (at tineRatio, dying in tineTau s: the DX7 e-piano's bark)
  * @typedef {{kind: 'osc', lo: number, hi: number, every: number, wave: SoundBakeWave, duty?: number, a: number, d: number,
  *   s: number, hold: number, cut: number, level: number}} SoundBakeOsc
  *   an oscillator through an attack and decay into a sustain that loops (a pad or an organ), low-passed at cut
@@ -86,7 +107,38 @@ export const SOUND_BAKE_CHUNK = 1024;
  *   SND-10: running water's babble (after Farnell's Designing Sound): sines whose pitch jumps at random and glides,
  *   loud only while it rises, a layer each [ms between jumps, centre Hz, gain]; one zone, a seamless loop sec long at
  *   RMS `level`, played from a random point at a rate (a river slower, rapids faster)
- * @typedef {SoundBakePluck | SoundBakeFm | SoundBakeOsc | SoundBakeBubble | SoundBakeBabble} SoundBakeRecipe
+ * @typedef {{kind: 'partials', lo: number, hi: number, every: number, sec: number, list: number[][], a?: number,
+ *   click?: number, bend?: number, bendTau?: number, thump?: number, thumpLp?: number, level: number, seed: number}}
+ *   SoundBakePartials
+ *   SND-11: struck bars, tines and bells (a music box, a celesta, a glockenspiel, timpani): sines at ratios of the
+ *   note, each [ratio, amp, seconds to fall to 1/e], a attack (s), click a tick of noise at the strike, bend how far
+ *   above the pitch a drum starts (a share; it settles in bendTau s), thump a felt mallet's low-passed noise (level,
+ *   thumpLp Hz). Played once, never looped
+ * @typedef {{kind: 'stack', lo: number, hi: number, every: number, wave: SoundBakeWave, duty?: number,
+ *   cents: number[], a: number, d?: number, s?: number, cut: number, track?: number, base?: number, q?: number,
+ *   formants?: number[][], vib?: number, vibRate?: number, vibDelay?: number, scoop?: number, open?: number,
+ *   openTau?: number, noise?: number, hold?: number, fade?: number, level: number, seed: number}} SoundBakeStack
+ *   SND-11: detuned oscillators together (a string section, an accordion's reeds, a choir, brass): one per cents
+ *   offset, through two low-passes in a row at min(cut, f·track + base) (Q q), or through formants [Hz, Q, gain] instead (a
+ *   choir's vowel); an attack a, a decay d to the sustain s (s 0: a one-shot, an orchestra hit); vib a vibrato's depth
+ *   (a share of the pitch) at vibRate Hz from vibDelay s; scoop cents under the pitch at the start (brass); open how
+ *   far the filter opens at the start (×, falling in openTau s); noise a breath of it. Sustained zones loop hold s
+ *   (fade s crossfaded)
+ * @typedef {{kind: 'wind', lo: number, hi: number, every: number, harmonics: number[], a: number, d?: number,
+ *   s?: number, breath?: number, breathAt?: number, breathQ?: number, chiff?: number, vib?: number, vibRate?: number,
+ *   vibDelay?: number, hold?: number, fade?: number, level: number, seed: number}} SoundBakeWind
+ *   SND-11: a tone of harmonics (the amplitude of the 1st, 2nd, 3rd...: a flute nearly a sine, a clarinet the odd
+ *   ones, a warm bass), breath noise band-passed at breathAt × the pitch, a chiff of noise at the start, a vibrato,
+ *   an attack, decay and sustain as a stack's; loops hold s while held
+ * @typedef {{kind: 'hit', lo: number, hi: number, every: number, sec: number, tone?: number, from?: number, to?: number,
+ *   sweep?: number, toneTau?: number, noise?: number, filter?: 'lowpass' | 'highpass' | 'bandpass', at?: number,
+ *   q?: number, noiseA?: number, noiseTau?: number, metal?: number[], metalTau?: number, shake?: number,
+ *   click?: number, level: number, seed: number}} SoundBakeHit
+ *   SND-11: a drum or a shaken thing, one zone (lo = hi): a tone sweeping from `from` to `to` Hz (sweep s) and dying in
+ *   toneTau; noise through a filter at `at` Hz, rising in noiseA s and dying in noiseTau; metal partials (Hz) dying in
+ *   metalTau, shaken at `shake` Hz (a tambourine, sleigh bells); a click. Played once
+ * @typedef {SoundBakePluck | SoundBakeFm | SoundBakeOsc | SoundBakeBubble | SoundBakeBabble | SoundBakePartials |
+ *   SoundBakeStack | SoundBakeWind | SoundBakeHit} SoundBakeRecipe
  * @typedef {'sine' | 'triangle' | 'saw' | 'pulse'} SoundBakeWave
  * @typedef {{root: number, lo: number, hi: number, rate: number, data: Float32Array, loopStart: number,
  *   loopEnd: number, tau: number}} SoundBakeZone
@@ -161,29 +213,7 @@ export function soundBakeBlep(t, dt) {
  * @returns {Float32Array}
  */
 export function soundBakeOsc(wave, freq, rate, n, duty = 0.5) {
-  const out = new Float32Array(n),
-    dt = freq / rate;
-  let ph = 0,
-    /* a triangle's integrator starts at its trough, so it swings -1 to 1 from the first period */
-    tri = -1;
-  for (let i = 0; i < n; i++) {
-    let v;
-    if (wave === 'sine') v = Math.sin(2 * Math.PI * ph);
-    else if (wave === 'saw') v = 2 * ph - 1 - soundBakeBlep(ph, dt);
-    else {
-      /* a pulse: two edges, each smoothed; a triangle is a square integrated (leaky, so it never drifts) */
-      const w = wave === 'triangle' ? 0.5 : duty;
-      v = (ph < w ? 1 : -1) + soundBakeBlep(ph, dt) - soundBakeBlep((ph - w + 1) % 1, dt);
-      if (wave === 'triangle') {
-        tri = 0.999 * tri + 4 * dt * v;
-        v = tri;
-      }
-    }
-    out[i] = v;
-    ph += dt;
-    if (ph >= 1) ph -= 1;
-  }
-  return out;
+  return soundBakeRun(soundBakeOscSteps(wave, freq, rate, n, duty));
 }
 
 /**
@@ -263,14 +293,7 @@ export function* soundBakeBiquadSteps(data, rate, type, freq, q = Math.SQRT1_2) 
  * @returns {Float32Array}
  */
 export function soundBakeFm(freq, rate, n, F) {
-  const out = new Float32Array(n),
-    k = Math.log(Math.max(1e-3, F.indexEnd) / Math.max(1e-3, F.index)) / Math.max(1, n);
-  for (let i = 0; i < n; i++) {
-    const t = i / rate,
-      I = F.index * Math.exp(k * i);
-    out[i] = Math.sin(2 * Math.PI * freq * t + I * Math.sin(2 * Math.PI * freq * F.ratio * t));
-  }
-  return out;
+  return soundBakeRun(soundBakeFmSteps(freq, rate, n, F));
 }
 
 /**
@@ -341,6 +364,17 @@ export function* soundBakeString(freq, rate, n, P, rnd) {
  * @returns {Float32Array} data
  */
 export function soundBakeLoop(data, loopStart, fade) {
+  return soundBakeRun(soundBakeLoopSteps(data, loopStart, fade));
+}
+
+/**
+ * SND-11: soundBakeLoop as a bake's steps (a sustained zone's loop is long: its flattening yields)
+ * @param {Float32Array} data
+ * @param {number} loopStart
+ * @param {number} fade
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakeLoopSteps(data, loopStart, fade) {
   const n = data.length,
     L = n - loopStart,
     q = Math.max(1, Math.floor(L / 4)),
@@ -351,7 +385,10 @@ export function soundBakeLoop(data, loopStart, fade) {
     };
   /* the level at the loop's start against its end, flattened by an exponential ramp over the loop */
   const k = Math.log(rms(loopStart, loopStart + q) / rms(n - q, n)) / Math.max(1, L - q);
-  for (let i = loopStart; i < n; i++) data[i] *= Math.exp(k * (i - loopStart));
+  for (let i = loopStart; i < n; i++) {
+    data[i] *= Math.exp(k * (i - loopStart));
+    if ((i - loopStart) % (SOUND_BAKE_CHUNK * 4) === SOUND_BAKE_CHUNK * 4 - 1) yield i;
+  }
   const F = Math.max(1, Math.min(fade, loopStart, L));
   for (let i = 0; i < F; i++) {
     const w = (i + 1) / F,
@@ -378,6 +415,323 @@ export function* soundBakePeak(d, peak) {
       d[i] *= peak / m;
       if (i % (SOUND_BAKE_CHUNK * 4) === SOUND_BAKE_CHUNK * 4 - 1) yield i;
     }
+  return d;
+}
+
+/**
+ * SND-11: a two-pole state-variable filter (the trapezoidal, zero-delay form: stable at any cutoff and Q) whose
+ * cutoff may move every sample: returns a function of (input, cutoff Hz) that gives the low-pass and keeps the
+ * band-pass in .bp and the high-pass in .hp. The cutoff is held under 0.45 of the rate
+ * @param {number} rate
+ * @param {number} q
+ */
+export function soundBakeSvf(rate, q) {
+  const k = 1 / Math.max(0.3, q);
+  let s1 = 0,
+    s2 = 0,
+    fcWas = -1,
+    g = 0,
+    a1 = 0,
+    a2 = 0,
+    a3 = 0;
+  const f = (/** @type {number} */ x, /** @type {number} */ fc) => {
+    if (fc !== fcWas) {
+      fcWas = fc;
+      g = Math.tan((Math.PI * Math.min(fc, rate * 0.45)) / rate);
+      a1 = 1 / (1 + g * (g + k));
+      a2 = g * a1;
+      a3 = g * a2;
+    }
+    const v3 = x - s2,
+      v1 = a1 * s1 + a2 * v3,
+      v2 = s2 + a2 * s1 + a3 * v3;
+    s1 = 2 * v1 - s1;
+    s2 = 2 * v2 - s2;
+    f.bp = v1;
+    f.hp = x - k * v1 - v2;
+    return v2;
+  };
+  f.bp = 0;
+  f.hp = 0;
+  return f;
+}
+
+/**
+ * SND-11: an attack, decay and sustain at time t (s): a linear rise over a, then a fall to s that is 1/e of the way in
+ * d seconds (no d: s at once)
+ * @param {number} t
+ * @param {number} a
+ * @param {number | undefined} d
+ * @param {number} s
+ */
+export function soundBakeAds(t, a, d, s) {
+  if (t < a) return t / a;
+  return d ? s + (1 - s) * Math.exp(-(t - a) / d) : s;
+}
+
+/**
+ * SND-11: two-operator FM (soundBakeFm) as a bake's steps, with an optional third operator, the tine, dying fast
+ * @param {number} freq
+ * @param {number} rate
+ * @param {number} n
+ * @param {{ratio: number, index: number, indexEnd: number, tine?: number, tineRatio?: number, tineTau?: number}} F
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakeFmSteps(freq, rate, n, F) {
+  const out = new Float32Array(n),
+    k = Math.log(Math.max(1e-3, F.indexEnd) / Math.max(1e-3, F.index)) / Math.max(1, n),
+    w = 2 * Math.PI * freq,
+    tr = F.tineRatio || 14,
+    tt = F.tineTau || 0.035;
+  for (let i = 0; i < n; i++) {
+    const t = i / rate,
+      I = F.index * Math.exp(k * i),
+      tine = F.tine ? F.tine * Math.exp(-t / tt) * Math.sin(w * tr * t) : 0;
+    out[i] = Math.sin(w * t + I * Math.sin(w * F.ratio * t) + tine);
+    if (i % SOUND_BAKE_CHUNK === SOUND_BAKE_CHUNK - 1) yield i;
+  }
+  return out;
+}
+
+/**
+ * SND-11: soundBakeOsc as a bake's steps (the same samples, a chunk at a time)
+ * @param {SoundBakeWave} wave
+ * @param {number} freq
+ * @param {number} rate
+ * @param {number} n
+ * @param {number} [duty]
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakeOscSteps(wave, freq, rate, n, duty = 0.5) {
+  const out = new Float32Array(n),
+    dt = freq / rate;
+  let ph = 0,
+    tri = -1;
+  for (let i = 0; i < n; i++) {
+    let v;
+    if (wave === 'sine') v = Math.sin(2 * Math.PI * ph);
+    else if (wave === 'saw') v = 2 * ph - 1 - soundBakeBlep(ph, dt);
+    else {
+      const w = wave === 'triangle' ? 0.5 : duty;
+      v = (ph < w ? 1 : -1) + soundBakeBlep(ph, dt) - soundBakeBlep((ph - w + 1) % 1, dt);
+      if (wave === 'triangle') {
+        tri = 0.999 * tri + 4 * dt * v;
+        v = tri;
+      }
+    }
+    out[i] = v;
+    ph += dt;
+    if (ph >= 1) ph -= 1;
+    if (i % SOUND_BAKE_CHUNK === SOUND_BAKE_CHUNK - 1) yield i;
+  }
+  return out;
+}
+
+/**
+ * SND-11: struck partials (SoundBakePartials) n samples at freq. A bake generator
+ * @param {number} freq
+ * @param {number} rate
+ * @param {number} n
+ * @param {SoundBakePartials} P
+ * @param {() => number} rnd seeded, 0-1
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakePartialsSteps(freq, rate, n, P, rnd) {
+  const out = new Float32Array(n),
+    bend = P.bend || 0,
+    bt = P.bendTau || 0.06;
+  for (const [ratio, amp, dec] of P.list) {
+    if (freq * ratio * (1 + bend) > rate * 0.45) continue;
+    let ph = rnd() * 2 * Math.PI;
+    const fall = Math.exp(-1 / (dec * rate)),
+      w = (2 * Math.PI * freq * ratio) / rate;
+    let g = amp;
+    for (let i = 0; i < n; i++) {
+      ph += bend ? w * (1 + bend * Math.exp(-i / rate / bt)) : w;
+      out[i] += Math.sin(ph) * g;
+      g *= fall;
+      if (i % SOUND_BAKE_CHUNK === SOUND_BAKE_CHUNK - 1) yield i;
+    }
+  }
+  /* the mallet: a felt thump (low-passed noise) and a tick */
+  if (P.thump) {
+    const N = Math.min(n, Math.round(rate * 0.03)),
+      a = Math.exp((-2 * Math.PI * (P.thumpLp || 900)) / rate);
+    let lp = 0;
+    for (let i = 0; i < N; i++) {
+      lp = (1 - a) * (rnd() * 2 - 1) + a * lp;
+      out[i] += lp * P.thump * (1 - i / N);
+    }
+  }
+  if (P.click) {
+    const N = Math.min(n, Math.round(rate * 0.003));
+    for (let i = 0; i < N; i++) out[i] += (rnd() * 2 - 1) * P.click * (1 - i / N);
+  }
+  yield 0;
+  const A = Math.max(1, Math.round((P.a ?? 0.002) * rate));
+  for (let i = 0; i < Math.min(n, A); i++) out[i] *= i / A;
+  return out;
+}
+
+/**
+ * SND-11: a stack of detuned oscillators (SoundBakeStack) n samples at freq. A bake generator
+ * @param {number} freq
+ * @param {number} rate
+ * @param {number} n
+ * @param {SoundBakeStack} S
+ * @param {() => number} rnd seeded, 0-1
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakeStackSteps(freq, rate, n, S, rnd) {
+  const out = new Float32Array(n),
+    det = S.cents.map(c => Math.pow(2, c / 1200)),
+    ph = det.map(() => rnd()),
+    tri = det.map(() => -1),
+    q = S.q ?? 0.6,
+    lp1 = soundBakeSvf(rate, q),
+    lp2 = soundBakeSvf(rate, q),
+    forms = (S.formants || []).map(([f, fq, g]) => ({ f, g, F: soundBakeSvf(rate, fq) })),
+    cut = Math.min(S.cut, freq * (S.track || 99) + (S.base || 0)),
+    duty = S.duty ?? 0.5,
+    gain = 1 / Math.sqrt(det.length),
+    breath = soundBakeSvf(rate, 0.8);
+  for (let i = 0; i < n; i++) {
+    const t = i / rate,
+      vib = S.vib
+        ? 1 +
+          S.vib *
+            Math.sin(2 * Math.PI * (S.vibRate || 5) * t) *
+            Math.min(1, Math.max(0, (t - (S.vibDelay ?? 0.25)) / 0.3))
+        : 1,
+      scoop = S.scoop ? Math.pow(2, (-S.scoop * Math.exp(-t / 0.03)) / 1200) : 1;
+    let x = 0;
+    for (let k = 0; k < det.length; k++) {
+      const dt = (freq * det[k] * vib * scoop) / rate;
+      let v;
+      if (S.wave === 'sine') v = Math.sin(2 * Math.PI * ph[k]);
+      else if (S.wave === 'saw') v = 2 * ph[k] - 1 - soundBakeBlep(ph[k], dt);
+      else {
+        const w = S.wave === 'triangle' ? 0.5 : duty;
+        v = (ph[k] < w ? 1 : -1) + soundBakeBlep(ph[k], dt) - soundBakeBlep((ph[k] - w + 1) % 1, dt);
+        if (S.wave === 'triangle') {
+          tri[k] = 0.999 * tri[k] + 4 * dt * v;
+          v = tri[k];
+        }
+      }
+      x += v;
+      ph[k] += dt;
+      if (ph[k] >= 1) ph[k] -= 1;
+    }
+    x *= gain;
+    if (S.noise) x += (breath((rnd() * 2 - 1) * S.noise, freq * 3), breath.bp);
+    let y;
+    if (forms.length) {
+      y = 0;
+      for (const F of forms) {
+        F.F(x, F.f);
+        y += F.F.bp * F.g;
+      }
+    } else {
+      const open = S.open ? 1 + S.open * (1 - Math.exp(-t / 0.03)) * Math.exp(-t / (S.openTau || 0.22)) : 1,
+        fc = cut * open;
+      y = lp2(lp1(x, fc), fc * 1.4);
+    }
+    out[i] = y * soundBakeAds(t, S.a, S.d, S.s ?? 1);
+    /* a stack costs a voice per offset a sample: it yields a quarter as long */
+    if (i % (SOUND_BAKE_CHUNK / 4) === SOUND_BAKE_CHUNK / 4 - 1) yield i;
+  }
+  return out;
+}
+
+/**
+ * SND-11: a wind tone (SoundBakeWind) n samples at freq. A bake generator
+ * @param {number} freq
+ * @param {number} rate
+ * @param {number} n
+ * @param {SoundBakeWind} W
+ * @param {() => number} rnd seeded, 0-1
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakeWindSteps(freq, rate, n, W, rnd) {
+  const out = new Float32Array(n),
+    H = W.harmonics.filter((_, k) => freq * (k + 1) < rate * 0.45),
+    bp = soundBakeSvf(rate, W.breathQ || 1.5),
+    chiffN = Math.round(rate * 0.03);
+  let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / rate,
+      vib = W.vib
+        ? 1 +
+          W.vib *
+            Math.sin(2 * Math.PI * (W.vibRate || 5) * t) *
+            Math.min(1, Math.max(0, (t - (W.vibDelay ?? 0.3)) / 0.4))
+        : 1,
+      env = soundBakeAds(t, W.a, W.d, W.s ?? 1);
+    ph += (2 * Math.PI * freq * vib) / rate;
+    let x = 0;
+    for (let k = 0; k < H.length; k++) x += H[k] * Math.sin((k + 1) * ph);
+    if (W.breath) {
+      bp(rnd() * 2 - 1, freq * (W.breathAt || 2));
+      x += bp.bp * W.breath;
+    }
+    out[i] = x * env + (W.chiff && i < chiffN ? (rnd() * 2 - 1) * W.chiff * (1 - i / chiffN) : 0);
+    if (i % SOUND_BAKE_CHUNK === SOUND_BAKE_CHUNK - 1) yield i;
+  }
+  return out;
+}
+
+/**
+ * SND-11: a drum or a shaken thing (SoundBakeHit), n samples. A bake generator
+ * @param {number} rate
+ * @param {number} n
+ * @param {SoundBakeHit} H
+ * @param {() => number} rnd seeded, 0-1
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakeHitSteps(rate, n, H, rnd) {
+  const out = new Float32Array(n),
+    F = soundBakeSvf(rate, H.q ?? 0.8),
+    metal = (H.metal || []).map(f => ({
+      w: (2 * Math.PI * f * (0.98 + rnd() * 0.04)) / rate,
+      ph: rnd() * 2 * Math.PI,
+    })),
+    clickN = Math.round(rate * 0.004);
+  let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / rate;
+    let x = 0;
+    if (H.tone) {
+      const f = (H.to ?? 60) + ((H.from ?? H.to ?? 60) - (H.to ?? 60)) * Math.exp(-t / (H.sweep || 0.035));
+      ph += (2 * Math.PI * f) / rate;
+      x += Math.sin(ph) * H.tone * Math.exp(-t / (H.toneTau || 0.15));
+    }
+    if (H.noise) {
+      const w = rnd() * 2 - 1,
+        lo = F(w, H.at || 1000),
+        y = H.filter === 'highpass' ? F.hp : H.filter === 'bandpass' ? F.bp : H.filter === 'lowpass' ? lo : w;
+      x += y * H.noise * Math.min(1, t / (H.noiseA || 0.0005)) * Math.exp(-t / (H.noiseTau || 0.06));
+    }
+    if (metal.length) {
+      let m = 0;
+      for (const M of metal) m += Math.sin(M.ph + M.w * i);
+      const shake = H.shake ? 0.6 + 0.4 * Math.sin(2 * Math.PI * H.shake * t) : 1;
+      x += (m / metal.length) * Math.exp(-t / (H.metalTau || 0.08)) * shake;
+    }
+    if (H.click && i < clickN) x += (rnd() * 2 - 1) * H.click * (1 - i / clickN);
+    out[i] = x;
+    if (i % SOUND_BAKE_CHUNK === SOUND_BAKE_CHUNK - 1) yield i;
+  }
+  return out;
+}
+
+/**
+ * SND-11: the last ms of a one-shot faded out, so a zone that ends never clicks
+ * @param {Float32Array} d
+ * @param {number} rate
+ */
+export function soundBakeTail(d, rate) {
+  const N = Math.min(d.length, Math.round(rate * 0.005));
+  for (let i = 0; i < N; i++) d[d.length - 1 - i] *= i / N;
   return d;
 }
 
@@ -425,21 +779,51 @@ export function* soundBakeZoneSteps(R, rate, z) {
     loopStart = n - Math.round(loopOf(0.04));
     tau = t60 / 6.9;
   } else if (R.kind === 'fm') {
-    /* fm and osc zones render in one step (no instrument uses them yet: SND-11 slices them like the string when one
-       does) */
+    /* SND-11: sliced like the string (SND-9 rendered it in one step while nothing used it) */
     const n = Math.round(R.sec * rate);
-    data = soundBakeFm(f, rate, n, R);
+    data = yield* soundBakeFmSteps(f, rate, n, R);
     const k = -6.9 / (R.t60 * rate);
-    for (let i = 0; i < n; i++) data[i] *= Math.exp(k * i) * Math.min(1, i / (rate * 0.002));
+    for (let i = 0; i < n; i++) {
+      data[i] *= Math.exp(k * i) * Math.min(1, i / (rate * 0.002));
+      if (i % (SOUND_BAKE_CHUNK * 4) === SOUND_BAKE_CHUNK * 4 - 1) yield i;
+    }
     loopStart = n - Math.round(loopOf(0.04));
     tau = R.t60 / 6.9;
-    yield 0;
+  } else if (R.kind === 'partials' || R.kind === 'hit' || ((R.kind === 'stack' || R.kind === 'wind') && R.s === 0)) {
+    /* SND-11: a one-shot (a struck bar, a drum, an orchestra hit): played once, never looped */
+    const rnd = ambienceRandom(R.seed + z),
+      sec = R.kind === 'stack' || R.kind === 'wind' ? R.a + 6 * (R.d || 0.1) : R.sec,
+      n = Math.round(sec * rate);
+    if (R.kind === 'partials') data = yield* soundBakePartialsSteps(f, rate, n, R, rnd);
+    else if (R.kind === 'hit') data = yield* soundBakeHitSteps(rate, n, R, rnd);
+    else if (R.kind === 'stack') data = yield* soundBakeStackSteps(f, rate, n, R, rnd);
+    else data = yield* soundBakeWindSteps(f, rate, n, R, rnd);
+    yield* soundBakePeak(data, R.level);
+    soundBakeTail(data, rate);
+    return { root, lo, hi, rate, data, loopStart: data.length, loopEnd: data.length, tau: 0 };
+  } else if (R.kind === 'stack' || R.kind === 'wind') {
+    /* SND-11: a sustained tone: its attack and decay, then hold s that loop while the note is held */
+    const rnd = ambienceRandom(R.seed + z),
+      head = R.a + 3 * (R.d || 0) + 0.05,
+      L = Math.round(loopOf(R.hold ?? 0.5)),
+      n = Math.round(head * rate) + L;
+    data =
+      R.kind === 'stack'
+        ? yield* soundBakeStackSteps(f, rate, n, R, rnd)
+        : yield* soundBakeWindSteps(f, rate, n, R, rnd);
+    loopStart = n - L;
+    tau = 0;
+    /* the loop first (its flattening can lift the end), then the peak */
+    yield* soundBakeLoopSteps(data, loopStart, Math.min(Math.round(rate * (R.fade ?? 0.06)), Math.floor(L / 2)));
+    yield* soundBakePeak(data, R.level);
+    return { root, lo, hi, rate, data, loopStart, loopEnd: data.length, tau };
   } else {
+    /* SND-11: sliced (SND-9 rendered it in one step while nothing used it) */
     const head = R.a + R.d,
       L = Math.round(loopOf(R.hold)),
       n = Math.round(head * rate) + L + Math.round(rate * 0.02);
-    data = soundBakeOsc(R.wave, f, rate, n, R.duty);
-    if (R.cut) soundBakeBiquad(data, rate, 'lowpass', R.cut);
+    data = yield* soundBakeOscSteps(R.wave, f, rate, n, R.duty);
+    if (R.cut) yield* soundBakeBiquadSteps(data, rate, 'lowpass', R.cut);
     soundBakeEnvelope(data, rate, R);
     loopStart = n - L;
     tau = 0;

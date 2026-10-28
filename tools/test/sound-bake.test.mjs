@@ -18,6 +18,7 @@ import {
   soundBakeRoots,
   soundBakeRun,
   soundBakeString,
+  soundBakeSvf,
   soundBakeZoneFor,
   soundBakeZoneSteps,
 } from '../../game/js/logic/sound-bake.js';
@@ -304,4 +305,343 @@ test('the babble loops with no seam, at its RMS, the same every time', () => {
   let yields = 0;
   while (!it.next().done) yields++;
   assert.ok(yields > 50, `${yields} yields`);
+});
+
+/* SND-11: the new kinds, each with a recipe as music.json `instruments` has them */
+const K11 = {
+  strings: {
+    kind: 'stack',
+    lo: 48,
+    hi: 72,
+    every: 12,
+    wave: 'saw',
+    cents: [-14, -9, -4, 0, 4, 9, 14],
+    a: 0.2,
+    cut: 5200,
+    track: 3.2,
+    base: 900,
+    q: 0.6,
+    vib: 0.0028,
+    vibRate: 5.1,
+    vibDelay: 0.25,
+    hold: 0.5,
+    fade: 0.08,
+    level: 0.7,
+    seed: 25409,
+  },
+  accordion: {
+    kind: 'stack',
+    lo: 60,
+    hi: 72,
+    every: 12,
+    wave: 'pulse',
+    duty: 0.36,
+    cents: [-7, 0, 7],
+    a: 0.035,
+    cut: 4200,
+    track: 5,
+    q: 0.7,
+    hold: 0.4,
+    level: 0.7,
+    seed: 28069,
+  },
+  choir: {
+    kind: 'stack',
+    lo: 57,
+    hi: 69,
+    every: 12,
+    wave: 'saw',
+    cents: [-11, -4, 3, 10],
+    a: 0.3,
+    cut: 6000,
+    formants: [
+      [700, 6, 1],
+      [1150, 7, 0.6],
+      [2600, 8, 0.25],
+    ],
+    noise: 0.05,
+    hold: 0.5,
+    level: 0.65,
+    seed: 27011,
+  },
+  brass: {
+    kind: 'stack',
+    lo: 53,
+    hi: 89,
+    every: 12,
+    wave: 'saw',
+    cents: [-4, 4],
+    a: 0.025,
+    d: 0.2,
+    s: 0.85,
+    cut: 7000,
+    track: 3.8,
+    q: 0.8,
+    open: 1.45,
+    openTau: 0.22,
+    scoop: 25,
+    hold: 0.4,
+    level: 0.75,
+    seed: 29101,
+  },
+  orchhit: {
+    kind: 'stack',
+    lo: 55,
+    hi: 67,
+    every: 12,
+    wave: 'saw',
+    cents: [-1200, 0, 702, 1200],
+    a: 0.004,
+    d: 0.12,
+    s: 0,
+    cut: 6000,
+    track: 6,
+    noise: 0.3,
+    level: 0.8,
+    seed: 30011,
+  },
+  flute: {
+    kind: 'wind',
+    lo: 72,
+    hi: 84,
+    every: 12,
+    harmonics: [1, 0.16, 0.05],
+    a: 0.07,
+    breath: 0.4,
+    breathAt: 2.2,
+    breathQ: 1.5,
+    chiff: 0.35,
+    vib: 0.005,
+    hold: 0.45,
+    level: 0.7,
+    seed: 32003,
+  },
+  bass: {
+    kind: 'wind',
+    lo: 36,
+    hi: 48,
+    every: 12,
+    harmonics: [1, 0.32, 0.1],
+    a: 0.006,
+    d: 0.35,
+    s: 0.45,
+    hold: 0.4,
+    level: 0.8,
+    seed: 34019,
+  },
+  musicbox: {
+    kind: 'partials',
+    lo: 72,
+    hi: 84,
+    every: 12,
+    sec: 1.2,
+    list: [
+      [1, 1, 0.9],
+      [6.27, 0.22, 0.12],
+      [17.55, 0.05, 0.04],
+    ],
+    a: 0.001,
+    click: 0.15,
+    level: 0.8,
+    seed: 22289,
+  },
+  timpani: {
+    kind: 'partials',
+    lo: 41,
+    hi: 53,
+    every: 12,
+    sec: 1.8,
+    list: [
+      [1, 1, 1.5],
+      [1.5, 0.7, 1],
+      [1.98, 0.45, 0.7],
+    ],
+    bend: 0.02,
+    thump: 0.8,
+    level: 0.85,
+    seed: 35027,
+  },
+  kick: {
+    kind: 'hit',
+    lo: 60,
+    hi: 60,
+    every: 1,
+    sec: 0.4,
+    tone: 1,
+    from: 120,
+    to: 45,
+    sweep: 0.035,
+    toneTau: 0.16,
+    click: 0.3,
+    level: 0.9,
+    seed: 38011,
+  },
+  snare: {
+    kind: 'hit',
+    lo: 60,
+    hi: 60,
+    every: 1,
+    sec: 0.25,
+    tone: 0.5,
+    from: 190,
+    to: 190,
+    toneTau: 0.04,
+    noise: 1,
+    filter: 'bandpass',
+    at: 2600,
+    q: 0.9,
+    noiseTau: 0.07,
+    level: 0.8,
+    seed: 39019,
+  },
+  tambourine: {
+    kind: 'hit',
+    lo: 60,
+    hi: 60,
+    every: 1,
+    sec: 0.3,
+    metal: [5200, 6900, 8300],
+    metalTau: 0.07,
+    shake: 38,
+    noise: 0.4,
+    filter: 'highpass',
+    at: 4000,
+    noiseTau: 0.05,
+    click: 0.3,
+    level: 0.6,
+    seed: 43019,
+  },
+  epiano: {
+    kind: 'fm',
+    lo: 60,
+    hi: 72,
+    every: 12,
+    sec: 1.2,
+    ratio: 1,
+    index: 1.6,
+    indexEnd: 0.3,
+    t60: 7,
+    tine: 0.9,
+    tineRatio: 14,
+    tineTau: 0.035,
+    level: 0.8,
+  },
+};
+const oneShot = R => R.kind === 'partials' || R.kind === 'hit' || R.s === 0;
+/* how strong a tone at f is in d (a Hann-windowed DFT bin) */
+const strength = (d, from, n, f, rate) => {
+  let re = 0,
+    im = 0;
+  for (let i = 0; i < n; i++) {
+    const w = 0.5 - 0.5 * Math.cos((2 * Math.PI * i) / n),
+      a = (2 * Math.PI * f * i) / rate;
+    re += d[from + i] * w * Math.cos(a);
+    im += d[from + i] * w * Math.sin(a);
+  }
+  return Math.hypot(re, im);
+};
+
+test('SND-11: every new kind bakes the same every time, with no NaN, no Math.random, peaks at its level', () => {
+  const real = Math.random;
+  let calls = 0;
+  Math.random = () => (calls++, 0.5);
+  try {
+    for (const [id, R] of Object.entries(K11)) {
+      const a = soundBakeAll(R, 44100),
+        b = soundBakeAll(R, 44100);
+      a.forEach((z, i) => {
+        assert.deepEqual(z.data, b[i].data, id);
+        assert.ok(finite(z.data), id + ': NaN');
+        const p = peak(z.data);
+        assert.ok(p <= R.level + 1e-6 && p > R.level * 0.99, `${id}: peak ${p}`);
+      });
+    }
+  } finally {
+    Math.random = real;
+  }
+  assert.equal(calls, 0);
+});
+
+test('SND-11: one-shots never loop and end in silence; sustained ones loop seamlessly at a flat level', () => {
+  for (const [id, R] of Object.entries(K11))
+    for (const z of soundBakeAll(R, RATE)) {
+      const d = z.data;
+      if (R.kind === 'fm' || R.kind === 'pluck') continue;
+      if (oneShot(R)) {
+        assert.equal(z.loopStart, d.length, id);
+        assert.equal(z.loopEnd, d.length, id);
+        assert.equal(z.tau, 0, id);
+        assert.ok(Math.abs(d[d.length - 1]) < 1e-4, `${id}: the last sample is silent`);
+        continue;
+      }
+      assert.ok(z.loopStart > 0 && z.loopStart < z.loopEnd && z.loopEnd === d.length, id);
+      assert.equal(z.tau, 0, `${id}: a sustained zone holds`);
+      const scale = peak(d.subarray(z.loopStart));
+      assert.ok(Math.abs(d[z.loopEnd - 1] - d[z.loopStart - 1]) <= 0.05 * scale, `${id} ${z.root}: the seam jumps`);
+      /* the level either side of the seam (a stack's detuned voices beat, its chorus, so only the seam is held flat;
+         a wind's whole loop is) */
+      const q = R.kind === 'stack' ? Math.round(RATE * 0.02) : Math.floor((z.loopEnd - z.loopStart) / 4),
+        rms = (a, b) => Math.sqrt(d.subarray(a, b).reduce((s, x) => s + x * x, 0) / (b - a));
+      const dB = 20 * Math.log10(rms(z.loopStart, z.loopStart + q) / rms(z.loopEnd - q, z.loopEnd));
+      assert.ok(Math.abs(dB) < (R.kind === 'stack' ? 3 : 1.5), `${id} ${z.root}: the loop's level moves ${dB} dB at its seam`);
+    }
+});
+
+test('SND-11: pitched kinds are in tune: the note is stronger than a quarter tone either side', () => {
+  for (const [id, R] of Object.entries(K11)) {
+    if (R.kind === 'hit') continue;
+    for (const z of soundBakeAll(R, RATE)) {
+      const f = hzOf(z.root),
+        from = Math.round(RATE * ((R.a || 0) + 0.05)),
+        n = Math.min(8192, z.data.length - from),
+        at = c => strength(z.data, from, n, f * Math.pow(2, c / 1200), RATE);
+      assert.ok(at(0) > at(-50) && at(0) > at(50), `${id} ${z.root}: out of tune`);
+    }
+  }
+});
+
+test('SND-11: a kick falls in pitch, a snare is mostly noise, a tambourine rings high', () => {
+  const [kick] = soundBakeAll(K11.kick, RATE),
+    [snare] = soundBakeAll(K11.snare, RATE),
+    [tam] = soundBakeAll(K11.tambourine, RATE);
+  const zc = (d, a, b) => {
+    let n = 0;
+    for (let i = a + 1; i < b; i++) if (d[i - 1] < 0 !== d[i] < 0) n++;
+    return n / ((b - a) / RATE) / 2;
+  };
+  assert.ok(zc(kick.data, 0, 480) > zc(kick.data, 4800, 9600) * 1.4, 'the kick falls');
+  assert.ok(zc(snare.data, 0, 4800) > 1000, 'the snare is bright noise');
+  assert.ok(zc(tam.data, 0, 4800) > 3000, 'the jingles ring high');
+});
+
+test('SND-11: the filter stays stable at any cutoff and Q; a stack yields four times as often', () => {
+  const F = soundBakeSvf(RATE, 8);
+  let m = 0;
+  for (let i = 0; i < RATE; i++) m = Math.max(m, Math.abs(F(Math.sin(i * 0.9), 23000 * ((i % 300) / 300))));
+  assert.ok(Number.isFinite(m) && m < 50);
+  const it = soundBakeZoneSteps(K11.strings, RATE, 0);
+  let gap = 0,
+    last = -1,
+    r;
+  while (!(r = it.next()).done) {
+    if (r.value > last) gap = Math.max(gap, r.value - last);
+    last = r.value;
+  }
+  assert.ok(gap <= SOUND_BAKE_CHUNK * 4, `the longest step ${gap} samples`);
+});
+
+test('SND-11: fm is sliced and keeps its sound; a tine adds a bark that dies at once', () => {
+  const plain = { ...K11.epiano, tine: 0 },
+    d1 = soundBakeFm(261.6, RATE, 4800, plain),
+    d2 = soundBakeFm(261.6, RATE, 4800, K11.epiano);
+  assert.ok(finite(d1) && finite(d2));
+  let early = 0,
+    late = 0;
+  for (let i = 0; i < 480; i++) early += Math.abs(d1[i] - d2[i]);
+  for (let i = 4000; i < 4480; i++) late += Math.abs(d1[i] - d2[i]);
+  assert.ok(early > 10 * late, 'the tine is heard at the start only');
+  let steps = 0;
+  const it = soundBakeZoneSteps(K11.epiano, RATE, 0);
+  while (!it.next().done) steps++;
+  assert.ok(steps > 20, 'fm zones are sliced');
 });
