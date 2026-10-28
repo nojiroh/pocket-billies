@@ -156,7 +156,7 @@ function unitHpHTML(u) {
 }
 /* UI-14b: the colour code on the tags: Lead neutral (the family table), Prime the teal ★ tag, a Coat its prism (gold
    keeps only value and your choice), the held item teal with its glyph and its name in its tier's colour */
-const unitPrimeHTML = () => `<span class="u-tag prime"><b aria-hidden="true">★</b>Prime</span>`;
+const unitPrimeHTML = () => `<span class="u-tag prime">Prime</span>`;
 const unitHeldHTML = (/** @type {Unit} */ u) =>
   `<span class="u-tag held"${rarityRowAttr(u.heldRar)}>${glyphHTML('kind', 'held', 11)}<span class="rar-name">${escapeHtml(u.held)}</span></span>`;
 function unitTagsHTML(u) {

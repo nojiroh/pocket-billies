@@ -70,7 +70,10 @@
   color: var(--c-ink);
   background: var(--sig-good);
 }
-.u-tag.prime b {
+.u-tag.prime::before {
+  /* the ★ drawn by the tag itself, so a Prime tag stays one piece (smoke's element count) */
+  content: '★';
+  content: '★' / '';
   font-weight: 400;
 }
 .u-tag.coat {
