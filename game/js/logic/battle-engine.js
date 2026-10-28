@@ -27,12 +27,15 @@ import { clamp, random } from '../util.js';
 import {
   BATTLE_STAGES,
   BOSSES,
+  EVENTS,
   FACTIONS,
   ITEMS,
+  MODIFIERS,
   MOVES,
   PASSIVE,
   PERKS,
   PYRAMIDS,
+  RESIDENTS,
   RULES,
   SPECIES,
   STATUS_NAMES,
@@ -198,7 +201,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxMoment: [() => fxMoment, v => (fxMoment = v)],
   fxNames: [() => fxNames],
-  fxSrcName: [() => fxSrcName],
+  // @ts-expect-error -- replaced on purpose
+  fxSrcName: [() => fxSrcName, v => (fxSrcName = v)],
   // @ts-expect-error -- replaced on purpose
   fxStageLines: [() => fxStageLines, v => (fxStageLines = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1380,8 +1384,26 @@ export function startTrainer(id, o = {}) {
   sayBattleFx();
   battleHost().open();
 }
-/** PK-1: what a row's source is called in battle: a Perk's name (else its id) @param {string} src */
-export const fxSrcName = src => (PERKS[src] ? PERKS[src].name : src);
+/** PK-1: what a row's source is called in battle (fxOfRun's src): a Perk's name, an event's boon by its event's
+ * title, the fountain's wish, the Expedition, a challenge's name, a hub person's or a resident's name (else the id)
+ * @param {string} src */
+export function fxSrcName(src) {
+  if (PERKS[src]) return PERKS[src].name;
+  const [kind, id = ''] = src.includes(':')
+      ? [src.slice(0, src.indexOf(':')), src.slice(src.indexOf(':') + 1)]
+      : ['', src],
+    cap = (/** @type {string} */ w) => w.charAt(0).toUpperCase() + w.slice(1);
+  if (kind === 'event') {
+    if (id === 'fountain') return 'The fountain’s wish';
+    const E = EVENTS && EVENTS.events && EVENTS.events[id];
+    return E && E.title ? E.title : cap(id.replace(/_/g, ' '));
+  }
+  if (kind === 'rel') return cap(id);
+  if (kind === 'res') return (RESIDENTS && RESIDENTS[id] && RESIDENTS[id].name) || cap(id);
+  if (src === 'expedition') return 'The Expedition';
+  const C = MODIFIERS && MODIFIERS.challenges && MODIFIERS.challenges[src];
+  return C && C.name ? C.name : src;
+}
 /** PK-1: the sources of some rows by name ("A and B") @param {any[]} rows */
 export const fxNames = rows => [...new Set(rows.map(f => fxSrcName(f.src)))].join(' and ');
 /** PK-1: a turn's end for one of yours on the field: the run's turnHeal rows heal it, its pinchHeal rows heal it once
@@ -1427,11 +1449,9 @@ export function sayBattleFx() {
   for (const [t, an] of b.fxSay) battleSay(t, an);
   delete b.fxSay;
 }
-/** the names of the Perks whose stat rows change stat s ("A and B") */
+/** the names of the Perks (PK-1: and boons, by fxSrcName) whose stat rows change stat s ("A and B") */
 export const perkNamesFor = (fx, s) =>
-  [...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => (PERKS[f.src] || { name: f.src }).name))].join(
-    ' and '
-  );
+  [...new Set(fx.filter(f => f.kind === 'stat' && f.stat === s).map(f => fxSrcName(f.src)))].join(' and ');
 /** PK-1: the marks a battle's rows keep: the run's (b.perkState, the run's own object: counters, growth, once a run)
  * and the battle's own (b.fxState: once a battle, once for each Billie), made when a row first needs them (`make`:
  * now) @param {any} [b] @param {boolean} [make] @returns {import('./effects.js').FxState} */

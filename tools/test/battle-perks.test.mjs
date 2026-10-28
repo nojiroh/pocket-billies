@@ -331,3 +331,22 @@ test('PK-1 moments: a battle without Perks makes no marks and says no Perk line'
   assert.equal(b.fxSay, undefined);
   assert.equal(fn('fxBattleRows')(b), undefined);
 });
+
+test('PK-1 lines: a boon is named by its event, not its raw source; other sources by their names', () => {
+  const fx = [{ kind: 'stat', stat: 'hus', stages: 1, src: 'event:ring_light' }],
+    b = battle(fx);
+  fn('sayBattleFx')();
+  assert.ok(
+    lines(b).some(t => /^Ring Light Shrine: .*Speed rose\.$/.test(t)),
+    lines(b).join('\n')
+  );
+  assert.ok(!lines(b).some(t => t.includes('event:')));
+  const name = fn('fxSrcName');
+  assert.equal(name('event:fountain'), 'The fountain’s wish');
+  assert.equal(name('expedition'), 'The Expedition');
+  assert.equal(name('mono'), data.MODIFIERS.challenges.mono.name);
+  assert.equal(name('rel:chosen'), 'Chosen');
+  assert.equal(name('res:mo'), data.RESIDENTS.mo.name);
+  assert.equal(name('lucky_charm'), data.PERKS.lucky_charm.name);
+  assert.equal(name('event:no_such_place'), 'No such place');
+});
