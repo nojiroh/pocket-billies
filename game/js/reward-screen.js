@@ -13,7 +13,7 @@ import { CURRENCIES, ITEMS, MOVES, PERKS, PYRAMIDS, RULES } from './game-data.js
 import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
 import { rarityTier } from './logic/marks.js';
-import { perkCap } from './logic/perks.js';
+import { perkCap, perkSetLine } from './logic/perks.js';
 import {
   rewardDataGame,
   rewardReroll,
@@ -59,8 +59,10 @@ function rewardCardHTML(c, k, on) {
   const n = c.n && c.n > 1 ? `${c.n} × ` : '';
   /* PK-7: an ordinary Perk, as a pick's card (its picture at 72 px, its rarity's frame) */
   if (c.kind === 'perk') {
-    const P = PERKS[/** @type {string} */ (c.perk)] || { name: c.perk, d: '', rarity: '', fx: [] };
-    return `<pb-pick-card data-k="${k}" kind="perk"${rarityAttr(P.rarity)} heading="${escapeHtml(P.name)}" sub="Perk"${on ? ' selected' : ''}><span slot="art">${artIconHTML(P.img, 72)}</span>${escapeHtml(P.d || '')}${fxTagsHTML(P.fx)}</pb-pick-card>`;
+    const P = PERKS[/** @type {string} */ (c.perk)] || { name: c.perk, d: '', rarity: '', fx: [] },
+      /* PK-8: its set's line ("Perk · Office Supplies 2/3", with it held: logic/perks.js perkSetLine) */
+      set = PERKS[c.perk] ? perkSetLine(saveData.run, /** @type {string} */ (c.perk), PERKS) : '';
+    return `<pb-pick-card data-k="${k}" kind="perk"${rarityAttr(P.rarity)} heading="${escapeHtml(P.name)}" sub="Perk${set ? ' · ' + escapeHtml(set) : ''}"${on ? ' selected' : ''}><span slot="art">${artIconHTML(P.img, 72)}</span>${escapeHtml(P.d || '')}${fxTagsHTML(P.fx)}</pb-pick-card>`;
   }
   /* RL-14: a salvage pick's cards: a bot's part (into your parts) and a stack of Scrap */
   if (c.kind === 'part') {

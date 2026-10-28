@@ -9,9 +9,9 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
-import { PERKS, RULES } from './game-data.js';
+import { PERKS, PERK_SETS, RULES } from './game-data.js';
 import { rarityTier } from './logic/marks.js';
-import { perkCap, perkChoose, perkCount, perkDropOk, perkNoDrop } from './logic/perks.js';
+import { perkCap, perkChoose, perkCount, perkDropOk, perkGroups, perkNoDrop, perkSetLine } from './logic/perks.js';
 import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
@@ -38,13 +38,16 @@ provide({ perkDropOpen, perkPickOpen });
 /** a Perk as a pick card (the pick, letting one go), its picture at `size` px (PK-2: 72 on the pick, 36 on the
  * longer list of letting one go); PK-3: a held one's counter after "Perk" ("Perk · 5/8", perkCount)
  * UI-14b: its rarity as the card's frame, pill and name colour (it was the caption), its kind as the Perk ribbon
- * (violet), its stat rows as Atk..Spe tags
+ * (violet), its stat rows as Atk..Spe tags. PK-8: its set's line after "Perk" ("Perk · Office Supplies 2/3": with this one
+ * held, logic/perks.js perkSetLine)
  * @param {string} id @param {boolean} on @param {number} [size] @param {any} [run] the run holding it */
 function perkCardHTML(id, on, size = 72, run = null) {
   const R = PERKS[id],
     t = rarityTier(R.rarity),
-    n = perkCount(run, id, PERKS);
-  return `<pb-pick-card data-id="${escapeHtml(id)}" kind="perk"${t ? ` rarity="${t}"` : ''} heading="${escapeHtml(R.name)}" sub="Perk${n ? ' · ' + escapeHtml(n) : ''}"${on ? ' selected' : ''}><span slot="art">${artIconHTML(R.img, size)}</span>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</pb-pick-card>`;
+    n = perkCount(run, id, PERKS),
+    set = perkSetLine(saveData && saveData.run, id, PERKS),
+    sub = ['Perk', set, n].filter(Boolean).join(' · ');
+  return `<pb-pick-card data-id="${escapeHtml(id)}" kind="perk"${t ? ` rarity="${t}"` : ''} heading="${escapeHtml(R.name)}" sub="${escapeHtml(sub)}"${on ? ' selected' : ''}><span slot="art">${artIconHTML(R.img, size)}</span>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</pb-pick-card>`;
 }
 /** show a sheet of this class in place when it is already up; otherwise ahead of any other (as the payout does) */
 function perkSheet(M) {
@@ -175,21 +178,29 @@ export function perkDropOpen(id, then, back) {
 }
 
 /* ---------- the Perks tab ---------- */
-/** the run's Perks, each with what it does (PK-3: and its counter, perkCount) */
+/** the run's Perks, each with what it does (PK-3: and its counter, perkCount); PK-8: grouped by set (logic/perks.js
+ * perkGroups), each set's head with its name, how many are held of its need and its bonus (on, or what it will do), then
+ * the Perks of no set */
 export function renderPerks() {
   const run = saveData.run,
     cap = perkCap(run, RULES.run.perks, PERKS);
   if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at Skyline Station.</p>`;
-  const held = run.perks.filter(id => PERKS[id]);
+  const held = run.perks.filter(id => PERKS[id]),
+    row = id => {
+      /* PK-3: a held Perk's counter ("5/8", "VOID") beside its rarity pill (UI-14b) */
+      const n = escapeHtml(perkCount(run, id, PERKS));
+      return `<div class="bag-row k-card rar-row"${rarityRowAttr(PERKS[id].rarity)}>${rarityFoilHTML(PERKS[id].rarity)}<span class="bag-ic">${artIconHTML(PERKS[id].img, 36)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}${fxTagsHTML(PERKS[id].fx)}</small></span>${rarityPillHTML(PERKS[id].rarity)}${n ? `<small class="note" data-perk-count="${n}">${n}</small>` : ''}</div>`;
+    },
+    groups = perkGroups(run, PERKS),
+    /* PK-8: a set's head: "Office Supplies 2/3", then its bonus ("Middle Management: ..."), marked once it holds */
+    head = g => {
+      if (!g.set) return groups.length > 1 ? `<h3>No set</h3>` : '';
+      const S = PERK_SETS[g.set];
+      return `<h3 data-perk-set="${escapeHtml(g.set)}">${escapeHtml(S.name)} <small class="tnum">${Math.min(g.n, g.need)}/${g.need}</small></h3><p class="note">${g.on ? '<b>' : ''}${escapeHtml(S.title)}${g.on ? ' (on)</b>' : ` at ${g.need}`}: ${escapeHtml(S.d)}</p>`;
+    };
   return `<section class="tpanel relics"><div class="sec-h"><h2>Perks</h2><span class="count tnum">${held.length} of ${cap}</span></div>${
     held.length
-      ? `<div class="bag-list">${held
-          .map(id => {
-            /* PK-3: a held Perk's counter ("5/8", "VOID") beside its rarity pill (UI-14b) */
-            const n = escapeHtml(perkCount(run, id, PERKS));
-            return `<div class="bag-row k-card rar-row"${rarityRowAttr(PERKS[id].rarity)}>${rarityFoilHTML(PERKS[id].rarity)}<span class="bag-ic">${artIconHTML(PERKS[id].img, 36)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}${fxTagsHTML(PERKS[id].fx)}</small></span>${rarityPillHTML(PERKS[id].rarity)}${n ? `<small class="note" data-perk-count="${n}">${n}</small>` : ''}</div>`;
-          })
-          .join('')}</div>`
+      ? groups.map(g => `${head(g)}<div class="bag-list">${g.ids.map(row).join('')}</div>`).join('')
       : `<p class="note bag-empty">None yet. Beat a mini-boss for a pick of ${RULES.run.perks.pick}, or buy one in a town’s shop. They last the run.</p>`
   }</section>`;
 }

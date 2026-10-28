@@ -302,3 +302,26 @@ test('PK-8 perkShopPrice: a run shop’s Perk with the shop’s price rows, then
   assert.equal(modules.effects.fxRunPrice(r, P, 'shop', 100), 100);
   assert.equal(modules.effects.fxRunPrice(r, P, 'heal', 100), 100);
 });
+
+test('PK-8 perkSetOf, perkSetLine and perkGroups: a Perk’s set, its "Office Supplies 2/3", the Perks tab’s groups', () => {
+  const r = run();
+  assert.equal(R.perkSetOf('rubber_stamp', PERKS), 'office');
+  assert.equal(R.perkSetOf('lucky_charm', PERKS), '');
+  assert.equal(R.perkSetOf('rubber_stamp', PERKS, {}), '', 'no sets');
+  assert.equal(R.perkSetLine(r, 'lucky_charm', PERKS), '');
+  assert.equal(R.perkSetLine(r, 'rubber_stamp', PERKS), 'Office Supplies 1/3', 'offered: with it taken');
+  assert.equal(R.perkSetLine(null, 'rubber_stamp', PERKS), 'Office Supplies 1/3', 'no run');
+  r.perks = ['rubber_stamp', 'lucky_charm', 'click_pen'];
+  assert.equal(R.perkSetLine(r, 'rubber_stamp', PERKS), 'Office Supplies 2/3', 'held: as it stands');
+  assert.equal(R.perkSetLine(r, 'punch_card', PERKS), 'Office Supplies 3/3', 'the one that completes it');
+  r.perks.push('punch_card', 'time_card');
+  assert.equal(R.perkSetLine(r, 'time_card', PERKS), 'Office Supplies 3/3', 'never past its need');
+  r.perks = ['umbrella', 'lucky_charm', 'rubber_stamp', 'barometer', 'snow_globe', 'coupon_book'];
+  assert.deepEqual(R.perkGroups(r, PERKS), [
+    { set: 'office', ids: ['rubber_stamp'], n: 1, need: 3, on: false },
+    { set: 'weather', ids: ['umbrella', 'barometer', 'snow_globe'], n: 3, need: 3, on: true },
+    { set: '', ids: ['lucky_charm', 'coupon_book'], n: 0, need: 0, on: false },
+  ]);
+  r.perks = [];
+  assert.deepEqual(R.perkGroups(r, PERKS), []);
+});

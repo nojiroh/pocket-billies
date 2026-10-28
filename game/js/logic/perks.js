@@ -23,12 +23,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide, toast } from '../hooks.js';
+import { PERK_SETS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
 import { runFoesSync, runFxMoment, runGaveText } from './run-loop.js';
-import { fxAt, fxCond, fxCopyOf, fxOfRun, fxPerkRows, fxPrice, fxRunRule } from './effects.js';
+import { fxAt, fxCond, fxCopyOf, fxOfRun, fxPerkRows, fxPrice, fxRunRule, fxSetHeld } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -46,6 +47,8 @@ expose({
   perkFindMake: [() => perkFindMake, v => ((perkFindMake = v), provide({ perkFindMake }))],
   // @ts-expect-error -- replaced on purpose
   perkFits: [() => perkFits, v => (perkFits = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkGroups: [() => perkGroups, v => (perkGroups = v)],
   perkLeaderRule: [() => perkLeaderRule],
   // @ts-expect-error -- replaced on purpose
   perkNoDrop: [() => perkNoDrop, v => (perkNoDrop = v)],
@@ -60,6 +63,9 @@ expose({
   perkRunBots: [() => perkRunBots, v => (perkRunBots = v)],
   // @ts-expect-error -- replaced on purpose
   perkRunSide: [() => perkRunSide, v => (perkRunSide = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkSetLine: [() => perkSetLine, v => (perkSetLine = v)],
+  perkSetOf: [() => perkSetOf],
   // @ts-expect-error -- replaced on purpose
   perkShelf: [() => perkShelf, v => (perkShelf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -102,6 +108,42 @@ export function perkCount(run, id, perks) {
     }
   });
   return [...new Set(out)].join(' · ');
+}
+
+/** PK-8: the Perk set a Perk is in: the first of its tags that is a set's id (perkSets.json), '' with none
+ * @param {string} id @param {Record<string, Perk>} perks
+ * @param {Record<string, import('../../types/game-data').PerkSet>} [sets] */
+export const perkSetOf = (id, perks, sets = PERK_SETS) =>
+  ((perks[id] && perks[id].tags) || []).find(t => Object.hasOwn(sets || {}, t)) || '';
+/** PK-8: a Perk's set line on its card and row (perks-track.md rule 4), "Office Supplies 2/3": its set's name, then how
+ * many of the set's Perks the run holds with this one (held or not: an offered card says what taking it makes; at most
+ * the need, so a fourth held reads 3/3); '' for a Perk in no set
+ * @param {Run | null | undefined} run @param {string} id @param {Record<string, Perk>} perks
+ * @param {Record<string, import('../../types/game-data').PerkSet>} [sets] */
+export function perkSetLine(run, id, perks, sets = PERK_SETS) {
+  const S = perkSetOf(id, perks, sets);
+  if (!S) return '';
+  const ids = run ? run.perks : [],
+    n = fxSetHeld(ids.includes(id) ? ids : [...ids, id], S, perks);
+  return `${sets[S].name} ${Math.min(n, sets[S].need)}/${sets[S].need}`;
+}
+/** PK-8: the Perks tab's groups: each set with a Perk held, in perkSets.json's order ({set, ids, n, need, on}: on once
+ * `need` are held), then the Perks of no set ({set: ''}), each in the order held; none empty
+ * @param {Run} run @param {Record<string, Perk>} perks
+ * @param {Record<string, import('../../types/game-data').PerkSet>} [sets]
+ * @returns {{ set: string, ids: string[], n: number, need: number, on: boolean }[]} */
+export function perkGroups(run, perks, sets = PERK_SETS) {
+  const held = run.perks.filter(id => perks[id]),
+    out = [];
+  for (const S of Object.keys(sets || {})) {
+    const ids = held.filter(id => perkSetOf(id, perks, sets) === S);
+    if (!ids.length) continue;
+    const n = fxSetHeld(held, S, perks);
+    out.push({ set: S, ids, n, need: sets[S].need, on: n >= sets[S].need });
+  }
+  const rest = held.filter(id => !perkSetOf(id, perks, sets));
+  if (rest.length) out.push({ set: '', ids: rest, n: 0, need: 0, on: false });
+  return out;
 }
 
 /** PK-4: a Perk's weight in a draw: its rarity's (rules.json run.perks.rarity), times run.perks.bias when one of its
