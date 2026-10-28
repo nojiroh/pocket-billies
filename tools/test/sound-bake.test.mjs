@@ -1,12 +1,15 @@
 // Sound track SND-9: instruments baked from numbers (game/js/logic/sound-bake.js): the same output every time, no NaN,
-// peaks at most 1, seamless loops, strings in tune, a size budget, and the reverb's impulse.
+// peaks at most 1, seamless loops, strings in tune, a size budget, and the reverb's impulse. SND-10: water's bubbles and
+// babble.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   SOUND_BAKE_CHUNK,
   SOUND_BAKE_INSTRUMENTS,
   soundBakeAll,
+  soundBakeBabble,
   soundBakeBiquad,
+  soundBakeBubble,
   soundBakeEnvelope,
   soundBakeFm,
   soundBakeImpulse,
@@ -229,4 +232,76 @@ test('envelope, biquad and FM keep to their shapes', () => {
   assert.ok(level(soundBakeBiquad(tone(100), RATE, 'highpass', 5000)) < 0.02);
   const fm = soundBakeFm(440, RATE, 4800, { ratio: 2.8, index: 6, indexEnd: 0.2 });
   assert.ok(finite(fm) && peak(fm) <= 1);
+});
+
+/* SND-10: water's banks (game/data/soundscape.json `banks` holds the game's) */
+const drop = { kind: 'bubble', lo: 50, hi: 115, every: 6, xi: 0.12, level: 0.9 };
+const babble = {
+  kind: 'babble',
+  lo: 60,
+  hi: 60,
+  every: 1,
+  sec: 2,
+  layers: [
+    [2, 800, 0.2],
+    [6, 600, 0.5],
+    [12, 400, 0.8],
+  ],
+  level: 0.25,
+  seed: 0xb0b1,
+};
+/** zero crossings a second over the first ms milliseconds */
+const crossings = (d, rate, ms) => {
+  let n = 0;
+  const m = Math.floor((rate * ms) / 1000);
+  for (let i = 1; i < m; i++) if (d[i - 1] < 0 !== d[i] < 0) n++;
+  return n / 2 / (ms / 1000);
+};
+
+test('a bubble rings at its pitch, rises a little and dies away; smaller ones shorter', () => {
+  const f0 = 1000,
+    b = soundBakeBubble(f0, 0.12, RATE);
+  /* the first 5 ms near f0 (the rise is small that early) */
+  const hz = crossings(b, RATE, 5);
+  assert.ok(Math.abs(hz - f0) < 0.12 * f0, `${hz} Hz`);
+  assert.ok(b.every(Number.isFinite));
+  assert.ok(Math.abs(b[0]) < 1e-6 && Math.abs(b[b.length - 1]) < 1e-3, 'no click at either end');
+  const big = soundBakeBubble(220, 0.7, RATE),
+    small = soundBakeBubble(4000, 0.1, RATE);
+  assert.ok(big.length > b.length && b.length > small.length, `${big.length} ${b.length} ${small.length}`);
+  assert.ok(big.length <= Math.ceil(0.7 * RATE));
+});
+
+test('bubble zones: every pitch from lo to hi, played once (no loop), peaks at the level', () => {
+  const Z = soundBakeAll(drop, RATE);
+  assert.equal(Z.length, soundBakeRoots(drop).length);
+  let bytes = 0;
+  for (const z of Z) {
+    assert.equal(z.loopStart, z.data.length);
+    let p = 0;
+    for (const v of z.data) p = Math.max(p, Math.abs(v));
+    assert.ok(Math.abs(p - drop.level) < 1e-6, `peak ${p}`);
+    bytes += z.data.length * 4;
+  }
+  assert.ok(bytes < 400 * 1024, `${Math.round(bytes / 1024)} KB`);
+});
+
+test('the babble loops with no seam, at its RMS, the same every time', () => {
+  const [z] = soundBakeAll(babble, RATE),
+    d = z.data;
+  assert.equal(d.length, babble.sec * RATE);
+  assert.ok(d.every(Number.isFinite));
+  let s = 0;
+  for (const v of d) s += v * v;
+  assert.ok(Math.abs(Math.sqrt(s / d.length) - babble.level) < 1e-4);
+  /* the jump from the end back to the start is no bigger than the signal's own steps */
+  let step = 0;
+  for (let i = 1; i < d.length; i++) step = Math.max(step, Math.abs(d[i] - d[i - 1]));
+  assert.ok(Math.abs(d[0] - d[d.length - 1]) <= step, `${Math.abs(d[0] - d[d.length - 1])} against ${step}`);
+  assert.deepEqual(soundBakeAll(babble, RATE)[0].data, d);
+  /* it yields while it works, so the page can slice it */
+  const it = soundBakeBabble(RATE, babble);
+  let yields = 0;
+  while (!it.next().done) yields++;
+  assert.ok(yields > 50, `${yields} yields`);
 });

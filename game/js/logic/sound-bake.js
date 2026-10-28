@@ -26,11 +26,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   soundBakeAll: [() => soundBakeAll, v => (soundBakeAll = v)],
   // @ts-expect-error -- replaced on purpose
+  soundBakeBabble: [() => soundBakeBabble, v => (soundBakeBabble = v)],
+  // @ts-expect-error -- replaced on purpose
   soundBakeBiquad: [() => soundBakeBiquad, v => (soundBakeBiquad = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakeBiquadSteps: [() => soundBakeBiquadSteps, v => (soundBakeBiquadSteps = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakeBlep: [() => soundBakeBlep, v => (soundBakeBlep = v)],
+  // @ts-expect-error -- replaced on purpose
+  soundBakeBubble: [() => soundBakeBubble, v => (soundBakeBubble = v)],
   // @ts-expect-error -- replaced on purpose
   soundBakeEnvelope: [() => soundBakeEnvelope, v => (soundBakeEnvelope = v)],
   // @ts-expect-error -- replaced on purpose
@@ -73,7 +77,16 @@ export const SOUND_BAKE_CHUNK = 1024;
  * @typedef {{kind: 'osc', lo: number, hi: number, every: number, wave: SoundBakeWave, duty?: number, a: number, d: number,
  *   s: number, hold: number, cut: number, level: number}} SoundBakeOsc
  *   an oscillator through an attack and decay into a sustain that loops (a pad or an organ), low-passed at cut
- * @typedef {SoundBakePluck | SoundBakeFm | SoundBakeOsc} SoundBakeRecipe
+ * @typedef {{kind: 'bubble', lo: number, hi: number, every: number, xi: number, level: number}} SoundBakeBubble
+ *   SND-10: water's bubbles (van den Doel): a zone's root is the pitch a bubble of radius 3/f m rings at (1 mm: 3 kHz);
+ *   it falls away at its own rate (smaller ones faster) while its pitch rises by xi (0.1 a drop, 0.5-1 a bigger
+ *   bubble). Played once, never looped: a zone moved to another pitch is a smaller or bigger bubble
+ * @typedef {{kind: 'babble', lo: number, hi: number, every: number, sec: number, layers: number[][], level: number,
+ *   seed: number}} SoundBakeBabble
+ *   SND-10: running water's babble (after Farnell's Designing Sound): sines whose pitch jumps at random and glides,
+ *   loud only while it rises, a layer each [ms between jumps, centre Hz, gain]; one zone, a seamless loop sec long at
+ *   RMS `level`, played from a random point at a rate (a river slower, rapids faster)
+ * @typedef {SoundBakePluck | SoundBakeFm | SoundBakeOsc | SoundBakeBubble | SoundBakeBabble} SoundBakeRecipe
  * @typedef {'sine' | 'triangle' | 'saw' | 'pulse'} SoundBakeWave
  * @typedef {{root: number, lo: number, hi: number, rate: number, data: Float32Array, loopStart: number,
  *   loopEnd: number, tau: number}} SoundBakeZone
@@ -382,6 +395,18 @@ export function* soundBakeZoneSteps(R, rate, z) {
   /* a loop of a whole number of periods, about 40 ms (a pluck's tail) or 120 ms (a sustain) */
   const loopOf = (/** @type {number} */ sec) => Math.max(1, Math.round(sec * f)) * period;
   let data, loopStart, tau;
+  if (R.kind === 'bubble') {
+    /* SND-10: one bubble, played once: no loop (loopStart is its end) */
+    data = soundBakeBubble(f, R.xi, rate);
+    yield 0;
+    yield* soundBakePeak(data, R.level);
+    return { root, lo, hi, rate, data, loopStart: data.length, loopEnd: data.length, tau: 0 };
+  }
+  if (R.kind === 'babble') {
+    /* SND-10: running water's babble, a seamless loop from its start to its end */
+    data = yield* soundBakeBabble(rate, R);
+    return { root, lo, hi, rate, data, loopStart: 0, loopEnd: data.length, tau: 0 };
+  }
   if (R.kind === 'pluck') {
     const sec = Math.min(R.maxSec, Math.max(R.minSec, R.sec * Math.pow(2, -(root - 60) / 24))),
       n = Math.round(sec * rate),
@@ -424,6 +449,94 @@ export function* soundBakeZoneSteps(R, rate, z) {
   yield* soundBakePeak(data, R.level);
   soundBakeLoop(data, loopStart, Math.min(Math.round(rate * 0.01), Math.floor((data.length - loopStart) / 2)));
   return { root, lo, hi, rate, data, loopStart, loopEnd: data.length, tau };
+}
+
+/**
+ * SND-10: a bubble ringing at f0 Hz (van den Doel, "Physically-based models for liquid sounds", 2005): radius r =
+ * 3 / f0 m, falling away at d = 0.13 / r + 0.0072 r^-1.5 a second, its pitch rising as f0 (1 + xi d t); a 0.6 ms ramp
+ * in and the last 4 ms faded out, so it never clicks. At most 0.7 s; peak about 1
+ * @param {number} f0
+ * @param {number} xi the rise (0.1 a raindrop, 0.5-1 a bigger bubble)
+ * @param {number} rate
+ * @returns {Float32Array}
+ */
+export function soundBakeBubble(f0, xi, rate) {
+  const r = 3 / f0,
+    d = 0.13 / r + 0.0072 * Math.pow(r, -1.5),
+    n = Math.ceil(Math.min(0.7, 6.9 / d + 0.004) * rate),
+    out = new Float32Array(n),
+    fMax = rate * 0.42,
+    ramp = rate * 0.0006,
+    tail = Math.max(1, Math.round(rate * 0.004));
+  let ph = 0;
+  for (let i = 0; i < n; i++) {
+    const t = i / rate;
+    ph += (2 * Math.PI * Math.min(fMax, f0 * (1 + xi * d * t))) / rate;
+    out[i] = Math.sin(ph) * Math.exp(-d * t) * Math.min(1, i / ramp) * Math.min(1, (n - i) / tail);
+  }
+  return out;
+}
+
+/**
+ * SND-10: running water's babble (after Farnell, Designing Sound, "running water"; our own code): for each layer
+ * [ms, centre, gain], a sine whose pitch jumps to a random height every ms milliseconds and glides there in 2.7 ms,
+ * loud only while its pitch rises (a bubble forming); made sec + 0.2 s long and the start crossfaded (equal power)
+ * with what follows the end, so it loops with no seam; scaled to RMS R.level. A bake generator
+ * @param {number} rate
+ * @param {SoundBakeBabble} R
+ * @returns {Generator<number, Float32Array, void>}
+ */
+export function* soundBakeBabble(rate, R) {
+  const rnd = ambienceRandom(R.seed),
+    len = Math.floor(rate * R.sec),
+    fade = Math.floor(rate * 0.2),
+    n = len + fade,
+    a = new Float32Array(n),
+    glide = Math.max(1, Math.round(0.002689 * rate)),
+    k10 = 1 - Math.exp((-2 * Math.PI * 10) / rate);
+  for (const [ms, depth, g] of R.layers) {
+    const step = Math.max(1, Math.round((ms / 1000) * rate));
+    let ph = rnd() * 2 * Math.PI,
+      f = depth,
+      from = f,
+      to = f,
+      tg = glide,
+      next = 0,
+      prev = f,
+      env = 0;
+    for (let i = 0; i < n; i++) {
+      if (i >= next) {
+        from = f;
+        const mag = Math.exp(9 * rnd()) / 23000;
+        to = depth + 1600 * (rnd() < 0.5 ? -mag : mag);
+        tg = 0;
+        next = i + step;
+      }
+      if (tg < glide) {
+        tg++;
+        f = from + ((to - from) * tg) / glide;
+      }
+      const rise = Math.max(0, Math.min(1, f - prev));
+      prev = f;
+      env += (rise - env) * k10;
+      ph += (2 * Math.PI * Math.max(30, f)) / rate;
+      a[i] += Math.sin(ph) * env * env * 0.81 * g;
+      if (i % SOUND_BAKE_CHUNK === SOUND_BAKE_CHUNK - 1) yield i;
+    }
+  }
+  const o = a.slice(0, len);
+  for (let i = 0; i < fade; i++) {
+    const th = (i / fade) * (Math.PI / 2);
+    o[i] = a[i] * Math.sin(th) + a[len + i] * Math.cos(th);
+  }
+  let s = 0;
+  for (let i = 0; i < len; i++) s += o[i] * o[i];
+  const k = R.level / (Math.sqrt(s / Math.max(1, len)) || 1);
+  for (let i = 0; i < len; i++) {
+    o[i] *= k;
+    if (i % (SOUND_BAKE_CHUNK * 8) === SOUND_BAKE_CHUNK * 8 - 1) yield i;
+  }
+  return o;
 }
 
 /**
