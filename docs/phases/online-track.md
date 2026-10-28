@@ -254,6 +254,57 @@ moderation in the game's Debug menu; the theme's top 3 win a ribbon.
 - Open on Spark: a cheater can keep a Billie they gave away by restoring their save.
 - **Ask me before:** which lines evolve by trade, the item, and the cap per trade.
 
+**Facts corrected at ON-4's start** (2026-10-28, main at 5f6d01ae, ON-3 merged by #268): there is no obedience
+anywhere in the game, and `meta.badges` is a record by type (`{ fire: 1 }`), not a count, so "obeys up to your badges"
+had nothing to build on (and disobedience would change the seeded engine's golden battle). Billies live in the team,
+storage (pens and trainees point into it) and the nursery's eggs; during a run the team holds copies, so nothing trades
+while `s.run` is set. A worn part is on its Billie (`aug`), only spares are in `s.parts`. The save is one
+`saves/<uid>` document written with `.set()`, so it can join a batch. `ribbons` wasn't in `ONLINE_BILLY_KEYS`.
+The event sheet allows 3 options, and Form 27-B had 3. RO-3g (the Swift line rebuilt) was still open: the Swift line
+was kept out of the trade rules.
+
+**Done in ON-4** (2026-10-28, on `track/online`, one session for both halves at the owner's word). The owner's answers:
+start now (only RO-3g open); Cliplet→Tiktokferret and Feedopus→Metapus evolve by trade; no obedience, traded Billies
+gain 1.5x XP instead; the solo route is Form 99-A from Form 27-B and the revived Bureau Checkpoint; up to 3 things each
+side; ribbons travel with the Billie.
+- Rules: `offers/<a>_<b>` (a < b; one live offer per pair) `{a, b, na, nb, ga, gb, oa, ob, da, db, ta, tb, ra, rb, ka,
+  kb, x, by, t, v, k}`. A side writes only its own fields: its give (up to 3 things, each `{k: b/e/p, d: the online copy
+  as JSON, ≤ 16000}`; the version `v` goes up, so no ok stands), its ok on the version (`o_ == v`, or 0), "gave" only
+  when both oks are on this version and both sides hold something, "received" only after both gave, "took back" after a
+  close; gave, received and took back each need the player's `saves/<uid>` in the same batch (`getAfter(...).t ==
+  request.time`). Closing: cancel before anyone gave, refused while the other side hasn't received, stale 7 days after
+  an unanswered give. Opening needs friends both ways and no block. Deleted once both received or once closed with each
+  giver's things back. `k` is the offer's own stamp. 8 emulator tests (`firebase/test/offers.test.mjs`), one a whole
+  trade written with the game's own patches.
+- `game/js/logic/trade.js`: `offerPatch` (the rules' twin: the same steps and refusals), `offerNext` (edit, give, wait,
+  take, done, stale, back, closed), `offerGone`, `tradeWhyNot` (run, last, cooldown, robot, egg), `tradeThing` (a
+  Billie's `onlineCopy`; an egg's nursery entry with its Billie's copy, unstamped; a part), `tradeLegal`,
+  `tradeGive` / `tradeTake` / `tradeBack` (by uid, once per trade through `meta.trades`; a held item stays in the bag;
+  what arrives goes to storage marked `traded {at, from}`, eggs to the nursery, parts to the spares; a uid you have gets
+  a new one), `tradeAcquire`, `TRADE_XP` 1.5. `meta.trades` (the latest 20: key, when, the friend, open / gave / done /
+  back, what was given and got) checked by `validTrades`. Ribbons are in `ONLINE_BILLY_KEYS` (shape-checked; a ghost's
+  party drops them to stay under 8 KB). Tests: `tools/test/trade.test.mjs`.
+- The `acquire` evolution kind `{k, item, min}`: `canEvolve` never (it isn't by level), the Billie sheet's item button
+  takes its item, the hint and the Guide name both routes, `evoUsable` counts it (no reward card offers the form).
+  `items.json` `transfer` (Form 99-A, `evoItem`, the `settlement` icon for now). Feedopus no longer takes the Shining
+  Stone. Form 27-B's "Fill it in" became "File a transfer" (the same nap and scratch, the form in place of a common
+  item; a fourth option didn't fit the sheet); the Bureau Checkpoint (weight 0 before) is drawn again and gives the form
+  after its inspection fight.
+- `battle-engine.js heldXp`: a traded Billie's XP × 1.5 (an `xp` effect row, as the Lucky Coin's).
+- The page (`game/js/trade.js`): a friend's row has Trade (gold while a trade is open); the Billie sheet has Trade…
+  (pick a friend); the trade sheet shows both sides live (`onSnapshot`), the picker says why a thing can't go, then
+  Ready / Not ready, Trade!, Call it off, Take mine back. Each step that changes the save is made on a copy, written in
+  one batch with the mark, then made on the live save with the same uids. Receiving, taking back and deleting a finished
+  offer run on their own; my offers are watched from sign-in (`initFriends`), so a page closed midway finishes at the
+  next start, and a save behind its offer (an older save picked) catches up. An acquired Billie evolves on arrival. The
+  Trainer card's Trades panel. The Safety step covers the trade sheet (open, ready, sent, refused), the picker, picking
+  a friend and the history.
+- Changed from the plan above: one offer per pair (`offers/<a>_<b>`, not `_<t>`) with its own stamp `k`; no obedience
+  (1.5x XP instead, the owner's pick); the version in the oks instead of clearing them (an ok on an old version is
+  refused, so a give changed at the same moment as an ok can't slip through); Form 27-B's existing option became the
+  transfer.
+
+
 ### ON-5 Global trading on trust: GTS and Surprise Trade (1-2 sessions)
 - GTS (`gts/{id}`): deposit one Billie, egg or part (it leaves your save), name what you want (species, level range,
   or "any egg"). Browse by species. Fulfilling: a create-only claim `gts/{id}/claim` with what you give (it leaves

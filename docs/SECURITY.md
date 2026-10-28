@@ -152,6 +152,20 @@ counts, so a modified game can give itself one. Reports hide an entry after 3 di
 so 3 accounts of one person can hide an entry until the moderator shows it again. Votes, entries and reports are
 counted with `getAfter`/`existsAfter` in one batch (no `count()`: the compat SDK the game loads has none).
 
+### ON-4 for the owner to do (2026-10-28)
+Publish the rules again (they add `offers/<a>_<b>`). Until then Trade opens the sheet but its first write says
+"Trading isn't open yet"; everything else works as before.
+
+What ON-4 leaves open (accepted by the owner, 2026-10-26): the rules can't read a save, so a modified game can mark
+"gave" and keep the thing, or a player can restore an old save after a trade, and keep both sides (duplication). A
+hacked-but-legal Billie passes `legalBilly`. What the rules do hold: only the two friends (friends both ways, not
+blocked) read or write their offer; each side writes only its own fields; both oks must be on the same version of both
+gives (an ok on an old version is refused), so neither side can swap its give after the other said Ready; nobody
+receives before both gave; each mark that changes a save comes with that save in the same batch; nobody can refuse
+after the other side received (keeping both); a give with no answer can be closed and taken back after 7 days. What
+arrives is checked again by the receiving game (`legalBilly`, `legalEgg`, `legalPart`); a thing that fails stops the
+whole trade and each side takes its own back.
+
 ### Superseded 2026-10-26: the online track on Spark
 The owner chose to stay on the free Spark plan (docs/phases/online-track.md), so the table above (`trades`,
 `inventory` written by a Cloud Function) won't be built. Instead every write comes from a player's own game and the
