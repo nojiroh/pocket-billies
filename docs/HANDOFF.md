@@ -2,6 +2,50 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Online track ON-4: friend trades (Billies, eggs, parts), trade evolutions, Form 99-A - 2026-10-28
+Branch `track/online` (level with main 5f6d01ae at the start: ON-3 had merged in #268). PR #307 (draft). Tag to
+suggest: `on-4-done`. Both halves in one session at the owner's word. Details: docs/phases/online-track.md, "Facts
+corrected at ON-4's start" and "Done in ON-4".
+- The owner's answers: start now (RO-3g, the Swift rebuild, still open: the Swift line kept out); Cliplet→Tiktokferret
+  and Feedopus→Metapus evolve by trade; no obedience, traded Billies gain 1.5x XP; the solo route is Form 99-A from
+  Form 27-B and the revived Bureau Checkpoint; up to 3 things each side; ribbons travel with the Billie.
+- Facts that were wrong: no obedience exists and badges are by type, not a count; the event sheet's 3-option cap
+  (Form 27-B already had 3, so "Fill it in" became "File a transfer": the same nap and scratch, the form in place of
+  a common item).
+- Changed:
+  - Rules: `offers/<a>_<b>`, with each side's own fields, oks on the gives' version, and saves in the batch.
+  - New: `logic/trade.js` and `game/js/trade.js`.
+  - `meta.trades` (validMeta).
+  - Ribbons in `ONLINE_BILLY_KEYS` (a ghost's party drops them).
+  - The `acquire` evolution kind (rules.js, the Billie sheet, the Guide, rewards).
+  - `items.json` `transfer`, `yiming.json`, `zuck.json`.
+  - `events.json`: form_27b, and bureau_checkpoint at weight 1.
+  - `battle-engine.js heldXp` (1.5x when traded).
+  - friends.js (Trade on a friend's row, under the name; the watch starts with friends), profile.js (the Trades
+    panel), billie-sheet.js (Trade…), friends.css (one rule), the quick check's Safety step.
+  - The run-start snapshot moved: the new item and the Checkpoint's weight.
+- **For the owner**: publish the rules (SECURITY.md "ON-4 for the owner to do"); then trade between two accounts on two
+  phones: a Billie for a part, an egg, Cliplet at 14+ (it should evolve on arrival), close one page between Trade! and
+  the other side's Trade! (it should finish at the next start), and a trade called off.
+- **Risky**: never tried with real accounts. The emulator tests prove the rules accept the game's own writes, but the
+  page's Firestore calls (compat SDK, `onSnapshot`, `batch`) were only drawn with stand-in offers. A trade writes the
+  whole save JSON in the batch: a very large save near 1 MB would refuse it. Open on Spark (accepted): marking "gave"
+  and keeping the thing, or restoring an old save after a trade. Form 99-A uses the `settlement` icon for now (a
+  drawn form would be better).
+- Verified:
+  - lint, typecheck, format:check, check:modules, check:data, build.
+  - `npm test` 1642 pass; `npm run test:slow` 108 pass.
+  - Rules emulator 41 pass (8 new, one a whole trade with the game's patches and real saves).
+  - The Safety step with the trade screens.
+  - Phone-size pictures of the trade sheet (open, ready, sent, done), the picker and the Trainer card. The friend
+    row's buttons were too wide for a phone, so Trade moved under the name.
+  - Full quick check: 35 of 42 ok. Run alone after, 4 pass (RT-2, Granny Juniper, Ground tiles, Battle music).
+    Still failing, the same on main 5f6d01ae in a worktree: Terraces (train_station floats), RL-8's seam view, the
+    settings tabs 7 px wide.
+  - CI smoke: the Studio's world map look and Camera section (404 art) are red on main too. Behind things passes
+    alone here and on main (one re-run asked; PR comment).
+- Next: the owner publishes the rules and trades between two accounts; ON-5 (GTS and Surprise Trade) after RO-3g.
+
 ### UI track - Part 2 checked: every skipped check on all of Part 2 merged, and the fixes (UI-8b..UI-18, WM-5b, WM-6, SY-1..SY-3, VFX-5) - 2026-10-28
 Branch `claude/ui-checks-all`, made from UI-17's `claude/ui-17-idle-life` (#300), which held main and every Part 2
 step. Merged in (merges, not rebases): main (nothing new); `track/ui` (UI-8b, #276: docs conflicts, the newer lines
