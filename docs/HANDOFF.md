@@ -2,6 +2,42 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-0: the plan, the research and a playable mockup - 2026-10-28
+Branch `ccr-2d53c4cf-8w7kd2` (from main 76aea599; `track/dialogue` doesn't exist yet). Docs only, plus the mockup
+page. Planned in Plan Mode and approved by the owner. Details: docs/phases/dialogue-track.md.
+- The owner's brief: "a modern stylized text bubble that subtly moves and expands", text effects and boldness for
+  emphasis and humour, dynamic and fun portraits; then "multiple bubbles on top of one another. Really give it
+  character and style. Don't make it boring." Answers: bracket tags; portraits from the characters track's figures;
+  emotes, the frame bounce, mid-line faces and bubble shapes approved; I mark up the key scenes and the owner
+  reviews.
+- Written:
+  - docs/phases/dialogue-track.md: what the code does today (read at 76aea599), the research with sources, the look,
+    how it is built, sessions DL-1..DL-8, Ask me before, risks.
+  - docs/samples/dialogue-mockup.html: a playable mockup (also the owner's private page
+    https://claude.ai/artifact/FuBfW9mRqSeao2y9rmJLDW). Four scenes with the stack, the skins, the shapes, the tags,
+    stand-in pixel faces, Text speed, the motion levels and a try-a-line box with the parser's errors.
+  - The ROADMAP entry and the BRANCHES rows.
+- Facts found that later sessions need:
+  - Every spoken line goes through `talkLine`, but the battle box, the walk speech, event intros and `#csBubble`
+    don't.
+  - `talkBox.onType` has no listeners.
+  - The mouth never moves on lines with an expression tag (talk.js:269).
+  - The blink is fixed at 3.7 s.
+  - Oxanium has no 700 in the game (Ask me before 1).
+  - `[` is used only as a leading expression and `{word}` is a slot, so bracket tags are free.
+  - Tests read `#talk .talk-who` and `talkBox.cur.text`; the stack keeps one of each.
+  - Kappi is they/them.
+- **For the owner**:
+  - Make `track/dialogue` from main (or this branch).
+  - Open the mockup on the phone, play the four scenes and say which skins and numbers to keep (Ask me before 2).
+  - Answer Ask me before 1 (bold) when DL-2 starts.
+- **Risky**: nothing in the game changed. The mockup's faces are stand-ins, not the figures. Its bubbles are SVG
+  while the game's are clip-path; DL-3 picks per shape.
+- Verified: the mockup played through all four scenes and a choice in headless Chromium at 390x844, with no page
+  errors; pictures checked. No game code touched, so lint and tests were not needed (the docs aren't formatted or
+  linted).
+- Next: DL-1 (markup) on `track/dialogue`.
+
 ### Online track ON-4: friend trades (Billies, eggs, parts), trade evolutions, Form 99-A - 2026-10-28
 Branch `track/online` (level with main 5f6d01ae at the start: ON-3 had merged in #268). PR #307 (draft). No session
 tag (CLAUDE.md: the track gets `online-done` when it ends). Both halves in one session at the owner's word. Details: docs/phases/online-track.md, "Facts

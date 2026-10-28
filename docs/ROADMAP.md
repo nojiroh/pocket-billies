@@ -334,6 +334,14 @@ town node needs it.
   motion (they don't today). SY-0 (the plan, with research) and SY-1 (battle flashes follow Flashes and Reduced
   motion) done 2026-10-27 on `ccr-86dc9cb1-odx2za`; SY-2 (numbers you feel) done 2026-10-27 on `track/style`; SY-3
   (the Bureau's mark: the emblem, `bureau.look`, `pb-stamp`) done 2026-10-28 on `track/style`; SY-4 (case files: Bureau events in a manila folder, typed in, redacted, stamped) done 2026-10-28 on `track/style`; SY-5 (the Bureau in battle: stamps on knockouts and wins, the Notice of Retrieval in the join intro, ID plates on form paper; UI-16a/b merged in for their plates) done 2026-10-28 on `track/style`; SY-6 (the coat's foil in the world: a dithered sheen band in the sprite shader on coated Billies, maps and battle) done 2026-10-28 on `track/style`; SY-7 (the Bureau in the world: red tape on its barrier and crate, its own checkpoint sign with the emblem, loose forms blowing about its places) done 2026-10-28 on `track/style`; SY-8 (tuning and docs: Studio dials for the stamp, the HP roll, the pop sizes and the foil, uiTheme.json `style`; the debug log's style line) done 2026-10-28 on `track/style`. **Track done** (2026-10-28), waiting on PR #289; tags `sy-N-done` and `style-done` are the owner's to push. Branch `track/style`.
+- **Dialogue track** (docs/phases/dialogue-track.md, the owner's brief 2026-10-28): talking with character. A
+  conversation of stacked bubbles (the last two lines above the newest, speakers on alternating sides, interruptions,
+  a "…" bubble, a Log), a bubble of their own for each character (the Bureau's form paper and stamp, Chosen's gold,
+  Kappi's leaf, Blake's pop-art slant, your neon), shout, whisper and think shapes, bracket tags for text that acts
+  (bold, slant, size, colour, wave, shake, speed, pauses, mid-line faces, emotes), a Text speed setting, and portraits
+  that perform (random blinks, a mouth synced to the voice, the head on a spring on the characters track's figures,
+  emotes, the frame bouncing). DL-0 (the plan, with research) done 2026-10-28 on `ccr-2d53c4cf-8w7kd2`; next DL-1
+  (markup) on `track/dialogue`, which the owner makes. About 8 sessions. Branch `track/dialogue`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.
