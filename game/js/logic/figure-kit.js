@@ -669,7 +669,8 @@ export function lookFigure(look, items, opts = {}) {
         c: [0, -0.24 * tk - neckL, -0.01],
         r: [xAt(3) + (outer ? 0.04 : 0.025), 0.26 * tk, zAt(3) + (outer ? 0.04 : 0.025)],
       },
-    }
+    },
+    KIT
   );
   /* CH-3b's hybrid variants may redesign (the owner: "you don't have to base them on their original sprites"): a scarf
      with a tail that streams behind, a cape from the shoulders */
@@ -1049,10 +1050,14 @@ export function kitTopOf(p, parts) {
  * @param {number} [vol] the strands' thickness and lift times this (a direction's fuller hair)
  * @param {{ ahoge?: boolean, body?: { c: Vec3, r: Vec3 } }} [o] an antenna strand; the back and shoulders, in the
  *   head's frame, for long hair to fall over
+ * @param {FigureKitData} [kit] the kit's data: each style's recipe (CH-5: game/data/figureKit.json hair: its hairline,
+ *   what shows under a hat, and its steps: grow, spikes, bun, tie, twin, with their strands' numbers)
  */
-export function kitHair(add, style, H, hat, seed, brim = false, vol = 1, o = {}) {
+export function kitHair(add, style, H, hat, seed, brim = false, vol = 1, o = {}, kit = figureKitData()) {
   if (!style) return;
-  const k = H.r[0] / 0.31,
+  /* CH-5: the style's recipe (game/data/figureKit.json hair; a style it has none for grows as hair_short) */
+  const HR = /** @type {any} */ (kit.hair[style] || kit.hair.hair_short),
+    k = H.r[0] / 0.31,
     sk = /** @type {{ t: 'ell', c: Vec3, r: Vec3 }} */ (H.items[0].p),
     sc = sk.c,
     sr = sk.r,
@@ -1068,12 +1073,8 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1, o = {})
     onSkull = (/** @type {number[]} */ d) =>
       /** @type {Vec3} */ ([sc[0] + d[0] * sr[0], sc[1] + d[1] * sr[1], sc[2] + d[2] * sr[2]]),
     outAt = (/** @type {number[]} */ d) => figureUnit([d[0] / sr[0], d[1] / sr[1], d[2] / sr[2]]),
-    cut =
-      style === 'hair_buzz'
-        ? { front: 0.42, side: 0.1, back: -0.2 }
-        : style === 'hair_bob' || style === 'hair_long'
-          ? { front: 0.3, side: -0.4, back: -0.7 }
-          : { front: 0.32, side: -0.15, back: -0.5 },
+    /* the hairline: the style's own, else the usual */
+    cut = HR.cut || { front: 0.32, side: -0.15, back: -0.5 },
     /* the hat's band, as a height on the skull's sphere */
     bandV = (c1 + H.r[1] * 0.18 - sc[1]) / sr[1],
     /* the body's ellipsoid's distance at a point, roughly */
@@ -1084,7 +1085,7 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1, o = {})
       return (Math.hypot(u[0], u[1], u[2]) - 1) * Math.min(B.r[0], B.r[1], B.r[2]);
     };
   /* the cap: the skull, a little out, cut at the hairline */
-  const t = (style === 'hair_buzz' || hat ? 0.012 : 0.02 * vol) * k;
+  const t = (HR.thin || hat ? 0.012 : 0.02 * vol) * k;
   items.push({ p: { t: 'ell', c: sc, r: [sr[0] + t, sr[1] + t, sr[2] + t] }, op: 'add', k: 0 });
   items.push({ p: { t: 'cut', c: sc, r: sr, cut }, op: 'and', k: 0 });
   /* hollow: a shell over the scalp, nothing hidden inside the head */
@@ -1229,133 +1230,95 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1, o = {})
       );
     }
   };
-  const s = hat ? 'under' : style;
-  if (s === 'under') {
+  if (hat) {
     /* below the hat: a fringe (not under a brim), and what shows of the style below the band */
-    const L = /** @type {[number, number]} */ (
-      style === 'hair_long'
-        ? [0.5, 0.68]
-        : style === 'hair_bob'
-          ? [0.2, 0.26]
-          : style === 'hair_buzz'
-            ? [0, 0]
-            : [0.07, 0.11]
-    );
-    if (L[1] > 0)
-      grow(
-        1,
-        L,
-        style === 'hair_long' ? 0.07 : 0.055,
-        {
-          grav: 1,
-          stiff: 0.75,
-          wave: style === 'hair_long' ? 0.2 : 0.08,
-          freq: 1.3,
-          curl: style === 'hair_bob' ? 0.7 : 0,
-          hug: 0.3,
-        },
-        0.08
+    const U = HR.under;
+    if (U && U.len[1] > 0) grow(1, U.len, U.w, U.strand, U.lift);
+    if (U && U.tail)
+      tail(
+        add3(onSkull([U.tail.at[0], bandV + U.tail.at[1], U.tail.at[2]]), [0, 0, -U.tail.back * k]),
+        U.tail.dir,
+        U.tail.n,
+        U.tail.len
       );
-    if (style === 'hair_pony')
-      tail(add3(onSkull([0, bandV - 0.45, -0.95]), [0, 0, -0.03 * k]), [0, -0.6, -0.8], 9, 0.36);
   } else
-    switch (style) {
-      case 'hair_buzz':
-        break;
-      case 'hair_sidepart': {
-        const side = kitRnd(seed, 5) < 0.5 ? 1 : -1;
-        grow(3, [0.14, 0.2], 0.06, { grav: 0.7, wave: 0.12, hug: 0.7 }, 0.1, [side * 0.35, 0.94, 0.1]);
-        break;
-      }
-      case 'hair_bob':
-        grow(
-          2,
-          [0.26, 0.32],
-          0.065,
-          { grav: 0.95, stiff: 0.75, wave: 0.08, curl: 0.8, hug: 0.35 },
-          0.15,
-          [0, 1, -0.05]
-        );
-        break;
-      case 'hair_long':
-        /* combed back from the brow, so the face shows between the falls */
-        grow(2, [0.55, 0.78], 0.065, { grav: 1, stiff: 0.75, wave: 0.25, freq: 1.4, hug: 0.25 }, 0.15, [0, 0.85, 0.55]);
-        break;
-      case 'hair_spiky':
-        /* big clumps swept back and up from the brow, curving as they go, the front ones flicked forward over it */
-        roots.forEach((R, i) => {
-          if (i % 7) return;
-          const front = R.d[2] > 0.4,
-            dir = front
-              ? add3(add3(R.n, [0, 0.5, 0.6]), [R.d[0], 0, 0], 0.5)
-              : add3(add3(comb(R, whorl), R.n, 0.55), [0, 0.35, 0]);
-          strand(add3(R.p, R.n, 0.035 * k), dir, (0.15 + 0.09 * rnd(i)) * k, 0.085 * k * vol, {
-            grav: 0.4,
-            stiff: 0.9,
-            wave: 0.12,
-            freq: 0.6,
+    for (const st of HR.steps)
+      switch (st.op) {
+        case 'grow': {
+          /* combed from the whorl, or from `from` (a part, mirrored to the side the seed picks) */
+          const side = kitRnd(seed, 5) < 0.5 ? 1 : -1,
+            from = st.from ? (st.mirror ? [side * st.from[0], st.from[1], st.from[2]] : st.from) : whorl;
+          grow(st.every, st.len, st.w, st.strand, st.lift, from);
+          break;
+        }
+        case 'spikes':
+          /* big clumps swept back and up from the brow, curving as they go, the front ones flicked forward over it */
+          roots.forEach((R, i) => {
+            if (i % st.every) return;
+            const front = R.d[2] > st.front,
+              dir = front
+                ? add3(add3(R.n, [0, 0.5, 0.6]), [R.d[0], 0, 0], 0.5)
+                : add3(add3(comb(R, whorl), R.n, 0.55), [0, 0.35, 0]);
+            strand(add3(R.p, R.n, st.root * k), dir, (st.len + st.lenVar * rnd(i)) * k, st.w * k * vol, st.strand);
           });
-        });
-        grow(4, [0.1, 0.14], 0.06, { grav: 0.5, hug: 0.5 }, 0.15);
-        break;
-      case 'hair_curly':
-        grow(2, [0.1, 0.15], 0.05, { grav: 0.25, stiff: 0.6, wave: 0.9, freq: 2.6 }, 0.7);
-        break;
-      case 'hair_bun': {
-        const T = onSkull([0, 0.78, -0.62]);
-        sweep(add3(T, outAt([0, 0.78, -0.62]), 0.05 * k), 4);
-        const B = add3(T, outAt([0, 0.78, -0.62]), 0.1 * k);
-        items.push({
-          p: { t: 'ell', c: B, r: [0.11 * k * vol, 0.1 * k * vol, 0.11 * k * vol] },
-          op: 'add',
-          k: blend * 2,
-        });
-        /* the bun wound round: a coil of strands */
-        for (let i = 0; i < 14; i++) {
-          const a0 = (i / 14) * 6.283 * 1.6,
-            a1 = ((i + 1) / 14) * 6.283 * 1.6,
-            R0 = 0.1 * k * vol * (1 - i * 0.025),
-            R1 = 0.1 * k * vol * (1 - (i + 1) * 0.025);
+          break;
+        case 'bun': {
+          const T = onSkull(st.at);
+          sweep(add3(T, outAt(st.at), st.tie * k), st.every);
+          const B = add3(T, outAt(st.at), st.out * k);
           items.push({
-            p: {
-              t: 'cone',
-              a: add3(B, [Math.cos(a0) * R0, (i / 14) * 0.06 * k, Math.sin(a0) * R0]),
-              b: add3(B, [Math.cos(a1) * R1, ((i + 1) / 14) * 0.06 * k, Math.sin(a1) * R1]),
-              ra: 0.035 * k,
-              rb: 0.035 * k,
-            },
+            p: { t: 'ell', c: B, r: [st.size[0] * k * vol, st.size[1] * k * vol, st.size[2] * k * vol] },
+            op: 'add',
+            k: blend * 2,
+          });
+          /* the bun wound round: a coil of strands */
+          for (let i = 0; i < st.coil; i++) {
+            const a0 = (i / st.coil) * 6.283 * st.turns,
+              a1 = ((i + 1) / st.coil) * 6.283 * st.turns,
+              R0 = st.coilR * k * vol * (1 - i * st.coilShrink),
+              R1 = st.coilR * k * vol * (1 - (i + 1) * st.coilShrink);
+            items.push({
+              p: {
+                t: 'cone',
+                a: add3(B, [Math.cos(a0) * R0, (i / st.coil) * st.coilRise * k, Math.sin(a0) * R0]),
+                b: add3(B, [Math.cos(a1) * R1, ((i + 1) / st.coil) * st.coilRise * k, Math.sin(a1) * R1]),
+                ra: st.coilW * k,
+                rb: st.coilW * k,
+              },
+              op: 'add',
+              k: blend,
+            });
+          }
+          break;
+        }
+        case 'tie': {
+          /* a ponytail: swept to the tie, a knot, a tail */
+          const T = add3(onSkull(st.at), [0, 0, -st.back * k]);
+          sweep(T, st.every);
+          items.push({
+            p: { t: 'ell', c: T, r: [st.knot[0] * k, st.knot[1] * k, st.knot[2] * k] },
             op: 'add',
             k: blend,
           });
+          tail(T, st.tail.dir, st.tail.n, st.tail.len);
+          break;
         }
-        break;
-      }
-      case 'hair_pony': {
-        const T = add3(onSkull([0, 0.25, -0.97]), [0, 0, -0.03 * k]);
-        sweep(T, 4);
-        items.push({ p: { t: 'ell', c: T, r: [0.05 * k, 0.05 * k, 0.04 * k] }, op: 'add', k: blend });
-        tail(T, [0, -0.5, -0.85], 9, 0.42);
-        break;
-      }
-      case 'hair_twin':
-        for (const sg of [1, -1]) {
-          const T = add3(onSkull([sg * 0.95, 0.3, -0.25]), [sg * 0.02 * k, 0, 0]);
-          roots.forEach((R, i) => {
-            if (i % 5 || Math.sign(R.d[0] || 1) !== sg) return;
-            strand(add3(R.p, R.n, 0.02 * k), add3(comb(R, [0, 1, 0]), R.n, 0.15), 0.4 * k, 0.045 * k * vol, {
-              to: T,
-              grav: 0,
-              stiff: 0.4,
+        case 'twin':
+          /* two tails: each side's hair swept to its tie */
+          for (const sg of [1, -1]) {
+            const T = add3(onSkull([sg * st.at[0], st.at[1], st.at[2]]), [sg * st.out * k, 0, 0]);
+            roots.forEach((R, i) => {
+              if (i % st.every || Math.sign(R.d[0] || 1) !== sg) return;
+              strand(add3(R.p, R.n, 0.02 * k), add3(comb(R, [0, 1, 0]), R.n, 0.15), st.len * k, 0.045 * k * vol, {
+                to: T,
+                grav: 0,
+                stiff: 0.4,
+              });
             });
-          });
-          tail(T, [sg * 0.5, -0.8, -0.2], 7, 0.36);
-        }
-        grow(9, [0.1, 0.12], 0.045, { grav: 0.6 }, 0.2);
-        break;
-      case 'hair_short':
-      default:
-        grow(3, [0.13, 0.19], 0.06, { grav: 0.7, wave: 0.14, hug: 0.6 }, 0.12);
-    }
+            tail(T, [sg * st.tail.dir[0], st.tail.dir[1], st.tail.dir[2]], st.tail.n, st.tail.len);
+          }
+          break;
+      }
   /* an antenna strand standing up off the crown */
   if (o.ahoge && !hat) strand(onSkull([0, 0.97, 0.2]), [0.2, 1, 0.3], 0.16 * k, 0.03 * k, { grav: 1.4, stiff: 0.9 });
   add('hair', 'head', [0, 0, 0], { kind: 'sdf', items, h: H.r[0] / 13, c: sc, r: sr }, 'hair');
