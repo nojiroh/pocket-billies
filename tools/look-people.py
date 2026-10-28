@@ -17,8 +17,9 @@
                                                     # one sheet at 4 screen pixels a pixel (figure-sheet-*.png), no shots;
                                                     # with --density (a list: 16,32,48 gives a sheet each), --steps,
                                                     # --outline, --style and --tilt=DEGREES (26: Normal)
-    python3 tools/look-people.py --figures --battle # CH-3: a trainer battle once its moves are asked for, you (and with
-                                                    # --folk=1 the rival) as figures at 64 px a metre (battle-*.png)
+    python3 tools/look-people.py --figures --battle # CH-3: a trainer battle in its intro, the trainers on the stage, you
+                                                    # (and with --folk=1 the rival) as figures at 64 px a metre
+                                                    # (battle-*.png); --no-shots for the battle (or --lose) alone
 
 The page is a 390 x 844 phone at 3 device pixels to the CSS pixel (the one the characters track's numbers are worked
 out for: the scene drawn into the same 860 x 1861 buffer as on the phone), with the game's own graphics, but auto
@@ -52,6 +53,7 @@ ONLY = set(arg('only', '').split(',')) - {''}
 FIGURES = '--figures' in ARGS
 LOSE = '--lose' in ARGS
 BATTLE = '--battle' in ARGS
+NO_SHOTS = '--no-shots' in ARGS
 SHEET = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a.startswith('--sheet')), None)
 TILT = float(arg('tilt', 26))
 FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline')),
@@ -145,16 +147,20 @@ def sheet(pg, t0, density=None):
 
 
 def battle(pg, t0):
-    """CH-3: a trainer battle (as check-quick's battles start one), shot once its moves are asked for and the
-    trainers' figures are baked: by day, then at dusk"""
+    """CH-3: a trainer battle (as check-quick's battles start one), shot in its intro, while the trainers stand on the
+    stage (they leave it as they send their Billies out): once both have slid in, the stage's clock is all but stopped
+    (battleStage.speed 0.001: 0 would divide by it) and the shots taken by day and at dusk, with the trainers'
+    pictures"""
     out = []
     pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};0")
     tid = pg.evaluate("Object.keys(TRAINERS).find(k=>TRAINERS[k].team&&TRAINERS[k].team.length>=1)||''")
     if not tid: return [{'shot': 'battle', 'error': 'no trainer'}]
-    pg.evaluate(f"uiState.dbgSpeed=true;battleStage.speed=4;startTrainer('{tid}',{{talked:true}});0")
-    tap = "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"
-    if not fast.until(pg, "activeBattle&&activeBattle.phase==='choose'", 240, tap):
-        return [{'shot': 'battle', 'error': 'never reached the move menu'}]
+    pg.evaluate(f"uiState.dbgSpeed=true;battleStage.speed=1;startTrainer('{tid}',{{talked:true}});0")
+    stood = "battleStage.tr&&battleStage.tr[0]&&battleStage.tr[1]&&battleStage.tr[0].show&&battleStage.tr[1].show&&Math.abs(battleStage.tr[0].x)<3&&Math.abs(battleStage.tr[1].x)<3"
+    # the intro plays by itself; a message waiting for a tap before it is tapped through, but only after a while
+    if not fast.until(pg, stood, 60) and not fast.until(pg, stood, 120, "activeBattle&&activeBattle.phase==='playing'&&!battleStage.tr[0]&&tapMessage()"):
+        return [{'shot': 'battle', 'error': 'the trainers never stood on the stage'}]
+    pg.evaluate("battleStage.speed=0.001;0")
     for tname, hour in (('day', 12.5), ('dusk', 18.6)):
         pg.evaluate(f"environment.force={{time:{hour},weather:'clear',season:'summer'}};0")
         shots.settle(pg, 8)
@@ -162,9 +168,11 @@ def battle(pg, t0):
         pg.screenshot(path=str(OUT / f'{name}.png'))
         r = pg.evaluate(f'{COUNT}({FRAMES})')
         r.update(shot=name, trainer=tid, figures=pg.evaluate('figureReport()'),
+                 shown=pg.evaluate("[0,1].map(i=>!!(battleStage.tr[i]&&battleStage.tr[i].show))"),
                  frames=pg.evaluate("[0,1].map(i=>{const f=trainerBattleFrame(i);return f?[f.width,f.height,f.ppm||null,f.figure||null]:null})"))
         out.append(r)
-        print(f"[{time.time() - t0:5.0f}s] {name:>24}: {r['draws']} draws, trainers {r['frames']}, figures {r['figures']}", flush=True)
+        print(f"[{time.time() - t0:5.0f}s] {name:>24}: {r['draws']} draws, trainers shown {r['shown']}, pictures {r['frames']}, figures {r['figures']}", flush=True)
+    pg.evaluate("battleStage.speed=1;0")
     return out
 
 
@@ -241,7 +249,7 @@ def main():
             pg.evaluate(f"environment.force={{time:{hour},weather:'clear',season:'summer'}};0")
             for sid, zoom in stops:
                 for yaw in YAWS:
-                    if not wanted(sid, tname, f'yaw{yaw}'): continue
+                    if NO_SHOTS or not wanted(sid, tname, f'yaw{yaw}'): continue
                     pg.evaluate(f"walkRenderer.zoomT=walkRenderer.zoom={zoom};walkRenderer.yawT=walkRenderer.yaw={math.radians(yaw)};walkRenderer.camT=null;0")
                     shots.settle(pg, 6)
                     name = f"{'figures-' if FIGURES else ''}{'crowd%d-' % CROWD if CROWD else ''}{tname}-{sid}-yaw{yaw}"
