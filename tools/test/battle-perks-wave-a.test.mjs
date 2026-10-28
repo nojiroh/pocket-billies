@@ -221,3 +221,72 @@ test('PK-3 immune: an event’s status skips a team holding the Perk (runImmune)
   s.run = { perks: [] };
   assert.equal(fn('runImmune')(s, P, 'brn'), false);
 });
+
+/* ---------- inflict ---------- */
+
+test('PK-3 inflict: a hit of yours of the category gives the foe the status by the battle’s roll, with a line', () => {
+  const { P, fx } = perks({
+    id: 'test_buzzer',
+    name: 'Test Buzzer',
+    fx: [{ kind: 'inflict', status: 'par', chance: 0.15, when: 'hit', if: 'cat:H' }],
+  });
+  const H = anyHit('H'),
+    S = anyHit('S');
+  withPerks(P, () => {
+    /* a roll under the chance lands it (every roll of the stream is held at 0.1 < 0.15) */
+    let b = battle(fx);
+    tough(foe(b));
+    fixedRoll(b, 0.1, () => fn('useMove')(0, H, 1));
+    assert.equal(foe(b).status, 'par');
+    assert.ok(lines(b).includes('Test Buzzer kicked in!'), lines(b).join('\n'));
+    /* over the chance: nothing */
+    b = battle(fx);
+    tough(foe(b));
+    fixedRoll(b, 0.2, () => fn('useMove')(0, H, 1));
+    assert.equal(foe(b).status ?? null, null);
+    /* a special hit: the condition doesn't hold */
+    b = battle(fx);
+    tough(foe(b));
+    fixedRoll(b, 0.01, () => fn('useMove')(0, S, 1));
+    assert.equal(foe(b).status ?? null, null);
+    /* the foe hitting yours: nothing on yours */
+    b = battle(fx);
+    tough(mine(b));
+    fixedRoll(b, 0.01, () => fn('useMove')(1, H, 0));
+    assert.equal(mine(b).status ?? null, null);
+  });
+});
+
+test('PK-3 inflict: chances acting together count at most 50%, laid end to end on one roll', () => {
+  const rows = [
+    { kind: 'inflict', status: 'par', chance: 0.5, src: 'a' },
+    { kind: 'inflict', status: 'brn', chance: 0.5, src: 'b' },
+  ];
+  const pick = r => (fn('fxInflictPick')(rows, r) || {}).status || null;
+  assert.equal(pick(0.1), 'par');
+  assert.equal(pick(0.3), 'brn', '0.25 each once scaled to 0.5 together');
+  assert.equal(pick(0.49), 'brn');
+  assert.equal(pick(0.5), null, 'never past 50%');
+  assert.equal(fn('fxInflictPick')([{ kind: 'inflict', status: 'slp', chance: 0.1 }], 0.1), null);
+  /* a seeded battle with two of them: the battle's stream, so the same seed gives the same statuses */
+  const { P, fx } = perks(
+    { id: 'test_a', fx: [{ kind: 'inflict', status: 'par', chance: 0.5, when: 'hit' }] },
+    { id: 'test_b', fx: [{ kind: 'inflict', status: 'brn', chance: 0.5, when: 'hit' }] }
+  );
+  const H = anyHit('H'),
+    play = () =>
+      withPerks(P, () => {
+        const got = [];
+        for (let i = 0; i < 40; i++) {
+          const b = battle(fx, { seed: 'inflict-' + i });
+          tough(foe(b));
+          fn('useMove')(0, H, 1);
+          got.push(foe(b).status || '-');
+        }
+        return got.join(' ');
+      });
+  const one = play();
+  assert.equal(play(), one, 'replayable');
+  const landed = one.split(' ').filter(x => x !== '-').length;
+  assert.ok(landed > 5 && landed < 35, `about half of 40: ${one}`);
+});

@@ -14,7 +14,7 @@
    which puts that kind's fields in with neutral values. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
-import { FX_CRIT, FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
+import { FX_CHANCE, FX_CRIT, FX_EVERY, FX_LIMIT, FX_STAGES, FX_WHEN } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
 import { FX_PLAIN, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
@@ -92,6 +92,7 @@ const PERK_KINDS = {
   bossHp: 'The run’s boss’s HP (PK-1)',
   crit: 'Critical hits: more often, or a move that is one (PK-3)',
   immune: 'A status, the Sandstorm or sharp stones can’t touch your Billies (PK-3)',
+  inflict: 'A chance to give the foe a status when one of yours hits it (PK-3)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -130,6 +131,7 @@ const PERK_ROW_NEW = {
   bossHp: () => ({ kind: 'bossHp', mult: 1.1 }),
   crit: () => ({ kind: 'crit', stages: 1 }),
   immune: () => ({ kind: 'immune', what: 'brn' }),
+  inflict: () => ({ kind: 'inflict', status: 'par', chance: 0.1, when: 'hit' }),
 };
 const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 
@@ -256,6 +258,19 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           ['sandstorm', 'The Sandstorm’s buffeting'],
           ['stones', 'Sharp stones on switching in'],
         ]),
+      ],
+      inflict: () => [
+        selectField(
+          'Status',
+          `${p}.status`,
+          (D.statuses || []).map((/** @type {any} */ q) => [q.id, q.name])
+        ),
+        numberField('Chance', `${p}.chance`, {
+          min: 0.01,
+          max: FX_CHANCE,
+          step: 0.01,
+          help: `Above 0, at most ${FX_CHANCE}; the chances of rows acting at one hit count at most ${FX_CHANCE} together (effects.js FX_CHANCE). If cat:H for physical hits only.`,
+        }),
       ],
     }[f.kind];
   return `<div class="relic-row" data-relic-row="${n}"><div class="relic-row-head"><select data-relic-kind="${escapeHtml(k)}" data-n="${n}" aria-label="Kind of effect">${Object.entries(

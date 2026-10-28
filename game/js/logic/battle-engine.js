@@ -96,6 +96,7 @@ import {
   fxDamage,
   fxFire,
   fxImmune,
+  fxInflictPick,
   fxLive,
   fxOfBillie,
   fxPeek,
@@ -204,6 +205,8 @@ expose({
   fxImmuneSay: [() => fxImmuneSay, v => (fxImmuneSay = v)],
   // @ts-expect-error -- replaced on purpose
   fxImmuneTo: [() => fxImmuneTo, v => (fxImmuneTo = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxInflict: [() => fxInflict, v => (fxInflict = v)],
   // @ts-expect-error -- replaced on purpose
   fxMoment: [() => fxMoment, v => (fxMoment = v)],
   fxNames: [() => fxNames],
@@ -1616,11 +1619,24 @@ export function fxHitMult(k, tk, M, h) {
 export function fxHitMoments(k, tk, M, r) {
   const more = { cat: M.c, superEffective: r.te > 1 };
   if (ACTOR_SIDE[k] === 0) {
-    fxMoment('hit', k, more);
+    const rows = fxMoment('hit', k, more);
+    /* PK-3: an inflict row at the hit: one roll for them all, on the foe hit */
+    if (ACTOR_SIDE[tk] === 1 && rows.some(f => f.kind === 'inflict')) fxInflict(tk, rows);
     if (r.crit) fxMoment('crit', k, more);
     if (ACTOR_SIDE[tk] === 1 && fighter(tk).hp <= 0) fxMoment('ko', k, more);
   }
   if (ACTOR_SIDE[tk] === 0) fxMoment('hurt', tk, more);
+}
+/** PK-3: the inflict rows that acted at a hit: one roll of the battle's stream picks the one that lands (fxInflictPick:
+ * their chances laid end to end, at most FX_CHANCE together) on the foe tk, standing and with no status yet; its line
+ * names the Perk @param {number} tk @param {any[]} rows */
+export function fxInflict(tk, rows) {
+  const t = fighter(tk);
+  if (!t || t.hp <= 0 || t.status) return;
+  const f = fxInflictPick(rows, battleRoll());
+  if (!f) return;
+  battleSay(`${fxSrcName(f.src)} kicked in!`, null);
+  inflict(tk, f.status, false);
 }
 /**
  * PK-1: a moment in battle: the run's rows of that `when` act (logic/effects.js fxFire counts, grows and spends). A

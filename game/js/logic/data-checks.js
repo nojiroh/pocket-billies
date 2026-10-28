@@ -40,6 +40,7 @@ import {
 } from './mapgen.js';
 import { fxRowOf } from './run-enc.js';
 import {
+  FX_CHANCE,
   FX_CRIT,
   FX_EVERY,
   FX_FOES,
@@ -1939,7 +1940,7 @@ export function dataPerks(D, valid = () => true) {
           /* PK-1: when, if, every, grow, per and once */
           fxWhenProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
           /* PK-3: the battle kit's kinds */
-          fxKindProblems(f, `${k}.fx[${n}]`, what => problem('perks.json', what));
+          fxKindProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
         });
     /* PK-1: a Perk's battle line */
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
@@ -2005,8 +2006,10 @@ export function fxRowProblems(f, at, kinds, D, problem, timing = false) {
   if (f.kind === 'pinchHeal' && !share(f.at)) problem(`${at}.at: a share of HP above 0, at most 1`);
 }
 /** PK-3: the battle kit's kinds (perks-track.md 5.2): crit gives 1 to FX_CRIT stages without a when, and none at
- * when: move (that move is critical); immune names what it keeps off (FX_IMMUNE) @param {any} f @param {string} at @param {(what: string) => void} problem */
-export function fxKindProblems(f, at, problem) {
+ * when: move (that move is critical); immune names what it keeps off (FX_IMMUNE); inflict a status of statuses.json
+ * with a chance up to FX_CHANCE, at a moment @param {any} f @param {string} at @param {any} D
+ * @param {(what: string) => void} problem */
+export function fxKindProblems(f, at, D, problem) {
   if (!f || typeof f !== 'object') return;
   if (f.kind === 'crit') {
     if (f.when == null && !(Number.isInteger(f.stages) && f.stages >= 1 && f.stages <= FX_CRIT))
@@ -2016,6 +2019,13 @@ export function fxKindProblems(f, at, problem) {
   }
   if (f.kind === 'immune' && !(/** @type {readonly string[]} */ (FX_IMMUNE).includes(f.what)))
     problem(`${at}.what: ${FX_IMMUNE.join(', ')} (effects.js FX_IMMUNE)`);
+  if (f.kind === 'inflict') {
+    const ids = (D.statuses || []).map((/** @type {any} */ q) => q.id);
+    if (!ids.includes(f.status)) problem(`${at}.status: no status "${f.status}" (statuses.json: ${ids.join(', ')})`);
+    if (!(typeof f.chance === 'number' && f.chance > 0 && f.chance <= FX_CHANCE))
+      problem(`${at}.chance: above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE: chances together never pass it)`);
+    if (f.when == null) problem(`${at}.when: an inflict row needs a moment (hit)`);
+  }
 }
 /** PK-1: the timing fields of an effect row (logic/effects.js) */
 export const FX_TIMING = ['when', 'if', 'every', 'grow', 'per', 'once'];
@@ -2028,6 +2038,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   damage: ['hit', 'hurt', 'crit'],
   /* PK-3: a crit row at a move makes that move critical */
   crit: ['move'],
+  /* PK-3: a status on the foe hit */
+  inflict: ['hit'],
 });
 /** PK-1: the timing fields a kind read outside any moment can't have */
 export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({

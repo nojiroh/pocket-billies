@@ -16,6 +16,7 @@
      unstable  an Unstable splice's turn-end hurt (battle-engine.js)          place's stocking)   (SP-6, Perks)
      crit    critical-hit stages for yours hitting (calcDamage); at `when: move` the move is a critical hit (PK-3)
      immune  yours can't get a status (brn, slp, par), or aren't hurt by the Sandstorm or sharp stones (PK-3)
+     inflict a status with a chance on the foe yours hit (`when: hit`; chances together at most FX_CHANCE) (PK-3)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -35,6 +36,7 @@ import { resFxRows } from './residents.js';
 import { encBoonRows } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
+  FX_CHANCE: [() => FX_CHANCE],
   FX_CRIT: [() => FX_CRIT],
   FX_EVERY: [() => FX_EVERY],
   FX_FOES: [() => FX_FOES],
@@ -61,6 +63,8 @@ expose({
   fxHealShare: [() => fxHealShare],
   fxIfs: [() => fxIfs],
   fxImmune: [() => fxImmune],
+  // @ts-expect-error -- replaced on purpose
+  fxInflictPick: [() => fxInflictPick, v => (fxInflictPick = v)],
   fxKey: [() => fxKey],
   // @ts-expect-error -- replaced on purpose
   fxLive: [() => fxLive, v => (fxLive = v)],
@@ -119,6 +123,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'unstable',
   'crit',
   'immune',
+  'inflict',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -307,6 +312,20 @@ export const FX_IMMUNE = /** @type {const} */ (['brn', 'slp', 'par', 'sandstorm'
  * @param {string} what */
 export const fxImmune = (fx, what) => (fx || []).filter(f => f.kind === 'immune' && f.what === what);
 provide({ fxImmune }); /* to-module */
+
+/** PK-3: the most the chance rows acting at one moment add up to (Risk of Rain 2's lesson, perks-track.md rule 5) */
+export const FX_CHANCE = 0.5;
+/** PK-3: which inflict row lands, from one roll r (0-1) of the battle's stream: the rows' chances are laid end to end,
+ * scaled down to FX_CHANCE together when they add up to more; null when the roll falls past them
+ * @param {any[] | null | undefined} rows @param {number} r @returns {any} */
+export function fxInflictPick(rows, r) {
+  const L = (rows || []).filter(f => f.kind === 'inflict' && f.chance > 0),
+    total = L.reduce((a, f) => a + f.chance, 0),
+    k = total > FX_CHANCE ? FX_CHANCE / total : 1;
+  let at = 0;
+  for (const f of L) if (r < (at += f.chance * k)) return f;
+  return null;
+}
 
 /** RL-12c: a holder's once-a-battle heal when low: the first pinchHeal row, or null
  * @param {Fx[] | null | undefined} fx @returns {{ at: number, share: number } | null} */
