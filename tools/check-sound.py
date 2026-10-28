@@ -31,8 +31,14 @@ gains are set as updateAmbience would set them.
     python3 tools/check-sound.py --loudness               # the comparison, then the report
     python3 tools/check-sound.py --loudness --only=route  # the report for those songs (and every world sound)
 
-A window may differ by 1% (or 0.0001) before it counts as changed. The baseline is committed: SND-4 and SND-5 write it
-again on purpose, like the picture baseline."""
+SND-9: beside each RMS array, a brightness fingerprint (`zc:<part>` in the same file): the zero crossings in each 50 ms
+window, so a change of timbre at the same loudness shows too (a brighter sound crosses zero more often). A crossing
+counts when the signal passes from under -0.0001 to over +0.0001 or back (so a near-silent tail's rounding never
+counts), and a window quieter than 0.0001 RMS counts 0. A baseline without brightness compares the RMS alone and says
+how many brightness arrays it lacks (written with --baseline).
+
+A window may differ by 1% (or 0.0001) before it counts as changed; a brightness window by 2% (or 2 crossings). The
+baseline is committed: SND-4 and SND-5 write it again on purpose, like the picture baseline."""
 import json, sys, time
 from pathlib import Path
 
@@ -45,6 +51,8 @@ BASE = ROOT / 'validation' / 'sound-baseline'
 RATE = 44100
 WINDOW = 0.05
 REL, ABS = 0.01, 1e-4
+ZC_REL, ZC_ABS = 0.02, 2   # SND-9: a brightness window's tolerance
+ZC = 'zc:'               # SND-9: a brightness array's key is the part's with this in front
 
 # runs in the page. Works on the code before and after the tracker split: it only uses sound.js's initSound, music,
 # jingle, soundEffect, soundEngine, SONGS and JINGLES, plus the tick (sound.js's musicTick, or the tracker's tick)
@@ -100,17 +108,25 @@ RENDER = r"""async ({jobs, rate, win}) => {
     delete oc.currentTime; delete oc.state;
     return oc;
   };
-  const rms = buf => {
-    const d = buf.getChannelData(0), n = Math.round(win * rate), out = [];
+  /* the RMS of each window and (SND-9) its zero crossings, with a little hysteresis so rounding near silence never counts */
+  const prints = buf => {
+    const d = buf.getChannelData(0), n = Math.round(win * rate), out = [], zc = [], EPS = 1e-4;
+    let side = 0;
     for (let i = 0; i < d.length; i += n) {
-      let s = 0; const e = Math.min(d.length, i + n);
-      for (let j = i; j < e; j++) s += d[j] * d[j];
-      out.push(Math.round(Math.sqrt(s / (e - i)) * 1e5) / 1e5);
+      let s = 0, z = 0; const e = Math.min(d.length, i + n);
+      for (let j = i; j < e; j++) {
+        const x = d[j];
+        s += x * x;
+        if (x > EPS) { if (side < 0) z++; side = 1; } else if (x < -EPS) { if (side > 0) z++; side = -1; }
+      }
+      const r = Math.sqrt(s / (e - i));
+      out.push(Math.round(r * 1e5) / 1e5);
+      zc.push(r < EPS ? 0 : z);
     }
-    return out;
+    return [out, zc];
   };
   const ctxs = jobs.map(schedule);
-  return (await Promise.all(ctxs.map(c => c.startRendering()))).map(rms);
+  return (await Promise.all(ctxs.map(c => c.startRendering()))).map(prints);
 }"""
 
 
@@ -246,28 +262,33 @@ def render_all(pg, only=None):
     for i in range(0, len(jobs), 12):   # in batches, so a page never holds every render at once
         part = jobs[i:i + 12]
         res = pg.evaluate(RENDER, {'jobs': [j[2] for j in part], 'rate': RATE, 'win': WINDOW})
-        for (file, key, _), r in zip(part, res): out.setdefault(file, {})[key] = r
+        for (file, key, _), (r, zc) in zip(part, res):
+            out.setdefault(file, {})[key] = r
+            out[file][ZC + key] = zc   # SND-9: the brightness, beside the RMS
     return out
 
 
 def differences(now, only=None):
-    """what changed against the baseline, as short lines"""
-    bad = []
+    """what changed against the baseline, as short lines; and (SND-9) how many brightness arrays the baseline lacks"""
+    bad, missing = [], 0
     for file, parts in now.items():
         f = BASE / f'{file}.json'
         if not f.exists(): bad.append(f'{file}: not in the baseline'); continue
         was = json.loads(f.read_text())
         for part, a in parts.items():
             b = was.get(part)
+            bright = part.startswith(ZC)
+            if b is None and bright: missing += 1; continue
             if b is None: bad.append(f'{file} {part}: not in the baseline'); continue
             if len(a) != len(b): bad.append(f'{file} {part}: {len(a)} windows, the baseline has {len(b)}'); continue
-            off = [i for i, (x, y) in enumerate(zip(a, b)) if abs(x - y) > max(ABS, REL * max(x, y))]
+            rel, tol = (ZC_REL, ZC_ABS) if bright else (REL, ABS)
+            off = [i for i, (x, y) in enumerate(zip(a, b)) if abs(x - y) > max(tol, rel * max(x, y))]
             if off:
                 i = off[0]; bad.append(f'{file} {part}: {len(off)} of {len(a)} windows differ, first at {i * WINDOW:.2f} s ({b[i]} -> {a[i]})')
     if not only:
         gone = sorted(p.stem for p in BASE.glob('*.json') if p.stem not in now)
         bad += [f'{g}: in the baseline, not rendered now' for g in gone]
-    return bad
+    return bad, missing
 
 
 def run(b, base, write=False, only=None):
@@ -281,14 +302,15 @@ def run(b, base, write=False, only=None):
         if not until(pg, "typeof soundEngine!=='undefined'&&typeof initSound==='function'&&typeof gameData!=='undefined'", 120):
             raise Exception('the game page never loaded its sound code')
         t = time.time(); now = render_all(pg, only); dt = round(time.time() - t, 1)
-        count = sum(len(p) for p in now.values())
+        count = sum(1 for p in now.values() for k in p if not k.startswith(ZC))
         if write:
             BASE.mkdir(parents=True, exist_ok=True)
             for file, parts in now.items():
                 (BASE / f'{file}.json').write_text(json.dumps(parts, separators=(',', ':')) + '\n')
-            return [], f'wrote {count} fingerprints in {len(now)} files ({dt} s)'
-        bad = differences(now, only)
-        return bad, f'{count} fingerprints, {len(bad)} changed ({dt} s)'
+            return [], f'wrote {count} fingerprints with their brightness in {len(now)} files ({dt} s)'
+        bad, missing = differences(now, only)
+        note = f'; brightness not in the baseline for {missing} (write it with --baseline)' if missing else ', with brightness'
+        return bad, f'{count} fingerprints{note}, {len(bad)} changed ({dt} s)'
     finally:
         ctx.close()
 
