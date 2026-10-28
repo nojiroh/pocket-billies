@@ -609,6 +609,9 @@ def behind_things(pg, base):
     silhouette is shown and the see-through circle is on, frame after frame; back where you started, in the open,
     none of it"""
     drawing(pg)
+    # your buddy off: it stays within a metre of you and, now and then just between the camera and you, covers you
+    # (anything does), so "in the open nothing" would depend on where it happens to stand (the pasture check does the same)
+    pg.evaluate("saveData.preferences.buddyWalk='off';0")
     home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     stand(pg, home[0], home[1], 30)
     if pg.evaluate('walkRenderer.hidK || 0') > 0.05: raise Exception('hidden where the player starts, in the open')
@@ -633,8 +636,11 @@ def behind_things(pg, base):
     until(pg, '(walkRenderer.hidK||0)<=0.05&&rockUniformsFor(walkView.C).rock[2]<=0', 30)
     k, circle = pg.evaluate('[walkRenderer.hidK || 0, rockUniformsFor(walkView.C).rock[2]]')
     if k > 0.05 or circle > 0:
-        seen = pg.evaluate(f"""(()=>{{const P=walkView.pl,near=(walkView.folkAll||walkView.folk||[]).map(f=>Math.hypot(f.x-P.x,f.z-P.z)).sort((a,b)=>a-b)[0];
-          return {{frames:walkRenderer.frames-{f0},hidT:walkRenderer.hidT,queries:hideQuery.q.length,at:[P.x,P.z],home:{json.dumps(home)},nearestFolk:near}}}})()""")
+        # what stands near the line from the camera to you: t is how far along it (1 = you), off how far beside it
+        seen = pg.evaluate(f"""(()=>{{const P=walkView.pl,e=walkView.C.eye,dx=P.x-e[0],dz=P.z-e[2],L=dx*dx+dz*dz,
+            line=(x,z)=>{{const t=((x-e[0])*dx+(z-e[2])*dz)/L;return {{t:+t.toFixed(2),off:+Math.hypot(x-e[0]-dx*t,z-e[2]-dz*t).toFixed(2),d:+Math.hypot(x-P.x,z-P.z).toFixed(2)}}}},
+            b=worldBillies.bud,folk=(walkView.folkAll||walkView.folk||[]).map(f=>line(f.x,f.z)).sort((a,b)=>a.d-b.d).slice(0,3);
+          return {{frames:walkRenderer.frames-{f0},hidT:walkRenderer.hidT,queries:hideQuery.q.length,at:[P.x,P.z],home:{json.dumps(home)},buddy:b?line(b.x,b.z):null,folk}}}})()""")
         raise Exception(f'back in the open, still hidden ({k}) or the circle on ({circle}): {seen}')
     return f'hidden behind {len(hid)} of {len(spots)} ({", ".join(hid)}); in the open not'
 
