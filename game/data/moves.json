@@ -390,7 +390,7 @@
   "d": "Wins the regatta by changing the course mid-race.",
   "sig": "ellison",
   "p": 85,
-  "anim": "shot"
+  "anim": "yachtrace"
  },
  "opensesame": {
   "n": "Open Sesame",
@@ -400,7 +400,7 @@
   "d": "Forty doors open at once and the bazaar pours out.",
   "sig": "ma",
   "p": 80,
-  "anim": "storm"
+  "anim": "opensesame"
  },
  "rollback": {
   "n": "Rollback",
@@ -432,7 +432,7 @@
   "d": "The same everywhere, on purpose.",
   "sig": "kroc",
   "p": 85,
-  "anim": "flurry"
+  "anim": "billionsserved"
  },
  "towerdrop": {
   "n": "Tower Drop",
@@ -442,7 +442,7 @@
   "d": "Sets twenty-seven storeys down on the foe.",
   "sig": "ambani",
   "p": 100,
-  "anim": "dive"
+  "anim": "towerdrop"
  },
  "fastfashion": {
   "n": "Fast Fashion",
@@ -463,7 +463,7 @@
   "d": "A library, dropped on a town, for its own good.",
   "sig": "carnegie",
   "p": 95,
-  "anim": "dive"
+  "anim": "libraryslam"
  },
  "popthecollar": {
   "n": "Pop the Collar",
@@ -525,7 +525,7 @@
   "d": "Builds something from nothing and keeps the one.",
   "sig": "thiel",
   "p": 100,
-  "anim": "shot"
+  "anim": "zerotoone"
  },
  "charlimit": {
   "n": "Character Limit",
@@ -555,7 +555,7 @@
   "d": "Bets everything on this one hit.",
   "sig": "son",
   "p": 110,
-  "anim": "beam"
+  "anim": "visionfund"
  },
  "smartcontract": {
   "n": "Smart Contract",
@@ -597,7 +597,7 @@
   "d": "Takes its talents to the foe's face.",
   "sig": "lebron",
   "p": 100,
-  "anim": "strike"
+  "anim": "thedecision"
  },
  "cutto": {
   "n": "Cut To",
@@ -607,7 +607,7 @@
   "d": "The scene changes and the foe is already hit.",
   "sig": "spielberg",
   "p": 85,
-  "anim": "wave"
+  "anim": "cutto"
  },
  "cyclone": {"n":"Cyclone","t":"Electric","c":"S","a":100,"d":"Never loses suction.","sig":"dyson","p":90,"anim":"storm"},
  "flatpack": {
@@ -618,7 +618,7 @@
   "d": "Assembled on the foe with one screw to spare.",
   "sig": "kamprad",
   "p": 75,
-  "anim": "storm"
+  "anim": "flatpack"
  },
  "giveswings": {
   "n": "Gives Wings",
@@ -650,7 +650,7 @@
   "d": "Sets hard before the foe can move.",
   "sig": "dangote",
   "p": 100,
-  "anim": "quake"
+  "anim": "concretepour"
  },
  "perfectfold": {
   "n": "Perfect Fold",
@@ -674,7 +674,16 @@
   "p": 85,
   "anim": "wave"
  },
- "blastfurnace": {"n":"Blast Furnace","t":"Fire","c":"H","a":85,"d":"Lights the cold mill again.","sig":"mittal","p":110,"anim":"strike"},
+ "blastfurnace": {
+  "n": "Blast Furnace",
+  "t": "Fire",
+  "c": "H",
+  "a": 85,
+  "d": "Lights the cold mill again.",
+  "sig": "mittal",
+  "p": 110,
+  "anim": "blastfurnace"
+ },
  "principle": {
   "n": "Principle No. 212",
   "t": "Psychic",
@@ -726,7 +735,7 @@
   "d": "Confidently wrong, and it still hurts.",
   "sig": "altman",
   "p": 100,
-  "anim": "wave"
+  "anim": "hallucinate"
  },
  "fork": {
   "n": "Fork",
@@ -769,7 +778,7 @@
   "anim": "shot"
  },
  "shipdirect": {"n":"Ship Direct","t":"Electric","c":"S","a":100,"d":"Skips the shop and arrives.","sig":"dell","p":85,"anim":"shot"},
- "developers": {"n":"Developers!","t":"Fire","c":"H","a":90,"d":"Shouted three times.","sig":"ballmer","p":100,"anim":"flurry"},
+ "developers": {"n":"Developers!","t":"Fire","c":"H","a":90,"d":"Shouted three times.","sig":"ballmer","p":100,"anim":"developers"},
  "onehandedbackhand": {
   "n": "One-handed Backhand",
   "t": "Flying",
@@ -780,7 +789,7 @@
   "p": 95,
   "anim": "slash"
  },
- "siu": {"n":"Siu!","t":"Fire","c":"H","a":90,"d":"Jump, turn, land, shout.","sig":"ronaldo","p":100,"anim":"dive"},
+ "siu": {"n":"Siu!","t":"Fire","c":"H","a":90,"d":"Jump, turn, land, shout.","sig":"ronaldo","p":100,"anim":"siu"},
  "greenhydrogen": {
   "n": "Green Hydrogen",
   "t": "Grass",
@@ -810,7 +819,7 @@
   "d": "Every rail it owns, at once.",
   "sig": "vanderbilt",
   "p": 100,
-  "anim": "charge"
+  "anim": "fullsteam"
  },
  "standardoil": {
   "n": "Standard Oil",
@@ -823,7 +832,7 @@
   "fx": {
    "tgtStage": {"hus":-1}
   },
-  "anim": "strike"
+  "anim": "standardoil"
  },
  "goldencaravan": {
   "n": "Golden Caravan",
@@ -833,7 +842,7 @@
   "d": "Drops a caravan of gold on the foe; prices fall for a decade.",
   "sig": "mansa",
   "p": 120,
-  "anim": "storm"
+  "anim": "goldencaravan"
  },
  "pistonjab": {"n":"Piston Jab","t":"Steel","c":"H","p":65,"a":100,"d":"A straight punch from a piston arm.","anim":"strike"},
  "augerbore": {
