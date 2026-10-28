@@ -281,6 +281,14 @@ function naturePreviewTick(list, T, t) {
   const pans = {},
     g = natureGustAt(0, 0, t * 1000),
     st = ambience.natureSt;
+  /* a new preview starts its one-shots at once (the game waits its usual while: a cicada may be 25 s away) */
+  const key = JSON.stringify(list);
+  if (st.preview !== key) {
+    st.preview = key;
+    for (const k of ['cicada', 'town', 'room']) st[k].next = t + 0.3;
+    for (const k of [...st.hop, ...st.frogs]) Object.assign(k, { next: t + 0.3, left: 12 });
+    st.previewThunder = null;
+  }
   for (const [k, d, w] of list) {
     if (!NATURE_PREVIEW_KINDS.includes(k)) continue;
     if (k === 'rain') natureRainHere(T, pans, t, w ?? 1, 1, false, null, 0.5);

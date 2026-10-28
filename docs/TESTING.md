@@ -544,6 +544,13 @@ same phase:
   schema and `soundscapeFindings` (a kind without a recipe, a recipe or bank named that doesn't exist).
   `check-studio-github.py --only=music` plays a brook 3 m away on the Sounds tab's World sounds card and stops it. The
   Animals step's "at least 9 beds" holds exactly (the 14 beds became 9; the water is the soundscape's player).
+  SND-14: `--loudness` adds nature's rows (rain light, steady and heavy, on a roof and indoors, thunder at 0.6 and 4
+  km, gusts, a forest's wind, birds at dawn and noon, an owl, grasshoppers, cicadas, frogs, fires by size, the town's
+  life, rooms by kind, steps on each surface); a bed row warns over either ceiling, an event row over the events'.
+  Unit tests: `nature-sound.test.mjs` (logic/nature-sound.js: curves, rain, roofs, patter, thunder by distance,
+  wind and gusts, birds by the hour, insects, bouts, lockouts, frogs, fire by size, every terrain's footstep surface,
+  the town's life, rooms, findings, never `Math.random`); `ambience-sound.test.mjs` counts 13 beds. check:data runs
+  `natureFindings`. `check-studio-github.py --only=music` plays steps on gravel from the World sounds card.
   SND-11: check-sound renders every existing part with GB Sounds on (today's sound whatever a song's ensemble) and adds
   parts `ensemble` and `ensemble-night` for a song (or its night version) naming an ensemble, its notes and the reverb
   baked first (204 fingerprints: Copperleaf and the route by day and night, wild); `--loudness` adds each ensemble's

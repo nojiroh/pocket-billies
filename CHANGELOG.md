@@ -48,6 +48,16 @@ kept aside in the browser).
   splash when you land the fish, and frogs, fish and diving birds splash. All of it sits well under the music. The
   debug menu's Sound test plays each at a distance, and so does the Studio's Sounds tab.
 
+- **Weather and wildlife you can hear** (sound track SND-14): rain sounds as hard as it falls, from a light hiss to a
+  storm's roar, with drops pattering round you; under the eaves you hear it drum on the roof and drip off the edge, and
+  indoors on the roof over you. Thunder follows every lightning bolt, late and low when it is far, closer and fuller
+  when near, and you hear it with reduced motion or the flashes off too. The wind rises with the gusts you see in the
+  grass and the leaves rustle with them. Birds sing a dawn chorus, go quiet at noon and give way to an owl at night;
+  grasshoppers and cicadas chirr by day, frogs croak by ponds at night, a fire crackles by its size, footsteps sound
+  of grass, sand, dirt, gravel, stone, boards, snow, mud or a carpet, a town has doors, carts, a far voice, a dog
+  and a bell instead of a murmur, and an inn, a library, a lab, a workshop or a barn each sound like themselves. All
+  of it sits well under the music; the debug menu's Sound test and the Studio's Sounds tab play each.
+
 - **Fanfares with a band** (sound track SND-17): the jingles play on real-sounding instruments too: the victory a
   brass fanfare with strings and timpani, a level up on glockenspiel and harp, an evolution's string swell and harp
   glissando, a catch on plucked strings with a snare roll, a hatch on a music box, and the run's own: a sly clarinet

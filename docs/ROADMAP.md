@@ -203,8 +203,11 @@ town node needs it.
   and its player on the game's chain; today's songs unchanged under GB Sounds) done 2026-10-28. SND-17 (jingles and
   stingers: the 12 jingles on ensembles of SND-11's instruments as placeholder arrangements, a run's short stingers on
   the song's beat and in its key with its busy parts dropped, the 8-bit jingles under GB Sounds, the Studio's Jingles
-  card and the Sound test both ways) done 2026-10-28. Two lanes on the branch since 2026-10-28: music (next layers in
-  play, SND-13, then arrangements, SND-12) and world (nature and weather, SND-14); then the mix and a phone
+  card and the Sound test both ways) done 2026-10-28. SND-14 (nature and weather: rain by how hard it falls with patter,
+  roofs and indoors, thunder from the weather's bolts by distance, wind with the grass's gusts, birds by the hour, insects
+  and frogs, fires by size, footsteps by surface, the town's life, rooms by kind; the world lane's last step) done
+  2026-10-28. Two lanes on the branch since 2026-10-28: music (next layers in
+  play, SND-13, then arrangements, SND-12) and world (done with SND-14); then the mix and a phone
   pass (SND-15). Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
   plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
