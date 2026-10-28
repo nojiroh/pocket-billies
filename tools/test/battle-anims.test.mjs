@@ -3,8 +3,10 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readGameData } from '../data-files.mjs';
 import {
+  BATTLE_ANIM_OUTCOMES,
   battleAnimFor,
   battleAnimLogLine,
+  battleAnimPreviewEvent,
   battleAnimTimeline,
   flashGate,
   hitTier,
@@ -15,24 +17,10 @@ import {
 const D = readGameData(),
   A = D.battleAnims,
   MOVES = D.moves,
-  OUTCOMES = ['hit', 'se', 'x4', 'nve', 'crit', 'secrit', 'miss', 'blocked'];
-/** a move event for an outcome, as the Studio's battle preview (and tools/look-battle-anims.py) build it */
-function moveAn(mid, res, si = 0) {
-  const M = MOVES[mid],
-    fx = M.fx || {},
-    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe || fx.copyTypes,
-    an = { k: 'move', si, ti: 1 - si, mid };
-  if (fx.protect) an.protect = true;
-  else if (!onFoe) an.self = true;
-  else if (res === 'miss') an.miss = true;
-  else if (res === 'blocked') an.blocked = true;
-  else if (M.c !== 'X') {
-    an.dmg = { crit: 48, se: 56, x4: 80, nve: 11, hit: 24, secrit: 70 }[res];
-    an.te = { se: 2, x4: 4, nve: 0.5, secrit: 2 }[res] || 1;
-    an.crit = res === 'crit' || res === 'secrit';
-  }
-  return an;
-}
+  OUTCOMES = BATTLE_ANIM_OUTCOMES;
+/** a move event for an outcome, as the Studio's Battle effects (and tools/look-battle-anims.py) build it (VFX-12: one
+ * function, logic/battle-anims.js) */
+const moveAn = (mid, res, si = 0) => battleAnimPreviewEvent(mid, MOVES[mid], si, res);
 /** what battle-stage.js's case 'move' returned before VFX-8, by outcome and category */
 function legacyDurHit(an, M) {
   if (an.miss) return { dur: 760, hit: 999 };
@@ -82,6 +70,16 @@ test('hit tiers', () => {
   assert.equal(hitTier({ k: 'move', dmg: 5, te: 4 }), 'super4');
   assert.equal(hitTier({ k: 'move', dmg: 5, te: 2, crit: true }), 'crit');
   assert.equal(hitTier({ k: 'move', dmg: 5, miss: true }), 'none');
+});
+
+test('the 8 preview outcomes land in their tiers (VFX-12)', () => {
+  const H = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && !(MOVES[k].fx || {}).protect),
+    tiers = OUTCOMES.map(r => hitTier(moveAn(H, r)));
+  assert.deepEqual(tiers, ['neutral', 'super', 'super4', 'resisted', 'crit', 'crit', 'none', 'none']);
+  assert.ok(moveAn(H, 'miss').miss && moveAn(H, 'blocked').blocked);
+  assert.deepEqual(moveAn(H, 'hit', 1), { k: 'move', si: 1, ti: 0, mid: H, dmg: 24, te: 1, crit: false });
+  const G = Object.keys(MOVES).find(k => (MOVES[k].fx || {}).protect);
+  if (G) assert.ok(moveAn(G, 'miss').protect && !moveAn(G, 'miss').miss, 'Guard is always a protect');
 });
 
 test('a KO ahead: the target faints before the next move; the last when no one comes in after and nothing moves', () => {

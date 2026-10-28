@@ -24,6 +24,7 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  BATTLE_ANIM_OUTCOMES: [() => BATTLE_ANIM_OUTCOMES],
   BATTLE_ANIM_SKIP: [() => BATTLE_ANIM_SKIP],
   HIT_TIERS: [() => HIT_TIERS],
   // @ts-expect-error -- replaced on purpose
@@ -34,6 +35,8 @@ expose({
   battleAnimLogLine: [() => battleAnimLogLine, v => (battleAnimLogLine = v)],
   // @ts-expect-error -- replaced on purpose
   battleAnimOutcome: [() => battleAnimOutcome, v => (battleAnimOutcome = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleAnimPreviewEvent: [() => battleAnimPreviewEvent, v => (battleAnimPreviewEvent = v)],
   // @ts-expect-error -- replaced on purpose
   battleAnimTimeline: [() => battleAnimTimeline, v => (battleAnimTimeline = v)],
   // @ts-expect-error -- replaced on purpose
@@ -59,6 +62,31 @@ export const BATTLE_ANIM_SKIP = /** @type {Record<string, 'run' | 'info'>} */ ({
 });
 /** the hit tiers, weakest first (vfx-track.md "Hit tiers"; `none`: no damage shown) */
 export const HIT_TIERS = ['none', 'resisted', 'neutral', 'super', 'super4', 'crit'];
+
+/** VFX-12: the outcomes the look tool films and the Studio's Battle effects plays: a normal hit, super effective (x2,
+ * x4), not very effective, a crit, a super-effective crit, a miss, a move into a Guard */
+export const BATTLE_ANIM_OUTCOMES = ['hit', 'se', 'x4', 'nve', 'crit', 'secrit', 'miss', 'blocked'];
+
+/** VFX-12: a move event for one of BATTLE_ANIM_OUTCOMES, by side si against the other, as the look tool films it and
+ * the Studio plays it (made up: the engine never runs). Guard is always a protect, a status move that lands on no foe
+ * is on itself; only a damaging move gets damage, effectiveness and a crit
+ * @param {string} mid @param {Move} M @param {number} si @param {string} res @returns {MoveAn} */
+export function battleAnimPreviewEvent(mid, M, si, res) {
+  const fx = /** @type {Record<string, any>} */ (M.fx || {}),
+    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe || fx.copyTypes,
+    /** @type {MoveAn} */ an = { k: 'move', si, ti: 1 - si, mid };
+  if (fx.protect) an.protect = true;
+  else if (!onFoe) an.self = true;
+  else if (res === 'miss') an.miss = true;
+  else if (res === 'blocked') an.blocked = true;
+  else if (M.c !== 'X') {
+    an.dmg =
+      /** @type {Record<string, number>} */ ({ crit: 48, se: 56, x4: 80, nve: 11, hit: 24, secrit: 70 })[res] ?? 24;
+    an.te = /** @type {Record<string, number>} */ ({ se: 2, x4: 4, nve: 0.5, secrit: 2 })[res] || 1;
+    an.crit = res === 'crit' || res === 'secrit';
+  }
+  return an;
+}
 
 /** a move event's outcome key in battleAnims.json `defaults`: miss, protect, blocked, or the category
  * @param {MoveAn} an @param {Move} M */

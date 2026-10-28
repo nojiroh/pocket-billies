@@ -74,11 +74,8 @@ __film.snap=(t0,vt)=>{const f=document.getElementById('flash'),w=document.getEle
   ['x','y','z','yaw','hz'].map(k=>r3(S.cam[k])),r3(S.css.r),r3(S.css.z),r3(S.shk),S.hold>vt?1:0,r3(S.hand.a),r3(S.dof.zf),r3(S.dof.ap),S.focusK,
   f?[f.style.opacity,f.style.background]:0,(w&&w.classList.contains('ca'))||S.ca?1:0,S.impact?1:0,
   p?[...p.children].map(e=>e.className+':'+e.textContent).join('|'):''])};
-/* an outcome's move event, as the Studio's battle preview builds it */
-__film.an=(mid,si,res)=>{const M=MOVES[mid],fx=M.fx||{},onFoe=M.c!=='X'||fx.status||fx.tgtStage||fx.hype||fx.spin||fx.wipe||fx.copyTypes,an={k:'move',si,ti:1-si,mid};
- if(fx.protect)an.protect=true;else if(!onFoe)an.self=true;else if(res==='miss')an.miss=true;else if(res==='blocked')an.blocked=true;
- else if(M.c!=='X'){an.dmg={crit:48,se:56,x4:80,nve:11,hit:24,secrit:70}[res];an.te={se:2,x4:4,nve:.5,secrit:2}[res]||1;an.crit=res==='crit'||res==='secrit'}
- return an};
+/* an outcome's move event, as the Studio's Battle effects builds it (VFX-12: logic/battle-anims.js) */
+__film.an=(mid,si,res)=>battleAnimPreviewEvent(mid,MOVES[mid],si,res);
 /* plays one film on the film's clock: frames of 16 ms; every k-th frame's state (sheet: the GL tasks too, and
    resolves after each block of k frames so a picture can be taken) */
 __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s},pn=performance.now,st=window.setTimeout,timers=[];
