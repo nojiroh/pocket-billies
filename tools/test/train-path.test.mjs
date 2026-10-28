@@ -16,6 +16,9 @@ const {
   trainDepartAt,
   trainHomeAt,
   trainPlace,
+  TRAIN_PLATFORM,
+  trainBoardPath,
+  trainWalkAt,
 } = modules['train-path'];
 const near = (a, b, e = 1e-6) => assert.ok(Math.abs(a - b) < e, `${a} is not ${b}`);
 const sum = B => Object.values(B).reduce((a, b) => a + b, 0);
@@ -91,4 +94,39 @@ test('train path: the placement stands in front of the track, turned to the way 
   near(Math.abs(west.rot), 180);
   near(west.lift, 5);
   assert.deepEqual(west.tilt, [20, 0]);
+});
+
+test("boarding (the owner, 2026-10-28): from where you stand, up the steps, across between the benches, on the platform's top, never through the station", () => {
+  const F = trainFrame({ x: 50, z: 40, rot: 90 }, 1.5),
+    P = TRAIN_PLATFORM,
+    /* a point in the station's metres */
+    own = (x, z) => [(x - F.x) * F.ax[0] + (z - F.z) * F.ax[1], (x - F.x) * F.bw[0] + (z - F.z) * F.bw[1]],
+    /* standing 3 m in front of the steps, a little to the side */
+    from = trainAt(F, 1.5, -4),
+    path = trainBoardPath(F, from);
+  assert.deepEqual(path[0].slice(0, 2), from, 'it starts where you stand');
+  /* from far away (or behind the station) it starts at the steps' foot */
+  assert.ok(Math.abs(own(...trainBoardPath(F, trainAt(F, 30, -30))[0])[1] - P.foot) < 1e-9);
+  assert.ok(Math.abs(own(...trainBoardPath(F, trainAt(F, 0, 9))[0])[1] - P.foot) < 1e-9);
+  for (let k = 0; k <= 1.0001; k += 0.01) {
+    const [x, z, h] = trainWalkAt(path, k),
+      [u, w] = own(x, z);
+    /* on the platform (behind its front edge): on its top, in the benches' gap */
+    if (w > P.steps[1] + 1e-6) {
+      near(h, P.top);
+      assert.ok(Math.abs(u - P.gap) < 0.45, `crossing the platform at u ${u}`);
+    }
+    /* on the steps: rising with them, never under the ground */
+    if (w > P.steps[0] && w <= P.steps[1]) assert.ok(h >= 0 && h <= P.top + 1e-9);
+    /* before the steps: on the ground */
+    if (w < P.steps[0] - 1e-6) near(h, 0);
+    /* never past the platform's edge (the train stands beyond it) */
+    assert.ok(w <= P.edge + 1e-6);
+  }
+  const end = trainWalkAt(path, 1);
+  near(own(end[0], end[1])[1], P.edge);
+  /* at a walk: the board beat is long enough for the way at 3.6 m a second or less */
+  let len = 0;
+  for (let i = 1; i < path.length; i++) len += Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
+  assert.ok(len / ((TRAIN_DEPART.board * 0.85) / 1000) < 3.6, `${len} m in ${TRAIN_DEPART.board} ms`);
 });

@@ -1591,7 +1591,7 @@ def train_ride(pg, base):
     # the ride runs on the clock: on a slow page a frame can fall either side of the lift, so one moment of it is held
     # (as tools/look-train-ride.py does) until a frame has drawn the train there, then the ride goes on to its end.
     # Cutscenes track A: by then it has risen straight up over the station on its engines
-    pg.evaluate("trainRide.hold=6900;0")
+    pg.evaluate("trainRide.hold=7600;0")
     if not until(pg, "trainRide.W&&trainRide.W.train.lift>8&&Math.hypot(trainRide.W.train.x-trainRide.W.H.x,trainRide.W.train.z-trainRide.W.H.z)<3", 90): raise Exception(f'the train never rose over the station: {pg.evaluate("trainRide.W&&[trainRide.W.train.x,trainRide.W.train.lift]")}')
     pg.evaluate("trainRide.hold=null;0")
     if not until(pg, "window._rode===1&&!!document.getElementById('trainveil')", 90): raise Exception('the departure didn’t end in the white veil')

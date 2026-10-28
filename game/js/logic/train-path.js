@@ -21,9 +21,12 @@ import { expose } from '../test-globals.js';
 expose({
   TRAIN_DEPART: [() => TRAIN_DEPART],
   TRAIN_HOME: [() => TRAIN_HOME],
+  TRAIN_PLATFORM: [() => TRAIN_PLATFORM],
   TRAIN_RIDE: [() => TRAIN_RIDE],
   // @ts-expect-error -- replaced on purpose
   trainAt: [() => trainAt, v => (trainAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  trainBoardPath: [() => trainBoardPath, v => (trainBoardPath = v)],
   trainClamp: [() => trainClamp],
   // @ts-expect-error -- replaced on purpose
   trainDepartAt: [() => trainDepartAt, v => (trainDepartAt = v)],
@@ -39,6 +42,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   trainPlace: [() => trainPlace, v => (trainPlace = v)],
   // @ts-expect-error -- replaced on purpose
+  trainWalkAt: [() => trainWalkAt, v => (trainWalkAt = v)],
+  // @ts-expect-error -- replaced on purpose
   turnTo: [() => turnTo, v => (turnTo = v)],
 });
 /* eslint-enable no-func-assign */
@@ -47,9 +52,15 @@ expose({
  * ground, where the train stops (u) and the track's line (w) in the station's metres, how high it hovers before it
  * turns to the portal, and the glide in: how far back along the track and how high up it starts */
 export const TRAIN_RIDE = { half: 1.3, railTop: 0.13, stop: -0.5, track: 6.1, hover: 11, glide: { back: 44, up: 12 } };
-/** the beats (ms): the departure and the way home */
-export const TRAIN_DEPART = { glide: 2600, board: 1300, lift: 2200, turn: 1100, dash: 1200 };
-export const TRAIN_HOME = { open: 900, out: 1700, turn: 900, down: 1700, off: 1300 };
+/** the beats (ms): the departure and the way home (the owner, 2026-10-28: you walk up the steps and across the
+ * platform into the train, at a walk) */
+export const TRAIN_DEPART = { glide: 2600, board: 3200, lift: 2200, turn: 1100, dash: 1200 };
+export const TRAIN_HOME = { open: 900, out: 1700, turn: 900, down: 1700, off: 2400 };
+/** the platform you walk across to board, in the station's metres (tools/build-station-trains.py station()): the steps
+ * from w 0 to 0.9 up to its top 0.93 m over the station's ground, the gap between the two benches facing the trains
+ * (u -0.15 to 0.85) where you cross, and its edge, the step into the carriage; the foot of the steps a little in
+ * front of them */
+export const TRAIN_PLATFORM = { top: 0.93, steps: [0, 0.9], gap: 0.35, edge: 4.35, foot: -1.2 };
 
 export const trainEase = {
   in: (/** @type {number} */ k) => k * k,
@@ -198,6 +209,41 @@ export function trainHomeAt(F, tear, t) {
     beat: (s -= R.down) < R.off ? 'off' : 'gone',
     k: trainClamp(s / R.off),
   };
+}
+
+/** the way you walk to board, [x, z, height over the station's ground] points: from where you stand (when near the
+ * steps; else from their foot) to the foot of the steps, up them onto the platform, across between the benches to its
+ * edge. Coming home it is walked backwards, to where the walk stands you after. Never through the station: on the
+ * platform you are on its top, and you cross it in the benches' gap
+ * @param {TrainFrame} F @param {number[] | null} from [x, z] where you stand @returns {number[][]} */
+export function trainBoardPath(F, from) {
+  const P = TRAIN_PLATFORM,
+    pt = (/** @type {number} */ u, /** @type {number} */ w, /** @type {number} */ h) => [...trainAt(F, u, w), h],
+    foot = pt(P.gap, P.foot, 0),
+    out = [];
+  if (from) {
+    /* where you stand, in the station's metres: only from in front of it and within 4 m of the steps' foot */
+    const dx = from[0] - F.x,
+      dz = from[1] - F.z,
+      u = dx * F.ax[0] + dz * F.ax[1],
+      w = dx * F.bw[0] + dz * F.bw[1];
+    if (w < P.foot && Math.hypot(u - P.gap, w - P.foot) < 4) out.push([from[0], from[1], 0]);
+  }
+  out.push(foot, pt(P.gap, P.steps[0], 0), pt(P.gap, P.steps[1], P.top), pt(P.gap, P.edge, P.top));
+  return out;
+}
+/** a walk along a path k of the way (0-1), at an even pace: [x, z, height] @param {number[][]} path @param {number} k */
+export function trainWalkAt(path, k) {
+  const len = [0];
+  for (let i = 1; i < path.length; i++)
+    len.push(len[i - 1] + Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]));
+  const d = trainClamp(k) * len[len.length - 1];
+  let i = 1;
+  while (i < path.length - 1 && len[i] < d) i++;
+  const a = path[i - 1],
+    b = path[i],
+    f = len[i] > len[i - 1] ? (d - len[i - 1]) / (len[i] - len[i - 1]) : 1;
+  return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
 }
 
 /** a train's placement at a pose: its base point half its width in front of the track's line (turned to its heading:

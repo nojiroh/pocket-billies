@@ -20,19 +20,22 @@ import { gameData } from './game-data.js';
 import {
   TRAIN_DEPART,
   TRAIN_HOME,
+  TRAIN_PLATFORM,
   TRAIN_RIDE,
-  trainAt,
+  trainBoardPath,
   trainDepartAt,
   trainEye,
   trainFrame,
   trainHomeAt,
   trainHover,
   trainPlace,
+  trainWalkAt,
 } from './logic/train-path.js';
 import { reducedMotion, uiState } from './game-state.js';
 import { personWalkFrames } from './person-art.js';
 import { mapById, walkData, walkView } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { standingHeightAt } from './walk/heights.js';
 import { personItem } from './walk/frame-items.js';
 import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
@@ -60,9 +63,9 @@ expose({
   trainRideFrame: [() => trainRideFrame, v => (trainRideFrame = v)],
   trainRideGuard: [() => trainRideGuard, v => (trainRideGuard = v)],
   trainRideHome: [() => trainRideHome, v => (trainRideHome = v)],
-  trainRidePerson: [() => trainRidePerson, v => (trainRidePerson = v)],
   trainRideSkip: [() => trainRideSkip, v => (trainRideSkip = v)],
   trainRideStart: [() => trainRideStart, v => (trainRideStart = v)],
+  trainRideWalker: [() => trainRideWalker, v => (trainRideWalker = v)],
   trainRideWorld: [() => trainRideWorld, v => (trainRideWorld = v)],
   trainVeil: [() => trainVeil, v => (trainVeil = v)],
 });
@@ -243,7 +246,6 @@ function trainRideFrame() {
     p = W.train,
     F = W.F,
     T = W.tear,
-    stop = TRAIN_RIDE.stop,
     /* the portal close: from the hover's side of it, a little above */
     portalCam = {
       eye: [T[0] + (W.H.x - T[0]) * 0.72, T[2] + 1, T[1] + (W.H.z - T[1]) * 0.72 - 9],
@@ -262,19 +264,19 @@ function trainRideFrame() {
     if (B.beat === 'gone') return (trainRideEnd(false), null);
     placeTrain(p, at, W.y0, B.s);
     if (B.beat === 'glide') {
-      /* from the beach in front: it comes in along the track and settles behind the platform */
-      look = shotAt(W, [9, -13, 4.5], [(at.x + W.H.x) / 2, (at.h + W.y0) / 2 + 1.5, (at.z + W.H.z) / 2], 54);
+      /* from in front of the station and to its left (the station inland since 2026-10-28: clear of the shop and the
+         cottages round it): it comes in along the track and settles behind the platform */
+      look = shotAt(W, [-14, -12, 5], [(at.x + W.H.x) / 2, (at.h + W.y0) / 2 + 1.5, (at.z + W.H.z) / 2], 54);
     } else if (B.beat === 'board') {
-      /* you walk up the steps onto the platform and into the train */
-      const k = clamp(B.k / 0.75, 0, 1),
-        a = trainAt(F, stop + 1.5, -0.4),
-        b = trainAt(F, stop + 1.5, TRAIN_RIDE.track - TRAIN_RIDE.half - 0.4);
-      if (k < 1) items.push(trainRidePerson(a, b, k, 'up', C0, t));
-      look = shotAt(W, [2.5, -8.5, 2.6], trainEye(F, stop + 0.5, 2.5, 1.6), 50);
+      /* you walk from where you stood to the steps, up them onto the platform, across it between the benches and
+         into the train (logic/train-path.js trainBoardPath: never through the station, on its top while on it) */
+      const k = clamp(B.k / 0.85, 0, 1);
+      if (k < 1) items.push(trainRideWalker(W.board, k, 'up', C0, t, W.y0));
+      look = shotAt(W, [-4, -4.6, 2], trainEye(F, TRAIN_PLATFORM.gap, 1.6, 1.3), 52);
     } else if (B.beat === 'lift') {
       /* straight up on its engines, over the canopy */
       lights.push(engineLight(at, 0.5 + 0.5 * B.k));
-      look = shotAt(W, [8, -14, 1.8], tgtOf(at, 1.2), 54);
+      look = shotAt(W, [-10, -12, 2.2], tgtOf(at, 1.2), 54);
     } else if (B.beat === 'turn') {
       /* hovering, it turns its nose to the portal; the portal stirs */
       lights.push(engineLight(at, 1));
@@ -312,14 +314,13 @@ function trainRideFrame() {
       look = shotAt(W, [-12, -14, 10], tgtOf(at, 1.5), 54);
     } else if (B.beat === 'down') {
       lights.push(engineLight(at, 1 - 0.5 * B.k));
-      look = shotAt(W, [8, -14, 2.2], tgtOf(at, 1.2), 54);
+      look = shotAt(W, [-10, -12, 2.4], tgtOf(at, 1.2), 54);
     } else {
-      /* you step off, down the platform's steps */
-      const k = clamp(B.k / 0.8, 0, 1),
-        a = trainAt(F, stop + 1.5, TRAIN_RIDE.track - TRAIN_RIDE.half - 0.4),
-        to = W.roam ? [W.roam.x, W.roam.z] : trainAt(F, stop + 1.5, -1.4);
-      items.push(trainRidePerson(a, to, k, 'down', C0, t));
-      look = shotAt(W, [2, -10, 2.8], trainEye(F, stop + 0.5, 1.2, 1.3), 50);
+      /* you step off, across the platform between the benches and down its steps to where the walk stands you */
+      const k = clamp(B.k / 0.85, 0, 1),
+        path = trainBoardPath(F, W.roam ? [W.roam.x, W.roam.z] : null).reverse();
+      items.push(trainRideWalker(path, k, 'down', C0, t, W.y0));
+      look = shotAt(W, [-4, -4.6, 2], trainEye(F, TRAIN_PLATFORM.gap, 1.2, 1.3), 52);
     }
   }
   return {
@@ -336,13 +337,17 @@ function trainRideFrame() {
     hazeK: look.hazeK || 1,
   };
 }
-/** you on the platform, walking from a to b (k of the way) @param {number[]} a @param {number[]} b @param {number} k
- * @param {string} dir @param {any} C0 @param {number} t */
-function trainRidePerson(a, b, k, dir, C0, t) {
+/** you walking a path (logic/train-path.js trainBoardPath's points, heights over the station's ground y0), k of the
+ * way, at the height it has there (on the steps and the platform, not the ground under them)
+ * @param {number[][]} path @param {number} k @param {string} dir @param {any} C0 @param {number} t @param {number} y0 */
+function trainRideWalker(path, k, dir, C0, t, y0) {
   const fr = personWalkFrames('me'),
     set = fr[dir] || fr.down,
-    im = k < 1 ? (set.cyc ? set.cyc[Math.floor(t / 110) % 6] : set[1 + (Math.floor(t / 150) % 2)]) : set[0];
-  return personItem('actor', im, a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, C0, {});
+    im = k < 1 ? (set.cyc ? set.cyc[Math.floor(t / 110) % 6] : set[1 + (Math.floor(t / 150) % 2)]) : set[0],
+    [x, z, h] = trainWalkAt(path, k),
+    ground = standingHeightAt(x, z);
+  /* on the ground in front of the station, the ground's own height; on its steps and platform, theirs */
+  return personItem('actor', im, x, z, C0, { y: h > 0.01 ? Math.max(ground, y0 + h) : ground });
 }
 
 /** a ride starts: in the hub's walk view, or straight to its end (no view, reduced motion)
@@ -366,6 +371,8 @@ function trainRideStart(kind, key, o, done) {
     return;
   }
   W.roam = uiState.roam && uiState.roam.id === mapIdAt(0) ? uiState.roam : null;
+  /* the way you walk to board: from where you stand */
+  W.board = trainBoardPath(W.F, walkView.pl ? [walkView.pl.x, walkView.pl.z] : null);
   W.train = trainProp(W, key, kind === 'home' ? (o.won ? 1 : 2) : 0);
   walkView.director = { frame: trainRideFrame };
   trainRideGuard();
