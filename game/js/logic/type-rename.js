@@ -157,6 +157,14 @@ export function renameTypeIn(D, from, to) {
   }
   for (const I of Object.values((BA && BA.iconSprites) || {}))
     if (/** @type {any} */ (I).ramp === from) /** @type {any} */ (I).ramp = to || 'None';
+  /* VFX-16: the flow moments' ramps that name a type (a Coat's glint, the level-up's) likewise */
+  const EV = BA && BA.events;
+  if (EV && EV.sendOut) {
+    const G = EV.sendOut.glint;
+    for (const k of ['coat', 'prime']) if (G[k] === from) G[k] = to || 'None';
+    for (const [k, r] of Object.entries(EV.sendOut.kinds)) if (r === from) EV.sendOut.kinds[k] = to || 'None';
+  }
+  if (EV && EV.levelUp && EV.levelUp.ramp === from) EV.levelUp.ramp = to || 'None';
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;
