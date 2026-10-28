@@ -200,7 +200,7 @@ function initSound() {
     });
     /* SND-9: the reverb's sends follow the sliders (applyVolumes; nothing is made until something sends) */
     const L0 = soundLevels(soundPreferences(), MUSIC.mix);
-    T.reverbLevels(L0.music, L0.sfx);
+    T.reverbLevels(L0.music, L0.sfx, L0.world);
     soundEngine.tracker = T;
     soundEngine.echoIn = T.echoIn;
     soundEngine.echoWet = T.echoWet;
@@ -222,7 +222,7 @@ function applyVolumes() {
   soundEngine.mus.gain.setTargetAtTime(L.music, t, 0.05);
   soundEngine.fx.gain.setTargetAtTime(L.sfx, t, 0.05);
   /* SND-9: the reverb's sends, post-fader: a slider at 0 leaves no reverb of its sounds behind */
-  if (soundEngine.tracker) soundEngine.tracker.reverbLevels(L.music, L.sfx);
+  if (soundEngine.tracker) soundEngine.tracker.reverbLevels(L.music, L.sfx, L.world);
 }
 /* the first touch unlocks sound; the song that was asked for starts then. SND-1: any touch also wakes sound that
    stopped for something else, as iOS Safari does after a call or Siri (its state is then 'interrupted', not

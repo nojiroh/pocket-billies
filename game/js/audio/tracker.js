@@ -242,6 +242,8 @@ const soundBakeBank = {
   entries: new Map(),
   /** the reverb's impulse by sample rate: a Promise of its AudioBuffer */
   impulses: new Map(),
+  /** SND-10: recipes from data beside SOUND_BAKE_INSTRUMENTS (soundscape.json `banks`: water's bubbles and babble) */
+  recipes: /** @type {Record<string, any>} */ ({}),
   queue: [],
   timer: 0,
   /* a play counts up: the zone played longest ago has the smallest count */
@@ -262,7 +264,7 @@ const soundBakeBank = {
 const soundBakeNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 /* the bank's entry for an instrument at a context's rate (made empty the first time) */
 function soundBakeEntry(id, c) {
-  const R = SOUND_BAKE_INSTRUMENTS[id];
+  const R = SOUND_BAKE_INSTRUMENTS[id] || soundBakeBank.recipes[id];
   if (!R) return null;
   const key = id + '@' + c.sampleRate;
   let E = soundBakeBank.entries.get(key);
@@ -557,6 +559,36 @@ export function trackerCreate(ctx, bus, opts = {}) {
   T.bankReady = ids =>
     Promise.all([].concat(ids).map(id => (soundBakeEntry(id, c) ? soundBakeWant(soundBakeEntry(id, c)) : null)));
   T.bankStats = soundBakeStats;
+  /* SND-10: recipes from data (soundscape.json `banks`) the bank may bake, by id; an id it already has keeps its own */
+  T.bankAdd = recipes => {
+    for (const [id, R] of Object.entries(recipes || {}))
+      if (!SOUND_BAKE_INSTRUMENTS[id] && !soundBakeBank.recipes[id]) soundBakeBank.recipes[id] = R;
+  };
+  /* SND-10: a baked sound played once (a bubble, a drip): one buffer source and one gain, the nearest zone moved to
+     midi and then by rate (a little faster or slower), never looped. null (and the bank asked) when nothing of it is
+     baked yet */
+  T.sampleShot = (out, { inst, midi, t, vol = 1, rate = 1 }) => {
+    const E = soundBakeEntry(inst, c);
+    if (!E) return null;
+    const P = soundBakeZoneFor(E.zones, midi);
+    if (!P || !P.own) soundBakeWant(E);
+    if (!P) return null;
+    const Z = P.zone;
+    E.used[Z.i] = ++soundBakeBank.clock;
+    T.started++;
+    const s = c.createBufferSource(),
+      g = c.createGain(),
+      k = P.rate * rate;
+    s.buffer = Z.buffer;
+    s.playbackRate.value = k;
+    g.gain.value = vol;
+    s.connect(g);
+    g.connect(out);
+    s.start(t);
+    s.stop(t + Z.buffer.length / Z.buffer.sampleRate / k + 0.01);
+    s.onended = () => g.disconnect();
+    return { source: s, gain: g };
+  };
   /* a note of a baked instrument: one buffer source and one gain. The zone nearest the note plays, moved to its pitch;
      its loop holds the note for as long as dur, a pluck's tail fading on (the zone's tau) the whole time; the release
      takes r. null (and the instrument asked for) when nothing of it is baked yet */
@@ -587,14 +619,14 @@ export function trackerCreate(ctx, bus, opts = {}) {
     s.stop(end + r * 1.5);
     return { source: s, gain: g };
   };
-  /* SND-9: the reverb's sends. A part that wants reverb connects to T.reverbSend('music') or ('sfx') after its own
+  /* SND-9: the reverb's sends. A part that wants reverb connects to T.reverbSend('music'), ('sfx') or (SND-10) ('world') after its own
      gain; each send is scaled by its slider (reverbLevels, from sound.js applyVolumes: post-fader, so a slider at 0
      leaves no reverb behind) and by the place (reverbPlace), and the room returns to the master (opts.master; the
      Studio, which has none, to the bus). Made on the first send */
   const room = {
     conv: null,
     sends: null,
-    level: { music: 1, sfx: 1 },
+    level: { music: 1, sfx: 1, world: 1 },
     place: 'town',
     bakeMs: 0,
     readyMs: 0,
@@ -604,7 +636,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
   const roomGain = k => room.level[k] * (SOUND_BAKE_PLACES[room.place] ?? 1);
   const roomApply = () => {
     if (room.sends)
-      for (const k of ['music', 'sfx']) room.sends[k].gain.setTargetAtTime(roomGain(k), c.currentTime, 0.05);
+      for (const k of ['music', 'sfx', 'world']) room.sends[k].gain.setTargetAtTime(roomGain(k), c.currentTime, 0.05);
   };
   T.reverbSend = (kind = 'music') => {
     if (!room.conv) {
@@ -614,7 +646,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       room.conv.connect(ret);
       ret.connect(opts.master || bus);
       room.sends = {};
-      for (const k of ['music', 'sfx']) {
+      for (const k of ['music', 'sfx', 'world']) {
         room.sends[k] = c.createGain();
         room.sends[k].gain.value = roomGain(k);
         room.sends[k].connect(room.conv);
@@ -636,8 +668,9 @@ export function trackerCreate(ctx, bus, opts = {}) {
   };
   /* resolves once the room has its impulse (and makes it, as a send would) */
   T.reverbReady = () => (T.reverbSend(), room.ready);
-  T.reverbLevels = (music, sfx) => {
-    room.level = { music, sfx };
+  /* SND-10: world, the World slider's level (cave drips send to it); left out, it stays as it was */
+  T.reverbLevels = (music, sfx, world = room.level.world) => {
+    room.level = { music, sfx, world };
     roomApply();
   };
   T.reverbPlace = p => {

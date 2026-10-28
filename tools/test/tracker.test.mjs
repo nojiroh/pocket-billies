@@ -574,3 +574,45 @@ test('SND-9: the reverb is made only when something sends to it; sends follow th
   const T2 = trackerCreate(c2, {}, {});
   assert.equal((await T2.reverbReady()).buffer, conv.buffer);
 });
+
+test('SND-10: the bank takes recipes from data; sampleShot plays a zone once, moved to the note and by rate', async () => {
+  const c = bankContext(16000),
+    T = trackerCreate(c, {}, {}),
+    out = { name: 'out' };
+  T.bankAdd({
+    tdrop: { kind: 'bubble', lo: 60, hi: 84, every: 6, xi: 0.1, level: 0.9 },
+    harp: { kind: 'bubble', lo: 1, hi: 2, every: 1, xi: 0, level: 1 },
+  });
+  assert.equal(T.sampleShot(out, { inst: 'nothing', midi: 60, t: 0 }), null);
+  assert.equal(T.sampleShot(out, { inst: 'tdrop', midi: 70, t: 0 }), null, 'nothing baked yet');
+  await T.bankReady('tdrop');
+  assert.ok(T.bankStats().instruments.some(k => k.startsWith('tdrop@16000')));
+  /* the harp keeps its own recipe (an id the bank has is never replaced) */
+  assert.equal(soundBakeBank.recipes.harp, undefined);
+  const v = T.sampleShot(out, { inst: 'tdrop', midi: 71, t: 2, vol: 0.4, rate: 1.1 });
+  const z = soundBakeBank.entries.get('tdrop@16000').zones.find(q => 71 >= q.lo && 71 <= q.hi);
+  assert.ok(Math.abs(v.source.playbackRate.value - Math.pow(2, (71 - z.root) / 12) * 1.1) < 1e-9);
+  assert.equal(v.source.loop, undefined, 'never looped');
+  assert.equal(v.source.started, 2);
+  assert.ok(Math.abs(v.source.stopped - (2 + z.buffer.length / 16000 / v.source.playbackRate.value + 0.01)) < 1e-9);
+  assert.equal(v.gain.gain.value, 0.4);
+  assert.deepEqual(v.gain.to, [out]);
+});
+
+test('SND-10: the reverb has a World send, scaled by the World slider', async () => {
+  const c = bankContext(11025);
+  c.createConvolver = () => ({
+    to: [],
+    connect(n) {
+      this.to.push(n);
+    },
+    buffer: null,
+  });
+  const T = trackerCreate(c, {}, { master: {} });
+  T.reverbLevels(0.5, 0.25, 0.2);
+  const w = T.reverbSend('world');
+  assert.ok(w !== T.reverbSend('music') && w !== T.reverbSend('sfx'));
+  assert.ok(Math.abs(w.gain.value - 0.2 * 0.8) < 1e-9, 'a town sends 0.8 of the slider');
+  T.reverbLevels(0.5, 0.25);
+  assert.ok(Math.abs(w.gain.calls.at(-1)[1] - 0.2 * 0.8) < 1e-9, 'left out, the World level stays');
+});

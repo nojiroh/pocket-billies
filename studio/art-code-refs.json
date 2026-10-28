@@ -1605,6 +1605,8 @@
    "game/js/structures.js:626"
   ],
   "bubble": [
+   "game/js/logic/sound-bake.js:80",
+   "game/js/logic/sound-bake.js:398",
    "game/js/logic/ui-dials.js:97"
   ],
   "building": [
@@ -1900,7 +1902,7 @@
    "game/js/ui.js:206"
   ],
   "up": [
-   "game/js/audio/tracker.js:932",
+   "game/js/audio/tracker.js:965",
    "game/js/augment-screen.js:142",
    "game/js/augment-screen.js:253",
    "game/js/battle-stage.js:2175",
