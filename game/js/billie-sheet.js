@@ -33,6 +33,7 @@ import { uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 import { showcaseAct } from './showcase.js';
+import { tradeAct } from './trade.js';
 import { hpBar, progressBarHTML, typeBadgeHTML } from './ui-bits.js';
 import { closeModal, modal, nextModal, toast } from './overlay.js';
 import { runEvolution } from './pending-windows.js';
@@ -149,7 +150,8 @@ function billySheet(m) {
             },
           }
     );
-  if (e && e.k === 'item' && m.lvl >= e.min) {
+  /* ON-4: an `acquire` evolution's item is its route without a trade */
+  if (e && (e.k === 'item' || e.k === 'acquire') && m.lvl >= e.min) {
     const ik = e.item || 'bell',
       I = ITEMS[ik] || { n: 'Shining Stone' },
       have = saveData.items[ik] || 0;
@@ -262,6 +264,9 @@ function billySheet(m) {
   /* ON-3: share its look to the Showcase (signed in; the sheet asks for Online play) */
   const shareAct = typeof showcaseAct === 'function' ? showcaseAct(m) : null;
   if (shareAct) acts.push(shareAct);
+  /* ON-4: trade it with a friend (signed in) */
+  const tradeBtn = typeof tradeAct === 'function' ? tradeAct(m) : null;
+  if (tradeBtn) acts.push(tradeBtn);
   /* alpha 0.5: the details open on a summary (meters, a stat chart, where it joined you, what it's like), with tabs
     for the exact stats, the moves and how it evolves */
   const base = s.base || [],
