@@ -25,7 +25,7 @@ import { i18nText } from './hooks.js';
 import { glyphOf, sigVar } from './logic/signals.js';
 import { chipLook, rarityTier } from './logic/marks.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
-import { LitElement, css, html, nothing, reduced } from './ui-kit.js';
+import { LitElement, css, html, nothing, pbSlideBar, reduced } from './ui-kit.js';
 expose({
   PbCoin: [() => PbCoin],
   PbDayChip: [() => PbDayChip],
@@ -1184,6 +1184,19 @@ const PbNavBar = class extends LitElement {
     this.badges = '';
     this.hide = '';
     this.compact = false;
+  }
+  /* UI-16a: the gold bar slides from the tab that was open to the new one (where the old one stood, before the redraw) */
+  willUpdate(ch) {
+    this._from =
+      ch.has('value') && ch.get('value') != null ? this.tabEl(ch.get('value'))?.getBoundingClientRect() : null;
+  }
+  updated() {
+    if (this._from) pbSlideBar(this._from, this.tabEl(this.value)?.getBoundingClientRect() || null);
+    this._from = null;
+  }
+  /** a tab's button (the fly-to's target for a gain: Bag, Perks) @param {string} id */
+  tabEl(id) {
+    return this.renderRoot.querySelector(`[data-t="${CSS.escape(String(id))}"]`);
   }
   /* UI-5: hide lists tabs to leave out (ids, comma-separated): a set's tab whose screen isn't built yet */
   get tabs() {

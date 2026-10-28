@@ -194,8 +194,8 @@ function gainTarget(k) {
     const n = document.querySelector('.topbar [data-count="tse"]');
     return n ? n.closest('.tb-chip') || n : null;
   }
-  const nav = document.getElementById('nav');
-  return (nav && nav.shadowRoot && nav.shadowRoot.querySelector(`[data-t="${CSS.escape(k)}"]`)) || null;
+  const nav = /** @type {any} */ (document.getElementById('nav'));
+  return (nav && nav.tabEl && nav.tabEl(k)) || null;
 }
 /** a gain from a card or row (its rect, taken before the sheet closed) flies to its place @param {DOMRect | null} from
  * @param {string} k money, bag, perks... @param {string} icon a ui icon id */
