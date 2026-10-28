@@ -478,20 +478,29 @@ export function* soundBakeImpulse(rate, o = {}) {
     seed = o.seed ?? 0x1e5b,
     out = [];
   for (let ch = 0; ch < 2; ch++) {
-    const d = ambienceNoise('white', n, ambienceRandom(seed + ch));
-    let lp = 0;
-    for (let i = 0; i < n; i++) {
-      if (i < pre) {
-        d[i] = 0;
-        continue;
+    /* the noise is made a chunk at a time (the same sequence as all at once), so no step does the whole second */
+    const d = new Float32Array(n),
+      r = ambienceRandom(seed + ch),
+      /* the envelope falls by a constant factor a sample; the low-pass's cutoff moves slowly, so it is worked out
+         every 32 samples */
+      fall = Math.exp(-6.9 / (t60 * rate));
+    let lp = 0,
+      env = 1,
+      a = 0;
+    for (let at = 0; at < n; at += SOUND_BAKE_CHUNK) {
+      const e = Math.min(n, at + SOUND_BAKE_CHUNK);
+      d.set(ambienceNoise('white', e - at, r), at);
+      for (let i = Math.max(at, pre); i < e; i++) {
+        if ((i - pre) % 32 === 0) {
+          const f = dark + (bright - dark) * Math.exp(-(i - pre) / rate / (t60 / 3));
+          a = Math.exp((-2 * Math.PI * f) / rate);
+        }
+        lp = (1 - a) * d[i] + a * lp;
+        d[i] = lp * env * Math.min(1, (i - pre) / ramp) * Math.min(1, (n - i) / tail);
+        env *= fall;
       }
-      const t = (i - pre) / rate,
-        f = dark + (bright - dark) * Math.exp(-t / (t60 / 3)),
-        a = Math.exp((-2 * Math.PI * f) / rate);
-      lp = (1 - a) * d[i] + a * lp;
-      const env = Math.exp((-6.9 * t) / t60) * Math.min(1, (i - pre) / ramp) * Math.min(1, (n - i) / tail);
-      d[i] = lp * env;
-      if (i % SOUND_BAKE_CHUNK === 0) yield i;
+      for (let i = at; i < Math.min(e, pre); i++) d[i] = 0;
+      yield at;
     }
     yield* soundBakePeak(d, 0.9);
     out.push(d);
