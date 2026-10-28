@@ -74,3 +74,21 @@ test('two high tides a day at the same hours every day, low between, never a jum
   for (let h = 0; h < 24; h += 0.25) assert.ok(tideLevel(h) >= -1 && tideLevel(h) <= 1);
   assert.ok(Math.min(...[0, 3, 6, 9, 12, 15, 18, 21].map(tideLevel)) < -0.99, 'it goes all the way out');
 });
+
+test('a river running into the sea is never the sea: the tide neither dries it nor covers its sandy banks', () => {
+  /* a river (column 3) runs down from the north into the open sea through the beach; wet sand lines its banks
+     upstream, joined to the sea only through the river */
+  const rows = ['ddddddd', 'wwwwwww', 'SSSwSSS', 'sssw sss'.replace(' ', ''), 'sSSwSSs', 'ssSwSss'];
+  const [w, h, ter, sea] = map(rows);
+  const run = (i, j) => i === 3 && j >= 2;
+  const T = tideCells(w, h, ter, sea, run);
+  for (let j = 2; j < h; j++) assert.equal(at(T.dry, w, 3, j), 0, `the river at row ${j} keeps its water`);
+  for (let j = 4; j < h; j++)
+    for (let i = 0; i < w; i++) assert.equal(at(T.cover, w, i, j), 0, `the bank at ${i}, ${j} stays above the tide`);
+  /* the shore's own sand, joined to the sea, still floods */
+  assert.equal(at(T.cover, w, 0, 2), 1);
+  /* without the river rule, the river was the sea's: its bed dried and its banks flooded */
+  const old = tideCells(w, h, ter, sea);
+  assert.equal(at(old.dry, w, 3, 4), 1);
+  assert.equal(at(old.cover, w, 2, 4), 1);
+});
