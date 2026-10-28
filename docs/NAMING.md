@@ -9,7 +9,7 @@ deleted on 2026-10-28: `git log --diff-filter=D --oneline -- docs/archive/phase-
 
 | Concept | Name in code and data | Notes |
 |---------|-----------------------|-------|
-| The 3D overview of the whole world | `worldMap` (world-map.js, world-map-gl.js, `worldMap*`, `worldMapGl*`, `worldMapMini*`) | was map, MAP, mgl, mm |
+| The 3D overview of the whole world | `worldMap` (world-bowl.js, logic/bowl*.js, `worldMap*`) | was map, MAP, mgl, mm |
 | A walkable area: a town, a route area, a room | `map` (data section `maps`, files `maps/<id>.json`, `mapById`, a location's `mapId`) | was scene |
 | The view of a map you walk in | `walkView` (walk-view.js) | was DIO, dio*, diorama |
 | Its WebGL renderer | `walkRenderer` (walk/walk-state.js) and descriptive names (`drawGround`, `shadowPass`) | was DGL, dgl* |
