@@ -55,7 +55,8 @@ const minimap = {
 };
 
 /** the dials (uiTheme.json minimap, written as --minimap-* by the theme; tokens.css holds the defaults): metres
- * across the tile (the same in both sizes, so going compact only scales the picture), ms of walking before the bar
+ * across the tile's shorter side (UI-8b: top to bottom on the wide tile; the same in both sizes, so going compact only
+ * scales the picture), ms of walking before the bar
  * goes compact and of standing before it comes back, and which marks show */
 function minimapDials() {
   const cs = getComputedStyle(/** @type {HTMLCanvasElement} */ (minimap.cv)),
@@ -131,11 +132,14 @@ function minimapPalette() {
   const surface = minimapRole('--c-surface'),
     text = minimapRole('--c-text'),
     text2 = minimapRole('--c-text2'),
-    primary = minimapRole('--c-primary'),
     goldA = minimapRole('--c-gold-a'),
     goldB = minimapRole('--c-gold-b'),
     danger = minimapRole('--c-danger'),
-    teal = minimapRole('--c-hp-ok');
+    teal = minimapRole('--c-hp-ok'),
+    /* UI-12: the palette's own grass and water (uiTheme.json mapGrass, mapWater), so a blue or purple palette keeps a
+       green map; without them primary and the HP teal, as before */
+    grassHue = minimapRole('--c-map-grass, var(--c-primary)'),
+    waterHue = minimapRole('--c-map-water, var(--c-hp-ok)');
   minimap.pal = {
     surface,
     text,
@@ -143,15 +147,15 @@ function minimapPalette() {
     goldB,
     danger,
     teal,
-    grass: minimapMix(surface, primary, 0.34),
-    tall: minimapMix(surface, primary, 0.62),
+    grass: minimapMix(surface, grassHue, 0.34),
+    tall: minimapMix(surface, grassHue, 0.62),
     road: minimapMix(surface, goldA, 0.42),
-    water: minimapMix(surface, teal, 0.55),
+    water: minimapMix(surface, waterHue, 0.55),
     sand: minimapMix(surface, goldA, 0.22),
     rock: minimapMix(surface, text2, 0.38),
     snow: minimapMix(surface, text2, 0.06),
-    marsh: minimapMix(minimapMix(surface, primary, 0.4), text2, 0.3),
-    wall: minimapMix(minimapMix(surface, primary, 0.7), text, 0.35),
+    marsh: minimapMix(minimapMix(surface, grassHue, 0.4), text2, 0.3),
+    wall: minimapMix(minimapMix(surface, grassHue, 0.7), text, 0.35),
     roof: minimapMix(text, surface, 0.18),
   };
 }
@@ -282,7 +286,11 @@ function minimapDraw(now = performance.now()) {
     cv.width = Math.round(cw * dpr);
     cv.height = Math.round(ch * dpr);
   }
-  const look = getComputedStyle(cv).getPropertyValue('--c-surface') + document.documentElement.dataset.theme;
+  const cs = getComputedStyle(cv),
+    look =
+      cs.getPropertyValue('--c-surface') +
+      cs.getPropertyValue('--c-map-grass') +
+      document.documentElement.dataset.theme;
   if (look !== minimap.look) {
     minimap.look = look;
     minimapPalette();
@@ -297,7 +305,9 @@ function minimapDraw(now = performance.now()) {
   const c = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')),
     W = cv.width,
     H = cv.height,
-    s = W / D.span,
+    /* UI-8b: metres per pixel from the shorter side, so the wide tile keeps span top to bottom and shows more across */
+    S = Math.min(W, H),
+    s = S / D.span,
     Pl = walkView.pl,
     P = minimap.pal,
     /* a place's metres on the canvas (north up: z grows upward) */
@@ -317,12 +327,13 @@ function minimapDraw(now = performance.now()) {
     c.fillStyle = minimapCss(P.surface);
     c.fill('evenodd');
   }
-  const unit = Math.max(1, W / 120),
+  /* the marks keep their size in metres (a 120 px side makes unit the device pixel ratio) */
+  const unit = Math.max(1, S / 120),
     inView = (/** @type {number} */ x, /** @type {number} */ y, m = 8 * unit) =>
       x > -m && y > -m && x < W + m && y < H + m;
   /* the facilities' icons, upright and the same size at any zoom */
   if (!RR && D.facilities) {
-    const icon = Math.round((W >= 100 * dpr ? 16 : 11) * dpr);
+    const icon = Math.round((S >= 100 * dpr ? 16 : 11) * dpr);
     for (const m of minimap.marks || []) {
       const x = toX(m.x),
         y = toY(m.z),

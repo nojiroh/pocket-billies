@@ -70,6 +70,17 @@
   .g-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
   .g-list li { padding: var(--s2) var(--s3); font: 600 15px/1.2 var(--font-voice); }
   .g-dark { padding: var(--s4); border-radius: var(--r-lg); background: #241c3a; }
+  /* UI-14a: a dark box's tags read light text (a plate's glass); the patterns always on in the Colour shapes section */
+  .g-dark { color: #f6f2ff; }
+  .g-shapes { --pat-ink: var(--pat-ink-on); }
+  .g-note { margin: 0; font: 500 var(--fs-caption)/1.4 var(--font-prose); color: var(--text2); }
+  /* SY-3: the Bureau's emblem drawn in whole pixels, its form line, stamps with room for their slant */
+  .g-emblem { image-rendering: pixelated; }
+  .g-form { display: grid; gap: 2px; margin-right: auto; font: 600 var(--fs-caption)/1.2 var(--font-voice); color: var(--text2); }
+  .g-form b { color: var(--text); font-size: 15px; }
+  .g-stamps { gap: var(--s4); padding: var(--s2) var(--s1); }
+  /* UI-17: the box the bursts and the banner play in */
+  .g-alive { position: relative; height: 160px; overflow: hidden; }
   /* UI-3: inside the Studio's UI section the Studio holds the switches */
   .g-studio .g-bar { display: none; }
   .g-studio body { padding-top: var(--s2); }
@@ -80,8 +91,8 @@
   <h1>UI gallery</h1>
   <button data-g="theme" data-v="light" aria-pressed="true">Light</button><button data-g="theme" data-v="dark" aria-pressed="false">Dark</button>
   <button data-g="w" data-v="320px" aria-pressed="false">320</button><button data-g="w" data-v="390px" aria-pressed="true">390</button><button data-g="w" data-v="760px" aria-pressed="false">Wide</button>
-  <button data-g="motion" data-v="reduced" aria-pressed="false">Reduced motion</button>
-  <button data-g="look" data-v="" aria-pressed="true">Copper Grove</button><button data-g="look" data-v="alpha05" aria-pressed="false">alpha 0.5</button><button data-g="look" data-v="stepped" aria-pressed="false">Stepped</button>
+  <button data-g="motion" data-v="reduced" aria-pressed="false">Reduced motion</button><button data-g="shapes" data-v="on" aria-pressed="false">Colour shapes</button>
+  <button data-g="look" data-v="" aria-pressed="true">Field Guide</button><button data-g="look" data-v="copper_grove" aria-pressed="false">Copper Grove+</button><button data-g="look" data-v="bureau_night" aria-pressed="false">Bureau Night</button><button data-g="look" data-v="brass_plum" aria-pressed="false">Brass &amp; Plum</button><button data-g="look" data-v="sunpunk_day" aria-pressed="false">Sunpunk Day</button><button data-g="look" data-v="alpha05" aria-pressed="false">alpha 0.5</button><button data-g="look" data-v="stepped" aria-pressed="false">Stepped</button>
 </div>
 <main class="g-wrap">
 
@@ -156,23 +167,26 @@
   </div>
 </section>
 
-<section class="g-sec" data-shot="plates"><h2>Battle plates</h2><p>Over each fighter in the 3D scene: a Billie's (the chosen one has a gold edge), a bot's (the shared bot plate: steel, two cuts, limb pips).</p>
-  <div class="g-row" style="padding:var(--s4);background:#2b3a2f;align-items:flex-start"><div class="bplate " style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Emberox</b><span class="pl-lv tnum">Lv 30</span></span><span class="pl-hp"><i class="ghost" style="width:82%"></i><i class="fill " style="width:82%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum">63/77</span></span><span class="pl-xp"><i style="width:60%"></i></span></div><div class="bplate cur" style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Kidling</b><span class="pl-lv tnum">Lv 5</span></span><span class="pl-hp"><i class="ghost" style="width:40%"></i><i class="fill mid" style="width:40%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum">10/24</span></span><span class="pl-xp"><i style="width:60%"></i></span></div><div class="bplate bot" style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Voltcrank</b><span class="pl-lv tnum">Lv 14</span></span><span class="pl-hp"><i class="ghost" style="width:18%"></i><i class="fill low" style="width:18%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts"><span class="pb-limbs" role="img" aria-label="left arm 100%, right arm 30%, legs broken"><span class="pb-limb ok"><b>L</b><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="pb-limb low"><b>R</b><i class="on"></i><i class="on"></i><i></i><i></i></span><span class="pb-limb broken"><b>Lg</b><i></i><i></i><i></i><i></i></span></span></span></div></div>
+<section class="g-sec" data-shot="plates"><h2>Battle plates</h2><p>Over each fighter in the 3D scene: a Billie's (the chosen one has a gold edge), a bot's (the shared bot plate: steel, two cuts, limb pips). UI-15: dark glass, at most three tags, the rest as "+N".</p>
+  <div class="g-row" style="padding:var(--s4);background:#2b3a2f;align-items:flex-start"><div class="bplate " style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Emberox</b><span class="pl-lv tnum">Lv 30</span></span><span class="pl-hp"><i class="ghost" style="width:82%"></i><i class="fill " style="width:82%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"><pb-tag kind="status" mark="brn" word="Burned"></pb-tag><pb-tag kind="stat" stat="lev" stages="2"></pb-tag><pb-tag kind="more" n="2" word="Also Speed down 1 stage, Defense up 1 stage" title="Also Speed down 1 stage, Defense up 1 stage"></pb-tag></span><span class="pl-num tnum">63/77</span></span><span class="pl-xp"><i style="width:60%"></i></span></div><div class="bplate cur" style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Kidling</b><span class="pl-lv tnum">Lv 5</span></span><span class="pl-hp"><i class="ghost" style="width:40%"></i><i class="fill mid" style="width:40%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum">10/24</span></span><span class="pl-xp"><i style="width:60%"></i></span></div><div class="bplate bot" style="position:relative;left:auto;top:auto;transform:none"><span class="pl-top"><b class="pl-n">Voltcrank</b><span class="pl-lv tnum">Lv 14</span></span><span class="pl-hp"><i class="ghost" style="width:18%"></i><i class="fill low" style="width:18%"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts"><span class="pb-limbs" role="img" aria-label="left arm 100%, right arm 30%, legs broken"><span class="pb-limb ok"><b>L</b><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span><span class="pb-limb low"><b>R</b><i class="on"></i><i class="on"></i><i></i><i></i></span><span class="pb-limb broken"><b>Lg</b><i></i><i></i><i></i><i></i></span></span></span></div></div>
 </section>
 
 <section class="g-sec" data-shot="dialogue"><h2>Dialogue box</h2><p>The 96 px slot holds a 64 px portrait at 1.5×, drawn in whole device pixels (js/talk.js).</p>
   <div class="talk-box g-local" style="width:100%;position:relative;margin-top:var(--s5)"><span class="talk-slot"><i class="g-sprite" style="--c1:#b07a52;width:96px;height:96px"></i></span><div class="talk-txt"><p class="talk-who">Professor Chosen</p><p class="talk-line">You came down through the crust. Things do, now and then. Mostly furniture.</p></div><span class="talk-more" style="opacity:.8">▼</span></div>
 </section>
 
-<section class="g-sec" data-shot="battle"><h2>Battle cards</h2><p>In the 3D scene they float under the one choosing; here they sit still.</p>
-  <div class="battle ui3d" style="position:relative;inset:auto;height:auto;background:none"><div class="dock" style="position:relative;inset:auto;display:grid;gap:8px;pointer-events:auto">
+<section class="g-sec" data-shot="battle"><h2>Battle cards</h2><p>In the 3D scene they float under the one choosing; here they sit still. UI-15: every floating part in dark glass in both themes; the field strip (weather and hazards with turns left, a chip's words on a tap); a move's details on a long press; the quiet command row.</p>
+  <div class="battle ui3d" style="position:relative;inset:auto;height:auto;background:none">
+    <div class="fstrip on" style="position:relative;top:auto;height:auto;margin-bottom:8px"><div class="fs-row"><span class="fs-side"></span><span class="fs-mid"><button class="fs-chip wx" type="button"><span class="fs-face"><i class="uico" data-ico="rain" style="width:14px;height:14px" aria-hidden="true"></i></span></button><button class="fs-chip warn" type="button"><span class="fs-face"><i class="uico" data-ico="bolt" style="width:14px;height:14px" aria-hidden="true"></i><b class="tnum">3</b></span></button></span><span class="fs-side"><button class="fs-chip bad" type="button"><span class="fs-face"><i class="uico" data-ico="scrap" style="width:14px;height:14px" aria-hidden="true"></i></span></button></span></div><p class="fs-tip">It’s raining: Water moves hit harder and Fire moves fizzle.</p></div>
+    <div class="dock" style="position:relative;inset:auto;display:grid;gap:8px;pointer-events:auto">
     <button class="bmsg g-local" id="msg" style="position:relative;width:100%">What will Zorblax do?</button>
+    <div class="mv-info" style="position:relative;width:auto"><b>Inferno</b><span class="mi-ty"><i class="ty-g" data-ty-g="Fire"></i>Fire · ★ same type, ×1.5</span><span class="mi-n tnum">120 power · 85% accuracy · stronger in this weather</span><span class="mi-d">Huge damage. 30% chance to burn itself.</span></div>
     <div class="cmd g-local" id="acts" style="position:relative;width:100%"><div class="c-choose"><div class="moves">
-      <button class="mv" style="--tc:#E0603A;--tf:#fff"><span class="mv-top"><b>Inferno</b><kbd>1</kbd></span><span class="mv-meta"><span class="mv-ty">Fire ★</span><span class="tnum">120 pow · 85%</span></span></button>
-      <button class="mv" style="--tc:#7fb2f5;--tf:#fff"><span class="mv-top"><b>Cyclone</b><kbd>2</kbd></span><span class="mv-meta"><span class="mv-ty">Flying</span><span class="tnum">110 pow</span></span></button>
-      <button class="mv" style="--tc:#E0603A;--tf:#fff"><span class="mv-top"><b>Blaze Charge</b><kbd>3</kbd></span><span class="mv-meta"><span class="mv-ty">Fire ★</span><span class="tnum">100 pow</span></span></button>
-      <button class="mv off" disabled style="--tc:#7d52c2;--tf:#fff"><span class="mv-top"><b>Drake Dive</b><kbd>4</kbd></span><span class="mv-meta"><span class="mv-ty">Part broken</span></span></button>
-    </div><div class="bt-row"><button class="bt coin"><b>Catch it</b><small>5 left</small></button><button class="bt items"><b>Bag</b><small>2</small></button><button class="bt team"><b>Team</b><small>2/2</small></button><button class="bt run"><b>Run</b><small>Walk away</small></button></div></div></div>
+      <button class="mv" style="--tc:#E0603A;--tf:#fff"><span class="mv-top" data-ty="Fire"><b>Inferno</b><kbd>1</kbd></span><span class="mv-meta"><span class="tnum">120 pow ▲</span></span><em class="se">Super effective</em></button>
+      <button class="mv" style="--tc:#7fb2f5;--tf:#fff"><span class="mv-top" data-ty="Flying"><b>Cyclone</b><kbd>2</kbd></span><span class="mv-meta"><span class="tnum">110 pow</span></span><em class="nve">Not very effective</em></button>
+      <button class="mv" style="--tc:#E0603A;--tf:#fff"><span class="mv-top" data-ty="Fire"><b>Blaze Charge</b><kbd>3</kbd></span><span class="mv-meta"><span class="tnum">100 pow ▲</span></span></button>
+      <button class="mv off" disabled style="--tc:#7d52c2;--tf:#fff"><span class="mv-top" data-ty="Dragon"><b>Drake Dive</b><kbd>4</kbd></span><span class="mv-meta"><span>Part broken</span></span></button>
+    </div><div class="bt-row"><button class="bt coin" title="5 pyramids left"><i class="uico" data-ico="pyramid" style="width:18px;height:18px" aria-hidden="true"></i><b>Catch it</b></button><button class="bt items" title="2 items"><i class="uico" data-ico="bag" style="width:18px;height:18px" aria-hidden="true"></i><b>Bag</b></button><button class="bt team" title="2 of 2 can fight"><i class="uico" data-ico="team" style="width:18px;height:18px" aria-hidden="true"></i><b>Team</b></button><button class="bt run" disabled title="No way out of a trainer battle"><i class="uico" data-ico="run" style="width:18px;height:18px" aria-hidden="true"></i><b>Run</b></button></div></div></div>
   </div></div>
 </section>
 
@@ -206,10 +220,10 @@
   </div>
 </section>
 
-<section class="g-sec" data-shot="run-nodes"><h2>Run map markers</h2><p>pb-node, one outline per node type (game/js/logic/run-marks.js, which the bowl's pins draw too): landing, route, town, mini-boss, boss, event, shop, not yet seen; then a town in each state, and with its forecast.</p>
+<section class="g-sec" data-shot="run-nodes"><h2>Run map markers</h2><p>pb-node, one pixel icon per node type on its UI-4 outline (game/art/ui/node-*.svg, painted by game/js/logic/run-marks.js as the bowl's pins are; UI-8c): landing, route, town, mini-boss, boss, event, shop, rival, scrapyard, not yet seen; then a town in each state, and with its forecast.</p>
   <div class="g-stack">
-    <div class="g-row"><pb-node type="landing" label="Landing"></pb-node><pb-node type="route" label="Route"></pb-node><pb-node type="town" label="Town"></pb-node><pb-node type="miniboss" label="Mini-boss"></pb-node><pb-node type="boss" label="Boss"></pb-node><pb-node type="event" label="Event"></pb-node><pb-node type="shop" label="Shop"></pb-node><pb-node type="unknown" state="hidden"></pb-node></div>
-    <div class="g-row"><pb-node type="town" state="seen" label="Marrow Town"></pb-node><pb-node type="town" state="current" label="Marrow Town"></pb-node><pb-node type="town" state="visited" label="Marrow Town"></pb-node><pb-node type="town" state="locked" label="Marrow Town"></pb-node><pb-node type="town" state="hidden"></pb-node><pb-node type="route" weather="rain" label="Wet Fen"></pb-node><pb-node type="boss" weather="storm" style="--size:64px" label="The Voltron"></pb-node></div>
+    <div class="g-row"><pb-node type="landing" label="Landing"></pb-node><pb-node type="route" label="Route"></pb-node><pb-node type="town" label="Town"></pb-node><pb-node type="miniboss" label="Mini-boss"></pb-node><pb-node type="boss" label="Boss"></pb-node><pb-node type="event" label="Event"></pb-node><pb-node type="shop" label="Shop"></pb-node><pb-node type="rival" label="Rival"></pb-node><pb-node type="scrapyard" label="Scrapyard"></pb-node><pb-node type="unknown" state="hidden"></pb-node></div>
+    <div class="g-row"><pb-node type="town" state="seen" label="Marrow Town"></pb-node><pb-node type="town" state="current" label="Marrow Town"></pb-node><pb-node type="town" state="visited" label="Marrow Town"></pb-node><pb-node type="town" state="locked" label="Marrow Town"></pb-node><pb-node type="town" state="hidden"></pb-node><pb-node type="route" weather="rain" label="Wet Fen"></pb-node><pb-node type="boss" weather="storm" style="--size:72px" label="The Voltron"></pb-node></div>
   </div>
 </section>
 
@@ -221,10 +235,104 @@
   </div>
 </section>
 
+<!-- UI-14a: the marks kit (game/js/ui-marks-kit.js, logic/marks.js); UI-14b puts them on the game's screens -->
+<section class="g-sec" data-shot="marks-tags"><h2>Tags</h2><p>pb-tag, sized for a battle plate's tag row: the three statuses (glyph and code in their colours); boosts and drops, the arrow first (▲ teal, ▼ red), the stat and its pips (1 to 6); the short effects with their turns left (none: no count); "+N" and a stat back at 0. Every tag says its word to a screen reader.</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-tag kind="status" mark="brn"></pb-tag><pb-tag kind="status" mark="par"></pb-tag><pb-tag kind="status" mark="slp"></pb-tag></div>
+    <div class="g-row"><pb-tag kind="stat" stat="lev" stages="1"></pb-tag><pb-tag kind="stat" stat="law" stages="2"></pb-tag><pb-tag kind="stat" stat="lob" stages="3"></pb-tag><pb-tag kind="stat" stat="pr" stages="4"></pb-tag><pb-tag kind="stat" stat="hus" stages="6"></pb-tag></div>
+    <div class="g-row"><pb-tag kind="stat" stat="lev" stages="-1"></pb-tag><pb-tag kind="stat" stat="law" stages="-2"></pb-tag><pb-tag kind="stat" stat="lob" stages="-3"></pb-tag><pb-tag kind="stat" stat="pr" stages="-5"></pb-tag><pb-tag kind="stat" stat="hus" stages="-6"></pb-tag><pb-tag kind="stat" stat="hus" stages="0"></pb-tag></div>
+    <div class="g-row"><pb-tag kind="effect" mark="protect" turns="1"></pb-tag><pb-tag kind="effect" mark="shield" turns="3"></pb-tag><pb-tag kind="effect" mark="confused" turns="2"></pb-tag><pb-tag kind="effect" mark="soaked" turns="4"></pb-tag><pb-tag kind="effect" mark="fork" turns="2"></pb-tag><pb-tag kind="effect" mark="delayed" turns="1"></pb-tag><pb-tag kind="effect" mark="stones"></pb-tag><pb-tag kind="effect" mark="sandstorm" turns="5"></pb-tag></div>
+    <div class="g-row"><pb-tag kind="more" n="2"></pb-tag><pb-tag kind="more" n="5"></pb-tag><pb-tag big kind="status" mark="brn"></pb-tag><pb-tag big kind="stat" stat="hus" stages="2"></pb-tag><pb-tag big kind="effect" mark="protect" turns="2"></pb-tag></div>
+    <p class="g-note">On a plate's dark glass, as UI-15's row will hold them (up to 3, then "+N"):</p>
+    <div class="g-dark g-stack">
+      <div class="g-row"><pb-tag kind="status" mark="par"></pb-tag><pb-tag kind="stat" stat="hus" stages="-1"></pb-tag><pb-tag kind="more" n="3"></pb-tag></div>
+      <div class="g-row"><pb-tag kind="status" mark="slp"></pb-tag><pb-tag kind="stat" stat="lev" stages="2"></pb-tag><pb-tag kind="effect" mark="protect" turns="1"></pb-tag></div>
+      <div class="g-row"><pb-tag kind="effect" mark="sandstorm" turns="4"></pb-tag><pb-tag kind="effect" mark="stones"></pb-tag></div>
+    </div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-chips"><h2>Chips</h2><p>pb-chip, on pb-coin's API (kind, value, label; it counts as pb-coin does): the six currencies in their families, then map nodes and messages as label chips (the family's glyph), and the small size.</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-chip kind="money" value="340" label="Moneys"></pb-chip><pb-chip kind="research" value="12400" label="Research"></pb-chip><pb-chip kind="scrap" value="86" label="Scrap"></pb-chip><pb-chip kind="dna" value="14" label="DNA"></pb-chip><pb-chip kind="crests" value="2" label="Crests"></pb-chip><pb-chip kind="beans" value="3" label="Beans"></pb-chip></div>
+    <div class="g-row"><pb-chip kind="town" label="Marrow Town"></pb-chip><pb-chip kind="boss" label="Boss"></pb-chip><pb-chip kind="event" label="Waystation"></pb-chip><pb-chip kind="stall" label="Stall"></pb-chip><pb-chip kind="scrapyard" label="Scrapyard"></pb-chip><pb-chip kind="ghost" label="Friend's ghost"></pb-chip><pb-chip kind="route" label="Route"></pb-chip></div>
+    <div class="g-row"><pb-chip small kind="good" label="Healed"></pb-chip><pb-chip small kind="bad" label="Lost 40 HP"></pb-chip><pb-chip small kind="caution" label="Costs $120"></pb-chip><pb-chip small kind="growth" label="Level up"></pb-chip><pb-chip small kind="special" label="New Perk"></pb-chip><pb-chip small kind="info" label="Saved"></pb-chip><pb-chip small kind="money" value="40" label="Moneys"></pb-chip></div>
+    <div class="g-row"><button class="pb small" id="gChipUp">Add 25 Scrap to the chip above</button></div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-procs"><h2>Blips</h2><p>pb-proc, when a Perk, held item, trait or type passive fires: its glyph in its family's colour and a short line, on the battle's dark glass (the look only: UI-16b shows them by the plates).</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-proc mark="held" text="Quick Laces" stat="hus" stages="1"></pb-proc><pb-proc mark="perk" text="Bubble Wrap −10%"></pb-proc><pb-proc mark="perk" text="Kindling" stat="lev" stages="1"></pb-proc></div>
+    <div class="g-row"><pb-proc group="effect" mark="sandstorm" text="Sandstorm −6"></pb-proc><pb-proc mark="part" text="Spare Limb"></pb-proc><pb-proc group="family" mark="bio" text="Unstable" stat="law" stages="-1"></pb-proc><pb-proc mark="item" text="Berry: +20 HP"></pb-proc></div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-info"><h2>Explainers</h2><p>pb-info, what a tap on a mark opens (long-press in battle): the mark, its word and one line. A tap on it or Escape closes it. Tap the tag to open one.</p>
+  <div class="g-stack">
+    <pb-info open kind="status" mark="brn" line="Loses a little HP each turn, and its physical moves hit for half."></pb-info>
+    <pb-info open kind="stat" stat="hus" stages="2" line="Moves first more often. Resets when it leaves the field."></pb-info>
+    <pb-info open kind="effect" mark="protect" turns="1" line="Blocks the next move aimed at it."></pb-info>
+    <pb-info open word="Research" line="What a run brings home. Spent on the Lab's unlock board."><pb-chip slot="mark" small kind="research" value="12400"></pb-chip></pb-info>
+    <div class="g-row"><button class="pb small" id="gInfoTag" aria-label="Paralyzed: tap to explain"><pb-tag kind="status" mark="par" aria-hidden="true"></pb-tag></button></div>
+    <pb-info id="gInfo" kind="status" mark="par" line="May not move this turn, and is slower."></pb-info>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-rarity"><h2>Rarity</h2><p>The loot ladder as frame, pill and name: common, uncommon, rare, mythical (rarities.json's starter shows as common). On pb-pick-card (rarity="..."; selected keeps its gold edge) and on list rows (.rar-row, data-rarity, .rar-name and pb-rarity).</p>
+  <div class="g-stack">
+    <div class="g-row"><pb-rarity tier="common"></pb-rarity><pb-rarity tier="uncommon"></pb-rarity><pb-rarity tier="rare"></pb-rarity><pb-rarity tier="mythical"></pb-rarity><pb-rarity tier="starter"></pb-rarity></div>
+    <div class="g-picks"><pb-pick-card heading="Lucky Charm" sub="Perk" rarity="common"><span slot="art" class="g-relic"></span>Shop prices are 15% lower.</pb-pick-card><pb-pick-card heading="Quick Laces" sub="Held item" rarity="uncommon"><span slot="art" class="g-relic"></span>Speed +1 at the start.</pb-pick-card><pb-pick-card heading="Golden Parachute" sub="Perk" rarity="rare" selected><span slot="art" class="g-relic"></span>When a Billie faints, gain $40.</pb-pick-card></div>
+    <div class="g-picks"><pb-pick-card heading="Emberox" sub="Lv 30 · Fire" rarity="mythical"><span slot="art" class="g-sprite" style="--c1:#c4502e"></span>Keeps its levels and its moves.</pb-pick-card><pb-pick-card heading="Sproutle" sub="Starter" rarity="starter"><span slot="art" class="g-sprite" style="--c1:#418623"></span>Shows as common.</pb-pick-card><pb-pick-card heading="Mystery" rarity="rare" facedown id="gPickRareDown">Face down: no tier shows.</pb-pick-card></div>
+    <div class="g-list">
+      <div class="bag-row k-card rar-row" data-rarity="common"><span class="g-relic"></span><span class="bag-t"><b class="rar-name">Lucky Charm</b><small>Shop prices are 15% lower.</small></span><pb-rarity tier="common"></pb-rarity></div>
+      <div class="bag-row k-card rar-row" data-rarity="uncommon"><span class="g-relic"></span><span class="bag-t"><b class="rar-name">Quick Laces</b><small>Speed +1 at the start.</small></span><pb-rarity tier="uncommon"></pb-rarity></div>
+      <div class="bag-row k-card rar-row on" data-rarity="rare"><span class="g-relic"></span><span class="bag-t"><b class="rar-name">Golden Parachute</b><small>Chosen: the row's own highlight stays.</small></span><pb-rarity tier="rare"></pb-rarity></div>
+      <div class="bag-row k-card rar-row" data-rarity="mythical"><span class="g-relic"></span><span class="bag-t"><b class="rar-name">Crown of the Long Lunch</b><small>A mythical row.</small></span><pb-rarity tier="mythical"></pb-rarity></div>
+    </div>
+  </div>
+</section>
+
+<section class="g-sec" data-shot="marks-shapes"><h2>Colour shapes</h2><p>The Accessibility switch's patterns (UI-14b adds the switch; the bar's Colour shapes button turns it on for the whole page). Here always on: statuses striped, dotted and barred, drops cross-hatched, HP striped under half and cross-hatched under a quarter.</p>
+  <div class="g-stack g-shapes">
+    <div class="g-row"><pb-tag kind="status" mark="brn"></pb-tag><pb-tag kind="status" mark="par"></pb-tag><pb-tag kind="status" mark="slp"></pb-tag><pb-tag kind="stat" stat="lev" stages="2"></pb-tag><pb-tag kind="stat" stat="hus" stages="-2"></pb-tag><pb-tag kind="effect" mark="confused" turns="2"></pb-tag><pb-tag kind="effect" mark="soaked" turns="3"></pb-tag><pb-tag kind="effect" mark="stones"></pb-tag></div>
+    <div class="g-row"><pb-tag big kind="status" mark="brn"></pb-tag><pb-tag big kind="status" mark="par"></pb-tag><pb-tag big kind="status" mark="slp"></pb-tag><pb-tag big kind="stat" stat="lev" stages="-1"></pb-tag></div>
+    <pb-stat-bar kind="hp" value="80" max="100" label="HP 80 of 100"></pb-stat-bar>
+    <pb-stat-bar kind="hp" value="40" max="100" label="HP 40 of 100"></pb-stat-bar>
+    <pb-stat-bar kind="hp" value="15" max="100" label="HP 15 of 100"></pb-stat-bar>
+  </div>
+</section>
+
 <section class="g-sec" data-shot="payout"><h2>Payout</h2><p>pb-payout: its rows slam in one by one and Research counts up (Play again; a tap skips to the end).</p>
   <div class="g-stack">
     <pb-panel><pb-payout id="gPayout" total="1180" total-label="Research" rows='[{"label":"Moneys left","note":"340 Moneys at half","value":170},{"label":"Items at half price","value":95},{"label":"Billies released","note":"2 Billies","value":60},{"label":"Nodes cleared","note":"7 × 75","value":525},{"label":"Win bonus","value":400},{"label":"Unpaid clinic bill","value":-70}]'></pb-payout></pb-panel>
     <div class="g-row"><button class="pb small" id="gPayoutPlay">Play again</button><button class="pb small" id="gCoinUp">Add 1,000 Research to the chip above</button></div>
+  </div>
+</section>
+
+<!-- SY-3: the Bureau's mark (docs/phases/style-track.md): its emblem (game/art/ui/bureau.svg) and pb-stamp, with the
+     words from factions.json look.stamps (gallery.js puts the data's words in) -->
+<section class="g-sec" data-shot="stamps"><h2>Bureau stamps</h2><p>pb-stamp (SY-3): a word in a rough double border, red ink, slammed on at a slant; only where the Bureau is. The emblem is a bean on a lost-property tag (art/ui/bureau.svg). The words are factions.json's (look.stamps).</p>
+  <div class="g-stack">
+    <pb-panel><div class="g-stack">
+      <div class="g-row"><img class="g-emblem" src="../game/art/ui/bureau.svg" width="36" height="36" alt="The Bureau's emblem"><span class="g-form"><b>Bureau of Lost, Found and Beans</b><span class="tnum" id="gForm">Form 7B</span></span></div>
+      <div class="g-row"><img class="g-emblem" src="../game/art/ui/bureau.svg" width="22" height="22" alt=""><img class="g-emblem" src="../game/art/ui/bureau.svg" width="36" height="36" alt=""><img class="g-emblem" src="../game/art/ui/bureau.svg" width="72" height="72" alt=""></div>
+      <div class="g-row g-stamps" id="gStamps"><pb-stamp still data-k="retrieved" word="RETRIEVED" tilt="-8"></pb-stamp><pb-stamp still data-k="void" word="VOID" tilt="6"></pb-stamp><pb-stamp still data-k="denied" word="DENIED" tilt="-4"></pb-stamp><pb-stamp still data-k="pending" word="PENDING" tilt="9"></pb-stamp><pb-stamp still data-k="filed" word="FILED" tilt="-10"></pb-stamp></div>
+      <div class="g-row g-stamps"><pb-stamp still word="DENIED" size="sm"></pb-stamp><pb-stamp still word="DENIED"></pb-stamp><pb-stamp still word="DENIED" size="lg"></pb-stamp></div>
+    </div></pb-panel>
+    <div class="g-row"><button class="pb small" id="gStampPlay">Stamp them again</button></div>
+  </div>
+</section>
+
+<!-- UI-17: idle life and big moments (docs/phases/ui-track.md Part 2, "Alive, without clutter") -->
+<section class="g-sec" data-shot="alive"><h2>Idle life and big moments</h2><p>UI-17: pb-foil, the prism sheen on a Coat's tag and on a rare or mythical frame; the main action's glint; today's forecast icon. In the game at most two kinds of idle loop play at once (ui-idle.js, logic/idle-life.js), none under Calm or Reduced, and Flashes off softens the glint and the foil. Here they stay still (as in the pictures) until Play the idle loops. pbBurst (a catch, a level-up) and pb-name-banner (a boss's name) on demand.</p>
+  <div class="g-stack">
+    <pb-panel><div class="g-stack">
+      <div class="g-row"><span class="u-tag coat">Sunset Coat<pb-foil></pb-foil></span><button class="pb gold small">Travel here</button><pb-button kind="gold">Start the run</pb-button><span class="mc-wx"><span class="wx-now"><i class="uico" data-ico="sun" style="width:14px;height:14px" aria-hidden="true"></i></span>Sunny</span></div>
+      <div class="g-row"><pb-pick-card heading="Lucky Coin" sub="Perk" rarity="rare">Found Moneys go up a tenth.</pb-pick-card><pb-pick-card heading="Golden Bean" sub="Perk" rarity="mythical">Every Billie heals a little each turn.</pb-pick-card></div>
+      <div class="g-alive" id="gAliveBox"></div>
+    </div></pb-panel>
+    <div class="g-row"><button class="pb small" id="gIdlePlay">Play the idle loops</button><button class="pb small" id="gBurstPlay">Catch and level-up bursts</button><button class="pb small" id="gBannerPlay">A boss's banner</button></div>
   </div>
 </section>
 

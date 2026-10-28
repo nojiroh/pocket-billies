@@ -15,7 +15,8 @@
 // - studio track ST-3: partKits.json against its schema, and every part's picture is there at its size,
 // - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below),
 // - UI-1: uiTheme.json against its schema, and its text reads on its ground and surface (4.5:1, light and dark; UI-3:
-//   danger and primary at 3:1, screens' overrides too),
+//   danger and primary at 3:1, screens' overrides too; UI-11: the colour code's shades and fills on every palette, and
+//   each screen's set of colours, the types included, apart),
 // - Studio plan T1.3: the Studio's scene and road checks (game/js/logic/data-checks.js); their warnings are printed.
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';

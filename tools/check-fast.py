@@ -117,6 +117,11 @@ def run_world(pg, base):
     if not pg.evaluate(nav_tap('map')): raise Exception('no Map tab on the bottom bar')
     if not until(pg, "typeof worldBowl!=='undefined'&&worldBowl.on&&worldBowl.frames>=3&&!!worldBowl.spots&&worldBowl.spots.length===LOCATIONS.length", 30):
         raise Exception('the map didn’t open as the bowl with the run’s places')
+    # UI-8c: the run's places are drawn as their pixel icons (art/ui/node-*.svg), the names in the voice font
+    if not until(pg, "Object.keys(runPinArt.pics).length>0&&Object.keys(runPinArt.pics).every(k=>k.startsWith('node-'))", 15):
+        raise Exception(f"the run's places aren't drawn as their icons (loaded: {pg.evaluate('Object.keys(runPinArt.px)')})")
+    font = pg.evaluate("[bowlFont.fam,getComputedStyle(document.documentElement).getPropertyValue('--font-voice').trim()]")
+    if not font[0] or font[0] != font[1]: raise Exception(f"the bowl's names are in {font[0]!r}, not the voice font {font[1]!r}")
     pg.evaluate(nav_tap('map'))   # the open tab again: back to the world
     drawing(pg)
     n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
@@ -172,6 +177,14 @@ def bowl_map(pg, base):
     if not until(pg, "!document.querySelector('.pcard-wrap')", 15): raise Exception('a postcard never closed')
     hit = pg.evaluate("(()=>{const r=worldMap.cv.getBoundingClientRect();if(r.height<innerHeight*.9)return 'a map layer '+Math.round(r.height)+' px high';for(const fy of [.2,.3,.4,.5])for(const fx of [.3,.5,.7]){const e=document.elementFromPoint(innerWidth*fx,innerHeight*fy);if(e===worldMap.cv)return ''}const e=document.elementFromPoint(innerWidth/2,innerHeight/2),p=e&&e.parentElement;return e?e.tagName+'#'+e.id+'.'+e.className+(e.src?' src '+String(e.src).split('/').pop().slice(0,40):'')+' in '+(p?p.tagName+'#'+p.id+'.'+p.className:'?'):'nothing'})()")
     if hit: raise Exception(f'a touch on the map lands on {hit}, not the map')
+    # UI-8c: the map's seven buttons are the kit's 44 px chips with the icon set's pictures (no typed symbols), and
+    # the look-around group stands clear of the place card
+    chips = pg.evaluate("""(()=>{const out=[],bs=[...document.querySelectorAll('.map-full .mapctl .mbtn,.map-full .mapview .mbtn')];
+      for(const b of bs){const r=b.getBoundingClientRect();if(Math.round(r.width)<44||Math.round(r.height)<44||!b.querySelector('.uico')||b.textContent.trim())out.push((b.dataset.a||b.dataset.k)+' '+Math.round(r.width)+'x'+Math.round(r.height))}
+      const v=document.querySelector('.map-full .mapview'),c=document.querySelector('#mapcard');let over='';
+      if(v&&c){const a=v.getBoundingClientRect(),k=c.getBoundingClientRect();if(a.bottom>k.top+.5&&a.top<k.bottom&&a.right>k.left&&a.left<k.right)over='the look-around group overlaps the card by '+Math.round(a.bottom-k.top)+' px'}
+      return [bs.length,out,over]})()""")
+    if chips[0] != 7 or chips[1] or chips[2]: raise Exception(f'the map’s buttons: {chips[0]} of 7; not 44 px chips with an icon: {chips[1]}; {chips[2]}')
     pg.set_viewport_size({'width': 400, 'height': 300})
     # the ground's terrain map fills and the terrain pictures go up (graphics off: nothing is judged by eye)
     if not until(pg, "!!(worldBowl.ground&&worldBowl.ground.terrain&&worldBowl.ground.terrain.ready&&worldBowl.ground.ok)", 60): raise Exception('the terrain never got ready')
@@ -893,7 +906,7 @@ def relics(pg, base):
     if len(got) != 6 or any(w != 36 or not f for w, f in got): raise Exception(f'the Perks tab’s pictures: {got}')
     # PK-3: a held Perk's counter on its row: Click Pen at 5 of 8, a spent Warranty Card VOID (put back after)
     cnt = pg.evaluate("(()=>{const r=saveData.run,keep=[r.perks.slice(),r.perkState];r.perks=['click_pen','warranty_card',...r.perks.slice(2)];r.perkState={'click_pen/0':{n:5},'warranty_card/0':{used:1}};render();const got=[...document.querySelectorAll('.s-perks .bag-row .note')].slice(0,2).map(e=>e.textContent);r.perks=keep[0];if(keep[1])r.perkState=keep[1];else delete r.perkState;render();return got})()")
-    if cnt != ['Uncommon · 5/8', 'Rare · VOID']: raise Exception(f'the Perks tab’s counters: {cnt}')
+    if cnt != ['5/8', 'VOID']: raise Exception(f'the Perks tab’s counters: {cnt}')
     pg.evaluate("uiState.tab='walk';render();0")
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
@@ -1050,6 +1063,8 @@ def lab(pg, base):
     rows, want = pg.evaluate("[document.querySelectorAll('.s-lab .lab-row').length,Object.keys(UNLOCK_DATA.unlocks).length]")
     if rows != want: raise Exception(f'the board shows {rows} rows of {want}')
     cost = pg.evaluate("UNLOCK_DATA.unlocks.shop_revive.cost")
+    # UI-8b: the taps on a phone-sized page: on this page's 300 px the wide map tile's bar (198 px) covers every row
+    pg.set_viewport_size({'width': 400, 'height': 760}); time.sleep(.3)
     pg.click(".s-lab [data-a=lab-buy][data-k=shop_revive]")
     st = pg.evaluate("[saveData.meta.research,!!saveData.meta.unlocks.shop_revive]")
     if st != [500 - cost, True]: raise Exception(f'buying Revives: Research and owned {st}')
@@ -1060,6 +1075,7 @@ def lab(pg, base):
     pg.evaluate("uiState.modal=null;uiState.mq=[];stationMenu(walkView.sc.props.find(q=>q.act==='station'));0")
     pg.click("#ov .fly-sheet [data-a=lab-buy][data-k=station_2]")
     if not until(pg, "saveData.meta.crests===1&&!!document.querySelector('#ov .fly-sheet [data-k=biome_ridge]:not([disabled])')", 10): raise Exception('Station Lv 2 didn’t open the ridge lands on the station’s sheet')
+    pg.set_viewport_size({'width': 400, 'height': 300})
     if pg.evaluate("runUnlocks(saveData,UNLOCK_DATA).join()") != 'shop_revive': raise Exception('a run wouldn’t carry the shop unlock')
     keep = pg.evaluate("JSON.stringify(saveData.meta)")
     pg.goto(base + '/index.html?fixture=stored')
@@ -1330,15 +1346,16 @@ def salvage(pg, base):
 
 
 def run_town_life(pg, base):
-    """TW-2: the run fixture's first town (a jump): its folk are there, as many as its houses give (2-6), drawn no more
-    than the graphics cap; they walk, and sent home (their hour moved to the evening) at least one goes indoors; its
-    animals, chat and a named local who talks by their own name"""
+    """TW-2: the run fixture's first town (a jump): its folk are there, as many as its houses give (WM-5: 2 and one for
+    every 2 houses, at most 10), drawn no more than the graphics cap; they walk, and sent home (their hour moved to the
+    evening) at least one goes indoors; its animals, chat and a named local who talks by their own name"""
     i = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='town')")
     if i < 0: raise Exception("the run fixture's map has no town")
     node = pg.evaluate(f"runWorldNode({i})")
     go_scene(pg, node, 90)
-    want = pg.evaluate(f"mapById(LOCATIONS[{node}].mapId).folk")
-    if not 2 <= want <= 6: raise Exception(f'the town has {want} folk, not 2-6')
+    want, houses = pg.evaluate(f"(()=>{{const m=mapById(LOCATIONS[{node}].mapId);return [m.folk,(m.town||{{}}).houses??-1]}})()")
+    if not 2 <= want <= 10: raise Exception(f'the town has {want} folk, not 2-10')
+    if houses >= 0 and want != min(10, 2 + houses // 2): raise Exception(f'{want} folk for {houses} houses, not {min(10, 2 + houses // 2)}')
     if not until(pg, f"(walkView.folkAll||[]).length==={want}", 60): raise Exception(f'the folk never came out: {pg.evaluate("(walkView.folkAll||[]).length")} of {want}')
     cap = pg.evaluate("folkCap(engineSetting('quality','townFolk')??10,walkRenderer.q,saveData.preferences&&saveData.preferences.aim)")
     if not until(pg, f"walkView.folk.length<={cap}", 20): raise Exception(f'{pg.evaluate("walkView.folk.length")} folk drawn, over the cap of {cap}')
@@ -1405,6 +1422,32 @@ def run_town_quests(pg, base):
     return f'{name} gave a {held[0]} quest in town {i}; handed in at town {j}'
 
 
+def run_village_stall(pg, base):
+    """WM-5: the run fixture's village (Expedition I's last town): its name says Village; its market stall, tapped,
+    opens a shop of its own with 2 held items at their prices, no Perk and no fresh stock; the town's shop is another"""
+    i = pg.evaluate("saveData.run.map.nodes.findIndex((n,i)=>!!LOCATIONS[runWorldNode(i)].stall)")
+    if i < 0: raise Exception("no town on the run fixture's map has a market stall")
+    node = pg.evaluate(f"runWorldNode({i})")
+    name = pg.evaluate(f"LOCATIONS[{node}].name")
+    if not name.endswith(' Village'): raise Exception(f'the town with a stall is called {name}')
+    go_scene(pg, node, 120)
+    if not pg.evaluate("walkView.sc.props.some(p=>p.act==='stall')"): raise Exception('the village has no market stall')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();"
+                "(()=>{const p=walkView.sc.props.find(q=>q.act==='stall');walkPick({k:'act',p,act:'stall'});return 0})()")
+    if not until(pg, "uiState.modal&&uiState.modal.shop&&document.querySelectorAll('#ov .shop-sheet .ware2').length>0", 15):
+        raise Exception('tapping the market stall opened no shop')
+    sid = pg.evaluate("uiState.modal.shop")
+    if sid != pg.evaluate(f"LOCATIONS[{node}].stall") or sid == pg.evaluate(f"LOCATIONS[{node}].shop"):
+        raise Exception(f'the stall opened {sid}, not its own shop')
+    wares = pg.evaluate(f"SHOPS['{sid}'].stock.map(w=>w.item)")
+    if len(wares) != 2 or not pg.evaluate(f"{json.dumps(wares)}.every(k=>ITEMS[k]&&(ITEMS[k].hold||[]).length)"):
+        raise Exception(f'the stall sells {wares}, not 2 held items')
+    if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the stall offers a Perk')
+    if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shopreroll]')"): raise Exception('the stall offers a fresh stock')
+    pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    return f'{name}: its stall sells {", ".join(wares)}'
+
+
 def waystations(pg, base):
     """RL-12b: the in-game test's own phase, "A run's waystation and stall" (self-test.js), on a copy of the save: the
     first seed with both, the stand tapped (its event's sheet), the stall tapped (its shop's wares), the wild stock"""
@@ -1447,6 +1490,16 @@ def screens(pg, base):
     # side of the minimap tile (Map), in the page's order
     tabs = pg.evaluate("[...document.querySelector('#nav').shadowRoot.querySelectorAll('button')].map(b=>b.dataset.t).join(',')")
     if tabs != 'team,guide,map,bag,lab': raise Exception(f'the bottom bar holds {tabs}')
+    # UI-8b: the map tile is wide and stands out of the bar's frame; every button a 40 px tap target; nothing overlaps
+    bar = pg.evaluate("""(()=>{const n=document.querySelector('#nav'),R=e=>{const q=e.getBoundingClientRect();return [q.left,q.top,q.right,q.bottom]},
+      sr=n.shadowRoot;return {tile:R(sr.querySelector('.map')),tabs:[...sr.querySelectorAll('.tab')].map(R),
+      frame:R(sr.querySelector('.side.l')).map((v,i)=>i===1?v-4:v)}})()""")   # the frame's top: the side's, less its 4 px
+    t, f = bar['tile'], bar['frame']
+    if not t[2] - t[0] > t[3] - t[1] + 20: raise Exception(f'the map tile is not wide: {t}')
+    if not f[1] - t[1] >= 40: raise Exception(f'the map tile stands {f[1] - t[1]:.0f} px out of the bar (40 or more)')
+    for q in bar['tabs']:
+        if q[2] - q[0] < 40 or q[3] - q[1] < 40: raise Exception(f'a bar button under 40 px: {q}')
+        if q[2] > t[0] and q[0] < t[2]: raise Exception(f'a bar button overlaps the tile: {q} and {t}')
     for t, part in (('map', '.map-head,pb-day-chip,.map-full'), ('team', '.u-team .u-hero'), ('guide', '.dex,.ledger,.lrow'),
                     ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]'), ('lab', '.lab-sec .lab-row')):
         if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
@@ -1771,7 +1824,8 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("Held items: a pick of them, who holds it, the sheet, Take off (RL-12c)", held_items),
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
-             ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests)]),
+             ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests),
+             ("A run's village: its name, its market stall's own shop of 2 held items, no Perk (WM-5)", run_village_stall)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),

@@ -25,6 +25,7 @@ expose({
   PbButton: [() => PbButton],
   PbCard: [() => PbCard],
   PbField: [() => PbField],
+  PbFoil: [() => PbFoil],
   PbPanel: [() => PbPanel],
   PbPill: [() => PbPill],
   PbSheet: [() => PbSheet],
@@ -37,10 +38,21 @@ expose({
   edgeLayer: [() => edgeLayer],
   html: [() => html],
   inboxShown: [() => inboxShown, v => (inboxShown = v)],
+  motionNow: [() => motionNow],
+  msOf: [() => msOf],
   nothing: [() => nothing],
+  patternVars: [() => patternVars],
+  pbBump: [() => pbBump, v => (pbBump = v)],
+  pbBurst: [() => pbBurst, v => (pbBurst = v)],
+  pbDoneHTML: [() => pbDoneHTML, v => (pbDoneHTML = v)],
+  pbDrawDone: [() => pbDrawDone, v => (pbDrawDone = v)],
   pbFloat: [() => pbFloat, v => (pbFloat = v)],
+  pbFlyTo: [() => pbFlyTo, v => (pbFlyTo = v)],
   pbInboxDot: [() => pbInboxDot, v => (pbInboxDot = v)],
   pbInboxPop: [() => pbInboxPop, v => (pbInboxPop = v)],
+  pbNudge: [() => pbNudge, v => (pbNudge = v)],
+  pbSlideBar: [() => pbSlideBar, v => (pbSlideBar = v)],
+  pbSound: [() => pbSound, v => (pbSound = v)],
   reduced: [() => reduced],
   shadowLayer: [() => shadowLayer],
   shaped: [() => shaped],
@@ -51,9 +63,16 @@ expose({
 /* to-module: end */
 export const { LitElement, css, html, nothing } = /** @type {any} */ (self).PB_LIT;
 
-export const reduced = () =>
-  document.documentElement.dataset.motion === 'reduced' ||
-  (typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches);
+/* UI-16a: the Animation level the page plays at (settings-screen.js writes it on <html data-motion>: full, calm or
+   reduced); a page that never wrote one follows the phone */
+export const motionNow = () => {
+  const m = document.documentElement.dataset.motion;
+  if (m === 'full' || m === 'calm' || m === 'reduced') return m;
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 'reduced'
+    : 'full';
+};
+export const reduced = () => motionNow() === 'reduced';
 
 /* shared look: glass surface, voice font, focus ring */
 const base = css`
@@ -119,6 +138,21 @@ const shaped = css`
   }
 `;
 /* the three layers' markup around a part's content */
+/* UI-14a: the Colour shapes switch's patterns (the owner's answer 11; logic/marks.js MARK_PATTERNS says which colour
+   takes which). They are drawn in --pat-ink, which tokens.css keeps transparent until :root[data-shapes='on'], so they
+   cost nothing when off; defined on each part's host so a box that sets --pat-ink itself (the gallery) shows them too.
+   A part lays one over its colour: background: var(--pat-stripe), var(--fill) */
+export const patternVars = css`
+  :host {
+    --pat-stripe: repeating-linear-gradient(135deg, var(--pat-ink, transparent) 0 1.5px, transparent 1.5px 5px);
+    --pat-cross:
+      repeating-linear-gradient(45deg, var(--pat-ink, transparent) 0 1px, transparent 1px 5px),
+      repeating-linear-gradient(135deg, var(--pat-ink, transparent) 0 1px, transparent 1px 5px);
+    --pat-bars: repeating-linear-gradient(90deg, var(--pat-ink, transparent) 0 1.5px, transparent 1.5px 4px);
+    --pat-dots: radial-gradient(circle, var(--pat-ink, transparent) 0 1px, transparent 1.5px) 0 0 / 4px 4px;
+    --pat-rise: repeating-linear-gradient(0deg, var(--pat-ink, transparent) 0 1px, transparent 1px 4px);
+  }
+`;
 const shadowLayer = () => html`<span class="sh" part="shadow" aria-hidden="true"></span>`;
 const edgeLayer = () => html`<span class="edge" part="edge" aria-hidden="true"></span>`;
 
@@ -294,10 +328,6 @@ const PbButton = class extends LitElement {
       :host([wide]) {
         display: block;
       }
-      :host(:active:not([disabled])) {
-        transform: scale(0.96);
-        transition-duration: 80ms;
-      }
       .face {
         width: 100%;
         min-height: var(--tap);
@@ -315,6 +345,27 @@ const PbButton = class extends LitElement {
       }
       :host([kind='gold']) .edge {
         background: linear-gradient(180deg, rgba(255, 255, 255, 0.85), color-mix(in srgb, var(--gold-b) 60%, #000));
+      }
+      /* UI-17: the main action's glint, idle life (ui-idle.js: --idle-glint names the keyframes only while it is one of
+         the screen's two idle loops; --sheen-a is SY-1's flash rule) */
+      :host([kind='gold']) .face::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: var(--glint-band);
+        transform: translateX(-120%);
+        opacity: var(--sheen-a, 0);
+        animation: var(--idle-glint, none) var(--idle-glint-ms, 7s) linear infinite;
+      }
+      @keyframes pb-glint {
+        0%,
+        88% {
+          transform: translateX(-120%);
+        }
+        100% {
+          transform: translateX(120%);
+        }
       }
       :host([kind='dark']) .face {
         color: #fff;
@@ -342,11 +393,6 @@ const PbButton = class extends LitElement {
       }
       .face:disabled {
         cursor: default;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        :host(:active:not([disabled])) {
-          transform: none;
-        }
       }
     `,
   ];
@@ -392,7 +438,8 @@ const PbSheet = class extends LitElement {
         width: min(calc(100% - 2 * var(--gutter)), 560px);
         isolation: isolate;
         transform: translateX(-50%) translateY(var(--dy, 0px));
-        animation: wipe var(--m-slow) var(--ease-out) backwards;
+        /* UI-16a: under Reduced (--m-k 0) it is there at once, behind the scrim's fade */
+        animation: wipe calc(var(--m-slow) * var(--m-k, 1)) var(--ease-out) backwards;
       }
       .sh,
       .edge {
@@ -463,11 +510,6 @@ const PbSheet = class extends LitElement {
           opacity: 0;
         }
       }
-      @media (prefers-reduced-motion: reduce) {
-        .frame {
-          animation: fade 120ms linear both;
-        }
-      }
     `,
   ];
   constructor() {
@@ -530,7 +572,7 @@ const PbSheet = class extends LitElement {
 
 /* the message under the top bar: a long hexagon of glass with a gold diamond */
 const PbToast = class extends LitElement {
-  static properties = { text: {}, n: { type: Number } };
+  static properties = { text: {}, n: { type: Number }, done: { type: Boolean } };
   static styles = [
     base,
     shaped,
@@ -543,7 +585,8 @@ const PbToast = class extends LitElement {
         max-width: calc(100vw - 2 * var(--gutter));
         transform: translateX(-50%) translateY(var(--dy, 0px));
         touch-action: none;
-        animation: drop var(--m-slow) var(--spring) both;
+        /* UI-16a: no drop under Reduced (--m-k 0) */
+        animation: drop calc(var(--m-slow) * var(--m-k, 1)) var(--spring) both;
         --k-clip: var(--clip-toast);
         --k-edge: var(--edge-toast);
         --k-ring: var(--ring-toast);
@@ -571,15 +614,16 @@ const PbToast = class extends LitElement {
         margin-left: var(--s1);
         color: var(--text2);
       }
+      /* UI-16a: something done: a check that draws itself (pbDrawDone) */
+      .ok {
+        flex: none;
+        display: inline-flex;
+        color: var(--sig-good-text, currentColor);
+      }
       @keyframes drop {
         from {
           opacity: 0;
           transform: translateX(-50%) translateY(-24px) scale(0.92);
-        }
-      }
-      @media (prefers-reduced-motion: reduce) {
-        :host {
-          animation: none;
         }
       }
     `,
@@ -588,6 +632,7 @@ const PbToast = class extends LitElement {
     super();
     this.text = '';
     this.n = 1;
+    this.done = false;
     this._y0 = null;
     this.addEventListener('pointerdown', e => {
       this._y0 = e.clientY;
@@ -614,6 +659,7 @@ const PbToast = class extends LitElement {
   }
   /* the count bumps each time the same message comes again */
   updated(changed) {
+    if (changed.has('done') && this.done) pbDrawDone(this.renderRoot.querySelector('.ok svg'));
     const n = this.renderRoot.querySelector('.n');
     if (changed.has('n') && n && !reduced())
       n.animate([{ transform: 'scale(1)' }, { transform: 'scale(1.3)' }, { transform: 'scale(1)' }], {
@@ -623,7 +669,15 @@ const PbToast = class extends LitElement {
   }
   render() {
     return html`<div class="face">
-        <span class="coin" aria-hidden="true"></span><span class="t">${this.text}</span
+        ${
+          this.done
+            ? html`<span class="ok" aria-hidden="true"
+                ><svg width="18" height="18" viewBox="0 0 24 24">
+                  <path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3.5" />
+                </svg></span
+              >`
+            : html`<span class="coin" aria-hidden="true"></span>`
+        }<span class="t">${this.text}</span
         >${this.n > 1 ? html`<b class="n">×${this.n}</b>` : nothing}
       </div>
       ${shadowLayer()}${edgeLayer()}`;
@@ -762,6 +816,7 @@ const PbStatBar = class extends LitElement {
   };
   static styles = [
     base,
+    patternVars,
     css`
       :host {
         display: block;
@@ -770,7 +825,7 @@ const PbStatBar = class extends LitElement {
       }
       :host([kind='xp']) {
         --bar-h: 6px;
-        --bar-c: #4f8fe0;
+        --bar-c: var(--sig-growth-text);
       }
       :host([kind='stat']) {
         --bar-c: linear-gradient(90deg, var(--gold-a), var(--gold-b));
@@ -784,7 +839,7 @@ const PbStatBar = class extends LitElement {
       .fill {
         position: absolute;
         inset: 0 auto 0 0;
-        background: var(--bar-c);
+        background: var(--bar-p, none), var(--bar-c);
         transition: width var(--m-slow) var(--ease-out);
       }
       .fill::after {
@@ -822,6 +877,8 @@ const PbStatBar = class extends LitElement {
         : this.kind === 'hp' && p < 0.5
           ? 'var(--c-hp-mid, var(--gold-b))'
           : null;
+    /* UI-14a: the Colour shapes switch: mid HP striped (amber), low HP cross-hatched (red) */
+    const pat = c ? `;--bar-p:var(--pat-${p < 0.25 ? 'cross' : 'stripe'})` : '';
     const n = this.segments > 0 ? this.segments : 0;
     return html`<div
       class="track"
@@ -831,7 +888,7 @@ const PbStatBar = class extends LitElement {
       aria-valuemax=${this.max}
       aria-valuenow=${this.value}
     >
-      <i class="fill" style="width:${p * 100}%${c ? `;--bar-c:${c}` : ''}"></i>
+      <i class="fill" style="width:${p * 100}%${c ? `;--bar-c:${c}` : ''}${pat}"></i>
       ${n > 1 ? html`<i class="cells" style="--cell:${100 / n}%"></i>` : nothing}
     </div>`;
   }
@@ -965,7 +1022,7 @@ const TYPE_GLYPHS = {
 };
 const GLYPH_URLS = {};
 /** a type's glyph as an SVG data URL ('' for a type with none) @param {string} t */
-function typeGlyphURL(t) {
+export function typeGlyphURL(t) {
   if (t in GLYPH_URLS) return GLYPH_URLS[t];
   const rows = TYPE_GLYPHS[t];
   if (!rows) return (GLYPH_URLS[t] = '');
@@ -982,6 +1039,50 @@ export function typeGlyphHTML(t) {
   return u ? `<i class="ty-g" style="--glyph:url('${u}')" aria-hidden="true"></i>` : '';
 }
 
+/* ---------- UI-17: the foil, a prism sheen sweeping across what wears it ---------- */
+/* One layer for every foil (ui-track.md Part 2: Coats shimmer, rare frames too; the style track's SY-6 carries the
+   same look onto the Billie in battle and on the maps): put <pb-foil></pb-foil> inside a positioned box and it fills
+   it, clipped to it (the box's own clip-path or radius clips it too). A band of the colour code's prism (special,
+   growth, good, value) sweeps across every --idle-foil-ms, transform only. It is idle life: it plays only while foil
+   is one of the screen's two idle kinds (ui-idle.js sets --idle-foil to the keyframes' name), and is as bright as
+   SY-1's flash rule lets it be (--sheen-a: softer with Flashes off, none under Calm and Reduced). --foil-delay offsets
+   one foil from its neighbours. */
+const PbFoil = class extends LitElement {
+  static styles = css`
+    :host {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      overflow: hidden;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    .band {
+      position: absolute;
+      top: -40%;
+      bottom: -40%;
+      left: 0;
+      width: 55%;
+      background: var(--foil-band);
+      opacity: var(--sheen-a, 0);
+      transform: translateX(-200%) skewX(-20deg);
+      animation: var(--idle-foil, none) var(--idle-foil-ms, 5.6s) linear var(--foil-delay, 0s) infinite;
+    }
+    @keyframes pb-foil-sweep {
+      0%,
+      58% {
+        transform: translateX(-200%) skewX(-20deg);
+      }
+      100% {
+        transform: translateX(300%) skewX(-20deg);
+      }
+    }
+  `;
+  render() {
+    return html`<i class="band" aria-hidden="true"></i>`;
+  }
+};
+
 for (const [tag, cls] of /** @type {const} */ ([
   ['pb-panel', PbPanel],
   ['pb-pill', PbPill],
@@ -992,8 +1093,32 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-tabs', PbTabs],
   ['pb-stat-bar', PbStatBar],
   ['pb-field', PbField],
+  ['pb-foil', PbFoil],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);
+
+/** UI-17: a big moment's burst (a catch, a level-up; the stage's 3D side is the VFX track's): a ring and eight rays
+ * in the moment's family from (x, y): page pixels, or pixels inside `o.in` (a positioned box). Reduced: the ring fades
+ * @param {number} x @param {number} y @param {{ tone?: string, size?: number, in?: Element | null }} [o] */
+export function pbBurst(x, y, o = {}) {
+  const el = document.createElement('i'),
+    still = reduced();
+  el.className = 'pb-burst' + (o.in ? ' in' : '') + (still ? ' still' : '');
+  el.setAttribute('aria-hidden', 'true');
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  if (o.tone) el.style.setProperty('--burst', o.tone);
+  if (o.size) el.style.setProperty('--burst-r', o.size + 'px');
+  if (!still)
+    for (let i = 0; i < 8; i++) {
+      const ray = document.createElement('b');
+      ray.style.setProperty('--rot', `${i * 45 + 22.5}deg`);
+      el.appendChild(ray);
+    }
+  (o.in || document.body).appendChild(el);
+  setTimeout(() => el.remove(), msOf('--burst-ms', 560) + 60);
+  return el;
+}
 
 /* a number (+120 Moneys) rising from an element: feedback where the action happened, instead of a toast */
 export function pbFloat(anchor, text, tone) {
@@ -1007,7 +1132,125 @@ export function pbFloat(anchor, text, tone) {
   el.style.top = r.top + 'px';
   if (tone) el.style.color = tone;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), reduced() ? 400 : 1200);
+  /* UI-16a: the pop and the float (motion.css m-float, --m-pop + --m-float) */
+  setTimeout(() => el.remove(), reduced() ? 400 : 900);
+}
+
+/* ================= UI-16a: feedback you caused (docs/phases/ui-track.md "Alive, without clutter") =================
+   Transform and opacity only, on the motion tokens; nothing under Reduced but a fade. The kit makes no sound itself: it
+   sends pb-sound ({k}: a music.json ui sound) on the document, which the game's ui-motion.js plays. */
+const msOf = (/** @type {string} */ name, /** @type {number} */ dflt) => {
+  const v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+  return Number.isFinite(v) ? v : dflt;
+};
+/** asks the game for one of its UI sounds (music.json ui: sheet, flip, count, toast, cant...) @param {string} k */
+export function pbSound(k) {
+  document.dispatchEvent(new CustomEvent('pb-sound', { detail: { k } }));
+}
+/** the selection bar slides from where it was to its new row (a ghost of the slanted bar, over both; the real one is
+ * already there and shows through as the ghost fades) @param {DOMRect | null} from @param {DOMRect | null} to */
+export function pbSlideBar(from, to) {
+  if (!from || !to || reduced() || !to.width || !to.height) return;
+  if (Math.abs(from.left - to.left) < 2 && Math.abs(from.top - to.top) < 2) return;
+  const el = document.createElement('i');
+  el.className = 'pb-slidebar';
+  el.setAttribute('aria-hidden', 'true');
+  Object.assign(el.style, {
+    left: to.left + 'px',
+    top: to.top + 'px',
+    width: to.width + 'px',
+    height: to.height + 'px',
+  });
+  document.body.appendChild(el);
+  const sx = from.width / to.width,
+    sy = from.height / to.height;
+  el.animate(
+    [
+      { transform: `translate(${from.left - to.left}px, ${from.top - to.top}px) scale(${sx}, ${sy})`, opacity: 1 },
+      { transform: 'none', opacity: 1, offset: 0.75 },
+      { transform: 'none', opacity: 0 },
+    ],
+    { duration: msOf('--m-base', 240), easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }
+  ).onfinish = () => el.remove();
+}
+/** the target of a gain bumps (it got something): a small pop; a fade under Reduced @param {Element | null} el */
+function pbBump(el) {
+  if (!el || !el.isConnected || !(/** @type {any} */ (el).animate)) return;
+  const ms = msOf('--m-pop', 150) * 1.4;
+  if (reduced()) el.animate([{ opacity: 0.4 }, { opacity: 1 }], { duration: ms });
+  else el.animate([{ scale: '1' }, { scale: '1.18' }, { scale: '1' }], { duration: ms, easing: 'ease-out' });
+}
+/** a wrong input: the control shakes once (no red flash); with sound, the can't buzz @param {Element | null} el
+ * @param {boolean} [sound] */
+export function pbNudge(el, sound) {
+  if (sound) pbSound('cant');
+  if (!el || !el.isConnected || reduced() || !(/** @type {any} */ (el).animate)) return;
+  el.animate(
+    [
+      { translate: '0' },
+      { translate: '-4px 0' },
+      { translate: '4px 0' },
+      { translate: '-3px 0' },
+      { translate: '2px 0' },
+      { translate: '0' },
+    ],
+    { duration: 320, easing: 'ease-out' }
+  );
+}
+/** a gain flies from where it happened to where it goes, and the target bumps when it lands (the Moneys chip, the Bag
+ * or Perks tab). what: the element that flies (an icon). Under Reduced nothing flies; the target only bumps (a fade)
+ * @param {DOMRect | null} from @param {Element | null} target @param {Element} what @param {number} [delay] */
+export function pbFlyTo(from, target, what, delay = 0) {
+  if (!target || !target.isConnected) return;
+  const to = target.getBoundingClientRect();
+  if (!from || reduced() || !to.width) {
+    pbBump(target);
+    return;
+  }
+  const el = document.createElement('span');
+  el.className = 'pb-fly';
+  el.setAttribute('aria-hidden', 'true');
+  el.appendChild(what);
+  document.body.appendChild(el);
+  const x0 = from.left + from.width / 2,
+    y0 = from.top + from.height / 2,
+    x1 = to.left + to.width / 2,
+    y1 = to.top + to.height / 2,
+    lift = Math.min(80, Math.abs(x1 - x0) * 0.25 + 30),
+    at = (/** @type {number} */ x, /** @type {number} */ y, /** @type {number} */ k) =>
+      `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${k})`;
+  el.animate(
+    [
+      { transform: at(x0, y0, 0.6), opacity: 0 },
+      { transform: at(x0, y0 - 10, 1.15), opacity: 1, offset: 0.2 },
+      { transform: at((x0 + x1) / 2, Math.min(y0, y1) - lift, 1), opacity: 1, offset: 0.55 },
+      { transform: at(x1, y1, 0.55), opacity: 0.9 },
+    ],
+    { duration: msOf('--m-float', 600), delay, easing: 'cubic-bezier(0.4, 0, 0.6, 1)', fill: 'backwards' }
+  ).onfinish = () => {
+    el.remove();
+    pbBump(target);
+  };
+}
+/** a check mark that draws itself (motion.css m-done; shadow roots draw it with pbDrawDone) */
+function pbDoneHTML(size = 16) {
+  return `<svg class="m-done" width="${size}" height="${size}" viewBox="0 0 24 24" aria-hidden="true"><path pathLength="1" d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="square"/></svg>`;
+}
+/** draws a done check's path inside a shadow root (motion.css's m-done can't reach in) @param {Element | null} svg */
+function pbDrawDone(svg) {
+  const p = svg && svg.querySelector('path');
+  if (!p || reduced()) return;
+  p.animate(
+    [
+      { strokeDasharray: '1', strokeDashoffset: '1' },
+      { strokeDasharray: '1', strokeDashoffset: '0' },
+    ],
+    {
+      duration: msOf('--m-slow', 380),
+      easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+      fill: 'backwards',
+    }
+  );
 }
 
 /* the inbox dot on the portrait: how many notices wait (0: no dot). The top bar is redrawn often, so the dot pops

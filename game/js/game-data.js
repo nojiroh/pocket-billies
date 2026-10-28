@@ -74,6 +74,7 @@ expose({
   TRAINERS: [() => TRAINERS],
   TYPES: [() => TYPES],
   TYPE_COLORS: [() => TYPE_COLORS],
+  TYPE_GLOW: [() => TYPE_GLOW],
   TYPE_RESISTED_BY: [() => TYPE_RESISTED_BY],
   TYPE_STRONG_AGAINST: [() => TYPE_STRONG_AGAINST],
   UNLOCKS: [() => UNLOCKS],
@@ -146,6 +147,11 @@ export const TYPES = gameData.types.map(t => t.id);
 export const TYPE_COLORS = Object.fromEntries(gameData.types.map(t => [t.id, [t.color, t.text || '#fff']]));
 provide({ TYPE_COLORS }); /* to-module */
 TYPE_COLORS.None = [gameData.untyped.color, gameData.untyped.text || '#fff'];
+/** UI-13: a type's colour in battle's 3D effects (rings, beams): `glow`, brighter than the one-lightness `color` the
+ * page's tiles, pills and plates use, so the effects keep their look on the dark stage */
+export const TYPE_GLOW = Object.fromEntries(gameData.types.map(t => [t.id, t.glow || t.color]));
+provide({ TYPE_GLOW }); /* to-module */
+TYPE_GLOW.None = gameData.untyped.glow || gameData.untyped.color;
 export const TYPE_STRONG_AGAINST = Object.fromEntries(
   gameData.types.map(t => [t.id, (t.strong || []).filter(x => TYPE_COLORS[x])])
 );

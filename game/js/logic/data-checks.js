@@ -14,7 +14,8 @@ import { expose } from '../test-globals.js';
 import { ZOOM_STOPS, stopsProblems } from '../hooks.js';
 import { lineSpeciesIds } from './forms.js';
 import { CLIMATE_WEATHER_ODDS, WEATHER_TYPE_BOOSTS } from './weather.js';
-import { uiThemeContrast } from './ui-theme.js';
+import { UI_SIGNALS } from './signals.js';
+import { uiSignalProblems, uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
@@ -76,6 +77,7 @@ expose({
   HOLD_KINDS: [() => HOLD_KINDS],
   PERK_NEEDS: [() => PERK_NEEDS],
   PERK_THEMES: [() => PERK_THEMES],
+  RARITY_TIERS: [() => RARITY_TIERS],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
   RUN_MAP_ROLE_TYPES: [() => RUN_MAP_ROLE_TYPES],
@@ -490,7 +492,7 @@ export function dataRunMapRules(D) {
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
   {
     const M = D.rules && D.rules.run && D.rules.run.map,
-      KEYS = ['path', 'towns', 'first', 'rest', 'guard', 'last', 'wide', 'cross', 'biomes'],
+      KEYS = ['path', 'towns', 'townSizes', 'first', 'rest', 'guard', 'last', 'wide', 'cross', 'biomes'],
       whole = (/** @type {any} */ r, /** @type {number} */ lo, /** @type {number} */ hi) =>
         Array.isArray(r) && r.length === 2 && r.every(v => Number.isInteger(v) && v >= lo && v <= hi) && r[0] <= r[1];
     if (!M || typeof M !== 'object') problem('rules.json', 'run.map missing');
@@ -511,6 +513,40 @@ export function dataRunMapRules(D) {
               );
           }
         });
+      /* WM-5: the town sizes: each one's cells ([wide, tall], 1-4 by 1-4, growing), and by Expedition a list of sizes
+         for every town count run.map.towns allows; run.town.sizes has each of them */
+      const TS = M.townSizes;
+      if (TS !== undefined) {
+        const C = TS && TS.cells && typeof TS.cells === 'object' ? TS.cells : null,
+          names = C ? Object.keys(C) : [];
+        if (!TS || !C || !names.length)
+          problem('rules.json', 'run.map.townSizes: cells (size to [wide, tall]) and order');
+        else {
+          for (const k of Object.keys(TS))
+            if (k !== 'cells' && k !== 'order') problem('rules.json', `run.map.townSizes.${k}: no such rule`);
+          let last = 0;
+          for (const k of names) {
+            const c = C[k];
+            if (!Array.isArray(c) || c.length !== 2 || !c.every(v => Number.isInteger(v) && v >= 1 && v <= 4))
+              problem('rules.json', `run.map.townSizes.cells.${k}: [wide, tall], whole, 1-4`);
+            else if (c[0] * c[1] < last)
+              problem('rules.json', `run.map.townSizes.cells.${k}: smaller than the size before (smallest first)`);
+            else last = c[0] * c[1];
+            if (!((D.rules.run.town || {}).sizes || {})[k])
+              problem('rules.json', `run.map.townSizes.cells.${k}: not in run.town.sizes`);
+          }
+          if (!Array.isArray(TS.order) || !TS.order.length)
+            problem('rules.json', 'run.map.townSizes.order: a list, an Expedition each');
+          else
+            TS.order.forEach((/** @type {any} */ by, /** @type {number} */ e) => {
+              for (let n = towns ? M.towns[0] : 0; towns && n <= M.towns[1]; n++) {
+                const L = by && by[String(n)];
+                if (n && (!Array.isArray(L) || L.length !== n || L.some(k => !names.includes(k))))
+                  problem('rules.json', `run.map.townSizes.order[${e}]["${n}"]: ${n} sizes of cells`);
+              }
+            });
+        }
+      }
       for (const k of ['first', 'rest', 'guard', 'last'])
         if (!(D.nodeTypes || {})[M[k]]) problem('rules.json', `run.map.${k}: no node type "${M[k]}" (nodeTypes.json)`);
       for (const k of ['wide', 'cross'])
@@ -966,7 +1002,45 @@ export function dataRunLoop(D) {
     const TN = R.town;
     if (!rec(TN)) problem('rules.json', 'run.town missing');
     else {
-      only(TN, ['locals', 'names', 'chat'], 'run.town');
+      only(TN, ['locals', 'sizes', 'stall', 'names', 'chat'], 'run.town');
+      /* WM-5: each size's word, houses (fewest, most: whole, 1-24), market stall (0 or 1) and quest givers (1 or 2), as
+         mapgen.js mapgenTownDial takes them; the stall's wares: held items (items.json with hold rows) by weight */
+      if (TN.sizes !== undefined) {
+        if (!rec(TN.sizes)) problem('rules.json', 'run.town.sizes: size to its word, houses, stall and givers');
+        else
+          for (const [k, Z] of Object.entries(TN.sizes)) {
+            const H = rec(Z) && Z.houses;
+            if (
+              !rec(Z) ||
+              typeof Z.word !== 'string' ||
+              !/^[A-Z][A-Za-z ]{1,19}$/.test(Z.word) ||
+              !Array.isArray(H) ||
+              H.length !== 2 ||
+              !whole(H[0], 1, 24) ||
+              !whole(H[1], H[0], 24) ||
+              (Z.stall !== 0 && Z.stall !== 1) ||
+              (Z.givers !== 1 && Z.givers !== 2)
+            )
+              problem(
+                'rules.json',
+                `run.town.sizes.${k}: word, houses [fewest, most] (1-24), stall 0 or 1, givers 1 or 2`
+              );
+            else only(Z, ['word', 'houses', 'stall', 'givers'], `run.town.sizes.${k}`);
+          }
+      }
+      if (TN.stall !== undefined) {
+        const P = rec(TN.stall) && rec(TN.stall.pick) ? Object.entries(TN.stall.pick) : [];
+        if (!rec(TN.stall) || !whole(TN.stall.more, 1, 6) || !P.some(([, w]) => w > 0))
+          problem('rules.json', 'run.town.stall: more (whole, 1-6) and pick (held items by weight)');
+        else only(TN.stall, ['more', 'pick'], 'run.town.stall');
+        for (const [w, n] of P) {
+          const I = (D.items || {})[w];
+          if (!I || !Array.isArray(I.hold) || !I.hold.length || !(I.price > 0))
+            problem('rules.json', `run.town.stall.pick.${w}: not a held item with a price (items.json)`);
+          if (typeof n !== 'number' || !(n >= 0))
+            problem('rules.json', `run.town.stall.pick.${w}: a weight of 0 or more`);
+        }
+      }
       const L = TN.locals;
       if (!Array.isArray(L) || L.length !== 2 || !whole(L[0], 0, 4) || !whole(L[1], L[0], 4))
         problem('rules.json', 'run.town.locals: [fewest, most], whole, 0-4');
@@ -1022,18 +1096,24 @@ export function dataRobots(D, valid = () => true) {
 }
 // UI-1: the UI's look: the schema, then the colours read on the ground and on a solid surface (UI-3: text and quiet
 // text at 4.5:1, danger and primary at 3:1) in the defaults, every preset and every screen's override, both sides
-// (logic/ui-theme.js uiThemeContrast, which the Studio's Check uses too)
+// (logic/ui-theme.js uiThemeContrast, which the Studio's Check uses too); UI-11: the colour code (uiSignalProblems)
 /** UI-1: uiTheme.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataUiTheme(D, valid = () => true) {
   /** @type {DataProblem[]} */
   const out = [],
     problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]);
-  if (D.uiTheme && valid('uiTheme.schema.json', D.uiTheme, 'uiTheme.json'))
+  if (D.uiTheme && valid('uiTheme.schema.json', D.uiTheme, 'uiTheme.json')) {
     for (const f of uiThemeContrast(D.uiTheme))
       problem(
         'uiTheme.json',
         `${f.where || 'defaults'} ${f.side}: ${f.fg} on ${f.bg} reads at ${f.ratio.toFixed(2)}:1, under ${f.min}`
       );
+    // UI-11: the colour code: its shades on every palette, dark text on its fills, and each screen's set apart
+    for (const f of uiSignalProblems(D.uiTheme, Array.isArray(D.types) ? D.types : [])) {
+      const where = f.where ? ' (' + f.where + ')' : '';
+      problem(f.where === 'types' ? 'types.json' : 'uiTheme.json', 'colour code' + where + ': ' + f.msg);
+    }
+  }
   return out;
 }
 // camera track CAM-4b: the zoom stops are the whole game's (engine.json defaults.camera.stops): 3-5 in zoom order,
@@ -1327,7 +1407,8 @@ export function dataArenas(D, valid = () => true) {
   return out;
 }
 // RL-14: factions.json: the schema; each bot is a gem and the right kind of part in each slot (robots.json); its
-// agents' and scrapyard's classes are events.json classes; its wild biomes are biomes; [least, most] in order
+// agents' and scrapyard's classes are events.json classes; its wild biomes are biomes; [least, most] in order; SY-3:
+// its look's stamp words, one word for each moment (the stamp shows it in capitals)
 /** RL-14: factions.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataFactions(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1357,6 +1438,16 @@ export function dataFactions(D, valid = () => true) {
     if (C.agents.bots[0] > C.agents.bots[1]) problem(`${k}.agents.bots: the fewest is more than the most`);
     if (C.scrapyard.trainers[0] > C.scrapyard.trainers[1])
       problem(`${k}.scrapyard.trainers: the fewest is more than the most`);
+    if (C.look) {
+      /* SY-3: one word means one moment, so two moments never stamp the same word */
+      /** @type {Record<string, string>} */
+      const seen = {};
+      for (const [m, w] of Object.entries(/** @type {Record<string, string>} */ (C.look.stamps))) {
+        const W = w.trim().toUpperCase();
+        if (seen[W]) problem(`${k}.look.stamps.${m}: "${w}" is also ${seen[W]}'s word`);
+        seen[W] = m;
+      }
+    }
   }
   return out;
 }
@@ -2255,8 +2346,10 @@ export function fxWhenProblems(f, at, D, problem) {
   }
 }
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
-// limits, and nothing else an item does (a held item is never used up)
+// limits, and nothing else an item does (a held item is never used up); UI-14b: each its rarity, and only they have one
 export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal'];
+/** UI-14b: the loot ladder's tiers (the owner's answer 9): the colour code's rarity ids (logic/signals.js) */
+export const RARITY_TIERS = UI_SIGNALS.filter(s => s[2] === 'rarity').map(s => s[0]);
 /** RL-12c: items.json `hold` @param {any} D @returns {DataProblem[]} */
 export function dataHeldItems(D) {
   /** @type {DataProblem[]} */
@@ -2264,11 +2357,17 @@ export function dataHeldItems(D) {
     problem = (/** @type {string} */ what) => out.push(['items.json', what]);
   for (const [k, I] of Object.entries(D.items || {})) {
     const H = /** @type {any} */ (I).hold;
-    if (H === undefined) continue;
+    if (H === undefined) {
+      if (/** @type {any} */ (I).rarity !== undefined) problem(`${k}.rarity: only a held item has a tier`);
+      continue;
+    }
     if (!Array.isArray(H) || !H.length || H.length > 4) {
       problem(`${k}.hold: a list of 1-4 effect rows`);
       continue;
     }
+    /* UI-14b: a held item's tier on the loot ladder (the colour code's rarity ids), by its price and effect size */
+    if (!RARITY_TIERS.includes(/** @type {any} */ (I).rarity))
+      problem(`${k}.rarity: one of ${RARITY_TIERS.join(', ')}`);
     for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp', 'repair'])
       if (/** @type {any} */ (I)[use] != null) problem(`${k}: a held item can't also be used (${use})`);
     H.forEach((/** @type {any} */ f, /** @type {number} */ n) =>

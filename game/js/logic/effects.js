@@ -76,6 +76,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxDamage: [() => fxDamage, v => (fxDamage = v)],
   // @ts-expect-error -- replaced on purpose
+  fxDamageBy: [() => fxDamageBy, v => (fxDamageBy = v)],
+  // @ts-expect-error -- replaced on purpose
   fxFire: [() => fxFire, v => ((fxFire = v), provide({ fxFire }))],
   fxHealShare: [() => fxHealShare],
   fxIfs: [() => fxIfs],
@@ -106,6 +108,7 @@ expose({
   fxRunMarks: [() => fxRunMarks],
   fxRunPrice: [() => fxRunPrice],
   fxRunRule: [() => fxRunRule],
+  fxSources: [() => fxSources],
   // @ts-expect-error -- replaced on purpose
   fxSpend: [() => fxSpend, v => (fxSpend = v)],
   fxSplice: [() => fxSplice],
@@ -256,6 +259,26 @@ export function fxDamage(fx, hit) {
       (!f.type || f.type === hit.type)
   );
 }
+
+/** UI-16b: which sources changed a hit's damage (the battle's blips): each src's own rows as fxDamage takes them,
+ * kept when they change it, with that multiplier to two places. A report only: calcDamage's number is fxDamage's
+ * @param {Fx[] | null | undefined} fx @param {{ cat: string, type: string, deal: boolean, take: boolean }} hit
+ * @returns {{ src: string, mult: number }[]} */
+export function fxDamageBy(fx, hit) {
+  const out = [];
+  for (const src of new Set((fx || []).map(f => f.src))) {
+    const m = fxDamage(
+      (fx || []).filter(f => f.src === src),
+      hit
+    );
+    if (m !== 1) out.push({ src, mult: Math.round(m * 100) / 100 });
+  }
+  return out;
+}
+
+/** UI-16b: the sources (src) of the rows of one kind, in order, once each (who a held item's heal came from)
+ * @param {Fx[] | null | undefined} fx @param {string} kind */
+export const fxSources = (fx, kind) => [...new Set((fx || []).filter(f => f.kind === kind).map(f => f.src))];
 
 /** the stat stages your Billies on the field get as a battle starts, by stat (summed, within FX_STAGES; none: {})
  * @param {Fx[] | null | undefined} fx @returns {Record<string, number>} */

@@ -465,8 +465,9 @@ export function validRunQuests(e) {
     e.held.length <= 9 &&
     e.held.every(quest) &&
     Array.isArray(e.took) &&
-    e.took.length <= RUN_NODES &&
-    e.took.every((/** @type {any} */ n) => wholeIn(n, 0, RUN_NODES - 1)) &&
+    e.took.length <= 2 * RUN_NODES &&
+    /* WM-5: a town's second giver's offers count RUN_NODES on (run-quests.js questKey) */
+    e.took.every((/** @type {any} */ n) => wholeIn(n, 0, 2 * RUN_NODES - 1)) &&
     wholeIn(e.n, 0, RUN_NODES) &&
     wholeIn(e.paid, 0, RUN_NODES)
   );

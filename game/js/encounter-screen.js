@@ -163,7 +163,7 @@ export function encounterOpen(i, id) {
     btns: E.options.map((o, k) => {
       const st = eventOptionState(o, encHolds, saveData.se, ITEMS, encDna());
       return {
-        l: `${escapeHtml(o.text)}${o.cost ? ` <small>${moneyHTML(o.cost, 12)}</small>` : ''}${o.dna ? ` <small><pb-coin kind="dna" value="${o.dna}" label="DNA"></pb-coin></small>` : ''}${st.ok ? '' : ` <small class="ev-why">${escapeHtml(st.why)}</small>`}`,
+        l: `${escapeHtml(o.text)}${o.cost ? ` <small>${moneyHTML(o.cost, 12)}</small>` : ''}${o.dna ? ` <small><pb-chip kind="dna" value="${o.dna}" label="DNA"></pb-chip></small>` : ''}${st.ok ? '' : ` <small class="ev-why">${escapeHtml(st.why)}</small>`}`,
         c: k === E.options.length - 1 ? 'quiet' : 'dark',
         dis: !st.ok,
         f: () => encounterPick(ev, i, k),

@@ -88,6 +88,7 @@ expose({
   runShopRerolled: [() => runShopRerolled],
   // @ts-expect-error -- replaced on purpose
   runShopStock: [() => runShopStock, v => (runShopStock = v)],
+  runStallStock: [() => runStallStock],
   runWareHeals: [() => runWareHeals],
   // @ts-expect-error -- replaced on purpose
   weatherEffectText: [() => weatherEffectText, v => (weatherEffectText = v)],
@@ -184,11 +185,13 @@ export function runClinic(s, each) {
 }
 
 /** a run town's wares on a day: `always`, then `more` drawn by weight from `pick` (none twice, none already there),
- * as shop stock rows ({item} or {coin}) @param {Run} run @param {number} i the map node @param {number} day
- * @param {{ always: string[], more: number, pick: Record<string, number> }} rule */
-export function runShopStock(run, i, day, rule) {
+ * as shop stock rows ({item} or {coin}); WM-5: `stream` 'stall' for a town's market stall (a stream of its own, no
+ * fresh stock) @param {Run} run @param {number} i the map node @param {number} day
+ * @param {{ always: string[], more: number, pick: Record<string, number> }} rule @param {string} [stream] */
+export function runShopStock(run, i, day, rule, stream = 'shop') {
   /* RS-4: a shop asked for a fresh stock that day draws from a stream of its own (runShopReroll) */
-  const g = rngFrom(runNodeSeed(run.seed, i), 'shop|' + day + (runShopRerolled(run, i, day) ? '|r1' : '')),
+  const again = stream === 'shop' && runShopRerolled(run, i, day),
+    g = rngFrom(runNodeSeed(run.seed, i), stream + '|' + day + (again ? '|r1' : '')),
     out = rule.always.slice(),
     left = Object.fromEntries(Object.entries(rule.pick).filter(([w, n]) => n > 0 && !out.includes(w)));
   for (let k = 0; k < rule.more && Object.keys(left).length; k++) {
@@ -225,6 +228,11 @@ export function runShopOpen(run, i, day, rule, unlockData) {
     always = modHas(run, 'noheal') ? rule.always.filter(w => !heals(w)) : rule.always;
   return runShopStock(run, i, day, { ...rule, always, pick });
 }
+/** WM-5: a village's or a town's market stall's wares on a day (rules.json run.town.stall: `more` held items drawn by
+ * weight, from the node's 'stall' stream; the owner: no Perk, and no fresh stock on Mo's word) @param {Run} run
+ * @param {number} i @param {number} day @param {{ more: number, pick: Record<string, number> }} rule */
+export const runStallStock = (run, i, day, rule) =>
+  runShopStock(run, i, day, { always: [], more: rule.more, pick: rule.pick }, 'stall');
 /** RL-13: whether a shop ware (an item id, or 'coin:<id>') heals or revives a Billie (items.json), for the
  * "No healing" challenge @param {string} ware @param {Record<string, any>} items */
 export const runWareHeals = (ware, items) => {

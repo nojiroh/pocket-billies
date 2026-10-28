@@ -27,6 +27,7 @@ export const SLOW_TESTS = [
   'mapgen-town.test.mjs',
   'route-finds-real.test.mjs',
   'route-trainer-spots.test.mjs',
+  'run-signs.test.mjs',
   'run-sim-scenes.test.mjs',
   'run-world-real.test.mjs',
   'resident-towns.test.mjs',

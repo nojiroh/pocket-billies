@@ -427,3 +427,30 @@ test("RL-13: a region whose dex has only a type's final forms: the leader looks 
     team = L.runLeaderTeam(rngFrom('FINALS', 'team'), flying, [11, 12], data.SPECIES, ['arnault0', 'bezos2']);
   for (const e of team) assert.equal(fn('speciesStep')(data.SPECIES[e.sp]), 0, `${e.sp} at ${e.lvl}`);
 });
+
+test("WM-5: a market stall: 2 held items a day (rules.json run.town.stall) from a stream of its own, the same on a reload, untouched by Mo's fresh stock", () => {
+  const run = runOf('STALLRUN'),
+    S = R.town.stall,
+    held = new Set(Object.keys(GAME_DATA.items).filter(k => (GAME_DATA.items[k].hold || []).length)),
+    stocks = new Set();
+  assert.equal(S.more, 2);
+  for (let day = 1; day <= 12; day++) {
+    const a = L.runStallStock(run, 3, day, S),
+      ids = a.map(w => w.item);
+    assert.deepEqual(a, L.runStallStock(run, 3, day, S), 'the same wares again');
+    assert.equal(a.length, 2);
+    assert.ok(
+      ids.every(k => held.has(k)),
+      `${ids}: held items only`
+    );
+    assert.equal(new Set(ids).size, 2, 'none twice');
+    stocks.add(JSON.stringify(a));
+  }
+  assert.ok(stocks.size > 4, 'the wares change by day');
+  /* a fresh stock on Mo's word re-rolls the town's shop, not its stall */
+  const before = L.runStallStock(run, 3, 2, S),
+    shop = L.runShopStock(run, 3, 2, R.shop);
+  run.reshop = ['3:2'];
+  assert.deepEqual(L.runStallStock(run, 3, 2, S), before);
+  assert.notDeepEqual(L.runShopStock(run, 3, 2, R.shop), shop);
+});

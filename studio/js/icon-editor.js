@@ -351,7 +351,7 @@ ACTIONS.icNew = async () => {
     <label class="chk"><input type="checkbox" id="icNewCopy"> Start as a copy of ${escapeHtml(artBrowser.icon)}</label>
     <p class="help">${
       ui
-        ? 'The game finds an icon by its name (uiIconHTML(&#39;lantern&#39;)). The unit test counts the set (51 now): its owner raises that count when the new icon goes in.'
+        ? 'The game finds an icon by its name (uiIconHTML(&#39;lantern&#39;)). The unit test counts the set (63 now): its owner raises that count when the new icon goes in.'
         : `Name it after what it shows: a Perk’s picture is its id, and the Perk names it (img “${escapeHtml(dir)}/&lt;id&gt;.svg”). A picture nothing names counts as unused.`
     }</p>`,
     [

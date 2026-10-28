@@ -6,6 +6,7 @@
 import { expose } from './test-globals.js';
 import { PYRAMIDS, formatNumber, plural, provide } from './hooks.js';
 import { clamp } from './util.js';
+import { glyphOf, sigVar } from './logic/signals.js';
 /* eslint-disable no-func-assign */
 expose({
   ART_CACHE: [() => ART_CACHE],
@@ -27,10 +28,12 @@ expose({
   darkCopy: [() => darkCopy, v => (darkCopy = v)],
   eggCanvas: [() => eggCanvas, v => (eggCanvas = v)],
   eggHTML: [() => eggHTML, v => (eggHTML = v)],
+  glyphHTML: [() => glyphHTML, v => (glyphHTML = v)],
   hexChannels: [() => hexChannels, v => (hexChannels = v)],
   hexLuminance: [() => hexLuminance, v => (hexLuminance = v)],
   hexToRgb: [() => hexToRgb],
   iconCanvas: [() => iconCanvas, v => (iconCanvas = v)],
+  iconTag: [() => iconTag],
   iconURL: [() => iconURL, v => (iconURL = v)],
   makeCanvas: [() => makeCanvas, v => (makeCanvas = v)],
   makeSeededRandom: [() => makeSeededRandom, v => (makeSeededRandom = v)],
@@ -173,16 +176,31 @@ export const uiIconURL = k =>
   window.NW_ART && window.NW_ART[`ui/${k}.svg`]
     ? window.NW_ART[`ui/${k}.svg`]
     : new URL(`${ART_DIR}ui/${k}.svg`, document.baseURI).href;
-export function uiIconHTML(key, size = 22, url = uiIconURL(key), cls = 'uico') {
-  return `<i class="${cls}" style="--ico:url('${url}');width:${size}px;height:${size}px" aria-hidden="true"></i>`;
+provide({ uiIconURL }); /* to-module */
+/* an icon's tag: `uico` shows the picture, `ugl` (UI-13) uses it as a mask; `vars` adds custom properties; PK-2: `url`
+   another picture drawn the same way (a Perk's) */
+const iconTag = (cls, key, size, vars = '', url = uiIconURL(key)) =>
+  `<i class="${cls}" style="--ico:url('${url}')${vars};width:${size}px;height:${size}px" aria-hidden="true"></i>`;
+export function uiIconHTML(key, size = 22) {
+  return iconTag('uico', key, size);
 }
 /** PK-2: a picture drawn as the UI icons are (an `img`, a Perk's SVG in art's perks folder; items and boons later) at
  * `size` px, a whole multiple of its 36 px so no pixel blurs; without one, the UI icon `fallback`
  * @param {string | undefined} img @param {number} [size] @param {string} [fallback] */
 export function artIconHTML(img, size = 36, fallback = 'relic') {
   return img
-    ? uiIconHTML(fallback, size, new URL(artURL(img), document.baseURI).href, 'uico art-ic')
+    ? iconTag('uico art-ic', fallback, size, '', new URL(artURL(img), document.baseURI).href)
     : uiIconHTML(fallback, size);
+}
+/** UI-13: a mark's glyph (logic/signals.js UI_GLYPHS: a status, a short effect, a family, a pickup's kind), its SVG
+ * as a mask filled with its colour code. `tint`: 'text' the side's text shade (light and dark screens), 'fill' the
+ * fill (on dark glass), 'current' the text's colour (inside a tag that has its own); a neutral one always takes the
+ * text's colour. '' for an unknown mark
+ * @param {string} group @param {string} id @param {number} [size] @param {'text' | 'fill' | 'current'} [tint] */
+export function glyphHTML(group, id, size = 14, tint = 'text') {
+  const G = glyphOf(group, id);
+  if (!G) return '';
+  return iconTag('ugl', G[0], size, G[1] && tint !== 'current' ? `;--tone:var(${sigVar(G[1], tint === 'text')})` : '');
 }
 /** RF-1: a run's money on screen: the coin icon and the number, read aloud as "120 Moneys" (plain text: plural(n, 'Money')) */
 export function moneyHTML(n, size = 14) {

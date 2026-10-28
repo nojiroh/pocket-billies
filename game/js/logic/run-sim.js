@@ -49,6 +49,7 @@ export const MAX_TURNS = 60;
  * - fightAbove: no wild fight while the party's HP is below this share of its full HP
  * - potionBelow: a Potion (potion) on a Billie below this share of its HP, before each wild fight
  * - clinic: a town's clinic whenever someone is hurt and the money is there
+ * - stall: a village's or a town's market stall is looked at, not bought from (its wares noted; WM-5)
  * - pyramidsUpTo, reserve: Pyramids bought in a town shop up to this many held, keeping this much money
  * - catchWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
  * - ring: the throw's ring timing (0 to 1, the page's ring phase; 0.5: a "Great throw")
@@ -136,13 +137,13 @@ export function runSimOn(env) {
   const { simBanner, simDataHash, simSeeds, simSummary } = modules['sim-compare'];
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
-    { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
+    { runArrive, runNext, runTownSize, runWorldNode, runWeather } = modules['run-map'],
     { fieldBadgeKey, fieldMoveState, runSideOpen } = modules['run-side'],
     MOVES = (GAME_DATA.fieldMoves && GAME_DATA.fieldMoves.moves) || {},
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
     { eventAt } = modules.encounters,
-    { runArriveFx, runBuyFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } =
+    { runArriveFx, runBuyFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen, runStallStock } =
       modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
@@ -351,6 +352,10 @@ export function runSimOn(env) {
         genes: 0,
         /** SP-5: Escaped specimens fought */
         escaped: 0,
+        /** WM-5: the towns walked into by size (rules.json run.map.townSizes), and their market stalls
+         * @type {Record<string, number>} */
+        towns: {},
+        stalls: 0,
       };
     try {
       runArrive(s, 0, MAP_DATA);
@@ -371,6 +376,17 @@ export function runSimOn(env) {
         /* a town: heal when hurt; a town or a stall (RL-12b, nodeTypes.json shop): the day's shop (Pyramids up to
            five) */
         if (node.type === 'town') {
+          /* WM-5: its size, and a village's or a town's market stall's wares (noted: the bot buys no held item) */
+          const size = runTownSize(node, R.map.townSizes),
+            Z = size && R.town.sizes ? R.town.sizes[size] : null;
+          if (size) {
+            at.size = size;
+            stats.towns[size] = (stats.towns[size] || 0) + 1;
+          }
+          if (Z && Z.stall && R.town.stall) {
+            at.stall = runStallStock(run, i, run.clock, R.town.stall).map((/** @type {any} */ w) => w.item);
+            stats.stalls++;
+          }
           const { paid } = runClinic(s, fxRunPrice(run, data.PERKS, 'heal', R.healCost));
           if (paid) {
             stats.healed += paid;
@@ -681,6 +697,13 @@ export function runSimOn(env) {
       genes: avg(x => x.genes || 0),
       /* SP-5: Escaped specimens fought a run */
       escaped: avg(x => x.escaped || 0),
+      /* WM-5: towns walked into a run by size, and market stalls */
+      towns: Object.fromEntries(
+        [...new Set(all.flatMap(x => Object.keys(x.towns || {})))]
+          .sort()
+          .map(k => [k, avg(x => (x.towns || {})[k] || 0)])
+      ),
+      stalls: avg(x => x.stalls || 0),
     };
   }
 
