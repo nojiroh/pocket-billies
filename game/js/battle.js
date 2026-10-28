@@ -267,6 +267,9 @@ export function battleResize() {
   });
 }
 export function openBattle() {
+  /* UI-16b: a new battle's strip starts clear (the last battle's stones and delayed hits stayed until the first menu) */
+  fieldUi.stones = [false, false];
+  fieldUi.mail = [0, 0];
   const bs = (saveData.preferences || {}).battleSpeed;
   if (bs && !uiState.dbgSpeed) battleStage.speed = bs === 'fast' ? 1.6 : bs === 'faster' ? 2.2 : 1;
   const area = activeBattle.area || 'grass',
@@ -535,6 +538,8 @@ function boxAnims(ev) {
   if (!an) return;
   /* UI-15: stones that hurt someone are on the field (the strip shows them from here, not a turn early) */
   if (an.fx === 'stones' && an.si != null) fieldUi.stones[ACTOR_SIDE[an.si]] = true;
+  /* UI-16b: a delayed hit that lands leaves the strip */
+  if (an.fx === 'mail' && an.si != null) fieldUi.mail[ACTOR_SIDE[an.si]] = 0;
   if (an.k === 'wild' || an.k === 'enter')
     setTimeout(() => paintBoxes(ev.s, ev.mk, false), an.k === 'wild' ? 620 : 420);
 }
@@ -559,7 +564,8 @@ const FIELD_WEATHER_ICONS = {
 };
 /* the sharp stones each side has, as the turn's playback has shown them so far (the battle runs a turn ahead of what
    is on screen: the strip waits for the event, then reads the field when the turn is over) */
-const fieldUi = { stones: [false, false], mk: null };
+/* UI-16b: and the delayed hits aimed at each side (the turns until the first lands; 0 none) */
+const fieldUi = { stones: [false, false], mail: [0, 0], mk: null };
 function fieldChipHTML(icon, words, turns, cls) {
   /* a 40 px button (the tap rule) around a 24 px chip; `icon` is an icon set name or a glyph's markup (UI-13) */
   const face = icon.startsWith('<') ? icon : uiIconHTML(icon, 14);
@@ -569,18 +575,32 @@ function fieldStripUpdate(mk) {
   const el = $('#fsRow');
   if (!el) return;
   if (mk !== undefined) fieldUi.mk = mk;
-  if (activeBattle && activeBattle.phase !== 'playing')
+  if (activeBattle && activeBattle.phase !== 'playing') {
     fieldUi.stones = [0, 1].map(i => !!(activeBattle.sides[i] && activeBattle.sides[i].stones));
+    fieldUi.mail = [0, 1].map(i => {
+      const M = (activeBattle.sides[i] && activeBattle.sides[i].mail) || [];
+      return M.length ? Math.min(...M.map(h => h.n)) : 0;
+    });
+  }
   const w = typeof battleWeather === 'function' ? battleWeather() : null,
+    /* UI-16b: the effects' glyphs (UI-13), stones and a delayed hit with its turns left */
     side = i =>
-      fieldUi.stones[i]
+      (fieldUi.stones[i]
         ? fieldChipHTML(
-            'scrap',
+            glyphHTML('effect', 'stones', 14, 'fill'),
             `Sharp stones on ${i ? 'their' : 'your'} side: they hurt each Billie that comes in`,
             0,
             'bad'
           )
-        : '',
+        : '') +
+      (fieldUi.mail[i]
+        ? fieldChipHTML(
+            glyphHTML('effect', 'delayed', 14, 'fill'),
+            `A delayed hit lands on ${i ? 'their' : 'your'} side in ${plural(fieldUi.mail[i], 'turn')}`,
+            fieldUi.mail[i],
+            'warn'
+          )
+        : ''),
     m = fieldUi.mk,
     mid =
       (w
@@ -601,7 +621,10 @@ function fieldStripUpdate(mk) {
         : '');
   const h = `<span class="fs-side">${side(0)}</span><span class="fs-mid">${mid}</span><span class="fs-side">${side(1)}</span>`;
   if (el.innerHTML !== h) el.innerHTML = h;
-  $('#fstrip').classList.toggle('on', !!(mid || fieldUi.stones[0] || fieldUi.stones[1]));
+  $('#fstrip').classList.toggle(
+    'on',
+    !!(mid || fieldUi.stones[0] || fieldUi.stones[1] || fieldUi.mail[0] || fieldUi.mail[1])
+  );
 }
 /* a chip's words under the strip for a few seconds (rule 3: never colour alone; the word on tap) */
 function fieldTip(ev) {

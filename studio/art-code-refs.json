@@ -1541,7 +1541,7 @@
  ],
  "atlas": {
   "bag": [
-   "game/js/battle.js:958",
+   "game/js/battle.js:981",
    "game/js/billie-sheet.js:119",
    "game/js/billie-sheet.js:171",
    "game/js/billie-sheet.js:180",
@@ -1581,7 +1581,7 @@
    "game/js/ui-run-kit.js:85"
   ],
   "box": [
-   "game/js/battle.js:1122",
+   "game/js/battle.js:1145",
    "game/js/engine/gpu-counters.js:61",
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
@@ -1632,7 +1632,7 @@
    "game/js/art.js:197",
    "game/js/battle-stage.js:1512",
    "game/js/battle-stage.js:2240",
-   "game/js/battle.js:958",
+   "game/js/battle.js:981",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
    "game/js/logic/marks.js:179",
@@ -1776,7 +1776,7 @@
    "game/js/unit-card.js:178"
   ],
   "leaf": [
-   "game/js/battle.js:340",
+   "game/js/battle.js:343",
    "game/js/boot.js:137",
    "game/js/field-moves.js:146",
    "game/js/logic/placeholder-art.js:270",
@@ -1792,7 +1792,7 @@
    "game/js/world-bowl.js:4202"
   ],
   "moon": [
-   "game/js/battle.js:557",
+   "game/js/battle.js:562",
    "game/js/boot.js:167",
    "game/js/environment.js:658"
   ],
@@ -1817,8 +1817,8 @@
   "pick": [
    "game/js/augment-screen.js:208",
    "game/js/augment-screen.js:230",
-   "game/js/battle.js:773",
-   "game/js/battle.js:1008",
+   "game/js/battle.js:796",
+   "game/js/battle.js:1031",
    "game/js/gene-bank-screen.js:207",
    "game/js/gene-bank-screen.js:229",
    "game/js/logic/data-checks.js:799",
@@ -1874,7 +1874,7 @@
    "game/js/battle-stage.js:2461",
    "game/js/battle-stage.js:2484",
    "game/js/battle-stage.js:2583",
-   "game/js/battle.js:1307",
+   "game/js/battle.js:1330",
    "game/js/billie-sheet.js:83",
    "game/js/billie-sheet.js:157",
    "game/js/billie-sheet.js:214",
@@ -1904,7 +1904,7 @@
    "game/js/game-data.js:166"
   ],
   "tag": [
-   "game/js/battle.js:625",
+   "game/js/battle.js:648",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:236",
    "game/js/ui.js:237"
