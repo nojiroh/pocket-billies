@@ -51,6 +51,7 @@ import {
   partMaxHp,
   plural,
 } from './logic/rules.js';
+import { MARK_STAT_SHORT } from './logic/marks.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
 import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
 import { typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
@@ -524,7 +525,8 @@ function boxAnims(ev) {
   if (an.k === 'wild' || an.k === 'enter')
     setTimeout(() => paintBoxes(ev.s, ev.mk, false), an.k === 'wild' ? 620 : 420);
 }
-const statShortName = k => (STAT_NAMES[k] || k).slice(0, 3).toUpperCase();
+/* UI-16b: Atk, Def, SpA, SpD, Spe (logic/marks.js, as Pokémon Showdown writes them; it printed "SP." for both Sp. stats) */
+const statShortName = k => (MARK_STAT_SHORT[k] || [(STAT_NAMES[k] || k).slice(0, 3)])[0];
 export function paintBoxes(s, mk, anim) {
   paintPlates(s, anim);
   fieldStripUpdate(mk);
