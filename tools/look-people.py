@@ -126,7 +126,8 @@ CAST_JS = """((whos, tilt, dials) => {const ppm=dials.density||engineSetting('pe
  for (const who of whos){const name=figureFor(who), Fig=figureDef(name); if(!Fig) return 'loading';
   const fr=personWalkFrames(who), now=fr&&fr.down&&fr.down[0], row=[now&&now.toDataURL?now.toDataURL('image/png'):null];
   for (const [h,clip,f] of cols){const im=bakeFigure(Fig,clip,f,view(h),ppm,outline,'pixel'); if(!im) return 'loading'; row.push(im.toDataURL('image/png'))}
-  rows.push({who, name, kit: Fig.F.kit||null, height: Math.round(Fig.F.height*100)/100, row})}
+  const pt=figurePortrait(who); if(!pt) return 'loading';
+  rows.push({who, name, kit: Fig.F.kit||null, height: Math.round(Fig.F.height*100)/100, row, portrait: pt.toDataURL('image/png')})}
  return {rows, ppm, report: figureReport()}})"""
 
 
@@ -166,6 +167,19 @@ def cast(pg, t0):
             if i: out.alpha_composite(i.resize((i.width * S, i.height * S), Image.NEAREST), (x * cw * S + (cw * S - i.width * S) // 2, oy + lab + (ch * S - i.height * S)))
     name = f"figure-cast-{CAST.replace(',', '-').replace(':', '')[:60]}-{ppm}ppm-{int(TILT)}deg.png"
     out.save(OUT / name)
+    # CH-3b: the portraits (figures.js figurePortrait: head and shoulders at 160 px a metre), four to a row, at 2 screen
+    # pixels a pixel
+    pts = [(R, dec(R['portrait'])) for R in r['rows']]
+    pw = max(p.width for _, p in pts) * 2 + 16
+    ph = max(p.height for _, p in pts) * 2 + 16 + lab * 2
+    per = 4
+    sheet2 = Image.new('RGBA', (pw * per, ph * ((len(pts) + per - 1) // per)), (228, 222, 206, 255))
+    d2 = ImageDraw.Draw(sheet2)
+    for i, (R, p) in enumerate(pts):
+        ox, oy = (i % per) * pw, (i // per) * ph
+        d2.text((ox + 8, oy + 4), R['who'], fill=(36, 25, 54, 255))
+        sheet2.alpha_composite(p.resize((p.width * 2, p.height * 2), Image.NEAREST), (ox + 8, oy + lab * 2))
+    sheet2.save(OUT / name.replace('figure-cast-', 'figure-portraits-'))
     print(f"[{time.time() - t0:5.0f}s] {name}: {len(rows)} people, the baker {r['report']}", flush=True)
     return {'shot': name, 'people': [{k: R[k] for k in ('who', 'name', 'kit', 'height')} for R, _ in rows], 'figures': r['report']}
 

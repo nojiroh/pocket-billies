@@ -68,6 +68,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   figureView: [() => figureView, v => (figureView = v)],
   // @ts-expect-error -- replaced on purpose
+  finerShape: [() => finerShape, v => (finerShape = v)],
+  // @ts-expect-error -- replaced on purpose
   frontOf: [() => frontOf, v => (frontOf = v)],
   // @ts-expect-error -- replaced on purpose
   hairCutAt: [() => hairCutAt, v => (hairCutAt = v)],
@@ -143,11 +145,14 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86 
  * a part: its joint at `at` from its parent's joint (rest pose, metres), its shape and its colour; `stripe` bands it
  * in a second colour every `every` metres of its height (from `from`) */
 /** @typedef {{ part: string, kind: string, at: Vec3, n: Vec3, w: number, h: number, col?: string,
- *   hollow?: boolean, min?: number, narrow?: boolean }} FaceMark
+ *   hollow?: boolean, min?: number, narrow?: boolean, shut?: boolean, glint?: boolean, shape?: 'oval' | 'arc' | 'cap' }}
+ * FaceMark
  * a mark painted on the picture in whole pixels: on part `part` at `at`, facing `n`, w by h metres, in colour `col`
  * (else the figure's colour named as its kind); `hollow` paints only its edge (a glasses frame); `min` how much it
  * must face the camera to show (else by kind: an eye 0.15, a mouth 0.25, anything else 0.2); `narrow` makes it a
- * pixel wide seen from the side, as an eye is. An 'eye' blinks and
+ * pixel wide seen from the side, as an eye is; `shut` hides it in a blink; `glint: false` keeps an eye's own glint
+ * off (the kit paints bigger ones); `shape` paints it as an oval, a smile's arc or a brow's cap (an arc the other
+ * way up) once it is 3 pixels or more (a portrait). An 'eye' blinks and
  * narrows to a pixel seen from the side; an eye 2 pixels wide and 3 tall or more gets a glint (CH-3b: brows, lashes,
  * glasses, a stache, freckles, a name tag are marks too) */
 /** @typedef {{ swing?: number, arms?: number, bounce?: number, lean?: number, hang?: number, head?: number }}
@@ -156,7 +161,7 @@ export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86 
  * stoop's forward) */
 /** @typedef {{ name: string, height: number, parts: FigurePart[], colours: Record<string, Vec3>, face?: FaceMark[],
  *   gloss?: string[],
- *   gait?: FigureGait, kit?: { head: string, build: string } }} Figure (`kit`: the head shape and build the figure
+ *   gait?: FigureGait, kit?: { head: string, build: string, bust?: number } }} Figure (`kit`: the head shape and build the figure
  * kit chose, logic/figure-kit.js) */
 /** @typedef {{ rot: Vec3[], lift: Vec3[], scale: Vec3[], rootY: number, blink?: boolean }} FigurePose per part (in
  * parts order); `blink` closes the eyes */
@@ -817,9 +822,10 @@ export function shapeTriangles(sh) {
 /**
  * the figure's shapes as triangles, each vertex with its part (one joint) and colour: 8 numbers a vertex (x, y, z, the
  * smooth normal, the part, the colour's place in `colours`: the colours its parts use, at most FIGURE_PAL_MAX)
- * @param {Figure} F @returns {{ data: Float32Array, count: number, colours: string[] }}
+ * @param {Figure} F @param {number} [detail] rings and segments times this (a close-up's finer mesh)
+ * @returns {{ data: Float32Array, count: number, colours: string[] }}
  */
-export function figureMesh(F) {
+export function figureMesh(F, detail = 1) {
   /* only the colours the parts use (face marks are painted, not shaded): the baker's palette holds FIGURE_PAL_MAX */
   const colours = [...new Set(F.parts.map(p => p.col))].filter(k => k in F.colours),
     /** @type {number[]} */ v = [];
@@ -831,7 +837,7 @@ export function figureMesh(F) {
     const ci = Math.max(0, colours.indexOf(p.col)),
       S = p.stripe,
       si = S ? colours.indexOf(S.col) : -1;
-    for (const tri of shapeTriangles(p.shape)) {
+    for (const tri of shapeTriangles(detail > 1 ? finerShape(p.shape, detail) : p.shape)) {
       /* CH-3b: a striped part's triangles take the stripe's colour in every other band of its height */
       const y = (tri[0][1] + tri[1][1] + tri[2][1]) / 3,
         c = S && si >= 0 && Math.floor((y - (S.from || 0)) / S.every) % 2 === 1 ? si : ci;
@@ -839,6 +845,19 @@ export function figureMesh(F) {
     }
   });
   return { data: new Float32Array(v), count: v.length / 8, colours };
+}
+
+/**
+ * a shape with `k` times its rings and segments, for a close-up (CH-3b: a portrait at 160 px a metre showed the
+ * low-poly facets the walking size hides)
+ * @param {FigureShape} sh @param {number} k @returns {FigureShape}
+ */
+export function finerShape(sh, k) {
+  /** @type {any} */
+  const o = { ...sh };
+  if ('seg' in sh || sh.kind !== 'lathe') o.seg = Math.round((sh.seg || 12) * k);
+  if (sh.kind === 'ellipsoid' || sh.kind === 'torus') o.rings = Math.round((sh.rings || 8) * k);
+  return o;
 }
 
 /* ---------- the face ---------- */
@@ -852,7 +871,7 @@ export function figureMesh(F) {
  * @returns {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean }[]}
  */
 export function figureFaceMarks(F, J, P, V, ppm, S) {
-  /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean }[]} */
+  /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string }[]} */
   const out = [];
   const c = Math.cos(V.rel),
     s = Math.sin(V.rel),
@@ -872,18 +891,25 @@ export function figureFaceMarks(F, J, P, V, ppm, S) {
       facing = -(n[1] * -st + nz * ct) / (Math.hypot(nx, n[1], nz) || 1);
     /* the camera looks down, so a face's lower half faces it less: the eyes show the longest, the mouth the least */
     if (facing < (m.min ?? (m.kind === 'eye' ? 0.15 : m.kind === 'mouth' ? 0.25 : 0.2))) continue;
-    /* an iris is on an open eye */
-    if (m.kind === 'iris' && P.blink) continue;
+    /* an iris is on an open eye, and so is anything `shut` (an eye's shines) */
+    if ((m.kind === 'iris' || m.shut) && P.blink) continue;
     let w = Math.max(1, Math.round(m.w * ppm)),
       h = Math.max(1, Math.round(m.h * ppm));
     if ((m.kind === 'eye' || m.narrow) && facing < 0.6) w = 1;
-    if (m.kind === 'eye' && P.blink) h = 1;
+    /* a closed eye is a line, a pixel thick at walking size and thicker in a close-up (a portrait) */
+    if (m.kind === 'eye' && P.blink) h = Math.max(1, Math.round(0.022 * ppm));
     const q = cardPoint(at, V.rel, V.tilt),
       x = Math.round(S.ax + q.u * ppm - w / 2),
       y = Math.round(S.ay - q.v * ppm - h / 2);
     const rgb = F.colours[m.col || m.kind] || [OUTLINE_RGB[0], OUTLINE_RGB[1], OUTLINE_RGB[2]];
-    out.push(m.hollow ? { x, y, w, h, rgb, kind: m.kind, hollow: true } : { x, y, w, h, rgb, kind: m.kind });
-    if (m.kind === 'eye' && !P.blink && w >= 2 && h >= 3)
+    /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string }} */
+    const o = { x, y, w, h, rgb, kind: m.kind };
+    if (m.hollow) o.hollow = true;
+    /* CH-3b: an oval (an eye, a pupil, a shine) or a smile's arc, painted as such once it is 3 pixels or more (a
+       portrait's close-up); smaller, a block */
+    if (m.shape && w >= 3 && h >= 3 && !(m.kind === 'eye' && P.blink)) o.shape = m.shape;
+    out.push(o);
+    if (m.kind === 'eye' && !P.blink && w >= 2 && h >= 3 && m.glint !== false)
       out.push({ x, y, w: 1, h: 1, rgb: F.colours.glint || [255, 255, 255], kind: 'glint' });
   }
   return out;

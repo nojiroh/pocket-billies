@@ -87,11 +87,12 @@ test('figure kit: the face faces the camera and blinks; glasses frame the eyes',
     eyes.every(e => e.w >= 2 && e.h >= 3),
     JSON.stringify(eyes)
   );
-  assert.equal(front.filter(m => m.kind === 'glint').length, 2);
+  /* two white shines in each eye (Gen 5's), and one on each lens */
+  assert.equal(front.filter(m => m.kind === 'shine').length, 6);
   assert.ok(front.filter(m => m.kind === 'iris').every(m => m.w >= 3));
   /* behind clear glasses the frame is the line over the eye (no lash line); a lens shine on each */
   assert.equal(front.filter(m => m.kind === 'lash').length, 0);
-  assert.equal(front.filter(m => m.kind === 'shine').length, 2);
+
   assert.equal(front.filter(m => m.kind === 'glasses' && m.hollow).length, 2);
   assert.ok(front.some(m => m.kind === 'iris'));
   /* the back of the head shows no face */
@@ -128,7 +129,7 @@ test('figure kit: shapes, builds and heights vary; a person’s choice wins', ()
       const t = F.parts.find(p => p.id === 'torso').shape;
       return Math.max(...t.rx);
     };
-  assert.ok(by('tall').height > by('small').height + 0.2, `${by('tall').height} ${by('small').height}`);
+  assert.ok(by('tall').height > by('small').height + 0.25, `${by('tall').height} ${by('small').height}`);
   assert.ok(width(by('round')) > width(by('slim')) * 1.4);
   assert.deepEqual(Object.keys(FIGURE_BUILDS), [
     'average',

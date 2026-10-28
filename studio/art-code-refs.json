@@ -91,13 +91,13 @@
   {
    "p": "figures/rogue.json",
    "at": [
-    "game/js/figures.js:114"
+    "game/js/figures.js:117"
    ]
   },
   {
    "p": "figures/rogue.png",
    "at": [
-    "game/js/figures.js:115"
+    "game/js/figures.js:118"
    ]
   },
   {
@@ -1568,9 +1568,9 @@
    "game/js/dressing-room.js:726",
    "game/js/fixture.js:129",
    "game/js/fixture.js:206",
-   "game/js/logic/figure-kit.js:562",
-   "game/js/logic/figure-kit.js:585",
-   "game/js/logic/figure-kit.js:600",
+   "game/js/logic/figure-kit.js:554",
+   "game/js/logic/figure-kit.js:577",
+   "game/js/logic/figure-kit.js:592",
    "game/js/person-art.js:339",
    "game/js/person-art.js:344",
    "game/js/reward-screen.js:240",
@@ -1692,7 +1692,7 @@
    "game/js/walk/effects.js:1090"
   ],
   "cup": [
-   "game/js/logic/figure-kit.js:711",
+   "game/js/logic/figure-kit.js:704",
    "game/js/logic/placeholder-art.js:280"
   ],
   "down": [
@@ -1745,19 +1745,20 @@
    "game/js/map-tab.js:148"
   ],
   "eye": [
-   "game/js/figures.js:484",
-   "game/js/logic/figure-kit.js:1192",
-   "game/js/logic/figure-kit.js:1195",
-   "game/js/logic/figure-kit.js:1196",
-   "game/js/logic/figure-kit.js:1331",
-   "game/js/logic/figure-kit.js:1347",
-   "game/js/logic/figure-pose.js:150",
-   "game/js/logic/figure-pose.js:351",
-   "game/js/logic/figure-pose.js:352",
-   "game/js/logic/figure-pose.js:874",
-   "game/js/logic/figure-pose.js:879",
-   "game/js/logic/figure-pose.js:880",
-   "game/js/logic/figure-pose.js:886"
+   "game/js/figures.js:488",
+   "game/js/logic/figure-kit.js:1191",
+   "game/js/logic/figure-kit.js:1201",
+   "game/js/logic/figure-kit.js:1202",
+   "game/js/logic/figure-kit.js:1338",
+   "game/js/logic/figure-kit.js:1354",
+   "game/js/logic/figure-pose.js:155",
+   "game/js/logic/figure-pose.js:356",
+   "game/js/logic/figure-pose.js:357",
+   "game/js/logic/figure-pose.js:893",
+   "game/js/logic/figure-pose.js:898",
+   "game/js/logic/figure-pose.js:900",
+   "game/js/logic/figure-pose.js:910",
+   "game/js/logic/figure-pose.js:912"
   ],
   "flame": [
    "game/js/battle-stage.js:843",
@@ -1956,8 +1957,8 @@
   ],
   "tag": [
    "game/js/battle.js:665",
-   "game/js/logic/figure-kit.js:745",
-   "game/js/logic/figure-kit.js:1350",
+   "game/js/logic/figure-kit.js:738",
+   "game/js/logic/figure-kit.js:1357",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:236",
    "game/js/ui.js:237"

@@ -66,6 +66,7 @@ expose({
   FIGURE_LOOK_NAMES: [() => FIGURE_LOOK_NAMES],
   FIGURE_OUT_FS: [() => FIGURE_OUT_FS],
   FIGURE_OUT_VS: [() => FIGURE_OUT_VS],
+  FIGURE_PORTRAIT_PPM: [() => FIGURE_PORTRAIT_PPM],
   FIGURE_SMOOTH_PPM: [() => FIGURE_SMOOTH_PPM],
   FIGURE_TEXTURES: [() => FIGURE_TEXTURES],
   FIGURE_VS: [() => FIGURE_VS],
@@ -87,9 +88,11 @@ expose({
   figureItems: [() => figureItems, v => (figureItems = v)],
   figureLast: [() => figureLast],
   figureLoad: [() => figureLoad, v => (figureLoad = v)],
+  figurePaintMark: [() => figurePaintMark, v => (figurePaintMark = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
   figurePersonPicture: [() => figurePersonPicture, v => (figurePersonPicture = v)],
   figurePicture: [() => figurePicture, v => (figurePicture = v)],
+  figurePortrait: [() => figurePortrait, v => (figurePortrait = v)],
   figureReport: [() => figureReport, v => (figureReport = v)],
   figureRes: [() => figureRes, v => (figureRes = v)],
   figureStyle: [() => figureStyle, v => (figureStyle = v)],
@@ -393,13 +396,14 @@ function figureBuild(gl) {
   figureTarget(gl, B.cv.width, B.cv.height);
 }
 /** a figure's buffers (and a model's texture) in the baker's context; null while a model's texture loads */
-function figureRes(gl, Fig) {
-  const B = figureBaker;
-  let R = B.res.get(Fig.name);
+function figureRes(gl, Fig, detail = 1) {
+  const B = figureBaker,
+    key = detail > 1 ? Fig.name + '|fine' : Fig.name;
+  let R = B.res.get(key);
   if (R) return R;
   if (Fig.kind === 'mesh' && !(Fig.tex && Fig.tex.complete && Fig.tex.naturalWidth > 0)) return null;
   const code = Fig.kind === 'code',
-    M = code ? figureMesh(Fig.F) : null,
+    M = code ? figureMesh(Fig.F, detail) : null,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const vb = gl.createBuffer();
@@ -446,7 +450,7 @@ function figureRes(gl, Fig) {
   }
   gl.bindVertexArray(null);
   R = { vao, count, indexed: !code, tex, colours: code ? M.colours : null };
-  B.res.set(Fig.name, R);
+  B.res.set(key, R);
   return R;
 }
 /** pass 1's colour (alpha the depth) and depth, as big as the baker's canvas */
@@ -496,7 +500,8 @@ function figurePalette(F, colours) {
 function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   const gl = figureGl();
   if (!gl) return null;
-  const R = figureRes(gl, Fig);
+  /* a close-up (a portrait, a battle) gets a code figure's finer mesh */
+  const R = figureRes(gl, Fig, Fig.kind === 'code' && ppm >= 90 ? 2.5 : 1);
   if (!R) return null;
   const B = figureBaker,
     t0 = performance.now(),
@@ -565,13 +570,7 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   if (code)
     for (const m of figureFaceMarks(Fig.F, J, pose, V, ppm, S)) {
       x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
-      /* a hollow mark (a glasses frame) is its edge only, so the eye shows through */
-      if (m.hollow && m.w > 2 && m.h > 2) {
-        x.fillRect(m.x, m.y, m.w, 1);
-        x.fillRect(m.x, m.y + m.h - 1, m.w, 1);
-        x.fillRect(m.x, m.y + 1, 1, m.h - 2);
-        x.fillRect(m.x + m.w - 1, m.y + 1, 1, m.h - 2);
-      } else x.fillRect(m.x, m.y, m.w, m.h);
+      figurePaintMark(x, m, ppm);
     }
   out.ax = S.ax;
   out.ay = S.ay;
@@ -580,6 +579,69 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   out.figure = Fig.name;
   B.bakes++;
   B.ms += performance.now() - t0;
+  return out;
+}
+/**
+ * a face mark painted in whole pixels (logic/figure-pose.js figureFaceMarks): a block; a hollow one (a glasses frame)
+ * its edge only, so the eye shows through; an oval (an eye, a pupil, a shine) or a smile's arc pixel by pixel, the
+ * arc as thick as the density allows (a portrait's close-up gets proper shapes, not blocks)
+ */
+function figurePaintMark(x, m, ppm) {
+  const th = Math.max(1, Math.round(0.02 * ppm));
+  if (m.shape === 'oval' || m.shape === 'arc' || m.shape === 'cap') {
+    /* an arc is the lower rim of an ellipse centred on the mark's top, a cap the upper rim of one centred on its
+       bottom, each `th` pixels thick */
+    const rx = m.w / 2,
+      rim = m.shape !== 'oval',
+      ry = rim ? m.h : m.h / 2,
+      cy = m.shape === 'arc' ? 0 : m.shape === 'cap' ? m.h : ry;
+    for (let j = 0; j < m.h; j++)
+      for (let i = 0; i < m.w; i++) {
+        const dx = i + 0.5 - rx,
+          dy = j + 0.5 - cy,
+          out = (dx / rx) ** 2 + (dy / ry) ** 2 <= 1,
+          inner = rim && (dx / Math.max(0.5, rx - th)) ** 2 + (dy / Math.max(0.5, ry - th)) ** 2 < 1;
+        if (out && !inner) x.fillRect(m.x + i, m.y + j, 1, 1);
+      }
+    return;
+  }
+  if (m.hollow && m.w > 2 && m.h > 2) {
+    const t = Math.min(th, Math.floor((Math.min(m.w, m.h) - 1) / 2));
+    x.fillRect(m.x, m.y, m.w, t);
+    x.fillRect(m.x, m.y + m.h - t, m.w, t);
+    x.fillRect(m.x, m.y + t, t, m.h - 2 * t);
+    x.fillRect(m.x + m.w - t, m.y + t, t, m.h - 2 * t);
+    return;
+  }
+  x.fillRect(m.x, m.y, m.w, m.h);
+}
+/** CH-3b: a portrait's density (pixels a metre): a head about 120 pixels wide */
+const FIGURE_PORTRAIT_PPM = 160;
+/**
+ * a person's portrait from their figure (the owner: the figures are also the character portraits): their head and
+ * shoulders at FIGURE_PORTRAIT_PPM, turned three quarters to the camera with a slight tilt, idling (`frame` 14
+ * blinks), cut from the top of their head to a little below the shoulders. A canvas, or null while the figure or the
+ * baker isn't ready. Baked every call (a dialogue keeps its own).
+ */
+function figurePortrait(who, frame = 0, turn = 0.82) {
+  const Fig = figureDef(figureFor(who));
+  if (!Fig) return null;
+  const V = figureView(Math.PI * turn, 0, (12 * Math.PI) / 180, 32),
+    im = bakeFigure(Fig, 'idle', frame, V, FIGURE_PORTRAIT_PPM, true, 'pixel');
+  if (!im) return null;
+  /* from the first row with anything on it (a top hat's crown and all) down to just under the shoulders (the kit's
+     `bust`, metres from the ground), or a head and a bit for a figure without one */
+  const x = im.getContext('2d'),
+    d = x.getImageData(0, 0, im.width, im.height).data;
+  let top = 0;
+  findTop: for (; top < im.height; top++)
+    for (let i = 0; i < im.width; i++) if (d[(top * im.width + i) * 4 + 3] > 0) break findTop;
+  /* Kappi (no kit) whole */
+  const bust = Fig.F && Fig.F.kit && Fig.F.kit.bust != null ? Fig.F.kit.bust : 0,
+    h = Math.max(8, Math.min(im.height - top, Math.round(im.ay - bust * FIGURE_PORTRAIT_PPM) - top)),
+    out = makeCanvas(im.width, h);
+  out.getContext('2d').drawImage(im, 0, top, im.width, h, 0, 0, im.width, h);
+  out.figure = Fig.name;
   return out;
 }
 /**
