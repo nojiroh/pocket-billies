@@ -11813,8 +11813,8 @@
   "sky_portal": {
    "name": "Sky portal",
    "img": "scene/next/station/sky_portal.png",
-   "ox": -214,
-   "oy": -429,
+   "ox": -3,
+   "oy": -253,
    "shadow": 0,
    "sway": 0,
    "flat": 0,
@@ -11824,20 +11824,23 @@
    "ppm": 32,
    "vary": {"rot":0,"lean":0,"size":0},
    "glow": {"c":"#8FD8FF","r":9,"y":6.5,"day":0.6},
+   "fx": [
+    {"k":"portal","x":0,"y":-208,"r":4.2}
+   ],
    "variants": [
     {
      "swap": {
       "scene/next/decals/sky_portal_rim.png": "scene/next/decals/sky_portal_rim_gold.png",
       "scene/next/decals/sky_portal_swirl.png": "scene/next/decals/sky_portal_swirl_gold.png",
-      "scene/next/decals/sky_portal_core.png": "scene/next/decals/sky_portal_core_gold.png",
-      "scene/next/decals/sky_portal_halo.png": "scene/next/decals/sky_portal_halo_gold.png"
+      "scene/next/decals/sky_portal_inner.png": "scene/next/decals/sky_portal_inner_gold.png",
+      "scene/next/decals/sky_portal_core.png": "scene/next/decals/sky_portal_core_gold.png"
      },
      "glow": {"c":"#FFC94A","r":9,"y":6.5,"day":0.6},
      "name": "Sky portal (gold)"
     }
    ],
    "tunnel": ["#1A1240","#2A1E5A","#5A3AC8","#3A8AE8","#8FE4FF","#F4FCFF"],
-   "about": "The portal (cutscenes track A): floating on its own in the sky out to sea, its glowing layers stacked for depth and its rings turning; it faces its -y. The sky train rises off the track on its engines and shoots into it. Its gold look for the way home after a win"
+   "about": "The portal (cutscenes track A): floating on its own in the sky out to sea, its glowing layers stacked for depth, nothing but light; its glow, mist and motes are the fx portal (walk/effects.js); it faces its -y. The sky train rises off the track on its engines and shoots into it. Its gold look for the way home after a win"
   },
   "train_lakeland": {
    "name": "Lakeland Clipper",
