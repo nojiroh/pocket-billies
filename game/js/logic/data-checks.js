@@ -20,7 +20,7 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
-import { BATTLE_KIT_ROLES } from './battle-anims.js';
+import { BATTLE_KIT_ROLES, redShare } from './battle-anims.js';
 import { caseFile, redactProblem } from './case-file.js';
 import {
   RUN_GRID,
@@ -87,6 +87,7 @@ expose({
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
   RUN_MAP_ROLE_TYPES: [() => RUN_MAP_ROLE_TYPES],
   RUN_RULE_KEYS: [() => RUN_RULE_KEYS],
+  TIER_STOP_MAX: [() => TIER_STOP_MAX],
   base64Bytes: [() => base64Bytes],
   // @ts-expect-error -- replaced on purpose
   dataArenas: [() => dataArenas, v => (dataArenas = v)],
@@ -98,6 +99,8 @@ expose({
   dataBattleFlowEvents: [() => dataBattleFlowEvents, v => (dataBattleFlowEvents = v)],
   // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataBattleTiers: [() => dataBattleTiers, v => (dataBattleTiers = v)],
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1571,8 +1574,36 @@ export function dataBattleAnims(D, valid = () => true) {
       ramp(`events.glint.ramps.${k}`, r);
   }
   dataBattleFlowEvents(D, A, problem);
+  dataBattleTiers(A, problem);
   return out;
 }
+/** VFX-13: the hit tiers in battleAnims.json `tiers`: every colour resolves (type or a colours key), no flash in
+ * saturated red, and no row's hit-stop past today's longest (a crit's 90 ms): only the KO's cell (at most one more)
+ * and the last KO's freeze add time @param {any} A @param {(what: string) => void} problem */
+export function dataBattleTiers(A, problem) {
+  const T = A.tiers;
+  if (!T) return;
+  const col = (/** @type {string} */ where, /** @type {string | undefined} */ c) => {
+    if (c !== undefined && c !== 'type' && c !== 'kit' && !A.colors[c])
+      problem(`tiers.${where}: no colour "${c}" in colors`);
+  };
+  for (const k of ['resisted', 'neutral', 'super', 'super4', 'crit']) {
+    const R = T[k];
+    col(`${k}.lightCol`, R.lightCol);
+    if (R.flash) {
+      col(`${k}.flash.color`, R.flash.color);
+      const hex = A.colors[R.flash.color];
+      if (hex && redShare(hex) >= A.flashes.redShare) problem(`tiers.${k}.flash: ${hex} is a saturated red`);
+    }
+    if (R.stop + (R.stopW || 0) > TIER_STOP_MAX)
+      problem(
+        `tiers.${k}: a hit-stop of up to ${R.stop + (R.stopW || 0)} ms, past ${TIER_STOP_MAX} (no hit gets longer)`
+      );
+  }
+  if ((T.ko.stop || 0) > T.cell) problem(`tiers.ko.stop: ${T.ko.stop} ms, more than one cell (${T.cell} ms)`);
+}
+/** VFX-13: the longest hit-stop a tier's row may have: today's longest, a crit's */
+export const TIER_STOP_MAX = 90;
 /** VFX-16: the flow moments in battleAnims.json `events`: every pyramid kind has a ramp, each named ramp exists, the
  * rivals are trainers @param {any} D @param {any} A @param {(what: string) => void} problem */
 export function dataBattleFlowEvents(D, A, problem) {

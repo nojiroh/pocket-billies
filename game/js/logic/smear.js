@@ -343,7 +343,7 @@ export const IMPACT_LINES = 24;
 /** how long a crit's speed lines stay after the frame (ms) */
 export const IMPACT_SPEED_LIFE = 260;
 /** the frame's kinds: a catch's pyramid, the mail move's coin and a crit */
-export const IMPACT_KINDS = ['catch', 'coin', 'crit'];
+export const IMPACT_KINDS = ['catch', 'coin', 'crit', 'ko'];
 
 /** @typedef {{ kind: string, cells: number, lines: number, warm: boolean, speed: boolean }} ImpactFrame */
 
@@ -355,7 +355,7 @@ export const IMPACT_KINDS = ['catch', 'coin', 'crit'];
 export function impactFrame(kind, reduced, lvl, noFlash = false) {
   if (reduced || !IMPACT_KINDS.includes(kind)) return null;
   const cells = noFlash || lvl >= 3 ? 0 : lvl >= 2 ? 1 : 2,
-    speed = kind === 'crit';
+    speed = kind === 'crit' || kind === 'ko';
   if (!cells && !speed) return null;
   return { kind, cells, lines: lvl >= 2 ? 16 : IMPACT_LINES, warm: kind === 'crit', speed };
 }

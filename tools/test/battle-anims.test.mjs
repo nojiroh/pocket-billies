@@ -18,8 +18,10 @@ import {
   battlePartOffset,
   battlePathAt,
   flashGate,
+  hitLook,
   hitTier,
   koAhead,
+  TIER_ROWS,
   redShare,
 } from '../../game/js/logic/battle-anims.js';
 
@@ -135,6 +137,86 @@ test('hit tiers', () => {
   assert.equal(hitTier({ k: 'move', dmg: 5, te: 4 }), 'super4');
   assert.equal(hitTier({ k: 'move', dmg: 5, te: 2, crit: true }), 'crit');
   assert.equal(hitTier({ k: 'move', dmg: 5, miss: true }), 'none');
+});
+
+/* VFX-13: the tier table (battleAnims.json tiers) as hitLook plays it */
+const hit = (/** @type {any} */ o) => ({ k: 'move', dmg: 5, te: 1, ...o });
+test('VFX-13 hit tiers: each row’s numbers, with the hit’s weight', () => {
+  const T = A.tiers,
+    n = hitLook(hit({}), null, 0.5, A);
+  assert.equal(n.tier, 'neutral');
+  assert.equal(n.ko, null);
+  assert.equal(n.stop, 20 + 70 * 0.5, 'today’s 20+70w');
+  assert.equal(n.shake, 1.4 + 6 * 0.5);
+  assert.equal(n.kb, 4 + 9 * 0.5, 'today’s 4+9w');
+  assert.equal(n.burst, 10);
+  assert.ok(n.punch > 0, 'a heavy neutral hit punches, as before');
+  assert.equal(hitLook(hit({}), null, 0.3, A).punch, 0, 'a light one doesn’t');
+  assert.equal(n.flash, null, 'no full-screen flash on a normal hit');
+  assert.deepEqual([n.sprite.white, n.sprite.ms], [0.5, T.cell], 'a one-cell sprite flash');
+  const r = hitLook(hit({ te: 0.5 }), null, 0.5, A);
+  assert.equal(r.tier, 'resisted');
+  assert.equal(r.stop, 20);
+  assert.ok(r.sprite.white > 0 && r.sprite.dark > 0, 'a grey sprite flash');
+  assert.ok(r.puff > 0 && r.burst < n.burst && r.light < n.light, 'a dull puff, a smaller burst, a dim light');
+  const s2 = hitLook(hit({ te: 2 }), null, 0.5, A),
+    s4 = hitLook(hit({ te: 4 }), null, 0.5, A);
+  assert.deepEqual([s2.tier, s2.flash.col, s2.flash.a, s2.ca], ['super', 'type', 0.35, 180]);
+  assert.deepEqual([s4.tier, s4.flash.col, s4.flash.a], ['super4', 'type', 0.45]);
+  assert.ok(s4.shake > s2.shake && s4.burst > s2.burst && s4.light > s2.light && s4.kb > s2.kb, 'x4 is bigger');
+  assert.equal(s2.stop, 80, 'today’s');
+  assert.equal(s4.stop, 80, 'no longer than today’s super');
+  const c = hitLook(hit({ crit: true }), null, 0.5, A),
+    sc = hitLook(hit({ crit: true, te: 2 }), null, 0.5, A);
+  assert.deepEqual([c.tier, c.impact, c.flash.col, c.flash.a, c.stop, c.ca], ['crit', 'crit', 'crit', 0.5, 90, 0]);
+  assert.equal(c.lightCol, 'crit', 'a warm light');
+  assert.equal(sc.tier, 'crit', 'a super crit is a crit (hitTier’s name)');
+  assert.equal(sc.ca, 180, '...with the super’s chromatic pulse');
+  assert.ok(sc.burst >= s2.burst && sc.punch > c.punch);
+  assert.equal(hitLook(hit({ miss: true }), null, 1, A), null);
+  assert.equal(hitLook(hit({ dmg: 0 }), null, 1, A), null);
+  assert.equal(hitLook(hit({}), null, 1, { ...A, tiers: undefined }), null, 'no table, nothing');
+  assert.deepEqual(TIER_ROWS, ['resisted', 'neutral', 'super', 'super4', 'crit', 'ko', 'last']);
+});
+
+test('VFX-13 a KO: one cell more and a scar; the last KO or a boss’s: the ~250 ms freeze and the impact frame', () => {
+  const T = A.tiers,
+    base = hitLook(hit({}), null, 0.4, A),
+    ko = hitLook(hit({}), { ko: true, last: false }, 0.4, A),
+    last = hitLook(hit({}), { ko: true, last: true }, 0.4, A),
+    boss = hitLook(hit({}), { ko: true, last: false }, 0.4, A, true);
+  assert.equal(ko.ko, 'ko');
+  assert.equal(ko.stop - base.stop, T.cell, 'the KO’s extra cell');
+  assert.ok(Math.abs(ko.shake - base.shake - 2) < 1e-9);
+  assert.equal(ko.burst - base.burst, 6);
+  assert.equal(ko.scar, 1, 'one more scar');
+  assert.ok(ko.sprite.white > 0.8 && ko.sprite.dark > 0 && ko.sprite.darkMs > 0, 'white, then ink');
+  assert.equal(last.ko, 'last');
+  assert.equal(last.stop, T.last.freeze, 'a freeze of about 250 ms in all');
+  assert.ok(last.stop >= 240 && last.stop <= 260);
+  assert.ok(last.shake >= 10 && last.burst === ko.burst + 10 && last.kb > ko.kb);
+  assert.equal(last.impact, 'ko', 'the impact frame');
+  assert.deepEqual(boss, { ...last }, 'a boss falling is the last KO’s look');
+  assert.equal(hitLook(hit({ crit: true }), { ko: true, last: true }, 0.4, A).impact, 'crit', 'a crit keeps its frame');
+  assert.equal(hitLook(hit({}), { ko: false, last: false }, 0.4, A).ko, null, 'no KO, no KO row');
+});
+
+test('VFX-13 time: no tier’s hit-stop past today’s longest (90 ms); only the KO’s cell and the last KO’s freeze add', () => {
+  for (const k of ['resisted', 'neutral', 'super', 'super4', 'crit']) {
+    const R = A.tiers[k];
+    assert.ok(R.stop + (R.stopW || 0) <= 90, `${k}: ${R.stop + (R.stopW || 0)} ms`);
+    for (const w of [0, 0.5, 1])
+      for (const crit of [false, true]) {
+        const L0 = hitLook(
+          hit({ crit, te: { resisted: 0.5, neutral: 1, super: 2, super4: 4, crit: 1 }[k] }),
+          null,
+          w,
+          A
+        );
+        assert.ok(L0.stop <= 90, `${k} w ${w}: ${L0.stop} ms`);
+        assert.ok(hitLook(hit({ crit }), { ko: true }, w, A).stop <= L0.stop + A.tiers.cell || k !== 'neutral');
+      }
+  }
 });
 
 test('the 8 preview outcomes land in their tiers (VFX-12)', () => {

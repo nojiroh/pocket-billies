@@ -22,7 +22,7 @@
   "stretch": {"pace":1.3,"k":0.6,"max":0.8},
   "lean": {"k":1,"max":0.3,"back":0.5}
  },
- "colors": {"white":"#FFFFFF","dust":"#E8DCC8","guard":"#8FD8FF","heal":"#8DE3D6"},
+ "colors": {"white":"#FFFFFF","dust":"#E8DCC8","guard":"#8FD8FF","heal":"#8DE3D6","crit":"#FFF2A8"},
  "defaults": {"H":"strike","S":"shot","X":"hex","miss":"whiff","protect":"guard","blocked":"blocked"},
  "intro": [
   {"do":"focus","on":"attacker"},
@@ -264,16 +264,17 @@
    }
   },
   "flurry": {
-   "about": "VFX-11: hits in a row: three quick lunges, an impact each",
+   "about": "VFX-11: hits in a row: three quick lunges, an impact each. VFX-13: on the beat (84 ms apart, two cells), each beat a little harder (beat), the last one the hit itself, the strongest",
    "dur": 880,
    "hit": 200,
    "steps": [
-    {"at":40,"n":3,"every":150,"do":"lunge","dx":20,"dy":-2,"dur":60,"ease":"in","delay":0,"backDur":70,"backAt":70},
-    {"at":100,"do":"toTarget","d":120},
-    {"at":110,"n":3,"every":150,"do":"impact","on":"target","spr":"small","k":1,"life":260,"jitter":0.35},
-    {"at":110,"n":3,"every":150,"do":"light","on":"target","ms":120},
-    {"at":410,"do":"impact","on":"target","spr":"impact","k":1,"life":380},
-    {"at":410,"do":"kit","part":"hit","on":"target"},
+    {"at":0,"n":3,"every":84,"do":"lunge","dx":20,"dy":-2,"dur":32,"ease":"in","delay":0,"backDur":40,"backAt":40},
+    {"at":0,"do":"toTarget","d":100},
+    {"at":32,"n":2,"every":84,"do":"impact","on":"target","spr":"small","k":1,"life":260,"jitter":0.35},
+    {"at":32,"n":2,"every":84,"do":"beat","on":"target"},
+    {"at":32,"n":3,"every":84,"do":"light","on":"target","ms":120},
+    {"at":200,"do":"impact","on":"target","spr":"impact","k":1,"life":380},
+    {"at":200,"do":"kit","part":"hit","on":"target"},
     {"at":200,"do":"hit","if":["dmg"]},
     {"do":"camHome","d":460,"delay":620},
     {"at":1050,"do":"focus","on":"wide"}
@@ -282,9 +283,11 @@
     "dur": 600,
     "hit": 160,
     "steps": [
-     {"at":20,"n":2,"every":120,"do":"lunge","dx":20,"dy":-2,"dur":50,"ease":"in","delay":0,"backDur":60,"backAt":60},
-     {"at":80,"do":"toTarget","d":100},
-     {"at":80,"n":2,"every":120,"do":"impact","on":"target","spr":"small","k":1,"life":240,"jitter":0.35},
+     {"at":36,"n":2,"every":84,"do":"lunge","dx":20,"dy":-2,"dur":40,"ease":"in","delay":0,"backDur":40,"backAt":44},
+     {"at":30,"do":"toTarget","d":90},
+     {"at":76,"do":"impact","on":"target","spr":"small","k":1,"life":240,"jitter":0.35},
+     {"at":76,"do":"beat","on":"target"},
+     {"at":160,"do":"impact","on":"target","spr":"impact","k":1,"life":380},
      {"at":160,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":300},
      {"at":720,"do":"focus","on":"wide"}
@@ -1758,6 +1761,92 @@
   "plus": {"sprite":"plus","ramp":"heal"},
   "zz": {"sprite":"zz","ramp":"None"},
   "sheet": {"sprite":"paper","ramp":"Bureau"}
+ },
+ "tiers": {
+  "about": "VFX-13: the hit tiers (logic/battle-anims.js hitLook picks the row, battle-stage.js hitFx plays it). A row: stop the hit-stop (ms of real time the stage holds; + stopW x the hit's weight w, the share of the target's HP it took), shake (+ shakeW x w), kb the knockback px (+ kbW x w), burst the particles of the type's burst (the budget caps it) at spread m/s, light the hit's light (times the kit's; lightCol a colours key, else the kit's), ring the ground ring's m (+ ringW x w), punch the zoom punch (punchW: a small one from that weight on), handheld the wobble, flash the full-screen flash (color: type or a colours key; a, ms; through flashFor and the flash limiter), ca the chromatic pulse (ms; none under Reduced motion or with Flashes off), impact the impact frame's kind, sprite the Billie's own flash (white, then dark: grey when both), puff a dull puff (dust). A super crit takes crit with super's ca, burst and shake, and superCritPunch more. ko adds to the row of a hit that knocks out (stop, shake, kb, burst, scar: more scars; its sprite flash white, then ink); last adds again for the last KO or a boss's (shakeTo: at least; freeze: the hit-stop in all, ms). Only these two add time. cell: a 24 fps cell, ms.",
+  "cell": 42,
+  "resisted": {
+   "stop": 20,
+   "shake": 1,
+   "shakeW": 2,
+   "kb": 4,
+   "kbW": 6,
+   "burst": 6,
+   "spread": 1.4,
+   "light": 0.5,
+   "ring": 0.8,
+   "ringW": 0.6,
+   "sprite": {"white":0.45,"dark":0.45,"ms":170},
+   "puff": 4
+  },
+  "neutral": {
+   "stop": 20,
+   "stopW": 70,
+   "shake": 1.4,
+   "shakeW": 6,
+   "kb": 4,
+   "kbW": 9,
+   "burst": 10,
+   "spread": 2.2,
+   "light": 1,
+   "ring": 1.2,
+   "ringW": 1.2,
+   "punchW": 0.45,
+   "sprite": {"white":0.5,"ms":42}
+  },
+  "super": {
+   "stop": 80,
+   "shake": 6,
+   "kb": 6,
+   "kbW": 9,
+   "burst": 16,
+   "spread": 3.2,
+   "light": 1.4,
+   "ring": 2.2,
+   "punch": 0.06,
+   "handheld": 1,
+   "flash": {"color":"type","a":0.35,"ms":260},
+   "ca": 180
+  },
+  "super4": {
+   "stop": 80,
+   "shake": 9,
+   "kb": 8,
+   "kbW": 9,
+   "burst": 24,
+   "spread": 3.6,
+   "light": 1.7,
+   "ring": 2.6,
+   "punch": 0.08,
+   "handheld": 1.2,
+   "flash": {"color":"type","a":0.45,"ms":300},
+   "ca": 220
+  },
+  "crit": {
+   "stop": 90,
+   "shake": 7,
+   "kb": 6,
+   "kbW": 9,
+   "burst": 16,
+   "spread": 3.2,
+   "light": 1.4,
+   "lightCol": "crit",
+   "ring": 1.6,
+   "punch": 0.09,
+   "handheld": 1,
+   "flash": {"color":"crit","a":0.5,"ms":300},
+   "impact": "crit"
+  },
+  "superCritPunch": 0.03,
+  "ko": {
+   "stop": 42,
+   "shake": 2,
+   "kb": 2,
+   "burst": 6,
+   "scar": 1,
+   "sprite": {"white":0.9,"ms":84,"dark":0.7,"darkMs":300}
+  },
+  "last": {"freeze":250,"shakeTo":10,"kb":6,"burst":10,"impact":"ko"}
  },
  "eventsAbout": "VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js picks what plays; battle-looks.js plays it). A burst: sprite (a strip in sprites), ramp (a ramps id, or type: the move's type), n of them every ms apart, each living life ms, rising vy m/s, spread m apart, at y (feet, mid or top of the Billie), scale k (a whole number), a fixed frame (else it plays), flip (upside down), glow (its white core adds). A status (brn, par, slp, confused) and an effect (soaked, fork): start when it begins, loop while it lasts (one every ms), tick on its turn (a burn's hurt, a lost turn, a turn asleep), end when it goes; tint and tintA: the sprite's tint under Reduced motion (the meaning without the motion); flicker: a burn's warm flicker on the sprite, an amount per 12 fps cell; hold: a lost turn's held frame (ms) and edge its flash; idle: asleep's slower (slow x the clock), lower (sink px) idle with its head down (droop); orbit: n stars round its head, r its half-heights, a turn in turnMs; bonk: hitting itself. stat: chevrons up or down, sharply times as many for a change of 2 stages or more. protect and shield: discs of hex cells (shield_hex) round it, cells by quality 0-3, r and h in its half-heights, frame (shown, eroded to a: dithered, so the Billie shows through), flashFrame (a block, flashMs, at full strength), crackFrame (a worn cell: the shield's turns used up). delayed: a mark in the sky over the side it will land on, y m up; stones: n pebbles r m round each Billie's feet on that side, glint now and then. glint: a Perk, held item, Gene or type passive firing (the battle's by report), one after another gapMs apart, in the source's ramp (a passive: its type's). pulseMs: under Calm, a lasting loop pulses once a turn for this long; cells: the most lasting-look particles at once by quality 0-3.",
  "events": {

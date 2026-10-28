@@ -27,6 +27,7 @@ gives the same film.
     python3 tools/look-battle-anims.py --compare=DIR         # this folder's trace against DIR's
     python3 tools/look-battle-anims.py --only=zip --measure  # draws, rig uploads and frame time per film
     python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
+    python3 tools/look-battle-anims.py --only=tackle --sheets --outcomes=hit+ko,crit+last   # VFX-13: a KO, the last KO
     python3 tools/look-battle-anims.py --flow [--only=enter.0,caught]    # VFX-16: the flow moments' sheets
     python3 tools/look-battle-anims.py --vs [--only=crude,blake,boss]    # VFX-16: the VS splash, in and out
     python3 tools/look-battle-anims.py --only=zip --measure --weather=rain   # in a weather (VFX-15)
@@ -101,10 +102,12 @@ __film.snap=(t0,vt)=>{const f=document.getElementById('flash'),w=document.getEle
 /* VFX-17: with --repeat, the move's scene counts as played before in this battle (its short version plays) */
 __film.seen=mid=>{if(__film.rep&&MOVES[mid]&&MOVES[mid].anim){S.scenesSeen=S.scenesSeen||new Set();S.scenesSeen.add(MOVES[mid].anim)}};
 /* an outcome's move event, as the Studio's Battle effects builds it (VFX-12: logic/battle-anims.js) */
-__film.an=(mid,si,res)=>battleAnimPreviewEvent(mid,MOVES[mid],si,res);
+__film.an=(mid,si,res)=>battleAnimPreviewEvent(mid,MOVES[mid],si,res.split('+')[0]);
+/* VFX-13: an outcome with +ko or +last knocks the target out (the last KO: the freeze); the line carries koAhead's */
+__film.ka=(si,res)=>{const k=res.split('+')[1];return k?{ko:true,si:[1-si],last:k==='last'}:null};
 /* plays one film on the film's clock: frames of 16 ms; every k-th frame's state (sheet: the GL tasks too, and
    resolves after each block of k frames so a picture can be taken) */
-__film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s},pn=performance.now,st=window.setTimeout,timers=[];
+__film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s,ka:__film.ka(si,res)},pn=performance.now,st=window.setTimeout,timers=[];
  let vt=pn.call(performance)+1e7;performance.now=()=>vt;window.setTimeout=(fn,ms)=>{timers.push({t:vt+(+ms||0),fn});return 0};
  const out={key};try{__film.reset();__seed(__film.hash(key));const t0=S.t,F=__film.tasks.get('scene').fn;
   __film.seen(mid);out.r=battleStagePlay(__film.an(mid,si,res),ev);out.trace=[];
@@ -112,7 +115,7 @@ __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[acti
  }catch(e){out.err=String(e&&e.stack||e)}finally{performance.now=pn;window.setTimeout=st}return out};
 /* a sheet's film: the same, the walk renderer's frame task stepped with the stage's, a picture after every block */
 __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;
- const ev={s:activeBattle.events[activeBattle.events.length-1].s};__film.seen(mid);return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
+ const ev={s:activeBattle.events[activeBattle.events.length-1].s,ka:__film.ka(si,res)};__film.seen(mid);return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
 /* VFX-14: an events film: lines at film times (ms), each an event (or none) and the snapshot changes it brings (mods:
    [{i, st, fx, stg, hp}]) on the snapshots before; its looks take the line when its plates would repaint */
 __film.snaps=(base,mods)=>{const s=JSON.parse(JSON.stringify(base));for(const m of mods||[]){const x=s[m.i];if(!x)continue;if('st' in m)x.st=m.st;
