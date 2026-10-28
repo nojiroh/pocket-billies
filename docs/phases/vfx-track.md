@@ -246,7 +246,8 @@ animation".
 3. **Stepped:** loops and holds at 12 fps, hits at 24 fps (`SMEAR_STEP`), all on the stage clock.
 4. **Value first, colour from the type:** sprites are 8 greys; a type's NW_PALETTE ramp colours them and pure white
    stays the core. Proposed ramps: Fire ember, Water sky, Grass leaf, Electric gold, Ground rust, Flying cobalt,
-   Psychic rose, Steel steel, Dragon indigo, None stone; the Bureau crimson with ink.
+   Psychic rose, Steel steel, Dragon indigo, None stone; the Bureau the red family (#EA5974, the style track's stamp
+   ink) with ink.
 5. **Hard edges:** fades are erosion (a hard step against a Bayer pattern on the effect's own texel grid, so holes are
    art-pixel sized, with a bright rim on the eroding edge), never smooth alpha. No blur, no soft glows.
 6. **Light:** effects light the stage in their colour; big ones darken the rest of it a little.
@@ -254,8 +255,9 @@ animation".
 8. **Time:** a normal move keeps today's timing; signature scenes and power 100+ moves get up to 0.5 s more; all of it
    on the stage clock (speed already scales it); a tap skips; Faster plays each family's short variant.
 9. **Safe:** at most 3 full-screen flashes in any second, 333 ms apart, peak .55, none in saturated red; a flash over
-   the limit becomes a sprite flash, never a late one. Flashes off: no full-screen flash, sprite flashes at most half
-   strength, blinks at most 3 a second. Calm (UI-16a; the rule ui-track.md asks VFX-5/6 for): what an action causes
+   the limit becomes a sprite flash, never a late one. Flashes off follows the style track's SY-1 (`flashFor`: a
+   bright flash held to a 15% tint, a dark one kept, no chromatic flash or two-tone cells), plus sprite flashes at
+   most half strength and blinks at most 3 a second. Calm (UI-16a; the rule ui-track.md asks VFX-5/6 for): what an action causes
    still plays, smears included; idle loops (status fizz, auras, motes) pulse once a turn. Reduced: the meaning
    without the motion (a dithered tint; no shake, camera, smears or extra time).
 10. **Original:** signature props allude through generic objects (a sneaker, a burger, a yacht), never a brand's logo
@@ -393,7 +395,7 @@ Spread moves play on every foe in the one move event; aimed moves (Auger Bore, G
 | Steel | steel | shard, cog, spark | hard rings, glints, sparks | white |
 | Dragon | indigo | scale, flame | two-tone; a roar ring | violet |
 | None | stone | pow star, dust | plain impacts | white |
-| the Bureau (its bots and agents) | crimson and ink | paper, stamp | stamped in, square | red, cold |
+| the Bureau (its bots and agents) | the red family and ink | paper | stamped in, square (its words are the style track's) | red, cold |
 
 ## Hit tiers (starting numbers; a cell is 42 ms)
 | Tier | Hit-stop | Shake | Full-screen | Burst | Light |
@@ -440,7 +442,7 @@ The stage side of UI-16b's tags, blips and pips; both read the same events, so t
   motion. One component with UI-17's boss banner: whichever lands first builds it.
 - **Send-out:** the pyramid's landing (Part 1), a burst in the Billie's type, the Billie dithering in from the feet
   up; each pyramid kind in its own colours; Prime and Coats a glint.
-- **Recall:** a beam from the Billie back to the trainer's hand while it dithers out; a sound.
+- **Recall:** a beam from the Billie back to the trainer's hand while it dithers out; its sound comes with VFX-19.
 - **Catch:** each wobble squashes the pyramid and puffs dust; caught: sparks up its edges, stars, the type's ring;
   an escape: the pyramid's shards in its colours.
 - **Faint:** the hurt pose holds, the Billie sinks and dithers out with a dust puff; bots shed their limbs with sparks
@@ -468,9 +470,11 @@ The first batch (VFX-17) is the 12 of power 100+ (Tower Drop, Zero to One, Visio
 Blast Furnace, Hallucinate, Developers!, Siu!, Full Steam, Standard Oil, Golden Caravan) and about 6 more.
 
 ## Move sounds (the owner's pick)
-A sound per family, layered by type, as data in music.json (notes like SND-6's UI sounds, plus a noise voice for
-hits, whooshes and splashes), edited in the Studio's Sounds tab and played on the stage clock; placeholders until
-the owner's listening pass. Hurt events (a burn, recoil, a spread move's second target, the delayed hit) get a sound.
+A sound per family, layered by type, in music.json's `battle` section (the shape agreed with the sound track, "Talking
+to the sound track": voices in the cries' shape, noise voices for hits, whooshes and splashes, baked instruments
+once SND-11 is on main), edited in the Studio's Sounds tab and played on the stage clock through the Sound effects
+bus; placeholders until the owner's listening pass. Hurt events (a burn, recoil, a spread move's second target, the
+delayed hit) and the recall get a sound; throws and catches get body and space (the battle half of SND-16, agreed).
 `python3 tools/check-sound.py` fingerprints every one (a new baseline in its own commit).
 
 ## The effect art
@@ -502,7 +506,7 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 | --- | --- | --- | --- | --- |
 | VFX-5 (done 2026-10-28) | Attack lunges (Part 1) | as planned; the lean and afterimages as helpers the runner can call | lunges | as planned. Phone |
 | VFX-7 (done 2026-10-27) | The plan | Part 2, with research; the owner's answers | none | merged |
-| VFX-8 | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; Flashes reaches the battle; the debug-log line; the look tool, first version | none, but the tap skips and Flashes off works | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
+| VFX-8 | Anims as data | battleAnims.json (schema, types, checks); logic/battle-anims.js (resolver, `hitTier`, `koAhead`, the timeline, the gates, the flash limiter) with tests and a snapshot; the runner with today's 3 choreographies and miss, Guard and blocked as legacy families; the tap that skips; the flash rate limit on SY-1's `flashFor`; the debug-log line; the look tool, first version | none, but the tap skips | `{dur, hit}` equal for 122 moves x 8 outcomes; films before and after equal; the golden record untouched; the quick check's battle steps (4x speed) rechecked |
 | VFX-9 | One draw for effects | the atlas, the instanced pool, cutout drawing, the budgets; rings, dust and beams into GL; `uHit`; fixed light keys; the `uCA` pulse | rings sit in the scene; no CPU flash redraws | a move's effects in at most 3 draws (gpu counters); rig uploads down (`rigStats`); frame time not worse. Phone |
 | VFX-10 | Effect art | tools/build-battle-anims.py and the strips; ramps (texture and data); the texel rule; 24 fps steps; erosion; the Studio's previews per ramp | every particle redrawn | `--check`; an Edit pixels round trip; the contact sheet. Phone (the repaint list) |
 | VFX-11 | Families x types | the 16 families and their short variants; the type kits; every move's `anim` and the Moves editor's dropdown; beams and projectiles in GL; effect lights; spread and aimed moves | every move by family and type | the snapshot remade on purpose; contact sheets of all 122. Phone |
@@ -510,10 +514,10 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 | VFX-13 | Hit tiers | the tier table; resisted, x4, KO and last-KO looks; the rhythm of multi-hits; drain, heal, recoil; misses per family | hits read by tier | tier tests; films. Phone |
 | VFX-14 | Statuses and stats | the lasting looks, "sharply", Protect, the shield dome, Soaked, Fork, the delayed hit, stones, glints (with UI-16b's events if they have landed) | statuses visible | the golden record untouched; Calm read if UI-16a has landed. Phone |
 | VFX-15 | The stage | moods, the row wave, heat, weather on the stage, scars | the stage reacts | decal cap tests; frame budget on the Graphics bench. Phone |
-| VFX-16 | Battle flow | the VS splash; send-out per pyramid; the recall beam; catch; faint and bots' faint; level-up, victory, defeat; items used; XP | the flow | films; Reduced motion seen in each. Phone |
+| VFX-16 | Battle flow | the VS splash; send-out per pyramid; the recall beam (its sound in VFX-19); catch; faint and bots' faint; level-up, victory, defeat; items used; XP | the flow | films; Reduced motion seen in each. Phone |
 | VFX-17 | Signature scenes 1 | `propWorldItem`, the stamp, the +0.5 s rule; the 12 power 100+ scenes and about 6 more | first scenes | storyboards approved first; films. Phone |
 | VFX-18 | Signature scenes 2 | the other 38 (split in two if it runs long); the bots' and the boss's specials | every scene | films. Phone |
-| VFX-19 | Move sounds | music.json's battle sounds, the noise voice, family x type, hurt sounds, the Studio's Sounds tab | sounds | check-sound.py fingerprints. Phone (listen) |
+| VFX-19 | Move sounds | music.json's `battle` section (the shape agreed with the sound track): family x type, hurt sounds, the recall, throws and catches; its schema, enums and checks; the Studio's Battle card | sounds | check-sound.py fingerprints; music-studio tests. Phone (listen) |
 | VFX-20 | Phone pass | tuning from the owner's phone notes, the quality ladder, a flash audit of filmed frames, the old 2D effect code and types.json `fx` removed (Ask me before), docs; tag `vfx-done` | tuning | the owner's phone log |
 
 ## How the sessions run (the owner, 2026-10-28)
@@ -547,17 +551,62 @@ commit of its own.
 - A VFX step that will touch sound.js, game/js/audio/, music.json (or its schema) or the check-sound baseline sends
   that session a message first (what, where, why) and another after pushing (the commit). The steps that do: VFX-8
   (battleSoundEffect's timing moves onto the stage clock; a tap that skips drops the pending sounds), VFX-14 (the
-  stat-down sound), VFX-16 (a recall sound), VFX-19 (move sounds).
-- VFX-19 overlaps the sound track's optional SND-16 ("battle hits, throws and catches with body and space"). Proposed
-  to the sound session (2026-10-28): VFX-19 takes the battle half (moves, hits, throws, catches, hurt sounds) on the
-  sound track's own tools (SND-9's bake and reverb, SND-11's instruments, whichever are on main by then) and its buses
-  (so SND-15's ducking applies), and SND-16 keeps the rest (the airship, the sky train, the world map, steam vents,
-  wells). Its answer is recorded here when it comes.
-- Offered to the sound track: logic/battle-anims.js's `hitTier` and `koAhead` (VFX-8) for SND-13's battle intensity
-  (turns, KOs, the red zone, a boss's phases).
+  stat-down sound), VFX-19 (move sounds and the recall's).
+- **Agreed with the sound session (2026-10-28):** VFX-19 takes the battle half (moves, hits, throws, catches, hurt
+  sounds, the recall) on the sound track's own tools (SND-9's bake and reverb, SND-11's instruments, whichever are on
+  main by then); SND-16 keeps the rest (the airship's engine, the sky train, the world map, steam vents, wells). VFX-8
+  and VFX-14 as described are fine with it.
+- **music.json's battle section (its proposal, taken):** a top-level `battle` (added to music.schema.json's
+  properties, since the top level has `additionalProperties: false`) with `families` (one per move family), `types` (a
+  layer per type), `hurt` (a burn, recoil, a spread move's second target, the delayed hit) and `recall`. Each sound is
+  a list of voices in the cries' shape (`{at, note, len, wave, vol, slide, vib}`: music.json `cries.bases`,
+  logic/cries.js), so one voice format serves cries, UI sounds, jingles and battle sounds; from SND-11 a voice may
+  name `inst` (a baked instrument) instead of `wave`; noise voices take synthNoise's options (`{noise: {bp|hp|lp, q},
+  dur, vol}`). New enums go in `MUSIC_CHOICES` (logic/music-studio.js; music-studio.test.mjs holds them to the
+  schema), checks in `musicFindings`. The Studio: a "Battle" card on the Sounds tab beside the base cries, button
+  sounds and mix (studio/js/music-editor.js ~650-758), a play button per sound. They play on the Sound effects bus
+  (`soundEngine.fx`), so SND-15's ducking covers them, and send their echo to SND-8b's effects echo (`T.echoFx`,
+  through synthVoice's `echoTo`; the heal and seal effects already do), never the music's.
+- **Names the sound track takes (avoid them):** logic/sound-bake.js (SND-9: pure DSP, zones, impulses),
+  `T.sampleVoice` and a bank cache in tracker.js, the reverb living with the tracker (post-fader sends per bus), and
+  the prefixes `musicStem*`, `musicLayer*`, `soundBake*`.
+- **Its side of the protocol:** every SND step that changes battleSoundEffect, soundEffect's battle recipes (hit,
+  super, weak, crit, faint, heal, seal, status, stat, wobble, throw, pop) or music.json's top level messages this
+  track's planning session before and after it pushes. Its next step, SND-8b (mix fixes), gives the jingles and the
+  heal and seal effects their own echo (soundEffect, sound.js ~504 and ~539) and songs a `trim`, and rewrites the
+  jingles' fingerprints; the next SND step writes this agreement into docs/phases/sound-track.md too.
+- **Shared:** SND-13 will read `hitTier` and `koAhead` from logic/battle-anims.js (VFX-8) for battle intensity
+  (turns, KOs, the red zone, a boss's phases) once they are on main (accepted 2026-10-28).
+
+## Fitting with the style track (found 2026-10-28)
+The style track (docs/phases/style-track.md, PR #279; its planning session `session_019UpAFyAJSkEVjDLuVMFQkS`, steps
+on `track/style`, merged to main through PR #289) also works in battle. How the two split, agreed with its planning
+session (2026-10-28):
+- `flashFor` reaches main through #289 (SY-1 and SY-2; #279 carries the same SY-1 commit): merge whichever lands
+  first. Its signature stays `(col, a, reduced, flashesOff)`. SY-2 is built: logic/hit-numbers.js (a pop's size by
+  `hitWeight`, 24-40 px, 40 on a KO; the plate's HP roll over .38 s).
+- Its steps from SY-4 on message this track's planning session before they change `hitFx`, the join intro,
+  `battleStageFlash` or the sprite shader (SY-5: the Notice, stamps in battle, the Bureau's plates; SY-6: `uFoil`),
+  naming the change and the commit; this track's steps do the same for it.
+- **Flashes:** SY-1 (built; on main through #289) already sends every battle flash through `flashFor`
+  (logic/smear.js): Reduced motion, no flash; Flashes off, a bright flash held to a 15% tint and a dark one kept, no
+  chromatic flash, the impact
+  frame without its two-tone cells (a crit keeps its speed lines). That replaces VFX-8's "Flashes reaches the battle"
+  and the Flashes-off half of rule 9. VFX-8 adds only the rate limit (at most 3 full-screen flashes in any second,
+  333 ms apart, no saturated red), counting the flashes the runner asks for and passing each through `flashFor`; it
+  leaves `battleStageFlash`'s settings code to SY-1 (merged from main once #289 or #279 is there).
+- **Numbers:** SY-2 sizes the damage pops by `hitWeight` and rolls the HP number (the HUD); VFX-13's `hitTier` is
+  offered to it. Hit-stop stays this track's (the tier table).
+- **The Bureau:** SY-5 owns its words in battle (the RETRIEVED, VOID, DENIED and PENDING stamps as the kit's
+  translatable `pb-stamp`), the Notice of Retrieval in the join intro and the bots' ID plates. This track's Bureau kit
+  is only its bots' move effects: paper sprites, square and stamped in, in the red family (#EA5974, the stamps' ink:
+  "one meaning, one colour"), with no drawn words. VFX-16's boss intro shares the join intro's 900 ms with the Notice.
+- **The sprite shader:** SY-6's `uFoil` (walk-shaders.js ~181 and the instanced ~511) and VFX-9's `uHit` go into the
+  same fragment shader; whichever lands second merges main first and keeps both. Both are off under Reduced motion.
 
 ## Bugs found (VFX-7) and where they're fixed
-- Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe (VFX-8).
+- Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe: fixed by the style
+  track's SY-1 (#279, `flashFor`); VFX-8 adds the rate limit on top.
 - The selection and target rings divide by `R.k2`, which no rig has (BS 1379; B3 228 uses `R.k`), so they never
   draw (VFX-8, seen on screen first; turning them on is an Ask me before).
 - `an.t = M.t` (BS 1917) writes into the engine's event; the runner passes the type itself (VFX-8).
@@ -579,11 +628,14 @@ commit of its own.
   Rule 9 is the Calm rule ui-track.md asks VFX-5/6 for. The UI plan's "hit-stop stays only on crits, KOs and
   super-effective hits" ("Alive, without clutter") is open: see Ask me before.
 - **RL-14b** (bosses, shield phases, the `join` intro): the shield dome and the boss's phases build on it.
+- **Style track:** flashes (SY-1), numbers (SY-2), the Bureau's words in battle (SY-5) and the foil (SY-6): see
+  "Fitting with the style track".
 - **Phase 20** (renderer): the atlas through `gpuTexture`, the programs in the warm-up, `spriteI` with `uHit`, fixed
   light keys for Steady lamps, the row wave on the Medium precision pass's highp list.
 - **Characters track:** battle trainers may be redrawn (throw poses); the VS splash uses portraits, not the battle
   sprites.
-- **Sound track:** move sounds in music.json and its Studio tab; check-sound.py's baseline.
+- **Sound track:** move sounds in music.json's `battle` section and its Studio tab, check-sound.py's baseline; the
+  split with SND-16 and the protocol agreed with its planning session (see "Talking to the sound track").
 - **Water track** (WA-7): ripples and splashes on battle water.
 - **The quick check** plays battles at 4x speed (check-quick.py 778-786): the tap that skips changes its timing, so
   VFX-8 rechecks those steps.
