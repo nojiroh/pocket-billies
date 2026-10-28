@@ -245,7 +245,15 @@ function figureDef(name) {
         : lookFigure(look, items, {
             name,
             seed: figureSeed(who),
-            figure: p && p.figure ? p.figure : who.startsWith('folk:') ? { variety: true } : undefined,
+            /* you: the main character's own head (figure-kit.js FIGURE_HEADS.hero) */
+            figure:
+              p && p.figure
+                ? p.figure
+                : who === 'me'
+                  ? { head: 'hero' }
+                  : who.startsWith('folk:')
+                    ? { variety: true }
+                    : undefined,
             chibi: look0 && look0.chibi ? look0.chibi : undefined,
             /* a direction's flair, and its design for this person (its cast table) */
             flair: look0 && look0.flair ? { ...look0.flair, ...((look0.cast && look0.cast[who]) || {}) } : undefined,

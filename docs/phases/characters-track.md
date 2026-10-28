@@ -267,6 +267,15 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     hair with bills, brims, bands and rolled edges; figures lit by the scene they stand in (logic/figure-pose.js
     figureSceneLight: the sun, the moon, a room's window light and the lamps near them, the sky's colour in the
     shade, a back rim after dark), the pictures kept by that light, portraits in the fixed studio light.
+  - round 5 ("Complete redo the heads. Use complex shapes with deformation", "Lose that oval head shape. This is a
+    main character", "add more variety. Make sure hair doesn't come through heads"): each head one sculpted mesh
+    (logic/figure-pose.js headDeform: the skull fuller behind and drawn up into the neck, a flatter face, flat
+    temples, the jaw narrowing to the chin, the chin dropped, a brow ridge, eye sockets, cheekbones), eight head
+    shapes plus `hero` (you, never picked at random), each person varied by their seed (proportions, jaw, chin,
+    cheekbones, brow, face depth, a button, straight, long or broad nose, ears, where the eyes and mouth sit); the
+    hair cap over the same skull; a beard as a shell over the jaw; under a hat every lock starts under its band (a
+    test checks every hat with every hair style); long hair flows in layered, waving locks; the girl's look
+    (people/girl.json) in a beanie with long hair, like the boy's beanie.
 - **CH-3c The rest of the cast and the movement pass:** every person and a crowd of townsfolk checked on sheets
   and in the towns; shop keepers and the arena's leader in place; the walk's stride fitted to the game's speed;
   start, stop and turns; the dressing room's pictures still today's. **Phone gate:** the owner tries Figures on.

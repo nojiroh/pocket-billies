@@ -79,6 +79,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   hairCutAt: [() => hairCutAt, v => (hairCutAt = v)],
   // @ts-expect-error -- replaced on purpose
+  headDeform: [() => headDeform, v => (headDeform = v)],
+  // @ts-expect-error -- replaced on purpose
+  headFrontOf: [() => headFrontOf, v => (headFrontOf = v)],
+  // @ts-expect-error -- replaced on purpose
   jointMatrices: [() => jointMatrices, v => (jointMatrices = v)],
   // @ts-expect-error -- replaced on purpose
   mannequinFigure: [() => mannequinFigure, v => (mannequinFigure = v)],
@@ -213,11 +217,16 @@ export function figureSceneLight(S) {
 export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86, deep: -0.55 });
 
 /** @typedef {[number, number, number]} Vec3 */
-/** @typedef {{ front: number, side: number, back: number, bangs?: number, depth?: number }} HairCut where a hair cap
+/** @typedef {{ front: number, side: number, back: number, bangs?: number, depth?: number, under?: boolean }} HairCut
+ * (`under`: keep what is below the edge instead, a beard) where a hair cap
  * ends, as a height on its own sphere (-1 the bottom, 1 the top) at the front, the sides and the back, its fringe in
  * `bangs` points `depth` deep */
+/** @typedef {{ jaw?: number, chin?: number, cheek?: number, crown?: number, brow?: number, face?: number,
+ *   skull?: boolean }} HeadDeform a sculpted head (headDeform): how V the jaw is (0 square .. 1 a point), how far the
+ *   chin drops, the cheekbones, how big the back of the skull, the brow, how flat the face; `skull` only the skull's
+ *   shape (a hair cap over it), no features */
 /** @typedef {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg?: number, rings?: number, cut?: HairCut, sq?: number,
- *     taper?: number }
+ *     taper?: number, deform?: HeadDeform }
  *   | { kind: 'lathe', c: Vec3, y: number[], rx: number[], rz: number[], seg?: number }
  *   | { kind: 'capsule', a: Vec3, b: Vec3, r0: number, r1: number, seg?: number }
  *   | { kind: 'cone', a: Vec3, b: Vec3, r: number, seg?: number }
@@ -308,16 +317,86 @@ export function toonBand(n) {
 /* ---------- the mannequin ---------- */
 /**
  * a point on the front of an ellipsoid at (x, y), and its outward normal: where a face mark sits
- * @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number }} E @param {number} x @param {number} y
+ * @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number, deform?: HeadDeform }} E @param {number} x @param {number} y
  * @returns {{ at: Vec3, n: Vec3 }}
  */
 export function frontOf(E, x, y) {
+  if (E.deform) return headFrontOf(E, x, y);
   const { c, r } = E,
     u = (x - c[0]) / r[0],
     v = (y - c[1]) / r[1],
     w = Math.sqrt(Math.max(0, 1 - u * u - v * v)),
     z = c[2] + r[2] * ellipsoidWarp(w, E.sq) * taperAt(v, E.taper);
   return { at: [x, y, z], n: figureUnit([u / r[0], v / r[1], w / r[2]]) };
+}
+/**
+ * CH-3b round 5 (the owner: "Complete redo the heads. Use complex shapes with deformation"): a point of the unit
+ * sphere (x right, y up, z the face's way) moved to where a sculpted head has it, before its radii scale it: the skull
+ * fuller behind and drawn up underneath into the neck, the face flatter, the temples flat, the jaw narrowing toward
+ * the chin (more at the front, the jaw line running back under the ear), the chin dropped and forward, and (not on a
+ * `skull`) a brow ridge, eye sockets and cheekbones as raised and sunken patches
+ * @param {number[]} d @param {HeadDeform} D @returns {Vec3}
+ */
+export function headDeform(d, D) {
+  let [x, y, z] = d;
+  const sm = (/** @type {number} */ t) => {
+      const q = Math.max(0, Math.min(1, t));
+      return q * q * (3 - 2 * q);
+    },
+    low = sm(-y),
+    front = Math.max(0, z),
+    back = Math.max(0, -z),
+    cr = D.crown ?? 1,
+    jw = D.jaw ?? 0.5,
+    ch = D.chin ?? 0.5;
+  /* the skull: fuller behind and above, its underside behind drawn up into the neck */
+  const bulge = 1 + 0.1 * cr * back * sm(y + 0.6);
+  z *= bulge;
+  y *= bulge * (1 + 0.04 * (cr - 1));
+  y += 0.32 * low * back * back;
+  /* the jaw narrows toward the chin, the front more than the back */
+  x *= 1 - low * (0.22 + 0.42 * jw) * (0.35 + 0.65 * front);
+  /* the chin, down and a little forward */
+  y -= 0.2 * ch * low * front * front;
+  z += 0.06 * ch * low * low * front;
+  /* a flatter face and flat temples (an egg's front is a dome) */
+  z -= (D.face ?? 0.5) * 0.16 * front ** 4;
+  x -= 0.1 * Math.sign(x) * Math.abs(x) ** 4 * (1 - low);
+  if (!D.skull && front > 0) {
+    const f = sm(front * 2),
+      g = (/** @type {number} */ cx, /** @type {number} */ cy, /** @type {number} */ sx, /** @type {number} */ sy) =>
+        Math.exp(-(((d[0] - cx) / sx) ** 2) - ((d[1] - cy) / sy) ** 2) * f,
+      /* raised and sunken, along the way out */
+      k =
+        1 +
+        0.045 * (D.brow ?? 1) * Math.exp(-(((d[1] - 0.13) / 0.09) ** 2) - (d[0] / 0.5) ** 4) * f -
+        0.03 * (g(0.36, -0.07, 0.14, 0.1) + g(-0.36, -0.07, 0.14, 0.1)) +
+        0.05 * (D.cheek ?? 1) * (g(0.56, -0.3, 0.2, 0.16) + g(-0.56, -0.3, 0.2, 0.16)) -
+        0.03 * (g(0.62, -0.6, 0.18, 0.18) + g(-0.62, -0.6, 0.18, 0.18));
+    x *= k;
+    y *= k;
+    z *= k;
+  }
+  return [x, y, z];
+}
+/** a point on the front of a sculpted head at (x, y) (where the sphere's point under it is moved to), and the way
+ * out there (from its neighbours) @param {{ c: Vec3, r: Vec3, deform?: HeadDeform }} E @param {number} x @param {number} y
+ * @returns {{ at: Vec3, n: Vec3 }} */
+export function headFrontOf(E, x, y) {
+  const { c, r } = E,
+    D = /** @type {HeadDeform} */ (E.deform),
+    at = (/** @type {number} */ u, /** @type {number} */ v) => {
+      const w = Math.sqrt(Math.max(0, 1 - u * u - v * v)),
+        q = headDeform([u, v, w], D);
+      return /** @type {Vec3} */ ([c[0] + r[0] * q[0], c[1] + r[1] * q[1], c[2] + r[2] * q[2]]);
+    },
+    u = Math.max(-0.95, Math.min(0.95, (x - c[0]) / r[0])),
+    v = Math.max(-0.95, Math.min(0.95, (y - c[1]) / r[1])),
+    e = 0.02,
+    p = at(u, v),
+    a = vSub(at(u + e, v), at(u - e, v)),
+    b = vSub(at(u, v + e), at(u, v - e));
+  return { at: p, n: figureUnit(vCross(a, b)) };
 }
 /** a squarer ellipsoid's reach along an axis (`sq` 0..1: 0 round, 1 nearly a box) @param {number} d @param {number} [sq] */
 export function ellipsoidWarp(d, sq) {
@@ -767,24 +846,30 @@ export function shapeSurface(sh) {
   if (sh.kind === 'ellipsoid') {
     const { c, r } = sh,
       seg = sh.seg || 12,
-      rings = sh.rings || 8;
+      rings = sh.rings || 8,
+      /** the sphere's points under a sculpted head's, for the hair's cut @type {Vec3[]} */ dirs = [];
     for (let i = 0; i <= rings; i++) {
       const ph = (Math.PI * i) / rings,
         sp = Math.sin(ph),
         cp = Math.cos(ph);
       if (i === 0 || i === rings) {
-        const p = /** @type {Vec3} */ ([c[0], c[1] + r[1] * cp, c[2]]);
+        const q = sh.deform ? headDeform([0, cp, 0], sh.deform) : [0, cp, 0],
+          p = /** @type {Vec3} */ ([c[0] + r[0] * q[0], c[1] + r[1] * q[1], c[2] + r[2] * q[2]]);
+        if (sh.deform) dirs.push([0, cp, 0]);
         R.push([p]);
         O.push([[0, cp, 0]]);
       } else
         ring(seg, t => {
           const d = /** @type {Vec3} */ ([sp * Math.sin(t), cp, sp * Math.cos(t)]),
             k = taperAt(cp, sh.taper),
-            q = /** @type {Vec3} */ ([
-              ellipsoidWarp(d[0], sh.sq) * k,
-              ellipsoidWarp(d[1], sh.sq),
-              ellipsoidWarp(d[2], sh.sq) * k,
-            ]);
+            q = sh.deform
+              ? headDeform(d, sh.deform)
+              : /** @type {Vec3} */ ([
+                  ellipsoidWarp(d[0], sh.sq) * k,
+                  ellipsoidWarp(d[1], sh.sq),
+                  ellipsoidWarp(d[2], sh.sq) * k,
+                ]);
+          if (sh.deform) dirs.push(d);
           return [[c[0] + r[0] * q[0], c[1] + r[1] * q[1], c[2] + r[2] * q[2]], d];
         });
     }
@@ -792,6 +877,10 @@ export function shapeSurface(sh) {
     if (sh.cut) {
       const C = sh.cut;
       S.tris = S.tris.filter(tr => {
+        if (sh.deform) {
+          const m = [0, 1, 2].map(k => (dirs[tr[0]][k] + dirs[tr[1]][k] + dirs[tr[2]][k]) / 3);
+          return C.under ? m[1] < hairCutAt(C, m[0], m[2]) : m[1] > hairCutAt(C, m[0], m[2]);
+        }
         const m = [0, 1, 2].map(k => (S.pts[tr[0]][k] + S.pts[tr[1]][k] + S.pts[tr[2]][k]) / 3);
         const u = (m[0] - c[0]) / r[0],
           v = (m[1] - c[1]) / r[1],

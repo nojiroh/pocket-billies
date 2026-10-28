@@ -18,7 +18,16 @@
    Logic only: no DOM, runs in Node (tools/test/figure-kit.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { figureDark, figureMesh, figureMix, figurePose, figureUnit, frontOf, jointMatrices } from './figure-pose.js';
+import {
+  figureDark,
+  figureMesh,
+  figureMix,
+  figurePose,
+  figureUnit,
+  frontOf,
+  headDeform,
+  jointMatrices,
+} from './figure-pose.js';
 /* eslint-disable no-func-assign */
 expose({
   FIGURE_BUILDS: [() => FIGURE_BUILDS],
@@ -29,6 +38,7 @@ expose({
   KIT_JACKETS: [() => KIT_JACKETS],
   KIT_LONG_COATS: [() => KIT_LONG_COATS],
   KIT_LONG_SLEEVES: [() => KIT_LONG_SLEEVES],
+  KIT_RANDOM_HEADS: [() => KIT_RANDOM_HEADS],
   KIT_SLEEVELESS: [() => KIT_SLEEVELESS],
   // @ts-expect-error -- replaced on purpose
   figureSeed: [() => figureSeed, v => (figureSeed = v)],
@@ -68,18 +78,25 @@ expose({
 /** @typedef {{ head?: string, build?: string, gait?: FigureGait, variety?: boolean }} FigureShapeChoice a person's
  * `figure`; `variety` (townsfolk) lets every build turn up, where anyone else's sliders decide it */
 
-/** the head shapes: radii as parts of the usual head's, squareness and taper (logic/figure-pose.js ellipsoid), and
- * (CH-3b, the owner: "heads ... made of various shapes and forms") the forms a head is built from: the jaw's width
- * (`jaw`) and squareness (`jsq`), the chin's size (`chin`), how far the cheekbones stand out (`cheek`) and how high
- * the cranium rises (`crown`) */
+/** the head shapes (CH-3b round 5, the owner: "Complete redo the heads. Use complex shapes with deformation"): each
+ * a sculpted head (logic/figure-pose.js headDeform): its radii as parts of the usual head's, how V its jaw is (below 0
+ * wider at the jaw than the cheeks), how far its chin drops, its cheekbones, how big the back of its skull, how flat its
+ * face. `hero` is the main character's (you), never picked at random */
 export const FIGURE_HEADS = Object.freeze({
-  round: { r: [1.04, 1, 1], sq: 0, taper: 0, jaw: 1, jsq: 0.25, chin: 0.85, cheek: 1.15, crown: 1 },
-  oval: { r: [0.92, 1.08, 0.96], sq: 0, taper: 0, jaw: 0.86, jsq: 0.1, chin: 1, cheek: 0.95, crown: 1.05 },
-  square: { r: [1, 0.96, 0.98], sq: 0.65, taper: 0, jaw: 1.1, jsq: 0.75, chin: 1.2, cheek: 1, crown: 0.95 },
-  long: { r: [0.86, 1.12, 0.92], sq: 0.3, taper: 0, jaw: 0.88, jsq: 0.4, chin: 1.2, cheek: 0.9, crown: 1.1 },
-  pear: { r: [1, 1, 0.98], sq: 0.2, taper: 0.22, jaw: 1.16, jsq: 0.4, chin: 1.05, cheek: 0.85, crown: 0.92 },
-  heart: { r: [1.02, 1.02, 0.98], sq: 0.1, taper: -0.2, jaw: 0.78, jsq: 0.05, chin: 0.75, cheek: 1.2, crown: 1.05 },
+  round: { r: [1.02, 0.98, 1], jaw: 0.2, chin: 0.25, cheek: 1.25, crown: 1, face: 0.4 },
+  oval: { r: [0.95, 1.03, 0.98], jaw: 0.55, chin: 0.5, cheek: 0.9, crown: 1.05, face: 0.55 },
+  square: { r: [1, 0.96, 0.98], jaw: -0.15, chin: 0.45, cheek: 1, crown: 0.95, face: 0.75 },
+  long: { r: [0.9, 1.1, 0.96], jaw: 0.45, chin: 0.85, cheek: 0.85, crown: 1.1, face: 0.6 },
+  pear: { r: [0.98, 0.98, 1], jaw: -0.35, chin: 0.35, cheek: 0.75, crown: 0.9, face: 0.5 },
+  heart: { r: [1.02, 1, 0.98], jaw: 0.95, chin: 0.55, cheek: 1.3, crown: 1.05, face: 0.5 },
+  /* narrow at the brow and the chin, wide at the cheekbones */
+  diamond: { r: [0.95, 1.03, 0.98], jaw: 0.8, chin: 0.7, cheek: 1.5, crown: 0.9, face: 0.55 },
+  /* wide and flat-faced, a strong jaw */
+  broad: { r: [1.08, 0.95, 1], jaw: 0.05, chin: 0.3, cheek: 1.1, crown: 0.95, face: 0.85 },
+  hero: { r: [0.97, 1.02, 0.98], jaw: 0.72, chin: 0.62, cheek: 1.1, crown: 1.12, face: 0.65 },
 });
+/** the head shapes a seed may pick (not the main character's) */
+export const KIT_RANDOM_HEADS = Object.freeze(Object.keys(FIGURE_HEADS).filter(k => k !== 'hero'));
 /** the builds: multipliers on the look's (exaggerated) sliders, and how each moves */
 export const FIGURE_BUILDS = Object.freeze({
   average: { k: {}, gait: {} },
@@ -163,7 +180,7 @@ export function figureShapeFor(look, seed, choice = {}) {
     const B = ['average', 'average', 'slim', 'stocky', 'athletic', 'pear', 'lanky', 'round', 'elder'];
     build = B[Math.floor(kitRnd(seed, 1) * B.length) % B.length];
   }
-  const heads = Object.keys(FIGURE_HEADS),
+  const heads = KIT_RANDOM_HEADS,
     head = heads[Math.floor(kitRnd(seed, 2) * heads.length) % heads.length];
   return {
     head: choice.head && choice.head in FIGURE_HEADS ? choice.head : head,
@@ -309,21 +326,33 @@ export function lookFigure(look, items, opts = {}) {
     );
   /* ---- the head ---- */
   /* the head (KIT_CHIBI.head, a direction's own): room for the face, hair and expressions, and the portraits'
-     close-ups; it grows a little with the body too, so a small figure is smaller all over and a tall one taller */
+     close-ups; it grows a little with the body too, so a small figure is smaller all over and a tall one taller.
+     One sculpted mesh (logic/figure-pose.js headDeform): the skull, the jaw line, the chin, cheekbones, the brow and
+     the eye sockets by the head shape, a little of each person's own on top; the nose and ears as parts on it */
   const hk3 = headK * PR.head * Math.sqrt(hk),
-    hr = /** @type {Vec3} */ ([0.31 * hk3 * HD.r[0], 0.3 * hk3 * HD.r[1], 0.29 * hk3 * HD.r[2]]),
-    head =
-      /** @type {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg: number, rings: number, sq: number, taper: number }} */ ({
-        kind: 'ellipsoid',
-        c: [0, hr[1] + 0.005, 0.01],
-        r: hr,
-        seg: 20,
-        rings: 14,
-        /* the face's surface (the marks sit on it); the jaw, chin, cheekbones and brow are forms of their own */
-        sq: HD.sq * 0.6,
-        taper: HD.taper * 0.5 + 0.06,
-      });
-  /* a neck, longer on a beanpole, all but gone on a kid; the slope of the shoulders up to it */
+    /* each person a little wider or narrower, longer or shorter, deeper or flatter than their head shape */
+    hr = /** @type {Vec3} */ ([
+      0.31 * hk3 * HD.r[0] * (0.95 + 0.1 * kitRnd(seed, 17)),
+      0.3 * hk3 * HD.r[1] * (0.95 + 0.1 * kitRnd(seed, 18)),
+      0.29 * hk3 * HD.r[2] * (0.96 + 0.08 * kitRnd(seed, 19)),
+    ]),
+    deform = {
+      jaw: HD.jaw + 0.16 * (kitRnd(seed, 15) - 0.5) - (shape.build === 'round' ? 0.25 : 0),
+      chin: HD.chin * (0.85 + 0.3 * kitRnd(seed, 13)),
+      cheek: HD.cheek * (0.85 + 0.3 * kitRnd(seed, 14)),
+      crown: HD.crown,
+      brow: 0.8 + 0.4 * kitRnd(seed, 16),
+      face: HD.face + 0.3 * (kitRnd(seed, 20) - 0.5),
+    },
+    head = /** @type {{ kind: 'ellipsoid', c: Vec3, r: Vec3, seg: number, rings: number, deform: typeof deform }} */ ({
+      kind: 'ellipsoid',
+      c: [0, hr[1] + 0.005, 0.01],
+      r: hr,
+      seg: 30,
+      rings: 22,
+      deform,
+    });
+  /* a neck, longer on a beanpole, all but gone on a kid */
   add(
     'neck',
     'torso',
@@ -335,12 +364,11 @@ export function lookFigure(look, items, opts = {}) {
   const c1 = head.c[1],
     c2 = head.c[2],
     hk1 = hr[0] / 0.31,
-    /* each person's own face: a nose, a chin and cheekbones from their seed, on top of the head shape's */
+    /* each person's own nose, from their seed */
     noseK = 0.85 + 0.4 * kitRnd(seed, 11),
     noseLong = kitRnd(seed, 12),
-    chinK = HD.chin * (0.88 + 0.24 * kitRnd(seed, 13)),
-    cheekK = HD.cheek * (0.9 + 0.2 * kitRnd(seed, 14)),
-    jawK = HD.jaw * (0.95 + 0.1 * kitRnd(seed, 15)) * (shape.build === 'round' ? 1.08 : 1);
+    /** the face's surface straight ahead at height v (-1..1) on the head @param {number} v */
+    faceZ = v => c2 + hr[2] * headDeform([0, v, Math.sqrt(Math.max(0, 1 - v * v))], deform)[2];
   /** a form on the head @param {string} id @param {Vec3} cc @param {Vec3} rr @param {Partial<FigureShape>} [o] */
   const form = (id, cc, rr, o = {}, col = 'skin') =>
     add(
@@ -350,79 +378,61 @@ export function lookFigure(look, items, opts = {}) {
       /** @type {FigureShape} */ ({ kind: 'ellipsoid', c: cc, r: rr, seg: 14, rings: 9, ...o }),
       col
     );
-  /* the cranium, rounder and fuller behind the face */
-  form(
-    'cranium',
-    [0, c1 + hr[1] * 0.1 * HD.crown, c2 - hr[2] * 0.08],
-    [hr[0] * 0.97, hr[1] * (0.87 + 0.4 * (HD.crown - 1)), hr[2] * 0.94],
-    { seg: 16, rings: 10 }
-  );
-  /* the jaw: a block narrowing to the chin, squarer on a square head */
-  form('jaw', [0, c1 - hr[1] * 0.42, c2 + hr[2] * 0.04], [hr[0] * 0.8 * jawK, hr[1] * 0.5, hr[2] * 0.76], {
-    sq: HD.jsq,
-    taper: -0.32 + HD.jsq * 0.2,
-    seg: 16,
-    rings: 9,
-  });
-  /* the chin, standing a little forward of the jaw */
-  form('chin', [0, c1 - hr[1] * 0.8, c2 + hr[2] * 0.44], [hr[0] * 0.24 * chinK, hr[1] * 0.14 * chinK, hr[2] * 0.26], {
-    sq: HD.jsq * 0.6,
-    seg: 10,
-    rings: 6,
-  });
-  /* cheekbones, high and out at the sides of the face */
-  for (const s of [1, -1])
-    form(
-      'cheek' + (s > 0 ? 'A' : 'B'),
-      [s * hr[0] * 0.56, c1 - hr[1] * 0.24, c2 + hr[2] * 0.46],
-      [hr[0] * 0.26 * cheekK, hr[1] * 0.2, hr[2] * 0.3 * cheekK],
-      { seg: 10, rings: 6 }
-    );
-  /* the brow: a ledge over the eyes that throws them into a little shade */
-  form('brow', [0, c1 + hr[1] * 0.06, c2 + hr[2] * 0.83], [hr[0] * 0.66, hr[1] * 0.1, hr[2] * 0.2], {
-    sq: 0.3,
-    seg: 12,
-    rings: 6,
-  });
-  /* the nose: a bridge down from the brow, its tip and its wings; long, short or broad by the person */
-  const nTip = /** @type {Vec3} */ ([0, c1 - hr[1] * (0.3 + 0.08 * noseLong), c2 + hr[2] * (1.0 + 0.06 * noseK)]);
+  /* the nose: a bridge down from the brow, its tip and its wings, of the person's kind: a short upturned button, a
+     straight one, a long one with a bump on its bridge, or a broad one */
+  const noseKind = Math.floor(kitRnd(seed, 21) * 4) % 4,
+    tipV = -(noseKind === 0 ? 0.26 : noseKind === 2 ? 0.4 : 0.3 + 0.08 * noseLong),
+    nTip = /** @type {Vec3} */ ([
+      0,
+      c1 + hr[1] * tipV + (noseKind === 0 ? 0.008 * hk1 : 0),
+      faceZ(tipV) + (noseKind === 0 ? 0.022 : noseKind === 2 ? 0.04 : 0.03) * hk1 * noseK,
+    ]),
+    wingK = noseKind === 3 ? 1.45 : 1;
+  if (noseKind === 2)
+    form('nbump', [0, c1 - hr[1] * 0.16, faceZ(-0.16) + 0.012 * hk1], [0.014 * hk1, 0.022 * hk1, 0.014 * hk1], {
+      seg: 8,
+      rings: 5,
+    });
   add(
     'nose',
     'head',
     [0, 0, 0],
     {
       kind: 'capsule',
-      a: [0, c1 - hr[1] * 0.02, c2 + hr[2] * 0.93],
+      a: [0, c1 - hr[1] * 0.04, faceZ(-0.04) - 0.004],
       b: nTip,
-      r0: 0.012 * hk1,
-      r1: 0.02 * hk1 * noseK,
+      r0: 0.011 * hk1,
+      r1: 0.019 * hk1 * noseK,
       seg: 8,
     },
     'skin'
   );
-  form('ntip', nTip, [0.026 * hk1 * noseK, 0.024 * hk1 * noseK, 0.024 * hk1 * noseK], { seg: 10, rings: 6 });
+  form('ntip', nTip, [0.024 * hk1 * noseK, 0.022 * hk1 * noseK, 0.022 * hk1 * noseK], { seg: 10, rings: 6 });
   for (const s of [1, -1])
     form(
       'nwing' + (s > 0 ? 'A' : 'B'),
-      [s * 0.024 * hk1 * noseK, nTip[1] - 0.006 * hk1, nTip[2] - 0.016 * hk1],
-      [0.016 * hk1 * noseK, 0.014 * hk1, 0.016 * hk1],
+      [s * 0.022 * hk1 * noseK * wingK, nTip[1] - 0.006 * hk1, nTip[2] - 0.016 * hk1],
+      [0.015 * hk1 * noseK * wingK, 0.013 * hk1, 0.015 * hk1],
       { seg: 8, rings: 5 }
     );
-  /* ears, just showing past the hair: the ear and its inner fold */
+  /* ears, just showing past the hair: the ear and its inner fold, bigger or smaller by the person */
+  const earK = 0.85 + 0.35 * kitRnd(seed, 22);
   for (const s of [1, -1]) {
     const e = s > 0 ? 'A' : 'B';
-    form('ear' + e, [s * hr[0] * 0.97, c1 - hr[1] * 0.08, c2 - hr[2] * 0.05], [0.032 * hk1, 0.062 * hk1, 0.045 * hk1], {
-      seg: 8,
-      rings: 6,
-    });
+    form(
+      'ear' + e,
+      [s * hr[0] * 0.88, c1 - hr[1] * 0.1, c2 - hr[2] * 0.08],
+      [0.03 * hk1 * earK, 0.06 * hk1 * earK, 0.044 * hk1],
+      {
+        seg: 8,
+        rings: 6,
+      }
+    );
     form(
       'earin' + e,
-      [s * hr[0] * 1.01, c1 - hr[1] * 0.1, c2 - hr[2] * 0.02],
-      [0.012 * hk1, 0.034 * hk1, 0.022 * hk1],
-      {
-        seg: 6,
-        rings: 4,
-      },
+      [s * hr[0] * 0.92, c1 - hr[1] * 0.12, c2 - hr[2] * 0.05],
+      [0.012 * hk1, 0.033 * hk1, 0.022 * hk1],
+      { seg: 6, rings: 4 },
       'nose'
     );
   }
@@ -1036,7 +1046,7 @@ export function lookFigure(look, items, opts = {}) {
       },
       'hair'
     );
-  if (hat) kitHat(add, hat, head, HD.crown);
+  if (hat) kitHat(add, hat, head, HD.crown * 1.06);
   if (wear.glasses === 'headset') {
     colours.gear = itemCol('headset', 0, [40, 40, 48]);
     for (const s of [1, -1])
@@ -1055,6 +1065,8 @@ export function lookFigure(look, items, opts = {}) {
       'gear'
     );
   }
+  /* a beard: a shell over the jaw and chin (the head's own sculpted shape, a little out), cut below the cheeks and
+     round under the ears; so it follows a V jaw or a square one */
   if (wear.facial === 'facial_beard')
     add(
       'beard',
@@ -1062,10 +1074,12 @@ export function lookFigure(look, items, opts = {}) {
       [0, 0, 0],
       {
         kind: 'ellipsoid',
-        c: [0, c1 - hr[1] * 0.62, hr[2] * 0.42],
-        r: [hr[0] * 0.78, hr[1] * 0.42, hr[2] * 0.62],
-        seg: 12,
-        rings: 7,
+        c: [head.c[0], head.c[1] - 0.004, head.c[2] + 0.006],
+        r: [hr[0] * 1.06, hr[1] * 1.04, hr[2] * 1.06],
+        seg: 24,
+        rings: 16,
+        deform: { ...deform, skull: true },
+        cut: { front: -0.42, side: -0.2, back: -1.5, under: true },
       },
       'hair'
     );
@@ -1121,7 +1135,7 @@ export function kitTopOf(p, parts) {
  * - bun, pony, twin: locks swept to where the hair is tied, then a bun, a tail or two tails.
  * Under a hat, only what shows below it: a cap or a beanie keeps a fringe, a brim none.
  * @param {(id: string, parent: string | null, at: Vec3, sh: FigureShape, col: string) => void} add
- * @param {string | null} style @param {{ c: Vec3, r: Vec3, sq: number, taper: number }} H the head
+ * @param {string | null} style @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number, deform?: import('./figure-pose.js').HeadDeform }} H the head
  * @param {boolean} hat @param {number} seed @param {boolean} [brim] under a brimmed hat (no fringe)
  * @param {number} [vol] the locks' thickness and bow times this (a hybrid variant's fuller hair)
  */
@@ -1175,10 +1189,12 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1) {
       kind: 'ellipsoid',
       c: [c[0], c[1] + r[1] * 0.03, c[2] - 0.004],
       r: [r[0] * capK, r[1] * capK, r[2] * capK],
-      seg: 20,
-      rings: 14,
+      seg: 24,
+      rings: 16,
       sq: H.sq,
       taper: H.taper,
+      /* over a sculpted head, its skull's shape (no features) */
+      ...(H.deform ? { deform: { ...H.deform, skull: true } } : {}),
       cut,
     },
     'hair'
@@ -1196,9 +1212,9 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1) {
       const t = count === 1 ? 0 : i / (count - 1) - 0.5,
         th = t * spread + j(i, 8),
         /* under a hat the fringe starts just under its band and only its ends show */
-        a = P(th * 0.4 + swept * 0.5, hat ? 28 : 72, hat ? 1.0 : 1.06),
-        b = P(th + swept + j(i + 20, 6), (hat ? to - 20 : to) + j(i + 40, 10), 1.1);
-      lock(a, b, (hat ? 0.02 : 0.065) * S, 0.072, 0.12, 0.45);
+        a = P(th * 0.4 + swept * 0.5, hat ? 10 : 72, hat ? 0.97 : 1.06),
+        b = P(th + swept + j(i + 20, 6), (hat ? to - 22 : to) + j(i + 40, 10), hat ? 1.04 : 1.1);
+      lock(a, b, (hat ? 0 : 0.065) * S, 0.072, 0.12, 0.45);
     }
   };
   /* a ring of locks from the crown down to `ph` (degrees up the head; below -90 runs on down the back), skipping the
@@ -1227,9 +1243,10 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1) {
       for (let i = 0; i < per; i++) {
         const th = sgn * (70 + i * 18);
         lock(
-          P(th * 0.6, hat ? 25 : 70, hat ? 1.0 : 1.06),
+          /* under a hat every lock starts under its band, so none comes out through its crown */
+          P(th * 0.6, hat ? 8 : 70, hat ? 0.98 : 1.06),
           P(th + sgn * 6, ph + j(i + (sgn > 0 ? 100 : 110), 8), 1.1),
-          (hat ? 0.02 : 0.05) * S,
+          (hat ? 0 : 0.05) * S,
           0.065,
           0.15,
           0.5
@@ -1242,6 +1259,75 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1) {
       const th = (360 * (i + 0.5)) / count + j(i + 120, 10);
       if (Math.abs(((th + 180) % 360) - 180) < 40) continue;
       lock(P(th, 20, 1.04), to, 0.04 * S, 0.06, 0.3, 0.45);
+    }
+  };
+  /* long flowing hair (the owner: "Give the girl long flowing hair"): locks from all round the back and sides falling
+     past the shoulders in two waving lengths, flaring out a little, and a lock each side down in front of the
+     shoulders */
+  const flowing = (/** @type {number} */ from) => {
+    const N = 11;
+    for (let i = 0; i < N; i++) {
+      const th = 100 + (160 * i) / (N - 1) + j(i + 170, 6),
+        sn = Math.sin(th * deg),
+        cs = Math.cos(th * deg),
+        /* layered: longest down the middle of the back, shorter toward the sides, each lock its own length */
+        len = 1.75 + 0.45 * Math.max(0, -cs) + 0.25 * kitRnd(seed, 180 + i),
+        wave = (i % 2 ? 1 : -1) * 0.045 * S,
+        a = P(th, from, 1.03),
+        m = /** @type {Vec3} */ ([sn * r[0] * 1.2, c[1] - r[1] * 1.05, c[2] + cs * r[2] * 1.22]),
+        b = /** @type {Vec3} */ ([
+          sn * r[0] * (1.12 + 0.12 * kitRnd(seed, 190 + i)),
+          c[1] - r[1] * len,
+          c[2] + cs * r[2] * 1.18 - 0.03,
+        ]),
+        mid = (/** @type {Vec3} */ p, /** @type {Vec3} */ q) =>
+          /** @type {Vec3} */ ([(p[0] + q[0]) / 2, (p[1] + q[1]) / 2, (p[2] + q[2]) / 2]);
+      const up = mid(a, m),
+        o1 = out(up),
+        k = n++ % 2 ? 'hair2' : 'hair';
+      add(
+        'lock' + n,
+        'head',
+        [0, 0, 0],
+        {
+          kind: 'tube',
+          a,
+          ctrl: [up[0] + o1[0] * 0.05 * S, up[1] + o1[1] * 0.05 * S, up[2] + o1[2] * 0.05 * S],
+          b: m,
+          r0: 0.09 * S,
+          r1: 0.07 * S,
+          flat: 0.45,
+          n: out(a),
+          seg: 7,
+          steps: 6,
+        },
+        k
+      );
+      const lo = mid(m, b);
+      add(
+        'lock' + n++,
+        'head',
+        [0, 0, 0],
+        {
+          kind: 'tube',
+          a: m,
+          ctrl: [lo[0] + sn * wave, lo[1], lo[2] + cs * wave + wave * 0.5],
+          b,
+          r0: 0.07 * S,
+          r1: 0.004 * S,
+          flat: 0.45,
+          n: [sn, 0, cs],
+          seg: 7,
+          steps: 8,
+        },
+        k
+      );
+    }
+    for (const sgn of [1, -1]) {
+      const a = P(sgn * 72, from - 10, 1.04),
+        b = /** @type {Vec3} */ ([sgn * r[0] * 0.92, c[1] - r[1] * 2.2, c[2] + r[2] * 0.42]);
+      lock(a, [sgn * r[0] * 1.08, c[1] - r[1] * 0.9, c[2] + r[2] * 0.2], 0.03 * S, 0.075, 0.6, 0.5);
+      lock([sgn * r[0] * 1.08, c[1] - r[1] * 0.9, c[2] + r[2] * 0.2], b, 0.04 * S, 0.06, 0.15, 0.5);
     }
   };
   const tail = (
@@ -1262,9 +1348,9 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1) {
     /* under a hat: a fringe (not under a brim) and locks over the ears */
     if (style !== 'hair_buzz') {
       fringe(style === 'hair_bob' ? 5 : 4, 70);
-      sides(style === 'hair_long' ? -130 : style === 'hair_bob' ? -60 : -20);
+      if (style !== 'hair_long') sides(style === 'hair_bob' ? -60 : -20);
     }
-    if (style === 'hair_long') crown(6, -150, 0.04, 60);
+    if (style === 'hair_long') flowing(6);
     if (style === 'hair_pony')
       tail('pony', P(180, 0, 1.0), P(180, -40, 1.5), [0, c[1] - r[1] * 1.3, c[2] - r[2] * 1.2], 0.08);
     return;
@@ -1286,9 +1372,9 @@ export function kitHair(add, style, H, hat, seed, brim = false, vol = 1) {
       sides(-60, 3);
       break;
     case 'hair_long':
-      crown(11, -170, 0.06);
+      crown(10, -45, 0.05);
       fringe(5, 80, 14);
-      sides(-140, 3);
+      flowing(40);
       break;
     case 'hair_spiky': {
       /* standing up and out from the crown, tips well off the head */
@@ -1470,21 +1556,22 @@ export function kitHat(add, hat, H, crown = 1) {
       break;
     case 'hat_beanie':
       /* knit, a little slouched behind, its cuff turned up and a bobble */
-      dome('hat', yb - 0.05, top - yb + 0.07, bx, bz * 1.02, 'hat', -0.012, -0.03);
+      /* fitted to the skull (its own crown hugs, a knit hat does not flare) */
+      dome('hat', yb - 0.03, top - yb + 0.04, bx * 0.97, bz * 0.99, 'hat', -0.008, -0.02);
       add(
         'slouch',
         'head',
         [0, 0, 0],
         {
           kind: 'ellipsoid',
-          c: [0, top - 0.06 * k, zc - bz * 0.3],
-          r: [bx * 0.66, 0.08 * k, bz * 0.6],
+          c: [0, top - 0.05 * k, zc - bz * 0.28],
+          r: [bx * 0.6, 0.065 * k, bz * 0.55],
           seg: 14,
           rings: 8,
         },
         'hat'
       );
-      band('fold', yb - 0.03, bx * 1.02, 0.042 * k, 'hat');
+      band('fold', yb - 0.012, bx * 0.96, 0.034 * k, 'hat');
       add(
         'bobble',
         'head',
@@ -1618,7 +1705,7 @@ export function kitHat(add, hat, H, crown = 1) {
  * the face as marks on the head (logic/figure-pose.js figureFaceMarks paints them in whole pixels): eyes by style
  * with a glint and an iris, lashes, brows by style, the mouth by style (a grin's teeth), blush, freckles, a stache,
  * stubble, and glasses (round and square frames, sunglasses, a monocle)
- * @param {{ c: Vec3, r: Vec3, sq: number, taper: number }} H @param {Record<string, string | null>} wear
+ * @param {{ c: Vec3, r: Vec3, sq?: number, taper?: number, deform?: import('./figure-pose.js').HeadDeform }} H @param {Record<string, string | null>} wear
  * @param {KitLook} look @param {Record<string, Vec3>} colours @param {number} seed @returns {FaceMark[]}
  */
 export function kitFaceMarks(H, wear, look, colours, seed) {
@@ -1629,8 +1716,9 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
     mark = (kind, x, y, w, h, o = {}) => out.push({ part: 'head', kind, ...frontOf(H, x, y), w, h, ...o }),
     /* every size is the spike's head's times how big this head is */
     k = r[0] / 0.31,
-    ex = r[0] * 0.35,
-    ey = c[1] - r[1] * 0.1,
+    /* eyes set wider or closer, higher or lower, by the person */
+    ex = r[0] * (0.32 + 0.06 * kitRnd(seed, 23)),
+    ey = c[1] - r[1] * (0.07 + 0.07 * kitRnd(seed, 24)),
     eyes = wear.eyes || 'eyes_round',
     /* the owner (2026-10-28: "the eyes look way too chibi and cute"): almond eyes, wider than tall, under a heavy lid;
        wide ones open more, sharp and sleepy ones narrower */
@@ -1738,7 +1826,7 @@ export function kitFaceMarks(H, wear, look, colours, seed) {
     }
   /* the mouth: a smile's arc; a grin open on teeth; an open mouth; a smirk tucked to one side; a neutral line; and in
      a close-up the lower lip's shade */
-  const my = c[1] - r[1] * 0.6;
+  const my = c[1] - r[1] * (0.56 + 0.08 * kitRnd(seed, 25));
   if (wear.facial === 'facial_stache') mark('stache', 0, my + 0.04 * k, 0.1 * k, 0.034 * k, { col: 'brow', min: 0.25 });
   if (mouth === 'mouth_grin') {
     mark('mouth', 0, my, 0.105 * k, 0.05 * k, { shape: 'oval' });

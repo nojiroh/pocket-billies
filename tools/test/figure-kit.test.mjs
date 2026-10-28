@@ -6,6 +6,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import {
   FIGURE_BUILDS,
   FIGURE_HEADS,
+  KIT_RANDOM_HEADS,
   figureSeed,
   figureShapeFor,
   kappiFigure,
@@ -14,6 +15,7 @@ import {
 } from '../../game/js/logic/figure-kit.js';
 import {
   figureGpuMesh,
+  shapeSurface,
   FIGURE_PAL_MAX,
   figureFaceMarks,
   figureMesh,
@@ -118,7 +120,9 @@ test('figure kit: shapes, builds and heights vary; a person’s choice wins', ()
   for (let s = 0; s < 200; s++) builds.add(figureShapeFor({}, figureSeed('folk:' + s), { variety: true }).build);
   assert.equal(builds.size, 8, [...builds].join());
   assert.equal(figureShapeFor({}, 12345).build, 'average');
-  assert.deepEqual([...heads].sort(), Object.keys(FIGURE_HEADS).sort());
+  assert.deepEqual([...heads].sort(), [...KIT_RANDOM_HEADS].sort());
+  assert.ok(!heads.has('hero'), 'the main character’s head is never picked at random');
+  assert.ok(FIGURE_HEADS.hero);
   /* a tall build stands taller than a small one, a round one is wider */
   const by = build => lookFigure(look, W.items, { name: 'x', figure: { build, head: 'round' } }),
     width = F => {
@@ -184,4 +188,21 @@ test('figure kit: the GPU mesh: a matrix only for moving parts (at most 32), eve
       );
     }
   }
+});
+
+test('figure kit: under a hat no lock of hair comes out through its crown (every hat, every hair style)', () => {
+  const base = PEOPLE.chosen.look;
+  for (const hat of ids('hat'))
+    for (const hair of ids('hair')) {
+      const F = lookFigure({ ...base, wear: { ...base.wear, hat, hair } }, W.items, { name: hat + hair }),
+        H = F.parts.find(p => p.id === 'head').shape,
+        band = H.c[1] + H.r[1] * 0.18,
+        zc = H.c[2] - H.r[2] * 0.06;
+      for (const p of F.parts.filter(q => /^(lock|curl)\d/.test(q.id)))
+        for (const v of shapeSurface(p.shape).pts) {
+          if (v[1] <= band + 0.005) continue;
+          const e = (v[0] / (H.r[0] * 1.1)) ** 2 + ((v[2] - zc) / (H.r[2] * 1.14)) ** 2;
+          assert.ok(e < 1.02, `${hat} ${hair} ${p.id}: ${v.map(x => x.toFixed(3))} (${e.toFixed(2)})`);
+        }
+    }
 });

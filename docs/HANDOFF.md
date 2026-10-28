@@ -2,6 +2,36 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-3b - The figure kit, the cast and its look - 2026-10-28
+Branch `claude/laughing-tesla-roy32r` (`track/characters` with main merged in), pushed for review into
+`track/characters`. The owner picked C (the 3D pixel puppet, from the mannequin's simpler shapes) and steered the
+look round by round in the same session; docs/phases/characters-track.md (CH-3b) lists every round.
+- Changed:
+  - logic/figure-kit.js (new): everyone's figure from their look: sculpted heads (eight shapes and the main
+    character's `hero`, varied per person), ten builds with their own gaits, every wardrobe slot as shapes, hair as
+    locks (long hair flowing), hats fitted round the head, the face as painted marks (almond eyes under a heavy lid,
+    brows, mouths, glasses; a close-up's crease, lower lid and lip), Kappi as a capybara.
+  - logic/figure-pose.js: headDeform, tubes, tapered and squarer ellipsoids, the GPU mesh with a matrix only for
+    moving parts (figures of 50 parts and more), figureSceneLight.
+  - figures.js: directions (FIGURE_LOOKS; gouache night the default style), the light's shadow map, rims, ink line
+    and occlusion; the scene's light (its sun, moon, room light and the lamps near each figure, stepped, the
+    pictures kept by it); portraits (figurePortrait) in a studio light; battles at 96 px a metre.
+  - Engine > People: Figure style (gouache night, HD-2D, painterly, pixel puppet, plain 3D), 48 px a metre; figures
+    still off by default (Figures (test)).
+  - people/<id>.json `figure` for the cast; people/girl.json in a beanie with long hair.
+  - tools/look-people.py: --cast, --styles (a panel and portraits a direction), --player=girl|boy.
+- Risky:
+  - The baked pictures are kept by the scene's light too: at night near lamps more pictures are baked (a phone
+    check of the bake count and memory, figureReport in the debug log, is owed).
+  - The in-world run (look-people --figures) takes 14 minutes headless for one shot; only a day shot was looked at.
+  - LOOK_PRESETS (the new game's default looks) are unchanged (a cap, a ponytail): changing them changes the
+    quick check's baseline pictures; the people/boy.json and girl.json looks are the figure presets.
+  - Figure portraits are not wired in place of the 32-bit portraits (the CLAUDE.md commitment); to decide.
+- Verified: lint, both type checks, format, 1,688 unit tests (the kit: every person and wardrobe item builds, faces
+  at 48 px, hair never through a hat's crown, the GPU mesh; figureSceneLight's sides, turn, steps, lamps), the
+  smoke checks (no problems); sheets of the cast, townsfolk, the boy and the girl in gouache night.
+- Next: CH-4 (the live atlas), in a new session.
+
 ### Characters track CH-3 - Spike 2: one figure, side by side - 2026-10-28
 Branch `track/characters`, the same session as CH-2, straight on at the owner's word ("Automatically follow the plan
 until you finished ch3 then stop"): the track file's CH-3 is the plan, and the "Ask me before" calls it touches were
