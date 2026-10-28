@@ -27,6 +27,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   perkChoose: [() => perkChoose, v => (perkChoose = v)],
   // @ts-expect-error -- replaced on purpose
+  perkCount: [() => perkCount, v => (perkCount = v)],
+  // @ts-expect-error -- replaced on purpose
   perkDraw: [() => perkDraw, v => (perkDraw = v)],
   perkOffer: [() => perkOffer],
   // @ts-expect-error -- replaced on purpose
@@ -42,6 +44,23 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/** PK-3: what a held Perk's card and row show of its marks on the run (perks-track.md rule 4: no hidden numbers): a
+ * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither). A
+ * row's mark is run.perkState['<id>/<row>'] (effects.js fxKey: a Perk's rows come first among its source's)
+ * @param {Run | null | undefined} run @param {string} id @param {Record<string, Perk>} perks */
+export function perkCount(run, id, perks) {
+  const P = perks[id],
+    M = /** @type {Record<string, { n?: number, used?: number }>} */ ((run && run.perkState) || {}),
+    out = /** @type {string[]} */ ([]);
+  if (!P) return '';
+  P.fx.forEach((f, i) => {
+    const m = M[`${id}/${i}`] || {};
+    if (f.once === 'run' && m.used) out.push('VOID');
+    else if (f.every) out.push(`${m.n || 0}/${f.every}`);
+  });
+  return [...new Set(out)].join(' · ');
+}
+
 /** the Perks that may be drawn: in perks.json, not held, with a rarity weight above 0, in perks.json's order (RF-4:
  * was by id; the data's order lets an id change without changing a seed's offers)
  * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[]} [also] left out too */

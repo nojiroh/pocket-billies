@@ -1699,8 +1699,8 @@
   ],
   "drop": [
    "game/js/boot.js:162",
-   "game/js/logic/perks.js:105",
-   "game/js/logic/perks.js:115",
+   "game/js/logic/perks.js:124",
+   "game/js/logic/perks.js:134",
    "game/js/logic/ui-dials.js:134",
    "game/js/map-tab.js:127"
   ],

@@ -870,7 +870,8 @@ def relics(pg, base):
     starts with the Speed stage and the catch row; walking in heals; a town's clinic charges half and its shop sells the
     day's Perk 15% cheaper; bought at the cap, one is let go; a mini-boss beaten stores a new pick before its sheet,
     whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it. PK-2: each card, row
-    and shop ware shows its Perk's own picture (72 px on the pick, 36 px in the tab, the shop and letting one go)"""
+    and shop ware shows its Perk's own picture (72 px on the pick, 36 px in the tab, the shop and letting one go).
+    PK-3: the tab shows a held Perk's counter (Click Pen 5/8, a spent Warranty Card VOID)"""
     pick = "!!uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
     stored = lambda: pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run")
     if not until(pg, pick, 90): raise Exception('the waiting pick didn’t open')
@@ -890,6 +891,9 @@ def relics(pg, base):
     if not until(pg, "document.querySelectorAll('.s-perks .bag-row').length===6", 10): raise Exception('the Perks tab doesn’t list six')
     got = pics('.s-perks .bag-row .art-ic')
     if len(got) != 6 or any(w != 36 or not f for w, f in got): raise Exception(f'the Perks tab’s pictures: {got}')
+    # PK-3: a held Perk's counter on its row: Click Pen at 5 of 8, a spent Warranty Card VOID (put back after)
+    cnt = pg.evaluate("(()=>{const r=saveData.run,keep=[r.perks.slice(),r.perkState];r.perks=['click_pen','warranty_card',...r.perks.slice(2)];r.perkState={'click_pen/0':{n:5},'warranty_card/0':{used:1}};render();const got=[...document.querySelectorAll('.s-perks .bag-row .note')].slice(0,2).map(e=>e.textContent);r.perks=keep[0];if(keep[1])r.perkState=keep[1];else delete r.perkState;render();return got})()")
+    if cnt != ['Uncommon · 5/8', 'Rare · VOID']: raise Exception(f'the Perks tab’s counters: {cnt}')
     pg.evaluate("uiState.tab='walk';render();0")
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')

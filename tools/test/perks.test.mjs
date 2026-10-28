@@ -145,3 +145,15 @@ test('relics: a seed’s offer order (Studio plan T4.1) is the run’s picks in 
     'past the cap nothing more is taken'
   );
 });
+
+test('PK-3 perkCount: a counter as n/every, VOID once a once-a-run row is spent, nothing otherwise', () => {
+  const r = run();
+  assert.equal(R.perkCount(r, 'click_pen', PERKS), '0/8');
+  r.perkState = { 'click_pen/0': { n: 5 }, 'warranty_card/0': { used: 1 } };
+  assert.equal(R.perkCount(r, 'click_pen', PERKS), '5/8');
+  assert.equal(R.perkCount(r, 'warranty_card', PERKS), 'VOID');
+  assert.equal(R.perkCount(run(), 'warranty_card', PERKS), '', 'not spent yet');
+  assert.equal(R.perkCount(r, 'lucky_charm', PERKS), '');
+  assert.equal(R.perkCount(null, 'click_pen', PERKS), '0/8');
+  assert.equal(R.perkCount(r, 'nope', PERKS), '');
+});
