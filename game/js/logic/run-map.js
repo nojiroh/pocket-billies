@@ -38,7 +38,7 @@
 /** @import { GhostRules, NodeType, RivalRules, RunMapRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
+import { fxRunRule, provide } from '../hooks.js';
 import { rngFirst, rngFrom } from './rng.js';
 import { weatherPick } from './weather.js';
 import { RUN_DAYS } from './run-state.js';
@@ -55,6 +55,8 @@ expose({
   runBack: [() => runBack],
   // @ts-expect-error -- replaced on purpose
   runExits: [() => runExits, v => (runExits = v)],
+  // @ts-expect-error -- replaced on purpose
+  runForecastDays: [() => runForecastDays, v => (runForecastDays = v)],
   // @ts-expect-error -- replaced on purpose
   runForecastFill: [() => runForecastFill, v => (runForecastFill = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1058,6 +1060,16 @@ export function runForecastFill(run, biomes, toDay) {
       days.push(weatherPick(climate, rngFrom(runNodeSeed(run.seed, i), 'weather|' + day).next()));
   });
 }
+/** PK-4: how many days ahead a run's forecast is rolled and shown: `ahead` (rules.json run.clock.ahead) and the run's
+ * forecastDays rule rows (Barometer: effects.js fxRunRule). The forecast is filled that far (the days a later fill
+ * would give, each from its own stream), so a Perk taken mid-run shows its days at once @param {Run} run
+ * @param {Record<string, { climate?: string }>} biomes @param {number} ahead @returns {number} the days shown */
+export function runForecastDays(run, biomes, ahead) {
+  /* the effects aren't loaded where the map is made alone (a test of this file): no rows then */
+  const n = Math.max(1, ahead + (typeof fxRunRule === 'function' ? fxRunRule(run, 'forecastDays') : 0));
+  runForecastFill(run, biomes, run.clock + n);
+  return n;
+}
 /** a node's weather on a day ('' when not rolled) @param {Run} run @param {number} i @param {number} day */
 export const runWeather = (run, i, day) => (run.forecast[runWorldNode(i)] || [])[day - 1] || '';
 provide({ runWeather }); /* to-module */
@@ -1081,7 +1093,7 @@ export function runMapStart(run, data) {
   if (data.ghost && data.rules.ghost) runMapGhost(run.seed, run.map, data.rules.ghost);
   run.forecast = [];
   runReveal(run.map, 0, data.rules.reveal);
-  runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);
+  runForecastDays(run, data.biomes, data.rules.clock.ahead);
   return run.map;
 }
 /** arrive at map node i: the landing first (day 1), then only a node linked to where you stand, forward or back, a day
@@ -1110,6 +1122,6 @@ export function runArrive(s, i, data) {
     map.nodes[i].side && map.side && map.side.to >= 0 ? map.nodes[map.side.to].row - 1 : map.nodes[i].row,
     data.rules.reveal
   );
-  runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);
+  runForecastDays(run, data.biomes, data.rules.clock.ahead);
   return run.clock;
 }

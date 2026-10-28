@@ -132,6 +132,7 @@ import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shad
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
+import { BATTLE_FX_SHADERS } from './walk/battle-fx.js';
 import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
@@ -368,6 +369,8 @@ export function ensureWalkGl(cv) {
       WEATHER_FX_SHADERS,
       /* VFX-2: a thrown pyramid's ribbon, so the first throw doesn't compile it */
       RIBBON_SHADERS,
+      /* VFX-9: the battle effects' pool */
+      BATTLE_FX_SHADERS,
       /* phase 20 R3: the instanced shadow pictures' and shadow models' programs */
       SHADOW_INSTANCE_SHADERS,
       typeof MODEL_SHADOW_SHADERS !== 'undefined' && MODEL_SHADOW_SHADERS,
@@ -828,6 +831,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
         ? { tex: FGS.tex, G: FGS.G, B: fogBox, k: fogK, lk: engineSetting('air', 'fogLamps') ?? 1, steps: fogSteps }
         : null,
       impact: BT && BT.impact ? impactOnScreen(C, BT.impact) : null,
+      caPulse: BT ? BT.caPulse || 0 : 0,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {

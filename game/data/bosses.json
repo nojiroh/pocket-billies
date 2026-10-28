@@ -3,6 +3,7 @@
  "bosses": {
   "retrieval": {
    "name": "The Retrieval Unit",
+   "faction": "bureau",
    "expeditions": [1],
    "who": "miner",
    "fighter": {"gem":"volt","torso":"intake","armL":"seizer","armR":"franker","legs":"conveyor"},

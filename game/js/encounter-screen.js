@@ -9,11 +9,26 @@
    - at the end, what changed (Moneys, items, pyramids) and "Keep walking".
    The event is spent when an option is picked (its cost paid then). While it plays, run.enc.play holds where it is
    (the event, the option, the script's last checkpoint, an event foe's class), saved at once: a reload in the middle
-   opens it again from there (encounterResume, through showPendingWindows), after the battle if one was on. */
+   opens it again from there (encounterResume, through showPendingWindows), after the battle if one was on.
+   SY-4: a Bureau event (events.json bureau: 1; logic/case-file.js) is a case file: the same sheet in a manila folder
+   with its form number and the Bureau's emblem on the tab, its lines typed in (pb-typed), its `redact` words under
+   bars until you choose (then the intro stays on file, the bars lifted), and its result stamped (pb-stamp). The
+   options, their costs and the summary are never covered. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, rewardPickOpen, toast } from './hooks.js';
-import { EVENTS, ITEMS, PERKS, PYRAMIDS, QUESTS, RESIDENTS, RULES, SPECIES, worldAddTrainers } from './game-data.js';
+import {
+  EVENTS,
+  FACTIONS,
+  ITEMS,
+  PERKS,
+  PYRAMIDS,
+  QUESTS,
+  RESIDENTS,
+  RULES,
+  SPECIES,
+  worldAddTrainers,
+} from './game-data.js';
 import { rngFrom } from './logic/rng.js';
 import { geneWords } from './logic/genes.js';
 import { bankTry } from './logic/gene-bank.js';
@@ -43,8 +58,11 @@ import {
 import { META_MAX } from './logic/meta-state.js';
 import { residentCandidate, residentInvite } from './logic/residents.js';
 import { runHome } from './logic/run-state.js';
+import { caseFile, caseStampMoment, redactSplit } from './logic/case-file.js';
 import { runMapNode } from './logic/run-map.js';
+import { runImmune } from './logic/run-loop.js';
 import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
+import { perkTeamOf } from './logic/perks.js';
 import {
   encChanges,
   encEventFoe,
@@ -67,11 +85,14 @@ import { startTrainer, startWild } from './logic/battle-engine.js';
 import { parseScript } from './logic/script-parse.js';
 import { runScript, storyHolds } from './logic/script.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { moneyHTML } from './art.js';
+import { moneyHTML, uiIconURL } from './art.js';
 import { perkPickOpen } from './perk-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   ENC_STOP: [() => ENC_STOP],
+  encCase: [() => encCase, v => (encCase = v)],
+  encCaseOf: [() => encCaseOf],
+  encCaseTab: [() => encCaseTab],
   encChoose: [() => encChoose, v => (encChoose = v)],
   encDna: [() => encDna],
   encFight: [() => encFight, v => (encFight = v)],
@@ -81,12 +102,16 @@ expose({
   encHolds: [() => encHolds],
   encLineHTML: [() => encLineHTML],
   encLines: [() => encLines, v => (encLines = v)],
+  encLinesHTML: [() => encLinesHTML],
   encNote: [() => encNote],
   encPlaying: [() => encPlaying, v => (encPlaying = v)],
   encRegion: [() => encRegion],
   encSheet: [() => encSheet, v => (encSheet = v)],
   encSheetClose: [() => encSheetClose, v => (encSheetClose = v)],
   encStep: [() => encStep, v => (encStep = v)],
+  encTypeKey: [() => encTypeKey, v => (encTypeKey = v)],
+  encTyped: [() => encTyped, v => (encTyped = v)],
+  encTypedHTML: [() => encTypedHTML],
   encWait: [() => encWait],
   encounterEnd: [() => encounterEnd, v => (encounterEnd = v)],
   encounterOpen: [() => encounterOpen, v => ((encounterOpen = v), provide({ encounterOpen }))],
@@ -109,11 +134,38 @@ const ENC_STOP = Object.assign(new Error('the event stopped'), { name: 'Encounte
 const encWait = async (/** @type {() => boolean} */ f) => {
   while (f()) await new Promise(r => setTimeout(r, 150));
 };
-/** a line as the sheet shows it: the speaker in bold */
-const encLineHTML = (/** @type {{ who: string | null, text: string }} */ l) =>
-  `<p class="ev-line">${l.who ? `<b>${escapeHtml(l.who)}</b> ` : ''}${escapeHtml(l.text)}</p>`;
+/** a line as the sheet shows it: the speaker in bold; SY-4: a case file's `redact` words under bars (lifted: still
+ * marked, but readable) @param {{ who: string | null, text: string }} l @param {string[]} [redact]
+ * @param {boolean} [lifted] */
+const encLineHTML = (l, redact, lifted) =>
+  `<p class="ev-line">${l.who ? `<b>${escapeHtml(l.who)}</b> ` : ''}${redactSplit(l.text, redact)
+    .map(p => (p.r ? `<span class="redact${lifted ? ' lifted' : ''}">${escapeHtml(p.t)}</span>` : escapeHtml(p.t)))
+    .join('')}</p>`;
+/** SY-4: the case file the event playing now is (null: a plain sheet), how many of its lines have been typed in, and
+ * a key for each sheet's typing */
+let encCase = /** @type {ReturnType<typeof caseFile>} */ (null),
+  encTyped = 0,
+  encTypeKey = 0;
+/** SY-4: an event's case file, or null @param {string} id */
+const encCaseOf = id => caseFile(id, EVENTS.events[id], { factions: FACTIONS });
+/** SY-4: the folder's tab: the emblem, the Bureau's name and the form number
+ * @param {NonNullable<ReturnType<typeof caseFile>>} C */
+const encCaseTab = C =>
+  `<div class="case-tab"><img class="case-emblem" src="${uiIconURL(C.emblem)}" width="36" height="36" alt=""><span class="case-who">${escapeHtml((FACTIONS.bureau && FACTIONS.bureau.name) || '')}</span><span class="case-form tnum">${escapeHtml(C.form)}</span></div>`;
+/** SY-4: lines typed in from line `skip` (a new key each time a sheet is built) @param {string} inner
+ * @param {number} skip */
+const encTypedHTML = (inner, skip) => `<pb-typed key="ev${++encTypeKey}" skip="${skip}">${inner}</pb-typed>`;
+/** the sheet's lines so far, as its body shows them; SY-4: in a case file the new ones type in */
+const encLinesHTML = () => {
+  const h = `<div class="ev-lines">${encLines.join('')}</div>`;
+  if (!encCase) return h;
+  const skip = encTyped;
+  encTyped = encLines.length;
+  return encTypedHTML(h, skip);
+};
 /** show the event's sheet (in place when it is up; ahead of any other) */
 function encSheet(M) {
+  if (encCase && M.cls === 'event-sheet' && !M.top) M.top = encCaseTab(encCase);
   if (uiState.modal && uiState.modal.cls !== M.cls) uiState.mq.unshift(uiState.modal);
   uiState.mq = uiState.mq.filter(q => q.cls !== M.cls);
   uiState.modal = M;
@@ -151,13 +203,16 @@ export function encounterOpen(i, id) {
   }
   saveNow();
   const E = EVENTS.events[ev],
-    intro = parseScript(E.intro).filter(n => n.k === 'say');
-  if (typeof debugLog !== 'undefined') debugLog.add('scene', `event ${ev}`);
+    intro = parseScript(E.intro).filter(n => n.k === 'say'),
+    C = encCaseOf(ev),
+    lines = `<div class="ev-lines">${intro.map(l => encLineHTML(l, C ? E.redact : undefined)).join('')}</div>`;
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `event ${ev}${C ? ` (case file, ${C.form})` : ''}`);
   encSheet({
     title: escapeHtml(E.title),
     cls: 'event-sheet',
     lock: true,
-    html: `<div class="ev-lines">${intro.map(encLineHTML).join('')}</div>`,
+    ...(C ? { top: encCaseTab(C) } : {}),
+    html: C ? encTypedHTML(lines, 0) : lines,
     btns: E.options.map((o, k) => {
       const st = eventOptionState(o, encHolds, saveData.se, ITEMS, encDna());
       return {
@@ -209,6 +264,14 @@ async function encounterPlay(resume, before) {
   }
   encPlaying = true;
   encLines = [];
+  /* SY-4: a case file keeps its intro on file at the top, the bars lifted now that you chose */
+  encCase = encCaseOf(P.id);
+  if (encCase)
+    for (const l of parseScript(E.intro).filter(n => n.k === 'say'))
+      encLines.push(
+        encLineHTML(/** @type {any} */ (l), E.redact, true).replace('class="ev-line"', 'class="ev-line case-intro"')
+      );
+  encTyped = encLines.length;
   let stopped = false;
   try {
     await runScript(parseScript(o.then), encounterStage(P.id, P.i), {
@@ -228,6 +291,8 @@ async function encounterPlay(resume, before) {
     stopped = true;
   }
   encPlaying = false;
+  const C = encCase;
+  encCase = null;
   if (saveData.story) delete saveData.story.wager;
   if (saveData.run && saveData.run.enc) saveData.run.enc.play = null;
   saveNow();
@@ -236,10 +301,12 @@ async function encounterPlay(resume, before) {
     encSheetClose();
     return;
   }
-  encounterEnd(E.title, before);
+  encounterEnd(E.title, before, C ? { C, moment: caseStampMoment(E, P.opt), id: P.id } : null);
 }
-/** the end: what changed, and back to walking */
-function encounterEnd(title, before) {
+/** the end: what changed, and back to walking; SY-4: a case file's result stamped under it (never over the summary)
+ * @param {string} title @param {any} before
+ * @param {{ C: NonNullable<ReturnType<typeof caseFile>>, moment: string, id: string } | null} [stamp] */
+function encounterEnd(title, before, stamp) {
   const ch = encChanges(before, { se: saveData.se, dna: encDna(), items: saveData.items, pyramids: saveData.pyramids }),
     name = (/** @type {string} */ k) =>
       k === 'money'
@@ -249,17 +316,24 @@ function encounterEnd(title, before) {
           : k.startsWith('coin:')
             ? (PYRAMIDS[k.slice(5)] || { n: k }).n
             : (ITEMS[k] || { n: k }).n;
-  encSheet({
+  const word = stamp ? stamp.C.stamps[/** @type {keyof typeof stamp.C.stamps} */ (stamp.moment)] || '' : '';
+  if (stamp && typeof debugLog !== 'undefined') debugLog.add('scene', `event ${stamp.id}: stamped ${stamp.moment}`);
+  /** @type {any} */
+  const M = {
     title: escapeHtml(title),
     cls: 'event-sheet',
     lock: true,
+    ...(stamp ? { top: encCaseTab(stamp.C) } : {}),
     html: `<div class="ev-lines">${encLines.join('')}</div>${
       ch.length
         ? `<p class="ev-sum">${ch.map(([k, n]) => (k === 'money' ? `${n > 0 ? '+' : '−'}${moneyHTML(Math.abs(n), 12)}` : `${n > 0 ? '+' : '−'}${Math.abs(n)} ${escapeHtml(name(k))}`)).join(' · ')}</p>`
         : ''
-    }`,
+    }${word ? `<p class="case-stamp"><pb-stamp word="${escapeHtml(word)}" size="lg" tilt="-8"></pb-stamp></p>` : ''}`,
     btns: [{ l: 'Keep walking', c: 'dark', f: closeModal }],
-  });
+  };
+  /* the stamp slams once: a redraw of the sheet shows it already stamped */
+  if (word) M.after = () => (M.html = M.html.replace('<pb-stamp ', '<pb-stamp still '));
+  encSheet(M);
 }
 /** the sheet with the lines so far and one button; resolves when it is tapped */
 function encStep(title, label) {
@@ -268,7 +342,7 @@ function encStep(title, label) {
       title: escapeHtml(title),
       cls: 'event-sheet',
       lock: true,
-      html: `<div class="ev-lines">${encLines.join('')}</div>`,
+      html: encLinesHTML(),
       btns: [{ l: label, c: 'dark', f: () => res(undefined) }],
     })
   );
@@ -287,6 +361,7 @@ async function encFight(start) {
   const run = saveData.run;
   if (!run || run.at.phase === 'payout' || !saveData.team.some(m => m.hp > 0)) throw ENC_STOP;
   encLines = [];
+  encTyped = 0;
 }
 
 /** the stage an event's script plays on: lines, choices and the event commands @param {string} id
@@ -306,7 +381,7 @@ function encounterStage(id, i) {
           title: escapeHtml(title),
           cls: 'event-sheet',
           lock: true,
-          html: `<div class="ev-lines">${encLines.join('')}</div>`,
+          html: encLinesHTML(),
           btns: options.map((op, k) => ({ l: escapeHtml(op.text), c: 'dark', f: () => res(k) })),
         })
       ),
@@ -322,7 +397,8 @@ function encounterStage(id, i) {
       encHurt(team(), +s, maxHp);
     },
     status: ([sid]) => {
-      encStatus(team(), sid);
+      /* PK-3: a Perk that keeps the status off (Oven Mitts) keeps it off the whole team */
+      if (!runImmune(saveData, PERKS, sid)) encStatus(team(), sid);
     },
     fx: ([n, ...row]) => {
       encBoon(saveData.run, [fxRowOf(row)], +n, id);
@@ -368,7 +444,7 @@ function encounterStage(id, i) {
     },
     perk: async ([arg]) => {
       const run = saveData.run,
-        pid = encPerk(run, arg, PERKS, RULES.run.perks);
+        pid = encPerk(run, arg, PERKS, RULES.run.perks, perkTeamOf(saveData.team));
       if (!pid) {
         encNote('There was nothing left to give you.');
         await encStep(title, 'Go on');
@@ -393,7 +469,7 @@ function encounterStage(id, i) {
           title: escapeHtml(title),
           cls: 'event-sheet',
           lock: true,
-          html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">Who goes back? It won’t come home.</p>`,
+          html: `${encLinesHTML()}<p class="note">Who goes back? It won’t come home.</p>`,
           btns: [
             ...L.map(m => ({
               l: `${escapeHtml(billyName(m))} <small>Lv ${m.lvl}</small>`,
@@ -439,7 +515,7 @@ function encounterStage(id, i) {
               title: escapeHtml(title),
               cls: 'event-sheet',
               lock: true,
-              html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">Your party is full. Who stays behind? It won’t come home.</p>`,
+              html: `${encLinesHTML()}<p class="note">Your party is full. Who stays behind? It won’t come home.</p>`,
               btns: [
                 ...L.map(m => ({
                   l: `${escapeHtml(billyName(m))} <small>Lv ${m.lvl}</small>`,
@@ -625,7 +701,7 @@ function encChoose(ask, options, leave) {
       title: escapeHtml(title),
       cls: 'event-sheet',
       lock: true,
-      html: `<div class="ev-lines">${encLines.join('')}</div><p class="note">${ask}</p>`,
+      html: `${encLinesHTML()}<p class="note">${ask}</p>`,
       btns: [
         ...options.map(o => ({ l: o.l, c: 'dark', dis: !!o.dis, f: () => res(o.v) })),
         ...(leave ? [{ l: 'Not now', c: 'quiet', f: () => res(null) }] : []),

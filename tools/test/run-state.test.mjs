@@ -346,3 +346,25 @@ test('run: the Expedition rules and the load check of what was picked and packed
   ])
     assert.equal(validRun(bad), false, JSON.stringify(bad.home ?? bad.pack ?? bad.start.buddy));
 });
+
+test('run: PK-1: run.perkState, missing or with bounded marks, passes; anything else is refused', () => {
+  const base = copy({ ...runBegin(hubSave(), GIVE), map: MAP, path: [0, 1], forecast: [['sun'], ['rain', 'sun']] }),
+    r = () => copy(base);
+  assert.equal(validRun(r()), true, 'missing (a run from before)');
+  for (const P of [{}, { 'click_pen/0': { n: 7 } }, { 'like_button/0': { v: 0.25 }, 'warranty_card/2': { used: 1 } }])
+    assert.equal(validRun({ ...r(), perkState: P }), true, JSON.stringify(P));
+  for (const P of [
+    null,
+    [],
+    { 'Bad Key/0': { n: 1 } },
+    { click_pen: { n: 1 } },
+    { 'click_pen/0': { n: 100 } },
+    { 'click_pen/0': { n: 1.5 } },
+    { 'click_pen/0': { v: 1e9 } },
+    { 'click_pen/0': { used: true } },
+    { 'click_pen/0': { by: ['u1'] } },
+    { 'click_pen/0': 3 },
+    Object.fromEntries(Array.from({ length: 201 }, (_, i) => [`p${i}/0`, {}])),
+  ])
+    assert.equal(validRun({ ...r(), perkState: P }), false, JSON.stringify(P).slice(0, 80));
+});
