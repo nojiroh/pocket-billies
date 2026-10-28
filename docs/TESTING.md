@@ -564,6 +564,15 @@ same phase:
   on the beat with its stems dropped and the fader alone, the fanfares' duck), `music-studio.test.mjs` (the jingles'
   findings and schema), `logic.test.mjs` (`jinglePlay` a seam). `check-studio-github.py --only=music` plays hatch
   8-bit and on its ensemble and draws a harmony note.
+  SND-13: check-sound renders each layer in play of a song whose ensemble has layers (`layer:<name>`, and
+  `layer:<name>@night` on a night version with its own ensemble: 234 fingerprints), GB Sounds off, the layers' notes
+  baked, logic/music-layers.js `MUSIC_LAYER_TESTS`' levels from the first step; every other part hears no layer levels
+  (layer parts silent, nothing dimmed); `--loudness` adds each layered row against the ensemble's. Unit tests:
+  `music-layers.test.mjs` (a part's gain, its beat or bar line, walking, the weather, the busker's earshot and
+  listening, a battle's build and peak from its lines with the real hitTier and koAhead, the arc, the schema's names),
+  `music-patterns.test.mjs` (the walk pattern, skip, a layer out of the bake and of a jingle), `tracker.test.mjs` (a
+  layered part's own gain after the part's, ramps at step times on the beat or bar, out until baked),
+  `sound.test.mjs` (an ensemble song keeps its name in an arc band, GB Sounds takes the band's version).
   `check-studio-github.py --only=music` checks the player's compressor, an instrument, an ensemble and GB Sounds on
   the Instruments tab. A Node record of every gb synth call (scratch, not committed) proved the refactor call for call.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's

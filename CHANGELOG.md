@@ -58,6 +58,14 @@ kept aside in the browser).
   and a bell instead of a murmur, and an inn, a library, a lab, a workshop or a barn each sound like themselves. All
   of it sits well under the music; the debug menu's Sound test and the Studio's Sounds tab play each.
 
+- **Music that listens** (sound track SND-13): the songs with the new instruments now change as you play, a beat or a
+  bar at a time. Walk through Copperleaf and a tambourine joins in (a snare on a route), and it drops out about a bar
+  after you stop. Rain adds a light celesta and brushes, snow sleigh bells, a storm low strings and timpani; on a
+  route at night a flute takes the tune. A wild battle starts lean and builds as the turns pass, KOs land and big hits
+  strike, with a choir and orchestra hits in the red zone and as a KO lands. In Copperleaf you hear the busker's
+  accordion inside the town's song as you pass, from the side where it plays; stop and listen a moment and it plays
+  your last run's theme. **GB Sounds** keeps the old behaviour. The debug menu's Sound test has a switch for each layer
+  and the busker at a distance.
 - **Fanfares with a band** (sound track SND-17): the jingles play on real-sounding instruments too: the victory a
   brass fanfare with strings and timpani, a level up on glockenspiel and harp, an evolution's string swell and harp
   glissando, a catch on plucked strings with a snare roll, a hatch on a music box, and the run's own: a sly clarinet

@@ -1389,6 +1389,91 @@ and any the bank later drops (least recently played first), bake on their first 
 - SND-11's "the jingles can use woodblock, glock, harp, brass, timpani, strings, celesta, musicbox": all twelve
   arrangements fit SND-11's 29 instruments; none was added.
 
+## SND-13: layers in play (as built)
+### SND-13 as built (2026-10-28, branch `track/sound`, the music lane, tag `snd-13-done` for the owner to push)
+One cause per commit; today's fingerprints never moved (FINGERPRINTS_LINE); the data commit added exactly the 18
+planned renders (`layer:<name>` parts), written once with plain `--baseline`.
+
+| Commit | What |
+|---|---|
+| 8f35516e | logic/music-layers.js: a part's layer gain from the game's levels (`musicLayerGain`; `still` = 1 − walk and `calm` = 1 − build, only once the game gives walk or build), its beat or bar line and ramp (`musicLayerMove`), walking (`musicLayerWalk`), the weather (`musicLayerWeather`), the busker by distance with hysteresis and its pan (`musicLayerBusker`, `musicLayerListen`, `musicLayerPan`), a battle's build and peak (`musicLayerFight`, `musicLayerBattle`, with hitTier and koAhead handed in), the arc (`musicLayerArc`), the renders an ensemble gets (`musicLayerTests`, `MUSIC_LAYER_TESTS`); tests |
+| e0bfba31 | music-patterns.js: the `walk` drum pattern (a light backbeat, the off-beats, a pickup); `musicEnsembleStep`'s `skip`; a layer's parts out of the bar's bake (`musicEnsembleNeeds` `{part}` bakes one) and out of a jingle |
+| 45f73fba | music.schema.json: a part's `layer` and `dim` (`$defs.layer`) |
+| 6216e661 | the tracker's layer controller: a layered part's own gain after the part's (`sg.lay[i]`), moved on its line from the step's time; a part that is out plays nothing; its notes bake when first wanted (`T.layersPrepare` ahead); the busker's panner; `T.layerStats` |
+| d6041ebb | sound.js `musicLayersNow` (walking, the weather, night) in the levels; on an ensemble the drums' bus stays full and the rain's 4 kHz muffle goes (gb keeps both); layers baked on arrival; the Sound test's layers; the debug log's `ensemble.layers` and `ensemble.parts` |
+| 40edfb27 | a battle's intensity (`musicLayersIntensity`) |
+| bbbfffd7 | the run's arc as layers: `songVariant` keeps an ensemble song's name in a band (gb, and GB Sounds, keep `@mid`/`@late`) |
+| 94b7d9cc | the busker: its layer by distance and pan; the last run's theme only when you stop to listen |
+| b9c6c0af | check-sound: `layer:<name>` parts (and `layer:<name>@night`), the loudness report's layered rows |
+| 836c2110 | the layers' placeholder parts in `copperleaf`, `copperleaf_night`, `route` and `battle` |
+| b75d5c34 | the Sound test's layer row |
+| 4289aa9a | a battle's peak parts baked as it starts |
+| c5bff6af | the Studio's logic worker loads music-layers.js |
+
+**How a layer works**: the game sets levels 0-1 (`soundEngine.L.layers`: walk, rain, snow, storm, night, busker, build,
+peak, and `buskerPan`) every 200 ms; the tracker reads them at each step of an ensemble. A part with `layer` plays only
+as far as that layer is up; `dim: {k: v}` takes the part down to v at a full layer k (`dim {night: 0.35}`, `dim {calm:
+0}`: out at a battle's intro). Walking and the busker move on a beat (walking in over a beat; out from a bar line over
+two beats, so the beat goes about a bar after you stop; 0.4 s of standing still never drops it); everything else on a
+bar line over a bar. Each ramp is `setValueAtTime(from, step time)` then `linearRampToValueAtTime(to, ...)`, never at
+currentTime. The layered part's gain sits after the part's own, so SND-17's stingers (which set the part's gain) and
+the layers never write the same node. No layer levels at all (every render that is not a `layer:` part, and the gb
+path) means layer parts silent, nothing dimmed: the ensemble as SND-11 wrote it.
+
+**Where the levels come from** (sound.js, the places the music read before):
+- walk: `walkView.pl.walk` (the joystick), as `L.drums` read it; on an ensemble it replaces `L.drums` (the drums' bus
+  stays 1); gb keeps 1 walking or in battle, else 0.45, × (1 − 0.4·night).
+- rain, snow, storm: `environment` (`E.rain`, `E.snow`, `E.storm`), outdoors, from 0.2 up to full at 0.8; on an
+  ensemble the rain layer replaces the 4 kHz muffle; gb keeps the muffle. The run map's forecast cut stays as it was.
+- night: the outdoor night level the night version reads (`L.night`).
+- busker: the `busker_case` prop's distance and pan (`soundPlacement`), outside a run, while a resident busks
+  (`squareBusker`) or, as long as no resident in the data busks, at the case alone (simulated). In earshot under 8 m
+  (out past 9), full within 2 m. Standing still within rules.json `square.busk.near` (5 m) for 3 s you listen: the
+  last run's theme plays (HB-10d's song) until you are 2 m further off.
+- build and peak: in a battle, from the lines played so far (`activeBattle.events` up to `.ev`, a new list each turn):
+  build = 0.25 a turn + 0.3 a KO + 0.35 a boss's phase (`alphaPhase` lines) + 0.15 a crit or 4× hit (`hitTier`),
+  up to 1; peak while the lead is in the red zone, while the line playing knocks something out (`koAhead`), and once
+  a boss or leader has changed phase. Out of a battle build is 1, and peak is the arc's: 0.6 on rows 3-5, 1 on 6-8.
+
+**The placeholder parts** (Claude's drafts; the owner's ears decide):
+- `copperleaf`: a tambourine on the walk pattern as you walk; a celesta (`drip`, an octave up) and brushes in the rain;
+  sleigh bells (`skip`) in snow; low strings (centre 48) and timpani in a storm; the busker's accordion on the
+  counter. `copperleaf_night`: the same, softer, with brushes and a tambourine as you walk.
+- `route`: a walking snare (the orchestral snare on the walk pattern); the kit to 0.65 standing still (`dim {still}`),
+  0.6 at night; a flute takes the tune at night (the chip to 0.35); the same rain, snow and storm parts.
+- `battle` (wild): from the intro the brass stabs out, the timpani at 0.3, the spiccato at half, the kit at 0.6
+  (`dim {calm}`), all full by the build's top; a choir and orchestra hits at the peak.
+
+**Fingerprints** (18 new, `layer:<name>` in each song's file): copperleaf `walk`, `rain`, `snow`, `storm`, `busker`
+and each `@night`; route `walk`, `still`, `rain`, `snow`, `storm`, `night`; wild `intensity1`, `intensity3`.
+
+**Loudness and levels**: LOUDNESS_LINE
+
+**Corrections found in SND-13** (checked in the code):
+- "Shares the stems with SND-17's stingers through a multiplier per owner, or the layers get their own gains": the
+  layers act on an ensemble's parts (`sg.parts`), not on the gb stems (`sg.stems`); a layered part gets its own gain
+  after the part's. The gb stems have no layers (gb keeps `L.drums`, the night pad and the muffle).
+- "It replaces today's `L.drums`": the drums' bus is the same node on both paths; on an ensemble it is held at 1 and
+  the walking beat and the dims do the work.
+- Layer parts in the bar's bake would crowd the bank (a run's place holds about 7 of the 8 MB): a layer's notes bake
+  when the layer first comes (it waits out until they are ready, then comes in on its line), on arrival for walking
+  and the weather and night there, and as a battle starts for its peak (a KO's peak lasts a line or two).
+- "Night swaps the lead for a flute or e-piano": Copperleaf already has a night version with its own ensemble (the
+  flute); the night layer swaps the route's lead, the only other ensemble a night reaches. Copperleaf's day tambourine
+  got no night dim (its night version has its own, softer walking beat), so it has no `layer:night` render.
+- The arc: no run song names an ensemble yet (the biome songs are gb until SND-12), so the arc's layers are wired and
+  tested but heard nowhere in a run today; the quick check's "Run music" still sees `@mid` and `@late` (gb).
+- "Use HB-10d's busker if it is in the data": `squareBusker` exists but no resident in residents.json busks, so the
+  busker is simulated at the case until RS-5. The hub's arrival point is 6.6 m from the case: arriving home you hear the
+  accordion faintly (level 0.2); square-day.test.mjs's "the hub is out of earshot" is about the 5 m listen, still true.
+- `musicLayerFight` takes hitTier and koAhead as arguments: importing them into a logic module made tools/to-module.mjs
+  route them through hooks.js, which rewrites battle-anims.js's generated block (the VFX track's file). sound.js
+  imports them directly (battle-anims.js loads before it).
+- A "busker distance slider" in the Sound test is a select of 1-10 m (the 40 px rule on the debug menu's controls).
+
+**Not done here**: festival players (HB-10e has none in the data); ensembles for other songs and their layers (SND-12);
+an e-piano night lead (only the route's flute so far); the mix of the layers on the phone (SND-15).
+
 ## Ask me before (Part 2; the first four before SND-8a)
 Since the owner's standing instruction (2026-10-27, "How the sessions run"), each session takes the recommended
 option below and lists it in its HANDOFF entry under "Decided for the owner, to review"; the owner can change any of
@@ -1424,7 +1509,8 @@ them later.
 - iPhones mute Web Audio with the ring/silent switch: expected; each listening list says so.
 - Quick-check steps that assert sound behaviour: Sound settings (slider → bus through a connect wrapper; birds must
   still reach `ambience.amb` or `lpA`), Animals (≥ 9 beds), Sound effects (the beds' duck equals `bedsUnderSong`),
-  Debug menu (its section list), Run music (expects `@mid`/`@late`: it changes when the arc becomes layers), the
+  Debug menu (its section list), Run music (expects `@mid`/`@late`: since SND-13 an ensemble song hears its arc as
+  layers instead, and the biome songs are still gb, so the step is unchanged), the
   40 px targets (the GB Sounds switch).
 
 ## Key files
