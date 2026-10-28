@@ -77,10 +77,12 @@ export function pyramidRamp(E, kind) {
   return (kind && E.kinds[kind]) || E.kinds.pyramid || 'None';
 }
 
-/** VFX-16: the VS splash portraits' scale: a whole number (rule 2), at most `most`, so two portraits of `cropW` art px
- * take at most 70% of a stage `boxW` CSS px wide; never under 1
- * @param {number} boxW @param {number} cropW @param {number} most */
-export function vsPortraitScale(boxW, cropW, most) {
+/** VFX-16: the VS splash portraits' scale: a whole number (rule 2), at most `most`, so two portraits of `cropW` x
+ * `cropH` art px take at most 44% of a stage `boxW` CSS px wide (the name between them) and 45% of its `boxH` high;
+ * never under 1
+ * @param {number} boxW @param {number} cropW @param {number} most @param {number} [boxH] @param {number} [cropH] */
+export function vsPortraitScale(boxW, cropW, most, boxH = Infinity, cropH = 0) {
   if (!(cropW > 0)) return 1;
-  return Math.max(1, Math.min(Math.floor(most), Math.floor((boxW * 0.35) / cropW)));
+  const tall = cropH > 0 ? Math.floor((boxH * 0.45) / cropH) : Infinity;
+  return Math.max(1, Math.min(Math.floor(most), Math.floor((boxW * 0.22) / cropW), tall));
 }

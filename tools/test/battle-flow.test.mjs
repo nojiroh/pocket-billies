@@ -65,10 +65,13 @@ test('pyramid kinds take their own ramps; an unknown kind the everyday one', () 
 });
 
 test('the portraits: whole-number scales, at most the data, never under 1', () => {
-  assert.equal(vsPortraitScale(400, 62, 2), 2);
+  assert.equal(vsPortraitScale(600, 62, 2), 2);
+  assert.equal(vsPortraitScale(390, 62, 2), 1, 'a phone: 1x, so both fit beside the name');
   assert.equal(vsPortraitScale(150, 62, 2), 1);
   assert.equal(vsPortraitScale(1000, 62, 2), 2);
   assert.equal(vsPortraitScale(300, 0, 2), 1);
+  assert.equal(vsPortraitScale(600, 62, 2, 300, 76), 1, 'a short stage keeps them small');
+  assert.equal(vsPortraitScale(600, 62, 2, 400, 76), 2);
   for (const w of [120, 240, 360, 480]) assert.ok(Number.isInteger(vsPortraitScale(w, 62, E.vs.scale)));
 });
 

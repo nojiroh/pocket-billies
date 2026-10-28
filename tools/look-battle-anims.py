@@ -28,6 +28,7 @@ gives the same film.
     python3 tools/look-battle-anims.py --only=zip --measure  # draws, rig uploads and frame time per film
     python3 tools/look-battle-anims.py --only=zip --sheets --outcomes=se,crit --sides=0   # fewer films
     python3 tools/look-battle-anims.py --flow [--only=enter.0,caught]    # VFX-16: the flow moments' sheets
+    python3 tools/look-battle-anims.py --vs [--only=crude,blake,boss]    # VFX-16: the VS splash, in and out
 
 Uses the browser checks' page set-up (tools/browser_check.py)."""
 import json
@@ -163,6 +164,47 @@ def sheet(pg, key, mid, si, res, start=None, n=16, every=5):
     (OUT / '_frame.png').unlink()
 
 
+# VFX-16: the VS splash as a trainer comes in (a phone-sized page; its banner's own timers stopped and its CSS
+# animations stepped by hand, since a software screenshot takes longer than the splash): yours and theirs, the name and
+# title, going in and out; `boss` stands a bosses.json boss in for a leader
+VS_FOES = ['crude', 'blake', 'boss']
+
+
+def vs_films(b, base, errs):
+    from PIL import Image
+    for who in [w for w in VS_FOES if not ONLY or w in ONLY]:
+        for red in (0, 1):
+            key = f"vs.{who}{'.reduced' if red else ''}"
+            ctx, pg = CF.new_page(b, errs, width=390, height=760, low=False, timeout=300000, init=(RENDER, SEEDED))
+            pg.goto(base + '/index.html?fixture=town')
+            if not CF.until(pg, READY, 300): raise Exception('the town fixture never got ready')
+            # catch the banner the moment it is added, before its timers can take it away
+            pg.evaluate("new MutationObserver((L,o)=>{for(const r of L)for(const n of r.addedNodes)if(n.tagName==='PB-NAME-BANNER'){window.__vs=n;n.updateComplete.then(()=>setTimeout(()=>n._timers.forEach(clearTimeout),0));o.disconnect()}}).observe(document.body,{childList:true,subtree:true});0")
+            pg.evaluate(f"setReducedMotion({'true' if red else 'false'});uiState.toastQ=[];uiState.modal=null;uiState.mq=[];saveData.team.forEach(m=>{{m.hp=maxHp(m)}});0")
+            if who == 'boss':
+                pg.evaluate("TRAINERS.vsboss={...TRAINERS.crude,id:'vsboss',name:'Boss',boss:Object.keys(BOSSES)[0],alpha:true,miniboss:false};startTrainer('vsboss');0")
+            else:
+                pg.evaluate(f"startTrainer({json.dumps(who)});0")
+            if not CF.until(pg, "!!window.__vs", 30):
+                print(key, 'no splash', flush=True)
+                ctx.close()
+                continue
+            pg.wait_for_timeout(100)
+            shots, pre = [], 'f-' if red else ''
+            for cls, ms in [(pre + 'in', 40), (pre + 'in', 120), (pre + 'in', 400), (pre + 'out', 60), (pre + 'out', 120), (pre + 'out', 400)]:
+                pg.evaluate(f"(async()=>{{const e=__vs;e._at={json.dumps(cls)};await e.updateComplete;for(const a of e.shadowRoot.getAnimations()){{a.pause();a.currentTime={ms}}}return 0}})()")
+                pg.wait_for_timeout(50)
+                pg.screenshot(path=str(OUT / '_vs.png'))
+                shots.append(Image.open(OUT / '_vs.png').convert('RGB'))
+            w, h = shots[0].size
+            W = Image.new('RGB', (w * 3, h * 2))
+            for i, im in enumerate(shots): W.paste(im, ((i % 3) * w, (i // 3) * h))
+            W.save(OUT / f'{key}.png')
+            (OUT / '_vs.png').unlink()
+            print(key, 'filmed', flush=True)
+            ctx.close()
+
+
 def measure(pg, moves):
     rows = {}
     for m in moves:
@@ -220,6 +262,11 @@ def main():
     errs = []
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=CF.LAUNCH)
+        if 'vs' in OPT:
+            vs_films(b, base, errs)
+            b.close()
+            srv.shutdown()
+            return
         ctx, pg = CF.new_page(b, errs, width=480, height=320, low=False, timeout=300000, init=(RENDER, SEEDED))
         pg.goto(base + '/index.html?fixture=town')
         if not CF.until(pg, READY, 300): raise Exception('the town fixture never got ready')

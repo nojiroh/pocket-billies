@@ -33,11 +33,13 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
+  BATTLE_ANIMS,
   BOSSES,
   FACTIONS,
   GENES,
   ITEMS,
   MOVES,
+  NODE_TYPES,
   PASSIVE,
   PASSIVE_INFO,
   PERKS,
@@ -69,7 +71,7 @@ import {
 import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
 import { styleDials, styleNote } from './theme-sheet.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
-import { lvlSlot } from './logic/battle-flow.js';
+import { lvlSlot, vsPortraitScale, vsSplashFor } from './logic/battle-flow.js';
 import { popSize, rollValue } from './logic/hit-numbers.js';
 import {
   JOIN_LOCK_MS,
@@ -107,7 +109,7 @@ import {
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
 import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML, uiIconURL } from './art.js';
-import { portraitHTML } from './person-art.js';
+import { portraitHTML, portraitSize, portraitURL } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
@@ -158,6 +160,7 @@ expose({
   battleShell: [() => battleShell, v => (battleShell = v)],
   battleStamp: [() => battleStamp, v => (battleStamp = v)],
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
+  battleVsSplash: [() => battleVsSplash, v => (battleVsSplash = v)],
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
@@ -737,10 +740,33 @@ function hudMoment(an, ev) {
     const q = battleStage.coin && battleStageToCss(battleStage.coin);
     if (q) pbBurst(q.x, q.y, HUD_BURSTS.caught(L));
   } else if (an.k === 'trainerIn') {
-    const T = activeBattle && activeBattle.T;
-    if (T && (T.boss || T.alpha))
+    const T = activeBattle && activeBattle.T,
+      E = BATTLE_ANIMS.events && BATTLE_ANIMS.events.vs,
+      V = vsSplashFor(T, E);
+    if (V && E) battleVsSplash(T, V, E, $('#stage') || L);
+    else if (T && (T.boss || T.alpha))
       pbNameBanner($('#stage') || L, { name: T.name, kicker: 'Boss', tone: 'bad', hold: 640 });
   }
+}
+/* VFX-16: the VS splash for a leader, the rival or a boss as its trainer comes in: UI-17's name banner with the two
+   portraits (yours and theirs, at a whole-number scale), the name and the run role's title as the game shows them
+   (nodeTypes.json), the leader's type colour (a boss keeps the red family), the kit's slant. It fits inside
+   trainerIn's 1150 ms (in 240 + hold + out 180) and goes before a boss's join intro and SY-5's notice; under Reduced
+   motion it fades in and out, standing still */
+function battleVsSplash(T, V, E, host) {
+  const [cw, ch] = portraitSize(),
+    r = host.getBoundingClientRect(),
+    k = vsPortraitScale(r.width, cw, E.scale, r.height, ch),
+    face = (/** @type {string} */ who) => ({ src: portraitURL(who), w: cw * k, h: ch * k }),
+    NT = NODE_TYPES[V.role];
+  pbNameBanner(host, {
+    name: T.name,
+    kicker: NT ? NT.name : '',
+    tone: V.role === 'boss' ? 'bad' : 'special',
+    color: V.role !== 'boss' && V.type ? TYPE_GLOW[V.type] || '' : '',
+    faces: [face('me'), face(T.who)],
+    hold: E.hold,
+  });
 }
 const HUD_BURSTS = {
   lvl: (/** @type {Element} */ L) => ({ tone: 'var(--sig-growth)', size: 56, in: L }),
