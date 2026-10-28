@@ -70,6 +70,10 @@ expose({
   CRIES: [() => CRIES],
   JINGLES: [() => JINGLES],
   LIVE_VOLUMES: [() => LIVE_VOLUMES],
+  MUSIC_JINGLES_BATTLE: [() => MUSIC_JINGLES_BATTLE],
+  MUSIC_JINGLES_BOSS: [() => MUSIC_JINGLES_BOSS],
+  MUSIC_JINGLES_HUB: [() => MUSIC_JINGLES_HUB],
+  MUSIC_JINGLES_RUN: [() => MUSIC_JINGLES_RUN],
   RARE_BIRDS: [() => RARE_BIRDS],
   SONGS: [() => SONGS],
   ambience: [() => ambience],
@@ -98,6 +102,7 @@ expose({
   initSound: [() => initSound, v => (initSound = v)],
   jingle: [() => jingle, v => (jingle = v)],
   jinglePlay: [() => jinglePlay, v => ((jinglePlay = v), provide({ jinglePlay }))],
+  jinglesPrepare: [() => jinglesPrepare, v => (jinglesPrepare = v)],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
   musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
@@ -414,6 +419,21 @@ function musicPrepare(st, name) {
     want = new Set([name, st.night > 0 ? songVariant(base, { ...st, night: 1 }, SONGS, null, MUSIC.run) : null]);
   if (wild) want.add(songVariant(songFor(wild, MUSIC.where, SONGS), wild, SONGS, null, MUSIC.run));
   for (const n of want) if (n) T.prepare(n);
+  /* SND-17: the jingles this place can play: a run's stingers in its places, the title's motif in the hub (a run
+     starts there) */
+  jinglesPrepare(st.nodeType ? MUSIC_JINGLES_RUN : MUSIC_JINGLES_HUB);
+}
+/* SND-17: which jingles are baked ahead (their ensembles' notes), and when: a run's stingers on arriving in its places,
+   the battle's fanfares as a battle starts (the run's end ones too in a boss battle), the motif in the hub. Others bake
+   on their first play (which plays 8-bit) */
+const MUSIC_JINGLES_RUN = ['day', 'reveal', 'relic', 'payout_coin'],
+  MUSIC_JINGLES_HUB = ['motif'],
+  MUSIC_JINGLES_BATTLE = ['victory', 'caught', 'levelup', 'evolve'],
+  MUSIC_JINGLES_BOSS = ['run_won', 'run_lost'];
+function jinglesPrepare(ids) {
+  const T = soundEngine.tracker;
+  if (!T || !T.jinglePrepare || (T.gbOn && T.gbOn())) return;
+  for (const id of ids) if (MUSIC.jingles[id]) T.jinglePrepare(MUSIC.jingles[id]);
 }
 /* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
    in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
@@ -424,6 +444,8 @@ function battleMusicStart() {
   const st = musicState(),
     name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, null, MUSIC.run);
   if (!name) return;
+  /* SND-17: its fanfares baked while it plays */
+  jinglesPrepare(st.battle === 'boss' ? [...MUSIC_JINGLES_BATTLE, ...MUSIC_JINGLES_BOSS] : MUSIC_JINGLES_BATTLE);
   music(name, { intro: true, hold: true, restart: true });
   const sg = soundEngine.song;
   soundLog('battle ' + st.battle + ': ' + name + (sg && sg.name === name && sg.D.introSteps ? ', its intro' : ''));
