@@ -7,10 +7,23 @@
    above. phase 06-3: the only stage (the painted one is gone); a battle waits until the walk scene is ready. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { PYRAMIDS, activeBattle, fieldState, provide, reducedMotion } from './hooks.js';
+import {
+  BATTLE_ANIMS,
+  COATS,
+  PYRAMIDS,
+  activeBattle,
+  fieldState,
+  provide,
+  reducedMotion,
+  saveData,
+  styleDials,
+  styleNote,
+} from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
 import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
+import { battleAnimFrame, battleIconSprite } from './logic/battle-anims.js';
+import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
   AREAS,
@@ -41,10 +54,11 @@ import {
 } from './battle-stage.js';
 import { battleStageLookFrame } from './battle-stage-look.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
+import { graphicsOff } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { BATTLE_FX_KIND } from './walk/battle-fx.js';
+import { BATTLE_FX_KIND, battleFxHasAnim } from './walk/battle-fx.js';
 import { battleScarsEnd } from './walk/battle-scars.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
@@ -67,6 +81,8 @@ expose({
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
+  battleFoil: [() => battleFoil, v => (battleFoil = v)],
+  battleFoilOn: [() => battleFoilOn, v => (battleFoilOn = v)],
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
@@ -226,6 +242,26 @@ export function battle3dStop() {
     if (cv) cv.after(walkRenderer.ui);
   }
 }
+/* style track SY-6: the coat's foil in battle (logic/coat-foil.js): off under Reduced motion, with Flashes off, with
+   Graphics Off and at the battle's quality level 2 and up */
+function battleFoilOn() {
+  const p = (typeof saveData !== 'undefined' && saveData && saveData.preferences) || {};
+  return foilOn({
+    reduced: !!reducedMotion,
+    flashesOff: p.flashes === 'off',
+    graphicsOff: graphicsOff(),
+    level: battleStage.q.lvl,
+  });
+}
+/** SY-8: the foil with the Studio's dials (uiTheme.json style), counted for the debug log
+ * @param {string} coat @param {string} seed */
+function battleFoil(coat, seed) {
+  /* the Studio's battle preview has no theme sheet: today's numbers, nothing counted */
+  const sheet = typeof styleDials === 'function',
+    f = coatFoil(coat, COATS, battleStage.t, seed, battleFoilOn(), sheet ? styleDials() : {});
+  if (f && sheet) styleNote('foil');
+  return f;
+}
 /* what the engine draws this frame, in walk-scene meters (battle space shifted by battle3d.off) */
 function battle3dFrame() {
   if (!battleStage.on || !battleStage.L) return null;
@@ -267,6 +303,8 @@ function battle3dFrame() {
       aoR: Math.max(0.3, G.hw * mpp * 0.9),
       fade: B.s.a,
       person: 1,
+      /* style track SY-6: a coated Billie's foil, on the scene's clock */
+      foil: B.s.coat ? battleFoil(B.s.coat, `b${i}:${B.s.seed || 0}`) : null,
       /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
       hit: battle3dHit(B.s, i),
     });
@@ -286,6 +324,7 @@ function battle3dFrame() {
         fade: g.fade * B.s.a,
         glow: g.glow,
         ghost: true,
+        foil: null,
         hit: null,
       });
     }
@@ -302,7 +341,8 @@ function battle3dFrame() {
         actorPositions[i].x + (i === 0 ? -1.15 : 1.25) + Tr.x * actorMetersPerPixel[i],
         actorPositions[i].z + (i === 0 ? 0.25 : 0.4)
       ),
-      mpp = trainerMetersPerPixel(i);
+      /* CH-3: a figure (figures.js) stands as tall as the trainer it stands in for */
+      mpp = f.figure && f.ppm ? (i === 0 ? 1.42 : 1.7) / 1.75 / f.ppm : trainerMetersPerPixel(i);
     items.push({
       k: 'rig',
       im: f,
@@ -373,6 +413,18 @@ function battle3dFrame() {
       q.k = BATTLE_FX_KIND.sprite;
       q.key = p.spr;
       q.s = (p.k || 1) / 30;
+      /* VFX-10: an icon with a strip like it (battleAnims.json iconSprites) is drawn as that strip, in its type's ramp
+         (else the icon's), its frame stepped on the stage clock; a strip that plays once carries its own fade (its
+         last frames erode), so only a looping one also erodes by its age */
+      const I = battleIconSprite(BATTLE_ANIMS, p.spr, p.ramp);
+      if (I && battleFxHasAnim(I.sprite)) {
+        const S = BATTLE_ANIMS.sprites[I.sprite];
+        q.anim = I.sprite;
+        q.ramp = I.ramp;
+        q.f = battleAnimFrame(S, p.age, p.life);
+        q.scale = p.k || 1;
+        if (!S.loop) q.a = p.twinkle ? clamp(0.5 + 0.5 * Math.sin(p.age / 120), 0, 1) : 1;
+      }
     } else if (p.ring) {
       q.k = BATTLE_FX_KIND.ring;
       q.r = (p.r0 + (p.r1 - p.r0) * EASE.out(p.age / p.life)) / 30;

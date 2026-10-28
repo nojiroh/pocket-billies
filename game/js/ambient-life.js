@@ -7,7 +7,10 @@
    v27: rabbits and squirrels that bolt when you come close, frogs on the bank that leap into the water, seagulls
    that wheel overhead, mountain goats, cats sunning themselves in town, crabs scuttling sideways on the beach and
    lizards on warm rock. Flags on a kind: flee (how close you may come), hop (bounds along), fly (takes off like a
-   pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways). */
+   pigeon, frames 2-3), shore (lives at the water's edge), side (walks sideways).
+   SY-7: loose Bureau forms near its places (setPieces.json life). drift (with fly): blown along low and sideways
+   instead of wheeling like a gull, lands where the gust drops it, rustles instead of calling; frame 1 a corner lifting
+   at rest. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, saveData, soundEffectAt } from './hooks.js';
@@ -33,6 +36,7 @@ expose({
   ambientLife: [() => ambientLife],
   lifeFrame: [() => lifeFrame, v => (lifeFrame = v)],
   lifeFrameCount: [() => lifeFrameCount],
+  lifeGust: [() => lifeGust, v => (lifeGust = v)],
   lifeInit: [() => lifeInit, v => (lifeInit = v)],
   lifeKey: [() => lifeKey, v => (lifeKey = v)],
   lifeMeta: [() => lifeMeta, v => (lifeMeta = v)],
@@ -76,6 +80,7 @@ const LIFE_KIND = {
     sh: 0.17,
     flee: 2.6,
   },
+  form: { s: 0.95, speed: 0.5, sh: 0.06, flee: 1.6, fly: 1, drift: 1 },
 };
 provide({ LIFE_KIND }); /* to-module */
 const lifeFrameCount = k => {
@@ -331,14 +336,15 @@ export function lifeStep(dt) {
       }
       continue;
     }
-    if (K.fly && c.st === 'idle' && Math.random() < dt * 0.04) {
+    if (K.fly && c.st === 'idle' && Math.random() < dt * (K.drift ? 0.09 : 0.04)) {
       c.wait = -1;
       c.st = 'fly';
       c.ft = 0;
-      const a = Math.random() * 6.283;
+      const a = K.drift ? lifeGust() : Math.random() * 6.283;
       c.vx = Math.cos(a) * 2.2;
       c.vz = Math.sin(a) * 1.4;
       c.flip = c.vx > 0 ? -1 : 1;
+      if (K.drift && typeof soundEffectAt === 'function') soundEffectAt('rustle', c.x, c.z);
     }
     /* v47: a duck paddles away from you, keeping to the water */
     if (c.k === 'duck' && dp < 1.7 && c.st !== 'run') {
@@ -365,27 +371,38 @@ export function lifeStep(dt) {
       /* off they go */ const a = Math.atan2(c.z - P.z, c.x - P.x) + (Math.random() - 0.5);
       c.st = 'fly';
       c.ft = 0;
-      c.vx = Math.cos(a) * 3.2;
-      c.vz = Math.sin(a) * 2.2;
+      c.vx = Math.cos(a) * (K.drift ? 2.2 : 3.2);
+      c.vz = Math.sin(a) * (K.drift ? 1.4 : 2.2);
       c.flip = c.vx > 0 ? -1 : 1;
+      if (K.drift && typeof soundEffectAt === 'function') soundEffectAt('rustle', c.x, c.z);
     }
     if (c.st === 'fly') {
       c.ft += dt;
       c.x += c.vx * dt;
       c.z += c.vz * dt;
-      c.alt = Math.min(K.fly ? 4.5 : 3.2, c.alt + dt * 3);
+      c.alt = K.drift
+        ? Math.min(1.2, c.alt + dt * 1.5) + Math.sin(c.t * 4.1) * 0.012
+        : Math.min(K.fly ? 4.5 : 3.2, c.alt + dt * 3);
       c.fr = (K.fly ? 2 : 3) + (Math.floor(c.t * (K.fly ? 5 : 10)) % 2);
-      if (K.fly) {
+      if (K.drift) {
+        /* a form tumbles along the gust, wobbling a little */ const a =
+          Math.atan2(c.vz, c.vx) + Math.sin(c.t * 1.7) * dt * 0.8;
+        const sp = Math.hypot(c.vx, c.vz);
+        c.vx = Math.cos(a) * sp;
+        c.vz = Math.sin(a) * sp;
+        c.flip = c.vx > 0 ? -1 : 1;
+      } else if (K.fly) {
         /* a gull wheels */ const a = Math.atan2(c.vz, c.vx) + dt * 0.9;
         const sp = Math.hypot(c.vx, c.vz);
         c.vx = Math.cos(a) * sp;
         c.vz = Math.sin(a) * sp;
         c.flip = c.vx > 0 ? -1 : 1;
       }
-      if (c.ft > (K.fly ? 4 + Math.random() * 3 : 1.6)) {
+      if (c.ft > (K.drift ? 2.5 + Math.random() * 2 : K.fly ? 4 + Math.random() * 3 : 1.6)) {
         const A = c.area || [1, 1, sc.w - 1, sc.h - 1];
-        c.tx = A[0] + (A[2] - A[0]) * Math.random();
-        c.tz = A[1] + (A[3] - A[1]) * Math.random();
+        /* a form comes down ahead of itself, where the gust drops it (kept to its place) */
+        c.tx = K.drift ? clamp(c.x + c.vx * 0.6, A[0], A[2]) : A[0] + (A[2] - A[0]) * Math.random();
+        c.tz = K.drift ? clamp(c.z + c.vz * 0.6, A[1], A[3]) : A[1] + (A[3] - A[1]) * Math.random();
         c.st = 'land';
       }
       continue;
@@ -400,7 +417,7 @@ export function lifeStep(dt) {
         c.alt = 0;
         c.wait = 2 + Math.random() * 3;
       } else {
-        const s = Math.min(l, 3 * dt);
+        const s = Math.min(l, (K.drift ? 1.6 : 3) * dt);
         c.x += (vx / l) * s;
         c.z += (vz / l) * s;
         c.alt = Math.max(0, Math.min(c.alt, l * 0.8));
@@ -452,10 +469,14 @@ export function lifeStep(dt) {
             ? 2
             : lifeFrameCount(c.k) > 3 && !K.fly && Math.sin(c.t * 1.3 + c.x) > 0.35
               ? 3
-              : 0;
-      if (typeof soundEffectAt === 'function' && Math.random() < dt * 0.018)
+              : K.drift && Math.sin(c.t * 2.3 + c.x * 3) > 0.7
+                ? 1
+                : 0;
+      if (!K.drift && typeof soundEffectAt === 'function' && Math.random() < dt * 0.018)
         soundEffectAt('call', c.x, c.z, { k: c.k });
-      if (c.wait <= 0) {
+      /* a form never walks: it lies there until a gust or you lift it */
+      if (c.wait <= 0 && K.drift) c.wait = 2 + Math.random() * 4;
+      else if (c.wait <= 0) {
         lifeTarget(c);
         c.st = 'walk';
       }
@@ -535,6 +556,12 @@ function lifeSprites() {
     out.push({ c, im, x: c.x, z: c.z, y: y + (c.alt || 0), mpp: K.s / PPU, flip, sh: c.alt > 0.3 ? 0 : K.sh });
   }
   return out;
+}
+/* SY-7: the way the wind blows loose forms in this scene: across the view, left or right, the same for every form */
+function lifeGust() {
+  let h = 17;
+  for (const ch of String(walkView.id || '')) h = (h * 31 + ch.charCodeAt(0)) % 9973;
+  return (lifeRandom(h, 29) < 0.5 ? 0 : Math.PI) + (Math.random() - 0.5) * 0.7;
 }
 function rawHeightAtSafe(x, z) {
   return typeof rawHeightAt === 'function' ? rawHeightAt(walkView.sc, x, z) : 0;

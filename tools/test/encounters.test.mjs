@@ -240,3 +240,30 @@ test('RL-13: a route trainer never fields a final form under level 32, a Billie 
     assert.ok(at40.includes(sp), `${sp} at level 40`);
   }
 });
+
+test('encounters: PK-1: a level row from a boon or a Perk raises a place’s foes, as the Expedition’s does', () => {
+  const s = onRun(),
+    run = s.run,
+    i = run.map.nodes.findIndex(n => n.row === 2),
+    base = X.encPlaceLevel(run, i, RUN),
+    E = modules.effects,
+    R = modules['run-enc'];
+  assert.equal(E.fxRunFoeLevels(run), modules.modifiers.modFoeLevels(run), 'no Perk or boon: the modifiers’ alone');
+  R.encBoon(run, [{ kind: 'level', n: 3 }], 2, 'test');
+  assert.equal(X.encPlaceLevel(run, i, RUN), base + 3);
+  /* a test-only Perk's level and bossHp rows, with a growth from the run's marks */
+  const perks = {
+    test_hard: {
+      fx: [
+        { kind: 'level', n: 1, grow: { on: 'win', by: 1, max: 5 } },
+        { kind: 'bossHp', mult: 1.5 },
+      ],
+    },
+  };
+  run.perks = ['test_hard'];
+  run.perkState = { 'test_hard/0': { v: 2 } };
+  assert.equal(E.fxRunFoeLevels(run, perks), modules.modifiers.modFoeLevels(run) + 3 + 3);
+  assert.equal(E.fxRunBossHp(run, perks), modules.modifiers.modBossHp(run) * 1.5);
+  assert.equal(E.fxRunFoeLevels(null), 0);
+  assert.equal(E.fxRunBossHp(null), 1);
+});

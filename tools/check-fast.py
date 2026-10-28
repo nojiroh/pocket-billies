@@ -882,11 +882,17 @@ def relics(pg, base):
     the world shows, three cards; one taken: six held, the pick gone, stored; the Perks tab lists them; a battle
     starts with the Speed stage and the catch row; walking in heals; a town's clinic charges half and its shop sells the
     day's Perk 15% cheaper; bought at the cap, one is let go; a mini-boss beaten stores a new pick before its sheet,
-    whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it"""
+    whose button opens it; a reload (?fixture=stored) opens the same pick; Take none clears it. PK-2: each card, row
+    and shop ware shows its Perk's own picture (72 px on the pick, 36 px in the tab, the shop and letting one go).
+    PK-3: the tab shows a held Perk's counter (Click Pen 5/8, a spent Warranty Card VOID)"""
     pick = "!!uiState.modal&&uiState.modal.cls==='relic-pick'&&document.querySelectorAll('#ov pb-pick-card').length===3"
     stored = lambda: pg.evaluate("JSON.parse(localStorage.getItem(SAVE_KEY)).run")
     if not until(pg, pick, 90): raise Exception('the waiting pick didn’t open')
     offer = pg.evaluate("saveData.run.offer.slice()")
+    # PK-2: each Perk's own picture, 72 px on a pick card, 36 px in a row (whole multiples of its 36 px)
+    pics = lambda sel: pg.evaluate(f"[...document.querySelectorAll({sel!r})].map(e=>[e.offsetWidth,(getComputedStyle(e).backgroundImage.match(/art\\/(perks\\/\\w+\\.svg)/)||[])[1]||''])")
+    got = pics('#ov pb-pick-card .art-ic')
+    if got != [[72, f'perks/{k}.svg'] for k in offer]: raise Exception(f'the pick cards’ pictures: {got}')
     pg.evaluate("document.querySelectorAll('#ov pb-pick-card')[1].shadowRoot.querySelector('button').click();0")
     if not until(pg, "!document.querySelector('#ov [data-a=mb]').disabled", 10): raise Exception('a card didn’t enable Take it')
     pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
@@ -896,6 +902,11 @@ def relics(pg, base):
     if len(stored()['perks']) != 6: raise Exception('the pick wasn’t stored')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='perks';render();0")
     if not until(pg, "document.querySelectorAll('.s-perks .bag-row').length===6", 10): raise Exception('the Perks tab doesn’t list six')
+    got = pics('.s-perks .bag-row .art-ic')
+    if len(got) != 6 or any(w != 36 or not f for w, f in got): raise Exception(f'the Perks tab’s pictures: {got}')
+    # PK-3: a held Perk's counter on its row: Click Pen at 5 of 8, a spent Warranty Card VOID (put back after)
+    cnt = pg.evaluate("(()=>{const r=saveData.run,keep=[r.perks.slice(),r.perkState];r.perks=['click_pen','warranty_card',...r.perks.slice(2)];r.perkState={'click_pen/0':{n:5},'warranty_card/0':{used:1}};render();const got=[...document.querySelectorAll('.s-perks .bag-row .note')].slice(0,2).map(e=>e.textContent);r.perks=keep[0];if(keep[1])r.perkState=keep[1];else delete r.perkState;render();return got})()")
+    if cnt != ['5/8', 'VOID']: raise Exception(f'the Perks tab’s counters: {cnt}')
     pg.evaluate("uiState.tab='walk';render();0")
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
@@ -913,10 +924,14 @@ def relics(pg, base):
     pg.evaluate(f"uiState.modal=null;uiState.mq=[];openShop('{sid}');0")
     if not until(pg, "!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')", 10): raise Exception('the town’s shop has no Perk')
     shelf = pg.evaluate("Object.values(saveData.run.shelf)[0]")
+    got = pics('#ov .shop-sheet .art-ic')
+    if got != [[36, f'perks/{shelf}.svg']]: raise Exception(f'the shop row’s picture: {got}')
     price = pg.evaluate(f"Math.round(RULES.run.perks.price[PERKS['{shelf}'].rarity]*0.85)")
     se, held = pg.evaluate("[saveData.se,saveData.run.perks.slice()]")
     pg.evaluate("document.querySelector('#ov [data-a=shoprelic]').click();0")
     if not until(pg, "!!uiState.modal&&uiState.modal.cls==='relic-drop'&&document.querySelectorAll('#ov pb-pick-card').length===6", 10): raise Exception('buying at the cap didn’t ask which to let go')
+    got = pics('#ov pb-pick-card .art-ic')
+    if len(got) != 6 or any(w != 36 for w, f in got): raise Exception(f'letting one go: the pictures {got}')
     pg.evaluate("document.querySelector('#ov pb-pick-card').shadowRoot.querySelector('button').click();0")
     if not until(pg, f"saveData.run.perks.includes('{shelf}')&&!saveData.run.perks.includes('{held[0]}')", 10): raise Exception('the Perk wasn’t bought')
     after = pg.evaluate("[saveData.se,saveData.run.perks.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
@@ -1409,15 +1424,20 @@ def run_town_quests(pg, base):
 
 def run_village_stall(pg, base):
     """WM-5: the run fixture's village (Expedition I's last town): its name says Village; its market stall, tapped,
-    opens a shop of its own with 2 held items at their prices, no Perk and no fresh stock; the town's shop is another"""
-    i = pg.evaluate("saveData.run.map.nodes.findIndex((n,i)=>!!LOCATIONS[runWorldNode(i)].stall)")
+    opens a shop of its own with 2 held items at their prices and no Perk (Mo's fresh stock, when the run has one, its own);
+    the town's shop is another"""
+    # the run's world in (the page's first check, alone, starts before it is)
+    if not until(pg, "!!(saveData.run&&saveData.run.map&&runWorld.seed===saveData.run.seed&&LOCATIONS.length>saveData.run.map.nodes.length)", 120):
+        raise Exception("the run's world never came in")
+    i = pg.evaluate("saveData.run.map.nodes.findIndex((n,i)=>!!(LOCATIONS[runWorldNode(i)]||{}).stall)")
     if i < 0: raise Exception("no town on the run fixture's map has a market stall")
     node = pg.evaluate(f"runWorldNode({i})")
     name = pg.evaluate(f"LOCATIONS[{node}].name")
     if not name.endswith(' Village'): raise Exception(f'the town with a stall is called {name}')
     go_scene(pg, node, 120)
     if not pg.evaluate("walkView.sc.props.some(p=>p.act==='stall')"): raise Exception('the village has no market stall')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();"
+    # Mo at Lv 3 on this run (one fresh stock a run: logic/residents.js resRerolls), so the stall's own is tried below
+    pg.evaluate("saveData.run.res=Object.assign(saveData.run.res||{},{mo:3});saveData.run.reshop=[];uiState.modal=null;uiState.mq=[];renderOverlay();"
                 "(()=>{const p=walkView.sc.props.find(q=>q.act==='stall');walkPick({k:'act',p,act:'stall'});return 0})()")
     if not until(pg, "uiState.modal&&uiState.modal.shop&&document.querySelectorAll('#ov .shop-sheet .ware2').length>0", 15):
         raise Exception('tapping the market stall opened no shop')
@@ -1428,9 +1448,17 @@ def run_village_stall(pg, base):
     if len(wares) != 2 or not pg.evaluate(f"{json.dumps(wares)}.every(k=>ITEMS[k]&&(ITEMS[k].hold||[]).length)"):
         raise Exception(f'the stall sells {wares}, not 2 held items')
     if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')"): raise Exception('the stall offers a Perk')
-    if pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shopreroll]')"): raise Exception('the stall offers a fresh stock')
+    # the owner: Mo's fresh stock works at the stall too (one of the run's rerolls), its own apart from the shop's
+    if pg.evaluate("runRerollsLeft(saveData.run,RESIDENTS)<1"): raise Exception('Mo at Lv 3 gave the run no fresh stock')
+    if not pg.evaluate("!!document.querySelector('#ov .shop-sheet [data-a=shopreroll]')"): raise Exception('the stall offers no fresh stock with a reroll left')
+    pg.evaluate("document.querySelector('#ov .shop-sheet [data-a=shopreroll]').click();0")
+    if not until(pg, f"saveData.run.reshop&&saveData.run.reshop.includes('{i}:'+saveData.run.clock+':s')", 10): raise Exception('the fresh stock wasn’t kept as the stall’s')
+    again = pg.evaluate(f"SHOPS['{sid}'].stock.map(w=>w.item)")
+    if len(again) != 2 or not pg.evaluate(f"{json.dumps(again)}.every(k=>ITEMS[k]&&(ITEMS[k].hold||[]).length)"):
+        raise Exception(f'the fresh stock is {again}, not 2 held items')
+    fresh = f'; a fresh stock: {", ".join(again)}'
     pg.evaluate("closeModal();uiState.modal=null;uiState.mq=[];renderOverlay();0")
-    return f'{name}: its stall sells {", ".join(wares)}'
+    return f'{name}: its stall sells {", ".join(wares)}{fresh}'
 
 
 def waystations(pg, base):
@@ -1810,7 +1838,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("Salvage: two of the bots' parts and Scrap, no reroll; a part into your parts, Scrap home (RL-14)", salvage),
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
              ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests),
-             ("A run's village: its name, its market stall's own shop of 2 held items, no Perk (WM-5)", run_village_stall)]),
+             ("A run's village: its name, its market stall's own shop of 2 held items, no Perk, Mo's fresh stock (WM-5)", run_village_stall)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),

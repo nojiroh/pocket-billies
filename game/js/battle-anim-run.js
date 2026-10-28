@@ -168,6 +168,7 @@ function animStep(S, c) {
         ay: S.ay,
         life: S.life,
         spr: key,
+        ramp: c.type,
         k: S.k,
         fade: false,
         glow: K.GLOWING_PARTICLES[key],
@@ -186,6 +187,7 @@ function animStep(S, c) {
         vz: (T.z - A.z) * S.speed + S.side,
         life: S.life,
         spr: K.typeSprite(c.type, S.i),
+        ramp: c.type,
         k: 1,
       });
       return;
@@ -203,6 +205,7 @@ function animStep(S, c) {
         vz: -Math.sin(a) * 1.2,
         life: S.life,
         spr: key,
+        ramp: c.type,
         k: 1,
         glow: K.GLOWING_PARTICLES[key],
       });

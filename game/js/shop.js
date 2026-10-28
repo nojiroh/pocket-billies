@@ -9,13 +9,20 @@ import { clamp, random } from './util.js';
 import { CURRENCIES, ITEMS, PERKS, PYRAMIDS, RESIDENTS, RULES, SHOPS, UNLOCK_DATA } from './game-data.js';
 import { formatNumber, plural } from './logic/rules.js';
 import { resStock } from './logic/residents.js';
-import { runRerollsLeft, runShopOpen, runShopReroll, runShopRerolled, runStallStock } from './logic/run-loop.js';
+import {
+  runBuyFx,
+  runRerollsLeft,
+  runShopOpen,
+  runShopReroll,
+  runShopRerolled,
+  runStallStock,
+} from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
-import { perkBuy, perkPrice, perkShelf } from './logic/perks.js';
+import { perkBuy, perkPrice, perkShelf, perkTeamOf } from './logic/perks.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbGainFly, recentPress } from './ui-motion.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { glyphHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
+import { artIconHTML, glyphHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
 import { openDressingRoom } from './dressing-room.js';
 import { buzz } from './battle-stage.js';
@@ -120,28 +127,34 @@ function shopPerkHTML(id, sh) {
   const R = PERKS[L.id],
     can = saveData.se >= L.price;
   /* UI-14b: the Perk's tier (frame, name colour, pill), its stat rows as tags, its kind by the Perk glyph (violet) */
-  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}>${rarityFoilHTML(R.rarity)}<span class="w-ic">${uiIconHTML('relic', 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}>${rarityFoilHTML(R.rarity)}<span class="w-ic">${artIconHTML(R.img, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 /** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
 function shopRerollHTML(id, sh) {
   const run = saveData.run;
-  /* WM-5: Mo's word is for the town's shop, not its market stall */
-  if (sh.runNode == null || !run || sh.stall) return '';
-  const left = runRerollsLeft(run, RESIDENTS);
-  if (!left && !runShopRerolled(run, sh.runNode, run.clock)) return '';
-  return runShopRerolled(run, sh.runNode, run.clock)
+  if (sh.runNode == null || !run) return '';
+  /* WM-5: a town's market stall has a fresh stock of its own (the owner) */
+  const left = runRerollsLeft(run, RESIDENTS),
+    done = runShopRerolled(run, sh.runNode, run.clock, sh.stall ? 'stall' : 'shop');
+  if (!left && !done) return '';
+  return done
     ? '<p class="note">Fresh stock, on Mo’s word.</p>'
     : `<p class="note"><button class="pb small" data-a="shopreroll" data-s="${id}">Fresh stock, on Mo’s word (${left} left this run)</button></p>`;
 }
 function shopReroll(id) {
   const sh = SHOPS[id],
     run = saveData.run;
-  if (!sh || !run || sh.runNode == null || sh.stall) return;
-  if (!runShopReroll(run, sh.runNode, run.clock, RESIDENTS)) return;
-  sh.stock = runShopOpen(run, sh.runNode, run.clock, RULES.run.shop, UNLOCK_DATA);
+  if (!sh || !run || sh.runNode == null) return;
+  if (!runShopReroll(run, sh.runNode, run.clock, RESIDENTS, sh.stall ? 'stall' : 'shop')) return;
+  sh.stock = sh.stall
+    ? runStallStock(run, sh.runNode, run.clock, RULES.run.town.stall)
+    : runShopOpen(run, sh.runNode, run.clock, RULES.run.shop, UNLOCK_DATA);
   uiState.shopQty = {};
-  uiState.shopLine = 'The shopkeeper ducks into the back and comes out with other boxes.';
-  if (typeof debugLog !== 'undefined') debugLog.add('scene', `shop restocked: ${sh.runNode}:${run.clock}`);
+  uiState.shopLine = sh.stall
+    ? 'The stallholder rummages under the cart and lays out other pieces.'
+    : 'The shopkeeper ducks into the back and comes out with other boxes.';
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('scene', `${sh.stall ? 'stall' : 'shop'} restocked: ${sh.runNode}:${run.clock}`);
   saveNow();
   shopRefresh();
 }
@@ -199,7 +212,7 @@ export function openShop(id) {
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */
-    perkShelf(saveData.run, sh.runNode, saveData.run.clock, PERKS, RULES.run.perks);
+    perkShelf(saveData.run, sh.runNode, saveData.run.clock, PERKS, RULES.run.perks, perkTeamOf(saveData.team));
   }
   /* RS-4: a resident's shop sells what their level has now */
   if (sh.res && !saveData.run) sh.stock = resStock(saveData, sh.res, RESIDENTS, UNLOCK_DATA.unlocks);
@@ -244,6 +257,8 @@ function shopBuy(id, k) {
   if (typeof soundEffect === 'function') soundEffect('buy');
   if (kind === 'coin') saveData.pyramids[key] = (saveData.pyramids[key] || 0) + n;
   else saveData.items[key] = (saveData.items[key] || 0) + n;
+  /* PK-1: a run shop's purchase is the buy moment (logic/run-loop.js) */
+  if (sh.runNode != null && saveData.run) runBuyFx(saveData, PERKS);
   /* RL-8: a run's purchase is a checkpoint */
   if (saveData.run) saveNow();
   else save();
@@ -277,8 +292,10 @@ function shopPerkBuy(id, drop) {
     );
     return;
   }
-  if (perkBuy(run, sh.runNode, run.clock, PERKS, RULES.run.perks, drop)) return;
+  if (perkBuy(run, sh.runNode, run.clock, PERKS, RULES.run.perks, drop, saveData)) return;
   saveData.se -= L.price;
+  /* PK-1: the buy moment (logic/run-loop.js) */
+  runBuyFx(saveData, PERKS);
   if (typeof soundEffect === 'function') soundEffect('buy');
   saveNow();
   if (typeof debugLog !== 'undefined') debugLog.add('scene', `Perk bought: ${L.id}${drop ? ` for ${drop}` : ''}`);

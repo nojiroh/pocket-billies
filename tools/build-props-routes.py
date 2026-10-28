@@ -11,7 +11,8 @@ in the style of phase 09's batches (tools/build-props-batch1.py .. batch11b.py a
     wayside    milestone, waymarker_post, shrine_small (a stone niche, a solar cell on its roof, a glowing seed)
     farm       haystack, rain_barrel, water_pump, beehive_stand, tool_shed, veg_patch_frame
     solarpunk  wind_turbine_small, solar_post_light, seed_library_box
-    Bureau     bureau_barrier, bureau_crate (no logo: the Bureau's look is the owner's call)
+    Bureau     bureau_barrier, bureau_crate (SY-7: red tape on both), bureau_sign (SY-7: the emblem, a decal made
+               from art/ui/bureau.svg: scene/next/decals/bureau_emblem.png)
   RP-3, the converter test (tools/glb-to-recipe.py from CC0 models in validation/cc0-src; showcase only):
                wind_turbine_small_cc0, footbridge_wood_cc0, arch_ruin_cc0
 
@@ -64,6 +65,7 @@ HAY, HAY_D = BI.HAY, BI.HAY_D
 SOLAR = '#3E5A8C'
 SLATE, SLATE_D, MUSTARD = '#7E8496', '#5E6274', '#E0B040'
 WHITE = '#F4F0E8'
+TAPE, TAPE_D = RED, RED_D  # SY-7: the Bureau's red tape (the scenery's red, beside the wax seal)
 # RP-3: the colours a converted CC0 model snaps to (tools/glb-to-recipe.py), each with the texture it is drawn with
 CC0_PALETTE = {
     'stone': (STONE, 'stone'), 'stone dark': (STONE_D, 'stone'), 'stone light': (STONE_L, 'stone'),
@@ -553,7 +555,7 @@ def seed_library_box():
 # ================================================================ new: the Bureau
 def bureau_barrier():
     """A Bureau road barrier: two grey A-frame legs holding a board striped slate and mustard, a laminated notice
-    clipped to it, a warning lamp on top. No logo (to be decided)."""
+    clipped to it, a warning lamp on top, red tape round it (SY-7)."""
     w = 1.6
     L = []
     for sx in (-1, 1):
@@ -567,12 +569,20 @@ def bureau_barrier():
           box(0.0, -0.07, 0.88, 0.1, 0.02, 0.03, '#3A3448', 'metal', 'clip'),
           cyl(w / 2 - 0.2, -0.03, 0.94, 0.06, 0.1, '#F49A3A', 'plain', 'warning lamp', 8),
           cyl(w / 2 - 0.2, -0.03, 1.04, 0.07, 0.02, '#3A3448', 'metal', 'lamp cap', 8)]
+    # SY-7: red tape, wound twice round the board, one end hanging, and strung between the legs in a stepped sag
+    L += [box(sx * 0.45, -0.03, 0.71, 0.05, 0.07, 0.24, TAPE, 'plain', 'red tape') for sx in (-1, 1)]
+    L.append(box(0.47, -0.07, 0.55, 0.05, 0.01, 0.16, TAPE_D, 'plain', 'red tape end'))
+    x0, n = w / 2 - 0.16, 7
+    for i in range(n):
+        u = (i + 0.5) / n
+        L.append(box(-x0 + 2 * x0 * u, -0.03, r2(0.5 - 0.12 * 4 * u * (1 - u)), 2 * x0 / n + 0.005, 0.02, 0.06, TAPE,
+                     'plain', 'red tape'))
     return rec(B1.shift_y(L, 0.25))
 
 
 def bureau_crate():
     """A Bureau evidence crate: grey ribbed metal with mustard corner guards, a white label with a barcode, a red wax
-    seal over the lid and a smaller crate on top."""
+    seal over the lid and a smaller crate on top, all taped up in red (SY-7)."""
     L = [box(0, 0, 0, 0.9, 0.7, 0.62, SLATE, 'metal', 'crate'),
          box(0, 0, 0.62, 0.94, 0.74, 0.05, SLATE_D, 'metal', 'lid')]
     for sx in (-1, 1):
@@ -585,7 +595,61 @@ def bureau_crate():
           {**sphere(0, -0.37, 0.64, 0.07, '#B0303C', 'plain', 'wax seal', 8, 3), 'ry': 0.03},
           box(0.1, 0.05, 0.67, 0.46, 0.4, 0.3, SLATE_D, 'metal', 'small crate'),
           box(0.1, -0.16, 0.76, 0.2, 0.01, 0.1, WHITE, 'plain', 'label')]
+    # SY-7: red tape crossed over it like a parcel (each band a shell just outside the crate and lid), one more over
+    # the small crate
+    L += [box(-0.3, 0, 0, 0.07, 0.76, 0.68, TAPE, 'plain', 'red tape'),
+          box(0, 0.12, 0, 0.96, 0.07, 0.68, TAPE, 'plain', 'red tape'),
+          box(0.22, 0.05, 0.67, 0.07, 0.42, 0.31, TAPE, 'plain', 'red tape')]
     return rec(L)
+
+
+def emblem_decal():
+    """SY-7: the Bureau's emblem (art/ui/bureau.svg, SY-3's bean on a lost-property tag, drawn in the Studio's icon
+    editor as one-pixel rectangles) as a decal picture at 1 px a pixel: scene/next/decals/bureau_emblem.png. Rerun this
+    script after repainting the emblem."""
+    import re
+    svg = (B1.ART / 'ui' / 'bureau.svg').read_text()
+    W, H = (int(float(v)) for v in re.search(r'viewBox="0 0 ([\d.]+) ([\d.]+)"', svg).groups())
+    a = np.zeros((H, W, 4), np.uint8)
+    for d, fill in re.findall(r'<path d="([^"]+)" fill="(#[0-9A-Fa-f]{6})"', svg):
+        rgb = [int(fill[i:i + 2], 16) for i in (1, 3, 5)]
+        for x, y, w, h in re.findall(r'M(\d+) (\d+)h(\d+)v(\d+)h-\d+z', d):
+            x, y, w, h = int(x), int(y), int(w), int(h)
+            a[y:y + h, x:x + w] = rgb + [255]
+    return B1.save_png(a, B1.ART / 'scene' / 'next' / 'decals' / 'bureau_emblem.png'), W, H
+
+
+EMBLEM = 'scene/next/decals/bureau_emblem.png'
+EMBLEM_AT = (0.0, -0.045, 1.02)  # the decal's bottom middle on the sign's board (x, y toward the eye negative, z up)
+
+
+def bureau_sign():
+    """SY-7: the checkpoint's sign: a square slate board on two posts, mustard edges, the Bureau's emblem on it as a
+    decal (flat on purpose: the emblem is drawn art), a red tape strip across its foot."""
+    L = []
+    for sx in (-1, 1):
+        L += [box(sx * 0.5, 0.05, 0, 0.16, 0.16, 0.06, SLATE_D, 'metal', 'foot'),
+              box(sx * 0.5, 0.05, 0.06, 0.08, 0.08, 2.2, SLATE_D, 'metal', 'post')]
+    L += [box(0, 0, 0.95, 1.3, 0.06, 1.3, SLATE, 'metal', 'board'),
+          box(0, 0, 2.25, 1.36, 0.08, 0.05, MUSTARD, 'metal', 'board edge'),
+          box(0, 0, 0.9, 1.36, 0.08, 0.05, MUSTARD, 'metal', 'board edge'),
+          box(0, -0.035, 0.96, 1.3, 0.01, 0.05, TAPE, 'plain', 'red tape'),
+          img(EMBLEM, *EMBLEM_AT, face='fixed', recv=0, shadow=0, sway=0, name='emblem')]
+    return rec(L)
+
+
+def paste_emblem(C, size):
+    """the baked picture (the fallback and the far view) draws no decals: the emblem goes on it where the model has it"""
+    from PIL import Image
+    M = C['bureau_sign']
+    path = B1.ART / M['img']
+    pic = Image.open(path).convert('RGBA')
+    em = Image.open(B1.ART / EMBLEM).convert('RGBA')
+    x, y, z = EMBLEM_AT
+    bx = round(-M['ox'] + x * PPM)
+    by = round(-M['oy'] - (z + y * BI.TILT) * PPM)
+    pic.alpha_composite(em, (bx - size[0] // 2, by - (size[1] - 1)))
+    pic.save(path, optimize=True)
 
 
 # ================================================================ the catalogue
@@ -613,6 +677,7 @@ NEW = {
     'seed_library_box': (seed_library_box, 'Seed library', 'wayside', 0.3, ('route',), {'solid': 0.25}, {}),
     'bureau_barrier': (bureau_barrier, 'Bureau barrier', 'bureau', 0.5, ('route', 'bureau'), {'box': [1.6, 0.5]}, {}),
     'bureau_crate': (bureau_crate, 'Bureau crate', 'bureau', 0.5, ('route', 'bureau'), {'solid': 0.5}, {}),
+    'bureau_sign': (bureau_sign, 'Bureau sign', 'bureau', 0.4, ('route', 'bureau'), {'box': [1.3, 0.3]}, {}),
 }
 
 
@@ -670,7 +735,7 @@ ROWS = [('wayside', ['milestone', 'waymarker_post', 'shrine_small', 'seed_librar
         ('farm-big', ['tool_shed', 'wind_turbine_small', 'footbridge_wood', 'pier_deck'], 4.4),
         ('ruins', ['pillar_broken', 'arch_ruin', 'wall_ruin_corner', 'statue'], 4.0),
         ('junk', ['firewood', 'firewood_b', 'tires', 'scrap'], 3.6),
-        ('bureau', ['tollbooth', 'bureau_barrier', 'bureau_crate', 'bollard'], 4.6),
+        ('bureau', ['tollbooth', 'bureau_barrier', 'bureau_crate', 'bureau_sign', 'bollard'], 4.6),
         ('converter', ['wind_turbine_small', 'wind_turbine_small_cc0', 'arch_ruin', 'arch_ruin_cc0', 'footbridge_wood',
                        'footbridge_wood_cc0'], 4.4)]  # RP-3: RP-1's recipe, then the converted model
 
@@ -703,7 +768,9 @@ def main():
     D = gamedata.load()
     C = D['scenery']['props']
     swap(C)
+    _, ew, eh = emblem_decal()
     add_new(C)
+    paste_emblem(C, (ew, eh))
     add_converted(C)
     D['maps']['test_props_routes'] = showcase(C)
     gamedata.save(D)

@@ -2,8 +2,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readGameData } from '../data-files.mjs';
+import { readFileSync } from 'node:fs';
 import {
   battleAnimFor,
+  battleAnimFrame,
+  battleIconSprite,
+  battleRampColors,
   battleAnimLogLine,
   battleAnimTimeline,
   flashGate,
@@ -195,4 +199,73 @@ test('every move x outcome’s timeline (snapshot)', t => {
         `${T.id} ${T.tier} ${T.dur}/${T.hit} ${T.steps.map(s => `${s.do}@${s.at}${s.sync ? '' : '+'}`).join(' ')}`;
     }
   t.assert.snapshot(out);
+});
+
+// VFX-10: the effect art's timing and colour
+test('a strip steps at 12 fps, an impact its first two frames at 24 fps', () => {
+  const S = { frames: 5 };
+  assert.deepEqual(
+    [0, 82, 84, 250, 333, 1000].map(t => battleAnimFrame({ ...S, impact: true }, t)),
+    [0, 1, 2, 4, 4, 4]
+  );
+  assert.deepEqual(
+    [0, 40, 43, 83, 84].map(t => battleAnimFrame({ frames: 4, impact: true }, t)),
+    [0, 0, 1, 1, 2]
+  );
+  assert.equal(battleAnimFrame({ frames: 4, fps: 6 }, 170), 1);
+  assert.equal(battleAnimFrame({ frames: 1 }, 500), 0);
+});
+test('a strip that loops plays round; one that does not ends with its life', () => {
+  assert.deepEqual(
+    [0, 84, 334, 420].map(t => battleAnimFrame({ frames: 4, loop: true }, t, 2000)),
+    [0, 1, 0, 1]
+  );
+  /* 4 frames at 12 fps take 333 ms: a 1000 ms life holds frame 0 until 667 ms */
+  assert.deepEqual(
+    [0, 600, 667, 760, 999].map(t => battleAnimFrame({ frames: 4 }, t, 1000)),
+    [0, 0, 0, 1, 3]
+  );
+  assert.equal(battleAnimFrame({ frames: 4 }, 2000, 1000), 3);
+});
+test('ramps: 7 steps from the palette and a white core; light "type" is the type glow', () => {
+  const pal = { ember: ['#000001', '#000002', '#000003', '#000004', '#000005', '#000006', '#000007', '#000008'] };
+  assert.deepEqual(battleRampColors({ ramp: 'ember', light: 'type' }, pal, '#FFFFFF', '#E0603A'), {
+    steps: ['#000001', '#000002', '#000003', '#000004', '#000005', '#000006', '#000007', '#FFFFFF'],
+    light: '#E0603A',
+  });
+  assert.equal(battleRampColors({ ramp: 'nope', light: '#FFFFFF' }, pal, '#FFFFFF'), null);
+  assert.equal(battleRampColors({ ramp: [...pal.ember], light: '#123456' }, {}, '#FFFFFF').light, '#123456');
+});
+test("the game's ramps: every type has one, every ramp resolves against NW_PALETTE, the schema's names are the palette's", () => {
+  const js = readFileSync(new URL('../../game/art/next/palette.js', import.meta.url), 'utf8'),
+    pal = JSON.parse(js.slice(js.indexOf('=') + 1, js.lastIndexOf(';'))).ramps,
+    names = Object.keys(pal).filter(k => Array.isArray(pal[k])),
+    schema = JSON.parse(
+      readFileSync(new URL('../../game/data/schema/battleAnims.schema.json', import.meta.url), 'utf8')
+    );
+  assert.deepEqual(schema.properties.ramps.additionalProperties.properties.ramp.oneOf[0].enum, names);
+  for (const t of [...D.types.map(t => t.id), 'None'])
+    assert.ok(battleRampColors(A.ramps[t], pal, A.colors.white), `${t} has a ramp`);
+  for (const [id, R] of Object.entries(A.ramps)) assert.ok(battleRampColors(R, pal, A.colors.white), `${id} resolves`);
+});
+test('icons drawn as strips: a typed particle takes its type ramp, an untyped one the icon ramp', () => {
+  assert.deepEqual(battleIconSprite(A, 'spark', 'Grass'), { sprite: 'spark', ramp: 'Grass' });
+  assert.deepEqual(battleIconSprite(A, 'spark'), { sprite: 'spark', ramp: 'Electric' });
+  assert.deepEqual(battleIconSprite(A, 'spark', 'Dynasty'), { sprite: 'spark', ramp: 'Electric' });
+  assert.equal(battleIconSprite(A, 'cog', 'Steel'), null);
+  for (const t of D.types) for (const k of t.fx || []) battleIconSprite(A, k, t.id);
+});
+test('the data check flags a sprite whose anchor is outside its cell, an effect of 2 frames and an icon with no sprite', async () => {
+  const { dataBattleAnims } = await import('../../game/js/logic/data-checks.js');
+  const B = structuredClone(A);
+  B.sprites.spark.anchor = [9, 3];
+  B.sprites.star.frames = 2;
+  B.iconSprites.spark.sprite = 'nope';
+  delete B.ramps.Fire;
+  const out = dataBattleAnims({ ...D, battleAnims: B }).map(p => p[1]);
+  assert.ok(out.some(w => w.startsWith('sprites.spark.anchor')));
+  assert.ok(out.some(w => w.startsWith('sprites.star: an effect has 3 to 8 frames')));
+  assert.ok(out.some(w => w.startsWith('iconSprites.spark.sprite')));
+  assert.ok(out.some(w => w === 'ramps: no ramp for the type "Fire"'));
+  assert.deepEqual(dataBattleAnims(D), []);
 });
