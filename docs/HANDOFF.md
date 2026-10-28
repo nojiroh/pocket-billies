@@ -5,7 +5,9 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 ### VFX track VFX-17 - Signature scenes 1: summoned models, the drawn stamp, the cut, 18 scenes with a short repeat - 2026-10-28
 Side branch `claude/vfx-17-scenes-1` (wave 3, beside VFX-13 on `track/vfx` and VFX-19 on `claude/vfx-19-move-sounds`),
 made from `track/vfx` at 7f957898 (VFX-11); `origin/track/vfx` merged in at ef0696af (8dc9583d: VFX-11's finish,
-VFX-12, VFX-14, VFX-16, main and VFX-13's first commits); draft PR #324 into `track/vfx`. Run under the owner's
+VFX-12, VFX-14, VFX-16, main and VFX-13's first commits) and again after the full check (f0af6ddb: VFX-13's tiers
+and the flurry's beats; the snapshot remade, only the 18 scene moves differ; traces of six scenes clean); draft PR
+#324 into `track/vfx`. Run under the owner's
 standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No
 tag (main's CLAUDE.md). Told first: VFX-19 (the files and keys), the main line (VFX-11, then VFX-13: the same, and
 that scenes use the plain `hit` step), the style coordinator (the stamp is not pb-stamp; `impactCut`; after pushing,
