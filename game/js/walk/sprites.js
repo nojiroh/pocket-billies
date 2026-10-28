@@ -74,6 +74,7 @@ expose({
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
   byImageId: [() => byImageId],
+  clearSpriteHit: [() => clearSpriteHit, v => (clearSpriteHit = v)],
   copySpriteLook: [() => copySpriteLook, v => (copySpriteLook = v)],
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
   drawClockHands: [() => drawClockHands, v => (drawClockHands = v)],
@@ -237,6 +238,7 @@ function setSpriteShadeUniforms(U, it, F) {
 function newSpriteRecord(cross) {
   return {
     it: null,
+    hit: null,
     mode: 'none',
     T: null,
     x: 0,
@@ -324,6 +326,8 @@ function spriteRecord(it, F, r) {
   r.self[1] = F.selfD[0] * (it.flip || 1);
   r.self[2] = F.selfD[1];
   r.emit = it.glow ? it.glow * 1.6 : 0;
+  /* VFX-9: a battle rig's hit flash ([r, g, b, amount], battle-3d.js), drawn on this program alone */
+  r.hit = it.hit && it.hit[3] > 0.001 ? it.hit : null;
   r.rim = it.person ? 0.4 : 0.12;
   r.lit = it.glow ? Math.max(0, 1 - it.glow) : it.far ? 0.75 : 1;
   r.shade = it.person ? 0.45 : it.far ? 0.3 : 0.55;
@@ -400,6 +404,11 @@ function setSpriteRecord(p, r) {
   gl.bindTexture(gl.TEXTURE_2D, r.T.n);
   setSpriteGeometry(p, r);
   if (r.dz) gl.uniform1f(U.uDZ, r.dz);
+  if (r.hit && U.uHit) gl.uniform4fv(U.uHit, r.hit);
+}
+/* VFX-9: the hit flash off again after its picture */
+function clearSpriteHit(p, r) {
+  if (r.hit && p.U.uHit) gpuState.gl.uniform4f(p.U.uHit, 0, 0, 0, 0);
 }
 /* a crossing picture's: only what differs from its tree's */
 function setSpriteCrossRecord(p, c) {
@@ -531,6 +540,7 @@ function drawFoilRecord(p, r) {
   gl.drawArrays(gl.TRIANGLES, 0, 6);
   if (U.uFoil) gl.uniform4f(U.uFoil, 0, 0, 0, 0);
   if (r.dz) gl.uniform1f(U.uDZ, 0);
+  clearSpriteHit(p, r);
 }
 function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
   const gl = gpuState.gl,
@@ -551,12 +561,19 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
     const r = spriteRecordAt(i),
       it = r.it,
       tag = it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0;
-    if (r.mode === 'quad' && it.foil && !r.crossOn) {
+    if (r.mode === 'quad' && ((it.foil && !r.crossOn) || r.hit)) {
+      /* SY-6's coat foil and VFX-9's hit flash (uHit) leave the run for the plain program */
       flushSpriteRun(ip);
       if (R.on) gl.useProgram(p.p);
       R.on = false;
       gpuTag(tag);
-      drawFoilRecord(p, r);
+      if (it.foil && !r.crossOn) drawFoilRecord(p, r);
+      else {
+        setSpriteRecord(p, r);
+        gl.drawArrays(gl.TRIANGLES, 0, 6);
+        if (r.dz) gl.uniform1f(p.U.uDZ, 0);
+        clearSpriteHit(p, r);
+      }
     } else if (r.mode === 'quad') {
       if (R.n && R.T !== r.T) flushSpriteRun(ip);
       if (!R.n) {
@@ -627,6 +644,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
         setSpriteRecord(p, r);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         if (r.dz) gl.uniform1f(U.uDZ, 0);
+        clearSpriteHit(p, r);
         if (r.crossOn) {
           setSpriteCrossRecord(p, r.cr);
           gl.drawArrays(gl.TRIANGLES, 0, 6);
