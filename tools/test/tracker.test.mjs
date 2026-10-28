@@ -14,9 +14,10 @@ const { trackerArc, trackerCompose, trackerCreate, trackerNight, trackerRecipe, 
 );
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
-// town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own
+// town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own. SND-12: and
+// without its form (these are the composer of one section; tools/test/music-form.test.mjs holds the forms)
 const town = Object.fromEntries(
-  Object.entries(MUSIC.songs.town).filter(([k]) => !['hook', 'counter', 'hookName'].includes(k))
+  Object.entries(MUSIC.songs.town).filter(([k]) => !['hook', 'counter', 'hookName', 'form', 'sections'].includes(k))
 );
 
 test('an empty hook and counter change nothing', () => {
