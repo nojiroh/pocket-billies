@@ -118,6 +118,8 @@ function evolutionMethod(e) {
       return `Lv ${e.at}, Build or Hype`;
     case 'item':
       return `${evolutionItemName(e)} at Lv ${e.min}`;
+    case 'acquire':
+      return `Traded at Lv ${e.min}, or ${evolutionItemName(e)}`;
     case 'donate':
       return `Give away ${e.n} items`;
     case 'merge':

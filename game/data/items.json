@@ -12,6 +12,13 @@
   "d": "A glittering stone that makes certain Billies evolve.",
   "icon": "stone"
  },
+ "transfer": {
+  "n": "Form 99-A",
+  "price": 2500,
+  "evoItem": 1,
+  "d": "Change of Ownership, stamped by the Bureau. A Billie that evolves by being acquired takes this as a trade.",
+  "icon": "settlement"
+ },
  "protein_bar": {
   "n": "Protein Bar",
   "price": 800,

@@ -554,6 +554,21 @@ def safety_step(P):
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';showcase.tab='new';render();{js};0"); ui(pg); check(name)
     pg.evaluate("friends.on=false;friends.uid=null;showcase.pages={};showcase.mod={list:null,entries:{},hidden:null,err:'',busy:false};saveData.preferences.online=false;delete saveData.team[0].ribbons;saveData.meta.show=newShowMeta();uiState.modal=null;uiState.mq=[];renderOverlay();0")
     shown.append('showcase')
+    # ON-4: friend trades (the trade sheet open, both ready, sent, refused; the picker; picking a friend; the history),
+    # names and nicknames as stored in the offer and the save
+    pg.evaluate("""(()=>{const X=window.__X,sp=saveData.team[0].sp;friends.on=true;friends.uid='me';
+      const b=(uid,o)=>({k:'b',d:JSON.stringify({uid,sp,lvl:5,nick:'Nick'+X,ot:{u:'u1',n:'OT'+X},...o})});
+      const o={a:'me',b:'u1',na:'Me'+X,nb:'Friend'+X,ga:[b('m1')],gb:[b('f1'),{k:'e',d:JSON.stringify({egg:{uid:'e1',sp,lvl:5,nick:X}})},{k:'p',d:JSON.stringify({uid:'p1',id:Object.keys(ROBOTS.parts)[0],up:1})}],oa:0,ob:0,da:false,db:false,ta:0,tb:0,ra:false,rb:false,ka:false,kb:false,x:'',by:'',v:2,k:'k1',t:0};
+      window.__offers=[o,{...o,oa:2,ob:2},{...o,oa:2,ob:2,da:true,ta:Date.now()},{...o,oa:2,ob:2,da:true,db:true,ta:1,tb:1,x:'refused',by:'u1'}];
+      saveData.meta.trades=[{k:'me_u1:k0',at:Date.now(),u:'u1',n:'Friend'+X,st:'done',gave:[{k:'b',sp,lvl:5,nick:'Gave'+X}],got:[{k:'e',sp,lvl:5}]}];0})()""")
+    for i, name in enumerate(['open', 'ready', 'sent', 'refused']):
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();trade.open='';trade.offers={{me_u1:window.__offers[{i}]}};uiState.tab='profile';render();document.querySelector('[data-a=td-open]')?.click();0"); ui(pg); check('trade ' + name)
+        if not pg.evaluate("!!(uiState.modal&&uiState.modal.cls==='trade-sheet')"): raise Exception(f'the trade sheet did not open ({name})')
+    for name, js in [('trade picker', "tradePickSheet('u1')"), ('trade with a friend', "tradeFriendSheet(saveData.team[0])"), ('trades on the Trainer card', "0")]:
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();trade.offers={{me_u1:window.__offers[0]}};uiState.tab='profile';render();{js};0"); ui(pg); check(name)
+    if not pg.evaluate("!!document.querySelector('.pf-trades')"): raise Exception('the Trainer card showed no trades')
+    pg.evaluate("trade.offers={};trade.open='';friends.on=false;friends.uid=null;saveData.meta.trades=[];delete window.__offers;uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    shown.append('trades')
     for k in ['sum', 'build', 'moves', 'evo']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); ui(pg); check('details ' + k)
     shown.append('details')
@@ -568,7 +583,7 @@ def safety_step(P):
     if wait_phase(pg, ('choose',), 120) != 'choose': raise Exception('the battle never reached the move menu')
     ui(pg); check('battle'); shown.append('battle')
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-    return f'a payload in the trainer, nicknames, a friend, a request, the friend code, friends\' boards and the Showcase stayed text on {len(shown)} screens: ' + ', '.join(shown)
+    return f'a payload in the trainer, nicknames, a friend, a request, the friend code, friends\' boards, the Showcase and trades stayed text on {len(shown)} screens: ' + ', '.join(shown)
 
 
 @step('Tap targets: every control on the main screens is big enough to tap (phase 06-4)', 240)
