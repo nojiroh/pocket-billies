@@ -91,7 +91,18 @@ and a typewriter voice, townsfolk the cream bubble in a colour each, and lines s
 prompts) a quiet note with no tail. A line's style changes the shape: `[shout]` a jagged burst with bold letters and a
 squash as it lands, `[whisper]` a dashed edge and fainter letters, `[think]` a cloud with a trail of dots. Each line
 tilts its bubble a little its own way (the letters stay level). `[stamp=approved]` (or denied, pending, filed, void)
-stamps the word on a Bureau bubble when the letters reach it; on anyone else's it does nothing yet.
+stamps the word on a Bureau bubble when the letters reach it; the stamp is the Bureau's alone (the owner, DL-4): on
+anyone else's it does nothing, and the Studio's script check warns.
+
+Since DL-4 a conversation stacks up: the newest bubble at the bottom, the two lines before it above, smaller and
+fainter (only the newest has the name tag and the line the checks look for: older ones are `.talk-was` and
+`.talk-said`). Speakers take turns on the left and right; the same speaker's lines in a row are linked. A "me" note
+sits in the middle and doesn't turn the sides. `[wait]` (anyone) shows a "…" bubble for under a second before the
+line; Kappi always gets one before their first line in a conversation (talkSkins.json `"wait": "first"`). A line
+that ends in `—` or holds `[cut]` stops there (the rest of the line is never shown) and goes on by itself a quarter
+second later; the next bubble knocks it aside. A choice's options take the older bubbles' place. The Log button on
+the newest bubble shows the whole conversation so far (kept in memory only, gone when the talk closes). The stack
+keeps within 40% of the screen's height above the bottom bar; the oldest bubble leaves first.
 
 ## Blocks
 
