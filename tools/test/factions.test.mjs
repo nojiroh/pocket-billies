@@ -71,3 +71,15 @@ test('factions: two stamp moments with the same word are a data problem', () => 
   assert.equal(out.length, 1);
   assert.match(out[0][1], /bureau\.look\.stamps\.(void|denied): .* also (denied|void)'s word/);
 });
+
+// SY-5: the Bureau in battle: the Retrieval Unit fights for the Bureau; the look names the notice and the plate's line
+test("factions: the Retrieval Unit is the Bureau's, and the look names its notice and its plates' line", () => {
+  assert.equal(GAME_DATA.bosses.bosses.retrieval.faction, 'bureau');
+  assert.ok(BUREAU.look.notice && BUREAU.look.property);
+  assert.deepEqual(modules['data-checks'].dataBosses(GAME_DATA), []);
+  const D = { ...GAME_DATA, bosses: structuredClone(GAME_DATA.bosses) };
+  D.bosses.bosses.retrieval.faction = 'nobody';
+  const out = modules['data-checks'].dataBosses(D);
+  assert.equal(out.length, 1);
+  assert.match(out[0][1], /retrieval\.faction: no faction "nobody"/);
+});

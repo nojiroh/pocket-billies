@@ -2040,6 +2040,10 @@ export interface FactionLook {
   emblem: string;
   stamps: Record<StampMoment, string>;
   forms: string[];
+  /** SY-5: the title of its boss's join notice */
+  notice?: string;
+  /** SY-5: the red line on its bots' plates in battle */
+  property?: string;
 }
 /** RL-14b: bosses.json: one boss phase, fired once when its HP falls to `at` of the most */
 export interface BossPhase {
@@ -2061,6 +2065,8 @@ export interface BossDef {
   /** the battle's first line ({name}) */
   call?: string;
   join?: string;
+  /** SY-5: the factions.json faction it fights for (its look in battle) */
+  faction?: string;
   /** the join intro's glow (else its gem's colour) */
   glow?: string;
   win?: string;

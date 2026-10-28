@@ -218,7 +218,7 @@
         "pattern": "^[a-z][a-z0-9-]*$"
        },
        "stamps": {
-        "description": "the word stamped for each moment (pb-stamp): retrieved (its bot knocks out one of yours), void (you knock out its bot), denied (your win, a refused event), pending (its boss wins), filed (an event's result); the owner's to edit",
+        "description": "the word stamped for each moment (pb-stamp): retrieved (its bot knocks out one of yours), void (you knock out its bot), denied (your win, a refused event), pending (over its boss's win line, the line it says when you beat it), filed (an event's result); the owner's to edit",
         "type": "object",
         "additionalProperties": false,
         "required": [
@@ -256,6 +256,18 @@
          "minLength": 1,
          "maxLength": 16
         }
+       },
+       "notice": {
+        "description": "SY-5: the title of the form its boss's join intro shows, listing the bots as line items ('Notice of Retrieval')",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 28
+       },
+       "property": {
+        "description": "SY-5: the red line on its bots' plates in battle ('Property of the Bureau')",
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 28
        }
       }
      }

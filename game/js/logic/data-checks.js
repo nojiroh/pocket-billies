@@ -1340,7 +1340,8 @@ export function dataFactions(D, valid = () => true) {
   return out;
 }
 // RL-14b: bosses.json: the schema; its fighter is a gem and the right kind of part in each slot (robots.json); its
-// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's
+// phases' `at` fall from first to last; its story script is a story.json script; its Expeditions are modifiers.json's;
+// SY-5: its faction is a factions.json faction
 /** RL-14b: bosses.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataBosses(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1354,6 +1355,7 @@ export function dataBosses(D, valid = () => true) {
     scripts = (D.story && D.story.scripts) || {},
     exps = ((D.modifiers && D.modifiers.expeditions) || []).length,
     stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id)),
+    factions = (D.factions && D.factions.factions) || {},
     /** @type {Record<number, string>} */
     taken = {};
   for (const [k, X] of Object.entries(/** @type {Record<string, any>} */ (B.bosses))) {
@@ -1370,6 +1372,7 @@ export function dataBosses(D, valid = () => true) {
         if (stats.size && !stats.has(s)) problem(`${k}.phases[${i}].stages: no stat "${s}" (stats.json)`);
     });
     if (X.story && !scripts[X.story]) problem(`${k}.story: no script "${X.story}" (story.json scripts)`);
+    if (X.faction && !factions[X.faction]) problem(`${k}.faction: no faction "${X.faction}" (factions.json)`);
     for (const n of X.expeditions) {
       if (exps && n > exps) problem(`${k}.expeditions: no Expedition ${n} (modifiers.json)`);
       if (taken[n]) problem(`${k}.expeditions: Expedition ${n} is already ${taken[n]}'s`);
