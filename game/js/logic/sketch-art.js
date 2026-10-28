@@ -2,7 +2,7 @@
 'use strict';
 /* ================= SKETCH ART (roster track RO-3a) =================
    Billies on any of the 14 body plans (game/data/bodyPlans.json, the plans body-plan-animation.js animates), drawn
-   as very obvious placeholders: flat shapes in the Billie's colours, a thick outline, a diagonal hatch and the part's
+   as very obvious sketches: flat shapes in the Billie's colours, a thick outline, a diagonal hatch and the part's
    name inside where it fits. Each picture is a cell: the part with room round it, its pivot at a fixed spot. The
    cells go out as drawing sheets (one per Billie: a column per picture, a row per view; one per body plan: a column
    per picture, two rows per Billie) on a magenta ground with a label strip and pivot ticks, are drawn on in any tool,
@@ -21,7 +21,7 @@
  *   mirrors applied, the form's sizes on; `src` names the bone whose picture it draws (flipped when `flip`)
  * @typedef {{ name: string, rig: string, line?: string, stage?: number, form?: string, plan: string,
  *   colours: { main: string | Rgb, accent?: string | Rgb }, size?: Record<string, number>, scale?: number,
- *   add?: PlanBone[], drop?: string[], q?: Record<string, number>, talk?: boolean }} SketchForm one placeholder Billie
+ *   add?: PlanBone[], drop?: string[], q?: Record<string, number>, talk?: boolean }} SketchForm one sketch Billie
  *   (bodyPlans.json forms); `talk`: its face also gets a mouth-open frame (a talking creature person: Kappi)
  * @typedef {{ bg: Rgb, grid: Rgb, label: number, room: number, min: number }} SketchSheetSet
  * @typedef {{ ink: Rgb, hatch: number, hatchDark: number, dark: number, light: number, back: number, eye: Rgb,
@@ -284,7 +284,7 @@ export function sketchInside(shape, u, v) {
       return Math.abs(x) <= 1 && Math.abs(y) <= 1;
   }
 }
-/** one bone's placeholder picture at its size (no room): the shape in its tone, hatched, outlined, its name inside
+/** one bone's sketch picture at its size (no room): the shape in its tone, hatched, outlined, its name inside
  * where it fits; a front face gets eyes (`blink` shuts them, `talk` opens a mouth); from behind it is darker and has no face
  * @param {SketchPaintSet} S @param {SketchBone} b @param {ReturnType<typeof sketchTones>} T
  * @param {string} view @param {string} [frame] */
@@ -447,7 +447,7 @@ export function sketchPieces(P, form, cells, view, D) {
   }
   return pieces;
 }
-/** a form baked: its sheet and both views' rigs (as rigs-next.js holds them, marked placeholder), from its cells
+/** a form baked: its sheet and both views' rigs (as rigs-next.js holds them, marked sketch), from its cells
  * (painted unless given) @param {BodyPlans} P @param {SketchForm} form
  * @param {{ pad: number, squash: Record<string, [number, number]>, sheetW: number, margin: number }} D the kit
  * baker's settings (kitBuilds.json bake) @param {SketchCells} [cells] */
@@ -643,7 +643,7 @@ export function sketchSheetCut(P, forms, sheet, named = false) {
   return out;
 }
 /** the painted cells for a form with its drawn ones on top (a drawn cell wins; one with no pixels keeps the
- * placeholder) @param {BodyPlans} P @param {SketchForm} form @param {SketchCells | null} drawn */
+ * sketch) @param {BodyPlans} P @param {SketchForm} form @param {SketchCells | null} drawn */
 export function sketchCellsWith(P, form, drawn) {
   const out = sketchPaintCells(P, form);
   if (!drawn) return out;

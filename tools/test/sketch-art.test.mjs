@@ -1,9 +1,9 @@
-// Roster track RO-3a: the body plans (game/data/bodyPlans.json) and the placeholder Billies baked from them
+// Roster track RO-3a: the body plans (game/data/bodyPlans.json) and the sketch Billies baked from them
 // (game/js/logic/sketch-art.js). Every plan the animation knows has a template whose bones the animation moves
 // (or that ride on one it moves); a sample Billie on each plan bakes inside the stage box, the same twice, with a
 // rig the renderer can read; its drawing sheets (a Billie's and a plan's, at any scale) cut back into the same cells;
-// a drawn cell wins over the placeholder, an empty one doesn't; the placeholders never use the sheets' magenta; and
-// every committed placeholder Billie bakes as committed (npm run bake:sketches --check).
+// a drawn cell wins over the sketch, an empty one doesn't; the sketches never use the sheets' magenta; and
+// every committed sketch Billie bakes as committed (npm run bake:sketches --check).
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readJson } from '../data-files.mjs';
@@ -127,7 +127,7 @@ test('a sheet that does not fit the layout is refused, with why', () => {
   assert.throws(() => PA.sketchSheetCut(P, [{ ...f, plan: 'crab' }], sheet), /layout/);
 });
 
-test('a drawn cell wins over the placeholder; an empty one keeps it; magenta is clear', () => {
+test('a drawn cell wins over the sketch; an empty one keeps it; magenta is clear', () => {
   const f = sample('biped'),
     painted = PA.sketchPaintCells(P, f),
     sheet = PA.sketchSheet(P, [f], { [f.name]: painted }),
@@ -149,7 +149,7 @@ test('a drawn cell wins over the placeholder; an empty one keeps it; magenta is 
   assert.ok(made.rig.front.imgs.length > 0);
 });
 
-test('placeholders never paint near the magenta a sheet is cut by', () => {
+test('sketches never paint near the magenta a sheet is cut by', () => {
   for (const plan of PLANS) {
     const cells = PA.sketchPaintCells(P, sample(plan));
     for (const v of PA.SKETCH_VIEWS)
@@ -159,6 +159,6 @@ test('placeholders never paint near the magenta a sheet is cut by', () => {
   }
 });
 
-test('every committed placeholder Billie bakes as committed', () => {
+test('every committed sketch Billie bakes as committed', () => {
   assert.deepEqual(bakeSketches({ check: true, log: () => {} }), []);
 });

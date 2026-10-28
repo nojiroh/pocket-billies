@@ -23,8 +23,8 @@ Studio track ST-T: the Studio self-test runs whole and must pass (no errors, eve
 no token in its report); its times are not judged here.
 Studio plan Phase 5 (T5.1): a kit Billie's recipe edited in Part mode bakes at once (one undo step), and the proposal
 carries its sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and its line.
-Roster track RO-3b: every kit Billie is on its placeholder (bodyPlans.json), its recipe kept. So the kit steps still run
-on a kit Billie, the stand-in serves the first recipe's Billie off its placeholder: bodyPlans.json without its form,
+Roster track RO-3b: every kit Billie is a sketch (bodyPlans.json), its recipe kept. So the kit steps still run
+on a kit Billie, the stand-in serves the first recipe's Billie off its sketch: bodyPlans.json without its form,
 its sheet and rig as `npm run bake:kits` bakes them (kit_off_placeholder). Nothing on disk changes.
 Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
 and a head swapped keeps a blink as one undo step.
@@ -1639,7 +1639,7 @@ def kit_write_steps(pg, errs):
         while time.time() - t0 < limit and (pg.evaluate("studioState.undo.length") < steps0 + k or not pg.evaluate(idle)): time.sleep(0.2)
 
     # parity through the browser: every kit Billie baked in the Studio is its committed sheet and rig (RO-3b: the one
-    # the stand-in serves off its placeholder; the others' recipes are kept, not baked)
+    # the stand-in serves off its sketch; the others' recipes are kept, not baked)
     par = pg.evaluate("""(async () => { const out = [];
       for (const f of studioState.D.kitBuilds.forms.filter(f => kitFormOf(f.rig))) {
         const m = await kitBakeInStudio(f), i = new Image(); i.src = '../game/art/next/billionaires/' + f.name + '.png'; await i.decode();
@@ -1678,7 +1678,7 @@ def kit_write_steps(pg, errs):
     pg.evaluate("redo()"); time.sleep(0.5)
     if json.loads(pg.evaluate(state)) != s1: errs.append('redo did not put the bake back whole')
     pg.evaluate("window.__kitWrite = " + json.dumps({'name': name, 'rig': sp, 'line': form['line'], 'form': s1['form']}))
-    # RO-3b: a Billie on its placeholder shows its recipe as kept, with nothing to bake or write
+    # RO-3b: a sketch Billie shows its recipe as kept, with nothing to bake or write
     kept = pg.evaluate("studioState.D.kitBuilds.forms[1]")
     pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(kept['rig'])}; wbPart.id = ''; render()")
     pg.wait_for_selector(f'[data-kit-kept="{kept["name"]}"]', timeout=20000)
@@ -1788,7 +1788,7 @@ def repack_steps(pg, errs):
     """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn rig (the first rig that is not a kit Billie: since RO-2c
     every game species is one, so a legacy rig): the sheet gets smaller, both views are
     drawn pixel for pixel as before (neutral pose, every face), it is one undo step and undo puts the sheet and rig
-    back; on a kit Billie it refuses (the recipe packs its sheet), and on a placeholder Billie (RO-3b: its body plan
+    back; on a kit Billie it refuses (the recipe packs its sheet), and on a sketch Billie (RO-3b: its body plan
     does)."""
     n = len(errs)
     sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && !sketchFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
@@ -1821,10 +1821,10 @@ def repack_steps(pg, errs):
     ph = pg.evaluate("studioState.D.bodyPlans.forms[0].rig")
     pg.evaluate(f"wbPart.sp = {json.dumps(ph)}; render()"); time.sleep(0.5)
     pg.locator('[data-act=wbsRepack]').first.click(); time.sleep(0.8)
-    if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its body plan').count(): errs.append('Repack sheet on a placeholder Billie did not refuse')
+    if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its body plan').count(): errs.append('Repack sheet on a sketch Billie did not refuse')
     pg.evaluate("wbPart.src = 'kits'; wbPart.id = ''; workbench.mode = 'sheet'")
     if len(errs) > n: errs[n:] = [f'repack: {e}' for e in errs[n:]]
-    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie and a placeholder Billie refused', flush=True)
+    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie and a sketch Billie refused', flush=True)
 
 
 def density_steps(pg, errs):
@@ -3368,7 +3368,7 @@ def kit_off_placeholder():
 def main():
     _srv, base = serve(ROOT)
     kit_files, kit_name, kit_rig = kit_off_placeholder()
-    print(f'stand-in: {kit_name} ({kit_rig}) served off its placeholder, as its kit recipe bakes', flush=True)
+    print(f'stand-in: {kit_name} ({kit_rig}) served off its sketch, as its kit recipe bakes', flush=True)
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game').rglob('*') if p.is_file()]
     posts, bodies = [], []

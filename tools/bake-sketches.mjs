@@ -1,8 +1,8 @@
-// Roster track RO-3a: bakes the placeholder Billies (game/data/bodyPlans.json forms) with the game's own baker
+// Roster track RO-3a: bakes the sketch Billies (game/data/bodyPlans.json forms) with the game's own baker
 // (game/js/logic/sketch-art.js), and moves their drawing sheets out and in.
 //
-// A Billie's cells are painted placeholders, with the cells of its drawing sheet on top when it has one
-// (game/art/next/sketches/<name>.png, written by --import; a cell left empty keeps its placeholder). The bake
+// A Billie's cells are painted sketches, with the cells of its drawing sheet on top when it has one
+// (game/art/next/sketches/<name>.png, written by --import; a cell left empty keeps its sketch). The bake
 // writes what changed, as bake-kit-billies.mjs does: game/art/next/billionaires/<name>.png and its rig in
 // game/art/next/rigs-next.js.
 //
@@ -166,13 +166,13 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       const o = arg('only'),
         check = process.argv.includes('--check'),
         changed = bakeSketches({ only: o ? o.split(',').filter(Boolean) : null, check });
-      if (!changed.length) console.log('every placeholder Billie bakes as committed');
+      if (!changed.length) console.log('every sketch Billie bakes as committed');
       else if (check) {
         console.log(
-          `${changed.length} placeholder Billie(s) would change (node tools/bake-sketches.mjs writes them)`
+          `${changed.length} sketch Billie(s) would change (node tools/bake-sketches.mjs writes them)`
         );
         process.exit(1);
-      } else console.log(`${changed.length} placeholder Billie(s) baked and written (under game/art/next)`);
+      } else console.log(`${changed.length} sketch Billie(s) baked and written (under game/art/next)`);
     }
   } catch (e) {
     console.error(e.message);

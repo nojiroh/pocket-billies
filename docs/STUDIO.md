@@ -187,7 +187,7 @@ Art workbench → **Part**: a part written by Sheet mode, its joints. The number
   to hang on itself instead. On the other side of the body the part is mirrored, or its copy is used.
 - **Mirror to other side** makes `<id>_r`: the pictures (and painted sizes) flipped, the pivot and sockets mirrored,
   L and R names swapped (shoulderL ↔ shoulderR), turn limits mirrored. Mirroring the copy gives the part back.
-  `sides` says which side each kind's art is drawn for (arms right, legs left, as the rework placeholders draw them).
+  `sides` says which side each kind's art is drawn for (arms right, legs left, as the rework's stand-in pictures draw them).
 - **S, M, L**: S and L are M scaled about the pivot (rules.json `parts.sizes`). **Paint S/L** makes its own picture
   beside M (`<id>_s.png`, `_l.png`), starting from M scaled: Points, Pencil, Eraser, Fill and Pick in the bar, and a
   colour. Points moved there belong to that size. **Back to scaled** stops using it (the picture stays in art/).
@@ -249,9 +249,9 @@ part's numbers (and when no part is picked): the stage scale, each bone kind's p
   Billie already is as baked it says so and changes nothing.
 - A recipe the baker can't make (a slot left empty, a missing picture) is not written; the card says why.
 - Edits by hand to a kit Billie's sheet or rig (pixels, pivots) are lost at its next bake: the recipe is the truth.
-- **Since roster track RO-3b every kit Billie is on its placeholder** (bodyPlans.json `forms`, below). Its recipe is
+- **Since roster track RO-3b every kit Billie is a sketch** (bodyPlans.json `forms`, below). Its recipe is
   kept in kitBuilds.json but not baked: Part mode shows it as **kept, not baked**, with nothing to edit or write, and
-  `npm run bake:kits` skips it ("kept: on its placeholder"). To bring a kit look back, take the Billie out of
+  `npm run bake:kits` skips it ("kept: a sketch"). To bring a kit look back, take the Billie out of
   bodyPlans.json `forms` and run `npm run bake:kits`. tools/test/kit-bake.json keeps every recipe's bake as
   fingerprints (`node tools/bake-kit-billies.mjs --fingerprints` writes it again), so the kit baker stays checked.
 
@@ -306,22 +306,22 @@ its own texture in 1/4096, byte 16 = 255, byte 18 = 1 for a face with no texture
 over 65,535 vertices is cut in pieces). The game draws it with its own texture (nearest texel), outside the instanced
 batches, one draw a part.
 
-## Placeholder Billies and their drawing sheets (roster track RO-3a)
+## Sketch Billies and their drawing sheets (roster track RO-3a)
 
-A placeholder Billie (game/data/bodyPlans.json `forms`) is built on one of the 14 body plans the game animates
+A sketch Billie (game/data/bodyPlans.json `forms`) is built on one of the 14 body plans the game animates
 (biped, quad, bird, flyer, fish, serpent, worm, octo, blob, insect, crab, hopper, plant, shell) and painted as an
-obvious placeholder: flat shapes in its colours, a thick outline, a diagonal hatch, each part's name written on it.
+obvious sketch: flat shapes in its colours, a thick outline, a diagonal hatch, each part's name written on it.
 Art workbench → Part mode, beside the kit recipe:
 
-- **Placeholder Billie** (when the open species is one): **Download drawing sheet**: a PNG with a column per picture
+- **Sketch Billie** (when the open species is one): **Download drawing sheet**: a PNG with a column per picture
   (`head`, `head blink`, `torso`, `legL`...; a mirrored bone such as `legR` uses its twin's picture, flipped) and a row
   per view (front, back, the back drawn as it shows on screen). Each cell is magenta with room round the part; the
   label strip says which part and view; yellow ticks on the cell's edge mark the pivot (where the part hangs).
   Draw over the cells in any app; magenta stays clear, so leave it round the drawing; keep the grid and labels where
   they are, and the picture's size (or a whole multiple of it). **Upload drawing sheet** cuts it back by the same
-  layout: a drawn cell replaces the placeholder, a cell left all magenta keeps it. The drawing is stored as
+  layout: a drawn cell replaces the sketch, a cell left all magenta keeps it. The drawing is stored as
   `art/next/sketches/<name>.png` and the Billie baked again (its sheet and rig); one undo takes it all back.
-  **Write Billie** bakes it again as it is. **Repack sheet** refuses a placeholder Billie (its plan packs the sheet).
+  **Write Billie** bakes it again as it is. **Repack sheet** refuses a sketch Billie (its plan packs the sheet).
 - **Body plan sheets**: pick a plan and a scale (1×, 2×, 4×, 8×: each pixel drawn as N × N, for drawing big),
   **Download**: every Billie on that plan, two rows each, a strip with its name above (a sample Billie while none is
   on the plan); **Upload** splits it back per Billie, stores and bakes each.
@@ -332,7 +332,7 @@ Art workbench → Part mode, beside the kit recipe:
   and export again.
 - RO-3b put every Billie on its plan: a form's `colours` (main, accent), `scale` (the whole Billie, a stage's size),
   `size` (a bone and its mirror against the plan's), `add` (bones of its own: horns, ears, crests, packs...) and
-  `drop` (the plan's bones it leaves out). The Pixel density report shows a placeholder Billie's plan and scale.
+  `drop` (the plan's bones it leaves out). The Pixel density report shows a sketch Billie's plan and scale.
 
 ## Pixel density (Studio plan Phase 5, T5.7)
 

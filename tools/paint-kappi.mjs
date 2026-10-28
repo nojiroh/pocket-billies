@@ -182,7 +182,7 @@ export function paintKappi(P, form) {
         back = view === 'back',
         p = blank(c.w, c.h),
         [bw, bh] = b.size;
-      /* the bone's box sits where the placeholder painter puts it: its pivot on the cell's pivot */
+      /* the bone's box sits where the sketch painter puts it: its pivot on the cell's pivot */
       const px = back ? c.pxb : c.px,
         bx = Math.round(px - (back ? 1 - b.pv[0] : b.pv[0]) * bw),
         by = Math.round(c.py - b.pv[1] * bh);

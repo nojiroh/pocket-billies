@@ -8,7 +8,7 @@
    box). A slot is swapped only bone kind for bone kind (an arm for an arm or a wing, a leg for a leg or a foot, a tail
    for a tail): the baker places each kind its own way, so a tail can't stand in for legs. Extras and the head are
    not grafted yet. SP-2: the splice is saved on the Billie (graftOf, graftSet); its rules are logic/genes.js. Logic only: no DOM (tools/test/graft-art.test.mjs).
-   RO-3c: placeholder Billies (logic/sketch-art.js, any of the 14 body plans) are grafted by slot across plans,
+   RO-3c: sketch Billies (logic/sketch-art.js, any of the 14 body plans) are grafted by slot across plans,
    on their baked sheets and rigs (graftSketch, below; tools/test/graft-sketch.test.mjs). */
 /** @import { PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-assemble.js').KitForm} KitForm */
@@ -18,7 +18,7 @@
 /** @typedef {import('./sketch-art.js').SketchForm} SketchForm */
 /** @typedef {import('./sketch-art.js').SketchBone} SketchBone */
 /**
- * @typedef {{ form: SketchForm, rig: Record<string, any>, sheet: Pixels }} SketchBaked a placeholder Billie
+ * @typedef {{ form: SketchForm, rig: Record<string, any>, sheet: Pixels }} SketchBaked a sketch Billie
  *   as baked (sketchBake): its form, its sheet and both views' rigs
  * @typedef {{ pic: Pixels, pv: [number, number] }} GraftPic a picture and its pivot inside it
  */
@@ -206,7 +206,7 @@ export function graftDonors(B, K, sp, slot) {
     .map(f => `${f.parts[kind][0]}@${f.rig}`);
 }
 
-/* ---------- RO-3c: placeholder Billies, grafted by slot across body plans ----------
+/* ---------- RO-3c: sketch Billies, grafted by slot across body plans ----------
    Splicing maps parts by slot (the owner, RO-3a): an octopus's tentacle can become a biped's arm. A graft works on the
    two Billies as baked (the sheet and rig the game already has, drawings included), so nothing else is loaded:
    - a slot's groups: a plan's own bones in it (mirrors follow their twin), a bone hanging on another bone of the
@@ -314,7 +314,7 @@ export function graftPicFit(d, r, k = 1) {
     pv = aimed ? [(g.pv[0] * w) / dw, (g.pv[1] * h) / dh] : [(r.pv[0] * w) / rw, (r.pv[1] * h) / rh];
   return { pic: kitNearest(g.pic, w, h), pv };
 }
-/** a placeholder Billie grafted: each slot of the graft from its donor (both baked), its sheet and both views' rigs
+/** a sketch Billie grafted: each slot of the graft from its donor (both baked), its sheet and both views' rigs
  * as sketchBake gives them (marked with the graft); throws, saying why, when a slot is missing on either side
  * or the result doesn't fit the stage box
  * @param {BodyPlans} P @param {{ sheetW: number, margin: number }} D the baker's settings (kitBuilds.json bake)
@@ -423,7 +423,7 @@ export function graftSketchAt(bones, D, recv, donors, mine, theirs, k) {
   return { sheet, rig };
 }
 
-/** the placeholder Billies that can give one a part for a slot: another line (another Billie when neither has a
+/** the sketch Billies that can give one a part for a slot: another line (another Billie when neither has a
  * line), and both have bones in the slot @param {BodyPlans} P @param {SketchForm[]} forms @param {string} sp
  * @param {string} slot @returns {string[]} */
 export function graftSketchDonors(P, forms, sp, slot) {

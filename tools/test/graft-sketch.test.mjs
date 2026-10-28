@@ -1,6 +1,6 @@
-// Roster track RO-3c: placeholder Billies grafted by slot across body plans (game/js/logic/graft-art.js,
+// Roster track RO-3c: sketch Billies grafted by slot across body plans (game/js/logic/graft-art.js,
 // graftSketch). Tested on sample Billies (tools/bake-sketches.mjs sampleSketch), one per plan, until the
-// roster's own are placeholders. A slot's groups per plan; every plan gives every other plan its front, back and sig,
+// roster's own are sketches. A slot's groups per plan; every plan gives every other plan its front, back and sig,
 // inside the stage box, the same twice; the grafted bones wear the donor's colour and the rest keep their pixels; a
 // mirrored twin is its bone flipped; a chain takes the donor's bones spread along it, so every bone draws; a slot one
 // side lacks is refused; the donors are other lines with the slot.
@@ -166,7 +166,7 @@ test('graftPicFit: turned to point the way of the bone it lands on and as long a
   assert.equal(G.graftPicFit({ pic: pic(8, 4), pv: [4, 0] }, { pic: pic(4, 6), pv: [2, 0] }).pic.width, 9);
 });
 
-test('RO-3b: every real placeholder Billie takes every slot from a Billie of each other plan, inside the box', () => {
+test('RO-3b: every real sketch Billie takes every slot from a Billie of each other plan, inside the box', () => {
   const real = new Map(P.forms.map(f => [f.name, { form: f, ...PA.sketchBake(P, f, D) }])),
     byPlan = new Map();
   for (const f of P.forms) if (!byPlan.has(f.plan)) byPlan.set(f.plan, real.get(f.name));

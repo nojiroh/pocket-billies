@@ -472,7 +472,7 @@ ACTIONS.wbsRepack = async () => {
   if (kitFormOf(sp))
     return toast('A kit Billie’s sheet is baked from its recipe (Kit recipe): Write Billie packs it.', 'err');
   if (sketchFormOf(sp))
-    return toast('A placeholder Billie’s sheet is baked from its body plan: Write Billie packs it.', 'err');
+    return toast('A sketch Billie’s sheet is baked from its body plan: Write Billie packs it.', 'err');
   const own = Object.entries(studioState.D.coats || {}).find(([, C]) => WB_VIEWS.some(v => coatArt(C, sp, v)));
   if (own) return toast(`The ${own[0]} coat has its own sheet laid out like this one, so it can’t be repacked.`, 'err');
   let rig = R,
