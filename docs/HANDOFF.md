@@ -2,6 +2,109 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-7 - Fine Print - 2026-10-28
+Branch `track/perks` (this session's outcome branch; PR #318 had merged PK-6 into main, so main 4423a457 came in first
+as a fast-forward, hooks.js unchanged). Started by PK-0's session under the owner's standing instruction (perks-track.md
+section 10): no Plan Mode, the plan below written first and carried out. Details and the plan's corrections:
+perks-track.md section 8, "Corrected in PK-7". The items lane (`track/perks-items`, PR #310) had not landed in
+track/perks; nothing of items.json, itemIcon, bag.js or art/items was touched (Subscription Box draws from events.json's
+loot tables). New draft PR #323 (track/perks to main, "Perks track (PK-7 onward): Fine Print").
+- The plan (as set at the start): (1) merge main; (2) the kinds Fine Print needs, one per commit with tests, schema,
+  data checks, types and the Studio's inputs: recoil, a money row's add (Subscription Box's charge), loot, the rules
+  noDrop and faintPaysNothing; level and bossHp rows taken mid-run applied at once; (3) the `fine` rarity and a leader's
+  pick drawn from it alone, with its look (the ladder's top orange, a red stamp); (4) the reward pick's Perk card;
+  (5) the 12 pictures as grids (drawn by three helpers in parallel, checked on contact sheets); (6) the 12 Perks in
+  perks.json; (7) rules.json's leader rule; (8) a test per Perk with its downside, Non-Refundable Ticket with Accordion
+  File and Photocopier, every Perk of Waves A-D and Fine Print at once; (9) the contact sheets; (10) the Studio check;
+  (11) docs.
+- Changed (18 commits and this entry; the merge of main was a fast-forward):
+  - **effects.js**: kinds `recoil` (`fxRecoil`) and `loot` (`FX_LOOT_N`); FX_RULES gains noDrop and faintPaysNothing.
+  - **Battle**: battle-engine.js `fxRecoilHurt` after an attack of yours that dealt damage; battle-rewards.js
+    battleRewards zeroes a win's Moneys under faintPaysNothing when one of yours fainted (`noPay`; battle.js toasts it).
+  - **Run**: run-loop.js runFxMoment pays or charges a money row's `add` (`cost`) and brings loot (`runLoot`: an
+    events.json loot table, the run's stream for the row and the place); run.js toasts both; `runFoesSync` /
+    `runFoesRelevel` move a run world's pools, trainers and boss when a level or bossHp row comes or goes
+    (run-scenes.js runWorldTables' `foeUp`/`foeSeed`, game-data.js worldPut keeps them).
+  - **Offers** (perks.js): `perkNoDrop` (perkDropOk, perkTake 'noDrop'), `perkLeaderRule`, perkOffer/perkOfferMake
+    `from` 'leader' (battle-rewards.js, the debug menu, the relics fixture, the run preview, perkOfferOrder); perkTake
+    ends with runFoesSync. rewards.js: the `perk` card (rewardDraw, rewardTake with `drop`, rewardDataGame's perks);
+    run-state.js validRunEnc keeps a perk card.
+  - **Page**: perk-screen.js (the pick's and the "Let one go" sheet's words under noDrop; perkDropOpen exported),
+    reward-screen.js (the Perk card, the cap's sheet, its toast, jingle and flight), shop.js, debug-menu.js and run.js
+    read perkCap (PK-6 had left four texts on rules.json's 6); marks.js `fine` and `rarityColour`, ui-marks-kit.js,
+    ui-run-kit.js (the stamp), ui-kit.css.
+  - **Data**: perks.json the 12 Fine Print Perks with `img`; rules.json `run.perks.leader`; rewards.json `perk`;
+    perks.schema.json (recoil, loot, xp, the money row's add, the rules, rarity fine), rewards.schema.json;
+    data-checks.js (the kinds, the leader rule, an event never naming Fine Print, a perk card naming no item);
+    game-data.d.ts (PerkRarity with fine, PerkTier), save-data.d.ts (RewardCard perk).
+  - **Studio**: the Perks editor's kinds recoil, loot, xp, the money add, the two rules' words, the rarity fine and its
+    head; check-studio-github.py `--only=relics` opens the 12 Fine Print Perks.
+  - **Art**: tools/art/icon-grids/perks.json the 11 new grids; game/art/perks/ 12 SVGs; the contact sheets.
+  - **Run sim**: moneyOut.perks counts what Perks charge on arrival; the "first item" policy skips a Perk card.
+  - **In-game full test**: the mini-boss's pick must be all Fine Print.
+  - Tests: battle-perks-fine.test.mjs (new, 22 tests), data-checks (PK-7 good rows and planted faults, the leader
+    rule, events, rewards), ui-marks (the tier), perks and run-preview (the leader's pick).
+  - Docs: perks-track.md (PK-7 done, "Corrected in PK-7"), ROADMAP, STUDIO.md, TESTING.md.
+- Risky:
+  - Every seed's leader picks changed (Fine Print only) and every reward pick's draw (one more card in the deck).
+  - Fine Print numbers are placeholders and strong on purpose: Glass Trophy x1.5 with Overclock Chip x1.35 and Terms
+    x1.3 stack within FX_LIMIT (x4); Heavy Crown's -15% applies only in double battles (the second place).
+  - Non-Refundable Ticket at its cap means no new Perk until the run ends (by design); the online run record still
+    keeps 6 Perks.
+  - runFoesSync moves the levels of every trainer of the world, beaten ones too (harmless), and leaves a place already
+    stocked this visit as it was.
+  - Subscription Box costs 15 Moneys at every place, also the landing places of side areas.
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck
+  and `npm test` (1924 at the start, 1946 at the end); before every commit check:modules, format:check, check:data
+  (179 files fine; its two bridge warnings are main's) and build; `check:smoke` on every commit touching game/ (7/7
+  each, run in a second worktree on the exact commit; Python Playwright 1.63.0). Golden battles unchanged (no snapshot
+  remade). `check:fast --only=perks` ok (the fixture's pick offered Non-Refundable Ticket, Influencer Contract and Paid
+  Promotion; a beaten mini-boss's stored pick Early Access Pass, Glass Trophy and Terms and Conditions).
+  `check-studio-github.py --only=relics` ok with its new Fine Print step. `npm run test:slow` 108 passed.
+  `node tools/build-icons.mjs perks --check` fine. `check:ui` differs from its baseline the same on main and on this
+  branch (the container's drawing), so its pictures were not remade. A phone-sized screenshot of the relics fixture's
+  pick showed the three orange Fine Print cards with their red stamps. **The run sim**: `--runs=50` stops in scene mode
+  with "runSceneParams: node 8 has no exit north3", the same as on main (PK-5, PK-6); `--balance` finishes its 50 runs.
+  **The in-game full test** (`--selftest`) on 78d638e6: the run's Perk steps passed (the mini-boss's pick all Fine
+  Print); two problems: "A room that opens in place: the town's walking grid changed" (main 4423a457 fails it the
+  same) and "the scene isn't drawing (black screen): no frames in 3 s", inside the clinic on one run and the Gene Bank
+  on the next (main's run passed it once): a different room each time, nothing here touches rooms or drawing, so read
+  as the container's frame timing, not established. **Full quick check** on 78d638e6: 42 steps, 36 passed; Terraces,
+  RL-8's "the town's shop has no Perk" and room light are main's known reds (#306's, PK-5's and PK-6's entries); RT-2's
+  pair, Granny Juniper and the run map's music passed alone right after (`--steps=`), so read as the full run's load.
+  **CI** on 78d638e6: lint and rules green; smoke (the fast check) red on "The world map opens as the bowl" and "Camera
+  follow", the steps main's own run 40744420002 (4423a457) fails too.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The look** (section 11, item 1): the ladder's top orange (#F77036, mythical's colour code) for frames, pills and
+    names, and a small red tilted "FINE PRINT" stamp on the pick card where the pill sits; rows show the orange pill.
+  - **The reward card's weight** (item 3): 2 of 41. **Weights** (item 2): 6/3/1 unchanged; a leader's pick draws its 12
+    evenly.
+  - **The 12 pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Terms and Conditions (a paper scroll on wood rollers with gold knobs, slate fine print, a red seal),
+    Energy Drink (a deep violet can, steel rim and ring-pull, a gold bolt), Glass Trophy (PK-0's sample), Overclock Chip
+    (a slate chip, steel pins, a teal die with a red-hot flame), Ethics Waiver (a wood clipboard, steel clip, a cream
+    form with a violet helix and a red tick, a folded corner), Hustle Planner (a red spiral planner, a slate calendar,
+    a gold coin), Influencer Contract (a deep violet phone-shaped contract, a red signature, a gold verified badge),
+    Non-Refundable Ticket (a red ticket with bitten ends on the diagonal, a steel padlock), Early Access Pass (a wide
+    gold keycard on a red strap, a slate clock), Subscription Box (a cardboard box, teal tape, a red renewal arrow),
+    Heavy Crown (a wide gold crown, red and violet gems), Paid Promotion (a red megaphone on the diagonal, a gold coin).
+  - Texts (drafts, every downside stated): as 5.6, with "In exchange" (Terms), "take the field with their Speed up
+    two stages" (Energy Drink: also on a switch in), "every attack that lands" (Overclock Chip), "Hold 8 Perks instead
+    of 6" (Ticket), "brings a random item, and charges you 15 Moneys" (Subscription Box).
+  - Influencer Contract's triple pay is every trainer battle (`if: foe:trainer`); its "pays nothing" zeroes Moneys
+    only (picks and badges stay).
+  - Subscription Box draws from events.json's `common` loot table (the plan's "loot common"), one item a place.
+  - Overclock Chip's cost can knock its user out (as Life Orb's); misses and status moves cost nothing.
+  - Taking Non-Refundable Ticket at the cap may still let one go (the rule acts once it is held).
+  - Fine Print gets the foil, as rare and mythical do.
+- Phone checks to do (listed, not waited for): a mini-boss's pick of three Fine Print cards (orange frames, the red
+  stamp) light and dark; the Perks tab's orange "Fine Print" pill; the reward pick's Perk card and its "Let one go"
+  at the cap; Non-Refundable Ticket at 8 (the sheet says none can go); Subscription Box's two toasts on walking in;
+  Influencer Contract's "paid nothing" toast; Overclock Chip's line after a hit; Early Access Pass taken mid-run (the
+  map shown, wild Billies of the next place three levels up); the 11 new pictures at 72 and 36 px.
+- Next: PK-8 (Perk sets: the `perkSets` data section, the 7 sets, the card's set line, the Perks tab grouped) on
+  `track/perks`.
+
 ### Perks track PK-6 - Wave D, rules, growth and adventure - 2026-10-28
 Branch `track/perks` (this session's outcome branch; main 2d862040, which holds PK-1..PK-5 through #316, merged first:
 a fast-forward, hooks.js unchanged; main 76aea599 merged again near the end, 4e8184a6). Started by PK-0's session under the owner's standing instruction (perks-track.md
