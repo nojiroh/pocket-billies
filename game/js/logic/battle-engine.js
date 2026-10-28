@@ -2042,9 +2042,10 @@ export function catchRoll(id, T, spin, b) {
     const q = Math.cbrt(P);
     let w = 0;
     while (w < 3 && battleRoll() < q) w++;
-    /* PK-1: a throw that missed: the run's rows of that moment */
-    if (w < 3) fxMoment('throwMiss', null);
-    return { caught: w === 3, w, edge: false, P };
+    /* PK-1: a throw that missed: the run's rows of that moment; PK-5: a refund row's pyramid comes back (the caller
+       puts it back in the bag: battle.js finishThrow, the run's simulation), `refund` naming the Perk */
+    const back = w < 3 ? fxMoment('throwMiss', null).filter(f => f.kind === 'refund' && f.what === 'pyramid') : [];
+    return { caught: w === 3, w, edge: false, P, ...(back.length ? { refund: fxSrcName(back[0].src) } : {}) };
   });
 }
 /* Studio plan T3.2: what follows a throw, the same on the page (battle.js finishThrow, battle-input.js) and in the

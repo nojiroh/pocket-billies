@@ -1214,6 +1214,12 @@ function finishThrow(res, id, lab, spin) {
     return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
+  /* PK-5: a refund row (Pyramid Pouch): the pyramid that missed comes back (logic/battle-engine.js catchRoll) */
+  if (res.refund) {
+    saveData.pyramids[id] = (saveData.pyramids[id] || 0) + 1;
+    battleSay(`${res.refund}: the ${PYRAMIDS[id].n} came back.`);
+    save();
+  }
   enemyOnly();
   playTurnEvents();
 }

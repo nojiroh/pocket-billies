@@ -2027,7 +2027,9 @@ export type FxKindRow =
   /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days); later waves add rules */
   | { kind: 'rule'; rule: 'forecastDays'; n: number }
   /** PK-5: a Billie you catch joins n levels higher */
-  | { kind: 'catchLevel'; n: number };
+  | { kind: 'catchLevel'; n: number }
+  /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
+  | { kind: 'refund'; what: 'pyramid' };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

@@ -110,6 +110,7 @@ const PERK_KINDS = {
   benchXp: 'Billies who sat out get more of a foe’s XP (PK-4)',
   rule: 'A run rule: the forecast shows more days (PK-4)',
   catchLevel: 'A Billie you catch joins levels higher (PK-5)',
+  refund: 'A pyramid that missed comes back (PK-5)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -157,6 +158,7 @@ const PERK_ROW_NEW = {
   benchXp: () => ({ kind: 'benchXp', share: 0.25 }),
   rule: () => ({ kind: 'rule', rule: 'forecastDays', n: 3 }),
   catchLevel: () => ({ kind: 'catchLevel', n: 2 }),
+  refund: () => ({ kind: 'refund', what: 'pyramid', when: 'throwMiss', once: 'battle' }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -359,6 +361,10 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           step: 1,
           help: `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
         }),
+      ],
+      refund: () => [
+        selectField('What comes back', `${p}.what`, [['pyramid', 'The pyramid thrown']], { rr: 1 }),
+        `<p class="note">At throwMiss (its When); Once battle for the first miss a battle only.</p>`,
       ],
       catchLevel: () => [
         numberField('Levels', `${p}.n`, {

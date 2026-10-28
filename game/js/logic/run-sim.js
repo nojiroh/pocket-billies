@@ -518,6 +518,8 @@ export function runSimOn(env) {
               if (q.graft) stats.caughtSpliced++;
               res = { over: 'caught', turns: B.turn };
             } else {
+              /* PK-5: a refund row's pyramid comes back (battle.js finishThrow) */
+              if (c.refund) s.pyramids.pyramid++;
               /* a miss: the foe's turn */
               fn('enemyOnly')();
             }

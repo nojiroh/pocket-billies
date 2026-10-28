@@ -29,6 +29,7 @@
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
              (PK-4, battle-engine.js fxPassiveOf)
      catchLevel  a Billie you catch joins n levels higher (PK-5, battle-engine.js catchKeep)
+     refund  a pyramid thrown that missed comes back (`when: throwMiss`) (PK-5, battle-engine.js catchRoll)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -62,6 +63,7 @@ expose({
   FX_ONCE: [() => FX_ONCE],
   FX_PASSIVE_KEYS: [() => FX_PASSIVE_KEYS],
   FX_PER: [() => FX_PER],
+  FX_REFUND: [() => FX_REFUND],
   FX_RULES: [() => FX_RULES],
   FX_SAY: [() => FX_SAY],
   FX_STAGES: [() => FX_STAGES],
@@ -160,6 +162,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'benchXp',
   'rule',
   'catchLevel',
+  'refund',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -489,6 +492,9 @@ export const fxCatchLevel = fx =>
       (fx || []).reduce((a, f) => a + (f.kind === 'catchLevel' ? f.n || 0 : 0), 0)
     )
   );
+
+/** PK-5: what a refund row gives back (a pyramid thrown that missed) */
+export const FX_REFUND = /** @type {const} */ (['pyramid']);
 
 /* ---------- PK-1: when a row acts, on what condition, how often, how it grows (perks-track.md section 7) ----------
    Optional fields on any effect row, from fixed lists (data-checks.js checks them; no script language):

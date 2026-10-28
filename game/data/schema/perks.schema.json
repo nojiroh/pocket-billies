@@ -168,6 +168,11 @@
        "description": "catchLevel (PK-5): a Billie you catch joins n levels higher (its moves learned on the way; at most 10 together)",
        "type": "object", "additionalProperties": false, "required": ["kind", "n"],
        "properties": {"kind": {"const": "catchLevel"}, "n": {"type": "integer", "minimum": 1, "maximum": 10}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
+       "description": "refund (PK-5): what a missed throw gives back (pyramid: the pyramid thrown); it acts at throwMiss",
+       "type": "object", "additionalProperties": false, "required": ["kind", "what", "when"],
+       "properties": {"kind": {"const": "refund"}, "what": {"enum": ["pyramid"]}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       }
      ]
     }

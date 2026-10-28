@@ -77,3 +77,47 @@ test('PK-5 catchLevel: a caught Billie joins n levels higher, learning on the wa
     10
   );
 });
+
+/* ---------- refund ---------- */
+
+/** the battle's stream, giving these values in turn (the last again when they run out) while `run` runs */
+const rolls = (b, vs, run) => {
+  const rng = b.rng,
+    L = [].concat(vs);
+  b.rng = () => (L.length > 1 ? L.shift() : L[0]);
+  try {
+    return run();
+  } finally {
+    b.rng = rng;
+  }
+};
+
+test('PK-5 refund: the first pyramid that misses in a battle comes back (once: battle); a catch gives none back', () => {
+  const { P, fx } = perks({
+    id: 'test_pouch',
+    name: 'Test Pouch',
+    fx: [{ kind: 'refund', what: 'pyramid', when: 'throwMiss', once: 'battle' }],
+  });
+  withPerks(P, () => {
+    const b = battle(fx, [ofType('Fire')]);
+    const miss = () => rolls(b, [0.99], () => fn('catchRoll')('pyramid', 1, false, b));
+    const a = miss();
+    assert.equal(a.caught, false);
+    assert.equal(a.refund, 'Test Pouch');
+    const c = miss();
+    assert.equal(c.caught, false);
+    assert.equal(c.refund, undefined, 'once a battle');
+    /* a new battle: back again */
+    const b2 = battle(fx, [ofType('Fire')]);
+    assert.equal(rolls(b2, [0.99], () => fn('catchRoll')('pyramid', 1, false, b2)).refund, 'Test Pouch');
+    /* a catch: nothing back, and the mark not spent */
+    const b3 = battle(fx, [ofType('Fire')]);
+    const got = rolls(b3, [0.99, 0], () => fn('catchRoll')('pyramid', 1, false, b3));
+    assert.equal(got.caught, true);
+    assert.equal(got.refund, undefined);
+    assert.equal(rolls(b3, [0.99], () => fn('catchRoll')('pyramid', 1, false, b3)).refund, 'Test Pouch');
+  });
+  /* none held: no refund, and the same rolls taken */
+  const b = battle(null, [ofType('Fire')]);
+  assert.equal(rolls(b, [0.99], () => fn('catchRoll')('pyramid', 1, false, b)).refund, undefined);
+});

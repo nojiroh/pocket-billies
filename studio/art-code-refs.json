@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:231",
     "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2492"
+    "game/js/logic/data-checks.js:2501"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2492"
+    "game/js/logic/data-checks.js:2501"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:440",
-    "game/js/logic/data-checks.js:2494"
+    "game/js/logic/data-checks.js:2503"
    ]
   },
   {
@@ -1639,7 +1639,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2648",
+   "game/js/logic/data-checks.js:2657",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1865,10 +1865,10 @@
    "game/js/battle.js:1093",
    "game/js/gene-bank-screen.js:207",
    "game/js/gene-bank-screen.js:229",
-   "game/js/logic/data-checks.js:875",
-   "game/js/logic/data-checks.js:995",
-   "game/js/logic/data-checks.js:1036",
-   "game/js/logic/data-checks.js:2066",
+   "game/js/logic/data-checks.js:876",
+   "game/js/logic/data-checks.js:996",
+   "game/js/logic/data-checks.js:1037",
+   "game/js/logic/data-checks.js:2067",
    "game/js/logic/script.js:234",
    "game/js/logic/story-checks.js:353",
    "game/js/ranch-screen.js:210",
@@ -1920,7 +1920,7 @@
    "game/js/battle-stage.js:2482",
    "game/js/battle-stage.js:2505",
    "game/js/battle-stage.js:2604",
-   "game/js/battle.js:1392",
+   "game/js/battle.js:1398",
    "game/js/billie-sheet.js:83",
    "game/js/billie-sheet.js:157",
    "game/js/billie-sheet.js:214",
@@ -1966,11 +1966,11 @@
    "game/js/fishing.js:171",
    "game/js/logic/bowl.js:133",
    "game/js/logic/cutscene-set.js:38",
-   "game/js/logic/data-checks.js:726",
-   "game/js/logic/data-checks.js:892",
-   "game/js/logic/data-checks.js:908",
-   "game/js/logic/data-checks.js:933",
-   "game/js/logic/data-checks.js:977",
+   "game/js/logic/data-checks.js:727",
+   "game/js/logic/data-checks.js:893",
+   "game/js/logic/data-checks.js:909",
+   "game/js/logic/data-checks.js:934",
+   "game/js/logic/data-checks.js:978",
    "game/js/logic/marks.js:109",
    "game/js/logic/music-studio.js:71",
    "game/js/logic/online-legal.js:242",
