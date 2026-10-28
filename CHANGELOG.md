@@ -48,6 +48,14 @@ kept aside in the browser).
   splash when you land the fish, and frogs, fish and diving birds splash. All of it sits well under the music. The
   debug menu's Sound test plays each at a distance, and so does the Studio's Sounds tab.
 
+- **Fanfares with a band** (sound track SND-17): the jingles play on real-sounding instruments too: the victory a
+  brass fanfare with strings and timpani, a level up on glockenspiel and harp, an evolution's string swell and harp
+  glissando, a catch on plucked strings with a snare roll, a hatch on a music box, and the run's own: a sly clarinet
+  for a Perk, bells for new places on the map, a woodblock's tock for a passing day, a glockenspiel coin per payout
+  row. Over a song the short ones now land on its beat and in its key, and only the busy parts of the song step back
+  for them. **GB Sounds** plays every jingle the old 8-bit way. The debug menu's Sound test plays each jingle both
+  ways.
+
 - **A fuller band** (sound track SND-11): Copperleaf, the routes and wild battles now have a band around the chip
   tune: in Copperleaf a music box, a harp and soft strings (a flute at night); on a route strings, plucked strings and
   an orchestral snare; in a wild battle quick strings, brass, timpani and a full drum kit. All of it is made by the

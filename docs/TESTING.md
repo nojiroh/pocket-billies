@@ -550,6 +550,13 @@ same phase:
   row against its gb version. Unit tests: `music-patterns.test.mjs` (the patterns, the ensembles' steps and needs),
   `sound-bake.test.mjs` the new kinds and every music.json instrument, `tracker.test.mjs` the stems and the ensemble
   path (gb until baked, GB Sounds, only the zones played), `music-studio.test.mjs` the new choices and findings.
+  SND-17: check-sound renders a jingle naming an ensemble once more on it (`jingles` `<name>@ensemble`: 216
+  fingerprints), every other jingle part with GB Sounds on (the 8-bit jingle); `--loudness` adds each jingle's row on
+  its ensemble against its 8-bit version, measured whole, on a page of its own. Unit tests: `music-patterns.test.mjs`
+  (a jingle's parts and needs, a stinger's beat and key), `tracker.test.mjs` (8-bit until baked, GB Sounds, a stinger
+  on the beat with its stems dropped and the fader alone, the fanfares' duck), `music-studio.test.mjs` (the jingles'
+  findings and schema), `logic.test.mjs` (`jinglePlay` a seam). `check-studio-github.py --only=music` plays hatch
+  8-bit and on its ensemble and draws a harmony note.
   `check-studio-github.py --only=music` checks the player's compressor, an instrument, an ensemble and GB Sounds on
   the Instruments tab. A Node record of every gb synth call (scratch, not committed) proved the refactor call for call.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's

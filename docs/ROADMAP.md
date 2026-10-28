@@ -200,9 +200,11 @@ town node needs it.
   sounds, decided as recommended) done 2026-10-28. SND-11 (stems and ensembles: the tick's patterns as pure
   functions, a stem per line, 29 baked instruments and the first ensembles in music.json, Copperleaf by day and night,
   the route and a wild battle in a Chip+ and DS-era mix, GB Sounds in Settings -> Sound, the Studio's Instruments tab
-  and its player on the game's chain; today's songs unchanged under GB Sounds) done 2026-10-28. Two lanes on the
-  branch since 2026-10-28: music (next SND-17, the jingles with the new instruments and stingers on the beat; then
-  layers in play, SND-13, and arrangements, SND-12) and world (nature and weather, SND-14); then the mix and a phone
+  and its player on the game's chain; today's songs unchanged under GB Sounds) done 2026-10-28. SND-17 (jingles and
+  stingers: the 12 jingles on ensembles of SND-11's instruments as placeholder arrangements, a run's short stingers on
+  the song's beat and in its key with its busy parts dropped, the 8-bit jingles under GB Sounds, the Studio's Jingles
+  card and the Sound test both ways) done 2026-10-28. Two lanes on the branch since 2026-10-28: music (next layers in
+  play, SND-13, then arrangements, SND-12) and world (nature and weather, SND-14); then the mix and a phone
   pass (SND-15). Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
   plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
