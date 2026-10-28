@@ -40,7 +40,10 @@ tag `snd-8a-done` (for the owner to push) on this session's last commit. Details
   alone. Browser probes: the bucketed water lookup equals the scan at 2,400 positions; the Sound test plays a song and
   a bed, stops on close and leaves the save unchanged, buttons 56 px tall; the debug log's audio lines filled.
   `npm run check:smoke`: no problems (Phone, Actions sheet, the in-game full test's one step).
-  The full `npm run check:quick`: running at the time of writing; its result follows in this entry's next commit.
+  The full `npm run check:quick`: 38 of 41 steps passed (1383 s). The three problems fail on main (07c9b284) too, run
+  the same way: Terraces (train_station floats in Copperleaf), RL-8 (a run's seam crossing never shows the next view)
+  and "Walking left and right..." (here at room light's night value; on main it stops earlier, at the settings tabs'
+  sizes, so room light isn't reached there; this session touched no lighting code). Noted, not fixed: outside SND-8a.
 - **Decided for the owner, to review**:
   - WA-8's water sounds move to SND-10 (recommended; nothing built here).
   - The music's rain low-pass softens to about 4 kHz in SND-8b (recommended; untouched here).
