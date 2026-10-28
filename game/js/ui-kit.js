@@ -18,6 +18,7 @@
 /* Lit, from the classic script game/vendor/lit.js (tools/vendor-lit.mjs), loaded before the modules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { provide } from './hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   GLYPH_URLS: [() => GLYPH_URLS],
@@ -70,6 +71,7 @@ const motionNow = () => {
     ? 'reduced'
     : 'full';
 };
+provide({ motionNow }); /* to-module */
 export const reduced = () => motionNow() === 'reduced';
 
 /* shared look: glass surface, voice font, focus ring */

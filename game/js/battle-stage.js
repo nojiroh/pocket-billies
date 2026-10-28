@@ -25,6 +25,7 @@ import {
   hudHit,
   hudPop,
   maxHp,
+  motionNow,
   platesTick,
   provide,
   reducedMotion,
@@ -1029,7 +1030,10 @@ function camApply() {
     L = battleStage.L,
     u = L.u,
     el = battleStage.el,
-    still = reducedMotion;
+    still = reducedMotion,
+    /* UI-16a/b: Calm drops the idle loops: the camera's breathing zoom and slow roll (shakes and the handheld feel
+       follow the action and stay) */
+    calm = still || motionNow() === 'calm';
   let sx = 0,
     sy = 0;
   if (battleStage.shk > 0.3 && !still) {
@@ -1041,9 +1045,11 @@ function camApply() {
     sx += ha * (Math.sin(t * 0.0113) * 1.1 + Math.sin(t * 0.0271 + 1.7) * 0.55);
     sy += ha * (Math.sin(t * 0.0097 + 0.6) * 0.8 + Math.sin(t * 0.0233 + 2.9) * 0.45);
   }
-  const breathe = still ? 0 : 0.006 * Math.sin(t / 3100),
+  const breathe = calm ? 0 : 0.006 * Math.sin(t / 3100),
     z = 1 + (still ? 0 : battleStage.css.z) + breathe,
-    r = still ? 0 : battleStage.css.r + 0.004 * Math.sin(t / 4700) + ha * 0.0035 * Math.sin(t * 0.0079 + 0.3);
+    r = still
+      ? 0
+      : battleStage.css.r + (calm ? 0 : 0.004 * Math.sin(t / 4700)) + ha * 0.0035 * Math.sin(t * 0.0079 + 0.3);
   const V = battleStage.V,
     key =
       z.toFixed(4) + r.toFixed(4) + sx.toFixed(2) + sy.toFixed(2) + V.yaw.toFixed(4) + V.x.toFixed(3) + V.hz.toFixed(2);
@@ -1130,8 +1136,10 @@ function camUpdate(dt) {
     busy = camBusy();
   if (busy) battleStage.camT = battleStage.t;
   const want =
-    /* phase 06-3: calm while the player chooses (the battle cards float in the scene and should hold still) */
+    /* phase 06-3: calm while the player chooses (the battle cards float in the scene and should hold still); UI-16b:
+       no idle orbit under Calm */
     !reducedMotion &&
+    motionNow() !== 'calm' &&
     !busy &&
     !battleStage.calm &&
     battleStage.t - battleStage.camT > 650 &&
