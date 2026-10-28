@@ -233,7 +233,7 @@
 }
 .bt-banner b {
   display: block;
-  padding: 5px 16px 4px;
+  padding: var(--s1) var(--s4);
   clip-path: var(--clip-chip);
   background: var(--sig-caution);
   color: var(--c-ink);

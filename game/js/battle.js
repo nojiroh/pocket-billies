@@ -688,7 +688,10 @@ function hudBanner(si, text, kind) {
   if (!q) return;
   const e = document.createElement('div');
   e.className = 'bt-banner ' + kind;
-  e.innerHTML = `<b class="m-slam">${escapeHtml(text)}</b>`;
+  const w = document.createElement('b');
+  w.className = 'm-slam';
+  w.textContent = text;
+  e.appendChild(w);
   e.style.left = clamp(q.x, 80, battleStage.L.vw - 80) + 'px';
   e.style.top = Math.max(40, q.y - 26) + 'px';
   L.appendChild(e);
