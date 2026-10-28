@@ -4,7 +4,8 @@
    What a run's Perks (perks.json) change, as effect rows read at named points of the game (roguelite-track.md 2d;
    phase 19's handler-table idea). A Perk is data: a list of rows, each of one kind in FX_KINDS. fxRows turns the
    ids held into one list; each point asks only for its kind:
-     money   a won battle's money (battle-rewards.js)         price   a run shop's prices, a run clinic's charge
+     money   a won battle's money (battle-rewards.js); PK-5: at `when: arrive`, a share of the Moneys carried, at most
+             `max` (run-loop.js runFxMoment)                   price   a run shop's prices, a run clinic's charge
      catch   a coin's chance to catch (catchOdds)              stat    stat stages for your Billies as a battle starts
      damage  what your Billies deal or take (calcDamage)       heal    a share of HP on walking into a place
      payout  the payout's Research, or the share items count at
@@ -94,6 +95,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxLive: [() => fxLive, v => (fxLive = v)],
   fxMoney: [() => fxMoney],
+  fxMoneyShare: [() => fxMoneyShare],
   // @ts-expect-error -- replaced on purpose
   fxMult: [() => fxMult, v => (fxMult = v)],
   fxOfBillie: [() => fxOfBillie],
@@ -231,7 +233,8 @@ export function fxMult(fx, test) {
 
 /** a won battle's money with the money rows (whole $) @param {Fx[] | null | undefined} fx @param {number} n */
 export const fxMoney = (fx, n) => {
-  const k = fxMult(fx, f => f.kind === 'money');
+  /* PK-5: a money share (paid on arrival) is no multiplier */
+  const k = fxMult(fx, f => f.kind === 'money' && typeof (/** @type {any} */ (f).mult) === 'number');
   return k === 1 ? n : Math.round(n * k);
 };
 
@@ -493,6 +496,14 @@ export const fxCatchLevel = fx =>
       (fx || []).reduce((a, f) => a + (f.kind === 'catchLevel' ? f.n || 0 : 0), 0)
     )
   );
+
+/** PK-5: what a money share row pays when it acts: its share of the Moneys carried (`se`), rounded down, at most its
+ * max (0 for a multiplier row) @param {any} f @param {number} se */
+export const fxMoneyShare = (f, se) =>
+  f.kind === 'money' && f.share > 0
+    ? Math.max(0, Math.min(f.max ?? Infinity, Math.floor(Math.max(0, se) * f.share)))
+    : 0;
+provide({ fxMoneyShare }); /* to-module */
 
 /** PK-5: what a refund row gives back (a pyramid thrown that missed) */
 export const FX_REFUND = /** @type {const} */ (['pyramid']);

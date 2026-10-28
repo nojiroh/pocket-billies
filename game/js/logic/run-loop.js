@@ -21,6 +21,7 @@ import {
   fxFire,
   fxHealShare,
   fxImmune,
+  fxMoneyShare,
   fxOfRun,
   fxRunBossHp,
   fxRunFoeLevels,
@@ -130,19 +131,27 @@ export function fxRunCtx(s, more) {
 /**
  * PK-1: a moment on the run (catch, win, arrive, buy, take): the run's rows of that `when` act (logic/effects.js
  * fxFire, counting and growing on run.perkState): a heal row heals the team (runArriveHeal). `only`: one Perk's rows
- * (the one taken). Returns the rows that acted (for the caller's own kinds) and the HP healed.
+ * (the one taken). PK-5: a money share row pays its share of the Moneys carried (effects.js fxMoneyShare: each row
+ * from what was carried as the moment came, at most its max). Returns the rows that acted (for the caller's own
+ * kinds), the HP healed and the Moneys paid.
  * @param {SaveData} s @param {Record<string, any>} perks @param {string} when @param {any} [more]
- * @param {string} [only] @returns {{ rows: any[], hp: number }}
+ * @param {string} [only] @returns {{ rows: any[], hp: number, money: number }}
  */
 export function runFxMoment(s, perks, when, more, only) {
   const fx = s.run ? fxOfRun(s.run, perks) : null;
   /* nothing of that moment: no marks made */
   if (!fx || !fx.some(f => f.when === when || (f.grow && (f.grow.on === when || f.grow.reset === when))))
-    return { rows: [], hp: 0 };
-  const rows = fxFire(fx, when, fxRunCtx(s, more), { run: fxRunMarks(s.run) }, only);
-  let hp = 0;
-  for (const f of rows) if (f.kind === 'heal') hp += runArriveHeal(s.team, f.share);
-  return { rows, hp };
+    return { rows: [], hp: 0, money: 0 };
+  const rows = fxFire(fx, when, fxRunCtx(s, more), { run: fxRunMarks(s.run) }, only),
+    se = s.se;
+  let hp = 0,
+    money = 0;
+  for (const f of rows) {
+    if (f.kind === 'heal') hp += runArriveHeal(s.team, f.share);
+    money += fxMoneyShare(f, se);
+  }
+  s.se += money;
+  return { rows, hp, money };
 }
 /** PK-3: does the run hold an immune row against `what` (a status an event hands out) that holds for the team here?
  * @param {SaveData} s @param {Record<string, any>} perks @param {string} what */
@@ -155,14 +164,18 @@ export function runImmune(s, perks, what) {
 export const runBuyFx = (s, perks) => runFxMoment(s, perks, 'buy');
 /** Studio plan T3.3: walking into a place on a run (walk-control.js through run.js runArrivedFx, and the run's
  * simulation): the held Perks' heal rows heal the team (runArriveHeal); returns the HP gained (0: none). PK-1: the
- * heal rows whose conditions hold here, then the arrive moment's rows
- * @param {SaveData} s @param {Record<string, any>} perks perks.json */
-export function runArriveFx(s, perks) {
+ * heal rows whose conditions hold here, then the arrive moment's rows. PK-5: `out.money` gets the Moneys its money
+ * share rows paid (Tip Jar) @param {SaveData} s @param {Record<string, any>} perks perks.json
+ * @param {{ money?: number }} [out] */
+export function runArriveFx(s, perks, out) {
   /* RL-12b: an event's boons count one place down first (logic/run-enc.js) */
   if (s.run) encArrive(s.run);
   const fx = fxOfRun(s.run, perks),
     share = fx ? fxHealShare(fxAt(fx, fxRunCtx(s), { run: s.run && s.run.perkState })) : 0;
-  return (share ? runArriveHeal(s.team, share) : 0) + runFxMoment(s, perks, 'arrive').hp;
+  const healed = share ? runArriveHeal(s.team, share) : 0,
+    m = runFxMoment(s, perks, 'arrive');
+  if (out) out.money = m.money;
+  return healed + m.hp;
 }
 /** what a run town's clinic charges to heal the party: `each` per hurt Billie @param {Billy[]} team
  * @param {number} each @returns {{ hurt: number, cost: number }} */

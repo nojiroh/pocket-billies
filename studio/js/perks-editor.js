@@ -215,7 +215,15 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       .filter((/** @type {any} */ s) => s.id !== 'hp')
       .map((/** @type {any} */ s) => [s.id, s.name]),
     fields = {
-      money: () => [mult('Moneys ×')],
+      /* PK-5: a money share (Tip Jar) is paid on arrival: a share of what you carry, up to its most */
+      money: () =>
+        'share' in f
+          ? [
+              share('Share of the Moneys carried'),
+              numberField('At most', `${p}.max`, { min: 1, max: 9999, step: 1, unit: '$' }),
+              `<p class="note">Paid at arrive (its When), from what you carry as you walk in.</p>`,
+            ]
+          : [mult('Moneys ×')],
       price: () => [
         selectField('Which price', `${p}.what`, [
           ['shop', 'A run shop’s wares'],

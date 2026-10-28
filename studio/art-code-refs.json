@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:231",
     "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2501"
+    "game/js/logic/data-checks.js:2513"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2501"
+    "game/js/logic/data-checks.js:2513"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:440",
-    "game/js/logic/data-checks.js:2503"
+    "game/js/logic/data-checks.js:2515"
    ]
   },
   {
@@ -1639,7 +1639,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2657",
+   "game/js/logic/data-checks.js:2669",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",

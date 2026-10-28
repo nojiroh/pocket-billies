@@ -2161,6 +2161,16 @@ export function fxKindProblems(f, at, D, problem) {
       problem(`${at}.mult: a boost row's mult is above 1 (the weather's boosts counted that many times over)`);
     if (f.what === 'noWeaken' && 'mult' in f) problem(`${at}.mult: a noWeaken row has no mult`);
   }
+  /* PK-5: a money row is a multiplier (a battle's pay) or a share of the Moneys carried, paid on arrival, up to max */
+  if (f.kind === 'money' && 'share' in f) {
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
+      problem(`${at}.share: a share of the Moneys carried above 0, at most 1`);
+    if (!(Number.isInteger(f.max) && f.max >= 1 && f.max <= 9999))
+      problem(`${at}.max: a money share needs its most, a whole number of Moneys from 1 to 9999`);
+    if ('mult' in f) problem(`${at}.mult: a money share has no mult`);
+    if (f.when == null) problem(`${at}.when: a money share needs a moment (arrive)`);
+  } else if (f.kind === 'money' && f.when != null)
+    problem(`${at}.when: a money row at ${f.when} is a share (share, max)`);
   /* PK-5: what a missed throw gives back, at that moment */
   if (f.kind === 'refund') {
     if (!(/** @type {readonly string[]} */ (FX_REFUND).includes(f.what)))
@@ -2246,6 +2256,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   crit: ['move'],
   /* PK-3: a status on the foe hit; PK-5: on each foe on the field as a battle starts */
   inflict: ['hit', 'battleStart'],
+  /* PK-5: a share of the Moneys carried, on walking into a place */
+  money: ['arrive'],
   /* PK-5: a missed throw's pyramid back */
   refund: ['throwMiss'],
 });

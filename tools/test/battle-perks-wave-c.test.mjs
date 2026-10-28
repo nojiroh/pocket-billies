@@ -4,7 +4,7 @@
 // finite.
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { data, fn, hooks, reseed, said, startedSave } from './setup-real.mjs';
+import { data, fn, hooks, modules, reseed, said, startedSave } from './setup-real.mjs';
 
 const { SPECIES } = data;
 /** a species of type T (one of that type alone when there is one) */
@@ -153,4 +153,33 @@ test('PK-5 inflict at battleStart: each wild foe on the field gets the status on
   /* none held: nothing waits, no roll */
   const d = battle(null, [ofType('Fire')]);
   assert.equal(d.fxStartInflict, undefined);
+});
+
+/* ---------- money share on arrival ---------- */
+
+test('PK-5 money share: walking in pays a share of the Moneys carried, up to its most; none without the row', () => {
+  const L = modules['run-loop'],
+    { P } = perks({ id: 'test_jar', fx: [{ kind: 'money', share: 0.1, max: 40, when: 'arrive' }] });
+  const walk = se => {
+    reseed(3);
+    const s = startedSave(ofType('Water'), 30);
+    s.se = se;
+    s.run = { perks: ['test_jar'], perkState: {} };
+    const out = {};
+    L.runArriveFx(s, P, out);
+    return [s.se, out.money];
+  };
+  assert.deepEqual(walk(125), [137, 12]);
+  assert.deepEqual(walk(1000), [1040, 40], 'at most 40');
+  assert.deepEqual(walk(5), [5, 0]);
+  /* none held: nothing paid */
+  reseed(3);
+  const s = startedSave(ofType('Water'), 30);
+  s.se = 500;
+  s.run = { perks: [], perkState: {} };
+  const out = {};
+  L.runArriveFx(s, P, out);
+  assert.deepEqual([s.se, out.money], [500, 0]);
+  /* a battle's money ignores the share row */
+  assert.equal(fn('fxMoney')([{ kind: 'money', share: 0.1, max: 40, when: 'arrive', src: 'x' }], 100), 100);
 });

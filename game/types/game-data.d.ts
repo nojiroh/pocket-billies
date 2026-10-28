@@ -1964,6 +1964,8 @@ export type FxRow = FxTiming & FxKindRow;
 /** one effect row's kind and numbers */
 export type FxKindRow =
   | { kind: 'money'; mult: number }
+  /** PK-5: at arrive, this share of the Moneys carried, at most max */
+  | { kind: 'money'; share: number; max: number }
   | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
   | { kind: 'catch'; mult: number }
   | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
