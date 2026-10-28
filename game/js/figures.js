@@ -49,7 +49,7 @@ import {
   meshClipFrame,
   meshClipMatrices,
 } from './logic/figure-pose.js';
-import { figureSeed, kappiFigure, kitExtent, lookFigure } from './logic/figure-kit.js';
+import { figureSeed, kappiFigure, kitBuild, lookFigure } from './logic/figure-kit.js';
 import { artImg, artURL, makeCanvas } from './art.js';
 import { lookOf, wardrobeData } from './person-art.js';
 import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
@@ -258,7 +258,11 @@ function figureDef(name) {
             /* a direction's flair, and its design for this person (its cast table) */
             flair: look0 && look0.flair ? { ...look0.flair, ...((look0.cast && look0.cast[who]) || {}) } : undefined,
           });
-    return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: kitExtent(F) });
+    /* CH-4: one build of its mesh, at the detail its direction draws it, gives its extent and its first GPU mesh
+       (figureRes takes it once, then lets it go) */
+    const detail = (look0 || FIGURE_LOOKS[figureStyle()] || FIGURE_LOOKS.pixel).detail || 1,
+      G = kitBuild(F, detail);
+    return (FIGURE_DEFS[name] = { kind: 'code', name, F, height: F.height, ext: G.ext, gpu: { ...G, detail } });
   }
   if (!(name in FIGURE_FILES)) return (FIGURE_DEFS[name] = false);
   FIGURE_DEFS[name] = null;
@@ -526,7 +530,8 @@ function figureRes(gl, Fig, detail = 1) {
   if (R) return R;
   if (Fig.kind === 'mesh' && !(Fig.tex && Fig.tex.complete && Fig.tex.naturalWidth > 0)) return null;
   const code = Fig.kind === 'code',
-    M = code ? figureGpuMesh(Fig.F, detail) : null,
+    /* CH-4: the mesh figureDef built with the figure, if at this detail (taken once: a lost context builds again) */
+    M = code ? (Fig.gpu && Fig.gpu.detail === detail ? Fig.gpu : figureGpuMesh(Fig.F, detail)) : null,
     vao = gl.createVertexArray();
   gl.bindVertexArray(vao);
   const vb = gl.createBuffer();
@@ -572,6 +577,7 @@ function figureRes(gl, Fig, detail = 1) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
   }
   gl.bindVertexArray(null);
+  if (code) Fig.gpu = null;
   R = { vao, count, indexed: !code, tex, colours: code ? M.colours : null, slots: code ? M.slots : null };
   B.res.set(key, R);
   return R;

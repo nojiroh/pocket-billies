@@ -10,6 +10,8 @@ import {
   figureSeed,
   figureShapeFor,
   kappiFigure,
+  kitBuild,
+  kitExtent,
   kitHex,
   lookFigure,
 } from '../../game/js/logic/figure-kit.js';
@@ -189,6 +191,20 @@ test('figure kit: the GPU mesh: a matrix only for moving parts (at most 32), eve
       );
     }
   }
+});
+
+test('figure kit: kitBuild gives the extent and the GPU mesh of two separate builds from one (CH-4)', () => {
+  const F = lookFigure(PEOPLE.chosen.look, W.items, { name: 'chosen', figure: PEOPLE.chosen.figure }),
+    G = kitBuild(F),
+    A = figureGpuMesh(F);
+  assert.deepEqual(G.ext, kitExtent(F));
+  assert.equal(G.count, A.count);
+  assert.deepEqual(G.slots, A.slots);
+  assert.deepEqual(G.colours, A.colours);
+  assert.ok(
+    G.data.every((x, i) => x === A.data[i]),
+    'the same vertices'
+  );
 });
 
 test('figure kit: under a hat no hair comes out through its crown (every hat, every hair style)', () => {

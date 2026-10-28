@@ -20,6 +20,7 @@
 import { expose } from '../test-globals.js';
 import {
   figureDark,
+  figureGpuMesh,
   figureMesh,
   figureMix,
   figurePose,
@@ -51,6 +52,8 @@ expose({
   kappiFigure: [() => kappiFigure, v => (kappiFigure = v)],
   // @ts-expect-error -- replaced on purpose
   kitBeardShape: [() => kitBeardShape, v => (kitBeardShape = v)],
+  // @ts-expect-error -- replaced on purpose
+  kitBuild: [() => kitBuild, v => (kitBuild = v)],
   // @ts-expect-error -- replaced on purpose
   kitExtent: [() => kitExtent, v => (kitExtent = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2008,10 +2011,11 @@ export function kappiFigure(opts = {}) {
 /**
  * the room a code figure's poses take (logic/figure-pose.js FigureExtent): its reach round its upright axis, its
  * depth, its top and bottom, over the idle, the walk, a cheer's raised arms and a throw's wind-up, with a margin
- * @param {Figure} F @returns {import('./figure-pose.js').FigureExtent}
+ * @param {Figure} F @param {{ data: Float32Array, count: number }} [M0] the figure's mesh if already built (any detail)
+ * @returns {import('./figure-pose.js').FigureExtent}
  */
-export function kitExtent(F) {
-  const M = figureMesh(F),
+export function kitExtent(F, M0) {
+  const M = M0 || figureMesh(F),
     poses = [
       ['idle', 0],
       ['walk', 0],
@@ -2043,4 +2047,16 @@ export function kitExtent(F) {
     }
   }
   return { r: r + 0.04, depth: r + 0.04, top: top + 0.04, bottom: Math.min(-0.04, bottom - 0.02) };
+}
+/**
+ * CH-4: a code figure's extent and its GPU mesh at `detail` from one build of its mesh (CH-3b built it twice when a
+ * figure was first wanted: once to measure, once to draw; about 150 + 230 ms for a gouache-night figure in Node)
+ * @param {Figure} F @param {number} [detail]
+ * @returns {{ ext: import('./figure-pose.js').FigureExtent, data: Float32Array, count: number, colours: string[],
+ *   slots: number[] }}
+ */
+export function kitBuild(F, detail = 1) {
+  const M = figureMesh(F, detail),
+    ext = kitExtent(F, M);
+  return { ext, ...figureGpuMesh(F, detail, M) };
 }

@@ -1425,10 +1425,13 @@ export const FIGURE_JOINTED = /^(torso|head|body|(thigh|shin|foot|arm|forearm)[A
  * past the shader's 32 joint matrices): a matrix only for each part a pose moves (FIGURE_JOINTED, and the root), every
  * other part's vertices carried by its own place (its `at` and its parents' up to the first moving one) and drawn on
  * that one's matrix. `slots`: the part each matrix is (jointMatrices' index), in the order the vertices name them.
- * @param {Figure} F @param {number} [detail] @returns {{ data: Float32Array, count: number, colours: string[], slots: number[] }}
+ * CH-4: `M`, the figure's mesh already built at this detail (figureMesh), is taken as it is (its data rewritten), so
+ * one build serves the figure's extent (figure-kit.js kitBuild) and its GPU mesh.
+ * @param {Figure} F @param {number} [detail] @param {{ data: Float32Array, count: number, colours: string[] }} [M0]
+ * @returns {{ data: Float32Array, count: number, colours: string[], slots: number[] }}
  */
-export function figureGpuMesh(F, detail = 1) {
-  const M = figureMesh(F, detail),
+export function figureGpuMesh(F, detail = 1, M0) {
+  const M = M0 || figureMesh(F, detail),
     jointOf = F.parts.map(() => -1),
     off = F.parts.map(() => /** @type {Vec3} */ ([0, 0, 0])),
     /** @type {number[]} */ slots = [];
