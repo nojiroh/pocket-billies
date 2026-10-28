@@ -32,7 +32,8 @@ tag (CLAUDE.md: the track gets `dialogue-done` when it ends). Details: docs/phas
 - Risky: a nickname or name that happens to contain a real tag (`[b]`) loses it in battle text and speech (unknown
   tags stay as typed). `plainOf` runs per frame in `drawSpeech`, but returns at once when there is no `[`.
 - Verified: lint, typecheck, format:check, check:modules, check:data, build clean; unit tests 1917 pass; smoke 7 of 7
-  (388 s); the Studio script box shows the did-you-mean on the right line (headless). Full quick check: 36 of 42 in
+  (388 s); check-fast 42 of 42 (its talk tap-throughs included); the Studio script box shows the did-you-mean on
+  the right line (headless). Full quick check: 36 of 42 in
   1651 s. Of the 6 problems, Terraces (train_station in the air), RL-8 (never landed) and the room-light/settings
   step fail on main 76aea599 too (same steps run side by side); Granny Juniper, RT-2 and Battle music pass on
   re-run (a busy machine: the battle's cries came 7.5 s late, past the 8 s drums fallback).
