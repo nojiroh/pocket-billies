@@ -172,3 +172,44 @@ test('PK-6 rule sideOpen: a side area’s obstacle opens with the badge alone; n
     assert.equal(S.fieldRope(null), false);
   });
 });
+
+/* ---------- rule sideFind ---------- */
+
+test('PK-6 rule sideFind: a side place holds finds more that show only with the rule; the rest stays the same', () => {
+  const F = modules['route-finds'],
+    D = { rules: GAME_DATA.rules.run.finds, cards: GAME_DATA.rewards },
+    spots = [20, 40, 60, 80, 100, 120].map((x, k) => ({ kind: k % 2 ? 'pocket' : 'deadend', x, z: x })),
+    make = side => {
+      const run = { seed: 'SIDEFINDS1', map: { nodes: [{}, side ? { side: 1 } : {}] } },
+        scenes = [null, { props: [], spots: structuredClone(spots), pieces: [] }],
+        got = F.routeFindsPlace(run, { T: { runNode: 1, route: { at: [0, 0] } } }, scenes, {}, D);
+      return { got, props: scenes[1].props };
+    };
+  const main = make(false),
+    side = make(true),
+    plain = p => !p.more;
+  /* the place's own finds are the same either way; the side's more come after them, marked */
+  assert.deepEqual(side.props.filter(plain), main.props);
+  assert.deepEqual(side.got[1].finds, main.got[1].finds);
+  assert.equal(main.got[1].more, undefined);
+  const more = side.props.filter(p => p.more);
+  assert.equal(more.length, F.ROUTE_FIND_MORE);
+  assert.deepEqual(
+    more.map(p => p.more),
+    [1, 2]
+  );
+  assert.deepEqual(
+    side.got[1].more,
+    more.map(p => p.card)
+  );
+  /* picked up only while the rule counts that many */
+  const p = more[0];
+  assert.equal(F.routeFindAt({ props: [p] }, p.x, p.z, {}), null);
+  assert.deepEqual(F.routeFindAt({ props: [p] }, p.x, p.z, {}, 1), { card: p.card, flag: p.find });
+  assert.equal(F.routeFindAt({ props: [more[1]] }, more[1].x, more[1].z, {}, 1), null);
+  const { P } = perks({ id: 'test_key', fx: [{ kind: 'rule', rule: 'sideFind', n: 1 }] });
+  withPerks(P, () => {
+    assert.equal(F.routeFindsMore(runOf('test_key')), 1);
+    assert.equal(F.routeFindsMore(runOf()), 0);
+  });
+});

@@ -18,19 +18,19 @@
   {
    "p": "battle/cloud_0.png",
    "at": [
-    "game/js/walk-view.js:741"
+    "game/js/walk-view.js:747"
    ]
   },
   {
    "p": "battle/cloud_1.png",
    "at": [
-    "game/js/walk-view.js:742"
+    "game/js/walk-view.js:748"
    ]
   },
   {
    "p": "battle/cloud_2.png",
    "at": [
-    "game/js/walk-view.js:743"
+    "game/js/walk-view.js:749"
    ]
   },
   {
@@ -45,21 +45,21 @@
    "at": [
     "game/js/art.js:231",
     "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2619"
+    "game/js/logic/data-checks.js:2621"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2619"
+    "game/js/logic/data-checks.js:2621"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:565",
-    "game/js/logic/data-checks.js:2621"
+    "game/js/logic/data-checks.js:2623"
    ]
   },
   {
@@ -117,7 +117,7 @@
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:506"
+    "game/js/walk-view.js:507"
    ]
   },
   {
@@ -163,41 +163,41 @@
    "at": [
     "game/js/buildings.js:171",
     "game/js/prop-models.js:2150",
-    "game/js/walk-view.js:765"
+    "game/js/walk-view.js:771"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/walk-view.js:765"
+    "game/js/walk-view.js:771"
    ]
   },
   {
    "p": "scene/build/walls.png",
    "at": [
-    "game/js/walk-view.js:740",
+    "game/js/walk-view.js:746",
     "game/js/walk/ground-draw.js:90"
    ]
   },
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:522"
+    "game/js/walk-view.js:523"
    ]
   },
   {
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:775",
+    "game/js/walk-view.js:781",
     "game/js/walk/frame-items.js:200"
    ]
   },
   {
    "p": "scene/fx/*.png",
    "at": [
-    "game/js/walk-view.js:744",
+    "game/js/walk-view.js:750",
     "game/js/walk/effects.js:254"
    ]
   },
@@ -1645,7 +1645,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2775",
+   "game/js/logic/data-checks.js:2777",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1685,7 +1685,7 @@
    "game/js/ui-run-kit.js:538",
    "game/js/ui.js:89",
    "game/js/ui.js:166",
-   "game/js/walk-view.js:3163"
+   "game/js/walk-view.js:3169"
   ],
   "cowboy": [
    "game/js/person-art.js:264"
@@ -1735,10 +1735,10 @@
    "game/js/walk-control.js:424",
    "game/js/walk-control.js:536",
    "game/js/walk-control.js:554",
-   "game/js/walk-view.js:334",
-   "game/js/walk-view.js:3742",
-   "game/js/walk-view.js:3853",
-   "game/js/walk-view.js:4174",
+   "game/js/walk-view.js:335",
+   "game/js/walk-view.js:3748",
+   "game/js/walk-view.js:3859",
+   "game/js/walk-view.js:4180",
    "game/js/walk/frame-items.js:319",
    "game/js/walk/frame-items.js:448",
    "game/js/walk/frame-items.js:466"
@@ -1765,7 +1765,7 @@
    "game/js/battle-stage.js:883",
    "game/js/battle-stage.js:2130",
    "game/js/battle-stage.js:2193",
-   "game/js/walk-view.js:397",
+   "game/js/walk-view.js:398",
    "game/js/walk/effects.js:372"
   ],
   "floppy": [
@@ -1838,8 +1838,8 @@
    "game/js/minimap.js:82",
    "game/js/minimap.js:83",
    "game/js/self-test.js:3534",
-   "game/js/walk-view.js:397",
-   "game/js/walk-view.js:4028",
+   "game/js/walk-view.js:398",
+   "game/js/walk-view.js:4034",
    "game/js/walk/effects.js:519",
    "game/js/walk/effects.js:673",
    "game/js/walk/effects.js:781",
@@ -1950,7 +1950,7 @@
    "game/js/logic/cutscene-set.js:44",
    "game/js/lore.js:195",
    "game/js/lore.js:197",
-   "game/js/walk-view.js:397",
+   "game/js/walk-view.js:398",
    "game/js/walk/effects.js:338",
    "game/js/walk/effects.js:342"
   ],
@@ -1995,8 +1995,8 @@
    "game/js/train-ride.js:272",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
-   "game/js/walk-view.js:3740",
-   "game/js/walk-view.js:3742",
+   "game/js/walk-view.js:3746",
+   "game/js/walk-view.js:3748",
    "game/js/walk/prop-look.js:154",
    "game/js/workshop.js:102"
   ],

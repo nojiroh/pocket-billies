@@ -2287,6 +2287,8 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   cap: [1, 2, 'Perks'],
   /* PK-6: a side area's obstacle opens with the badge alone (Coil of Rope) */
   sideOpen: [1, 1, 'times (it is on or off)'],
+  /* PK-6: finds more in side areas (Rusty Key; route-finds.js ROUTE_FIND_MORE) */
+  sideFind: [1, 2, 'finds'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];

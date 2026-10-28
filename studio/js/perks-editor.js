@@ -141,6 +141,10 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     'A side area opens with its badge alone',
     () => 'On (1): no Billie of the field move’s type needed at a side area’s obstacle (not brambles, not Surf).',
   ],
+  sideFind: [
+    'Side areas hold more finds',
+    () => 'Finds more on each side area’s route or arena (at most 2; they show at once when taken).',
+  ],
 });
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
