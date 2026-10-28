@@ -91,3 +91,37 @@ test('PK-8 heldBoost: a won battle’s money rows of yours held, boosted', () =>
   const { B: B2 } = battle('lucky_coin');
   assert.equal(fn('battleMoneyFx')(B2).find(f => f.src === 'held:lucky_coin').mult, 1.25);
 });
+
+/** your Kidling spliced Unstable (the Gene Bank's limit at 0 while it is tidied), in a wild battle with the run's rows */
+function unstableBattle(fx) {
+  const S = data.GENES.stability,
+    was = S.limit;
+  const s = startedSave('gates0', 20),
+    me = s.team[0];
+  me.build = { head: 'M', body: 'M', front: 'M', back: 'M', sig: 'M' };
+  me.graft = { front: 'bear_arm@musk3' };
+  S.limit = 0;
+  try {
+    fn('unstableTidy')(me);
+  } finally {
+    S.limit = was;
+  }
+  fn('newBattle')('wild', [fn('makeBilly')('cuban0', 20)], { fmt: 'single', seed: 'genes', ...(fx ? { fx } : {}) });
+  return { s, B: hooks.activeBattle, me };
+}
+
+test('PK-8 if: unstable holds for an Unstable splice acting, not for a stable Billie', () => {
+  assert.equal(E.fxCond('unstable', { unstable: true }), true);
+  assert.equal(E.fxCond('unstable', {}), false, 'unknown: false');
+  const { me } = unstableBattle();
+  assert.ok(fn('billyUnstable')(me));
+  assert.equal(fn('fxBattleCtx')(0).unstable, true);
+  battle(null);
+  assert.equal(fn('fxBattleCtx')(0).unstable, false);
+  /* a damage row for Unstable Billies counts for them alone */
+  const rows = [{ kind: 'damage', side: 'deal', mult: 1.2, if: 'unstable', src: 'test' }];
+  unstableBattle(rows);
+  assert.equal(E.fxAt(rows, fn('fxBattleCtx')(0), {}).length, 1);
+  battle(null, null, rows);
+  assert.equal(E.fxAt(rows, fn('fxBattleCtx')(0), {}).length, 0);
+});

@@ -775,6 +775,7 @@ test('PK-7: dataPerks and the schema take Fine Print’s kinds and name their fa
 const PK8_GOOD = [
   { kind: 'price', what: 'perk', mult: 0.5 },
   { kind: 'heldBoost', mult: 1.5 },
+  { kind: 'damage', side: 'deal', mult: 1.2, if: 'unstable' },
 ];
 const PK8_BAD = [
   [{ kind: 'heldBoost', mult: 1 }, 'mult: above 1 (held items work better)'],

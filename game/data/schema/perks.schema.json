@@ -9,7 +9,7 @@
  "minProperties": 1,
  "$defs": {
   "when": {"description": "PK-1: the moment the row acts at (logic/effects.js FX_WHEN); without one it acts where its kind always acts", "enum": ["battleStart", "switchIn", "move", "hit", "hurt", "crit", "ko", "faint", "turnEnd", "throwMiss", "catch", "win", "arrive", "buy", "take"]},
-  "cond": {"description": "PK-1: one condition (effects.js fxCond; data-checks.js checks the names after the colon)", "type": "string", "pattern": "^(mono|alone|lead|notLead|newSpecies|superEffective|noFaint|hp<(0(\\.[0-9]+)?|1)|(weather|type|team|foe|place|cat):[A-Za-z_]+(\\|[A-Za-z_]+)*|turn:[0-9]{1,2})$"},
+  "cond": {"description": "PK-1: one condition (effects.js fxCond; data-checks.js checks the names after the colon); PK-8: unstable, the Billie acting is an Unstable splice", "type": "string", "pattern": "^(mono|alone|lead|notLead|newSpecies|superEffective|noFaint|unstable|hp<(0(\\.[0-9]+)?|1)|(weather|type|team|foe|place|cat):[A-Za-z_]+(\\|[A-Za-z_]+)*|turn:[0-9]{1,2})$"},
   "need": {"description": "PK-5: a condition a Perk's needs can name: a row's condition, or bots; PK-6: or side", "oneOf": [{"$ref": "#/$defs/cond"}, {"const": "bots"}, {"const": "side"}]},
   "if": {"description": "PK-1: a condition, or a list of them that must all hold", "oneOf": [{"$ref": "#/$defs/cond"}, {"type": "array", "minItems": 1, "maxItems": 4, "items": {"$ref": "#/$defs/cond"}}]},
   "every": {"description": "PK-1: it acts on every Nth time its when comes (the count lasts the run)", "type": "integer", "minimum": 2, "maximum": 99},

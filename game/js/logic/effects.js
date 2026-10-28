@@ -641,7 +641,8 @@ export const FX_REFUND = /** @type {const} */ (['pyramid']);
    Optional fields on any effect row, from fixed lists (data-checks.js checks them; no script language):
      when   the moment it acts (FX_WHEN). Without one a row acts where its kind always acts (a stat row as each of
             your Billies takes the field, a heal row on walking into a place, a damage row on every hit...)
-     if     one condition or a list of them, all of which must hold (fxCond)
+     if     one condition or a list of them, all of which must hold (fxCond; PK-8: `unstable`, the Billie acting is an
+            Unstable splice)
      every  N: it acts on every Nth time its `when` comes (the count lasts the run)
      grow   {on, by, max, reset?, if?}: a value that builds by `by` each time `on` comes (up to `max`, back to 0 at
             `reset`) and is added to the row's number (mult, stages, share or n)
@@ -683,6 +684,7 @@ export const FX_IF_WORDS = /** @type {const} */ ([
   'newSpecies',
   'superEffective',
   'noFaint',
+  'unstable',
 ]);
 /** the condition words with a value after a colon ('hp<' takes a share instead) */
 export const FX_IF_KEYS = /** @type {const} */ (['weather', 'type', 'team', 'foe', 'turn', 'place', 'cat']);
@@ -693,7 +695,7 @@ export const FX_SAY = 40;
 /**
  * @typedef {{ weather?: string, type?: string[], team?: string[][], lead?: boolean, alone?: boolean, hp?: number,
  *   foe?: string[], turn?: number, newSpecies?: boolean, place?: string, superEffective?: boolean, noFaint?: boolean,
- *   cat?: string, uid?: string }} FxCtx what a moment knows: the weather, the acting Billie's types, every type list
+ *   cat?: string, uid?: string, unstable?: boolean }} FxCtx what a moment knows: the weather, the acting Billie's types, every type list
  *   on your team, whether it leads or stands alone, its share of HP, what the foe is, the turn, ...
  * @typedef {Record<string, { n?: number, v?: number, used?: 1, by?: string[] }>} FxMarks
  * @typedef {{ run?: FxMarks | null, battle?: FxMarks | null }} FxState the run's marks and the battle's
@@ -725,6 +727,7 @@ export function fxCond(c, ctx) {
     case 'newSpecies':
     case 'superEffective':
     case 'noFaint':
+    case 'unstable':
       return ctx[k] === true;
     case 'notLead':
       return ctx.lead === false;

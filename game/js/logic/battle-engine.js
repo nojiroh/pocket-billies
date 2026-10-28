@@ -61,6 +61,7 @@ import {
   addBilly,
   billyName,
   billyTypes,
+  billyUnstable,
   brokenParts,
   coatPrefix,
   encounterBuild,
@@ -1812,7 +1813,15 @@ export function fxBattleCtx(k, more) {
     /* no Billie of the foe's species on your team (a run keeps no list of what it caught) */
     newSpecies: b.kind === 'wild' && b.sides[1].team.some(e => !isRobot(e) && !mine.some(q => q.sp === e.sp)),
   };
-  if (m) Object.assign(ctx, { type: actorTypes(k), lead: k === actorIndex(0, 0), hp: m.hp / maxHp(m), uid: m.uid });
+  if (m)
+    Object.assign(ctx, {
+      type: actorTypes(k),
+      lead: k === actorIndex(0, 0),
+      hp: m.hp / maxHp(m),
+      uid: m.uid,
+      /* PK-8: an Unstable splice (rules.js billyUnstable: the Lab Kit set) */
+      unstable: !!billyUnstable(m),
+    });
   return Object.assign(ctx, more);
 }
 /** PK-1: the run's stat rows without a when for one of yours taking the field (the battle's start, every switch in):
