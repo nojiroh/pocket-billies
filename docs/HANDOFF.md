@@ -20,6 +20,9 @@ dial, so MAPGEN_VERSION stays 24.
 - **The grid** (run-map.js): runMapLength gives the run's `sizes`; runMapMake asks runMapGrid for each town's cells with
   no 2x1 fallback (`want`); if the map can't be laid out even without its lane switches, every town steps down a size
   at once, then again. runTownSize reads a town's size off its footprint (a side area's town, with none: a hamlet).
+  Bigger towns made the search step back more: run-map-checks' 1,000-maps sweep went from about 310 ms to 490 here and
+  over its 1 s on CI (1095 ms); runMapGrid now keeps each node's spot list by what it reads (69f2f933): about 355 ms,
+  the same maps byte for byte.
 - **Scenes and names** (run-scenes.js): runTownOf / runTownDial pass size, houses, stall and givers to mapgen;
   **runPlaceName** is the one function a place's name comes from (WM-6 reads it): "Meadow Hamlet", "Thicket Village",
   "Meadow Town"; a side area's town "Bramble Grove Hamlet"; a town's shop "Thicket Village Shop".
