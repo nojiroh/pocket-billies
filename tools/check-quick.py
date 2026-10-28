@@ -43,7 +43,9 @@ OUT = ROOT / 'validation' / 'quick'
 # screen (the stock Marigold's General Store had)
 CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Mabel Underhill',who:'clerk',greeting:'Welcome in! Potions on the left, coins on the right.',stock:[{item:'potion',price:150},{item:'burn_salve',price:200},{item:'nerve_tonic',price:200},{item:'wake_tea',price:200},{item:'trailmix',price:260},{coin:'pyramid',price:300}]};"
 # UI-6b: blurred surfaces a screen may have (ui-track.md: at most 3; logic/ui-inspect.js UI_BLUR_BUDGET); the screens
-# over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur)
+# over it on 2026-10-26 may not rise above that day's count (lower a number when a screen sheds a blur). The UI checks
+# session after UI-18: uiBlurCount() now sees pseudo-elements and shadow trees, so the top and bottom bars' glass
+# counts; the budget is 3 besides the two bars (uiBlurCount({bars:false})), as it was set while the bars existed
 BLUR_BUDGET = 3
 # UI-18: the Map's ceiling (10) went: it has 0 blurred surfaces smoke can count (its header, card and places list are
 # solid), under the budget
@@ -989,23 +991,23 @@ def phone_flow(P):
     pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
     # UI-1: how many surfaces blur what's behind them on each screen; UI-6b: a failure above the budget (BLUR_BUDGET), or
     # for a screen already over it, above its count when UI-6b began (BLUR_CEILING)
-    blur, elems = {}, {}
+    blur, blurAll, elems = {}, {}, {}
     for tab in ['walk', 'map', 'team', 'guide', 'profile']:
         pg.evaluate(f"uiState.tab='{tab}';render();scrollTo(0,0);0")
         if tab == 'walk': drawn(pg)
         elif tab == 'map' and not until(pg, BOWL_OPEN, 30): raise Exception('the map tab didn’t open the bowl')
         ui(pg); shot(pg, f'phone-{tab}')
-        blur[tab] = pg.evaluate('uiBlurCount()')
+        blur[tab] = pg.evaluate('uiBlurCount({bars:false})'); blurAll[tab] = pg.evaluate('uiBlurCount()')
         elems[tab] = pg.evaluate('uiElementCount()')
     pg.evaluate(CHECK_SHOP + "uiState.tab='walk';saveData.trip.node=0;render();openShop('check_shop');0"); ui(pg); shot(pg, 'phone-shop')
-    blur['shop'] = pg.evaluate('uiBlurCount()')
+    blur['shop'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['shop'] = pg.evaluate('uiBlurCount()')
     elems['shop'] = pg.evaluate('uiElementCount()')
     pg.evaluate("closeModal();screenWipe=f=>f();activeBattle=null;const q={id:'tq',sp:'swift1',lvl:12,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});startWild(q);0")
     if wait_phase(pg) != 'choose': raise Exception('a wild battle never reached the move menu')
     shot(pg, 'phone-battle')
-    blur['battle'] = pg.evaluate('uiBlurCount()')
+    blur['battle'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['battle'] = pg.evaluate('uiBlurCount()')
     elems['battle'] = pg.evaluate('uiElementCount()')
-    R['blurPerScreen'] = blur
+    R['blurPerScreen'] = blur; R['blurPerScreenWithBars'] = blurAll
     # UI-15: the pieces each screen shows (uiElementCount: words and icons on screen), logged so clutter is seen going
     # down; a screen may not show more than its ceiling (ELEMENT_CEILING, lowered when a screen sheds pieces)
     R['elementsPerScreen'] = elems
@@ -1028,7 +1030,7 @@ def phone_flow(P):
     if names: raise Exception(f'the exported debug log holds a name: {names}')
     # kept for comparing logs across a phase (validation/ is not committed)
     shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
-    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen: {", ".join(f"{k} {v}" for k, v in blur.items())}; pieces per screen: {", ".join(f"{k} {v}" for k, v in elems.items())}'
+    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen besides the bars (with them): {", ".join(f"{k} {v} ({blurAll[k]})" for k, v in blur.items())}; pieces per screen: {", ".join(f"{k} {v}" for k, v in elems.items())}'
 
 
 def all_maps(pg, sec=180):
