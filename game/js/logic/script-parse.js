@@ -9,6 +9,7 @@
 import { expose } from '../test-globals.js';
 import { CONDITION_KINDS, conditionProblem, didYouMean } from './conditions.js';
 import { cutsceneStep } from './cutscene-set.js';
+import { MARKUP_TAGS, OPTION_TAGS, leadingExpr, markupProblem } from './line-markup.js';
 /* eslint-disable no-func-assign */
 expose({
   KEYWORDS: [() => KEYWORDS],
@@ -289,11 +290,15 @@ export function sayLine(s, line) {
   /** @type {SayNode} */
   const n = { k: 'say', line, who: null, expr: null, text: t };
   if (id) n.id = id;
-  const e = /^\[([\w-]+)\]\s*/.exec(n.text);
-  if (e) [n.expr, n.text] = [e[1], n.text.slice(e[0].length)];
+  /* DL-1: the expression and any bubble styles come first, then the speaker; the styles stay in the text */
+  const { expr, style, rest } = leadingExpr(n.text);
+  [n.expr, n.text] = [expr, rest];
   const w = /^([A-Za-z][\w-]*):\s+/.exec(n.text);
   if (w) [n.who, n.text] = [w[1], n.text.slice(w[0].length)];
   if (!n.text) throw scriptError('a line with nothing to say', line);
+  const bad = markupProblem(n.text);
+  if (bad) throw scriptError(bad, line);
+  n.text = style.map(t => `[${t}]`).join('') + n.text;
   for (const [, k] of n.text.matchAll(/\{(\w*)\}/g))
     if (!(k in SCRIPT_SLOTS)) {
       const near = didYouMean(k, Object.keys(SCRIPT_SLOTS));
@@ -405,6 +410,8 @@ export function parseScript(lines) {
         t = t.slice(m[0].length);
       }
       if (!t) throw scriptError('an option with no text', l);
+      const bad = markupProblem(t, { only: OPTION_TAGS });
+      if (bad) throw scriptError(bad, l);
       /** @type {ChoiceOption} */
       const op = { text: t, cond, once, line: l, body: p < L.length && L[p].ind > ind ? block(ind + 2) : [] };
       if (oid) op.id = oid;
@@ -497,8 +504,18 @@ export function scriptReference() {
         { use: 'Text', about: 'a line said by the one you talk to', tag: '' },
         { use: 'Name: text', about: 'a line said by someone else (story.json speakers)', tag: '' },
         { use: '[happy] Name: text', about: 'with an expression on their portrait', tag: '' },
+        {
+          use: '[happy][shout] Name: [b]text[/b]',
+          about: 'a bubble style after the expression; tags in the text (Markup)',
+          tag: '',
+        },
         ...Object.entries(SCRIPT_SLOTS).map(([k, about]) => ({ use: `{${k}}`, about, tag: 'slot' })),
       ],
+    },
+    {
+      /* DL-1: the bracket tags inside a line (logic/line-markup.js); styles go right after the expression */
+      title: 'Markup',
+      rows: Object.values(MARKUP_TAGS).map(t => ({ use: t.use, about: t.about, tag: t.kind })),
     },
     {
       title: 'Blocks',

@@ -8,6 +8,7 @@
 import { expose } from './test-globals.js';
 import { mapChatLines, playStoryScript, provide, residentHomeTalk, storyFreshTake, storyGiftOffer } from './hooks.js';
 import { PEOPLE, TRAINERS } from './game-data.js';
+import { parseLine, plainOf } from './logic/line-markup.js';
 import { reducedMotion } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { drawPortrait, lookOf } from './person-art.js';
@@ -107,11 +108,11 @@ function talkEl() {
 /* one line; the box stays open for the next one until talkHide() */
 export function talkLine(who, text, expr, o = {}) {
   const el = talkEl();
-  let m = /^\[(\w+)\]\s*/.exec(text || '');
-  if (m) {
-    expr = expr || m[1];
-    text = text.slice(m[0].length);
-  }
+  /* DL-1: the line's markup read once (logic/line-markup.js); the box types its plain text until DL-2 draws the
+     effects, so talkBox.cur.text stays plain */
+  const parsed = parseLine(text || '');
+  expr = expr || parsed.expr;
+  text = parsed.plain;
   const shown = !el.hidden;
   el.hidden = false;
   el.classList.toggle('in-cs', !!o.cs);
@@ -136,7 +137,7 @@ export function talkLine(who, text, expr, o = {}) {
     frameTask('talk', talkTick, () => 30);
   }
   return new Promise(res => {
-    const st = { who, text, n: 0, t0: performance.now(), typing: true, res };
+    const st = { who, text, parsed, n: 0, t0: performance.now(), typing: true, res };
     talkBox.cur = st;
     let blipN = 0;
     const step = () => {
@@ -209,7 +210,7 @@ export function talkChoose(options) {
       const b = document.createElement('button');
       b.type = 'button';
       b.className = 'talk-choice';
-      b.textContent = o.text;
+      b.textContent = plainOf(o.text);
       b.addEventListener('click', ev => {
         ev.stopPropagation();
         pick(i);
