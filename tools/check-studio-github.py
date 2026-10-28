@@ -1995,6 +1995,13 @@ def music_steps(pg, errs):
     if not until(pg, "Object.keys(musicStudio.scape.P.stats().voices).length===0", 15):
         errs.append(f'music: the World sounds card left {pg.evaluate("JSON.stringify(musicStudio.scape.P.stats().voices)")} playing after Stop')
     if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing a world sound changed the data')
+    # SND-14: nature's rows: steps on gravel start sources through nature's player; Stop ends them; the data unchanged
+    pg.click('[data-act=musNature][data-k="step:gravel"]')
+    if not until(pg, "!!musicStudio.nature&&musicStudio.nature.P.stats().started>=6", 10):
+        errs.append('music: the World sounds card never played steps on gravel')
+    pg.click('[data-act=musScapeStop]')
+    if pg.evaluate("musicStudio.nature.want") is not None: errs.append('music: Stop left nature playing')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing nature changed the data')
     # a Billy's cry (the Billies page; SND-6: every stage has one): a new pitch keeps its base and plays the base's
     # notes from it, and its low-HP version a third down; undone, nothing to propose
     pg.evaluate("void openSection('billionaires')")
