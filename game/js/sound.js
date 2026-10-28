@@ -1112,6 +1112,9 @@ function ambiencePreviewTick(list, t) {
   const B = list.find(([k]) => k === 'birds' || k === 'owl');
   if (B) {
     const owl = B[0] === 'owl';
+    /* SND-14: a new preview's first bird calls at once */
+    if (ambience.previewBirds !== B) ambience.birdAt = t + 0.3;
+    ambience.previewBirds = B;
     ambienceBirds(t, ['lark', 'lark', 'song'], false, owl ? 0 : 1, 0, 1, owl ? 23 : (B[2] ?? 9), owl ? 1 : 0);
   }
   /* footsteps ['steps', 0, ground or surface], one every 0.35 s (walking) */
