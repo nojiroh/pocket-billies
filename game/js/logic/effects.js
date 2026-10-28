@@ -40,6 +40,8 @@
              battleSalvage)
      free    what was just bought in a run shop is free: its price back (`when: buy`, with `every`) (PK-5, run-loop.js
              runBuyFx)
+     give    Moneys and Bag items at once, when the Perk is taken (`when: take`; Boarding Pass) (PK-6, run-loop.js
+             runFxMoment)
      copy    stands for the rows of the Perk just above it in the list held (PK-6, fxPerkRows: never itself or another
              copier; the rows count as the copier's own, src its id)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
@@ -185,6 +187,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'free',
   'salvage',
   'copy',
+  'give',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };

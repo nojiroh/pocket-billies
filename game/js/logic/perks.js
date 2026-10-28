@@ -20,11 +20,12 @@
 /** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number>, bias?: number }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { toast } from '../hooks.js';
 import { rngFrom } from './rng.js';
 import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
-import { runFxMoment } from './run-loop.js';
+import { runFxMoment, runGaveText } from './run-loop.js';
 import { fxCond, fxCopyOf, fxPerkRows, fxRunRule } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -222,7 +223,12 @@ export function perkTake(run, id, perks, rule, drop, s) {
     if (run.perks.length >= perkCap(run, rule, perks)) return 'full';
     run.perks.push(id);
   }
-  if (s && s.run === run) runFxMoment(s, perks, 'take', undefined, id);
+  if (s && s.run === run) {
+    const m = runFxMoment(s, perks, 'take', undefined, id),
+      gave = runGaveText(m);
+    /* PK-6: a give row (Boarding Pass) says what it gave */
+    if (gave && typeof toast === 'function') toast(`${perks[id].name}: ${gave}.`);
+  }
   /* PK-5: a mapReveal rule (Tour Brochure) shows the map at once */
   runRevealAll(run, perks);
   return '';

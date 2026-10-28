@@ -607,12 +607,22 @@ test('PK-5: dataPerks and the schema take Wave C’s kinds and name their faults
   }
 });
 
-const PK6_GOOD = [{ kind: 'rule', rule: 'cap', n: 1 }, { kind: 'copy' }];
+const PK6_GOOD = [
+  { kind: 'rule', rule: 'cap', n: 1 },
+  { kind: 'copy' },
+  { kind: 'give', money: 150, items: { potion: 2 }, when: 'take' },
+];
 const PK6_BAD = [
   [{ kind: 'rule', rule: 'cap', n: 3 }, 'n: a whole number of Perks from 1 to 2'],
   [{ kind: 'rule', rule: 'cap', n: 1, if: 'lead' }, 'a rule row is read where no battle'],
   [{ kind: 'copy', when: 'take' }, "a copy row can't act at take"],
   [{ kind: 'copy', if: 'lead' }, 'a copy row is read where no battle'],
+  [{ kind: 'give', money: 150 }, 'a give row needs a moment (take)'],
+  [{ kind: 'give', money: 150, when: 'arrive' }, "a give row can't act at arrive"],
+  [{ kind: 'give', when: 'take' }, 'a give row gives money, items or both'],
+  [{ kind: 'give', money: 0, when: 'take' }, 'money: a whole number of Moneys from 1 to 9999'],
+  [{ kind: 'give', items: { gold_bar: 1 }, when: 'take' }, 'no item "gold_bar"'],
+  [{ kind: 'give', items: { potion: 0 }, when: 'take' }, 'items.potion: a whole number from 1 to 99'],
 ];
 test('PK-6: dataPerks and the schema take Wave D’s kinds and name their faults', async () => {
   const D = structuredClone(GAME_DATA);

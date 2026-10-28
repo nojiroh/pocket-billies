@@ -413,7 +413,10 @@ export function runSimOn(env) {
                     )
                   : null;
             at.relic = { id: shelf, price: cost };
+            const se0 = s.se;
             if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop, s)) {
+              /* PK-6: a give row's Moneys on taking it (Boarding Pass) */
+              stats.moneyIn.perks += s.se - se0;
               s.se -= cost;
               /* PK-1: the buy moment (shop.js shopPerkBuy); PK-5: a free row gives the price back */
               stats.moneyIn.perks += runBuyFx(s, data.PERKS, cost).free;
@@ -596,7 +599,10 @@ export function runSimOn(env) {
               P
             );
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
+            const se0 = s.se;
             perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined, s);
+            /* PK-6: a give row's Moneys on taking it (Boarding Pass) */
+            stats.moneyIn.perks += s.se - se0;
           }
           if (node.type === 'boss') {
             stats.won = true;

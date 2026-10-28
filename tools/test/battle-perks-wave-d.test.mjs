@@ -107,3 +107,42 @@ test('PK-6 copy: a copier gives the rows of the Perk just above it, as its own; 
   assert.equal(PK.perkCount({ perks: ['test_copier'], perkState: {} }, 'test_copier', P), 'copies nothing');
   assert.equal(PK.perkCount({ perks: [], perkState: {} }, 'test_copier', P), '', 'not held: nothing');
 });
+
+/* ---------- give ---------- */
+
+test('PK-6 give: taking the Perk pays its Moneys and puts its items in the Bag, once; a copier gives again', () => {
+  const PK = modules.perks,
+    { P } = perks(
+      { id: 'test_pass', name: 'Test Pass', fx: [{ kind: 'give', money: 150, items: { potion: 2 }, when: 'take' }] },
+      { id: 'test_copier', name: 'Test Copier', fx: [{ kind: 'copy' }] }
+    );
+  withPerks(P, () => {
+    reseed(3);
+    const s = startedSave(ofType('Water'), 30);
+    s.se = 100;
+    s.items.potion = 1;
+    s.run = runOf();
+    const toasts = [];
+    hooks.provide({ toast: t => toasts.push(t) });
+    try {
+      assert.equal(PK.perkTake(s.run, 'test_pass', data.PERKS, RULE, undefined, s), '');
+      assert.equal(s.se, 250);
+      assert.equal(s.items.potion, 3);
+      assert.deepEqual(toasts, ['Test Pass: 150 Moneys and 2 Potions.']);
+      /* nothing more on later moments */
+      modules['run-loop'].runArriveFx(s, data.PERKS, {});
+      assert.equal(s.se, 250);
+      /* a copier taken just below it gives the same, once */
+      assert.equal(PK.perkTake(s.run, 'test_copier', data.PERKS, RULE, undefined, s), '');
+      assert.equal(s.se, 400);
+      assert.equal(s.items.potion, 5);
+    } finally {
+      hooks.provide({ toast: undefined });
+    }
+    /* without the save (a preview), nothing is given */
+    const r = runOf();
+    assert.equal(PK.perkTake(r, 'test_pass', data.PERKS, RULE), '');
+  });
+  assert.equal(modules['run-loop'].runGaveText({ money: 0, items: {} }), '');
+  assert.equal(modules['run-loop'].runGaveText({ money: 1, items: {} }), '1 Money');
+});

@@ -115,6 +115,7 @@ const PERK_KINDS = {
   free: 'What you just bought is free (PK-5)',
   salvage: 'Beaten bots leave more salvage (PK-5)',
   copy: 'Copies the Perk just above it in the list held (PK-6)',
+  give: 'Moneys and Bag items at once, when it is taken (PK-6)',
 };
 /** PK-4, PK-5: each run rule's name and what its By counts (data-checks.js FX_RULE_N has its range) */
 const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
@@ -187,6 +188,7 @@ const PERK_ROW_NEW = {
   free: () => ({ kind: 'free', when: 'buy', every: 4 }),
   salvage: () => ({ kind: 'salvage', mult: 2 }),
   copy: () => ({ kind: 'copy' }),
+  give: () => ({ kind: 'give', money: 150, when: 'take' }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -405,6 +407,16 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         }),
       ],
       salvage: () => [mult('Parts offered and Scrap ×')],
+      /* PK-6: Moneys, and the items as id:n pairs */
+      give: () => [
+        numberField('Moneys', `${p}.money`, { min: 1, max: 9999, step: 1, opt: 1 }),
+        `<label class="fld"><span>Bag items (id:n, comma between)</span><input type="text" data-relic-give="${escapeHtml(k)}" data-n="${n}" value="${escapeHtml(
+          Object.entries(f.items || {})
+            .map(([i, c]) => `${i}:${c}`)
+            .join(', ')
+        )}" placeholder="potion:2"></label>`,
+        `<p class="note">At take (its When): given once, as the Perk is taken.</p>`,
+      ],
       /* PK-6: no numbers: the rows of the Perk above it, downsides too */
       copy: () => [
         `<p class="note">The rows of the Perk just above it in the list held count as this one’s (downsides too; never itself or another copier). Nothing when it is first.</p>`,
@@ -803,6 +815,26 @@ document.addEventListener('change', ev => {
     else f.if = L.length === 1 ? L[0] : L;
   } else if (!el.value) delete f.grow;
   else f.grow = { ...(f.grow || { by: 0.05, max: 0.25 }), on: el.value };
+  if (JSON.stringify(f) === was) return;
+  changed();
+  render();
+});
+/* PK-6: a give row's Bag items: id:n pairs split at commas (none removes them) */
+document.addEventListener('change', ev => {
+  const el = /** @type {HTMLInputElement} */ (ev.target);
+  if (!el.dataset || !el.dataset.relicGive) return;
+  const R = studioState.D.perks[el.dataset.relicGive],
+    f = R && R.fx[+(el.dataset.n || 0)];
+  if (!f) return;
+  const was = JSON.stringify(f),
+    /** @type {Record<string, number>} */
+    items = {};
+  for (const w of el.value.split(',')) {
+    const [id, c] = w.split(':').map(q => q.trim());
+    if (id) items[id] = c ? Math.round(Number(c)) || 1 : 1;
+  }
+  if (Object.keys(items).length) f.items = items;
+  else delete f.items;
   if (JSON.stringify(f) === was) return;
   changed();
   render();

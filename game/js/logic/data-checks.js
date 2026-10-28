@@ -2241,6 +2241,20 @@ export function fxKindProblems(f, at, D, problem) {
     if (f.when == null) problem(`${at}.when: a money share needs a moment (arrive)`);
   } else if (f.kind === 'money' && f.when != null)
     problem(`${at}.when: a money row at ${f.when} is a share (share, max)`);
+  /* PK-6: a give row's Moneys and Bag items (items.json), given when the Perk is taken */
+  if (f.kind === 'give') {
+    const items = f.items || {},
+      ids = Object.keys(items);
+    if (f.when == null) problem(`${at}.when: a give row needs a moment (take)`);
+    if ('money' in f && !(Number.isInteger(f.money) && f.money >= 1 && f.money <= 9999))
+      problem(`${at}.money: a whole number of Moneys from 1 to 9999`);
+    if (!('money' in f) && !ids.length) problem(`${at}: a give row gives money, items or both`);
+    for (const id of ids) {
+      if (!D.items || !D.items[id]) problem(`${at}.items.${id}: no item "${id}" (items.json)`);
+      if (!(Number.isInteger(items[id]) && items[id] >= 1 && items[id] <= 99))
+        problem(`${at}.items.${id}: a whole number from 1 to 99`);
+    }
+  }
   /* PK-5: a free row acts at a purchase (Punch Card) */
   if (f.kind === 'free' && f.when == null) problem(`${at}.when: a free row needs a moment (buy)`);
   /* PK-5: what a missed throw gives back, at that moment */
@@ -2344,6 +2358,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   money: ['arrive'],
   /* PK-5: what was just bought, free */
   free: ['buy'],
+  /* PK-6: Moneys and items when the Perk is taken */
+  give: ['take'],
   /* PK-5: a missed throw's pyramid back */
   refund: ['throwMiss'],
 });
