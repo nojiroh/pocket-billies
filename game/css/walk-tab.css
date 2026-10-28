@@ -3,12 +3,6 @@
 .gate {
   color: var(--red);
 }
-@keyframes breathe {
-  50% {
-    opacity: 0.4;
-    transform: translateX(-50%) scale(0.85);
-  }
-}
 .pipe {
   display: flex;
   align-items: center;
@@ -186,18 +180,6 @@
   font-size: 16px;
   line-height: 1.1;
 }
-.enc.gp {
-  background: linear-gradient(160deg, #fff6cf, #f2d27a 60%, #e2a72e);
-  color: #3a2408;
-}
-.enc.gp::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(110deg, transparent 35%, rgba(255, 255, 255, 0.6) 48%, transparent 60%);
-  animation: sheen 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
 .enc.enc-new {
   animation: pop 0.5s cubic-bezier(0.3, 1.7, 0.5, 1) backwards;
 }
@@ -218,18 +200,6 @@
   position: relative;
   overflow: hidden;
 }
-.slot::before {
-  content: '';
-  position: absolute;
-  top: 2px;
-  left: 50%;
-  width: 70px;
-  height: 70px;
-  transform: translateX(-50%);
-  background: radial-gradient(circle, var(--glow), transparent 66%);
-  animation: breathe 2.6s ease-in-out infinite;
-  pointer-events: none;
-}
 .slot b {
   font-family: var(--font-voice);
   font-weight: 400;
@@ -241,9 +211,6 @@
 }
 .slot img {
   position: relative;
-}
-.slot.empty::before {
-  display: none;
 }
 .enc .stage-glow {
   opacity: 0.45;
@@ -475,8 +442,11 @@ html:has(> body.on-walk) {
   width: 84px;
   height: 56px;
   image-rendering: pixelated;
-  animation: rustle 1.8s ease-in-out infinite;
   transform-origin: 50% 100%;
+}
+/* UI-16a: the grass rustles three times when a hidden Billie wanders in (the card's first showing), not forever */
+.enc.hidden-enc.enc-new .enc-hide img {
+  animation: rustle 1.8s ease-in-out 3;
 }
 .enc.hidden-enc .enc-hide i {
   position: absolute;
@@ -500,6 +470,10 @@ html:has(> body.on-walk) {
   .enc.hidden-enc .enc-hide img {
     animation: none;
   }
+}
+/* UI-16a: and under the game's own Reduced */
+[data-motion='reduced'] :is(.wh-down, .enc.hidden-enc .enc-hide img) {
+  animation: none;
 }
 @media (max-height: 520px) {
   .walk-hero {
