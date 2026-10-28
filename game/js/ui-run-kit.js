@@ -29,11 +29,13 @@ import { chipLook, rarityTier } from './logic/marks.js';
 import { motionCountAt, motionCountMs } from './logic/motion.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { LitElement, css, html, nothing, pbSlideBar, pbSound, reduced } from './ui-kit.js';
+/* eslint-disable no-func-assign */
 expose({
   PbCoin: [() => PbCoin],
   PbDayChip: [() => PbDayChip],
   PbForecast: [() => PbForecast],
   PbLoading: [() => PbLoading],
+  PbNameBanner: [() => PbNameBanner],
   PbNavBar: [() => PbNavBar],
   PbNode: [() => PbNode],
   PbPayout: [() => PbPayout],
@@ -43,6 +45,7 @@ expose({
   RUN_NAV_SETS: [() => RUN_NAV_SETS],
   RUN_WEATHER_ICONS: [() => RUN_WEATHER_ICONS],
   navStep: [() => navStep],
+  pbNameBanner: [() => pbNameBanner, v => (pbNameBanner = v)],
   runIcon: [() => runIcon],
   runIconPixels: [() => runIconPixels],
   runIconPx: [() => runIconPx],
@@ -55,6 +58,7 @@ expose({
   runSvg: [() => runSvg],
   unsafeCSS: [() => unsafeCSS],
 });
+/* eslint-enable no-func-assign */
 /* to-module: end */
 /* Lit's html, css, LitElement and nothing, and reduced(), come from js/ui-kit.js (one name each on the page) */
 const runSvg = /** @type {any} */ (self).PB_LIT.svg;
@@ -1114,6 +1118,147 @@ const PbStamp = class extends LitElement {
   }
 };
 
+/* ---------- UI-17: a name banner, slammed in at the slant (a boss's name as its trainer comes in) ---------- */
+/* A big moment's words (ui-track.md Part 2: "a boss's name banner, shared with RL-14b's stage intro"; the VFX track's
+   VFX-16 VS splash carries the same banner: one component, whichever lands first builds it). The kicker over the name
+   ("Boss"), a bar in the family's colour (`tone`: a --sig-* name, bad by default: bosses share the red family with
+   Crests) with the main action's long hexagon, slammed in from the left on the spring, held, then gone to the right.
+   Put it in a positioned box and call play(hold) (or use pbNameBanner); it tells the page pb-banner-done and leaves.
+   Reduced motion: it fades in and out. Words only from the caller (translated there) */
+const PbNameBanner = class extends LitElement {
+  static properties = { name: {}, kicker: {}, tone: { reflect: true }, _at: { state: true } };
+  static styles = [
+    runKitBase,
+    runKitMotion,
+    css`
+      :host {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 24%;
+        z-index: 7;
+        display: grid;
+        justify-items: center;
+        pointer-events: none;
+        --tone: var(--sig-bad);
+      }
+      .bar {
+        display: grid;
+        justify-items: center;
+        gap: 2px;
+        min-width: min(70%, 260px);
+        max-width: calc(100% - 2 * var(--s4));
+        padding: var(--s2) calc(var(--s5) + 12px) var(--s3);
+        clip-path: var(--clip-action);
+        background: linear-gradient(90deg, color-mix(in srgb, var(--tone) 70%, black), var(--tone) 30% 70%, color-mix(in srgb, var(--tone) 70%, black));
+        color: white;
+        opacity: 0;
+      }
+      .k {
+        font: 600 var(--fs-caption) / 1 var(--font-voice);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        opacity: 0.85;
+      }
+      .n {
+        font: 400 30px / 1 var(--font-voice);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
+      }
+      .bar.in {
+        animation: pb-banner-in var(--m-base) var(--spring) both;
+      }
+      .bar.out {
+        animation: pb-banner-out var(--m-exit, 180ms) var(--ease-in, ease-in) both;
+      }
+      .bar.f-in {
+        animation: m-fade var(--m-fast) linear both;
+      }
+      .bar.f-out {
+        opacity: 1;
+        animation: m-fade var(--m-fast) linear reverse both;
+      }
+      @keyframes pb-banner-in {
+        from {
+          opacity: 0;
+          transform: translateX(-45%) skewX(calc(-1 * var(--slant)));
+        }
+        60% {
+          opacity: 1;
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes pb-banner-out {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+          transform: translateX(35%) skewX(calc(-1 * var(--slant)));
+        }
+      }
+    `,
+  ];
+  constructor() {
+    super();
+    this.name = '';
+    this.kicker = '';
+    this.tone = '';
+    this._at = '';
+    this._timers = /** @type {number[]} */ ([]);
+  }
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this._timers.forEach(t => clearTimeout(t));
+  }
+  /** slams it in, holds it `hold` ms, then it leaves; resolves when it is gone @param {number} [hold] */
+  play(hold = 700) {
+    this._timers.forEach(t => clearTimeout(t));
+    const still = reduced(),
+      inMs = runMsVar(this, still ? '--m-fast' : '--m-base', 240),
+      outMs = runMsVar(this, still ? '--m-fast' : '--m-exit', 180);
+    this._at = still ? 'f-in' : 'in';
+    return new Promise(done => {
+      this._timers = [
+        setTimeout(() => (this._at = still ? 'f-out' : 'out'), inMs + hold),
+        setTimeout(
+          () => {
+            this._at = '';
+            this.dispatchEvent(new CustomEvent('pb-banner-done', { bubbles: true, composed: true }));
+            done(undefined);
+          },
+          inMs + hold + outMs
+        ),
+      ];
+    });
+  }
+  willUpdate() {
+    if (this.tone) this.style.setProperty('--tone', `var(${sigVar(this.tone)})`);
+  }
+  render() {
+    return html`<div class="bar ${this._at}" role="status">
+      ${this.kicker ? html`<span class="k">${this.kicker}</span>` : nothing}<span class="n">${this.name}</span>
+    </div>`;
+  }
+};
+/** UI-17: a name banner in `host` (a positioned box): kicker over name, held `hold` ms, then removed; the whole of it
+ * fits a stage intro's time (in 240 ms, out 180 ms). Returns the element; its play() promise is el.done
+ * @param {Element} host @param {{ name: string, kicker?: string, tone?: string, hold?: number }} o */
+export function pbNameBanner(host, o) {
+  const el = /** @type {any} */ (document.createElement('pb-name-banner'));
+  el.name = o.name;
+  el.kicker = o.kicker || '';
+  el.tone = o.tone || '';
+  host.appendChild(el);
+  el.done = el.updateComplete.then(() => el.play(o.hold ?? 700)).then(() => el.remove());
+  return el;
+}
+
 /* ---------- the bottom bar: the minimap in the middle, two buttons on each side (UI-8) ---------- */
 /* The set's first tab (Map) is the minimap tile; the rest go two to a side, the icon over the word. The tile's picture
    is the light-DOM child in slot "map" (the game's <canvas>, js/minimap.js); with none, the map icon. UI-8b: the tile
@@ -1649,5 +1794,6 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-nav-bar', PbNavBar],
   ['pb-loading', PbLoading],
   ['pb-stamp', PbStamp],
+  ['pb-name-banner', PbNameBanner],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);

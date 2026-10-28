@@ -115,6 +115,42 @@ html:not([data-idle~='bloom']) .bloom {
   }
 }
 
+/* UI-17: big moments. A burst (pbBurst): the ring opens and fades, the rays shoot out from the middle */
+:root {
+  --burst-ms: 560ms;
+}
+@keyframes m-burst-ring {
+  0% {
+    opacity: 1;
+    transform: scale(0.25);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+@keyframes m-burst-ray {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--rot)) translateY(-10%) scaleY(0.2);
+  }
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--rot)) translateY(-170%) scaleY(1);
+  }
+}
+@keyframes m-burst-fade {
+  0% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* press: every button and tappable card */
 .m-press {
   transition: transform var(--m-fast) var(--spring);

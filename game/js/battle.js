@@ -53,7 +53,8 @@ import {
 } from './logic/rules.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
 import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
-import { typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
+import { pbBurst, typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
+import { pbNameBanner } from './ui-run-kit.js';
 import {
   ACTOR_SIDE,
   BATTLE_RULES,
@@ -108,6 +109,7 @@ import { battle3d, battle3dWanted } from './battle-3d.js';
 /* eslint-disable no-func-assign */
 expose({
   FIELD_WEATHER_ICONS: [() => FIELD_WEATHER_ICONS],
+  HUD_BURSTS: [() => HUD_BURSTS],
   MOVE_HOLD_MS: [() => MOVE_HOLD_MS],
   PLATE_TAGS: [() => PLATE_TAGS],
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
@@ -140,6 +142,7 @@ expose({
   floatTick: [() => floatTick, v => (floatTick = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
+  hudMoment: [() => hudMoment, v => (hudMoment = v)],
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
   koThisEvent: [() => koThisEvent, v => (koThisEvent = v)],
@@ -450,6 +453,7 @@ function showEvent() {
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
   if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r, ev);
+  if (ev.an) hudMoment(ev.an);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
   afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => paintBoxes(ev.s, ev.mk, true));
@@ -620,6 +624,32 @@ function hudPop(si, text, kind, w) {
   L.appendChild(e);
   setTimeout(() => e.remove(), 1500);
 }
+/* UI-17: the big moments' HUD side (ui-track.md Part 2; the stage's 3D side is the VFX track's): a level-up bursts
+   sky (the growth family) round its plate's level, a catch bursts teal (good) round the pyramid, and a boss's name
+   banner slams in as its trainer comes in, inside the trainer's own 1150 ms (no time added). The banner is the kit's
+   pb-name-banner, which RL-14b's stage intro and VFX-16's VS splash can call the same way */
+function hudMoment(an) {
+  const L = $('#pops');
+  if (!L) return;
+  const box = L.getBoundingClientRect();
+  if (an.k === 'lvl') {
+    const lv = $(`#plates .bplate[data-k="${an.si ?? 0}"] .pl-lv`);
+    if (!lv) return;
+    const r = lv.getBoundingClientRect();
+    if (r.width) pbBurst(r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top, HUD_BURSTS.lvl(L));
+  } else if (an.k === 'caught') {
+    const q = battleStage.coin && battleStageToCss(battleStage.coin);
+    if (q) pbBurst(q.x, q.y, HUD_BURSTS.caught(L));
+  } else if (an.k === 'trainerIn') {
+    const T = activeBattle && activeBattle.T;
+    if (T && (T.boss || T.alpha))
+      pbNameBanner($('#stage') || L, { name: T.name, kicker: 'Boss', tone: 'bad', hold: 640 });
+  }
+}
+const HUD_BURSTS = {
+  lvl: (/** @type {Element} */ L) => ({ tone: 'var(--sig-growth)', size: 56, in: L }),
+  caught: (/** @type {Element} */ L) => ({ tone: 'var(--sig-good)', size: 96, in: L }),
+};
 function hudHit(ti, an, w = 0.3) {
   if (!an.dmg) return;
   const kind = 'dmg' + (an.te > 1 ? ' se' : '') + (an.crit ? ' crit' : '') + (an.te < 1 ? ' nve' : '');

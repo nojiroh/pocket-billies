@@ -43,6 +43,7 @@ expose({
   nothing: [() => nothing],
   patternVars: [() => patternVars],
   pbBump: [() => pbBump, v => (pbBump = v)],
+  pbBurst: [() => pbBurst, v => (pbBurst = v)],
   pbDoneHTML: [() => pbDoneHTML, v => (pbDoneHTML = v)],
   pbDrawDone: [() => pbDrawDone, v => (pbDrawDone = v)],
   pbFloat: [() => pbFloat, v => (pbFloat = v)],
@@ -1095,6 +1096,29 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-foil', PbFoil],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);
+
+/** UI-17: a big moment's burst (a catch, a level-up; the stage's 3D side is the VFX track's): a ring and eight rays
+ * in the moment's family from (x, y): page pixels, or pixels inside `o.in` (a positioned box). Reduced: the ring fades
+ * @param {number} x @param {number} y @param {{ tone?: string, size?: number, in?: Element | null }} [o] */
+export function pbBurst(x, y, o = {}) {
+  const el = document.createElement('i'),
+    still = reduced();
+  el.className = 'pb-burst' + (o.in ? ' in' : '') + (still ? ' still' : '');
+  el.setAttribute('aria-hidden', 'true');
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  if (o.tone) el.style.setProperty('--burst', o.tone);
+  if (o.size) el.style.setProperty('--burst-r', o.size + 'px');
+  if (!still)
+    for (let i = 0; i < 8; i++) {
+      const ray = document.createElement('b');
+      ray.style.setProperty('--rot', `${i * 45 + 22.5}deg`);
+      el.appendChild(ray);
+    }
+  (o.in || document.body).appendChild(el);
+  setTimeout(() => el.remove(), msOf('--burst-ms', 560) + 60);
+  return el;
+}
 
 /* a number (+120 Moneys) rising from an element: feedback where the action happened, instead of a toast */
 export function pbFloat(anchor, text, tone) {
