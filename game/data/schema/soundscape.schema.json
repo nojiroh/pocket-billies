@@ -163,6 +163,10 @@
     "eventGain": {
      "type": "number",
      "minimum": 0
+    },
+    "dry": {
+     "description": "SND-14: an Ambience bed heard straight, never through the outdoors' muffle (a room's or a cave's own tone)",
+     "type": "boolean"
     }
    }
   },
@@ -444,6 +448,29 @@
     },
     "byHeight": {
      "type": "boolean"
+    }
+   }
+  },
+  "span": {
+   "description": "[lo, hi]",
+   "type": "array",
+   "minItems": 2,
+   "maxItems": 2,
+   "items": {
+    "type": "number",
+    "minimum": 0
+   }
+  },
+  "curve": {
+   "description": "a curve: [x, y] points, x rising (logic/nature-sound.js natureCurve)",
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "array",
+    "minItems": 2,
+    "maxItems": 2,
+    "items": {
+     "type": "number"
     }
    }
   }
@@ -801,6 +828,645 @@
      }
     }
    }
+  },
+  "nature": {
+   "description": "SND-14: the weather, the wild and the town (logic/nature-sound.js; game/js/nature-here.js reads the place, audio/nature-player.js plays them)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "rain": {
+     "description": "rain by how hard it falls (the weather's rain, 0-1.6): the wash bed's level (wash), the heavy rain's roar (heavy, the rainHeavy bed), patter (drops a second by the rain, their pitch f, Q, length d s, gain, more and higher on leaves, now and then a plink from bank), the rain on roofs (the rainRoof bed: full within near m of a building's eaves, nothing past range, indoor its level in a room) and drips off the eaves (bubbles from the drop bank)",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "wash": {
+       "$ref": "#/$defs/curve"
+      },
+      "heavy": {
+       "$ref": "#/$defs/curve"
+      },
+      "patter": {
+       "description": "patter",
+       "type": "object",
+       "additionalProperties": false,
+       "properties": {
+        "rate": {
+         "$ref": "#/$defs/curve"
+        },
+        "f": {
+         "$ref": "#/$defs/span"
+        },
+        "q": {
+         "$ref": "#/$defs/span"
+        },
+        "d": {
+         "$ref": "#/$defs/span"
+        },
+        "gain": {
+         "type": "number",
+         "minimum": 0
+        },
+        "leaves": {
+         "type": "number",
+         "minimum": 0
+        },
+        "plink": {
+         "type": "number",
+         "minimum": 0
+        },
+        "bank": {
+         "type": "string"
+        }
+       },
+       "required": [
+        "rate",
+        "f",
+        "q",
+        "d",
+        "gain",
+        "leaves",
+        "plink",
+        "bank"
+       ]
+      },
+      "roof": {
+       "description": "roofs",
+       "type": "object",
+       "additionalProperties": false,
+       "properties": {
+        "near": {
+         "type": "number",
+         "minimum": 0
+        },
+        "range": {
+         "type": "number",
+         "minimum": 0
+        },
+        "level": {
+         "type": "number",
+         "minimum": 0
+        },
+        "indoor": {
+         "type": "number",
+         "minimum": 0
+        }
+       },
+       "required": [
+        "near",
+        "range",
+        "level",
+        "indoor"
+       ]
+      },
+      "drips": {
+       "$ref": "#/$defs/event"
+      }
+     },
+     "required": [
+      "wash",
+      "heavy",
+      "patter",
+      "roof",
+      "drips"
+     ]
+    },
+    "thunder": {
+     "description": "thunder after each of the weather's bolts: its distance km (more far than near), the speed of sound (km/s) for its delay, nearer than nearKm a soft-edged crack first; level and lp (Hz) from far to near, rolls, its length dur s from near to far, the crack's share, each roll's attack s, at most cap rolling at once",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "km": {
+       "$ref": "#/$defs/span"
+      },
+      "speed": {
+       "type": "number",
+       "minimum": 0
+      },
+      "nearKm": {
+       "type": "number",
+       "minimum": 0
+      },
+      "level": {
+       "$ref": "#/$defs/span"
+      },
+      "lp": {
+       "$ref": "#/$defs/span"
+      },
+      "rolls": {
+       "$ref": "#/$defs/span"
+      },
+      "dur": {
+       "$ref": "#/$defs/span"
+      },
+      "crack": {
+       "type": "number",
+       "minimum": 0
+      },
+      "attack": {
+       "$ref": "#/$defs/span"
+      },
+      "cap": {
+       "type": "number",
+       "minimum": 0
+      }
+     },
+     "required": [
+      "km",
+      "speed",
+      "nearKm",
+      "level",
+      "lp",
+      "rolls",
+      "dur",
+      "crack",
+      "attack",
+      "cap"
+     ]
+    },
+    "wind": {
+     "description": "the wind bed: a breeze in the open (times the scene's wind; town: its share in a town), the mountains' (alpine), a storm's and snow's; gust and leaves: [floor, lift] by the renderer's gusts where you stand",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "breeze": {
+       "type": "number",
+       "minimum": 0
+      },
+      "town": {
+       "type": "number",
+       "minimum": 0
+      },
+      "alpine": {
+       "type": "number",
+       "minimum": 0
+      },
+      "storm": {
+       "type": "number",
+       "minimum": 0
+      },
+      "snow": {
+       "type": "number",
+       "minimum": 0
+      },
+      "gust": {
+       "$ref": "#/$defs/span"
+      },
+      "leaves": {
+       "$ref": "#/$defs/span"
+      }
+     },
+     "required": [
+      "breeze",
+      "town",
+      "alpine",
+      "storm",
+      "snow",
+      "gust",
+      "leaves"
+     ]
+    },
+    "birds": {
+     "description": "birds by the hour, one at a time: the wait after a call (wait, townWait s) times the hour's (hours: a curve), the dawn chorus's hours and its extra singers, the night from which only the owl calls (owlNight) and its wait",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "wait": {
+       "$ref": "#/$defs/span"
+      },
+      "townWait": {
+       "$ref": "#/$defs/span"
+      },
+      "hours": {
+       "$ref": "#/$defs/curve"
+      },
+      "chorus": {
+       "$ref": "#/$defs/span"
+      },
+      "chorusAdd": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "owlNight": {
+       "type": "number",
+       "minimum": 0
+      },
+      "owlWait": {
+       "$ref": "#/$defs/span"
+      }
+     },
+     "required": [
+      "wait",
+      "townWait",
+      "hours",
+      "chorus",
+      "chorusAdd",
+      "owlNight",
+      "owlWait"
+     ]
+    },
+    "insects": {
+     "description": "insects: crickets at night (their bed's level, in a town, the share left in winter), by day the first kind whose biomes, hours and seasons match, and each day kind's sound: a grasshopper's chirrs (bouts of count pulses step s apart, gaps, pitch f, Q, gain, callers) and a cicada's swells (every s, dur s, pulses a second, f, Q, gain)",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "crickets": {
+       "description": "crickets",
+       "type": "object",
+       "additionalProperties": false,
+       "properties": {
+        "gain": {
+         "type": "number",
+         "minimum": 0
+        },
+        "town": {
+         "type": "number",
+         "minimum": 0
+        },
+        "winter": {
+         "type": "number",
+         "minimum": 0
+        }
+       },
+       "required": [
+        "gain",
+        "town",
+        "winter"
+       ]
+      },
+      "day": {
+       "type": "object",
+       "additionalProperties": {
+        "description": "a day kind",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+         "biomes": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         },
+         "hours": {
+          "$ref": "#/$defs/span"
+         },
+         "seasons": {
+          "type": "array",
+          "items": {
+           "type": "string"
+          }
+         }
+        },
+        "required": [
+         "biomes",
+         "hours"
+        ]
+       }
+      },
+      "grasshopper": {
+       "description": "grasshoppers",
+       "type": "object",
+       "additionalProperties": false,
+       "properties": {
+        "count": {
+         "$ref": "#/$defs/span"
+        },
+        "step": {
+         "$ref": "#/$defs/span"
+        },
+        "gap": {
+         "$ref": "#/$defs/span"
+        },
+        "f": {
+         "type": "number",
+         "minimum": 0
+        },
+        "q": {
+         "type": "number",
+         "minimum": 0
+        },
+        "gain": {
+         "type": "number",
+         "minimum": 0
+        },
+        "callers": {
+         "type": "number",
+         "minimum": 0
+        }
+       },
+       "required": [
+        "count",
+        "step",
+        "gap",
+        "f",
+        "q",
+        "gain",
+        "callers"
+       ]
+      },
+      "cicada": {
+       "description": "cicadas",
+       "type": "object",
+       "additionalProperties": false,
+       "properties": {
+        "every": {
+         "$ref": "#/$defs/span"
+        },
+        "dur": {
+         "$ref": "#/$defs/span"
+        },
+        "rate": {
+         "type": "number",
+         "minimum": 0
+        },
+        "f": {
+         "type": "number",
+         "minimum": 0
+        },
+        "q": {
+         "type": "number",
+         "minimum": 0
+        },
+        "gain": {
+         "type": "number",
+         "minimum": 0
+        }
+       },
+       "required": [
+        "every",
+        "dur",
+        "rate",
+        "f",
+        "q",
+        "gain"
+       ]
+      }
+     },
+     "required": [
+      "crickets",
+      "day",
+      "grasshopper",
+      "cicada"
+     ]
+    },
+    "frogs": {
+     "description": "frogs at the still water near you by night (near: the water recipes they live by) from night, in seasons, fewer in the rain; bouts of count croaks step s apart with gaps, a croak's pitch f Hz and formant Hz, gain, callers",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "near": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "night": {
+       "type": "number",
+       "minimum": 0
+      },
+      "seasons": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       }
+      },
+      "rain": {
+       "type": "number",
+       "minimum": 0
+      },
+      "count": {
+       "$ref": "#/$defs/span"
+      },
+      "step": {
+       "$ref": "#/$defs/span"
+      },
+      "gap": {
+       "$ref": "#/$defs/span"
+      },
+      "f": {
+       "$ref": "#/$defs/span"
+      },
+      "formant": {
+       "type": "number",
+       "minimum": 0
+      },
+      "gain": {
+       "type": "number",
+       "minimum": 0
+      },
+      "callers": {
+       "type": "number",
+       "minimum": 0
+      }
+     },
+     "required": [
+      "near",
+      "night",
+      "seasons",
+      "rain",
+      "count",
+      "step",
+      "gap",
+      "f",
+      "formant",
+      "gain",
+      "callers"
+     ]
+    },
+    "fire": {
+     "description": "a fire by its size (sizes by the prop's group, times its scale): heard within range m times the root of its size, its gain times size^0.6, crackles a second times the root of its size",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "sizes": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "number",
+        "minimum": 0
+       }
+      },
+      "range": {
+       "type": "number",
+       "minimum": 0
+      },
+      "gain": {
+       "type": "number",
+       "minimum": 0
+      },
+      "crackle": {
+       "type": "number",
+       "minimum": 0
+      }
+     },
+     "required": [
+      "sizes",
+      "range",
+      "gain",
+      "crackle"
+     ]
+    },
+    "steps": {
+     "description": "footsteps by the ground: each surface's terrain codes (ground; wet and snow come from the weather too), the surface of any other ground (fallback), and each surface's hits",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "ground": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "string"
+       }
+      },
+      "fallback": {
+       "type": "string"
+      },
+      "surfaces": {
+       "type": "object",
+       "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "items": {
+         "description": "a hit: [at s, type (lp, bp or hp), Hz, Q, dur s, vol, attack s]",
+         "type": "array",
+         "minItems": 6,
+         "maxItems": 7,
+         "prefixItems": [
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "enum": [
+            "lp",
+            "bp",
+            "hp"
+           ]
+          },
+          {
+           "type": "number",
+           "exclusiveMinimum": 0
+          },
+          {
+           "type": "number",
+           "exclusiveMinimum": 0
+          },
+          {
+           "type": "number",
+           "exclusiveMinimum": 0
+          },
+          {
+           "type": "number",
+           "minimum": 0
+          },
+          {
+           "type": "number",
+           "minimum": 0
+          }
+         ]
+        }
+       }
+      }
+     },
+     "required": [
+      "ground",
+      "fallback",
+      "surfaces"
+     ]
+    },
+    "town": {
+     "description": "the town's life instead of a murmur: one quiet event at a time, every every s (nightEvery times as long by night), each kind by its weight (night: its share by night) at its gain",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "every": {
+       "$ref": "#/$defs/span"
+      },
+      "nightEvery": {
+       "type": "number",
+       "minimum": 0
+      },
+      "kinds": {
+       "type": "object",
+       "additionalProperties": {
+        "description": "a kind",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+         "weight": {
+          "type": "number",
+          "minimum": 0
+         },
+         "night": {
+          "type": "number",
+          "minimum": 0
+         },
+         "gain": {
+          "type": "number",
+          "minimum": 0
+         }
+        },
+        "required": [
+         "weight",
+         "gain"
+        ]
+       }
+      }
+     },
+     "required": [
+      "every",
+      "nightEvery",
+      "kinds"
+     ]
+    },
+    "rooms": {
+     "description": "a room's tone by its kind (its map id without int_; _ the default): the bed, its level, now and then its small sounds (page, clink, tool, straw) every every s",
+     "type": "object",
+     "required": [
+      "_"
+     ],
+     "additionalProperties": {
+      "description": "a room",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "bed": {
+        "type": "string"
+       },
+       "level": {
+        "type": "number",
+        "minimum": 0
+       },
+       "events": {
+        "enum": [
+         "page",
+         "clink",
+         "tool",
+         "straw"
+        ]
+       },
+       "every": {
+        "$ref": "#/$defs/span"
+       }
+      },
+      "required": [
+       "bed",
+       "level"
+      ]
+     }
+    }
+   },
+   "required": [
+    "rain",
+    "thunder",
+    "wind",
+    "birds",
+    "insects",
+    "frogs",
+    "fire",
+    "steps",
+    "town",
+    "rooms"
+   ]
   }
  }
 }
