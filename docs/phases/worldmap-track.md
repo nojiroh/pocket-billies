@@ -79,7 +79,7 @@ below against main and report what differs.
 | WM-2 | The region grid (logic) (done 2026-10-27) | a coarse grid (about 64 m cells) replaces the rows: nodes get footprints, links go east, north or south; the landing's exits north and east; at least 2 routes between towns; leader then town; 2-3 towns; 8-12 places a path; the data checks, sim and the Run Lab's 2D preview | WM-1 | 1-2 |
 | WM-3 | Shapes and sizes (done 2026-10-27, WM-3a and WM-3b) | mapgen takes a footprint: any width and height, L-masks walled by mountain or forest, exits on any edge (more than 2 on long edges), roads that bend to a north exit; seam rules for north/south joins; a phone-time measurement | WM-2 | 1-2 |
 | WM-4 | The seamless region on the world map (done 2026-10-27: WM-4a, WM-4b on `claude/wm-4b-seamless-region`) | places stamped at their grid positions, region filler between, the run's real roads, fogged outlines for unreached places; ends the crowding | WM-3 | 1-2 |
-| WM-5 | Town streets (planned 2026-10-27: WM-5a the streets in mapgen, WM-5b sizes, services and names) | street growth from the through road (T-junctions, bends, dead ends, a square at the main junction), side streets mostly east to west, lots along every street, houses mostly facing the camera; the three town sizes | WM-3 | 2 |
+| WM-5 | Town streets (done 2026-10-27: WM-5a the streets in mapgen, WM-5b sizes, services and names) | street growth from the through road (T-junctions, bends, dead ends, a square at the main junction), side streets mostly east to west, lots along every street, houses mostly facing the camera; the three town sizes | WM-3 | 2 |
 | WM-6 | A region's look | districts (square, homes, park or pond, farm edge), a landmark per town from existing props, route numbers and town names on signposts at seams and on the world map | WM-4, WM-5 | 1 |
 | WM-7 | Leader arenas (done 2026-10-27, `claude/wm-7-leader-arenas`) | a raised, fenced ring by the leader's type on the road, a gate or Bureau barrier opening after the win, a line of trainers before it, the camera framing it; the final boss's own arena place | WM-2 | 1 |
 | WM-8 | Ledges and loops | one-way ledges and shortcuts that loop between routes | WM-3 | 1 |
@@ -123,6 +123,17 @@ the in-game checks. MAPGEN_VERSION 24 (22 is RT-4b's on `track/routes`, 23 left 
   Expedition doesn't reach the grid; a ghost that replaces a town keeps its footprint; water-gen keeps rivers out of a
   fixed box round a town's road; nothing kept a tall-grass patch at a town's edge.
 - Measured in Node: a run's town 34 ms; the TW-1 stage at 128 x 128 57 ms and 192 x 128 73 ms; a run's places 1.2-4.3 s.
+
+## WM-5b: what it found (2026-10-27)
+
+- Corrected: townsfolk were already "2 and 1 for every 2 houses, at most 10" in mapgen (WM-5a); the stall prop
+  (`act: 'stall'`) already existed but would have opened the town's own shop; a town's size needs no save field (its
+  footprint says it: run-map.js runTownSize); the whole of rules.json `run` reaches the scenes (run-world-data.js).
+- Built: rules.json `run.map.townSizes` (cells, and sizes by Expedition and town count) and `run.town.sizes` (word,
+  houses, stall, givers), `run.town.stall` (2 held items a day); strict sizes on the grid with a step-down (every town
+  a size smaller, after dropping lane switches); no step-down was needed in 5,000 maps. Names by size from
+  run-scenes.js runPlaceName (the one function a place's name comes from). The stall's own shop (runStallId,
+  run-loop.js runStallStock: no Perk, no fresh stock); a 3 x 2 town's second quest giver (run-quests.js questKey).
 
 ## Risks
 
