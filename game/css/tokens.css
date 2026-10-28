@@ -43,11 +43,16 @@
   /* motion (06-plan "Motion"): transforms and opacity only */
   --m-fast: 140ms;
   --m-base: 240ms;
-  --m-slow: 420ms;
+  --m-slow: 380ms; /* UI-16a: 420 to 380, so an enter is done by 400 ms */
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in: cubic-bezier(0.4, 0, 1, 1);
   /* --spring is v05's cubic-bezier(0.3, 1.6, 0.5, 1) */
   --stagger: 35ms;
+  /* UI-16a: the feedback times (docs/phases/ui-track.md "Timings"; logic/motion.js MOTION_TIMES holds the ranges) */
+  --m-press: 100ms;
+  --m-exit: 180ms;
+  --m-pop: 150ms;
+  --m-float: 600ms;
   /* UI-15: a place's arrival title before it folds into the top bar, and a walking hint before it fades (walk-tab.js
      PLACE_TITLE_MS and WALK_HINT_MS hold the same numbers) */
   --m-title: 4500ms;

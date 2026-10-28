@@ -240,6 +240,11 @@ export function sharedVars(look) {
     ['base', '--m-base'],
     ['slow', '--m-slow'],
     ['stagger', '--stagger'],
+    // UI-16a: the feedback times
+    ['press', '--m-press'],
+    ['exit', '--m-exit'],
+    ['pop', '--m-pop'],
+    ['float', '--m-float'],
   ]))
     if (typeof mo[k] === 'number') out.push(`${v}: ${mo[k]}ms;`);
   for (const [k, v] of /** @type {const} */ ([

@@ -172,12 +172,16 @@
   "motion": {
    "type": "object",
    "additionalProperties": false,
-   "description": "the three speeds in ms, the stagger between rows, and the eases",
+   "description": "the three speeds in ms, the stagger between rows, the feedback times (UI-16a) and the eases",
    "properties": {
     "fast": {"type": "number", "minimum": 0, "maximum": 2000, "description": "--m-fast, ms"},
     "base": {"type": "number", "minimum": 0, "maximum": 2000, "description": "--m-base, ms"},
     "slow": {"type": "number", "minimum": 0, "maximum": 4000, "description": "--m-slow, ms"},
     "stagger": {"type": "number", "minimum": 0, "maximum": 500, "description": "--stagger, ms between rows"},
+    "press": {"type": "number", "minimum": 0, "maximum": 1000, "description": "UI-16a: --m-press, ms: a press's squash and its spring back"},
+    "exit": {"type": "number", "minimum": 0, "maximum": 1000, "description": "UI-16a: --m-exit, ms: things leaving (a toast, a sheet's fly-to)"},
+    "pop": {"type": "number", "minimum": 0, "maximum": 1000, "description": "UI-16a: --m-pop, ms: a number's or a target's pop"},
+    "float": {"type": "number", "minimum": 0, "maximum": 2000, "description": "UI-16a: --m-float, ms: a floating number's rise after its pop"},
     "easeOut": {"$ref": "#/$defs/ease"},
     "easeIn": {"$ref": "#/$defs/ease"},
     "spring": {"$ref": "#/$defs/ease"}

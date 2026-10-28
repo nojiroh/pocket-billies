@@ -13,10 +13,11 @@
   transition-duration: 80ms;
 }
 
-/* enter: fade and a small rise; list items stagger by --stagger (set --i on each, at most 8) */
+/* enter: fade and a small rise; list items stagger by --stagger (set --i on each). UI-16a: past the 4th row the rest
+   come in together, so the last is in by 400 ms (logic/motion.js motionStaggerCap; ui-motion.js pbEnterRows sets --i) */
 .m-enter {
   animation: m-enter var(--m-base) var(--ease-out) both;
-  animation-delay: calc(min(var(--i, 0), 8) * var(--stagger));
+  animation-delay: calc(min(var(--i, 0), 4) * var(--stagger));
 }
 @keyframes m-enter {
   from {
@@ -96,12 +97,25 @@
   }
 }
 
-/* float: an in-place number (+$120) rising from where it happened (pbFloat in js/ui-kit.js) */
+/* float: an in-place number (+$120) rising from where it happened (pbFloat in js/ui-kit.js). UI-16a: a pop
+   (--m-pop), then the float (--m-float), the doc's 150 ms and 500-700 ms */
 .m-float {
-  animation: m-float 1100ms var(--ease-out) forwards;
+  animation:
+    m-float-pop var(--m-pop) var(--spring) both,
+    m-float var(--m-float) var(--ease-out) var(--m-pop) forwards;
+}
+@keyframes m-float-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 4px) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -6px) scale(1);
+  }
 }
 @keyframes m-float {
-  15% {
+  from {
     opacity: 1;
     transform: translate(-50%, -6px) scale(1);
   }

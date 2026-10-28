@@ -1026,7 +1026,8 @@ export function pbFloat(anchor, text, tone) {
   el.style.top = r.top + 'px';
   if (tone) el.style.color = tone;
   document.body.appendChild(el);
-  setTimeout(() => el.remove(), reduced() ? 400 : 1200);
+  /* UI-16a: the pop and the float (motion.css m-float, --m-pop + --m-float) */
+  setTimeout(() => el.remove(), reduced() ? 400 : 900);
 }
 
 /* the inbox dot on the portrait: how many notices wait (0: no dot). The top bar is redrawn often, so the dot pops
