@@ -22,6 +22,7 @@ import {
   changed,
   checkboxField,
   clone,
+  colorField,
   numberField,
   rangeField,
   render,
@@ -34,16 +35,19 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   FIGURE_EDIT_TABS: [() => FIGURE_EDIT_TABS],
+  FIGURE_FACE_PARTS: [() => FIGURE_FACE_PARTS],
   FIGURE_MARK_ITEMS: [() => FIGURE_MARK_ITEMS],
   FIGURE_ROW_KINDS: [() => FIGURE_ROW_KINDS],
   FIGURE_STYLE_NAMES: [() => FIGURE_STYLE_NAMES],
   FIGURE_WHOLE: [() => FIGURE_WHOLE],
   figureEditor: [() => figureEditor],
   figureEditorDraw: [() => figureEditorDraw, v => (figureEditorDraw = v)],
+  figureEditorFace: [() => figureEditorFace, v => (figureEditorFace = v)],
   figureEditorRun: [() => figureEditorRun, v => (figureEditorRun = v)],
   figureEditorStart: [() => figureEditorStart, v => (figureEditorStart = v)],
   figureEditorTab: [() => figureEditorTab, v => (figureEditorTab = v)],
   figureEditorTick: [() => figureEditorTick, v => (figureEditorTick = v)],
+  figureFacesTab: [() => figureFacesTab, v => (figureFacesTab = v)],
   figureFieldHTML: [() => figureFieldHTML, v => (figureFieldHTML = v)],
   figureFieldsHTML: [() => figureFieldsHTML, v => (figureFieldsHTML = v)],
   figureKitOf: [() => figureKitOf],
@@ -64,6 +68,15 @@ const figureEditor = {
   frame: 0,
   tab: 'heads',
   pick: { heads: 'round', builds: 'average', hair: 'hair_short', accessories: 'hat_cap' },
+  /* CH-6: the face tried on the turntable (eye and brow styles, '' their own; an expression; talking; a blink) and
+     the Faces tab's part and picks */
+  eyes: '',
+  brows: '',
+  expr: 'idle',
+  talk: false,
+  blinkT: 0,
+  facePart: 'eyes',
+  facePick: { eyes: 'round', eyeFrames: 'open', brows: 'soft', mouths: 'smile', expressions: 'idle' },
   timer: 0,
   error: '',
 };
@@ -73,7 +86,18 @@ const FIGURE_EDIT_TABS = [
   ['builds', 'Builds'],
   ['hair', 'Hair'],
   ['accessories', 'Hats & things'],
+  ['faces', 'Faces'],
   ['body', 'Variety & proportions'],
+];
+/** CH-6: the Faces tab's parts (figureKit.json faces), the name of each */
+const FIGURE_FACE_PARTS = [
+  ['eyes', 'Eye styles'],
+  ['eyeFrames', 'Eye frames'],
+  ['brows', 'Brows'],
+  ['mouths', 'Mouths'],
+  ['expressions', 'Expressions'],
+  ['skin', 'Skin'],
+  ['wardrobe', 'Wardrobe'],
 ];
 /** the shapes a row can be (logic/figure-pose.js's own, and kit-shapes.js's round the head) */
 const FIGURE_ROW_KINDS = ['ellipsoid', 'lathe', 'torus', 'cone', 'capsule', 'tube', 'dome', 'disc', 'band', 'curls'];
@@ -94,7 +118,11 @@ SECTIONS.figures = () => {
     return `<div class="ed-col solo"><h2>Figures</h2><p class="help">This game data has no figure kit (game/data/figureKit.json).</p></div>`;
   const E = figureEditor;
   if (!D.people[E.who]) E.who = 'chosen' in D.people ? 'chosen' : Object.keys(D.people)[0];
-  for (const [t] of FIGURE_EDIT_TABS) if (t !== 'body' && !K[t][E.pick[t]]) E.pick[t] = Object.keys(K[t])[0] || '';
+  for (const [t] of FIGURE_EDIT_TABS)
+    if (t !== 'body' && t !== 'faces' && !K[t][E.pick[t]]) E.pick[t] = Object.keys(K[t])[0] || '';
+  for (const [t] of FIGURE_FACE_PARTS)
+    if (t !== 'wardrobe' && t !== 'skin' && K.faces && !K.faces[t][E.facePick[t]])
+      E.facePick[t] = Object.keys(K.faces[t])[0] || '';
   afterRender(figureEditorStart);
   const opt = (/** @type {string} */ v, /** @type {string} */ n, /** @type {string} */ cur) =>
       `<option value="${escapeHtml(v)}" ${v === cur ? 'selected' : ''}>${escapeHtml(n)}</option>`,
@@ -136,7 +164,34 @@ SECTIONS.figures = () => {
    <div class="seg-row"><button class="seg sm ${E.view === 'whole' ? 'on' : ''}" data-act="figView" data-v="whole" aria-pressed="${E.view === 'whole'}">Whole</button><button class="seg sm ${E.view === 'head' ? 'on' : ''}" data-act="figView" data-v="head" aria-pressed="${E.view === 'head'}">Head</button>
    <button class="seg sm ${E.spin ? 'on' : ''}" data-act="figSpin" aria-pressed="${E.spin}">Turntable</button>
    <label class="fld range"><span>Turn</span><input type="range" id="figTurn" min="0" max="2" step="0.0625" value="${E.turn}"></label></div>
-   <div class="seg-row"><button class="btn" data-act="figSaveChoice" ${E.head || E.build ? '' : 'disabled'} title="Write the head shape and build tried here into this person's figure (people/${escapeHtml(E.who)}.json)">Give ${escapeHtml(E.who)} this head and build</button></div>`;
+   <div class="seg-row"><button class="btn" data-act="figSaveChoice" ${E.head || E.build ? '' : 'disabled'} title="Write the head shape and build tried here into this person's figure (people/${escapeHtml(E.who)}.json)">Give ${escapeHtml(E.who)} this head and build</button></div>
+   ${
+     K.faces
+       ? `<div class="grid">${sel(
+           'figEyes',
+           'Eyes',
+           opt('', 'Their own', E.eyes) +
+             Object.keys(K.faces.eyes)
+               .map(k => opt(k, k, E.eyes))
+               .join('')
+         )}${sel(
+           'figBrows',
+           'Brows',
+           opt('', 'Their own', E.brows) +
+             Object.keys(K.faces.brows)
+               .map(k => opt(k, k, E.brows))
+               .join('')
+         )}${sel(
+           'figExpr',
+           'Face',
+           Object.keys(K.faces.expressions)
+             .map(k => opt(k, k, E.expr))
+             .join('')
+         )}</div>
+   <div class="seg-row"><button class="seg sm ${E.talk ? 'on' : ''}" data-act="figTalk" aria-pressed="${E.talk}">Talk</button><button class="btn sm" data-act="figBlink">Blink</button>
+   <button class="btn" data-act="figSaveFace" ${E.eyes || E.brows ? '' : 'disabled'} title="Write the eye and brow styles tried here into this person's figure (people/${escapeHtml(E.who)}.json)">Give ${escapeHtml(E.who)} these eyes and brows</button></div>`
+       : ''
+   }`;
   const tabs = `<div class="seg-row" role="tablist">${FIGURE_EDIT_TABS.map(
     ([k, n]) =>
       `<button class="seg sm ${E.tab === k ? 'on' : ''}" role="tab" aria-selected="${E.tab === k}" data-act="figTab" data-v="${k}">${n}</button>`
@@ -260,6 +315,8 @@ function figureEditorTab() {
         }
       );
     }
+    case 'faces':
+      return figureFacesTab();
     default:
       return (
         card(
@@ -273,6 +330,141 @@ function figureEditorTab() {
         })
       );
   }
+}
+
+/** CH-6: the Faces tab: eye styles and frames, brows, mouth frames (rows of marks), expressions and which style each
+ * wardrobe id draws (figureKit.json faces); the turntable shows the part being edited */
+function figureFacesTab() {
+  const E = figureEditor,
+    F = figureKitOf().faces,
+    q = 'figureKit.faces',
+    part = E.facePart,
+    k = /** @type {Record<string, string>} */ (E.facePick)[part],
+    parts = `<div class="seg-row" role="tablist">${FIGURE_FACE_PARTS.map(
+      ([t, n]) =>
+        `<button class="seg sm ${part === t ? 'on' : ''}" role="tab" aria-selected="${part === t}" data-act="figFacePart" data-v="${t}">${n}</button>`
+    ).join('')}</div>`,
+    pickRow = (/** @type {string} */ what, /** @type {string} */ extra = '') =>
+      `<div class="seg-row"><label class="fld"><span>${what}</span><select data-fig-face="${part}">${Object.keys(
+        F[part]
+      )
+        .map(x => `<option value="${escapeHtml(x)}" ${x === k ? 'selected' : ''}>${escapeHtml(x)}</option>`)
+        .join('')}</select></label>${extra}</div>`,
+    num = (/** @type {string} */ label, /** @type {string} */ key, /** @type {any} */ o = {}) =>
+      numberField(label, `${q}.${part}.${k}.${key}`, { opt: true, step: 0.001, ...o }),
+    chk = (/** @type {string} */ label, /** @type {string} */ key) => checkboxField(label, `${q}.${part}.${k}.${key}`),
+    copy = `<button class="btn" data-act="figFaceCopy">+ Copy as new</button>`,
+    frames = Object.keys(F.mouths).map(x => [x, x]);
+  let body = '';
+  switch (part) {
+    case 'eyes': {
+      const ES = F.eyes[k];
+      body =
+        pickRow('Eye style', copy) +
+        `<div class="grid">${num('Width', 'w')}${num('Height', 'h')}${num('Apart', 'gap', { ph: '1', step: 0.01 })}${num('Iris', 'iris', { ph: '1', step: 0.01 })}${num('Lash flicks', 'flicks', { ph: '1', step: 1 })}${num('Outer lash (wing)', 'wing', { ph: '1', step: 0.05 })}
+        ${chk('Shaded lid', 'shade')}${chk('Bags under', 'bags')}${chk('Lines (close-ups)', 'lines')}${chk('Always blushes', 'blush')}</div>` +
+        (ES.lid
+          ? `<h4>Heavy lid (y, width, height as parts of the eye)</h4>${figureFieldsHTML(`${q}.eyes.${k}.lid`, ES.lid, false)}`
+          : '');
+      break;
+    }
+    case 'eyeFrames':
+      body =
+        pickRow('Eye frame') +
+        `<div class="grid">${num('Open', 'open', { ph: '1', step: 0.05 })}${num('Scale', 'scale', { ph: '1', step: 0.01 })}${num('Iris', 'iris', { ph: '1', step: 0.01 })}${num('Angry slant', 'slant', { step: 1 })}${num('Glance', 'look', { step: 1 })}
+        ${chk('Shut', 'shut')}${chk('Happy (shut, curved up)', 'happy')}${chk('Flat lid', 'flat')}</div>`;
+      break;
+    case 'brows':
+      body =
+        pickRow('Brow style', copy) +
+        `<div class="grid">${num('Width', 'w')}${num('Thickness', 't')}${num('Arch', 'arch', { ph: '0' })}${num('Tilt', 'tilt', { ph: '0', step: 0.5, help: 'Above 0 down to the nose' })}${num('One side up', 'uneven', { ph: '0' })}
+        ${chk('Flat', 'flat')}${chk('Peaked', 'peak')}${chk('Knit (a crease between)', 'knit')}${chk('Bushy', 'bushy')}</div>`;
+      break;
+    case 'mouths': {
+      const rows = F.mouths[k];
+      body =
+        pickRow('Mouth frame') +
+        rows
+          .map(
+            (/** @type {any} */ m, /** @type {number} */ i) =>
+              `<fieldset class="fig-row"><legend>${escapeHtml(m.kind)}</legend><div class="grid">${textField('Kind', `${q}.mouths.${k}.${i}.kind`)}${[
+                'x',
+                'y',
+                'w',
+                'h',
+                't',
+                'min',
+              ]
+                .map(x => numberField(x, `${q}.mouths.${k}.${i}.${x}`, { opt: x !== 'w' && x !== 'h', step: 0.001 }))
+                .join('')}${selectField(
+                'Shape',
+                `${q}.mouths.${k}.${i}.shape`,
+                ['oval', 'arc', 'cap', 'slant'].map(x => [x, x]),
+                { none: 'A block', opt: true }
+              )}${selectField(
+                'Slant',
+                `${q}.mouths.${k}.${i}.dir`,
+                [
+                  ['1', 'Down to the right'],
+                  ['-1', 'Down to the left'],
+                ],
+                { none: '-', opt: true, num: true }
+              )}${textField('Colour slot', `${q}.mouths.${k}.${i}.col`, { opt: true, ph: m.kind })}${checkboxField('Close-ups only', `${q}.mouths.${k}.${i}.close`)}</div>
+              <div class="seg-row"><button class="btn sm" data-act="figMarkDup" data-i="${i}">Duplicate</button><button class="btn sm" data-act="figMarkDel" data-i="${i}" ${rows.length > 1 ? '' : 'disabled'}>Delete</button></div></fieldset>`
+          )
+          .join('');
+      break;
+    }
+    case 'expressions': {
+      const X = F.expressions[k];
+      body =
+        pickRow('Expression') +
+        `<div class="grid">${selectField(
+          'Eyes',
+          `${q}.expressions.${k}.eyes`,
+          Object.keys(F.eyeFrames).map(x => [x, x])
+        )}${selectField('Mouth', `${q}.expressions.${k}.mouth`, frames, { none: 'The look’s own', opt: true })}${num('Brow tilt', 'tilt', { ph: '0', step: 0.5 })}${num('Brow lift', 'lift', { ph: '0' })}${chk('Blush', 'blush')}</div>
+        <h4>Talking frames</h4><div class="grid">${(X.talk || F.talk)
+          .map((/** @type {string} */ _, /** @type {number} */ i) =>
+            selectField(String(i + 1), X.talk ? `${q}.expressions.${k}.talk.${i}` : `${q}.talk.${i}`, frames)
+          )
+          .join(
+            ''
+          )}</div><p class="help">${X.talk ? 'This expression’s own.' : 'The kit’s, shared by every expression without its own.'} A line’s [${escapeHtml(k)}] shows this face.</p>`;
+      break;
+    }
+    case 'skin':
+      body = (F.skin || [])
+        .map(
+          (/** @type {any} */ R, /** @type {number} */ i) =>
+            `<fieldset class="fig-row"><legend>${escapeHtml(R.base)}</legend><div class="grid">${[
+              'Deep',
+              'Shadow',
+              'Base',
+              'Light',
+              'Shine',
+            ]
+              .map((n, j) => colorField(n, `${q}.skin.${i}.ramp.${j}`))
+              .join('')}</div></fieldset>`
+        )
+        .join('');
+      break;
+    default:
+      body = `<div class="grid">${Object.keys(F.wardrobe)
+        .map(id => {
+          const slot = /** @type {any} */ (studioState.D.wardrobe.items[id] || {}).slot,
+            of = slot === 'eyes' ? F.eyes : slot === 'brows' ? F.brows : F.mouths;
+          return selectField(
+            id,
+            `${q}.wardrobe.${id}`,
+            Object.keys(of).map(x => [x, x])
+          );
+        })
+        .join('')}</div>`;
+  }
+  return card('Faces', parts + body, {
+    sub: 'The face is painted on as marks (sizes in metres on the usual head). The turntable shows what you edit; try Talk, Blink and a Face on it.',
+  });
 }
 
 /**
@@ -320,13 +512,21 @@ function figureEditorDraw() {
     me = E.who === 'boy' || E.who === 'girl',
     who = me ? 'me' : E.who,
     own = P.figure || (me ? { head: 'hero' } : null),
-    figure =
-      E.head || E.build
-        ? { ...(own || {}), ...(E.head ? { head: E.head } : {}), ...(E.build ? { build: E.build } : {}) }
-        : own || undefined,
+    try1 = {
+      ...(E.head ? { head: E.head } : {}),
+      ...(E.build ? { build: E.build } : {}),
+      ...(E.eyes ? { eyes: E.eyes } : {}),
+      ...(E.brows ? { brows: E.brows } : {}),
+    },
+    figure = Object.keys(try1).length ? { ...(own || {}), ...try1 } : own || undefined,
     look = P.creature ? P : cleanLook(P.look || null),
-    /* built again when the kit, the look or the choice changes (a hash of them) */
-    rev = figureSeed(JSON.stringify([K, look, figure || null]));
+    /* built again when the kit (but its faces), the look or the head and build change (a hash of them); CH-6: the face
+       painted again, on the same mesh, when the faces or the eyes and brows change */
+    { faces, ...body } = K,
+    { eyes, brows, ...shape } = figure || {},
+    rev = figureSeed(JSON.stringify([body, look, shape])),
+    faceRev = figureSeed(JSON.stringify([faces, eyes || null, brows || null])),
+    face = figureEditorFace();
   const x = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
   let im = null;
   try {
@@ -337,6 +537,8 @@ function figureEditorDraw() {
       who,
       figure,
       rev,
+      faceRev,
+      face,
       style: E.style,
       clip: E.clip,
       frame: E.frame,
@@ -371,7 +573,23 @@ function figureEditorTick() {
   if (!figureEditorDraw()) return;
   const t = /** @type {HTMLInputElement | null} */ ($('#figTurn'));
   if (t && E.spin) t.value = String(E.turn);
-  if (E.spin || E.clip !== 'idle') E.timer = window.setTimeout(figureEditorTick, 1000 / 12);
+  if (E.spin || E.clip !== 'idle' || E.talk || E.blinkT > performance.now())
+    E.timer = window.setTimeout(figureEditorTick, 1000 / 12);
+}
+/** CH-6: the face on the turntable: the expression picked, or the Faces tab's eye frame or mouth frame being edited;
+ * talking runs through its frames, a blink shuts the eyes */
+function figureEditorFace() {
+  const E = figureEditor,
+    ft = E.tab === 'faces' ? E.facePart : '',
+    expr = ft === 'expressions' ? E.facePick.expressions : E.expr,
+    left = E.blinkT - performance.now();
+  return {
+    expr,
+    ...(ft === 'eyeFrames' ? { eyes: E.facePick.eyeFrames } : {}),
+    ...(ft === 'mouths' && !E.talk ? { mouth: E.facePick.mouths } : {}),
+    ...(E.talk ? { talk: Math.floor(E.frame / 1.5) } : {}),
+    ...(left > 0 ? { blink: left > 150 || left < 50 ? 1 : 2 } : {}),
+  };
 }
 /** after the section is drawn: its pickers, and the turntable going */
 function figureEditorStart() {
@@ -400,6 +618,24 @@ function figureEditorStart() {
     E.clip = v;
     figureEditorRun();
   });
+  on('figEyes', v => {
+    E.eyes = v;
+    render();
+  });
+  on('figBrows', v => {
+    E.brows = v;
+    render();
+  });
+  on('figExpr', v => {
+    E.expr = v;
+    figureEditorDraw();
+  });
+  for (const el of $$('[data-fig-face]'))
+    /** @type {HTMLSelectElement} */ (el).onchange = () => {
+      const t = /** @type {keyof typeof E.facePick} */ (/** @type {HTMLElement} */ (el).dataset.figFace);
+      E.facePick[t] = /** @type {HTMLSelectElement} */ (el).value;
+      render();
+    };
   on('figTurn', v => {
     E.turn = +v;
     E.spin = false;
@@ -509,6 +745,57 @@ ACTIONS.figRowDel = (/** @type {DOMStringMap} */ d) => {
   const A = figureKitOf().accessories[figureEditor.pick.accessories];
   if (A.rows.length < 2) return;
   A.rows.splice(+(d.i || 0), 1);
+  changed();
+  render();
+};
+/* CH-6: the face */
+ACTIONS.figFacePart = (/** @type {DOMStringMap} */ d) => {
+  figureEditor.facePart = d.v || 'eyes';
+  render();
+};
+ACTIONS.figTalk = () => {
+  figureEditor.talk = !figureEditor.talk;
+  render();
+};
+ACTIONS.figBlink = () => {
+  figureEditor.blinkT = performance.now() + 200;
+  figureEditorRun();
+};
+/** the eye and brow styles tried on this person written into their `figure` */
+ACTIONS.figSaveFace = () => {
+  const E = figureEditor,
+    P = studioState.D.people[E.who];
+  if (!P || (!E.eyes && !E.brows)) return;
+  P.figure = { ...(P.figure || {}), ...(E.eyes ? { eyes: E.eyes } : {}), ...(E.brows ? { brows: E.brows } : {}) };
+  E.eyes = '';
+  E.brows = '';
+  changed();
+  render();
+  toast(`${E.who} has these eyes and brows now`);
+};
+/** an eye or brow style copied under a new name */
+ACTIONS.figFaceCopy = () => {
+  const E = figureEditor,
+    t = /** @type {'eyes' | 'brows'} */ (E.facePart),
+    F = figureKitOf().faces,
+    k = E.facePick[t],
+    n = uniqueKey(k, (/** @type {string} */ x) => !!F[t][x]);
+  F[t][n] = clone(F[t][k]);
+  E.facePick[t] = n;
+  changed();
+  render();
+};
+ACTIONS.figMarkDup = (/** @type {DOMStringMap} */ d) => {
+  const rows = figureKitOf().faces.mouths[figureEditor.facePick.mouths],
+    i = +(d.i || 0);
+  rows.splice(i + 1, 0, clone(rows[i]));
+  changed();
+  render();
+};
+ACTIONS.figMarkDel = (/** @type {DOMStringMap} */ d) => {
+  const rows = figureKitOf().faces.mouths[figureEditor.facePick.mouths];
+  if (rows.length < 2) return;
+  rows.splice(+(d.i || 0), 1);
   changed();
   render();
 };
