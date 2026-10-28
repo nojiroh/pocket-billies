@@ -791,6 +791,44 @@ The plan approved in advance (the owner's standing instruction); the browser che
 - **For UI-17:** the boss banner of the stage intro is UI-17's; the battle side gives it the boss's `alphaPhase`
   events (each with `shield`) and the plates' Alpha look.
 
+## UI-17 as built (2026-10-28, `claude/ui-17-idle-life`, into main)
+The plan approved in advance (the owner's standing instruction); the browser and phone checks skipped until the UI
+plan is done.
+- **The budget as code:** logic/idle-life.js lists the kinds of idle loop in the order they win (map, foil, forecast,
+  glint, bubble, stage, breathe, coin, logo, bloom; loops that mean something before decoration) and `idlePick` keeps
+  at most two (`IDLE_MAX`), none under Calm or Reduced. ui-idle.js (a page module) looks at what shows every 600 ms
+  (and at once when Animation or Flashes change), writes the picked kinds on `<html data-idle>`, and motion.css stops
+  every other idle loop. A kit part's loop (in a shadow root) takes its keyframes' name from `--idle-<kind>`, set only
+  while its kind plays. A page without ui-idle.js (the Studio, the gallery until its button) plays none.
+- **Counted:** `IDLE_LOOPS` and `SIGNAL_LOOPS` name every endless CSS loop in the game (38 rules: 14 idle, 24 that
+  say something: low HP, aim, news, loading, weather, a Billie's own frames); idle-life.test.mjs fails on a new
+  `infinite` animation until it is listed, and on an idle loop motion.css doesn't stop. Before UI-17 the title had
+  three idle loops (the coin, the logo, the gold sheen), the battle three (the camera's sway, the bloom, Fight's
+  glow), and the top bar's turning coin added one to every screen.
+- **Flashes, through SY-1's rule:** `sheenAlpha` is smear.js `flashFor` for a white flash: the glint and the foil at
+  full strength, at `FLASH_SOFT_MAX` (0.15) with Flashes off, none under Reduced (and Calm). ui-idle.js writes it as
+  `--sheen-a`.
+- **Glint:** the gold main action's sheen ran every 3.4 s (the doc: 6-8 s); now every 7 s, the sweep in its last
+  0.8 s, on `.pb.gold` and on pb-button gold. The red pulse keeps its own 3.4 s (it says "act now").
+- **Foil:** `<pb-foil>` (ui-kit.js), one layer: it fills its positioned box and sweeps the colour code's prism
+  (special, growth, good, value) across it every 5.6 s, transform only; `--foil-delay` offsets neighbours. On a Coat's
+  tag (unit-card.js), rare and mythical rows (`rarityFoilHTML`: Bag, shop, Perks, Workshop, Gene Bank, Team) and rare
+  and mythical pick cards. SY-6 can put the same element over the Billie, or copy its look into the sprite shader.
+- **Forecast:** today's icon (the Map's place card, the walk sheet's Today row, pb-forecast's today) sways 1 px and
+  6° every 3.6 s.
+- **The Map:** on one 2.4 s beat (`BOWL_LIFE`), the run's places you can reach next (a road from where you stand,
+  shown) grow up to 8% and back, your place's head bobs 3 px, the ring there pulses and your figure steps in place.
+  `worldBowlRunPin` returns the head's resting top and `meBox` keeps the figure's resting box, so UI-18's names stay
+  still. With nothing else moving only the flat overlay redraws, about 24 times a second; the old ring pulse and step
+  ran whenever the bowl redrew, under Calm too.
+- **Low HP:** the plate's red fill pulsed `brightness(1.5)` in two steps every 0.7 s; now opacity to 55% on the screen
+  edge's 1.3 s beat. (The screen edge's own pulse was already opacity.)
+- **Big moments, the HUD side** (battle.js `hudMoment`, from `showEvent`; battle-stage.js untouched): a level-up
+  bursts sky round its plate's level, a catch bursts teal round the pyramid (`pbBurst`: a ring and eight rays, 560 ms;
+  Reduced: the ring fades), and a boss or Alpha trainer's name banner plays inside `trainerIn`'s 1150 ms (240 in,
+  640 held, 180 out). `<pb-name-banner>` and `pbNameBanner(host, {name, kicker, tone, hold})` (ui-run-kit.js) are
+  the one component RL-14b's stage intro and VFX-16's VS splash call.
+
 ## Sessions (Part 2; each starts on `track/ui` after #266 merges)
 
 | # | Session | Does | Visible change | Done when |
@@ -806,7 +844,7 @@ The plan approved in advance (the owner's standing instruction); the browser che
 | UI-15 (done 2026-10-27, `claude/ui-15-less-clutter`) | Less clutter: battle and walk | the field strip, plates' "+N", long-press details, quiet command buttons; the hint, the Actions bob, the place card | battle and walk | element counts down per screen (logged by smoke); fast check green |
 | UI-16a (built 2026-10-28, `claude/ui-16a-motion`; checks after UI-18) | Alive: feedback | the motions wired everywhere, fly-to, tick-ups, the new sounds, Animation Calm, no `:host-context`, the five walk loops down to two | motion | frame check on the Graphics bench; reduced motion seen in every motion |
 | UI-16b (built 2026-10-28, `claude/ui-16b-battle-events`; checks after UI-18) | Alive: battle events | UI-14b's leftovers first (UI-15 had not finished): the plates' tag row on `markRow` and `pb-tag` (Atk..Spe on the stage chips, battle.js `statShortName`), the statuses as tags on the plates, Alpha one colour (the bad family; battle-screen.css's turn bar has it gold, its plate crimson); then the stamp, blips, effect pips, banners; with VFX-5/6 (smears under Calm) and RL-14b (shield phases, the stage intro) | battle motion | the battle golden record untouched (or remade alone, end states equal) |
-| UI-17 | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
+| UI-17 (built 2026-10-28, `claude/ui-17-idle-life`; checks after the UI plan) | Alive: idle life and big moments | glints, breathing nodes, the Coat's foil, the live forecast icon, the boss banner, catch and level-up bursts; Flashes for glints and foil; the loop budget | idle motion | the owner's phone check of feel and frame rate |
 | UI-18 (done 2026-10-28, `claude/ui-18-map-clutter`) | Less clutter: the Map | after WM-4b (#267) and WM-6, which own world-bowl.js: blur 10 to 3, Give up in ⋯, the folded place card | the Map | smoke's blur count for the map at 3 |
 
 About 13 sessions in all, plus the owner's phone checks after UI-8b, UI-8c, UI-12, UI-14b, UI-15 and UI-17. Tags `ui-10-done`

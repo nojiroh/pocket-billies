@@ -2,6 +2,98 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### UI track UI-17 - alive: idle life and big moments (two idle loops at most, glint, foil, forecast, the Map's life, low HP, bursts, the boss banner) - 2026-10-28
+Branch `claude/ui-17-idle-life`, made from UI-16a's `claude/ui-16a-motion` (main plus every finished UI step through
+UI-16a: draft PRs #276, #281, #280, #282, #284, #286, #288, #294 and #297). Merged in, in order (merges, not rebases):
+main (nothing new); UI-18's `claude/ui-18-map-clutter` (#298, with WM-5b #293 and WM-6 #296: docs both kept,
+uiTheme.json's motion UI-16a's, battle.js's field chip UI-18's markup argument, ui-lint saved again, hooks.js and
+art-code-refs.json remade); `track/style` (#289, SY-1..SY-3: music.json ui with UI-16a's four sounds and SY-3's stamp,
+`UI_SOUND_NAMES` all nine, ui-icons 91); then UI-16b's `claude/ui-16b-battle-events` (its HANDOFF entry had landed:
+its shared stamp motion replaced this session's interim pb-stamp fix, its field strip with the delayed hits kept).
+The track/style merge brought SY-3's pb-stamp with a `:host-context` rule, which UI-16a's motion.test forbids: fixed
+in its own commit, then superseded by UI-16b's. Its PR goes to main and shows those steps' and tracks' commits until
+their PRs merge. No Plan Mode (the owner's standing instruction): the plan was written as a message and carried out.
+Details: docs/phases/ui-track.md, "UI-17 as built". **Visible change: fewer loops, the right ones** (each screen
+plays at most two kinds of idle loop; the gold sheen comes every 7 s instead of 3.4; Coats and rare things shimmer;
+today's weather icon sways; on a run's map the next places breathe and your pin bobs; a level-up and a catch burst
+on the HUD; a boss's name slams in).
+- Changed:
+  - **logic/idle-life.js (new, in the Studio's logic worker):** `IDLE_KINDS` (map, foil, forecast, glint, bubble,
+    stage, breathe, coin, logo, bloom, with the selectors that find each on a page), `IDLE_MAX` 2, `idlePick` (none
+    under Calm or Reduced), `sheenAlpha` (SY-1's `flashFor` for a white flash), `IDLE_LOOPS` and `SIGNAL_LOOPS`.
+    tools/test/idle-life.test.mjs (4 tests: the budget over every set of kinds, the flash rule, every endless CSS
+    loop listed, every idle loop stopped by motion.css or by `--idle-<kind>`).
+  - **ui-idle.js (new page module, after ui-motion.js):** every 600 ms, on Animation or Flashes changing and on the
+    page hiding, writes the picked kinds on `<html data-idle>` and `--sheen-a`.
+  - **motion.css:** the idle gates (`html:not([data-idle~='k']) ... { animation: none }`), `--idle-glint`,
+    `--idle-foil`, `--idle-forecast` (keyframes names for kit parts), the glint's band, the foil's prism band, the
+    idle and burst times, `pb-glint`, `pb-wx-now`, the burst keyframes.
+  - **Glint:** base.css `.pb.gold::after` every 7 s (was 3.4), opacity `--sheen-a`; pb-button gold gets the same
+    glint; the red pulse split off with its own 3.4 s.
+  - **Foil:** ui-kit.js `<pb-foil>`; ui-marks-kit.js `rarityFoilHTML`, put inside the rare and mythical rows of the
+    Bag, shop (relics and wares), Perks, Workshop, Gene Bank, Team (boxes and unit rows); pb-pick-card on rare and
+    mythical; a Coat's tag (units.css: positioned, clipped).
+  - **Forecast:** `.wx-now` on today's icon in map-tab.js `runTodayHTML` and walk-tab.js's status sheet; pb-forecast's
+    today icon.
+  - **world-bowl.js:** `BOWL_LIFE` (2.4 s beat, 42 ms overlay frame, 8% growth, 3 px bob), `bowlLifeOn` (reads
+    `data-idle`), `worldBowlRunPin(..., life)`; the ring's pulse and the figure's step on the same beat, still when the
+    map's life isn't playing; the overlay alone redraws for it.
+  - **battle-screen.css:** the plate's low-HP fill pulses on opacity (`low`, 1.3 s).
+  - **Big moments:** ui-kit.js `pbBurst` (ui-kit.css `.pb-burst`); ui-run-kit.js `<pb-name-banner>` and
+    `pbNameBanner`; battle.js `hudMoment` (from `showEvent`) and `HUD_BURSTS`.
+  - **The gallery:** a section "Idle life and big moments" (data-shot `alive`): the foil, glints, today's icon (still
+    until Play the idle loops), the bursts and the banner on buttons.
+- Found (figures checked):
+  - The glint ran every 3.4 s (Part 2: 6-8 s), and nothing stopped it under Calm.
+  - The low-HP screen edge already pulsed on opacity; the filter pulse was the plate's fill (`low`, brightness 1.5).
+  - Endless loops in the game's CSS: 38 rules (opening-old.css aside), 14 idle and 24 that say something. Before
+    this the title showed three idle loops (coin, logo, gold sheen), the battle three (sway, bloom, Fight's glow),
+    and the top bar's coin turned on every screen; the Map's ring pulse and figure step ran under Calm.
+  - The Map's names already took the figure's resting box (UI-18 left the step out of `meBox`); the pins' tops now
+    stay at rest too.
+  - The banner component didn't exist yet (VFX-16 hasn't started); RL-14b's join intro is the stage's (3D), so the
+    banner is called from the battle's `trainerIn` line, before the join.
+- Decided for the owner, to review:
+  - **The order idle kinds win in** (map, foil, forecast, glint, bubble, stage, breathe, coin, logo, bloom): loops
+    that mean something before decoration. So on the Map the breathing places and today's icon play and the Travel
+    glint doesn't; on the Bag the foil and the glint; in battle Fight's glow and the camera's sway, not the bloom; on
+    the title the glint and the coin, not the logo. One line in idle-life.js to reorder.
+  - **Fight's glow, the profile badges' glint and the gold sheen are one kind (glint);** the coins (top bar, title)
+    one kind; the dialogue bubble's three drifts one kind; the Map's breathing, bob, ring and step one kind (one beat).
+  - **"Reachable" places** are the run's shown places one road from where you stand; the hub's pins don't breathe.
+  - **Foil on rare and mythical only** (not uncommon), on the row's whole frame, over its content (see-through), and
+    on every Coat tag. **Coat foil in menus only**: SY-6 owns the Billie in the world.
+  - **The burst's colours:** level-up sky (growth, "level-ups go sky"), catch teal (good). Sizes 56 and 96 px.
+  - **The boss banner** for trainers with `boss` (bosses.json) or `alpha` (a run's boss), kicker "Boss", the bad
+    family's red, 240 + 640 + 180 ms inside `trainerIn`'s 1150. No sound (a `banner` sound can be added as data later,
+    music.json ui).
+  - **Pages without ui-idle.js play no idle loops** (the Studio, the checks' fixtures), which also keeps pictures
+    still.
+- Risky:
+  - Every idle loop now depends on ui-idle.js: if it fails to load, the game is still (nothing breaks).
+  - The scan runs `querySelectorAll` over ten selectors every 600 ms (with `checkVisibility`); cheap, not measured on a
+    phone.
+  - Rows with `<pb-foil>` have one more element (smoke's element counts) and a positioned overlay above their text
+    (see-through, pointer-events none).
+  - The Map's overlay redraws about 24 times a second while its life plays (2D only); not measured on a phone.
+  - The banner sits in `#stage` at z-index 7 (over the plates); UI-16b's effectiveness banners use their own layer.
+  - Nothing here has been seen on a phone (the owner's rule).
+- Verified: lint (ceilings lowered), typecheck, format, `npm test` (all pass), check:data, check:modules after each
+  change and after each merge. No browser run.
+- Skipped until the UI plan is done (the owner's rule), needed later:
+  - check-fast and check-quick: the Map step (breathing pins; the overlay's redraws), battle steps (the banner over a
+    boss's intro, the bursts on a level-up and a catch), the Bag and shop (foil on rare rows), the title; smoke's
+    element counts (pb-foil adds one a rare row; a burst or banner shown at the moment of counting adds one);
+  - the Studio check (the logic worker with idle-life.js);
+  - the gallery: the new `alive` picture needs `--update --only=alive`; pictures of rare rows and pick cards gain a
+    still pb-foil (invisible while still);
+  - the owner's phone check (Part 2's "done when" for UI-17): how the glint, foil, forecast icon and the Map's life
+    feel; frame rate on the Map with its life playing; Calm and Reduced stopping all of it; Flashes off softening the
+    glint and foil; the bursts and the boss banner.
+- Next: the session that runs every skipped check and fixes what they find (the UI plan's end); SY-6 can reuse
+  `<pb-foil>`'s look; VFX-16 and RL-14b can call `pbNameBanner`.
+- Tag to suggest (sessions can't push tags): `ui-17-done` on this entry's commit.
+
 ### UI track UI-16b - alive: battle events (the plates' marks, stamps, rises and falls, blips, effect pips, banners; one stamp motion; Calm) - 2026-10-28
 Branch `claude/ui-16b-battle-events`, made from UI-16a's `claude/ui-16a-motion` (main plus UI-8b, UI-8c, UI-11 to
 UI-16a; draft PRs #276, #281, #280, #282, #284, #286, #288, #294, #297). Main merged in first (nothing new), then
