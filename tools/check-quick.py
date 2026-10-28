@@ -48,8 +48,9 @@ CHECK_SHOP = "SHOPS.check_shop=SHOPS.check_shop||{name:'Corner Store',keeper:'Ma
 # counts; the budget is 3 besides the two bars (uiBlurCount({bars:false})), as it was set while the bars existed
 BLUR_BUDGET = 3
 # UI-18: the Map's ceiling (10) went: it has 0 blurred surfaces smoke can count (its header, card and places list are
-# solid), under the budget
-BLUR_CEILING = {'shop': 5}
+# solid), under the budget. The UI checks session: the shop's (5) went too, at 3 besides the bars; every screen is
+# held to the budget
+BLUR_CEILING = {}
 # UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps, lowered when
 # a screen sheds pieces. Set from UI-15's counts (before it: walk 27, map 25, team 28, guide 39, profile 55, shop 73,
 # battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in. Team 28 -> 29 in the UI
