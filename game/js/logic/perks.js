@@ -12,7 +12,7 @@
    RL-12); RL-11's unlocks may narrow the pool later. PK-4: a Perk with `needs` (a condition on the team, such as
    team:Fire) is offered only to a team it holds for (PokeRogue's rule: a type Perk needs a Billie of its type); the
    team is given as each Billie's types (perkTeamOf), and with none given (a preview from the seed alone) needs are
-   not asked.
+   not asked. PK-5: `bots` holds while the run's map has a scrapyard not yet visited (perkRunBots).
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { Perk } from '../../types/game-data' */
@@ -44,6 +44,8 @@ expose({
   perkOfferOrder: [() => perkOfferOrder, v => (perkOfferOrder = v)],
   perkPool: [() => perkPool],
   perkPrice: [() => perkPrice],
+  // @ts-expect-error -- replaced on purpose
+  perkRunBots: [() => perkRunBots, v => (perkRunBots = v)],
   // @ts-expect-error -- replaced on purpose
   perkShelf: [() => perkShelf, v => (perkShelf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -86,11 +88,21 @@ export function perkWeight(run, id, perks, rule, team) {
 /** PK-4: a team as the offers see it: each Billie's types @param {any[]} team the save's team
  * @returns {string[][]} */
 export const perkTeamOf = team => (team || []).map(m => billyTypes(m));
+/** PK-5: can the run still meet bots (for `needs: bots`): a scrapyard on its map not yet visited (every wild one
+ * there is a bot: factions.js factionWildChance). True when the run or its map isn't known
+ * @param {Run | null | undefined} run */
+export function perkRunBots(run) {
+  if (!run || !run.map) return true;
+  return run.map.nodes.some((n, i) => n.type === 'scrapyard' && !(run.path || []).includes(i));
+}
 /** PK-4: does a Perk's `needs` hold for a team (each of its conditions, effects.js fxCond, with the team alone)?
- * True without needs, or with no team given @param {Perk} P @param {string[][]} [team] */
-export function perkFits(P, team) {
+ * True without needs, or with no team given. PK-5: `bots` asks the run (perkRunBots)
+ * @param {Perk} P @param {string[][]} [team] @param {Run} [run] */
+export function perkFits(P, team, run) {
   if (P.needs == null || !team) return true;
-  return (Array.isArray(P.needs) ? P.needs : [P.needs]).every(c => fxCond(c, { team }));
+  return (Array.isArray(P.needs) ? P.needs : [P.needs]).every(c =>
+    c === 'bots' ? perkRunBots(run) : fxCond(c, { team })
+  );
 }
 /** the Perks that may be drawn: in perks.json, not held, with a rarity weight above 0, in perks.json's order (RF-4:
  * was by id; the data's order lets an id change without changing a seed's offers); PK-4: whose needs hold for the
@@ -105,7 +117,7 @@ export const perkPool = (run, perks, rule, also = [], team) =>
           !run.perks.includes(id) &&
           !also.includes(id) &&
           (rule.rarity[perks[id].rarity] || 0) > 0 &&
-          perkFits(perks[id], team)
+          perkFits(perks[id], team, run)
       );
 
 /** draw up to n Perks from a stream, by rarity weight, none twice; PK-4: by `weigh` when given (perkWeight: the bias

@@ -2238,8 +2238,9 @@ export function fxPassiveProblems(f, at, D, problem) {
 /** PK-4: the themes a Perk's tags may name besides types: the Perk sets planned for PK-8 (perks-track.md 5.7, which
  * makes them a data section) */
 export const PERK_THEMES = ['office', 'influencer', 'tech', 'lab', 'adventurer', 'weather', 'classics'];
-/** PK-4: the conditions a Perk's needs can name: those an offer knows (the team) */
-export const PERK_NEEDS = ['team', 'mono'];
+/** PK-4: the conditions a Perk's needs can name: those an offer knows (the team); PK-5: bots, a scrapyard still
+ * ahead on the run's map (perks.js perkRunBots: needs alone, not a row's condition) */
+export const PERK_NEEDS = ['team', 'mono', 'bots'];
 /** PK-4: a Perk's needs: one condition or a list of 1-4, each a condition word (fxCondProblem) of PERK_NEEDS
  * @param {any} v @param {string} at @param {any} D @param {(what: string) => void} problem */
 export function perkNeedsProblems(v, at, D, problem) {
@@ -2247,6 +2248,7 @@ export function perkNeedsProblems(v, at, D, problem) {
   const L = Array.isArray(v) ? v : [v];
   if (!L.length || L.length > 4) problem(`${at}: one condition, or a list of 1-4`);
   for (const c of L) {
+    if (c === 'bots') continue;
     const why = fxCondProblem(c, D),
       key = typeof c === 'string' ? c.split(':')[0] : '';
     if (why) problem(`${at}: ${why}`);
