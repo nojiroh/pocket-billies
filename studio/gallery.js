@@ -13,7 +13,7 @@ const press = (group, value) =>
 
 document.addEventListener('click', ev => {
   const b = /** @type {HTMLElement} */ (ev.target).closest(
-    '[data-g],[data-m],#gToastMore,#gFloat,#gSheetBtn,#gPayoutPlay,#gPickFlip,#gCoinUp'
+    '[data-g],[data-m],#gToastMore,#gFloat,#gSheetBtn,#gPayoutPlay,#gPickFlip,#gCoinUp,#gStampPlay'
   );
   if (!b) return;
   const d = b.dataset;
@@ -48,7 +48,12 @@ document.addEventListener('click', ev => {
     const c = /** @type {any} */ (document.getElementById('gPickDown'));
     if (c.facedown) c.reveal();
     else c.facedown = true;
-  } else if (b.id === 'gCoinUp') {
+  } else if (b.id === 'gStampPlay')
+    // SY-3: each stamp slams on again, one after another
+    document
+      .querySelectorAll('#gStamps pb-stamp')
+      .forEach((el, i) => setTimeout(() => /** @type {any} */ (el).play(), i * 160));
+  else if (b.id === 'gCoinUp') {
     const c = /** @type {any} */ (document.querySelector('pb-coin[kind="research"]'));
     c.value += 1000;
   }
@@ -62,6 +67,16 @@ toastEl.n = 1;
 document
   .querySelectorAll('.chip[data-ty]')
   .forEach(c => c.insertAdjacentHTML('afterbegin', typeGlyphHTML(/** @type {HTMLElement} */ (c).dataset.ty)));
+
+// SY-3: the stamps say the data's words (factions.json look.stamps) and its first form number
+const bureauLook = /** @type {any} */ (globalThis).GAMEDATA?.factions?.factions?.bureau?.look;
+if (bureauLook) {
+  document.querySelectorAll('#gStamps pb-stamp').forEach(el => {
+    const w = bureauLook.stamps[/** @type {HTMLElement} */ (el).dataset.k];
+    if (w) el.setAttribute('word', w);
+  });
+  document.getElementById('gForm').textContent = bureauLook.forms[0];
+}
 
 // UI-3: the Studio's UI section shows this page in a frame (gallery.html?studio=1, without the bar) and hands it the
 // look being edited: the theme, light or dark, the width, reduced motion, Settings' text size and the screen whose

@@ -70,6 +70,11 @@
   .g-list { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
   .g-list li { padding: var(--s2) var(--s3); font: 600 15px/1.2 var(--font-voice); }
   .g-dark { padding: var(--s4); border-radius: var(--r-lg); background: #241c3a; }
+  /* SY-3: the Bureau's emblem drawn in whole pixels, its form line, stamps with room for their slant */
+  .g-emblem { image-rendering: pixelated; }
+  .g-form { display: grid; gap: 2px; margin-right: auto; font: 600 var(--fs-caption)/1.2 var(--font-voice); color: var(--text2); }
+  .g-form b { color: var(--text); font-size: 15px; }
+  .g-stamps { gap: var(--s4); padding: var(--s2) var(--s1); }
   /* UI-3: inside the Studio's UI section the Studio holds the switches */
   .g-studio .g-bar { display: none; }
   .g-studio body { padding-top: var(--s2); }
@@ -225,6 +230,20 @@
   <div class="g-stack">
     <pb-panel><pb-payout id="gPayout" total="1180" total-label="Research" rows='[{"label":"Moneys left","note":"340 Moneys at half","value":170},{"label":"Items at half price","value":95},{"label":"Billies released","note":"2 Billies","value":60},{"label":"Nodes cleared","note":"7 × 75","value":525},{"label":"Win bonus","value":400},{"label":"Unpaid clinic bill","value":-70}]'></pb-payout></pb-panel>
     <div class="g-row"><button class="pb small" id="gPayoutPlay">Play again</button><button class="pb small" id="gCoinUp">Add 1,000 Research to the chip above</button></div>
+  </div>
+</section>
+
+<!-- SY-3: the Bureau's mark (docs/phases/style-track.md): its emblem (game/art/ui/bureau.svg) and pb-stamp, with the
+     words from factions.json look.stamps (gallery.js puts the data's words in) -->
+<section class="g-sec" data-shot="stamps"><h2>Bureau stamps</h2><p>pb-stamp (SY-3): a word in a rough double border, red ink, slammed on at a slant; only where the Bureau is. The emblem is a bean on a lost-property tag (art/ui/bureau.svg). The words are factions.json's (look.stamps).</p>
+  <div class="g-stack">
+    <pb-panel><div class="g-stack">
+      <div class="g-row"><img class="g-emblem" src="../game/art/ui/bureau.svg" width="36" height="36" alt="The Bureau's emblem"><span class="g-form"><b>Bureau of Lost, Found and Beans</b><span class="tnum" id="gForm">Form 7B</span></span></div>
+      <div class="g-row"><img class="g-emblem" src="../game/art/ui/bureau.svg" width="22" height="22" alt=""><img class="g-emblem" src="../game/art/ui/bureau.svg" width="36" height="36" alt=""><img class="g-emblem" src="../game/art/ui/bureau.svg" width="72" height="72" alt=""></div>
+      <div class="g-row g-stamps" id="gStamps"><pb-stamp still data-k="retrieved" word="RETRIEVED" tilt="-8"></pb-stamp><pb-stamp still data-k="void" word="VOID" tilt="6"></pb-stamp><pb-stamp still data-k="denied" word="DENIED" tilt="-4"></pb-stamp><pb-stamp still data-k="pending" word="PENDING" tilt="9"></pb-stamp><pb-stamp still data-k="filed" word="FILED" tilt="-10"></pb-stamp></div>
+      <div class="g-row g-stamps"><pb-stamp still word="DENIED" size="sm"></pb-stamp><pb-stamp still word="DENIED"></pb-stamp><pb-stamp still word="DENIED" size="lg"></pb-stamp></div>
+    </div></pb-panel>
+    <div class="g-row"><button class="pb small" id="gStampPlay">Stamp them again</button></div>
   </div>
 </section>
 
