@@ -610,6 +610,12 @@ session (2026-10-28):
   lower middle of the stage from 0 to 1300 ms; the VS splash fits around it.
 - **The sprite shader:** SY-6's `uFoil` (walk-shaders.js ~181 and the instanced ~511) and VFX-9's `uHit` go into the
   same fragment shader; whichever lands second merges main first and keeps both. Both are off under Reduced motion.
+  VFX-9 landed first on track/vfx (d7a64e60): `uniform vec4 uGhost,uHit;` and, after the light and vRip, before the
+  final fogit, `col=mix(col,uHit.rgb,uHit.a);`. The order agreed: SY-6's `if(uFoil.x>0.){...}` block goes before that
+  line (a hit's flash reads over the sheen). A rig item with `hit` draws on the plain sprite program (walk/sprites.js),
+  as a coated rig whose band is crossing will. `uHit` shows the same sprite flashes rigTint baked in before (send-out,
+  recall, heal, the limiter's held flash), under the same settings: none of them was gated by Reduced motion, and
+  VFX-9 doesn't change that (VFX-13/14 can).
 
 ## Bugs found (VFX-7) and where they're fixed
 - Flashes doesn't reach the battle's flash, the impact frame, the chromatic flash or the wipe: fixed by the style

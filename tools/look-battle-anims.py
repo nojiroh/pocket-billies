@@ -17,8 +17,8 @@ gives the same film.
 - With --measure (and --only=; VFX-9): each film drawn frame by frame with the GPU counters on (engine/gpu-counters.js):
   the effects pass's draws a frame (the most and the mean, and the same on the stage at rest before it), the battle
   effects' own draws (the `battleFx` tag, where the build has it), the rigs' redraws and uploaded bytes (rigStats) and
-  the processor's time a frame (the stage's and the renderer's tasks, real time; headless, so only a comparison of two
-  builds on one machine means anything). measure.json, and a table on the console.
+  the time a frame (the stage's and the renderer's tasks and gl.finish, real time: headless the GPU is software, so
+  only two builds measured side by side on one machine compare). measure.json, and a table on the console.
 
     python3 tools/look-battle-anims.py                       # traces of all moves, validation/look-battle-anims/
     python3 tools/look-battle-anims.py --out=DIR             # somewhere else (e.g. a film before a change)
@@ -95,7 +95,7 @@ __film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__fil
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
 __film.measure=(key,mid,si,res,frames,rest)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
  TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],restEff:[],restMs:[]};
- const one=(e,m)=>{countersOn(gl);const t0=rn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);const dt=rn()-t0;const c=gpuCounters.cur;
+ const one=(e,m)=>{countersOn(gl);const t0=rn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);gl.finish();const dt=rn()-t0;const c=gpuCounters.cur;
   e.push(c[E*FIELD_COUNT+F_DRAW]);if(m)out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
  __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
  __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
