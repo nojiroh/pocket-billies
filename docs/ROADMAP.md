@@ -216,7 +216,9 @@ town node needs it.
   VFX-10 (effect art: tools/build-battle-anims.py and 44 grayscale strips in game/art/battle/anims, battleAnims.json
   sprites, ramps and iconSprites, the strips in the pool's atlas coloured by the type's ramp at the rigs' pixel size,
   12/24 fps frames, the eroding rim; the Art browser's ramp previews; the particle picker fixed) built 2026-10-28;
-  wave 1 goes on with VFX-12 and VFX-15 on side branches. **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  wave 1 goes on with VFX-12 and VFX-15 on side branches. VFX-15 (the stage: a battle mood that darkens and tints on
+  big moves, the row wave, heat, the weather on the stage, battle scars in VFX-10's decals) built 2026-10-28 on
+  `claude/vfx-15-stage` (PR #311 into `track/vfx`). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
