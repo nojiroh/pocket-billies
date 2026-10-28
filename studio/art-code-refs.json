@@ -1625,8 +1625,8 @@
   "bubble": [
    "game/js/logic/idle-life.js:50",
    "game/js/logic/idle-life.js:89",
-   "game/js/logic/sound-bake.js:80",
-   "game/js/logic/sound-bake.js:398",
+   "game/js/logic/sound-bake.js:100",
+   "game/js/logic/sound-bake.js:728",
    "game/js/logic/soundscape.js:117",
    "game/js/logic/soundscape.js:123",
    "game/js/logic/ui-dials.js:103"
@@ -1671,8 +1671,8 @@
    "game/js/shop.js:172",
    "game/js/shop.js:182",
    "game/js/shop.js:251",
-   "game/js/sound.js:521",
-   "game/js/sound.js:1763",
+   "game/js/sound.js:550",
+   "game/js/sound.js:1807",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:96",
@@ -1819,6 +1819,9 @@
    "game/js/unit-card.js:172",
    "game/js/unit-card.js:178"
   ],
+  "key": [
+   "game/js/logic/music-studio.js:114"
+  ],
   "leaf": [
    "game/js/battle.js:356",
    "game/js/boot.js:137",
@@ -1900,6 +1903,7 @@
    "game/js/walk/quality-cull.js:185"
   ],
   "scale": [
+   "game/js/logic/music-studio.js:115",
    "game/js/logic/ui-dials.js:219"
   ],
   "sheet": [
@@ -1956,7 +1960,6 @@
    "game/js/ui.js:237"
   ],
   "up": [
-   "game/js/audio/tracker.js:976",
    "game/js/augment-screen.js:148",
    "game/js/augment-screen.js:259",
    "game/js/battle-stage.js:2303",
@@ -1972,7 +1975,9 @@
    "game/js/logic/data-checks.js:891",
    "game/js/logic/data-checks.js:935",
    "game/js/logic/marks.js:109",
-   "game/js/logic/music-studio.js:71",
+   "game/js/logic/music-patterns.js:51",
+   "game/js/logic/music-patterns.js:103",
+   "game/js/logic/music-studio.js:75",
    "game/js/logic/online-legal.js:242",
    "game/js/logic/person-view.js:5",
    "game/js/logic/person-view.js:56",
