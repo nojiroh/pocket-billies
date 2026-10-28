@@ -393,3 +393,133 @@ test("SND-8b: a song's trim (dB) is its fader's top; a jingle ducks it to 0.15 o
   assert.equal(p.level, 1);
   assert.equal(trackerNight({ ...town, trim: 6 }).trim, 6, 'the night version keeps it');
 });
+
+/** a context that makes real buffers and records the sources and gains it makes (the bank's tests) */
+function bankContext(rate) {
+  const made = { sources: [], gains: [] },
+    param = () => {
+      const p = { value: 0, calls: [] };
+      for (const m of ['setValueAtTime', 'linearRampToValueAtTime', 'cancelScheduledValues', 'setTargetAtTime'])
+        p[m] = (...a) => p.calls.push([m, ...a]);
+      return p;
+    },
+    node = () => ({
+      to: [],
+      connect(n) {
+        this.to.push(n);
+      },
+      disconnect() {},
+    });
+  const any = () => new Proxy(function () {}, { get: (t, k) => (k === 'value' ? 0 : any()), apply: () => any() });
+  const t = {
+    currentTime: 0,
+    sampleRate: rate,
+    made,
+    createBuffer: (ch, n, r) => {
+      const d = Array.from({ length: ch }, () => new Float32Array(n));
+      return { length: n, sampleRate: r, getChannelData: i => d[i], copyToChannel: (a, i) => d[i].set(a) };
+    },
+    createBufferSource: () => {
+      const s = {
+        ...node(),
+        playbackRate: param(),
+        started: null,
+        start: at => (s.started = at),
+        stop: at => (s.stopped = at),
+      };
+      made.sources.push(s);
+      return s;
+    },
+    createGain: () => {
+      const g = { ...node(), gain: param() };
+      made.gains.push(g);
+      return g;
+    },
+  };
+  return new Proxy(t, { get: (o, k) => (k in o ? o[k] : any()) });
+}
+const { soundBakeBank, SOUND_BAKE_BUDGET } = /** @type {any} */ (globalThis);
+
+test('SND-9: the bank bakes in slices, once per rate; bankReady resolves when every zone is in', async () => {
+  const c = bankContext(22050),
+    T = trackerCreate(c, {}, {}),
+    slices = soundBakeBank.slices;
+  await T.bankReady('harp');
+  const E = soundBakeBank.entries.get('harp@22050');
+  assert.ok(E.zones.every(Boolean));
+  assert.ok(soundBakeBank.slices - slices > 1, 'more than one slice');
+  for (const z of E.zones) assert.equal(z.buffer.sampleRate, 22050, "a buffer at the context's own rate");
+  /* a second context at the same rate bakes nothing again */
+  const zones = soundBakeBank.zones,
+    T2 = trackerCreate(bankContext(22050), {}, {});
+  await T2.bankReady(['harp']);
+  assert.equal(soundBakeBank.zones, zones);
+  /* the stats say what the debug log needs */
+  const S = T.bankStats();
+  assert.ok(S.instruments.includes('harp@22050 10/10'));
+  assert.ok(S.slices > 0 && S.sliceMaxMs >= 0 && S.lastSlicesMs.length > 0 && S.mb > 0);
+  /* an instrument that doesn't exist is null, not an error */
+  assert.deepEqual(await T.bankReady('nothing'), [null]);
+});
+
+test('SND-9: sampleVoice is one buffer source and one gain, the nearest zone moved to the note, its loop held', async () => {
+  const c = bankContext(16000),
+    T = trackerCreate(c, {}, {}),
+    out = {};
+  assert.equal(T.sampleVoice(out, { inst: 'harp', midi: 60, t: 0, dur: 1 }), null, 'nothing baked yet');
+  await T.bankReady('harp');
+  const s0 = c.made.sources.length,
+    g0 = c.made.gains.length,
+    started = T.started,
+    v = T.sampleVoice(out, { inst: 'harp', midi: 61, t: 1, dur: 2, vol: 0.3 });
+  assert.equal(c.made.sources.length - s0, 1);
+  assert.equal(c.made.gains.length - g0, 1);
+  assert.equal(T.started, started + 1);
+  const E = soundBakeBank.entries.get('harp@16000'),
+    Z = E.zones.find(z => z.lo <= 61 && z.hi >= 61);
+  assert.equal(v.source.buffer, Z.buffer);
+  assert.ok(Math.abs(v.source.playbackRate.value - Math.pow(2, (61 - Z.root) / 12)) < 1e-12);
+  assert.ok(v.source.loop && v.source.loopStart === Z.loopStart && v.source.loopEnd === Z.loopEnd);
+  assert.deepEqual(v.source.to, [v.gain]);
+  assert.deepEqual(v.gain.to, [out]);
+  assert.equal(v.source.started, 1);
+  assert.ok(v.source.stopped > 3);
+  /* the gain: its level, then the pluck's tail once the loop starts, then the release at the note's end */
+  const calls = v.gain.gain.calls;
+  assert.deepEqual(calls[0], ['setValueAtTime', 0.3, 1]);
+  assert.equal(calls.at(-1)[0], 'setTargetAtTime');
+  assert.equal(calls.at(-1)[2], 3);
+});
+
+test('SND-9: past the budget the least recently played zone goes; a note there plays from the nearest and bakes it again', async () => {
+  /* the earlier tests' zones are older than these: only this test's count */
+  soundBakeBank.entries.clear();
+  const c = bankContext(12000),
+    T = trackerCreate(c, {}, {});
+  await T.bankReady('harp');
+  const E = soundBakeBank.entries.get('harp@12000');
+  /* play every zone but the lowest, so the lowest is the one played longest ago */
+  for (const z of E.zones.slice(1)) T.sampleVoice({}, { inst: 'harp', midi: z.root, t: 0, dur: 0.1 });
+  const other = soundBakeBank.other,
+    low = E.zones[0];
+  const bank = () =>
+    [...soundBakeBank.entries.values()].reduce((a, e) => a + e.zones.reduce((b, z) => b + (z ? z.bytes : 0), 0), 0);
+  try {
+    /* the other buffers fill the budget but for less than the bank holds: something must go */
+    const room = SOUND_BAKE_BUDGET - bank() + 1;
+    soundBakeBank.other = () => room;
+    const dropped = soundBakeBank.dropped;
+    /* baking one more zone (a fresh rate's single zone) prunes */
+    E.zones[E.zones.length - 1] = null;
+    await T.bankReady('harp');
+    assert.ok(soundBakeBank.dropped > dropped);
+    assert.equal(E.zones[0], null, 'the least recently played zone went');
+    soundBakeBank.other = () => 0;
+    const v = T.sampleVoice({}, { inst: 'harp', midi: low.root, t: 0, dur: 0.1 });
+    assert.ok(v && v.source.buffer !== low.buffer, 'the nearest zone left plays it');
+    await T.bankReady('harp');
+    assert.ok(E.zones[0], 'and the dropped zone is baked again');
+  } finally {
+    soundBakeBank.other = other;
+  }
+});

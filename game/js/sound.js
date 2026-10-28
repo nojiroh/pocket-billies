@@ -194,6 +194,8 @@ function initSound() {
       run: MUSIC.run,
       levels: () => soundEngine.L,
       fx: soundEngine.fx,
+      /* SND-9: the beds' noise counts toward the baked buffers' budget (the tracker's bank) */
+      memory: () => (ambience.noise ? (ambience.noise.pink.length + ambience.noise.brown.length) * 4 : 0),
     });
     soundEngine.tracker = T;
     soundEngine.echoIn = T.echoIn;

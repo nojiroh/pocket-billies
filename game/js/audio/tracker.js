@@ -6,11 +6,24 @@
    noise buffer through filters, and a kick; a soft echo that every voice can send to. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { SOUND_BAKE_INSTRUMENTS, soundBakeRoots, soundBakeZoneFor, soundBakeZoneSteps } from '../logic/sound-bake.js';
 /* eslint-disable no-func-assign */
 expose({
   SCALES: [() => SCALES],
+  SOUND_BAKE_BUDGET: [() => SOUND_BAKE_BUDGET],
+  SOUND_BAKE_SLICE_MS: [() => SOUND_BAKE_SLICE_MS],
   midiToFrequency: [() => midiToFrequency],
   songRandom: [() => songRandom, v => (songRandom = v)],
+  soundBakeBank: [() => soundBakeBank],
+  soundBakeBytes: [() => soundBakeBytes, v => (soundBakeBytes = v)],
+  soundBakeEntry: [() => soundBakeEntry, v => (soundBakeEntry = v)],
+  soundBakeKeep: [() => soundBakeKeep, v => (soundBakeKeep = v)],
+  soundBakeNow: [() => soundBakeNow],
+  soundBakePrune: [() => soundBakePrune, v => (soundBakePrune = v)],
+  soundBakeSlice: [() => soundBakeSlice, v => (soundBakeSlice = v)],
+  soundBakeStart: [() => soundBakeStart, v => (soundBakeStart = v)],
+  soundBakeStats: [() => soundBakeStats, v => (soundBakeStats = v)],
+  soundBakeWant: [() => soundBakeWant, v => (soundBakeWant = v)],
   trackerArc: [() => trackerArc, v => (trackerArc = v)],
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
@@ -195,6 +208,153 @@ function trackerRecipe(songs, name, run) {
   }
   return D;
 }
+/* ---------- SND-9: the bank ----------
+   Baked instruments (logic/sound-bake.js) as AudioBuffers, kept here at module level by (instrument, sample rate): a
+   buffer plays in any context, so a second context (the Studio's, check-sound's) never bakes again. Every buffer is
+   made at its context's own rate. Baking runs zone by zone in setTimeout slices that stop after about 2.5 ms of work
+   (iOS Safari has no requestIdleCallback), so no frame waits on it; each slice's time is kept for the debug log. The
+   bank and the other baked buffers (the beds' noise, the tracker's noise, the reverb's impulse) stay within
+   SOUND_BAKE_BUDGET together: past it the least recently played zone is dropped (a note then plays from the nearest
+   zone left, and the dropped one is baked again) */
+const SOUND_BAKE_BUDGET = 6 * 1024 * 1024;
+const SOUND_BAKE_SLICE_MS = 2.5;
+const soundBakeBank = {
+  /** 'harp@48000' -> { id, R, rate, ctx, zones: (zone | null)[], used: number[], queued: Set, wait: [] } */
+  entries: new Map(),
+  queue: [],
+  timer: 0,
+  /* a play counts up: the zone played longest ago has the smallest count */
+  clock: 0,
+  /* the other baked buffers' bytes (the beds' noise, the tracker's noise, the impulse), from the last tracker made */
+  other: () => 0,
+  ms: 0,
+  zones: 0,
+  dropped: 0,
+  slices: 0,
+  sliceMaxMs: 0,
+  lastSlicesMs: [],
+};
+const soundBakeNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+/* the bank's entry for an instrument at a context's rate (made empty the first time) */
+function soundBakeEntry(id, c) {
+  const R = SOUND_BAKE_INSTRUMENTS[id];
+  if (!R) return null;
+  const key = id + '@' + c.sampleRate;
+  let E = soundBakeBank.entries.get(key);
+  if (!E) {
+    const n = soundBakeRoots(R).length;
+    E = {
+      id,
+      key,
+      R,
+      rate: c.sampleRate,
+      ctx: c,
+      zones: new Array(n).fill(null),
+      used: new Array(n).fill(0),
+      queued: new Set(),
+      wait: [],
+    };
+    soundBakeBank.entries.set(key, E);
+  }
+  return E;
+}
+/* bakes what an entry lacks; resolves with the entry once every zone is baked */
+function soundBakeWant(E) {
+  E.zones.forEach((z, i) => {
+    if (!z && !E.queued.has(i)) {
+      E.queued.add(i);
+      soundBakeBank.queue.push({ make: () => soundBakeZoneSteps(E.R, E.rate, i), keep: Z => soundBakeKeep(E, i, Z) });
+    }
+  });
+  if (!E.queued.size) return Promise.resolve(E);
+  soundBakeStart();
+  return new Promise(res => E.wait.push(res));
+}
+/* the slices start (when they aren't running) */
+function soundBakeStart() {
+  if (!soundBakeBank.timer) soundBakeBank.timer = setTimeout(soundBakeSlice, 0);
+}
+/* one slice of baking: zone steps until about SOUND_BAKE_SLICE_MS have passed */
+function soundBakeSlice() {
+  const B = soundBakeBank,
+    t0 = soundBakeNow();
+  let job;
+  while ((job = B.queue[0])) {
+    if (!job.it) job.it = job.make();
+    const r = job.it.next();
+    if (r.done) {
+      B.queue.shift();
+      job.keep(r.value);
+    }
+    if (soundBakeNow() - t0 > SOUND_BAKE_SLICE_MS) break;
+  }
+  const dt = soundBakeNow() - t0;
+  B.ms += dt;
+  B.slices++;
+  B.sliceMaxMs = Math.max(B.sliceMaxMs, dt);
+  B.lastSlicesMs.push(Math.round(dt * 100) / 100);
+  if (B.lastSlicesMs.length > 16) B.lastSlicesMs.shift();
+  B.timer = B.queue.length ? setTimeout(soundBakeSlice, 0) : 0;
+}
+/* a baked zone made into a buffer at its context's rate (its numbers dropped), the bank kept within its budget */
+function soundBakeKeep(E, i, Z) {
+  const b = E.ctx.createBuffer(1, Z.data.length, E.rate);
+  if (b.copyToChannel) b.copyToChannel(Z.data, 0);
+  else b.getChannelData(0).set(Z.data);
+  E.zones[i] = {
+    i,
+    root: Z.root,
+    lo: Z.lo,
+    hi: Z.hi,
+    buffer: b,
+    loopStart: Z.loopStart / E.rate,
+    loopEnd: Z.loopEnd / E.rate,
+    tau: Z.tau,
+    bytes: Z.data.length * 4,
+  };
+  E.used[i] = ++soundBakeBank.clock;
+  E.queued.delete(i);
+  soundBakeBank.zones++;
+  soundBakePrune(E.zones[i]);
+  if (!E.queued.size) for (const res of E.wait.splice(0)) res(E);
+}
+/* the bank's bytes, its zones' alone */
+function soundBakeBytes() {
+  let n = 0;
+  for (const E of soundBakeBank.entries.values()) for (const z of E.zones) if (z) n += z.bytes;
+  return n;
+}
+/* past the budget, the least recently played zones go (never the one just made) */
+function soundBakePrune(keep) {
+  while (soundBakeBytes() + soundBakeBank.other() > SOUND_BAKE_BUDGET) {
+    let worst = null;
+    for (const E of soundBakeBank.entries.values())
+      E.zones.forEach((z, i) => {
+        if (z && z !== keep && (!worst || E.used[i] < worst.E.used[worst.i])) worst = { E, i };
+      });
+    if (!worst) return;
+    worst.E.zones[worst.i] = null;
+    soundBakeBank.dropped++;
+  }
+}
+/* what the debug log says about the bank (no save data) */
+function soundBakeStats() {
+  const B = soundBakeBank,
+    mb = n => Math.round((n / 1048576) * 100) / 100;
+  return {
+    instruments: [...B.entries.values()].map(E => `${E.key} ${E.zones.filter(Boolean).length}/${E.zones.length}`),
+    mb: mb(soundBakeBytes()),
+    withOtherMb: mb(soundBakeBytes() + B.other()),
+    budgetMb: mb(SOUND_BAKE_BUDGET),
+    bakeMs: Math.round(B.ms),
+    zones: B.zones,
+    dropped: B.dropped,
+    queued: B.queue.length,
+    slices: B.slices,
+    sliceMaxMs: Math.round(B.sliceMaxMs * 100) / 100,
+    lastSlicesMs: B.lastSlicesMs.slice(),
+  };
+}
 export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
     /* SND-8a: started counts the voices started (the debug log's sources a minute), late the steps scheduled after
@@ -338,6 +498,43 @@ export function trackerCreate(ctx, bus, opts = {}) {
     g.connect(out);
     o.start(t);
     o.stop(t + 0.22);
+  };
+  /* ---------- SND-9: baked instruments ---------- */
+  /* the bytes of baked buffers outside the bank (the beds' noise: opts.memory, sound.js), for the bank's budget */
+  soundBakeBank.other = () => (opts.memory ? opts.memory() : 0) + T.noise.length * 4 + (T.reverbBytes || 0);
+  /* resolves once the instruments named are baked at this context's rate (at once when they are) */
+  T.bankReady = ids =>
+    Promise.all([].concat(ids).map(id => (soundBakeEntry(id, c) ? soundBakeWant(soundBakeEntry(id, c)) : null)));
+  T.bankStats = soundBakeStats;
+  /* a note of a baked instrument: one buffer source and one gain. The zone nearest the note plays, moved to its pitch;
+     its loop holds the note for as long as dur, a pluck's tail fading on (the zone's tau) the whole time; the release
+     takes r. null (and the instrument asked for) when nothing of it is baked yet */
+  T.sampleVoice = (out, { inst, midi, t, dur, vol = 0.2, r = 0.25 }) => {
+    const E = soundBakeEntry(inst, c);
+    if (!E) return null;
+    const P = soundBakeZoneFor(E.zones, midi);
+    if (!P || !P.own) soundBakeWant(E);
+    if (!P) return null;
+    const Z = P.zone;
+    E.used[Z.i] = ++soundBakeBank.clock;
+    T.started++;
+    const s = c.createBufferSource(),
+      g = c.createGain(),
+      body = Z.loopStart / P.rate,
+      end = t + Math.max(0.01, dur);
+    s.buffer = Z.buffer;
+    s.playbackRate.value = P.rate;
+    s.loop = true;
+    s.loopStart = Z.loopStart;
+    s.loopEnd = Z.loopEnd;
+    g.gain.setValueAtTime(vol, t);
+    if (Z.tau && body < end - t) g.gain.setTargetAtTime(0, t + body, Z.tau / P.rate);
+    g.gain.setTargetAtTime(0, end, r / 4);
+    s.connect(g);
+    g.connect(out);
+    s.start(t);
+    s.stop(end + r * 1.5);
+    return { source: s, gain: g };
   };
   /* ---------- the player ---------- */
   /* a song starts 80 ms from now and fades in; the songs before it fade out. levels() is the game's say on the drums
