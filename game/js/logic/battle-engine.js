@@ -64,6 +64,7 @@ import {
   brokenParts,
   coatPrefix,
   encounterBuild,
+  feedLevels,
   findBilly,
   formatNumber,
   gainXp,
@@ -93,6 +94,7 @@ import {
   fxAt,
   fxBenchXp,
   fxCatch,
+  fxCatchLevel,
   fxChip,
   fxCrit,
   fxDamage,
@@ -201,6 +203,8 @@ expose({
   fxBattleStart: [() => fxBattleStart, v => (fxBattleStart = v)],
   // @ts-expect-error -- replaced on purpose
   fxBattleState: [() => fxBattleState, v => (fxBattleState = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxCatchLevelUp: [() => fxCatchLevelUp, v => (fxCatchLevelUp = v)],
   // @ts-expect-error -- replaced on purpose
   fxFieldStages: [() => fxFieldStages, v => (fxFieldStages = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1674,13 +1678,17 @@ export function fxImmuneSay(k, st) {
  * come out */
 export function sayBattleFx() {
   const b = battleNow();
-  if (!b || !b.fxSay) return;
+  if (!b || (!b.fxSay && !b.fxStartInflict)) return;
   /* UI-16b: a line may carry its blips (fxBattleStart: each Perk that raised a stat, by each of yours it raised) */
-  for (const [t, an, by] of b.fxSay) {
+  for (const [t, an, by] of b.fxSay || []) {
     const ev = battleSay(t, an);
     if (by) ev.by = by;
   }
   delete b.fxSay;
+  /* PK-5: the start's inflict rows (Music Box): one roll for each foe on the field, in order (fxInflict) */
+  const rows = b.fxStartInflict;
+  delete b.fxStartInflict;
+  if (rows) for (const k of liveActors(1)) fxInflict(k, rows);
 }
 /** the names of the Perks (PK-1: and boons, by fxSrcName) whose stat rows change stat s ("A and B") */
 export const perkNamesFor = (fx, s) =>
@@ -1779,7 +1787,9 @@ export function fxBattleStart() {
   );
   /* the battleStart moment's lines wait with them */
   b.fxSay = lines;
-  fxMoment('battleStart', null);
+  const start = fxMoment('battleStart', null).filter(f => f.kind === 'inflict');
+  /* PK-5: an inflict row at the start (Music Box) waits for the sides to come out too (sayBattleFx) */
+  if (start.length) b.fxStartInflict = start;
   if (!b.fxSay.length) delete b.fxSay;
 }
 /** PK-1: the rows read for the whole battle where its kind always acts (a win's money, a coin's chance, XP, DNA): the
@@ -2038,9 +2048,10 @@ export function catchRoll(id, T, spin, b) {
     const q = Math.cbrt(P);
     let w = 0;
     while (w < 3 && battleRoll() < q) w++;
-    /* PK-1: a throw that missed: the run's rows of that moment */
-    if (w < 3) fxMoment('throwMiss', null);
-    return { caught: w === 3, w, edge: false, P };
+    /* PK-1: a throw that missed: the run's rows of that moment; PK-5: a refund row's pyramid comes back (the caller
+       puts it back in the bag: battle.js finishThrow, the run's simulation), `refund` naming the Perk */
+    const back = w < 3 ? fxMoment('throwMiss', null).filter(f => f.kind === 'refund' && f.what === 'pyramid') : [];
+    return { caught: w === 3, w, edge: false, P, ...(back.length ? { refund: fxSrcName(back[0].src) } : {}) };
   });
 }
 /* Studio plan T3.2: what follows a throw, the same on the page (battle.js finishThrow, battle-input.js) and in the
@@ -2056,9 +2067,30 @@ export function catchKeep(e) {
     e.hp = Math.max(1, Math.round(maxHp(e) * f));
   }
   e.hp = Math.max(1, e.hp);
+  /* PK-5: a run's catchLevel rows (Name Tags): it joins that many levels higher, learning its moves on the way */
+  fxCatchLevelUp(e);
   const where = addBilly(e);
   battleNow().over = 'caught';
   return { where, alpha };
+}
+/** PK-5: a caught foe joins the levels the run's catchLevel rows give (fxBattleRows: those whose conditions hold
+ * here), as a Protein Bar's would (rules.js feedLevels: its moves learned on the way, its HP up by what it gained);
+ * one line names the Perks instead of a line a level. The levels gained (0 with none) @param {any} e */
+export function fxCatchLevelUp(e) {
+  const b = battleNow();
+  if (!b || !b.fx) return 0;
+  const rows = (fxBattleRows(b) || []).filter(f => f.kind === 'catchLevel'),
+    n = fxCatchLevel(rows);
+  if (!n) return 0;
+  const got = feedLevels(e, n, (t, o) => {
+    if (!o || o.k !== 'lvl') battleSay(t, o);
+  });
+  if (got)
+    battleSay(
+      `${[...new Set(rows.map(f => fxSrcName(f.src)))].join(' and ')}: ${billyName(e)} joins at level ${e.lvl}.`,
+      null
+    );
+  return got;
 }
 /* the items: out of battle (b not given) on the save's team and bag; with a battle, on that battle's team and bag */
 export const teamNeedsHp = b => (b ? b.sides[0].team : saveData.team).some(m => m.hp > 0 && m.hp < maxHp(m));

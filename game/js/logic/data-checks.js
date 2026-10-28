@@ -42,6 +42,7 @@ import {
 } from './mapgen.js';
 import { fxRowOf } from './run-enc.js';
 import {
+  FX_CATCH_LEVEL,
   FX_CHANCE,
   FX_CHIP,
   FX_CRIT,
@@ -55,6 +56,7 @@ import {
   FX_ONCE,
   FX_PASSIVE_KEYS,
   FX_PER,
+  FX_REFUND,
   FX_RULES,
   FX_SAY,
   FX_STAGES,
@@ -72,6 +74,7 @@ expose({
   FX_ONCE_KINDS: [() => FX_ONCE_KINDS],
   FX_PASSIVE_ALL: [() => FX_PASSIVE_ALL],
   FX_PLAIN: [() => FX_PLAIN],
+  FX_RULE_N: [() => FX_RULE_N],
   FX_TIMING: [() => FX_TIMING],
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
   GENE_KINDS: [() => GENE_KINDS],
@@ -2210,7 +2213,7 @@ export function fxKindProblems(f, at, D, problem) {
     if (!ids.includes(f.status)) problem(`${at}.status: no status "${f.status}" (statuses.json: ${ids.join(', ')})`);
     if (!(typeof f.chance === 'number' && f.chance > 0 && f.chance <= FX_CHANCE))
       problem(`${at}.chance: above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE: chances together never pass it)`);
-    if (f.when == null) problem(`${at}.when: an inflict row needs a moment (hit)`);
+    if (f.when == null) problem(`${at}.when: an inflict row needs a moment (hit, battleStart)`);
   }
   if (f.kind === 'chip' && !(/** @type {readonly string[]} */ (FX_CHIP).includes(f.what)))
     problem(`${at}.what: ${FX_CHIP.join(', ')} (effects.js FX_CHIP)`);
@@ -2228,16 +2231,45 @@ export function fxKindProblems(f, at, D, problem) {
       problem(`${at}.mult: a boost row's mult is above 1 (the weather's boosts counted that many times over)`);
     if (f.what === 'noWeaken' && 'mult' in f) problem(`${at}.mult: a noWeaken row has no mult`);
   }
+  /* PK-5: a money row is a multiplier (a battle's pay) or a share of the Moneys carried, paid on arrival, up to max */
+  if (f.kind === 'money' && 'share' in f) {
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
+      problem(`${at}.share: a share of the Moneys carried above 0, at most 1`);
+    if (!(Number.isInteger(f.max) && f.max >= 1 && f.max <= 9999))
+      problem(`${at}.max: a money share needs its most, a whole number of Moneys from 1 to 9999`);
+    if ('mult' in f) problem(`${at}.mult: a money share has no mult`);
+    if (f.when == null) problem(`${at}.when: a money share needs a moment (arrive)`);
+  } else if (f.kind === 'money' && f.when != null)
+    problem(`${at}.when: a money row at ${f.when} is a share (share, max)`);
+  /* PK-5: a free row acts at a purchase (Punch Card) */
+  if (f.kind === 'free' && f.when == null) problem(`${at}.when: a free row needs a moment (buy)`);
+  /* PK-5: what a missed throw gives back, at that moment */
+  if (f.kind === 'refund') {
+    if (!(/** @type {readonly string[]} */ (FX_REFUND).includes(f.what)))
+      problem(`${at}.what: ${FX_REFUND.join(', ')} (effects.js FX_REFUND)`);
+    if (f.when == null) problem(`${at}.when: a refund row needs a moment (throwMiss)`);
+  }
+  /* PK-5: the levels a caught Billie joins higher, 1 to FX_CATCH_LEVEL */
+  if (f.kind === 'catchLevel' && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= FX_CATCH_LEVEL))
+    problem(`${at}.n: a whole number of levels from 1 to ${FX_CATCH_LEVEL} (effects.js FX_CATCH_LEVEL)`);
   if (f.kind === 'benchXp' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
     problem(`${at}.share: a share of XP above 0, at most 1`);
-  /* PK-4: a run rule of FX_RULES and how much it changes (forecastDays: 1 to 14 more days) */
+  /* PK-4: a run rule of FX_RULES and how much it changes (FX_RULE_N: forecastDays 1 to 14 more days...) */
   if (f.kind === 'rule') {
-    if (!(/** @type {readonly string[]} */ (FX_RULES).includes(f.rule)))
+    const R = FX_RULE_N[f.rule];
+    if (!(/** @type {readonly string[]} */ (FX_RULES).includes(f.rule)) || !R)
       problem(`${at}.rule: ${FX_RULES.join(', ')} (effects.js FX_RULES)`);
-    else if (f.rule === 'forecastDays' && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= 14))
-      problem(`${at}.n: a whole number of days from 1 to 14`);
+    else if (!(Number.isInteger(f.n) && f.n >= R[0] && f.n <= R[1]))
+      problem(`${at}.n: a whole number of ${R[2]} from ${R[0]} to ${R[1]}`);
   }
 }
+/** PK-4, PK-5: each run rule's n, the least and the most, and what it counts */
+export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */ ({
+  forecastDays: [1, 14, 'days'],
+  rewardPick: [1, 2, 'cards'],
+  rerollFree: [1, 3, 'rerolls'],
+  mapReveal: [1, 1, 'times (it is on or off)'],
+});
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
 /** PK-4: a passive row: a passive one of types.json's types has, only the numbers that passive takes, and enough of
@@ -2275,8 +2307,9 @@ export function fxPassiveProblems(f, at, D, problem) {
 /** PK-4: the themes a Perk's tags may name besides types: the Perk sets planned for PK-8 (perks-track.md 5.7, which
  * makes them a data section) */
 export const PERK_THEMES = ['office', 'influencer', 'tech', 'lab', 'adventurer', 'weather', 'classics'];
-/** PK-4: the conditions a Perk's needs can name: those an offer knows (the team) */
-export const PERK_NEEDS = ['team', 'mono'];
+/** PK-4: the conditions a Perk's needs can name: those an offer knows (the team); PK-5: bots, a scrapyard still
+ * ahead on the run's map (perks.js perkRunBots: needs alone, not a row's condition) */
+export const PERK_NEEDS = ['team', 'mono', 'bots'];
 /** PK-4: a Perk's needs: one condition or a list of 1-4, each a condition word (fxCondProblem) of PERK_NEEDS
  * @param {any} v @param {string} at @param {any} D @param {(what: string) => void} problem */
 export function perkNeedsProblems(v, at, D, problem) {
@@ -2284,6 +2317,7 @@ export function perkNeedsProblems(v, at, D, problem) {
   const L = Array.isArray(v) ? v : [v];
   if (!L.length || L.length > 4) problem(`${at}: one condition, or a list of 1-4`);
   for (const c of L) {
+    if (c === 'bots') continue;
     const why = fxCondProblem(c, D),
       key = typeof c === 'string' ? c.split(':')[0] : '';
     if (why) problem(`${at}: ${why}`);
@@ -2302,8 +2336,14 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   damage: ['hit', 'hurt', 'crit'],
   /* PK-3: a crit row at a move makes that move critical */
   crit: ['move'],
-  /* PK-3: a status on the foe hit */
-  inflict: ['hit'],
+  /* PK-3: a status on the foe hit; PK-5: on each foe on the field as a battle starts */
+  inflict: ['hit', 'battleStart'],
+  /* PK-5: a share of the Moneys carried, on walking into a place */
+  money: ['arrive'],
+  /* PK-5: what was just bought, free */
+  free: ['buy'],
+  /* PK-5: a missed throw's pyramid back */
+  refund: ['throwMiss'],
 });
 /** PK-1: the timing fields a kind read outside any moment can't have */
 export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({
