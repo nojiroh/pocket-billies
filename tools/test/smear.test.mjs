@@ -292,13 +292,11 @@ test('the impact frame shows the negative, then the positive, then (a crit) the 
 
 /* VFX-5: attack lunges */
 import {
-  LUNGE_DASH,
   LUNGE_GHOSTS,
   LUNGE_LEAN_BACK,
   LUNGE_LEAN_MAX,
   LUNGE_RIBBON_MAX,
   LUNGE_RIBBON_MIN,
-  lungeDash,
   lungeGhostCount,
   lungeLean,
   lungeLeanFor,
@@ -402,12 +400,17 @@ test('the lunge smears thin out with the quality and stop under Reduced motion',
 test("the dash moves are real moves and their ribbon is the Billie's size", () => {
   const moves = JSON.parse(readFileSync(new URL('../../game/data/moves.json', import.meta.url), 'utf8')),
     list = Array.isArray(moves) ? moves : Object.entries(moves).map(([id, m]) => ({ id, ...m }));
-  for (const id of LUNGE_DASH) {
-    const m = list.find(x => x.id === id);
-    assert.ok(m, `${id} is a move`);
-    assert.equal(m.c, 'H', `${id} is a hit (it lunges)`);
-  }
-  assert.ok(lungeDash('flashsale') && !lungeDash('tackle') && !lungeDash(null));
+  /* VFX-11: the dash moves are the `dash` family's (VFX-5's six) */
+  const dash = list.filter(m => m.anim === 'dash');
+  assert.deepEqual(dash.map(m => m.id).sort(), [
+    'dashkick',
+    'flashsale',
+    'frontrun',
+    'justdoit',
+    'movefast',
+    'pipeline',
+  ]);
+  for (const m of dash) assert.equal(m.c, 'H', `${m.id} is a hit (it lunges)`);
   assert.equal(lungeRibbonHalf(0), LUNGE_RIBBON_MIN);
   assert.equal(lungeRibbonHalf(10), LUNGE_RIBBON_MAX);
   assert.ok(Math.abs(lungeRibbonHalf(1) - 0.3) < 1e-12);
