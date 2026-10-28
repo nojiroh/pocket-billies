@@ -2033,7 +2033,9 @@ export type FxKindRow =
   /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
   | { kind: 'refund'; what: 'pyramid' }
   /** PK-5: what was just bought in a run shop is free (its price back), at buy */
-  | { kind: 'free' };
+  | { kind: 'free' }
+  /** PK-5: what beaten bots leave (their parts offered, the Scrap), times mult */
+  | { kind: 'salvage'; mult: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;

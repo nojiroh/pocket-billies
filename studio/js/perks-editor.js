@@ -112,6 +112,7 @@ const PERK_KINDS = {
   catchLevel: 'A Billie you catch joins levels higher (PK-5)',
   refund: 'A pyramid that missed comes back (PK-5)',
   free: 'What you just bought is free (PK-5)',
+  salvage: 'Beaten bots leave more salvage (PK-5)',
 };
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -161,6 +162,7 @@ const PERK_ROW_NEW = {
   catchLevel: () => ({ kind: 'catchLevel', n: 2 }),
   refund: () => ({ kind: 'refund', what: 'pyramid', when: 'throwMiss', once: 'battle' }),
   free: () => ({ kind: 'free', when: 'buy', every: 4 }),
+  salvage: () => ({ kind: 'salvage', mult: 2 }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -372,6 +374,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
           help: `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
         }),
       ],
+      salvage: () => [mult('Parts offered and Scrap ×')],
       free: () => [
         `<p class="note">At buy (its When), with Every for every Nth thing bought in a run shop: one of it comes free (several of one ware at once are one buy).</p>`,
       ],

@@ -4,7 +4,7 @@
 // finite.
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { data, fn, hooks, modules, reseed, said, startedSave } from './setup-real.mjs';
+import { GAME_DATA, data, fn, hooks, modules, reseed, said, startedSave } from './setup-real.mjs';
 
 const { SPECIES } = data;
 /** a species of type T (one of that type alone when there is one) */
@@ -203,4 +203,32 @@ test('PK-5 free: every 4th purchase gives its price back, and the count lasts th
   assert.equal(L.runBuyFx(s, P, 100).by, '');
   s.run.perks = [];
   assert.equal(L.runBuyFx(s, P, 100).free, 0);
+});
+
+/* ---------- salvage ---------- */
+
+test('PK-5 salvage: beaten bots leave their parts offered and Scrap times mult; as before without the row', () => {
+  const F = modules.factions,
+    fac = GAME_DATA.factions.factions,
+    S = fac.bureau.salvage,
+    bot = B => fn('trainerTeam')({ team: [F.factionBotEntry(fac.bureau.bots[B], 10)] })[0];
+  const pick = fx => {
+    reseed(7);
+    startedSave(ofType('Fire'), 20);
+    assert.ok(
+      fn('newBattle')('wild', [bot('repo'), bot('courier')], { fmt: 'double', seed: 'salv', ...(fx ? { fx } : {}) })
+    );
+    const run = { seed: 'SALVSEED01', perks: [] };
+    assert.equal(fn('battleSalvage')(hooks.activeBattle, run), true);
+    return run.enc.reward.cards;
+  };
+  const plain = pick(null),
+    parts = F.salvageParts([bot('repo'), bot('courier')]);
+  assert.equal(plain.filter(c => c.kind === 'part').length, S.parts);
+  assert.equal(plain.at(-1).n, S.scrap + S.scrapPerBot);
+  const { fx } = perks({ fx: [{ kind: 'salvage', mult: 2 }] });
+  const twice = pick(fx);
+  assert.equal(twice.filter(c => c.kind === 'part').length, Math.min(parts.length, S.parts * 2));
+  assert.equal(twice.at(-1).n, 2 * S.scrap + 2 * S.scrapPerBot);
+  assert.equal(fn('fxSalvage')(null, S), S);
 });

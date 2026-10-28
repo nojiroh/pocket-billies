@@ -176,6 +176,11 @@
        "properties": {"kind": {"const": "refund"}, "what": {"enum": ["pyramid"]}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
       },
       {
+       "description": "salvage (PK-5): what beaten bots leave (their parts offered and the Scrap), times mult",
+       "type": "object", "additionalProperties": false, "required": ["kind", "mult"],
+       "properties": {"kind": {"const": "salvage"}, "mult": {"type": "number", "minimum": 0, "maximum": 4}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}
+      },
+      {
        "description": "free (PK-5): what was just bought in a run shop is free (one of it: its price comes back); it acts at buy, usually every N",
        "type": "object", "additionalProperties": false, "required": ["kind", "when"],
        "properties": {"kind": {"const": "free"}, "when": {"$ref": "#/$defs/when"}, "if": {"$ref": "#/$defs/if"}, "every": {"$ref": "#/$defs/every"}, "grow": {"$ref": "#/$defs/grow"}, "per": {"$ref": "#/$defs/per"}, "once": {"$ref": "#/$defs/once"}}

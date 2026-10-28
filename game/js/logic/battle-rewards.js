@@ -20,7 +20,7 @@ import { META_GENES, META_MAX } from './meta-state.js';
 import { factionBotOf, factionOfClass } from './factions.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop, runFxMoment } from './run-loop.js';
-import { fxMoney, fxOfBillie, fxSplice } from './effects.js';
+import { fxMoney, fxOfBillie, fxSalvage, fxSplice } from './effects.js';
 import { perkOfferMake, perkTeamOf } from './perks.js';
 import { rewardDataGame, rewardOfferMake, salvageOfferMake } from './rewards.js';
 import { battleRoll, fxBattleRows, fxFoeTags } from './battle-engine.js';
@@ -285,5 +285,11 @@ export function battleSalvage(b, run) {
     byBot = byClass ? null : bots.map((/** @type {any} */ m) => factionBotOf(FACTIONS, m.sp)).find(Boolean),
     F = byClass ? byClass.F : byBot ? FACTIONS[byBot.faction] : null;
   if (!F) return false;
-  return !!salvageOfferMake(run, b.kind === 'wild' ? 'wild' : b.tid || 'trainer', bots, F.salvage);
+  /* PK-5: the run's salvage rows (Magnet on a String) whose conditions hold for the battle */
+  return !!salvageOfferMake(
+    run,
+    b.kind === 'wild' ? 'wild' : b.tid || 'trainer',
+    bots,
+    b.fx ? fxSalvage(fxBattleRows(b), F.salvage) : F.salvage
+  );
 }

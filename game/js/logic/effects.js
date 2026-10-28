@@ -32,6 +32,8 @@
              (PK-4, battle-engine.js fxPassiveOf)
      catchLevel  a Billie you catch joins n levels higher (PK-5, battle-engine.js catchKeep)
      refund  a pyramid thrown that missed comes back (`when: throwMiss`) (PK-5, battle-engine.js catchRoll)
+     salvage what beaten bots leave: their parts offered and the Scrap, times mult (PK-5, battle-rewards.js
+             battleSalvage)
      free    what was just bought in a run shop is free: its price back (`when: buy`, with `every`) (PK-5, run-loop.js
              runBuyFx)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
@@ -118,6 +120,8 @@ expose({
   fxRunMarks: [() => fxRunMarks],
   fxRunPrice: [() => fxRunPrice],
   fxRunRule: [() => fxRunRule],
+  // @ts-expect-error -- replaced on purpose
+  fxSalvage: [() => fxSalvage, v => (fxSalvage = v)],
   fxSources: [() => fxSources],
   // @ts-expect-error -- replaced on purpose
   fxSpend: [() => fxSpend, v => (fxSpend = v)],
@@ -169,6 +173,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'catchLevel',
   'refund',
   'free',
+  'salvage',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -507,6 +512,21 @@ export const fxMoneyShare = (f, se) =>
     ? Math.max(0, Math.min(f.max ?? Infinity, Math.floor(Math.max(0, se) * f.share)))
     : 0;
 provide({ fxMoneyShare }); /* to-module */
+
+/** PK-5: a faction's salvage rules (factions.json salvage) with the salvage rows: the parts offered and the Scrap
+ * times their product (rounded; the rules themselves when none) @template {{ parts: number, scrap: number,
+ * scrapPerBot: number }} S @param {Fx[] | null | undefined} fx @param {S} S @returns {S} */
+export function fxSalvage(fx, S) {
+  const k = fxMult(fx, f => f.kind === 'salvage');
+  return k === 1
+    ? S
+    : {
+        ...S,
+        parts: Math.round(S.parts * k),
+        scrap: Math.round(S.scrap * k),
+        scrapPerBot: Math.round(S.scrapPerBot * k),
+      };
+}
 
 /** PK-5: what a refund row gives back (a pyramid thrown that missed) */
 export const FX_REFUND = /** @type {const} */ (['pyramid']);
