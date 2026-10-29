@@ -317,6 +317,9 @@ def loud_page(b, base):
     pg.goto(base + '/index.html')
     if not until(pg, "typeof soundEngine!=='undefined'&&typeof initSound==='function'&&typeof gameData!=='undefined'&&typeof initAmbience==='function'", 120):
         raise Exception('the game page never loaded its sound code')
+    # SND-15: the loudness pages stop drawing too (SND-12c's NO_DRAW): their renders waited on the title's live scene,
+    # drawn in software, between jobs; no number moves
+    pg.evaluate(NO_DRAW)
     src = (ROOT / 'tools' / 'sound-loudness.mjs').read_text().replace('export function', 'function')
     pg.evaluate('(() => {' + src + '\nwindow.__soundLoudness = soundLoudness;})()')
     return ctx, pg, errs
