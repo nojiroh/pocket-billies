@@ -125,6 +125,83 @@ branch; the build sessions start on `track/vfx` after VFX-5 (fetch it first: a f
 session's branch). Three read-only passes (what a battle draws; data, Studio and tests; the renderer), outside
 research, and a review of the plan against the code, whose corrections are in "How it's built".
 
+## Part 2 as built (VFX-20, 2026-10-29)
+What exists, where, and how to tune it. Everything a battle shows comes from one data file, game/data/battleAnims.json
+(its schema in game/data/schema/battleAnims.schema.json, checked by logic/data-checks.js `dataBattleAnims`), and is
+tuned in the Studio's **Creatures › Battle effects** (studio/js/battle-preview.js), which plays any move or event on
+the real battle stage at any speed, quality, Animation setting and Flashes, on a 24 fps scrubber, and saves the data
+like any section (drafts, Propose).
+- **Moves:** every move has an `anim` (moves.json): one of 16 **families** (`families`: charge, dash, dive, strike,
+  slash, quake, flurry, shot, beam, breath, wave, storm, buff, hex, guard, heal, each with a Faster `short` and,
+  for the 13 that can, its own `miss`) or a **signature scene** (`scenes`, VFX-17/18/18b: a family to fall back to,
+  low-poly props, stamped sound words, a short repeat). A family plays in its move's **type kit** (`types`: ramp,
+  strips by role, path, motion, light, cast and hit steps, `burstSprites`; the Bureau's for a bot's moves). Studio:
+  Moves › Animation picks it; Battle effects shows the timeline; the Families, Misses and Type kits panes.
+- **The resolver and runner:** logic/battle-anims.js (browser-free: `battleAnimFor`, `battleAnimTimeline`, `hitTier`,
+  `koAhead`, `hurtKoAhead`, `hitLook`, the flash limiter `flashGate`) and game/js/battle-anim-run.js (`battleAnimPlay`:
+  the steps on the stage clock; a tap skips). `{dur, hit}` per outcome are capped by `maxMs` (+`extraMs` 500 for
+  scenes and power 100+, none under Reduced motion).
+- **Hits:** the tier table (`tiers`: resisted, neutral, super, super ×4, crit; then what a KO and the last KO add; drain,
+  heal, recoil), played by battle-stage.js `hitFx`; a hurt line that knocks out takes the KO's look too. Studio: the
+  Hit tiers pane; Outcome and Knocks out beside the move.
+- **Statuses and short effects:** `events` (VFX-14's brn, par, slp, confused, stat, protect, shield, soaked, fork,
+  delayed, stones, glint, broken; VFX-16's vs, sendOut, recall, catch, faint, levelUp, victory, defeat, item), drawn by
+  game/js/battle-looks.js and battle-stage.js's flow block; logic/battle-looks.js `BATTLE_LOOK_FILMS` are the Studio's
+  look films (Event list) and the film tool's.
+- **The stage:** `moods` (darken, tint, the row wave, heat), `weather`, `scars` (walk/battle-scars.js); the effects'
+  pool, atlas and strips (walk/battle-fx.js, game/art/battle/anims/, drawn by tools/build-battle-anims.py; repaint them
+  in the Art browser); `ramps`, `sprites`, `iconSprites`.
+- **Budgets and settings:** `budgets` (particles, burst, lights, lightsPhone, lightsAll by quality; the Budgets pane),
+  `smears` (Part 1's dials), `flashes` (the limiter: perSecond, gapMs, redShare). The quality ladder, Calm, Reduced and
+  Flashes off: the table in VFX-20's HANDOFF entry.
+- **Sound:** music.json `battle` (VFX-19; Music & sound › Sounds › Battle), on the stage clock.
+- **Tools:** tools/look-battle-anims.py (films, sheets, `--measure`, `--events`, `--flow`, `--vs`, `--flashes=off`,
+  `--quality=N`), tools/flash-audit.py (rule 9 over the films), tools/build-battle-anims.py (the art),
+  tools/check-studio-github.py `--only=battle_fx`. The debug log's `anim` line per move: its family or scene (and the
+  scene a family stands in for), tier (+ko, +last), variant, quality and motion, and any flash the limiter held.
+
+## Phone checks for all of Part 2, in one sitting (VFX-20)
+Nothing here was waited for; every step listed its own, and they are gathered here in the order one sitting meets
+them. Send a debug log at the end (it has an `anim` line per move). Settings: Animation Full, Flashes on, Battle speed
+Normal, unless a line says otherwise.
+1. **A wild battle in Copperleaf** (frame rate first: does it hold while a big move plays?).
+   - The start: the swoop; a wild Billie's reveal. The send-out: the pyramid's landing, the dither climbing from the
+     feet, the burst in its type (a Coat's gold glint).
+   - Choosing a move: the gold ring under yours; in a double battle the target rings.
+   - One move of each family: Tackle (charge), Quick Strike (dash: afterimages and the ribbon), Wing Strike (dive),
+     Piston Jab (strike), Vine Lash (slash), Quake Stomp (quake), Assembly Line (flurry: three beats, the last the
+     hit), Spark Shot (shot), Overcharge (beam), Inferno (breath), Mind Pulse (wave), Petal Storm (storm), Charge Up
+     (buff), Static Wave (hex), Guard, Sunbathe (heal). Their colours by type; effects the size of the Billies' pixels;
+     the eroding rim on fades; lights (Fire's warm flicker, Electric's brief gold); the move sounds (placeholders).
+   - Hits by tier: resisted (grey flash, dull puff), neutral, super (type tint, chromatic pulse), ×4, crit (impact
+     frame, warm flash), a KO (white, then ink, a second scar), the last KO's freeze; the scars fading when it ends.
+   - A miss of a few families (a shot, a beam, a dash). A drain (Harvest), a crash (Margin Call missing).
+   - Tap during a move: it stops cleanly, the plates and number show, a second tap moves on.
+   - Statuses on both sides: burned's embers and flicker (and a burn that knocks out: the KO's look), paralyzed's sparks
+     and gold edge, asleep's Z's and lower idle, waking's pop, confused's stars and bonk; stat chevrons, sharply;
+     Protect's bubble and its flash on a block; Soaked's drips; Fork's copy; the delayed hit's mark (and when it
+     knocks out); stones at the feet; glints when a Perk or held item fires.
+   - The stage: the darken and tint on a big move; the row wave on a Psychic move; heat on a big Fire move; rain
+     splashing, snow settling, the Sandstorm's streaks (if the weather comes).
+   - A throw: the squash on each wobble, the dust, the seal's ring; an escape's shards. An item used. The recall
+     beam (swap a Billie) and its sound. A faint (the sink and dither). Level-up (the sky column, on the right Billie
+     in a double). A win (the cheer); a loss (your side fades).
+2. **Signature scenes:** each scene once (VFX-17's 18, VFX-18's and 18b's, the bots' and the boss's specials: the
+   lists in their HANDOFF entries), the same scene twice in a battle (the short repeat), a foe using one (the model's
+   heading), the stamped words readable at phone size, the frame rate while a tower or the train is up.
+3. **A leader, Blake and a boss:** the VS splash (portraits crisp, the type colour, the slant, gone before the first
+   line); the boss's join intro with the Notice; an Alpha's shield dome cracking and shattering; a bot's faint (limbs
+   drop, smoke); an aimed move on a bot's arm (Auger Bore).
+4. **Settings, one battle each:** Faster (short variants; a tap still skips); quality 3 in Graphics (fewer particles,
+   no smears, no scars, no impact cells; still readable); Calm (status loops and ambient motes pulse once a turn;
+   actions play in full); Reduced motion (tints instead of loops, no shake, camera, dithers or extra time, scenes play
+   their family, no tag pops); Flashes off (no full-screen flash brighter than a faint tint, sprite flashes at half,
+   a hurt's blink at most 3 a second, Cut To without its two-tone frame); 3D props off (scenes play their family).
+5. **The Studio on the phone:** Creatures › Battle effects: play a move and an event (a look film), scrub to the hit,
+   step a cell, change a tier dial and a miss, undo; Types: a type's battle particles.
+6. **Listening pass** (Music & sound › Sounds › Battle): each placeholder sound, nothing too loud over the song.
+7. **The repaint list:** `python3 tools/build-battle-anims.py --sheet` (which strips to redraw).
+
 ## The owner's answers (2026-10-27)
 - **Home:** Part 2 of this track, sessions VFX-8 on, on `track/vfx`. VFX-6 folds in (see Part 1's sessions).
 - **Effect art:** Claude draws it (a tool makes grayscale pixel sprites and short flipbooks at the Billies' pixel
