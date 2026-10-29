@@ -184,6 +184,7 @@ expose({
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
   burstMax: [() => burstMax],
+  burstN: [() => burstN],
   buzz: [() => buzz, v => ((buzz = v), provide({ buzz }))],
   calmMotion: [() => calmMotion],
   camApply: [() => camApply, v => (camApply = v)],
@@ -1661,6 +1662,8 @@ export const battleStageRingPhase = () =>
    share isn't made. VFX-12: the numbers are battleAnims.json `budgets` (the Studio's Battle effects tunes them) */
 const battleQuality = () => clamp(battleStage.q.lvl | 0, 0, 3);
 const fxBudget = (/** @type {'particles' | 'burst'} */ k) => BATTLE_ANIMS.budgets[k][battleQuality()];
+/* VFX-20: a loop's particle count held to the burst budget (the stage's own bursts: flow, hurt, heal, status...) */
+const burstN = (/** @type {number} */ n) => Math.min(n, fxBudget('burst'));
 let ambientSpawning = false;
 function addParticle(o) {
   const P = battleStage.parts;
@@ -1844,7 +1847,7 @@ function hitFx(ti, an, imp0 = null, ka = null) {
   }
   burst(T, an.t || 'None', L.burst, L.spread, 1);
   /* a resisted hit's dull puff: grey dust where it landed */
-  for (let i = 0; i < L.puff; i++)
+  for (let i = 0; i < burstN(L.puff); i++)
     addParticle({
       x: T.x + (fxRandom() - 0.5) * 0.4,
       y: T.y,
@@ -1891,7 +1894,7 @@ function drainFx(from, to) {
   const A = actorCenter(from),
     B = actorCenter(to),
     t = D.ms / 1000;
-  for (let i = 0; i < D.n; i++)
+  for (let i = 0; i < burstN(D.n); i++)
     scheduleAt(i * D.every, () => {
       const j = (fxRandom() - 0.5) * 0.5;
       addParticle({
@@ -1924,7 +1927,7 @@ function recoilFx(i) {
   s.dark = Math.max(s.dark || 0, (R.sprite.dark || 0) * k);
   tween(s, 'white', 0, R.sprite.ms, 'in');
   tween(s, 'dark', 0, R.sprite.ms, 'in');
-  for (let j = 0; j < R.puff; j++)
+  for (let j = 0; j < burstN(R.puff); j++)
     addParticle({
       x: w.x + (fxRandom() - 0.5) * 0.5,
       y: 0.1,
@@ -2094,7 +2097,7 @@ function flowDust(P, n) {
 /** a glint on a fighter: n small stars about its top, twinkling, in a ramp (a Coat's gold, a Prime build's teal) */
 function flowGlint(i, ramp, n) {
   const c = actorCenter(i);
-  for (let k = 0; k < n; k++)
+  for (let k = 0; k < burstN(n); k++)
     addParticle({
       x: c.x + (fxRandom() - 0.5) * 0.7,
       y: c.y + (fxRandom() - 0.2) * 0.6,
@@ -2204,7 +2207,7 @@ export function battleStagePlay(an, ev) {
           battleStageFlash('#5A1030', 0.45, 600);
           battleStage.shk = 9;
           handheld(900, 1.4);
-          for (let i = 0; i < 26; i++) {
+          for (let i = 0; i < burstN(26); i++) {
             const a = random() * 6.283,
               c = actorCenter(1);
             addParticle({
@@ -2484,7 +2487,7 @@ export function battleStagePlay(an, ev) {
       /* VFX-15: the Sandstorm's hurt leaves a sand drift */
       if (an.fx === 'oil' && typeof battleScarAt === 'function') battleScarAt(an.si, { sandstorm: true });
       if (an.fx === 'oil')
-        for (let i = 0; i < 7; i++)
+        for (let i = 0; i < burstN(7); i++)
           addParticle({
             x: T.x - 0.8 + random() * 0.4,
             y: 0.2 + random() * 0.9,
@@ -2499,7 +2502,7 @@ export function battleStagePlay(an, ev) {
       /* VFX-14: a burn's lick of flame, a confused Billie's bonk, a blocked spread hit's bubble (battle-looks.js) */
       const looked = typeof battleLookHurt === 'function' && battleLookHurt(an, ev);
       if (an.fx === 'brn' && !looked)
-        for (let i = 0; i < 4; i++)
+        for (let i = 0; i < burstN(4); i++)
           scheduleAt(i * 70, () =>
             addParticle({
               x: T.x + (random() - 0.5) * 0.8,
@@ -2538,7 +2541,7 @@ export function battleStagePlay(an, ev) {
         after = lineAfterLook(ev);
       if (after && after.kind === 'drain') drainFx(after.from, an.si);
       setActorAction(an.si, 'cheer', 700);
-      for (let i = 0; i < (H ? H.n : 12); i++)
+      for (let i = 0; i < burstN(H ? H.n : 12); i++)
         scheduleAt(i * (H ? H.every : 45), () =>
           addParticle({
             x: T.x + (random() - 0.5) * 1.2,
@@ -2568,7 +2571,7 @@ export function battleStagePlay(an, ev) {
       const T = actorCenter(an.si),
         kk = 1;
       setActorAction(an.si, 'dizzy', 800);
-      for (let i = 0; i < 7; i++)
+      for (let i = 0; i < burstN(7); i++)
         scheduleAt(i * 60, () => {
           const a = (i / 7) * Math.PI * 2;
           addParticle({
@@ -2624,7 +2627,7 @@ export function battleStagePlay(an, ev) {
       if (s && an.shield !== false) s.shield = 1;
       ringFx(T, '#FFD860', 0.3, 2.2, 700);
       groundRing(an.si, '#FFD860', 2.6, 800);
-      for (let i = 0; i < 24; i++)
+      for (let i = 0; i < burstN(24); i++)
         scheduleAt(i * 25, () => {
           const a = (i / 24) * Math.PI * 2;
           addParticle({
@@ -2653,7 +2656,7 @@ export function battleStagePlay(an, ev) {
     case 'break': {
       const T = actorCenter(an.si);
       setActorAction(an.si, 'hurt', 600);
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < burstN(16); i++) {
         const a = random() * 6.283;
         addParticle({
           x: T.x + (an.part === 'armL' ? -0.3 : an.part === 'armR' ? 0.3 : 0),
@@ -2703,7 +2706,7 @@ export function battleStagePlay(an, ev) {
     case 'caught': {
       const C = battleStage.coin;
       if (C) {
-        for (let i = 0; i < 10; i++)
+        for (let i = 0; i < burstN(10); i++)
           addParticle({ x: C.x, y: C.y, z: C.z, vx: (i - 4.5) * 0.5, vy: 3, ay: -6, life: 720, spr: 'spark', glow: 1 });
         tween(C, 'glow', 0.8, 120);
         tween(C, 'glow', 0, 300, 'lin', 140);
@@ -2890,7 +2893,7 @@ export function battleStageCatch(kind, res, spin, done) {
               });
             }
             scheduleAt(C.tip ? 0 : 320, () => {
-              for (let i = 0; i < 12; i++)
+              for (let i = 0; i < burstN(12); i++)
                 addParticle({
                   x: C.x,
                   y: C.y,

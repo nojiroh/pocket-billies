@@ -36,6 +36,7 @@ import {
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
 expose({
+  BURST_STEPS: [() => BURST_STEPS],
   GLOWING_MOTIONS: [() => GLOWING_MOTIONS],
   animAt: [() => animAt, v => (animAt = v)],
   animBureau: [() => animBureau, v => (animBureau = v)],
@@ -101,6 +102,8 @@ function kitLight(c, ramp) {
   return !L || L === 'type' ? TYPE_GLOW[c.type] || BATTLE_ANIMS.colors.white : L;
 }
 const sideFocus = i => (battleStageKit.actorTeam(i) === 0 ? 'me' : 'foe');
+/** VFX-20: the steps whose repeats each make particles (held to the burst budget) */
+const BURST_STEPS = { dust: 1, lob: 1, fling: 1, converge: 1, impact: 1, spray: 1, rain: 1, orbit: 1, rise: 1 };
 /** one step, on the stage now. c: the move's (its event, sides, type, the places it started from) */
 function animStep(S, c) {
   /* VFX-11: a spread move's step marked `each` plays on every foe it hits */
@@ -110,6 +113,9 @@ function animStep(S, c) {
   }
   const K = battleStageKit,
     i = S.on ? c.idx[S.on] : c.si;
+  /* VFX-20: a repeated step that makes particles stops at the burst budget (24 / 16 / 10 / 6 by quality), so a move's
+     effects step down with quality as the Budgets ask (before, only spray checked it) */
+  if (BURST_STEPS[S.do] && (S.i || 0) >= K.burstMax()) return;
   switch (S.do) {
     case 'focus':
       battleStageFocus(S.on === 'wide' ? 'wide' : sideFocus(i));
@@ -344,7 +350,6 @@ function animFamilyStep(S, c, i) {
       return;
     }
     case 'spray': {
-      if (S.i >= K.burstMax()) return;
       const P = animPoint(c, S.on, S),
         To = S.toward ? animPoint(c, S.toward) : null;
       for (let j = 0; j < (S.n2 || 1); j++) {
