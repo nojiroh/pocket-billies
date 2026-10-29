@@ -38,7 +38,12 @@ Branch `ccr-15aa5647-90bz3r` (this session's branch, made from `track/assets` f8
   train and skip the arrival; `airship_moored` is the hub's airship and stays. Tests: new halt.test.mjs (7);
   mapgen-lots, first-run on the halt; snapshots remade: first-run-places (only the landing moved), the data check's
   file count (191).
-- Found, not changed: check-quick.py's RL-8 step fails at its town shop ("no Perk", line 1952) on `track/assets`
+- CI (check-fast.py): the arrival's tap-to-skip swallowed the payout card's tap in "Packing for a run" (the payout
+  opens right after landing); fixed: a sheet, a battle or the run's end ends the arrival and the tap goes through.
+- Found, not changed: on `track/assets` f835b311 CI's smoke job hits its 30-minute limit and fails "A run town's life",
+  "A run town's quest" (the named locals' talk box) and later "Packing for a run" (the ride home never ended);
+  "Kappi's tips" is timing-sensitive (each throw about 20 s in software drawing against a 30 s wait: passes alone,
+  fails beside a second browser). check-quick.py's RL-8 step fails at its town shop ("no Perk", line 1952) on `track/assets`
   before this lane too; `ui-lint` reports the colour count in game js at 618 -> 612 on `track/assets` already (a ratchet
   waiting for `--save`); the crash scene's haze hides most of the wreck past about 15 m (AS-7's "fog too much").
 - Facts checked against `track/assets` (section 2.5): all held. One addition: the hub's lost-run line said "by the
