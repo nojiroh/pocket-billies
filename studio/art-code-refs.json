@@ -616,6 +616,24 @@
    ]
   },
   {
+   "p": "scene/next/decals/halt_lantern.png",
+   "at": [
+    "game/art/scene/next/models/train_halt.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/halt_name.png",
+   "at": [
+    "game/art/scene/next/models/train_halt.json"
+   ]
+  },
+  {
+   "p": "scene/next/decals/halt_tickets.png",
+   "at": [
+    "game/art/scene/next/models/train_halt.json"
+   ]
+  },
+  {
    "p": "scene/next/decals/inn_word.png",
    "at": [
     "game/art/scene/next/models/inn.json"
