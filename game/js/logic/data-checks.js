@@ -104,6 +104,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
   // @ts-expect-error -- replaced on purpose
+  dataBoonArt: [() => dataBoonArt, v => (dataBoonArt = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataBoons: [() => dataBoons, v => (dataBoons = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBosses: [() => dataBosses, v => (dataBosses = v)],
   // @ts-expect-error -- replaced on purpose
   dataBuildings: [() => dataBuildings, v => (dataBuildings = v)],
@@ -2316,6 +2320,24 @@ export function dataPerkSets(D, valid = () => true) {
   }
   return out;
 }
+/** PK-9: boons.json: the schema, each row as a Perk's (perkRowProblems; no copy row: a boon has no Perk above it), and
+ * no row that keeps a count or a mark (every, grow, once: a boon's marks would outlive it) @param {any} D
+ * @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBoons(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['boons.json', what]),
+    B = D.boons;
+  if (!B || !valid('boons.schema.json', B, 'boons.json')) return out;
+  for (const [id, T] of Object.entries(B))
+    T.fx.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
+      if (f.kind === 'copy') problem(`${id}.fx[${n}]: a boon has no copy row (it copies a Perk above it)`);
+      else perkRowProblems(f, `${id}.fx[${n}]`, D, problem);
+      for (const key of ['every', 'grow', 'once'])
+        if (key in f) problem(`${id}.fx[${n}].${key}: a boon keeps no count or mark (it lasts a few places)`);
+    });
+  return out;
+}
 /** RL-12c, SP-2: one effect row a Billie has (a held item's or a Gene's): one of `kinds`, its numbers within the code's
  * limits @param {any} f @param {string} at @param {string[]} kinds @param {any} D
  * @param {(what: string) => void} problem */
@@ -2939,6 +2961,12 @@ export function dataPerkArt(perks, read) {
     }
   }
   return out;
+}
+/** PK-9: the boons' pictures, as dataPerkArt checks the Perks': an img that is there and is an icon; a boon without one
+ * shows the relic icon (a warning) @param {any} boons @param {(path: string) => string | null} read
+ * @returns {DataFinding[]} */
+export function dataBoonArt(boons, read) {
+  return dataPerkArt(boons, read).map(f => ({ ...f, where: 'boons.json' }));
 }
 /**
  * PK-11: the items' pictures, as dataPerkArt checks the Perks'. items.json has no schema, so the path's form is checked

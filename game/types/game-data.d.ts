@@ -67,6 +67,8 @@ export interface GameData {
   perks?: Record<DataId, Perk>;
   /** PK-8: Perk sets (perkSets.json; logic/perks.js perkSetsOn) */
   perkSets?: Record<DataId, PerkSet>;
+  /** PK-9: boons and curses (boons.json; logic/run-enc.js encBoonGive) */
+  boons?: Record<DataId, Boon>;
   /** RL-12b: events.json */
   events?: EventsData;
   /** RL-S1: the story director's lines */
@@ -2450,6 +2452,21 @@ export interface PerkSet {
   need: number;
   /** what the bonus does, in one sentence */
   d: string;
+  fx: FxRow[];
+}
+/** PK-9: boons.json: a boon or a curse, a named effect that lasts the place it is given in and `places` more (events'
+ * `boon`/`curse` commands, the fountain's wish); while it lasts its rows join the run's (src `boon:<id>`) */
+export interface Boon {
+  /** what the player reads */
+  name: string;
+  /** what it does while it lasts, in one sentence */
+  d: string;
+  /** a curse (the Bureau's Red Tape): a clinic's appeal lifts it; a boon without */
+  curse?: true;
+  /** the place it is given in and this many more (0-20) */
+  places: number;
+  /** its picture (boons/<id>.svg) */
+  img?: string;
   fx: FxRow[];
 }
 

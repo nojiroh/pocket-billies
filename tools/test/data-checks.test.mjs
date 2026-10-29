@@ -953,3 +953,43 @@ test('PK-8: dataPerkSets: the schema, each row as a Perk’s, a need its Perks c
     JSON.stringify(C.dataPerks(D))
   );
 });
+
+test('PK-9: dataBoons: the schema, each row as a Perk’s, no copy, no count or mark; dataBoonArt checks the pictures', async () => {
+  assert.deepEqual(C.dataBoons(GAME_DATA), []);
+  assert.equal(Object.keys(GAME_DATA.boons).length, 20);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false });
+  for (const f of ['perks.schema.json', 'boons.schema.json'])
+    ajv.addSchema(JSON.parse(readFileSync(join(DATA, 'schema', f), 'utf8')));
+  assert.ok(ajv.validate('boons.schema.json', GAME_DATA.boons), JSON.stringify(ajv.errors));
+  const bad = structuredClone(GAME_DATA.boons);
+  bad.tailwind.places = 21;
+  assert.equal(ajv.validate('boons.schema.json', bad), false, 'at most 20 more places');
+  bad.tailwind.places = 2;
+  bad.tailwind.curse = false;
+  assert.equal(ajv.validate('boons.schema.json', bad), false, 'curse is true or left out');
+  for (const [plant, text] of [
+    [D => (D.boons.pep_talk.fx = [{ kind: 'damage', side: 'deal', mult: 9 }]), 'pep_talk.fx[0].mult: 9 is outside'],
+    [D => (D.boons.pep_talk.fx = [{ kind: 'copy' }]), 'pep_talk.fx[0]: a boon has no copy row'],
+    [
+      D => (D.boons.pep_talk.fx = [{ kind: 'heal', share: 0.1, when: 'arrive', every: 2 }]),
+      'pep_talk.fx[0].every: a boon keeps no count or mark',
+    ],
+  ]) {
+    const D = structuredClone(GAME_DATA);
+    plant(D);
+    const all = C.dataBoons(D).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.startsWith('boons.json') && w.includes(text)),
+      `${text} in ${JSON.stringify(all)}`
+    );
+  }
+  const svg = id => readFileSync(join(DATA, '..', 'art', 'boons', id + '.svg'), 'utf8'),
+    read = p => (p.startsWith('boons/') && GAME_DATA.boons[p.slice(6, -4)] ? svg(p.slice(6, -4)) : null);
+  assert.deepEqual(C.dataBoonArt(GAME_DATA.boons, read), []);
+  const art = C.dataBoonArt({ x: { img: 'boons/x.svg' }, y: {} }, read).map(f => `${f.lvl} ${f.where} ${f.msg}`);
+  assert.deepEqual(art, [
+    'error boons.json x.img: no picture art/boons/x.svg',
+    'warn boons.json y: no img, so it shows the relic icon (tools/build-icons.mjs)',
+  ]);
+});

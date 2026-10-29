@@ -211,7 +211,7 @@ h1{font-size:18px;margin:0 0 4px}.sub{color:${T.text2};margin:0 0 12px}
 <div class="row">${items.map(it => img(it.svg, 18)).join('')}</div></body></html>`;
 }
 
-/** a folder's data as the sheet names it: { name, sub, d, rarity } by id (perks.json's Perks, items.json's items) */
+/** a folder's data as the sheet names it: { name, sub, d, rarity } by id (perks.json's Perks, items.json's items, PK-9: boons.json's boons) */
 function sheetNames(/** @type {string} */ folder, root = ROOT) {
   const RAR = { common: 'Common', uncommon: 'Uncommon', rare: 'Rare', mythical: 'Mythical', fine: 'Fine Print' },
     read = (/** @type {string} */ f) => JSON.parse(readFileSync(join(root, 'game/data', f), 'utf8')),
@@ -228,6 +228,15 @@ function sheetNames(/** @type {string} */ folder, root = ROOT) {
         sub: I.hold ? `${RAR[I.rarity] || I.rarity} · Held item` : 'Bag item',
         d: I.d,
         rarity: I.hold ? I.rarity : '',
+      };
+  /* PK-9: the boons and curses, with how long each lasts */
+  if (folder === 'boons')
+    for (const [id, B] of Object.entries(read('boons.json')))
+      out[id] = {
+        name: B.name,
+        sub: `${B.curse ? 'Curse' : 'Boon'} · ${B.places + 1} place${B.places ? 's' : ''}`,
+        d: B.d,
+        rarity: '',
       };
   return out;
 }
@@ -296,7 +305,9 @@ async function main() {
     onlyArg = args.find(a => a.startsWith('--only=')),
     only = onlyArg ? onlyArg.slice(7).split(',').filter(Boolean) : undefined;
   if (!folder) {
-    console.log(`Usage: node tools/build-icons.mjs <${ICON_FOLDERS.join('|')}> [--check] [--force] [--only=a,b] [--sheet]`);
+    console.log(
+      `Usage: node tools/build-icons.mjs <${ICON_FOLDERS.join('|')}> [--check] [--force] [--only=a,b] [--sheet]`
+    );
     process.exit(2);
   }
   const P = planIcons({ folder, only, force: flag('force') });
@@ -313,7 +324,9 @@ async function main() {
   } else {
     mkdirSync(join(ROOT, 'game/art', folder), { recursive: true });
     for (const w of P.write) writeFileSync(w.path, w.svg);
-    console.log(`art/${folder}: ${P.write.length} written${P.write.length ? ': ' + P.write.map(w => w.id).join(', ') : ''}`);
+    console.log(
+      `art/${folder}: ${P.write.length} written${P.write.length ? ': ' + P.write.map(w => w.id).join(', ') : ''}`
+    );
     if (!flag('force') && P.notes.length) console.log('  (an SVG on disk is never written over without --force)');
   }
   if (flag('sheet')) for (const f of await writeIconSheets(folder)) console.log('  sheet: ' + f);

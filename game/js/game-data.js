@@ -20,6 +20,7 @@ expose({
   BANTER: [() => BANTER],
   BATTLE_ANIMS: [() => BATTLE_ANIMS],
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BOONS: [() => BOONS],
   BOSSES: [() => BOSSES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
@@ -480,6 +481,8 @@ provide({ PERKS }); /* to-module */
 /* perks track PK-8: Perk sets, a bonus for holding `need` of a set's Perks (perkSets.json; logic/perks.js perkSetsOn) */
 export const PERK_SETS = /** @type {Record<string, import('../types/game-data').PerkSet>} */ (gameData.perkSets || {});
 provide({ PERK_SETS }); /* to-module */
+/* perks track PK-9: boons and curses, named effects that last a few places (boons.json; logic/run-enc.js) */
+export const BOONS = /** @type {Record<string, import('../types/game-data').Boon>} */ (gameData.boons || {});
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 provide({ REWARDS }); /* to-module */
