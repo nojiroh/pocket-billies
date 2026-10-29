@@ -85,6 +85,17 @@ window.__film={tasks:new Map(T)};
 T.clear();S.lockQ=true;S.q.lvl=0;
 const r3=v=>Math.round((+v||0)*1000)/1000;
 __film.hash=k=>{let h=2166136261;for(let i=0;i<k.length;i++){h^=k.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
+/* VFX-20: what the whole screen shows, for tools/flash-audit.py: each #flash the page shows (its peak, colour and fade,
+   read from the style it had: battleStageFlash sets the peak, then fades it to 0), the impact frame's mode (1-2 the
+   two-tone, 3 the speed lines), the chromatic pulse and whether each Billie's sprite is drawn (a blink hides it), on
+   the film's clock, a row each time something changes. Read off the page, not from the limiter it audits */
+__film.fsObs=new MutationObserver(()=>{});{const f=document.getElementById('flash');if(f)__film.fsObs.observe(f,{attributes:true,attributeFilter:['style'],attributeOldValue:true})}
+__film.probe=vt=>{const o=__film.fsOut;if(!o)return;const t=Math.round(vt-o.t0),d=document.createElement('div');
+ for(const m of __film.fsObs.takeRecords()){d.setAttribute('style',m.oldValue||'');const now=m.target.style,a=+d.style.opacity||0,ms=parseFloat(d.style.transitionDuration)||0;
+  if(a>0&&ms>0&&now.opacity==='0'&&d.style.transitionProperty.includes('opacity'))o.fs.push(['f',t,a,d.style.backgroundColor||d.style.background,Math.round(ms*(d.style.transitionDuration.endsWith('ms')?1:1000))])}
+ const I=typeof battleImpact==='function'?battleImpact():null,ca=typeof battleStageChromaticPulse==='function'?battleStageChromaticPulse():0,
+  vis=S.s.map((s,i)=>!s.show?'-':actorBuffer(i)?'1':'0').join(''),k=[I?I.mode:0,ca?1:0,vis].join('|');
+ if(k!==o.fsk){o.fsk=k;o.fs.push(['s',t,I?I.mode:0,ca?1:0,vis])}};
 __film.reset=()=>{S.tws.length=0;S.evs.length=0;S.parts.length=0;S.impact=null;S.shk=0;S.hold=0;S.coin=null;S.ring=null;S.calm=false;S.t=1e5;
  S.props=[];if(S.scenesSeen)S.scenesSeen.clear();
  S.leafy.length=0;S.glint.length=0;if(typeof battleAnim!=='undefined'){battleAnim.flashes.times.length=0;battleAnim.cur=null}
@@ -110,9 +121,10 @@ __film.ka=(si,res)=>{const k=res.split('+')[1];return k?{ko:true,si:[1-si],last:
 __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s,ka:__film.ka(si,res)},pn=performance.now,st=window.setTimeout,timers=[];
  let vt=pn.call(performance)+1e7;performance.now=()=>vt;window.setTimeout=(fn,ms)=>{timers.push({t:vt+(+ms||0),fn});return 0};
  const out={key};try{__film.reset();__seed(__film.hash(key));const t0=S.t,F=__film.tasks.get('scene').fn;
-  __film.seen(mid);out.r=battleStagePlay(__film.an(mid,si,res),ev);out.trace=[];
-  for(let i=0;i<frames;i++){vt+=16;timers.sort((a,b)=>a.t-b.t);while(timers.length&&timers[0].t<=vt)timers.shift().fn();F(vt,16);if(i%every===0)out.trace.push(__film.snap(t0,vt))}
- }catch(e){out.err=String(e&&e.stack||e)}finally{performance.now=pn;window.setTimeout=st}return out};
+  __film.fsObs.takeRecords();out.fs=[];out.t0=vt;out.fsk='';__film.fsOut=out;
+  __film.seen(mid);out.r=battleStagePlay(__film.an(mid,si,res),ev);out.trace=[];__film.probe(vt);
+  for(let i=0;i<frames;i++){vt+=16;timers.sort((a,b)=>a.t-b.t);while(timers.length&&timers[0].t<=vt)timers.shift().fn();F(vt,16);__film.probe(vt);if(i%every===0)out.trace.push(__film.snap(t0,vt))}
+ }catch(e){out.err=String(e&&e.stack||e)}finally{performance.now=pn;window.setTimeout=st;__film.fsOut=null;delete out.t0;delete out.fsk}return out};
 /* a sheet's film: the same, the walk renderer's frame task stepped with the stage's, a picture after every block */
 __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;
  const ev={s:activeBattle.events[activeBattle.events.length-1].s,ka:__film.ka(si,res)};__film.seen(mid);return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
@@ -126,7 +138,7 @@ __film.lines=(key,L)=>{__film.reset();__seed(__film.hash(key));if(typeof battleL
  for(const x of L){if(!x.at)play(x);else window.setTimeout(()=>play(x),x.at)}return 0};
 __film.startLines=(key,L)=>{__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;return __film.wrap(()=>__film.lines(key,L))};
 __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=()=>__film.vt;window.setTimeout=(f,ms)=>{__film.timers.push({t:__film.vt+(+ms||0),fn:f});return 0};try{return fn()}finally{performance.now=pn;window.setTimeout=st}};
-__film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16)}return 0});
+__film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);__film.probe(__film.vt)}return 0});
 /* VFX-16: a flow moment's film (--flow): the stage call for each moment, with Reduced motion on or off; the battle's
    own Billies (a bot stands in for the foe in faint.bot) */
 __film.flow=(kind,red)=>{if(typeof battleStageOutcome==='undefined'&&(kind==='win'||kind==='lose'))return;const ev={s:activeBattle.events[activeBattle.events.length-1].s},S0=S.s[0],S1=S.s[1];
@@ -363,6 +375,8 @@ def main():
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
         pg.evaluate(MOTION_JS[MOTION])
+        # VFX-20: --flashes=off films with the Flashes setting off (SY-1's flashFor; rule 9)
+        if OPT.get('flashes') == 'off': pg.evaluate("saveData.preferences=saveData.preferences||{};saveData.preferences.flashes='off';0")
         if 'repeat' in OPT: pg.evaluate("__film.rep=true;0")
         if WEATHER == 'sand': pg.evaluate("battleStage.oil=true;0")
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
@@ -377,7 +391,7 @@ def main():
                 if 'sheets' in OPT:
                     sheet(pg, key, '', 1, '', start, every=15)
                 else:
-                    traces[key] = pg.evaluate(f"(()=>{{{start};const out={{key:{json.dumps(key)},trace:[]}};const t0=battleStage.t;for(let i=0;i<240;i++){{__film.step(1);if(i%{EVERY}===0)out.trace.push(__film.snap(t0,__film.vt))}}return out}})()")
+                    traces[key] = pg.evaluate(f"(()=>{{const out={{key:{json.dumps(key)},trace:[],fs:[],fsk:''}};__film.fsObs.takeRecords();{start};out.t0=__film.vt;__film.fsOut=out;const t0=battleStage.t;for(let i=0;i<240;i++){{__film.step(1);if(i%{EVERY}===0)out.trace.push(__film.snap(t0,__film.vt))}}__film.fsOut=null;delete out.t0;delete out.fsk;return out}})()")
                 print(key, 'filmed', flush=True)
             if traces: (OUT / 'trace-events.json').write_text(json.dumps(traces, indent=0, sort_keys=True))
         # VFX-16: --flow films the flow moments (--only= picks some), each with motion and under Reduced motion
