@@ -6,6 +6,7 @@
 import { expose } from './test-globals.js';
 import { flushAccountSave, provide, runWorld, runWorldSync, toast } from './hooks.js';
 import { TEST_BOOT } from './test-boot.js';
+import { collectionNote } from './logic/collection.js';
 import { loadSave, newSave, saveAge } from './logic/saves.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -204,6 +205,8 @@ provide({ uiState }); /* to-module */
 let saveTimer = null;
 export function save() {
   saveData.savedAt = Date.now();
+  /* PK-12: what the save shows now is noted for the Field Guide's Perks tab (logic/collection.js) */
+  collectionNote(saveData);
   writeStoredSave(saveData);
   if (!saveTimer)
     saveTimer = setTimeout(() => {

@@ -10,7 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { UI_SIGNALS } from './signals.js';
-import { paletteFor, uiThemeCss, uiThemeLook } from './ui-theme.js';
+import { UI_SHAPE_FAMILIES, paletteFor, uiThemeCss, uiThemeLook } from './ui-theme.js';
 /* eslint-disable no-func-assign */
 expose({
   UI_DIALS: [() => UI_DIALS],
@@ -101,6 +101,10 @@ export const UI_FAMILY_LABELS = /** @type {[string, string, boolean][]} */ ([
   ['tab', 'Tabs', false],
   ['toast', 'Toasts', true],
   ['bubble', 'The dialogue bubble', false],
+  ['bubbleSoft', 'A soft bubble (Kappi)', false],
+  ['bubbleNote', 'A note (narration)', false],
+  ['bubbleShout', 'A shouted line (burst)', false],
+  ['bubbleThink', 'A thought (cloud)', false],
 ]);
 export const dialEase = (/** @type {string} */ k, /** @type {string} */ label, help = '') =>
   /** @type {UiDial} */ ({ k, label, kind: 'ease', help });
@@ -295,6 +299,57 @@ export const UI_DIALS = [
         unit: 'ms',
         help: 'A number rising after its pop (500 to 700).',
       },
+      /* DL-3: the dialogue bubble */
+      {
+        k: 'bubbleResponse',
+        label: 'Bubble spring',
+        kind: 'range',
+        min: 0.1,
+        max: 1,
+        step: 0.01,
+        unit: 's',
+        help: 'How long one swing of the speech bubble’s spring takes as it pops in and grows to fit (0.35).',
+      },
+      {
+        k: 'bubbleDamping',
+        label: 'Bubble damping',
+        kind: 'range',
+        min: 0.3,
+        max: 1,
+        step: 0.05,
+        unit: '',
+        help: '1 never overshoots; lower bounces more (0.7).',
+      },
+      {
+        k: 'bubblePop',
+        label: 'Bubble pop-in size',
+        kind: 'range',
+        min: 0.3,
+        max: 1,
+        step: 0.02,
+        unit: '×',
+        help: 'The size a new bubble pops in from (0.6; 1: no pop).',
+      },
+      {
+        k: 'bubbleTilt',
+        label: 'Bubble tilt',
+        kind: 'range',
+        min: 0,
+        max: 8,
+        step: 0.5,
+        unit: '°',
+        help: 'The most a bubble’s frame tilts; each line picks its own, the letters stay level (3).',
+      },
+      {
+        k: 'bubbleIdle',
+        label: 'Bubble idle',
+        kind: 'range',
+        min: 0,
+        max: 2,
+        step: 0.1,
+        unit: '×',
+        help: 'The talking bubble’s float, wiggle and breathing (0.6). Off with Calm and Reduced.',
+      },
       dialEase('easeOut', 'Ease out', 'Things arriving.'),
       dialEase('easeIn', 'Ease in', 'Things leaving.'),
       dialEase('spring', 'Spring', 'Pops and bounces.'),
@@ -443,6 +498,7 @@ export const UI_DIALS = [
 
 /** the layer scale as tokens.css has it (kept equal by tools/test/ui-dials.test.mjs) */
 export const UI_LAYERS = /** @type {[string, number, string][]} */ ([
+  ['--z-under', -2, 'Under a part’s own under-layer (a thick-edged speech bubble’s edge)'],
   ['--z-below', -1, 'Under its own part (the shapes’ shadow layers)'],
   ['--z-battle', 10, 'The battle'],
   ['--z-scene', 20, 'Cutscene people over the dressing room'],
@@ -472,7 +528,10 @@ export function uiDialList() {
     for (const d of G.dials || []) {
       if (d.kind === 'families')
         for (const [f, n, hex] of UI_FAMILY_LABELS)
-          for (const k of hex ? ['kind', 'size', 'radius'] : ['kind', 'size', 'corners', 'radius'])
+          for (const k of [
+            ...(hex ? ['kind', 'size', 'radius'] : ['kind', 'size', 'corners', 'radius']),
+            ...(UI_SHAPE_FAMILIES[f]?.kind === 'jag' ? ['depth', 'spikes'] : []),
+          ])
             out.push({ group: G.id, side: '', path: `shape.families.${f}.${k}`, label: `${n}: ${k}`, dial: d });
       else out.push({ group: G.id, side: '', path: `${G.id}.${d.k}`, label: d.label, dial: d });
     }

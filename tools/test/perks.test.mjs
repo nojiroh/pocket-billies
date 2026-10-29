@@ -74,7 +74,8 @@ test('PK-4 relics: a Perk that needs a type is never offered without it, in a pi
 test('PK-4 relics: a type Perk whose type is on the team is offered about bias times as often as an untagged one', () => {
   const team = [['Fire'], ['Water']],
     count = { bellows: 0, joy_buzzer: 0 };
-  for (let n = 0; n < 1500; n++) {
+  /* PK-9: 6000 shelves (1500 left too few of the two for the ratio to settle once the pool grew) */
+  for (let n = 0; n < 6000; n++) {
     const id = R.perkShelf(run('B' + n), 1, 1, PERKS, RULE, team);
     if (id in count) count[id]++;
   }
@@ -162,7 +163,7 @@ test('relics: a seed’s offer order (Studio plan T4.1) is the run’s picks in 
     none = R.perkOfferOrder('ORDER1', PERKS, RULE, picks),
     r = run('ORDER1'),
     game = [];
-  for (let k = 0; k < picks; k++) game.push(R.perkOfferMake(r, PERKS, RULE) || []);
+  for (let k = 0; k < picks; k++) game.push(R.perkOfferMake(r, PERKS, RULE, undefined, 'leader') || []);
   assert.deepEqual(
     none.map(p => p.offer),
     game,
@@ -280,4 +281,48 @@ test('PK-4 tags: a Perk whose tag is a type on the team or a held Perk’s tag w
     even = count([['Water']]);
   assert.ok(Math.abs(even - 0.5) < 0.08, `even ${even}`);
   assert.ok(Math.abs(lean - 2 / 3) < 0.08, `lean ${lean}`);
+});
+
+test('PK-8 perkShopPrice: a run shop’s Perk with the shop’s price rows, then those of a Perk', () => {
+  const P = {
+      ...PERKS,
+      test_shop: { name: 'T', d: 'T.', rarity: 'common', fx: [{ kind: 'price', what: 'shop', mult: 0.8 }] },
+      test_perk: { name: 'T', d: 'T.', rarity: 'common', fx: [{ kind: 'price', what: 'perk', mult: 0.5 }] },
+    },
+    r = run(),
+    id = 'lucky_charm',
+    base = R.perkPrice(PERKS[id], RULE);
+  assert.equal(R.perkShopPrice(r, id, P, RULE), base, 'none held: its price');
+  assert.equal(R.perkShopPrice(null, id, P, RULE), base, 'no run: its price');
+  r.perks = ['test_perk'];
+  assert.equal(R.perkShopPrice(r, id, P, RULE), Math.round(base * 0.5));
+  r.perks = ['test_perk', 'test_shop'];
+  assert.equal(R.perkShopPrice(r, id, P, RULE), Math.round(Math.round(base * 0.8) * 0.5), 'the shop’s rows first');
+  /* a perk row leaves the shop's wares and the clinic alone */
+  r.perks = ['test_perk'];
+  assert.equal(modules.effects.fxRunPrice(r, P, 'shop', 100), 100);
+  assert.equal(modules.effects.fxRunPrice(r, P, 'heal', 100), 100);
+});
+
+test('PK-8 perkSetOf, perkSetLine and perkGroups: a Perk’s set, its "Office Supplies 2/3", the Perks tab’s groups', () => {
+  const r = run();
+  assert.equal(R.perkSetOf('rubber_stamp', PERKS), 'office');
+  assert.equal(R.perkSetOf('lucky_charm', PERKS), '');
+  assert.equal(R.perkSetOf('rubber_stamp', PERKS, {}), '', 'no sets');
+  assert.equal(R.perkSetLine(r, 'lucky_charm', PERKS), '');
+  assert.equal(R.perkSetLine(r, 'rubber_stamp', PERKS), 'Office Supplies 1/3', 'offered: with it taken');
+  assert.equal(R.perkSetLine(null, 'rubber_stamp', PERKS), 'Office Supplies 1/3', 'no run');
+  r.perks = ['rubber_stamp', 'lucky_charm', 'click_pen'];
+  assert.equal(R.perkSetLine(r, 'rubber_stamp', PERKS), 'Office Supplies 2/3', 'held: as it stands');
+  assert.equal(R.perkSetLine(r, 'punch_card', PERKS), 'Office Supplies 3/3', 'the one that completes it');
+  r.perks.push('punch_card', 'time_card');
+  assert.equal(R.perkSetLine(r, 'time_card', PERKS), 'Office Supplies 3/3', 'never past its need');
+  r.perks = ['umbrella', 'lucky_charm', 'rubber_stamp', 'barometer', 'snow_globe', 'coupon_book'];
+  assert.deepEqual(R.perkGroups(r, PERKS), [
+    { set: 'office', ids: ['rubber_stamp'], n: 1, need: 3, on: false },
+    { set: 'weather', ids: ['umbrella', 'barometer', 'snow_globe'], n: 3, need: 3, on: true },
+    { set: '', ids: ['lucky_charm', 'coupon_book'], n: 0, need: 0, on: false },
+  ]);
+  r.perks = [];
+  assert.deepEqual(R.perkGroups(r, PERKS), []);
 });

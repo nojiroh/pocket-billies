@@ -5,6 +5,7 @@
 import { expose } from '../../game/js/test-globals.js';
 import {
   artStepPut,
+  battlePreviewLeave,
   draftNow,
   draftSoon,
   legacyLineIdsRead,
@@ -667,7 +668,11 @@ export const SECTION_LIST = [
   ['workbench', 'Art workbench', 'Cut sheets into parts (drop a PNG anywhere), then their pivots and sockets'],
   ['robots', 'Robots', 'Robot parts, gems, their pictures and the rules behind them'],
   ['moves', 'Moves', 'Attacks and their effects'],
-  ['preview', 'Battle preview', 'Watch moves, backdrops and Billies on the real battle stage'],
+  [
+    'preview',
+    'Battle effects',
+    'Moves and events on the real battle stage: step through them, tune budgets and smears',
+  ],
   ['types', 'Types', 'Colors, matchups and type abilities'],
   ['items', 'Items & pyramids', 'Shop goods, catch pyramids'],
   ['world', 'World & encounters', 'Who appears where (runs read the pools their biomes name); map: legacy'],
@@ -758,7 +763,11 @@ export function besideRefusal(s) {
   return '';
 }
 export function openSection(s, sel) {
-  if (studioState.sec === 'preview' && s !== 'preview' && typeof battleStageStop === 'function') battleStageStop();
+  if (studioState.sec === 'preview' && s !== 'preview') {
+    /* VFX-12: the Battle effects editor's motion and Flashes settings stay with it */
+    if (typeof battlePreviewLeave === 'function') battlePreviewLeave();
+    if (typeof battleStageStop === 'function') battleStageStop();
+  }
   if (typeof engineContext !== 'undefined') engineContext.bypass = false;
   /* the second pane's section moves to the first: the two swap (or the second pane closes, for a 3D one) */
   if (studioState.sec2 === s) studioState.sec2 = PANE2_REFUSED[studioState.sec] ? null : studioState.sec;

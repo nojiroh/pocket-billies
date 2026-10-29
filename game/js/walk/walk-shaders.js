@@ -207,7 +207,7 @@ void main(){vRip=0.;float px=(uOff.x+aC.x*uOff.z),py=(uOff.y+aC.y*uOff.w);float 
     the same pixels), so only rock clearly nearer than you shows it, not the ground at your feet */
  if(uGhostV.w>0.)p+=normalize(uGhostV.xyz-p)*uGhostV.w;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv,uFig;uniform vec4 uMat,uUV;uniform vec3 uSelf;uniform vec4 uGhost,uHit;uniform float uGhostE;uniform vec4 uFoil;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}${FIGURE_SPRITE_GLSL}
+precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv,uFig;uniform vec4 uMat,uUV;uniform vec3 uSelf;uniform vec4 uGhost,uHit;uniform float uGhostE;uniform vec4 uFoil;uniform vec3 uRise;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}${FIGURE_SPRITE_GLSL}
 float bayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
  /* terrain TR-3: your silhouette through rock: a flat tint (uGhost.rgb) over uGhost.w of the pixels; player visibility:
@@ -218,6 +218,11 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
  if(uFade<.99&&bayer(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
  /* CH-4: a figure's cell: its colour by its ramp and the light where it stands (FIGURE_SPRITE_GLSL) */
  if(uFig>.5)c.rgb=figLit(c.rgb,texture(uNrm,vUV),vUV,uRight,uBack,uFlipN,vW,vPx);
+ /* VFX-16: a Billie dithering in from its feet up (a send-out) or out (a recall, a faint): uRise.x the share hidden from
+    the top, uRise.y and uRise.z the feet's and the head's places down the picture (0..1); a hard step against the Bayer pattern on the art's own
+    pixels, with a bright rim on the eroding edge. 0 for everything else and in the instanced program */
+ float rr=0.;if(uRise.x>0.){vec2 tz=vec2(textureSize(uTex,0)),ap=floor(vUV*tz),lf=((ap+.5)/tz-uUV.xy)/uUV.zw;float h=(uRise.y-lf.y)/max(uRise.y-uRise.z,.001),e=1.-uRise.x+(bayer(ap)-.5)*.3;
+  if(h>e)discard;rr=h>e-.08?.75:0.;}
  /* v47: one outline rule: a near-black texel on the picture's edge takes a deep shade of the colour beside it, so
     outlines are coloured, as the newer art draws them (the pictures themselves are not changed) */
  if(uSelOut>0.&&uFig<.5&&dot(c.rgb,vec3(.3,.59,.11))<.17){vec2 ts=1./vec2(textureSize(uTex,0));vec4 q[4]=vec4[4](texture(uTex,vUV+vec2(ts.x,0.)),texture(uTex,vUV-vec2(ts.x,0.)),texture(uTex,vUV+vec2(0.,ts.y)),texture(uTex,vUV-vec2(0.,ts.y)));
@@ -246,7 +251,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
  if(uFoil.x>0.){vec2 tz=vec2(textureSize(uTex,0)),ap=floor(vUV*tz),lf=((ap+.5)/tz-uUV.xy)/uUV.zw;float fd=abs(lf.x+lf.y*.6-uFoil.y)/uFoil.z;
   if(fd<1.&&dot(c.rgb,vec3(.3,.59,.11))>.3&&(fd<.6||bayer(ap)>(fd-.6)/.4)){const vec3 hk=vec3(.57735);float ha=uFoil.w*6.2832;vec3 hc=col*cos(ha)+cross(hk,col)*sin(ha)+hk*dot(hk,col)*(1.-cos(ha));col=mix(col,hc*1.25+.06,uFoil.x);}}
  /* VFX-9: a hit's flash (white or dark, uHit.a its amount), after the light, so a flash no longer redraws the picture */
- col=mix(col,uHit.rgb,uHit.a);o=vec4(fogit(col,vW),uAlpha);}`,
+ col=mix(col,vec3(1.),rr);col=mix(col,uHit.rgb,uHit.a);o=vec4(fogit(col,vW),uAlpha);}`,
   ],
   shadow: [
     `#version 300 es

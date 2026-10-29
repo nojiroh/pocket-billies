@@ -32,7 +32,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 # TC-4: the set-up every browser check shares (tools/browser_check.py); the look tools reach it through this module too
 from browser_check import (CLOCK, GAME, LAUNCH, LOW_GRAPHICS, NO_ACCOUNTS, ROOT, T0, TEST_GLOBALS, console_text,  # noqa: E402,F401
-                           drawing, free_port, go_scene, log, open_game, serve, stand, until)
+                           drawing, frames, free_port, go_scene, log, open_game, serve, stand, until)
 
 ARGS = sys.argv[1:]
 WORKERS = int(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--workers=')), 2))
@@ -107,6 +107,12 @@ def walk_over(pg, n1, past, sec=60):
     return False
 
 
+SEAM_BUILDS = "[...debugLog.marks.filter(m=>m[0]>={t0}&&/building the ground mesh/.test(m[2])).map(m=>m[2]+' '+Math.round(m[1]-m[0])+' ms'),...(walkView.navBuilds>{n0}?[(walkView.navBuilds-{n0})+' walking grid(s) built in one go']:[])]"
+# pushes a held or remade view's preparation along, 150 ms of work a half second (light: the other worker's checks
+# count frames meanwhile)
+SEAM_PREP = "groundPrepWork(150);if(typeof navPrepWork==='function')navPrepWork(150)"
+
+
 def run_world(pg, base):
     """RL-7: the run fixture boots on its landing (day 1), its world made from the seed at boot: Copperleaf and a place
     per node, the landing's view drawing; HB-2: its loading screen lifts and logs a resume line (no seed); the Map tab opens as the bowl with every place on it; a walk over the
@@ -139,10 +145,75 @@ def run_world(pg, base):
     if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
     # the next view is held (seamless-world.js seamlessGate) until it is built, a few ms a frame: about 140 frames, a
     # minute or more at this machine's frame rate and 2 s on a phone. While waiting, give it the build time a phone's
-    # frames would (check-quick.py's cross(prep_ms=...) does the same)
-    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60, poke='groundPrepWork(50)'):
+    # frames would (check-quick.py's cross(prep_ms=...) does the same): its ground and, since the crossing hitch fix,
+    # its walking grid (SEAM_PREP)
+    if not until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 60, poke=SEAM_PREP, poll=500):
         raise Exception(f'crossed but the view is still {pg.evaluate("walkView.id")}')
     return f'{scenes} scenes made in {ms} ms; {line}; walked into {pg.evaluate(f"LOCATIONS[{n1}].name")} on day 2'
+
+
+def run_seam_water(pg, base):
+    """the crossing hitch (the owner's log of 28 Oct 2026: one frame of 3.2 s): a seam walked on a day the weather
+    changes the water in view. Every run place has a storm on day 1 (water floods where it can) and a clear day 2; the
+    walk goes to the next place whose view holds one that floods. With the next view prepared ahead (pushed along here:
+    headless draws a frame every second or so), walking over the seam builds no ground and no walking grid in one go,
+    then or when the view takes day 2's water (made again in the background and swapped in once ready)"""
+    drawing(pg)
+    if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the run's loading screen never lifted")
+    pg.evaluate("""(() => {
+      const F = saveData.run.forecast;
+      for (const L of LOCATIONS)
+        if (L && L.runNode != null) {
+          const d = F[runWorldNode(L.runNode)];
+          d[0] = 'storm';
+          d[1] = 'clear';
+        }
+      runWaterWx.key = '';
+      return 0;
+    })()""")
+    if not until(pg, "LOCATIONS.some(L=>L&&L.runNode!=null&&(gameData.maps[L.mapId]||{}).wx==='flood')", 30): raise Exception('no run place floods in a storm')
+    n1, flooded = pg.evaluate("""(() => {
+      const wet = id => (gameData.maps[id] || {}).wx === 'flood';
+      for (const i of runNext(saveData.run.map, 0)) {
+        const n = runWorldNode(i), V = mapById('w:' + LOCATIONS[n].mapId + '*'), ids = (V && V.parts || []).map(p => p.id).filter(wet);
+        if (ids.length) return [n, ids];
+      }
+      return [null, []];
+    })()""")
+    if n1 is None: raise Exception("no place next to the landing has a view that floods")
+    nxt = pg.evaluate(f"'w:'+LOCATIONS[{n1}].mapId+'*'")
+    flood = f"{json.dumps(flooded)}.filter(id=>gameData.maps[id].wx==='flood')"
+    settled = "walkView.sc===mapById(walkView.id)&&isGroundPrepared(walkView.id,walkView.sc)"
+    if not until(pg, settled, 120, poke=SEAM_PREP, poll=500): raise Exception("the landing's view never took day 1's flood")
+    walk_over(pg, n1, -20)   # 20 m short of the seam
+    if not until(pg, f"seamlessGetReady('{nxt}',false)", 120, poke=SEAM_PREP, poll=500): raise Exception(f'the next view {nxt} never got ready ahead')
+    t0, n0 = pg.evaluate('[performance.now(), walkView.navBuilds]')
+    if not walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6): raise Exception(f'walked toward {pg.evaluate(f"LOCATIONS[{n1}].name")} and never crossed')
+    if pg.evaluate('saveData.run.clock') != 2: raise Exception(f'arrived on day {pg.evaluate("saveData.run.clock")}, not 2')
+    if not until(pg, f"walkView.ready&&walkView.id==='{nxt}'", 30): raise Exception(f'crossed, but the view is still {pg.evaluate("walkView.id")} (held for its remake?)')
+    # the walk frame lays each place's water by the new day's forecast (run-world.js runWaterWeatherSync)
+    if not until(pg, f"{flood}.length===0", 30): raise Exception(f'day 2 is clear, but {pg.evaluate(flood)} still flood')
+    if not frames(pg, 3): raise Exception('the view stopped drawing after the crossing')
+    built = pg.evaluate(SEAM_BUILDS.format(t0=t0, n0=n0))
+    if built: raise Exception(f'the crossing built in one go: {built}')
+    if not until(pg, settled, 120, poke=SEAM_PREP, poll=500): raise Exception(f'the view never took day 2’s water ({pg.evaluate("walkView.id")})')
+    if not frames(pg, 3): raise Exception('the view stopped drawing after its remake')
+    built = pg.evaluate(SEAM_BUILDS.format(t0=t0, n0=n0))
+    if built: raise Exception(f'the remade view was built in one go: {built}')
+    # the grid built ahead a slice at a time is the very grid navGrid builds in one go
+    diff = pg.evaluate("""(() => {
+      const a = walkView.nav, keep = walkView.navKeep, ahead = walkView.navAhead;
+      walkView.nav = null;
+      walkView.navKeep = [];
+      walkView.navAhead = [];
+      const b = navGrid();
+      walkView.navKeep = keep;
+      walkView.navAhead = ahead;
+      return ['N', 'gw', 'gh', 'blk', 'cost', 'lv', 'hop', 'dry', 'surf'].filter(k =>
+        a[k] && a[k].length != null ? a[k].length !== b[k].length || a[k].some((v, i) => v !== b[k][i]) : a[k] !== b[k]);
+    })()""")
+    if diff: raise Exception(f'the walking grid built ahead differs from one built in one go: {diff}')
+    return f'into {pg.evaluate(f"LOCATIONS[{n1}].name")}, its view flooded at {flooded} on day 1: crossed on day 2 with nothing built in one go; the remade view swapped in'
 
 
 def run_helper(pg, base):
@@ -310,9 +381,11 @@ def hub_orbit(pg, base):
 
 # IS-1: the camera's yaw (0 looking north) and the wrapped difference between two angles, in the page
 WRAP = "((a)=>a-2*Math.PI*Math.floor((a+Math.PI)/(2*Math.PI)))"
-# the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026): holding right from the south
-# keeps to 30 m for the 0.7 rad the check needs; nearer the summit (12-20 m) the slopes slide you 1-3 m in
-ORBIT_R = 30
+# the circle round Copperleaf's summit the orbit check walks (measured on 23 Oct 2026, again on 28 Oct after the hub's
+# wider mountain and the pond's terrace): holding right from the south keeps to 32 m for the 0.7 rad the check needs
+# (its radial slope under 0.15 the whole way); at 30 m it ends at the terrace's rock face, nearer the summit the
+# mountain's foot slides you in
+ORBIT_R = 32
 ORBIT_FRAMES = 300   # the hold-right walk's frames on a slow machine, four times what it needs
 
 
@@ -935,7 +1008,11 @@ def relics(pg, base):
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
     odds = pg.evaluate("[catchOdds('pyramid',1,false),(activeBattle.fx=null,catchOdds('pyramid',1,false))]")
-    if abs(odds[0] - min(1, odds[1] * 1.25)) > 1e-9: raise Exception(f'the catch row: {odds}')
+    # PK-8: Steady Hand's 1.25, and Old School's 1.1 (the fixture holds three Trainer Classics: Steady Hand, Running
+    # Shoes, Trail Snacks)
+    sets = pg.evaluate("fxSetsOn(saveData.run.perks,PERKS)")
+    if sets != ['classics']: raise Exception(f'the Perk sets on: {sets}')
+    if abs(odds[0] - min(1, odds[1] * 1.25 * 1.1)) > 1e-9: raise Exception(f'the catch row: {odds}')
     pg.evaluate("stopTimers();activeBattle.over='ran';endBattle();0")
     if not until(pg, "!activeBattle", 20): raise Exception('the battle didn’t end')
     heal = pg.evaluate("uiState.modal=null;uiState.mq=[];saveData.team[0].hp=1;runArrivedFx();saveData.team[0].hp")
@@ -961,6 +1038,17 @@ def relics(pg, base):
     after = pg.evaluate("[saveData.se,saveData.run.perks.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
     if after != [se - price, 6, '', False]: raise Exception(f'after buying: money, held, shelf, row {after} (paid {se - after[0]}, price {price})')
     if stored()['shelf'] != {f'{town}:{pg.evaluate("saveData.run.clock")}': ''}: raise Exception(f'the bought shelf isn’t stored: {stored()["shelf"]}')
+    # PK-9: a boon and a curse on the run: the Perks tab lists them (picture, places left), the Map tab's head shows
+    # them beside the day, an appeal at the clinic lifts the curse
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();encBoonGive(saveData.run,'tailwind','check');encBoonGive(saveData.run,'audit_trail','check');uiState.tab='perks';render();0")
+    if not until(pg, "document.querySelectorAll('.s-perks .boon-row').length===2", 10): raise Exception('the Perks tab doesn’t list the boon and the curse')
+    rows = pg.evaluate("[...document.querySelectorAll('.s-perks .boon-row')].map(e=>[e.dataset.boon,e.querySelector('.art-ic').offsetWidth,(getComputedStyle(e.querySelector('.art-ic')).backgroundImage.match(/art\\/(boons\\/\\w+\\.svg)/)||[])[1]||'',e.querySelector('.boon-left').textContent])")
+    if rows != [['tailwind', 36, 'boons/tailwind.svg', 'Boon · 3 places left'], ['audit_trail', 36, 'boons/audit_trail.svg', 'Curse · 4 places left']]:
+        raise Exception(f'the boons’ rows: {rows}')
+    pg.evaluate("uiState.tab='map';render();0")
+    if not until(pg, "document.querySelectorAll('.map-hrow .boon-strip .boon-chip').length===2", 10): raise Exception('the Map tab’s head doesn’t show the boons')
+    appeal = pg.evaluate("(()=>{const se=saveData.se;saveData.se=500;const r=runAppeal(saveData,'audit_trail',RULES.run.appealCost);const out=[r.paid,saveData.run.enc.boons.map(b=>b.id)];saveData.se=se;saveData.run.enc.boons=[];uiState.tab='walk';render();return out})()")
+    if appeal != [50, ['tailwind']]: raise Exception(f'the appeal: {appeal}')
     # a mini-boss beaten: the pick is stored with the battle's end, before its sheet
     mb = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='miniboss')")
     if not pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({mb}+1)"): raise Exception('couldn’t walk to a mini-boss')
@@ -978,7 +1066,12 @@ def relics(pg, base):
     if pg.evaluate("saveData.run.offer") != offer2: raise Exception('a reload showed another pick')
     pg.evaluate("document.querySelectorAll('#ov [data-a=mb]')[1].click();0")
     if not until(pg, "!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10): raise Exception('Take none didn’t clear the pick')
-    return f'the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
+    # PK-12: the Field Guide's Perks tab lists every Perk, the held ones taken, the unseen as silhouettes
+    pg.evaluate("save();uiState.tab='guide';uiState.guideTab='perks';uiState.perkGuideK='perk';render();0")
+    if not until(pg, "document.querySelectorAll('.pkg-row').length===Object.keys(PERKS).length", 10): raise Exception('the Field Guide’s Perks tab doesn’t list every Perk')
+    guide = pg.evaluate("[saveData.run.perks.every(id=>document.querySelector(`.pkg-row[data-pkg='perk:${id}']`).classList.contains('taken')),document.querySelectorAll('.pkg-row.none .art-sil').length,document.querySelectorAll('.pkg-row.none').length,!!JSON.parse(localStorage.getItem(SAVE_KEY)).collection.taken['perk:'+saveData.run.perks[0]]]")
+    if not guide[0] or guide[1] != guide[2] or not guide[3]: raise Exception(f'the Perks tab’s marks: {guide}')
+    return f'the Field Guide’s Perks tab ({guide[2]} unseen as silhouettes); the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
 
 
 def income(pg, base):
@@ -1541,6 +1634,13 @@ def screens(pg, base):
                     ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]'), ('lab', '.lab-sec .lab-row')):
         if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
         need(t, screen(t, part))
+    # PK-11: the Bag's rows draw each item's own picture (art/items) at 36 px, a whole multiple of the icon's 36
+    pg.evaluate(nav_tap('bag'))
+    need('the Bag again', screen('bag', '.bag-list'))
+    pics = pg.evaluate("[...document.querySelectorAll('.screen.s-bag .bag-row .bag-ic img')].filter(e=>/art\\/items\\//.test(e.getAttribute('src'))).map(e=>e.getBoundingClientRect().width)")
+    if not pics or any(w != 36 for w in pics): raise Exception(f'the Bag rows’ item pictures: {pics} (36 px each)')
+    pg.evaluate(nav_tap('lab'))
+    need('lab again', screen('lab', '.lab-sec .lab-row'))
     # the world is the base view: the open tab tapped again, or Esc, goes back to it
     pg.evaluate(nav_tap('lab'))
     need('the world (the open tab again)', screen('walk', '#walkHero'))
@@ -1610,12 +1710,13 @@ def train_ride(pg, base):
     after a loss the battered one with its smoke"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')&&walkView.ready&&!!walkView.sc.props.find(p=>p.act==='station')", 90): raise Exception('Copperleaf’s station isn’t in the view')
-    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();window._rode=0;trainRideDepart('train_harvest',()=>{window._rode=1});0")
-    if not pg.evaluate("trainRide.on&&!!trainRide.W&&!!walkView.director"): raise Exception('the departure isn’t filmed in the walk view')
     # the ride runs on the clock: on a slow page a frame can fall either side of the lift, so one moment of it is held
     # (as tools/look-train-ride.py does) until a frame has drawn the train there, then the ride goes on to its end.
-    # Cutscenes track A: by then it has risen straight up over the station on its engines
-    pg.evaluate("trainRide.hold=6900;0")
+    # Cutscenes track A: by then it has risen straight up over the station on its engines. The hold is set in the same
+    # call that starts the ride: on the CI runner's slow draw (the hub inland since 2026-10-28) the ride's 10.3 s could
+    # run out before a second call came
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();window._rode=0;trainRideDepart('train_harvest',()=>{window._rode=1});trainRide.hold=7600;0")
+    if not pg.evaluate("trainRide.on&&!!trainRide.W&&!!walkView.director"): raise Exception('the departure isn’t filmed in the walk view')
     if not until(pg, "trainRide.W&&trainRide.W.train.lift>8&&Math.hypot(trainRide.W.train.x-trainRide.W.H.x,trainRide.W.train.z-trainRide.W.H.z)<3", 90): raise Exception(f'the train never rose over the station: {pg.evaluate("trainRide.W&&[trainRide.W.train.x,trainRide.W.train.lift]")}')
     pg.evaluate("trainRide.hold=null;0")
     if not until(pg, "window._rode===1&&!!document.getElementById('trainveil')", 90): raise Exception('the departure didn’t end in the white veil')
@@ -1868,6 +1969,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("A run town's life: folk walk and go indoors, the graphics cap, a named local talks (TW-2)", run_town_life),
              ("A run town's quest: the giver's \"!\", Yes takes it, the Map tab lists it, another town's board pays it (TW-3)", run_town_quests),
              ("A run's village: its name, its market stall's own shop of 2 held items, no Perk, Mo's fresh stock (WM-5)", run_village_stall)]),
+    ('run', [("A seam on a day the weather changes the water in view: nothing built in one go, the day's water swapped in after (the crossing hitch)", run_seam_water)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),

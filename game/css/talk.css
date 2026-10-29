@@ -115,10 +115,10 @@
   box-shadow: 0 10px 30px var(--shadow);
   animation: csUp 0.25s ease backwards;
 }
-.talk-layer.in-cs .talk-box {
+.talk-layer.in-cs .talk-stack {
   bottom: calc(7vh + 12px);
 }
-body.in-cs .talk-layer:not(.in-cs) .talk-box {
+body.in-cs .talk-layer:not(.in-cs) .talk-stack {
   bottom: calc(7vh + 12px);
 }
 .talk-por {
@@ -167,8 +167,8 @@ body.talking #nav {
   .talk-line {
     font-size: 15.5px;
   }
-  .talk-layer.in-cs .talk-box,
-  body.in-cs .talk-layer .talk-box {
+  .talk-layer.in-cs .talk-stack,
+  body.in-cs .talk-layer .talk-stack {
     bottom: calc(5vh + 10px);
   }
 }

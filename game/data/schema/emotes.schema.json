@@ -1,0 +1,33 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "emotes.schema.json",
+ "title": "game/data/emotes.json: the emotes that pop beside a talking head (dialogue track DL-5; logic/talk-director.js, talk.js)",
+ "type": "object",
+ "required": ["size", "outline", "colors", "auto", "emotes"],
+ "additionalProperties": false,
+ "properties": {
+  "about": {"type": "string"},
+  "size": {"type": "integer", "minimum": 8, "maximum": 16, "description": "each emote's width and height in art pixels"},
+  "outline": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$", "description": "drawn on every clear side of a drawn pixel"},
+  "colors": {
+   "type": "object",
+   "propertyNames": {"pattern": "^[a-z]$"},
+   "additionalProperties": {"type": "string", "pattern": "^#[0-9a-fA-F]{6}$"},
+   "description": "a letter in a grid → its colour"
+  },
+  "auto": {
+   "type": "object",
+   "additionalProperties": {"type": "string"},
+   "description": "a face (an expression) → the emote it pops when its line has no [emote] of its own"
+  },
+  "emotes": {
+   "type": "object",
+   "minProperties": 1,
+   "additionalProperties": {
+    "type": "array",
+    "items": {"type": "string", "pattern": "^[a-z.]+$"},
+    "description": "rows of the picture, top first: a letter from colors, or . for clear"
+   }
+  }
+ }
+}

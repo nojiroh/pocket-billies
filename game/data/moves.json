@@ -1,6 +1,6 @@
 {
- "handshake": {"n":"Tackle","t":"None","c":"H","p":40,"a":100,"d":"A full-body charge."},
- "lawsuit": {"n":"Rush","t":"None","c":"H","p":70,"a":90,"d":"A reliable hit."},
+ "handshake": {"n":"Tackle","t":"None","c":"H","p":40,"a":100,"d":"A full-body charge.","anim":"charge"},
+ "lawsuit": {"n":"Rush","t":"None","c":"H","p":70,"a":90,"d":"A reliable hit.","anim":"charge"},
  "hedge": {
   "n": "Guard",
   "t": "None",
@@ -8,7 +8,8 @@
   "a": 0,
   "pr": 4,
   "fx": {"protect":1},
-  "d": "Blocks one attack. Fails if used twice in a row."
+  "d": "Blocks one attack. Fails if used twice in a row.",
+  "anim": "guard"
  },
  "subpoena": {
   "n": "Lullaby",
@@ -16,7 +17,8 @@
   "c": "X",
   "a": 75,
   "fx": {"status":"slp"},
-  "d": "Sings the target to sleep for 2–4 turns. Sleeping targets are twice as easy to catch."
+  "d": "Sings the target to sleep for 2–4 turns. Sleeping targets are twice as easy to catch.",
+  "anim": "hex"
  },
  "movefast": {
   "n": "Zip",
@@ -29,18 +31,20 @@
    "selfStage": {"law":-1},
    "selfChance": 10
   },
-  "d": "Always strikes first. 10% chance to lower its own Defense."
+  "d": "Always strikes first. 10% chance to lower its own Defense.",
+  "anim": "dash"
  },
- "disrupt": {"n":"Spark Shot","t":"Electric","c":"S","p":65,"a":100,"d":"A crackling bolt."},
+ "disrupt": {"n":"Spark Shot","t":"Electric","c":"S","p":65,"a":100,"d":"A crackling bolt.","anim":"shot"},
  "tos": {
   "n": "Static Wave",
   "t": "Electric",
   "c": "X",
   "a": 90,
   "fx": {"status":"par"},
-  "d": "Paralyzes the target."
+  "d": "Paralyzes the target.",
+  "anim": "hex"
  },
- "overload": {"n":"Overcharge","t":"Electric","c":"S","p":95,"a":90,"d":"A heavy hit."},
+ "overload": {"n":"Overcharge","t":"Electric","c":"S","p":95,"a":90,"d":"A heavy hit.","anim":"beam"},
  "harvest": {
   "n": "Sap Drain",
   "t": "Grass",
@@ -48,7 +52,8 @@
   "p": 60,
   "a": 100,
   "fx": {"drain":0.5},
-  "d": "Drains half the damage dealt."
+  "d": "Drains half the damage dealt.",
+  "anim": "shot"
  },
  "rebrand": {
   "n": "Charge Up",
@@ -58,7 +63,8 @@
   "fx": {
    "selfStage": {"lev":1,"lob":1}
   },
-  "d": "Raises Attack and Sp. Atk."
+  "d": "Raises Attack and Sp. Atk.",
+  "anim": "buff"
  },
  "post3am": {
   "n": "Inferno",
@@ -67,9 +73,10 @@
   "p": 120,
   "a": 85,
   "fx": {"selfStatus":"brn","selfChance":30},
-  "d": "Huge damage. 30% chance to burn itself."
+  "d": "Huge damage. 30% chance to burn itself.",
+  "anim": "breath"
  },
- "pump": {"n":"Mind Pulse","t":"Psychic","c":"S","p":50,"a":100,"d":"A wave of strange energy."},
+ "pump": {"n":"Mind Pulse","t":"Psychic","c":"S","p":50,"a":100,"d":"A wave of strange energy.","anim":"wave"},
  "fud": {
   "n": "Unnerve",
   "t": "Psychic",
@@ -78,7 +85,8 @@
   "fx": {
    "tgtStage": {"pr":-2}
   },
-  "d": "Sharply lowers the target’s Sp. Def."
+  "d": "Sharply lowers the target’s Sp. Def.",
+  "anim": "hex"
  },
  "hype": {
   "n": "Bewilder",
@@ -86,9 +94,10 @@
   "c": "X",
   "a": 85,
   "fx": {"hype":1},
-  "d": "Confuses the target. It may hurt itself."
+  "d": "Confuses the target. It may hurt itself.",
+  "anim": "hex"
  },
- "moon": {"n":"Moonbeam","t":"Psychic","c":"S","p":95,"a":85,"d":"Wildly unpredictable."},
+ "moon": {"n":"Moonbeam","t":"Psychic","c":"S","p":95,"a":85,"d":"Wildly unpredictable.","anim":"beam"},
  "rugpull": {
   "n": "Mind Wipe",
   "t": "Psychic",
@@ -96,7 +105,8 @@
   "p": 40,
   "a": 100,
   "fx": {"wipe":1},
-  "d": "Wipes out the target’s stat boosts."
+  "d": "Wipes out the target’s stat boosts.",
+  "anim": "strike"
  },
  "spill": {
   "n": "Cinders",
@@ -105,9 +115,10 @@
   "p": 40,
   "a": 100,
   "fx": {"status":"brn","chance":20},
-  "d": "20% chance to burn the target."
+  "d": "20% chance to burn the target.",
+  "anim": "storm"
  },
- "pipeline": {"n":"Flame Dash","t":"Fire","c":"H","p":60,"a":100,"d":"A blazing charge."},
+ "pipeline": {"n":"Flame Dash","t":"Fire","c":"H","p":60,"a":100,"d":"A blazing charge.","anim":"dash"},
  "lobby": {
   "n": "Stoke",
   "t": "Fire",
@@ -116,7 +127,8 @@
   "fx": {
    "selfStage": {"lob":2}
   },
-  "d": "Sharply raises Sp. Atk."
+  "d": "Sharply raises Sp. Atk.",
+  "anim": "buff"
  },
  "deepdrill": {
   "n": "Drill Strike",
@@ -125,9 +137,10 @@
   "p": 80,
   "a": 95,
   "fx": {"heal":0.25},
-  "d": "Hits and restores 25% of its HP."
+  "d": "Hits and restores 25% of its HP.",
+  "anim": "strike"
  },
- "gusher": {"n":"Blaze Charge","t":"Fire","c":"H","p":100,"a":80,"d":"Powerful but hard to aim."},
+ "gusher": {"n":"Blaze Charge","t":"Fire","c":"H","p":100,"a":80,"d":"Powerful but hard to aim.","anim":"charge"},
  "lobbygusher": {
   "n": "Sand Squall",
   "t": "Ground",
@@ -135,9 +148,10 @@
   "p": 70,
   "a": 100,
   "fx": {"market":"sand","spread":1},
-  "d": "Hits and whips up a sandstorm for 5 turns."
+  "d": "Hits and whips up a sandstorm for 5 turns.",
+  "anim": "storm"
  },
- "flashsale": {"n":"Quick Strike","t":"None","c":"H","p":40,"a":100,"pr":1,"d":"Always strikes first."},
+ "flashsale": {"n":"Quick Strike","t":"None","c":"H","p":40,"a":100,"pr":1,"d":"Always strikes first.","anim":"dash"},
  "markdown": {
   "n": "Grinding Screech",
   "t": "Steel",
@@ -146,9 +160,10 @@
   "fx": {
    "tgtStage": {"law":-1}
   },
-  "d": "Lowers the target’s Defense."
+  "d": "Lowers the target’s Defense.",
+  "anim": "hex"
  },
- "bulk": {"n":"Heavy Press","t":"Steel","c":"H","p":75,"a":95,"d":"A crushing hit."},
+ "bulk": {"n":"Heavy Press","t":"Steel","c":"H","p":75,"a":95,"d":"A crushing hit.","anim":"strike"},
  "dynamic": {
   "n": "Iron Squeeze",
   "t": "Steel",
@@ -156,7 +171,8 @@
   "p": 0,
   "a": 100,
   "fx": {"vary":"dyn"},
-  "d": "Hits harder the more HP the target has."
+  "d": "Hits harder the more HP the target has.",
+  "anim": "strike"
  },
  "twoday": {
   "n": "Premonition",
@@ -165,7 +181,8 @@
   "p": 160,
   "a": 100,
   "fx": {"delay":2},
-  "d": "A huge hit that lands two turns later."
+  "d": "A huge hit that lands two turns later.",
+  "anim": "wave"
  },
  "hottake": {
   "n": "Searing Beam",
@@ -174,7 +191,8 @@
   "p": 55,
   "a": 100,
   "fx": {"crit":1},
-  "d": "High chance of a critical hit."
+  "d": "High chance of a critical hit.",
+  "anim": "beam"
  },
  "smear": {
   "n": "Scorch",
@@ -182,7 +200,8 @@
   "c": "X",
   "a": 85,
   "fx": {"status":"brn"},
-  "d": "Burns the target."
+  "d": "Burns the target.",
+  "anim": "hex"
  },
  "spin": {
   "n": "Soak",
@@ -190,7 +209,8 @@
   "c": "X",
   "a": 100,
   "fx": {"spin":1},
-  "d": "Drenches the target, turning it Water type for 3 turns."
+  "d": "Drenches the target, turning it Water type for 3 turns.",
+  "anim": "hex"
  },
  "headline": {
   "n": "Surge Wave",
@@ -199,10 +219,11 @@
   "p": 80,
   "a": 100,
   "d": "A strong wave.",
-  "fx": {"spread":1}
+  "fx": {"spread":1},
+  "anim": "wave"
  },
- "exclusive": {"n":"Riptide","t":"Water","c":"S","p":95,"a":90,"d":"A heavy hit."},
- "interest": {"n":"Splash Shot","t":"Water","c":"S","p":40,"a":100,"d":"A quick jet of water."},
+ "exclusive": {"n":"Riptide","t":"Water","c":"S","p":95,"a":90,"d":"A heavy hit.","anim":"wave"},
+ "interest": {"n":"Splash Shot","t":"Water","c":"S","p":40,"a":100,"d":"A quick jet of water.","anim":"shot"},
  "compound": {
   "n": "Flow State",
   "t": "Water",
@@ -211,7 +232,8 @@
   "fx": {
    "selfStage": {"lob":1,"hus":1}
   },
-  "d": "Raises Sp. Atk and Speed."
+  "d": "Raises Sp. Atk and Speed.",
+  "anim": "buff"
  },
  "shortsell": {
   "n": "Finisher",
@@ -220,7 +242,8 @@
   "p": 0,
   "a": 100,
   "fx": {"vary":"short"},
-  "d": "Hits harder the less HP the target has."
+  "d": "Hits harder the less HP the target has.",
+  "anim": "strike"
  },
  "buyhold": {
   "n": "Rolling Wave",
@@ -229,7 +252,8 @@
   "p": 40,
   "a": 100,
   "fx": {"hold":1},
-  "d": "Power doubles each turn in a row it’s used, up to 320."
+  "d": "Power doubles each turn in a row it’s used, up to 320.",
+  "anim": "wave"
  },
  "margincall": {
   "n": "Landslide",
@@ -238,7 +262,8 @@
   "p": 150,
   "a": 70,
   "fx": {"missCost":0.5},
-  "d": "Enormous, but a miss costs half its own HP."
+  "d": "Enormous, but a miss costs half its own HP.",
+  "anim": "quake"
  },
  "snub": {
   "n": "Sticky Seeds",
@@ -249,16 +274,18 @@
   "fx": {
    "tgtStage": {"hus":-1}
   },
-  "d": "Lowers the target’s Speed."
+  "d": "Lowers the target’s Speed.",
+  "anim": "shot"
  },
- "oldmoney": {"n":"Vine Lash","t":"Grass","c":"H","p":70,"a":100,"d":"A stinging whip of vines."},
+ "oldmoney": {"n":"Vine Lash","t":"Grass","c":"H","p":70,"a":100,"d":"A stinging whip of vines.","anim":"slash"},
  "allowance": {
   "n": "Sunbathe",
   "t": "Grass",
   "c": "X",
   "a": 0,
   "fx": {"heal":0.5},
-  "d": "Restores 50% of its HP."
+  "d": "Restores 50% of its HP.",
+  "anim": "heal"
  },
  "familyoffice": {
   "n": "Petal Storm",
@@ -267,9 +294,10 @@
   "p": 85,
   "a": 100,
   "d": "A heavy hit.",
-  "fx": {"spread":1}
+  "fx": {"spread":1},
+  "anim": "storm"
  },
- "liftoff": {"n":"Wing Strike","t":"Flying","c":"H","p":50,"a":100,"d":"A swooping hit."},
+ "liftoff": {"n":"Wing Strike","t":"Flying","c":"H","p":50,"a":100,"d":"A swooping hit.","anim":"dive"},
  "escvel": {
   "n": "Updraft",
   "t": "Flying",
@@ -278,10 +306,11 @@
   "fx": {
    "selfStage": {"hus":2}
   },
-  "d": "Sharply raises Speed."
+  "d": "Sharply raises Speed.",
+  "anim": "buff"
  },
- "orbit": {"n":"Gale Slash","t":"Flying","c":"S","p":75,"a":100,"d":"Circles, then strikes."},
- "joyride": {"n":"Drake Dive","t":"Dragon","c":"H","p":90,"a":90,"d":"A fearsome dive from above."},
+ "orbit": {"n":"Gale Slash","t":"Flying","c":"S","p":75,"a":100,"d":"Circles, then strikes.","anim":"slash"},
+ "joyride": {"n":"Drake Dive","t":"Dragon","c":"H","p":90,"a":90,"d":"A fearsome dive from above.","anim":"dive"},
  "launch": {
   "n": "Cyclone",
   "t": "Flying",
@@ -289,7 +318,8 @@
   "p": 110,
   "a": 85,
   "d": "A violent, hard-to-aim storm.",
-  "fx": {"spread":1}
+  "fx": {"spread":1},
+  "anim": "storm"
  },
  "scatterstones": {
   "n": "Scatter Stones",
@@ -297,7 +327,8 @@
   "c": "X",
   "a": 0,
   "fx": {"stones":1},
-  "d": "Scatters sharp stones: foes switching in lose 1/8 of their HP."
+  "d": "Scatters sharp stones: foes switching in lose 1/8 of their HP.",
+  "anim": "hex"
  },
  "zoning": {
   "n": "Shock Pulse",
@@ -306,9 +337,10 @@
   "p": 55,
   "a": 100,
   "fx": {"status":"par","chance":30},
-  "d": "30% chance to paralyze the target."
+  "d": "30% chance to paralyze the target.",
+  "anim": "wave"
  },
- "bouldertoss": {"n":"Boulder Toss","t":"Ground","c":"H","p":75,"a":100,"d":"Hurls a heavy rock."},
+ "bouldertoss": {"n":"Boulder Toss","t":"Ground","c":"H","p":75,"a":100,"d":"Hurls a heavy rock.","anim":"quake"},
  "quakestomp": {
   "n": "Quake Stomp",
   "t": "Ground",
@@ -316,9 +348,10 @@
   "p": 60,
   "a": 100,
   "fx": {"stones":1},
-  "d": "Hits and scatters sharp stones."
+  "d": "Hits and scatters sharp stones.",
+  "anim": "quake"
  },
- "gentrify": {"n":"Chrome Ray","t":"Steel","c":"S","p":90,"a":100,"d":"A heavy hit."},
+ "gentrify": {"n":"Chrome Ray","t":"Steel","c":"S","p":90,"a":100,"d":"A heavy hit.","anim":"beam"},
  "rerecord": {
   "n": "Spring Tide",
   "t": "Water",
@@ -326,7 +359,8 @@
   "p": 75,
   "a": 100,
   "fx": {"heal":0.25},
-  "d": "Hits, then restores a quarter of its own HP."
+  "d": "Hits, then restores a quarter of its own HP.",
+  "anim": "wave"
  },
  "giveaway": {
   "n": "Second Wind",
@@ -334,10 +368,20 @@
   "c": "X",
   "a": 0,
   "fx": {"heal":0.5},
-  "d": "Restores 50% of its HP."
+  "d": "Restores 50% of its HP.",
+  "anim": "heal"
  },
- "wyrmbreath": {"n":"Wyrm Breath","t":"Dragon","c":"S","p":85,"a":100,"d":"A blast of ancient breath."},
- "cudacall": {"n":"CUDA Call","t":"Electric","c":"S","a":100,"d":"Every fan on its back roars at once.","sig":"huang","p":90},
+ "wyrmbreath": {"n":"Wyrm Breath","t":"Dragon","c":"S","p":85,"a":100,"d":"A blast of ancient breath.","anim":"breath"},
+ "cudacall": {
+  "n": "CUDA Call",
+  "t": "Electric",
+  "c": "S",
+  "a": 100,
+  "d": "Every fan on its back roars at once.",
+  "sig": "huang",
+  "p": 90,
+  "anim": "cudacall"
+ },
  "yachtrace": {
   "n": "Yacht Race",
   "t": "Water",
@@ -345,7 +389,8 @@
   "a": 100,
   "d": "Wins the regatta by changing the course mid-race.",
   "sig": "ellison",
-  "p": 85
+  "p": 85,
+  "anim": "yachtrace"
  },
  "opensesame": {
   "n": "Open Sesame",
@@ -354,9 +399,19 @@
   "a": 100,
   "d": "Forty doors open at once and the bazaar pours out.",
   "sig": "ma",
-  "p": 80
+  "p": 80,
+  "anim": "opensesame"
  },
- "rollback": {"n":"Rollback","t":"Steel","c":"H","a":100,"d":"Rolls the price, and the foe, back.","sig":"walton","p":75},
+ "rollback": {
+  "n": "Rollback",
+  "t": "Steel",
+  "c": "H",
+  "a": 100,
+  "d": "Rolls the price, and the foe, back.",
+  "sig": "walton",
+  "p": 75,
+  "anim": "rollback"
+ },
  "terminalfee": {
   "n": "Terminal Fee",
   "t": "Electric",
@@ -364,12 +419,49 @@
   "a": 100,
   "d": "Charges rent for reading the numbers: the foe loses a little HP each turn.",
   "sig": "bloomberg",
-  "fx": {"status":"brn"}
+  "fx": {"status":"brn"},
+  "anim": "terminalfee"
  },
- "onemorething": {"n":"One More Thing","t":"Psychic","c":"S","a":100,"d":"Just when it seemed over.","sig":"jobs","p":95},
- "justdoit": {"n":"Just Do It","t":"Flying","c":"H","a":100,"d":"Does it before anyone asked.","sig":"knight","p":80},
- "billionsserved": {"n":"Billions Served","t":"Fire","c":"H","a":100,"d":"The same everywhere, on purpose.","sig":"kroc","p":85},
- "towerdrop": {"n":"Tower Drop","t":"Ground","c":"H","a":85,"d":"Sets twenty-seven storeys down on the foe.","sig":"ambani","p":100},
+ "onemorething": {
+  "n": "One More Thing",
+  "t": "Psychic",
+  "c": "S",
+  "a": 100,
+  "d": "Just when it seemed over.",
+  "sig": "jobs",
+  "p": 95,
+  "anim": "onemorething"
+ },
+ "justdoit": {
+  "n": "Just Do It",
+  "t": "Flying",
+  "c": "H",
+  "a": 100,
+  "d": "Does it before anyone asked.",
+  "sig": "knight",
+  "p": 80,
+  "anim": "justdoit"
+ },
+ "billionsserved": {
+  "n": "Billions Served",
+  "t": "Fire",
+  "c": "H",
+  "a": 100,
+  "d": "The same everywhere, on purpose.",
+  "sig": "kroc",
+  "p": 85,
+  "anim": "billionsserved"
+ },
+ "towerdrop": {
+  "n": "Tower Drop",
+  "t": "Ground",
+  "c": "H",
+  "a": 85,
+  "d": "Sets twenty-seven storeys down on the foe.",
+  "sig": "ambani",
+  "p": 100,
+  "anim": "towerdrop"
+ },
  "fastfashion": {
   "n": "Fast Fashion",
   "t": "Grass",
@@ -377,9 +469,19 @@
   "a": 100,
   "d": "A new look every two weeks; the old one is thrown at the foe.",
   "sig": "ortega",
-  "p": 70
+  "p": 70,
+  "anim": "fastfashion"
  },
- "sprucedive": {"n":"Spruce Dive","t":"Flying","c":"S","a":90,"d":"Flies once, and it counts.","sig":"hughes","p":95},
+ "sprucedive": {
+  "n": "Spruce Dive",
+  "t": "Flying",
+  "c": "S",
+  "a": 90,
+  "d": "Flies once, and it counts.",
+  "sig": "hughes",
+  "p": 95,
+  "anim": "sprucedive"
+ },
  "libraryslam": {
   "n": "Library Slam",
   "t": "Steel",
@@ -387,7 +489,8 @@
   "a": 95,
   "d": "A library, dropped on a town, for its own good.",
   "sig": "carnegie",
-  "p": 95
+  "p": 95,
+  "anim": "libraryslam"
  },
  "popthecollar": {
   "n": "Pop the Collar",
@@ -398,9 +501,19 @@
   "sig": "lauren",
   "fx": {
    "tgtStage": {"lev":-2}
-  }
+  },
+  "anim": "popthecollar"
  },
- "assemblyline": {"n":"Assembly Line","t":"Steel","c":"H","a":100,"d":"Hits in a row of identical parts.","sig":"ford","p":85},
+ "assemblyline": {
+  "n": "Assembly Line",
+  "t": "Steel",
+  "c": "H",
+  "a": 100,
+  "d": "Hits in a row of identical parts.",
+  "sig": "ford",
+  "p": 85,
+  "anim": "assemblyline"
+ },
  "perminute": {
   "n": "Per Minute",
   "t": "Electric",
@@ -408,7 +521,8 @@
   "a": 100,
   "d": "Charges by the minute: the foe loses HP every turn.",
   "sig": "slim",
-  "fx": {"status":"brn"}
+  "fx": {"status":"brn"},
+  "anim": "perminute"
  },
  "imout": {
   "n": "I'm Out",
@@ -417,7 +531,8 @@
   "a": 100,
   "d": "Says it is out, waits a beat, and invests the hit anyway.",
   "sig": "cuban",
-  "p": 85
+  "p": 85,
+  "anim": "imout"
  },
  "feelinglucky": {
   "n": "Feeling Lucky",
@@ -426,7 +541,8 @@
   "a": 95,
   "d": "Finds the one weak spot in a quarter of a second.",
   "sig": "pagebrin",
-  "p": 90
+  "p": 90,
+  "anim": "feelinglucky"
  },
  "zerotoone": {
   "n": "Zero to One",
@@ -435,11 +551,39 @@
   "a": 90,
   "d": "Builds something from nothing and keeps the one.",
   "sig": "thiel",
-  "p": 100
+  "p": 100,
+  "anim": "zerotoone"
  },
- "charlimit": {"n":"Character Limit","t":"Flying","c":"S","a":100,"d":"Says it in a hundred and forty.","sig":"dorsey","p":70},
- "shuffleplay": {"n":"Shuffle Play","t":"Electric","c":"S","a":100,"d":"The next song before the last is done.","sig":"ek","p":80},
- "visionfund": {"n":"Vision Fund","t":"Psychic","c":"S","a":80,"d":"Bets everything on this one hit.","sig":"son","p":110},
+ "charlimit": {
+  "n": "Character Limit",
+  "t": "Flying",
+  "c": "S",
+  "a": 100,
+  "d": "Says it in a hundred and forty.",
+  "sig": "dorsey",
+  "p": 70,
+  "anim": "charlimit"
+ },
+ "shuffleplay": {
+  "n": "Shuffle Play",
+  "t": "Electric",
+  "c": "S",
+  "a": 100,
+  "d": "The next song before the last is done.",
+  "sig": "ek",
+  "p": 80,
+  "anim": "shuffleplay"
+ },
+ "visionfund": {
+  "n": "Vision Fund",
+  "t": "Psychic",
+  "c": "S",
+  "a": 80,
+  "d": "Bets everything on this one hit.",
+  "sig": "son",
+  "p": 110,
+  "anim": "visionfund"
+ },
  "smartcontract": {
   "n": "Smart Contract",
   "t": "Electric",
@@ -447,7 +591,8 @@
   "a": 100,
   "d": "Executes exactly as written, no appeal.",
   "sig": "buterin",
-  "p": 85
+  "p": 85,
+  "anim": "smartcontract"
  },
  "buythedip": {
   "n": "Buy the Dip",
@@ -456,12 +601,31 @@
   "a": 100,
   "d": "Buys low: restores half its HP.",
   "sig": "saylor",
-  "fx": {"heal":0.5}
+  "fx": {"heal":0.5},
+  "anim": "buythedip"
  },
- "insync": {"n":"In Sync","t":"Water","c":"H","a":100,"d":"Both heads row the same stroke.","sig":"winklevoss","p":80},
- "empirestate": {"n":"Empire State","t":"Flying","c":"S","a":100,"d":"A city-sized hook.","sig":"jayz","p":90},
- "sundayred": {"n":"Sunday Red","t":"Grass","c":"H","a":95,"d":"Sinks it on the last hole.","sig":"woods","p":95},
- "thedecision": {"n":"The Decision","t":"Fire","c":"H","a":90,"d":"Takes its talents to the foe's face.","sig":"lebron","p":100},
+ "insync": {
+  "n": "In Sync",
+  "t": "Water",
+  "c": "H",
+  "a": 100,
+  "d": "Both heads row the same stroke.",
+  "sig": "winklevoss",
+  "p": 80,
+  "anim": "insync"
+ },
+ "empirestate": {"n":"Empire State","t":"Flying","c":"S","a":100,"d":"A city-sized hook.","sig":"jayz","p":90,"anim":"empirestate"},
+ "sundayred": {"n":"Sunday Red","t":"Grass","c":"H","a":95,"d":"Sinks it on the last hole.","sig":"woods","p":95,"anim":"sundayred"},
+ "thedecision": {
+  "n": "The Decision",
+  "t": "Fire",
+  "c": "H",
+  "a": 90,
+  "d": "Takes its talents to the foe's face.",
+  "sig": "lebron",
+  "p": 100,
+  "anim": "thedecision"
+ },
  "cutto": {
   "n": "Cut To",
   "t": "Psychic",
@@ -469,10 +633,20 @@
   "a": 100,
   "d": "The scene changes and the foe is already hit.",
   "sig": "spielberg",
-  "p": 85
+  "p": 85,
+  "anim": "cutto"
  },
- "cyclone": {"n":"Cyclone","t":"Electric","c":"S","a":100,"d":"Never loses suction.","sig":"dyson","p":90},
- "flatpack": {"n":"Flatpack","t":"Steel","c":"S","a":100,"d":"Assembled on the foe with one screw to spare.","sig":"kamprad","p":75},
+ "cyclone": {"n":"Cyclone","t":"Electric","c":"S","a":100,"d":"Never loses suction.","sig":"dyson","p":90,"anim":"cyclone"},
+ "flatpack": {
+  "n": "Flatpack",
+  "t": "Steel",
+  "c": "S",
+  "a": 100,
+  "d": "Assembled on the foe with one screw to spare.",
+  "sig": "kamprad",
+  "p": 75,
+  "anim": "flatpack"
+ },
  "giveswings": {
   "n": "Gives Wings",
   "t": "Flying",
@@ -482,7 +656,8 @@
   "sig": "mateschitz",
   "fx": {
    "selfStage": {"hus":2,"lev":1}
-  }
+  },
+  "anim": "giveswings"
  },
  "statesizedpit": {
   "n": "State-sized Pit",
@@ -491,9 +666,19 @@
   "a": 95,
   "d": "Digs the ground out from under the foe.",
   "sig": "rinehart",
-  "p": 95
+  "p": 95,
+  "anim": "statesizedpit"
  },
- "concretepour": {"n":"Concrete Pour","t":"Ground","c":"H","a":90,"d":"Sets hard before the foe can move.","sig":"dangote","p":100},
+ "concretepour": {
+  "n": "Concrete Pour",
+  "t": "Ground",
+  "c": "H",
+  "a": 90,
+  "d": "Sets hard before the foe can move.",
+  "sig": "dangote",
+  "p": 100,
+  "anim": "concretepour"
+ },
  "perfectfold": {
   "n": "Perfect Fold",
   "t": "Steel",
@@ -503,10 +688,29 @@
   "sig": "yanai",
   "fx": {
    "tgtStage": {"hus":-2}
-  }
+  },
+  "anim": "perfectfold"
  },
- "harbourfee": {"n":"Harbour Fee","t":"Steel","c":"S","a":100,"d":"Charges for the water the foe stands in.","sig":"kashing","p":85},
- "blastfurnace": {"n":"Blast Furnace","t":"Fire","c":"H","a":85,"d":"Lights the cold mill again.","sig":"mittal","p":110},
+ "harbourfee": {
+  "n": "Harbour Fee",
+  "t": "Steel",
+  "c": "S",
+  "a": 100,
+  "d": "Charges for the water the foe stands in.",
+  "sig": "kashing",
+  "p": 85,
+  "anim": "harbourfee"
+ },
+ "blastfurnace": {
+  "n": "Blast Furnace",
+  "t": "Fire",
+  "c": "H",
+  "a": 85,
+  "d": "Lights the cold mill again.",
+  "sig": "mittal",
+  "p": 110,
+  "anim": "blastfurnace"
+ },
  "principle": {
   "n": "Principle No. 212",
   "t": "Psychic",
@@ -516,9 +720,19 @@
   "sig": "dalio",
   "fx": {
    "selfStage": {"law":1,"pr":1}
-  }
+  },
+  "anim": "principle"
  },
- "frontrun": {"n":"Front Run","t":"Flying","c":"H","a":100,"d":"Gets there before the foe's move.","sig":"griffin","p":90},
+ "frontrun": {
+  "n": "Front Run",
+  "t": "Flying",
+  "c": "H",
+  "a": 100,
+  "d": "Gets there before the foe's move.",
+  "sig": "griffin",
+  "p": 90,
+  "anim": "frontrun"
+ },
  "wrongname": {
   "n": "Wrong Name",
   "t": "Water",
@@ -526,11 +740,30 @@
   "a": 100,
   "d": "Calls the foe something that is almost its name.",
   "sig": "schultz",
-  "p": 75
+  "p": 75,
+  "anim": "wrongname"
  },
- "cleaningfee": {"n":"Cleaning Fee","t":"Water","c":"S","a":100,"d":"Added at checkout.","sig":"chesky","p":70},
- "autoplay": {"n":"Autoplay","t":"Psychic","c":"S","a":100,"d":"The next one starts before you can stop it.","sig":"hastings","p":80},
- "hallucinate": {"n":"Hallucinate","t":"Psychic","c":"S","a":80,"d":"Confidently wrong, and it still hurts.","sig":"altman","p":100},
+ "cleaningfee": {"n":"Cleaning Fee","t":"Water","c":"S","a":100,"d":"Added at checkout.","sig":"chesky","p":70,"anim":"cleaningfee"},
+ "autoplay": {
+  "n": "Autoplay",
+  "t": "Psychic",
+  "c": "S",
+  "a": 100,
+  "d": "The next one starts before you can stop it.",
+  "sig": "hastings",
+  "p": 80,
+  "anim": "autoplay"
+ },
+ "hallucinate": {
+  "n": "Hallucinate",
+  "t": "Psychic",
+  "c": "S",
+  "a": 80,
+  "d": "Confidently wrong, and it still hurts.",
+  "sig": "altman",
+  "p": 100,
+  "anim": "hallucinate"
+ },
  "fork": {
   "n": "Fork",
   "t": "Steel",
@@ -538,16 +771,71 @@
   "a": 0,
   "d": "Forks the foe's chain and runs its copy: takes the foe's types for 5 turns.",
   "sig": "satoshi",
-  "fx": {"copyTypes":1}
+  "fx": {"copyTypes":1},
+  "anim": "fork"
  },
- "countstotwo": {"n":"Counts to Two","t":"Water","c":"H","a":100,"d":"Hits twice. Never a third time.","sig":"newell","p":90},
- "fifteensec": {"n":"Fifteen Seconds","t":"Electric","c":"S","a":100,"d":"Over before you know it, then again.","sig":"yiming","p":85},
- "stakeineverything": {"n":"Stake in Everything","t":"Water","c":"S","a":100,"d":"Owns a bit of the foe already.","sig":"ponyma","p":85},
- "shipdirect": {"n":"Ship Direct","t":"Electric","c":"S","a":100,"d":"Skips the shop and arrives.","sig":"dell","p":85},
- "developers": {"n":"Developers!","t":"Fire","c":"H","a":90,"d":"Shouted three times.","sig":"ballmer","p":100},
- "onehandedbackhand": {"n":"One-handed Backhand","t":"Flying","c":"H","a":100,"d":"Nobody has returned it.","sig":"federer","p":95},
- "siu": {"n":"Siu!","t":"Fire","c":"H","a":90,"d":"Jump, turn, land, shout.","sig":"ronaldo","p":100},
- "greenhydrogen": {"n":"Green Hydrogen","t":"Grass","c":"S","a":95,"d":"Promised, then delivered, hard.","sig":"forrest","p":90},
+ "countstotwo": {
+  "n": "Counts to Two",
+  "t": "Water",
+  "c": "H",
+  "a": 100,
+  "d": "Hits twice. Never a third time.",
+  "sig": "newell",
+  "p": 90,
+  "anim": "countstotwo"
+ },
+ "fifteensec": {
+  "n": "Fifteen Seconds",
+  "t": "Electric",
+  "c": "S",
+  "a": 100,
+  "d": "Over before you know it, then again.",
+  "sig": "yiming",
+  "p": 85,
+  "anim": "fifteensec"
+ },
+ "stakeineverything": {
+  "n": "Stake in Everything",
+  "t": "Water",
+  "c": "S",
+  "a": 100,
+  "d": "Owns a bit of the foe already.",
+  "sig": "ponyma",
+  "p": 85,
+  "anim": "stakeineverything"
+ },
+ "shipdirect": {
+  "n": "Ship Direct",
+  "t": "Electric",
+  "c": "S",
+  "a": 100,
+  "d": "Skips the shop and arrives.",
+  "sig": "dell",
+  "p": 85,
+  "anim": "shipdirect"
+ },
+ "developers": {"n":"Developers!","t":"Fire","c":"H","a":90,"d":"Shouted three times.","sig":"ballmer","p":100,"anim":"developers"},
+ "onehandedbackhand": {
+  "n": "One-handed Backhand",
+  "t": "Flying",
+  "c": "H",
+  "a": 100,
+  "d": "Nobody has returned it.",
+  "sig": "federer",
+  "p": 95,
+  "anim": "onehandedbackhand"
+ },
+ "siu": {"n":"Siu!","t":"Fire","c":"H","a":90,"d":"Jump, turn, land, shout.","sig":"ronaldo","p":100,"anim":"siu"},
+ "greenhydrogen": {
+  "n": "Green Hydrogen",
+  "t": "Grass",
+  "c": "S",
+  "a": 95,
+  "d": "Promised, then delivered, hard.",
+  "sig": "forrest",
+  "p": 90,
+  "anim": "greenhydrogen"
+ },
  "quietgift": {
   "n": "Quiet Gift",
   "t": "Water",
@@ -555,10 +843,20 @@
   "a": 100,
   "d": "Gives half its HP to the party: heals the active ally... or itself when alone.",
   "sig": "scott",
-  "fx": {"heal":0.5}
+  "fx": {"heal":0.5},
+  "anim": "quietgift"
  },
- "kisses": {"n":"Kisses","t":"Ground","c":"H","a":100,"d":"Antlers first.","sig":"hershey","p":85},
- "fullsteam": {"n":"Full Steam","t":"Electric","c":"H","a":90,"d":"Every rail it owns, at once.","sig":"vanderbilt","p":100},
+ "kisses": {"n":"Kisses","t":"Ground","c":"H","a":100,"d":"Antlers first.","sig":"hershey","p":85,"anim":"kisses"},
+ "fullsteam": {
+  "n": "Full Steam",
+  "t": "Electric",
+  "c": "H",
+  "a": 90,
+  "d": "Every rail it owns, at once.",
+  "sig": "vanderbilt",
+  "p": 100,
+  "anim": "fullsteam"
+ },
  "standardoil": {
   "n": "Standard Oil",
   "t": "Fire",
@@ -569,7 +867,8 @@
   "p": 120,
   "fx": {
    "tgtStage": {"hus":-1}
-  }
+  },
+  "anim": "standardoil"
  },
  "goldencaravan": {
   "n": "Golden Caravan",
@@ -578,9 +877,10 @@
   "a": 90,
   "d": "Drops a caravan of gold on the foe; prices fall for a decade.",
   "sig": "mansa",
-  "p": 120
+  "p": 120,
+  "anim": "goldencaravan"
  },
- "pistonjab": {"n":"Piston Jab","t":"Steel","c":"H","p":65,"a":100,"d":"A straight punch from a piston arm."},
+ "pistonjab": {"n":"Piston Jab","t":"Steel","c":"H","p":65,"a":100,"d":"A straight punch from a piston arm.","anim":"strike"},
  "augerbore": {
   "n": "Auger Bore",
   "t": "Ground",
@@ -588,7 +888,8 @@
   "p": 65,
   "a": 95,
   "fx": {"aim":1,"breaker":1.5},
-  "d": "Aim it at a part. Hurts parts half again as much."
+  "d": "Aim it at a part. Hurts parts half again as much.",
+  "anim": "strike"
  },
  "gripcrush": {
   "n": "Grip Crush",
@@ -597,7 +898,8 @@
   "p": 50,
   "a": 100,
   "fx": {"aim":1,"breaker":2},
-  "d": "Aim it at a part. Hurts parts twice as much."
+  "d": "Aim it at a part. Hurts parts twice as much.",
+  "anim": "strike"
  },
  "cindershot": {
   "n": "Cinder Shot",
@@ -606,7 +908,8 @@
   "p": 75,
   "a": 95,
   "fx": {"status":"brn","chance":10},
-  "d": "10% chance to burn the target."
+  "d": "10% chance to burn the target.",
+  "anim": "shot"
  },
  "arcwhip": {
   "n": "Arc Whip",
@@ -615,7 +918,8 @@
   "p": 60,
   "a": 100,
   "fx": {"status":"par","chance":20},
-  "d": "20% chance to paralyze the target."
+  "d": "20% chance to paralyze the target.",
+  "anim": "slash"
  },
  "jetblast": {
   "n": "Jet Blast",
@@ -624,7 +928,8 @@
   "p": 65,
   "a": 100,
   "fx": {"aim":1},
-  "d": "A jet of water you can aim at a part."
+  "d": "A jet of water you can aim at a part.",
+  "anim": "breath"
  },
  "anchor": {
   "n": "Anchor Down",
@@ -634,9 +939,10 @@
   "fx": {
    "selfStage": {"law":1,"pr":1}
   },
-  "d": "Digs in. Raises Defense and Sp. Def."
+  "d": "Digs in. Raises Defense and Sp. Def.",
+  "anim": "buff"
  },
- "dashkick": {"n":"Dash Kick","t":"None","c":"H","p":45,"a":100,"pr":1,"d":"Always strikes first."},
+ "dashkick": {"n":"Dash Kick","t":"None","c":"H","p":45,"a":100,"pr":1,"d":"Always strikes first.","anim":"dash"},
  "skimguard": {
   "n": "Skim Guard",
   "t": "None",
@@ -644,16 +950,18 @@
   "a": 0,
   "pr": 4,
   "fx": {"protect":1},
-  "d": "Floats clear of one attack. Fails if used twice in a row."
+  "d": "Floats clear of one attack. Fails if used twice in a row.",
+  "anim": "guard"
  },
- "flarecore": {"n":"Flare Core","t":"Fire","c":"S","p":90,"a":90,"d":"The gem flares. A heavy hit."},
+ "flarecore": {"n":"Flare Core","t":"Fire","c":"S","p":90,"a":90,"d":"The gem flares. A heavy hit.","anim":"shot"},
  "selfrepair": {
   "n": "Self-Repair",
   "t": "None",
   "c": "X",
   "a": 0,
   "fx": {"heal":0.33,"repair":0.5},
-  "d": "Restores a third of its HP and half the HP of each part, and fixes broken parts that get back above zero."
+  "d": "Restores a third of its HP and half the HP of each part, and fixes broken parts that get back above zero.",
+  "anim": "heal"
  },
  "overclock": {
   "n": "Overclock",
@@ -663,6 +971,7 @@
   "fx": {
    "selfStage": {"lev":1,"lob":1,"hus":1}
   },
-  "d": "Raises Attack, Sp. Atk and Speed."
+  "d": "Raises Attack, Sp. Atk and Speed.",
+  "anim": "buff"
  }
 }

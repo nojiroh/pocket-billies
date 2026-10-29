@@ -10,7 +10,10 @@
    - a card is only drawn when it can be used: an evolution item when a Billie of the team evolves with it, a tutor
      when a Billie has a move to learn; a `held` card (RL-12c) when some held item (items.json `hold`) is held by
      nobody on the team: its item is drawn from those, and taking it gives it to a Billie (or into the bag);
-   - none twice in one pick.
+   - none twice in one pick;
+   - PK-7: a `perk` card when an ordinary Perk can be offered (perks.js perkPool: none held, no Fine Print, its needs
+     met, none under the "No Perks" challenge): its Perk drawn by weight with the bias (perkWeight) from the pick's
+     stream; taking it holds it (perkTake: at the cap with the one to let go, `drop`).
    RL-14: beating bots leaves a salvage pick in the same place (run.enc.reward, kind 'salvage'): two of their parts and
    a stack of Scrap (logic/factions.js salvageCards, from the run's salvage stream); a part goes into your parts
    (saveData.parts, kept whatever the run's end), Scrap into the meta's. A salvage pick is never rerolled.
@@ -19,11 +22,13 @@
 /** @typedef {{ kind: RewardCard['kind'], item?: string, pyramid?: string, n?: number, weight: number }} RewardRow */
 /** @typedef {{ cards: Record<string, RewardRow>, rules: { pick: number, reroll: number, grow: number },
  *   team: Billy[], species: Record<string, any>, lines: Record<string, any>, moves: Record<string, any>,
- *   slots: number, items?: Record<string, { hold?: unknown[] }>, newUid?: () => string }} RewardData items (RL-12c):
- *   the held items' table; newUid (RL-14): a new part's uid (rules.js newUid: a run's own counter) */
+ *   slots: number, items?: Record<string, { hold?: unknown[] }>, newUid?: () => string,
+ *   perks?: Record<string, any>, perkRule?: any }} RewardData items (RL-12c):
+ *   the held items' table; newUid (RL-14): a new part's uid (rules.js newUid: a run's own counter); perks and
+ *   perkRule (PK-7): perks.json and rules.json run.perks, for a perk card */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { ITEMS, LINE_BY_ID, MOVES, REWARDS, RULES, SPECIES } from '../game-data.js';
+import { ITEMS, LINE_BY_ID, MOVES, PERKS, REWARDS, RULES, SPECIES } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { newPart } from './fighters.js';
 import { moveSlotCount, newUid } from './rules.js';
@@ -31,6 +36,7 @@ import { salvageCards, salvageParts } from './factions.js';
 import { heldGive, heldIds } from './held.js';
 import { encOf } from './run-enc.js';
 import { fxRunRule } from './effects.js';
+import { perkDraw, perkPool, perkTake, perkTeamOf, perkWeight } from './perks.js';
 /* eslint-disable no-func-assign */
 expose({
   evoUsable: [() => evoUsable],
@@ -87,17 +93,21 @@ export const evoUsable = (item, D) =>
 /**
  * Draw a pick's cards: by weight from `g`, none twice, only those that can be used (rewardDraw's rules above); a
  * tutor card gets its move drawn from the moves the team can learn. `kind` keeps to one kind (an event's "reward
- * tutor"); `n` cards (the rules' pick when not given).
+ * tutor"); `n` cards (the rules' pick when not given). PK-7: `run`, for a perk card (its Perk from the ordinary pool)
  * @param {{ pick: (w: Record<string, number>) => string, int: (lo: number, hi: number) => number }} g
- * @param {RewardData} D @param {{ kind?: string, n?: number }} [o] @returns {RewardCard[]}
+ * @param {RewardData} D @param {{ kind?: string, n?: number, run?: Run }} [o] @returns {RewardCard[]}
  */
 export function rewardDraw(g, D, o = {}) {
   const n = o.n || D.rules.pick,
     tutors = [...new Set(D.team.flatMap(m => tutorMoves(m, D)))].sort(),
     helds = heldIds(D.items || {}).filter(k => !D.team.some(m => m.held === k)),
+    /* PK-7: the ordinary Perks a perk card may hold (no Fine Print: it has no weight in run.perks.rarity) */
+    team = perkTeamOf(D.team),
+    perkIds = o.run && D.perks && D.perkRule ? perkPool(o.run, D.perks, D.perkRule, [], team) : [],
     ok = (/** @type {string} */ id) => {
       const R = D.cards[id];
       if (!(R.weight > 0) || (o.kind && R.kind !== o.kind)) return false;
+      if (R.kind === 'perk') return perkIds.length > 0;
       if (R.kind === 'held') return helds.length > 0;
       if (R.kind === 'evo') return !!R.item && evoUsable(R.item, D);
       if (R.kind === 'tutor') return tutors.length > 0;
@@ -121,6 +131,16 @@ export function rewardDraw(g, D, o = {}) {
       out.push({ id, kind: 'tutor', move: mv });
       /* a tutor card may come again in the same pick, with another move, while the team has some */
       if (taught.size >= tutors.length || !o.kind) left = left.filter(k => k !== id);
+      continue;
+    }
+    if (R.kind === 'perk') {
+      /* PK-7: its Perk by weight with the bias, as a pick's (perks.js perkWeight) */
+      const run = /** @type {Run} */ (o.run),
+        pid = perkDraw(g, perkIds, /** @type {any} */ (D.perks), D.perkRule, 1, k =>
+          perkWeight(run, k, /** @type {any} */ (D.perks), D.perkRule, team)
+        )[0];
+      if (pid) out.push({ id, kind: 'perk', perk: pid });
+      left = left.filter(k => k !== id);
       continue;
     }
     if (R.kind === 'held') {
@@ -148,11 +168,12 @@ export function rewardDraw(g, D, o = {}) {
  * saves before showing it @param {Run} run @param {string} from who left it (a trainer's id, 'event:<id>')
  * @param {RewardData} D @param {{ kind?: string, n?: number }} [o] @returns {RunReward | null} */
 export function rewardOfferMake(run, from, D, o = {}) {
-  /* PK-5: the run's rewardPick rule rows (Gift Receipt) show more cards; the pick keeps its count for a reroll */
+  /* PK-5: the run's rewardPick rule rows (Gift Receipt) show more cards; the pick keeps its count for a reroll. PK-9:
+     below 0 (the curse Pending Review) fewer, never under one card */
   const more = fxRunRule(run, 'rewardPick'),
-    n = more > 0 ? (o.n || D.rules.pick) + more : o.n;
+    n = more !== 0 ? Math.max(1, (o.n || D.rules.pick) + more) : o.n;
   const e = encOf(run),
-    cards = rewardDraw(rngFrom(run.seed, 'reward|' + e.rewardN + '|0'), D, { ...o, n });
+    cards = rewardDraw(rngFrom(run.seed, 'reward|' + e.rewardN + '|0'), D, { ...o, n, run });
   e.rewardN++;
   e.reward = cards.length ? { cards, rolls: 0, from, ...(o.kind ? { kind: o.kind } : {}), ...(n ? { n } : {}) } : null;
   return e.reward;
@@ -191,6 +212,7 @@ export function rewardReroll(run, s, D) {
   const cards = rewardDraw(rngFrom(run.seed, 'reward|' + (encOf(run).rewardN - 1) + '|' + R.rolls), D, {
     kind: R.kind,
     n: R.n,
+    run,
   });
   if (cards.length) R.cards = cards;
   return '';
@@ -201,8 +223,10 @@ export function rewardReroll(run, s, D) {
  * the Billie `uid` when one is named, the one it held going back to the bag); a tutor's move to the Billie
  * `uid` (in place of `forget` when its moves are full). The pick is cleared once answered. '' when done, else why not
  * ('none': no pick or card, 'who': that Billie can't learn it, 'full': its moves are full and none to forget given).
+ * PK-7: a perk card's Perk is held (perks.js perkTake, with the save for its take moment): at the cap `drop` names the
+ * one to let go, else perkTake's reasons ('full', 'cap', 'noDrop', 'held') and the pick stays open.
  * @param {Run} run @param {{ items: Record<string, number>, pyramids: Record<string, number> }} s
- * @param {number | null} k @param {RewardData} D @param {{ uid?: string, forget?: string }} [o]
+ * @param {number | null} k @param {RewardData} D @param {{ uid?: string, forget?: string, drop?: string }} [o]
  */
 export function rewardTake(run, s, k, D, o = {}) {
   const R = run.enc && run.enc.reward;
@@ -213,7 +237,11 @@ export function rewardTake(run, s, k, D, o = {}) {
   }
   const c = R.cards[k];
   if (!c) return 'none';
-  if (c.kind === 'tutor') {
+  if (c.kind === 'perk') {
+    if (!c.perk || !D.perks || !D.perkRule) return 'none';
+    const why = perkTake(run, c.perk, D.perks, D.perkRule, o.drop, s);
+    if (why) return why;
+  } else if (c.kind === 'tutor') {
     const m = D.team.find(b => b.uid === o.uid);
     if (!m || !c.move || !tutorMoves(m, D).includes(c.move)) return 'who';
     if (m.moves.length >= D.slots) {
@@ -253,4 +281,7 @@ export const rewardDataGame = team => ({
   slots: moveSlotCount(),
   items: ITEMS,
   newUid,
+  /* PK-7: for a perk card */
+  perks: PERKS,
+  perkRule: RULES.run.perks,
 });

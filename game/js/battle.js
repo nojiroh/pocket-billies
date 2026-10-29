@@ -33,14 +33,17 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
+  BATTLE_ANIMS,
   BOSSES,
   FACTIONS,
   GENES,
   ITEMS,
   MOVES,
+  NODE_TYPES,
   PASSIVE,
   PASSIVE_INFO,
   PERKS,
+  PERK_SETS,
   PYRAMIDS,
   STATUS_NAMES,
   STAT_NAMES,
@@ -69,6 +72,7 @@ import {
 import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
 import { styleDials, styleNote } from './theme-sheet.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
+import { lvlSlot, vsPortraitScale, vsSplashFor } from './logic/battle-flow.js';
 import { popSize, rollValue } from './logic/hit-numbers.js';
 import {
   JOIN_LOCK_MS,
@@ -96,6 +100,7 @@ import {
   effectiveStat,
   enemyOnly,
   fighter,
+  fxSrcName,
   fxWeatherFor,
   isMulti,
   liveActors,
@@ -104,9 +109,10 @@ import {
   teamNeedsHp,
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
+import { plainOf } from './logic/line-markup.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
 import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML, uiIconURL } from './art.js';
-import { portraitHTML } from './person-art.js';
+import { portraitHTML, portraitSize, portraitURL } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
@@ -116,6 +122,7 @@ import {
   battleStage,
   battleStageCatch,
   battleStageFocus,
+  battleStageOutcome,
   battleStagePlay,
   battleStagePrepare,
   battleStageResize,
@@ -128,6 +135,7 @@ import {
   camAt,
 } from './battle-stage.js';
 import { battleAnimSkip } from './battle-anim-run.js';
+import { battleLooksLine } from './battle-looks.js';
 import { walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { WEATHER_NAMES } from './environment.js';
@@ -157,6 +165,7 @@ expose({
   battleShell: [() => battleShell, v => (battleShell = v)],
   battleStamp: [() => battleStamp, v => (battleStamp = v)],
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
+  battleVsSplash: [() => battleVsSplash, v => (battleVsSplash = v)],
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
@@ -454,6 +463,8 @@ export function stopTimers() {
   clearInterval(uiState.typeT);
 }
 function typeText(t) {
+  /* DL-1: plain text until the battle box draws markup (DL-8) */
+  t = plainOf(t);
   const el = $('#msgT');
   clearInterval(uiState.typeT);
   if (!el) return 0;
@@ -515,12 +526,14 @@ function showEvent() {
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
   if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r, ev);
-  if (ev.an) hudMoment(ev.an);
+  if (ev.an) hudMoment(ev.an, ev);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
   afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => {
     paintBoxes(ev.s, ev.mk, true);
     eventBlips(ev);
+    /* VFX-14: the stage's statuses and short effects take the same line's state (battle-looks.js) */
+    battleLooksLine(ev);
   });
   $('#msg').classList.remove('ready');
   uiState.evReady = false;
@@ -593,6 +606,8 @@ export function tapMessage() {
   battleAnimSkip();
   const ev = activeBattle.events[activeBattle.ev];
   if (ev) paintBoxes(ev.s, ev.mk, true);
+  /* VFX-14: and the stage's looks */
+  if (ev) battleLooksLine(ev);
   lineReady();
 }
 /* phase 06-4: the corner cards are gone (the plates in the scene show everything); a Billie coming in repaints them */
@@ -711,7 +726,7 @@ function koThisEvent(si) {
    size follows the hit, the largest on a KO (SY-2, logic/hit-numbers.js), the kind's colour on top */
 function hudPop(si, text, kind, w) {
   const L = $('#pops');
-  if (!L || !battleStage.L || (reducedMotion && kind === 'tag')) return;
+  if (!L || !battleStage.L || (reducedMotion && String(kind).split(' ')[0] === 'tag')) return;
   const q = battleStageToCss(actorTop(si));
   if (!q) return;
   const e = document.createElement('div');
@@ -732,12 +747,13 @@ function hudPop(si, text, kind, w) {
    sky (the growth family) round its plate's level, a catch bursts teal (good) round the pyramid, and a boss's name
    banner slams in as its trainer comes in, inside the trainer's own 1150 ms (no time added). The banner is the kit's
    pb-name-banner, which RL-14b's stage intro and VFX-16's VS splash can call the same way */
-function hudMoment(an) {
+function hudMoment(an, ev) {
   const L = $('#pops');
   if (!L) return;
   const box = L.getBoundingClientRect();
   if (an.k === 'lvl') {
-    const lv = $(`#plates .bplate[data-k="${an.si ?? 0}"] .pl-lv`);
+    /* VFX-16: the Billie the line is about (the engine names it by uid; it read slot 0) */
+    const lv = $(`#plates .bplate[data-k="${lvlSlot(an, ev)}"] .pl-lv`);
     if (!lv) return;
     const r = lv.getBoundingClientRect();
     if (r.width) pbBurst(r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top, HUD_BURSTS.lvl(L));
@@ -745,10 +761,33 @@ function hudMoment(an) {
     const q = battleStage.coin && battleStageToCss(battleStage.coin);
     if (q) pbBurst(q.x, q.y, HUD_BURSTS.caught(L));
   } else if (an.k === 'trainerIn') {
-    const T = activeBattle && activeBattle.T;
-    if (T && (T.boss || T.alpha))
+    const T = activeBattle && activeBattle.T,
+      E = BATTLE_ANIMS.events && BATTLE_ANIMS.events.vs,
+      V = vsSplashFor(T, E);
+    if (V && E) battleVsSplash(T, V, E, $('#stage') || L);
+    else if (T && (T.boss || T.alpha))
       pbNameBanner($('#stage') || L, { name: T.name, kicker: 'Boss', tone: 'bad', hold: 640 });
   }
+}
+/* VFX-16: the VS splash for a leader, the rival or a boss as its trainer comes in: UI-17's name banner with the two
+   portraits (yours and theirs, at a whole-number scale), the name and the run role's title as the game shows them
+   (nodeTypes.json), the leader's type colour (a boss keeps the red family), the kit's slant. It fits inside
+   trainerIn's 1150 ms (in 240 + hold + out 180) and goes before a boss's join intro and SY-5's notice; under Reduced
+   motion it fades in and out, standing still */
+function battleVsSplash(T, V, E, host) {
+  const [cw, ch] = portraitSize(),
+    r = host.getBoundingClientRect(),
+    k = vsPortraitScale(r.width, cw, E.scale, r.height, ch),
+    face = (/** @type {string} */ who) => ({ src: portraitURL(who), w: cw * k, h: ch * k }),
+    NT = NODE_TYPES[V.role];
+  pbNameBanner(host, {
+    name: T.name,
+    kicker: NT ? NT.name : '',
+    tone: V.role === 'boss' ? 'bad' : 'special',
+    color: V.role !== 'boss' && V.type ? TYPE_GLOW[V.type] || '' : '',
+    faces: [face('me'), face(T.who)],
+    hold: E.hold,
+  });
 }
 const HUD_BURSTS = {
   lvl: (/** @type {Element} */ L) => ({ tone: 'var(--sig-growth)', size: 56, in: L }),
@@ -953,6 +992,8 @@ function afterEvents() {
   if (activeBattle.over) {
     activeBattle.phase = 'end';
     paintActions();
+    /* VFX-16: the winners cheer with sparkles, or your side fades (no time added: the end waits on the player) */
+    battleStageOutcome(activeBattle.over);
     /* SY-5: a win over the Bureau is DENIED (it replaces a knockout's stamp: one at a time) */
     const look = activeBattle.over === 'win' && battleFactionLook();
     if (look) battleStamp(null, look.stamps.denied, true);
@@ -1097,7 +1138,10 @@ function teamPick(back) {
 }
 const backButtonHTML = () =>
   `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back</b><kbd>Esc</kbd></button>`;
-export const itemIcon = (k, size = 30) => {
+/* PK-11: an item's own picture (its img, a 36 px icon in art/items) at a whole multiple of 36 px, pixelated (.pxi);
+   without one, its rectangle of the old atlas (`i_` + its icon). The Bag, a shop and the battle's Bag draw 36 px, a
+   reward card 72 */
+export const itemIcon = (k, size = 36) => {
   const I = ITEMS[k] || {};
   return I.img
     ? `<img class="pxi" src="${artURL(I.img)}" width="${size}" height="${size}" alt="">`
@@ -1308,7 +1352,7 @@ export function paintActions() {
             .map(k => {
               const I = ITEMS[k],
                 ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(k, m));
-              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 32)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
+              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 36)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
             })
             .join('')
         : '<p class="note">No items. Buy some at a town shop.</p>'
@@ -1491,6 +1535,8 @@ export function endBattle() {
      a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
   if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
+  /* PK-7: a faintPaysNothing row (Influencer Contract) kept the win's Moneys */
+  if (pay.noPay) toast(`${fxSrcName(pay.noPay)}: one of yours fainted, so the battle paid nothing.`);
   /* SP-3: a spliced wild Billie knocked out: its DNA, and a sheet for a Gene sampled for the first time */
   const spliced =
     /** @type {{ dna?: number, sampled?: { gene: string, words: string }[], parts?: { id: string, words: string }[] }} */ (
@@ -1724,6 +1770,8 @@ function blipLook(b) {
     pct = b.mult && b.mult !== 1 ? ` ${b.mult > 1 ? '+' : '−'}${Math.round(Math.abs(b.mult - 1) * 100)}%` : '',
     o = { stat: b.stat || '', stages: b.stat ? b.stages || 1 : 0 };
   if (kind === 'perk') return { ...o, group: 'kind', mark: 'perk', text: ((PERKS[id] || {}).name || id) + pct };
+  /* PK-8: a Perk set's bonus, by its title */
+  if (kind === 'set') return { ...o, group: 'kind', mark: 'perk', text: ((PERK_SETS[id] || {}).title || id) + pct };
   if (kind === 'held') return { ...o, group: 'kind', mark: 'held', text: ((ITEMS[id] || {}).n || id) + pct };
   if (kind === 'gene')
     return { ...o, group: 'family', mark: 'bio', text: (((GENES.traits || {})[id] || {}).name || id) + pct };

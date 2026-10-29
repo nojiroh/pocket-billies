@@ -45,6 +45,72 @@ A line that starts with a small letter is a command or a keyword. An unknown one
 "sett", did you mean "set"?"), never a line of dialogue. A line of dialogue starts with a capital, a quote, a digit,
 `[expression]` or `Name:`.
 
+### Markup (dialogue track DL-1)
+
+A line can carry bracket tags (game/js/logic/line-markup.js, `MARKUP_TAGS`; the Studio's script reference lists them
+under Markup). A bubble style goes at the start, before or after the expression; the rest go anywhere in the text:
+
+    [happy][shout] Chosen: Get [b]out[/b] of my lab![p] [face=angry]Now.
+
+| Tag | Does |
+|---|---|
+| `[b]…[/b]` | bold, for the stressed word |
+| `[i]…[/i]` | a slant |
+| `[big]…[/big]`, `[small]…[/small]` | bigger; smaller and fainter |
+| `[c=gold]…[/c]` | a colour: gold, red, teal, grey |
+| `[wave]…[/wave]`, `[shake]…[/shake]` | the letters bob in a wave; a short jitter |
+| `[slow]…[/slow]`, `[fast]…[/fast]` | typed at half or double speed |
+| `[p]`, `[p=0.8]` | a pause (0.4 s, or the seconds given, up to 3) |
+| `[face=angry]` | changes the face here (any expression) |
+| `[emote=sweat]` | pops an emote: ! ? sweat anger sparkle note heart |
+| `[stamp=denied]` | the Bureau's stamp: denied, approved, pending, filed, void |
+| `[cut]` | the line breaks off here; a line ending in `—` does too |
+| `[shout]`, `[whisper]`, `[think]`, `[wait]` | the bubble's style (only at the start of the line) |
+
+A bad tag is an error on its line, with a did-you-mean (`unknown tag "[wav]", did you mean "[wave]"?`): an unknown
+tag, a value not in the list, a closing tag that closes nothing, crossed tags (`[b][i]x[/b][/i]`), a tag left open,
+a style in the middle of a line. A choice's option may use `[b]` only. Brackets that aren't tag-shaped (`[if …]`,
+`[B2]`) are plain text.
+
+Since DL-1 every surface shows the line's plain text (the tags taken out). Since DL-2 the dialogue box draws the
+effects: `[b]` in Oxanium 700 with a small pop, `[big]` in the voice font, wave, shake and the colours
+(game/css/talk-text.css). The cut acts since DL-4; since DL-5 the face and emote tags do too (below). The battle box,
+the walk speech, event intros and the opening's hot takes stay plain until DL-8.
+
+Since DL-5 the portrait acts (game/js/logic/talk-director.js): it blinks every few seconds (not while happy), its mouth
+opens on the vowels as they type, even on a line with a face, and `[face=angry]` changes the face when the letters
+reach it, with a small bounce of the circle behind the head. `[emote=sweat]` pops a small icon beside the head at that
+point for about a second (game/data/emotes.json draws them); a line that starts as, or turns, `surprised` or `angry`
+pops `!` or `anger` by itself unless it has an emote of its own (emotes.json "auto"). The faces a line may ask for are
+the wardrobe's: happy, surprised, sad, angry (the expressions test checks every one used). Under Reduced motion the
+blinks and the mouth stay; the bounce goes and emotes appear without the pop.
+
+How a line types (game/js/logic/talk-type.js): one letter every 28 ms at the Normal Text speed (Settings, Game: Slow
+42, Fast 14, Instant shows the line whole; Reduced motion is always Instant). The reader gets a beat for free: about 4
+letters' time after `, ; :` and 8 after `. ! ?` when a space follows (none inside `3.5` or `?!`, none at the line's
+end); an ellipsis (`…` or `...`) types three times slower. So write `[p]` only for a beat the punctuation doesn't
+give. A tap shows the rest of the line at once, pauses included. The voice follows the style: a shout blips higher
+and louder, a whisper softer, a thought not at all.
+
+Since DL-3 each speaker has a bubble of their own (game/data/talkSkins.json, game/css/talk-skins.css): Professor
+Chosen gold, Kappi a soft green one, Blake a slanted pop-art one, the Bureau's agents form paper with a form number
+and a typewriter voice, townsfolk the cream bubble in a colour each, and lines said as "me" (the field moves'
+prompts) a quiet note with no tail. A line's style changes the shape: `[shout]` a jagged burst with bold letters and a
+squash as it lands, `[whisper]` a dashed edge and fainter letters, `[think]` a cloud with a trail of dots. Each line
+tilts its bubble a little its own way (the letters stay level). `[stamp=approved]` (or denied, pending, filed, void)
+stamps the word on a Bureau bubble when the letters reach it; the stamp is the Bureau's alone (the owner, DL-4): on
+anyone else's it does nothing, and the Studio's script check warns.
+
+Since DL-4 a conversation stacks up: the newest bubble at the bottom, the two lines before it above, smaller and
+fainter (only the newest has the name tag and the line the checks look for: older ones are `.talk-was` and
+`.talk-said`). Speakers take turns on the left and right; the same speaker's lines in a row are linked. A "me" note
+sits in the middle and doesn't turn the sides. `[wait]` (anyone) shows a "…" bubble for under a second before the
+line; Kappi always gets one before their first line in a conversation (talkSkins.json `"wait": "first"`). A line
+that ends in `—` or holds `[cut]` stops there (the rest of the line is never shown) and goes on by itself a quarter
+second later; the next bubble knocks it aside. A choice's options take the older bubbles' place. The Log button on
+the newest bubble shows the whole conversation so far (kept in memory only, gone when the talk closes). The stack
+keeps within 40% of the screen's height above the bottom bar; the oldest bubble leaves first.
+
 ## Blocks
 
 ```
@@ -143,7 +209,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `go place [entrance]` | a checkpoint; from S2 |
 | `actor`, `act`, `caption`, `blink`, `screen`, `effect`, `hide`, `sound`, `walk who spot`, `camera shot`, `wait who` | a cutscene's: docs/CUTSCENES.md (only in a cutscene) |
 | `dressing-room`, `throw-coins`, `pick-starter`, `staged-fight`, `rival-battle`, `fall` | the opening's: docs/CUTSCENES.md |
-| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `revive species [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `invite`, `dna n`, `gene [n]`, `splice how`, `unsplice [n]` | an event's (events.json, on a run; RL-12b, SP-6): below |
+| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `boon id`, `curse id`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `revive species [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `invite`, `dna n`, `gene [n]`, `splice how`, `unsplice [n]` | an event's (events.json, on a run; RL-12b, SP-6): below |
 
 ### Event commands (RL-12b)
 
@@ -158,7 +224,8 @@ plays the same.
 | `money 150`, `money -50` | Moneys gained or lost (never below 0) |
 | `hurt 0.1`, `heal 0.25`, `heal` | every Billie standing loses / gains that share of its HP (never past 1 HP); `heal` alone heals all |
 | `status slp` | every Billie standing without a status gets one (par, slp, brn) |
-| `fx 3 price what=shop mult=1.25` | an effect row (perks.json's kinds) for this place and 3 more |
+| `fx 3 price what=shop mult=1.25` | an effect row (perks.json's kinds) for this place and 3 more (an unnamed one, for packs) |
+| `boon tailwind`, `curse audit_trail` | PK-9: a named boon or curse of boons.json for this place and its `places` more; the sheet says what it does. Given again while on, it lasts the longer of the two. A clinic's appeal lifts a curse; Correction Fluid shortens it or erases the run's first |
 | `wager 50` | a 50% chance: sets the flag `wager` to `win` or `lose` (`if wager = win`) |
 | `loot auction`, `loot common 2` | items drawn from a loot table (events.json `loot`) |
 | `level -1` | a Billie of the team, drawn, gains or loses levels |

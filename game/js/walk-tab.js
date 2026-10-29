@@ -9,7 +9,8 @@ import { LOCATIONS, NODE_TYPES, RULES, SHOPS, locationSubtitle, trainersAt } fro
 import { encountersHere, formatNumber, healAll, plural } from './logic/rules.js';
 import { faceToward } from './logic/person-view.js';
 import { modHas } from './logic/modifiers.js';
-import { runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
+import { runAppeal, runClinic, runHealCost, runSheetStatus, weatherEffectText } from './logic/run-loop.js';
+import { encBoonsOn } from './logic/run-enc.js';
 import { startWild } from './logic/battle-engine.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { moneyHTML, uiIconHTML } from './art.js';
@@ -25,6 +26,7 @@ expose({
   PLACE_TITLE_MS: [() => PLACE_TITLE_MS],
   WALK_HINT_MS: [() => WALK_HINT_MS],
   WEATHER_ICONS: [() => WEATHER_ICONS],
+  clinicAppealOpen: [() => clinicAppealOpen, v => (clinicAppealOpen = v)],
   clinicHeal: [() => clinicHeal, v => (clinicHeal = v)],
   dataAttrs: [() => dataAttrs],
   encountersNearest: [() => encountersNearest, v => (encountersNearest = v)],
@@ -93,6 +95,12 @@ export function clinicHeal(say) {
     toast('The clinic is shut. No healing on this run.');
     return;
   }
+  /* PK-9: a curse on can be appealed here, hurt or not */
+  const curses = encBoonsOn(saveData.run).filter(b => b.boon.curse);
+  if (curses.length) {
+    clinicAppealOpen(say, hurt, cost, curses);
+    return;
+  }
   if (!hurt) {
     toast('Everyone is in good shape. Nothing to pay.');
     return;
@@ -122,6 +130,58 @@ export function clinicHeal(say) {
       },
       { l: 'Not now', c: 'quiet', f: closeModal },
     ],
+  });
+}
+/** PK-9: the clinic with a curse on: heal (when someone is hurt and the money is there) and an appeal for each curse
+ * (rules.json run.appealCost) that lifts it at once (logic/run-loop.js runAppeal) @param {string | undefined} say
+ * @param {number} hurt @param {number} cost @param {ReturnType<typeof encBoonsOn>} curses */
+function clinicAppealOpen(say, hurt, cost, curses) {
+  const fee = RULES.run.appealCost ?? 50,
+    names = curses.map(c => c.boon.name).join(', ');
+  /** @type {any[]} */
+  const btns = [];
+  if (hurt && saveData.se >= cost)
+    btns.push({
+      l: `Heal for ${plural(cost, 'Money')}`,
+      c: 'gold',
+      f: () => {
+        closeModal();
+        const now = runClinic(saveData, runClinicEach());
+        if (!now.paid) return;
+        saveNow();
+        render();
+        toast(say || `The clinic patched everyone up for ${plural(now.cost, 'Money')}.`);
+      },
+    });
+  for (const c of curses)
+    btns.push({
+      l: `Appeal ${c.boon.name} (${plural(fee, 'Money')})`,
+      c: saveData.se >= fee ? 'dark' : 'quiet',
+      f: () => {
+        const r = runAppeal(saveData, c.id, fee);
+        if (!r.paid) {
+          toast(
+            r.why === 'poor'
+              ? `An appeal costs ${plural(fee, 'Money')}. You have ${plural(saveData.se, 'Money')}.`
+              : 'There is nothing to appeal.'
+          );
+          return;
+        }
+        closeModal();
+        saveNow();
+        render();
+        if (typeof debugLog !== 'undefined') debugLog.add('run', `appeal: ${c.id} lifted`);
+        toast(`Appeal granted. ${c.boon.name} is lifted.`);
+      },
+    });
+  btns.push({ l: 'Not now', c: 'quiet', f: closeModal });
+  const heal = hurt
+    ? `Healing is ${moneyHTML(runClinicEach())} a Billie (${plural(hurt, 'hurt Billie')}: ${moneyHTML(cost)}).`
+    : 'Everyone is in good shape.';
+  modal({
+    title: 'The clinic',
+    html: `<p>${heal}</p><p>The clinic also hears appeals: for ${moneyHTML(fee)} a curse on you is lifted at once. On you now: ${escapeHtml(names)}.</p><p class="note">You have ${moneyHTML(saveData.se)}.</p>`,
+    btns,
   });
 }
 /** what a place offers, one item a button (the map's card: nodeActions; the Actions bar: walkTrayItems): a shop, the

@@ -8,7 +8,8 @@
    toss waits for the next run's end. The roll comes from meta.runs and the last run's seed, so a reload tosses the
    same coin. A boon or curse waits in meta.wish until the next take-off, when it becomes an event boon of the run
    (run.enc.boons, src `fountain`: fxOfRun reads it, encArrive counts its places down) and an item given goes into
-   the bag. Only the outcome's id is kept: what it does is read from the rules when it is used (meta-state.js
+   the bag. PK-9: an outcome names its boon or curse of boons.json (`boon`: Glittering Water, Lucky Ripples, Stamped
+   Insufficient), kept on the run by id; an outcome's own `fx` and `places` (a pack's) still work as before. Only the outcome's id is kept: what it does is read from the rules when it is used (meta-state.js
    validWish checks what is stored).
    Logic only: no DOM, no Date, no Math.random (tools/test/fountain-wish.test.mjs). */
 /** @import { Meta, Run } from '../../types/save-data' */
@@ -16,7 +17,7 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { rngFrom } from './rng.js';
-import { encBoon } from './run-enc.js';
+import { encBoon, encBoonGive } from './run-enc.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -35,8 +36,9 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ wishTakeoff });
 /* to-module: end */
-/** @typedef {{ id: string, w: number, say: string[], fx?: any[], places?: number, give?: Record<string, number>,
- * pay?: Record<string, number> }} WishOutcome  one way a toss can go */
+/** @typedef {{ id: string, w: number, say: string[], boon?: string, fx?: any[], places?: number,
+ * give?: Record<string, number>, pay?: Record<string, number> }} WishOutcome  one way a toss can go (PK-9: `boon`, a
+ * boon or curse of boons.json) */
 /** @typedef {{ cost: { cur: string, n: number }, outcomes: WishOutcome[] }} WishRules  rules.json square.wish */
 
 /** whether a coin can be tossed now: 'ok', 'done' (tossed since the last run ended) or 'poor' (not enough to pay)
@@ -63,7 +65,7 @@ export function wishToss(meta, R) {
   M[R.cost.cur] = (M[R.cost.cur] || 0) - R.cost.n;
   for (const [cur, n] of Object.entries(out.pay || {})) M[cur] = Math.min(1e12, (M[cur] || 0) + n);
   meta.wish = { at: meta.runs, out: out.id };
-  if (!(out.fx && out.fx.length) && !out.give) meta.wish.used = 1;
+  if (!(out.fx && out.fx.length) && !out.give && !out.boon) meta.wish.used = 1;
   return { out, say };
 }
 
@@ -98,6 +100,8 @@ export function wishTakeoff(s, R) {
   const out = wishOutcome(R, W.out);
   W.used = 1;
   if (!out) return null;
+  /* PK-9: a named boon or curse (boons.json) */
+  if (out.boon) encBoonGive(s.run, out.boon, 'fountain');
   if (out.fx && out.fx.length) encBoon(s.run, out.fx, out.places || 0, 'fountain');
   for (const [k, n] of Object.entries(out.give || {})) {
     const bag = s.items || (s.items = {});

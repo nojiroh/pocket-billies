@@ -25,7 +25,10 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  BUST_PX: [() => BUST_PX],
+  BUST_SHARE: [() => BUST_SHARE],
   CLIP_FRAMES: [() => CLIP_FRAMES],
+  FACE_MOUTH_OPEN: [() => FACE_MOUTH_OPEN],
   FIGURE_BANDS: [() => FIGURE_BANDS],
   FIGURE_FPS: [() => FIGURE_FPS],
   FIGURE_GAITS: [() => FIGURE_GAITS],
@@ -36,10 +39,13 @@ expose({
   FIGURE_PAL_MAX: [() => FIGURE_PAL_MAX],
   FIGURE_TALK_MS: [() => FIGURE_TALK_MS],
   FIGURE_TURN_RATE: [() => FIGURE_TURN_RATE],
+  HEAD_STEPS: [() => HEAD_STEPS],
   OUTLINE_RGB: [() => OUTLINE_RGB],
   SDF_CORNERS: [() => SDF_CORNERS],
   TILT_STEP: [() => TILT_STEP],
   WALK_CYCLE_M: [() => WALK_CYCLE_M],
+  // @ts-expect-error -- replaced on purpose
+  bustSize: [() => bustSize, v => (bustSize = v)],
   // @ts-expect-error -- replaced on purpose
   cardPoint: [() => cardPoint, v => (cardPoint = v)],
   // @ts-expect-error -- replaced on purpose
@@ -111,6 +117,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   headFrontOf: [() => headFrontOf, v => (headFrontOf = v)],
   // @ts-expect-error -- replaced on purpose
+  headKey: [() => headKey, v => (headKey = v)],
+  // @ts-expect-error -- replaced on purpose
+  headStep: [() => headStep, v => (headStep = v)],
+  // @ts-expect-error -- replaced on purpose
   jointMatrices: [() => jointMatrices, v => (jointMatrices = v)],
   // @ts-expect-error -- replaced on purpose
   legAngle: [() => legAngle, v => (legAngle = v)],
@@ -126,6 +136,10 @@ expose({
   meshClipFrame: [() => meshClipFrame, v => (meshClipFrame = v)],
   // @ts-expect-error -- replaced on purpose
   meshClipMatrices: [() => meshClipMatrices, v => (meshClipMatrices = v)],
+  // @ts-expect-error -- replaced on purpose
+  meshHeadPivot: [() => meshHeadPivot, v => (meshHeadPivot = v)],
+  // @ts-expect-error -- replaced on purpose
+  nearestHead: [() => nearestHead, v => (nearestHead = v)],
   // @ts-expect-error -- replaced on purpose
   outlineOf: [() => outlineOf, v => (outlineOf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -162,6 +176,10 @@ expose({
   taperAt: [() => taperAt, v => (taperAt = v)],
   // @ts-expect-error -- replaced on purpose
   toonBand: [() => toonBand, v => (toonBand = v)],
+  // @ts-expect-error -- replaced on purpose
+  turnHeadPose: [() => turnHeadPose, v => (turnHeadPose = v)],
+  // @ts-expect-error -- replaced on purpose
+  turnJointAbout: [() => turnJointAbout, v => (turnJointAbout = v)],
   vCross: [() => vCross],
   vDot: [() => vDot],
   vSub: [() => vSub],
@@ -329,7 +347,19 @@ export function figureSceneLight(S) {
  * shadow (CH-3b's fidelity pass: a fourth tone, so forms turn) */
 export const FIGURE_BANDS = Object.freeze({ light: 0.5, base: -0.1, shine: 0.86, deep: -0.55 });
 
+/** an open mouth on a figure's painted face (DL-6): this many pixels taller than the shut one */
+export const FACE_MOUTH_OPEN = 2;
+/** DL-6: a talk close-up is a square picture this many pixels across (today's portraits are 64 art pixels) */
+export const BUST_PX = 64;
+/** and shows the figure's top this share of its height (the head and shoulders) */
+export const BUST_SHARE = 0.6;
+/** the head's stepped angles in a close-up (degrees: a step and the most either way): 5 yaws, 3 pitches, 3 rolls, so
+ * at most 45 pictures of a figure, each read as a pixel-art key frame */
+export const HEAD_STEPS = Object.freeze({ yaw: [6, 12], pitch: [8, 8], roll: [8, 8] });
 /** @typedef {[number, number, number]} Vec3 */
+/** @typedef {{ eyes?: 'open' | 'shut', mouth?: 'open' | 'shut', expr?: string | null }} TalkFace the talk's face at a
+ * moment (DL-6, logic/talk-director.js; figureFaceMarks maps it onto a kit figure's face set) */
+/** @typedef {{ yaw: number, pitch: number, roll: number }} HeadAngles degrees; pitch down is positive */
 /** @typedef {{ front: number, side: number, back: number, bangs?: number, depth?: number, under?: boolean }} HairCut
  * (`under`: keep what is below the edge instead, a beard) where a hair cap
  * ends, as a height on its own sphere (-1 the bottom, 1 the top) at the front, the sides and the back, its fringe in
@@ -1815,16 +1845,29 @@ export function figureFaceState(F, o = {}) {
  * holds it this pose, seen in view V, if it faces the camera enough (eyes most, the mouth least); an eye seen from the
  * side is a pixel wide; a closed eye (`blink`) a line; an open eye 2 pixels or wider and 3 or taller gets a glint at
  * its top left, toward the light. CH-6: a kit figure's marks in face state `face` (figureFaceState; its rest when not
- * given, a pose's blink closing its eyes)
+ * given, a pose's blink closing its eyes). DL-6: `face` may instead be the talk's face at a moment (TalkFace,
+ * logic/talk-director.js): `eyes: 'shut'` closes the eyes as a blink; a kit figure shows `expr` (the line's expression)
+ * and, for `mouth: 'open'`, its first talking frame. On a figure with no face set (the mannequin, the stand-in) draws the mouth FACE_MOUTH_OPEN
+ * pixels taller, its top where the shut mouth is
  * @param {Figure} F @param {Float32Array} J the pose's joint matrices (jointMatrices) @param {FigurePose} P
  * @param {{ rel: number, tilt: number }} V @param {number} ppm @param {{ ax: number, ay: number }} S
- * @param {FaceState | null} [face]
+ * @param {FaceState | TalkFace | null} [face]
  * @returns {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean }[]}
  */
 export function figureFaceMarks(F, J, P, V, ppm, S, face = null) {
-  const tagged = !!F.faceSet,
-    FS = tagged ? face || figureFaceState(F, { blink: P.blink ? 2 : 0 }) : null,
-    blink = !tagged && P.blink;
+  const talk = face && !('when' in face) ? /** @type {TalkFace} */ (face) : null,
+    shut = !!P.blink || (talk && talk.eyes) === 'shut',
+    FS = F.faceSet
+      ? talk
+        ? figureFaceState(F, {
+            expr: talk.expr || null,
+            blink: shut ? 2 : 0,
+            mouth: talk.mouth === 'open' ? F.faceSet.talk[0] || undefined : undefined,
+          })
+        : /** @type {FaceState | null} */ (face) || figureFaceState(F, { blink: P.blink ? 2 : 0 })
+      : null,
+    blink = !F.faceSet && shut,
+    open = !F.faceSet && (talk && talk.mouth) === 'open';
   /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string,
    *   dir?: number, t?: number, d?: number }[]} */
   const out = [];
@@ -1865,6 +1908,19 @@ export function figureFaceMarks(F, J, P, V, ppm, S, face = null) {
     const rgb = F.colours[m.col || m.kind] || [OUTLINE_RGB[0], OUTLINE_RGB[1], OUTLINE_RGB[2]];
     /** @type {{ x: number, y: number, w: number, h: number, rgb: Vec3, kind: string, hollow?: boolean, shape?: string,
      *   dir?: number, t?: number, d?: number }} */
+    /* DL-6: an open mouth on a figure with no face set: as wide, taller downward, darker (the inside) */
+    if (m.kind === 'mouth' && open) {
+      out.push({
+        x,
+        y,
+        w,
+        h: h + FACE_MOUTH_OPEN,
+        rgb: figureDark(F.colours.mouth || [150, 70, 74], 0.55),
+        kind: 'mouth',
+        d,
+      });
+      continue;
+    }
     const o = { x, y, w, h, rgb, kind: m.kind, d };
     if (m.hollow) o.hollow = true;
     /* CH-3b: an oval (an eye, a pupil, a shine) or a smile's arc, painted as such once it is 3 pixels or more (a
@@ -2101,5 +2157,101 @@ export function meshClipMatrices(c, frame, joints, ppm) {
     const m = c.mats.subarray((f * joints + j) * 12, (f * joints + j) * 12 + 12);
     out.set([m[0], m[1], m[2], 0, m[3], m[4], m[5], 0, m[6], m[7], m[8], 0, m[9], m[10] + dy, m[11], 1], j * 16);
   }
+  return out;
+}
+
+/* ---------- close-ups (dialogue track DL-6) ---------- */
+/**
+ * a talk close-up's picture: BUST_PX square, the figure's top BUST_SHARE filling it (2 pixels spare above), seen
+ * level (tilt 0); the anchor (the ground point under the figure) is below the picture, so its bottom rows cut through
+ * the chest. `ppm` is the density that fits it.
+ * @param {FigureExtent} ext @returns {{ w: number, h: number, ax: number, ay: number, ppm: number }}
+ */
+export function bustSize(ext) {
+  const ppm = Math.max(8, Math.round((BUST_PX - 4) / (ext.top * BUST_SHARE)));
+  return { w: BUST_PX, h: BUST_PX, ax: BUST_PX / 2, ay: Math.round(ext.top * ppm) + 2, ppm };
+}
+/**
+ * the head's angles stepped (HEAD_STEPS) and held in range, so a turning head shows a few kept pictures
+ * @param {Partial<HeadAngles> | null | undefined} h @returns {HeadAngles}
+ */
+export function headStep(h) {
+  const q = (/** @type {number | undefined} */ v, /** @type {number[]} */ [step, most]) =>
+    Math.max(-most, Math.min(most, Math.round((Number(v) || 0) / step) * step)) || 0;
+  return { yaw: q(h?.yaw, HEAD_STEPS.yaw), pitch: q(h?.pitch, HEAD_STEPS.pitch), roll: q(h?.roll, HEAD_STEPS.roll) };
+}
+/** a stepped head's key @param {HeadAngles} h */
+export function headKey(h) {
+  return `${h.yaw}/${h.pitch}/${h.roll}`;
+}
+/**
+ * of the angles kept, the nearest to the one wanted (a pitch or roll step weighs as a yaw step), or null if none
+ * @param {HeadAngles} want @param {Iterable<HeadAngles>} kept @returns {HeadAngles | null}
+ */
+export function nearestHead(want, kept) {
+  /** @type {HeadAngles | null} */
+  let best = null,
+    bd = Infinity;
+  for (const h of kept) {
+    const d =
+      Math.abs(h.yaw - want.yaw) / HEAD_STEPS.yaw[0] +
+      Math.abs(h.pitch - want.pitch) / HEAD_STEPS.pitch[0] +
+      Math.abs(h.roll - want.roll) / HEAD_STEPS.roll[0];
+    if (d < bd) {
+      bd = d;
+      best = h;
+    }
+  }
+  return best;
+}
+/**
+ * a code figure's pose with its head turned by `h` (degrees, added to the head part's own turn: x the pitch, down
+ * forward; y the yaw; z the roll); its hair, cowlick and face turn with it. A copy: `P` is not changed.
+ * @param {Figure} F @param {FigurePose} P @param {HeadAngles} h @returns {FigurePose}
+ */
+export function turnHeadPose(F, P, h) {
+  const i = F.parts.findIndex(p => p.id === 'head'),
+    rad = Math.PI / 180;
+  if (i < 0) return P;
+  const rot = P.rot.map(r => /** @type {Vec3} */ ([...r]));
+  rot[i] = [rot[i][0] + h.pitch * rad, rot[i][1] + h.yaw * rad, rot[i][2] + h.roll * rad];
+  return { ...P, rot };
+}
+/**
+ * where a model figure's head turns: the middle of its head joint's lowest vertices (the neck), as modelled. Null if
+ * no vertex is on that joint.
+ * @param {Float32Array} data the figure's vertices (x y z, the normal, the joint, u v: 9 numbers each)
+ * @param {number} joint @returns {Vec3 | null}
+ */
+export function meshHeadPivot(data, joint) {
+  let lo = Infinity;
+  for (let i = 0; i + 8 < data.length; i += 9) if (data[i + 6] === joint && data[i + 1] < lo) lo = data[i + 1];
+  if (lo === Infinity) return null;
+  let x = 0,
+    z = 0,
+    n = 0;
+  for (let i = 0; i + 8 < data.length; i += 9)
+    if (data[i + 6] === joint && data[i + 1] < lo + 0.04) {
+      x += data[i];
+      z += data[i + 2];
+      n++;
+    }
+  return [x / n, lo, z / n];
+}
+/**
+ * joint matrices with joint `i` turned by `h` (degrees, the figure's own axes: x the pitch, y the yaw, z the roll)
+ * about `pivot` (where it is modelled; it moves with the joint's pose). For a model figure's head, which has no joint
+ * under it. A copy.
+ * @param {Float32Array} J @param {number} i @param {Vec3} pivot @param {HeadAngles} h @returns {Float32Array}
+ */
+export function turnJointAbout(J, i, pivot, h) {
+  const out = new Float32Array(J),
+    M = J.subarray(i * 16, i * 16 + 16),
+    p = [0, 1, 2].map(r => M[r] * pivot[0] + M[4 + r] * pivot[1] + M[8 + r] * pivot[2] + M[12 + r]),
+    rad = Math.PI / 180,
+    R = partMatrix([h.pitch * rad, h.yaw * rad, h.roll * rad], [1, 1, 1], [0, 0, 0]),
+    to = partMatrix([0, 0, 0], [1, 1, 1], p),
+    back = partMatrix([0, 0, 0], [1, 1, 1], [-p[0], -p[1], -p[2]]);
+  out.set(mat4Mul(to, mat4Mul(R, mat4Mul(back, M))), i * 16);
   return out;
 }

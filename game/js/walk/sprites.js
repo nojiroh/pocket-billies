@@ -239,6 +239,7 @@ function newSpriteRecord(cross) {
   return {
     it: null,
     hit: null,
+    rise: null,
     mode: 'none',
     T: null,
     x: 0,
@@ -331,6 +332,8 @@ function spriteRecord(it, F, r) {
   r.hit = it.hit && it.hit[3] > 0.001 ? it.hit : null;
   /* CH-4: a figure's cell of the live atlas, lit where it stands (figure-atlas.js) */
   r.fig = it.im && it.im.figAtlas ? 1 : 0;
+  /* VFX-16: a rig dithering in or out from its feet up ([share hidden, the feet's and the head's places down the picture]) */
+  r.rise = it.rise && it.rise[0] > 0.001 ? it.rise : null;
   r.rim = it.person ? 0.4 : 0.12;
   r.lit = it.glow ? Math.max(0, 1 - it.glow) : it.far ? 0.75 : 1;
   r.shade = it.person ? 0.45 : it.far ? 0.3 : 0.55;
@@ -409,10 +412,12 @@ function setSpriteRecord(p, r) {
   setSpriteGeometry(p, r);
   if (r.dz) gl.uniform1f(U.uDZ, r.dz);
   if (r.hit && U.uHit) gl.uniform4fv(U.uHit, r.hit);
+  if (r.rise && U.uRise) gl.uniform3fv(U.uRise, r.rise);
 }
 /* VFX-9: the hit flash off again after its picture */
 function clearSpriteHit(p, r) {
   if (r.hit && p.U.uHit) gpuState.gl.uniform4f(p.U.uHit, 0, 0, 0, 0);
+  if (r.rise && p.U.uRise) gpuState.gl.uniform3f(p.U.uRise, 0, 0, 0);
 }
 /* a crossing picture's: only what differs from its tree's */
 function setSpriteCrossRecord(p, c) {
@@ -565,8 +570,8 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
     const r = spriteRecordAt(i),
       it = r.it,
       tag = it.voxImg || it.vox ? 'modelPic' : personPicture(it.im) ? 'person' : 0;
-    if (r.mode === 'quad' && ((it.foil && !r.crossOn) || r.hit)) {
-      /* SY-6's coat foil and VFX-9's hit flash (uHit) leave the run for the plain program */
+    if (r.mode === 'quad' && ((it.foil && !r.crossOn) || r.hit || r.rise)) {
+      /* SY-6's coat foil, VFX-9's hit flash (uHit) and VFX-16's dither (uRise) leave the run for the plain program */
       flushSpriteRun(ip);
       if (R.on) gl.useProgram(p.p);
       R.on = false;

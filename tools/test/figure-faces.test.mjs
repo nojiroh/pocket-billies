@@ -17,6 +17,7 @@ import {
   jointMatrices,
 } from '../../game/js/logic/figure-pose.js';
 import { kitFaceProblems } from '../../game/js/logic/kit-shapes.js';
+import { leadingExpr } from '../../game/js/logic/line-markup.js';
 
 const W = JSON.parse(readFileSync(new URL('../../game/data/wardrobe.json', import.meta.url), 'utf8'));
 const PEOPLE = Object.fromEntries(
@@ -154,7 +155,11 @@ test('faces: every expression tag a line uses in the game data is one of the kit
         if (f.isDirectory()) {
           if (f.name !== 'legacy' && f.name !== 'schema') walk(p);
         } else if (f.name.endsWith('.json'))
-          for (const m of readFileSync(p, 'utf8').matchAll(/"\[(\w+)\]\s/g)) used.add(m[1]);
+          /* a line's expression as the talk reads it (DL-1 leadingExpr: style tags such as [whisper] are not one) */
+          for (const m of readFileSync(p, 'utf8').matchAll(/"(\[[^"]*)"/g)) {
+            const L = leadingExpr(m[1]);
+            if (L.expr && L.rest.trim()) used.add(L.expr);
+          }
       }
     };
   walk(new URL('../../game/data', import.meta.url).pathname);
@@ -222,4 +227,23 @@ test('faces: every skin swatch has a hand-picked ramp; a skin between swatches t
   assert.equal(kitSkinRamp([1, 2, 3], undefined), null);
   /* a figure carries its ramp */
   assert.equal(lookFigure(PEOPLE.broker.look, W.items, { name: 'broker' }).skinRamp.length, 5);
+});
+
+test('faces: a talk close-up’s face (DL-6’s {eyes, mouth, expr}) shows on a kit figure as its own face set', () => {
+  const F = lookFigure(PEOPLE.broker.look, W.items, { name: 'broker' }),
+    FC = figureKitData().faces,
+    ppm = 96,
+    S = cardSize(ppm, 0, 1.9),
+    P = figurePose(F, 'idle', 0),
+    J = jointMatrices(F, P, ppm),
+    V = { rel: Math.PI, tilt: 0 },
+    paint = face => JSON.stringify(figureFaceMarks(F, J, P, V, ppm, S, face));
+  assert.equal(paint({ eyes: 'open', mouth: 'shut' }), paint(null), 'open and shut is the rest');
+  assert.equal(paint({ eyes: 'shut', mouth: 'shut' }), paint(figureFaceState(F, { blink: 2 })), 'shut eyes, a blink');
+  assert.equal(
+    paint({ eyes: 'open', mouth: 'open', expr: 'happy' }),
+    paint(figureFaceState(F, { expr: 'happy', mouth: FC.talk[0] })),
+    'an open mouth, the first talking frame, in the line’s expression'
+  );
+  assert.notEqual(paint({ eyes: 'open', mouth: 'open' }), paint(null));
 });

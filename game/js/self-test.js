@@ -1195,7 +1195,13 @@ async function runFullTest(mode) {
         if (!(await want(['choose'], 45000)))
           throw new Error(`never got to the menu (${activeBattle ? activeBattle.phase : 'no battle'})`);
         const foe = fighter(1);
-        if (!foe || foe.kind !== 'robot' || !foe.boss || !foe.boss.phases) throw new Error('the boss is no boss robot');
+        if (!foe || foe.kind !== 'robot' || !foe.boss || !foe.boss.phases) {
+          /* VFX-10: what stood there instead (no names: a kind, flags and the field), so a rare failure says why */
+          const F = activeBattle.sides[1].f[0] || {};
+          throw new Error(
+            `the boss is no boss robot (${foe ? `${foe.kind || 'billie'}, boss ${!!foe.boss}, ${foe.hp} HP` : 'none'}; slot ${F.on ? 'on' : 'off'}, line ${activeBattle.ev} of ${activeBattle.events.length})`
+          );
+        }
         if (!joined) throw new Error('no join intro');
         /* SY-5: the notice listed its four bots and was gone by the menu */
         if (FACTIONS.bureau.look && notice !== Object.keys(V.bots || {}).length)
@@ -2281,6 +2287,9 @@ async function runFullTest(mode) {
             pickBtn().f();
             if (!uiState.modal || uiState.modal.cls !== 'relic-pick' || !saveData.run.offer)
               throw new Error('the pick didn’t open');
+            /* PK-7: a leader's win offers Fine Print alone (rules.json run.perks.leader) */
+            if (saveData.run.offer.some(id => !PERKS[id] || PERKS[id].rarity !== 'fine'))
+              throw new Error(`the mini-boss's pick isn't all Fine Print: ${saveData.run.offer.join(', ')}`);
             const took = saveData.run.offer[0];
             uiState.relicSel = took;
             perkPickOpen();

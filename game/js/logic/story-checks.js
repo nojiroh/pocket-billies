@@ -17,6 +17,7 @@ import { expose } from '../test-globals.js';
 import { HISTORY_FACTS, LAST_FACTS, LOST_TO_KINDS } from './run-history.js';
 import { conditionHolds, conditionNames, conditionProblem, conditionTree, storyStateOf } from './conditions.js';
 import { CUTSCENE_YOU, cutsceneNames, cutsceneStep } from './cutscene-set.js';
+import { talkSkinOf } from './talk-skins.js';
 import { LINE_ID, SCRIPT_COMMANDS, parseScript } from './script-parse.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -248,6 +249,20 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
       problems.push(at, `speaker ${w}, not in story.json speakers nor a person`);
   };
 
+  /* DL-4 (the owner's answer to Ask me before 4): the stamp is the Bureau's; a [stamp=…] on a speaker whose bubble takes
+     no stamps (talkSkins.json deco "stamp": the speaker, the script owner's or its trainer class's skin) is ignored */
+  const TS = G.talkSkins || {},
+    stamps = (/** @type {string} */ skin) => ((TS.skins || {})[skin]?.deco || []).includes('stamp');
+  const stampCheck = (/** @type {any} */ n, /** @type {any} */ sc, /** @type {any} */ at) => {
+    if (!/\[stamp=/.test(n.text || '')) return;
+    const O = sc.owner || {},
+      ws = [n.who, String(n.who || '').toLowerCase(), O.who].filter(Boolean);
+    /* the speaker's skin, the owner's (a banter line's who may name a skin: "bureau"), or its trainer class's */
+    if (ws.some(w => stamps(talkSkinOf(TS, w)) || stamps(w)) || (O.cls && stamps(talkSkinOf(TS, '', { cls: O.cls }))))
+      return;
+    warnings.push(at, `a [stamp] on ${n.who || 'this line'}: only the Bureau's bubble takes stamps, so it won't show`);
+  };
+
   /* a cutscene's own commands: only in a cutscene; there, every spot, shot and person it names is its own or a
      speaker (logic/cutscene-set.js reads them) */
   const CMD = /** @type {Record<string, { group?: string }>} */ (SCRIPT_COMMANDS);
@@ -316,8 +331,10 @@ export function storyFindings(G, L = { parseScript, conditionTree, conditionProb
     const walk = blk => {
       for (const n of blk) {
         const at = spot(`${sc.where} ${sc.id}, line ${n.line + 1}`, { file: sc.where, script: sc.id, line: n.line });
-        if (n.k === 'say') who(n.who, at);
-        else if (n.k === 'if')
+        if (n.k === 'say') {
+          who(n.who, at);
+          stampCheck(n, sc, at);
+        } else if (n.k === 'if')
           for (const c of n.clauses) {
             if (c.cond) condition(c.cond, at);
             walk(c.body);

@@ -50,3 +50,22 @@ test('the frame at a time, and a strip that doesn`t fit', () => {
   assert.match(S.stripProblem({ w: 5, h: 4, n: 2, from: 'effects' }, { w: 12, h: 4 }), /12 px wide/);
   assert.match(S.stripProblem({ w: 5, h: 4, n: 2, from: 'effects' }, { w: 10, h: 5 }), /4 px high/);
 });
+
+test('VFX-10: the battle effect strips are strips, read from battleAnims.json sprites, and fit their pictures', () => {
+  const T = { ...TABLES, anims: GAME_DATA.battleAnims.sprites };
+  assert.deepEqual(S.stripOf('art/battle/anims/burst.png', T), {
+    w: 16,
+    h: 16,
+    n: GAME_DATA.battleAnims.sprites.burst.frames,
+    from: 'battleAnims',
+    name: 'burst',
+    fps: 12,
+  });
+  assert.equal(S.stripOf('battle/anims/scar_dent.png', T), null, 'a one-frame mark on the ground is no strip');
+  for (const [id, sp] of Object.entries(GAME_DATA.battleAnims.sprites)) {
+    const s = S.stripOf(`battle/anims/${id}.png`, T);
+    if (s) assert.equal(S.stripProblem(s, sizeOf(`battle/anims/${id}.png`)), '', id);
+    else assert.equal(sp.frames, 1, id);
+  }
+  assert.equal(A.artMadeBy('art/battle/anims/spark.png'), 'tools/build-battle-anims.py');
+});

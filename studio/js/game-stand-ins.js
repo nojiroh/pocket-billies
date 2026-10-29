@@ -5,10 +5,12 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { provide, studioState } from '../../game/js/hooks.js';
+/* eslint-disable no-func-assign */
 expose({
+  BATTLE_ANIMS: [() => BATTLE_ANIMS],
   BATTLE_STAGES: [() => BATTLE_STAGES],
-  HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   MOVES: [() => MOVES],
+  PASSIVE: [() => PASSIVE],
   PEOPLE: [() => PEOPLE],
   RULES: [() => RULES],
   TYPE_COLORS: [() => TYPE_COLORS],
@@ -16,16 +18,24 @@ expose({
   activeBattle: [() => activeBattle, v => ((activeBattle = v), provide({ activeBattle }))],
   escapeHtml: [() => escapeHtml],
   liveMap: [() => liveMap],
-  reducedMotion: [() => reducedMotion, v => ((reducedMotion = v), provide({ reducedMotion }))],
+  reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
+  robotIdsFromSp: [() => robotIdsFromSp],
   saveData: [() => saveData, v => ((saveData = v), provide({ saveData }))],
+  setReducedMotion: [() => setReducedMotion, v => (setReducedMotion = v)],
   uiState: [() => uiState, v => ((uiState = v), provide({ uiState }))],
 });
+/* eslint-enable no-func-assign */
 /* to-module: end */
 export var saveData = { preferences: {}, gender: 'boy', avatar: null },
   uiState = {},
   activeBattle = null,
   reducedMotion = false;
 provide({ activeBattle, reducedMotion, saveData, uiState }); /* to-module */
+/* VFX-12: the Battle effects editor plays under Reduced motion (as the game's game-state.js setReducedMotion) */
+export function setReducedMotion(v) {
+  reducedMotion = !!v;
+  provide({ reducedMotion });
+}
 export const escapeHtml = s =>
   String(s == null ? '' : s).replace(
     /[&<>"']/g,
@@ -55,11 +65,13 @@ const liveMap = f =>
     }
   );
 export const BATTLE_STAGES = liveMap(D => D.battleStages),
+  /* VFX-12: how the battle plays a move (battleAnims.json), so the battle preview plays moves (battle-anim-run.js) */
+  BATTLE_ANIMS = liveMap(D => D.battleAnims),
   MOVES = liveMap(D => D.moves),
   PEOPLE = liveMap(D => D.people),
   /* phase 16: the rig drawing reads RULES.parts (part sizes) */
   RULES = liveMap(D => D.rules);
-provide({ BATTLE_STAGES, MOVES, PEOPLE, RULES }); /* to-module */
+provide({ BATTLE_ANIMS, BATTLE_STAGES, MOVES, PEOPLE, RULES }); /* to-module */
 const TYPE_COLORS = liveMap(D => {
   const o = Object.fromEntries(D.types.map(t => [t.id, [t.color, t.text || '#fff']]));
   o.None = [(D.untyped || {}).color || '#9a9a9a', (D.untyped || {}).text || '#fff'];
@@ -73,9 +85,14 @@ const TYPE_GLOW = liveMap(D => {
   return o;
 });
 provide({ TYPE_GLOW }); /* to-module */
-const HIT_EFFECTS_BY_TYPE = liveMap(D => {
-  const o = Object.fromEntries(D.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
-  o.None = (D.untyped || {}).fx || ['pow', 'star'];
-  return o;
-});
-provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
+/* VFX-20: a type's passive (game-data.js PASSIVE: the battle's glints name the passive's type) */
+const PASSIVE = liveMap(D => Object.fromEntries(D.types.map(t => [t.id, t.passive || ''])));
+provide({ PASSIVE }); /* to-module */
+/* VFX-20: a Bureau bot's gem and parts from its sp (logic/fighters.js robotIdsFromSp, which needs the game's data
+   module): the battle stage's faint and broken-part looks read it */
+const robotIdsFromSp = sp => {
+  if (typeof sp !== 'string' || !sp.startsWith('bot:')) return null;
+  const a = sp.slice(4).split('.');
+  return a.length === 5 ? { gem: a[0], torso: a[1], armL: a[2], armR: a[3], legs: a[4] } : null;
+};
+provide({ robotIdsFromSp }); /* to-module */
