@@ -1,0 +1,187 @@
+exports[`the prepared run’s places and its crash site stay where they are 1`] = `
+{
+  "seed": "FIRSTRUN",
+  "places": [
+    {
+      "node": "0 landing",
+      "size": [
+        128,
+        64
+      ],
+      "seed": 145490293,
+      "ground": "7288c8c4",
+      "props": [
+        773,
+        "0eee38ae"
+      ]
+    },
+    {
+      "node": "1 route",
+      "size": [
+        128,
+        128
+      ],
+      "seed": 9042100,
+      "ground": "5aea36bc",
+      "props": [
+        1396,
+        "edc755d8"
+      ]
+    },
+    {
+      "node": "2 route",
+      "size": [
+        128,
+        64
+      ],
+      "seed": 850086807,
+      "ground": "bc13a787",
+      "props": [
+        617,
+        "b6579d0c"
+      ]
+    },
+    {
+      "node": "3 town",
+      "size": [
+        128,
+        64
+      ],
+      "seed": 708938533,
+      "ground": "b72a392d",
+      "props": [
+        604,
+        "2769a721"
+      ]
+    },
+    {
+      "node": "4 event",
+      "size": [
+        64,
+        64
+      ],
+      "seed": 1670967712,
+      "ground": "e7e6cf47",
+      "props": [
+        358,
+        "70ae2ef4"
+      ]
+    },
+    {
+      "node": "5 miniboss",
+      "size": [
+        128,
+        64
+      ],
+      "seed": 2133608815,
+      "ground": "7d9c5076",
+      "props": [
+        728,
+        "1db256ae"
+      ]
+    },
+    {
+      "node": "6 town",
+      "size": [
+        128,
+        64
+      ],
+      "seed": 1208162050,
+      "ground": "7ce59f5d",
+      "props": [
+        681,
+        "5800cabd"
+      ]
+    },
+    {
+      "node": "7 boss",
+      "size": [
+        128,
+        64
+      ],
+      "seed": 849259586,
+      "ground": "55eb5657",
+      "props": [
+        754,
+        "a568869f"
+      ]
+    }
+  ],
+  "mast": {
+    "x": 89.75,
+    "z": 28,
+    "rot": 0
+  },
+  "spots": {
+    "wreck": {
+      "x": 77.75,
+      "z": 33
+    },
+    "me": {
+      "x": 83.75,
+      "z": 27
+    },
+    "chosen": {
+      "x": 80.75,
+      "z": 29.5
+    },
+    "kappi": {
+      "x": 86.75,
+      "z": 26.5
+    },
+    "star1": {
+      "x": 81.75,
+      "z": 25.5
+    },
+    "star2": {
+      "x": 83.75,
+      "z": 24.5
+    },
+    "star3": {
+      "x": 85.75,
+      "z": 25.5
+    }
+  },
+  "crash": [
+    {
+      "k": "train_greenbelt",
+      "x": 77.75,
+      "z": 33,
+      "rot": 17
+    },
+    {
+      "k": "bureau_crate",
+      "x": 84.25,
+      "z": 31,
+      "rot": 0
+    },
+    {
+      "k": "bureau_crate",
+      "x": 72.75,
+      "z": 29.5,
+      "rot": 34
+    }
+  ],
+  "key": "1 wreck, 2 me, 3 chosen, 4 kappi, 5 star1, 6 star2, 7 star3",
+  "picture": [
+    " 37 o*o*GGGggGGGGGGGGGGGGGpp*u*pp",
+    " 36 oooGGGGgGGGGGGGGGG*G*p*GGuppp",
+    " 35 oooGGGGGGGGGGGGGGGGGGGGG*gupp",
+    " 34 *ooGGGGGGGGGGGGGGGGGGGG*GG*up",
+    " 33 GCCGGGGG&1&ggggGG*GGGGGGG**up",
+    " 32 CCCCCGG&&&&&ggggGGGGGGGGGGGuu",
+    " 31 CCCCCG&&&&&&ggggWGGgggggGGGGu",
+    " 30 C*CCCG&&&&fgggggg*gggggggGGGg",
+    " 29 CCCCWG&&&&fg3ggg&&*gggggggGgg",
+    " 28 CCC*CG&&&&&&&&&&&&gggMggggGgg",
+    " 27 CCCCCG&&&&&&&&&2&&ggggggggggg",
+    " 26 gGC*GGG&&&&&&&&&&&4Cgssssgggg",
+    " 25 g*GGGf&&&&&&&5&fg7&sswwwwsggf",
+    " 24 gGG*Gf&&&&&&fff6gCsswwwwwwsGf",
+    " 23 *GGG*G&&&*&*ffffgsswwwsswwwsG",
+    " 22 ggG*GC&&*&&f*fggsswwwsGswwwsC",
+    " 21 ggGGCC&&&&&ffCCsswwwsGswwwsGC",
+    " 20 g*GGCCC&&CCCC*swwwwsGswwwssCC"
+  ]
+}
+`;

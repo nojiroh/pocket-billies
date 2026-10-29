@@ -66,7 +66,7 @@ import {
 } from './logic/battle-engine.js';
 import { bossStoryNext } from './logic/battle-rewards.js';
 import { runUnlocks } from './logic/unlocks.js';
-import { runStartOn, runStartPlan } from './logic/run-start.js';
+import { runStartOn, runStartPlan, runStartPrepared } from './logic/run-start.js';
 import { storyAllows } from './logic/script.js';
 import { isLiteMap, loadMapFile } from './map-files.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -113,9 +113,20 @@ expose({
   runStartable: [() => runStartable, v => ((runStartable = v), provide({ runStartable }))],
   runTakeOff: [() => runTakeOff, v => ((runTakeOff = v), provide({ runTakeOff }))],
   runTakeOffGo: [() => runTakeOffGo, v => (runTakeOffGo = v)],
+  runTakeOffPrepared: [() => runTakeOffPrepared, v => ((runTakeOffPrepared = v), provide({ runTakeOffPrepared }))],
 });
 /* eslint-enable no-func-assign */
-provide({ runBattleStart, runGiveUp, runJump, runOver, runReleaseSheet, runStartSheet, runStartable, runTakeOff });
+provide({
+  runBattleStart,
+  runGiveUp,
+  runJump,
+  runOver,
+  runReleaseSheet,
+  runStartSheet,
+  runStartable,
+  runTakeOff,
+  runTakeOffPrepared,
+});
 /* to-module: end */
 /** a Billie caught on a run while the party was full, waiting for the release sheet (page state only) */
 const runCatch = { m: /** @type {any} */ (null) };
@@ -639,6 +650,31 @@ export function runTakeOff(seed, map, mods, pick, expedition, board) {
       runTakeOffGo(s, data);
     });
   });
+}
+/** IN-1: the prepared first run (game/data/firstRun.json; logic/run-start.js runStartPrepared) on this save: its lead
+ * travels alone, healed, with the file's gift; no train ride (the crash already put you on the landing): the places
+ * are made behind the loading screen, then you stand on the landing as any take-off leaves you. The debug menu's
+ * "Prepared run" until New game plays it (IN-5). Returns whether it started */
+function runTakeOffPrepared() {
+  if (!runStartable() || !saveData.team.length) return false;
+  uiState.runPick = uiState.runPack = null;
+  uiState.runExp = uiState.runChal = uiState.runMonoType = uiState.runKind = null;
+  const s = saveData,
+    data = runWorldData();
+  healAll();
+  runStartPrepared(s, { ...data, unlockData: UNLOCK_DATA });
+  runWorldAheadStart(s.run);
+  uiState.learnQ = [];
+  runCatch.m = null;
+  if (uiState.modal) closeModal();
+  runLoadBegin('take-off', -1);
+  runLoadShow();
+  const seed = s.run.seed;
+  runWorldMake(runLoadPlaces).then(() => {
+    if (saveData !== s || !s.run || runWorld.seed !== seed) return;
+    runTakeOffGo(s, data);
+  });
+  return true;
 }
 /** the take-off once the run's world is in: day 1 on the landing (runArrive), saved with the account; then (not on a
  * resume, which stands you there itself) you stand on the landing and its loading's own stages begin.

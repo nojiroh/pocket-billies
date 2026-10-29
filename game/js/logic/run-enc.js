@@ -26,12 +26,12 @@ expose({
   encBoonRows: [() => encBoonRows],
   encBoonsOn: [() => encBoonsOn],
   // @ts-expect-error -- replaced on purpose
-  encOf: [() => encOf, v => (encOf = v)],
+  encOf: [() => encOf, v => ((encOf = v), provide({ encOf }))],
   // @ts-expect-error -- replaced on purpose
   fxRowOf: [() => fxRowOf, v => (fxRowOf = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ encArrive, encBoonGive });
+provide({ encArrive, encBoonGive, encOf });
 /* to-module: end */
 /** a run's encounter state, made the first time it is asked for @param {Run} run @returns {RunEnc} */
 export function encOf(run) {

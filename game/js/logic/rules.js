@@ -1075,6 +1075,8 @@ export function encounterStock(node) {
   if (!L) return 0;
   /* RL-7: a run's place walked back to holds fewer (rules.json run.wild.back) */
   if (encounterRunVisits(node) > 1) return RULES.run.wild.back;
+  /* IN-1: the prepared first run's file says how many (run-scenes.js runWorldTables) */
+  if (L.stock != null) return L.stock;
   /* RL-12b: a waystation (an event's or a stall's place) holds fewer */
   if (L.waystation) return RULES.run.wild.waystation;
   /* RT-2: a run route's trainers stand in for some of its wild Billies */

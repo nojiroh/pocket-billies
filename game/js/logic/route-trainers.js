@@ -21,6 +21,7 @@ import { expose } from '../test-globals.js';
 import { FACTIONS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { runNodeSeed } from './run-map.js';
+import { firstRunTrainers } from './first-run.js';
 import { MAPGEN_WET, mapgenResample } from './mapgen.js';
 import { encClassFoe } from './encounters.js';
 /* eslint-disable no-func-assign */
@@ -106,7 +107,9 @@ export function runRouteTrainers(run, data) {
     if (node.type !== 'route' && !arena) return;
     const seed = runNodeSeed(run.seed, i),
       g = rngFrom(seed, arena ? 'arena|trainers' : 'route|trainers'),
-      total = Math.min(classes.length, arena || routeTrainerCount(node, R, g)),
+      /* IN-1: the prepared first run's file may say how many stand there */
+      pin = firstRunTrainers(run, i),
+      total = Math.min(classes.length, pin ?? (arena || routeTrainerCount(node, R, g))),
       pair = !arena && total >= 2 && rngFrom(seed, 'route|pair').chance(R.pair || 0),
       n = pair ? total - 1 : total,
       need = arena ? total : Math.max(1, Math.round(total * (R.required ?? 1)));

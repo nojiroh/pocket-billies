@@ -23,10 +23,12 @@
 import * as espree from 'espree';
 import * as eslintScope from 'eslint-scope';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, normalize, relative } from 'node:path';
+import { join, posix } from 'node:path';
 import * as prettier from 'prettier';
 
 const ROOT = join(import.meta.dirname, '..');
+// the files' names are the repo's, with forward slashes, on Windows too (they are compared with names like HOOKS)
+const { dirname, normalize, relative } = posix;
 export const PAGES = ['game/index.html', 'studio/index.html'];
 export const BRIDGE = 'game/js/test-globals.js';
 export const START = '/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */';
@@ -53,7 +55,7 @@ export function scriptsOf(page) {
     const m = attrs.match(/\bsrc="([^"?]+\.js)(?:\?[^"]*)?"/);
     if (!m) out.push({ file: `${page}#inline${n++}`, inline: true, text });
     else if (!m[1].includes('://'))
-      out.push({ file: normalize(join(dirname(page), m[1])), module: /\btype="module"/.test(attrs) });
+      out.push({ file: normalize(posix.join(dirname(page), m[1])), module: /\btype="module"/.test(attrs) });
   }
   return out;
 }
@@ -503,7 +505,7 @@ export async function run(args) {
   return { modules: [...modules], changed: stale, hooks: slots.length };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.filename === process.argv[1]) {
   run(process.argv.slice(2)).then(
     r => {
       console.log(`${r.modules.length} modules, ${r.changed.length} changed`);

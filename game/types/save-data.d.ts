@@ -417,6 +417,9 @@ export interface Run {
   beat?: string[];
   /** RO-3f: a mythical was met (battled or fled from) this run: no other stands in for a rarer one (logic/rules.js spawnMyth) */
   myth?: 1;
+  /** IN-1: the prepared first run (game/data/firstRun.json; logic/run-start.js runStartPrepared): its map, wild Billies,
+   * leaders and boss are the file's, and it keeps every Billie, won or lost (run-state.js runEnd) */
+  first?: true;
   /** TW-3: its quests (logic/run-quests.js); missing until the first is taken */
   quests?: RunQuests;
   /** RS-1: the resident invited this run (residents.json); they move in when it ends, won or lost */

@@ -27,6 +27,7 @@ import {
   runOver,
   runStartable,
   runTakeOff,
+  runTakeOffPrepared,
   showModHTML,
   soundTestAction,
   soundTestHTML,
@@ -333,7 +334,7 @@ function debugHTML() {
         Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
         uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''
       )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}${debugButtonHTML('routetrainer', 'Walk into a route trainer’s sight')}${debugButtonHTML('heldpick', 'A held item’s pick')}${debugButtonHTML('heldall', 'Every held item into the bag')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
-    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (6 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
+    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (6 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugButtonHTML('runprep', 'Prepared run', 'gold')}</div><p class="note">The first run, written by hand (firstRun.json): your lead alone, 5 Pyramids and a Potion, the crash site on the landing. It keeps every Billie, won or lost. New game doesn’t start it yet (IN-5).</p><div class="dbg-row">${debugSelectHTML(
         'dbgRunSide',
         [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
         uiState.dbgRunSide || ''
@@ -832,6 +833,13 @@ function debugAction(x) {
       );
       return;
     }
+    /* IN-1: the prepared first run on this save (run.js runTakeOffPrepared) */
+    case 'runprep':
+      if (!runStartable() || !saveData.team.length)
+        return refreshDebugMenu('A run can’t start now (on a run, in a battle, or nobody in the team).');
+      uiState.modal = null;
+      runTakeOffPrepared();
+      return;
     /* RL-13: every Expedition open, to try the harder ones */
     case 'expopen':
       saveData.meta.expedition = MODIFIERS.expeditions.length;
