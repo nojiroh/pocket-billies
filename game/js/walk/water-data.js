@@ -547,15 +547,16 @@ export function flowTexture(T, F) {
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 }
-/* the water shader's flow map (texture unit 7); off where the scene has none, and for the basins (on = false) */
+/* the water shader's flow map (texture unit 4; it was 7, the soft shadows' raw depth unit, so the water's shadows read
+   the flow map); off where the scene has none, and for the basins (on = false) */
 export function setFlowUniforms(U, sc, on = true) {
   if (!U.uFlowR) return;
   const gl = gpuState.gl,
     t = on && walkRenderer.flowTex;
-  gl.activeTexture(gl.TEXTURE7);
+  gl.activeTexture(gl.TEXTURE4);
   gl.bindTexture(gl.TEXTURE_2D, t || gpuState.white);
-  gl.bindSampler(7, null);
-  gl.uniform1i(U.uFlowTex, 7);
+  gl.bindSampler(4, null);
+  gl.uniform1i(U.uFlowTex, 4);
   gl.uniform3f(U.uFlowR, 1 / sc.w, 1 / sc.h, t ? 1 : 0);
   gl.activeTexture(gl.TEXTURE0);
 }
