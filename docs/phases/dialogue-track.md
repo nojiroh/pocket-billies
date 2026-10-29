@@ -326,7 +326,7 @@ fill, name-tag style, decoration, entrance and blip. Starting skins (the mockup 
      painted after). Pictures kept by stepped head angle (about 5 × 3 × 3 = 45, about 37 KB each, about 1.7 MB);
      the rest pose baked when the talk opens, at most one bake a frame through the existing gate, the nearest kept
      angle shown meanwhile. The face painted fresh each tick from `figureFaceMarks` with the director's state. The
-     Rogue model's head (a mesh clip) needs the head-joint step that CH-12 brings; until then it gets no head motion.
+     Rogue model's head turns about its neck (its head joint is a leaf; DL-6).
    - **Emotes**: `game/art/ui/emotes.png` (12 px cells: ! ? sweat anger sparkle note heart) and
      `game/data/emotes.json`; drawn in the slot's top 55 px, which the circle mask leaves whole.
 6. **With the characters track** (agreed in DL-0; tell the CH session when DL-5 starts):
@@ -437,6 +437,28 @@ skill), its HANDOFF entry, and the owner's phone check.
 - **DL-6 Figure close-ups.** The bust bake, the head spring in stepped angles, the face state (with CH-6). Tests:
   the figure tests, the bake count in the debug log. The full quick check with figures off and on. On the phone:
   figures on, heads nod and jolt; the debug log's bake cost.
+  **Done in DL-6** (2026-10-29, `track/dialogue`): CH-6 is not in (the characters track stopped at CH-3), so the
+  track's fallback: the mannequin's `figureFaceMarks` plus a 2 px open mouth, through a `faceState` argument
+  (`{eyes, mouth}`) that CH-6 fills with each figure's face set. Built: logic/figure-pose.js `bustSize` (a 64 px square,
+  the figure's top 60%, seen level, the anchor below the picture; about 55 px a metre for a 1.75 m figure), `headStep`
+  (yaw in 6° steps to ±12, pitch and roll in 8° steps to ±8: 45 angles), `nearestHead`, `turnHeadPose` (a code figure:
+  added to the head part's turn, the hair and face go with it), `meshHeadPivot` and `turnJointAbout` (a model figure:
+  the head joint turned about its neck), `FACE_MOUTH_OPEN`; tested in figure-pose.test.mjs. figures.js: `bakeFigure`'s
+  options (`bust`, `head`, `face: false`, which keeps what the face needs on the picture), `figureBustPicture` (its own
+  cache, `FIGURE_BUST_MAX` 135; the rest pose first; one bake every `FIGURE_BUST_GAP` 50 ms, a timer rather than the
+  world's per-frame gate, since the talk can be open where no world frame advances; the nearest kept angle meanwhile)
+  and `figureBustFace` (the face painted on a copy each tick); `figureReport` gains `busts`, `bustBakes`, `bustMs` (the
+  debug log's people section); tested in figures.test.mjs. talk.js `talkFigure`: with Figures on, you are your
+  figure, and anyone else who is a person (not Kappi) is your figure too when Townsfolk as figures is on (as in the world
+  and in battle); today's portrait otherwise, and until the first close-up is baked. The older bubbles' small portraits
+  use the rest close-up. Seen at a three-quarter turn (`FIGURE_BUST_TURN` 0.3 rad). Reduced: no head motion (the
+  director's). Tools: `?fixture=talk&figures=mannequin` (or rogue), look-talk.py `--figures[=rogue]` (each portrait
+  alone and a sheet of the head's hits), `PB_FIGURES=1` for any browser check (docs/TESTING.md). Corrections to this
+  file: the Rogue's head needs no CH-12 step: its `head` joint is a leaf, so it turns about its neck now (its face is its
+  texture: no blinks or mouth until CH-6); "at most one bake a frame through the existing gate" became the 50 ms timer
+  (above). A close-up bake cost about 0.65 ms here (software drawing; the phone's debug log says its own).
+  Provisional (my picks, for the owner): who gets a close-up (above), the angle steps, the three-quarter turn, the
+  open mouth (2 px taller, darker inside).
 - **DL-7 The writing pass.** Markup in the opening, Chosen, Kappi, Blake and the Bureau's lines, light-handed: a
   stressed word, a beat before a punchline, a face on the turn, a stamp on the Bureau's best lines. The owner reviews
   every changed line; opening-said.json only changes at the owner's word.
