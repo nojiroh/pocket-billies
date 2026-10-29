@@ -576,6 +576,11 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   rows in words (the rows are edited in perkSets.json), with dataPerkSets's messages. Kinds heldBoost (held items work
   ×), a price row's **perk** (a run shop's Perk) and the rules unstableSafe and sidePerk. `--only=relics` reads Running
   Shoes's set, swaps it and undoes it, proposes a set's title and undoes it, and names a need past a set's Perks.
+  **Boons and curses** (PK-9, boons.json): a card under the sets: each boon's name, places more after the first, text,
+  Boon or Curse, its picture (Edit art; Draw one makes a blank art/boons/<id>.svg) and its rows in words (the rows are
+  edited in boons.json), with dataBoons's messages. Rule words for shopClosed, muteNewest (a curse's only),
+  curseShorter and curseErase; the kind last; rewardPick down to -1. `--only=relics` checks the 20 with their
+  pictures, proposes a name and undoes it, makes a boon a curse and undoes it, and names a copy row.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,

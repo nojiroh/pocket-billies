@@ -345,7 +345,12 @@ town node needs it.
   reward pick's Perk card, the orange cards with a red stamp, 11 new pictures) done 2026-10-28 on `track/perks`; PK-8
   (Perk sets: the `perkSets` data section and its 7 sets, a set's Perks from their tags, a bonus while 3 are held, the
   kinds heldBoost, a Perk's price row, the condition unstable, the rules unstableSafe and sidePerk, the cards' set line,
-  the Perks tab grouped by set, the Studio's sets) done 2026-10-28 on `track/perks`; PK-9 (boons and curses) next.
+  the Perks tab grouped by set, the Studio's sets) done 2026-10-28 on `track/perks`; PK-9 (boons and curses: the
+  `boons` data section and its 20 named boons and curses with pictures, the event commands `boon` and `curse`, the four
+  events and the fountain by id, the kinds last, a turnHurt row at arrive, rewardPick -1 and the rules shopClosed,
+  muteNewest, curseShorter and curseErase, the clinic's appeal, five Bureau Red Tape events, Correction Fluid as the
+  79th Perk, boons on the Perks tab and the Map tab's head, the Studio's boons) done 2026-10-29 on `track/perks`;
+  PK-12 (the Field Guide's Perks tab and the wrap-up) next.
   PK-11 (Bag item icons: the 13 consumables drawn in art/items, `img` and dataItemArt, 36 px in the Bag
   and 72 on reward cards, the Studio's items editor with Edit art, the atlas's 9 `i_*` rectangles retired) done
   2026-10-28 on `track/perks-items` (the items lane, beside the Perk waves); PK-10 (held items: 16 new, the 8 existing

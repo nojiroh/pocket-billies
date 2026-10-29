@@ -25,6 +25,83 @@ Plan Mode, the plan below written first and carried out. Details and the plan's 
   tools/build-icons.mjs boons` and `perks`, `--check`, the contact sheets); (10) tests: every boon has a name and a
   picture, each works and expires, the appeal, Correction Fluid, the new events, every Perk, set and boon at once
   finite, golden battles unchanged; (11) docs.
+- Changed (15 commits of code, data, art and tests, besides the plan, this docs commit and the merge of main):
+  - **Kinds** (one per commit; effects.js, schema, game-data.d.ts, data-checks.js, the Studio's rows, tests): `last` on
+    a run's rows (battle-engine.js fxLastActs; it moved from HELD_FX_KINDS to FX_KINDS and HELD_OWN_FORMS), a turnHurt
+    row at `arrive` (run-loop.js runArriveHurt, run.js's toast), rewardPick -1 (rewards.js), the rules shopClosed
+    (run-loop.js runShopShut, shop.js), muteNewest (effects.js fxMuted, fxLivePerks; perks.js perkCount "REVOKED",
+    perkSetLine, perkGroups), curseShorter and curseErase (run-loop.js runBoonGive, run.enc.erased).
+  - **Data**: game/data/boons.json (the 20), boons.schema.json, index.json, `Boon`, game-data.js `BOONS`, data-checks.js
+    `dataBoons` and `dataBoonArt` (check-data.mjs, studio/js/check.js); rules.json square.wish outcomes' `boon` and
+    run.appealCost; events.json's four events by id and the five new Bureau events; perks.json Correction Fluid.
+  - **Run**: run-enc.js encBoonGive, encBoonRows by id, encBoonsOn, encBoonLine; run-state.js validRun (named boons,
+    `erased`); battle-engine.js fxSrcName `boon:`; the commands `boon` and `curse` (script-parse.js,
+    encounter-screen.js, docs/SCRIPTS.md); fountain-wish.js; debug-log.js; the appeal (run-loop.js runAppeal,
+    walk-tab.js clinicAppealOpen).
+  - **Page**: perk-screen.js boonsHTML (the Perks tab) and boonStripHTML (the Map tab's head), map-tab.js, bag.css,
+    map-tab.css.
+  - **Studio**: perks-editor.js the Boons and curses card, the rule words and the kind last; check-studio-github.py
+    `--only=relics`'s boons step.
+  - **Art**: tools/art/icon-grids/boons.json (20 grids, drawn by a helper and checked on contact sheets) and Correction
+    Fluid's in perks.json; game/art/boons/ 20 SVGs and game/art/perks/correction_fluid.svg; build-icons.mjs's sheet
+    knows boons; validation/icon-sheets/boons-{light,dark}.png new, perks-{light,dark}.png remade.
+  - Tests: battle-boons.test.mjs (new, 14), data-checks (PK-9 rows, dataBoons, dataBoonArt, the commands),
+    fountain-wish (by id), battle-perk-sets (Office Supplies' 7th), battle-perks-fine (66 of Waves A-D and Fine
+    Print), perks.test.mjs's bias test draws 6000 shelves (1500 left too few to settle once the pool grew); the
+    check-data snapshots count 181 files; check-fast.py's perks step reads the boons on screen and an appeal.
+  - Docs: perks-track.md (PK-9 done, "Corrected in PK-9" in 5.9), ROADMAP, STUDIO.md, TESTING.md, ART-NOTES.md "Boon
+    and curse pictures", SCRIPTS.md.
+- Merged main ed5c6857 (track/vfx VFX-13, #295) at the end: HANDOFF kept every entry; hooks.js and art-code-refs.json
+  regenerated; the check-data snapshots count 181 files.
+- Risky:
+  - Every seed's offers (Correction Fluid joins the pool) and event draws (five more events) changed.
+  - Permit Revoked mutes the newest Perk: an Accordion File muted lowers the cap while it lasts (the run may then hold
+    one past it; taking another opens "Let one go"); a muted Early Access Pass's foe levels stay until the next Perk is
+    taken (runFoesSync runs on taking a Perk, not when a curse comes or goes).
+  - Out of Office shuts every run town's shop for its places, not only the next one.
+  - A boon given again lasts the longer of the two (no stacking); the old unnamed rows of a run saved before PK-9 keep
+    working until they run out.
+  - Hold Music and Alarm Clock together: a Billie both first and last moves first (early sorts before late).
+- Verified: after every change lint, typecheck and `npm test` (2021 at the start, 2038 at the end; 2063 with main's
+  after the merge); before every commit check:modules, format:check, check:data (181 files fine; its two bridge
+  warnings are main's) and build; `check:smoke` on every commit touching game/, run in a second worktree on the exact
+  commit (no problems each; Python Playwright 1.63.0). Golden battles unchanged (no snapshot remade). `check:fast
+  --only=perks` ok with its boons step. `check-studio-github.py --only=relics` ok with the boons step. `npm run
+  test:slow` 109 passed. `node tools/build-icons.mjs boons --check` and `perks --check` fine. The 1,000-maps timing
+  test failed only while a smoke run loaded the machine and passed alone (main's known flake). **The run sim**:
+  `--runs=50` stops in scene mode with "runSceneParams: node 8 has no exit north3", main's (PK-5..PK-8); `--balance`
+  finishes its 50 runs.
+  The in-game full test (`--selftest`) and the full quick check: results below once run.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 20 names and texts** (drafts, 5.9's names): Glittering Water "Wins pay 10% more Moneys.", Lucky Ripples
+    "Billies are 5% easier to catch.", Camera-Ready and Tailwind "Your Billies take the field with their Speed up.",
+    Fired Up "...Attack up.", Pep Talk "Your Billies hit 10% harder.", Grand Opening "Run shops charge 20% less.",
+    Second Breakfast "Walking into a place heals your team 10%.", Viral Moment "Wins pay 25% more Moneys.", Beginner's
+    Luck "Billies are 15% easier to catch."; curses Stamped Insufficient "Run shops charge 10% more.", Surge Pricing
+    "...25% more.", Clinic Backlog "Clinics charge 50% more.", Pending Review "Reward picks show one card fewer.",
+    Mandatory Training "Your Billies take the field with their Speed down.", Audit Trail "Wins pay 25% fewer Moneys.",
+    Hold Music "Your Billies move last on each battle's first turn.", Permit Revoked "Your newest Perk does nothing.",
+    Out of Office "Run towns' shops are shut. The market stalls stay open.", Paper Cuts "Each place you walk into
+    costs your team 5% of their HP." Places as 5.9 (Out of Office 3).
+  - **The appeal** (section 11 item 7): 50 Moneys at a run town's clinic, one button per curse, not changed by clinic
+    price rows; shut under "No healing".
+  - **Correction Fluid**: uncommon, Office Supplies; "Curses last one place less, and the first curse you're handed
+    this run is erased at once."; the erase counts once a run even if it is let go and taken again.
+  - **The five Bureau events and their lines** (events.json): Mandatory Orientation, Routine Audit, Please Hold, Permit
+    Inspection, Paperwork Avalanche (options and outcomes in perks-track.md "Corrected in PK-9" and the commit).
+  - **A boon given again lasts the longer**, never stacks. A curse's row on the Perks tab says "A clinic's appeal lifts
+    it."
+  - **The HUD**: the Map tab's head row beside the day (18 px pictures with the places left, the name and text as a
+    title); the Perks tab's "Boons and curses" list under the Perks.
+  - **The 21 pictures** (validation/icon-sheets/boons-light.png and -dark.png, perks-* for Correction Fluid; redraw any
+    in the Studio's icon editor), described in ART-NOTES.md "Boon and curse pictures".
+- Phone checks to do (listed, not waited for): an event giving a boon and a curse (the sheet's "Curse: ..., for this
+  place and 3 more." line); the Perks tab's Boons and curses list light and dark; the Map tab's strip beside the day
+  (does it fit beside the day and the menu on a narrow phone with 3-4 on?); the clinic's appeal sheet; a shop shut by
+  Out of Office; Hold Music's "moves last" line; Permit Revoked's REVOKED on the newest Perk and a set losing its
+  bonus; Correction Fluid's erase line; the 21 pictures at 36 and 18 px.
+- Next: PK-12 (the Field Guide's Perks tab, the run sim over every Perk, the full check, the summary of every decision
+  for the owner) on `track/perks`.
 
 ### Perks track PK-8 - Perk sets - 2026-10-28
 Branch `track/perks` (this session's outcome branch, at 528c321e: PK-7 with main 3f559c3b merged; main had not moved,

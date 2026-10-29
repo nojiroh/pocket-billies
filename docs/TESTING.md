@@ -447,6 +447,14 @@ same phase:
   as itself), Non-Refundable Ticket, each set's bonus, and every Perk and set at once in whole, replayable battles;
   `perks.test.mjs` perkShopPrice, perkSetLine and perkGroups; `data-checks.test.mjs` dataPerkSets and the kinds' rows.
   check-fast's relics step expects the fixture's Trainer Classics set (its catch row).
+  PK-9: `tools/test/battle-boons.test.mjs` checks the curses' kinds with test-only rows (last on the first turn, a
+  turnHurt row at arrive, rewardPick -1, the rules shopClosed and muteNewest), then the named boons of boons.json: given
+  by id, read as `boon:<id>`, counting down, never stacking, a run in progress loading (validRun with an event's own
+  rows and a named boon), the four events and the fountain with their old numbers, Correction Fluid (the first curse
+  erased, later ones a place shorter), the clinic's appeal, the five new Bureau events played option by option, every
+  boon's name and picture, and every Perk, set, boon and curse at once in whole, replayable battles. `data-checks`
+  checks dataBoons, dataBoonArt and the boon and curse commands. check-fast's perks step gives a boon and a curse and
+  reads the Perks tab's rows, the Map tab's strip and an appeal.
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the

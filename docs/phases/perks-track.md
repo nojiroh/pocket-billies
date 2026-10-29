@@ -425,6 +425,49 @@ A clinic takes an appeal fee to lift a curse (placeholder 50 Moneys). Events and
 id (`boon <id>`, `curse <id>`; `fx` stays for packs). 4-5 new Bureau events hand curses out (drafted lines). The
 Perks tab lists them with places left; battle lines name them, not "event:ring_light".
 
+**Corrected in PK-9** (built 2026-10-29 on `track/perks`; where the code or the plan above was wrong or vague):
+- Section 2's claims held at ab776fc1: the `fx N kind k=v` command (4 uses: ring_light, terms_of_service,
+  surveyor_hole, poster_grove), the fountain's three rows (src `fountain`), each lasting the place it is given in and N
+  more (encArrive counts down at each place walked into, before the arrival's rows). **Nothing showed a boon on
+  screen**: the "run HUD where timed effects show today" did not exist; the run's HUD is now the Map tab's head row
+  (a strip of pictures at 18 px with the places left, beside the day), and the Perks tab lists them under the Perks.
+- **The section**: game/data/boons.json (index.json key after perkSets), boons.schema.json (rows as a Perk's by `$ref`;
+  name, d, `curse: true` or none, places 0-20, img), `Boon` in game-data.d.ts, game-data.js `BOONS`, data-checks.js
+  `dataBoons` (no copy row; no every, grow or once: a boon keeps no marks) and `dataBoonArt` in check-data and the
+  Studio's Check. `places` is today's N: the place it is given in and that many more ("3 places" in 5.9 means N 3).
+- **On the run**: a named boon is kept by id (run.enc.boons `{id, left, src}`, run-enc.js `encBoonGive`); its rows are
+  read from the data (src `boon:<id>`; battle-engine.js fxSrcName names it), so a run in progress keeps working after
+  a data change and validRun takes both forms (an event's own `fx` rows, as before PK-9, still load and work; a boon
+  the data no longer has gives nothing). **Given again while on, it lasts the longer of the two** (no stacking). The
+  `fx` command stays for packs. The debug log lists a named boon by its id.
+- **Commands**: `boon <id>` and `curse <id>` (script-parse.js; encounter-screen.js says "Curse: Surge Pricing, for this
+  place and 3 more. Run shops charge 25% more."); data-checks.js refuses a boon given by `curse` and the other way.
+  The four events and the fountain name theirs with the same rows and places (rules.json square.wish outcomes' `boon`;
+  an outcome's own fx and places still work). Terms of Service's line "For three places" predates PK-9 (it is this
+  place and 3 more); kept, player words.
+- **The kinds as built** (one per commit): Hold Music's **last** was a held kind only (PK-10, Ankle Weights): it is now
+  one of FX_KINDS (a run's row, read with `if: turn:1` in the turn's order: battle-engine.js fxLastActs, "Hold Music: X
+  moves last.") and read its own way on a hold row (HELD_OWN_FORMS). Paper Cuts needed a kind the plan did not name: a
+  **turnHurt row at `arrive`** (run-loop.js runArriveHurt: rounded up, never below 1 HP; "Paper Cuts: your team lost N
+  HP."). Pending Review is **rewardPick -1** (FX_RULE_N -1 to 2, not 0; never under one card; rules.json's 3 make 2).
+  **shopClosed**: Out of Office shuts every run town's shop while it lasts (3 more places), not only "the next town's"
+  (a place-counted effect can't know which town is next); the market stalls stay open. **muteNewest**: the newest Perk
+  is the last of run.perks; effects.js fxMuted/fxLivePerks keep it out of fxOfRun's Perk and set rows (PK-8's note:
+  fxSetHeld's list), perkSetLine and perkGroups; its card and row read "REVOKED". It is a curse's only (data-checks.js
+  refuses it on a Perk or a set: fxMuted reads the boons alone, so fxOfRun never asks itself). Mandatory Training is a
+  stat row of -1 Speed as each of yours takes the field (PK-1's rule), so "at battle start" reads "take the field".
+- **Correction Fluid** (79th Perk, uncommon, Office Supplies' 7th): the rules **curseShorter** (1-3) and
+  **curseErase** (1), read when a boon is given (run-loop.js runBoonGive; the commands use it). "The first curse each
+  run" is counted on the run (run.enc.erased), so letting it go and taking it again erases no second; its text says
+  "the first curse you're handed this run". A curse never lasts less than its own place. The fountain's curse comes at
+  take-off, before any Perk is held, so it is never erased.
+- **The appeal**: rules.json `run.appealCost` (50, section 11 item 7); at a run town's clinic with a curse on, the sheet
+  shows heal (when someone is hurt) and one "Appeal <curse>" button for each curse (walk-tab.js clinicAppealOpen,
+  run-loop.js runAppeal). The fee is plain (clinic price rows don't change it); the "No healing" challenge shuts it too.
+- **Five Bureau events** (case files, weight 1; lines drafted): Mandatory Orientation, Routine Audit, Please Hold,
+  Permit Inspection, Paperwork Avalanche. Between them they hand out all 7 Red Tape curses and the 6 new boons, so
+  every one of the 20 can be met.
+
 ### 5.10 Bag item icons (PK-11)
 Potion, Hi-Potion, Burn Salve, Nerve Tonic, Wake-Up Tea, Revive, Max Revive, Full Remedy, Shining Stone, Protein Bar,
 Trail Mix, Pretzel and Repair Kit get 36 px pictures (`img: "items/<id>.svg"`); `itemIcon` already prefers `img`;
@@ -753,7 +796,7 @@ unused-art gate.
 | PK-6 | Wave D (**done 2026-10-28**, `track/perks`; "Corrected in PK-6" in section 7) | 11 Perks of 5.5 (Correction Fluid waits for PK-9) | growth and copy tested over a simulated run |
 | PK-7 | Fine Print (**done 2026-10-28**, `track/perks`; "Corrected in PK-7" in section 8) | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
 | PK-8 | Sets (**done 2026-10-28**, `track/perks`; "Corrected in PK-8" in 5.7) | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |
-| PK-9 | Boons and curses | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
+| PK-9 | Boons and curses (**done 2026-10-29**, `track/perks`; "Corrected in PK-9" in 5.9) | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
 | PK-10 | Held items (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-10" in 5.8) | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
 | PK-11 | Bag item icons (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-11" in 5.10) | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
 | PK-12 | Collection and wrap-up | the Field Guide's Perks tab (seen, taken, silhouettes of the unseen: the SVGs work as masks), the run sim over every Perk, the full check, the summary of every decision for the owner | the track's done-when (section 14) |

@@ -603,6 +603,25 @@ art pipeline (phase 17 task 11).
 - `--check`'s silhouette rule made four of them change shape (the notebook, the chip bag and the seed packet were
   three boxes alike; the fangs were the coin's octagon).
 
+## Boon and curse pictures, 36x36 (Perks track PK-9, 2026-10-29)
+- The 20 boons and curses have their own pictures in the Perks' look: `game/art/boons/<id>.svg`, named by the boon's
+  `img` in boons.json. Same rules as "Perk pictures" above. Drawn as grids in `tools/art/icon-grids/boons.json` and
+  written by `node tools/build-icons.mjs boons`; contact sheets `validation/icon-sheets/boons-{light,dark}.png`.
+  Correction Fluid's (a cream bottle in a steel outline, a red label, a slate brush cap) is with the Perks.
+- Boons are warm, happy objects; the curses are the Bureau's Red Tape (paperwork, stamps, red tape, slate and cream
+  paper, steel outlines so cream never sits alone): a water drop with gold glints (Glittering Water), teal ripple rings
+  round a coin (Lucky Ripples), a ring light round a phone (Camera-Ready), a red and gold flame (Fired Up), wind
+  swirls on the diagonal (Tailwind), a speech bubble with a gold "!" (Pep Talk), gold scissors cutting a red ribbon
+  (Grand Opening), a fried egg on a plate (Second Breakfast), a red heart with gold sparks (Viral Moment), two red dice
+  (Beginner's Luck); a coin under a red stamp bar (Stamped Insufficient), a price tag with a red up arrow (Surge
+  Pricing), a queue ticket with a red cross (Clinic Backlog), an hourglass (Pending Review), a ring binder with a red
+  band (Mandatory Training), a magnifier over a coin (Audit Trail), a handset with violet notes (Hold Music), a permit
+  card under a no-sign (Permit Revoked), a hanging wood sign (Out of Office), a paper sheet with a red cut (Paper Cuts).
+- Shown at 36 px on the Perks tab's rows and the Studio's card, 18 px in the run's HUD strip (the Map tab's head).
+- `--check`'s silhouette rule redrew three while drafting (Paper Cuts and Complaint Form, Permit Revoked and Warranty
+  Card, an early Fired Up and Lucky Coin); the closest pairs now are 88% (Out of Office and Early Access Pass, Clinic
+  Backlog and Complaint Form).
+
 ## Terrain TR-4 (2026-10-26): the biomes' cliff faces
 - `scene/build/walls.png` is now a 4 x 4 atlas (256 x 256). The first three rows are the 12 cells from before, kept
   pixel for pixel; the fourth row is new, drawn by `python3 tools/build-walls.py --extend` (from its own seed, so it
