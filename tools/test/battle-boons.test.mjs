@@ -334,3 +334,86 @@ test('PK-9 the appeal: a clinic’s fee lifts a curse at once; not a boon, not w
   s.run.mods = ['noheal'];
   assert.deepEqual(L.runAppeal(s, 'audit_trail', fee), { paid: 0, why: 'shut' });
 });
+
+/* ---------- the Bureau's new events ---------- */
+
+const NEW_EVENTS = [
+  'mandatory_orientation',
+  'routine_audit',
+  'please_hold',
+  'permit_inspection',
+  'paperwork_avalanche',
+];
+/** play one option of an event's script on a stage that gives its boons and curses on a run (runBoonGive) and
+ * records every other command @returns {Promise<{ cmds: string[], given: string[] }>} */
+async function playOption(s, id, k) {
+  const cmds = [],
+    given = [],
+    give = ([bid]) => {
+      modules['run-loop'].runBoonGive(s.run, bid, id, data.PERKS);
+      given.push(bid);
+    };
+  const stage = new Proxy(
+    { say: () => {}, choose: () => 0, boon: give, curse: give },
+    { get: (t, c) => t[c] || (() => cmds.push(c)) }
+  );
+  const ev = GAME_DATA.events.events[id];
+  await modules.script.runScript(modules['script-parse'].parseScript(ev.options[k].then), stage, {
+    save: { story: {} },
+    id: 'event:' + id,
+  });
+  return { cmds, given };
+}
+
+test('PK-9 the five new Bureau events: case files that hand out curses, every Red Tape curse among them', async () => {
+  const E = GAME_DATA.events.events,
+    B = GAME_DATA.boons,
+    seen = new Set();
+  for (const id of NEW_EVENTS) {
+    assert.equal(E[id].bureau, 1, id);
+    let curses = 0;
+    for (let k = 0; k < E[id].options.length; k++) {
+      const s = runSave([]),
+        { given } = await playOption(s, id, k);
+      for (const b of given) {
+        assert.ok(B[b], `${id}: ${b}`);
+        assert.ok(
+          s.run.enc.boons.some(x => x.id === b),
+          `${id} option ${k}: ${b} on the run`
+        );
+        if (B[b].curse) curses++;
+        seen.add(b);
+      }
+    }
+    assert.ok(curses >= 1, `${id} hands out a curse`);
+  }
+  for (const id of [
+    'pending_review',
+    'mandatory_training',
+    'audit_trail',
+    'hold_music',
+    'permit_revoked',
+    'out_of_office',
+    'paper_cuts',
+  ])
+    assert.ok(seen.has(id), id);
+  /* every one of the 20 can be met: in an event or the fountain */
+  const all = new Set([
+    ...Object.values(E).flatMap(e =>
+      e.options.flatMap(o => o.then.filter(l => /^(boon|curse) /.test(l)).map(l => l.split(' ')[1]))
+    ),
+    ...GAME_DATA.rules.square.wish.outcomes.filter(o => o.boon).map(o => o.boon),
+  ]);
+  assert.deepEqual(
+    Object.keys(B).filter(id => !all.has(id)),
+    []
+  );
+});
+
+test('PK-9 with Correction Fluid the first Bureau curse of a run is erased', async () => {
+  const s = runSave(['correction_fluid']);
+  await playOption(s, 'routine_audit', 0);
+  assert.equal(s.run.enc.boons.length, 0, 'Audit Trail erased');
+  await playOption(s, 'paperwork_avalanche', 2);
+  assert.deepEqual(s.run.enc.boons, [{ id: 'out_of_office', left: 2, src: 'paperwork_avalanche' }]);
+});
