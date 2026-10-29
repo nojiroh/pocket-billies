@@ -333,7 +333,8 @@ async function runGraphicsBench() {
   document.addEventListener('visibilitychange', onVis);
   wake();
   debugLog.add('bench', 'graphics test start');
-  debugLog.bench = { step: 'graphics test', result: null };
+  /* TD-1: only the step changes; a full test's result from earlier in the page stays in the debug log */
+  debugLog.bench = Object.assign(debugLog.bench || { result: null }, { step: 'graphics cost test' });
   try {
     uiState.tab = 'walk';
     uiState.bench = { id: GRAPHICS_TEST_MAP, test: 1 };
@@ -357,6 +358,9 @@ async function runGraphicsBench() {
         for (const p of mine) {
           if (graphicsTest.stop) break;
           stepEl.textContent = `${st.name}: ${p.kind === 'dial' ? `${p.label} ${graphicsTestValue(p.value)}` : p.label}${graphicsTestWaterNote(p.set)}`;
+          /* TD-1: the step in the debug log's samples and the crash breadcrumb */
+          debugLog.bench.step = `graphics cost test: ${st.name}: ${p.label}`;
+          debugLog.crumb();
           graphicsTestPrefs(st, p.set);
           /* a rebuild before this step, and back after a step that rebuilt, so the ground and grass match */
           const rb = p.rebuild || rebuilt;

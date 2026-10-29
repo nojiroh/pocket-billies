@@ -120,6 +120,9 @@ export async function runGraphicsTest(G) {
   graphicsTest.on = true;
   graphicsTest.stop = false;
   G.selfTest.on = true; /* the story, postcards and the full test stay out of the way while it runs */
+  /* TD-1: the step goes in the debug log's samples and its crash breadcrumb (an earlier full test's result stays) */
+  const L = G.debugLog;
+  L.bench = Object.assign(L.bench || { result: null }, { step: 'graphics test' });
   G.uiState.modal = null;
   G.uiState.mq = [];
   G.renderOverlay();
@@ -224,6 +227,8 @@ export async function runGraphicsTest(G) {
       while (document.hidden && !graphicsTest.stop) await sleep(300);
       if (graphicsTest.stop) return;
       stepEl.textContent = name;
+      L.bench.step = 'graphics test: ' + name;
+      L.crumb();
       const h0 = hidden,
         e0 = G.debugLog.err.length;
       const s = Object.assign({ name, ok: true }, extra);
@@ -322,6 +327,7 @@ export async function runGraphicsTest(G) {
       });
     }
   } finally {
+    L.bench.step = null;
     document.removeEventListener('visibilitychange', onVis);
     if (G.environment) G.environment.force = forceKeep;
     if (engKeep) G.gameData.engine = JSON.parse(engKeep);
