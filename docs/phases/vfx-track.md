@@ -514,6 +514,62 @@ props are icons.png cells; stamped words are drawn sound words only (rule 10). E
 - Billions Served (`billionsserved`, Fire H, flurry; the burger icon): burgers served in a row, one per hit, three
   hits; a coin ring at the end. Repeat: one burger, the hit.
 
+**VFX-18b's storyboards** (written 2026-10-29 before any scene was built; taken as approved under the owner's standing
+instruction, listed for review). VFX-17's format. Each attack at most its category's `maxMs` + 500 ms (H 1380, S
+1560); the 5 status moves (X) stay within X's `maxMs` (1000 ms: no extra time); every repeat within `maxMs`. Props
+are generic objects only (rule 10): no logo, brand mark, slogan, real name or likeness. New stamped words are sound
+words: WHOOSH!, PSSHT!, DING-DONG!, THWOCK! (KA-CHING! is VFX-17's, reused); none against a Bureau bot.
+- Cyclone (`cyclone`, Electric S, storm; no model, bits and leaves): a funnel over the foe: dust, leaves and sparks
+  spiral up round it, tightening; "WHOOSH!" stamped at the attacker; the funnel pulls in to the foe and the hit.
+  Repeat: the funnel, the hit.
+- Gives Wings (`giveswings`, Flying X, buff; the soda icon): a can pops up at the attacker, "PSSHT!"; bubbles fizz up,
+  feathers whirl round it, the up chevrons rise twice as fast. Within 1000 ms. Repeat: the can, the chevrons.
+- State-sized Pit (`statesizedpit`, Ground H, quake; the pick icon, rocks_b): a pick at the attacker strikes the
+  ground; the ground drops under the foe (it sinks a little), a dark dust ring; rocks heave up from below beside it
+  and the hit; the rocks erode away. Repeat: the rocks, the hit.
+- Perfect Fold (`perfectfold`, Steel X, hex; the hanger icon): a hanger over the foe; paper sheets fly in and close
+  round it in two neat folds (orbits tightening); the down chevrons. Within 1000 ms. Repeat: the folds, the chevrons.
+- Harbour Fee (`harbourfee`, Steel S, wave; crate_goods, the anchor icon): water rings lap at the foe's feet; an
+  anchor icon over it; a crate lowers from above onto the foe; coins fly from the foe to the attacker, "KA-CHING!";
+  the hit. Repeat: the crate, the hit.
+- Principle No. 212 (`principle`, Psychic X, buff; the scale and paper icons): pages orbit the attacker, a balance
+  (scale) over it tips one way, then the other, and settles; a ring on each side; the up chevrons. Within 1000 ms.
+  Repeat: the scale, the chevrons.
+- Front Run (`frontrun`, Flying H, dash; the chart icon): a chart pops over the foe; before it has finished, the
+  attacker is already there: the dash's afterimages and feathers, the hit, the chart erodes. Repeat: the dash, the
+  hit.
+- Wrong Name (`wrongname`, Water S, wave; the cup icon): a cup at the attacker; three cups fly to the foe one after
+  another, each a little off; the last splashes over it (a splash crown). Repeat: one cup, the splash, the hit.
+- Cleaning Fee (`cleaningfee`, Water S, shot; the house and tag icons): a small house beside the attacker; soap
+  bubbles stream to the foe; the shot lands and a price tag pops over the foe. Repeat: the bubbles, the tag, the hit.
+- Autoplay (`autoplay`, Psychic S, wave; sofa, the tv icon): a sofa rises behind the foe; a tv over it plays one
+  pulse, and the next starts before it ends (three, overlapping); the hit. Repeat: two pulses, the hit.
+- Fork (`fork`, Steel X, hex; the vcoin icon): a chain of coins runs from the foe toward the attacker and splits in
+  two; one branch closes on the attacker (it takes the foe's types), a ring each. Within 1000 ms. Repeat: the split,
+  the ring.
+- Counts to Two (`countstotwo`, Water H, flurry; no prop): two quick strikes, a splash each, the second the hit; a
+  third wind-up starts and stops short (the attacker turns back). Repeat: the two strikes.
+- Fifteen Seconds (`fifteensec`, Electric S, shot; the phone icon): a phone at the attacker; a short shot, notes
+  rising; at once another shot; the second lands the hit. Repeat: one shot, the hit.
+- Stake in Everything (`stakeineverything`, Water S, shot; waymarker_post, the flag icon): a post drops from above
+  and stakes the ground beside the foe; a small flag pops on the foe; then the shot and a water ring. Repeat: the
+  post, the hit.
+- Ship Direct (`shipdirect`, Electric S, shot; crate_goods): "DING-DONG!" at the foe; a crate flies straight from
+  behind the attacker onto the foe on sparks, no stop on the way; the hit. Repeat: the crate, the hit.
+- One-handed Backhand (`onehandedbackhand`, Flying H, slash; no model): the attacker winds back; one long arc, swept
+  the other way; a small ball flies from it to the foe, "THWOCK!"; the hit. Repeat: the arc, the ball, the hit.
+- Green Hydrogen (`greenhydrogen`, Grass S, beam; wind_turbine_small): a small wind turbine rises behind the attacker;
+  bubbles rise, a held beat (promised); then the leafy ray, twice as wide (delivered, hard). Repeat: the ray, the hit.
+- Quiet Gift (`quietgift`, Water X, heal; the box and heart icons): a box rises over the attacker and opens quietly:
+  hearts and heal sparkles drift down on the one it heals. Within 1000 ms. Repeat: the box, the sparkles.
+- Kisses (`kisses`, Ground H, charge; the heart icon): the attacker lowers its head (antlers first) and charges;
+  hearts burst out of the impact with the dust. Repeat: the charge, the hearts, the hit.
+- The bots' and the boss's specials: the bots' part and gem moves (Piston Jab, Auger Bore, Grip Crush, Cinder Shot,
+  Arc Whip, Jet Blast, Anchor Down, Dash Kick, Skim Guard, Flare Core, Self-Repair, Overclock) are regular moves and
+  keep their families. The boss (the Retrieval Unit) has no move of its own; what is its own is its phase change and
+  the limb that tears loose, events with their own choreography (battle-stage.js `alphaPhase`, `break`); see VFX-18b's
+  HANDOFF entry for what was done with them.
+
 ## Move sounds (the owner's pick)
 A sound per family, layered by type, in music.json's `battle` section (the shape agreed with the sound track, "Talking
 to the sound track": voices in the cries' shape, noise voices for hits, whooshes and splashes, baked instruments
