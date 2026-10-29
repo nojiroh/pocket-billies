@@ -182,9 +182,12 @@ Both terrain lanes and the vegetation lane meet here, so no lane waits on anothe
   biome's own lists (`trees`, `shrubs`, `plants`, `rocks`, `waterPlants`, `canopy`, `tall`): **the species stay in
   those lists**, so the vegetation lane (AS-3) adds kinds there and the terrain lanes (AS-5, AS-6) read the layers.
   All 12 biomes have flora (2026-10-29: first values by the biome's character; the terrain lanes tune them).
-- **Baselines:** `validation/assets-baseline/` (not in git) on the owner's PC: the hub (`island-shots.py`), the ride
-  (`look-train-ride.py`), Skyline Station (`look-station.py --hub`) and the run routes (`check-perf.py --routes
-  --shots`). Every lane makes its own "before" set from `track/assets` at its start (section 10).
+- **Baselines:** `validation/assets-baseline/routes/` (not in git) on the owner's PC: 30 route pictures, six each of
+  the layouts none, farmland, forest, lakeside and ledges (`check-perf.py --routes --shots`; the lanes plan timed out
+  with four browsers drawing at once). Every lane makes its own "before" set from `track/assets` at its start (section
+  10), one browser tool at a time: several software-drawn pages at once time out ("the walk view never got ready").
+  What the route pictures show already: flat painted clumps for crowns, and a milky haze that hides everything past
+  about 15 m (the Godot port's "fog too much" note; AS-7).
 
 ## 5. Sessions
 

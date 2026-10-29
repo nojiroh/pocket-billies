@@ -2,6 +2,33 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### AS-0 - the assets track: plan, scatter module, flora layers - 2026-10-29
+Branch `track/assets` from main 73b2f8b1, draft PR into main. The owner's brief: raise every asset (props, a natural
+island and routes, varied vegetation with better leaf art, a train station instead of the airship station at the
+start of runs, the sky train's ride without flickering windows and odd jet fire), using the Godot port's coordinator
+session as inspiration, in lanes that run at once. Plan Mode answers: painted blob crowns (never round), a full
+Copperleaf regenerate, the phone a bit slower is fine (the floor: Balanced at most about 15% slower on the bench).
+- New: docs/phases/assets-track.md (audits, research, sources, seven wave-1 lanes AS-1..AS-7 with file ownership,
+  AS-8 together, AS-9 the owner's phone play, "Ask me before", risks, how each lane checks itself); ROADMAP and
+  BRANCHES rows.
+- New: `game/js/logic/scatter.js`: seeded Poisson-disc points (changing spacing, masks, earlier layers kept clear of
+  by their own footprint), seed-spread clumps (parents thinned after spreading), layers with kinds by weight, and
+  `scatterFlora(biome, area)` with a density per layer and spot. Not used by the game yet (AS-5, AS-6).
+- New: `flora` layers on all 12 biomes (biomes.json, schema, `BiomeFloraLayer`, `dataBiomes` checks): each layer
+  names one of the biome's own species lists, so AS-3 adds species there and AS-5/AS-6 read the layers.
+- Found while auditing (the lanes fix them): the sky train's windows re-roll colour and lit state every frame because
+  `uWinSeed` and `modelWindowLight` hash the train's live world position (prop-models.js, walk/lighting.js); the jet
+  fire is two flat hard-alpha cards that don't tip with the train and are dark by day (`lampLit`).
+- Verified: scatter.test.mjs 9 of 9, scatter-real.test.mjs 1 of 1; lint, types, check:data clean; the quick unit
+  tier passes except check-data-snapshot (symlinks), data-rigs and faces, which fail on main too on this Windows PC
+  (paths); `check-quick.py --smoke` 6 of 7, the seventh ("Unused": `art-unused.mjs --json` prints nothing on Windows)
+  fails on main too.
+- Baselines: 30 route pictures in `validation/assets-baseline/routes/` (not in git). The hub, ride and station sets
+  timed out with four software-drawn browsers at once; each lane makes its own before set (track file section 10).
+- On this PC `python3` is the Windows Store stub: run the tools with `python`.
+- Next: wave 1, AS-1 to AS-7 at once, each in its own session and worktree on `claude/as-<n>-<words>`, a draft PR
+  into `track/assets`.
+
 ### Fix - Kappi's stall clock counts only free walking - 2026-10-29
 Branch `fix/kappi-stall-clock` from main 7f661239, PR into main. From the owner's first phone log of the new intro
 (deploy 7f661239, Android, Adreno 750): New game -> the crash scene at 15.6 s -> Cartotter picked at 42.8 s (27 s into
