@@ -52,6 +52,7 @@ expose({
   battleLookStat: [() => battleLookStat, v => ((battleLookStat = v), provide({ battleLookStat }))],
   battleLookStatus: [() => battleLookStatus, v => ((battleLookStatus = v), provide({ battleLookStatus }))],
   battleLooks: [() => battleLooks],
+  battleLooksIdleOn: [() => battleLooksIdleOn, v => ((battleLooksIdleOn = v), provide({ battleLooksIdleOn }))],
   battleLooksLine: [() => battleLooksLine, v => (battleLooksLine = v)],
   battleLooksReset: [() => battleLooksReset, v => ((battleLooksReset = v), provide({ battleLooksReset }))],
   battleLooksTick: [() => battleLooksTick, v => ((battleLooksTick = v), provide({ battleLooksTick }))],
@@ -75,6 +76,7 @@ provide({
   battleLookSleepPose,
   battleLookStat,
   battleLookStatus,
+  battleLooksIdleOn,
   battleLooksReset,
   battleLooksTick,
 });
@@ -501,6 +503,11 @@ function battleLookSleepPose(P, sl) {
   P.head += sl.droop;
   P.face = 'blink';
   return P;
+}
+/** VFX-20: whether the stage's idle loops move now (rule 9): always under Full, in the turn's pulse under Calm, never
+ * under Reduced motion; the stage's ambient motes and leaves follow it as the lasting looks do */
+function battleLooksIdleOn() {
+  return lookLoopOn(lookMotionNow(), battleStage.t, battleLooks.pulse);
 }
 /** VFX-14: Fork's flickering copy of Billie i (battle-3d.js draws it as an afterimage): how far aside and how strong;
  * null when it shows none (Calm outside its pulse, Reduced motion: a tint instead) */

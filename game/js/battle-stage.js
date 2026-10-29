@@ -32,6 +32,7 @@ import {
   battleLookSleepPose,
   battleLookStat,
   battleLookStatus,
+  battleLooksIdleOn,
   battleLooksReset,
   battleLooksTick,
   battleSandGust,
@@ -829,7 +830,9 @@ function battleStageFrame(ts, rawDt) {
   P.length = n;
   let amb = 0;
   for (let i = 0; i < n; i++) if (P[i].amb) amb++;
-  if (dt > 0 && !reducedMotion && amb < fxBudget('particles') / 4) {
+  /* VFX-20: under Calm the ambient motes and leaves are an idle loop: they come only in the turn's pulse (rule 9) */
+  const idle = typeof battleLooksIdleOn === 'function' ? battleLooksIdleOn() : !reducedMotion;
+  if (dt > 0 && !reducedMotion && idle && amb < fxBudget('particles') / 4) {
     ambientSpawning = true;
     try {
       spawnAmbientParticles(dt);
