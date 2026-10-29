@@ -27,6 +27,11 @@ tuned from films and measurements.
   music.json; loudness within 0.1 LU); battleSoundEffect, the battle recipes and music.json's top-level shape are
   untouched, so VFX-19's `battle` section sits beside it: keep both, then `npm run modules`, studio/art-code-refs.json
   and the check-data snapshot regenerated, check-sound's baseline once in its own commit.
+  SND-15 (track/sound 14be6f5b, not on main) adds a master chain (compressor, makeup, a -1 dBTP limiter), ducks the
+  music and beds under cries (never the Sound effects bus) and raises the defaults (the Sound effects slider 1,
+  mix.sfx 1.35, every bus about 13.6 dB louder at the same balances); battleSoundEffect and the battle recipes are
+  unchanged. Once both are on main VFX-19's sounds play through the limiter: if the loudest layered hits (a family's
+  super4, crit or KO) clip, lower those voices' `vol`, not the sfx trim (`check-sound.py --loudness` shows true peaks).
 - Changed (one cause per commit; smoke on each game or Studio commit, in a second worktree on that commit):
   - d651ff6c (Ask me before) a type's burst particles move from types.json `fx` into battleAnims.json
     `types.<kit>.burstSprites` (same lists; None's from untyped.json; the Bureau falls back to None's as before):
