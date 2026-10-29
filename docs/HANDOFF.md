@@ -115,7 +115,7 @@ and the owner's call.
 - Risky: the `[p]` beats add about 0.4 s each to the opening (13 pauses in 16 lines: about 5 s more at Normal
   speed; a tap still shows the rest at once). Stamps fire on the Bureau's bubble only (the `bureau` banter is said by a
   run trainer whose class picks the skin; the story check gives no stamp warning).
-- Verified: lint, typecheck, check:data (181 files, after `--fix` laid out two banter lines the Studio's way), unit
+- Verified: lint, typecheck, check:modules, format:check, build, check:data (181 files, after `--fix` laid out two banter lines the Studio's way), unit
   tests 2040 pass (opening-script, line-markup-real, expressions, story-checks among them). Smoke 7 of 7 (371 s), its phone
   flow playing the whole opening with the new markup. Pictures at 390×844 (a scratch script calling `talkLine` on
   `?fixture=talk`, not kept): the opening's first line ("WHOA." shaken, **my** bold), Chosen's clerk line, Blake's
