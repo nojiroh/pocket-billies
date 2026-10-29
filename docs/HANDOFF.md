@@ -2,6 +2,82 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Intro track IN-5 - New game: the crash scene, wired end to end - 2026-10-29
+Branch `claude/in-5-new-game` from `track/intro` 17de7135 (wave 1 merged), built in the planning session at the
+owner's word ("Dew it": sessions couldn't be started over Remote Control). Merged into `track/intro`, then main, at
+the owner's word ("When done merge with main").
+- What differs from the plan (section 5, IN-5):
+  - **The picked starter replaces a stand-in.** The crash is filmed on the prepared landing, which exists only once
+    the run's world is made, and the run's counter lane follows the starter. So New game starts the run with the first
+    starter as a stand-in; the pick swaps it in (`firstRunStarter`: same uid, the hub's snapshot, the run's lead, the
+    dex) and the pools are made again (`runWorldRepool`). Nothing else of the world depends on the starter.
+  - **Skip the crash is the old opening**, not "the pick card, then the lab scene without a payout": the opening
+    (`opening.json`) already is the fall, the lab door, the dressing room, the pick and the station; it now falls from
+    the Bureau's portal with no captions, its "through the crust" and "airship at the mast" lines are changed (below),
+    and `cutsceneStartName`'s fallback is Copperleaf. So `opening.json` stays (the plan said replace it).
+  - **Dead code not removed** (`staged-fight.js`, Blake's HOT TIP tutor, `blake-first-battle`, `cutscene.test`,
+    `uiState.intro`): the cut was optional and every one of them is outside the new path; left for a clean-up.
+  - **No debug jumps to each beat:** the debug menu's "Prepared run" and "Jump to the pickup" (wave 1) cover the run
+    and the way back; New game is the crash.
+- Changed:
+  - New `game/data/cutscenes/crash.json` (`landing: true`, `map: first_run`; schema `landing`; check-data: its spots
+    must equal `firstRun.json` `crash.spots`), played by new `game/js/cutscene/crash-scene.js` (`newGameStart`,
+    `crashStart`, `crashFilm`, `crashPick`, `crashFinish`). Under 60 s to the pick at reading speed (about 35 s of lines
+    and moves); skipping stops at the pick.
+  - `logic/first-run.js`: `firstRunCutscene` (the file laid on the landing: spots, shots and clear areas turned with
+    the mast), `firstRunStarter`. Run phase `crash` (`RUN_PHASES`); `runResume` plays the crash again.
+  - `run.js` `runTakeOffPrepared({ crash })` and `runCrashLand`; `run-world.js` `runWorldRepool`; `stage.js`
+    `cutscenePlayScript(id, { set })` and `opening.js` `cutsceneMount(..., set)` take a laid-out cutscene;
+    `cutsceneMapId(node)`; `openingThrowCoins`, `openingPickStarter`, `openingLayer` exported.
+  - New game: `ui.js` `intro`, `title.js` `titleNew` (both places) call `newGameStart`. Settings' erase reaches it
+    through the intro screen's Start. `return-scene.js` marks the device (`introMark`) when the way back ends.
+  - The crash site: IN-3's `train_wreck` replaces the stand-in train (at -14, 6.5 from the mast, rot 8, clear 12),
+    spots `chosen_from` and `kappi_from` added, the ring cleared round each spot 2.5 -> 6 m (the cameras stood in
+    trees: a crash makes a clearing), and the scene hides two more areas while filming (camera side and stage).
+  - The boss: `retrieval_scout`'s fighter is IN-3's look (intake, seizer, franker, conveyor). The sim: **won 68 of
+    300 (23%)**, lost on a route 20, at the mini-boss 69, at the boss 143 (as before).
+  - The clerks: IN-4's stand-ins (`people/intake.json`, `outtake.json`) gone; the pickup's `Intake` and `Outtake` are
+    IN-3's bots (`bureau_clerk_a` "Intake Clerk", `bureau_clerk_b` "Outtake Clerk"), Bureau bubbles.
+  - Tests: new `tools/test/crash-script.test.mjs` + `crash-said.json`; two in `first-run.test.mjs` (the scene laid
+    on the landing, the starter swap); `first-run-places` snapshot remade (the landing only: the wreck, the spots, 39
+    fewer props); `check-quick.py` `phone_flow` now plays New game -> the crash -> pick -> the run -> a loss -> the
+    pickup -> the fall -> the lab's dressing room ("Checker") and payout -> Copperleaf -> the station's run sheet, and
+    asserts the gift (0 Moneys, 5 Pyramids, 1 Potion) and the device's Skip note; its map ceiling 25 -> 29 (the map's
+    header shows Research and Scrap once a run has ended, which every new player now has). Return tests and check-fast
+    follow the clerk swap. `tools/story-ids.mjs` runs on Windows (own commit).
+- **The lines, for the owner** (drafts; `#l:` ids):
+  - The crash (cutscenes/crash.json):
+    - `#l:3dc6` [surprised] Chosen: You’re awake! Good. I was going to carry you, but I’m more of a [i]leader[/i] than a lifter.
+    - `#l:4976` Kappi: Don’t sit up too fast. The train came down, and everyone walked away from it.[p] Even the train, nearly.
+    - `#l:70df` Chosen: Do you remember your name? No? Don’t worry. Mine came to me in a dream.[p] It was “Chosen”.
+    - `#l:9009` Kappi: Just before we hit, there was a square of light on the rails ahead. [i]Square.[/i][p] Nobody else saw it.
+    - `#l:3ea3` [happy] Chosen: I saw it. I see everything. Right now I see that we need a plan.
+    - `#l:4ee2` Chosen: The cargo held three Billies. Every hero needs a companion.[p] Not me, obviously. [b]You.[/b]
+    - `#l:fb3f` Chosen: Three Billies, three types. Each one beats one of the others. Choose wisely.[p] Like I would.
+    - (the pick) `#l:1b2d` [happy] Chosen: {starter}! Bold. I’d have picked that one too.[p] I didn’t. But I [i]would[/i] have.
+    - `#l:d273` Kappi: The cargo had five pyramids and a potion too. Take them. A tired wild Billie is easier to keep.
+    - (caption "From the cargo | 5 Pyramids and a Potion")
+    - `#l:4f1c` Kappi: The station’s rescue beacon is at the far end of this valley. The arrows at the edge point the way.
+    - `#l:b089` [happy] Chosen: We’ll guard the wreck. Bravely.[p] From here.
+  - The opening (Skip the crash), changed: `#l:b29c` "Stuff falls out of the sky round here sometimes. Mostly
+    furniture." (was "comes down through the crust"); `#l:9e1c` "One more thing. Skyline Station, just up the hill. Its
+    trains go out past the island, to wild places nobody’s mapped yet." (was the airship at the mast).
+- Risky:
+  - The crash site's cameras are placed by numbers, checked in headless pictures only (the wreck behind you, the
+    three starters in front); the owner's phone is the judge. A mapgen change can move trees back in front of a camera
+    (the places snapshot shows it).
+  - The pick swaps the run's lead after its world is made: only the pools are made again. If a later change makes
+    something else of the world follow the starter, it must be remade there too.
+  - A save made in the crash scene and killed before the pick resumes into the crash with the stand-in; the pick then
+    swaps it as usual.
+- Verified (Windows; CI on Linux is the reference): lint 0 errors, type-check, check:modules (591 names), check:data
+  (190 files), format; unit tests: the same 24 Windows-only failures as `track/intro` (the data snapshot needs
+  symlinks, `D:\D:\` paths, CSS lists), no others; first-run (13), crash-script (4), return-script, opening-script,
+  figure golden, first-run-places (remade); `check-quick.py --smoke`: 6 of 7, the phone flow above passing, the one
+  failure "Unused" the known Windows tool guard; `check-fast.py` "way back", "Kappi", the lab and the lab room: 5 of 5.
+  The crash scene watched headless at reading speed: the loading screen lifts, the dark fades in, every line plays.
+- Next: IN-6, the owner plays it on the phone and sends a debug log; the lines, the cameras and the boss tuned from it.
+
 ### Intro track IN-1 - the prepared first run (logic and data) - 2026-10-29
 Branch `claude/in-1-prepared-run-29643a` (wave 1, from `track/intro` at 61d90751), draft PR into `track/intro`.
 Planned and built at once (intro-track.md section 1: the owner's standing answer). No section 6 item came up: nothing
