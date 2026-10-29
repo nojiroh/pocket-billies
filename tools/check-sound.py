@@ -74,6 +74,11 @@ REL, ABS = 0.01, 1e-4
 ZC_REL, ZC_ABS = 0.02, 2   # SND-9: a brightness window's tolerance
 ZC = 'zc:'               # SND-9: a brightness array's key is the part's with this in front
 
+# SND-12c: the game page stops drawing once its sound code is loaded: its frames (the title's live scene, drawn in
+# software here) took over 3 of the container's 4 cores and left the renders a quarter of one. No sound code waits on
+# a frame (the bank bakes in setTimeout slices), so the renders' numbers are the same
+NO_DRAW = "() => { window.requestAnimationFrame = () => 0; }"
+
 # runs in the page. Works on the code before and after the tracker split: it only uses sound.js's initSound, music,
 # jingle, soundEffect, soundEngine, SONGS and JINGLES, plus the tick (sound.js's musicTick, or the tracker's tick)
 RENDER = r"""async ({jobs, rate, win}) => {
@@ -448,6 +453,7 @@ def run(b, base, write=False, only=None):
         pg.goto(base + '/index.html')
         if not until(pg, "typeof soundEngine!=='undefined'&&typeof initSound==='function'&&typeof gameData!=='undefined'", 120):
             raise Exception('the game page never loaded its sound code')
+        pg.evaluate(NO_DRAW)
         t = time.time(); now = render_all(pg, only); dt = round(time.time() - t, 1)
         count = sum(1 for p in now.values() for k in p if not k.startswith(ZC))
         if write:
