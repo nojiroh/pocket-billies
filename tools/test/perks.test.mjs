@@ -74,7 +74,8 @@ test('PK-4 relics: a Perk that needs a type is never offered without it, in a pi
 test('PK-4 relics: a type Perk whose type is on the team is offered about bias times as often as an untagged one', () => {
   const team = [['Fire'], ['Water']],
     count = { bellows: 0, joy_buzzer: 0 };
-  for (let n = 0; n < 1500; n++) {
+  /* PK-9: 6000 shelves (1500 left too few of the two for the ratio to settle once the pool grew) */
+  for (let n = 0; n < 6000; n++) {
     const id = R.perkShelf(run('B' + n), 1, 1, PERKS, RULE, team);
     if (id in count) count[id]++;
   }

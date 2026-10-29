@@ -274,3 +274,35 @@ test('PK-9 the four events name their boons and curses, with the rows and places
     assert.equal(!!B[id].curse, cmd.startsWith('curse'), id);
   }
 });
+
+/* ---------- Correction Fluid ---------- */
+
+test('PK-9 Correction Fluid: the run’s first curse is erased, later curses last one place less, boons as they are', () => {
+  const L = modules['run-loop'],
+    s = runSave(['correction_fluid']),
+    run = s.run;
+  assert.equal(data.PERKS.correction_fluid.rarity, 'uncommon');
+  assert.ok(data.PERKS.correction_fluid.tags.includes('office'), 'an Office Supplies Perk');
+  assert.deepEqual(L.runBoonGive(run, 'surge_pricing', 'terms_of_service', data.PERKS), {
+    left: -1,
+    erased: 'correction_fluid',
+  });
+  assert.equal(run.enc.boons.length, 0, 'erased: nothing given');
+  assert.equal(run.enc.erased, 1);
+  assert.deepEqual(L.runBoonGive(run, 'surge_pricing', 'terms_of_service', data.PERKS), { left: 2, erased: '' });
+  assert.deepEqual(L.runBoonGive(run, 'tailwind', 'x', data.PERKS), { left: 2, erased: '' }, 'a boon is as it is');
+  assert.deepEqual(L.runBoonGive(run, 'camera_ready', 'x', data.PERKS), { left: 1, erased: '' });
+  /* let go and taken again, it doesn't erase a second curse this run */
+  run.perks = [];
+  run.perks = ['correction_fluid'];
+  assert.deepEqual(L.runBoonGive(run, 'audit_trail', 'x', data.PERKS), { left: 2, erased: '' });
+  /* without it a curse lasts its places */
+  const t = runSave([]);
+  assert.deepEqual(L.runBoonGive(t.run, 'surge_pricing', 'x', data.PERKS), { left: 3, erased: '' });
+  assert.deepEqual(L.runBoonGive(t.run, 'clinic_backlog', 'x', data.PERKS), { left: 2, erased: '' });
+  /* a curse of 0 more places stays 0 */
+  const u = runSave(['correction_fluid']);
+  u.run.enc = { ...modules['run-enc'].encOf(u.run), erased: 1 };
+  const B = { quick: { name: 'Quick', d: 'A test.', curse: true, places: 0, fx: [{ kind: 'money', mult: 0.9 }] } };
+  assert.equal(modules['run-enc'].encBoonGive(u.run, 'quick', 'x', B, { shorter: 1, erase: 1 }), 0);
+});

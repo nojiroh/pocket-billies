@@ -242,6 +242,8 @@ test('PK-8 the 7 sets: their Perks as 5.7 lists them, need 3, each Perk in one s
     'accordion_file',
     'photocopier',
     'time_card',
+    /* PK-9 */
+    'correction_fluid',
   ]);
   assert.deepEqual(members('lab'), ['petri_dish', 'gene_lure', 'stabilizer_gel', 'lab_goggles']);
   assert.deepEqual(members('weather'), ['rubber_boots', 'umbrella', 'snow_globe', 'barometer']);

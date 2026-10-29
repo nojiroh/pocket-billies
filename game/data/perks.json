@@ -671,6 +671,17 @@
    {"kind":"heal","share":0.25,"when":"arrive","if":"place:town"}
   ]
  },
+ "correction_fluid": {
+  "name": "Correction Fluid",
+  "d": "Curses last one place less, and the first curse you’re handed this run is erased at once.",
+  "rarity": "uncommon",
+  "img": "perks/correction_fluid.svg",
+  "tags": ["office"],
+  "fx": [
+   {"kind":"rule","rule":"curseShorter","n":1},
+   {"kind":"rule","rule":"curseErase","n":1}
+  ]
+ },
  "terms_conditions": {
   "name": "Terms and Conditions",
   "d": "Your Billies hit 30% harder. In exchange, run shops and clinics charge 50% more.",

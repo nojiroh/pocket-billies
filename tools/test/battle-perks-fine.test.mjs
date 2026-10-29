@@ -733,7 +733,8 @@ test('PK-7 Heavy Crown: the lead hits 40% harder and takes 20% less; the other B
 
 test('PK-7 every Perk of Waves A-D and Fine Print at once: whole battles end, every number finite, replayable', () => {
   const ids = Object.keys(data.PERKS).slice(13);
-  assert.equal(ids.length, 65);
+  /* PK-9: Correction Fluid (Wave D's 12th) makes 66 */
+  assert.equal(ids.length, 66);
   const team = [ofType('Fire'), ofType('Water'), ofType('Grass')];
   const play = seed => {
     reseed(7);
