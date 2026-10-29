@@ -64,12 +64,12 @@ town node needs it.
   level 50), ON-7 random casual matches. Firebase stays on Spark (no server code): what that leaves open is in the
   track file and SECURITY.md. About 10-13 sessions. ON-5 waits for RO-3g (the Swift line rebuilt; ON-4 started
   without it at the owner's word). Tags `on-N-done`. Branch `track/online`.
-- **Routes track** (docs/phases/routes-track.md, the owner's brief 2026-10-24): run routes planned like a Pokémon
+- **Routes track** (docs/archive/tracks/routes-track.md, the owner's brief 2026-10-24): run routes planned like a Pokémon
   route: RT-1 (layouts: forest masses, fences, 55-65% walkable, marked spots; done 2026-10-24), RT-2 (battle spots, 4-6 trainers,
   pairs; done 2026-10-25), RT-3 (set pieces for a lived-in feel; done 2026-10-25), RT-4a (more wild Billies, habitats, a rarer one in a
   hard pocket; done 2026-10-25), RT-4b (items at dead ends, Cut bramble shortcuts, animals; done 2026-10-27). Tags `rt-N-done`, `rt-4a-done`, `rt-4b-done`.
   Branch `track/routes`.
-- **Route props track** (docs/phases/route-props-track.md, the owner's brief 2026-10-26): more 3D props for the
+- **Route props track** (docs/archive/tracks/route-props-track.md, the owner's brief 2026-10-26): more 3D props for the
   routes: RP-1 (the set pieces' last pictures as models, 20 new route props, the pieces use them, a wayside shrine
   and a solar garden; done 2026-10-26), RP-2 (bridges, jetties, rails and arches in the props' style, a hump on wood
   bridges; done 2026-10-26), RP-3 (a CC0 glTF-to-recipe converter, tools/glb-to-recipe.py, tried on the turbine, the
@@ -116,7 +116,7 @@ town node needs it.
   (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines; side areas on the grid; done 2026-10-27),
   WM-5 (branching town streets, three town sizes, services and names; done 2026-10-27: WM-5a, WM-5b), WM-6 (districts, landmarks, route names; done 2026-10-27 on `claude/wm-6-region-look`), WM-7 (leader arenas, the
   final boss's arena place), WM-8 (ledges and loops). Tags `wm-N-done`. Branch `track/worldmap`.
-- **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
+- **Towns track** (docs/archive/tracks/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
   square, houses with gardens, mapgen's `town` kind) done 2026-10-24; TW-2 (townsfolk, animals, chat, named locals)
   done 2026-10-25; TW-3 (run quests paid at another town's notice board with the reward pick) done 2026-10-25: the
@@ -128,7 +128,7 @@ town node needs it.
   Beans. RF-1 and RF-2 before RO-1, RF-3 before RL-12b, RF-4 before RL-S1. Tags `rf-N-done`. Branch `track/reflavour`.
   RF-1 (the words players see), RF-2 (pyramids: names, icons, the 3D throw, its sounds) and RF-3 (type passives) done
   2026-10-23. RF-4 (internal renames, SAVE_VERSION 5) and RF-5 (the new tone in text) done 2026-10-23; RF-6 (the game's name) next.
-- **Studio art track** (docs/phases/studio-art-track.md, the owner's brief 2026-10-26): every piece of art viewable
+- **Studio art track** (docs/archive/tracks/studio-art-track.md, the owner's brief 2026-10-26): every piece of art viewable
   and editable in the Studio, with online research, and what no longer fits the Vision taken out. SA-1 (an Art
   browser over the whole art tree: search, Used by, Edit pixels, Open in its editor; done 2026-10-26), SA-2a (the
   ground tile set with its Lite tiles, robots, pyramids, frame strips; the terrain builder retired; done 2026-10-26),
@@ -140,7 +140,7 @@ town node needs it.
   2026-10-26 on `ccr-a073cfde-ab64xh`. Tags `sa-N-done`. Branch `track/studio-art` (the owner makes it from main).
 - **Studio track** (docs/phases/studio-track.md): ST-0..ST-7 done (ST-7, Model mode import, 2026-10-27 on `track/studio`); ST-8 (Model mode export) next. Independent of the
   rework; the editors for the new data sections come with their sessions (RL-11..RL-16). Side session ST-T, the
-  Studio self-test (docs/phases/studio-self-test.md, approved 2026-10-21): measure the Studio; fixes come after.
+  Studio self-test (docs/STUDIO.md, "Self-test"; approved 2026-10-21): measure the Studio; fixes come after.
 - **UI track** (docs/phases/ui-track.md, planned 2026-10-21): Semigloss Angular, the Studio's UI section and phase
   06's leftover. UI-1..UI-4 run beside RL-3..RL-7 (UI-4 before RL-7, so the run screens use the new parts); UI-5 and
   UI-6 after the RL-8 play test. Tags `ui-N-done`. UI-1 (theme as data, rules as a check) and UI-2 (kit v2, angular
@@ -244,7 +244,7 @@ town node needs it.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
   `track/vfx` after VFX-5, each in a new session started by VFX-7's, plans approved automatically (the owner,
   2026-10-28), sound steps agreed with the sound track's planning session. Tags `vfx-N-done`. Branch `track/vfx`.
-- **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
+- **Camera track** (docs/archive/tracks/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
   CAM-1 (the follow) done 2026-10-22 (PR #127); CAM-2 (moments of interest) done 2026-10-22 (PR #132); CAM-3 (the
@@ -253,7 +253,7 @@ town node needs it.
   named zoom stops with blur per stop and a pull to the nearest (CAM-4b). CAM-4a done 2026-10-26 (built on
   `ccr-6dfb9e06-vr4uwi` at the owner's word); CAM-4b (zoom stops, the curve graph, camera looks) done 2026-10-26 on
   `track/camera`.
-- **Test cleanup track** (docs/phases/test-cleanup-track.md, planned 2026-10-23): make every check and test fit the
+- **Test cleanup track** (docs/archive/tracks/test-cleanup-track.md, planned 2026-10-23): make every check and test fit the
   roguelite game. TC-1 delete the outdated and useless ones, TC-2 rewrite the rest onto the hub and run worlds (off
   the parked old world), TC-3 rename and fix what stays in check-quick, TC-4 speed (shared helpers, fixtures, the
   budgets, the picture baseline). About 4-5 sessions; seven "Ask me before" items, all answered 2026-10-23. Tags `tc-N-done`. First, alone:
@@ -402,25 +402,25 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 
 | # | File | Status | In the rework |
 |---|---|---|---|
-| 00 | 00-finish-current-work | done (`Baseline` is the one tag on GitHub) | keep |
-| 01 | 01-baseline-and-bug-fixes | done | keep |
-| 02 | 02-security | done; the Studio token options A and B were left "ask before" | absorbed: RL-1 |
-| 03 | 03-fresh-base-and-scope-reset | done; no picture baseline yet | keep |
-| 04 | 04-modernize-codebase | done (04a-04e) | keep |
-| 05 | 05-internal-renaming | done | keep |
-| 06 | 06-ui-structure | done (06-1..06-4, then UI-5 and UI-6, 2026-10-26) | `phase-06-done` with `ui-6-done`; UI-9b (2026-10-27) took the off-scale values and parts.css; the old parts still move onto the kit screen by screen |
-| 07 | 07-portraits | part 1 only (kit, slicer, portraits.json; nothing uses them) | parked: after the first cut is fun |
-| 08 | 08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
+| 00 | archive/00-finish-current-work | done (`Baseline` is the one tag on GitHub) | keep |
+| 01 | archive/01-baseline-and-bug-fixes | done | keep |
+| 02 | archive/02-security | done; the Studio token options A and B were left "ask before" | absorbed: RL-1 |
+| 03 | archive/03-fresh-base-and-scope-reset | done; no picture baseline yet | keep |
+| 04 | archive/04-modernize-codebase | done (04a-04e) | keep |
+| 05 | archive/05-internal-renaming | done | keep |
+| 06 | archive/06-ui-structure | done (06-1..06-4, then UI-5 and UI-6, 2026-10-26) | `phase-06-done` with `ui-6-done`; UI-9b (2026-10-27) took the off-scale values and parts.css; the old parts still move onto the kit screen by screen |
+| 07 | 07-plan | part 1 only (portraits.json and the 311 cut portraits; the kit's sources and slicer are in git history; nothing uses them) | parked: after the first cut is fun |
+| 08 | archive/08-classic-movement-seamless-maps-rooms | 08a-1..3 and 08b-1..2 done; 08b-3 not | absorbed: the run world uses 08b's seam model; 08b-3 templates parked |
 | 09 | 09-props-and-terrain | partly: Copperleaf, Route 1, Marigold and the city set redone; every tree of the run biomes a model (batch 10) | parked: the other towns are legacy; run biomes reuse the done kits (left: the rooms' furniture, the barn, the mossy boulder, campfire, lookout tower, wind-sail flower) |
 | 10 | 10-world-map-bowl | done, waiting on the owner's phone look and the tag | absorbed: RL-7 makes the bowl show a run |
 | 11 | archive/11-opening-sequence | moved to Project Story S7-S8; since RL-8 New game plays the fall only | absorbed: RL-8 (the fall only, Hazel's mast lines) |
-| 12 | 12-ranch | not started | absorbed: RL-9, RL-10 |
-| 13 | 13-testing-and-debugging | 13a done; 13b, 13c not | absorbed in part (fixtures for runs, RL-7/8); 13c parked |
-| 14 | 14-studio | partly, through the Studio track | absorbed: editors come with their sections (RL-16) |
+| 12 | archive/12-ranch | not started | absorbed: RL-9, RL-10 |
+| 13 | archive/13-testing-and-debugging | 13a done; 13b, 13c not | absorbed in part (fixtures for runs, RL-7/8); 13c parked |
+| 14 | archive/14-studio | partly, through the Studio track | absorbed: editors come with their sections (RL-16) |
 | 15 | archive/15-game-design-and-story | archived; the design half is the roguelite track; the story half is Project Story S4 | superseded |
 | 16 | 16-billies-monster-system | prep and prototype part 1 (parts, 7 lines, Studio Parts) | absorbed: breeding and abominations in RL-10; the rest parked |
 | 17 | 17-robots | prototype built, unapproved, untagged, debug-only | absorbed: RL-14 (bots as enemies, the Voltron); playable bots much later |
-| 18 | 18-friend-trading-and-battles | not started | absorbed: the online track (docs/phases/online-track.md, 2026-10-26): ON-4 friend trades, ON-6 live friend battles |
+| 18 | archive/18-friend-trading-and-battles | not started | absorbed: the online track (docs/phases/online-track.md, 2026-10-26): ON-4 friend trades, ON-6 live friend battles |
 | 19 | 19-battle-core (branch `plan/engine-phases-19-21`) | plan only | absorbed: RL-2, RL-4 (core), RL-12 (effect handlers), RL-15 (replay) |
 | 20 | 20-renderer-batching (branch `track/renderer`) | A-C, H and rounds R1-R3 done; R4 defaults lane done (2026-10-26): models, shadows, rain, phone lamps and battle rigs on their batched paths only, three losing paths deleted; D2 built (2026-10-27): the bloom, rays and grade in `mediump` behind `quality.mediump` (off); left: Medium precision, Sky last, Pictures in batches, Steady lamps, the phone pixel budget (owner's checks), then `phase-20-done` | active: R4, the owner's checks |
 | 21 | 21-texture-atlases-and-ktx2 (branch `plan/engine-phases-19-21`) | plan only | parked: after phase 20 |
