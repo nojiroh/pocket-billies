@@ -110,16 +110,17 @@ def dressing(pg, notes):
     got = {}
     for on in (False, True):
         pg.evaluate(f"(()=>{{const p=saveData.preferences;p.eng={{...(p.eng||{{}}),people:{{figures:{'true' if on else 'false'},folk:true}}}};return 0}})()")
-        h = pg.evaluate_handle(DRESS_JS + "(" + json.dumps({'wait': 240, 'on': on}) + ")")
-        while on:
+        # run on the page without waiting for it, so each tab's picture can be taken here when it asks
+        pg.evaluate("window.__dressOut=null;window.__dressShot=null;(" + DRESS_JS + ")(" + json.dumps({'wait': 240, 'on': on}) + ").then(r=>{window.__dressOut=r});0")
+        while True:
             t = pg.evaluate("window.__dressShot||null")
             if t:
                 pg.screenshot(path=str(OUT / f'dressing-{t}-fig.png'))
                 pg.evaluate("window.__dressShot=null;0")
-            if pg.evaluate("!dressingRoom.on&&!window.__dressShot"):
+            if pg.evaluate("!!window.__dressOut"):
                 break
             time.sleep(0.3)
-        got['on' if on else 'off'] = h.json_value()
+        got['on' if on else 'off'] = pg.evaluate("window.__dressOut")
     off, fig = got['off']['tabs'], got['on']['tabs']
     every = all(v['figTiles'] >= v['tiles'] and v['figure'] for v in fig.values())
     differ = all(fig[t]['hash'] != off[t]['hash'] for t in fig if fig[t]['tiles'])
