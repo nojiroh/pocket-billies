@@ -2,6 +2,142 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-12 - Collection and wrap-up: the Field Guide's Perks tab, the balance pass, the art review; the track is done - 2026-10-29
+Branch `track/perks` (this session's outcome branch, at 0fbef2a6: PK-9; main ed5c6857 was already in, so nothing to
+merge). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode, the
+plan below written first and carried out. Details and the audit: perks-track.md section 14, "Corrected in PK-12".
+- The plan (as set at the start): (1) the Field Guide's Perks tab: a save record of what was seen and taken, following
+  `seen`/`caught` (a new field, `collection`; no SAVE_VERSION bump, a missing one reads as empty), noted on every save
+  from what the run shows; a fourth tab listing every Perk, set, held item and boon or curse with silhouettes of the
+  unseen (the SVG as a mask); phone screenshots light and dark; (2) the balance pass: the run sim gets options to start
+  holding Perks, boons and a held item; everything at once must stay finite; each one alone over the same seeds against
+  a baseline; tune only clear outliers, one commit each with the numbers; list the rest; rerolls a recommendation only;
+  (3) the art review: redraw Steady Hand, Screen Protector and Rubber Boots, remake the contact sheets, check every icon
+  is distinct across the folders, `--check`; (4) the section 14 audit, the tag line fixed; (5) the owner's summary of
+  every decision; ROADMAP, BRANCHES, TESTING, ART-NOTES; (6) every check tier, CI, PR #323's description.
+- Changed (6 commits of code, data, art and tests, besides this docs commit):
+  - **The record** (c5b3f557): game/js/logic/collection.js (`collectionNew`, `collectionFill`, `collectionNote`,
+    `collectionRows`); saves.js newSave/saveFill/validSave; `collection` in save-data.d.ts; game-state.js save() notes
+    it; index.html and the Studio's logic worker load it. tools/test/collection.test.mjs (4).
+  - **The tab** (7cdd9fb8): guide.js `renderPerkGuide` (Seen / Taken / Total over all 130, a chip per kind with its
+    count, the kind's list in the data's order: picture or silhouette, name or Unknown, text, rarity pill, "seen" or
+    "taken"; a set shows its bonus and its Perks' pictures), art.js `artSilHTML`, guide.css, ui.js's `pkgk`;
+    check-fast's perks step opens the tab; check-quick.py's guide ceiling 39 -> 40 (the tab's button).
+  - **The run sim** (8853c17e): `perks`, `boons` (`SIM_BOON_PLACES` 99) and `held` options and the CLI's `--perks`,
+    `--boons`, `--held` ('all' for every one); a run-sim test with all of them at once.
+  - **Art** (9d74b7c6): Steady Hand, Screen Protector, Rubber Boots redrawn (grids, SVGs, ART-NOTES.md); the perks
+    sheets remade, the items' and boons' remade unchanged.
+  - **Balance** (98f971c6): Costume Fangs 1/8 -> 1/16 (text and test).
+  - Docs: perks-track.md (PK-12 done, section 14 audited, the tag line), ROADMAP (the track done), BRANCHES
+    (`perks-done` after #323), TESTING.md, this entry.
+- **The balance pass** (the run sim, `--balance --policy=never-pick --team=3 --pack=5 --lvl=25 --unlocks=all`, the
+  same 300 seeds each; a bot, not a player: it plays three of the starter, never rerolls or catches much, so type
+  Perks for other types, catching, shop and map Perks show 0; with `--held` every Billie holds the item; a boon lasts
+  the whole run). Without any: 17.0% won, 6.64 places, 3,600 Moneys left. **Everything at once** (79 Perks, 20 boons
+  and curses, Quick Laces held): 100 runs, 89% won, every number finite.
+  - Tuned (one clear outlier): **Costume Fangs** 1/8 -> 1/16 of the damage dealt: 68.3% -> 40.7% won (the rare
+    Leftover Sandwich 41.7%).
+  - For the owner to tune on the phone (win rate alone vs 17.0%; Moneys left vs 3,600):
+    - Strongest Perks: Warranty Card 44.7% (rare, once a run), Heavy Crown 37.7% (Fine Print: its cost barely shows
+      for a bot that leads with its best), Power Bank 37.0%, **Oven Mitts 34.7% (a common; the run's foes burn a lot)**,
+      Plot Armor 31.7%, Screen Protector 31.0%, Matching Hoodies 30.0% (a mono team is the bot's default), Hazmat Suit
+      27.7%.
+    - Fine Print that only hurts the bot: **Overclock Chip 0.3%** (5% recoil: 5.3%, 3%: 15.3%), **Early Access Pass
+      0.7%** (+2 levels: 4.0%, +1: 6.3%), Hustle Planner 9.7% (but +3,000 Moneys), Glass Trophy 11.3%, Paid Promotion
+      11.7%, Energy Drink 12.0%. A player picks these knowingly; the bot can't value a map or tempo.
+    - Held items: Snack Pack 49.3% (common, 800) and Leftover Sandwich 41.7%, Cactus Keyring 40.0%, Party Balloon
+      35.0%, Iron Vest 30.0%; **Ankle Weights 3.3%** (moving last; +50% or +70% damage barely helps: 4.3%, 4.7%: a design
+      call, not a number); Lucky Coin +2,503 Moneys (three holders multiply: 1.25 cubed).
+    - Boons and curses: Fired Up 36.7% (Attack up, the run long; 3 places in play), Pep Talk 21.0%; curses Mandatory
+      Training 11.3%, Paper Cuts 12.0%, Hold Music 12.7%; Audit Trail -787 Moneys, Viral Moment +797.
+    - Money: Influencer Contract +2,832, Hustle Planner +3,000, Lucky Charm +633, Bounty Poster +430, Tip Jar +226.
+  - **Rerolls** (section 11, item 6; an "Ask me before"): recommended unchanged at 50, doubling. The bot never rerolls,
+    so the sim can't judge them; Fortune Cookie frees only the first reroll of each pick and Gift Receipt adds a card,
+    which the doubling still bounds.
+- **The owner's summary: every "Decided for the owner, to review" of the track** (PK-0..PK-12, grouped; the entry
+  named in brackets has the details):
+  - *Names and texts* (all drafts): the 66 new Perks' names and card texts as perks-track.md 5.2-5.6 with the changes
+    each wave's entry lists (Click Pen "Every 8th attack", Power Bank "ends a turn below a quarter", Alarm Clock without
+    "always" [PK-3]; Group Chat gives the bench the full XP, not half, Snorkel/Knee Pads/Kite/Union Card/Heirloom
+    Locket/Barometer wording [PK-4]; Bug Net, Pyramid Pouch, Music Box, Punch Card, Gift Receipt, Tour Brochure wording
+    [PK-5]; Photocopier, Streak Tracker, Coil of Rope, Time Card wording [PK-6]; the Fine Print texts with every
+    downside stated [PK-7]); Correction Fluid's text [PK-9]; the 7 sets' bonus names and texts [PK-8]; the 20 boons'
+    and curses' names and texts [PK-9]; the 16 new held items' names and lines (Express Pass "each turn", Ankle Weights
+    "moves after the others", Complaint Form "once a battle") [PK-10]; the five Bureau events Mandatory Orientation,
+    Routine Audit, Please Hold, Permit Inspection, Paperwork Avalanche and their lines [PK-9].
+  - *Battle lines*: "<Perk>: <say>", a stat row's "<Perk>: X's Speed rose.", turnHurt's "lost a little HP" [PK-1];
+    Rubber Stamp "Approved!", Click Pen "Click! X lines up a critical hit.", Screen Protector, Joy Buzzer, Oven Mitts,
+    Alarm Clock, Warranty Card [PK-3]; the held items' six lines (Seatbelt, Cactus Keyring, Complaint Form, Party
+    Balloon, Costume Fangs, Express Pass) [PK-10].
+  - *The look*: Fine Print in the ladder's top orange #F77036 with a small red tilted "FINE PRINT" stamp, and the foil
+    [PK-7]; Lucky Charm a horseshoe [PK-0, PK-2]; pictures at 72 px on cards and 36 px in rows, the drop sheet at 36
+    [PK-2]; the Bag's battle list and the Billie sheet at 36 px too [PK-11]; the Perks tab grouped by set, "(on)" in
+    bold [PK-8]; boons on the Perks tab and an 18 px strip beside the day on the Map tab [PK-9]; the Field Guide's
+    Perks tab (a chip per kind, silhouettes of the unseen, "seen"/"taken" in hand-written ink) [PK-12].
+  - *Every picture* (about 140, contact sheets in validation/icon-sheets/; redraw any in the Studio's icon editor):
+    13 existing Perks redrawn [PK-2], 11 [PK-3], 13 [PK-4], 12 [PK-5], 11 [PK-6], 11 [PK-7], Correction Fluid and the
+    20 boons [PK-9], 25 held items with Form 99-A [PK-10], 13 Bag items [PK-11]; Steady Hand, Screen Protector and
+    Rubber Boots redrawn [PK-12]. Still the weakest reads: Garden Trowel (a hammer?), Snack Pack, Ankle Weights
+    [PK-10], Max Revive's small heart and Trail Mix [PK-11], Knee Pads (a robot head?) and Static Socks (boxy) [PK-4].
+  - *Rarities and numbers*: rarity weights 6/3/1 unchanged with Fine Print out of the ordinary pool; a leader's pick
+    draws its 12 evenly; the reward pick's Perk card weight 2 of 41 [PK-7]; the 13 existing Perks keep their numbers
+    [PK-0]; the cap stays 6 (Accordion File +1, Non-Refundable Ticket +2), and letting Accordion File go at the cap it
+    raises is refused [PK-6]; Wave A-D rarities as the plan [PK-3..PK-6]; held items: the 9 type boosters common
+    (800), the 7 tricks uncommon (1000), Seatbelt 1200 [PK-10]; the appeal 50 Moneys at a run town's clinic [PK-9];
+    rerolls unchanged at 50, doubling (Fortune Cookie makes only the first free) [PK-5, PK-12]; the bias toward the
+    team's types and held sets at x2 [PK-4]; heldBoost rounds stages half up, chances stop at 50% [PK-8]; the PK-12
+    balance list below (numbers to tune on the phone).
+  - *How things work* (rules chosen where the plan was open): `every` counts over the whole run [PK-1]; a run's
+    pinchHeal heals each Billie once a battle [PK-1]; a growth stays between 0 and its max, and shows "+0%" before it
+    grows [PK-1, PK-6]; "VOID" on a spent once-a-run row [PK-3]; an event's status skips the whole team when a guard
+    holds [PK-3]; `needs` ignored where no team is given [PK-4]; Punch Card refunds one of a stack, Tip Jar is a money
+    row, Music Box rolls once a foe, `needs: bots` is a scrapyard not yet visited [PK-5]; a copier's marks are its own,
+    sideOpen at a side area's obstacle only, sideFind at most 2, eventHurt stops only the `hurt` command [PK-6];
+    Influencer Contract's triple pay on every trainer battle and its "pays nothing" zeroes Moneys only, Subscription Box
+    draws from the `common` loot table, Overclock Chip's cost can knock its user out, Non-Refundable Ticket at the cap
+    may still let one go [PK-7]; a copy doesn't count toward a set, the set line counts with the card's Perk [PK-8]; a
+    boon given again lasts the longer, never stacks; Correction Fluid's erase counts once a run [PK-9]; the held kinds
+    stay out of FX_KINDS [PK-10]; the Studio's PNG upload for items gone (Draw one and Edit art) [PK-11]; the Perks tab's
+    record notes on every save, a set counts as taken once its bonus has been on, Bag items are not listed [PK-12].
+  - *Every seed's offers and event draws changed* as Perks and events were added (the pool follows the file's order),
+    accepted as SP-6 did [PK-3..PK-9].
+- Decided for the owner in PK-12, to review: the record's name `collection` and what counts as seen and taken (above);
+  the tab's place (second, between Billies and Lore) and words ("Everything a run can hand you", "Runs hand them out.
+  Take them all.", "Not seen yet."); Bag items not listed; a set shown with the relic icon and its Perks' small
+  pictures; the guide's piece ceiling 39 -> 40; the three redraws; Costume Fangs 1/16; rerolls unchanged.
+- **Phone checks for the whole track** (none done yet; light and dark each): the Field Guide's Perks tab (the chips
+  fit? the 79 rows scroll, silhouettes read) [PK-12]; a mini-boss's pick of three Fine Print cards and the red stamp,
+  the reward pick's Perk card and "Let one go" at the cap, Non-Refundable Ticket at 8, Subscription Box, Influencer
+  Contract and Overclock Chip lines, Early Access mid-run [PK-7]; every picture crisp at 72 and 36 px (PK-2..PK-11,
+  the three redraws [PK-12]); Click Pen's "n/8" and its critical 8th attack, Warranty Card's VOID, Alarm Clock [PK-3];
+  no type Perk offered without its type, Barometer's 10-day forecast, Umbrella in rain, Kite's free switches [PK-4];
+  Gift Receipt's four cards, Fortune Cookie's free reroll, Tour Brochure mid-run, Pyramid Pouch, Tip Jar, Punch Card,
+  Name Tags [PK-5]; Accordion File's "n of 7", Photocopier's note, Boarding Pass, Like Button and Streak Tracker's
+  "+N%", Coil of Rope, Rusty Key, Ten-Foot Pole, Time Card, Travel Pillow [PK-6]; the Perks tab grouped by set, the set
+  line on cards and shop rows, Adventurer's Pack's pyramid, Tech Gear with Quick Laces, the Lab Kit's splice, the
+  Influencer's first critical [PK-8]; an event's boon and curse, the Map tab's strip on a narrow phone with 3-4 on, the
+  clinic's appeal, Out of Office, Hold Music, Permit Revoked's REVOKED, Correction Fluid's erase [PK-9]; the Bag and
+  reward picks' held cards, Party Balloon and Express Pass in battle, the Billie sheet's held line [PK-10]; the Bag's
+  rows, a run shop's item rows, the battle's Bag [PK-11].
+- Risky:
+  - Every save now runs collectionNote (a walk over the run, the bag and the team: about 130 checks). A save that holds
+    junk in `collection` loads with it cleaned; one where `collection` isn't an object fails validSave (a backup import).
+  - What counts as "seen" comes from what a save holds: a shop's Perk seen only once the shelf is drawn and saved, a
+    held item in a town's market stall not seen until bought or offered in a reward pick.
+  - The balance numbers measure a bot; Fine Print and Ankle Weights especially need a person's judgment.
+- Verified: after every change lint, typecheck and `npm test` (2063 at the start, 2068 at the end); before every
+  commit check:modules, format:check, check:data (181 files fine; its two bridge warnings are main's) and build;
+  `check:smoke` on every commit touching game/, run in a second worktree on the exact commit: no problems on c5b3f557,
+  9d74b7c6 and 98f971c6; on the tab's first version it found the Guide screen at 40 pieces over its ceiling of 39,
+  fixed in the same commit (7cdd9fb8: no problems). The tab seen at 390 x 844, light and dark, every kind (no page
+  errors, no sideways scroll). `check:fast --only=perks` ok with the new tab step. `check-studio-github.py
+  --only=relics` ok. `npm run test:slow` 109 passed. `build-icons.mjs perks|items|boons --check` fine. The run sim:
+  `--balance` runs finish (the numbers above); the default scenes mode stops at "runSceneParams: node 8 has no exit
+  north3", main's (PK-5..PK-9). **In-game full test** (`--selftest`, 98f971c6): one problem, "A room that opens in
+  place: the town's walking grid changed", main's (PK-7's and PK-9's entries). The full quick check and CI: below.
+- Next: the track is done. The owner reviews the summary above, the phone checks and PR #323; once #323 merges,
+  `track/perks` gets the `perks-done` tag and it and `track/perks-items` are deleted (docs/BRANCHES.md).
+
 ### Perks track PK-9 - Boons and curses - 2026-10-29
 Branch `track/perks` (this session's outcome branch, at ab776fc1: PK-8; main 6ca60be6 was already in, so nothing to
 merge at the start). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no

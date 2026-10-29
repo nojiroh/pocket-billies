@@ -455,6 +455,14 @@ same phase:
   boon's name and picture, and every Perk, set, boon and curse at once in whole, replayable battles. `data-checks`
   checks dataBoons, dataBoonArt and the boon and curse commands. check-fast's perks step gives a boon and a curse and
   reads the Perks tab's rows, the Map tab's strip and an appeal.
+  PK-12: `tools/test/collection.test.mjs` checks the Field Guide's Perks tab record (logic/collection.js: offered Perks
+  seen, held ones taken, a set taken with its bonus on, held items from a reward pick, the bag and the team, boons once
+  on, the record cleaned on load, a save with or without it valid). `run-sim.test.mjs` plays runs holding every Perk,
+  boon and curse at once with a held item (the sim's `perks`, `boons`, `held`; the CLI's `--perks=all --boons=all
+  --held=<id>`), all finite. check-fast's perks step opens the Field Guide's Perks tab (every Perk listed, the held
+  ones taken, the unseen as silhouettes, the record stored). The balance pass: each Perk, boon or held item alone over
+  the same seeds (`--balance --policy=never-pick --team=3 --pack=5 --lvl=25 --unlocks=all`: the bot wins about 17%
+  without any, so a change shows; fewer runs out of the box end within two places).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the

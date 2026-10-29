@@ -357,7 +357,11 @@ town node needs it.
   events and the fountain by id, the kinds last, a turnHurt row at arrive, rewardPick -1 and the rules shopClosed,
   muteNewest, curseShorter and curseErase, the clinic's appeal, five Bureau Red Tape events, Correction Fluid as the
   79th Perk, boons on the Perks tab and the Map tab's head, the Studio's boons) done 2026-10-29 on `track/perks`;
-  PK-12 (the Field Guide's Perks tab and the wrap-up) next.
+  PK-12 (the Field Guide's Perks tab with the save's `collection` record and silhouettes of the unseen, the run sim's
+  `--perks`/`--boons`/`--held` and the balance pass (Costume Fangs 1/8 -> 1/16), Steady Hand, Screen Protector and
+  Rubber Boots redrawn, the section 14 audit, the owner's summary of every decision) done 2026-10-29 on
+  `track/perks`: **the track is done**. Once the owner merges #323, `track/perks` gets the `perks-done` tag and it and
+  `track/perks-items` are deleted.
   PK-11 (Bag item icons: the 13 consumables drawn in art/items, `img` and dataItemArt, 36 px in the Bag
   and 72 on reward cards, the Studio's items editor with Edit art, the atlas's 9 `i_*` rectangles retired) done
   2026-10-28 on `track/perks-items` (the items lane, beside the Perk waves); PK-10 (held items: 16 new, the 8 existing
@@ -365,7 +369,8 @@ town node needs it.
   the Studio's held rows, every `i_` atlas rectangle retired) done 2026-10-28 on `track/perks-items`; the items lane is
   finished.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
-  sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
+  sessions. No per-session tags (CLAUDE.md); `perks-done` once #323 merges. Branch `track/perks` (made by PK-1's
+  session).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
   picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
   events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in

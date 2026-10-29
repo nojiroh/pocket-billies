@@ -7,7 +7,7 @@ Also make it so they have their own art in a style that fits. Do research online
 for next steps and start them in new sessions until this plan is finished."
 
 This file is the plan (session PK-0, planning and art samples only; nothing in the game changed). Sessions follow
-CLAUDE.md (one cause per commit, the test tiers of docs/TESTING.md, a HANDOFF entry, a tag `pk-N-done` to suggest),
+CLAUDE.md (one cause per commit, the test tiers of docs/TESTING.md, a HANDOFF entry; no per-session tags: see section 14),
 except that the owner pre-approved every step's plan: see "How the sessions run". Numbers and lines below were read at
 main 07c9b28 (2026-10-27); verify again before each session and correct this file where the code disagrees.
 
@@ -799,7 +799,7 @@ unused-art gate.
 | PK-9 | Boons and curses (**done 2026-10-29**, `track/perks`; "Corrected in PK-9" in 5.9) | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
 | PK-10 | Held items (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-10" in 5.8) | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
 | PK-11 | Bag item icons (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-11" in 5.10) | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
-| PK-12 | Collection and wrap-up | the Field Guide's Perks tab (seen, taken, silhouettes of the unseen: the SVGs work as masks), the run sim over every Perk, the full check, the summary of every decision for the owner | the track's done-when (section 14) |
+| PK-12 | Collection and wrap-up (**done 2026-10-29**, `track/perks`; "Corrected in PK-12" in section 14) | the Field Guide's Perks tab (seen, taken, silhouettes of the unseen: the SVGs work as masks), the run sim over every Perk, the full check, the summary of every decision for the owner | the track's done-when (section 14) |
 
 About 12 sessions after this one. Each one merges main into `track/perks` first (a merge, not a rebase; `npm run
 modules` for hooks.js, never by hand).
@@ -860,8 +860,30 @@ modules` for hooks.js, never by hand).
 ## 14. Done when (the track)
 79 Perks (13 + 66), each with its own picture; Fine Print at leader wins and a Perk card in the reward pick; 7 sets;
 24 held items and 13 Bag items with pictures; 20 named boons and curses with pictures; the Field Guide's Perks tab;
-every test tier green but main's known red step; HANDOFF lists every decision taken for the owner; tags `pk-N-done`
-suggested.
+every test tier green but main's known red step; HANDOFF lists every decision taken for the owner. No per-session tags
+(CLAUDE.md, 2026-10-28): once the owner merges the track's PR (#323), `track/perks` gets the `perks-done` tag and it
+and `track/perks-items` are deleted (docs/BRANCHES.md).
+
+**The track is done (PK-12, 2026-10-29).** **Corrected in PK-12** (each claim checked against the code at PK-12's
+commits on `track/perks`):
+- 79 Perks, each with its picture in art/perks: yes (28 common, 27 uncommon, 12 rare, 12 fine). Fine Print at leader
+  wins: yes (rules.json run.perks.leader `{rarity: fine, pick: 3}`, a leader's pick draws its 12 evenly). The reward
+  pick's Perk card: yes (rewards.json `perk`, weight 2 of 41). 7 sets: yes (perkSets.json). 24 held items with
+  pictures: yes. **Bag items: 14, not 13**: Form 99-A (main's ON-4 trade item, drawn in PK-10) joined the 13; all 14
+  have pictures and no item draws from the atlas. 20 boons and curses (10 each) with pictures: yes.
+- The Field Guide's Perks tab: built in PK-12 (guide.js renderPerkGuide, logic/collection.js). The save's new field
+  `collection` (`seen` and `taken`, keys `<kind>:<id>` for perk, set, item, boon) is filled in by every save
+  (game-state.js save() calls collectionNote): a Perk seen when offered (a pick, a run shop's shelf, a reward pick's
+  card), taken once held; a set seen with one of its Perks, taken once its bonus has been on; a held item seen in a
+  reward pick, taken once in the bag or held; a boon or curse seen and taken once on. A save without the field loads
+  (it reads as empty), so SAVE_VERSION stays 5. Bag items are not listed (section 9 names Perks, sets, held items and
+  boons). The Guide screen's piece ceiling in check-quick.py went 39 -> 40 for the fourth tab's button.
+- Every test tier green but main's known reds: see HANDOFF "Perks track PK-12" for the runs and which reds are main's.
+- The balance pass: the run sim learned `--perks`, `--boons` and `--held` (a run starts holding them); every Perk,
+  boon, curse and a held item at once plays finite runs (a unit test, and 100 runs: 89% won). Each one alone against
+  the same 300 seeds is in HANDOFF; one clear outlier tuned (Costume Fangs 1/8 -> 1/16), the rest listed for the owner.
+- Rerolls (section 11, item 6): unchanged at 50, doubling. The sim's bot never rerolls, so it can't judge them; Fortune
+  Cookie makes only the first reroll of each pick free and Gift Receipt adds a card, which doubling still bounds.
 
 ## 15. Sources (research, 2026-10-27)
 - Slay the Spire relics: https://slaythespire.wiki.gg/wiki/Relics; boss relic downsides:
