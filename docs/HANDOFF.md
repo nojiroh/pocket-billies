@@ -183,6 +183,95 @@ and IN-5 do that. Hand-over note for the other wave 1 sessions: the shared notes
   Striders and hover; the boss parts' pictures replace the Voltron's stand-ins too.
 - Next: IN-1 puts `train_wreck` on the prepared landing (firstRun.json `crash`) and sets `retrieval_scout`'s fighter; IN-4 uses the portal (`open`,
   `shut`) and the clerks (`act ... stamp`); the owner judges the art on the phone.
+### Intro track IN-4 - the way back: the Bureau's pickup, the fall from its portal, the lab - 2026-10-29
+Branch `claude/in-4-way-back-74f4bd` (made from `track/intro` 61d90751), draft PR into `track/intro`. Wave 1, run
+alongside IN-1 to IN-3 under the owner's standing answer (intro-track.md section 1: plan and build, no approval stop).
+No "Ask me before" item came up. New game is unchanged (IN-5 wires it).
+- Facts checked against the code (plan sections 3.1 and 3.2, main bb658f52): all held. Two notes: `fallPlay`'s
+  fallback with no 3D map (reduced motion, no WebGL) draws the Inner Sun (`fallSky`) with its caption, so the portal
+  fall has a fallback of its own (the portal's light held, no sky); and `runEndHomeGo` leaves `story.pending =
+  'back-lost'` after a loss, which the lab scene replaces on the first run (cleared there).
+- Changed:
+  - **The pickup.** `runOver` (run.js): when `run.first` (IN-1) or the debug jump, the run's phase is `return` at once
+    (a new RUN_PHASES value, saved before anything plays), then `runPickup`: once the battle and its windows are gone,
+    story.json `pickup-lost` / `pickup-won` on the story stage: `camera run-up`, two Bureau clerks walk over (the story
+    stage's `walk X beside me` now takes a second person, on your other side), the stamp, then the new command
+    `portal` (story-stage.js `storyPortal`): the square portal opens under you (IN-3's `bureau_portal` prop with its
+    `open` time once the scenery has it; until then a stand-in square of sparkle light), you drop, and a white veil
+    (`#backVeil`, the portal's light) covers the screen until the way back takes it.
+  - **The stamps.** Markup `[stamp=returned]` and `[stamp=recovered]` (line-markup.js MARKUP_STAMPS), stamped as
+    "RETURNED TO SENDER" / "RECOVERED PROPERTY" in the small size (talk.js STAMP_WORDS), on the Bureau's bubble.
+  - **The clerks (stand-ins).** people/intake.json and outtake.json ("Intake Clerk", "Outtake Clerk", in the clerk's
+    look), speakers `Intake` / `Outtake` in story.json, the Bureau's bubble in talkSkins.json.
+  - **The fall.** `fallPlay(run, { from: 'portal' })` (opening-fall.js): `fallPortal` draws the first picture, the
+    portal's light filling the screen, then the square shrinking overhead as you drop under it (1.4 s), then
+    `fallOverWorldMap` with the new `{ captions: false }` onto `me`. The street and crust legs are untouched.
+  - **The lab.** game/data/cutscenes/return.json (the opening's set: map, spots, shots, clear; tools/build-copperleaf.mjs
+    now gives it the opening's whenever it moves them) played by the new game/js/cutscene/return-scene.js
+    (`returnStart`). opening.js's start is split into `cutsceneBegin` and `cutsceneMount` (shared; the opening plays
+    as before). The scene's `dressing-room` saves your look and name at once; the new cutscene command `payout` opens
+    the payout sheet over the scene in a lab mode (run-payout.js: "What you brought back", Kappi's words, no keep-one
+    cards since everyone comes home on the first run, "Done" goes back to the scene; skipping stops there). The scene's
+    end: `runEndLab` (run.js), which is `runEndHomeGo` with everyone kept, no train, standing at return.json's `me`
+    outside the lab door (`standByLab`), then what the run brought home is told. If the 3D view can't run or the scene
+    breaks, the run still ends the same way.
+  - **Resume.** A run at phase `return` reopens at the lab (`runResume`), with no fall. `runEnded` (logic/run-state.js)
+    treats `return` like `payout`: no run battle, no encounter, no giving up, no second ending. ui.js `render` leaves
+    the screen to the way back while it plays (`cutscene.back`); the director doesn't skip past the open payout.
+  - **Debug menu:** on a run, "Jump to the pickup (win)" / "(loss)" ends this run the first run's way.
+  - Docs: CUTSCENES.md ("The way back"), SCRIPTS.md (`payout`, `portal`, the second walker, the two stamps).
+- **The lines, for the owner** (drafts in the cast's voice; `#l:` line ids; change freely):
+  - The lab scene (cutscenes/return.json), after you wake:
+    - `#l:0135` [surprised] Chosen: You came out of the sky.[p] [b]Again.[/b] Once is an accident. Twice is a [i]brand[/i].
+    - `#l:88e1` Chosen: I took the next train home, by the way. First class. They gave me a blanket for the shock.[p] I wasn’t in shock. I kept the blanket.
+    - `#l:2a5d` Kappi: You’re outside the lab, in Copperleaf. Nothing’s broken. I checked.[p] Twice.
+    - `#l:f85b` Chosen: Before anything else: who [i]are[/i] you? Still nothing? Fine. We’ll build you from scratch.[p] Like a legend.
+    - (the dressing room)
+    - `#l:b9d5` [happy] Chosen: {name}. Strong name.[p] Second-strongest on this porch.
+    - `#l:04bf` Kappi: Now, what you brought back. Empty your pockets. I’ll count.
+    - (the payout sheet, "What you brought back": "Kappi counts it up. It turns into Research, for the Lab, and your
+      bag goes into Copperleaf’s." after a win; "... and everyone you caught comes home with you." after a loss)
+    - `#l:0084` Kappi: That square of light in front of the train? You came down through one just now. It’s the Bureau’s.
+    - `#l:dd9c` [surprised] Chosen: The Bureau? Paperwork people. Don’t sign [b]anything[/b].[p] I signed one thing once. I still get letters.
+    - `#l:c0d7` Chosen: Here’s the plan. Skyline Station, just up the hill. Its trains go out past the island, to wild places nobody’s mapped.
+    - `#l:d777` Kappi: Every trip is a new region. New Billies, new leaders. You never get the same one twice.
+    - `#l:1c6e` Kappi: What you catch can come home with you. What you learn turns into Research, for the lab. That stays, whatever happens out there.
+    - `#l:14c0` [happy] Chosen: And every trip, you come back stronger. Like a training montage.[p] I [i]love[/i] a montage.
+    - `#l:20d9` Kappi: Rest first. The station isn’t going anywhere.[p] Neither are we.
+  - The pickup after a loss (story.json `pickup-lost`):
+    - `#l:ad1f` Intake: Don’t get up. You’re [i]exactly[/i] where the form says you’d be.
+    - `#l:5af2` Outtake: One person, unregistered. Fell off a train. No ticket.[p] Also lost a fight.
+    - `#l:ca6b` Intake: Several fights. It’s all on the form. We have a form for that.
+    - `#l:65eb` Outtake: Sender, unclear. Address, unclear. So it goes back to the default address.
+    - `#l:b5f8` [shout] Intake: Returned to sender.[stamp=returned]
+  - The pickup after a win (story.json `pickup-won`; IN-1's boss is "The Retrieval Scout"):
+    - `#l:ad5e` Intake: Hold still. You beat our retrieval scout.[p] That scout was [i]on loan[/i].
+    - `#l:66e8` Outtake: One person, unregistered. One scout, dented. Both found at the scene.
+    - `#l:c180` Intake: Good work, technically. We don’t do good work here. We do [b]paperwork[/b].
+    - `#l:ec95` [shout] Intake: Recovered property.[stamp=recovered]
+- Risky:
+  - **Stand-ins until IN-3 merges.** The clerks are people in the clerk's apron (people/intake.json, outtake.json).
+    IN-3's bots are `bureau_clerk_a` / `bureau_clerk_b` (creature people, no portraits). The swap: story.json
+    `speakers` (`Intake` to `bureau_clerk_a`, `Outtake` to `bureau_clerk_b`), talkSkins.json `speakers` (both to
+    `bureau`), delete the two stand-in people files and their rows in the figure golden snapshot. IN-3's `act <clerk>
+    stamp` pose is a cutscene command; the story stage has no `act`, so the stamp stays the bubble's. The portal takes
+    IN-3's prop by itself once `bureau_portal` is in the scenery (not seen running: IN-3 hasn't committed it yet).
+  - The pickup waits for the battle's windows to close (at most 8 s), then plays even if one is still open.
+  - A reload with the payout sheet open at the lab starts the lab scene again from the top (the plan allows beat 8).
+  - Windows: the repo's Node tools run their main block only on POSIX paths (`import.meta.url === file://argv[1]`)
+    and `to-module.mjs` compares POSIX paths; IN-1 fixed both on its branch. This session ran them through a local
+    wrapper (not committed). 24 unit tests fail on Windows on `track/intro` itself; the same 24 fail here, no others.
+- Verified: lint (eslint 0 errors; the names, ui-lint, unused-css, art-refs and modules checks), type-check, the data
+  check, the unit tests (new tools/test/return-script.test.mjs with return-said.json: the lab scene's and both
+  pickups' lines and commands in order, the stamps, the Bureau's bubble, no Hollow Earth, the set equal to the
+  opening's, `payout` a cutscene's; run-state.test.mjs: `return` loads, `runEnded`), and a new check-fast step,
+  "The first run's way back" (`?fixture=run`): the pickup with both clerks, the phase stored at once, a reload plays
+  the lab, skipping stops at the dressing room and at the payout (no cards), Done, the end: no run, one more run
+  ended, standing on the lab door's spot. The smoke check: its four browser steps pass (the phone flow plays the real
+  opening through the split `cutsceneStart`; palettes; the actions bar; the in-game test's step). Its data step
+  "Unused: art, props and songs" fails on Windows on clean `track/intro` too (a Node tool's POSIX main guard).
+- Next: IN-5 wires New game to the crash and `runStartPrepared`; then the way back plays for real. Swap the clerks
+  for IN-3's bots when it merges (above). IN-6: the owner reads the lines on the phone.
 
 ### Test data track TD-2 - the graphics test walks a benchmark path - 2026-10-29
 Branch `track/test-data` (TD-1's pushes and main, 4b64e3d6, merged in at the start; four conflicts kept both sides:

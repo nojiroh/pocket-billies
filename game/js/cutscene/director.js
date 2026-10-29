@@ -103,7 +103,8 @@ export function cutsceneFlush() {
   if (talkBox.cur && cutscene.on) talkBox.cur.done();
 }
 function skipCutscene() {
-  if (!cutscene.on || cutscene.choosing || cutscene.dressing) return;
+  /* IN-4: nor while the lab scene's payout sheet is open */
+  if (!cutscene.on || cutscene.choosing || cutscene.dressing || cutscene.paying) return;
   cutscene.skip = true;
   cutsceneFlush();
 }

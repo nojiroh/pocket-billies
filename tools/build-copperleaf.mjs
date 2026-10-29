@@ -492,8 +492,8 @@ const life = TOWN.life.map(L => {
   });
 }
 
-/* ---------- the opening (cutscenes/opening.json): you wake outside the lab, so its spots, shots and the stage it keeps
-   clear move and turn with the lab's door (the shots' heights are above the ground: they stay) ---------- */
+/* ---------- the opening (cutscenes/opening.json; IN-4: and the lab scene, cutscenes/return.json): you wake outside the
+   lab, so its spots, shots and the stage it keeps clear move and turn with the lab's door (the shots' heights are above the ground: they stay) ---------- */
 {
   const was = OLD.find(p => p.act === 'lab'),
     now = kept.find(p => p.act === 'lab'),
@@ -517,6 +517,9 @@ const life = TOWN.life.map(L => {
     }),
     eyes: O.clear.eyes.map(e => mv(e[0], e[1])),
   };
+  /* IN-4: the lab scene after the first run (cutscenes/return.json) is filmed on the same set, so it gets the same */
+  if (D.cutscenes.return)
+    Object.assign(D.cutscenes.return, { spots: op.spots, shots: op.shots, clear: structuredClone(op.clear) });
 }
 
 /* ---------- the map ---------- */

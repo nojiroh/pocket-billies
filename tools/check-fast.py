@@ -527,6 +527,43 @@ def run_loop(pg, base):
 
 
 
+def run_way_back(pg, base):
+    """IN-4: the first run's end (the debug menu's "Jump to the pickup"): the Bureau's two clerks run up where it ended,
+    the stamp, the square portal (the run's phase 'return', stored at once); the way back takes the screen; a reload
+    there plays the lab scene; skipping stops at the dressing room and the payout (no keep-one cards: everyone comes
+    home), its Done goes back to the scene, and its end finishes the run: no run, you stand outside the lab door"""
+    drawing(pg)
+    if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    team = pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();uiState.pickupTest=true;runOver(false);saveData.team.length")
+    if not until(pg, "storyRun.on&&storyRun.id==='story:pickup-lost'", 20): raise Exception('the pickup didn’t play: ' + str(pg.evaluate("[storyRun.id,saveData.run&&saveData.run.at.phase,storyWorldOK()]")))
+    stored = pg.evaluate("(r=>r&&r.run&&r.run.at)(JSON.parse(localStorage.getItem(SAVE_KEY)))")
+    if not stored or stored.get('phase') != 'return': raise Exception(f'the way back isn’t stored: {stored}')
+    if not until(pg, "!!cutscene.actors.intake&&!cutscene.actors.intake.walk", 20): raise Exception('the first clerk never ran up')
+    if not until(pg, "!!cutscene.actors.outtake&&!cutscene.actors.outtake.walk", 20): raise Exception('the second clerk never came over')
+    pg.evaluate("storyRun.control&&(storyRun.control.skipping=true),talkBox.cur&&talkBox.cur.done(),0")
+    if not until(pg, "typeof cutscene!=='undefined'&&cutscene.on&&cutscene.back", 30): raise Exception('the way back never took the screen: ' + str(pg.evaluate("[storyRun.on,!!document.getElementById('backVeil'),cutscene.on]")))
+    pg.goto(base + '/index.html?fixture=stored')
+    LAB = "typeof cutscene!=='undefined'&&cutscene.on&&cutscene.back&&cutscene.set===CUTSCENES.return"
+    if not until(pg, LAB, 90): raise Exception('a reload on the way back didn’t play the lab: ' + str(pg.evaluate("[saveData.run&&saveData.run.at.phase,typeof cutscene!=='undefined'&&cutscene.on]")))
+    pg.evaluate("skipCutscene();0")
+    if not until(pg, "dressingRoom.on", 30): raise Exception('skipping didn’t stop at the dressing room')
+    pg.evaluate("saveDressingLook();0")
+    if not until(pg, "!dressingRoom.on", 10): raise Exception('the dressing room didn’t close')
+    pg.evaluate("skipCutscene();0")
+    if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-payout')", 30): raise Exception('no payout sheet in the lab scene')
+    cards = pg.evaluate("document.querySelectorAll('#ov pb-pick-card').length")
+    if cards: raise Exception(f'the lab’s payout asks who to keep ({cards} cards): everyone comes home on the first run')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    if not until(pg, "!uiState.modal&&!cutscene.paying", 10): raise Exception('Done didn’t close the payout')
+    pg.evaluate("skipCutscene();0")
+    if not until(pg, "!saveData.run&&saveData.meta.runs===1&&!cutscene.on", 30): raise Exception('the lab scene’s end didn’t finish the run: ' + str(pg.evaluate("[!!saveData.run,saveData.meta.runs,cutscene.on]")))
+    home = pg.evaluate("[uiState.roam&&uiState.roam.id,uiState.roam&&[uiState.roam.x,uiState.roam.z],CUTSCENES.return.spots.me,saveData.team.length,saveData.story.pending||'',saveData.meta.history[0]&&saveData.meta.history[0].end]")
+    if home[1] != home[2]: raise Exception(f'not outside the lab door: {home}')
+    # a jump with the party standing ends the run as given up (the history's 'quit'); fainted, 'lost'
+    if home[3] < team or home[4] or home[5] not in ('lost', 'quit'): raise Exception(f'home: team {home[3]} of {team}, pending {home[4]!r}, history {home[5]}')
+    return f'the pickup (two clerks), stored at once, the lab again after a reload, the dressing room, the payout with no cards, home by the lab door with {home[3]} Billies'
+
+
 def run_arena(pg, base):
     """WM-7: the run fixture's first mini-boss place has its leader's arena: walked there (runJump), its gate shut
     (shown while the leader is unbeaten), the leader standing in the ring; set down inside the ring, the camera's
@@ -1971,6 +2008,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
              ("A run's village: its name, its market stall's own shop of 2 held items, no Perk, Mo's fresh stock (WM-5)", run_village_stall)]),
     ('run', [("A seam on a day the weather changes the water in view: nothing built in one go, the day's water swapped in after (the crossing hitch)", run_seam_water)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
+    ('run', [("The first run's way back: the Bureau's pickup, the lab again after a reload, the payout at the lab, home by the lab door (IN-4)", run_way_back)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),

@@ -7,7 +7,10 @@
    owner's answer). Everyone else from Copperleaf comes back as they left. RL-9b: on a win the bag goes home (no items
    row), on a loss it is paid as Research. "Ride home" ends the run (run.js runEndHome; HB-8: the train home). RS-2: who is moving to
    Copperleaf (run.invited, won or lost: logic/run-state.js runEnd settles it after this screen).
-   Built from the run parts (js/ui-run-kit.js: pb-payout, pb-coin, pb-pick-card) in a sheet. */
+   Built from the run parts (js/ui-run-kit.js: pb-payout, pb-coin, pb-pick-card) in a sheet.
+   IN-4: the first run's payout is shown at the lab instead (cutscene/return-scene.js, run phase 'return'): Kappi
+   tallies it, everyone comes home (the first run's rule, won or lost: no keep-one picker), and "Done" goes back to the
+   scene, which finishes the run (run.js runEndLab). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { boardsFetch, boardsPayoutHTML, provide, renderOverlay } from './hooks.js';
@@ -28,6 +31,7 @@ import { runEndHome } from './run.js';
 expose({
   payoutRarity: [() => payoutRarity],
   runPayoutDone: [() => runPayoutDone, v => (runPayoutDone = v)],
+  runPayoutLabDone: [() => runPayoutLabDone, v => (runPayoutLabDone = v)],
   runPayoutNow: [() => runPayoutNow, v => (runPayoutNow = v)],
   runPayoutOpen: [() => runPayoutOpen, v => ((runPayoutOpen = v), provide({ runPayoutOpen }))],
 });
@@ -49,10 +53,14 @@ function runPayoutNow() {
     runItemPrice
   );
 }
-/** the payout screen: the sheet, locked (only "Ride home" leaves it); its rows play in once */
-function runPayoutOpen() {
+/** the payout screen: the sheet, locked (only "Ride home" leaves it); its rows play in once. IN-4: o.lab, the lab
+ * scene's (run phase 'return'): called when the sheet is done. Whether it opened
+ * @param {{ lab?: () => void }} [o] */
+export function runPayoutOpen(o = {}) {
   const run = saveData.run;
-  if (!run || run.at.phase !== 'payout') return;
+  if (o.lab) uiState.runPayoutLab = o.lab;
+  const lab = !!uiState.runPayoutLab && !!run && run.at.phase === 'return';
+  if (!run || (run.at.phase !== 'payout' && !lab)) return false;
   const won = !!run.at.won,
     pay = runPayoutNow(),
     /* RL-S2: the Beans found on the run (already kept) and a win's */
@@ -62,20 +70,25 @@ function runPayoutOpen() {
     keep = uiState.runKeep,
     who = run.invited && RESIDENTS[run.invited],
     moving = who ? `<p class="run-moving">${escapeHtml(QUESTS.invite.moving.replace(/\{name\}/g, who.name))}</p>` : '',
-    cards = won
-      ? ''
-      : `<p class="note">Pick one Billie to bring its run home. One from Copperleaf keeps what it learned; one caught on the run comes home with you. Everyone else from Copperleaf comes back as they left.</p><div class="bx-grid">${saveData.team
-          .map(
-            m =>
-              `<pb-pick-card data-u="${m.uid}"${payoutRarity(m)} heading="${escapeHtml(billyName(m))}" sub="${`Lv ${m.lvl} · ${runReleasePays(run, m) ? 'caught on the run' : 'from Copperleaf'}`}"${keep === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`
-          )
-          .join('')}</div>`;
+    cards =
+      won || lab
+        ? ''
+        : `<p class="note">Pick one Billie to bring its run home. One from Copperleaf keeps what it learned; one caught on the run comes home with you. Everyone else from Copperleaf comes back as they left.</p><div class="bx-grid">${saveData.team
+            .map(
+              m =>
+                `<pb-pick-card data-u="${m.uid}"${payoutRarity(m)} heading="${escapeHtml(billyName(m))}" sub="${`Lv ${m.lvl} · ${runReleasePays(run, m) ? 'caught on the run' : 'from Copperleaf'}`}"${keep === m.uid ? ' selected' : ''}><span slot="art">${rigCanvasHTML(m.sp, 64, { build: m.build, coat: m.coat, graft: graftLook(m) })}</span></pb-pick-card>`
+            )
+            .join('')}</div>`;
   const M = {
-    title: won ? 'You beat the run' : 'The run is over',
+    title: lab ? 'What you brought back' : won ? 'You beat the run' : 'The run is over',
     cls: 'run-payout',
     lock: true,
-    html: `<p>${won ? `The boss is down. The ${escapeHtml(trainName(trainOfRun(run)))} takes everyone home, with all they learned, and your bag goes into Copperleaf’s.` : 'A train comes for you through the portal. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${moving}${pay.crests || pay.scrap || beans ? `<p>${pay.scrap ? `<pb-chip kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-chip> ` : ''}${pay.crests ? `<pb-chip kind="crests" value="${pay.crests}" label="Crest"></pb-chip> ` : ''}${beans ? `<pb-chip kind="beans" value="${beans}" label="${escapeHtml(beans === 1 ? B.one : B.name)}"></pb-chip>` : ''}</p>` : ''}${typeof boardsPayoutHTML === 'function' ? boardsPayoutHTML(run.board) : ''}${cards}`,
-    btns: [{ l: 'Ride home', c: 'gold', dis: !won && !saveData.team.some(m => m.uid === keep), f: runPayoutDone }],
+    html: `<p>${lab ? `Kappi counts it up. It turns into Research, for the Lab, and ${won ? 'your bag goes into Copperleaf’s' : 'everyone you caught comes home with you'}.` : won ? `The boss is down. The ${escapeHtml(trainName(trainOfRun(run)))} takes everyone home, with all they learned, and your bag goes into Copperleaf’s.` : 'A train comes for you through the portal. What you found turns into Research, for the Lab.'}</p><pb-payout rows="${escapeHtml(JSON.stringify(rows))}" total="${pay.research}" total-label="Research"></pb-payout>${moving}${pay.crests || pay.scrap || beans ? `<p>${pay.scrap ? `<pb-chip kind="scrap" value="${pay.scrap}" label="Scrap, for the Ranch"></pb-chip> ` : ''}${pay.crests ? `<pb-chip kind="crests" value="${pay.crests}" label="Crest"></pb-chip> ` : ''}${beans ? `<pb-chip kind="beans" value="${beans}" label="${escapeHtml(beans === 1 ? B.one : B.name)}"></pb-chip>` : ''}</p>` : ''}${typeof boardsPayoutHTML === 'function' ? boardsPayoutHTML(run.board) : ''}${cards}`,
+    btns: [
+      lab
+        ? { l: 'Done', c: 'gold', f: runPayoutLabDone }
+        : { l: 'Ride home', c: 'gold', dis: !won && !saveData.team.some(m => m.uid === keep), f: runPayoutDone },
+    ],
     after: () => {
       const el = /** @type {any} */ (document.querySelector('#ov pb-payout'));
       /* SND-6: a coin for each row as it shows, a step higher each, then the run's end when the total lands: run_won
@@ -114,6 +127,18 @@ function runPayoutOpen() {
   uiState.mq = uiState.mq.filter(q => q.cls !== 'run-payout');
   uiState.modal = M;
   renderOverlay();
+  return true;
+}
+/** IN-4: the lab's "Done": the sheet closes and the scene goes on (the run ends at the scene's end) */
+function runPayoutLabDone() {
+  const done = uiState.runPayoutLab;
+  uiState.runPayoutLab = null;
+  uiState.runPayoutPlayed = false;
+  uiState.runPayoutSung = false;
+  uiState.runPayoutBoards = false;
+  uiState.modal = null;
+  renderOverlay();
+  if (typeof done === 'function') done();
 }
 /** "Ride home": the kept Billies (the whole party on a win), then the run ends */
 function runPayoutDone() {

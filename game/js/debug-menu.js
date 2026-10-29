@@ -325,7 +325,7 @@ function debugHTML() {
   const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
-    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
+    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugButtonHTML('pickupwin', 'Jump to the pickup (win)')}${debugButtonHTML('pickuplose', 'Jump to the pickup (loss)')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRelic',
         Object.keys(PERKS).map(k => [k, PERKS[k].name]),
         uiState.dbgRelic || Object.keys(PERKS)[0] || ''
@@ -940,6 +940,15 @@ function debugAction(x) {
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
       uiState.modal = null;
       runOver(x === 'runwin');
+      return;
+    /* IN-4: this run ends the first run's way: the Bureau's pickup here, the fall, the lab (cutscene/return-scene.js) */
+    case 'pickupwin':
+    case 'pickuplose':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      uiState.modal = null;
+      render();
+      uiState.pickupTest = true;
+      runOver(x === 'pickupwin');
       return;
     case 'fillq': {
       /* a town without wild Billies gets a route's worth, so there is always something to test with */

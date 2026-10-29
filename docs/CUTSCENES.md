@@ -6,7 +6,8 @@ named spots and shots, and its script. Maps stay pure level data, and a cutscene
 whole. The story layer's scripts (docs/SCRIPTS.md) are the language; this page covers what a cutscene adds.
 
 Today: `city` (the city at night, before the fall; not played since RL-8, and its map `city_opening` is parked in
-`game/data/legacy` since the test cleanup, kept for the story to bring back) and `opening` (Copperleaf, after the fall). The
+`game/data/legacy` since the test cleanup, kept for the story to bring back), `opening` (Copperleaf, after the fall) and
+`return` (intro track IN-4: the lab scene after the first run, on the opening's set; below, "The way back"). The
 Studio's cutscene tools (save the free camera as a shot, drop spots as pins, a step list with Preview) are the plan's
 session 2, not built yet (docs/HANDOFF.md).
 
@@ -83,10 +84,31 @@ it and of the starter pick, which looks across the three starters from the side 
 
 ### The opening's own
 
-`dressing-room` (you make yourself up), `throw-coins` (the professor's coins pop open on the spots star1 to star3),
+`dressing-room` (you make yourself up; the lab scene's too), `payout` (the lab scene's: the payout sheet), `throw-coins` (the professor's coins pop open on the spots star1 to star3),
 `pick-starter` (the pick card; afterwards `{starter}`, `{counter}` and the place `starter` are known), `staged-fight`
 (the Chosen against Blake, staged; Project Story S6 makes it a real battle; `{foe}` after it), `rival-battle` (Blake's
 battle follows the opening), `fall`. Skipping stops at the dressing room and the pick.
+
+### The way back (intro track IN-4)
+
+The first run (the intro's prepared run, `run.first`; the debug menu's "Jump to the pickup (win / loss)" on any run)
+ends another way than a run's payout and train (run.js `runOver`; the run's phase is `return` at once, so a reload in
+the pickup or the fall opens the lab):
+1. **The pickup**, where the run ended: story.json `pickup-lost` or `pickup-won` on the story stage (`camera run-up`,
+   two Bureau clerks walk over beside you, `[stamp=returned]` "Returned to sender" or `[stamp=recovered]` "Recovered
+   property" on the Bureau's bubble, then `portal`: the square portal opens under you and you drop through it; its
+   light stays on screen as a white veil, `#backVeil`).
+2. **The fall**, `fallPlay(run, { from: 'portal' })` (opening-fall.js): the portal's light as its first picture
+   (`fallPortal`), then the world map's dive with no captions, onto the opening's spot `me`. The street and the crust
+   stay for the story.
+3. **The lab**, cutscenes/return.json (cutscene/return-scene.js): wake, Chosen and Kappi, `dressing-room` (look and
+   name are made here now), `payout` (the payout sheet over the scene: Kappi tallies the run, everyone comes home, its
+   Done goes back to the scene; skipping stops here), the expeditions. Its end finishes the run (run.js `runEndLab`:
+   the same `runEnd`, no train) and you stand outside the lab door. It can't run (no 3D view) or breaks: the run still
+   ends the same way.
+
+Its set is the opening's: `tools/build-copperleaf.mjs` gives return.json the opening's spots, shots and clear whenever
+it moves them with the lab door (return-script.test.mjs checks they are the same).
 
 ## Skipping
 
@@ -107,7 +129,8 @@ are a problem: they play only in a cutscene. Tests: `tools/test/opening-script.t
 | `game/js/logic/cutscene-set.js` | reads what a cutscene command says (one reading for the stage, the checks and the Studio); the set in the view: the map's corner, a shot's heights on the ground, what is cleared. Logic only, tested in Node. |
 | `game/js/cutscene/director.js` | the state, timing that resolves while skipping, the camera, the people, what the engine draws each frame (plus each cutscene's own layers), the overlay, the dialogue, the teardown |
 | `game/js/cutscene/stage.js` | plays a cutscene's script on the director: every command above; `cutscenePlayScript(id, { extra, slots })` |
-| `game/js/cutscene/opening.js` | the opening: mounts Copperleaf after the fall, clears the set, plays `opening` with its own commands, starts the game |
+| `game/js/cutscene/opening.js` | the opening: mounts Copperleaf after the fall, clears the set, plays `opening` with its own commands, starts the game; `cutsceneBegin` and `cutsceneMount`, shared with the way back |
+| `game/js/cutscene/return-scene.js` | IN-4, the way back: the fall from the portal, the lab scene (`return`) with the dressing room and the payout, the run finished at the lab door |
 | `game/js/cutscene/starter-pick.js` | the three starters drawn with their rigs and the pick card |
 | `game/js/cutscene/staged-fight.js` | the professor's staged fight (until S6) |
 
