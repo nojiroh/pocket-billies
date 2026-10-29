@@ -2591,7 +2591,7 @@ export interface BattleAnimsData {
   defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
   intro: BattleAnimStep[];
   families: Record<DataId, BattleAnimFamily>;
-  scenes: Record<DataId, BattleAnimFamily>;
+  scenes: Record<DataId, BattleAnimScene>;
   /** VFX-15: the battle mood (logic/battle-stage-look.js battleMoodFor) */
   moods?: BattleMoods;
   /** VFX-15: the walk weather on the battle stage */
@@ -2917,6 +2917,11 @@ export interface BattleAnimFamily extends BattleAnimTimeline {
   /** VFX-13: its own miss (a whiff that fits it) */
   miss?: BattleAnimTimeline;
 }
+/** VFX-17: a signature scene: a family's shape, the family it plays where its models can't be drawn or under Reduced
+ * motion, and its short version (the prop and the hit) for its second use in a battle and the Faster speed */
+export interface BattleAnimScene extends BattleAnimFamily {
+  family: string;
+}
 /** a step: what it does, when (stage ms), its gates and its own numbers */
 export interface BattleAnimStep {
   do: string;
@@ -2938,7 +2943,10 @@ export interface BattleAnimStep {
   ramp2?: string;
   path?: string;
   part?: 'cast' | 'hit';
-  icon?: string;
+  /** VFX-17: or several icons, taken in turn */
+  icon?: string | string[];
+  /** VFX-17: a prop step's model (a recipe id in game/art/scene/next/models) */
+  prop?: string;
   [k: string]: unknown;
 }
 /** WM-7: arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's

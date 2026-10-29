@@ -111,7 +111,7 @@
   },
   "intro": {"description": "steps every move plays first", "type": "array", "items": {"$ref": "#/$defs/step"}},
   "families": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}},
-  "scenes": {"description": "signature scenes by id (VFX-17); a family's shape", "type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}},
+  "scenes": {"description": "signature scenes by id (VFX-17): a family's shape, the family it plays where its models can't be drawn or under Reduced motion, and its short version (the prop and the hit) for its second use in a battle and the Faster speed", "type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/scene"}},
   "moods": {"description": "VFX-15: the battle mood over the place mood (logic/battle-stage-look.js battleMoodFor; the grade pass): a darken and a type tint on big moves and super-effective hits, the row wave, heat", "type": "object", "required": ["dark", "tint", "inMs", "outMs", "superEffective", "bureau", "wave", "heat"], "additionalProperties": false, "properties": {
    "about": {"type": "string"},
    "dark": {"description": "how much darker, at most .2 (the owner's pick)", "type": "number", "minimum": 0, "maximum": 0.2},
@@ -261,22 +261,35 @@
    },
    "additionalProperties": false
   },
+  "scene": {
+   "allOf": [{"$ref": "#/$defs/timeline"}],
+   "type": "object",
+   "required": ["family"],
+   "properties": {
+    "about": {"type": "string"},
+    "family": {"description": "VFX-17: the family it plays instead (3D props off, its models not loaded, Reduced motion)", "$ref": "#/$defs/id"},
+    "dur": true, "hit": true, "steps": true,
+    "short": {"description": "VFX-17: the repeat (its second use in a battle) and the Faster variant: the prop and the hit, no wind-up", "$ref": "#/$defs/timeline"}
+   },
+   "additionalProperties": false
+  },
   "step": {
    "type": "object",
    "required": ["do"],
    "properties": {
-    "do": {"enum": ["focus", "camAt", "camTo", "camHome", "toTarget", "handheld", "action", "lunge", "dust", "ring", "groundRing", "beam", "lob", "fling", "converge", "blink", "dodge", "pop", "hit", "projectile", "ray", "impact", "spray", "rain", "orbit", "rise", "light", "shake", "jump", "pulse", "kit", "beat"], "description": "VFX-13 adds beat (a flurry's lighter hit on the beat, each repeat harder, the last the hit itself). VFX-11 adds: projectile (a sprite flying on a path from one Billie to another, a trail of copies behind it), ray (a beam strip with its caps), impact (one strip at a Billie), spray (strips thrown out, or toward a Billie), rain (strips falling round a Billie), orbit (strips circling a Billie), rise (strips rising, or falling with down), light (a point light in the kit's colour), shake, jump (a Billie up and down again), pulse (a ring flying to a Billie), kit (the kit's cast or hit steps)"},
+    "do": {"enum": ["focus", "camAt", "camTo", "camHome", "toTarget", "handheld", "action", "lunge", "dust", "ring", "groundRing", "beam", "lob", "fling", "converge", "blink", "dodge", "pop", "hit", "projectile", "ray", "impact", "spray", "rain", "orbit", "rise", "light", "shake", "jump", "pulse", "kit", "beat", "prop", "stamp", "cut"], "description": "VFX-17 adds: prop (a low-poly model, game/art/scene/next/models/<prop>.json, flown on a path to its place: from above, below, the side or the attacker; held, then eroded), stamp (a drawn sound word, a strip, stepped in from big to its size), cut (the camera cuts to a Billie with the impact frame, through Flashes and the flash limiter). VFX-13 adds beat (a flurry's lighter hit on the beat, each repeat harder, the last the hit itself). VFX-11 adds: projectile (a sprite flying on a path from one Billie to another, a trail of copies behind it), ray (a beam strip with its caps), impact (one strip at a Billie), spray (strips thrown out, or toward a Billie), rain (strips falling round a Billie), orbit (strips circling a Billie), rise (strips rising, or falling with down), light (a point light in the kit's colour), shake, jump (a Billie up and down again), pulse (a ring flying to a Billie), kit (the kit's cast or hit steps)"},
     "at": {"description": "stage ms after the move starts (missing: at once)", "type": "number", "minimum": 0},
     "n": {"description": "repeats (every ms apart)", "type": "integer", "minimum": 1},
     "every": {"type": "number", "minimum": 0},
     "if": {"description": "VFX-11 adds drain, heal, drop (it lowers a foe's stat), spread (it hits every foe), aim (it hit a robot's part it aimed at), bureau (a Bureau bot's move)", "type": "array", "items": {"enum": ["H", "S", "X", "self", "protect", "dmg", "landed", "power80", "gl", "motion", "drain", "heal", "drop", "spread", "aim", "bureau", "!H", "!S", "!X", "!self", "!protect", "!dmg", "!landed", "!power80", "!gl", "!motion", "!drain", "!heal", "!drop", "!spread", "!aim", "!bureau"]}},
     "types": {"type": "array", "items": {"type": "string"}},
     "on": {"enum": ["attacker", "target", "subject", "foe", "wide", "past"]},
-    "from": {"enum": ["attacker", "target", "subject", "foe"]},
+    "from": {"description": "VFX-17: a prop also flies from above, below, side (off the stage beyond the attacker) or behind (behind the attacker)", "enum": ["attacker", "target", "subject", "foe", "above", "below", "side", "behind"]},
+    "prop": {"description": "VFX-17: a prop step's model, a recipe id in game/art/scene/next/models", "$ref": "#/$defs/id"},
     "to": {"enum": ["attacker", "target", "subject", "foe", "past"]},
     "toward": {"enum": ["attacker", "target", "subject", "foe", "past"]},
     "spr": {"description": "VFX-11: a strip (sprites) or a kit role (shot, impact, small, bits), or several taken in turn", "oneOf": [{"$ref": "#/$defs/id"}, {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1}]},
-    "icon": {"description": "VFX-11: an icons.png particle instead of a strip", "type": "string"},
+    "icon": {"description": "VFX-11: an icons.png particle instead of a strip; VFX-17: or several, taken in turn (a scene's icon props)", "oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}, "minItems": 1}]},
     "ramp": {"description": "VFX-11: the ramp a strip takes (ramps; the kit's when left out)", "type": "string"},
     "ramp2": {"type": "string"},
     "path": {"enum": ["kit", "straight", "arc", "zigzag", "spiral", "wave", "stamp"]},

@@ -146,6 +146,135 @@ written here, recommended options taken and listed below. Draft PR #295 updated.
   target, the delayed hit, a burn) that knocks out (koAhead reads move lines only); editing the families' misses in
   the Studio (the Families pane only shows them).
 
+### VFX track VFX-17 - Signature scenes 1: summoned models, the drawn stamp, the cut, 18 scenes with a short repeat - 2026-10-28
+Side branch `claude/vfx-17-scenes-1` (wave 3, beside VFX-13 on `track/vfx` and VFX-19 on `claude/vfx-19-move-sounds`),
+made from `track/vfx` at 7f957898 (VFX-11); `origin/track/vfx` merged in at ef0696af (8dc9583d: VFX-11's finish,
+VFX-12, VFX-14, VFX-16, main and VFX-13's first commits) and again after the full check (f0af6ddb: VFX-13's tiers
+and the flurry's beats; the snapshot remade, only the 18 scene moves differ; traces of six scenes clean), then
+5d7152e3 and b475bb15 (VFX-13's misses per family: a scene's miss is its family's whiff; its test reads
+`scenes.<id>.family`); draft PR
+#324 into `track/vfx`. Run under the owner's
+standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No
+tag (main's CLAUDE.md). Told first: VFX-19 (the files and keys), the main line (VFX-11, then VFX-13: the same, and
+that scenes use the plain `hit` step), the style coordinator (the stamp is not pb-stamp; `impactCut`; after pushing,
+the commits). No sound file touched.
+- The plan: read the resolver, runner, stage kit and `pyramidWorldItem`; check each power in moves.json; write the
+  batch's storyboards into vfx-track.md and commit them first; then the primitives (summoned models with smears, the
+  stamp, the cut, a scene's fallback and repeat) with their schema, types and checks; the scenes as data; tests and
+  the snapshot; films of every scene; tune; measure against track/vfx's head; merge track/vfx; the full check; docs.
+- Changed (one cause per commit):
+  - Storyboards (516a7327): 18 one-liners in vfx-track.md "Signature scenes", before any scene was built.
+  - Art (5851a68c): tools/build-battle-anims.py draws stamped words from pixel letters (GLYPHS, `word()`): word_siu
+    "SIU!", word_kaching "KA-CHING!", word_toot "TOOT!" (7 px tall, a dark outline, held whole then wearing off over
+    two frames); battleAnims.json `sprites` names them.
+  - Primitives (1ab0ab6d): battle-3d.js `propWorldItem(path, x, y, z, spin, s, rot, o)`, which `pyramidWorldItem`
+    now calls; `battlePropsPreload` (battle3dAttach asks for every scene's models at the battle's start);
+    `battlePropsReady`; `battle3dProps` draws battleStage.props (a list that was there, empty, from the painted stage)
+    on their paths with the thrown pyramid's afterimages and, on fast cells, its stretch, then erodes them in 12 fps
+    steps; a stamped word's particle steps in at +2, +1, its size, one 24 fps cell each. logic/battle-anims.js
+    `battleSceneFallback`, `battleSceneProps`, `battlePropAt`, the timeline's `repeat` and the anim line's ' repeat'.
+    battle-anim-run.js `animSceneStep` (from animFamilyStep's default): `prop`, `stamp`, `cut`; icon props
+    (`icon`, one or several, in animStrip); battleAnimPlay passes `props` and `seen` and drops the props at the move's
+    end or a skip. battle-stage.js: `battleStage.scenesSeen` (battleStageStart), `impactCut` in the stage kit.
+    Schema `$defs/scene` (`family` required, `short`), the steps prop/stamp/cut, `prop`, `from` above/below/side/
+    behind, icon lists; types `BattleAnimScene`; `dataBattleAnims`: a scene's family exists, a scene fits its moves'
+    maxMs + extraMs and its short version maxMs, a prop step names a model. look-battle-anims.py `--cells=`,
+    `--repeat`; a film clears the scenes seen.
+  - Scenes (8bc5197a, tuned in 313a1e99): battleAnims.json `scenes`, 18, each with `family` (the family it had) and
+    `short`; moves.json `anim` of the 18 is its scene. Times (H maxMs 880, S 1060; the cap +500): Tower Drop 1300,
+    Library Slam 1300, Siu! 1340, Full Steam 1360, Developers! 1340, The Decision 1300, Concrete Pour 1340, Blast
+    Furnace 1360, Standard Oil 1300, Billions Served 1300; Golden Caravan 1500, Zero to One 1540, Vision Fund 1540,
+    Hallucinate 1500, Open Sesame 1500, Yacht Race 1500, Flatpack 1500, Cut To 1060; each short 800-1000.
+    tools/test/battle-scenes.test.mjs (8); battle-anims.test.mjs: VFX-8's "no longer" allows a scene its extraMs,
+    VFX-11's family table counts a scene's move under its family; the snapshot remade on purpose (only the 18 moves'
+    6 landing outcomes; miss and blocked unchanged).
+  - No scene stamp against a Bureau bot (6e3421ab), at the style coordinator's request: SY-5 stamps its knockout.
+  - studio/art-code-refs.json regenerated (64cc6a91; it records line numbers, so each code change regenerates it).
+- Where the track file was wrong or vague (checked in the code):
+  - `pyramidWorldItem` was at battle-3d.js ~708, not B3 486. `battleStage.props` already existed (an empty list from
+    the painted stage, reset in battleStageStart, read by nothing): reused for the summoned models.
+  - The +0.5 s rule was built in VFX-8 (`longPower` 100, `extraMs` 500, a scene or power 100+, none under Reduced
+    motion) and `scenes` (empty, a family's shape) with it; the Moves editor's dropdown and the Studio's type rename
+    already covered scenes. VFX-17 added the scene's own shape (`family`, `short`) and the checks.
+  - The icon atlas's megaphone is `mega`. The models: city_tower_slab (the tower; 58 m tall at full size),
+    library, market_cart, train_greenbelt, fishing_boat, crate_goods, plus barrel, wheelbarrow, fireplace (the
+    furnace) and stall.
+  - Rule 2's "summoned models keep the world's 32 px/m": a model scaled down to the battle's size (the tower x0.05,
+    the train x0.24) scales its texels with it, so they are finer than 32 px/m. Kept: a full-size tower would be 58 m.
+  - The film tool plays every film in one battle, so a scene filmed twice would show its short version: films clear
+    `scenesSeen`, and `--repeat` films the short version on purpose.
+  - The 12 power-100+ moves are as listed (powers 100-120), and no other signature move has power 100+ (a test).
+- Decided for the owner, to review:
+  - The 18 storyboards (taken as approved, written before building; "Signature scenes" in vfx-track.md). The 6 more:
+    Library Slam, Cut To, Open Sesame, Yacht Race, Flatpack (the track's examples) and Billions Served.
+  - A repeat of a scene within a battle plays its short version from the second use: the prop and the hit, no
+    wind-up (recommended); Faster plays the same short version; every short version fits the move's old maxMs.
+  - Under Reduced motion a scene plays its family (the meaning without the motion; no models, no extra time). With 3D
+    props off, on the 2D stage, or when a model hasn't loaded yet, a scene with models plays its family too; Siu! and
+    Cut To have no model and play anyway (not under Reduced motion).
+  - Stamped words: SIU!, KA-CHING!, TOOT! only (sound words, rule 10), in the move's type ramp (KA-CHING! gold);
+    none when a foe is a Bureau bot.
+  - Cut To's two-tone frame is the impact frame (`coin` kind) and counts as one full-screen flash for the limiter;
+    none with Flashes off or under Reduced motion (the camera cut alone).
+  - Props and placement: a tower, the library and a drum drop from above; the market cart and crates arc from the
+    attacker; the train and the boat come from beyond the attacker; the stall rises beside the foe; the furnace rises
+    beside the attacker; the wheelbarrow tips over the foe. Icon props (mega, mic, chart at the attacker k 1; rocket,
+    burgers k 2; tv, dice, phone, the stall's goods k 2) keep the icons' own pixels.
+  - No sound of its own: VFX-19 plays a scene's family's sound through `scenes.<id>.family` (agreed by message).
+  - Scenes use the plain `hit` step, so VFX-13's tiers apply to them unchanged.
+- Measurements (headless, software GPU, quality 0, the town fixture, side 0, a hit; before = track/vfx 7f957898 in a
+  worktree with its own tool, the moves playing their families; after = this branch at 313a1e99; one after the other
+  on an idle machine; towerdrop, fullsteam, goldencaravan, flatpack, visionfund, siu):
+  - The pool's own draws (`battleFx`) 3 at most in every film, before and after (budget 3); the effects pass's draws
+    91 at most, before and after.
+  - All draws a frame at the busiest frame: 971.5 mean before, 1061.8 after (the models in their passes plus their
+    afterimages: about +90 at the peak, only while a model is up; Siu! has no model and is +144 from its stamp and
+    trail cells: noisy).
+  - Time a frame during the move: 900.8 ms mean before, 715.4 after (p90 3012 -> 2611): software rendering, only the
+    direction counts; no slowdown shows.
+  - Effect lights: the families' kinds only (the hit's `light`, a lit projectile in Siu! and The Decision, the
+    furnace's glow in Blast Furnace), all through battle3dEffectLights' budget (3/2/1/0 by quality, 2 on phones);
+    the models add none.
+  - Times: every scene at most its category's maxMs + 500 ms (the data check and tests), none longer under Reduced
+    motion (it plays its family, at most maxMs), every short version within maxMs.
+- Films (look-battle-anims.py `--sheets --cells=20 --outcomes=hit --sides=0`, in the scratchpad, not committed): all
+  18. Seen: the tower falling with afterimages onto the foe, the dust ring, holding, eroding away; the library and its
+  pages; Siu!'s jump and the stamp over it; TOOT! and the train crossing through the foe; the cart's arc, coins in gold
+  and indigo, KA-CHING!; the megaphone and three shouts; the mic, the leap and slam; the wheelbarrow tipping and
+  pebbles pouring; the furnace and flames; the drum bursting; the rocket's arc; coins into the attacker, the chart,
+  the wide ray; three wrong things orbiting; Cut To's two-tone frame and the camera on the reeling foe; the stall and
+  its goods; the boat; three crates stacking. Tuned from them (313a1e99): the boat bigger and afloat, the stall and
+  furnace off the camera's line, icon props at the attacker smaller. `--repeat` (towerdrop, goldencaravan): the
+  short version, over in under a second. Traces of all 18 x hit, crit, miss, blocked, both sides, after the merge:
+  no errors; a miss and a block play their own.
+- Risky:
+  - Draws on the phone: a model and its afterimages add about 90 draws while it is up (the phone's budget is 400 a
+    frame and the frame here is ~1000 headless at quality 0, so the phone's own count needs the debug log).
+  - A model's heading follows the attack line (its +x toward the foe); filmed from your side only: a foe's scene
+    (side 1) ran in the traces without errors but wasn't looked at.
+  - A scene's models must load before its first use; the battle asks for them at its start, and a scene whose models
+    aren't in yet plays its family silently (the anim line says `family:`).
+  - Big models near the camera (the train from beyond the attacker, the cart's arc) pass close to the lens for a few
+    cells; the smears skip copies within 2 m of it.
+- Phone checks for the owner (listed, not waited for): each of the 18 scenes once (Tower Drop, Library Slam, Siu!,
+  Full Steam, Golden Caravan, Developers!, The Decision, Concrete Pour, Blast Furnace, Standard Oil, Zero to One,
+  Vision Fund, Hallucinate, Cut To, Open Sesame, Yacht Race, Flatpack, Billions Served); the short repeat (the same
+  scene twice in one battle); one at Faster; one under Reduced motion (its family) and with 3D props off; a foe using
+  one (the model's heading); the frame rate while a tower or the train is up; the stamped words read at phone size.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text and build before each commit;
+  `npm test` 1974 of 1974 on the merged head; `build-battle-anims.py --check` (47 sprites). Smoke: the primitives
+  commit in a worktree 6 of 7 (the Actions sheet's "town fixture never got ready" at 322 s, while the films loaded the
+  machine); CI smoke on 516a7327, 6e3421ab and 313a1e99: red only on "Camera follow ... the page stopped drawing"
+  (known), once "The world map opens as the bowl" (known) and once "Every screen opens" (passes alone here 2 of 2;
+  it never enters a battle); CI lint red on 8bc5197a (art-code-refs, fixed in 64cc6a91). Full quick check on the
+  merged head ef0696af: 36 of 42 in 2393 s. Main's or load's: Terraces (train_station in the air), RL-8's seam (never
+  shown), the walking step's room light (all three on the known list); "Starters ... battle rig buffers nearly empty",
+  "Run map music hears the forecast" and "Ground tiles ... the lab's room didn't open in place" each pass alone here
+  (Starters and the music once, Ground tiles 2 of 2 on this head and once on track/vfx's 8dc9583d): the machine
+  had just run the films. The in-game battle steps (A battle plays to the end, the Voltron, a run's battles) passed.
+- Next: VFX-13 merges this branch into `track/vfx`; VFX-18 builds the other 38 scenes (and the bots' and the boss's
+  specials) on these primitives.
+
 ### VFX track VFX-16 - Battle flow: the VS splash, send-out, recall, catch, faint, level-up, items, victory and defeat - 2026-10-28
 Side branch `claude/vfx-16-battle-flow` (wave 2, beside VFX-11 on `track/vfx` and VFX-14 on `claude/vfx-14-statuses`),
 made from `track/vfx` at 868e6f30 (VFX-10's head); `track/vfx` merged in twice (438f9396: VFX-15 and main's #317;

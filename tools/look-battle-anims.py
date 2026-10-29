@@ -32,6 +32,8 @@ gives the same film.
     python3 tools/look-battle-anims.py --vs [--only=crude,blake,boss]    # VFX-16: the VS splash, in and out
     python3 tools/look-battle-anims.py --only=zip --measure --weather=rain   # in a weather (VFX-15)
     python3 tools/look-battle-anims.py --bench                # time a frame on the Graphics bench (VFX-15)
+    python3 tools/look-battle-anims.py --only=towerdrop --sheets --cells=20 --outcomes=hit --sides=0   # a scene (VFX-17)
+    python3 tools/look-battle-anims.py --only=towerdrop --sheets --repeat   # its second use: the short version
     python3 tools/look-battle-anims.py --events --sheets     # VFX-14: statuses, stats and short effects (EVENT_FILMS)
     python3 tools/look-battle-anims.py --events --only=shield,brn --sheets --motion=calm   # Calm, or reduced
     python3 tools/look-battle-anims.py --events --measure    # their draws and frame time
@@ -65,6 +67,9 @@ if OPT.get('outcomes'): OUTCOMES = str(OPT['outcomes']).split(',')
 SIDES = [int(v) for v in str(OPT.get('sides') or '0,1').split(',')]
 FRAMES, EVERY = 96, 3
 WEATHER = str(OPT.get('weather') or '')
+# VFX-17: --cells=20 for a longer sheet (a signature scene runs to 1.56 s; 16 cells show 1.2 s); --repeat films a
+# scene's second use in a battle (its short version)
+CELLS = int(OPT.get('cells') or 16)
 
 # Math.random seeded from the start (util.js keeps the Math.random it finds when it loads), reseeded per film
 SEEDED = """(()=>{let s=1;window.__seed=n=>{s=(n>>>0)%2147483646+1};Math.random=()=>{s=s*16807%2147483647;return (s-1)/2147483646}})()"""
@@ -81,6 +86,7 @@ T.clear();S.lockQ=true;S.q.lvl=0;
 const r3=v=>Math.round((+v||0)*1000)/1000;
 __film.hash=k=>{let h=2166136261;for(let i=0;i<k.length;i++){h^=k.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0};
 __film.reset=()=>{S.tws.length=0;S.evs.length=0;S.parts.length=0;S.impact=null;S.shk=0;S.hold=0;S.coin=null;S.ring=null;S.calm=false;S.t=1e5;
+ S.props=[];if(S.scenesSeen)S.scenesSeen.clear();
  S.leafy.length=0;S.glint.length=0;if(typeof battleAnim!=='undefined'){battleAnim.flashes.times.length=0;battleAnim.cur=null}
  S.s.forEach(s=>{Object.assign(s,{ox:0,oy:0,sc:1,a:1,white:0,dark:0,act:null,blinkUntil:0,lunge:null,trail:null,seed:1,rise:null})});
  const home={x:0,y:1.6,z:0,yaw:0,hz:0};Object.assign(S.cam,home);Object.assign(S.V,home);Object.assign(S.drift,{w:0,tq:-1,x:0,y:0,z:0,yaw:0,hz:0});
@@ -93,6 +99,8 @@ __film.snap=(t0,vt)=>{const f=document.getElementById('flash'),w=document.getEle
   ['x','y','z','yaw','hz'].map(k=>r3(S.cam[k])),r3(S.css.r),r3(S.css.z),r3(S.shk),S.hold>vt?1:0,r3(S.hand.a),r3(S.dof.zf),r3(S.dof.ap),S.focusK,
   f?[f.style.opacity,f.style.background]:0,(w&&w.classList.contains('ca'))||S.ca?1:0,S.impact?1:0,
   p?[...p.children].map(e=>e.className+':'+e.textContent).join('|'):''])};
+/* VFX-17: with --repeat, the move's scene counts as played before in this battle (its short version plays) */
+__film.seen=mid=>{if(__film.rep&&MOVES[mid]&&MOVES[mid].anim){S.scenesSeen=S.scenesSeen||new Set();S.scenesSeen.add(MOVES[mid].anim)}};
 /* an outcome's move event, as the Studio's Battle effects builds it (VFX-12: logic/battle-anims.js) */
 __film.an=(mid,si,res)=>battleAnimPreviewEvent(mid,MOVES[mid],si,res.split('+')[0]);
 /* VFX-13: an outcome with +ko or +last knocks the target out (the last KO: the freeze); the line carries koAhead's */
@@ -102,12 +110,12 @@ __film.ka=(si,res)=>{const k=res.split('+')[1];return k?{ko:true,si:[1-si],last:
 __film.play=(key,mid,si,res,frames,every)=>{const ev={s:activeBattle.events[activeBattle.events.length-1].s,ka:__film.ka(si,res)},pn=performance.now,st=window.setTimeout,timers=[];
  let vt=pn.call(performance)+1e7;performance.now=()=>vt;window.setTimeout=(fn,ms)=>{timers.push({t:vt+(+ms||0),fn});return 0};
  const out={key};try{__film.reset();__seed(__film.hash(key));const t0=S.t,F=__film.tasks.get('scene').fn;
-  out.r=battleStagePlay(__film.an(mid,si,res),ev);out.trace=[];
+  __film.seen(mid);out.r=battleStagePlay(__film.an(mid,si,res),ev);out.trace=[];
   for(let i=0;i<frames;i++){vt+=16;timers.sort((a,b)=>a.t-b.t);while(timers.length&&timers[0].t<=vt)timers.shift().fn();F(vt,16);if(i%every===0)out.trace.push(__film.snap(t0,vt))}
  }catch(e){out.err=String(e&&e.stack||e)}finally{performance.now=pn;window.setTimeout=st}return out};
 /* a sheet's film: the same, the walk renderer's frame task stepped with the stage's, a picture after every block */
 __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;
- const ev={s:activeBattle.events[activeBattle.events.length-1].s,ka:__film.ka(si,res)};return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
+ const ev={s:activeBattle.events[activeBattle.events.length-1].s,ka:__film.ka(si,res)};__film.seen(mid);return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
 /* VFX-14: an events film: lines at film times (ms), each an event (or none) and the snapshot changes it brings (mods:
    [{i, st, fx, stg, hp}]) on the snapshots before; its looks take the line when its plates would repaint */
 __film.snaps=(base,mods)=>{const s=JSON.parse(JSON.stringify(base));for(const m of mods||[]){const x=s[m.i];if(!x)continue;if('st' in m)x.st=m.st;
@@ -206,9 +214,10 @@ def pick(moves):
 FLOWS = ['enter.0', 'enter.1', 'recall.0', 'faint.1', 'faint.bot', 'lvl.0', 'item.0', 'caught', 'escape', 'win', 'lose']
 
 
-def sheet(pg, key, mid, si, res, start=None, n=16, every=5):
+def sheet(pg, key, mid, si, res, start=None, n=None, every=5):
     from PIL import Image, ImageDraw
     pg.evaluate(start or f"__film.start({json.dumps(key)},{json.dumps(mid)},{si},{json.dumps(res)})")
+    n = n or CELLS  # VFX-17: --cells= for a longer sheet
     # VFX-9: the battle's menu, ticker and plates hidden (they cover most of the stage at this size), the pops kept
     pg.evaluate(HIDE_UI)
     shots = []
@@ -382,6 +391,7 @@ def main():
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
         pg.evaluate(MOTION_JS[MOTION])
+        if 'repeat' in OPT: pg.evaluate("__film.rep=true;0")
         if WEATHER == 'sand': pg.evaluate("battleStage.oil=true;0")
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
         if 'events' in OPT and 'measure' not in OPT:

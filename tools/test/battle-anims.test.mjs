@@ -57,7 +57,7 @@ const bare = mid => {
   return M;
 };
 
-test('every move in 8 outcomes, on the 3D stage and off it, plays no longer than it did (VFX-11: at most maxMs)', () => {
+test('every move in 8 outcomes, on the 3D stage and off it, plays no longer than it did (VFX-11: at most maxMs; VFX-17: a scene + extraMs)', () => {
   let n = 0;
   for (const mid of Object.keys(MOVES))
     for (const res of OUTCOMES)
@@ -66,7 +66,10 @@ test('every move in 8 outcomes, on the 3D stage and off it, plays no longer than
           const an = moveAn(mid, res),
             T = battleAnimTimeline(an, MOVES[mid], { gl, q: 0, speed }, A),
             old = legacyDurHit(an, MOVES[mid]);
-          assert.ok(T.dur <= old.dur, `${mid} ${res}: ${T.dur} ms, over ${old.dur}`);
+          assert.ok(
+            T.dur <= old.dur + (T.kind === 'scene' ? A.extraMs : 0),
+            `${mid} ${res}: ${T.dur} ms, over ${old.dur}`
+          );
           assert.ok(T.hit === 999 || T.hit <= T.dur, `${mid} ${res}: hits after it ends`);
           assert.equal(T.hit === 999, old.hit === 999, `${mid} ${res}: a hit where there was none, or none`);
           n++;
@@ -77,7 +80,11 @@ test('every move in 8 outcomes, on the 3D stage and off it, plays no longer than
 
 test('VFX-11: every move names one of the 16 families, the table’s counts', () => {
   const count = {};
-  for (const M of Object.values(MOVES)) count[M.anim] = (count[M.anim] || 0) + 1;
+  /* VFX-17: a move with a scene counts under the family its scene falls back to */
+  for (const M of Object.values(MOVES)) {
+    const f = A.scenes[M.anim] ? A.scenes[M.anim].family : M.anim;
+    count[f] = (count[f] || 0) + 1;
+  }
   assert.deepEqual(count, {
     charge: 6,
     dash: 6,
@@ -264,9 +271,11 @@ test('VFX-13 misses per family: each attacking family whiffs its own way, in a m
     const M = MOVES[mid],
       an = moveAn(mid, 'miss');
     if (!an.miss) continue;
-    const T = battleAnimTimeline(an, M, { gl: true, q: 0, speed: 1 }, A),
-      F = A.families[M.anim];
-    assert.equal(T.id, F && F.miss ? M.anim : 'whiff', mid);
+    /* VFX-17: a scene's move whiffs as its family does */
+    const fid = A.scenes[M.anim] ? A.scenes[M.anim].family : M.anim,
+      T = battleAnimTimeline(an, M, { gl: true, q: 0, speed: 1 }, A),
+      F = A.families[fid];
+    assert.equal(T.id, F && F.miss ? fid : 'whiff', mid);
     assert.equal(T.variant, F && F.miss ? 'miss' : 'full', mid);
     assert.deepEqual([T.dur, T.hit], [760, 999], `${mid}: a miss’s time`);
     assert.ok(

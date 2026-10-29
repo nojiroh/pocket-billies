@@ -873,7 +873,966 @@
    }
   }
  },
- "scenes": {},
+ "scenes": {
+  "towerdrop": {
+   "about": "VFX-17: Tower Drop: a city tower drops from above onto the foe (stretch, afterimages); a shake, a dust ring, a crack; it erodes away",
+   "family": "dive",
+   "dur": 1300,
+   "hit": 700,
+   "steps": [
+    {"at":80,"do":"impact","on":"attacker","spr":"dust","feet":1,"k":1,"life":420,"ramp":"None"},
+    {"at":150,"do":"toTarget","d":200},
+    {"at":250,"do":"prop","prop":"city_tower_slab","from":"above","h":6,"ms":450,"hold":300,"out":250,"s":0.05,"yaw":0.5},
+    {"at":700,"do":"shake","amt":7},
+    {"at":700,"do":"groundRing","on":"target","color":"kit","r1":2.4,"life":460},
+    {"at":700,"do":"impact","on":"target","spr":"dust","feet":1,"k":2,"life":480,"ramp":"Ground"},
+    {"at":700,"n":6,"do":"spray","on":"target","spr":"bits","speed":2,"up":1.2,"life":460},
+    {"at":700,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":700,"do":"light","on":"target","ms":240},
+    {"at":700,"do":"kit","part":"hit","on":"target"},
+    {"at":700,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":380,"delay":950},
+    {"at":1470,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 420,
+    "steps": [
+     {"at":60,"do":"toTarget","d":140},
+     {"at":0,"do":"prop","prop":"city_tower_slab","from":"above","h":6,"ms":420,"hold":150,"out":200,"s":0.05,"yaw":0.5},
+     {"at":420,"do":"shake","amt":6},
+     {"at":420,"do":"groundRing","on":"target","color":"kit","r1":2.2,"life":400},
+     {"at":420,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":420,"do":"light","on":"target","ms":240},
+     {"at":420,"do":"kit","part":"hit","on":"target"},
+     {"at":420,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":600},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "libraryslam": {
+   "about": "VFX-17: Library Slam: the library drops on the foe; pages scatter both ways; a steel ring",
+   "family": "dive",
+   "dur": 1300,
+   "hit": 700,
+   "steps": [
+    {"at":150,"do":"toTarget","d":200},
+    {"at":250,"do":"prop","prop":"library","from":"above","h":5,"ms":450,"hold":300,"out":250,"s":0.26,"yaw":-0.3},
+    {"at":700,"do":"shake","amt":6},
+    {"at":700,"do":"ring","on":"target","color":"kit","r0":0.2,"r1":1.6,"life":420},
+    {"at":700,"n":8,"every":15,"do":"spray","on":"target","spr":"paper","ramp":"None","speed":2.6,"up":1.6,"life":600},
+    {"at":700,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":700,"do":"light","on":"target","ms":240},
+    {"at":700,"do":"kit","part":"hit","on":"target"},
+    {"at":700,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":380,"delay":950},
+    {"at":1470,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 420,
+    "steps": [
+     {"at":60,"do":"toTarget","d":140},
+     {"at":0,"do":"prop","prop":"library","from":"above","h":5,"ms":420,"hold":150,"out":200,"s":0.26,"yaw":-0.3},
+     {"at":420,"do":"shake","amt":5},
+     {"at":420,"n":5,"every":15,"do":"spray","on":"target","spr":"paper","ramp":"None","speed":2.4,"up":1.4,"life":420},
+     {"at":420,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":420,"do":"light","on":"target","ms":240},
+     {"at":420,"do":"kit","part":"hit","on":"target"},
+     {"at":420,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":600},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "siu": {
+   "about": "VFX-17: Siu!: a jump, two turns in the air, the landing on the foe in a fire ring, SIU! stamped over the attacker as it lands back",
+   "family": "dive",
+   "dur": 1340,
+   "hit": 620,
+   "steps": [
+    {"at":60,"do":"jump","on":"attacker","dy":120,"up":180,"hold":300,"down":200},
+    {"at":160,"n":4,"do":"orbit","on":"attacker","spr":"bits","r":0.5,"h":1.2,"turns":2,"life":420},
+    {"at":360,"do":"toTarget","d":200},
+    {"at":440,"do":"projectile","spr":"shot","path":"stamp","to":"target","h":3,"ms":180,"k":2,"trail":3,"lit":1},
+    {"at":620,"do":"groundRing","on":"target","color":"kit","r1":2,"life":420},
+    {"at":620,"do":"shake","amt":5},
+    {"at":620,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":620,"do":"light","on":"target","ms":240},
+    {"at":620,"do":"kit","part":"hit","on":"target"},
+    {"at":620,"do":"hit","if":["dmg"]},
+    {"at":760,"do":"stamp","on":"attacker","spr":"word_siu","k":2,"life":560},
+    {"do":"camHome","d":420,"delay":900},
+    {"at":1510,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 300,
+    "steps": [
+     {"at":40,"do":"toTarget","d":120},
+     {"at":120,"do":"projectile","spr":"shot","path":"stamp","to":"target","h":3,"ms":180,"k":2,"trail":2},
+     {"at":300,"do":"groundRing","on":"target","color":"kit","r1":2,"life":380},
+     {"at":300,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":300,"do":"light","on":"target","ms":240},
+     {"at":300,"do":"kit","part":"hit","on":"target"},
+     {"at":300,"do":"hit","if":["dmg"]},
+     {"at":320,"do":"stamp","on":"attacker","spr":"word_siu","k":2,"life":500},
+     {"do":"camHome","d":300,"delay":560},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "fullsteam": {
+   "about": "VFX-17: Full Steam: TOOT! stamped; a train runs in from the attacker's side, through the foe and off the stage; sparks along the rails",
+   "family": "charge",
+   "dur": 1360,
+   "hit": 720,
+   "steps": [
+    {"at":60,"do":"stamp","on":"attacker","spr":"word_toot","k":2,"life":520},
+    {"do":"lunge","dx":30,"dy":-3,"dur":150,"ease":"in","delay":420,"backDur":220,"backAt":620},
+    {"at":300,"do":"toTarget","d":200},
+    {"at":250,"do":"prop","prop":"train_greenbelt","from":"side","off":4,"through":4,"ms":700,"out":250,"s":0.24},
+    {"at":400,"n":6,"every":60,"do":"spray","on":"target","spr":"bits","speed":1.5,"up":0.8,"life":320,"feet":1},
+    {"at":720,"do":"shake","amt":6},
+    {"at":720,"do":"impact","on":"target","spr":"dust","feet":1,"k":2,"life":420,"ramp":"Ground"},
+    {"at":720,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":720,"do":"light","on":"target","ms":240},
+    {"at":720,"do":"kit","part":"hit","on":"target"},
+    {"at":720,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":980},
+    {"at":1530,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 420,
+    "steps": [
+     {"at":60,"do":"toTarget","d":140},
+     {"at":0,"do":"prop","prop":"train_greenbelt","from":"side","off":4,"through":4,"ms":620,"out":200,"s":0.24},
+     {"at":420,"do":"shake","amt":5},
+     {"at":420,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":420,"do":"light","on":"target","ms":240},
+     {"at":420,"do":"kit","part":"hit","on":"target"},
+     {"at":420,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":600},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "goldencaravan": {
+   "about": "VFX-17: Golden Caravan: the market cart rolls in on a high arc onto the foe; coins rain in the Dragon's two-tone; KA-CHING!",
+   "family": "storm",
+   "dur": 1500,
+   "hit": 800,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {
+     "at": 200,
+     "do": "prop",
+     "prop": "market_cart",
+     "from": "attacker",
+     "fromY": 0.3,
+     "arc": 2.5,
+     "dx": -0.6,
+     "ms": 500,
+     "hold": 400,
+     "out": 250,
+     "s": 0.5,
+     "turn": 0.5
+    },
+    {"at":330,"do":"toTarget","d":220},
+    {
+     "at": 600,
+     "n": 12,
+     "every": 40,
+     "do": "rain",
+     "on": "target",
+     "spr": "coin",
+     "ramp": "Electric",
+     "ramp2": "Dragon",
+     "r": 0.9,
+     "h": 2.4,
+     "life": 380
+    },
+    {"at":760,"do":"stamp","on":"target","spr":"word_kaching","ramp":"Electric","dy":1.5,"k":2,"life":600},
+    {"at":700,"do":"shake","amt":4},
+    {"at":800,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":800,"do":"light","on":"target","ms":240},
+    {"at":800,"do":"kit","part":"hit","on":"target"},
+    {"at":800,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1100},
+    {"at":1670,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 1000,
+    "hit": 560,
+    "steps": [
+     {
+      "at": 0,
+      "do": "prop",
+      "prop": "market_cart",
+      "from": "attacker",
+      "fromY": 0.3,
+      "arc": 2.5,
+      "dx": -0.6,
+      "ms": 420,
+      "hold": 200,
+      "out": 200,
+      "s": 0.5,
+      "turn": 0.5
+     },
+     {"at":100,"do":"toTarget","d":160},
+     {
+      "at": 360,
+      "n": 8,
+      "every": 40,
+      "do": "rain",
+      "on": "target",
+      "spr": "coin",
+      "ramp": "Electric",
+      "ramp2": "Dragon",
+      "r": 0.9,
+      "h": 2.4,
+      "life": 320
+     },
+     {"at":560,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":560,"do":"light","on":"target","ms":240},
+     {"at":560,"do":"kit","part":"hit","on":"target"},
+     {"at":560,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":760},
+     {"at":1170,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "developers": {
+   "about": "VFX-17: Developers!: a megaphone at the attacker; three shouts in a row, a ring and a lunge each; the third lands the hit",
+   "family": "flurry",
+   "dur": 1340,
+   "hit": 860,
+   "steps": [
+    {"at":40,"do":"impact","on":"attacker","icon":"mega","dy":0.3,"k":1,"life":1000},
+    {"at":120,"n":3,"every":240,"do":"lunge","dx":20,"dy":-2,"dur":60,"ease":"in","delay":0,"backDur":70,"backAt":70},
+    {"at":120,"n":3,"every":240,"do":"ring","on":"attacker","color":"kit","r0":0.2,"r1":1,"life":300},
+    {"at":120,"n":3,"every":240,"do":"pulse","to":"target","color":"kit","r0":0.25,"r1":0.8,"ms":260},
+    {"at":300,"do":"toTarget","d":200},
+    {"at":380,"n":2,"every":240,"do":"impact","on":"target","spr":"small","k":1,"life":260,"jitter":0.35},
+    {"at":860,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":860,"do":"light","on":"target","ms":240},
+    {"at":860,"do":"kit","part":"hit","on":"target"},
+    {"at":860,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1050},
+    {"at":1510,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 380,
+    "steps": [
+     {"at":0,"do":"impact","on":"attacker","icon":"mega","dy":0.3,"k":1,"life":500},
+     {"at":120,"do":"ring","on":"attacker","color":"kit","r0":0.2,"r1":1,"life":300},
+     {"at":120,"do":"pulse","to":"target","color":"kit","r0":0.25,"r1":0.8,"ms":260},
+     {"at":160,"do":"toTarget","d":140},
+     {"at":380,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":380,"do":"light","on":"target","ms":240},
+     {"at":380,"do":"kit","part":"hit","on":"target"},
+     {"at":380,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":560},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "thedecision": {
+   "about": "VFX-17: The Decision: a mic pops up before the attacker, a held beat; then a leap and a slam down onto the foe, a fire ring",
+   "family": "strike",
+   "dur": 1300,
+   "hit": 820,
+   "steps": [
+    {"at":40,"do":"impact","on":"attacker","icon":"mic","dy":0.4,"k":1,"life":520},
+    {"do":"lunge","dx":44,"dy":-30,"dur":160,"ease":"in","delay":600,"backDur":260,"backAt":880},
+    {"at":600,"do":"toTarget","d":160},
+    {"at":660,"do":"projectile","spr":"shot","path":"stamp","to":"target","h":3,"ms":160,"k":2,"trail":3,"lit":1},
+    {"at":820,"do":"groundRing","on":"target","color":"kit","r1":2,"life":420},
+    {"at":820,"do":"shake","amt":5},
+    {"at":820,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":820,"do":"light","on":"target","ms":240},
+    {"at":820,"do":"kit","part":"hit","on":"target"},
+    {"at":820,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1050},
+    {"at":1470,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 300,
+    "steps": [
+     {"do":"lunge","dx":44,"dy":-30,"dur":140,"ease":"in","delay":60,"backDur":240,"backAt":320},
+     {"at":60,"do":"toTarget","d":120},
+     {"at":140,"do":"projectile","spr":"shot","path":"stamp","to":"target","h":3,"ms":160,"k":2,"trail":2},
+     {"at":300,"do":"groundRing","on":"target","color":"kit","r1":2,"life":380},
+     {"at":300,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":300,"do":"light","on":"target","ms":240},
+     {"at":300,"do":"kit","part":"hit","on":"target"},
+     {"at":300,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":560},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "concretepour": {
+   "about": "VFX-17: Concrete Pour: a wheelbarrow tips over the foe; grey pebbles and dust pour down; it sets with a shake and a ring",
+   "family": "quake",
+   "dur": 1340,
+   "hit": 760,
+   "steps": [
+    {"at":150,"do":"toTarget","d":200},
+    {
+     "at": 200,
+     "do": "prop",
+     "prop": "wheelbarrow",
+     "from": "above",
+     "h": 1.4,
+     "y": 1.5,
+     "ms": 360,
+     "hold": 450,
+     "out": 200,
+     "s": 0.8,
+     "tumble": 0.25,
+     "ax": 1,
+     "mid": 0.2
+    },
+    {"at":520,"n":10,"every":25,"do":"rain","on":"target","spr":"pebble","ramp":"None","r":0.5,"h":1.4,"life":260},
+    {
+     "at": 560,
+     "n": 3,
+     "every": 60,
+     "do": "impact",
+     "on": "target",
+     "spr": "dust",
+     "feet": 1,
+     "k": 1,
+     "life": 360,
+     "ramp": "None",
+     "jitter": 0.4
+    },
+    {"at":760,"do":"shake","amt":7},
+    {"at":760,"do":"groundRing","on":"target","color":"kit","r1":2.2,"life":460},
+    {"at":760,"do":"impact","on":"target","spr":"dust","feet":1,"k":2,"life":480,"ramp":"Ground"},
+    {"at":760,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":760,"do":"light","on":"target","ms":240},
+    {"at":760,"do":"kit","part":"hit","on":"target"},
+    {"at":760,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1000},
+    {"at":1510,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 420,
+    "steps": [
+     {"at":60,"do":"toTarget","d":140},
+     {
+      "at": 0,
+      "do": "prop",
+      "prop": "wheelbarrow",
+      "from": "above",
+      "h": 1.4,
+      "y": 1.5,
+      "ms": 200,
+      "hold": 300,
+      "out": 150,
+      "s": 0.8,
+      "tumble": 0.25,
+      "ax": 1,
+      "mid": 0.2
+     },
+     {"at":160,"n":8,"every":25,"do":"rain","on":"target","spr":"pebble","ramp":"None","r":0.5,"h":1.4,"life":240},
+     {"at":420,"do":"shake","amt":6},
+     {"at":420,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":420,"do":"light","on":"target","ms":240},
+     {"at":420,"do":"kit","part":"hit","on":"target"},
+     {"at":420,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":600},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "blastfurnace": {
+   "about": "VFX-17: Blast Furnace: a furnace rises behind the attacker and glows; flame tongues blast toward the foe; the hit with heat",
+   "family": "strike",
+   "dur": 1360,
+   "hit": 760,
+   "steps": [
+    {
+     "at": 60,
+     "do": "prop",
+     "prop": "fireplace",
+     "to": "attacker",
+     "from": "below",
+     "dx": -0.6,
+     "h": 2,
+     "ms": 300,
+     "ease": "out",
+     "hold": 700,
+     "out": 250,
+     "s": 0.45,
+     "yaw": 3.14,
+     "dz": 1
+    },
+    {"at":360,"do":"light","on":"attacker","ms":300},
+    {"at":420,"do":"toTarget","d":200},
+    {
+     "at": 440,
+     "n": 6,
+     "every": 40,
+     "do": "spray",
+     "on": "attacker",
+     "toward": "target",
+     "spr": "flame_tongue",
+     "speed": 6,
+     "cone": 0.25,
+     "life": 360
+    },
+    {"at":760,"do":"shake","amt":4},
+    {"at":760,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":760,"do":"light","on":"target","ms":240},
+    {"at":760,"do":"kit","part":"hit","on":"target"},
+    {"at":760,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1000},
+    {"at":1530,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 420,
+    "steps": [
+     {
+      "at": 0,
+      "do": "prop",
+      "prop": "fireplace",
+      "to": "attacker",
+      "from": "below",
+      "dx": -0.6,
+      "h": 2,
+      "ms": 160,
+      "ease": "out",
+      "hold": 450,
+      "out": 200,
+      "s": 0.45,
+      "yaw": 3.14,
+      "dz": 1
+     },
+     {
+      "at": 120,
+      "n": 4,
+      "every": 40,
+      "do": "spray",
+      "on": "attacker",
+      "toward": "target",
+      "spr": "flame_tongue",
+      "speed": 6,
+      "cone": 0.25,
+      "life": 320
+     },
+     {"at":160,"do":"toTarget","d":140},
+     {"at":420,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":420,"do":"light","on":"target","ms":240},
+     {"at":420,"do":"kit","part":"hit","on":"target"},
+     {"at":420,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":600},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "standardoil": {
+   "about": "VFX-17: Standard Oil: a drum drops beside the foe and bursts: a dark spray, then flames lick over it",
+   "family": "strike",
+   "dur": 1300,
+   "hit": 700,
+   "steps": [
+    {"at":150,"do":"toTarget","d":200},
+    {
+     "at": 200,
+     "do": "prop",
+     "prop": "barrel",
+     "from": "above",
+     "h": 3,
+     "dx": -0.5,
+     "ms": 380,
+     "hold": 150,
+     "out": 160,
+     "s": 0.8,
+     "tumble": 0.5,
+     "ax": 1
+    },
+    {"at":580,"n":8,"every":12,"do":"spray","on":"target","spr":"droplet","ramp":"None","speed":2.4,"up":1.4,"life":480},
+    {"at":660,"n":4,"every":60,"do":"rise","on":"target","spr":"flame_tongue","life":420},
+    {"at":700,"do":"shake","amt":5},
+    {"at":700,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":700,"do":"light","on":"target","ms":240},
+    {"at":700,"do":"kit","part":"hit","on":"target"},
+    {"at":700,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":950},
+    {"at":1470,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 380,
+    "steps": [
+     {"at":60,"do":"toTarget","d":140},
+     {
+      "at": 0,
+      "do": "prop",
+      "prop": "barrel",
+      "from": "above",
+      "h": 3,
+      "dx": -0.5,
+      "ms": 300,
+      "hold": 80,
+      "out": 160,
+      "s": 0.8,
+      "tumble": 0.5,
+      "ax": 1
+     },
+     {"at":300,"n":6,"every":12,"do":"spray","on":"target","spr":"droplet","ramp":"None","speed":2.4,"up":1.4,"life":400},
+     {"at":380,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":380,"do":"light","on":"target","ms":240},
+     {"at":380,"do":"kit","part":"hit","on":"target"},
+     {"at":380,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":600},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "zerotoone": {
+   "about": "VFX-17: Zero to One: one dot blinks at the attacker (the zero), swells, and flies to the foe as a rocket on an arc; one big impact",
+   "family": "shot",
+   "dur": 1540,
+   "hit": 940,
+   "steps": [
+    {"at":80,"do":"kit","part":"cast","on":"attacker"},
+    {"at":120,"do":"impact","on":"attacker","spr":"star","k":1,"life":260},
+    {"at":360,"do":"impact","on":"attacker","spr":"orb","k":1,"life":300},
+    {
+     "at": 540,
+     "do": "projectile",
+     "icon": "rocket",
+     "path": "arc",
+     "from": "attacker",
+     "to": "target",
+     "h": 1.2,
+     "ms": 400,
+     "k": 2,
+     "trail": 3,
+     "lit": 1
+    },
+    {"at":600,"do":"toTarget","d":220},
+    {"at":940,"do":"impact","on":"target","spr":"explosion","k":1,"life":480},
+    {"at":940,"do":"ring","on":"target","color":"kit","r0":0.2,"r1":1.4,"life":380},
+    {"at":940,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":940,"do":"light","on":"target","ms":240},
+    {"at":940,"do":"kit","part":"hit","on":"target"},
+    {"at":940,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":340,"delay":1200},
+    {"at":1710,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 1000,
+    "hit": 500,
+    "steps": [
+     {
+      "at": 100,
+      "do": "projectile",
+      "icon": "rocket",
+      "path": "arc",
+      "from": "attacker",
+      "to": "target",
+      "h": 1.2,
+      "ms": 400,
+      "k": 2,
+      "trail": 2
+     },
+     {"at":200,"do":"toTarget","d":160},
+     {"at":500,"do":"impact","on":"target","spr":"explosion","k":1,"life":420},
+     {"at":500,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":500,"do":"light","on":"target","ms":240},
+     {"at":500,"do":"kit","part":"hit","on":"target"},
+     {"at":500,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":720},
+     {"at":1170,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "visionfund": {
+   "about": "VFX-17: Vision Fund: coins rush into the attacker; a chart pops over it; a ray twice as wide; a ring",
+   "family": "beam",
+   "dur": 1540,
+   "hit": 960,
+   "steps": [
+    {"at":80,"do":"kit","part":"cast","on":"attacker"},
+    {"at":100,"n":10,"every":30,"do":"rain","on":"attacker","spr":"coin","ramp":"Electric","r":0.7,"h":1.6,"life":300},
+    {"at":360,"do":"impact","on":"attacker","icon":"chart","dy":0.7,"k":1,"life":600},
+    {"at":420,"do":"ring","on":"attacker","color":"kit","r0":0.9,"r1":0.1,"life":220},
+    {"at":620,"do":"ray","life":420,"k":2},
+    {"at":640,"do":"toTarget","d":220},
+    {"at":700,"n":3,"every":70,"do":"impact","on":"target","spr":"small","k":1,"life":240,"jitter":0.3},
+    {"at":960,"do":"ring","on":"target","color":"kit","r0":0.2,"r1":1.4,"life":380},
+    {"at":960,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":960,"do":"light","on":"target","ms":240},
+    {"at":960,"do":"kit","part":"hit","on":"target"},
+    {"at":960,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":320,"delay":1220},
+    {"at":1710,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 1000,
+    "hit": 480,
+    "steps": [
+     {"at":160,"do":"ray","life":300,"k":2},
+     {"at":200,"do":"toTarget","d":140},
+     {"at":480,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":480,"do":"light","on":"target","ms":240},
+     {"at":480,"do":"kit","part":"hit","on":"target"},
+     {"at":480,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":700},
+     {"at":1170,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "hallucinate": {
+   "about": "VFX-17: Hallucinate: three wrong things (a tv, dice, a phone) orbit the foe while rose rings travel to it; they pop, and the real pulse hits",
+   "family": "wave",
+   "dur": 1500,
+   "hit": 900,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {"at":200,"n":3,"do":"orbit","on":"target","icon":["tv","dice","phone"],"k":2,"r":0.8,"h":0.4,"turns":1.5,"life":640},
+    {"at":200,"n":3,"every":110,"do":"pulse","to":"target","color":"kit","r0":0.25,"r1":0.8,"ms":300},
+    {"at":360,"do":"toTarget","d":220},
+    {"at":840,"n":4,"do":"spray","on":"target","spr":"bits","speed":2,"up":1,"life":360},
+    {"at":900,"do":"ring","on":"target","color":"kit","r0":0.2,"r1":1.3,"life":380},
+    {"at":900,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":900,"do":"light","on":"target","ms":240},
+    {"at":900,"do":"kit","part":"hit","on":"target"},
+    {"at":900,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1150},
+    {"at":1670,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 1000,
+    "hit": 480,
+    "steps": [
+     {"at":100,"n":2,"every":90,"do":"pulse","to":"target","color":"kit","r0":0.25,"r1":0.8,"ms":300},
+     {"at":200,"do":"toTarget","d":140},
+     {"at":480,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":480,"do":"light","on":"target","ms":240},
+     {"at":480,"do":"kit","part":"hit","on":"target"},
+     {"at":480,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":700},
+     {"at":1170,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "cutto": {
+   "about": "VFX-17: Cut To: the camera cuts hard to the foe, already reeling: the impact frame (through Flashes and the limiter) and a shock ring",
+   "family": "wave",
+   "dur": 1060,
+   "hit": 300,
+   "steps": [
+    {"at":80,"do":"kit","part":"cast","on":"attacker"},
+    {"at":260,"do":"cut","on":"target"},
+    {"at":260,"do":"impact","on":"target","spr":"shock_ring","k":1,"life":420},
+    {"at":300,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":300,"do":"light","on":"target","ms":240},
+    {"at":300,"do":"kit","part":"hit","on":"target"},
+    {"at":300,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":360,"delay":700},
+    {"at":1230,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 800,
+    "hit": 160,
+    "steps": [
+     {"at":100,"do":"cut","on":"target"},
+     {"at":100,"do":"impact","on":"target","spr":"shock_ring","k":1,"life":360},
+     {"at":160,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":160,"do":"light","on":"target","ms":240},
+     {"at":160,"do":"kit","part":"hit","on":"target"},
+     {"at":160,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":480},
+     {"at":970,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "opensesame": {
+   "about": "VFX-17: Open Sesame: a market stall rises beside the foe; its goods pour out over the foe",
+   "family": "storm",
+   "dur": 1500,
+   "hit": 860,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {
+     "at": 200,
+     "do": "prop",
+     "prop": "stall",
+     "from": "below",
+     "dx": -0.8,
+     "dz": 1,
+     "h": 1.8,
+     "ms": 320,
+     "ease": "out",
+     "hold": 700,
+     "out": 250,
+     "s": 0.55,
+     "yaw": 1.57
+    },
+    {"at":260,"do":"toTarget","d":220},
+    {
+     "at": 540,
+     "n": 12,
+     "every": 28,
+     "do": "rain",
+     "on": "target",
+     "icon": ["bag","box","soda","burger"],
+     "k": 2,
+     "r": 0.7,
+     "h": 1.6,
+     "life": 320
+    },
+    {"at":860,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":860,"do":"light","on":"target","ms":240},
+    {"at":860,"do":"kit","part":"hit","on":"target"},
+    {"at":860,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1100},
+    {"at":1670,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 1000,
+    "hit": 520,
+    "steps": [
+     {
+      "at": 0,
+      "do": "prop",
+      "prop": "stall",
+      "from": "below",
+      "dx": -0.8,
+      "dz": 1,
+      "h": 1.8,
+      "ms": 240,
+      "ease": "out",
+      "hold": 450,
+      "out": 200,
+      "s": 0.55,
+      "yaw": 1.57
+     },
+     {"at":100,"do":"toTarget","d":160},
+     {
+      "at": 200,
+      "n": 8,
+      "every": 28,
+      "do": "rain",
+      "on": "target",
+      "icon": ["bag","box","soda","burger"],
+      "k": 2,
+      "r": 0.7,
+      "h": 1.6,
+      "life": 300
+     },
+     {"at":520,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":520,"do":"light","on":"target","ms":240},
+     {"at":520,"do":"kit","part":"hit","on":"target"},
+     {"at":520,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":720},
+     {"at":1170,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "yachtrace": {
+   "about": "VFX-17: Yacht Race: a boat skims in on a wave, turns hard and rams the foe; a splash crown",
+   "family": "shot",
+   "dur": 1500,
+   "hit": 900,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {
+     "at": 200,
+     "do": "prop",
+     "prop": "fishing_boat",
+     "from": "side",
+     "off": 3,
+     "dz": 1.2,
+     "path": "wave",
+     "amp": 0.15,
+     "turns": 3,
+     "dx": -0.5,
+     "ms": 650,
+     "hold": 200,
+     "out": 250,
+     "s": 0.6,
+     "turn": 0.25,
+     "y": 0.5
+    },
+    {"at":380,"do":"toTarget","d":220},
+    {"at":880,"do":"impact","on":"target","spr":"splash_crown","feet":1,"k":2,"life":420},
+    {"at":880,"n":6,"do":"spray","on":"target","spr":"droplet","speed":2,"up":1.6,"life":420},
+    {"at":900,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":900,"do":"light","on":"target","ms":240},
+    {"at":900,"do":"kit","part":"hit","on":"target"},
+    {"at":900,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1150},
+    {"at":1670,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 1000,
+    "hit": 560,
+    "steps": [
+     {
+      "at": 0,
+      "do": "prop",
+      "prop": "fishing_boat",
+      "from": "side",
+      "off": 3,
+      "dz": 1.2,
+      "path": "wave",
+      "amp": 0.15,
+      "turns": 2,
+      "dx": -0.5,
+      "ms": 520,
+      "hold": 120,
+      "out": 200,
+      "s": 0.6,
+      "turn": 0.25,
+      "y": 0.5
+     },
+     {"at":120,"do":"toTarget","d":160},
+     {"at":540,"do":"impact","on":"target","spr":"splash_crown","feet":1,"k":2,"life":380},
+     {"at":560,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":560,"do":"light","on":"target","ms":240},
+     {"at":560,"do":"kit","part":"hit","on":"target"},
+     {"at":560,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":760},
+     {"at":1170,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "flatpack": {
+   "about": "VFX-17: Flatpack: three crates fly in one after another and stack on the foe; one chip bounces off (the screw to spare)",
+   "family": "storm",
+   "dur": 1500,
+   "hit": 920,
+   "steps": [
+    {"at":100,"do":"kit","part":"cast","on":"attacker"},
+    {
+     "at": 200,
+     "n": 3,
+     "every": 180,
+     "do": "prop",
+     "prop": "crate_goods",
+     "from": "attacker",
+     "fromY": 0.4,
+     "arc": 1.4,
+     "stack": 0.45,
+     "ms": 340,
+     "until": 1240,
+     "out": 200,
+     "s": 0.5,
+     "tumble": 1,
+     "mid": 0.45
+    },
+    {"at":380,"do":"toTarget","d":220},
+    {"at":920,"do":"shake","amt":3},
+    {"at":940,"do":"spray","on":"target","spr":"chip","ramp":"Steel","speed":2,"up":1.6,"life":520},
+    {"at":920,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":920,"do":"light","on":"target","ms":240},
+    {"at":920,"do":"kit","part":"hit","on":"target"},
+    {"at":920,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1150},
+    {"at":1670,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 1000,
+    "hit": 560,
+    "steps": [
+     {
+      "at": 0,
+      "n": 3,
+      "every": 80,
+      "do": "prop",
+      "prop": "crate_goods",
+      "from": "attacker",
+      "fromY": 0.4,
+      "arc": 1.4,
+      "stack": 0.45,
+      "ms": 300,
+      "until": 760,
+      "out": 200,
+      "s": 0.5,
+      "tumble": 1,
+      "mid": 0.45
+     },
+     {"at":100,"do":"toTarget","d":160},
+     {"at":560,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":560,"do":"light","on":"target","ms":240},
+     {"at":560,"do":"kit","part":"hit","on":"target"},
+     {"at":560,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":760},
+     {"at":1170,"do":"focus","on":"wide"}
+    ]
+   }
+  },
+  "billionsserved": {
+   "about": "VFX-17: Billions Served: burgers served in a row, one per hit, three hits; a spray of coins at the end",
+   "family": "flurry",
+   "dur": 1300,
+   "hit": 760,
+   "steps": [
+    {"at":60,"n":3,"every":220,"do":"lunge","dx":20,"dy":-2,"dur":60,"ease":"in","delay":0,"backDur":70,"backAt":70},
+    {
+     "at": 80,
+     "n": 3,
+     "every": 220,
+     "do": "projectile",
+     "icon": "burger",
+     "path": "arc",
+     "from": "attacker",
+     "to": "target",
+     "h": 0.6,
+     "ms": 200,
+     "k": 2,
+     "trail": 2
+    },
+    {"at":200,"do":"toTarget","d":160},
+    {"at":280,"n":3,"every":220,"do":"impact","on":"target","spr":"small","k":1,"life":260,"jitter":0.35},
+    {"at":760,"n":6,"do":"spray","on":"target","spr":"coin","ramp":"Electric","speed":2,"up":1.4,"life":420},
+    {"at":760,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+    {"at":760,"do":"light","on":"target","ms":240},
+    {"at":760,"do":"kit","part":"hit","on":"target"},
+    {"at":760,"do":"hit","if":["dmg"]},
+    {"do":"camHome","d":420,"delay":1000},
+    {"at":1470,"do":"focus","on":"wide"}
+   ],
+   "short": {
+    "dur": 860,
+    "hit": 320,
+    "steps": [
+     {
+      "at": 80,
+      "do": "projectile",
+      "icon": "burger",
+      "path": "arc",
+      "from": "attacker",
+      "to": "target",
+      "h": 0.6,
+      "ms": 220,
+      "k": 2,
+      "trail": 2
+     },
+     {"at":120,"do":"toTarget","d":140},
+     {"at":320,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
+     {"at":320,"do":"light","on":"target","ms":240},
+     {"at":320,"do":"kit","part":"hit","on":"target"},
+     {"at":320,"do":"hit","if":["dmg"]},
+     {"do":"camHome","d":300,"delay":560},
+     {"at":1030,"do":"focus","on":"wide"}
+    ]
+   }
+  }
+ },
  "moods": {
   "about": "VFX-15: the battle's mood, over the place's (engine/post-effects.js's grade pass; battle-stage-look.js tweens it on the stage clock, logic/battle-stage-look.js picks it). A landed move of power bigPower or more, or a super-effective hit, darkens the stage by dark (at most .2) and tints it to its type's glow (tint: how much) or, a Bureau bot's, to bureau; in over inMs at the hit, out over outMs to the move's end. wave: the rows of the picture swing sideways (EarthBound's battle backgrounds) for the types listed and a Bureau bot's moves: px (bigPx on a big move) whole pixels, rows rowPx tall, speed radians a stage ms. heat: the grade's heat shimmer for these types' big moves. Under Reduced motion: the darken and tint only, stepped (no wave, no shimmer).",
   "dark": 0.2,
@@ -965,7 +1924,10 @@
   "scar_crack": {"about":"cracks in the ground (Ground), from above","cell":[32,32],"frames":1,"anchor":[16,16],"ground":true},
   "scar_leaf": {"about":"leaf litter (Grass), from above","cell":[32,32],"frames":1,"anchor":[16,16],"ground":true},
   "scar_sand": {"about":"a sand drift (Sandstorm), from above","cell":[36,24],"frames":1,"anchor":[18,12],"ground":true},
-  "scar_dent": {"about":"a dent (a heavy hit), from above","cell":[32,32],"frames":1,"anchor":[16,16],"ground":true}
+  "scar_dent": {"about":"a dent (a heavy hit), from above","cell":[32,32],"frames":1,"anchor":[16,16],"ground":true},
+  "word_siu": {"about":"VFX-17: the word SIU! (a shout), stamped in","cell":[17,7],"frames":3,"anchor":[8,3]},
+  "word_kaching": {"about":"VFX-17: the word KA-CHING! (a till), stamped in","cell":[41,7],"frames":3,"anchor":[20,3]},
+  "word_toot": {"about":"VFX-17: the word TOOT! (a train's whistle), stamped in","cell":[21,7],"frames":3,"anchor":[11,3]}
  },
  "ramps": {
   "Fire": {"ramp":"ember","light":"type"},

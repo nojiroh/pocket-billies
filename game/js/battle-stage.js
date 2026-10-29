@@ -225,6 +225,7 @@ expose({
   hitStop: [() => hitStop, v => (hitStop = v)],
   hitWeight: [() => hitWeight, v => (hitWeight = v)],
   homeCamera: [() => homeCamera],
+  impactCut: [() => impactCut, v => (impactCut = v)],
   impactFx: [() => impactFx, v => (impactFx = v)],
   lineAfterLook: [() => lineAfterLook, v => (lineAfterLook = v)],
   lungeKind: [() => lungeKind, v => (lungeKind = v)],
@@ -525,6 +526,8 @@ export function battleStageStart(area) {
   battleStage.cv = $('#cvWorld');
   battleStage.fgc = $('#cvFg');
   battleStage.props = [];
+  /* VFX-17: the signature scenes played in this battle (a second use plays the short version) */
+  battleStage.scenesSeen = new Set();
   battleStage.leafy = [];
   battleStage.glint = [];
   battleStage.clouds = [];
@@ -1763,6 +1766,14 @@ function impactFx(P, kind) {
   battleStage.impact = F ? { ...F, P: { x: P.x, y: P.y, z: P.z }, t0: performance.now(), seed: random() } : null;
   return F;
 }
+/* VFX-17: a signature scene's cut (Cut To): the impact frame at P, only with Flashes on and when the flash limiter
+   lets a full-screen flash through now (the two-tone frame counts as one, in col; held back, the cut is the camera's
+   alone) */
+function impactCut(P, who, col) {
+  if (reducedMotion || flashesOff()) return null;
+  if (typeof battleFlashGate === 'function' && !battleFlashGate(col, 0.55, 120, who)) return null;
+  return impactFx(P, 'coin');
+}
 /* what it shows now (battle-3d.js passes it to the post pass), or null once over */
 export function battleImpact() {
   const I = battleStage.impact,
@@ -2962,4 +2973,6 @@ export const battleStageKit = {
   /* VFX-11 */
   burstMax,
   actorWorldPoint,
+  /* VFX-17 */
+  impactCut,
 };

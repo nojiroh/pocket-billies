@@ -13,14 +13,17 @@
 /**
  * @typedef {{ k: string, si?: number, ti?: number, mid?: string, dmg?: number, te?: number, crit?: boolean,
  *   miss?: boolean, blocked?: boolean, protect?: boolean, self?: boolean, spread?: boolean, part?: string }} MoveAn a move event's `an`
- * @typedef {{ gl?: boolean, reduced?: boolean, q?: number, speed?: number, bureau?: boolean }} AnimCtx the stage: 3D
- *   or not, Reduced motion, the battle's quality (0-3), its speed, and whether the attacker is a Bureau bot (VFX-11)
+ * @typedef {{ gl?: boolean, reduced?: boolean, q?: number, speed?: number, bureau?: boolean, props?: boolean,
+ *   seen?: boolean }} AnimCtx the stage: 3D or not, Reduced motion, the battle's quality (0-3), its speed, and whether
+ *   the attacker is a Bureau bot (VFX-11); VFX-17: whether a scene's models can be drawn (3D props on, loaded) and
+ *   whether the move's scene has played before in this battle
  * @typedef {BattleAnimStep & { at: number, i: number, sync: boolean, skip: 'run' | 'info' | 'drop' }} AnimStep a
  *   timeline's step: when, which repeat, played at once (no `at` in the data) or on the stage clock, and what a skip
  *   does to it
  * @typedef {{ id: string, kind: 'family' | 'scene', variant: 'full' | 'short' | 'miss', dur: number, hit: number,
- *   tier: string, long: boolean, kit: string | null, steps: AnimStep[] }} AnimTimeline the kit: the type kit it plays
- *   in (battleAnims.json types; VFX-11)
+ *   tier: string, long: boolean, kit: string | null, steps: AnimStep[], repeat?: boolean }} AnimTimeline the kit: the
+ *   type kit it plays in (battleAnims.json types; VFX-11); repeat: a scene's short version because it played before
+ *   in this battle (VFX-17)
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -61,7 +64,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   battlePathAt: [() => battlePathAt, v => (battlePathAt = v)],
   // @ts-expect-error -- replaced on purpose
+  battlePropAt: [() => battlePropAt, v => (battlePropAt = v)],
+  // @ts-expect-error -- replaced on purpose
   battleRampColors: [() => battleRampColors, v => (battleRampColors = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleSceneFallback: [() => battleSceneFallback, v => (battleSceneFallback = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleSceneProps: [() => battleSceneProps, v => (battleSceneProps = v)],
   // @ts-expect-error -- replaced on purpose
   flashGate: [() => flashGate, v => (flashGate = v)],
   // @ts-expect-error -- replaced on purpose
@@ -72,6 +81,8 @@ expose({
   koAhead: [() => koAhead, v => (koAhead = v)],
   // @ts-expect-error -- replaced on purpose
   lineAfterMove: [() => lineAfterMove, v => (lineAfterMove = v)],
+  // @ts-expect-error -- replaced on purpose
+  propPace: [() => propPace, v => (propPace = v)],
   // @ts-expect-error -- replaced on purpose
   redShare: [() => redShare, v => (redShare = v)],
   // @ts-expect-error -- replaced on purpose
@@ -314,12 +325,14 @@ export function stepOn(S, G, type, q) {
  * null when the data has no animation for it
  * @param {MoveAn} an @param {Move} M @param {AnimCtx} ctx @param {BattleAnimsData} A @returns {AnimTimeline | null} */
 export function battleAnimTimeline(an, M, ctx, A) {
-  const pick = battleAnimFor(an, M, A);
+  const pick = battleSceneFallback(battleAnimFor(an, M, A), ctx, A);
   if (!pick) return null;
   const fam = (pick.kind === 'scene' ? A.scenes : A.families)[pick.id],
     /* VFX-13: a family's miss is a timeline of its own (no Faster variant: its time is today's miss's) */
     src = /** @type {BattleAnimFamily} */ ((pick.miss && fam.miss) || fam),
-    short = !!src.short && (ctx.speed || 1) >= A.shortSpeed,
+    /* VFX-17: a scene seen before in this battle plays its short version (the prop and the hit, no wind-up) */
+    repeat = pick.kind === 'scene' && !!ctx.seen,
+    short = !!src.short && ((ctx.speed || 1) >= A.shortSpeed || repeat),
     V = short && src.short ? src.short : src,
     G = battleAnimGates(an, M, ctx, A),
     q = ctx.q || 0,
@@ -355,6 +368,7 @@ export function battleAnimTimeline(an, M, ctx, A) {
     long,
     kit: kit ? kit.id : null,
     steps,
+    ...(repeat && short ? { repeat: true } : {}),
   };
 }
 
@@ -387,7 +401,7 @@ export function flashGate(L, now, col, rule) {
  * @param {string} mid @param {AnimTimeline | null} T @param {number} q @param {string[]} held */
 export function battleAnimLogLine(mid, T, q, held) {
   if (!T) return `${mid} none`;
-  return `${mid} ${T.kind}:${T.id} ${T.tier} ${T.variant} q${q}${T.long ? ' long' : ''}${held.length ? ' held:' + held.join(',') : ''}`;
+  return `${mid} ${T.kind}:${T.id} ${T.tier} ${T.variant}${T.repeat ? ' repeat' : ''} q${q}${T.long ? ' long' : ''}${held.length ? ' held:' + held.join(',') : ''}`;
 }
 /* ===== VFX-10: the effect art's timing and colour =====
    A strip's frames are stepped on the stage clock: 12 fps (its fps), an impact's first two frames at 24 fps. A strip
@@ -541,4 +555,73 @@ export function battlePartOffset(part) {
   if (part === 'armR') return [0.3, null];
   if (part === 'legs') return [0, 0.25];
   return [0, null];
+}
+/* ===== VFX-17: signature scenes =====
+   A scene (battleAnims.json scenes, named by a move's anim) is a family's shape plus the family it falls back to and
+   the models it summons. Where its models can't be drawn (3D props off, the 2D stage, not loaded) or under Reduced
+   motion (the meaning without the motion, and no extra time) it plays that family instead. A `prop` step summons a
+   model that flies on a path (battlePathAt) to its place, holds, then erodes in 12 fps steps. */
+/** the animation a move plays once a scene's fallback is applied: a scene whose models can't be drawn, or any scene
+ * under Reduced motion, plays its family
+ * @param {{ id: string, kind: 'family' | 'scene', miss?: boolean } | null} pick @param {AnimCtx} ctx
+ * @param {BattleAnimsData} A @returns {{ id: string, kind: 'family' | 'scene', miss?: boolean } | null} */
+export function battleSceneFallback(pick, ctx, A) {
+  if (!pick || pick.kind !== 'scene') return pick;
+  const S = A.scenes[pick.id];
+  if (!S) return null;
+  const needsProps = battleSceneProps(A, pick.id).length > 0;
+  if (!ctx.reduced && !(needsProps && ctx.props === false)) return pick;
+  return A.families[S.family] ? { id: S.family, kind: 'family' } : null;
+}
+/** the models a scene summons (its full and short steps; each a recipe id in game/art/scene/next/models), or every
+ * scene's when id is left out (the battle preloads them at its start)
+ * @param {BattleAnimsData} A @param {string} [id] @returns {string[]} */
+export function battleSceneProps(A, id) {
+  const out = new Set(),
+    ids = id === undefined ? Object.keys((A && A.scenes) || {}) : [id];
+  for (const k of ids) {
+    const S = A && A.scenes && A.scenes[k];
+    if (!S) continue;
+    for (const st of [...S.steps, ...(S.short ? S.short.steps : [])])
+      if (st.do === 'prop' && typeof st.prop === 'string') out.add(st.prop);
+  }
+  return [...out];
+}
+/** how fast a summoned model moves at k of its flight, against its mean speed: its ease's slope (a stamp's fall
+ * speeds up on its own); its stretch shows over smear.js STRETCH_PACE
+ * @param {string | undefined} ease @param {string | undefined} kind @param {number} k */
+export function propPace(ease, kind, k) {
+  if (kind === 'stamp') return 2 * k;
+  return ease === 'in' ? 2 * k : ease === 'out' ? 2 * (1 - k) : 1;
+}
+/** where a summoned model is at stage time t, and how it shows: P.t0 its start, P.ms its flight on P.path (battlePathAt;
+ * eased in, out or not), then P.hold ms still, then P.out ms eroding in 12 fps steps (fade 1 whole .. 0 gone). yaw:
+ * P.yaw turned by P.turn turns over the flight; tum: P.tumble turns about its middle over the flight; pace: its speed
+ * against its mean (see propPace); gone once eroded
+ * @param {{ t0: number, ms: number, hold?: number, out?: number, path: { kind?: string, a: number[], b: number[],
+ *   h?: number, amp?: number, turns?: number }, ease?: string, yaw?: number, turn?: number, tumble?: number }} P
+ * @param {number} t */
+export function battlePropAt(P, t) {
+  const age = t - P.t0,
+    ms = Math.max(1, P.ms),
+    k = Math.min(1, Math.max(0, age / ms)),
+    u = P.ease === 'in' ? k * k : P.ease === 'out' ? 1 - (1 - k) * (1 - k) : k,
+    [x, y, z] = battlePathAt(P.path, u),
+    out = P.out ?? 250,
+    after = age - ms - (P.hold || 0),
+    step = 1000 / 12,
+    steps = Math.max(1, Math.round(out / step)),
+    fade = after <= 0 ? 1 : 1 - Math.min(steps, Math.floor(after / step) + 1) / steps;
+  return {
+    x,
+    y,
+    z,
+    k,
+    flying: age < ms,
+    pace: age < ms ? propPace(P.ease, P.path.kind, k) : 0,
+    yaw: (P.yaw || 0) + Math.PI * 2 * (P.turn || 0) * u,
+    tum: Math.PI * 2 * (P.tumble || 0) * u,
+    fade: Math.max(0, fade),
+    gone: after > 0 && fade <= 0,
+  };
 }

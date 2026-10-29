@@ -1459,6 +1459,23 @@ export function dataBattleAnims(D, valid = () => true) {
       for (const V of [A.families[M.anim], A.families[M.anim].short])
         if (V && V.dur > /** @type {Record<string, number>} */ (A.maxMs)[M.c])
           problem(`${id}.anim: "${M.anim}" plays ${V.dur} ms, over ${M.c}'s ${A.maxMs[M.c]} (maxMs)`, 'moves.json');
+  /* VFX-17: a scene plays at most its category's maxMs + extraMs (none longer), its short version (a repeat, Faster)
+     within maxMs */
+  for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {}))) {
+    const S = M && typeof M.anim === 'string' ? A.scenes[M.anim] : null,
+      cap = M ? /** @type {Record<string, number>} */ (A.maxMs)[M.c] : undefined;
+    if (!S || cap === undefined) continue;
+    if (S.dur > cap + A.extraMs)
+      problem(`${id}.anim: the scene "${M.anim}" plays ${S.dur} ms, over ${M.c}'s ${cap} + ${A.extraMs}`, 'moves.json');
+    if (S.short && S.short.dur > cap)
+      problem(`${id}.anim: the scene "${M.anim}"'s short version plays ${S.short.dur} ms, over ${cap}`, 'moves.json');
+  }
+  /* VFX-17: a scene falls back to a family; its prop steps name a model */
+  for (const [id, S] of Object.entries(/** @type {Record<string, any>} */ (A.scenes))) {
+    if (!A.families[S.family]) problem(`scenes.${id}.family: no family "${S.family}"`);
+    for (const st of [...S.steps, ...(S.short ? S.short.steps : [])])
+      if (st.do === 'prop' && typeof st.prop !== 'string') problem(`scenes.${id}: a prop step names no model (prop)`);
+  }
   /* VFX-11: a kit for every type and None; its strips are sprites, its ramps ramps, its light within the budget */
   if (A.types) {
     const K = /** @type {Record<string, any>} */ (A.types);
