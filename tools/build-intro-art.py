@@ -431,7 +431,7 @@ def mesh_json(M, name, about):
 
 def write_mesh(key, M, name, about):
     p = MODELS / f'{key}.json'
-    p.write_text(json.dumps(mesh_json(M, name, about), separators=(',', ':')) + '\n')
+    p.write_text(json.dumps(mesh_json(M, name, about), separators=(',', ':')) + '\n', newline='\n')
     return B1.rel(p)
 
 
