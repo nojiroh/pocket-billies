@@ -94,6 +94,7 @@ expose({
   evolutionRowHTML: [() => evolutionRowHTML, v => (evolutionRowHTML = v)],
   iconSpriteHTML: [() => iconSpriteHTML, v => (iconSpriteHTML = v)],
   lineIndexOf: [() => lineIndexOf],
+  moveAnimField: [() => moveAnimField, v => (moveAnimField = v)],
   personLook: [() => personLook, v => (personLook = v)],
   personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
   poolName: [() => poolName],
@@ -104,6 +105,7 @@ expose({
   selectedLineIndex: [() => selectedLineIndex],
   statsCard: [() => statsCard, v => (statsCard = v)],
   trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
+  typeFxIcons: [() => typeFxIcons, v => (typeFxIcons = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
 });
 /* eslint-enable no-func-assign */
@@ -785,6 +787,22 @@ SIDE_LIST_RENDERERS.mq = () => {
     )
     .join('');
 };
+/* VFX-11: the move's animation (moves.json anim): one of battleAnims.json's families (the 16 first, then the legacy
+   ones) or a signature scene; empty plays its kind's default */
+function moveAnimField(D, p) {
+  const A = D.battleAnims || { families: {}, scenes: {} },
+    fams = Object.keys(A.families || {}),
+    opts = [
+      ...fams.filter(k => !k.startsWith('legacy_')).map(k => [k, k]),
+      ...Object.keys(A.scenes || {}).map(k => [k, `${k} (scene)`]),
+      ...fams.filter(k => k.startsWith('legacy_')).map(k => [k, `${k} (before VFX-11)`]),
+    ];
+  return selectField('Animation', `${p}.anim`, opts, {
+    none: 'Its kind’s default',
+    opt: 1,
+    help: 'The family (or signature scene) it plays when it lands; its type’s kit colours it. Misses and blocks play their own.',
+  });
+}
 SECTIONS.moves = () => {
   const D = studioState.D;
   if (!D.moves[studioState.sel.move]) studioState.sel.move = Object.keys(D.moves)[0];
@@ -824,6 +842,7 @@ SECTIONS.moves = () => {
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${escapeHtml(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${SIDE_LIST_RENDERERS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${escapeHtml(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
  ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOptions(true), { rr: 1 }), selectField('Kind', `${p}.c`, MOVE_CATEGORIES, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
+ ${card('Animation', moveAnimField(D, p), { sub: 'How the battle plays it (Battle effects: battleAnims.json).' })}
  ${card('Effects', fxB, { sub: 'Leave anything empty to switch it off.' })}
  ${card(
    'Learned by',
@@ -943,6 +962,17 @@ const FX_ICONS = [
   'zz',
   'down',
 ];
+/* VFX-10: the particle picker offers every icon a type uses (flame, leaf, pebble, feather, orb, cog and scale were
+   missing, so 7 types' particles showed none picked) and the icons the battle draws as strips, after the old list */
+function typeFxIcons(D) {
+  const keys = [
+    ...FX_ICONS,
+    ...(D.types || []).flatMap(t => t.fx || []),
+    ...((D.untyped && D.untyped.fx) || []),
+    ...Object.keys((D.battleAnims && D.battleAnims.iconSprites) || {}),
+  ];
+  return [...new Set(keys)].filter(k => !ARTMAN.icons || ARTMAN.icons[k]);
+}
 SECTIONS.types = () => {
   const D = studioState.D,
     T = D.types;
@@ -961,7 +991,12 @@ SECTIONS.types = () => {
       t,
       i
     ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES), textField('Ability name', `types.${i}.passiveName`, { max: 20, help: 'What the player reads in the Guide and in battle.' }), textField('What it does', `types.${i}.passiveText`, { area: 1, rows: 2, help: 'One sentence for the Guide.' }))}
-  <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
+  <div class="fxpick"><span>Battle particles</span>${typeFxIcons(D)
+    .map(
+      k =>
+        `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`
+    )
+    .join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
