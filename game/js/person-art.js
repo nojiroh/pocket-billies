@@ -745,6 +745,8 @@ function creatureFrame(Cr, view, act, ph, t, mirror, expr) {
     Object.assign(c, { ax: 0, ay: 1, ppm: 42, noNormal: true });
     return c;
   }
+  /* IN-3: a bot rig whose part pictures are still loading draws stand-ins: not kept, so it is drawn again with them */
+  if (R.wait) personArtMissing = true;
   const a = CREATURE_ACTS[act] || 'idle',
     /* IN-3: the stamp's whole move over its progress (ph 0-1: raised, slammed, held) */
     P = rigPose(
