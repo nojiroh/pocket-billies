@@ -302,11 +302,21 @@ same phase:
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
 - The graphics test (the debug menu's Tests and performance section; Help had it before UI-7b; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
-  a script, and no command-line runner, CI job or hook. It tries the shaders, each engine dial on its own (ENGINE_SPEC,
-  moved away from its default), Balanced, Beautiful and each engine preset, in one scene, and saves a short .json
-  report. A new dial in ENGINE_SPEC is tested with no change; a new kind of dial needs a value in
-  `graphicsDialValue`. Its rules (the dial values, the report's planted-name check) are unit tests in
-  `tools/test/graphics-test.test.mjs`.
+  a script, and no command-line runner, CI job or hook. TD-2: it walks the benchmark path (`game/js/logic/bench-path.js`:
+  segments in test_graphics and test_light_room, each with its route, hour, weather and what it shows) with
+  `game/js/bench-walk.js`, after the shaders and an unmeasured warm-up lap: each segment as shipped (first and last),
+  each ENGINE_SPEC dial at one other value on a segment that has what it needs, a drift check on the open ground every
+  20 steps, the presets. Quality is pinned (automatic quality off, resolution 1, lowered a quarter at a time while the
+  place as shipped passes the budget); graphics memory stays under 300 MB (`BENCH_BUDGET_MB`: a step whose guess passes
+  it is skipped, a walk that passes it stops); every step is saved in localStorage `pb-gtest` (numbers and ids), so after
+  a reload the next tap offers to resume (the step that was running is marked "the page reloaded" and skipped) or to save
+  the partial report. You pick the groups (the whole path is about 50 minutes). The report (format 3) has per step
+  fps, p50/p90/p99, worst, jank, CPU ms, fence lag, draws, `gmb` and its peak, slow causes, quality and resolution; per
+  dial its cost over its segment with the segment's spread; the run's conditions (browser name and version, refresh
+  rate measured, fps cap, DPR, timers, timer queries, LoAF) at the start and end. A new ENGINE_SPEC row needs a need
+  in bench-path.js's NEEDS (`tools/test/bench-path.test.mjs` fails without one); a dial nothing on the path shows is
+  listed with its reason. The quick check's "Test scenes: walking rules" step checks every segment can be walked
+  (planned from the data, not run). The report's rules are unit tests in `tools/test/graphics-test.test.mjs`.
 
 ## What each phase does
 

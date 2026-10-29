@@ -4,6 +4,8 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  BENCH_BUDGET_MB,
+  BENCH_SEGMENTS,
   BUILDING_SHADERS,
   ENGINE_DEFAULTS,
   ENGINE_PRESETS,
@@ -21,6 +23,15 @@ import {
   applyVolumes,
   attributeClashes,
   battleStageStop,
+  benchConditions,
+  benchMemory,
+  benchMemoryGuess,
+  benchMinutes,
+  benchOpen,
+  benchPlan,
+  benchStateLoad,
+  benchWalk,
+  benchWalkEnd,
   closeModal,
   compileProgram,
   engineSetting,
@@ -186,6 +197,10 @@ async function startGraphicsTest() {
     ENGINE_PRESETS,
     FIXTURE_NAMES,
     version: PB_VERSION,
+    /* TD-2: the benchmark path (logic/bench-path.js) and its walker (bench-walk.js) */
+    bench: { BENCH_BUDGET_MB, BENCH_SEGMENTS, benchPlan, benchMinutes, benchMemoryGuess, benchStateLoad },
+    walk: { benchOpen, benchWalk, benchWalkEnd, benchMemory, benchConditions },
+    rebuildFromSettings,
   });
 }
 export async function exportSave() {
