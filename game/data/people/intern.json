@@ -27,5 +27,10 @@
    "hat_hardhat": ["#3E8FB0"],
    "backpack": ["#3E8A6E","#8A5A2A"]
   }
+ },
+ "figure": {
+  "head": "oval",
+  "build": "slim",
+  "gait": {"bounce":1.5,"swing":1.1}
  }
 }

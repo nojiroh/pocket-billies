@@ -426,11 +426,22 @@ def t_people():
           {'who': 'folk:3', 'x': 10.8, 'z': 1.8, 'dir': 'down'},
           {'figure': 'rogue', 'x': 12.0, 'z': 1.8, 'dir': 'down'},
           {'figure': 'rogue', 'x': 13.2, 'z': 1.8, 'dir': 'down', 'style': 'smooth'},
-          {'billie': 'carnegie1', 'x': 14.4, 'z': 1.8},
+          {'billie': 'philanthrobite', 'x': 14.4, 'z': 1.8},
           {'figure': 'rogue', 'x': 15.6, 'z': 1.8, 'dir': 'down', 'act': 'throw'}]
     L += [{'figure': 'rogue', 'x': round(12 + (i - 3.5) * 1.2, 2), 'z': 13.8, 'face': i * 45} for i in range(8)]
     L += [{'figure': 'rogue', 'x': 6.0, 'z': 11.4, 'dir': 'side', 'walk': True},
           {'figure': 'rogue', 'x': 18.0, 'z': 11.4, 'dir': 'sideR', 'walk': True, 'run': True}]
+    # CH-3b: nearest the camera, the cast as their own figures (the figure kit), only with the figures on: the
+    # professor, the rival, Kappi, the leaders and bosses, the Bureau's clerk
+    cast3b = ['chosen', 'chad', 'kappi', 'vault', 'morel', 'poppy', 'marina', 'alta', 'carat', 'crude', 'markdown', 'clerk']
+    L += [{'figure': 'look', 'who': w, 'x': round(12 + (i - (len(cast3b) - 1) / 2) * 0.95, 2), 'z': 0.7, 'dir': 'down'}
+          for i, w in enumerate(cast3b)]
+    # CH-3c: the rest of the cast as their own figures, a row behind (only with the figures on): the residents, the
+    # rooms' keepers, Granny Juniper, the ghost trainer's hiker and the route trainers' classes
+    cast3c = ['dottie', 'mo', 'bertha', 'gus', 'hayden', 'rosa', 'seamus', 'helix', 'cashier', 'vera', 'juniper',
+              'hiker', 'intern', 'broker', 'diver', 'miner', 'geo']
+    L += [{'figure': 'look', 'who': w, 'x': round(12 + (i - (len(cast3c) - 1) / 2) * 0.95, 2), 'z': 3.4, 'dir': 'down'}
+          for i, w in enumerate(cast3c)]
     s.d['lineup'] = L
     # lantern posts light the night (a street lamp would also fill the distance: grass-build.js buildFarProps takes
     # props whose group matches 'tree', and 'streetlamp' does)

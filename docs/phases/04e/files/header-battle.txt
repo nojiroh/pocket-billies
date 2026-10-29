@@ -1,3 +1,0 @@
-Phase 04e: the battle engine, moved here from battle.js, which keeps the battle screen (BATTLE UI). Logic only
-   (game/js/logic/, see rules.js): a turn writes what happens into activeBattle.events; battle.js plays them
-   (playTurnEvents) and opens the screen (openBattle), reached through hooks.js.

@@ -7,9 +7,11 @@ neon, the portal opens in a side alley and is a rift, the player falls through b
 skippable; this street replaces the fall's first leg; the figure reaches toward the light; shorter than the first
 draft's 26 s.
 
-The set: map `city_opening` (tools/build-props-batch8.py; a draft, not joined to the world). One avenue running away
-from the camera between towers, the hero tower closing the view, a 5 m alley off to the right two thirds up, the
-rift at its end beside the blank logo sign. Walk it on your phone with Settings > Time of day: night, Weather: rain.
+The set: map `city_opening` (made by tools/build-props-batch8.py, deleted on 2026-10-27: a rerun would have put the
+parked map back into the live data and redrawn its pictures; it is in git history; a draft, not joined to the
+world). One avenue running away from the camera between towers, the hero tower closing the view, a 5 m alley off to
+the right two thirds up, the rift at its end beside the blank logo sign. It is meant to be seen at night in the rain;
+since 48b95021 the map is parked in game/data/legacy, so the game no longer loads it.
 
 ## Beats (21 s)
 

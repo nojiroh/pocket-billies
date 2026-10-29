@@ -26,6 +26,15 @@ import {
   uiRulesShow,
 } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
+import {
+  UI_CVD,
+  UI_SIGNALS,
+  UI_SIGNAL_MIN,
+  UI_SIGNAL_SETS,
+  cvdHex,
+  nearestPair,
+  signalSetColours,
+} from '../../game/js/logic/signals.js';
 import { UI_CONTRAST, UI_SCREENS, mergeLook, screenLook, uiRatio, uiThemeLook } from '../../game/js/logic/ui-theme.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -98,6 +107,9 @@ expose({
   uiSaved: [() => uiSaved, v => (uiSaved = v)],
   uiScreenName: [() => uiScreenName],
   uiSettingsHTML: [() => uiSettingsHTML, v => (uiSettingsHTML = v)],
+  uiSigBadge: [() => uiSigBadge, v => (uiSigBadge = v)],
+  uiSignalsCvdHTML: [() => uiSignalsCvdHTML, v => (uiSignalsCvdHTML = v)],
+  uiSignalsHTML: [() => uiSignalsHTML, v => (uiSignalsHTML = v)],
   uiViewSrc: [() => uiViewSrc],
 });
 /* eslint-enable no-func-assign */
@@ -117,6 +129,8 @@ export const uiEditor = {
   holding: false,
   saved: null,
   pvT: 0,
+  /* UI-11: the colour code's colour-blind preview: '' (as it is) or a UI_CVD kind */
+  cvd: '',
 };
 export const uiData = () => studioState.D.uiTheme;
 /* UI-3b: the preview's views: the gallery, and the game's real screens from fixtures (game/js/fixture.js); the payout
@@ -213,6 +227,68 @@ function uiColorsHTML(G) {
     )
     .join('')}</tbody></table>`;
 }
+/* UI-11: the colour code's badges: a text shade on its side's surface and ground, dark text (the dark ground) on a
+   fill; the same minimums as the Check (logic/signals.js UI_SIGNAL_MIN) */
+function uiSigBadge(part, id) {
+  const L = uiThemeLook(uiData()),
+    C = (L && L.color) || {},
+    hex = uiGet(L, `signals.${part}.${id}`);
+  if (typeof hex !== 'string') return '';
+  if (part === 'fill') {
+    const ink = (C.dark || {}).ground;
+    if (!ink) return '';
+    const r = uiRatio(ink, hex.slice(0, 7));
+    return `<span class="ui-aa ${r >= UI_SIGNAL_MIN.ink ? 'ok' : 'bad'}" data-sig="fill.${id}" title="Dark text (the dark ground) on it: ${r.toFixed(2)}:1 (needs ${UI_SIGNAL_MIN.ink}:1)">${uiGrade(r)} ${r.toFixed(1)}</span>`;
+  }
+  const pal = C[part] || {};
+  if (!pal.surface || !pal.ground) return '';
+  const s = uiRatio(hex, pal.surface),
+    g = uiRatio(hex, pal.ground),
+    ok = s >= UI_SIGNAL_MIN.surface && g >= UI_SIGNAL_MIN.ground;
+  return `<span class="ui-aa ${ok ? 'ok' : 'bad'}" data-sig="${part}.${id}" title="On a surface ${s.toFixed(2)}:1 (needs ${UI_SIGNAL_MIN.surface}:1), on the ground ${g.toFixed(2)}:1 (needs ${UI_SIGNAL_MIN.ground}:1)">${uiGrade(s)} ${s.toFixed(1)}</span>`;
+}
+/* UI-11: the colour code: a row an id (families, statuses, rarity), its fill and both text shades; then each screen's
+   colours as swatches, as they are or as someone with a colour blindness sees them, and the two that look closest */
+function uiSignalsHTML() {
+  const groups = { family: 'Families', status: 'Statuses', rarity: 'Rarity' };
+  let last = '';
+  const rows = UI_SIGNALS.map(([id, label, group, help]) => {
+    const head =
+      group !== last ? `<tr class="ui-sig-head"><th colspan="4">${escapeHtml(groups[group] || group)}</th></tr>` : '';
+    last = group;
+    const cell = part => {
+      const rel = `signals.${part}.${id}`,
+        p = `${uiBase()}.${rel}`,
+        st = uiDialState(rel),
+        name = part === 'fill' ? 'fill' : `text, ${part}`;
+      return `<td><div class="eng-f ui-col ${st.set ? 'own' : ''}" data-path="${p}">${uiColorHTML(p, st.v, { label: `${label}, ${name}` })}${uiSigBadge(part, id)}${uiResetBtn(rel, st)}</div></td>`;
+    };
+    return `${head}<tr><th title="${escapeHtml(help)}">${escapeHtml(label)}</th>${['fill', 'light', 'dark'].map(cell).join('')}</tr>`;
+  }).join('');
+  return `<table class="ui-cols ui-sig"><thead><tr><th></th><th>Fill</th><th>Text, light</th><th>Text, dark</th></tr></thead><tbody>${rows}</tbody></table>${uiSignalsCvdHTML()}`;
+}
+function uiSignalsCvdHTML() {
+  const sig = uiGet(uiData().defaults, 'signals') || {},
+    k = uiEditor.cvd,
+    types = studioState.D.types || [],
+    kinds = [['', 'As it is'], ...Object.entries(UI_CVD).map(([c, v]) => [c, v.name])];
+  const sets = Object.entries(UI_SIGNAL_SETS)
+    .map(([set, S]) => {
+      const list = signalSetColours(sig, set, types),
+        near = nearestPair(list, k),
+        nm = n => (UI_SIGNALS.find(x => x[0] === n) || [])[1] || n;
+      const sw = list
+        .map(
+          ([n, h]) =>
+            `<span class="ui-sig-sw" title="${escapeHtml(nm(n))} ${escapeHtml(h)}"><i style="background:${cvdHex(h, k)}"></i>${escapeHtml(n.replace(/^type /, ''))}</span>`
+        )
+        .join('');
+      const close = near && near.d < UI_SIGNAL_MIN.distance;
+      return `<div class="ui-sig-set" data-sig-set="${set}"><h4>${escapeHtml(S.name)}</h4><div class="ui-sig-row">${sw}</div>${near ? `<p class="help ${close ? 'bad' : ''}">Closest: ${escapeHtml(nm(near.a))} and ${escapeHtml(nm(near.b))}, ${near.d.toFixed(1)} apart${k ? '' : ` (needs ${UI_SIGNAL_MIN.distance})`}.</p>` : ''}</div>`;
+    })
+    .join('');
+  return `<h4>Colour-blind preview</h4><div class="seg-row">${kinds.map(([c, n]) => `<button class="seg ${k === c ? 'on' : ''}" data-act="uiCvd" data-k="${c}">${escapeHtml(n)}</button>`).join('')}</div><p class="help">Each screen’s colours side by side${k ? ', as someone with this colour blindness sees them (Machado 2009, full strength). Close pairs here must differ by glyph and code too' : '. The Check wants every two at least ' + UI_SIGNAL_MIN.distance + ' apart (OKLab)'}.</p>${sets}`;
+}
 /* the shape families: pick one, then its shape, cut size, corners and radius */
 function uiFamiliesHTML() {
   const f = uiEditor.fam,
@@ -285,6 +361,7 @@ function uiGroupHTML(G) {
   if (open) {
     if (G.readOnly) body = uiLayersHTML();
     else if (G.id === 'color') body = uiColorsHTML(G);
+    else if (G.id === 'signals') body = uiSignalsHTML();
     else {
       body = (G.dials || [])
         .map(d => (d.kind === 'families' ? uiFamiliesHTML() : uiDialHTML(d, `${G.id}.${d.k}`)))
@@ -530,6 +607,12 @@ function uiAfterEdit(p) {
     t.innerHTML = uiAABadge(side, role);
     if (t.firstElementChild) b.replaceWith(t.firstElementChild);
   });
+  document.querySelectorAll('#uiSet [data-sig]').forEach(b => {
+    const [part, id] = b.dataset.sig.split('.'),
+      t = document.createElement('div');
+    t.innerHTML = uiSigBadge(part, id);
+    if (t.firstElementChild) b.replaceWith(t.firstElementChild);
+  });
   uiPreview();
 }
 /* edits through the Studio's own field code (studio-app.js onField writes the data first) */
@@ -570,6 +653,10 @@ function uiPruneHere() {
 }
 ACTIONS.uiOpen = d => {
   uiEditor.open[d.g] = !uiEditor.open[d.g];
+  refreshUiSettings();
+};
+ACTIONS.uiCvd = d => {
+  uiEditor.cvd = d.k || '';
   refreshUiSettings();
 };
 ACTIONS.uiFam = d => {
@@ -687,6 +774,7 @@ ACTIONS.uiPresetSave = async () => {
     ps = T.presets || (T.presets = {}),
     k = uiPresetId(name, ps);
   ps[k] = { name, ...clone(cur) };
+  delete ps[k].signals; // UI-11: the colour code is the same in every palette
   uiDone();
   toast('Preset saved.');
 };

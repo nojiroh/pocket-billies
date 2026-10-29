@@ -260,3 +260,50 @@ test('WM-3: on the grid, a node’s exits are where its links cross its edges, w
   assert.deepEqual(runCutRect(/** @type {any} */ ({ at: [1, 1], cut: [1, 2] })), [0, 64, 64, 128]);
   assert.deepEqual(runCutRect(/** @type {any} */ ({ at: [1, 1], cut: [2, 1] })), [64, 0, 128, 64]);
 });
+
+test("WM-5: a town's size from its footprint: the name says it, the town dial asks mapgen for it, a village's and a town's market stall is a shop of its own", async () => {
+  const { runTownDial, runStallId } = await import('../../game/js/logic/run-scenes.js');
+  const SIZED = {
+      ...DATA,
+      rules: {
+        ...DATA.rules,
+        map: { townSizes: { cells: { hamlet: [2, 1], village: [2, 2], town: [3, 2] }, order: [] } },
+        town: {
+          locals: [1, 2],
+          names: ['Pip'],
+          chat: {},
+          sizes: {
+            hamlet: { word: 'Hamlet', houses: [3, 5], stall: 0, givers: 1 },
+            village: { word: 'Village', houses: [6, 10], stall: 1, givers: 1 },
+            town: { word: 'Town', houses: [10, 16], stall: 1, givers: 2 },
+          },
+        },
+      },
+    },
+    at = (/** @type {number[] | undefined} */ size) => ({
+      nodes: MAP.nodes.map((n, i) => (i === 3 && size ? { ...n, size } : { ...n })),
+    });
+  assert.equal(runPlaceName(at([2, 1]), 3, SIZED), 'Lake Hamlet');
+  assert.equal(runPlaceName(at([2, 2]), 3, SIZED), 'Lake Village');
+  assert.equal(runPlaceName(at([3, 2]), 3, SIZED), 'Lake Town');
+  assert.equal(runPlaceName(at(undefined), 3, SIZED), 'Lake Hamlet', 'no footprint (a side area): the smallest');
+  assert.equal(runPlaceName(at([3, 2]), 1, SIZED), 'Meadow Route', 'a route keeps its word');
+  assert.equal(runPlaceName(at([3, 2]), 3, DATA), 'Lake Town', 'without the tables: the type');
+  assert.deepEqual(runTownDial(at([3, 2]), 3, SIZED), {
+    town: { size: 'town', houses: [10, 16], stall: 1, givers: 2 },
+  });
+  assert.deepEqual(runTownDial(at([2, 2]), 3, DATA), {}, 'without the tables: none (mapgen sizes it by its cells)');
+  for (const [size, stall] of [
+    [[2, 1], false],
+    [[2, 2], true],
+  ]) {
+    const W = runWorldTables({ ...RUN, map: at(size) }, HUB, SIZED),
+      row = W.locations[4];
+    assert.equal(row.stall, stall ? runStallId(3) : undefined);
+    assert.equal(!!W.shops[runStallId(3)], stall);
+    if (stall) {
+      assert.equal(W.shops[runStallId(3)].stall, 1);
+      assert.equal(W.shops[runStallId(3)].name, 'Lake Village Market Stall');
+    }
+  }
+});

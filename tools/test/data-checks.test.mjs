@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { PB_DATA } from '../data-files.mjs';
+import { DATA, PB_DATA } from '../data-files.mjs';
 import { GAME_DATA, modules } from './setup-real.mjs';
 
 const C = modules['data-checks'];
@@ -79,6 +79,22 @@ test('a planted fault is found by its family, in the file check-data names', () 
   D.rules.run.map.first = 'nosuch';
   found('dataRunMapRules', D, 'no node type "nosuch"');
   assert.deepEqual(C.dataRunMapRules(D)[0][0], 'rules.json');
+  // WM-5: the town sizes, their services and the market stall's wares
+  D = copy();
+  D.rules.run.map.townSizes.order[1]['3'] = ['hamlet', 'town'];
+  found('dataRunMapRules', D, 'order[1]["3"]: 3 sizes');
+  D = copy();
+  D.rules.run.map.townSizes.cells.mega = [4, 4];
+  found('dataRunMapRules', D, 'cells.mega: not in run.town.sizes');
+  D = copy();
+  D.rules.run.map.townSizes.cells = { town: [3, 2], hamlet: [2, 1] };
+  found('dataRunMapRules', D, 'smaller than the size before');
+  D = copy();
+  D.rules.run.town.sizes.town.givers = 3;
+  found('dataRunLoop', D, 'run.town.sizes.town: word');
+  D = copy();
+  D.rules.run.town.stall.pick.potion = 1;
+  found('dataRunLoop', D, 'stall.pick.potion: not a held item');
   D = copy();
   D.rules.run.typo = 1;
   found('dataRunClock', D, 'run.typo: no such rule');
@@ -131,6 +147,13 @@ test('a planted fault is found by its family, in the file check-data names', () 
     [E => (E.events.form_27b.options[0].then[0] = 'gene 9'), '1-5 Genes'],
     [E => (E.events.form_27b.options[0].then[0] = 'unsplice -1'), '0-1000 DNA'],
     [E => (E.events.form_27b.when = 'genez:x'), 'events.form_27b.when'],
+    /* SY-4: a case file's redaction covers flavour words of the intro only; a stamp only in a Bureau event */
+    [E => (E.events.form_27b.redact = ['27']), 'letters only'],
+    [E => (E.events.form_27b.redact = ['stapler']), 'not a word of the intro'],
+    [E => ((E.events.form_27b.intro[0] += ' Leave it.'), (E.events.form_27b.redact = ['Leave'])), 'the option "Leave"'],
+    [E => (E.events.beans_crate.redact = ['BEANS']), 'never covered'],
+    [E => (E.events.ring_light.redact = ['ring']), 'only a Bureau event'],
+    [E => (E.events.ring_light.options[0].stamp = 'filed'), 'only a Bureau event is stamped'],
   ]) {
     D = copy();
     plant(D.events);
@@ -279,6 +302,29 @@ test('every catch item has its icons and its model; a missing or empty one is na
   ]);
 });
 
+// PK-2: a Perk's picture is there and is an icon; a Perk without one warns (it shows the relic icon)
+test('PK-2: dataPerkArt: a missing picture or a bad SVG is an error, no img a warning', () => {
+  const icon = readFileSync(join(import.meta.dirname, '../../game/art/ui/relic.svg'), 'utf8'),
+    files = { 'perks/a.svg': icon, 'perks/c.svg': '<svg viewBox="0 0 12 12"></svg>' },
+    read = (/** @type {string} */ p) => files[p] ?? null,
+    P = { a: { img: 'perks/a.svg' }, b: { img: 'perks/b.svg' }, c: { img: 'perks/c.svg' }, d: {} };
+  assert.deepEqual(
+    C.dataPerkArt(P, read).map(f => [f.lvl, f.msg]),
+    [
+      ['error', 'b.img: no picture art/perks/b.svg'],
+      ['error', 'c.img: art/perks/c.svg is not an icon: An icon’s box is viewBox="0 0 36 36".'],
+      ['warn', 'd: no img, so it shows the relic icon (tools/build-icons.mjs)'],
+    ]
+  );
+  const ART = join(import.meta.dirname, '../../game/art'),
+    disk = (/** @type {string} */ p) => (existsSync(join(ART, p)) ? readFileSync(join(ART, p), 'utf8') : null);
+  assert.deepEqual(
+    C.dataPerkArt(GAME_DATA.perks, disk),
+    [],
+    'every game Perk names a picture that is there (PK-2: the 13 drawn)'
+  );
+});
+
 test('RS-4: a resident’s service and its rows: one entry a level, one power level, names that exist, rows in order', () => {
   let D = copy();
   D.residents.mo.service.pop();
@@ -305,4 +351,340 @@ test('RS-4: a resident’s service and its rows: one entry a level, one power le
   D.unlocks.mo_dup = structuredClone(D.unlocks.mo_2);
   found('dataUnlocks', D, "mo's level 2 is sold by mo_2 already");
   found('dataResidents', D, "mo_dup raises their service but isn't listed");
+});
+
+// PK-1: a Perk row's when, if, every, grow, per and once, its battle line, and the schema that allows them
+test('PK-1: dataPerks checks when, if, every, grow, per, once and say; other rows refuse them', async () => {
+  const D = structuredClone(GAME_DATA),
+    good = [
+      { kind: 'damage', side: 'deal', mult: 1.5, when: 'hit', once: 'battle' },
+      { kind: 'stat', stat: 'lev', stages: 1, when: 'ko', if: ['foe:leader|rival', 'hp<0.5'] },
+      { kind: 'heal', share: 1, when: 'arrive', every: 5, if: 'place:town' },
+      {
+        kind: 'damage',
+        side: 'deal',
+        mult: 1,
+        grow: { on: 'win', by: 0.05, max: 0.25, reset: 'faint', if: 'noFaint' },
+      },
+      { kind: 'damage', side: 'deal', mult: 1.03, per: 'teamTypes', if: 'weather:rain|storm' },
+      { kind: 'pinchHeal', at: 0.25, share: 0.25, once: 'battle' },
+      { kind: 'stat', stat: 'hus', stages: 1, once: 'billie', if: ['mono', 'turn:1'] },
+      { kind: 'damage', side: 'take', mult: 0.7, if: 'alone' },
+      { kind: 'level', n: 3 },
+      { kind: 'bossHp', mult: 1.3 },
+      { kind: 'turnHeal', share: 0.05 },
+      { kind: 'turnHurt', share: 0.05, if: 'type:Fire' },
+    ];
+  D.perks.test_good = { name: 'Test', d: 'A test.', rarity: 'common', fx: good.slice(0, 4), say: 'Approved!' };
+  D.perks.test_good2 = { name: 'Test 2', d: 'A test.', rarity: 'common', fx: good.slice(4, 8) };
+  D.perks.test_good3 = { name: 'Test 3', d: 'A test.', rarity: 'common', fx: good.slice(8) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    schema = JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')),
+    ok = ajv.compile(schema);
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of [
+    [{ kind: 'money', mult: 1.2, when: 'win' }, 'a money row can’t act at win'.replace('’', "'")],
+    [{ kind: 'heal', share: 0.1, when: 'later' }, 'no moment "later"'],
+    [{ kind: 'damage', side: 'take', mult: 2, when: 'hit' }, 'side: deal, at hit'],
+    [{ kind: 'damage', side: 'deal', mult: 2, when: 'hurt' }, 'side: take, at hurt'],
+    [{ kind: 'heal', share: 0.1, if: 'foe:dragon' }, 'foe: no "dragon"'],
+    [{ kind: 'heal', share: 0.1, if: 'weather:hail' }, 'weather: no "hail"'],
+    [{ kind: 'heal', share: 0.1, if: 'type:Plastic' }, 'type: no "Plastic"'],
+    [{ kind: 'heal', share: 0.1, if: 'place:mall' }, 'place: no "mall"'],
+    [{ kind: 'heal', share: 0.1, if: 'hp<2' }, 'hp<x'],
+    [{ kind: 'heal', share: 0.1, if: 'turn:0' }, 'turn:N'],
+    [{ kind: 'heal', share: 0.1, if: 'sunnyish' }, 'no condition "sunnyish"'],
+    [{ kind: 'heal', share: 0.1, if: [] }, 'one condition, or a list of 1-4'],
+    [{ kind: 'heal', share: 0.1, every: 3 }, 'every: needs a when'],
+    [{ kind: 'heal', share: 0.1, when: 'arrive', every: 1 }, 'every: a whole number from 2'],
+    [{ kind: 'heal', share: 0.1, grow: { on: 'win', by: 0.1, max: -1 } }, 'grow.max: a number of the same sign'],
+    [{ kind: 'heal', share: 0.1, grow: { on: 'win', by: 0, max: 1 } }, 'grow.by: a number, not 0'],
+    [{ kind: 'heal', share: 0.1, grow: { on: 'win', by: 0.1, max: 1, reset: 'win' } }, 'grow.reset'],
+    [{ kind: 'heal', share: 0.1, grow: { on: 'soon', by: 0.1, max: 1 } }, 'grow.on: a moment'],
+    [{ kind: 'heal', share: 0.1, per: 'teamSize' }, 'per: teamTypes'],
+    [{ kind: 'heal', share: 0.1, once: 'day' }, 'once: battle, run, billie'],
+    [{ kind: 'heal', share: 0.1, when: 'arrive', once: 'battle' }, 'once: battle needs a moment in battle'],
+    [{ kind: 'heal', share: 0.1, once: 'run' }, 'once: run needs a when'],
+    [{ kind: 'level', n: 2, if: 'lead' }, 'if: a level row is read where no battle'],
+    [{ kind: 'price', what: 'shop', mult: 0.9, per: 'teamTypes' }, 'per: a price row is read where no battle'],
+  ]) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+  const E = structuredClone(GAME_DATA);
+  E.perks.lucky_charm.say = 'x'.repeat(41);
+  assert.ok(C.dataPerks(E).some(p => p[1].includes('lucky_charm.say')));
+  /* a held item's rows are a Billie's own: no timing there (it would be ignored) */
+  const F = structuredClone(GAME_DATA),
+    held = Object.keys(F.items).find(k => F.items[k].hold);
+  F.items[held].hold[0].when = 'hit';
+  assert.ok(
+    C.dataHeldItems(F).some(p => p[1].includes(`${held}.hold[0].when: only a run's rows`)),
+    JSON.stringify(C.dataHeldItems(F))
+  );
+});
+
+// PK-3: the battle kit's kinds (crit, immune, inflict, chip, first, revive): good rows pass check-data and the schema,
+// planted faults are named
+const PK3_GOOD = [
+  { kind: 'crit', stages: 1 },
+  { kind: 'crit', when: 'move', every: 8, if: 'cat:H|S' },
+  { kind: 'immune', what: 'brn' },
+  { kind: 'immune', what: 'stones', if: 'lead' },
+  { kind: 'inflict', status: 'par', chance: 0.15, when: 'hit', if: 'cat:H' },
+  { kind: 'inflict', status: 'brn', chance: 0.5, when: 'hit' },
+  { kind: 'chip', what: 'burn', mult: 0.5 },
+  { kind: 'first', if: 'turn:1' },
+  { kind: 'revive', share: 0.5, once: 'run' },
+  { kind: 'revive', share: 0.25, once: 'battle' },
+];
+const PK3_BAD = [
+  [{ kind: 'crit', stages: 4 }, 'stages: a whole number of critical-hit stages from 1 to 3'],
+  [{ kind: 'crit' }, 'stages: a whole number of critical-hit stages'],
+  [{ kind: 'crit', stages: 1, when: 'move' }, 'makes that move a critical hit: no stages'],
+  [{ kind: 'crit', when: 'hit' }, "a crit row can't act at hit"],
+  [{ kind: 'immune', what: 'frz' }, 'what: brn, slp, par, sandstorm, stones'],
+  [{ kind: 'immune', what: 'brn', when: 'hit' }, "an immune row can't act at hit"],
+  [{ kind: 'immune', what: 'brn', once: 'battle' }, 'once: battle needs a moment in battle'],
+  [{ kind: 'inflict', status: 'frz', chance: 0.1, when: 'hit' }, 'status: no status "frz"'],
+  [{ kind: 'inflict', status: 'par', chance: 0.6, when: 'hit' }, 'chance: above 0, at most 0.5'],
+  [{ kind: 'inflict', status: 'par', chance: 0.1 }, 'an inflict row needs a moment'],
+  [{ kind: 'inflict', status: 'par', chance: 0.1, when: 'hurt' }, "an inflict row can't act at hurt"],
+  [{ kind: 'chip', what: 'poison', mult: 0.5 }, 'what: burn (effects.js FX_CHIP)'],
+  [{ kind: 'chip', what: 'burn', mult: 9 }, 'mult: 9 is outside the code'],
+  [{ kind: 'first', when: 'battleStart' }, "a first row can't act at battleStart"],
+  [{ kind: 'revive', share: 0.5 }, 'a revive row needs once (battle or run)'],
+  [{ kind: 'revive', share: 0.5, once: 'billie' }, 'a revive row needs once (battle or run)'],
+  [{ kind: 'revive', share: 1.5, once: 'run' }, 'share: a share of HP above 0, at most 1'],
+];
+test('PK-3: dataPerks and the schema take the battle kit’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK3_GOOD.length; i += 4)
+    D.perks['test_pk3_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK3_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK3_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
+// PK-4: Wave B's kinds (passive, then weather, benchXp, rule): good rows pass check-data and the schema, planted
+// faults are named
+const PK4_GOOD = [
+  { kind: 'passive', passive: 'kindling', rate: 2 },
+  { kind: 'passive', passive: 'undertow', hp: 0.5 },
+  { kind: 'passive', passive: 'regrowth', mult: 2 },
+  { kind: 'passive', passive: 'livewire', mult: 2 },
+  { kind: 'passive', passive: 'bedrock', uses: 2, hp: 0.75 },
+  { kind: 'passive', passive: 'bedrock', uses: 3 },
+  { kind: 'passive', passive: 'slipstream', always: true },
+  { kind: 'passive', passive: 'wildmind', rolls: 2 },
+  { kind: 'passive', passive: 'alloy', all: true },
+  { kind: 'passive', passive: 'partingroar', stat: 'hus', stages: 1 },
+  { kind: 'passive', passive: 'regrowth', mult: 1.5, if: 'lead' },
+  { kind: 'weather', what: 'noWeaken' },
+  { kind: 'weather', what: 'boost', mult: 2 },
+  { kind: 'weather', what: 'boost', mult: 1.5, if: 'type:Water' },
+  { kind: 'benchXp', share: 0.5 },
+  { kind: 'benchXp', share: 0.25, if: 'foe:trainer' },
+  { kind: 'rule', rule: 'forecastDays', n: 3 },
+];
+const PK4_BAD = [
+  [{ kind: 'passive', passive: 'overheat', rate: 2 }, 'passive: kindling, undertow'],
+  [{ kind: 'passive', passive: 'kindling' }, 'a kindling row needs rate'],
+  [{ kind: 'passive', passive: 'kindling', rate: 1 }, 'rate: above 1, at most 4'],
+  [{ kind: 'passive', passive: 'kindling', rate: 2, hp: 0.5 }, 'hp: kindling takes rate only'],
+  [{ kind: 'passive', passive: 'regrowth', mult: 0.5 }, 'mult: above 1'],
+  [{ kind: 'passive', passive: 'livewire', mult: 4 }, "Live Wire's stages times this pass 3"],
+  [{ kind: 'passive', passive: 'bedrock' }, 'a bedrock row needs uses or hp'],
+  [{ kind: 'passive', passive: 'bedrock', uses: 12 }, 'uses: a whole number from 1 to 9'],
+  [{ kind: 'passive', passive: 'undertow', hp: 1.5 }, 'hp: a share of HP above 0, at most 1'],
+  [{ kind: 'passive', passive: 'slipstream', always: false }, 'always: true'],
+  [{ kind: 'passive', passive: 'wildmind', rolls: 5 }, 'rolls: 2 or 3'],
+  [{ kind: 'passive', passive: 'partingroar', stat: 'hp', stages: 1 }, 'stat: no stat "hp"'],
+  [{ kind: 'passive', passive: 'partingroar', stat: 'hus' }, 'a partingroar row needs stat and stages'],
+  [{ kind: 'passive', passive: 'kindling', rate: 2, when: 'hit' }, "a passive row can't act at hit"],
+  [{ kind: 'weather', what: 'fog' }, 'what: noWeaken, boost'],
+  [{ kind: 'weather', what: 'boost', mult: 1 }, "a boost row's mult is above 1"],
+  [{ kind: 'weather', what: 'boost' }, "a boost row's mult is above 1"],
+  [{ kind: 'weather', what: 'noWeaken', mult: 2 }, 'a noWeaken row has no mult'],
+  [{ kind: 'weather', what: 'noWeaken', when: 'hit' }, "a weather row can't act at hit"],
+  [{ kind: 'benchXp', share: 0 }, 'share: a share of XP above 0, at most 1'],
+  [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
+  [
+    { kind: 'rule', rule: 'luck', n: 1 },
+    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind, eventHurt (effects.js FX_RULES)',
+  ],
+  [{ kind: 'rule', rule: 'forecastDays', n: 20 }, 'n: a whole number of days from 1 to 14'],
+  [{ kind: 'rule', rule: 'forecastDays', n: 3, if: 'lead' }, 'a rule row is read where no battle'],
+];
+test('PK-4: dataPerks and the schema take Wave B’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK4_GOOD.length; i += 4)
+    D.perks['test_pk4_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK4_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK4_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
+// PK-5: Wave C's kinds (catching, cash and maps): good rows pass check-data and the schema, planted faults are named
+const PK5_GOOD = [
+  { kind: 'catchLevel', n: 2 },
+  { kind: 'catchLevel', n: 1, if: 'foe:spliced' },
+  { kind: 'refund', what: 'pyramid', when: 'throwMiss', once: 'battle' },
+  { kind: 'inflict', status: 'slp', chance: 0.2, when: 'battleStart', if: 'foe:wild' },
+  { kind: 'money', share: 0.1, max: 40, when: 'arrive' },
+  { kind: 'money', mult: 2, if: 'foe:leader|rival' },
+  { kind: 'free', when: 'buy', every: 4 },
+  { kind: 'salvage', mult: 2 },
+  { kind: 'rule', rule: 'rewardPick', n: 1 },
+  { kind: 'rule', rule: 'rerollFree', n: 1 },
+  { kind: 'rule', rule: 'mapReveal', n: 1 },
+];
+const PK5_BAD = [
+  [{ kind: 'catchLevel', n: 0 }, 'n: a whole number of levels from 1 to 10'],
+  [{ kind: 'catchLevel', n: 2, when: 'catch' }, "a catchLevel row can't act at catch"],
+  [{ kind: 'refund', what: 'coin', when: 'throwMiss' }, 'what: pyramid (effects.js FX_REFUND)'],
+  [{ kind: 'refund', what: 'pyramid', when: 'hit' }, "a refund row can't act at hit"],
+  [{ kind: 'inflict', status: 'slp', chance: 0.2, when: 'turnEnd' }, "can't act at turnEnd (hit, battleStart)"],
+  [{ kind: 'money', share: 0.1, when: 'arrive' }, 'max: a money share needs its most'],
+  [{ kind: 'money', share: 2, max: 40, when: 'arrive' }, 'share: a share of the Moneys carried'],
+  [{ kind: 'money', share: 0.1, max: 40 }, 'when: a money share needs a moment (arrive)'],
+  [{ kind: 'money', share: 0.1, max: 40, when: 'win' }, "a money row can't act at win"],
+  [{ kind: 'money', mult: 2, when: 'arrive' }, 'a money row at arrive is a share'],
+  [{ kind: 'free', when: 'win', every: 4 }, "a free row can't act at win"],
+  [{ kind: 'free' }, 'a free row needs a moment (buy)'],
+  [{ kind: 'salvage', mult: 9 }, 'mult: 9 is outside the code'],
+  [{ kind: 'salvage', mult: 2, when: 'win' }, "a salvage row can't act at win"],
+  [{ kind: 'rule', rule: 'rewardPick', n: 3 }, 'n: a whole number of cards from 1 to 2'],
+  [{ kind: 'rule', rule: 'rerollFree', n: 0 }, 'n: a whole number of rerolls from 1 to 3'],
+  [{ kind: 'rule', rule: 'mapReveal', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
+];
+test('PK-5: dataPerks and the schema take Wave C’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK5_GOOD.length; i += 4)
+    D.perks['test_pk5_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK5_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK5_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
+const PK6_GOOD = [
+  { kind: 'rule', rule: 'cap', n: 1 },
+  { kind: 'copy' },
+  { kind: 'give', money: 150, items: { potion: 2 }, when: 'take' },
+  { kind: 'rule', rule: 'sideOpen', n: 1 },
+  { kind: 'rule', rule: 'sideFind', n: 2 },
+  { kind: 'rule', rule: 'eventHurt', n: 1 },
+];
+const PK6_BAD = [
+  [{ kind: 'rule', rule: 'cap', n: 3 }, 'n: a whole number of Perks from 1 to 2'],
+  [{ kind: 'rule', rule: 'cap', n: 1, if: 'lead' }, 'a rule row is read where no battle'],
+  [{ kind: 'copy', when: 'take' }, "a copy row can't act at take"],
+  [{ kind: 'copy', if: 'lead' }, 'a copy row is read where no battle'],
+  [{ kind: 'give', money: 150 }, 'a give row needs a moment (take)'],
+  [{ kind: 'give', money: 150, when: 'arrive' }, "a give row can't act at arrive"],
+  [{ kind: 'give', when: 'take' }, 'a give row gives money, items or both'],
+  [{ kind: 'give', money: 0, when: 'take' }, 'money: a whole number of Moneys from 1 to 9999'],
+  [{ kind: 'give', items: { gold_bar: 1 }, when: 'take' }, 'no item "gold_bar"'],
+  [{ kind: 'give', items: { potion: 0 }, when: 'take' }, 'items.potion: a whole number from 1 to 99'],
+  [{ kind: 'rule', rule: 'sideOpen', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
+  [{ kind: 'rule', rule: 'sideFind', n: 3 }, 'n: a whole number of finds from 1 to 2'],
+  [{ kind: 'rule', rule: 'eventHurt', n: 0 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
+];
+test('PK-6: dataPerks and the schema take Wave D’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK6_GOOD.length; i += 4)
+    D.perks['test_pk6_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK6_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK6_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
+test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () => {
+  const D = structuredClone(GAME_DATA);
+  D.perks.lucky_charm.needs = 'team:Fire';
+  D.perks.clinic_card.needs = ['team:Water|Grass', 'mono'];
+  D.perks.coupon_book.needs = 'bots';
+  D.perks.steady_hand.needs = 'side';
+  assert.deepEqual(C.dataPerks(D), []);
+  for (const [v, text] of [
+    ['lead', '"lead" can\'t be known when a Perk is offered'],
+    ['team:Fyre', 'team: no "Fyre"'],
+    [[], 'one condition, or a list of 1-4'],
+  ]) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.needs = v;
+    const all = C.dataPerks(E, () => true).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.needs') && w.includes(text)),
+      `${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
+test('PK-4: a Perk’s tags are types or themes; rules.json run.perks.bias a factor from 1 to 10', () => {
+  const D = structuredClone(GAME_DATA);
+  D.perks.lucky_charm.tags = ['Fire', 'weather'];
+  assert.deepEqual(C.dataPerks(D), []);
+  D.perks.lucky_charm.tags = ['Fyre'];
+  D.rules.run.perks.bias = 0.5;
+  const all = C.dataPerks(D).map(p => p.join(': '));
+  assert.ok(
+    all.some(w => w.includes('lucky_charm.tags: "Fyre" is no type')),
+    JSON.stringify(all)
+  );
+  assert.ok(
+    all.some(w => w.includes('run.perks.bias is not a factor from 1 to 10')),
+    JSON.stringify(all)
+  );
 });

@@ -84,3 +84,70 @@ test("the game's clock: no deadline (RL-R2), a week of forecast from the biomes'
   // the five biomes are mild: the mild odds, no snow or ash (no season in a run)
   assert.deepEqual(Object.keys(weathers).sort(), ['clear', 'cloudy', 'fog', 'rain', 'storm']);
 });
+
+test("WM-5: the game's towns take their size by order and Expedition (rules.json run.map.townSizes), strictly", () => {
+  const { runTownSize } = modules['run-map'],
+    T = M.townSizes,
+    seen = {};
+  assert.deepEqual(T.cells, { hamlet: [2, 1], village: [2, 2], town: [3, 2] });
+  for (const [k, s] of seeds.slice(0, 500).entries()) {
+    const e = 1 + (k % 5),
+      L = runMapLength(s, M, e),
+      map = runMapMake(s, GAME_DATA.nodeTypes, { ...M, ...L }),
+      towns = map.nodes.filter(n => n.type === 'town'),
+      rows = [...new Set(towns.map(n => n.row))].sort((a, b) => a - b);
+    assert.deepEqual(L.sizes, T.order[e - 1][String(L.minibosses)], `${s}: the Expedition's sizes`);
+    assert.equal(rows.length, L.minibosses);
+    for (const n of towns) {
+      const want = L.sizes[rows.indexOf(n.row)];
+      assert.deepEqual(n.size, T.cells[want], `${s}: town on row ${n.row} is a ${want}`);
+      assert.equal(runTownSize(n, T), want);
+    }
+    const key = `${e}:${rows
+      .map(r =>
+        runTownSize(
+          towns.find(n => n.row === r),
+          T
+        )
+      )
+      .join('+')}`;
+    seen[key] = (seen[key] || 0) + 1;
+  }
+  // the owner's answer: the last a village at I, a town from II; before it hamlet (then village) of three, of two a
+  // hamlet at I-III and a village at IV-V
+  assert.deepEqual(Object.keys(seen).sort(), [
+    '1:hamlet+village',
+    '2:hamlet+town',
+    '3:hamlet+town',
+    '4:hamlet+village+town',
+    '4:village+town',
+    '5:hamlet+village+town',
+    '5:village+town',
+  ]);
+});
+
+test("WM-5: a town size the grid can't hold steps every town down a size, never to a failed map", () => {
+  const { runTownSize } = modules['run-map'],
+    T = { cells: { hamlet: [2, 1], village: [2, 2], huge: [4, 4] }, order: [{ 2: ['village', 'huge'] }] },
+    R = { ...M, townSizes: T },
+    seen = new Set();
+  for (const s of seeds.slice(0, 50)) {
+    const L = runMapLength(s, R, 1),
+      map = runMapMake(s, GAME_DATA.nodeTypes, { ...R, ...L }),
+      towns = map.nodes.filter(n => n.type === 'town'),
+      rows = [...new Set(towns.map(n => n.row))].sort((a, b) => a - b),
+      got = rows.map(r =>
+        runTownSize(
+          towns.find(n => n.row === r),
+          T
+        )
+      );
+    assert.deepEqual(L.sizes, ['village', 'huge']);
+    // a 4 x 4 town is taller than the grid's 7 rows less the room round it on most maps: stepped down together
+    assert.ok(['village,huge', 'hamlet,village'].includes(got.join()), `${s}: ${got.join()} (stepped down together)`);
+    seen.add(got.join());
+  }
+  assert.equal(seen.size, 2, 'some maps hold the huge town, some step down');
+  assert.equal(runTownSize({ type: 'town' }, T), 'hamlet', 'no footprint (a side area): the smallest');
+  assert.equal(runTownSize({ type: 'town', size: [2, 2] }, undefined), '', 'no table');
+});

@@ -6,11 +6,34 @@
    noise buffer through filters, and a kick; a soft echo that every voice can send to. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import {
+  SOUND_BAKE_INSTRUMENTS,
+  soundBakeImpulse,
+  soundBakeRoots,
+  soundBakeZoneFor,
+  soundBakeZoneSteps,
+} from '../logic/sound-bake.js';
 /* eslint-disable no-func-assign */
 expose({
   SCALES: [() => SCALES],
+  SOUND_BAKE_BUDGET: [() => SOUND_BAKE_BUDGET],
+  SOUND_BAKE_IMPULSE_SEC: [() => SOUND_BAKE_IMPULSE_SEC],
+  SOUND_BAKE_PLACES: [() => SOUND_BAKE_PLACES],
+  SOUND_BAKE_ROOM_GAIN: [() => SOUND_BAKE_ROOM_GAIN],
+  SOUND_BAKE_SLICE_MS: [() => SOUND_BAKE_SLICE_MS],
   midiToFrequency: [() => midiToFrequency],
   songRandom: [() => songRandom, v => (songRandom = v)],
+  soundBakeBank: [() => soundBakeBank],
+  soundBakeBytes: [() => soundBakeBytes, v => (soundBakeBytes = v)],
+  soundBakeEntry: [() => soundBakeEntry, v => (soundBakeEntry = v)],
+  soundBakeImpulseFor: [() => soundBakeImpulseFor, v => (soundBakeImpulseFor = v)],
+  soundBakeKeep: [() => soundBakeKeep, v => (soundBakeKeep = v)],
+  soundBakeNow: [() => soundBakeNow],
+  soundBakePrune: [() => soundBakePrune, v => (soundBakePrune = v)],
+  soundBakeSlice: [() => soundBakeSlice, v => (soundBakeSlice = v)],
+  soundBakeStart: [() => soundBakeStart, v => (soundBakeStart = v)],
+  soundBakeStats: [() => soundBakeStats, v => (soundBakeStats = v)],
+  soundBakeWant: [() => soundBakeWant, v => (soundBakeWant = v)],
   trackerArc: [() => trackerArc, v => (trackerArc = v)],
   trackerCompose: [() => trackerCompose, v => (trackerCompose = v)],
   trackerCreate: [() => trackerCreate, v => (trackerCreate = v)],
@@ -195,23 +218,223 @@ function trackerRecipe(songs, name, run) {
   }
   return D;
 }
+/* ---------- SND-9: the bank ----------
+   Baked instruments (logic/sound-bake.js) as AudioBuffers, kept here at module level by (instrument, sample rate): a
+   buffer plays in any context, so a second context (the Studio's, check-sound's) never bakes again. Every buffer is
+   made at its context's own rate. Baking runs zone by zone in setTimeout slices that stop after about 2 ms of work
+   (iOS Safari has no requestIdleCallback), so no frame waits on it; each slice's time is kept for the debug log. The
+   bank and the other baked buffers (the beds' noise, the tracker's noise, the reverb's impulse) stay within
+   SOUND_BAKE_BUDGET together: past it the least recently played zone is dropped (a note then plays from the nearest
+   zone left, and the dropped one is baked again) */
+const SOUND_BAKE_BUDGET = 6 * 1024 * 1024;
+const SOUND_BAKE_SLICE_MS = 2;
+/* SND-9: the reverb. One ConvolverNode (a phone's costliest node: one, short), made the first time something sends to
+   it, so a song that never asks (all of today's: the future `gb` ensemble) never makes it. Its impulse: 1.2 s of
+   stereo decaying noise (logic/sound-bake.js). A place changes how much is sent, not the room: open air, a town, a
+   forest, a room, a cave (no second convolver for caves until a cave needs a longer room) */
+const SOUND_BAKE_IMPULSE_SEC = 1.2;
+/* the normalised room comes back about 11 dB under what is sent (measured: noise through the 1.2 s impulse in
+   Chromium); the return makes a send of 1 come back about level, so a send's gain reads as the room's level */
+const SOUND_BAKE_ROOM_GAIN = 3.5;
+const SOUND_BAKE_PLACES = { open: 0.6, town: 0.8, forest: 1, room: 0.7, cave: 1.8 };
+const soundBakeBank = {
+  /** 'harp@48000' -> { id, R, rate, ctx, zones: (zone | null)[], used: number[], queued: Set, wait: [] } */
+  entries: new Map(),
+  /** the reverb's impulse by sample rate: a Promise of its AudioBuffer */
+  impulses: new Map(),
+  /** SND-10: recipes from data beside SOUND_BAKE_INSTRUMENTS (soundscape.json `banks`: water's bubbles and babble) */
+  recipes: /** @type {Record<string, any>} */ ({}),
+  queue: [],
+  timer: 0,
+  /* a play counts up: the zone played longest ago has the smallest count */
+  clock: 0,
+  /* the other baked buffers' bytes (the beds' noise, the tracker's noise, the impulse), from the last tracker made */
+  other: () => 0,
+  ms: 0,
+  /* the last impulse's own work (ms), for the reverb's line */
+  impulseMs: 0,
+  zones: 0,
+  dropped: 0,
+  slices: 0,
+  sliceMaxMs: 0,
+  /* the slowest single step (a slice can run over its budget by one step) */
+  stepMaxMs: 0,
+  lastSlicesMs: [],
+};
+const soundBakeNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
+/* the bank's entry for an instrument at a context's rate (made empty the first time) */
+function soundBakeEntry(id, c) {
+  const R = SOUND_BAKE_INSTRUMENTS[id] || soundBakeBank.recipes[id];
+  if (!R) return null;
+  const key = id + '@' + c.sampleRate;
+  let E = soundBakeBank.entries.get(key);
+  if (!E) {
+    const n = soundBakeRoots(R).length;
+    E = {
+      id,
+      key,
+      R,
+      rate: c.sampleRate,
+      ctx: c,
+      zones: new Array(n).fill(null),
+      used: new Array(n).fill(0),
+      queued: new Set(),
+      wait: [],
+    };
+    soundBakeBank.entries.set(key, E);
+  }
+  return E;
+}
+/* bakes what an entry lacks; resolves with the entry once every zone is baked */
+function soundBakeWant(E) {
+  E.zones.forEach((z, i) => {
+    if (!z && !E.queued.has(i)) {
+      E.queued.add(i);
+      soundBakeBank.queue.push({ make: () => soundBakeZoneSteps(E.R, E.rate, i), keep: Z => soundBakeKeep(E, i, Z) });
+    }
+  });
+  if (!E.queued.size) return Promise.resolve(E);
+  soundBakeStart();
+  return new Promise(res => E.wait.push(res));
+}
+/* the slices start (when they aren't running) */
+function soundBakeStart() {
+  if (!soundBakeBank.timer) soundBakeBank.timer = setTimeout(soundBakeSlice, 0);
+}
+/* one slice of baking: zone steps until about SOUND_BAKE_SLICE_MS have passed */
+function soundBakeSlice() {
+  const B = soundBakeBank,
+    t0 = soundBakeNow();
+  let job;
+  while ((job = B.queue[0])) {
+    if (!job.it) ((job.it = job.make()), (job.ms = 0));
+    const s0 = soundBakeNow(),
+      r = job.it.next();
+    const step = soundBakeNow() - s0;
+    job.ms += step;
+    B.stepMaxMs = Math.max(B.stepMaxMs, step);
+    if (r.done) {
+      B.queue.shift();
+      job.keep(r.value, job.ms);
+    }
+    if (soundBakeNow() - t0 > SOUND_BAKE_SLICE_MS) break;
+  }
+  const dt = soundBakeNow() - t0;
+  B.ms += dt;
+  B.slices++;
+  B.sliceMaxMs = Math.max(B.sliceMaxMs, dt);
+  B.lastSlicesMs.push(Math.round(dt * 100) / 100);
+  if (B.lastSlicesMs.length > 16) B.lastSlicesMs.shift();
+  B.timer = B.queue.length ? setTimeout(soundBakeSlice, 0) : 0;
+}
+/* a baked zone made into a buffer at its context's rate (its numbers dropped), the bank kept within its budget */
+function soundBakeKeep(E, i, Z) {
+  const b = E.ctx.createBuffer(1, Z.data.length, E.rate);
+  if (b.copyToChannel) b.copyToChannel(Z.data, 0);
+  else b.getChannelData(0).set(Z.data);
+  E.zones[i] = {
+    i,
+    root: Z.root,
+    lo: Z.lo,
+    hi: Z.hi,
+    buffer: b,
+    loopStart: Z.loopStart / E.rate,
+    loopEnd: Z.loopEnd / E.rate,
+    tau: Z.tau,
+    bytes: Z.data.length * 4,
+  };
+  E.used[i] = ++soundBakeBank.clock;
+  E.queued.delete(i);
+  soundBakeBank.zones++;
+  soundBakePrune(E.zones[i]);
+  if (!E.queued.size) for (const res of E.wait.splice(0)) res(E);
+}
+/* the reverb's impulse at a context's rate, baked in the same slices (once per rate) */
+function soundBakeImpulseFor(c) {
+  const B = soundBakeBank;
+  if (!B.impulses.has(c.sampleRate))
+    B.impulses.set(
+      c.sampleRate,
+      new Promise(res => {
+        B.queue.push({
+          make: () => soundBakeImpulse(c.sampleRate, { sec: SOUND_BAKE_IMPULSE_SEC }),
+          keep: ([L, R], ms) => {
+            B.impulseMs = Math.round(ms * 10) / 10;
+            const b = c.createBuffer(2, L.length, c.sampleRate);
+            [L, R].forEach((d, ch) => (b.copyToChannel ? b.copyToChannel(d, ch) : b.getChannelData(ch).set(d)));
+            res(b);
+          },
+        });
+        soundBakeStart();
+      })
+    );
+  return B.impulses.get(c.sampleRate);
+}
+/* the bank's bytes, its zones' alone */
+function soundBakeBytes() {
+  let n = 0;
+  for (const E of soundBakeBank.entries.values()) for (const z of E.zones) if (z) n += z.bytes;
+  return n;
+}
+/* past the budget, the least recently played zones go (never the one just made) */
+function soundBakePrune(keep) {
+  while (soundBakeBytes() + soundBakeBank.other() > SOUND_BAKE_BUDGET) {
+    let worst = null;
+    for (const E of soundBakeBank.entries.values())
+      E.zones.forEach((z, i) => {
+        if (z && z !== keep && (!worst || E.used[i] < worst.E.used[worst.i])) worst = { E, i };
+      });
+    if (!worst) return;
+    worst.E.zones[worst.i] = null;
+    soundBakeBank.dropped++;
+  }
+}
+/* what the debug log says about the bank (no save data) */
+function soundBakeStats() {
+  const B = soundBakeBank,
+    mb = n => Math.round((n / 1048576) * 100) / 100;
+  return {
+    instruments: [...B.entries.values()].map(E => `${E.key} ${E.zones.filter(Boolean).length}/${E.zones.length}`),
+    mb: mb(soundBakeBytes()),
+    withOtherMb: mb(soundBakeBytes() + B.other()),
+    budgetMb: mb(SOUND_BAKE_BUDGET),
+    bakeMs: Math.round(B.ms),
+    zones: B.zones,
+    dropped: B.dropped,
+    queued: B.queue.length,
+    slices: B.slices,
+    sliceMaxMs: Math.round(B.sliceMaxMs * 100) / 100,
+    stepMaxMs: Math.round(B.stepMaxMs * 100) / 100,
+    lastSlicesMs: B.lastSlicesMs.slice(),
+  };
+}
 export function trackerCreate(ctx, bus, opts = {}) {
   const c = ctx,
-    T = { ctx, bus, waves: {} };
-  /* a soft echo for the music (caves get more of it) */
-  const d = c.createDelay(1),
-    fb = c.createGain(),
-    wet = c.createGain();
-  d.delayTime.value = 0.27;
-  fb.gain.value = 0.28;
-  wet.gain.value = 0.16;
-  T.echoIn = c.createGain();
-  T.echoIn.connect(d);
-  d.connect(fb);
-  fb.connect(d);
-  d.connect(wet);
-  wet.connect(bus);
-  T.echoWet = wet;
+    /* SND-8a: started counts the voices started (the debug log's sources a minute), late the steps scheduled after
+       their time (a stall in the page) */
+    T = { ctx, bus, waves: {}, started: 0, late: 0 };
+  /* a soft echo for the music (caves get more of it). SND-8b: and one of its own for the effects (opts.fx, the Sound
+     effects bus: jingles and the heal and seal effects), so their echo follows the Sound effects slider, not Music's
+     and the rain's low-pass */
+  const echoLine = out => {
+    const d = c.createDelay(1),
+      fb = c.createGain(),
+      wet = c.createGain(),
+      input = c.createGain();
+    d.delayTime.value = 0.27;
+    fb.gain.value = 0.28;
+    wet.gain.value = 0.16;
+    input.connect(d);
+    d.connect(fb);
+    fb.connect(d);
+    d.connect(wet);
+    wet.connect(out);
+    return { input, wet };
+  };
+  const echoMusic = echoLine(bus);
+  T.echoIn = echoMusic.input;
+  T.echoWet = echoMusic.wet;
+  T.echoFx = opts.fx ? echoLine(opts.fx).input : null;
   const n = c.createBuffer(1, c.sampleRate, c.sampleRate),
     nd = n.getChannelData(0);
   for (let i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
@@ -243,8 +466,10 @@ export function trackerCreate(ctx, bus, opts = {}) {
       vib = 0,
       cut = 0,
       echo = 0,
+      echoTo = null,
     }
   ) => {
+    T.started++;
     const o = c.createOscillator(),
       g = c.createGain();
     if (T.waves[type]) o.setPeriodicWave(T.waves[type]);
@@ -276,16 +501,19 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
     o.connect(g);
     o2.connect(out);
-    if (echo && T.echoIn) {
+    /* SND-8b: echoTo is the echo it sends to (a song's send, after its fader); the music's echo when not given */
+    const to = echoTo || T.echoIn;
+    if (echo && to) {
       const e = c.createGain();
       e.gain.value = echo;
       o2.connect(e);
-      e.connect(T.echoIn);
+      e.connect(to);
     }
     o.start(t);
     o.stop(t + Math.max(a + d, dur) + r + 0.02);
   };
   T.synthNoise = (out, { t, dur = 0.05, vol = 0.2, hp = 0, lp = 0, bp = 0, q = 1 }) => {
+    T.started++;
     const s = c.createBufferSource(),
       g = c.createGain();
     s.buffer = T.noise;
@@ -312,6 +540,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     s.stop(t + dur + 0.02);
   };
   T.synthKick = (out, t, v = 0.5) => {
+    T.started++;
     const o = c.createOscillator(),
       g = c.createGain();
     o.frequency.setValueAtTime(140, t);
@@ -323,6 +552,153 @@ export function trackerCreate(ctx, bus, opts = {}) {
     o.start(t);
     o.stop(t + 0.22);
   };
+  /* ---------- SND-9: baked instruments ---------- */
+  /* the bytes of baked buffers outside the bank (the beds' noise: opts.memory, sound.js), for the bank's budget */
+  soundBakeBank.other = () => (opts.memory ? opts.memory() : 0) + T.noise.length * 4 + (T.reverbBytes || 0);
+  /* resolves once the instruments named are baked at this context's rate (at once when they are) */
+  T.bankReady = ids =>
+    Promise.all([].concat(ids).map(id => (soundBakeEntry(id, c) ? soundBakeWant(soundBakeEntry(id, c)) : null)));
+  T.bankStats = soundBakeStats;
+  /* SND-10: recipes from data (soundscape.json `banks`) the bank may bake, by id; an id it already has keeps its own */
+  T.bankAdd = recipes => {
+    for (const [id, R] of Object.entries(recipes || {}))
+      if (!SOUND_BAKE_INSTRUMENTS[id] && !soundBakeBank.recipes[id]) soundBakeBank.recipes[id] = R;
+  };
+  /* SND-10: a baked zone's buffer and the rate that moves it to midi (a texture loops it); null (and the bank asked)
+     when nothing of it is baked yet */
+  T.bankBuffer = (inst, midi) => {
+    const E = soundBakeEntry(inst, c);
+    if (!E) return null;
+    const P = soundBakeZoneFor(E.zones, midi);
+    if (!P || !P.own) soundBakeWant(E);
+    if (!P) return null;
+    E.used[P.zone.i] = ++soundBakeBank.clock;
+    return { buffer: P.zone.buffer, rate: P.rate };
+  };
+  /* SND-10: a baked sound played once (a bubble, a drip): one buffer source and one gain, the nearest zone moved to
+     midi and then by rate (a little faster or slower), never looped. null (and the bank asked) when nothing of it is
+     baked yet */
+  T.sampleShot = (out, { inst, midi, t, vol = 1, rate = 1 }) => {
+    const E = soundBakeEntry(inst, c);
+    if (!E) return null;
+    const P = soundBakeZoneFor(E.zones, midi);
+    if (!P || !P.own) soundBakeWant(E);
+    if (!P) return null;
+    const Z = P.zone;
+    E.used[Z.i] = ++soundBakeBank.clock;
+    T.started++;
+    const s = c.createBufferSource(),
+      g = c.createGain(),
+      k = P.rate * rate;
+    s.buffer = Z.buffer;
+    s.playbackRate.value = k;
+    g.gain.value = vol;
+    s.connect(g);
+    g.connect(out);
+    s.start(t);
+    s.stop(t + Z.buffer.length / Z.buffer.sampleRate / k + 0.01);
+    s.onended = () => g.disconnect();
+    return { source: s, gain: g };
+  };
+  /* a note of a baked instrument: one buffer source and one gain. The zone nearest the note plays, moved to its pitch;
+     its loop holds the note for as long as dur, a pluck's tail fading on (the zone's tau) the whole time; the release
+     takes r. null (and the instrument asked for) when nothing of it is baked yet */
+  T.sampleVoice = (out, { inst, midi, t, dur, vol = 0.2, r = 0.25 }) => {
+    const E = soundBakeEntry(inst, c);
+    if (!E) return null;
+    const P = soundBakeZoneFor(E.zones, midi);
+    if (!P || !P.own) soundBakeWant(E);
+    if (!P) return null;
+    const Z = P.zone;
+    E.used[Z.i] = ++soundBakeBank.clock;
+    T.started++;
+    const s = c.createBufferSource(),
+      g = c.createGain(),
+      body = Z.loopStart / P.rate,
+      end = t + Math.max(0.01, dur);
+    s.buffer = Z.buffer;
+    s.playbackRate.value = P.rate;
+    s.loop = true;
+    s.loopStart = Z.loopStart;
+    s.loopEnd = Z.loopEnd;
+    g.gain.setValueAtTime(vol, t);
+    if (Z.tau && body < end - t) g.gain.setTargetAtTime(0, t + body, Z.tau / P.rate);
+    g.gain.setTargetAtTime(0, end, r / 4);
+    s.connect(g);
+    g.connect(out);
+    s.start(t);
+    s.stop(end + r * 1.5);
+    return { source: s, gain: g };
+  };
+  /* SND-9: the reverb's sends. A part that wants reverb connects to T.reverbSend('music'), ('sfx') or (SND-10) ('world') after its own
+     gain; each send is scaled by its slider (reverbLevels, from sound.js applyVolumes: post-fader, so a slider at 0
+     leaves no reverb behind) and by the place (reverbPlace), and the room returns to the master (opts.master; the
+     Studio, which has none, to the bus). Made on the first send */
+  const room = {
+    conv: null,
+    sends: null,
+    level: { music: 1, sfx: 1, world: 1 },
+    place: 'town',
+    bakeMs: 0,
+    readyMs: 0,
+    setMs: 0,
+    sec: 0,
+  };
+  const roomGain = k => room.level[k] * (SOUND_BAKE_PLACES[room.place] ?? 1);
+  const roomApply = () => {
+    if (room.sends)
+      for (const k of ['music', 'sfx', 'world']) room.sends[k].gain.setTargetAtTime(roomGain(k), c.currentTime, 0.05);
+  };
+  T.reverbSend = (kind = 'music') => {
+    if (!room.conv) {
+      room.conv = c.createConvolver();
+      const ret = c.createGain();
+      ret.gain.value = SOUND_BAKE_ROOM_GAIN;
+      room.conv.connect(ret);
+      ret.connect(opts.master || bus);
+      room.sends = {};
+      for (const k of ['music', 'sfx', 'world']) {
+        room.sends[k] = c.createGain();
+        room.sends[k].gain.value = roomGain(k);
+        room.sends[k].connect(room.conv);
+      }
+      const t0 = soundBakeNow();
+      room.ready = soundBakeImpulseFor(c).then(b => {
+        /* readyMs: from the first send to the impulse in place (it waits its turn in the slices); bakeMs: its own work */
+        room.readyMs = Math.round(soundBakeNow() - t0);
+        room.bakeMs = soundBakeBank.impulseMs;
+        const t1 = soundBakeNow();
+        room.conv.buffer = b;
+        room.setMs = Math.round((soundBakeNow() - t1) * 100) / 100;
+        room.sec = b.length / b.sampleRate;
+        T.reverbBytes = b.length * 2 * 4;
+        return room.conv;
+      });
+    }
+    return room.sends[kind] || room.sends.music;
+  };
+  /* resolves once the room has its impulse (and makes it, as a send would) */
+  T.reverbReady = () => (T.reverbSend(), room.ready);
+  /* SND-10: world, the World slider's level (cave drips send to it); left out, it stays as it was */
+  T.reverbLevels = (music, sfx, world = room.level.world) => {
+    room.level = { music, sfx, world };
+    roomApply();
+  };
+  T.reverbPlace = p => {
+    room.place = p in SOUND_BAKE_PLACES ? p : 'town';
+    roomApply();
+  };
+  T.reverbStats = () =>
+    room.conv
+      ? {
+          place: room.place,
+          sec: room.sec,
+          bakeMs: room.bakeMs,
+          readyMs: room.readyMs,
+          setMs: room.setMs,
+          kb: Math.round((T.reverbBytes || 0) / 1024),
+        }
+      : null;
   /* ---------- the player ---------- */
   /* a song starts 80 ms from now and fades in; the songs before it fade out. levels() is the game's say on the drums
      (softer standing still or at night) and the night pad; with none, drums are full and there is no pad */
@@ -334,6 +710,13 @@ export function trackerCreate(ctx, bus, opts = {}) {
   T.timer = null;
   /* SND-4: 'town@night' is town's night version (trackerNight); SND-5: any name trackerRecipe knows */
   T.recipe = name => trackerRecipe(songs, name, opts.run);
+  /* SND-8b: a song's fader. Its gain and its echo send move together, so the echo follows the fade-in, a crossfade, a
+     stop and a jingle's duck (the send used to be taken before the fader). f moves one AudioParam and runs for both;
+     unplug disconnects both after ms */
+  const fader = (sg, f) => [sg.gain, sg.echo].forEach(n => f(n.gain)),
+    /* SND-8b: a song's level, its `trim` (dB, music.json) as a gain: the fader's top, and what a duck is a share of */
+    level = D => Math.pow(10, (D.trim || 0) / 20),
+    unplug = (sg, ms) => setTimeout(() => [sg.gain, sg.echo].forEach(n => n.disconnect()), ms);
   T.compose = name => {
     const D = T.recipe(name);
     if (!D) return null;
@@ -347,8 +730,14 @@ export function trackerCreate(ctx, bus, opts = {}) {
     composed.clear();
     if (!T.song) return;
     const D = T.compose(T.song.name);
-    if (D) T.song.D = D;
-    else T.stop();
+    if (!D) return T.stop();
+    T.song.D = D;
+    /* SND-8b: a new trim is heard at once */
+    const lv = level(D);
+    if (lv !== T.song.level) {
+      T.song.level = lv;
+      fader(T.song, g => g.setTargetAtTime(lv, c.currentTime, 0.05));
+    }
   };
   /* SND-5: o.intro plays the song's intro first; o.hold keeps the drums out until drumsIn() (the throw), or 8 s;
      o.restart starts the song again even when it is playing (a new battle with the same song) */
@@ -356,10 +745,6 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (T.song && T.song.name === name && !o.restart) return T.song;
     const D = T.compose(name);
     if (!D) return null;
-    if (T.song) {
-      const old = T.song;
-      old.fade = c.currentTime;
-    }
     const L = levels();
     T.song = {
       name,
@@ -367,21 +752,28 @@ export function trackerCreate(ctx, bus, opts = {}) {
       step: o.intro ? -(D.introSteps || 0) : 0,
       next: c.currentTime + 0.08,
       gain: c.createGain(),
+      echo: c.createGain(),
+      level: level(D),
       /* a song that takes over a held one (the red zone during the intro) keeps the drums out too */
       hold: o.hold ? c.currentTime + 8 : (T.song && T.song.hold) || 0,
     };
     T.song.gain.connect(bus);
+    T.song.echo.connect(T.echoIn);
     T.song.drums = c.createGain();
     T.song.drums.gain.value = L ? L.drums : 1;
     T.song.drums.connect(T.song.gain);
-    T.song.gain.gain.setValueAtTime(0, c.currentTime);
-    T.song.gain.gain.linearRampToValueAtTime(1, c.currentTime + 0.6);
+    const now = c.currentTime;
+    fader(T.song, g => {
+      g.setValueAtTime(0, now);
+      g.linearRampToValueAtTime(T.song.level, now + 0.6);
+    });
     for (const v of T.voices) {
-      const t = c.currentTime;
-      v.gain.gain.cancelScheduledValues(t);
-      v.gain.gain.setValueAtTime(v.gain.gain.value, t);
-      v.gain.gain.linearRampToValueAtTime(0, t + 0.5);
-      setTimeout(() => v.gain.disconnect(), 700);
+      fader(v, g => {
+        g.cancelScheduledValues(now);
+        g.setValueAtTime(g.value, now);
+        g.linearRampToValueAtTime(0, now + 0.5);
+      });
+      unplug(v, 700);
     }
     T.voices = [T.song];
     if (!T.timer) T.timer = setInterval(T.tick, 25);
@@ -389,11 +781,12 @@ export function trackerCreate(ctx, bus, opts = {}) {
   };
   T.stop = () => {
     if (T.song) {
-      const t = c.currentTime,
-        g = T.song.gain;
-      g.gain.setValueAtTime(g.gain.value, t);
-      g.gain.linearRampToValueAtTime(0, t + 0.4);
-      setTimeout(() => g.disconnect(), 600);
+      const t = c.currentTime;
+      fader(T.song, g => {
+        g.setValueAtTime(g.value, t);
+        g.linearRampToValueAtTime(0, t + 0.4);
+      });
+      unplug(T.song, 600);
     }
     T.song = null;
     T.voices = [];
@@ -420,6 +813,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
       spb = 60 / D.bpm / 4;
     if (sg.hold && c.currentTime > sg.hold) sg.hold = 0;
     while (sg.next < c.currentTime + 0.14) {
+      if (sg.next < c.currentTime - 0.005) T.late++;
       /* SND-5: the intro, on the lead alone */
       if (sg.step < 0) {
         const N = D.introNotes[sg.step + D.introSteps];
@@ -433,7 +827,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
             d: 0.06,
             s: 0.7,
             r: 0.04,
-            echo: D.echo || 0.15,
+            echo: D.echo ?? 0.15,
+            echoTo: sg.echo,
           });
         sg.step++;
         sg.next += spb;
@@ -476,7 +871,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: D.pluck ? 0.12 : 0.55,
           r: D.pluck ? 0.12 : 0.06,
           vib: !D.pluck && L[1] >= 6 ? 1 : 0,
-          echo: D.echo || 0.15,
+          echo: D.echo ?? 0.15,
+          echoTo: sg.echo,
         });
       /* the countermelody (SND-3), when the song has one */ const C = D.counterNotes && D.counterNotes[st];
       if (C)
@@ -490,6 +886,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: 0.5,
           r: 0.06,
           echo: 0.1,
+          echoTo: sg.echo,
         });
       /* bass */ const bs = D.bass,
         root = dg(ch) - 24;
@@ -563,6 +960,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: 0.2,
           r: 0.15,
           echo: 0.5,
+          echoTo: sg.echo,
         });
       else if (four && ar === 'chord7' && i % 2 === 0)
         T.synthVoice(bus, {
@@ -573,6 +971,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.035,
           s: 0.3,
           echo: 0.15,
+          echoTo: sg.echo,
         });
       else if (ar === 'up' && i % 2 === 0)
         T.synthVoice(bus, {
@@ -583,6 +982,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.035,
           s: 0.3,
           echo: 0.2,
+          echoTo: sg.echo,
         });
       else if (ar === 'updown' && i % 2 === 0) {
         const k = i / 2,
@@ -595,6 +995,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.035,
           s: 0.3,
           echo: 0.15,
+          echoTo: sg.echo,
         });
       } else if (ar === 'drip' && (i === 0 || i === 6 || i === 11))
         T.synthVoice(bus, {
@@ -606,6 +1007,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
           s: 0.2,
           r: 0.3,
           echo: 0.7,
+          echoTo: sg.echo,
         });
       else if (ar === 'chord7' && (i === 0 || i === 6 || i === 10))
         tri.forEach(n =>
@@ -662,7 +1064,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
     }
   };
   /* a short tune that plays once over a lead and a bass an octave down, on the bus it is given; the song ducks to 0.15
-     for its length. Returns when it ends (on the context's clock). SND-6: o.shift moves it by semitones, o.duck false
+     of its level for its length. Returns when it ends (on the context's clock). SND-6: o.shift moves it by semitones, o.duck false
      leaves the song alone (a coin on the payout) */
   T.jingle = (notes, bpm, type, out, o = {}) => {
     const spb = 60 / bpm / 4,
@@ -670,12 +1072,12 @@ export function trackerCreate(ctx, bus, opts = {}) {
       up = o.shift || 0,
       duck = o.duck !== false;
     let t = t0;
-    if (T.song && duck) {
-      const g = T.song.gain.gain;
-      g.cancelScheduledValues(t0);
-      g.setValueAtTime(g.value, t0);
-      g.linearRampToValueAtTime(0.15, t0 + 0.1);
-    }
+    if (T.song && duck)
+      fader(T.song, g => {
+        g.cancelScheduledValues(t0);
+        g.setValueAtTime(g.value, t0);
+        g.linearRampToValueAtTime(0.15 * T.song.level, t0 + 0.1);
+      });
     for (const [n, l] of notes) {
       if (n)
         (T.synthVoice(out, {
@@ -686,6 +1088,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
           vol: 0.12,
           s: 0.6,
           echo: 0.2,
+          /* SND-8b: on the effects' echo, unless it plays on the music bus (Settings' Music test) */
+          echoTo: out === bus ? T.echoIn : T.echoFx,
         }),
           n &&
             T.synthVoice(out, {
@@ -697,11 +1101,11 @@ export function trackerCreate(ctx, bus, opts = {}) {
             }));
       t += l * spb;
     }
-    if (T.song && duck) {
-      const g = T.song.gain.gain;
-      g.linearRampToValueAtTime(0.15, t);
-      g.linearRampToValueAtTime(1, t + 0.8);
-    }
+    if (T.song && duck)
+      fader(T.song, g => {
+        g.linearRampToValueAtTime(0.15 * T.song.level, t);
+        g.linearRampToValueAtTime(T.song.level, t + 0.8);
+      });
     return t;
   };
   return T;

@@ -164,7 +164,7 @@ export function renderLabBoard() {
     chips = META_CURRENCIES.filter(c => c !== 'dna' || M.dna)
       .map(
         c =>
-          `<pb-coin kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-coin>`
+          `<pb-chip kind="${c}" value="${M[c]}" label="${escapeHtml((CURRENCIES[c] || { name: c }).name)}"></pb-chip>`
       )
       .join(' '),
     owned = rows.filter(r => r.owned).length;

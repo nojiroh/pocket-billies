@@ -30,3 +30,17 @@ test('every sound has notes; the tick is as before (1320 Hz-ish, 25 ms)', () => 
   const [c, d] = uiSoundVoices(UI.sounds.cancel);
   assert.equal(c.midi - d.midi, 7, 'cancel falls a fifth');
 });
+
+test("UI-16a: the UI’s four motion sounds are data beside the buttons' four, each short and soft", () => {
+  for (const k of ['sheet', 'flip', 'count', 'toast']) {
+    assert.ok(UI_SOUND_NAMES.includes(k), k);
+    const V = uiSoundVoices(UI.sounds[k]);
+    assert.ok(V.length >= 1, k);
+    assert.ok(Math.max(...V.map(v => v.at + v.dur)) <= 0.25, `${k} is short`);
+    assert.ok(
+      V.every(v => v.vol <= 0.05),
+      `${k} is no louder than a button`
+    );
+  }
+  assert.deepEqual(UI_SOUND_NAMES.slice(0, 4), ['select', 'confirm', 'cancel', 'cant'], "the buttons' four first");
+});

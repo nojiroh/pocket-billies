@@ -23,5 +23,6 @@
    "neck": "nametag"
   },
   "colors": {"apron":["#3E8A4E","#2A6436"]}
- }
+ },
+ "figure": {"head":"round","build":"average","eyes":"round","brows":"soft"}
 }

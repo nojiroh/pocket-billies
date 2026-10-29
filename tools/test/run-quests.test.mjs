@@ -260,3 +260,39 @@ test('run quests: RS-2: the run’s resident stands in the first town row while 
   }
   assert.equal(Q.residentPlan({ meta: {}, run: null }, R, qdata(start('X').run)), null);
 });
+
+test("WM-5: a town's second quest giver: an offer of its own (another kind when another can be done), taken apart, inside the cap of three", () => {
+  let two = 0,
+    other = 0;
+  for (const seed of SEEDS) {
+    const run = start(seed).run,
+      D = qdata(run);
+    for (const i of towns(run)) {
+      const a = Q.questOffer(run, i, D, 0),
+        b = Q.questOffer(run, i, D, 1);
+      assert.equal(!!a, !!b, 'both givers offer, or neither');
+      if (!a || !b) continue;
+      two++;
+      if (a.kind !== b.kind) other++;
+      assert.deepEqual(Q.questOffer(run, i, D, 1), b, 'the same offer again');
+      assert.equal(Q.questKey(i, 1), i + RS.RUN_NODES);
+    }
+  }
+  assert.ok(two > 20, `${two} towns offer twice`);
+  assert.ok(other >= two * 0.9, `${other} of ${two}: the second giver's kind is another`);
+  /* taken apart: one taken leaves the other open; the cap counts both */
+  const run = start(SEEDS[0]).run,
+    D = qdata(run),
+    i = towns(run).find(j => Q.questOffer(run, j, D, 1));
+  assert.ok(Q.questTake(run, i, Q.questOffer(run, i, D, 1), QD, 1), 'the second giver’s taken');
+  assert.equal(Q.questOffer(run, i, D, 1), null, 'its offer is gone');
+  assert.ok(Q.questOffer(run, i, D, 0), "the first giver's still open");
+  assert.ok(Q.questTake(run, i, Q.questOffer(run, i, D, 0), QD, 0));
+  assert.deepEqual(run.quests.took, [i + RS.RUN_NODES, i]);
+  assert.equal(Q.questsHeld(run), 2);
+  assert.ok(RS.validRun(JSON.parse(JSON.stringify(run))), 'a reload keeps them');
+  run.quests.held.push({ ...run.quests.held[0], id: 'qx' });
+  assert.equal(Q.questsHeld(run), QD.held);
+  const j = towns(run).find(k => k !== i && Q.questOffer(run, k, D, 1));
+  if (j !== undefined) assert.equal(Q.questTake(run, j, Q.questOffer(run, j, D, 1), QD, 1), null, 'over the cap');
+});

@@ -49,6 +49,7 @@ export const MAX_TURNS = 60;
  * - fightAbove: no wild fight while the party's HP is below this share of its full HP
  * - potionBelow: a Potion (potion) on a Billie below this share of its HP, before each wild fight
  * - clinic: a town's clinic whenever someone is hurt and the money is there
+ * - stall: a village's or a town's market stall is looked at, not bought from (its wares noted; WM-5)
  * - pyramidsUpTo, reserve: Pyramids bought in a town shop up to this many held, keeping this much money
  * - catchWhileBelow: one throw at a wild Billie (not an Alpha) while the party is smaller than this
  * - ring: the throw's ring timing (0 to 1, the page's ring phase; 0.5: a "Great throw")
@@ -136,20 +137,21 @@ export function runSimOn(env) {
   const { simBanner, simDataHash, simSeeds, simSummary } = modules['sim-compare'];
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
-    { runArrive, runNext, runWorldNode, runWeather } = modules['run-map'],
-    { fieldBadgeKey, fieldMoveState, runSideOpen } = modules['run-side'],
+    { runArrive, runNext, runTownSize, runWorldNode, runWeather } = modules['run-map'],
+    { fieldBadgeKey, fieldMoveState, fieldRope, runSideOpen } = modules['run-side'],
     MOVES = (GAME_DATA.fieldMoves && GAME_DATA.fieldMoves.moves) || {},
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
     { eventAt } = modules.encounters,
-    { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen } = modules['run-loop'],
+    { runArriveFx, runBuyFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen, runStallStock } =
+      modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
     { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
     { routeTrainerTally, runRouteTrainers } = modules['route-trainers'],
     { rewardDataGame, rewardTake } = modules.rewards,
-    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks,
+    { perkBuy, perkCap, perkChoose, perkPrice, perkShelf, perkTeamOf } = modules.perks,
     { pointBudget, pointPick } = modules['starter-points'],
     { modTypeFits } = modules.modifiers,
     { residentCandidate } = modules.residents,
@@ -338,7 +340,7 @@ export function runSimOn(env) {
         /** the lost place's row on the map (null: not lost there) @type {number | null} */
         lostRow: null,
         /** money in by where it came from, and out by what it paid for (Studio plan T3.4) */
-        moneyIn: { prize: 0, reward: 0 },
+        moneyIn: { prize: 0, reward: 0, perks: 0 },
         moneyOut: { heal: 0, shop: 0, perks: 0 },
         /** each run foe fought: its leader, its node's type, won or not @type {any[]} */
         foes: [],
@@ -350,6 +352,10 @@ export function runSimOn(env) {
         genes: 0,
         /** SP-5: Escaped specimens fought */
         escaped: 0,
+        /** WM-5: the towns walked into by size (rules.json run.map.townSizes), and their market stalls
+         * @type {Record<string, number>} */
+        towns: {},
+        stalls: 0,
       };
     try {
       runArrive(s, 0, MAP_DATA);
@@ -370,6 +376,17 @@ export function runSimOn(env) {
         /* a town: heal when hurt; a town or a stall (RL-12b, nodeTypes.json shop): the day's shop (Pyramids up to
            five) */
         if (node.type === 'town') {
+          /* WM-5: its size, and a village's or a town's market stall's wares (noted: the bot buys no held item) */
+          const size = runTownSize(node, R.map.townSizes),
+            Z = size && R.town.sizes ? R.town.sizes[size] : null;
+          if (size) {
+            at.size = size;
+            stats.towns[size] = (stats.towns[size] || 0) + 1;
+          }
+          if (Z && Z.stall && R.town.stall) {
+            at.stall = runStallStock(run, i, run.clock, R.town.stall).map((/** @type {any} */ w) => w.item);
+            stats.stalls++;
+          }
           const { paid } = runClinic(s, fxRunPrice(run, data.PERKS, 'heal', R.healCost));
           if (paid) {
             stats.healed += paid;
@@ -382,13 +399,27 @@ export function runSimOn(env) {
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
           /* the shop's Perk, drawn as the shop opens (perks.js perkShelf), bought as the policy says, keeping the
              reserve (shop.js shopPerkBuy: its price with the price rows) */
-          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks);
+          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks, perkTeamOf(s.team));
           if (shelf) {
             const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
-              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.perks, data.PERKS, R.perks, P) : null;
+              c =
+                s.se >= cost + P.reserve
+                  ? simPerkChoice(
+                      [shelf],
+                      run.perks,
+                      data.PERKS,
+                      { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+                      P
+                    )
+                  : null;
             at.relic = { id: shelf, price: cost };
-            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop)) {
+            const se0 = s.se;
+            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop, s)) {
+              /* PK-6: a give row's Moneys on taking it (Boarding Pass) */
+              stats.moneyIn.perks += s.se - se0;
               s.se -= cost;
+              /* PK-1: the buy moment (shop.js shopPerkBuy); PK-5: a free row gives the price back */
+              stats.moneyIn.perks += runBuyFx(s, data.PERKS, cost).free;
               stats.spent += cost;
               stats.moneyOut.perks += cost;
               at.relic.bought = c.drop ? { drop: c.drop } : 1;
@@ -404,6 +435,8 @@ export function runSimOn(env) {
           ) {
             s.se -= price;
             s.pyramids.pyramid = (s.pyramids.pyramid || 0) + 1;
+            /* PK-1: the buy moment (shop.js shopBuy); PK-5: a free row gives the price back */
+            stats.moneyIn.perks += runBuyFx(s, data.PERKS, price).free;
             stats.spent += price;
             stats.moneyOut.shop += price;
           }
@@ -497,6 +530,8 @@ export function runSimOn(env) {
               if (q.graft) stats.caughtSpliced++;
               res = { over: 'caught', turns: B.turn };
             } else {
+              /* PK-5: a refund row's pyramid comes back (battle.js finishThrow) */
+              if (c.refund) s.pyramids.pyramid++;
               /* a miss: the foe's turn */
               fn('enemyOnly')();
             }
@@ -556,9 +591,18 @@ export function runSimOn(env) {
           stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simPerkChoice(run.offer, run.perks, data.PERKS, R.perks, P);
+            const c = simPerkChoice(
+              run.offer,
+              run.perks,
+              data.PERKS,
+              { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+              P
+            );
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
-            perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined);
+            const se0 = s.se;
+            perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined, s);
+            /* PK-6: a give row's Moneys on taking it (Boarding Pass) */
+            stats.moneyIn.perks += s.se - se0;
           }
           if (node.type === 'boss') {
             stats.won = true;
@@ -568,7 +612,7 @@ export function runSimOn(env) {
         /* on: into the side area when its field move can be used here (the policy takes it), out by its way out
            at its last place, else a lane drawn from the seed */
         const next = runNext(run.map, i),
-          side = simSideNext(run.map, i, s.meta.badges, simTypes());
+          side = simSideNext(run.map, i, s.meta.badges, simTypes(), fieldRope(run));
         if (side) {
           if (side.open) {
             runSideOpen(run.map);
@@ -579,7 +623,10 @@ export function runSimOn(env) {
         else i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
         /* walking in: the Perks' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
-        fxHealed = runArriveFx(s, data.PERKS);
+        const paid = { money: 0 };
+        fxHealed = runArriveFx(s, data.PERKS, paid);
+        /* PK-5: a money share row (Tip Jar) */
+        stats.moneyIn.perks += paid.money || 0;
       }
     } finally {
       data.worldHubBack();
@@ -676,6 +723,13 @@ export function runSimOn(env) {
       genes: avg(x => x.genes || 0),
       /* SP-5: Escaped specimens fought a run */
       escaped: avg(x => x.escaped || 0),
+      /* WM-5: towns walked into a run by size, and market stalls */
+      towns: Object.fromEntries(
+        [...new Set(all.flatMap(x => Object.keys(x.towns || {})))]
+          .sort()
+          .map(k => [k, avg(x => (x.towns || {})[k] || 0)])
+      ),
+      stalls: avg(x => x.stalls || 0),
     };
   }
 
@@ -705,12 +759,13 @@ export function runSimOn(env) {
    * RL-R2b: the policy at a side area: from the obstacle's place into the side when its field move can be used (the
    * badge kept and a Billie of the type standing: `open`), from its last place out by its way out; else null (the
    * lane as usual) @param {any} map @param {number} i @param {Record<string, number>} badges
-   * @param {{ name: string, types: string[] }[]} team @returns {{ to: number, open?: boolean } | null}
+   * @param {{ name: string, types: string[] }[]} team @param {boolean} [rope] PK-6: a sideOpen rule held (Coil of
+   * Rope: the badge alone) @returns {{ to: number, open?: boolean } | null}
    */
-  function simSideNext(map, i, badges, team) {
+  function simSideNext(map, i, badges, team, rope = false) {
     const S = map.side;
     if (!S) return null;
-    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team).state === 'ask')
+    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team, rope).state === 'ask')
       return { to: S.nodes[0], open: true };
     if (i === S.nodes[S.nodes.length - 1] && S.to >= 0) return { to: S.to };
     return null;

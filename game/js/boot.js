@@ -154,6 +154,7 @@ const UI_ICONS = [
   'mint',
   'minus',
   'plus',
+  'more',
   'run',
   'shop',
   'spark',

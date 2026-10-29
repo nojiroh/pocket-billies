@@ -46,7 +46,7 @@ test('halves: exact values stay exact, others go to the nearest half, ties to ev
 });
 
 test('the layout: in order, each field aligned, ending at the stride', () => {
-  const size = { f32: 4, f16: 2, u8n: 1, u8i: 1 };
+  const size = { f32: 4, f16: 2, u8n: 1, u8i: 1, u16n: 2 };
   let at = 0;
   SPRITE_INSTANCE_LAYOUT.forEach(([loc, , n, fmt, off], i) => {
     assert.equal(loc, i + 1);
@@ -147,4 +147,12 @@ test('packSpriteInstances: a run of records from instance 0, the buffer grown an
     assert.equal(u.x, i);
     assert.equal(u.mat, SPRITE_MATERIALS[i % 8]);
   }
+});
+
+test("CH-4: a picture's rect of its texture (an atlas cell) is packed with it, to a 65535th", () => {
+  packSpriteInstance(0, record({ uv: new Float32Array([0.25, 0.5, 0.0625, 0.03125 * 0.75]) }), false);
+  const c = unpackSpriteInstance(0).cell;
+  [0.25, 0.5, 0.0625, 0.0234375].forEach((v, k) => assert.ok(Math.abs(c[k] - v) <= 0.5 / 65535, `${k}: ${c[k]}`));
+  packSpriteInstance(1, record(), false);
+  assert.deepEqual(unpackSpriteInstance(1).cell.slice(0, 3), [0, 0, 1], 'a whole picture');
 });

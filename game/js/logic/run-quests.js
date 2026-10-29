@@ -21,6 +21,7 @@
 import { expose } from '../test-globals.js';
 import { rngFrom } from './rng.js';
 import { residentDrawn, residentFirstTowns } from './residents.js';
+import { RUN_NODES } from './run-state.js';
 import { runNext, runNodeSeed } from './run-map.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -49,8 +50,11 @@ expose({
   questFill: [() => questFill, v => (questFill = v)],
   // @ts-expect-error -- replaced on purpose
   questGoal: [() => questGoal, v => (questGoal = v)],
+  questKey: [() => questKey],
   // @ts-expect-error -- replaced on purpose
   questOffer: [() => questOffer, v => (questOffer = v)],
+  // @ts-expect-error -- replaced on purpose
+  questOfferAt: [() => questOfferAt, v => (questOfferAt = v)],
   // @ts-expect-error -- replaced on purpose
   questPay: [() => questPay, v => (questPay = v)],
   // @ts-expect-error -- replaced on purpose
@@ -159,20 +163,33 @@ export function questGoal(g, kind, c, Q) {
     type = c.types[g.int(0, c.types.length - 1)];
   return { goal, type };
 }
+/** WM-5: what run.quests.took keeps for town i's giver `slot` (0: the first, by the board; 1: a town's second, 3 x 2):
+ * the node for the first, as before, and RUN_NODES more for the second @param {number} i @param {number} [slot] */
+export const questKey = (i, slot = 0) => i + slot * RUN_NODES;
 /**
  * Town i's quest offer, or null: none when the town has no board, its offer was taken, or nothing it could offer can
  * be finished and handed in on this run. The same run and town always offer the same (the node's 'quest' stream:
- * the kind, its text, its goal, its type, in that order)
- * @param {Run} run @param {number} i @param {QuestData} data @returns {QuestOffer | null}
+ * the kind, its text, its goal, its type, in that order). WM-5: `slot` 1 is a town's second giver: its own stream
+ * ('quest|2'), and another kind than the first giver's when another can be finished
+ * @param {Run} run @param {number} i @param {QuestData} data @param {number} [slot] @returns {QuestOffer | null}
  */
-export function questOffer(run, i, data) {
+export function questOffer(run, i, data, slot = 0) {
+  if (run.quests && run.quests.took.includes(questKey(i, slot))) return null;
+  return questOfferAt(run, i, data, slot);
+}
+/** town i's offer from giver `slot`, taken or not (questOffer) @param {Run} run @param {number} i
+ * @param {QuestData} data @param {number} slot @returns {QuestOffer | null} */
+export function questOfferAt(run, i, data, slot) {
   const Q = data.quests;
-  if (run.quests && run.quests.took.includes(i)) return null;
   const c = questCan(run, i, data);
   if (!c) return null;
   const weights = Object.fromEntries(QUEST_KINDS.map(k => [k, c.can[k] ? Q.kinds[k].weight : 0]));
   if (!Object.values(weights).some(w => w > 0)) return null;
-  const g = rngFrom(runNodeSeed(run.seed, i), 'quest'),
+  if (slot) {
+    const first = questOfferAt(run, i, data, 0);
+    if (first && Object.entries(weights).some(([k, w]) => w > 0 && k !== first.kind)) weights[first.kind] = 0;
+  }
+  const g = rngFrom(runNodeSeed(run.seed, i), slot ? 'quest|' + (slot + 1) : 'quest'),
     kind = /** @type {QuestKind} */ (g.pick(weights)),
     texts = Q.texts.filter(t => t.kind === kind),
     text = texts[g.int(0, texts.length - 1)].id,
@@ -242,16 +259,18 @@ export function questFill(line, q, Q) {
   const fill = (/** @type {string} */ s) => s.replace(/\{type\}/g, q.type || '').replace(/\{n\}/g, String(q.goal));
   return fill(line).replace(/\{title\}/g, fill(Q.kinds[q.kind].title));
 }
-/** take town i's offer: false when `held` are held already @param {Run} run @param {number} i
- * @param {QuestOffer} offer @param {QuestsData} Q @returns {RunQuest | null} */
-export function questTake(run, i, offer, Q) {
-  const R = questsOf(run);
-  if (questsHeld(run) >= Q.held || R.took.includes(i)) return null;
+/** take town i's offer (WM-5: from giver `slot`): false when `held` are held already (the cap counts both givers'
+ * quests) @param {Run} run @param {number} i @param {QuestOffer} offer @param {QuestsData} Q @param {number} [slot]
+ * @returns {RunQuest | null} */
+export function questTake(run, i, offer, Q, slot = 0) {
+  const R = questsOf(run),
+    key = questKey(i, slot);
+  if (questsHeld(run) >= Q.held || R.took.includes(key)) return null;
   /** @type {RunQuest} */
   const q = { id: 'q' + R.n, kind: offer.kind, text: offer.text, at: i, goal: offer.goal, n: 0, done: 0 };
   if (offer.type) q.type = offer.type;
   R.n++;
-  R.took.push(i);
+  R.took.push(key);
   R.held.push(q);
   return q;
 }

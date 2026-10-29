@@ -175,9 +175,6 @@
 .pc-thumb:nth-child(2n) {
   transform: rotate(1.2deg);
 }
-.pc-thumb:active {
-  transform: scale(0.97);
-}
 .pc-thumb img {
   display: block;
   width: 100%;

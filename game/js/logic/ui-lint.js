@@ -86,16 +86,16 @@ export const UI_LINT_RULES = [
 export const UI_LINT_CEILING = {
   radius: 0,
   space: 39,
-  shadow: 161,
-  keyframes: 53,
-  duration: 249,
+  shadow: 160,
+  keyframes: 50,
+  duration: 241,
   font: 10,
-  colour: 650,
-  important: 153,
-  zindex: 60,
-  blur: 27,
-  jsColour: 638,
-  innerHtml: 55,
+  colour: 554,
+  important: 152,
+  zindex: 58,
+  blur: 24,
+  jsColour: 622,
+  innerHtml: 54,
   styleAttr: 41,
 };
 // ceiling: end
@@ -285,8 +285,9 @@ export const uiLintReads = (/** @type {string} */ f) =>
   !/\/vendor\//.test(f) &&
   !f.endsWith('/hooks.js') &&
   !f.endsWith('logic/ui-lint.js') &&
-  /* LD-4: the run's helper thread is on no page and draws nothing; LD-5: nor the world map's (bowl-worker.js) */
-  !/\/(run|bowl)-worker(-modules)?\.js$/.test(f);
+  /* LD-4: the run's helper thread is on no page and draws nothing; LD-5: nor the world map's (bowl-worker.js); CH-4:
+     nor the figures' (figure-worker.js and its modules) */
+  !/\/(run|bowl|figure)-worker(-modules)?\.js$/.test(f);
 
 /** every file the lint reads, by following the pages: read(path) gives a file's text (fetch or fs) */
 export async function uiLintCrawl(/** @type {(path: string) => Promise<string>} */ read) {

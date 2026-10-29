@@ -452,11 +452,26 @@ debugLog.state = () => {
     const p = GAME.saveData.preferences || {};
     s.preferences = {
       theme: p.theme || 'system',
+      /* UI-12: the palette (a uiTheme.json preset id; default: the defaults) and the side the screen shows */
+      palette: p.palette || 'default',
+      side:
+        document.documentElement.dataset.theme === 'dark' ||
+        (document.documentElement.dataset.theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+          ? 'dark'
+          : 'light',
       motion: p.motion || 'system',
+      /* UI-16a: the level it resolves to (Device follows the phone): full, calm or reduced */
+      motionLevel: document.documentElement.dataset.motion || 'full',
+      /* UI-14b: the Colour shapes switch (patterns on the marks and bars) */
+      shapes: p.shapes === 'on' ? 'on' : 'off',
       fps: p.fps || 60,
       effects: p.effects || 'full',
       tilt: p.tilt !== false,
     };
+    /* SY-8: the style track: the Flashes and Animation state now, and under each state that ran this session how many
+       flashes showed (flash), were held to 15% (flashHeld) or skipped (flashSkipped), stamps, damage pops, HP rolls and
+       foil frames. Counts only: no save data, names or places */
+    if (typeof GAME.styleLog === 'function') s.style = GAME.styleLog();
     s.started = !!GAME.saveData.started;
     s.tab = GAME.uiState.tab;
     s.battle = !!GAME.activeBattle;
@@ -520,6 +535,8 @@ debugLog.state = () => {
             camRise: GAME.walkRenderer && GAME.walkRenderer.occT != null ? +GAME.walkRenderer.occT.toFixed(1) : null,
             /* RL-12: the Perks held (perks.json ids, not names), the pick waiting (how many) and offers made */
             relics: (run.perks || []).slice(),
+            /* PK-1: the Perks' counters, growth and once marks (logic/effects.js fxStateLog: numbers only) */
+            relicState: GAME.fxStateLog ? GAME.fxStateLog(run) : null,
             offer: run.offer ? run.offer.length : 0,
             offers: run.offerN || 0,
             /* RL-12b: events (ids played, the one playing, draws so far), the boons on, reward picks made and the
@@ -991,16 +1008,8 @@ debugLog.more = () => {
   t('glExtensions', () =>
     typeof GAME.gpuState !== 'undefined' && GAME.gpuState.gl ? GAME.gpuState.gl.getSupportedExtensions() : null
   );
-  t('audio', () =>
-    typeof GAME.soundEngine !== 'undefined' && GAME.soundEngine.ctx
-      ? {
-          state: GAME.soundEngine.ctx.state,
-          rate: GAME.soundEngine.ctx.sampleRate,
-          song: GAME.soundEngine.song ? GAME.soundEngine.song.name : null,
-          worldBeds: typeof GAME.ambience !== 'undefined' ? Object.keys(GAME.ambience.beds).length : 0,
-        }
-      : null
-  );
+  /* SND-8a: the sound's own lines (sound.js soundDebugLines): live beds, sources a minute, late steps, state changes */
+  t('audio', () => (typeof GAME.soundDebugLines === 'function' ? GAME.soundDebugLines() : null));
   return o;
 };
 debugLog.build = () => ({
@@ -1178,6 +1187,8 @@ debugLog.hook = () => {
     ['buildGroundMesh', 'building the ground mesh'],
     ['navGrid', 'working out where you can walk'],
     ['screenSnapshot', 'reading the picture back'],
+    /* SND-8a: the world sounds' 200 ms update */
+    ['updateAmbience', 'world sounds'],
   ])
     timed(n, l);
   /* the renderer's own sections, timed every frame */

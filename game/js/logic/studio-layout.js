@@ -141,7 +141,7 @@ export const STUDIO_WORKSPACES = [
   ['Art', ['art', 'workbench']],
   ['Creatures', ['billionaires', 'roster', 'parts', 'genes', 'coats', 'moves', 'types', 'preview']],
   ['World', ['scenes', 'hub', 'props', 'world', 'engine', 'camera']],
-  ['People & story', ['trainers', 'people', 'wardrobe', 'lore', 'story']],
+  ['People & story', ['trainers', 'people', 'wardrobe', 'figures', 'lore', 'story']],
   /* robots join the runs: bots are the runs' enemy faction (VISION.md); items are what a run's shops sell */
   ['Runs', ['runlab', 'relics', 'unlocks', 'economy', 'robots', 'items']],
   ['Sound & UI', ['music', 'ui']],
@@ -151,8 +151,8 @@ export const STUDIO_WORKSPACES = [
 export const NAV_JOINED = [
   {
     name: 'Characters',
-    d: 'Trainers’ and shopkeepers’ looks, and the wardrobe they are made from: body, hair, faces, clothes',
-    keys: ['people', 'wardrobe'],
+    d: 'Trainers’ and shopkeepers’ looks, the wardrobe they are made from (body, hair, faces, clothes) and the figure kit that builds their 3D figures',
+    keys: ['people', 'wardrobe', 'figures'],
   },
 ];
 

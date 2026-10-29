@@ -133,6 +133,27 @@ export interface Meta {
   bosses: Record<string, number>;
   /** ON-3: the Showcase (logic/showcase.js) */
   show: MetaShow;
+  /** ON-4: the latest friend trades, newest first (logic/trade.js) */
+  trades: MetaTrade[];
+}
+
+/** ON-4: one friend trade as the save keeps it: its key (the offer's id and stamp), when it began here, the friend
+    (uid and name), how far this side went (open, gave, done, back: given back after a close), and what was given and
+    got (kind b / e / p, species or part id, level or upgrade, nickname) */
+export interface MetaTrade {
+  k: string;
+  at: number;
+  u: string;
+  n: string;
+  st: 'open' | 'gave' | 'done' | 'back';
+  gave: TradeLabel[];
+  got: TradeLabel[];
+}
+export interface TradeLabel {
+  k: string;
+  sp: string;
+  lvl: number;
+  nick?: string;
 }
 
 /** ON-3: the save's Showcase record: my entries (slot, stamp, week, theme and the Billie's uid, for its ribbon), the
@@ -350,6 +371,9 @@ export interface Run {
   /** RL-12: each run shop's Perk for a day, by '<map node>:<day>' ('' once bought), drawn when the shop first
       opens that day (logic/perks.js perkShelf) */
   shelf: Record<string, string>;
+  /** PK-1: the Perks' counters (n, for `every`), growth (v, for `grow`) and once-a-run marks (used), by
+      '<source>/<row>' (logic/effects.js fxKey); missing until a row keeps state, and missing reads as empty */
+  perkState?: Record<string, { n?: number; v?: number; used?: 1 }>;
   /** the hub's working fields as the run started */
   start: RunStart;
   /** counters, so a resumed run carries on its random streams and ids */
@@ -476,7 +500,7 @@ export interface Trip {
 /** settings kept in the save (a new game on this device keeps them) */
 export interface Preferences {
   theme: 'system' | 'light' | 'dark';
-  motion: 'system' | 'reduced' | 'full';
+  motion: 'system' | 'reduced' | 'calm' | 'full';
   fps: 30 | 60 | 90 | 120;
   effects: 'full';
   /** graphics: 'sharp' (best) or 'smooth' */
@@ -493,6 +517,8 @@ export interface Preferences {
   bigTargets?: boolean;
   textSize?: string;
   contrast?: string;
+  /** UI-14b: the Colour shapes switch: 'on' draws patterns over the coloured marks and bars */
+  shapes?: 'on' | 'off';
   flashes?: string;
   lang?: string;
   expert?: boolean;

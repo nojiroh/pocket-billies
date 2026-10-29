@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  figureDensityStep,
   CLIP_FRAMES,
   TILT_STEP,
   WALK_CYCLE_M,
@@ -15,14 +16,17 @@ import {
   figureMesh,
   figurePose,
   figureRamp,
+  figureSceneLight,
   figureTick,
   figureView,
+  frontOf,
   jointMatrices,
   mannequinFigure,
   meshClipFrame,
   meshClipMatrices,
   outlineOf,
   restPose,
+  shapeSurface,
   toonBand,
 } from '../../game/js/logic/figure-pose.js';
 
@@ -130,7 +134,9 @@ test('figure pose: the mesh: rounded shapes, each vertex on one joint, wound out
     { data, count, colours } = figureMesh(F);
   assert.equal(count % 3, 0);
   assert.ok(count > 2000 && count < 20000, `${count} vertices`);
-  assert.deepEqual(colours, Object.keys(F.colours));
+  /* CH-3b: the colours its parts use, in the order first used (the face marks' are painted, not shaded) */
+  assert.deepEqual(colours, [...new Set(F.parts.map(p => p.col))]);
+  assert.ok(!colours.includes('eye') && !colours.includes('blush'));
   const seen = new Set();
   for (let v = 0; v < count; v++) {
     const j = data[v * 8 + 6];
@@ -173,12 +179,14 @@ test('figure pose: the walk swings the legs against each other and the arms agai
   const F = mannequinFigure(),
     at = id => F.parts.findIndex(p => p.id === id);
   assert.equal(CLIP_FRAMES.walk, 8);
-  const P2 = figurePose(F, 'walk', 2),
-    P6 = figurePose(F, 'walk', 6);
-  assert.ok(P2.rot[at('thighA')][0] < -0.5 && P2.rot[at('thighB')][0] > 0.5, 'frame 2: A forward, B back');
-  assert.ok(P2.rot[at('armA')][0] > 0.4, 'the arm on the side of the forward leg swings back');
-  assert.deepEqual(P6.rot[at('thighA')], P2.rot[at('thighB')]);
-  assert.ok(P2.rootY < 0 && figurePose(F, 'walk', 0).rootY > 0, 'it drops as the legs part and bounces as they pass');
+  /* CH-3c: frame 0 is A's foot coming down ahead, B's leaving the ground behind */
+  const P0 = figurePose(F, 'walk', 0),
+    P4 = figurePose(F, 'walk', 4);
+  assert.ok(P0.rot[at('thighA')][0] < -0.4 && P0.rot[at('thighB')][0] > 0.4, 'frame 0: A forward, B back');
+  assert.ok(P0.rot[at('armA')][0] > 0.3, 'the arm on the side of the forward leg swings back');
+  assert.ok(Math.abs(P4.rot[at('thighA')][0] - P0.rot[at('thighB')][0]) < 1e-6, 'half a cycle on, the other leg');
+  assert.ok(P0.rootY < figurePose(F, 'walk', 2).rootY, 'it drops as the legs part and rises as they pass');
+  for (let f = 0; f < 8; f++) assert.ok(figurePose(F, 'walk', f).rootY <= 1e-9, `frame ${f}: a foot on the ground`);
   for (let f = 0; f < 8; f++) {
     const P = figurePose(F, 'walk', f);
     for (const k of ['A', 'B']) {
@@ -376,4 +384,183 @@ test('figure pose: a model’s clip matrices: 3 x 4 to 4 x 4, the hips’ lift s
   /* lift 0.513 m is 16.4 texels: snapped to 16, so every joint is 0.013 m lower */
   assert.ok(Math.abs(M[13] - (0.5 + 0.013 + 16 / 32 - 0.513)) < 1e-6, `${M[13]}`);
   assert.deepEqual(meshClipMatrices(c, 3, 2, 32), M, 'the frames wrap');
+});
+
+/* CH-3b: head shapes, the new clips, a figure's own gait, four legs, marks of any colour */
+test('figure pose: a squarer ellipsoid reaches further on the diagonal, a tapered one is wider at the bottom', () => {
+  const reach = sh => {
+    const S = shapeSurface(sh);
+    let diag = 0,
+      low = 0,
+      high = 0;
+    for (const p of S.pts) {
+      diag = Math.max(diag, Math.min(Math.abs(p[0]), Math.abs(p[1])));
+      if (p[1] < -0.3) low = Math.max(low, Math.abs(p[0]));
+      if (p[1] > 0.3) high = Math.max(high, Math.abs(p[0]));
+    }
+    return { diag, low, high };
+  };
+  const E = { kind: 'ellipsoid', c: [0, 0, 0], r: [0.5, 0.5, 0.5], seg: 16, rings: 12 },
+    round = reach(E),
+    box = reach({ ...E, sq: 1 }),
+    pear = reach({ ...E, taper: 0.3 });
+  assert.ok(box.diag > round.diag + 0.05, `${box.diag} > ${round.diag}`);
+  assert.ok(pear.low > pear.high + 0.05, `${pear.low} > ${pear.high}`);
+  assert.ok(Math.abs(round.low - round.high) < 1e-6);
+  /* a face mark sits on the shape's front: further forward on a squarer head */
+  assert.ok(frontOf({ ...E, sq: 1 }, 0.2, 0.2).at[2] > frontOf(E, 0.2, 0.2).at[2]);
+});
+
+test('figure pose: cheer, throw and sit; a gait of its own; on the clock', () => {
+  const F = mannequinFigure(),
+    i = id => F.parts.findIndex(p => p.id === id);
+  assert.deepEqual(Object.keys(CLIP_FRAMES), [
+    'idle',
+    'walk',
+    'jog',
+    'sprint',
+    'start',
+    'stop',
+    'cheer',
+    'throw',
+    'sit',
+  ]);
+  /* both arms up in a cheer */
+  const C = figurePose(F, 'cheer', 0);
+  assert.ok(C.rot[i('armA')][2] > 2 && C.rot[i('armB')][2] < -2);
+  /* the throwing arm back over the shoulder, then forward past the hip */
+  assert.ok(figurePose(F, 'throw', 3).rot[i('armB')][0] > 1.5);
+  assert.ok(figurePose(F, 'throw', 7).rot[i('armB')][0] < -0.5);
+  /* sitting: thighs forward, shins down */
+  const S = figurePose(F, 'sit', 0);
+  assert.ok(S.rot[i('thighA')][0] < -1.2 && S.rot[i('shinA')][0] > 1.2);
+  /* a bigger stride and a forward lean */
+  const G = { ...F, gait: { swing: 1.4, lean: 0.1 } },
+    w0 = figurePose(F, 'walk', 0),
+    w1 = figurePose(G, 'walk', 0);
+  assert.ok(Math.abs(w1.rot[i('thighA')][0]) > Math.abs(w0.rot[i('thighA')][0]) * 1.3);
+  assert.ok(Math.abs(w1.rot[i('torso')][0] - (w0.rot[i('torso')][0] + 0.1)) < 1e-9);
+  /* the default gait is the spike's walk */
+  assert.deepEqual(figurePose({ ...F, gait: {} }, 'walk', 3), figurePose(F, 'walk', 3));
+  /* a cheer on ones, the idle on twos */
+  const tick = 1000 / 12;
+  assert.equal(clipFrameAt('cheer', tick * 3), 3);
+  assert.equal(clipFrameAt('idle', tick * 3), 1);
+});
+
+test('figure pose: four legs walk in diagonal pairs', () => {
+  const leg = (id, at) => ({
+      id,
+      parent: 0,
+      at,
+      shape: { kind: 'capsule', a: [0, 0, 0], b: [0, -0.2, 0], r0: 0.05, r1: 0.05 },
+      col: 'fur',
+    }),
+    F = {
+      name: 'quad',
+      height: 0.8,
+      colours: { fur: [150, 100, 60] },
+      parts: [
+        {
+          id: 'body',
+          parent: -1,
+          at: [0, 0.4, 0],
+          shape: { kind: 'ellipsoid', c: [0, 0, 0], r: [0.2, 0.2, 0.4] },
+          col: 'fur',
+        },
+        {
+          id: 'head',
+          parent: 0,
+          at: [0, 0.1, 0.4],
+          shape: { kind: 'ellipsoid', c: [0, 0, 0], r: [0.1, 0.1, 0.1] },
+          col: 'fur',
+        },
+        leg('legFL', [0.1, -0.1, 0.25]),
+        leg('legFR', [-0.1, -0.1, 0.25]),
+        leg('legBL', [0.1, -0.1, -0.25]),
+        leg('legBR', [-0.1, -0.1, -0.25]),
+      ],
+    },
+    P = figurePose(F, 'walk', 2);
+  assert.ok(Math.abs(P.rot[2][0]) > 0.3);
+  assert.equal(P.rot[2][0], P.rot[5][0], 'front left with back right');
+  assert.equal(P.rot[3][0], P.rot[4][0], 'front right with back left');
+  assert.equal(P.rot[2][0], -P.rot[3][0]);
+  assert.ok(figurePose(F, 'idle', 14).blink);
+});
+
+test('figure pose: marks in their own colour, hollow, and how much they must face the camera', () => {
+  const F = mannequinFigure(),
+    head = F.parts.find(p => p.id === 'head').shape;
+  F.colours.frame = [10, 20, 30];
+  F.face = [
+    { part: 'head', kind: 'glasses', col: 'frame', hollow: true, ...frontOf(head, 0.11, 0.255), w: 0.12, h: 0.12 },
+    { part: 'head', kind: 'tag', ...frontOf(head, 0, 0.255), w: 0.06, h: 0.03, min: 0.99 },
+  ];
+  const P = restPose(F),
+    S = cardSize(32, 0.45),
+    M = figureFaceMarks(F, jointMatrices(F, P, 32), P, { rel: Math.PI, tilt: 0.45 }, 32, S);
+  assert.equal(M.length, 1, 'the tag needs the head square to the camera');
+  assert.equal(M[0].hollow, true);
+  assert.deepEqual(M[0].rgb, [10, 20, 30]);
+});
+
+test('figure pose: the scene lights a figure (CH-3b): the sun by its side, a lamp up close, an overcast sky softer', () => {
+  /* the camera looking north (into the view: -z), its right +x */
+  const cam = { right: [1, 0, 0], fwd: [0, -0.4, -0.9] },
+    sun = (dir, col = [1, 0.95, 0.85]) => figureSceneLight({ sunDir: dir, sunCol: col, amb: [0.5, 0.55, 0.7], ...cam });
+  /* a sun in the west lights the figure's left, one in the east its right */
+  assert.ok(sun([-0.7, 0.6, 0.2]).L[0] < -0.3);
+  assert.ok(sun([0.7, 0.6, 0.2]).L[0] > 0.3);
+  /* a sun behind the camera lights the front (z toward the viewer), one beyond the figure its back */
+  assert.ok(sun([0, 0.5, 0.8]).L[2] < -0.3);
+  assert.ok(sun([0, 0.5, -0.8]).L[2] > 0.3);
+  /* turned with the camera: a sun in the north, a camera looking east (its right the south): from the left
+  assert.ok(
+    figureSceneLight({ sunDir: [0, 0.6, -0.8], sunCol: [1, 1, 1], right: [0, 0, 1], fwd: [1, 0, 0] }).L[0] < -0.3
+  );
+  /* stepped: a small move of the sun keeps the same picture */
+  assert.equal(sun([-0.7, 0.6, 0.2]).key, sun([-0.69, 0.61, 0.2]).key);
+  /* at night a lamp just to the east of the figure is its key, warm on the lit side */
+  const night = figureSceneLight({
+    sunDir: [-0.3, 0.8, -0.2],
+    sunCol: [0.08, 0.09, 0.14],
+    amb: [0.1, 0.12, 0.25],
+    lamps: [{ p: [1.2, 2.2, 0], r: 5, c: [1.3, 0.9, 0.5] }],
+    at: [0, 1, 0],
+    dark: 1,
+    ...cam,
+  });
+  assert.ok(night.L[0] > 0.3, JSON.stringify(night.L));
+  assert.ok(night.keyT[0] > night.keyT[2], 'a warm key');
+  assert.ok(night.ambT[2] > night.ambT[0], 'a cool shade');
+  assert.ok(night.rimK > 0.9, 'the back rim after dark');
+  /* the same night far from the lamp: lit by the moon, and softer (more of it the sky's) */
+  const far = figureSceneLight({
+    ...cam,
+    sunDir: [-0.3, 0.8, -0.2],
+    sunCol: [0.08, 0.09, 0.14],
+    amb: [0.1, 0.12, 0.25],
+    lamps: [{ p: [40, 2, 0], r: 5, c: [1, 1, 1] }],
+    at: [0, 1, 0],
+  });
+  assert.ok(far.L[0] < 0);
+  assert.ok(far.flat > sun([-0.7, 0.6, 0.2]).flat);
+});
+
+test('CH-4: density by distance: whole near, 3/4 then 1/2 farther off, holding near an edge', () => {
+  assert.equal(figureDensityStep(1.4), 1, 'nearer than the target');
+  assert.equal(figureDensityStep(1), 1);
+  assert.equal(figureDensityStep(0.7), 0.75, 'about 1.4 times the target distance');
+  assert.equal(figureDensityStep(0.4), 0.5, 'two and a half times');
+  /* at an edge the step held stays */
+  assert.equal(figureDensityStep(0.78, 1), 1);
+  assert.equal(figureDensityStep(0.82, 0.75), 0.75);
+  assert.equal(figureDensityStep(0.53, 0.75), 0.75);
+  assert.equal(figureDensityStep(0.57, 0.5), 0.5);
+  /* past the margin it moves */
+  assert.equal(figureDensityStep(0.74, 1), 0.75);
+  assert.equal(figureDensityStep(0.86, 0.75), 1);
+  assert.equal(figureDensityStep(0.49, 0.75), 0.5);
+  assert.equal(figureDensityStep(0.61, 0.5), 0.75);
 });

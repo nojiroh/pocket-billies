@@ -153,7 +153,7 @@ sea past it, `cam.orbit` set. A quick fixture `?fixture=island` that boots into 
 
 ### IS-2 Island ground generator
 - `logic/island-gen.js`, seeded (`logic/rng.js`), a Node tool `tools/build-island.mjs` that writes
-  `game/data/maps/copperleaf_island.json`. Does **not** edit `logic/mapgen.js` while TR-2c part 2 is open; import its
+  `game/data/maps/copperleaf_island.json` (since IS-5, `copperleaf.json`). Does **not** edit `logic/mapgen.js` while TR-2c part 2 is open; import its
   helpers read-only (if one must be exported, one tiny commit, named in HANDOFF).
 - Order: coast polygon (radius plus noise, the cove cut in), heights (mountain, foot hills, coast fall-off, cliffs
   where the dials say), the trail (reuse TR-2b's trail logic), the stream, the coast path as a closed loop plus spokes,

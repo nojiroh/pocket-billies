@@ -30,7 +30,7 @@ Project Story is its own track. It runs alongside phases A to E; A2 and E3 point
 | Hazel vs Blake | A **real battle in the battle engine** with the normal battle UI, built after phase 19 (battle core) |
 | Pacing | First talk: flat rhythm. Hazel vs Blake: too fast. Starter pick: too fast. Blake's battle: flat rhythm |
 | Arrival | Open: Claude proposes 2-3 options (see "Ask me before") |
-| Phase 22 | Moved here from the `plan/engine-phases-19-21` branch |
+| Phase 22 | Moved here from the `plan/engine-phases-19-21` branch (now `archive/plan-engine-19-21`) |
 | City opening beats (S7) | Draft in docs/city-opening-beats.md: 21 s; the city replaces the fall's first leg (in S8); the figure reaches toward the light; the billboard's advert stays open (one swappable picture) |
 
 ## Owner decisions (2026-10-23): the Chosen is the professor

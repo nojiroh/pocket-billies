@@ -16,14 +16,14 @@ import { openBattle, setOpenBattle } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({
   WEATHER_BATTLE_NOTES: [() => WEATHER_BATTLE_NOTES],
-  battleWeather: [() => battleWeather, v => (battleWeather = v)],
+  battleWeather: [() => battleWeather, v => ((battleWeather = v), provide({ battleWeather }))],
   battleWeatherMultiplier: [
     () => battleWeatherMultiplier,
     v => ((battleWeatherMultiplier = v), provide({ battleWeatherMultiplier })),
   ],
 });
 /* eslint-enable no-func-assign */
-provide({ battleWeatherMultiplier });
+provide({ battleWeather, battleWeatherMultiplier });
 /* to-module: end */
 /* ---------- battles feel the weather ---------- */
 const WEATHER_BATTLE_NOTES = {
@@ -35,6 +35,9 @@ const WEATHER_BATTLE_NOTES = {
   sunny: 'The sun is out: Fire and Grass moves are a little stronger.',
   night: 'It’s night: Psychic and Dragon moves are a little stronger.',
 };
+provide({ WEATHER_BATTLE_NOTES }); /* to-module */
+/* UI-15: the battle's field strip shows the line on a tap */
+provide({ WEATHER_BATTLE_NOTES });
 function battleWeather() {
   if (typeof activeBattle === 'undefined' || !activeBattle) return null;
   if (activeBattle.wx !== undefined) return activeBattle.wx;

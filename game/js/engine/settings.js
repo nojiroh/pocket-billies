@@ -257,7 +257,16 @@ export const ENGINE_DEFAULTS = {
   /* characters track CH-2 and CH-3 (the spike): people as small 3D figures baked into pixel pictures
      (game/js/figures.js), off; which figure you are, the style (the pixel puppet or the plain 3D figure), how many
      pixels a metre they are baked at, how many ways round, their outline, and townsfolk as figures too */
-  people: { figures: false, figure: 'rogue', style: 'pixel', density: 32, yawSteps: 16, outline: true, folk: false },
+  people: {
+    figures: false,
+    figure: 'look',
+    style: 'gnight',
+    density: 48,
+    yawSteps: 16,
+    outline: true,
+    folk: true,
+    atlas: true,
+  },
   camera: {
     pitch: null,
     pitchAdd: -3,
@@ -1128,17 +1137,18 @@ export const ENGINE_SPEC = [
         'figures',
         'Figures (test)',
         'bool',
-        'Characters track spike: you and the test maps’ figures drawn as small 3D figures baked into pixel pictures. Off: people as they are.',
+        'Characters track: people drawn as small 3D figures baked into pixel pictures, each built from their own look. Off: people as they are.',
       ],
       [
         'figure',
         'Your figure',
         'sel',
         [
+          ['look', 'Your look'],
           ['rogue', 'Stand-in (CC0 model)'],
           ['mannequin', 'Mannequin (code)'],
         ],
-        'Which figure you are (and townsfolk, with them on).',
+        'Which figure you are: your own look, or one of the spike’s figures.',
       ],
       [
         'style',
@@ -1146,9 +1156,12 @@ export const ENGINE_SPEC = [
         'sel',
         [
           ['pixel', 'Pixel puppet'],
+          ['gnight', 'Gouache night (CH-3b)'],
+          ['hd2d', 'HD-2D'],
+          ['paint', 'Painterly'],
           ['smooth', 'Plain 3D'],
         ],
-        'Pixel puppet: toon bands and an outline on the pixel grid. Plain 3D: the same figure, smooth, for comparison.',
+        'Pixel puppet: toon bands and an outline on the pixel grid. Gouache night: the CH-3b redesign, painted bands, rims and its own outfits. HD-2D and Painterly: two of the directions. Plain 3D: the same figure, smooth, for comparison. Every style is lit by the scene: its sun, sky, rooms and lamps.',
       ],
       [
         'density',
@@ -1156,7 +1169,7 @@ export const ENGINE_SPEC = [
         16,
         64,
         4,
-        'How fine the figures are baked: 32 matches the ground and props.',
+        'How fine the figures are baked: 32 matches the ground and props, 48 (the default) shows more detail and stays sharp at the Normal zoom; above that they blur on a phone.',
       ],
       ['yawSteps', 'Figure turns', 8, 32, 8, 'How many ways round a figure is drawn: 8, 16 or 32 (24 draws 16).'],
       [
@@ -1165,7 +1178,18 @@ export const ENGINE_SPEC = [
         'bool',
         'The dark plum outline round a figure, and inside it where one part stands in front of another.',
       ],
-      ['folk', 'Townsfolk as figures', 'bool', 'Townsfolk walking about are figures too (yours).'],
+      [
+        'folk',
+        'Everyone else as figures',
+        'bool',
+        'Everyone else is a figure too, each their own look: townsfolk, people on the maps, trainers, Kappi, cutscenes.',
+      ],
+      [
+        'atlas',
+        'Live atlas',
+        'bool',
+        'Figures drawn each step into one shared picture by the game’s own renderer and lit where they stand by the sun, the sky, every lamp and the shadows. Off: each picture baked on its own, as before.',
+      ],
     ],
   ],
   [

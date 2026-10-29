@@ -27,5 +27,6 @@
    "scarf": ["#CE7C4C"],
    "glasses_round": ["#8A6A3A"]
   }
- }
+ },
+ "figure": {"head":"pear","build":"elder","eyes":"weary","brows":"soft"}
 }

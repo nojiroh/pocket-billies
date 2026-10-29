@@ -24,5 +24,6 @@
    "hat_cowboy": ["#B89060","#5A3A20"],
    "scarf": ["#E9B83C","#B8423A"]
   }
- }
+ },
+ "figure": {"head":"long","build":"lanky","eyes":"soft","brows":"soft"}
 }

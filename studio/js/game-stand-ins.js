@@ -12,6 +12,7 @@ expose({
   PEOPLE: [() => PEOPLE],
   RULES: [() => RULES],
   TYPE_COLORS: [() => TYPE_COLORS],
+  TYPE_GLOW: [() => TYPE_GLOW],
   activeBattle: [() => activeBattle, v => ((activeBattle = v), provide({ activeBattle }))],
   escapeHtml: [() => escapeHtml],
   liveMap: [() => liveMap],
@@ -65,6 +66,13 @@ const TYPE_COLORS = liveMap(D => {
   return o;
 });
 provide({ TYPE_COLORS }); /* to-module */
+/* UI-13: battle's 3D effects take a type's `glow` (game-data.js TYPE_GLOW) */
+const TYPE_GLOW = liveMap(D => {
+  const o = Object.fromEntries(D.types.map(t => [t.id, t.glow || t.color]));
+  o.None = (D.untyped || {}).glow || (D.untyped || {}).color || '#9a9a9a';
+  return o;
+});
+provide({ TYPE_GLOW }); /* to-module */
 const HIT_EFFECTS_BY_TYPE = liveMap(D => {
   const o = Object.fromEntries(D.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
   o.None = (D.untyped || {}).fx || ['pow', 'star'];

@@ -78,6 +78,81 @@
   white-space: nowrap;
 }
 
+/* UI-16a: the selection bar sliding to its new row (pbSlideBar): a ghost of .pb-sel's slanted bar */
+.pb-slidebar {
+  position: fixed;
+  z-index: var(--z-float);
+  pointer-events: none;
+  transform-origin: 0 0;
+}
+.pb-slidebar::before {
+  content: '';
+  position: absolute;
+  inset: 2px 0;
+  transform: skewX(calc(-1 * var(--slant)));
+  border-left: 4px solid var(--gold-b);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--gold-b) 34%, transparent),
+    color-mix(in srgb, var(--gold-a) 10%, transparent)
+  );
+}
+/* UI-16a: a gain flying to where it goes (pbFlyTo) */
+.pb-fly {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: var(--z-float);
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+/* UI-17: a big moment's burst (pbBurst: a catch, a level-up): a ring and eight rays in the moment's family, from a
+   point; inside a positioned box (`in`) or on the page. Reduced keeps the ring's fade only */
+.pb-burst {
+  position: fixed;
+  z-index: var(--z-float);
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  --burst: var(--sig-value);
+  --burst-r: 64px;
+}
+.pb-burst.in {
+  position: absolute;
+}
+.pb-burst::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--burst-r) / -2);
+  top: calc(var(--burst-r) / -2);
+  width: var(--burst-r);
+  height: var(--burst-r);
+  box-sizing: border-box;
+  border: 3px solid var(--burst);
+  border-radius: 50%;
+  opacity: 0;
+  animation: m-burst-ring var(--burst-ms) var(--ease-out) both;
+}
+.pb-burst b {
+  position: absolute;
+  left: -2px;
+  bottom: 0;
+  width: 4px;
+  height: calc(var(--burst-r) * 0.3);
+  background: linear-gradient(var(--burst), color-mix(in srgb, var(--burst) 30%, white));
+  transform-origin: 50% 100%;
+  opacity: 0;
+  animation: m-burst-ray var(--burst-ms) var(--ease-out) both;
+}
+.pb-burst.still b {
+  display: none;
+}
+.pb-burst.still::before {
+  animation: m-burst-fade var(--burst-ms) linear both;
+}
+
 /* phase 06-4: every sheet is a floating card that keeps clear of the screen's edges, with room to breathe (on wide
    screens style.css centres it in the middle of the screen). UI-2: the panel's two cuts and its edge line; no
    shadow (a clip-path would cut it off, and the scrim behind already sets the sheet apart) */
@@ -249,7 +324,7 @@ hr.pb-rule::after {
   padding: var(--s1) var(--s2) var(--s1);
   box-shadow:
     inset 0 -2px 0 rgba(0, 0, 0, 0.16),
-    0 2px 4px -1px rgba(46, 33, 64, 0.3);
+    0 2px 4px -1px color-mix(in srgb, var(--c-shadow) 30%, transparent);
 }
 /* UI-2: a type pill's glyph (ui-kit.js typeGlyphHTML), in the pill's text colour */
 .ty-g {
@@ -443,4 +518,45 @@ hr.pb-rule::after {
   clip-path: var(--k-edge);
   background: var(--edge);
   pointer-events: none;
+}
+
+/* UI-14a: rarity on a list row (the owner's answer 9: frame, pill and name in the tier's colour; UI-14b puts it on the
+   Bag's, the shop's and the Perks' rows). The row takes data-rarity (rarities.json's starter shows as common, as
+   logic/marks.js rarityTier says) and .rar-row: a 4 px bar of the tier's fill on its leading edge and a thin frame in
+   it (both inside the row, so a cut row's clip-path keeps them, and clear of the rows' own !important borders; the
+   row is positioned, as every .k-* part is); its name takes .rar-name; the pill is <pb-rarity tier="..."> */
+:is([data-rarity='common'], [data-rarity='starter']) {
+  --rar: var(--sig-common);
+  --rar-t: var(--sig-common-text);
+}
+[data-rarity='uncommon'] {
+  --rar: var(--sig-uncommon);
+  --rar-t: var(--sig-uncommon-text);
+}
+[data-rarity='rare'] {
+  --rar: var(--sig-rare);
+  --rar-t: var(--sig-rare-text);
+}
+[data-rarity='mythical'] {
+  --rar: var(--sig-mythical);
+  --rar-t: var(--sig-mythical-text);
+}
+.rar-row {
+  outline: 1px solid color-mix(in srgb, var(--rar, transparent) 60%, transparent);
+  outline-offset: -1px;
+}
+.rar-row::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: var(--rar, transparent);
+  pointer-events: none;
+}
+.rar-name {
+  color: var(--rar-t, inherit);
+}
+/* UI-14b: a list row's stat tags sit after its text; its pill at the row's end */
+.bag-t pb-tag {
+  margin-left: var(--s1);
 }

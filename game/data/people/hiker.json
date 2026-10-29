@@ -16,5 +16,6 @@
    "bag": "backpack"
   },
   "colors": {"puffer":["#E8702A","#B85512"],"cargo":["#5A6270"],"hat_beanie":["#2A9D8F"],"backpack":["#3E8A6E"]}
- }
+ },
+ "figure": {"head":"long","build":"athletic","eyes":"wide_set","brows":"bushy"}
 }

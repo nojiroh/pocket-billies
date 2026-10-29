@@ -6,7 +6,7 @@
   "hair": "#8C3A1F",
   "eyes": "#4A7BBB",
   "wear": {
-   "hair": "hair_pony",
+   "hair": "hair_long",
    "eyes": "eyes_round",
    "brows": "brows_soft",
    "mouth": "mouth_smile",
@@ -15,7 +15,7 @@
    "outer": null,
    "bottom": "shorts",
    "shoes": "sneakers",
-   "hat": "hat_hardhat",
+   "hat": "hat_beanie",
    "glasses": null,
    "neck": null,
    "bag": "backpack"
@@ -24,7 +24,7 @@
    "tee": ["#8E5BD6"],
    "shorts": ["#3E6FB0"],
    "sneakers": ["#F4F4F4","#F2F0EA"],
-   "hat_hardhat": ["#F2C14E"],
+   "hat_beanie": ["#E2546E","#B03A55"],
    "backpack": ["#E2546E","#8A5A2A"]
   }
  }

@@ -22,6 +22,7 @@ import {
   factionWildChance,
   fieldMoveState,
   fieldMoveText,
+  fieldRope,
   fxOfRun,
   fxSplice,
   jingle,
@@ -848,6 +849,8 @@ export function evolutionHint(m) {
     }
     case 'item':
       return `Evolves when you use ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}, once it reaches level ${e.min}.`;
+    case 'acquire':
+      return `Evolves when another trainer acquires it in a trade, once it reaches level ${e.min}. Or file ${/^[AEIOU]/.test(evolutionItemName(e)) ? 'an' : 'a'} ${evolutionItemName(e)}.`;
     case 'donate':
       return `Evolves after it gives away ${e.n} items, once it reaches level ${e.min}. ${m.donated || 0} of ${e.n} given.`;
     case 'merge':
@@ -951,7 +954,8 @@ export function gateText(n) {
     const team = saveData.team
         .filter(m => m.hp > 0 && speciesOf(m))
         .map(m => ({ name: billyName(m), types: billyFieldTypes(m) })),
-      st = fieldMoveState(M, (saveData.meta || {}).badges, team);
+      /* PK-6: Coil of Rope: the badge alone opens it */
+      st = fieldMoveState(M, (saveData.meta || {}).badges, team, fieldRope(saveData.run));
     return st.state === 'ask' ? `Use ${M.name} on what blocks the way first.` : fieldMoveText(M, st.state);
   }
   if (n.ride && !canRide()) {

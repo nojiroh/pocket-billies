@@ -233,9 +233,6 @@ body.ttl-live .ttl-bg {
   box-shadow: var(--depth-float);
   transition: transform var(--m-fast) var(--spring);
 }
-.ttl-cont:active {
-  transform: scale(0.96);
-}
 .ttl-face {
   position: relative;
   width: 64px;

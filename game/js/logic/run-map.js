@@ -38,8 +38,8 @@
 /** @import { GhostRules, NodeType, RivalRules, RunMapRules } from '../../types/game-data' */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
-import { rngFrom } from './rng.js';
+import { fxRunRule, provide } from '../hooks.js';
+import { rngFirst, rngFrom } from './rng.js';
 import { weatherPick } from './weather.js';
 import { RUN_DAYS } from './run-state.js';
 import { runZoneOf } from './run-region.js';
@@ -55,6 +55,8 @@ expose({
   runBack: [() => runBack],
   // @ts-expect-error -- replaced on purpose
   runExits: [() => runExits, v => (runExits = v)],
+  // @ts-expect-error -- replaced on purpose
+  runForecastDays: [() => runForecastDays, v => (runForecastDays = v)],
   // @ts-expect-error -- replaced on purpose
   runForecastFill: [() => runForecastFill, v => (runForecastFill = v)],
   // @ts-expect-error -- replaced on purpose
@@ -98,6 +100,8 @@ expose({
   runNodeSeed: [() => runNodeSeed],
   // @ts-expect-error -- replaced on purpose
   runReveal: [() => runReveal, v => (runReveal = v)],
+  // @ts-expect-error -- replaced on purpose
+  runRevealAll: [() => runRevealAll, v => (runRevealAll = v)],
   runSegDist: [() => runSegDist],
   // @ts-expect-error -- replaced on purpose
   runShapeSize: [() => runShapeSize, v => (runShapeSize = v)],
@@ -113,6 +117,8 @@ expose({
   runSpotCells: [() => runSpotCells, v => (runSpotCells = v)],
   // @ts-expect-error -- replaced on purpose
   runSpotOutline: [() => runSpotOutline, v => (runSpotOutline = v)],
+  // @ts-expect-error -- replaced on purpose
+  runTownSize: [() => runTownSize, v => (runTownSize = v)],
   runWeather: [() => runWeather],
   runWorldNode: [() => runWorldNode],
 });
@@ -150,15 +156,31 @@ export function runMapRowsFit(M) {
 }
 /** WM-2: a run's places a path and its mini-bosses: the rows drawn from run.map.path's range for the Expedition
  * (index 0 = Expedition I; past the end, the last) on the stream 'map|path', unless the rules give them (the debug
- * menu's short map); as many mini-bosses (each with its town) as fit them, within run.map.towns, unless given
- * @param {string} seed @param {RunMapRules} M @param {number} [expedition] @returns {{ rows: number, minibosses: number }} */
+ * menu's short map); as many mini-bosses (each with its town) as fit them, within run.map.towns, unless given; WM-5:
+ * and their towns' sizes in order (run.map.townSizes by Expedition and town count; none without the table)
+ * @param {string} seed @param {RunMapRules} M @param {number} [expedition]
+ * @returns {{ rows: number, minibosses: number, sizes?: string[] }} */
 export function runMapLength(seed, M, expedition) {
   const P = M.path || [],
     span = P[Math.min(Math.max(1, expedition || 1), P.length) - 1],
     rows = M.rows || (span ? rngFrom(seed, 'map|path').int(span[0], span[1]) : 0),
     [lo, hi] = M.towns || [0, 0],
     minibosses = M.minibosses !== undefined ? M.minibosses : Math.max(lo, Math.min(hi, Math.floor((rows - 3) / 3)));
-  return { rows, minibosses };
+  /* WM-5: the towns' sizes in order (run.map.townSizes by Expedition and how many towns), unless given */
+  const O = M.townSizes && M.townSizes.order,
+    by = O && O.length ? O[Math.min(Math.max(1, expedition || 1), O.length) - 1] : null,
+    sizes = M.sizes || (by && by[String(minibosses)]);
+  return sizes ? { rows, minibosses, sizes: sizes.slice() } : { rows, minibosses };
+}
+/** WM-5: a town node's size (a name of run.map.townSizes.cells, smallest first): the one whose cells its footprint
+ * has, else the smallest (a side area's town, which has no footprint, or a run's from before WM-5b: 2 x 1); '' without
+ * the table @param {RunNode} node @param {RunMapRules['townSizes']} [T] */
+export function runTownSize(node, T) {
+  const C = T && T.cells;
+  if (!C) return '';
+  const names = Object.keys(C),
+    s = node.size;
+  return (s && names.find(k => C[k][0] === s[0] && C[k][1] === s[1])) || names[0] || '';
 }
 /** WM-2: the region grid: cells `cell` metres square (x east, y north), the main path within `half` cells north and
  * south of the landing's row; `tries`, how many footprints the layout search may try before it gives up on a map's
@@ -217,21 +239,27 @@ export function runLinkDir(map, i, j) {
  * 'map|grid|row|lane|spot' (east twice as likely as north or south, half as likely again away from the landing's row)
  * and steps back when the next can't be placed. WM-3: each node's footprint is its type's shape (nodeTypes.json
  * `shapes`, drawn on 'map|size|row|lane'), tried at every spot before RUN_GRID.place is; then every link's exit
- * along the edge it crosses (runGridWays) and an L's cut corner (runGridCut).
+ * along the edge it crosses (runGridWays) and an L's cut corner (runGridCut). WM-5: `want`, the cells a node must
+ * take (a town's size), with no shape drawn and no fallback.
  * Sets `at`, `size`, `ways` (and an L's `cut`) on the nodes and returns true, or false (nothing set) when the search
  * gives up
- * @param {string} seed @param {RunNode[]} nodes @param {Record<string, NodeType>} [nodeTypes] @returns {boolean} */
-export function runMapGrid(seed, nodes, nodeTypes = {}) {
+ * @param {string} seed @param {RunNode[]} nodes @param {Record<string, NodeType>} [nodeTypes]
+ * @param {(number[] | null)[]} [want] @returns {boolean} */
+export function runMapGrid(seed, nodes, nodeTypes = {}, want = []) {
   const H = RUN_GRID.half,
     from = nodes.map((_, i) => nodes.flatMap((p, k) => (p.to.includes(i) ? [k] : []))),
     /** @type {({ at: number[], size: number[] } | null)[]} */
     put = nodes.map(() => null),
     /* each node's shape, and the sizes it tries in turn */
-    shape = nodes.map(n => {
+    shape = nodes.map((n, i) => {
       const S = (nodeTypes[n.type] || {}).shapes;
+      if (want[i]) return '';
       return S && Object.values(S).some(w => w > 0) ? rngFrom(seed, `map|size|${n.row}|${n.lane}`).pick(S) : '';
     }),
-    sizes = shape.map(s => {
+    /* WM-5: a node given its cells (a town's size) takes them or nothing (no 2 x 1 to fall back on) */
+    sizes = shape.map((s, i) => {
+      const f = want[i];
+      if (f) return [/** @type {[number, number]} */ ([f[0], f[1]])];
       const a = runShapeSize(s),
         b = RUN_GRID.place;
       return a[0] === b[0] && a[1] === b[1] ? [a] : [a, /** @type {[number, number]} */ (b.slice())];
@@ -242,7 +270,7 @@ export function runMapGrid(seed, nodes, nodeTypes = {}) {
   const drawn = /** @type {Map<string, number>} */ (new Map()),
     draw = (/** @type {string} */ k) => {
       let v = drawn.get(k);
-      if (v === undefined) drawn.set(k, (v = rngFrom(seed, `map|grid|${k}`).next()));
+      if (v === undefined) drawn.set(k, (v = rngFirst(seed, `map|grid|${k}`)));
       return v;
     };
   /** the spots node i of size [w, h] can take, best first @param {number} i @param {number[]} size */
@@ -315,11 +343,25 @@ export function runMapGrid(seed, nodes, nodeTypes = {}) {
     const south = nodes.findIndex((m, j) => j < i && m.row === n.row && m.lane === n.lane - 1);
     return !(south >= 0 && put[south] && /** @type {any} */ (put[south]).at[1] >= f.at[1]);
   };
+  /** WM-5b: spots(i, size) kept by all it reads (where node i's parents stand and their sizes, and an L parent's own
+   * parent), so stepping back doesn't build and sort them again (bigger towns step back more) @type {Map<string,
+   * number[][]>} */
+  const spotsKept = new Map(),
+    at = (/** @type {number} */ j) => {
+      const f = /** @type {any} */ (put[j]);
+      return f ? `${f.at}/${f.size}` : '-';
+    },
+    spotsOf = (/** @type {number} */ i, /** @type {number[]} */ size) => {
+      const k = `${i}|${size}|${from[i].map(j => at(j) + (shape[j] === 'L' && from[j].length ? ':' + at(from[j][0]) : '')).join('|')}`;
+      let v = spotsKept.get(k);
+      if (!v) spotsKept.set(k, (v = spots(i, size)));
+      return v;
+    };
   /** @param {number} i @returns {boolean} */
   const place = i => {
     if (i >= nodes.length) return true;
     for (const size of sizes[i])
-      for (const [x, y] of spots(i, size)) {
+      for (const [x, y] of spotsOf(i, size)) {
         if (++tries > RUN_GRID.tries) return false;
         const f = { at: [x, y], size: size.slice() };
         if (!fits(i, f)) continue;
@@ -632,28 +674,48 @@ export function runMapMake(seed, nodeTypes, rules) {
   /* the links, then their layout on the grid (WM-2); when the grid can't hold the map's lane switches, the map is
      linked again without them (nothing else changes). WM-3: no two shops in a row is settled before the grid, as a
      place's type gives its shape (each try starts from the types drawn) */
-  const drawn = nodes.map(n => n.type);
-  for (const switches of [true, false]) {
-    nodes.forEach((n, i) => {
-      n.to = [];
-      n.type = drawn[i];
-    });
-    for (let row = 0; row + 1 < at.length; row++) {
-      const here = at[row],
-        next = at[row + 1],
-        link = (/** @type {number} */ a, /** @type {number} */ b) => nodes[here[a]].to.push(next[b]);
-      if (here.length === 1) next.forEach((_, b) => link(0, b));
-      else if (next.length === 1) here.forEach((_, a) => link(a, 0));
-      else {
-        link(0, 0);
-        link(1, 1);
-        if (switches && shape[row].cross) shape[row].west ? link(1, 0) : link(0, 1);
+  const drawn = nodes.map(n => n.type),
+    /* WM-5: each town's size (M.sizes, in order of the town rows: two towns on a row share one), its cells from
+       M.townSizes.cells; stepped down a size at a time (every town at once, the smallest kept) when the grid can't
+       hold the map even without its lane switches */
+    C = M.townSizes && M.townSizes.cells,
+    names = C ? Object.keys(C) : [],
+    townRows = roles.flatMap((r, row) => (r === 'rest' ? [row] : [])),
+    sizeAt = (/** @type {number} */ row) => {
+      const S = /** @type {string[]} */ (M.sizes),
+        k = names.indexOf(S[Math.min(townRows.indexOf(row), S.length - 1)]);
+      return k < 0 ? 0 : k;
+    },
+    sized = !!(C && M.sizes && M.sizes.length && townRows.length),
+    most = sized ? Math.max(0, ...townRows.map(sizeAt)) : 0;
+  grid: for (let down = 0; down <= most; down++) {
+    const want = nodes.map(n =>
+      sized && roles[n.row] === 'rest'
+        ? /** @type {[number, number]} */ (C[names[Math.max(0, sizeAt(n.row) - down)]])
+        : null
+    );
+    for (const switches of [true, false]) {
+      nodes.forEach((n, i) => {
+        n.to = [];
+        n.type = drawn[i];
+      });
+      for (let row = 0; row + 1 < at.length; row++) {
+        const here = at[row],
+          next = at[row + 1],
+          link = (/** @type {number} */ a, /** @type {number} */ b) => nodes[here[a]].to.push(next[b]);
+        if (here.length === 1) next.forEach((_, b) => link(0, b));
+        else if (next.length === 1) here.forEach((_, a) => link(a, 0));
+        else {
+          link(0, 0);
+          link(1, 1);
+          if (switches && shape[row].cross) shape[row].west ? link(1, 0) : link(0, 1);
+        }
       }
+      for (const n of nodes) n.to.sort((a, b) => a - b);
+      runMapNoTwoShops(seed, nodeTypes, roles, nodes);
+      if (runMapGrid(seed, nodes, nodeTypes, want)) break grid;
     }
-    for (const n of nodes) n.to.sort((a, b) => a - b);
-    runMapNoTwoShops(seed, nodeTypes, roles, nodes);
-    if (runMapGrid(seed, nodes, nodeTypes)) break;
-    if (!switches) throw new Error(`runMapMake: seed ${seed}'s map doesn't fit the grid`);
+    if (down === most) throw new Error(`runMapMake: seed ${seed}'s map doesn't fit the grid`);
   }
   return { nodes };
 }
@@ -980,6 +1042,13 @@ export function runReveal(map, row, reveal) {
     n.seen = Math.max(n.seen || 0, want);
   }
 }
+/** PK-5: a run's mapReveal rule rows (Tour Brochure): every place of the main map shows what it is (its type), as
+ * the map is made, at each arrival and when such a Perk is taken (logic/perks.js perkTake); a side area still shows
+ * once its obstacle is open. Nothing without a row @param {Run} run @param {Record<string, any>} [perks] */
+export function runRevealAll(run, perks) {
+  if (!run || !run.map || typeof fxRunRule !== 'function' || !(fxRunRule(run, 'mapReveal', perks) > 0)) return;
+  for (const n of run.map.nodes.filter(runSideMain)) n.seen = 2;
+}
 /** a map node's seed, which its scene, wild stock, shop and weather streams are salted from (roguelite-track.md 2c:
  * the map's numbering) @param {string} seed @param {number} i */
 export const runNodeSeed = (seed, i) => `${seed}|n${i}`;
@@ -999,6 +1068,16 @@ export function runForecastFill(run, biomes, toDay) {
     for (let day = days.length + 1; day <= last; day++)
       days.push(weatherPick(climate, rngFrom(runNodeSeed(run.seed, i), 'weather|' + day).next()));
   });
+}
+/** PK-4: how many days ahead a run's forecast is rolled and shown: `ahead` (rules.json run.clock.ahead) and the run's
+ * forecastDays rule rows (Barometer: effects.js fxRunRule). The forecast is filled that far (the days a later fill
+ * would give, each from its own stream), so a Perk taken mid-run shows its days at once @param {Run} run
+ * @param {Record<string, { climate?: string }>} biomes @param {number} ahead @returns {number} the days shown */
+export function runForecastDays(run, biomes, ahead) {
+  /* the effects aren't loaded where the map is made alone (a test of this file): no rows then */
+  const n = Math.max(1, ahead + (typeof fxRunRule === 'function' ? fxRunRule(run, 'forecastDays') : 0));
+  runForecastFill(run, biomes, run.clock + n);
+  return n;
 }
 /** a node's weather on a day ('' when not rolled) @param {Run} run @param {number} i @param {number} day */
 export const runWeather = (run, i, day) => (run.forecast[runWorldNode(i)] || [])[day - 1] || '';
@@ -1023,7 +1102,8 @@ export function runMapStart(run, data) {
   if (data.ghost && data.rules.ghost) runMapGhost(run.seed, run.map, data.rules.ghost);
   run.forecast = [];
   runReveal(run.map, 0, data.rules.reveal);
-  runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);
+  runRevealAll(run);
+  runForecastDays(run, data.biomes, data.rules.clock.ahead);
   return run.map;
 }
 /** arrive at map node i: the landing first (day 1), then only a node linked to where you stand, forward or back, a day
@@ -1052,6 +1132,7 @@ export function runArrive(s, i, data) {
     map.nodes[i].side && map.side && map.side.to >= 0 ? map.nodes[map.side.to].row - 1 : map.nodes[i].row,
     data.rules.reveal
   );
-  runForecastFill(run, data.biomes, run.clock + data.rules.clock.ahead);
+  runRevealAll(run);
+  runForecastDays(run, data.biomes, data.rules.clock.ahead);
   return run.clock;
 }

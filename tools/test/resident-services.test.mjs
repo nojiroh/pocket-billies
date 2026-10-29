@@ -38,6 +38,7 @@ test('residents: RS-4: a run takes off with each service level; Bertha’s packe
   assert.equal(validRun(s.run), true, 'a reload keeps the levels');
   assert.equal(validRun({ ...s.run, res: { bertha: 0 } }), false);
   assert.equal(validRun({ ...s.run, reshop: ['3:1'] }), true);
+  assert.equal(validRun({ ...s.run, reshop: ['3:1', '3:1:s'] }), true, "WM-5: a town's market stall's fresh stock");
   assert.equal(validRun({ ...s.run, reshop: ['shop'] }), false);
 });
 

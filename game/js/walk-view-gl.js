@@ -123,6 +123,7 @@ import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
 import { figureReport, figuresOn } from './figures.js';
+import { figureAtlasPass } from './figure-atlas.js';
 import { gatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawPlayerSilhouette, drawSprites, hideQueriesLost } from './walk/sprites.js';
 import { battleCamera, cutsceneCamera, screenRay, startSceneZoom, walkCamera } from './walk/camera.js';
@@ -131,6 +132,7 @@ import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shad
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
+import { BATTLE_FX_SHADERS } from './walk/battle-fx.js';
 import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
@@ -367,6 +369,8 @@ export function ensureWalkGl(cv) {
       WEATHER_FX_SHADERS,
       /* VFX-2: a thrown pyramid's ribbon, so the first throw doesn't compile it */
       RIBBON_SHADERS,
+      /* VFX-9: the battle effects' pool */
+      BATTLE_FX_SHADERS,
       /* phase 20 R3: the instanced shadow pictures' and shadow models' programs */
       SHADOW_INSTANCE_SHADERS,
       typeof MODEL_SHADOW_SHADERS !== 'undefined' && MODEL_SHADOW_SHADERS,
@@ -656,6 +660,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   for (let i = 0; i < items.length; i++) if (personPicture(items[i].im)) people++;
   walkRenderer.people = people;
   coverItems(items, C, dt);
+  /* CH-4: the people whose pictures changed drawn into the figures' atlas, before the shadows read it */
+  if (typeof figureAtlasPass === 'function' && figuresOn()) {
+    gpuPass('figures');
+    figureAtlasPass();
+    gpuPass('other');
+  }
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lk = engineContext.env && !sc.indoor ? environment.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);
@@ -741,6 +751,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   effectsPass(C, items, X, dark, t, dt);
   /* VFX-2: a thrown pyramid's motion lines (battle-3d.js) */
   if (BT && BT.ribbon) ribbonPass(C, BT.ribbon, X);
+  /* VFX-5: a dashing Billie's (battle-3d.js) */
+  if (BT && BT.rigRibbons) for (const R of BT.rigRibbons) ribbonPass(C, R, X);
   gpuPass('post');
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
@@ -823,6 +835,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
         ? { tex: FGS.tex, G: FGS.G, B: fogBox, k: fogK, lk: engineSetting('air', 'fogLamps') ?? 1, steps: fogSteps }
         : null,
       impact: BT && BT.impact ? impactOnScreen(C, BT.impact) : null,
+      caPulse: BT ? BT.caPulse || 0 : 0,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {

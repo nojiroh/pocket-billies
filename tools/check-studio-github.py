@@ -36,7 +36,8 @@ Studio plan Phase 1 (T1.3): the Check lists check-data's own problems (planted),
 UI track UI-3: the UI look section: a colour dial changed shows in the preview frame, Undo puts the data and the
 preview back; a screen's own colour shows on that screen only and ↺ takes it away; a preset applies and undoes; Find
 and the Check's Show me reach a dial; Hold to compare shows the saved look; a cut size is left changed, so the
-proposal at the end must carry uiTheme.json with it.
+proposal at the end must carry uiTheme.json with it. UI-11: the colour code's fill in the preview and undone, its
+colour-blind preview, and a planted clash the Check finds.
 Island track IS-6a/IS-6b (a page of its own, after the proposal): the Hub island section on test_island draws (the
 orbit view and the map), a drag turns it, a stroke paints and undoes; the ground lock here and in Walk scenes; the
 dials: too big round the middle, a draft drawn, Use this island, Undo, read-only when locked.
@@ -60,7 +61,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from browser_check import serve  # noqa: E402  (TC-4: the browser checks' shared helpers)
+from browser_check import serve, until  # noqa: E402  (TC-4: the browser checks' shared helpers)
 
 REPO = Path(__file__).resolve().parent.parent
 POS = [a for a in sys.argv[1:] if not a.startswith('--')]
@@ -957,6 +958,31 @@ def ui_steps(pg, errs):
     found = pg.evaluate("runCheck().filter(c => c.go === 'ui' && c.lvl === 'error').map(c => [c.msg, c.sel])")
     if len(found) != 2 or found[0][1] != {'uiFocus': {'scope': 'bag', 'rel': 'color.dark.text2'}}: errs.append(f'the Check found {found}')
     pg.evaluate("delete studioState.D.uiTheme.overrides.bag")
+    # UI-11: the colour code: a fill in the preview and undone, the colour-blind preview, a planted clash for the Check
+    pg.evaluate("uiEditor.open.signals = 1; refreshUiSettings()")
+    q = 'uiTheme.defaults.signals.fill.good'
+    sig0, undo1 = pg.evaluate(f"[{PV}('--sig-good'), studioState.undo.length]")
+    if sig0 != '#40d9c1': errs.append(f'the preview has no colour code ({sig0!r})')
+    box = pg.locator(f'#uiSet input.hex[data-p="{q}"]')
+    box.fill('#30C0B0'); box.press('Tab')
+    wait_pv('--sig-good', '#30c0b0', 'a colour code fill')
+    if not pg.evaluate("!!document.querySelector('#uiSet [data-sig=\"light.good\"]') && !!document.querySelector('#uiSet [data-sig=\"fill.good\"]')"):
+        errs.append('the colour code has no contrast badges')
+    pg.click('#undoBtn')
+    if pg.evaluate(f"readPath('{q}')") != '#40D9C1': errs.append('Undo did not put the fill back')
+    wait_pv('--sig-good', '#40d9c1', 'a colour code fill undone')
+    if pg.evaluate("studioState.undo.length") != undo1: errs.append('the fill was not one undo step')
+    sw = "document.querySelector('#uiSet [data-sig-set=battle] .ui-sig-sw i').style.background"
+    plain = pg.evaluate(sw)
+    pg.click('#uiSet [data-act=uiCvd][data-k=deutan]')
+    if pg.evaluate(sw) == plain: errs.append('the colour-blind preview did not change the swatches')
+    pg.click('#uiSet [data-act=uiCvd][data-k=""]')
+    pg.evaluate("studioState.D.uiTheme.defaults.signals.fill.bio = studioState.D.uiTheme.defaults.signals.fill.special")
+    clash = pg.evaluate("runCheck().filter(c => c.go === 'ui' && c.lvl === 'error' && /^Colour code/.test(c.msg)).map(c => [c.msg, c.sel])")
+    if not clash or not any('apart' in m for m, _ in clash) or clash[0][1] != {'uiFocus': {'scope': 'game', 'rel': 'signals.fill.special'}}:
+        errs.append(f'the Check did not find a planted colour clash: {clash}')
+    pg.evaluate("studioState.D.uiTheme.defaults.signals.fill.bio = '#DA5AB6'")
+    if pg.evaluate("runCheck().filter(c => /^Colour code/.test(c.msg)).length"): errs.append('the colour code fails the Check')
     # the large cut, compared with the saved look, and left changed for the proposal
     pg.evaluate("uiEditor.open.shape = 1; refreshUiSettings()")
     pg.evaluate("""(()=>{const r=document.querySelector('#uiSet input[data-p="uiTheme.defaults.shape.cutLg"]');r.value='20';
@@ -969,7 +995,7 @@ def ui_steps(pg, errs):
     if pg.evaluate("studioState.D.uiTheme.defaults.shape.cutLg") != 20: errs.append('the large cut did not reach the data')
     if pg.evaluate("studioState.undo.length") < undo0 + 2: errs.append('the edits are not undo steps')
     if len(errs) > n: errs[n:] = [f'ui: {e}' for e in errs[n:]]
-    else: print('ui: a colour previewed and undone, a screen colour on its screen and taken away, a preset undone, Find and the Check, compare; the large cut left at 20 px', flush=True)
+    else: print('ui: a colour previewed and undone, a screen colour on its screen and taken away, a preset undone, Find and the Check, the colour code (a fill undone, colour-blind preview, a planted clash), compare; the large cut left at 20 px', flush=True)
 
 
 def ui_tools_steps(pg, errs):
@@ -1093,7 +1119,9 @@ def ui_screens_steps(pg, errs):
         pg.click('[data-act=uiPv][data-g=mode][data-v=light]')
         # inspect a team row, and the overlays, on the game itself
         pg.click('#uiInsp')
-        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click()
+        # its top corner: since UI-8b the bottom bar stands 192 px tall (its minimap tile 60 px out of the bar), over the
+        # lead card's middle in the preview (where a plain click taps)
+        pg.frame_locator('#uiPv').locator('main.s-team .u-row, main.s-team .u-hero').first.click(position={'x': 24, 'y': 16})
         try: pg.wait_for_selector('#uiInspect tr[data-var]', timeout=10000)
         except Exception: errs.append('inspect found nothing on the Team screen')
         where = pg.evaluate("(document.querySelector('#uiInspect .ui-insp-h') || {}).textContent || ''")
@@ -1823,9 +1851,12 @@ def density_steps(pg, errs):
 def music_steps(pg, errs):
     """SND-3: the Music & sound section (studio/js/music-editor.js): a song plays through the game's tracker on the
     Studio's own AudioContext (a real click starts it), the bar playing shows, Stop stops it, and leaving the section
-    stops it too (no scheduler left running)."""
+    stops it too (no scheduler left running). SND-10: the Sounds tab's World sounds card plays a water recipe and
+    stops."""
     n = len(errs)
     pg.evaluate("void openSection('music')")
+    # the section opens on the tab last used; an earlier step (the full run's) can leave it on Where they play
+    pg.click('[data-act=musTab][data-t=songs]')
     try: pg.wait_for_selector('#musList [data-act=musPlay][data-song=town]', timeout=20000)
     except Exception:
         errs.append('music: the song list never showed'); return
@@ -1955,6 +1986,15 @@ def music_steps(pg, errs):
     pg.click('#undoBtn')
     if pg.evaluate("studioState.D.music.mix.master") != 0.9 or pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"):
         errs.append('music: undo did not put the mix back')
+    # SND-10: the World sounds card: a water recipe 3 m away plays through the game's own player (its voice goes live),
+    # Stop fades it out; nothing in the data changes
+    pg.click('[data-act=musScape][data-k=brook][data-d="3"]')
+    if not until(pg, "!!musicStudio.scape&&('brook#0' in musicStudio.scape.P.stats().voices)", 10):
+        errs.append('music: the World sounds card never played the brook')
+    pg.click('[data-act=musScapeStop]')
+    if not until(pg, "Object.keys(musicStudio.scape.P.stats().voices).length===0", 15):
+        errs.append(f'music: the World sounds card left {pg.evaluate("JSON.stringify(musicStudio.scape.P.stats().voices)")} playing after Stop')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing a world sound changed the data')
     # a Billy's cry (the Billies page; SND-6: every stage has one): a new pitch keeps its base and plays the base's
     # notes from it, and its low-HP version a third down; undone, nothing to propose
     pg.evaluate("void openSection('billionaires')")
@@ -1982,7 +2022,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
@@ -2074,8 +2114,95 @@ def relics_steps(pg, errs):
     pg.evaluate("undo()"); time.sleep(0.3)
     if kind != 'stat' or pg.evaluate("JSON.stringify(studioState.D.perks.lucky_charm.fx)") != '[{"kind":"money","mult":1.2}]':
         errs.append(f"perks: the kind change made {kind!r} and undo left {pg.evaluate('JSON.stringify(studioState.D.perks.lucky_charm.fx)')}")
+    # PK-1: a row's When and If: a stat row gets a moment from its kind's list, the If text becomes a list, a bad
+    # condition shows data-checks' message on its row, and undo takes each back
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    whens = pg.evaluate("[...document.querySelectorAll('#main [data-p=\"perks.running_shoes.fx.0.when\"] option')].map(o=>o.value)")
+    if 'ko' not in whens or 'arrive' in whens: errs.append(f'perks: a stat row offers the moments {whens}')
+    sel = '#main [data-p="perks.running_shoes.fx.0.when"]'
+    pg.select_option(sel, 'ko')
+    wait_js(pg, "!!document.querySelector('#main [data-p=\"perks.running_shoes.fx.0.every\"]')", 10)
+    sel = '#main [data-relic-if="running_shoes"][data-n="0"]'
+    pg.fill(sel, 'lead, foe:dragon'); pg.dispatch_event(sel, 'change')
+    wait_js(pg, "/foe: no/.test((document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||'')", 10)
+    row = pg.evaluate("JSON.stringify(studioState.D.perks.running_shoes.fx[0])")
+    if row != '{"kind":"stat","stat":"hus","stages":1,"when":"ko","if":["lead","foe:dragon"]}': errs.append(f'perks: When and If made {row}')
+    msg = pg.evaluate("(document.querySelector('#main [data-relic-row=\"0\"] .relic-err')||{}).textContent||''")
+    if 'foe: no "dragon"' not in msg: errs.append(f'perks: a bad condition showed no message on its row ({msg!r})')
+    if not pg.query_selector('#main [data-relic-grow="running_shoes"]') or not pg.query_selector('#main [data-p="perks.running_shoes.fx.0.once"]'):
+        errs.append('perks: no Grows or Once input on a stat row')
+    pg.evaluate("undo()"); time.sleep(0.3); pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("JSON.stringify(studioState.D.perks.running_shoes.fx)") != '[{"kind":"stat","stat":"hus","stages":1}]':
+        errs.append(f"perks: undo left {pg.evaluate('JSON.stringify(studioState.D.perks.running_shoes.fx)')}")
     if pending_files(pg, 'perks\\.json$'): errs.append('perks: after every undo Propose would still send perks.json')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone", flush=True)
+    # PK-2: a Perk's picture at the game's 72 and 36 px; Edit art opens it in the icon editor with the other Perks'
+    pg.evaluate("void openSection('relics', { relic: 'lucky_charm' })")
+    if not wait_js(pg, "(()=>{const a=[...document.querySelectorAll('#main .perk-art img')];return a.length===2&&a.every(i=>i.complete&&i.naturalWidth>0)})()", 10):
+        errs.append('perks: Lucky Charm shows no picture (or it did not load)')
+    pic = pg.evaluate("[...document.querySelectorAll('#main .perk-art img')].map(i=>i.width+' '+i.getAttribute('src').replace(/^.*\\/art\\//,''))")
+    if pic != ['72 perks/lucky_charm.svg', '36 perks/lucky_charm.svg']: errs.append(f'perks: the picture shows as {pic}')
+    pg.click('#main .perk-art [data-act=icOpen]')
+    if not wait_js(pg, "artBrowser.icon==='perks/lucky_charm'&&!!document.querySelector('#icStage .pc-art')", 10):
+        errs.append(f"perks: Edit art opened {pg.evaluate('artBrowser.icon')!r}, not perks/lucky_charm in the painter")
+    others = pg.evaluate("document.querySelectorAll('#main .ic-others .ic-other').length")
+    if others != pg.evaluate("Object.keys(studioState.D.perks).length"): errs.append(f'perks: the icon editor shows {others} pictures beside it, not the Perks’')
+    pg.evaluate("ACTIONS.icClose()")
+    # a Perk without a picture says it shows the relic icon (and offers Draw one)
+    pg.evaluate("delete studioState.D.perks.petri_dish.img;void openSection('relics', { relic: 'petri_dish' })")
+    time.sleep(0.3)
+    if 'relic icon' not in pg.evaluate("(document.querySelector('#main .perk-art')||{}).textContent||''"): errs.append('perks: a Perk without img doesn’t say it shows the relic icon')
+    pg.evaluate("studioState.D.perks.petri_dish.img='perks/petri_dish.svg'")
+    # PK-3: the battle kit's kinds (crit, immune, inflict, chip, first, revive): every row of the 15 Wave A Perks shows
+    # its inputs, with no error and no "No such kind"
+    wave = ['rubber_stamp', 'click_pen', 'laser_pointer', 'screen_protector', 'power_bank', 'mic_drop', 'joy_buzzer', 'hot_sauce', 'oven_mitts', 'noise_headphones', 'rubber_boots', 'hazmat_suit', 'alarm_clock', 'plot_armor', 'warranty_card']
+    for pid in wave:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
+    # PK-4: Wave B's kinds (passive, weather, benchXp, rule): every row of the 15 Wave B Perks shows its inputs with no
+    # error; Bellows shows its Needs and Tags, and a bad need's message shows and is undone
+    wave_b = ['bellows', 'snorkel', 'watering_can', 'static_socks', 'knee_pads', 'kite', 'mood_ring', 'union_card', 'heirloom_locket', 'matching_hoodies', 'rainbow_lanyard', 'group_chat', 'umbrella', 'snow_globe', 'barometer']
+    for pid in wave_b:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err, #main .relic-err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
+    pg.evaluate("void openSection('relics', { relic: 'bellows' })"); time.sleep(0.3)
+    nt = pg.evaluate("[(document.querySelector('#main [data-relic-needs=\"bellows\"]')||{}).value, (document.querySelector('#main [data-relic-tags=\"bellows\"]')||{}).value]")
+    if nt != ['team:Fire', 'Fire']: errs.append(f'perks: Bellows shows Needs and Tags as {nt}')
+    sel = '#main [data-relic-needs="bellows"]'
+    pg.fill(sel, 'lead'); pg.dispatch_event(sel, 'change')
+    if not wait_js(pg, "/can't be known when a Perk is offered/.test(document.querySelector('#main').textContent)", 10): errs.append('perks: a bad need showed no message')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.perks.bellows.needs") != 'team:Fire': errs.append('perks: undo left Bellows needing ' + str(pg.evaluate("studioState.D.perks.bellows.needs")))
+    # PK-5: Wave C's kinds (catchLevel, refund, inflict at battleStart, a money share, free, salvage, the rules
+    # rewardPick, rerollFree, mapReveal): every row of the 12 Wave C Perks shows its inputs with no error; Tip Jar shows
+    # its share and its most; Magnet on a String's Needs read bots
+    wave_c = ['bug_net', 'music_box', 'name_tags', 'pyramid_pouch', 'tip_jar', 'punch_card', 'gift_receipt', 'fortune_cookie', 'tour_brochure', 'bounty_poster', 'string_magnet', 'lab_goggles']
+    for pid in wave_c:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err, #main .relic-err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
+    pg.evaluate("void openSection('relics', { relic: 'tip_jar' })"); time.sleep(0.3)
+    tj = pg.evaluate("['share','max'].map(k=>!!document.querySelector(`#main [data-p=\"perks.tip_jar.fx.0.${k}\"], #main [data-path=\"perks.tip_jar.fx.0.${k}\"]`))")
+    if tj != [True, True]: errs.append(f'perks: Tip Jar shows its share and most inputs as {tj}')
+    pg.evaluate("void openSection('relics', { relic: 'string_magnet' })"); time.sleep(0.3)
+    mg = pg.evaluate("(document.querySelector('#main [data-relic-needs=\"string_magnet\"]')||{}).value")
+    if mg != 'bots': errs.append(f'perks: Magnet on a String shows Needs as {mg!r}')
+    # PK-6: Wave D's kinds (copy, give, the rules cap, sideOpen, sideFind, eventHurt, growth with a reset): every row of
+    # the 11 Wave D Perks shows its inputs with no error; Boarding Pass shows its Moneys and Bag items; Rusty Key's
+    # Needs read side
+    wave_d = ['accordion_file', 'photocopier', 'like_button', 'streak_tracker', 'selfie_stick', 'coil_of_rope', 'ten_foot_pole', 'rusty_key', 'time_card', 'boarding_pass', 'travel_pillow']
+    for pid in wave_d:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err, #main .relic-err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value)]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)"): errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}')
+    pg.evaluate("void openSection('relics', { relic: 'boarding_pass' })"); time.sleep(0.3)
+    bp = pg.evaluate("[!!document.querySelector('#main [data-p=\"perks.boarding_pass.fx.0.money\"], #main [data-path=\"perks.boarding_pass.fx.0.money\"]'), (document.querySelector('#main [data-relic-give=\"boarding_pass\"]')||{}).value]")
+    if bp != [True, 'potion:2']: errs.append(f'perks: Boarding Pass shows its Moneys and items as {bp}')
+    pg.evaluate("void openSection('relics', { relic: 'rusty_key' })"); time.sleep(0.3)
+    rk = pg.evaluate("(document.querySelector('#main [data-relic-needs=\"rusty_key\"]')||{}).value")
+    if rk != 'side': errs.append(f'perks: Rusty Key shows Needs as {rk!r}')
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs", flush=True)
 
 
 def unlocks_steps(pg, errs):
@@ -2323,6 +2450,13 @@ def art_browser_steps(pg, errs):
         if 'Edit pixels' in acts or 'Replace…' in acts: errs.append(f'art browser: legacy art {old} offers {acts}')
         pg.evaluate(f"ACTIONS.abEdit({{ p: {json.dumps(old)} }})"); time.sleep(0.3)
         if pg.evaluate('artBrowser.edit'): errs.append(f'art browser: legacy art {old} opened in the painter')
+    # PK-2: a Perk's picture: Used by names perks.json, and Edit icon opens it
+    pg.evaluate("artBrowser.q = ''; ACTIONS.abPick({ p: 'art/perks/lucky_charm.svg' })")
+    end = time.time() + 30
+    while time.time() < end and 'perks' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): time.sleep(0.5)
+    if 'perks' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append('art browser: Used by for a Perk’s picture does not name perks.json')
+    if not pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].some(b => b.textContent === 'Edit icon' && b.dataset.n === 'perks/lucky_charm')"):
+        errs.append('art browser: a Perk’s picture has no Edit icon')
     tile = pg.evaluate("Object.values(studioState.D.scenery.terrains).map(T => T.tile).find(Boolean)")
     path = 'art/' + tile
     pg.evaluate(f"artBrowser.q = ''; ACTIONS.abPick({{ p: {json.dumps(path)} }})")
@@ -2348,7 +2482,7 @@ def art_browser_steps(pg, errs):
     hit = pg.evaluate("(() => { const r = findRun('pyramid_32.png').find(e => e.kind === 'art'); if (!r) return null; r.fn(); return [studioState.sec, artBrowser.sel] })()")
     if hit != ['art', 'art/coins/pyramid_32.png']: errs.append(f'art browser: Ctrl K on pyramid_32.png gave {hit}')
     pg.set_default_timeout(30000)
-    print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, the Report, read-only legacy, Used by, Edit pixels and its undo, Ctrl K', flush=True)
+    print('art browser: folders, breadcrumbs, dir:/w:/unused, chips, the Report, read-only legacy, Used by (a Perk’s picture too, with Edit icon), Edit pixels and its undo, Ctrl K', flush=True)
 
 
 def tile_set_steps(pg, errs):
@@ -2505,7 +2639,29 @@ def icons_steps(pg, errs):
     E("undo()"); time.sleep(0.3)
     if E("studioState.textDirty.size"): errs.append(f"icons: left {E('[...studioState.textDirty.keys()]')} unsaved")
     E("ACTIONS.icClose()")
-    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; all undone', flush=True)
+    # PK-2: a Perk's picture opens the same way (its folder's others beside it, its sizes 72 and 36); a stroke shows in
+    # the game's artURL (NW_ART keyed by the path in art/); a new picture there is named with _ and staged in art/perks
+    E("void iconEditOpen('perks/lucky_charm')")
+    pg.wait_for_selector('#icStage .pc-art', timeout=20000); time.sleep(0.4)
+    P = "loadedText('art/perks/lucky_charm.svg')"
+    orig = E(P)
+    if E("document.querySelectorAll('#main .ic-other').length") != E("iconNames('perks').length") or E("iconNames('perks').length") < 13:
+        errs.append(f"icons: a Perk's picture shows {E('document.querySelectorAll(\'#main .ic-other\').length')} beside it")
+    if '72' not in E("[...document.querySelectorAll('#main .ic-size small')].map(e=>e.textContent).join()"): errs.append('icons: a Perk’s picture isn’t previewed at 72 px')
+    box, z = pg.locator('#icStage .pc-art').bounding_box(), E("iconEd.pc.zoom")
+    pg.mouse.click(box['x'] + 1.5 * z, box['y'] + 1.5 * z); time.sleep(0.4)
+    if E(P) == orig or not E("(window.NW_ART || {})['perks/lucky_charm.svg'] && artURL('perks/lucky_charm.svg').startsWith('data:')"):
+        errs.append('icons: a stroke on a Perk’s picture did not write it or reach the previews')
+    E("undo()"); time.sleep(0.3)
+    if E(P) != orig: errs.append('icons: undo did not put the Perk’s picture back')
+    E("void ACTIONS.icNew()"); pg.wait_for_selector('#icNewName'); pg.fill('#icNewName', 'check_perk')
+    pg.locator('#dlg button', has_text='Make it').click(); time.sleep(0.6)
+    if 'art/perks/check_perk.svg' not in E("stageChanges().texts.map(t => t.path)") or E("artBrowser.icon") != 'perks/check_perk':
+        errs.append('icons: a new picture in art/perks is not staged and open')
+    E("undo()"); time.sleep(0.3)
+    if E("studioState.textDirty.size"): errs.append(f"icons: left {E('[...studioState.textDirty.keys()]')} unsaved")
+    E("ACTIONS.icClose()")
+    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; a Perk’s picture painted and a new one in art/perks staged; all undone', flush=True)
 
 
 def atlas_steps(pg, errs):

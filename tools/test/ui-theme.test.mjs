@@ -19,6 +19,8 @@ import {
   shapeVars,
   uiThemeCss,
   uiThemeLook,
+  uiPalettes,
+  UI_FROM_SIGNALS,
   UI_ROLES,
   UI_SHAPE_DEFAULTS,
 } from '../../game/js/logic/ui-theme.js';
@@ -46,9 +48,9 @@ test('light on :root, dark under the system setting unless Settings says light, 
   assert.match(css, /@media \(prefers-color-scheme: dark\) \{\n {2}:root:not\(\[data-theme='light'\]\) \{/);
   const light = blockOf(css, ':root'),
     dark = blockOf(css, ":root[data-theme='dark']");
-  assert.equal(light['--c-ground'], '#f4efe0');
-  assert.equal(dark['--c-ground'], '#17261e');
-  assert.equal(light['--c-hp-ok'], '#2a9d8f');
+  assert.equal(light['--c-ground'], '#f0e5cf');
+  assert.equal(dark['--c-ground'], '#1a1611');
+  assert.equal(light['--c-hp-ok'], '#007e6e', 'UI-12: the colour code’s teal, the light shade');
   // the system-dark block and the Settings-dark block say the same
   const sys = css.slice(css.indexOf(":root:not([data-theme='light'])"));
   assert.deepEqual(blockOf(sys, ":root:not([data-theme='light'])"), dark);
@@ -58,9 +60,9 @@ test('each role also sets the older variables the screens read', () => {
   const light = blockOf(uiThemeCss(THEME), ':root');
   for (const [role, olds] of Object.entries(UI_ROLES))
     for (const v of olds) assert.equal(light[v], light[roleVar(role)], `${v} follows ${role}`);
-  assert.equal(light['--text'], '#22301f');
+  assert.equal(light['--text'], '#2e1f14');
   assert.equal(light['--gold'], light['--c-gold-b']);
-  assert.equal(light['--g-bg'], 'rgba(255, 251, 240, 0.7)');
+  assert.equal(light['--g-bg'], 'rgba(250, 243, 227, 0.7)');
   assert.equal(light['--g-blur'], 'blur(12px) saturate(1.4)');
   assert.equal(light['--cut-lg'], '12px');
   assert.equal(light['--slant'], '10deg');
@@ -75,7 +77,7 @@ test('a preset lays its groups over the defaults; alpha05 is the look before UI-
   assert.equal(light['--g-blur'], 'blur(16px) saturate(1.5)');
   assert.equal(light['--font-voice'], "'Pixelify Sans', ui-monospace, monospace");
   assert.equal(light['--g-in'], 'inset 0 1px 0 rgba(255, 255, 255, 0.9)');
-  assert.equal(uiThemeLook(THEME, 'no-such').color.light.text, '#22301F');
+  assert.equal(uiThemeLook(THEME, 'no-such').color.light.text, '#2E1F14');
 });
 
 test("UI-3: looks merge at every depth; lists are replaced; a preset's name stays out of the look", () => {
@@ -114,7 +116,7 @@ test('UI-3: space, text sizes, motion, depth and drop shadows are written from t
   assert.equal(light['--spring'], 'cubic-bezier(0.3, 1.6, 0.5, 1)');
   assert.equal(
     light['--g-sh'],
-    'rgba(34, 48, 31, 0.42)'.replace(/^/, '0 10px 28px -10px ') + ', 0 2px 6px rgba(34, 48, 31, 0.14)'
+    'rgba(46, 31, 20, 0.42)'.replace(/^/, '0 10px 28px -10px ') + ', 0 2px 6px rgba(46, 31, 20, 0.14)'
   );
   assert.equal(
     dark['--g-sh2'],
@@ -241,15 +243,15 @@ test('a family can be rounded or square, and cuts can be stepped like pixel art'
   // the stepped preset changes the shapes only
   const css = blockOf(uiThemeCss(THEME, { preset: 'stepped' }), ':root');
   assert.match(css['--clip-panel'], /^polygon\(0 12px, 4px 12px, 4px 8px, /);
-  assert.equal(css['--text'], '#22301f');
+  assert.equal(css['--text'], '#2e1f14');
   // alpha05 is rounded: the look before UI-2
   assert.match(blockOf(uiThemeCss(THEME, { preset: 'alpha05' }), ':root')['--clip-card'], /^polygon\(0 16px, 0\.55px /);
 });
 
 test('the edge line and the drop shadows follow the text tint on the light side and black on the dark', () => {
   const css = uiThemeCss(THEME);
-  assert.equal(blockOf(css, ':root')['--c-shadow'], '#22301f');
-  assert.equal(blockOf(css, ':root')['--edge-lo'], 'rgba(34, 48, 31, 0.3)');
+  assert.equal(blockOf(css, ':root')['--c-shadow'], '#2e1f14');
+  assert.equal(blockOf(css, ':root')['--edge-lo'], 'rgba(46, 31, 20, 0.3)');
   assert.equal(blockOf(css, ":root[data-theme='dark']")['--c-shadow'], '#000000');
 });
 
@@ -296,7 +298,7 @@ test("UI-3: a screen's override: its colours and shapes on its root (and on data
   const team = blockOf(css, ":is(.screen.s-team, [data-ui-screen='team'])");
   assert.equal(team['--c-text'], '#102010');
   assert.equal(team['--text'], '#102010');
-  assert.equal(team['--c-ground'], '#f4efe0', 'the rest of the palette comes along, so derived values follow');
+  assert.equal(team['--c-ground'], '#f0e5cf', 'the rest of the palette comes along, so derived values follow');
   assert.equal(team['--depth-raised'], 'var(--g-in), var(--g-sh)');
   assert.equal(team['--clip-panel'], undefined, 'no shapes without a shape override');
   const dark = blockOf(css, ":root[data-theme='dark'] :is(.screen.s-team, [data-ui-screen='team'])");
@@ -357,6 +359,58 @@ test('UI-3: contrast: text at 4.5:1, danger and primary at 3:1, overrides too; a
     [
       ['', 'danger', 3],
       ['', 'danger', 3],
+      // UI-12: the players' palettes leave danger to the defaults and are checked in full; the Studio's presets aren't
+      ['preset:copper_grove', 'danger', 3],
+      ['preset:copper_grove', 'danger', 3],
+      ['preset:bureau_night', 'danger', 3],
+      ['preset:bureau_night', 'danger', 3],
     ]
   );
+});
+
+test('UI-12: Field Guide is the defaults; danger and HP come from the colour code; the palettes players pick', () => {
+  const light = blockOf(uiThemeCss(THEME), ':root'),
+    dark = blockOf(uiThemeCss(THEME), ":root[data-theme='dark']");
+  assert.equal(THEME.defaults.name, 'Field Guide');
+  for (const side of ['light', 'dark'])
+    for (const role of Object.keys(UI_FROM_SIGNALS))
+      assert.equal(THEME.defaults.color[side][role], undefined, `${side} ${role} is the colour code's`);
+  assert.equal(light['--c-danger'], '#bd2c42');
+  assert.equal(light['--c-hp-ok'], '#007e6e');
+  assert.equal(light['--c-hp-mid'], '#9a5505');
+  assert.equal(light['--c-hp-low'], '#bd2c42');
+  assert.equal(dark['--c-hp-ok'], '#57d6c0');
+  assert.equal(light['--c-ink'], '#1a1611', 'dark text: the dark side’s ground');
+  assert.equal(light['--c-map-grass'], '#5e721f');
+  assert.deepEqual(uiPalettes(THEME), [
+    ['', 'Field Guide'],
+    ['copper_grove', 'Copper Grove+'],
+    ['bureau_night', 'Bureau Night'],
+  ]);
+  assert.deepEqual(uiPalettes(undefined), []);
+  // a preset players pick names every colour role but those the colour code fills in
+  const roles = Object.keys(UI_ROLES).filter(r => !(r in UI_FROM_SIGNALS));
+  for (const id of ['copper_grove', 'bureau_night', 'brass_plum', 'sunpunk_day'])
+    for (const side of ['light', 'dark'])
+      assert.deepEqual(Object.keys(THEME.presets[id].color[side]).sort(), [...roles].sort(), `${id} ${side}`);
+  assert.equal(uiThemeLook(THEME, 'bureau_night').player, undefined, 'player stays out of the look');
+  const bn = blockOf(uiThemeCss(THEME, { preset: 'bureau_night' }), ':root');
+  assert.equal(bn['--c-ground'], '#e6eaef');
+  assert.equal(bn['--c-danger'], '#bd2c42', 'the colour code is the same in every palette');
+  assert.equal(bn['--c-ink'], '#0b111f');
+  // a Studio-only preset is held to text only; marked player, to everything
+  const pale = mergeLook(THEME, { presets: { sunpunk_day: { color: { light: { primary: '#C0E0F0' } } } } });
+  assert.deepEqual(uiThemeContrast(pale), []);
+  pale.presets.sunpunk_day.player = true;
+  assert.ok(uiThemeContrast(pale).some(f => f.where === 'preset:sunpunk_day' && f.fg === 'primary'));
+});
+
+test('UI-12: reduced transparency makes the glass solid on both sides, after the palettes', () => {
+  const css = uiThemeCss(THEME),
+    at = css.indexOf('@media (prefers-reduced-transparency: reduce)');
+  assert.ok(at > css.lastIndexOf(":root[data-theme='dark']"), 'after the dark blocks');
+  const rule = css.slice(at, css.indexOf('}\n}', at));
+  assert.match(rule, /:root:not\(\[data-theme='light'\]\),\n {2}:root\[data-theme='light'\] \{/);
+  assert.match(rule, /--g-blur: none;/);
+  assert.match(rule, /--g-bg: var\(--g-solid\);/);
 });

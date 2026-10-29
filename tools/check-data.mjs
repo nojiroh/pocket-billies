@@ -15,17 +15,21 @@
 // - studio track ST-3: partKits.json against its schema, and every part's picture is there at its size,
 // - phase 08b: the links between places (roads.json) join them as the walk needs, and every door opens a room (below),
 // - UI-1: uiTheme.json against its schema, and its text reads on its ground and surface (4.5:1, light and dark; UI-3:
-//   danger and primary at 3:1, screens' overrides too),
+//   danger and primary at 3:1, screens' overrides too; UI-11: the colour code's shades and fills on every palette, and
+//   each screen's set of colours, the types included, apart),
 // - Studio plan T1.3: the Studio's scene and road checks (game/js/logic/data-checks.js); their warnings are printed.
 import Ajv2020 from 'ajv/dist/2020.js';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { musicFindings } from '../game/js/logic/music-studio.js';
+import { soundscapeFindings } from '../game/js/logic/soundscape.js';
+import { WATER_KINDS } from '../game/js/logic/water-kinds.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { islandProblems } from '../game/js/logic/island.js';
 import { POSES_BY_PLAN } from '../game/js/body-plan-animation.js';
 import { formProblems, lineSpeciesIds } from '../game/js/logic/forms.js';
+import { figureKitProblems } from '../game/js/logic/kit-shapes.js';
 // CAM-4b: the zoom stops reach data-checks.js through hooks.js (the page's load order), so they are loaded first
 import '../game/js/logic/camera-zoom.js';
 import {
@@ -34,6 +38,7 @@ import {
   dataCameraStops,
   dataBuildings,
   dataCatchArt,
+  dataPerkArt,
   dataCurrencies,
   dataNodeTypes,
   dataRanchRules,
@@ -41,6 +46,7 @@ import {
   dataFieldMoves,
   dataSetPieces,
   dataArenas,
+  dataBattleAnims,
   dataModifiers,
   dataFactions,
   dataBosses,
@@ -321,6 +327,7 @@ for (const family of [
   dataFieldMoves,
   dataSetPieces,
   dataArenas,
+  dataBattleAnims,
   dataModifiers,
   dataFactions,
   dataBosses,
@@ -363,6 +370,9 @@ if (D.music && check('music.schema.json', D.music, 'music.json')) {
         );
     });
 }
+// SND-10: the world's sounds (soundscape.json): the schema
+if (D.soundscape && check('soundscape.schema.json', D.soundscape, 'soundscape.json') && D.soundscape.water)
+  for (const m of soundscapeFindings(D.soundscape, WATER_KINDS)) problem('soundscape.json', m);
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
   const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));
@@ -401,6 +411,13 @@ for (const [where, what] of dataCatchArt(D.pyramids, p => {
   return existsSync(f) ? readFileSync(f, 'utf8') : null;
 }))
   problem(where, what);
+// PK-2: the Perks' pictures (an img that is there and is an icon; a Perk without one warns)
+for (const f of dataPerkArt(D.perks, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
 // studio track ST-3: the part kits: the schema, then every picture they name is there with the size given
 // (ST-4: and the S/L pictures, turn limits that run least to most, slots the socket rules name, the part mirrored)
 if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {
@@ -548,6 +565,10 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
     }
   }
 }
+// characters track CH-5: the figure kit's shapes (figureKit.json): the schema, then every sum works out and every id
+// it names is a build or a wardrobe item
+if (D.figureKit && check('figureKit.schema.json', D.figureKit, 'figureKit.json'))
+  for (const p of figureKitProblems(D.figureKit, (D.wardrobe && D.wardrobe.items) || {}, D.people || {})) problem('figureKit.json', p);
 // phase 07: portraits: the schema, then every picture named is there and every face uses parts that exist
 if (D.portraits) {
   const P = D.portraits,

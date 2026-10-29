@@ -1,4 +1,0 @@
-================= SAVES =================
-   Phase 04e: the save format, moved here from game-state.js (a new save, filling one out, the load checks) and
-   settings-screen.js (the backup check). Where a save is kept (this browser, the account) stays in game-state.js
-   and account.js. Logic only (game/js/logic/, see rules.js).

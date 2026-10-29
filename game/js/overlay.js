@@ -6,7 +6,9 @@ import { expose } from './test-globals.js';
 import { provide, render, showPendingWindows } from './hooks.js';
 import { $ } from './util.js';
 import { TOAST_MS, toastAdd, toastItem, toastTime } from './logic/messages.js';
-import { activeBattle, saveData, uiState } from './game-state.js';
+import { pbEnterRows } from './ui-motion.js';
+import { activeBattle, reducedMotion, saveData, uiState } from './game-state.js';
+import { uiSound } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
   closeModal: [() => closeModal, v => ((closeModal = v), provide({ closeModal }))],
@@ -18,6 +20,7 @@ expose({
   renderOverlay: [() => renderOverlay, v => setRenderOverlay(v)],
   showToast: [() => showToast, v => (showToast = v)],
   toast: [() => toast, v => ((toast = v), provide({ toast }))],
+  toastLeave: [() => toastLeave, v => (toastLeave = v)],
   toastTimer: [() => toastTimer, v => (toastTimer = v)],
 });
 /* eslint-enable no-func-assign */
@@ -57,11 +60,11 @@ function showToast(fresh) {
   let el = /** @type {any} */ (document.getElementById('toast'));
   const t = uiState.toastOn;
   if (!t) {
-    if (el) el.remove();
+    if (el) toastLeave(el);
     return;
   }
   if (el && fresh) {
-    el.remove();
+    toastLeave(el);
     el = null;
   }
   if (!el) {
@@ -69,10 +72,33 @@ function showToast(fresh) {
     el.id = 'toast';
     el.addEventListener('pb-dismiss', nextToast);
     document.body.appendChild(el);
+    /* UI-16a: a toast drops in with its sound */
+    if (typeof uiSound === 'function') uiSound('toast');
   }
+  /* UI-16a: a quest done gets the done check, drawing itself, in place of the coin */
+  el.done = /^Quest done\b/.test(t.text);
   el.style.setProperty('--toast-top', document.querySelector('.topbar') ? '70px' : '12px');
   el.text = t.text;
   el.n = t.count;
+}
+/** UI-16a: a toast leaves (--m-exit, fading up) instead of vanishing; it gives up its id at once, so the next one is
+ * a new element @param {HTMLElement} el */
+function toastLeave(el) {
+  el.removeAttribute('id');
+  el.style.pointerEvents = 'none';
+  if (reducedMotion || !el.animate) {
+    el.remove();
+    return;
+  }
+  const ms = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--m-exit')) || 180;
+  el.animate([{ opacity: 1 }, { opacity: 0, translate: '0 -12px' }], {
+    duration: ms,
+    easing: 'ease-in',
+    fill: 'forwards',
+  }).finished.then(
+    () => el.remove(),
+    () => el.remove()
+  );
 }
 /* phase 06: a notice that can wait (not a choice) goes behind the dot on the portrait instead of opening by itself;
    the same id is kept once; onRead runs when it has been read */
@@ -117,8 +143,17 @@ export function renderOverlay() {
     h += `<div class="scrim" data-a="scrim"><div class="sheet px ${M.cls || ''}" role="dialog" aria-modal="true" aria-labelledby="mt">${M.top || ''}<h2 id="mt">${M.title}</h2><div class="body">${M.html || ''}</div><div class="btns">${(M.btns || []).map((b, i) => `<button class="pb ${b.c || ''} wide" data-a="mb" data-i="${i}" ${b.dis ? 'disabled' : ''}>${b.l}</button>`).join('')}</div></div></div>`;
   const keep = ov.querySelector('.scrim');
   ov.innerHTML = h;
-  const sc = ov.querySelector('.scrim');
-  if (sc && keep && M && M === uiState._lastM) sc.classList.add('still');
+  const sc = ov.querySelector('.scrim'),
+    was = uiState._lastM,
+    /* UI-16a: the same sheet drawn again (a pick card chosen redraws it with a new object): it stays still, so a
+       motion plays only when a sheet opens (rule 5: motion has a cause) */
+    same = !!(sc && keep && M && (M === was || (was && M.cls && M.cls === was.cls && M.title === was.title)));
+  if (same) sc.classList.add('still');
+  else if (sc) {
+    /* UI-16a: a new sheet: its rows come in one after another, and it makes the sheet sound */
+    pbEnterRows(sc.querySelector('.body'));
+    if (typeof uiSound === 'function') uiSound('sheet');
+  }
   uiState._lastM = M;
   showToast();
   if (M && M.after && !M._afterRan) {

@@ -59,6 +59,10 @@ export interface GameData {
   nodeTypes?: Record<DataId, NodeType>;
   /** sound track SND-2: the songs, jingles, cries' bases and where each song plays (game/data/music.json) */
   music?: Music;
+  /** sound track SND-10: the world's sounds as recipes (game/data/soundscape.json; sound.js plays them) */
+  soundscape?: { about?: string; beds: Record<string, import('../js/logic/ambience-sound.js').AmbienceBed> } & Partial<
+    import('../js/logic/soundscape.js').SoundscapeWater
+  >;
   /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
   perks?: Record<DataId, Perk>;
   /** RL-12b: events.json */
@@ -90,6 +94,8 @@ export interface GameData {
   setPieces?: SetPiecesData;
   /** WM-7: the leaders' arenas */
   arenas?: ArenasData;
+  /** VFX-8: how the battle plays a move */
+  battleAnims: BattleAnimsData;
   /** RL-13: a run's Expeditions and challenges */
   modifiers?: ModifiersData;
   /** RL-14: the runs' enemy factions and their bots */
@@ -119,6 +125,9 @@ export interface GameData {
   roads?: RoadLink[];
   engine: Engine;
   wardrobe: Wardrobe;
+  /** characters track CH-5: the figure kit's shapes as data (game/data/figureKit.json; its schema has every field,
+   * logic/figure-kit.js and logic/kit-shapes.js read it) */
+  figureKit?: FigureKit;
   /** fishing spots' encounter lists, keyed by the water ('pond', 'sea'...) */
   fishing: Record<string, Pool>;
   moods: Record<DataId, Mood>;
@@ -196,6 +205,8 @@ export interface Meta {
 export interface BillyType {
   id: TypeId;
   color: Color;
+  /** UI-13: its colour in battle's 3D effects (rings, beams; default `color`) */
+  glow?: Color;
   /** the text colour on it (default '#fff') */
   text?: Color;
   /** the types it hits for double damage */
@@ -214,6 +225,8 @@ export interface BillyType {
 /** untyped.json: the colours and hit effects of 'None' */
 export interface Untyped {
   color: Color;
+  /** UI-13: its colour in battle's 3D effects (default `color`) */
+  glow?: Color;
   text?: Color;
   fx?: string[];
 }
@@ -237,6 +250,8 @@ export interface Move {
   fx?: MoveEffect;
   /** the line whose signature move it is */
   sig?: string;
+  /** VFX-8: its animation, a battleAnims.json family or scene id (missing: its outcome's or category's default) */
+  anim?: string;
 }
 
 export interface MoveEffect {
@@ -275,6 +290,8 @@ export interface MoveEffect {
 export type Evolution =
   | { k: 'lvl' | 'split'; at: number }
   | { k: 'item'; item?: DataId; min: number }
+  /** ON-4: evolves when it arrives by a friend trade at `min` or above, or with the item (the route without friends) */
+  | { k: 'acquire'; item: DataId; min: number }
   | { k: 'idle'; ms: number; min: number }
   | { k: 'streak' | 'donate'; n: number; min: number }
   | { k: 'merge' | 'rename'; min: number };
@@ -425,6 +442,8 @@ export interface LocationData {
   music?: string;
   /** a key of SHOPS */
   shop?: DataId;
+  /** WM-5: a village's or a town's market stall's shop (logic/run-scenes.js runStallId) */
+  stall?: DataId;
   boutique?: string;
   /** a gym badge (a trainer's seat id) needed to go on */
   gate?: string;
@@ -446,6 +465,8 @@ export interface LocationData {
   side?: 1;
   /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
   waystation?: 1;
+  /** WM-6: a run's route-like place's route number (logic/run-scenes.js runRouteNumbers), on its signs and the map */
+  routeNo?: number;
   /** WA-5a: a run's place with marsh or bog water: its wild Billies weighted toward the marsh's (logic/water-play.js) */
   marsh?: string;
   v47region?: number;
@@ -503,6 +524,11 @@ export interface RunTownRules {
   locals: [number, number];
   names: string[];
   chat: Record<DataId, string[]>;
+  /** WM-5: what each town size (rules.json run.map.townSizes.cells) has: the word in its name ("Meadow Village"), its
+      houses (fewest, most), a market stall (0 or 1) and its quest givers (1 or 2) */
+  sizes?: Record<string, { word: string; houses: [number, number]; stall: number; givers: number }>;
+  /** WM-5: a market stall's wares: `more` a day drawn by weight from `pick` (held items), no Perk */
+  stall?: { more: number; pick: Record<string, number> };
 }
 
 /** RL-R1: a region theme (regions.json themes): where its zones start, the biomes it walks through, the types it
@@ -732,7 +758,11 @@ export interface Item {
   /** RL-12c: a held item: what it does for the Billie holding it (logic/effects.js fxOfBillie); given from its sheet,
       never used up, never used in battle */
   hold?: FxRow[];
+  /** UI-14b: a held item's tier on the loot ladder (frame, pill and name colour), by price and effect size */
+  rarity?: RarityTier;
 }
+/** UI-14b: the loot ladder's four tiers (logic/marks.js MARK_RARITY; the owner's answer 9) */
+export type RarityTier = 'common' | 'uncommon' | 'rare' | 'mythical';
 
 /** a shop: a run town's or stall's (logic/run-scenes.js), in SHOPS while the run's world is in */
 export interface Shop {
@@ -1086,6 +1116,8 @@ export interface Rules {
       pick: number;
       rarity: Record<PerkRarity, number>;
       price: Record<PerkRarity, number>;
+      /** PK-4: a Perk whose tags match the team's types or a held Perk's tags is drawn this many times as often */
+      bias?: number;
     };
     /** RL-R2: side areas (logic/run-side.js) */
     side?: RunSideRules;
@@ -1218,6 +1250,12 @@ export interface RunMapRules {
   minibosses: number;
   /** WM-2: the places a path by Expedition (index 0 = Expedition I; past the end, the last): [fewest, most] */
   path?: [number, number][];
+  /** WM-5: the town sizes: each one's cells on the region grid ([wide, tall], smallest first: the step-down's order),
+      and by Expedition (index 0 = Expedition I; past the end, the last) the sizes of a run's towns in order, by how
+      many towns it has ("2", "3") */
+  townSizes?: { cells: Record<string, [number, number]>; order: Record<string, string[]>[] };
+  /** WM-5: the run's own towns' sizes in order (logic/run-map.js runMapLength, from townSizes), unless given */
+  sizes?: string[];
   /** WM-2: the fewest and most towns (each after a mini-boss) a run */
   towns?: [number, number];
   /** the nodeTypes.json types of the landing, the row before each mini-boss, the mini-bosses and the boss */
@@ -1414,7 +1452,8 @@ export interface RobotPart {
   /** which slot it fits: an arm fits either side */
   slot: 'torso' | 'arm' | 'legs';
   type: TypeId;
-  rar?: string;
+  /** UI-14b: its tier on the loot ladder (an arm or legs as an Augment), or boss (a boss's own part, never offered) */
+  rar?: RarityTier | 'boss';
   /** kg */
   wt: number;
   /** its own HP x this (default 1) */
@@ -1462,7 +1501,7 @@ export interface RobotGem {
   name: string;
   short?: string;
   type: TypeId;
-  rar?: string;
+  rar?: RarityTier;
   /** its signature move */
   move: MoveId;
   stats: Partial<Record<StatId, number>>;
@@ -1565,6 +1604,113 @@ export interface Mood {
 export interface Engine {
   defaults: Record<string, any>;
   presets: Record<string, any>;
+}
+
+/** figureKit.json (characters track CH-5): head shapes, how far people vary, builds, the builds townsfolk are picked
+ * from, proportions, hair recipes and the accessories' shape lists (game/data/schema/figureKit.schema.json) */
+export interface FigureKit {
+  note?: string;
+  heads: Record<
+    DataId,
+    {
+      r: number[];
+      jaw: number;
+      chin: number;
+      cheek: number;
+      crown: number;
+      face: number;
+      nose?: number;
+      random?: boolean;
+    }
+  >;
+  vary: Record<string, number | number[]>;
+  builds: Record<DataId, { k: Record<string, number>; gait: Record<string, number>; jaw?: number }>;
+  folk: DataId[];
+  proportions: { chibi: Record<'head' | 'legs' | 'torso' | 'arms' | 'neck', number>; sliderGain: number };
+  hair: Record<
+    DataId,
+    { cut?: { front: number; side: number; back: number }; thin?: boolean; under?: any; steps: any[] }
+  >;
+  accessories: Record<
+    DataId,
+    { rows: any[]; vars?: Record<string, string | number>; fringe?: boolean; colour?: number[] }
+  >;
+  /** CH-6: the face's marks (logic/figure-kit.js kitFaceMarks) */
+  faces: FigureKitFaces;
+}
+/** figureKit.json faces (characters track CH-6): eye and brow styles, mouth frames, moods, which style a wardrobe id
+ * draws */
+export interface FigureKitFaces {
+  note?: string;
+  eyes: Record<
+    DataId,
+    {
+      w: number;
+      h: number;
+      lid?: number[];
+      flicks?: number;
+      wing?: number;
+      gap?: number;
+      iris?: number;
+      shade?: boolean;
+      bags?: boolean;
+      lines?: boolean;
+      blush?: boolean;
+    }
+  >;
+  brows: Record<
+    DataId,
+    {
+      w: number;
+      t: number;
+      arch?: number;
+      tilt?: number;
+      flat?: boolean;
+      peak?: boolean;
+      uneven?: number;
+      knit?: boolean;
+      bushy?: boolean;
+    }
+  >;
+  eyeFrames: Record<
+    DataId,
+    {
+      open?: number;
+      scale?: number;
+      iris?: number;
+      shut?: boolean;
+      happy?: boolean;
+      slant?: number;
+      flat?: boolean;
+      look?: number;
+    }
+  >;
+  mouths: Record<DataId, FigureKitMouthMark[]>;
+  expressions: Record<
+    DataId,
+    { eyes: DataId; mouth?: DataId; tilt?: number; lift?: number; blush?: boolean; talk?: DataId[] }
+  >;
+  talk: DataId[];
+  /** CH-6: hand-picked skin ramps: a swatch's five shades (deep, shadow, base, light, shine) */
+  skin?: { base: string; ramp: string[] }[];
+  moods: Record<DataId, { lid: number; tilt?: number; lift?: number }>;
+  rest: { eyes?: string[]; brows?: string[]; mouth?: string[]; mood: DataId }[];
+  wardrobe: Record<string, DataId>;
+  defaults: { eyes: DataId; brows: DataId; mouth: DataId };
+}
+/** a mark of a mouth frame: sizes in metres on the usual head, x and y from the mouth's middle */
+export interface FigureKitMouthMark {
+  kind: string;
+  x?: number;
+  y?: number;
+  w: number;
+  h: number;
+  t?: number;
+  shape?: 'oval' | 'arc' | 'cap' | 'slant';
+  dir?: number;
+  min?: number;
+  close?: boolean;
+  col?: string;
 }
 
 /** wardrobe.json: the dressing room's body, slots and clothes (dressing-room.js, person-art.js) */
@@ -1900,16 +2046,50 @@ export interface Music {
 
 /** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks) */
 export type PerkRarity = 'common' | 'uncommon' | 'rare';
-/** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes) */
-export type FxRow =
+/** PK-1: the moments a row can act at (logic/effects.js FX_WHEN) */
+export type FxWhen =
+  | 'battleStart'
+  | 'switchIn'
+  | 'move'
+  | 'hit'
+  | 'hurt'
+  | 'crit'
+  | 'ko'
+  | 'faint'
+  | 'turnEnd'
+  | 'throwMiss'
+  | 'catch'
+  | 'win'
+  | 'arrive'
+  | 'buy'
+  | 'take';
+/** PK-1: when a row acts, on what condition, how often and how it grows (logic/effects.js; all optional) */
+export interface FxTiming {
+  when?: FxWhen;
+  /** a condition or a list that must all hold (effects.js fxCond: 'lead', 'hp<0.25', 'foe:leader|rival', ...) */
+  if?: string | string[];
+  /** acts on every Nth time its `when` comes */
+  every?: number;
+  /** builds by `by` each time `on` comes (when `if` holds), up to `max`, back to 0 at `reset` */
+  grow?: { on: FxWhen; by: number; max: number; reset?: FxWhen; if?: string | string[] };
+  per?: 'teamTypes';
+  once?: 'battle' | 'run' | 'billie';
+}
+/** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes), with PK-1's timing */
+export type FxRow = FxTiming & FxKindRow;
+/** one effect row's kind and numbers */
+export type FxKindRow =
   | { kind: 'money'; mult: number }
+  /** PK-5: at arrive, this share of the Moneys carried, at most max */
+  | { kind: 'money'; share: number; max: number }
   | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
   | { kind: 'catch'; mult: number }
   | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
   | { kind: 'heal'; share: number }
   | { kind: 'payout'; what: 'research' | 'itemShare'; mult: number }
-  /** RL-13 (modifiers.json only): foes' levels up by n; the boss's HP times mult */
+  /** RL-13 (modifiers.json; PK-1: any run row, effects.js fxRunFoeLevels, fxRunBossHp): foes' levels up by n; the
+      boss's HP times mult */
   | { kind: 'level'; n: number }
   | { kind: 'bossHp'; mult: number }
   /** RL-12c (held items only, for the holder): its XP times mult; a share of its HP at each turn's end; once a battle,
@@ -1922,7 +2102,67 @@ export type FxRow =
   /** SP-6: a Gene Sample's DNA, the wild splice odds, an Unstable splice's turn-end hurt (Perks), times mult */
   | { kind: 'dna'; mult: number }
   | { kind: 'splice'; mult: number }
-  | { kind: 'unstable'; mult: number };
+  | { kind: 'unstable'; mult: number }
+  /** PK-3: critical-hit stages for your Billies' hits (without a when); at `when: move` that move is critical */
+  | { kind: 'crit'; stages?: number }
+  /** PK-3: your Billies can't get a status, or aren't hurt by the Sandstorm or sharp stones */
+  | { kind: 'immune'; what: 'brn' | 'slp' | 'par' | 'sandstorm' | 'stones' }
+  /** PK-3: at a hit of yours, a status on the foe with a chance (rows together at most 0.5) */
+  | { kind: 'inflict'; status: string; chance: number }
+  /** PK-3: what a burn takes from your Billies at each turn's end, times mult */
+  | { kind: 'chip'; what: 'burn'; mult: number }
+  /** PK-3: your Billies move before the foe's (within a move's priority) where its `if` holds */
+  | { kind: 'first' }
+  /** PK-3: when your whole team has fainted, they all get back up with this share of their HP (needs `once`) */
+  | { kind: 'revive'; share: number }
+  /** PK-4: a type passive works better for your Billies that have it, by its own numbers (effects.js FX_PASSIVE_KEYS) */
+  | {
+      kind: 'passive';
+      passive:
+        | 'kindling'
+        | 'undertow'
+        | 'regrowth'
+        | 'livewire'
+        | 'bedrock'
+        | 'slipstream'
+        | 'wildmind'
+        | 'alloy'
+        | 'partingroar';
+      rate?: number;
+      hp?: number;
+      mult?: number;
+      uses?: number;
+      always?: true;
+      rolls?: number;
+      all?: true;
+      stat?: 'lev' | 'law' | 'lob' | 'pr' | 'hus';
+      stages?: number;
+    }
+  /** PK-4: the weather never weakens your Billies' moves (noWeaken), or its boosts count mult times over (boost) */
+  | { kind: 'weather'; what: 'noWeaken' | 'boost'; mult?: number }
+  /** PK-4: your Billies who sat out get this share of a foe's XP more (added to progression.teamXpShare, at most 1) */
+  | { kind: 'benchXp'; share: number }
+  /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
+   * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place;
+   * PK-6: cap, n more Perks held; sideOpen, a side area's obstacle opens with its badge alone; sideFind, side areas hold n more finds;
+   * eventHurt, an event's hurt does nothing) */
+  | {
+      kind: 'rule';
+      rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal' | 'cap' | 'sideOpen' | 'sideFind' | 'eventHurt';
+      n: number;
+    }
+  /** PK-5: a Billie you catch joins n levels higher */
+  | { kind: 'catchLevel'; n: number }
+  /** PK-5: what a missed throw gives back (the pyramid), at throwMiss */
+  | { kind: 'refund'; what: 'pyramid' }
+  /** PK-5: what was just bought in a run shop is free (its price back), at buy */
+  | { kind: 'free' }
+  /** PK-5: what beaten bots leave (their parts offered, the Scrap), times mult */
+  | { kind: 'salvage'; mult: number }
+  /** PK-6: Moneys and Bag items (items.json ids) at once, when the Perk is taken */
+  | { kind: 'give'; money?: number; items?: Record<string, number> }
+  /** PK-6: stands for the rows of the Perk just above it in the list held (never itself or another copier) */
+  | { kind: 'copy' };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;
@@ -1982,6 +2222,8 @@ export interface GeneTrait {
   name: string;
   d: string;
   fx: FxRow[];
+  /** UI-14b: its tier on the loot ladder, by effect size (a Gene that brings it shows it) */
+  rarity: RarityTier;
 }
 /** RL-13: modifiers.json: a run's Expedition (one row each, I first) and its challenges (logic/modifiers.js) */
 export interface Modifier {
@@ -2019,6 +2261,20 @@ export interface Faction {
   scrapyard: { trainers: [number, number]; classes: string[] };
   /** a salvage pick: up to `parts` of the beaten bots' parts and Scrap (scrap + scrapPerBot a bot after the first) */
   salvage: { parts: number; scrap: number; scrapPerBot: number };
+  /** SY-3: its paperwork look, only where it is: a UI icon (art/ui/<emblem>.svg), the stamp words, form numbers */
+  look?: FactionLook;
+}
+/** SY-3: a faction's stamp moments (pb-stamp) */
+export type StampMoment = 'retrieved' | 'void' | 'denied' | 'pending' | 'filed';
+/** SY-3: factions.json `look` */
+export interface FactionLook {
+  emblem: string;
+  stamps: Record<StampMoment, string>;
+  forms: string[];
+  /** SY-5: the title of its boss's join notice */
+  notice?: string;
+  /** SY-5: the red line on its bots' plates in battle */
+  property?: string;
 }
 /** RL-14b: bosses.json: one boss phase, fired once when its HP falls to `at` of the most */
 export interface BossPhase {
@@ -2040,6 +2296,8 @@ export interface BossDef {
   /** the battle's first line ({name}) */
   call?: string;
   join?: string;
+  /** SY-5: the factions.json faction it fights for (its look in battle) */
+  faction?: string;
   /** the join intro's glow (else its gem's colour) */
   glow?: string;
   win?: string;
@@ -2203,6 +2461,12 @@ export interface RunEvent {
   options: RunEventOption[];
   /** residents track RS-2: only while the run's resident can be met at an event; `invite` invites them */
   resident?: true;
+  /** style track SY-4: one of the Bureau's events, opened as a case file (logic/case-file.js) */
+  bureau?: 1;
+  /** SY-4: the form number its case file shows (else one of bureau.look.forms) */
+  form?: string;
+  /** SY-4: flavour words of the intro under redaction bars until you choose */
+  redact?: string[];
 }
 export interface RunEventOption {
   text: string;
@@ -2211,6 +2475,8 @@ export interface RunEventOption {
   cost?: number;
   /** SP-6: DNA paid when it is picked */
   dna?: number;
+  /** SY-4: in a Bureau event, the moment its result is stamped */
+  stamp?: StampMoment;
   then: string[];
 }
 /** perks.json: a Perk (roguelite track RL-12): held for one run, its effect rows apply while it is held */
@@ -2221,6 +2487,15 @@ export interface Perk {
   d: string;
   rarity: PerkRarity;
   fx: FxRow[];
+  /** PK-1: its battle line when one of its rows acts at a moment (at most 40 letters; {name}: the Billie) */
+  say?: string;
+  /** PK-2: its picture under game/art ('perks/<id>.svg'); without one it shows the `relic` UI icon */
+  img?: string;
+  /** PK-4: offered only to a team this holds for (a condition or a list, all of which must hold: team:<Type>, mono) */
+  needs?: string | string[];
+  /** PK-4: its types and themes (types.json ids; logic/perks.js PERK_THEMES): offers lean toward a Perk whose tag
+      matches a type on the team or a tag of a Perk held (rules.json run.perks.bias) */
+  tags?: string[];
 }
 
 /** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */
@@ -2287,7 +2562,9 @@ export type UiRole =
   | 'danger'
   | 'hpOk'
   | 'hpMid'
-  | 'hpLow';
+  | 'hpLow'
+  | 'mapGrass'
+  | 'mapWater';
 export interface UiSurfaceSide {
   glass?: number;
   highlight?: number;
@@ -2314,8 +2591,10 @@ export interface UiFamilyShape {
 }
 export type UiEase = [number, number, number, number];
 export interface UiLook {
-  /** a preset's name in the Studio */
+  /** a preset's name in the Studio; the defaults' and a player preset's in Settings' Palette row (UI-12) */
   name?: string;
+  /** UI-12: a preset players pick in Settings' Palette row */
+  player?: boolean;
   color?: { light?: Partial<Record<UiRole, string>>; dark?: Partial<Record<UiRole, string>> };
   surface?: { blur?: number; saturate?: number; light?: UiSurfaceSide; dark?: UiSurfaceSide };
   /** the glass panels' box shadows per side (UI-3) */
@@ -2348,6 +2627,31 @@ export interface UiLook {
     easeIn?: UiEase;
     spring?: UiEase;
   };
+  /** UI-11: the colour code; only the defaults set it */
+  signals?: UiSignals;
+}
+/** UI-11: the colour code's ids (logic/signals.js UI_SIGNALS): the eight families, the three statuses, the rarity tiers */
+export type UiSignalId =
+  | 'good'
+  | 'bad'
+  | 'caution'
+  | 'value'
+  | 'special'
+  | 'growth'
+  | 'machine'
+  | 'bio'
+  | 'brn'
+  | 'par'
+  | 'slp'
+  | 'common'
+  | 'uncommon'
+  | 'rare'
+  | 'mythical';
+/** UI-11: the colour code, the same in every palette: a fill (--sig-<id>) and a text shade per side (--sig-<id>-text) */
+export interface UiSignals {
+  fill?: Partial<Record<UiSignalId, string>>;
+  light?: Partial<Record<UiSignalId, string>>;
+  dark?: Partial<Record<UiSignalId, string>>;
 }
 export interface UiTheme {
   version: 2;
@@ -2374,6 +2678,51 @@ export interface FieldMove {
   ask: string;
   used: string;
   out: string;
+}
+/** VFX-8: battleAnims.json: how the battle plays a move (logic/battle-anims.js, battle-anim-run.js) */
+export interface BattleAnimsData {
+  about?: string;
+  /** the power80 gate's power */
+  bigPower: number;
+  /** a move this strong (or a scene) may run extraMs longer */
+  longPower: number;
+  extraMs: number;
+  /** a family's short variant plays at this battle speed or more */
+  shortSpeed: number;
+  /** the longest a move may play by outcome and category, stage ms (the times before VFX-8) */
+  maxMs: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', number>;
+  /** the full-screen flash limiter */
+  flashes: { perSecond: number; gapMs: number; redShare: number };
+  colors: Record<string, Color>;
+  defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
+  intro: BattleAnimStep[];
+  families: Record<DataId, BattleAnimFamily>;
+  scenes: Record<DataId, BattleAnimFamily>;
+}
+export interface BattleAnimTimeline {
+  dur: number;
+  hit: number;
+  steps: BattleAnimStep[];
+}
+export interface BattleAnimFamily extends BattleAnimTimeline {
+  about?: string;
+  short?: BattleAnimTimeline;
+}
+/** a step: what it does, when (stage ms), its gates and its own numbers */
+export interface BattleAnimStep {
+  do: string;
+  at?: number;
+  n?: number;
+  every?: number;
+  if?: string[];
+  types?: string[];
+  on?: 'attacker' | 'target' | 'subject' | 'wide';
+  color?: string;
+  pop?: 'miss' | 'hedged';
+  pose?: string;
+  ease?: string;
+  cam?: Record<string, number>;
+  [k: string]: unknown;
 }
 /** WM-7: arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's
  * (logic/arena-gen.js) */

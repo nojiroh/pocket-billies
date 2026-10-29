@@ -216,9 +216,16 @@ export default [
     },
     rules: bugRules,
   },
-  // Studio plan T2.4: the Studio's logic worker is on no page: logic-client.js starts it as a module worker
+  // Studio plan T2.4: the Studio's logic worker is on no page: logic-client.js starts it as a module worker; CH-4: the
+  // figures' helper thread likewise (figure-meshes.js starts it)
   {
-    files: ['studio/js/logic-worker.js', 'studio/js/logic-worker-modules.js', 'studio/js/logic-worker-page.js'],
+    files: [
+      'studio/js/logic-worker.js',
+      'studio/js/logic-worker-modules.js',
+      'studio/js/logic-worker-page.js',
+      'game/js/figure-worker.js',
+      'game/js/figure-worker-modules.js',
+    ],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.worker },
     rules: bugRules,
   },

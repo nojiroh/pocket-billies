@@ -28,6 +28,8 @@ import {
   runStartable,
   runTakeOff,
   showModHTML,
+  soundTestAction,
+  soundTestHTML,
   storyScriptIds,
   testMapChecks,
   testMaps,
@@ -82,7 +84,7 @@ import { heldIds } from './logic/held.js';
 import { RUN_SIDE_MOD } from './logic/run-side.js';
 import { MAPGEN_LAYOUTS } from './logic/mapgen.js';
 import { RUN_LAYOUT_MOD, RUN_MOD_MOUNTAINS } from './logic/run-scenes.js';
-import { perkOfferMake, perkTake } from './logic/perks.js';
+import { perkCap, perkOfferMake, perkTake, perkTeamOf } from './logic/perks.js';
 import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { buildingLevel, unlockGrant } from './logic/unlocks.js';
@@ -224,6 +226,7 @@ const FIGURE_SWITCHES = [
     'figure',
     'Figure',
     [
+      ['look', 'your look'],
       ['rogue', 'stand-in'],
       ['mannequin', 'mannequin'],
     ],
@@ -238,12 +241,21 @@ const FIGURE_SWITCHES = [
     ],
   ],
   [
+    'figatlas',
+    'atlas',
+    'Atlas',
+    [
+      [true, 'live'],
+      [false, 'baked'],
+    ],
+  ],
+  [
     'figfolk',
     'folk',
-    'Townsfolk',
+    'Everyone else',
     [
-      [false, 'as they are'],
       [true, 'figures'],
+      [false, 'as they are'],
     ],
   ],
   [
@@ -391,6 +403,8 @@ function debugHTML() {
    debugSection('battle', `Battle${inB ? '' : ' (start one first)'}`, battle, false, inB),
    debugSection('run', 'Run', run),
    debugSection('places', 'Places and test scenes', places, false, inTest),
+   /* SND-8a: the Sound test (sound-test.js) */
+   debugSection('sound', 'Sound test', typeof soundTestHTML === 'function' ? soundTestHTML() : ''),
    debugSection('story', 'Story', story),
    debugSection('ranch', 'Ranch and time', ranch),
    debugSection('save', 'Save', saveRow),
@@ -501,6 +515,8 @@ function debugChimeraFor(sp) {
   return g && Object.keys(g).length > 1 ? graftKey(g) : '';
 }
 function debugAction(x) {
+  /* SND-8a: the Sound test's buttons play and stop sounds; they never change the save */
+  if (/^snd[A-Z]/.test(x)) return soundTestAction(x);
   const v = id => {
       const e = $('#' + id);
       return e ? e.value : null;
@@ -656,6 +672,7 @@ function debugAction(x) {
     case 'figon':
     case 'figwho':
     case 'figstyle':
+    case 'figatlas':
     case 'figfolk':
     case 'figppm':
     case 'figturns':
@@ -835,7 +852,8 @@ function debugAction(x) {
         id,
         PERKS,
         RULES.run.perks,
-        run.perks.length >= RULES.run.perks.cap ? run.perks[0] : undefined
+        run.perks.length >= perkCap(run, RULES.run.perks, PERKS) ? run.perks[0] : undefined,
+        saveData
       );
       if (why) return refreshDebugMenu(why === 'held' ? 'Already held.' : 'That Perk can’t be given.');
       saveNow();
@@ -843,7 +861,8 @@ function debugAction(x) {
     }
     case 'relicpick':
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
-      if (!perkOfferMake(saveData.run, PERKS, RULES.run.perks)) return refreshDebugMenu('Every Perk is held.');
+      if (!perkOfferMake(saveData.run, PERKS, RULES.run.perks, perkTeamOf(saveData.team)))
+        return refreshDebugMenu('Every Perk is held.');
       saveNow();
       uiState.modal = null;
       perkPickOpen();

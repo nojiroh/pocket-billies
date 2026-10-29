@@ -57,6 +57,7 @@ import {
   riderName,
   routeFindAt,
   routeFindGive,
+  routeFindsMore,
   saveData,
   saveNow,
   seamlessMapById,
@@ -624,7 +625,12 @@ export function propShown(p) {
   if (!p || (!p.hours && !p.days && !p.season && p.grow == null && !p.dry && !p.when && !p.unless)) return true;
   /* RT-4b: a route's bramble row or find goes once its run flag is set: what its `unless` (opened:<flag>) says, read
      without making the story state (asked for every prop, every frame) */
-  if (p.rt4b) return !(typeof saveData !== 'undefined' && saveData && (saveData.flags || {})[p.cut || p.find]);
+  if (p.rt4b) {
+    if (typeof saveData === 'undefined' || !saveData) return true;
+    /* PK-6: a side place's find more shows while a sideFind rule says so (Rusty Key) */
+    if (p.more && !(routeFindsMore(saveData.run) >= p.more)) return false;
+    return !(saveData.flags || {})[p.cut || p.find];
+  }
   /* Project Story S2: "when" / "unless": only while the story allows (logic/script.js storyAllows) */
   if ((p.when || p.unless) && !storyAllows(p)) return false;
   if (p.grow != null && !cropGrowth(p)) return false;
@@ -1071,7 +1077,7 @@ export function scaleColor(c, k) {
    the worn ones (10, 11) where people walk, the touched ones (1-5, 8, 9) gathered in slow patches of detail, the plain
    ones (0, 6, 7) over the rest (v47: picked evenly, plainTileIndex). The ground painter and the Studio's tile set
    preview (studio/js/tile-set.js, SA-2a) both pick with it */
-const GROUND_DETAIL_TILES = [1, 2, 3, 4, 5, 8, 9];
+export const GROUND_DETAIL_TILES = [1, 2, 3, 4, 5, 8, 9];
 export function groundTileRole(sx, sz, sa, worn, t47) {
   const r = hash2d(sx * 3 + 11 + sa * 7919, sz * 7 + 5);
   if (worn) return r < 0.5 ? 10 : 11;
@@ -3152,7 +3158,7 @@ export function routeFindStep(P) {
   const sc = walkView.sc;
   if (!sc || !saveData || !saveData.run || !(sc.props || []).some(p => p.find)) return;
   const F = saveData.flags || (saveData.flags = {}),
-    R = routeFindAt(sc, P.x, P.z, F);
+    R = routeFindAt(sc, P.x, P.z, F, routeFindsMore(saveData.run));
   if (!R) return;
   const got = routeFindGive(saveData, REWARDS[R.card]);
   F[R.flag] = 1;
@@ -3193,6 +3199,8 @@ function surfMount(P, on, quiet) {
   P.surfId = walkView.id;
   P.surfT = walkView.t;
   if (quiet) return;
+  /* SND-10: a splash as you mount or leave (sound.js, soundscape-here.js) */
+  if (typeof soundEffect === 'function') soundEffect('splash', { size: on ? 'surfOn' : 'surfOff' });
   if (typeof debugLog !== 'undefined') debugLog.add('scene', on ? 'surf on' : 'surf off');
   if (!reducedMotion && typeof addRipple === 'function')
     for (let k = 0; k < 3; k++) setTimeout(() => addRipple(P.x, P.z - 0.05, 0.6 + k * 0.4), k * 140);
@@ -4291,11 +4299,13 @@ function folkSay(f, force) {
 /** HB-10d: what the square says about your last run: every square_won / square_lost line that holds now; HB-10e: on
  * a festival or market day, its own lines (square_fest) first */
 function squareChat() {
-  const H = saveData && saveData.meta && saveData.meta.history,
+  /* the Studio's 3D previews load neither the game data nor logic/square-talk.js: no square lines there */
+  if (!gameData || typeof squareTalk !== 'function' || typeof squareMood !== 'function') return [];
+  const B = gameData.banter || {},
+    H = saveData && saveData.meta && saveData.meta.history,
     holds = (/** @type {string} */ c) => storyAllows({ when: c }),
-    fest =
-      typeof festivalToday === 'function' && festivalToday() ? squareTalk(gameData.banter || {}, 'fest', holds) : [];
-  return [...fest, ...squareTalk(gameData.banter || {}, squareMood(H), holds)];
+    fest = typeof festivalToday === 'function' && festivalToday() ? squareTalk(B, 'fest', holds) : [];
+  return [...fest, ...squareTalk(B, squareMood(H), holds)];
 }
 function sendFolk(f, to, then) {
   const rt = findPath(f.x, f.z, to[0], to[1], { noHop: true });

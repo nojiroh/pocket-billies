@@ -64,12 +64,16 @@ test('held items: the game data passes dataHeldItems; planted mistakes are named
   const D = {
     ...GAME_DATA,
     items: {
-      a: { n: 'A', price: 1, d: '', icon: 'x', hold: [] },
-      b: { n: 'B', price: 1, d: '', icon: 'x', hp: 20, hold: [{ kind: 'xp', mult: 1.5 }] },
-      c: { n: 'C', price: 1, d: '', icon: 'x', hold: [{ kind: 'catch', mult: 2 }] },
-      d: { n: 'D', price: 1, d: '', icon: 'x', hold: [{ kind: 'stat', stat: 'hp', stages: 1 }] },
-      e: { n: 'E', price: 1, d: '', icon: 'x', hold: [{ kind: 'pinchHeal', at: 2, share: 0 }] },
-      f: { n: 'F', price: 1, d: '', icon: 'x', hold: [{ kind: 'money', mult: 9 }] },
+      a: { n: 'A', price: 1, d: '', icon: 'x', rarity: 'common', hold: [] },
+      b: { n: 'B', price: 1, d: '', icon: 'x', rarity: 'common', hp: 20, hold: [{ kind: 'xp', mult: 1.5 }] },
+      c: { n: 'C', price: 1, d: '', icon: 'x', rarity: 'common', hold: [{ kind: 'catch', mult: 2 }] },
+      d: { n: 'D', price: 1, d: '', icon: 'x', rarity: 'common', hold: [{ kind: 'stat', stat: 'hp', stages: 1 }] },
+      e: { n: 'E', price: 1, d: '', icon: 'x', rarity: 'common', hold: [{ kind: 'pinchHeal', at: 2, share: 0 }] },
+      f: { n: 'F', price: 1, d: '', icon: 'x', rarity: 'common', hold: [{ kind: 'money', mult: 9 }] },
+      /* UI-14b: a held item has its tier; nothing else has one */
+      g: { n: 'G', price: 1, d: '', icon: 'x', hold: [{ kind: 'xp', mult: 1.5 }] },
+      h: { n: 'H', price: 1, d: '', icon: 'x', rarity: 'starter', hold: [{ kind: 'xp', mult: 1.5 }] },
+      i: { n: 'I', price: 1, d: '', icon: 'x', hp: 20, rarity: 'rare' },
     },
   };
   const got = C.dataHeldItems(D).map(p => p[1].split(':')[0]);
@@ -81,5 +85,8 @@ test('held items: the game data passes dataHeldItems; planted mistakes are named
     'e.hold[0].share',
     'e.hold[0].at',
     'f.hold[0].mult',
+    'g.rarity',
+    'h.rarity',
+    'i.rarity',
   ]);
 });

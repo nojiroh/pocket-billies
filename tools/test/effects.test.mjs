@@ -133,3 +133,23 @@ test("effects: fxRunPrice is a run's price with its Perks' price rows (none held
   assert.equal(E.fxRunPrice({ perks: [] }, PERKS, 'heal', 60), 60);
   assert.equal(E.fxRunPrice(null, PERKS, 'heal', 60), 60);
 });
+
+test('UI-16b: fxDamageBy names each source that changed a hit, with its own multiplier; fxSources lists a kind’s', () => {
+  const fx = [
+    { kind: 'damage', side: 'take', mult: 0.9, src: 'bubble_wrap' },
+    { kind: 'damage', side: 'deal', cat: 'H', mult: 1.15, src: 'power_gloves' },
+    { kind: 'damage', side: 'deal', cat: 'H', mult: 1.1, src: 'power_gloves' },
+    { kind: 'turnHeal', share: 0.1, src: 'held:leftover_sandwich' },
+  ];
+  assert.deepEqual(E.fxDamageBy(fx, hit()), [{ src: 'power_gloves', mult: 1.26 }]);
+  assert.deepEqual(E.fxDamageBy(fx, hit({ deal: false, take: true })), [{ src: 'bubble_wrap', mult: 0.9 }]);
+  assert.deepEqual(E.fxDamageBy(fx, hit({ cat: 'S' })), []);
+  assert.deepEqual(E.fxDamageBy(null, hit()), []);
+  // both sides when one of yours hits another of yours, each with its own number
+  assert.deepEqual(E.fxDamageBy(fx, hit({ take: true })), [
+    { src: 'bubble_wrap', mult: 0.9 },
+    { src: 'power_gloves', mult: 1.26 },
+  ]);
+  assert.deepEqual(E.fxSources(fx, 'turnHeal'), ['held:leftover_sandwich']);
+  assert.deepEqual(E.fxSources(fx, 'damage'), ['bubble_wrap', 'power_gloves']);
+});

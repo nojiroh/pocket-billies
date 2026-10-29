@@ -25,6 +25,7 @@
   "airborne": {
    "name": "Airborne",
    "d": "Takes half damage from Ground moves.",
+   "rarity": "rare",
    "fx": [
     {"kind":"damage","side":"take","type":"Ground","mult":0.5}
    ]
@@ -32,6 +33,7 @@
   "swimmer": {
    "name": "Swimmer",
    "d": "Its Water moves deal 15% more.",
+   "rarity": "common",
    "fx": [
     {"kind":"damage","side":"deal","type":"Water","mult":1.15}
    ]
@@ -39,6 +41,7 @@
   "counterweight": {
    "name": "Counterweight",
    "d": "Starts each battle with Defense up a stage.",
+   "rarity": "uncommon",
    "fx": [
     {"kind":"stat","stat":"law","stages":1}
    ]
@@ -46,6 +49,7 @@
   "grip": {
    "name": "Grip",
    "d": "Its physical moves deal 10% more.",
+   "rarity": "common",
    "fx": [
     {"kind":"damage","side":"deal","cat":"H","mult":1.1}
    ]
@@ -53,6 +57,7 @@
   "stride": {
    "name": "Stride",
    "d": "Starts each battle with Speed up a stage.",
+   "rarity": "uncommon",
    "fx": [
     {"kind":"stat","stat":"hus","stages":1}
    ]
@@ -60,6 +65,7 @@
   "armored": {
    "name": "Armored",
    "d": "Takes 15% less from physical moves.",
+   "rarity": "uncommon",
    "fx": [
     {"kind":"damage","side":"take","cat":"H","mult":0.85}
    ]
@@ -67,6 +73,7 @@
   "gore": {
    "name": "Gore",
    "d": "Its physical moves deal 15% more.",
+   "rarity": "uncommon",
    "fx": [
     {"kind":"damage","side":"deal","cat":"H","mult":1.15}
    ]
@@ -74,6 +81,7 @@
   "barbed": {
    "name": "Barbed",
    "d": "Takes 10% less from physical moves.",
+   "rarity": "common",
    "fx": [
     {"kind":"damage","side":"take","cat":"H","mult":0.9}
    ]
@@ -81,6 +89,7 @@
   "showy": {
    "name": "Showy",
    "d": "Starts each battle with Sp. Atk up a stage.",
+   "rarity": "uncommon",
    "fx": [
     {"kind":"stat","stat":"lob","stages":1}
    ]
@@ -88,6 +97,7 @@
   "keen": {
    "name": "Keen",
    "d": "Starts each battle with Sp. Def up a stage.",
+   "rarity": "uncommon",
    "fx": [
     {"kind":"stat","stat":"pr","stages":1}
    ]
@@ -95,6 +105,7 @@
   "lure": {
    "name": "Lure",
    "d": "Battles it wins pay 10% more.",
+   "rarity": "common",
    "fx": [
     {"kind":"money","mult":1.1}
    ]

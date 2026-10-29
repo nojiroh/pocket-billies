@@ -50,13 +50,13 @@ town node needs it.
 
 ## Tracks alongside
 - **Online track** (docs/phases/online-track.md, the owner's brief and answers 2026-10-26; ON-1 done 2026-10-26 on
-  `ccr-0b8e3c38-gt7t6a`; ON-2 and ON-3 done 2026-10-27 on `track/online`): ON-1 base (one legality
+  `ccr-0b8e3c38-gt7t6a`; ON-2 and ON-3 done 2026-10-27, ON-4 2026-10-28, on `track/online`): ON-1 base (one legality
   check, Online play switch, block and report, the friend re-add fix), ON-2 run record, ghosts, dailies and friends'
   boards (= RL-15), ON-3 the Showcase (share a Billie's look, votes, weekly themes, ribbons), ON-4 friend trades
   (Billies, eggs, parts; trade evolutions), ON-5 GTS and Surprise Trade on trust, ON-6 live friend battles (lockstep,
   level 50), ON-7 random casual matches. Firebase stays on Spark (no server code): what that leaves open is in the
-  track file and SECURITY.md. About 10-13 sessions. ON-4 and ON-5 wait for the Billie format (splicing, augments,
-  RO-3). Tags `on-N-done`. Branch `track/online`.
+  track file and SECURITY.md. About 10-13 sessions. ON-5 waits for RO-3g (the Swift line rebuilt; ON-4 started
+  without it at the owner's word). Tags `on-N-done`. Branch `track/online`.
 - **Routes track** (docs/phases/routes-track.md, the owner's brief 2026-10-24): run routes planned like a Pokémon
   route: RT-1 (layouts: forest masses, fences, 55-65% walkable, marked spots; done 2026-10-24), RT-2 (battle spots, 4-6 trainers,
   pairs; done 2026-10-25), RT-3 (set pieces for a lived-in feel; done 2026-10-25), RT-4a (more wild Billies, habitats, a rarer one in a
@@ -71,7 +71,7 @@ town node needs it.
 - **Water track** (docs/phases/water-track.md, the owner's brief and answers 2026-10-25): pixel water on the 32 texels
   a metre grid (hybrid: banded tones, stepped frames, smooth reflections), waterfalls as set pieces with plunge pools
   and mist, rivers that run downhill, the sea and the coast, wading, Surf and a Waterfall climb, new kinds, water
-  life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done 2026-10-25; WA-1 (pixel water) done 2026-10-25; WA-2a (waterfalls drawn, the flow map) done 2026-10-25; WA-2b (waterfalls placed) done 2026-10-25; WA-3a (rivers that run downhill) done 2026-10-25; WA-6a (wading) done 2026-10-25; WA-6b (Surf and the Waterfall climb) done 2026-10-25; WA-5a (new kinds' play, weather on water, shallows for others) done 2026-10-25; WA-4 (the sea and the coast) done 2026-10-25; WA-7 (the world map's and battles' water) done 2026-10-26; WA-5b (kinds as a texture, water life) done 2026-10-26; WA-9 (the Studio's water tools: a river brush, a waterfall placer, the kind painter, kept in the dials) done 2026-10-26; WA-10 (Copperleaf's river, mouth and outflow: kinds by connectivity, estuaries, smooth river levels, the outflow and a smaller square patched) done 2026-10-26; next WA-11 (the hub island's waterfall, the owner's pick 2026-10-27), then WA-8 alone;
+  life, sounds and Studio tools. WA-0 (the plan, the contract, test_water and `tools/look-water.py`) done 2026-10-25; WA-1 (pixel water) done 2026-10-25; WA-2a (waterfalls drawn, the flow map) done 2026-10-25; WA-2b (waterfalls placed) done 2026-10-25; WA-3a (rivers that run downhill) done 2026-10-25; WA-6a (wading) done 2026-10-25; WA-6b (Surf and the Waterfall climb) done 2026-10-25; WA-5a (new kinds' play, weather on water, shallows for others) done 2026-10-25; WA-4 (the sea and the coast) done 2026-10-25; WA-7 (the world map's and battles' water) done 2026-10-26; WA-5b (kinds as a texture, water life) done 2026-10-26; WA-9 (the Studio's water tools: a river brush, a waterfall placer, the kind painter, kept in the dials) done 2026-10-26; WA-10 (Copperleaf's river, mouth and outflow: kinds by connectivity, estuaries, smooth river levels, the outflow and a smaller square patched) done 2026-10-26; next WA-11 (the hub island's waterfall, the owner's pick 2026-10-27), then WA-8 alone (its water sounds were made in the sound track's SND-10, 2026-10-28; WA-8 keeps the phone pass and the baseline);
   then three lanes at once (renderer, generation, play; rounds 1-4; a fourth, world map and battles, in round 3), WA-8
   alone last. Takes over TR-6's waterfalls, TR-10's water and "rivers downhill" from the terrain track. Tags
   `wa-N-done`. Branch `track/water`.
@@ -107,7 +107,7 @@ town node needs it.
   region grid: footprints, links east, north or south, at least 2 routes between towns, leader then town, 9-12
   places a path by Expedition, 2-3 towns; done 2026-10-27 on `claude/wm-2-region-grid`), WM-3
   (shapes and sizes in mapgen, seams north and south), WM-4 (the seamless region on the world map, fogged outlines; side areas on the grid; done 2026-10-27),
-  WM-5 (branching town streets, three town sizes), WM-6 (districts, landmarks, route names), WM-7 (leader arenas, the
+  WM-5 (branching town streets, three town sizes, services and names; done 2026-10-27: WM-5a, WM-5b), WM-6 (districts, landmarks, route names; done 2026-10-27 on `claude/wm-6-region-look`), WM-7 (leader arenas, the
   final boss's arena place), WM-8 (ledges and loops). Tags `wm-N-done`. Branch `track/worldmap`.
 - **Towns track** (docs/phases/towns-track.md, the owner's brief 2026-10-24): run towns that feel alive. TW-0 (walk
   out of any room's doorway; "Go outside" stays with the card closed) done 2026-10-24; TW-1 (a town layout: street,
@@ -146,17 +146,37 @@ town node needs it.
   Part 2, Living Semigloss (the owner's brief 2026-10-27: look and feel, one design language, less clutter, motion,
   run pickups and statuses colour coded): UI-10 (the plan, research and a palette sampler) done 2026-10-27 on
   `ccr-03a15a70-nd3yqu`, answered (Field Guide by default, three palettes in Settings; rarity as frame and pill); UI-8b (the wide
-  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) first, UI-8c (the run map's icons in the icon set's pixel style, the markers first)
-  beside it on `claude/ui-8c-map-markers`, then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
-  the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266).
+  minimap tile, out of the bar's frame, the owner's brief 2026-10-27) done 2026-10-27 on `track/ui`, UI-8c (the run map's icons in the icon set's pixel style, the markers first)
+  beside it on `claude/ui-8c-map-markers` (done 2026-10-27, draft PR #281 into main; the owner's phone check after UI-18), then UI-11..UI-18 (the colour code as data, the palette, glyphs and types,
+  the marks kit, less clutter, motion) on `track/ui` after UI-9b (#266). UI-11 (the colour code as data) done
+  2026-10-27 on `ccr-dab4e0cd-6re1eb` (#280); UI-12 (the palettes: Field Guide by default, a Settings Palette row)
+  done 2026-10-27 on `claude/ui-12-palettes`; UI-13 (the marks' glyphs, the types at one lightness, the teal heart,
+  the bolt for storms only) done 2026-10-27 on `claude/ui-13-glyphs-types`; UI-14a (the marks kit: `pb-tag`,
+  `pb-chip`, `pb-proc`, `pb-info`, rarity, the Colour shapes patterns; gallery only) done 2026-10-27 on
+  `claude/ui-14a-marks-kit`; UI-14b (the marks on every screen: status tags, Prime teal, Lead neutral, towns teal,
+  rarity on held items, Augments, Genes and Billies, pb-coin's screens on pb-chip, the Colour shapes switch; the
+  battle plates left to UI-16b) done 2026-10-27 on `claude/ui-14b-marks-screens`; UI-15 (less clutter in battle and
+  walking: the field strip, plates' "+N", long-press move details, quiet commands, dark battle glass; the place card
+  as a title, the fading hint, the Actions bob) done 2026-10-27 on `claude/ui-15-less-clutter`; UI-16a (alive:
+  the feedback motions wired on every screen, press squash, the sliding selection bar, tick-ups, fly-to, face-down
+  picks that turn over, the sheet, flip, count and toast sounds, Animation Calm, no `:host-context`, walking's loops
+  from five to one) done 2026-10-28 on `claude/ui-16a-motion`; UI-16b (alive: battle events: the plates' tags on the
+  marks kit, Atk..Spe, Alpha in the bad family, statuses that stamp on, boosts that rise and drops that fall, trigger
+  blips, effect pips, effectiveness banners, one stamp motion shared with SY-3's pb-stamp, Calm for the battle
+  camera) done 2026-10-28 on `claude/ui-16b-battle-events`; UI-18 (less clutter
+  on the Map: no blurred panels, Give up in a ⋯ menu, the folded place card, towns teal on the bowl, names clear of
+  your figure) done 2026-10-28 on `claude/ui-18-map-clutter`; UI-17 (alive: idle life kept to two loops a screen and
+  counted by a test, the 7 s glint, the Coats' and rare frames' foil, today's forecast icon, the Map's breathing
+  places and bobbing pin, low HP on opacity, catch and level-up bursts, the boss's name banner) done 2026-10-28 on
+  `claude/ui-17-idle-life`; Part 2 checked 2026-10-28 on `claude/ui-checks-all` (every skipped browser check run on all of Part 2 merged, the fixes they called for, the gallery's baselines remade; one draft PR into main brings every Part 2 PR); the owner's phone checks next (HANDOFF, "Part 2 checked").
 - **Map generator track** (docs/phases/mapgen-track.md): MG-1 done; MG-2 is on the RL path (before RL-6), the
   roguelite version (seam agreement), with terrain TR-1 folded in; MG-3 when a town node needs it; MG-4 and MG-5
   after RL-8.
 - **Terrain track** (docs/phases/terrain-track.md, the owner's brief 2026-10-21): smooth roads, mountains, height as
   gameplay, terrain features. TR-1 (smooth roads) is folded into MG-2, before RL-7; TR-2a (mountains as the border) and
   TR-2b (mountain trails) done 2026-10-21, after the Gen 3-5 route research; TR-2c next. Runs went east to west (the
-  owner, TR-2 session; west to east since WM-1). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) next. TR-4 (the look by height and steepness: biome cliffs and strata, the snow line, scree and turf
-  edges, each behind a World switch, off) done 2026-10-26; TR-5..TR-7 alongside RL-9..RL-11 after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
+  owner, TR-2 session; west to east since WM-1). TR-3 (the camera on tall ground) done 2026-10-22 (PR #108). TR-2c split by the owner: part 1 (grass patches, wild Billies in any patch, the dust puff) done 2026-10-22; part 2 (the road pathfinder through tiers and the massif, the four mountain route types) after `track/worldmap` reaches main, as recipes on RT-1's plans. TR-4 (the look by height and steepness: biome cliffs and strata, the snow line, scree and turf
+  edges, each behind a World switch, off) done 2026-10-26. TR-5 (terraces along the contours, their fronts, stairs up to any stranded tier, summit or door) done 2026-10-28 on `track/terrain`; TR-6..TR-7 alongside RL-9..RL-11 after the first cut; the gameplay sessions TR-8..TR-11 wait for their RL parts. Tags `tr-N-done`.
 - **Sound track** (docs/phases/sound-track.md, planned 2026-10-21): settings fixes, the tracker as data, a Studio
   section for music and cries, then a Pokémon-style rework (four voices, written hooks, battle intros, a cry per
   species). SND-1 to SND-3 beside RL-8; SND-4 to SND-6 after the RL-8 play test. Tags `snd-N-done`. SND-1 (settings
@@ -166,13 +186,39 @@ town node needs it.
   music: intros timed to the throw, leader and boss songs, the red zone's tense version, the run's arc by row, the
   deadline version, the map song's forecast) done 2026-10-22; SND-6 (a cry per Billie from eight kinds with a low-HP
   cry, four UI sounds, jingles for the run's beats, the mix as data; every new sound a placeholder) done 2026-10-23.
-  The track's planned sessions are done; what's next is the owner's listening pass.
+  **Part 2** (the owner's brief and answers 2026-10-27: richer music, not only 8-bit; gentle environment sounds;
+  better water): SND-7 (the plan with research, a private listening page) done 2026-10-27; SND-8a (calm beds:
+  their own soft noise, re-voiced, started and stopped; a loudness report; a Sound Test in the debug menu; no
+  fingerprint changes) done 2026-10-28, every bed 12 LU or more under the route song. SND-8b (the echo bugs: a song's echo follows its fader, jingles
+  echo on the effects bus; a trim per song, Copperleaf's hub song +13.5 dB to 1.7 LU under the route song; the rain's
+  music low-pass 4 kHz; iOS "interrupted"; the baseline written again) done 2026-10-28. SND-9 (logic/sound-bake.js:
+  instruments baked from numbers, the tracker's bank and `T.sampleVoice`, one reverb made on first use, a harp in the
+  debug menu's Sound test, bake time and memory in the debug log, a brightness fingerprint beside the RMS; no sound
+  changed) done 2026-10-28. SND-10 (water: `soundscape.json` with a recipe per water kind, emitters from the scene
+  (shores, river lines, falls by height and their pools, fountains), far water low and soft and near water bright, the
+  surf on the tide, rain on water, wading, Surf, fishing and plops, a World sounds card in the Studio; WA-8's water
+  sounds, decided as recommended) done 2026-10-28. Next stems and ensembles in a
+  Chip+ and DS-era mix with a GB Sounds switch (SND-11), layers in play (SND-13: a walking beat, street musicians,
+  weather and night, building intensity), arrangements (SND-12), nature and weather (SND-14), the mix and a phone
+  pass (SND-15); SND-17 (the jingles with the new instruments, stingers on the beat) right after SND-11, added at the
+  owner's question. Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
+  plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
   art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the
   stretched pyramid (VFX-3), an impact frame (VFX-4), attack lunges (VFX-5), Studio dials and the debug log (VFX-6).
   VFX-0 (the plan, with research) and VFX-1 built 2026-10-26 on `ccr-a98cc267-eqso1d` at the owner's word; VFX-2
   (the ribbon) and VFX-3 (the stretched pyramid) built 2026-10-26 on `track/vfx`; VFX-4 (the impact frame) built
-  2026-10-27; VFX-5 next. Tags `vfx-N-done`. Branch `track/vfx`.
+  2026-10-27; VFX-5 (attack lunges: the lean, two afterimages, the dash moves' ribbon, as helpers Part 2's runner
+  reuses) built 2026-10-28; VFX-8 (anims as data: battleAnims.json, logic/battle-anims.js, the runner with today's
+  choreographies as legacy families, the tap that skips, sounds on the stage clock, the flash limiter, the rings) built
+  2026-10-28; VFX-9 (one draw for effects: the battle's particles in a GPU pool over one atlas, two draws a move,
+  the budgets, fixed light keys, the rig's flash on the GPU, the chromatic flash in the grade pass) built 2026-10-28;
+  VFX-10 next. **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
+  lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
+  VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
+  `track/vfx` after VFX-5, each in a new session started by VFX-7's, plans approved automatically (the owner,
+  2026-10-28), sound steps agreed with the sound track's planning session. Tags `vfx-N-done`. Branch `track/vfx`.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
@@ -257,9 +303,54 @@ town node needs it.
   the sprite-sheet exporter retired) done 2026-10-27; the spike CH-2 (the figure baker: jointed rigid figures baked
   into pixel pictures down today's sprite path, behind Engine > People > Figures; a code-built mannequin, made rounder
   at the owner's word) and CH-3 (KayKit's CC0 Rogue through tools/gltf-figure.mjs, the plain 3D figure beside it, a
-  Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; next **the owner's phone
-  and pick** ("Ask me before" 1). About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch `track/characters` (made
+  Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; **the owner's pick
+  (2026-10-28): C, built in code from the mannequin's simpler shapes, with more variety and personality**; CH-3b (the
+  figure kit: six head shapes, six builds with their own gaits, every wardrobe slot, painted faces; every NPC, Kappi
+  as a capybara and you as your look, behind Figures) done 2026-10-28; CH-4 (the live atlas: figures drawn each
+  step by the game's renderer into one shared unlit atlas and lit where they stand; meshes on a helper thread;
+  density by distance; the snapshot service) done 2026-10-28 on `claude/laughing-tesla-roy32r` ahead of CH-3c (the
+  plan approved in Plan Mode), its phone gate owed; CH-5 (the kit's data: head shapes, builds, hair recipes and the
+  hats, headset, neckwear and bags as shape lists in game/data/figureKit.json, figures cached by what makes them, the
+  Studio's Figures section with a turntable; clothes split into CH-5b) done 2026-10-28 there too, ahead of CH-3c; CH-6
+  (faces: the portrait kit's 13 eye and 12 brow styles, its 15 mouth frames and 7 expressions as marks, blinks for
+  everyone, talking mouths with the line's [tag], hand-picked skin ramps, all in figureKit.json `faces` with the
+  Studio's Faces tab) done 2026-10-28 there too, ahead of CH-3c; CH-3c (the movement pass: walk, jog and sprint by
+  speed with each build's stride from its legs, the step off, the settle and eased turns; figure data for the
+  residents, keepers, Granny Juniper and the hiker; a room's people seen with the live atlas; tools/look-places.py)
+  done 2026-10-29 there too, its phone gate owed with CH-4's; next CH-5b (clothes as data) or CH-7 (the dressing
+  room).
+  About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
+- **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's
+  relics) with lots of variety, each with its own picture in the UI icon set's 36 px block-and-split look, drawn as
+  flat 34x34 grids and shaded by the game's own `icon-block.js`. 66 new Perks in four waves (battle kit; types, team
+  and weather; catching, cash and maps; rules, growth and adventure) plus 12 **Fine Print** trade-off Perks offered at
+  leader wins, 7 Perk sets, 16 new held items, every Bag item and held item redrawn, 20 named boons and curses (the
+  Bureau's Red Tape), the Field Guide's Perks tab; the effects gain triggers, conditions, counters and growth. PK-0
+  (the plan, research and 8 sample icons) done 2026-10-27 on `ccr-24be55e6-2bmqci`; PK-1 (the effects core: when,
+  if, every, grow, per and once on effect rows, run.perkState, the switch-in fix, every run row of turnHeal, pinchHeal,
+  turnHurt, level and bossHp read, battle lines naming boons, the Studio's row inputs) done 2026-10-28 on
+  `track/perks`; PK-2 (the art pipeline: tools/build-icons.mjs, `img` on Perks, the 13 existing Perks drawn, pictures
+  at 72 px on pick cards and 36 px in rows, the Studio's icon editor and art browser on art/perks, Edit art in the
+  Perks editor) done 2026-10-28 on `track/perks`; PK-3 (Wave A, the battle kit: 15 Perks, the kinds crit, immune,
+  inflict, chip, first and revive, 11 new pictures, counters on the Perks tab) done 2026-10-28 on `track/perks`; PK-4
+  (Wave B: types, team and weather: 15 Perks, the kinds passive, weather, benchXp and rule forecastDays, `needs` and
+  `tags` with the bias on offers, 13 new pictures) done 2026-10-28 on `track/perks`; PK-5 (Wave C: catching, cash and
+  maps: 12 Perks, the kinds catchLevel, refund, free and salvage, a money share on arrival, inflict at battle start,
+  the rules rewardPick, rerollFree and mapReveal, `needs: bots`, 12 new pictures) done 2026-10-28 on `track/perks`;
+  PK-6 (Wave D: rules, growth and adventure: 11 Perks, the kinds copy and give, the rules cap, sideOpen, sideFind and
+  eventHurt, `needs: side`, growth on the cards, 11 new pictures) done 2026-10-28 on `track/perks`; PK-7 (Fine Print)
+  next.
+  The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
+  sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
+- **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
+  picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
+  events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in
+  the world), numbers you feel beyond the UI track's (your HP rolls down, damage numbers sized by the hit), and the
+  coat's prism foil carried onto Billies in battle and on the maps. First, battle flashes obey Flashes and Reduced
+  motion (they don't today). SY-0 (the plan, with research) and SY-1 (battle flashes follow Flashes and Reduced
+  motion) done 2026-10-27 on `ccr-86dc9cb1-odx2za`; SY-2 (numbers you feel) done 2026-10-27 on `track/style`; SY-3
+  (the Bureau's mark: the emblem, `bureau.look`, `pb-stamp`) done 2026-10-28 on `track/style`; SY-4 (case files: Bureau events in a manila folder, typed in, redacted, stamped) done 2026-10-28 on `track/style`; SY-5 (the Bureau in battle: stamps on knockouts and wins, the Notice of Retrieval in the join intro, ID plates on form paper; UI-16a/b merged in for their plates) done 2026-10-28 on `track/style`; SY-6 (the coat's foil in the world: a dithered sheen band in the sprite shader on coated Billies, maps and battle) done 2026-10-28 on `track/style`; SY-7 (the Bureau in the world: red tape on its barrier and crate, its own checkpoint sign with the emblem, loose forms blowing about its places) done 2026-10-28 on `track/style`; SY-8 (tuning and docs: Studio dials for the stamp, the HP roll, the pop sizes and the foil, uiTheme.json `style`; the debug log's style line) done 2026-10-28 on `track/style`. **Track done** (2026-10-28), waiting on PR #289; tags `sy-N-done` and `style-done` are the owner's to push. Branch `track/style`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.

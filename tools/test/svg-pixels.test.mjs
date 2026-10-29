@@ -69,3 +69,13 @@ test('svgProblem: any drawing in the 36 x 36 box, nothing that runs or loads', (
   ])
     assert.ok(S.svgProblem(bad), bad);
 });
+
+test('PK-2: an icon’s key and path, in art/ui and the Perks’, items’ and boons’ folders', () => {
+  assert.equal(S.svgIconKey('art/ui/bag.svg'), 'bag');
+  assert.equal(S.svgIconKey('art/ui/sound-off.svg'), 'sound-off');
+  assert.equal(S.svgIconKey('art/perks/lucky_charm.svg'), 'perks/lucky_charm');
+  assert.equal(S.svgIconKey('art/boons/fired_up.svg'), 'boons/fired_up');
+  for (const p of ['art/scene/x.svg', 'art/perks/a/b.svg', 'art/perks/x.png', 'perks/x.svg', ''])
+    assert.equal(S.svgIconKey(p), '', p);
+  for (const k of ['bag', 'perks/lucky_charm', 'items/potion']) assert.equal(S.svgIconKey(S.svgIconPath(k)), k);
+});

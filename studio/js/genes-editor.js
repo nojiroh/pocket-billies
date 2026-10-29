@@ -28,6 +28,7 @@ import { SECTIONS, card, grid, numberField, render, selectField, studioState, te
 /* eslint-disable no-func-assign */
 expose({
   GENE_SLOTS: [() => GENE_SLOTS],
+  RARITY_OPTS: [() => RARITY_OPTS],
   genesAugText: [() => genesAugText, v => (genesAugText = v)],
   genesBake: [() => genesBake, v => (genesBake = v)],
   genesData: [() => genesData, v => (genesData = v)],
@@ -88,6 +89,13 @@ function genesAugText(G, S) {
       .join(', ') || 'none'
   )}</p>`;
 }
+/** UI-14b: the loot ladder's tiers, for a trait's rarity */
+const RARITY_OPTS = [
+  ['common', 'Common'],
+  ['uncommon', 'Uncommon'],
+  ['rare', 'Rare'],
+  ['mythical', 'Mythical'],
+];
 /** the splice preview's words: the Gene's Stability, traits, types and price, from the game's logic */
 function genesPreviewText(G, S) {
   if (!S.gene) return '<p class="help">Pick a Gene.</p>';
@@ -184,7 +192,9 @@ SECTIONS.genes = () => {
       t =>
         `<div class="parts-size"><b>${escapeHtml(t)}</b>${grid(
           textField('Name', `genes.traits.${t}.name`, { max: 24 }),
-          textField('What it does', `genes.traits.${t}.d`, { area: 1, rows: 2 })
+          textField('What it does', `genes.traits.${t}.d`, { area: 1, rows: 2 }),
+          /* UI-14b: the trait's tier on the loot ladder (a Gene that brings it shows it) */
+          selectField('Rarity', `genes.traits.${t}.rarity`, RARITY_OPTS)
         )}</div>`
     )
     .join('');

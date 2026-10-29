@@ -243,6 +243,35 @@ test('run sim: a stall sells without healing and a waystation notes its event (R
   assert.ok(stands >= 2, `${stands} waystations`);
 });
 
+test("run sim: WM-5: a town walked into notes its size, a village's market stall its 2 held items; the report counts them", () => {
+  let villages = 0;
+  const all = [];
+  for (let k = 0; k < 30; k++) {
+    const { log, stats } = runSim(`SIMTOWN${k}`, T);
+    all.push(stats);
+    for (const at of log.places) {
+      if (at.type !== 'town') continue;
+      assert.ok(['hamlet', 'village'].includes(at.size), `SIMTOWN${k} node ${at.i}: ${at.size} (Expedition I)`);
+      if (at.size === 'village') {
+        villages++;
+        assert.equal(at.stall.length, 2, `SIMTOWN${k} node ${at.i}: two wares`);
+        assert.ok(
+          at.stall.every(w => (GAME_DATA.items[w].hold || []).length),
+          `${at.stall}: held items`
+        );
+      } else assert.equal(at.stall, undefined, 'a hamlet has no stall');
+    }
+    assert.equal(stats.stalls, stats.towns.village || 0);
+  }
+  assert.ok(villages >= 3, `${villages} villages reached`);
+  const R = runStats(2, T);
+  assert.ok(R.towns && typeof R.stalls === 'number', 'the report has towns by size and stalls');
+  assert.ok(
+    all.some(x => x.towns.hamlet),
+    'hamlets reached'
+  );
+});
+
 test('RS-2: a run’s log names its resident (Dottie on a fresh save) and whether the walk went through their town', () => {
   for (let k = 0; k < 4; k++) {
     const { log, stats } = runSim('SIMRES' + k, { ...B, team: 6, lvl: 20 }),

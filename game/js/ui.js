@@ -7,7 +7,9 @@ import { $, $$ } from './util.js';
 import { LOCATIONS, RULES, START_NODE, TRAINERS } from './game-data.js';
 import { speciesOf } from './logic/fighters.js';
 import { formatNumber, makeBilly, plural, spawn } from './logic/rules.js';
-import { pbFloat, pbInboxDot, pbInboxPop } from './ui-kit.js';
+import { motionCountAt, motionCountMs } from './logic/motion.js';
+import { pbFloat, pbInboxDot, pbInboxPop, pbSound } from './ui-kit.js';
+import { pbEnterRows, pbGainFly, recentPress } from './ui-motion.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
 import {
   activeBattle,
@@ -23,7 +25,7 @@ import { pyramidHTML, uiIconHTML } from './art.js';
 import { LOOK_PRESETS, cleanLook, portraitHTML } from './person-art.js';
 import { openSettings } from './settings-screen.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
-import { EASE } from './battle-stage.js';
+import { environment, environmentIcon } from './environment.js';
 import { fishStart } from './fishing.js';
 import { battleResize, battleShell, tapMessage } from './battle.js';
 import { worldMapAction, worldMapFit, worldMapMount, worldMapOpenFromWalk } from './world-bowl.js';
@@ -42,7 +44,17 @@ import { guideAction, renderGuide } from './guide.js';
 import { renderTeam, teamAction } from './team.js';
 import { billieSheetAction } from './billie-sheet.js';
 import { mapTabAction, renderWorldMapTab } from './map-tab.js';
-import { renderWalk, walkSheetClose, walkSheetOpen, walkSheetSync, walkTabAction, walkTipOnce } from './walk-tab.js';
+import {
+  placeCardState,
+  renderWalk,
+  walkAfterRender,
+  walkSheetClose,
+  walkSheetOpen,
+  walkSheetSync,
+  walkSheetToggle,
+  walkTabAction,
+  walkTipOnce,
+} from './walk-tab.js';
 import { leaveRoom, roomState, walkMapSync } from './walk-control.js';
 import { battleAction } from './battle-input.js';
 /* eslint-disable no-func-assign */
@@ -70,9 +82,12 @@ export function setRender(v) {
 const TABS = ['walk', 'map', 'team', 'guide', 'bag', 'perks', 'lab'],
   SCREENS = [...TABS, 'profile'];
 function topbar() {
-  const shut = !!(saveData.preferences && saveData.preferences.cardClosed),
-    walk = uiState.tab === 'walk';
-  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Moneys"><span class="money">${uiIconHTML('coin', 16)}</span><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
+  const walk = uiState.tab === 'walk',
+    shut = walk && !placeCardState().show,
+    inRoom = !!(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState()),
+    /* UI-15: the folded place card leaves its name and today's weather in the top bar */
+    wx = walk && !inRoom && environment.on ? uiIconHTML(environmentIcon(), 14) : '';
+  return `<div class="topbar glass" role="status">${walk ? `<button class="tb-where ${shut ? 'shut' : ''}" data-a="card-open" aria-expanded="${!shut}" aria-label="${shut ? 'Show' : 'Hide'} the card for ${escapeHtml(LOCATIONS[saveData.trip.node].name)}">${wx}${escapeHtml(uiState.inside && !uiState.bench && typeof roomState === 'function' && roomState() ? uiState.inside.name || LOCATIONS[saveData.trip.node].name : LOCATIONS[saveData.trip.node].name)}${uiIconHTML('chev', 12)}</button>` : `<span class="tb-where">${escapeHtml(LOCATIONS[saveData.trip.node].name)}</span>`}<span class="tb-chip tnum" title="Moneys"><span class="money">${uiIconHTML('coin', 16)}</span><b data-count="tse" data-to="${saveData.se}">${formatNumber(saveData.se)}</b></span><button class="tb-btn" data-a="settings" aria-label="Settings and help">${uiIconHTML('gear', 18)}</button><button class="tb-me" data-a="tab" data-t="profile" aria-label="Your trainer card" ${uiState.tab === 'profile' ? 'aria-current="page"' : ''}>${typeof portraitHTML === 'function' ? portraitHTML('me', 84) : ''}</button>${pbInboxDot(uiState.inbox.length)}</div>`;
 }
 export function render() {
   const app = $('#app');
@@ -129,30 +144,47 @@ export function render() {
   uiState.lastTab = T;
   app.innerHTML = `${topbar()}<main class="screen s-${T}${enter ? ' enter' + dir : ''}">${body}</main>`;
   updateNav(true);
+  /* UI-16a: a new tab's rows come in one after another (the Map keeps no entrance) */
+  if (enter && T !== 'map') pbEnterRows($('#app > .screen'));
   walkMapSync();
   document.body.classList.toggle('on-map', T === 'map');
   if (T === 'map') worldMapMount();
-  if (T === 'walk') walkTipOnce();
+  if (T === 'walk') {
+    walkTipOnce();
+    walkAfterRender();
+  }
   pbInboxPop(uiState.inbox.length);
   $$('[data-count]').forEach(el => {
     const k = el.dataset.count,
       to = +el.dataset.to,
       from = uiState.disp[k];
     uiState.disp[k] = to;
-    /* phase 06: money earned rises from the money chip instead of a toast */
-    if (k === 'tse' && from != null && to > from)
+    /* phase 06: money earned rises from the money chip instead of a toast. UI-16a: right after a press (a sale, a
+       reward, an event's answer) the coins fly there from what you pressed first */
+    if (k === 'tse' && from != null && to > from) {
       pbFloat(el.closest('.tb-chip') || el, '+' + plural(to - from, 'Money'));
+      const at = recentPress();
+      if (at) pbGainFly(at, 'money', 'coin');
+    }
     if (from == null || from === to || reducedMotion) {
       el.textContent = formatNumber(to);
       return;
     }
+    /* UI-16a: the shared count (logic/motion.js): 400-700 ms by the size of the change, in the value family's colour
+       while it ticks, a small pop and the count sound at the end */
     const t0 = performance.now(),
-      dur = 700;
+      dur = motionCountMs(from, to);
+    el.classList.add('m-ticking');
     const st = () => {
-      const q = Math.min(1, (performance.now() - t0) / dur),
-        v = from + (to - from) * EASE.out(q);
-      el.textContent = formatNumber(v);
+      const q = Math.min(1, (performance.now() - t0) / dur);
+      el.textContent = formatNumber(motionCountAt(from, to, q));
       if (q < 1 && el.isConnected) requestAnimationFrame(st);
+      else if (el.isConnected) {
+        el.classList.remove('m-ticking');
+        el.classList.add('m-count');
+        el.addEventListener('animationend', () => el.classList.remove('m-count'), { once: true });
+        pbSound('count');
+      }
     };
     st();
   });
@@ -253,7 +285,7 @@ document.addEventListener('click', ev => {
   const a = el.dataset.a,
     d = el.dataset;
   /* a button in the Actions sheet closes it first, then does its thing (a shop, the clinic, a battle, the map) */
-  if (el.closest('#walkSheet')) walkSheetClose();
+  if (el.closest('#walkSheet') && !el.dataset.keep) walkSheetClose();
   if (a === 'scrim') {
     if (ev.target === el && uiState.modal && !uiState.modal.lock) {
       const c =
@@ -295,7 +327,7 @@ document.addEventListener('click', ev => {
       if (d.r && typeof residentHomeTalk === 'function') residentHomeTalk({ res: d.r });
       break;
     case 'walkdown':
-      walkSheetOpen();
+      walkSheetToggle();
       break;
     case 'settings':
       openSettings();
@@ -311,6 +343,8 @@ document.addEventListener('click', ev => {
     case 'rungiveup':
     case 'walkrun':
     case 'walkmark':
+    case 'wtday':
+    case 'encgo':
       walkTabAction(a, d);
       break;
     case 'mon':
@@ -334,6 +368,7 @@ document.addEventListener('click', ev => {
     case 'msel':
     case 'travel':
     case 'stoptrip':
+    case 'mcfold':
     case 'mzoom':
     case 'mreset':
       mapTabAction(a, d);
@@ -381,7 +416,8 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'Escape' && uiState.modal && !uiState.modal.lock) {
     const c = uiState.modal.btns && uiState.modal.btns.find(b => b.l === 'Close' || b.l === 'Done' || b.l === 'Cancel');
     if (c) c.f();
-  } else if (ev.key === 'Escape' && !uiState.modal && !activeBattle && !uiState.title && saveData.started)
+  } else if (ev.key === 'Escape' && uiState.walkSheet && !uiState.modal) walkSheetClose();
+  else if (ev.key === 'Escape' && !uiState.modal && !activeBattle && !uiState.title && saveData.started)
     /* UI-5: no Walk tab: Esc goes back to the world */
     openTab('walk');
   if ((ev.key === 'Enter' || ev.key === ' ') && ev.target.matches('[role=button][data-a]')) {
@@ -452,18 +488,18 @@ document.addEventListener('keydown', ev => {
     first.focus();
   }
 });
-/* the Actions sheet on a computer: Tab opens and closes it while the world shows and nothing else has the focus (once
+/* the Actions bar on a computer: Tab opens and closes it while the world shows and nothing else has the focus (once
    a button outside it has the focus, Tab moves on as usual; Shift+Tab is never taken); open, Tab closes it. Opened by Tab, its first button
    takes the focus; the arrow keys move between its buttons */
 document.addEventListener('keydown', ev => {
   const sh = $('#walkSheet'),
     a = document.activeElement;
-  if (uiState.walkSheet && sh && (ev.key === 'ArrowDown' || ev.key === 'ArrowUp')) {
+  if (uiState.walkSheet && sh && /^Arrow(Down|Up|Left|Right)$/.test(ev.key)) {
     const els = $$('button:not(:disabled),[role=button],summary', sh).filter(e => e.getClientRects().length);
     if (!els.length) return;
     ev.preventDefault();
     const i = els.indexOf(/** @type {any} */ (a)),
-      j = i < 0 ? 0 : (i + (ev.key === 'ArrowDown' ? 1 : -1) + els.length) % els.length;
+      j = i < 0 ? 0 : (i + (ev.key === 'ArrowDown' || ev.key === 'ArrowRight' ? 1 : -1) + els.length) % els.length;
     /** @type {HTMLElement} */ (els[j]).focus();
     return;
   }
@@ -477,12 +513,9 @@ document.addEventListener('keydown', ev => {
     return;
   }
   walkSheetOpen();
-  const el = /** @type {any} */ ($('#walkSheet'));
-  if (el)
-    el.updateComplete.then(() => {
-      const b = $$('button:not(:disabled),[role=button]', el).find(e => e.getClientRects().length);
-      if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
-    });
+  const el = $('#walkSheet'),
+    b = el && $$('button:not(:disabled),[role=button]', el).find(e => e.getClientRects().length);
+  if (b) /** @type {HTMLElement} */ (b).focus({ preventScroll: true });
 });
 // Enter in the nickname field saves it.
 document.addEventListener('keydown', ev => {
