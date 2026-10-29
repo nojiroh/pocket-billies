@@ -7,7 +7,8 @@ graphics test: "Check other things in the graphics test that could be better tes
 tests to see what can be improved to give you actually useful test and debug data. Do extensive research online."
 Earlier in the same talk: "The graphics test makes the character stand still and doesn't really test some things like
 water while standing at water or see through while not standing behind things." TD-0 (this file, docs only) was
-written on `ccr-b95ade74-f8w3vy`; every later session works on `track/test-data` (the owner makes it from main).
+written on `ccr-b95ade74-f8w3vy`; every later session works on `track/test-data`, made from that branch by TD-0's
+session at the owner's word (2026-10-29).
 
 **Status:** TD-0 done (2026-10-29). Next: TD-1.
 
@@ -35,6 +36,11 @@ Sessions act on these without asking again.
 - **The test that reloaded** was the per-setting **Graphics test** (`game/js/graphics-test.js`), preset Beautiful,
   battery saver on.
 - **Branch** `track/test-data`.
+- **Sessions run on their own** (the owner, 2026-10-29: "Start TD-1 in a new session. Start every step after this
+  automatically in a new session."): each session plans, then builds without waiting for approval (this answer is
+  the approval), and at its end starts the next session (create_session, branch `track/test-data`) with the same
+  instructions. An "Ask me before" item is still asked: the session ends its turn with the question and options
+  instead of deciding. The last session (TD-5) starts none.
 
 ## 2. The log that started it
 `pocket-billies-debug-20261029-0952.json` (kept out of git, docs/TESTING.md privacy). Firefox 159, Android 17, Adreno
