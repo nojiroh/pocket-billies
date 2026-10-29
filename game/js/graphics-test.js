@@ -303,6 +303,20 @@ async function runPath(G, st) {
     });
     st.at++;
   }
+  /* a reload during the warm-up lap: that segment's warm-up is skipped from now on, and said so */
+  if (st.warmRunning) {
+    const seg = segs[st.warmRunning];
+    st.skipWarm = [...new Set([...(st.skipWarm || []), st.warmRunning])];
+    st.steps.push({
+      kind: 'warmup',
+      seg: st.warmRunning,
+      name: 'Warming up: ' + (seg ? seg.name : st.warmRunning),
+      ok: false,
+      reloaded: true,
+      why: 'the page reloaded during the warm-up walk',
+    });
+    st.warmRunning = null;
+  }
   st.running = null;
   graphicsTest.on = true;
   graphicsTest.stop = false;
@@ -370,6 +384,23 @@ async function runPath(G, st) {
     await W.benchOpen(sceneId, stop);
   };
   let grow = 0; /* the most a rebuild has added to graphics memory so far (MB) */
+  /* a segment that holds engine values of its own (the figures, the sun's place) is built with them, and the place
+     is built again when it is left */
+  let prevSeg = null,
+    scene = null;
+  const enter = async seg => {
+    const own = seg.eng || (prevSeg && prevSeg.eng);
+    setEng(seg);
+    if (scene !== seg.scene) {
+      const ms = await W.benchOpen(seg.scene, stop);
+      scene = seg.scene;
+      prevSeg = seg;
+      return ms;
+    }
+    if (own && prevSeg !== seg) await rebuild(seg.scene);
+    prevSeg = seg;
+    return 0;
+  };
   const save = () => writeState(st);
   const conditions = { start: null, end: null };
   try {
@@ -412,21 +443,20 @@ async function runPath(G, st) {
     }
     /* 2. the warm-up lap: every segment the plan walks, once, unmeasured; the resolution comes down a step while the
        place as shipped is already over the budget */
-    const walked = [...new Set(plan.filter(p => p.seg).map(p => p.seg))];
-    let scene = null;
+    const walked = [...new Set(plan.filter(p => p.seg).map(p => p.seg))].filter(
+      id => !(st.skipWarm || []).includes(id)
+    );
     for (const id of walked) {
       if (stop()) break;
       const seg = segs[id];
       stepEl.textContent = 'Warming up: ' + seg.name;
       L.bench.step = 'graphics test: warm-up ' + seg.id;
       L.crumb();
-      setEng(seg);
-      if (scene !== seg.scene) {
-        await W.benchOpen(seg.scene, stop);
-        scene = seg.scene;
-      }
-      const m = await W.benchWalk(seg, { budget, stop, settle: 6000 });
-      if (m.peakMb > budget && st.res > 0.5) {
+      st.warmRunning = id;
+      save();
+      await enter(seg);
+      let m = await W.benchWalk(seg, { budget, stop, settle: 6000 });
+      while (m.peakMb > budget && st.res > 0.5 && !stop()) {
         st.res = Math.round((st.res - 0.25) * 100) / 100;
         G.debugLog.add(
           'bench',
@@ -434,10 +464,12 @@ async function runPath(G, st) {
         );
         setEng(seg);
         await rebuild(seg.scene);
+        m = await W.benchWalk(seg, { budget, stop, settle: 6000 });
       }
       W.benchWalkEnd();
+      st.warmRunning = null;
+      save();
     }
-    save();
     /* 3. the steps */
     for (let i = st.at; i < plan.length && !stop(); i++) {
       const p = plan[i],
@@ -461,14 +493,11 @@ async function runPath(G, st) {
       const e0 = G.debugLog.err.length;
       let changed = false;
       try {
-        if (scene !== seg.scene) {
-          setEng(seg);
-          s.openMs = await W.benchOpen(seg.scene, stop);
-          scene = seg.scene;
-        }
+        s.openMs = (await enter(seg)) || undefined;
         /* the guess first: a step that would pass the budget is not run */
         const mem = W.benchMemory(),
-          guess = B.benchMemoryGuess(mem.kinds, p.dial || '', p.shipped, p.value, p.build ? grow : 0);
+          from = p.dial === 'quality.resolution' ? st.res : p.shipped,
+          guess = B.benchMemoryGuess(mem.kinds, p.dial || '', from, p.value, p.build ? grow : 0);
         s.guessMb = guess;
         if (guess > budget) {
           Object.assign(s, {
