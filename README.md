@@ -75,7 +75,7 @@ text are not licensed for reuse ([LICENSE](LICENSE)). Outside parts keep their o
 ## Project layout
 
 - The root: `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `CREDITS.md`, `LICENSE`, `CLAUDE.md` (the rules for
-  Claude Code sessions), `ART-NOTES.md` (art notes), `index.html` (the site's start page), and the configs
+  Claude Code sessions), `index.html` (the site's start page), and the configs
   (`package.json`, `vite.config.js`, `eslint.config.js`, `tsconfig*.json`, `.prettierrc.json`, `.editorconfig`,
   `.gitattributes`, `.github/`: the CI workflows and the pull request template).
 - `game/`: the game. `index.html` (the script order; the build replaces the module tags with one bundle), `version.js` (the version, the only place it is written),
@@ -107,4 +107,4 @@ text are not licensed for reuse ([LICENSE](LICENSE)). Outside parts keep their o
   strings; each proves a rename changed nothing else), and the Python scripts
   that drew the art and built the maps (the top of each says what it writes).
 - `docs/`: vision, roadmap, phases, naming, testing (`TESTING.md`: the tiers and what every phase tests), security
-  review, handoff log, the Studio guide.
+  review, handoff log, the Studio guide, the art rules (`ART.md`).

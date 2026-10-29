@@ -80,7 +80,7 @@ shaded by `game/js/logic/icon-block.js` (`iconBlockKeyed`: a 2 px block side to 
 the 45-degree line through its middle with the upper half paler, a lit top and left edge, a darker seam where two
 colours meet) and written by `game/js/logic/svg-pixels.js` (`pixelsToSvg`; `svgProblem` checks an icon). Colours are
 `ICON_PALETTE` letters (g G y o r t b B w W p s k n v V c) or one `ICON_RAMPS` hue (gold, red, green, steel, blue,
-teal, violet; digits 1-4 light, mid, dark, ink). ART-NOTES.md "UI icons, 36x36": the same colours on both themes,
+teal, violet; digits 1-4 light, mid, dark, ink). docs/ART.md "UI icons, 36x36": the same colours on both themes,
 nothing darker than slate `#4A5544`, 45-degree lines, octagons for circles, strokes of 3 px. The original grids are
 `tools/test/fixtures/ui-icon-grids.json`; since SA-2b the SVGs are the source, edited in the Studio's icon editor
 (`studio/js/icon-editor.js`, "Shade as a block"). `tools/test/ui-icons.test.mjs:18` pins art/ui at 51 icons with
@@ -533,7 +533,7 @@ unused-art gate.
   the unused-art gate stays green with nothing else to keep in step; `--force` is the only way over an SVG on disk.
 - In a one-colour (`mono`) picture the ramp's shades get no seam, so a detail drawn in a darker shade can vanish in the
   pale top half (Power Gloves' thumb, Gene Lure's helix in the first drafts). A same-colour letter (`r` beside the red
-  ramp's `2`) is its own block and gets a seam: ART-NOTES.md "Perk pictures".
+  ramp's `2`) is its own block and gets a seam: docs/ART.md "Perk pictures".
 - The picture check is its own data check, `dataPerkArt` (it reads files, which `dataPerks` doesn't), run by
   check-data: an error for an `img` that isn't there or fails `svgProblem`, a warning for a Perk without one.
 - The art browser and art-refs needed no change for "Used by" (perks.json's `img` is data text naming the path);

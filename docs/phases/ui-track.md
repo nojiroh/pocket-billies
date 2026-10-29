@@ -402,7 +402,7 @@ Line refs to parts.css move to base.css with UI-9b (#266).
   (`UI_ROLES`, the schema's palette, tokens.css's fallback, a Studio dial: ui-dials.js 74-87). The minimap mixes the
   theme's roles (minimap.js), so a palette's hue reaches it (a purple palette gives a purple minimap: seen in the
   sampler's captures).
-- **Icons are objects** in fixed colours, the owner's P5 (ART-NOTES.md, "UI icons, 36×36"); the SVGs are the source
+- **Icons are objects** in fixed colours, the owner's P5 (docs/ART.md, "UI icons, 36×36"); the SVGs are the source
   since SA-2b (the Studio's icon editor, logic/icon-block.js, logic/svg-pixels.js). Every drawn pixel is opaque, so an
   icon's SVG also works as an alpha mask.
 - **Settings** already has Animation (Device / Full / Reduced), Theme (Device / Light / Dark), Flashes and High
