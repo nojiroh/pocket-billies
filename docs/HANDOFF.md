@@ -2,6 +2,20 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fix - Kappi's stall clock counts only free walking - 2026-10-29
+Branch `fix/kappi-stall-clock` from main 7f661239, PR into main. From the owner's first phone log of the new intro
+(deploy 7f661239, Android, Adreno 750): New game -> the crash scene at 15.6 s -> Cartotter picked at 42.8 s (27 s into
+the scene) -> the run at 49 s -> Meadow Route -> a wild battle won; no errors. But "Kappi's cue: stall" fired 3.6 s
+after the crash scene ended, and again 0.2 s after the battle: the place's stall clock (logic/kappi-tips.js) started
+when the run's first look saw the place and ran on through the scene and the battle.
+- Changed: `tipHold(st, free, t)` holds the clock while you aren't free to walk (kappi.js calls it every look with
+  `kappiWalking()`: no scene, story, battle, sheet or room); a new place while held starts when you are free again.
+- Tests: kappi-tips.test.mjs, one more (the log's two cases and a place reached while held); 16 of 16. check-fast
+  "Kappi's tips" passes; lint, types, format.
+- Also in the log, not fixed here: the run's walk at 23-31 fps with quality stepped down to q4 and resolution 0.6
+  within 29 s (planting the grass and drawing sprites lead the slow frames, on the route more than on the landing);
+  the graphics estimate 307 MB, the landing's peak 322 MB (TD's phone budget is 300). For the load and test tracks.
+
 ### Intro track IN-5 - New game: the crash scene, wired end to end - 2026-10-29
 Branch `claude/in-5-new-game` from `track/intro` 17de7135 (wave 1 merged), built in the planning session at the
 owner's word ("Dew it": sessions couldn't be started over Remote Control). Merged into `track/intro`, then main, at
