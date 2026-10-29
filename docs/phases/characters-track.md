@@ -367,9 +367,24 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     (figures.js figurePreview: the game's baker on the unsaved data, built on the page once an edit), person, head
     shape, build, style and clip pickers, whole or the head close up; tabs for head shapes, builds, hair, hats and
     things (rows: duplicate, delete, give an item shapes), variety and proportions; "Give <who> this head and build".
-- **CH-5b Clothes as data:** tops, jackets, coats, skirts and trousers (fitted to the arms and the build in
-  figure-kit.js lookFigure) as shape lists in figureKit.json, with the same rows and the Studio's same editor; the
-  directions' flair (FIGURE_LOOKS: scarves, capes, gloves) too if it fits.
+- **CH-5b Clothes as data.** Done 2026-10-29 on `track/characters` (after #314 merged there; main merged in, draft PR
+  #332 into main). The owner's answers (Ask me before): CH-5b before CH-7; **knobs + rows**; **the flair's shapes to
+  data, FIGURE_LOOKS stays in code**.
+  - Checked against the code first: most clothes are not shapes but the colour of the body's own parts (the arms by
+    the sleeves, the thighs and shins by the bottom, the foot by the shoe); the garment kinds were four sets and id
+    checks; the body's frame rows could name had only tk, girth, hipK and torsoZ. Chad wears the track top as his
+    outer, so its jacket and zip are drawn there only.
+  - figureKit.json `clothes` (every wardrobe top, outer, bottom and shoe): knobs (sleeves; covers, puff, open, long;
+    legs, fit, belt; length, sole, boot, flat), `stripe`, rows at a stage (torso, shell, details), marks (buttons,
+    pockets, a zip, a buckle), `use` (the shared `pieces`: the collar, the belt) and `outer` (worn as an outer);
+    `flair` (scarf, cape, detail, goggles, fur, earrings) as rows; their colours and gloves stay in code.
+  - kit-shapes.js: a row's `stage`, `when` (bare, open, long, belted, belt, boot, neck, hat; ! for not), `chance` on
+    the figure's dice, side groups (A's rows, then B's), a side's part (`thigh$`), marks; the body's frame names the
+    sizes and the torso's profile (trx0..6, trz0..6); kitClothesProblems in check:data.
+  - The Studio's Clothes tab (a garment's knobs, shapes and marks on the turntable's person, "+ Give it clothes", the
+    shared pieces) and Flair tab (the picked flair on the turntable: figures.js figurePreview `flair`).
+  - The golden test grew to 707 figures (every top and bottom under every outer, each slot empty) before the move and
+    held through it.
 - **CH-6 Faces.** Done 2026-10-28 on `claude/laughing-tesla-roy32r` (PR #314 grows; the owner's choice), ahead of
   CH-3c; HANDOFF has the pictures. The owner's answers (Ask me before): **the face's data in figureKit.json with a
   Studio Faces tab**, and **every one of the portrait kit's styles** (13 eyes, 12 brows) for figures, the wardrobe's
@@ -455,6 +470,9 @@ Tags `ch-N-done` (the owner pushes them).
 - The kit's data (CH-5): game/data/figureKit.json (schema/figureKit.schema.json), game/js/logic/kit-shapes.js,
   studio/js/figure-editor.js (the Figures section), figures.js figurePreview and figureKitUse,
   tools/test/figure-kit-golden.test.mjs (the 485 figures' hashes), tools/studio-shots.py `figures`, `figure-hats`.
+- Clothes (CH-5b): figureKit.json `clothes`, `pieces` and `flair`, figure-kit.js lookFigure (`dress`, BF),
+  kit-shapes.js kitAccessory's options and kitClothesProblems, studio/js/figure-editor.js figureClothesTab and
+  figureRowsHTML, tools/test/figure-clothes.test.mjs, studio-shots `figure-clothes`, `figure-flair`.
 - Faces (CH-6): figureKit.json `faces`, figure-kit.js kitFaceMarks, kitFaceStyles, kitFaceSet and kitSkinRamp,
   figure-pose.js figureFaceState, figureBlinkAt and figureTalkFace, figures.js figureFaceFor,
   tools/test/figure-faces.test.mjs, look-people `--faces`, studio-shots `figure-faces`.

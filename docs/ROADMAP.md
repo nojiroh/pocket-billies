@@ -367,8 +367,11 @@ town node needs it.
   Studio's Faces tab) done 2026-10-28 there too, ahead of CH-3c; CH-3c (the movement pass: walk, jog and sprint by
   speed with each build's stride from its legs, the step off, the settle and eased turns; figure data for the
   residents, keepers, Granny Juniper and the hiker; a room's people seen with the live atlas; tools/look-places.py)
-  done 2026-10-29 there too, its phone gate owed with CH-4's; next CH-5b (clothes as data) or CH-7 (the dressing
-  room).
+  done 2026-10-29 there too, its phone gate owed with CH-4's. PR #314 merged into `track/characters` 2026-10-29 (the
+  owner: "merge #314 first"). CH-5b (clothes as data: each wardrobe top, outer, bottom and shoe as knobs, rows and
+  marks in figureKit.json clothes, the shared pieces, the directions' flair as rows; the Studio's Clothes and Flair
+  tabs; main merged in, DL-6's figure close-ups joined with the kit's faces) done 2026-10-29 on `track/characters`
+  (draft PR #332 into main); next CH-7 (the dressing room on the figure).
   About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's
