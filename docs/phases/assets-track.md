@@ -46,9 +46,36 @@ Sessions act on these without asking again.
   land. (Rooms are inside buildings and don't change.)
 - **The phone: a bit slower is fine.** The floor sessions keep to: Balanced on the phone loses at most about 15% of
   today's frame rate on the Graphics test's benchmark path (docs/TESTING.md); Beautiful has no floor.
+- **The style** (the owner, after the plan): "The style should feel like professional high resolution painterly pixel
+  art." Section 1.1 is the rule every lane paints to.
+- **48 px/m** (asked after that answer): new and remade model, prop, vegetation, halt and train textures are painted
+  at 48 pixels a metre (today 32, some props 34). The terrain tiles stay at 32 px/m: they are a fixed visual target
+  (CLAUDE.md) and no lane repaints them. AS-4 makes the model shader and the prop builders take 48 px/m textures (UV
+  scale per texture or atlas) in its first commits, so AS-2 and AS-3 can paint at 48 from the start.
 - **Sessions run on their own** (the owner, "you can automatically open the lanes when done"): every wave-1 session
   plans and builds without waiting, stops only on an item in section 7, and lists its drafts (words, looks) in its
   HANDOFF entry for the owner to change afterwards.
+
+### 1.1 The style rule: professional, high-resolution, painterly pixel art
+Every texture, model colour and leaf picture in this track is judged against this. It is hand-painted light in crisp
+pixels, the HD-2D way: the engine adds the moving light, the art carries the form and the material.
+- **Crisp pixels at 48 px/m**, sampled nearest, never resampled or blurred when in focus. One pixel size per object:
+  no mixed densities on one prop.
+- **Painted, not generated:** shapes are drawn by light. Each surface has a lit plane, a mid tone, a shadow and a
+  bounced light, laid as clusters of pixels (brush strokes: leaf masses, plank grain, stone faces), never noise, never
+  stray single pixels, never flat fills. Ordered dithering only for soft gradients (sky, glow), sparingly.
+- **Hue-shifted ramps:** every material has a ramp of 4-6 tones that shifts hue along its length, shadows cooler,
+  lights warmer. Brightness-only ramps read as dull. Ramps are shared per material family, so a scene holds together.
+- **Selective outlines:** dark lines only where a form must separate from what is behind it. A lit edge gets a
+  coloured light line, not black. No outline round every shape.
+- **Readable at phone size:** big shapes first, detail second. A prop reads from its silhouette and its two or three
+  biggest light planes at the camera's usual 40 m; the detail rewards a closer look.
+- **Organic forms:** no cube canopies, no perfect circles or spheres, no machine-straight rows in nature. Crowns are
+  lobed, rocks faceted, coasts and paths wander.
+- **Fits the world:** the retro-futuristic solarpunk palette of the Hollow Earth: warm sunlit greens and golds,
+  verdigris copper, cream stone, clean solar glass.
+- References for the feel (never to copy): Octopath Traveler II's maps, Eastward, Sea of Stars, and the Godot port's
+  HD-2D look.
 
 ## 2. What the code does today (audit, 2026-10-29, main 73b2f8b1)
 
@@ -165,6 +192,8 @@ Sessions act on these without asking again.
 - **Depth:** WebGL2 reversed-Z needs `EXT_clip_control` (not everywhere); not needed, the flicker is the hash.
 - **HD-2D:** dynamic light on pixel art, depth of field and tilt-shift; Octopath II raised map resolution for a more
   organic look.
+- **Painterly pixel art:** hue-shifted ramps (shadows cooler, lights warmer; brightness-only ramps look dull), the
+  outline used as the darkest shade, generated ramps as a starting point only.
 
 ## 4. The shared pieces (AS-0, done)
 Both terrain lanes and the vegetation lane meet here, so no lane waits on another.
@@ -199,7 +228,7 @@ Both terrain lanes and the vegetation lane meet here, so no lane waits on anothe
   is capped so it doesn't strobe. Buildings look exactly as before (look-windows.py before/after).
 - **Jet fire:** each nozzle's two cards become a plume drawn in its own additive pass (new `walk/plume.js`): crossed
   quads plus a cone along the nozzle, oriented by the train's full pose (pitch included); scrolling noise through a
-  stepped ramp (white-blue core, orange, clear), quantised to 32 px/m; length and flicker by beat (long and down in the
+  stepped ramp (white-blue core, orange, clear), quantised to 48 px/m; length and flicker by beat (long and down in the
   lift, short in the glide, a puff at "board"); lit by day and night alike (no `lampLit`); heat shimmer on Beautiful
   only. Smoke and sparks at lift-off from `walk/effects.js` (`plume`, `smoke`).
 - **Pictures tip with their model**, so the headlamp and name boards stay on the train (`decalPlace` takes the
@@ -208,7 +237,7 @@ Both terrain lanes and the vegetation lane meet here, so no lane waits on anothe
   hold each beat for several frames and compare the windows' colours (none may change). Screenshots in HANDOFF.
 
 #### AS-2 A train halt at every run's start
-- **The halt:** a low-poly country halt at 32 px/m in the props' style (AS-4's rules, section 5 AS-4): platform,
+- **The halt:** a low-poly country halt painted at 48 px/m in the props' style (AS-4's rules, section 5 AS-4): platform,
   canopy, kiosk, lamp, sign, bench, buffer stop, and a short curve of rail off the place's edge, a parked sky train at
   the platform. A new `tools/build-halt.py` writes it (the station trains' builder style).
 - **In the game:** `RUN_BUILDINGS.landing` gets `halt` instead of `mast`; mapgen's landing block places it with its
@@ -225,8 +254,8 @@ Both terrain lanes and the vegetation lane meet here, so no lane waits on anothe
 #### AS-3 Vegetation: painted blob crowns, many species
 - **The builder:** a new `tools/build-flora.mjs` writes deterministic mesh recipes (`kind:"mesh"`) per species and
   variant: crowns of 3-9 uneven lobes (flattened, offset, noise-displaced; never a sphere), a short alpha-cut leaf
-  fringe along the silhouette; a painted 32 px/m texture per species family (leaf strokes, a lit top, a dark cool
-  underside, no pixel noise); normals spherical from the crown's centre, AO baked into vertex colours, a colour shift
+  fringe along the silhouette; a painted 48 px/m texture per species family (section 1.1: leaf-mass clusters, a lit
+  warm top, a cool dark underside, hue-shifted ramps, no pixel noise); normals spherical from the crown's centre, AO baked into vertex colours, a colour shift
   per lobe; trunks 8-12 sides with branches showing in the gaps.
 - **The light:** a foliage shader chunk: the back-light (the sun through the leaves, brighter at the rim), soft wrap
   (no hard cel band across a crown), wind sway weighted by height and distance from the trunk (the one wind field),
@@ -243,8 +272,9 @@ Both terrain lanes and the vegetation lane meet here, so no lane waits on anothe
 
 #### AS-4 Props that look made, not boxed
 - **The builder:** a minimum side count by size; a 1-2 texel bevel on box edges so edges catch the light; smooth
-  normals on round parts with softer cel bands; every prop at 32 px/m.
-- **Textures:** a bigger 32 px/m atlas with matching normal maps (planks, painted wood, stone block, brick, metal
+  normals on round parts with softer cel bands; every prop at 48 px/m (first: the model
+  shader and the builders take 48 px/m textures, pushed early, since AS-2 and AS-3 paint at 48 too).
+- **Textures:** a bigger 48 px/m atlas painted to section 1.1, with matching normal maps (planks, painted wood, stone block, brick, metal
   plate, rust, thatch, roof tile, glass, cloth, solar panel, verdigris copper for the solarpunk look); moss and wear
   as painted masks in texel space, not noise; bumps on at Balanced.
 - **Remodels, the most seen first:** lamps, fences, benches, crates, barrels, signs, wells, carts, rocks (faceted,
@@ -372,6 +402,8 @@ golden snapshots and the rng hash.
 - Engine exhaust effects: https://forum.kerbalspaceprogram.com/topic/204884-developer-insights-11-%E2%80%93-engine-exhaust-visual-effects ;
   https://godotshaders.com/shader/engine-flame/ ; https://litedictteam.itch.io/ignition/devlog/337852/jet-engine-exhaust-visual-effects
 - EXT_clip_control for WebGL: https://registry.khronos.org/webgl/extensions/EXT_clip_control/
+- Colour ramps and hue shifting: https://www.slynyrd.com/blog/2018/1/10/pixelblog-1-color-palettes ;
+  https://feuniverse.us/t/gba-custom-portrait-tutorial-wip/10927/ ; https://github.com/Exerionius/ColorRampGenerator
 - HD-2D: https://en.wikipedia.org/wiki/HD-2D ;
   https://www.unrealengine.com/en-US/developer-interviews/octopath-traveler-ii-builds-a-bigger-bolder-world-in-its-stunning-hd-2d-style
 - The Godot port's tuning notes: `D:\Pocket BBB\pocket-bb\README.md` ("The HD-2D look", "Atmosphere", "Tuning: subtle

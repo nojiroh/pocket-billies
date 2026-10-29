@@ -38,7 +38,9 @@ The single source of truth for what the game is becoming. Phase files implement 
 
 ## Presentation
 - Portraits: only the eyes and mouth animate; the head may move a little. The old portrait system is replaced. 32-bit pixel art. (Phase 07.)
-- Art targets: terrain textures and the airship style (low-poly, 32 px/m). Flat props stay flat. (Phase 09.)
+- Art targets: terrain textures and the airship style (low-poly). Flat props stay flat. (Phase 09.)
+- The style: professional, high-resolution, painterly pixel art (the owner, 2026-10-29; docs/ART.md, "The style").
+  Models, props and vegetation are painted at 48 px/m (was 32); the terrain tiles stay at 32 px/m.
 
 ## Keeps
 Walking maps, seamless joins and rooms that are bigger on the inside than the outside (kept and improved), friends (ghost teams, daily seeds, trading, live battles and the Showcase in the online track), the Studio (extended), Firebase accounts, the debug tools and my phone-testing workflow.
