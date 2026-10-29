@@ -94,12 +94,22 @@
   }
  ],
  "crash": {
-  "clear": 2.5,
+  "clear": 6,
   "props": [
-   {"k":"train_greenbelt","at":[-12,5],"rot":17,"clear":7.5},
+   {"k":"train_wreck","at":[-14,6.5],"rot":8,"clear":12},
    {"k":"bureau_crate","at":[-5.5,3],"clear":1},
    {"k":"bureau_crate","at":[-17,1.5],"rot":34,"clear":1}
   ],
-  "spots": {"wreck":[-12,5],"me":[-6,-1],"chosen":[-9,1.5],"kappi":[-3,-1.5],"star1":[-8,-2.5],"star2":[-6,-3.5],"star3":[-4,-2.5]}
+  "spots": {
+   "wreck": [-14,6.5],
+   "me": [-6,-1],
+   "chosen": [-9,1.5],
+   "chosen_from": [-10.5,4],
+   "kappi": [-3,-1.5],
+   "kappi_from": [-1.5,2.5],
+   "star1": [-8,-2.5],
+   "star2": [-6,-3.5],
+   "star3": [-4,-2.5]
+  }
  }
 }

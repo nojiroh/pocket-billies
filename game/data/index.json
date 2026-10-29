@@ -143,9 +143,7 @@
     "seamus",
     "helix",
     "bureau_clerk_a",
-    "bureau_clerk_b",
-    "intake",
-    "outtake"
+    "bureau_clerk_b"
    ]
   },
   "trainers": {"ids":["crude","markdown","alta","marina","blake0","blake","poppy","vault","morel","carat","tinker"]},
@@ -197,6 +195,6 @@
     "test_intro_art"
    ]
   },
-  "cutscenes": {"ids":["opening","city","return"]}
+  "cutscenes": {"ids":["opening","city","return","crash"]}
  }
 }

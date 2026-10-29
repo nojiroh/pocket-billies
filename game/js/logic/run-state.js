@@ -74,7 +74,7 @@ export const RUN_FIELDS = /** @type {const} */ ([
   'buddy',
 ]);
 /* IN-4: 'return', the first run's end: the Bureau's pickup, the fall and the lab scene (its payout is shown there) */
-export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout', 'return'],
+export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout', 'return', 'crash'],
   RUN_NODES = 64,
   RUN_DAYS = 9999,
   RUN_LIST = 5000,

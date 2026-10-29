@@ -247,3 +247,50 @@ test('the crash site: the wreck and its cargo by the mast, turned with it, the a
   assert.ok(Math.abs(turned.wreck.x - (50 - dz)) < 0.02 && Math.abs(turned.wreck.z - (20 + dx)) < 0.02);
   assert.deepEqual(FR.firstRunSpots({ props: [] }), {}, 'no mast, no spots');
 });
+
+test('IN-5: the crash cutscene laid on the landing: its spots are the crash site’s, its shots turned with the mast', () => {
+  const C = GAME_DATA.cutscenes.crash,
+    mast = { k: 'airship_station', x: 50, z: 20, act: 'fly' };
+  assert.ok(C && C.landing && C.map === 'first_run', 'crash.json is filmed on the landing');
+  assert.deepEqual(C.spots, F.crash.spots, 'the cutscene’s spots are the crash site’s');
+  const S = FR.firstRunCutscene(C, { props: [mast] }, 'run_landing');
+  assert.equal(S.map, 'run_landing');
+  const spots = FR.firstRunSpots({ props: [mast] });
+  for (const [k, p] of Object.entries(S.spots)) assert.deepEqual(p, [spots[k].x, spots[k].z], k);
+  for (const [k, K] of Object.entries(S.shots)) {
+    assert.deepEqual(K.eye, [50 + C.shots[k].eye[0], C.shots[k].eye[1], 20 + C.shots[k].eye[2]], k + ' eye');
+    assert.equal(K.tgt[1], C.shots[k].tgt[1], k + ': the heights stay');
+  }
+  /* turned a quarter, an area clears the square round its turned corners */
+  const Q = FR.firstRunCutscene({ ...C, clear: { areas: [[1, 2, 3, 4]] } }, { props: [{ ...mast, rot: 90 }] }, 'x');
+  assert.deepEqual(Q.clear.areas[0], [46, 21, 48, 23]);
+  assert.equal(FR.firstRunCutscene(C, { props: [] }, 'x'), null, 'no mast, no scene');
+});
+
+test('IN-5: the starter picked at the crash takes the stand-in’s place on the run, the counter lane following it', () => {
+  const [a, b] = RULES.start.starters,
+    { s, run } = prepared(a),
+    uid = s.team[0].uid;
+  const old = FR.firstRunStarter(s, fn('makeBilly')(b + '0', RULES.start.starterLevel), b);
+  assert.equal(old.sp, a + '0');
+  assert.equal(s.team.length, 1);
+  assert.equal(s.team[0].sp, b + '0');
+  assert.equal(s.team[0].uid, uid, 'the same uid: the run’s home and the buddy still name it');
+  assert.equal(s.buddy, uid);
+  assert.equal(s.starter, b);
+  assert.ok(s.caught[b + '0'] && s.seen[b + '0']);
+  assert.equal(run.rival.lead, b + '0', 'the run’s lead is the picked one');
+  assert.deepEqual(
+    run.start.team.map(m => m.sp),
+    [b + '0'],
+    'the hub’s snapshot holds the picked one, not the stand-in'
+  );
+  const lane = F.nodes.findIndex(n => n.wild && n.wild.by);
+  assert.deepEqual(
+    FR.firstRunPool(run, lane).list.map(([id]) => id),
+    F.nodes[lane].wild.by[b],
+    'the counter lane is the picked starter’s'
+  );
+  assert.ok(validRun(run), 'still a valid run');
+  assert.equal(FR.firstRunStarter({ team: [] }, {}, b), null);
+});

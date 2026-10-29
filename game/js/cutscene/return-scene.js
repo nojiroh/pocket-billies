@@ -11,7 +11,7 @@
    or breaks, the run still ends the same way, so nobody is left in a run that is over. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { provide } from '../hooks.js';
+import { introMark, provide } from '../hooks.js';
 import { $ } from '../util.js';
 import { save, saveData, uiState } from '../game-state.js';
 import { cleanLook } from '../person-art.js';
@@ -123,6 +123,8 @@ function returnFinish(why) {
   cutscene.back = false;
   cutscene.paying = false;
   uiState.trainerDraft = null;
+  /* IN-5: the cold open was played to its end on this device: New game offers to skip it from now on */
+  if (typeof introMark === 'function') introMark();
   if (why && typeof debugLog !== 'undefined') debugLog.add('scene', `the way back skipped the lab (${why})`);
   if (typeof runEndLab === 'function') runEndLab();
 }

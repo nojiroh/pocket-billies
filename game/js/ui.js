@@ -30,8 +30,8 @@ import { fishStart } from './fishing.js';
 import { battleResize, battleShell, tapMessage } from './battle.js';
 import { worldMapAction, worldMapFit, worldMapMount, worldMapOpenFromWalk } from './world-bowl.js';
 import { cutscene } from './cutscene/director.js';
-import { cutsceneStart, cutsceneWanted } from './cutscene/opening.js';
 import { renderTitle, titleMount } from './title.js';
+import { newGameStart } from './cutscene/crash-scene.js';
 import { renderPerks } from './perk-screen.js';
 import { labAction, renderLabBoard } from './lab-board.js';
 import { renderBag } from './bag.js';
@@ -308,13 +308,9 @@ document.addEventListener('click', ev => {
   if (typeof worldMapAction === 'function' && worldMapAction(a, d)) return;
   switch (a) {
     case 'intro':
-      /* the opening cutscene is the only way into a new game; if it can't run, the Try again screen */
-      uiState.openingFailed = false;
-      if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
-      else {
-        uiState.openingFailed = 'cant';
-        render();
-      }
+      /* IN-5: New game is the crash (cutscene/crash-scene.js), or once it has been played here, the choice to skip it
+         for the opening; if neither can run, the Try again screen */
+      newGameStart();
       break;
     case 'tab':
       openTab(d.t);

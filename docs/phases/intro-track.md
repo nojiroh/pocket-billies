@@ -10,8 +10,8 @@ thrown in a square portal. Then a part of the old intro plays but it's changed t
 sky, no hollow earth. The player wakes up at the lab and Kappi and Chosen talk shortly and explain the expeditions."
 IN-0 (this file, docs only) was written on `track/intro`, made from main bb658f52 on 2026-10-29.
 
-**Status:** IN-0 done (2026-10-29): the plan, with the owner's answers (section 1). Next: wave 1 (IN-1 to IN-4),
-waiting for the owner's go-ahead to start.
+**Status:** IN-0 to IN-5 done (2026-10-29; wave 1 merged into `track/intro` at 17de7135, IN-5 built in the planning
+session at the owner's word, its HANDOFF entry lists what differs from section 5). Next: IN-6, the owner's phone play.
 
 Before editing, every session checks the facts it relies on against main and says in its HANDOFF entry what
 differs: they come from read-only audits on 2026-10-29 (main at bb658f52). Line numbers drift; find lines by text.

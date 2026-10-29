@@ -36,7 +36,7 @@
    "faction": "bureau",
    "expeditions": [],
    "who": "miner",
-   "fighter": {"gem":"volt","torso":"bulwark","armL":"clamp","armR":"piston","legs":"treads"},
+   "fighter": {"gem":"volt","torso":"intake","armL":"seizer","armR":"franker","legs":"conveyor"},
    "bots": {"torso":"Scout Frame","armL":"Grabber","armR":"Stamper","legs":"Crawler"},
    "boss": {"hp":2.4,"st":1,"levels":0},
    "phases": [

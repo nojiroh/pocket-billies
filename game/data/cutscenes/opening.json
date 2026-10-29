@@ -1,5 +1,5 @@
 {
- "about": "The opening in Copperleaf, after the fall: you wake outside Professor Chosen’s lab, he comes running and his assistant Kappi follows him out, you make yourself up, three coins pop open into the starters, you pick one, and the Chosen sends you to the airship mast. Started by New game (cutscene/opening.js); the fall before it is opening-fall.js. RL-8 (the owner's \"fall only\"): Blake's entrance, the Chosen's fight with him and his battle left the opening; his spots and shots stay for the story.",
+ "about": "The opening in Copperleaf, after the fall: you wake outside Professor Chosen’s lab, he comes running and his assistant Kappi follows him out, you make yourself up, three coins pop open into the starters, you pick one, and the Chosen sends you to Skyline Station. Since IN-5 it is New game's Skip the crash (cutscene/crash-scene.js newGameStart; cutscene/opening.js); the fall before it is opening-fall.js. RL-8 (the owner's \"fall only\"): Blake's entrance, the Chosen's fight with him and his battle left the opening; his spots and shots stay for the story.",
  "map": "copperleaf",
  "spots": {
   "door": [155.35,79.66],
@@ -53,7 +53,7 @@
   "walk Chosen hazel 1.5",
   "face Chosen down",
   "[surprised] Chosen: Whoa. [shake]WHOA.[/shake] You fell out of the sky and you’re alive? That’s a main character move.[p] That’s [b]my[/b] move. #l:bfff",
-  "Chosen: Stuff comes down through the crust sometimes. Mostly furniture.[p] Furniture has [i]never once[/i] been chosen. #l:b29c",
+  "Chosen: Stuff falls out of the sky round here sometimes. Mostly furniture.[p] Furniture has [i]never once[/i] been chosen. #l:b29c",
   "actor Kappi at door down",
   "camera hazelRuns 1.2 on hazel assist",
   "walk Kappi assist 0.8",
@@ -97,7 +97,7 @@
   "act you cheer 1.3",
   "wait 0.9",
   "[happy] Chosen: {starter}! Bold. I’d have picked that one too.[p] I didn’t. But I [i]would[/i] have. #l:a99c",
-  "Chosen: One more thing. See the airship at the mast? It flies out past the island, to wild places nobody’s mapped yet. #l:9e1c",
+  "Chosen: One more thing. Skyline Station, just up the hill. Its trains go out past the island, to wild places nobody’s mapped yet. #l:9e1c",
   "Chosen: Every trip is different. Take {starter}, catch what you can, bring back whatever you find. Side quest.[p] [b]Very[/b] important side quest. #l:321e",
   "camera standing 0.9 on Kappi Chosen",
   "Kappi: And come back in one piece. Falling once is plenty. There’s a hot bath in the lab.[p] Yuzu in it. #l:30e3",

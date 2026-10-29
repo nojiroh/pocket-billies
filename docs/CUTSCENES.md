@@ -74,9 +74,22 @@ should hold.
 
 Slots work in commands too (`{place}`, `{name}`, `{starter}` ...: docs/SCRIPTS.md).
 
-### How New game begins (cutscenes track B)
+### How New game begins (intro track IN-5)
 
-The fall ends in a dive straight down onto Copperleaf's island, onto the opening's own landing spot (`me`): the
+New game (`cutscene/crash-scene.js` `newGameStart`) is the cold open: a new save with a stand-in starter, the prepared
+first run started at once (`run.js` `runTakeOffPrepared({ crash })`, no train), and `crash.json` played on its landing
+while the run waits at phase `crash` (a reload plays it again). `crash.json` has `"landing": true` and `"map":
+"first_run"`: it has no map of its own, its spots are the crash site's (`firstRun.json` `crash.spots`, checked equal
+by check-data), and its spots, its shots' eye and target and its clear areas are metres from the landing's mast,
+turned with it (`logic/first-run.js` `firstRunCutscene`; a turned area clears the square round its corners). Its own
+commands are the opening's `throw-coins` and `pick-starter`; the picked starter takes the stand-in's place on the run
+(`firstRunStarter`, then `run-world.js` `runWorldRepool`). The run ends through the way back below.
+
+Once a first run has ended at the lab on this device (localStorage `pb-intro-done`), New game asks: **Skip the
+crash** plays the opening below (the fall from the Bureau's portal with no captions, the lab, the dressing room, the
+pick, Skyline Station), or play it again.
+
+The opening's fall ends in a dive straight down onto Copperleaf's island, onto the opening's own landing spot (`me`): the
 world map films it (opening-fall.js `fallFloatCamera`), clouds and streaks of air over it. Its last picture is held
 (dazed) behind the impact's flash while Copperleaf's walk view is made, and the opening's first shot, `drop`, looks
 down on the same spot before `wake` brings the camera down to the ground. `tools/look-opening.py` takes pictures of

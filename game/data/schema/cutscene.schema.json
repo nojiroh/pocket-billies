@@ -57,6 +57,10 @@
    "type": "string",
    "pattern": "^[a-z0-9_]+$"
   },
+  "landing": {
+   "description": "IN-5: filmed on the prepared first run's landing (game/data/firstRun.json), not on a map of its own: `map` is then first_run, and its spots and its shots' eye and target are metres from the landing's mast, turned with it (logic/first-run.js firstRunCutscene); its spots are the crash site's",
+   "type": "boolean"
+  },
   "who": {
    "description": "who says a line that names nobody (a speaker in story.json)",
    "type": "string"

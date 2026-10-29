@@ -68,13 +68,15 @@
   {
    "p": "coins/pyramid_32.png",
    "at": [
+    "game/js/cutscene/crash-scene.js:165",
     "game/js/cutscene/opening.js:121",
-    "game/js/cutscene/opening.js:445"
+    "game/js/cutscene/opening.js:447"
    ]
   },
   {
    "p": "coins/pyramid.json",
    "at": [
+    "game/js/cutscene/crash-scene.js:166",
     "game/js/cutscene/opening.js:123"
    ]
   },
@@ -1542,7 +1544,7 @@
    "game/js/battle-stage.js:2112",
    "game/js/battle-stage.js:2590",
    "game/js/battle-stage.js:2913",
-   "game/js/cutscene/opening.js:360"
+   "game/js/cutscene/opening.js:362"
   ],
   "tag": [
    "game/js/battle.js:729",

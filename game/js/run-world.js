@@ -21,6 +21,7 @@ import {
   EVENTS,
   LOCATIONS,
   LOCATION_BY_ID,
+  POOLS,
   QUESTS,
   RESIDENTS,
   REWARDS,
@@ -71,6 +72,7 @@ expose({
   runWorldMaking: [() => runWorldMaking],
   runWorldNextFrame: [() => runWorldNextFrame, v => (runWorldNextFrame = v)],
   runWorldPutRun: [() => runWorldPutRun, v => (runWorldPutRun = v)],
+  runWorldRepool: [() => runWorldRepool, v => (runWorldRepool = v)],
   runWorldSync: [() => runWorldSync, v => ((runWorldSync = v), provide({ runWorldSync }))],
   runWorldWorker: [() => runWorldWorker, v => (runWorldWorker = v)],
 });
@@ -319,6 +321,12 @@ function runWorldAheadFail(why) {
     job.failed = why;
     job.res(null);
   }
+}
+/** IN-5: the run's pools made again after the crash scene's starter pick (the prepared run's counter lane follows the
+ * starter: logic/first-run.js firstRunPool); the scenes and everything else stay @param {any} run */
+export function runWorldRepool(run) {
+  if (!run || runWorld.seed !== run.seed) return;
+  Object.assign(POOLS, runWorldTables(run, gameData.locations[START_NODE], runWorldData()).pools);
 }
 /** HB-2: f after the page has drawn a frame (a hidden page draws none: then a timer) @param {() => void} f */
 function runWorldNextFrame(f) {
