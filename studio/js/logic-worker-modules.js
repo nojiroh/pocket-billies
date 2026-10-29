@@ -207,6 +207,7 @@ import '../../game/js/logic/water-play.js';
 import '../../game/js/logic/water-weather.js';
 import '../../game/js/logic/weather.js';
 import '../../game/js/logic/wild-pool.js';
+import '../../game/js/logic/window-seed.js';
 export { runPreview } from '../../game/js/logic/run-preview.js';
 export { runMapSweep } from '../../game/js/logic/data-checks.js';
 /* Studio plan T3.4: the run simulation (the modules above, named for it) */

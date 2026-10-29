@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/prop-models.js:2156",
+    "game/js/prop-models.js:2157",
     "game/js/walk-view.js:793"
    ]
   },
@@ -1595,7 +1595,7 @@
    "game/js/walk-control.js:998",
    "game/js/walk-control.js:1008",
    "game/js/walk/effects.js:413",
-   "game/js/walk/lighting.js:243"
+   "game/js/walk/lighting.js:252"
   ]
  }
 }
