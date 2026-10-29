@@ -436,6 +436,8 @@ async function runFullTest(mode) {
       measureFrom = 0;
       stepEl.textContent = name;
       debugLog.bench.step = name;
+      /* TD-1: the crash breadcrumb names the step, in case this one ends the page */
+      debugLog.crumb();
       const t0 = debugLog.now(),
         e0 = debugLog.err.length,
         w0 = performance.now(),

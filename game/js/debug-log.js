@@ -308,6 +308,10 @@ debugLog.flush = ts => {
     debugLog.gc.n = debugLog.gc.freed = 0;
   }
   debugLog.samples.push(s);
+  if (ts - debugLog.crumbT >= 2000) {
+    debugLog.crumbT = ts;
+    debugLog.crumb();
+  }
   if (debugLog.samples.length > debugLog.max.samples)
     debugLog.samples.splice(0, debugLog.samples.length - debugLog.max.samples);
   /* LD-1 (the owner, 2026-10-27): no timed picture. Reading the picture back stalls the GPU and the JPEG is made on
@@ -689,6 +693,80 @@ debugLog.state = () => {
   }
   return s;
 };
+/* TD-1: a crash breadcrumb. A page the browser kills (out of memory, a crashed graphics driver) leaves nothing in the
+   log, so every 2 s and at each test step a tiny numbers-only record is kept in localStorage: uptime, the place's id,
+   the test step, graphics memory (MB in all and by kind), the last second's frame rate, quality, resolution and the
+   refresh rate; never the save or a name. pagehide marks it clean. On the next boot a record without the clean mark,
+   written while the page was in view, is reported as previousPage (with how the page was opened: reload, navigate) */
+const CRUMB_KEY = 'pb-crumb';
+debugLog.crumbT = 0;
+debugLog.crumb = clean => {
+  /* the page is going: pagehide's (or the pretend kill's) record is the last; the "hidden" that follows writes none */
+  if (debugLog.crumbEnd) return;
+  try {
+    const W = typeof GAME.walkView !== 'undefined' ? GAME.walkView : null,
+      R = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
+      L = debugLog.samples[debugLog.samples.length - 1],
+      kinds = {};
+    let gmb = 0;
+    if (typeof GAME.gpuMemory === 'function') {
+      for (const [k, v] of Object.entries(GAME.gpuMemory())) {
+        kinds[k] = Math.round(v.mb);
+        gmb += v.mb;
+      }
+    }
+    const c = {
+      up: Math.round(debugLog.now() / 1000),
+      at: Date.now(),
+      vis: document.hidden ? 0 : 1,
+      scene: (W && W.id) || null,
+      test: (debugLog.bench && debugLog.bench.step) || null,
+      gmb: Math.round(gmb),
+      kinds,
+      fps: L && L.tasks ? (L.tasks.dio || L.tasks.scene || L.tasks.map || {}).fps || null : null,
+      q: R && R.on ? R.qe || 0 : null,
+      res: W ? Math.round((W.R || 1) * 100) / 100 : null,
+      hz: typeof GAME.frameScheduler !== 'undefined' ? GAME.frameScheduler.hz || null : null,
+    };
+    if (clean) c.clean = 1;
+    localStorage.setItem(CRUMB_KEY, JSON.stringify(c));
+  } catch (e) {}
+};
+debugLog.previousPage = null;
+try {
+  const n = performance.getEntriesByType('navigation')[0],
+    p = JSON.parse(localStorage.getItem(CRUMB_KEY) || 'null');
+  debugLog.navigation = (n && n.type) || null;
+  if (p && typeof p === 'object') {
+    debugLog.previousPage = {
+      endedUnexpectedly: !p.clean && !!p.vis,
+      /* no clean mark, but last seen in the background: the phone may have closed it to free memory (that's normal) */
+      endedInBackground: !p.clean && !p.vis,
+      last: p,
+    };
+    if (debugLog.previousPage.endedUnexpectedly)
+      debugLog.add(
+        'page',
+        `the last page ended unexpectedly after ${p.up} s${p.test ? ' during ' + p.test : ''} (${debugLog.navigation || 'opened'})`
+      );
+  }
+} catch (e) {}
+debugLog.crumb();
+/* "pretend the page was killed" (the debug menu): reload without the clean mark, as a crash would */
+debugLog.pretendKilled = () => {
+  debugLog.crumb();
+  debugLog.crumbEnd = true;
+  location.reload();
+};
+addEventListener('pagehide', () => {
+  debugLog.crumb(true);
+  debugLog.crumbEnd = true;
+});
+/* back from the browser's page cache: the same page goes on */
+addEventListener('pageshow', e => {
+  if (e.persisted) debugLog.crumbEnd = false;
+});
+document.addEventListener('visibilitychange', () => debugLog.crumb());
 /* v30: more to go on: the hour and weather, every setting, the scene's contents, caches, memory, long tasks,
    how long frames take, and the GPU's extensions */
 debugLog.long = { n: 0, total: 0, max: 0, last: [] };
@@ -796,7 +874,7 @@ try {
 })();
 /* the boot's timeline for the log: the stages, the page's own timings and the network's (sizes only, no addresses) */
 debugLog.bootReport = () => {
-  const o = { stages: debugLog.boot };
+  const o = { stages: debugLog.boot, navigation: debugLog.navigation || null };
   try {
     const n = performance.getEntriesByType('navigation')[0];
     if (n)
@@ -1068,6 +1146,8 @@ debugLog.build = () => ({
   /* LD-0: the boot's timeline and every frame held over 33 ms */
   boot: debugLog.bootReport(),
   hitches: debugLog.hitchReport(),
+  /* TD-1: the page before this one ended without its clean mark (see debugLog.crumb) */
+  previousPage: debugLog.previousPage,
   summary: debugLog.summary(),
   bench: (debugLog.bench && debugLog.bench.result) || null,
   errors: debugLog.err,

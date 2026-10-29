@@ -29,6 +29,12 @@ const log = {
   kind: 'debug-log',
   format: 1,
   build: '0.1.0',
+  boot: { navigation: 'reload' },
+  previousPage: {
+    endedUnexpectedly: true,
+    endedInBackground: false,
+    last: { up: 600, scene: 'test_graphics', test: 'Dial: shadow map size', gmb: 540, kinds: { ground: 217 }, fps: 9 },
+  },
   summary: { 'walk:copperleaf': { seconds: 120, loadingSeconds: 14, fpsAvg: 16.5, fpsP10: 4, fpsWorst: 2 } },
   bench: { kind: 'full', passed: false, seconds: 300, phases: [{ name: 'Shaders', ok: true }, lightLab] },
   more: {
@@ -53,6 +59,7 @@ test('the reader finds the full test in `bench` and prints the failed step with 
   assert.match(r.stdout, /Graphics memory peak by screen \(MB\): walk:copperleaf 540/);
   assert.match(r.stdout, /Quality and resolution \(2 changes\)/);
   assert.match(r.stdout, /context lost/);
+  assert.match(r.stdout, /PREVIOUS PAGE ENDED UNEXPECTEDLY \(this page: reload\): after 600 s, scene test_graphics/);
   assert.match(r.stdout, /walk:copperleaf\s+120 {2}\+14 s\s+16\.5/);
 });
 

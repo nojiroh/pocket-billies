@@ -65,6 +65,14 @@ def main():
     mem = (d.get('more') or {}).get('memoryMB') or {}
     if mem: print(f"Memory: JS heap {mem.get('used')} of {mem.get('total')} MB (limit {mem.get('limit')})")
 
+    pp = d.get('previousPage') or {}
+    if pp.get('endedUnexpectedly') or pp.get('endedInBackground'):
+        L = pp.get('last') or {}
+        print(f"PREVIOUS PAGE ENDED {'UNEXPECTEDLY' if pp.get('endedUnexpectedly') else 'in the background'} "
+              f"(this page: {(d.get('boot') or {}).get('navigation') or '?'}): after {num(L.get('up'))} s, scene {L.get('scene')}, "
+              f"test step {L.get('test')!r}, graphics {num(L.get('gmb'))} MB {json.dumps(L.get('kinds') or {})}, "
+              f"{num(L.get('fps'))} fps, q{L.get('q')} res {L.get('res')}, {num(L.get('hz'))} Hz")
+
     ld = d.get('load') or {}
     if ld: print(f"Load: {num(ld.get('ms'))} ms, {ld.get('files')} files" + (f", FAILED: {ld.get('failed')}" if ld.get('failed') else ''))
 
