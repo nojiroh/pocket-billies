@@ -94,14 +94,18 @@ function haltShot(/** @type {any} */ W, /** @type {number[]} */ eye, /** @type {
   return { eye: trainEye(W.F, eye[0], eye[1], eye[2]), tgt, fov, hazeK: 1.4 };
 }
 
-/** something else took over: a battle, a room, another tab, another place in the view */
+/** something else took over: a battle, a sheet, a room, another tab, another place in the view, the run walking no
+ * more (its payout, a battle, home) */
 function haltTakenOver() {
   const W = haltArrival.W;
   return (
     (typeof activeBattle !== 'undefined' && !!activeBattle) ||
     !!walkView.battle ||
+    !!uiState.modal ||
     uiState.tab !== 'walk' ||
     !!uiState.inside ||
+    !saveData.run ||
+    saveData.run.at.phase !== 'walk' ||
     !W ||
     walkView.sc !== W.sc
   );
@@ -250,10 +254,14 @@ export function haltArriveSkip() {
   if (haltArrival.on) haltArriveEnd(true);
 }
 
+/* a tap skips the arrival; once something else has taken over (a sheet, a battle) the arrival just ends and the tap
+   goes where it was meant to (a tap on a sheet over the page always does) */
 document.addEventListener(
   'click',
   ev => {
     if (!haltArrival.on || !haltArrival.W) return;
+    const t = /** @type {any} */ (ev.target);
+    if (haltTakenOver() || (t && t.closest && t.closest('#ov'))) return void haltArriveEnd(true);
     ev.stopPropagation();
     ev.preventDefault();
     haltArriveSkip();
