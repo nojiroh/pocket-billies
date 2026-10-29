@@ -28,6 +28,7 @@ expose({
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
   DEX_ORDER: [() => DEX_ORDER],
+  EMOTES: [() => EMOTES],
   EVENTS: [() => EVENTS],
   FACTIONS: [() => FACTIONS],
   FESTIVALS: [() => FESTIVALS],
@@ -416,6 +417,8 @@ export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) ||
 provide({ FIELD_MOVES }); /* to-module */
 /* dialogue track DL-3: each character's own speech bubble (talkSkins.json; logic/talk-skins.js, talk.js) */
 export const TALK_SKINS = gameData.talkSkins || { default: 'folk', skins: {}, speakers: {}, classes: {} };
+/* dialogue track DL-5: the emotes that pop beside a talking head (emotes.json; talk.js) */
+export const EMOTES = gameData.emotes || { size: 12, outline: '#000000', colors: {}, auto: {}, emotes: {} };
 /* splicing track SP-2: what spliced parts do (genes.json; logic/genes.js) */
 export const GENES = /** @type {import('../types/game-data').Genes} */ (
   gameData.genes || {

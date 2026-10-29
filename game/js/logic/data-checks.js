@@ -68,6 +68,7 @@ import {
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
+import { MARKUP_EMOTES } from './line-markup.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 import { svgProblem } from './svg-pixels.js';
 /* eslint-disable no-func-assign */
@@ -113,6 +114,8 @@ expose({
   dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
   // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataEmotes: [() => dataEmotes, v => (dataEmotes = v)],
   // @ts-expect-error -- replaced on purpose
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2288,6 +2291,33 @@ export function dataTalkSkins(D, valid = () => true) {
     if (!skins[k]) problem(`classes.${c}: no skin "${k}"`);
     if (!classes[c]) problem(`classes.${c}: no trainer class of that id (events.json classes)`);
   }
+  return out;
+}
+
+// DL-5: emotes.json: the schema; every emote a line can ask for ([emote=x], logic/line-markup.js MARKUP_EMOTES) is
+// drawn; each picture is size × size and uses only its colours; a face's own emote is one of them
+/** DL-5: emotes.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataEmotes(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['emotes.json', what]),
+    E = D.emotes;
+  if (!E) return [['emotes.json', 'missing']];
+  if (!valid('emotes.schema.json', E, 'emotes.json')) return out;
+  const n = E.size,
+    colors = E.colors || {},
+    pics = E.emotes || {};
+  for (const k of MARKUP_EMOTES) if (!pics[k]) problem(`emotes: no picture for "${k}" ([emote=${k}] asks for it)`);
+  for (const [k, rows] of Object.entries(/** @type {Record<string, string[]>} */ (pics))) {
+    if (!MARKUP_EMOTES.includes(k))
+      problem(`emotes.${k}: no line can ask for it (MARKUP_EMOTES in logic/line-markup.js)`);
+    if (rows.length !== n || rows.some(r => r.length !== n)) problem(`emotes.${k}: not ${n} × ${n}`);
+    const bad = [...new Set(rows.join('').replace(/\./g, ''))].filter(c => !colors[c]);
+    if (bad.length) problem(`emotes.${k}: no colour for ${bad.map(c => `"${c}"`).join(', ')}`);
+    if (!/[^.]/.test(rows.join(''))) problem(`emotes.${k}: nothing drawn`);
+  }
+  for (const [face, k] of Object.entries(/** @type {Record<string, string>} */ (E.auto || {})))
+    if (!pics[k]) problem(`auto.${face}: no emote "${k}"`);
   return out;
 }
 

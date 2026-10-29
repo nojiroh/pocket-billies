@@ -44,6 +44,7 @@ const FAMILIES = [
   'dataEvents',
   'dataBanter',
   'dataTalkSkins',
+  'dataEmotes',
   'dataRewards',
   'dataCurrencies',
   'dataBuildings',
@@ -200,6 +201,18 @@ test('a planted fault is found by its family, in the file check-data names', () 
     D = copy();
     plant(D.talkSkins);
     found('dataTalkSkins', D, text);
+  }
+  // DL-5: the emotes: one a line can ask for is missing, a picture the wrong size or with a letter of no colour, a
+  // face's own emote that isn't drawn
+  for (const [plant, text] of [
+    [E => delete E.emotes.heart, 'no picture for "heart"'],
+    [E => (E.emotes.sweat = E.emotes.sweat.slice(1)), 'emotes.sweat: not 12 × 12'],
+    [E => (E.emotes['!'] = E.emotes['!'].map(r => r.replace(/r/g, 'q'))), 'emotes.!: no colour for "q"'],
+    [E => (E.auto.sad = 'tear'), 'auto.sad: no emote "tear"'],
+  ]) {
+    D = copy();
+    plant(D.emotes);
+    found('dataEmotes', D, text);
   }
   // Studio plan T4.1: the code's limits (effects.js FX_LIMIT, FX_STAGES) on a row
   D = copy();
