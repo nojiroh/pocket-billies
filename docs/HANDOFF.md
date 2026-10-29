@@ -116,7 +116,12 @@ and the owner's call.
   speed; a tap still shows the rest at once). Stamps fire on the Bureau's bubble only (the `bureau` banter is said by a
   run trainer whose class picks the skin; the story check gives no stamp warning).
 - Verified: lint, typecheck, check:data (181 files, after `--fix` laid out two banter lines the Studio's way), unit
-  tests 2040 pass (opening-script, line-markup-real, expressions, story-checks among them). Smoke: SMOKE_RESULT.
+  tests 2040 pass (opening-script, line-markup-real, expressions, story-checks among them). Smoke 7 of 7 (371 s), its phone
+  flow playing the whole opening with the new markup. Pictures at 390×844 (a scratch script calling `talkLine` on
+  `?fixture=talk`, not kept): the opening's first line ("WHOA." shaken, **my** bold), Chosen's clerk line, Blake's
+  shout, the Bureau's FILED stamp on "You're on file." (the stamp sits over the line's end, as in the DL-3 fixture)
+  and Kappi's whisper all on their own skins; each box's screen-reader copy is the plain line. The full quick check
+  was not run: data lines only (the brief's rule).
 - Next: the owner reviews the lines (and the 25-word warning call); DL-8 (optional: effects in the battle box and the
   walk speech, a stamp in battle) only at the owner's word.
 - For the owner on the phone: New game, play the opening, then talk to Chosen and lose a run to a Bureau clerk. Do the
