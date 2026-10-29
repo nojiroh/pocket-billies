@@ -7,7 +7,7 @@
 import { expose } from './test-globals.js';
 import { buzz, provide, render, soundEffect, toast } from './hooks.js';
 import { $, $$, random } from './util.js';
-import { SHOPS } from './game-data.js';
+import { SHOPS, gameData } from './game-data.js';
 import { plural } from './logic/rules.js';
 import { escapeHtml, save, saveData, uiState } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
@@ -24,13 +24,13 @@ import {
 } from './person-art.js';
 /* eslint-disable no-func-assign */
 expose({
-  BODY_BUILD_PRESETS: [() => BODY_BUILD_PRESETS],
   DRESSING_TABS: [() => DRESSING_TABS],
   DRESSING_VIEWS: [() => DRESSING_VIEWS],
   FACE_PRESETS: [() => FACE_PRESETS],
   OUTFIT_PRESETS: [() => OUTFIT_PRESETS],
   THUMB_CROPS: [() => THUMB_CROPS],
   bindDressingRoom: [() => bindDressingRoom, v => (bindDressingRoom = v)],
+  bodyBuildPresets: [() => bodyBuildPresets, v => (bodyBuildPresets = v)],
   boutiqueSells: [() => boutiqueSells],
   buyDressingItems: [() => buyDressingItems, v => (buyDressingItems = v)],
   changeLook: [() => changeLook, v => (changeLook = v)],
@@ -267,15 +267,14 @@ const OUTFIT_PRESETS = [
   ],
 ];
 dressingRoom.more = {};
-const BODY_BUILD_PRESETS = [
-  ['Average', {}],
-  ['Slim', { body: 0.86, shoulders: 0.94, hips: 0.95 }],
-  ['Sturdy', { body: 1.28, shoulders: 1.1, hips: 1.08 }],
-  ['Athletic', { body: 1.05, shoulders: 1.16, legs: 1.04 }],
-  ['Curvy', { body: 1.08, hips: 1.18, chest: 0.75, shoulders: 0.94 }],
-  ['Tall', { height: 1.1, legs: 1.1 }],
-  ['Petite', { height: 0.9, legs: 0.94, head: 1.05 }],
-];
+/* CH-7: the build buttons are the figure kit's builds with a preset (figureKit.json builds.<id>.preset: a name and the
+   sliders it sets): [name, sliders, build]; a look that picks one names the build (look.build) for its figure */
+function bodyBuildPresets() {
+  const B = (gameData && gameData.figureKit && gameData.figureKit.builds) || {};
+  return Object.entries(B)
+    .filter(([, b]) => b.preset)
+    .map(([id, b]) => [b.preset.name, b.preset.body, id]);
+}
 const wardrobeState = () => saveData.wardrobe || (saveData.wardrobe = { owned: {}, outfits: [null, null, null] });
 function owns(id) {
   const it = wardrobeData().items[id];
@@ -299,6 +298,8 @@ export function openDressingRoom(o = {}) {
   dressingRoom.noBack = !!o.noBack;
   const base = o.look || (dressingRoom.mode === 'intro' ? uiState.trainerDraft || LOOK_PRESETS[0] : saveData.avatar);
   dressingRoom.look = cleanLook(JSON.parse(JSON.stringify(base)));
+  /* CH-7: a look picks a build here, so its sliders move its figure smoothly (none yet: the usual one) */
+  if (!dressingRoom.look.build && bodyBuildPresets().length) dressingRoom.look.build = 'average';
   dressingRoom.orig = JSON.stringify(dressingRoom.look);
   dressingRoom.undo = [];
   dressingRoom.redo = [];
@@ -409,7 +410,12 @@ function dressingTabHTML() {
           : '') +
         dressingSectionHTML(
           'Build',
-          `<div class="dr-builds">${BODY_BUILD_PRESETS.map(([n, b]) => `<button class="pb small ${wearsBuild(b) ? 'gold' : 'quiet'}" data-a="dr-build" data-b="${n}">${n}</button>`).join('')}</div>`
+          `<div class="dr-builds">${bodyBuildPresets()
+            .map(
+              ([n, b, id]) =>
+                `<button class="pb small ${wearsBuild(b, id) ? 'gold' : 'quiet'}" data-a="dr-build" data-b="${n}">${n}</button>`
+            )
+            .join('')}</div>`
         ) +
         dressingSectionHTML('Skin', colorSwatchesHTML('skin', P.skin || [], L.skin)) +
         dressingMoreHTML('body', 'Fine-tune the shape', () =>
@@ -506,7 +512,8 @@ function dressingMoreHTML(tab, label, fn) {
   const open = !!dressingRoom.more[tab];
   return `<section class="dr-sec dr-more"><button class="pb small ${open ? '' : 'quiet'} dr-moreb" data-a="dr-more" data-t="${tab}" aria-expanded="${open}">${open ? 'Less' : 'More'} · ${label}</button>${open ? fn() : ''}</section>`;
 }
-function wearsBuild(b) {
+function wearsBuild(b, id) {
+  if (dressingRoom.look.build) return dressingRoom.look.build === id;
   const L = dressingRoom.look.body;
   return bodySliders().every(s => s.k === 'chest' || Math.abs((L[s.k] ?? s.def) - (b[s.k] ?? s.def)) < 0.005);
 }
@@ -911,11 +918,12 @@ document.addEventListener('click', ev => {
       break;
     case 'dr-build':
       {
-        const b = BODY_BUILD_PRESETS.find(x => x[0] === d.b);
+        const b = bodyBuildPresets().find(x => x[0] === d.b);
         if (b)
           changeLook(L => {
             for (const s of bodySliders()) if (s.k !== 'chest') L.body[s.k] = s.def;
             Object.assign(L.body, b[1]);
+            L.build = b[2];
           });
       }
       break;

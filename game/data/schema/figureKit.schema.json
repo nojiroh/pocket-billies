@@ -247,6 +247,16 @@
        "chestOut": {"type": "number", "minimum": 0, "maximum": 2}
       }
      },
+     "preset": {
+      "description": "CH-7: the dressing room's button for this build: its name and the wardrobe sliders it sets (wardrobe.json sliders; the rest go back to their defaults). A look that names this build (look.build) counts its sliders from these",
+      "type": "object",
+      "required": ["name", "body"],
+      "additionalProperties": false,
+      "properties": {
+       "name": {"type": "string", "minLength": 1, "maxLength": 12},
+       "body": {"type": "object", "additionalProperties": {"type": "number", "minimum": 0, "maximum": 2}}
+      }
+     },
      "gait": {
       "type": "object",
       "additionalProperties": false,
