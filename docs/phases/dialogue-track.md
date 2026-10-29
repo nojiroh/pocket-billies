@@ -462,6 +462,20 @@ skill), its HANDOFF entry, and the owner's phone check.
 - **DL-7 The writing pass.** Markup in the opening, Chosen, Kappi, Blake and the Bureau's lines, light-handed: a
   stressed word, a beat before a punchline, a face on the turn, a stamp on the Bureau's best lines. The owner reviews
   every changed line; opening-said.json only changes at the owner's word.
+  **Done in DL-7** (2026-10-29, `track/dialogue`): **provisional, every line for the owner's review** (Ask me before
+  3; the list, before → after, is in the HANDOFF entry "Dialogue track DL-7"). 87 lines in 4 files, markup only:
+  the opening (16 of its 21 lines; opening-said.json unchanged: each line keeps its plain text and its expression),
+  story.json (Chosen's talk, back-lost, chapter1-end, blake-first-battle, Chosen and Blake in the ending), banter.json
+  (Chosen, Kappi, Blake's `rival_*`, the Bureau's `bureau_*`, the back_lost pairs, the chapter 1 beats, the favours,
+  the thank-yous) and trainers/blake0.json. Mostly a `[p]` before the punchline (where the punctuation's own beat is
+  too short), one `[b]` or `[i]` stressed word, `[face=happy|sad]` on a turn (which also moves a figure's head since
+  DL-6), three emotes (sparkle, sweat twice), one `[shake]`, one `[slow]`, one `[wave]`, one shout (Blake's "Ha! Told
+  you."), one whisper (Kappi's notes in the jar of beans) and two stamps on the Bureau (filed on "You're on file",
+  pending on "Reviews take time"). A script checked every line before writing it: the same plain text and leading
+  expression, no markup errors. Not done: the "under about 25 words" warning (it would fire on the approved opening's
+  "They live in the long grass…" line, 34 words, and three others of 26, and fail the "no warnings" story test for
+  good; left for the owner). Not marked (DL-8 or plain): battle-box `win`/`lose` lines, event menus, the square's walk
+  speech, Vinylla and the other townsfolk.
 - **DL-8 (optional) The rest.** Effects in the battle box (its own typer) and the walk speech; a stamp in battle.
 
 Tags `dl-N-done` are not asked for per session (CLAUDE.md); the track gets `dialogue-done` when it ends.
@@ -471,7 +485,7 @@ Tags `dl-N-done` are not asked for per session (CLAUDE.md); the track gets `dial
    Oxanium 700.**
 2. Each skin's final look, after the mockup (DL-0) and again on the phone (DL-3). **Answered 2026-10-28 (DL-3): the
    mockup's skins as they are; the player's lines wear a narration skin.** The phone check is still the owner's.
-3. The lines in DL-7, and any change to the approved opening text.
+3. The lines in DL-7, and any change to the approved opening text. **DL-7's lines are provisional (2026-10-29), waiting on the owner's review.**
 4. Whether the "…" bubble and the stamp also show outside Kappi and the Bureau. **Answered 2026-10-28 (DL-4):
    `[wait]` for anyone, the automatic "…" Kappi's; the stamp the Bureau's alone.**
 

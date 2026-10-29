@@ -2,6 +2,126 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-7: the writing pass (markup in the opening, Chosen, Kappi, Blake and the Bureau; provisional) - 2026-10-29
+Branch `track/dialogue` (main ed5c6857 already in: nothing to merge). Run under the owner's standing instruction
+(2026-10-29): plan written in the session's reply, approved in advance, no Plan Mode. Data and docs only. No session
+tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-7". The last automatic session: DL-8 is optional
+and the owner's call.
+- Changed: markup in 87 lines in 4 files (game/data/cutscenes/opening.json 16, story.json 19, banter.json 51,
+  trainers/blake0.json 1). **Every word stays as it was**: a script checked each line for the same plain text
+  (`plainOf`) and the same leading expression, with no markup errors, before writing it; opening-said.json is
+  unchanged and opening-script.test.mjs passes. The hand: mostly a `[p]` before a punchline (only where the
+  punctuation's own beat is too short), one `[b]` or `[i]` stressed word, `[face=happy|sad]` on the turn (3 lines;
+  with figures on it also moves the head), 3 emotes (a sparkle on "destiny", a sweat on Kappi's "...No reason" and
+  Chosen's "...Don't tell Kappi"), one `[shake]` ("WHOA."), one `[slow]` ("Neatly."), one `[wave]` ("hum"), one
+  shout (Blake's "Ha! Told you."), one whisper (Kappi's notes in the jar of beans), and two Bureau stamps (`filed` on
+  "You're on file.", `pending` at the end of "Reviews take time.").
+- **For the owner's review (Ask me before 3: all provisional, my picks)**, before → after (ids are `#l:` line ids):
+  - cutscenes/opening.json `#l:bfff`: [surprised] Chosen: Whoa. WHOA. You fell out of the sky and you’re alive? That’s a main character move. That’s my move. → [surprised] Chosen: Whoa. [shake]WHOA.[/shake] You fell out of the sky and you’re alive? That’s a main character move.[p] That’s [b]my[/b] move.
+  - cutscenes/opening.json `#l:b29c`: Chosen: Stuff comes down through the crust sometimes. Mostly furniture. Furniture has never once been chosen. → Chosen: Stuff comes down through the crust sometimes. Mostly furniture.[p] Furniture has [i]never once[/i] been chosen.
+  - cutscenes/opening.json `#l:2d45`: Kappi: He means: are you hurt? Take your time. Nothing down here is in a hurry. Except him. → Kappi: He means: are you hurt? Take your time. Nothing down here is in a hurry.[p] Except him.
+  - cutscenes/opening.json `#l:c40b`: Chosen: Quick, what’s your name? Is it epic? It’s not “The Chosen”, right? That one’s taken. → Chosen: Quick, what’s your name? Is it [b]epic[/b]? It’s not “The Chosen”, right?[p] That one’s taken.
+  - cutscenes/opening.json `#l:0cc5`: [happy] Chosen: Amnesia. Classic origin story. I’d be jealous, but I already have one. → [happy] Chosen: Amnesia. Classic origin story. I’d be jealous, but I [i]already[/i] have one.
+  - cutscenes/opening.json `#l:12e4`: Kappi: Fall-related amnesia. Very common down here. It comes back slowly. Most good things do. → Kappi: Fall-related amnesia. Very common down here. It comes back slowly.[p] Most good things do.
+  - cutscenes/opening.json `#l:130b`: [happy] Chosen: {name}? Solid sidekick name. Not chosen-tier. But solid. → [happy] Chosen: {name}? Solid sidekick name. Not [i]chosen[/i]-tier.[p] But solid.
+  - cutscenes/opening.json `#l:0e4e`: Chosen: I’m Professor Chosen. Nobody gave me the title. It chose me. That’s how chosen works. → Chosen: I’m Professor Chosen. Nobody gave me the title. It [b]chose[/b] me. That’s how chosen works.
+  - cutscenes/opening.json `#l:7fa0`: Kappi: I’m Kappi. People add “the Wise”. I do the research. He does the… presence. → Kappi: I’m Kappi. People add “the Wise”. I do the research. He does the… [face=happy]presence.
+  - cutscenes/opening.json `#l:176f`: Kappi: Then dropped them down here. They went wild. Most of them nap on me now. → Kappi: Then dropped them down here. They went wild.[p] Most of them nap on me now.
+  - cutscenes/opening.json `#l:abfa`: [happy] Chosen: Every hero needs a companion. Not me, obviously. You. I’ve got three right here. → [happy] Chosen: Every hero needs a companion.[p] Not me, obviously. [b]You.[/b] I’ve got three right here.
+  - cutscenes/opening.json `#l:1ae5`: Chosen: Three Billies, three types. Each one beats one of the others. Choose wisely. Like I would. → Chosen: Three Billies, three types. Each one beats one of the others. Choose wisely.[p] Like I would.
+  - cutscenes/opening.json `#l:a99c`: [happy] Chosen: {starter}! Bold. I’d have picked that one too. I didn’t. But I would have. → [happy] Chosen: {starter}! Bold. I’d have picked that one too.[p] I didn’t. But I [i]would[/i] have.
+  - cutscenes/opening.json `#l:321e`: Chosen: Every trip is different. Take {starter}, catch what you can, bring back whatever you find. Side quest. Very important side quest. → Chosen: Every trip is different. Take {starter}, catch what you can, bring back whatever you find. Side quest.[p] [b]Very[/b] important side quest.
+  - cutscenes/opening.json `#l:30e3`: Kappi: And come back in one piece. Falling once is plenty. There’s a hot bath in the lab. Yuzu in it. → Kappi: And come back in one piece. Falling once is plenty. There’s a hot bath in the lab.[p] Yuzu in it.
+  - cutscenes/opening.json `#l:97b4`: [happy] Chosen: Go whenever you’re ready. The lab’s always open. So is destiny. → [happy] Chosen: Go whenever you’re ready. The lab’s always open.[p] So is [emote=sparkle][b]destiny[/b].
+  - story.json `#l:6616`: Kappi: That thing was retrieving. It was built to bring things back. → Kappi: That thing was [i]retrieving[/i]. It was built to bring things back.
+  - story.json `#l:85a4`: Chosen: Like me. With you. Constantly. → Chosen: Like me. With you.[p] Constantly.
+  - story.json `#l:af32`: Kappi: ...Yes. Exactly like that. Which is the problem. → Kappi: ...Yes. Exactly like that.[p] [face=sad]Which is the problem.
+  - story.json `#l:4571`: [happy] Chosen: There you are! Face-down by the mast. You’re welcome. → [happy] Chosen: There you are! Face-down by the mast.[p] You’re welcome.
+  - story.json `#l:bd04`: Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how. I don’t know either. → Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how.[p] I don’t know either.
+  - story.json `#l:d779`: Kappi: He was asleep in the lab when you landed. → Kappi: He was [i]asleep[/i] in the lab when you landed.
+  - story.json `#l:7301`: Kappi: It closed behind you. Neatly. Like someone shutting a drawer. → Kappi: It closed behind you. [slow]Neatly.[/slow] Like someone shutting a drawer.
+  - story.json `#l:978e`: [happy] Chosen: A drawer. My drawer. Professor powers. → [happy] Chosen: A drawer. [b]My[/b] drawer. Professor powers.
+  - story.json `#l:5e16`: [happy] That’s a proper collection. Kappi says they might cite you in their paper. I said put me first. → [happy] That’s a proper collection. Kappi says they might cite you in their paper.[p] I said put me [b]first[/b].
+  - story.json `#l:251a`: [surprised] You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls. → [surprised] You’re getting good at this. Not [i]chosen[/i] good. But good. Some of them only show up in caves or in the malls.
+  - story.json `#l:4eb4`: 1 badge already. The arena leaders talk about you. Not as much as about me. But they talk. → 1 badge already. The arena leaders talk about you. Not as much as about [b]me[/b]. But they talk.
+  - story.json `#l:be0b`: {badges} badges already. The arena leaders talk about you. Not as much as about me. But they talk. → {badges} badges already. The arena leaders talk about you. Not as much as about [b]me[/b]. But they talk.
+  - story.json `#l:0008`: [surprised] Blake: What? I lost to someone who fell out of the sky an hour ago? → [surprised] Blake: What? I lost to someone who [i]fell out of the sky[/i] an hour ago?
+  - story.json `#l:4d19`: [angry] Blake: Mine only knows Tackle. That’s my excuse and I’m sticking to it. → [angry] Blake: Mine only knows [b]Tackle[/b]. That’s my excuse and I’m sticking to it.
+  - story.json `#l:5707`: [happy] Blake: Ha! Told you. Mine beats yours. → [happy][shout] Blake: Ha! Told you. Mine beats yours.
+  - story.json `#l:256f`: [happy] There. Good as new. I have healing hands. Kappi has a first-aid kit and a hot bath. Same thing. → [happy] There. Good as new. I have healing hands. Kappi has a first-aid kit and a hot bath.[p] Same thing.
+  - story.json `#l:36c7`: Now go and explore! The road teaches more than any book. I’ve read zero books, and look at me. → Now go and explore! The road teaches more than any book. I’ve read [b]zero[/b] books, and look at me.
+  - story.json `#l:8b79`: [happy] Aurumansa. The golden caravan. I foresaw this. I didn’t write it down, but I foresaw it. → [happy] Aurumansa. The golden caravan. I foresaw this.[p] I didn’t write it down, but I foresaw it.
+  - story.json `#l:d97e`: [happy] Blake: About what it’s worth to listen to it. Turns out that was the point. → [happy] Blake: About what it’s worth to listen to it.[p] Turns out that was the point.
+  - trainers/blake0.json `#l:b4ee`: [happy] Mine beats yours. Watch. → [happy] Mine beats [b]yours[/b]. Watch.
+  - banter.json `#l:0caf`: Chosen: Rescued you again. Don’t thank me. Actually, do. → Chosen: Rescued you again. Don’t thank me.[p] Actually, do.
+  - banter.json `#l:11db`: Kappi: Same spot over the dock. To the metre. → Kappi: Same spot over the dock.[p] To the metre.
+  - banter.json `#l:bd0a`: Chosen: Yanked you out just in time. Professor reflexes. → Chosen: Yanked you out just in time. Professor [b]reflexes[/b].
+  - banter.json `#l:abb6`: Kappi: You landed exactly in the mast’s shadow. Exactly. → Kappi: You landed exactly in the mast’s shadow.[p] [i]Exactly.[/i]
+  - banter.json `#l:ba8e`: Chosen: You lost to a clerk and I still saved you. Generous of me. → Chosen: You lost to a [i]clerk[/i] and I still saved you. Generous of me.
+  - banter.json `#l:0df7`: Kappi: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. → Kappi: There was a stamp on your sleeve. “Returned to sender.”[p] It wasn’t there when you left.
+  - banter.json `#l:3c86`: Chosen: Blake sent a postcard. It just says “Ha.” → Chosen: Blake sent a postcard. It just says[p] “Ha.”
+  - banter.json `#l:44ee`: You fell out of the sky once. Fine. Now you do it on a schedule. → You fell out of the sky once. Fine.[p] Now you do it on a [i]schedule[/i].
+  - banter.json `#l:8d8e`: Blake? Loud, tall, counters everything you own? I taught him that. Not on purpose. → Blake? Loud, tall, counters everything you own? I taught him that.[p] Not on purpose.
+  - banter.json `#l:c6c3`: These Beans. Every crate the Bureau loses has them. Nobody eats them. Nobody throws them out. → These Beans. Every crate the Bureau loses has them. Nobody eats them.[p] Nobody throws them out.
+  - banter.json `#l:a7b4`: Their forms number lost things. I found yours. You’re item four hundred and something. → Their forms number lost things. I found yours.[p] You’re item four hundred and something.
+  - banter.json `#l:1dd7`: Something big walked across Kappi’s instruments. I’m claiming it was me. Emotionally. → Something big walked across Kappi’s instruments. I’m claiming it was me.[p] Emotionally.
+  - banter.json `#l:7d69`: Beat a leader and tell them Professor Chosen sends his regards. Loudly. → Beat a leader and tell them Professor Chosen sends his regards.[p] [b]Loudly.[/b]
+  - banter.json `#l:5363`: They remembered me? Brand awareness. Have two points of my respect. → They remembered me? [b]Brand awareness.[/b] Have two points of my respect.
+  - banter.json `#l:e544`: Readings. Real ones. The numbers hum near their crates. → Readings. [i]Real[/i] ones. The numbers hum near their crates.
+  - banter.json `#l:b1b0`: Your first expedition! I’d have done it faster, but I was busy being chosen. → Your first expedition! I’d have done it faster, but I was busy being [i]chosen[/i].
+  - banter.json `#l:ed8d`: [happy] You won! I taught you that. I’m not sure when. Possibly in a dream we shared. → [happy] You won! I taught you that. I’m not sure when.[p] Possibly in a dream we shared.
+  - banter.json `#l:3752`: Down that early? Bold. Avant-garde. Next time try the part where you win. → Down that early? Bold. Avant-garde.[p] Next time try the part where you [b]win[/b].
+  - banter.json `#l:ef10`: You reached the big one and blinked. I respect a dramatic exit. → You reached the big one and blinked.[p] I respect a dramatic exit.
+  - banter.json `#l:f8bc`: [surprised] Three in a row. I’ve decided this is a training montage. Montages end well. Usually. → [surprised] Three in a row. I’ve decided this is a [b]training montage[/b]. Montages end well.[p] Usually.
+  - banter.json `#l:5806`: Home early. Leave them wanting more. That’s what I always say. I’ve never said that. → Home early. Leave them wanting more. That’s what I always say.[p] I’ve never said that.
+  - banter.json `#l:0564`: [angry] A clerk? You lost to paperwork? I once lost to a form. We don’t talk about the form. → [angry] A clerk? You lost to [i]paperwork[/i]? I once lost to a form.[p] [face=sad]We don’t talk about the form.
+  - banter.json `#l:5be0`: You came back through the same hole. I measured it from the bath. It’s getting rounder. → You came back through the same hole. I measured it from the bath.[p] It’s getting [i]rounder[/i].
+  - banter.json `#l:2b31`: Every time you lose out there, you land in the same spot. Things don’t fall that tidily. → Every time you lose out there, you land in the same spot.[p] Things don’t fall that tidily.
+  - banter.json `#l:df6c`: You won and came home by train. Good. The other way home makes my instruments hum. → You won and came home by train. Good. The other way home makes my instruments [wave]hum[/wave].
+  - banter.json `#l:41c7`: The clerk who beat you. Did they mention a file? A number? ...No reason. → The clerk who beat you. Did they mention a file? A number? [emote=sweat]...No reason.
+  - banter.json `#l:1d8e`: That many Perks in one run. You sound like someone I work with. Not a compliment. → That many Perks in one run. You sound like someone I work with.[p] Not a compliment.
+  - banter.json `#l:6ba3`: Five expeditions. Juniper started a scrapbook. Someone in a lab coat keeps pasting himself into it. → Five expeditions. Juniper started a scrapbook. Someone in a lab coat keeps pasting [i]himself[/i] into it.
+  - banter.json `#l:7ea4`: “Blake. You’ve heard of me. You haven’t? Weird. I’ve been out here being heard of.” → “Blake. You’ve heard of me. You haven’t?[p] Weird. I’ve been out here being [b]heard of[/b].”
+  - banter.json `#l:8db3`: “I built this team for yours. Specifically. It took ages.” → “I built this team for yours. [b]Specifically.[/b] It took ages.”
+  - banter.json `#l:239c`: “Last time doesn’t count. I was warming up. For a whole battle.” → “Last time doesn’t count. I was warming up.[p] For a whole battle.”
+  - banter.json `#l:6a21`: “Last time I sent you home the long way. Through the sky.” → “Last time I sent you home the long way.[p] Through the [i]sky[/i].”
+  - banter.json `#l:acbd`: “Our routes aren’t the same route. Stop following me.” → “Our routes aren’t the same route.[p] Stop [b]following[/b] me.”
+  - banter.json `#l:12fd`: - A Bean. For me. Naturally. → - A Bean. For me.[p] Naturally.
+  - banter.json `#l:a3ac`: - I’ll add it to the collection. The collection is one Bean. → - I’ll add it to the collection.[p] The collection is one Bean.
+  - banter.json `#l:35e2`: You’ve noticed me. Most people do. Eventually. → You’ve noticed me. Most people do.[p] Eventually.
+  - banter.json `#l:6c17`: Take this. Moneys, a little extra each trip. I’ll say I invented interest. → Take this. Moneys, a little extra each trip. I’ll say I invented [i]interest[/i].
+  - banter.json `#l:e0e4`: You’re on my list of people I tolerate. It’s a short list. Mostly mirrors. → You’re on my list of people I tolerate. It’s a short list.[p] Mostly mirrors.
+  - banter.json `#l:5d53`: Wear these. Sunglasses. Now you look chosen. Adjacent. → Wear these. Sunglasses. Now you look chosen.[p] Adjacent.
+  - banter.json `#l:608e`: Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Kappi I said that. They know. → Can I tell you something? I didn’t rescue you. Not once.[p] [emote=sweat]...Don’t tell Kappi I said that. They know.
+  - banter.json `#l:1c33`: - Thanks. I’ll test it. I mean that literally. → - Thanks. I’ll test it. I mean that [i]literally[/i].
+  - banter.json `#l:f5c6`: - Another one. They’re warm. Why are they warm? → - Another one. They’re warm.[p] Why are they warm?
+  - banter.json `#l:5db1`: Oh. Thank you. People don’t usually give me things. They give me forms. → Oh. Thank you. People don’t usually give me things.[p] They give me forms.
+  - banter.json `#l:355b`: Here. A Potion for every trip. Don’t tell him where they come from. He thinks they grow. → Here. A Potion for every trip. Don’t tell him where they come from.[p] He thinks they grow.
+  - banter.json `#l:79b4`: I’m adding you to my notes. Under “reliable.” It’s a short section. → I’m adding you to my notes. Under “reliable.”[p] It’s a short section.
+  - banter.json `#l:fbdf`: My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence. Not snacks. → My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence.[p] Not snacks.
+  - banter.json `#l:9a5c`: My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans. → [whisper] My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans.
+  - banter.json `#l:492a`: “You look lost. That is our department.” → “You look lost.[p] That is our department.”
+  - banter.json `#l:7ffb`: “Ah. You’re on file. Returned item, handled once.” → “Ah. You’re on file.[stamp=filed] Returned item, handled once.”
+  - banter.json `#l:2ca8`: “Your file is getting thick. We’ll need a bigger drawer.” → “Your file is getting thick.[p] We’ll need a [b]bigger[/b] drawer.”
+  - banter.json `#l:aaec`: “A win, recorded. Wins are reviewed. Reviews take time.” → “A win, recorded. Wins are reviewed. Reviews take time.”[stamp=pending]
+- Decided for the owner (provisional): the lines above. Not done: the "under about 25 words" data warning DL-1 left
+  here. I recommend against it as it stands: it would fire on the approved opening's "They live in the long grass…"
+  (34 words) and on three lines of 26 (one on the Copperleaf map, two in a legacy map), and the story test "the game's
+  scripts pass the story checks, with no warnings" would fail until their words change. Options: drop it (my pick),
+  or add it with a higher bar or as a Studio-only hint.
+- Not marked (DL-8 or plain on purpose): the battle box's `win`/`lose` lines, the event menus, the square's walk
+  speech, Vinylla, Juniper and the other townsfolk; lines that already land on their own (exposition, the slow
+  "Nothing? Not even your name?").
+- Risky: the `[p]` beats add about 0.4 s each to the opening (13 pauses in 16 lines: about 5 s more at Normal
+  speed; a tap still shows the rest at once). Stamps fire on the Bureau's bubble only (the `bureau` banter is said by a
+  run trainer whose class picks the skin; the story check gives no stamp warning).
+- Verified: lint, typecheck, check:data (181 files, after `--fix` laid out two banter lines the Studio's way), unit
+  tests 2040 pass (opening-script, line-markup-real, expressions, story-checks among them). Smoke: SMOKE_RESULT.
+- Next: the owner reviews the lines (and the 25-word warning call); DL-8 (optional: effects in the battle box and the
+  walk speech, a stamp in battle) only at the owner's word.
+- For the owner on the phone: New game, play the opening, then talk to Chosen and lose a run to a Bureau clerk. Do the
+  pauses land the jokes or drag? Is the stamp on the right Bureau lines?
+
 ### Dialogue track DL-6: figure close-ups (the bust bake, the head in stepped angles, the face from the director) - 2026-10-29
 Branch `track/dialogue` (main ed5c6857 already in: nothing to merge). Run under the owner's standing instruction
 (2026-10-29): plan written in the session's reply, approved in advance, no Plan Mode. Code, tests, a fixture flag, check
