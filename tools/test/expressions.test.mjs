@@ -9,6 +9,7 @@ import { test } from 'node:test';
 import { ROOT } from './load-logic.mjs';
 import { MARKUP_TAGS, leadingExpr } from '../../game/js/logic/line-markup.js';
 import { withoutId } from '../../game/js/logic/script-parse.js';
+import { faceToken } from '../../game/js/logic/talk-director.js';
 
 // every value of "x" (the expression a piece is for) anywhere in the wardrobe
 function expressions(o, out = new Set()) {
@@ -70,4 +71,21 @@ test('no expression is also a markup tag (DL-1: a leading [b] or [shout] is neve
     [...have].filter(x => x in MARKUP_TAGS),
     []
   );
+});
+
+test('DL-5: a combined expression dresses each face item in its own part (happy eyes, a talking mouth)', () => {
+  const W = JSON.parse(readFileSync(join(ROOT, 'game/data/wardrobe.json'), 'utf8')),
+    worn = (/** @type {any} */ it, /** @type {string} */ expr) =>
+      faceToken(expr, t => it.pieces.some((/** @type {any} */ p) => p.v === 'front' && p.x === t));
+  const bySlot = (/** @type {string} */ s) => Object.values(W.items).filter((/** @type {any} */ it) => it.slot === s);
+  assert.ok(bySlot('eyes').length && bySlot('mouth').length, 'the wardrobe has eyes and mouths');
+  for (const it of bySlot('eyes')) {
+    assert.equal(worn(it, 'happy+talk'), 'happy');
+    assert.equal(worn(it, 'angry+blink+talk'), 'blink');
+  }
+  for (const it of bySlot('mouth')) {
+    assert.equal(worn(it, 'happy+talk'), 'talk');
+    assert.equal(worn(it, 'sad+blink'), 'sad');
+  }
+  for (const it of bySlot('brows')) assert.equal(worn(it, 'angry+blink+talk'), 'angry');
 });
