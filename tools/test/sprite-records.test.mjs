@@ -473,3 +473,63 @@ for (const inst of [false, true])
       ]);
     }
   });
+
+// ---------- fluid track FL-2a: the three fixes found in review ----------
+// (a) the pass always knows which program is bound: a picture with blades or hands puts the sprite program in use before
+// them, even when none is drawn (a model's blades: no blades drawn for a model), so a picture after it that leaves the
+// run (a hit flash) is drawn on the sprite program, not the instanced one
+test('FL-2a (a): after a model with blades, a flashing picture is drawn on the sprite program', () => {
+  const gl = setupInstanced(),
+    sign = fixture().find(it => it.id === 'sign'),
+    L = [
+      { ...sign, id: 'bladed', vox: true, M: M({ blades: { img: 'blade', x: 0, y: 0, w: 8 } }) },
+      { ...sign, id: 'flash', x: 20, hit: [1, 1, 1, 0.5] },
+    ];
+  G.drawSprites(camera(), L, X, [], [], 32);
+  let prog = null;
+  const at = [];
+  for (const c of gl.calls) {
+    if (c[0] === 'useProgram') prog = c[1];
+    else if (c[0] === 'drawArrays') at.push(prog);
+  }
+  assert.ok(at.length > 0);
+  assert.deepEqual([...new Set(at)], ['sprite']);
+  assert.equal(prog, 'sprite', 'the pass ends on the sprite program');
+});
+// (b) a crossing tree that flashes or dithers in keeps its crossing picture, as on the plain path
+for (const what of ['hit', 'rise'])
+  test(`FL-2a (b): a crossing tree with ${what === 'hit' ? 'a hit flash' : 'its rise dither'} keeps its crossing picture`, () => {
+    const one = inst => {
+      const gl = inst ? setupInstanced() : setup(),
+        L = fixture().filter(it => it.id === 'oak');
+      L[0][what] = what === 'hit' ? [1, 1, 1, 0.5] : [0.4, 0, 1];
+      G.drawSprites(camera(), L, X, [], [], 32);
+      return draws(gl.calls).out;
+    };
+    assert.deepEqual(one(false), [
+      ['tex1', 1],
+      ['tex1', 1],
+    ]);
+    assert.deepEqual(one(true), one(false));
+  });
+// (c) the reflection of a figure's cell of the live atlas: its rect (im.uv) and the figure flag, plain and batched
+test("FL-2a (c): a figure's reflection draws its cell of the atlas, lit as a figure, in both paths", () => {
+  const cell = [0.25, 0.5, 0.125, 0.25],
+    L = () => {
+      const man = fixture().find(it => it.id === 'man');
+      return [{ ...man, cut: 0, im: { ...man.im, uv: cell, figAtlas: true } }];
+    };
+  let gl = setup();
+  G.reflectionPass(L(), camera(), 400, 300, X);
+  const c = gl.calls.map(q => q.map(round).join(' '));
+  assert.ok(c.includes('uniform4fv uUV ' + cell.join(',')), 'the plain reflection sends the cell');
+  assert.ok(c.includes('uniform1f uFig 1'), 'and the figure flag');
+  gl = setupInstanced();
+  G.reflectionPass(L(), camera(), 400, 300, X);
+  const u = G.unpackSpriteInstance(0);
+  assert.equal(u.fig, 1);
+  assert.deepEqual(
+    u.cell.map(v => Math.round(v * 1e4) / 1e4),
+    cell
+  );
+});

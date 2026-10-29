@@ -582,6 +582,11 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         if (r.dz) gl.uniform1f(p.U.uDZ, 0);
         clearSpriteHit(p, r);
+        /* FL-2a: a crossing tree keeps its crossing picture while it flashes or dithers, as on the plain path */
+        if (r.crossOn) {
+          setSpriteCrossRecord(p, r.cr);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
       }
     } else if (r.mode === 'quad') {
       if (R.n && R.T !== r.T) flushSpriteRun(ip);
@@ -600,8 +605,13 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
       drawSpriteWave(p, r);
     } else if (r.mode === 'model' && spriteHasParts(it)) flushSpriteRun(ip);
     gpuTag(tag);
-    /* blades and hands leave the sprite program in use */
-    if (spriteHasParts(it) && r.mode !== 'none' && r.mode !== 'front' && r.mode !== 'wave') R.on = false;
+    /* blades and hands are drawn on the fx program and leave the sprite program in use. FL-2a: the sprite program is
+       put in use before them, so the pass knows which program is bound even when none is drawn (no blade picture
+       yet, a model's blades, far hands) */
+    if (spriteHasParts(it) && (r.mode === 'quad' || r.mode === 'model')) {
+      if (R.on) gl.useProgram(p.p);
+      R.on = false;
+    }
     spriteSideEffects(p, r, C, X, hits, labels, PPU, sc);
   }
   flushSpriteRun(ip);
@@ -1294,6 +1304,8 @@ function reflectionRecord(it, F, C, r) {
   r.rim = 0;
   r.lit = 1;
   r.shade = 0.3;
+  /* FL-2a: a figure's cell of the live atlas is lit as one, as in the main pass */
+  r.fig = it.im && it.im.figAtlas ? 1 : 0;
   spriteGeometry(r, it);
   r.dz = 0;
   r.wave = null;
