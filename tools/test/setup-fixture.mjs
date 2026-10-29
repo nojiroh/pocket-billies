@@ -88,7 +88,7 @@ export const FIXTURE = {
     { id: 'Water', color: '#3a86d6', strong: ['Fire'], weak: ['Water', 'Grass'], passive: '' },
     { id: 'Grass', color: '#4e9e42', strong: ['Water'], weak: ['Fire', 'Grass'], passive: '' },
   ],
-  untyped: { color: '#8e8b78', text: '#fff', fx: ['pow', 'star'] },
+  untyped: { color: '#8e8b78', text: '#fff' },
   stats: [
     { id: 'hp', name: 'HP' },
     { id: 'lev', name: 'Attack' },

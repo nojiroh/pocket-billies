@@ -215,17 +215,14 @@ export interface BillyType {
   /** RF-3: the passive's name and what it does, as the player reads them */
   passiveName?: string;
   passiveText?: string;
-  /** hit effects (default pow, star) */
-  fx?: string[];
 }
 
-/** untyped.json: the colours and hit effects of 'None' */
+/** untyped.json: the colours of 'None' (VFX-20: its battle particles are battleAnims.json types.None.burstSprites) */
 export interface Untyped {
   color: Color;
   /** UI-13: its colour in battle's 3D effects (default `color`) */
   glow?: Color;
   text?: Color;
-  fx?: string[];
 }
 
 /** moves.json: a move */
