@@ -62,7 +62,9 @@ perks-track.md 5.7, "Corrected in PK-8".
   pick's cards read "Perk · Weather Kit 3/3" and "Perk · Office Supplies 1/3"; the Perks tab groups Office Supplies
   2/3 and Weather Kit 3/3 ("Weather Person (on)") then "No set". **The run sim**: `--runs=50` stops in scene mode with
   "runSceneParams: node 8 has no exit north3", main's (PK-5..PK-7); `--balance` finishes its 50 runs.
-  **Full quick check** on 01d8472a: running at the time of this commit (its result follows in the next docs commit).
+  **Full quick check** on 01d8472a: 42 steps, 39 passed in 1374 s; the three problems are main's known reds recorded
+  in the PK-7 and PK-10 entries (RL-8's "the town's shop has no Perk", room light, Battle music "wild: the drums never
+  came in on a throw"). **CI** on 5af1266b: lint and rules green; the fast check (smoke) green on the push's run.
 - Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
   - **A copy doesn't count toward a set**; a Photocopier counts as itself (Office Supplies). Non-Refundable Ticket is
     in no set.
