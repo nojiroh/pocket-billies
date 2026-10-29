@@ -32,14 +32,20 @@ validation/look-water*/
 validation/look-decals/
 validation/look-train-ride/
 validation/look-grafts/
-validation/hub-sketches/
 validation/look-station/
 validation/look-hub-buildings/
 validation/look-pasture/
 validation/look-people/
+validation/look-air/
+validation/look-opening/
+validation/look-run-screens/
 validation/style-diff/
 validation/ui-gallery-out/
 validation/sim/
+# island-shots.py and look-worldmap.py's default output (at the repo root) and the sketch bake's export
+island-shots/
+look-worldmap/
+tools/art-source/sketches/
 # Claude Code's Playwright MCP server (tools/mcp-playwright.mjs) and a debug log's picture (tools/read-debug-log.py)
 validation/mcp/
 validation/debug-log/
@@ -62,7 +68,6 @@ game/data/gamedata.js
 # ESLint cache (npm run lint, phase 04e)
 .eslintcache
 validation/st1/
-validation/st3/
 validation/terrain-look/
 validation/load/
 validation/look-talk*/

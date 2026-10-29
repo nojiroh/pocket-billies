@@ -42,8 +42,8 @@
  ],
  "parody": "Zhang Yiming",
  "cry": [
-  {"base":"beast","pitch":76,"length":0.5,"name":"placeholder: a bright chirp that loops (Claude's draft)"},
-  {"base":"machine","pitch":64,"length":0.9,"name":"placeholder: a buzzing chirp, then the same again (Claude's draft)"}
+  {"base":"beast","pitch":76,"length":0.5,"name":"a bright chirp that loops"},
+  {"base":"machine","pitch":64,"length":0.9,"name":"a buzzing chirp, then the same again"}
  ],
  "parts": [
   {"head":"cat_head","body":"fox_torso","front":"fox_arm","back":"fox_leg","sig":"fox_tail"},

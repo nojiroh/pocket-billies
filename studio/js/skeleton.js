@@ -55,6 +55,7 @@ expose({
   applyBodyPlan: [() => applyBodyPlan, v => (applyBodyPlan = v)],
   applyLinear2x2: [() => applyLinear2x2],
   bindSkeletonCanvas: [() => bindSkeletonCanvas, v => (bindSkeletonCanvas = v)],
+  blankPart: [() => blankPart, v => (blankPart = v)],
   blobPart: [() => blobPart, v => (blobPart = v)],
   boneSlotFieldHTML: [() => boneSlotFieldHTML, v => (boneSlotFieldHTML = v)],
   bonesUsingImage: [() => bonesUsingImage],
@@ -68,7 +69,6 @@ expose({
   mirrorPart: [() => mirrorPart, v => (mirrorPart = v)],
   neutralPose: [() => neutralPose, v => ((neutralPose = v), provide({ neutralPose }))],
   openSkeleton: [() => openSkeleton, v => ((openSkeleton = v), provide({ openSkeleton }))],
-  placeholderPart: [() => placeholderPart, v => (placeholderPart = v)],
   planRoles: [() => planRoles, v => (planRoles = v)],
   putPart: [() => putPart, v => (putPart = v)],
   renameBone: [() => renameBone, v => (renameBone = v)],
@@ -950,7 +950,7 @@ function mirrorPart(meta, b, par, orig) {
   [...orig].filter(c => c.par === b.n).forEach(c => mirrorPart(meta, c, n.n, orig));
   return n;
 }
-function placeholderPart(w, h, col = '#B8A8E0') {
+function blankPart(w, h, col = '#B8A8E0') {
   const c = makeCanvas(w, h),
     x = c.getContext('2d');
   x.fillStyle = col;
@@ -1139,7 +1139,7 @@ function skeletonClick(ev) {
         ]
       );
       if (!r) return;
-      addPart(placeholderPart(r.w, r.h), { name: r.n.replace(/[^A-Za-z0-9_]/g, '') || 'part' });
+      addPart(blankPart(r.w, r.h), { name: r.n.replace(/[^A-Za-z0-9_]/g, '') || 'part' });
       toast('Part added. Click “Paint this part” to draw it.');
     },
     addPng: async () => {
@@ -1157,7 +1157,7 @@ function skeletonClick(ev) {
     },
     child: () => {
       if (!b) return;
-      addPart(placeholderPart(Math.round(8 * meta.k), Math.round(8 * meta.k)), {
+      addPart(blankPart(Math.round(8 * meta.k), Math.round(8 * meta.k)), {
         par: b.n,
         at: [0, -4],
         name: b.n + 'Tip',
@@ -1218,7 +1218,7 @@ function skeletonClick(ev) {
     },
     givePic: () => {
       if (!b) return;
-      const src = placeholderPart(Math.round(10 * meta.k), Math.round(10 * meta.k)),
+      const src = blankPart(Math.round(10 * meta.k), Math.round(10 * meta.k)),
         r = allocRect(skeletonEditor.sp, skeletonEditor.view, src.width, src.height);
       putPart(skeletonEditor.sp, skeletonEditor.view, r, src);
       meta.imgs.push({ ox: -src.width / 2, oy: -src.height / 2, f: { main: r } });

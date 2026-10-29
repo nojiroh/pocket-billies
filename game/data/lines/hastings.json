@@ -33,12 +33,7 @@
  ],
  "parody": "Reed Hastings",
  "cry": [
-  {"base":"bird","pitch":86,"length":0.5,"name":"placeholder: a squeaky four-note theme tune (Claude's draft)"},
-  {
-   "base": "machine",
-   "pitch": 70,
-   "length": 0.9,
-   "name": "placeholder: a screech and a chime, “still watching?” (Claude’s draft)"
-  }
+  {"base":"bird","pitch":86,"length":0.5,"name":"a squeaky four-note theme tune"},
+  {"base":"machine","pitch":70,"length":0.9,"name":"a screech and a chime, “still watching?”"}
  ]
 }

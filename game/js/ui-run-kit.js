@@ -1019,7 +1019,7 @@ const PbPayout = class extends LitElement {
 };
 
 /* ---------- SY-3: a stamp: a word in a rough border, slammed on at a slant ---------- */
-/* The Bureau's paperwork (style-track.md: its stamp words are factions.json look.stamps; the page passes the word). Ink
+/* The Bureau's paperwork (docs/archive/tracks/style-track.md: its stamp words are factions.json look.stamps; the page passes the word). Ink
    in the red family (--redink, which follows light and dark; --stamp-ink sets another), a word plus a shape (the double
    border), never colour alone. It slams on when it joins the page (play() again for another), and tells the page as it
    lands (pb-stamp-land: sound.js thunks); `still` shows it already stamped, with no slam and no thunk (a sheet drawn

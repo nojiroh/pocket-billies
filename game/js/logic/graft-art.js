@@ -8,25 +8,25 @@
    box). A slot is swapped only bone kind for bone kind (an arm for an arm or a wing, a leg for a leg or a foot, a tail
    for a tail): the baker places each kind its own way, so a tail can't stand in for legs. Extras and the head are
    not grafted yet. SP-2: the splice is saved on the Billie (graftOf, graftSet); its rules are logic/genes.js. Logic only: no DOM (tools/test/graft-art.test.mjs).
-   RO-3c: placeholder Billies (logic/placeholder-art.js, any of the 14 body plans) are grafted by slot across plans,
-   on their baked sheets and rigs (graftPlaceholder, below; tools/test/graft-placeholder.test.mjs). */
+   RO-3c: sketch Billies (logic/sketch-art.js, any of the 14 body plans) are grafted by slot across plans,
+   on their baked sheets and rigs (graftSketch, below; tools/test/graft-sketch.test.mjs). */
 /** @import { PartKits } from '../../types/game-data' */
 /** @typedef {import('./kit-assemble.js').KitForm} KitForm */
 /** @typedef {Record<string, string>} Graft slot (rules.json parts.slots) -> Gene id, "part@donor" (SP-2) */
 /** @typedef {import('./kit-pixels.js').Pixels} Pixels */
-/** @typedef {import('./placeholder-art.js').BodyPlans} BodyPlans */
-/** @typedef {import('./placeholder-art.js').PlaceholderForm} PlaceholderForm */
-/** @typedef {import('./placeholder-art.js').PlaceholderBone} PlaceholderBone */
+/** @typedef {import('./sketch-art.js').BodyPlans} BodyPlans */
+/** @typedef {import('./sketch-art.js').SketchForm} SketchForm */
+/** @typedef {import('./sketch-art.js').SketchBone} SketchBone */
 /**
- * @typedef {{ form: PlaceholderForm, rig: Record<string, any>, sheet: Pixels }} PlaceholderBaked a placeholder Billie
- *   as baked (placeholderBake): its form, its sheet and both views' rigs
+ * @typedef {{ form: SketchForm, rig: Record<string, any>, sheet: Pixels }} SketchBaked a sketch Billie
+ *   as baked (sketchBake): its form, its sheet and both views' rigs
  * @typedef {{ pic: Pixels, pv: [number, number] }} GraftPic a picture and its pivot inside it
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
-  PLACEHOLDER_BOX,
-  PLACEHOLDER_VIEWS,
+  SKETCH_BOX,
+  SKETCH_VIEWS,
   kitBlank,
   kitBounds,
   kitDrawRest,
@@ -35,8 +35,8 @@ import {
   kitPack,
   kitPaste,
   kitTurnRight,
-  placeholderBones,
   roundHalfEven,
+  sketchBones,
 } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -71,15 +71,15 @@ expose({
   graftPic: [() => graftPic, v => (graftPic = v)],
   // @ts-expect-error -- replaced on purpose
   graftPicFit: [() => graftPicFit, v => (graftPicFit = v)],
-  // @ts-expect-error -- replaced on purpose
-  graftPlaceholder: [() => graftPlaceholder, v => (graftPlaceholder = v)],
-  // @ts-expect-error -- replaced on purpose
-  graftPlaceholderAt: [() => graftPlaceholderAt, v => (graftPlaceholderAt = v)],
-  // @ts-expect-error -- replaced on purpose
-  graftPlaceholderDonors: [() => graftPlaceholderDonors, v => (graftPlaceholderDonors = v)],
   graftRecipe: [() => graftRecipe],
   // @ts-expect-error -- replaced on purpose
   graftSet: [() => graftSet, v => (graftSet = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftSketch: [() => graftSketch, v => (graftSketch = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftSketchAt: [() => graftSketchAt, v => (graftSketchAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  graftSketchDonors: [() => graftSketchDonors, v => (graftSketchDonors = v)],
   graftTurn: [() => graftTurn],
 });
 /* eslint-enable no-func-assign */
@@ -206,7 +206,7 @@ export function graftDonors(B, K, sp, slot) {
     .map(f => `${f.parts[kind][0]}@${f.rig}`);
 }
 
-/* ---------- RO-3c: placeholder Billies, grafted by slot across body plans ----------
+/* ---------- RO-3c: sketch Billies, grafted by slot across body plans ----------
    Splicing maps parts by slot (the owner, RO-3a): an octopus's tentacle can become a biped's arm. A graft works on the
    two Billies as baked (the sheet and rig the game already has, drawings included), so nothing else is loaded:
    - a slot's groups: a plan's own bones in it (mirrors follow their twin), a bone hanging on another bone of the
@@ -226,7 +226,7 @@ export function graftDonors(B, K, sp, slot) {
      that still spills is refused (the plain Billie draws). */
 export const GRAFT_SHRINK = [1, 0.9, 0.8, 0.7, 0.6, 0.5];
 
-/** a slot's groups in a plan's bones: chains of bone names @param {PlaceholderBone[]} bones @param {string} slot
+/** a slot's groups in a plan's bones: chains of bone names @param {SketchBone[]} bones @param {string} slot
  * @returns {string[][]} */
 export function graftGroups(bones, slot) {
   /** @type {string[][]} */
@@ -249,7 +249,7 @@ export function graftCut(sheet, x, y, w, h) {
   return o;
 }
 /** a bone's picture in one view of a baked Billie (its first frame) and its pivot; null when it draws nothing
- * @param {PlaceholderBaked} B @param {string} view @param {string} n @returns {GraftPic | null} */
+ * @param {SketchBaked} B @param {string} view @param {string} n @returns {GraftPic | null} */
 export function graftPic(B, view, n) {
   const R = B.rig[view],
     b = R.bones.find((/** @type {any} */ x) => x.n === n);
@@ -260,7 +260,7 @@ export function graftPic(B, view, n) {
 }
 /** a group of a baked Billie's bones put together at rest in one view, as one picture whose pivot is the first bone's
  * joint (each bone's own turn at rest left out: the group takes the turn of the bone it lands on)
- * @param {PlaceholderBaked} B @param {string} view @param {string[]} group @returns {GraftPic | null} */
+ * @param {SketchBaked} B @param {string} view @param {string[]} group @returns {GraftPic | null} */
 export function graftGroupPic(B, view, group) {
   if (group.length === 1) return graftPic(B, view, group[0]);
   const R = B.rig[view],
@@ -314,36 +314,36 @@ export function graftPicFit(d, r, k = 1) {
     pv = aimed ? [(g.pv[0] * w) / dw, (g.pv[1] * h) / dh] : [(r.pv[0] * w) / rw, (r.pv[1] * h) / rh];
   return { pic: kitNearest(g.pic, w, h), pv };
 }
-/** a placeholder Billie grafted: each slot of the graft from its donor (both baked), its sheet and both views' rigs
- * as placeholderBake gives them (marked with the graft); throws, saying why, when a slot is missing on either side
+/** a sketch Billie grafted: each slot of the graft from its donor (both baked), its sheet and both views' rigs
+ * as sketchBake gives them (marked with the graft); throws, saying why, when a slot is missing on either side
  * or the result doesn't fit the stage box
  * @param {BodyPlans} P @param {{ sheetW: number, margin: number }} D the baker's settings (kitBuilds.json bake)
- * @param {PlaceholderBaked} recv @param {Record<string, PlaceholderBaked>} donors slot -> donor
+ * @param {SketchBaked} recv @param {Record<string, SketchBaked>} donors slot -> donor
  * @returns {{ sheet: Pixels, rig: Record<string, any> }} */
-export function graftPlaceholder(P, D, recv, donors) {
-  const bones = placeholderBones(P, recv.form),
+export function graftSketch(P, D, recv, donors) {
+  const bones = sketchBones(P, recv.form),
     /** @type {Record<string, string[][]>} */ mine = {},
     /** @type {Record<string, string[][]>} */ theirs = {};
   for (const [slot, donor] of Object.entries(donors)) {
     mine[slot] = graftGroups(bones, slot);
-    theirs[slot] = graftGroups(placeholderBones(P, donor.form), slot);
+    theirs[slot] = graftGroups(sketchBones(P, donor.form), slot);
     if (!mine[slot].length) throw new Error(`${recv.form.name} (${recv.form.plan}) has no ${slot} to graft`);
     if (!theirs[slot].length) throw new Error(`${donor.form.name} (${donor.form.plan}) has no ${slot} to give`);
   }
   for (const k of GRAFT_SHRINK) {
-    const made = graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k);
+    const made = graftSketchAt(bones, D, recv, donors, mine, theirs, k);
     if (made) return made;
   }
   throw new Error(`${recv.form.name} ~ ${Object.keys(donors).join(',')}: doesn't fit the stage box`);
 }
-/** graftPlaceholder with the grafted pictures scaled by k; null when it doesn't fit the stage box
- * @param {PlaceholderBone[]} bones @param {{ sheetW: number, margin: number }} D @param {PlaceholderBaked} recv
- * @param {Record<string, PlaceholderBaked>} donors @param {Record<string, string[][]>} mine
+/** graftSketch with the grafted pictures scaled by k; null when it doesn't fit the stage box
+ * @param {SketchBone[]} bones @param {{ sheetW: number, margin: number }} D @param {SketchBaked} recv
+ * @param {Record<string, SketchBaked>} donors @param {Record<string, string[][]>} mine
  * @param {Record<string, string[][]>} theirs @param {number} k */
-export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
-  const box = PLACEHOLDER_BOX,
+export function graftSketchAt(bones, D, recv, donors, mine, theirs, k) {
+  const box = SKETCH_BOX,
     /** @type {Record<string, Record<string, GraftPic | null>>} */ put = {};
-  for (const view of PLACEHOLDER_VIEWS) {
+  for (const view of SKETCH_VIEWS) {
     /** @type {Record<string, GraftPic | null>} */
     const v = (put[view] = {});
     for (const [slot, donor] of Object.entries(donors))
@@ -367,7 +367,7 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
   /** @type {Pixels[]} */
   const pics = [],
     /** @type {any[]} */ where = [];
-  for (const view of PLACEHOLDER_VIEWS) {
+  for (const view of SKETCH_VIEWS) {
     const R = recv.rig[view];
     for (const b of R.bones) {
       if (b.n in put[view]) {
@@ -382,7 +382,7 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
   }
   const { sheet, spots } = kitPack(pics, D.sheetW),
     /** @type {Record<string, any>} */ rig = {};
-  for (const view of PLACEHOLDER_VIEWS) {
+  for (const view of SKETCH_VIEWS) {
     const R = recv.rig[view],
       imgs = [],
       out = [],
@@ -423,14 +423,14 @@ export function graftPlaceholderAt(bones, D, recv, donors, mine, theirs, k) {
   return { sheet, rig };
 }
 
-/** the placeholder Billies that can give one a part for a slot: another line (another Billie when neither has a
- * line), and both have bones in the slot @param {BodyPlans} P @param {PlaceholderForm[]} forms @param {string} sp
+/** the sketch Billies that can give one a part for a slot: another line (another Billie when neither has a
+ * line), and both have bones in the slot @param {BodyPlans} P @param {SketchForm[]} forms @param {string} sp
  * @param {string} slot @returns {string[]} */
-export function graftPlaceholderDonors(P, forms, sp, slot) {
+export function graftSketchDonors(P, forms, sp, slot) {
   const base = forms.find(f => f.rig === sp);
-  if (!base || !graftGroups(placeholderBones(P, base), slot).length) return [];
+  if (!base || !graftGroups(sketchBones(P, base), slot).length) return [];
   return forms
     .filter(f => (base.line ? f.line !== base.line : f.rig !== sp))
-    .filter(f => graftGroups(placeholderBones(P, f), slot).length)
+    .filter(f => graftGroups(sketchBones(P, f), slot).length)
     .map(f => f.rig);
 }

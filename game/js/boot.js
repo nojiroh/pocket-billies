@@ -1119,10 +1119,7 @@ else
       if (TEST_BOOT && !TEST_RUN && !FIXTURE)
         setTimeout(() => toast('Test boot: the opening with Professor Chosen, nothing is saved.'), 900);
       if (location.protocol === 'file:')
-        setTimeout(
-          () => toast('Battles and the map need a local web server. Open the game with Start-Game (see README).'),
-          900
-        );
+        setTimeout(() => toast('Battles and the map need a local web server (README: Run it from the source).'), 900);
       if (DATA_WARN.length)
         console.info(
           `Pocket Billies: ${DATA_WARN.length} game data warning(s). Open the debug menu (Ctrl+Shift+D) to see them.`

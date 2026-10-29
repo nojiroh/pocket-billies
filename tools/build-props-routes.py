@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Route props track (docs/phases/route-props-track.md): more props for the run routes, low-poly at 32 px to the metre
+"""Route props track (docs/archive/tracks/route-props-track.md): more props for the run routes, low-poly at 32 px to the metre
 in the style of phase 09's batches (tools/build-props-batch1.py .. batch11b.py and the island's).
 
   swapped in under their own keys (the last standing pictures the set pieces place; the pictures stay as the

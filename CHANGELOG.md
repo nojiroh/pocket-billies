@@ -2,13 +2,19 @@
 
 Pocket Billies, from the fresh base on. Versions are `0.MINOR.PATCH alpha`: MINOR for a finished phase or a batch of
 new features, PATCH for fix-only releases; "alpha" becomes "beta" once the planned features are all in. The version is
-written in one place, game/version.js. The legacy build's changelog is in docs/archive/LEGACY-CHANGELOG.md.
+written in one place, game/version.js. The legacy build's changelog is README.md on the `legacy` branch.
 
 ## 0.1.0 alpha (unreleased)
 
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **Plainer words in the Studio and the runs** (clean-up track): the Studio no longer says "placeholder", "AI" or
+  "Claude" (the Music page follows once the sound work is in). Billies painted from their body plan are now **Sketch
+  Billies** (Part mode, the kit recipe, the density table); the Genes page's numbers are "first guesses"; the Model
+  drop zone names Blender, Blockbench and MagicaVoxel. The Billie cries have plain names. The Retrieval Unit's robot
+  parts lose "Placeholder art." on the salvage card and in their blurbs, and the run region word "Placeholder" is now
+  "Untitled" (a run may be called "Untitled Basin").
 - **A smoother bottom bar and a quick Actions bar** (the owner's phone notes, 2026-10-28): the bottom bar folds down
   while you walk in one smooth motion, and its buttons keep their words when small. Settings > Controls has "Shrink the
   bar while walking" to keep it full size. The selected tab is a soft gold pill, and pressing a tab squashes only that
@@ -990,7 +996,7 @@ kept aside in the browser).
 - Under the hood: the modules no longer put their names on `window` (the game and the Studio reach each other's
   code through imports); for the console, add `?globals` to the address.
 - Under the hood: the code, the data and the files have descriptive names (docs/NAMING.md; the old -> new list is in
-  docs/archive/phase-05-renames.md). The places' ids match their names (Marigold Town is `marigold`, no longer
+  git history). The places' ids match their names (Marigold Town is `marigold`, no longer
   `sundown`), so a debug log, a `?scene=` link or a Studio export from an earlier build names places the old way.
   The save format is 2: a save from an earlier 0.1.0 build doesn't load (a new game starts and the old save is kept
   aside, as with legacy saves). No text changed, but the 43 places with a new id look a little different: the

@@ -1,9 +1,9 @@
 # Testing: what every phase does
 
-Phase 13 reworks the tests (docs/phases/13-testing-and-debugging.md; sub-sessions 13a, 13b, 13c, see
-docs/HANDOFF.md). This file is the contract for every later phase: where a new test goes, what a phase updates when
-it changes or removes a system, and what must pass before a phase ends. Parts marked **(13b)** or **(13c)** arrive with
-those sessions; until then, follow the rule next to them.
+This file is the contract for every phase and track: where a new test goes, what a session updates when it changes or
+removes a system, and what must pass before it ends; parts marked **(13b)** or **(13c)** come from phase 13's plan
+(docs/archive/13-testing-and-debugging.md), are not built yet (13c is parked), and until then the rule next to them
+holds.
 
 ## The tiers
 
@@ -244,7 +244,7 @@ Two rules hold everywhere:
   People > Figures and Townsfolk as figures on in the game-wide defaults, `PB_FIGURE=mannequin` for the code figure
   (the Rogue by default). A session that changes the figures or the talk's portraits runs the quick check with them
   off and on.
-- The test cleanup track's TC-1 (docs/phases/test-cleanup-track.md, lane B) deleted the steps another check already
+- The test cleanup track's TC-1 (docs/archive/tracks/test-cleanup-track.md, lane B) deleted the steps another check already
   covers (Code, Messages, Team, Studio opens, Shaders, Paths, Scenes, Crowd, RL-7's run roads, the joystick, Battles,
   v36's split evolution) and the outdated ones (old place names, v34, v35, v37, v38, v39/v40, v44, v47, Things to do
   with its system). What still mattered stayed as small steps: Data (only what check-data does not refuse), Battle
@@ -307,8 +307,6 @@ same phase:
   (check-fast.py `nav_tap`); the fast check's "Every screen opens with its parts" opens each screen by the buttons a
   player taps, and a move that must change nothing on screen proves it with `tools/style-diff.py` (0 differences
   against HEAD).
-- **07 Portraits**: `tools/test/expressions.test.mjs` checks that every expression asked for has face pieces;
-  replace it with the real tag-to-expression mapping test (task 8's second half). Add a portrait to the full test.
 - **08 Step tracking removed, maps and rooms (Part A and B)**: remove or replace everything driven by steps:
   - the full test's Road step (it switches travel to steps for its run since 13a);
   - check-quick's `play()` (it sets `RULES.travel='steps'` and adds 2,400 steps) and the steps in the steps
@@ -328,9 +326,8 @@ same phase:
   baseline afterwards (Actions → Check → Run workflow → "Make the picture baseline").
 - **10 World-map bowl**: `tools/test/world-graph.test.mjs` must pass unchanged (positions may move, connections may
   not). Replace the full test's two World map steps, v32's miniatures and the airship step with checks of the bowl.
-- **11 Opening**: the smoke phone flow and the full test's two Opening steps play the opening; update them with it.
-- **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
-  tests (`saves.test.mjs`, `validSave`). RL-9: `tools/test/ranch.test.mjs` (training's logic on the game's rules),
+- **Ranch** (phase 12, absorbed by RL-9 and RL-10): its save fields in the save tests (`saves.test.mjs`,
+  `validSave`). RL-9: `tools/test/ranch.test.mjs` (training's logic on the game's rules),
   check-fast's ranch step on `?fixture=ranch` (Train, a level with the page's clock moved on, the cap, a clock turned
   back, a reload) and the in-game test's "The ranch: training between runs". RL-9b: check-fast's "Packing for a run"
   on `?fixture=ranch` (a trainee from storage picked, two Potions packed; kept on a loss, back in storage once; a win
@@ -369,11 +366,7 @@ same phase:
   check-data and blocks the Studio's Propose, a `warn` is shown and never blocks. `check-data-snapshot.test.mjs` holds
   check-data's whole output on the game data and on two planted copies (in a temp copy made with `PB_DATA_DIR`): a
   change meant to alter its words remakes it with `--test-update-snapshots`, said in the commit.
-- **15 Design and story**: write down the balance bounds the simulations will assert (with the owner).
-- **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
-  agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) that counted the legacy roster were
-  deleted in TC-1; a roster check for the slimmed roster goes into unit tests.
-- **17 Robots**: the robot battle rules live in `game/js/logic/` with unit tests (`tools/test/robots.test.mjs`); the
+- **Robots** (phase 17's prototype, the bots of RL-14): the robot battle rules live in `game/js/logic/` with unit tests (`tools/test/robots.test.mjs`); the
   simulation (no build dominates) comes before the full build: `node tools/test/sim/robot-sim.mjs` fights every build
   the data allows against a reference set of robots and Billies and reports win rates per build and part
   (`--quick` for a sample; `robot-sim.test.mjs` checks it runs). Its bounds are still to be agreed with the owner.
@@ -613,8 +606,8 @@ same phase:
   rules in words, where songs play, the findings, the schema's choices, jingles as notes and back),
   `tracker.test.mjs` (the hook and counter; the tracker is a page module, so it is read through the test globals),
   `cries.test.mjs`.
-- **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
-  trade validation is logic with unit tests.
+- **Online track** (docs/phases/online-track.md; phase 18 absorbed): every new Firestore rule gets emulator tests in
+  `firebase/test/`; trade validation is logic with unit tests.
 
 ## Before a phase ends
 

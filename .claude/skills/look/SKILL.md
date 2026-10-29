@@ -31,8 +31,9 @@ Other URLs: `?test=1&scene=<mapId>` (a throwaway game on any map, never saved; `
 tools/look-station.py: `serve(GAME)`, `chromium.launch(args=LAUNCH)`, `open_game`, `drawing(pg)`, screenshot, from
 tools/browser_check.py; output in `validation/<tool>/` with that folder added to .gitignore.
 
-**Judge** against the targets in docs/VISION.md ("Presentation") and ART-NOTES.md (terrain and the airship's low-poly
-models at 32 px/m; flat props stay flat; 32-bit pixel-art portraits).
+**Judge** against the targets in docs/VISION.md ("Presentation") and docs/ART.md (the art rules: icons,
+portraits, terrain at 32 px/m), plus CLAUDE.md's fixed art commitments (the airship's low-poly models at 32 px/m;
+flat props stay flat; 32-bit pixel-art portraits).
 
 **What this can't show**: frame rates (software drawing), `mediump` precision (SwiftShader computes it at full
 precision), a real phone's GPU limits, iOS Safari. Those come from the owner's phone: the in-game full test, then

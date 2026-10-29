@@ -1,6 +1,6 @@
 'use strict';
 /* ================= POCKET BILLIES STUDIO · Art workbench, Model mode (studio track ST-7) =================
-   A 3D model from Blender, Blockbench, MagicaVoxel or an AI generator made into a prop: drop a .glb, a .gltf (with its
+   A 3D model from Blender, Blockbench or MagicaVoxel made into a prop: drop a .glb, a .gltf (with its
    .bin and pictures), an .obj (with its .mtl and pictures) or a .vox anywhere on the Studio, or open one here.
    - Read by hand in the logic (logic/model-gltf.js, model-obj.js, model-vox.js) and made into the game's mesh format
      v2 (logic/model-mesh.js): its own texture, parts with their pivots, spins and joints. Height (or scale), the turn,
@@ -385,7 +385,7 @@ function wbModelSection(head) {
   const R = wbModel.rec;
   afterRender(wbmMount);
   if (!wbModel.main && !R)
-    return `<div class="wb wbm">${head}<div class="wb-body"><aside class="list-col wb-list">${wbmOpenHTML()}</aside><div class="wb-mid wb-empty"><div class="wb-drop"><b>Drop a model here</b><span>A .glb, or a .gltf with its .bin and pictures, an .obj with its .mtl and pictures, or a MagicaVoxel .vox. Anywhere on the Studio works.</span></div></div><aside class="px-side wb-side"><div class="px-sec"><p class="help">Blender, Blockbench, MagicaVoxel and AI generators all export glTF. Keep it under 2,000 triangles and paint it at 32 pixels to the metre (the airship's and the ground's art).</p></div></aside></div></div>`;
+    return `<div class="wb wbm">${head}<div class="wb-body"><aside class="list-col wb-list">${wbmOpenHTML()}</aside><div class="wb-mid wb-empty"><div class="wb-drop"><b>Drop a model here</b><span>A .glb, or a .gltf with its .bin and pictures, an .obj with its .mtl and pictures, or a MagicaVoxel .vox. Anywhere on the Studio works.</span></div></div><aside class="px-side wb-side"><div class="px-sec"><p class="help">Blender, Blockbench and MagicaVoxel all export glTF. Keep it under 2,000 triangles and paint it at 32 pixels to the metre (the airship's and the ground's art).</p></div></aside></div></div>`;
   if (!R)
     return `<div class="wb wbm">${head}<div class="wb-body"><aside class="list-col wb-list">${wbmOpenHTML()}</aside><div class="wb-mid wb-empty"><div class="wb-drop"><b>${escapeHtml(wbModel.main)} can't be read</b><span>${escapeHtml(wbModel.err)}</span></div></div><aside class="px-side wb-side"></aside></div></div>`;
   const tabs = `<div class="seg-row wb-tools"><button class="seg ${wbModel.view === 'model' ? 'on' : ''}" data-act="wbmView" data-v="model">Model</button><button class="seg ${wbModel.view === 'texture' ? 'on' : ''}" data-act="wbmView" data-v="texture" ${wbModel.tex ? '' : 'disabled title="No texture: colours only"'}>Texture</button><span class="grow"></span>${wbModel.view === 'model' ? `<label class="chk"><input type="checkbox" data-wbm="spin" ${wbModel.spin ? 'checked' : ''}> Turn slowly</label>` : ''}</div>`;

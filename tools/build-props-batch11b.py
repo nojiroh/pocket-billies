@@ -122,7 +122,9 @@ def jungle_recipe():
     """The jungle tree: a tall pale trunk on brown buttress roots, its crown (with the drawing's front leaf layer laid
     over it) cut into clumps, the drawing's back leaf layer behind them, and the hanging vines as two sheets cut from
     the drawing, every other vine in front of the trunk and the rest behind it, so they hang all round when the camera
-    turns. Each picture in a model costs a draw, so it keeps to nine (a run's jungle has twenty or so of these trees)."""
+    turns. Each picture in a model costs a draw, so it keeps to nine (a run's jungle has twenty or so of these trees).
+    Its two leaf layers (game/art/scene/props/layers/tree_jungle_lb.png, _lf.png) were deleted with the other unused
+    layers (clean-up track, lane T): restore them from git history before running this again."""
     P = 'tree_jungle'
     a = B1.rgba(B1.PROPS / f'{P}.png')
     H, W = a.shape[:2]

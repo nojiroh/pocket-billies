@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Style track SY-7 (docs/phases/style-track.md): loose Bureau forms, an ambient-life kind (game/js/ambient-life.js
+"""Style track SY-7 (docs/archive/tracks/style-track.md): loose Bureau forms, an ambient-life kind (game/js/ambient-life.js
 `form`, the fly and drift flags) that lies about the Bureau's places and blows past. Flat on purpose: a sheet of paper.
 
   art/scene/life/form.png   4 frames, 20 x 14: lying flat, a corner lifting, two tumbling in the air

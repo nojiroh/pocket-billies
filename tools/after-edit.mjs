@@ -1,5 +1,5 @@
 // Phase 13: the checks Claude Code runs after each edit (.claude/settings.json, a PostToolUse hook on Edit and Write),
-// the fast tiers of docs/phases/13: lint and the type check, the unit tests, the data check. It reads the edited file
+// the fast tiers of docs/TESTING.md: lint and the type check, the unit tests, the data check. It reads the edited file
 // from the hook's JSON on stdin and runs only what that file can break:
 //   game/js, studio and the root's *.js     npm run lint, and npm run typecheck for game/js
 //   game/js/logic/<name>.js                  the unit test files for <name> (testsFor below)

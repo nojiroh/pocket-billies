@@ -80,6 +80,12 @@ export function artCodeRefs() {
   return [...by].sort((a, b) => a[0].localeCompare(b[0])).map(([p, at]) => ({ p, at }));
 }
 
+/** the art folder's build lists: only the Python tools read them (build-scenes.py copies what the game needs into its
+ *  data), so a picture only they name is not used */
+export const BUILD_LISTS = ['scene/props.json', 'scene/layers.json', 'scene/life.json', 'scene/build.json'].map(
+  f => 'game/art/' + f
+);
+
 /** every art file the art folder's JSON files name (the model recipes' decals and leaves), with the files naming it */
 export function artRecipeRefs() {
   /** @type {string[]} */
@@ -89,8 +95,9 @@ export function artRecipeRefs() {
     for (const e of readdirSync(join(ROOT, dir), { withFileTypes: true })) {
       const p = dir + '/' + e.name;
       if (e.isDirectory()) walk(p);
-      else if (e.name.endsWith('.json')) json.push(p);
-      else files.add(p.slice('game/art/'.length));
+      else if (e.name.endsWith('.json')) {
+        if (!BUILD_LISTS.includes(p)) json.push(p);
+      } else files.add(p.slice('game/art/'.length));
     }
   };
   walk('game/art');

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Route props track RP-3 (docs/phases/route-props-track.md): a CC0 glTF/GLB model turned into our prop recipe format
+"""Route props track RP-3 (docs/archive/tracks/route-props-track.md): a CC0 glTF/GLB model turned into our prop recipe format
 (game/art/scene/next/models/<key>.json: layers of box, cyl, cone, dome, sphere and limb; prop-models.js
 lowPolyFromRecipe), so a pack's model looks like our props: simplified to a few dozen shapes, its colours snapped to
 our palette and drawn with our textures at 32 px to the metre.

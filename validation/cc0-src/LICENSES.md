@@ -1,6 +1,6 @@
 # CC0 sources for the GLB-to-recipe converter (route props track RP-3)
 
-The models tools/glb-to-recipe.py converts for the converter test (docs/phases/route-props-track.md, RP-3). Only
+The models tools/glb-to-recipe.py converts for the converter test (docs/archive/tracks/route-props-track.md, RP-3). Only
 CC0 files: each one's licence was read in its pack's own `LICENSE.txt` before it was copied here. They are inputs for
 the tool, not game art: the game draws the recipes made from them (game/art/scene/next/models/*_cc0.json).
 
