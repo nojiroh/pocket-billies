@@ -514,6 +514,60 @@ props are icons.png cells; stamped words are drawn sound words only (rule 10). E
 - Billions Served (`billionsserved`, Fire H, flurry; the burger icon): burgers served in a row, one per hit, three
   hits; a coin ring at the end. Repeat: one burger, the hit.
 
+**VFX-18's storyboards** (written 2026-10-29 before any of them was built; taken as approved under the owner's
+standing instruction, listed for review). The same format as VFX-17's. These moves allude to real people and
+companies, so rule 10 is strict here: generic objects only, no logo, mark, slogan, real name or likeness; no move
+whose name is a slogan or catchphrase (Just Do It, I'm Out, Feeling Lucky, One More Thing) has it stamped. New drawn
+sound words: WHIRR!, TICK!, CLICK!, FORE!. Caps: H 1380, S 1560; status moves (X, maxMs 1000) stay within 1000 and add
+no time; every repeat within `maxMs`.
+- CUDA Call (`cudacall`, Electric S, breath; wind_turbine_small x3 as the fans): three fans rise behind the attacker
+  and spin up, "WHIRR!"; a gold jet roars from the attacker over the foe, sparks spraying; the hit; the fans erode.
+  Repeat: the fans spin, the jet, the hit.
+- Rollback (`rollback`, Steel H, charge; tires): a tyre rolls in from beyond the attacker, through the foe (the hit
+  as it passes), then rolls back the way it came; a down chevron on the foe. Repeat: the tyre in, the hit.
+- Terminal Fee (`terminalfee`, Electric X, hex; the laptop and coin icons): a screen (the laptop icon) pops over the
+  attacker; coins lift off the foe and fly to it; the hex's ring, and the burn's embers. Repeat: the screen, the
+  coins, the ring.
+- One More Thing (`onemorething`, Psychic S, shot; the excl icon): the attacker turns away and the camera starts to
+  pull home, as if it's over; a beat; a "!" pops over it, it turns back, and a rose orb flies at the foe; the hit.
+  Repeat: the "!", the orb, the hit.
+- Just Do It (`justdoit`, Flying H, dash; the sneaker icon): a sneaker pops at the attacker's feet; the dash comes at
+  once, before any wind-up, afterimages and feathers; the hit; the sneaker drifts off. Repeat: the dash, the hit.
+- Fast Fashion (`fastfashion`, Grass S, shot; laundry_line, the hanger and tag icons): a clothes line rises beside
+  the attacker; hangers and tags fly off it at the foe, one every two cells, leaves spinning after them; the last one
+  hits. Repeat: three hangers, the hit.
+- Spruce Dive (`sprucedive`, Flying S, dive; tree_pine_small): the attacker jumps out of view; a spruce drops out of
+  the sky onto the foe with Part 1's stretch; feathers and a wind ring; the hit; the spruce erodes. (Wish: a big
+  wooden flying boat.) Repeat: the spruce drops, the hit.
+- Pop the Collar (`popthecollar`, Psychic X, hex; the shades icon): shades pop onto the attacker with a sparkle, a held
+  pose; a rose ring over the foe and its chevrons fall sharply (the hex's drop). Repeat: the shades, the ring and the
+  chevrons.
+- Assembly Line (`assemblyline`, Steel H, flurry; crate_goods): three identical crates slide in a row along the ground
+  from beyond the attacker into the foe, a cog spark at each; the third lands the hit. Repeat: one crate, the hit.
+- Per Minute (`perminute`, Electric X, hex; wall_clock): a clock appears over the foe and ticks, "TICK!" stamped
+  over it; a coin drops off the foe on each tick; the hex's ring and the burn's embers. Repeat: the clock, the ring.
+- I'm Out (`imout`, Water H, strike; no prop): the attacker hops back and turns away, a held beat (wide), then darts
+  in: the strike, a splash crown and droplets. (Wish: a dorsal fin.) Repeat: the dart, the splash, the hit.
+- Feeling Lucky (`feelinglucky`, Psychic S, beam; the dice icon): a die tumbles before the attacker and lands; a thin
+  ray flicks to the foe in a quarter of a second; a star on the weak spot, the hit. Repeat: the ray, the star, the
+  hit.
+- Character Limit (`charlimit`, Flying S, shot; the bubble icon): speech bubbles fire in a tight row from the
+  attacker; the last bursts into feathers on the foe; the hit. Repeat: three bubbles, the hit.
+- Shuffle Play (`shuffleplay`, Electric S, wave; no model, notes): notes orbit the attacker out of order, then pulse
+  to the foe one after another, a ring with each; the last ring hits. (Wish: a jukebox.) Repeat: one pulse, the hit.
+- Smart Contract (`smartcontract`, Electric S, shot; the paper and cbox icons): a sheet (the paper icon) at the
+  attacker; small blocks chain from it to the foe in a straight line; the sheet flies down the chain and locks on,
+  "CLICK!"; the hit in a square burst. Repeat: the sheet, the hit.
+- Buy the Dip (`buythedip`, Steel X, heal; the chart, down and coin icons): a chart over the attacker, a down arrow
+  falls; coins rise into the attacker with the heal's sparkles and light. Repeat: the coins, the heal.
+- In Sync (`insync`, Water H, flurry; rowboat): a rowboat skims in from the attacker's side on two strokes; two
+  splashes land at once on the foe, twice; the hit. Repeat: the boat, the hit.
+- Empire State (`empirestate`, Flying S, slash; city_tower_hero): a tower rises behind the attacker and swings over
+  in a hook across the foe, a slash arc and a wind ring; the hit; the tower erodes. Repeat: the swing, the hit.
+- Sunday Red (`sundayred`, Grass H, strike; flag_pole as the pin): a flag on a pole rises beside the foe; "FORE!"; the
+  attacker swings (a lunge) and a ball arcs low and drops in at the foe; leaves burst; the hit. Repeat: the ball,
+  the hit.
+
 ## Move sounds (the owner's pick)
 A sound per family, layered by type, in music.json's `battle` section (the shape agreed with the sound track, "Talking
 to the sound track": voices in the cries' shape, noise voices for hits, whooshes and splashes, baked instruments
