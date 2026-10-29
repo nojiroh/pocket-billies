@@ -72,6 +72,9 @@ test('the timeline: a scene on the 3D stage with its models; its family under Re
   assert.ok(R.dur <= A.maxMs.H, 'none longer under Reduced motion');
   const P = battleAnimTimeline(hitAn('towerdrop'), MOVES.towerdrop, { gl: true, props: false }, A);
   assert.deepEqual([P.kind, P.id], ['family', 'dive']);
+  /* VFX-20: the debug log names the scene the family stands in for */
+  assert.equal(P.fallback, 'towerdrop');
+  assert.match(battleAnimLogLine('towerdrop', P, 1, []), /^towerdrop family:dive for:scene:towerdrop /);
   /* a scene with no model plays with props off; Reduced motion still takes its family */
   assert.equal(battleAnimTimeline(hitAn('siu'), MOVES.siu, { props: false }, A).kind, 'scene');
   assert.equal(battleAnimTimeline(hitAn('siu'), MOVES.siu, { reduced: true }, A).id, 'dive');

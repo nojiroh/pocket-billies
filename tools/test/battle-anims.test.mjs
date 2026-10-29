@@ -418,6 +418,9 @@ test('the debug log line names the move, its family, tier and variant, nothing e
   assert.equal(battleAnimLogLine(H, T, 1, []), `${H} family:${MOVES[H].anim} crit full q1${T.long ? ' long' : ''}`);
   assert.match(battleAnimLogLine(H, T, 1, ['gap', 'red']), / held:gap,red$/);
   assert.equal(battleAnimLogLine(H, null, 0, []), `${H} none`);
+  /* VFX-20: a KO and the motion setting; Full isn't named */
+  assert.match(battleAnimLogLine(H, T, 2, [], { ko: 'last', motion: 'reduced' }), / crit\+last full q2 reduced/);
+  assert.doesNotMatch(battleAnimLogLine(H, T, 2, [], { motion: 'full' }), /full q2 full/);
 });
 
 test('every move x outcome’s timeline (snapshot)', t => {

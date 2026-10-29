@@ -18,7 +18,7 @@
   {
    "p": "battle/anims/*",
    "at": [
-    "game/js/logic/battle-anims.js:442"
+    "game/js/logic/battle-anims.js:447"
    ]
   },
   {
@@ -1756,8 +1756,8 @@
   "drop": [
    "game/js/boot.js:163",
    "game/js/logic/battle-anims.js:20",
-   "game/js/logic/battle-anims.js:336",
-   "game/js/logic/battle-anims.js:388",
+   "game/js/logic/battle-anims.js:337",
+   "game/js/logic/battle-anims.js:390",
    "game/js/logic/perks.js:230",
    "game/js/logic/perks.js:241",
    "game/js/logic/ui-dials.js:147",
