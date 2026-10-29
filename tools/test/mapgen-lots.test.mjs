@@ -1,5 +1,6 @@
-// Map generator MG-2: the hub's buildings (the props dials mast, clinic and shop; RL-8's run towns). Each stands
-// beside the main road near the hub facing the camera, on level ground, its door (or the mast's landing spot) a walk
+// Map generator MG-2: the hub's buildings (the props dials mast, clinic and shop; RL-8's run towns; AS-2: the mast dial
+// is the sky train halt). Each stands beside the main road near the hub facing the camera, on level ground, its door
+// (or the halt's stand, at the foot of its steps) a walk
 // from the hub, its room fitting behind the door, nothing growing on its lot or its path.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -8,7 +9,7 @@ import { GAME_DATA, modules } from './setup-real.mjs';
 const G = modules.mapgen;
 const C = GAME_DATA.scenery,
   ctx = { scenery: C, biomes: GAME_DATA.biomes };
-const ACT = { clinic: 'clinic', shop: 'shop', airship_station: 'fly' };
+const ACT = { clinic: 'clinic', shop: 'shop', train_halt: 'fly' };
 
 function towns(seed, n) {
   const R = modules.rng.rngFrom(seed, 'lots'),
@@ -55,7 +56,7 @@ test('off by default: no building at the hub', () => {
   assert.ok(!sc.props.some(p => p.k in ACT));
 });
 
-test('the clinic, the shop and the mast stand by the hub, each a walk from it', () => {
+test('the clinic, the shop and the halt stand by the hub, each a walk from it', () => {
   const made = towns(1, 30);
   let placed = 0;
   for (const { p, scene: sc, notes } of made) {
@@ -66,7 +67,11 @@ test('the clinic, the shop and the mast stand by the hub, each a walk from it', 
       tile = (x, z) => (sc.tiles[sc.h - 1 - Math.floor(z)] || '')[Math.floor(x)];
     const built = sc.props.filter(q => q.k in ACT);
     placed += built.length;
-    assert.equal(built.length + notes.filter(t => /^no room for the (clinic|shop|airship)/.test(t)).length, 3, where);
+    assert.equal(
+      built.length + notes.filter(t => /^no room for the (clinic|shop|sky train halt)/.test(t)).length,
+      3,
+      where
+    );
     for (const b of built) {
       const M = C.props[b.k],
         [bw, bd] = M.box,
@@ -74,11 +79,11 @@ test('the clinic, the shop and the mast stand by the hub, each a walk from it', 
       assert.equal(b.act, ACT[b.k], where);
       assert.equal(b.g, 1, where);
       assert.ok(!b.rot && !b.f, `${where}: ${b.k} faces the camera`);
-      if (b.k === 'airship_station') assert.equal(b.label, 'Airship station');
-      /* the spot you use it from: the door step, or where the airship sets you down (airship.js flyLand) */
-      const spot = b.k === 'airship_station' ? [b.x + bw / 2 + 0.9, b.z - 0.9] : [b.x + dx, b.z - 0.55];
+      if (b.k === 'train_halt') assert.equal(b.label, 'Sky train halt');
+      /* the spot you use it from: the door step, or where you stand by the halt (its stand: airship.js standByMast) */
+      const spot = b.k === 'train_halt' ? [b.x + M.stand[0], b.z + M.stand[1]] : [b.x + dx, b.z - 0.55];
       assert.ok(G.mapgenReached(reach, ...spot), `${where}: ${b.k}'s ${spot} can't be walked to from the hub`);
-      if (b.k !== 'airship_station') {
+      if (b.k !== 'train_halt') {
         /* a door: its room fits behind it (seamlessRoomPlacement), and a path to it is painted */
         assert.ok(spot[0] >= 7 && spot[0] <= sc.w - 7 && b.z <= sc.h - 10.4, `${where}: ${b.k}'s room fits`);
         assert.equal(tile(...spot), surf, `${where}: ${b.k}'s door step is on its path`);

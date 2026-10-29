@@ -317,6 +317,7 @@ expose({
   mapgenStageWater: [() => mapgenStageWater, v => (mapgenStageWater = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStairsUp: [() => mapgenStairsUp, v => (mapgenStairsUp = v)],
+  mapgenStandSpot: [() => mapgenStandSpot],
   // @ts-expect-error -- replaced on purpose
   mapgenSteepAt: [() => mapgenSteepAt, v => (mapgenSteepAt = v)],
   // @ts-expect-error -- replaced on purpose
@@ -3315,16 +3316,21 @@ export function mapgenStageEdgeGround(G) {
 
 /* ---------- MG-2: the hub's buildings (a first take on MG-3's lots) ---------- */
 /* what the props dials put at the hub: [dial, prop, what it does, label] (the act opens the clinic's or the shop's
-   room, data-files.js ROOM_BY_USE; 'fly' is the airship's mast, airship.js; RL-12b: a waystation's stand opens its
-   event and a stall its shop where you stand, walk-control.js walkPick) */
+   room, data-files.js ROOM_BY_USE; 'fly' is the landing's sky train halt, airship.js (AS-2: was the airship's mast);
+   RL-12b: a waystation's stand opens its event and a stall its shop where you stand, walk-control.js walkPick) */
 /** @type {[string, string, string, string | null][]} */
 export const MAPGEN_HUB_BUILDINGS = [
   ['clinic', 'clinic', 'clinic', null],
   ['shop', 'shop', 'shop', null],
-  ['mast', 'airship_station', 'fly', 'Airship station'],
+  ['mast', 'train_halt', 'fly', 'Sky train halt'],
   ['stand', 'tent', 'event', 'Waystation'],
   ['stall', 'stall', 'stall', 'Stall'],
 ];
+/** where you stand by a landing's building at (x, z), unturned (mapgen's lots face the camera): its catalogue's stand
+ * (metres from its base point), else beside its right-hand side, a step in front (airship.js standByMast)
+ * @param {any} C its catalogue entry @param {number} x @param {number} z @param {number} bw its width */
+export const mapgenStandSpot = (C, x, z, bw) =>
+  Array.isArray(C.stand) ? [x + C.stand[0], z + C.stand[1]] : [x + bw / 2 + 0.9, z - 0.9];
 /** is (x, z) on a building's lot, or within m metres of one */
 export const mapgenInLot = (G, x, z, m = 0) =>
   G.lots.some(L => x > L[0] - m && x < L[2] + m && z > L[1] - m && z < L[3] + m);
@@ -3353,7 +3359,7 @@ export function mapgenLotFree(G, x0, z0, x1, z1, hub = true) {
   }
   return true;
 }
-/** the props dials' clinic, shop and airship mast beside the main road near the hub, facing the camera (south) like
+/** the props dials' clinic, shop and sky train halt beside the main road near the hub, facing the camera (south) like
  * every town building: north of the road, the front 2.5-5 m from its edge, on a level pad, with a path from the door
  * to the road. A lot keeps 12 m from the exits and joined edges, clear of the road, water, banks, bridges and
  * anything placed, its z on a half metre (so the door step isn't inside the building's walk block), and its door 7 m
@@ -3415,23 +3421,34 @@ export function mapgenStageLots(G) {
           if (p.k !== 0 || step[1] < p.z - 1.5 || Math.hypot(step[0] - p.x, step[1] - p.z) > p.r + (wide ? 14 : 5.5))
             continue;
           if (!free(x - bw / 2 - 0.5, z - 1, x + bw / 2 + 0.5, z + bd + 0.5)) continue;
-          /* a spot for the mast's landing (airship.js flyLand: beside it, a step in front) */
-          if (act === 'fly' && !free(x + bw / 2 + 0.4, z - 1.4, x + bw / 2 + 1.4, z - 0.4)) continue;
+          /* where you stand by it (airship.js standByMast: its catalogue's stand, metres from its base point; AS-2:
+             the halt's is at the foot of its steps), else beside it, a step in front */
+          const sp = mapgenStandSpot(C, x, z, bw);
+          if (act === 'fly' && !free(sp[0] - 0.5, sp[1] - 0.5, sp[0] + 0.5, sp[1] + 0.5)) continue;
           done = { x, z, step, road: p, bw, bd };
           break;
         }
         if (done) break;
       }
     if (!done) {
-      G.notes.push(`no room for the ${dial === 'mast' ? "airship's mast" : dial} beside the road near the hub`);
+      G.notes.push(`no room for the ${dial === 'mast' ? 'sky train halt' : dial} beside the road near the hub`);
       continue;
     }
     mapgenLevelLot(G, done);
     const extra = label ? { act, label } : { act };
     mapgenPutProp(G, k, done.x, done.z, { force: true, extra });
     G.lots.push([done.x - bw / 2, done.z - 0.1, done.x + bw / 2, done.z + bd]);
-    mapgenOccAdd(G, done.x, done.z + bd / 2, Math.hypot(bw, bd) / 2 + 0.4);
-    if (act === 'fly') G.keep.push([done.x + bw / 2 + 0.9, done.z - 0.9, 1]);
+    /* AS-2: a big lot (the halt's) as small circles over it: mapgenOccFree looks only a few metres round a spot */
+    const rr = Math.hypot(bw, bd) / 2 + 0.4;
+    if (rr <= 4) mapgenOccAdd(G, done.x, done.z + bd / 2, rr);
+    else {
+      const ni = Math.ceil(bw / 2),
+        nj = Math.ceil(bd / 2);
+      for (let j = 0; j < nj; j++)
+        for (let i = 0; i < ni; i++)
+          mapgenOccAdd(G, done.x - bw / 2 + ((i + 0.5) * bw) / ni, done.z + ((j + 0.5) * bd) / nj, 1.6);
+    }
+    if (act === 'fly') G.keep.push([...mapgenStandSpot(C, done.x, done.z, bw), 1]);
   }
 }
 /** a lot made ready: its ground (the building, a metre round it and the door's path) level at the road's height
