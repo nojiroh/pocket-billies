@@ -117,7 +117,7 @@ import {
   setSaveData,
   uiState,
 } from './game-state.js';
-import { gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
+import { drawErrorWatch, gpuCountBegin, gpuCountEnd } from './engine/gpu-counters.js';
 import { frameScheduler, userFps } from './frame-scheduler.js';
 import { ART_CACHE } from './art.js';
 import { PERSON_ART_CACHE } from './person-art.js';
@@ -537,7 +537,8 @@ async function runFullTest(mode) {
             note,
             detail,
             why: ok ? undefined : why || 'the check returned a problem',
-            ctx: ok ? undefined : D,
+            /* TD-1: a step that took its context at the failure (the light lab) gives that one */
+            ctx: ok ? undefined : (err && err.ctx) || D,
             slowCauses: by,
             worstFrameMs: worst || undefined,
             openHitchMs: openHitchMs || undefined,
@@ -2921,25 +2922,25 @@ async function runFullTest(mode) {
         'Light lab: the land, a room, props, the air',
         'dio',
         async () => {
+          /* TD-1: each refused draw says where (place, hour) and what (pass, program, target); the step's context is
+             taken at the first refusal or the throw, before the finally below sends the game back to Copperleaf */
           const gl = gpuState.gl,
-            proto = Object.getPrototypeOf(gl),
-            ge = proto.getError,
-            O = {};
+            since = debugLog.now(),
+            refusedAt = [],
+            stale = [];
+          /* an error WebGL still holds from before this step isn't the light lab's: read and said apart */
+          for (let e = gl.getError(); e && stale.length < 8; e = gl.getError()) stale.push(e);
           let refused = 0,
-            last = '';
-          for (const k of ['drawArrays', 'drawElements', 'drawArraysInstanced', 'drawElementsInstanced']) {
-            O[k] = gl[k];
-            const f = proto[k];
-            gl[k] = function (...a) {
-              const r = f.apply(gl, a);
-              const e = ge.call(gl);
-              if (e) {
-                refused++;
-                last = k + ' ' + e;
-              }
-              return r;
-            };
-          }
+            last = '',
+            ctx = null;
+          const undo = drawErrorWatch(gl, r => {
+            refused++;
+            last = r.call + ' ' + r.code;
+            const key = `${r.call} ${r.pass} ${r.program} ${r.target}`;
+            if (refusedAt.length < 6 && !refusedAt.some(x => x.key === key))
+              refusedAt.push(Object.assign({ key, scene: walkView.id, hour: +environment.tod.toFixed(1) }, r));
+            if (!ctx) ctx = Object.assign(debugLog.diag(since), { at: 'first refused draw' });
+          });
           const out = [];
           try {
             for (const [id, t] of [
@@ -3011,14 +3012,37 @@ async function runFullTest(mode) {
                 `${(sc.name || id).replace(/^Test: /, '')} ${Math.floor(t)}:${t % 1 ? String(Math.round((t % 1) * 60)).padStart(2, '0') : '00'} — ${Math.min(b, planB) + Math.min(lp, polyB)} of ${wantB} buildings, ${v} voxels, ${p} solids drawn (${seen.length} placed things in view), ${lm} lamp map(s)`
               );
             }
+          } catch (e) {
+            if (e && !e.ctx) e.ctx = Object.assign(ctx || debugLog.diag(since), { at: 'throw', refused: refusedAt });
+            throw e;
           } finally {
-            for (const k in O) gl[k] = O[k];
+            undo();
             if (typeof environment !== 'undefined') environment.force = null;
             uiState.bench = null;
             render();
           }
-          if (refused) throw new Error(refused + ' draw calls refused by WebGL (last: ' + last + ')');
-          return out.join('; ') + '; no draw call refused';
+          if (refused) {
+            const e = new Error(
+              refused +
+                ' graphics calls refused by WebGL (last: ' +
+                last +
+                '; ' +
+                refusedAt
+                  .map(
+                    x =>
+                      `${x.call} ${x.code} ${x.pass}/${x.program}->${x.target}${x.size ? ' ' + x.size : ''} at ${x.scene} ${x.hour} h`
+                  )
+                  .join(', ') +
+                ')'
+            );
+            e.ctx = Object.assign(ctx, { refused: refusedAt });
+            throw e;
+          }
+          return (
+            out.join('; ') +
+            '; no draw call refused' +
+            (stale.length ? ` (WebGL still held error ${stale.join(', ')} from before this step)` : '')
+          );
         },
         6,
         120

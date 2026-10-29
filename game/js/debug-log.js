@@ -307,6 +307,18 @@ debugLog.flush = ts => {
     s.alloc = [debugLog.gc.n, Math.round(debugLog.gc.freed / 1048576)];
     debugLog.gc.n = debugLog.gc.freed = 0;
   }
+  /* TD-1: WebGL keeps its first error until someone asks, and play never asks: an error from any time before showed
+     up only when a test's check read it, blamed on that test. Asked once a second, an error is put to the second,
+     place and test step it happened in */
+  const gl = typeof GAME.gpuState !== 'undefined' ? GAME.gpuState.gl : null;
+  if (gl && !GAME.gpuState.lost) {
+    const e = gl.getError();
+    if (e)
+      debugLog.error(
+        'webgl',
+        `WebGL error ${e} in the last second at ${c.scene || c.view}${c.bench ? ' (' + c.bench + ')' : ''}`
+      );
+  }
   debugLog.samples.push(s);
   if (ts - debugLog.crumbT >= 2000) {
     debugLog.crumbT = ts;

@@ -286,6 +286,19 @@ same phase:
 - **(Phase 20 C3)** The full test's Shaders step also builds every program with the light code with the Frame uniform
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".
+- **(TD-1)** A crash breadcrumb (debug-log.js `debugLog.crumb`, localStorage `pb-crumb`): every 2 s, at each step
+  of the full test and both graphics tests, and when the page hides, a numbers-only record (uptime, place id, test
+  step, graphics memory in all and by kind, last fps, q, resolution, refresh rate); pagehide marks it clean. On the
+  next boot a record without the mark written in view is `previousPage.endedUnexpectedly` (in the background:
+  `endedInBackground`); `boot.navigation` says how the page was opened. The debug menu's "Pretend the page was
+  killed" tests it. A sample has `ld: 1` while a place loads; `summary()` keeps those seconds apart
+  (`loadingSeconds`). Slow frames count towards every cause they overlapped (`slowFramesBy`: frames, share, ms,
+  worst). `?glerr` checks every draw for a refusal and logs each kind once with the place, hour, pass, program and
+  target (slow; for finding a refused draw; the uploads and blits too, with the picture's size, and an error already
+  held before a call is reported as "before <call>"); the light lab uses the same check (`drawErrorWatch`,
+  gpu-counters.js), takes its context at the failure, and reads an error WebGL still held from an earlier step
+  apart. The debug log reads WebGL's error once a second (an error `webgl: WebGL error N in the last second at
+  <place> (<test step>)`), so an error is put to the second, place and step it happened in.
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
 - The graphics test (the debug menu's Tests and performance section; Help had it before UI-7b; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or

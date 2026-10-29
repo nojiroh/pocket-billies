@@ -10,6 +10,7 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   COUNTED: [() => COUNTED],
+  DRAW_CALLS: [() => DRAW_CALLS],
   FIELD_COUNT: [() => FIELD_COUNT],
   F_BUFB: [() => F_BUFB],
   F_DRAW: [() => F_DRAW],
@@ -28,12 +29,15 @@ expose({
   TAG_INDEX: [() => TAG_INDEX],
   TAG_SLOTS: [() => TAG_SLOTS],
   UNIFORM_NAMES: [() => UNIFORM_NAMES],
+  UPLOAD_CALLS: [() => UPLOAD_CALLS],
   countInPass: [() => countInPass],
   countTagged: [() => countTagged],
   countUniform: [() => countUniform],
   countersOff: [() => countersOff, v => (countersOff = v)],
   countersOn: [() => countersOn, v => (countersOn = v)],
   dataBytes: [() => dataBytes],
+  drawErrorWatch: [() => drawErrorWatch, v => (drawErrorWatch = v)],
+  drawWatches: [() => drawWatches],
   gpuCountBegin: [() => gpuCountBegin, v => (gpuCountBegin = v)],
   gpuCountDue: [() => gpuCountDue, v => (gpuCountDue = v)],
   gpuCountEnd: [() => gpuCountEnd, v => (gpuCountEnd = v)],
@@ -44,6 +48,7 @@ expose({
   gpuTag: [() => gpuTag, v => (gpuTag = v)],
   pixelBytes: [() => pixelBytes, v => (pixelBytes = v)],
   sourceSize: [() => sourceSize],
+  sourceSizeOf: [() => sourceSizeOf],
   texImageBytes: [() => texImageBytes, v => (texImageBytes = v)],
   texSubImageBytes: [() => texSubImageBytes, v => (texSubImageBytes = v)],
   uniformNames: [() => uniformNames, v => (uniformNames = v)],
@@ -360,4 +365,69 @@ export function gpuCountEnd() {
   if (s) s.frames = gpuCounters.frames;
   gpuCounters.want = Math.max(0, gpuCounters.want - 1);
   return s;
+}
+/* TD-1: draws (and uploads) WebGL refuses (a sampler fed the wrong texture, a target read while drawn to, an incomplete texture):
+   each draw call is followed by getError (and preceded by one: an error raised since the last draw by another call is
+   reported as "before <draw>"), and a refused one is handed to every listener with what was drawing: the
+   call, the error code, the render pass, the program and the target being drawn to (their names, webgl.js). One
+   wrapper per context however many listen (?glerr and the light lab at once: the first getError would clear the
+   error for the next). A getError after every draw makes the GPU wait, so this is for tests and ?glerr only.
+   Returns the undo */
+const DRAW_CALLS = ['drawArrays', 'drawElements', 'drawArraysInstanced', 'drawElementsInstanced', 'drawRangeElements'],
+  /* the uploads and copies too: a picture uploaded on first use inside a pass (walk/sprites.js through imageTexture)
+     sets the error a draw would otherwise be blamed for; `size` says how big its source was */
+  UPLOAD_CALLS = ['texImage2D', 'texSubImage2D', 'generateMipmap', 'texImage3D', 'texSubImage3D', 'blitFramebuffer'];
+const sourceSizeOf = a => {
+  const s = a.find(x => x && typeof x === 'object' && x.width != null);
+  if (s) return `${s.naturalWidth || s.width}x${s.naturalHeight || s.height}`;
+  const n = a.filter(x => typeof x === 'number');
+  return n.length > 3 ? n.slice(3, 6).join(',') : null;
+};
+const drawWatches = new WeakMap();
+export function drawErrorWatch(gl, onRefused) {
+  let W = drawWatches.get(gl);
+  if (!W) {
+    W = { on: new Set(), saved: [] };
+    drawWatches.set(gl, W);
+    const L = W.on;
+    for (const k of [...DRAW_CALLS, ...UPLOAD_CALLS]) {
+      if (typeof gl[k] !== 'function') continue;
+      const own = Object.prototype.hasOwnProperty.call(gl, k),
+        f = gl[k];
+      W.saved.push([k, own, f]);
+      /* an error already raised (by an upload, a uniform, a blit since the last draw) is told apart from the draw's */
+      const tell = (e, before, a) => {
+        const P = gl.getParameter(gl.CURRENT_PROGRAM),
+          F = gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING),
+          info = {
+            call: before ? 'before ' + k : k,
+            code: e,
+            pass: GPU_PASSES[gpuCounters.pass] || '?',
+            program: (P && P.pbName) || (P ? '?' : 'none'),
+            target: F ? F.pbName || '?' : 'screen',
+          };
+        if (a && UPLOAD_CALLS.includes(k)) info.size = sourceSizeOf(a);
+        for (const fn of L) fn(info);
+      };
+      gl[k] = function (...a) {
+        const e0 = gl.getError();
+        if (e0) tell(e0, true);
+        const r = f.apply(gl, a),
+          e = gl.getError();
+        if (e) tell(e, false, a);
+        return r;
+      };
+    }
+  }
+  W.on.add(onRefused);
+  return () => {
+    W.on.delete(onRefused);
+    if (W.on.size || drawWatches.get(gl) !== W) return;
+    drawWatches.delete(gl);
+    for (let i = W.saved.length - 1; i >= 0; i--) {
+      const [k, own, f] = W.saved[i];
+      if (own) gl[k] = f;
+      else delete gl[k];
+    }
+  };
 }
