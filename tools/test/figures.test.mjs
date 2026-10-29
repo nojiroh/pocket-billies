@@ -458,6 +458,57 @@ test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, 
   }
 });
 
+test('figures: you as you picked (CH-7): a direction keeps its extras but not its jacket or palette on you', () => {
+  const was3 = [G.lookOf, G.figureChoice, G.figureItems, G.figureStyle],
+    W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+    look = {
+      body: {},
+      skin: '#E6B08A',
+      hair: '#2B6CB0',
+      wear: { hair: 'hair_short', top: 'tee' },
+      colors: { tee: ['#C8323C'] },
+    };
+  try {
+    freshBaker();
+    G.lookOf = () => look;
+    G.figureItems = () => W.items;
+    G.figureChoice = () => 'look';
+    G.figureStyle = () => 'gnight';
+    const built = who => {
+      const name = G.figureFor(who);
+      G.gpuState.fr++;
+      assert.ok(G.figurePersonPicture({}, name, 0, 'idle', 0, Math.PI), who);
+      return G.FIGURE_DEFS[name].F;
+    };
+    const me = built('me'),
+      other = built('marina');
+    /* the direction's cast puts a denim jacket on Marina and once did on you: no longer */
+    assert.ok(
+      other.parts.some(p => p.col === 'outer'),
+      'Marina wears her direction’s jacket'
+    );
+    assert.ok(!me.parts.some(p => p.col === 'outer'), 'you wear no outer: none was picked');
+    /* its extras stay (goggles, gloves) */
+    assert.ok(me.parts.length > 0 && me.exact && !other.exact);
+    /* your colours as picked: the direction's palette and saturation leave them be, everyone else's are pulled */
+    const LK = G.FIGURE_LOOKS.gnight,
+      base = (F, k) => {
+        const P = G.figurePalette(F, [k], LK.ramp, LK),
+          M = G.figurePalette({ ...F, exact: true }, [k], LK.ramp, LK);
+        return [Array.from(P.slice(6, 9)), Array.from(M.slice(6, 9))];
+      };
+    const [mine, mineRaw] = base(me, 'top');
+    assert.deepEqual(mine, mineRaw);
+    assert.deepEqual(mine.map(Math.round), [200, 50, 60], 'the tee’s red as picked');
+    const [theirs, theirsRaw] = base(other, 'top');
+    assert.notDeepEqual(theirs, theirsRaw, 'the rest of the cast keep the direction’s palette');
+  } finally {
+    G.document.createElement = was;
+    [G.lookOf, G.figureChoice, G.figureItems, G.figureStyle] = was3;
+    for (const k of Object.keys(G.FIGURE_DEFS)) if (k.startsWith('look:')) delete G.FIGURE_DEFS[k];
+  }
+});
+
 test('CH-4: the snapshot service: a UI picture baked once in the studio light, then kept', () => {
   const look = G.engineContext.look;
   try {

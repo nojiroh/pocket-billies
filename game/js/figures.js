@@ -375,13 +375,15 @@ function figureFromLook(name, who, L, look0, items, kit, fig) {
        by default: person-art.js DEFAULT_WEAR); townsfolk and you keep the bag their look picked */
     own = p && p.look && p.look.wear,
     look1 = own && !own.bag && L.wear ? { ...L, wear: { ...L.wear, bag: null } } : L,
-    /* a hybrid variant can redress everyone (its flair's wear) and each of its cast (its cast table's) */
-    wear0 = look0
-      ? {
-          ...((look0.flair && look0.flair.wear) || {}),
-          ...((look0.cast && look0.cast[who] && look0.cast[who].wear) || {}),
-        }
-      : null,
+    /* a hybrid variant can redress everyone (its flair's wear) and each of its cast (its cast table's); CH-7 (the
+       owner: your picks win): never you, who wear what the dressing room picked */
+    wear0 =
+      look0 && who !== 'me'
+        ? {
+            ...((look0.flair && look0.flair.wear) || {}),
+            ...((look0.cast && look0.cast[who] && look0.cast[who].wear) || {}),
+          }
+        : null,
     look = wear0 && look1.wear && Object.keys(wear0).length ? { ...look1, wear: { ...look1.wear, ...wear0 } } : look1,
     F = L.creature
       ? kappiFigure({ name })
@@ -403,6 +405,8 @@ function figureFromLook(name, who, L, look0, items, kit, fig) {
           /* a direction's flair, and its design for this person (its cast table) */
           flair: look0 && look0.flair ? { ...look0.flair, ...((look0.cast && look0.cast[who]) || {}) } : undefined,
         });
+  /* CH-7: your colours as you picked them (a direction's palette and saturation leave them be) */
+  if (who === 'me' && F) F.exact = true;
   return F;
 }
 /** the wardrobe's items (their default colours), for the figure kit; null before the game data is in */
@@ -1008,8 +1012,8 @@ FIGURE_PALETTES.gnight =
   '141833 1d2552 2e3a7a 4a5bb0 7d93d9 b8c9f0 2a9d8f 5fb7c0 a8e6e0 f1faee f2e8cf ffd166 f4a261 e76f51 e63946 9b2242 5c1a3a 3a0ca3 7b2cbf c77dff 6a994e a7c957 6d4c41 b07d62 e5b299';
 /** a figure's colour as a direction takes it: its saturation pushed (LK.sat), then pulled toward the nearest colour of
  * the direction's palette (LK.palette; skin only a little, eyes and shines not at all) */
-function figureLookColour(c, key, LK) {
-  if (!LK || (!LK.palette && !LK.sat)) return c;
+function figureLookColour(c, key, LK, exact = false) {
+  if (!LK || exact || (!LK.palette && !LK.sat)) return c;
   let v = [c[0], c[1], c[2]];
   if (LK.sat) {
     const l = 0.3 * v[0] + 0.59 * v[1] + 0.11 * v[2];
@@ -1061,7 +1065,7 @@ export function figurePalette(F, colours, ramp = 'props', LK = null) {
     const R =
         k === 'skin' && F.skinRamp && ramp !== 'cel'
           ? F.skinRamp
-          : figureLookRamp(figureLookColour(F.colours[k], k, LK), ramp),
+          : figureLookRamp(figureLookColour(F.colours[k], k, LK, !!F.exact), ramp),
       flat = k === 'eye' || k === 'glint';
     [
       flat ? R[2] : R[0],
