@@ -95,7 +95,9 @@ debugLog.mark = (label, t0, t1) => {
   M.push([t0, t1, label]);
   if (M.length > 600) M.splice(0, M.length - 600);
 };
-debugLog.blame = (t0, t1) => {
+/* TD-1: how long each marked job overlapped the span t0..t1 (ms by label; the uncovered rest as "outside the marked
+   steps" when it is most of it) */
+debugLog.blameBy = (t0, t1) => {
   const by = {},
     iv = [];
   for (const [a, b, l] of debugLog.marks) {
@@ -121,7 +123,11 @@ debugLog.blame = (t0, t1) => {
   if (ce > cs) cov += ce - cs;
   const rest = t1 - t0 - cov;
   if (rest > 150 && rest > (t1 - t0) * 0.5) by['outside the marked steps'] = rest;
-  const k = Object.keys(by).sort((x, y) => by[y] - by[x]);
+  return by;
+};
+debugLog.blame = (t0, t1) => {
+  const by = debugLog.blameBy(t0, t1),
+    k = Object.keys(by).sort((x, y) => by[y] - by[x]);
   return k.length
     ? k
         .slice(0, 2)
@@ -129,11 +135,14 @@ debugLog.blame = (t0, t1) => {
         .join(', ')
     : null;
 };
-debugLog.cause = (label, ms) => {
-  const c = debugLog.causes[label] || (debugLog.causes[label] = { n: 0, ms: 0, max: 0 });
+/* TD-1: a slow frame counts towards every cause it overlapped, by its share of the frame (share 0-1; ms: that share of
+   the frame's time; most: the cause's own time in that frame), not only towards the biggest one */
+debugLog.cause = (label, ms, share = 1, most = ms) => {
+  const c = debugLog.causes[label] || (debugLog.causes[label] = { n: 0, share: 0, ms: 0, max: 0 });
   c.n++;
+  c.share += share;
   c.ms += ms;
-  c.max = Math.max(c.max, ms);
+  c.max = Math.max(c.max, most);
 };
 /* section timings inside a frame (CPU side), averaged per second into the samples */
 debugLog.time = (sec, ms) => {
@@ -155,8 +164,11 @@ debugLog.task = (name, work, ts) => {
   if (work > 33) {
     a.long++;
     const t1 = performance.now(),
+      by = debugLog.blameBy(t1 - work - 2, t1 + 1),
+      sum = Object.values(by).reduce((x, y) => x + y, 0),
       why = debugLog.blame(t1 - work - 2, t1 + 1) || 'drawing';
-    debugLog.cause(why.replace(/ \d+ ms.*$/, ''), work);
+    if (!sum) debugLog.cause('drawing', work);
+    for (const l in by) debugLog.cause(l, (work * by[l]) / sum, by[l] / sum, Math.min(work, by[l]));
     const L = debugLog.slow;
     L.push({
       t: debugLog.now(),
@@ -992,7 +1004,11 @@ debugLog.more = () => {
       Object.entries(debugLog.causes)
         .sort((a, b) => b[1].ms - a[1].ms)
         .slice(0, 16)
-        .map(([k, v]) => [k, { frames: v.n, totalMs: Math.round(v.ms), worstMs: Math.round(v.max) }])
+        .map(([k, v]) => [
+          k,
+          /* TD-1: frames it took part in, its share of them in frames, its share of their time, its most in one frame */
+          { frames: v.n, share: Math.round(v.share * 10) / 10, totalMs: Math.round(v.ms), worstMs: Math.round(v.max) },
+        ])
     )
   );
   t('slowFrames', () => debugLog.slow.slice(-30));

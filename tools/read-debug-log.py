@@ -77,9 +77,11 @@ def main():
                   f"slow {num(v.get('slowFrames'))}  {v.get('renderer')} res {v.get('resolution')}")
     by = (d.get('more') or {}).get('slowFramesBy') or {}
     if by:
-        print('Slow frames by cause (frames, total ms, worst ms):')
+        # TD-1: each slow frame counts towards every cause it overlapped (share: its part of those frames, in frames)
+        print('Slow frames by cause (frames it took part in, share in frames, its ms, its most in one frame):')
         for cause, v in sorted(by.items(), key=lambda kv: -(kv[1].get('totalMs') or 0))[:8]:
-            print(f"  {cause[:44]:44s} {num(v.get('frames')):>5s} {num(v.get('totalMs')):>8s} {num(v.get('worstMs')):>6s}")
+            print(f"  {cause[:44]:44s} {num(v.get('frames')):>5s} {num(v.get('share'), 1) if 'share' in v else '-':>6s} "
+                  f"{num(v.get('totalMs')):>8s} {num(v.get('worstMs')):>6s}")
     h = d.get('hitches') or {}
     if h: print(f"Hitches over {h.get('overMs')} ms: {h.get('count')} in {h.get('frames')} frames, {num(h.get('totalMs'))} ms in all, "
                 f"worst {num(h.get('maxMs'))} ms; by size {h.get('by')}")
