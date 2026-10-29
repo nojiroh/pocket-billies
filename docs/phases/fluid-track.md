@@ -7,7 +7,8 @@ that is set. Research render layering online and other necessary. Are assets cur
 (this file, docs only) was written on `ccr-36d73c36-2xv56p`; every later session works on `track/fluid`, which the
 owner makes from that branch (docs/BRANCHES.md).
 
-**Status:** FL-0 done (2026-10-29). Next: FL-0b (the owner's phone run, no code), then FL-1a.
+**Status:** FL-0 done (2026-10-29). Round 1 (FL-1a, FL-1b, FL-2a at once) started 2026-10-29. FL-0b (the owner's
+phone run) runs beside it.
 
 Before editing, every session checks the facts it relies on against main and says in its HANDOFF entry what differs.
 They come from read-only studies on 2026-10-29 at main 73b2f8b1: nine studies (frame pacing, sprite batching, world
@@ -38,6 +39,38 @@ Sessions act on these without asking again.
   three small fixes in FL-2a; the old paths stay one release as an automatic fallback.
 - **Behind full menus (Team, Bag, Guide ...) and windows the world is frozen**: one last frame, then nothing until
   you return.
+
+- **Sessions run on their own** (the owner, 2026-10-29: "Automatically start plan when reviewed. Start each new step
+  in a new session. Plans are approved. Run things simultaneously if you can."): each session plans, then builds
+  without waiting for approval (this answer is the approval), and its work goes in by rounds (below). An "Ask me
+  before" item is still asked: the session ends its turn with the question, options and a recommendation instead of
+  deciding, and the rest of its work goes on. The owner's standing answers above already settle the ones they cover.
+
+### Rounds and lanes (parallel sessions)
+Every lane works on `track/fluid` (each cloud session started with it as its push branch). Before every push:
+`git pull --no-rebase origin track/fluid` (a merge, never a rebase or force push). A lane edits only its own files;
+a change it needs in another lane's file goes in its HANDOFF entry for that lane. Shared files take additions only
+and are merged by hand: engine/settings.js defaults, the precompile list in engine/webgl.js, HANDOFF (yours on top),
+this file's Status line, CHANGELOG. Generated files (hooks.js, debug-log-names.js): after a merge run `npm run
+modules`, never edit by hand. debug-log.js and tools/read-debug-log.py are shared with the test-data track:
+additions only.
+
+| Round | Lane | Owns |
+|---|---|---|
+| 1 | FL-1a pacer and ladder | frame-scheduler.js, walk/quality-cull.js, logic/quality-step.js (and a new logic/ pacing module), engine/gpu-counters.js, debug-menu.js's fps overlay; in walk-view-gl.js only the `work` timing and the adaptQuality call |
+| 1 | FL-1b stalls and page | debug-log.js's getError (additions), walk-control.js cap(), pixel-sky.js, walk-tab.js/css, walk-view.js and walk-control.js `safe()`; in walk-view-gl.js the label canvas, the canvas size and the shadow/reflection parity |
+| 1 | FL-2a pictures | walk/sprites.js, engine/sprite-instances.js, walk/water.js's reflection, walk/walk-shaders.js's sprite programs, the contactAO CPU twin (engine/light.js or a new logic/ module), the two defaults in engine/settings.js |
+| 2 | FL-2b effects, spins, grass | walk/effects.js, walk/fountains-weather.js, prop-models.js, walk/shadows.js, walk/ground-draw.js, walk/frame-items.js |
+| 2 | FL-3a controller | the controller module in logic/, walk/quality-cull.js, battle-stage.js's ladder, the world clock in walk-view-gl.js |
+| 2 | FL-6 fluid UI | game/css/*, battle.js, minimap.js, ui-motion.js, bag.js, settings-screen.js, overlay.js, walk-control.js (after FL-1b) |
+| 3 | FL-3b resolution | walk-view-gl.js's canvas and target sizing, engine/webgl.js renderTarget |
+| 3 | FL-4 even frames | grass-build.js, map-cache.js, walk/shadows.js's far cache key, the timers |
+| 4 | FL-5a draw order | the opaque programs' variants, the scene-pass order in walk-view-gl.js |
+| 5 | FL-5b look trades | shadow map size, far trees (tools/bake-pixel-facts.mjs), ground tiles, post-effects.js |
+| 6 | FL-7 close-out | everything, after the owner's phone run |
+The last lane of a round to finish (it checks the round's other HANDOFF entries on `track/fluid`) starts the next
+round's lanes, each in a new session (create_session, push branch `track/fluid`) with the same instructions. FL-7
+waits for the owner's phone run. One draft pull request from `track/fluid` into main, updated by each round.
 
 ## 2. The numbers that started it
 - Android, Adreno 750 (Opera, Chromium): Copperleaf **13-17 fps** by day, about 700 sprite draws of which 650 are model
