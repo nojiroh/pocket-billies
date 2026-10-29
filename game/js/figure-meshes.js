@@ -15,6 +15,8 @@ import { kitBuild } from './logic/figure-kit.js';
 /* eslint-disable no-func-assign */
 expose({
   FIGURE_MESH_BYTES: [() => FIGURE_MESH_BYTES],
+  figureMeshBuilding: [() => figureMeshBuilding, v => (figureMeshBuilding = v)],
+  figureMeshDrop: [() => figureMeshDrop, v => (figureMeshDrop = v)],
   figureMeshFail: [() => figureMeshFail, v => (figureMeshFail = v)],
   figureMeshGet: [() => figureMeshGet, v => (figureMeshGet = v)],
   figureMeshKeep: [() => figureMeshKeep, v => (figureMeshKeep = v)],
@@ -140,6 +142,18 @@ export function figureMeshGet(key, F, detail, extent = false) {
   }
   figureMeshKeep(key, B);
   return B;
+}
+/** CH-7: let a built mesh go now (the dressing room's figures once their pictures are kept); a build under way stays */
+export function figureMeshDrop(key) {
+  const M = figureMeshes,
+    R = M.done.get(key);
+  if (!R) return;
+  M.bytes -= R.data.byteLength;
+  M.done.delete(key);
+}
+/** whether a mesh is being built on the helper thread */
+export function figureMeshBuilding(key) {
+  return figureMeshes.jobs.has(key);
 }
 /** the meshes' numbers for the debug log (numbers only) */
 export function figureMeshReport() {

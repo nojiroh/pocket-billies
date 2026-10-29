@@ -16,6 +16,7 @@ import { storyAllows } from './logic/script.js';
 import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad } from './art.js';
+import { dressingRoom } from './dressing-room.js';
 import {
   closedText,
   doorLinkOf,
@@ -996,10 +997,11 @@ export function walkMapSync() {
             ? ''
             : uiState.modal
               ? 'window'
-              : uiState.tab !== 'walk'
+              : uiState.tab !== 'walk' || (typeof dressingRoom !== 'undefined' && dressingRoom.on)
                 ? 'screen'
                 : '';
-        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...) the world settles for 0.8 s, then nearly stops (1 a
+        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...; CH-7: the dressing room, which covers it whole and
+           bakes its figures meanwhile) the world settles for 0.8 s, then nearly stops (1 a
            second): a still canvas lets the browser keep its blurred backdrop instead of blurring it again every frame,
            which made a phone's menus crawl */
         if (w !== walkView.held) walkView.heldT = performance.now();
