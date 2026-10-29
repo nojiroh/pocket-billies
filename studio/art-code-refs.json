@@ -42,22 +42,22 @@
   {
    "p": "coins/*_*.png",
    "at": [
-    "game/js/art.js:233",
-    "game/js/art.js:236"
+    "game/js/art.js:246",
+    "game/js/art.js:249"
    ]
   },
   {
    "p": "coins/*_16.png",
    "at": [
-    "game/js/art.js:231",
-    "game/js/art.js:233",
+    "game/js/art.js:244",
+    "game/js/art.js:246",
     "game/js/logic/data-checks.js:3044"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
-    "game/js/art.js:231",
+    "game/js/art.js:244",
     "game/js/logic/data-checks.js:3044"
    ]
   },
@@ -84,14 +84,14 @@
   {
    "p": "eggs/egg_*_cracked.png",
    "at": [
-    "game/js/art.js:242"
+    "game/js/art.js:255"
    ]
   },
   {
    "p": "eggs/egg_*.png",
    "at": [
-    "game/js/art.js:242",
-    "game/js/art.js:244"
+    "game/js/art.js:255",
+    "game/js/art.js:257"
    ]
   },
   {
@@ -110,7 +110,7 @@
    "p": "icons/icons.png",
    "at": [
     "game/index.html:18",
-    "game/js/art.js:158"
+    "game/js/art.js:159"
    ]
   },
   {
@@ -234,8 +234,8 @@
   {
    "p": "ui/*.svg",
    "at": [
-    "game/js/art.js:176",
     "game/js/art.js:177",
+    "game/js/art.js:178",
     "game/js/boot.js:628",
     "game/js/ui-run-kit.js:75"
    ]
@@ -1675,7 +1675,7 @@
    "game/js/world-bowl.js:1767"
   ],
   "coin": [
-   "game/js/art.js:207",
+   "game/js/art.js:220",
    "game/js/battle-stage.js:1613",
    "game/js/battle-stage.js:2518",
    "game/js/battle.js:1302",

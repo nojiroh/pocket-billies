@@ -995,7 +995,12 @@ def relics(pg, base):
     if pg.evaluate("saveData.run.offer") != offer2: raise Exception('a reload showed another pick')
     pg.evaluate("document.querySelectorAll('#ov [data-a=mb]')[1].click();0")
     if not until(pg, "!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10): raise Exception('Take none didn’t clear the pick')
-    return f'the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
+    # PK-12: the Field Guide's Perks tab lists every Perk, the held ones taken, the unseen as silhouettes
+    pg.evaluate("save();uiState.tab='guide';uiState.guideTab='perks';uiState.perkGuideK='perk';render();0")
+    if not until(pg, "document.querySelectorAll('.pkg-row').length===Object.keys(PERKS).length", 10): raise Exception('the Field Guide’s Perks tab doesn’t list every Perk')
+    guide = pg.evaluate("[saveData.run.perks.every(id=>document.querySelector(`.pkg-row[data-pkg='perk:${id}']`).classList.contains('taken')),document.querySelectorAll('.pkg-row.none .art-sil').length,document.querySelectorAll('.pkg-row.none').length,!!JSON.parse(localStorage.getItem(SAVE_KEY)).collection.taken['perk:'+saveData.run.perks[0]]]")
+    if not guide[0] or guide[1] != guide[2] or not guide[3]: raise Exception(f'the Perks tab’s marks: {guide}')
+    return f'the Field Guide’s Perks tab ({guide[2]} unseen as silhouettes); the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
 
 
 def income(pg, base):
