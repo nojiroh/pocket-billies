@@ -545,7 +545,7 @@ into `track/hub`). The owner's answer: about 10 m. Checked against the code:
 - **Not done, moved to HB-10f**: the pinwheel street entries. The streets come in from the north-west, west and east
   inside the locked town zone; turning them means re-routing streets, which is the reproducible rebuild's work.
 - The hub spot [151.63, 59.36] stays (1.25 m from the basin's edge): every hub position is unchanged.
-- **HB-10b started then**: its work so far is docs/plans/hb-10b-wip.patch (see HANDOFF's HB-10a entry for what's left).
+- **HB-10b started then** (its work-in-progress patch was never committed; HB-10b was done 2026-10-26, ROADMAP).
 
 **Done in HB-10b** (2026-10-26, on `track/hub` after merging `ccr-144f3c08-vf09lo`; the WIP patch applied, then finished):
 - The edge layout: `tools/square-props.mjs` `SQUARE_EDGE`, 24 props by angle round the middle and an inset from the rim
