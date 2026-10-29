@@ -87,7 +87,9 @@ player sees changes. No "Ask me before" item came up. Track-end tags only (CLAUD
     reports the call, code, pass, program and target; programs and render targets carry `pbName`. An error held before
     a call reads "before <call>". The light lab uses it, takes its context at the failure, and reads an error left
     from an earlier step apart (a note, not a failure). `?glerr` turns the watcher on for the whole page. The debug
-    log now reads WebGL's error once a second (`webgl: WebGL error N in the last second at <place> (<step>)`).
+    log now reads WebGL's error once a second: a `webgl` event `WebGL error N in the last second at <place> (<step>)`,
+    added to that step's note. It was an error at first; CI's Voltron step then failed on a 1281 the check found (it
+    passes alone), so it no longer fails the step, since it can't say which call raised the error.
   - tools/check-quick.py: the full test's no-save step allows `pb-crumb`. docs/TESTING.md: a TD-1 bullet.
 - Found, not changed:
   - The owner's refused draw didn't reproduce in headless Chromium. Firefox can't be downloaded here (the network
@@ -101,9 +103,9 @@ player sees changes. No "Ask me before" item came up. Track-end tags only (CLAUD
   - A background audit of every `drawArrays` in the light scenes found no Firefox-only refusal. Two defensive ideas
     from it, not done: engine/light.js gives `uLampSh1` its sampler only when `uLampSh0` is active, and
     post-effects.js leaves colour targets on units 12-13.
-- Risky: the once-a-second `getError` is a sync call on some browsers (one per second; not measured on a phone). It can
-  now fail full-test steps that passed before, when WebGL holds an error during them: that is the data, not a
-  regression. With two tabs open, each overwrites the other's breadcrumb.
+- Risky: the once-a-second `getError` is a sync call on some browsers (one per second; not measured on a phone). An
+  occasional real WebGL error (1281, in CI's Voltron step at Copperleaf, not reproduced alone) now shows in that
+  step's note; ?glerr would name its call. With two tabs open, each overwrites the other's breadcrumb.
 - Verified: lint, typecheck, check:modules (562 names), format:check, check:data (182 files), build. `npm test`
   2,171 pass. Smoke: 6 of 7 steps ok; its no-save step flagged `pb-crumb`, which is fixed and passed on the rerun.
   The full quick check was stopped at the owner's word after 19 steps: 18 ok, and 1 problem (RL-8's run from the

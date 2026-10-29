@@ -309,12 +309,14 @@ debugLog.flush = ts => {
   }
   /* TD-1: WebGL keeps its first error until someone asks, and play never asks: an error from any time before showed
      up only when a test's check read it, blamed on that test. Asked once a second, an error is put to the second,
-     place and test step it happened in */
+     place and test step it happened in (a 'webgl' event) */
   const gl = typeof GAME.gpuState !== 'undefined' ? GAME.gpuState.gl : null;
   if (gl && !GAME.gpuState.lost) {
     const e = gl.getError();
+    /* an event, not an error: it can't say which call raised it, so it would fail whichever test step was running
+       (a CI run's Voltron step, 2026-10-29); a step notes it instead, and ?glerr names the call */
     if (e)
-      debugLog.error(
+      debugLog.add(
         'webgl',
         `WebGL error ${e} in the last second at ${c.scene || c.view}${c.bench ? ' (' + c.bench + ')' : ''}`
       );

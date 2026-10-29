@@ -297,8 +297,9 @@ same phase:
   target (slow; for finding a refused draw; the uploads and blits too, with the picture's size, and an error already
   held before a call is reported as "before <call>"); the light lab uses the same check (`drawErrorWatch`,
   gpu-counters.js), takes its context at the failure, and reads an error WebGL still held from an earlier step
-  apart. The debug log reads WebGL's error once a second (an error `webgl: WebGL error N in the last second at
-  <place> (<test step>)`), so an error is put to the second, place and step it happened in.
+  apart. The debug log reads WebGL's error once a second (a `webgl` event `WebGL error N in the last second at
+  <place> (<test step>)`, added to that full-test step's note, not failing it: it can't name the call), so an error
+  is put to the second, place and step it happened in.
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
 - The graphics test (the debug menu's Tests and performance section; Help had it before UI-7b; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or

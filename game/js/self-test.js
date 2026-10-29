@@ -492,6 +492,10 @@ async function runFullTest(mode) {
         why = why || 'an error during the step: ' + ne[0].msg.slice(0, 200);
         note = note || ne[0].msg.slice(0, 140);
       }
+      /* TD-1: a WebGL error the debug log's once-a-second check found during the step: noted, not failed (the call
+         that raised it is unknown; ?glerr names it) */
+      const glErr = debugLog.ev.find(x => x.t >= t0 && x.kind === 'webgl' && x.msg.startsWith('WebGL error'));
+      if (glErr && !bg) note = (note ? note + ' ' : '') + `(${glErr.msg.replace(/ \(.*\)$/, '')})`;
       const D = debugLog.diag(t0),
         slow = debugLog.slow.filter(x => x.t >= m0),
         hitch = debugLog.slow.filter(x => x.t >= t0 && x.t < m0),
