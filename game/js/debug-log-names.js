@@ -93,7 +93,7 @@ import { drawPropModels, setDrawPropModels } from './prop-models.js';
 import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
 import { worldBillies } from './world-billies.js';
 import { seamlessWorld } from './seamless-world.js';
-import { paintWorkerReport } from './ground-paint-worker.js';
+import { paintWorkerReport, paintWorkerState } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
 import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } from './world-bowl.js';
 import { openShop, setOpenShop } from './shop.js';
@@ -173,6 +173,7 @@ Object.defineProperties(GAME, {
   openShop: { get: () => openShop, set: setOpenShop },
   paintActions: { get: () => paintActions, set: setPaintActions },
   paintWorkerReport: { get: () => paintWorkerReport },
+  paintWorkerState: { get: () => paintWorkerState },
   peopleReport: { get: () => peopleReport },
   personBattleFrames: { get: () => personBattleFrames, set: setPersonBattleFrames },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },

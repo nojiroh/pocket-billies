@@ -444,11 +444,12 @@ def run_in_game_test(pg, only, diag, sec):
 
 
 # a stand-in account and friends list that only record what would be written, and a record of what goes into this
-# browser's storage while the test runs; save() leaves a write waiting, as a player's last move would
+# browser's storage while the test runs; save() leaves a write waiting, as a player's last move would. TD-1: the
+# debug log's crash breadcrumb (pb-crumb: numbers and ids, never the save) is written on purpose at each step
 SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Check'};
   account.db={collection:c=>({doc:d=>({set:o=>{__st.w.push({c,during:selfTest.on,team:o.json?JSON.parse(o.json).team.map(m=>m.uid):null});return Promise.resolve()}})})};
   friends.on=true;friends.uid='check';friends.pubT=0;
-  const si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(selfTest.on)__st.ls.push(k);return si.call(this,k,v)};
+  const si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(selfTest.on&&k!=='pb-crumb')__st.ls.push(k);return si.call(this,k,v)};
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
