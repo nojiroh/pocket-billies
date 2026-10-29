@@ -105,3 +105,14 @@ test('clothes: an edit to the data is what the figure wears; an unknown item dre
   assert.equal(U.parts.find(p => p.id === 'forearmA').col, 'outer');
   assert.ok(!ids(U).includes('jacket'));
 });
+
+test('clothes: the flair is data too', () => {
+  const kit = clone(KIT);
+  kit.flair.cape.rows[0].shape.r0 = 0.5;
+  const F = wearing({}, { kit, flair: { cape: true } });
+  assert.equal(F.parts.find(p => p.id === 'cape').shape.r0, 0.5);
+  const noNeck = ids(wearing({ neck: null }, { flair: { scarf: true } })),
+    neck = ids(wearing({ neck: 'tie' }, { flair: { scarf: true } }));
+  assert.ok(noNeck.includes('fscarf') && !neck.includes('fscarf'), 'the flair scarf only with nothing round the neck');
+  assert.equal(ids(wearing({}, { flair: { fur: true } })).filter(x => /^fur\d$/.test(x)).length, 9);
+});

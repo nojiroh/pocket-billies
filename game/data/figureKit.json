@@ -1095,6 +1095,178 @@
    ]
   }
  },
+ "flair": {
+  "note": "CH-5b: the directions' flair (figures.js FIGURE_LOOKS says who wears what) as rows on the body's and the head's frames; their colours stay in code",
+  "scarf": {
+   "rows": [
+    {
+     "id": "fscarf",
+     "parent": "torso",
+     "at": [0,"0.36 * tk",0],
+     "when": "!neck",
+     "shape": {"kind":"torus","c":[0,0,0.005],"R":["0.11 * sqrt(girth)","0.095 * sqrt(girth)"],"r":0.048,"seg":14,"rings":7},
+     "col": "flair"
+    },
+    {
+     "id": "ftail",
+     "parent": "torso",
+     "at": [0.06,"0.35 * tk",-0.08],
+     "when": "!neck",
+     "shape": {
+      "kind": "tube",
+      "a": [0,0,0],
+      "ctrl": [0.12,-0.05,-0.16],
+      "b": [0.2,"-0.26 * tk",-0.2],
+      "r0": 0.05,
+      "r1": 0.035,
+      "flat": 0.35,
+      "n": [0,0,-1],
+      "seg": 8,
+      "steps": 7
+     },
+     "col": "flair"
+    }
+   ]
+  },
+  "cape": {
+   "rows": [
+    {
+     "id": "cape",
+     "parent": "torso",
+     "at": [0,"0.36 * tk","-trz4 - 0.02"],
+     "shape": {
+      "kind": "tube",
+      "a": [0,0,0],
+      "ctrl": [0,"-0.2 * tk",-0.1],
+      "b": [0,"-0.36 * tk - thighL * 0.85",-0.06],
+      "r0": "trx4 * 1.05",
+      "r1": "trx3 * 1.5",
+      "flat": 0.16,
+      "n": [0,0,-1],
+      "seg": 10,
+      "steps": 8
+     },
+     "col": "flair"
+    }
+   ]
+  },
+  "detail": {
+   "rows": [
+    {
+     "sides": true,
+     "id": "lapel",
+     "parent": "torso",
+     "when": "open",
+     "shape": {
+      "kind": "tube",
+      "a": ["s * trx4 * 0.3","0.38 * tk","trz4 * 1.05"],
+      "ctrl": ["s * trx3 * 0.62","0.3 * tk","trz3 * 1.18"],
+      "b": ["s * trx3 * 0.3","0.12 * tk","trz3 * 1.12"],
+      "r0": 0.035,
+      "r1": 0.012,
+      "flat": 0.3,
+      "n": [0,0,1],
+      "seg": 7,
+      "steps": 6
+     },
+     "col": "outer2"
+    },
+    {
+     "sides": true,
+     "id": "tail",
+     "parent": "hips",
+     "at": ["s * 0.07",0.02,"-0.11 * girth"],
+     "when": "long",
+     "shape": {
+      "kind": "tube",
+      "a": [0,0,0],
+      "ctrl": ["s * 0.05","-thighL * 0.5",-0.07],
+      "b": ["s * 0.09","-thighL * 1.05",-0.04],
+      "r0": 0.07,
+      "r1": 0.1,
+      "flat": 0.22,
+      "n": [0,0,-1],
+      "seg": 8,
+      "steps": 6
+     },
+     "col": "outer"
+    },
+    {
+     "sides": true,
+     "id": "pouch",
+     "parent": "hips",
+     "at": ["s * 0.14 * girth * hipK",0.05,"0.05 * girth"],
+     "when": "belt",
+     "chance": 0.7,
+     "salt": "200 + s",
+     "shape": {"kind":"ellipsoid","c":[0,-0.02,0],"r":[0.032,0.045,0.035],"seg":8,"rings":5,"sq":0.8},
+     "col": "leather"
+    },
+    {
+     "sides": true,
+     "id": "bcuff",
+     "parent": "shin$",
+     "at": [0,"-shinL * 0.55",0],
+     "when": "boot",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["legR * 1.05","legR * 1.05"],"r":0.02,"seg":10,"rings":4},
+     "col": "sole"
+    }
+   ]
+  },
+  "goggles": {
+   "vars": {"gy":"c1 + hy * 0.42","gz":"c2 - hz * 0.06","gRx":"hx * 1.06","gRz":"hz * 1.1"},
+   "rows": [
+    {
+     "id": "gband",
+     "parent": "head",
+     "shape": {"kind":"torus","c":[0,"gy","gz"],"R":["gRx","gRz"],"r":0.02,"seg":18,"rings":4},
+     "col": "gear"
+    },
+    {
+     "sides": true,
+     "id": "goggle",
+     "parent": "head",
+     "shape": {
+      "kind": "ellipsoid",
+      "c": ["s * hx * 0.36","gy + 0.01","gz + gRz * 0.93"],
+      "r": ["0.055 * (hx / 0.31)","0.045 * (hx / 0.31)",0.032],
+      "seg": 12,
+      "rings": 6
+     },
+     "col": "lensG"
+    }
+   ]
+  },
+  "fur": {
+   "rows": [
+    {
+     "repeat": 9,
+     "id": "fur",
+     "parent": "torso",
+     "at": [0,"0.36 * tk",0],
+     "shape": {
+      "kind": "ellipsoid",
+      "c": ["sin(i / 9 * pi * 2) * 0.13 * sqrt(girth)",0,"cos(i / 9 * pi * 2) * 0.11 * sqrt(girth)"],
+      "r": [0.07,0.055,0.07],
+      "seg": 9,
+      "rings": 5
+     },
+     "col": "fur"
+    }
+   ]
+  },
+  "earrings": {
+   "rows": [
+    {
+     "sides": true,
+     "id": "ring",
+     "parent": "head",
+     "shape": {"kind":"ellipsoid","c":["s * hx * 0.98","c1 - hy * 0.28",0],"r":[0.02,0.028,0.02],"seg":8,"rings":5},
+     "col": "gold"
+    }
+   ]
+  }
+ },
  "faces": {
   "note": "Characters track CH-6: the face, painted as marks on the head (logic/figure-kit.js kitFaceMarks), in the portrait kit's styles (portraits.json). Sizes are metres on the usual head (k scales them to this one). eyes: each style's white (w, h); a heavy lid over it (lid: [y, w, h] as parts of the eye); how far apart (gap); the iris's size (iris); lash flicks (flicks: 0 to 3) and how long the outer one (wing); a shaded lid (shade), bags under (bags) and lines (lines, close-ups); whether its wearer blushes (blush). brows: each style's width (w) and thickness (t), how high it arches (arch), its own tilt (tilt: above 0 down to the nose, below 0 up), a peak, one side raised (uneven), a crease between (knit), tufts (bushy), flat. mouths: each mouth frame's marks (kind, x, y from the mouth's middle, w, h, shape oval, arc, cap or slant, dir, t, min, close, col). eyeFrames: how each frame of an eye (the portrait kit's) changes it: open (how much of it shows), scale, iris, shut, happy (shut, curved up), slant (an angry lid), flat (a bored lid), look (a glance). expressions: the portrait kit's seven, as figures show them: the eyes frame, the mouth frame (else the look's), the brows' tilt and lift (metres up), blush, and the talking frames. talk: the talking frames when an expression has none. moods: how a resting face holds its lids (lid: where the upper lid sits, as a part of the eye's height). rest: a look's resting mood, the first rule its wardrobe ids match. skin: a ramp of five shades (deep, shadow, base, light, shine) for each of the wardrobe's skin swatches, shadows warm and red, the deep a little lavender, lights yellow; a skin between swatches takes the nearest one's, shifted to it. wardrobe: the style or mouth frame each wardrobe id draws. defaults: the style when an id isn't in wardrobe.",
   "eyes": {

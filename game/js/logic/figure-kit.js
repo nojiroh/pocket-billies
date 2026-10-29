@@ -576,127 +576,22 @@ export function lookFigure(look, items, opts = {}) {
     colours.flair = Array.isArray(FL.col)
       ? [FL.col[0], FL.col[1], FL.col[2]]
       : figureMix(colours.top, [196, 64, 72], 0.6);
-  if (FL.scarf && !wear.neck) {
-    add(
-      'fscarf',
-      'torso',
-      [0, 0.36 * tk, 0],
-      {
-        kind: 'torus',
-        c: [0, 0, 0.005],
-        R: [0.11 * Math.sqrt(girth), 0.095 * Math.sqrt(girth)],
-        r: 0.048,
-        seg: 14,
-        rings: 7,
-      },
-      'flair'
-    );
-    add(
-      'ftail',
-      'torso',
-      [0.06, 0.35 * tk, -0.08],
-      {
-        kind: 'tube',
-        a: [0, 0, 0],
-        ctrl: [0.12, -0.05, -0.16],
-        b: [0.2, -0.26 * tk, -0.2],
-        r0: 0.05,
-        r1: 0.035,
-        flat: 0.35,
-        n: [0, 0, -1],
-        seg: 8,
-        steps: 7,
-      },
-      'flair'
-    );
-  }
-  if (FL.cape)
-    add(
-      'cape',
-      'torso',
-      [0, 0.36 * tk, -zAt(4) - 0.02],
-      {
-        kind: 'tube',
-        a: [0, 0, 0],
-        ctrl: [0, -0.2 * tk, -0.1],
-        b: [0, -0.36 * tk - thighL * 0.85, -0.06],
-        r0: xAt(4) * 1.05,
-        r1: xAt(3) * 1.5,
-        flat: 0.16,
-        n: [0, 0, -1],
-        seg: 10,
-        steps: 8,
-      },
-      'flair'
-    );
+  /* CH-5b: the flair's shapes (figureKit.json flair) on the body's frame and the head's */
+  const FF = { ...BF, hx: hr[0], hy: hr[1], hz: hr[2], c1, c2 },
+    flair = (/** @type {string} */ k) => {
+      const A = KIT.flair && KIT.flair[k];
+      if (A && k !== 'note')
+        kitAccessory(add, /** @type {any} */ (A), FF, 'torso', { rnd: salt => kitRnd(seed, salt) });
+    };
+  if (FL.scarf) flair('scarf');
+  if (FL.cape) flair('cape');
   /* CH-3b's gouache night: the detail pass (flair.detail) and a character's own design (flair: goggles, fur, earrings,
      gloves, an antenna lock) */
   if (FL.detail) {
     colours.leather = [92, 58, 46];
     colours.gold = [232, 190, 84];
-    /* lapels down an open jacket or coat */
-    if (BF.open)
-      for (const s of [1, -1])
-        add(
-          'lapel' + (s > 0 ? 'A' : 'B'),
-          'torso',
-          [0, 0, 0],
-          {
-            kind: 'tube',
-            a: [s * xAt(4) * 0.3, 0.38 * tk, zAt(4) * 1.05],
-            ctrl: [s * xAt(3) * 0.62, 0.3 * tk, zAt(3) * 1.18],
-            b: [s * xAt(3) * 0.3, 0.12 * tk, zAt(3) * 1.12],
-            r0: 0.035,
-            r1: 0.012,
-            flat: 0.3,
-            n: [0, 0, 1],
-            seg: 7,
-            steps: 6,
-          },
-          'outer2'
-        );
-    /* a long coat's tails, split behind */
-    if (BF.long)
-      for (const s of [1, -1])
-        add(
-          'tail' + (s > 0 ? 'A' : 'B'),
-          'hips',
-          [s * 0.07, 0.02, -0.11 * girth],
-          {
-            kind: 'tube',
-            a: [0, 0, 0],
-            ctrl: [s * 0.05, -thighL * 0.5, -0.07],
-            b: [s * 0.09, -thighL * 1.05, -0.04],
-            r0: 0.07,
-            r1: 0.1,
-            flat: 0.22,
-            n: [0, 0, -1],
-            seg: 8,
-            steps: 6,
-          },
-          'outer'
-        );
-    /* pouches on the belt */
-    if (parts.some(q => q.id === 'belt'))
-      for (const s of [1, -1])
-        if (kitRnd(seed, 200 + s) < 0.7)
-          add(
-            'pouch' + (s > 0 ? 'A' : 'B'),
-            'hips',
-            [s * 0.14 * girth * hipK, 0.05, 0.05 * girth],
-            { kind: 'ellipsoid', c: [0, -0.02, 0], r: [0.032, 0.045, 0.035], seg: 8, rings: 5, sq: 0.8 },
-            'leather'
-          );
-    /* cuffs on boots and high tops */
-    for (const k of ['A', 'B'])
-      if (parts.some(q => q.id === 'boot' + k))
-        add(
-          'bcuff' + k,
-          'shin' + k,
-          [0, -shinL * 0.55, 0],
-          { kind: 'torus', c: [0, 0, 0], R: [legR * 1.05, legR * 1.05], r: 0.02, seg: 10, rings: 4 },
-          'sole'
-        );
+    /* lapels down an open jacket or coat, a long coat's tails split behind, pouches on the belt, cuffs on boots */
+    flair('detail');
   }
   if (FL.gloves) {
     colours.glove = FL.gloveCol ? [FL.gloveCol[0], FL.gloveCol[1], FL.gloveCol[2]] : [52, 40, 64];
@@ -706,61 +601,14 @@ export function lookFigure(look, items, opts = {}) {
   if (FL.goggles && !hat) {
     colours.gear = colours.gear || [52, 44, 60];
     colours.lensG = [104, 226, 236];
-    /* round the cranium, or round a hat's crown */
-    const gy = c1 + hr[1] * (hat ? 0.34 : 0.42),
-      gz = c2 - hr[2] * 0.06,
-      gR = /** @type {[number, number]} */ (hat ? [hr[0] * 1.14, hr[2] * 1.2] : [hr[0] * 1.06, hr[2] * 1.1]);
-    add('gband', 'head', [0, 0, 0], { kind: 'torus', c: [0, gy, gz], R: gR, r: 0.02, seg: 18, rings: 4 }, 'gear');
-    for (const s of [1, -1])
-      add(
-        'goggle' + (s > 0 ? 'A' : 'B'),
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'ellipsoid',
-          c: [s * hr[0] * 0.36, gy + 0.01, gz + gR[1] * 0.93],
-          r: [0.055 * (hr[0] / 0.31), 0.045 * (hr[0] / 0.31), 0.032],
-          seg: 12,
-          rings: 6,
-        },
-        'lensG'
-      );
+    flair('goggles');
     FL.glossy = true;
   }
   if (FL.fur) {
     colours.fur = [238, 228, 208];
-    for (let i = 0; i < 9; i++) {
-      const a = (i / 9) * Math.PI * 2;
-      add(
-        'fur' + i,
-        'torso',
-        [0, 0.36 * tk, 0],
-        {
-          kind: 'ellipsoid',
-          c: [Math.sin(a) * 0.13 * Math.sqrt(girth), 0, Math.cos(a) * 0.11 * Math.sqrt(girth)],
-          r: [0.07, 0.055, 0.07],
-          seg: 9,
-          rings: 5,
-        },
-        'fur'
-      );
-    }
+    flair('fur');
   }
-  if (FL.earrings)
-    for (const s of [1, -1])
-      add(
-        'ring' + (s > 0 ? 'A' : 'B'),
-        'head',
-        [0, 0, 0],
-        {
-          kind: 'ellipsoid',
-          c: [s * hr[0] * 0.98, c1 - hr[1] * 0.28, 0],
-          r: [0.02, 0.028, 0.02],
-          seg: 8,
-          rings: 5,
-        },
-        'gold'
-      );
+  if (FL.earrings) flair('earrings');
   if (FL.earrings || FL.detail) colours.gold = [232, 190, 84];
   if (hat) kitHat(add, hat, head, HD.crown * 1.06, KIT);
   /* something worn round the head in the glasses' slot (a headset); glasses are the face's marks */
