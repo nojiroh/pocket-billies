@@ -325,6 +325,7 @@ test('the instanced fragment shader: every per-picture uniform read from a varyi
     'uFlipN',
     'uFixed',
     'uNoRecv',
+    'uCAO',
   ])
     assert.match(fs, new RegExp(`#define ${u} `), u);
   for (const f of ['lookOn(', 'seasonal(', 'snowOn(']) assert.ok(main.includes(f), f);
@@ -532,4 +533,46 @@ test("FL-2a (c): a figure's reflection draws its cell of the atlas, lit as a fig
     u.cell.map(v => Math.round(v * 1e4) / 1e4),
     cell
   );
+});
+
+// FL-2a: the contact shade at a picture's base, once per picture: the plain pass sends it as uCAO, the batched one
+// packs the same value (to a 65535th), a crossing picture the same as its tree; no patches or the dial at 0 give 1
+test("FL-2a: each picture's contact shade, as uCAO and in its instance", () => {
+  const XA = {
+      ...X,
+      ao: [
+        [1, 2, 1.5, 1.2],
+        [5, 5, 0.5, 0.5],
+      ],
+      contact: 0.6,
+    },
+    want = it => G.contactShade(XA.ao, XA.contact, it.x, it.z);
+  let gl = setup();
+  const items = fixture();
+  G.drawSprites(camera(), items, XA, [], [], 32);
+  const sent = gl.calls.filter(c => c[0] === 'uniform1f' && c[1] === 'uCAO').map(c => c[2]);
+  const L = G.spriteDrawList(items);
+  assert.ok(sent.length > 5);
+  assert.ok(
+    sent.some(v => v < 0.99),
+    'the oak stands in a patch'
+  );
+  assert.deepEqual(
+    sent.map(round),
+    L.filter((it, i) => ['quad', 'wave'].includes(G.spriteRecordAt(i).mode)).map(it => round(want(it)))
+  );
+  gl = setupInstanced();
+  G.drawSprites(camera(), fixture(), XA, [], [], 32);
+  const F = G.spriteFrame(camera(), XA.sun, XA);
+  let k = 0;
+  G.spriteDrawList(fixture()).forEach((it, i) => {
+    const r = G.spriteRecordAt(i);
+    G.spriteRecord(it, F, r);
+    if (r.mode !== 'quad') return;
+    for (let n = r.crossOn ? 2 : 1; n > 0; n--)
+      assert.ok(Math.abs(G.unpackSpriteInstance(k++).cao - want(it)) <= 1 / 65535, it.id);
+  });
+  setup();
+  G.drawSprites(camera(), fixture(), { ...XA, contact: 0 }, [], [], 32);
+  assert.ok(gpuState.gl.calls.filter(c => c[1] === 'uCAO').every(c => c[2] === 1));
 });

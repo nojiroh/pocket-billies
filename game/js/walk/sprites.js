@@ -7,6 +7,7 @@ import { expose } from '../test-globals.js';
 import { gameData, loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing, pictureRight } from '../logic/prop-turn.js';
+import { contactShade } from '../logic/contact-shade.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
 import { personPicture } from '../logic/person-view.js';
 import { pixelLightness } from '../logic/pixel-facts.js';
@@ -202,8 +203,10 @@ function sortByPicture(L) {
 }
 /* phase 20 E1: what the pass works out once a frame: the camera, how much a crown shades itself and toward where (the
    sun across the picture), and how much a tree's crossing picture shows (by the camera's turn) */
-const SPRITE_FRAME = { C: null, selfK: 0, selfD: [0, 0], crossK: 0 };
-function spriteFrame(C, sun) {
+/* FL-2a: and the frame's contact-shadow patches and their dial (X.ao, X.contact: the shade at each picture's base,
+   logic/contact-shade.js; none without X) */
+const SPRITE_FRAME = { C: null, selfK: 0, selfD: [0, 0], crossK: 0, ao: null, contact: 0 };
+function spriteFrame(C, sun, X) {
   const F = SPRITE_FRAME,
     sd = sun.dir,
     sl = Math.hypot(sd[0] * C.right[0] + sd[2] * C.right[2], sd[1]) || 1,
@@ -213,6 +216,8 @@ function spriteFrame(C, sun) {
   F.selfD[1] = -sd[1] / sl;
   F.selfK = sd[1] > 0.05 && ss > 0 ? ss * engineSetting('shadows', 'strength') * Math.min(1, sd[1] * 4) : 0;
   F.crossK = Math.abs(Math.sin(C.yaw || 0));
+  F.ao = (X && X.ao) || null;
+  F.contact = (X && X.contact) || 0;
   return F;
 }
 /* alpha 0.4.1: how much a tree's crown shades itself (props over 1.2 m that are leaves, facing the camera, not far) */
@@ -222,13 +227,14 @@ function spriteSelfShade(it, F) {
     : 0;
 }
 /* phase 20 E3: the season on leaves, a crown's self-shade and noRecv for a picture drawn outside the pass (the
-   reflection's) */
+   reflection's); FL-2a: and its contact shade */
 function setSpriteShadeUniforms(U, it, F) {
   const gl = gpuState.gl,
     f = foliageAmount(it);
   if (U.uFol) gl.uniform2f(U.uFol, f[0], f[1]);
   if (U.uSelf) gl.uniform3f(U.uSelf, spriteSelfShade(it, F), F.selfD[0] * (it.flip || 1), F.selfD[1]);
   if (U.uNoRecv) gl.uniform1f(U.uNoRecv, it.noRecv ? 1 : 0);
+  if (U.uCAO) gl.uniform1f(U.uCAO, F.contact > 0 ? contactShade(F.ao, F.contact, it.x, it.z) : 1);
 }
 /* phase 20 E1: one picture's draw as values, the uniforms it is drawn with, in a record kept from frame to frame. mode:
    'model' (a model: no picture; its hit target and clock hands), 'front' (a 3D building's front, drawn with its walls),
@@ -274,6 +280,7 @@ function newSpriteRecord(cross) {
     inst: 0,
     cam: false,
     fig: 0,
+    cao: 1,
   };
 }
 const SPRITE_RECORDS = [];
@@ -327,6 +334,8 @@ function spriteRecord(it, F, r) {
   r.self[1] = F.selfD[0] * (it.flip || 1);
   r.self[2] = F.selfD[1];
   r.emit = it.glow ? it.glow * 1.6 : 0;
+  /* FL-2a: the contact shade at the base (was contactAO(uBaseP) in every pixel) */
+  r.cao = F.contact > 0 ? contactShade(F.ao, F.contact, it.x, it.z) : 1;
   /* VFX-9: a battle rig's hit flash ([r, g, b, amount], battle-3d.js), drawn on this program alone */
   r.hit = it.hit && it.hit[3] > 0.001 ? it.hit : null;
   /* CH-4: a figure's cell of the live atlas, lit where it stands (figure-atlas.js) */
@@ -376,6 +385,7 @@ function copySpriteLook(c, r) {
   c.self[1] = r.self[1];
   c.self[2] = r.self[2];
   c.emit = r.emit;
+  c.cao = r.cao;
   c.rim = r.rim;
   c.lit = r.lit;
   c.shade = r.shade;
@@ -403,6 +413,7 @@ function setSpriteRecord(p, r) {
   gl.uniform1f(U.uLit, r.lit);
   gl.uniform1f(U.uShade, r.shade);
   if (U.uFig) gl.uniform1f(U.uFig, r.fig);
+  if (U.uCAO) gl.uniform1f(U.uCAO, r.cao);
   gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, r.T.t);
@@ -645,7 +656,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
-  const F = spriteFrame(C, sun),
+  const F = spriteFrame(C, sun, X),
     L = spriteDrawList(items),
     ip = spriteInstanceProgram(C, X, sh);
   if (ip) drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc);
@@ -1305,6 +1316,7 @@ function reflectionRecord(it, F, C, r) {
   r.shade = 0.3;
   /* FL-2a: a figure's cell of the live atlas is lit as one, as in the main pass */
   r.fig = it.im && it.im.figAtlas ? 1 : 0;
+  r.cao = F.contact > 0 ? contactShade(F.ao, F.contact, it.x, it.z) : 1;
   spriteGeometry(r, it);
   r.dz = 0;
   r.wave = null;

@@ -143,7 +143,7 @@ export function reflectionPass(items, C, rw, rh, X) {
   gl.disable(gl.BLEND);
   /* alpha 0.2: near water by a summed table (a joined view can hold thousands of water tiles, and walking them all for
     every thing cost the iPad about 10 ms a frame), and only what shows in the water: its mirror image in view */
-  const SF = spriteFrame(C, X.sun),
+  const SF = spriteFrame(C, X.sun, X),
     FR = computeFrustum(C.vp),
     cut = engineSetting('quality', 'cull') ?? true,
     models = [],
