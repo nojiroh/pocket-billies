@@ -2039,8 +2039,10 @@ def music_steps(pg, errs):
     # SND-11: the player is on the game's chain (music.json mix's compressor); the Instruments tab: an instrument bakes
     # and plays its run, an ensemble's song plays as the ensemble (its parts' stems, no chip drums), GB Sounds puts it
     # back on gb from the next bar, a part's level edited and undone
-    if pg.evaluate("[musicStudio.chain.comp.threshold.value, musicStudio.chain.comp.ratio.value]") != [-14, 3]:
-        errs.append(f'music: the player\'s compressor is {pg.evaluate("[musicStudio.chain.comp.threshold.value, musicStudio.chain.comp.ratio.value]")}, not the mix\'s')
+    # SND-15: the whole master chain (audio/mix-chain.js): the compressor, the make-up and the limiter as the mix says
+    chain = pg.evaluate("(() => { const C = musicStudio.chain.chain, M = studioState.D.music.mix, r = v => Math.round(v * 1000) / 1000; return [[C.glue.threshold.value, C.glue.ratio.value, r(20 * Math.log10(C.makeup.gain.value)), C.limit.threshold.value].map(r), [M.compressor.threshold, M.compressor.ratio, M.makeup, M.limiter.threshold].map(r)]; })()")
+    if chain[0] != chain[1]:
+        errs.append(f'music: the player\'s master chain is {chain[0]}, not the mix\'s {chain[1]}')
     pg.click('[data-act=musTab][data-t=instruments]')
     pg.wait_for_selector('[data-act=musInst][data-k=harp]', timeout=10000)
     pg.evaluate("(() => { const T = musicStudio.tracker, f = T.sampleVoice; window.__sv = []; T.sampleVoice = (o, v) => { const r = f(o, v); window.__sv.push([v.inst, !!r]); return r; }; window.__svf = f })()")

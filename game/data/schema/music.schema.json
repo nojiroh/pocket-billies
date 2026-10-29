@@ -1211,7 +1211,7 @@
    }
   },
   "mix": {
-   "description": "SND-6: the mix: each bus's trim (x the square of its Settings slider; logic: audio/levels.js) and the compressor on the master",
+   "description": "SND-6: the mix: each bus's trim (x the square of its Settings slider; logic: audio/levels.js) and (SND-15) the master chain (audio/mix-chain.js: the compressor, the make-up gain, the limiter)",
    "type": "object",
    "additionalProperties": false,
    "properties": {
@@ -1268,6 +1268,50 @@
        "type": "number",
        "minimum": 1,
        "maximum": 20
+      },
+      "knee": {
+       "description": "dB",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 40
+      },
+      "attack": {
+       "description": "s",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      },
+      "release": {
+       "description": "s",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      }
+     },
+     "description": "SND-15: the gentle compressor on the master (a glue: a low threshold, a small ratio, a slow release)"
+    },
+    "makeup": {
+     "description": "SND-15: dB the whole mix is lifted after the compressor, so the music sits near -18 LUFS at the default sliders",
+     "type": "number",
+     "minimum": -12,
+     "maximum": 24
+    },
+    "limiter": {
+     "description": "SND-15: the limiter last on the master, so the true peaks stay under -1 dBTP",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "threshold": {
+       "description": "dB",
+       "type": "number",
+       "minimum": -24,
+       "maximum": 0
+      },
+      "release": {
+       "description": "s",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
       }
      }
     }

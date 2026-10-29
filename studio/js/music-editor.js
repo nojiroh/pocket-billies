@@ -23,6 +23,7 @@ import {
   natureTown,
 } from '../../game/js/logic/nature-sound.js';
 import { soundLevels } from '../../game/js/audio/levels.js';
+import { mixChainMake } from '../../game/js/audio/mix-chain.js';
 import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
 import { soundscapePlayerCreate } from '../../game/js/audio/soundscape-player.js';
 import { naturePlayerCreate } from '../../game/js/audio/nature-player.js';
@@ -200,18 +201,16 @@ function musicUses() {
 }
 
 /* ---------- the player ---------- */
-/* SND-11: the player's chain is the game's (sound.js initSound): the music bus, the master's trim, the compressor,
-   each from music.json mix at the game's default sliders (audio/levels.js soundLevels), so a song's balance and level
-   sound here as they do in the game (until SND-11 the Studio used the browser's default compressor, -24 dB at 12:1,
-   against the game's -14 dB at 3:1). An edit to the mix is heard at once */
+/* SND-11: the player's chain is the game's (sound.js initSound): the music bus, the master's trim and (SND-15) the
+   master chain (audio/mix-chain.js: the gentle compressor, the make-up gain, the limiter), each from music.json mix at
+   the game's default sliders (audio/levels.js soundLevels), so a song's balance and level sound here as they do in the
+   game. An edit to the mix is heard at once */
 function musicMixApply() {
   const C = musicStudio.chain;
   if (!C) return;
   const mix = musicData().mix || {},
-    L = soundLevels({}, mix),
-    CM = mix.compressor || {};
-  C.comp.threshold.value = CM.threshold ?? -14;
-  C.comp.ratio.value = CM.ratio ?? 3;
+    L = soundLevels({}, mix);
+  C.chain.apply(mix);
   C.master.gain.value = L.master;
   C.music.gain.value = L.music;
 }
@@ -221,11 +220,10 @@ function musicTracker() {
     ctx = new AC(),
     out = ctx.createGain(),
     master = ctx.createGain(),
-    squash = ctx.createDynamicsCompressor();
+    chain = mixChainMake(ctx, musicData().mix || {});
   out.connect(master);
-  master.connect(squash);
-  squash.connect(ctx.destination);
-  musicStudio.chain = { comp: squash, master, music: out };
+  master.connect(chain.input);
+  musicStudio.chain = { chain, comp: chain.glue, master, music: out };
   musicMixApply();
   /* SND-5: the run's arc as the data has it now (an edit or an undo replaces it); SND-11: the instruments, the
      ensembles as the data has them now, GB Sounds as the box beside Night says, the reverb returning to the master */

@@ -2432,14 +2432,16 @@
   }
  },
  "mix": {
-  "about": "SND-6: the mix. Each bus's trim (x the square of its Settings slider): master leaves headroom for the compressor after it, amb sits the ambience a little under the world sounds. bedsUnderSong: dB the world and ambience beds come down while a four-voice song plays (not the title or the fall). compressor: on the master, threshold in dB and ratio",
+  "about": "SND-6: the mix. Each bus's trim (x the square of its Settings slider): master leaves headroom for the compressor after it, amb sits the ambience a little under the world sounds. bedsUnderSong: dB the world and ambience beds come down while a four-voice song plays (not the title or the fall). compressor: on the master, threshold in dB and ratio. SND-15: the master chain (audio/mix-chain.js): the compressor a gentle glue (threshold and knee in dB, ratio, attack and release in s), makeup the dB the whole mix is lifted after it so the music sits near -18 LUFS at the default sliders, the limiter last (threshold dB, release s) so the true peaks stay under -1 dBTP",
   "master": 0.9,
   "music": 1,
   "sfx": 1,
   "world": 1,
   "amb": 0.9,
   "bedsUnderSong": -3,
-  "compressor": {"threshold":-14,"ratio":3}
+  "compressor": {"threshold":-36,"knee":12,"ratio":1.5,"attack":0.02,"release":1},
+  "makeup": 8,
+  "limiter": {"threshold":-5,"release":0.1}
  },
  "run": {
   "about": "SND-5: the run's music. arc: bands of rows (row 0 is the landing; the mini-bosses stand on rows 3 and 6) and how a biome's song changes there, so a run builds as it goes; rows no band names play the song as written. weather: on the run's map tab the map song is muffled by today's forecast where you stand, a low-pass at these Hz (weather it doesn't name: open)",

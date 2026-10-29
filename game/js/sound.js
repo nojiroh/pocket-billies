@@ -82,6 +82,7 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
+import { mixChainMake } from './audio/mix-chain.js';
 import { midiToFrequency, trackerCreate, trackerRecipe } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -220,16 +221,13 @@ function initSound() {
   try {
     const c = new AC();
     soundEngine.ctx = c;
-    /* SND-6: the compressor's settings and the master's trim are music.json mix */
-    const comp = c.createDynamicsCompressor(),
-      CM = (MUSIC.mix && MUSIC.mix.compressor) || {};
-    comp.threshold.value = CM.threshold ?? -14;
-    comp.ratio.value = CM.ratio ?? 3;
-    comp.connect(c.destination);
-    soundEngine.comp = comp;
+    /* SND-15: the master chain (audio/mix-chain.js: a gentle compressor, a make-up gain, a limiter; music.json mix),
+       after the master's trim (SND-6) */
+    const chain = mixChainMake(c, MUSIC.mix);
+    soundEngine.chain = chain;
     soundEngine.master = c.createGain();
     soundEngine.master.gain.value = mixTrim(MUSIC.mix, 'master');
-    soundEngine.master.connect(comp);
+    soundEngine.master.connect(chain.input);
     soundEngine.mus = c.createGain();
     soundEngine.fx = c.createGain();
     /* v27: a filter on the music, closed a little in the rain */ soundEngine.musLP = c.createBiquadFilter();
