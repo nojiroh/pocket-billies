@@ -263,9 +263,21 @@ debugLog.ctx = () => {
       if (b) c.gmb = Math.round(b / 1048576);
     }
     if (debugLog.bench && debugLog.bench.step) c.bench = debugLog.bench.step;
+    if (debugLog.loading()) c.ld = 1;
   } catch (e) {}
   return c;
 };
+/* TD-1: the page is loading rather than playing: a loading screen, a place not ready yet, or the place's grass, its
+   preparation or the ground painter's helper still at work (graphics-bench-test.js graphicsTestSettle waits for the
+   same). Its seconds are kept apart from play in summary() */
+debugLog.loading = () =>
+  !!(
+    document.getElementById('loader') ||
+    document.getElementById('runload') ||
+    (typeof GAME.walkView !== 'undefined' && GAME.walkView.id && !GAME.walkView.ready) ||
+    (typeof GAME.walkRenderer !== 'undefined' && (GAME.walkRenderer.prep || GAME.walkRenderer.grassJob)) ||
+    (typeof GAME.paintWorkerState !== 'undefined' && GAME.paintWorkerState && GAME.paintWorkerState.jobs.size)
+  );
 debugLog.flush = ts => {
   const dt = debugLog.secT ? ts - debugLog.secT : 1000;
   debugLog.secT = ts;
@@ -355,7 +367,12 @@ debugLog.summary = (from = 0) => {
           : k === 'scene'
             ? 'battle'
             : 'map';
-      const e = g[key] || (g[key] = { sec: 0, fps: [], ms: [], long: 0, gl: s.gl, res: [] });
+      const e = g[key] || (g[key] = { sec: 0, load: 0, fps: [], ms: [], long: 0, gl: s.gl, res: [] });
+      /* TD-1: a second spent loading the place is counted apart, not averaged in with play */
+      if (k === 'dio' && s.ld) {
+        e.load++;
+        continue;
+      }
       e.sec++;
       e.fps.push(v.fps);
       e.ms.push(v.ms);
@@ -370,6 +387,7 @@ debugLog.summary = (from = 0) => {
       avg = a => (a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null);
     out[k] = {
       seconds: e.sec,
+      loadingSeconds: e.load,
       fpsAvg: avg(f),
       fpsWorst: f[0],
       fpsP10: f[Math.floor(f.length * 0.1)],

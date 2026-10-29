@@ -70,9 +70,11 @@ def main():
 
     rows = [(k, v) for k, v in (d.get('summary') or {}).items() if isinstance(v, dict) and 'fpsAvg' in v]
     if rows:
-        print('Frame rates by screen (fps avg / 10th percentile / worst; CPU ms avg / 90th; slow frames):')
+        # TD-1: seconds of play, and (+N) seconds spent loading the place, which the averages leave out
+        print('Frame rates by screen (seconds of play +loading; fps avg / 10th percentile / worst; CPU ms avg / 90th; slow frames):')
         for k, v in sorted(rows, key=lambda r: -(r[1].get('seconds') or 0)):
-            print(f"  {k[:38]:38s} {num(v.get('seconds')):>4s} s  {num(v.get('fpsAvg'), 1):>5s} / {num(v.get('fpsP10')):>3s} / "
+            ld = f"+{num(v.get('loadingSeconds'))}" if v.get('loadingSeconds') else ''
+            print(f"  {k[:38]:38s} {num(v.get('seconds')):>4s}{ld:>5s} s  {num(v.get('fpsAvg'), 1):>5s} / {num(v.get('fpsP10')):>3s} / "
                   f"{num(v.get('fpsWorst')):>3s}  CPU {num(v.get('cpuMsAvg'), 1):>6s} / {num(v.get('cpuMsP90'), 1):>6s}  "
                   f"slow {num(v.get('slowFrames'))}  {v.get('renderer')} res {v.get('resolution')}")
     by = (d.get('more') or {}).get('slowFramesBy') or {}
