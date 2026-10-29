@@ -1927,7 +1927,11 @@
   "scar_dent": {"about":"a dent (a heavy hit), from above","cell":[32,32],"frames":1,"anchor":[16,16],"ground":true},
   "word_siu": {"about":"VFX-17: the word SIU! (a shout), stamped in","cell":[17,7],"frames":3,"anchor":[8,3]},
   "word_kaching": {"about":"VFX-17: the word KA-CHING! (a till), stamped in","cell":[41,7],"frames":3,"anchor":[20,3]},
-  "word_toot": {"about":"VFX-17: the word TOOT! (a train's whistle), stamped in","cell":[21,7],"frames":3,"anchor":[11,3]}
+  "word_toot": {"about":"VFX-17: the word TOOT! (a train's whistle), stamped in","cell":[21,7],"frames":3,"anchor":[11,3]},
+  "word_whoosh": {"about":"VFX-18b: the word WHOOSH! (a gust), stamped in","cell":[34,7],"frames":3,"anchor":[17,3]},
+  "word_pssht": {"about":"VFX-18b: the word PSSHT! (a can opening), stamped in","cell":[27,7],"frames":3,"anchor":[13,3]},
+  "word_dingdong": {"about":"VFX-18b: the word DING-DONG! (a doorbell), stamped in","cell":[46,7],"frames":3,"anchor":[23,3]},
+  "word_thwock": {"about":"VFX-18b: the word THWOCK! (a ball struck), stamped in","cell":[33,7],"frames":3,"anchor":[16,3]}
  },
  "ramps": {
   "Fire": {"ramp":"ember","light":"type"},

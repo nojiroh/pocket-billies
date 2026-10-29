@@ -957,6 +957,12 @@ GLYPHS = {
     'T': ['###', '.#.', '.#.', '.#.', '.#.'],
     'O': ['.##.', '#..#', '#..#', '#..#', '.##.'],
 }
+# VFX-18b: the letters its words add (W, P, D)
+GLYPHS.update({
+    'W': ['#...#', '#...#', '#.#.#', '##.##', '#...#'],
+    'P': ['###.', '#..#', '###.', '#...', '#...'],
+    'D': ['###.', '#..#', '#..#', '#..#', '###.'],
+})
 
 
 def word_cell(text):
@@ -1036,6 +1042,10 @@ SPRITES = {
     'word_siu': (word('SIU!'), word_cell('SIU!'), [8, 3], {}, 'VFX-17: the word SIU! (a shout), stamped in'),
     'word_kaching': (word('KA-CHING!'), word_cell('KA-CHING!'), [20, 3], {}, 'VFX-17: the word KA-CHING! (a till), stamped in'),
     'word_toot': (word('TOOT!'), word_cell('TOOT!'), [11, 3], {}, "VFX-17: the word TOOT! (a train's whistle), stamped in"),
+    'word_whoosh': (word('WHOOSH!'), word_cell('WHOOSH!'), [17, 3], {}, 'VFX-18b: the word WHOOSH! (a gust), stamped in'),
+    'word_pssht': (word('PSSHT!'), word_cell('PSSHT!'), [13, 3], {}, 'VFX-18b: the word PSSHT! (a can opening), stamped in'),
+    'word_dingdong': (word('DING-DONG!'), word_cell('DING-DONG!'), [23, 3], {}, 'VFX-18b: the word DING-DONG! (a doorbell), stamped in'),
+    'word_thwock': (word('THWOCK!'), word_cell('THWOCK!'), [16, 3], {}, 'VFX-18b: the word THWOCK! (a ball struck), stamped in'),
 }
 
 
