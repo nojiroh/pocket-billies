@@ -34,6 +34,7 @@ import {
   figureAtlasOn,
   figureAtlasPicture,
   figureAtlasReport,
+  figureLooksReport,
   provide,
   reducedMotion,
   talkBox,
@@ -171,6 +172,7 @@ expose({
   figurePreviewState: [() => figurePreviewState],
   figureReport: [() => figureReport, v => (figureReport = v)],
   figureRes: [() => figureRes, v => (figureRes = v)],
+  figureResForget: [() => figureResForget, v => (figureResForget = v)],
   figureSlotMatrices: [() => figureSlotMatrices, v => (figureSlotMatrices = v)],
   figureSnapshot: [() => figureSnapshot, v => (figureSnapshot = v)],
   figureStrides: [() => figureStrides],
@@ -255,10 +257,10 @@ const FIGURE_LOOK_NAMES = new Map();
 /** CH-5: the figure kit's data the figures are built with: the Studio's while it previews (figureKitUse), else the
  * game's (game/data/figureKit.json); and its revision, a hash of it, in every figure's name */
 const figureKitState = { own: /** @type {any} */ (null), rev: '' };
-function figureKitNow() {
+export function figureKitNow() {
   return figureKitState.own || figureKitData();
 }
-function figureKitRevision() {
+export function figureKitRevision() {
   if (!figureKitState.rev) figureKitState.rev = figureSeed(JSON.stringify(figureKitNow())).toString(36);
   return figureKitState.rev;
 }
@@ -305,7 +307,7 @@ export function figureFor(who) {
   return n;
 }
 /** the '@direction' a figure's name carries when the style has designs of its own (figureDef reads it), else '' */
-function figureDesign(style) {
+export function figureDesign(style) {
   const LK = FIGURE_LOOKS[style];
   return LK && (LK.cast || LK.flair || LK.chibi) ? '@' + style : '';
 }
@@ -369,7 +371,7 @@ function figureDef(name) {
  * @param {any} items the wardrobe's items @param {any} kit the kit's data @param {any} [fig] their `figure` (the
  * Studio's draft), else the game data's
  */
-function figureFromLook(name, who, L, look0, items, kit, fig) {
+export function figureFromLook(name, who, L, look0, items, kit, fig) {
   const p = typeof PEOPLE !== 'undefined' && PEOPLE[who],
     /* the owner (2026-10-28): no backpack unless the person's own look has a bag (the wardrobe gives everyone one
        by default: person-art.js DEFAULT_WEAR); townsfolk and you keep the bag their look picked */
@@ -410,7 +412,7 @@ function figureFromLook(name, who, L, look0, items, kit, fig) {
   return F;
 }
 /** the wardrobe's items (their default colours), for the figure kit; null before the game data is in */
-function figureItems() {
+export function figureItems() {
   const W = typeof wardrobeData === 'function' ? wardrobeData() : null;
   return W ? W.items : null;
 }
@@ -1084,7 +1086,7 @@ export function figurePalette(F, colours, ramp = 'props', LK = null) {
  * bustSize) instead of the whole figure; `head`, angles (degrees) the head turns by; `face: false`, a code figure's
  * face left off and what painting it needs kept on the picture (`face`, for figureBustFace).
  */
-function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', o = {}) {
+export function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', o = {}) {
   /* CH-4: the scene's light; CH-6: the face state (or DL-6's talk face) */
   const light = o.light || null;
   const gl = figureGl();
@@ -1489,6 +1491,19 @@ function figurePreviewForget() {
   P.name = '';
   P.def = null;
 }
+/** CH-7: let a figure's buffers in the baker's context go (every detail of it), when nothing will bake it again */
+export function figureResForget(name) {
+  const B = figureBaker,
+    gl = B.gl;
+  for (const [k, R] of B.res)
+    if (k === name || k.startsWith(name + '|')) {
+      if (gl && !gl.isContextLost()) {
+        gl.deleteVertexArray(R.vao);
+        if (R.vb) gl.deleteBuffer(R.vb);
+      }
+      B.res.delete(k);
+    }
+}
 /** CH-4: the snapshots kept (figureSnapshot), the longest unused let go past this many */
 const FIGURE_SNAP_MAX = 48;
 const FIGURE_SNAPS = new Map();
@@ -1771,6 +1786,8 @@ export function figureReport() {
     atlas: typeof figureAtlasReport === 'function' ? figureAtlasReport() : null,
     /* CH-3c: the ticks people spent walking, jogging, sprinting, stepping off and settling */
     moves: { ...figureMoves },
+    /* CH-7: the dressing room's figures: built, their wait, kept, pictures and bakes */
+    dress: typeof figureLooksReport === 'function' ? figureLooksReport() : null,
   };
 }
 /** the checks: lose the baker's context on purpose, back after `ms` (WEBGL_lose_context); false if it can't */
