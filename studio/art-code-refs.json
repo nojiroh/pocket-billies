@@ -1583,7 +1583,7 @@
  ],
  "atlas": {
   "bag": [
-   "game/js/battle.js:1302",
+   "game/js/battle.js:1301",
    "game/js/billie-sheet.js:120",
    "game/js/billie-sheet.js:173",
    "game/js/billie-sheet.js:182",
@@ -1621,12 +1621,12 @@
    "game/js/ui-run-kit.js:93"
   ],
   "box": [
-   "game/js/battle.js:1466",
+   "game/js/battle.js:1465",
    "game/js/engine/gpu-counters.js:61",
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
    "game/js/logic/cutscene-set.js:142",
-   "game/js/logic/rules.js:951",
+   "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
    "game/js/prop-models.js:220",
    "game/js/prop-models.js:349",
@@ -1647,8 +1647,8 @@
   "bubble": [
    "game/js/logic/idle-life.js:50",
    "game/js/logic/idle-life.js:89",
-   "game/js/logic/sound-bake.js:80",
-   "game/js/logic/sound-bake.js:398",
+   "game/js/logic/sound-bake.js:100",
+   "game/js/logic/sound-bake.js:728",
    "game/js/logic/soundscape.js:117",
    "game/js/logic/soundscape.js:123",
    "game/js/logic/ui-dials.js:103"
@@ -1674,11 +1674,14 @@
    "game/js/world-bowl.js:1737",
    "game/js/world-bowl.js:1767"
   ],
+  "cart": [
+   "game/js/audio/nature-player.js:243"
+  ],
   "coin": [
    "game/js/art.js:220",
    "game/js/battle-stage.js:1613",
    "game/js/battle-stage.js:2518",
-   "game/js/battle.js:1302",
+   "game/js/battle.js:1301",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
    "game/js/logic/idle-life.js:53",
@@ -1693,8 +1696,8 @@
    "game/js/shop.js:182",
    "game/js/shop.js:192",
    "game/js/shop.js:267",
-   "game/js/sound.js:522",
-   "game/js/sound.js:1769",
+   "game/js/sound.js:716",
+   "game/js/sound.js:2079",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:100",
@@ -1795,11 +1798,11 @@
    "game/js/logic/robot-joints.js:48",
    "game/js/logic/robot-joints.js:87",
    "game/js/logic/robot-joints.js:193",
-   "game/js/logic/rules.js:686",
-   "game/js/logic/rules.js:702",
-   "game/js/logic/rules.js:727",
-   "game/js/logic/rules.js:729",
-   "game/js/logic/rules.js:736",
+   "game/js/logic/rules.js:685",
+   "game/js/logic/rules.js:701",
+   "game/js/logic/rules.js:726",
+   "game/js/logic/rules.js:728",
+   "game/js/logic/rules.js:735",
    "game/js/robot-art.js:324",
    "game/js/robot-art.js:326",
    "game/js/robot-art.js:328",
@@ -1847,10 +1850,11 @@
    "game/js/walk-tab.js:230"
   ],
   "key": [
+   "game/js/logic/music-studio.js:121",
    "game/js/ui-run-kit.js:1893"
   ],
   "leaf": [
-   "game/js/battle.js:397",
+   "game/js/battle.js:396",
    "game/js/boot.js:137",
    "game/js/field-moves.js:148",
    "game/js/logic/placeholder-art.js:270",
@@ -1868,9 +1872,9 @@
    "game/js/world-bowl.js:4282"
   ],
   "moon": [
-   "game/js/battle.js:640",
+   "game/js/battle.js:639",
    "game/js/boot.js:168",
-   "game/js/environment.js:658"
+   "game/js/environment.js:659"
   ],
   "palm": [
    "game/js/logic/bowl-things.js:135",
@@ -1893,8 +1897,8 @@
   "pick": [
    "game/js/augment-screen.js:208",
    "game/js/augment-screen.js:230",
-   "game/js/battle.js:1117",
-   "game/js/battle.js:1352",
+   "game/js/battle.js:1116",
+   "game/js/battle.js:1351",
    "game/js/gene-bank-screen.js:207",
    "game/js/gene-bank-screen.js:229",
    "game/js/logic/data-checks.js:913",
@@ -1937,6 +1941,7 @@
    "game/js/walk/quality-cull.js:185"
   ],
   "scale": [
+   "game/js/logic/music-studio.js:122",
    "game/js/logic/ui-dials.js:219"
   ],
   "sheet": [
@@ -1959,7 +1964,7 @@
    "game/js/battle-stage.js:2730",
    "game/js/battle-stage.js:2731",
    "game/js/battle-stage.js:2877",
-   "game/js/battle.js:1664",
+   "game/js/battle.js:1663",
    "game/js/billie-sheet.js:84",
    "game/js/billie-sheet.js:159",
    "game/js/billie-sheet.js:216",
@@ -1993,13 +1998,12 @@
    "game/js/game-data.js:171"
   ],
   "tag": [
-   "game/js/battle.js:726",
+   "game/js/battle.js:725",
    "game/js/opening-fall.js:922",
    "game/js/ui.js:237",
    "game/js/ui.js:238"
   ],
   "up": [
-   "game/js/audio/tracker.js:976",
    "game/js/augment-screen.js:148",
    "game/js/augment-screen.js:259",
    "game/js/cutscene/director.js:167",
@@ -2014,7 +2018,9 @@
    "game/js/logic/data-checks.js:971",
    "game/js/logic/data-checks.js:1015",
    "game/js/logic/marks.js:110",
-   "game/js/logic/music-studio.js:71",
+   "game/js/logic/music-patterns.js:75",
+   "game/js/logic/music-patterns.js:135",
+   "game/js/logic/music-studio.js:76",
    "game/js/logic/online-legal.js:246",
    "game/js/logic/person-view.js:5",
    "game/js/logic/person-view.js:56",
