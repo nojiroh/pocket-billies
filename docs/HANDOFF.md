@@ -2,6 +2,53 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-5b - Clothes as data - 2026-10-29
+Branch `track/characters` (PR #314 merged into it first, at the owner's word "merge #314 first"; main merged in at the
+start, e888b09f, and again at the end for the merge into main). Plan approved in Plan Mode. Data, figure, Studio and
+test work; figures still off by default, so the game's pictures are unchanged. Draft PR #332 into main. No session tag
+(CLAUDE.md). docs/phases/characters-track.md (CH-5b) has the design.
+- The owner's answers: CH-5b before CH-7; **knobs + rows**; **the flair's shapes to data, FIGURE_LOOKS stays in code**.
+- Found (checked against the code):
+  - Most clothes were not shapes but the colour of the body's own parts: sleeves colour the arms, the bottom the thighs
+    and shins, the shoe the foot; the kinds were four sets (KIT_SLEEVELESS, KIT_LONG_SLEEVES, KIT_JACKETS,
+    KIT_LONG_COATS) and id checks. The body's frame rows could name had only tk, girth, hipK and torsoZ.
+  - Chad wears the track top (a top in the wardrobe) as his outer, so its jacket shell and zip are drawn there only
+    (I first took that code for dead; the golden test showed otherwise).
+  - The first merge of main met the Dialogue track's DL-6, built on the older figure code: bakeFigure's options
+    object (bust window, head angles, a faceless bake) now also carries CH-4's light and CH-6's face; the talk
+    director's {eyes, mouth, expr} maps onto a kit figure's face set; the mannequin keeps DL-6's open mouth. CH-6's
+    expression-tag test now reads a line as the talk does ([whisper] is a style), DL-6's close-up test counts the
+    shadow pass.
+- Changed:
+  - game/data/figureKit.json `clothes` (every wardrobe top, outer, bottom and shoe): knobs (sleeves; covers, puff,
+    open, long; legs, fit, belt; length, sole, boot, flat), `stripe`, rows at a stage (torso, shell, details), marks
+    (buttons, pockets, a zip, a buckle), `use` (the shared `pieces`: collar, belt) and `outer` (worn as an outer);
+    `flair` (scarf, cape, detail, goggles, fur, earrings) as rows; schema, types, check:data (kitClothesProblems).
+  - logic/kit-shapes.js kitAccessory: `stage`, `when` (bare, open, long, belted, belt, boot, neck, hat; ! for not),
+    `chance` on the figure's dice, side groups, a side's part (`thigh$`), marks; KIT_FRAME_SAMPLE has the body's sizes
+    and the torso's profile (trx0..6, trz0..6).
+  - logic/figure-kit.js lookFigure reads them (`dress` per stage, BF the body's frame); 1,901 to 1,640 lines.
+  - The Studio's Clothes tab (knobs, shapes and marks, worn on the turntable; "+ Give it clothes"; the shared pieces)
+    and Flair tab (figures.js figurePreview `flair`); the rows' editor shared with Hats & things.
+  - Tests: the golden test grew to 707 figures (every top and bottom under every outer, each slot empty) before the
+    move and held through every commit; tools/test/figure-clothes.test.mjs; kit-shapes tests for the new row fields.
+- Risky:
+  - The Studio's editing is untested by a person (headless: the Clothes and Flair tabs drew; a widened lab-coat hem
+    showed on the next draw).
+  - A garment's knobs and rows are as today's code made them; new garments need 2D art for the old path too.
+- Verified:
+  - lint, both type checks, format, check:modules, check:data, build; check-data-text after CI caught backticks in two
+    notes (fixed).
+  - Unit tests: 2,242 pass (the map-checks timing test fails only beside a browser check, as before).
+  - Smoke: no problems after the merge (514 s), the garments (463 s) and the flair and Studio (476 s).
+  - Full quick check on ad28dd78: 37 of 42 in 2,447 s. Failing: RL-8's seam, room light and Battle music (recorded
+    before), Starters and Ground tiles (both failed in busy runs in CH-5 and passed alone then; the rerun alone was
+    stopped at the merge coordinator's word, the owner having said checks can be skipped).
+- Next: CH-7 (the dressing room on the figure), on `track/characters` after #332 merges into main.
+- For the owner: in the Studio, Characters > Figures > Clothes (pick a garment, edit its shapes, watch the turntable)
+  and Flair. On the phone, CH-4's and CH-3c's gate is still owed (debug menu: Figures on, Atlas live; walk Copperleaf
+  by day and night, talk to someone; send the debug log from Settings > Help).
+
 ### Characters track CH-3c - The rest of the cast and the movement pass - 2026-10-29
 Branch `claude/laughing-tesla-roy32r` (the owner chose to continue here, so PR #314 grows; main merged in at the start,
 834fed3f; the CH-6 session's hat fix and the PR watcher's art-code-refs fix merged in on the way). Plan approved in
