@@ -413,6 +413,27 @@ skill), its HANDOFF entry, and the owner's phone check.
   Pictures: tools/look-talk.py `--only=stack`; the gallery's `talk-stack` section.
 - **DL-5 Faces.** The director, today's portrait (combined expressions, blinks, the mouth), emotes, the frame bounce,
   the listener dimmed. Tests: talk-director, expressions. On the phone: faces feel alive and stay crisp.
+  **Done in DL-5** (2026-10-29, `track/dialogue`): built as planned, with these choices. logic/talk-director.js
+  (`talkDirector({seed, expr, events, reduced, auto, blinkAt})`: `start`, `reach(n)` for the `[face]`/`[emote]`
+  events, `type(ch)` from the `onType` hook (its first listener), `done`, `drain` (what starts now: a face, an emote, a
+  bounce) and `at(t)` → `{expr, combo, eyes, mouth, head: {yaw, pitch, roll}, bounce, emotes}`; `faceToken`,
+  `creatureFace`, `headAt`, `bounceAt`, `emoteAt`), tested in talk-director.test.mjs. Blinks go on from the line before
+  (`nextBlink`), so a short line still blinks. The mouth now talks on lines with a face too (`happy+talk`). Today's
+  portrait: person-art.js `personRig` takes combinations (each item the last token it has pieces for; tested on the
+  wardrobe in expressions.test.mjs); talk.js keeps a person's pictures per face and per breath step (3 steps of the
+  idle breathing) while the talk is open; a creature (Kappi) is drawn each tick as before (its rig moves on its own
+  clock). No head motion on today's portrait (as planned): `head` waits for DL-6. The bounce squashes the slot's
+  circle (`::before`, Web Animations `pseudoElement`); the picture never stretches. **The listener dimmed**: an older
+  bubble of anyone but the one talking now gets `.listening` (its small portrait at 55% of its fade); an older bubble's
+  small portrait keeps the line's last face. Emotes: `game/data/emotes.json` (+ schema, check-data's `dataEmotes`,
+  tested), **12 px pixel grids as text, not an emotes.png**: the repo has no PNG tool and text grids stay editable;
+  outlined by the code, drawn at 2 device pixels per art pixel's nearest whole number (24 CSS px), top of the slot on
+  the text's side. Provisional (my picks, for the owner): the emotes' drawings and colours; the **auto emotes**
+  (a line that starts as or turns `surprised` pops `!`, `angry` pops `anger`, unless it has an `[emote]`: emotes.json
+  `auto`, empty it to turn them off); the listener at 55%. Corrections to this file: "expressions may combine
+  (person-art.js:627)" was the plan, not the code (one expression a rig before); there is no `smug` face in the
+  wardrobe (the director's smug tilt waits for one). Pictures: `?fixture=talk&faces=1`, tools/look-talk.py
+  `--only=faces`.
 - **DL-6 Figure close-ups.** The bust bake, the head spring in stepped angles, the face state (with CH-6). Tests:
   the figure tests, the bake count in the debug log. The full quick check with figures off and on. On the phone:
   figures on, heads nod and jolt; the debug log's bake cost.
