@@ -75,6 +75,8 @@ export interface GameData {
   banter?: Record<DataId, BanterLine>;
   /** DL-3: each character's own speech bubble (logic/talk-skins.js) */
   talkSkins?: TalkSkins;
+  /** IN-2: Kappi's tips during a run (logic/kappi-tips.js) */
+  kappiTips?: KappiTips;
   emotes?: Emotes;
   /** RL-S2: the hub folk and you (relations.json) */
   relations?: RelationsData;
@@ -3365,6 +3367,26 @@ export interface TalkSkin {
   entrance: 'pop' | 'soft' | 'still';
   blip: 'voice' | 'typewriter' | 'calm';
   deco: string[];
+}
+/** IN-2: one of Kappi's tips (kappiTips.json): its trigger, a world cue tried first, a stall's seconds, the line */
+export interface KappiTip {
+  when: 'catchFails' | 'faint' | 'potionUnused' | 'noPyramids' | 'sheetStall' | 'placeStall' | 'foeBeatsLead';
+  line: string;
+  cue?: 'catchButton' | 'itemsButton' | 'sheetPulse' | 'roadMarker';
+  cueS?: number;
+  s?: number;
+  n?: number;
+  hp?: number;
+  near?: number;
+}
+/** IN-2: kappiTips.json: the caps and the tips */
+export interface KappiTips {
+  about?: string;
+  caps: { run: number; place: number };
+  near?: number;
+  keepS?: number;
+  showS?: number;
+  tips: Record<string, KappiTip>;
 }
 /** DL-3: talkSkins.json: the skins, and who wears which */
 export interface TalkSkins {

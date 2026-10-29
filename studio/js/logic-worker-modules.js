@@ -80,6 +80,7 @@ import '../../game/js/logic/icon-block.js';
 import '../../game/js/logic/idle-life.js';
 import '../../game/js/logic/island-gen.js';
 import '../../game/js/logic/island.js';
+import '../../game/js/logic/kappi-tips.js';
 import '../../game/js/logic/kit-assemble.js';
 import '../../game/js/logic/kit-pixels.js';
 import '../../game/js/logic/kit-shapes.js';

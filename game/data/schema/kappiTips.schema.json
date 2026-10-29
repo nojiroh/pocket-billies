@@ -1,0 +1,43 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "kappiTips.schema.json",
+ "title": "game/data/kappiTips.json: Kappi's tips during a run, on struggle or stall only (intro track IN-2; logic/kappi-tips.js, kappi.js)",
+ "type": "object",
+ "required": ["caps", "tips"],
+ "additionalProperties": false,
+ "properties": {
+  "about": {"type": "string"},
+  "caps": {
+   "type": "object",
+   "required": ["run", "place"],
+   "additionalProperties": false,
+   "properties": {
+    "run": {"type": "integer", "minimum": 0, "maximum": 20, "description": "the most tips Kappi says in one run"},
+    "place": {"type": "integer", "minimum": 0, "maximum": 5, "description": "the most tips Kappi says in one place"}
+   }
+  },
+  "near": {"type": "number", "minimum": 0.5, "maximum": 20, "description": "metres nearer a road out that count as heading for it (the place stall's clock starts again)"},
+  "keepS": {"type": "number", "minimum": 1, "maximum": 300, "description": "seconds a fired tip waits for a quiet moment before it is dropped"},
+  "showS": {"type": "number", "minimum": 1, "maximum": 20, "description": "seconds Kappi's bubble stays (a tap closes it sooner; a long line stays a little longer)"},
+  "tips": {
+   "type": "object",
+   "minProperties": 1,
+   "propertyNames": {"pattern": "^[a-z][a-z0-9_]{0,31}$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["when", "line"],
+    "additionalProperties": false,
+    "properties": {
+     "when": {"enum": ["catchFails", "faint", "potionUnused", "noPyramids", "sheetStall", "placeStall", "foeBeatsLead"], "description": "the trigger (logic/kappi-tips.js TIP_TRIGGERS)"},
+     "line": {"type": "string", "minLength": 4, "maxLength": 160, "description": "Kappi's line, with markup (docs/SCRIPTS.md) and its line id (npm run story:ids)"},
+     "cue": {"enum": ["catchButton", "itemsButton", "sheetPulse", "roadMarker"], "description": "the world cue tried before Kappi speaks"},
+     "cueS": {"type": "number", "minimum": 0, "maximum": 600, "description": "a stall's seconds before its cue"},
+     "s": {"type": "number", "minimum": 1, "maximum": 600, "description": "a stall's seconds before Kappi speaks"},
+     "n": {"type": "integer", "minimum": 1, "maximum": 9, "description": "catchFails: the misses in a row"},
+     "hp": {"type": "number", "exclusiveMinimum": 0, "maximum": 1, "description": "potionUnused: the share of its HP a Billie of yours is under"},
+     "near": {"type": "number", "minimum": 1, "maximum": 60, "description": "noPyramids: metres from you a wild one counts as in view"}
+    }
+   }
+  }
+ }
+}

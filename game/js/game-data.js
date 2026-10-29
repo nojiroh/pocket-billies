@@ -38,6 +38,7 @@ expose({
   GHOST_KEEPS: [() => GHOST_KEEPS],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
+  KAPPI_TIPS: [() => KAPPI_TIPS],
   LINES: [() => LINES],
   LINE_BY_ID: [() => LINE_BY_ID],
   LOCATIONS: [() => LOCATIONS],
@@ -413,6 +414,10 @@ export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) ||
 provide({ FIELD_MOVES }); /* to-module */
 /* dialogue track DL-3: each character's own speech bubble (talkSkins.json; logic/talk-skins.js, talk.js) */
 export const TALK_SKINS = gameData.talkSkins || { default: 'folk', skins: {}, speakers: {}, classes: {} };
+/* intro track IN-2: Kappi's tips during a run (kappiTips.json; logic/kappi-tips.js, kappi.js) */
+export const KAPPI_TIPS = /** @type {import('../types/game-data').KappiTips} */ (
+  gameData.kappiTips || { caps: { run: 5, place: 1 }, tips: {} }
+);
 /* dialogue track DL-5: the emotes that pop beside a talking head (emotes.json; talk.js) */
 export const EMOTES = gameData.emotes || { size: 12, outline: '', colors: {}, auto: {}, emotes: {} };
 /* splicing track SP-2: what spliced parts do (genes.json; logic/genes.js) */

@@ -19,6 +19,7 @@ import { uiSignalProblems, uiThemeContrast } from './ui-theme.js';
 import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
+import { tipDataProblems } from './kappi-tips.js';
 import { runRegionData, runRegionMake } from './run-region.js';
 import { BATTLE_KIT_ROLES, redShare } from './battle-anims.js';
 import { caseFile, redactProblem } from './case-file.js';
@@ -73,7 +74,7 @@ import {
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
-import { MARKUP_EMOTES } from './line-markup.js';
+import { MARKUP_EMOTES, markupProblem } from './line-markup.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 import { svgProblem } from './svg-pixels.js';
 /* eslint-disable no-func-assign */
@@ -139,6 +140,8 @@ expose({
   dataHeldItems: [() => dataHeldItems, v => (dataHeldItems = v)],
   // @ts-expect-error -- replaced on purpose
   dataItemArt: [() => dataItemArt, v => (dataItemArt = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataKappiTips: [() => dataKappiTips, v => (dataKappiTips = v)],
   // @ts-expect-error -- replaced on purpose
   dataModifiers: [() => dataModifiers, v => (dataModifiers = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2351,6 +2354,22 @@ export function dataTalkSkins(D, valid = () => true) {
   for (const [c, k] of Object.entries(/** @type {Record<string, string>} */ (T.classes || {}))) {
     if (!skins[k]) problem(`classes.${c}: no skin "${k}"`);
     if (!classes[c]) problem(`classes.${c}: no trainer class of that id (events.json classes)`);
+  }
+  return out;
+}
+
+// IN-2: kappiTips.json: the schema; one tip per trigger, its cue one kappi.js shows, a stall's cue before its line,
+// every line with its id and clean markup (logic/kappi-tips.js tipDataProblems, logic/line-markup.js)
+/** IN-2: kappiTips.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataKappiTips(D, valid = () => true) {
+  const T = D.kappiTips;
+  if (!T) return [['kappiTips.json', 'missing']];
+  if (!valid('kappiTips.schema.json', T, 'kappiTips.json')) return [];
+  /** @type {DataProblem[]} */
+  const out = tipDataProblems(T).map(p => /** @type {DataProblem} */ (['kappiTips.json', p]));
+  for (const [id, tip] of Object.entries(/** @type {Record<string, any>} */ (T.tips))) {
+    const bad = markupProblem(String(tip.line).replace(/\s*#l:[0-9a-f]+$/, ''));
+    if (bad) out.push(['kappiTips.json', `${id}: ${bad}`]);
   }
   return out;
 }

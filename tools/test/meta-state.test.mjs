@@ -32,8 +32,13 @@ test('meta: a new one is empty, Expedition I open, and passes the check', () => 
     trades: [],
     bosses: {},
     fest: null,
+    tipsSeen: {},
   });
   assert.equal(validMeta(m), true);
+  /* IN-2: the tips seen, once ever */
+  assert.equal(validMeta({ ...m, tipsSeen: { catch: 1, 'hint:town': 1 } }), true);
+  assert.equal(validMeta({ ...m, tipsSeen: { catch: 2 } }), false);
+  assert.equal(validMeta({ ...m, tipsSeen: [] }), false);
   /* ON-3: the Showcase record */
   const slot = { i: 0, k: 1700000000000, w: 2913, th: 'splice', b: 'b1' },
     rib = { w: 2912, th: 'abom', p: 0, sp: 'bezos0', nick: 'Jeff' };

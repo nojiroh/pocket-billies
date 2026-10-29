@@ -1003,7 +1003,7 @@ function tutorSkip() {
 }
 /* a word from someone at the top of the battle, without stopping it; it goes after a while, or with a tap.
    phase 06-2b: hot = the professor's HOT TIP: big, in the middle, over everything (the move buttons too), until tapped */
-function battleTip(who, text, btn, hot) {
+export function battleTip(who, text, btn, hot) {
   let el = $('#btip');
   if (!el) {
     el = document.createElement('div');
@@ -1017,10 +1017,11 @@ function battleTip(who, text, btn, hot) {
     ex = m[1];
     text = text.slice(m[0].length);
   }
-  const name = who === 'chosen' ? 'Professor Chosen' : escapeHtml(who),
+  /* IN-2: Kappi's tips use the card too, in Kappi's colours (kappi.js) */
+  const name = who === 'chosen' ? 'Professor Chosen' : who === 'kappi' ? 'Kappi' : escapeHtml(who),
     face = typeof portraitHTML === 'function' ? portraitHTML(who, hot ? 72 : 44, ex) : '',
     b = btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${escapeHtml(btn.l)}</button>` : '';
-  el.className = hot ? 'btip hot' : 'btip';
+  el.className = hot ? 'btip hot' : who === 'kappi' ? 'btip kappi' : 'btip';
   el.innerHTML = hot
     ? `<div class="btip-card m-pop"><span class="btip-hot" aria-hidden="true">HOT TIP!</span><span class="btip-face">${face}</span><span class="btip-t"><b>${name}</b>${escapeHtml(text)}</span>${b}<small class="btip-dismiss">Tap anywhere to close</small></div>`
     : `<span class="btip-face">${face}</span><span class="btip-t"><b>${name}</b>${escapeHtml(text)}${b}</span>`;
