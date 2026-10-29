@@ -1,4 +1,4 @@
-/* SY-5: the Bureau in battle (docs/phases/style-track.md; battle.js "THE BUREAU IN BATTLE", logic/bureau-battle.js).
+/* SY-5: the Bureau in battle (docs/archive/tracks/style-track.md; battle.js "THE BUREAU IN BATTLE", logic/bureau-battle.js).
    Only where the Bureau is: its bots' plates are form paper (a serial, the red property line), its stamps land on a
    paper slip, and its boss's join intro shows the Notice of Retrieval. The paper is the case files' (case-file.css
    --case-*), so it follows light and dark the same way; the ink is the red family (--redink). Never colour alone: a

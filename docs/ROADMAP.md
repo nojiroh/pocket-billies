@@ -378,7 +378,7 @@ town node needs it.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
   sessions. No per-session tags (CLAUDE.md); `perks-done` once #323 merges. Branch `track/perks` (made by PK-1's
   session).
-- **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
+- **Style track** (docs/archive/tracks/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
   picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
   events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in
   the world), numbers you feel beyond the UI track's (your HP rolls down, damage numbers sized by the hit), and the
