@@ -760,7 +760,7 @@ function talkTick(ts) {
     frameStop('talk');
     return;
   }
-  if (ts - P.t < 50) return;
+  if (ts - P.t < 70) return;
   P.t = ts;
   /* DL-5: the director says the face (blinks, the mouth, the line's face), and what starts now: an emote, the frame's
      bounce, a new face (kept for the line's small portrait once it moves up the stack) */
