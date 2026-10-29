@@ -2,6 +2,54 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-5: faces (the director, combined expressions, blinks and the mouth, emotes, the bounce, the listener dimmed) - 2026-10-29
+Branch `track/dialogue`; main ed5c6857 (#295, VFX-13) merged in at the start (HANDOFF both sides, art-code-refs and the
+check-data snapshot remade). Run under the owner's standing instruction (2026-10-29): plan written in the session's
+reply, approved in advance, no Plan Mode. Code, CSS, data, a schema, tests, a fixture, a look tool, docs. No session tag
+(CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-5".
+- Changed:
+  - New logic/talk-director.js (`talkDirector`: blinks every 2-6 s, a double one in six, none while happy, carried
+    from line to line; the mouth open on vowels, shut on the rest, held 60 ms, shut after 150 ms without a letter;
+    `[face=x]` and `[emote=x]` at their letters; the bounce spring; head hits nod/jolt/shake and held droop/tilt for
+    DL-6; `faceToken`, `creatureFace`) + talk-director.test.mjs (14). In the page, the Studio and the logic worker.
+  - person-art.js: combined expressions (`happy+talk`: each wardrobe item the last token it has pieces for); the
+    expressions test checks it on the real wardrobe.
+  - talk.js: the director per line, fed by `onType` (its first listener); the portrait from the director's combo;
+    a person's pictures kept per face and breath step while the talk is open (`talkBox.frames`), a creature drawn each
+    tick as before; `talkEmote` (an outlined pixel grid at whole device pixels, pops 0 → 1.2 → 1, fades by 1.3 s),
+    `talkBounce` (the slot's `::before` squashes); an older bubble of anyone but the speaker gets `.listening`; the
+    small portrait keeps the line's last face. dialogue.css: `.talk-emote`, `.talk-old.listening`.
+  - New game/data/emotes.json + schema (12 px grids: ! ? sweat anger sparkle note heart, `auto` faces), check-data's
+    `dataEmotes` (tested in data-checks.test.mjs), `EMOTES` in game-data.js, its type.
+  - `?fixture=talk&faces=1`; tools/look-talk.py `--only=faces`. docs/SCRIPTS.md says what faces and emotes do now.
+- Decided for the owner (provisional, as the standing instruction asks; no "Ask me before" item was DL-5's): the emote
+  drawings and colours; **auto emotes** (a line that starts as or turns surprised pops `!`, angry pops `anger`, unless
+  it has an `[emote]`: emotes.json `auto`, empty it to turn them off); the listener's small portrait at 55%; emotes as
+  text grids in emotes.json instead of the track's emotes.png (no PNG tool in the repo; editable as text).
+- Found, not changed / corrections: "expressions may combine (person-art.js:627)" was the plan, not the code; the
+  wardrobe has no `smug` face (the director's tilt waits for one). Chosen's sunglasses hide his eyes, so his blinks
+  don't show (brows and mouth do). The characters track is at CH-3 (waiting on the owner's pick), so **CH-6 is not
+  in**: DL-6 takes the track's fallback (the mannequin's `figureFaceMarks` plus a 2 px open mouth). figures.js
+  (CH-2/CH-3's baker) is in main. Four of my commit messages have their attribution lines in the subject paragraph
+  (pushed; not rewritten).
+- Risky: the bounce uses Web Animations' `pseudoElement` (Safari 14+; older: no bounce). The mouth is not seen moving
+  in this machine's headless browser (it draws one frame every few seconds while the fixture loads), so its feel is
+  tested in Node only. The cached portraits are per face × 3 breath steps × speaker (cleared when the talk closes).
+  Battle music (SND-5) failed 3 of 5 runs alone on my code and passed 3 of 3 at the commit before: the throw came
+  10.6 s after the flash where the step allows 8; nothing in the battle path uses what DL-5 changed, and after the
+  portrait's tick went back to 70 ms (I had made it 50) it passed twice. Watch it.
+- Verified: lint, typecheck, format:check, check:modules, check:data (181 files), build clean. Unit tests 2032 pass.
+  check-fast 42: 39 in the full run; breeding, every screen and tall ground passed alone (tall ground failed once
+  alone, passed at the commit before and then on mine: timing). Full quick check: 36 of 42 in 2609 s; RL-8 and
+  "Walking … settings tabs" known before DL-4; Starters, Ground tiles (rooms) and the phone step passed alone (the
+  phone step's dialogue counted 23 pieces in the full run, 20 alone, the same as DL-4: emotes are canvases, which the
+  count skips); Battle music as above. Smoke 7 of 7 (483 s) on the final code. Pictures at 390×844 (look-talk.py
+  `--only=faces`): each emote pops crisp at 24 CSS px on the text's side, the listeners dim; faces combine.
+- Next: DL-6 (figure close-ups) on `track/dialogue`, started by this session with its plan approved; it starts DL-7.
+- For the owner on the phone: `?fixture=talk&faces=1`: tap through. Do Chosen's face turn sad on "floors", Kappi's
+  note and heart, Blake's "!" and the sweat read well, and do the older bubbles' heads dim? Do the mouths move while
+  the letters type, and the blinks feel natural? Is the auto "!" on surprised lines welcome?
+
 ### Dialogue track DL-4: the stack (sides, links, the cut, the "…", choices, the Log, the height budget, the camera lift) - 2026-10-28
 Branch `track/dialogue` (main already merged in at the start). Plan approved in Plan Mode. Code, CSS, data, a schema,
 tests, checks, a look tool, docs. No session tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-4".
