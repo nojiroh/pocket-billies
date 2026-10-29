@@ -51,21 +51,21 @@
    "at": [
     "game/js/art.js:231",
     "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2828"
+    "game/js/logic/data-checks.js:2831"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2828"
+    "game/js/logic/data-checks.js:2831"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:720",
-    "game/js/logic/data-checks.js:2830"
+    "game/js/logic/data-checks.js:2833"
    ]
   },
   {
@@ -1655,7 +1655,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2984",
+   "game/js/logic/data-checks.js:2987",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1670,7 +1670,7 @@
   ],
   "coin": [
    "game/js/art.js:207",
-   "game/js/battle-stage.js:1617",
+   "game/js/battle-stage.js:1615",
    "game/js/battle-stage.js:1776",
    "game/js/battle-stage.js:2530",
    "game/js/battle.js:1297",
@@ -1897,7 +1897,7 @@
    "game/js/logic/data-checks.js:886",
    "game/js/logic/data-checks.js:1006",
    "game/js/logic/data-checks.js:1047",
-   "game/js/logic/data-checks.js:2340",
+   "game/js/logic/data-checks.js:2343",
    "game/js/logic/script.js:234",
    "game/js/logic/story-checks.js:353",
    "game/js/ranch-screen.js:210",
@@ -1917,10 +1917,9 @@
    "game/js/shop.js:183"
   ],
   "pow": [
+   "game/js/battle-stage.js:1720",
    "game/js/battle-stage.js:1884",
-   "game/js/battle-stage.js:1949",
-   "game/js/game-data.js:166",
-   "game/js/game-data.js:169"
+   "game/js/battle-stage.js:1949"
   ],
   "ring": [
    "game/js/battle-anim-run.js:171",
@@ -1943,8 +1942,8 @@
   ],
   "spark": [
    "game/js/bag.js:29",
-   "game/js/battle-stage.js:906",
-   "game/js/battle-stage.js:920",
+   "game/js/battle-stage.js:904",
+   "game/js/battle-stage.js:918",
    "game/js/battle-stage.js:2076",
    "game/js/battle-stage.js:2148",
    "game/js/battle-stage.js:2230",
@@ -1980,13 +1979,12 @@
    "game/js/walk/effects.js:458"
   ],
   "star": [
+   "game/js/battle-stage.js:1720",
    "game/js/battle-stage.js:2115",
    "game/js/battle-stage.js:2116",
    "game/js/battle-stage.js:2586",
    "game/js/battle-stage.js:2907",
-   "game/js/cutscene/opening.js:344",
-   "game/js/game-data.js:166",
-   "game/js/game-data.js:169"
+   "game/js/cutscene/opening.js:344"
   ],
   "tag": [
    "game/js/battle.js:724",

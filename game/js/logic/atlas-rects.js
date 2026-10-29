@@ -92,20 +92,22 @@ export function atlasRename(icons, from, to) {
 export const atlasKeyOk = k => /^[a-z][a-z0-9_]*$/i.test(k);
 
 /** what in the data names a key: [{ at, kind }] (items/<id>, types/<id>)
- * @param {string} key @param {{ items?: Record<string, any>, types?: any[] }} D */
+ * @param {string} key @param {{ items?: Record<string, any>, types?: any[], battleAnims?: any }} D */
 export function atlasUses(key, D) {
   const out = [];
   if (key.startsWith('i_'))
     for (const [id, I] of Object.entries(D.items || {}))
       if (I && 'i_' + (I.icon || id) === key) out.push({ at: 'items/' + id, kind: 'item icon' });
-  for (const t of D.types || [])
-    if (t && (t.fx || []).includes(key)) out.push({ at: 'types/' + t.id, kind: 'battle particle' });
+  /* VFX-20: a type's battle particles are its kit's burstSprites (battleAnims.json types; were types.json fx) */
+  for (const [id, K] of Object.entries((D.battleAnims && D.battleAnims.types) || {}))
+    if (K && typeof K === 'object' && (K.burstSprites || []).includes(key))
+      out.push({ at: 'types/' + id, kind: 'battle particle' });
   return out;
 }
 
-/** renames a key where the data names it (in place): items' icons (an item icon stays i_<name>) and types' particles.
+/** renames a key where the data names it (in place): items' icons (an item icon stays i_<name>) and types' particles (their battle kits').
  * Returns how many places changed, or -1 when an item uses it and the new key isn't an item icon's (i_...)
- * @param {{ items?: Record<string, any>, types?: any[] }} D @param {string} from @param {string} to */
+ * @param {{ items?: Record<string, any>, types?: any[], battleAnims?: any }} D @param {string} from @param {string} to */
 export function atlasRenameData(D, from, to) {
   const uses = atlasUses(from, D);
   if (uses.some(u => u.kind === 'item icon') && !to.startsWith('i_')) return -1;
@@ -113,8 +115,8 @@ export function atlasRenameData(D, from, to) {
     const [kind, id] = u.at.split('/');
     if (kind === 'items') /** @type {Record<string, any>} */ (D.items)[id].icon = to.slice(2);
     else {
-      const t = (D.types || []).find(x => x.id === id);
-      t.fx = t.fx.map((/** @type {string} */ k) => (k === from ? to : k));
+      const K = /** @type {any} */ (D.battleAnims).types[id];
+      K.burstSprites = K.burstSprites.map((/** @type {string} */ k) => (k === from ? to : k));
     }
   }
   return uses.length;

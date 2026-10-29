@@ -1485,6 +1485,9 @@ export function dataBattleAnims(D, valid = () => true) {
       if (id !== 'None' && id !== 'Bureau' && types.size && !types.has(id)) problem(`types.${id}: no type "${id}"`);
       for (const sp of [k.shot, k.impact, k.small, ...(k.bits || [])])
         if (sp !== undefined && A.sprites && !A.sprites[sp]) problem(`types.${id}: no sprite "${sp}"`);
+      /* VFX-20: a burst's particles (were types.json fx) */
+      if (k.burstSprites !== undefined && (!Array.isArray(k.burstSprites) || !k.burstSprites.length))
+        problem(`types.${id}.burstSprites: a list of one icon or more`);
       for (const r of [k.ramp, k.ramp2]) if (r !== undefined && !A.ramps[r]) problem(`types.${id}: no ramp "${r}"`);
       steps(`types.${id}.cast`, k.cast || []);
       steps(`types.${id}.hit`, k.hit || []);

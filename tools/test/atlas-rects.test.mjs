@@ -52,11 +52,12 @@ test('a rename keeps the order; the data’s item icons and type particles follo
     'z',
     'c',
   ]);
-  const D = structuredClone({ items: GAME_DATA.items, types: GAME_DATA.types }),
+  const D = structuredClone({ items: GAME_DATA.items, types: GAME_DATA.types, battleAnims: GAME_DATA.battleAnims }),
     icons = A.manifestParse(TEXT).icons,
     item = Object.keys(D.items).find(k => icons['i_' + (D.items[k].icon || k)]),
     key = 'i_' + (D.items[item].icon || item),
-    type = D.types.find(t => (t.fx || []).length);
+    /* VFX-20: a type's battle particles are its kit's burstSprites */
+    type = D.types.find(t => (D.battleAnims.types[t.id]?.burstSprites || []).length);
   assert.ok(item && type);
   const users = A.atlasUses(key, D);
   assert.ok(users.some(u => u.at === 'items/' + item && u.kind === 'item icon'));
@@ -64,10 +65,10 @@ test('a rename keeps the order; the data’s item icons and type particles follo
   assert.equal(A.atlasRenameData(D, key, 'i_renamed'), users.length);
   assert.equal(D.items[item].icon, 'renamed');
   assert.deepEqual(A.atlasUses(key, D), []);
-  const fx = type.fx[0],
+  const fx = D.battleAnims.types[type.id].burstSprites[0],
     n = A.atlasUses(fx, D).length;
   assert.ok(n >= 1);
   assert.equal(A.atlasRenameData(D, fx, 'fx_renamed'), n);
-  assert.ok(D.types.find(t => t.id === type.id).fx.includes('fx_renamed'));
+  assert.ok(D.battleAnims.types[type.id].burstSprites.includes('fx_renamed'));
   assert.ok(A.atlasKeyOk('i_potion') && !A.atlasKeyOk('a-b') && !A.atlasKeyOk('1a'));
 });

@@ -12,7 +12,6 @@ import { expose } from './test-globals.js';
 import {
   BATTLE_ANIMS,
   BATTLE_STAGES,
-  HIT_EFFECTS_BY_TYPE,
   ITEMS,
   MOVES,
   TYPE_COLORS,
@@ -111,7 +110,6 @@ expose({
   GROUND_SPHERE_RADIUS: [() => GROUND_SPHERE_RADIUS],
   GROUND_TEXTURE_PX_PER_METER: [() => GROUND_TEXTURE_PX_PER_METER],
   GROUND_TEXTURE_SIZE: [() => GROUND_TEXTURE_SIZE],
-  HIT_SPRITES_BY_TYPE: [() => HIT_SPRITES_BY_TYPE],
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF_COLORS: [() => LEAF_COLORS],
   MONEY_ICON: [() => MONEY_ICON],
@@ -1714,10 +1712,12 @@ function addParticle(o) {
   if (ambientSpawning) p.amb = 1;
   P.push(p);
 }
-const HIT_SPRITES_BY_TYPE = HIT_EFFECTS_BY_TYPE;
 const GLOWING_PARTICLES = { spark: 1, star: 1, bolt: 1, bit: 1, gem: 1, pow: 1, up: 1 };
+/* VFX-20: a burst's particles in turn, from the type's kit (battleAnims.json types.<t>.burstSprites; were types.json
+   fx), else None's */
 const typeSprite = (t, i) => {
-  const l = HIT_SPRITES_BY_TYPE[t] || HIT_SPRITES_BY_TYPE.None;
+  const K = BATTLE_ANIMS.types,
+    l = (K[t] && K[t].burstSprites) || (K.None && K.None.burstSprites) || ['pow', 'star'];
   return l[i % l.length];
 };
 /* VFX-9: the move effects' own random numbers (logic/rng.js), seeded per event (battleFxSeed, from battleAnimPlay), so

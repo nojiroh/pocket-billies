@@ -2625,6 +2625,9 @@ export interface BattleAnimKit {
   impact: DataId;
   small?: DataId;
   bits: DataId[];
+  /** VFX-20: the icons.png particles a hit's burst sprays in turn (were types.json and untyped.json `fx`); a kit
+   * without one sprays None's */
+  burstSprites?: string[];
   /** icons.png particles sprayed beside the strips (cog, scale, pow) */
   icons?: string[];
   path: 'straight' | 'arc' | 'zigzag' | 'spiral' | 'wave' | 'stamp';
