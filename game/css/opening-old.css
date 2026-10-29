@@ -109,7 +109,8 @@ body.cs-dress .cs-skip {
 .cs-pick .racts .pb {
   flex: 1;
 }
-.cs-fade {
+.cs-fade,
+.back-veil {
   position: fixed;
   inset: 0;
   background: #fff8ec;
@@ -117,22 +118,15 @@ body.cs-dress .cs-skip {
   pointer-events: none;
   transition: opacity 0.7s ease;
 }
-.cs-fade.on {
+.cs-fade.on,
+.back-veil.on {
   opacity: 1;
 }
 /* IN-4: the Bureau's portal light, over everything from the pickup until the way back takes the screen
    (story-stage.js storyPortal, cutscene/return-scene.js) */
 .back-veil {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: #fff8ec;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.4s ease-in;
-}
-.back-veil.on {
-  opacity: 1;
+  z-index: var(--z-veil);
+  transition-duration: var(--m-slow);
 }
 body.in-cs #dressing {
   z-index: 20;
