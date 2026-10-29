@@ -609,7 +609,7 @@
   "p": 85,
   "anim": "cutto"
  },
- "cyclone": {"n":"Cyclone","t":"Electric","c":"S","a":100,"d":"Never loses suction.","sig":"dyson","p":90,"anim":"storm"},
+ "cyclone": {"n":"Cyclone","t":"Electric","c":"S","a":100,"d":"Never loses suction.","sig":"dyson","p":90,"anim":"cyclone"},
  "flatpack": {
   "n": "Flatpack",
   "t": "Steel",
@@ -630,7 +630,7 @@
   "fx": {
    "selfStage": {"hus":2,"lev":1}
   },
-  "anim": "buff"
+  "anim": "giveswings"
  },
  "statesizedpit": {
   "n": "State-sized Pit",
@@ -640,7 +640,7 @@
   "d": "Digs the ground out from under the foe.",
   "sig": "rinehart",
   "p": 95,
-  "anim": "quake"
+  "anim": "statesizedpit"
  },
  "concretepour": {
   "n": "Concrete Pour",
@@ -662,7 +662,7 @@
   "fx": {
    "tgtStage": {"hus":-2}
   },
-  "anim": "hex"
+  "anim": "perfectfold"
  },
  "harbourfee": {
   "n": "Harbour Fee",
@@ -672,7 +672,7 @@
   "d": "Charges for the water the foe stands in.",
   "sig": "kashing",
   "p": 85,
-  "anim": "wave"
+  "anim": "harbourfee"
  },
  "blastfurnace": {
   "n": "Blast Furnace",
@@ -694,7 +694,7 @@
   "fx": {
    "selfStage": {"law":1,"pr":1}
   },
-  "anim": "buff"
+  "anim": "principle"
  },
  "frontrun": {
   "n": "Front Run",
@@ -704,7 +704,7 @@
   "d": "Gets there before the foe's move.",
   "sig": "griffin",
   "p": 90,
-  "anim": "dash"
+  "anim": "frontrun"
  },
  "wrongname": {
   "n": "Wrong Name",
@@ -714,9 +714,9 @@
   "d": "Calls the foe something that is almost its name.",
   "sig": "schultz",
   "p": 75,
-  "anim": "wave"
+  "anim": "wrongname"
  },
- "cleaningfee": {"n":"Cleaning Fee","t":"Water","c":"S","a":100,"d":"Added at checkout.","sig":"chesky","p":70,"anim":"shot"},
+ "cleaningfee": {"n":"Cleaning Fee","t":"Water","c":"S","a":100,"d":"Added at checkout.","sig":"chesky","p":70,"anim":"cleaningfee"},
  "autoplay": {
   "n": "Autoplay",
   "t": "Psychic",
@@ -725,7 +725,7 @@
   "d": "The next one starts before you can stop it.",
   "sig": "hastings",
   "p": 80,
-  "anim": "wave"
+  "anim": "autoplay"
  },
  "hallucinate": {
   "n": "Hallucinate",
@@ -745,7 +745,7 @@
   "d": "Forks the foe's chain and runs its copy: takes the foe's types for 5 turns.",
   "sig": "satoshi",
   "fx": {"copyTypes":1},
-  "anim": "hex"
+  "anim": "fork"
  },
  "countstotwo": {
   "n": "Counts to Two",
@@ -755,7 +755,7 @@
   "d": "Hits twice. Never a third time.",
   "sig": "newell",
   "p": 90,
-  "anim": "flurry"
+  "anim": "countstotwo"
  },
  "fifteensec": {
   "n": "Fifteen Seconds",
@@ -765,7 +765,7 @@
   "d": "Over before you know it, then again.",
   "sig": "yiming",
   "p": 85,
-  "anim": "shot"
+  "anim": "fifteensec"
  },
  "stakeineverything": {
   "n": "Stake in Everything",
@@ -775,9 +775,18 @@
   "d": "Owns a bit of the foe already.",
   "sig": "ponyma",
   "p": 85,
-  "anim": "shot"
+  "anim": "stakeineverything"
  },
- "shipdirect": {"n":"Ship Direct","t":"Electric","c":"S","a":100,"d":"Skips the shop and arrives.","sig":"dell","p":85,"anim":"shot"},
+ "shipdirect": {
+  "n": "Ship Direct",
+  "t": "Electric",
+  "c": "S",
+  "a": 100,
+  "d": "Skips the shop and arrives.",
+  "sig": "dell",
+  "p": 85,
+  "anim": "shipdirect"
+ },
  "developers": {"n":"Developers!","t":"Fire","c":"H","a":90,"d":"Shouted three times.","sig":"ballmer","p":100,"anim":"developers"},
  "onehandedbackhand": {
   "n": "One-handed Backhand",
@@ -787,7 +796,7 @@
   "d": "Nobody has returned it.",
   "sig": "federer",
   "p": 95,
-  "anim": "slash"
+  "anim": "onehandedbackhand"
  },
  "siu": {"n":"Siu!","t":"Fire","c":"H","a":90,"d":"Jump, turn, land, shout.","sig":"ronaldo","p":100,"anim":"siu"},
  "greenhydrogen": {
@@ -798,7 +807,7 @@
   "d": "Promised, then delivered, hard.",
   "sig": "forrest",
   "p": 90,
-  "anim": "beam"
+  "anim": "greenhydrogen"
  },
  "quietgift": {
   "n": "Quiet Gift",
@@ -808,9 +817,9 @@
   "d": "Gives half its HP to the party: heals the active ally... or itself when alone.",
   "sig": "scott",
   "fx": {"heal":0.5},
-  "anim": "heal"
+  "anim": "quietgift"
  },
- "kisses": {"n":"Kisses","t":"Ground","c":"H","a":100,"d":"Antlers first.","sig":"hershey","p":85,"anim":"charge"},
+ "kisses": {"n":"Kisses","t":"Ground","c":"H","a":100,"d":"Antlers first.","sig":"hershey","p":85,"anim":"kisses"},
  "fullsteam": {
   "n": "Full Steam",
   "t": "Electric",

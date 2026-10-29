@@ -400,8 +400,9 @@ test('the lunge smears thin out with the quality and stop under Reduced motion',
 test("the dash moves are real moves and their ribbon is the Billie's size", () => {
   const moves = JSON.parse(readFileSync(new URL('../../game/data/moves.json', import.meta.url), 'utf8')),
     list = Array.isArray(moves) ? moves : Object.entries(moves).map(([id, m]) => ({ id, ...m }));
-  /* VFX-11: the dash moves are the `dash` family's (VFX-5's six) */
-  const dash = list.filter(m => m.anim === 'dash');
+  /* VFX-11: the dash moves are the `dash` family's (VFX-5's six); VFX-18b: a signature scene's, its family's */
+  const scenes = JSON.parse(readFileSync(new URL('../../game/data/battleAnims.json', import.meta.url), 'utf8')).scenes,
+    dash = list.filter(m => (scenes[m.anim] ? scenes[m.anim].family : m.anim) === 'dash');
   assert.deepEqual(dash.map(m => m.id).sort(), [
     'dashkick',
     'flashsale',

@@ -40,7 +40,8 @@ test('the batch: the 12 signature moves of power 100+ and 6 more each name their
     assert.equal(MOVES[mid].anim, mid);
   }
   const named = Object.keys(MOVES).filter(k => A.scenes[MOVES[k].anim]);
-  assert.equal(named.length, 18);
+  /* VFX-18b: later batches add theirs (each scene named by its move, below) */
+  assert.ok(named.length >= 18);
   for (const k of named) assert.ok(MOVES[k].sig, `${k} is a signature move`);
   assert.deepEqual(named.sort(), SCENES.slice().sort());
   for (const k of Object.keys(MOVES)) if (MOVES[k].sig && MOVES[k].p >= A.longPower) assert.ok(named.includes(k), k);
@@ -56,7 +57,9 @@ test('a scene plays at most its category’s maxMs + 500 ms, its short version w
     for (const V of [S, S.short]) {
       assert.ok(V.hit <= V.dur, `${id}: hits after it ends`);
       const hit = V.steps.find(s => s.do === 'hit');
-      assert.ok(hit && hit.at === V.hit, `${id}: its hit step is at its hit`);
+      /* VFX-18b: a status move's scene lands no hit, as its family */
+      if (M.c === 'X') assert.ok(!hit, `${id}: a status scene has no hit step`);
+      else assert.ok(hit && hit.at === V.hit, `${id}: its hit step is at its hit`);
     }
     assert.equal(S.family, D.moves[id].anim === id ? S.family : null);
     assert.ok(A.families[S.family], `${id}: falls back to a family`);
@@ -100,8 +103,10 @@ test('a repeat in the same battle and the Faster speed play the short version: t
   assert.equal(F.repeat, undefined);
   for (const id of SCENES) {
     const S = A.scenes[id],
-      first = (S.steps.find(s => s.do === 'hit') || {}).at,
-      again = (S.short.steps.find(s => s.do === 'hit') || {}).at;
+      /* VFX-18b: a status scene has no hit step: its beat is its `hit` */
+      beat = V => (V.steps.find(s => s.do === 'hit') || { at: V.hit }).at,
+      first = beat(S),
+      again = beat(S.short);
     assert.ok(again < first, `${id}: the repeat hits sooner (no wind-up)`);
   }
 });
