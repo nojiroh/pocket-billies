@@ -272,6 +272,91 @@ No "Ask me before" item came up. New game is unchanged (IN-5 wires it).
   "Unused: art, props and songs" fails on Windows on clean `track/intro` too (a Node tool's POSIX main guard).
 - Next: IN-5 wires New game to the crash and `runStartPrepared`; then the way back plays for real. Swap the clerks
   for IN-3's bots when it merges (above). IN-6: the owner reads the lines on the phone.
+### Intro track IN-2 - Kappi's tips - 2026-10-29
+Branch `claude/in-2-kappi-tips-8cada0` (from `track/intro` 61d90751), a draft PR into `track/intro` (wave 1, beside
+IN-1, IN-3 and IN-4). Built at once: the owner's standing answer (intro-track.md section 1) is the approval. No "Ask me
+before" item came up.
+- Facts checked (intro-track.md 3.2, against 61d90751): `RUN_HINTS`/`runHint` are as described (toasts once a run while
+  `meta.runs` is 0; 10 hints). Today a later run shows **none** of them, so "the second run on keeps them as toasts
+  while `meta.tipsSeen` lacks them" (section 5) is a change for later runs: it is what the plan says, so it is built,
+  but see Risky. `#btip`/`battleTip` (opening-fall.js) is dormant as said; its card's CSS is in opening-old.css. There
+  was no `meta.tipsSeen`, no `run.first` yet (IN-1 adds `run.first === true`), and no pulse flag for a road's arrows.
+- Changed:
+  - New game/js/logic/kappi-tips.js (pure, Node-tested): the run's counters and the decision. Triggers: two failed
+    catches in a row; the run's first faint; one of yours under a third of its HP with a heal in the bag and none used
+    by the battle's end; no pyramids with a wild one within 10 m; 20 s on a choice sheet (reward pick, Perk pick, event,
+    shop) without a real choice (the clock restarts only when the sheet closes or its pick, money, Perks, heals or
+    pyramids change); 60 s in a place without getting 2 m nearer a road on; the first fight against a foe whose type is
+    strong against your lead. Caps: nothing in a run's first battle (not said, not cued, not kept for later), one tip a
+    place, five a run, each tip once ever (`meta.tipsSeen`), never while busy (a battle not at its menu, a throw, a talk,
+    a card or bubble already up, a sheet still opening, any other sheet). A fired tip waits up to 30 s for a quiet
+    moment, then is dropped. Cues first: the Catch button glows after one miss when the foe is under half HP; the Bag
+    button glows when one of yours is low with a heal in the bag; a sheet's picks and its main button glow at 12 s; the
+    arrows of the roads on glow gold and bolder at 40 s. Kappi speaks only when the trigger still fires after its cue.
+  - New game/data/kappiTips.json + schema (triggers, cues, seconds, caps, the lines with line ids); data-checks.js
+    `dataKappiTips` (one tip per trigger, known cues, a cue before its line, line ids, markup), in check-data and the
+    Studio's Check. tools/story-ids.mjs gives the tips' lines their ids.
+  - New game/js/kappi.js: watches the game twice a second (and right after each throw: battle.js finishThrow calls
+    `kappiCatch`), shows the cues and Kappi's voice. Out of battle: a bubble at the top of the screen, under the top
+    bar, in Kappi's skin (talk-skins.css kappi, dialogue.css's bubble) with Kappi's face; a tap closes it, else it goes
+    after 4 s (50 ms a letter for a longer line). In battle: the dormant `#btip` card in Kappi's leaf green
+    (opening-fall.js `battleTip` now knows `kappi` and is exported; only that block changed). Kappi doesn't walk with
+    you. The debug log gets a `scene` line per cue and tip (its id only). New game/css/kappi-tip.css; motion.css `m-cue`.
+  - walk-view.js: `walkView.exitPulse`; `drawExitMarks` draws those exits gold and bolder while it lasts.
+  - run.js `runHint` (the RUN_HINTS block only): on the first run (`run.first`, else `meta.runs === 0`) every hint is
+    dropped and counted as met (`meta.tipsSeen['hint:<id>']`); Kappi's struggle tips and cues take their place. From
+    the second run on a hint is a toast once ever, while not met. The landing hint is dropped on the first run: IN-5's
+    crash scene ends with the way; until then the 60 s stall cue and tip cover a lost player.
+  - Settings, Game tab: "Kappi's tips" (on by default; `preferences.kappiTips` 'on'/'off'). Off also stops the cues.
+    The later runs' hint toasts are not Kappi's and stay on either way.
+  - `meta.tipsSeen` (meta-state.js: in `newMeta`, checked by `validMeta`, a broken one dropped alone by `metaFill`).
+  - tools/check-fast.py "Kappi's tips" (run fixture, a page of its own): past the run's first battle, two throws miss
+    (the roll is made to miss): one tip in Kappi's card, `tipsSeen.catch` set, nothing after a third miss.
+  - tools/test/kappi-tips.test.mjs (15 tests), meta-state.test.mjs; tools/test/load-logic.mjs imports by file URL (the
+    same one-line Windows fix IN-1 made; identical lines merge cleanly); the Studio's logic worker lists the new module.
+- Kappi's lines (drafts for the owner, kappiTips.json):
+  - catch (2 misses in a row): "Two misses. From my notes: a fresh Billie jumps right out. A tired one stays in.[p] Tire
+    it first." `#l:4da8`
+  - faint (the run's first): "Fainted, not gone. They nap it off.[p] Send in someone rested. A town’s clinic does the
+    rest." `#l:d2c9`
+  - potion (low, a heal unused all battle; said after it): "You carried a potion through that whole fight. I watched it
+    [i]not[/i] get used.[p] It’s in the Bag." `#l:c01a`
+  - pyramids (none left, a wild one near): "No pyramids left. Wild ones still fight, and fights pay.[p] Shops sell
+    more." `#l:bcf2`
+  - sheet (20 s on a choice sheet): "There’s no wrong choice here. Only a slow one.[p] Leaving counts as a choice."
+    `#l:2643`
+  - stall (60 s in a place): "Lovely spot. The arrows at the edge point the way on.[p] No hurry. I’m only noting it."
+    `#l:2611`
+  - counter (a foe whose type beats your lead): "Its type beats yours. Brave.[p] Switching is brave too. Just less
+    dramatic." `#l:d1c5`
+- Risky:
+  - **Later runs' hint toasts** now show on the second and later runs until each is met (before: never after the first
+    run). That is section 5's wording; if the owner reads "Ask me before" item 2 as covering it, `hintPlan` returning
+    `skip` for a run that isn't the first restores the old behaviour in one line.
+  - The counters live in memory: a reload mid-run starts them over (the once-ever list is saved). After a reload the
+    next battle counts as the run's first, so nothing fires in it.
+  - The road cue relies on `walkView.st.exits` and the map's `to` links; the gold arrows were not seen in a screenshot
+    (the headless low-graphics page drew no exit arrows where I looked). The stall clock runs only when such an exit is
+    known.
+  - kappi.js runs a 500 ms timer on every page (it returns at once without a run).
+  - Merge spots: run.js (the RUN_HINTS block only), opening-fall.js (`battleTip` only), battle.js (two lines in
+    `finishThrow`), hooks.js (re-run `npm run modules`), studio/art-code-refs.json (regenerate), meta-state.js.
+- Windows note: the repo's tools (`npm run modules`, `data`, `story:ids`, the art refs) compare `import.meta.url` with
+  `file://${argv[1]}` and do nothing on Windows; to-module also needs forward-slash paths, and the check scripts' local
+  server (listen backlog 5) refuses connections there. I ran them through a scratch wrapper (forward-slash `node:path`,
+  a bigger backlog); nothing in the repo changed for it except load-logic.mjs.
+- Verified: lint (eslint 0 errors; check-names, unused-css, to-module --check; ui-lint counted by hand on Windows:
+  every rule under its ceiling), typecheck, format:check, check:data (184 files), line ids. `npm test`: kappi-tips
+  15/15, meta-state; the quick tier's other failures are the same Windows-only ones as on the base commit (a 1,000-map
+  timing test failed once under load). check-fast "Kappi's tips" passed.
+  check:smoke: **2 of 7 here, the same 2 of 7 with the same five failures on the base
+  commit 61d90751** on this Windows machine (page loads past the 90 s limit: Phone, Actions bar, the full test, and
+  Palettes on the page that didn't load; Unused: a node tool that prints nothing on Windows). So smoke is not shown
+  passing: CI or a Linux run should confirm it.
+  Screenshots (phone size, headless): the world bubble with Kappi's face under the top bar; the battle card with the
+  Catch button glowing.
+- Next: IN-5 calls nothing new (the tips run on any run; the prepared run is `run.first`). IN-6 tunes the seconds
+  from the owner's debug log (each cue and tip is a `scene` line). The owner reads the lines.
 
 ### Test data track TD-2 - the graphics test walks a benchmark path - 2026-10-29
 Branch `track/test-data` (TD-1's pushes and main, 4b64e3d6, merged in at the start; four conflicts kept both sides:

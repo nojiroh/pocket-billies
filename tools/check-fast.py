@@ -563,6 +563,44 @@ def run_way_back(pg, base):
     if home[3] < team or home[4] or home[5] not in ('lost', 'quit'): raise Exception(f'home: team {home[3]} of {team}, pending {home[4]!r}, history {home[5]}')
     return f'the pickup (two clerks), stored at once, the lab again after a reload, the dressing room, the payout with no cards, home by the lab door with {home[3]} Billies'
 
+def kappi_tips(pg, base):
+    """IN-2: Kappi's tips on a run. Past the run's first battle, a wild battle where two throws in a row miss: Kappi's
+    catch tip shows once, in the battle's tip card in Kappi's colours, and is marked seen for good; a third miss shows
+    nothing more (one tip a place, each once ever)"""
+    drawing(pg)
+    if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.meta.tipsSeen={};saveData.preferences.kappiTips='on';"
+                "kappiLook();kappi.st.battles=1;window.kappiRoll=catchRoll;catchRoll=()=>({caught:false,w:0,edge:false,P:0});"
+                "startWild(encountersHere()[0]);0")
+    settle = ("(()=>{const p=activeBattle?activeBattle.phase:'none';if(p==='playing')tapMessage();"
+              "if(p==='switch')document.querySelector('#acts [data-a=bswitch]:not([disabled])')?.click();return ['choose','end','none'].includes(p)})()")
+    throw = ("(()=>{const k=Object.keys(PYRAMIDS).find(k=>saveData.pyramids[k]>0)||Object.keys(PYRAMIDS)[0];activeBattle.coin=k;"
+             "saveData.pyramids[k]=(saveData.pyramids[k]||0)+1;activeBattle.phase='aim';paintActions();showAim();doThrow(false);return 1})()")
+    said = "kappi.st.said"
+    try:
+        for n in range(3):
+            if not until(pg, settle, 60) or pg.evaluate("!activeBattle||activeBattle.phase!=='choose'"):
+                raise Exception(f'the battle never came back to its menu before throw {n + 1}: {pg.evaluate("activeBattle&&activeBattle.phase")}')
+            if n == 2:
+                pg.evaluate("document.getElementById('btip')?.click();0")
+            pg.evaluate(throw)
+            if n == 0:
+                if not until(pg, settle, 60): raise Exception('the first throw never finished')
+                time.sleep(1.2)
+                if pg.evaluate(said): raise Exception('Kappi spoke after one miss')
+            if n == 1:
+                if not until(pg, "(()=>{" + settle + ";return !!document.querySelector('#btip.kappi.on:not(.off)')})()", 30):
+                    raise Exception(f'no tip after two misses: {pg.evaluate("JSON.stringify([kappi.st.fails,kappi.st.battles,kappi.st.due,activeBattle&&activeBattle.phase])")}')
+                tip = pg.evaluate("[document.querySelector('#btip .btip-t').textContent,saveData.meta.tipsSeen.catch,kappi.st.said]")
+                if 'Kappi' not in tip[0] or 'Tire it first' not in tip[0] or tip[1] != 1 or tip[2] != 1:
+                    raise Exception(f'the catch tip: {tip}')
+        if not until(pg, settle, 60): raise Exception('the third throw never finished')
+        time.sleep(1.5)
+        if pg.evaluate(said) != 1: raise Exception(f'{pg.evaluate(said)} tips after a third miss (one a place)')
+    finally:
+        pg.evaluate("catchRoll=window.kappiRoll||catchRoll;if(activeBattle){activeBattle.over=activeBattle.over||'ran';activeBattle.phase='end';endBattle()};0")
+    return f'one tip after two misses, in Kappi’s card (“{tip[0][:40]}…”), seen for good; nothing after a third'
+
 
 def run_arena(pg, base):
     """WM-7: the run fixture's first mini-boss place has its leader's arena: walked there (runJump), its gate shut
@@ -2009,6 +2047,7 @@ PAGES = [   # (what the page opens, its checks in order); the longest first, so 
     ('run', [("A seam on a day the weather changes the water in view: nothing built in one go, the day's water swapped in after (the crossing hitch)", run_seam_water)]),
     ('run', [("A run's battle held and started again after a reload; a loss, the payout (again after a reload) and home; the history, the lost run's scene, a fresh line (RL-S1)", run_loop)]),
     ('run', [("The first run's way back: the Bureau's pickup, the lab again after a reload, the payout at the lab, home by the lab door (IN-4)", run_way_back)]),
+    ('run', [("Kappi's tips: two misses in a row on a run, one tip in Kappi's card, once (IN-2)", kappi_tips)]),
     ('run', [("A leader's arena: its gate shut, the leader in the ring; stepped into, the intro and the battle; won, the gate open (WM-7)", run_arena)]),
     ('run', [("Blake on the run's map: his team against the lead, in his place, beaten (a meeting, a win, a reward pick); a Bean for Chosen and his thanks; Kappi's favour paid on the way home (RL-S2)", run_rival)]),
     ('mountains', [('Tall ground: behind a south mountain the camera rises, rock fades, your silhouette shows; no rise or rock fade on flat ground', tall_ground)]),

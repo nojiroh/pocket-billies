@@ -328,6 +328,8 @@ export const walkView = {
   x: null,
   /* the Actions sheet's marker over a hub building ({ act, label }: walk-tab.js walkMarkTo, drawn by drawWalkMark) */
   mark: /** @type {{ act: string, label: string } | null} */ (null),
+  /* IN-2: Kappi's road cue (kappi.js): until when the arrows of the roads to these places glow (drawExitMarks) */
+  exitPulse: /** @type {{ until: number, to: number[] } | null} */ (null),
   id: null,
   sc: null,
   ground: null,
@@ -4671,7 +4673,8 @@ export function drawExitMarks(C, st, t) {
     ex = sc.exits || [];
   if (!st.exits || !st.exits.length) return;
   const x = walkView.x,
-    hub = mapHub(sc);
+    hub = mapHub(sc),
+    t0 = performance.now();
   x.save();
   x.lineCap = 'round';
   x.lineJoin = 'round';
@@ -4685,7 +4688,10 @@ export function drawExitMarks(C, st, t) {
       uz = dz / l,
       px = -uz,
       pz = ux,
-      col = e.locked ? '255,120,110' : e.dest ? '255,212,71' : '255,255,255';
+      /* IN-2: Kappi's road cue (kappi.js): the ways on glow gold and bolder for a few seconds */
+      lit = !e.locked && walkView.exitPulse && t0 < walkView.exitPulse.until && walkView.exitPulse.to.includes(e.to),
+      col = e.locked ? '255,120,110' : e.dest || lit ? '255,212,71' : '255,255,255',
+      wk = lit ? 1.7 : 1;
     for (let c = 0; c < 3; c++) {
       const f = ((reducedMotion ? 0 : t / 1100) + c / 3) % 1,
         cx = pt[0] - ux * (2.2 - f * 1.9),
@@ -4696,14 +4702,14 @@ export function drawExitMarks(C, st, t) {
         D = worldToScreen(C, cx - px * 0.42 - ux * 0.25, 0, cz - pz * 0.42 - uz * 0.25);
       if (!A || !B || !D) continue;
       x.strokeStyle = `rgba(30,24,50,${a * 0.35})`;
-      x.lineWidth = Math.max(3, B.s * 0.2);
+      x.lineWidth = Math.max(3, B.s * 0.2) * wk;
       x.beginPath();
       x.moveTo(A.x, A.y + 2);
       x.lineTo(B.x, B.y + 2);
       x.lineTo(D.x, D.y + 2);
       x.stroke();
       x.strokeStyle = `rgba(${col},${a})`;
-      x.lineWidth = Math.max(2, B.s * 0.12);
+      x.lineWidth = Math.max(2, B.s * 0.12) * wk;
       x.beginPath();
       x.moveTo(A.x, A.y);
       x.lineTo(B.x, B.y);

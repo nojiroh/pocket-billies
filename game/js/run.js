@@ -48,6 +48,7 @@ import {
 } from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
+import { hintPlan, tipFirstRun } from './logic/kappi-tips.js';
 import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
 import { pointBudget, pointPick, pointSpend, pointStartable } from './logic/starter-points.js';
 import { ranchNow } from './logic/ranch-clock.js';
@@ -893,8 +894,9 @@ export function runArrivedFx() {
   if (typeof questArrived === 'function') questArrived();
 }
 
-/* ---------- hints, on a player's first run only ---------- */
-/** the first run's hints, each shown once (run.hints) as a toast */
+/* ---------- hints ---------- */
+/** the run's hints, each met once a run (run.hints). IN-2: on the first run Kappi's tips and cues take their place
+ * (kappi.js); from the second run on each is a toast until it has been met (meta.tipsSeen `hint:<id>`) */
 const RUN_HINTS = {
   landing: run =>
     `Day 1 of the run. Walk east into the next place: each place you walk into takes a day. The boss waits at the far end.`,
@@ -910,12 +912,18 @@ const RUN_HINTS = {
   relic: run =>
     `Perks last the run: hold up to ${perkCap(run, RULES.run.perks, PERKS)}. The Perks tab shows what each one does; town shops sell them too.`,
 };
-/** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
+/** a hint met: on the first run it counts as met without a toast (logic/kappi-tips.js hintPlan); later, a toast once
+ * ever @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {
-  const run = saveData.run;
-  if (!run || (saveData.meta && saveData.meta.runs) || run.hints[id] || !RUN_HINTS[id]) return;
+  const run = saveData.run,
+    meta = saveData.meta;
+  if (!run || !meta || run.hints[id] || !RUN_HINTS[id]) return;
   run.hints[id] = 1;
-  toast(RUN_HINTS[id](run));
+  const seen = meta.tipsSeen || (meta.tipsSeen = {}),
+    plan = hintPlan(tipFirstRun(run, meta), seen, id);
+  if (plan === 'skip') return;
+  seen['hint:' + id] = 1;
+  if (plan === 'toast') toast(RUN_HINTS[id](run));
 }
 /** a run's place walked into: its type's hint */
 export function runArrivedHint() {

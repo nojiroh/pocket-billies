@@ -46,6 +46,10 @@ export function storyScripts(dir = DATA) {
   const B = json('banter.json');
   for (const [k, v] of Object.entries(B))
     out.push({ id: 'banter:' + k, file: 'banter.json', data: B, lines: v.script, put: L => (v.script = L) });
+  /* IN-2: Kappi's tips, a line each */
+  const K = json('kappiTips.json');
+  for (const [k, v] of Object.entries(K.tips || {}))
+    out.push({ id: 'kappiTip:' + k, file: 'kappiTips.json', data: K, lines: [v.line], put: L => (v.line = L[0]) });
   return out;
 }
 /** gives each line without an id (or with an id seen before) a new one; returns how many */

@@ -1,0 +1,67 @@
+/* ================= IN-2: Kappi's tips =================
+   Kappi is a voice during a run (kappi.js): a short bubble at the top of the screen in Kappi's own skin (talk-skins.css
+   kappi, dialogue.css's bubble), never in the way of the stick or the bottom bar; a tap closes it. In a battle the
+   tip card (#btip, opening-old.css) takes Kappi's colours. A world cue pulses a button or a choice sheet's picks. */
+.ktip {
+  position: fixed;
+  z-index: var(--z-hud);
+  left: 50%;
+  /* under the top bar (the place's name, the clock) */
+  top: calc(env(safe-area-inset-top, 0px) + var(--s7) + var(--s4) + var(--bubble-tail, 18px));
+  width: min(440px, calc(100% - 2 * var(--gutter, 16px)));
+  translate: -50% calc(-1 * var(--s3));
+  opacity: 0;
+  pointer-events: none;
+  cursor: pointer;
+  transition:
+    opacity var(--m-base) ease,
+    translate var(--m-base) ease;
+}
+.ktip.on {
+  opacity: 1;
+  translate: -50% 0;
+  pointer-events: auto;
+}
+.ktip .ktip-box {
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  align-items: center;
+}
+.ktip-face {
+  width: 44px;
+  height: 54px;
+  display: grid;
+  place-items: end center;
+  overflow: hidden;
+}
+.ktip-face img {
+  display: block;
+  image-rendering: pixelated;
+}
+.ktip .talk-line {
+  font-size: 0.95em;
+}
+/* the battle's tip card in Kappi's leaf green (talk-skins.css kappi's colours) */
+.btip.kappi {
+  --kappi-fill: #e8f0d8;
+  --kappi-ink: #26331a;
+  --kappi-edge: #6f8f48;
+  background: var(--kappi-fill);
+  color: var(--kappi-ink);
+  outline: 2px solid var(--kappi-edge);
+}
+.btip.kappi .btip-t b {
+  color: var(--kappi-edge);
+}
+/* the cues: the Catch or Items button, a choice sheet's picks and its main button pulse a few times, in gold */
+#acts[data-kcue='bcoins'] [data-a='bcoins'],
+#acts[data-kcue='bitems'] [data-a='bitems'],
+#ov[data-kcue='sheet'] pb-pick-card,
+#ov[data-kcue='sheet'] .pb.gold {
+  animation: m-cue calc(var(--m-slow) * 3) ease-in-out 5;
+}
+[data-motion='reduced'] :is(#acts[data-kcue] [data-a], #ov[data-kcue='sheet'] :is(pb-pick-card, .pb.gold)) {
+  animation: none;
+  filter: var(--drop-focus);
+}

@@ -109,6 +109,8 @@ export interface Meta {
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */
   buildings: Record<string, number>;
+  /** IN-2: Kappi's tips said (kappiTips.json ids) and the run hints met (`hint:<id>`, run.js RUN_HINTS), once ever */
+  tipsSeen: Record<string, 1>;
   /** runs ended (won or lost) and runs won */
   runs: number;
   wins: number;
