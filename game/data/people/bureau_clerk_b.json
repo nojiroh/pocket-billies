@@ -1,0 +1,4 @@
+{
+ "look": {"name":"Bureau clerk"},
+ "creature": {"rig":"bot:tide.intake.franker.seizer.hover","ht":1.5}
+}

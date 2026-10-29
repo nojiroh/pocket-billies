@@ -139,7 +139,9 @@
     "hayden",
     "rosa",
     "seamus",
-    "helix"
+    "helix",
+    "bureau_clerk_a",
+    "bureau_clerk_b"
    ]
   },
   "trainers": {"ids":["crude","markdown","alta","marina","blake0","blake","poppy","vault","morel","carat","tinker"]},
@@ -187,7 +189,8 @@
     "int_workshop",
     "int_gene_bank",
     "test_props_routes",
-    "test_people"
+    "test_people",
+    "test_intro_art"
    ]
   },
   "cutscenes": {"ids":["opening","city"]}

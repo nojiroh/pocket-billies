@@ -200,7 +200,7 @@
    "at": [
     "game/js/postcards.js:49",
     "game/js/walk-view.js:801",
-    "game/js/walk/frame-items.js:203"
+    "game/js/walk/frame-items.js:212"
    ]
   },
   {
@@ -1189,8 +1189,8 @@
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
-   "game/js/walk/frame-items.js:174",
-   "game/js/walk/frame-items.js:272",
+   "game/js/walk/frame-items.js:183",
+   "game/js/walk/frame-items.js:281",
    "game/js/walk/prop-look.js:55",
    "game/js/walk/prop-look.js:65",
    "game/js/walk/prop-look.js:418",
@@ -1241,14 +1241,14 @@
   ],
   "crown": [
    "game/js/logic/shaft-pick.js:40",
-   "game/js/walk/effects.js:1146"
+   "game/js/walk/effects.js:1167"
   ],
   "cup": [
    "game/js/logic/sketch-art.js:279"
   ],
   "down": [
    "game/js/cutscene/director.js:132",
-   "game/js/cutscene/director.js:168",
+   "game/js/cutscene/director.js:170",
    "game/js/cutscene/stage.js:119",
    "game/js/engine/post-effects.js:476",
    "game/js/engine/post-effects.js:480",
@@ -1270,8 +1270,8 @@
    "game/js/logic/run-scenes.js:640",
    "game/js/logic/run-scenes.js:662",
    "game/js/logic/train-path.js:204",
-   "game/js/person-art.js:804",
-   "game/js/person-art.js:884",
+   "game/js/person-art.js:812",
+   "game/js/person-art.js:892",
    "game/js/story-stage.js:220",
    "game/js/train-ride.js:315",
    "game/js/train-ride.js:322",
@@ -1283,9 +1283,9 @@
    "game/js/walk-view.js:3890",
    "game/js/walk-view.js:4001",
    "game/js/walk-view.js:4322",
-   "game/js/walk/frame-items.js:322",
-   "game/js/walk/frame-items.js:473",
-   "game/js/walk/frame-items.js:493"
+   "game/js/walk/frame-items.js:331",
+   "game/js/walk/frame-items.js:482",
+   "game/js/walk/frame-items.js:502"
   ],
   "drop": [
    "game/js/boot.js:163",
@@ -1302,8 +1302,8 @@
    "game/js/battle-anim-run.js:645"
   ],
   "eye": [
-   "game/js/figures.js:1019",
-   "game/js/figures.js:1065",
+   "game/js/figures.js:1021",
+   "game/js/figures.js:1067",
    "game/js/logic/figure-kit.js:1232",
    "game/js/logic/figure-kit.js:1286",
    "game/js/logic/figure-kit.js:1316",
@@ -1322,7 +1322,7 @@
   "flame": [
    "game/js/battle-stage.js:2517",
    "game/js/walk-view.js:416",
-   "game/js/walk/effects.js:380"
+   "game/js/walk/effects.js:401"
   ],
   "floppy": [
    "game/js/opening-fall.js:922"
@@ -1406,9 +1406,9 @@
    "game/js/walk-view.js:416",
    "game/js/walk-view.js:4176",
    "game/js/walk/battle-scars.js:146",
-   "game/js/walk/effects.js:569",
-   "game/js/walk/effects.js:723",
-   "game/js/walk/effects.js:833",
+   "game/js/walk/effects.js:590",
+   "game/js/walk/effects.js:744",
+   "game/js/walk/effects.js:854",
    "game/js/walk/fountains-weather.js:602",
    "game/js/world-bowl.js:4282"
   ],
@@ -1519,15 +1519,15 @@
    "game/js/walk-tab.js:383"
   ],
   "sparkle": [
-   "game/js/cutscene/director.js:292",
+   "game/js/cutscene/director.js:294",
    "game/js/logic/cutscene-set.js:44",
    "game/js/logic/line-markup.js:38",
    "game/js/lore.js:195",
    "game/js/lore.js:197",
    "game/js/walk-view.js:416",
-   "game/js/walk/effects.js:346",
-   "game/js/walk/effects.js:350",
-   "game/js/walk/effects.js:458"
+   "game/js/walk/effects.js:367",
+   "game/js/walk/effects.js:371",
+   "game/js/walk/effects.js:479"
   ],
   "star": [
    "game/js/battle-stage.js:1692",
@@ -1551,7 +1551,7 @@
   "up": [
    "game/js/augment-screen.js:148",
    "game/js/augment-screen.js:259",
-   "game/js/cutscene/director.js:168",
+   "game/js/cutscene/director.js:170",
    "game/js/engine/post-effects.js:484",
    "game/js/engine/post-effects.js:586",
    "game/js/fishing.js:171",
@@ -1571,8 +1571,8 @@
    "game/js/logic/person-view.js:58",
    "game/js/logic/person-view.js:61",
    "game/js/logic/person-view.js:116",
-   "game/js/person-art.js:805",
-   "game/js/person-art.js:884",
+   "game/js/person-art.js:813",
+   "game/js/person-art.js:892",
    "game/js/train-ride.js:274",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
@@ -1585,7 +1585,7 @@
    "game/js/seamless-world.js:1196",
    "game/js/walk-control.js:998",
    "game/js/walk-control.js:1008",
-   "game/js/walk/effects.js:392",
+   "game/js/walk/effects.js:413",
    "game/js/walk/lighting.js:243"
   ]
  }
