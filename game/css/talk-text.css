@@ -1,0 +1,76 @@
+/* ================= DL-2: the letters of a spoken line =================
+   talk.js (talkLetters) draws each line as words of letter spans with the effects of its markup
+   (docs/phases/dialogue-track.md, "Text that acts"; logic/line-markup.js). A letter arrives with a small rise and a
+   fade; bold pops, shake jitters once, wave bobs while the line is on screen (a signal loop: logic/idle-life.js). The
+   frame may move, the letters keep a straight baseline. The keyframes and Reduced (no rise, pop, shake or wave) are
+   in motion.css. */
+
+/* what a screen reader hears: the plain line, out of sight */
+.talk-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+/* a word never breaks; the line wraps between words */
+.talk-glyphs .w {
+  display: inline-block;
+  white-space: nowrap;
+}
+.talk-glyphs .l {
+  display: inline-block;
+  opacity: 0;
+  translate: 0 2px;
+  transition:
+    opacity var(--m-fast) var(--ease-out),
+    translate var(--m-fast) var(--ease-out);
+}
+.talk-glyphs .l.on {
+  opacity: 1;
+  translate: none;
+  /* each effect adds its own animation (none where it has none) */
+  animation: var(--talk-pop, none), var(--talk-shake, none), var(--talk-wave, none);
+}
+
+/* [b] the stressed word: Oxanium 700, a small pop as it shows */
+.talk-glyphs .fx-b {
+  font-weight: 700;
+  --talk-pop: talk-pop var(--m-pop) var(--ease-out);
+}
+/* [i] a slant (Oxanium has no italic: the browser slants it) */
+.talk-glyphs .fx-i {
+  font-style: italic;
+}
+/* [big] in the voice font; [small] smaller and fainter */
+.talk-glyphs .fx-big {
+  font-family: var(--font-voice);
+  font-size: 1.3em;
+  line-height: 1;
+}
+.talk-glyphs .fx-small {
+  font-size: 0.85em;
+  color: color-mix(in srgb, currentColor 70%, transparent);
+}
+/* [c=…] the colour code's text shades (they follow the theme) */
+.talk-glyphs .fx-c-gold {
+  color: var(--sig-value-text);
+}
+.talk-glyphs .fx-c-red {
+  color: var(--sig-bad-text);
+}
+.talk-glyphs .fx-c-teal {
+  color: var(--sig-good-text);
+}
+.talk-glyphs .fx-c-grey {
+  color: var(--sig-machine-text);
+}
+/* [shake] a jitter in whole pixels, once */
+.talk-glyphs .fx-shake {
+  --talk-shake: talk-shake var(--m-slow) steps(1, end);
+}
+/* [wave] the letters bob one after another for as long as the line shows */
+.talk-glyphs .fx-wave {
+  --talk-wave: talk-wave var(--talk-wave-ms, 1.2s) ease-in-out calc(var(--i) * -90ms) infinite;
+}

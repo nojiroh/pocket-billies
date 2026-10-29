@@ -93,6 +93,7 @@ import { folkCap, squareGoers, squareSlot, squareStopFor, squareStops } from './
 import { residentHomes, residentsHere } from './logic/residents.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
+import { plainOf } from './logic/line-markup.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -4903,6 +4904,7 @@ function drawSpeechTail(x, cx, y, u, fill, line) {
   x.fillRect(cx - u, y, 2 * u, u);
 }
 export function drawSpeech(x, cx, cy, txt, a) {
+  txt = plainOf(txt);
   if (!txt) return;
   const s = canvasPixels(12),
     u = pixelUnit();

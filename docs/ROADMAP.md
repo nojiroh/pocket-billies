@@ -399,6 +399,21 @@ town node needs it.
   motion (they don't today). SY-0 (the plan, with research) and SY-1 (battle flashes follow Flashes and Reduced
   motion) done 2026-10-27 on `ccr-86dc9cb1-odx2za`; SY-2 (numbers you feel) done 2026-10-27 on `track/style`; SY-3
   (the Bureau's mark: the emblem, `bureau.look`, `pb-stamp`) done 2026-10-28 on `track/style`; SY-4 (case files: Bureau events in a manila folder, typed in, redacted, stamped) done 2026-10-28 on `track/style`; SY-5 (the Bureau in battle: stamps on knockouts and wins, the Notice of Retrieval in the join intro, ID plates on form paper; UI-16a/b merged in for their plates) done 2026-10-28 on `track/style`; SY-6 (the coat's foil in the world: a dithered sheen band in the sprite shader on coated Billies, maps and battle) done 2026-10-28 on `track/style`; SY-7 (the Bureau in the world: red tape on its barrier and crate, its own checkpoint sign with the emblem, loose forms blowing about its places) done 2026-10-28 on `track/style`; SY-8 (tuning and docs: Studio dials for the stamp, the HP roll, the pop sizes and the foil, uiTheme.json `style`; the debug log's style line) done 2026-10-28 on `track/style`. **Track done** (2026-10-28), waiting on PR #289; tags `sy-N-done` and `style-done` are the owner's to push. Branch `track/style`.
+- **Dialogue track** (docs/phases/dialogue-track.md, the owner's brief 2026-10-28): talking with character. A
+  conversation of stacked bubbles (the last two lines above the newest, speakers on alternating sides, interruptions,
+  a "…" bubble, a Log), a bubble of their own for each character (the Bureau's form paper and stamp, Chosen's gold,
+  Kappi's leaf, Blake's pop-art slant, your neon), shout, whisper and think shapes, bracket tags for text that acts
+  (bold, slant, size, colour, wave, shake, speed, pauses, mid-line faces, emotes), a Text speed setting, and portraits
+  that perform (random blinks, a mouth synced to the voice, the head on a spring on the characters track's figures,
+  emotes, the frame bouncing). DL-0 (the plan, with research) done 2026-10-28 on `ccr-2d53c4cf-8w7kd2`; DL-1 (markup:
+  logic/line-markup.js, plain text on every surface, script errors for bad tags) done 2026-10-28 on `track/dialogue`;
+  DL-2 (letters: the letter spans and effects, logic/talk-type.js timing, Text speed, blip styles, Oxanium 700 for
+  bold) done 2026-10-28; DL-3 (bubbles: each speaker's skin from talkSkins.json, shout, whisper and think shapes, the
+  tilt, the pop-in and grow spring, the Bureau's stamp, the bubble's dials; the owner kept the mockup's skins and gave
+  the player's lines a narration skin) done 2026-10-28; DL-4 (the stack: sides, linked lines, the cut and its knock,
+  the "…" bubble, choices in the stack, the Log, the 40% height budget, the camera lifting the talk above it; the
+  owner's answer: `[wait]` for anyone, the stamp the Bureau's alone) done 2026-10-28; DL-5 (faces: logic/talk-director.js, combined expressions, blinks and the mouth, emotes from emotes.json, the frame's bounce, the listener dimmed) done 2026-10-29; DL-6 (figure close-ups: the bust bake, the head turned in stepped angles, the face painted from the director, the mannequin's marks plus an open mouth while CH-6 isn't in) done 2026-10-29; DL-7 (the writing pass: markup in 87 lines of the opening, Chosen, Kappi, Blake and the Bureau, words unchanged; provisional, for the owner's review) done 2026-10-29; next DL-8 (optional, the owner decides). About 8
+  sessions. Branch `track/dialogue`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.

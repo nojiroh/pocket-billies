@@ -18,7 +18,7 @@
   "if beat:blake0",
   "  [happy] Back for more? All right! #l:85be",
   "else",
-  "  [happy] Mine beats yours. Watch. #l:b4ee",
+  "  [happy] Mine beats [b]yours[/b]. Watch. #l:b4ee",
   "battle blake0"
  ]
 }

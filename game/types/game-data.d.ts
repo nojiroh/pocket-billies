@@ -73,6 +73,9 @@ export interface GameData {
   events?: EventsData;
   /** RL-S1: the story director's lines */
   banter?: Record<DataId, BanterLine>;
+  /** DL-3: each character's own speech bubble (logic/talk-skins.js) */
+  talkSkins?: TalkSkins;
+  emotes?: Emotes;
   /** RL-S2: the hub folk and you (relations.json) */
   relations?: RelationsData;
   /** ON-3: the Showcase's weekly themes and ribbons (game/data/showcase.json) */
@@ -3214,4 +3217,32 @@ export interface RelationLevel {
   pyramids?: Record<string, number>;
   /** a wardrobe piece given once, when the level is reached */
   wardrobe?: string;
+}
+
+/** DL-3: a speech bubble's skin (talkSkins.json; css/talk-skins.css) */
+export interface TalkSkin {
+  name: string;
+  family: 'bubble' | 'bubbleSoft' | 'bubbleNote';
+  slant?: number;
+  tilt?: number;
+  entrance: 'pop' | 'soft' | 'still';
+  blip: 'voice' | 'typewriter' | 'calm';
+  deco: string[];
+}
+/** DL-3: talkSkins.json: the skins, and who wears which */
+export interface TalkSkins {
+  about?: string;
+  default: string;
+  skins: Record<DataId, TalkSkin>;
+  speakers: Record<DataId, DataId>;
+  classes: Record<DataId, DataId>;
+}
+/** DL-5: emotes.json: the emotes that pop beside a talking head, as pixel grids */
+export interface Emotes {
+  about?: string;
+  size: number;
+  outline: string;
+  colors: Record<string, string>;
+  auto: Record<string, string>;
+  emotes: Record<string, string[]>;
 }

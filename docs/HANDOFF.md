@@ -2,6 +2,456 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-7: the writing pass (markup in the opening, Chosen, Kappi, Blake and the Bureau; provisional) - 2026-10-29
+Branch `track/dialogue` (main ed5c6857 already in: nothing to merge). Run under the owner's standing instruction
+(2026-10-29): plan written in the session's reply, approved in advance, no Plan Mode. Data and docs only. No session
+tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-7". The last automatic session: DL-8 is optional
+and the owner's call.
+- Changed: markup in 87 lines in 4 files (game/data/cutscenes/opening.json 16, story.json 19, banter.json 51,
+  trainers/blake0.json 1). **Every word stays as it was**: a script checked each line for the same plain text
+  (`plainOf`) and the same leading expression, with no markup errors, before writing it; opening-said.json is
+  unchanged and opening-script.test.mjs passes. The hand: mostly a `[p]` before a punchline (only where the
+  punctuation's own beat is too short), one `[b]` or `[i]` stressed word, `[face=happy|sad]` on the turn (3 lines;
+  with figures on it also moves the head), 3 emotes (a sparkle on "destiny", a sweat on Kappi's "...No reason" and
+  Chosen's "...Don't tell Kappi"), one `[shake]` ("WHOA."), one `[slow]` ("Neatly."), one `[wave]` ("hum"), one
+  shout (Blake's "Ha! Told you."), one whisper (Kappi's notes in the jar of beans), and two Bureau stamps (`filed` on
+  "You're on file.", `pending` at the end of "Reviews take time.").
+- **For the owner's review (Ask me before 3: all provisional, my picks)**, before → after (ids are `#l:` line ids):
+  - cutscenes/opening.json `#l:bfff`: [surprised] Chosen: Whoa. WHOA. You fell out of the sky and you’re alive? That’s a main character move. That’s my move. → [surprised] Chosen: Whoa. [shake]WHOA.[/shake] You fell out of the sky and you’re alive? That’s a main character move.[p] That’s [b]my[/b] move.
+  - cutscenes/opening.json `#l:b29c`: Chosen: Stuff comes down through the crust sometimes. Mostly furniture. Furniture has never once been chosen. → Chosen: Stuff comes down through the crust sometimes. Mostly furniture.[p] Furniture has [i]never once[/i] been chosen.
+  - cutscenes/opening.json `#l:2d45`: Kappi: He means: are you hurt? Take your time. Nothing down here is in a hurry. Except him. → Kappi: He means: are you hurt? Take your time. Nothing down here is in a hurry.[p] Except him.
+  - cutscenes/opening.json `#l:c40b`: Chosen: Quick, what’s your name? Is it epic? It’s not “The Chosen”, right? That one’s taken. → Chosen: Quick, what’s your name? Is it [b]epic[/b]? It’s not “The Chosen”, right?[p] That one’s taken.
+  - cutscenes/opening.json `#l:0cc5`: [happy] Chosen: Amnesia. Classic origin story. I’d be jealous, but I already have one. → [happy] Chosen: Amnesia. Classic origin story. I’d be jealous, but I [i]already[/i] have one.
+  - cutscenes/opening.json `#l:12e4`: Kappi: Fall-related amnesia. Very common down here. It comes back slowly. Most good things do. → Kappi: Fall-related amnesia. Very common down here. It comes back slowly.[p] Most good things do.
+  - cutscenes/opening.json `#l:130b`: [happy] Chosen: {name}? Solid sidekick name. Not chosen-tier. But solid. → [happy] Chosen: {name}? Solid sidekick name. Not [i]chosen[/i]-tier.[p] But solid.
+  - cutscenes/opening.json `#l:0e4e`: Chosen: I’m Professor Chosen. Nobody gave me the title. It chose me. That’s how chosen works. → Chosen: I’m Professor Chosen. Nobody gave me the title. It [b]chose[/b] me. That’s how chosen works.
+  - cutscenes/opening.json `#l:7fa0`: Kappi: I’m Kappi. People add “the Wise”. I do the research. He does the… presence. → Kappi: I’m Kappi. People add “the Wise”. I do the research. He does the… [face=happy]presence.
+  - cutscenes/opening.json `#l:176f`: Kappi: Then dropped them down here. They went wild. Most of them nap on me now. → Kappi: Then dropped them down here. They went wild.[p] Most of them nap on me now.
+  - cutscenes/opening.json `#l:abfa`: [happy] Chosen: Every hero needs a companion. Not me, obviously. You. I’ve got three right here. → [happy] Chosen: Every hero needs a companion.[p] Not me, obviously. [b]You.[/b] I’ve got three right here.
+  - cutscenes/opening.json `#l:1ae5`: Chosen: Three Billies, three types. Each one beats one of the others. Choose wisely. Like I would. → Chosen: Three Billies, three types. Each one beats one of the others. Choose wisely.[p] Like I would.
+  - cutscenes/opening.json `#l:a99c`: [happy] Chosen: {starter}! Bold. I’d have picked that one too. I didn’t. But I would have. → [happy] Chosen: {starter}! Bold. I’d have picked that one too.[p] I didn’t. But I [i]would[/i] have.
+  - cutscenes/opening.json `#l:321e`: Chosen: Every trip is different. Take {starter}, catch what you can, bring back whatever you find. Side quest. Very important side quest. → Chosen: Every trip is different. Take {starter}, catch what you can, bring back whatever you find. Side quest.[p] [b]Very[/b] important side quest.
+  - cutscenes/opening.json `#l:30e3`: Kappi: And come back in one piece. Falling once is plenty. There’s a hot bath in the lab. Yuzu in it. → Kappi: And come back in one piece. Falling once is plenty. There’s a hot bath in the lab.[p] Yuzu in it.
+  - cutscenes/opening.json `#l:97b4`: [happy] Chosen: Go whenever you’re ready. The lab’s always open. So is destiny. → [happy] Chosen: Go whenever you’re ready. The lab’s always open.[p] So is [emote=sparkle][b]destiny[/b].
+  - story.json `#l:6616`: Kappi: That thing was retrieving. It was built to bring things back. → Kappi: That thing was [i]retrieving[/i]. It was built to bring things back.
+  - story.json `#l:85a4`: Chosen: Like me. With you. Constantly. → Chosen: Like me. With you.[p] Constantly.
+  - story.json `#l:af32`: Kappi: ...Yes. Exactly like that. Which is the problem. → Kappi: ...Yes. Exactly like that.[p] [face=sad]Which is the problem.
+  - story.json `#l:4571`: [happy] Chosen: There you are! Face-down by the mast. You’re welcome. → [happy] Chosen: There you are! Face-down by the mast.[p] You’re welcome.
+  - story.json `#l:bd04`: Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how. I don’t know either. → Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how.[p] I don’t know either.
+  - story.json `#l:d779`: Kappi: He was asleep in the lab when you landed. → Kappi: He was [i]asleep[/i] in the lab when you landed.
+  - story.json `#l:7301`: Kappi: It closed behind you. Neatly. Like someone shutting a drawer. → Kappi: It closed behind you. [slow]Neatly.[/slow] Like someone shutting a drawer.
+  - story.json `#l:978e`: [happy] Chosen: A drawer. My drawer. Professor powers. → [happy] Chosen: A drawer. [b]My[/b] drawer. Professor powers.
+  - story.json `#l:5e16`: [happy] That’s a proper collection. Kappi says they might cite you in their paper. I said put me first. → [happy] That’s a proper collection. Kappi says they might cite you in their paper.[p] I said put me [b]first[/b].
+  - story.json `#l:251a`: [surprised] You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls. → [surprised] You’re getting good at this. Not [i]chosen[/i] good. But good. Some of them only show up in caves or in the malls.
+  - story.json `#l:4eb4`: 1 badge already. The arena leaders talk about you. Not as much as about me. But they talk. → 1 badge already. The arena leaders talk about you. Not as much as about [b]me[/b]. But they talk.
+  - story.json `#l:be0b`: {badges} badges already. The arena leaders talk about you. Not as much as about me. But they talk. → {badges} badges already. The arena leaders talk about you. Not as much as about [b]me[/b]. But they talk.
+  - story.json `#l:0008`: [surprised] Blake: What? I lost to someone who fell out of the sky an hour ago? → [surprised] Blake: What? I lost to someone who [i]fell out of the sky[/i] an hour ago?
+  - story.json `#l:4d19`: [angry] Blake: Mine only knows Tackle. That’s my excuse and I’m sticking to it. → [angry] Blake: Mine only knows [b]Tackle[/b]. That’s my excuse and I’m sticking to it.
+  - story.json `#l:5707`: [happy] Blake: Ha! Told you. Mine beats yours. → [happy][shout] Blake: Ha! Told you. Mine beats yours.
+  - story.json `#l:256f`: [happy] There. Good as new. I have healing hands. Kappi has a first-aid kit and a hot bath. Same thing. → [happy] There. Good as new. I have healing hands. Kappi has a first-aid kit and a hot bath.[p] Same thing.
+  - story.json `#l:36c7`: Now go and explore! The road teaches more than any book. I’ve read zero books, and look at me. → Now go and explore! The road teaches more than any book. I’ve read [b]zero[/b] books, and look at me.
+  - story.json `#l:8b79`: [happy] Aurumansa. The golden caravan. I foresaw this. I didn’t write it down, but I foresaw it. → [happy] Aurumansa. The golden caravan. I foresaw this.[p] I didn’t write it down, but I foresaw it.
+  - story.json `#l:d97e`: [happy] Blake: About what it’s worth to listen to it. Turns out that was the point. → [happy] Blake: About what it’s worth to listen to it.[p] Turns out that was the point.
+  - trainers/blake0.json `#l:b4ee`: [happy] Mine beats yours. Watch. → [happy] Mine beats [b]yours[/b]. Watch.
+  - banter.json `#l:0caf`: Chosen: Rescued you again. Don’t thank me. Actually, do. → Chosen: Rescued you again. Don’t thank me.[p] Actually, do.
+  - banter.json `#l:11db`: Kappi: Same spot over the dock. To the metre. → Kappi: Same spot over the dock.[p] To the metre.
+  - banter.json `#l:bd0a`: Chosen: Yanked you out just in time. Professor reflexes. → Chosen: Yanked you out just in time. Professor [b]reflexes[/b].
+  - banter.json `#l:abb6`: Kappi: You landed exactly in the mast’s shadow. Exactly. → Kappi: You landed exactly in the mast’s shadow.[p] [i]Exactly.[/i]
+  - banter.json `#l:ba8e`: Chosen: You lost to a clerk and I still saved you. Generous of me. → Chosen: You lost to a [i]clerk[/i] and I still saved you. Generous of me.
+  - banter.json `#l:0df7`: Kappi: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. → Kappi: There was a stamp on your sleeve. “Returned to sender.”[p] It wasn’t there when you left.
+  - banter.json `#l:3c86`: Chosen: Blake sent a postcard. It just says “Ha.” → Chosen: Blake sent a postcard. It just says[p] “Ha.”
+  - banter.json `#l:44ee`: You fell out of the sky once. Fine. Now you do it on a schedule. → You fell out of the sky once. Fine.[p] Now you do it on a [i]schedule[/i].
+  - banter.json `#l:8d8e`: Blake? Loud, tall, counters everything you own? I taught him that. Not on purpose. → Blake? Loud, tall, counters everything you own? I taught him that.[p] Not on purpose.
+  - banter.json `#l:c6c3`: These Beans. Every crate the Bureau loses has them. Nobody eats them. Nobody throws them out. → These Beans. Every crate the Bureau loses has them. Nobody eats them.[p] Nobody throws them out.
+  - banter.json `#l:a7b4`: Their forms number lost things. I found yours. You’re item four hundred and something. → Their forms number lost things. I found yours.[p] You’re item four hundred and something.
+  - banter.json `#l:1dd7`: Something big walked across Kappi’s instruments. I’m claiming it was me. Emotionally. → Something big walked across Kappi’s instruments. I’m claiming it was me.[p] Emotionally.
+  - banter.json `#l:7d69`: Beat a leader and tell them Professor Chosen sends his regards. Loudly. → Beat a leader and tell them Professor Chosen sends his regards.[p] [b]Loudly.[/b]
+  - banter.json `#l:5363`: They remembered me? Brand awareness. Have two points of my respect. → They remembered me? [b]Brand awareness.[/b] Have two points of my respect.
+  - banter.json `#l:e544`: Readings. Real ones. The numbers hum near their crates. → Readings. [i]Real[/i] ones. The numbers hum near their crates.
+  - banter.json `#l:b1b0`: Your first expedition! I’d have done it faster, but I was busy being chosen. → Your first expedition! I’d have done it faster, but I was busy being [i]chosen[/i].
+  - banter.json `#l:ed8d`: [happy] You won! I taught you that. I’m not sure when. Possibly in a dream we shared. → [happy] You won! I taught you that. I’m not sure when.[p] Possibly in a dream we shared.
+  - banter.json `#l:3752`: Down that early? Bold. Avant-garde. Next time try the part where you win. → Down that early? Bold. Avant-garde.[p] Next time try the part where you [b]win[/b].
+  - banter.json `#l:ef10`: You reached the big one and blinked. I respect a dramatic exit. → You reached the big one and blinked.[p] I respect a dramatic exit.
+  - banter.json `#l:f8bc`: [surprised] Three in a row. I’ve decided this is a training montage. Montages end well. Usually. → [surprised] Three in a row. I’ve decided this is a [b]training montage[/b]. Montages end well.[p] Usually.
+  - banter.json `#l:5806`: Home early. Leave them wanting more. That’s what I always say. I’ve never said that. → Home early. Leave them wanting more. That’s what I always say.[p] I’ve never said that.
+  - banter.json `#l:0564`: [angry] A clerk? You lost to paperwork? I once lost to a form. We don’t talk about the form. → [angry] A clerk? You lost to [i]paperwork[/i]? I once lost to a form.[p] [face=sad]We don’t talk about the form.
+  - banter.json `#l:5be0`: You came back through the same hole. I measured it from the bath. It’s getting rounder. → You came back through the same hole. I measured it from the bath.[p] It’s getting [i]rounder[/i].
+  - banter.json `#l:2b31`: Every time you lose out there, you land in the same spot. Things don’t fall that tidily. → Every time you lose out there, you land in the same spot.[p] Things don’t fall that tidily.
+  - banter.json `#l:df6c`: You won and came home by train. Good. The other way home makes my instruments hum. → You won and came home by train. Good. The other way home makes my instruments [wave]hum[/wave].
+  - banter.json `#l:41c7`: The clerk who beat you. Did they mention a file? A number? ...No reason. → The clerk who beat you. Did they mention a file? A number? [emote=sweat]...No reason.
+  - banter.json `#l:1d8e`: That many Perks in one run. You sound like someone I work with. Not a compliment. → That many Perks in one run. You sound like someone I work with.[p] Not a compliment.
+  - banter.json `#l:6ba3`: Five expeditions. Juniper started a scrapbook. Someone in a lab coat keeps pasting himself into it. → Five expeditions. Juniper started a scrapbook. Someone in a lab coat keeps pasting [i]himself[/i] into it.
+  - banter.json `#l:7ea4`: “Blake. You’ve heard of me. You haven’t? Weird. I’ve been out here being heard of.” → “Blake. You’ve heard of me. You haven’t?[p] Weird. I’ve been out here being [b]heard of[/b].”
+  - banter.json `#l:8db3`: “I built this team for yours. Specifically. It took ages.” → “I built this team for yours. [b]Specifically.[/b] It took ages.”
+  - banter.json `#l:239c`: “Last time doesn’t count. I was warming up. For a whole battle.” → “Last time doesn’t count. I was warming up.[p] For a whole battle.”
+  - banter.json `#l:6a21`: “Last time I sent you home the long way. Through the sky.” → “Last time I sent you home the long way.[p] Through the [i]sky[/i].”
+  - banter.json `#l:acbd`: “Our routes aren’t the same route. Stop following me.” → “Our routes aren’t the same route.[p] Stop [b]following[/b] me.”
+  - banter.json `#l:12fd`: - A Bean. For me. Naturally. → - A Bean. For me.[p] Naturally.
+  - banter.json `#l:a3ac`: - I’ll add it to the collection. The collection is one Bean. → - I’ll add it to the collection.[p] The collection is one Bean.
+  - banter.json `#l:35e2`: You’ve noticed me. Most people do. Eventually. → You’ve noticed me. Most people do.[p] Eventually.
+  - banter.json `#l:6c17`: Take this. Moneys, a little extra each trip. I’ll say I invented interest. → Take this. Moneys, a little extra each trip. I’ll say I invented [i]interest[/i].
+  - banter.json `#l:e0e4`: You’re on my list of people I tolerate. It’s a short list. Mostly mirrors. → You’re on my list of people I tolerate. It’s a short list.[p] Mostly mirrors.
+  - banter.json `#l:5d53`: Wear these. Sunglasses. Now you look chosen. Adjacent. → Wear these. Sunglasses. Now you look chosen.[p] Adjacent.
+  - banter.json `#l:608e`: Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Kappi I said that. They know. → Can I tell you something? I didn’t rescue you. Not once.[p] [emote=sweat]...Don’t tell Kappi I said that. They know.
+  - banter.json `#l:1c33`: - Thanks. I’ll test it. I mean that literally. → - Thanks. I’ll test it. I mean that [i]literally[/i].
+  - banter.json `#l:f5c6`: - Another one. They’re warm. Why are they warm? → - Another one. They’re warm.[p] Why are they warm?
+  - banter.json `#l:5db1`: Oh. Thank you. People don’t usually give me things. They give me forms. → Oh. Thank you. People don’t usually give me things.[p] They give me forms.
+  - banter.json `#l:355b`: Here. A Potion for every trip. Don’t tell him where they come from. He thinks they grow. → Here. A Potion for every trip. Don’t tell him where they come from.[p] He thinks they grow.
+  - banter.json `#l:79b4`: I’m adding you to my notes. Under “reliable.” It’s a short section. → I’m adding you to my notes. Under “reliable.”[p] It’s a short section.
+  - banter.json `#l:fbdf`: My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence. Not snacks. → My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence.[p] Not snacks.
+  - banter.json `#l:9a5c`: My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans. → [whisper] My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans.
+  - banter.json `#l:492a`: “You look lost. That is our department.” → “You look lost.[p] That is our department.”
+  - banter.json `#l:7ffb`: “Ah. You’re on file. Returned item, handled once.” → “Ah. You’re on file.[stamp=filed] Returned item, handled once.”
+  - banter.json `#l:2ca8`: “Your file is getting thick. We’ll need a bigger drawer.” → “Your file is getting thick.[p] We’ll need a [b]bigger[/b] drawer.”
+  - banter.json `#l:aaec`: “A win, recorded. Wins are reviewed. Reviews take time.” → “A win, recorded. Wins are reviewed. Reviews take time.”[stamp=pending]
+- Decided for the owner (provisional): the lines above. Not done: the "under about 25 words" data warning DL-1 left
+  here. I recommend against it as it stands: it would fire on the approved opening's "They live in the long grass…"
+  (34 words) and on three lines of 26 (one on the Copperleaf map, two in a legacy map), and the story test "the game's
+  scripts pass the story checks, with no warnings" would fail until their words change. Options: drop it (my pick),
+  or add it with a higher bar or as a Studio-only hint.
+- Not marked (DL-8 or plain on purpose): the battle box's `win`/`lose` lines, the event menus, the square's walk
+  speech, Vinylla, Juniper and the other townsfolk; lines that already land on their own (exposition, the slow
+  "Nothing? Not even your name?").
+- Risky: the `[p]` beats add about 0.4 s each to the opening (13 pauses in 16 lines: about 5 s more at Normal
+  speed; a tap still shows the rest at once). Stamps fire on the Bureau's bubble only (the `bureau` banter is said by a
+  run trainer whose class picks the skin; the story check gives no stamp warning).
+- Verified: lint, typecheck, check:modules, format:check, build, check:data (181 files, after `--fix` laid out two banter lines the Studio's way), unit
+  tests 2040 pass (opening-script, line-markup-real, expressions, story-checks among them). Smoke 7 of 7 (371 s), its phone
+  flow playing the whole opening with the new markup. Pictures at 390×844 (a scratch script calling `talkLine` on
+  `?fixture=talk`, not kept): the opening's first line ("WHOA." shaken, **my** bold), Chosen's clerk line, Blake's
+  shout, the Bureau's FILED stamp on "You're on file." (the stamp sits over the line's end, as in the DL-3 fixture)
+  and Kappi's whisper all on their own skins; each box's screen-reader copy is the plain line. The full quick check
+  was not run: data lines only (the brief's rule).
+- Next: the owner reviews the lines (and the 25-word warning call); DL-8 (optional: effects in the battle box and the
+  walk speech, a stamp in battle) only at the owner's word.
+- For the owner on the phone: New game, play the opening, then talk to Chosen and lose a run to a Bureau clerk. Do the
+  pauses land the jokes or drag? Is the stamp on the right Bureau lines?
+
+### Dialogue track DL-6: figure close-ups (the bust bake, the head in stepped angles, the face from the director) - 2026-10-29
+Branch `track/dialogue` (main ed5c6857 already in: nothing to merge). Run under the owner's standing instruction
+(2026-10-29): plan written in the session's reply, approved in advance, no Plan Mode. Code, tests, a fixture flag, check
+and look tools, docs. No session tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-6".
+- Changed:
+  - logic/figure-pose.js: `bustSize` (a 64 px square of the figure's top 60%, level, about 55 px a metre), `headStep`
+    (yaw 6° steps to ±12, pitch and roll 8° steps to ±8: 45 angles), `headKey`, `nearestHead`, `turnHeadPose` (a code
+    figure's head part turned, hair and face with it), `meshHeadPivot` + `turnJointAbout` (a model's head joint turned
+    about its neck), `FACE_MOUTH_OPEN`; `figureFaceMarks(..., state)`: the `{eyes, mouth}` face state, the seam CH-6
+    fills (eyes shut a line, the mouth open 2 px taller and darker). 5 new tests in figure-pose.test.mjs.
+  - figures.js: `bakeFigure(..., o)` (`bust`, `head`, `face: false`); `figureBustPicture` (its own cache of at most
+    135, the rest pose first, one bake every 50 ms, the nearest kept angle meanwhile) and `figureBustFace` (the face
+    painted on a copy each tick); `figureReport` gains `busts`, `bustBakes`, `bustMs` (the debug log). 3 new tests in
+    figures.test.mjs.
+  - talk.js: `talkFigure`: with Engine > People > Figures on you are your figure, and with Townsfolk as figures on
+    every other person speaker too (Kappi stays a creature), as in the world and in battle; the portrait is then the
+    close-up, the head turned by the director's `head`, the face from its `eyes` and `mouth`; the older bubbles' small
+    portraits use the rest close-up. Figures off: unchanged (today's portrait).
+  - Tools: `?fixture=talk&figures=mannequin` (or `rogue`), look-talk.py `--figures[=rogue]` (each portrait alone and
+    a sheet of the head's hits), `PB_FIGURES=1` (and `PB_FIGURE=`) for any browser check (browser_check.py,
+    docs/TESTING.md).
+- Decided for the owner (provisional; DL-6 had no "Ask me before" item): who gets a close-up (above); the angle steps;
+  a three-quarter view (0.3 rad round); the open mouth (2 px taller, darker inside); the bust's framing (top 60%).
+- Found, not changed / corrections: "figures on" is only the Engine > People dials (off by default) and the debug
+  menu's switches, as DL-5 said. The track said the Rogue's head waits for CH-12: its `head` joint is a leaf, so it
+  turns now, about its neck; its face is its texture, so no blinks or mouth until CH-6. "One bake a frame through the
+  existing gate" became a 50 ms timer: the world's gate counts the world's frames, which a talk need not advance. CH-6
+  is still not in (the characters track waits at CH-3 on the owner's pick).
+- Risky: a close-up bake reads its picture back from the graphics chip (about 0.65 ms here in software drawing; the
+  phone's debug log says its own as `bustMs` / `bustBakes`). The head's hits last 250-700 ms against a 70 ms tick, so
+  a phone that drops ticks shows fewer steps of a nod. The headless browser ticks too seldom to catch a hit as it
+  plays: the head sheet bakes each angle directly. Every close-up is your chosen figure for now (as the townsfolk
+  are): Chosen and Blake look alike until the characters track gives each their own.
+- Verified: lint, typecheck, format:check, check:modules, check:data (181 files), build clean. Unit tests 2040 pass
+  (one failed in a run beside the smoke run, all passed alone). Smoke 7 of 7 (389 s). Full quick check with figures
+  off: 37 of 42 (1641 s); with figures on (`PB_FIGURES=1`, the Rogue): 37 of 42 (1611 s), the same five. At the commit
+  before this session (d01a94d4, a worktree) the full run failed RL-8, Route trainers (RT-2), Granny Juniper and
+  "Walking … settings tabs" too (38 of 42); RL-8 fails alone at both ("the town's shop has no Perk"); RT-2 and Juniper
+  pass alone on mine with figures off and on (fixed waits round talk under a full run's load). Battle music failed in
+  both my full runs and passed alone twice (DL-5 saw the same). Pictures at 390×844: `--figures` and
+  `--figures=rogue`: the mannequin and the Rogue nod, jolt, shake and tilt in their steps; the mannequin blinks and
+  talks; listeners dim; emotes crisp.
+- Next: DL-7 (the writing pass) on `track/dialogue`, started by this session with its plan approved; it is the last
+  automatic session.
+- For the owner on the phone: Settings' debug menu → Figures on, Townsfolk figures, then talk to Chosen (or
+  `?fixture=talk&faces=1&figures=mannequin`). Do the heads nod on happy, jolt on surprised, shake on angry, droop on
+  sad, and do the mouth and blinks read on the mannequin? Is the three-quarter view right? Send a debug log after a
+  talk: its people section has `busts`, `bustBakes` and `bustMs`.
+
+### Dialogue track DL-5: faces (the director, combined expressions, blinks and the mouth, emotes, the bounce, the listener dimmed) - 2026-10-29
+Branch `track/dialogue`; main ed5c6857 (#295, VFX-13) merged in at the start (HANDOFF both sides, art-code-refs and the
+check-data snapshot remade). Run under the owner's standing instruction (2026-10-29): plan written in the session's
+reply, approved in advance, no Plan Mode. Code, CSS, data, a schema, tests, a fixture, a look tool, docs. No session tag
+(CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-5".
+- Changed:
+  - New logic/talk-director.js (`talkDirector`: blinks every 2-6 s, a double one in six, none while happy, carried
+    from line to line; the mouth open on vowels, shut on the rest, held 60 ms, shut after 150 ms without a letter;
+    `[face=x]` and `[emote=x]` at their letters; the bounce spring; head hits nod/jolt/shake and held droop/tilt for
+    DL-6; `faceToken`, `creatureFace`) + talk-director.test.mjs (14). In the page, the Studio and the logic worker.
+  - person-art.js: combined expressions (`happy+talk`: each wardrobe item the last token it has pieces for); the
+    expressions test checks it on the real wardrobe.
+  - talk.js: the director per line, fed by `onType` (its first listener); the portrait from the director's combo;
+    a person's pictures kept per face and breath step while the talk is open (`talkBox.frames`), a creature drawn each
+    tick as before; `talkEmote` (an outlined pixel grid at whole device pixels, pops 0 → 1.2 → 1, fades by 1.3 s),
+    `talkBounce` (the slot's `::before` squashes); an older bubble of anyone but the speaker gets `.listening`; the
+    small portrait keeps the line's last face. dialogue.css: `.talk-emote`, `.talk-old.listening`.
+  - New game/data/emotes.json + schema (12 px grids: ! ? sweat anger sparkle note heart, `auto` faces), check-data's
+    `dataEmotes` (tested in data-checks.test.mjs), `EMOTES` in game-data.js, its type.
+  - `?fixture=talk&faces=1`; tools/look-talk.py `--only=faces`. docs/SCRIPTS.md says what faces and emotes do now.
+- Decided for the owner (provisional, as the standing instruction asks; no "Ask me before" item was DL-5's): the emote
+  drawings and colours; **auto emotes** (a line that starts as or turns surprised pops `!`, angry pops `anger`, unless
+  it has an `[emote]`: emotes.json `auto`, empty it to turn them off); the listener's small portrait at 55%; emotes as
+  text grids in emotes.json instead of the track's emotes.png (no PNG tool in the repo; editable as text).
+- Found, not changed / corrections: "expressions may combine (person-art.js:627)" was the plan, not the code; the
+  wardrobe has no `smug` face (the director's tilt waits for one). Chosen's sunglasses hide his eyes, so his blinks
+  don't show (brows and mouth do). The characters track is at CH-3 (waiting on the owner's pick), so **CH-6 is not
+  in**: DL-6 takes the track's fallback (the mannequin's `figureFaceMarks` plus a 2 px open mouth). figures.js
+  (CH-2/CH-3's baker) is in main. Four of my commit messages have their attribution lines in the subject paragraph
+  (pushed; not rewritten).
+- Risky: the bounce uses Web Animations' `pseudoElement` (Safari 14+; older: no bounce). The mouth is not seen moving
+  in this machine's headless browser (it draws one frame every few seconds while the fixture loads), so its feel is
+  tested in Node only. The cached portraits are per face × 3 breath steps × speaker (cleared when the talk closes).
+  Battle music (SND-5) failed 3 of 5 runs alone on my code and passed 3 of 3 at the commit before: the throw came
+  10.6 s after the flash where the step allows 8; nothing in the battle path uses what DL-5 changed, and after the
+  portrait's tick went back to 70 ms (I had made it 50) it passed twice. Watch it.
+- Verified: lint, typecheck, format:check, check:modules, check:data (181 files), build clean. Unit tests 2032 pass.
+  check-fast 42: 39 in the full run; breeding, every screen and tall ground passed alone (tall ground failed once
+  alone, passed at the commit before and then on mine: timing). Full quick check: 36 of 42 in 2609 s; RL-8 and
+  "Walking … settings tabs" known before DL-4; Starters, Ground tiles (rooms) and the phone step passed alone (the
+  phone step's dialogue counted 23 pieces in the full run, 20 alone, the same as DL-4: emotes are canvases, which the
+  count skips); Battle music as above. Smoke 7 of 7 (483 s) on the final code. Pictures at 390×844 (look-talk.py
+  `--only=faces`): each emote pops crisp at 24 CSS px on the text's side, the listeners dim; faces combine.
+- Next: DL-6 (figure close-ups) on `track/dialogue`, started by this session with its plan approved; it starts DL-7.
+- For the owner on the phone: `?fixture=talk&faces=1`: tap through. Do Chosen's face turn sad on "floors", Kappi's
+  note and heart, Blake's "!" and the sweat read well, and do the older bubbles' heads dim? Do the mouths move while
+  the letters type, and the blinks feel natural? Is the auto "!" on surprised lines welcome?
+
+### Dialogue track DL-4: the stack (sides, links, the cut, the "…", choices, the Log, the height budget, the camera lift) - 2026-10-28
+Branch `track/dialogue` (main already merged in at the start). Plan approved in Plan Mode. Code, CSS, data, a schema,
+tests, checks, a look tool, docs. No session tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-4".
+- Decided by the owner (Ask me before 4): **`[wait]` for anyone**; the automatic "…" is Kappi's (talkSkins.json
+  `"wait": "first"`); **the stamp is the Bureau's alone** (a `[stamp]` on another skin does nothing; the Studio's story
+  check warns). Narration (the "me" notes) sits in the middle of the stack, never links, never turns the sides.
+- Changed:
+  - New logic/talk-stack.js (`stackStep`, `stackFit`, `waitMs`, `cutAt`, `knockOf`) + talk-stack.test.mjs; in the
+    page, the Studio and the logic worker's list.
+  - talk.js: `.talk-layer > .talk-stack`, the live `.talk-box` last; `talkDemote` (the older bubble as a copy:
+    `.talk-old was-1/was-2`, `.talk-was` in `.talk-said`, one piece, inert, aria-hidden, its own small portrait; FLIP
+    up on the Web Animations API; linked: no portrait or name, a `.talk-bridge`; cut: `knocked`), `talkStackFit` (the
+    budget; publishes `talkBox.cover`), `talkCutLine`, the "…" (`.talk-wait`, a timer, tap skips), the Log
+    (`.talk-logbtn`, `.talk-log`, `talkBox.log`: memory only, cleared by `talkHide`; a tap or Escape closes it),
+    choices hide the older bubbles. Every lookup of the box is `.talk-box:not(.talk-old)` (older bubbles keep the
+    class for their shape).
+  - CSS: dialogue.css (the stack, sides mirrored by `--flip`/`--flip-dx` in the layers' transform with the text
+    level, older bubbles, link, knock, the "…", the Log), talk.css (the cutscene placement moved to the stack),
+    motion.css (`m-talk-wait`).
+  - Camera: `talkLiftShare` (logic/camera-moments.js, tested); walk/camera.js lowers the aim by it while any talk is
+    open (the hub's orbit camera too), followed as a goal so the dead zone doesn't eat it.
+  - talkSkins.json + schema: `wait`. logic/story-checks.js: the stamp warning (+ tests). docs/SCRIPTS.md.
+  - `?fixture=talk&stack=1&choice=1`; tools/look-talk.py `--only=stack` (pictures and measures); the gallery's
+    `talk-stack` section and baseline (its own commit); check-quick.py: the phone step's stack (one `.talk-who` and
+    `.talk-line`, at most 3 bubbles, the 40% budget, `ELEMENT_CEILING['dialogue'] = 20`) and the Safety step's name in
+    an older bubble and the Log.
+- Found, not changed / corrections: the track's height sum (130 + 146 + 64 + 64 = 404, not ~300): the cap counts the
+  bubbles above the bar only. The bottom bar with the minimap tile is ~190 px on 390×844, not 130, so three bubbles
+  reached ~62% of the screen and covered you at mid-screen: hence the camera lift. The "two-shot (talk.js:316)" is
+  walk/camera.js + logic/camera-moments.js, and the hub's free camera has no two-shot. RL-8 (a run's seam: "crossed
+  into … but its view never showed") and "Walking left and right … settings tabs" fail the same way on the commit
+  before DL-4 (1ebb2d55): not this session's.
+- Risky: the camera lift pans the hub's orbit camera up to ~19 m while a long talk is open (eased by the follow; not
+  seen on a phone). The "…" and the cut's auto-advance use timers. Older bubbles keep 2 rows; the budget often keeps
+  2 older bubbles, not 3, when the newest is a shout or has a stamp. `:has()` scopes the name tag's room for the Log
+  button (Safari 15.4+). FLIP and the pop-in are not measured on a phone.
+- Verified: lint, typecheck, format:check, check:modules, check:data (180 files), build clean. Unit tests 1968 pass
+  (talk-stack 9, camera-moments 11, story-checks 8 among them). check-fast 42: 37 in the full run, the 5 others
+  (perks, breeding, income, every screen, tall ground) passed alone (the full run shared the machine with my look
+  runs). Full quick check: 37 of 42 in 2304 s; of the 5, RT-2 (the pair's talk), Granny Juniper and rooms passed
+  alone; RL-8 and the walking/settings step fail identically at 1ebb2d55. Gallery `dialogue` and `talk-skins`
+  unchanged, `talk-stack` judged and saved. Pictures at 390×844 (look-talk.py `--only=stack`): sides, a linked pair,
+  the cut and the knock, the [wait] "…", the stamp in a stack, the Log, a choice: judged.
+- Next: DL-5 (faces) on `track/dialogue`. The owner (2026-10-29) asked for the next sessions to start by themselves
+  with their plans approved: DL-5 starts DL-6, DL-6 starts DL-7; DL-8 is the owner's call.
+- For the owner on the phone: `?fixture=talk&stack=1&choice=1`: tap through. Do the sides, the linked Kappi pair, Blake
+  cut off and knocked aside, the clerk's "…", the stamp and the choice read well? Tap Log on the third line. Then talk
+  to Chosen or Kappi in the lab: do you and they stay in view above the bubbles, and is the camera's pan gentle?
+
+### Dialogue track DL-3: bubbles (skins, shout/whisper/think shapes, tilt, pop-in and grow spring, the stamp) - 2026-10-28
+Branch `track/dialogue` (DL-2's code fast-forwarded in before the first edit; origin/track/dialogue with DL-2's
+handoff and main merged in later: conflicts in the generated studio/art-code-refs.json, regenerated, and the ui-lint
+ceilings, the lower one kept). Plan approved in Plan Mode. Code, CSS, data, a schema, tests, a look tool, docs. No
+session tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-3".
+- Decided by the owner (Ask me before 2): **the mockup's skins as they are**. Asked "does the player even talk?": no,
+  every `talkLine('me', …)` is a field move's prompt or result, so the player's lines wear a **narration** skin (a
+  quiet tail-less note, no tilt); the neon "you" skin stays in talkSkins.json, unused.
+- Changed:
+  - logic/motion.js: `springAt`, `springMs`, `springEase(response, damping)` (a damped spring as a CSS `linear()`),
+    tested. The Studio page now loads motion.js before ui-theme.js (ui-theme writes the spring).
+  - logic/ui-theme.js: the `jag` kind (seeded zigzags, `seededRandom`, 3 held variants as
+    `--clip-bubbleShout-0..2` / `--edge-…`, the top spike is the tail), `familyOf`, `shapeVariants`, a `lift` flag
+    (no tail, top edge the tail's height down); families `bubbleSoft` (Kappi), `bubbleNote` (narration),
+    `bubbleShout`, `bubbleThink`; `BUBBLE_MOTION` and `--bubble-spring`, `-spring-ms`, `-pop`, `-tilt`, `-idle`.
+    tokens.css fallbacks regenerated (it grew about 600 lines: the bursts' polygons) plus a `--z-under` layer token.
+  - logic/ui-dials.js and studio/js/ui-editor.js: the families' labels, a "Jagged burst" shape, spike depth and count
+    dials, five Motion dials (Bubble spring, damping, pop-in size, tilt, idle). uiTheme.json and its schema (a
+    `jagShape` def). ui-dials.test's "every dial writes a variable" also tries an all-cut look.
+  - New game/data/talkSkins.json + schema + `dataTalkSkins` (check-data, the Studio's checks); game-data.js
+    `TALK_SKINS`. New logic/talk-skins.js: `talkSkinOf` (o.skin, the speaker, a run trainer's class, the default),
+    `talkSeed`, `talkTilt`, `talkVariant`, `talkAccentHue`; tests in talk-skins.test.mjs and data-checks.test.mjs.
+  - talk.js: `talkDress` (data-skin, data-shape, `--talk-clip`/`--talk-edge`, `--tilt-k`, `--talk-slant`,
+    `--talk-hue`, the Bureau's form number from factions.json), `talkArrive` (the pop-in from the speaker's side on
+    the spring, Kappi soft, narration a fade; the grow to fit by `--grow`; the shout's squash and shake; Chosen's
+    shine; Reduced: a fade on opening only), `talkStamp` (a `[stamp=…]` lands as pb-stamp on a skin with `stamp`, the
+    bubble thumps). New `.talk-deco` and `.talk-dots` in the box. story-stage.js passes the trainer's class (`cls`).
+  - CSS: dialogue.css (the layers read `--skin-*`, the tilt and slant as a `transform` on the layers, `@property
+    --grow`, whisper's dashed edge, the shout's bold line, the thought's dots, csUp off); new talk-skins.css (each
+    skin only sets `--skin-*`); motion.css (the bubble's idle loops times `--bubble-idle`, the deco layer gated with
+    them).
+  - sound.js: a `voice` on the blip: the Bureau's typewriter clack, `calm` (Kappi's purr).
+  - `?fixture=talk&skin=<skin>&style=<shout|whisper|think>`; tools/look-talk.py (pictures of every skin and shape);
+    studio/gallery.html's new `talk-skins` section and its baseline (its own commit).
+- Found, not changed / corrections: Blake's speaker id is `chad` (story.json `speakers`), not `blake`;
+  `UI_FAMILY_LABELS` lives in logic/ui-dials.js; the Bureau's agents do speak through `talkLine` (banter `bureau_*`
+  via story-stage.js), so the skin keys on the trainer class. The grow scales from the bottom edge, not the tail (the
+  box is anchored at the bottom). Kappi's bubble is rounded, not a true leaf. The fixture plays its line while the
+  loading screen is still up, so its pop-in happens unseen.
+- Risky: the fixed-colour skins (Chosen, Kappi, Blake, the Bureau) keep light paper in the dark theme; DL-2's colour
+  tags use theme text shades, so a `[c=…]` word on them in dark mode may read weakly (not checked). `@property` and
+  animating `--grow` need Safari 16.4+ (older: no grow, same box). The pop-in and grow springs are not measured on a
+  phone. tokens.css is bigger by the bursts' polygons.
+- Verified: lint, typecheck, format:check, check:modules, check:data (180 files), build clean. Unit tests 1955: 1953
+  pass, then the 2 failures fixed or re-run: the expressions test read the fixture's style list as an expression
+  (fixed, 145d2cd1), the 1,000-maps timing test went over 1.5 s with check-fast running alongside and passes alone.
+  check-fast 42 of 42. Smoke 7 of 7 in 290 s (the in-game full test step and the phone run among them). The full
+  quick check was started and stopped from outside the session before it finished: not run to the end. Gallery
+  `talk-skins` and `dialogue` at 320/390, light and dark: dialogue unchanged, talk-skins judged and saved. Pictures in
+  the game at 390×844 (look-talk.py) of every skin, the folk shout and thought: judged.
+- Next: DL-4 (the stack) on `track/dialogue`; the owner asked for it to start in a new session right after this one.
+- For the owner on the phone: `?fixture=talk&skin=chosen` (then `kappi`, `blake`, `bureau`, `folk`, `narration`), and
+  each with `&style=shout`, `&style=whisper`, `&style=think`: is every bubble right, the tilt subtle, the pop-in not
+  seasick? The Bureau's line ends in an APPROVED stamp. Then Settings, Animation: Calm (no breathing) and Reduced (a
+  fade only).
+
+### Dialogue track DL-2: letters that act (spans, effects, pauses, beats, Text speed, blip styles) - 2026-10-28
+Branch `track/dialogue` (the session started on a detached HEAD at its tip; checked out the branch, merged main
+4423a457 (PK-6) first and main 6acee223 (UI fixes #309) at the end; both times the conflicts were the HANDOFF top,
+both sides kept, and the generated studio/art-code-refs.json, regenerated). Plan approved in Plan Mode. Code, CSS, a
+font, tests and docs. No session tag (CLAUDE.md: the track gets `dialogue-done`). Details: docs/phases/dialogue-track.md,
+"Done in DL-2".
+- Decided by the owner: Ask me before 1, bold is **Oxanium 700** (game/fonts/oxanium-700.woff2, 8.8 KB, the latin
+  subset from Google Fonts; a row in ui-theme.js `UI_FONTS`; it loads only when a bold word shows).
+- Changed:
+  - New game/js/logic/talk-type.js: `TEXT_SPEEDS` (slow 42, normal 28, fast 14, instant 0 ms a letter) and
+    `letterTimes(parsed, speed)`: [slow] ×2, [fast] ×0.5, [p] seconds, a beat of 4 letters after `, ; :` and 8 after
+    `. ! ? …` only where a space follows (past a closing quote), an ellipsis typed ×3. In the pages and the Studio's
+    logic worker (alphabetical: logic-worker.test checks it).
+  - talk.js `talkLetters`: the line as `.talk-line[data-one-piece]` > `span.talk-sr` (the plain line, visually
+    hidden) + `span.talk-glyphs[aria-hidden]` > `span.w` (a word, no break) > `span.l` (`--i`, `fx-*`), with
+    `createElement`/`textContent` only. `step` adds `.on` on the times; a tap still ends the typing (pauses too);
+    `onType` still fires per letter; Reduced types at once as before. `talkBox.cur.text` stays plain.
+  - New game/css/talk-text.css: the arrival (fade and a 2 px rise), `[b]` 700 with a pop, `[i]` slant, `[big]` voice
+    font 1.3 em, `[small]`, the colours (the colour code's text shades), `[shake]` once in whole pixels, `[wave]`. The
+    effects stack through `--talk-pop`, `--talk-shake`, `--talk-wave`. Keyframes and the Reduced rule in motion.css
+    (ui-lint keeps keyframes there); wave is the signal loop `.talk-glyphs .fx-wave` in idle-life.js.
+  - theme-sheet.js `uiElementCount`: a `[data-one-piece]` element counts as one piece.
+  - Settings, Game: a Text speed row (Slow, Normal, Fast, Instant) under Battle speed; `textSpeed: 'normal'` in
+    saves.js's preferences.
+  - sound.js blip: `style` and `big`: shout +5 semitones and 1.5× louder, whisper 0.45×, a [big] letter +2 and 1.3×;
+    a thought never blips (talk.js). Kappi's purr follows.
+  - Docs: SCRIPTS.md (the effects, how a line types, Text speed), the track file (Done in DL-2, Ask me before 1
+    answered), ROADMAP, BRANCHES.
+- Found, not changed: Battle speed's default is in settings-screen.js:394 (`|| 'normal'`), not saves.js as the track
+  said. There was no visually hidden class in game/css (`.talk-sr` is the first). Face, emote, stamp and cut events
+  are parsed but act in DL-4/DL-5.
+- Risky: letters as inline-blocks lose kerning between them (slight in Oxanium); a `[big]` word makes its line a bit
+  taller. Long lines are about 100 spans; only new letters change each frame. Not measured on a phone.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build clean; unit tests 1944 (1943 pass before
+  the logic-worker order fix, then that test and the map-check timing test pass on re-run; the timing test went over
+  1.5 s while a browser ran alongside). In headless Chromium at `?fixture=talk`: a line with every effect drew right
+  (screenshot judged), a hostile name and `<img>` in a line stayed text, Instant shows the line whole, Reduced stops
+  the wave, Oxanium 700 loads, the Text speed row fits at 390 px. check-fast: cut off by my own 25-min timeout after
+  24 of 42 (the machine was slow); 22 ok, the ranch and Perks steps failed, both pass on re-run. Full quick check: 36
+  of 42 in 2522 s, the Safety step and the talk steps passing. Of the 6 problems, Terraces, RL-8 and room light fail
+  on main too (DL-1's entry); Starters, Ground tiles and Run map music pass on re-run. After merging main 6acee223:
+  lint, typecheck, check:modules, check:data clean; unit tests 1944 of 1944 pass.
+- Next: DL-3 (bubbles) on `track/dialogue`, already started by the owner's word in its own session (it merges this
+  push before its first edit); Ask me before 2 (each skin's look) is its question.
+- For the owner on the phone: in a Studio script played in its story preview, a line `I am [b]very[/b] [c=gold]important[/c],
+  [wave]obviously[/wave].[p] [shake]Watch[/shake] [big]this[/big]...` and play it; try Settings, Game, Text speed
+  (Slow and Instant) and Animation Reduced (letters just appear, no wave). Send a debug log if typing stutters.
+
+### Dialogue track DL-1: line markup (bracket tags), plain text everywhere, script errors - 2026-10-28
+Branch `track/dialogue` (made by the owner from `ccr-2d53c4cf-8w7kd2`, so it carries DL-0; main 76aea599 already in,
+nothing to merge). Plan approved in Plan Mode. Code, tests and docs; nothing in the game looks different. No session
+tag (CLAUDE.md: the track gets `dialogue-done` when it ends). Details: docs/phases/dialogue-track.md, "Done in DL-1".
+- Changed:
+  - New game/js/logic/line-markup.js: `MARKUP_TAGS` (wrap `b i big small c wave shake slow fast`, point `p face
+    emote stamp cut`, style `shout whisper think wait`, each with its use and a line about it), `leadingExpr` (the
+    one reading of a line's leading expression and styles, in either order), `parseLine` → `{plain, expr, style,
+    runs, events, errors}`, `plainOf`, `markupProblem`. Started from the mockup's parser; adds crossed and repeated
+    tags, values checked with a did-you-mean, styles only at the start, a trailing `—` as a cut.
+  - talk.js `talkLine` types the plain line (`talkBox.cur.text` stays plain; the parse is kept on `st.parsed` for
+    DL-2); choice buttons show plain text.
+  - script-parse.js `sayLine`: `leadingExpr` instead of its own regex; a bad tag is a script error on its line
+    (`unknown tag "[wav]", did you mean "[wave]"?`), shown in the Studio's script box; options allow `[b]` only;
+    the styles stay in the node's text after the speaker. The script reference has a Markup section.
+  - Plain text on the other surfaces: the battle typer (battle.js `typeText`), walk speech (walk-view.js
+    `drawSpeech`), event intros (`encLineHTML`), the opening's hot takes (cutscene/opening.js).
+  - Pages: the module in game/index.html, studio/index.html and studio/js/logic-worker-modules.js.
+  - Tests: new line-markup (11) and line-markup-real (every tag-shaped string in game/data and every script);
+    expressions reads lines with `leadingExpr` (now indented script lines too, which it skipped before), collects
+    `[face=x]`, and checks no expression is also a tag; opening-script compares plain text; the Studio GitHub check
+    (`--only=story`) types a bad tag.
+  - Docs: SCRIPTS.md "Markup"; the track file (corrections, Done in DL-1); ROADMAP; BRANCHES.
+- Found, not changed: the track file's paths for `#csBubble` (it is cutscene/opening.js:462) and `drawSpeech`
+  (walk-view.js:4758); the three leading-expression regexes disagreed (fixed by `leadingExpr`). The full Studio
+  GitHub check stops at the story preview's `#scStoryOn` uncheck in this container (a known stall, its `--only`
+  comment says so); the markup step before it passes.
+- Risky: a nickname or name that happens to contain a real tag (`[b]`) loses it in battle text and speech (unknown
+  tags stay as typed). `plainOf` runs per frame in `drawSpeech`, but returns at once when there is no `[`.
+- Verified: lint, typecheck, format:check, check:modules, check:data, build clean; unit tests 1917 pass; smoke 7 of 7
+  (388 s); check-fast 42 of 42 (its talk tap-throughs included); the Studio script box shows the did-you-mean on
+  the right line (headless). Full quick check: 36 of 42 in
+  1651 s. Of the 6 problems, Terraces (train_station in the air), RL-8 (never landed) and the room-light/settings
+  step fail on main 76aea599 too (same steps run side by side); Granny Juniper, RT-2 and Battle music pass on
+  re-run (a busy machine: the battle's cries came 7.5 s late, past the 8 s drums fallback).
+- Next: DL-2 (letters: the span renderer, effects, pauses, Text speed) on `track/dialogue`; Ask me before 1 (bold:
+  Oxanium 700 or the voice font) is needed then.
+- For the owner on the phone: nothing should look different. In the Studio, type `A [wav]wave[/wav].` in a script:
+  the box says line N, did you mean "[wave]"; the Commands list has a Markup section.
+
+### Dialogue track DL-0: the plan, the research and a playable mockup - 2026-10-28
+Branch `ccr-2d53c4cf-8w7kd2` (from main 76aea599; `track/dialogue` doesn't exist yet). Docs only, plus the mockup
+page. Planned in Plan Mode and approved by the owner. Details: docs/phases/dialogue-track.md.
+- The owner's brief: "a modern stylized text bubble that subtly moves and expands", text effects and boldness for
+  emphasis and humour, dynamic and fun portraits; then "multiple bubbles on top of one another. Really give it
+  character and style. Don't make it boring." Answers: bracket tags; portraits from the characters track's figures;
+  emotes, the frame bounce, mid-line faces and bubble shapes approved; I mark up the key scenes and the owner
+  reviews.
+- Written:
+  - docs/phases/dialogue-track.md: what the code does today (read at 76aea599), the research with sources, the look,
+    how it is built, sessions DL-1..DL-8, Ask me before, risks.
+  - docs/samples/dialogue-mockup.html: a playable mockup (also the owner's private page
+    https://claude.ai/artifact/FuBfW9mRqSeao2y9rmJLDW). Four scenes with the stack, the skins, the shapes, the tags,
+    stand-in pixel faces, Text speed, the motion levels and a try-a-line box with the parser's errors.
+  - The ROADMAP entry and the BRANCHES rows.
+- Facts found that later sessions need:
+  - Every spoken line goes through `talkLine`, but the battle box, the walk speech, event intros and `#csBubble`
+    don't.
+  - `talkBox.onType` has no listeners.
+  - The mouth never moves on lines with an expression tag (talk.js:269).
+  - The blink is fixed at 3.7 s.
+  - Oxanium has no 700 in the game (Ask me before 1).
+  - `[` is used only as a leading expression and `{word}` is a slot, so bracket tags are free.
+  - Tests read `#talk .talk-who` and `talkBox.cur.text`; the stack keeps one of each.
+  - Kappi is they/them.
+- **For the owner**:
+  - Make `track/dialogue` from main (or this branch).
+  - Open the mockup on the phone, play the four scenes and say which skins and numbers to keep (Ask me before 2).
+  - Answer Ask me before 1 (bold) when DL-2 starts.
+- **Risky**: nothing in the game changed. The mockup's faces are stand-ins, not the figures. Its bubbles are SVG
+  while the game's are clip-path; DL-3 picks per shape.
+- Verified: the mockup played through all four scenes and a choice in headless Chromium at 390x844, with no page
+  errors; pictures checked. No game code touched, so lint and tests were not needed (the docs aren't formatted or
+  linted).
+- Next: DL-1 (markup) on `track/dialogue`.
 ### VFX track VFX-20 - Phone pass: VFX-17, 18, 18b and 19 merged, fx and the old 2D code out, the flash audit, the quality ladder, Part 2 as built - 2026-10-29
 Branch `track/vfx`, the main line of wave 5 and Part 2's last step. Run under the owner's standing instruction
 (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tags (CLAUDE.md

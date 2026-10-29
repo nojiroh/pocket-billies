@@ -2,7 +2,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  BUST_PX,
   CLIP_FRAMES,
+  FACE_MOUTH_OPEN,
+  bustSize,
+  headKey,
+  headStep,
+  meshHeadPivot,
+  nearestHead,
+  turnHeadPose,
+  turnJointAbout,
   TILT_STEP,
   WALK_CYCLE_M,
   cardPoint,
@@ -376,4 +385,120 @@ test('figure pose: a model’s clip matrices: 3 x 4 to 4 x 4, the hips’ lift s
   /* lift 0.513 m is 16.4 texels: snapped to 16, so every joint is 0.013 m lower */
   assert.ok(Math.abs(M[13] - (0.5 + 0.013 + 16 / 32 - 0.513)) < 1e-6, `${M[13]}`);
   assert.deepEqual(meshClipMatrices(c, 3, 2, 32), M, 'the frames wrap');
+});
+
+/* ---------- DL-6: close-ups ---------- */
+test('figure close-up: the bust is a 64 px square showing the head and shoulders, the ground below it', () => {
+  const E = codeExtent(1.75),
+    S = bustSize(E);
+  assert.deepEqual([S.w, S.h, S.ax], [BUST_PX, BUST_PX, BUST_PX / 2]);
+  assert.ok(S.ay > S.h, 'the anchor is below the picture');
+  /* the top of the figure 2 pixels down, the picture's bottom at about the top 60% of the figure */
+  assert.equal(S.ay - Math.round(E.top * S.ppm), 2);
+  const shown = S.h / S.ppm;
+  assert.ok(shown > 0.55 * E.top && shown < 0.65 * E.top, `shows ${shown.toFixed(2)} m`);
+  /* the mannequin's face is on the picture, level, at this density */
+  const F = mannequinFigure(),
+    P = figurePose(F, 'idle', 0),
+    M = figureFaceMarks(F, jointMatrices(F, P, S.ppm), P, { rel: Math.PI, tilt: 0 }, S.ppm, S);
+  assert.equal(M.filter(m => m.kind === 'eye').length, 2);
+  for (const m of M) assert.ok(m.x >= 0 && m.y >= 0 && m.x + m.w <= S.w && m.y + m.h <= S.h, 'inside');
+});
+
+test('figure close-up: the head steps to 5 yaws, 3 pitches and 3 rolls', () => {
+  assert.deepEqual(headStep({ yaw: 4, pitch: -3, roll: 0 }), { yaw: 6, pitch: 0, roll: 0 });
+  assert.deepEqual(headStep({ yaw: -40, pitch: 11, roll: 5 }), { yaw: -12, pitch: 8, roll: 8 });
+  assert.deepEqual(headStep(null), { yaw: 0, pitch: 0, roll: 0 });
+  assert.deepEqual(headStep({ yaw: -2 }), { yaw: 0, pitch: 0, roll: 0 }, 'no minus zero');
+  const keys = new Set();
+  for (let y = -30; y <= 30; y++)
+    for (let p = -20; p <= 20; p += 2)
+      for (let r = -20; r <= 20; r += 2) keys.add(headKey(headStep({ yaw: y, pitch: p, roll: r })));
+  assert.equal(keys.size, 45);
+  /* the nearest kept: by steps */
+  const kept = [
+    { yaw: 0, pitch: 0, roll: 0 },
+    { yaw: 12, pitch: 0, roll: 0 },
+    { yaw: 0, pitch: 8, roll: 0 },
+  ];
+  assert.equal(nearestHead({ yaw: 6, pitch: 8, roll: 0 }, kept), kept[2]);
+  assert.equal(nearestHead({ yaw: 12, pitch: -8, roll: 0 }, kept), kept[1]);
+  assert.equal(nearestHead({ yaw: 0, pitch: 0, roll: 0 }, []), null);
+});
+
+test('figure close-up: a turned head moves the face with it, and leaves the body', () => {
+  const F = mannequinFigure(),
+    P = figurePose(F, 'idle', 0),
+    S = bustSize(codeExtent(1.75)),
+    V = { rel: Math.PI, tilt: 0 },
+    at = id => F.parts.findIndex(p => p.id === id),
+    marks = Q => figureFaceMarks(F, jointMatrices(F, Q, S.ppm), Q, V, S.ppm, S),
+    eyeY = M => Math.min(...M.filter(m => m.kind === 'eye').map(m => m.y)),
+    eyeX = M => M.filter(m => m.kind === 'eye').reduce((a, m) => a + m.x, 0);
+  const nod = turnHeadPose(F, P, { yaw: 0, pitch: 8, roll: 0 });
+  assert.notEqual(nod.rot, P.rot, 'a copy');
+  assert.deepEqual(P.rot[at('head')], figurePose(F, 'idle', 0).rot[at('head')], 'the pose itself unchanged');
+  assert.ok(eyeY(marks(nod)) > eyeY(marks(P)), 'a nod lowers the eyes');
+  assert.ok(eyeY(marks(turnHeadPose(F, P, { yaw: 0, pitch: -8, roll: 0 }))) < eyeY(marks(P)), 'a jolt lifts them');
+  assert.notEqual(
+    eyeX(marks(turnHeadPose(F, P, { yaw: 12, pitch: 0, roll: 0 }))),
+    eyeX(marks(P)),
+    'a shake moves them'
+  );
+  const J0 = jointMatrices(F, P, S.ppm),
+    J1 = jointMatrices(F, nod, S.ppm);
+  assert.deepEqual(
+    J1.subarray(at('torso') * 16, at('torso') * 16 + 16),
+    J0.subarray(at('torso') * 16, at('torso') * 16 + 16)
+  );
+  assert.notDeepEqual(
+    J1.subarray(at('hair') * 16, at('hair') * 16 + 16),
+    J0.subarray(at('hair') * 16, at('hair') * 16 + 16)
+  );
+});
+
+test('figure close-up: the face state shuts the eyes and opens the mouth', () => {
+  const F = mannequinFigure(),
+    P = figurePose(F, 'idle', 0),
+    S = bustSize(codeExtent(1.75)),
+    J = jointMatrices(F, P, S.ppm),
+    V = { rel: Math.PI, tilt: 0 },
+    plain = figureFaceMarks(F, J, P, V, S.ppm, S),
+    same = figureFaceMarks(F, J, P, V, S.ppm, S, { eyes: 'open', mouth: 'shut' }),
+    shut = figureFaceMarks(F, J, P, V, S.ppm, S, { eyes: 'shut' }),
+    open = figureFaceMarks(F, J, P, V, S.ppm, S, { mouth: 'open' });
+  assert.deepEqual(same, plain, 'open and shut: as the pose has it');
+  assert.ok(shut.filter(m => m.kind === 'eye').every(m => m.h === 1));
+  assert.equal(shut.filter(m => m.kind === 'glint').length, 0);
+  const m0 = plain.find(m => m.kind === 'mouth'),
+    m1 = open.find(m => m.kind === 'mouth');
+  assert.deepEqual([m1.x, m1.y, m1.w, m1.h], [m0.x, m0.y, m0.w, m0.h + FACE_MOUTH_OPEN]);
+  assert.notDeepEqual(m1.rgb, m0.rgb, 'darker inside');
+});
+
+test('figure close-up: a model head turns about its neck, its other joints left alone', () => {
+  /* two joints: a body cube (joint 0) and a head cube (joint 1) from y 1.4 to 1.8, the head's neck at (0, 1.4, 0) */
+  const v = [];
+  for (const [j, y0] of [
+    [0, 0],
+    [1, 1.4],
+  ])
+    for (const y of [y0, y0 + 0.4])
+      for (const x of [-0.1, 0.1]) for (const z of [-0.1, 0.1]) v.push(x, y, z, 0, 1, 0, j, 0, 0);
+  const data = new Float32Array(v),
+    pivot = meshHeadPivot(data, 1);
+  assert.deepEqual(
+    pivot.map(n => Math.round(n * 100) / 100),
+    [0, 1.4, 0]
+  );
+  assert.equal(meshHeadPivot(data, 5), null);
+  const I = [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+    J = new Float32Array([...I, ...I]),
+    T = turnJointAbout(J, 1, pivot, { yaw: 0, pitch: 90, roll: 0 });
+  assert.deepEqual(Array.from(T.subarray(0, 16)), I, 'the body unchanged');
+  const apply = (M, p) =>
+    [0, 1, 2].map(r => Math.round((M[r] * p[0] + M[4 + r] * p[1] + M[8 + r] * p[2] + M[12 + r]) * 100) / 100 || 0);
+  const H = T.subarray(16, 32);
+  assert.deepEqual(apply(H, [0, 1.4, 0]), [0, 1.4, 0], 'the neck stays');
+  assert.deepEqual(apply(H, [0, 1.8, 0]), [0, 1.4, 0.4], 'the top of the head tips forward (+z) on a nod');
 });

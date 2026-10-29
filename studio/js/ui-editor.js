@@ -35,7 +35,15 @@ import {
   nearestPair,
   signalSetColours,
 } from '../../game/js/logic/signals.js';
-import { UI_CONTRAST, UI_SCREENS, mergeLook, screenLook, uiRatio, uiThemeLook } from '../../game/js/logic/ui-theme.js';
+import {
+  UI_CONTRAST,
+  UI_SCREENS,
+  UI_SHAPE_FAMILIES,
+  mergeLook,
+  screenLook,
+  uiRatio,
+  uiThemeLook,
+} from '../../game/js/logic/ui-theme.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   UI_FAMILY_LABELS,
@@ -309,6 +317,7 @@ function uiFamiliesHTML() {
        ['cut', 'Cut corners'],
        ['rounded', 'Rounded (to compare)'],
        ['square', 'Square (to compare)'],
+       ['jag', 'Jagged burst (shouts)'],
      ],
    },
    rel('kind')
@@ -341,7 +350,13 @@ function uiFamiliesHTML() {
          )
          .join('')}</span>${uiResetBtn(rel('corners'), corners)}</div>`
  }
- ${uiDialHTML({ k: 'radius', label: 'Radius when rounded', kind: 'range', min: 0, max: 48, step: 1, unit: 'px' }, rel('radius'))}</div>`;
+ ${uiDialHTML({ k: 'radius', label: 'Radius when rounded', kind: 'range', min: 0, max: 48, step: 1, unit: 'px' }, rel('radius'))}
+ ${
+   /* DL-3: a jagged burst's spikes */
+   UI_SHAPE_FAMILIES[f]?.kind === 'jag'
+     ? `${uiDialHTML({ k: 'depth', label: 'Spike depth', kind: 'range', min: 2, max: 24, step: 1, unit: 'px' }, rel('depth'))}${uiDialHTML({ k: 'spikes', label: 'Spikes along an edge', kind: 'range', min: 3, max: 16, step: 1, unit: '' }, rel('spikes'))}`
+     : ''
+ }</div>`;
 }
 function uiLayersHTML() {
   return `<table class="tbl ui-layers"><thead><tr><th>Layer</th><th>z</th><th>What</th></tr></thead><tbody>${UI_LAYERS.map(

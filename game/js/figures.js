@@ -21,6 +21,11 @@
      the frame's work budget lasts; until then a person keeps their last picture (or today's, or none on a test map).
    - A lost baker context bakes nothing until it is back, then rebuilds; the game's own lost context only drops the
      textures, and the canvases are uploaded again. figureBakerLose forces a loss for the checks.
+   - Close-ups (dialogue track DL-6): a talking person's head and shoulders (figureBustPicture), seen level, the head
+     turned by the talk's director in stepped angles (logic/figure-pose.js headStep: at most 45 pictures a figure),
+     kept apart from the world's pictures; the face painted on a copy each tick (figureBustFace) with the director's
+     eyes and mouth, so a blink or a word costs no bake. The rest pose first, at most one bake every FIGURE_BUST_GAP
+     ms, the nearest kept angle shown meanwhile.
    The renderer never calls this with the switch off, and a model's file is only fetched when one is first wanted. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
@@ -29,6 +34,7 @@ import {
   FIGURE_BANDS,
   FIGURE_LIGHT,
   OUTLINE_RGB,
+  bustSize,
   cardSize,
   clipFrameAt,
   codeExtent,
@@ -40,10 +46,16 @@ import {
   figureRamp,
   figureTick,
   figureView,
+  headKey,
+  headStep,
   jointMatrices,
   mannequinFigure,
   meshClipFrame,
   meshClipMatrices,
+  meshHeadPivot,
+  nearestHead,
+  turnHeadPose,
+  turnJointAbout,
 } from './logic/figure-pose.js';
 import { artImg, artURL, makeCanvas } from './art.js';
 import { RUN_FACTOR, WALK_SPEED, seenYaw, walkView } from './walk-view.js';
@@ -54,6 +66,10 @@ import { frameBudgetLeft } from './walk/quality-cull.js';
 expose({
   FIGURE_BAKES_A_FRAME: [() => FIGURE_BAKES_A_FRAME],
   FIGURE_BATTLE_PPM: [() => FIGURE_BATTLE_PPM],
+  FIGURE_BUSTS: [() => FIGURE_BUSTS],
+  FIGURE_BUST_GAP: [() => FIGURE_BUST_GAP],
+  FIGURE_BUST_MAX: [() => FIGURE_BUST_MAX],
+  FIGURE_BUST_TURN: [() => FIGURE_BUST_TURN],
   FIGURE_CACHE: [() => FIGURE_CACHE],
   FIGURE_CACHE_BYTES: [() => FIGURE_CACHE_BYTES],
   FIGURE_CACHE_MAX: [() => FIGURE_CACHE_MAX],
@@ -70,6 +86,8 @@ expose({
   figureBakerLose: [() => figureBakerLose, v => (figureBakerLose = v)],
   figureBattlePicture: [() => figureBattlePicture, v => ((figureBattlePicture = v), provide({ figureBattlePicture }))],
   figureBuild: [() => figureBuild, v => (figureBuild = v)],
+  figureBustFace: [() => figureBustFace, v => (figureBustFace = v)],
+  figureBustPicture: [() => figureBustPicture, v => (figureBustPicture = v)],
   figureBytes: [() => figureBytes, v => (figureBytes = v)],
   figureCacheClear: [() => figureCacheClear, v => (figureCacheClear = v)],
   figureChoice: [() => figureChoice, v => (figureChoice = v)],
@@ -81,6 +99,8 @@ expose({
   figureGl: [() => figureGl, v => (figureGl = v)],
   figureLast: [() => figureLast],
   figureLoad: [() => figureLoad, v => (figureLoad = v)],
+  figureMeshHead: [() => figureMeshHead, v => (figureMeshHead = v)],
+  figurePaintFace: [() => figurePaintFace, v => (figurePaintFace = v)],
   figurePalette: [() => figurePalette, v => (figurePalette = v)],
   figurePersonPicture: [() => figurePersonPicture, v => (figurePersonPicture = v)],
   figurePicture: [() => figurePicture, v => (figurePicture = v)],
@@ -101,7 +121,12 @@ const FIGURE_CACHE_MAX = 600,
   /** the plain 3D figure (B, the style "smooth") is baked this fine and left to the GPU's mipmaps to smooth */
   FIGURE_SMOOTH_PPM = 128,
   /** figures in battle: twice the world's grid (the old style guide's "32 px/m in the world, 64 in battle") */
-  FIGURE_BATTLE_PPM = 64;
+  FIGURE_BATTLE_PPM = 64,
+  /** DL-6: close-ups: at most this many kept (45 head angles of three figures), one baked every this many ms */
+  FIGURE_BUST_MAX = 135,
+  FIGURE_BUST_GAP = 50,
+  /** and seen this far round from straight on (radians; a three-quarter look reads as 3D) */
+  FIGURE_BUST_TURN = 0.3;
 /** the figures made from models (tools/gltf-figure.mjs; their CC0 sources in validation/cc0-src/LICENSES.md), each
  * a JSON file and its texture */
 const FIGURE_FILES = { rogue: 'figures/rogue.json' };
@@ -127,8 +152,13 @@ const figureBaker = {
   losses: 0,
   frame: -1,
   frameBakes: 0,
+  busts: 0,
+  bustMs: 0,
+  bustAt: -1e9,
 };
 const FIGURE_CACHE = new Map();
+/** DL-6: the close-ups by figure, style, outline and head angle (figureBustPicture) */
+const FIGURE_BUSTS = new Map();
 /** each person's last picture (a runtime record or a test map's lineup entry; nothing is written on them) */
 const figureLast = new WeakMap();
 /** the figures by name: a code figure at once; a model's once its file is in (null while it loads, false if it can't) */
@@ -434,9 +464,11 @@ function figurePalette(F, colours) {
 /**
  * one picture of a figure: its pose at a clip's frame, seen in view V at `ppm` pixels a metre, in a style ('pixel':
  * toon bands and the outline as `outline` says; 'smooth': the plain 3D figure, a soft light and no outline). A canvas
- * tagged as a person's picture, or null if the baker can't draw it now.
+ * tagged as a person's picture, or null if the baker can't draw it now. DL-6, `o`: `bust`, a window (logic/figure-pose.js
+ * bustSize) instead of the whole figure; `head`, angles (degrees) the head turns by; `face: false`, a code figure's
+ * face left off and what painting it needs kept on the picture (`face`, for figureBustFace).
  */
-function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
+function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', o = {}) {
   const gl = figureGl();
   if (!gl) return null;
   const R = figureRes(gl, Fig);
@@ -444,15 +476,18 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   const B = figureBaker,
     t0 = performance.now(),
     smooth = style === 'smooth',
-    S = cardSize(ppm, V.tilt, Fig.ext);
+    S = o.bust || cardSize(ppm, V.tilt, Fig.ext);
   if (S.w > B.cv.width || S.h > B.cv.height) {
     B.cv.width = Math.max(B.cv.width, S.w);
     B.cv.height = Math.max(B.cv.height, S.h);
   }
   figureTarget(gl, B.cv.width, B.cv.height);
   const code = Fig.kind === 'code',
-    pose = code ? figurePose(Fig.F, clip, frame) : null,
-    J = code ? jointMatrices(Fig.F, pose, ppm) : meshClipMatrices(Fig.clips[clip], frame, Fig.joints.length, ppm),
+    pose0 = code ? figurePose(Fig.F, clip, frame) : null,
+    pose = pose0 && o.head ? turnHeadPose(Fig.F, pose0, o.head) : pose0,
+    J = code
+      ? jointMatrices(Fig.F, pose, ppm)
+      : figureMeshHead(Fig, meshClipMatrices(Fig.clips[clip], frame, Fig.joints.length, ppm), o.head),
     c = Math.cos(V.rel),
     s = Math.sin(V.rel);
   /* pass 1: the figure with its depth */
@@ -505,11 +540,8 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   x.drawImage(B.cv, 0, B.cv.height - S.h, S.w, S.h, 0, 0, S.w, S.h);
   /* a code figure's face, painted in whole pixels where its head faces the camera (logic/figure-pose.js
      figureFaceMarks); a model's face is in its texture */
-  if (code)
-    for (const m of figureFaceMarks(Fig.F, J, pose, V, ppm, S)) {
-      x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
-      x.fillRect(m.x, m.y, m.w, m.h);
-    }
+  if (code && o.face === false) out.face = { F: Fig.F, J, pose, V, ppm, S };
+  else if (code) figurePaintFace(x, figureFaceMarks(Fig.F, J, pose, V, ppm, S));
   out.ax = S.ax;
   out.ay = S.ay;
   out.ppm = ppm;
@@ -517,6 +549,86 @@ function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel') {
   out.figure = Fig.name;
   B.bakes++;
   B.ms += performance.now() - t0;
+  return out;
+}
+/** face marks painted on a picture's 2D context, in whole pixels */
+function figurePaintFace(x, marks) {
+  for (const m of marks) {
+    x.fillStyle = `rgb(${m.rgb[0]},${m.rgb[1]},${m.rgb[2]})`;
+    x.fillRect(m.x, m.y, m.w, m.h);
+  }
+}
+/** a model figure's joint matrices with its head turned by `head` (degrees) about its neck (DL-6); as they are with no
+ * head joint or no turn. The neck is found once a figure (logic/figure-pose.js meshHeadPivot). */
+function figureMeshHead(Fig, J, head) {
+  if (!head || (!head.yaw && !head.pitch && !head.roll)) return J;
+  if (Fig.neck === undefined) {
+    const j = Fig.joints.indexOf('head'),
+      p = j >= 0 ? meshHeadPivot(Fig.data, j) : null;
+    Fig.neck = p ? { j, p } : null;
+  }
+  return Fig.neck ? turnJointAbout(J, Fig.neck.j, Fig.neck.p, head) : J;
+}
+/**
+ * DL-6: a talk close-up of figure `name`, its head turned by `head` (degrees, the talk director's: stepped here,
+ * logic/figure-pose.js headStep), in `style`: the head and shoulders BUST_PX square, seen level and a little round, in
+ * its rest pose. Kept by angle; one baked every FIGURE_BUST_GAP ms at most, the rest pose before any other, and the
+ * nearest kept angle given meanwhile (null until the first). A code figure's picture has no face: figureBustFace paints
+ * it.
+ */
+export function figureBustPicture(name, head, style = 'pixel') {
+  const Fig = figureDef(name);
+  if (!Fig) return null;
+  const smooth = style === 'smooth',
+    outline = !smooth && engineSetting('people', 'outline') !== false,
+    base = `${Fig.name}|${smooth ? 'smooth' : 'pixel'}|${outline ? 1 : 0}|`,
+    want = headStep(head),
+    got = FIGURE_BUSTS.get(base + headKey(want));
+  if (got) return got;
+  const rest = headStep(null),
+    B = figureBaker,
+    now = performance.now();
+  if (now - B.bustAt >= FIGURE_BUST_GAP) {
+    const h = FIGURE_BUSTS.has(base + headKey(rest)) ? want : rest,
+      S = bustSize(Fig.ext),
+      clip = Fig.kind === 'code' ? 'idle' : Fig.clips.idle ? 'idle' : Object.keys(Fig.clips)[0],
+      ms0 = B.ms,
+      im = bakeFigure(Fig, clip, 0, { rel: Math.PI - FIGURE_BUST_TURN, tilt: 0 }, S.ppm, outline, style, {
+        bust: S,
+        head: h,
+        face: false,
+      });
+    B.bustAt = now;
+    if (im) {
+      B.busts++;
+      /* the bake's own time (as `ms` counts it), not the baker's one-off start */
+      B.bustMs += B.ms - ms0;
+      im.head = h;
+      FIGURE_BUSTS.set(base + headKey(h), im);
+      while (FIGURE_BUSTS.size > FIGURE_BUST_MAX) FIGURE_BUSTS.delete(FIGURE_BUSTS.keys().next().value);
+      if (h === want) return im;
+    }
+  }
+  const kept = [];
+  for (const [k, im] of FIGURE_BUSTS) if (k.startsWith(base)) kept.push(im.head);
+  const near = nearestHead(want, kept);
+  return near ? FIGURE_BUSTS.get(base + headKey(near)) || null : null;
+}
+/** DL-6: a close-up with its face at a moment (the talk director's `{eyes, mouth}`), drawn into `out` (a canvas, sized
+ * to it); a model's face is its texture's, so it is copied as it is */
+export function figureBustFace(out, im, state) {
+  if (out.width !== im.width || out.height !== im.height) {
+    out.width = im.width;
+    out.height = im.height;
+  }
+  const x = out.getContext('2d');
+  x.imageSmoothingEnabled = false;
+  x.clearRect(0, 0, out.width, out.height);
+  x.drawImage(im, 0, 0);
+  const f = im.face;
+  if (f) figurePaintFace(x, figureFaceMarks(f.F, f.J, f.pose, f.V, f.ppm, f.S, state || undefined));
+  out.ppm = im.ppm;
+  out.figure = im.figure;
   return out;
 }
 /**
@@ -645,6 +757,10 @@ export function figureReport() {
     mb: Math.round((B.bytes / 1048576) * 10) / 10,
     bakes: B.bakes,
     ms: Math.round(B.ms * 10) / 10,
+    /* DL-6: the talk's close-ups kept, baked, and their bakes' time (ms, also in `ms`) */
+    busts: FIGURE_BUSTS.size,
+    bustBakes: B.busts,
+    bustMs: Math.round(B.bustMs * 10) / 10,
     lost: B.lost,
     losses: B.losses,
     failed: B.failed || null,
@@ -663,5 +779,6 @@ function figureBakerLose(ms = 1500) {
 /** forget every baked picture (the checks; a picture already in the world stays drawn until it's replaced) */
 function figureCacheClear() {
   FIGURE_CACHE.clear();
+  FIGURE_BUSTS.clear();
   figureBaker.bytes = 0;
 }

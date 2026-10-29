@@ -41,7 +41,7 @@ import { FIXTURE, saveData, setSaveData, uiState } from './game-state.js';
 import { LOOK_PRESETS, cleanLook } from './person-art.js';
 import { applyPreferences } from './settings-screen.js';
 import { actionSpot, walkData, walkView } from './walk-view.js';
-import { talkLine } from './talk.js';
+import { talkChoose, talkHide, talkLine } from './talk.js';
 import { renderOverlay } from './overlay.js';
 import { enterRoom } from './walk-control.js';
 import { render } from './ui.js';
@@ -208,8 +208,73 @@ export function fixtureStart() {
     uiState.tab = FIXTURE;
     render();
   }
-  if (FIXTURE === 'talk')
-    talkLine('chosen', 'This is the dialogue box. The Studio shows it with the look you are editing.');
+  if (FIXTURE === 'talk') {
+    /* DL-3: &skin= shows a skin's bubble with a line of its own, &style= says it as a shout, a whisper or a thought */
+    const q = new URLSearchParams(location.search),
+      /* DL-6: &figures=mannequin (or rogue, or 1: the default figure) talks with figure close-ups: Engine > People >
+         Figures and Townsfolk as figures on, as a player's own dials (the fixture's save only) */
+      figs = q.get('figures');
+    if (figs) {
+      const p = (saveData.preferences = saveData.preferences || {}),
+        people = { figures: true, folk: true, ...(/^[a-z]+$/.test(figs) ? { figure: figs } : {}) };
+      p.expert = true;
+      p.eng = { ...(p.eng || {}), people: { ...((p.eng && p.eng.people) || {}), ...people } };
+    }
+    const pick = /** @type {Record<string, [string, string, any]>} */ ({
+        chosen: ['chosen', 'This is the dialogue box. The Studio shows it with the look you are editing.', {}],
+        kappi: ['kappi', 'Breathe in. The water always knows the way down.', {}],
+        blake: ['chad', 'Oh, it’s [b]you[/b] again. Try to keep up this time.', {}],
+        bureau: [
+          'clerk',
+          'You look lost. That is [b]our[/b] department.[stamp=approved]',
+          { cls: 'bureau_clerk', name: 'Clerk 4471' },
+        ],
+        folk: ['folk:3', 'Nice weather for a walk, isn’t it? The bridge is new.', {}],
+        narration: ['me', 'The water is calm and deep. Would you like to Surf?', {}],
+        you: ['me', 'Where am I? This doesn’t look like the city.', { skin: 'you' }],
+      })[q.get('skin') || 'chosen'] || ['chosen', 'This is the dialogue box.', {}],
+      style = (q.get('style') || '').replace(/[^a-z]/g, '');
+    /* DL-4: &stack=1 plays a whole exchange (sides, a linked pair, Kappi's "…", a cut, a [wait], the stamp), tapped on
+       by the caller (tools/look-talk.py); &choice=1 ends it in a choice */
+    if (q.get('stack')) {
+      const lines = /** @type {[string, string, any][]} */ ([
+        ['chosen', 'So. You fell through the crust. Mostly [b]furniture[/b] does that.', {}],
+        ['kappi', '[whisper] They are not furniture, Professor.', {}],
+        ['kappi', 'Breathe in. The water always knows the way down.', {}],
+        ['chad', '[shout] Out of my way, I was here first, I’m next in the—', {}],
+        [
+          'clerk',
+          '[wait] Actually, the queue is [b]ours[/b].[stamp=approved]',
+          { cls: 'bureau_clerk', name: 'Clerk 4471' },
+        ],
+        ['chosen', '[think] Was it left at the fork, or right?', {}],
+      ]);
+      (async () => {
+        for (const [who, text, o] of lines) await talkLine(who, text, null, o);
+        if (q.get('choice')) await talkChoose([{ text: 'Join the queue' }, { text: 'Walk away' }]);
+        talkHide();
+      })();
+      return;
+    }
+    /* DL-5: &faces=1 plays faces: a mid-line face, emotes, a face's own emote and a listener, tapped on by the caller
+       (tools/look-talk.py --only=faces) */
+    if (q.get('faces')) {
+      const lines = /** @type {[string, string, any][]} */ ([
+        ['chosen', '[happy] Welcome back! The lab missed you. Mostly the [face=sad]floors did.', {}],
+        ['kappi', 'The kettle is on.[emote=note] It always is.', {}],
+        ['chad', '[surprised] You again? I thought the crust ate you!', {}],
+        ['chosen', 'Blake, please. [face=angry]Not on the carpet.[emote=sweat]', {}],
+        ['kappi', '[happy] I like the carpet.[emote=heart]', {}],
+      ]);
+      (async () => {
+        for (const [who, text, o] of lines) await talkLine(who, text, null, o);
+        talkHide();
+      })();
+      return;
+    }
+    const said = (/^(shout|whisper|think)$/.test(style) ? `[${style}] ` : '') + pick[1];
+    talkLine(pick[0], said, null, pick[2]);
+  }
 }
 /* UI-3b: the Studio's UI look preview hands a fixture the look being edited: the theme sheet, and light or dark,
    reduced motion and the text size through the fixture save's own Settings (only a fixture listens) */

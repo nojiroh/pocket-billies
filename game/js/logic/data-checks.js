@@ -73,6 +73,7 @@ import {
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
+import { MARKUP_EMOTES } from './line-markup.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 import { svgProblem } from './svg-pixels.js';
 /* eslint-disable no-func-assign */
@@ -122,6 +123,8 @@ expose({
   dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
   // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataEmotes: [() => dataEmotes, v => (dataEmotes = v)],
   // @ts-expect-error -- replaced on purpose
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
@@ -186,6 +189,8 @@ expose({
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
   dataSquareRules: [() => dataSquareRules, v => (dataSquareRules = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataTalkSkins: [() => dataTalkSkins, v => (dataTalkSkins = v)],
   // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
   // @ts-expect-error -- replaced on purpose
@@ -2322,6 +2327,58 @@ export function dataBanter(D, valid = () => true) {
   for (const id of Object.keys(R))
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === id && !b.when))
       problem(`no line for the resident "${id}" without a when: they could have nothing to say`);
+  return out;
+}
+
+// DL-3: talkSkins.json: the schema; the default and every skin a speaker or a class names are skins; a speaker is
+// someone (people/*.json, story.json speakers, me) and a class is a run trainer's class (events.json classes)
+/** DL-3: talkSkins.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataTalkSkins(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['talkSkins.json', what]),
+    T = D.talkSkins;
+  if (!T) return [['talkSkins.json', 'missing']];
+  if (!valid('talkSkins.schema.json', T, 'talkSkins.json')) return out;
+  const skins = T.skins || {},
+    people = new Set(['me', ...Object.keys(D.people || {}), ...Object.values((D.story && D.story.speakers) || {})]),
+    classes = (D.events && D.events.classes) || {};
+  if (!skins[T.default]) problem(`default: no skin "${T.default}"`);
+  for (const [who, k] of Object.entries(/** @type {Record<string, string>} */ (T.speakers || {}))) {
+    if (!skins[k]) problem(`speakers.${who}: no skin "${k}"`);
+    if (!people.has(who)) problem(`speakers.${who}: nobody of that id (people/*.json, story.json speakers)`);
+  }
+  for (const [c, k] of Object.entries(/** @type {Record<string, string>} */ (T.classes || {}))) {
+    if (!skins[k]) problem(`classes.${c}: no skin "${k}"`);
+    if (!classes[c]) problem(`classes.${c}: no trainer class of that id (events.json classes)`);
+  }
+  return out;
+}
+
+// DL-5: emotes.json: the schema; every emote a line can ask for ([emote=x], logic/line-markup.js MARKUP_EMOTES) is
+// drawn; each picture is size × size and uses only its colours; a face's own emote is one of them
+/** DL-5: emotes.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataEmotes(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['emotes.json', what]),
+    E = D.emotes;
+  if (!E) return [['emotes.json', 'missing']];
+  if (!valid('emotes.schema.json', E, 'emotes.json')) return out;
+  const n = E.size,
+    colors = E.colors || {},
+    pics = E.emotes || {};
+  for (const k of MARKUP_EMOTES) if (!pics[k]) problem(`emotes: no picture for "${k}" ([emote=${k}] asks for it)`);
+  for (const [k, rows] of Object.entries(/** @type {Record<string, string[]>} */ (pics))) {
+    if (!MARKUP_EMOTES.includes(k))
+      problem(`emotes.${k}: no line can ask for it (MARKUP_EMOTES in logic/line-markup.js)`);
+    if (rows.length !== n || rows.some(r => r.length !== n)) problem(`emotes.${k}: not ${n} × ${n}`);
+    const bad = [...new Set(rows.join('').replace(/\./g, ''))].filter(c => !colors[c]);
+    if (bad.length) problem(`emotes.${k}: no colour for ${bad.map(c => `"${c}"`).join(', ')}`);
+    if (!/[^.]/.test(rows.join(''))) problem(`emotes.${k}: nothing drawn`);
+  }
+  for (const [face, k] of Object.entries(/** @type {Record<string, string>} */ (E.auto || {})))
+    if (!pics[k]) problem(`auto.${face}: no emote "${k}"`);
   return out;
 }
 
