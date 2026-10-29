@@ -11,6 +11,7 @@ import {
   FIXTURE_NAMES,
   POST_EFFECT_SHADERS,
   SOLID_PROP_SHADERS,
+  SOUND_DEFAULTS,
   WALK_SHADERS,
   WORLD_BOWL_SHADERS,
   account,
@@ -489,20 +490,30 @@ function settingsHTML() {
       );
   else if (tab === 'sound')
     body =
-      volumeSliderHTML('master', 'Volume', 'Everything together. Mute keeps your levels for later.', 1) +
-      volumeSliderHTML('music', 'Music', 'Tunes for each place and battle.', 0.55) +
+      volumeSliderHTML(
+        'master',
+        'Volume',
+        'Everything together. Mute keeps your levels for later.',
+        SOUND_DEFAULTS.master
+      ) +
+      volumeSliderHTML('music', 'Music', 'Tunes for each place and battle.', SOUND_DEFAULTS.music) +
       volumeSliderHTML(
         'sfx',
         'Sound effects',
         'Buttons, battles, catches, and the short tunes for a win or a level up.',
-        0.8
+        SOUND_DEFAULTS.sfx
       ) +
-      volumeSliderHTML('world', 'World sounds', 'Water, fountains, fire, rain, wind and animals near you.', 0.5) +
+      volumeSliderHTML(
+        'world',
+        'World sounds',
+        'Water, fountains, fire, rain, wind and animals near you.',
+        SOUND_DEFAULTS.world
+      ) +
       volumeSliderHTML(
         'amb',
         'Ambience',
         'Birdsong by day, crickets at night, leaves, a town’s murmur, a room’s clock.',
-        0.5
+        SOUND_DEFAULTS.amb
       ) +
       settingsRowHTML(
         'Low HP beep',

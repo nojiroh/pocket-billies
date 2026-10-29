@@ -15,13 +15,14 @@ const near = (a, b) => assert.ok(Math.abs(a - b) < 1e-9, `${a} is not ${b}`);
 test('with no preferences each bus has the level the sliders show by default', () => {
   for (const prefs of [undefined, null, {}]) {
     const L = soundLevels(prefs);
+    /* SND-15: the defaults near the top (music 0.8, sound effects 1, world and ambience 0.75) */
     near(L.master, 0.9);
-    near(L.music, 0.55 * 0.55);
-    near(L.sfx, 0.8 * 0.8);
-    near(L.world, 0.25);
-    near(L.amb, 0.25 * 0.9);
+    near(L.music, 0.8 * 0.8);
+    near(L.sfx, 1);
+    near(L.world, 0.75 * 0.75);
+    near(L.amb, 0.75 * 0.75 * 0.9);
   }
-  assert.equal(soundLevel({}, 'music'), 0.55);
+  assert.equal(soundLevel({}, 'music'), 0.8);
 });
 
 test('a slider value is squared, and 0 is silent', () => {
@@ -50,13 +51,19 @@ test('a level stored as text, as a slider hands it over, reads as its number', (
   assert.equal(soundLevel({ sfx: '0' }, 'sfx'), 0);
 });
 
-test("SND-6: the trims are music.json's mix; the data's mix is today's trims, so nothing sounds different", () => {
+test("SND-6: the trims are music.json's mix (SND-15: set so each bus keeps its level against the music)", () => {
   for (const prefs of [undefined, { master: 0.7, music: 0.3, amb: 0.9 }, { mute: 1 }]) {
     const A = soundLevels(prefs),
       B = soundLevels(prefs, MIX);
-    for (const k of ['master', 'music', 'sfx', 'world', 'amb']) near(A[k], B[k]);
+    for (const k of ['master', 'music']) near(A[k], B[k]);
   }
-  near(soundLevels({}, { music: 0.5 }).music, 0.55 * 0.55 * 0.5);
+  /* SND-15: at the new defaults every bus stands to the music as it did at the old ones (0.55, 0.8, 0.5, 0.5), within
+     0.1 dB */
+  const now = soundLevels({}, MIX),
+    was = soundLevels({ music: 0.55, sfx: 0.8, world: 0.5, amb: 0.5 }, { ...MIX, sfx: 1, world: 1, amb: 0.9 });
+  for (const k of ['sfx', 'world', 'amb'])
+    assert.ok(Math.abs(20 * Math.log10(now[k] / now.music / (was[k] / was.music))) < 0.1, k);
+  near(soundLevels({}, { music: 0.5 }).music, 0.8 * 0.8 * 0.5);
   near(soundLevels({}, { master: 1 }).master, 1);
   assert.equal(mixTrim({}, 'amb'), 0.9);
   assert.equal(mixTrim(null, 'master'), 0.9);

@@ -2432,15 +2432,15 @@
   }
  },
  "mix": {
-  "about": "SND-6: the mix. Each bus's trim (x the square of its Settings slider): master leaves headroom for the compressor after it, amb sits the ambience a little under the world sounds. bedsUnderSong: dB the world and ambience beds come down while a four-voice song plays (not the title or the fall). compressor: on the master, threshold in dB and ratio. SND-15: the master chain (audio/mix-chain.js): the compressor a gentle glue (threshold and knee in dB, ratio, attack and release in s), makeup the dB the whole mix is lifted after it so the music sits near -18 LUFS at the default sliders, the limiter last (threshold dB, release s) so the true peaks stay under -1 dBTP",
+  "about": "SND-6: the mix. Each bus's trim (x the square of its Settings slider): master leaves headroom for the compressor after it, amb sits the ambience a little under the world sounds. bedsUnderSong: dB the world and ambience beds come down while a four-voice song plays (not the title or the fall). compressor: on the master, threshold in dB and ratio. SND-15: the master chain (audio/mix-chain.js): the compressor a gentle glue (threshold and knee in dB, ratio, attack and release in s), makeup the dB the whole mix is lifted after it so the music sits near -18 LUFS at the default sliders, the limiter last (threshold dB, release s) so the true peaks stay under -1 dBTP. SND-15 also raised the sliders' defaults (audio/levels.js SOUND_DEFAULTS: music 0.8, sound effects 1, world and ambience 0.75) and set sfx, world and amb here so every bus keeps its level against the music as it was",
   "master": 0.9,
   "music": 1,
-  "sfx": 1,
-  "world": 1,
-  "amb": 0.9,
+  "sfx": 1.35,
+  "world": 0.94,
+  "amb": 0.85,
   "bedsUnderSong": -3,
   "compressor": {"threshold":-36,"knee":12,"ratio":1.5,"attack":0.02,"release":1},
-  "makeup": 8,
+  "makeup": 2.8,
   "limiter": {"threshold":-5,"release":0.1},
   "duck": {
    "about": "SND-15: what dips, and by how many dB, under each: music the songs (their own duck after the fader, so a fade-in, a stinger or a layer keeps its gains), beds the world sounds and the ambience; attack and release in s; hold s more after each sound (talk: each letter's blip holds it). A jingle plays the music under it nearly away, as since SND-2 (0.15); a stinger only drops the song's busy parts (SND-17) and the beds a little; a cry and talk a little",
