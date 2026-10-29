@@ -138,7 +138,7 @@ export const musicStudio = {
   /** SND-4: play songs' night versions (town@night) */ night: false,
   /** SND-5: play another version: tense or a run arc band ('' as written) */ part: '',
   /** SND-11: GB Sounds: every song on the four chip voices (the game's Settings -> Sound switch) */ gb: false,
-  /** SND-11: the player's master, compressor and music bus (built from music.json mix, as the game's) */
+  /** SND-11: the player's master, (SND-15) master chain and music bus (built from music.json mix, as the game's) */
   /** @type {any} */ chain: null,
   shown: '',
   /** the where rule last moved, added or shown (marked in the table) */ picked: -1,
@@ -971,7 +971,7 @@ function musicMixHTML() {
     'Mix',
     grid(
       ...[
-        ['Master', 'master', 'Headroom for the compressor after it'],
+        ['Master', 'master', 'Headroom for the master chain after it'],
         ['Music', 'music', ''],
         ['Sound effects', 'sfx', 'Jingles, cries and the buttons'],
         ['World sounds', 'world', 'Water, fire, rain, animals'],
@@ -994,10 +994,34 @@ function musicMixHTML() {
         step: 1,
         unit: 'dB',
       }),
-      numberField('Compressor ratio', `${p}.compressor.ratio`, { opt: 1, min: 1, max: 20, step: 0.5, unit: ': 1' })
+      numberField('Compressor ratio', `${p}.compressor.ratio`, { opt: 1, min: 1, max: 20, step: 0.1, unit: ': 1' }),
+      /* SND-15: the master chain's other settings (audio/mix-chain.js) */
+      numberField('Compressor knee', `${p}.compressor.knee`, { opt: 1, min: 0, max: 40, step: 1, unit: 'dB' }),
+      numberField('Compressor attack', `${p}.compressor.attack`, { opt: 1, min: 0, max: 1, step: 0.005, unit: 's' }),
+      numberField('Compressor release', `${p}.compressor.release`, { opt: 1, min: 0, max: 1, step: 0.05, unit: 's' }),
+      numberField('Make-up', `${p}.makeup`, {
+        opt: 1,
+        min: -12,
+        max: 24,
+        step: 0.5,
+        unit: 'dB',
+        help: 'The whole mix lifted after the compressor: the music near -18 LUFS at the default sliders',
+      }),
+      numberField('Limiter threshold', `${p}.limiter.threshold`, {
+        opt: 1,
+        min: -24,
+        max: 0,
+        step: 0.5,
+        unit: 'dB',
+        help: 'Last on the master: the peaks stay under -1 dBTP',
+      }),
+      ...['jingle', 'stinger', 'cry', 'talk'].flatMap(k => [
+        numberField(`Under a ${k}: music`, `${p}.duck.${k}.music`, { opt: 1, min: -40, max: 0, step: 0.5, unit: 'dB' }),
+        numberField(`Under a ${k}: beds`, `${p}.duck.${k}.beds`, { opt: 1, min: -40, max: 0, step: 0.5, unit: 'dB' }),
+      ])
     ),
     {
-      sub: 'Each bus’s trim, times the square of its slider in the game’s Settings → Sound. The game uses these, and (SND-11) so does the Studio’s player, at the game’s default sliders.',
+      sub: 'Each bus’s trim, times the square of its slider in the game’s Settings → Sound; then (SND-15) the master chain: a gentle compressor, the make-up and a limiter, and what dips under a jingle, a stinger, a cry or talk. The game uses these, and so does the Studio’s player, at the game’s default sliders.',
     }
   );
 }
