@@ -35,6 +35,8 @@
 //   --policy=never-pick        another bot policy (run-sim.js SIM_POLICIES; default greedy-forward)
 //   --out=path.json            where the report goes (default validation/sim/runs.json): runStats's numbers, the seeds,
 //                              the options, the data's hash and every run's stats (`results`)
+//   --prepared                 IN-1: the prepared first run (game/data/firstRun.json) on every seed: the seed picks the
+//                              starter and salts the battles' and catches' luck; the map is the file's
 //   --compare=base.json        play a saved report's seeds with its options on the data as it is now, and write the
 //                              paired compare (logic/sim-compare.js simCompareReports; default validation/sim/compare.json),
 //                              the same JSON as the Run Lab's Simulate card
@@ -85,6 +87,8 @@ if (process.argv[1] && process.argv[1].endsWith('run-sim.mjs')) {
           ...(opt('boons') ? { boons: listOpt('boons', data.BOONS) } : {}),
           ...(opt('held') ? { held: opt('held') } : {}),
           ...(process.argv.includes('--balance') ? { scenes: 'skip' } : {}),
+          /* IN-1: the prepared first run (game/data/firstRun.json), the seed playing a player: its starter, its luck */
+          ...(process.argv.includes('--prepared') ? { prepared: true } : {}),
         },
     report = runReport(base ? base.seeds : C.simSeeds(arg('runs', 50)), o),
     out = resolve(opt('out') || join(ROOT, base ? 'validation/sim/compare.json' : 'validation/sim/runs.json')),

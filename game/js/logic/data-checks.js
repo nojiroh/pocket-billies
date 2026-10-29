@@ -33,6 +33,7 @@ import {
   runMapRows,
   runMapRowsFit,
 } from './run-map.js';
+import { firstRunProblems } from './first-run.js';
 import {
   MAPGEN_DEFAULTS,
   MAPGEN_FEATURES,
@@ -133,6 +134,8 @@ expose({
   dataFestivals: [() => dataFestivals, v => (dataFestivals = v)],
   // @ts-expect-error -- replaced on purpose
   dataFieldMoves: [() => dataFieldMoves, v => (dataFieldMoves = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataFirstRun: [() => dataFirstRun, v => (dataFirstRun = v)],
   // @ts-expect-error -- replaced on purpose
   dataGenes: [() => dataGenes, v => (dataGenes = v)],
   // @ts-expect-error -- replaced on purpose
@@ -619,6 +622,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'seamIn',
   'load',
   'start',
+  'first',
   'points',
   'pack',
   'healCost',
@@ -843,7 +847,7 @@ export function dataRunScene(D) {
 // run town's heal price per hurt Billie, its shop (wares that exist: an item id or coin:<id>; `more` drawn by weight
 // from `pick`, with something to pick when more is above 0), a mini-boss's and the boss's levels over their row and
 // their reward; nothing else in each
-/** RL-8: rules.json run.start, home, pack, healCost, shop, foes @param {any} D @returns {DataProblem[]} */
+/** RL-8: rules.json run.start (IN-1: and run.first), home, pack, healCost, shop, foes @param {any} D @returns {DataProblem[]} */
 export function dataRunLoop(D) {
   /** @type {DataProblem[]} */
   const out = [],
@@ -857,20 +861,24 @@ export function dataRunLoop(D) {
       },
       ware = w =>
         typeof w === 'string' && (w.startsWith('coin:') ? !!(D.pyramids || {})[w.slice(5)] : !!(D.items || {})[w]),
-      ST = R.start,
       SH = R.shop,
       F = R.foes;
-    if (!rec(ST) || !whole(ST.se, 0, 1e6) || !rec(ST.pyramids) || !rec(ST.items))
-      problem('rules.json', 'run.start: se (whole, 0-1,000,000), pyramids and items (records) are needed');
-    else {
-      only(ST, ['se', 'pyramids', 'items'], 'run.start');
-      for (const [k, n] of Object.entries(ST.pyramids))
-        if (!(D.pyramids || {})[k] || !whole(n, 0, 999))
-          problem('rules.json', `run.start.pyramids.${k}: no such coin, or not a whole count`);
-      for (const [k, n] of Object.entries(ST.items))
-        if (!(D.items || {})[k] || !whole(n, 0, 999))
-          problem('rules.json', `run.start.items.${k}: no such item, or not a whole count`);
-    }
+    /* IN-1: run.first, the prepared first run's gift (none: it gets run.start's), checked as run.start is */
+    for (const [at, ST] of /** @type {[string, any][]} */ ([
+      ['run.start', R.start],
+      ...(R.first !== undefined ? [['run.first', R.first]] : []),
+    ]))
+      if (!rec(ST) || !whole(ST.se, 0, 1e6) || !rec(ST.pyramids) || !rec(ST.items))
+        problem('rules.json', `${at}: se (whole, 0-1,000,000), pyramids and items (records) are needed`);
+      else {
+        only(ST, ['se', 'pyramids', 'items'], at);
+        for (const [k, n] of Object.entries(ST.pyramids))
+          if (!(D.pyramids || {})[k] || !whole(n, 0, 999))
+            problem('rules.json', `${at}.pyramids.${k}: no such coin, or not a whole count`);
+        for (const [k, n] of Object.entries(ST.items))
+          if (!(D.items || {})[k] || !whole(n, 0, 999))
+            problem('rules.json', `${at}.items.${k}: no such item, or not a whole count`);
+      }
     // RL-9b: by Expedition (index 0 = Expedition I; past the end, the last): the things packed from Copperleaf's bag
     // (0-99 items and pyramids in all); RL-13: the starter points' budget (1-99), never less than the Expedition before
     for (const [k, lo, hi, what] of [
@@ -1776,6 +1784,31 @@ export function dataBosses(D, valid = () => true) {
     }
   }
   return out;
+}
+// IN-1: firstRun.json: the schema, then what it can't check (logic/first-run.js firstRunProblems): the map's numbering and
+// links, one landing and one boss, and every type, biome, species, leader, event, Perk, boss, town size, prop and spot
+// it names is the game's
+/** IN-1: firstRun.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataFirstRun(D, valid = () => true) {
+  const F = D.firstRun;
+  if (!F) return [['firstRun.json', 'missing']];
+  if (!valid('firstRun.schema.json', F, 'firstRun.json')) return [];
+  const species = Object.fromEntries(
+    (D.lines || []).flatMap((/** @type {any} */ L) => lineSpeciesIds(L).map((/** @type {string} */ id) => [id, 1]))
+  );
+  return firstRunProblems(F, {
+    nodeTypes: D.nodeTypes || {},
+    biomes: D.biomes || {},
+    species,
+    trainers: D.trainers || {},
+    events: (D.events && D.events.events) || {},
+    perks: D.perks || {},
+    bosses: (D.bosses && D.bosses.bosses) || {},
+    props: (D.scenery && D.scenery.props) || {},
+    starters: (D.rules && D.rules.start && D.rules.start.starters) || [],
+    townSizes:
+      D.rules && D.rules.run && D.rules.run.map && D.rules.run.map.townSizes && D.rules.run.map.townSizes.cells,
+  }).map(t => /** @type {DataProblem} */ (['firstRun.json', t]));
 }
 // RL-13: modifiers.json: the schema; each challenge's `when` reads as a condition; the Expeditions are no more than
 // regions.json has zone counts for (past its last, a region keeps its last count) and their foe level rows never go down

@@ -109,6 +109,8 @@ export interface GameData {
   factions?: { about?: string; factions: Record<DataId, Faction> };
   /** RL-14b: a run's bosses that are not a leader's Billie (the Voltron) */
   bosses?: { about?: string; bosses: Record<DataId, BossDef> };
+  /** IN-1: the prepared first run, written by hand */
+  firstRun?: FirstRunData;
   /** TW-3: a run's quests */
   quests?: QuestsData;
   /** residents track RS-1: the people a run can invite to Copperleaf (game/data/residents.json; logic/residents.js) */
@@ -469,6 +471,8 @@ export interface LocationData {
   side?: 1;
   /** RL-12b: 1 on a run's waystation (an event's or a stall's place): fewer wild Billies (rules.json run.wild) */
   waystation?: 1;
+  /** IN-1: how many wild Billies the prepared first run's file gives a place (logic/first-run.js firstRunStock) */
+  stock?: number;
   /** WM-6: a run's route-like place's route number (logic/run-scenes.js runRouteNumbers), on its signs and the map */
   routeNo?: number;
   /** WA-5a: a run's place with marsh or bog water: its wild Billies weighted toward the marsh's (logic/water-play.js) */
@@ -2390,6 +2394,47 @@ export interface BossDef {
   story?: string;
   /** its story script plays only while the story's chapter is this */
   chapter?: number;
+}
+/** IN-1: firstRun.json: a node of the prepared first run's map (logic/first-run.js) */
+export interface FirstRunNode {
+  type: string;
+  row: number;
+  lane: number;
+  biome: string;
+  /** the nodes it leads to (the next row's), by their number in the file */
+  to: number[];
+  /** its wild Billies: levels, how many, and the species (`list`) or the species by the starter's line (`by`) */
+  wild?: { lv: [number, number]; stock?: number; list?: string[]; by?: Record<string, string[]> };
+  /** route trainers on it (a mini-boss's place: the line before its ring) */
+  trainers?: number;
+  /** a waystation's event (events.json) */
+  event?: string;
+  /** a town's size (rules.json run.map.townSizes.cells) */
+  size?: string;
+  /** a mini-boss's or the boss's leader (trainers with miniboss) */
+  leader?: string;
+  /** a mini-boss's or the boss's levels over its row's top wild level (else rules.json run.foes) */
+  up?: number;
+  /** a mini-boss's Billies, at its leader's strongest levels (else the leader's team built for the run) */
+  team?: string[];
+  note?: string;
+}
+/** IN-1: firstRun.json: the prepared first run (logic/first-run.js) */
+export interface FirstRunData {
+  about?: string;
+  seed: string;
+  expedition?: number;
+  /** the bosses.json boss on its boss node */
+  boss: string;
+  /** the Perk planted in the first mini-boss's pick */
+  plant?: string;
+  nodes: FirstRunNode[];
+  /** the crash site on the landing: offsets in metres from the landing's mast, turned with it */
+  crash: {
+    clear: number;
+    props: { k: string; at: [number, number]; rot?: number; clear?: number }[];
+    spots: Record<string, [number, number]>;
+  };
 }
 /** TW-3: quests.json: a run's quests (logic/run-quests.js) */
 export type QuestKind = 'catch' | 'trainers' | 'parcel' | 'miniboss';

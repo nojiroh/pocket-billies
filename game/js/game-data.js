@@ -34,6 +34,7 @@ expose({
   FACTIONS: [() => FACTIONS],
   FESTIVALS: [() => FESTIVALS],
   FIELD_MOVES: [() => FIELD_MOVES],
+  FIRST_RUN: [() => FIRST_RUN],
   GENES: [() => GENES],
   GHOST_KEEPS: [() => GHOST_KEEPS],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
@@ -469,6 +470,9 @@ export const BOSSES = /** @type {Record<string, import('../types/game-data').Bos
   (gameData.bosses && gameData.bosses.bosses) || {}
 );
 provide({ BOSSES }); /* to-module */
+/* intro track IN-1: the prepared first run, written by hand (firstRun.json; logic/first-run.js); null without it */
+export const FIRST_RUN = /** @type {import('../types/game-data').FirstRunData | null} */ (gameData.firstRun || null);
+provide({ FIRST_RUN }); /* to-module */
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
 /* residents track RS-1: the people a run can invite to Copperleaf (residents.json; logic/residents.js) */

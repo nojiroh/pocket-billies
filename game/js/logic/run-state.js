@@ -318,6 +318,8 @@ export function validRun(o) {
   if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
   /* RO-3f: a mythical met this run */
   if (o.myth !== undefined && o.myth !== 1) return false;
+  /* IN-1: the prepared first run (logic/run-start.js runStartPrepared) */
+  if (o.first !== undefined && o.first !== true) return false;
   /* PK-1: the Perks' counters, growth and once-a-run marks (logic/effects.js; missing until a row keeps state) */
   if (o.perkState !== undefined && !validPerkState(o.perkState)) return false;
   /* TW-3: its quests (missing until the first is taken) */
@@ -604,8 +606,9 @@ export function payoutOf(end, rates, itemPrice) {
     Billies (`keep`, by uid). A kept Billie that travelled from home keeps what it gained in the run, where it lives
     (the team or storage); one caught or bought in the run joins the team, or the box when the team is full. Every
     other Billie from home comes back as it left (roguelite-track.md section 3, option 3 of "keep-one vs ranch
-    levels"; 8.2: one kept on a loss, all on a win). RL-9b: on a win the run's items and pyramids go into the hub's bag
-    (on a loss they were paid as Research). Returns the payout */
+    levels"; 8.2: one kept on a loss, all on a win). IN-1: the prepared first run keeps the whole party, won or lost
+    (the starter and every Billie caught; `keep` is not read). RL-9b: on a win the run's items and pyramids go into the
+    hub's bag (on a loss they were paid as Research). Returns the payout */
 /**
  * @param {SaveData} s
  * @param {{ won: boolean, keep: string[] }} how
@@ -623,7 +626,8 @@ export function runEnd(s, how, rates, itemPrice) {
     rates,
     itemPrice
   );
-  const kept = how.keep.map(uid => s.team.find(m => m.uid === uid)).filter(m => !!m),
+  const keep = run.first ? s.team.map(m => m.uid) : how.keep,
+    kept = keep.map(uid => s.team.find(m => m.uid === uid)).filter(m => !!m),
     bag = how.won ? { items: copyOf(s.items || {}), pyramids: copyOf(s.pyramids || {}) } : null,
     /* RL-S1: the run as the story remembers it, read while the team and the run's records are the run's */
     entry = historyEntry(s, how.won);

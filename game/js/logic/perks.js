@@ -28,6 +28,7 @@ import { rngFrom } from './rng.js';
 import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
+import { firstRunPlant } from './first-run.js';
 import { runFoesSync, runFxMoment, runGaveText } from './run-loop.js';
 import {
   fxAt,
@@ -258,7 +259,8 @@ export const perkOffer = (run, perks, rule, team, from) => {
  * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule
  * @param {string[][]} [team] the team's types (perkTeamOf) @param {'leader'} [from] */
 export function perkOfferMake(run, perks, rule, team, from) {
-  const ids = perkOffer(run, perks, rule, team, from);
+  /* IN-1: the prepared first run plants its Perk in its first pick (logic/first-run.js) */
+  const ids = firstRunPlant(run, perkOffer(run, perks, rule, team, from), perks);
   run.offerN++;
   run.offer = ids.length ? ids : null;
   return run.offer;
