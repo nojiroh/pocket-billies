@@ -92,10 +92,11 @@ export const VOWEL = /[aeiouyàáâäãåèéêëìíîïòóôöõùúûüýæ�
 
 /** a director for one line.
  * @param {{ seed?: number, expr?: string | null, events?: LineEvent[], reduced?: boolean,
- *   auto?: Record<string, string>, t0?: number }} o
+ *   auto?: Record<string, string>, t0?: number, blinkAt?: number }} o
  *   seed: the line's own (talk-skins.js talkSeed); expr: the face it starts with; events: its parsed events (face and
  *   emote act here); reduced: Reduced motion (blinks and the mouth stay, no bounce, no head, emotes without the pop);
- *   auto: a face's own emote (emotes.json "auto"), popped when the line has no [emote] of its own; t0: when it starts */
+ *   auto: a face's own emote (emotes.json "auto"), popped when the line has no [emote] of its own; t0: when it starts;
+ *   blinkAt: the line before's next blink (nextBlink) */
 export function talkDirector(o = {}) {
   const R = rand((o.seed || 0) * 2654435761 + 7),
     reduced = !!o.reduced,
@@ -106,7 +107,7 @@ export function talkDirector(o = {}) {
   let expr = o.expr || null,
     next = 0,
     reached = -1,
-    blinkAt = t0 + 2000 + R() * 4000,
+    blinkAt = Infinity,
     blinkTwice = false,
     mouth = false,
     want = false,
@@ -155,6 +156,8 @@ export function talkDirector(o = {}) {
       started = true;
       typing = true;
       letterAt = t;
+      /* the blinks go on from the line before (a short line still blinks), or start 2-6 s from now */
+      blinkAt = o.blinkAt != null && o.blinkAt > t && o.blinkAt < t + 6000 ? o.blinkAt : t + 2000 + R() * 4000;
       if (!reduced) hits.push({ kind: 'settle', t });
       if (expr) face(expr, t, true);
       D.reach(0, t);
@@ -181,6 +184,10 @@ export function talkDirector(o = {}) {
     done() {
       typing = false;
       want = false;
+    },
+    /** when the next blink is due (the next line's director goes on from it) */
+    nextBlink() {
+      return blinkAt;
     },
     /** what started since the last call (talk.js plays them as animations) @returns {DirectorPop[]} */
     drain() {

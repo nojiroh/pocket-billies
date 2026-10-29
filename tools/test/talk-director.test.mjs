@@ -228,3 +228,15 @@ test('Reduced: blinks and the mouth stay; no bounce, no head, emotes without the
   assert.ok(!D.drain().some(p => p.kind === 'bounce'));
   assert.ok(blinks(D, 200, 20000).length > 0, 'still blinks once angry');
 });
+
+test('no blink before the line starts; the next line goes on from the blink that was due', () => {
+  const A = talkDirector({ seed: 9 });
+  assert.equal(A.at(5000).eyes, 'open', 'not started');
+  A.start(100000);
+  const due = A.nextBlink();
+  assert.ok(due >= 102000 && due <= 106000);
+  const B = talkDirector({ seed: 1, blinkAt: due });
+  B.start(due - 500);
+  assert.equal(B.nextBlink(), due);
+  assert.equal(B.at(due + 10).eyes, 'shut');
+});
