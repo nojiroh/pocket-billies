@@ -25,8 +25,8 @@ a segment's draws or instances a frame (mean or most over its spots) or its grap
 estimate, engine/webgl.js gpuMemory) more than 10% up; any program compiled after a place settled that the baseline
 doesn't list (phase 20 H5); a segment over 400 draws a frame (phase 20 A8, the phone budget) that the baseline doesn't
 already list as over it; a renderer that isn't SwiftShader (the counts were made on it); and in the memory matrix
-(Copperleaf as shipped at DPR 1-4; Balanced, Beautiful and each engine preset in test_graphics at DPR 1 and 4: 2-4
-draw the same canvas; on a phone and a desktop page) anything over 300 MB at a phone size. Results go to validation/perf/results.json. Run `npm run data`
+(Copperleaf as shipped at DPR 1-4 on a phone and a desktop page; in test_graphics at DPR 4, Balanced and Beautiful
+on both and each engine preset on the phone page: DPR 2-4 draw the same canvas) anything over 300 MB at a phone size. Results go to validation/perf/results.json. Run `npm run data`
 first. Nothing is sent anywhere: numbers, segment ids and program names only."""
 import json
 import queue
@@ -66,8 +66,9 @@ PHONE = {'width': 390, 'height': 844, 'mobile': True,
          'ua': 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Mobile Safari/537.36'}
 # the game draws the walk at most at DPR 1.75 and then at most 1.2 million pixels on a phone, 1.6 elsewhere
 # (walk-view-gl.js), so DPR 2, 3 and 4 draw the same canvas (measured: 860x1861 on the phone page at each): every DPR
-# for the place as shipped, the presets at DPR 1 and 4 (each reading is about a minute in software drawing)
-PRESET_DPRS = (1, 4)
+# for the place as shipped, the presets at DPR 4, the most they draw (each reading is one to two minutes in software
+# drawing with the path running beside it)
+PRESET_DPRS = (4,)
 DESKTOP = {'width': 1280, 'height': 800, 'mobile': False, 'ua': None}
 
 # automatic quality off, in the game-wide defaults, before any script reads them: the counts need a still scene (auto
@@ -204,10 +205,11 @@ def run_path(b, base, R):
 
 
 # ------------------------------------------------------------------ the memory matrix
-PRESET_SET = """(async (key,scene)=>{const P=saveData.preferences||(saveData.preferences={});
+# a preset's values are read live each frame (only grass.density and world.farProps need the place built again, TD-2,
+# and no preset sets them): no rebuild, which took minutes on the desktop page
+PRESET_SET = """((key)=>{const P=saveData.preferences||(saveData.preferences={});
  if(key.startsWith('aim:')){P.aim=key.slice(4);P.expert=false;P.eng={}}else{P.aim='sharp';P.expert=true;P.eng=JSON.parse(JSON.stringify(ENGINE_PRESETS[key].v))}
- environment.force={time:15,weather:'clear',season:'summer'};rebuildFromSettings();
- await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));await benchOpen(scene);return 0})"""
+ environment.force={time:15,weather:'clear',season:'summer'};return 0})"""
 
 
 def metrics(pg, size, dpr):
@@ -247,12 +249,13 @@ def run_matrix(b, base, R, name, size):
             r.update(page=name, place='copperleaf', preset='aim:sharp', dprAsked=dpr)
             rows.append(r)
             fast.log(f'matrix {name:>7} Copperleaf, Beautiful, DPR {dpr}: {r["mb"]} MB (canvas {r["canvas"][0]}x{r["canvas"][1]})' + ('' if r['settled'] else ', still planting'))
-        presets = [('aim:smooth', 'Balanced'), ('aim:sharp', 'Beautiful')] + [(k, 'Engine: ' + v) for k, v in pg.evaluate(
-            'Object.entries(ENGINE_PRESETS).map(([k,P])=>[k,P.name])')]
+        # the engine presets on the phone page only: the desktop page draws as many pixels (the 1.6 million cap)
+        presets = [('aim:smooth', 'Balanced'), ('aim:sharp', 'Beautiful')] + ([(k, 'Engine: ' + v) for k, v in pg.evaluate(
+            'Object.entries(ENGINE_PRESETS).map(([k,P])=>[k,P.name])')] if size['mobile'] else [])
         metrics(pg, size, 1)
         pg.evaluate("(async()=>{await benchOpen('test_graphics');standAt(benchSegmentById('shade'));return 0})()")
         for key, label in presets:
-            pg.evaluate(f"{PRESET_SET}({json.dumps(key)},'test_graphics')")
+            pg.evaluate(f"{PRESET_SET}({json.dumps(key)})")
             for dpr in PRESET_DPRS:
                 metrics(pg, size, dpr)
                 r = memory_reading(pg, 'test_graphics')
