@@ -4,7 +4,8 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 
 ### Sound track SND-12b - arrangements, batch 2: the cave, the seven biome songs and the run's map on ensembles in forms, with peak parts so the run's arc is heard, and walk, rain and snow layers - 2026-10-28
 Branch `track/sound`, the music lane (main merged first at 62c20703, a merge: HANDOFF kept both entries, art-code-refs
-made again in its own commit; no sound files from main). Started by the planning session under the owner's standing
+made again in its own commit; no sound files from main; main merged again at d71cdf61 with VFX-13, #295 and #326:
+HANDOFF kept both sides' entries, hooks.js and art-code-refs made again at db6f5930, `npm test` 2055 of 2055 after it). Started by the planning session under the owner's standing
 instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per commit; the baseline
 pending for SND-12c; the docs. Tag `snd-12b-done` (for the owner to push) on this session's last commit. PR #292. Details:
 sound-track.md "SND-12b as built".
