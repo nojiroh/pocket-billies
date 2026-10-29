@@ -254,14 +254,16 @@ export function haltArriveSkip() {
   if (haltArrival.on) haltArriveEnd(true);
 }
 
-/* a tap skips the arrival; once something else has taken over (a sheet, a battle) the arrival just ends and the tap
-   goes where it was meant to (a tap on a sheet over the page always does) */
+/* a tap on the scene skips the arrival. Clicks made by code (the debug log's download link, the checks) always go
+   through untouched; a tap on a button, a link or a sheet, or once something else has taken over (a sheet, a battle),
+   ends the arrival and goes where it was meant to */
 document.addEventListener(
   'click',
   ev => {
-    if (!haltArrival.on || !haltArrival.W) return;
+    if (!haltArrival.on || !haltArrival.W || !ev.isTrusted) return;
     const t = /** @type {any} */ (ev.target);
-    if (haltTakenOver() || (t && t.closest && t.closest('#ov'))) return void haltArriveEnd(true);
+    if (haltTakenOver() || (t && t.closest && t.closest('#ov, a, button, input, select, textarea, [data-a]')))
+      return void haltArriveEnd(true);
     ev.stopPropagation();
     ev.preventDefault();
     haltArriveSkip();
