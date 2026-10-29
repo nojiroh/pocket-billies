@@ -2339,7 +2339,7 @@
     {"at":60,"do":"jump","on":"attacker","dy":110,"up":160,"hold":520,"down":220},
     {"at":60,"do":"impact","on":"attacker","spr":"dust","feet":1,"k":1,"life":420,"ramp":"None"},
     {"at":260,"do":"toTarget","d":200},
-    {"do":"prop","prop":"tree_pine_small","from":"above","h":6,"out":250,"s":0.45,"at":360,"ms":440,"hold":250},
+    {"do":"prop","prop":"forest_canopy_pine","from":"above","h":6,"out":250,"s":0.3,"at":360,"ms":440,"hold":250},
     {"at":800,"do":"shake","amt":6},
     {"at":800,"do":"groundRing","on":"target","color":"kit","r1":2.2,"life":460},
     {"at":800,"do":"ring","on":"target","color":"kit","r0":0.2,"r1":1.3,"life":380},
@@ -2356,7 +2356,7 @@
     "hit": 440,
     "steps": [
      {"at":60,"do":"toTarget","d":140},
-     {"do":"prop","prop":"tree_pine_small","from":"above","h":6,"out":200,"s":0.45,"at":0,"ms":440,"hold":150},
+     {"do":"prop","prop":"forest_canopy_pine","from":"above","h":6,"out":200,"s":0.3,"at":0,"ms":440,"hold":150},
      {"at":440,"do":"shake","amt":5},
      {"at":440,"do":"groundRing","on":"target","color":"kit","r1":2,"life":400},
      {"at":440,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
@@ -2374,8 +2374,8 @@
    "dur": 1000,
    "hit": 600,
    "steps": [
-    {"at":60,"do":"impact","on":"attacker","icon":"shades","dy":0.25,"k":1,"life":820},
-    {"at":120,"do":"impact","on":"attacker","icon":"sparkle","dy":0.55,"k":1,"life":300},
+    {"at":60,"do":"impact","on":"attacker","icon":"shades","dy":0.6,"k":2,"life":820},
+    {"at":120,"do":"impact","on":"attacker","icon":"sparkle","dy":0.9,"k":1,"life":300},
     {"at":120,"do":"action","on":"attacker","pose":"cheer","ms":420},
     {"at":240,"do":"toTarget","on":"foe","d":240},
     {
@@ -2407,7 +2407,7 @@
     "dur": 700,
     "hit": 400,
     "steps": [
-     {"at":0,"do":"impact","on":"attacker","icon":"shades","dy":0.25,"k":1,"life":560},
+     {"at":0,"do":"impact","on":"attacker","icon":"shades","dy":0.6,"k":2,"life":560},
      {"at":120,"do":"toTarget","on":"foe","d":160},
      {"at":420,"n":4,"every":50,"do":"rise","on":"foe","spr":"chevron","ramp":"down","down":1,"life":420,"if":["drop"]},
      {"at":400,"do":"ring","on":"foe","color":"kit","r0":0.2,"r1":1.1,"life":360},

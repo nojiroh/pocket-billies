@@ -536,7 +536,7 @@ no time; every repeat within `maxMs`.
 - Fast Fashion (`fastfashion`, Grass S, shot; laundry_line, the hanger and tag icons): a clothes line rises beside
   the attacker; hangers and tags fly off it at the foe, one every two cells, leaves spinning after them; the last one
   hits. Repeat: three hangers, the hit.
-- Spruce Dive (`sprucedive`, Flying S, dive; tree_pine_small): the attacker jumps out of view; a spruce drops out of
+- Spruce Dive (`sprucedive`, Flying S, dive; forest_canopy_pine, built: tree_pine_small's needles are picture cards a summoned model doesn't draw): the attacker jumps out of view; a spruce drops out of
   the sky onto the foe with Part 1's stretch; feathers and a wind ring; the hit; the spruce erodes. (Wish: a big
   wooden flying boat.) Repeat: the spruce drops, the hit.
 - Pop the Collar (`popthecollar`, Psychic X, hex; the shades icon): shades pop onto the attacker with a sparkle, a held
