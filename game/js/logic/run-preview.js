@@ -11,7 +11,7 @@
    - each place's wild table (run-scenes.js runWorldTables: its biome's pool at its row's levels), the side area's
      places too (RL-R2b: map.side, from the field moves as run-world.js passes them);
    - each waystation's event (RL-12b: encounters.js eventAt, with none played yet);
-   - the Perk picks after each mini-boss row, in order (perkOfferMake), with nothing held;
+   - the Perk picks after each mini-boss row, in order (perkOfferMake; PK-7: Fine Print), with nothing held;
    - RS-2: the run's resident on a first run (nobody in Copperleaf: the free first one) and on a later one (the first
      one living there): who, the towns they stand in (run-quests.js residentPlan; every town counted as having its
      notice board, which a town's square almost always fits) and the waystations whose event would be theirs.
@@ -120,7 +120,9 @@ export function runPreview(seed, o = {}) {
   });
   const relicOffers = [],
     guards = new Set(map.nodes.filter(n => n.type === 'miniboss').map(n => n.row)).size;
-  for (let k = 0; k < guards; k++) relicOffers.push(perkOfferMake(run, PERKS, RULES.run.perks) || []);
+  /* PK-7: a leader's pick: Fine Print */
+  for (let k = 0; k < guards; k++)
+    relicOffers.push(perkOfferMake(run, PERKS, RULES.run.perks, undefined, 'leader') || []);
   return {
     seed,
     expedition: plan.give.expedition,

@@ -17,6 +17,7 @@ import {
   chipLook,
   fxTags,
   markRow,
+  rarityColour,
   rarityHighest,
   rarityTier,
   tagLook,
@@ -114,8 +115,12 @@ test('the tag row: the status first, then boosts and drops, then effects; past 3
   assert.deepEqual(markRow([]), []);
 });
 
-test('rarity: the four tiers of the ladder; starter shows as common', () => {
-  assert.deepEqual(Object.keys(MARK_RARITY), ['common', 'uncommon', 'rare', 'mythical']);
+test('rarity: the four tiers of the ladder; starter shows as common; PK-7: Fine Print in the top orange', () => {
+  assert.deepEqual(Object.keys(MARK_RARITY), ['common', 'uncommon', 'rare', 'mythical', 'fine']);
+  assert.equal(rarityTier('fine'), 'fine');
+  assert.equal(MARK_RARITY.fine, 'Fine Print');
+  assert.equal(rarityColour('fine'), 'mythical');
+  assert.equal(rarityColour('rare'), 'rare');
   for (const r of Object.keys(json('game/data/rarities.json')))
     assert.ok(MARK_RARITY[rarityTier(r)], `${r} has a tier on the ladder`);
   assert.equal(rarityTier('starter'), 'common');
@@ -123,7 +128,7 @@ test('rarity: the four tiers of the ladder; starter shows as common', () => {
   assert.equal(rarityTier('legendary'), '');
   const sig = json('game/data/uiTheme.json').defaults.signals;
   for (const r of Object.keys(MARK_RARITY))
-    for (const k of ['fill', 'light', 'dark']) assert.ok(sig[k][r], `${r}: a ${k} in the colour code`);
+    for (const k of ['fill', 'light', 'dark']) assert.ok(sig[k][rarityColour(r)], `${r}: a ${k} in the colour code`);
 });
 
 test('UI-14b: held items, Augments and Genes each name a tier; the rarer of two shows', () => {

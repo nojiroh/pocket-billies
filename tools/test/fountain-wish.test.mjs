@@ -37,7 +37,16 @@ test('the rules as the owner chose: 3 Scrap; 55 boon, 30 joke, 10 curse, 5 big w
   assert.deepEqual(R.cost, { cur: 'scrap', n: 3 });
   const w = pre => R.outcomes.filter(o => o.id.startsWith(pre)).reduce((a, o) => a + o.w, 0);
   assert.deepEqual([w('boon'), w('joke'), w('curse'), w('big')], [55, 30, 10, 5]);
-  for (const o of R.outcomes.filter(o => o.fx)) assert.equal(o.places, o.id === 'curse' ? 2 : 3, o.id);
+  /* PK-9: the boons and the curse are boons.json's, with the numbers they had (3 places after the first, 2 the curse's) */
+  const B = GAME_DATA.boons;
+  assert.deepEqual(
+    R.outcomes.filter(o => o.boon).map(o => [o.id, o.boon, B[o.boon].places, B[o.boon].fx, !!B[o.boon].curse]),
+    [
+      ['boon_money', 'glittering_water', 3, [{ kind: 'money', mult: 1.1 }], false],
+      ['boon_catch', 'lucky_ripples', 3, [{ kind: 'catch', mult: 1.05 }], false],
+      ['curse', 'stamped_insufficient', 2, [{ kind: 'price', what: 'shop', mult: 1.1 }], true],
+    ]
+  );
 });
 
 test('a toss costs 3 Scrap, once per return: the next waits for the next run to end', () => {
@@ -80,15 +89,17 @@ test('a boon joins the next run at take-off for its places, an item goes into th
     heal = R.outcomes.find(o => o.id === 'boon_heal');
   const s = { meta: { ...metaWith(5), wish: { at: 0, out: 'boon_money' } }, run: {}, items: {} };
   assert.equal(wishTakeoff(s, R), boon);
+  /* PK-9: Glittering Water, by its id */
+  assert.deepEqual(s.run.enc.boons, [{ id: 'glittering_water', left: 3, src: 'fountain' }]);
   assert.deepEqual(
-    encBoonRows(s.run).map(f => [f.kind, f.mult, f.src]),
-    [['money', 1.1, 'event:fountain']]
+    encBoonRows(s.run, GAME_DATA.boons).map(f => [f.kind, f.mult, f.src]),
+    [['money', 1.1, 'boon:glittering_water']]
   );
   assert.equal(wishTakeoff(s, R), null, 'used once');
   for (let i = 0; i < 3; i++) encArrive(s.run);
-  assert.equal(encBoonRows(s.run).length, 1, 'still on in the third place');
+  assert.equal(encBoonRows(s.run, GAME_DATA.boons).length, 1, 'still on in the third place');
   encArrive(s.run);
-  assert.equal(encBoonRows(s.run).length, 0, 'gone after its three places');
+  assert.equal(encBoonRows(s.run, GAME_DATA.boons).length, 0, 'gone after its three places');
   const t = { meta: { ...metaWith(5), wish: { at: 0, out: 'boon_heal' } }, run: {}, items: { hi_potion: 1 } };
   assert.equal(wishTakeoff(t, R), heal);
   assert.equal(t.items.hi_potion, 2);

@@ -155,7 +155,8 @@ function fixtureSave() {
   if (FIXTURE === 'relics') {
     s.run.perks = FIXTURE_PERKS.filter(id => PERKS[id]);
     s.se = 2000;
-    perkOfferMake(s.run, PERKS, RULES.run.perks, perkTeamOf(s.team));
+    /* PK-7: a leader's win's pick: Fine Print */
+    perkOfferMake(s.run, PERKS, RULES.run.perks, perkTeamOf(s.team), 'leader');
   }
   return s;
 }

@@ -71,7 +71,7 @@ function theGame(/** @type {string} */ seed, /** @type {{ unlocks: string[], map
   });
   const offers = [],
     guards = new Set(run.map.nodes.filter(n => n.type === 'miniboss').map(n => n.row)).size;
-  for (let k = 0; k < guards; k++) offers.push(perkOfferMake(run, PERKS, RULES.run.perks) || []);
+  for (let k = 0; k < guards; k++) offers.push(perkOfferMake(run, PERKS, RULES.run.perks, undefined, 'leader') || []);
   return { map: run.map, unlocks: run.unlocks, nodes, offers };
 }
 
