@@ -50,12 +50,15 @@ town node needs it.
 ## Tracks alongside
 - **Clean-up track** (docs/phases/cleanup-track.md, the owner's brief and answers 2026-10-28): main tidied and laid out
   like a game repo, and no "placeholder" or "AI" in the Studio. CU-0 (the plan, research and audits; docs only) done
-  2026-10-28 on `ccr-4d35b293-6rc24z`. Round 1 runs four sessions at once on `track/cleanup`: lane S (the Studio's
+  2026-10-28 on `ccr-4d35b293-6rc24z`. Round 1 (done 2026-10-28) ran four sessions at once on `track/cleanup`: lane S (the Studio's
   words; "placeholder Billies" become sketch Billies; plain sound names; the region word "Untitled"), lane D (docs:
   HANDOFF's older entries archived, legacy docs deleted, finished plans archived), lane R (the root: LICENSE, CREDITS,
   CONTRIBUTING, .editorconfig, .gitattributes, a PR template), lane T (files: the portrait kit's sources, orphan art,
-  scratch tools, a test map). Round 2, one session after them: what waited on other tracks' PRs (the music names wait
-  for track/sound and the VFX move sounds), the full checks. Tag `cleanup-done` at the end. Branch `track/cleanup`.
+  scratch tools, a test map). Round 2 (done 2026-10-29): ART-NOTES.md -> docs/ART.md, style-track archived, HANDOFF
+  re-trimmed after main's merge, 27 gone branches' rows, the deferred pointers, the full checks; PR #328. Still blocked
+  (cleanup-track.md section 7, a later CU-3): the music names (track/sound, the VFX move sounds), the .gitignore
+  rewrite and eslint ignore (#314, #331, #322), HANDOFF's header. Tag `cleanup-done` when section 7 is empty. Branch
+  `track/cleanup`.
 - **Online track** (docs/phases/online-track.md, the owner's brief and answers 2026-10-26; ON-1 done 2026-10-26 on
   `ccr-0b8e3c38-gt7t6a`; ON-2 and ON-3 done 2026-10-27, ON-4 2026-10-28, on `track/online`): ON-1 base (one legality
   check, Online play switch, block and report, the friend re-add fix), ON-2 run record, ghosts, dailies and friends'
