@@ -29,7 +29,7 @@ what exists, the data format and what is left. Status is at the bottom. Parked: 
 - **Size: 64×64 art pixels** (the phase file's "ask me"). 96 was also cut and tried; 64 was chosen.
 - **The face kit is AI-drawn part sheets, cut by a tool** (the phase file's "how the face kit is made"): 15 sheets
   of heads, hair, hats, clothes, eyes, brows, noses, mouths, face marks and accessories on magenta, in
-  `tools/art-source/portrait-kit/`. The sheets' "pixels" are uneven (5-9 source px each); the tool resamples every part
+  `tools/art-source/portrait-kit/` (deleted 2026-10-28, in git history). The sheets' "pixels" are uneven (5-9 source px each); the tool resamples every part
   to one shared grid, so nothing mixes pixel sizes.
 - **The body stays still; the head moves, and NOT on the pixel grid.** This replaces the phase file's "whole pixels
   only (no rotation, scaling or sub-pixel movement)" and "1 px bob/shake/pop". The owner asked for "more dynamic,
