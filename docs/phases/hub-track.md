@@ -591,7 +591,7 @@ market every day; up to 2 ranch Billies by day; one cap for the hub and the run 
   in the pasture; each one drawn takes one off the townsfolk drawn; a tap opens the ranch's sheet.
 - Fixed on the way (own commits): folk out about the streets (14:00-17:30) when a town loaded started indoors until
   17:30; folk trimmed by the cap never came back when it rose again.
-- Frame cost (`python3 tools/island-perf.py --square [--low]`): with the low graphics 10 folk add about 39 draw calls
+- Frame cost (`python3 tools/check-perf.py --island --square [--low]`, was island-perf.py): with the low graphics 10 folk add about 39 draw calls
   to about 878 (+4.5%) at midday; headless milliseconds are SwiftShader's (noise). At full graphics headless the game
   stepped its quality down (frames of seconds), so the cap drew 0.6; the night lights cost more than the people (about
   1035 draws at 21:00 against 878 at midday). The phone's debug log has the real frame times (scene: folk, folkAll,

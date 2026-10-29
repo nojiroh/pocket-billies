@@ -286,14 +286,55 @@ same phase:
 - **(Phase 20 C3)** The full test's Shaders step also builds every program with the light code with the Frame uniform
   block (`frameBlockCheck`, engine/webgl.js) and checks the block's size and each member's offset, as this device's
   driver lays them out, against what engine/frame-block.js packs; smoke shows "N shaders; 14 with the Frame block".
+- **(TD-1)** A crash breadcrumb (debug-log.js `debugLog.crumb`, localStorage `pb-crumb`): every 2 s, at each step
+  of the full test and both graphics tests, and when the page hides, a numbers-only record (uptime, place id, test
+  step, graphics memory in all and by kind, last fps, q, resolution, refresh rate); pagehide marks it clean. On the
+  next boot a record without the mark written in view is `previousPage.endedUnexpectedly` (in the background:
+  `endedInBackground`); `boot.navigation` says how the page was opened. The debug menu's "Pretend the page was
+  killed" tests it. A sample has `ld: 1` while a place loads; `summary()` keeps those seconds apart
+  (`loadingSeconds`). Slow frames count towards every cause they overlapped (`slowFramesBy`: frames, share, ms,
+  worst). `?glerr` checks every draw for a refusal and logs each kind once with the place, hour, pass, program and
+  target (slow; for finding a refused draw; the uploads and blits too, with the picture's size, and an error already
+  held before a call is reported as "before <call>"); the light lab uses the same check (`drawErrorWatch`,
+  gpu-counters.js), takes its context at the failure, and reads an error WebGL still held from an earlier step
+  apart. The debug log reads WebGL's error once a second (a `webgl` event `WebGL error N in the last second at
+  <place> (<test step>)`, added to that full-test step's note, not failing it: it can't name the call), so an error
+  is put to the second, place and step it happened in.
 - **(13c)** The full test and the debug menu load on demand; the recording part of the debug log stays loaded.
 - The graphics test (the debug menu's Tests and performance section; Help had it before UI-7b; `game/js/graphics-test.js`, loaded on
   demand) is run only by a person, by hand, on their own device: never from Claude Code, CI, a headless browser or
-  a script, and no command-line runner, CI job or hook. It tries the shaders, each engine dial on its own (ENGINE_SPEC,
-  moved away from its default), Balanced, Beautiful and each engine preset, in one scene, and saves a short .json
-  report. A new dial in ENGINE_SPEC is tested with no change; a new kind of dial needs a value in
-  `graphicsDialValue`. Its rules (the dial values, the report's planted-name check) are unit tests in
-  `tools/test/graphics-test.test.mjs`.
+  a script, and no command-line runner, CI job or hook. TD-2: it walks the benchmark path (`game/js/logic/bench-path.js`:
+  segments in test_graphics and test_light_room, each with its route, hour, weather and what it shows) with
+  `game/js/bench-walk.js`, after the shaders and an unmeasured warm-up lap: each segment as shipped (first and last),
+  each ENGINE_SPEC dial at one other value on a segment that has what it needs, a drift check on the open ground every
+  20 steps, the presets. Quality is pinned (automatic quality off, resolution 1, lowered a quarter at a time while the
+  place as shipped passes the budget); graphics memory stays under 300 MB (`BENCH_BUDGET_MB`: a step whose guess passes
+  it is skipped, a walk that passes it stops); every step is saved in localStorage `pb-gtest` (numbers and ids), so after
+  a reload the next tap offers to resume (the step that was running is marked "the page reloaded" and skipped) or to save
+  the partial report. You pick the groups (the whole path is about 50 minutes). The report (format 3) has per step
+  fps, p50/p90/p99, worst, jank, CPU ms, fence lag, draws, `gmb` and its peak, slow causes, quality and resolution; per
+  dial its cost over its segment with the segment's spread; the run's conditions (browser name and version, refresh
+  rate measured, fps cap, DPR, timers, timer queries, LoAF) at the start and end. A new ENGINE_SPEC row needs a need
+  in bench-path.js's NEEDS (`tools/test/bench-path.test.mjs` fails without one); a dial nothing on the path shows is
+  listed with its reason. The quick check's "Test scenes: walking rules" step checks every segment can be walked
+  (planned from the data, not run). The report's rules are unit tests in `tools/test/graphics-test.test.mjs`.
+- **(TD-3)** `tools/check-perf.py` walks the same benchmark path headless, with blocking gates. It does not run the
+  Graphics test: it uses `bench-walk.js` and `bench-path.js` directly. On an Android phone page (390 x 844, so the
+  game's phone limits hold), with automatic quality off and the resolution at 0.5 (the same counts as at 1, at a
+  third of the time), it puts the player at every point of each segment's route and halfway along each leg over 8 m,
+  lets the place settle and counts 4 frames: software drawing runs at about one frame a second, so a walk in real
+  time would take hours (`--walk` also walks each route, as notes). Counts are the gates, milliseconds only notes.
+  Against `validation/perf-baseline.json` (committed): a segment's draws or instances a frame (mean or most) or its
+  graphics memory more than 10% up (and at least 5 draws, 50 instances, 2 MB); a program compiled after a place
+  settled that the baseline doesn't list; a segment over the 400-draw phone budget that the baseline doesn't list
+  as over it already (most are: the list prints every run, so a segment that gets back under it can be taken off);
+  a renderer that isn't SwiftShader. The memory matrix (Copperleaf as shipped at DPR 1-4 on a phone and a desktop page;
+  in test_graphics at DPR 4, Balanced and Beautiful on both and each engine preset on the phone page, since the game
+  draws DPR 2-4 at the same canvas size; the resolution as shipped) fails at more than 300 MB on the phone page. `--baseline` rewrites the baseline on purpose (say why in HANDOFF); `--plant=draws|memory|compile`
+  adds a regression to prove the check goes red. `--routes` and `--island` are the old route-perf.py and
+  island-perf.py. Results: `validation/perf/results.json`. CI runs it nightly and by hand (Actions → Check → Run
+  workflow: "Only the perf check", "Plant a regression"); it is not a pull-request gate. `--selftest` now also
+  keeps each in-game test's whole result in `validation/quick/in-game-full.json` and `in-game-diagnostics.json`.
 
 ## What each phase does
 

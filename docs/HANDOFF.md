@@ -2,6 +2,122 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test data track TD-2 - the graphics test walks a benchmark path - 2026-10-29
+Branch `track/test-data` (TD-1's pushes and main, 4b64e3d6, merged in at the start; four conflicts kept both sides:
+HANDOFF, webgl.js's target record, the reader's helpers, art-code-refs regenerated). Plan written, then built at once:
+the owner's standing answer (track file section 1) is the approval. Test, debug and test-scene work; nothing a player
+sees changes. No "Ask me before" item came up: the scene grew only by section 5's list. Track-end tags only.
+- Facts checked (track file 3.1): ENGINE_SPEC has 383 rows (not about 392). Only `grass.density` and `world.farProps`
+  need a rebuild on the Settings screen; every other dial is read live each frame (engine/settings.js engineSetting),
+  so the old test's full rebuild per step was most of its memory churn. Balanced and Beautiful differ only in what
+  automatic quality aims for (walk/quality-cull.js), so with quality pinned they are the same: they are walked with
+  automatic quality on. The time-of-day looks' `at` is hours from sunrise or sunset, not an hour. Townsfolk spawn
+  round the arrival spot from `sc.folk`, read live. The build deletes game/js/logic, so graphics-test.js (loaded by URL)
+  gets the path through settings-screen.js's object. There was no fence-lag figure anywhere; the walker adds one.
+- Changed:
+  - New game/js/logic/bench-path.js: 24 segments (open ground, standing still, the shadow court, behind the houses,
+    the pond, the stream's shore by day and with lamps at night, tall grass, townsfolk and townsfolk as figures, the
+    slope by the cliff, the lamp square at 22:00, dawn fog, rain, the avenue, into the low sun, open sky, a run with
+    turns, a room in test_light_room, the five time-of-day looks at their own hours). Every ENGINE_SPEC row has a need
+    (NEEDS); 48 rows can't be measured on a walk and say why (world map, island, battle, talks and bosses, touch, the
+    tilt sensor, places the bench lacks, the clock, what the test pins). Each dial's one other value (a quarter of its
+    range toward the middle), the plan (a drift check on the open ground every 20 steps, the presets last), frame
+    stats, the memory guess, the saved state. Unit tests: tools/test/bench-path.test.mjs (a new row without a need
+    fails).
+  - New game/js/bench-walk.js: walks a segment point by point (stuck is no progress for 3 s and 10 frames, so a slow
+    phone keeps walking) and measures frame gaps (p50/p90/p99, worst, jank), CPU ms, fence lag (a fence a frame, read
+    without waiting), draws, graphics memory and its peak (stops at the budget), slow causes, with
+    `performance.mark/measure` (`bench:<segment>`); `benchConditions` (browser name and major version, refresh rate as
+    set and as measured, fps cap, DPR, resolution, crossOriginIsolated, timer step, timer queries, LoAF);
+    `benchPathChecks` (every route planned on its place's grid). TD-3's headless check can use all of it.
+  - game/js/graphics-test.js reworked: shaders, a warm-up lap, then each segment as shipped (first and last), each dial
+    at its other value where it shows, the presets. Automatic quality off and resolution pinned (lowered by a quarter
+    while the place as shipped passes 300 MB). A step whose memory guess passes the budget is skipped as "over budget";
+    a walk that passes it stops and the place is built back. Every step is saved in localStorage `pb-gtest`; the next
+    tap after a reload offers Resume (the step, or warm-up walk, that was running is marked "the page reloaded" and
+    skipped), Save the partial report, or Start again. Groups picked before the start with their minutes (the whole
+    path is about 52 min). Report format 3: per step the numbers above, quality and resolution; per dial its cost over
+    its segment with the segment's spread; drift; conditions at start and end. graphics-test.test.mjs updated.
+  - tools/build-test-scenes.py t_graphics: 60x46 → 60x58. A strip at z 46-58: a road, a stream with two lamps on its
+    shore, a spring and a fountain across it, a deep pond, a 50% slope up to 3 m beside a 2.5 m cliff; two new walking
+    checks. Everything south of z 46 compared equal (tiles and props). docs/graphics-bench.md says so.
+  - tools/check-quick.py "Test scenes: walking rules" also plans every bench segment (24 walk). game/index.html loads
+    the two new modules; the Studio's logic worker lists bench-path.js. docs/TESTING.md, README.md.
+- Found, not changed:
+  - The Graphics cost test (graphics-bench-test.js) still stands at its stations. The new test's per-dial cost covers
+    most of what it measures (two values, not five); retiring or folding it in fits TD-5's tidy-up.
+  - Real rooms open only in seamless places (walk-control.js enterRoom needs `sc.parts` and a trip node), so the room
+    segment opens test_light_room as its own place instead of walking through a door.
+  - From the shore segment the player stands behind the "everything" corner's trees (the picture shows the stream,
+    lamps and fountain; the player only as a silhouette).
+- Risky: the runner itself has never run (CLAUDE.md and docs/TESTING.md: the Graphics test is run only by a person on
+  their own device). Its walker and path were run headless, segment by segment (shore, plaza, standing, turn, room,
+  slope: each reached its last point, counted draws and memory, folk came on and went back), so the first phone run
+  is the runner's first. The memory guess is rough (resolution and shadow map only; others the place as it is plus
+  the biggest rebuild so far); the walk's own stop at 300 MB is the backstop. The saved state grows to about 150 KB
+  for a whole run. A reload in a build step leaves the place as shipped on the next tap (the scene is rebuilt).
+- Verified: lint, typecheck, check:modules (582 names), format:check, check:data (183 files), build. `npm test` 2,347
+  pass (one failed first: the Studio worker's module list, fixed). Smoke 7 of 7 in 493 s. The walking-rules step:
+  33 test scenes, 89 checks, 24 bench segments walk. Full quick check: 38 of 42 in 4,355 s; the four failing are main's, recorded in earlier entries: RL-8's seam, room light, the lab's room at its door, Battle music (the timing flake).
+- Next: TD-3 (the same path headless, and the gates) on `track/test-data`, started automatically in a new session.
+- For the owner on the phone: debug menu → Graphics test. Untick groups to about 15 minutes (the time-of-day looks
+  are about 4 min each) and run it on Firefox with Beautiful. If the page reloads, tap Graphics test again: it should
+  offer Resume, and the report marks the step that reloaded. Send the report (pocket-billies-graphics-*.json) and the
+  debug log.
+
+### Test data track TD-1 - quick fixes: the log reader, a crash breadcrumb, loading apart, refused calls located - 2026-10-29
+Branch `track/test-data` (main merged in at the start: already up to date). Plan written, then built at once: the
+owner's standing answer (track file section 1) is the approval. Debug-log, full-test and reader code; nothing a
+player sees changes. No "Ask me before" item came up. Track-end tags only (CLAUDE.md), none for this session.
+- Facts checked (track file sections 3.3, 3.4): all held, except that `?glerr` didn't exist (TD-1 adds it).
+- Changed:
+  - tools/read-debug-log.py reads the full test from `bench` (`bench.result` kept for old logs) and prints failed
+    steps' why and ctx, graphics memory by kind with its peak per screen, the q/res changes, the visibility and
+    context-lost events, loading seconds, the slow-frame share and the previous page. The debug-log skill's jq line
+    is fixed. New unit test: tools/test/read-debug-log.test.mjs.
+  - debug-log.js: the "drawing items" label is now "gathering frame items" (its own commit). Slow frames count towards
+    every overlapping cause, by share (`slowFramesBy` gains `share`). Samples carry `ld: 1` while a place loads, and
+    `summary()` keeps `loadingSeconds` apart.
+  - Crash breadcrumb (`debugLog.crumb`, localStorage `pb-crumb`, numbers and ids only). It is written every 2 s, at each
+    full-test and graphics-test step, and on hide; `pagehide` marks it clean. On the next boot the log gets
+    `previousPage.endedUnexpectedly` (or `endedInBackground`), and `boot.navigation` says how the page was opened.
+    New debug-menu button: "Pretend the page was killed".
+  - The graphics cost test no longer wipes the full test's result. Both graphics tests write `debugLog.bench.step`.
+  - Refused calls: `drawErrorWatch` (engine/gpu-counters.js) is one watcher on the draws, uploads and blits. It
+    reports the call, code, pass, program and target; programs and render targets carry `pbName`. An error held before
+    a call reads "before <call>". The light lab uses it, takes its context at the failure, and reads an error left
+    from an earlier step apart (a note, not a failure). `?glerr` turns the watcher on for the whole page. The debug
+    log now reads WebGL's error once a second: a `webgl` event `WebGL error N in the last second at <place> (<step>)`,
+    added to that step's note. It was an error at first; CI's Voltron step then failed on a 1281 the check found (it
+    passes alone), so it no longer fails the step, since it can't say which call raised the error.
+  - tools/check-quick.py: the full test's no-save step allows `pb-crumb`. docs/TESTING.md: a TD-1 bullet.
+- Found, not changed:
+  - The owner's refused draw didn't reproduce in headless Chromium. Firefox can't be downloaded here (the network
+    policy blocks Playwright's download hosts). A likely cause: WebGL keeps an error until someone reads it, and play
+    never did, so an error from any of the 44 earlier steps could surface as the light lab's single "drawArrays 1282".
+    The next phone log will say which: the once-a-second check names the place and step, and the lab names the call.
+  - One run of all five light-lab stops, while the unit tests loaded the CPU, saw 1281 then 1282 in test_light_air's
+    sprites pass (program `sprite`, before the watcher could tell "before" errors apart). Six more runs (two with
+    6x CPU throttling) and an upload-call wrapper saw none. A picture uploaded on first use in that pass is the
+    suspect (texImage2D refused, then generateMipmap). No PNG over 4096 px exists; a canvas made in code still could.
+  - A background audit of every `drawArrays` in the light scenes found no Firefox-only refusal. Two defensive ideas
+    from it, not done: engine/light.js gives `uLampSh1` its sampler only when `uLampSh0` is active, and
+    post-effects.js leaves colour targets on units 12-13.
+- Risky: the once-a-second `getError` is a sync call on some browsers (one per second; not measured on a phone). An
+  occasional real WebGL error (1281, in CI's Voltron step at Copperleaf, not reproduced alone) now shows in that
+  step's note; ?glerr would name its call. With two tabs open, each overwrites the other's breadcrumb.
+- Verified: lint, typecheck, check:modules (562 names), format:check, check:data (182 files), build. `npm test`
+  2,171 pass. Smoke: 6 of 7 steps ok; its no-save step flagged `pb-crumb`, which is fixed and passed on the rerun.
+  The full quick check was stopped at the owner's word after 19 steps: 18 ok, and 1 problem (RL-8's run from the
+  mast) that the clean-up entry below already records on main. Headless checks: a pretend kill reads as unexpected
+  on the next boot, a normal reload as clean. A refused draw planted in test_light_props is named there with its
+  hour, pass and program. One planted in Copperleaf before the lab goes to Copperleaf's second, not to the lab.
+- Next: TD-2 (the graphics test walks) on `track/test-data`, started automatically in a new session.
+- For the owner on the phone: run the full test on Firefox and send the log. The light lab now names the refused call
+  and where it happened, and an error from an earlier step shows under that step. Optionally, debug menu → "Pretend
+  the page was killed", then export the log: it should begin with "PREVIOUS PAGE ENDED UNEXPECTEDLY". If the
+  Graphics test reloads the page again, the next log names the step it died on.
+
 ### Characters track CH-5b - Clothes as data - 2026-10-29
 Branch `track/characters` (PR #314 merged into it first, at the owner's word "merge #314 first"; main merged in at the
 start, e888b09f, and again at the end for the merge into main). Plan approved in Plan Mode. Data, figure, Studio and

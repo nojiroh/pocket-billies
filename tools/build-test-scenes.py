@@ -454,10 +454,10 @@ def t_people():
 def t_graphics():
     """the Graphics test's place (docs/graphics-bench.md): nine stations, each built so one group of settings has
     something to work on, and a fixed spot to stand and look from. The test (game/js/graphics-bench-test.js) reads `bench`."""
-    s = base('test_graphics', 'Test: graphics bench', 60, 46, 'g', 950, far='hills', look={'sun': {'angle': 35, 'height': 40}})
+    s = base('test_graphics', 'Test: graphics bench', 60, 58, 'g', 950, far='hills', look={'sun': {'angle': 35, 'height': 40}})
     s.d['farH'] = 1
     hub(s, 30, 3)
-    s.road((30, 1), (30, 45), 'p', 1.6, amp=0)
+    s.road((30, 1), (30, 48), 'p', 1.6, amp=0)
     s.road((2, 18.5), (58, 18.5), 'p', 1.4, amp=0)
     s.road((2, 31.5), (58, 31.5), 'p', 1.4, amp=0)
     # A1 control pad: bare pavers, nothing on them, seen close up (what the full-screen passes cost)
@@ -504,6 +504,20 @@ def t_graphics():
     s.rect(41, 33, 59, 45, 'G')
     s.scatter(['flowers_meadow', 'flowers_mixed', 'bush_round'], 6, (42, 34, 58, 44), gap=2)
     s.patches('G', .6, 6, seed=6)
+    # TD-2 (test-data-track.md): the strip at the north edge the per-setting Graphics test walks (logic/bench-path.js
+    # segments `shore`, `shoreNight` and `slope`): a walk along a stream's south shore with lamps on it; across the
+    # stream a cool spring and a fountain on a little plaza; the stream ends in a deep pond (fish); to the east a slope
+    # up onto high ground beside a cliff (cliff faces and edges, the camera's rise)
+    s.road((2, 47.6), (44, 47.6), 'p', 1.4, amp=0)
+    s.stream([(1, 51.6), (12, 51.9), (24, 51.3), (35, 51.8)], 1.2, .7)
+    s.pond(39, 53, 3.6, 2.4, reeds=3, lilies=2, ducks=0, rocks=1)
+    for x in (12, 24): s.put('streetlamp', x, 50.3)
+    s.rect(17.5, 53.6, 22.5, 57, 'c'); s.put('fountain', 20, 55.4)
+    s.blob(9, 55.2, 2.2, 1.3, 'w', .15)
+    s.d['waters'] = [{'x': 6.6, 'z': 53.8, 'w': 4.8, 'h': 2.8, 'k': 'spring'}]
+    s.hadd(lambda x, z: (max(0, min(z, 55) - 49) * .5) if 44 <= x <= 51 else 0)   # a 50% slope up to 3 m
+    s.cliff(52.5, 50, 59, 59, 2.5, mat=3, wobble=.3)
+    s.scatter(['@rocks', 'fern', 'bush_round'], 6, (44.5, 55.5, 51, 57.5), gap=.8)
     # where the test stands: [x, z, camera turn, zoom]; the rest of the stations' setup lives with the test
     st = {'control': [10, 6, 0, .6], 'shadows': [30, 5.5, 0, 1], 'pond': [50, 5, 0, 1],
           'sun': [10.5, 20, 0, 1.1], 'lamps': [30, 20, 0, 1], 'meadow': [50, 23.5, 0, 1],
@@ -513,6 +527,8 @@ def t_graphics():
     s.d['bench'] = st
     for k, (x, z, y, _) in st.items(): shot(s, x, z, k, y)
     check(s, (30, 3), (10, 32.5), True, 'from where you arrive to the far corner')
+    check(s, (30, 3), (35, 49.4), True, 'from where you arrive to the stream (TD-2)')
+    check(s, (45.5, 48.4), (50.5, 56.5), True, 'up the slope onto the high ground (TD-2)')
     return s.out(8)
 
 

@@ -5,7 +5,9 @@ check (tools/check-fast.py) instead.
 
     python3 tools/check-quick.py                 # the data, the phone flow, the sound, UI and run steps, the desktop steps
     python3 tools/check-quick.py --smoke         # the fast subset: Start-Game on a phone + debug log, the actions sheet, the in-game test's first step
-    python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes)
+    python3 tools/check-quick.py --selftest      # the game's own full test and diagnostics test, whole (about 25 minutes);
+                                                 # TD-3: each one's whole result in validation/quick/in-game-full.json
+                                                 # and in-game-diagnostics.json
     python3 tools/check-quick.py --steps=running,lamps # only the steps whose names hold these words
     python3 tools/check-quick.py --workers=3     # pages side by side in this many browsers (default 2)
     python3 tools/check-quick.py --tests         # also draw every test scene and take its pictures (the walking checks
@@ -363,7 +365,7 @@ def walk_in(pg, act, k):
 # frame; headless software drawing manages two frames a second, so the next view would otherwise take minutes), and
 # meter['waits'] counts those steps' worth spent waiting at the seam for the next view
 # RT-1: 150 s, not 90: a laid-out run place draws about 1.5 times slower in software than the open field (canopy
-# pieces, tools/route-perf.py); in the full check's paired browsers a frame took up to 10 s, and the view's preparation
+# pieces, tools/check-perf.py --routes); in the full check's paired browsers a frame took up to 10 s, and the view's preparation
 # is spread over frames. On a phone it is a second or two
 def cross(pg, n1, sec=150, look=None, prep_ms=None, meter=None):
     if not until(pg, 'walkView.ready', sec): raise Exception(f'the view {pg.evaluate("walkView.id")} never got ready to walk from')
@@ -444,11 +446,12 @@ def run_in_game_test(pg, only, diag, sec):
 
 
 # a stand-in account and friends list that only record what would be written, and a record of what goes into this
-# browser's storage while the test runs; save() leaves a write waiting, as a player's last move would
+# browser's storage while the test runs; save() leaves a write waiting, as a player's last move would. TD-1: the
+# debug log's crash breadcrumb (pb-crumb: numbers and ids, never the save) is written on purpose at each step
 SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Check'};
   account.db={collection:c=>({doc:d=>({set:o=>{__st.w.push({c,during:selfTest.on,team:o.json?JSON.parse(o.json).team.map(m=>m.uid):null});return Promise.resolve()}})})};
   friends.on=true;friends.uid='check';friends.pubT=0;
-  const si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(selfTest.on)__st.ls.push(k);return si.call(this,k,v)};
+  const si=Storage.prototype.setItem;Storage.prototype.setItem=function(k,v){if(selfTest.on&&k!=='pb-crumb')__st.ls.push(k);return si.call(this,k,v)};
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
@@ -1013,6 +1016,9 @@ def in_game_test_whole(P):
     out = []
     for diag in (False, True):
         r = run_in_game_test(pg, None, diag, 3600)
+        # TD-3: the whole result as the game keeps it (the diagnostics' numbers, every step, the stress test), as the
+        # debug log has it: numbers and ids, never the save
+        (OUT / f"in-game-{'diagnostics' if diag else 'full'}.json").write_text(pg.evaluate('JSON.stringify(debugLog.bench.result,null,1)'))
         out.append(f'{r["kind"]}: {sum(p["ok"] for p in r["phases"])} of {len(r["phases"])} steps passed in {r["seconds"]} s')
         R['inGame' + ('Diagnostics' if diag else 'FullTest')] = r
     return '; '.join(out)
@@ -1193,8 +1199,11 @@ def test_checks(P):
     all_maps(pg)   # TC-4: this step reads every map (the page's other steps may have run without them)
     r = pg.evaluate("(()=>{const o={};for(const id of testMaps())o[id]=testMapChecks(id);return o})()")
     R['testChecks'] = r; bad = [f'{k}: {c["what"]}' for k, v in r.items() for c in v if not c['ok']]
+    # TD-2: the Graphics test's benchmark path (logic/bench-path.js) walks, segment by segment (planned, not run)
+    bp = pg.evaluate("benchPathChecks()"); R['benchPath'] = bp
+    bad += [f"bench path {c['seg']}: {c['what']}" for c in bp if not c['ok']]
     if bad: raise Exception('; '.join(bad[:6]))
-    return f'{len(r)} test scenes, {sum(len(v) for v in r.values())} checks'
+    return f'{len(r)} test scenes, {sum(len(v) for v in r.values())} checks; the bench path\'s {len(bp)} segments walk'
 
 
 # --tests only
