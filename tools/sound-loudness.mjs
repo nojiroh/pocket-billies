@@ -127,7 +127,10 @@ function windows(y, n, hop) {
  */
 export function soundLoudness(chans, rate, skip = 0) {
   const s0 = Math.floor(skip * rate),
-    cut = chans.map(c => Float32Array.from(Array.prototype.slice.call(c, s0))),
+    /* SND-15: a typed array's own subarray (the same values; a plain Array copy of a long render was slow) */
+    cut = chans.map(c =>
+      Float32Array.from(c instanceof Float32Array ? c.subarray(s0) : Array.prototype.slice.call(c, s0))
+    ),
     nan = cut.some(c => c.some(v => !Number.isFinite(v))),
     K = soundKWeight(rate),
     k = cut.map(c => soundFilter(c, K)),
