@@ -359,7 +359,7 @@ export interface Run {
       the seed). Where the player is stays saveData.trip.node: 0 Copperleaf, i + 1 the map's node i */
   /** RL-8: won, at the payout (1 won, 0 lost or given up) */
   /** RL-8: in a battle, its foe as it began (a reload starts the same battle again) */
-  at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number; won?: 0 | 1; foe?: RunFoe };
+  at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout' | 'return'; battle: number; won?: 0 | 1; foe?: RunFoe };
   /** the day (one per node arrival, backtracking included) */
   clock: number;
   /** each node's weather by day: forecast[world node][day - 1] (a weather id; world node i + 1 is the map's node i,

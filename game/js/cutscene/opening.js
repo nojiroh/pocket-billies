@@ -60,8 +60,10 @@ import { chosenFight } from './staged-fight.js';
 expose({
   chosenHotTake: [() => chosenHotTake, v => ((chosenHotTake = v), provide({ chosenHotTake }))],
   cutsceneAbort: [() => cutsceneAbort, v => (cutsceneAbort = v)],
+  cutsceneBegin: [() => cutsceneBegin, v => (cutsceneBegin = v)],
   cutsceneEnd: [() => cutsceneEnd, v => (cutsceneEnd = v)],
   cutsceneMapId: [() => cutsceneMapId, v => (cutsceneMapId = v)],
+  cutsceneMount: [() => cutsceneMount, v => (cutsceneMount = v)],
   cutsceneStart: [() => cutsceneStart, v => setCutsceneStart(v)],
   cutsceneStartName: [() => cutsceneStartName],
   cutsceneWanted: [() => cutsceneWanted, v => (cutsceneWanted = v)],
@@ -112,7 +114,48 @@ export const cutsceneStartName = () =>
    so the game opens on the professor's scene and goes on to the coins and the starter pick */
 export async function cutsceneStart(opts) {
   if (cutscene.on) return;
-  const id = cutsceneMapId();
+  const id = cutsceneMapId(),
+    run = cutsceneBegin(opts);
+  const pre = Promise.all([
+    rigPreload(cutscene.pickList.map(l => [l + '0', 1])),
+    artLoad(['coins/pyramid_32.png']),
+    /* RF-2: the thrown pyramids' model, so the throws have it */
+    Promise.resolve(typeof loadPropModelRecipe === 'function' && loadPropModelRecipe('coins/pyramid.json')),
+    prepareMap(id),
+  ]).catch(() => {});
+  /* the fall from the crust down to Copperleaf (opening-fall.js); it ends on a white screen. RL-8 (the owner's answer,
+     roguelite-track.md 8.20, "fall only"): New game no longer plays the city at night (cutscenes/city.json; openingCity
+     stays for later) nor the fall's street leg, its stand-in */
+  if (typeof fallPlay === 'function' && !cutscene.test && !cutscene.quick) {
+    try {
+      await fallPlay(run, { from: 'crust' });
+    } catch (e) {
+      console.error(e);
+      const f = $('#csFade');
+      if (f) f.classList.add('on');
+    }
+  } else {
+    const f = $('#csFade');
+    if (f) f.classList.add('on');
+  }
+  if (!cutscene.skip && !cutscene.test)
+    document.body.classList.add('cs-dazed'); /* blurred already while the screen is white */
+  if (!cutscene.on || cutscene.run !== run) return;
+  await pre;
+  if (!cutscene.on || cutscene.run !== run) return;
+  cutscene.layers.push(openingLayer);
+  if (!(await cutsceneMount(run, id, 'opening', 'Opening scene in ' + cutsceneStartName(), cutsceneAbort))) return;
+  try {
+    await openingScript(run);
+  } catch (e) {
+    console.error(e);
+    if (typeof debugLog !== 'undefined') debugLog.add('error', 'cutscene: ' + (e.message || e));
+    if (cutscene.on && cutscene.run === run) cutsceneAbort();
+  }
+}
+/* the director made ready for a cutscene of its own (the opening; IN-4, the lab scene after the first run): its state
+   fresh, the letterbox up over an empty page. Returns the cutscene's run number */
+export function cutsceneBegin(opts) {
   cutscene.on = true;
   cutscene.quick = !!(opts && opts.quick);
   cutscene.run++;
@@ -148,33 +191,12 @@ export async function cutsceneStart(opts) {
   document.body.classList.add('in-cs');
   $('#app').innerHTML = '';
   updateNav(false);
-  const pre = Promise.all([
-    rigPreload(cutscene.pickList.map(l => [l + '0', 1])),
-    artLoad(['coins/pyramid_32.png']),
-    /* RF-2: the thrown pyramids' model, so the throws have it */
-    Promise.resolve(typeof loadPropModelRecipe === 'function' && loadPropModelRecipe('coins/pyramid.json')),
-    prepareMap(id),
-  ]).catch(() => {});
-  /* the fall from the crust down to Copperleaf (opening-fall.js); it ends on a white screen. RL-8 (the owner's answer,
-     roguelite-track.md 8.20, "fall only"): New game no longer plays the city at night (cutscenes/city.json; openingCity
-     stays for later) nor the fall's street leg, its stand-in */
-  if (typeof fallPlay === 'function' && !cutscene.test && !cutscene.quick) {
-    try {
-      await fallPlay(run, { from: 'crust' });
-    } catch (e) {
-      console.error(e);
-      const f = $('#csFade');
-      if (f) f.classList.add('on');
-    }
-  } else {
-    const f = $('#csFade');
-    if (f) f.classList.add('on');
-  }
-  if (!cutscene.skip && !cutscene.test)
-    document.body.classList.add('cs-dazed'); /* blurred already while the screen is white */
-  if (!cutscene.on || cutscene.run !== run) return;
-  await pre;
-  if (!cutscene.on || cutscene.run !== run) return;
+  return run;
+}
+/* the cutscene's map mounted on the walk scene's canvas after the fall, the set cleared (the cutscene's file: key),
+   the ground drawn before the white lifts. False if it couldn't (no 3D view, the set has no place here): abort was
+   called */
+export async function cutsceneMount(run, id, key, label, abort) {
   let cv = $('#dio');
   if (!cv) {
     cv = document.createElement('canvas');
@@ -182,7 +204,7 @@ export async function cutsceneStart(opts) {
     document.body.prepend(cv);
   }
   cv.hidden = false;
-  cv.setAttribute('aria-label', 'Opening scene in ' + cutsceneStartName());
+  cv.setAttribute('aria-label', label);
   walkView.director = { frame: cutsceneFrame };
   await mountWalkView(cv, id, {
     state: () => ({ who: null, npcs: [], enc: [], mode: 'line' }),
@@ -191,26 +213,25 @@ export async function cutsceneStart(opts) {
     onPick: () => {},
     cap: () => (document.hidden ? 1 : dressingRoom.on ? 4 : Math.min(60, userFps())),
   });
-  if (!cutscene.on || cutscene.run !== run) return;
+  if (!cutscene.on || cutscene.run !== run) return false;
   if (!walkRenderer.on || !walkView.ready || !walkView.cv) {
-    cutsceneAbort();
-    return;
+    abort();
+    return false;
   }
   cv = walkView.cv;
   cv.classList.add('in');
   const sc = walkView.sc,
     C0 = walkData().sc,
-    C = CUTSCENES.opening,
+    C = CUTSCENES[key],
     off = C && cutsceneOffset(sc, C.map);
   if (!off) {
     if (typeof debugLog !== 'undefined')
-      debugLog.add('error', 'cutscene: the opening (cutscenes/opening.json) has no place here');
-    cutsceneAbort();
-    return;
+      debugLog.add('error', `cutscene: ${key} (cutscenes/${key}.json) has no place here`);
+    abort();
+    return false;
   }
   /* out of the way while filming: what the cutscene's file clears (logic/cutscene-set.js) */
   cutscene.hide = cutsceneCleared(C, sc.props || [], C0.props, off);
-  cutscene.layers.push(openingLayer);
   /* the town's ground is laid and drawn before the white fades */
   const f0 = walkRenderer.frames,
     t0 = performance.now();
@@ -225,13 +246,7 @@ export async function cutsceneStart(opts) {
   setTimeout(() => {
     if (typeof fallHoldLift === 'function') fallHoldLift(700);
   }, 80);
-  try {
-    await openingScript(run);
-  } catch (e) {
-    console.error(e);
-    if (typeof debugLog !== 'undefined') debugLog.add('error', 'cutscene: ' + (e.message || e));
-    if (cutscene.on && cutscene.run === run) cutsceneAbort();
-  }
+  return cutscene.on && cutscene.run === run;
 }
 /* the city opening: its own map's view on the same canvas, its cutscene played, the view stopped again (the fall
    comes next); false if it couldn't start (no file, no map, no 3D view). RL-8: New game doesn't play it (the owner's
@@ -313,7 +328,7 @@ async function openingScript(run) {
 }
 /* ---------- the opening's own commands ---------- */
 /* dressing-room: you make yourself up; skipping stops here */
-async function openingDressingRoom() {
+export async function openingDressingRoom() {
   const body = document.body;
   cutscene.skip = false;
   cutsceneHideDialogue();

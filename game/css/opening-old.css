@@ -120,6 +120,20 @@ body.cs-dress .cs-skip {
 .cs-fade.on {
   opacity: 1;
 }
+/* IN-4: the Bureau's portal light, over everything from the pickup until the way back takes the screen
+   (story-stage.js storyPortal, cutscene/return-scene.js) */
+.back-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: #fff8ec;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease-in;
+}
+.back-veil.on {
+  opacity: 1;
+}
 body.in-cs #dressing {
   z-index: 20;
 }

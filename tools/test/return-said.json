@@ -1,0 +1,151 @@
+{
+ "about": "Intro track IN-4, the way back (drafts for the owner, 2026-10-29): every line of the lab scene (cutscenes/return.json) and of the Bureau’s pickup (story.json pickup-lost, pickup-won), its speaker (a look id), expression and stamp, and their own commands, in order, played on a stub with Pat. return-script.test.mjs compares them; a change to the words changes this file on purpose.",
+ "return": [
+  {
+   "who": "chosen",
+   "expr": "surprised",
+   "text": "You came out of the sky. Again. Once is an accident. Twice is a brand."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "I took the next train home, by the way. First class. They gave me a blanket for the shock. I wasn’t in shock. I kept the blanket."
+  },
+  {
+   "who": "kappi",
+   "expr": null,
+   "text": "You’re outside the lab, in Copperleaf. Nothing’s broken. I checked. Twice."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "Before anything else: who are you? Still nothing? Fine. We’ll build you from scratch. Like a legend."
+  },
+  {
+   "cmd": "dressing-room"
+  },
+  {
+   "who": "chosen",
+   "expr": "happy",
+   "text": "Pat. Strong name. Second-strongest on this porch."
+  },
+  {
+   "who": "kappi",
+   "expr": null,
+   "text": "Now, what you brought back. Empty your pockets. I’ll count."
+  },
+  {
+   "cmd": "payout"
+  },
+  {
+   "who": "kappi",
+   "expr": null,
+   "text": "That square of light in front of the train? You came down through one just now. It’s the Bureau’s."
+  },
+  {
+   "who": "chosen",
+   "expr": "surprised",
+   "text": "The Bureau? Paperwork people. Don’t sign anything. I signed one thing once. I still get letters."
+  },
+  {
+   "who": "chosen",
+   "expr": null,
+   "text": "Here’s the plan. Skyline Station, just up the hill. Its trains go out past the island, to wild places nobody’s mapped."
+  },
+  {
+   "who": "kappi",
+   "expr": null,
+   "text": "Every trip is a new region. New Billies, new leaders. You never get the same one twice."
+  },
+  {
+   "who": "kappi",
+   "expr": null,
+   "text": "What you catch can come home with you. What you learn turns into Research, for the lab. That stays, whatever happens out there."
+  },
+  {
+   "who": "chosen",
+   "expr": "happy",
+   "text": "And every trip, you come back stronger. Like a training montage. I love a montage."
+  },
+  {
+   "who": "kappi",
+   "expr": null,
+   "text": "Rest first. The station isn’t going anywhere. Neither are we."
+  }
+ ],
+ "pickup-lost": [
+  {
+   "cmd": "camera run-up"
+  },
+  {
+   "cmd": "walk Intake beside me"
+  },
+  {
+   "cmd": "walk Outtake beside me"
+  },
+  {
+   "who": "intake",
+   "expr": null,
+   "text": "Don’t get up. You’re exactly where the form says you’d be."
+  },
+  {
+   "who": "outtake",
+   "expr": null,
+   "text": "One person, unregistered. Fell off a train. No ticket. Also lost a fight."
+  },
+  {
+   "who": "intake",
+   "expr": null,
+   "text": "Several fights. It’s all on the form. We have a form for that."
+  },
+  {
+   "who": "outtake",
+   "expr": null,
+   "text": "Sender, unclear. Address, unclear. So it goes back to the default address."
+  },
+  {
+   "who": "intake",
+   "expr": null,
+   "text": "Returned to sender.",
+   "stamp": "returned"
+  },
+  {
+   "cmd": "portal"
+  }
+ ],
+ "pickup-won": [
+  {
+   "cmd": "camera run-up"
+  },
+  {
+   "cmd": "walk Intake beside me"
+  },
+  {
+   "cmd": "walk Outtake beside me"
+  },
+  {
+   "who": "intake",
+   "expr": null,
+   "text": "Hold still. You beat our retrieval scout. That scout was on loan."
+  },
+  {
+   "who": "outtake",
+   "expr": null,
+   "text": "One person, unregistered. One scout, dented. Both found at the scene."
+  },
+  {
+   "who": "intake",
+   "expr": null,
+   "text": "Good work, technically. We don’t do good work here. We do paperwork."
+  },
+  {
+   "who": "intake",
+   "expr": null,
+   "text": "Recovered property.",
+   "stamp": "recovered"
+  },
+  {
+   "cmd": "portal"
+  }
+ ]
+}

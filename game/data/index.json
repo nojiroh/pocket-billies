@@ -139,7 +139,9 @@
     "hayden",
     "rosa",
     "seamus",
-    "helix"
+    "helix",
+    "intake",
+    "outtake"
    ]
   },
   "trainers": {"ids":["crude","markdown","alta","marina","blake0","blake","poppy","vault","morel","carat","tinker"]},
@@ -190,6 +192,6 @@
     "test_people"
    ]
   },
-  "cutscenes": {"ids":["opening","city"]}
+  "cutscenes": {"ids":["opening","city","return"]}
  }
 }

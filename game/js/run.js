@@ -20,25 +20,39 @@ import {
   mapIdAt,
   modal,
   perkPickOpen,
+  playStoryScript,
   provide,
   questArrived,
   render,
   renderOverlay,
+  returnStart,
   rewardPickOpen,
   runPayoutOpen,
   storyHomeArrive,
   storyPendingCheck,
+  storyWorldOK,
   toast,
   typeBadgeHTML,
 } from './hooks.js';
-import { ITEMS, MODIFIERS, PERKS, PYRAMIDS, RULES, SPECIES, TRAINERS, TYPES, UNLOCK_DATA } from './game-data.js';
+import {
+  CUTSCENES,
+  ITEMS,
+  MODIFIERS,
+  PERKS,
+  PYRAMIDS,
+  RULES,
+  SPECIES,
+  TRAINERS,
+  TYPES,
+  UNLOCK_DATA,
+} from './game-data.js';
 import { graftLook } from './logic/graft-art.js';
 import { billyName, formatNumber, healAll, plural } from './logic/rules.js';
 import { CHALLENGE_IDS, expeditionNumeral, modsMake } from './logic/modifiers.js';
 import { pointBudget, pointPick, pointSpend, pointStartable } from './logic/starter-points.js';
 import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
-import { runByExpedition, runEnd } from './logic/run-state.js';
+import { runByExpedition, runEnd, runEnded } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
 import { runCardHome } from './logic/run-card.js';
 import { runWorldData } from './logic/run-world-data.js';
@@ -46,6 +60,7 @@ import {
   runArriveFx,
   runBattleExtra,
   runGaveText,
+  runItemPrice,
   runRelease,
   runReleasePays,
   runWareHeals,
@@ -91,6 +106,7 @@ expose({
   runClinicEach: [() => runClinicEach],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
   runEndHomeGo: [() => runEndHomeGo, v => (runEndHomeGo = v)],
+  runEndLab: [() => runEndLab, v => (runEndLab = v)],
   runExpNow: [() => runExpNow],
   runFoeRef: [() => runFoeRef],
   runGiveUp: [() => runGiveUp, v => ((runGiveUp = v), provide({ runGiveUp }))],
@@ -105,6 +121,7 @@ expose({
   runPickDefault: [() => runPickDefault, v => (runPickDefault = v)],
   runPickNow: [() => runPickNow, v => (runPickNow = v)],
   runPickTap: [() => runPickTap, v => (runPickTap = v)],
+  runPickup: [() => runPickup, v => (runPickup = v)],
   runReleasePick: [() => runReleasePick, v => (runReleasePick = v)],
   runReleaseSheet: [() => runReleaseSheet, v => ((runReleaseSheet = v), provide({ runReleaseSheet }))],
   runResume: [() => runResume, v => (runResume = v)],
@@ -113,6 +130,7 @@ expose({
   runStartable: [() => runStartable, v => ((runStartable = v), provide({ runStartable }))],
   runTakeOff: [() => runTakeOff, v => ((runTakeOff = v), provide({ runTakeOff }))],
   runTakeOffGo: [() => runTakeOffGo, v => (runTakeOffGo = v)],
+  standByLab: [() => standByLab, v => (standByLab = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ runBattleStart, runGiveUp, runJump, runOver, runReleaseSheet, runStartSheet, runStartable, runTakeOff });
@@ -156,19 +174,38 @@ function runReleasePick(o) {
 
 /* ---------- the end ---------- */
 /** the run is over (won: the boss beaten; lost: the party fainted, or given up): the payout phase is saved at once
- * (a reload opens the payout screen again), then the payout screen (run-payout.js) */
+ * (a reload opens the payout screen again), then the payout screen (run-payout.js). IN-4: the first run (run.first,
+ * the intro's prepared run; until it lands, the debug menu's "Jump to the pickup") ends another way: the phase is
+ * 'return' (a reload goes to the lab), then the Bureau's pickup where it ended, the fall and the lab (runPickup) */
 function runOver(won) {
   const run = saveData.run;
-  if (!run || run.at.phase === 'payout') return;
-  run.at = { phase: 'payout', battle: -1, won: won ? 1 : 0 };
+  if (!run || runEnded(run)) return;
+  const back = !!(/** @type {any} */ (run).first || uiState.pickupTest);
+  uiState.pickupTest = false;
+  run.at = { phase: back ? 'return' : 'payout', battle: -1, won: won ? 1 : 0 };
   saveNow();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `the run ended (${won ? 'won' : 'lost'}) on day ${run.clock}`);
-  runPayoutOpen();
+    debugLog.add('scene', `the run ended (${won ? 'won' : 'lost'}) on day ${run.clock}${back ? ': the way back' : ''}`);
+  if (back) runPickup(won);
+  else runPayoutOpen();
+}
+/** IN-4: the first run's end where it ended: once the battle and its windows are gone (the walk scene up, at most 8 s),
+ * the Bureau's pickup (story.json pickup-won / pickup-lost on the story stage), then the way back
+ * (cutscene/return-scene.js returnStart: the fall from the square portal, the lab) @param {boolean} won */
+async function runPickup(won) {
+  const t0 = Date.now(),
+    ready = () => !activeBattle && !uiState.modal && typeof storyWorldOK === 'function' && storyWorldOK();
+  while (!ready() && Date.now() - t0 < 8000) await new Promise(r => setTimeout(r, 200));
+  try {
+    if (typeof playStoryScript === 'function') await playStoryScript('story:pickup-' + (won ? 'won' : 'lost'));
+  } catch (e) {
+    console.error(e);
+  }
+  if (typeof returnStart === 'function') returnStart({ fall: true });
 }
 /** give up the run (the Map tab, the landing's mast): it ends as a loss, after a yes */
 export function runGiveUp() {
-  if (!saveData.run || saveData.run.at.phase === 'payout' || activeBattle) return;
+  if (!saveData.run || runEnded(saveData.run) || activeBattle) return;
   modal({
     title: 'Give up the run?',
     html: '<p>The run ends as a loss. You keep one Billie of your choice, and what you found turns into Research.</p>',
@@ -216,10 +253,26 @@ export function runEndHome(won, keep, itemPrice) {
     throw e;
   }
 }
-/** runEndHome's steps, the screen up (show) as soon as the payout is known, in the same frame
+/** IN-4: the first run's end, at the lab (cutscene/return-scene.js, once its scene is over): the run ends as any run
+ * does (runEnd), everyone coming home (the first run's rule, won or lost), and with no train home: you stand outside
+ * the lab door, where the scene left you */
+export function runEndLab() {
+  const run = saveData.run;
+  if (!run || run.at.phase !== 'return') return;
+  runEndHomeGo(
+    !!run.at.won,
+    saveData.team.map(m => m.uid),
+    runItemPrice,
+    '',
+    () => null,
+    true
+  );
+}
+/** runEndHome's steps, the screen up (show) as soon as the payout is known, in the same frame. IN-4: lab, the first
+ * run's end at the lab: no train, you stand by the lab door, and the lab scene has been a lost run's scene already
  * @param {boolean} won @param {string[]} keep @param {(id: string) => number} itemPrice @param {string} train
- * @param {(pay: any) => HTMLElement} show */
-function runEndHomeGo(won, keep, itemPrice, train, show) {
+ * @param {(pay: any) => HTMLElement | null} show @param {boolean} [lab] */
+function runEndHomeGo(won, keep, itemPrice, train, show, lab = false) {
   /* RL-12: the Perks' payout rows, read before the run ends. ON-2: the run's record for friends, read while the team
      is the run's (logic/run-record.js; signed in only: boards.js posts it, or keeps it until it can) */
   const user = typeof account !== 'undefined' && account.user,
@@ -246,7 +299,7 @@ function runEndHomeGo(won, keep, itemPrice, train, show) {
   healAll();
   uiState.tab = 'walk';
   const home = saveData.trip.node,
-    stand = () => standByMast(home);
+    stand = () => (lab && standByLab(home)) || standByMast(home);
   if (typeof isLiteMap === 'function' && isLiteMap(mapIdAt(home)))
     loadMapFile(mapIdAt(home)).then(() => {
       if (stand()) render();
@@ -254,12 +307,27 @@ function runEndHomeGo(won, keep, itemPrice, train, show) {
   else stand();
   /* RL-S1: the hub characters' lines for this return, and a lost run's scene (story-stage.js) */
   storyHomeArrive(won, next);
+  if (lab && saveData.story && saveData.story.pending === 'back-lost') delete saveData.story.pending;
   saveNow();
   closeModal();
   render();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `back in the hub: +${pay.research} Research, +${pay.crests} Crests, +${pay.scrap} Scrap`);
-  trainRideHome(train, won, () => runHomeTold(pay, opened), cover);
+    debugLog.add(
+      'scene',
+      `back in the hub${lab ? ' (at the lab)' : ''}: +${pay.research} Research, +${pay.crests} Crests, +${pay.scrap} Scrap`
+    );
+  if (lab) runHomeTold(pay, opened);
+  else trainRideHome(train, won, () => runHomeTold(pay, opened), /** @type {HTMLElement} */ (cover));
+}
+/** IN-4: stand where the lab scene left you, outside the lab door (cutscenes/return.json `me`, in the hub's own map);
+ * false when the hub isn't that map @param {string} home */
+function standByLab(home) {
+  const C = CUTSCENES.return,
+    me = C && C.spots && C.spots.me,
+    sid = mapIdAt(home);
+  if (!me || sid !== C.map) return false;
+  uiState.roam = { id: sid, node: home, x: me[0], z: me[1] };
+  return true;
 }
 /** home, off the train: what the run brought home, a newly opened Expedition, the milestones, a lost run's scene
  * @param {{ research: number, crests: number, scrap: number }} pay @param {number} opened the Expedition before */
@@ -280,6 +348,11 @@ function runHomeTold(pay, opened) {
 export function runResume() {
   const run = saveData.run;
   if (!run) return;
+  /* IN-4: killed in the first run's pickup, its fall or at the lab: the lab again */
+  if (run.at.phase === 'return') {
+    if (typeof returnStart === 'function') returnStart();
+    return;
+  }
   if (run.at.phase === 'payout') runPayoutOpen();
   /* RL-12: a mini-boss's pick not answered yet (the offer was saved before it showed) */
   else if (run.offer && run.at.phase === 'walk') perkPickOpen();
@@ -712,7 +785,7 @@ const runFoeRef = (kind, foe, extra = {}) => ({
 function runBattleStart(kind, foe, extra) {
   const run = saveData.run,
     i = run && run.map ? runMapNode(saveData.trip.node) : -1;
-  if (!run || !run.map || !run.map.nodes[i] || run.at.phase === 'payout' || (extra && extra.host)) return null;
+  if (!run || !run.map || !run.map.nodes[i] || runEnded(run) || (extra && extra.host)) return null;
   const again = run.at.phase === 'battle',
     k = again ? run.at.battle : run.battleN,
     ref = again && run.at.foe ? run.at.foe : runFoeRef(kind, foe, extra);

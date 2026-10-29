@@ -101,6 +101,12 @@ export function render() {
     titleMount();
     return;
   }
+  /* IN-4: the way back after the first run (cutscene/return-scene.js) has the screen, though a game is under way */
+  if (typeof cutscene !== 'undefined' && cutscene.on && cutscene.back) {
+    app.replaceChildren();
+    updateNav(false);
+    return;
+  }
   if (!saveData.started) {
     if (typeof cutscene !== 'undefined' && cutscene.on) {
       app.replaceChildren();

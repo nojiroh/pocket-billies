@@ -37,6 +37,7 @@ expose({
   runByExpedition: [() => runByExpedition],
   // @ts-expect-error -- replaced on purpose
   runEnd: [() => runEnd, v => (runEnd = v)],
+  runEnded: [() => runEnded],
   runHome: [() => runHome],
   runNodeCount: [() => runNodeCount],
   // @ts-expect-error -- replaced on purpose
@@ -72,12 +73,16 @@ export const RUN_FIELDS = /** @type {const} */ ([
   'visited',
   'buddy',
 ]);
-export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout'],
+/* IN-4: 'return', the first run's end: the Bureau's pickup, the fall and the lab scene (its payout is shown there) */
+export const RUN_PHASES = ['fly', 'walk', 'battle', 'menu', 'payout', 'return'],
   RUN_NODES = 64,
   RUN_DAYS = 9999,
   RUN_LIST = 5000,
   RUN_EXPEDITIONS = 9;
 export const copyOf = v => JSON.parse(JSON.stringify(v));
+/** the run is over and only its end is left to play: the payout screen, or (IN-4) the first run's way back
+ * @param {Run | null | undefined} run */
+export const runEnded = run => !!run && (run.at.phase === 'payout' || run.at.phase === 'return');
 /** RL-9b: a rule by Expedition (rules.json run.pack, run.points.budget): the expedition's entry, past the list's end its last */
 /** @param {number[]} list @param {number} expedition */
 export const runByExpedition = (list, expedition) =>

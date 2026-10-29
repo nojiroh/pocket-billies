@@ -1,0 +1,31 @@
+{
+ "look": {
+  "name": "Intake Clerk",
+  "body": {"height":1,"legs":1,"arms":1,"body":1,"shoulders":1.05,"hips":1,"chest":0.03,"head":1},
+  "skin": "#C98E66",
+  "hair": "#6A4A3A",
+  "eyes": "#4A7BBB",
+  "wear": {
+   "hair": "hair_bun",
+   "eyes": "eyes_round",
+   "brows": "brows_soft",
+   "mouth": "mouth_smile",
+   "facial": null,
+   "top": "longsleeve",
+   "outer": "apron",
+   "bottom": "jeans",
+   "shoes": "sneakers",
+   "hat": null,
+   "glasses": "glasses_round",
+   "neck": null,
+   "bag": null
+  },
+  "colors": {"apron":["#2A6450","#2A6450"],"longsleeve":["#3E8A6E"],"jeans":["#4A5260"],"sneakers":["#3A2A1C","#F2F0EA"]}
+ },
+ "figure": {
+  "head": "long",
+  "build": "lanky",
+  "gait": {"swing":0.6,"arms":0.35,"bounce":0.3}
+ },
+ "about": "IN-4: a Bureau clerk of the pickup after the first run (story.json pickup-won, pickup-lost): a stand-in look (the clerk's) until the intro track's art (IN-3) gives the Bureau's bots"
+}
