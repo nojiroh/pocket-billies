@@ -50,22 +50,19 @@
    "p": "coins/*_16.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2838"
+    "game/js/art.js:233"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
-    "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2838"
+    "game/js/art.js:231"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
-    "game/js/battle-3d.js:684",
-    "game/js/logic/data-checks.js:2840"
+    "game/js/battle-3d.js:684"
    ]
   },
   {
@@ -1580,8 +1577,8 @@
    "game/js/dressing-room.js:726",
    "game/js/fixture.js:129",
    "game/js/fixture.js:206",
-   "game/js/person-art.js:340",
-   "game/js/person-art.js:345",
+   "game/js/person-art.js:341",
+   "game/js/person-art.js:346",
    "game/js/reward-screen.js:248",
    "game/js/shop.js:276",
    "game/js/ui-run-kit.js:113",
@@ -1640,7 +1637,7 @@
    "game/js/logic/soundscape.js:117",
    "game/js/logic/soundscape.js:123",
    "game/js/logic/ui-dials.js:103",
-   "game/js/talk.js:223"
+   "game/js/talk.js:239"
   ],
   "building": [
    "game/js/bowl-map-test.js:344",
@@ -1650,7 +1647,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:2994",
+   "game/js/logic/data-checks.js:3024",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1693,7 +1690,7 @@
    "game/js/walk-view.js:3170"
   ],
   "cowboy": [
-   "game/js/person-art.js:265"
+   "game/js/person-art.js:266"
   ],
   "crest": [
    "game/js/logic/marks.js:183",
@@ -1730,8 +1727,8 @@
    "game/js/logic/run-scenes.js:640",
    "game/js/logic/run-scenes.js:662",
    "game/js/logic/train-path.js:204",
-   "game/js/person-art.js:802",
-   "game/js/person-art.js:882",
+   "game/js/person-art.js:804",
+   "game/js/person-art.js:884",
    "game/js/story-stage.js:220",
    "game/js/train-ride.js:315",
    "game/js/train-ride.js:322",
@@ -1886,10 +1883,10 @@
    "game/js/battle.js:1350",
    "game/js/gene-bank-screen.js:207",
    "game/js/gene-bank-screen.js:229",
-   "game/js/logic/data-checks.js:888",
-   "game/js/logic/data-checks.js:1008",
-   "game/js/logic/data-checks.js:1049",
-   "game/js/logic/data-checks.js:2350",
+   "game/js/logic/data-checks.js:891",
+   "game/js/logic/data-checks.js:1011",
+   "game/js/logic/data-checks.js:1052",
+   "game/js/logic/data-checks.js:2380",
    "game/js/logic/script.js:234",
    "game/js/logic/story-checks.js:370",
    "game/js/ranch-screen.js:210",
@@ -1911,8 +1908,8 @@
   "pow": [
    "game/js/battle-stage.js:1872",
    "game/js/battle-stage.js:1937",
-   "game/js/game-data.js:167",
-   "game/js/game-data.js:170"
+   "game/js/game-data.js:168",
+   "game/js/game-data.js:171"
   ],
   "ring": [
    "game/js/battle-anim-run.js:166",
@@ -1978,8 +1975,8 @@
    "game/js/battle-stage.js:2574",
    "game/js/battle-stage.js:2892",
    "game/js/cutscene/opening.js:345",
-   "game/js/game-data.js:167",
-   "game/js/game-data.js:170"
+   "game/js/game-data.js:168",
+   "game/js/game-data.js:171"
   ],
   "tag": [
    "game/js/battle.js:727",
@@ -1997,11 +1994,11 @@
    "game/js/fishing.js:171",
    "game/js/logic/bowl.js:133",
    "game/js/logic/cutscene-set.js:38",
-   "game/js/logic/data-checks.js:739",
-   "game/js/logic/data-checks.js:905",
-   "game/js/logic/data-checks.js:921",
-   "game/js/logic/data-checks.js:946",
-   "game/js/logic/data-checks.js:990",
+   "game/js/logic/data-checks.js:742",
+   "game/js/logic/data-checks.js:908",
+   "game/js/logic/data-checks.js:924",
+   "game/js/logic/data-checks.js:949",
+   "game/js/logic/data-checks.js:993",
    "game/js/logic/marks.js:109",
    "game/js/logic/music-studio.js:71",
    "game/js/logic/online-legal.js:246",
@@ -2009,8 +2006,8 @@
    "game/js/logic/person-view.js:56",
    "game/js/logic/person-view.js:59",
    "game/js/logic/person-view.js:114",
-   "game/js/person-art.js:803",
-   "game/js/person-art.js:882",
+   "game/js/person-art.js:805",
+   "game/js/person-art.js:884",
    "game/js/train-ride.js:274",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
