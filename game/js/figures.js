@@ -131,7 +131,7 @@ expose({
   figureBustPicture: [() => figureBustPicture, v => (figureBustPicture = v)],
   figureBytes: [() => figureBytes, v => (figureBytes = v)],
   figureCacheClear: [() => figureCacheClear, v => (figureCacheClear = v)],
-  figureChoice: [() => figureChoice, v => (figureChoice = v)],
+  figureChoice: [() => figureChoice, v => ((figureChoice = v), provide({ figureChoice }))],
   figureCompile: [() => figureCompile, v => (figureCompile = v)],
   figureCycle: [() => figureCycle, v => (figureCycle = v)],
   figureDef: [() => figureDef, v => (figureDef = v)],
@@ -183,7 +183,7 @@ expose({
   figuresOn: [() => figuresOn, v => ((figuresOn = v), provide({ figuresOn }))],
 });
 /* eslint-enable no-func-assign */
-provide({ figureBattlePicture, figureFolk, figuresOn });
+provide({ figureBattlePicture, figureChoice, figureFolk, figuresOn });
 /* to-module: end */
 const FIGURE_CACHE_MAX = 600,
   /** and at most this many bytes of them (a plain 3D picture at 128 px a metre is about 340 KB, a pixel one 23 KB) */

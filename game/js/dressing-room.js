@@ -5,11 +5,22 @@
    the same room has a till: try things on and buy what you're wearing. Also the "Create your trainer" step. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { buzz, provide, render, soundEffect, toast } from './hooks.js';
+import {
+  buzz,
+  figureChoice,
+  figureLookPicture,
+  figureLooksForget,
+  figuresOn,
+  provide,
+  render,
+  soundEffect,
+  toast,
+} from './hooks.js';
 import { $, $$, random } from './util.js';
 import { SHOPS, gameData } from './game-data.js';
 import { plural } from './logic/rules.js';
-import { escapeHtml, save, saveData, uiState } from './game-state.js';
+import { clipFrameAt, figureBlinkAt } from './logic/figure-pose.js';
+import { escapeHtml, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { makeCanvas, moneyHTML, uiIconHTML } from './art.js';
 import {
@@ -26,6 +37,7 @@ import {
 expose({
   DRESSING_TABS: [() => DRESSING_TABS],
   DRESSING_VIEWS: [() => DRESSING_VIEWS],
+  DRESS_FIG_THUMBS: [() => DRESS_FIG_THUMBS],
   FACE_PRESETS: [() => FACE_PRESETS],
   OUTFIT_PRESETS: [() => OUTFIT_PRESETS],
   THUMB_CROPS: [() => THUMB_CROPS],
@@ -36,6 +48,9 @@ expose({
   changeLook: [() => changeLook, v => (changeLook = v)],
   closeDressingRoom: [() => closeDressingRoom, v => (closeDressingRoom = v)],
   colorSwatchesHTML: [() => colorSwatchesHTML, v => (colorSwatchesHTML = v)],
+  dressingFigureForget: [() => dressingFigureForget, v => (dressingFigureForget = v)],
+  dressingFigurePreview: [() => dressingFigurePreview, v => (dressingFigurePreview = v)],
+  dressingFigureTiles: [() => dressingFigureTiles, v => (dressingFigureTiles = v)],
   dressingFootHTML: [() => dressingFootHTML, v => (dressingFootHTML = v)],
   dressingMoreHTML: [() => dressingMoreHTML, v => (dressingMoreHTML = v)],
   dressingPreviewLoop: [() => dressingPreviewLoop, v => (dressingPreviewLoop = v)],
@@ -43,6 +58,7 @@ expose({
   dressingRoomHTML: [() => dressingRoomHTML, v => (dressingRoomHTML = v)],
   dressingSectionHTML: [() => dressingSectionHTML, v => (dressingSectionHTML = v)],
   dressingTabHTML: [() => dressingTabHTML, v => (dressingTabHTML = v)],
+  figureThumb: [() => figureThumb, v => (figureThumb = v)],
   lookPortrait: [() => lookPortrait, v => (lookPortrait = v)],
   lookThumbnail: [() => lookThumbnail, v => (lookThumbnail = v)],
   lookWithOutfit: [() => lookWithOutfit, v => (lookWithOutfit = v)],
@@ -88,6 +104,17 @@ export const dressingRoom = {
   thumbs: new Map(),
   done: null,
   flash: null,
+  /* CH-7: the room on the figure (with Figures on): the figure's turn (1 facing you, 0 from behind), its last picture
+     and what it shows, the look held while a slider is dragged, the tiles' figure pictures (data URLs by what they
+     show) and the tiles waiting for theirs (by their 2D picture, in the order they were drawn) */
+  fig: false,
+  turn: 1,
+  figPic: null,
+  figKey: '',
+  figAt: -1e9,
+  held: null,
+  figThumbs: new Map(),
+  figJobs: new Map(),
 };
 const DRESSING_VIEWS = [
   ['front', 0],
@@ -309,6 +336,12 @@ export function openDressingRoom(o = {}) {
   dressingRoom.walk = false;
   dressingRoom.pose = null;
   dressingRoom.thumbs.clear();
+  dressingRoom.fig = figuresOn() && figureChoice() === 'look';
+  dressingRoom.turn = 1;
+  dressingRoom.figPic = null;
+  dressingRoom.figKey = '';
+  dressingRoom.held = null;
+  dressingRoom.figJobs.clear();
   let el = $('#dressing');
   if (!el) {
     el = document.createElement('div');
@@ -319,6 +352,7 @@ export function openDressingRoom(o = {}) {
   el.setAttribute('role', 'dialog');
   el.setAttribute('aria-modal', 'true');
   el.setAttribute('aria-label', dressingRoom.shop ? shopName(dressingRoom.shop) : 'Dressing room');
+  dressingRoom.figJobs.clear();
   el.innerHTML = dressingRoomHTML();
   el.hidden = false;
   document.body.classList.add('dressing');
@@ -335,6 +369,7 @@ export function closeDressingRoom() {
   }
   document.body.classList.remove('dressing');
   uiState.trainerDraft = null;
+  dressingFigureForget();
 }
 /* ---------- markup ---------- */
 function dressingRoomHTML() {
@@ -543,9 +578,9 @@ function lookWithOutfit(L, o, way) {
 function lookThumbnail(L2, crop) {
   const key =
     'look|' + crop + '|' + JSON.stringify([L2.wear, L2.colors, L2.skin, L2.hair, L2.eyes, L2.body.body, L2.body.chest]);
-  if (dressingRoom.thumbs.has(key)) return dressingRoom.thumbs.get(key);
   L2.body.height = 1;
   if (crop !== 'body') L2.wear.hat = null;
+  if (dressingRoom.thumbs.has(key)) return figureThumb(L2, crop, dressingRoom.thumbs.get(key));
   const f = personFrame(L2, 'front', 'idle', 0, 0),
     [x0, y0, x1, y1] = THUMB_CROPS[crop] || THUMB_CROPS.body,
     w = x1 - x0,
@@ -555,7 +590,7 @@ function lookThumbnail(L2, crop) {
   x.drawImage(f, f.ax + x0, f.ay + y0, w, h, 0, 0, w, h);
   const u = c.toDataURL();
   dressingRoom.thumbs.set(key, u);
-  return u;
+  return figureThumb(L2, crop, u);
 }
 function unownedPieces() {
   return Object.values(dressingRoom.look.wear).filter(id => id && !owns(id));
@@ -613,7 +648,7 @@ function wardrobeThumbnail(slot, id, crop) {
       L.wear.hair,
       L.wear.eyes,
     ]);
-  if (dressingRoom.thumbs.has(key)) return dressingRoom.thumbs.get(key);
+  if (dressingRoom.thumbs.has(key)) return figureThumb(L, crop, dressingRoom.thumbs.get(key));
   const f = personFrame(L, 'front', 'idle', 0, 0),
     [x0, y0, x1, y1] = THUMB_CROPS[crop] || THUMB_CROPS.body,
     w = x1 - x0,
@@ -623,7 +658,7 @@ function wardrobeThumbnail(slot, id, crop) {
   x.drawImage(f, f.ax + x0, f.ay + y0, w, h, 0, 0, w, h);
   const u = c.toDataURL();
   dressingRoom.thumbs.set(key, u);
-  return u;
+  return figureThumb(L, crop, u);
 }
 function lookPortrait(look) {
   const L = cleanLook(look),
@@ -631,7 +666,101 @@ function lookPortrait(look) {
     b = opaqueBox(f),
     c = makeCanvas(b[2] + 2, b[3] + 2);
   c.getContext('2d').drawImage(f, b[0] - 1, b[1] - 1, b[2] + 2, b[3] + 2, 0, 0, b[2] + 2, b[3] + 2);
-  return c.toDataURL();
+  return figureThumb(L, 'whole', c.toDataURL());
+}
+/* ---------- CH-7: the room on the figure (Figures on) ---------- */
+/** the tiles' figure pictures kept (data URLs) */
+const DRESS_FIG_THUMBS = 300;
+/** a tile's picture with Figures on: its figure's when baked, else the 2D one while it waits its turn (its figure is
+ * asked for by dressingFigureTiles, in the order the tiles are on the page) */
+function figureThumb(L, crop, url) {
+  if (!dressingRoom.fig) return url;
+  const fc = crop === 'all' ? 'whole' : crop,
+    key = fc + '|' + JSON.stringify(L),
+    done = dressingRoom.figThumbs.get(key);
+  if (done) return done;
+  let q = dressingRoom.figJobs.get(url);
+  if (!q) dressingRoom.figJobs.set(url, (q = []));
+  q.push({ key, look: JSON.parse(JSON.stringify(L)), crop: fc });
+  return url;
+}
+/** the tiles on the page given their figures, the first waiting one each frame (figure-looks.js builds them in turn) */
+function dressingFigureTiles() {
+  const root = $('#dressing');
+  if (!root) return;
+  for (const img of root.querySelectorAll('img:not([data-fs])')) {
+    const q = dressingRoom.figJobs.get(img.getAttribute('src') || ''),
+      job = q && q.shift();
+    img.dataset.fs = job ? '1' : '';
+    if (job) img.figJob = job;
+  }
+  for (const img of root.querySelectorAll('img[data-fs="1"]')) {
+    const job = img.figJob;
+    let u = job && dressingRoom.figThumbs.get(job.key);
+    if (!u && job) {
+      const c = figureLookPicture(job.look, { tile: true, crop: job.crop, ppm: 64 });
+      if (!c) return;
+      u = c.toDataURL();
+      dressingRoom.figThumbs.set(job.key, u);
+      while (dressingRoom.figThumbs.size > DRESS_FIG_THUMBS)
+        dressingRoom.figThumbs.delete(dressingRoom.figThumbs.keys().next().value);
+    }
+    img.dataset.fs = '2';
+    if (u) img.src = u;
+  }
+}
+/**
+ * the preview as a figure: your look (the one before a slider drag until it's let go), turned, idling with blinks,
+ * walking or posing on the figure's 12 fps clock, drawn in whole pixels; the last picture while the next is built.
+ * False until there is one (the 2D preview shows meanwhile).
+ */
+function dressingFigurePreview(x, W, H, t) {
+  const R = dressingRoom;
+  let clip = 'idle',
+    frame = clipFrameAt('idle', t);
+  if (R.pose) {
+    const k = (t - R.poseT) / (R.pose === 'throw' ? 700 : 1400);
+    if (k >= 1) R.pose = null;
+    else {
+      clip = R.pose;
+      frame = Math.min(7, Math.floor(k * 8));
+    }
+  } else if (R.walk) {
+    clip = 'walk';
+    frame = Math.floor(t / (1000 / 12)) % 8;
+  }
+  const look = (R.slT && R.held) || R.look,
+    /* about 96 px a metre, in whole steps on the canvas; smaller when the canvas is short */
+    s = Math.max(1, Math.floor((0.82 * H) / (2 * 96))),
+    ppm = Math.min(96, Math.floor((0.82 * H) / (2 * s))),
+    blink = reducedMotion ? 0 : figureBlinkAt(t, 7),
+    key = JSON.stringify([look, clip, frame, Math.round(R.turn * 16), blink, ppm]);
+  if (key !== R.figKey && t - R.figAt >= 60) {
+    const im = figureLookPicture(look, { clip, frame, turn: R.turn, ppm, face: { blink } });
+    if (im) {
+      R.figPic = im;
+      R.figKey = key;
+      R.figAt = t;
+    }
+  }
+  const f = R.figPic;
+  if (!f) return false;
+  x.imageSmoothingEnabled = false;
+  x.fillStyle = 'rgba(20,14,40,.18)';
+  x.beginPath();
+  x.ellipse(W / 2, H * 0.93, 0.2 * f.ppm * s, 0.045 * f.ppm * s, 0, 0, 7);
+  x.fill();
+  x.drawImage(f, Math.round(W / 2 - f.ax * s), Math.round(H * 0.93 - f.ay * s), f.width * s, f.height * s);
+  dressingFigureTiles();
+  return true;
+}
+/** the room's figures let go (it closed) */
+function dressingFigureForget() {
+  dressingRoom.figPic = null;
+  dressingRoom.figKey = '';
+  dressingRoom.held = null;
+  dressingRoom.figJobs.clear();
+  figureLooksForget();
 }
 /* ---------- the preview ---------- */
 function dressingPreviewLoop(ts) {
@@ -652,6 +781,7 @@ function dressingPreviewLoop(ts) {
   const x = cv.getContext('2d');
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, W, H);
+  if (dressingRoom.fig && dressingFigurePreview(x, W, H, ts)) return;
   const [view, mir] = DRESSING_VIEWS[dressingRoom.view],
     t = ts;
   let act = 'idle',
@@ -696,6 +826,7 @@ function refreshDressingRoom(full) {
   const b = $('#drBody');
   if (b && full !== false) {
     const y = b.scrollTop;
+    dressingRoom.figJobs.clear();
     b.innerHTML = dressingTabHTML();
     b.scrollTop = y;
   }
@@ -748,6 +879,7 @@ export function saveDressingLook() {
     const done = dressingRoom.done;
     dressingRoom.on = false;
     frameStop('dress');
+    dressingFigureForget();
     const el = $('#dressing');
     if (el) {
       el.hidden = true;
@@ -797,13 +929,15 @@ function bindDressingRoom() {
   const el = $('#dressing'),
     cv = $('#drCv');
   cv.addEventListener('pointerdown', e => {
-    dressingRoom.drag = { x: e.clientX, v: dressingRoom.view };
+    dressingRoom.drag = { x: e.clientX, v: dressingRoom.view, t: dressingRoom.turn };
     cv.setPointerCapture(e.pointerId);
   });
   cv.addEventListener('pointermove', e => {
     if (!dressingRoom.drag) return;
     const d = Math.round((e.clientX - dressingRoom.drag.x) / 60);
     dressingRoom.view = (((dressingRoom.drag.v - d) % 4) + 4) % 4;
+    /* CH-7: a figure turns smoothly (32 headings): a quarter turn every 60 px */
+    dressingRoom.turn = (((dressingRoom.drag.t + (0.5 * (e.clientX - dressingRoom.drag.x)) / 60) % 2) + 2) % 2;
   });
   cv.addEventListener('pointerup', () => {
     dressingRoom.drag = null;
@@ -822,6 +956,8 @@ function bindDressingRoom() {
       if (!dressingRoom.slT) {
         pushDressingUndo();
         dressingRoom.slT = 1;
+        /* CH-7: the figure keeps the look from before the drag until the slider is let go (one build, not one a step) */
+        dressingRoom.held = JSON.parse(JSON.stringify(dressingRoom.look));
       }
       dressingRoom.look.body[k] = +t.value;
       dressingRoom.look = cleanLook(dressingRoom.look);
@@ -831,6 +967,7 @@ function bindDressingRoom() {
   el.addEventListener('change', e => {
     if (e.target.dataset.drSl) {
       dressingRoom.slT = 0;
+      dressingRoom.held = null;
       dressingRoom.thumbs.clear();
       refreshDressingRoom();
     }
@@ -938,6 +1075,8 @@ document.addEventListener('click', ev => {
       break;
     case 'dr-turn':
       dressingRoom.view = (((dressingRoom.view + +d.d) % 4) + 4) % 4;
+      /* CH-7: a figure an eighth of a turn at a time */
+      dressingRoom.turn = (((dressingRoom.turn - 0.25 * +d.d) % 2) + 2) % 2;
       break;
     case 'dr-walk':
       dressingRoom.walk = !dressingRoom.walk;

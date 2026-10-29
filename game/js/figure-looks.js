@@ -47,14 +47,14 @@ expose({
   figureLookKey: [() => figureLookKey, v => (figureLookKey = v)],
   figureLookPaint: [() => figureLookPaint, v => (figureLookPaint = v)],
   figureLookPaintKey: [() => figureLookPaintKey, v => (figureLookPaintKey = v)],
-  figureLookPicture: [() => figureLookPicture, v => (figureLookPicture = v)],
+  figureLookPicture: [() => figureLookPicture, v => ((figureLookPicture = v), provide({ figureLookPicture }))],
   figureLookShape: [() => figureLookShape, v => (figureLookShape = v)],
   figureLooks: [() => figureLooks],
-  figureLooksForget: [() => figureLooksForget, v => (figureLooksForget = v)],
+  figureLooksForget: [() => figureLooksForget, v => ((figureLooksForget = v), provide({ figureLooksForget }))],
   figureLooksReport: [() => figureLooksReport, v => ((figureLooksReport = v), provide({ figureLooksReport }))],
 });
 /* eslint-enable no-func-assign */
-provide({ figureLooksReport });
+provide({ figureLookPicture, figureLooksForget, figureLooksReport });
 /* to-module: end */
 /** the figures kept (each a mesh on the helper thread's side and buffers in the baker's context) */
 const FIGURE_LOOK_KEEP = 16;

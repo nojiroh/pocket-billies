@@ -5,8 +5,8 @@ Engine > People > Figures on (with Everyone else as figures); --off for the same
 
     python3 tools/look-places.py                     # town (day, night), rooms, arena
     python3 tools/look-places.py --only=rooms,arena  # some of: town, rooms, arena, dressing
-    python3 tools/look-places.py --only=dressing     # the dressing room's pictures (every tab's thumbnails, and the
-                                                     # preview where it holds still) with Figures on and off: they must be the same
+    python3 tools/look-places.py --only=dressing     # the dressing room with Figures off and on (CH-7: on the figure):
+                                                     # every tab's tiles become figures; a picture of each tab
     python3 tools/look-places.py --only=rooms --room=int_shop   # one room
     python3 tools/look-places.py --off               # Figures off (today's people), for a before/after
     python3 tools/look-places.py --out=DIR
@@ -87,29 +87,46 @@ def rooms(pg, notes):
         shots.settle(pg, 4)
 
 
-# every picture in the dressing room: each tab's thumbnails (img data URLs) and the preview canvas, hashed
-DRESS_JS = """(async()=>{const h=s=>{let a=2166136261;for(let i=0;i<s.length;i++){a^=s.charCodeAt(i);a=Math.imul(a,16777619)}return (a>>>0).toString(16)};
+# every picture in the dressing room: each tab's thumbnails (img data URLs) and the preview canvas, hashed; with
+# Figures on (CH-7), each tab waited on until every tile is its figure's (or `wait` seconds), its picture taken
+DRESS_JS = """(async({wait,on})=>{const h=s=>{let a=2166136261;for(let i=0;i<s.length;i++){a^=s.charCodeAt(i);a=Math.imul(a,16777619)}return (a>>>0).toString(16)};
+ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  talkHide();uiState.modal=null;uiState.mq=[];renderOverlay();openDressingRoom({});
  const tabs=[...document.querySelectorAll('#dressing [data-a="dr-tab"]')].map(b=>b.dataset.t), out={};
- for(const t of tabs){closeDressingRoom();openDressingRoom({tab:t});await new Promise(r=>setTimeout(r,600));
+ for(const t of tabs){closeDressingRoom();openDressingRoom({tab:t});const t0=performance.now();await sleep(600);
+  let figs=0,n=0;
+  if(on)for(;;){const ims=[...document.querySelectorAll('#dressing img')];n=ims.filter(i=>i.dataset.fs!=='').length;figs=ims.filter(i=>i.dataset.fs==='2').length;
+   if((figs>=n&&dressingRoom.figPic)||performance.now()-t0>wait*1000)break;await sleep(250)}
   const ims=[...document.querySelectorAll('#dressing img')].map(i=>i.src), cv=document.getElementById('drCv'),
-   p1=cv&&cv.width?h(cv.toDataURL()):null; await new Promise(r=>setTimeout(r,700)); const p2=cv&&cv.width?h(cv.toDataURL()):null;
-  out[t]={imgs:ims.length,hash:h(ims.join('|')),preview:p1===p2?p1:'moving'}}
- closeDressingRoom();return out})()"""
+   p1=cv&&cv.width?h(cv.toDataURL()):null; await sleep(700); const p2=cv&&cv.width?h(cv.toDataURL()):null;
+  out[t]={imgs:ims.length,hash:h(ims.join('|')),preview:p1===p2?p1:'moving',figTiles:figs,tiles:n,s:Math.round(performance.now()-t0)/1000,figure:!!dressingRoom.figPic};
+  if(on)window.__dressShot=t;while(on&&window.__dressShot)await sleep(100)}
+ closeDressingRoom();return {tabs:out,report:typeof figureReport==='function'?figureReport().dress:null}})"""
 
 
 def dressing(pg, notes):
-    """the dressing room keeps today's pictures (CH-7 moves it to the figure): the same with Figures on and off"""
+    """the dressing room with Figures off (today's 2D pictures) and on (CH-7: the figure, every tile its figure's
+    picture, each tab's picture taken), each tab's pictures counted and hashed"""
     got = {}
-    for on in (True, False):
+    for on in (False, True):
         pg.evaluate(f"(()=>{{const p=saveData.preferences;p.eng={{...(p.eng||{{}}),people:{{figures:{'true' if on else 'false'},folk:true}}}};return 0}})()")
-        got['on' if on else 'off'] = pg.evaluate(DRESS_JS)
-    # the preview breathes on the clock: compared only where it held still between two looks
-    same = all(got['on'][t]['hash'] == got['off'][t]['hash'] and got['on'][t]['imgs'] == got['off'][t]['imgs'] and
-               ('moving' in (got['on'][t]['preview'], got['off'][t]['preview']) or got['on'][t]['preview'] == got['off'][t]['preview'])
-               for t in got['on']) and set(got['on']) == set(got['off'])
-    notes.append({'dressing': same, 'tabs': {t: got['on'][t]['imgs'] for t in got['on']}, 'diff': None if same else got})
-    print(f"  dressing room: {'the same' if same else 'DIFFERENT'} with Figures on and off ({sum(v['imgs'] for v in got['on'].values())} pictures in {len(got['on'])} tabs)", flush=True)
+        h = pg.evaluate_handle(DRESS_JS + "(" + json.dumps({'wait': 240, 'on': on}) + ")")
+        while on:
+            t = pg.evaluate("window.__dressShot||null")
+            if t:
+                pg.screenshot(path=str(OUT / f'dressing-{t}-fig.png'))
+                pg.evaluate("window.__dressShot=null;0")
+            if pg.evaluate("!dressingRoom.on&&!window.__dressShot"):
+                break
+            time.sleep(0.3)
+        got['on' if on else 'off'] = h.json_value()
+    off, fig = got['off']['tabs'], got['on']['tabs']
+    every = all(v['figTiles'] >= v['tiles'] and v['figure'] for v in fig.values())
+    differ = all(fig[t]['hash'] != off[t]['hash'] for t in fig if fig[t]['tiles'])
+    notes.append({'dressing': every and differ, 'off': off, 'on': fig, 'report': got['on']['report']})
+    for t, v in fig.items():
+        print(f"  dressing {t}: {v['figTiles']} of {v['tiles']} tiles figures in {v['s']} s (of {off[t]['imgs']} pictures), preview {'a figure' if v['figure'] else '2D'}", flush=True)
+    print(f"  dressing room: {'every tile a figure' if every else 'NOT every tile a figure'}; {'new pictures' if differ else 'SOME TABS UNCHANGED'} with Figures on; {got['on']['report']}", flush=True)
 
 
 def arena(b, base, errs, notes):
