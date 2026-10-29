@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Clean-up track CU round 2 - close-out: HANDOFF re-trimmed, ART-NOTES.md -> docs/ART.md, style track archived, gone branches' rows, the full checks - 2026-10-29
+Branch `track/cleanup` (fast-forwarded to origin, then origin/main merged in twice: first PK-7..12, #295's VFX-8..16,
+the hub polish, the UI fixes; then a90c9301 with #331 VFX, #322 Dialogue, #308, #291 and #327). The owner approved
+round 2 ("Yes, start round 2", 2026-10-29); every decision was in docs/phases/cleanup-track.md sections 1, 3, 6, 7
+and 9, so no Plan Mode. Alone on the branch; one cause per commit; pushed; PR #328 owned from here.
+- Facts checked: lane D's step 1 was done (docs/archive/HANDOFF-2026-10.md, word for word and in main's order;
+  CLAUDE.md line 20 and start-session point at it). At the start the live set was #331, #322, #314, #308, #292, #291,
+  #327 and track/roster; after the second merge it is track/characters (with #314), track/sound (#292), track/roster.
+  #291's merge kept docs/samples/perk-icons.* deleted. A merge coordinator session asked for the second merge of main
+  so #328 can merge today.
+- Changed:
+  - Two merges of main: HANDOFF keeps both sides; TESTING keeps main's Figures bullet (test-cleanup's archived path);
+    hooks.js, art-code-refs and the check-data and run-start snapshots regenerated (run-start's hash differs from
+    main's because of lane S's region word, as before).
+  - HANDOFF back to each track's newest 3 after each merge: VFX, Perks, Dialogue and Load (24 entries, 2,331 lines,
+    moved word for word into the archive at their place in main's order; its header says 2026-10-28 and 2026-10-29).
+    Clean-up keeps its entries until #328 merges; Style, Characters and Phase 04/08 keep lane D's live-hunk picks.
+  - ART-NOTES.md -> docs/ART.md (git mv); README's layout, the look skill (its 32 px/m line now cites CLAUDE.md's art
+    commitments, since ART.md keeps only TR-4's terrain lines), perks-track and ui-track repointed.
+  - docs/phases/style-track.md -> docs/archive/tracks/; its code comments (bureau-battle.css, case-file.css,
+    ui-run-kit.js, gallery.html, build-bureau-forms.py), vfx-track.md and ROADMAP repointed.
+  - ROADMAP: the old phases' File column names where each brief is (`archive/` like rows 11 and 15; 07 is 07-plan, its
+    kit sources in git history); the archived tracks' rows (Routes, Route props, Towns, Studio art, Camera, Test
+    cleanup) and lane S's Studio self-test link repointed; the CU row.
+  - BRANCHES: rows of 30 of the 32 branches gone from GitHub deleted; the studio-art, camera and three more archived
+    tracks' rows repointed; track/cleanup's row. Two gone rows and the style rows wait (next to track/characters).
+  - .gitignore: `validation/st3/` dropped (track/dialogue's neighbouring line is in main).
+  - Deferred pointers: start-session's long-file example (roguelite-track.md is 804 lines; sound-track and ui-track are
+    the long ones now), after-edit.mjs's tiers (docs/TESTING.md), perks.json's `about` and 07-plan's kit line (deleted
+    files in git history), hub-track's never-committed HB-10b patch.
+  - cleanup-track.md: status and section 7 (only what is still blocked, each with its blocker).
+- Dead paths over every current doc (repo paths that don't exist; HANDOFF and docs/archive excepted): 132 before, 128
+  after the first pass. The rest are history notes ("deleted", "retired", "in git history"), output folders the tools
+  make, files plans will make, cleanup-track.md's own audit (37), and the rows section 7 holds.
+- Verified: on the branch after the second merge: lint, typecheck, check:modules (562 names), format:check,
+  check:data (182 files, the two old bridge warnings), `node tools/art-unused.mjs --check` (3,929 pictures, 0 unused,
+  0 missing), `npm test` 2,169 pass; version-source 4 pass and `git add --renormalize .` changes nothing (first merge).
+  After the first merge: `npm test` 2,071 pass, `npm run test:slow` 109 pass, build, and the full quick check
+  (1,772 s): 36 of 39 steps ok, 3 problems that are main's too: RL-8's run (fails on origin/main at other points:
+  "the town's shop has no Perk"), "Walking left and right... settings tabs" (the same failure on main) and Battle
+  music's drums (passed on both on a rerun: intermittent). CI's smoke: 40 of 42, the bowl zoom-out and Camera follow,
+  red on main too (the PR's earlier comment says so). This round changed docs, comments and a .gitignore line only.
+- Risky: the archive moves cut the middle of HANDOFF.md; trial merges (`git merge-tree`) with every live branch after
+  each change give no conflict the branch didn't already have (HANDOFF's top and .gitignore for track/characters).
+- For the owner: tag `cleanup-done` only when section 7 is empty (not yet: the music names wait for track/sound; the
+  .gitignore rewrite, eslint's ignore and two BRANCHES rows for track/characters; HANDOFF's header for any branch
+  inserting at its top). Your calls, from the lanes: the four portal props no place uses since the test map went
+  (portal_door, portal_gate, portal_hole, portal_ring: keep for the hub's portal or delete), game-data.d.ts's "the
+  placeholder picture" and docs/ART.md's "Robots (phase 17, placeholder)" heading, VISION.md's "airship", "brackets"
+  and "relics". On the phone after the merge: section 9's list (a region may be "Untitled ..."; no "Placeholder art."
+  on a salvage card; "Sketch Billie" in Part mode; plain Cry names).
+- Next: CU-3 once track/sound and track/characters merge: section 7's items, then `cleanup-done`.
+
 ### Clean-up track CU-0 - the plan: a tidy main laid out like a game repo, no "placeholder" or "AI" in the Studio - 2026-10-28
 Branch `ccr-4d35b293-6rc24z` (the cloud session's own; main fast-forwarded to 3f559c3b first). Plan approved in Plan
 Mode. Docs only: the plan, research and three read-only audits; nothing deleted or renamed yet. `track/cleanup` made
