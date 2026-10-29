@@ -39,6 +39,13 @@ test('each planted fault is found', () => {
       'is also',
     ],
     ['an unknown speaker', G => G.trainers.crude.script.push('Nobody: Hi. #l:zz01'), 'problems', 'speaker Nobody'],
+    /* DL-4: the stamp is the Bureau's (the owner's answer to Ask me before 4) */
+    [
+      'a stamp on a speaker whose bubble takes none',
+      G => G.trainers.crude.script.push('Chosen: Approved.[stamp=approved] #l:zz02'),
+      'warnings',
+      'only the Bureau',
+    ],
     ['an unknown trainer', G => G.trainers.crude.script.push('battle nobody'), 'problems', 'battle nobody'],
     ['an unknown item', G => G.trainers.crude.script.push('give unobtainium'), 'problems', 'no such item'],
     ['an unknown place', G => G.trainers.crude.script.push('go nowhere'), 'problems', 'go nowhere'],
@@ -211,4 +218,10 @@ test('Play from here: the switches go through the address and into a save as the
   const save = storySwitches({ story: { rival0: 'win' } }, GAME_DATA, F);
   assert.deepEqual([save.story.met_x, save.story.rival0, save.flags.crude], [1, undefined, 1]);
   assert.ok(save.seats.includes(GAME_DATA.trainers.crude.seat.id), 'and the badge');
+});
+
+test('DL-4: a stamp on the Bureau’s lines (a banter line whose who is the Bureau) gives no warning', () => {
+  const G = copy();
+  G.banter.bureau_lost.script = ['“You look lost. That is our department.”[stamp=filed] #l:492a'];
+  assert.deepEqual(run(G).warnings, []);
 });

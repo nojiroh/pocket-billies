@@ -10,6 +10,9 @@ import {
   motionCountMs,
   motionLevelOf,
   motionStaggerCap,
+  springAt,
+  springEase,
+  springMs,
 } from '../../game/js/logic/motion.js';
 
 test('Device plays Full unless the phone asks for reduced motion; a choice wins over the phone', () => {
@@ -93,4 +96,40 @@ test('no :host-context anywhere in the game (Safari ignores it): the levels reac
   const css = readFileSync(new URL('../../game/css/motion.css', import.meta.url), 'utf8');
   assert.match(css, /\[data-motion='reduced'\] \{\s*--m-k: 0;\s*--m-loop: paused;/);
   assert.match(css, /\[data-motion='calm'\] \{\s*--m-loop: paused;/);
+});
+
+// DL-3: the dialogue bubble's spring as a CSS linear() easing
+test('springEase starts at 0, ends exactly at 1 and overshoots only when damping is under 1', () => {
+  const pts = (/** @type {string} */ s) => {
+    const m = /^linear\((.*)\)$/.exec(s);
+    assert.ok(m, `a linear() easing: ${s}`);
+    return m[1].split(', ').map(Number);
+  };
+  const bouncy = pts(springEase(0.35, 0.7));
+  assert.equal(bouncy[0], 0);
+  assert.equal(bouncy.at(-1), 1);
+  assert.equal(bouncy.length, 25);
+  assert.ok(bouncy.every(Number.isFinite));
+  assert.ok(Math.max(...bouncy) > 1.02, 'damping 0.7 overshoots');
+  const firm = pts(springEase(0.35, 1));
+  assert.ok(Math.max(...firm) <= 1, 'damping 1 never overshoots');
+  for (let i = 1; i < firm.length; i++) assert.ok(firm[i] >= firm[i - 1], 'damping 1 only rises');
+  assert.equal(pts(springEase(0.35, 0.7, 8)).length, 9);
+});
+test('the spring settles: springMs grows with the response and shrinks with damping; bad input is clamped', () => {
+  assert.ok(springMs(0.5, 0.7) > springMs(0.35, 0.7));
+  assert.ok(springMs(0.35, 0.9) < springMs(0.35, 0.5));
+  const ms = springMs(0.35, 0.7);
+  assert.ok(ms > 150 && ms < 1500, `a bubble's spring settles in a sensible time: ${ms}`);
+  assert.ok(Math.abs(springAt(0.35, 0.7, ms / 1000) - 1) < 0.006, 'within 0.5% at springMs');
+  assert.equal(springAt(0.35, 0.7, 0), 0);
+  for (const [r, d] of [
+    [NaN, NaN],
+    [-1, 5],
+    [0, 0],
+    [99, 0.01],
+  ]) {
+    assert.ok(Number.isFinite(springMs(r, d)), `springMs(${r}, ${d})`);
+    assert.match(springEase(r, d), /^linear\(0, .*, 1\)$/);
+  }
 });

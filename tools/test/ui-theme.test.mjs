@@ -17,12 +17,15 @@ import {
   shapeDecls,
   shapePoints,
   shapeVars,
+  shapeVariants,
+  seededRandom,
   uiThemeCss,
   uiThemeLook,
   uiPalettes,
   UI_FROM_SIGNALS,
   UI_ROLES,
   UI_SHAPE_DEFAULTS,
+  BUBBLE_MOTION,
 } from '../../game/js/logic/ui-theme.js';
 
 const THEME = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/uiTheme.json'), 'utf8'));
@@ -413,4 +416,61 @@ test('UI-12: reduced transparency makes the glass solid on both sides, after the
   assert.match(rule, /:root:not\(\[data-theme='light'\]\),\n {2}:root\[data-theme='light'\] \{/);
   assert.match(rule, /--g-blur: none;/);
   assert.match(rule, /--g-bg: var\(--g-solid\);/);
+});
+
+// DL-3: a shout's burst (the jag kind) and a thought's cloud, drawn in the bubble's layer box
+test('a shout: seeded jagged bursts that hold still, each variant its own, the tail a spike to the top', () => {
+  const sh = { ...UI_SHAPE_DEFAULTS };
+  assert.equal(shapeVariants('bubbleShout', sh), 3);
+  assert.equal(shapeVariants('bubble', sh), 1);
+  const a = shapePoints('bubbleShout', sh, 0, 0);
+  assert.deepEqual(a, shapePoints('bubbleShout', sh, 0, 0), 'the same seed, the same burst');
+  assert.notDeepEqual(a, shapePoints('bubbleShout', sh, 0, 1), 'each variant its own');
+  assert.ok(a.length >= 30, `enough spikes: ${a.length}`);
+  for (const [ax, , ay] of a) assert.ok(ax >= 0 && ax <= 100 && ay >= 0 && ay <= 100, 'inside the box');
+  // the tail: one point at the layer's top; every other point at or below the top edge (the tail's 18 px down)
+  assert.equal(a.filter(p => p[2] === 0 && p[3] === 0).length, 1);
+  assert.ok(a.every(p => p[2] !== 0 || p[3] === 0 || p[3] >= 18));
+  // the inner outline (the edge line's) sits 1 px in: same number of points
+  assert.equal(shapePoints('bubbleShout', sh, 1, 0).length, a.length);
+  const v = shapeVars('bubbleShout', sh);
+  assert.deepEqual(Object.keys(v).sort(), [
+    '--clip-bubbleShout-0',
+    '--clip-bubbleShout-1',
+    '--clip-bubbleShout-2',
+    '--edge-bubbleShout-0',
+    '--edge-bubbleShout-1',
+    '--edge-bubbleShout-2',
+  ]);
+  assert.match(v['--edge-bubbleShout-0'], /^polygon\(evenodd, /);
+  // the data's spikes and depth change it
+  const more = shapePoints('bubbleShout', { ...sh, families: { bubbleShout: { spikes: 12 } } });
+  assert.ok(more.length > a.length);
+});
+test('a thought: a rounded cloud with no tail, its top edge the tail height down', () => {
+  const c = shapePoints('bubbleThink', { ...UI_SHAPE_DEFAULTS });
+  assert.ok(c.every(([, , ay, oy]) => ay !== 0 || oy >= 18));
+  assert.equal(Math.min(...c.filter(p => p[2] === 0).map(p => p[3])), 18);
+});
+test('seededRandom: the same seed, the same numbers, all in [0, 1)', () => {
+  const a = seededRandom(7),
+    b = seededRandom(7);
+  for (let i = 0; i < 50; i++) {
+    const x = a();
+    assert.equal(x, b());
+    assert.ok(x >= 0 && x < 1);
+  }
+});
+
+test('DL-3: tokens.css holds the bubble motion the data writes (a page without uiTheme.json moves the same)', () => {
+  const tok = readFileSync(join(import.meta.dirname, '../../game/css/tokens.css'), 'utf8')
+    .replace(/\s+/g, ' ')
+    .replace(/\( /g, '(')
+    .replace(/,? \)/g, ')');
+  const light = blockOf(uiThemeCss(THEME), ':root');
+  for (const k of ['--bubble-spring', '--bubble-spring-ms', '--bubble-pop', '--bubble-tilt', '--bubble-idle']) {
+    assert.ok(light[k], `${k} is written`);
+    assert.ok(tok.includes(`${k}: ${light[k]};`), `tokens.css ${k}: ${light[k]}`);
+  }
+  for (const [k, v] of Object.entries(BUBBLE_MOTION)) assert.equal(THEME.defaults.motion[k], v, k);
 });

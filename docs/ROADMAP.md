@@ -241,12 +241,30 @@ town node needs it.
   `claude/vfx-16-battle-flow`: the VS splash for leaders, Blake and bosses inside trainerIn's time, the send-out's
   dither from the feet up and its pyramid's colours, the recall beam, the catch's squash, seal ring and shards, the
   faint and the bots' shed, the level-up's column on the right Billie, an item's pop, victory and defeat; the XP bar
-  and level-up bugs fixed) built 2026-10-28 (PR #319, merged by VFX-13). VFX-13 (hit tiers: the tier table as battleAnims.json `tiers` and its Studio pane, resisted, x4, crit, KO and last-KO looks, the last KO's 250 ms freeze, a flurry on the beat, drain, heal and recoil looks, misses per family; Scatter Stones on the foe's side) built 2026-10-28 on `track/vfx`, the main line of wave 3 beside VFX-17 and VFX-19. **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  and level-up bugs fixed) built 2026-10-28 (PR #319, merged by VFX-13). VFX-13 (hit tiers: the tier table as battleAnims.json `tiers` and its Studio pane, resisted, x4, crit, KO and last-KO looks, the last KO's 250 ms freeze, a flurry on the beat, drain, heal and recoil looks, misses per family; Scatter Stones on the foe's side) built 2026-10-28 on `track/vfx`, the main line of wave 3 beside VFX-17 and VFX-19. VFX-17 (signature scenes 1, wave 3, side
+  branch `claude/vfx-17-scenes-1`: the batch's storyboards first, then `propWorldItem` and summoned low-poly models
+  with Part 1's smears, the drawn stamp (SIU!, KA-CHING!, TOOT!), the cut, 18 scenes (the 12 of power 100+ and 6
+  more) at most 0.5 s longer, a short repeat from a scene's second use, its family with 3D props off or under Reduced
+  motion) built 2026-10-28 (PR #324 into `track/vfx`, merged by VFX-20). VFX-18 (signature scenes 2, wave 4, side branch `claude/vfx-18-scenes-2`: 19 more storyboards first, then 19 scenes on VFX-17's primitives with generic props only (no slogan stamped), the drawn words WHIRR!, TICK!, CLICK!, FORE!, status scenes within their family's time) built 2026-10-29 (PR #329 into `track/vfx`; VFX-18b does the other 19).
+  VFX-19 (move sounds: music.json `battle`, a sound per move family layered by type, hurt sounds, the recall, throws
+  and catches with body and echo, the Studio's Battle card, check-sound fingerprints; placeholders until the owner's
+  listening pass) built 2026-10-28 on `claude/vfx-19-move-sounds` (PR #325 into `track/vfx`, merged by VFX-20).
+  VFX-18b (signature scenes 3, wave 4, side branch `claude/vfx-18b-scenes-3`: storyboards first, 19 more scenes from
+  VFX-17's primitives, the sound words WHOOSH!, PSSHT!, DING-DONG! and THWOCK!, status scenes within their family's
+  time, and the Retrieval Unit's shield phase raising two Bureau barriers; the bots' moves keep their families) built
+  2026-10-29 (PR #330 into `track/vfx`; VFX-18 and 18b merged by VFX-20). VFX-20 (the phone pass, Part 2's last step:
+  VFX-17, 18, 18b and 19 merged; types.json `fx` moved into the kits and removed with the old 2D effect drawing; a hurt
+  line that knocks out takes the KO's look; the Studio plays every event and look film and tunes the misses; the debug
+  log names a scene's fallback, the KO and the motion; rule 9's blink, half sprite flashes and Calm's motes; every
+  burst on the burst budget; tools/flash-audit.py passes; the budgets hold at quality 0-3) built 2026-10-29 on
+  `track/vfx` (draft PR #331, after the owner merged #295). **Part 2 is done** (2026-10-29): its "as built" summary and
+  the one-sitting phone checks are at the top of Part 2 in docs/phases/vfx-track.md.
+  **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
   `track/vfx` after VFX-5, each in a new session started by VFX-7's, plans approved automatically (the owner,
-  2026-10-28), sound steps agreed with the sound track's planning session. Tags `vfx-N-done`. Branch `track/vfx`.
+  2026-10-28), sound steps agreed with the sound track's planning session. No per-session tags (CLAUDE.md since #283). Branch `track/vfx`.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
@@ -323,7 +341,9 @@ town node needs it.
   build time, canvases read back kept in memory) done 2026-10-27 on the same branch; LD-2 (shaders started together, read once, finished behind
   the loader) done 2026-10-27; LD-3 (the island in a worker, pictures per place, the bundle minified, the
   precache) done 2026-10-27; LD-4 (the run's places on a helper thread from the pick) done 2026-10-27; LD-5 in part (one frame budget, the
-  moves measured) done 2026-10-27, its other items wait on the owner's phone log; next LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
+  moves measured) done 2026-10-27, its other items wait on the owner's phone log; the crossing hitch (the day's water
+  remade in the background, the next view's walking grid built ahead) done 2026-10-28 on `claude/new-session-bcxme1`;
+  next LD-5 (one frame budget, meshes in a worker, the next place warmed), LD-6 (the phone check). Tags
   `ld-N-done`. Branch `track/load`.
 - **Characters track** (docs/phases/characters-track.md, the owner's brief 2026-10-27): people that look like they
   belong and move like they're alive. People are 66.5 px/m and drawn at 0.74 of a screen pixel per art pixel at the
@@ -389,6 +409,21 @@ town node needs it.
   motion (they don't today). SY-0 (the plan, with research) and SY-1 (battle flashes follow Flashes and Reduced
   motion) done 2026-10-27 on `ccr-86dc9cb1-odx2za`; SY-2 (numbers you feel) done 2026-10-27 on `track/style`; SY-3
   (the Bureau's mark: the emblem, `bureau.look`, `pb-stamp`) done 2026-10-28 on `track/style`; SY-4 (case files: Bureau events in a manila folder, typed in, redacted, stamped) done 2026-10-28 on `track/style`; SY-5 (the Bureau in battle: stamps on knockouts and wins, the Notice of Retrieval in the join intro, ID plates on form paper; UI-16a/b merged in for their plates) done 2026-10-28 on `track/style`; SY-6 (the coat's foil in the world: a dithered sheen band in the sprite shader on coated Billies, maps and battle) done 2026-10-28 on `track/style`; SY-7 (the Bureau in the world: red tape on its barrier and crate, its own checkpoint sign with the emblem, loose forms blowing about its places) done 2026-10-28 on `track/style`; SY-8 (tuning and docs: Studio dials for the stamp, the HP roll, the pop sizes and the foil, uiTheme.json `style`; the debug log's style line) done 2026-10-28 on `track/style`. **Track done** (2026-10-28), waiting on PR #289; tags `sy-N-done` and `style-done` are the owner's to push. Branch `track/style`.
+- **Dialogue track** (docs/phases/dialogue-track.md, the owner's brief 2026-10-28): talking with character. A
+  conversation of stacked bubbles (the last two lines above the newest, speakers on alternating sides, interruptions,
+  a "…" bubble, a Log), a bubble of their own for each character (the Bureau's form paper and stamp, Chosen's gold,
+  Kappi's leaf, Blake's pop-art slant, your neon), shout, whisper and think shapes, bracket tags for text that acts
+  (bold, slant, size, colour, wave, shake, speed, pauses, mid-line faces, emotes), a Text speed setting, and portraits
+  that perform (random blinks, a mouth synced to the voice, the head on a spring on the characters track's figures,
+  emotes, the frame bouncing). DL-0 (the plan, with research) done 2026-10-28 on `ccr-2d53c4cf-8w7kd2`; DL-1 (markup:
+  logic/line-markup.js, plain text on every surface, script errors for bad tags) done 2026-10-28 on `track/dialogue`;
+  DL-2 (letters: the letter spans and effects, logic/talk-type.js timing, Text speed, blip styles, Oxanium 700 for
+  bold) done 2026-10-28; DL-3 (bubbles: each speaker's skin from talkSkins.json, shout, whisper and think shapes, the
+  tilt, the pop-in and grow spring, the Bureau's stamp, the bubble's dials; the owner kept the mockup's skins and gave
+  the player's lines a narration skin) done 2026-10-28; DL-4 (the stack: sides, linked lines, the cut and its knock,
+  the "…" bubble, choices in the stack, the Log, the 40% height budget, the camera lifting the talk above it; the
+  owner's answer: `[wait]` for anyone, the stamp the Bureau's alone) done 2026-10-28; DL-5 (faces: logic/talk-director.js, combined expressions, blinks and the mouth, emotes from emotes.json, the frame's bounce, the listener dimmed) done 2026-10-29; DL-6 (figure close-ups: the bust bake, the head turned in stepped angles, the face painted from the director, the mannequin's marks plus an open mouth while CH-6 isn't in) done 2026-10-29; DL-7 (the writing pass: markup in 87 lines of the opening, Chosen, Kappi, Blake and the Bureau, words unchanged; provisional, for the owner's review) done 2026-10-29; next DL-8 (optional, the owner decides). About 8
+  sessions. Branch `track/dialogue`.
 - **Project Story** (docs/phases/project-story.md): S1-S3 and S7 done, S8 partly (RL-8: New game plays the fall only; the city's files stay).
   2026-10-23 (the owner): the professor is Professor Chosen, with Hazel as his assistant; lines, names and ids done
   (PR #142); his wolf shirt and katana art are next.

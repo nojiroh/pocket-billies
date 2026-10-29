@@ -8,6 +8,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  battleCatchSoundPlay,
+  battleHurtSoundPlay,
+  battleMoveSoundPlay,
+  battleRecallSoundPlay,
   cutscene,
   mapIdAt,
   provide,
@@ -166,7 +170,7 @@ export const soundEngine = {
   seen: null,
   log: [],
 };
-function soundLog(e) {
+export function soundLog(e) {
   const L = soundEngine.log;
   L.push({ at: Math.round(performance.now()), e });
   if (L.length > 40) L.shift();
@@ -472,15 +476,33 @@ export function soundEffect(name, o = {}) {
       uiSound('select');
       break;
     case 'blip': {
-      if (o.who === 'kappi') {
+      /* DL-2: the voice follows the line's style: a shout higher and louder, a whisper softer; a [big] letter an accent
+         (a thought never blips: talk.js) */
+      const loud = o.style === 'shout' ? 1.5 : o.style === 'whisper' ? 0.45 : o.big ? 1.3 : 1,
+        up = o.style === 'shout' ? 5 : o.big ? 2 : 0;
+      /* DL-3: a skin's blip (talkSkins.json): the Bureau's typewriter, a key's short clack and a dull strike */
+      if (o.voice === 'typewriter') {
+        synthNoise(F, { t, dur: 0.018, vol: 0.05 * loud, bp: 2600 + Math.random() * 900, q: 2.2 });
+        synthVoice(F, {
+          type: 'square',
+          freq: midiToFrequency(40 + up),
+          t,
+          dur: 0.02,
+          vol: 0.025 * loud,
+          r: 0.01,
+          cut: 900,
+        });
+        break;
+      }
+      if (o.who === 'kappi' || o.voice === 'calm') {
         /* Kappi, a capybara: a low, soft, falling note with a small click in front, like a capybara's purr and click */
-        synthNoise(F, { t, dur: 0.012, vol: 0.03, bp: 3200, q: 1.4 });
+        synthNoise(F, { t, dur: 0.012, vol: 0.03 * loud, bp: 3200, q: 1.4 });
         synthVoice(F, {
           type: 'triangle',
-          freq: midiToFrequency(53 + [0, 2, 3][Math.floor(Math.random() * 3)]),
+          freq: midiToFrequency(53 + up + [0, 2, 3][Math.floor(Math.random() * 3)]),
           t: t + 0.008,
           dur: 0.05,
-          vol: 0.07,
+          vol: 0.07 * loud,
           r: 0.03,
           slide: 0.88,
           cut: 1400,
@@ -493,10 +515,10 @@ export function soundEffect(name, o = {}) {
         o.who === 'chosen' ? 64 : o.who === 'me' ? 67 : /^folk/.test(o.who || '') ? 62 + (h % 10) : 60 + (h % 14);
       synthVoice(F, {
         type: 'p25',
-        freq: midiToFrequency(base + [0, 2, 4, 7][Math.floor(Math.random() * 4)]),
+        freq: midiToFrequency(base + up + [0, 2, 4, 7][Math.floor(Math.random() * 4)]),
         t,
         dur: 0.035,
-        vol: 0.045,
+        vol: 0.045 * loud,
         r: 0.02,
       });
       break;
@@ -710,8 +732,9 @@ function battleSoundEffect(an, r, ev) {
     }
     case 'enter':
       battleDrumsIn();
-      soundEffect('throw');
-      at(380, () => soundEffect('pop'));
+      /* VFX-19: the throw and the pop from music.json battle.catch (audio/battle-sounds.js), else as before */
+      if (!battleCatchSoundPlay('throw')) soundEffect('throw');
+      at(380, () => battleCatchSoundPlay('pop') || soundEffect('pop'));
       /* SND-6: a Billie cries as it comes out (as in Gen 1), after the pop */
       at(520, () => battleCry(ev, an.si));
       break;
@@ -731,17 +754,28 @@ function battleSoundEffect(an, r, ev) {
       /* VFX-14: the engine sends a drop as up: false (never n or down), so every drop played the rising sound */
       soundEffect('stat', { down: an.up === false || an.n < 0 || an.down });
       break;
-    case 'move':
+    /* VFX-19: a burn, recoil, a spread move's second target, the delayed hit; the recall's beam */
+    case 'hurt':
+      battleHurtSoundPlay(an, r);
+      break;
+    case 'recall':
+      battleRecallSoundPlay();
+      break;
+    case 'move': {
+      /* VFX-19: the move's family and type layer (music.json battle): the cast now, the hit at its hit; the tier's
+         sound below stays */
+      const own = battleMoveSoundPlay(an, r);
       if (an.miss) {
         at(r.hit || 300, () => soundEffect('miss'));
         break;
       }
       if (an.self || an.protect) {
-        soundEffect('status');
+        if (!own) soundEffect('status');
         break;
       }
       at(r.hit || 300, () => soundEffect(an.crit ? 'crit' : an.te > 1 ? 'super' : an.te < 1 ? 'weak' : 'hit'));
       break;
+    }
     case 'caught':
       jingle(JINGLES.caught);
       break;

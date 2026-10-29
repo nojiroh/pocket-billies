@@ -11,28 +11,36 @@
 import { expose } from './test-globals.js';
 import {
   BATTLE_ANIMS,
+  BOSSES,
+  FACTIONS,
   MOVES,
   TYPE_GLOW,
   activeBattle,
   battleMoodPlay,
+  battlePropsReady,
   battleScarAt,
   hudHit,
   hudPop,
   provide,
   reducedMotion,
 } from './hooks.js';
-import { smearDialsSet } from './logic/smear.js';
+import { smearDialsSet, smearHistory } from './logic/smear.js';
 import {
+  battleAnimFor,
   battleAnimLogLine,
   battleAnimTimeline,
+  battleEventProps,
   battlePartOffset,
+  battleSceneProps,
   flashGate,
   hitLook,
   koAhead,
 } from './logic/battle-anims.js';
+import { battleFactionOf } from './logic/bureau-battle.js';
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
 expose({
+  BURST_STEPS: [() => BURST_STEPS],
   GLOWING_MOTIONS: [() => GLOWING_MOTIONS],
   animAt: [() => animAt, v => (animAt = v)],
   animBureau: [() => animBureau, v => (animBureau = v)],
@@ -40,16 +48,22 @@ expose({
   animFamilyStep: [() => animFamilyStep, v => (animFamilyStep = v)],
   animKo: [() => animKo, v => (animKo = v)],
   animKoAhead: [() => animKoAhead, v => (animKoAhead = v)],
+  animLinePoint: [() => animLinePoint, v => (animLinePoint = v)],
   animLog: [() => animLog, v => (animLog = v)],
   animPast: [() => animPast, v => (animPast = v)],
   animPoint: [() => animPoint, v => (animPoint = v)],
   animScar: [() => animScar, v => (animScar = v)],
+  animSceneStep: [() => animSceneStep, v => (animSceneStep = v)],
   animStep: [() => animStep, v => (animStep = v)],
   animStepInfo: [() => animStepInfo, v => (animStepInfo = v)],
   animStrip: [() => animStrip, v => (animStrip = v)],
   battleAnim: [() => battleAnim],
   battleAnimPlay: [() => battleAnimPlay, v => ((battleAnimPlay = v), provide({ battleAnimPlay }))],
   battleAnimSkip: [() => battleAnimSkip, v => (battleAnimSkip = v)],
+  battleBossPhaseScene: [
+    () => battleBossPhaseScene,
+    v => ((battleBossPhaseScene = v), provide({ battleBossPhaseScene })),
+  ],
   battleFlashGate: [() => battleFlashGate, v => ((battleFlashGate = v), provide({ battleFlashGate }))],
   battleStageAt: [() => battleStageAt, v => (battleStageAt = v)],
   brightColor: [() => brightColor],
@@ -58,7 +72,7 @@ expose({
   sideFocus: [() => sideFocus],
 });
 /* eslint-enable no-func-assign */
-provide({ battleAnimPlay, battleFlashGate });
+provide({ battleAnimPlay, battleBossPhaseScene, battleFlashGate });
 /* to-module: end */
 /** the runner's state: the full-screen flashes shown in the last second (flashGate), the move playing (its id, its
  * timeline, the quality, the flashes held back) */
@@ -96,6 +110,8 @@ function kitLight(c, ramp) {
   return !L || L === 'type' ? TYPE_GLOW[c.type] || BATTLE_ANIMS.colors.white : L;
 }
 const sideFocus = i => (battleStageKit.actorTeam(i) === 0 ? 'me' : 'foe');
+/** VFX-20: the steps whose repeats each make particles (held to the burst budget) */
+const BURST_STEPS = { dust: 1, lob: 1, fling: 1, converge: 1, impact: 1, spray: 1, rain: 1, orbit: 1, rise: 1 };
 /** one step, on the stage now. c: the move's (its event, sides, type, the places it started from) */
 function animStep(S, c) {
   /* VFX-11: a spread move's step marked `each` plays on every foe it hits */
@@ -105,6 +121,9 @@ function animStep(S, c) {
   }
   const K = battleStageKit,
     i = S.on ? c.idx[S.on] : c.si;
+  /* VFX-20: a repeated step that makes particles stops at the burst budget (24 / 16 / 10 / 6 by quality), so a move's
+     effects step down with quality as the Budgets ask (before, only spray checked it) */
+  if (BURST_STEPS[S.do] && (S.i || 0) >= K.burstMax()) return;
   switch (S.do) {
     case 'focus':
       battleStageFocus(S.on === 'wide' ? 'wide' : sideFocus(i));
@@ -267,7 +286,8 @@ function animStep(S, c) {
       K.tween(s, 'ox', s.ox + c.dir * (2 + 4 * k), 30);
       K.tween(s, 'ox', 0, 90, 'out', 30);
       if (!reducedMotion) battleStage.shk = Math.max(battleStage.shk, 1 + 2 * k);
-      s.white = Math.max(s.white || 0, 0.25 + 0.25 * k);
+      /* VFX-20: at most half strength with Flashes off (rule 9), as hitFx's own sprite flash */
+      s.white = Math.max(s.white || 0, (0.25 + 0.25 * k) * (K.flashesOff() ? 0.5 : 1));
       K.tween(s, 'white', 0, BATTLE_ANIMS.tiers ? BATTLE_ANIMS.tiers.cell : 42, 'in');
       return;
     }
@@ -310,6 +330,11 @@ function animPoint(c, on, S) {
 /** the strip a step's i-th particle shows, its ramp (Dragon's two-tone: every other one the kit's second) and the icon
  * the 2D stage draws instead */
 function animStrip(S, c, i) {
+  /* VFX-17: an icons.png prop (a scene's mic, rocket, burger...) instead of a strip */
+  if (S.icon && S.spr === undefined) {
+    const I = [S.icon].flat();
+    return { anim: null, ramp: S.ramp || c.type, spr: I[i % I.length] };
+  }
   const L = [S.spr].flat().filter(Boolean),
     id = L.length ? L[i % L.length] : null,
     icons = BATTLE_ANIMS.iconSprites || {},
@@ -334,7 +359,6 @@ function animFamilyStep(S, c, i) {
       return;
     }
     case 'spray': {
-      if (S.i >= K.burstMax()) return;
       const P = animPoint(c, S.on, S),
         To = S.toward ? animPoint(c, S.toward) : null;
       for (let j = 0; j < (S.n2 || 1); j++) {
@@ -541,6 +565,99 @@ function animFamilyStep(S, c, i) {
       });
       return;
     }
+    default:
+      animSceneStep(S, c);
+  }
+}
+/* ===== VFX-17: a signature scene's own steps (battleAnims.json scenes) =====
+   prop: a low-poly model summoned on a path (battle-3d.js draws battleStage.props, with smears); stamp: a drawn sound
+   word stepped in; cut: the camera cuts to a Billie, with the impact frame when Flashes and the limiter allow it */
+/** a point on the line from the attacker to the target: [x, z] moved `along` metres toward the target and `side`
+ * metres across it */
+function animLinePoint(c, P, along, side) {
+  const A = c.P.attacker,
+    T = c.P.target,
+    dx = T.x - A.x,
+    dz = T.z - A.z,
+    L = Math.hypot(dx, dz) || 1;
+  return [P.x + (dx / L) * along - (dz / L) * side, P.z + (dz / L) * along + (dx / L) * side];
+}
+function animSceneStep(S, c) {
+  const K = battleStageKit;
+  switch (S.do) {
+    case 'prop': {
+      if (!battleStage.props) battleStage.props = [];
+      const to = c.P[S.to || 'target'] || c.P.target,
+        A = c.P.attacker,
+        T = c.P.target,
+        [bx, bz] = animLinePoint(c, to, (S.dx || 0) + (S.through || 0), S.dz || 0),
+        by = (S.y || 0) + (S.stack || 0) * (S.i || 0),
+        b = [bx, by, bz],
+        h = S.h ?? 3,
+        from = S.from || 'above';
+      let a = [bx, by + h, bz],
+        kind = S.path || 'stamp';
+      if (from === 'below') {
+        a = [bx, by - h, bz];
+        kind = S.path || 'straight';
+      } else if (from === 'side' || from === 'behind') {
+        const [x, z] = animLinePoint(c, A, -(S.off ?? (from === 'side' ? 4 : 1.2)), S.dz || 0);
+        a = [x, by, z];
+        kind = S.path || 'straight';
+      } else if (from !== 'above') {
+        const F = c.P[from] || A,
+          [x, z] = animLinePoint(c, F, 0, S.dz || 0);
+        a = [x, S.fromY ?? F.y, z];
+        kind = S.path || 'arc';
+      }
+      battleStage.props.push({
+        prop: S.prop,
+        t0: battleStage.t,
+        ms: S.ms || 300,
+        /* until: the stage ms (from the move's start) it holds to, whichever repeat it is */
+        hold: S.until !== undefined ? Math.max(0, S.until - (S.at || 0) - (S.ms || 300)) : S.hold || 0,
+        out: S.out ?? 250,
+        ease: S.ease,
+        path: { kind, a, b, h: kind === 'stamp' ? h : S.arc, amp: S.amp, turns: S.turns },
+        /* its heading along the attack (the model's +x toward the target), turned by yaw */
+        yaw: Math.atan2(T.z - A.z, T.x - A.x) + (S.yaw || 0),
+        turn: S.turn || 0,
+        tumble: S.tumble || 0,
+        ax: S.ax === 1 ? [1, 0, 0] : [0, 0, 1],
+        mid: S.mid ?? 0.5,
+        s: S.s || 1,
+        trail: smearHistory(),
+      });
+      return;
+    }
+    case 'stamp': {
+      /* not against a Bureau bot: the style track's SY-5 stamps its knockout (and a win against the Bureau), and two
+         stamps must not land at once */
+      if (c.foes.some(f => animBureau(f))) return;
+      const P = c.P[S.on || 'attacker'] || c.P.attacker;
+      K.addParticle({
+        x: P.x,
+        y: P.y + (S.dy ?? 0.9),
+        z: P.z,
+        anim: [S.spr].flat()[0],
+        ramp: S.ramp || c.type,
+        /* the 2D stage's stand-in */
+        spr: 'excl',
+        k: S.k || 2,
+        life: S.life || 800,
+        stampIn: 1,
+        fade: false,
+        glow: 1,
+      });
+      return;
+    }
+    case 'cut': {
+      const ti = S.on ? c.idx[S.on] : c.ti;
+      battleStageFocus(sideFocus(ti), true);
+      camAt(ti, S.amt ?? 0.5, S.z ?? 0.18, (S.roll ?? 0.03) * (K.actorTeam(ti) === 1 ? 1 : -1), 1);
+      K.impactCut(c.P[S.on || 'target'] || c.P.target, ti, BATTLE_ANIMS.colors.white);
+      return;
+    }
   }
 }
 /** what a skipped step still does: the hit's numbers */
@@ -566,7 +683,8 @@ function animKo(c, i) {
 function animLog(C) {
   if (C.logged) return;
   C.logged = true;
-  if (typeof debugLog !== 'undefined') debugLog.add('anim', battleAnimLogLine(C.mid, C.T, C.q, C.held));
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('anim', battleAnimLogLine(C.mid, C.T, C.q, C.held, { ko: C.ko, motion: C.motion }));
 }
 
 /** VFX-11: whether Billie i is a Bureau bot (its moves play in the Bureau's kit; as battle-stage-look.js's mood) */
@@ -574,21 +692,58 @@ function animBureau(i) {
   const s = battleStage.s[i];
   return !!(s && typeof s.sp === 'string' && s.sp.startsWith('bot:'));
 }
+/** VFX-18b: a Bureau boss's phase with a shield (battle-stage.js alphaPhase; bosses.json phases): events.bossPhase's
+ * prop steps on the boss (the "attacker" of VFX-17's prop step; the target the side it faces), inside the phase's own
+ * time. None under Reduced motion, on the 2D stage, with 3D props off or before its models have loaded, for a phase
+ * without a shield, or for a boss of another faction (an Alpha Billie's phase keeps its own look) */
+function battleBossPhaseScene(an) {
+  const E = BATTLE_ANIMS && BATTLE_ANIMS.events && BATTLE_ANIMS.events.bossPhase,
+    si = an.si,
+    s = battleStage.s[si],
+    /* the boss's faction (bosses.json faction, as SY-5 reads it), not its bot look: another faction's boss gets none */
+    f = s ? battleFactionOf(FACTIONS, BOSSES, { sp: s.sp, boss: true }, activeBattle && activeBattle.T) : null;
+  if (!E || reducedMotion || !battleStage.gl || an.shield === false || !f || f.faction !== E.faction) return;
+  if (!battlePropsReady(battleEventProps(BATTLE_ANIMS))) return;
+  const K = battleStageKit,
+    ti = battleStage.s.findIndex((s, k) => s && s.show && K.actorTeam(k) !== K.actorTeam(si)),
+    A = actorCenter(si),
+    T = ti >= 0 ? actorCenter(ti) : { ...A, x: A.x + (K.actorTeam(si) === 0 ? 4 : -4) },
+    c = { si, ti, P: { attacker: A, target: T }, idx: { attacker: si, target: ti }, foes: [ti] };
+  for (const S of E.steps) animAt(S.at || 0, () => animSceneStep(S, c), null);
+}
 /** VFX-8: plays a move event (the engine's `an`, only read) on the stage; {dur, hit} for battle.js */
 function battleAnimPlay(an, ev) {
   const M = MOVES[an.mid],
     si = an.si,
     ti = an.ti ?? 1 - si,
     q = battleStage.q.lvl,
+    /* VFX-17: a scene's models drawn now (else it plays its family), and whether it played before in this battle */
+    pick = M ? battleAnimFor(an, M, BATTLE_ANIMS) : null,
+    scene = pick && pick.kind === 'scene' ? pick.id : null,
+    seen = battleStage.scenesSeen || (battleStage.scenesSeen = new Set()),
     T = M
       ? battleAnimTimeline(
           an,
           M,
-          { gl: !!battleStage.gl, reduced: !!reducedMotion, q, speed: battleStage.speed, bureau: animBureau(si) },
+          {
+            gl: !!battleStage.gl,
+            reduced: !!reducedMotion,
+            q,
+            speed: battleStage.speed,
+            bureau: animBureau(si),
+            props: !!scene && !!battleStage.gl && battlePropsReady(battleSceneProps(BATTLE_ANIMS, scene)),
+            seen: !!scene && seen.has(scene),
+          },
           BATTLE_ANIMS
         )
       : null;
   if (!T) return { dur: 0, hit: 999 };
+  if (T.kind === 'scene') seen.add(T.id);
+  /* VFX-17: the last move's summoned models go; this one's go when its time is up or a skip ends it */
+  battleStage.props = [];
+  const dropProps = () => {
+    battleStage.props = [];
+  };
   const ss = battleStageKit.actorTeam(si),
     A = actorCenter(si),
     Tg = actorCenter(ti),
@@ -629,6 +784,9 @@ function battleAnimPlay(an, ev) {
     },
     C = (battleAnim.cur = { mid: an.mid, T, q, held: [], logged: false });
   c.look = hitLook(c.hitAn, animKo(c, ti), battleStageKit.hitWeight(ti, an), BATTLE_ANIMS);
+  /* VFX-20: the debug log's line names a KO and the motion setting too */
+  C.ko = c.look && c.look.ko;
+  C.motion = reducedMotion ? 'reduced' : document.documentElement.dataset.motion === 'calm' ? 'calm' : 'full';
   /* VFX-9: the effects' random numbers for this event: the move, its sides and the event's place in the battle */
   battleStageKit.fxSeed(
     `${an.mid}|${si}|${ti}|${typeof activeBattle !== 'undefined' && activeBattle ? activeBattle.events.length : 0}`
@@ -645,6 +803,7 @@ function battleAnimPlay(an, ev) {
     () => animLog(C),
     () => animLog(C)
   );
+  animAt(T.dur, dropProps, dropProps);
   return { dur: T.dur, hit: T.hit };
 }
 

@@ -84,7 +84,7 @@ export function newSave() {
     saveVersion: SAVE_VERSION,
     gameVersion: PB_VERSION,
     avatar: null,
-    preferences: { theme: 'system', motion: 'system', fps: 60, effects: 'full' },
+    preferences: { theme: 'system', motion: 'system', fps: 60, effects: 'full', textSpeed: 'normal' },
     started: false,
     gender: null,
     starter: null,

@@ -109,6 +109,7 @@ import {
   teamNeedsHp,
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
+import { plainOf } from './logic/line-markup.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
 import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML, uiIconURL } from './art.js';
 import { portraitHTML, portraitSize, portraitURL } from './person-art.js';
@@ -462,6 +463,8 @@ export function stopTimers() {
   clearInterval(uiState.typeT);
 }
 function typeText(t) {
+  /* DL-1: plain text until the battle box draws markup (DL-8) */
+  t = plainOf(t);
   const el = $('#msgT');
   clearInterval(uiState.typeT);
   if (!el) return 0;

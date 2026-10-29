@@ -29,13 +29,13 @@ expose({
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
   DEX_ORDER: [() => DEX_ORDER],
+  EMOTES: [() => EMOTES],
   EVENTS: [() => EVENTS],
   FACTIONS: [() => FACTIONS],
   FESTIVALS: [() => FESTIVALS],
   FIELD_MOVES: [() => FIELD_MOVES],
   GENES: [() => GENES],
   GHOST_KEEPS: [() => GHOST_KEEPS],
-  HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
   LINES: [() => LINES],
@@ -75,6 +75,7 @@ expose({
   STAT_IDS: [() => STAT_IDS],
   STAT_NAMES: [() => STAT_NAMES],
   STORY_DATA: [() => STORY_DATA],
+  TALK_SKINS: [() => TALK_SKINS],
   TRAINERS: [() => TRAINERS],
   TYPES: [() => TYPES],
   TYPE_COLORS: [() => TYPE_COLORS],
@@ -164,11 +165,6 @@ export const TYPE_RESISTED_BY = Object.fromEntries(
 );
 export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
 provide({ PASSIVE }); /* to-module */
-export const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
-  gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']])
-);
-provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
-HIT_EFFECTS_BY_TYPE.None = gameData.untyped.fx || ['pow', 'star'];
 export const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
 /** RF-3: a passive's name and text as the player reads them (types.json passiveName, passiveText), by type */
@@ -415,6 +411,10 @@ export const SOUNDSCAPE = gameData.soundscape || { beds: {} };
 /* roguelite track RL-R2: the field moves that open a run's side areas (fieldMoves.json; logic/run-side.js) */
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
 provide({ FIELD_MOVES }); /* to-module */
+/* dialogue track DL-3: each character's own speech bubble (talkSkins.json; logic/talk-skins.js, talk.js) */
+export const TALK_SKINS = gameData.talkSkins || { default: 'folk', skins: {}, speakers: {}, classes: {} };
+/* dialogue track DL-5: the emotes that pop beside a talking head (emotes.json; talk.js) */
+export const EMOTES = gameData.emotes || { size: 12, outline: '', colors: {}, auto: {}, emotes: {} };
 /* splicing track SP-2: what spliced parts do (genes.json; logic/genes.js) */
 export const GENES = /** @type {import('../types/game-data').Genes} */ (
   gameData.genes || {
@@ -463,10 +463,12 @@ export const SHOWCASE = /** @type {import('../types/game-data').ShowcaseData} */
 export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
   (gameData.factions && gameData.factions.factions) || {}
 );
+provide({ FACTIONS }); /* to-module */
 /* roguelite track RL-14b: a run's bosses that are not a leader's Billie: the Voltron (bosses.json; battle-engine.js makeBossRobot) */
 export const BOSSES = /** @type {Record<string, import('../types/game-data').BossDef>} */ (
   (gameData.bosses && gameData.bosses.bosses) || {}
 );
+provide({ BOSSES }); /* to-module */
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
 /* residents track RS-1: the people a run can invite to Copperleaf (residents.json; logic/residents.js) */

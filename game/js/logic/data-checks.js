@@ -73,6 +73,7 @@ import {
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
+import { MARKUP_EMOTES } from './line-markup.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 import { svgProblem } from './svg-pixels.js';
 /* eslint-disable no-func-assign */
@@ -122,6 +123,8 @@ expose({
   dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
   // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataEmotes: [() => dataEmotes, v => (dataEmotes = v)],
   // @ts-expect-error -- replaced on purpose
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
@@ -186,6 +189,8 @@ expose({
   dataSpeciesKind: [() => dataSpeciesKind, v => (dataSpeciesKind = v)],
   // @ts-expect-error -- replaced on purpose
   dataSquareRules: [() => dataSquareRules, v => (dataSquareRules = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataTalkSkins: [() => dataTalkSkins, v => (dataTalkSkins = v)],
   // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
   // @ts-expect-error -- replaced on purpose
@@ -1486,6 +1491,23 @@ export function dataBattleAnims(D, valid = () => true) {
       for (const V of [A.families[M.anim], A.families[M.anim].short])
         if (V && V.dur > /** @type {Record<string, number>} */ (A.maxMs)[M.c])
           problem(`${id}.anim: "${M.anim}" plays ${V.dur} ms, over ${M.c}'s ${A.maxMs[M.c]} (maxMs)`, 'moves.json');
+  /* VFX-17: a scene plays at most its category's maxMs + extraMs (none longer), its short version (a repeat, Faster)
+     within maxMs */
+  for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {}))) {
+    const S = M && typeof M.anim === 'string' ? A.scenes[M.anim] : null,
+      cap = M ? /** @type {Record<string, number>} */ (A.maxMs)[M.c] : undefined;
+    if (!S || cap === undefined) continue;
+    if (S.dur > cap + A.extraMs)
+      problem(`${id}.anim: the scene "${M.anim}" plays ${S.dur} ms, over ${M.c}'s ${cap} + ${A.extraMs}`, 'moves.json');
+    if (S.short && S.short.dur > cap)
+      problem(`${id}.anim: the scene "${M.anim}"'s short version plays ${S.short.dur} ms, over ${cap}`, 'moves.json');
+  }
+  /* VFX-17: a scene falls back to a family; its prop steps name a model */
+  for (const [id, S] of Object.entries(/** @type {Record<string, any>} */ (A.scenes))) {
+    if (!A.families[S.family]) problem(`scenes.${id}.family: no family "${S.family}"`);
+    for (const st of [...S.steps, ...(S.short ? S.short.steps : [])])
+      if (st.do === 'prop' && typeof st.prop !== 'string') problem(`scenes.${id}: a prop step names no model (prop)`);
+  }
   /* VFX-11: a kit for every type and None; its strips are sprites, its ramps ramps, its light within the budget */
   if (A.types) {
     const K = /** @type {Record<string, any>} */ (A.types);
@@ -1495,6 +1517,9 @@ export function dataBattleAnims(D, valid = () => true) {
       if (id !== 'None' && id !== 'Bureau' && types.size && !types.has(id)) problem(`types.${id}: no type "${id}"`);
       for (const sp of [k.shot, k.impact, k.small, ...(k.bits || [])])
         if (sp !== undefined && A.sprites && !A.sprites[sp]) problem(`types.${id}: no sprite "${sp}"`);
+      /* VFX-20: a burst's particles (were types.json fx) */
+      if (k.burstSprites !== undefined && (!Array.isArray(k.burstSprites) || !k.burstSprites.length))
+        problem(`types.${id}.burstSprites: a list of one icon or more`);
       for (const r of [k.ramp, k.ramp2]) if (r !== undefined && !A.ramps[r]) problem(`types.${id}: no ramp "${r}"`);
       steps(`types.${id}.cast`, k.cast || []);
       steps(`types.${id}.hit`, k.hit || []);
@@ -2302,6 +2327,58 @@ export function dataBanter(D, valid = () => true) {
   for (const id of Object.keys(R))
     if (!Object.values(B).some((/** @type {any} */ b) => b.who === id && !b.when))
       problem(`no line for the resident "${id}" without a when: they could have nothing to say`);
+  return out;
+}
+
+// DL-3: talkSkins.json: the schema; the default and every skin a speaker or a class names are skins; a speaker is
+// someone (people/*.json, story.json speakers, me) and a class is a run trainer's class (events.json classes)
+/** DL-3: talkSkins.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataTalkSkins(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['talkSkins.json', what]),
+    T = D.talkSkins;
+  if (!T) return [['talkSkins.json', 'missing']];
+  if (!valid('talkSkins.schema.json', T, 'talkSkins.json')) return out;
+  const skins = T.skins || {},
+    people = new Set(['me', ...Object.keys(D.people || {}), ...Object.values((D.story && D.story.speakers) || {})]),
+    classes = (D.events && D.events.classes) || {};
+  if (!skins[T.default]) problem(`default: no skin "${T.default}"`);
+  for (const [who, k] of Object.entries(/** @type {Record<string, string>} */ (T.speakers || {}))) {
+    if (!skins[k]) problem(`speakers.${who}: no skin "${k}"`);
+    if (!people.has(who)) problem(`speakers.${who}: nobody of that id (people/*.json, story.json speakers)`);
+  }
+  for (const [c, k] of Object.entries(/** @type {Record<string, string>} */ (T.classes || {}))) {
+    if (!skins[k]) problem(`classes.${c}: no skin "${k}"`);
+    if (!classes[c]) problem(`classes.${c}: no trainer class of that id (events.json classes)`);
+  }
+  return out;
+}
+
+// DL-5: emotes.json: the schema; every emote a line can ask for ([emote=x], logic/line-markup.js MARKUP_EMOTES) is
+// drawn; each picture is size × size and uses only its colours; a face's own emote is one of them
+/** DL-5: emotes.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataEmotes(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['emotes.json', what]),
+    E = D.emotes;
+  if (!E) return [['emotes.json', 'missing']];
+  if (!valid('emotes.schema.json', E, 'emotes.json')) return out;
+  const n = E.size,
+    colors = E.colors || {},
+    pics = E.emotes || {};
+  for (const k of MARKUP_EMOTES) if (!pics[k]) problem(`emotes: no picture for "${k}" ([emote=${k}] asks for it)`);
+  for (const [k, rows] of Object.entries(/** @type {Record<string, string[]>} */ (pics))) {
+    if (!MARKUP_EMOTES.includes(k))
+      problem(`emotes.${k}: no line can ask for it (MARKUP_EMOTES in logic/line-markup.js)`);
+    if (rows.length !== n || rows.some(r => r.length !== n)) problem(`emotes.${k}: not ${n} × ${n}`);
+    const bad = [...new Set(rows.join('').replace(/\./g, ''))].filter(c => !colors[c]);
+    if (bad.length) problem(`emotes.${k}: no colour for ${bad.map(c => `"${c}"`).join(', ')}`);
+    if (!/[^.]/.test(rows.join(''))) problem(`emotes.${k}: nothing drawn`);
+  }
+  for (const [face, k] of Object.entries(/** @type {Record<string, string>} */ (E.auto || {})))
+    if (!pics[k]) problem(`auto.${face}: no emote "${k}"`);
   return out;
 }
 

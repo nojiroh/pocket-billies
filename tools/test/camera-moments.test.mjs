@@ -3,7 +3,7 @@
 // nothing new right after a sharp turn, and reduced motion.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { MOMENT_DIALS as D, momentNew, momentStep } from '../../game/js/logic/camera-moments.js';
+import { MOMENT_DIALS as D, momentNew, momentStep, talkLiftShare } from '../../game/js/logic/camera-moments.js';
 import { blendGoals, followNew } from '../../game/js/logic/camera-follow.js';
 
 const near = (a, b, e = 1e-9) => assert.ok(Math.abs(a - b) < e, `${a} ≈ ${b}`);
@@ -126,4 +126,12 @@ test("WM-7: a leader's arena frames the ring, eased out, and beats the talk its 
     'talk'
   );
   assert.equal(momentStep(momentNew(), input({ talk: [3, 1] }), D, 1 / 60).id, 'talk');
+});
+
+test('DL-4: talking over a tall stack of bubbles, the two-shot moves up into the space left above it', () => {
+  assert.equal(talkLiftShare(0), 0, 'no bubbles: no lift');
+  assert.ok(Math.abs(talkLiftShare(0.3) - 0.1) < 1e-9, 'a low stack: a little');
+  assert.equal(talkLiftShare(0.1), 0, 'covered no more than the header: none');
+  assert.ok(Math.abs(talkLiftShare(0.62) - 0.26) < 1e-9, 'three bubbles over a tall bar: up a quarter of the screen');
+  assert.ok(talkLiftShare(5) <= 0.4, 'never more than the screen allows');
 });

@@ -25,6 +25,7 @@ validation/tall-ground/
 validation/behind/
 validation/look-blur/
 validation/look-battle-anims*/
+validation/flash-audit/
 validation/build-battle-anims/
 validation/look-windows/
 validation/look-water*/
@@ -70,3 +71,4 @@ validation/st1/
 validation/st3/
 validation/terrain-look/
 validation/load/
+validation/look-talk*/

@@ -12,6 +12,7 @@ const { cutsceneStep, cutsceneNames, cutsceneOffset, cutsceneShotAt, cutsceneCle
 const { storyFindings } = modules['story-checks'];
 /* 2026-10-23, the owner's new professor: the opening's words are the Chosen's and his assistant Kappi's, as approved */
 const SAID = JSON.parse(readFileSync(new URL('./opening-said.json', import.meta.url), 'utf8')).said;
+const { plainOf } = modules['line-markup'];
 const OPENING = GAME_DATA.cutscenes.opening;
 const SPEAKERS = GAME_DATA.story.speakers;
 const OWN = ['dressing-room', 'staged-fight', 'pick-starter'];
@@ -21,7 +22,8 @@ async function play(lines, slots) {
   const said = [];
   const stage = new Proxy(
     {
-      say: l => said.push({ who: SPEAKERS[l.who] || l.who, expr: l.expr, text: l.text }),
+      // DL-1: the plain text, so markup added later (DL-7) doesn't change the approved lines
+      say: l => said.push({ who: SPEAKERS[l.who] || l.who, expr: l.expr, text: plainOf(l.text) }),
       choose: () => 0,
     },
     { get: (t, k) => t[k] || (args => OWN.includes(k) && said.push({ cmd: k })) }

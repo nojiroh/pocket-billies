@@ -83,6 +83,7 @@ import {
 } from './logic/encounters.js';
 import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { fxSrcName, startTrainer, startWild } from './logic/battle-engine.js';
+import { plainOf } from './logic/line-markup.js';
 import { parseScript } from './logic/script-parse.js';
 import { runScript, storyHolds } from './logic/script.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -140,7 +141,7 @@ const encWait = async (/** @type {() => boolean} */ f) => {
  * marked, but readable) @param {{ who: string | null, text: string }} l @param {string[]} [redact]
  * @param {boolean} [lifted] */
 const encLineHTML = (l, redact, lifted) =>
-  `<p class="ev-line">${l.who ? `<b>${escapeHtml(l.who)}</b> ` : ''}${redactSplit(l.text, redact)
+  `<p class="ev-line">${l.who ? `<b>${escapeHtml(l.who)}</b> ` : ''}${redactSplit(plainOf(l.text), redact)
     .map(p => (p.r ? `<span class="redact${lifted ? ' lifted' : ''}">${escapeHtml(p.t)}</span>` : escapeHtml(p.t)))
     .join('')}</p>`;
 /** SY-4: the case file the event playing now is (null: a plain sheet), how many of its lines have been typed in, and

@@ -202,7 +202,8 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   after it: no move holds a frame for a shader; what holds frames in software is the GPU's side of drawing (main
   thread idle) and the Map tab's first draw ("drawing the map" 1.8 s in software). **Left for the phone's hitch list
   to confirm** (each a measured main-thread cost here, not yet proven on the phone): the walk grid (`navGrid`, 100-280
-  ms of plain JavaScript where a place opens; on a seam it is prepared ahead), the world map's prewarm in a worker (the
+  ms of plain JavaScript where a place opens; on a seam it was *not* prepared ahead, only kept for views you left:
+  built ahead since the crossing hitch fix, 2026-10-28, below), the world map's prewarm in a worker (the
   longest stage of a take-off, about 7 s in software, sliced 12 ms a frame), model meshes in a worker (a first mesh of
   a frame 20-70 ms in software), `createImageBitmap` and an upload queue, the next place's warm-up.
   **LD-5, two of its items, done 2026-10-27** in the cutscenes session (`ccr-517fcc1e-p1asai`, which merges this
@@ -224,6 +225,12 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   - Also fixed: `debugLog.hook` waits for `debug-log-names.js`. LD-0's early call could come first on a quick boot and
     log "no function render to wrap", which failed check-fast steps under two browsers.
   - Still left: model meshes in a worker, `createImageBitmap` and the upload queue, the next place's warm-up.
+  **The crossing hitch, fixed 2026-10-28** on `claude/new-session-bcxme1` (the owner: "a hiccup moving from a route to
+  another route"; their PC log: one frame of 3.2 s, one of 0.9 s, a 4.7 s hold, a walking grid in one frame at every
+  seam). The day's water by the weather remakes only the views that show a changed place, the one on screen in the
+  background, swapped in once ready (`seamlessDropViewsOf`, `seamlessRemakeTick`); the next view's walking grid is
+  built ahead a slice a frame (`navGridSteps`, `navPrepare`, `navPrepWork`), and a view counts as ready only with it.
+  check-fast's "A seam on a day the weather changes the water in view" fails on the code before.
 - **LD-6 the phone check.** The owner's phone runs (cold start, a run's start, a walk across seams, a battle, the Map
   tab); the hitch list empty or explained; the settings on by default; the load check a gate in CI; the quick check's
   baseline updated; HANDOFF; tag `load-done`.

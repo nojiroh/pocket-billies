@@ -61,6 +61,8 @@ import {
   dataBoons,
   dataEvents,
   dataBanter,
+  dataTalkSkins,
+  dataEmotes,
   dataRelations,
   dataShowcase,
   dataRewards,
@@ -345,6 +347,8 @@ for (const family of [
   dataBoons,
   dataEvents,
   dataBanter,
+  dataTalkSkins,
+  dataEmotes,
   dataRelations,
   dataShowcase,
   dataRewards,
@@ -362,6 +366,7 @@ if (D.music && check('music.schema.json', D.music, 'music.json')) {
     nodeTypes: D.nodeTypes || {},
     biomes: D.biomes || {},
     locations: D.locations || [],
+    battleAnims: D.battleAnims,
   }))
     if (F.lvl === 'error') problem(F.place ? 'locations.json' : 'music.json', F.msg);
   // SND-3: a species' own cry names a base that exists
