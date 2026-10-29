@@ -317,6 +317,23 @@ same phase:
   in bench-path.js's NEEDS (`tools/test/bench-path.test.mjs` fails without one); a dial nothing on the path shows is
   listed with its reason. The quick check's "Test scenes: walking rules" step checks every segment can be walked
   (planned from the data, not run). The report's rules are unit tests in `tools/test/graphics-test.test.mjs`.
+- **(TD-3)** `tools/check-perf.py` walks the same benchmark path headless, with blocking gates. It does not run the
+  Graphics test: it uses `bench-walk.js` and `bench-path.js` directly. On an Android phone page (390 x 844, so the
+  game's phone limits hold), with automatic quality off and the resolution at 0.5 (the same counts as at 1, at a
+  third of the time), it puts the player at every point of each segment's route and halfway along each leg over 8 m,
+  lets the place settle and counts 4 frames: software drawing runs at about one frame a second, so a walk in real
+  time would take hours (`--walk` also walks each route, as notes). Counts are the gates, milliseconds only notes.
+  Against `validation/perf-baseline.json` (committed): a segment's draws or instances a frame (mean or most) or its
+  graphics memory more than 10% up (and at least 5 draws, 50 instances, 2 MB); a program compiled after a place
+  settled that the baseline doesn't list; a segment over the 400-draw phone budget that the baseline doesn't list
+  as over it already (most are: the list prints every run, so a segment that gets back under it can be taken off);
+  a renderer that isn't SwiftShader. The memory matrix (Copperleaf as shipped at DPR 1-4 on a phone and a desktop page;
+  in test_graphics at DPR 4, Balanced and Beautiful on both and each engine preset on the phone page, since the game
+  draws DPR 2-4 at the same canvas size; the resolution as shipped) fails at more than 300 MB on the phone page. `--baseline` rewrites the baseline on purpose (say why in HANDOFF); `--plant=draws|memory|compile`
+  adds a regression to prove the check goes red. `--routes` and `--island` are the old route-perf.py and
+  island-perf.py. Results: `validation/perf/results.json`. CI runs it nightly and by hand (Actions → Check → Run
+  workflow: "Only the perf check", "Plant a regression"); it is not a pull-request gate. `--selftest` now also
+  keeps each in-game test's whole result in `validation/quick/in-game-full.json` and `in-game-diagnostics.json`.
 
 ## What each phase does
 
