@@ -71,7 +71,15 @@ Plan Mode, the plan below written first and carried out. Details and the plan's 
   test failed only while a smoke run loaded the machine and passed alone (main's known flake). **The run sim**:
   `--runs=50` stops in scene mode with "runSceneParams: node 8 has no exit north3", main's (PK-5..PK-8); `--balance`
   finishes its 50 runs.
-  The in-game full test (`--selftest`) and the full quick check: results below once run.
+  **The in-game full test** (`--selftest`) on 49d3fde5: two problems, "A run's road: arrived but the view is still
+  w:run_0_2210*" and "A room that opens in place: the town's walking grid changed"; ab776fc1 (PK-8, before any PK-9
+  change) fails the same two in the same run, so neither is PK-9's (the second is main's, PK-7's entry). **Full quick
+  check** on c5055fda (main merged): 42 steps, 37 passed in 1725 s; room light and Battle music (the drums on a throw)
+  are main's known reds; RL-8 (that run: "crossed into Thicket Route but its view never showed"), RT-2's pair and
+  Granny Juniper were run again alone with `--steps=`: RT-2 and Granny Juniper passed, RL-8 crossed the seam and
+  stopped at "the town's shop has no Perk", main's known red (PK-5..PK-8). **CI** on c5055fda: lint and rules green;
+  smoke red on "Camera follow: the page stopped drawing" (main's known red; commented on #323), and its second run on
+  the same commit passed every step it reached before the 30-minute job timeout (also main's).
 - Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
   - **The 20 names and texts** (drafts, 5.9's names): Glittering Water "Wins pay 10% more Moneys.", Lucky Ripples
     "Billies are 5% easier to catch.", Camera-Ready and Tailwind "Your Billies take the field with their Speed up.",
