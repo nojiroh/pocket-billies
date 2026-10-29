@@ -6,7 +6,8 @@
    accessory's shapes (hats, the headset, neckwear, bags). The preview is the game's own figure baker
    (figures.js figurePreview) on the unsaved data: pick a person, try another head shape or build on them, turn them
    round, look at the head close up, and see an edit as soon as it is typed. An accessory's values are numbers or
-   sums of the head's or body's frame ('bx * 0.98'), so one hat fits every head. */
+   sums of the head's or body's frame ('bx * 0.98'), so one hat fits every head. CH-5b: the clothes (each garment's
+   knobs, rows and marks, the pieces garments share) and the directions' flair, tried on the turntable. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { $, $$ } from '../../game/js/util.js';
@@ -25,6 +26,7 @@ import {
   colorField,
   numberField,
   rangeField,
+  readPath,
   render,
   selectField,
   studioState,
@@ -36,10 +38,12 @@ import {
 expose({
   FIGURE_EDIT_TABS: [() => FIGURE_EDIT_TABS],
   FIGURE_FACE_PARTS: [() => FIGURE_FACE_PARTS],
+  FIGURE_GARMENT_KNOBS: [() => FIGURE_GARMENT_KNOBS],
   FIGURE_MARK_ITEMS: [() => FIGURE_MARK_ITEMS],
   FIGURE_ROW_KINDS: [() => FIGURE_ROW_KINDS],
   FIGURE_STYLE_NAMES: [() => FIGURE_STYLE_NAMES],
   FIGURE_WHOLE: [() => FIGURE_WHOLE],
+  figureClothesTab: [() => figureClothesTab, v => (figureClothesTab = v)],
   figureEditor: [() => figureEditor],
   figureEditorDraw: [() => figureEditorDraw, v => (figureEditorDraw = v)],
   figureEditorFace: [() => figureEditorFace, v => (figureEditorFace = v)],
@@ -50,7 +54,10 @@ expose({
   figureFacesTab: [() => figureFacesTab, v => (figureFacesTab = v)],
   figureFieldHTML: [() => figureFieldHTML, v => (figureFieldHTML = v)],
   figureFieldsHTML: [() => figureFieldsHTML, v => (figureFieldsHTML = v)],
+  figureKeys: [() => figureKeys],
   figureKitOf: [() => figureKitOf],
+  figureMarksHTML: [() => figureMarksHTML, v => (figureMarksHTML = v)],
+  figureRowsHTML: [() => figureRowsHTML, v => (figureRowsHTML = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -67,7 +74,15 @@ const figureEditor = {
   spin: true,
   frame: 0,
   tab: 'heads',
-  pick: { heads: 'round', builds: 'average', hair: 'hair_short', accessories: 'hat_cap' },
+  pick: {
+    heads: 'round',
+    builds: 'average',
+    hair: 'hair_short',
+    accessories: 'hat_cap',
+    clothes: 'tee',
+    pieces: 'collar',
+    flair: 'scarf',
+  },
   /* CH-6: the face tried on the turntable (eye and brow styles, '' their own; an expression; talking; a blink) and
      the Faces tab's part and picks */
   eyes: '',
@@ -86,6 +101,8 @@ const FIGURE_EDIT_TABS = [
   ['builds', 'Builds'],
   ['hair', 'Hair'],
   ['accessories', 'Hats & things'],
+  ['clothes', 'Clothes'],
+  ['flair', 'Flair'],
   ['faces', 'Faces'],
   ['body', 'Variety & proportions'],
 ];
@@ -110,6 +127,36 @@ const FIGURE_MARK_ITEMS = /^(glasses_|nametag$)/;
 const FIGURE_WHOLE = new Set(['seg', 'rings', 'steps', 'repeat', 'every', 'n', 'coil']);
 
 const figureKitOf = () => studioState.D.figureKit;
+/** a part of the kit's names, without its note @param {Record<string, any> | undefined} o */
+const figureKeys = o => Object.keys(o || {}).filter(k => k !== 'note');
+/** CH-5b: the clothes' knobs the Clothes tab offers, by the item's slot: [key, label, kind, choices or help] */
+const FIGURE_GARMENT_KNOBS = {
+  top: [['sleeves', 'Sleeves', ['none', 'short', 'long']]],
+  outer: [
+    ['covers', 'Covers the arms and collar', 'on'],
+    ['puff', 'Sleeves’ bulk', 'num', '1.08'],
+    ['open', 'Open front (lapels)', 'bool'],
+    ['long', 'To the knees (no belt; tails)', 'bool'],
+  ],
+  bottom: [
+    ['legs', 'Legs', ['full', 'shorts', 'skirt']],
+    ['fit', 'Legs’ width', 'num', '1.06'],
+    ['belt', 'A belt', 'on'],
+  ],
+  shoes: [
+    ['length', 'Foot’s length', 'num', '1'],
+    [
+      'sole',
+      'Sole',
+      [
+        ['', 'Dark'],
+        ['1', 'Its second colour'],
+      ],
+    ],
+    ['boot', 'Up the shin', 'bool'],
+    ['flat', 'A sandal (bare foot)', 'bool'],
+  ],
+};
 
 SECTIONS.figures = () => {
   const D = studioState.D,
@@ -118,8 +165,8 @@ SECTIONS.figures = () => {
     return `<div class="ed-col solo"><h2>Figures</h2><p class="help">This game data has no figure kit (game/data/figureKit.json).</p></div>`;
   const E = figureEditor;
   if (!D.people[E.who]) E.who = 'chosen' in D.people ? 'chosen' : Object.keys(D.people)[0];
-  for (const [t] of FIGURE_EDIT_TABS)
-    if (t !== 'body' && t !== 'faces' && !K[t][E.pick[t]]) E.pick[t] = Object.keys(K[t])[0] || '';
+  for (const t of [...FIGURE_EDIT_TABS.map(x => x[0]), 'pieces'])
+    if (t !== 'body' && t !== 'faces' && !(K[t] || {})[E.pick[t]]) E.pick[t] = figureKeys(K[t])[0] || '';
   for (const [t] of FIGURE_FACE_PARTS)
     if (t !== 'wardrobe' && t !== 'skin' && K.faces && !K.faces[t][E.facePick[t]])
       E.facePick[t] = Object.keys(K.faces[t])[0] || '';
@@ -207,7 +254,7 @@ function figureEditorTab() {
     K = figureKitOf(),
     p = 'figureKit',
     pickRow = (/** @type {string} */ t, /** @type {string} */ what, /** @type {string} */ extra = '') =>
-      `<div class="seg-row"><label class="fld"><span>${what}</span><select data-fig-pick="${t}">${Object.keys(K[t])
+      `<div class="seg-row"><label class="fld"><span>${what}</span><select data-fig-pick="${t}">${figureKeys(K[t])
         .map(k => `<option value="${escapeHtml(k)}" ${k === E.pick[t] ? 'selected' : ''}>${escapeHtml(k)}</option>`)
         .join('')}</select></label>${extra}</div>`;
   switch (E.tab) {
@@ -296,22 +343,26 @@ function figureEditorTab() {
         pickRow('accessories', 'Item', add) +
           `<div class="grid">${checkboxField('A fringe shows under it', `${q}.fringe`)}</div>` +
           (A.vars ? `<h4>Named values</h4>${figureFieldsHTML(`${q}.vars`, A.vars, true)}` : '') +
-          A.rows
-            .map(
-              (/** @type {any} */ r, /** @type {number} */ i) =>
-                `<fieldset class="fig-row"><legend>${escapeHtml(r.id)}${r.sides ? ' (A and B)' : r.repeat ? ` (×${r.repeat})` : ''}</legend>
-                <div class="grid">${textField('Id', `${q}.rows.${i}.id`)}${textField('On part', `${q}.rows.${i}.parent`, { opt: true, ph: k.startsWith('hat') || k === 'headset' ? 'head' : 'torso' })}${textField('Colour slot', `${q}.rows.${i}.col`)}${selectField(
-                  'Shape',
-                  `${q}.rows.${i}.shape.kind`,
-                  FIGURE_ROW_KINDS.map(x => [x, x])
-                )}${checkboxField('Mirrored A and B', `${q}.rows.${i}.sides`)}</div>
-                ${r.at ? `<h5>At</h5>${figureFieldsHTML(`${q}.rows.${i}.at`, r.at, true)}` : ''}
-                ${figureFieldsHTML(`${q}.rows.${i}.shape`, r.shape, true, ['kind'])}
-                <div class="seg-row"><button class="btn sm" data-act="figRowDup" data-i="${i}">Duplicate</button><button class="btn sm" data-act="figRowDel" data-i="${i}" ${A.rows.length > 1 ? '' : 'disabled'}>Delete</button></div></fieldset>`
-            )
-            .join(''),
+          figureRowsHTML(`${q}.rows`, A.rows, k.startsWith('hat') || k === 'headset' ? 'head' : 'torso'),
         {
           sub: `Rows of shapes. A value is a number or a sum of the frame’s values: round a hat k, rx, yb (its band), zc, bx, bz, top; the head k, hx, hy, c1; the body tk, girth, hipK, torsoZ; with sqrt, sin, cos and pi.`,
+        }
+      );
+    }
+    case 'clothes':
+      return figureClothesTab();
+    case 'flair': {
+      const k = E.pick.flair,
+        q = `${p}.flair.${k}`,
+        A = (K.flair || {})[k];
+      if (!A) return card('Flair', '<p class="help">This kit has no flair.</p>');
+      return card(
+        'Flair',
+        pickRow('flair', 'Flair') +
+          (A.vars ? `<h4>Named values</h4>${figureFieldsHTML(`${q}.vars`, A.vars, true)}` : '') +
+          figureRowsHTML(`${q}.rows`, A.rows, k === 'goggles' || k === 'earrings' ? 'head' : 'torso'),
+        {
+          sub: `A direction’s extras (figures.js FIGURE_LOOKS says who wears which), on the turntable now. Sums may use the body’s frame (as Clothes) and the head’s: hx, hy, hz, c1, c2. Their colours are the kit’s own.`,
         }
       );
     }
@@ -468,6 +519,127 @@ function figureFacesTab() {
 }
 
 /**
+ * CH-5b: rows of shapes (an accessory's, a garment's, a piece's, a flair's), each a fieldset with its fields, and
+ * duplicate and delete by the rows' path; a group's rows inside it
+ * @param {string} q the rows' path @param {any[]} rows @param {string} ph the part a row hangs from when it names none
+ * @returns {string}
+ */
+function figureRowsHTML(q, rows, ph) {
+  return rows
+    .map((/** @type {any} */ r, /** @type {number} */ i) => {
+      const at = `${q}.${i}`,
+        tags = [r.sides ? 'A and B' : r.repeat ? `×${r.repeat}` : '', r.stage || '', r.when ? `when ${r.when}` : '']
+          .filter(Boolean)
+          .join(', ');
+      return `<fieldset class="fig-row"><legend>${escapeHtml(r.id)}${tags ? ` (${escapeHtml(tags)})` : ''}</legend>
+        <div class="grid">${textField('Id', `${at}.id`)}${
+          r.rows
+            ? ''
+            : `${textField('On part', `${at}.parent`, { opt: true, ph })}${textField('Colour slot', `${at}.col`)}${selectField(
+                'Shape',
+                `${at}.shape.kind`,
+                FIGURE_ROW_KINDS.map(x => [x, x])
+              )}`
+        }${checkboxField('Mirrored A and B', `${at}.sides`)}${textField('Only when', `${at}.when`, { opt: true, ph: 'always' })}</div>
+        ${r.vars ? `<h5>Named values</h5>${figureFieldsHTML(`${at}.vars`, r.vars, true)}` : ''}
+        ${r.at ? `<h5>At</h5>${figureFieldsHTML(`${at}.at`, r.at, true)}` : ''}
+        ${r.shape ? figureFieldsHTML(`${at}.shape`, r.shape, true, ['kind']) : ''}
+        ${r.rows ? `<h5>For each side, in order</h5>${figureRowsHTML(`${at}.rows`, r.rows, ph)}` : ''}
+        <div class="seg-row"><button class="btn sm" data-act="figRowDup" data-q="${q}" data-i="${i}">Duplicate</button><button class="btn sm" data-act="figRowDel" data-q="${q}" data-i="${i}" ${rows.length > 1 ? '' : 'disabled'}>Delete</button></div></fieldset>`;
+    })
+    .join('');
+}
+/** CH-5b: marks painted on a part (buttons, pockets, a zip), each its fields @param {string} q @param {any[]} marks */
+function figureMarksHTML(q, marks) {
+  return marks
+    .map(
+      (/** @type {any} */ m, /** @type {number} */ i) =>
+        `<fieldset class="fig-row"><legend>${escapeHtml(m.id)} (${escapeHtml(m.kind)}${m.sides ? ', A and B' : m.repeat ? `, ×${m.repeat}` : ''})</legend>
+        <div class="grid">${textField('Id', `${q}.${i}.id`)}${textField('Kind', `${q}.${i}.kind`)}${textField('On part', `${q}.${i}.part`)}${textField('Colour slot', `${q}.${i}.col`)}${checkboxField('Mirrored A and B', `${q}.${i}.sides`)}${textField('Only when', `${q}.${i}.when`, { opt: true, ph: 'always' })}</div>
+        ${figureFieldsHTML(`${q}.${i}`, { at: m.at, w: m.w, h: m.h, ...(m.repeat ? { repeat: m.repeat } : {}), ...(m.vars ? { vars: m.vars } : {}) }, true)}
+        <div class="seg-row"><button class="btn sm" data-act="figRowDup" data-q="${q}" data-i="${i}">Duplicate</button><button class="btn sm" data-act="figRowDel" data-q="${q}" data-i="${i}">Delete</button></div></fieldset>`
+    )
+    .join('');
+}
+/** CH-5b: the Clothes tab: a garment's knobs, rows and marks (on the turntable's person), then the shared pieces */
+function figureClothesTab() {
+  const E = figureEditor,
+    K = figureKitOf(),
+    W = studioState.D.wardrobe,
+    p = 'figureKit',
+    C = K.clothes || {},
+    k = E.pick.clothes,
+    G = C[k],
+    q = `${p}.clothes.${k}`,
+    slot = (W.items[k] || {}).slot || '',
+    free = Object.keys(W.items).filter(id => FIGURE_GARMENT_KNOBS[W.items[id].slot] && !C[id]),
+    pick = `<div class="seg-row"><label class="fld"><span>Garment</span><select data-fig-pick="clothes">${figureKeys(C)
+      .map(
+        id =>
+          `<option value="${escapeHtml(id)}" ${id === k ? 'selected' : ''}>${escapeHtml(((W.items[id] || {}).name || id) + ' · ' + ((W.items[id] || {}).slot || '?'))}</option>`
+      )
+      .join('')}</select></label>${
+      free.length
+        ? `<label class="fld"><span>Clothes for</span><select id="figClothNew">${free.map(id => `<option value="${escapeHtml(id)}">${escapeHtml(W.items[id].name || id)}</option>`).join('')}</select></label><button class="btn" data-act="figClothNew">+ Give it clothes</button>`
+        : ''
+    }</div>`;
+  if (!G) return card('Clothes', pick + '<p class="help">This kit has no clothes.</p>');
+  const knob = (/** @type {string} */ base, /** @type {any[]} */ [key, label, kind, extra]) => {
+    const at = `${base}.${key}`;
+    if (Array.isArray(kind))
+      return selectField(
+        label,
+        at,
+        kind.map(x => (Array.isArray(x) ? x : [x, x])),
+        { opt: true, num: key === 'sole' }
+      );
+    if (kind === 'on') {
+      const v = readPath(at);
+      return `<label class="fld chk"><input type="checkbox" data-p="${at}" data-k="bool" ${v !== false ? 'checked' : ''}><span>${label}</span></label>`;
+    }
+    if (kind === 'num') return numberField(label, at, { opt: true, step: 0.01, ph: extra });
+    return checkboxField(label, at);
+  };
+  const outerOf = G.outer ? `${q}.outer` : '';
+  const garmentHTML = (/** @type {string} */ at, /** @type {any} */ g, /** @type {string} */ sl) =>
+    `<div class="grid">${(FIGURE_GARMENT_KNOBS[sl] || []).map(x => knob(at, x)).join('')}</div>` +
+    (g.use && g.use.length
+      ? `<p class="help">Uses ${g.use.map((/** @type {string} */ u) => escapeHtml(u)).join(', ')} (below), then its own rows.</p>`
+      : '') +
+    (g.stripe ? `<h4>Stripes</h4>${figureFieldsHTML(`${at}.stripe`, g.stripe, false)}` : '') +
+    (g.rows && g.rows.length ? `<h4>Shapes</h4>${figureRowsHTML(`${at}.rows`, g.rows, 'torso')}` : '') +
+    (g.marks && g.marks.length ? `<h4>Marks</h4>${figureMarksHTML(`${at}.marks`, g.marks)}` : '') +
+    `<div class="seg-row"><button class="btn sm" data-act="figClothRow" data-q="${at}">+ A shape</button><button class="btn sm" data-act="figClothMark" data-q="${at}">+ A mark</button></div>`;
+  const pk = E.pick.pieces,
+    P = (K.pieces || {})[pk];
+  return (
+    card(
+      'Clothes',
+      pick +
+        garmentHTML(q, G, slot) +
+        (outerOf
+          ? `<fieldset class="fig-row"><legend>Worn as an outer</legend>${garmentHTML(outerOf, G.outer, 'outer')}</fieldset>`
+          : ''),
+      {
+        sub: `What each wardrobe item is on the figure: its knobs dress the body’s own parts (the arms, legs and feet), its shapes and marks are added. A shape’s stage is when it is added (torso; shell, after the legs; details). Sums may use the body’s frame: tk, girth, hipK, shK, legK, armK, thighL, shinL, legR, armR, hipW, waist, belly, chest, chestOut, neckL, torsoZ, the torso’s profile trx0..trx6 and trz0..trz6 (bottom to top), s and i; “only when” names bare, open, long, belted, belt, boot, neck or hat (! for not). The turntable’s person wears it.`,
+      }
+    ) +
+    (P
+      ? card(
+          'Shared pieces',
+          `<div class="seg-row"><label class="fld"><span>Piece</span><select data-fig-pick="pieces">${figureKeys(
+            K.pieces
+          )
+            .map(id => `<option value="${escapeHtml(id)}" ${id === pk ? 'selected' : ''}>${escapeHtml(id)}</option>`)
+            .join('')}</select></label></div>` +
+            (P.rows ? figureRowsHTML(`${p}.pieces.${pk}.rows`, P.rows, 'torso') : '') +
+            (P.marks ? figureMarksHTML(`${p}.pieces.${pk}.marks`, P.marks) : ''),
+          { sub: 'Rows and marks many garments use (a collar, a belt): edit them once here.' }
+        )
+      : '')
+  );
+}
+/**
  * fields for a part of the kit's data, by what each value is: a number a number field (a sum's text field when `sums`),
  * a string a text field, a yes/no a checkbox, a list its items in a row, an object its keys
  * @param {string} path @param {any} v @param {boolean} sums values may be sums @param {string[]} [skip] keys left out
@@ -519,12 +691,18 @@ function figureEditorDraw() {
       ...(E.brows ? { brows: E.brows } : {}),
     },
     figure = Object.keys(try1).length ? { ...(own || {}), ...try1 } : own || undefined,
-    look = P.creature ? P : cleanLook(P.look || null),
+    look0 = P.creature ? P : cleanLook(P.look || null),
+    /* CH-5b: the Clothes tab's garment worn (in its own slot) */
+    cloth = E.tab === 'clothes' ? E.pick.clothes : '',
+    clothSlot = cloth && D.wardrobe.items[cloth] ? D.wardrobe.items[cloth].slot : '',
+    look =
+      clothSlot && look0 && !P.creature ? { ...look0, wear: { ...(look0.wear || {}), [clothSlot]: cloth } } : look0,
+    flairOn = E.tab === 'flair' ? E.pick.flair : '',
     /* built again when the kit (but its faces), the look or the head and build change (a hash of them); CH-6: the face
        painted again, on the same mesh, when the faces or the eyes and brows change */
     { faces, ...body } = K,
     { eyes, brows, ...shape } = figure || {},
-    rev = figureSeed(JSON.stringify([body, look, shape])),
+    rev = figureSeed(JSON.stringify([body, look, shape, flairOn])),
     faceRev = figureSeed(JSON.stringify([faces, eyes || null, brows || null])),
     face = figureEditorFace();
   const x = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d'));
@@ -539,6 +717,7 @@ function figureEditorDraw() {
       rev,
       faceRev,
       face,
+      flair: flairOn || undefined,
       style: E.style,
       clip: E.clip,
       frame: E.frame,
@@ -733,18 +912,63 @@ ACTIONS.figAccNew = () => {
   render();
 };
 ACTIONS.figRowDup = (/** @type {DOMStringMap} */ d) => {
-  const A = figureKitOf().accessories[figureEditor.pick.accessories],
-    i = +(d.i || 0),
-    r = clone(A.rows[i]);
-  r.id = uniqueKey(r.id, (/** @type {string} */ x) => A.rows.some((/** @type {any} */ q) => q.id === x));
-  A.rows.splice(i + 1, 0, r);
+  const rows = readPath(d.q || ''),
+    i = +(d.i || 0);
+  if (!Array.isArray(rows)) return;
+  const r = clone(rows[i]);
+  r.id = uniqueKey(r.id, (/** @type {string} */ x) => rows.some((/** @type {any} */ q) => q.id === x));
+  rows.splice(i + 1, 0, r);
   changed();
   render();
 };
 ACTIONS.figRowDel = (/** @type {DOMStringMap} */ d) => {
-  const A = figureKitOf().accessories[figureEditor.pick.accessories];
-  if (A.rows.length < 2) return;
-  A.rows.splice(+(d.i || 0), 1);
+  const rows = readPath(d.q || '');
+  if (!Array.isArray(rows) || (rows.length < 2 && !/\.marks$/.test(d.q || ''))) return;
+  rows.splice(+(d.i || 0), 1);
+  changed();
+  render();
+};
+/** CH-5b: a wardrobe item given clothes: a top, bottom or shoes dressed as the kit's tee, trousers or sneakers, an
+ * outer as a plain jacket (copies, edited apart) */
+ACTIONS.figClothNew = () => {
+  const sel = /** @type {HTMLSelectElement | null} */ ($('#figClothNew')),
+    id = sel && sel.value,
+    K = figureKitOf(),
+    W = studioState.D.wardrobe;
+  if (!id || !K.clothes || K.clothes[id]) return;
+  const slot = W.items[id].slot,
+    like = { top: 'tee', bottom: 'trousers', shoes: 'sneakers', outer: 'denim_jacket' }[slot];
+  K.clothes[id] = like && K.clothes[like] ? clone(K.clothes[like]) : {};
+  figureEditor.pick.clothes = id;
+  changed();
+  render();
+};
+/** CH-5b: a shape or a mark added to a garment */
+ACTIONS.figClothRow = (/** @type {DOMStringMap} */ d) => {
+  const G = readPath(d.q || '');
+  if (!G) return;
+  (G.rows = G.rows || []).push({
+    id: uniqueKey('patch', (/** @type {string} */ x) => G.rows.some((/** @type {any} */ q) => q.id === x)),
+    parent: 'torso',
+    at: [0, '0.2 * tk', 'trz3'],
+    shape: { kind: 'ellipsoid', c: [0, 0, 0], r: [0.04, 0.04, 0.02], seg: 8, rings: 5 },
+    col: 'top2',
+  });
+  changed();
+  render();
+};
+ACTIONS.figClothMark = (/** @type {DOMStringMap} */ d) => {
+  const G = readPath(d.q || '');
+  if (!G) return;
+  (G.marks = G.marks || []).push({
+    id: uniqueKey('mark', (/** @type {string} */ x) => G.marks.some((/** @type {any} */ q) => q.id === x)),
+    kind: 'button',
+    part: 'torso',
+    at: [0, '0.2 * tk', 'trz3 + 0.01'],
+    w: 0.02,
+    h: 0.02,
+    col: 'button',
+  });
   changed();
   render();
 };

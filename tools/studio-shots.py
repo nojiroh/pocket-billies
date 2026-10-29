@@ -32,6 +32,9 @@ VIEWS = {
     'figures': ('figures', "figureEditor.spin = false; render()", '#figInfo:not(:empty)'),
     'figure-hats': ('figures', "Object.assign(figureEditor, { spin: false, who: 'boy', view: 'head', tab: 'accessories' }); figureEditor.pick.accessories = 'hat_beanie'; render()", '#figInfo:not(:empty)'),
     'figure-faces': ('figures', "Object.assign(figureEditor, { spin: false, turn: 1, who: 'broker', view: 'head', tab: 'faces', facePart: 'expressions' }); figureEditor.facePick.expressions = 'happy'; render()", '#figInfo:not(:empty)'),
+    # CH-5b: the Clothes tab (a garment on the turntable's person) and the Flair tab (the picked flair on)
+    'figure-clothes': ('figures', "Object.assign(figureEditor, { spin: false, turn: 0.85, who: 'chosen', tab: 'clothes' }); figureEditor.pick.clothes = 'labcoat'; render()", '#figInfo:not(:empty)'),
+    'figure-flair': ('figures', "Object.assign(figureEditor, { spin: false, turn: 1.2, who: 'chosen', tab: 'flair' }); figureEditor.pick.flair = 'cape'; render()", '#figInfo:not(:empty)'),
     'preview': ('preview', '', '#cvWorld'),
     'skeleton': ('billionaires', "void openSkeleton(studioState.D.lines[0].id + '0', 'front')", '.pxed.skel'),
     'pixels': ('billionaires', "void openPixelEditor(studioState.D.lines[0].id + '0', 'front')", '#pxCv'),

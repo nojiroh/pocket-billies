@@ -167,6 +167,7 @@ expose({
   figurePortrait: [() => figurePortrait, v => (figurePortrait = v)],
   figurePreview: [() => figurePreview, v => (figurePreview = v)],
   figurePreviewForget: [() => figurePreviewForget, v => (figurePreviewForget = v)],
+  figurePreviewLook: [() => figurePreviewLook, v => (figurePreviewLook = v)],
   figurePreviewState: [() => figurePreviewState],
   figureReport: [() => figureReport, v => (figureReport = v)],
   figureRes: [() => figureRes, v => (figureRes = v)],
@@ -1405,6 +1406,14 @@ function figurePortrait(who, frame = 0, turn = 0.9, style = 'pixel') {
   out.figure = Fig.name;
   return out;
 }
+/** CH-5b: the direction the Studio's preview dresses by: the style's, with flair `flair` on (the Flair tab)
+ * @param {string} style @param {string} [flair] */
+function figurePreviewLook(style, flair) {
+  const LK = FIGURE_LOOKS[style] || FIGURE_LOOKS.pixel,
+    own = figureDesign(style) ? LK : null;
+  if (!flair) return own;
+  return { ...(own || {}), flair: { ...((own && own.flair) || {}), [flair]: true } };
+}
 /** CH-5: the figure the Studio's preview shows (figurePreview): its name, its figure and how long it took to build */
 const figurePreviewState = { name: '', def: /** @type {any} */ (null), ms: 0, face: '' };
 /**
@@ -1416,8 +1425,9 @@ const figurePreviewState = { name: '', def: /** @type {any} */ (null), ms: 0, fa
  * frame, turn (0.9), tilt (radians, 4 degrees), ppm (64), crop ('whole' or 'bust'). The canvas carries `ms`, the
  * figure's build time, and `kit`, the head shape and build it has. CH-6: a change of the face alone (`faceRev`, the
  * Studio's count of its face edits, or the figure's eye and brow styles) paints the face again on the same mesh.
+ * CH-5b: `flair` turns that flair of the kit's on (the Studio's Flair tab; part of `rev`).
  * @param {{ look: any, items: any, kit: any, who?: string, figure?: any, rev?: number, faceRev?: number,
- *   face?: { expr?: string, talk?: number, blink?: number, mouth?: string, eyes?: string }, style?: string, clip?: string, frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
+ *   flair?: string, face?: { expr?: string, talk?: number, blink?: number, mouth?: string, eyes?: string }, style?: string, clip?: string, frame?: number, turn?: number, tilt?: number, ppm?: number, crop?: string }} o
  */
 export function figurePreview(o) {
   const style = o.style && (o.style === 'smooth' || o.style in FIGURE_LOOKS) ? o.style : 'pixel',
@@ -1428,7 +1438,7 @@ export function figurePreview(o) {
   if (P.name !== name) {
     figurePreviewForget();
     const detail = LK.detail || 1,
-      look0 = figureDesign(style) ? LK : null,
+      look0 = figurePreviewLook(style, o.flair),
       F = figureFromLook(name, who, o.look, look0, o.items, o.kit, o.figure),
       t0 = performance.now(),
       M = kitBuild(F, detail);
@@ -1442,7 +1452,7 @@ export function figurePreview(o) {
     face = JSON.stringify([fig.eyes, fig.brows, o.faceRev || 0]);
   if (P.face && P.face !== face) {
     /* the face's marks and colours from the edited data, on the mesh already built */
-    const F2 = figureFromLook(name, who, o.look, figureDesign(style) ? LK : null, o.items, o.kit, o.figure);
+    const F2 = figureFromLook(name, who, o.look, figurePreviewLook(style, o.flair), o.items, o.kit, o.figure);
     P.def.F.face = F2.face;
     Object.assign(P.def.F.colours, F2.colours);
   }
