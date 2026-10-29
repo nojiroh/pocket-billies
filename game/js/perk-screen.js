@@ -11,6 +11,7 @@ import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
 import { PERKS, PERK_SETS, RULES } from './game-data.js';
 import { rarityTier } from './logic/marks.js';
+import { encBoonsOn } from './logic/run-enc.js';
 import { perkCap, perkChoose, perkCount, perkDropOk, perkGroups, perkNoDrop, perkSetLine } from './logic/perks.js';
 import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
@@ -21,6 +22,9 @@ import { jinglePlay } from './sound.js';
 import { runHint } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
+  boonLeftText: [() => boonLeftText],
+  boonStripHTML: [() => boonStripHTML, v => (boonStripHTML = v)],
+  boonsHTML: [() => boonsHTML, v => (boonsHTML = v)],
   perkCardHTML: [() => perkCardHTML, v => (perkCardHTML = v)],
   perkCardsOn: [() => perkCardsOn, v => (perkCardsOn = v)],
   perkDropOpen: [() => perkDropOpen, v => ((perkDropOpen = v), provide({ perkDropOpen }))],
@@ -177,6 +181,32 @@ export function perkDropOpen(id, then, back) {
   });
 }
 
+/* ---------- PK-9: boons and curses ---------- */
+/** how long a boon or curse still lasts, counting the place you are in ("Last place", "3 places left")
+ * @param {number} left the places after this one */
+const boonLeftText = left => (left > 0 ? `${left + 1} places left` : 'Last place');
+/** the run's named boons and curses (logic/run-enc.js encBoonsOn) as the Perks tab's rows: picture, name, what it does,
+ * Boon or Curse and how long it lasts; '' when none is on @param {any} run */
+function boonsHTML(run) {
+  const on = encBoonsOn(run);
+  if (!on.length) return '';
+  const row = (/** @type {(typeof on)[number]} */ b) =>
+    `<div class="bag-row k-card boon-row${b.boon.curse ? ' curse' : ''}" data-boon="${escapeHtml(b.id)}"><span class="bag-ic">${artIconHTML(b.boon.img, 36)}</span><span class="bag-t"><b>${escapeHtml(b.boon.name)}</b><small>${escapeHtml(b.boon.d)}${b.boon.curse ? ' A clinic’s appeal lifts it.' : ''}</small></span><small class="note boon-left tnum">${b.boon.curse ? 'Curse' : 'Boon'} · ${boonLeftText(b.left)}</small></div>`;
+  return `<section class="tpanel relics boons"><div class="sec-h"><h2>Boons and curses</h2><span class="count tnum">${on.length}</span></div><div class="bag-list">${on.map(row).join('')}</div></section>`;
+}
+/** the run's HUD strip (the Map tab's head row, beside the day): each boon or curse on as its picture at 18 px with the
+ * places it still lasts; '' when none @param {any} run */
+export function boonStripHTML(run) {
+  const on = encBoonsOn(run);
+  if (!on.length) return '';
+  return `<span class="boon-strip">${on
+    .map(b => {
+      const t = escapeHtml(`${b.boon.name} (${b.boon.curse ? 'curse' : 'boon'}): ${b.boon.d} ${boonLeftText(b.left)}.`);
+      return `<span class="boon-chip${b.boon.curse ? ' curse' : ''}" data-boon="${escapeHtml(b.id)}" title="${t}" aria-label="${t}">${artIconHTML(b.boon.img, 18)}<small class="tnum">${b.left + 1}</small></span>`;
+    })
+    .join('')}</span>`;
+}
+
 /* ---------- the Perks tab ---------- */
 /** the run's Perks, each with what it does (PK-3: and its counter, perkCount); PK-8: grouped by set (logic/perks.js
  * perkGroups), each set's head with its name, how many are held of its need and its bonus (on, or what it will do), then
@@ -185,6 +215,8 @@ export function renderPerks() {
   const run = saveData.run,
     cap = perkCap(run, RULES.run.perks, PERKS);
   if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at Skyline Station.</p>`;
+  /* PK-9: the boons and curses on, under the Perks */
+  const boons = boonsHTML(run);
   const held = run.perks.filter(id => PERKS[id]),
     row = id => {
       /* PK-3: a held Perk's counter ("5/8", "VOID") beside its rarity pill (UI-14b) */
@@ -202,5 +234,5 @@ export function renderPerks() {
     held.length
       ? groups.map(g => `${head(g)}<div class="bag-list">${g.ids.map(row).join('')}</div>`).join('')
       : `<p class="note bag-empty">None yet. Beat a mini-boss for a pick of ${RULES.run.perks.pick}, or buy one in a town’s shop. They last the run.</p>`
-  }</section>`;
+  }</section>${boons}`;
 }

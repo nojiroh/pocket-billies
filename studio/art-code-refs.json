@@ -1770,7 +1770,7 @@
    "game/js/logic/perks.js:335",
    "game/js/logic/perks.js:347",
    "game/js/logic/ui-dials.js:147",
-   "game/js/map-tab.js:152",
+   "game/js/map-tab.js:153",
    "game/js/walk-tab.js:384"
   ],
   "eye": [
@@ -1921,7 +1921,7 @@
    "game/js/battle-stage.js:2190",
    "game/js/billie-sheet.js:197",
    "game/js/boot.js:156",
-   "game/js/map-tab.js:69",
+   "game/js/map-tab.js:70",
    "game/js/shop.js:186"
   ],
   "pow": [
@@ -1967,7 +1967,7 @@
    "game/js/billie-sheet.js:292",
    "game/js/boot.js:160",
    "game/js/lab-board.js:107",
-   "game/js/map-tab.js:103",
+   "game/js/map-tab.js:104",
    "game/js/showcase.js:286",
    "game/js/ui-run-kit.js:121",
    "game/js/walk-tab.js:331",

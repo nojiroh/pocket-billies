@@ -967,6 +967,17 @@ def relics(pg, base):
     after = pg.evaluate("[saveData.se,saveData.run.perks.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
     if after != [se - price, 6, '', False]: raise Exception(f'after buying: money, held, shelf, row {after} (paid {se - after[0]}, price {price})')
     if stored()['shelf'] != {f'{town}:{pg.evaluate("saveData.run.clock")}': ''}: raise Exception(f'the bought shelf isn’t stored: {stored()["shelf"]}')
+    # PK-9: a boon and a curse on the run: the Perks tab lists them (picture, places left), the Map tab's head shows
+    # them beside the day, an appeal at the clinic lifts the curse
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();encBoonGive(saveData.run,'tailwind','check');encBoonGive(saveData.run,'audit_trail','check');uiState.tab='perks';render();0")
+    if not until(pg, "document.querySelectorAll('.s-perks .boon-row').length===2", 10): raise Exception('the Perks tab doesn’t list the boon and the curse')
+    rows = pg.evaluate("[...document.querySelectorAll('.s-perks .boon-row')].map(e=>[e.dataset.boon,e.querySelector('.art-ic').offsetWidth,(getComputedStyle(e.querySelector('.art-ic')).backgroundImage.match(/art\\/(boons\\/\\w+\\.svg)/)||[])[1]||'',e.querySelector('.boon-left').textContent])")
+    if rows != [['tailwind', 36, 'boons/tailwind.svg', 'Boon · 3 places left'], ['audit_trail', 36, 'boons/audit_trail.svg', 'Curse · 4 places left']]:
+        raise Exception(f'the boons’ rows: {rows}')
+    pg.evaluate("uiState.tab='map';render();0")
+    if not until(pg, "document.querySelectorAll('.map-hrow .boon-strip .boon-chip').length===2", 10): raise Exception('the Map tab’s head doesn’t show the boons')
+    appeal = pg.evaluate("(()=>{const se=saveData.se;saveData.se=500;const r=runAppeal(saveData,'audit_trail',RULES.run.appealCost);const out=[r.paid,saveData.run.enc.boons.map(b=>b.id)];saveData.se=se;saveData.run.enc.boons=[];uiState.tab='walk';render();return out})()")
+    if appeal != [50, ['tailwind']]: raise Exception(f'the appeal: {appeal}')
     # a mini-boss beaten: the pick is stored with the battle's end, before its sheet
     mb = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='miniboss')")
     if not pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({mb}+1)"): raise Exception('couldn’t walk to a mini-boss')
