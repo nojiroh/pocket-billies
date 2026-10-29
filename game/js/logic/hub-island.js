@@ -364,8 +364,11 @@ export function hubGenWalkProblems(sc, scenery) {
         ok = !!R.seen[j * R.gw + i] && islandPointIn(Z.poly, (i + 0.5) / R.N, (j + 0.5) / R.N);
     if (!ok) out.push(`the ${Z.k} zone can't be walked to`);
   }
+  /* the summit is walked to only when a trail goes up (the owner, 2026-10-28: the hub's mountain has none) */
+  const G = sc.islandGen && sc.islandGen.dials && sc.islandGen.dials.mountain,
+    trail = !(G && (G.trail === 0 || G.trail === false));
   for (const S of Array.isArray(sc.spots) ? sc.spots : [])
-    if ((S.kind === 'summit' || S.kind === 'dock') && !mapgenReached(R, S.x, S.z))
+    if (((S.kind === 'summit' && trail) || S.kind === 'dock') && !mapgenReached(R, S.x, S.z))
       out.push(`the ${S.kind} can't be walked to`);
   for (const L of Array.isArray(sc.plots) ? sc.plots : []) {
     const a = (L.a * Math.PI) / 180;

@@ -72,7 +72,7 @@ test('hub placing: the new buildings on their plots, their doors open their room
   assert.equal(M.props.find(q => q.k === 'train_station').act, 'station');
 });
 
-test('cutscenes track A: Skyline Station faces out, its track chained from its right-hand end, level with it, the portal floating out in front', () => {
+test('Skyline Station faces out, inland, its track pieces (any) chained from its right-hand end, level with it, the portal floating where its landmarks say', () => {
   const st = M.props.find(q => q.k === 'train_station'),
     L = M.plots.find(q => q.k === 'station'),
     pieces = M.props.filter(q => q.k === 'sky_rail'),
@@ -88,8 +88,14 @@ test('cutscenes track A: Skyline Station faces out, its track chained from its r
     front = [Math.sin(r), -Math.cos(r)],
     outward = [st.x - cx, st.z - cz];
   assert.ok(front[0] * outward[0] + front[1] * outward[1] > 0.8 * Math.hypot(...outward), 'it faces out');
-  assert.equal(pieces.length, SKY_RAIL.looks.length);
-  const back = C.train_station.box[1] / 2 + SKY_RAIL.from[1];
+  /* the owner (2026-10-28): not tucked into a corner by the edge: well inland, a short walk from the square */
+  const coastD = Math.min(...M.island.coast.map(([x, z]) => Math.hypot(x - L.x, z - L.z)));
+  assert.ok(coastD > 25, `the station ${coastD} m from the coast`);
+  assert.ok(Math.hypot(L.x - M.hub[0], L.z - M.hub[1]) < 45, 'near the square');
+  const back = C.train_station.box[1] / 2 + SKY_RAIL.from[1],
+    /* the track data's far end, metres along from the track's start: the pieces fill it, 12 m each */
+    railEnd = Math.max(...M.landmarks.rail.map(([x, z]) => own({ x, z })[0])) - SKY_RAIL.from[0];
+  assert.equal(pieces.length, Math.round(railEnd / SKY_RAIL.piece) || 0);
   pieces.forEach((q, i) => {
     const [u, v] = own(q);
     assert.ok(Math.abs(u - SKY_RAIL.from[0] - SKY_RAIL.piece * (i + 0.5)) < 0.02, `piece ${i} at ${u} along`);
@@ -100,9 +106,11 @@ test('cutscenes track A: Skyline Station faces out, its track chained from its r
       V = look ? C.sky_rail.variants[q.v - 1] : null;
     assert.equal(V ? V.form : '', look, `piece ${i}'s look`);
   });
-  const [pu, pv] = own(portal);
-  assert.ok(Math.abs(pu - SKY_RAIL.from[0] - SKY_RAIL.tear[0]) < 0.02 && Math.abs(pv - back + SKY_RAIL.tear[1]) < 0.02);
+  /* the portal stands where the ride flies to (landmarks.portal: its middle) */
+  assert.ok(Math.abs(portal.x - M.landmarks.portal[0]) < 0.05 && Math.abs(portal.z - M.landmarks.portal[1]) < 0.05);
+  assert.ok(Math.abs(portal.y + 6.5 - M.landmarks.portal[2]) < 0.05, 'its middle at the landmark');
   assert.ok(portal.y > L.y + 10, 'floating');
+  assert.ok(portal.x > 0 && portal.x < M.w && portal.z > 0 && portal.z < M.h, 'inside the map');
   /* the data (the ride flies the train from it) runs down the drawn track's middle */
   for (const [x, z, y] of M.landmarks.rail) {
     const [, v] = own({ x, z });

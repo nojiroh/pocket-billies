@@ -264,6 +264,9 @@ precision highp float;in vec2 aC;out vec2 vUV;void main(){vUV=aC;gl_Position=vec
 precision highp float;in vec2 vUV;out vec4 o;uniform sampler2D uCol,uDof,uBloom,uAO,uRays,uDep,uVol,uVolZ;uniform vec2 uPx;uniform vec4 uHeatS[6];uniform float uHeatN;uniform vec4 uDofPl,uDofB;uniform float uDofView;uniform vec3 uInkF;uniform float uVolK,uExp,uShoulder,uCon,uSat,uWarm,uVig,uCA,uCAP,uGrain,uSharp,uBloomK,uTime,uDofOn,uAOK,uRaysK,uTone,uHeat,uInk,uNear,uFar,uGlare;uniform vec3 uLift,uGam,uGain,uShT,uHiT,uRayC,uSunP;
 float linz(float d){float z=d*2.-1.;return 2.*uNear*uFar/(uFar+uNear-z*(uFar-uNear));}
 uniform vec4 uImp,uImpL;
+/* VFX-15: the battle's row wave (EarthBound's battle backgrounds): rows uWave.y pixels tall swing sideways up to uWave.x
+   whole pixels, uWave.z the phase on the stage clock */
+uniform vec4 uWave;
 ${VOLZ_GLSL}
 /* air track AIR-4: the light in the air back to full size by depth (nearest-depth upsampling): where the four
    march-size depths round this pixel all lie near its own, the smooth bilinear read; at an edge, the one of the four
@@ -294,6 +297,7 @@ void main(){vec2 uv=vUV;/* v32: heat shimmer above hot ground (lava, desert noon
  if(uHeat>0.){float band=smoothstep(.12,.42,uv.y)*smoothstep(.8,.5,uv.y),w=sin(uv.y*70.+uTime*.0045)+.5*sin(uv.y*31.-uTime*.003+uv.x*14.);uv.x+=floor(w*1.6+.5)/2.*uPx.x*.9*uHeat*band;}
  /* alpha 0.4: a small shimmer just above each fire (uHeatS: where on screen, and how big) */
  for(int i=0;i<6;i++){if(float(i)>=uHeatN)break;vec4 hs=uHeatS[i];vec2 q=(uv-hs.xy)/hs.zw;float m=smoothstep(1.,.25,length(q))*step(0.,q.y+.35);if(m>0.){float w=sin(uv.y/hs.w*9.+uTime*.009+float(i)*2.3);uv.x+=floor(w*1.6+.5)/2.*uPx.x*1.1*m;}}
+ if(uWave.x>0.){float r=floor(gl_FragCoord.y/uWave.y);uv.x+=floor(uWave.x*sin(r*.45+uWave.z)+.5)*uPx.x;}
  vec2 d=uv-.5;vec2 ca=(d*dot(d,d)*uCA*6.+vec2(uCAP,0.))*uPx;vec3 s=vec3(texture(uCol,uv-ca).r,texture(uCol,uv).g,texture(uCol,uv+ca).b);
  if(uSharp>0.){vec3 n=texture(uCol,vUV+vec2(uPx.x,0)).rgb+texture(uCol,vUV-vec2(uPx.x,0)).rgb+texture(uCol,vUV+vec2(0,uPx.y)).rgb+texture(uCol,vUV-vec2(0,uPx.y)).rgb;s+=(s-n*.25)*uSharp;}
  /* CAM-3: the blur's amount worked out here at full size from the full-size depth (the same plane of focus as the
@@ -367,6 +371,8 @@ const POST_MEDIUMP = {
       'in highp vec2 vUV;out vec4 o;uniform mediump sampler2D uCol,uDof,uBloom,uAO,uRays,uVol;uniform highp sampler2D uDep;uniform highp sampler2D uVolZ;uniform highp vec2 uPx;uniform highp vec4 uHeatS[6];uniform float uHeatN;uniform highp vec4 uDofPl,uDofB;',
     ],
     ['uniform vec3 uInkF;', 'uniform highp vec3 uInkF;'],
+    /* VFX-15: the row wave's rows and phase are screen places */
+    ['uniform vec4 uWave;', 'uniform highp vec4 uWave;'],
     ['uSharp,uBloomK,uTime,uDofOn,', 'uSharp,uBloomK,uDofOn,'],
     ['uInk,uNear,uFar,uGlare;', 'uInk,uGlare;uniform highp float uTime,uNear,uFar;'],
     ['uHiT,uRayC,uSunP;', 'uHiT,uRayC;uniform highp vec3 uSunP;'],
@@ -606,7 +612,11 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   /* light shafts: the sky and the brightest spots smeared toward the sun's place on screen */
-  const rk = o.sun && !o.noRays ? engineSetting('sun', 'shafts') * (o.sun[2] ?? 1) : 0;
+  /* VFX-15: the sun in battle (its sunny weather) brightens its shafts (o.stageLook.rays) */
+  const rk =
+    o.sun && !o.noRays
+      ? engineSetting('sun', 'shafts') * (o.sun[2] ?? 1) * (o.stageLook ? o.stageLook.rays || 1 : 1)
+      : 0;
   let RY = null;
   if (rk > 0.01) {
     const qw = Math.max(16, hw >> 1),
@@ -726,7 +736,8 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   const mini = (engineSetting('lens', 'miniature') || 0) * F.scale;
   gl.uniform1f(U.uCon, engineSetting('color', 'contrast') * (MO ? MO.con : 1) * (1 + mini * 0.12));
   gl.uniform1f(U.uSat, engineSetting('color', 'saturation') * (MO ? MO.sat : 1) * (1 + mini * 0.25));
-  gl.uniform1f(U.uWarm, engineSetting('color', 'warmth') + (MO ? MO.warm : 0));
+  const BL = o.stageLook;
+  gl.uniform1f(U.uWarm, engineSetting('color', 'warmth') + (MO ? MO.warm : 0) + (BL ? BL.warm || 0 : 0));
   gl.uniform1f(U.uVig, Math.min(1, engineSetting('lens', 'vignette') + mini * 0.2));
   gl.uniform1f(U.uCA, engineSetting('lens', 'aberration'));
   /* VFX-9: the battle's chromatic flash (battle-stage.js battleStageChromaticFlash): red and blue pulled 2 CSS pixels
@@ -735,6 +746,19 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
     const cv = gl.canvas,
       css = (cv && /** @type {HTMLCanvasElement} */ (cv).clientWidth) || rw;
     gl.uniform1f(U.uCAP, (o.caPulse || 0) * 2 * (rw / Math.max(1, css)));
+  }
+  /* VFX-15: the battle's row wave, in CSS pixels as the picture is seen (battle-stage-look.js; none under Reduced motion) */
+  if (U.uWave) {
+    const cv = gl.canvas,
+      k = rw / Math.max(1, (cv && /** @type {HTMLCanvasElement} */ (cv).clientWidth) || rw),
+      on = BL && BL.wave > 0 && !reducedMotion;
+    gl.uniform4f(
+      U.uWave,
+      on ? BL.wave * k : 0,
+      Math.max(1, (BL ? BL.waveRow : 4) * k),
+      on ? BL.wavePhase % (Math.PI * 2) : 0,
+      0
+    );
   }
   gl.uniform1f(U.uGrain, reducedMotion ? 0 : engineSetting('lens', 'grain'));
   gl.uniform1f(U.uSharp, engineSetting('lens', 'sharpen'));
@@ -777,6 +801,9 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
       G.gain[i] *= 1 + MO.gain[i];
     }
   }
+  /* VFX-15: the battle's mood over the place's: darker (at most 20%) and tinted to the move's type */
+  if (BL && (BL.dark > 0 || BL.tint > 0))
+    for (let i = 0; i < 3; i++) G.gain[i] *= (1 - Math.min(0.2, BL.dark)) * (1 - BL.tint + BL.tint * BL.col[i]);
   /* 0.1.0 alpha: the time-of-day look's shadow and highlight tints (outdoors, in a walk frame) */
   const TL = engineContext.env && typeof environment !== 'undefined' ? environment.look : null;
   if (TL && TL.tintStrength > 0)

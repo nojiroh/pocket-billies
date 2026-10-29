@@ -41,7 +41,10 @@ test('nothing in the pasture, the barn, the town, on a street or in water; trees
     .filter(k => k.startsWith('tree_'))
     .reduce((a, k) => a + counts[k], 0);
   assert.ok(trees >= 100 * (O.trees ?? 1), `${trees} trees`);
-  for (const k of ['beach_grass', 'driftwood', 'shells', 'scree', 'cairn']) assert.ok(counts[k] > 0, `no ${k}`);
+  /* cairns stand by the trail: the hub's mountain has none since 2026-10-28 (the owner) */
+  const trail = hub.islandGen.dials.mountain.trail !== 0;
+  for (const k of ['beach_grass', 'driftwood', 'shells', 'scree', ...(trail ? ['cairn'] : [])])
+    assert.ok(counts[k] > 0, `no ${k}`);
   /* HB-4b: the summit lookout is gone (the owner) */
   assert.ok(!counts.summit_lookout && !props.some(p => p.k === 'summit_lookout'), 'a summit lookout');
 });
