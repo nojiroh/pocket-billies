@@ -2268,6 +2268,13 @@ def battle_fx_steps(pg, errs):
     if live != 0.3: errs.append(f'battle effects: the ribbon dial reached the stage as {live}')
     if pg.evaluate("[studioState.D.battleAnims.budgets.burst[0], studioState.D.battleAnims.smears.ribbon.half]") != [24, 0.24]: errs.append('battle effects: undo did not put the budget and the dial back')
     if pending_files(pg, 'battleAnims\\.json$'): errs.append('battle effects: after the undo Propose would still send battleAnims.json')
+    # VFX-13: the tier table's pane: a dial reaches the data (Propose would send it) and undoes; a KO plays from Knocks out
+    pick('#main [data-p="battleAnims.tiers.super4.shake"]', '11'); time.sleep(0.6)
+    if pg.evaluate("studioState.D.battleAnims.tiers.super4.shake") != 11: errs.append('battle effects: a tier dial (x4 shake 11) did not reach the data')
+    if not pending_files(pg, 'battleAnims\\.json$'): errs.append('battle effects: after a tier edit Propose would not send battleAnims.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.battleAnims.tiers.super4.shake") != 9: errs.append('battle effects: undo did not put the tier dial back')
+    if not pg.evaluate("!!document.querySelector('#main select[data-bp=ko]')"): errs.append('battle effects: no Knocks out choice beside the outcome')
     empty = pg.evaluate("[document.querySelector('#bfxPane-ramps').textContent, document.querySelector('#bfxPane-cells').textContent]")
     has = pg.evaluate("[!!studioState.D.battleAnims.ramps, !!studioState.D.battleAnims.sprites]")
     for (t, h, k) in zip(empty, has, ('ramps', 'cells')):
@@ -2276,7 +2283,7 @@ def battle_fx_steps(pg, errs):
     back = pg.evaluate("[reducedMotion, (saveData.preferences||{}).flashes||null, document.documentElement.dataset.motion||null]")
     if back != [False, None, None]: errs.append(f'battle effects: leaving the section left the motion and Flashes at {back}')
     pg.evaluate("Object.assign(battlePreview,{clip:'move',speed:1,q:0,motion:'full',flashes:true,res:'hit'})")
-    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget and a smear dial proposed and undone, the empty ramps and cells panes, the settings back on leaving', flush=True)
+    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget, a smear and a tier dial proposed and undone, Knocks out, the empty ramps and cells panes, the settings back on leaving', flush=True)
 
 
 def unlocks_steps(pg, errs):

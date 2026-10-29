@@ -73,6 +73,7 @@ expose({
   pictureKey: [() => pictureKey, v => (pictureKey = v)],
   portraitHTML: [() => portraitHTML, v => (portraitHTML = v)],
   portraitRect: [() => portraitRect, v => (portraitRect = v)],
+  portraitSize: [() => portraitSize, v => (portraitSize = v)],
   portraitURL: [() => portraitURL, v => (portraitURL = v)],
   recolorPiece: [() => recolorPiece, v => (recolorPiece = v)],
   rgbToHsl: [() => rgbToHsl, v => (rgbToHsl = v)],
@@ -1041,7 +1042,12 @@ function creaturePortrait(cv, Cr, expr, t) {
     k = 2;
   x.drawImage(f, Math.round(cx - w / (2 * k)), Math.round(cy - (h * 0.5) / k), w / k, h / k, 0, 0, w, h);
 }
-function portraitURL(who, expr) {
+/** VFX-16: a portrait's size in art pixels [w, h] (the bust crop), so a caller can draw it at a whole-number scale */
+export function portraitSize() {
+  const r = portraitRect();
+  return [r[2], r[3]];
+}
+export function portraitURL(who, expr) {
   const L = lookOf(who);
   return cachedPersonArt('porurl|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
     /* LD-1: a canvas kept in memory (willReadFrequently: drawPortrait's getContext gets the same), so its PNG is

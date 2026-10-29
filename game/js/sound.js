@@ -746,7 +746,8 @@ function battleSoundEffect(an, r, ev) {
       soundEffect('status');
       break;
     case 'stat':
-      soundEffect('stat', { down: an.n < 0 || an.down });
+      /* VFX-14: the engine sends a drop as up: false (never n or down), so every drop played the rising sound */
+      soundEffect('stat', { down: an.up === false || an.n < 0 || an.down });
       break;
     case 'move':
       if (an.miss) {

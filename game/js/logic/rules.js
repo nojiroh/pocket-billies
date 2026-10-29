@@ -137,7 +137,7 @@ expose({
   canEvolve: [() => canEvolve, v => (canEvolve = v)],
   canRide: [() => canRide],
   // @ts-expect-error -- replaced on purpose
-  cleanBuild: [() => cleanBuild, v => (cleanBuild = v)],
+  cleanBuild: [() => cleanBuild, v => ((cleanBuild = v), provide({ cleanBuild }))],
   cleanName: [() => cleanName],
   coatPrefix: [() => coatPrefix],
   dexCaught: [() => dexCaught],
@@ -271,7 +271,18 @@ expose({
   xpFor: [() => xpFor],
 });
 /* eslint-enable no-func-assign */
-provide({ addWalked, billyGeneFx, billySpliceCost, geneLimit, healAll, makeBilly, makeRobot, riderOf, unstableTidy });
+provide({
+  addWalked,
+  billyGeneFx,
+  billySpliceCost,
+  cleanBuild,
+  geneLimit,
+  healAll,
+  makeBilly,
+  makeRobot,
+  riderOf,
+  unstableTidy,
+});
 export function setSetTrip(v) {
   // @ts-expect-error -- replaced on purpose
   setTrip = v; // eslint-disable-line no-func-assign
@@ -367,6 +378,7 @@ export function encounterBuild(q) {
 export const billyBuild = m => cleanBuild(m && m.build);
 /** @param {Build} b @param {boolean} [spliced] SP-2: a splice is never Prime */
 export const isPrime = (b, spliced) => partsPrime(RULES.parts, b, spliced);
+provide({ isPrime }); /* to-module */
 /** @param {Build} b the weight as a share of the species' own weight (1 = all M)
  * @param {Record<string, number> | null} [rel] SP-2: the spliced slots' relative weights (billyRel) */
 export const buildWeightRatio = (b, rel) => partsWeightRatio(RULES.parts, b, rel);
