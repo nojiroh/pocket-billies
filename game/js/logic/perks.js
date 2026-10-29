@@ -29,7 +29,18 @@ import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
 import { runFoesSync, runFxMoment, runGaveText } from './run-loop.js';
-import { fxAt, fxCond, fxCopyOf, fxOfRun, fxPerkRows, fxPrice, fxRunRule, fxSetHeld } from './effects.js';
+import {
+  fxAt,
+  fxCond,
+  fxCopyOf,
+  fxLivePerks,
+  fxMuted,
+  fxOfRun,
+  fxPerkRows,
+  fxPrice,
+  fxRunRule,
+  fxSetHeld,
+} from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -91,6 +102,8 @@ export function perkCount(run, id, perks) {
     out = /** @type {string[]} */ ([]),
     held = run ? run.perks.indexOf(id) : -1;
   if (!P) return '';
+  /* PK-9: the Perk a curse turns off (Permit Revoked) */
+  if (run && fxMuted(run) === id) return 'REVOKED';
   /* PK-6: a copier shows what it copies, and the copied rows' counters (its own marks) */
   if (P.fx.some(f => f.kind === 'copy') && run && held >= 0) {
     const c = fxCopyOf(run.perks, held, perks);
@@ -123,8 +136,9 @@ export const perkSetOf = (id, perks, sets = PERK_SETS) =>
 export function perkSetLine(run, id, perks, sets = PERK_SETS) {
   const S = perkSetOf(id, perks, sets);
   if (!S) return '';
-  const ids = run ? run.perks : [],
-    n = fxSetHeld(ids.includes(id) ? ids : [...ids, id], S, perks);
+  /* PK-9: a Perk a curse turns off counts toward no set (fxLivePerks) */
+  const ids = run ? fxLivePerks(run) : [],
+    n = fxSetHeld(run && run.perks.includes(id) ? ids : [...ids, id], S, perks);
   return `${sets[S].name} ${Math.min(n, sets[S].need)}/${sets[S].need}`;
 }
 /** PK-8: the Perks tab's groups: each set with a Perk held, in perkSets.json's order ({set, ids, n, need, on}: on once
@@ -138,7 +152,8 @@ export function perkGroups(run, perks, sets = PERK_SETS) {
   for (const S of Object.keys(sets || {})) {
     const ids = held.filter(id => perkSetOf(id, perks, sets) === S);
     if (!ids.length) continue;
-    const n = fxSetHeld(held, S, perks);
+    /* PK-9: a Perk a curse turns off counts toward no set */
+    const n = fxSetHeld(fxLivePerks(run), S, perks);
     out.push({ set: S, ids, n, need: sets[S].need, on: n >= sets[S].need });
   }
   const rest = held.filter(id => !perkSetOf(id, perks, sets));

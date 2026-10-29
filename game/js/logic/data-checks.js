@@ -2193,7 +2193,12 @@ export function dataPerks(D, valid = () => true) {
       types = new Set((D.types || []).map(t => t.id));
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
       for (const [k, R] of Object.entries(D.perks))
-        R.fx.forEach((f, n) => perkRowProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what)));
+        R.fx.forEach((f, n) => {
+          perkRowProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
+          /* PK-9: a Perk can't turn the newest Perk off (effects.js fxMuted reads the boons alone) */
+          if (f && f.kind === 'rule' && f.rule === 'muteNewest')
+            problem('perks.json', `${k}.fx[${n}].rule: muteNewest is a curse's only (boons.json)`);
+        });
     /* PK-1: a Perk's battle line */
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
       for (const [k, R] of Object.entries(D.perks))
@@ -2294,6 +2299,8 @@ export function dataPerkSets(D, valid = () => true) {
     T.fx.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
       if (f.kind === 'copy')
         problem('perkSets.json', `${id}.fx[${n}]: a set has no copy row (it copies a Perk above it)`);
+      else if (f.kind === 'rule' && f.rule === 'muteNewest')
+        problem('perkSets.json', `${id}.fx[${n}].rule: muteNewest is a curse's only (boons.json)`);
       else perkRowProblems(f, `${id}.fx[${n}]`, D, what => problem('perkSets.json', what));
     });
     const members = Object.keys(perks).filter(k => (perks[k].tags || []).includes(id));
@@ -2474,6 +2481,8 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   sidePerk: [1, 1, 'times (it is on or off)'],
   /* PK-9: a run town's shop is shut (the curse Out of Office; run-loop.js runShopShut) */
   shopClosed: [1, 1, 'times (it is on or off)'],
+  /* PK-9: the newest Perk held does nothing (the curse Permit Revoked; effects.js fxMuted): only a boon or curse */
+  muteNewest: [1, 1, 'times (it is on or off)'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];

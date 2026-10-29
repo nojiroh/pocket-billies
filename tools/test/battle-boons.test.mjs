@@ -160,3 +160,31 @@ test('PK-9 rule shopClosed: a run town’s shop is shut while it holds, by its s
   withPerks(P, () => assert.equal(L.runShopShut(runSave(['test_ooo']), data.PERKS), 'test_ooo'));
   assert.equal(L.runShopShut(runSave([]), data.PERKS), '');
 });
+
+/* ---------- rule muteNewest ---------- */
+
+test('PK-9 rule muteNewest: the newest Perk gives nothing and counts toward no set; it shows REVOKED', () => {
+  const FX = modules.effects,
+    PK = modules.perks,
+    classics = Object.keys(data.PERKS)
+      .filter(k => (data.PERKS[k].tags || []).includes('classics'))
+      .slice(0, 3),
+    s = runSave(['lucky_charm', ...classics]),
+    srcs = () => new Set((fn('fxOfRun')(s.run, data.PERKS) || []).map(f => f.src));
+  assert.equal(classics.length, 3);
+  assert.ok(srcs().has('set:classics'), 'three Trainer Classics: Old School on');
+  assert.ok(srcs().has(classics[2]));
+  modules['run-enc'].encBoon(s.run, [{ kind: 'rule', rule: 'muteNewest', n: 1 }], 1, 'test');
+  assert.equal(FX.fxMuted(s.run), classics[2]);
+  assert.deepEqual(FX.fxLivePerks(s.run), ['lucky_charm', ...classics.slice(0, 2)]);
+  assert.ok(!srcs().has(classics[2]), 'the newest gives no rows');
+  assert.ok(!srcs().has('set:classics'), 'and the set loses its bonus');
+  assert.ok(srcs().has('lucky_charm'));
+  assert.equal(PK.perkCount(s.run, classics[2], data.PERKS), 'REVOKED');
+  assert.match(PK.perkSetLine(s.run, classics[2], data.PERKS), /2\/3$/);
+  assert.equal(PK.perkGroups(s.run, data.PERKS).find(g => g.set === 'classics').on, false);
+  /* it runs out with the curse's places */
+  for (let k = 0; k < 2; k++) modules['run-enc'].encArrive(s.run);
+  assert.equal(FX.fxMuted(s.run), '');
+  assert.ok(srcs().has('set:classics'));
+});

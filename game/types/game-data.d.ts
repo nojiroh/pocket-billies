@@ -2083,7 +2083,8 @@ export type FxKindRow =
         | 'faintPaysNothing'
         | 'unstableSafe'
         | 'sidePerk'
-        | 'shopClosed';
+        | 'shopClosed'
+        | 'muteNewest';
       n: number;
     }
   /** PK-5: a Billie you catch joins n levels higher */

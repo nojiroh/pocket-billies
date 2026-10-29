@@ -176,6 +176,10 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     'Side areas hold a Perk',
     () => 'On (1): each side area’s place has a Perk lying on the ground (a pick of one when you walk onto it).',
   ],
+  muteNewest: [
+    'The newest Perk does nothing',
+    () => 'On (1): the last Perk taken gives nothing and counts toward no set (a curse’s only; boons.json).',
+  ],
   shopClosed: [
     'Run towns’ shops are shut',
     () => 'On (1): a run town’s shop is shut while it holds (a curse); the market stall stays open.',

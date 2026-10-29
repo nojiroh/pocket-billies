@@ -36,7 +36,8 @@
              perks.js perkNoDrop; faintPaysNothing, a win in which one of yours fainted pays no Moneys,
              battle-rewards.js battleRewards; PK-8: unstableSafe, an Unstable splice of yours loses no HP at a turn's
              end, battle-engine.js endTurn; sidePerk, a side area's place holds a Perk lying on the ground,
-             route-finds.js routeFindsPerk; PK-9: shopClosed, a run town's shop is shut, run-loop.js runShopShut)
+             route-finds.js routeFindsPerk; PK-9: shopClosed, a run town's shop is shut, run-loop.js runShopShut;
+             muteNewest, the newest Perk held does nothing and counts toward no set, fxMuted: a curse's only)
              (PK-4,
              run-map.js
              runForecastDays; later waves add rules)
@@ -134,10 +135,13 @@ expose({
   fxKey: [() => fxKey],
   // @ts-expect-error -- replaced on purpose
   fxLive: [() => fxLive, v => (fxLive = v)],
+  fxLivePerks: [() => fxLivePerks],
   fxMoney: [() => fxMoney],
   fxMoneyShare: [() => fxMoneyShare],
   // @ts-expect-error -- replaced on purpose
   fxMult: [() => fxMult, v => (fxMult = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxMuted: [() => fxMuted, v => (fxMuted = v)],
   fxOfBillie: [() => fxOfBillie],
   fxOfRun: [() => fxOfRun],
   // @ts-expect-error -- replaced on purpose
@@ -271,17 +275,33 @@ export const fxSetsOn = (ids, perks, sets = PERK_SETS) =>
 export const fxSetRows = (ids, perks, sets = PERK_SETS) =>
   fxSetsOn(ids, perks, sets).flatMap(id => sets[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: 'set:' + id })));
 
+/** PK-9: the Perk a muteNewest rule row turns off (the curse Permit Revoked: the newest Perk held, the last of
+ * run.perks), or ''. Only an event's boons and curses carry the rule (data-checks.js), so it is read from them alone
+ * and fxOfRun never asks itself @param {any} run @returns {string} */
+export function fxMuted(run) {
+  if (!run || !Array.isArray(run.perks) || !run.perks.length) return '';
+  const on = encBoonRows(run).some(f => f.kind === 'rule' && f.rule === 'muteNewest' && (f.n || 0) > 0);
+  return on ? run.perks[run.perks.length - 1] : '';
+}
+/** PK-9: the Perks held that work: all but the one a curse turns off (fxMuted), in the order held @param {any} run
+ * @returns {string[]} */
+export const fxLivePerks = run => {
+  const ids = (run && run.perks) || [];
+  return fxMuted(run) ? ids.slice(0, -1) : ids;
+};
 /** the effect rows of a run's Perks (PK-8: and of the sets they make, fxSetRows), its events' boons, its Expedition and
  * challenges and (RL-S2) the hub folk's level bonuses it took off with (null in the hub, or with
  * none) @param {{ perks: string[], expedition?: number, mods?: string[] } | null | undefined} run
  * @param {Record<string, Perk>} perks @returns {Fx[] | null} */
 export const fxOfRun = (run, perks) => {
   /* RL-12b: an event's boons (logic/run-enc.js) after the Perks' rows; RL-13: the Expedition's and challenges' last */
+  /* PK-9: a Perk a curse turns off (Permit Revoked) gives no rows and counts toward no set */
+  const live = fxLivePerks(run);
   const rows = run
     ? [
-        ...fxRows(run.perks || [], perks),
+        ...fxRows(live, perks),
         /* PK-8: the bonuses of the Perk sets whose `need` is held (perkSets.json), after the Perks' own rows */
-        ...fxSetRows(run.perks || [], perks),
+        ...fxSetRows(live, perks),
         ...encBoonRows(/** @type {any} */ (run)),
         .../** @type {Fx[]} */ (modFxRows(run)),
         /* RL-S2: the hub folk's level bonuses (logic/relations.js) */
@@ -566,6 +586,7 @@ export const FX_RULES = /** @type {const} */ ([
   'unstableSafe',
   'sidePerk',
   'shopClosed',
+  'muteNewest',
 ]);
 /** PK-4: what a run's rule rows add to rule `id` (their n summed, with growth; 0 when none). Read on the run where no
  * battle or team is known, so a row with `if` never counts @param {any} run @param {string} id
