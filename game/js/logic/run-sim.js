@@ -14,13 +14,14 @@
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
  * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all', residents?: 'none' | 'all',
  *   policy?: string, scenes?: 'make' | 'skip', expedition?: number, mods?: string[], lvl?: number,
- *   badges?: 'none' | 'all' }} SimOptions
+ *   badges?: 'none' | 'all', perks?: string[], boons?: string[], held?: string }} SimOptions
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   MAX_TURNS: [() => MAX_TURNS],
+  SIM_BOON_PLACES: [() => SIM_BOON_PLACES],
   SIM_CLOCK: [() => SIM_CLOCK],
   SIM_LITE_PLACE: [() => SIM_LITE_PLACE],
   SIM_NOTE: [() => SIM_NOTE],
@@ -40,6 +41,8 @@ expose({
 /** a guard against a battle that never ends in the simulation: the game itself ends one at rules.json battle.turnCap
  * (battle-engine.js turnCapCheck), so this is never reached by a battle the game plays */
 export const MAX_TURNS = 60;
+/** PK-12: how many places a boon or curse the options start a run with lasts (longer than any run) */
+export const SIM_BOON_PLACES = 99;
 /**
  * Studio plan T3.2: the player's part, the bot policy. Every number the simulation uses that isn't the game's own rule is
  * here, by name, and every report names the policy and its settings: the results measure this bot, not a player.
@@ -289,6 +292,12 @@ export function runSimOn(env) {
       ),
       { home, pack }
     );
+    /* PK-12, the balance pass: a run that starts holding these Perks (past the cap), with these boons and curses on for
+       the whole run, and this held item on each Billie (the policy `never-pick` keeps it to them) */
+    for (const id of o.perks || []) if (data.PERKS[id] && !run.perks.includes(id)) run.perks.push(id);
+    for (const id of o.boons || [])
+      if (data.BOONS[id]) modules['run-enc'].encOf(run).boons.push({ id, left: SIM_BOON_PLACES, src: 'sim' });
+    if (o.held && data.ITEMS[o.held] && data.ITEMS[o.held].hold) for (const m of s.team) m.held = o.held;
     const balance = o.scenes === 'skip',
       scenes = balance ? null : runScenesMake(run, worldData()),
       W = runWorldTables(run, data.LOCATIONS[0], worldData()),

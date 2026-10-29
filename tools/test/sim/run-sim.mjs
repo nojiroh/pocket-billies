@@ -38,6 +38,8 @@
 //   --compare=base.json        play a saved report's seeds with its options on the data as it is now, and write the
 //                              paired compare (logic/sim-compare.js simCompareReports; default validation/sim/compare.json),
 //                              the same JSON as the Run Lab's Simulate card
+//   --perks=a,b --boons=c --held=d   PK-12: a run starts holding these Perks (past the cap; 'all': every one), with
+//                              these boons and curses on for the whole run ('all' too) and item d held by each Billie
 //   e.g. node tools/test/sim/run-sim.mjs --runs=200 --balance --out=base.json; (edit the data); then
 //        node tools/test/sim/run-sim.mjs --compare=base.json
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
@@ -59,6 +61,7 @@ if (process.argv[1] && process.argv[1].endsWith('run-sim.mjs')) {
   const C = modules['sim-compare'],
     opt = k => (process.argv.find(a => a.startsWith(`--${k}=`)) || '').split('=').slice(1).join('='),
     arg = (k, d) => +(opt(k) || d),
+    listOpt = (k, all) => (opt(k) === 'all' ? Object.keys(all) : opt(k).split(',').filter(Boolean)),
     t0 = Date.now(),
     base = opt('compare') ? JSON.parse(readFileSync(resolve(opt('compare')), 'utf8')) : null;
   if (base && base.kind !== 'pb-sim-report') throw new Error(`${opt('compare')} is not a simulation report (--out)`);
@@ -77,6 +80,10 @@ if (process.argv[1] && process.argv[1].endsWith('run-sim.mjs')) {
           ...(opt('lvl') ? { lvl: arg('lvl', 0) } : {}),
           ...(opt('badges') ? { badges: opt('badges') } : {}),
           ...(opt('policy') ? { policy: opt('policy') } : {}),
+          /* PK-12: Perks held and boons on from the start ('all': every one), a held item on each Billie */
+          ...(opt('perks') ? { perks: listOpt('perks', data.PERKS) } : {}),
+          ...(opt('boons') ? { boons: listOpt('boons', data.BOONS) } : {}),
+          ...(opt('held') ? { held: opt('held') } : {}),
           ...(process.argv.includes('--balance') ? { scenes: 'skip' } : {}),
         },
     report = runReport(base ? base.seeds : C.simSeeds(arg('runs', 50)), o),
