@@ -5,7 +5,7 @@ the console text and the log line.
 Used by check-fast.py, check-quick.py, check-ui-gallery.py, check-sound.py and check-studio-github.py, and by the look
 tools (style-diff.py, look-blur.py, island-perf.py, island-shots.py; look-tall-ground.py through check-fast.py).
 Nothing here waits a fixed time: `until` asks the page every 100 ms."""
-import socket, threading, time
+import os, socket, threading, time
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -32,6 +32,16 @@ LOW_GRAPHICS = """(()=>{const off={lens:{blur:0,bokeh:0,aberration:0,grain:0,sha
  quality:{auto:false,shadowMap:1024,resolution:.4}};let G;
  Object.defineProperty(window,'GAMEDATA',{configurable:true,get(){return G},set(v){if(v&&typeof v==='object'){v.engine=v.engine||{};
   const d=v.engine.defaults=v.engine.defaults||{};for(const k in off)d[k]=Object.assign({},d[k]||{},off[k])}G=v}})})()"""
+
+
+# dialogue track DL-6: PB_FIGURES=1 runs any check with figures on (Engine > People > Figures and Townsfolk as figures,
+# in the game-wide defaults, PB_FIGURE the figure: rogue by default). It wraps whatever GAMEDATA hook came before it
+# (LOW_GRAPHICS, check-quick's QUICK_RENDER), so it goes last
+FIGURES_ON = os.environ.get('PB_FIGURES') == '1'
+FIGURES = ("(()=>{const was=Object.getOwnPropertyDescriptor(window,'GAMEDATA');let G;Object.defineProperty(window,'GAMEDATA',{configurable:true,"
+           "get(){return was&&was.get?was.get():G},set(v){if(v&&typeof v==='object'){v.engine=v.engine||{};const d=v.engine.defaults=v.engine.defaults||{};"
+           "d.people=Object.assign({},d.people||{},{figures:true,folk:true,figure:%s})}if(was&&was.set)was.set(v);else G=v}})})()"
+           % repr(os.environ.get('PB_FIGURE', 'rogue')))
 
 
 def log(msg):
@@ -74,7 +84,7 @@ def new_page(b, errs, width=400, height=300, mobile=False, low=True, timeout=600
     """a page with the check set-up: the clock, no accounts, the test globals, (low) the graphics off and the scripts
     in init; its errors go into errs. Not opened yet: (context, page)"""
     ctx = b.new_context(viewport={'width': width, 'height': height}, device_scale_factor=1, is_mobile=mobile, has_touch=mobile, **context)
-    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS) + ((LOW_GRAPHICS,) if low else ()) + tuple(init): ctx.add_init_script(s)
+    for s in (CLOCK, NO_ACCOUNTS, TEST_GLOBALS) + ((LOW_GRAPHICS,) if low else ()) + tuple(init) + ((FIGURES,) if FIGURES_ON else ()): ctx.add_init_script(s)
     ctx.set_default_timeout(timeout); pg = ctx.new_page()
     collect_errors(pg, errs, console)
     return ctx, pg
