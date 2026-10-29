@@ -16,7 +16,11 @@ cozy whimsical retro futuristic", then "all houses look way too similar now, add
   first sketches: "a little more Pokémon generation 5" (the track file's section 5; the sketch page redrawn with the
   high 3/4 view, thick eaves, white walls with bold roofs, a brick townhouse body, fire escapes, water towers,
   awnings, a big shop sign). BD-2 split into BD-2a (painting) and BD-2b (the shader); sessions grouped in five waves
-  that can run side by side (section 6).
+  that can run side by side (section 6). Then: "a little more nature, bit more on the retro futuristic" (the sketch
+  page's fourth version: gardens on every plot, an atomic, dish, antenna or tube touch on every house, bubble cars);
+  the three Ask me before items answered (normal maps on above Low, pixel-font signs, 6,000 triangles a house); and
+  the sessions chained (the owner: "All plans approved. Automatically start next steps in new session ... Run
+  simultaneously when you can"): this session made `track/buildings` and started wave 1 (BD-1, BD-2a, BD-F).
 - Found, not changed (for BD-7; details in the track file, section 3): doors are written at 32 px/m but read at ppu 34
   (about 6% short of the model's door); tools/clear-windows.py ignores `rot` (most hub buildings are at rot 90); the
   lighthouse and station have no `door`, so lowpoly-props.test.mjs gives them the 4k prop budget; cottage_juniper gets
@@ -27,7 +31,8 @@ cozy whimsical retro futuristic", then "all houses look way too similar now, add
 - Verified: lint, format:check, `npm test` 2392 of 2392 (docs only). Pictures of today's cottages and houses
   (tools/look-hub-buildings.py --times=rows, scratchpad, not committed). The suggestion page looked at once at phone
   width, light and dark: no sideways scroll, no script errors.
-- Next: BD-1 (new recipe shapes) on `track/buildings`, which the owner makes from this branch or main.
+- Next: wave 1, started by this session: BD-1 (new recipe shapes) on `track/buildings`, BD-2a (surfaces painted) on
+  `claude/bd-2a-surfaces`, BD-F (the window check reads `rot`) on `claude/bd-f-window-check`.
 
 ### Fix - Kappi's stall clock counts only free walking - 2026-10-29
 Branch `fix/kappi-stall-clock` from main 7f661239, PR into main. From the owner's first phone log of the new intro

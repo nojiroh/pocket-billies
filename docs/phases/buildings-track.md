@@ -6,10 +6,10 @@ The owner's brief (2026-10-29): "Redo the 3D buildings of the main hub island. T
 playful stylized details. Add more building textures and normal maps if that helps. Go for cozy whimsical retro
 futuristic. Do online research. Make suggestions. Ask questions for clarification." Then, in the same talk: "All
 houses look way too similar now, add a lot of modular variety." BD-0 (this file and a suggestion page, docs only) was
-written on `ccr-d224d90d-qlnty6`; every later session works on `track/buildings`, made by the owner from that branch
-or main.
+written on `ccr-d224d90d-qlnty6`; `track/buildings` was made from it by BD-0's session at the owner's word
+(2026-10-29), and every later session works there or on a side branch of it (section 6, "How the sessions run").
 
-**Status:** BD-0 done (2026-10-29). Next: BD-1.
+**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once.
 
 The suggestion page (sketches of every building, a house roller, the new surfaces; private to the owner):
 https://claude.ai/artifact/3NF2Qp28uncV7fiCH5yP5b . Its sketches are 2D drawings of shapes and details, not the
@@ -49,6 +49,15 @@ Sessions act on these without asking again.
 - **More Pokémon generation 5** (Black and White) in the style (the owner, after the first sketches, 2026-10-29: "The
   sketches look great. Put a little more Pokemon generation 5 in the style"). Section 5 says what that means here;
   the sketch page shows it. Original designs only: no copied buildings, logos or names.
+- **A little more nature, a bit more retro-futurism** (the owner, 2026-10-29, after the second sketches). Section 5.
+- **Ask me before, answered** (2026-10-29): the normal sheet **on above Low** graphics; signs keep the **pixel-font
+  decals**; **6,000 triangles** per kit house.
+- **Sessions run on their own** (the owner, 2026-10-29: "Continue with the next steps when done. All plans approved.
+  Automatically start next steps in new session. Plans auto approved. Run simultaneously when you can."): each
+  session writes its plan in Plan Mode's shape in its first reply, then builds without waiting for approval (this
+  answer is the approval), and at its end starts the next session(s) by section 6's rules. Sessions in one wave run
+  at the same time. BD-3's look pick is the owner's: the chain pauses there until they answer. A new "Ask me before"
+  a session meets is still asked: it ends its turn with the question and options, and the chain waits.
 
 ## 2. What the buildings are made of today (audit, 2026-10-29)
 - **Recipes.** Each building is a JSON recipe in game/art/scene/next/models/<key>.json (`{ppm: 32, cel, layers}`),
@@ -162,6 +171,15 @@ Each building gets **one signature silhouette** that reads from the orbit camera
   - **Big readable signs**: a rounded board and a round emblem on the shop and the station; Copperleaf gets its own
     leaf emblem.
   - **Tidier civic buildings**: the storybook lean stays on homes and is turned down on the square's buildings.
+- **More nature** (the owner, 2026-10-29): every house plot has a garden. Round, pine and blossom trees behind it,
+  shrubs and flowers along the walls, ivy up a corner, hanging baskets, flower boxes, roof gardens, moss. Ivy, flower
+  boxes, baskets and moss are model layers in the house recipe; trees and bushes are the island's existing prop
+  models, placed with the plot by the town tools (BD-7, island-dress.mjs), not baked into the house. Civic buildings
+  get street trees and planters; ivy on the archive, blossom by the inn.
+- **More retro-futurism** (the owner, 2026-10-29): every house carries at least one retro-future touch (atomic
+  finial with orbit rings, satellite dish, antenna with a glowing tip, wind spinner, solar sail, bubble greenhouse,
+  pneumatic tube that glows at night, copper rocket chimney); neon tubes under the eaves on about two thirds of
+  houses; chrome and brass trims. Bubble cars hovering by the shop and the station (new scenery props, BD-6).
 - **Surfaces** (BD-2a, BD-2b): fish-scale shingles, copper standing seam, barrel tiles, cob/stucco, half-timber, riveted
   panels, glass block, mosaic tile; each with a normal cell.
 
@@ -196,6 +214,32 @@ session merges them.
 
 Not at the same time: BD-1 and BD-2b (the same shader files); anything with BD-7 (copperleaf.json); BD-3 before
 wave 4 (its pick changes their ranges).
+
+### How the sessions run (the owner's answer, section 1)
+- **Branches.** The main line works on `track/buildings`: BD-1, BD-2b, BD-3, BD-4a, BD-7 (with BD-4b), BD-8. Side
+  sessions work on their own branch from `track/buildings` and open a draft PR into it: BD-2a
+  `claude/bd-2a-surfaces`, BD-F `claude/bd-f-window-check`, BD-5 `claude/bd-5-civic`, BD-6 `claude/bd-6-landmarks`.
+  A cloud session pushes only to the branch it was started on: each is started with that branch.
+- **The start of a wave's main-line session** merges the last wave's side branches into `track/buildings`
+  (`git fetch origin <branch>`, `git merge origin/<branch>`, never a rebase; HANDOFF.md conflicts keep both entries,
+  newest on top; scenery.json conflicts are settled by rerunning the builders, then `npm run data`), merges main in,
+  pushes, then plans and builds.
+- **The end of every session**: the handoff skill (HANDOFF entry, ROADMAP, BRANCHES), push, its PR (a side
+  session's draft PR into `track/buildings`; the main line keeps one draft PR from `track/buildings` into main, made
+  by BD-1 and updated after), then the chain:
+  1. Is the wave done? A wave is done when every session in it has its HANDOFF entry on its own branch
+     (`git fetch origin <branch>` and look for `### Buildings track BD-<n>` in its docs/HANDOFF.md).
+  2. If not, stop: the last session of the wave to finish starts the next.
+  3. If so, check that the next wave's sessions don't already exist (list your sessions; titles start "Buildings
+     BD-<n>"), then start each with `create_session` (the repository, its branch as both `source_revision` and
+     `outcome_branch`, title "Buildings BD-<n>: <goal>", no plan permission mode) and a prompt that says: the session's ID
+     and branch, "read CLAUDE.md, then docs/phases/buildings-track.md section 1 and 6 and the session's own section;
+     use the start-session skill but do not wait for approval (section 1); at the end follow 'How the sessions run'".
+     Side branches that don't exist yet are made from `track/buildings` first (the GitHub tools' create_branch).
+  4. BD-3 ends its turn with the look pick (pictures sent to the owner, options, a recommendation) and starts wave 4
+     only after the owner answers in that session. BD-8 starts nothing; it says the track is done.
+- **Failures**: a session that cannot finish (red checks it cannot fix, a blocker) says so at the top of its HANDOFF
+  entry and in its final message, and starts nothing.
 
 ### BD-1 New shapes
 In `lowPolyFromRecipe` (prop-models.js), each a new field or kind with its own unit test (bounds, normals pointing
@@ -241,7 +285,10 @@ tools/build-house-kit.py, beside batch 7's `House` (reuse its windows, doors, la
   - Roofs: steep gable, low-pitch slab (Unova's wide thick eaves), gambrel, saltbox, upswept, bulb dome, mushroom
     thatch, mansard, flat with a roof garden.
   - Add-ons, 0-3: turret, bay window, dormer, lean-to, balcony, porch canopy, bubble greenhouse, solar sail, water
-    tower, fire escape, striped awning, antenna or weathervane, wind spinner, outside stair.
+    tower, fire escape, striped awning, antenna or weathervane, wind spinner, outside stair, atomic finial,
+    satellite dish, pneumatic tube. At least one retro-future add-on on every house; one rooftop ornament at most.
+  - A nature pass on every house: flower boxes, ivy (60% of tall bodies), hanging baskets, moss; the plot's trees and
+    shrubs are listed with the variant (`garden` hints for the town tools: tree kinds and sides).
   - Chimneys: crooked brick, stovepipe, copper rocket. Doors: round, arched, porthole, Dutch. Windows: porthole,
     round-top, bay, crossed square, ribbon.
   - 8-10 palettes from section 5 (the copper ones and white walls with red, navy or teal roofs); wonk (lean, sag, bulge) from the seed within BD-3's ranges.
@@ -249,7 +296,7 @@ tools/build-house-kit.py, beside batch 7's `House` (reuse its windows, doors, la
   swap `model`, `box`, `door` and `fx` (walk-view.js `plainPropVariant` already lets a variant replace any field), in
   small, medium and large footprints so plots can take them. Glass and roof marks written by the kit itself.
 - A contact sheet of all houses (a picture tool), and a test that no two variants share body + roof + palette.
-- Triangle budget per house: Ask 3. Each variant is its own mesh (about 11 more draws than today's 2 shared meshes;
+- Triangle budget per house: 6,000 (the owner's answer). Each variant is its own mesh (about 11 more draws than today's 2 shared meshes;
   far under 400).
 
 ### BD-4b Houses placed
@@ -270,6 +317,8 @@ Lettering stays fixed decals, never mirrored (HB-1).
 - Lighthouse: a finned rocket shape; its light room and turning shutter kept.
 - Windmill: a retro rotor on a tapered tower, its sails turning (`spin`).
 - Barn: a gambrel roof with solar shingles and a domed silo.
+- Bubble cars: a small hovering retro car prop (two or three colour variants, a glow under it at night), parked by
+  the shop and the station.
 - Skyline Station: a Googie boomerang canopy over the platform, a starburst clock; the rail, its offset and the
   portal unchanged (station-place.mjs reads `box[1]`: keep the depth or move the rail with it, tested by hub-doors).
 
@@ -288,10 +337,10 @@ Lettering stays fixed decals, never mirrored (HB-1).
 tools/island-shots.py and look-hub-buildings.py pictures at noon, dusk and night; the owner plays on the phone and
 sends a debug log; frame times against the last log's.
 
-## 7. Ask me before (recommendation first)
-1. The normal sheet by default: on above Low graphics (rec) / always / off.
-2. Signs: keep the pixel-font decals (rec) / painted signs.
-3. Triangle budget per house: 4k (rec, checked in BD-2b's measures) / 6k.
+## 7. Ask me before
+Answered 2026-10-29 (section 1): the normal sheet on above Low; pixel-font decals; 6,000 triangles a house. Still the
+owner's: BD-3's look pick. Anything new a session meets that only the owner should decide is asked the same way
+(options, a recommendation, the chain waits).
 
 ## 8. Not in this track
 - Run towns' houses (biomes.json `town.houses`): a later step swaps them to the kit per biome palette.
