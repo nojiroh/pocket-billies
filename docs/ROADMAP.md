@@ -239,6 +239,10 @@ town node needs it.
   VFX-19 (move sounds: music.json `battle`, a sound per move family layered by type, hurt sounds, the recall, throws
   and catches with body and echo, the Studio's Battle card, check-sound fingerprints; placeholders until the owner's
   listening pass) built 2026-10-28 on `claude/vfx-19-move-sounds` (PR #325 into `track/vfx`, merged by VFX-20).
+  VFX-18b (signature scenes 3, wave 4, side branch `claude/vfx-18b-scenes-3`: storyboards first, 19 more scenes from
+  VFX-17's primitives, the sound words WHOOSH!, PSSHT!, DING-DONG! and THWOCK!, status scenes within their family's
+  time, and the Retrieval Unit's shield phase raising two Bureau barriers; the bots' moves keep their families) built
+  2026-10-29 (PR #330 into `track/vfx`).
   **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
