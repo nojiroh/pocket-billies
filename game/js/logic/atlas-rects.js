@@ -5,8 +5,8 @@
    in art/manifest.js: `window.ARTMAN={"icons":{"<key>":[x,y,w,h],...},"battle":{...}};`, one line (art.js iconCanvas
    reads them). The Studio's atlas editor (studio/js/atlas-editor.js) moves, resizes, adds, renames and deletes them;
    this is its arithmetic: the file's text, the problems a sheet can have, a free spot, a rename that keeps the order,
-   and what in the data names a key: an item's icon is `i_` + (its `icon` or its id), a type's battle particles are its
-   `fx` list. The code names some keys as words too (art-code-refs.json `atlas`).
+   and what in the data names a key: an item's icon is `i_` + (its `icon` or its id) unless it has its own picture
+   (`img`, PK-11), a type's battle particles are its kit's `burstSprites` (battleAnims.json). The code names some keys as words too (art-code-refs.json `atlas`).
    Logic only: no DOM, runs in Node (tools/test/atlas-rects.test.mjs). */
 /** @typedef {[number, number, number, number]} Rect */
 /** @typedef {Record<string, Rect>} Rects */
@@ -92,20 +92,23 @@ export function atlasRename(icons, from, to) {
 export const atlasKeyOk = k => /^[a-z][a-z0-9_]*$/i.test(k);
 
 /** what in the data names a key: [{ at, kind }] (items/<id>, types/<id>)
- * @param {string} key @param {{ items?: Record<string, any>, types?: any[] }} D */
+ * @param {string} key @param {{ items?: Record<string, any>, types?: any[], battleAnims?: any }} D */
 export function atlasUses(key, D) {
   const out = [];
+  /* PK-11: an item with its own picture (img, art/items) draws no rectangle, so it uses none */
   if (key.startsWith('i_'))
     for (const [id, I] of Object.entries(D.items || {}))
-      if (I && 'i_' + (I.icon || id) === key) out.push({ at: 'items/' + id, kind: 'item icon' });
-  for (const t of D.types || [])
-    if (t && (t.fx || []).includes(key)) out.push({ at: 'types/' + t.id, kind: 'battle particle' });
+      if (I && !I.img && 'i_' + (I.icon || id) === key) out.push({ at: 'items/' + id, kind: 'item icon' });
+  /* VFX-20: a type's battle particles are its kit's burstSprites (battleAnims.json types; were types.json fx) */
+  for (const [id, K] of Object.entries((D.battleAnims && D.battleAnims.types) || {}))
+    if (K && typeof K === 'object' && (K.burstSprites || []).includes(key))
+      out.push({ at: 'types/' + id, kind: 'battle particle' });
   return out;
 }
 
-/** renames a key where the data names it (in place): items' icons (an item icon stays i_<name>) and types' particles.
+/** renames a key where the data names it (in place): items' icons (an item icon stays i_<name>) and types' particles (their battle kits').
  * Returns how many places changed, or -1 when an item uses it and the new key isn't an item icon's (i_...)
- * @param {{ items?: Record<string, any>, types?: any[] }} D @param {string} from @param {string} to */
+ * @param {{ items?: Record<string, any>, types?: any[], battleAnims?: any }} D @param {string} from @param {string} to */
 export function atlasRenameData(D, from, to) {
   const uses = atlasUses(from, D);
   if (uses.some(u => u.kind === 'item icon') && !to.startsWith('i_')) return -1;
@@ -113,8 +116,8 @@ export function atlasRenameData(D, from, to) {
     const [kind, id] = u.at.split('/');
     if (kind === 'items') /** @type {Record<string, any>} */ (D.items)[id].icon = to.slice(2);
     else {
-      const t = (D.types || []).find(x => x.id === id);
-      t.fx = t.fx.map((/** @type {string} */ k) => (k === from ? to : k));
+      const K = /** @type {any} */ (D.battleAnims).types[id];
+      K.burstSprites = K.burstSprites.map((/** @type {string} */ k) => (k === from ? to : k));
     }
   }
   return uses.length;

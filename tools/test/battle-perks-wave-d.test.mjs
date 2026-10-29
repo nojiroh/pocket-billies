@@ -187,7 +187,7 @@ test('PK-6 rule sideFind: a side place holds finds more that show only with the 
     };
   const main = make(false),
     side = make(true),
-    plain = p => !p.more;
+    plain = p => !p.more && !p.perk;
   /* the place's own finds are the same either way; the side's more come after them, marked */
   assert.deepEqual(side.props.filter(plain), main.props);
   assert.deepEqual(side.got[1].finds, main.got[1].finds);

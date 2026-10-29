@@ -25,7 +25,15 @@ import {
 } from '../../game/js/logic/effects.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
-import { FX_ONCE_KINDS, FX_PLAIN, FX_RULE_N, FX_WHEN_KINDS, dataPerks } from '../../game/js/logic/data-checks.js';
+import {
+  FX_ONCE_KINDS,
+  FX_PLAIN,
+  FX_RULE_N,
+  FX_WHEN_KINDS,
+  dataBoons,
+  dataPerkSets,
+  dataPerks,
+} from '../../game/js/logic/data-checks.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -54,6 +62,7 @@ expose({
   PERK_ROW_NEW: [() => PERK_ROW_NEW],
   PERK_RULES: [() => PERK_RULES],
   PERK_WHEN: [() => PERK_WHEN],
+  boonsCardHTML: [() => boonsCardHTML, v => (boonsCardHTML = v)],
   perkArtHTML: [() => perkArtHTML, v => (perkArtHTML = v)],
   perkCoverage: [() => perkCoverage, v => (perkCoverage = v)],
   perkEd: [() => perkEd],
@@ -67,6 +76,8 @@ expose({
   perkProblems: [() => perkProblems],
   perkRarityHTML: [() => perkRarityHTML, v => (perkRarityHTML = v)],
   perkRowHTML: [() => perkRowHTML, v => (perkRowHTML = v)],
+  perkSetPickHTML: [() => perkSetPickHTML, v => (perkSetPickHTML = v)],
+  perkSetsHTML: [() => perkSetsHTML, v => (perkSetsHTML = v)],
   perkTimingHTML: [() => perkTimingHTML, v => (perkTimingHTML = v)],
   perkX: [() => perkX],
 });
@@ -93,6 +104,7 @@ const PERK_KINDS = {
   heal: 'Heal a share of HP on walking into a place',
   payout: 'The payout’s Research, or the share items count at',
   dna: 'A Gene Sample’s DNA (SP-6)',
+  xp: 'The XP your Billies get from a battle (PK-7)',
   splice: 'How often wild Billies are spliced (SP-6)',
   unstable: 'The HP Unstable splices lose at each turn’s end (SP-6)',
   turnHeal: 'Heal a share of HP at each turn’s end (PK-1)',
@@ -105,6 +117,7 @@ const PERK_KINDS = {
   inflict: 'A chance to give the foe a status when one of yours hits it, or as a battle starts (PK-3, PK-5)',
   chip: 'What a burn takes from your Billies at each turn’s end (PK-3)',
   first: 'Your Billies move before the foe’s (PK-3; If turn:1 for the first turn)',
+  last: 'Your Billies move after the foe’s (PK-9; If turn:1 for the first turn)',
   revive: 'A wiped team gets back up, once (PK-3)',
   passive: 'A type passive works better for your Billies that have it (PK-4)',
   weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
@@ -116,6 +129,9 @@ const PERK_KINDS = {
   salvage: 'Beaten bots leave more salvage (PK-5)',
   copy: 'Copies the Perk just above it in the list held (PK-6)',
   give: 'Moneys and Bag items at once, when it is taken (PK-6)',
+  recoil: 'An attack of yours that deals damage costs its user HP (PK-7)',
+  loot: 'A random item from an events.json loot table, at its moment (PK-7)',
+  heldBoost: 'Your Billies’ held items work better (PK-8)',
 };
 /** PK-4, PK-5: each run rule's name and what its By counts (data-checks.js FX_RULE_N has its range) */
 const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
@@ -124,8 +140,9 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     () => `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
   ],
   rewardPick: [
-    'Reward picks show more cards',
-    () => `Cards more than rules.json’s ${studioState.D.rules.run.rewards.pick}.`,
+    'Reward picks show more cards (or fewer)',
+    () =>
+      `Cards more than rules.json’s ${studioState.D.rules.run.rewards.pick}; -1 shows one fewer (a curse; never under one).`,
   ],
   rerollFree: [
     'The first rerolls of a reward pick are free',
@@ -146,6 +163,38 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     () => 'Finds more on each side area’s route or arena (at most 2; they show at once when taken).',
   ],
   eventHurt: ['Events never cost your team HP', () => 'On (1): an event’s hurt command does nothing.'],
+  /* PK-7: Non-Refundable Ticket */
+  /* PK-7: Influencer Contract */
+  faintPaysNothing: [
+    'A win in which one of yours fainted pays nothing',
+    () => 'On (1): a won battle in which one of yours fainted pays no Moneys (a wild prize or a trainer’s reward).',
+  ],
+  /* PK-8: the Lab Kit set */
+  unstableSafe: [
+    'Unstable splices lose no HP',
+    () => 'On (1): an Unstable splice of yours loses nothing at a turn’s end (its cells never hurt it).',
+  ],
+  sidePerk: [
+    'Side areas hold a Perk',
+    () => 'On (1): each side area’s place has a Perk lying on the ground (a pick of one when you walk onto it).',
+  ],
+  curseShorter: ['Curses last fewer places', () => 'Places fewer for each curse given (boons.json; at most 3).'],
+  curseErase: [
+    'The run’s first curse is erased',
+    () => 'On (1): the first curse handed out on a run is erased at once.',
+  ],
+  muteNewest: [
+    'The newest Perk does nothing',
+    () => 'On (1): the last Perk taken gives nothing and counts toward no set (a curse’s only; boons.json).',
+  ],
+  shopClosed: [
+    'Run towns’ shops are shut',
+    () => 'On (1): a run town’s shop is shut while it holds (a curse); the market stall stays open.',
+  ],
+  noDrop: [
+    'No Perk held can be let go',
+    () => 'On (1): at the cap no new Perk can be taken (the “Let one go” sheet offers none).',
+  ],
 });
 /** PK-1: what each moment means, for the When select */
 const PERK_WHEN = {
@@ -175,6 +224,7 @@ const PERK_ROW_NEW = {
   heal: () => ({ kind: 'heal', share: 0.1 }),
   payout: () => ({ kind: 'payout', what: 'research', mult: 1.1 }),
   dna: () => ({ kind: 'dna', mult: 1.1 }),
+  xp: () => ({ kind: 'xp', mult: 1.1 }),
   splice: () => ({ kind: 'splice', mult: 1.1 }),
   unstable: () => ({ kind: 'unstable', mult: 0.9 }),
   turnHeal: () => ({ kind: 'turnHeal', share: 0.05 }),
@@ -187,6 +237,7 @@ const PERK_ROW_NEW = {
   inflict: () => ({ kind: 'inflict', status: 'par', chance: 0.1, when: 'hit' }),
   chip: () => ({ kind: 'chip', what: 'burn', mult: 0.9 }),
   first: () => ({ kind: 'first', if: 'turn:1' }),
+  last: () => ({ kind: 'last', if: 'turn:1' }),
   revive: () => ({ kind: 'revive', share: 0.5, once: 'run' }),
   passive: () => ({ kind: 'passive', passive: 'kindling', rate: 2 }),
   weather: () => ({ kind: 'weather', what: 'noWeaken' }),
@@ -198,6 +249,9 @@ const PERK_ROW_NEW = {
   salvage: () => ({ kind: 'salvage', mult: 2 }),
   copy: () => ({ kind: 'copy' }),
   give: () => ({ kind: 'give', money: 150, when: 'take' }),
+  recoil: () => ({ kind: 'recoil', share: 0.08 }),
+  loot: () => ({ kind: 'loot', table: 'common', when: 'arrive' }),
+  heldBoost: () => ({ kind: 'heldBoost', mult: 1.5 }),
 };
 /** PK-4: what each passive row's numbers mean (effects.js FX_PASSIVE_KEYS), for its inputs */
 const PERK_PASSIVE_FIELDS = {
@@ -217,7 +271,12 @@ const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 /** the data checks' messages about perks.json and rules.json run.perks (dataPerks, as CI runs it) */
 const perkProblems = () => {
   try {
-    return dataPerks(studioState.D).map(([f, m]) => ({ f, m }));
+    /* PK-8: and the Perk sets' (perkSets.json; a Perk in two sets is a perks.json message) */
+    /* PK-9: and the boons' and curses' (boons.json) */
+    return [...dataPerks(studioState.D), ...dataPerkSets(studioState.D), ...dataBoons(studioState.D)].map(([f, m]) => ({
+      f,
+      m,
+    }));
   } catch (e) {
     return [{ f: 'perks.json', m: `the check stopped: ${e.message || e}` }];
   }
@@ -262,11 +321,19 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
               numberField('At most', `${p}.max`, { min: 1, max: 9999, step: 1, unit: '$' }),
               `<p class="note">Paid at arrive (its When), from what you carry as you walk in.</p>`,
             ]
-          : [mult('Moneys ×')],
+          : 'add' in f
+            ? [
+                /* PK-7: Moneys paid, or charged below 0 (Subscription Box) */
+                numberField('Moneys (below 0 charges)', `${p}.add`, { min: -9999, max: 9999, step: 1, unit: '$' }),
+                `<p class="note">At arrive (its When): paid, or charged when below 0 (never below none carried).</p>`,
+              ]
+            : [mult('Moneys ×')],
       price: () => [
         selectField('Which price', `${p}.what`, [
           ['shop', 'A run shop’s wares'],
           ['heal', 'A run town’s clinic'],
+          /* PK-8: a run shop's Perk (after the shop's rows) */
+          ['perk', 'A run shop’s Perk'],
         ]),
         mult('Price ×'),
       ],
@@ -318,11 +385,25 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         mult('×'),
       ],
       dna: () => [mult('Gene Sample DNA ×')],
+      /* PK-7: Hustle Planner's quarter */
+      xp: () => [mult('XP from a battle ×')],
       splice: () => [mult('Wild splice odds × (Graft and Chimera together never past 100%)')],
       unstable: () => [mult('Unstable turn-end hurt ×')],
       turnHeal: () => [share('Share of HP healed at each turn’s end')],
       pinchHeal: () => [share('Low: at this share of HP or below', 'at'), share('Share of HP healed')],
       turnHurt: () => [share('Share of HP lost at each turn’s end (at most 0.5)')],
+      /* PK-7: Overclock Chip's cost */
+      recoil: () => [share('Share of its HP an attack that dealt damage costs its user (at most 0.5)')],
+      /* PK-7: Subscription Box's item */
+      loot: () => [
+        selectField(
+          'Loot table (events.json loot)',
+          `${p}.table`,
+          Object.keys((D.events && D.events.loot) || {}).map(t => [t, t])
+        ),
+        numberField('Items', `${p}.n`, { min: 1, max: 3, step: 1, opt: 1 }),
+        `<p class="note">At its When (arrive): drawn from the run’s own stream for each place, so a reload brings the same.</p>`,
+      ],
       level: () => [numberField('Foes’ levels +', `${p}.n`, { min: -20, max: 20, step: 1 })],
       bossHp: () => [mult('Boss HP ×')],
       /* PK-3: stages without a when; at a move (When) the move itself is a critical hit */
@@ -361,6 +442,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       ],
       chip: () => [selectField('Which hurt', `${p}.what`, [['burn', 'A burn’s, at each turn’s end']]), mult('Hurt ×')],
       first: () => [`<p class="note">Within a move’s priority, yours act before the foe’s wherever its If holds.</p>`],
+      last: () => [`<p class="note">Within a move’s priority, yours act after the foe’s wherever its If holds.</p>`],
       revive: () => [share('Share of HP each gets back up with')],
       /* PK-4: the passive, then the numbers it takes; slipstream and alloy take a flag */
       passive: () => [
@@ -416,6 +498,8 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
         }),
       ],
       salvage: () => [mult('Parts offered and Scrap ×')],
+      /* PK-8: a held item's factors move this many times as far from 1; its stages, shares and chances this many times */
+      heldBoost: () => [mult('Held items work ×')],
       /* PK-6: Moneys, and the items as id:n pairs */
       give: () => [
         numberField('Moneys', `${p}.money`, { min: 1, max: 9999, step: 1, opt: 1 }),
@@ -578,7 +662,7 @@ SECTIONS.relics = () => {
   const list = ks
     .map(
       x =>
-        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'perks.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${escapeHtml(L[x].rarity)} · weight ${D.rules.run.perks.rarity[L[x].rarity] || 0} · ${perkPct(cov.chance[x])} first</small></span></button>`
+        `<button class="lcard slim ${x === k ? 'on' : ''}" data-act="pickRelic" data-id="${escapeHtml(x)}"><span class="lt"><b>${escapeHtml(L[x].name || x)}${P.some(p => p.f === 'perks.json' && p.m.startsWith(x + '.')) ? ' <span class="warn">⚠</span>' : ''}</b><small>${L[x].rarity === 'fine' ? 'fine · a leader’s win only' : `${escapeHtml(L[x].rarity)} · weight ${D.rules.run.perks.rarity[L[x].rarity] || 0} · ${perkPct(cov.chance[x])} first`}</small></span></button>`
     )
     .join('');
   const head = `<div class="list-head"><button class="btn primary" data-act="relicNew">+ New Perk</button></div>`;
@@ -600,7 +684,8 @@ SECTIONS.relics = () => {
      selectField(
        'Rarity',
        `${p}.rarity`,
-       PERK_RARITIES.map(r => [r, r]),
+       /* PK-7: fine, Fine Print: offered only at a leader's win (rules.json run.perks.leader) */
+       [...PERK_RARITIES.map(r => [r, r]), ['fine', 'fine (Fine Print: a leader’s win only)']],
        { rr: 1 }
      )
    ) +
@@ -612,10 +697,15 @@ SECTIONS.relics = () => {
      }) +
      `<label class="fld"><span>Needs, to be offered (PK-4: team:Fire for a Billie of that type, mono; PK-5: bots, a scrapyard still ahead; PK-6: side, a side area still ahead)</span><input type="text" data-relic-needs="${escapeHtml(k)}" value="${escapeHtml(R.needs == null ? '' : [].concat(R.needs).join(', '))}" placeholder="team:Fire"></label>` +
      `<label class="fld"><span>Tags (PK-4: types and themes; offers lean ×${D.rules.run.perks.bias || 1} toward a match with the team’s types or a Perk held)</span><input type="text" data-relic-tags="${escapeHtml(k)}" value="${escapeHtml((R.tags || []).join(', '))}" placeholder="Fire, weather"></label>` +
+     perkSetPickHTML(D, k, R) +
      perkArtHTML(k, R) +
      perkProblemHTML(P, `${k}.`, `${k}.fx[`),
    {
-     sub: `${escapeHtml(R.rarity)}: ${perkPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.perks.price[R.rarity] || 0} Moneys.`,
+     sub:
+       R.rarity === 'fine'
+         ? /* PK-7: Fine Print: a leader's win's pick only, every one of its rarity as likely */
+           `fine (Fine Print): offered only at a leader’s win, one of ${Object.values(L).filter(q => q.rarity === 'fine').length} there; never in a shop, an event or a reward pick.`
+         : `${escapeHtml(R.rarity)}: ${perkPct(cov.chance[k])} to be drawn first at a pick; a shop asks ${D.rules.run.perks.price[R.rarity] || 0} Moneys.`,
    }
  )}
  ${card(
@@ -661,9 +751,110 @@ SECTIONS.relics = () => {
      sub: 'The picks after each mini-boss on a run of this seed (perks.js), as the Run Lab shows them for the same seed with nothing taken. Shops are left out.',
    }
  )}
+ ${perkSetsHTML(D, P)}
+ ${boonsCardHTML(D, P)}
  ${perkRarityHTML(D, cov, P)}</div></div>`;
 };
 
+/** PK-8: a Perk's set: its tag that is a set's id (perkSets.json), picked here; the tag is written in its Tags */
+function perkSetPickHTML(/** @type {any} */ D, /** @type {string} */ k, /** @type {any} */ R) {
+  const S = D.perkSets || {},
+    on = (R.tags || []).find((/** @type {string} */ t) => Object.hasOwn(S, t)) || '';
+  return `<label class="fld"><span>Set (PK-8: holding ${on ? S[on].need : 'its need'} of a set’s Perks gives its bonus; the set’s id goes in the Tags)</span><select data-relic-set="${escapeHtml(k)}"><option value="">No set</option>${Object.keys(
+    S
+  )
+    .map(
+      id =>
+        `<option value="${escapeHtml(id)}"${id === on ? ' selected' : ''}>${escapeHtml(S[id].name)} (${escapeHtml(S[id].title)})</option>`
+    )
+    .join('')}</select></label>`;
+}
+/** PK-8: the Perk sets (perkSets.json): each set's name, its bonus's title and text, how many are needed, its Perks
+ * and its rows (as words: edit the rows in perkSets.json), with perkSets.json's messages */
+function perkSetsHTML(/** @type {any} */ D, /** @type {{ f: string, m: string }[]} */ P) {
+  const S = D.perkSets || {},
+    L = D.perks || {};
+  if (!Object.keys(S).length) return '';
+  const rowWords = (/** @type {any} */ f) =>
+    [
+      f.kind,
+      f.what || f.rule || f.side || '',
+      'mult' in f ? `×${f.mult}` : '',
+      f.when ? `at ${f.when}` : '',
+      f.if ? `if ${[].concat(f.if).join(', ')}` : '',
+      f.once ? `once a ${f.once}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+  return card(
+    'Perk sets',
+    Object.keys(S)
+      .map(id => {
+        const p = `perkSets.${id}`,
+          members = Object.keys(L).filter(x => (L[x].tags || []).includes(id));
+        return `<div data-perk-set="${escapeHtml(id)}"><h4 class="mono">${escapeHtml(id)}</h4>${grid(
+          textField('Name', `${p}.name`, { max: 40 }),
+          textField('Bonus title', `${p}.title`, { max: 40 }),
+          numberField('Perks needed', `${p}.need`, { min: 2, max: 6, step: 1 })
+        )}${textField('What the bonus does (one sentence)', `${p}.d`, { area: 1, rows: 2, max: 160 })}<p class="help">Its Perks (${members.length}): ${escapeHtml(members.map(x => L[x].name || x).join(', ') || 'none tagged yet')}</p><p class="help mono">${S[id].fx.map((/** @type {any} */ f) => escapeHtml(rowWords(f))).join(' · ')}</p>${P.filter(
+          q => q.f === 'perkSets.json' && q.m.startsWith(id + '.')
+        )
+          .map(q => `<p class="err relic-err">${escapeHtml(q.m)}</p>`)
+          .join('')}</div>`;
+      })
+      .join(''),
+    {
+      sub: 'PK-8: holding a set’s Perks (those tagged with its id) up to its need adds its bonus’s rows to the run. A Photocopier counts as itself, never as the Perk it copies. The rows are edited in perkSets.json.',
+    }
+  );
+}
+/** PK-9: the boons and curses (boons.json): each one's name, how many more places it lasts, its text, Boon or Curse,
+ * its picture (Edit art, or Draw one) and its rows in words (edit the rows in boons.json), with boons.json's messages */
+function boonsCardHTML(/** @type {any} */ D, /** @type {{ f: string, m: string }[]} */ P) {
+  const B = D.boons || {};
+  if (!Object.keys(B).length) return '';
+  const there = (/** @type {string} */ p) => artPictures().includes(p) || studioState.textDirty.has(p),
+    rowWords = (/** @type {any} */ f) =>
+      [
+        f.kind,
+        f.what || f.rule || f.side || f.stat || '',
+        'mult' in f ? `×${f.mult}` : '',
+        'stages' in f ? `${f.stages > 0 ? '+' : ''}${f.stages}` : '',
+        'share' in f ? `${Math.round(f.share * 100)}%` : '',
+        'n' in f ? `n ${f.n}` : '',
+        f.when ? `at ${f.when}` : '',
+        f.if ? `if ${[].concat(f.if).join(', ')}` : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    art = (/** @type {string} */ id, /** @type {any} */ T) => {
+      const key = T.img ? svgIconKey('art/' + T.img) : '';
+      if (key && there('art/' + T.img))
+        return `<div class="seg-row boon-art"><img class="pix" src="${escapeHtml(iconSrc(key))}" alt="" width="36" height="36"><span class="help mono">${escapeHtml(T.img)}</span><button class="btn sm" data-act="icOpen" data-n="${escapeHtml(key)}">Edit art</button></div>`;
+      return `<div class="seg-row boon-art"><p class="help">No picture yet: the game shows the relic icon.</p><button class="btn sm" data-act="boonArt" data-id="${escapeHtml(id)}">Draw one</button></div>`;
+    };
+  return card(
+    'Boons and curses',
+    Object.keys(B)
+      .map(id => {
+        const p = `boons.${id}`,
+          T = B[id];
+        return `<div data-boon="${escapeHtml(id)}"><h4 class="mono">${escapeHtml(id)}</h4>${grid(
+          textField('Name', `${p}.name`, { max: 40 }),
+          numberField('More places after the first', `${p}.places`, { min: 0, max: 20, step: 1 }),
+          `<label class="fld"><span>Boon or curse (a clinic’s appeal lifts a curse)</span><select data-boon-curse="${escapeHtml(id)}"><option value=""${T.curse ? '' : ' selected'}>Boon</option><option value="1"${T.curse ? ' selected' : ''}>Curse</option></select></label>`
+        )}${textField('What it does while it lasts (one sentence)', `${p}.d`, { area: 1, rows: 2, max: 160 })}${art(id, T)}<p class="help mono">${(T.fx || []).map((/** @type {any} */ f) => escapeHtml(rowWords(f))).join(' · ')}</p>${P.filter(
+          q => q.f === 'boons.json' && q.m.startsWith(id + '.')
+        )
+          .map(q => `<p class="err relic-err">${escapeHtml(q.m)}</p>`)
+          .join('')}</div>`;
+      })
+      .join(''),
+    {
+      sub: 'PK-9: named effects that last the place they are given in and the places more set here; events give them (boon <id>, curse <id>) and the fountain’s wish. The rows are edited in boons.json.',
+    }
+  );
+}
 /** the preview and the offers, from the logic worker, a little after the last edit */
 function perkFillSoon() {
   clearTimeout(perkEd.t);
@@ -806,6 +997,33 @@ document.addEventListener('change', ev => {
   changed();
   render();
 });
+/* PK-9: a boon becomes a curse (curse: true) or a boon again (no curse) */
+document.addEventListener('change', ev => {
+  const el = /** @type {HTMLSelectElement} */ (ev.target);
+  if (!el.dataset || !el.dataset.boonCurse) return;
+  const T = /** @type {any} */ ((studioState.D.boons || {})[el.dataset.boonCurse]);
+  if (!T || !!T.curse === !!el.value) return;
+  if (el.value) T.curse = true;
+  else delete T.curse;
+  changed();
+  render();
+});
+/* PK-8: a Perk's set: the set ids leave its tags, the one picked goes in (none removes them; no tags left, none) */
+document.addEventListener('change', ev => {
+  const el = /** @type {HTMLSelectElement} */ (ev.target);
+  if (!el.dataset || !el.dataset.relicSet) return;
+  const R = /** @type {any} */ (studioState.D.perks[el.dataset.relicSet]),
+    S = studioState.D.perkSets || {};
+  if (!R) return;
+  const was = JSON.stringify(R.tags),
+    L = (R.tags || []).filter((/** @type {string} */ t) => !Object.hasOwn(S, t));
+  if (el.value) L.push(el.value);
+  if (L.length) R.tags = L;
+  else delete R.tags;
+  if (JSON.stringify(R.tags) === was) return;
+  changed();
+  render();
+});
 /* PK-1: a row's If: words split at commas (one is kept as a word, more as a list, none removes it) */
 document.addEventListener('change', ev => {
   const el = /** @type {HTMLInputElement} */ (ev.target);
@@ -887,6 +1105,18 @@ ACTIONS.relicArt = () => {
   R.img = `perks/${k}.svg`;
   changed();
   iconEditOpen(`perks/${k}`);
+};
+/** PK-9: a boon without a picture: a blank art/boons/<id>.svg, named by its img, opened in the icon editor */
+ACTIONS.boonArt = (/** @type {any} */ d) => {
+  const k = (d && d.id) || '',
+    T = (studioState.D.boons || {})[k],
+    path = `art/boons/${k}.svg`;
+  if (!T) return;
+  if (!artPictures().includes(path) && !studioState.textDirty.has(path))
+    textStep(path, null, pixelsToSvg(new Uint8ClampedArray(36 * 36 * 4), 36, 36));
+  T.img = `boons/${k}.svg`;
+  changed();
+  iconEditOpen(`boons/${k}`);
 };
 ACTIONS.relicRowAdd = () => {
   const R = studioState.D.perks[studioState.sel.relic];

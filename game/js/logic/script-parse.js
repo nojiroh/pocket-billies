@@ -139,6 +139,17 @@ export const SCRIPT_COMMANDS = {
     about:
       'an effect row (perks.json’s kinds) for this place and n more: "fx 3 price what=shop mult=1.25", "fx 1 stat stat=hus stages=1"',
   },
+  /* PK-9: a named boon or curse (boons.json) */
+  boon: {
+    args: ['id'],
+    group: 'event',
+    about: 'a boon of boons.json for this place and its places more: "boon tailwind"',
+  },
+  curse: {
+    args: ['id'],
+    group: 'event',
+    about: 'a curse of boons.json (the Bureau’s Red Tape) for this place and its places more: "curse audit_trail"',
+  },
   wager: {
     args: ['n'],
     group: 'event',

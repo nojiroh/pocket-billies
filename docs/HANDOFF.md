@@ -452,6 +452,941 @@ page. Planned in Plan Mode and approved by the owner. Details: docs/phases/dialo
   errors; pictures checked. No game code touched, so lint and tests were not needed (the docs aren't formatted or
   linted).
 - Next: DL-1 (markup) on `track/dialogue`.
+### VFX track VFX-20 - Phone pass: VFX-17, 18, 18b and 19 merged, fx and the old 2D code out, the flash audit, the quality ladder, Part 2 as built - 2026-10-29
+Branch `track/vfx`, the main line of wave 5 and Part 2's last step. Run under the owner's standing instruction
+(2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tags (CLAUDE.md
+since #283). The owner merged PR #295 into main at VFX-13's head (ed5c6857) while this ran; main is merged back in
+(8a3f8d5e, no changes) and the rest of Part 2 goes to main through draft PR #331. No phone notes from the owner yet:
+tuned from films and measurements.
+- The plan: merge main, VFX-17 and VFX-19; message VFX-18 and 18b before touching what they might use; then the
+  Ask-me-before removal (fx, the old 2D effect code) in its own commits; VFX-13's and VFX-17's leftovers (the hurt KO
+  look, the Studio's events and misses, the debug log line, the foe-side film, the texel note); a browser-free flash
+  audit over filmed frames; the budgets measured at quality 0-3; the quality ladder read from the code (a subagent's
+  read, checked) and its gaps fixed one cause a commit; VFX-18b (carrying VFX-18) merged last; the audit, budgets and
+  films again over all 56 scenes; the full quick check; docs; the coordinators told.
+- Merges (each a merge, the unit tests after each): origin/main already in at the start (6ca60be6); VFX-17
+  `claude/vfx-17-scenes-1` b34ab164 (d2321650; HANDOFF and ROADMAP both; 1974 tests); VFX-19
+  `claude/vfx-19-move-sounds` 957efb6a (8607080a; HANDOFF and ROADMAP both, hooks.js and art-code-refs regenerated;
+  1990 tests; check-sound 236 fingerprints, 0 changed; smoke 7 of 7); main ed5c6857 (8a3f8d5e); VFX-18b
+  `claude/vfx-18b-scenes-3` 4973c477, which carries VFX-18's 707a47ab (f4b243f3; clean; 2004 tests, the 1,000-maps
+  timing test failing only under load and passing alone; snapshot and battle tests 256 of 256; check:data; check-sound
+  236, 0 changed; smoke no problems). The side branches' PRs (#324, #325, #329, #330) show merged.
+- Merging with track/sound (whichever of track/sound or track/vfx reaches main second): VFX-19's HANDOFF entry lists
+  the ten both-added conflicts (keep both). track/sound's SND-12c (a9549340, PR #292, not on main) also changed the
+  battle songs' forms and gave each its own ensemble (songs' form, sections and ensemble, and `ensembles`, in
+  music.json; loudness within 0.1 LU); battleSoundEffect, the battle recipes and music.json's top-level shape are
+  untouched, so VFX-19's `battle` section sits beside it: keep both, then `npm run modules`, studio/art-code-refs.json
+  and the check-data snapshot regenerated, check-sound's baseline once in its own commit.
+  SND-15 (track/sound 14be6f5b, not on main) adds a master chain (compressor, makeup, a -1 dBTP limiter), ducks the
+  music and beds under cries (never the Sound effects bus) and raises the defaults (the Sound effects slider 1,
+  mix.sfx 1.35, every bus about 13.6 dB louder at the same balances); battleSoundEffect and the battle recipes are
+  unchanged. Once both are on main VFX-19's sounds play through the limiter: if the loudest layered hits (a family's
+  super4, crit or KO) clip, lower those voices' `vol`, not the sfx trim (`check-sound.py --loudness` shows true peaks).
+- Changed (one cause per commit; smoke on each game or Studio commit, in a second worktree on that commit):
+  - d651ff6c (Ask me before) a type's burst particles move from types.json `fx` into battleAnims.json
+    `types.<kit>.burstSprites` (same lists; None's from untyped.json; the Bureau falls back to None's as before):
+    battle-stage.js `typeSprite` reads the kit; game-data.js `HIT_EFFECTS_BY_TYPE` and its Studio stand-in gone; the
+    Studio's Types "Battle particles" picker edits the kit (None's row gets one); atlas-rects counts and renames a
+    kit's particles; schema, types, a data check and the atlas test.
+  - e6b30a7e types.json and untyped.json `fx` removed (read by nothing after d651ff6c).
+  - 8bc377f5 the old 2D effect drawing removed: battle-stage.js drawParticles' rings, icons, beams and plain pixels
+    (never ran since VFX-9: the canvas draws only with the 3D stage on, where they were skipped). The picture branch
+    (a bot's dropped part), drawPixelRing (the selection, target and catch rings) and particleSprite (the opening and
+    cutscenes) stay; no icons.png cell removed.
+  - 6f0b0e90 a hurt line that knocks out takes the KO's look (VFX-13's leftover): logic/battle-anims.js
+    `hurtKoAhead(events, i)` (koAhead's shape; tested); case 'hurt' plays it through hitFx (white then ink, the KO's
+    cell and scar; the last KO's freeze and impact frame) for a burn, the delayed hit, a spread move's second target,
+    recoil, stones, the storm. `koAhead` and `hitTier` untouched (SND-13 reads them).
+  - dc1bedcb the event films are one list, logic/battle-looks.js `BATTLE_LOOK_FILMS` and `lookSnaps`, read by the
+    film tool and the Studio; three new films: brn_ko, spread_ko, delayed_ko.
+  - 34bad0f5 tools/flash-audit.py and the film tool's full-screen probe and `--flashes=off` (below).
+  - f327bd7e the Studio's battle stage gets `PASSIVE` and `robotIdsFromSp` stand-ins: They faint, Yours faints, A part
+    breaks and glints threw on the Studio page (the faints since VFX-16); found by the new Studio check step.
+  - 90a67efc the Studio's Battle effects plays every event (item used, Alpha phase, shield blocks, a part breaks, cry,
+    run away, victory, defeat) and every look film, and a Misses pane tunes each family's miss (sidestep time and
+    distance, the Miss tag's time, the miss's length up to maxMs.miss). Every scene already played from the Move list.
+    check-studio-github.py `--only=battle_fx` plays every event, tunes and undoes a miss, toggles a type's particles.
+  - 7cdb0bdf the debug log's `anim` line names the scene a family stands in for (`for:scene:<id>`), a KO (`+ko`,
+    `+last`) and Calm or Reduced; still no names or save data.
+  - 82801ed0 rule 9: with Flashes off or under Reduced motion a blink steps at 167 ms of real time (at most 3 a
+    second at any speed; it was every 60 ms of the stage clock, about 8 a second and faster at Faster).
+  - e9ec3706 every burst keeps the burst budget (24 / 16 / 10 / 6): the runner's repeated particle steps (dust, lob,
+    fling, converge, impact, rain, orbit, rise; one guard at animStep) and the stage's own loops (burstN).
+  - 5d04c2c6 rule 9: with Flashes off every sprite flash is at most half (a flurry's beat, a stat change, a heal, a
+    dome's flash cell on a block).
+  - 580aef80 rule 9: under Calm the stage's ambient motes and leaves come only in the turn's pulse (battle-looks.js
+    `battleLooksIdleOn`).
+  - 39776f86, a9a9686a the film tool: `--measure` counts particles, made a frame, effect lights, scars, frames over
+    33 ms, and takes `--quality=N`; event traces step the stage alone (fast).
+  - Docs: vfx-track.md's "Part 2 as built" and the one-sitting phone checks (105fc22a); ROADMAP's VFX line (Part 2
+    done), BRANCHES' track/vfx row (4ec9ce89); this entry and the VFX-20 row's as built (the last commit).
+- The flash audit (tools/flash-audit.py; browser-free over look-battle-anims.py's traces; a flash is a #flash brighter
+  than Flashes off's 15% tint, the impact frame's two-tone or the chromatic pulse, ones that touch counted as one; at
+  most 3 a second, 333 ms apart, none saturated red; Flashes off none; blinks at most 3 a second with Flashes off):
+  at f4b243f3 (all 56 scenes), Flashes on: 2197 films (122 moves x 2 sides x 8 outcomes, the 56 scene moves in hit+ko,
+  crit+last and secrit, 21 event films); 857 with a full-screen flash; most in any second 1 (each source counted
+  alone: 3, the crit's two-tone, warm flash and pulse together); no two within 333 ms; saturated red 0; most blinks
+  a second 4 (a sprite, Full); breaches 0. Flashes off: the same 2197 films; 0 with a full-screen flash; most blinks
+  a second 3; breaches 0. (A first pass at 34bad0f5-a9a9686a over 1973 films said the same.) Reproduce:
+  `python3 tools/look-battle-anims.py --events --out=DIR/on` (it also films every move) and `--only=<scene moves>
+  --outcomes=hit+ko,crit+last,secrit --out=DIR/onko`, the same with `--flashes=off` into DIR/off and DIR/offko, then
+  `python3 tools/flash-audit.py --on=DIR/on,DIR/onko --off=DIR/off,DIR/offko`.
+- Budgets (look-battle-anims.py `--measure --quality=N`, headless, software GPU, the town fixture, side 0, a super
+  crit and a last KO each; the busiest moves and scenes):
+  | Quality | Particles alive (budget) | Made in a frame (burst 24/16/10/6, several bursts can land at once) | Effect lights (budget) | Scars (budget) | battleFx draws (3) |
+  | --- | --- | --- | --- | --- | --- |
+  | 0 | 49 / 67 (256) | 40 / 39 | 2 (3) | 12 (12) | 3 / 3 |
+  | 1 | 42 / 59 (160) | 34 / 32 | 2 (2) | 8 (8) | 3 / 3 |
+  | 2 | 36 / 45 (96) | 28 / 26 | 1 (1) | 4 (4) | 3 / 3 |
+  | 3 | 32 / 33 (48) | 24 / 21 | 0 (0) | 0 (0) | 2 / 2 |
+  Each cell: VFX-17's busiest (Golden Caravan, Flatpack, Tower Drop, Vision Fund, Overload) at 580aef80 / VFX-18 and
+  18b's busiest (CUDA Call, Cyclone, Gives Wings, Character Limit, Green Hydrogen) at f4b243f3. Everything holds at
+  every quality; scars fill to their cap and stop. Couldn't measure headless: the phone's 400 draws a frame (the
+  headless frame draws about 805-850 at every quality: the desktop-quality town scene, not the battle's share) and no
+  frame over 33 ms (software GPU: 0.5-8 s a frame); effect lights at most 2 on a phone is the code's
+  (`budgets.lightsPhone`, by user agent). The debug log on the phone answers both.
+- The quality ladder (read from the code; "fixed" marks this step's commits):
+  | System | q1 / q2 / q3 | Calm | Reduced | Flashes off |
+  | --- | --- | --- | --- | --- |
+  | Families, kits, scenes' steps | no step has a quality gate; they thin through the pool (256/160/96/48) and, fixed, every repeated particle step stops at the burst budget (24/16/10/6) | play in full | no camera moves, shake, handheld or hit-stop; no extra time; a scene plays its family | as below |
+  | Hit tiers | burst by quality; impact cells 2/2/1/0, lines 24/24/16/16; lights by the light budget; shake, punch, flash and hit-stop unchanged | play | no hit-stop, shake, punch, flash, impact frame or pulse; knockback still moves | flash held to 15%, no pulse, no two-tone cells (a crit's lines stay), sprite flashes half |
+  | Statuses and stats | look cells 24/16/10/6 a cell; dome cells 9/7/5/4 (Protect 3/3/2/1) | loops pulse once a turn | tints instead of loops | gold edge and burn's tint half; fixed: chevron flash and dome's flash cell half |
+  | The stage | scars 12/8/4/0; mood, wave and heat unchanged | plays (the walk weather keeps falling) | darken and tint stepped, no wave or heat, no battle splashes; sand drifts at 0.2 | - |
+  | Flow | bursts by quality (fixed: every loop) | plays | no dithers, camera or wobble | full-screen flashes through flashFor; heal fixed to half |
+  | Smears | afterimages 3/3/2/0, ribbon 6/6/4/0, lunge ghosts 2/2/1/0, lean off at 3 | play (an action) | none | - |
+  | Budgets | particles 256/160/96/48, ambient a quarter; effect lights 3/2/1/0, 2 on phones; render scale halved at q2; depth blur off at q3 | fixed: ambient motes pulse once a turn | no ambient particles | - |
+  | Sounds | unchanged by quality or settings (the Sound effects slider) | - | - | - |
+  | Blinks | - | - | fixed: 3 a second | fixed: 3 a second |
+- Where the track file and the brief were wrong or vague (checked in the code):
+  - "Flashes off = none full-screen": SY-1's `flashFor` holds a bright flash to a 15% tint rather than none; the audit
+    counts only what is brighter than that (rule 9's own wording).
+  - The Budgets' "a burst at most 24 / 16 / 10 / 6" held only for burst(), two flow helpers and the spray step; fixed.
+  - The ladder: no family, kit or scene step has a quality gate (`maxQ` is read by stepOn but set nowhere): moves step
+    down only through the particle budgets; kept so (the budgets were the plan's mechanism).
+  - "The Studio's battle preview plays every scene and every event": every scene did (from the move list); the events
+    list lacked a dozen, and three of its own threw.
+  - "Leftover: the KO look for a spread move's second target": koAhead already counted a spread move's KOs, but the
+    hit step plays on the target only, so the second target's KO never showed; it now shows on its hurt line.
+  - PR #295 was merged, not open: PR #331 replaces it.
+- Decided for the owner, to review:
+  - types.json `fx` and the old icon particles removed after moving the keys into the kits (recommended); the old 2D
+    effect drawing removed; icons.png's cells all stay (other screens and the kits use them).
+  - The flash limiter as rule 9 (recommended); the crit's two-tone and its warm flash, and a super's tint and pulse,
+    count as one flash each (they touch); the impact frame itself isn't gated by the limiter (it's at most one per
+    hit and never within 333 ms of another in any film).
+  - Blinks at Full stay at 60 ms (up to 4 a second in the films; a sprite, not the screen); 167 ms with Flashes off
+    or Reduced.
+  - A hurt that knocks out plays a full KO hit look (knockback, ring, burst), not only the white and ink.
+  - Under Reduced motion knockback, lunges and dodges still move the sprites a little (the rule names shake, camera,
+    smears and extra time, not these): kept, listed for the phone.
+  - Scenes at quality 3 still summon their props (their smears go); the alternative is their family, as with 3D props
+    off: kept, the owner's call.
+  - VFX-17's scaled models (a tower x0.05, a train x0.24) show texels finer than 32 px/m: kept (a full-size tower
+    would be 58 m); a battle-scale model set is the owner's call.
+  - A foe's scene (side 1, filmed for the first time: Tower Drop, Full Steam): the heading is right, but the tower
+    and the train pass close to the lens and fill a third to half of the frame for a few cells: kept, a phone check.
+  - The weather keeps falling under Calm (the world's, not the battle's idle loop); the Sandstorm's streaks drift at
+    0.2 under Reduced: kept.
+- Wishes passed on (from VFX-18 and 18b): props that don't exist (a balance, a dust funnel, a delivery van, a tennis
+  racket, a gift box, a hydrogen tank; a wooden flying boat, a dorsal fin, a jukebox, a flag pin, a single tyre, a fan
+  with spinning blades, a clothes rail) and scene sounds (Ship Direct's doorbell, Gives Wings' can, One-handed
+  Backhand's racket, Cyclone's whoosh, Fifteen Seconds' tune, the boss's barriers; CUDA Call's fans, Per Minute's
+  tick, Smart Contract's lock, Sunday Red's swing, Shuffle Play's record skip) to the owner and the sound coordinator.
+- Risky:
+  - The phone's own numbers: headless frames draw about 850 (the desktop-quality scene) and take 0.5-8 s (software
+    GPU), so the phone's 400 draws and 33 ms need the debug log; the battle's own share stayed at 3 effect draws or
+    fewer a move at every quality.
+  - Burst budgets now thin rain-heavy scenes at quality 2-3 (Golden Caravan's coins, Cyclone, CUDA Call): check they
+    still read.
+  - The Studio's look films replay lines with their own snapshots; a film's lasting looks clear on the next clip.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; the unit tests
+  after each change (2004 at the end; only the 1,000-maps timing test failed, under load, and passes alone);
+  battle-anims, battle-scenes and battle-looks tests; check-sound 236 of 236 equal after each sound-bearing merge;
+  smoke no problems on every game and Studio commit and on the merges (82801ed0 once timed out the in-game full
+  test's download under load, then passed alone); check-studio-github.py `--only=battle_fx` (every event and look
+  film, a miss, a type's particles); films: the burn, spread and delayed KOs, both scenes from side 1. Full quick
+  check at f4b243f3: 36 of 42 in 2600 s, with the films running beside it. RL-8 (crossed into Lakeside
+  Route but its view never showed) and room light are on the known list; RT-2's pair, Granny Juniper, Ground tiles'
+  lab room and Battle music ("the drums never came in on a throw": its 8 s fallback fired first) each pass alone on
+  this head (406 s for the four together; Battle music alone 74 s; also on a9a9686a, 8607080a, d2321650 and main).
+  CI on #331: lint and rules green; smoke red only on Camera follow, the bowl and Tall ground (main's; commented on
+  the PR).
+- Phone checks for the owner: the whole of Part 2 in one sitting is in docs/phases/vfx-track.md ("Phone checks for all
+  of Part 2"). This step's own: a burn or the delayed hit that knocks out; Flashes off (no bright full-screen flash, a
+  hurt's blink slow, sprite flashes soft); Calm (the motes come once a turn); quality 3 (bursts thinner, scenes still
+  read); the Studio's every event and Misses pane; the debug log's anim lines.
+- Next: Part 2 is done. The owner's phone pass and listening pass; merging PR #331 is the owner's. Left for later:
+  quality gates on heavy steps if the phone needs them, the props and sounds wished for above.
+
+### VFX track VFX-18b - Signature scenes 3: 19 more scenes, four sound words, the boss's shield phase - 2026-10-29
+Side branch `claude/vfx-18b-scenes-3` (wave 4, beside VFX-18 on `claude/vfx-18-scenes-2`), made from VFX-17's finished
+branch (b34ab164, which had merged `track/vfx` b475bb15); `origin/track/vfx` merged in at b4922c4c (8bc377f5: VFX-17
+and VFX-19 merged, VFX-13's docs, VFX-20's first commits: burstSprites, types.json `fx` and the old 2D effect drawing
+removed; only conflict the generated studio/art-code-refs.json, regenerated), again at 7cdb0bdf (VFX-20's anim log
+line) and a9a9686a (VFX-20's event traces; main ed5c6857), and VFX-18's finished branch (707a47ab, reported done) merged in: both sides kept (its 19 scenes before mine in
+`scenes`, its four words before mine in `sprites` and SPRITES, its W in GLYPHS so mine adds only P and D, both
+storyboard sections and rows, both HANDOFF entries; battleAnims.json rebuilt from both sides' additions, nothing else
+differed; the auto-merged battle-anims snapshot equals a remake on the merged data); draft PR #330 into `track/vfx`. Run under
+the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and
+listed below. No tag (main's CLAUDE.md). Told first: VFX-18 (the shared tests, the glyphs, the scene order, every
+shared line the boss phase touches; it agreed, adopted my test edits and touches none of those lines), the style
+coordinator (the boss phase; its answers: no clash with SY-5, pick the boss by faction, bureau_barrier now carries
+SY-7's red tape; after pushing, the commit). No sound file touched; VFX-19's sounds read `scenes.<id>.family`.
+- The plan: read VFX-17's entry, the runner (`animSceneStep`, `battleAnimPlay`), the stage's `alphaPhase` and `break`,
+  robots.json, bosses.json and the engine's boss phases; check each move in moves.json; write the batch's storyboards
+  and commit them first; the stamped words; the scenes as data with VFX-17's primitives only; tests and the snapshot;
+  films of every scene; tune; the boss's own; measure against VFX-17's head; merge track/vfx; the full check; docs.
+- Changed (one cause per commit):
+  - Storyboards (b5c0942f): 19 one-liners, "VFX-18b's storyboards" under VFX-17's in vfx-track.md "Signature scenes",
+    before any scene was built, plus what the bots and the boss have of their own.
+  - Art (1f8dc9d4): build-battle-anims.py draws word_whoosh "WHOOSH!", word_pssht "PSSHT!", word_dingdong "DING-DONG!",
+    word_thwock "THWOCK!" (VFX-17's `word()`; the letters W, P, D in a `GLYPHS.update` after VFX-17's dict; VFX-18's W
+    is the same rows); battleAnims.json `sprites` names them (51 sprites, `--check` clean).
+  - Scenes (19bd5667, tuned in 959a3fac): battleAnims.json `scenes` cyclone .. kisses, one block after VFX-17's last,
+    each `family` the family it had and a `short` version; moves.json `anim` of the 19 is its scene. Built with
+    VFX-17's primitives only (no new primitive): `prop` (rocks_b, crate_goods, sofa, waymarker_post,
+    wind_turbine_small), `stamp`, icon props (soda, pick, hanger, anchor, paper, chart, cup, map_house, tag, tv,
+    vcoin, phone, map_flag, box, heart). Times (H maxMs 880, S 1060, X 1000): Cyclone 1460, State-sized Pit 1340,
+    Harbour Fee 1480, Front Run 1000, Wrong Name 1400, Cleaning Fee 1400, Autoplay 1480, Counts to Two 1200, Fifteen
+    Seconds 1300, Stake in Everything 1460, Ship Direct 1400, One-handed Backhand 1200, Green Hydrogen 1500, Kisses
+    1100; the five status scenes (Gives Wings, Perfect Fold, Principle No. 212, Fork, Quiet Gift) 1000 each, no extra
+    time and no hit step (their families have none); each short 560-1000. Tests: tools/test/battle-scenes-3.test.mjs
+    (7: the batch and its families, times, props off, a foe's side and a repeat, stamps, the bots' moves, the boss
+    phase); VFX-17's battle-scenes.test.mjs takes later batches and status scenes; VFX-11's smear.test.mjs dash list
+    counts a scene by its family (Front Run). The battle-anims snapshot remade on purpose: only the 19 moves.
+  - The boss's own (1c66b48b): battleAnims.json `events.bossPhase` (`faction` 'bureau', two prop steps): as the
+    Retrieval Unit's shield phase comes up, two bureau_barrier models rise either side of it, hold and erode by
+    ~1150 ms, inside the phase's own 1200 ms. battle-anim-run.js `battleBossPhaseScene(an)` (a new function: VFX-17's
+    prop step played on the boss), picked by SY-5's `battleFactionOf` (bosses.json `faction`, as the style
+    coordinator asked, not the `bot:` prefix); logic/battle-anims.js `battleEventProps(A)` (a new export) and one line
+    in battle-3d.js `battlePropsPreload`; one call in battle-stage.js case 'alphaPhase' after its own steps; schema
+    (events.bossPhase), types. None under Reduced motion, on the 2D stage, with 3D props off or before its model has
+    loaded, or on a phase without a shield (the limb break keeps its own); no stamp (Bureau), no flash of its own; the
+    join intro untouched.
+- What the bots and the boss have of their own (checked in the data and the code): every part and gem move in
+  robots.json (Piston Jab, Auger Bore, Grip Crush, Cinder Shot, Arc Whip, Jet Blast, Anchor Down, Dash Kick, Skim
+  Guard, Flare Core, Self-Repair, Overclock) is a regular move with a family: they keep it (a test). The boss
+  (bosses.json, the Retrieval Unit) has no move of its own: it fights with its parts' moves. Its own are its two
+  phases (battle-engine.js `bossPhase`, played as battle-stage.js `alphaPhase`: a shield with stages; then stages and
+  a limb that tears loose, the `break` event). The shield phase got the barriers; the limb break already has its own
+  choreography (sparks, the part's picture falling off: phase 17, RL-14) and no finisher move exists, so nothing was
+  invented for it.
+- Where the brief or the data was wrong or vague (checked):
+  - Quiet Gift's text says it heals "the active ally... or itself when alone"; the engine (useMove's `fx.heal` on a
+    status move) heals the user itself only. The scene plays on the user, as the engine does.
+  - Counts to Two says "Hits twice"; its data has no multi-hit, so one hit lands: the scene shows two strikes, the
+    second the hit, then a third wind-up that stops short.
+  - The atlas's `scale` icon is a 5 px fish scale (a kit icon), not a balance: Principle No. 212 flips a big page
+    instead (noted under its storyboard).
+  - Status moves have no `hit` step in their families, so VFX-17's scene test (a hit step at every scene's `hit`)
+    needed the X case; the self-only buff and heal families have no `miss` of their own, so a "miss" of Gives Wings,
+    Principle or Quiet Gift played the family before and plays the scene now (the engine never makes them miss).
+  - A model "behind the attacker" sits between the camera and the attacker and isn't seen, and one 1.3 m behind the
+    foe hides behind its rig: the turbine and the sofa moved beside them (VFX-17's furnace placement, dx -0.6 dz 1).
+  - The look tool's `--repeat` films every outcome on both sides (16 films a move), so a run of two hit its time limit
+    after the first.
+- Decided for the owner, to review:
+  - The 19 storyboards (taken as approved, written before building; "VFX-18b's storyboards" in vfx-track.md).
+  - Stamped words: WHOOSH! (Cyclone), PSSHT! (Gives Wings: a can opening), DING-DONG! (Ship Direct: a doorbell),
+    THWOCK! (One-handed Backhand), KA-CHING! (VFX-17's, Harbour Fee); sound words only, never a move's name or a
+    slogan (rule 10); none against a Bureau bot.
+  - Rule 10's generic objects: a can (soda), a pick, a hanger, an anchor and a crate, a page, a chart, cups (no
+    names on them), a house and a price tag, a sofa and a tv, coins, a phone with notes, a post and a flag, a crate
+    and a doorbell word, a ball and an arc, a small wind turbine and bubbles, a box and hearts, hearts and dust. No
+    logo, lettering, likeness or trade dress (Kisses uses hearts, not a wrapped sweet).
+  - Status scenes stay within X's 1000 ms (no extra time) and keep their families' shape (no hit step).
+  - The boss's special: the shield phase's barriers (inside its time); nothing invented for the limb break or the
+    bots.
+  - Under Reduced motion a scene plays its family. With 3D props off the six with a model (State-sized Pit, Harbour
+    Fee, Autoplay, Stake in Everything, Ship Direct, Green Hydrogen) play their families; the other 13 (icons, strips
+    and stamps only) play anyway, as VFX-17's Siu! and Cut To do.
+- Wishes for the owner (props that don't exist; the nearest generic one used): a balance (Principle No. 212: a page),
+  a vacuum-like funnel or dust bin (Cyclone: dust and leaves only), a delivery van (Ship Direct: a crate), a tennis
+  ball and racket (One-handed Backhand: a small shot sprite and the slash arc), a gift box with a ribbon (Quiet Gift:
+  the icon box), a hydrogen tank or bubbles strip (Green Hydrogen: the bubble strip).
+- Sounds: none of its own (VFX-19 plays a scene's family). For the sound track's later pass, scenes that would like a
+  sound of their own: Ship Direct's doorbell, Gives Wings' can, One-handed Backhand's racket, Cyclone's whoosh,
+  Fifteen Seconds' short tune, the boss's barriers slamming up.
+- Measurements (headless, software GPU, quality 0, the town fixture, side 0, a hit; before = VFX-17's head b34ab164 in
+  a worktree with its own tool, the moves playing their families; after = this branch at 959a3fac; one after the other
+  on an idle machine; statesizedpit, autoplay, shipdirect, greenhydrogen, cyclone):
+  - The pool's own draws (`battleFx`) 3 at most in every film, before and after (budget 3); the effects pass's draws
+    129-131 at most, before and after.
+  - All draws a frame at the busiest frame, mean over the 5: 714.8 before, 690.0 after (the models replace other
+    drawing at their peak; Ship Direct's crate near the lens 849 -> 776).
+  - Time a frame during the move: 538.5 ms mean before, 737.0 after (p90 2392 -> 4206): software rendering, only the
+    direction counts, and the films' first frames carry the shader compiles; the phone's own numbers need the debug
+    log. Rig redraws 17.2 -> 22.4 a film (the scenes are longer).
+  - Effect lights: the families' kinds only (the hit's `light`, the kits' casts, lit shots), all through
+    battle3dEffectLights' budget; the models add none.
+  - Times: every attack scene at most its category's maxMs + 500 ms, every status scene and every short version within
+    maxMs, none longer under Reduced motion (the data check and battle-scenes-3.test.mjs).
+- Films (look-battle-anims.py, in the scratchpad's validation folder, not committed): all 19 with `--sheets --cells=20
+  --outcomes=hit --sides=0`, the 10 retuned ones again; Harbour Fee and Autoplay from the foe's side (`--sides=1`: the
+  crate lands on your Billie, KA-CHING! over the foe); State-sized Pit's repeat (`--repeat`, all 8 outcomes, both
+  sides: the rocks at once, the hit at 400 ms); the boss phase (`--events --only=shield --bot`: the red-taped barriers
+  rise round the Bureau bot with its golden shield and are gone before the phase ends). Seen and tuned from them:
+  icons at the foe too small at k 1 (k 2 now), the sofa hidden behind the foe and the turbine behind the camera
+  (moved beside), the rocks, crate and post too small (bigger), Fork's coins and Kisses' hearts bigger.
+- Risky:
+  - Draws on the phone: a model and its afterimages add draws while it is up; the five measured stayed level here, but
+    the phone's count needs the debug log.
+  - The boss phase's barriers are filmed against the Bureau courier (the look tool's `--bot`), not the Voltron itself;
+    the smoke check's Voltron step plays its phases without errors.
+  - Ship Direct's crate flies from behind the attacker past the lens for a few cells (the smears skip copies within
+    2 m of it).
+  - battle-stage.js case 'alphaPhase' and battle-anim-run.js are shared with VFX-18 and VFX-20: each change is one
+    added line or a new function.
+- Phone checks for the owner (listed, not waited for): each of the 19 once (Cyclone, Gives Wings, State-sized Pit,
+  Perfect Fold, Harbour Fee, Principle No. 212, Front Run, Wrong Name, Cleaning Fee, Autoplay, Fork, Counts to Two,
+  Fifteen Seconds, Stake in Everything, Ship Direct, One-handed Backhand, Green Hydrogen, Quiet Gift, Kisses); a
+  short repeat (the same scene twice in one battle); Autoplay or Stake in Everything with 3D props off (its family);
+  the Retrieval Unit's shield phase (the barriers) on an Expedition; the stamped words read at phone size.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; `npm test` 1988 of
+  1988 before the merges, 1997 of 1997 after track/vfx's 8bc377f5, 2004 of 2004 with track/vfx's 7cdb0bdf and VFX-18 merged
+  (smoke 7 of 7 there too), and again 2004 of 2004 with smoke 7 of 7 after track/vfx's a9a9686a; `build-battle-anims.py --check` (51 sprites); smoke 7 of 7
+  on 19bd5667's tree and again on 959a3fac's. CI smoke on b5c0942f and 19bd5667: red only on "Camera follow ... the
+  page stopped drawing" (known; it failed on the docs-only storyboards commit too; noted on the PR).
+  Full quick check on the merged head b4922c4c: 37 of 42 in 2005 s. Known or load's: RL-8's seam (never shown), Room
+  light (locally), Battle music's drums (both on the known list); "RT-2: route trainers ... no battle started" and
+  "Copperleaf: Granny Juniper ... didn't say anything" each pass alone, on this head and on track/vfx's 8bc377f5. The
+  battle steps (A battle plays to the end, the Voltron's phases, a run's battles) passed.
+- Next: VFX-20 (the main line) merges this branch, which already carries VFX-18's (all 56 signature scenes now have
+  one; VFX-18's block first in `scenes`, then this one).
+### VFX track VFX-18 - Signature scenes 2: 19 more scenes on VFX-17's primitives, four drawn sound words - 2026-10-29
+Side branch `claude/vfx-18-scenes-2` (wave 4, beside VFX-18b on `claude/vfx-18b-scenes-3`; VFX-20 on `track/vfx`),
+made from VFX-17's finished `claude/vfx-17-scenes-1` at b34ab164 (track/vfx b475bb15 already in it); `origin/track/vfx`
+merged in at d339a162 (8607080a: VFX-13's docs, VFX-17 and VFX-19 merged) and again at 5a818ecf (8bc377f5: VFX-20's burstSprites, types.json fx and the old 2D effect drawing removed; npm test 1995 of 1995 and traces of the 19 x hit, crit, miss, blocked from both sides clean after it); draft PR #329 into `track/vfx`. Run under
+the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and
+listed below. No tag (main's CLAUDE.md). Told first: VFX-18b (every shared place: the word strips and GLYPHS, the
+scenes block, VFX-17's scene test, the snapshot, the film tool); no shared function, schema, sound file or style
+code touched, so no message to the sound or style coordinators was needed.
+- The plan: check each move's type, category, power and mechanics in moves.json; write the batch's storyboards in
+  VFX-17's format into vfx-track.md and commit them first; draw the stamped words; build the 19 scenes as data with
+  VFX-17's steps only (no new primitive); tests and the snapshot; film every scene, tune from the films, film again;
+  a foe-side film, the short repeat; measure against VFX-17's head; merge track/vfx; the full checks; docs.
+- Changed (one cause per commit):
+  - Storyboards (69ea1c20): 19 one-liners, "VFX-18's storyboards" under VFX-17's in vfx-track.md "Signature scenes",
+    before any scene was built.
+  - Art (f4a92294): tools/build-battle-anims.py's GLYPHS gain W, R, E, F, L (VFX-18b's W is the same rows); the
+    strips word_whirr "WHIRR!", word_tick "TICK!", word_click "CLICK!", word_fore "FORE!" (VFX-17's `word()`);
+    battleAnims.json `sprites` names them.
+  - The film tool (4c6e82fb): look-battle-anims.py waits until both Billies' rig buffers have pixels (as check-quick's
+    starter battle does). On a loaded machine every film had shown the foe alone: the films began before your
+    Billie's rig was drawn.
+  - Scenes (8b9b682f; tuned in 226ff592, f536de58, e960e747): battleAnims.json `scenes`, 19 as one block after
+    VFX-17's billionsserved in the batch's order, each with `family` (the family it had) and `short`; moves.json `anim`
+    of the 19 is its scene. tools/test/battle-scenes-2.test.mjs (5 tests); the battle-anims snapshot remade on
+    purpose (only these 19 moves' lines change).
+  - Agreed with VFX-18b (c07a65b7): status scenes land no hit step, as the hex and heal families have none;
+    tools/test/battle-scenes.test.mjs (VFX-17's, which counted exactly 18 scenes and required a hit step) and
+    smear.test.mjs (VFX-11's dash list, which a dash move's scene broke: Just Do It) taken verbatim from VFX-18b's
+    branch, so the two branches merge cleanly.
+- The scenes (scene id, family it falls back to, prop; times full / short against the cap):
+  | Move | Family | Prop | Full / cap | Short / maxMs |
+  | --- | --- | --- | --- | --- |
+  | CUDA Call (S) | breath | wind_turbine_small x3, WHIRR! | 1480 / 1560 | 1000 / 1060 |
+  | Rollback (H) | charge | tires (in, then back), the tag icon | 1300 / 1380 | 860 / 880 |
+  | Terminal Fee (X) | hex | the laptop icon, coins | 1000 / 1000 | 700 / 1000 |
+  | One More Thing (S) | shot | the excl icon | 1500 / 1560 | 1000 / 1060 |
+  | Just Do It (H) | dash | the sneaker icon | 1000 / 1380 | 700 / 880 |
+  | Fast Fashion (S) | shot | laundry_line, hanger and tag icons | 1460 / 1560 | 1000 / 1060 |
+  | Spruce Dive (S) | dive | forest_canopy_pine | 1400 / 1560 | 900 / 1060 |
+  | Pop the Collar (X) | hex | the shades and sparkle icons | 1000 / 1000 | 700 / 1000 |
+  | Assembly Line (H) | flurry | crate_goods x3, the cog icon | 1300 / 1380 | 860 / 880 |
+  | Per Minute (X) | hex | wall_clock, TICK!, coins | 1000 / 1000 | 700 / 1000 |
+  | I'm Out (H) | strike | none | 1340 / 1380 | 860 / 880 |
+  | Feeling Lucky (S) | beam | the dice icon | 1460 / 1560 | 1000 / 1060 |
+  | Character Limit (S) | shot | the bubble icon | 1400 / 1560 | 900 / 1060 |
+  | Shuffle Play (S) | wave | none (notes) | 1540 / 1560 | 960 / 1060 |
+  | Smart Contract (S) | shot | the paper and cbox icons, CLICK! | 1440 / 1560 | 1000 / 1060 |
+  | Buy the Dip (X) | heal | the chart, down and coin icons | 1000 / 1000 | 640 / 1000 |
+  | In Sync (H) | flurry | rowboat | 1340 / 1380 | 860 / 880 |
+  | Empire State (S) | slash | city_tower_hero | 1480 / 1560 | 1000 / 1060 |
+  | Sunday Red (H) | strike | flag_pole (the pin), FORE! | 1340 / 1380 | 860 / 880 |
+- Where the track file or the brief was wrong or vague (checked in the code):
+  - The VFX-18 row's "the other 38" is two steps now (VFX-18 and VFX-18b, 19 each).
+  - The Families table's family for each of the 19 is right (checked against moves.json `anim`). Assembly Line and In
+    Sync are flurry moves with one hit (no `hits` mechanic): their beats are only the look.
+  - Status moves: maxMs X is 1000 and the hex and heal families already play 1000 ms, so a status scene is a
+    restaging inside its family's time, never longer (the +0.5 s is for power 100+ or a scene, but the brief keeps
+    status scenes within maxMs; none of the batch has power 100+).
+  - Rule 2 and Props: tree_pine_small's needles are picture-card (`img`) layers, and a summoned model showed only its
+    trunk; forest_canopy_pine (all cones) is the spruce. flag_pole has no flag (a bare pin). city_tower_hero's
+    "logo panel" is blank (generic). The icon atlas's sneaker is a plain shoe with a tag, the bubble a speech bubble.
+  - A step aims at a Billie's middle or its feet; nothing aims at its head, so Pop the Collar's shades sit high on the
+    body, not on the face.
+  - The film tool started filming before your Billie's rig had pixels on a busy machine (fixed, above).
+- Decided for the owner, to review:
+  - The 19 storyboards (taken as approved, written before building; "VFX-18's storyboards" in vfx-track.md). Built as
+    written except: Spruce Dive's model (above); Rollback's "down chevron on the foe" became the tag icon (a chevron
+    reads as a stat drop in the colour code, and Rollback lowers nothing).
+  - Rule 10: generic objects only, no logo, mark, slogan, name or likeness. No stamp on the four moves whose names are
+    slogans or catchphrases (Just Do It, I'm Out, Feeling Lucky, One More Thing). The stamped words are sound words:
+    WHIRR!, TICK!, CLICK! and FORE! (a golfer's shout), in the move's type ramp.
+  - The repeat (second use in a battle, and Faster) is the short version: the prop and the hit, no wind-up; every
+    short version fits maxMs and lands sooner than the full scene.
+  - Under Reduced motion a scene plays its family; with 3D props off a scene with a model plays its family, and one
+    with icons only (One More Thing, Just Do It, I'm Out, Feeling Lucky, Character Limit, Shuffle Play, Smart
+    Contract, Terminal Fee, Pop the Collar, Buy the Dip) plays anyway (not under Reduced motion).
+  - Status scenes have no hit step (agreed with VFX-18b), as their families.
+  - Props and placement: the fans and the clothes line beside the attacker on its open side (behind it they filled the
+    lens); the tyre, the crates and the rowboat come from beyond the attacker; the clock and the pin at the foe; the
+    spruce drops from above; the tower rises behind the attacker and swings over in a quarter-turn hook. Icon props
+    near the attacker at k 1 (near the lens), at the foe at k 2.
+  - No sound of its own: each scene plays its family's sound (VFX-19 reads `scenes.<id>.family`). For the sound
+    track, scenes that would like their own: CUDA Call (fans spinning up), Per Minute (a clock's tick), Smart
+    Contract (a lock's click), Sunday Red (a club's swing and a ball dropping in), Shuffle Play (a record skip).
+  - Prop wishes for the owner (the nearest generic one stands in): a big wooden flying boat (Spruce Dive), a dorsal
+    fin (I'm Out), a jukebox (Shuffle Play), a flag for the pin (Sunday Red), a single tyre (Rollback: the model is a
+    stack), a fan with blades that spin (CUDA Call: the whole turbine turns), a clothes rail (Fast Fashion).
+- Measurements (headless, software GPU, quality 0, the town fixture, side 0, a hit; before = VFX-17's head b34ab164
+  in a worktree with this branch's film tool, the moves playing their families; after = this branch at e960e747; one
+  after the other on an idle machine; cudacall, sprucedive, assemblyline, smartcontract, insync, empirestate):
+  - The pool's own draws (`battleFx`) 3 at most in every film, before and after (budget 3); the effects pass 129-131
+    at most, before and after.
+  - All draws a frame at the busiest frame: 733.2 mean before, 716.2 after (noise; the models' draws fall inside the
+    wide shot's peak).
+  - Time a frame during the move: 590.6 ms mean before, 669.8 after; p90 2254.8 and 3345.3 (software rendering: the
+    rest frames before the move swing as much, 2436 and 1684, so only the direction counts and it is within noise).
+  - Rig redraws 30.0 before, 23.7 after. Effect lights: the kits' and the families' `light` steps only, through
+    battle3dEffectLights' budget; the models add none. Flashes: none of the 19 uses `cut` or a flash of its own.
+  - Times: every scene at most its category's maxMs + 500 ms, the four status scenes at most 1000 (maxMs), every short
+    version within maxMs (tests); under Reduced motion each plays its family (at most maxMs).
+- Films (look-battle-anims.py `--sheets --cells=20 --outcomes=hit --sides=0`, in the scratchpad, not committed): all
+  19, then the nine tuned ones again. Seen: the fans and WHIRR!; the tyre rolling to the foe and back; the laptop and
+  the coins; One More Thing's step back, the "!", the orb; the sneaker and the instant dash; the clothes line and its
+  hangers; the attacker's jump and the spruce falling with afterimages; the shades and the falling chevrons; three
+  crates sliding in; the clock, TICK! and coins; I'm Out's hop, held beat and dart; the die, the thin ray and the
+  star; the speech bubbles; the notes and the rings; the sheet, the block chain and CLICK!; the chart and the heal;
+  the rowboat and the double splashes; the tower's hook; the pin, FORE! and the ball. From the foe's side (`--sides=1`,
+  rollback, empirestate): the tyre comes from beyond the foe and rolls back, the tower rises behind the foe and swings
+  at your Billie (the heading VFX-17 had not filmed is right). `--repeat` (cudacall, sprucedive): the short version,
+  its hit within half a second. Traces of every film: no errors.
+- Risky:
+  - Models near the lens: In Sync's rowboat (and less so Assembly Line's crates) passes close to the camera for a few
+    cells as it comes from beyond the attacker, as VFX-17's train does; the smears skip copies within 2 m of it.
+  - The phone's draws while the tower, the rowboat or the fans are up (headless the peak is unchanged; the phone needs
+    the debug log).
+  - The four status scenes add no time but replace their family's look; a status scene's stat-drop chevrons need the
+    real line's snapshots (the film's preview event has none), so Pop the Collar's sharply falling chevrons are seen
+    only in a real battle.
+- Phone checks for the owner (listed, not waited for): each of the 19 once (CUDA Call, Rollback, Terminal Fee, One More
+  Thing, Just Do It, Fast Fashion, Spruce Dive, Pop the Collar, Assembly Line, Per Minute, I'm Out, Feeling Lucky,
+  Character Limit, Shuffle Play, Smart Contract, Buy the Dip, In Sync, Empire State, Sunday Red); a short repeat (the
+  same scene twice in one battle); one scene with 3D props off (Empire State plays the slash family; Feeling Lucky,
+  icons only, plays its scene); the stamped words at phone size; the frame rate while the tower or the rowboat is up.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; `npm test` 1995 of
+  1995 on the merged head d339a162; `build-battle-anims.py --check` (51 sprites). CI smoke on e960e747: red only on
+  "Camera follow ... the page stopped drawing" (known; commented on #329, re-run once). The full quick check on the merged head d339a162: 39 of 42 in 1529 s. Not this branch's: "Walking left and right ... room light" (known); "Battle music ... the drums never came in on a throw" (known; passes alone here); "RL-8: a run from the mast ... the town's shop has no Perk (RL-12)", which fails alone here too and fails the same way on track/vfx's head 8607080a in a worktree (track/vfx's or main's, for VFX-20). Passed here: every battle step (A battle plays to the end, the Voltron, Starters, a run's battles), the in-game full test, the Studio's, Camera follow and the bowl. CI smoke on cbccff3a: Camera follow and the bowl (both known; commented on #329).
+- Next: VFX-20 merges this branch into `track/vfx` (after VFX-18b's; this branch merges cleanly with it in the shared
+  tests, and the two `scenes` blocks both follow billionsserved: keep both, mine first); then the phone pass.
+
+### Load track - the crossing hitch: the day's water remade in the background, the walking grid built ahead - 2026-10-28
+Branch `claude/new-session-bcxme1` (from main 485674b5; main merged in at a3bc2421, 76aea599 (#306 with it), 4423a457 and ed5c6857). Plan approved in Plan Mode. The owner: "there's still a hiccup
+when moving from a route to another route", with their PC debug log (10:36, RTX 2070, DPR 2.5) and diagnostics report
+(10:30). No look changes, except when the water appears (below).
+- **Found** (the log, then the code):
+  - The full test's crossing into Thicket Route: one frame of 3238 ms ("building the ground mesh"); the second time a
+    926 ms frame, a 4.7 s hold (`crossings.heldMaxMs` 4665) at about 22 fps, then 392 ms at the switch. Both logged
+    "water by the weather" as the day turned.
+  - run-world.js `runWaterWeatherSync`: when the day's weather changed *any* run place's water, it cleared every view,
+    put a remade one on screen and set `walkRenderer.hkey = ''`, so the next frame's `swapMapCache('', hk)` could not
+    use the cache and built the visible ground in one go. The next view, prepared ahead, was thrown away too.
+  - `navGrid` built every new view's walking grid in one frame (14 slow frames in the log, 75-90 ms, worst 595 ms on
+    the PC). load-track.md said "on a seam it is prepared ahead"; it wasn't (corrected there).
+- **Changed:**
+  - seamless-world.js: `seamlessDropViewsOf` drops only the views that show a changed place (`seamlessViewUses`, now
+    also used by map-files.js); no `gen++` (the seams' memo holds heights, not water). The view on screen keeps drawing;
+    `seamlessRemakeTick` (from `seamlessPrepareAhead`) gets its new version ready and swaps it in (swapMapCache finds
+    it). `seamlessGate` crosses into a ready earlier version (`seamlessWorld.was`) rather than wait; `shiftWalkView`
+    takes it and remakes it after. Stats: `remade`, `remadeMs`, `early` (the debug log's `world.crossings`).
+  - walk-view.js: `navGridSteps` (the grid a row or 32 props a step; `navGrid` runs it in one go, the same arrays);
+    `navPrepare` / `navPrepWork` build up to three grids ahead in the frame budget (walk-view-gl.js, next to
+    `groundPrepWork`); `navReady` is part of `seamlessViewReady`. `walkView.navBuilding` holds the view being built
+    (heights.js, `mapBridges`), not `true`. `walkView.navBuilds` counts grids built in one go.
+  - heights.js: the steep pass as steps too; `navGrid`'s wrapper takes a kept or ahead grid without looking at the
+    heights again.
+  - tools/check-fast.py: "A seam on a day the weather changes the water in view" (its own run page). Fails on main
+    (the ground built in one go, 2.9 s headless, and the walking grid); passes after, and checks the grid built ahead
+    equals one built in one go. The plan's Node unit test for that became this in-browser comparison (walk-view.js
+    needs the page).
+- **Found, not changed** (the same log, for their owners):
+  - The full test failed "A room that opens in place" (the town's walking grid changed by 236 cells after the room)
+    and "Light lab" (one draw call refused, GL error 1282, also logged at "Fog in the air: dawn fog").
+  - Copperleaf's opening hitch, "setting up the ground" 3.5 s on the PC: the same `buildGroundMesh`, on a place
+    opening (behind its fade). Next for this track.
+  - The diagnostics report's `passed: false` doesn't say which step failed (self-test.js `diagnosticsSummary` keeps
+    only the walk, battle, world map and memory steps), and tools/read-debug-log.py can't read a diagnostics report.
+  - tools/check-load.py `--only=moves --site=game` didn't get ready in 300 s here (the unbundled source).
+- **Risky:**
+  - When the day's weather changes the water of a place you can see, the new water appears when its remade view is
+    ready (seconds on a phone, headless 9 s), at once, instead of in a freeze.
+  - A crossing now also waits for the next view's walking grid (built ahead in the frame's budget). Walking straight
+    at a seam fast could hold a little longer; at the view's edge it is built on the spot, as before.
+  - Not measured on a phone. Headless only ranks the causes.
+  - A walking grid a crossing waits for (the gate's urgent ask) is built first, with the ground's urgent budget.
+  - tools/check-fast.py "A run's world" pushes the held next view's preparation along while it waits: it failed on
+    main at 485674b5 the same way (CI's smoke and locally: the ground alone took 5 s of work over 56 s headless, past
+    its 60 s wait), and the walking grid added a few seconds.
+- **Verified:** lint, typecheck, check:modules, format:check, check:data and build clean; `npm test` 1,733 pass; the
+  new check before (fails) and after (passes); "A run's world" and the new check pass together; `check:smoke` 7 of 7
+  (422 s). The full check-fast here on ca2d16d2: 38 of 43 (1,753 s); of the 5, "A battle plays to the end" and the
+  Studio's Model mode pass alone, and the pasture check (IS-8, "a Billie moved to the team still wanders in the
+  pasture") fails on main at 485674b5 too. CI's smoke on this branch ran on slow runners (1,436 s and 1,702 s in all,
+  main's 1,008 s and 1,300 s; the Studio's Camera section alone 135 s and 155 s, main's 76 s and 117 s), where the
+  frame-counting checks (the island orbit, Tall ground's silhouette, the bowl's zoom out) ran out of time; all pass
+  here. The checks' pushes (`SEAM_PREP`) were made light (150 ms a half second) so they don't take frames from the
+  other worker. On CI and in the full check-fast, for main's owners: "The Studio's world map look" and "The Studio's Camera
+  section" fail on main too (404s for game/art/billionaires/*.png); "Behind things" failed once under load on CI and
+  once locally beside `npm test`, and passed alone here and on main (its occlusion query answers late on a busy
+  machine).
+- Next: the owner's phone run below; then Copperleaf's opening hitch (the same ground build).
+- **For the owner on the phone:** start a run and walk two or three routes on foot over their seams (a day with a
+  storm or snow on the forecast shows the water change), then export the debug log. "building the ground mesh",
+  "setting up the ground" and "working out where you can walk" should be gone from the crossings, and
+  `world.crossings` shows `remade`/`early`.
+### Perks track PK-12 - Collection and wrap-up: the Field Guide's Perks tab, the balance pass, the art review; the track is done - 2026-10-29
+Branch `track/perks` (this session's outcome branch, at 0fbef2a6: PK-9; main ed5c6857 was already in, so nothing to
+merge). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode, the
+plan below written first and carried out. Details and the audit: perks-track.md section 14, "Corrected in PK-12".
+- The plan (as set at the start): (1) the Field Guide's Perks tab: a save record of what was seen and taken, following
+  `seen`/`caught` (a new field, `collection`; no SAVE_VERSION bump, a missing one reads as empty), noted on every save
+  from what the run shows; a fourth tab listing every Perk, set, held item and boon or curse with silhouettes of the
+  unseen (the SVG as a mask); phone screenshots light and dark; (2) the balance pass: the run sim gets options to start
+  holding Perks, boons and a held item; everything at once must stay finite; each one alone over the same seeds against
+  a baseline; tune only clear outliers, one commit each with the numbers; list the rest; rerolls a recommendation only;
+  (3) the art review: redraw Steady Hand, Screen Protector and Rubber Boots, remake the contact sheets, check every icon
+  is distinct across the folders, `--check`; (4) the section 14 audit, the tag line fixed; (5) the owner's summary of
+  every decision; ROADMAP, BRANCHES, TESTING, ART-NOTES; (6) every check tier, CI, PR #323's description.
+- Changed (6 commits of code, data, art and tests, besides this docs commit):
+  - **The record** (c5b3f557): game/js/logic/collection.js (`collectionNew`, `collectionFill`, `collectionNote`,
+    `collectionRows`); saves.js newSave/saveFill/validSave; `collection` in save-data.d.ts; game-state.js save() notes
+    it; index.html and the Studio's logic worker load it. tools/test/collection.test.mjs (4).
+  - **The tab** (7cdd9fb8): guide.js `renderPerkGuide` (Seen / Taken / Total over all 130, a chip per kind with its
+    count, the kind's list in the data's order: picture or silhouette, name or Unknown, text, rarity pill, "seen" or
+    "taken"; a set shows its bonus and its Perks' pictures), art.js `artSilHTML`, guide.css, ui.js's `pkgk`;
+    check-fast's perks step opens the tab; check-quick.py's guide ceiling 39 -> 40 (the tab's button).
+  - **The run sim** (8853c17e): `perks`, `boons` (`SIM_BOON_PLACES` 99) and `held` options and the CLI's `--perks`,
+    `--boons`, `--held` ('all' for every one); a run-sim test with all of them at once.
+  - **Art** (9d74b7c6): Steady Hand, Screen Protector, Rubber Boots redrawn (grids, SVGs, ART-NOTES.md); the perks
+    sheets remade, the items' and boons' remade unchanged.
+  - **Balance** (98f971c6): Costume Fangs 1/8 -> 1/16 (text and test).
+  - Docs: perks-track.md (PK-12 done, section 14 audited, the tag line), ROADMAP (the track done), BRANCHES
+    (`perks-done` after #323), TESTING.md, this entry.
+- **The balance pass** (the run sim, `--balance --policy=never-pick --team=3 --pack=5 --lvl=25 --unlocks=all`, the
+  same 300 seeds each; a bot, not a player: it plays three of the starter, never rerolls or catches much, so type
+  Perks for other types, catching, shop and map Perks show 0; with `--held` every Billie holds the item; a boon lasts
+  the whole run). Without any: 17.0% won, 6.64 places, 3,600 Moneys left. **Everything at once** (79 Perks, 20 boons
+  and curses, Quick Laces held): 100 runs, 89% won, every number finite.
+  - Tuned (one clear outlier): **Costume Fangs** 1/8 -> 1/16 of the damage dealt: 68.3% -> 40.7% won (the rare
+    Leftover Sandwich 41.7%).
+  - For the owner to tune on the phone (win rate alone vs 17.0%; Moneys left vs 3,600):
+    - Strongest Perks: Warranty Card 44.7% (rare, once a run), Heavy Crown 37.7% (Fine Print: its cost barely shows
+      for a bot that leads with its best), Power Bank 37.0%, **Oven Mitts 34.7% (a common; the run's foes burn a lot)**,
+      Plot Armor 31.7%, Screen Protector 31.0%, Matching Hoodies 30.0% (a mono team is the bot's default), Hazmat Suit
+      27.7%.
+    - Fine Print that only hurts the bot: **Overclock Chip 0.3%** (5% recoil: 5.3%, 3%: 15.3%), **Early Access Pass
+      0.7%** (+2 levels: 4.0%, +1: 6.3%), Hustle Planner 9.7% (but +3,000 Moneys), Glass Trophy 11.3%, Paid Promotion
+      11.7%, Energy Drink 12.0%. A player picks these knowingly; the bot can't value a map or tempo.
+    - Held items: Snack Pack 49.3% (common, 800) and Leftover Sandwich 41.7%, Cactus Keyring 40.0%, Party Balloon
+      35.0%, Iron Vest 30.0%; **Ankle Weights 3.3%** (moving last; +50% or +70% damage barely helps: 4.3%, 4.7%: a design
+      call, not a number); Lucky Coin +2,503 Moneys (three holders multiply: 1.25 cubed).
+    - Boons and curses: Fired Up 36.7% (Attack up, the run long; 3 places in play), Pep Talk 21.0%; curses Mandatory
+      Training 11.3%, Paper Cuts 12.0%, Hold Music 12.7%; Audit Trail -787 Moneys, Viral Moment +797.
+    - Money: Influencer Contract +2,832, Hustle Planner +3,000, Lucky Charm +633, Bounty Poster +430, Tip Jar +226.
+  - **Rerolls** (section 11, item 6; an "Ask me before"): recommended unchanged at 50, doubling. The bot never rerolls,
+    so the sim can't judge them; Fortune Cookie frees only the first reroll of each pick and Gift Receipt adds a card,
+    which the doubling still bounds.
+- **The owner's summary: every "Decided for the owner, to review" of the track** (PK-0..PK-12, grouped; the entry
+  named in brackets has the details):
+  - *Names and texts* (all drafts): the 66 new Perks' names and card texts as perks-track.md 5.2-5.6 with the changes
+    each wave's entry lists (Click Pen "Every 8th attack", Power Bank "ends a turn below a quarter", Alarm Clock without
+    "always" [PK-3]; Group Chat gives the bench the full XP, not half, Snorkel/Knee Pads/Kite/Union Card/Heirloom
+    Locket/Barometer wording [PK-4]; Bug Net, Pyramid Pouch, Music Box, Punch Card, Gift Receipt, Tour Brochure wording
+    [PK-5]; Photocopier, Streak Tracker, Coil of Rope, Time Card wording [PK-6]; the Fine Print texts with every
+    downside stated [PK-7]); Correction Fluid's text [PK-9]; the 7 sets' bonus names and texts [PK-8]; the 20 boons'
+    and curses' names and texts [PK-9]; the 16 new held items' names and lines (Express Pass "each turn", Ankle Weights
+    "moves after the others", Complaint Form "once a battle") [PK-10]; the five Bureau events Mandatory Orientation,
+    Routine Audit, Please Hold, Permit Inspection, Paperwork Avalanche and their lines [PK-9].
+  - *Battle lines*: "<Perk>: <say>", a stat row's "<Perk>: X's Speed rose.", turnHurt's "lost a little HP" [PK-1];
+    Rubber Stamp "Approved!", Click Pen "Click! X lines up a critical hit.", Screen Protector, Joy Buzzer, Oven Mitts,
+    Alarm Clock, Warranty Card [PK-3]; the held items' six lines (Seatbelt, Cactus Keyring, Complaint Form, Party
+    Balloon, Costume Fangs, Express Pass) [PK-10].
+  - *The look*: Fine Print in the ladder's top orange #F77036 with a small red tilted "FINE PRINT" stamp, and the foil
+    [PK-7]; Lucky Charm a horseshoe [PK-0, PK-2]; pictures at 72 px on cards and 36 px in rows, the drop sheet at 36
+    [PK-2]; the Bag's battle list and the Billie sheet at 36 px too [PK-11]; the Perks tab grouped by set, "(on)" in
+    bold [PK-8]; boons on the Perks tab and an 18 px strip beside the day on the Map tab [PK-9]; the Field Guide's
+    Perks tab (a chip per kind, silhouettes of the unseen, "seen"/"taken" in hand-written ink) [PK-12].
+  - *Every picture* (about 140, contact sheets in validation/icon-sheets/; redraw any in the Studio's icon editor):
+    13 existing Perks redrawn [PK-2], 11 [PK-3], 13 [PK-4], 12 [PK-5], 11 [PK-6], 11 [PK-7], Correction Fluid and the
+    20 boons [PK-9], 25 held items with Form 99-A [PK-10], 13 Bag items [PK-11]; Steady Hand, Screen Protector and
+    Rubber Boots redrawn [PK-12]. Still the weakest reads: Garden Trowel (a hammer?), Snack Pack, Ankle Weights
+    [PK-10], Max Revive's small heart and Trail Mix [PK-11], Knee Pads (a robot head?) and Static Socks (boxy) [PK-4].
+  - *Rarities and numbers*: rarity weights 6/3/1 unchanged with Fine Print out of the ordinary pool; a leader's pick
+    draws its 12 evenly; the reward pick's Perk card weight 2 of 41 [PK-7]; the 13 existing Perks keep their numbers
+    [PK-0]; the cap stays 6 (Accordion File +1, Non-Refundable Ticket +2), and letting Accordion File go at the cap it
+    raises is refused [PK-6]; Wave A-D rarities as the plan [PK-3..PK-6]; held items: the 9 type boosters common
+    (800), the 7 tricks uncommon (1000), Seatbelt 1200 [PK-10]; the appeal 50 Moneys at a run town's clinic [PK-9];
+    rerolls unchanged at 50, doubling (Fortune Cookie makes only the first free) [PK-5, PK-12]; the bias toward the
+    team's types and held sets at x2 [PK-4]; heldBoost rounds stages half up, chances stop at 50% [PK-8]; the PK-12
+    balance list below (numbers to tune on the phone).
+  - *How things work* (rules chosen where the plan was open): `every` counts over the whole run [PK-1]; a run's
+    pinchHeal heals each Billie once a battle [PK-1]; a growth stays between 0 and its max, and shows "+0%" before it
+    grows [PK-1, PK-6]; "VOID" on a spent once-a-run row [PK-3]; an event's status skips the whole team when a guard
+    holds [PK-3]; `needs` ignored where no team is given [PK-4]; Punch Card refunds one of a stack, Tip Jar is a money
+    row, Music Box rolls once a foe, `needs: bots` is a scrapyard not yet visited [PK-5]; a copier's marks are its own,
+    sideOpen at a side area's obstacle only, sideFind at most 2, eventHurt stops only the `hurt` command [PK-6];
+    Influencer Contract's triple pay on every trainer battle and its "pays nothing" zeroes Moneys only, Subscription Box
+    draws from the `common` loot table, Overclock Chip's cost can knock its user out, Non-Refundable Ticket at the cap
+    may still let one go [PK-7]; a copy doesn't count toward a set, the set line counts with the card's Perk [PK-8]; a
+    boon given again lasts the longer, never stacks; Correction Fluid's erase counts once a run [PK-9]; the held kinds
+    stay out of FX_KINDS [PK-10]; the Studio's PNG upload for items gone (Draw one and Edit art) [PK-11]; the Perks tab's
+    record notes on every save, a set counts as taken once its bonus has been on, Bag items are not listed [PK-12].
+  - *Every seed's offers and event draws changed* as Perks and events were added (the pool follows the file's order),
+    accepted as SP-6 did [PK-3..PK-9].
+- Decided for the owner in PK-12, to review: the record's name `collection` and what counts as seen and taken (above);
+  the tab's place (second, between Billies and Lore) and words ("Everything a run can hand you", "Runs hand them out.
+  Take them all.", "Not seen yet."); Bag items not listed; a set shown with the relic icon and its Perks' small
+  pictures; the guide's piece ceiling 39 -> 40; the three redraws; Costume Fangs 1/16; rerolls unchanged.
+- **Phone checks for the whole track** (none done yet; light and dark each): the Field Guide's Perks tab (the chips
+  fit? the 79 rows scroll, silhouettes read) [PK-12]; a mini-boss's pick of three Fine Print cards and the red stamp,
+  the reward pick's Perk card and "Let one go" at the cap, Non-Refundable Ticket at 8, Subscription Box, Influencer
+  Contract and Overclock Chip lines, Early Access mid-run [PK-7]; every picture crisp at 72 and 36 px (PK-2..PK-11,
+  the three redraws [PK-12]); Click Pen's "n/8" and its critical 8th attack, Warranty Card's VOID, Alarm Clock [PK-3];
+  no type Perk offered without its type, Barometer's 10-day forecast, Umbrella in rain, Kite's free switches [PK-4];
+  Gift Receipt's four cards, Fortune Cookie's free reroll, Tour Brochure mid-run, Pyramid Pouch, Tip Jar, Punch Card,
+  Name Tags [PK-5]; Accordion File's "n of 7", Photocopier's note, Boarding Pass, Like Button and Streak Tracker's
+  "+N%", Coil of Rope, Rusty Key, Ten-Foot Pole, Time Card, Travel Pillow [PK-6]; the Perks tab grouped by set, the set
+  line on cards and shop rows, Adventurer's Pack's pyramid, Tech Gear with Quick Laces, the Lab Kit's splice, the
+  Influencer's first critical [PK-8]; an event's boon and curse, the Map tab's strip on a narrow phone with 3-4 on, the
+  clinic's appeal, Out of Office, Hold Music, Permit Revoked's REVOKED, Correction Fluid's erase [PK-9]; the Bag and
+  reward picks' held cards, Party Balloon and Express Pass in battle, the Billie sheet's held line [PK-10]; the Bag's
+  rows, a run shop's item rows, the battle's Bag [PK-11].
+- Risky:
+  - Every save now runs collectionNote (a walk over the run, the bag and the team: about 130 checks). A save that holds
+    junk in `collection` loads with it cleaned; one where `collection` isn't an object fails validSave (a backup import).
+  - What counts as "seen" comes from what a save holds: a shop's Perk seen only once the shelf is drawn and saved, a
+    held item in a town's market stall not seen until bought or offered in a reward pick.
+  - The balance numbers measure a bot; Fine Print and Ankle Weights especially need a person's judgment.
+- Verified: after every change lint, typecheck and `npm test` (2063 at the start, 2068 at the end); before every
+  commit check:modules, format:check, check:data (181 files fine; its two bridge warnings are main's) and build;
+  `check:smoke` on every commit touching game/, run in a second worktree on the exact commit: no problems on c5b3f557,
+  9d74b7c6 and 98f971c6; on the tab's first version it found the Guide screen at 40 pieces over its ceiling of 39,
+  fixed in the same commit (7cdd9fb8: no problems). The tab seen at 390 x 844, light and dark, every kind (no page
+  errors, no sideways scroll). `check:fast --only=perks` ok with the new tab step. `check-studio-github.py
+  --only=relics` ok. `npm run test:slow` 109 passed. `build-icons.mjs perks|items|boons --check` fine. The run sim:
+  `--balance` runs finish (the numbers above); the default scenes mode stops at "runSceneParams: node 8 has no exit
+  north3", main's (PK-5..PK-9). **In-game full test** (`--selftest`, 98f971c6): one problem, "A room that opens in
+  place: the town's walking grid changed", main's (PK-7's and PK-9's entries). **Full quick check** (98f971c6): 42
+  steps, 37 passed in 1711 s; room light and Battle music (the drums on a throw) are main's known reds; RL-8 ("crossed
+  into Meadow Route but its view never showed"), RT-2's pair and Granny Juniper, run again alone with `--steps=`: RT-2
+  and Granny Juniper passed, RL-8 stopped at "the town's shop has no Perk", main's known red (PK-5..PK-9): the same five
+  as PK-9's run. **CI** on 9cd4fa75 (this entry's first push): lint, rules and the pull request's smoke green; the push
+  run's second smoke hit the 30-minute job timeout (main's).
+- Next: the track is done. The owner reviews the summary above, the phone checks and PR #323; once #323 merges,
+  `track/perks` gets the `perks-done` tag and it and `track/perks-items` are deleted (docs/BRANCHES.md).
+
+### Perks track PK-9 - Boons and curses - 2026-10-29
+Branch `track/perks` (this session's outcome branch, at ab776fc1: PK-8; main 6ca60be6 was already in, so nothing to
+merge at the start). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no
+Plan Mode, the plan below written first and carried out. Details and the plan's corrections: perks-track.md 5.9,
+"Corrected in PK-9".
+- The plan (as set at the start): (1) the kinds the new curses need, one per commit with tests, schema, data checks,
+  types and the Studio's row inputs: `last` on a run's rows (Hold Music: yours move last on the first turn), a
+  `turnHurt` row at `arrive` (Paper Cuts: each place costs HP), `rewardPick` below 0 (Pending Review: one card
+  fewer), the rules `shopClosed` (Out of Office) and `muteNewest` (Permit Revoked: the newest Perk does nothing and
+  counts toward no set); (2) the `boons` data section: boons.json (name, d, curse, places, img, fx), its index.json
+  key, boons.schema.json, `Boon` in game-data.d.ts, game-data.js `BOONS`, data-checks.js `dataBoons` in check-data and
+  the Studio's Check; the 20 of 5.9 with drafted texts; (3) the run keeps a named boon by id (run.enc.boons `id`, its
+  rows read from the data, src `boon:<id>`; an unnamed `fx` boon of a pack as before; validRun takes both, so a run in
+  progress loads), battle lines and the debug log name it; the event commands `boon <id>` and `curse <id>`; the 4
+  events and the fountain refer to them by id with today's numbers; (4) Correction Fluid, the 79th Perk (rules
+  `curseShorter` and `curseErase`), in Office Supplies, with its picture; (5) the clinic's appeal (rules.json
+  run.appeal, placeholder 50 Moneys) lifts a curse; (6) 5 new Bureau events that hand out curses (drafted lines);
+  (7) on screen: the Perks tab lists the boons and curses on, each with its picture and places left; the Map tab's
+  head row (the run's HUD beside the day) shows their pictures with places left; (8) the Studio edits boons (their
+  words, places and picture; rows as JSON as the sets'); (9) the 21 pictures (a helper draws the grids; `node
+  tools/build-icons.mjs boons` and `perks`, `--check`, the contact sheets); (10) tests: every boon has a name and a
+  picture, each works and expires, the appeal, Correction Fluid, the new events, every Perk, set and boon at once
+  finite, golden battles unchanged; (11) docs.
+- Changed (15 commits of code, data, art and tests, besides the plan, this docs commit and the merge of main):
+  - **Kinds** (one per commit; effects.js, schema, game-data.d.ts, data-checks.js, the Studio's rows, tests): `last` on
+    a run's rows (battle-engine.js fxLastActs; it moved from HELD_FX_KINDS to FX_KINDS and HELD_OWN_FORMS), a turnHurt
+    row at `arrive` (run-loop.js runArriveHurt, run.js's toast), rewardPick -1 (rewards.js), the rules shopClosed
+    (run-loop.js runShopShut, shop.js), muteNewest (effects.js fxMuted, fxLivePerks; perks.js perkCount "REVOKED",
+    perkSetLine, perkGroups), curseShorter and curseErase (run-loop.js runBoonGive, run.enc.erased).
+  - **Data**: game/data/boons.json (the 20), boons.schema.json, index.json, `Boon`, game-data.js `BOONS`, data-checks.js
+    `dataBoons` and `dataBoonArt` (check-data.mjs, studio/js/check.js); rules.json square.wish outcomes' `boon` and
+    run.appealCost; events.json's four events by id and the five new Bureau events; perks.json Correction Fluid.
+  - **Run**: run-enc.js encBoonGive, encBoonRows by id, encBoonsOn, encBoonLine; run-state.js validRun (named boons,
+    `erased`); battle-engine.js fxSrcName `boon:`; the commands `boon` and `curse` (script-parse.js,
+    encounter-screen.js, docs/SCRIPTS.md); fountain-wish.js; debug-log.js; the appeal (run-loop.js runAppeal,
+    walk-tab.js clinicAppealOpen).
+  - **Page**: perk-screen.js boonsHTML (the Perks tab) and boonStripHTML (the Map tab's head), map-tab.js, bag.css,
+    map-tab.css.
+  - **Studio**: perks-editor.js the Boons and curses card, the rule words and the kind last; check-studio-github.py
+    `--only=relics`'s boons step.
+  - **Art**: tools/art/icon-grids/boons.json (20 grids, drawn by a helper and checked on contact sheets) and Correction
+    Fluid's in perks.json; game/art/boons/ 20 SVGs and game/art/perks/correction_fluid.svg; build-icons.mjs's sheet
+    knows boons; validation/icon-sheets/boons-{light,dark}.png new, perks-{light,dark}.png remade.
+  - Tests: battle-boons.test.mjs (new, 14), data-checks (PK-9 rows, dataBoons, dataBoonArt, the commands),
+    fountain-wish (by id), battle-perk-sets (Office Supplies' 7th), battle-perks-fine (66 of Waves A-D and Fine
+    Print), perks.test.mjs's bias test draws 6000 shelves (1500 left too few to settle once the pool grew); the
+    check-data snapshots count 181 files; check-fast.py's perks step reads the boons on screen and an appeal.
+  - Docs: perks-track.md (PK-9 done, "Corrected in PK-9" in 5.9), ROADMAP, STUDIO.md, TESTING.md, ART-NOTES.md "Boon
+    and curse pictures", SCRIPTS.md.
+- Merged main ed5c6857 (track/vfx VFX-13, #295) at the end: HANDOFF kept every entry; hooks.js and art-code-refs.json
+  regenerated; the check-data snapshots count 181 files.
+- Risky:
+  - Every seed's offers (Correction Fluid joins the pool) and event draws (five more events) changed.
+  - Permit Revoked mutes the newest Perk: an Accordion File muted lowers the cap while it lasts (the run may then hold
+    one past it; taking another opens "Let one go"); a muted Early Access Pass's foe levels stay until the next Perk is
+    taken (runFoesSync runs on taking a Perk, not when a curse comes or goes).
+  - Out of Office shuts every run town's shop for its places, not only the next one.
+  - A boon given again lasts the longer of the two (no stacking); the old unnamed rows of a run saved before PK-9 keep
+    working until they run out.
+  - Hold Music and Alarm Clock together: a Billie both first and last moves first (early sorts before late).
+- Verified: after every change lint, typecheck and `npm test` (2021 at the start, 2038 at the end; 2063 with main's
+  after the merge); before every commit check:modules, format:check, check:data (181 files fine; its two bridge
+  warnings are main's) and build; `check:smoke` on every commit touching game/, run in a second worktree on the exact
+  commit (no problems each; Python Playwright 1.63.0). Golden battles unchanged (no snapshot remade). `check:fast
+  --only=perks` ok with its boons step. `check-studio-github.py --only=relics` ok with the boons step. `npm run
+  test:slow` 109 passed. `node tools/build-icons.mjs boons --check` and `perks --check` fine. The 1,000-maps timing
+  test failed only while a smoke run loaded the machine and passed alone (main's known flake). **The run sim**:
+  `--runs=50` stops in scene mode with "runSceneParams: node 8 has no exit north3", main's (PK-5..PK-8); `--balance`
+  finishes its 50 runs.
+  **The in-game full test** (`--selftest`) on 49d3fde5: two problems, "A run's road: arrived but the view is still
+  w:run_0_2210*" and "A room that opens in place: the town's walking grid changed"; ab776fc1 (PK-8, before any PK-9
+  change) fails the same two in the same run, so neither is PK-9's (the second is main's, PK-7's entry). **Full quick
+  check** on c5055fda (main merged): 42 steps, 37 passed in 1725 s; room light and Battle music (the drums on a throw)
+  are main's known reds; RL-8 (that run: "crossed into Thicket Route but its view never showed"), RT-2's pair and
+  Granny Juniper were run again alone with `--steps=`: RT-2 and Granny Juniper passed, RL-8 crossed the seam and
+  stopped at "the town's shop has no Perk", main's known red (PK-5..PK-8). **CI** on c5055fda: lint and rules green;
+  smoke red on "Camera follow: the page stopped drawing" (main's known red; commented on #323), and its second run on
+  the same commit passed every step it reached before the 30-minute job timeout (also main's).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 20 names and texts** (drafts, 5.9's names): Glittering Water "Wins pay 10% more Moneys.", Lucky Ripples
+    "Billies are 5% easier to catch.", Camera-Ready and Tailwind "Your Billies take the field with their Speed up.",
+    Fired Up "...Attack up.", Pep Talk "Your Billies hit 10% harder.", Grand Opening "Run shops charge 20% less.",
+    Second Breakfast "Walking into a place heals your team 10%.", Viral Moment "Wins pay 25% more Moneys.", Beginner's
+    Luck "Billies are 15% easier to catch."; curses Stamped Insufficient "Run shops charge 10% more.", Surge Pricing
+    "...25% more.", Clinic Backlog "Clinics charge 50% more.", Pending Review "Reward picks show one card fewer.",
+    Mandatory Training "Your Billies take the field with their Speed down.", Audit Trail "Wins pay 25% fewer Moneys.",
+    Hold Music "Your Billies move last on each battle's first turn.", Permit Revoked "Your newest Perk does nothing.",
+    Out of Office "Run towns' shops are shut. The market stalls stay open.", Paper Cuts "Each place you walk into
+    costs your team 5% of their HP." Places as 5.9 (Out of Office 3).
+  - **The appeal** (section 11 item 7): 50 Moneys at a run town's clinic, one button per curse, not changed by clinic
+    price rows; shut under "No healing".
+  - **Correction Fluid**: uncommon, Office Supplies; "Curses last one place less, and the first curse you're handed
+    this run is erased at once."; the erase counts once a run even if it is let go and taken again.
+  - **The five Bureau events and their lines** (events.json): Mandatory Orientation, Routine Audit, Please Hold, Permit
+    Inspection, Paperwork Avalanche (options and outcomes in perks-track.md "Corrected in PK-9" and the commit).
+  - **A boon given again lasts the longer**, never stacks. A curse's row on the Perks tab says "A clinic's appeal lifts
+    it."
+  - **The HUD**: the Map tab's head row beside the day (18 px pictures with the places left, the name and text as a
+    title); the Perks tab's "Boons and curses" list under the Perks.
+  - **The 21 pictures** (validation/icon-sheets/boons-light.png and -dark.png, perks-* for Correction Fluid; redraw any
+    in the Studio's icon editor), described in ART-NOTES.md "Boon and curse pictures".
+- Phone checks to do (listed, not waited for): an event giving a boon and a curse (the sheet's "Curse: ..., for this
+  place and 3 more." line); the Perks tab's Boons and curses list light and dark; the Map tab's strip beside the day
+  (does it fit beside the day and the menu on a narrow phone with 3-4 on?); the clinic's appeal sheet; a shop shut by
+  Out of Office; Hold Music's "moves last" line; Permit Revoked's REVOKED on the newest Perk and a set losing its
+  bonus; Correction Fluid's erase line; the 21 pictures at 36 and 18 px.
+- Next: PK-12 (the Field Guide's Perks tab, the run sim over every Perk, the full check, the summary of every decision
+  for the owner) on `track/perks`.
+
+### Perks track PK-8 - Perk sets - 2026-10-28
+Branch `track/perks` (this session's outcome branch, at 528c321e: PK-7 with main 3f559c3b merged; main had not moved,
+so nothing to merge at the start). Started by PK-0's session under the owner's standing instruction (perks-track.md
+section 10): no Plan Mode, the plan below written first and carried out. Details and the plan's corrections:
+perks-track.md 5.7, "Corrected in PK-8".
+- The plan (as set at the start): (1) the kinds the 7 bonuses need, one per commit with tests, schema, data checks,
+  types and the Studio's row inputs: a price row for a run shop's Perk (`what: perk`, Office), `heldBoost` (Tech: your
+  held items' numbers half again), the condition `unstable` (Lab's damage), the rules `unstableSafe` (Lab: an Unstable
+  splice's cells never hurt it) and `sidePerk` (Adventurer: a side area's place holds a Perk lying on the ground);
+  (2) the `perkSets` data section: perkSets.json, its index.json key, perkSets.schema.json, `PerkSet` in
+  game-data.d.ts, `dataPerkSets` (check-data and the Studio's Check), game-data.js `PERK_SETS`; the 7 sets with drafted
+  texts; a set's members are the Perks tagged with its id, so the themes come from the section (PERK_THEMES goes);
+  (3) fxOfRun adds a set's rows (src `set:<id>`) while `need` of its members are held (copies don't count); battle
+  lines name a set by its title; (4) the card's set line ("Office Supplies 2/3") on pick cards, rows and the shop, the
+  Perks tab grouped by set with each set's bonus; (5) the Studio's Perks editor: a Perk's set, and the sets' names,
+  titles and texts; (6) tests: a set's bonus starts and stops with its third member (taken, let go, swapped), each
+  set's bonus, every Perk and every set at once finite, golden battles unchanged; (7) docs.
+- Changed (10 commits of code and tests, besides the plan, this docs commit and the merge of main):
+  - **Kinds** (effects.js, schema, game-data.d.ts, data-checks.js, the Studio's rows, tests): a price row's `what:
+    perk` (perks.js `perkShopPrice`, read by shop.js and the run sim); `heldBoost` (`fxHeldBoost`, `fxBoostRow`;
+    fxOfBillie and fxHeldAt take a boost; battle-engine.js `heldBoostOf`/`heldFx` for yours only, battle-state.js's
+    start stages, battle-rewards.js's money rows); the condition `unstable` (fxBattleCtx); the rules `unstableSafe`
+    (endTurn) and `sidePerk` (route-finds.js `routeFindsPerk` and the Perk's find on a side place, perks.js
+    `perkFindMake`, walk-view.js's pickup and propShown).
+  - **Data**: game/data/perkSets.json (the 7 sets), perkSets.schema.json, index.json, `PerkSet`, game-data.js
+    `PERK_SETS`; data-checks.js `dataPerkSets` and `perkRowProblems` (dataPerks' row checks moved, same words),
+    `PERK_THEMES` gone (tags read the sets); check-data.mjs and studio/js/check.js run it.
+  - **The bonus**: effects.js `fxSetHeld`, `fxSetsOn`, `fxSetRows`, fxOfRun adds them (src `set:<id>`);
+    battle-engine.js fxSrcName and battle.js's blips name a set by its title; debug-log.js `relicSets`.
+  - **Page**: perks.js `perkSetOf`, `perkSetLine`, `perkGroups`; perk-screen.js (the card's set line, the Perks tab
+    grouped by set), reward-screen.js and shop.js (the set line).
+  - **Studio**: perks-editor.js a Perk's Set select and the Perk sets card; check-studio-github.py `--only=relics`'s
+    set step.
+  - Tests: battle-perk-sets.test.mjs (new, 20), perks.test.mjs (perkShopPrice; perkSetOf, perkSetLine, perkGroups),
+    data-checks.test.mjs (the kinds, dataPerkSets; a PK-4 message that pinned the whole rule list now checks its
+    start), battle-perks-wave-d.test.mjs (the sideFind test leaves the Perk's find out of the place's own); the
+    check-data snapshots count 180 files. check-fast.py's relics step expects Old School's catch row.
+  - Docs: perks-track.md (PK-8 done, "Corrected in PK-8" in 5.7, section 8's tags), ROADMAP, STUDIO.md, TESTING.md.
+- Merged main 6ca60be6 (track/vfx VFX-5..12 and VFX-15, #295/#326) after the Studio commit: HANDOFF kept every entry,
+  art-code-refs.json and hooks.js regenerated, VFX-12's new check-data snapshot counts 180 files.
+- Risky:
+  - Sets change balance at once for runs holding three of a set (the relics fixture holds three Trainer Classics, so
+    Old School is on there). Numbers are placeholders.
+  - heldBoost scales every held number of yours, take rows too (Iron Vest's ×0.85 becomes ×0.775) and Seatbelt-like
+    rows with no number not at all; +1 stage becomes +2 (rounded half up), so Quick Laces doubles.
+  - The side area's Perk find is put in every side place's scene, shown only with the rule; a pick of one reopened
+    after a reload reads the mini-boss's line. If a pick is already open, walking onto the find does nothing until it
+    is answered.
+  - Influencer's critical first attack spends its once-a-battle mark on the first attack that moves (a miss spends it
+    too, as Rubber Stamp's PK-3 rule).
+  - The Studio's need field shows its message after the section redraws (a number field doesn't redraw it).
+- Verified: after every change lint, typecheck and `npm test` (1973 at the start, 2020 with main's tests after the
+  merge); before every commit check:modules, format:check, check:data (180 files fine; its two bridge warnings are
+  main's) and build; `check:smoke` on every commit touching game/ (no problems each, run in a second worktree on the
+  exact commit; Python Playwright 1.63.0), and on the merged head. Golden battles unchanged (no snapshot remade).
+  `check:fast --only=perks` ok (after its expectation took the set's catch row). `check-studio-github.py
+  --only=relics` ok with the set step. `npm run test:slow` 109 passed. A phone-sized look at the relics fixture: the
+  pick's cards read "Perk · Weather Kit 3/3" and "Perk · Office Supplies 1/3"; the Perks tab groups Office Supplies
+  2/3 and Weather Kit 3/3 ("Weather Person (on)") then "No set". **The run sim**: `--runs=50` stops in scene mode with
+  "runSceneParams: node 8 has no exit north3", main's (PK-5..PK-7); `--balance` finishes its 50 runs.
+  **Full quick check** on 01d8472a: 42 steps, 39 passed in 1374 s; the three problems are main's known reds recorded
+  in the PK-7 and PK-10 entries (RL-8's "the town's shop has no Perk", room light, Battle music "wild: the drums never
+  came in on a throw"). **CI** on 5af1266b: lint and rules green; the fast check (smoke) green on the push's run.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **A copy doesn't count toward a set**; a Photocopier counts as itself (Office Supplies). Non-Refundable Ticket is
+    in no set.
+  - **The 7 bonuses and their texts** as listed in perks-track.md 5.7 "Corrected in PK-8"; where the plan's draft
+    didn't fit the code: Office's "stocks a Perk" was already true (half price kept); Lab's "lose no HP" needed its own
+    rule; Weather's "any weather but clear" lists rain, storms, snow, fog and ash; Adventurer's Perk lies on the
+    ground as a find (a pick of one), drawn like a pick's (ordinary rarities, the bias).
+  - **heldBoost's rounding**: stages round half up (+1 to +2), chances stop at FX_CHANCE (0.5).
+  - **The set line counts with the card's Perk** ("3/3" on the card that would complete a set), never past the need.
+  - **The Perks tab**: sets in perkSets.json's order with their bonus text, "(on)" in bold once held, then "No set".
+  - No set picture (section 6 asks none); the Studio edits a set's words and need, its rows in perkSets.json.
+- Phone checks to do (listed, not waited for): the Perks tab grouped (a set's head, "(on)"), light and dark; a pick
+  card's and a shop row's set line; a side area with three Adventurer's Pack Perks: the pyramid on the ground and its
+  pick of one; Tech Gear with Quick Laces (+2 Speed) and Express Pass; an Unstable splice under the Lab Kit (no
+  "unstable cells" line); Influencer's first attack critical.
+- Next: PK-9 (boons and curses: the `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the
+  fountain by id, the appeal, 4-5 Bureau events, Correction Fluid) on `track/perks`; Permit Revoked must keep a
+  muted Perk out of a set's count (effects.js fxSetHeld).
+
+### Perks track PK-7 - Fine Print - 2026-10-28
+Branch `track/perks` (this session's outcome branch; PR #318 had merged PK-6 into main, so main 4423a457 came in first
+as a fast-forward, hooks.js unchanged; main 6acee223, the UI fixes #309, merged at the end: only the generated
+art-code-refs.json met, regenerated, hooks.js remade by `npm run modules`; that merge commit, c503ff47, left
+conflict markers in this file by mistake, fixed by the next merge). At the planning session's request the items lane,
+`track/perks-items` at 0c138c24 (PK-11 and PK-10, PR #310), merged last: HANDOFF keeps every entry, ROADMAP both
+lines, art-code-refs.json and hooks.js regenerated; then the commit tier, 1971 unit tests, smoke (7/7), `check:fast --only=perks` and the Studio check.
+`check:fast --only=held` alone fails at once here ("Cannot read properties of undefined (reading 'name')") on main
+4423a457, the items lane and this branch alike; CI's whole fast check passes that step. Main 3f559c3b (the hub island
+polish, #315) merged after that: only HANDOFF met (both entries kept); hooks.js and art-code-refs regenerated. Started by PK-0's session under the owner's standing instruction (perks-track.md
+section 10): no Plan Mode, the plan below written first and carried out. Details and the plan's corrections:
+perks-track.md section 8, "Corrected in PK-7". The items lane (`track/perks-items`, PR #310) had not landed in
+track/perks until the end (merged then, above); nothing of items.json, itemIcon, bag.js or art/items was touched by PK-7
+(Subscription Box draws from events.json's loot tables). New draft PR #323 (track/perks to main, "Perks track (PK-7 onward): Fine Print").
+- The plan (as set at the start): (1) merge main; (2) the kinds Fine Print needs, one per commit with tests, schema,
+  data checks, types and the Studio's inputs: recoil, a money row's add (Subscription Box's charge), loot, the rules
+  noDrop and faintPaysNothing; level and bossHp rows taken mid-run applied at once; (3) the `fine` rarity and a leader's
+  pick drawn from it alone, with its look (the ladder's top orange, a red stamp); (4) the reward pick's Perk card;
+  (5) the 12 pictures as grids (drawn by three helpers in parallel, checked on contact sheets); (6) the 12 Perks in
+  perks.json; (7) rules.json's leader rule; (8) a test per Perk with its downside, Non-Refundable Ticket with Accordion
+  File and Photocopier, every Perk of Waves A-D and Fine Print at once; (9) the contact sheets; (10) the Studio check;
+  (11) docs.
+- Changed (18 commits and this entry; the merge of main was a fast-forward):
+  - **effects.js**: kinds `recoil` (`fxRecoil`) and `loot` (`FX_LOOT_N`); FX_RULES gains noDrop and faintPaysNothing.
+  - **Battle**: battle-engine.js `fxRecoilHurt` after an attack of yours that dealt damage; battle-rewards.js
+    battleRewards zeroes a win's Moneys under faintPaysNothing when one of yours fainted (`noPay`; battle.js toasts it).
+  - **Run**: run-loop.js runFxMoment pays or charges a money row's `add` (`cost`) and brings loot (`runLoot`: an
+    events.json loot table, the run's stream for the row and the place); run.js toasts both; `runFoesSync` /
+    `runFoesRelevel` move a run world's pools, trainers and boss when a level or bossHp row comes or goes
+    (run-scenes.js runWorldTables' `foeUp`/`foeSeed`, game-data.js worldPut keeps them).
+  - **Offers** (perks.js): `perkNoDrop` (perkDropOk, perkTake 'noDrop'), `perkLeaderRule`, perkOffer/perkOfferMake
+    `from` 'leader' (battle-rewards.js, the debug menu, the relics fixture, the run preview, perkOfferOrder); perkTake
+    ends with runFoesSync. rewards.js: the `perk` card (rewardDraw, rewardTake with `drop`, rewardDataGame's perks);
+    run-state.js validRunEnc keeps a perk card.
+  - **Page**: perk-screen.js (the pick's and the "Let one go" sheet's words under noDrop; perkDropOpen exported),
+    reward-screen.js (the Perk card, the cap's sheet, its toast, jingle and flight), shop.js, debug-menu.js and run.js
+    read perkCap (PK-6 had left four texts on rules.json's 6); marks.js `fine` and `rarityColour`, ui-marks-kit.js,
+    ui-run-kit.js (the stamp), ui-kit.css.
+  - **Data**: perks.json the 12 Fine Print Perks with `img`; rules.json `run.perks.leader`; rewards.json `perk`;
+    perks.schema.json (recoil, loot, xp, the money row's add, the rules, rarity fine), rewards.schema.json;
+    data-checks.js (the kinds, the leader rule, an event never naming Fine Print, a perk card naming no item);
+    game-data.d.ts (PerkRarity with fine, PerkTier), save-data.d.ts (RewardCard perk).
+  - **Studio**: the Perks editor's kinds recoil, loot, xp, the money add, the two rules' words, the rarity fine and its
+    head; check-studio-github.py `--only=relics` opens the 12 Fine Print Perks.
+  - **Art**: tools/art/icon-grids/perks.json the 11 new grids; game/art/perks/ 12 SVGs; the contact sheets.
+  - **Run sim**: moneyOut.perks counts what Perks charge on arrival; the "first item" policy skips a Perk card.
+  - **In-game full test**: the mini-boss's pick must be all Fine Print.
+  - Tests: battle-perks-fine.test.mjs (new, 22 tests), data-checks (PK-7 good rows and planted faults, the leader
+    rule, events, rewards), ui-marks (the tier), perks and run-preview (the leader's pick).
+  - Docs: perks-track.md (PK-7 done, "Corrected in PK-7"), ROADMAP, STUDIO.md, TESTING.md.
+- Risky:
+  - Every seed's leader picks changed (Fine Print only) and every reward pick's draw (one more card in the deck).
+  - Fine Print numbers are placeholders and strong on purpose: Glass Trophy x1.5 with Overclock Chip x1.35 and Terms
+    x1.3 stack within FX_LIMIT (x4); Heavy Crown's -15% applies only in double battles (the second place).
+  - Non-Refundable Ticket at its cap means no new Perk until the run ends (by design); the online run record still
+    keeps 6 Perks.
+  - runFoesSync moves the levels of every trainer of the world, beaten ones too (harmless), and leaves a place already
+    stocked this visit as it was.
+  - Subscription Box costs 15 Moneys at every place, also the landing places of side areas.
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck
+  and `npm test` (1924 at the start, 1946 at the end); before every commit check:modules, format:check, check:data
+  (179 files fine; its two bridge warnings are main's) and build; `check:smoke` on every commit touching game/ (7/7
+  each, run in a second worktree on the exact commit; Python Playwright 1.63.0). Golden battles unchanged (no snapshot
+  remade). `check:fast --only=perks` ok (the fixture's pick offered Non-Refundable Ticket, Influencer Contract and Paid
+  Promotion; a beaten mini-boss's stored pick Early Access Pass, Glass Trophy and Terms and Conditions).
+  `check-studio-github.py --only=relics` ok with its new Fine Print step. `npm run test:slow` 108 passed.
+  `node tools/build-icons.mjs perks --check` fine. `check:ui` differs from its baseline the same on main and on this
+  branch (the container's drawing), so its pictures were not remade. A phone-sized screenshot of the relics fixture's
+  pick showed the three orange Fine Print cards with their red stamps. **The run sim**: `--runs=50` stops in scene mode
+  with "runSceneParams: node 8 has no exit north3", the same as on main (PK-5, PK-6); `--balance` finishes its 50 runs.
+  **The in-game full test** (`--selftest`) on 78d638e6: the run's Perk steps passed (the mini-boss's pick all Fine
+  Print); two problems: "A room that opens in place: the town's walking grid changed" (main 4423a457 fails it the
+  same) and "the scene isn't drawing (black screen): no frames in 3 s", inside the clinic on one run and the Gene Bank
+  on the next (main's run passed it once): a different room each time, nothing here touches rooms or drawing, so read
+  as the container's frame timing, not established. **Full quick check** on 78d638e6: 42 steps, 36 passed; Terraces,
+  RL-8's "the town's shop has no Perk" and room light are main's known reds (#306's, PK-5's and PK-6's entries); RT-2's
+  pair, Granny Juniper and the run map's music passed alone right after (`--steps=`), so read as the full run's load.
+  **CI** on 78d638e6: lint and rules green; smoke (the fast check) red on "The world map opens as the bowl" and "Camera
+  follow", the steps main's own run 40744420002 (4423a457) fails too.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The look** (section 11, item 1): the ladder's top orange (#F77036, mythical's colour code) for frames, pills and
+    names, and a small red tilted "FINE PRINT" stamp on the pick card where the pill sits; rows show the orange pill.
+  - **The reward card's weight** (item 3): 2 of 41. **Weights** (item 2): 6/3/1 unchanged; a leader's pick draws its 12
+    evenly.
+  - **The 12 pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Terms and Conditions (a paper scroll on wood rollers with gold knobs, slate fine print, a red seal),
+    Energy Drink (a deep violet can, steel rim and ring-pull, a gold bolt), Glass Trophy (PK-0's sample), Overclock Chip
+    (a slate chip, steel pins, a teal die with a red-hot flame), Ethics Waiver (a wood clipboard, steel clip, a cream
+    form with a violet helix and a red tick, a folded corner), Hustle Planner (a red spiral planner, a slate calendar,
+    a gold coin), Influencer Contract (a deep violet phone-shaped contract, a red signature, a gold verified badge),
+    Non-Refundable Ticket (a red ticket with bitten ends on the diagonal, a steel padlock), Early Access Pass (a wide
+    gold keycard on a red strap, a slate clock), Subscription Box (a cardboard box, teal tape, a red renewal arrow),
+    Heavy Crown (a wide gold crown, red and violet gems), Paid Promotion (a red megaphone on the diagonal, a gold coin).
+  - Texts (drafts, every downside stated): as 5.6, with "In exchange" (Terms), "take the field with their Speed up
+    two stages" (Energy Drink: also on a switch in), "every attack that lands" (Overclock Chip), "Hold 8 Perks instead
+    of 6" (Ticket), "brings a random item, and charges you 15 Moneys" (Subscription Box).
+  - Influencer Contract's triple pay is every trainer battle (`if: foe:trainer`); its "pays nothing" zeroes Moneys
+    only (picks and badges stay).
+  - Subscription Box draws from events.json's `common` loot table (the plan's "loot common"), one item a place.
+  - Overclock Chip's cost can knock its user out (as Life Orb's); misses and status moves cost nothing.
+  - Taking Non-Refundable Ticket at the cap may still let one go (the rule acts once it is held).
+  - Fine Print gets the foil, as rare and mythical do.
+- Phone checks to do (listed, not waited for): a mini-boss's pick of three Fine Print cards (orange frames, the red
+  stamp) light and dark; the Perks tab's orange "Fine Print" pill; the reward pick's Perk card and its "Let one go"
+  at the cap; Non-Refundable Ticket at 8 (the sheet says none can go); Subscription Box's two toasts on walking in;
+  Influencer Contract's "paid nothing" toast; Overclock Chip's line after a hit; Early Access Pass taken mid-run (the
+  map shown, wild Billies of the next place three levels up); the 11 new pictures at 72 and 36 px.
+- Next: PK-8 (Perk sets: the `perkSets` data section, the 7 sets, the card's set line, the Perks tab grouped) on
+  `track/perks`.
 ### VFX track VFX-13 - Hit tiers: the tier table, KO and last-KO looks, a flurry on the beat, drain, heal and recoil, misses per family - 2026-10-28
 Branch `track/vfx`, the main line of wave 3 (VFX-17 on `claude/vfx-17-scenes-1` and VFX-19 on
 `claude/vfx-19-move-sounds` ran beside it; both were told the shared sections before the edits and the commits after;
@@ -595,6 +1530,256 @@ written here, recommended options taken and listed below. Draft PR #295 updated.
   next main-line session (VFX-18) merges them. Not done here: the KO look for a hurt line (a spread move's second
   target, the delayed hit, a burn) that knocks out (koAhead reads move lines only); editing the families' misses in
   the Studio (the Families pane only shows them).
+
+### VFX track VFX-17 - Signature scenes 1: summoned models, the drawn stamp, the cut, 18 scenes with a short repeat - 2026-10-28
+Side branch `claude/vfx-17-scenes-1` (wave 3, beside VFX-13 on `track/vfx` and VFX-19 on `claude/vfx-19-move-sounds`),
+made from `track/vfx` at 7f957898 (VFX-11); `origin/track/vfx` merged in at ef0696af (8dc9583d: VFX-11's finish,
+VFX-12, VFX-14, VFX-16, main and VFX-13's first commits) and again after the full check (f0af6ddb: VFX-13's tiers
+and the flurry's beats; the snapshot remade, only the 18 scene moves differ; traces of six scenes clean), then
+5d7152e3 and b475bb15 (VFX-13's misses per family: a scene's miss is its family's whiff; its test reads
+`scenes.<id>.family`); draft PR
+#324 into `track/vfx`. Run under the owner's
+standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No
+tag (main's CLAUDE.md). Told first: VFX-19 (the files and keys), the main line (VFX-11, then VFX-13: the same, and
+that scenes use the plain `hit` step), the style coordinator (the stamp is not pb-stamp; `impactCut`; after pushing,
+the commits). No sound file touched.
+- The plan: read the resolver, runner, stage kit and `pyramidWorldItem`; check each power in moves.json; write the
+  batch's storyboards into vfx-track.md and commit them first; then the primitives (summoned models with smears, the
+  stamp, the cut, a scene's fallback and repeat) with their schema, types and checks; the scenes as data; tests and
+  the snapshot; films of every scene; tune; measure against track/vfx's head; merge track/vfx; the full check; docs.
+- Changed (one cause per commit):
+  - Storyboards (516a7327): 18 one-liners in vfx-track.md "Signature scenes", before any scene was built.
+  - Art (5851a68c): tools/build-battle-anims.py draws stamped words from pixel letters (GLYPHS, `word()`): word_siu
+    "SIU!", word_kaching "KA-CHING!", word_toot "TOOT!" (7 px tall, a dark outline, held whole then wearing off over
+    two frames); battleAnims.json `sprites` names them.
+  - Primitives (1ab0ab6d): battle-3d.js `propWorldItem(path, x, y, z, spin, s, rot, o)`, which `pyramidWorldItem`
+    now calls; `battlePropsPreload` (battle3dAttach asks for every scene's models at the battle's start);
+    `battlePropsReady`; `battle3dProps` draws battleStage.props (a list that was there, empty, from the painted stage)
+    on their paths with the thrown pyramid's afterimages and, on fast cells, its stretch, then erodes them in 12 fps
+    steps; a stamped word's particle steps in at +2, +1, its size, one 24 fps cell each. logic/battle-anims.js
+    `battleSceneFallback`, `battleSceneProps`, `battlePropAt`, the timeline's `repeat` and the anim line's ' repeat'.
+    battle-anim-run.js `animSceneStep` (from animFamilyStep's default): `prop`, `stamp`, `cut`; icon props
+    (`icon`, one or several, in animStrip); battleAnimPlay passes `props` and `seen` and drops the props at the move's
+    end or a skip. battle-stage.js: `battleStage.scenesSeen` (battleStageStart), `impactCut` in the stage kit.
+    Schema `$defs/scene` (`family` required, `short`), the steps prop/stamp/cut, `prop`, `from` above/below/side/
+    behind, icon lists; types `BattleAnimScene`; `dataBattleAnims`: a scene's family exists, a scene fits its moves'
+    maxMs + extraMs and its short version maxMs, a prop step names a model. look-battle-anims.py `--cells=`,
+    `--repeat`; a film clears the scenes seen.
+  - Scenes (8bc5197a, tuned in 313a1e99): battleAnims.json `scenes`, 18, each with `family` (the family it had) and
+    `short`; moves.json `anim` of the 18 is its scene. Times (H maxMs 880, S 1060; the cap +500): Tower Drop 1300,
+    Library Slam 1300, Siu! 1340, Full Steam 1360, Developers! 1340, The Decision 1300, Concrete Pour 1340, Blast
+    Furnace 1360, Standard Oil 1300, Billions Served 1300; Golden Caravan 1500, Zero to One 1540, Vision Fund 1540,
+    Hallucinate 1500, Open Sesame 1500, Yacht Race 1500, Flatpack 1500, Cut To 1060; each short 800-1000.
+    tools/test/battle-scenes.test.mjs (8); battle-anims.test.mjs: VFX-8's "no longer" allows a scene its extraMs,
+    VFX-11's family table counts a scene's move under its family; the snapshot remade on purpose (only the 18 moves'
+    6 landing outcomes; miss and blocked unchanged).
+  - No scene stamp against a Bureau bot (6e3421ab), at the style coordinator's request: SY-5 stamps its knockout.
+  - studio/art-code-refs.json regenerated (64cc6a91; it records line numbers, so each code change regenerates it).
+- Where the track file was wrong or vague (checked in the code):
+  - `pyramidWorldItem` was at battle-3d.js ~708, not B3 486. `battleStage.props` already existed (an empty list from
+    the painted stage, reset in battleStageStart, read by nothing): reused for the summoned models.
+  - The +0.5 s rule was built in VFX-8 (`longPower` 100, `extraMs` 500, a scene or power 100+, none under Reduced
+    motion) and `scenes` (empty, a family's shape) with it; the Moves editor's dropdown and the Studio's type rename
+    already covered scenes. VFX-17 added the scene's own shape (`family`, `short`) and the checks.
+  - The icon atlas's megaphone is `mega`. The models: city_tower_slab (the tower; 58 m tall at full size),
+    library, market_cart, train_greenbelt, fishing_boat, crate_goods, plus barrel, wheelbarrow, fireplace (the
+    furnace) and stall.
+  - Rule 2's "summoned models keep the world's 32 px/m": a model scaled down to the battle's size (the tower x0.05,
+    the train x0.24) scales its texels with it, so they are finer than 32 px/m. Kept: a full-size tower would be 58 m.
+  - The film tool plays every film in one battle, so a scene filmed twice would show its short version: films clear
+    `scenesSeen`, and `--repeat` films the short version on purpose.
+  - The 12 power-100+ moves are as listed (powers 100-120), and no other signature move has power 100+ (a test).
+- Decided for the owner, to review:
+  - The 18 storyboards (taken as approved, written before building; "Signature scenes" in vfx-track.md). The 6 more:
+    Library Slam, Cut To, Open Sesame, Yacht Race, Flatpack (the track's examples) and Billions Served.
+  - A repeat of a scene within a battle plays its short version from the second use: the prop and the hit, no
+    wind-up (recommended); Faster plays the same short version; every short version fits the move's old maxMs.
+  - Under Reduced motion a scene plays its family (the meaning without the motion; no models, no extra time). With 3D
+    props off, on the 2D stage, or when a model hasn't loaded yet, a scene with models plays its family too; Siu! and
+    Cut To have no model and play anyway (not under Reduced motion).
+  - Stamped words: SIU!, KA-CHING!, TOOT! only (sound words, rule 10), in the move's type ramp (KA-CHING! gold);
+    none when a foe is a Bureau bot.
+  - Cut To's two-tone frame is the impact frame (`coin` kind) and counts as one full-screen flash for the limiter;
+    none with Flashes off or under Reduced motion (the camera cut alone).
+  - Props and placement: a tower, the library and a drum drop from above; the market cart and crates arc from the
+    attacker; the train and the boat come from beyond the attacker; the stall rises beside the foe; the furnace rises
+    beside the attacker; the wheelbarrow tips over the foe. Icon props (mega, mic, chart at the attacker k 1; rocket,
+    burgers k 2; tv, dice, phone, the stall's goods k 2) keep the icons' own pixels.
+  - No sound of its own: VFX-19 plays a scene's family's sound through `scenes.<id>.family` (agreed by message).
+  - Scenes use the plain `hit` step, so VFX-13's tiers apply to them unchanged.
+- Measurements (headless, software GPU, quality 0, the town fixture, side 0, a hit; before = track/vfx 7f957898 in a
+  worktree with its own tool, the moves playing their families; after = this branch at 313a1e99; one after the other
+  on an idle machine; towerdrop, fullsteam, goldencaravan, flatpack, visionfund, siu):
+  - The pool's own draws (`battleFx`) 3 at most in every film, before and after (budget 3); the effects pass's draws
+    91 at most, before and after.
+  - All draws a frame at the busiest frame: 971.5 mean before, 1061.8 after (the models in their passes plus their
+    afterimages: about +90 at the peak, only while a model is up; Siu! has no model and is +144 from its stamp and
+    trail cells: noisy).
+  - Time a frame during the move: 900.8 ms mean before, 715.4 after (p90 3012 -> 2611): software rendering, only the
+    direction counts; no slowdown shows.
+  - Effect lights: the families' kinds only (the hit's `light`, a lit projectile in Siu! and The Decision, the
+    furnace's glow in Blast Furnace), all through battle3dEffectLights' budget (3/2/1/0 by quality, 2 on phones);
+    the models add none.
+  - Times: every scene at most its category's maxMs + 500 ms (the data check and tests), none longer under Reduced
+    motion (it plays its family, at most maxMs), every short version within maxMs.
+- Films (look-battle-anims.py `--sheets --cells=20 --outcomes=hit --sides=0`, in the scratchpad, not committed): all
+  18. Seen: the tower falling with afterimages onto the foe, the dust ring, holding, eroding away; the library and its
+  pages; Siu!'s jump and the stamp over it; TOOT! and the train crossing through the foe; the cart's arc, coins in gold
+  and indigo, KA-CHING!; the megaphone and three shouts; the mic, the leap and slam; the wheelbarrow tipping and
+  pebbles pouring; the furnace and flames; the drum bursting; the rocket's arc; coins into the attacker, the chart,
+  the wide ray; three wrong things orbiting; Cut To's two-tone frame and the camera on the reeling foe; the stall and
+  its goods; the boat; three crates stacking. Tuned from them (313a1e99): the boat bigger and afloat, the stall and
+  furnace off the camera's line, icon props at the attacker smaller. `--repeat` (towerdrop, goldencaravan): the
+  short version, over in under a second. Traces of all 18 x hit, crit, miss, blocked, both sides, after the merge:
+  no errors; a miss and a block play their own.
+- Risky:
+  - Draws on the phone: a model and its afterimages add about 90 draws while it is up (the phone's budget is 400 a
+    frame and the frame here is ~1000 headless at quality 0, so the phone's own count needs the debug log).
+  - A model's heading follows the attack line (its +x toward the foe); filmed from your side only: a foe's scene
+    (side 1) ran in the traces without errors but wasn't looked at.
+  - A scene's models must load before its first use; the battle asks for them at its start, and a scene whose models
+    aren't in yet plays its family silently (the anim line says `family:`).
+  - Big models near the camera (the train from beyond the attacker, the cart's arc) pass close to the lens for a few
+    cells; the smears skip copies within 2 m of it.
+- Phone checks for the owner (listed, not waited for): each of the 18 scenes once (Tower Drop, Library Slam, Siu!,
+  Full Steam, Golden Caravan, Developers!, The Decision, Concrete Pour, Blast Furnace, Standard Oil, Zero to One,
+  Vision Fund, Hallucinate, Cut To, Open Sesame, Yacht Race, Flatpack, Billions Served); the short repeat (the same
+  scene twice in one battle); one at Faster; one under Reduced motion (its family) and with 3D props off; a foe using
+  one (the model's heading); the frame rate while a tower or the train is up; the stamped words read at phone size.
+- Verified: lint, typecheck, check:modules, format:check, check:data, check-data-text and build before each commit;
+  `npm test` 1974 of 1974 on the merged head; `build-battle-anims.py --check` (47 sprites). Smoke: the primitives
+  commit in a worktree 6 of 7 (the Actions sheet's "town fixture never got ready" at 322 s, while the films loaded the
+  machine); CI smoke on 516a7327, 6e3421ab and 313a1e99: red only on "Camera follow ... the page stopped drawing"
+  (known), once "The world map opens as the bowl" (known) and once "Every screen opens" (passes alone here 2 of 2;
+  it never enters a battle); CI lint red on 8bc5197a (art-code-refs, fixed in 64cc6a91). Full quick check on the
+  merged head ef0696af: 36 of 42 in 2393 s. Main's or load's: Terraces (train_station in the air), RL-8's seam (never
+  shown), the walking step's room light (all three on the known list); "Starters ... battle rig buffers nearly empty",
+  "Run map music hears the forecast" and "Ground tiles ... the lab's room didn't open in place" each pass alone here
+  (Starters and the music once, Ground tiles 2 of 2 on this head and once on track/vfx's 8dc9583d): the machine
+  had just run the films. The in-game battle steps (A battle plays to the end, the Voltron, a run's battles) passed.
+- Next: VFX-13 merges this branch into `track/vfx`; VFX-18 builds the other 38 scenes (and the bots' and the boss's
+  specials) on these primitives.
+
+### VFX track VFX-19 - Move sounds: music.json battle (16 families, 11 type layers, hurt, recall, throw and catch), the Studio's Battle card, fingerprints - 2026-10-28
+Branch `claude/vfx-19-move-sounds`, a side branch of wave 3 made from `track/vfx` at 7f957898 (VFX-11); draft PR #325
+into `track/vfx`. The latest `origin/track/vfx` (24d54001: VFX-11 done, main and VFX-12 merged) merged in at 2d6cde0a
+(hooks.js and art-code-refs.json regenerated, ROADMAP keeps both), so the next main-line session can merge it clean. Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here,
+recommended options taken and listed below. Agreed with the sound track's planning session
+(session_019UpAFxCHyLNWb1TCD6L3vh) before each sound file was touched and after each push; VFX-17
+(session_019UpAFyKqgF7VsYJD7y7u6A) told of the one battle-stage.js line. No tags (CLAUDE.md since #283).
+- The plan: the `battle` section in music.json in the agreed shape, with its schema; a pure logic module for it with
+  tests; a player that knows nothing of the game (the game and the Studio share it) and the game's glue in
+  game/js/audio/; the fewest lines in sound.js (battleSoundEffect only) and battle-stage.js (catchSound only); the
+  Studio's Battle card; check-sound.py's fingerprints, the baseline in its own commit; the checks; docs.
+- Changed:
+  - game/data/music.json `battle` (+ schema/music.schema.json: properties.battle, $defs battleVoice, battleSound,
+    battleMoveSound): `families` (one per VFX-11 family: charge, dash, dive, strike, slash, quake, flurry, shot, beam,
+    breath, wave, storm, buff, hex, guard, heal; each a `cast` part from the move's start and a `hit` part from its
+    hit), `types` (a layer per type kit: the 9 types, None, Bureau), `hurt` (burn, recoil, spread, delayed),
+    `recall`, `catch` (throw, pop, land, wobble, seal). A sound: name, pitch (midi, 60 when left out), wave, echo, and
+    voices in the cries' shape (`{at, note, len, wave?, inst?, vol?, slide?, vib?}`) or synthNoise's (`{at, noise:
+    {lp|hp|bp, q}, dur, vol?}`). 37 sounds, all "placeholder: ..." (Claude's drafts). The throw, pop, land, wobble
+    and seal are today's recipes with a low sine for body and a little echo for space.
+  - game/js/logic/battle-sounds.js (new, pure; tools/test/battle-sounds.test.mjs, 8 tests on the game's data):
+    `battleSoundPlays` (a part as a play list), `battleSoundLength`, `battleSoundNames`, `battleSoundGet`,
+    `battleMoveFamilies` (every family but legacy ones and the ones only `defaults.miss`/`defaults.blocked` name:
+    VFX-13's whiff and blocked), `battleSoundPreview` (a move sound heard alone: its hit at its family's hit), `battleSoundFamily` (a move's own
+    `anim` when it is a family; a scene's `family`, VFX-17's key; else its category's default: a miss is still cast),
+    `battleMoveSound` (family + type layer), `battleHurtKind`, `battleSoundFindings`. logic/music-studio.js:
+    MUSIC_CHOICES `noise`, `battleHurt`, `battleCatch` (held to the schema by the new test); musicFindings checks
+    the section against battleAnims.json (`more.battleAnims`: a family or type that isn't one an error, a missing
+    one a warning, placeholders a note); check-data.mjs and the Studio's Check pass it.
+  - game/js/audio/battle-voices.js (new, knows nothing of the game): `battleVoicesPlay(T, out, list, t, {echoTo})`
+    plays a list on a tracker: tones through synthVoice, a voice naming `inst` through T.sampleShot when the bank has
+    it baked (else the wave), noises through synthNoise. No echo without a send of its own (the tracker would send it
+    to the music's echo).
+  - game/js/audio/battle-sounds.js (new, the game's glue): `battleMoveSoundPlay(an, r)` (cast now, hit at r.hit when
+    it lands; the type is the kit the move plays in, the Bureau's for a bot), `battleHurtSoundPlay`,
+    `battleRecallSoundPlay`, `battleCatchSoundPlay(k)` (pyramidLand is land; false when the data has none, so the
+    caller plays its old one), `battleSoundPreviewPlay(name)` (check-sound.py, the console). On soundEngine.fx, echo
+    to soundEngine.tracker.echoFx, timed by battleStageAt (a skip drops what's still to come). A `battle <family>
+    <kit>` line in soundEngine.log (in memory, never sent).
+  - game/js/sound.js battleSoundEffect only: case 'move' adds the move's sound (the tier's hit, super, weak, crit and
+    miss sounds stay; a move on itself or Protect plays its family instead of the status blip); new cases 'hurt' and
+    'recall' (after 'stat', away from SND-17's jinglePlay lines, as the sound coordinator asked); case 'enter' plays
+    battle.catch's throw and pop. soundLog exported. No recipe changed; the caught and lvl jingle lines untouched.
+  - game/js/battle-stage.js: `catchSound` tries battleCatchSoundPlay first (one line). Cutscene, airship and
+    train throws keep soundEffect('throw').
+  - Studio (music-editor.js): a Battle card on Music & sound -> Sounds after Button sounds: Move families, Type
+    layers, Hurt, Recall, Throw and catch; a ▶ per sound (through audio/battle-voices.js, a family's hit at its hit),
+    name, wave, pitch, echo and every voice's fields. The Check's battle findings open the Sounds tab.
+    check-studio-github.py's music step plays every battle sound and counts its voices, edits a name and undoes it.
+  - tools/check-sound.py: a 'battle' kind, 2.5 s a render, into validation/sound-baseline/battle.json; the
+    baseline commit only adds that file.
+  - Pages: logic/battle-sounds.js (both, before music-studio.js in the Studio), audio/battle-voices.js (both),
+    audio/battle-sounds.js (the game, after sound.js); studio/js/logic-worker-modules.js; hooks.js and
+    art-code-refs.json regenerated.
+- Where the track file and the brief were wrong or vague (checked in the code):
+  - "SND-11's instruments are not on main": right, but SND-9's bank is already on track/vfx (tracker.js
+    `T.sampleShot`, `T.bankReady`, sound-bake.js with one instrument, harp). The sound coordinator gave SND-11's 29
+    ids (accordion ... woodblock; orchhit, timpani, kick, snare, brass for hits); the schema accepts any id.
+  - SND-8b's `T.echoFx` is on track/vfx, so the sounds echo there (not dry).
+  - "recoil": the engine has no recoil fx. A crash (missCost), confusion, unstable cells, stones, the storm and the
+    passives' small hurt are all plain `hurt` events: all but burn, spread and the delayed hit (`mail`) play recoil.
+    Hurt events played no sound at all before.
+  - The recall beam: VFX-16's beam isn't on track/vfx at 7f957898 (the recall there is the old white fade); the sound
+    hangs on the `recall` event, so it plays with either.
+  - music-editor.js "~650-758": the Sounds tab's cards were at 666-770 (base cries 684, button sounds 713, mix 730).
+    sound.js heal and seal (track file "~504 and ~539") are at ~586 and ~623 on this branch.
+  - The brief's voice shape has noise voices with `dur` and tone voices with `len`; kept as agreed (cries' `len`,
+    synthNoise's `dur`). A tone's `note` goes to +-36 (the cries' +-24 is too narrow for low thumps and high clangs).
+  - music.json is laid out by check-data's writer (`--fix`): voices with a nested `noise` are written one key a line.
+- Decided for the owner, to review:
+  - The tier sounds stay and the family's sound layers over them (recommended in "Hit tiers" spirit: the tier is
+    SND-13's and sound.js's); the alternative, family replacing the generic hit, is a one-line change later.
+  - A move on itself (buff, guard, heal families) plays its family instead of today's status blip; a missed move
+    plays its cast, then today's miss sound.
+  - A Bureau bot's moves take the Bureau's layer (as VFX-11's kits do); a scene plays its `family`'s sound until
+    scenes get sounds of their own (VFX-18 or later: a `battle.scenes` key would be the place).
+  - The send-out uses battle.catch's throw and pop too; cutscene, airship and train throws keep the old ones.
+  - Echo: guard .3, heal .4, recall .3, the catch sounds .15-.35; the rest dry.
+  - No placeholder names `inst` yet (the bank has harp only here); so `T.bankReady` isn't called. When a sound names
+    an instrument, call `T.bankReady(ids)` as a battle starts (sound.js 'wild' and 'trainerIn'), as SND-13 does.
+- Measurements:
+  - 37 sounds, 0.06-1.5 s each heard alone (the test holds 1.5 s); a move adds 3-8 voices (heal over Electric the
+    most) to today's 2-3; nothing adds time: no move's {dur, hit} or `maxMs` changed (the battle-anims tests).
+  - check-sound.py: 236 fingerprints (was 199 + 37 new), the other 26 baseline files byte-identical after a rewrite.
+    Peak RMS a 50 ms window: 0.002 (None's tap) to 0.056 (quake); the UI sounds 0.004-0.018 for scale.
+  - In the game (a wild battle in the town fixture, headless, autoplay on): one move per family x type pair found
+    (31 pairs) through battleSoundEffect: all 16 families and all 11 kits logged and started voices; hurt (burn 13,
+    recoil 22, spread 50, delayed 27 voices started in 300 ms, the music's included), recall, every catch sound
+    returned true and started its voices.
+- Risky:
+  - Loudness: the placeholders are set by ear-less numbers. Some are faint (None's tap, spread, flurry); quake's and
+    charge's thumps are the loudest. SND-15's mix pass and the owner's listening pass set them.
+  - A merge with track/sound (whichever reaches main second; if track/vfx lands first, SND-15 does it). The sound
+    coordinator test-merged 791ac709 into track/sound 7934154c (not pushed): sound.js merges clean; ten files conflict,
+    all "both sides added", keep both: HANDOFF.md; music.json and music.schema.json (`battle` beside `instruments` and
+    `ensembles`); game/index.html and studio/index.html (script tags; check:modules checks the order);
+    logic/music-studio.js (MUSIC_CHOICES, musicFindings); studio/js/music-editor.js (Battle beside Instruments,
+    Jingles and Form); tools/check-sound.py (the battle kind beside brightness, loudness, ensemble, jingle and layer)
+    and tools/check-studio-github.py; studio/art-code-refs.json (regenerate). Then `npm run modules`, the music tests,
+    `check-sound.py --only=<battle names>` and the songs, and the baseline once in its own commit.
+- Phone checks for the owner (listen; placeholders until your listening pass): a move of each family (Studio: Music &
+  sound -> Sounds -> Battle plays each; in a battle: a strike, a shot, a beam, a storm, a heal...), a hurt
+  sound (a burn's tick; a spread move's second target), the recall (swap a Billie), a throw (send-out) and a catch
+  (throw, landing, wobbles, seal). Also: nothing too loud over the battle song; the Sound effects slider moves them.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build before the commits; unit tests 1931 of
+  1931 after adding the logic worker's line (it failed once without it); battle-sounds and music-studio tests 20 of
+  20; check-sound.py (only `battle` new, then all 236 equal); smoke at 611151bd's tree: no problems (346 s);
+  check-studio-github.py `--only=music` ok (every Battle-card sound's voices counted); the in-game probe above.
+  Full quick check (at 48e1446d, 1632 s): 37 of 42; the 5 problems: Terraces, RL-8's seam and room light (the known
+  list), RT-2 route trainers and Granny Juniper: both pass alone on this branch (91 s, 16 s), load. After merging
+  track/vfx (2d6cde0a): unit tests 1955 of 1955, lint, typecheck, check:modules, format, check:data, build; smoke no
+  problems (315 s); check-sound 236 of 236 equal. CI smoke: on c9bf80fc red only for "The world map opens as the bowl"
+  (main's); on 48e1446d also "Camera follow ... the page stopped drawing" at 265 s (passes alone here in 75 s; VFX-10
+  saw it on #295 too: load). Both commented on PR #325.
+- Talking to the wave: VFX-13 (session_019UpAFzn8FD2nCwYETVqCaY) drops the legacy_* families and adds whiff and
+  blocked: the findings skip outcome-only families, so its merge needs nothing more; it doesn't touch catchSound.
+  VFX-17 (session_019UpAFyKqgF7VsYJD7y7u6A): every scene carries `family` (8bc5197a), which battleSoundFamily reads.
+- Next: the planning session merges this branch into `track/vfx` in the next main-line step (VFX-13 or after). The
+  owner's listening pass replaces the placeholders; when SND-11 reaches main, sounds may name instruments (and the
+  battle start calls bankReady).
 
 ### VFX track VFX-16 - Battle flow: the VS splash, send-out, recall, catch, faint, level-up, items, victory and defeat - 2026-10-28
 Side branch `claude/vfx-16-battle-flow` (wave 2, beside VFX-11 on `track/vfx` and VFX-14 on `claude/vfx-14-statuses`),
@@ -1057,6 +2242,164 @@ save or data change but one preference). No tag: not a phase or track step. Draf
   still worded); Settings > Controls > Shrink the bar while walking off; tap Actions in Copperleaf and on a run, tap
   a "?" button (you walk to it, then battle); a battle on a wide screen or a tablet on its side. Send a debug log
   if anything stutters.
+### Perks track PK-10 - Held items: 16 new, the 8 existing redrawn, the held kinds (the items lane) - 2026-10-28
+Branch `track/perks-items` (the items lane, PK-11 finished at b1440794). origin/main (a2a0963c) then origin/track/perks
+(183a5c09, PK-5) merged first (HANDOFF and art-code-refs conflicts; hooks.js by `npm run modules`); near the end main
+(76aea599: ON-4, TR-5) and track/perks (17b085ae: PK-6's kinds) merged again. Started by PK-0's session under the
+owner's standing instruction (perks-track.md section 10): no Plan Mode, the plan below written first and carried out.
+Details and the brief's corrections: perks-track.md 5.8, "Corrected in PK-10".
+- The plan (as set at the start): (1) merge main, then track/perks; (2) the Studio's items editor edits hold rows (it
+  had none); (3) hold rows may say when (hit, hurt), if and once: battle (Complaint Form); (4) the held kinds, one per
+  commit with tests, data checks, types and the Studio: survive, reflect, drain, immune by type until hit, first by
+  chance, last, kept in their own functions and out of FX_KINDS so merges with the Perk lane stay small; (5) the 16
+  items' data (placeholder prices; tiers: boosters common, tricks uncommon) and a battle test for each by name;
+  (6) the 24 pictures (`node tools/build-icons.mjs items`), the atlas's last i_ rectangles retired through the gate
+  (atlasUses), contact sheets; (7) the Studio checks, check:ui, test:slow, the full quick check; (8) docs.
+- Changed (17 commits of PK-10's own, besides the merges):
+  - **Studio** (studio/js/held-editor.js, new): a held item's Tier and its rows by kind, When/If/Once on a stat row,
+    + Add an effect, a row's remove, Make it a held item, Not a held item; dataHeldItems's messages on each row.
+    check-studio-github.py's `items` step edits them (and, with no item left on the atlas, makes a new item to try
+    Draw one on); the `atlas` step renames a type's particle key instead of an item icon's.
+  - **Engine**: effects.js `fxHeldAt`, `HELD_FX_KINDS` (survive, reflect, drain, last), `HELD_OWN_FORMS` (immune by
+    type, first by chance), `HELD_WHEN`, `HELD_IFS`, `fxHeldRow`; fxOfBillie leaves rows with a when out.
+    battle-engine.js, its own PK-10 section: `heldMarks` (b.heldState, per holder), `heldMoment`/`heldHitMoments`
+    (after each hit), `heldSurvives` (after Bedrock), `heldAfterHit` (reflect, drain, the balloon popping),
+    `heldFloats` (in useMove before the accuracy roll, and in aiDamage), `heldFirstActs` and `heldLastActs` (runTurn's
+    order: priority, early, late, Speed). A held item works for whichever side holds it.
+  - **Checks and types**: data-checks.js `heldRowProblems` (the timing), `heldKindProblems` (the kinds' fields),
+    `HELD_WHEN_KINDS`, `HOLD_KINDS` grown; dataItemArt warns for a held item without a picture too. game-data.d.ts
+    `HeldRow`, `HeldKindRow`; `Item.hold` is HeldRow[]. type-rename.js reaches hold rows.
+  - **Data**: items.json the 16 new held items; `img` on all 24 and on Form 99-A (`transfer`, main's ON-4), `icon`
+    gone from every item.
+  - **Art**: 25 grids in tools/art/icon-grids/items.json, game/art/items/*.svg; the last 9 i_ rectangles left
+    art/manifest.js and art/icons/icons.png. validation/icon-sheets/items-{light,dark}.png.
+  - Tests: battle-held-kinds.test.mjs (new: the kinds and moments on test-only items), battle-held.test.mjs (each new
+    item by name), data-checks, held-items, type-rename, atlas-rects; the run-start snapshot (the starting bag lists
+    every item: 16 more zeros, and its hash).
+  - Docs: perks-track.md (PK-10 done, "Corrected in PK-10" in 5.8), ROADMAP, STUDIO.md, ART-NOTES.md ("Held item
+    pictures"), TESTING.md.
+- Risky:
+  - **The atlas has no item rectangles left**: a branch or pack naming an item `icon` draws nothing until it gets an
+    `img` (check-data warns). Main's ON-4 did exactly that mid-step (Form 99-A on i_settlement); fixed here.
+  - Held items now act for foes too (they always did for damage, money and stat rows); a trainer given Express Pass or
+    Party Balloon would use them. No trainer holds one today.
+  - Express Pass adds rolls to the battle's stream only when something holds it; golden battles unchanged.
+  - Party Balloon blocks damaging moves only (a status move of its type still lands); the AI sees 0 damage while it
+    floats, so a foe stops using Ground moves on it.
+  - The Billie sheet's held line (14 px), the Trainer card's list (24) and the run start's packing list (30) now draw
+    the new SVGs at sizes that aren't multiples of 36 (they drew the atlas before): small text rows, left as they were.
+  - In the Studio, undoing a step that added a data key (a new item) rebuilds the whole data and marks the rigs dirty,
+    so the next Save writes rigs.js and rigs-next.js back unchanged (seen in the items check: "blobs" x3). Existing
+    behaviour (studio-app.js restoreParts), not this step's.
+- Verified: after every change lint, typecheck and `npm test` (1868 at the start, 1934 at the end with PK-6 merged;
+  all passing but the 1,000-maps timing test, main's known flake, which failed only while a smoke ran beside it and
+  passed alone); before every commit check:modules, format:check, check:data (179 files fine) and build; check:smoke
+  on every commit touching game/ (run on that commit in its own worktree: "no problems" each time, 446-502 s), also
+  on the merged head. `node tools/build-icons.mjs items --check` fine. `check-studio-github.py
+  --only=items,icons,art_browser,atlas,relics` ok. `npm run test:slow` 108/108. `check:ui`: 16 pictures differ
+  (case, alive and loading pages), the same 16 on origin/main and on this branch's first merge commit: main's.
+  Full quick check (before the last merges, at dd77f926): 42 steps, 38 passed; the four PROBLEMs are the four
+  recorded as main's since PK-1 (Terraces "props in the air: train_station", RL-8 "crossed into Thicket Route but its
+  view never showed", "room light", Battle music "wild: no battle cue").
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 25 pictures** (validation/icon-sheets/items-light.png and -dark.png; ART-NOTES.md "Held item pictures"
+    lists each): weakest reads Garden Trowel (could pass for a hammer), Snack Pack (a puffed bag) and Ankle Weights (a
+    cuff). Redraw any in the Studio's items editor (Edit art).
+  - Names and lines as drafted in 5.8; Express Pass's text says "each turn"; Ankle Weights' "moves after the others"
+    (not "always": a priority move still goes first); Complaint Form's "once a battle".
+  - Tiers: the 9 boosters common, the 7 tricks uncommon (Answer 5). Prices: boosters 800, tricks 1000, Seatbelt 1200.
+  - Battle lines: "X held on with its Seatbelt!", "Y was hurt by X's Cactus Keyring.", "Complaint Form: X's Attack
+    rose sharply.", "X floated clear on its Party Balloon." / "X's Party Balloon popped!", "X restored HP with its
+    Costume Fangs.", "X's Express Pass let it go first!".
+  - The held kinds stay out of FX_KINDS (a Perk can't name them); immune and first read their own way on a hold row.
+  - Every i_ rectangle retired, including the six finance-era ones nothing used; Form 99-A drawn rather than its
+    rectangle kept.
+- Phone checks to do (listed, not waited for): the Bag and a reward pick's held cards with the new pictures, a battle
+  with Party Balloon (the miss line) and Express Pass, the Billie sheet's held line; light and dark themes.
+- Next: the items lane is finished. PR #310 carries PK-11 and PK-10 into `track/perks`; the Perk lane goes on there
+  (PK-6 now). PK-8's set rows (`heldBoost`) will read held items.
+### Perks track PK-11 - Bag item icons (the items lane) - 2026-10-28
+Branch `track/perks-items` (this session's outcome branch, made from `track/perks` at 8af07402; origin/main 48ded9d2
+merged in first: WM-5b's run-map.js imports and studio/art-code-refs.json were the conflicts). The second lane beside
+the Perk waves (the owner, 2026-10-28: "2 lanes": PK-11 then PK-10 here, the Perk steps on `track/perks`). Started by
+PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode, the plan below written
+first and carried out. Details and the brief's corrections: perks-track.md 5.10, "Corrected in PK-11".
+- The plan (as set at the start): (1) merge main; (2) `--sheet` names items from items.json; (3) the 13 grids in
+  tools/art/icon-grids/items.json (section 6's rules); (4) `img` on the 13, the types, a data check like dataPerkArt,
+  the SVGs written; (5) the screens at whole multiples (Bag 36, reward cards 72; shop already 36) and a check-fast
+  assertion; (6) the Studio: the items editor's picture with Edit art (the icon editor and art browser already knew
+  art/items), its checks; (7) the atlas's rectangles retired through the atlas editor's gate (`atlasUses`), keeping
+  those held items still draw; (8) contact sheets; (9) docs. One cause per commit, no renames.
+- Changed (9 commits after the merge):
+  - **tools/build-icons.mjs** `--sheet` names the items folder from items.json (Bag item, or a held item's tier).
+  - **Art**: tools/art/icon-grids/items.json (13 grids, drawn with octagons and 45-degree shapes); game/art/items/*.svg
+    written by `node tools/build-icons.mjs items`.
+  - **Data**: items.json `img` on the 13 (and their `icon` dropped once the atlas retired); game-data.d.ts `Item.img`,
+    `Item.icon` optional; data-checks.js `dataItemArt` (items.json has no schema, so it checks the path's form,
+    `items/<id>.svg`, as well as there-and-an-icon; a Bag item without `img` warns; held items wait for PK-10), run by
+    check-data; its test.
+  - **Screens**: `itemIcon` default 36; the Bag 36 (was 30), reward cards 72 (was 40), the battle's Bag 36 (was 32),
+    the Billie sheet's use and give lists 36 (was 34). check-fast's screens step checks the Bag rows at 36 px.
+  - **Studio**: the items editor (data-editors.js `itemPicHTML`, `itemArtButtonsHTML`, `itemArtKey`): an item's own
+    picture at 72 and 36 px with **Edit art**, no atlas Icon field; **Draw one** (a blank art/items/<id>.svg, two undo
+    steps) replaced the PNG upload; **Use an atlas icon** only while the rectangle exists; a new item starts with no
+    atlas icon ("No picture"). studio.css sizes; icon-editor.js's comment. check-studio-github.py: a new `items`
+    step; `icons` paints an item's picture; `art_browser` checks Used by items.json and Edit icon.
+  - **Atlas**: atlas-rects.js `atlasUses`: an item with `img` uses no key (its test); the 9 rectangles (i_potion,
+    i_hipotion, i_salve, i_tonic, i_tea, i_revive, i_maxrevive, i_stone, i_remedy) left art/manifest.js and their
+    pixels left art/icons/icons.png; i_pretzel, i_trailmix, i_bell stay (Leftover Sandwich, Snack Pack, Lucky Coin).
+  - **validation/icon-sheets/items-{light,dark}.png**: the contact sheets.
+  - Docs: perks-track.md (PK-11 done, "Corrected in PK-11" in 5.10), ROADMAP, STUDIO.md, ART-NOTES.md ("Bag item
+    pictures"), TESTING.md.
+- Risky:
+  - **Merging with the Perk lane**: both lanes touch perks-track.md (section 9's rows, different lines), ROADMAP's
+    Perks paragraph (this lane added its own lines after "PK-5 ... next."), HANDOFF.md's top, studio/art-code-refs.json
+    (regenerate with `node tools/art-code-refs.mjs`, never by hand) and game/js/hooks.js (`npm run modules`; this lane
+    added `iconEditOpen` and `iconSrc` to it).
+  - The atlas pixels are gone from icons.png: a branch still naming one of the 9 keys draws an empty 1x1 (none on
+    main or `track/perks` at 8af07402).
+  - In the Studio, undoing a just-drawn (unsaved, new) picture **after** closing the icon editor makes the art browser
+    ask the site for the file once (a console 404); undone with the editor open, nothing. Seen while writing the
+    items check (it undoes with the editor open, as the icons check's New icon does); the same holds for a Perk's
+    Draw one. Not fixed (the art browser's, not this step's).
+  - studio/art-code-refs.json now lists `items/*` at atlas-rects.js (`'items/' + id` in a message): a hint, harmless.
+  - Every picture is new art for the owner's eye; nothing checked on a phone yet.
+- Verified: after every change lint (eslint, names, ui-lint, unused CSS, art-code-refs), typecheck and `npm test`
+  (1726 at the start, 1728 at the end, all passing); before every commit touching game/ check:modules, format:check,
+  check:data (176 files fine) and build, and `check:smoke` 7/7 (Python Playwright 1.63.0). `node tools/build-icons.mjs
+  items --check` fine. check-fast `screens` (the Bag rows at 36 px) and `Perks` passed; Blake's run (a reward pick)
+  passed. `check:ui` passed (129 pictures). `check-studio-github.py --only=items,icons,art_browser,relics` and
+  `--only=atlas,items,studio_test` ok. `art-unused.mjs --check`: 0 unused, 0 missing. Full quick check on a61e1644:
+  42 steps, 36 passed. Four PROBLEMs are the four PK-1/PK-2 recorded as main's (Terraces "props in the air:
+  train_station", RL-8 "crossed into Lakeside Route but its view never showed", "room light", Battle music "the drums
+  never came in on a throw"). Two more were load flakes: "Actions sheet: a run's sheet has no day chip" (its known 5 s
+  wait) passed on a re-run, and "Ground tiles ... the lab's room didn't open in place" failed twice beside a second
+  browser (boots 72-77 s) but passed alone, on main 48ded9d2, on track/perks 8af07402, on this branch's merge commit
+  and on 2b15598f in a clean worktree. CI on #310: lint and rules green; smoke red on the two Studio steps main's run
+  2592 (5b0d43e) also fails ("The Studio's world map look": no Auto landmark for Copperleaf, and the Camera section,
+  with 404s for `game/art/billionaires/*.png`), noted on the PR. `npm run test:slow` not run (no scene, map or run-sim
+  code changed).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 13 pictures** (validation/icon-sheets/items-light.png and -dark.png; redraw any in the Studio's icon editor
+    or the items editor's Edit art): Potion (a round red flask, steel neck, wood cork), Hi-Potion (a tall violet
+    bottle, a gold star on a cream label, slate cap), Burn Salve (a wide blue tin, steel lid, a blue drop on a cream
+    label), Nerve Tonic (a gold dropper bottle with a red bulb, a slate bolt on its label), Wake-Up Tea (a green mug,
+    the tea bag's gold tag over the rim), Revive (a red heart, a cream cross), Max Revive (a gold heart with blue
+    wings, a cream cross), Full Remedy (a red and teal capsule on the 45-degree line), Shining Stone (a violet cut gem
+    with a gold glint), Protein Bar (a red wrapped bar on the 45-degree line, crimped steel ends, a gold stripe), Trail
+    Mix (a wood bowl heaped with nuts, raisins and a cranberry), Pretzel (a dark gold knot, three holes, salt), Repair
+    Kit (a red toolbox, slate handle, steel latch and wrench). Weakest reads: Max Revive's small heart, Trail Mix.
+  - The battle's Bag and the Billie sheet's lists also moved to 36 px (whole multiples; not in the brief).
+  - A held item without `img` gets no check-data warning until PK-10 (eight warnings would have changed every
+    check-data snapshot).
+  - The Studio's PNG upload for items is gone (Draw one and Edit art instead): an item's picture is an icon.
+  - The retired rectangles' pixels were cleared from icons.png, not just their rectangles.
+  - No items schema added (the path is checked in `dataItemArt`).
+- Phone checks to do (listed, not waited for): the Bag's rows at 36 px, a run shop's item rows, a reward pick with an
+  item card at 72 px, the battle's Bag; light and dark themes.
+- Next: PK-10 (held items: 16 new, the 8 existing redrawn, the held kinds, rarity tiers) on `track/perks-items`; it
+  retires i_pretzel, i_trailmix, i_bell and the other held rectangles the same way. Main moved on during this
+  session (5b0d43e, #305: the Style track and the Perks PR #301 merged): PK-10 merges it first.
 
 ### VFX track VFX-11 - Families x types: 16 families, 11 type kits, every move's anim, projectiles, rays and lights in GL - 2026-10-28
 Branch `track/vfx`, the main line of wave 2 (VFX-14 on `claude/vfx-14-statuses` and VFX-16 on

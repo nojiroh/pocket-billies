@@ -6,6 +6,7 @@
    ids held into one list; each point asks only for its kind:
      money   a won battle's money (battle-rewards.js); PK-5: at `when: arrive`, a share of the Moneys carried, at most
              `max` (run-loop.js runFxMoment)                   price   a run shop's prices, a run clinic's charge
+                                                               (PK-8: `perk`, a run shop's Perk, perks.js perkShopPrice)
      catch   a coin's chance to catch (catchOdds)              stat    stat stages for your Billies as a battle starts
      damage  what your Billies deal or take (calcDamage)       heal    a share of HP on walking into a place
      payout  the payout's Research, or the share items count at
@@ -31,7 +32,15 @@
              rewards.js rewardRerollCost; mapReveal, the run map shows what every place is, run-map.js runRevealAll; PK-6:
              cap, n more Perks held, perks.js perkCap; sideOpen, a side area's obstacle opens with its badge alone,
              run-side.js fieldRope; sideFind, side areas hold n more finds, route-finds.js routeFindsMore; eventHurt,
-             an event's hurt does nothing, run-loop.js runEventSafe) (PK-4,
+             an event's hurt does nothing, run-loop.js runEventSafe; PK-7: noDrop, no Perk held can be let go,
+             perks.js perkNoDrop; faintPaysNothing, a win in which one of yours fainted pays no Moneys,
+             battle-rewards.js battleRewards; PK-8: unstableSafe, an Unstable splice of yours loses no HP at a turn's
+             end, battle-engine.js endTurn; sidePerk, a side area's place holds a Perk lying on the ground,
+             route-finds.js routeFindsPerk; PK-9: shopClosed, a run town's shop is shut, run-loop.js runShopShut;
+             muteNewest, the newest Perk held does nothing and counts toward no set, fxMuted: a curse's only;
+             curseShorter, curses last n places less, and curseErase, the first n curses of the run are erased,
+             run-loop.js runBoonGive: Correction Fluid)
+             (PK-4,
              run-map.js
              runForecastDays; later waves add rules)
      passive one type passive (types.json) works better for yours that have it, by its own numbers (FX_PASSIVE_KEYS)
@@ -46,6 +55,14 @@
              runFxMoment)
      copy    stands for the rows of the Perk just above it in the list held (PK-6, fxPerkRows: never itself or another
              copier; the rows count as the copier's own, src its id)
+     recoil  an attack of yours that deals damage costs its user this share of its HP (PK-7, battle-engine.js
+             fxRecoilHurt; Overclock Chip)
+     loot    n items from an events.json loot table (`table`: common...), drawn by weight, at its moment (`when:
+             arrive`; Subscription Box) (PK-7, run-loop.js runLoot)
+     heldBoost  your Billies' held items work mult times as well: each number of a held row moved that much further
+             from doing nothing (fxBoostRow; the Tech Gear set) (PK-8, battle-engine.js heldFx)
+     last    yours move after the foe's (within a move's priority) where its `if` holds: `turn:1` (PK-9, the curse Hold
+             Music; battle-engine.js fxLastActs); on a hold row its holder always moves last (PK-10)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -58,7 +75,7 @@
 /** @typedef {FxRow & { src: string, row?: number }} Fx */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { PERKS, RELATIONS, RESIDENTS, billyGeneFx, provide } from '../hooks.js';
+import { PERKS, PERK_SETS, RELATIONS, RESIDENTS, billyGeneFx, provide } from '../hooks.js';
 import { relFxRows } from './relations.js';
 import { modFxRows } from './modifiers.js';
 import { resFxRows } from './residents.js';
@@ -76,6 +93,7 @@ expose({
   FX_IMMUNE: [() => FX_IMMUNE],
   FX_KINDS: [() => FX_KINDS],
   FX_LIMIT: [() => FX_LIMIT],
+  FX_LOOT_N: [() => FX_LOOT_N],
   FX_ONCE: [() => FX_ONCE],
   FX_PASSIVE_KEYS: [() => FX_PASSIVE_KEYS],
   FX_PER: [() => FX_PER],
@@ -86,8 +104,14 @@ expose({
   FX_WEATHER: [() => FX_WEATHER],
   FX_WHEN: [() => FX_WHEN],
   FX_WHEN_BATTLE: [() => FX_WHEN_BATTLE],
+  HELD_FX_KINDS: [() => HELD_FX_KINDS],
+  HELD_IFS: [() => HELD_IFS],
+  HELD_OWN_FORMS: [() => HELD_OWN_FORMS],
+  HELD_WHEN: [() => HELD_WHEN],
   fxAt: [() => fxAt],
   fxBenchXp: [() => fxBenchXp],
+  // @ts-expect-error -- replaced on purpose
+  fxBoostRow: [() => fxBoostRow, v => (fxBoostRow = v)],
   fxCatch: [() => fxCatch],
   fxCatchLevel: [() => fxCatchLevel],
   fxChip: [() => fxChip],
@@ -103,6 +127,9 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxFire: [() => fxFire, v => ((fxFire = v), provide({ fxFire }))],
   fxHealShare: [() => fxHealShare],
+  fxHeldAt: [() => fxHeldAt],
+  fxHeldBoost: [() => fxHeldBoost],
+  fxHeldRow: [() => fxHeldRow],
   fxIfs: [() => fxIfs],
   fxImmune: [() => fxImmune],
   // @ts-expect-error -- replaced on purpose
@@ -110,10 +137,13 @@ expose({
   fxKey: [() => fxKey],
   // @ts-expect-error -- replaced on purpose
   fxLive: [() => fxLive, v => (fxLive = v)],
+  fxLivePerks: [() => fxLivePerks],
   fxMoney: [() => fxMoney],
   fxMoneyShare: [() => fxMoneyShare],
   // @ts-expect-error -- replaced on purpose
   fxMult: [() => fxMult, v => (fxMult = v)],
+  // @ts-expect-error -- replaced on purpose
+  fxMuted: [() => fxMuted, v => (fxMuted = v)],
   fxOfBillie: [() => fxOfBillie],
   fxOfRun: [() => fxOfRun],
   // @ts-expect-error -- replaced on purpose
@@ -126,6 +156,7 @@ expose({
   fxPerkRows: [() => fxPerkRows, v => (fxPerkRows = v)],
   fxPinchHeal: [() => fxPinchHeal],
   fxPrice: [() => fxPrice],
+  fxRecoil: [() => fxRecoil],
   // @ts-expect-error -- replaced on purpose
   fxRowNow: [() => fxRowNow, v => (fxRowNow = v)],
   fxRows: [() => fxRows],
@@ -136,6 +167,9 @@ expose({
   fxRunRule: [() => fxRunRule],
   // @ts-expect-error -- replaced on purpose
   fxSalvage: [() => fxSalvage, v => (fxSalvage = v)],
+  fxSetHeld: [() => fxSetHeld],
+  fxSetRows: [() => fxSetRows],
+  fxSetsOn: [() => fxSetsOn],
   fxSources: [() => fxSources],
   // @ts-expect-error -- replaced on purpose
   fxSpend: [() => fxSpend, v => (fxSpend = v)],
@@ -190,6 +224,10 @@ export const FX_KINDS = /** @type {const} */ ([
   'salvage',
   'copy',
   'give',
+  'recoil',
+  'loot',
+  'heldBoost',
+  'last',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -223,15 +261,49 @@ export function fxCopyOf(ids, i, perks) {
 export const fxRows = (ids, perks) =>
   ids.flatMap((id, i) => fxPerkRows(ids, i, perks).map(f => /** @type {Fx} */ ({ ...f, src: id })));
 
-/** the effect rows of a run's Perks, its events' boons, its Expedition and challenges and (RL-S2) the hub folk's level
- * bonuses it took off with (null in the hub, or with
+/** PK-8: how many of set `id`'s Perks are among those held: the ids tagged with it (perks.json `tags`), each once. A
+ * Photocopier counts as the Perk it is (an Office Supplies one), never as the Perk it copies
+ * @param {string[]} ids @param {string} id @param {Record<string, Perk>} perks */
+export const fxSetHeld = (ids, id, perks) =>
+  new Set(ids.filter(k => perks[k] && (perks[k].tags || []).includes(id))).size;
+/** PK-8: the sets whose bonus holds: `need` of their Perks held (fxSetHeld), in perkSets.json's order
+ * @param {string[]} ids @param {Record<string, Perk>} perks
+ * @param {Record<string, import('../../types/game-data').PerkSet>} [sets] @returns {string[]} */
+export const fxSetsOn = (ids, perks, sets = PERK_SETS) =>
+  Object.keys(sets || {}).filter(id => fxSetHeld(ids, id, perks) >= sets[id].need);
+/** PK-8: the rows of the sets whose bonus holds, each tagged `set:<id>` @param {string[]} ids
+ * @param {Record<string, Perk>} perks @param {Record<string, import('../../types/game-data').PerkSet>} [sets]
+ * @returns {Fx[]} */
+export const fxSetRows = (ids, perks, sets = PERK_SETS) =>
+  fxSetsOn(ids, perks, sets).flatMap(id => sets[id].fx.map(f => /** @type {Fx} */ ({ ...f, src: 'set:' + id })));
+
+/** PK-9: the Perk a muteNewest rule row turns off (the curse Permit Revoked: the newest Perk held, the last of
+ * run.perks), or ''. Only an event's boons and curses carry the rule (data-checks.js), so it is read from them alone
+ * and fxOfRun never asks itself @param {any} run @returns {string} */
+export function fxMuted(run) {
+  if (!run || !Array.isArray(run.perks) || !run.perks.length) return '';
+  const on = encBoonRows(run).some(f => f.kind === 'rule' && f.rule === 'muteNewest' && (f.n || 0) > 0);
+  return on ? run.perks[run.perks.length - 1] : '';
+}
+/** PK-9: the Perks held that work: all but the one a curse turns off (fxMuted), in the order held @param {any} run
+ * @returns {string[]} */
+export const fxLivePerks = run => {
+  const ids = (run && run.perks) || [];
+  return fxMuted(run) ? ids.slice(0, -1) : ids;
+};
+/** the effect rows of a run's Perks (PK-8: and of the sets they make, fxSetRows), its events' boons, its Expedition and
+ * challenges and (RL-S2) the hub folk's level bonuses it took off with (null in the hub, or with
  * none) @param {{ perks: string[], expedition?: number, mods?: string[] } | null | undefined} run
  * @param {Record<string, Perk>} perks @returns {Fx[] | null} */
 export const fxOfRun = (run, perks) => {
   /* RL-12b: an event's boons (logic/run-enc.js) after the Perks' rows; RL-13: the Expedition's and challenges' last */
+  /* PK-9: a Perk a curse turns off (Permit Revoked) gives no rows and counts toward no set */
+  const live = fxLivePerks(run);
   const rows = run
     ? [
-        ...fxRows(run.perks || [], perks),
+        ...fxRows(live, perks),
+        /* PK-8: the bonuses of the Perk sets whose `need` is held (perkSets.json), after the Perks' own rows */
+        ...fxSetRows(live, perks),
         ...encBoonRows(/** @type {any} */ (run)),
         .../** @type {Fx[]} */ (modFxRows(run)),
         /* RL-S2: the hub folk's level bonuses (logic/relations.js) */
@@ -256,14 +328,36 @@ provide({ fxOfRun }); /* to-module */
  * splice's (rules.js billyGeneFx: its traits', tagged `gene:<trait>`, and an Unstable splice's drawback, `unstable`);
  * null with none (SP-5: an Augment's Unstable splice too)
  * @param {{ held?: string, sp?: string, graft?: Record<string, string>, aug?: any } | null | undefined} m
- * @param {Record<string, { hold?: import('../../types/game-data').FxRow[] }>} items @returns {Fx[] | null} */
-export const fxOfBillie = (m, items) => {
+ * @param {Record<string, { hold?: import('../../types/game-data').HeldRow[] }>} items @param {number} [boost] PK-8:
+ * what its held item's rows are worked by (fxBoostRow; 1, as they are) @returns {Fx[] | null} */
+export const fxOfBillie = (m, items, boost = 1) => {
   const I = m && m.held ? items[m.held] : null,
-    held = I && I.hold && I.hold.length ? I.hold.map(f => /** @type {Fx} */ ({ ...f, src: 'held:' + m?.held })) : null;
+    /* PK-10: a row with a when acts only at its moment (fxHeldAt), never where its kind always acts */
+    rows = I && I.hold ? /** @type {import('../../types/game-data').FxRow[]} */ (I.hold.filter(f => !f.when)) : [],
+    /* PK-8: `boost` (fxHeldBoost, yours only) makes a held item work better: fxBoostRow */
+    held = rows.length ? rows.map(f => /** @type {Fx} */ ({ ...fxBoostRow(f, boost), src: 'held:' + m?.held })) : null;
   if (!m || (!m.graft && !m.aug)) return held;
   const gene = /** @type {Fx[]} */ (billyGeneFx(m));
   return held || gene.length ? [...(held || []), ...gene] : null;
 };
+
+/** PK-8: how much better your Billies' held items work: the product of the heldBoost rows (1 when none; the Tech Gear
+ * set's 1.5) @param {Fx[] | null | undefined} fx */
+export const fxHeldBoost = fx => fxMult(fx, f => f.kind === 'heldBoost');
+/** PK-8: a held row worked k times as well: a factor moved k times as far from 1 (x1.2 at 1.5 is x1.3, a take of x0.8
+ * is x0.7), within FX_LIMIT; stages k times as many, rounded half up (+1 is +2), within FX_STAGES; a share k times as
+ * big, at most 1; a chance k times, at most FX_CHANCE. Anything else (pinchHeal's `at`, a type, a when) as it is; the
+ * row itself when k is 1 @template T @param {T} f @param {number} k @returns {T} */
+export function fxBoostRow(f, k) {
+  if (k === 1 || !f || typeof f !== 'object') return f;
+  const r = /** @type {any} */ ({ ...f });
+  if (typeof r.mult === 'number') r.mult = Math.min(FX_LIMIT.hi, Math.max(FX_LIMIT.lo, 1 + (r.mult - 1) * k));
+  if (typeof r.stages === 'number')
+    r.stages = Math.sign(r.stages) * Math.min(FX_STAGES, Math.round(Math.abs(r.stages) * k));
+  if (typeof r.share === 'number') r.share = Math.min(1, r.share * k);
+  if (typeof r.chance === 'number') r.chance = Math.min(FX_CHANCE, r.chance * k);
+  return r;
+}
 
 /** the product of the multipliers of the rows that pass `test`, smallest first, within FX_LIMIT (1 when none)
  * @param {Fx[] | null | undefined} fx @param {(f: Fx) => boolean} test */
@@ -284,8 +378,9 @@ export const fxMoney = (fx, n) => {
   return k === 1 ? n : Math.round(n * k);
 };
 
-/** a price on the run with the price rows of `what` (whole $, never below 0)
- * @param {Fx[] | null | undefined} fx @param {'shop' | 'heal'} what @param {number} n */
+/** a price on the run with the price rows of `what` (whole $, never below 0); PK-8: `perk`, a run shop's Perk (on top
+ * of the shop's own rows: perks.js perkShopPrice)
+ * @param {Fx[] | null | undefined} fx @param {'shop' | 'heal' | 'perk'} what @param {number} n */
 export const fxPrice = (fx, what, n) => {
   const k = fxMult(fx, f => f.kind === 'price' && f.what === what);
   return k === 1 ? n : Math.max(0, Math.round(n * k));
@@ -293,7 +388,7 @@ export const fxPrice = (fx, what, n) => {
 
 /** Studio plan T3.2: a price on a run with its Perks' price rows of `what` (the page's clinic and shops, and the
  * run's simulation): the price itself with no run or none held @param {{ perks: string[] } | null | undefined} run
- * @param {Record<string, Perk>} perks @param {'shop' | 'heal'} what @param {number} n */
+ * @param {Record<string, Perk>} perks @param {'shop' | 'heal' | 'perk'} what @param {number} n */
 export const fxRunPrice = (run, perks, what, n) => fxPrice(fxOfRun(run, perks), what, n);
 
 /** what multiplies a coin's chance to catch (the chance itself stays at most 1) @param {Fx[] | null | undefined} fx */
@@ -395,6 +490,14 @@ export const fxTurnHurt = fx =>
     (fx || []).reduce((a, f) => a + (f.kind === 'turnHurt' ? f.share : 0), 0)
   );
 
+/** PK-7: the share of its HP an attack of yours that dealt damage costs its user: the recoil rows' shares summed, at
+ * most a half (0 when none) @param {Fx[] | null | undefined} fx */
+export const fxRecoil = fx =>
+  Math.min(
+    0.5,
+    (fx || []).reduce((a, f) => a + (f.kind === 'recoil' ? f.share : 0), 0)
+  );
+
 /** SP-6: what multiplies a Gene Sample's DNA, the wild splice odds and an Unstable splice's turn-end hurt: the run's
  * rows of that kind (1 when none) @param {Fx[] | null | undefined} fx @param {'dna' | 'splice' | 'unstable'} kind */
 export const fxSplice = (fx, kind) => fxMult(fx, f => f.kind === kind);
@@ -480,6 +583,14 @@ export const FX_RULES = /** @type {const} */ ([
   'sideOpen',
   'sideFind',
   'eventHurt',
+  'noDrop',
+  'faintPaysNothing',
+  'unstableSafe',
+  'sidePerk',
+  'shopClosed',
+  'muteNewest',
+  'curseShorter',
+  'curseErase',
 ]);
 /** PK-4: what a run's rule rows add to rule `id` (their n summed, with growth; 0 when none). Read on the run where no
  * battle or team is known, so a row with `if` never counts @param {any} run @param {string} id
@@ -575,6 +686,9 @@ export function fxSalvage(fx, S) {
       };
 }
 
+/** PK-7: the most items one loot row brings */
+export const FX_LOOT_N = 3;
+
 /** PK-5: what a refund row gives back (a pyramid thrown that missed) */
 export const FX_REFUND = /** @type {const} */ (['pyramid']);
 
@@ -582,7 +696,8 @@ export const FX_REFUND = /** @type {const} */ (['pyramid']);
    Optional fields on any effect row, from fixed lists (data-checks.js checks them; no script language):
      when   the moment it acts (FX_WHEN). Without one a row acts where its kind always acts (a stat row as each of
             your Billies takes the field, a heal row on walking into a place, a damage row on every hit...)
-     if     one condition or a list of them, all of which must hold (fxCond)
+     if     one condition or a list of them, all of which must hold (fxCond; PK-8: `unstable`, the Billie acting is an
+            Unstable splice)
      every  N: it acts on every Nth time its `when` comes (the count lasts the run)
      grow   {on, by, max, reset?, if?}: a value that builds by `by` each time `on` comes (up to `max`, back to 0 at
             `reset`) and is added to the row's number (mult, stages, share or n)
@@ -624,6 +739,7 @@ export const FX_IF_WORDS = /** @type {const} */ ([
   'newSpecies',
   'superEffective',
   'noFaint',
+  'unstable',
 ]);
 /** the condition words with a value after a colon ('hp<' takes a share instead) */
 export const FX_IF_KEYS = /** @type {const} */ (['weather', 'type', 'team', 'foe', 'turn', 'place', 'cat']);
@@ -634,7 +750,7 @@ export const FX_SAY = 40;
 /**
  * @typedef {{ weather?: string, type?: string[], team?: string[][], lead?: boolean, alone?: boolean, hp?: number,
  *   foe?: string[], turn?: number, newSpecies?: boolean, place?: string, superEffective?: boolean, noFaint?: boolean,
- *   cat?: string, uid?: string }} FxCtx what a moment knows: the weather, the acting Billie's types, every type list
+ *   cat?: string, uid?: string, unstable?: boolean }} FxCtx what a moment knows: the weather, the acting Billie's types, every type list
  *   on your team, whether it leads or stands alone, its share of HP, what the foe is, the turn, ...
  * @typedef {Record<string, { n?: number, v?: number, used?: 1, by?: string[] }>} FxMarks
  * @typedef {{ run?: FxMarks | null, battle?: FxMarks | null }} FxState the run's marks and the battle's
@@ -666,6 +782,7 @@ export function fxCond(c, ctx) {
     case 'newSpecies':
     case 'superEffective':
     case 'noFaint':
+    case 'unstable':
       return ctx[k] === true;
     case 'notLead':
       return ctx.lead === false;
@@ -823,3 +940,37 @@ export function fxStateLog(run) {
     ])
   );
 }
+
+/* ---------- PK-10: held items' own moments and kinds (perks-track.md 5.8) ----------
+   A held item's rows act for its holder alone, on either side (a foe's Billie may hold one too). A hold row may say
+   `when` (hit: its holder lands a hit; hurt: its holder is hit), `if` (what such a moment knows about the holder and
+   the hit: HELD_IFS) and `once: battle`; its marks are the battle's, one set for each holder (battle-engine.js
+   heldMarks). */
+/** PK-10: the kinds only a held item has (not FX_KINDS: no Perk, boon or modifier gives them):
+ *   survive  once a battle, from full HP, its holder lives through a knockout hit with 1 HP (battle-engine.js
+ *            heldSurvives)
+ *   reflect  a Billie that hits its holder with a move (of its cat, if it names one) loses share of its own HP
+ *            (heldAfterHit)
+ *   drain    its holder heals share of the damage it deals (heldAfterHit) */
+export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect', 'drain']);
+/** PK-10: the kinds of FX_KINDS a hold row reads its own way: immune names a type (its moves miss the holder, until
+ * it is hit with `until: hurt`; battle-engine.js heldFloats); first a chance its holder moves first (heldFirstActs);
+ * last (PK-9 made it a run's kind too) its holder moves after the others, within a move's priority (heldLastActs) */
+export const HELD_OWN_FORMS = /** @type {const} */ (['immune', 'first', 'last']);
+/** PK-10: a holder's first row of a kind, or null @param {any[] | null | undefined} fx @param {string} kind */
+export const fxHeldRow = (fx, kind) => (fx || []).find(f => f.kind === kind) || null;
+/** PK-10: the moments a hold row can act at */
+export const HELD_WHEN = /** @type {const} */ (['hit', 'hurt']);
+/** PK-10: the conditions a hold row's `if` can name: those a hit knows about its holder */
+export const HELD_IFS = /** @type {const} */ (['superEffective', 'cat', 'type', 'hp<']);
+/** PK-10: a Billie's hold rows of `when` (tagged held:<id>), for its moment; [] with none. PK-8: worked `boost` times
+ * as well (fxBoostRow) @param {{ held?: string } | null | undefined} m
+ * @param {Record<string, { hold?: any[] }>} items @param {string} when @param {number} [boost] @returns {Fx[]} */
+export const fxHeldAt = (m, items, when, boost = 1) => {
+  const I = m && m.held ? items[m.held] : null;
+  return I && I.hold
+    ? I.hold
+        .map((f, row) => /** @type {Fx} */ ({ ...fxBoostRow(f, boost), src: 'held:' + m?.held, row }))
+        .filter(f => f.when === when)
+    : [];
+};

@@ -38,6 +38,8 @@ import {
   dataBuildings,
   dataCatchArt,
   dataPerkArt,
+  dataBoonArt,
+  dataItemArt,
   dataCurrencies,
   dataNodeTypes,
   dataRanchRules,
@@ -55,6 +57,8 @@ import {
   dataResidents,
   dataFestivals,
   dataPerks,
+  dataPerkSets,
+  dataBoons,
   dataEvents,
   dataBanter,
   dataTalkSkins,
@@ -339,6 +343,8 @@ for (const family of [
   dataFestivals,
   dataNodeTypes,
   dataPerks,
+  dataPerkSets,
+  dataBoons,
   dataEvents,
   dataBanter,
   dataTalkSkins,
@@ -360,6 +366,7 @@ if (D.music && check('music.schema.json', D.music, 'music.json')) {
     nodeTypes: D.nodeTypes || {},
     biomes: D.biomes || {},
     locations: D.locations || [],
+    battleAnims: D.battleAnims,
   }))
     if (F.lvl === 'error') problem(F.place ? 'locations.json' : 'music.json', F.msg);
   // SND-3: a species' own cry names a base that exists
@@ -416,6 +423,20 @@ for (const [where, what] of dataCatchArt(D.pyramids, p => {
   problem(where, what);
 // PK-2: the Perks' pictures (an img that is there and is an icon; a Perk without one warns)
 for (const f of dataPerkArt(D.perks, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
+// PK-9: the boons' pictures (an img that is there and is an icon; a boon without one warns)
+for (const f of dataBoonArt(D.boons, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
+// PK-11: the items' pictures (an img at items/<id>.svg that is there and is an icon; an item without one warns)
+for (const f of dataItemArt(D.items, p => {
   const f = join(DATA, '..', 'art', p);
   return existsSync(f) ? readFileSync(f, 'utf8') : null;
 }))

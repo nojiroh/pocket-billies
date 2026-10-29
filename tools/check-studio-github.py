@@ -1861,7 +1861,7 @@ def music_steps(pg, errs):
     """SND-3: the Music & sound section (studio/js/music-editor.js): a song plays through the game's tracker on the
     Studio's own AudioContext (a real click starts it), the bar playing shows, Stop stops it, and leaving the section
     stops it too (no scheduler left running). SND-10: the Sounds tab's World sounds card plays a water recipe and
-    stops."""
+    stops. VFX-19: the Battle card plays every battle sound and edits one."""
     n = len(errs)
     pg.evaluate("void openSection('music')")
     # the section opens on the tab last used; an earlier step (the full run's) can leave it on Where they play
@@ -2004,6 +2004,27 @@ def music_steps(pg, errs):
     if not until(pg, "Object.keys(musicStudio.scape.P.stats().voices).length===0", 15):
         errs.append(f'music: the World sounds card left {pg.evaluate("JSON.stringify(musicStudio.scape.P.stats().voices)")} playing after Stop')
     if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing a world sound changed the data')
+    # VFX-19: the Battle card: every battle sound's play button starts its voices (tones and noises) through the game's
+    # player (audio/battle-voices.js), as many as its preview lists; a name edited and undone leaves nothing changed
+    r = pg.evaluate("""(() => { const T = musicStudio.tracker || null; const B = studioState.D.music.battle, A = studioState.D.battleAnims;
+      const names = battleSoundNames(B), btns = [...document.querySelectorAll('[data-act=musBattle]')].map(b => b.dataset.k);
+      const out = { names: names.length, btns: btns.length, bad: [] };
+      for (const k of names) { const b = document.querySelector(`summary [data-act=musBattle][data-k="${k}"]`); if (!b) { out.bad.push(k + ' has no button'); continue; }
+        const t = musicStudio.tracker; let n = 0; const fv = t && t.synthVoice, fn = t && t.synthNoise;
+        if (t) { t.synthVoice = (...a) => { n++; return fv(...a); }; t.synthNoise = (...a) => { n++; return fn(...a); }; }
+        b.click(); const T2 = musicStudio.tracker; if (!t) { /* the first click makes the tracker: count from the next */ continue; }
+        t.synthVoice = fv; t.synthNoise = fn;
+        const [g, id] = k.split('.'), F = g === 'families' && A.families[id], want = battleSoundPreview(battleSoundGet(B, k), F && F.hit < 999 ? F.hit / 1000 : 0.3).length;
+        if (n !== want) out.bad.push(`${k} started ${n} voices, not ${want}`); }
+      return out; })()""")
+    if r['names'] < 37 or r['btns'] != r['names'] or r['bad']:
+        errs.append(f"music: the Battle card: {r['names']} sounds, {r['btns']} buttons; {'; '.join(r['bad'][:5])}")
+    pg.evaluate("void (document.querySelector('[data-act=musBattle][data-k=\\'families.charge\\']').closest('details').open = true)")
+    m = pg.locator('#main input[data-p="music.battle.families.charge.name"]')
+    m.fill('a test name'); m.press('Tab')
+    if pg.evaluate("studioState.D.music.battle.families.charge.name") != 'a test name': errs.append('music: the Battle card did not edit a sound\'s name')
+    pg.click('#undoBtn')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: undo did not put the Battle card back')
     # a Billy's cry (the Billies page; SND-6: every stage has one): a new pitch keeps its base and plays the base's
     # notes from it, and its low-HP version a third down; undone, nothing to propose
     pg.evaluate("void openSection('billionaires')")
@@ -2031,7 +2052,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped, every battle sound on the Battle card heard and a name edited and undone; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
@@ -2211,7 +2232,52 @@ def relics_steps(pg, errs):
     pg.evaluate("void openSection('relics', { relic: 'rusty_key' })"); time.sleep(0.3)
     rk = pg.evaluate("(document.querySelector('#main [data-relic-needs=\"rusty_key\"]')||{}).value")
     if rk != 'side': errs.append(f'perks: Rusty Key shows Needs as {rk!r}')
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs", flush=True)
+    # PK-7: Fine Print's kinds (recoil, loot, a money add, xp, the rules noDrop and faintPaysNothing, level, bossHp,
+    # damage with if lead / notLead): every row of the 12 Fine Print Perks shows its inputs with no error, its rarity
+    # reads fine; Subscription Box shows its loot table and its charge
+    fine = ['terms_conditions', 'energy_drink', 'glass_trophy', 'overclock_chip', 'ethics_waiver', 'hustle_planner', 'influencer_contract', 'nonrefundable_ticket', 'early_access', 'subscription_box', 'heavy_crown', 'paid_promotion']
+    for pid in fine:
+        pg.evaluate(f"void openSection('relics', {{ relic: '{pid}' }})"); time.sleep(0.2)
+        got = pg.evaluate(f"[document.querySelectorAll('#main .relic-row').length, studioState.D.perks['{pid}'].fx.length, [...document.querySelectorAll('#main .relic-row .err, #main .relic-err')].map(e=>e.textContent), [...document.querySelectorAll('#main [data-relic-kind]')].map(e=>e.value), (document.querySelector('#main [data-p=\"perks.{pid}.rarity\"], #main [data-path=\"perks.{pid}.rarity\"]')||{{}}).value]")
+        if got[0] != got[1] or got[2] or got[3] != pg.evaluate(f"studioState.D.perks['{pid}'].fx.map(f=>f.kind)") or got[4] != 'fine': errs.append(f'perks: {pid} in the editor: rows {got[0]} of {got[1]}, errors {got[2]}, kinds {got[3]}, rarity {got[4]!r}')
+    pg.evaluate("void openSection('relics', { relic: 'subscription_box' })"); time.sleep(0.3)
+    sb = pg.evaluate("['fx.0.table','fx.1.add'].map(k=>(document.querySelector(`#main [data-p=\"perks.subscription_box.${k}\"], #main [data-path=\"perks.subscription_box.${k}\"]`)||{}).value)")
+    if sb != ['common', '-15']: errs.append(f'perks: Subscription Box shows its loot table and charge as {sb}')
+    # PK-8: the Perk sets: Running Shoes's Set reads Trainer Classics; picked Tech Gear its tags swap the set's id and
+    # undo puts it back; the sets card shows the 7 with no message; a set's title edit is proposed in perkSets.json and
+    # undone; a need past its Perks shows its message
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    st = pg.evaluate("[(document.querySelector('#main [data-relic-set=\"running_shoes\"]')||{}).value, document.querySelectorAll('#main [data-p$=\".need\"][data-p^=\"perkSets.\"]').length, [...document.querySelectorAll('#main .relic-err')].map(e=>e.textContent)]")
+    if st != ['classics', 7, []]: errs.append(f'perks: sets: Running Shoes reads set, sets shown, messages {st}')
+    sel = '#main [data-relic-set="running_shoes"]'
+    pg.select_option(sel, 'tech'); time.sleep(0.3)
+    tg = pg.evaluate("studioState.D.perks.running_shoes.tags")
+    if 'tech' not in tg or 'classics' in tg: errs.append(f'perks: sets: Running Shoes picked Tech Gear has tags {tg}')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if 'classics' not in pg.evaluate("studioState.D.perks.running_shoes.tags"): errs.append('perks: sets: undo left Running Shoes out of Trainer Classics')
+    edit_undo(pg, errs, 'perks: sets', '#main [data-p="perkSets.office.title"]', 'Upper Management', 'perkSets.office.title', 'perkSets\\.json$')
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    sel = '#main [data-p="perkSets.lab.need"]'
+    pg.fill(sel, '6'); pg.dispatch_event(sel, 'change'); time.sleep(0.3)
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })")
+    if not wait_js(pg, "/lab.need: 6, but only 4 Perks/.test(document.querySelector('#main').textContent)", 10): errs.append('perks: sets: a need past its Perks showed no message')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.perkSets.lab.need") != 3: errs.append('perks: sets: undo left the Lab Kit needing ' + str(pg.evaluate("studioState.D.perkSets.lab.need")))
+    # PK-9: the boons and curses: the card shows the 20 with their pictures and no message; a name edit is proposed in
+    # boons.json and undone; a boon made a curse and undone; a copy row's message
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    bn = pg.evaluate("[document.querySelectorAll('#main [data-boon] [data-p$=\".name\"][data-p^=\"boons.\"]').length, document.querySelectorAll('#main [data-boon] .boon-art img.pix').length, document.querySelectorAll('#main [data-boon-curse]').length, [...document.querySelectorAll('#main [data-boon] .relic-err')].map(e=>e.textContent)]")
+    if bn != [20, 20, 20, []]: errs.append(f'perks: boons: names, pictures, kinds, messages {bn}')
+    edit_undo(pg, errs, 'perks: boons', '#main [data-p="boons.tailwind.name"]', 'Following Wind', 'boons.tailwind.name', 'boons\\.json$')
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    pg.select_option('#main [data-boon-curse="tailwind"]', '1'); time.sleep(0.3)
+    if pg.evaluate("studioState.D.boons.tailwind.curse") is not True: errs.append('perks: boons: Tailwind made a curse reads ' + str(pg.evaluate("studioState.D.boons.tailwind.curse")))
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("'curse' in studioState.D.boons.tailwind"): errs.append('perks: boons: undo left Tailwind a curse')
+    pg.evaluate("studioState.D.boons.pep_talk.fx.push({kind:'copy'}); void openSection('relics', { relic: 'running_shoes' })")
+    if not wait_js(pg, "/pep_talk.fx\\[1\\]: a boon has no copy row/.test(document.querySelector('#main').textContent)", 10): errs.append('perks: boons: a copy row showed no message')
+    pg.evaluate("studioState.D.boons.pep_talk.fx.pop(); void openSection('relics', { relic: 'running_shoes' })")
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs; the 12 Fine Print Perks' rows with no error and their rarity fine, Subscription Box's loot table and charge; the 7 Perk sets, Running Shoes's set swapped and undone, a set's title proposed and undone, a need past its Perks named; the 20 boons and curses with their pictures, a name proposed and undone, one made a curse and undone, a copy row named", flush=True)
 
 
 def battle_fx_steps(pg, errs):
@@ -2257,6 +2323,16 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("battleFxSeek(600)")
     ev = pg.evaluate("[battleFx.clip, battleFx.at>=599, battleFx.T]")
     if ev[0] != 'event:catch:0' or not ev[1] or ev[2] is not None: errs.append(f'battle effects: the catch event played and seeked as {ev}')
+    # VFX-20: every event plays (the flow's, the stage's others and the look films), the page with no error; a look
+    # film's scrubber runs past its last line
+    evs = pg.evaluate("[...document.querySelectorAll('#main [data-bp=ev] option')].map(o=>o.value)")
+    for v in evs:
+        pick('#main [data-bp=ev]', v); time.sleep(0.05)
+        clk('#main [data-act=bfxPlay][data-side="0"]'); time.sleep(0.35)
+        if not pg.evaluate(f"battleFx.clip==='event:'+{json.dumps(v)}+':0'"): errs.append(f'battle effects: the event {v} did not play ({pg.evaluate("battleFx.clip")})')
+    looks = [v for v in evs if v.startswith('look:')]
+    if len(looks) < 20 or 'look:brn_ko' not in looks or 'win' not in evs: errs.append(f'battle effects: the events are {evs}')
+    if pg.evaluate("battleFx.dur") < 1600: errs.append(f'battle effects: the last look film runs {pg.evaluate("battleFx.dur")} ms on the scrubber')
     clk('#main [data-act=bfxSet][data-k=clip][data-v=move]'); time.sleep(0.5)
     pick('#main [data-p="battleAnims.budgets.burst.0"]', '20'); time.sleep(0.6)
     if pg.evaluate("studioState.D.battleAnims.budgets.burst[0]") != 20: errs.append('battle effects: a burst budget of 20 did not reach the data')
@@ -2275,6 +2351,12 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("undo()"); time.sleep(0.3)
     if pg.evaluate("studioState.D.battleAnims.tiers.super4.shake") != 9: errs.append('battle effects: undo did not put the tier dial back')
     if not pg.evaluate("!!document.querySelector('#main select[data-bp=ko]')"): errs.append('battle effects: no Knocks out choice beside the outcome')
+    # VFX-20: a family's miss is tuned in the Misses pane (proposed, undone)
+    pick('#main [data-p="battleAnims.families.shot.miss.dur"]', '700'); time.sleep(0.6)
+    if pg.evaluate("studioState.D.battleAnims.families.shot.miss.dur") != 700: errs.append('battle effects: the shot miss length 700 did not reach the data')
+    if not pending_files(pg, 'battleAnims\\.json$'): errs.append('battle effects: after a miss edit Propose would not send battleAnims.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.battleAnims.families.shot.miss.dur") != 760: errs.append('battle effects: undo did not put the miss back')
     empty = pg.evaluate("[document.querySelector('#bfxPane-ramps').textContent, document.querySelector('#bfxPane-cells').textContent]")
     has = pg.evaluate("[!!studioState.D.battleAnims.ramps, !!studioState.D.battleAnims.sprites]")
     for (t, h, k) in zip(empty, has, ('ramps', 'cells')):
@@ -2282,8 +2364,15 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("void openSection('types')"); time.sleep(0.3)
     back = pg.evaluate("[reducedMotion, (saveData.preferences||{}).flashes||null, document.documentElement.dataset.motion||null]")
     if back != [False, None, None]: errs.append(f'battle effects: leaving the section left the motion and Flashes at {back}')
+    # VFX-20: a type's battle particles are its kit's burstSprites (battleAnims.json types; were types.json fx)
+    before = pg.evaluate("JSON.stringify(studioState.D.battleAnims.types.Fire.burstSprites)")
+    clk('#main [data-act=typeFx][data-t="Fire"][data-k="star"]'); time.sleep(0.3)
+    got = pg.evaluate("studioState.D.battleAnims.types.Fire.burstSprites")
+    if 'star' not in (got or []) or not pending_files(pg, 'battleAnims\\.json$'): errs.append(f'types: the Fire particle picker gave {got}, or Propose would not send battleAnims.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("JSON.stringify(studioState.D.battleAnims.types.Fire.burstSprites)") != before: errs.append('types: undo did not put the Fire particles back')
     pg.evaluate("Object.assign(battlePreview,{clip:'move',speed:1,q:0,motion:'full',flashes:true,res:'hit'})")
-    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget, a smear and a tier dial proposed and undone, Knocks out, the empty ramps and cells panes, the settings back on leaving', flush=True)
+    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget, a smear and a tier dial proposed and undone, Knocks out, every event and look film, a miss tuned and undone, the empty ramps and cells panes, the settings back on leaving, a type\'s particles in its kit', flush=True)
 
 
 def unlocks_steps(pg, errs):
@@ -2538,6 +2627,13 @@ def art_browser_steps(pg, errs):
     if 'perks' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append('art browser: Used by for a Perk’s picture does not name perks.json')
     if not pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].some(b => b.textContent === 'Edit icon' && b.dataset.n === 'perks/lucky_charm')"):
         errs.append('art browser: a Perk’s picture has no Edit icon')
+    # PK-11: a Bag item's picture: Used by names items.json, and Edit icon opens it
+    pg.evaluate("artBrowser.q = ''; ACTIONS.abPick({ p: 'art/items/potion.svg' })")
+    end = time.time() + 30
+    while time.time() < end and 'items' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): time.sleep(0.5)
+    if 'items' not in pg.evaluate("(document.querySelector('.ab-refs') || {}).textContent || ''"): errs.append('art browser: Used by for an item’s picture does not name items.json')
+    if not pg.evaluate("[...document.querySelectorAll('.ab-acts .btn')].some(b => b.textContent === 'Edit icon' && b.dataset.n === 'items/potion')"):
+        errs.append('art browser: an item’s picture has no Edit icon')
     tile = pg.evaluate("Object.values(studioState.D.scenery.terrains).map(T => T.tile).find(Boolean)")
     path = 'art/' + tile
     pg.evaluate(f"artBrowser.q = ''; ACTIONS.abPick({{ p: {json.dumps(path)} }})")
@@ -2779,12 +2875,92 @@ def icons_steps(pg, errs):
     E("undo()"); time.sleep(0.3)
     if E("studioState.textDirty.size"): errs.append(f"icons: left {E('[...studioState.textDirty.keys()]')} unsaved")
     E("ACTIONS.icClose()")
-    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; a Perk’s picture painted and a new one in art/perks staged; all undone', flush=True)
+    # PK-11: a Bag item's picture opens the same way, its folder's others beside it; a stroke reaches artURL
+    E("void iconEditOpen('items/potion')")
+    pg.wait_for_selector('#icStage .pc-art', timeout=20000); time.sleep(0.4)
+    P = "loadedText('art/items/potion.svg')"
+    orig = E(P)
+    if E("document.querySelectorAll('#main .ic-other').length") != E("iconNames('items').length") or E("iconNames('items').length") < 13:
+        errs.append(f"icons: an item's picture shows {E('document.querySelectorAll(\'#main .ic-other\').length')} beside it")
+    box, z = pg.locator('#icStage .pc-art').bounding_box(), E("iconEd.pc.zoom")
+    pg.mouse.click(box['x'] + 1.5 * z, box['y'] + 1.5 * z); time.sleep(0.4)
+    if E(P) == orig or not E("(window.NW_ART || {})['items/potion.svg'] && artURL('items/potion.svg').startsWith('data:')"):
+        errs.append('icons: a stroke on an item’s picture did not write it or reach the previews')
+    E("undo()"); time.sleep(0.3)
+    if E(P) != orig or E("studioState.textDirty.size"): errs.append('icons: undo did not put the item’s picture back')
+    E("ACTIONS.icClose()")
+    print('icons: painted, previewed, refused a script, shaded as a block, a new icon staged; a Perk’s picture painted and a new one in art/perks staged; an item’s picture painted; all undone', flush=True)
+
+
+def items_steps(pg, errs):
+    """PK-11: the Items & pyramids editor shows a Bag item's own picture at 72 and 36 px with Edit art (no atlas Icon
+    field); Edit art opens it in the icon editor. An item without a picture (PK-10: a new one, as every item has its own)
+    has Draw one, which names art/items/<id>.svg in its img and opens it blank (two undo steps); all undone."""
+    E = pg.evaluate
+    E("void openSection('items')")
+    pg.wait_for_selector('#main [data-act="icOpen"][data-n="items/potion"]', timeout=20000)
+    items0 = E("JSON.stringify(studioState.D.items)")
+    row = "[...document.querySelectorAll('#main .item-row')].find(r => r.querySelector('.item-ic small').textContent === %s)"
+    sizes = E(f"[...({row % json.dumps('potion')}).querySelectorAll('.item-ic img.item-art')].map(i => i.width)")
+    if sizes != [72, 36]: errs.append(f'items: the Potion’s picture shows at {sizes}, not 72 and 36 px')
+    if E(f"!!({row % json.dumps('potion')}).querySelector('[data-p=\"items.potion.icon\"]')"): errs.append('items: an item with a picture still offers the atlas Icon field')
+    held = E("Object.keys(studioState.D.items).find(k => !studioState.D.items[k].img)")
+    made = False
+    if not held:  # PK-10: every item has its own picture now: a new item (no picture) is made, and undone at the end
+        E("ACTIONS.itemNew()"); time.sleep(0.7); made = True
+        held = E("Object.keys(studioState.D.items).find(k => !studioState.D.items[k].img)")
+    if not held: errs.append('items: no item without a picture to try Draw one on'); return
+    if not E(f"!!({row % json.dumps(held)}).querySelector('[data-act=\"itemArt\"]')"): errs.append(f'items: {held} (no picture) has no Draw one')
+    pg.click('#main [data-act="icOpen"][data-n="items/potion"]')
+    pg.wait_for_selector('#icStage .pc-art', timeout=20000); time.sleep(0.3)
+    if E("artBrowser.icon") != 'items/potion': errs.append(f"items: Edit art opened {E('artBrowser.icon')!r}")
+    E("ACTIONS.icClose()")
+    steps0 = E("studioState.undo.length")
+    E(f"void openSection('items')"); time.sleep(0.4)
+    E(f"ACTIONS.itemArt({{ k: {json.dumps(held)} }})"); time.sleep(0.8)
+    path = f'art/items/{held}.svg'
+    if E(f"studioState.D.items[{json.dumps(held)}].img") != f'items/{held}.svg' or not E(f"studioState.textDirty.has({json.dumps(path)})") or E("artBrowser.icon") != f'items/{held}':
+        errs.append(f'items: Draw one on {held} did not name and open a blank {path}')
+    if E("studioState.undo.length") != steps0 + 2: errs.append(f"items: Draw one made {E('studioState.undo.length') - steps0} undo steps, not 2")
+    E("undo(); undo()"); time.sleep(0.4)
+    E("ACTIONS.icClose()")
+    if E(f"'img' in studioState.D.items[{json.dumps(held)}]") or E("studioState.textDirty.size"): errs.append('items: undo did not take Draw one back')
+    if made:
+        E("undo()"); time.sleep(0.4)
+        if E(f"{json.dumps(held)} in studioState.D.items"): errs.append(f'items: undo did not take the new item {held} back')
+    # PK-10: a held item's tier and rows: a row's kind changed (the row takes that kind's fields), a row added, a plain
+    # item made a held one; all undone
+    E("void openSection('items')"); time.sleep(0.4)
+    hk = E("Object.keys(studioState.D.items).find(k => (studioState.D.items[k].hold || []).length === 1)")
+    if not hk: errs.append('items: no held item with one row to edit'); return
+    sel = f"({row % json.dumps(hk)}).querySelector('select[data-held-kind]')"
+    if not E(f"!!{sel}") or not E(f"!!({row % json.dumps(hk)}).querySelector('[data-p=\"items.{hk}.rarity\"]')"):
+        errs.append(f'items: the held item {hk} shows no kind select or tier'); return
+    steps0, before = E("studioState.undo.length"), E(f"JSON.stringify(studioState.D.items[{json.dumps(hk)}])")
+    E(f"(s => {{ s.value = 'xp'; s.dispatchEvent(new Event('change', {{ bubbles: true }})); }})({sel})"); time.sleep(0.4)
+    if E(f"JSON.stringify(studioState.D.items[{json.dumps(hk)}].hold[0])") != '{"kind":"xp","mult":1.1}' or not E(f"!!document.querySelector('[data-p=\"items.{hk}.hold.0.mult\"]')"):
+        errs.append(f"items: changing {hk}'s row to xp made {E(f'JSON.stringify(studioState.D.items[{json.dumps(hk)}].hold)')}")
+    E(f"ACTIONS.heldRowAdd({{ k: {json.dumps(hk)} }})"); time.sleep(0.3)
+    if E(f"studioState.D.items[{json.dumps(hk)}].hold.length") != 2 or E(f"({row % json.dumps(hk)}).querySelectorAll('[data-held-row]').length") != 2:
+        errs.append('items: + Add an effect did not add a held row')
+    # every kind a hold row can be has its fields and a new row (HELD_ROW_NEW), and a stat row at a moment its If and Once
+    bad = E(f"HOLD_KINDS.filter(q => !HELD_ROW_NEW[q] || heldRowHTML({json.dumps(hk)}, HELD_ROW_NEW[q](), 0, []).includes('No such kind'))")
+    if bad: errs.append(f'items: no held row editor for {bad}')
+    if 'data-held-if' not in E(f"heldRowHTML({json.dumps(hk)}, {{ kind: 'stat', stat: 'lev', stages: 2, when: 'hurt' }}, 0, [])"): errs.append('items: a held stat row at hurt has no If')
+    plain = E("Object.keys(studioState.D.items).find(k => !studioState.D.items[k].hold && !studioState.D.items[k].hp && !studioState.D.items[k].revive && !studioState.D.items[k].cure && !studioState.D.items[k].hpAll)") or 'bell'
+    E(f"ACTIONS.heldMake({{ k: {json.dumps(plain)} }})"); time.sleep(0.3)
+    if not E(f"!!({row % json.dumps(plain)}).querySelector('select[data-held-kind]')"): errs.append(f'items: Make it a held item did not give {plain} a row')
+    time.sleep(0.6)  # the last edits' undo step is made 450 ms after them (studio-app.js commit)
+    while E("studioState.undo.length") > steps0: E("undo()"); time.sleep(0.15)
+    time.sleep(0.3)
+    if E(f"JSON.stringify(studioState.D.items[{json.dumps(hk)}])") != before or E(f"'hold' in studioState.D.items[{json.dumps(plain)}]"): errs.append('items: undo did not take the held edits back')
+    if E("JSON.stringify(studioState.D.items)") != items0: errs.append('items: items.json is not as it was after the undos')
+    print(f'items: the Potion’s picture at 72 and 36 px with Edit art (opens it), {held} drawn from blank with Draw one; {hk}’s held row changed and added, {plain} made a held item; all undone', flush=True)
 
 
 def atlas_steps(pg, errs):
     """Studio art track SA-2b: the icon atlas: a rectangle dragged and resized (art/manifest.js unsaved, the game's
-    ARTMAN following), undone; an item icon's key renamed with the data in the same undo step; Delete refused while the
+    ARTMAN following), undone; a key the data uses (PK-10: a type's particle; no item uses the atlas) renamed with the data in the same undo step; Delete refused while the
     data uses a key; a rectangle added in a free place."""
     E = pg.evaluate
     E("void atlasOpen('coin')")
@@ -2797,7 +2973,9 @@ def atlas_steps(pg, errs):
     if E("ARTMAN.icons.coin") != [r0[0] + 3, r0[1], r0[2] + 1, r0[3]]: errs.append(f"atlas: drag and Shift+Right made {E('ARTMAN.icons.coin')} from {r0}")
     E("undo(); undo()"); time.sleep(0.3)
     if E("loadedText('art/manifest.js')") != orig or E("studioState.textDirty.size"): errs.append('atlas: undo did not put art/manifest.js back')
-    k = E("Object.keys(ARTMAN.icons).find(k => k.startsWith('i_') && atlasUses(k, studioState.D).length)")
+    # PK-10: no item draws from the atlas any more, so a key the data uses is a type's particle
+    k = E("Object.keys(ARTMAN.icons).find(k => atlasUses(k, studioState.D).length)")
+    if not k: errs.append('atlas: no key the data uses to rename'); return
     n = E(f"atlasUses({json.dumps(k)}, studioState.D).length")
     E(f"atlasEd.key = {json.dumps(k)}; render()"); time.sleep(0.3)
     E("void ACTIONS.atRename()"); pg.wait_for_selector('#atKey'); pg.fill('#atKey', k + '_c')
@@ -2855,6 +3033,7 @@ STEPS = [
     ('battle_anim_art', battle_anim_art_steps),
     ('robot_art', robot_art_steps),
     ('icons', icons_steps),
+    ('items', items_steps),
     ('atlas', atlas_steps),
     ('scene_art', scene_art_steps),
     ('split', split_steps),

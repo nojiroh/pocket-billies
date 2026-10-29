@@ -65,6 +65,10 @@ export interface GameData {
   >;
   /** roguelite track RL-12: a run's Perks, each a list of effect rows (game/data/perks.json; logic/effects.js) */
   perks?: Record<DataId, Perk>;
+  /** PK-8: Perk sets (perkSets.json; logic/perks.js perkSetsOn) */
+  perkSets?: Record<DataId, PerkSet>;
+  /** PK-9: boons and curses (boons.json; logic/run-enc.js encBoonGive) */
+  boons?: Record<DataId, Boon>;
   /** RL-12b: events.json */
   events?: EventsData;
   /** RL-S1: the story director's lines */
@@ -218,17 +222,14 @@ export interface BillyType {
   /** RF-3: the passive's name and what it does, as the player reads them */
   passiveName?: string;
   passiveText?: string;
-  /** hit effects (default pow, star) */
-  fx?: string[];
 }
 
-/** untyped.json: the colours and hit effects of 'None' */
+/** untyped.json: the colours of 'None' (VFX-20: its battle particles are battleAnims.json types.None.burstSprites) */
 export interface Untyped {
   color: Color;
   /** UI-13: its colour in battle's 3D effects (default `color`) */
   glow?: Color;
   text?: Color;
-  fx?: string[];
 }
 
 /** moves.json: a move */
@@ -744,7 +745,10 @@ export interface Item {
   n: string;
   price: number;
   d: string;
-  icon: string;
+  /** the old atlas's rectangle, `i_` + this (art/icons/icons.png; battle.js itemIcon), for an item without `img` */
+  icon?: string;
+  /** PK-11: its own picture, `items/<id>.svg` under game/art (a 36 px icon), which itemIcon prefers */
+  img?: string;
   hp?: number;
   hpAll?: number;
   cure?: string;
@@ -757,7 +761,7 @@ export interface Item {
   repair?: number;
   /** RL-12c: a held item: what it does for the Billie holding it (logic/effects.js fxOfBillie); given from its sheet,
       never used up, never used in battle */
-  hold?: FxRow[];
+  hold?: HeldRow[];
   /** UI-14b: a held item's tier on the loot ladder (frame, pill and name colour), by price and effect size */
   rarity?: RarityTier;
 }
@@ -1085,6 +1089,8 @@ export interface Rules {
     points: StarterPointRules;
     /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
     healCost: number;
+    /** PK-9: a clinic's fee to lift a curse (an appeal; logic/run-loop.js runAppeal) */
+    appealCost?: number;
     /** RL-8: a run town's shop: `always` on sale, then `more` wares a day drawn by weight from `pick` (an item id, or
         `coin:<id>`), at their own prices; drawn from the town's seed and the day */
     shop: { always: string[]; more: number; pick: Record<string, number> };
@@ -1114,10 +1120,12 @@ export interface Rules {
     perks: {
       cap: number;
       pick: number;
-      rarity: Record<PerkRarity, number>;
-      price: Record<PerkRarity, number>;
+      rarity: Record<PerkTier, number>;
+      price: Record<PerkTier, number>;
       /** PK-4: a Perk whose tags match the team's types or a held Perk's tags is drawn this many times as often */
       bias?: number;
+      /** PK-7: a leader's (mini-boss's) win offers `pick` Perks of this rarity alone (Fine Print), evenly */
+      leader?: { rarity: PerkRarity; pick: number };
     };
     /** RL-R2: side areas (logic/run-side.js) */
     side?: RunSideRules;
@@ -1937,8 +1945,11 @@ export interface Music {
   where: MusicWhere[];
 }
 
-/** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks) */
-export type PerkRarity = 'common' | 'uncommon' | 'rare';
+/** perks.json: how often a Perk is offered and what a shop asks for it (rules.json run.perks); PK-7: `fine` (Fine
+ * Print), offered only at a leader's win (rules.json run.perks.leader), never in a shop, an event or a reward pick */
+export type PerkRarity = PerkTier | 'fine';
+/** PK-7: the rarities of the ordinary picks, shops and events (their weights and prices) */
+export type PerkTier = 'common' | 'uncommon' | 'rare';
 /** PK-1: the moments a row can act at (logic/effects.js FX_WHEN) */
 export type FxWhen =
   | 'battleStart'
@@ -1968,6 +1979,23 @@ export interface FxTiming {
   per?: 'teamTypes';
   once?: 'battle' | 'run' | 'billie';
 }
+/** PK-10: items.json: one held item's row: an effect row, or one of the kinds only a held item has (effects.js
+ * HELD_FX_KINDS) */
+export type HeldRow = FxRow | (FxTiming & HeldKindRow);
+/** PK-10: the held items' own kinds and their numbers */
+export type HeldKindRow =
+  /** once a battle, from full HP, its holder lives through a knockout hit with 1 HP */
+  | { kind: 'survive' }
+  /** a Billie that hits its holder (with a move of `cat`, any without) loses `share` of its own HP */
+  | { kind: 'reflect'; share: number; cat?: 'H' | 'S' }
+  /** its holder heals `share` of the damage it deals */
+  | { kind: 'drain'; share: number }
+  /** moves of `type` miss its holder (until it is hit, with `until: 'hurt'`) */
+  | { kind: 'immune'; type: string; until?: 'hurt' }
+  /** a `chance` each turn that its holder moves first (within a move's priority) */
+  | { kind: 'first'; chance: number }
+  /** its holder moves after the others (within a move's priority) */
+  | { kind: 'last' };
 /** perks.json: one effect row (logic/effects.js FX_KINDS; the schema says what each kind takes), with PK-1's timing */
 export type FxRow = FxTiming & FxKindRow;
 /** one effect row's kind and numbers */
@@ -1975,7 +2003,9 @@ export type FxKindRow =
   | { kind: 'money'; mult: number }
   /** PK-5: at arrive, this share of the Moneys carried, at most max */
   | { kind: 'money'; share: number; max: number }
-  | { kind: 'price'; what: 'shop' | 'heal'; mult: number }
+  /** PK-7: at arrive, Moneys paid (charged when below 0, never below none) */
+  | { kind: 'money'; add: number }
+  | { kind: 'price'; what: 'shop' | 'heal' | 'perk'; mult: number }
   | { kind: 'catch'; mult: number }
   | { kind: 'stat'; stat: 'lev' | 'law' | 'lob' | 'pr' | 'hus'; stages: number }
   | { kind: 'damage'; side: 'deal' | 'take'; cat?: 'H' | 'S'; type?: string; mult: number }
@@ -2006,6 +2036,8 @@ export type FxKindRow =
   | { kind: 'chip'; what: 'burn'; mult: number }
   /** PK-3: your Billies move before the foe's (within a move's priority) where its `if` holds */
   | { kind: 'first' }
+  /** PK-9: your Billies move after the foe's (within a move's priority) where its `if` holds (Hold Music) */
+  | { kind: 'last' }
   /** PK-3: when your whole team has fainted, they all get back up with this share of their HP (needs `once`) */
   | { kind: 'revive'; share: number }
   /** PK-4: a type passive works better for your Billies that have it, by its own numbers (effects.js FX_PASSIVE_KEYS) */
@@ -2038,10 +2070,27 @@ export type FxKindRow =
   /** PK-4: a run rule changed by n (forecastDays: the forecast shows n more days; PK-5: rewardPick, reward picks
    * show n more cards; rerollFree, the first n rerolls of each reward pick are free; mapReveal, the run map shows every place;
    * PK-6: cap, n more Perks held; sideOpen, a side area's obstacle opens with its badge alone; sideFind, side areas hold n more finds;
-   * eventHurt, an event's hurt does nothing) */
+   * eventHurt, an event's hurt does nothing; PK-7: noDrop, no Perk held can be let go; faintPaysNothing, a win in which one of
+   * yours fainted pays no Moneys) */
   | {
       kind: 'rule';
-      rule: 'forecastDays' | 'rewardPick' | 'rerollFree' | 'mapReveal' | 'cap' | 'sideOpen' | 'sideFind' | 'eventHurt';
+      rule:
+        | 'forecastDays'
+        | 'rewardPick'
+        | 'rerollFree'
+        | 'mapReveal'
+        | 'cap'
+        | 'sideOpen'
+        | 'sideFind'
+        | 'eventHurt'
+        | 'noDrop'
+        | 'faintPaysNothing'
+        | 'unstableSafe'
+        | 'sidePerk'
+        | 'shopClosed'
+        | 'muteNewest'
+        | 'curseShorter'
+        | 'curseErase';
       n: number;
     }
   /** PK-5: a Billie you catch joins n levels higher */
@@ -2055,7 +2104,13 @@ export type FxKindRow =
   /** PK-6: Moneys and Bag items (items.json ids) at once, when the Perk is taken */
   | { kind: 'give'; money?: number; items?: Record<string, number> }
   /** PK-6: stands for the rows of the Perk just above it in the list held (never itself or another copier) */
-  | { kind: 'copy' };
+  | { kind: 'copy' }
+  /** PK-7: an attack of yours that deals damage costs its user this share of its HP */
+  | { kind: 'recoil'; share: number }
+  /** PK-7: n (1-3) items from an events.json loot table (`table`), drawn by weight, at its moment (arrive) */
+  | { kind: 'loot'; table: string; n?: number }
+  /** PK-8: your Billies' held items work mult times as well (effects.js fxBoostRow; the Tech Gear set) */
+  | { kind: 'heldBoost'; mult: number };
 /** SP-2: genes.json: what spliced parts do (logic/genes.js). Every number is a placeholder until the owner sets it */
 export interface Genes {
   about?: string;
@@ -2386,9 +2441,37 @@ export interface Perk {
   img?: string;
   /** PK-4: offered only to a team this holds for (a condition or a list, all of which must hold: team:<Type>, mono) */
   needs?: string | string[];
-  /** PK-4: its types and themes (types.json ids; logic/perks.js PERK_THEMES): offers lean toward a Perk whose tag
-      matches a type on the team or a tag of a Perk held (rules.json run.perks.bias) */
+  /** PK-4: its types and themes (types.json ids; PK-8: the themes are perkSets.json's ids, its set): offers lean toward a
+      Perk whose tag matches a type on the team or a tag of a Perk held (rules.json run.perks.bias) */
   tags?: string[];
+}
+/** PK-8: perkSets.json: a Perk set. Its Perks are those tagged with its id (perks.json `tags`); while `need` of them are
+    held its rows join the run's (logic/effects.js fxOfRun, src `set:<id>`) */
+export interface PerkSet {
+  /** the set's name on its Perks' cards ("Office Supplies 2/3") */
+  name: string;
+  /** the bonus's name ("Middle Management"); battle lines name the set by it */
+  title: string;
+  /** how many of its Perks must be held (2-6) */
+  need: number;
+  /** what the bonus does, in one sentence */
+  d: string;
+  fx: FxRow[];
+}
+/** PK-9: boons.json: a boon or a curse, a named effect that lasts the place it is given in and `places` more (events'
+ * `boon`/`curse` commands, the fountain's wish); while it lasts its rows join the run's (src `boon:<id>`) */
+export interface Boon {
+  /** what the player reads */
+  name: string;
+  /** what it does while it lasts, in one sentence */
+  d: string;
+  /** a curse (the Bureau's Red Tape): a clinic's appeal lifts it; a boon without */
+  curse?: true;
+  /** the place it is given in and this many more (0-20) */
+  places: number;
+  /** its picture (boons/<id>.svg) */
+  img?: string;
+  fx: FxRow[];
 }
 
 /** currencies.json: one of the game's six currencies (roguelite track RL-11; RL-S2: Beans; SP-3: DNA) */
@@ -2594,7 +2677,7 @@ export interface BattleAnimsData {
   defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
   intro: BattleAnimStep[];
   families: Record<DataId, BattleAnimFamily>;
-  scenes: Record<DataId, BattleAnimFamily>;
+  scenes: Record<DataId, BattleAnimScene>;
   /** VFX-15: the battle mood (logic/battle-stage-look.js battleMoodFor) */
   moods?: BattleMoods;
   /** VFX-15: the walk weather on the battle stage */
@@ -2628,6 +2711,9 @@ export interface BattleAnimKit {
   impact: DataId;
   small?: DataId;
   bits: DataId[];
+  /** VFX-20: the icons.png particles a hit's burst sprays in turn (were types.json and untyped.json `fx`); a kit
+   * without one sprays None's */
+  burstSprites?: string[];
   /** icons.png particles sprayed beside the strips (cog, scale, pow) */
   icons?: string[];
   path: 'straight' | 'arc' | 'zigzag' | 'spiral' | 'wave' | 'stamp';
@@ -2867,6 +2953,8 @@ export interface BattleAnimEvents {
   victory?: { sparkles: number; cheerMs: number };
   defeat?: { fadeMs: number };
   item?: { flyMs: number };
+  /** VFX-18b: a Bureau boss's phase with a shield: prop steps played on the boss inside the phase's own time */
+  bossPhase?: { about?: string; faction: string; steps: BattleAnimStep[] };
 }
 /** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
 export interface BattleMoods {
@@ -2920,6 +3008,11 @@ export interface BattleAnimFamily extends BattleAnimTimeline {
   /** VFX-13: its own miss (a whiff that fits it) */
   miss?: BattleAnimTimeline;
 }
+/** VFX-17: a signature scene: a family's shape, the family it plays where its models can't be drawn or under Reduced
+ * motion, and its short version (the prop and the hit) for its second use in a battle and the Faster speed */
+export interface BattleAnimScene extends BattleAnimFamily {
+  family: string;
+}
 /** a step: what it does, when (stage ms), its gates and its own numbers */
 export interface BattleAnimStep {
   do: string;
@@ -2941,7 +3034,10 @@ export interface BattleAnimStep {
   ramp2?: string;
   path?: string;
   part?: 'cast' | 'hit';
-  icon?: string;
+  /** VFX-17: or several icons, taken in turn */
+  icon?: string | string[];
+  /** VFX-17: a prop step's model (a recipe id in game/art/scene/next/models) */
+  prop?: string;
   [k: string]: unknown;
 }
 /** WM-7: arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's

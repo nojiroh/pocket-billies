@@ -27,6 +27,7 @@ expose({
   fxTags: [() => fxTags, v => (fxTags = v)],
   // @ts-expect-error -- replaced on purpose
   markRow: [() => markRow, v => (markRow = v)],
+  rarityColour: [() => rarityColour],
   // @ts-expect-error -- replaced on purpose
   rarityHighest: [() => rarityHighest, v => (rarityHighest = v)],
   // @ts-expect-error -- replaced on purpose
@@ -147,6 +148,9 @@ export const MARK_RARITY = /** @type {Record<string, string>} */ ({
   uncommon: 'Uncommon',
   rare: 'Rare',
   mythical: 'Mythical',
+  /* PK-7: Fine Print (perks.json rarity fine), a leader's win's Perks: the ladder's top colour (rarityColour), its own
+     name and the pick card's red stamp (perks-track.md section 11, item 1) */
+  fine: 'Fine Print',
 });
 /** a rarity id as its tier on the ladder: starter -> common; '' for none or an unknown one @param {string} [id] */
 export function rarityTier(id) {
@@ -154,6 +158,9 @@ export function rarityTier(id) {
   if (r === 'starter') return 'common';
   return MARK_RARITY[r] ? r : '';
 }
+/** PK-7: the colour code id (logic/signals.js) a tier is drawn in: its own, but Fine Print in the ladder's top orange
+ * (mythical's) @param {string} t a tier (rarityTier) */
+export const rarityColour = t => (t === 'fine' ? 'mythical' : t);
 /** UI-14b: the highest tier of several (a Gene with two traits shows the rarer); '' when none has one
  * @param {(string | undefined)[]} ids */
 export function rarityHighest(ids) {

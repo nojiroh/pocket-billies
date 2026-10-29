@@ -209,7 +209,7 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `go place [entrance]` | a checkpoint; from S2 |
 | `actor`, `act`, `caption`, `blink`, `screen`, `effect`, `hide`, `sound`, `walk who spot`, `camera shot`, `wait who` | a cutscene's: docs/CUTSCENES.md (only in a cutscene) |
 | `dressing-room`, `throw-coins`, `pick-starter`, `staged-fight`, `rival-battle`, `fall` | the opening's: docs/CUTSCENES.md |
-| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `revive species [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `invite`, `dna n`, `gene [n]`, `splice how`, `unsplice [n]` | an event's (events.json, on a run; RL-12b, SP-6): below |
+| `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `boon id`, `curse id`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `revive species [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `invite`, `dna n`, `gene [n]`, `splice how`, `unsplice [n]` | an event's (events.json, on a run; RL-12b, SP-6): below |
 
 ### Event commands (RL-12b)
 
@@ -224,7 +224,8 @@ plays the same.
 | `money 150`, `money -50` | Moneys gained or lost (never below 0) |
 | `hurt 0.1`, `heal 0.25`, `heal` | every Billie standing loses / gains that share of its HP (never past 1 HP); `heal` alone heals all |
 | `status slp` | every Billie standing without a status gets one (par, slp, brn) |
-| `fx 3 price what=shop mult=1.25` | an effect row (perks.json's kinds) for this place and 3 more |
+| `fx 3 price what=shop mult=1.25` | an effect row (perks.json's kinds) for this place and 3 more (an unnamed one, for packs) |
+| `boon tailwind`, `curse audit_trail` | PK-9: a named boon or curse of boons.json for this place and its `places` more; the sheet says what it does. Given again while on, it lasts the longer of the two. A clinic's appeal lifts a curse; Correction Fluid shortens it or erases the run's first |
 | `wager 50` | a 50% chance: sets the flag `wager` to `win` or `lose` (`if wager = win`) |
 | `loot auction`, `loot common 2` | items drawn from a loot table (events.json `loot`) |
 | `level -1` | a Billie of the team, drawn, gains or loses levels |
