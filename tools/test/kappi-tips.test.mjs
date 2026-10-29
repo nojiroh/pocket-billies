@@ -14,6 +14,7 @@ import {
   tipDataProblems,
   tipFaint,
   tipFirstRun,
+  tipHold,
   tipMoved,
   tipNext,
   tipNoPyramids,
@@ -153,6 +154,36 @@ test('a place stood in: the road cue at 40 s, Kappi at 60 s; walking nearer a ro
   tipMoved(st, D, 26, 80000);
   assert.equal(tipNext(st, D, c(100))?.cue, 'roadMarker', 'wandering is not progress; the cue again');
   assert.equal(tipNext(st, D, c(110))?.id, 'stall');
+});
+
+test('the stall clock counts only free walking: a scene or a battle in between holds it (the owner’s phone log)', () => {
+  const st = newTipRun(),
+    c = (/** @type {number} */ s) => at(s * 1000, { cues: { roadMarker: true } });
+  /* the run starts under the crash scene: 30 s of it, then you walk */
+  tipPlace(st, '0', 0);
+  tipMoved(st, D, 30, 0);
+  tipHold(st, false, 0);
+  tipHold(st, true, 30000);
+  assert.equal(tipNext(st, D, c(45)), null, 'only 15 s of walking: no cue (the log’s cue came 3.6 s after the scene)');
+  assert.equal(tipNext(st, D, c(70))?.cue, 'roadMarker', '40 s of walking: the cue');
+  /* a new place, 10 s walked, a 33 s battle, then 5 s: 15 s free, not 48 */
+  const S = newTipRun();
+  tipPlace(S, '1', 0);
+  tipMoved(S, D, 30, 0);
+  tipHold(S, true, 10000);
+  tipHold(S, false, 10000);
+  tipHold(S, false, 25000);
+  tipHold(S, true, 43000);
+  assert.equal(tipNext(S, D, c(48)), null, 'the battle’s 33 s don’t count');
+  assert.equal(tipNext(S, D, c(73))?.cue, 'roadMarker', 'after 40 s free');
+  /* a new place while held: its clock starts when you are free again */
+  const H = newTipRun();
+  tipHold(H, false, 0);
+  tipPlace(H, '2', 5000);
+  tipMoved(H, D, 30, 5000);
+  tipHold(H, true, 20000);
+  assert.equal(tipNext(H, D, c(55)), null, 'held from arrival: 35 s free at 55 s');
+  assert.equal(tipNext(H, D, c(60))?.cue, 'roadMarker');
 });
 
 test('caps: one tip per place, five a run, each once ever, none while busy or switched off', () => {

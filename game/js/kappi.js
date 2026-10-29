@@ -19,6 +19,7 @@ import {
   tipBeaten,
   tipCatch,
   tipFaint,
+  tipHold,
   tipMoved,
   tipNext,
   tipNoPyramids,
@@ -225,6 +226,7 @@ function kappiLook() {
   /* walking: nearer a road out, a wild one near with no pyramids */
   const walking = kappiWalking(),
     ways = walking ? kappiWaysOn() : [];
+  tipHold(st, walking, t);
   if (walking && ways.length) {
     const pl = walkView.pl;
     tipMoved(

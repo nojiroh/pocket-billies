@@ -1295,8 +1295,8 @@
    "game/js/logic/battle-anims.js:20",
    "game/js/logic/battle-anims.js:339",
    "game/js/logic/battle-anims.js:392",
-   "game/js/logic/kappi-tips.js:307",
-   "game/js/logic/kappi-tips.js:309",
+   "game/js/logic/kappi-tips.js:323",
+   "game/js/logic/kappi-tips.js:325",
    "game/js/logic/perks.js:337",
    "game/js/logic/perks.js:349",
    "game/js/logic/ui-dials.js:151",
@@ -1490,9 +1490,9 @@
    "game/js/logic/ui-dials.js:223"
   ],
   "sheet": [
-   "game/js/kappi.js:316",
-   "game/js/logic/kappi-tips.js:90",
-   "game/js/logic/kappi-tips.js:230",
+   "game/js/kappi.js:318",
+   "game/js/logic/kappi-tips.js:92",
+   "game/js/logic/kappi-tips.js:246",
    "game/js/logic/soundscape.js:111",
    "game/js/logic/ui-sounds.js:24",
    "game/js/overlay.js:155",

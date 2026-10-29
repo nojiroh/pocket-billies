@@ -13,7 +13,7 @@
 /** @import { KappiTips, KappiTip } from '../../types/game-data' */
 /**
  * @typedef {{ place: string, placeSaid: number, said: number, battles: number, inBattle: boolean, fails: number,
- *   faints: number, sheet: string, sheetT: number, placeT: number, best: number, cued: Record<string, 1>,
+ *   faints: number, sheet: string, sheetT: number, placeT: number, held: number, best: number, cued: Record<string, 1>,
  *   due: { id: string, t: number }[], potionLow: boolean }} TipRun
  * what this run's tips know: the place you are in (its id) and whether Kappi spoke there, how many tips Kappi said,
  * battles fought (the one going on counts), the failed catches in a row, faints, the choice sheet open (its key) and
@@ -55,6 +55,8 @@ expose({
   tipFaint: [() => tipFaint, v => (tipFaint = v)],
   // @ts-expect-error -- replaced on purpose
   tipFirstRun: [() => tipFirstRun, v => (tipFirstRun = v)],
+  // @ts-expect-error -- replaced on purpose
+  tipHold: [() => tipHold, v => (tipHold = v)],
   // @ts-expect-error -- replaced on purpose
   tipMayCue: [() => tipMayCue, v => (tipMayCue = v)],
   // @ts-expect-error -- replaced on purpose
@@ -107,6 +109,7 @@ export function newTipRun() {
     sheet: '',
     sheetT: 0,
     placeT: 0,
+    held: -1,
     best: Infinity,
     cued: {},
     due: [],
@@ -146,9 +149,22 @@ export function tipPlace(st, place, t) {
   st.place = place;
   st.placeSaid = 0;
   st.placeT = t;
+  if (st.held >= 0) st.held = t;
   st.best = Infinity;
   /* the road's marker may pulse again in the next place */
   delete st.cued.roadMarker;
+}
+/** the place's stall clock counts only the time you are free to walk on: while `free` is false (a scene, a battle, a
+ * sheet, a talk) it is held, and it goes on from where it was (the owner's phone log, 2026-10-29: the crash scene's
+ * half a minute and a battle's counted, so the stall cue came seconds after each) @param {TipRun} st @param {boolean}
+ * free @param {number} t */
+export function tipHold(st, free, t) {
+  if (!free) {
+    if (st.held < 0) st.held = t;
+  } else if (st.held >= 0) {
+    st.placeT += t - st.held;
+    st.held = -1;
+  }
 }
 /** where you stand: the distance (m) to the nearest road out of the place. Getting nearer by `near` metres than you
  * have been is progress, and the stall clock starts again; wandering about isn't
