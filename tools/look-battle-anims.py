@@ -38,9 +38,9 @@ gives the same film.
     python3 tools/look-battle-anims.py --events --only=shield,brn --sheets --motion=calm   # Calm, or reduced
     python3 tools/look-battle-anims.py --events --measure    # their draws and frame time
 
-VFX-14: with --events, each film is a few battle lines (EVENT_FILMS: a status beginning, its loop, its turn and its
+VFX-14: with --events, each film is a few battle lines (EVENT_FILMS, VFX-20: logic/battle-looks.js BATTLE_LOOK_FILMS: a status beginning, its loop, its turn and its
 end; stat chevrons, sharply; Protect's bubble and a block; the shield's dome wearing down and shattering; Soaked, Fork,
-a delayed hit, stones, glints, a broken part) on the foe, the snapshots changed as the engine would; a sheet's 16
+a delayed hit, stones, glints, a broken part; VFX-20: brn_ko, spread_ko, delayed_ko, hurt lines that knock out) on the foe, the snapshots changed as the engine would; a sheet's 16
 frames are 240 ms apart. --motion=calm or --motion=reduced films under that Animation level.
 
 VFX-15: --weather=rain|storm|snow|ash|fog|clear (forced at noon in summer before the battle; clear by day is the
@@ -118,11 +118,10 @@ __film.start=(key,mid,si,res)=>{__film.reset();__seed(__film.hash(key));__film.v
  const ev={s:activeBattle.events[activeBattle.events.length-1].s,ka:__film.ka(si,res)};__film.seen(mid);return __film.wrap(()=>battleStagePlay(__film.an(mid,si,res),ev))};
 /* VFX-14: an events film: lines at film times (ms), each an event (or none) and the snapshot changes it brings (mods:
    [{i, st, fx, stg, hp}]) on the snapshots before; its looks take the line when its plates would repaint */
-__film.snaps=(base,mods)=>{const s=JSON.parse(JSON.stringify(base));for(const m of mods||[]){const x=s[m.i];if(!x)continue;if('st' in m)x.st=m.st;
- if('fx' in m){if(m.fx)x.fx=m.fx;else delete x.fx}if(m.stg)x.stg=m.stg;if(m.hp!=null)x.hp=m.hp}return s};
+__film.snaps=(base,mods)=>lookSnaps(base,mods);
 __film.lines=(key,L)=>{__film.reset();__seed(__film.hash(key));if(typeof battleLooksReset==='function')battleLooksReset();
  let cur=activeBattle.events[activeBattle.events.length-1].s;
- const play=x=>{const prev=cur;cur=__film.snaps(cur,x.mods);const ev={an:x.an||null,s:cur,by:x.by,prev,after:x.after};const r=ev.an?battleStagePlay(ev.an,ev):{dur:0,hit:0};
+ const play=x=>{const prev=cur;cur=__film.snaps(cur,x.mods);const ev={an:x.an||null,s:cur,by:x.by,prev,after:x.after,ka:x.ka};const r=ev.an?battleStagePlay(ev.an,ev):{dur:0,hit:0};
   const go=()=>battleLooksLine(ev);if(r.hit>=999||!r.hit)go();else S.evs.push({t:S.t+r.hit,fn:go,onSkip:go})};
  for(const x of L){if(!x.at)play(x);else window.setTimeout(()=>play(x),x.at)}return 0};
 __film.startLines=(key,L)=>{__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;return __film.wrap(()=>__film.lines(key,L))};
@@ -165,37 +164,10 @@ __film.measure=(key,mid,si,res,frames,rest,go)=>{const rn=__film.rnow||(__film.r
 return 0})()"""
 
 
-# VFX-14: the events films (on the foe, slot 1): lines at film ms, each an event and the snapshot changes it brings
-def _st(st, at=0, **o): return {'at': at, 'an': {'k': 'status', 'si': 1, **({'st': st} if st else {})}, 'mods': [{'i': 1, 'st': st}] if st else [], **o}
-EVENT_FILMS = {
-    # VFX-13: a drain (Sap Drain's hit, then its heal with the motes) and a crash's recoil (a miss, then the hurt)
-    'drain': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'harvest', 'dmg': 12, 'te': 1}},
-              {'at': 1000, 'an': {'k': 'heal', 'si': 0, 'amt': 6}, 'after': {'kind': 'drain', 'from': 1, 'mid': 'harvest'}}],
-    'recoil': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'margincall', 'miss': True}},
-               {'at': 900, 'an': {'k': 'hurt', 'si': 0, 'dmg': 20}, 'after': {'kind': 'recoil', 'from': 1, 'mid': 'margincall'}}],
-    'brn': [_st('brn'), {'at': 2000, 'an': {'k': 'hurt', 'si': 1, 'fx': 'brn', 'dmg': 3}}, {'at': 3200, 'mods': [{'i': 1, 'st': None}]}],
-    'par': [_st('par'), _st('par', 1800)],
-    'slp': [_st('slp'), _st('slp', 1800), {'at': 3000, 'mods': [{'i': 1, 'st': None}]}],
-    'confused': [{'an': {'k': 'hype', 'si': 1}, 'mods': [{'i': 1, 'fx': {'confused': 3}}]},
-                 {'at': 1900, 'an': {'k': 'hurt', 'si': 1, 'dmg': 4}, 'mods': [{'i': 1, 'fx': {'confused': 2}}]},
-                 {'at': 3200, 'mods': [{'i': 1, 'fx': None}]}],
-    'stat_up': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 1}}]}],
-    'stat_up2': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 2}}]}],
-    'stat_down': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'stg': {'law': -1}}]}],
-    'stat_down2': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'stg': {'law': -2}}]}],
-    'protect': [{'an': {'k': 'move', 'si': 1, 'ti': 1, 'mid': 'hedge', 'protect': True}, 'mods': [{'i': 1, 'fx': {'protect': 1}}]},
-                {'at': 1500, 'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'quakestomp', 'blocked': True}}],
-    'shield': [{'an': {'k': 'alphaPhase', 'si': 1}, 'mods': [{'i': 1, 'fx': {'shield': 2}}]},
-               {'at': 1500, 'an': {'k': 'block', 'si': 1}}, {'at': 2100, 'mods': [{'i': 1, 'fx': {'shield': 1}}]},
-               {'at': 3000, 'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'fx': None}]}],
-    'soaked': [{'an': {'k': 'stat', 'si': 1, 'up': False}, 'mods': [{'i': 1, 'fx': {'soaked': 3}}]}],
-    'fork': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'fx': {'fork': 3}}]}],
-    'delayed': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'twoday', 'self': True}}, {'at': 2600, 'an': {'k': 'hurt', 'si': 1, 'fx': 'mail', 'dmg': 5}}],
-    'stones': [{'an': {'k': 'move', 'si': 0, 'ti': 1, 'mid': 'quakestomp', 'dmg': 8, 'te': 1}}, {'at': 2400, 'an': {'k': 'hurt', 'si': 1, 'fx': 'stones', 'dmg': 3}}],
-    'glint': [{'an': {'k': 'stat', 'si': 1, 'up': True}, 'mods': [{'i': 1, 'stg': {'lev': 1}}],
-               'by': [{'src': 'perk:x', 'si': 1}, {'src': 'held:y', 'si': 1}, {'src': 'passive:kindling', 'si': 1}]}],
-    'broken': [{'an': {'k': 'status', 'si': 1}}],
-}
+# VFX-14: the events films (on the foe, slot 1): lines at film ms, each an event and the snapshot changes it brings.
+# VFX-20: the list is the game's own (logic/battle-looks.js BATTLE_LOOK_FILMS, which the Studio's Battle effects plays
+# too), read from the page once it is up
+EVENT_FILMS = {}
 MOTION = str(OPT.get('motion') or 'full')
 # VFX-14: the Animation level for the films: Calm on <html data-motion>, Reduced through the game's own setter
 MOTION_JS = {'full': "document.documentElement.dataset.motion='full';setReducedMotion(false);0",
@@ -394,6 +366,7 @@ def main():
         if 'repeat' in OPT: pg.evaluate("__film.rep=true;0")
         if WEATHER == 'sand': pg.evaluate("battleStage.oil=true;0")
         moves = pick(pg.evaluate("Object.keys(MOVES).map(id=>({id,c:MOVES[id].c}))"))
+        EVENT_FILMS.update({k: v['lines'] for k, v in pg.evaluate('BATTLE_LOOK_FILMS').items()})
         if 'events' in OPT and 'measure' not in OPT:
             # VFX-14: the events films: sheets, or traces like the moves'
             traces = {}
