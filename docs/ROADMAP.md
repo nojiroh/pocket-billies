@@ -55,10 +55,9 @@ town node needs it.
   HANDOFF's older entries archived, legacy docs deleted, finished plans archived), lane R (the root: LICENSE, CREDITS,
   CONTRIBUTING, .editorconfig, .gitattributes, a PR template), lane T (files: the portrait kit's sources, orphan art,
   scratch tools, a test map). Round 2 (done 2026-10-29): ART-NOTES.md -> docs/ART.md, style-track archived, HANDOFF
-  re-trimmed after main's merge, 27 gone branches' rows, the deferred pointers, the full checks; PR #328. Still blocked
-  (cleanup-track.md section 7, a later CU-3): the music names (track/sound, the VFX move sounds), the .gitignore
-  rewrite and eslint ignore (#314, #331, #322), HANDOFF's header. Tag `cleanup-done` when section 7 is empty. Branch
-  `track/cleanup`.
+  re-trimmed after main's merge, 30 gone branches' rows, the deferred pointers, the full checks; PR #328. Still blocked
+  (cleanup-track.md section 7, a later CU-3): the music names (track/sound), the .gitignore rewrite and eslint ignore
+  (track/characters), HANDOFF's header. Tag `cleanup-done` when section 7 is empty. Branch `track/cleanup`.
 - **Online track** (docs/phases/online-track.md, the owner's brief and answers 2026-10-26; ON-1 done 2026-10-26 on
   `ccr-0b8e3c38-gt7t6a`; ON-2 and ON-3 done 2026-10-27, ON-4 2026-10-28, on `track/online`): ON-1 base (one legality
   check, Online play switch, block and report, the friend re-add fix), ON-2 run record, ghosts, dailies and friends'
