@@ -308,6 +308,9 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
     row of the rest of the cast; look-people `--moves`; tools/look-places.py (Copperleaf by day and night, every
     keeper's room, a run arena's leader, the dressing room with Figures on and off: the same).
   - Not in it: slopes, stairs, hops, wading, Surf, mounts, friends (CH-9); gaits by role (CH-12).
+  - Found and fixed on the way: with the live atlas nobody in a room was seen (a room's people are made afresh each
+    frame, so each got a new, undrawn atlas cell): a map person's figure record is now kept by place and id
+    (logic/person-view.js keptRecord).
   - **Phone gate (owed, with CH-4's):** the owner turns Figures on in the debug menu and sends a debug log.
 - **CH-4 The live atlas.** Done 2026-10-28 on `claude/laughing-tesla-roy32r` (PR #314 grows; the owner's choice),
   ahead of CH-3c; HANDOFF has the numbers. The owner's answer to the conflict with CH-3b's scene-lit bakes (an "Ask

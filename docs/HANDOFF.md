@@ -2,6 +2,69 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-3c - The rest of the cast and the movement pass - 2026-10-29
+Branch `claude/laughing-tesla-roy32r` (the owner chose to continue here, so PR #314 grows; main merged in at the start,
+834fed3f; the CH-6 session's hat fix and the PR watcher's art-code-refs fix merged in on the way). Plan approved in
+Plan Mode. Figure, game and tool work; figures still off by default, so the game's pictures are unchanged. No session
+tag (CLAUDE.md). docs/phases/characters-track.md (CH-3c) has the design.
+- The owner's answers: continue on #314's branch; **walk, jog, sprint** (keep the game's speeds and the 12 fps clock);
+  **keep today's keepers** (cashier, Vera and the townsfolk keepers; Mo and Bertha stay outside).
+- Found (checked against the code):
+  - `npm test` alone at the start: 1,975 of 1,975 passed. CH-6's one failure was the map-checks timing test (1,000
+    maps in under 1.5 s: about 0.34 s alone, 1.1 s beside a browser check).
+  - Feet slid: you walk at 3.4 m/s (run 5.78, a light push 2.04), townsfolk at 1.25, but the walk clip covered 2.4 m
+    a cycle while an average build's legs reach about 0.77 m (the foot moved at about 68% of the body's speed).
+    Townsfolk counted 1.4 m/s of wall time even standing; a map's people were always posed idle (a trainer coming
+    over slid); turns, start and stop were instant.
+  - Copperleaf has no arena: leaders stand in a run's arenas. Keepers already stood in their rooms (walk-control.js
+    roomState). 27 of 43 people had no `figure` block (12 of them legacy only).
+  - The debug menu's Atlas switch was drawn but had no case (a tap did nothing). The phone's Settings has no Figures
+    switch: on the phone it is the debug menu's Figures switches (the earlier phone-gate notes said Engine > People).
+  - **With the live atlas nobody in a room was seen** (Chosen, Kappi, the keepers): roomState makes a room's people
+    afresh each frame, and the atlas keeps a cell per record, so each frame made a new, undrawn cell (and redrew it).
+- Changed:
+  - logic/figure-pose.js: FIGURE_GAITS (walk 8 frames, jog 6, sprint 4); figureStride, each build's cycle from its
+    own legs, at least the gait's `min` so a cycle shows 4 frames or more at its usual speed (average: walk 0.73 m,
+    jog 1.45, sprint 1.90; tall 1.01, 2.01, 2.42; round and elder 0.45, 1.15, 1.90); locoPose (the foot down moves
+    straight back under the hip, the knee solved, so it stays put; the body rises between a jog's steps); the step
+    off and the settle (`start`, `stop`); figureGaitFor (jog from 1.9 m/s, sprint from 4.6, a gap at each edge);
+    figureTurn (a half turn in about 0.25 s); figureMotion and figureMotionClip (a tick at a time).
+  - figures.js figurePersonPicture runs the movement for everyone; frame-items.js: townsfolk and the lineup pass no
+    clock-made count; a map person's figure record kept by place and id (logic/person-view.js keptRecord).
+  - people/<id>.json `figure` (head, build, eyes, brows) for the 8 residents, cashier, Vera, Granny Juniper and the
+    hiker; test_people's row of the rest of the cast; the golden hashes remade for those 12 in their own commit.
+  - The debug log: figureReport().moves (person-ticks per gait); read-debug-log.py prints Figures on/off, everyone
+    else, your figure and the kit. debug-menu.js: the Atlas switch handled (a test checks every figure switch).
+  - Tools: look-people `--moves`; tools/look-places.py (Copperleaf by day and night, every keeper's room, a run arena's
+    leader, the dressing room with Figures on and off).
+- Risky:
+  - Untested on a phone. A walking person's cell is drawn about once a tick (12 a second); the debug log's moves line
+    shows which gaits were reached.
+  - The jog's cycle is a choice: at your 3.4 m/s an average build shows about 5 frames a cycle, short builds 4.
+  - Short builds jog with a longer moment in the air (a duty down to 0.15) to keep 4 frames a cycle.
+  - At walking size Mo's cap, Hayden's and Juniper's hats hide their faces from the camera's height, and Seamus's
+    fringe covers his eyes (the cast sheets).
+  - Cutscene actors are moved by straight lerps: their gait now follows their speed (story-stage.js's fixed 1.5 s
+    moves can jog or sprint).
+- Verified:
+  - lint, both type checks, check:modules, format:check, check:data, build.
+  - Unit tests: 1,988 pass alone (new: tools/test/figure-moves.test.mjs: every build's planted foot in each gait,
+    the 4-frame floor, the air, the gait by speed, the step off and settle, turns, the tick-by-tick movement;
+    debug-menu-switches.test.mjs; keptRecord in person-view.test.mjs).
+  - Smoke before each game commit: no problems (442 s, 390 s, 359 s).
+  - Full quick check on 89974890, alone: 37 of 42 in 1,816 s. Failing: Terraces (train_station), RL-8's seam, room
+    light, Battle music (all recorded as failing before this session), and Postcards (passed alone in 69 s).
+  - CI's check-fast on #314: 41 of 42; Camera follow ("the page stopped drawing") fails on main too (the PR watcher).
+  - Headless pictures (validation/look-people, validation/look-places): the moves sheet (every build); the 12 new
+    people's cast sheets; Copperleaf by day and night; the lab, shop, inn and library (after the fix: Chosen and Kappi
+    in the lab, the cashier behind the counter); a run arena's leader (Iris) in the ring; the dressing room's 59
+    pictures the same with Figures on and off.
+- Next: CH-5b (clothes as data) or CH-7 (the dressing room on the figure), in a new session; #314's merge first is
+  the owner's call.
+- For the owner on the phone (CH-4's gate and this one): open the debug menu, turn on Figures (and Atlas: live), walk
+  and run round Copperleaf by day and at night, go into the shop and the lab, talk to someone, then send the debug log
+  (Settings > Help), not the Diagnostics. Its figures line should say ON and list the moves.
+
 ### Characters track CH-6 - Faces - 2026-10-28
 Branch `claude/laughing-tesla-roy32r` (main merged in at the start, c7dc2c23: the Perks PK-6 merge; the owner chose to
 continue here, so PR #314 grows). Plan approved in Plan Mode. Data, figure, game and Studio work; figures still off by
