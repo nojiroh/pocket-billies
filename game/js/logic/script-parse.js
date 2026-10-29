@@ -96,7 +96,7 @@ export const SCRIPT_COMMANDS = {
   act: {
     args: ['who', 'pose', 's?'],
     group: 'cutscene',
-    about: 'a pose for a while: throw, cheer, react, reach (doesn’t wait)',
+    about: 'a pose for a while: throw, cheer, react, reach, stamp (doesn’t wait)',
   },
   caption: {
     args: ['s', '...'],

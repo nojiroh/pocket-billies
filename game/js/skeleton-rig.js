@@ -289,6 +289,22 @@ export function rigPose(act, tau, t, seed) {
       if (s > 0.15 && r < 0.6) P.face = 'shout';
       break;
     }
+    case 'stamp': {
+      /* intro track IN-3: a Bureau clerk's stamp (cutscene `act <who> stamp`): the right arm (a clerk's Franking
+         Cannon, the stamp) raised high over 350 ms, slammed down with a squash and a dip at 350-450, held there */
+      const u = smoothStepUnclamped(ph(0, 350)),
+        d = smoothStepUnclamped(ph(350, 450)),
+        hit = d > 0 && tau < 560;
+      P.k = u;
+      P.aR -= 2.6 * u * (1 - d) - 0.35 * d;
+      P.aL += 0.3 * u;
+      P.body = -0.08 * u * (1 - d) + 0.12 * d;
+      P.head -= 0.1 * u * (1 - d);
+      P.y = 2 * d;
+      P.sq = hit ? 'squash' : u > 0.6 && !d ? 'stretch' : null;
+      if (hit) P.face = 'shout';
+      break;
+    }
     case 'cast': {
       const u = smoothStepUnclamped(ph(0, 220)),
         r = smoothStepUnclamped(ph(560, 820)),
