@@ -3,6 +3,7 @@
 // process, before anything imports a game module: the data tables are read when game-data.js loads.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import vm from 'node:vm';
 
 export const ROOT = join(import.meta.dirname, '..', '..');
@@ -42,7 +43,7 @@ export async function loadLogic(gameData) {
     .map(f => `${LOGIC_DIR}/${f}`);
   const data = await import('../../game/js/game-data.js');
   const modules = {};
-  for (const f of files) modules[f.slice(LOGIC_DIR.length + 1, -3)] = await import(join(ROOT, f));
+  for (const f of files) modules[f.slice(LOGIC_DIR.length + 1, -3)] = await import(pathToFileURL(join(ROOT, f)).href);
   const logic = Object.assign({}, data, ...Object.values(modules));
   const fn = name => {
     if (typeof logic[name] !== 'function') throw new Error(`no logic module exports ${name}`);
