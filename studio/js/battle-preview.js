@@ -19,6 +19,7 @@ import {
   battleAnimPreviewEvent,
   battleAnimTimeline,
 } from '../../game/js/logic/battle-anims.js';
+import { BATTLE_LOOK_FILMS, lookSnaps } from '../../game/js/logic/battle-looks.js';
 import { frameScheduler } from '../../game/js/frame-scheduler.js';
 import { PYRAMID_ART, artLoad } from '../../game/js/art.js';
 import { robotArtFiles } from '../../game/js/robot-art.js';
@@ -29,6 +30,7 @@ import {
   battleStage,
   battleStageCatch,
   battleStageFocus,
+  battleStageOutcome,
   battleStagePlay,
   battleStagePrepare,
   battleStageResize,
@@ -39,6 +41,7 @@ import {
   drawForegrounds,
 } from '../../game/js/battle-stage.js';
 import { battleAnim } from '../../game/js/battle-anim-run.js';
+import { battleLooksLine, battleLooksReset } from '../../game/js/battle-looks.js';
 import { mapHub, walkView } from '../../game/js/walk-view.js';
 import { mountWalkView } from '../../game/js/walk-view-gl.js';
 import { battle3dAttach, battle3dStop } from '../../game/js/battle-3d.js';
@@ -98,6 +101,7 @@ expose({
   battlePreviewEvent: [() => battlePreviewEvent],
   battlePreviewFighters: [() => battlePreviewFighters, v => (battlePreviewFighters = v)],
   battlePreviewLeave: [() => battlePreviewLeave, v => ((battlePreviewLeave = v), provide({ battlePreviewLeave }))],
+  battlePreviewLines: [() => battlePreviewLines, v => (battlePreviewLines = v)],
   battlePreviewPlay: [() => battlePreviewPlay, v => (battlePreviewPlay = v)],
   battlePreviewReset: [() => battlePreviewReset, v => (battlePreviewReset = v)],
   bfxEntries: [() => bfxEntries],
@@ -108,6 +112,7 @@ expose({
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   isRobotFighter: [() => isRobotFighter],
   loadFighterArt: [() => loadFighterArt],
+  lookFilmMs: [() => lookFilmMs],
   mountBattlePreviewMap: [() => mountBattlePreviewMap, v => (mountBattlePreviewMap = v)],
   playBattlePreviewMove: [() => playBattlePreviewMove, v => (playBattlePreviewMove = v)],
   robotFighterOk: [() => robotFighterOk, v => (robotFighterOk = v)],
@@ -261,6 +266,16 @@ const BATTLE_FX_EVENTS = [
   ['recall', 'Recall'],
   ['catch', 'Throw: caught'],
   ['escape', 'Throw: breaks free'],
+  /* VFX-20: the rest of the stage's events, and the lasting looks as short runs of lines (BATTLE_LOOK_FILMS) */
+  ['item', 'Item used'],
+  ['alpha', 'Alpha phase'],
+  ['block', 'Shield blocks'],
+  ['break', 'A part breaks'],
+  ['cry', 'Cry'],
+  ['run', 'Run away'],
+  ['win', 'Victory'],
+  ['lose', 'Defeat'],
+  ...Object.entries(BATTLE_LOOK_FILMS).map(([k, F]) => ['look:' + k, F.label]),
 ];
 const BATTLE_FX_SPEEDS = [
   [0.25, '¼×'],
@@ -521,10 +536,35 @@ function battlePreviewReset() {
       trail: null,
     });
 }
+/* VFX-20: a look film (logic/battle-looks.js BATTLE_LOOK_FILMS): its lines at their times, each with the snapshots
+   its mods bring; its looks take the line when its plates would repaint (at its hit), as battle.js does */
+function battlePreviewLines(key) {
+  const F = BATTLE_LOOK_FILMS[key];
+  if (!F) return;
+  if (typeof battleLooksReset === 'function') battleLooksReset();
+  let cur = battlePreviewEvent().s;
+  const play = x => {
+    const prev = cur;
+    cur = lookSnaps(cur, x.mods);
+    const ev = { an: x.an || null, s: cur, by: x.by, prev, after: x.after, ka: x.ka },
+      r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 },
+      go = () => battleLooksLine(ev);
+    if (r.hit >= 999 || !r.hit) go();
+    else battleStage.evs.push({ t: battleStage.t + r.hit, fn: go, onSkip: go });
+  };
+  for (const x of F.lines) {
+    if (!x.at) play(x);
+    else setTimeout(() => play(x), x.at / battleStage.speed);
+  }
+}
+/** a look film's length on the scrubber: its last line and a beat after */
+const lookFilmMs = key =>
+  BATTLE_LOOK_FILMS[key] ? Math.max(0, ...BATTLE_LOOK_FILMS[key].lines.map(x => x.at || 0)) + 1600 : BATTLE_FX_EVENT_MS;
 /* an event (the Effects buttons before VFX-12, now the editor's events) */
 function battlePreviewPlay(x) {
   const ev = battlePreviewEvent(),
     later = (ms, f) => setTimeout(f, ms / battleStage.speed);
+  if (x.startsWith('look:')) return battlePreviewLines(x.slice(5));
   switch (x) {
     case 'wild':
       battlePreviewReset();
@@ -592,6 +632,34 @@ function battlePreviewPlay(x) {
     case 'faint0':
       battleStagePlay({ k: 'faint', si: 0 }, ev);
       later(1600, battlePreviewReset);
+      break;
+    case 'item': {
+      const it =
+        Object.keys(studioState.D.items).find(k => studioState.D.items[k].hp) || Object.keys(studioState.D.items)[0];
+      battleStagePlay({ k: 'item', it }, ev);
+      later(700, () => battleStagePlay({ k: 'heal', si: 0, amt: 12 }, ev));
+      break;
+    }
+    case 'alpha':
+      battleStagePlay({ k: 'alphaPhase', si: 1 }, ev);
+      break;
+    case 'block':
+      battleStagePlay({ k: 'block', si: 1 }, ev);
+      break;
+    case 'break':
+      battleStagePlay({ k: 'break', si: 1, part: 'armL' }, ev);
+      break;
+    case 'cry':
+      battleStagePlay({ k: 'cry', si: 1 }, ev);
+      break;
+    case 'run':
+      battleStagePlay({ k: 'run' }, ev);
+      later(900, battlePreviewReset);
+      break;
+    case 'win':
+    case 'lose':
+      battleStageOutcome(x);
+      later(1800, battlePreviewReset);
       break;
     case 'catch':
     case 'escape':
@@ -668,6 +736,8 @@ function battleFxClean() {
   S.ring = null;
   battleAnim.flashes.times.length = 0;
   battleAnim.cur = null;
+  /* VFX-20: the lasting looks a look film left (embers, a dome, chevrons) */
+  if (typeof battleLooksReset === 'function') battleLooksReset();
   Object.assign(S.drift, { w: 0, tq: -1, x: 0, y: 0, z: 0, yaw: 0, hz: 0 });
   S.hand.a = 0;
   S.camT = 0;
@@ -733,6 +803,8 @@ function battleFxStart(si) {
   }
   battleFx.clip = `${battlePreview.clip}:${battlePreview.clip === 'move' ? battlePreview.move + ':' + battlePreview.res : battlePreview.ev}:${si}`;
   battleFx.dur = battleFxSpan(battleFx.T);
+  if (battlePreview.clip !== 'move' && String(battlePreview.ev).startsWith('look:'))
+    battleFx.dur = lookFilmMs(battlePreview.ev.slice(5));
 }
 /** plays it live, the scrubber following */
 export function battleFxPlay(si) {
@@ -1144,6 +1216,28 @@ battleFxPanes.push(
             `<tr><th title="${escapeHtml(F[id].about || '')}">${escapeHtml(id)}</th><td>${n(id)}</td><td>${F[id].dur} / ${F[id].hit}</td><td>${F[id].short ? `${F[id].short.dur} / ${F[id].short.hit}` : '—'}</td></tr>`
         )
         .join('')}</table></div>`;
+    },
+  },
+  {
+    /* VFX-20: a family's miss tuned here (VFX-13 built them; the pane only showed them) */
+    id: 'misses',
+    title: 'Misses',
+    sub: 'How each family misses (battleAnims.json families.<id>.miss; VFX-13): when the target sidesteps and how far, when the Miss tag pops, and how long the miss plays (at most maxMs.miss). Buff, guard and heal never miss; a move with no family plays whiff. Play a move with Outcome: Miss to see it.',
+    html: A => {
+      const F = A.families || {},
+        cap = (A.maxMs && A.maxMs.miss) || 760,
+        L = Object.keys(F).filter(id => F[id] && F[id].miss && Array.isArray(F[id].miss.steps));
+      if (!L.length) return '<p class="help">No family has a miss of its own.</p>';
+      const at = (id, kind) =>
+        F[id].miss.steps.findIndex(S => S.do === kind || (kind === 'pop' && S.do === 'pop' && S.pop === 'miss'));
+      const cell = (id, i, k, o) => (i < 0 ? '—' : bfxNum('', `battleAnims.families.${id}.miss.steps.${i}.${k}`, o));
+      return `<div class="bfx-tw"><table class="bfx-t"><tr><th>Family</th><th>Sidestep at (ms)</th><th>Sidestep px</th><th>Miss tag at (ms)</th><th>Plays (ms)</th></tr>${L.map(
+        id => {
+          const d = at(id, 'dodge'),
+            p = at(id, 'pop');
+          return `<tr><th title="${escapeHtml(F[id].miss.about || '')}">${escapeHtml(id)}</th><td>${cell(id, d, 'at', { step: 10, min: 0, max: cap })}</td><td>${cell(id, d, 'dx', { step: 1, min: 0, max: 40 })}</td><td>${cell(id, p, 'at', { step: 10, min: 0, max: cap })}</td><td>${bfxNum('', `battleAnims.families.${id}.miss.dur`, { step: 10, min: 200, max: cap })}</td></tr>`;
+        }
+      ).join('')}</table></div>`;
     },
   },
   {

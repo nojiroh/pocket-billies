@@ -677,7 +677,8 @@ function animKo(c, i) {
 function animLog(C) {
   if (C.logged) return;
   C.logged = true;
-  if (typeof debugLog !== 'undefined') debugLog.add('anim', battleAnimLogLine(C.mid, C.T, C.q, C.held));
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('anim', battleAnimLogLine(C.mid, C.T, C.q, C.held, { ko: C.ko, motion: C.motion }));
 }
 
 /** VFX-11: whether Billie i is a Bureau bot (its moves play in the Bureau's kit; as battle-stage-look.js's mood) */
@@ -777,6 +778,9 @@ function battleAnimPlay(an, ev) {
     },
     C = (battleAnim.cur = { mid: an.mid, T, q, held: [], logged: false });
   c.look = hitLook(c.hitAn, animKo(c, ti), battleStageKit.hitWeight(ti, an), BATTLE_ANIMS);
+  /* VFX-20: the debug log's line names a KO and the motion setting too */
+  C.ko = c.look && c.look.ko;
+  C.motion = reducedMotion ? 'reduced' : document.documentElement.dataset.motion === 'calm' ? 'calm' : 'full';
   /* VFX-9: the effects' random numbers for this event: the move, its sides and the event's place in the battle */
   battleStageKit.fxSeed(
     `${an.mid}|${si}|${ti}|${typeof activeBattle !== 'undefined' && activeBattle ? activeBattle.events.length : 0}`

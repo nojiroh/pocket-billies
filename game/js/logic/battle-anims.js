@@ -21,9 +21,10 @@
  *   timeline's step: when, which repeat, played at once (no `at` in the data) or on the stage clock, and what a skip
  *   does to it
  * @typedef {{ id: string, kind: 'family' | 'scene', variant: 'full' | 'short' | 'miss', dur: number, hit: number,
- *   tier: string, long: boolean, kit: string | null, steps: AnimStep[], repeat?: boolean }} AnimTimeline the kit: the
- *   type kit it plays in (battleAnims.json types; VFX-11); repeat: a scene's short version because it played before
- *   in this battle (VFX-17)
+ *   tier: string, long: boolean, kit: string | null, steps: AnimStep[], repeat?: boolean, fallback?: string }} AnimTimeline
+ *   the kit: the type kit it plays in (battleAnims.json types; VFX-11); repeat: a scene's short version because it
+ *   played before in this battle (VFX-17); fallback: the scene that played its family instead (3D props off, Reduced
+ *   motion; VFX-20, for the debug log)
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -79,6 +80,8 @@ expose({
   hitLook: [() => hitLook, v => (hitLook = v)],
   // @ts-expect-error -- replaced on purpose
   hitTier: [() => hitTier, v => (hitTier = v)],
+  // @ts-expect-error -- replaced on purpose
+  hurtKoAhead: [() => hurtKoAhead, v => (hurtKoAhead = v)],
   // @ts-expect-error -- replaced on purpose
   koAhead: [() => koAhead, v => (koAhead = v)],
   // @ts-expect-error -- replaced on purpose
@@ -184,6 +187,34 @@ export function koAhead(events, i) {
     if (e.k === 'faint' && (e.si === an.ti || (an.spread && side(e.si) === foe))) si.push(e.si);
   }
   if (!si.length) return { ko: false, si, last: false };
+  let last = true;
+  for (let k = i + 1; k < events.length && last; k++) {
+    const e = events[k].an;
+    if (e && (e.k === 'move' || (e.k === 'enter' && side(e.si) === foe))) last = false;
+  }
+  return { ko: true, si, last };
+}
+
+/** VFX-20: koAhead for a hurt line (a burn, the delayed hit, a spread move's second target, recoil, stones...): its
+ * Billie faints before the next move (or the next hurt line of its own) and whether that is the battle's last KO, in
+ * koAhead's shape. A blocked hit (no damage) never knocks out. koAhead itself reads move lines only (SND-13 reads it)
+ * @param {{ an?: any }[]} events @param {number} i @returns {{ ko: boolean, si: number[], last: boolean }} */
+export function hurtKoAhead(events, i) {
+  const an = events[i] && events[i].an,
+    side = (/** @type {number} */ k) => (k === 1 || k === 3 ? 1 : 0),
+    /** @type {number[]} */ si = [];
+  if (!an || an.k !== 'hurt' || an.si == null || !an.dmg || an.fx === 'block') return { ko: false, si, last: false };
+  for (let j = i + 1; j < events.length; j++) {
+    const e = events[j].an;
+    if (!e) continue;
+    if (e.k === 'move' || (e.k === 'hurt' && e.si === an.si)) break;
+    if (e.k === 'faint' && e.si === an.si) {
+      si.push(an.si);
+      break;
+    }
+  }
+  if (!si.length) return { ko: false, si, last: false };
+  const foe = side(an.si);
   let last = true;
   for (let k = i + 1; k < events.length && last; k++) {
     const e = events[k].an;
@@ -327,7 +358,8 @@ export function stepOn(S, G, type, q) {
  * null when the data has no animation for it
  * @param {MoveAn} an @param {Move} M @param {AnimCtx} ctx @param {BattleAnimsData} A @returns {AnimTimeline | null} */
 export function battleAnimTimeline(an, M, ctx, A) {
-  const pick = battleSceneFallback(battleAnimFor(an, M, A), ctx, A);
+  const pick0 = battleAnimFor(an, M, A),
+    pick = battleSceneFallback(pick0, ctx, A);
   if (!pick) return null;
   const fam = (pick.kind === 'scene' ? A.scenes : A.families)[pick.id],
     /* VFX-13: a family's miss is a timeline of its own (no Faster variant: its time is today's miss's) */
@@ -371,6 +403,7 @@ export function battleAnimTimeline(an, M, ctx, A) {
     kit: kit ? kit.id : null,
     steps,
     ...(repeat && short ? { repeat: true } : {}),
+    ...(pick0 && pick0.kind === 'scene' && pick.kind === 'family' ? { fallback: pick0.id } : {}),
   };
 }
 
@@ -398,12 +431,14 @@ export function flashGate(L, now, col, rule) {
   return 'full';
 }
 
-/** the debug log's `anim` line for a move: its id, family or scene, tier, variant, the quality, and the flashes the
- * limiter held back (why, each). No names, no save data
- * @param {string} mid @param {AnimTimeline | null} T @param {number} q @param {string[]} held */
-export function battleAnimLogLine(mid, T, q, held) {
+/** the debug log's `anim` line for a move: its id, family or scene (VFX-20: and the scene a family stands in for),
+ * tier (VFX-20: +ko or +last when it knocks out), variant, the quality (VFX-20: and Calm or Reduced), and the flashes
+ * the limiter held back (why, each). No names, no save data
+ * @param {string} mid @param {AnimTimeline | null} T @param {number} q @param {string[]} held
+ * @param {{ ko?: string | null, motion?: string }} [o] */
+export function battleAnimLogLine(mid, T, q, held, o = {}) {
   if (!T) return `${mid} none`;
-  return `${mid} ${T.kind}:${T.id} ${T.tier} ${T.variant}${T.repeat ? ' repeat' : ''} q${q}${T.long ? ' long' : ''}${held.length ? ' held:' + held.join(',') : ''}`;
+  return `${mid} ${T.kind}:${T.id}${T.fallback ? ' for:scene:' + T.fallback : ''} ${T.tier}${o.ko ? '+' + o.ko : ''} ${T.variant}${T.repeat ? ' repeat' : ''} q${q}${o.motion && o.motion !== 'full' ? ' ' + o.motion : ''}${T.long ? ' long' : ''}${held.length ? ' held:' + held.join(',') : ''}`;
 }
 /* ===== VFX-10: the effect art's timing and colour =====
    A strip's frames are stepped on the stage clock: 12 fps (its fps), an impact's first two frames at 24 fps. A strip
