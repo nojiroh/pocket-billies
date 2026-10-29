@@ -50,6 +50,8 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | Branch | What it is |
 |---|---|
 | `main` | The game. |
+| `track/test-data` | Test data track (docs/phases/test-data-track.md): planned 2026-10-29 on `ccr-b95ade74-f8w3vy`; the owner makes this branch from main (or from that branch before its PR merges), and TD-1 starts here. TD-2 and TD-3 may run at once. To main by pull request. |
+| `ccr-b95ade74-f8w3vy` | Test data track TD-0 (the plan, research and audits; docs only), written here because `track/test-data` didn't exist yet (2026-10-29). Draft PR into main. Delete once its PR merges or is superseded. |
 | `track/cleanup` | Clean-up track (docs/phases/cleanup-track.md): made 2026-10-28 from `ccr-4d35b293-6rc24z` (CU-0's plan) at the owner's approval of the plan. Round 1's four lanes (S, D, R, T) worked here at the same time (2026-10-28), round 2 closed it out (2026-10-29). PR #328 into main. After it merges: tag `cleanup-done` once section 7 of the plan is empty, then delete the branch (until then later CU sessions work here). |
 | `ccr-4d35b293-6rc24z` | Clean-up track CU-0 (the plan, research and audits; docs only), written here because `track/cleanup` didn't exist yet (2026-10-28). Draft PR into main; `track/cleanup` carries the same commits. Delete once its PR merges or is superseded. |
 | `legacy` | The old build (Net Worth v47.x / alpha 0.5), reference only (CLAUDE.md). Tag `legacy` on 0314a22. |

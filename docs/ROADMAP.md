@@ -48,6 +48,13 @@ before the owner has played the first cut on the phone.** MG-3 (towns from the g
 town node needs it.
 
 ## Tracks alongside
+- **Test data track** (docs/phases/test-data-track.md, the owner's brief and answers 2026-10-29): tests and logs
+  that give Claude useful bug and speed data on every device. TD-0 (the plan, research and audits; docs only) done
+  2026-10-29 on `ccr-b95ade74-f8w3vy`. TD-1 quick fixes (the log reader, a crash marker that survives a reload,
+  loading apart from play, the light lab's refused draw), TD-2 the graphics test walks a benchmark path (water, behind
+  things, grass, lamps, fog, rain, rooms; quality pinned; 300 MB budget; resumes after a reload), TD-3 the same path
+  headless with blocking gates (draws, memory +10%, late compiles), TD-4 a richer log and log comparison, TD-5 the
+  test suite tidy-up. TD-2 and TD-3 can run at once. Tags `td-N-done`, then `test-data-done`. Branch `track/test-data`.
 - **Clean-up track** (docs/phases/cleanup-track.md, the owner's brief and answers 2026-10-28): main tidied and laid out
   like a game repo, and no "placeholder" or "AI" in the Studio. CU-0 (the plan, research and audits; docs only) done
   2026-10-28 on `ccr-4d35b293-6rc24z`. Round 1 (done 2026-10-28) ran four sessions at once on `track/cleanup`: lane S (the Studio's
