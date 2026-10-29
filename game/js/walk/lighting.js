@@ -144,6 +144,8 @@ export function modelWindowLight(it, dark0) {
     P.push({ p, n: [nx * cr - nz * sr, nx * sr + nz * cr], lit });
   }
   if (mv && it.p.moving && kept == null) it.p._winOn = on;
+  /* what look-train-ride.py --windows reads back each moment (none of it is drawn from here) */
+  if (mv) it.p._win = [on, seed];
   return { k, on, P, dark, seed: mv ? seed + 2 : seed };
 }
 /* phase 20 C5: the lit lights out of the frame's, with quality.stableLights on kept from frame to frame
