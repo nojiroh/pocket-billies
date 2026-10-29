@@ -9,6 +9,7 @@ import {
   LINE_BY_ID,
   LOCATIONS,
   PASSIVE_INFO,
+  PERKS,
   POOLS,
   SPECIES,
   SPECIES_FORMS,
@@ -19,8 +20,10 @@ import {
   typeEffectiveness,
 } from './game-data.js';
 import { dexCaught, dexSeen, evolutionHint, evolutionItemName, formatNumber } from './logic/rules.js';
+import { rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
+import { collectionRows } from './logic/collection.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
-import { pyramidURL } from './art.js';
+import { artIconHTML, artSilHTML, pyramidURL, uiIconHTML } from './art.js';
 import { bustHTML, rigCanvasHTML } from './skeleton-rig.js';
 import { loreBook, renderLore } from './lore.js';
 import { renderPostcards } from './postcards.js';
@@ -28,14 +31,17 @@ import { progressBarHTML, typeBadgeHTML } from './ui-bits.js';
 import { toast } from './overlay.js';
 /* eslint-disable no-func-assign */
 expose({
+  PERK_GUIDE_KINDS: [() => PERK_GUIDE_KINDS],
   RARITY_NAMES: [() => RARITY_NAMES],
   TRACKS: [() => TRACKS],
   dexStatus: [() => dexStatus, v => (dexStatus = v)],
   evolutionMethod: [() => evolutionMethod, v => (evolutionMethod = v)],
   guideAction: [() => guideAction, v => (guideAction = v)],
   guideTabs: [() => guideTabs, v => (guideTabs = v)],
+  perkGuideRowHTML: [() => perkGuideRowHTML, v => (perkGuideRowHTML = v)],
   renderDexEntry: [() => renderDexEntry, v => (renderDexEntry = v)],
   renderGuide: [() => renderGuide, v => (renderGuide = v)],
+  renderPerkGuide: [() => renderPerkGuide, v => (renderPerkGuide = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -58,6 +64,7 @@ function guideTabs() {
   const t = uiState.guideTab || 'dex';
   return `<div class="seg guide-tabs" role="tablist" aria-label="Field Guide">${[
     ['dex', 'Billies'],
+    ['perks', 'Perks'],
     ['lore', 'Lore'],
     ['cards', 'Postcards'],
   ]
@@ -71,6 +78,8 @@ export function renderGuide() {
   if (uiState.dex && SPECIES[uiState.dex] && dexSeen(uiState.dex)) return renderDexEntry(uiState.dex);
   if (uiState.guideTab === 'cards' && typeof renderPostcards === 'function')
     return `<header class="bar"><div><div class="sub">Greetings from every town you’ve walked into</div><h1 class="where">Postcards</h1></div></header>${guideTabs()}${renderPostcards()}`;
+  if (uiState.guideTab === 'perks')
+    return `<header class="bar"><div><div class="sub">Everything a run can hand you</div><h1 class="where">Perks</h1></div></header>${guideTabs()}${renderPerkGuide()}`;
   if (uiState.guideTab === 'lore' && typeof renderLore === 'function')
     return `<header class="bar"><div><div class="sub">The world, the story, the people</div><h1 class="where">Lore</h1></div></header>${guideTabs()}${renderLore()}`;
   const seen = DEX_ORDER.filter(dexSeen).length,
@@ -108,6 +117,59 @@ export function renderGuide() {
      })
      .join('') || '<li class="lempty">No entries match.</li>'
  }</ol>`;
+}
+/* ---------- PK-12: the Perks tab (logic/collection.js): every Perk, set, held item and boon or curse ---------- */
+/** the tab's kinds: its chip's label and its list's head */
+const PERK_GUIDE_KINDS = [
+  ['perk', 'Perks'],
+  ['set', 'Sets'],
+  ['item', 'Held items'],
+  ['boon', 'Boons and curses'],
+];
+/** one row: the picture (a silhouette until seen), the name, what it does, its rarity and Seen or Taken
+ * @param {string} kind @param {{ id: string, def: any, st: string }} r */
+function perkGuideRowHTML(kind, r) {
+  const D = r.def,
+    sn = r.st !== 'none',
+    name = kind === 'item' ? D.n : D.name,
+    rarity = kind === 'perk' || kind === 'item' ? D.rarity : '';
+  let pic, text;
+  if (kind === 'set') {
+    /* a set has no picture of its own: its Perks', each seen or not */
+    const members = Object.keys(PERKS).filter(id => (PERKS[id].tags || []).includes(r.id));
+    pic = uiIconHTML('relic', 36);
+    text = sn
+      ? `${escapeHtml(D.title)} at ${D.need}: ${escapeHtml(D.d)}<span class="pkg-set">${members
+          .map(id => {
+            const seen = saveData.collection && saveData.collection.seen[`perk:${id}`];
+            return seen ? artIconHTML(PERKS[id].img, 18) : artSilHTML(PERKS[id].img, 18);
+          })
+          .join('')}</span>`
+      : 'Not seen yet.';
+  } else {
+    pic = sn ? artIconHTML(D.img, 36) : artSilHTML(D.img, 36);
+    text = sn
+      ? escapeHtml(D.d) + (kind === 'boon' ? ` <em class="pkg-kind">${D.curse ? 'Curse' : 'Boon'}</em>` : '')
+      : 'Not seen yet.';
+  }
+  const mark =
+    r.st === 'taken' ? '<em class="pkg-st taken">taken</em>' : r.st === 'seen' ? '<em class="pkg-st">seen</em>' : '';
+  return `<li class="pkg-row ${r.st}${kind === 'boon' && D.curse && sn ? ' curse' : ''}"${sn ? rarityRowAttr(rarity) : ''} data-pkg="${kind}:${escapeHtml(r.id)}"><span class="pkg-ic">${pic}</span><span class="pkg-t"><b class="rar-name">${sn ? escapeHtml(name) : 'Unknown'}</b><small>${text}</small></span>${sn && rarity ? rarityPillHTML(rarity) : ''}${mark}</li>`;
+}
+/** the Perks tab: Seen, Taken and the total of every kind, a chip per kind, then that kind's list in the data's order */
+function renderPerkGuide() {
+  const k = PERK_GUIDE_KINDS.some(([x]) => x === uiState.perkGuideK) ? uiState.perkGuideK : 'perk',
+    all = PERK_GUIDE_KINDS.flatMap(([x]) => collectionRows(saveData, x)),
+    seen = all.filter(r => r.st !== 'none').length,
+    taken = all.filter(r => r.st === 'taken').length,
+    rows = collectionRows(saveData, k);
+  const chips = PERK_GUIDE_KINDS.map(([x, l]) => {
+    const n = collectionRows(saveData, x);
+    return `<button class="fchip k-btn${k === x ? ' on' : ''}" data-a="pkgk" data-k="${x}">${l} <small class="tnum">${n.filter(r => r.st !== 'none').length}/${n.length}</small></button>`;
+  }).join('');
+  return `<section class="ledsum paper px k-panel"><div class="ls-row"><div><span class="ls-k">Seen</span><b class="tnum">${seen}</b></div><div><span class="ls-k">Taken</span><b class="tnum">${taken}</b></div><div><span class="ls-k">Total</span><b class="tnum">${all.length}</b></div></div>${progressBarHTML(taken / Math.max(1, all.length), 'gold')}<p class="hand">Runs hand them out. Take them all.</p></section>
+ <div class="fchips">${chips}</div>
+ <ol class="ledger pkg-list paper px k-panel">${rows.map(r => perkGuideRowHTML(k, r)).join('') || '<li class="lempty">No entries.</li>'}</ol>`;
 }
 function evolutionMethod(e) {
   if (!e) return '';
@@ -226,6 +288,10 @@ export function guideAction(a, d) {
       break;
     case 'dexf':
       uiState.dexF = d.f;
+      render();
+      break;
+    case 'pkgk':
+      uiState.perkGuideK = d.k;
       render();
       break;
     case 'guidetab':

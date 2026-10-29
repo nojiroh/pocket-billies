@@ -20,6 +20,7 @@ expose({
   BANTER: [() => BANTER],
   BATTLE_ANIMS: [() => BATTLE_ANIMS],
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BOONS: [() => BOONS],
   BOSSES: [() => BOSSES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
@@ -49,6 +50,7 @@ expose({
   PASSIVE_INFO: [() => PASSIVE_INFO],
   PEOPLE: [() => PEOPLE],
   PERKS: [() => PERKS],
+  PERK_SETS: [() => PERK_SETS],
   POOLS: [() => POOLS],
   PYRAMIDS: [() => PYRAMIDS],
   QUESTS: [() => QUESTS],
@@ -477,6 +479,12 @@ export const FESTIVALS = /** @type {import('../types/game-data').FestivalsData |
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 provide({ PERKS }); /* to-module */
+/* perks track PK-8: Perk sets, a bonus for holding `need` of a set's Perks (perkSets.json; logic/perks.js perkSetsOn) */
+export const PERK_SETS = /** @type {Record<string, import('../types/game-data').PerkSet>} */ (gameData.perkSets || {});
+provide({ PERK_SETS }); /* to-module */
+/* perks track PK-9: boons and curses, named effects that last a few places (boons.json; logic/run-enc.js) */
+export const BOONS = /** @type {Record<string, import('../types/game-data').Boon>} */ (gameData.boons || {});
+provide({ BOONS }); /* to-module */
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 provide({ REWARDS }); /* to-module */
@@ -603,15 +611,20 @@ export const worldExtra = {
   pools: /** @type {string[]} */ ([]),
   shops: /** @type {string[]} */ ([]),
   trainers: /** @type {string[]} */ ([]),
+  /* PK-7: the levels its foes were made with (run-scenes.js runWorldTables' foeUp; null: the hub's, or none given) */
+  foeUp: /** @type {number | null} */ (null),
+  foeSeed: '',
 };
 provide({ worldExtra }); /* to-module */
 /** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS;
  * RL-8b: and its own world map look
  * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,
- *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any }} w */
+ *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any, foeUp?: number, foeSeed?: string }} w */
 export function worldPut(w) {
   worldHubBack();
   worldExtra.look = w.look || null;
+  worldExtra.foeUp = typeof w.foeUp === 'number' ? w.foeUp : null;
+  worldExtra.foeSeed = w.foeSeed || '';
   Object.assign(worldExtra.maps, w.maps);
   Object.assign(gameData.maps, w.maps);
   Object.assign(POOLS, w.pools);
@@ -631,6 +644,8 @@ export function worldAddTrainers(trainers) {
 }
 export function worldHubBack() {
   worldExtra.look = null;
+  worldExtra.foeUp = null;
+  worldExtra.foeSeed = '';
   for (const id of Object.keys(worldExtra.maps)) {
     delete gameData.maps[id];
     delete worldExtra.maps[id];

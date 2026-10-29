@@ -40,6 +40,7 @@ import { metaFill, newMeta, ribbonsShapeOk, validMeta } from './meta-state.js';
 import { newRanch, ranchFill, validRanch } from './ranch-state.js';
 import { ranchTidy } from './ranch.js';
 import { runNodeCount, runRestore, validRun } from './run-state.js';
+import { collectionFill, collectionNew } from './collection.js';
 /* eslint-disable no-func-assign */
 expose({
   SAVE_NEW_MSG: [() => SAVE_NEW_MSG],
@@ -92,6 +93,8 @@ export function newSave() {
     parts: [],
     seen: {},
     caught: {},
+    /* PK-12: the Field Guide's Perks tab (logic/collection.js) */
+    collection: collectionNew(),
     se: R.se,
     pyramids,
     items,
@@ -197,6 +200,8 @@ export function saveFill(o) {
     m.moves = (m.moves || []).filter(k => MOVES[k]);
     if (!m.moves.length && !isRobot(m)) m.moves = movesAt(speciesOf(m).line, m.lvl);
   });
+  /* PK-12: the Perks tab's record keeps what the data still has */
+  s.collection = collectionFill(o.collection);
   for (const key of ['seen', 'caught'])
     if (s[key] && typeof s[key] === 'object') for (const id of Object.keys(s[key])) if (!SPECIES[id]) delete s[key][id];
   if (!s.wild || typeof s.wild !== 'object') s.wild = {};
@@ -308,6 +313,8 @@ export function validSave(o) {
   if (
     !record(o.seen) ||
     !record(o.caught) ||
+    (o.collection != null &&
+      (!record(o.collection) || !record(o.collection.seen || {}) || !record(o.collection.taken || {}))) ||
     !record(o.flags) ||
     !Array.isArray(o.seats) ||
     o.seats.some(v => typeof v !== 'string') ||

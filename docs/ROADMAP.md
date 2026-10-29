@@ -348,10 +348,31 @@ town node needs it.
   maps: 12 Perks, the kinds catchLevel, refund, free and salvage, a money share on arrival, inflict at battle start,
   the rules rewardPick, rerollFree and mapReveal, `needs: bots`, 12 new pictures) done 2026-10-28 on `track/perks`;
   PK-6 (Wave D: rules, growth and adventure: 11 Perks, the kinds copy and give, the rules cap, sideOpen, sideFind and
-  eventHurt, `needs: side`, growth on the cards, 11 new pictures) done 2026-10-28 on `track/perks`; PK-7 (Fine Print)
-  next.
+  eventHurt, `needs: side`, growth on the cards, 11 new pictures) done 2026-10-28 on `track/perks`; PK-7 (Fine Print:
+  12 trade-off Perks of the `fine` rarity, offered only at leader wins, the kinds recoil and loot, a money add, xp on a
+  Perk, the rules noDrop and faintPaysNothing, foe levels and the boss's HP moved at once when taken mid-run, the
+  reward pick's Perk card, the orange cards with a red stamp, 11 new pictures) done 2026-10-28 on `track/perks`; PK-8
+  (Perk sets: the `perkSets` data section and its 7 sets, a set's Perks from their tags, a bonus while 3 are held, the
+  kinds heldBoost, a Perk's price row, the condition unstable, the rules unstableSafe and sidePerk, the cards' set line,
+  the Perks tab grouped by set, the Studio's sets) done 2026-10-28 on `track/perks`; PK-9 (boons and curses: the
+  `boons` data section and its 20 named boons and curses with pictures, the event commands `boon` and `curse`, the four
+  events and the fountain by id, the kinds last, a turnHurt row at arrive, rewardPick -1 and the rules shopClosed,
+  muteNewest, curseShorter and curseErase, the clinic's appeal, five Bureau Red Tape events, Correction Fluid as the
+  79th Perk, boons on the Perks tab and the Map tab's head, the Studio's boons) done 2026-10-29 on `track/perks`;
+  PK-12 (the Field Guide's Perks tab with the save's `collection` record and silhouettes of the unseen, the run sim's
+  `--perks`/`--boons`/`--held` and the balance pass (Costume Fangs 1/8 -> 1/16), Steady Hand, Screen Protector and
+  Rubber Boots redrawn, the section 14 audit, the owner's summary of every decision) done 2026-10-29 on
+  `track/perks`: **the track is done**. Once the owner merges #323, `track/perks` gets the `perks-done` tag and it and
+  `track/perks-items` are deleted.
+  PK-11 (Bag item icons: the 13 consumables drawn in art/items, `img` and dataItemArt, 36 px in the Bag
+  and 72 on reward cards, the Studio's items editor with Edit art, the atlas's 9 `i_*` rectangles retired) done
+  2026-10-28 on `track/perks-items` (the items lane, beside the Perk waves); PK-10 (held items: 16 new, the 8 existing
+  redrawn, the held kinds survive, reflect, drain, last, immune by type and first by chance, when/if/once on hold rows,
+  the Studio's held rows, every `i_` atlas rectangle retired) done 2026-10-28 on `track/perks-items`; the items lane is
+  finished.
   The owner's standing instruction: each step starts in a new session with its plan approved, until PK-12. About 12
-  sessions. Tags `pk-N-done`. Branch `track/perks` (made by PK-1's session).
+  sessions. No per-session tags (CLAUDE.md); `perks-done` once #323 merges. Branch `track/perks` (made by PK-1's
+  session).
 - **Style track** (docs/phases/style-track.md, the owner's brief 2026-10-27, after the VFX track): three style ideas
   picked from research, fitted to the game. The Bureau's own paperwork look (an emblem, red-ink stamps, case-file
   events with redaction, a Notice of Retrieval at the boss's join, ID plates on its bots, red tape and loose forms in

@@ -25,7 +25,7 @@
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
 import { glyphOf, sigVar } from './logic/signals.js';
-import { chipLook, rarityTier } from './logic/marks.js';
+import { chipLook, rarityColour, rarityTier } from './logic/marks.js';
 import { motionCountAt, motionCountMs } from './logic/motion.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { styleNote } from './theme-sheet.js';
@@ -610,6 +610,21 @@ const PbPickCard = class extends LitElement {
       :host([rarity]) h3 {
         color: var(--rar-t, inherit);
       }
+      /* PK-7: Fine Print's stamp (perks-track.md section 11, item 1): a small red rubber stamp in place of the tier's
+         pill, a double red edge, tilted */
+      .stamp {
+        padding: 1px 5px;
+        border: 2px double var(--sig-bad-text);
+        border-radius: 2px;
+        color: var(--sig-bad-text);
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        transform: rotate(-6deg);
+      }
       /* UI-14b: what kind of pickup (the colour code's "family colour + frame shape: the card's ribbon"): kind="..." (a
          UI_GLYPHS.kind id: perk, held, item, candy, evo, tutor, part, scrap) draws the sub line as a slanted ribbon
          in its family's tint with a bar of its fill and its glyph in its text shade; a neutral kind (item) stays
@@ -780,7 +795,9 @@ const PbPickCard = class extends LitElement {
   }
   render() {
     const t = rarityTier(this.rarity),
-      rar = t ? `--rar:var(--sig-${t});--rar-t:var(--sig-${t}-text)` : '';
+      /* PK-7: Fine Print in the ladder's top orange (rarityColour), its red stamp in place of the pill */
+      c = rarityColour(t),
+      rar = t ? `--rar:var(--sig-${c});--rar-t:var(--sig-${c}-text)` : '';
     return html`<button
       part="button"
       ?disabled=${this.disabled}
@@ -793,9 +810,9 @@ const PbPickCard = class extends LitElement {
           ${
             t
               ? html`<span class="rar" aria-hidden="true"></span>${
-                  /* UI-17: a rare or mythical card's foil (pb-foil: idle life) */
-                  t === 'rare' || t === 'mythical' ? html`<pb-foil></pb-foil>` : nothing
-                }<pb-rarity class="tier" tier=${t}></pb-rarity>`
+                  /* UI-17: a rare or mythical card's foil (pb-foil: idle life); PK-7: Fine Print's too */
+                  t === 'rare' || t === 'mythical' || t === 'fine' ? html`<pb-foil></pb-foil>` : nothing
+                }${t === 'fine' ? html`<span class="tier stamp">Fine Print</span>` : html`<pb-rarity class="tier" tier=${t}></pb-rarity>`}`
               : nothing
           }
           <span class="art"><slot name="art"></slot></span>
