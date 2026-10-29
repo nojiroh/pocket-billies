@@ -417,3 +417,73 @@ test('PK-9 with Correction Fluid the first Bureau curse of a run is erased', asy
   await playOption(s, 'paperwork_avalanche', 2);
   assert.deepEqual(s.run.enc.boons, [{ id: 'out_of_office', left: 2, src: 'paperwork_avalanche' }]);
 });
+
+/* ---------- everything at once ---------- */
+
+test('PK-9 every Perk, set, boon and curse at once: whole battles end, every number finite, replayable', () => {
+  const ids = Object.keys(data.PERKS),
+    boons = Object.keys(data.BOONS);
+  assert.equal(ids.length, 79);
+  assert.equal(boons.length, 20);
+  reseed(3);
+  const s = runSave(ids),
+    E = modules.effects,
+    L = modules['run-loop'];
+  for (const id of boons) modules['run-enc'].encBoonGive(s.run, id, 'test');
+  const fx = fn('fxOfRun')(s.run, data.PERKS),
+    srcs = new Set(fx.map(f => f.src));
+  for (const id of boons) assert.ok(srcs.has('boon:' + id), id);
+  assert.ok(!srcs.has(ids[ids.length - 1]), 'Permit Revoked: the newest Perk gives nothing');
+  const play = seed => {
+    reseed(7);
+    const t = startedSave(starter(), 20);
+    for (let i = 0; i < 2; i++) t.team.push(fn('makeBilly')(starter(), 20));
+    assert.ok(fn('newBattle')('wild', [fn('makeBilly')(wild(), 20)], { fmt: 'single', seed, fx, perkState: {} }));
+    const b = hooks.activeBattle,
+      out = [];
+    for (let k = 0; k < 200 && !b.over; k++) {
+      if ((b.needSwitch || []).length) {
+        const i = fn('benchCandidates')(0)[0];
+        if (i == null) break;
+        fn('doSwitch')(b.needSwitch.shift(), i);
+        continue;
+      }
+      const m = fn('fighter')(0),
+        mid = m.moves.find(id => data.MOVES[id] && data.MOVES[id].p > 0) || m.moves[0];
+      fn('runTurn')([{ who: 0, k: 'move', mid, tk: 1 }], b);
+      for (const side of b.sides)
+        for (const q of side.team) assert.ok(Number.isInteger(q.hp) && q.hp >= 0, `hp ${q.hp}`);
+      out.push(b.events.length);
+    }
+    assert.ok(b.over || (b.needSwitch || []).length, `${seed}: over within 200 turns`);
+    return [b.over, ...out].join();
+  };
+  for (const seed of ['boons-all-a', 'boons-all-b']) assert.equal(play(seed), play(seed), seed);
+  /* the run's moments and rules, many times over: finite */
+  s.se = 500;
+  for (let i = 0; i < 6; i++) {
+    L.runArriveFx(s, data.PERKS, {});
+    L.runBuyFx(s, data.PERKS, 50);
+    L.runFxMoment(s, data.PERKS, 'win', { foe: ['wild'], noFaint: true });
+  }
+  assert.ok(Number.isInteger(s.se) && s.se >= 0, String(s.se));
+  for (const m of s.team) assert.ok(Number.isInteger(m.hp) && m.hp >= 0);
+  for (const r of E.FX_RULES) assert.ok(Number.isInteger(E.fxRunRule(s.run, r)), r);
+  assert.ok(s.run.enc.boons.length === 0, 'every boon and curse ran out');
+});
+
+test('PK-9 every timed effect has a name and a picture; no event leaves an unnamed one', async () => {
+  const { existsSync, readFileSync } = await import('node:fs'),
+    { svgProblem } = modules['svg-pixels'],
+    art = new URL('../../game/art/', import.meta.url);
+  for (const [id, B] of Object.entries(GAME_DATA.boons)) {
+    assert.ok(B.name && B.d, id);
+    assert.equal(B.img, `boons/${id}.svg`, id);
+    const f = new URL(B.img, art);
+    assert.ok(existsSync(f), `${id}: ${B.img}`);
+    assert.equal(svgProblem(readFileSync(f, 'utf8')), '', id);
+  }
+  for (const [id, E] of Object.entries(GAME_DATA.events.events))
+    for (const o of E.options) assert.ok(!o.then.some(l => /^fx /.test(l)), `${id}: an unnamed fx row`);
+  assert.ok(!GAME_DATA.rules.square.wish.outcomes.some(o => o.fx), 'the fountain names its boons');
+});
