@@ -22,6 +22,7 @@ import {
   musicStingerShift,
 } from '../logic/music-patterns.js';
 import { musicLayerGain, musicLayerHas, musicLayerMove } from '../logic/music-layers.js';
+import { mixDuck } from '../logic/sound-duck.js';
 import { mixDuckerMake } from './mix-chain.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -1379,8 +1380,12 @@ export function trackerCreate(ctx, bus, opts = {}) {
     return Promise.all(waits).then(() => true);
   };
   /* the song's duck under a jingle, from t0 to its end: to 0.15 of its level, back over 0.8 s. SND-15: on the songs'
-     duck (T.duck), no longer on the song's fader */
-  const duckUnder = (t0, end) => T.duck(t0, end, 0.15, 0.1, 0.8, 'jingle');
+     duck (T.duck), no longer on the song's fader; how far and how fast from music.json mix duck jingle (opts.mix) */
+  const duckUnder = (t0, end) => {
+    const M = opts.mix && opts.mix(),
+      D = M && M.duck && M.duck.jingle ? mixDuck(M, 'jingle') : { music: 0.15, a: 0.1, r: 0.8, hold: 0 };
+    T.duck(t0, end + D.hold, D.music, D.a, D.r, 'jingle');
+  };
   /* SND-17: a stinger (a jingle marked `stinger`: a Perk, the reveal, a day, a coin) over a song drops the song's busy
      parts (its tune, counter and arpeggio: the gb stems and the ensemble's parts) to 0.2 instead of ducking all of it,
      from its beat to its end, back over 0.4 s. All at step times; a stinger that starts while one is still down keeps

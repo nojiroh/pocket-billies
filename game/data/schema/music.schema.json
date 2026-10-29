@@ -832,6 +832,46 @@
     "still",
     "calm"
    ]
+  },
+  "duck": {
+   "description": "SND-15: one kind of duck",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "music": {
+     "description": "dB the music comes down (0 or left out: not at all)",
+     "type": "number",
+     "minimum": -40,
+     "maximum": 0
+    },
+    "beds": {
+     "description": "dB the world sounds and the ambience come down",
+     "type": "number",
+     "minimum": -40,
+     "maximum": 0
+    },
+    "attack": {
+     "description": "s the dip takes to come",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "release": {
+     "description": "s it takes to go",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 4
+    },
+    "hold": {
+     "description": "s it stays after each sound (talk: each letter's blip)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 4
+    }
+   }
   }
  },
  "properties": {
@@ -1211,7 +1251,7 @@
    }
   },
   "mix": {
-   "description": "SND-6: the mix: each bus's trim (x the square of its Settings slider; logic: audio/levels.js) and (SND-15) the master chain (audio/mix-chain.js: the compressor, the make-up gain, the limiter)",
+   "description": "SND-6: the mix: each bus's trim (x the square of its Settings slider; logic: audio/levels.js) and (SND-15) the master chain (audio/mix-chain.js: the compressor, the make-up gain, the limiter) and the ducks",
    "type": "object",
    "additionalProperties": false,
    "properties": {
@@ -1312,6 +1352,28 @@
        "type": "number",
        "minimum": 0,
        "maximum": 1
+      }
+     }
+    },
+    "duck": {
+     "description": "SND-15: what ducks under a jingle, a stinger, a cry and talk (audio/levels.js mixDuck)",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "about": {
+       "type": "string"
+      },
+      "jingle": {
+       "$ref": "#/$defs/duck"
+      },
+      "stinger": {
+       "$ref": "#/$defs/duck"
+      },
+      "cry": {
+       "$ref": "#/$defs/duck"
+      },
+      "talk": {
+       "$ref": "#/$defs/duck"
       }
      }
     }

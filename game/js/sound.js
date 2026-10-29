@@ -82,7 +82,8 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
-import { mixChainMake } from './audio/mix-chain.js';
+import { mixDuck } from './logic/sound-duck.js';
+import { mixChainMake, mixDuckerMake } from './audio/mix-chain.js';
 import { midiToFrequency, trackerCreate, trackerRecipe } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -150,6 +151,7 @@ expose({
   runArriveSound: [() => runArriveSound, v => (runArriveSound = v)],
   soundBedDuck: [() => soundBedDuck, v => (soundBedDuck = v)],
   soundDebugLines: [() => soundDebugLines, v => (soundDebugLines = v)],
+  soundDuck: [() => soundDuck, v => (soundDuck = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
@@ -228,6 +230,11 @@ function initSound() {
     soundEngine.master = c.createGain();
     soundEngine.master.gain.value = mixTrim(MUSIC.mix, 'master');
     soundEngine.master.connect(chain.input);
+    /* SND-15: the world sounds' and the ambience's duck: a gain of the ducker's own between their buses and the master
+       (soundDuck), so a jingle, a cry or talk dips them without touching their sliders, fade-in or bedsUnderSong */
+    soundEngine.bedsDuck = c.createGain();
+    soundEngine.bedsDuck.connect(soundEngine.master);
+    soundEngine.bedsDucker = mixDuckerMake(c, () => [soundEngine.bedsDuck.gain]);
     soundEngine.mus = c.createGain();
     soundEngine.fx = c.createGain();
     /* v27: a filter on the music, closed a little in the rain */ soundEngine.musLP = c.createBiquadFilter();
@@ -255,6 +262,8 @@ function initSound() {
           ? { ...soundEngine.L, layers: soundEngine.testLayers }
           : soundEngine.L,
       fx: soundEngine.fx,
+      /* SND-15: what a jingle ducks the music by (music.json mix duck) */
+      mix: () => MUSIC.mix,
       /* SND-9: the beds' noise counts toward the baked buffers' budget (the tracker's bank) */
       memory: () => (ambience.noise ? (ambience.noise.pink.length + ambience.noise.brown.length) * 4 : 0),
       /* SND-9: the reverb returns to the master, after the sliders' own buses */
@@ -565,8 +574,10 @@ setInterval(() => {
 /* SND-1: bus is where it plays, the effects bus unless asked (Settings → Sound → Music's Test plays one on the music bus) */
 export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   if (!initSound() || soundEngine.ctx.state !== 'running') return;
-  const end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - soundEngine.ctx.currentTime;
+  const t0 = soundEngine.ctx.currentTime,
+    end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - t0;
   soundEngine.jingle = performance.now() + end * 1000 + 200;
+  soundDuck('jingle', t0, t0 + end, false);
 }
 /* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave; SND-17: o.bpm, the battle's
    level up at 180); on its ensemble when it names one (tracker.js T.jingle); o.shift moves it by
@@ -582,15 +593,26 @@ export function jinglePlay(id, o = {}) {
     as: !ens ? 'gb' : T.gbOn() ? 'gb (GB Sounds)' : T.jingleReady(J) ? J.ensemble : 'gb (baking)',
   };
   const out = o.bus || soundEngine.fx,
+    t0 = soundEngine.ctx.currentTime,
     end =
       soundEngine.tracker.jingle(J.notes, o.bpm || J.bpm || 150, J.wave || 'p25', out, {
         shift: o.shift,
         duck: o.duck,
         jingle: J,
-      }) - soundEngine.ctx.currentTime;
+      }) - t0;
   if (o.duck !== false) soundEngine.jingle = performance.now() + end * 1000 + 200;
+  /* SND-15: the beds dip under it too (the tracker dips the music, or a stinger its busy parts) */
+  if (o.duck !== false) soundDuck(J.stinger ? 'stinger' : 'jingle', t0, t0 + end, false);
   soundLog('jingle ' + id + (o.shift ? ' +' + o.shift : ''));
   return end;
+}
+/* SND-15: a jingle, a stinger, a cry or talk ducks the music (the tracker's duck, when music is true) and the world
+   sounds and ambience (their own), by music.json mix duck, from t0 to end (the context's clock), held `hold` more */
+function soundDuck(kind, t0, end, music = true) {
+  const T = soundEngine.tracker,
+    D = mixDuck(MUSIC.mix, kind);
+  if (music && T && T.song && D.music < 1) T.duck(t0, end + D.hold, D.music, D.a, D.r, kind);
+  if (soundEngine.bedsDucker && D.beds < 1) soundEngine.bedsDucker.add(t0, end + D.hold, D.beds, D.a, D.r, kind);
 }
 /* SND-6: walking into a run's next place: a day passes (the day jingle), then the reveal jingle when the map shows more
    than it did */
@@ -614,6 +636,8 @@ export function soundEffect(name, o = {}) {
       uiSound('select');
       break;
     case 'blip': {
+      /* SND-15: talk dips the music and the beds a little; each letter's blip holds the dip (mix duck talk hold) */
+      soundDuck('talk', t, t + 0.05);
       if (o.who === 'kappi') {
         /* Kappi, a capybara: a low, soft, falling note with a small click in front, like a capybara's purr and click */
         synthNoise(F, { t, dur: 0.012, vol: 0.03, bp: 3200, q: 1.4 });
@@ -797,7 +821,10 @@ function cryPlay(sp, low) {
       slide: v.slide,
       vib: v.vib,
     });
-  return Math.max(0, ...V.map(v => v.at + v.dur));
+  const len = Math.max(0, ...V.map(v => v.at + v.dur));
+  /* SND-15: the music and the beds dip under it */
+  if (len > 0) soundDuck('cry', t, t + len);
+  return len;
 }
 /* SND-6: a Billie's cry in battle, from the line's snapshot of its slot (ev.s: its species and its HP then): its low-HP
    cry in the red zone (logic/music-where.js musicRedZone, as the music's tense version); RL-14: a bot's too */
@@ -1067,10 +1094,10 @@ function initAmbience() {
   const c = soundEngine.ctx;
   ambience.bus = c.createGain();
   ambience.bus.gain.value = 0;
-  ambience.bus.connect(soundEngine.master);
+  ambience.bus.connect(soundEngine.bedsDuck || soundEngine.master);
   ambience.amb = c.createGain();
   ambience.amb.gain.value = 0;
-  ambience.amb.connect(soundEngine.master);
+  ambience.amb.connect(soundEngine.bedsDuck || soundEngine.master);
   /* v47: the outdoors comes through a low-pass of its own, closed down when you are in a room laid into the place:
     the town's murmur, the birds, the rain on the roof and the fountain outside reach you through the walls */
   const lp = to => {
