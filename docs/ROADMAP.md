@@ -235,7 +235,7 @@ town node needs it.
   branch `claude/vfx-17-scenes-1`: the batch's storyboards first, then `propWorldItem` and summoned low-poly models
   with Part 1's smears, the drawn stamp (SIU!, KA-CHING!, TOOT!), the cut, 18 scenes (the 12 of power 100+ and 6
   more) at most 0.5 s longer, a short repeat from a scene's second use, its family with 3D props off or under Reduced
-  motion) built 2026-10-28 (PR #324 into `track/vfx`, merged by VFX-20).
+  motion) built 2026-10-28 (PR #324 into `track/vfx`, merged by VFX-20). VFX-18 (signature scenes 2, wave 4, side branch `claude/vfx-18-scenes-2`: 19 more storyboards first, then 19 scenes on VFX-17's primitives with generic props only (no slogan stamped), the drawn words WHIRR!, TICK!, CLICK!, FORE!, status scenes within their family's time) built 2026-10-29 (PR #329 into `track/vfx`; VFX-18b does the other 19).
   VFX-19 (move sounds: music.json `battle`, a sound per move family layered by type, hurt sounds, the recall, throws
   and catches with body and echo, the Studio's Battle card, check-sound fingerprints; placeholders until the owner's
   listening pass) built 2026-10-28 on `claude/vfx-19-move-sounds` (PR #325 into `track/vfx`, merged by VFX-20).
