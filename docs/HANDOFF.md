@@ -5,7 +5,7 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 ### VFX track VFX-18 - Signature scenes 2: 19 more scenes on VFX-17's primitives, four drawn sound words - 2026-10-29
 Side branch `claude/vfx-18-scenes-2` (wave 4, beside VFX-18b on `claude/vfx-18b-scenes-3`; VFX-20 on `track/vfx`),
 made from VFX-17's finished `claude/vfx-17-scenes-1` at b34ab164 (track/vfx b475bb15 already in it); `origin/track/vfx`
-merged in at d339a162 (8607080a: VFX-13's docs, VFX-17 and VFX-19 merged); draft PR #329 into `track/vfx`. Run under
+merged in at d339a162 (8607080a: VFX-13's docs, VFX-17 and VFX-19 merged) and again at 5a818ecf (8bc377f5: VFX-20's burstSprites, types.json fx and the old 2D effect drawing removed; npm test 1995 of 1995 and traces of the 19 x hit, crit, miss, blocked from both sides clean after it); draft PR #329 into `track/vfx`. Run under
 the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and
 listed below. No tag (main's CLAUDE.md). Told first: VFX-18b (every shared place: the word strips and GLYPHS, the
 scenes block, VFX-17's scene test, the snapshot, the film tool); no shared function, schema, sound file or style
