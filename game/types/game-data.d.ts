@@ -71,6 +71,7 @@ export interface GameData {
   banter?: Record<DataId, BanterLine>;
   /** DL-3: each character's own speech bubble (logic/talk-skins.js) */
   talkSkins?: TalkSkins;
+  emotes?: Emotes;
   /** RL-S2: the hub folk and you (relations.json) */
   relations?: RelationsData;
   /** ON-3: the Showcase's weekly themes and ribbons (game/data/showcase.json) */
@@ -3139,4 +3140,13 @@ export interface TalkSkins {
   skins: Record<DataId, TalkSkin>;
   speakers: Record<DataId, DataId>;
   classes: Record<DataId, DataId>;
+}
+/** DL-5: emotes.json: the emotes that pop beside a talking head, as pixel grids */
+export interface Emotes {
+  about?: string;
+  size: number;
+  outline: string;
+  colors: Record<string, string>;
+  auto: Record<string, string>;
+  emotes: Record<string, string[]>;
 }
