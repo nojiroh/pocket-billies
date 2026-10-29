@@ -70,6 +70,42 @@
     "maxItems": 3
    }
   },
+  "prog": {
+   "type": "array",
+   "items": {
+    "type": "integer",
+    "minimum": 0,
+    "maximum": 6
+   },
+   "minItems": 4,
+   "maxItems": 16
+  },
+  "section": {
+   "description": "SND-12: a section of a song's form: its chords, and optionally its own hook and counter (steps 0-31 of the section, as the song's), its seed (the song's + 97 when left out) and the hook's name",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "prog"
+   ],
+   "properties": {
+    "prog": {
+     "$ref": "#/$defs/prog"
+    },
+    "hook": {
+     "$ref": "#/$defs/line"
+    },
+    "counter": {
+     "$ref": "#/$defs/line"
+    },
+    "seed": {
+     "type": "integer"
+    },
+    "hookName": {
+     "type": "string",
+     "maxLength": 200
+    }
+   }
+  },
   "recipe": {
    "type": "object",
    "properties": {
@@ -94,15 +130,28 @@
      ]
     },
     "prog": {
-     "description": "the chord of each bar, as a scale degree from 0 (I) to 6 (vii); eight bars",
+     "description": "the chord of each bar, as a scale degree from 0 (I) to 6 (vii); 4-16 bars (eight until SND-12). With a form, this is section A's",
+     "$ref": "#/$defs/prog"
+    },
+    "form": {
+     "description": "SND-12: the song's sections in the order they play, then it loops (\"A\" is the song's own prog, hook and counter; the others are in sections), 16-32 bars in all. A repeat is varied (its free bar walked again, every other one's arpeggio an octave up), each section's last bar has a drum fill and the bass walks into the next; the loop's last bar comes home. Left out: one section, as before",
      "type": "array",
      "items": {
-      "type": "integer",
-      "minimum": 0,
-      "maximum": 6
+      "type": "string",
+      "pattern": "^[A-Z][a-z0-9]*$"
      },
-     "minItems": 8,
+     "minItems": 1,
      "maxItems": 8
+    },
+    "sections": {
+     "description": "SND-12: the sections other than A, by name (B, C...): each its own chords, and a hook and counter if written (else its tune is the seeded walk)",
+     "type": "object",
+     "propertyNames": {
+      "pattern": "^[B-Z][a-z0-9]*$"
+     },
+     "additionalProperties": {
+      "$ref": "#/$defs/section"
+     }
     },
     "lead": {
      "$ref": "#/$defs/wave"
@@ -134,6 +183,7 @@
       "drive",
       "march",
       "bossa",
+      "walk",
       "none"
      ]
     },
@@ -183,6 +233,643 @@
     "counterAuto": {
      "description": "SND-5: with no counter written, make one from the hook (each note on a chord tone a third or more below it; the run's last rows)",
      "type": "boolean"
+    },
+    "ensemble": {
+     "description": "SND-11: the ensemble that plays the song (music.json ensembles), or gb: today's four chip voices (a reserved id, never an ensemble's). Left out: gb. A night, tense or arc version may name its own. Settings -> Sound -> GB Sounds plays every song as gb",
+     "$ref": "#/$defs/id"
+    }
+   }
+  },
+  "instrument": {
+   "description": "SND-11: a baked instrument (logic/sound-bake.js renders its zones through the tracker's bank; synth only, never a sound file). Each kind reads its own keys; the others are left out",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "kind",
+    "lo",
+    "hi",
+    "every",
+    "level"
+   ],
+   "properties": {
+    "name": {
+     "type": "string",
+     "maxLength": 200,
+     "description": "what it is, for the Studio"
+    },
+    "kind": {
+     "enum": [
+      "pluck",
+      "fm",
+      "partials",
+      "stack",
+      "wind",
+      "hit"
+     ],
+     "description": "pluck: a Karplus-Strong string; fm: two operators (a third, the tine); partials: struck sines (bars, bells, timpani); stack: detuned oscillators (strings, reeds, a choir, brass); wind: harmonics and breath (a flute, a clarinet, a bass); hit: a drum or a shaken thing"
+    },
+    "lo": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 127,
+     "description": "the lowest note it plays (midi)"
+    },
+    "hi": {
+     "type": "integer",
+     "minimum": 0,
+     "maximum": 127,
+     "description": "the highest note it plays"
+    },
+    "every": {
+     "type": "integer",
+     "minimum": 1,
+     "maximum": 24,
+     "description": "a zone (one baked note) every this many semitones"
+    },
+    "level": {
+     "type": "number",
+     "description": "the zone's peak",
+     "minimum": 0.05,
+     "maximum": 1
+    },
+    "seed": {
+     "type": "integer",
+     "description": "its noise's seed (the same seed, the same sound)"
+    },
+    "sec": {
+     "type": "number",
+     "description": "seconds a zone lasts (pluck: at middle C)",
+     "exclusiveMinimum": 0,
+     "maximum": 4
+    },
+    "minSec": {
+     "type": "number",
+     "description": "pluck: the shortest zone",
+     "exclusiveMinimum": 0,
+     "maximum": 4
+    },
+    "maxSec": {
+     "type": "number",
+     "description": "pluck: the longest zone",
+     "exclusiveMinimum": 0,
+     "maximum": 4
+    },
+    "t60": {
+     "type": "number",
+     "description": "pluck, fm: seconds to fall 60 dB",
+     "exclusiveMinimum": 0,
+     "maximum": 20
+    },
+    "bright": {
+     "type": "number",
+     "description": "pluck: the pluck's low-pass (Hz)",
+     "minimum": 100,
+     "maximum": 20000
+    },
+    "pick": {
+     "type": "number",
+     "description": "pluck: where it is plucked (a share of the string)",
+     "exclusiveMinimum": 0,
+     "maximum": 0.5
+    },
+    "tone": {
+     "type": "number",
+     "description": "pluck: the output's low-pass (Hz); hit: the tone's level",
+     "minimum": 0,
+     "maximum": 20000
+    },
+    "ratio": {
+     "type": "number",
+     "description": "fm: the modulator against the note",
+     "exclusiveMinimum": 0,
+     "maximum": 32
+    },
+    "index": {
+     "type": "number",
+     "description": "fm: the modulation at the start",
+     "minimum": 0,
+     "maximum": 20
+    },
+    "indexEnd": {
+     "type": "number",
+     "description": "fm: the modulation at the end",
+     "minimum": 0,
+     "maximum": 20
+    },
+    "tine": {
+     "type": "number",
+     "description": "fm: a third operator's index (the e-piano's bark)",
+     "minimum": 0,
+     "maximum": 10
+    },
+    "tineRatio": {
+     "type": "number",
+     "description": "fm: the tine against the note",
+     "exclusiveMinimum": 0,
+     "maximum": 32
+    },
+    "tineTau": {
+     "type": "number",
+     "description": "fm: seconds the tine takes to die (to 1/e)",
+     "exclusiveMinimum": 0,
+     "maximum": 2
+    },
+    "list": {
+     "description": "partials: [ratio to the note, amplitude, seconds to fall to 1/e]",
+     "type": "array",
+     "minItems": 1,
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+     }
+    },
+    "a": {
+     "type": "number",
+     "description": "attack (s)",
+     "minimum": 0,
+     "maximum": 4
+    },
+    "d": {
+     "type": "number",
+     "description": "stack, wind: decay to the sustain (s, to 1/e)",
+     "minimum": 0,
+     "maximum": 4
+    },
+    "s": {
+     "type": "number",
+     "description": "stack, wind: the sustain's level (0: a one-shot, never looped)",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "click": {
+     "type": "number",
+     "description": "partials, hit: a tick of noise at the strike",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "bend": {
+     "type": "number",
+     "description": "partials: how far above the note a drum starts (a share)",
+     "minimum": 0,
+     "maximum": 0.5
+    },
+    "bendTau": {
+     "type": "number",
+     "description": "partials: seconds the bend takes to settle",
+     "exclusiveMinimum": 0,
+     "maximum": 2
+    },
+    "thump": {
+     "type": "number",
+     "description": "partials: a felt mallet's thump",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "thumpLp": {
+     "type": "number",
+     "description": "partials: the thump's low-pass (Hz)",
+     "minimum": 50,
+     "maximum": 8000
+    },
+    "wave": {
+     "enum": [
+      "sine",
+      "triangle",
+      "saw",
+      "pulse"
+     ],
+     "description": "stack: each voice's wave"
+    },
+    "duty": {
+     "type": "number",
+     "description": "stack: a pulse's share up",
+     "exclusiveMinimum": 0,
+     "exclusiveMaximum": 1
+    },
+    "cents": {
+     "description": "stack: one voice per offset from the note, in cents",
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 12,
+     "items": {
+      "type": "number",
+      "minimum": -2400,
+      "maximum": 2400
+     }
+    },
+    "cut": {
+     "type": "number",
+     "description": "stack: the low-pass's highest cutoff (Hz)",
+     "minimum": 100,
+     "maximum": 20000
+    },
+    "track": {
+     "type": "number",
+     "description": "stack: the cutoff as a multiple of the note",
+     "minimum": 0,
+     "maximum": 40
+    },
+    "base": {
+     "type": "number",
+     "description": "stack: Hz added to the tracked cutoff",
+     "minimum": 0,
+     "maximum": 8000
+    },
+    "q": {
+     "type": "number",
+     "description": "stack, hit: the filter's Q",
+     "minimum": 0.3,
+     "maximum": 20
+    },
+    "formants": {
+     "description": "stack: a vowel's band-passes [Hz, Q, gain] in place of the low-pass (a choir)",
+     "type": "array",
+     "items": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3
+     }
+    },
+    "vib": {
+     "type": "number",
+     "description": "stack, wind: the vibrato's depth (a share of the pitch)",
+     "minimum": 0,
+     "maximum": 0.05
+    },
+    "vibRate": {
+     "type": "number",
+     "description": "stack, wind: the vibrato's Hz",
+     "minimum": 0,
+     "maximum": 12
+    },
+    "vibDelay": {
+     "type": "number",
+     "description": "stack, wind: seconds before the vibrato comes in",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "scoop": {
+     "type": "number",
+     "description": "stack: cents under the note at the start (brass)",
+     "minimum": 0,
+     "maximum": 200
+    },
+    "open": {
+     "type": "number",
+     "description": "stack: how far the filter opens at the start (x the cutoff, over 1)",
+     "minimum": 0,
+     "maximum": 10
+    },
+    "openTau": {
+     "type": "number",
+     "description": "stack: seconds the opening takes to close",
+     "exclusiveMinimum": 0,
+     "maximum": 2
+    },
+    "noise": {
+     "type": "number",
+     "description": "stack: a breath of noise; hit: the noise's level",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "hold": {
+     "type": "number",
+     "description": "stack, wind: seconds of the sustain that loop while a note is held",
+     "minimum": 0.05,
+     "maximum": 2
+    },
+    "fade": {
+     "type": "number",
+     "description": "stack, wind: seconds of the loop's crossfade",
+     "minimum": 0.001,
+     "maximum": 1
+    },
+    "harmonics": {
+     "description": "wind: the amplitude of the 1st, 2nd, 3rd... harmonic",
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 16,
+     "items": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 2
+     }
+    },
+    "breath": {
+     "type": "number",
+     "description": "wind: breath noise's level",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "breathAt": {
+     "type": "number",
+     "description": "wind: the breath's band, a multiple of the note",
+     "exclusiveMinimum": 0,
+     "maximum": 16
+    },
+    "breathQ": {
+     "type": "number",
+     "description": "wind: the breath's Q",
+     "minimum": 0.3,
+     "maximum": 20
+    },
+    "chiff": {
+     "type": "number",
+     "description": "wind: a puff of noise at the start",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "from": {
+     "type": "number",
+     "description": "hit: the tone's Hz at the strike",
+     "minimum": 10,
+     "maximum": 20000
+    },
+    "to": {
+     "type": "number",
+     "description": "hit: the Hz it falls to",
+     "minimum": 10,
+     "maximum": 20000
+    },
+    "sweep": {
+     "type": "number",
+     "description": "hit: seconds the fall takes (to 1/e)",
+     "exclusiveMinimum": 0,
+     "maximum": 2
+    },
+    "toneTau": {
+     "type": "number",
+     "description": "hit: seconds the tone takes to die",
+     "exclusiveMinimum": 0,
+     "maximum": 4
+    },
+    "filter": {
+     "enum": [
+      "lowpass",
+      "highpass",
+      "bandpass"
+     ],
+     "description": "hit: the noise's filter"
+    },
+    "at": {
+     "type": "number",
+     "description": "hit: the filter's Hz",
+     "minimum": 20,
+     "maximum": 20000
+    },
+    "noiseA": {
+     "type": "number",
+     "description": "hit: seconds the noise takes to rise",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "noiseTau": {
+     "type": "number",
+     "description": "hit: seconds the noise takes to die",
+     "exclusiveMinimum": 0,
+     "maximum": 4
+    },
+    "metal": {
+     "description": "hit: metal partials (Hz): jingles, small bells",
+     "type": "array",
+     "items": {
+      "type": "number",
+      "minimum": 20,
+      "maximum": 20000
+     }
+    },
+    "metalTau": {
+     "type": "number",
+     "description": "hit: seconds the metal takes to die",
+     "exclusiveMinimum": 0,
+     "maximum": 4
+    },
+    "shake": {
+     "type": "number",
+     "description": "hit: how fast it is shaken (Hz)",
+     "minimum": 0,
+     "maximum": 100
+    }
+   }
+  },
+  "ensemblePart": {
+   "description": "SND-11: one part of an ensemble: a line of the song played on an instrument (inst, baked), on a chip voice (wave, as the gb path plays it) or, for drums, on a kit, into its own stem",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "line"
+   ],
+   "oneOf": [
+    {
+     "required": [
+      "inst"
+     ]
+    },
+    {
+     "required": [
+      "wave"
+     ]
+    },
+    {
+     "required": [
+      "kit"
+     ]
+    }
+   ],
+   "properties": {
+    "line": {
+     "enum": [
+      "lead",
+      "counter",
+      "bass",
+      "arp",
+      "pad",
+      "stabs",
+      "timp",
+      "drums",
+      "ostinato",
+      "chime",
+      "drone",
+      "hits"
+     ],
+     "description": "what it plays: lead (the tune, and a battle's intro), counter (the countermelody), bass (the bass pattern), arp (the arpeggio pattern), pad (the bar's chord, held), stabs (the chord, short, on beats 1 and the and of 3), timp (the root on the first bar of each four, a roll into the loop and, SND-12, into each section), drums (the drum pattern on a kit, with a fill at each section's end). SND-12: ostinato (the chord low-high-middle-high in eighths; style sixteenth: every step), chime (a bell on every other downbeat), drone (the key's root and fifth held four bars), hits (the chord as each section starts and on a fill)"
+    },
+    "in": {
+     "description": "SND-12: the sections of the song's form it plays in (A, B...); left out: every section. A song with no form is all A",
+     "type": "array",
+     "items": {
+      "type": "string",
+      "pattern": "^[A-Z][a-z0-9]*$"
+     },
+     "minItems": 1
+    },
+    "inst": {
+     "$ref": "#/$defs/id",
+     "description": "the instrument (music.json instruments)"
+    },
+    "wave": {
+     "$ref": "#/$defs/wave",
+     "description": "a chip voice instead of an instrument (the chip lead, the signature)"
+    },
+    "oct": {
+     "type": "integer",
+     "minimum": -3,
+     "maximum": 3,
+     "description": "octaves up or down (0 when left out)"
+    },
+    "pan": {
+     "type": "number",
+     "minimum": -1,
+     "maximum": 1,
+     "description": "left -1 to right 1 (centre when left out)"
+    },
+    "verb": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1,
+     "description": "its send to the reverb (none when left out)"
+    },
+    "level": {
+     "type": "number",
+     "minimum": 0,
+     "maximum": 4,
+     "description": "its level (1 when left out)"
+    },
+    "style": {
+     "type": "string",
+     "description": "a pattern of its own instead of the song's: bass (bounce, gallop, long, walk, drive, pedal), arp (up, updown, drip, chord7), drums (soft, skip, drive, march, bossa); SND-12: ostinato (sixteenth)"
+    },
+    "centre": {
+     "type": "integer",
+     "minimum": 24,
+     "maximum": 108,
+     "description": "pad, stabs: the chord sits within a fifth of this note (pad 62, stabs 58 when left out); SND-12: ostinato 55, chime 79, drone 45, hits 58"
+    },
+    "kit": {
+     "description": "drums: the instrument for each hit",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "kick": {
+       "$ref": "#/$defs/id"
+      },
+      "snare": {
+       "$ref": "#/$defs/id"
+      },
+      "hat": {
+       "$ref": "#/$defs/id"
+      },
+      "rim": {
+       "$ref": "#/$defs/id"
+      }
+     }
+    },
+    "layer": {
+     "$ref": "#/$defs/layer",
+     "description": "SND-13: plays only with this layer, as loud as the layer is up (a part with none always plays); its notes bake when the layer first comes"
+    },
+    "dim": {
+     "description": "SND-13: how far the part goes down at a full layer (night 0.3: to 0.3 of its level at night; calm 0: out at a battle's intro), each on the layer's beat or bar line",
+     "type": "object",
+     "propertyNames": {
+      "$ref": "#/$defs/layer"
+     },
+     "additionalProperties": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+     }
+    }
+   }
+  },
+  "ensemble": {
+   "description": "SND-11: an ensemble, Chip+ meets DS-era: the parts that play a song in place of the four chip voices",
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "parts"
+   ],
+   "properties": {
+    "name": {
+     "type": "string",
+     "maxLength": 200,
+     "description": "what it is, for the Studio"
+    },
+    "trim": {
+     "type": "number",
+     "minimum": -24,
+     "maximum": 24,
+     "description": "dB on top of the song's own trim, so the ensemble sits where the song's gb version does (the loudness report)"
+    },
+    "parts": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 16,
+     "items": {
+      "$ref": "#/$defs/ensemblePart"
+     }
+    }
+   }
+  },
+  "layer": {
+   "description": "SND-13: a layer the game moves (logic/music-layers.js): walk (as you walk), rain, snow, storm, night, busker (a street musician by distance), build (a battle's intensity, 0 at its intro), peak (the red zone, a KO, a boss's phase, the run's late rows); still is 1 - walk and calm 1 - build",
+   "enum": [
+    "walk",
+    "rain",
+    "snow",
+    "storm",
+    "night",
+    "busker",
+    "build",
+    "peak",
+    "still",
+    "calm"
+   ]
+  },
+  "duck": {
+   "description": "SND-15: one kind of duck",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "music": {
+     "description": "dB the music comes down (0 or left out: not at all)",
+     "type": "number",
+     "minimum": -40,
+     "maximum": 0
+    },
+    "beds": {
+     "description": "dB the world sounds and the ambience come down",
+     "type": "number",
+     "minimum": -40,
+     "maximum": 0
+    },
+    "attack": {
+     "description": "s the dip takes to come",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 2
+    },
+    "release": {
+     "description": "s it takes to go",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 4
+    },
+    "hold": {
+     "description": "s it stays after each sound (talk: each letter's blip)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 4
     }
    }
   },
@@ -430,6 +1117,8 @@
        "key": true,
        "scale": true,
        "prog": true,
+       "form": true,
+       "sections": true,
        "lead": true,
        "bass": true,
        "arp": true,
@@ -485,7 +1174,8 @@
        "arc": {
         "description": "SND-5: false: the run's arc bands (music.json run.arc) leave this song as written",
         "const": false
-       }
+       },
+       "ensemble": true
       },
       "additionalProperties": false
      }
@@ -539,6 +1229,26 @@
       "description": "SND-4: a name for the jingle. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
       "type": "string",
       "maxLength": 80
+     },
+     "ensemble": {
+      "description": "SND-17: the ensemble that plays it (music.json ensembles) in place of the chip lead and its triangle, once its notes are baked and while GB Sounds is off; \"gb\" or none: the 8-bit jingle. Each part reads a line of the jingle: lead and counter the tune, pad the harmony held, stabs it short, arp its chords broken upward, bass the bass, drums the perc's kit notes, timp its other notes",
+      "$ref": "#/$defs/id"
+     },
+     "harmony": {
+      "description": "SND-17: chords under the tune for the ensemble's pad, stabs and arp parts (notes starting on the same step make a chord)",
+      "$ref": "#/$defs/line"
+     },
+     "bass": {
+      "description": "SND-17: the bass line for the ensemble's bass parts",
+      "$ref": "#/$defs/line"
+     },
+     "perc": {
+      "description": "SND-17: hits by step: General MIDI drum notes (35, 36 kick; 37, 39 rim; 38, 40 snare; 42, 44, 46 hat) on the ensemble's kit, any other note on its timpani",
+      "$ref": "#/$defs/line"
+     },
+     "stinger": {
+      "description": "SND-17: a short sting over a song (a Perk, the map's reveal, a day, a coin): as its ensemble it starts on the song's next beat, moves into the song's key (written in C) and drops the song's busy parts (the tune, the counter, the arpeggio) under it instead of ducking all of it. Without: the song ducks to 0.15 (the battle's fanfares)",
+      "type": "boolean"
      }
     }
    }
@@ -728,6 +1438,29 @@
     }
    }
   },
+  "instruments": {
+   "description": "SND-11: the baked instruments by id (an ensemble's part and the battle sounds name one; the ids stay stable)",
+   "type": "object",
+   "propertyNames": {
+    "$ref": "#/$defs/id"
+   },
+   "additionalProperties": {
+    "$ref": "#/$defs/instrument"
+   }
+  },
+  "ensembles": {
+   "description": "SND-11: the ensembles by id; gb is reserved (today's four chip voices, the code's own)",
+   "type": "object",
+   "propertyNames": {
+    "$ref": "#/$defs/id",
+    "not": {
+     "const": "gb"
+    }
+   },
+   "additionalProperties": {
+    "$ref": "#/$defs/ensemble"
+   }
+  },
   "battle": {
    "description": "VFX-19: the battle's sounds (logic/battle-sounds.js; audio/battle-sounds.js plays them): a sound per move family, a layer per type, the hurt sounds, the recall, the throw and catch",
    "type": "object",
@@ -797,7 +1530,7 @@
    }
   },
   "mix": {
-   "description": "SND-6: the mix: each bus's trim (x the square of its Settings slider; logic: audio/levels.js) and the compressor on the master",
+   "description": "SND-6: the mix: each bus's trim (x the square of its Settings slider; logic: audio/levels.js) and (SND-15) the master chain (audio/mix-chain.js: the compressor, the make-up gain, the limiter) and the ducks",
    "type": "object",
    "additionalProperties": false,
    "properties": {
@@ -854,6 +1587,72 @@
        "type": "number",
        "minimum": 1,
        "maximum": 20
+      },
+      "knee": {
+       "description": "dB",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 40
+      },
+      "attack": {
+       "description": "s",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      },
+      "release": {
+       "description": "s",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      }
+     },
+     "description": "SND-15: the gentle compressor on the master (a glue: a low threshold, a small ratio, a slow release)"
+    },
+    "makeup": {
+     "description": "SND-15: dB the whole mix is lifted after the compressor, so the music sits near -18 LUFS at the default sliders",
+     "type": "number",
+     "minimum": -12,
+     "maximum": 24
+    },
+    "limiter": {
+     "description": "SND-15: the limiter last on the master, so the true peaks stay under -1 dBTP",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "threshold": {
+       "description": "dB",
+       "type": "number",
+       "minimum": -24,
+       "maximum": 0
+      },
+      "release": {
+       "description": "s",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 1
+      }
+     }
+    },
+    "duck": {
+     "description": "SND-15: what ducks under a jingle, a stinger, a cry and talk (audio/levels.js mixDuck)",
+     "type": "object",
+     "additionalProperties": false,
+     "properties": {
+      "about": {
+       "type": "string"
+      },
+      "jingle": {
+       "$ref": "#/$defs/duck"
+      },
+      "stinger": {
+       "$ref": "#/$defs/duck"
+      },
+      "cry": {
+       "$ref": "#/$defs/duck"
+      },
+      "talk": {
+       "$ref": "#/$defs/duck"
       }
      }
     }

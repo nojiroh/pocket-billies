@@ -2,6 +2,838 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-15 - the mix and a phone pass: a master chain at -18 LUFS, slider defaults near the top, ducks for cries, talk and jingles, Play when silenced, the debug log's mix line; Part 2 done - 2026-10-29
+Branch `track/sound`, after both lanes. main merged three times: ca19d9cd (98 commits, the Perks track; no sound files;
+art-code-refs made again at 60a89260), 798226e9 (VFX-19's battle sounds in #331, the dialogue track #322 and others:
+the ten "keep both" files and sound.js's blip; art-code-refs 1f1eaa3d) and 2e2b88b1 (the clean-up track #328: HANDOFF
+is main's re-trimmed file with Part 2's sound entries on top). Started by the planning session
+under the owner's standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per
+commit, the generated files in their own commits, the baseline once at the end, the docs. Tag `snd-15-done` (for the
+owner to push) on this session's last commit. PR #292. Details: sound-track.md "SND-15 as built" and "Part 2 done".
+- **Plan**: (g) first make the loudness report fast (its pages stop drawing, as SND-12c's fingerprint page) and give
+  it true peaks, a loudness range and effect rows, numbers unchanged; measure where everything stands; (a) a master
+  chain (a gentle compressor, a make-up, a limiter) tuned on the songs, jingles and beds so the route song sits at -18
+  LUFS with true peaks under -1 dBTP; (b) ducks on gains of their own (jingles, stingers, cries, talk; the music and the
+  beds), never writing another owner's gain; (c) slider defaults from the measurements; (d) Play when silenced; (e)
+  the debug log's audio lines complete for the phone pass; (f) the Studio's Mix card and player on the same chain;
+  (h) VFX-19 reached main during the session (PR #331): merged, its 37 battle sounds in the baseline and the report; (i) each change commit rendered
+  against the one before, the baseline once at the end.
+- **Found** (checked in the code at 6052ea68): the route song at **-31.6 LUFS** at default sliders (13.6 dB under the
+  target); one compressor on the master (-14 dB, 3:1, the browser's 30 dB knee), no limiter; a jingle ducked the song by
+  rewriting its fader (a jingle in a fade-in cancelled the fade); nothing ducked under a cry or talk; the beds never
+  ducked under a jingle; "a full render takes 13 minutes" held for the fingerprints only (the loudness pages still drew
+  the title's scene in software: SND-14's and SND-17's "over 90 minutes"); `tools/read-debug-log.py` printed none of
+  the audio lines.
+- **Changed** (commits, one cause each):
+  - 24b9340f, be4fec99, d74f72f3 (tools): the loudness pages stop drawing (a sample 1110 s -> 408 s); the measure takes
+    typed subarrays; true peak (dBTP, 4x oversampled) and LRA columns; effect rows (a cry of each base, talk, buttons);
+    the targets as warnings.
+  - 4fe58c03: the master chain, game/js/audio/mix-chain.js `mixChainMake`, in sound.js and the Studio's player:
+    compressor -36 dB, knee 12, 1.5:1, 20 ms, 1 s; make-up; limiter -5 dB (hard knee, 20:1, 1 ms, 100 ms release).
+  - 8412347d: the songs' duck on gains of its own (logic/sound-duck.js plans dips, overlaps take the lower;
+    `mixDuckerMake` schedules them): the jingle's duck moved off the song's fader, the same shape.
+  - df4b175a: music.json mix `duck`: cry music -4 / beds -6 dB, talk -3 / -5 (each blip holds 0.35 s), jingle beds -6
+    (music to 0.15 as before), stinger beds -3; the world's and the ambience's buses on a duck gain of their own.
+  - a69a0e20: slider defaults music 0.8, sound effects 1, world 0.75, ambience 0.75 (were 0.55, 0.8, 0.5, 0.5; Settings
+    reads audio/levels.js `SOUND_DEFAULTS`); mix trims sfx 1.35, world 0.94, amb 0.85 keep every bus against the music
+    as it was (within 0.1 dB, a unit test); make-up 2.8 dB.
+  - 0092fbdd: Settings -> Sound -> **Play when silenced** (`preferences.playSilenced`, off by default):
+    `navigator.audioSession.type` 'playback' / 'auto', set before the context and on each change; shown only where
+    `navigator.audioSession` exists.
+  - a7d54897, f25fd5f9: the debug log's `audio.mix` (the chain's cut now and most this minute, the make-up, the buses'
+    gains, ducks so far and under way, the session); 1bb6e7c4: read-debug-log.py prints the audio block.
+  - 2b426ca7: the Studio's Mix card (the chain's settings, the ducks' dB; its texts say the chain);
+    check-studio-github compares the player's chain with the mix.
+  - 8ab311dc: the report's effect rows include VFX-19's battle sounds. 14be6f5b, 60a89260, 1f1eaa3d: art-code-refs
+    made again; the merges above; 1696f517: the sound baseline.
+- **Loudness, before -> after** (the report at default sliders, K-weighted; songs as they play, on their ensembles;
+  before from the old chain's renders at 6052ea68, after the whole report at 8ab311dc):
+
+  | | before | after |
+  |---|---|---|
+  | route (the target, -18 LUFS) | -31.6 LUFS, true peak -15.6 dBTP | **-17.9 LUFS**, -2.9 dBTP |
+  | Copperleaf / town / map | -33.3 / -31.5 / -31.8 | -18.1 / -17.5 / -17.9 |
+  | cave / meadow / hazel (the soft ones) | -35.1 / -34.3 / -35.3 | -19.2 / -19.4 / -19.4 |
+  | wild / trainer / leader / boss | -29.2 / -30.1 / -30.4 / -30.0 (wild -14.0 dBTP) | -16.3 / -16.6 / -16.6 / -16.8 (wild -1.8 dBTP) |
+  | title / fall / the inner sun | -31.9 / -31.0 / -29.6 | -17.7 / -16.5 / -16.5 |
+  | songs' spread | 5.9 LU (-29.2 to -35.3) | 3.1 LU (-16.3 to -19.4) |
+  | jingles: victory / level-up / catch / run_won | -28.3 / -29.3 / -28.3 / -27.7 | -15.3 / -15.2 / -14.8 / -14.8 (worst -1.5 dBTP) |
+  | cries (loudest 3 s, against the route song) | -7.4 to -20.2 LU | -6.1 to -18.1 LU |
+  | talk: Kappi / a townsperson | +0.4 / -7.9 LU | +1.0 / -5.9 LU |
+  | VFX-19's battle sounds | (new) | -6.2 to -33 LU, true peaks -5.9 dBTP at worst |
+  | beds alone (rain, heavy rain, the sea, a brook 3 m) | -14.2 / -12.9 / -18.2 / -16.1 LU | -11.0 / -9.9 / -14.7 / -12.8 LU (see Risky) |
+
+  Every song's and jingle's true peak is under -1 dBTP (the worst -1.5); the songs' loudness ranges 0.4-4.1 LU; no
+  NaN. The report warns on 14 bed and water rows (rain, heavy rain, a roof at 1 m, a bonfire at 3 m, the water at 1 m):
+  every world row rose by the same 3.0-3.5 LU, which is the compressor's cut on the music (Risky).
+- **Fingerprints**: the tool commits move no render. 4fe58c03 (the chain) moved all 337 (659 arrays with brightness, no
+  NaN), as planned: every render about 13.6 dB louder through the chain. 8412347d and df4b175a (the ducks): 337, **0
+  changed** (rendered together against a scratch baseline written at 4fe58c03; nothing ducks in a render alone). a69a0e20
+  (the defaults and the make-up) moves all, as planned (the level reaches the chain's compressor 6.5 dB higher).
+  Then plain `--baseline` once, after merging main (VFX-19's battle sounds): 374 fingerprints in 27 files
+  (1696f517); compared file by file with a scratch baseline written at a69a0e20: the 337 songs, jingles, cries and
+  buttons **0 changed** (so nothing after a69a0e20 moved a render: the silent-switch setting, the debug log, the Studio,
+  the reader, both merges); VFX-19's 37 battle renders moved against main's, as planned (through the chain).
+- **Risky or unfinished**:
+  - Claude can't hear: the chain, the defaults and the ducks are judged by numbers (K-weighted, true peaks, phone band);
+    the owner's phone decides.
+  - Everything is about 13.6 dB louder at default sliders. A save whose sliders were moved keeps its own slider values,
+    and comes out several dB louder than before through the make-up and the compressor: the owner may
+    want to move the sliders once, or reset them to 80/100/75/75.
+  - Sound effects default to 100 % (no room to raise them; they keep their old level against the music).
+  - The phone band: the four orchestral fights are 1-5 dB *under* the route song in a phone's 400 Hz-6 kHz band (their
+    weight is in the lows), so they should not read louder; the fall (+6.7 dB there), Copperleaf (+4.5), the cave and
+    hazel (+3-4) are the ones a phone speaker makes louder. Not trimmed (K-weighted is the standard; for the ears).
+  - Kappi's talk is as loud as the music over 3 s (+0.4 LU); a townsperson's 8 LU under. Not changed.
+  - The limiter is the browser's compressor at 20:1 (6 ms look-ahead), not a true-peak limiter: a render's true peaks
+    measured -1.7 dBTP at worst; music, a jingle and a cry together go through it harder. The debug log's
+    `mix.cutMost.limit` shows how hard it works on the phone.
+  - **The beds' and the water's rows now warn** (14 rows over the -12 LU or -8 LU ceilings): the report renders each
+    bed alone, so the compressor barely works on it, while it cuts the songs (the debug log read 1.5-2.2 dB on the
+    title's song in headless Chromium; the reference, the route song, is louder); every world row rose by the same
+    3.0-3.5 LU. In play the beds sit under the music, the music drives the compressor and the beds share its cut, so
+    their balance against the music should be as SND-8a..SND-14 set it. Not proven in a mixed render (for the next
+    session: measure a bed under the playing route song, or the phone's ears). The ceilings were not loosened.
+  - `navigator.audioSession` is tested with a stand-in object in headless Chromium, not on an iPhone; 'playback' may
+    pause another app's music.
+  - The report's event-driven water and scene rows move 0.1-0.6 LU between runs and tools (timing in the page).
+  - VFX-19's battle sounds play through the chain since the merge (peaks -5.9 dBTP at worst alone); a layered hit (a
+    family, a type, a crit, a KO) may meet the limiter: lower those voices' `vol` in music.json `battle`, not `mix.sfx`
+    (the VFX track's note, sound-track.md SND-16).
+- **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules`, `npm run check:data` after every commit;
+  `npm test` 2062 of 2062 (the change commits), 2157 (after the first main merge), 2255 (after VFX-19's), 2258 (after
+  the clean-up's); the unit tests for the ducks (sound-levels.test.mjs: a dip, overlaps, the mix's dB), the defaults
+  (every bus against the music within 0.1 dB), the true peak and the range (sound-loudness.test.mjs), the tracker's
+  duck gains (tracker.test.mjs). `check-sound.py`: 659 arrays moved at 4fe58c03 (no NaN), 0 changed at df4b175a
+  against 4fe58c03, the baseline as above; the whole `--loudness` report (66 minutes with the fingerprints). Browser
+  probes (headless Chromium, a real AudioContext): a cry dips the beds to 0.50 (-6 dB) and back to 1, talk to 0.56, a
+  jingle to 0.50; the song's fader untouched; the silent-switch row only with a stand-in `navigator.audioSession`
+  (`playback` on, `auto` off), 52 x 32 px with the game's 7 px tap margin; the sliders show 100/80/100/75/75; the
+  debug log's `audio.mix` and read-debug-log.py's Audio section from a log the page exported; no page errors.
+  `npm run check:smoke` 7 of 7 at 2e2b88b1 (362 s: the phone, the palettes, the Actions bar, the in-game full test). CI smoke on PR #292: red at d74f72f3, 60a89260 and 29267d6b on check-fast's frame-timed steps (the bowl's
+  zoom "never settled", Camera follow "the page stopped drawing"), commits that touch no map or camera; commented on
+  the PR.
+- **Skipped**: the full `npm run check:quick` (the owner's word to SND-12, "You can skip the checks", and the merge
+  coordinator's "don't wait on a full quick check" for today's merges), so SND-12b's "Starters' rig buffers" load note
+  was not checked again; `check-studio-github.py --only=music` (its chain step was updated, not run).
+- **Decided for the owner, to review**:
+  - The target: -18 LUFS integrated for the route song as it plays (its ensemble) at default sliders (recommended);
+    reached -17.9; true peaks under -1 dBTP (the worst -1.5).
+  - The master chain: a compressor at -36 dB, knee 12, 1.5:1, 20 ms, 1 s (the research's glue: -40 and 1.4:1 measured
+    the same spread), the make-up 2.8 dB, a limiter at -5 dB (true peaks about -1.7 dBTP at worst).
+  - New slider defaults (recommended "as needed"): Music 0.8, Sound effects 1, World 0.75, Ambience 0.75, with the mix's
+    trims set so every balance the earlier steps tuned stays (instead of a 10 dB make-up that left Music's slider 10 dB
+    of room into the limiter).
+  - Ducks: jingle music 0.15 (unchanged) and beds -6 dB; stinger beds -3 dB; cry music -4, beds -6 dB; talk music -3,
+    beds -5 dB held 0.35 s after each blip; the payout's coins none; the Sound effects bus is never ducked.
+  - Play when silenced (recommended): a setting, off by default; the row only on browsers with navigator.audioSession.
+  - No trims for the soft songs' phone-band level or Kappi's blips: listed for the ears instead.
+  - The loudness report on one page per kind as before (its slowness was the drawing).
+- **The owner's listening list for Part 2** (one list for SND-8a to SND-15; phone, **silent switch OFF**, or turn on
+  Settings -> Sound -> Play when silenced; leave the sliders where they come, or put them at the new defaults: Music 80,
+  Sound effects 100, World 75, Ambience 75). In this order:
+  1. **Settings -> Sound**: the new defaults; Play when silenced (iPhone only): on, flip the silent switch, sound goes on;
+     off, it stops. GB Sounds on and off while a song plays (switches at the next bar).
+  2. **The title and hazel** (before a new game), **the opening fall**: the moment songs on their ensembles; the whole
+     game is now about 13.6 dB louder at the default sliders (the route song -18 LUFS, was -31.6), nothing should clip.
+  3. **Copperleaf by day and at night**: AABA on the music box, harp and strings, the flute at night; walk, stop, walk
+     (the tambourine on the beat); pass the busker's case (its accordion from its side), stop within 5 m after a run (its
+     theme); the square at midday (the sea and the fountain under the song, the town's life); a house, the inn, the lab
+     (rooms by kind); real rain (under the eaves, indoors). Talk to Kappi and a townsperson: the music and the beds dip a
+     little while the text types (Kappi's blips are loud: as loud as the music, say if they grate).
+  4. **A route**: the chip lead over strings and pizzicato, the ostinato in B; the walking snare; a forest's wind and
+     leaves; birds by the hour (a dawn chorus), grasshoppers, a pond at night with frogs; steps on grass, sand, a bridge,
+     gravel, snow, mud; a brook, a river and the sea from near and far.
+  5. **A wild battle**: it starts light and builds; the drums on the throw; each cry dips the music and the beds a
+     little; a KO and the red zone bring the choir and hits; the victory fanfare (the music nearly away under it, the beds
+     down 6 dB); a level-up and a catch. **A trainer, the rival, a leader and a boss**: the four orchestral fights, dense
+     on a phone (their phone-band level measured 1-5 dB under the route song's, so they should not read louder).
+  6. **A run**: the day's tock and the reveal on arrival (on the beat, in the key; the beds dip 3 dB); a Perk's relic
+     (the tune steps back, no full duck); biome songs and the arc (rows 3-5 at 0.6, 6-8 full); a cave (bells, reverb,
+     drips); the run's map song; the payout's coins, then run_won or run_lost.
+  7. **Debug menu -> Sound test**: every song "As its ensemble" and GB; the layer row (walk, rain, snow, storm, night,
+     intensity 1-3, the busker at 1-10 m); every jingle both ways; the instrument row; the world sounds and nature rows.
+  8. **Export a debug log** after a few minutes of play and send it: its `audio` lines (python3 tools/read-debug-log.py
+     now prints them): the bank (mb, withOtherMb under 8, dropped), the reverb's setMs, late steps near 0, the water and
+     nature counts, the ensemble and its section, and the new `mix` line: the compressor's and limiter's cut (the
+     limiter should rarely pass -3 dB), the levels, the ducks so far, the session (`playback` with Play when silenced on).
+  Listen for: nothing clipping or pumping, rain and water never louder than the music, battles not harsher than the
+  route, the fall and Copperleaf not too loud on the phone speaker (they carry the most energy in a phone's band: the
+  fall 6.7 dB and Copperleaf 4.5 dB over the route song there), jingles and cries clear over the music.
+- **Tags for the owner to push** (Part 2): `snd-8a-done` 7384ddf1, `snd-8b-done` aa0c837e, `snd-9-done` a0fd75a9,
+  `snd-10-done` 13fd96aa, `snd-11-done` 754508ab, `snd-17-done` 928b1472, `snd-13-done` a18a94e5, `snd-12a-done`
+  ec6d21db, `snd-12b-done` 3eb19ae7, `snd-12c-done` 6052ea68, `snd-14-done` 977cbc98, `snd-15-done` on this entry's
+  commit.
+- **Next**: the owner's phone pass (the list above) and the merge of PR #292; SND-16 (an effects pass: the airship, the
+  sky train, the world map, steam vents, wells) only at the owner's word; VFX-19's battle sounds into the loudness
+  report once on main.
+
+### Sound track SND-12c - check-sound renders in minutes (its page stops drawing); arrangements, batch 3: the battles that build and peak, the boss, the mall, hazel, the title, the fall and the variants; the baseline for batches 2 and 3 - 2026-10-29
+Branch `track/sound`, the music lane (main already merged: nothing new on main since SND-12b's merge at d71cdf61).
+Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode, plan below,
+recommended options taken. One cause per commit. Tag `snd-12c-done` (for the owner to push) on this session's last
+commit. PR #292. Details: sound-track.md "SND-12c as built".
+- **Plan**: (0) make check-sound's renders fast: the jobs over 3-4 pages, each baking its own ensembles, a tool-only
+  commit with the numbers identical on a sample, and a cheap in-page speedup in its own commit if obvious; (1) batch 3
+  as sound-track.md's SND-12c names it, as named placeholders, levels within 1 LU by the ensembles' trims, memory
+  against the 8 MB budget; tell the VFX planning session; (2) a full render to confirm only batches 2 and 3 changed,
+  then plain `--baseline` once in its own commit; the docs.
+- **The render speedup** (a0c670ee): the game page drew the title's live scene in software the whole time (the GPU
+  process at 330-390 % of 4 cores, the renders about 30 %). check-sound now makes `requestAnimationFrame` a no-op in
+  its page once the sound code is loaded. A sample of 31 renders 1058 s -> 75 s, byte for byte the same. A full render
+  now takes about 9.3 minutes for SND-12b's 317 renders (over 3.5 hours before, stopped) and about 13 minutes for
+  the 337 since batch 3 (774 s).
+- **Not done: several pages.** Built in a scratch copy and measured: the same numbers, but no faster (the full set
+  561 s on one page, 570 s on two, 723 s on four): one page already renders its chunk of 12 contexts on parallel
+  threads, so more pages oversubscribed the 4 cores (load average 27). Not committed; one page stays.
+- **Found: run-to-run jitter** (not new): two full renders of the same tool and data differ in 2-7 windows of ~400,000,
+  by the RMS's last digit or 2 zero crossings, inside the tolerance; most likely the page's timers landing on an
+  offline render under load. The sample of 31 never showed it, and the baseline write left the 7 untouched files byte
+  for byte the same.
+- **Batch 3** (a9549340; Claude's drafts, named as placeholders; B a seeded walk over its own chords; every ensemble
+  keeps the song's chip lead):
+  - wild AABA (32 bars, 51 s), its `battle` ensemble kept.
+  - trainer AABA (47 s), rival ABAB (53 s), leader AABA (51 s): new ensembles: the chip lead over a spiccato ostinato,
+    brass stabs, timpani, a warm bass, a full kit; while calm the ostinato at half, brass out, timpani 0.3, kit 0.6; a
+    choir and orchestra hits at the peak. Trainer: sixteenths above the ostinato in B; rival: sixteenths throughout,
+    brass hits into B; leader: the tune on brass in B, the orchestral snare.
+  - boss ABAB (46 s): a choir and orchestra hits throughout (dimmed while calm), spiccato sixteenths, brass, timpani, a
+    kit; the peak: the tune on brass, orchestra stabs.
+  - mall AABA (71 s, bossa): e-piano, walking bass, a brush kit with woodblock, glockenspiel in B; walk a tambourine.
+  - hazel ABA (65 s): harp, soft strings, warm bass, a flute and celesta in B. title AABA (83 s, the motif): harp,
+    strings, warm bass, timpani rolls, a soft kit, brass and a flute in B. fall ABA (80 s): a celesta's drip, soft
+    strings, a drone, a bell in B. variants AABA (58 s, legacy places): pizzicato, brass, a march kit, an ostinato in B.
+- **The baseline** (c3d2705d): a full render first showed exactly the 19 songs changed (SND-12b's nine and these ten)
+  and no NaN; then plain `--baseline`: 337 fingerprints in 26 files, exactly those 19 files changed, the other 7
+  byte for byte the same.
+- **Levels** (the loudness report's song rows run alone, K-weighted; gb before -> ensemble after its trim): wild
+  -29.3 (ensemble -29.2) -> -29.2 LUFS (trim kept), trainer -30.1 -> -30.1 (-4.5 dB), rival -30.2 -> -30.3 (-5.0),
+  leader -30.4 -> -30.4 (-5.5), boss -30.0 -> -30.0 (-5.3), mall -31.3 -> -31.4 (0), hazel -35.2 -> -35.3 (-1.7), title
+  -31.9 -> -31.9 (+1.5), fall -31.0 -> -31.0 (+4.0), variants -30.0 -> -30.0 (-3.4): all within 0.1 LU. The gb
+  versions in the forms moved 0.0-0.1 LU. The battles' build (fingerprints' RMS): calm -4.0 to -4.2 dB, peak +0.0 to
+  +0.1 dB and brighter, as the wild battle's.
+- **Memory** (Node, 48 kHz, bars / with peak): wild 1.79 / 2.50 MB (2.30 before its B), trainer 1.59 / 2.30, rival
+  1.97 / 2.67, leader 1.67 / 2.38, boss 2.47 / 2.61, all five 3.42 (shared instruments); mall 1.51, hazel 1.88, title
+  2.44, fall 2.84, variants 1.24 (night 1.56). A run's place bakes the wild battle on arrival: worst the trench at 4.57
+  MB of song zones (was 4.37), about 7.4 MB with the water, beds and reverb: inside 8 MB; a boss battle there adds
+  0.31. No instrument dropped; the budget stays 8 MB.
+- **Risky or unfinished**:
+  - Claude can't hear: the arrangements are judged by numbers (levels, memory, the build's dB, no NaN, the tests);
+    placeholders, the owner's ears decide.
+  - Four full orchestral fights needed -4.5 to -5.5 dB trims; on a phone speaker their density may read louder than
+    the LUFS say (SND-15's phone pass).
+  - The run's place is 0.2 MB fuller with the wild battle's B; stingers there keep baking on first play.
+  - The renders' jitter (above): a tool change's byte-for-byte proof needs a sample.
+- **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules`, `npm run check:data` (179 files fine;
+  the check-data snapshot test passes, unchanged), the music unit tests (with batch 3's two), `npm test` 2057 of 2057;
+  `check-sound.py --only=<the ten>` (53 fingerprints, as expected); the full comparison and the baseline (above);
+  `npm run check:smoke` 7 of 7 (at c3d2705d, 337 s); `check-quick.py --steps="Battle music"` ok alone (45 s: the wild
+  battle and a mini-boss's leader song with their intros, the drums in on the throw).
+- **Skipped at the owner's word** (2026-10-28 21:18 UTC, "You can skip the checks"): the full `npm run check:quick`
+  and the whole `check-sound.py --loudness` report (the levels above are its song rows run alone), with them the
+  K-weighted layered rows and `check-studio-github.py --only=music` (no Studio code changed).
+- **Decided for the owner, to review**:
+  - Renders on one page, not 3-4 (measured slower); the page stops drawing instead.
+  - The ten arrangements and their forms (above): fights in 32 bars (AABA trainer, leader, wild; ABAB rival, boss),
+    the moment songs in ABA 24 (hazel, fall) or AABA 32 (title, mall, variants).
+  - The fights share the wild battle's instruments (zones shared, memory near the wild battle's) and its build: the
+    ostinato, brass, timpani and kit dimmed while calm; the boss's choir and hits throughout, brass on the tune at
+    its peak.
+  - No weather layers on the battle and moment songs; the mall walk only.
+  - Trims on the ensembles, not the songs; wild's `battle` trim kept (within 0.1 LU in the form).
+  - `mall` and `variants` arranged though only legacy places play them (as the brief lists them), with few parts.
+- **The owner's listening list** (phone, silent switch OFF; the debug menu's Sound test -> a song "As its ensemble",
+  then GB Sounds; or in play):
+  - A wild battle, a trainer, the rival, a leader and a boss against GB Sounds: A, B with its own chords, the fills
+    into each section; the intro on the chip lead, then the drums on the throw.
+  - A battle building to its peak (SND-13's layers on the new ensembles): it starts light (brass out, strings at half),
+    builds over the turns and KOs, a choir and orchestra hits in the red zone or as a boss changes phase; the Sound
+    test's layer row plays intensity 1-3.
+  - The title, the mall, hazel (before a new game starts) and the opening fall.
+- **Next**: SND-15 (the mix and a phone pass; the full check, with SND-12b's Starters note), then SND-16 at the
+  owner's word.
+
+### Sound track SND-12b - arrangements, batch 2: the cave, the seven biome songs and the run's map on ensembles in forms, with peak parts so the run's arc is heard, and walk, rain and snow layers - 2026-10-28
+Branch `track/sound`, the music lane (main merged first at 62c20703, a merge: HANDOFF kept both entries, art-code-refs
+made again in its own commit; no sound files from main; main merged again at d71cdf61 with VFX-13, #295 and #326:
+HANDOFF kept both sides' entries, hooks.js and art-code-refs made again at db6f5930, `npm test` 2055 of 2055 after it). Started by the planning session under the owner's standing
+instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per commit; the baseline
+pending for SND-12c; the docs. Tag `snd-12b-done` (for the owner to push) on this session's last commit. PR #292. Details:
+sound-track.md "SND-12b as built".
+- **Plan**: (a) forms (ABA or AABA, 24-32 bars) and an ensemble each for cave, meadow, spore, trench, hills, innersun,
+  crystal, spire and map, by the moods in Part 2's palette, as named placeholders; (b) `peak` parts in each (the arc:
+  rows 3-5 at 0.6, 6-8 full) and walk, rain and snow layers; (c) the quick check's Run music step in the same commit;
+  (d) memory measured in Node, instruments dropped to fit, budget unchanged; (e) levels within 1 LU by trims; (f) the
+  Starters step alone; then the baseline once with plain `--baseline` (pending, see Fingerprints), the docs.
+- **Changed**: game/data/music.json (the nine songs' `form`, `sections.B`, `ensemble`; nine new ensembles with trims);
+  tools/check-quick.py (Run music: an ensemble song keeps its name in a band and hears it as its peak layer);
+  tools/test/music-form.test.mjs (two batch-2 tests); docs. No code. The sound baseline not written (pending).
+- **Batch 2** (Claude's drafts, named as placeholders; B a seeded walk over its own chords, each with a placeholder
+  hook name; every ensemble keeps the song's chip lead):
+  - cave ABA (24 bars, 72 s): bells, a drone, a pizzicato drip, a flute in B, heavy reverb; peak a choir and timpani.
+  - meadow AABA (32, 69 s): a harp, a flute in B, soft strings, pizzicato bass, brushes; peak a march snare, strings.
+  - spore ABA (24, 69 s): bells, soft strings, a pizzicato drip, a warm bass; peak a choir and timpani.
+  - trench ABA (24, 69 s): a drone and a deep pad, pizzicato, a warm bass, a clarinet in B; peak brass and timpani.
+  - hills AABA (32, 77 s): an accordion (the tune in B), a walking bass, a bossa kit and woodblock; peak brass, timpani.
+  - innersun AABA (32, 55 s): brass stabs, timpani, spiccato (an ostinato in B), a warm bass, a full kit; peak a choir
+    and orchestra hits (the wild battle's own).
+  - crystal ABA (24, 64 s): bells, a pizzicato arpeggio, soft strings, a warm bass; peak a choir and timpani.
+  - spire AABA (32, 62 s): a celesta chime, pizzicato, strings, spiccato in B, an orchestral-snare kit; peak brass, timpani.
+  - map AABA (32, 80 s): a harp, strings, pizzicato bass, brushes, a flute in B; peak a march snare and timpani.
+  - Layers: walk a tambourine (cave a woodblock, spire the orchestral snare); rain brushes and a pizzicato drip; snow
+    sleigh bells; the kit to 0.7 standing still, 0.6 at night.
+- **Fingerprints**: batch 2's baseline is pending; SND-12c writes it after speeding up check-sound's renders. No code changed, so
+  only the nine songs' renders can have moved; the plain `--baseline` ran twice and was stopped twice (a container
+  restart at about 45 minutes, with the `--only` run beside it; then stopped at the planning session's word after
+  3.5 hours, nothing written). Until then `check-sound.py` reports the nine songs as changed (and their new ensemble,
+  night and layer renders as not in the baseline); validation/sound-baseline/ is as SND-12 left it.
+- **Levels** (the loudness report's song rows run alone, K-weighted, whole songs; gb before -> ensemble after its
+  trim): cave -35.2 -> -35.1 LUFS (+0.4 dB), meadow -34.3 -> -34.3 (-2.8), spore -34.4 -> -34.4 (-1.8), trench -32.8 ->
+  -32.8 (+0.4), hills -31.3 -> -31.3 (-0.7), innersun -29.6 -> -29.6 (-4.0), crystal -34.5 -> -34.5 (-1.8), spire -30.9 ->
+  -30.9 (+0.5), map -31.9 -> -31.8 (+3.2): all within 0.1 LU. Their gb versions in the forms moved 0.0-0.2 LU. Peaks
+  -14.9 to -23.9 dBFS. The trims are the ensembles' (no song trim moved: a song's moves its gb version too).
+- **Memory** (Node, 48 kHz): each song's bars 1.22-2.11 MB, 2.02-2.96 with every layer, at night 1.11-2.05; in a run's
+  place (its bars, walk, rain and peak with the wild battle's) each adds 0.28 (innersun) to 2.07 MB (trench) over the
+  wild battle's 2.30. A run's place now holds about 5.4-7.2 MB before stingers (with SND-11's ~2.8 MB of water, beds and
+  reverb), so few or none of the stingers bake ahead there (they bake on first play, 8-bit until then). The budget
+  stays 8 MB; dropped to fit: the rain's celesta (a pizzicato drip instead), the cave's soft strings, spore's and
+  crystal's glockenspiel, crystal's pizzicato bass, spire's celesta arpeggio (a chime instead), meadow's glockenspiel.
+- **The Starters step** ("battle rig buffers nearly empty" in SND-12's partial full check): run alone on this branch,
+  it passed (99 s; both puppets drawn, 1351 / 3074 px), so main was not needed. A load effect of the full check (the
+  buffers are read 20 s after the move menu), not the sound's: noted for SND-15's full check. Battle music also failed
+  once beside another step and the level renders and passed alone (62 s): SND-12's known timing flake under load.
+- **Risky or unfinished**:
+  - Claude can't hear: the arrangements are judged by numbers (levels, memory, no NaN, the tests); placeholders and first
+    guesses, the owner's ears decide.
+  - Memory: a run's place is near the budget before stingers; on the map tab the map song's zones (1.3 MB) push the
+    least recently played out, so going back to the walk tab may re-bake a few zones (gb until ready, on a bar line).
+    Estimated in Node, not measured in a browser; SND-15 reads the phone's debug log `bank`.
+  - The arc at 0.6 has no render (the fingerprints hear peak 1 as `layer:intensity3`).
+  - No storm layer for the run's songs (left out for the bank's room).
+  - The baseline is pending: a render of this batch is not compared with anything until SND-12c writes it.
+- **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules`, `npm run check:data` (179 files fine; the
+  check-data snapshot unchanged), the music unit tests (136 with the two new), `npm test` 2004 of 2004 (the two new
+  tests included); `check-sound.py --only=<the nine>` not finished (killed by the container restart); the baseline pending (above);
+  `check-quick.py --steps="Run music"` ok (15 places: 5 bands at 0.6 and 3 full heard as layers), "Run map music" ok,
+  "Battle music" ok alone, "Starters" ok alone; `npm run check:smoke` 7 of 7 (at 5df91925, 513 s).
+  CI on PR #292: green at 35fb3153 (the main merge); smoke red at a6d24c52 (docs only) on the bowl map's zoom ("never
+  settled"), the frame-timed step SND-13 already explained on the PR; not re-commented.
+- **Skipped at the owner's word** (2026-10-28 21:18 UTC, "You can skip the checks"): the full `npm run check:quick` and
+  the whole `check-sound.py --loudness` report (the levels above are its song rows run alone), and with them the
+  layered loudness rows and `check-studio-github.py --only=music` (no Studio code changed).
+- **Decided for the owner, to review**:
+  - The nine arrangements and their forms (above; sound-track.md "SND-12b as built"): Claude's drafts as named
+    placeholders you edit in the Studio's Form card and Instruments tab; GB Sounds compares.
+  - Slow songs (cave, spore, trench, crystal) in ABA of 24 bars, the rest AABA of 32 (renders and memory both grow with
+    length).
+  - The peak parts: a march snare (meadow, map; the gb arc marches too), brass or a choir, timpani; leaning on the
+    battle's instruments so the zones are shared.
+  - Memory: instruments dropped rather than the budget raised (as the brief said); the stingers give way in a run's
+    place.
+  - Trims on the ensembles, not the songs.
+  - No storm layer for the run's songs; the cave keeps no night (its song has none).
+- **The owner's listening list** (phone, silent switch OFF; the debug menu's Sound test -> a song "As its ensemble",
+  then GB Sounds; or in a run):
+  - The cave, then each biome song (meadow, spore, trench, hills, the inner sun, crystal, the spire), against GB Sounds:
+    A, B with its own chords and colour, A again; the fills into each section.
+  - The run's arc on a biome song as you go deeper: rows 3-5 (the first mini-boss's row on) bring the peak parts in at
+    0.6 (a march snare, strings, brass or a choir, timpani), rows 6-8 full. The Sound test's layer row plays them too.
+  - The run's map song on the map tab, and its rain muffle as before.
+  - Walking (a light beat), rain and snow on any of them.
+- **Next**: SND-12c (first check-sound's renders in parallel and batches 2 and 3's baseline in one commit; battles, bosses and the rest: wild in a form, trainer, rival, leader, boss, then mall, hazel,
+  title, fall, variants; tell the VFX planning session when it lands), then SND-15.
+
+### Sound track SND-12 (part 1) - arrangements: song forms (sections A and B, 16-32 bars), fills and turnarounds, varied repeats, new lines; batch 1 re-voiced: Copperleaf, the route, town and city - 2026-10-28
+Branch `track/sound`, the music lane (main already merged at the start; the branch fast-forwarded to SND-13's last
+push; main merged again at 641d18c0 with Perks PK-6: HANDOFF kept both entries, art-code-refs made again at f5cae841;
+no sound files). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan
+Mode, plan below, recommended options taken. One cause per commit, the generated file in its own commit, the baseline
+commit, the docs; tag `snd-12a-done` (for the owner to push) on this session's last commit. PR #292. Details:
+sound-track.md "SND-12 as built, part 1", "SND-12b", "SND-12c".
+- **Plan**: (a) forms in the composer, pure: a song with no `form` composes exactly as today; a form lays its sections
+  (each an SND-4 song of 4-16 bars, hooks kept) end to end, a fill and a turnaround at each section's end, the loop's
+  end home, seeded variation on repeats; (b) the new lines on the stems (an ostinato, a chime, a drone, hits; pad,
+  strings, pizzicato, stabs, timpani and the kits already were lines or instruments) and a part's sections (`in`);
+  (c) the schema in both places, `musicFindings`, the Studio's Form card; (d) batch 1 (the hub, the route, towns) as
+  placeholders, levels within 1 LU (the route 0.5), memory recorded; the baseline once; (e) write SND-12b and SND-12c
+  for the rest.
+- **Changed**: game/js/audio/tracker.js (`trackerCompose` -> `trackerComposeOne` for one section, `trackerComposeForm`;
+  the night moves each section's hook; the gb drums play the fills); game/js/logic/music-patterns.js (`musicFormPlan`,
+  `musicSectionAt`, `musicFillAt`, `MUSIC_FILL_LEVEL`, `MUSIC_FORM_VARY`, `MUSIC_FORM_FILLS`; the bass's walk-up, the
+  arpeggio's lift, the timpani's roll per section; lines ostinato, chime, drone, hits; a part's `in`);
+  game/js/logic/music-studio.js (the line choices, `MUSIC_FORM_BARS`, the recipe keys, the findings, placeholder
+  arrangements); game/data/schema/music.schema.json (`form`, `sections`, `$defs.section`, `$defs.prog` of 4-16 bars, the
+  new lines, `in`); game/js/sound.js (the debug log's `ensemble.section`); studio/js/music-editor.js (the Form card, the
+  hook roll's section picker); game/data/music.json (batch 1); tools/check-studio-github.py (the Form step); tools/check-sound.py (each song's ensemble baked in an emptied
+  bank, acb53fd9: a full render with batch 1 outgrew the shared bank); tests
+  (new music-form.test.mjs; tracker.test.mjs's town without its form); validation/sound-baseline/ (the four songs).
+- **Batch 1** (Claude's drafts, named as placeholders):
+  - copperleaf: AABA (32 bars, ~87 s); B over IV-V-iii-vi-IV-V-ii-V, the music box's own walk; in B a flute an octave
+    under the tune and a glockenspiel now and then (at night a celesta). Its ensemble otherwise SND-11's and SND-13's.
+  - route: AABA (32 bars, ~63 s); B over vi-IV-I-V-vi-IV-ii-V; a spiccato ostinato in B (half at night).
+  - town: ABAB (32 bars, ~77 s); B over vi-ii-V-I-vi-ii-V-V; the new `town` ensemble: chip lead, accordion counter (the
+    tune in B), e-piano chords, walking bass, brush kit, glockenspiel in B; walk, rain and snow layers.
+  - city: ABA (24 bars, ~50 s); B over IV-bVII-I-vi-IV-bVII-V-V; the new `city` ensemble: chip lead over e-piano chords,
+    walking bass, a kit, soft strings and brass stabs in B; walk, rain and snow layers.
+- **Fingerprints**: the code commits (afca4762, dc19598f, 7934154c) moved none (`check-sound.py
+  --only=copperleaf,route,town,city,wild` at afca4762's tree: 35 fingerprints, 0 changed). The data commit (94123484) changes
+  exactly the four songs: the baseline written once with plain `--baseline` (ea4fd03f, 4259 s): 248 fingerprints,
+  copperleaf, route, town and city written again (town's and city's ensemble, night and layer renders new, 14), the
+  other 22 files byte for byte the same; no NaN; mono RMS of the re-arranged renders within 0.3-0.7 dB of before. The
+  first `--baseline` failed ("the ensemble of copperleaf did not bake (the budget?)": one shared bank for every song in
+  the page); fixed in the tool (acb53fd9), no render changed by it (the 22 files).
+- **Levels** (the loudness report's song rows, K-weighted, whole songs, before -> after): gb Copperleaf -33.6 -> -33.9
+  LUFS, the route -31.9 -> -31.7, town -31.5 -> -31.5, city -31.2 -> -31.2; on their ensembles the route -31.9 -> -31.6
+  (+0.3: within 0.5), Copperleaf -33.6 -> -33.3 (+0.3), town -31.5 (0.0 on its gb before), city -30.9 (+0.3). No trim
+  changed. The layered rows were not measured (see Risky).
+- **Memory** (Node, 48 kHz, a song's bars, then with every layer): Copperleaf 1.41 -> 2.23 MB (16 zones; 4.37 with every
+  layer), at night 1.01 -> 1.65; the route 0.83 -> 1.09 (2.83), at night 0.92 -> 1.18; town 2.10 (3.24), at night 2.36;
+  city 1.76 (2.76), at night 2.01; 50-350 ms of work each. Only the layers wanted bake.
+- **Risky or unfinished**:
+  - Claude can't hear: the arrangements are judged by numbers (levels, the plan's tests, no NaN in the renders); they are
+    named placeholders and first guesses: the owner's ears decide (the listening list).
+  - Songs are 2-4 times longer: each render in check-sound and the loudness report is too. `check-sound.py --loudness
+    --only=<songs>` (which also renders every world sound and every layer) ran past the 30-minute background limit
+    twice; the levels above come from its song rows run alone (a scratch wrapper around its `loudness`, world rows and
+    layers left out). Making the report faster is SND-15's (it was already over 90 minutes whole).
+  - Memory: a run's town node now bakes `town` (2.1 MB; it was gb), so beside a battle's zones and the stingers the
+    bank (8 MB) drops least-recently-played zones sooner there and more stingers play 8-bit on their first play. The hub
+    estimated at 5-6 MB from SND-11's browser measure, not measured in a browser here. SND-15 reads the phone's `bank`.
+  - The fills replace the drums from beat 3 or 4 of a section's last bar on every drums part with a kit but the walking
+    beat's (`walk` never fills); a layer's sleigh bells drop out for that half bar (they have no snare).
+  - The turnaround rewrites a section's last bar only when the hook didn't write it (sections of 7 bars or more).
+  - SND-13's "the arc is heard nowhere yet" still holds: the biome songs are batch 2 (SND-12b).
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `npm test` 2002 of 2002 (after main's
+  merge; an earlier run beside a render failed only the rules' 1,000-maps timing test); `node --test` tracker 36,
+  music-patterns, music-studio 17, sound, music-layers, sound-bake, music-form 14 (134 together); `npm run
+  check:modules`, `npm run check:data` (179 files fine), the check-data snapshot (unchanged). `check-sound.py
+  --only=copperleaf,route,town,city,wild` on the code (35, 0 changed); the baseline as above. `npm run check:smoke` 7
+  of 7 (at 7934154c). `check-studio-github.py --only=music`: ok (the Form step included). The full `npm run
+  check:quick` was started twice and not finished: the container restarted during the first, and the owner said to skip
+  the checks during the second, stopped at 31 minutes with 30 steps ok and 6 problems: Copperleaf's train_station in
+  the air, RL-8, room light, the lab's room at its door (main's, known), Battle music (the known timing flake under
+  load), and the Starters' battle rig buffers (not looked into). Song fingerprints, Run music and the debug menu steps
+  were not reached; `check-quick.py --steps=sound,song,music,"debug menu"` was not run. CI on PR #292: smoke red at
+  dc19598f, 7934154c and 310b9b69 on the bowl map's zoom ("never settled") and once Camera follow: the frame-timed steps
+  SND-13 already explained on the PR (main's own Check is red on its intermittent smoke steps too); nothing here touches
+  the map or the camera; not re-commented.
+- **Decided for the owner, to review**:
+  - The arrangements are Claude's drafts as named placeholders you edit in the Studio (as SND-4), loops of 16-32 bars.
+    As recommended.
+  - Batch 1 = the hub, the route and the towns: copperleaf AABA, route AABA, town ABAB, city ABA, with the B chords,
+    parts and ensembles above (sound-track.md "SND-12 as built, part 1"). Approve or change them in the Studio's Form
+    card and Instruments tab; GB Sounds compares.
+  - B sections have no written hook: their tune is the seeded walk over their chords (each has a placeholder hook name
+    so the Check lists it; draw one in the hook roll's section picker).
+  - Variation on repeats: the bar after the hook's repeat walked again and every other repeat's arpeggio an octave up
+    (not a whole new tune, which a song without a hook would become).
+  - Three fill shapes picked from the song's seed and the section's place (no random); softer in soft patterns; the
+    bass walks two scale steps up into the next chord; the tune ends a step above the next section's root.
+  - A part's `in` (sections it plays in), not in the plan: B's own instruments.
+  - Town and city get their own ensembles with walk, rain and snow layers (as the route's); no busker or storm parts.
+  - No trims changed (every song within 0.3 LU of its level before).
+  - SND-12 split: SND-12b (caves, biomes, the run's songs and their arc layers) and SND-12c (battles, bosses, the rest).
+- **The owner's listening list** (phone, silent switch OFF; the debug menu's Sound test -> a song "As its ensemble",
+  then GB Sounds; or in the game):
+  - Copperleaf (by day and at night), a route, a run's town: the A section twice, then B (its own chords and tune; the
+    flute and glockenspiel in Copperleaf's B, the string ostinato on the route), then A again; listen across each
+    section's end: the drum fill, the bass walking up, the tune leading into the next section.
+  - The second A: bar 7 differs, the arpeggio sits an octave higher.
+  - town and city on their new ensembles (accordion, e-piano, walking bass, brushes); walking, rain and snow layers.
+  - GB Sounds on: the same forms on the four chip voices.
+  - Studio (computer): the Form card on a song (+ A, + B, New section, the chords, New tune) and the hook roll's
+    section picker; the Check lists the placeholder arrangements and B sections.
+  - Export a debug log and read `audio.ensemble.section` (the section, its repeat, the bar of how many).
+  - Nothing new for the run's arc yet (SND-12b).
+- **Next**: SND-12b (batch 2: caves, biomes, the run's songs, so the arc's layers are heard), then SND-12c (battles,
+  bosses, the rest), then SND-15.
+
+### Sound track SND-13 - layers in play: the walking beat, rain, snow, a storm and night, a battle that builds, the run's arc, the busker as you pass, the Sound test's layer switches - 2026-10-28
+Branch `track/sound`, the music lane (main merged first, 948eaa0f: HANDOFF kept both entries, art-code-refs made
+again; the world lane's last push merged at 9348a6ed; main merged again at the end, 8bd6032d: 51 commits, no sound
+files, then Song fingerprints 234, 0 changed, and Run music, Sound effects ok). Started by the planning session under the owner's standing
+instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per commit, the generated
+files in their own commits, the baseline commit, the docs; tag `snd-13-done` (for the owner to push) on this session's
+last commit. PR #292. Details: sound-track.md "SND-13 as built".
+- **Plan**: (a) pure logic first (logic/music-layers.js): a part's gain from the game's layer levels, beat and bar
+  lines, walking, the weather, the busker by distance with hysteresis, a battle's build and peak from its lines
+  (hitTier, koAhead), the arc; (b) the schema (a part's `layer` and `dim`) and the `walk` drum pattern; (c) the
+  tracker's controller: a gain of its own per layered part after the part's (the stingers keep theirs), ramps at step
+  times, layer parts out of the bar's bake; (d) sound.js: the levels from where the music read them (walking, the
+  environment's weather, the night), on ensembles the drums' bus at 1 and no rain muffle (gb keeps both), a battle's
+  intensity, the arc as layers, the busker's stem and listening; (e) check-sound's `layer:<name>` renders; (f) the
+  placeholder layer parts; (g) the Sound test; the baseline once, plain `--baseline`.
+- **Changed**: new game/js/logic/music-layers.js and tools/test/music-layers.test.mjs; game/js/logic/music-patterns.js
+  (the `walk` pattern, `skip`, needs by part); game/js/logic/music-studio.js (the Walk choice); game/js/logic/music-where.js
+  (`songVariant`: an ensemble song's arc as layers); game/data/schema/music.schema.json (`$defs.layer`, a part's `layer`,
+  `dim`, the drums' `walk`); game/js/audio/tracker.js (the layer controller, `T.layersPrepare`, `T.layerStats`);
+  game/js/sound.js (`musicLayersNow`, `musicLayersIntensity`, `musicBuskerNow`, `buskerCase`, `musicLayersPrepare`,
+  `buskerSongNear` only when listening, musicState's `gb`, the drums' bus and the muffle on ensembles, musicParts'
+  layer parts, a battle's peak baked as it starts, the debug log's `ensemble.layers` and `ensemble.parts`);
+  game/data/music.json (layer parts in copperleaf, copperleaf_night, route, battle); game/js/sound-test.js (the layer
+  row); game/index.html, studio/index.html, studio/js/logic-worker-modules.js (the new module); tools/check-sound.py;
+  tests (music-patterns, tracker, sound); validation/sound-baseline/ (copperleaf, route, wild).
+- **Fingerprints**: 216 before, **0 changed** at the last code commit (`check-sound.py` at c5bff6af, 1349 s: 234
+  fingerprints, exactly the 18 planned additions and nothing else); after the first draft of the data, at 836c2110's
+  parent, `--only=copperleaf,route,wild` showed the same additions (19 then: Copperleaf's day `layer:night` was dropped
+  in the tuning, its render being the plain ensemble's). The baseline written once with plain `--baseline` (ccdb06eb),
+  every old value byte for byte the same (checked file by file); then `check-quick.py`'s Song fingerprints: 234, with
+  brightness, 0 changed. The code commits before the data were not rendered one by one (a render of the tracker's
+  commit in a worktree was stopped at its 30-minute limit on the busy machine): no ensemble part named a layer or a
+  dim before 836c2110, so the controller made no node and moved nothing; the render at the last commit covers them.
+- **Levels** (mono RMS of the fingerprint renders, against the plain ensemble, by day): Copperleaf walk +0.1 dB (the tambourine shows in the brightness: zero crossings 80 -> 118 a window), rain +1.3, snow +0.2 (80 -> 102), storm +2.0, busker +1.1; at night walk +0.1, rain +0.6, snow +0.1, storm +1.1, busker +0.5; the route walk +0.3, still -3.0, rain +0.4, snow +0.1, storm +0.9, night -2.0; the wild battle intensity 1 -4.1, intensity 3 +0.1 (brighter: 58 -> 62); every layered render differs from the plain ensemble in 83-502 windows, no NaN. The K-weighted
+  `--loudness` report was not run whole (90+ minutes here; see Risky).
+- **Seen in the game** (headless Chromium, a real AudioContext, the town fixture): Copperleaf on its ensemble; the
+  stick held: walk 1, the tambourine's gain 1 (baked when first wanted), still 1 a second after letting go, 0 six
+  seconds later (a bar line, then its fade); the drums' bus 1 on the ensemble (0.45 → 1 → 0.45 on gb, as before); the
+  busker 12 m off 0, 6 m 0.28, 3 m 0.8, its pan moving with the camera, listening after 3 s still within 5 m (no theme
+  played: the fixture has no last run); no page errors.
+- **Risky or unfinished**:
+  - Claude can't hear: the layer parts are judged by numbers (levels, windows that differ, no NaN); they are named
+    placeholders, and the levels are first guesses: the owner's ears decide (the listening list).
+  - The arc's layers are wired and tested but heard nowhere yet: no biome song names an ensemble (SND-12).
+  - The busker is simulated at its case (no resident busks in the data yet, RS-5). Arriving home (6.6 m from the
+    case) you hear its accordion faintly (0.2).
+  - A layer's notes bake on first want (on arrival for walking and the weather and night there, as a battle starts
+    for its peak): until baked it stays out. In a slow headless page the bank's slices ran about once a second (the
+    page's software rendering), so the first walk there passed before the tambourine was baked; on a phone a zone
+    bakes in milliseconds. The debug log's `ensemble.parts` says each layered part's gain and whether it is baked.
+  - Memory: the layers add instruments to a place's bank (Copperleaf's walk, rain, snow, storm and busker parts
+    together 0.84 MB at 48 kHz, 7 zones: walk 0.05, rain 0.26, snow 0.08, storm 0.36, busker 0.09; the route's 0.85,
+    the battle's peak 0.29; Node, 100-225 ms of work each; only those wanted are baked). A run's place is near the 8 MB budget (SND-17); the
+    bank drops the least recently played zones first. SND-15's call.
+  - `check-sound.py --loudness` as a whole still takes over 90 minutes (the planning session relayed SND-14's
+    measure: the ensemble parts bake again in each render job while the page draws in software). Not fixed here (not
+    cheap to prove the numbers identical in this session); for SND-15. Its new layered rows are in the code, not run.
+  - CI on PR #292: lint failed at 5b2201c8 on the logic worker's module list (fixed, c5bff6af); smoke at 1ab98c5c on
+    the bowl map's zoom and Camera follow (frame-timed; both pass here, `check-fast.py --only="bowl,Camera follow"`);
+    commented on the PR.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `npm test` 1932 of 1932 (the logic worker's
+  module list fixed in c5bff6af); `node --test` music-layers 13, music-patterns 14, tracker 36, sound 17, music-studio 17,
+  sound-bake, square-day; `npm run check:modules` (0 changed), `npm run check:data` (179 files fine), the check-data
+  snapshot (unchanged). `check-sound.py` at c5bff6af (234: the 18 additions, 0 else) and the baseline (ccdb06eb), then
+  Song fingerprints 234, 0 changed. `npm run check:smoke` 7 of 7. `check-quick.py --steps=sound,song,music,"debug
+  menu"`: 8 of 9, "Battle music" failing under load and passing alone twice (drums 4.9 and 5.6 s after the flash, on
+  the throw). `check-studio-github.py --only=music`: ok on the second run (the first run's output was cut while a click
+  waited on a disabled control). `check-fast.py --only="bowl,Camera follow"` 3 of 3. The full `npm run check:quick`: 37
+  of 42 (2087 s): Copperleaf's train_station in the air, RL-8, room light at night (main's, known), Battle music (passes
+  alone), and the lab's room laid in at its door (passes alone, 122 s). The game probe above. CI on PR #292 green at
+  ccdb06eb and e6e53bf5.
+- **Decided for the owner, to review**:
+  - The busker plays an accordion stem inside Copperleaf's song as you pass (earshot 8 m, out past 9, full within 2
+    m, panned from where it stands), and its last run's theme only when you stop to listen (still within rules.json
+    `square.busk.near`, 5 m, for 3 s, until 2 m further off); today's switch within 5 m goes. As recommended.
+  - A battle's intensity: build = 0.25 a turn + 0.3 a KO + 0.35 a boss's phase + 0.15 a crit or 4× hit (full after
+    about four turns); peak in the red zone, as a KO lands (the line that knocks out) and once a boss or leader has
+    changed phase. The red zone's tense version stays (it is a version, not a layer).
+  - The music's rain low-pass gives way to the rain layer on ensemble songs; gb keeps its 4 kHz low-pass. As
+    recommended. The run map's forecast cut stays.
+  - The run's arc on an ensemble song is layers (its `peak` parts: rows 3-5 at 0.6, 6-8 full); gb songs and GB Sounds
+    keep `@mid` and `@late` (the quick check's Run music step unchanged).
+  - Walking: in on the next beat over a beat; out from the next bar line over two beats; 0.4 s still never drops it.
+    Weather, night and intensity move on bar lines over a bar; the busker on beats.
+  - On an ensemble the drums' bus stays at 1 (the walking beat and the dims replace `L.drums`); the route's kit goes to
+    0.65 standing and 0.6 at night; gb keeps 1/0.45 × (1 − 0.4·night).
+  - Night: the route's flute takes the tune (the chip to 0.35); Copperleaf keeps its night version (its own ensemble),
+    with its own softer layers. No e-piano yet.
+  - The placeholder parts (sound-track.md "SND-13 as built"): Copperleaf's tambourine, celesta and brushes, sleigh
+    bells, storm strings and timpani, accordion; the route's walking snare, flute, the same weather; the battle's brass,
+    timpani, spiccato and kit dimmed at the intro, a choir and orchestra hits at the peak.
+  - The weather layers start at 0.2 of the environment's rain, snow or storm and are full at 0.8, outdoors only.
+  - Simulated busker: at the case while no resident in the data busks; a resident who busks (RS-5) takes over.
+  - The Sound test's "busker distance slider" is a select of 1-10 m (the debug menu's 40 px controls); the layers are
+    set with "Set the layers" and move on the next beat or bar.
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test, the layer row, then Play the
+  song "As its ensemble"; or in the game):
+  - Copperleaf and a route: walk, stop, walk (the tambourine or snare comes in on the beat, goes about a bar after you
+    stop; on the route the kit thins standing).
+  - Rain, snow and a storm over Copperleaf and the route (the Sound test's weather; in the game, a rainy day).
+  - Night on the route (the flute takes the tune) and Copperleaf at night (its night version with its own layers).
+  - A wild battle: lean at the start, building over the turns; the choir and hits as a KO lands and in the red zone
+    (Sound test: wild, intensity 1, 2, 3).
+  - The run's arc: nothing to hear yet (no run song on an ensemble until SND-12).
+  - Copperleaf's busker: walk past the case (the accordion comes and goes, from its side), stop within 5 m for 3 s
+    after a run (its theme), walk away (Copperleaf's song again). Sound test: the busker at 1-10 m.
+  - GB Sounds on: every song as before (the drums soften standing, the rain muffles).
+  - Export a debug log and read `audio.ensemble.layers` and `.parts` (each layered part's gain and whether baked).
+- **Next**: SND-12 (arrangements: A/B forms, every song re-voiced as placeholders, in batches the owner approves; the
+  biome songs' ensembles then hear the arc as layers).
+
+### Sound track SND-14 - nature and weather: rain by intensity, roofs, thunder from the weather's bolts, wind and gusts, birds by the hour, insects, frogs, fire by size, footsteps by surface, the town's life, rooms by kind - 2026-10-28
+Branch `track/sound`, the world lane (main merged first, 764a4fde; SND-11's work merged mid-session, 0ba9f941). Started
+by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode, plan below, recommended
+options taken. 9 change commits, one cause each, plus docs; tag `snd-14-done` (for the owner to push) on this
+session's last commit. PR #292. Details: sound-track.md "SND-14 as built". The world lane is done.
+- **Plan**: (a) a pure, seeded logic/nature-sound.js and soundscape.json `nature` (schema, check:data findings), Node
+  tests; (b) a thin bolt counter in environment.js; (c) audio/nature-player.js for the one-shots and a game-side
+  nature-here.js reading the place, sound.js keeping thin calls: rain (wash, heavy roar, patter, roofs, eaves' drips,
+  indoors), thunder by distance, wind and the grass's gusts with the leaves, birds by the hour (the owl into the
+  one-at-a-time queue), insects, frogs at SND-10's still-water voices, fire by size, steps by surface, the town's life,
+  rooms by kind; (d) the Sound test's rows, the report's nature rows, the Studio card; (e) trims from the report; docs.
+- **Changed**: new game/js/logic/nature-sound.js, game/js/audio/nature-player.js, game/js/nature-here.js,
+  tools/test/nature-sound.test.mjs; game/data/soundscape.json (`nature`; beds `rainHeavy`, `rainRoof`, `roomHum`,
+  `roomBarn`; `dry` on cave and room) and its schema; game/js/environment.js (`environment.bolts`, a few lines);
+  game/js/sound.js (thin calls: `natureStart`, `natureHere`, `naturePreviewTick`, footsteps by `natureStep`; the
+  flash-polled thunder, the fire's fixed level, the town's murmur outdoors, the owl's own random and
+  `nearestSoundSource` gone; birds by the hour); game/js/logic/ambience-sound.js (`ambienceCrackles` takes a rate);
+  game/js/soundscape-here.js (keeps its chosen water voices for the frogs); game/js/sound-test.js (rows);
+  tools/check-sound.py (nature rows); tools/check-data.mjs; studio/js/music-editor.js (the World sounds card's nature
+  rows); tools/check-studio-github.py; script tags on both pages; studio/js/logic-worker-modules.js;
+  tools/test/ambience-sound.test.mjs (13 beds); studio/art-code-refs.json.
+- **Fingerprints**: 199, **0 changed** (`check-sound.py --loudness` in a worktree on 7a3bec54, on 1fb8ee3a, and on
+  1fb8ee3a with d071cc55 and 9401f985 on top: everything of this session that a fingerprint could reach). The baseline
+  was not written.
+- **Loudness** (LU under the route song; max = loudest 3 s): light rain -20.7, rain -14.0, heavy rain -12.8, on a roof
+  at 1 m -12.9, indoors -19.5; thunder at 0.6 km -11.6 (max -11.7), at 4 km -22.2; gusts -29.9, a forest's wind -16.1;
+  dawn chorus -22.7 (max -26.3), noon -23.5 (max -29.2), owl -22.1 (max -28.0); grasshoppers max -26.8, cicadas max
+  -24.2, frogs at 3 m -19.5; fireplace 2 m -22.6, campfire 2 m -16.8, bonfire 3 m -12.7; town life -23.9 (max -27.2);
+  rooms -19.9 (house) to -25.8 (workshop); steps -23.7 (mud) to -27.2 (wood). Scenes: Copperleaf's square -14.5
+  (-12.8 before), a route in rain -12.0, a meadow at night -16.6. No warning after the second trims.
+- **Memory**: nothing new baked (the beds' noise and SND-10's drop bank); 3.84 MB of the 6 MB budget as before.
+- **Risky or unfinished**:
+  - Claude can't hear: every recipe is judged by numbers; the owner's ears decide (Sound test, the Studio card).
+  - Thunder at 0.6 km is the loudest event (-11.7 LU max): within the events' ceiling, so no exception; it rises over
+    40-500 ms. If it reads too weak as thunder on the phone, `nature.thunder.level` is the knob.
+  - The cicada is a pulsing band at 3.3 kHz, high-shelved: the kind of sound that can grate; it is rare (10-25 s
+    apart), summer afternoons in hot biomes only.
+  - Rain on rooms: a room hears its place's rain (`environment.rain` indoors, by the forced or the place's weather);
+    not checked on a run's own weather in a room.
+  - In headless Chromium the page's frames block the 200 ms timer for seconds, so in-page counts of one-shots are
+    much lower than on a phone; the offline report is the measure. The debug log's `audio.nature` line (sources
+    started, thunder rolls, the bolts heard, the last thunder's km and delay) shows the phone's.
+  - `check-sound.py --loudness` on the merged head takes over 90 min (25 before), for SND-15 to fix: since SND-11 each
+    job waits a tick before it renders, so the game page's software-drawn frames run between jobs, about 10 s per job
+    here (measured: batches of six world rows took 40-70 s each, steady, so nothing piles up per page), and this
+    session's 39 nature rows join SND-10's 66 water rows. A fix (fewer frames between jobs, or the world rows on a page
+    of their own that never starts the walk view) belongs in a commit of its own with the report's numbers identical.
+    The fingerprint pass alone (`check-sound.py`, no `--loudness`) takes 3 min.
+  - The merge of SND-11 (0ba9f941) regenerated studio/art-code-refs.json and hooks.js inside the merge commit, not in
+    a commit of their own.
+- **Verified**: `npm run lint`, `typecheck`, `check:modules`, `format:check` and `check:data` after every commit (the
+  intermediate commits checked before committing, art-code-refs refreshed where sound.js moved); `npm test` 1770 of
+  1771 after the merge of SND-11 (the timing test "1,000 maps in under 1.5 s" on a loaded machine, as in SND-10); the
+  sound tests (ambience-sound, soundscape, sound, sound-bake, tracker, nature-sound, the check-data snapshot) 118 of
+  118. `check-sound.py --loudness`: 199, 0 changed on 7a3bec54, 1fb8ee3a and 1fb8ee3a + d071cc55 + 9401f985 (in a
+  worktree); the second trims measured on their rows alone. `npm run check:smoke` on 1edb2c77: 7 of 7, no problems.
+  Browser probes (headless Chromium, Copperleaf): a storm at night (two bolts: thunder rolled, the far one 12.5 s
+  later), dawn, and every new Sound test row: no page error. `check-quick.py --steps=sound,song,music,"debug
+  menu",weather,animals`: 10 of 12 (battle music failed under load and passed alone; Song fingerprints listed
+  SND-11's new ensemble parts as not in the baseline: the tested commit 323fc0c2 had SND-11's ensemble code but not its
+  baseline commit 32f497c4, which came later; origin/track/sound has those renders). `check-studio-github.py --only=music`: ok (steps on gravel
+  on the World sounds card). The full `npm run check:quick` on 323fc0c2: 38 of 42 in 2152 s; every sound step passed;
+  Terraces, RL-8 and "Walking left and right..." fail on main too; Song fingerprints as above (the baseline commit 32f497c4 was not yet in the tested tree).
+  CI on 4874a99d (the session's merge push): lint and rules green; smoke still running when this entry was
+  written (locally: smoke 7 of 7, the full quick check as above). Tag `snd-14-done` on this entry's commit.
+- **Decided for the owner, to review**:
+  - Thunder: from a bolt counter in environment.js (the thin hook; its flash unchanged); distances 0.4-4.5 km, more
+    far than near; the speed of sound for the delay (1.2-13 s); a crack only within 1.2 km; at most two rolling; none
+    in a cave; bolts while the walk is away not heard; muffled to half indoors. Its level within the events' ceiling
+    (no exception).
+  - Rain: the wash by a curve (0.19 at 0.3, 0.38 at 1, 0.4 at 1.6), the heavy roar from 0.6, patter 2-20 drops a second
+    outdoors only, the roof full within 1.5 m of a building's eaves (its footprint as a circle), gone by 8 m, and
+    indoors at its own level; drips only under the eaves.
+  - Wind: a light breeze everywhere outdoors (half in towns), lifted by the gust the grass shows; the leaves too.
+  - Birds: the hour's curve (dawn 0.3, noon 2.6 times the wait), the dawn chorus 4:48-7:36, the owl from night 0.6 in
+    the same one-at-a-time queue (25-60 s), none in towns.
+  - Insects: cicadas (hot biomes, summer, 11:00-19:00) before grasshoppers (meadows and the like, spring to autumn,
+    9:30-18:30); none in rain or winter; crickets as before.
+  - Frogs: by pond, marsh, bog, lake and oasis voices, from night 0.45, spring to autumn.
+  - Fire sizes: campfire 1, fireplace 0.55, bakery oven 0.45, times the prop's scale.
+  - Footstep surfaces: grass (incl. forest floor, leaf litter, pine needles, moss), sand (incl. ash, salt), dirt,
+    gravel (incl. pebbles, scrap ground), wood (every board and parquet), snow, mud (incl. marsh), carpet (carpets,
+    rubber, cork, straw floor, cloud floor), stone for everything else; wet and snow from the weather as before.
+  - The town's life replaces the murmur outdoors (the murmur now an inn's tone); five kinds, 6-16 s apart.
+  - Rooms by the map id: house, shop, library, inn, lab, clinic, gene bank, workshop, barn, else a house's.
+  - A Sound test row starts its one-shots at once; its town murmur row went.
+  - The Studio card plays nature's one-shots only (its beds need sound.js; the game's Sound test plays them).
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test, then the places): light rain,
+  rain and heavy rain; "Rain on a roof" at 1 and 6 m and "Rain on the roof, indoors"; real rain in Copperleaf, under a
+  house's eaves and inside a room; thunder near and far, and a real storm with Settings' flashes off (thunder still
+  comes); "A breeze and its gusts" and "Wind in a forest" (and a forest route: the leaves rise with the grass's
+  gusts); "A dawn chorus", "Birds at noon", "An owl at night"; "Frogs by a pond at night" and a pond at night in
+  play; grasshoppers and cicadas; a fireplace, a campfire and a bonfire; steps on each surface (and walking over grass,
+  sand, a bridge, a dock, gravel, snow, mud); "A town's life" and Copperleaf's square at midday; an inn, a library, a
+  lab, a workshop, a barn and a house. Listen for: nothing sudden or shrill, thunder that reads as thunder, the rain
+  never louder than the music. Then export a debug log and check `audio.nature` (started, thunder, bolts,
+  lastThunder).
+- **Next**: the world lane is done. SND-15 (the mix and a phone pass) after the music lane (SND-17, SND-13, SND-12).
+### Sound track SND-17 - jingles and stingers: the 12 jingles on ensembles, stingers on the song's beat, GB Sounds keeps the 8-bit ones - 2026-10-28
+Branch `track/sound`, the music lane (main merged first, 63fe5835: HANDOFF kept both entries, art-code-refs made
+again). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode, plan below,
+recommended options taken. One cause per commit, the generated files in their own commits, the baseline commit, the
+docs; tag `snd-17-done` (for the owner to push) on this session's last commit. PR #292. Details: sound-track.md
+"SND-17 as built". The world lane (SND-14) pushed nothing during this session.
+- **Plan**: (a) pure logic first: what each ensemble part plays of a jingle and a stinger's beat and key
+  (music-patterns.js); (b) the schema (`ensemble`, `harmony`, `bass`, `perc` as a hook's lines, and `stinger`) and
+  `musicFindings`; (c) the tracker: a jingle on its ensemble once baked and GB Sounds off, else today's code; (d)
+  stingers (beat, key, busy parts dropped; the fanfares keep the duck); (e) every caller by name so its ensemble can
+  play; (f) check-sound's `<name>@ensemble` renders and loudness rows; (g) the 12 arrangements as placeholders on
+  SND-11's instruments, trims from the loudness report; (h) the Studio's Jingles card and the Sound test both ways;
+  (i) bake ahead where they play; the baseline once, plain `--baseline`.
+- **Changed**: game/js/logic/music-patterns.js (`musicJingleParts`, `musicJingleNeeds`, `musicJingleTune`,
+  `MUSIC_JINGLE_KIT`, `musicStingerAt`, `musicStingerShift`); game/data/schema/music.schema.json (the jingle's keys);
+  game/js/logic/music-studio.js (`musicFindings`); game/js/audio/tracker.js (`T.jingleEnsemble`, `T.jingleNeeds`,
+  `T.jingleReady`, `T.jinglePrepare`, the ensemble path, stingers, `synthVoice` returns its nodes); game/js/sound.js
+  (`jinglePlay` passes the jingle and `o.bpm`, `jinglesPrepare`, the debug log's last jingle, the caught and lvl cases
+  by name); game/js/battle.js, run.js, logic/rules.js (by name); game/data/music.json (11 ensembles, the jingles' lines
+  and `stinger`); game/js/sound-test.js; studio/js/music-editor.js (the Jingles card, the roll's `poly`);
+  tools/check-sound.py, tools/check-studio-github.py; tests (music-patterns, tracker, music-studio, logic);
+  validation/sound-baseline/jingles.json.
+- **Fingerprints**: at the last code commit 204, **0 changed** (`check-sound.py`, 433 s); the arrangements' commit
+  (989247b3) listed exactly the 12 planned additions (`jingles` `<name>@ensemble`), 0 else; the baseline written once
+  with plain `--baseline` (9b85433b), every old value byte for byte the same; then `check-quick.py`'s Song fingerprints step: 216, with brightness,
+  0 changed. The first commits were not rendered one by one: each changed no data a render
+  reads before the arrangements (no jingle named an ensemble), and the render at the last code commit covers them.
+- **Loudness**: every jingle on its ensemble within 0.3 LU of its 8-bit version (the report's new jingle rows,
+  measured whole); peaks -11 to -22 dBFS. The full `--loudness` run did not finish on this machine (over 90 minutes,
+  stopped; see Risky); the jingle rows were measured with the same code on a page per jingle.
+- **Memory and bake time** (Node, 48 kHz): a run's stingers 2.7 MB (21 zones, 162 ms of work), the battle's fanfares
+  3.2 MB (27, 249 ms), run_won and run_lost 2.6 MB, the motif 0.8, hatch 0.9. A run's place holds about 7 of the 8 MB
+  already, so they bake ahead one at a time while 1.5 MB stays free; the rest bake on first play (which is 8-bit).
+- **Risky or unfinished**:
+  - Claude can't hear: the twelve arrangements are judged by numbers (the notes, levels, no NaN, peaks); the owner's
+    ears decide (the listening list). They are named placeholders.
+  - Memory: in a run's places the bank can't hold every jingle beside the songs, the water and the beds: some jingles
+    play 8-bit the first time (or after the bank dropped them) and bake for the next time. The debug log's `ensemble`
+    line says how the last jingle played (`gb (baking)`). A bigger budget or smaller zones is SND-15's call.
+  - Stingers drop the busy stems by setting their gains (1 -> 0.2 -> 1); SND-13's layers will move the same stems and
+    must share them (a multiplier per owner, or the layers on their own gains).
+  - `check-sound.py --loudness` as a whole took over 90 minutes here and was stopped: a page slows as its renders pile
+    up (the world rows: water and nature, about 100). Not this session's rows (theirs now run on their own page); for
+    the world lane or SND-15.
+  - CI smoke on PR #292: the Studio's world map look and Camera section fail on main too (the landmark's Auto and 404s
+    for game/art/billionaires/*.png); the frame-timed steps (the orbit, behind things, tall ground, a run's seam, the
+    camera dial) fail on some runs and not others (tall ground at SND-11's 0ba9f941, the seam at 63fe5835, five of
+    them at a70652e0), pass here at HEAD and on main when the machine is quiet, and fail here at HEAD under load.
+    Noted on the PR; not fixed.
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `npm test` 1903 of 1903; `node --test`
+  tracker 33, music-patterns 13, music-studio 17, sound 17, sound-bake 23, logic 2 (the `jinglePlay` seam); `npm run
+  check:modules` (0 changed), `npm run check:data` (178 files fine), the check-data snapshot (unchanged). `check-sound.py`
+  at the last code commit (204, 0 changed) and at the arrangements (exactly the 12 additions), then the baseline. The
+  jingle loudness rows (a page per jingle). `check-studio-github.py --only=music`: ok (hatch 8-bit and on its ensemble,
+  a harmony note drawn and undone). `check-quick.py --steps=sound,song,music,"debug menu"`: 8 of 9, including "Sound
+  effects and jingles" (the day, reveal, relic, coins and run_won in order); "Battle music" failed once under load and
+  passed alone three times (drums 4.9-6.0 s after the flash). `npm run check:smoke`: 7 of 7. The full `npm run
+  check:quick`: 36 of 42 (1963 s): Copperleaf's train_station in the air, RL-8, room light at night (main's, known),
+  Battle music (passes alone), RT-2's double and Granny Juniper (each passes alone, at HEAD and on main). CI smoke:
+  see Risky; commented on PR #292 and its failed job re-run once.
+- **Decided for the owner, to review**:
+  - The arrangements (sound-track.md "SND-17 as built"): fanfare for victory and run_won, fanfare_pizz for the catch,
+    sparkle, swell, twinkle, motif, sly, chime, tock, lament, coin; trims level with the 8-bit versions.
+  - How a jingle's lines map onto SND-11's part lines (lead and counter the tune, pad, stabs and arp the harmony, bass,
+    drums the perc's General MIDI kit notes, timp its other notes) instead of new part lines.
+  - Stingers are data (`stinger: true` on relic, reveal, day, payout_coin), written in C and moved into the song's key
+    the nearer way (-5 to +6); they start on the song's next beat after any stinger already waiting; the busy parts
+    are the tune, the counter and the arpeggio (gb's lead, counter and harmony stems; an ensemble's lead, counter and
+    arp parts), dropped to 0.2 and back over 0.4 s; the bass, pad and drums keep playing.
+  - The payout's coins (`duck: false`) still drop the busy parts (the spec lists them).
+  - GB Sounds keeps the whole 8-bit jingle: no beat, no key, the duck, as today.
+  - Baked ahead: the run's stingers on arrival in its places, the motif in the hub, the fanfares (and in a boss battle
+    run_won and run_lost) as a battle starts, while 1.5 MB stays free; hatch never (nothing in the game plays it).
+  - No instrument added: SND-11's 29 cover every arrangement.
+  - The Studio: ▶ Play plays the ensemble (its notes baked first), ▶ 8-bit beside it; the roll's harmony, bass and
+    perc lines take several notes a step.
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test):
+  - Every jingle both ways: "Every jingle both ways" (each 8-bit, then on its ensemble), or one at a time.
+  - In the game: a battle's victory, a level-up and a catch (the fanfares duck the song); an evolution.
+  - The day's tock over Copperleaf's song: in Copperleaf, the Sound test's jingle row, day, on its ensemble (on the
+    beat? in the key?); in the game it plays walking into a run's next place, over that place's song, then the reveal.
+  - A relic (a Perk taken) over a route song: the tune and arpeggio step back, the bass and drums go on (no full duck).
+  - The payout: a coin per row, a tone higher each, then run_won or run_lost.
+  - Settings -> Sound -> GB Sounds on: every jingle 8-bit as before.
+  - Export a debug log and read `audio.ensemble.jingle` (the last jingle and what played it) and `bank` (withOtherMb,
+    dropped).
+- **Next**: SND-13 (layers in play: walking, weather, the busker, a battle's intensity), then SND-12.
+
+### Sound track SND-11 - stems and ensembles: the tick's patterns as pure functions, stems, baked instruments, the first ensembles, GB Sounds, the Studio's Instruments tab - 2026-10-28
+Branch `track/sound`, the music lane (main merged first; the local clone was stale and was reset to origin/track/sound
+before any edit). Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode,
+plan below, recommended options taken. 13 change commits, one cause each, the baseline commit, the generated files in
+their own commits and the docs; tag `snd-11-done` (for the owner to push) on this session's last commit. PR #292.
+Details: sound-track.md "SND-11 as built". Merged mid-session: main (twice) and the world lane's SND-10 and SND-14
+pushes (only art-code-refs conflicted: made again).
+- **Plan**: (a) bass, arpeggio and drums as pure "what plays at this step" functions (logic/music-patterns.js) the gb
+  path plays exactly as before (a Node record of every synth call, beside the fingerprints); (b) stems: each line into
+  its own plain gain under the fader, no panner on gb; (c) sound-bake.js's new kinds (partials, stack, wind, hit; fm
+  and osc sliced), music.json `instruments` (about two dozen, the harp moving from the code), `ensembles` and a song's
+  `ensemble` in the schema (gb reserved), MUSIC_CHOICES, musicFindings; the tracker's ensemble path (gb until the notes
+  are baked, a switch on a bar line), T.prepare baking only the notes a song plays, on arrival, with the reverb made
+  then; (d) Copperleaf (day and night), the route and the wild battle as ensembles; (e) GB Sounds in Settings -> Sound;
+  (f) the Studio's Instruments tab and its player on the game's chain; (g) the reverb at a load, off at Graphics Off;
+  check-sound: today's 194 (199 with main's UI sounds) unchanged, the ensembles as new parts; the baseline once.
+- **Changed**: new game/js/logic/music-patterns.js, tools/test/music-patterns.test.mjs; game/js/audio/tracker.js (gb
+  on the patterns, stems, the ensemble path, `T.prepare`, `T.needs`, `T.ensembleReady`, per-zone baking, one-shots,
+  the budget 8 MB); game/js/logic/sound-bake.js (partials, stack, wind, hit; fm and osc sliced; the TPT filter; the
+  harp's recipe to the data); game/data/music.json (`instruments` 29, `ensembles` 4, songs copperleaf, route and wild
+  naming one, Copperleaf's night written out) and its schema; game/js/logic/music-studio.js (`MUSIC_CHOICES` line and
+  kind, `MUSIC_RECIPE_KEYS`, `musicFindings`); game/js/sound.js (the tracker's options, `musicPrepare`, `musicParts`'
+  ensemble parts, the debug log's `ensemble` line); game/js/settings-screen.js (GB Sounds); game/js/sound-test.js (a
+  song as its ensemble or GB, any instrument); studio/js/music-editor.js (the chain, GB Sounds, the Ensemble picker,
+  the Instruments tab), studio/index.html (levels.js, music-patterns.js before music-studio.js), game/index.html;
+  tools/check-sound.py, tools/check-studio-github.py; tests (tracker, sound-bake, music-studio);
+  validation/sound-baseline/ (copperleaf, route, wild).
+- **Fingerprints**: 199 (194 and main's five UI sounds) **0 changed** on every commit (`check-sound.py --loudness` in a
+  worktree, commit by commit); the ensembles' commit listed exactly the five planned additions (copperleaf and route
+  `ensemble` and `ensemble-night`, wild `ensemble`); the baseline written once with plain `--baseline` (32f497c4),
+  every old value byte for byte the same (checked file by file); then 204, with brightness, 0 changed. A Node record of
+  every gb synth call (524 renders, 118,716 calls) was the same call for call after the patterns and the stems.
+- **Loudness**: each ensemble within 0.1 LU of its gb version (route 0.0, wild +0.1, Copperleaf 0.0), peaks -14 to -21
+  dBFS; every other row as before.
+- **Memory and bake time**: only the notes a song plays bake. At 48 kHz Copperleaf 1.4 MB (10 zones), its night 1.0,
+  the route 1.2, the battle 1.6. Headless Chromium, 44.1 kHz, a quiet machine: every ensemble and the water baked
+  together 7.8 of the new 8 MB (nothing dropped), 236 ms of work in 106 slices, the slowest slice 4.9 ms, the slowest
+  step 3.2 ms; Copperleaf ready 0.34 s after arrival. The reverb at arrival: its impulse 9 ms of work, its assignment
+  7.7 ms in one go. With two other browsers rendering beside it single steps reached 25 ms (GC or the CPU).
+- **Risky or unfinished**:
+  - Claude can't hear: 29 instruments and four ensembles are judged by numbers (in tune within a quarter tone, no NaN,
+    seamless loops, levels); the owner's ears decide (the listening list below). The ensembles are named placeholders.
+  - A song naming an ensemble plays gb until its notes are baked (about a third of a second after arrival), then
+    switches on a bar line; a battle that starts before its bake finishes begins on gb.
+  - The bank's budget went from 6 to 8 MB (decided below): the phone's debug log (`bank`) shows what it holds.
+  - The smoke check's walk screen counted 20 pieces against its ceiling of 18 in two runs: an arrival postcard
+    ("Greetings from Copperleaf Town") was still on screen when it counted (its screenshot shows it). main's smoke run
+    passed the same step; nothing of this session draws on the walk screen. Noted, not fixed (UI track's ceiling).
+  - Tense and arc versions inherit the song's ensemble; the arc's run versions (`@mid`, `@late`) are rendered only as
+    gb (no `ensemble` part for them yet: SND-13 turns the arc into layers).
+- **Verified**: `npm run lint` and `npm run typecheck` after every commit; `npm test` 1771 of 1771 (after the last
+  merge); `node --test` tracker 29, sound-bake 23, music-studio 15, music-patterns 8, sound 17; `npm run check:modules`
+  (0 changed), `npm run check:data` (178 files fine), the check-data snapshot (unchanged by the data). `check-sound.py
+  --loudness` on every change commit (above). `npm run check:smoke` twice: 6 of 7, the walk screen's piece count (the
+  postcard, above; main's smoke passed it). `check-quick.py --steps=sound,song,music,"debug menu"`: 8 of 9, "Battle
+  music" failing under load and passing alone (drums in 4.7 s, on the throw). `check-studio-github.py --only=music`: ok
+  (the compressor, an instrument, route as its ensemble, GB Sounds, a part's level undone). The full `npm run
+  check:quick`: 37 of 42 (1352 s): Copperleaf's train_station in the air, RL-8's "the town's shop has no Perk", room
+  light at night (all main's, explained on PR #292 or in earlier entries), the walk screen's postcard count, and
+  "Battle music" (the known full-run timing flake, passing alone). Browser probes (headless Chromium, a real
+  AudioContext): Copperleaf plays as its ensemble after its bake, GB Sounds turns it to gb at the next bar, nothing
+  dropped from the bank, the debug log's `ensemble` line.
+- **Decided for the owner, to review**:
+  - The instruments per place, as Part 2's design and the listening page proposed: Copperleaf a music box doubling the
+    chip, a harp counter, soft strings, a harp's root each bar, and at night a flute taking the tune; a route the chip
+    lead with strings, pizzicato arpeggio and bass, kick, orchestral snare and shaker; a wild battle the chip lead over
+    a spiccato ostinato, a warm bass, brass stabs, timpani and a full kit. Towns, caves and bosses stay gb until
+    SND-12 (their instruments are in music.json: accordion, epiano, bell, drone, choir, orchhit).
+  - 29 instruments (the palette's two dozen and a spiccato for battles, a woodblock for SND-17's day jingle, a drone for
+    caves); their ids stable.
+  - The bank's budget 8 MB (SND-9's 6 could not hold Copperleaf beside the water's banks; recommended over dropping
+    zones on every arrival).
+  - A battle's song bakes on arrival only in a run's places (the hub has no battles); a song's night version from dusk.
+  - The reverb off at Graphics Off (`preferences.aim` 'off', the game's lowest tier) and made at arrival otherwise.
+  - GB Sounds off by default (the new band plays); it switches from the next bar.
+  - Each ensemble's trim set so it sits level with its gb version (Copperleaf -11.3 dB, route -1.4, battle -3.8).
+  - The Studio's player plays at the game's default sliders (so its balance is the game's), and its Instruments tab
+    edits an ensemble's parts (instrument, level, pan, reverb) but not an instrument's recipe (edit music.json).
+  - The Sound test's harp row became an instrument row (the harp first).
+- **The owner's listening list** (phone, silent switch OFF; debug menu -> Sound test):
+  - Copperleaf and the route as their ensembles, by day and at night, each against GB Sounds (the new "As" choice);
+    wild as its ensemble. Then in the game: Copperleaf's square, a route, a wild battle (the drums come in on the
+    throw), Settings -> Sound -> GB Sounds on and off while a song plays (it switches at the next bar).
+  - The instruments: each in the instrument row, in Copperleaf's room and in a cave; listen for clicks at a held
+    note's loop (strings, flute, accordion), tuning, and the drums' punch.
+  - The reverb's first use: no hitch on arriving in Copperleaf or a route.
+  - Export a debug log and read `audio`: `bank` (instruments, mb, withOtherMb under 8, dropped 0, sliceMaxMs,
+    stepMaxMs), `reverb` (setMs) and `ensemble` (the song, its ensemble, playing ensemble or gb).
+- **Next**: SND-17 (jingles and stingers with the new instruments; GB Sounds keeps today's 8-bit jingles).
 ### Clean-up track CU round 2 - close-out: HANDOFF re-trimmed, ART-NOTES.md -> docs/ART.md, style track archived, gone branches' rows, the full checks - 2026-10-29
 Branch `track/cleanup` (fast-forwarded to origin, then origin/main merged in twice: first PK-7..12, #295's VFX-8..16,
 the hub polish, the UI fixes; then a90c9301 with #331 VFX, #322 Dialogue, #308, #291 and #327). The owner approved

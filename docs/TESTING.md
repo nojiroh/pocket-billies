@@ -595,6 +595,59 @@ same phase:
   schema and `soundscapeFindings` (a kind without a recipe, a recipe or bank named that doesn't exist).
   `check-studio-github.py --only=music` plays a brook 3 m away on the Sounds tab's World sounds card and stops it. The
   Animals step's "at least 9 beds" holds exactly (the 14 beds became 9; the water is the soundscape's player).
+  SND-14: `--loudness` adds nature's rows (rain light, steady and heavy, on a roof and indoors, thunder at 0.6 and 4
+  km, gusts, a forest's wind, birds at dawn and noon, an owl, grasshoppers, cicadas, frogs, fires by size, the town's
+  life, rooms by kind, steps on each surface); a bed row warns over either ceiling, an event row over the events'.
+  Unit tests: `nature-sound.test.mjs` (logic/nature-sound.js: curves, rain, roofs, patter, thunder by distance,
+  wind and gusts, birds by the hour, insects, bouts, lockouts, frogs, fire by size, every terrain's footstep surface,
+  the town's life, rooms, findings, never `Math.random`); `ambience-sound.test.mjs` counts 13 beds. check:data runs
+  `natureFindings`. `check-studio-github.py --only=music` plays steps on gravel from the World sounds card.
+  SND-11: check-sound renders every existing part with GB Sounds on (today's sound whatever a song's ensemble) and adds
+  parts `ensemble` and `ensemble-night` for a song (or its night version) naming an ensemble, its notes and the reverb
+  baked first (204 fingerprints: Copperleaf and the route by day and night, wild); `--loudness` adds each ensemble's
+  row against its gb version. Unit tests: `music-patterns.test.mjs` (the patterns, the ensembles' steps and needs),
+  `sound-bake.test.mjs` the new kinds and every music.json instrument, `tracker.test.mjs` the stems and the ensemble
+  path (gb until baked, GB Sounds, only the zones played), `music-studio.test.mjs` the new choices and findings.
+  SND-17: check-sound renders a jingle naming an ensemble once more on it (`jingles` `<name>@ensemble`: 216
+  fingerprints), every other jingle part with GB Sounds on (the 8-bit jingle); `--loudness` adds each jingle's row on
+  its ensemble against its 8-bit version, measured whole, on a page of its own. Unit tests: `music-patterns.test.mjs`
+  (a jingle's parts and needs, a stinger's beat and key), `tracker.test.mjs` (8-bit until baked, GB Sounds, a stinger
+  on the beat with its stems dropped and the fader alone, the fanfares' duck), `music-studio.test.mjs` (the jingles'
+  findings and schema), `logic.test.mjs` (`jinglePlay` a seam). `check-studio-github.py --only=music` plays hatch
+  8-bit and on its ensemble and draws a harmony note.
+  SND-13: check-sound renders each layer in play of a song whose ensemble has layers (`layer:<name>`, and
+  `layer:<name>@night` on a night version with its own ensemble: 234 fingerprints), GB Sounds off, the layers' notes
+  baked, logic/music-layers.js `MUSIC_LAYER_TESTS`' levels from the first step; every other part hears no layer levels
+  (layer parts silent, nothing dimmed); `--loudness` adds each layered row against the ensemble's. Unit tests:
+  `music-layers.test.mjs` (a part's gain, its beat or bar line, walking, the weather, the busker's earshot and
+  listening, a battle's build and peak from its lines with the real hitTier and koAhead, the arc, the schema's names),
+  `music-patterns.test.mjs` (the walk pattern, skip, a layer out of the bake and of a jingle), `tracker.test.mjs` (a
+  layered part's own gain after the part's, ramps at step times on the beat or bar, out until baked),
+  `sound.test.mjs` (an ensemble song keeps its name in an arc band, GB Sounds takes the band's version).
+  `check-studio-github.py --only=music` checks the player's compressor, an instrument, an ensemble and GB Sounds on
+  the Instruments tab. A Node record of every gb synth call (scratch, not committed) proved the refactor call for call.
+  SND-12: a song with a form renders whole (its 16-32 bars: Copperleaf's 32 bars are about 87 s), so check-sound and
+  the loudness report take longer per song; the fingerprints of a re-arranged song change on purpose (gb plays the new
+  arrangement too). Unit tests: `music-form.test.mjs` (a song with no form composes as before, every one in
+  music.json; the plan, the hook kept, a repeat varied, the turnaround and the loop's end, the night's sections, the
+  fills, the bass's walk-up, the lift, the new lines, a part's `in`, the findings). `check-studio-github.py
+  --only=music` adds a section B on hills, hears it at once, changes its chord and undoes both.
+  SND-12c: check-sound's game page stops drawing once its sound code is loaded (`NO_DRAW`: `requestAnimationFrame` a
+  no-op there): the title's live scene, drawn in software in the cloud container, took over 3 of its 4 cores. A full
+  render (337 renders since batch 3) takes about 13 minutes (774 s; 9.3 minutes for the 317 before batch 3, over 3.5
+  hours before the change); `--only=<songs>` a few minutes. Spreading the renders over 2 or 4 pages was measured and
+  not kept: no faster (570 s and 723 s against 561 s), as one page already renders its chunk of 12 on parallel threads.
+  Two full renders of the same code differ in a few windows by the last digit (0.00001 RMS, 2 crossings: timers in
+  the page landing on an offline render under load), inside the tolerance; prove a tool change byte for byte on a
+  sample (`--only=copperleaf,wild,trainer,title,victory,levelup`), or by the comparison.
+  SND-15: the game's sound ends in a master chain (game/js/audio/mix-chain.js: a gentle compressor, a make-up gain and
+  a limiter, music.json mix), so every fingerprint went up about 13.6 dB with the baseline written again; the ducks
+  (logic/sound-duck.js, `sound-levels.test.mjs`) move no render alone. `--loudness` now gives each row its true peak
+  (dBTP) and each song its loudness range, adds effect rows (a cry of each base, talk, the buttons) and warns when the
+  route song as it plays strays over 1 LU from -18 LUFS or a song's or jingle's true peak passes -1 dBTP. Its pages stop
+  drawing too (SND-12c's `NO_DRAW`): a sample 1110 s -> 408 s, the songs', layers', beds' and nature's rows identical;
+  a few water and scene rows driven by events moved 0.1-0.6 LU (they also vary by up to 0.3 run to run). The whole
+  `--loudness` run took 66 minutes here (the fingerprints 21, the report's rows about 45: they render one at a time). `tools/read-debug-log.py` prints the log's audio lines.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

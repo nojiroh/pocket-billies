@@ -4,8 +4,8 @@
    How loud a rendered sound is, the way ITU-R BS.1770 measures it: each channel K-weighted (a high shelf of +4 dB
    above ~1.7 kHz, then a high-pass at ~38 Hz, worked out for the render's own sample rate), mean squares over 400 ms
    blocks every 100 ms, gated (blocks under -70 LUFS dropped, then those 10 LU under the rest), summed over the
-   channels. Besides the integrated loudness: the loudest 3 s ("short-term" max), the sample peak, the level in a
-   phone speaker's band (400 Hz - 6 kHz, unweighted) and the share of the energy between 2 and 6 kHz, where hearing is
+   channels. Besides the integrated loudness: the loudest 3 s ("short-term" max), the sample peak, (SND-15) the true
+   peak (4x oversampled, BS.1770-4 annex 2) and the loudness range (EBU Tech 3342), the level in a phone speaker's band (400 Hz - 6 kHz, unweighted) and the share of the energy between 2 and 6 kHz, where hearing is
    most sensitive and where a bed grates. tools/check-sound.py --loudness puts it in the page as a script and runs it
    on each render (nothing in the game loads it). Plain numbers: no audio; runs in Node
    (tools/test/sound-loudness.test.mjs). */
@@ -116,18 +116,73 @@ function windows(y, n, hop) {
   return out;
 }
 
+/* SND-15: the true peak's interpolator (BS.1770-4 annex 2: 4x oversampling, at least 48 taps): the three points
+   between two samples, each a Hann-windowed sinc over the 12 samples around it (48 taps over the four phases) */
+const TP_PHASES = 4,
+  TP_HALF = 6,
+  TP_FIR = Array.from({ length: TP_PHASES }, (_, p) =>
+    Array.from({ length: 2 * TP_HALF }, (_, j) => {
+      const d = p / TP_PHASES - (j - TP_HALF + 1);
+      return (d === 0 ? 1 : Math.sin(Math.PI * d) / (Math.PI * d)) * (0.5 + 0.5 * Math.cos((Math.PI * d) / TP_HALF));
+    })
+  );
+
+/**
+ * SND-15: a channel's true peak: its samples and the points between them; worked out only next to samples within
+ * 6 dB of the sample peak (an inter-sample over is a few dB at most), so a long render costs little
+ * @param {Float32Array} c
+ * @param {number} peak the channel's sample peak (linear)
+ * @returns {number} linear
+ */
+function truePeakOf(c, peak) {
+  let tp = peak;
+  const lim = peak * 0.5;
+  for (let i = 0; i < c.length; i++) {
+    if (Math.abs(c[i]) < lim) continue;
+    /* the gaps on either side of the sample: from a-1 to a and from a to a+1 */
+    for (let a = Math.max(TP_HALF - 1, i - 1); a <= Math.min(c.length - TP_HALF - 1, i); a++)
+      for (let p = 1; p < TP_PHASES; p++) {
+        const F = TP_FIR[p];
+        let v = 0;
+        for (let j = 0; j < F.length; j++) v += F[j] * c[a - TP_HALF + 1 + j];
+        if (Math.abs(v) > tp) tp = Math.abs(v);
+      }
+  }
+  return tp;
+}
+
+/**
+ * SND-15: the loudness range (EBU Tech 3342): the short-term (3 s) levels gated at -70 LUFS and 20 LU under their
+ * mean, then the spread from the 10th to the 95th percentile (LU); 0 for a render shorter than 3 s
+ * @param {number[]} shorts the 3 s windows' mean squares, summed over the channels
+ */
+function rangeOf(shorts) {
+  const loud = shorts.filter(z => lufsOf(z) > -70);
+  if (!loud.length) return 0;
+  const rel = lufsOf(loud.reduce((a, b) => a + b, 0) / loud.length) - 20,
+    L = loud
+      .map(z => lufsOf(z))
+      .filter(v => v > rel)
+      .sort((x, y) => x - y),
+    at = (/** @type {number} */ q) => L[Math.min(L.length - 1, Math.max(0, Math.round(q * (L.length - 1))))];
+  return at(0.95) - at(0.1);
+}
+
 /**
  * how loud a render is
  * @param {ArrayLike<number>[]} chans the channels (one for mono, two for stereo)
  * @param {number} rate
  * @param {number} [skip] seconds left out at the start (a fade-in)
- * @returns {{lufs: number, short: number, peak: number, phone: number, share: number, nan: boolean}}
- *   lufs integrated (gated), short the loudest 3 s, peak dBFS, phone the 400 Hz-6 kHz band's level (dB of power),
+ * @returns {{lufs: number, short: number, peak: number, tp: number, lra: number, phone: number, share: number, nan: boolean}}
+ *   lufs integrated (gated), short the loudest 3 s, peak dBFS, (SND-15) tp the true peak (dBTP), lra the loudness range (LU), phone the 400 Hz-6 kHz band's level (dB of power),
  *   share the part of the energy between 2 and 6 kHz (0..1); -Infinity where silent
  */
 export function soundLoudness(chans, rate, skip = 0) {
   const s0 = Math.floor(skip * rate),
-    cut = chans.map(c => Float32Array.from(Array.prototype.slice.call(c, s0))),
+    /* SND-15: a typed array's own subarray (the same values; a plain Array copy of a long render was slow) */
+    cut = chans.map(c =>
+      Float32Array.from(c instanceof Float32Array ? c.subarray(s0) : Array.prototype.slice.call(c, s0))
+    ),
     nan = cut.some(c => c.some(v => !Number.isFinite(v))),
     K = soundKWeight(rate),
     k = cut.map(c => soundFilter(c, K)),
@@ -141,8 +196,14 @@ export function soundLoudness(chans, rate, skip = 0) {
     gated = loud.filter(z => lufsOf(z) > rel);
   const sper = k.map(y => windows(y, Math.round(3 * rate), hop)),
     shorts = sper[0] ? sper[0].map((_, j) => sper.reduce((a, w) => a + w[j], 0)) : [];
-  let peak = 0;
-  for (const c of cut) for (let i = 0; i < c.length; i++) peak = Math.max(peak, Math.abs(c[i]));
+  let peak = 0,
+    tp = 0;
+  for (const c of cut) {
+    let pc = 0;
+    for (let i = 0; i < c.length; i++) pc = Math.max(pc, Math.abs(c[i]));
+    peak = Math.max(peak, pc);
+    if (pc > 0) tp = Math.max(tp, truePeakOf(c, pc));
+  }
   /* the phone's band, and the 2-6 kHz share of all the energy (unweighted) */
   const band = (/** @type {number} */ lo, /** @type {number} */ hi) =>
       cut.reduce((a, c) => {
@@ -163,6 +224,8 @@ export function soundLoudness(chans, rate, skip = 0) {
     lufs: gated.length ? lufsOf(mean(gated)) : -Infinity,
     short: shorts.length ? lufsOf(Math.max(...shorts)) : lufsOf(mean(blocks)),
     peak: peak > 0 ? 20 * Math.log10(peak) : -Infinity,
+    tp: tp > 0 ? 20 * Math.log10(tp) : -Infinity,
+    lra: rangeOf(shorts),
     phone: lufsOf(band(400, 6000), 0),
     share: all > 0 ? band(2000, 6000) / all : 0,
     nan,

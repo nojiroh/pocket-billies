@@ -89,8 +89,9 @@ test('drift wanders around its base within its depth, a new value within its tim
 
 test('every bed recipe is sound: a known bus, layers of pink or brown with filters, drifts on what exists', () => {
   const types = ['lowpass', 'highpass', 'bandpass', 'highshelf'];
-  /* SND-10: the five water beds went to soundscape.json `water` */
-  assert.equal(Object.keys(AMBIENCE_BEDS).length, 9);
+  /* SND-10: the five water beds went to soundscape.json `water`; SND-14 adds the heavy rain, the rain on roofs and two
+     room tones */
+  assert.equal(Object.keys(AMBIENCE_BEDS).length, 13);
   for (const [k, B] of Object.entries(AMBIENCE_BEDS)) {
     assert.ok(['world', 'amb'].includes(B.bus), k);
     assert.ok(B.trim > 0 && B.trim <= 4, `${k} trim ${B.trim}`);
