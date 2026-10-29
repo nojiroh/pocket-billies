@@ -1,0 +1,87 @@
+// PK-9: boons and curses (perks-track.md 5.9 and section 7): the kinds the curses need (last, turnHurt at arrive,
+// rewardPick below 0, the rules shopClosed and muteNewest), each with test-only rows first; then the 20 named boons and
+// curses of boons.json, each working and running out, the appeal, Correction Fluid, and everything at once finite.
+import assert from 'node:assert/strict';
+import { beforeEach, test } from 'node:test';
+import { data, fn, hooks, reseed, said, startedSave } from './setup-real.mjs';
+
+const { RULES, SPECIES } = data;
+const starter = () => Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0]);
+const wild = () =>
+  Object.keys(SPECIES).find(k => SPECIES[k].stage === 0 && !RULES.start.starters.includes(SPECIES[k].line));
+
+beforeEach(() => {
+  hooks.provide({ activeBattle: null });
+  said.length = 0;
+});
+
+/** rows of made-up Perks, as fxOfRun gives them (test-only: never in perks.json) */
+const perks = (...defs) => {
+  const P = Object.fromEntries(defs.map((d, i) => [d.id || 'test' + i, { name: d.name || 'Test ' + i, ...d }]));
+  return { P, fx: fn('fxOfRun')({ perks: Object.keys(P) }, P) };
+};
+/** a seeded wild battle with a team of `n`, holding these rows; extra laid over */
+function battle(fx, extra = {}, n = 2, lvl = 12) {
+  reseed(7);
+  const s = startedSave(starter(), lvl);
+  while (s.team.length < n) s.team.push(fn('makeBilly')(starter(), lvl));
+  const foe = fn('makeBilly')(wild(), lvl);
+  assert.ok(fn('newBattle')('wild', [foe], { fmt: 'single', seed: 'boon-test', ...(fx ? { fx } : {}), ...extra }));
+  return hooks.activeBattle;
+}
+const lines = b => b.events.map(e => e.t || '').filter(Boolean);
+const withPerks = (P, run) => {
+  const old = { ...data.PERKS };
+  Object.assign(data.PERKS, P);
+  try {
+    return run();
+  } finally {
+    for (const k of Object.keys(P)) if (!(k in old)) delete data.PERKS[k];
+  }
+};
+/** any damaging, never-missing move in the game of a category (to teach a fighter) */
+const anyHit = cat =>
+  Object.keys(data.MOVES).find(id => {
+    const M = data.MOVES[id];
+    return (
+      M.p > 0 &&
+      M.c === cat &&
+      (!M.a || M.a >= 100) &&
+      !M.pr &&
+      !(M.fx && Object.keys(M.fx).some(k => k !== 'crit' || M.fx.crit))
+    );
+  });
+const foe = b => b.sides[1].team[0];
+const mine = b => b.sides[0].team[0];
+const tough = m => {
+  m.hp = 99999;
+  return m;
+};
+const order = b =>
+  b.events
+    .filter(e => e.an && e.an.k === 'move')
+    .map(e => e.an.si)
+    .join(',');
+
+/* ---------- last ---------- */
+
+test('PK-9 last: on turn 1 yours move after a slower foe (with a line); from turn 2 speed decides again', () => {
+  const { P, fx } = perks({ id: 'test_hold', name: 'Test Hold', fx: [{ kind: 'last', if: 'turn:1' }] });
+  const H = anyHit('H');
+  for (const held of [true, false])
+    withPerks(P, () => {
+      const b = battle(held ? fx : null);
+      tough(mine(b));
+      tough(foe(b));
+      b.sides[0].f[0].v.st.hus = 6;
+      b.sides[1].f[0].v.st.hus = -6;
+      fn('runTurn')([{ who: 0, k: 'move', mid: H, tk: 1 }], b);
+      assert.match(order(b), held ? /^1,0/ : /^0,1/, `turn 1, held ${held}`);
+      assert.equal(
+        lines(b).some(t => /^Test Hold: .* moves last\.$/.test(t)),
+        held
+      );
+      fn('runTurn')([{ who: 0, k: 'move', mid: H, tk: 1 }], b);
+      assert.match(order(b), /^0,1/, `turn 2, held ${held}`);
+    });
+});

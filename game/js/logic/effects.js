@@ -57,6 +57,8 @@
              arrive`; Subscription Box) (PK-7, run-loop.js runLoot)
      heldBoost  your Billies' held items work mult times as well: each number of a held row moved that much further
              from doing nothing (fxBoostRow; the Tech Gear set) (PK-8, battle-engine.js heldFx)
+     last    yours move after the foe's (within a move's priority) where its `if` holds: `turn:1` (PK-9, the curse Hold
+             Music; battle-engine.js fxLastActs); on a hold row its holder always moves last (PK-10)
    RL-12c: a Billie's own rows (fxOfBillie: its held item's `hold` in items.json) count for that Billie alone and never
    join the run's list; the battle asks for them by fighter (battle-engine.js, battle-state.js).
    Stacking: rows of one kind combine whatever order they were picked in. Stages and shares add up; multipliers are
@@ -218,6 +220,7 @@ export const FX_KINDS = /** @type {const} */ ([
   'recoil',
   'loot',
   'heldBoost',
+  'last',
 ]);
 /** a product of multipliers stays within these */
 export const FX_LIMIT = { lo: 0.1, hi: 4 };
@@ -921,12 +924,12 @@ export function fxStateLog(run) {
  *            heldSurvives)
  *   reflect  a Billie that hits its holder with a move (of its cat, if it names one) loses share of its own HP
  *            (heldAfterHit)
- *   drain    its holder heals share of the damage it deals (heldAfterHit)
- *   last     its holder moves after the others, within a move's priority (battle-engine.js heldLastActs) */
-export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect', 'drain', 'last']);
+ *   drain    its holder heals share of the damage it deals (heldAfterHit) */
+export const HELD_FX_KINDS = /** @type {const} */ (['survive', 'reflect', 'drain']);
 /** PK-10: the kinds of FX_KINDS a hold row reads its own way: immune names a type (its moves miss the holder, until
- * it is hit with `until: hurt`; battle-engine.js heldFloats); first a chance its holder moves first (heldFirstActs) */
-export const HELD_OWN_FORMS = /** @type {const} */ (['immune', 'first']);
+ * it is hit with `until: hurt`; battle-engine.js heldFloats); first a chance its holder moves first (heldFirstActs);
+ * last (PK-9 made it a run's kind too) its holder moves after the others, within a move's priority (heldLastActs) */
+export const HELD_OWN_FORMS = /** @type {const} */ (['immune', 'first', 'last']);
 /** PK-10: a holder's first row of a kind, or null @param {any[] | null | undefined} fx @param {string} kind */
 export const fxHeldRow = (fx, kind) => (fx || []).find(f => f.kind === kind) || null;
 /** PK-10: the moments a hold row can act at */

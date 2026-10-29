@@ -2032,6 +2032,8 @@ export type FxKindRow =
   | { kind: 'chip'; what: 'burn'; mult: number }
   /** PK-3: your Billies move before the foe's (within a move's priority) where its `if` holds */
   | { kind: 'first' }
+  /** PK-9: your Billies move after the foe's (within a move's priority) where its `if` holds (Hold Music) */
+  | { kind: 'last' }
   /** PK-3: when your whole team has fainted, they all get back up with this share of their HP (needs `once`) */
   | { kind: 'revive'; share: number }
   /** PK-4: a type passive works better for your Billies that have it, by its own numbers (effects.js FX_PASSIVE_KEYS) */

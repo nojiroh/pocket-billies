@@ -115,6 +115,7 @@ const PERK_KINDS = {
   inflict: 'A chance to give the foe a status when one of yours hits it, or as a battle starts (PK-3, PK-5)',
   chip: 'What a burn takes from your Billies at each turn’s end (PK-3)',
   first: 'Your Billies move before the foe’s (PK-3; If turn:1 for the first turn)',
+  last: 'Your Billies move after the foe’s (PK-9; If turn:1 for the first turn)',
   revive: 'A wiped team gets back up, once (PK-3)',
   passive: 'A type passive works better for your Billies that have it (PK-4)',
   weather: 'The weather never weakens your Billies’ moves, or boosts them more (PK-4)',
@@ -220,6 +221,7 @@ const PERK_ROW_NEW = {
   inflict: () => ({ kind: 'inflict', status: 'par', chance: 0.1, when: 'hit' }),
   chip: () => ({ kind: 'chip', what: 'burn', mult: 0.9 }),
   first: () => ({ kind: 'first', if: 'turn:1' }),
+  last: () => ({ kind: 'last', if: 'turn:1' }),
   revive: () => ({ kind: 'revive', share: 0.5, once: 'run' }),
   passive: () => ({ kind: 'passive', passive: 'kindling', rate: 2 }),
   weather: () => ({ kind: 'weather', what: 'noWeaken' }),
@@ -420,6 +422,7 @@ function perkRowHTML(/** @type {string} */ k, /** @type {any} */ f, /** @type {n
       ],
       chip: () => [selectField('Which hurt', `${p}.what`, [['burn', 'A burn’s, at each turn’s end']]), mult('Hurt ×')],
       first: () => [`<p class="note">Within a move’s priority, yours act before the foe’s wherever its If holds.</p>`],
+      last: () => [`<p class="note">Within a move’s priority, yours act after the foe’s wherever its If holds.</p>`],
       revive: () => [share('Share of HP each gets back up with')],
       /* PK-4: the passive, then the numbers it takes; slipstream and alloy take a flag */
       passive: () => [

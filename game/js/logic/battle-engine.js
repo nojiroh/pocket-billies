@@ -231,6 +231,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxInflict: [() => fxInflict, v => (fxInflict = v)],
   // @ts-expect-error -- replaced on purpose
+  fxLastActs: [() => fxLastActs, v => (fxLastActs = v)],
+  // @ts-expect-error -- replaced on purpose
   fxMoment: [() => fxMoment, v => (fxMoment = v)],
   fxNames: [() => fxNames],
   // @ts-expect-error -- replaced on purpose
@@ -1696,6 +1698,26 @@ export function fxFirstActs(acts) {
   if (K.length) battleSay(`${fxNames(rows)}: ${joinNames(K)} ${K.length > 1 ? 'move' : 'moves'} first.`, null);
   return out;
 }
+/** PK-9: a run's last rows (the curse Hold Music) put yours behind the foe's, within a move's priority, where their
+ * `if` holds for the one acting; added to `late` (the held last rows' acts), with a line @param {any[]} acts
+ * @param {Set<any>} late */
+export function fxLastActs(acts, late) {
+  const b = battleNow();
+  if (!b || !b.fx) return late;
+  /** @type {any[]} */
+  const rows = [],
+    K = [];
+  for (const a of acts) {
+    if (ACTOR_SIDE[a.who] !== 0) continue;
+    const R = fxAt(b.fx, fxBattleCtx(a.who), fxBattleState(b)).filter(f => f.kind === 'last');
+    if (!R.length) continue;
+    late.add(a);
+    rows.push(...R);
+    if (!K.includes(a.who)) K.push(a.who);
+  }
+  if (K.length) battleSay(`${fxNames(rows)}: ${joinNames(K)} ${K.length > 1 ? 'move' : 'moves'} last.`, null);
+  return late;
+}
 /** PK-3: your whole team has fainted: the first revive row that may act (its once mark not spent) spends it, and every
  * Billie of yours gets back up with its share of HP, no status, back on the field where it stood (as if sent out
  * again). False with none (the battle is lost) @returns {boolean} */
@@ -2181,6 +2203,8 @@ export function runTurn(plan, b) {
     heldFirstActs(acts, early);
     /* PK-10: a held last row (Ankle Weights): after the others, within a move's priority */
     const late = heldLastActs(acts);
+    /* PK-9: a run's last rows (Hold Music): yours after the foe's */
+    fxLastActs(acts, late);
     acts.sort(
       (a, b) =>
         (MOVES[b.mid].pr || 0) - (MOVES[a.mid].pr || 0) ||
