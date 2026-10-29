@@ -12,7 +12,6 @@ import { expose } from './test-globals.js';
 import {
   BATTLE_ANIMS,
   BATTLE_STAGES,
-  HIT_EFFECTS_BY_TYPE,
   ITEMS,
   MOVES,
   TYPE_COLORS,
@@ -24,6 +23,7 @@ import {
   battleAnimPlay,
   battleBossPhaseScene,
   battleCardColumn,
+  battleCatchSoundPlay,
   battleFlashGate,
   battleFreeArea,
   battleLayoutChanged,
@@ -111,7 +111,6 @@ expose({
   GROUND_SPHERE_RADIUS: [() => GROUND_SPHERE_RADIUS],
   GROUND_TEXTURE_PX_PER_METER: [() => GROUND_TEXTURE_PX_PER_METER],
   GROUND_TEXTURE_SIZE: [() => GROUND_TEXTURE_SIZE],
-  HIT_SPRITES_BY_TYPE: [() => HIT_SPRITES_BY_TYPE],
   HORIZON_IN_FRAME: [() => HORIZON_IN_FRAME],
   LEAF_COLORS: [() => LEAF_COLORS],
   MONEY_ICON: [() => MONEY_ICON],
@@ -1472,13 +1471,13 @@ function drawPixelRing(c, cx, cy, rx, ry, col, th = 1) {
 export function particleSprite(key) {
   return iconCanvas(key);
 }
+/* VFX-20: only a bot's dropped part (a picture) is drawn on this canvas; every other particle is drawn in the 3D world
+   (walk/battle-fx.js, VFX-9). The old 2D rings, icons, beams and pixels are gone: this canvas draws only while the
+   3D stage is on (battleStageDraw), where they were already skipped */
 function drawParticles(c, layer) {
   const L = [];
   battleStage.parts.forEach(p => {
-    /* VFX-11: a light with nothing to show (the runner's light step) */
-    if ((p.layer || 2) !== layer || p.hide) return;
-    /* VFX-9: drawn in the 3D world instead (walk/battle-fx.js), all but a bot's dropped part (a picture) */
-    if (battleStage.gl && !p.img) return;
+    if (!p.img || (p.layer || 2) !== layer || p.hide) return;
     const q = battleStageProject(p.x, p.y, p.z);
     if (q) L.push([q, p]);
   });
@@ -1489,56 +1488,15 @@ function drawParticles(c, layer) {
     c.globalAlpha = Math.max(0, Math.min(1, fade));
     if (p.glow) c.globalCompositeOperation = 'lighter';
     const k = clamp((q.s / 30) * (p.k || 1), 0.5, 5);
-    if (p.ring) {
-      const r = ((p.r0 + (p.r1 - p.r0) * EASE.out(p.age / p.life)) * q.s) / 30;
-      drawPixelRing(
-        c,
-        q.x,
-        q.y,
-        r,
-        p.ground ? r * clamp(battleStage.V.y / q.z, 0.2, 0.6) : r,
-        p.col,
-        p.ground ? 2 : Math.max(1, Math.round(k))
-      );
-    } else if (p.img) {
-      /* RL-14: a picture (a bot's dropped part), turning as it falls */
-      const kk = Math.max(0.5, Math.round(k * 2) / 4),
-        w = Math.round((p.img.naturalWidth || p.img.width) * kk),
-        h = Math.round((p.img.naturalHeight || p.img.height) * kk);
-      c.save();
-      c.translate(Math.round(q.x), Math.round(q.y));
-      c.rotate((p.rot || 0) + ((p.vr || 0) * Math.min(p.age, 700)) / 1000);
-      c.drawImage(p.img, -Math.round(w / 2), -Math.round(h / 2), w, h);
-      c.restore();
-    } else if (p.spr) {
-      const s = particleSprite(p.spr),
-        kk = Math.max(1, Math.round(k * 2) / 2);
-      c.drawImage(
-        s,
-        Math.round(q.x - (s.width * kk) / 2),
-        Math.round(q.y - (s.height * kk) / 2),
-        Math.round(s.width * kk),
-        Math.round(s.height * kk)
-      );
-    } else if (p.beam) {
-      const q2 = battleStageProject(p.x2, p.y2, p.z2);
-      if (q2) {
-        c.strokeStyle = p.col;
-        c.lineWidth = Math.max(1, p.w * k);
-        c.lineCap = 'round';
-        c.beginPath();
-        c.moveTo(q.x, q.y);
-        c.lineTo(q2.x, q2.y);
-        c.stroke();
-        c.strokeStyle = '#FFFFFF';
-        c.lineWidth = Math.max(1, p.w * k * 0.35);
-        c.stroke();
-      }
-    } else {
-      c.fillStyle = p.col;
-      const sz = Math.max(1, Math.round((p.size || 2) * k * 0.6));
-      c.fillRect(Math.round(q.x), Math.round(q.y), sz, sz);
-    }
+    /* RL-14: a picture (a bot's dropped part), turning as it falls */
+    const kk = Math.max(0.5, Math.round(k * 2) / 4),
+      w = Math.round((p.img.naturalWidth || p.img.width) * kk),
+      h = Math.round((p.img.naturalHeight || p.img.height) * kk);
+    c.save();
+    c.translate(Math.round(q.x), Math.round(q.y));
+    c.rotate((p.rot || 0) + ((p.vr || 0) * Math.min(p.age, 700)) / 1000);
+    c.drawImage(p.img, -Math.round(w / 2), -Math.round(h / 2), w, h);
+    c.restore();
     c.globalCompositeOperation = 'source-over';
   });
   c.globalAlpha = 1;
@@ -1714,10 +1672,12 @@ function addParticle(o) {
   if (ambientSpawning) p.amb = 1;
   P.push(p);
 }
-const HIT_SPRITES_BY_TYPE = HIT_EFFECTS_BY_TYPE;
 const GLOWING_PARTICLES = { spark: 1, star: 1, bolt: 1, bit: 1, gem: 1, pow: 1, up: 1 };
+/* VFX-20: a burst's particles in turn, from the type's kit (battleAnims.json types.<t>.burstSprites; were types.json
+   fx), else None's */
 const typeSprite = (t, i) => {
-  const l = HIT_SPRITES_BY_TYPE[t] || HIT_SPRITES_BY_TYPE.None;
+  const K = BATTLE_ANIMS.types,
+    l = (K[t] && K[t].burstSprites) || (K.None && K.None.burstSprites) || ['pow', 'star'];
   return l[i % l.length];
 };
 /* VFX-9: the move effects' own random numbers (logic/rng.js), seeded per event (battleFxSeed, from battleAnimPlay), so
@@ -2808,7 +2768,10 @@ export const PYRAMID_LIFT = 0.02,
    (res.edge, the critical catch: on its point), rocks on a base edge once a wobble (res.w), then seals (light climbs
    its edges to the tip, a glow, stars) or the Billie breaks out */
 /* RF-2: the catch's sounds (sound.js): the throw, the landing, a wobble each way, the seal or the pop out */
-const catchSound = k => typeof soundEffect === 'function' && soundEffect(k);
+/* VFX-19: music.json battle.catch's first (audio/battle-sounds.js), else as before */
+const catchSound = k =>
+  (typeof battleCatchSoundPlay === 'function' && battleCatchSoundPlay(k)) ||
+  (typeof soundEffect === 'function' && soundEffect(k));
 export function battleStageCatch(kind, res, spin, done) {
   battleStageFlush();
   const s1 = battleStage.s[1],

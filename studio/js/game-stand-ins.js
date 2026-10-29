@@ -9,7 +9,6 @@ import { provide, studioState } from '../../game/js/hooks.js';
 expose({
   BATTLE_ANIMS: [() => BATTLE_ANIMS],
   BATTLE_STAGES: [() => BATTLE_STAGES],
-  HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   MOVES: [() => MOVES],
   PEOPLE: [() => PEOPLE],
   RULES: [() => RULES],
@@ -84,9 +83,3 @@ const TYPE_GLOW = liveMap(D => {
   return o;
 });
 provide({ TYPE_GLOW }); /* to-module */
-const HIT_EFFECTS_BY_TYPE = liveMap(D => {
-  const o = Object.fromEntries(D.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
-  o.None = (D.untyped || {}).fx || ['pow', 'star'];
-  return o;
-});
-provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */

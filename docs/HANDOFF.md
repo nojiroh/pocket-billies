@@ -2,6 +2,150 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-13 - Hit tiers: the tier table, KO and last-KO looks, a flurry on the beat, drain, heal and recoil, misses per family - 2026-10-28
+Branch `track/vfx`, the main line of wave 3 (VFX-17 on `claude/vfx-17-scenes-1` and VFX-19 on
+`claude/vfx-19-move-sounds` ran beside it; both were told the shared sections before the edits and the commits after;
+the sound and style coordinators too). Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan
+written here, recommended options taken and listed below. Draft PR #295 updated. No tag (CLAUDE.md since #283).
+- Merges first, each a merge, the unit tests after each: origin/main 4423a457 (a477c924; HANDOFF both, art-code-refs
+  regenerated; 1942 tests), VFX-12 `claude/vfx-12-studio-effects` a1b94cb8 (52a8643b, PR #313; docs both; 1946), VFX-14
+  `claude/vfx-14-statuses` 840a4595 (acdc2ddb, PR #320; the schema's required list both sides', both sides' $defs,
+  the types both; 1958), VFX-16 `claude/vfx-16-battle-flow` 38245bb6 (aa9ae1c1, PR #319) by the recipe both HANDOFF
+  entries give: one `events` object with both key sets; the schema keeps VFX-14's required list and
+  additionalProperties:false with VFX-16's properties added; one `BattleAnimEvents` (VFX-16's fields optional); both
+  checks; battle-3d.js VFX-14's `p.anim && !p.spr && !p.beam` branch, then VFX-16's `(p.spr || p.strip) && !p.beam`;
+  type-rename both. Two things the recipe didn't cover: VFX-14's and VFX-16's new burst caps read `BURST_BUDGET`,
+  which VFX-12 had replaced by `fxBudget('burst')` (lint caught it; now `fxBudget('burst')`), and the logic worker's
+  load order wants battle-flow.js before battle-looks.js (the worker test caught it; both index pages and
+  logic-worker-modules.js in that order). 1965 tests, smoke 7 of 7. Then VFX-11's late commits (b171d6f0: it had
+  merged main and VFX-12 itself, added the Families and Type kits panes and removed LUNGE_DASH: VFX-11's leftovers
+  1 and 2 were done there, `burstMax` already `fxBudget('burst')`, one copy), and near the end main 6ca60be6
+  (b475bb15: the owner's merge of track/vfx to VFX-11 into main, #315 the hub island polish, #309 the UI fixes; HANDOFF
+  both; 1973 tests; smoke no problems). The side branches' PRs show merged.
+- VFX-11's leftovers: LUNGE_DASH was already removed by VFX-11 (05556f54) and `burstMax` already reads
+  `fxBudget('burst')` (one copy); the legacy families are gone or renamed (below); Premonition plays `wave` (880 ms),
+  as VFX-11 said, and its miss is wave's; the rig redraws rechecked (Measurements).
+- The plan: the four merges; message the siblings and coordinators; the small fixes first in their own commits (the
+  tag bug, the stones engine fix, the legacy families' rename and removal); then the tier table as data with its
+  browser-free picker and tests, hitFx playing the row, the runner's KO; then the flurry's beats; drain, heal and
+  recoil; misses per family; the Studio pane; films of each; measurements against the build before; the full check;
+  docs. One cause per commit; the smoke check for each game commit ran in a second worktree on that exact commit while
+  the next was written, and a commit was pushed only once its smoke passed.
+- Changed:
+  - 0047b19f battle.js hudPop: under Reduced motion a `tag …` kind no longer pops (`kind === 'tag'` never matched
+    'tag crit'; the track's bug, B 568 then, 713 now). The crit's tag is hidden under Reduced motion, as the code
+    meant; its number still shows in the crit colour.
+  - df70e79d logic/battle-engine.js: Scatter Stones lays its stones on the foe's side (a status move's `td` was the
+    user's own side; the line said "their side"). The one engine change. The golden record is unchanged: no golden
+    battle uses Scatter Stones (its test passes and `--test-update-snapshots` writes the same file). A new test,
+    tools/test/battle-stones.test.mjs, fails before and passes after.
+  - 1bdf44a6 the rename alone: families `legacy_miss` -> `whiff`, `legacy_blocked` -> `blocked` (defaults.miss and
+    .blocked; the test and its snapshot's names).
+  - 8dc9583d legacy_hit, legacy_cast, legacy_status, legacy_guard removed (nothing in the game named them); the
+    battle-anims tests' gate, repeat and variant cases read them from tools/test/fixtures/battle-anims-legacy.json;
+    check-data's planted faults moved onto strike, shot and guard (its snapshot remade: three family names).
+  - cc8e58b6 the tier table: battleAnims.json `tiers` (schema, types `BattleAnimTiers`/`BattleTierRow`/`BattleTierKo`/
+    `BattleTierSprite`, `dataBattleTiers`): rows resisted, neutral, super, super4, crit (stop, shake, kb, each with a
+    weight term; burst, spread, light, lightCol, ring, punch/punchW, handheld, flash {color, a, ms}, ca, impact,
+    sprite {white, dark, ms, darkMs}, puff), `superCritPunch`, `ko` and `last` (added on top; `last.freeze` the hit-stop
+    in all), `cell` 42; colours gain `crit` (#FFF2A8, the crit flash's). logic/battle-anims.js `hitLook(an, ka, w, A,
+    boss)` returns the row the stage plays (tier, ko flag, stop, shake, kb, burst, spread, light, lightCol, ring,
+    punch, handheld, flash, ca, impact, sprite, puff, scar) and `TIER_ROWS`; `hitTier` and `koAhead` untouched.
+    battle-stage.js hitFx(ti, an, imp, ka) plays it: knockback, shake, hit-stop, punch, the impact frame, the
+    full-screen flash and the chromatic pulse after it (battleStageFlash: flashFor, the tally, the limiter), the ground
+    ring (and the ring for flash tiers), buzz, handheld, the Billie's own flash (half with Flashes off), the burst,
+    resisted's dull puff (smoke strips), hudHit; it returns the row. A fighter with `boss`/`alpha` falling counts as
+    the last KO. logic/smear.js IMPACT_KINDS gains `ko` (two-tone and speed lines like a crit's, not warm). The runner
+    (battle-anim-run.js) reads koAhead from the battle's lines (`animKoAhead`; a preview line's own `ka` for the look
+    tool and the Studio), passes each target's KO to hitFx (`animKo`), computes the row once (`c.look`) so the
+    target's `light` steps take the tier's strength and colour (no new lights), and lays the KO's extra scar (the
+    heavy kind) on a hit or a skipped hit. The look tool takes outcomes `hit+ko`, `crit+last` and so on.
+  - f0af6ddb flurry (and short) re-timed on 84 ms beats (two cells): lunges at 0, 84, 168; impacts and a new `beat`
+    step on the first two (a knock, a shake, a one-cell flash, each harder; no hit-stop); the hit, the big impact and
+    the kit's hit on the last beat at 200 (160 short). Before, the hit came at 200 with the last impacts at 260 and 410.
+  - 5d7152e3 drain, heal, recoil: logic/battle-anims.js `lineAfterMove(events, i, moves)` (the move line a heal or
+    hurt line follows: a drain's heal, a crash's hurt; tested); battle-stage.js case 'heal' streams the drain's motes
+    from the target first (`drainFx`) and its sparkles are heal_sparkle strips in the heal ramp, the ground ring the
+    heal colour (#8DE3D6; was #5DFF8A); case 'hurt' after a crash (fx.missCost: Margin Call) knocks back, puffs dust
+    and flashes dull grey (`recoilFx`). Numbers in `tiers.drain`, `.heal`, `.recoil`. Look tool: `--events
+    --only=drain,recoil`.
+  - bf2c8723 misses per family: `families.<id>.miss` for charge, dash, dive, strike, slash, quake, flurry, shot, beam,
+    breath, wave, storm, hex (buff, guard and heal never miss; moves without a family and those take `whiff`).
+    battleAnimFor returns `{id, kind, miss: true}` (a scene's `family`, VFX-17's, when it has one); the timeline's
+    variant is 'miss' (no Faster miss: a miss keeps 760 ms, no hit). The runner's `past` point (0.8 m beside the
+    target across the line of the attack, 0.4 m past, 0.4 up) for `on`/`to`/`toward`; a ray may aim `to` it. The check
+    holds a miss to maxMs.miss and hit 999; type-rename reaches the misses' ramps (a test caught it).
+  - 16f9694e Studio: a Hit tiers pane in VFX-12's battleFxPanes (every row's numbers as dials, what a KO and the last
+    KO add, drain and recoil), and Knocks out (No, a KO, the last KO) beside the outcome. check-studio-github.py
+    `--only=battle_fx` proposes and undoes a tier dial and finds the choice.
+- The snapshot (battle-anims.test.mjs.snapshot) remade on purpose twice: the five flurry moves (all 880/200), then the
+  106 moves whose family has a miss (all 760/999). `{dur, hit}` of every move and outcome unchanged (the test for every
+  move x 8 outcomes x 2 stages x 2 speeds passes).
+- Time added (hit-stop: real time the stage holds; the stage's own `{dur, hit}` don't change): a KO one cell (42 ms)
+  more than its tier; the last KO, or a boss's, a freeze of 250 ms in all. Nothing else gets longer: normal hits keep
+  20+70w ms, super and x4 80 ms, crit 90 ms (today's), resisted 20.
+- The track file's figures, checked: neutral's shake was 1.4+6w in the code, not 1.4+5w (kept 6); super's hit-stop
+  80 ms, not 2 cells (84); crit 90, not 2 cells; super's shake was 8, the table's 6 taken; x4's 3 cells (126 ms) would
+  make a hit longer, so x4 keeps 80. "B 568" (the tag bug) is battle.js 713 now. The legacy families were six, two of
+  them (miss, blocked) still the outcome defaults; the other four were named only by tests.
+- Decided for the owner, to review:
+  - Hit-stop on normal hits: today's 20+70w ms kept (recommended).
+  - The KO's extra cell and the last KO's freeze (about 250 ms; 250 exactly): both (recommended). A boss's KO
+    (`m.boss || m.alpha`) takes the last KO's row too.
+  - No other hit longer (recommended): x4 keeps the super's 80 ms rather than the track table's 3 cells.
+  - x4's darken: the VFX-15 mood already darkens (.2) and tints every super-effective hit; x4's own look is the
+    stronger tint (.45 against .35), more shake, a bigger burst and light. No second full-screen flash (the limiter
+    would hold it).
+  - Super's full-screen flash is now the type's colour at .35 (it was white .55); a type colour the limiter calls
+    saturated red becomes a sprite flash, as rule 9 says.
+  - The crit's warm flash .5 (was .6), after the impact frame as before.
+  - Under Reduced motion the crit's "Critical hit" tag is hidden (the code's intent); the number stays.
+  - A flurry's beats add no hit-stop; the last beat is the hit.
+  - The heal's ground ring takes the heal colour from the data (#8DE3D6) instead of #5DFF8A.
+  - `whiff` (the old miss) stays for families with no miss of their own and for moves with no family.
+- Films (look-battle-anims.py, headless, the town fixture): Handshake (charge) side 0 in nve, hit, se, x4, crit,
+  secrit, hit+ko, hit+last (each tier distinct: the x4's chromatic pulse, darken and white-hot sprite; the last KO's
+  impact frame, white then ink); Assembly Line's flurry (the beats building to the hit); drain and recoil (--events);
+  the misses of Lift Off (dive), Disrupt (shot), Overload (beam) and Assembly Line (flurry): the shot and the ray go
+  wide of the target, which sidesteps with Miss. No errors.
+- Measurements (headless, software GPU, the town fixture, quality 0; `look-battle-anims.py
+  --only=handshake,overload,assemblyline --measure`, outcomes hit, se, secrit, side 0, 9 films; the build before = this
+  head with the VFX-13 game commits reversed, in a second worktree, so the scene is the same):
+  - battleFx draws a move: 3 before and after (the budget). Effects pass draws a frame at most: 130.3 before, 130.0
+    after; the frame's draws at most 733 before, 732 after (side 0's 9 films).
+  - Rig redraws a film: 31.0 before, 31.3 after over 18 films both sides (per film equal, a flurry one more: its
+    beats' hurt pose). VFX-11's rise (15.6 -> 27.2) rechecked: the build before VFX-13 on main's new scene already
+    redraws 31 a film, and the same build on the scene before main's #315 (8dc9583d) 15.5: it follows the scene (main's
+    Copperleaf rebuild and the near Billie's framing), not the families or the tiers.
+  - Frame time a move: 539 ms mean before, 687 after (p90 1994 / 3035), but the stage at rest moved as much (2221 /
+    2605) in runs an hour apart: software rendering, only the direction counts, and the phone decides.
+  - `{dur, hit}`: unchanged for every move and outcome (tested); the only time added is hit-stop: a KO's cell, the
+    last KO's freeze.
+- Risky:
+  - The last KO's freeze is real time and doesn't scale with the battle speed (hit-stop never did); 250 ms at Faster
+    may feel long. The data's `tiers.last.freeze` is the dial.
+  - koAhead reads the battle's lines by the event object (`activeBattle.events.indexOf(ev)`): a line played from
+    elsewhere gets no KO look (the Studio and the look tool pass their own `ka`).
+  - The type tint for super hits: dark type colours tint less; Fire's glow may meet the saturated-red rule and drop to
+    a sprite flash (rule 9, intended).
+  - Smoke on the drain commit once failed the in-game full test's report download (a 30 s timeout behind 9 s shader
+    frames) while films rendered on the same machine; alone it passed.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; the unit tests
+  after each change (1973 at the end; the 1,000-maps timing test failed twice only while a smoke or film ran beside
+  it, and passes alone); smoke no problems on every game commit (in a second worktree, on that commit) and on the
+  merges; check-studio-github.py `--only=battle_fx`; the full quick check at
+  b475bb15: 37 of 42 (1693 s). RL-8 (the town's shop has no Perk), room light and Battle music's drums are on the
+  known list; RT-2 (the pair talked but no battle started) and Copperleaf (Granny Juniper said nothing) failed under
+  the full run's load and pass alone, on this head (2 of 2) and on main 6ca60be6 (2 of 2).
+- Phone checks for the owner (listed, not waited for): a resisted hit (grey flash, dull puff); a super; a x4; a crit;
+  a KO (white, then ink, a second scar); the last KO's freeze (and the impact frame); a flurry (Assembly Line,
+  Developers!); a drain (Harvest) and a crash (Margin Call missing); a miss of a few families (a shot, a beam, a
+  dash); Reduced motion: no tag pops; Scatter Stones: the stones on the foe's side.
+- Next: wave 3 goes on: VFX-17 and VFX-19 merge the latest `track/vfx` into their side branches and report done; the
+  next main-line session (VFX-18) merges them. Not done here: the KO look for a hurt line (a spread move's second
+  target, the delayed hit, a burn) that knocks out (koAhead reads move lines only); editing the families' misses in
+  the Studio (the Families pane only shows them).
+
 ### VFX track VFX-17 - Signature scenes 1: summoned models, the drawn stamp, the cut, 18 scenes with a short repeat - 2026-10-28
 Side branch `claude/vfx-17-scenes-1` (wave 3, beside VFX-13 on `track/vfx` and VFX-19 on `claude/vfx-19-move-sounds`),
 made from `track/vfx` at 7f957898 (VFX-11); `origin/track/vfx` merged in at ef0696af (8dc9583d: VFX-11's finish,
@@ -130,6 +274,127 @@ the commits). No sound file touched.
   had just run the films. The in-game battle steps (A battle plays to the end, the Voltron, a run's battles) passed.
 - Next: VFX-13 merges this branch into `track/vfx`; VFX-18 builds the other 38 scenes (and the bots' and the boss's
   specials) on these primitives.
+
+### VFX track VFX-19 - Move sounds: music.json battle (16 families, 11 type layers, hurt, recall, throw and catch), the Studio's Battle card, fingerprints - 2026-10-28
+Branch `claude/vfx-19-move-sounds`, a side branch of wave 3 made from `track/vfx` at 7f957898 (VFX-11); draft PR #325
+into `track/vfx`. The latest `origin/track/vfx` (24d54001: VFX-11 done, main and VFX-12 merged) merged in at 2d6cde0a
+(hooks.js and art-code-refs.json regenerated, ROADMAP keeps both), so the next main-line session can merge it clean. Run under the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here,
+recommended options taken and listed below. Agreed with the sound track's planning session
+(session_019UpAFxCHyLNWb1TCD6L3vh) before each sound file was touched and after each push; VFX-17
+(session_019UpAFyKqgF7VsYJD7y7u6A) told of the one battle-stage.js line. No tags (CLAUDE.md since #283).
+- The plan: the `battle` section in music.json in the agreed shape, with its schema; a pure logic module for it with
+  tests; a player that knows nothing of the game (the game and the Studio share it) and the game's glue in
+  game/js/audio/; the fewest lines in sound.js (battleSoundEffect only) and battle-stage.js (catchSound only); the
+  Studio's Battle card; check-sound.py's fingerprints, the baseline in its own commit; the checks; docs.
+- Changed:
+  - game/data/music.json `battle` (+ schema/music.schema.json: properties.battle, $defs battleVoice, battleSound,
+    battleMoveSound): `families` (one per VFX-11 family: charge, dash, dive, strike, slash, quake, flurry, shot, beam,
+    breath, wave, storm, buff, hex, guard, heal; each a `cast` part from the move's start and a `hit` part from its
+    hit), `types` (a layer per type kit: the 9 types, None, Bureau), `hurt` (burn, recoil, spread, delayed),
+    `recall`, `catch` (throw, pop, land, wobble, seal). A sound: name, pitch (midi, 60 when left out), wave, echo, and
+    voices in the cries' shape (`{at, note, len, wave?, inst?, vol?, slide?, vib?}`) or synthNoise's (`{at, noise:
+    {lp|hp|bp, q}, dur, vol?}`). 37 sounds, all "placeholder: ..." (Claude's drafts). The throw, pop, land, wobble
+    and seal are today's recipes with a low sine for body and a little echo for space.
+  - game/js/logic/battle-sounds.js (new, pure; tools/test/battle-sounds.test.mjs, 8 tests on the game's data):
+    `battleSoundPlays` (a part as a play list), `battleSoundLength`, `battleSoundNames`, `battleSoundGet`,
+    `battleMoveFamilies` (every family but legacy ones and the ones only `defaults.miss`/`defaults.blocked` name:
+    VFX-13's whiff and blocked), `battleSoundPreview` (a move sound heard alone: its hit at its family's hit), `battleSoundFamily` (a move's own
+    `anim` when it is a family; a scene's `family`, VFX-17's key; else its category's default: a miss is still cast),
+    `battleMoveSound` (family + type layer), `battleHurtKind`, `battleSoundFindings`. logic/music-studio.js:
+    MUSIC_CHOICES `noise`, `battleHurt`, `battleCatch` (held to the schema by the new test); musicFindings checks
+    the section against battleAnims.json (`more.battleAnims`: a family or type that isn't one an error, a missing
+    one a warning, placeholders a note); check-data.mjs and the Studio's Check pass it.
+  - game/js/audio/battle-voices.js (new, knows nothing of the game): `battleVoicesPlay(T, out, list, t, {echoTo})`
+    plays a list on a tracker: tones through synthVoice, a voice naming `inst` through T.sampleShot when the bank has
+    it baked (else the wave), noises through synthNoise. No echo without a send of its own (the tracker would send it
+    to the music's echo).
+  - game/js/audio/battle-sounds.js (new, the game's glue): `battleMoveSoundPlay(an, r)` (cast now, hit at r.hit when
+    it lands; the type is the kit the move plays in, the Bureau's for a bot), `battleHurtSoundPlay`,
+    `battleRecallSoundPlay`, `battleCatchSoundPlay(k)` (pyramidLand is land; false when the data has none, so the
+    caller plays its old one), `battleSoundPreviewPlay(name)` (check-sound.py, the console). On soundEngine.fx, echo
+    to soundEngine.tracker.echoFx, timed by battleStageAt (a skip drops what's still to come). A `battle <family>
+    <kit>` line in soundEngine.log (in memory, never sent).
+  - game/js/sound.js battleSoundEffect only: case 'move' adds the move's sound (the tier's hit, super, weak, crit and
+    miss sounds stay; a move on itself or Protect plays its family instead of the status blip); new cases 'hurt' and
+    'recall' (after 'stat', away from SND-17's jinglePlay lines, as the sound coordinator asked); case 'enter' plays
+    battle.catch's throw and pop. soundLog exported. No recipe changed; the caught and lvl jingle lines untouched.
+  - game/js/battle-stage.js: `catchSound` tries battleCatchSoundPlay first (one line). Cutscene, airship and
+    train throws keep soundEffect('throw').
+  - Studio (music-editor.js): a Battle card on Music & sound -> Sounds after Button sounds: Move families, Type
+    layers, Hurt, Recall, Throw and catch; a ▶ per sound (through audio/battle-voices.js, a family's hit at its hit),
+    name, wave, pitch, echo and every voice's fields. The Check's battle findings open the Sounds tab.
+    check-studio-github.py's music step plays every battle sound and counts its voices, edits a name and undoes it.
+  - tools/check-sound.py: a 'battle' kind, 2.5 s a render, into validation/sound-baseline/battle.json; the
+    baseline commit only adds that file.
+  - Pages: logic/battle-sounds.js (both, before music-studio.js in the Studio), audio/battle-voices.js (both),
+    audio/battle-sounds.js (the game, after sound.js); studio/js/logic-worker-modules.js; hooks.js and
+    art-code-refs.json regenerated.
+- Where the track file and the brief were wrong or vague (checked in the code):
+  - "SND-11's instruments are not on main": right, but SND-9's bank is already on track/vfx (tracker.js
+    `T.sampleShot`, `T.bankReady`, sound-bake.js with one instrument, harp). The sound coordinator gave SND-11's 29
+    ids (accordion ... woodblock; orchhit, timpani, kick, snare, brass for hits); the schema accepts any id.
+  - SND-8b's `T.echoFx` is on track/vfx, so the sounds echo there (not dry).
+  - "recoil": the engine has no recoil fx. A crash (missCost), confusion, unstable cells, stones, the storm and the
+    passives' small hurt are all plain `hurt` events: all but burn, spread and the delayed hit (`mail`) play recoil.
+    Hurt events played no sound at all before.
+  - The recall beam: VFX-16's beam isn't on track/vfx at 7f957898 (the recall there is the old white fade); the sound
+    hangs on the `recall` event, so it plays with either.
+  - music-editor.js "~650-758": the Sounds tab's cards were at 666-770 (base cries 684, button sounds 713, mix 730).
+    sound.js heal and seal (track file "~504 and ~539") are at ~586 and ~623 on this branch.
+  - The brief's voice shape has noise voices with `dur` and tone voices with `len`; kept as agreed (cries' `len`,
+    synthNoise's `dur`). A tone's `note` goes to +-36 (the cries' +-24 is too narrow for low thumps and high clangs).
+  - music.json is laid out by check-data's writer (`--fix`): voices with a nested `noise` are written one key a line.
+- Decided for the owner, to review:
+  - The tier sounds stay and the family's sound layers over them (recommended in "Hit tiers" spirit: the tier is
+    SND-13's and sound.js's); the alternative, family replacing the generic hit, is a one-line change later.
+  - A move on itself (buff, guard, heal families) plays its family instead of today's status blip; a missed move
+    plays its cast, then today's miss sound.
+  - A Bureau bot's moves take the Bureau's layer (as VFX-11's kits do); a scene plays its `family`'s sound until
+    scenes get sounds of their own (VFX-18 or later: a `battle.scenes` key would be the place).
+  - The send-out uses battle.catch's throw and pop too; cutscene, airship and train throws keep the old ones.
+  - Echo: guard .3, heal .4, recall .3, the catch sounds .15-.35; the rest dry.
+  - No placeholder names `inst` yet (the bank has harp only here); so `T.bankReady` isn't called. When a sound names
+    an instrument, call `T.bankReady(ids)` as a battle starts (sound.js 'wild' and 'trainerIn'), as SND-13 does.
+- Measurements:
+  - 37 sounds, 0.06-1.5 s each heard alone (the test holds 1.5 s); a move adds 3-8 voices (heal over Electric the
+    most) to today's 2-3; nothing adds time: no move's {dur, hit} or `maxMs` changed (the battle-anims tests).
+  - check-sound.py: 236 fingerprints (was 199 + 37 new), the other 26 baseline files byte-identical after a rewrite.
+    Peak RMS a 50 ms window: 0.002 (None's tap) to 0.056 (quake); the UI sounds 0.004-0.018 for scale.
+  - In the game (a wild battle in the town fixture, headless, autoplay on): one move per family x type pair found
+    (31 pairs) through battleSoundEffect: all 16 families and all 11 kits logged and started voices; hurt (burn 13,
+    recoil 22, spread 50, delayed 27 voices started in 300 ms, the music's included), recall, every catch sound
+    returned true and started its voices.
+- Risky:
+  - Loudness: the placeholders are set by ear-less numbers. Some are faint (None's tap, spread, flurry); quake's and
+    charge's thumps are the loudest. SND-15's mix pass and the owner's listening pass set them.
+  - A merge with track/sound (whichever reaches main second; if track/vfx lands first, SND-15 does it). The sound
+    coordinator test-merged 791ac709 into track/sound 7934154c (not pushed): sound.js merges clean; ten files conflict,
+    all "both sides added", keep both: HANDOFF.md; music.json and music.schema.json (`battle` beside `instruments` and
+    `ensembles`); game/index.html and studio/index.html (script tags; check:modules checks the order);
+    logic/music-studio.js (MUSIC_CHOICES, musicFindings); studio/js/music-editor.js (Battle beside Instruments,
+    Jingles and Form); tools/check-sound.py (the battle kind beside brightness, loudness, ensemble, jingle and layer)
+    and tools/check-studio-github.py; studio/art-code-refs.json (regenerate). Then `npm run modules`, the music tests,
+    `check-sound.py --only=<battle names>` and the songs, and the baseline once in its own commit.
+- Phone checks for the owner (listen; placeholders until your listening pass): a move of each family (Studio: Music &
+  sound -> Sounds -> Battle plays each; in a battle: a strike, a shot, a beam, a storm, a heal...), a hurt
+  sound (a burn's tick; a spread move's second target), the recall (swap a Billie), a throw (send-out) and a catch
+  (throw, landing, wobbles, seal). Also: nothing too loud over the battle song; the Sound effects slider moves them.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build before the commits; unit tests 1931 of
+  1931 after adding the logic worker's line (it failed once without it); battle-sounds and music-studio tests 20 of
+  20; check-sound.py (only `battle` new, then all 236 equal); smoke at 611151bd's tree: no problems (346 s);
+  check-studio-github.py `--only=music` ok (every Battle-card sound's voices counted); the in-game probe above.
+  Full quick check (at 48e1446d, 1632 s): 37 of 42; the 5 problems: Terraces, RL-8's seam and room light (the known
+  list), RT-2 route trainers and Granny Juniper: both pass alone on this branch (91 s, 16 s), load. After merging
+  track/vfx (2d6cde0a): unit tests 1955 of 1955, lint, typecheck, check:modules, format, check:data, build; smoke no
+  problems (315 s); check-sound 236 of 236 equal. CI smoke: on c9bf80fc red only for "The world map opens as the bowl"
+  (main's); on 48e1446d also "Camera follow ... the page stopped drawing" at 265 s (passes alone here in 75 s; VFX-10
+  saw it on #295 too: load). Both commented on PR #325.
+- Talking to the wave: VFX-13 (session_019UpAFzn8FD2nCwYETVqCaY) drops the legacy_* families and adds whiff and
+  blocked: the findings skip outcome-only families, so its merge needs nothing more; it doesn't touch catchSound.
+  VFX-17 (session_019UpAFyKqgF7VsYJD7y7u6A): every scene carries `family` (8bc5197a), which battleSoundFamily reads.
+- Next: the planning session merges this branch into `track/vfx` in the next main-line step (VFX-13 or after). The
+  owner's listening pass replaces the placeholders; when SND-11 reaches main, sounds may name instruments (and the
+  battle start calls bankReady).
 
 ### VFX track VFX-16 - Battle flow: the VS splash, send-out, recall, catch, faint, level-up, items, victory and defeat - 2026-10-28
 Side branch `claude/vfx-16-battle-flow` (wave 2, beside VFX-11 on `track/vfx` and VFX-14 on `claude/vfx-14-statuses`),

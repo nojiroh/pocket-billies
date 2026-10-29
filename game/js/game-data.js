@@ -34,7 +34,6 @@ expose({
   FIELD_MOVES: [() => FIELD_MOVES],
   GENES: [() => GENES],
   GHOST_KEEPS: [() => GHOST_KEEPS],
-  HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
   LINES: [() => LINES],
@@ -162,11 +161,6 @@ export const TYPE_RESISTED_BY = Object.fromEntries(
 );
 export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
 provide({ PASSIVE }); /* to-module */
-export const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
-  gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']])
-);
-provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
-HIT_EFFECTS_BY_TYPE.None = gameData.untyped.fx || ['pow', 'star'];
 export const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
 /** RF-3: a passive's name and text as the player reads them (types.json passiveName, passiveText), by type */
