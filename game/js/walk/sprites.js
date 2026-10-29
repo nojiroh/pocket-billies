@@ -1167,8 +1167,9 @@ function drawFlatItem(fp, it, T) {
   gl.uniform4f(U.uUV, 0, 0, 1, 1);
   gl.uniform4f(U.uCol, 1, 1, 1, 1);
   gl.uniform1f(U.uGlow, 0);
-  gl.uniform1f(U.uLitFx, 1);
-  const gt = groundTintOf(it);
+  /* IN-3: a picture of light (emit: the Bureau's portal) keeps its own colours, unlit by the scene, day or night */
+  gl.uniform1f(U.uLitFx, it.emit ? 0 : 1);
+  const gt = it.emit ? 0 : groundTintOf(it);
   gl.uniform4f(U.uGTint, cx, cz, gt ? 1 : 0, gt);
   if (gt) {
     const sc = walkView.sc,
