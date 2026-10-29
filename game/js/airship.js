@@ -75,12 +75,12 @@ function flyFare(a, b) {
 export function flyMenu(p) {
   if (airshipFlight.on || !saveData.started || !saveData.run) return;
   modal({
-    title: escapeHtml((p && p.label) || 'Airship mast'),
+    title: escapeHtml((p && p.label) || 'Sky train halt'),
     cls: 'fly-sheet',
-    html: '<p>The airship waits here for the end of the run. Flying home now gives the run up.</p>',
+    html: '<p>The sky train waits here for the end of the run. Riding home now gives the run up.</p>',
     btns: [
       {
-        l: 'Fly home',
+        l: 'Ride home',
         c: 'red',
         f: () => {
           uiState.modal = null;
