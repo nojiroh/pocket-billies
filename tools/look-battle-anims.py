@@ -139,7 +139,7 @@ __film.lines=(key,L)=>{__film.reset();__seed(__film.hash(key));if(typeof battleL
  for(const x of L){if(!x.at)play(x);else window.setTimeout(()=>play(x),x.at)}return 0};
 __film.startLines=(key,L)=>{__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;return __film.wrap(()=>__film.lines(key,L))};
 __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=()=>__film.vt;window.setTimeout=(f,ms)=>{__film.timers.push({t:__film.vt+(+ms||0),fn:f});return 0};try{return fn()}finally{performance.now=pn;window.setTimeout=st}};
-__film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);__film.probe(__film.vt)}return 0});
+__film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [k,t] of __film.tasks)if(!__film.stageOnly||k==='scene')t.fn(__film.vt,16);__film.probe(__film.vt)}return 0});
 /* VFX-16: a flow moment's film (--flow): the stage call for each moment, with Reduced motion on or off; the battle's
    own Billies (a bot stands in for the foe in faint.bot) */
 __film.flow=(kind,red)=>{if(typeof battleStageOutcome==='undefined'&&(kind==='win'||kind==='lose'))return;const ev={s:activeBattle.events[activeBattle.events.length-1].s},S0=S.s[0],S1=S.s[1];
@@ -401,7 +401,7 @@ def main():
                 if 'sheets' in OPT:
                     sheet(pg, key, '', 1, '', start, every=15)
                 else:
-                    traces[key] = pg.evaluate(f"(()=>{{const out={{key:{json.dumps(key)},trace:[],fs:[],fsk:''}};__film.fsObs.takeRecords();{start};out.t0=__film.vt;__film.fsOut=out;const t0=battleStage.t;for(let i=0;i<240;i++){{__film.step(1);if(i%{EVERY}===0)out.trace.push(__film.snap(t0,__film.vt))}}__film.fsOut=null;delete out.t0;delete out.fsk;return out}})()")
+                    traces[key] = pg.evaluate(f"(()=>{{__film.stageOnly=true;const out={{key:{json.dumps(key)},trace:[],fs:[],fsk:''}};__film.fsObs.takeRecords();{start};out.t0=__film.vt;__film.fsOut=out;const t0=battleStage.t;for(let i=0;i<240;i++){{__film.step(1);if(i%{EVERY}===0)out.trace.push(__film.snap(t0,__film.vt))}}__film.fsOut=null;__film.stageOnly=false;delete out.t0;delete out.fsk;return out}})()")
                 print(key, 'filmed', flush=True)
             if traces: (OUT / 'trace-events.json').write_text(json.dumps(traces, indent=0, sort_keys=True))
         # VFX-16: --flow films the flow moments (--only= picks some), each with motion and under Reduced motion
