@@ -133,6 +133,7 @@ import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
 import { BATTLE_FX_SHADERS } from './walk/battle-fx.js';
+import { BATTLE_SCAR_SHADERS } from './walk/battle-scars.js';
 import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
@@ -371,6 +372,8 @@ export function ensureWalkGl(cv) {
       RIBBON_SHADERS,
       /* VFX-9: the battle effects' pool */
       BATTLE_FX_SHADERS,
+      /* VFX-15: the battle's scars */
+      BATTLE_SCAR_SHADERS,
       /* phase 20 R3: the instanced shadow pictures' and shadow models' programs */
       SHADOW_INSTANCE_SHADERS,
       typeof MODEL_SHADOW_SHADERS !== 'undefined' && MODEL_SHADOW_SHADERS,
@@ -815,9 +818,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       dofRef: BT ? null : 16,
       dofView: !!walkView.opt.dofView /* CAM-3: the Studio's blur heatmap */,
       plane: FP && tilt > 0 ? [FP.g[0], FP.g[1], FP.g[2], FP.h] : null /* (tilt 0: the old slab, to the bit) */,
-      heat: heatHaze(sc),
+      /* VFX-15: a battle's Fire big moves shimmer too; the battle's mood, its row wave, the sun's warmth and shafts
+         (battle-stage-look.js) */
+      heat: Math.max(heatHaze(sc), BT && BT.stageLook ? BT.stageLook.heat : 0),
       heatS: heatSources(C),
       mood: easedMood(sc),
+      stageLook: BT ? BT.stageLook || null : null,
       sun: sc.indoor ? null : litSunScreenPosition(C, sun),
       sunCol: engineSetting('sun', 'followLight') ? sun.col : null,
       X,

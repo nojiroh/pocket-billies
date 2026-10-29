@@ -91,11 +91,11 @@ expose({
   runSeenSum: [() => runSeenSum, v => (runSeenSum = v)],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
-  walkPick: [() => walkPick, v => (walkPick = v)],
+  walkPick: [() => walkPick, v => ((walkPick = v), provide({ walkPick }))],
   walkState: [() => walkState, v => (walkState = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ leaveRoom, mapIdAt, mapOffsetInView, roomState });
+provide({ leaveRoom, mapIdAt, mapOffsetInView, roomState, walkPick });
 /* to-module: end */
 /* ---------- the walk scene behind the Walk tab ---------- */
 export function mapIdAt(i) {

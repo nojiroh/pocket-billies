@@ -33,11 +33,13 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
+  BATTLE_ANIMS,
   BOSSES,
   FACTIONS,
   GENES,
   ITEMS,
   MOVES,
+  NODE_TYPES,
   PASSIVE,
   PASSIVE_INFO,
   PERKS,
@@ -69,6 +71,7 @@ import {
 import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
 import { styleDials, styleNote } from './theme-sheet.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
+import { lvlSlot, vsPortraitScale, vsSplashFor } from './logic/battle-flow.js';
 import { popSize, rollValue } from './logic/hit-numbers.js';
 import {
   JOIN_LOCK_MS,
@@ -106,7 +109,7 @@ import {
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
 import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML, uiIconURL } from './art.js';
-import { portraitHTML } from './person-art.js';
+import { portraitHTML, portraitSize, portraitURL } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
@@ -116,6 +119,7 @@ import {
   battleStage,
   battleStageCatch,
   battleStageFocus,
+  battleStageOutcome,
   battleStagePlay,
   battleStagePrepare,
   battleStageResize,
@@ -128,6 +132,7 @@ import {
   camAt,
 } from './battle-stage.js';
 import { battleAnimSkip } from './battle-anim-run.js';
+import { battleLooksLine } from './battle-looks.js';
 import { walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { WEATHER_NAMES } from './environment.js';
@@ -145,6 +150,7 @@ expose({
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
   backButtonHTML: [() => backButtonHTML],
+  battleCardColumn: [() => battleCardColumn, v => ((battleCardColumn = v), provide({ battleCardColumn }))],
   battleFactionLook: [() => battleFactionLook, v => (battleFactionLook = v)],
   battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
   battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
@@ -156,6 +162,7 @@ expose({
   battleShell: [() => battleShell, v => (battleShell = v)],
   battleStamp: [() => battleStamp, v => (battleStamp = v)],
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
+  battleVsSplash: [() => battleVsSplash, v => (battleVsSplash = v)],
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
@@ -232,7 +239,17 @@ expose({
   winLineHTML: [() => winLineHTML, v => (winLineHTML = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop, openBattle, platesTick, playTurnEvents, stopTimers });
+provide({
+  battleCardColumn,
+  battleFreeArea,
+  battleLayoutChanged,
+  hudHit,
+  hudPop,
+  openBattle,
+  platesTick,
+  playTurnEvents,
+  stopTimers,
+});
 export function setPaintActions(v) {
   paintActions = v; // eslint-disable-line no-func-assign
   provide({ paintActions });
@@ -504,12 +521,14 @@ function showEvent() {
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
   if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r, ev);
-  if (ev.an) hudMoment(ev.an);
+  if (ev.an) hudMoment(ev.an, ev);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
   afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => {
     paintBoxes(ev.s, ev.mk, true);
     eventBlips(ev);
+    /* VFX-14: the stage's statuses and short effects take the same line's state (battle-looks.js) */
+    battleLooksLine(ev);
   });
   $('#msg').classList.remove('ready');
   uiState.evReady = false;
@@ -582,6 +601,8 @@ export function tapMessage() {
   battleAnimSkip();
   const ev = activeBattle.events[activeBattle.ev];
   if (ev) paintBoxes(ev.s, ev.mk, true);
+  /* VFX-14: and the stage's looks */
+  if (ev) battleLooksLine(ev);
   lineReady();
 }
 /* phase 06-4: the corner cards are gone (the plates in the scene show everything); a Billie coming in repaints them */
@@ -700,7 +721,7 @@ function koThisEvent(si) {
    size follows the hit, the largest on a KO (SY-2, logic/hit-numbers.js), the kind's colour on top */
 function hudPop(si, text, kind, w) {
   const L = $('#pops');
-  if (!L || !battleStage.L || (reducedMotion && kind === 'tag')) return;
+  if (!L || !battleStage.L || (reducedMotion && String(kind).split(' ')[0] === 'tag')) return;
   const q = battleStageToCss(actorTop(si));
   if (!q) return;
   const e = document.createElement('div');
@@ -721,12 +742,13 @@ function hudPop(si, text, kind, w) {
    sky (the growth family) round its plate's level, a catch bursts teal (good) round the pyramid, and a boss's name
    banner slams in as its trainer comes in, inside the trainer's own 1150 ms (no time added). The banner is the kit's
    pb-name-banner, which RL-14b's stage intro and VFX-16's VS splash can call the same way */
-function hudMoment(an) {
+function hudMoment(an, ev) {
   const L = $('#pops');
   if (!L) return;
   const box = L.getBoundingClientRect();
   if (an.k === 'lvl') {
-    const lv = $(`#plates .bplate[data-k="${an.si ?? 0}"] .pl-lv`);
+    /* VFX-16: the Billie the line is about (the engine names it by uid; it read slot 0) */
+    const lv = $(`#plates .bplate[data-k="${lvlSlot(an, ev)}"] .pl-lv`);
     if (!lv) return;
     const r = lv.getBoundingClientRect();
     if (r.width) pbBurst(r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top, HUD_BURSTS.lvl(L));
@@ -734,10 +756,33 @@ function hudMoment(an) {
     const q = battleStage.coin && battleStageToCss(battleStage.coin);
     if (q) pbBurst(q.x, q.y, HUD_BURSTS.caught(L));
   } else if (an.k === 'trainerIn') {
-    const T = activeBattle && activeBattle.T;
-    if (T && (T.boss || T.alpha))
+    const T = activeBattle && activeBattle.T,
+      E = BATTLE_ANIMS.events && BATTLE_ANIMS.events.vs,
+      V = vsSplashFor(T, E);
+    if (V && E) battleVsSplash(T, V, E, $('#stage') || L);
+    else if (T && (T.boss || T.alpha))
       pbNameBanner($('#stage') || L, { name: T.name, kicker: 'Boss', tone: 'bad', hold: 640 });
   }
+}
+/* VFX-16: the VS splash for a leader, the rival or a boss as its trainer comes in: UI-17's name banner with the two
+   portraits (yours and theirs, at a whole-number scale), the name and the run role's title as the game shows them
+   (nodeTypes.json), the leader's type colour (a boss keeps the red family), the kit's slant. It fits inside
+   trainerIn's 1150 ms (in 240 + hold + out 180) and goes before a boss's join intro and SY-5's notice; under Reduced
+   motion it fades in and out, standing still */
+function battleVsSplash(T, V, E, host) {
+  const [cw, ch] = portraitSize(),
+    r = host.getBoundingClientRect(),
+    k = vsPortraitScale(r.width, cw, E.scale, r.height, ch),
+    face = (/** @type {string} */ who) => ({ src: portraitURL(who), w: cw * k, h: ch * k }),
+    NT = NODE_TYPES[V.role];
+  pbNameBanner(host, {
+    name: T.name,
+    kicker: NT ? NT.name : '',
+    tone: V.role === 'boss' ? 'bad' : 'special',
+    color: V.role !== 'boss' && V.type ? TYPE_GLOW[V.type] || '' : '',
+    faces: [face('me'), face(T.who)],
+    hold: E.hold,
+  });
 }
 const HUD_BURSTS = {
   lvl: (/** @type {Element} */ L) => ({ tone: 'var(--sig-growth)', size: 56, in: L }),
@@ -942,6 +987,8 @@ function afterEvents() {
   if (activeBattle.over) {
     activeBattle.phase = 'end';
     paintActions();
+    /* VFX-16: the winners cheer with sparkles, or your side fades (no time added: the end waits on the player) */
+    battleStageOutcome(activeBattle.over);
     /* SY-5: a win over the Bureau is DENIED (it replaces a knockout's stamp: one at a time) */
     const look = activeBattle.over === 'win' && battleFactionLook();
     if (look) battleStamp(null, look.stamps.denied, true);
@@ -1871,6 +1918,15 @@ function turnBar() {
    readable size, stay in the lower part of the screen within thumb reach, and are page elements, so the scene's
    lighting never touches them (css/battle-ui.css) */
 const floatPos = { acts: null, msg: null };
+/** the battle cards' column (the text over the menu): its width in screen px, its zoom (big screens zoom the dock:
+    battle-screen.css), the gap to the fighters and the margin to the screen's edge. battle-stage.js lays the fighters
+    out beside it on a wide screen @param {number} vw @param {boolean} land */
+function battleCardColumn(vw, land) {
+  const dock = $('#dock'),
+    z = (dock && parseFloat(getComputedStyle(dock).zoom)) || 1,
+    cwd = Math.min((vw - 32) / z, land ? 360 : 400);
+  return { cwd, cw: cwd * z, z, gap: 32, edge: land ? Math.max(24, Math.round(vw * 0.03)) : 16 };
+}
 function floatTick() {
   const B = $('#battle'),
     acts = $('#acts'),
@@ -1907,17 +1963,16 @@ function floatTick() {
      right third in landscape), so neither card covers a fighter and both stay within thumb reach */
   /* big screens zoom the dock (style.css, 1.18 or 1.35) so the cards grow with the screen: sizes below are in screen
      pixels, and the translate is divided back into the dock's own units */
-  const z = parseFloat(getComputedStyle(acts.parentElement).zoom) || 1,
-    cwd = Math.min((vw - 2 * pad) / z, land ? 360 : 400);
+  const { cwd, cw, z, gap: apart, edge } = battleCardColumn(vw, land);
   acts.style.width = msg.style.width = cwd + 'px';
-  const cw = cwd * z,
-    ah = hasActs ? acts.offsetHeight * z : 0,
+  const ah = hasActs ? acts.offsetHeight * z : 0,
     mh = msg.offsetHeight * z,
     gap = 8 * z,
     colH = mh + (hasActs ? gap + ah : 0);
-  /* wide screens (owner, 2026-10-19): a column on the right, clear of the edge, centred top to bottom */
-  const edge = land ? Math.max(24, Math.round(vw * 0.03)) : pad;
-  let x = land ? vw - cw - edge : a ? a.x - cw * 0.3 : (vw - cw) / 2,
+  /* wide screens (owner, 2026-10-19): a column on the right, clear of the edge, centred top to bottom; where the
+     fighters were moved in to sit beside it (battle-stage.js battleStageLayout), right next to them (2026-10-28) */
+  const beside = land && L.beside ? L.fx + L.fw + apart : vw - cw - edge;
+  let x = land ? beside : a ? a.x - cw * 0.3 : (vw - cw) / 2,
     y = land ? (vh - colH) / 2 : a ? a.y + 12 : vh - colH - pad;
   x = clamp(x, edge, vw - cw - edge);
   y = clamp(y, land ? top0 : vh * 0.42, vh - colH - edge - 8);

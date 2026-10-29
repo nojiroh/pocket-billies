@@ -2,9 +2,11 @@
 """Pictures of New game's opening (cutscenes track, part B), for picture notes (nothing is judged here): the fall (a
 picture every half second: the crust, the dive onto Copperleaf, the impact and the held landing), the opening's first
 shots after it (the walk view taking over on the same spot), and the starter pick with each of the three starters.
-Phone sized, the game's own graphics. Real time, so the fall's pictures depend on the machine's speed.
+Phone sized, the game's own graphics. Real time, so the fall's pictures depend on the machine's speed. --lines takes a
+picture at each line of the talk too (line-NN.png, the camera settled on it): Kappi's shots, the standing shot.
 
     python3 tools/look-opening.py                 # in validation/look-opening/
+    python3 tools/look-opening.py --lines         # and a picture at every line, to the starter pick
     python3 tools/look-opening.py --out=DIR
 
 Uses the browser checks' page set-up (tools/browser_check.py)."""
@@ -17,6 +19,7 @@ sys.path.insert(0, str(ROOT / 'tools'))
 import browser_check as CF  # noqa: E402
 ARGS = sys.argv[1:]
 OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), ROOT / 'validation' / 'look-opening'))
+LINES = '--lines' in ARGS
 SKIP = "cutscene.say&&cutscene.say.tap();cutscene.skip||skipCutscene()"
 
 
@@ -35,15 +38,33 @@ def main():
         pg.click('[data-a=intro]')
         t0, i = time.time(), 0
         # the fall and the opening's first lines, till Chosen first speaks
-        while time.time() - t0 < 40 and not pg.evaluate('!!(cutscene.say&&cutscene.say.on)'):
+        while time.time() - t0 < 40 and not pg.evaluate('!!cutscene.say'):
             pg.screenshot(path=str(OUT / f'fall-{i:02d}-{time.time() - t0:04.1f}s.png'))
             i += 1
             pg.wait_for_timeout(450)
         print('fall', i, 'pictures', flush=True)
+        n = 0
+
+        def lines(stop):
+            # a picture at each line once the camera has settled on it, then tap on, till the JS condition `stop`
+            nonlocal n
+            t1 = time.time()
+            while time.time() - t1 < 240 and not pg.evaluate(stop):
+                if pg.evaluate('!!cutscene.say'):
+                    pg.wait_for_timeout(1400)
+                    who = pg.evaluate("(document.querySelector('.cs-name,.talk-name,#csName')||{}).textContent||''")
+                    pg.screenshot(path=str(OUT / f'line-{n:02d}.png'))
+                    print('line', n, who.strip()[:12], flush=True)
+                    n += 1
+                    pg.evaluate(SKIP.split(';')[0] + ';0')
+                pg.wait_for_timeout(250)
+
+        if LINES: lines('!!(window.dressingRoom&&dressingRoom.on)')
         if not CF.until(pg, 'dressingRoom.on', 90, SKIP): raise Exception('never reached the dressing room')
         pg.click('[data-a=dr-preset][data-i="2"]')
         pg.fill('#drName', 'Checker')
         pg.click('[data-a=dr-save]')
+        if LINES: lines('!!cutscene.choosing')
         if not CF.until(pg, 'cutscene.choosing', 90, SKIP): raise Exception('never reached the starter pick')
         for k in range(3):
             pg.wait_for_timeout(1500)

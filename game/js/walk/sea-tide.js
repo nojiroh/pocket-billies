@@ -40,8 +40,10 @@ export function tideLevel(h) {
  * @param {number} h
  * @param {(i: number, j: number) => string} ter
  * @param {(i: number, j: number) => boolean} sea
+ * @param {(i: number, j: number) => boolean} [run] whether tile i, j holds running water (a river): never the sea's,
+ *   so the tide neither dries its bed nor covers its banks through it (a river runs at its own level)
  */
-export function tideCells(w, h, ter, sea) {
+export function tideCells(w, h, ter, sea, run) {
   const n = w * h,
     isSea = new Uint8Array(n),
     open = new Uint8Array(n),
@@ -58,7 +60,7 @@ export function tideCells(w, h, ter, sea) {
   for (let j = 0; j < h; j++)
     for (let i = 0; i < w; i++) {
       const c = ter(i, j);
-      if ((c === 'w' || c === 'd') && sea(i, j)) isSea[j * w + i] = 1;
+      if ((c === 'w' || c === 'd') && sea(i, j) && !(run && run(i, j))) isSea[j * w + i] = 1;
     }
   /* the open sea: the sea's water reached from the map's edge or from deep water */
   for (let j = 0; j < h; j++)

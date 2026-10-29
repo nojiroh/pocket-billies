@@ -138,13 +138,73 @@ export function renameTypeIn(D, from, to) {
     timelines = BA
       ? [
           { steps: BA.intro },
-          ...[...Object.values(BA.families), ...Object.values(BA.scenes)].flatMap(F => [F, F.short]),
+          ...[...Object.values(BA.families), ...Object.values(BA.scenes)].flatMap(F => [F, F.short, F.miss]),
         ]
       : [];
   for (const T of timelines)
     for (const S of (T && T.steps) || [])
       if (Array.isArray(S.types))
         S.types = S.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  /* VFX-15: the battle stage's moods and scars (battleAnims.json moods.wave, moods.heat, scars.kinds) */
+  const swapTypes = (/** @type {any} */ o) => {
+    if (o && Array.isArray(o.types))
+      o.types = o.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  };
+  if (BA && BA.moods) [BA.moods.wave, BA.moods.heat].forEach(swapTypes);
+  if (BA && BA.scars)
+    for (const K of Object.values(BA.scars.kinds)) {
+      swapTypes(K);
+      /* its decal's ramp, which a type names (a deleted one's: None's) */
+      if (/** @type {any} */ (K).ramp === from) /** @type {any} */ (K).ramp = to || 'None';
+    }
+  /* VFX-10: a type's ramp moves with it (a deleted type's goes), and an icon's ramp that named it names the new id, or
+     None */
+  if (BA && BA.ramps && Object.hasOwn(BA.ramps, from)) {
+    /** @type {Record<string, any>} */
+    const out = {};
+    for (const [k, R] of Object.entries(BA.ramps))
+      if (k !== from) out[k] = R;
+      else if (to) out[to] = R;
+    BA.ramps = out;
+  }
+  for (const I of Object.values((BA && BA.iconSprites) || {}))
+    if (/** @type {any} */ (I).ramp === from) /** @type {any} */ (I).ramp = to || 'None';
+  /* VFX-14: a status's or effect's ramp (battleAnims.json events) that named it names the new id, or None */
+  const looks = (/** @type {any} */ o) => {
+    if (!o || typeof o !== 'object') return;
+    for (const [k, v] of Object.entries(o))
+      if ((k === 'ramp' || o === (BA && BA.events && BA.events.glint && BA.events.glint.ramps)) && v === from)
+        o[k] = to || 'None';
+      else looks(v);
+  };
+  if (BA) looks(BA.events);
+  /* VFX-16: the flow moments' ramps that name a type (a Coat's glint, the level-up's) likewise */
+  const EV = BA && BA.events;
+  if (EV && EV.sendOut) {
+    const G = EV.sendOut.glint;
+    for (const k of ['coat', 'prime']) if (G[k] === from) G[k] = to || 'None';
+    for (const [k, r] of Object.entries(EV.sendOut.kinds)) if (r === from) EV.sendOut.kinds[k] = to || 'None';
+  }
+  if (EV && EV.levelUp && EV.levelUp.ramp === from) EV.levelUp.ramp = to || 'None';
+  /* VFX-11: a type's kit moves with it (a deleted type's goes); a kit or a step whose ramp named it names the new id, or
+     None */
+  if (BA && BA.types) {
+    /** @type {Record<string, any>} */
+    const out = {};
+    for (const [k, K] of Object.entries(BA.types))
+      if (k !== from) out[k] = K;
+      else if (to) out[to] = K;
+    BA.types = out;
+    const reRamp = (/** @type {any} */ o) => {
+      for (const f of ['ramp', 'ramp2']) if (o && o[f] === from) o[f] = to || 'None';
+    };
+    for (const K of Object.values(BA.types)) {
+      if (!K || typeof K !== 'object') continue;
+      reRamp(K);
+      for (const S of [...(K.cast || []), ...(K.hit || [])]) reRamp(S);
+    }
+    for (const T of timelines) for (const S of (T && T.steps) || []) reRamp(S);
+  }
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};
     if (!Object.hasOwn(lean, from)) continue;

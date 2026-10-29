@@ -5,29 +5,39 @@
    steps at stage-ms times. This file turns a move event into its timeline: which family (battleAnimFor), the steps
    whose gates hold, repeats spread out, the Faster variant, the quality, and the cap on extra time; battle-anim-run.js
    plays it on the stage. Also the hit's tier (hitTier) and whether a KO follows (koAhead), which the sound track
-   (SND-13) and the UI track (UI-16b) read too, and the full-screen flash limiter (flashGate).
+   (SND-13) and the UI track (UI-16b) read too, how the hit lands by its tier (hitLook, VFX-13; the tier names stay
+   hitTier's, a KO only a flag on top), and the full-screen flash limiter (flashGate).
    The engine's events are only read, never written. Effects draw no random numbers here.
    Logic only: no DOM, runs in Node (tools/test/battle-anims.test.mjs). */
-/** @import { BattleAnimsData, BattleAnimStep, Move } from '../../types/game-data' */
+/** @import { BattleAnimsData, BattleAnimStep, BattleAnimKit, BattleAnimFamily, Move } from '../../types/game-data' */
 /**
  * @typedef {{ k: string, si?: number, ti?: number, mid?: string, dmg?: number, te?: number, crit?: boolean,
- *   miss?: boolean, blocked?: boolean, protect?: boolean, self?: boolean, spread?: boolean }} MoveAn a move event's `an`
- * @typedef {{ gl?: boolean, reduced?: boolean, q?: number, speed?: number }} AnimCtx the stage: 3D or not, Reduced
- *   motion, the battle's quality (0-3), its speed
+ *   miss?: boolean, blocked?: boolean, protect?: boolean, self?: boolean, spread?: boolean, part?: string }} MoveAn a move event's `an`
+ * @typedef {{ gl?: boolean, reduced?: boolean, q?: number, speed?: number, bureau?: boolean }} AnimCtx the stage: 3D
+ *   or not, Reduced motion, the battle's quality (0-3), its speed, and whether the attacker is a Bureau bot (VFX-11)
  * @typedef {BattleAnimStep & { at: number, i: number, sync: boolean, skip: 'run' | 'info' | 'drop' }} AnimStep a
  *   timeline's step: when, which repeat, played at once (no `at` in the data) or on the stage clock, and what a skip
  *   does to it
- * @typedef {{ id: string, kind: 'family' | 'scene', variant: 'full' | 'short', dur: number, hit: number,
- *   tier: string, long: boolean, steps: AnimStep[] }} AnimTimeline
+ * @typedef {{ id: string, kind: 'family' | 'scene', variant: 'full' | 'short' | 'miss', dur: number, hit: number,
+ *   tier: string, long: boolean, kit: string | null, steps: AnimStep[] }} AnimTimeline the kit: the type kit it plays
+ *   in (battleAnims.json types; VFX-11)
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
+  BATTLE_ANIM_ART_DIR: [() => BATTLE_ANIM_ART_DIR],
+  BATTLE_ANIM_OUTCOMES: [() => BATTLE_ANIM_OUTCOMES],
   BATTLE_ANIM_SKIP: [() => BATTLE_ANIM_SKIP],
+  BATTLE_KIT_ROLES: [() => BATTLE_KIT_ROLES],
   HIT_TIERS: [() => HIT_TIERS],
+  IMPACT_FRAME_MS: [() => IMPACT_FRAME_MS],
+  TIER_ROWS: [() => TIER_ROWS],
   // @ts-expect-error -- replaced on purpose
   battleAnimFor: [() => battleAnimFor, v => (battleAnimFor = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleAnimFrame: [() => battleAnimFrame, v => (battleAnimFrame = v)],
   // @ts-expect-error -- replaced on purpose
   battleAnimGates: [() => battleAnimGates, v => (battleAnimGates = v)],
   // @ts-expect-error -- replaced on purpose
@@ -35,13 +45,33 @@ expose({
   // @ts-expect-error -- replaced on purpose
   battleAnimOutcome: [() => battleAnimOutcome, v => (battleAnimOutcome = v)],
   // @ts-expect-error -- replaced on purpose
+  battleAnimPreviewEvent: [() => battleAnimPreviewEvent, v => (battleAnimPreviewEvent = v)],
+  // @ts-expect-error -- replaced on purpose
   battleAnimTimeline: [() => battleAnimTimeline, v => (battleAnimTimeline = v)],
   // @ts-expect-error -- replaced on purpose
+  battleIconSprite: [() => battleIconSprite, v => (battleIconSprite = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleKitFor: [() => battleKitFor, v => (battleKitFor = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleKitRoles: [() => battleKitRoles, v => (battleKitRoles = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleKitSteps: [() => battleKitSteps, v => (battleKitSteps = v)],
+  // @ts-expect-error -- replaced on purpose
+  battlePartOffset: [() => battlePartOffset, v => (battlePartOffset = v)],
+  // @ts-expect-error -- replaced on purpose
+  battlePathAt: [() => battlePathAt, v => (battlePathAt = v)],
+  // @ts-expect-error -- replaced on purpose
+  battleRampColors: [() => battleRampColors, v => (battleRampColors = v)],
+  // @ts-expect-error -- replaced on purpose
   flashGate: [() => flashGate, v => (flashGate = v)],
+  // @ts-expect-error -- replaced on purpose
+  hitLook: [() => hitLook, v => (hitLook = v)],
   // @ts-expect-error -- replaced on purpose
   hitTier: [() => hitTier, v => (hitTier = v)],
   // @ts-expect-error -- replaced on purpose
   koAhead: [() => koAhead, v => (koAhead = v)],
+  // @ts-expect-error -- replaced on purpose
+  lineAfterMove: [() => lineAfterMove, v => (lineAfterMove = v)],
   // @ts-expect-error -- replaced on purpose
   redShare: [() => redShare, v => (redShare = v)],
   // @ts-expect-error -- replaced on purpose
@@ -60,6 +90,31 @@ export const BATTLE_ANIM_SKIP = /** @type {Record<string, 'run' | 'info'>} */ ({
 /** the hit tiers, weakest first (vfx-track.md "Hit tiers"; `none`: no damage shown) */
 export const HIT_TIERS = ['none', 'resisted', 'neutral', 'super', 'super4', 'crit'];
 
+/** VFX-12: the outcomes the look tool films and the Studio's Battle effects plays: a normal hit, super effective (x2,
+ * x4), not very effective, a crit, a super-effective crit, a miss, a move into a Guard */
+export const BATTLE_ANIM_OUTCOMES = ['hit', 'se', 'x4', 'nve', 'crit', 'secrit', 'miss', 'blocked'];
+
+/** VFX-12: a move event for one of BATTLE_ANIM_OUTCOMES, by side si against the other, as the look tool films it and
+ * the Studio plays it (made up: the engine never runs). Guard is always a protect, a status move that lands on no foe
+ * is on itself; only a damaging move gets damage, effectiveness and a crit
+ * @param {string} mid @param {Move} M @param {number} si @param {string} res @returns {MoveAn} */
+export function battleAnimPreviewEvent(mid, M, si, res) {
+  const fx = /** @type {Record<string, any>} */ (M.fx || {}),
+    onFoe = M.c !== 'X' || fx.status || fx.tgtStage || fx.hype || fx.spin || fx.wipe || fx.copyTypes,
+    /** @type {MoveAn} */ an = { k: 'move', si, ti: 1 - si, mid };
+  if (fx.protect) an.protect = true;
+  else if (!onFoe) an.self = true;
+  else if (res === 'miss') an.miss = true;
+  else if (res === 'blocked') an.blocked = true;
+  else if (M.c !== 'X') {
+    an.dmg =
+      /** @type {Record<string, number>} */ ({ crit: 48, se: 56, x4: 80, nve: 11, hit: 24, secrit: 70 })[res] ?? 24;
+    an.te = /** @type {Record<string, number>} */ ({ se: 2, x4: 4, nve: 0.5, secrit: 2 })[res] || 1;
+    an.crit = res === 'crit' || res === 'secrit';
+  }
+  return an;
+}
+
 /** a move event's outcome key in battleAnims.json `defaults`: miss, protect, blocked, or the category
  * @param {MoveAn} an @param {Move} M */
 export function battleAnimOutcome(an, M) {
@@ -68,13 +123,21 @@ export function battleAnimOutcome(an, M) {
 
 /** which animation a move event plays: the move's own `anim` (a family or a scene) when it lands, else its outcome's
  * or category's default. null when the data has neither
- * @param {MoveAn} an @param {Move} M @param {BattleAnimsData} A @returns {{ id: string, kind: 'family' | 'scene' } | null} */
+ * @param {MoveAn} an @param {Move} M @param {BattleAnimsData} A @returns {{ id: string, kind: 'family' | 'scene', miss?: boolean } | null} */
 export function battleAnimFor(an, M, A) {
   if (!A || !M) return null;
   const out = battleAnimOutcome(an, M);
   if (out === M.c && M.anim) {
     if (A.scenes[M.anim]) return { id: M.anim, kind: 'scene' };
     if (A.families[M.anim]) return { id: M.anim, kind: 'family' };
+  }
+  /* VFX-13: a miss plays its family's own whiff when the family has one (a scene's, its family's) */
+  if (out === 'miss' && M.anim) {
+    /* a scene names its family (VFX-17's `family`) */
+    const S = /** @type {any} */ (A.scenes[M.anim]),
+      fid = S && S.family ? S.family : M.anim,
+      F = A.families[fid];
+    if (F && F.miss) return { id: fid, kind: 'family', miss: true };
   }
   const id = A.defaults[/** @type {keyof BattleAnimsData['defaults']} */ (out)];
   return id && A.families[id] ? { id, kind: 'family' } : null;
@@ -116,6 +179,104 @@ export function koAhead(events, i) {
   return { ko: true, si, last };
 }
 
+/** VFX-13: the rows of battleAnims.json `tiers` a hit can add on top of its tier: a KO, and the last KO (or a boss's) */
+export const TIER_ROWS = ['resisted', 'neutral', 'super', 'super4', 'crit', 'ko', 'last'];
+
+/**
+ * @typedef {{ tier: string, ko: null | 'ko' | 'last', stop: number, shake: number, kb: number, burst: number,
+ *   spread: number, light: number, lightCol: string, ring: number, punch: number, handheld: number,
+ *   flash: { col: string, a: number, ms: number } | null, ca: number, impact: string | null,
+ *   sprite: { white: number, dark: number, ms: number, darkMs: number } | null, puff: number, scar: number }} HitLook
+ *   what a hit shows: hit-stop ms (real time: the stage holds), shake, knockback px, the burst (particles, speed),
+ *   the light's strength (times the kit's) and colour ('kit', or a battleAnims.json colour), the ground ring (m),
+ *   the zoom punch and the handheld wobble, the full-screen flash (colour 'type' or a colour key; through flashFor
+ *   and the flash gate), the chromatic pulse (ms), the impact frame's kind, the sprite flash (white then dark), a
+ *   dull puff (dust particles) and the extra scars
+ */
+/** VFX-13: how a hit lands, from the tier table (battleAnims.json `tiers`): its tier's row (hitTier) with the hit's
+ * weight w (battle-stage.js hitWeight: the share of the target's HP it took), then the KO's row on top when it knocks
+ * the target out (koAhead), then the last KO's (no one comes in after and the battle ends, or a boss falls). A super
+ * crit takes the crit's row with the super's chromatic pulse, burst and shake. Only hit-stop adds time: a KO one cell,
+ * the last KO a freeze of `freeze` ms in all. null for no damage (a miss, a block, a status move)
+ * @param {MoveAn} an @param {{ ko?: boolean, last?: boolean } | null | undefined} ka koAhead's
+ * @param {number} w @param {BattleAnimsData} A @param {boolean} [boss] the target is a boss's
+ * @returns {HitLook | null} */
+export function hitLook(an, ka, w, A, boss = false) {
+  const T = A && A.tiers,
+    tier = hitTier(an);
+  if (!T || tier === 'none') return null;
+  const R = T[/** @type {'neutral'} */ (tier)],
+    ww = Math.max(0, Math.min(1, w || 0)),
+    lin = (/** @type {number | undefined} */ a, /** @type {number | undefined} */ k) => (a || 0) + (k || 0) * ww,
+    /** @type {HitLook} */ L = {
+      tier,
+      ko: null,
+      stop: lin(R.stop, R.stopW),
+      shake: lin(R.shake, R.shakeW),
+      kb: lin(R.kb, R.kbW),
+      burst: R.burst,
+      spread: R.spread,
+      light: R.light,
+      lightCol: R.lightCol || 'kit',
+      ring: lin(R.ring, R.ringW),
+      punch: R.punch || (R.punchW && ww > R.punchW ? 0.03 + ww * 0.04 : 0),
+      handheld: R.handheld || 0,
+      flash: R.flash ? { col: R.flash.color, a: R.flash.a, ms: R.flash.ms } : null,
+      ca: R.ca || 0,
+      impact: R.impact || null,
+      sprite: R.sprite ? { white: R.sprite.white || 0, dark: R.sprite.dark || 0, ms: R.sprite.ms, darkMs: 0 } : null,
+      puff: R.puff || 0,
+      scar: 0,
+    };
+  if (tier === 'crit' && (an.te ?? 1) > 1) {
+    const S = T.super;
+    L.ca = Math.max(L.ca, S.ca || 0);
+    L.burst = Math.max(L.burst, S.burst);
+    L.shake = Math.max(L.shake, S.shake);
+    L.punch += T.superCritPunch || 0;
+  }
+  if (!ka || !ka.ko) return L;
+  /** @param {any} K */
+  const add = K => {
+    L.stop += K.stop || 0;
+    L.shake = K.shakeTo ? Math.max(L.shake + (K.shake || 0), K.shakeTo) : L.shake + (K.shake || 0);
+    L.kb += K.kb || 0;
+    L.burst += K.burst || 0;
+    L.scar += K.scar || 0;
+    if (K.sprite) L.sprite = { white: K.sprite.white, dark: K.sprite.dark, ms: K.sprite.ms, darkMs: K.sprite.darkMs };
+    if (K.impact && !L.impact) L.impact = K.impact;
+  };
+  L.ko = 'ko';
+  add(T.ko);
+  if (ka.last || boss) {
+    L.ko = 'last';
+    add(T.last);
+    L.stop = Math.max(L.stop, T.last.freeze || 0);
+  }
+  return L;
+}
+
+/** VFX-13: what a heal or a hurt line follows: the move line before it in the same move's lines (a drain's heal, a
+ * crash's recoil), or null. drain: Billie si healed from the target of a move it used that drains (its fx.drain);
+ * recoil: si hurt after a move of its own that missed (fx.missCost: it crashed). Read only
+ * @param {{ an?: any }[]} events @param {number} i @param {Record<string, Move>} moves
+ * @returns {{ kind: 'drain' | 'recoil', from: number, mid: string } | null} */
+export function lineAfterMove(events, i, moves) {
+  const an = events[i] && events[i].an;
+  if (!an || (an.k !== 'heal' && an.k !== 'hurt')) return null;
+  for (let j = i - 1; j >= 0; j--) {
+    const e = events[j] && events[j].an;
+    if (!e || e.k !== 'move') continue;
+    const M = moves[e.mid],
+      fx = (M && M.fx) || {};
+    if (e.si !== an.si) return null;
+    if (an.k === 'heal' && fx.drain && !e.miss && e.dmg) return { kind: 'drain', from: e.ti, mid: e.mid };
+    if (an.k === 'hurt' && fx.missCost && e.miss) return { kind: 'recoil', from: e.ti, mid: e.mid };
+    return null;
+  }
+  return null;
+}
+
 /** the gates that hold for a move event (battleAnims.json's `if` words)
  * @param {MoveAn} an @param {Move} M @param {AnimCtx} ctx @param {BattleAnimsData} A @returns {Set<string>} */
 export function battleAnimGates(an, M, ctx, A) {
@@ -127,6 +288,14 @@ export function battleAnimGates(an, M, ctx, A) {
   if ((M.p || 0) >= A.bigPower) G.add('power80');
   if (ctx.gl) G.add('gl');
   if (!ctx.reduced) G.add('motion');
+  /* VFX-11: what the move does beside its damage (moves.json fx), its spread, an aimed part, a Bureau bot's move */
+  const fx = /** @type {Record<string, any>} */ (M.fx || {});
+  if (fx.drain) G.add('drain');
+  if (fx.heal) G.add('heal');
+  if (fx.tgtStage && Object.values(fx.tgtStage).some(v => v < 0)) G.add('drop');
+  if (an.spread) G.add('spread');
+  if (fx.aim && an.part) G.add('aim');
+  if (ctx.bureau) G.add('bureau');
   return G;
 }
 
@@ -147,7 +316,9 @@ export function stepOn(S, G, type, q) {
 export function battleAnimTimeline(an, M, ctx, A) {
   const pick = battleAnimFor(an, M, A);
   if (!pick) return null;
-  const src = (pick.kind === 'scene' ? A.scenes : A.families)[pick.id],
+  const fam = (pick.kind === 'scene' ? A.scenes : A.families)[pick.id],
+    /* VFX-13: a family's miss is a timeline of its own (no Faster variant: its time is today's miss's) */
+    src = /** @type {BattleAnimFamily} */ ((pick.miss && fam.miss) || fam),
     short = !!src.short && (ctx.speed || 1) >= A.shortSpeed,
     V = short && src.short ? src.short : src,
     G = battleAnimGates(an, M, ctx, A),
@@ -157,8 +328,10 @@ export function battleAnimTimeline(an, M, ctx, A) {
       A.maxMs[/** @type {keyof BattleAnimsData['maxMs']} */ (battleAnimOutcome(an, M))] +
       (long && !ctx.reduced ? A.extraMs : 0),
     dur = Math.min(V.dur, cap),
+    kit = battleKitFor(A, M.t, !!ctx.bureau),
     /** @type {AnimStep[]} */ steps = [];
-  for (const S of [...A.intro, ...V.steps]) {
+  for (const S0 of battleKitSteps([...A.intro, ...V.steps], kit ? kit.K : undefined, G, M.t, q)) {
+    const S = battleKitRoles(S0, kit ? kit.K : undefined);
     if (!stepOn(S, G, M.t, q)) continue;
     const { if: _if, types: _t, ...rest } = S,
       { n, every } = S,
@@ -175,11 +348,12 @@ export function battleAnimTimeline(an, M, ctx, A) {
   return {
     id: pick.id,
     kind: pick.kind,
-    variant: short ? 'short' : 'full',
+    variant: pick.miss ? 'miss' : short ? 'short' : 'full',
     dur,
     hit: V.hit >= 999 ? V.hit : Math.min(V.hit, dur),
     tier: hitTier(an),
     long,
+    kit: kit ? kit.id : null,
     steps,
   };
 }
@@ -214,4 +388,157 @@ export function flashGate(L, now, col, rule) {
 export function battleAnimLogLine(mid, T, q, held) {
   if (!T) return `${mid} none`;
   return `${mid} ${T.kind}:${T.id} ${T.tier} ${T.variant} q${q}${T.long ? ' long' : ''}${held.length ? ' held:' + held.join(',') : ''}`;
+}
+/* ===== VFX-10: the effect art's timing and colour =====
+   A strip's frames are stepped on the stage clock: 12 fps (its fps), an impact's first two frames at 24 fps. A strip
+   that loops plays round; one that doesn't plays once, ending with its particle's life (so its eroding last frames
+   are its fade), or from its start when it is an impact or has no life. */
+export const IMPACT_FRAME_MS = 1000 / 24;
+/** the effect strips' folder, inside art/ (tools/build-battle-anims.py draws them; a strip is <id>.png) */
+export const BATTLE_ANIM_ART_DIR = 'battle/anims/';
+provide({ BATTLE_ANIM_ART_DIR }); /* to-module */
+/** the frame a strip shows ageMs into a particle's life (stage ms)
+ * @param {{ frames: number, fps?: number, impact?: boolean, loop?: boolean }} S @param {number} age
+ * @param {number} [life] */
+export function battleAnimFrame(S, age, life = 0) {
+  const n = S.frames | 0;
+  if (n <= 1) return 0;
+  const step = 1000 / (S.fps || 12),
+    lead = S.impact ? Math.min(2, n) : 0,
+    len = lead * IMPACT_FRAME_MS + (n - lead) * step;
+  let t = Math.max(0, age);
+  if (S.loop) t %= len;
+  else if (!S.impact && life > 0) t = Math.max(0, len - Math.max(0, life - age));
+  const f =
+    t < lead * IMPACT_FRAME_MS
+      ? Math.floor(t / IMPACT_FRAME_MS)
+      : lead + Math.floor((t - lead * IMPACT_FRAME_MS) / step);
+  return Math.min(n - 1, Math.max(0, f));
+}
+/** a ramp's 8 colours (index 7 the white core) and its light colour
+ * @param {{ ramp: string | string[], light: string }} R @param {Record<string, string[] | string>} paletteRamps
+ *   NW_PALETTE.ramps @param {string} white the core's colour (battleAnims.json colors.white)
+ * @param {string} [glow] the type's glow (types.json), for light 'type' (white without one)
+ * @returns {{ steps: string[], light: string } | null} */
+export function battleRampColors(R, paletteRamps, white, glow) {
+  const S = !R ? null : Array.isArray(R.ramp) ? R.ramp : paletteRamps && paletteRamps[R.ramp];
+  if (!Array.isArray(S) || S.length < 7) return null;
+  return { steps: [...S.slice(0, 7), white], light: R.light === 'type' ? glow || white : R.light };
+}
+/** the strip an icons.png particle is drawn with (battleAnims.json iconSprites) and its ramp: its type's when it has
+ * one with a ramp, else the icon's own; null when the icon stays an icon
+ * @param {BattleAnimsData} A @param {string} key @param {string} [type] */
+export function battleIconSprite(A, key, type) {
+  const I = A && A.iconSprites && A.iconSprites[key];
+  if (!I || !A.sprites[I.sprite]) return null;
+  return { sprite: I.sprite, ramp: type && A.ramps[type] ? type : I.ramp };
+}
+/* ===== VFX-11: the type kits and the paths things fly on =====
+   A family's steps say what happens (a projectile, an impact, a spray...); the move's type kit (battleAnims.json
+   types: the Bureau's for a Bureau bot's move, else the move's type, else None) says with what: a step's sprite may be
+   a role (shot, impact, small, bits) the kit fills, its ramp is the kit's unless the step names one, `path: kit` is
+   the kit's path, and a `kit` step plays the kit's own cast or hit steps at its time. */
+/** the sprite roles a step's `spr` may name */
+export const BATTLE_KIT_ROLES = ['shot', 'impact', 'small', 'bits'];
+/** the type kit a move plays in: the Bureau's for a Bureau bot, else its type's, else None's (null: no kits)
+ * @param {BattleAnimsData} A @param {string} type @param {boolean} [bureau] @returns {{ id: string, K: BattleAnimKit } | null} */
+export function battleKitFor(A, type, bureau = false) {
+  const T = A && A.types;
+  if (!T) return null;
+  const id = bureau && T.Bureau ? 'Bureau' : T[type] ? type : T.None ? 'None' : null;
+  return id ? { id, K: T[id] } : null;
+}
+/** a step list with each `kit` step replaced by its kit's steps for that part (cast or hit), at its time plus theirs,
+ * on its Billie unless they name one, behind its gates and theirs. A kit step whose gates fail adds nothing
+ * @param {BattleAnimStep[]} L @param {BattleAnimKit | undefined} K @param {Set<string>} G @param {string} type
+ * @param {number} q @returns {BattleAnimStep[]} */
+export function battleKitSteps(L, K, G, type, q) {
+  /** @type {BattleAnimStep[]} */
+  const out = [];
+  for (const S of L) {
+    if (S.do !== 'kit') {
+      out.push(S);
+      continue;
+    }
+    if (!K || !stepOn(S, G, type, q)) continue;
+    const part = /** @type {BattleAnimStep[] | undefined} */ (K[/** @type {'cast' | 'hit'} */ (S.part)]);
+    for (const k of part || []) {
+      /** @type {BattleAnimStep} */
+      const E = { ...k, on: k.on || S.on };
+      if (S.each) E.each = S.each;
+      if (S.at !== undefined || k.at !== undefined) E.at = (S.at ?? 0) + (k.at ?? 0);
+      const gates = [...(S.if || []), ...(k.if || [])];
+      if (gates.length) E.if = gates;
+      else delete E.if;
+      out.push(E);
+    }
+  }
+  return out;
+}
+/** a step with its kit's sprite roles, ramp and path filled in (the step's own win; only steps that draw a sprite)
+ * @param {BattleAnimStep} S @param {BattleAnimKit | undefined} K @returns {BattleAnimStep} */
+export function battleKitRoles(S, K) {
+  if (!K || (S.spr === undefined && S.path === undefined)) return S;
+  const R = { ...S };
+  if (typeof S.spr === 'string' && BATTLE_KIT_ROLES.includes(S.spr)) {
+    const v = K[/** @type {'shot' | 'impact' | 'small' | 'bits'} */ (S.spr)];
+    R.spr = v === undefined ? K.impact : v;
+  }
+  if (S.path === 'kit') R.path = K.path;
+  if (R.ramp === undefined) R.ramp = K.ramp;
+  if (K.ramp2 && R.ramp2 === undefined && S.ramp === undefined) R.ramp2 = K.ramp2;
+  return R;
+}
+/** where a thing on a path is at u (0 at its start, 1 at its end), battle metres [x, y, z] (y up). Paths: straight;
+ * arc (h metres up at its middle); zigzag (amp sideways, turns zigs); spiral (amp round the line, turns times); wave
+ * (amp up and down, turns times); stamp (straight down onto b from h above it, speeding up); orbit (round b at amp,
+ * turns times from phase ph, rising h). Each one starts at a and ends at b (stamp: above b; orbit: round b)
+ * @param {{ kind?: string, a: number[], b: number[], h?: number, amp?: number, turns?: number, ph?: number }} P
+ * @param {number} u */
+export function battlePathAt(P, u) {
+  const t = Math.min(1, Math.max(0, u)),
+    { a, b } = P,
+    h = P.h || 0,
+    amp = P.amp || 0,
+    turns = P.turns || 1;
+  if (P.kind === 'stamp') return [b[0], b[1] + h * (1 - t * t), b[2]];
+  if (P.kind === 'orbit') {
+    const g = Math.PI * 2 * (turns * t + (P.ph || 0));
+    return [b[0] + Math.cos(g) * amp, b[1] + h * t, b[2] + Math.sin(g) * amp];
+  }
+  const dx = b[0] - a[0],
+    dz = b[2] - a[2],
+    L = Math.hypot(dx, dz) || 1,
+    sx = -dz / L,
+    sz = dx / L,
+    env = Math.sin(Math.PI * t);
+  let x = a[0] + dx * t,
+    y = a[1] + (b[1] - a[1]) * t,
+    z = a[2] + dz * t;
+  if (P.kind === 'arc') y += 4 * h * t * (1 - t);
+  else if (P.kind === 'zigzag') {
+    /* a triangle wave, its corners sharp, held to the ends */
+    const f = t * turns * 2,
+      tri = Math.floor(f) % 2 === 0 ? (f % 1) * 2 - 1 : 1 - (f % 1) * 2,
+      o = amp * tri * env;
+    x += sx * o;
+    z += sz * o;
+    y += o * 0.4;
+  } else if (P.kind === 'spiral') {
+    const g = Math.PI * 2 * turns * t,
+      r = amp * env;
+    x += sx * Math.cos(g) * r;
+    z += sz * Math.cos(g) * r;
+    y += Math.sin(g) * r;
+  } else if (P.kind === 'wave') y += amp * Math.sin(Math.PI * 2 * turns * t) * env;
+  return [x, y, z];
+}
+/** an aimed move's hit point on a robot: the part's offset from its middle (the stage's 'break' places a broken part
+ * so): [dx metres, y metres over the ground or null for the middle's height]
+ * @param {string | undefined} part @returns {[number, number | null]} */
+export function battlePartOffset(part) {
+  if (part === 'armL') return [-0.3, null];
+  if (part === 'armR') return [0.3, null];
+  if (part === 'legs') return [0, 0.25];
+  return [0, null];
 }
