@@ -24,19 +24,19 @@
   {
    "p": "battle/cloud_0.png",
    "at": [
-    "game/js/walk-view.js:754"
+    "game/js/walk-view.js:766"
    ]
   },
   {
    "p": "battle/cloud_1.png",
    "at": [
-    "game/js/walk-view.js:755"
+    "game/js/walk-view.js:767"
    ]
   },
   {
    "p": "battle/cloud_2.png",
    "at": [
-    "game/js/walk-view.js:756"
+    "game/js/walk-view.js:768"
    ]
   },
   {
@@ -135,7 +135,7 @@
   {
    "p": "next/*/*_*.png",
    "at": [
-    "game/js/walk-view.js:512"
+    "game/js/walk-view.js:524"
    ]
   },
   {
@@ -181,41 +181,41 @@
    "at": [
     "game/js/buildings.js:171",
     "game/js/prop-models.js:2156",
-    "game/js/walk-view.js:778"
+    "game/js/walk-view.js:790"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/walk-view.js:778"
+    "game/js/walk-view.js:790"
    ]
   },
   {
    "p": "scene/build/walls.png",
    "at": [
-    "game/js/walk-view.js:753",
+    "game/js/walk-view.js:765",
     "game/js/walk/ground-draw.js:90"
    ]
   },
   {
    "p": "scene/flags/*.png",
    "at": [
-    "game/js/walk-view.js:528"
+    "game/js/walk-view.js:540"
    ]
   },
   {
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:788",
+    "game/js/walk-view.js:800",
     "game/js/walk/frame-items.js:200"
    ]
   },
   {
    "p": "scene/fx/*.png",
    "at": [
-    "game/js/walk-view.js:757",
+    "game/js/walk-view.js:769",
     "game/js/walk/effects.js:262"
    ]
   },
@@ -1633,7 +1633,7 @@
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
-   "game/js/walk-view-gl.js:722"
+   "game/js/walk-view-gl.js:725"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1701,8 +1701,8 @@
    "game/js/ui-run-kit.js:538",
    "game/js/ui.js:90",
    "game/js/ui.js:167",
-   "game/js/walk-view.js:3181",
-   "game/js/walk-view.js:3191"
+   "game/js/walk-view.js:3299",
+   "game/js/walk-view.js:3309"
   ],
   "cowboy": [
    "game/js/person-art.js:265"
@@ -1751,10 +1751,10 @@
    "game/js/walk-control.js:424",
    "game/js/walk-control.js:536",
    "game/js/walk-control.js:554",
-   "game/js/walk-view.js:340",
-   "game/js/walk-view.js:3770",
-   "game/js/walk-view.js:3881",
-   "game/js/walk-view.js:4202",
+   "game/js/walk-view.js:347",
+   "game/js/walk-view.js:3889",
+   "game/js/walk-view.js:4000",
+   "game/js/walk-view.js:4321",
    "game/js/walk/frame-items.js:319",
    "game/js/walk/frame-items.js:448",
    "game/js/walk/frame-items.js:466"
@@ -1781,7 +1781,7 @@
   ],
   "flame": [
    "game/js/battle-stage.js:2509",
-   "game/js/walk-view.js:403",
+   "game/js/walk-view.js:415",
    "game/js/walk/effects.js:380"
   ],
   "floppy": [
@@ -1858,8 +1858,8 @@
    "game/js/minimap.js:83",
    "game/js/self-test.js:3543",
    "game/js/walk-tab.js:382",
-   "game/js/walk-view.js:403",
-   "game/js/walk-view.js:4056",
+   "game/js/walk-view.js:415",
+   "game/js/walk-view.js:4175",
    "game/js/walk/battle-scars.js:146",
    "game/js/walk/effects.js:569",
    "game/js/walk/effects.js:723",
@@ -1886,7 +1886,7 @@
    "game/js/battle-stage.js:2494"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:684",
+   "game/js/walk-view-gl.js:687",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1978,7 +1978,7 @@
    "game/js/logic/cutscene-set.js:44",
    "game/js/lore.js:195",
    "game/js/lore.js:197",
-   "game/js/walk-view.js:403",
+   "game/js/walk-view.js:415",
    "game/js/walk/effects.js:346",
    "game/js/walk/effects.js:350",
    "game/js/walk/effects.js:458"
@@ -2025,15 +2025,15 @@
    "game/js/train-ride.js:274",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
-   "game/js/walk-view.js:3768",
-   "game/js/walk-view.js:3770",
+   "game/js/walk-view.js:3887",
+   "game/js/walk-view.js:3889",
    "game/js/walk/prop-look.js:154",
    "game/js/workshop.js:102"
   ],
   "window": [
-   "game/js/seamless-world.js:1183",
-   "game/js/walk-control.js:997",
-   "game/js/walk-control.js:1007",
+   "game/js/seamless-world.js:1196",
+   "game/js/walk-control.js:998",
+   "game/js/walk-control.js:1008",
    "game/js/walk/effects.js:392",
    "game/js/walk/lighting.js:243"
   ]
