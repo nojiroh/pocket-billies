@@ -5,17 +5,17 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 ### Sound track SND-12b - arrangements, batch 2: the cave, the seven biome songs and the run's map on ensembles in forms, with peak parts so the run's arc is heard, and walk, rain and snow layers - 2026-10-28
 Branch `track/sound`, the music lane (main merged first at 62c20703, a merge: HANDOFF kept both entries, art-code-refs
 made again in its own commit; no sound files from main). Started by the planning session under the owner's standing
-instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per commit; the baseline in its
-own commit; the docs. Tag `snd-12b-done` (for the owner to push) on this session's last commit. PR #292. Details:
+instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per commit; the baseline
+pending for SND-12c; the docs. Tag `snd-12b-done` (for the owner to push) on this session's last commit. PR #292. Details:
 sound-track.md "SND-12b as built".
 - **Plan**: (a) forms (ABA or AABA, 24-32 bars) and an ensemble each for cave, meadow, spore, trench, hills, innersun,
   crystal, spire and map, by the moods in Part 2's palette, as named placeholders; (b) `peak` parts in each (the arc:
   rows 3-5 at 0.6, 6-8 full) and walk, rain and snow layers; (c) the quick check's Run music step in the same commit;
   (d) memory measured in Node, instruments dropped to fit, budget unchanged; (e) levels within 1 LU by trims; (f) the
-  Starters step alone; then the baseline once with plain `--baseline`, the docs.
+  Starters step alone; then the baseline once with plain `--baseline` (pending, see Fingerprints), the docs.
 - **Changed**: game/data/music.json (the nine songs' `form`, `sections.B`, `ensemble`; nine new ensembles with trims);
   tools/check-quick.py (Run music: an ensemble song keeps its name in a band and hears it as its peak layer);
-  tools/test/music-form.test.mjs (two batch-2 tests); validation/sound-baseline/ (the nine songs); docs. No code.
+  tools/test/music-form.test.mjs (two batch-2 tests); docs. No code. The sound baseline not written (pending).
 - **Batch 2** (Claude's drafts, named as placeholders; B a seeded walk over its own chords, each with a placeholder
   hook name; every ensemble keeps the song's chip lead):
   - cave ABA (24 bars, 72 s): bells, a drone, a pizzicato drip, a flute in B, heavy reverb; peak a choir and timpani.
@@ -30,7 +30,11 @@ sound-track.md "SND-12b as built".
   - map AABA (32, 80 s): a harp, strings, pizzicato bass, brushes, a flute in B; peak a march snare and timpani.
   - Layers: walk a tambourine (cave a woodblock, spire the orchestral snare); rain brushes and a pizzicato drip; snow
     sleigh bells; the kit to 0.7 standing still, 0.6 at night.
-- **Fingerprints**: pending: the plain `--baseline` run (started 23:28 UTC after a container restart killed the first one, with the `--only` run beside it).
+- **Fingerprints**: batch 2's baseline is pending; SND-12c writes it after speeding up check-sound's renders. No code changed, so
+  only the nine songs' renders can have moved; the plain `--baseline` ran twice and was stopped twice (a container
+  restart at about 45 minutes, with the `--only` run beside it; then stopped at the planning session's word after
+  3.5 hours, nothing written). Until then `check-sound.py` reports the nine songs as changed (and their new ensemble,
+  night and layer renders as not in the baseline); validation/sound-baseline/ is as SND-12 left it.
 - **Levels** (the loudness report's song rows run alone, K-weighted, whole songs; gb before -> ensemble after its
   trim): cave -35.2 -> -35.1 LUFS (+0.4 dB), meadow -34.3 -> -34.3 (-2.8), spore -34.4 -> -34.4 (-1.8), trench -32.8 ->
   -32.8 (+0.4), hills -31.3 -> -31.3 (-0.7), innersun -29.6 -> -29.6 (-4.0), crystal -34.5 -> -34.5 (-1.8), spire -30.9 ->
@@ -54,11 +58,12 @@ sound-track.md "SND-12b as built".
     Estimated in Node, not measured in a browser; SND-15 reads the phone's debug log `bank`.
   - The arc at 0.6 has no render (the fingerprints hear peak 1 as `layer:intensity3`).
   - No storm layer for the run's songs (left out for the bank's room).
+  - The baseline is pending: a render of this batch is not compared with anything until SND-12c writes it.
 - **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules`, `npm run check:data` (179 files fine; the
   check-data snapshot unchanged), the music unit tests (136 with the two new), `npm test` 2004 of 2004 (the two new
-  tests included); `check-sound.py --only=<the nine>` (killed by the container restart; replaced by the baseline's own diff, below); the baseline pending;
+  tests included); `check-sound.py --only=<the nine>` not finished (killed by the container restart); the baseline pending (above);
   `check-quick.py --steps="Run music"` ok (15 places: 5 bands at 0.6 and 3 full heard as layers), "Run map music" ok,
-  "Battle music" ok alone, "Starters" ok alone; `npm run check:smoke` pending.
+  "Battle music" ok alone, "Starters" ok alone; `npm run check:smoke` 7 of 7 (at 5df91925, 513 s).
   CI on PR #292: green at 35fb3153 (the main merge); smoke red at a6d24c52 (docs only) on the bowl map's zoom ("never
   settled"), the frame-timed step SND-13 already explained on the PR; not re-commented.
 - **Skipped at the owner's word** (2026-10-28 21:18 UTC, "You can skip the checks"): the full `npm run check:quick` and
@@ -83,7 +88,7 @@ sound-track.md "SND-12b as built".
     0.6 (a march snare, strings, brass or a choir, timpani), rows 6-8 full. The Sound test's layer row plays them too.
   - The run's map song on the map tab, and its rain muffle as before.
   - Walking (a light beat), rain and snow on any of them.
-- **Next**: SND-12c (battles, bosses and the rest: wild in a form, trainer, rival, leader, boss, then mall, hazel,
+- **Next**: SND-12c (first check-sound's renders in parallel and batches 2 and 3's baseline in one commit; battles, bosses and the rest: wild in a form, trainer, rival, leader, boss, then mall, hazel,
   title, fall, variants; tell the VFX planning session when it lands), then SND-15.
 
 ### Sound track SND-12 (part 1) - arrangements: song forms (sections A and B, 16-32 bars), fills and turnarounds, varied repeats, new lines; batch 1 re-voiced: Copperleaf, the route, town and city - 2026-10-28

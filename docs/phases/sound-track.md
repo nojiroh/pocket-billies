@@ -1566,12 +1566,13 @@ the budget.
 
 ### SND-12b as built (2026-10-28, branch `track/sound`, the music lane, tag `snd-12b-done` for the owner to push)
 One cause per commit. No code changed; the data commit changed exactly the nine songs' renders and added their
-ensembles' renders, written once with plain `--baseline` (counts in the baseline commit, below).
+ensembles' renders, to be written once with plain `--baseline`: pending, SND-12c writes it (batches 2 and 3 in one commit) after making
+check-sound render in parallel; two runs here were stopped (a container restart, then after 3.5 hours).
 
 | Commit | What |
 |---|---|
 | 9fbd9c79 | batch 2: `cave`, `meadow`, `spore`, `trench`, `hills`, `innersun`, `crystal`, `spire` and `map` in forms, each on an ensemble of its own (same id) with `peak` parts and walk, rain and snow layers; trims; the quick check's Run music step (an ensemble song keeps its name in a band and hears it as its peak layer); music-form.test.mjs's batch-2 tests |
-| (next) | the sound baseline, written once with plain `--baseline` |
+| (SND-12c) | the sound baseline, written once with plain `--baseline` (pending) |
 
 **Batch 2** (Claude's drafts, named as placeholders; the owner's ears decide; GB Sounds compares). B is a seeded walk over
 its own chords (diatonic triads, so dorian's vi and lydian's #iv are diminished, as in the A sections) (no written hook, each with a placeholder hook name); every ensemble keeps the song's chip lead:
