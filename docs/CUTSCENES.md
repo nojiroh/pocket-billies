@@ -55,7 +55,7 @@ a spot, turns them for real in the scene, and each shot then shows the side of t
 | `walk Blake blake 1.5` | walks someone to a place; no time given: 1.6 m a second | yes, till they arrive |
 | `walk Blake blake 1.5 nowait` | the same, while the script goes on | no |
 | `face Kappi sideR` / `face Kappi Blake` | turns someone, or towards someone or a spot | no |
-| `act Kappi throw 0.9` | a pose for a while: throw, cheer, react, reach (an arm held out the way they face) | no |
+| `act Kappi throw 0.9` | a pose for a while: throw, cheer, react, reach (an arm held out the way they face), stamp (a Bureau clerk bot raises its stamp arm and slams it down, then holds; IN-3) | no |
 | `wait 1.5` / `wait Blake` | pauses for seconds, or till Blake stops walking | yes |
 | `caption 3.4 The Hollow Earth \| {place}` | a caption for seconds: the small line, then the big one | no |
 | `blink` | the letterbox closes and opens like eyelids | yes |

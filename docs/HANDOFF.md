@@ -92,6 +92,97 @@ still plays today's opening: the prepared run starts from the debug menu only, u
 - Next: IN-3 swaps its wreck prop into `crash.props[0].k` (and may restyle `retrieval_scout`); IN-4 needs no keep
   picker on the first run (`run.first`); IN-5 starts it from New game with `runStartPrepared` and stands the crash
   cutscene on `firstRunSpots`; IN-6 tunes the numbers above from a phone run.
+### Intro track IN-3 - The art: the wreck, the square portal, the clerks, the boss - 2026-10-29
+Branch `claude/in-3-intro-art-a49f03` (from `track/intro` 61d90751), draft PR into `track/intro`. Wave 1, built straight
+in (section 1: sessions run on their own; art is judged on the phone). Not placed in any scene or cutscene: IN-1, IN-4
+and IN-5 do that. Hand-over note for the other wave 1 sessions: the shared notes folder's `in-3-art-ids.md`.
+- Facts checked (plan section 5 and the brief, against 61d90751):
+  - A recipe's boxes always stand upright (prop-models.js lowPolyFromRecipe: no turn but a round shape's `rot`), so
+    a tipped carriage can't be a recipe. The wreck is a prebuilt mesh in the airship's format (kind `mesh`, v 1: the
+    buildings' 32 px texture cells), tessellated from the trains' own recipes the way lowPolyFromRecipe draws them.
+  - bosses.json already has a boss called "The Retrieval Unit" (`retrieval`, the Voltron of Expedition I, built from
+    the boss parts intake, seizer, franker, conveyor). IN-1 had no commits when this was built; it pushed
+    later: its boss is `retrieval_scout` ("The Retrieval Scout"), fighter
+    bulwark/clamp/piston/treads as a stand-in for IN-3's look; the look below goes in its row (IN-1's file).
+  - RL-14's boss parts had no pictures (drawn as stand-ins from a colour and a shape); bots are drawn only in battle
+    (robot-art.js robotRig), and in the world only as a creature person on a `bot:` rig (person-art.js creatureFrame:
+    skeleton-rig.js rigParts takes `bot:` sp). With figures on, every creature person was drawn as Kappi's capybara
+    (figures.js figureFromLook).
+  - The VFX track's particles (VFX-20's ladder) are the battle's; the walk view's prop fx (walk/effects.js) and its
+    quality step (`walkRenderer.qe`) are the world's equivalent, so the smoke is a walk fx on that step.
+  - No prop picture could lie on the ground lit as light: flat props (walk/sprites.js drawFlatItem) were always lit
+    and tinted by the scene.
+- Changed:
+  - New tools/build-intro-art.py (rerunnable) builds everything below; new tools/look-intro-art.py takes the pictures.
+  - **`train_wreck`** (scenery.json, tags intro/station/train): the crashed sky train, one prop, about 22 x 10 m, its
+    footprint behind its base point. The train's recipe with its battered colours (HB-8's swap; windows dark), cut in
+    two at its middle: the front carriage pitched 21 degrees nose down, 0.7 m into a dirt heap; the second rolled 82
+    degrees onto its side; a broken piece of sky rail behind; five `bureau_crate`s spilled in front; two torn panels.
+    Smoke: fx `plume` at the front's tail and two on the tipped carriage. One look per Skyline Station train (its
+    `form` its region theme): base lakeland (4,254 triangles), v 1 greenbelt, v 2 wildwood, v 3 highland, v 4 harvest
+    (2,370-3,714; the Zephyr's gasbag comes down deflated beside it). Files: game/art/scene/next/models/train_wreck*.json (1.4 MB for all five; a run loads one),
+    pictures in game/art/scene/next/intro/.
+  - **`sky_rail_broken`**: the broken rail piece alone (448 triangles).
+  - **`bureau_portal`**: the Bureau's square portal, flat on the ground (flat on purpose), 2.5 m, its middle at its
+    base point. Light only: a white and cyan rim, the drawer's walls going down in rings to a bright eye, specks, a bar
+    of light under its front edge (the drawer's handle), sparks; drawn unlit (`emit`), a cyan glow light. Its `opens`:
+    six frames from a line to the square over 700 ms. A placement's `open = walkView.t` plays them; `shut =
+    walkView.t` plays them back and then hides it (Kappi's "like someone shutting a drawer"). New
+    game/js/logic/prop-open.js `openingFrame` (tested), walk/frame-items.js picks the frame, walk/sprites.js draws an
+    `emit` flat picture unlit.
+  - **The plume** (walk/effects.js fx `plume`): a thick, dark column, 9 puffs at quality step 0, 7, 5, 3 at step 3 (a
+    struggling phone).
+  - **The clerks**: game/data/people/bureau_clerk_a.json (`bot:volt.intake.seizer.franker.striders`, walks) and
+    bureau_clerk_b.json (`bot:tide.intake.franker.seizer.hover`, hovers): creature people on a bot rig, so `actor`,
+    `walk`, `face` and the story stage use them as anyone. figures.js gives a bot person no figure (it keeps its bot
+    picture, never a capybara); figure-kit-golden skips them (snapshot unchanged).
+  - **The stamp pose**: `act <who> stamp [s]` (logic/cutscene-set.js CUTSCENE_POSES, script-parse's help,
+    docs/CUTSCENES.md): skeleton-rig.js rigPose `stamp` (the right arm, a clerk's Franking Cannon, raised over 350 ms,
+    slammed down with a squash at 350-450, held), person-art.js draws it at its progress (12 steps), director.js plays it
+    over 0.9 s. A person (not a bot) throws instead.
+  - **The boss's look**: pictures for RL-14's four boss parts in the placeholder sheet's look
+    (game/art/robots/intake, intake_head, seizer, franker, conveyor and their backs; robots.json `art`): the Intake
+    Frame a filing cabinet (two drawers, label holders, mustard handles, red tape, the gem's socket), its head a slate box
+    with two red lamps, the Seizure Arm a claw holding a manila folder, the Franking Cannon a rubber stamp, the
+    Conveyor Treads a belt with parcels. **For IN-1's bosses.json row:** `fighter
+    {"gem":"volt","torso":"intake","armL":"seizer","armR":"franker","legs":"conveyor"}`, a single bot (no `bots`,
+    no `join`). The Voltron uses the same parts, so Expedition I's boss gains the same pictures (art only).
+  - New showcase map test_intro_art (`?test=1&scene=test_intro_art`): the five wrecks, the broken rail, the portal,
+    the clerks.
+  - Windows, each its own commit: tools/test/load-logic.mjs imports logic modules by file URL (the same line IN-1
+    committed); tools/browser_check.py's test server listens with a queue of 256 (Python's 5 refused a page's module
+    loads). Also: a bot person drawn while its pictures load isn't cached (person-art.js), so it is drawn again with
+    them; the new module is listed in game/index.html, studio/index.html and the Studio's logic worker.
+- Shots (tools/look-intro-art.py, copies in docs/samples/intro-art/):
+  - The wrecks, each train (a phone held sideways): docs/samples/intro-art/wreck-lakeland.webp, wreck-greenbelt,
+    wreck-wildwood (its gasbag torn off and deflated on the ground), wreck-highland, wreck-harvest; nearer on a phone:
+    wreck-close.webp (22 m is wider than the phone's view: you see the gap, the rail and the crates).
+  - The portal opening (phone sized, the two clerks either side): portal-1.webp (a line), portal-3, portal-5,
+    portal-7.webp (open).
+  - The clerks, drawn by the game at 3x: clerk-stamp.png (both clerks' stamp, 13 steps: raised, slammed, held),
+    clerk-walk.png (walk cycles, down and up). The boss bot: boss.png (front, back, stamp raised, slammed).
+- Risky:
+  - The wreck is big (22 m) and its footprint a rectangle: on the landing, IN-1 must leave room in front of it. Its
+    triangle count (3-4k) is over the import checks' 2,000 warning; it is one model a run.
+  - A wreck mesh doesn't take colour swaps (a mesh, not a recipe): each train is its own file.
+  - The Voltron's look changes (stand-ins to pictures); its fight is unchanged.
+  - The portal's frames load on demand the first time it opens (a frame or two of nothing): IN-4 can ask for them
+    ahead (`artImg` on `opens.frames[].img`).
+- Verified: lint (0 errors), type-check, `check:data`, `art-code-refs --check`, unused art (none, none missing), the
+  new unit test (prop-open.test.mjs), figure-kit-golden and logic-worker; `python tools/check-quick.py --smoke --workers=1`: 5 of 7 steps pass (the phone flow: Start-Game, the opening, the
+  dressing room, the starter, the station's run sheet, five screens, a battle, the debug log; the in-game full test's
+  first step; palettes; windows; ground). Two can't pass on this Windows machine: "Unused" (tools/art-unused.mjs's
+  `file://` + argv guard prints nothing; its report run directly: 0 unused, 0 missing) and "Actions bar" (its page
+  load passes 90 s here: the in-game full test, on the same town fixture, booted in 88 s). Shots: the look tool,
+  no page errors.
+  On this Windows machine several tools don't run as written (they compare paths with `/` or `file://` + argv):
+  `npm run data` and `npm run modules` write nothing, and 20 unit tests fail on paths (`D:\D:\...`) or symlinks
+  without admin rights; they pass on Linux CI. to-module was run with node:path swapped for its POSIX version.
+- Decided for the owner, to review: the wreck's train is the Lakeland Clipper by default (any of the five by `v`);
+  the portal is cyan and violet like the sky portal, a drawer's handle of light at its front; the clerks walk on
+  Striders and hover; the boss parts' pictures replace the Voltron's stand-ins too.
+- Next: IN-1 puts `train_wreck` on the prepared landing (firstRun.json `crash`) and sets `retrieval_scout`'s fighter; IN-4 uses the portal (`open`,
+  `shut`) and the clerks (`act ... stamp`); the owner judges the art on the phone.
 
 ### Test data track TD-2 - the graphics test walks a benchmark path - 2026-10-29
 Branch `track/test-data` (TD-1's pushes and main, 4b64e3d6, merged in at the start; four conflicts kept both sides:

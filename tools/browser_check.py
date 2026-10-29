@@ -57,9 +57,14 @@ class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
 
+class Server(ThreadingHTTPServer):
+    """a page asks for hundreds of modules at once: Python's listen queue of 5 refused some of them on Windows"""
+    request_queue_size = 256
+
+
 def serve(directory):
     """a quiet web server for the folder on a free port, in a thread of its own: (server, its base URL)"""
-    srv = ThreadingHTTPServer(('127.0.0.1', free_port()), partial(Quiet, directory=str(directory)))
+    srv = Server(('127.0.0.1', free_port()), partial(Quiet, directory=str(directory)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f'http://127.0.0.1:{srv.server_address[1]}'
 
