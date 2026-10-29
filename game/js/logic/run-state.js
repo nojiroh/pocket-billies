@@ -425,8 +425,14 @@ export function validRunEnc(e) {
     Array.isArray(e.boons) &&
     e.boons.length <= 32 &&
     e.boons.every(
+      /* PK-9: a named boon (boons.json) by its id, or an event's own rows (fx) */
       (/** @type {any} */ b) =>
-        plain(b) && Array.isArray(b.fx) && b.fx.length <= 8 && b.fx.every(row) && wholeIn(b.left, 0, 99) && id(b.src)
+        plain(b) &&
+        Object.keys(b).every(k => ['fx', 'id', 'left', 'src'].includes(k)) &&
+        (b.id === undefined ? Array.isArray(b.fx) : id(b.id) && b.fx === undefined) &&
+        (b.fx === undefined || (Array.isArray(b.fx) && b.fx.length <= 8 && b.fx.every(row))) &&
+        wholeIn(b.left, 0, 99) &&
+        id(b.src)
     ) &&
     wholeIn(e.rewardN, 0, 1e6) &&
     (e.reward === null ||

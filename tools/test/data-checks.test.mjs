@@ -993,3 +993,16 @@ test('PK-9: dataBoons: the schema, each row as a Perk’s, no copy, no count or 
     'warn boons.json y: no img, so it shows the relic icon (tools/build-icons.mjs)',
   ]);
 });
+
+test('PK-9: an event’s boon and curse commands name a boon or a curse of boons.json', () => {
+  const plant = line => {
+    const D = structuredClone(GAME_DATA);
+    D.events.events.ring_light.options[0].then = [line];
+    return C.dataEvents(D).map(p => p.join(': '));
+  };
+  assert.deepEqual(plant('boon tailwind'), []);
+  assert.deepEqual(plant('curse audit_trail'), []);
+  assert.ok(plant('boon audit_trail').some(w => w.includes('"audit_trail" is a curse (curse audit_trail)')));
+  assert.ok(plant('curse tailwind').some(w => w.includes('"tailwind" is a boon (boon tailwind)')));
+  assert.ok(plant('boon no_such').some(w => w.includes('no boon or curse "no_such" (boons.json)')));
+});

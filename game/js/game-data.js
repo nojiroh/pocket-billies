@@ -483,6 +483,7 @@ export const PERK_SETS = /** @type {Record<string, import('../types/game-data').
 provide({ PERK_SETS }); /* to-module */
 /* perks track PK-9: boons and curses, named effects that last a few places (boons.json; logic/run-enc.js) */
 export const BOONS = /** @type {Record<string, import('../types/game-data').Boon>} */ (gameData.boons || {});
+provide({ BOONS }); /* to-module */
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 provide({ REWARDS }); /* to-module */

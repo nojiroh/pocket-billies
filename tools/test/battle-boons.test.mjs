@@ -188,3 +188,70 @@ test('PK-9 rule muteNewest: the newest Perk gives nothing and counts toward no s
   assert.equal(FX.fxMuted(s.run), '');
   assert.ok(srcs().has('set:classics'));
 });
+
+/* ---------- named boons on the run ---------- */
+
+test('PK-9 named boons: given by id, their rows read from boons.json as boon:<id>, counted down, named', () => {
+  const E = modules['run-enc'],
+    s = runSave([]),
+    run = s.run;
+  assert.equal(E.encBoonGive(run, 'surge_pricing', 'terms_of_service'), 3);
+  assert.deepEqual(run.enc.boons, [{ id: 'surge_pricing', left: 3, src: 'terms_of_service' }]);
+  assert.deepEqual(E.encBoonRows(run), [{ kind: 'price', what: 'shop', mult: 1.25, src: 'boon:surge_pricing' }]);
+  assert.equal(fn('fxSrcName')('boon:surge_pricing'), 'Surge Pricing');
+  assert.equal(E.encBoonGive(run, 'no_such_boon', 'x'), -1, 'no such boon: nothing given');
+  /* given again while on, it lasts the longer of the two and never stacks */
+  E.encArrive(run);
+  assert.equal(E.encBoonGive(run, 'surge_pricing', 'again'), 3);
+  assert.equal(run.enc.boons.length, 1);
+  assert.equal(run.enc.boons[0].left, 3);
+  assert.deepEqual(
+    E.encBoonsOn(run).map(b => [b.id, b.left, b.boon.name]),
+    [['surge_pricing', 3, 'Surge Pricing']]
+  );
+  for (let k = 0; k < 3; k++) E.encArrive(run);
+  assert.equal(E.encBoonRows(run).length, 1, 'its last place');
+  E.encArrive(run);
+  assert.equal(E.encBoonRows(run).length, 0, 'gone');
+  assert.equal(
+    E.encBoonLine(data.BOONS.surge_pricing, 3),
+    'Curse: Surge Pricing, for this place and 3 more. Run shops charge 25% more.'
+  );
+  assert.equal(
+    E.encBoonLine(data.BOONS.tailwind, 0),
+    'Boon: Tailwind, for this place. Your Billies take the field with their Speed up.'
+  );
+});
+
+test('PK-9 a run in progress loads: validRun takes an event’s own rows (before PK-9) and a named boon', () => {
+  const V = modules['run-state'].validRun,
+    s = startedSave(starter(), 10);
+  s.run = null;
+  const run = modules['run-state'].runBegin(s, {
+    seed: 'BOONSEED02',
+    expedition: 1,
+    mapgenV: 1,
+    se: 300,
+    pyramids: {},
+    items: {},
+  });
+  assert.equal(V(run), true, 'as begun');
+  modules['run-enc'].encBoon(run, [{ kind: 'price', what: 'shop', mult: 1.25 }], 3, 'terms_of_service');
+  modules['run-enc'].encBoonGive(run, 'tailwind', 'fountain');
+  assert.equal(V(JSON.parse(JSON.stringify(run))), true);
+  for (const bad of [
+    { id: 'tailwind', fx: [], left: 1, src: 'x' },
+    { left: 1, src: 'x' },
+    { id: 'Bad Id', left: 1, src: 'x' },
+    { id: 'tailwind', left: 1, src: 'x', more: 1 },
+  ]) {
+    const r = JSON.parse(JSON.stringify(run));
+    r.enc.boons.push(bad);
+    assert.equal(V(r), false, JSON.stringify(bad));
+  }
+  /* a boon a pack took away gives nothing and doesn't crash */
+  const r = JSON.parse(JSON.stringify(run));
+  r.enc.boons.push({ id: 'gone_boon', left: 1, src: 'x' });
+  assert.equal(V(r), true);
+  assert.ok(fn('fxOfRun')(r, data.PERKS).every(f => f.src !== 'boon:gone_boon'));
+});

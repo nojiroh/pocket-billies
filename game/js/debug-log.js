@@ -548,7 +548,8 @@ debugLog.state = () => {
                   seen: run.enc.seen.slice(),
                   playing: run.enc.play ? run.enc.play.id + ':' + run.enc.play.opt : null,
                   draws: run.enc.n,
-                  boons: run.enc.boons.map(b => b.src + ':' + b.left),
+                  /* PK-9: a named boon by its id */
+                  boons: run.enc.boons.map(b => (b.id || b.src) + ':' + b.left),
                   rewards: run.enc.rewardN,
                   reward: run.enc.reward ? { cards: run.enc.reward.cards.length, rolls: run.enc.reward.rolls } : null,
                 }

@@ -18,6 +18,7 @@
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, rewardPickOpen, toast } from './hooks.js';
 import {
+  BOONS,
   EVENTS,
   FACTIONS,
   ITEMS,
@@ -61,7 +62,7 @@ import { runHome } from './logic/run-state.js';
 import { caseFile, caseStampMoment, redactSplit } from './logic/case-file.js';
 import { runMapNode } from './logic/run-map.js';
 import { runEventSafe, runImmune } from './logic/run-loop.js';
-import { encBoon, encOf, fxRowOf } from './logic/run-enc.js';
+import { encBoon, encBoonGive, encBoonLine, encOf, fxRowOf } from './logic/run-enc.js';
 import { perkTeamOf } from './logic/perks.js';
 import {
   encChanges,
@@ -90,6 +91,7 @@ import { perkPickOpen } from './perk-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   ENC_STOP: [() => ENC_STOP],
+  encBoonCmd: [() => encBoonCmd, v => (encBoonCmd = v)],
   encCase: [() => encCase, v => (encCase = v)],
   encCaseOf: [() => encCaseOf],
   encCaseTab: [() => encCaseTab],
@@ -364,6 +366,17 @@ async function encFight(start) {
   encTyped = 0;
 }
 
+/** PK-9: an event gives a named boon or curse (boons.json): it joins the run and the sheet says what it does
+ * @param {string} bid @param {string} id the event's */
+function encBoonCmd(bid, id) {
+  const run = saveData.run,
+    B = BOONS[bid];
+  if (!run || !B) return;
+  const left = encBoonGive(run, bid, id);
+  saveNow();
+  if (typeof debugLog !== 'undefined') debugLog.add('run', `${B.curse ? 'curse' : 'boon'} ${bid} from ${id}`);
+  encNote(encBoonLine(B, left));
+}
 /** the stage an event's script plays on: lines, choices and the event commands @param {string} id
  * @param {number} i the map node (-1: from the debug menu, the place you are at counts) */
 function encounterStage(id, i) {
@@ -406,6 +419,9 @@ function encounterStage(id, i) {
     fx: ([n, ...row]) => {
       encBoon(saveData.run, [fxRowOf(row)], +n, id);
     },
+    /* PK-9: a named boon or curse (boons.json), with its line */
+    boon: ([bid]) => encBoonCmd(bid, id),
+    curse: ([bid]) => encBoonCmd(bid, id),
     invite: () => {
       /* RS-2: the run's resident, met at this event; a favour of theirs held from a town goes (it's done with) */
       const run = saveData.run,

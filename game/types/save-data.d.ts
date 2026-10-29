@@ -460,8 +460,9 @@ export interface RunEnc {
   node: Record<string, string>;
   /** the events played this run, in order */
   seen: string[];
-  /** effect rows an event left: this place and `left` more */
-  boons: { fx: import('./game-data').FxRow[]; left: number; src: string }[];
+  /** effect rows an event left: this place and `left` more; PK-9: a named boon or curse (boons.json) by its `id`, its
+   * rows read from the data (no `fx`) */
+  boons: { fx?: import('./game-data').FxRow[]; id?: string; left: number; src: string }[];
   /** reward picks made so far (the next pick's stream) */
   rewardN: number;
   /** the reward pick waiting (saved before it shows), or null */

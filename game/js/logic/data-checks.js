@@ -1973,6 +1973,15 @@ export function dataEvents(D, valid = () => true) {
           problem(`${at}: a kind (item, tutor, candy, evo)`);
         if (b != null && !(Number.isInteger(num(b)) && num(b) >= 1 && num(b) <= 5)) problem(`${at}: 1-5 cards`);
         return;
+      /* PK-9: a named boon or curse (boons.json): `boon` gives a boon, `curse` a curse */
+      case 'boon':
+      case 'curse': {
+        const B = D.boons && D.boons[a];
+        if (!B) problem(`${at}: no boon or curse "${a}" (boons.json)`);
+        else if (!!B.curse !== (n.name === 'curse'))
+          problem(`${at}: "${a}" is a ${B.curse ? 'curse' : 'boon'} (${B.curse ? 'curse' : 'boon'} ${a})`);
+        return;
+      }
       case 'fx': {
         const places = num(a),
           row = fxRowOf(n.args.slice(1));

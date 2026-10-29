@@ -26,6 +26,7 @@ import {
 import { clamp, random } from '../util.js';
 import {
   BATTLE_STAGES,
+  BOONS,
   BOSSES,
   EVENTS,
   FACTIONS,
@@ -1616,6 +1617,8 @@ export function fxSrcName(src) {
     const E = EVENTS && EVENTS.events && EVENTS.events[id];
     return E && E.title ? E.title : cap(id.replace(/_/g, ' '));
   }
+  /* PK-9: a named boon or curse (boons.json) */
+  if (kind === 'boon') return (BOONS && BOONS[id] && BOONS[id].name) || cap(id.replace(/_/g, ' '));
   if (kind === 'rel') return cap(id);
   /* PK-8: a Perk set's bonus, by its title ("Middle Management") */
   if (kind === 'set') return (PERK_SETS && PERK_SETS[id] && PERK_SETS[id].title) || cap(id);
