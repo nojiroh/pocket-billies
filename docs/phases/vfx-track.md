@@ -134,7 +134,8 @@ like any section (drafts, Propose).
 - **Moves:** every move has an `anim` (moves.json): one of 16 **families** (`families`: charge, dash, dive, strike,
   slash, quake, flurry, shot, beam, breath, wave, storm, buff, hex, guard, heal, each with a Faster `short` and,
   for the 13 that can, its own `miss`) or a **signature scene** (`scenes`, VFX-17/18/18b: a family to fall back to,
-  low-poly props, stamped sound words, a short repeat). A family plays in its move's **type kit** (`types`: ramp,
+  low-poly props, stamped sound words, a short repeat; all 56 signature moves have one, and the Retrieval Unit boss's
+  shield phase has `events.bossPhase`). A family plays in its move's **type kit** (`types`: ramp,
   strips by role, path, motion, light, cast and hit steps, `burstSprites`; the Bureau's for a bot's moves). Studio:
   Moves › Animation picks it; Battle effects shows the timeline; the Families, Misses and Type kits panes.
 - **The resolver and runner:** logic/battle-anims.js (browser-free: `battleAnimFor`, `battleAnimTimeline`, `hitTier`,
@@ -190,7 +191,8 @@ Normal, unless a line says otherwise.
    lists in their HANDOFF entries), the same scene twice in a battle (the short repeat), a foe using one (the model's
    heading), the stamped words readable at phone size, the frame rate while a tower or the train is up.
 3. **A leader, Blake and a boss:** the VS splash (portraits crisp, the type colour, the slant, gone before the first
-   line); the boss's join intro with the Notice; an Alpha's shield dome cracking and shattering; a bot's faint (limbs
+   line); the boss's join intro with the Notice; the Retrieval Unit's shield phase raising two Bureau barriers
+   (VFX-18b); an Alpha's shield dome cracking and shattering; a bot's faint (limbs
    drop, smoke); an aimed move on a bot's arm (Auger Bore).
 4. **Settings, one battle each:** Faster (short variants; a tap still skips); quality 3 in Graphics (fewer particles,
    no smears, no scars, no impact cells; still readable); Calm (status loops and ambient motes pulse once a turn;

@@ -242,13 +242,19 @@ town node needs it.
   VFX-18b (signature scenes 3, wave 4, side branch `claude/vfx-18b-scenes-3`: storyboards first, 19 more scenes from
   VFX-17's primitives, the sound words WHOOSH!, PSSHT!, DING-DONG! and THWOCK!, status scenes within their family's
   time, and the Retrieval Unit's shield phase raising two Bureau barriers; the bots' moves keep their families) built
-  2026-10-29 (PR #330 into `track/vfx`).
+  2026-10-29 (PR #330 into `track/vfx`; VFX-18 and 18b merged by VFX-20). VFX-20 (the phone pass, Part 2's last step:
+  VFX-17, 18, 18b and 19 merged; types.json `fx` moved into the kits and removed with the old 2D effect drawing; a hurt
+  line that knocks out takes the KO's look; the Studio plays every event and look film and tunes the misses; the debug
+  log names a scene's fallback, the KO and the motion; rule 9's blink, half sprite flashes and Calm's motes; every
+  burst on the burst budget; tools/flash-audit.py passes; the budgets hold at quality 0-3) built 2026-10-29 on
+  `track/vfx` (draft PR #331, after the owner merged #295). **Part 2 is done** (2026-10-29): its "as built" summary and
+  the one-sitting phone checks are at the top of Part 2 in docs/phases/vfx-track.md.
   **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
   `track/vfx` after VFX-5, each in a new session started by VFX-7's, plans approved automatically (the owner,
-  2026-10-28), sound steps agreed with the sound track's planning session. Tags `vfx-N-done`. Branch `track/vfx`.
+  2026-10-28), sound steps agreed with the sound track's planning session. No per-session tags (CLAUDE.md since #283). Branch `track/vfx`.
 - **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
