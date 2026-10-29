@@ -51,21 +51,21 @@
    "at": [
     "game/js/art.js:231",
     "game/js/art.js:233",
-    "game/js/logic/data-checks.js:2884"
+    "game/js/logic/data-checks.js:2886"
    ]
   },
   {
    "p": "coins/*_32.png",
    "at": [
     "game/js/art.js:231",
-    "game/js/logic/data-checks.js:2884"
+    "game/js/logic/data-checks.js:2886"
    ]
   },
   {
    "p": "coins/*.json",
    "at": [
     "game/js/battle-3d.js:621",
-    "game/js/logic/data-checks.js:2886"
+    "game/js/logic/data-checks.js:2888"
    ]
   },
   {
@@ -122,7 +122,7 @@
   {
    "p": "items/*.svg",
    "at": [
-    "game/js/logic/data-checks.js:2952"
+    "game/js/logic/data-checks.js:2954"
    ]
   },
   {
@@ -1595,7 +1595,7 @@
    "game/js/person-art.js:339",
    "game/js/person-art.js:344",
    "game/js/reward-screen.js:275",
-   "game/js/shop.js:277",
+   "game/js/shop.js:285",
    "game/js/ui-run-kit.js:113",
    "game/js/ui-run-kit.js:120",
    "game/js/ui.js:82",
@@ -1663,7 +1663,7 @@
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
    "game/js/logic/bowl-things.js:131",
-   "game/js/logic/data-checks.js:3073",
+   "game/js/logic/data-checks.js:3075",
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
@@ -1690,11 +1690,11 @@
    "game/js/logic/smear.js:346",
    "game/js/logic/story-checks.js:348",
    "game/js/lore.js:209",
-   "game/js/shop.js:66",
-   "game/js/shop.js:86",
-   "game/js/shop.js:180",
-   "game/js/shop.js:190",
-   "game/js/shop.js:259",
+   "game/js/shop.js:68",
+   "game/js/shop.js:88",
+   "game/js/shop.js:182",
+   "game/js/shop.js:192",
+   "game/js/shop.js:267",
    "game/js/sound.js:522",
    "game/js/sound.js:1768",
    "game/js/town-square.js:159",
@@ -1922,7 +1922,7 @@
    "game/js/billie-sheet.js:197",
    "game/js/boot.js:156",
    "game/js/map-tab.js:69",
-   "game/js/shop.js:184"
+   "game/js/shop.js:186"
   ],
   "pow": [
    "game/js/game-data.js:166",

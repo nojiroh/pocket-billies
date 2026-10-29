@@ -151,3 +151,12 @@ test('PK-9 rewardPick below 0: reward picks show one card fewer, never under one
     GAME_DATA.rules.run.rewards.pick
   );
 });
+
+/* ---------- rule shopClosed ---------- */
+
+test('PK-9 rule shopClosed: a run town’s shop is shut while it holds, by its source', () => {
+  const L = modules['run-loop'],
+    { P } = perks({ id: 'test_ooo', name: 'Test Out', fx: [{ kind: 'rule', rule: 'shopClosed', n: 1 }] });
+  withPerks(P, () => assert.equal(L.runShopShut(runSave(['test_ooo']), data.PERKS), 'test_ooo'));
+  assert.equal(L.runShopShut(runSave([]), data.PERKS), '');
+});

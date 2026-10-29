@@ -15,12 +15,14 @@ import {
   runShopOpen,
   runShopReroll,
   runShopRerolled,
+  runShopShut,
   runStallStock,
 } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
 import { perkBuy, perkCap, perkSetLine, perkShelf, perkShopPrice, perkTeamOf } from './logic/perks.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbGainFly, recentPress } from './ui-motion.js';
+import { fxSrcName } from './logic/battle-engine.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artIconHTML, glyphHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -210,6 +212,12 @@ export function openShop(id) {
     /* WM-5: a village's or a town's market stall: the day's held items, no Perk (logic/run-loop.js runStallStock) */
     sh.stock = runStallStock(saveData.run, sh.runNode, saveData.run.clock, RULES.run.town.stall);
   } else if (sh.runNode != null && saveData.run) {
+    /* PK-9: a shopClosed rule (the curse Out of Office) shuts a run town's shop; its stall stays open */
+    const shut = runShopShut(saveData, PERKS);
+    if (shut) {
+      toast(`${fxSrcName(shut)}: the shop is shut. A sign on the door says “Back soon.”`);
+      return;
+    }
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */

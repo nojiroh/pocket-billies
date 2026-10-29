@@ -111,6 +111,8 @@ expose({
   runShopReroll: [() => runShopReroll, v => (runShopReroll = v)],
   runShopRerolled: [() => runShopRerolled],
   // @ts-expect-error -- replaced on purpose
+  runShopShut: [() => runShopShut, v => (runShopShut = v)],
+  // @ts-expect-error -- replaced on purpose
   runShopStock: [() => runShopStock, v => (runShopStock = v)],
   runStallStock: [() => runStallStock],
   runWareHeals: [() => runWareHeals],
@@ -256,6 +258,13 @@ export function runGaveText(m) {
 export function runEventSafe(s, perks) {
   const fx = s.run ? fxOfRun(s.run, perks) : null,
     f = fx && fxAt(fx, {}, { run: s.run && s.run.perkState }).find(r => r.kind === 'rule' && r.rule === 'eventHurt');
+  return f && f.n > 0 ? f.src : '';
+}
+/** PK-9: is a run town's shop shut (a shopClosed rule row: the curse Out of Office)? Its source ('' when open). A
+ * market stall stays open @param {SaveData} s @param {Record<string, any>} perks */
+export function runShopShut(s, perks) {
+  const fx = s.run ? fxOfRun(s.run, perks) : null,
+    f = fx && fxAt(fx, {}, { run: s.run && s.run.perkState }).find(r => r.kind === 'rule' && r.rule === 'shopClosed');
   return f && f.n > 0 ? f.src : '';
 }
 /** PK-3: does the run hold an immune row against `what` (a status an event hands out) that holds for the team here?
