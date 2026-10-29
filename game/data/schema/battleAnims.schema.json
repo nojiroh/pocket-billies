@@ -225,7 +225,8 @@
     "levelUp": {"type": "object", "required": ["ramp", "n", "h", "ringR"], "additionalProperties": false, "properties": {"ramp": {"type": "string"}, "n": {"type": "integer", "minimum": 0}, "h": {"type": "number", "minimum": 0}, "ringR": {"type": "number", "minimum": 0}}},
     "victory": {"type": "object", "required": ["sparkles", "cheerMs"], "additionalProperties": false, "properties": {"sparkles": {"type": "integer", "minimum": 0}, "cheerMs": {"type": "number", "minimum": 0}}},
     "defeat": {"type": "object", "required": ["fadeMs"], "additionalProperties": false, "properties": {"fadeMs": {"type": "number", "minimum": 0}}},
-    "item": {"type": "object", "required": ["flyMs"], "additionalProperties": false, "properties": {"flyMs": {"type": "number", "minimum": 0}}}
+    "item": {"type": "object", "required": ["flyMs"], "additionalProperties": false, "properties": {"flyMs": {"type": "number", "minimum": 0}}},
+    "bossPhase": {"description": "VFX-18b: a Bureau boss's phase with a shield: steps (prop steps, VFX-17's shape) played on the boss inside the phase's own time (battle-anim-run.js battleBossPhaseScene); none under Reduced motion or with 3D props off", "type": "object", "required": ["faction", "steps"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "faction": {"description": "the faction (factions.json) whose boss plays it, read from bosses.json faction", "type": "string"}, "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}}}}
    }
   }
  },

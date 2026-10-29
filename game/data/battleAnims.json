@@ -3113,7 +3113,43 @@
   "levelUp": {"ramp":"growth","n":12,"h":2.2,"ringR":2},
   "victory": {"sparkles":10,"cheerMs":900},
   "defeat": {"fadeMs":420},
-  "item": {"flyMs":420}
+  "item": {"flyMs":420},
+  "bossPhase": {
+   "about": "VFX-18b: a Bureau boss's phase with a shield (bosses.json phases; battle-stage.js alphaPhase, battle-anim-run.js battleBossPhaseScene): two barriers rise either side of it as the golden shield comes up, hold and erode, inside the phase's own 1200 ms; none under Reduced motion, on the 2D stage or with 3D props off; no stamp (the Bureau's)",
+   "faction": "bureau",
+   "steps": [
+    {
+     "at": 120,
+     "do": "prop",
+     "prop": "bureau_barrier",
+     "from": "below",
+     "to": "attacker",
+     "dz": 1.6,
+     "h": 1.2,
+     "ms": 260,
+     "ease": "out",
+     "hold": 520,
+     "out": 250,
+     "s": 1,
+     "yaw": 1.57
+    },
+    {
+     "at": 200,
+     "do": "prop",
+     "prop": "bureau_barrier",
+     "from": "below",
+     "to": "attacker",
+     "dz": -1.6,
+     "h": 1.2,
+     "ms": 260,
+     "ease": "out",
+     "hold": 440,
+     "out": 250,
+     "s": 1,
+     "yaw": 1.57
+    }
+   ]
+  }
  },
  "types": {
   "about": "VFX-11: the type kits: what a family's steps draw with in each type (a step's spr names a role: shot, impact, small, bits; its ramp is the kit's unless it names one; path kit is the kit's path), the kit's motion (flicker: its bits float up; zigzag: a held frame doubled; the rest come from its path and its cast and hit steps) and its light (the ramp's light colour, k its strength, ms how long, at most 300). The Bureau's is a Bureau bot's move, whatever its type. cast plays at a family's wind-up on the attacker, hit at its hit on the target",

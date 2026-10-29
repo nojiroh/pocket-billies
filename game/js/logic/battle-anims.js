@@ -52,6 +52,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   battleAnimTimeline: [() => battleAnimTimeline, v => (battleAnimTimeline = v)],
   // @ts-expect-error -- replaced on purpose
+  battleEventProps: [() => battleEventProps, v => (battleEventProps = v)],
+  // @ts-expect-error -- replaced on purpose
   battleIconSprite: [() => battleIconSprite, v => (battleIconSprite = v)],
   // @ts-expect-error -- replaced on purpose
   battleKitFor: [() => battleKitFor, v => (battleKitFor = v)],
@@ -585,6 +587,14 @@ export function battleSceneProps(A, id) {
     for (const st of [...S.steps, ...(S.short ? S.short.steps : [])])
       if (st.do === 'prop' && typeof st.prop === 'string') out.add(st.prop);
   }
+  return [...out];
+}
+/** VFX-18b: the models a battle event summons (events.bossPhase, a Bureau boss's shield phase), preloaded with the
+ * scenes' @param {BattleAnimsData} A @returns {string[]} */
+export function battleEventProps(A) {
+  const E = A && A.events && A.events.bossPhase,
+    out = new Set(/** @type {string[]} */ ([]));
+  for (const st of E ? E.steps : []) if (st.do === 'prop' && typeof st.prop === 'string') out.add(st.prop);
   return [...out];
 }
 /** how fast a summoned model moves at k of its flight, against its mean speed: its ease's slope (a stamp's fall

@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readGameData } from '../data-files.mjs';
-import { battleAnimTimeline, battleSceneProps } from '../../game/js/logic/battle-anims.js';
+import { existsSync } from 'node:fs';
+import { battleAnimTimeline, battleEventProps, battleSceneProps } from '../../game/js/logic/battle-anims.js';
 
 const D = readGameData(),
   A = D.battleAnims,
@@ -89,4 +90,24 @@ test('the bots’ part and gem moves are regular moves: they keep their families
     assert.ok(MOVES[mid], mid);
     assert.ok(!MOVES[mid].sig && A.families[MOVES[mid].anim], `${mid} plays a family`);
   }
+});
+
+test('the boss’s own: its shield phase summons barriers (events.bossPhase), within the phase’s 1200 ms', () => {
+  const E = A.events.bossPhase;
+  assert.deepEqual(battleEventProps(A), ['bureau_barrier']);
+  for (const id of battleEventProps(A)) assert.ok(existsSync(`game/art/scene/next/models/${id}.json`), id);
+  for (const s of E.steps) {
+    assert.equal(s.do, 'prop', 'props only: no stamp against the Bureau, no flash of its own');
+    assert.ok(s.at + s.ms + (s.hold || 0) + (s.out ?? 250) <= 1200, 'gone by the phase’s end');
+  }
+  assert.deepEqual(battleEventProps({}), []);
+  assert.equal(
+    E.faction,
+    D.bosses.bosses.retrieval.faction,
+    'its boss is picked by faction (SY-5’s bosses.json faction)'
+  );
+  assert.ok(
+    D.bosses.bosses.retrieval.phases.some(p => p.shield),
+    'the Retrieval Unit has a shield phase'
+  );
 });

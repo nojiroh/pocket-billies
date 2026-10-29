@@ -2864,6 +2864,8 @@ export interface BattleAnimEvents {
   victory?: { sparkles: number; cheerMs: number };
   defeat?: { fadeMs: number };
   item?: { flyMs: number };
+  /** VFX-18b: a Bureau boss's phase with a shield: prop steps played on the boss inside the phase's own time */
+  bossPhase?: { about?: string; faction: string; steps: BattleAnimStep[] };
 }
 /** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
 export interface BattleMoods {

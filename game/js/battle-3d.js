@@ -33,6 +33,7 @@ import {
 } from './logic/smear.js';
 import {
   battleAnimFrame,
+  battleEventProps,
   battleIconSprite,
   battlePathAt,
   battlePropAt,
@@ -861,6 +862,8 @@ const battlePropPath = id => `scene/next/models/${id}.json`;
 function battlePropsPreload() {
   if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof BATTLE_ANIMS === 'undefined') return;
   for (const id of battleSceneProps(BATTLE_ANIMS)) loadPropModelRecipe(battlePropPath(id));
+  /* VFX-18b: and a Bureau boss's shield phase's (battleBossPhaseScene) */
+  for (const id of battleEventProps(BATTLE_ANIMS)) loadPropModelRecipe(battlePropPath(id));
 }
 /* whether every model of a scene can be drawn now (3D props on, each recipe loaded and not empty) */
 function battlePropsReady(ids) {

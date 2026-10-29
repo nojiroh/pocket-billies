@@ -461,10 +461,12 @@ export const SHOWCASE = /** @type {import('../types/game-data').ShowcaseData} */
 export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
   (gameData.factions && gameData.factions.factions) || {}
 );
+provide({ FACTIONS }); /* to-module */
 /* roguelite track RL-14b: a run's bosses that are not a leader's Billie: the Voltron (bosses.json; battle-engine.js makeBossRobot) */
 export const BOSSES = /** @type {Record<string, import('../types/game-data').BossDef>} */ (
   (gameData.bosses && gameData.bosses.bosses) || {}
 );
+provide({ BOSSES }); /* to-module */
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
 /* residents track RS-1: the people a run can invite to Copperleaf (residents.json; logic/residents.js) */
