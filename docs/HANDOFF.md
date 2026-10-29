@@ -19,7 +19,9 @@ cozy whimsical retro futuristic", then "all houses look way too similar now, add
   that can run side by side (section 6). Then: "a little more nature, bit more on the retro futuristic" (the sketch
   page's fourth version: gardens on every plot, an atomic, dish, antenna or tube touch on every house, bubble cars);
   the three Ask me before items answered (normal maps on above Low, pixel-font signs, 6,000 triangles a house); and
-  the sessions chained (the owner: "All plans approved. Automatically start next steps in new session ... Run
+  "more windmill variety and variants, more retro futuristic" (a windmill kit of nine designs and three colourways,
+  a saucer pod body, a butterfly roof, starburst wall lamps; the sketch page's fifth version); the sessions chained
+  (the owner: "All plans approved. Automatically start next steps in new session ... Run
   simultaneously when you can"): this session made `track/buildings` and started wave 1 (BD-1, BD-2a, BD-F).
 - Found, not changed (for BD-7; details in the track file, section 3): doors are written at 32 px/m but read at ppu 34
   (about 6% short of the model's door); tools/clear-windows.py ignores `rot` (most hub buildings are at rot 90); the
