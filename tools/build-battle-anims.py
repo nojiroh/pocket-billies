@@ -956,6 +956,12 @@ GLYPHS = {
     'G': ['.###', '#...', '#.##', '#..#', '.###'],
     'T': ['###', '.#.', '.#.', '.#.', '.#.'],
     'O': ['.##.', '#..#', '#..#', '#..#', '.##.'],
+    # VFX-18's letters
+    'W': ['#...#', '#...#', '#.#.#', '##.##', '#...#'],
+    'R': ['###.', '#..#', '###.', '#.#.', '#..#'],
+    'E': ['####', '#...', '###.', '#...', '####'],
+    'F': ['####', '#...', '###.', '#...', '#...'],
+    'L': ['#...', '#...', '#...', '#...', '####'],
 }
 
 
@@ -1036,6 +1042,10 @@ SPRITES = {
     'word_siu': (word('SIU!'), word_cell('SIU!'), [8, 3], {}, 'VFX-17: the word SIU! (a shout), stamped in'),
     'word_kaching': (word('KA-CHING!'), word_cell('KA-CHING!'), [20, 3], {}, 'VFX-17: the word KA-CHING! (a till), stamped in'),
     'word_toot': (word('TOOT!'), word_cell('TOOT!'), [11, 3], {}, "VFX-17: the word TOOT! (a train's whistle), stamped in"),
+    'word_whirr': (word('WHIRR!'), word_cell('WHIRR!'), [14, 3], {}, 'VFX-18: the word WHIRR! (fans spinning up), stamped in'),
+    'word_tick': (word('TICK!'), word_cell('TICK!'), [10, 3], {}, "VFX-18: the word TICK! (a clock's hand), stamped in"),
+    'word_click': (word('CLICK!'), word_cell('CLICK!'), [13, 3], {}, 'VFX-18: the word CLICK! (a lock shutting), stamped in'),
+    'word_fore': (word('FORE!'), word_cell('FORE!'), [11, 3], {}, "VFX-18: the word FORE! (a golfer's warning shout), stamped in"),
 }
 
 
