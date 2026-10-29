@@ -51,6 +51,11 @@ logic/music-layers.js MUSIC_LAYER_TESTS gives them from the first step. Every ot
 layer parts stay silent and nothing is dimmed: today's sound. --loudness adds each layered render's row against the
 ensemble's.
 
+SND-15: --loudness gives each row its true peak (dBTP, 4x oversampled) and each song its loudness range (LRA, EBU Tech
+3342); adds effect rows (a cry of each base, talk, the buttons, their loudest 3 s against the route song); and checks
+the targets: the route song as it plays (its ensemble) within 1 LU of -18 LUFS at the default sliders, every song's
+and jingle's true peak under -1 dBTP (a warning, as the ceilings). Its pages stop drawing, as the fingerprints' do.
+
 SND-9: beside each RMS array, a brightness fingerprint (`zc:<part>` in the same file): the zero crossings in each 50 ms
 window, so a change of timbre at the same loudness shows too (a brighter sound crosses zero more often). A crossing
 counts when the signal passes from under -0.0001 to over +0.0001 or back (so a near-silent tail's rounding never
@@ -209,7 +214,7 @@ LOUD = r"""async ({jobs, rate}) => {
     let seed = 0x5eed;
     Math.random = () => { seed |= 0; seed = (seed + 0x6d2b79f5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
-    let len = 12, steps = 0, spb = 0;
+    let len = job.len || 12, steps = 0, spb = 0;
     /* SND-11: a song row with GB Sounds on (today's sound), an ensemble row (job.ens) with it off, baked first */
     if (job.ens) {
       const oc0 = new OfflineAudioContext(2, rate, rate),
@@ -243,6 +248,9 @@ LOUD = r"""async ({jobs, rate}) => {
         E.tracker.tick();
       } else if (job.jingle) {
         jinglePlay(job.jingle);
+      } else if (job.fx) {
+        /* SND-15: effects at their times: [s, soundEffect's name, its options] (a cry, talk's blips) or [s, 'ui', name] */
+        for (const [at, name, o] of job.fx) { now = at; if (name === 'ui') uiSound(o); else soundEffect(name, o); }
       } else {
         Object.assign(ambience, { bus: null, amb: null, lpA: null, lpW: null, beds: {}, flash: 0, arrive: -9, id: null, lastCall: 0, ev: {}, birdAt: null });
         if (!initAmbience()) throw new Error('initAmbience failed on the offline context');
@@ -273,7 +281,7 @@ LOUD = r"""async ({jobs, rate}) => {
     const buf = await oc.startRendering();
     Object.assign(ambience, amb);
     /* a song's fade-in and a bed's first second left out; a jingle whole (SND-17) */
-    const L = soundLoudness([buf.getChannelData(0), buf.getChannelData(1)], rate, job.jingle ? 0 : job.song ? 0.5 : 1);
+    const L = soundLoudness([buf.getChannelData(0), buf.getChannelData(1)], rate, job.jingle || job.fx ? 0 : job.song ? 0.5 : 1);
     out.push(Object.fromEntries(Object.entries(L).map(([k, v]) => [k, typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 100) / 100 : v])));
   }
   return out;
@@ -302,6 +310,18 @@ LOUD_EVENTS = ('birds', 'steps (lawn)', 'thunder', 'dawn chorus', 'birds at noon
 LOUD_SCENES = [('Copperleaf square', [['sea_coast', 0], ['fountain', 3], ['townLife', 0], ['birds', 0]]),
                ('a route in rain', [['rain', 0], ['gusts', 0], ['leaves', 0]]), ('a meadow at night', [['crickets', 0], ['leaves', 0]])]
 CEILING_BED, CEILING_EVENT = -12, -8   # LU under the route song (design rule 7: beds at least 12 under, events 8)
+TARGET_LUFS, TARGET_WITHIN, TARGET_TP = -18, 1, -1   # SND-15: the music's loudness at default sliders and the peaks' ceiling
+
+
+def loud_effects(pg):
+    """SND-15: the effect rows: (name, [[s, effect, options]...], seconds): a cry of each base (the first species by id
+    that has it), Kappi's and a townsperson's talk (a blip every 84 ms for 3 s, as talk.js types), the buttons"""
+    cries = pg.evaluate("Object.keys(MUSIC.cries.bases).map(b => [b, Object.keys(SPECIES).sort().find(s => cryRecipe(s, (SPECIES[s] || {}).cry, MUSIC.cries.bases).base === b)]).filter(x => x[1])")
+    talk = [round(0.05 + i * 0.084, 3) for i in range(36)]
+    rows = [(f'cry ({b}: {sp})', [[0.05, 'cry', {'sp': sp}]], 3) for b, sp in cries]
+    rows += [(f'talk ({w})', [[t, 'blip', {'who': w}] for t in talk], 4) for w in ('kappi', 'folk3')]
+    rows += [('buttons', [[0.05 + 0.4 * i, 'ui', u] for i, u in enumerate(['select', 'confirm', 'cancel', 'cant', 'sheet', 'toast'])], 3.5)]
+    return rows
 # SND-10: every water recipe (soundscape.json `water`) at 1, 3 and 10 m, a fall at its height; both ceilings apply (its
 # bed's integrated level and its events' loudest 3 s)
 WATER_AT = (1, 3, 10)
@@ -351,35 +371,47 @@ def loudness(b, base, only=None):
     finally:
         ctx.close()
     # SND-17: the jingles on a page of their own (a page slows as its renders pile up, and their zones would push the
-    # water's banks out of the bank)
-    if jens:
-        ctx, pg, errs = loud_page(b, base)
-        try:
-            jobs = [{'jingle': j} for j in jens] + [{'jingle': j, 'ens': True} for j in jens]
-            for i in range(0, len(jobs), 6):
-                res += pg.evaluate(LOUD, {'jobs': jobs[i:i + 6], 'rate': RATE})
-            if errs: raise Exception('page errors: ' + ' | '.join(errs[:3]))
-        finally:
-            ctx.close()
+    # water's banks out of the bank); SND-15: and the effects (a cry of each base, talk, the buttons)
+    ctx, pg, errs = loud_page(b, base)
+    try:
+        fx = loud_effects(pg)
+        jobs = [{'jingle': j} for j in jens] + [{'jingle': j, 'ens': True} for j in jens] + [{'fx': F, 'len': n} for _, F, n in fx]
+        for i in range(0, len(jobs), 6):
+            res += pg.evaluate(LOUD, {'jobs': jobs[i:i + 6], 'rate': RATE})
+        if errs: raise Exception('page errors: ' + ' | '.join(errs[:3]))
+    finally:
+        ctx.close()
     S = dict(zip(songs, res[:len(songs)]))
     SE = dict(zip(ens, res[len(songs):len(songs) + len(ens)]))
     SL = list(zip(lay, res[len(songs) + len(ens):len(songs) + len(ens) + len(lay)]))
     ref = S['route']['lufs']
     lines = [f'loudness at default sliders, stereo, K-weighted (LUFS; LU against the route song, {ref:.1f} LUFS; beds {duck:+.1f} dB under a song)',
              '  songs (day):']
-    lines += [f'    {s:12} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f}   peak {L["peak"]:6.1f} dBFS' for s, L in sorted(S.items(), key=lambda x: -x[1]['lufs'])]
+    lines += [f'    {s:12} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f}   peak {L["peak"]:6.1f} dBFS {L.get("tp", 0):6.1f} dBTP   LRA {L.get("lra", 0):4.1f}' for s, L in sorted(S.items(), key=lambda x: -x[1]['lufs'])]
     if SE:
         lines.append('  songs (SND-11: as their ensemble, against their gb version):')
-        lines += [f'    {s:12} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f}   peak {L["peak"]:6.1f} dBFS   {L["lufs"] - S[s]["lufs"]:+5.1f} LU on gb' for s, L in SE.items()]
+        lines += [f'    {s:12} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f}   peak {L["peak"]:6.1f} dBFS {L.get("tp", 0):6.1f} dBTP   LRA {L.get("lra", 0):4.1f}   {L["lufs"] - S[s]["lufs"]:+5.1f} LU on gb' for s, L in SE.items()]
     if SL:
         lines.append('  songs (SND-13: each layer in play, against the ensemble as written):')
-        lines += [f'    {s + " " + p:28} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   peak {L["peak"]:6.1f} dBFS   {L["lufs"] - SE[s]["lufs"]:+5.1f} LU on the ensemble' for (s, p), L in SL]
+        lines += [f'    {s + " " + p:28} {L["lufs"]:7.1f} LUFS {L["lufs"] - ref:+6.1f} LU   peak {L["peak"]:6.1f} dBFS {L.get("tp", 0):6.1f} dBTP   {L["lufs"] - SE[s]["lufs"]:+5.1f} LU on the ensemble' for (s, p), L in SL]
     warn = [f'{s} {p}: NaN in the render' for (s, p), L in SL if L.get('nan')]
     if jens:
-        J0, J1 = res[-2 * len(jens):-len(jens)], res[-len(jens):]
+        J0, J1 = res[len(res) - len(fx) - 2 * len(jens):len(res) - len(fx) - len(jens)], res[len(res) - len(fx) - len(jens):len(res) - len(fx)]
         lines.append('  jingles (SND-17: on their ensemble, against their 8-bit version):')
-        lines += [f'    {j:12} {b["lufs"]:7.1f} LUFS {b["lufs"] - ref:+6.1f} LU   peak {b["peak"]:6.1f} dBFS   {b["lufs"] - a["lufs"]:+5.1f} LU on the 8-bit ({a["lufs"]:.1f})' for j, a, b in zip(jens, J0, J1)]
+        lines += [f'    {j:12} {b["lufs"]:7.1f} LUFS {b["lufs"] - ref:+6.1f} LU   peak {b["peak"]:6.1f} dBFS {b.get("tp", 0):6.1f} dBTP   {b["lufs"] - a["lufs"]:+5.1f} LU on the 8-bit ({a["lufs"]:.1f})' for j, a, b in zip(jens, J0, J1)]
         warn += [f'jingle {j}: NaN in the render' for j, b in zip(jens, J1) if b.get('nan')]
+    if fx:
+        lines.append('  effects (SND-15: a cry of each base, talk, the buttons; the loudest 3 s against the route song):')
+        lines += [f'    {n:20} {L["short"] - ref:+6.1f} LU   max 3 s {L["short"]:6.1f} LUFS   peak {L["peak"]:6.1f} dBFS {L.get("tp", 0):6.1f} dBTP' for (n, _, _), L in zip(fx, res[len(res) - len(fx):])]
+        warn += [f'{n}: NaN in the render' for (n, _, _), L in zip(fx, res[len(res) - len(fx):]) if L.get('nan')]
+    # SND-15: the targets: the music near -18 LUFS at default sliders (the route song as its ensemble), every true peak
+    # under -1 dBTP
+    R = SE.get('route', S['route'])
+    lines.insert(1, f'  target: the route song {R["lufs"]:.1f} LUFS (as it plays, {TARGET_LUFS} wanted, within {TARGET_WITHIN}); true peaks under {TARGET_TP} dBTP')
+    if abs(R['lufs'] - TARGET_LUFS) > TARGET_WITHIN: warn.append(f'the route song at {R["lufs"]:.1f} LUFS, not within {TARGET_WITHIN} of {TARGET_LUFS}')
+    for what, D in (('song', S), ('ensemble', SE)):
+        warn += [f'{what} {k}: true peak {L["tp"]:.1f} dBTP, over {TARGET_TP}' for k, L in D.items() if L.get('tp', -99) > TARGET_TP]
+    if jens: warn += [f'jingle {j}: true peak {L["tp"]:.1f} dBTP, over {TARGET_TP}' for j, L in zip(jens, J0 + J1) if L.get('tp', -99) > TARGET_TP]
     at = len(songs) + len(ens) + len(lay)
     for title, rows in (('world sounds', LOUD_BEDS), ('nature (SND-14)', nature), ('scenes', LOUD_SCENES), ('water (SND-10: each recipe at 1, 3 and 10 m)', rows_w)):
         if not rows: continue
