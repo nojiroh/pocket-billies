@@ -22,6 +22,7 @@ import {
   musicStingerShift,
 } from '../logic/music-patterns.js';
 import { musicLayerGain, musicLayerHas, musicLayerMove } from '../logic/music-layers.js';
+import { mixDuckerMake } from './mix-chain.js';
 /* eslint-disable no-func-assign */
 expose({
   MUSIC_STEM_LINES: [() => MUSIC_STEM_LINES],
@@ -826,6 +827,26 @@ export function trackerCreate(ctx, bus, opts = {}) {
   };
   /* resolves once the room has its impulse (and makes it, as a send would) */
   T.reverbReady = () => (T.reverbSend(), room.ready);
+  /* SND-15: the songs' duck: gains of the ducker's own between every song and the bus, its echo and its reverb send
+     (audio/mix-chain.js mixDuckerMake), so a jingle, a cry or talk dips the music without touching a song's fader (its
+     fade-in, a crossfade) or its stems (a stinger's, the layers'). Jingles and the effects never pass through them */
+  const duckIn = c.createGain(),
+    duckEcho = c.createGain();
+  duckIn.connect(bus);
+  duckEcho.connect(T.echoIn);
+  let duckVerb = null;
+  const duckVerbIn = () => {
+    if (!duckVerb) {
+      duckVerb = c.createGain();
+      duckVerb.gain.value = duckIn.gain.value;
+      duckVerb.connect(T.reverbSend('music'));
+    }
+    return duckVerb;
+  };
+  T.ducker = mixDuckerMake(c, () => [duckIn.gain, duckEcho.gain].concat(duckVerb ? [duckVerb.gain] : []));
+  /* dips the songs to g (a gain) from t0 to end, coming over a s and going over r s; the ducks that overlap take the
+     lower */
+  T.duck = (t0, end, g, a, r, kind) => T.ducker.add(t0, end, g, a, r, kind);
   /* SND-10: world, the World slider's level (cave drips send to it); left out, it stays as it was */
   T.reverbLevels = (music, sfx, world = room.level.world) => {
     room.level = { music, sfx, world };
@@ -954,7 +975,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
         if (!sg.verb) {
           sg.verb = c.createGain();
           sg.verb.gain.value = sg.gain.gain.value;
-          sg.verb.connect(T.reverbSend('music'));
+          sg.verb.connect(duckVerbIn());
         }
         const v = c.createGain();
         v.gain.value = P.verb;
@@ -1138,8 +1159,8 @@ export function trackerCreate(ctx, bus, opts = {}) {
       /* a song that takes over a held one (the red zone during the intro) keeps the drums out too */
       hold: o.hold ? c.currentTime + 8 : (T.song && T.song.hold) || 0,
     };
-    T.song.gain.connect(bus);
-    T.song.echo.connect(T.echoIn);
+    T.song.gain.connect(duckIn);
+    T.song.echo.connect(duckEcho);
     T.song.drums = c.createGain();
     T.song.drums.gain.value = L ? L.drums : 1;
     T.song.drums.connect(T.song.gain);
@@ -1357,18 +1378,9 @@ export function trackerCreate(ctx, bus, opts = {}) {
     if (T.verbOk() && T.jingleEnsemble(J).parts.some(P => P.verb > 0)) waits.push(T.reverbReady());
     return Promise.all(waits).then(() => true);
   };
-  /* the song's duck under a jingle, from t0 to its end: to 0.15 of its level, back over 0.8 s */
-  const duckUnder = (t0, end) => {
-    fader(T.song, g => {
-      g.cancelScheduledValues(t0);
-      g.setValueAtTime(g.value, t0);
-      g.linearRampToValueAtTime(0.15 * T.song.level, t0 + 0.1);
-    });
-    fader(T.song, g => {
-      g.linearRampToValueAtTime(0.15 * T.song.level, end);
-      g.linearRampToValueAtTime(T.song.level, end + 0.8);
-    });
-  };
+  /* the song's duck under a jingle, from t0 to its end: to 0.15 of its level, back over 0.8 s. SND-15: on the songs'
+     duck (T.duck), no longer on the song's fader */
+  const duckUnder = (t0, end) => T.duck(t0, end, 0.15, 0.1, 0.8, 'jingle');
   /* SND-17: a stinger (a jingle marked `stinger`: a Perk, the reveal, a day, a coin) over a song drops the song's busy
      parts (its tune, counter and arpeggio: the gb stems and the ensemble's parts) to 0.2 instead of ducking all of it,
      from its beat to its end, back over 0.4 s. All at step times; a stinger that starts while one is still down keeps
@@ -1479,12 +1491,6 @@ export function trackerCreate(ctx, bus, opts = {}) {
       up = o.shift || 0,
       duck = o.duck !== false;
     let t = t0;
-    if (T.song && duck)
-      fader(T.song, g => {
-        g.cancelScheduledValues(t0);
-        g.setValueAtTime(g.value, t0);
-        g.linearRampToValueAtTime(0.15 * T.song.level, t0 + 0.1);
-      });
     for (const [n, l] of notes) {
       if (n)
         (T.synthVoice(out, {
@@ -1508,11 +1514,7 @@ export function trackerCreate(ctx, bus, opts = {}) {
             }));
       t += l * spb;
     }
-    if (T.song && duck)
-      fader(T.song, g => {
-        g.linearRampToValueAtTime(0.15 * T.song.level, t);
-        g.linearRampToValueAtTime(T.song.level, t + 0.8);
-      });
+    if (T.song && duck) duckUnder(t0, t);
     return t;
   };
   return T;

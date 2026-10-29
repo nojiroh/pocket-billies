@@ -4,11 +4,18 @@
    the same in both: a gentle compressor that glues the mix and keeps its loudness range small, a make-up gain that
    lifts the whole mix to about -18 LUFS at the default sliders (the mobile target, sound-track.md "The research"), and
    a limiter that keeps the true peaks under -1 dBTP. Their settings are music.json mix (`compressor`, `makeup`,
-   `limiter`); apply(mix) sets them again after an edit. Knows nothing of the game. */
+   `limiter`); apply(mix) sets them again after an edit. Also (mixDuckerMake) the ducker: gains that dip under a
+   jingle, a cry or talk and come back, the dips planned by logic/sound-duck.js duckPoints, so ducks that overlap take
+   the lower gain and never fight over a param. Knows nothing of the game. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { duckPoints } from '../logic/sound-duck.js';
 /* eslint-disable no-func-assign */
-expose({ MIX_CHAIN_DEFAULTS: [() => MIX_CHAIN_DEFAULTS], mixChainMake: [() => mixChainMake, v => (mixChainMake = v)] });
+expose({
+  MIX_CHAIN_DEFAULTS: [() => MIX_CHAIN_DEFAULTS],
+  mixChainMake: [() => mixChainMake, v => (mixChainMake = v)],
+  mixDuckerMake: [() => mixDuckerMake, v => (mixDuckerMake = v)],
+});
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* the chain without a mix's say: the glue's and the limiter's settings */
@@ -64,4 +71,34 @@ export function mixChainMake(c, mix, dest) {
   };
   chain.apply(mix);
   return chain;
+}
+/**
+ * a ducker over some gains (each param one of the same dip): add(t0, end, g, a, r) dips them to g from t0 (over a
+ * seconds) to end, back to 1 over r; overlapping dips take the lowest. Every change is planned from now on the context's
+ * clock, so the params never hold another owner's ramps (these gains are the ducker's alone)
+ * @param {BaseAudioContext} c
+ * @param {() => AudioParam[]} params
+ */
+export function mixDuckerMake(c, params) {
+  /** @type {{t0: number, end: number, g: number, a: number, r: number, kind?: string}[]} */
+  let list = [];
+  const D = {
+    count: /** @type {Record<string, number>} */ ({}),
+    add(/** @type {number} */ t0, /** @type {number} */ end, /** @type {number} */ g, a = 0.1, r = 0.8, kind = 'duck') {
+      if (!(g < 1)) return;
+      const now = c.currentTime;
+      list = list.filter(d => Math.max(d.end, d.t0 + d.a) + d.r > now);
+      list.push({ t0: Math.max(t0, now), end, g: Math.max(0, g), a, r, kind });
+      D.count[kind] = (D.count[kind] || 0) + 1;
+      const P = duckPoints(list, now);
+      for (const p of params()) {
+        p.cancelScheduledValues(now);
+        p.setValueAtTime(P[0][1], now);
+        for (let i = 1; i < P.length; i++) p.linearRampToValueAtTime(P[i][1], P[i][0]);
+      }
+    },
+    /** the ducks still under way (the debug log) */
+    live: () => list.filter(d => Math.max(d.end, d.t0 + d.a) + d.r > c.currentTime).map(d => d.kind),
+  };
+  return D;
 }

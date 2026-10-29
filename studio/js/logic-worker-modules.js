@@ -160,6 +160,7 @@ import '../../game/js/logic/signals.js';
 import '../../game/js/logic/sim-compare.js';
 import '../../game/js/logic/smear.js';
 import '../../game/js/logic/sound-bake.js';
+import '../../game/js/logic/sound-duck.js';
 import '../../game/js/logic/soundscape.js';
 import '../../game/js/logic/square-day.js';
 import '../../game/js/logic/square-talk.js';

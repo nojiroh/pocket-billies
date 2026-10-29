@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 
 globalThis.window ??= globalThis;
 const { bedDuck, mixTrim, soundLevel, soundLevels } = await import('../../game/js/audio/levels.js');
+const { duckAt, duckPoints, mixDuck } = await import('../../game/js/logic/sound-duck.js');
 const MIX = JSON.parse(
   (await import('node:fs')).readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8')
 ).mix;
@@ -80,4 +81,46 @@ test('each bus has its own mute, which silences only that bus and keeps its leve
     assert.equal(soundLevel({ ...prefs, mutes: { [k]: true } }, k), prefs[k]);
   }
   near(soundLevels({ ...prefs, mutes: { music: false } }).music, on.music);
+});
+
+// SND-15: the ducks (audio/levels.js mixDuck, duckAt, duckPoints)
+test('SND-15: a dip comes over its attack, holds to its end and goes over its release', () => {
+  const d = { t0: 1, end: 2, g: 0.5, a: 0.2, r: 1 };
+  assert.equal(duckAt(d, 0.5), 1);
+  near(duckAt(d, 1.1), 0.75);
+  assert.equal(duckAt(d, 1.5), 0.5);
+  near(duckAt(d, 2.5), 0.75);
+  assert.equal(duckAt(d, 3.5), 1);
+  /* shorter than its attack: held at the bottom until the attack is over */
+  assert.equal(duckAt({ t0: 0, end: 0.05, g: 0.2, a: 0.1, r: 1 }, 0.1), 0.2);
+});
+
+test('SND-15: overlapping dips take the lower gain at every corner, from now on', () => {
+  const P = duckPoints(
+    [
+      { t0: 0, end: 2, g: 0.5, a: 0.1, r: 0.5 },
+      { t0: 1, end: 1.5, g: 0.2, a: 0.1, r: 0.5 },
+    ],
+    0.5
+  );
+  assert.deepEqual(P[0], [0.5, 0.5], 'now: the first dip holds');
+  const at = t => P.find(p => Math.abs(p[0] - t) < 1e-9)[1];
+  near(at(1.1), 0.2);
+  near(at(1.5), 0.2);
+  near(at(2), 0.5, 'the second has come back past the first');
+  near(at(2.5), 1);
+  assert.ok(
+    P.every((p, i) => i === 0 || p[0] > P[i - 1][0]),
+    'in time order'
+  );
+});
+
+test('SND-15: mixDuck reads music.json mix duck in dB; a kind left out ducks nothing', () => {
+  const D = mixDuck({ duck: { cry: { music: -6, beds: -12, attack: 0.03, release: 0.5 } } }, 'cry');
+  assert.ok(Math.abs(D.music - 0.5012) < 1e-4 && Math.abs(D.beds - 0.2512) < 1e-4, `${D.music} ${D.beds}`);
+  assert.equal(D.a, 0.03);
+  assert.equal(D.r, 0.5);
+  const N = mixDuck({}, 'talk');
+  assert.equal(N.music, 1);
+  assert.equal(N.beds, 1);
 });

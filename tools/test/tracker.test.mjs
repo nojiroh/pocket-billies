@@ -335,18 +335,23 @@ function recordingContext() {
   return c;
 }
 
-test("SND-8b: a song's echo send moves with its fader (the fade-in, a jingle's duck, a stop)", () => {
+test("SND-8b: a song's echo send moves with its fader (the fade-in, a stop); SND-15: a jingle's duck on the duck's own gains", () => {
   const c = recordingContext(),
     T = trackerCreate(c, {}, { songs: { s: town } }),
     sg = T.play('s');
   clearInterval(T.timer);
-  assert.ok(sg.echo.to.includes(T.echoIn), 'the send goes to the echo');
+  /* SND-15: the song's level and its echo send each pass through a gain of the duck's own */
+  const [dIn] = sg.gain.to,
+    [dEcho] = sg.echo.to;
+  assert.ok(dEcho.to.includes(T.echoIn), 'the send goes to the echo');
   const moves = n => n.gain.calls.map(([m, v]) => [m, v]);
   assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the fade-in');
   assert.deepEqual(moves(sg.gain).at(-1), ['linearRampToValueAtTime', 1]);
+  const before = moves(sg.gain).length;
   T.jingle([[72, 4]], 150, 'p25', {});
-  assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the duck');
-  assert.ok(moves(sg.echo).some(([m, v]) => m === 'linearRampToValueAtTime' && v === 0.15));
+  assert.equal(moves(sg.gain).length, before, 'the fader is left alone');
+  assert.deepEqual(moves(dEcho), moves(dIn), 'the duck');
+  assert.ok(moves(dEcho).some(([m, v]) => m === 'linearRampToValueAtTime' && v === 0.15));
   T.stop();
   assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the stop');
   assert.deepEqual(moves(sg.echo).at(-1), ['linearRampToValueAtTime', 0]);
@@ -388,7 +393,9 @@ test("SND-8b: a song's trim (dB) is its fader's top; a jingle ducks it to 0.15 o
   const lv = Math.round(Math.pow(10, 6 / 20) * 1e4) / 1e4;
   assert.deepEqual(tops(sg.gain), [lv]);
   T.jingle([[72, 4]], 150, 'p25', {});
-  assert.deepEqual(tops(sg.echo), [lv, Math.round(0.15 * lv * 1e4) / 1e4, Math.round(0.15 * lv * 1e4) / 1e4, lv]);
+  /* SND-15: the duck is a share of whatever the fader holds: its own gains go to 0.15 and back, the fader stays */
+  assert.deepEqual(tops(sg.echo), [lv]);
+  assert.deepEqual(tops(sg.echo.to[0]), [1, 0.15, 0.15, 1]);
   const p = T.play('plain');
   clearInterval(T.timer);
   assert.equal(p.level, 1);
@@ -1005,8 +1012,7 @@ test('SND-17: a jingle that is no stinger ducks the song (the battle fanfares)',
   clearInterval(T.timer);
   c.currentTime = 0.5;
   T.jingle(JING.notes, 150, 'p25', {}, { jingle: JING });
-  assert.ok(
-    sg.gain.gain.calls.some(([m, v]) => m === 'linearRampToValueAtTime' && Math.abs(v - 0.15 * sg.level) < 1e-9)
-  );
+  /* SND-15: on the songs' duck (the gain after the fader), not the fader */
+  assert.ok(sg.gain.to[0].gain.calls.some(([m, v]) => m === 'linearRampToValueAtTime' && Math.abs(v - 0.15) < 1e-9));
   assert.equal(sg.stems.lead.gain.calls.length, 0);
 });
