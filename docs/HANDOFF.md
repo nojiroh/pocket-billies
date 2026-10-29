@@ -77,8 +77,9 @@ before" item came up.
   a bigger backlog); nothing in the repo changed for it except load-logic.mjs.
 - Verified: lint (eslint 0 errors; check-names, unused-css, to-module --check; ui-lint counted by hand on Windows:
   every rule under its ceiling), typecheck, format:check, check:data (184 files), line ids. `npm test`: kappi-tips
-  15/15, meta-state; the quick tier's other failures are the same Windows-only ones as on the base commit (a 1,000-map
-  timing test failed once under load). check-fast "Kappi's tips" passed.
+  15/15, meta-state; the quick tier's other local failures are Windows-only (the same on the base commit; a 1,000-map
+  timing test failed once under load), except check-data's 18 snapshots, which CI showed need the file count 184 (fixed
+  in tools/test/check-data-snapshot.test.mjs.snapshot; they can't run on Windows: they make a symlink). check-fast "Kappi's tips" passed.
   check:smoke: **2 of 7 here, the same 2 of 7 with the same five failures on the base
   commit 61d90751** on this Windows machine (page loads past the 90 s limit: Phone, Actions bar, the full test, and
   Palettes on the page that didn't load; Unused: a node tool that prints nothing on Windows). So smoke is not shown
