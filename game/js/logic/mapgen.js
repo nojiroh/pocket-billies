@@ -4772,7 +4772,7 @@ export const MAPGEN_LAYOUTS = {
 };
 /** the layout dial when not given (not in MAPGEN_DEFAULTS, so scenes made without it keep the dials they stored) */
 export const MAPGEN_LAYOUT_DIALS = { layout: 'none' };
-/** a forest mass's props (measured on the phone-sized headless page, tools/route-perf.py): canopy pieces `step`
+/** a forest mass's props (measured on the phone-sized headless page, tools/check-perf.py --routes, was route-perf.py): canopy pieces `step`
  * metres apart at a scale in `size`, the biome's trees along its edge `wall` metres apart (a model tree is a draw
  * per leaf clump, the wall is most of a forest's cost) */
 export const MAPGEN_FOREST = { step: 5.2, size: [1.0, 1.35], wall: 5 };

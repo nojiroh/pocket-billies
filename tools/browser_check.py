@@ -3,7 +3,7 @@ every check page gets (the clock, no accounts, the test globals, the low graphic
 the console text and the log line.
 
 Used by check-fast.py, check-quick.py, check-ui-gallery.py, check-sound.py and check-studio-github.py, and by the look
-tools (style-diff.py, look-blur.py, island-perf.py, island-shots.py; look-tall-ground.py through check-fast.py).
+tools (style-diff.py, look-blur.py, check-perf.py, island-shots.py; look-tall-ground.py through check-fast.py).
 Nothing here waits a fixed time: `until` asks the page every 100 ms."""
 import os, socket, threading, time
 from functools import partial

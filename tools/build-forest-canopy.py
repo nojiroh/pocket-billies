@@ -30,7 +30,7 @@ MODELS = ROOT / 'game' / 'art' / 'scene' / 'next' / 'models'
 PICS = ROOT / 'game' / 'art' / 'scene' / 'next' / 'forest'
 SOLID = 1.2  # the trunks' disc (metres); the mass blocks by its ground (DEEP), not by the pieces
 DEEP = '&'  # the deep forest terrain's letter
-# the crown's shapes: few and big (measured, tools/route-perf.py: every model draws into the shadow map, so a piece's
+# the crown's shapes: few and big (measured, tools/check-perf.py --routes: every model draws into the shadow map, so a piece's
 # weight counts twice; 10 globes a piece doubled a forest's frame time headless, 5 keep the look)
 GLOBES, CONES = 5, 5
 
