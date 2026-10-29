@@ -21,6 +21,7 @@ import {
   hitLook,
   hitTier,
   koAhead,
+  hurtKoAhead,
   lineAfterMove,
   TIER_ROWS,
   redShare,
@@ -599,4 +600,20 @@ test('every family’s strips are sprites and its kit roles resolve in every kit
     T.steps.some(s => s.do === 'impact' && s.each),
     'Surge Wave hits each foe'
   );
+});
+
+test("VFX-20: hurtKoAhead: a hurt line that knocks out, in koAhead's shape", () => {
+  const hurt = (si, fx, dmg = 5) => ({ an: { k: 'hurt', si, fx, dmg } }),
+    faint = si => ({ an: { k: 'faint', si } }),
+    mv = (si, ti) => ({ an: { k: 'move', si, ti, dmg: 3 } });
+  assert.deepEqual(hurtKoAhead([hurt(1, 'brn'), faint(1)], 0), { ko: true, si: [1], last: true });
+  assert.deepEqual(hurtKoAhead([hurt(1, 'brn'), faint(1), { an: { k: 'enter', si: 1 } }], 0).last, false);
+  assert.deepEqual(hurtKoAhead([hurt(1, 'mail'), faint(1), mv(0, 1)], 0), { ko: true, si: [1], last: false });
+  assert.equal(hurtKoAhead([hurt(3, 'spread'), hurt(1, 'brn'), faint(3)], 0).ko, true, "another Billie's hurt between");
+  assert.equal(hurtKoAhead([hurt(1, 'brn'), faint(3)], 0).ko, false, 'another Billie faints');
+  assert.equal(hurtKoAhead([hurt(1, 'brn'), mv(0, 1), faint(1)], 0).ko, false, 'a move first');
+  assert.equal(hurtKoAhead([hurt(1, 'brn'), hurt(1, 'stones'), faint(1)], 0).ko, false, 'its own later hurt KOs');
+  assert.equal(hurtKoAhead([hurt(1, 'block', 0), faint(1)], 0).ko, false, 'a block');
+  assert.equal(hurtKoAhead([mv(0, 1), faint(1)], 0).ko, false, "a move line is koAhead's");
+  assert.equal(koAhead([hurt(1, 'brn'), faint(1)], 0).ko, false, 'koAhead unchanged');
 });

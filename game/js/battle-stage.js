@@ -82,7 +82,7 @@ import {
   smearStretch,
   throwArcEase,
 } from './logic/smear.js';
-import { battlePathAt, hitLook, lineAfterMove } from './logic/battle-anims.js';
+import { battlePathAt, hitLook, hurtKoAhead, lineAfterMove } from './logic/battle-anims.js';
 import { FLOW_CELL_MS, lvlSlot, pyramidRamp, riseShare } from './logic/battle-flow.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
@@ -224,8 +224,11 @@ expose({
   hitStop: [() => hitStop, v => (hitStop = v)],
   hitWeight: [() => hitWeight, v => (hitWeight = v)],
   homeCamera: [() => homeCamera],
+  hurtKoLook: [() => hurtKoLook, v => (hurtKoLook = v)],
+  hurtType: [() => hurtType],
   impactCut: [() => impactCut, v => (impactCut = v)],
   impactFx: [() => impactFx, v => (impactFx = v)],
+  koScars: [() => koScars, v => (koScars = v)],
   lineAfterLook: [() => lineAfterLook, v => (lineAfterLook = v)],
   lungeKind: [() => lungeKind, v => (lungeKind = v)],
   newActorState: [() => newActorState],
@@ -1854,6 +1857,21 @@ function lineAfterLook(ev) {
     i = B && B.events ? B.events.indexOf(ev) : -1;
   return i < 0 ? null : lineAfterMove(B.events, i, MOVES);
 }
+/* VFX-20: koAhead for a hurt line (logic/battle-anims.js hurtKoAhead), on the battle's lines; a preview's line (the
+   Studio, tools/look-battle-anims.py) may carry its own (`ka`) */
+function hurtKoLook(ev) {
+  if (ev && ev.ka) return ev.ka;
+  const B = typeof activeBattle !== 'undefined' ? activeBattle : null,
+    i = B && B.events ? B.events.indexOf(ev) : -1;
+  return i < 0 ? null : hurtKoAhead(B.events, i);
+}
+/* the type a hurt line's KO bursts in: a burn Fire's, stones and the storm Ground's, a spread hit its move's */
+const hurtType = an => (an.fx === 'brn' ? 'Fire' : an.fx === 'stones' || an.fx === 'oil' ? 'Ground' : an.t || 'None');
+/* a KO's extra scars (its tier row's `scar`: the heavy kind), as the runner lays them after a move's hit */
+function koScars(i, L) {
+  if (typeof battleScarAt !== 'function' || !L) return;
+  for (let k = 0; k < (L.scar || 0); k++) battleScarAt(i, { w: 0.3, ko: true });
+}
 /* VFX-13: a drain: motes of the target's life fly to the one draining (battleAnims.json tiers.drain) */
 function drainFx(from, to) {
   const D = BATTLE_ANIMS.tiers && BATTLE_ANIMS.tiers.drain;
@@ -2481,12 +2499,19 @@ export function battleStagePlay(an, ev) {
               k: kk,
             })
           );
+      /* VFX-20: any other hurt line that knocks out (a burn, a spread move's second target, recoil, stones, the storm)
+         lands as a hit of its tier with the KO's look (the last KO's freeze and impact frame too); no number twice:
+         hitFx's pop needs damage and gets none */
+      const ka = an.fx !== 'mail' ? hurtKoLook(ev) : null;
+      if (ka && ka.ko) koScars(an.si, hitFx(an.si, { te: an.te ?? 1, t: hurtType(an) }, null, ka));
       if (an.fx === 'mail') {
         battleStageFocus(actorTeam(an.si) === 0 ? 'me' : 'foe');
         pyramidArc({ x: T.x + 3, y: 4, z: T.z + 2 }, T, 380, MONEY_ICON, C => {
           C.show = false;
           /* VFX-11: it read 'Retail', not a type (the bug list), so it fell back to None's: the delayed move's own */
-          hitFx(an.si, { te: an.te, t: delayedMoveType() }, impactFx(T, 'coin'));
+          /* VFX-20: a delayed hit that knocks out takes the KO's look */
+          const L = hitFx(an.si, { te: an.te, t: delayedMoveType() }, impactFx(T, 'coin'), hurtKoLook(ev));
+          koScars(an.si, L);
         });
         scheduleAt(1000, () => battleStageFocus('wide'));
         return { dur: 900, hit: 400 };

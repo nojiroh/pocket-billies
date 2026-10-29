@@ -78,6 +78,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   hitTier: [() => hitTier, v => (hitTier = v)],
   // @ts-expect-error -- replaced on purpose
+  hurtKoAhead: [() => hurtKoAhead, v => (hurtKoAhead = v)],
+  // @ts-expect-error -- replaced on purpose
   koAhead: [() => koAhead, v => (koAhead = v)],
   // @ts-expect-error -- replaced on purpose
   lineAfterMove: [() => lineAfterMove, v => (lineAfterMove = v)],
@@ -182,6 +184,34 @@ export function koAhead(events, i) {
     if (e.k === 'faint' && (e.si === an.ti || (an.spread && side(e.si) === foe))) si.push(e.si);
   }
   if (!si.length) return { ko: false, si, last: false };
+  let last = true;
+  for (let k = i + 1; k < events.length && last; k++) {
+    const e = events[k].an;
+    if (e && (e.k === 'move' || (e.k === 'enter' && side(e.si) === foe))) last = false;
+  }
+  return { ko: true, si, last };
+}
+
+/** VFX-20: koAhead for a hurt line (a burn, the delayed hit, a spread move's second target, recoil, stones...): its
+ * Billie faints before the next move (or the next hurt line of its own) and whether that is the battle's last KO, in
+ * koAhead's shape. A blocked hit (no damage) never knocks out. koAhead itself reads move lines only (SND-13 reads it)
+ * @param {{ an?: any }[]} events @param {number} i @returns {{ ko: boolean, si: number[], last: boolean }} */
+export function hurtKoAhead(events, i) {
+  const an = events[i] && events[i].an,
+    side = (/** @type {number} */ k) => (k === 1 || k === 3 ? 1 : 0),
+    /** @type {number[]} */ si = [];
+  if (!an || an.k !== 'hurt' || an.si == null || !an.dmg || an.fx === 'block') return { ko: false, si, last: false };
+  for (let j = i + 1; j < events.length; j++) {
+    const e = events[j].an;
+    if (!e) continue;
+    if (e.k === 'move' || (e.k === 'hurt' && e.si === an.si)) break;
+    if (e.k === 'faint' && e.si === an.si) {
+      si.push(an.si);
+      break;
+    }
+  }
+  if (!si.length) return { ko: false, si, last: false };
+  const foe = side(an.si);
   let last = true;
   for (let k = i + 1; k < events.length && last; k++) {
     const e = events[k].an;
