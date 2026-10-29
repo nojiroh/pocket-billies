@@ -1855,7 +1855,7 @@ def music_steps(pg, errs):
     """SND-3: the Music & sound section (studio/js/music-editor.js): a song plays through the game's tracker on the
     Studio's own AudioContext (a real click starts it), the bar playing shows, Stop stops it, and leaving the section
     stops it too (no scheduler left running). SND-10: the Sounds tab's World sounds card plays a water recipe and
-    stops."""
+    stops. VFX-19: the Battle card plays every battle sound and edits one."""
     n = len(errs)
     pg.evaluate("void openSection('music')")
     # the section opens on the tab last used; an earlier step (the full run's) can leave it on Where they play
@@ -1998,6 +1998,27 @@ def music_steps(pg, errs):
     if not until(pg, "Object.keys(musicStudio.scape.P.stats().voices).length===0", 15):
         errs.append(f'music: the World sounds card left {pg.evaluate("JSON.stringify(musicStudio.scape.P.stats().voices)")} playing after Stop')
     if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing a world sound changed the data')
+    # VFX-19: the Battle card: every battle sound's play button starts its voices (tones and noises) through the game's
+    # player (audio/battle-voices.js), as many as its preview lists; a name edited and undone leaves nothing changed
+    r = pg.evaluate("""(() => { const T = musicStudio.tracker || null; const B = studioState.D.music.battle, A = studioState.D.battleAnims;
+      const names = battleSoundNames(B), btns = [...document.querySelectorAll('[data-act=musBattle]')].map(b => b.dataset.k);
+      const out = { names: names.length, btns: btns.length, bad: [] };
+      for (const k of names) { const b = document.querySelector(`summary [data-act=musBattle][data-k="${k}"]`); if (!b) { out.bad.push(k + ' has no button'); continue; }
+        const t = musicStudio.tracker; let n = 0; const fv = t && t.synthVoice, fn = t && t.synthNoise;
+        if (t) { t.synthVoice = (...a) => { n++; return fv(...a); }; t.synthNoise = (...a) => { n++; return fn(...a); }; }
+        b.click(); const T2 = musicStudio.tracker; if (!t) { /* the first click makes the tracker: count from the next */ continue; }
+        t.synthVoice = fv; t.synthNoise = fn;
+        const [g, id] = k.split('.'), F = g === 'families' && A.families[id], want = battleSoundPreview(battleSoundGet(B, k), F && F.hit < 999 ? F.hit / 1000 : 0.3).length;
+        if (n !== want) out.bad.push(`${k} started ${n} voices, not ${want}`); }
+      return out; })()""")
+    if r['names'] < 37 or r['btns'] != r['names'] or r['bad']:
+        errs.append(f"music: the Battle card: {r['names']} sounds, {r['btns']} buttons; {'; '.join(r['bad'][:5])}")
+    pg.evaluate("void (document.querySelector('[data-act=musBattle][data-k=\\'families.charge\\']').closest('details').open = true)")
+    m = pg.locator('#main input[data-p="music.battle.families.charge.name"]')
+    m.fill('a test name'); m.press('Tab')
+    if pg.evaluate("studioState.D.music.battle.families.charge.name") != 'a test name': errs.append('music: the Battle card did not edit a sound\'s name')
+    pg.click('#undoBtn')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: undo did not put the Battle card back')
     # a Billy's cry (the Billies page; SND-6: every stage has one): a new pitch keeps its base and plays the base's
     # notes from it, and its low-HP version a third down; undone, nothing to propose
     pg.evaluate("void openSection('billionaires')")
@@ -2025,7 +2046,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped, every battle sound on the Battle card heard and a name edited and undone; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';

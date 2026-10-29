@@ -231,11 +231,15 @@ town node needs it.
   `claude/vfx-16-battle-flow`: the VS splash for leaders, Blake and bosses inside trainerIn's time, the send-out's
   dither from the feet up and its pyramid's colours, the recall beam, the catch's squash, seal ring and shards, the
   faint and the bots' shed, the level-up's column on the right Billie, an item's pop, victory and defeat; the XP bar
-  and level-up bugs fixed) built 2026-10-28 (PR #319, merged by VFX-13). VFX-17 (signature scenes 1, wave 3, side
+  and level-up bugs fixed) built 2026-10-28 (PR #319, merged by VFX-13). VFX-13 (hit tiers: the tier table as battleAnims.json `tiers` and its Studio pane, resisted, x4, crit, KO and last-KO looks, the last KO's 250 ms freeze, a flurry on the beat, drain, heal and recoil looks, misses per family; Scatter Stones on the foe's side) built 2026-10-28 on `track/vfx`, the main line of wave 3 beside VFX-17 and VFX-19. VFX-17 (signature scenes 1, wave 3, side
   branch `claude/vfx-17-scenes-1`: the batch's storyboards first, then `propWorldItem` and summoned low-poly models
   with Part 1's smears, the drawn stamp (SIU!, KA-CHING!, TOOT!), the cut, 18 scenes (the 12 of power 100+ and 6
   more) at most 0.5 s longer, a short repeat from a scene's second use, its family with 3D props off or under Reduced
-  motion) built 2026-10-28 (PR #324 into `track/vfx`). **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
+  motion) built 2026-10-28 (PR #324 into `track/vfx`, merged by VFX-20).
+  VFX-19 (move sounds: music.json `battle`, a sound per move family layered by type, hurt sounds, the recall, throws
+  and catches with body and echo, the Studio's Battle card, check-sound fingerprints; placeholders until the owner's
+  listening pass) built 2026-10-28 on `claude/vfx-19-move-sounds` (PR #325 into `track/vfx`, merged by VFX-20).
+  **Part 2, battle effects** (the owner's brief and answers 2026-10-27): every move animated
   from data (16 families by type; a scene for each of the 56 signature moves), new pixel effect art, light, hit tiers,
   lasting statuses, the battle's flow with VS intros, battle scars, move sounds and a Studio editor; VFX-6 folds in.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
