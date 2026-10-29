@@ -70,6 +70,7 @@ WEATHER = str(OPT.get('weather') or '')
 # VFX-17: --cells=20 for a longer sheet (a signature scene runs to 1.56 s; 16 cells show 1.2 s); --repeat films a
 # scene's second use in a battle (its short version)
 CELLS = int(OPT.get('cells') or 16)
+QUALITY = int(OPT.get('quality') or 0)
 
 # Math.random seeded from the start (util.js keeps the Math.random it finds when it loads), reseeded per film
 SEEDED = """(()=>{let s=1;window.__seed=n=>{s=(n>>>0)%2147483646+1};Math.random=()=>{s=s*16807%2147483647;return (s-1)/2147483646}})()"""
@@ -140,7 +141,7 @@ __film.lines=(key,L)=>{__film.reset();__seed(__film.hash(key));if(typeof battleL
  for(const x of L){if(!x.at)play(x);else window.setTimeout(()=>play(x),x.at)}return 0};
 __film.startLines=(key,L)=>{__film.vt=performance.now()+1e7;__film.timers=[];__film.k=key;return __film.wrap(()=>__film.lines(key,L))};
 __film.wrap=fn=>{const pn=performance.now,st=window.setTimeout;performance.now=()=>__film.vt;window.setTimeout=(f,ms)=>{__film.timers.push({t:__film.vt+(+ms||0),fn:f});return 0};try{return fn()}finally{performance.now=pn;window.setTimeout=st}};
-__film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);__film.probe(__film.vt)}return 0});
+__film.step=n=>__film.wrap(()=>{for(let i=0;i<n;i++){__film.vt+=16;const T=__film.timers;T.sort((a,b)=>a.t-b.t);while(T.length&&T[0].t<=__film.vt)T.shift().fn();for(const [k,t] of __film.tasks)if(!__film.stageOnly||k==='scene')t.fn(__film.vt,16);__film.probe(__film.vt)}return 0});
 /* VFX-16: a flow moment's film (--flow): the stage call for each moment, with Reduced motion on or off; the battle's
    own Billies (a bot stands in for the foe in faint.bot) */
 __film.flow=(kind,red)=>{if(typeof battleStageOutcome==='undefined'&&(kind==='win'||kind==='lose'))return;const ev={s:activeBattle.events[activeBattle.events.length-1].s},S0=S.s[0],S1=S.s[1];
@@ -163,11 +164,13 @@ __film.flowStart=(key,kind,red)=>{__film.reset();__seed(__film.hash(key));__film
  return __film.wrap(()=>__film.flow(kind,red))};
 /* VFX-9: a film drawn frame by frame with the GPU counters on; rest: frames of the stage at rest first */
 __film.measure=(key,mid,si,res,frames,rest,go)=>{const rn=__film.rnow||(__film.rnow=performance.now.bind(performance)),gl=gpuState.gl,E=PASS_INDEX.effects,
- TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],all:[],restEff:[],restMs:[],st:[]};
+ TI=typeof TAG_INDEX!=='undefined'?TAG_INDEX.battleFx:0;const out={key,eff:[],fx:[],ms:[],all:[],restEff:[],restMs:[],st:[],pa:[],born:[],lt:[],sc:[]};
  /* VFX-10: the instances drawn as strips (the ramp flag, 4) in the frame's pool */
  const strips=()=>{if(typeof battleFxBatch==='undefined')return 0;const B=battleFxBatch;let n=0;for(let i=0;i<B.n;i++)if(B.d[i*BATTLE_FX_FLOATS+20]&4)n++;return n};
  const one=(e,m)=>{countersOn(gl);const t0=rn();for(const [,t] of __film.tasks)t.fn(__film.vt,16);gl.finish();const dt=rn()-t0;const c=gpuCounters.cur;
-  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m){let d=0;for(let p=0;p<c.length/FIELD_COUNT;p++)d+=c[p*FIELD_COUNT+F_DRAW];out.all.push(d);out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);out.st.push(strips())}(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
+  e.push(c[E*FIELD_COUNT+F_DRAW]);if(m){let d=0;for(let p=0;p<c.length/FIELD_COUNT;p++)d+=c[p*FIELD_COUNT+F_DRAW];out.all.push(d);out.fx.push(TI?gpuCounters.tcur[(E*GPU_TAGS.length+TI)*2]:0);out.st.push(strips());
+  /* VFX-20: the budgets: particles alive, made this frame, effect lights (kinds 8-10) and scars on the ground */
+  const P=battleStage.parts;out.pa.push(P.length);out.born.push(P.filter(p=>p.age<=16).length);out.lt.push((battle3d.lights||[]).filter(l=>l.kind>=8).length);out.sc.push(typeof battleScars!=='undefined'?battleScars.list.length:0)}(m?out.ms:out.restMs).push(Math.round(dt*100)/100);countersOff()};
  __film.reset();__film.vt=performance.now()+1e7;__film.timers=[];
  __film.wrap(()=>{for(let i=0;i<rest;i++){__film.vt+=16;one(out.restEff,false)}});
  Object.assign(rigStats,{calls:0,redraws:0,bytes:0,ms:0});
@@ -290,17 +293,22 @@ def measure(pg, moves):
                 ms = sorted(r['ms'])
                 rows[key] = {'allMax': max(r['all'] or [0]), 'effMax': max(r['eff']), 'effMean': mean(r['eff']), 'restEff': mean(r['restEff']),
                              'fxMax': max(r['fx'] or [0]), 'msMean': mean(r['ms']), 'msP90': ms[int(len(ms) * 0.9)],
-                             'restMs': mean(r['restMs']), 'rig': r['rig'], 'stripMax': max(r['st'] or [0])}
+                             'restMs': mean(r['restMs']), 'rig': r['rig'], 'stripMax': max(r['st'] or [0]),
+                             'partsMax': max(r['pa'] or [0]), 'bornMax': max(r['born'] or [0]), 'lightsMax': max(r['lt'] or [0]), 'scarsMax': max(r['sc'] or [0]),
+                             'over33': sum(1 for v in r['ms'] if v > 33)}
                 x = rows[key]
                 print(f"{key:28} frame draws max {x['allMax']:4}  effects draws max {x['effMax']:3} mean {x['effMean']:6} (rest {x['restEff']:5}) battleFx max "
                       f"{x['fxMax']:2}  ms mean {x['msMean']:7} p90 {x['msP90']:7} (rest {x['restMs']:7})  rig redraws "
-                      f"{x['rig']['redraws']:3} {x['rig']['kb']:6} KB  strips max {x['stripMax']:3}", flush=True)
+                      f"{x['rig']['redraws']:3} {x['rig']['kb']:6} KB  strips max {x['stripMax']:3}  particles max {x['partsMax']:3} made a frame {x['bornMax']:3} lights {x['lightsMax']} scars {x['scarsMax']:2}", flush=True)
     (OUT / 'measure.json').write_text(json.dumps(rows, indent=1, sort_keys=True))
     keys = list(rows)
     tot = lambda f: round(sum(f(rows[k]) for k in keys) / max(1, len(keys)), 2)
     print('mean over films: frame draws max', tot(lambda x: x['allMax']), 'effects draws max', tot(lambda x: x['effMax']), 'battleFx max', tot(lambda x: x['fxMax']),
           'ms', tot(lambda x: x['msMean']), 'p90', tot(lambda x: x['msP90']), 'rest ms', tot(lambda x: x['restMs']),
           'rig redraws', tot(lambda x: x['rig']['redraws']), 'KB', tot(lambda x: x['rig']['kb']))
+    big = lambda f: max((f(rows[k]) for k in keys), default=0)
+    print(f"most over films (q{QUALITY}): frame draws {big(lambda x: x['allMax'])}, battleFx draws {big(lambda x: x['fxMax'])}, particles {big(lambda x: x['partsMax'])}, "
+          f"made in a frame {big(lambda x: x['bornMax'])}, effect lights {big(lambda x: x['lightsMax'])}, scars {big(lambda x: x['scarsMax'])}")
 
 
 def bench(pg):
@@ -379,6 +387,8 @@ def main():
         CF.until(pg, RIGS_READY, 60)
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
+        # VFX-20: --quality=N films at the battle's quality N (0-3; the budgets' ladder), else 0
+        if QUALITY: pg.evaluate(f"battleStage.q.lvl={QUALITY};0")
         pg.evaluate(MOTION_JS[MOTION])
         # VFX-20: --flashes=off films with the Flashes setting off (SY-1's flashFor; rule 9)
         if OPT.get('flashes') == 'off': pg.evaluate("saveData.preferences=saveData.preferences||{};saveData.preferences.flashes='off';0")
@@ -396,7 +406,7 @@ def main():
                 if 'sheets' in OPT:
                     sheet(pg, key, '', 1, '', start, every=15)
                 else:
-                    traces[key] = pg.evaluate(f"(()=>{{const out={{key:{json.dumps(key)},trace:[],fs:[],fsk:''}};__film.fsObs.takeRecords();{start};out.t0=__film.vt;__film.fsOut=out;const t0=battleStage.t;for(let i=0;i<240;i++){{__film.step(1);if(i%{EVERY}===0)out.trace.push(__film.snap(t0,__film.vt))}}__film.fsOut=null;delete out.t0;delete out.fsk;return out}})()")
+                    traces[key] = pg.evaluate(f"(()=>{{__film.stageOnly=true;const out={{key:{json.dumps(key)},trace:[],fs:[],fsk:''}};__film.fsObs.takeRecords();{start};out.t0=__film.vt;__film.fsOut=out;const t0=battleStage.t;for(let i=0;i<240;i++){{__film.step(1);if(i%{EVERY}===0)out.trace.push(__film.snap(t0,__film.vt))}}__film.fsOut=null;__film.stageOnly=false;delete out.t0;delete out.fsk;return out}})()")
                 print(key, 'filmed', flush=True)
             if traces: (OUT / 'trace-events.json').write_text(json.dumps(traces, indent=0, sort_keys=True))
         # VFX-16: --flow films the flow moments (--only= picks some), each with motion and under Reduced motion

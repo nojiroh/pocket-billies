@@ -7,7 +7,7 @@ Side branch `claude/vfx-18b-scenes-3` (wave 4, beside VFX-18 on `claude/vfx-18-s
 branch (b34ab164, which had merged `track/vfx` b475bb15); `origin/track/vfx` merged in at b4922c4c (8bc377f5: VFX-17
 and VFX-19 merged, VFX-13's docs, VFX-20's first commits: burstSprites, types.json `fx` and the old 2D effect drawing
 removed; only conflict the generated studio/art-code-refs.json, regenerated), again at 7cdb0bdf (VFX-20's anim log
-line), and VFX-18's finished branch (707a47ab, reported done) merged in: both sides kept (its 19 scenes before mine in
+line) and a9a9686a (VFX-20's event traces; main ed5c6857), and VFX-18's finished branch (707a47ab, reported done) merged in: both sides kept (its 19 scenes before mine in
 `scenes`, its four words before mine in `sprites` and SPRITES, its W in GLYPHS so mine adds only P and D, both
 storyboard sections and rows, both HANDOFF entries; battleAnims.json rebuilt from both sides' additions, nothing else
 differed; the auto-merged battle-anims snapshot equals a remake on the merged data); draft PR #330 into `track/vfx`. Run under
@@ -128,7 +128,7 @@ SY-7's red tape; after pushing, the commit). No sound file touched; VFX-19's sou
   the Retrieval Unit's shield phase (the barriers) on an Expedition; the stamped words read at phone size.
 - Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; `npm test` 1988 of
   1988 before the merges, 1997 of 1997 after track/vfx's 8bc377f5, 2004 of 2004 with track/vfx's 7cdb0bdf and VFX-18 merged
-  (smoke 7 of 7 there too); `build-battle-anims.py --check` (51 sprites); smoke 7 of 7
+  (smoke 7 of 7 there too), and again 2004 of 2004 with smoke 7 of 7 after track/vfx's a9a9686a; `build-battle-anims.py --check` (51 sprites); smoke 7 of 7
   on 19bd5667's tree and again on 959a3fac's. CI smoke on b5c0942f and 19bd5667: red only on "Camera follow ... the
   page stopped drawing" (known; it failed on the docs-only storyboards commit too; noted on the PR).
   Full quick check on the merged head b4922c4c: 37 of 42 in 2005 s. Known or load's: RL-8's seam (never shown), Room
