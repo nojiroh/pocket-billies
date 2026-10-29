@@ -86,7 +86,9 @@ No "Ask me before" item came up. New game is unchanged (IN-5 wires it).
   opening's, `payout` a cutscene's; run-state.test.mjs: `return` loads, `runEnded`), and a new check-fast step,
   "The first run's way back" (`?fixture=run`): the pickup with both clerks, the phase stored at once, a reload plays
   the lab, skipping stops at the dressing room and at the payout (no cards), Done, the end: no run, one more run
-  ended, standing on the lab door's spot.
+  ended, standing on the lab door's spot. The smoke check: its four browser steps pass (the phone flow plays the real
+  opening through the split `cutsceneStart`; palettes; the actions bar; the in-game test's step). Its data step
+  "Unused: art, props and songs" fails on Windows on clean `track/intro` too (a Node tool's POSIX main guard).
 - Next: IN-5 wires New game to the crash and `runStartPrepared`; then the way back plays for real. Swap the clerks
   for IN-3's bots when it merges (above). IN-6: the owner reads the lines on the phone.
 
