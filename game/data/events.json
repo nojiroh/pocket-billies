@@ -167,10 +167,7 @@
     {
      "text": "Like and subscribe",
      "cost": 100,
-     "then": [
-      "The Billie looks right at you and nods. Engagement is up. Your team feels faster for a while.",
-      "fx 1 stat stat=hus stages=1"
-     ]
+     "then": ["The Billie looks right at you and nods. Engagement is up. Your team feels faster for a while.","boon camera_ready"]
     },
     {
      "text": "Overload it with Live Wire",
@@ -207,7 +204,7 @@
    "options": [
     {
      "text": "Accept without reading",
-     "then": ["perk","fx 3 price what=shop mult=1.25","Founder: Great! You also agreed to surge pricing. For three places."]
+     "then": ["perk","curse surge_pricing","Founder: Great! You also agreed to surge pricing. For three places."]
     },
     {
      "text": "Read all 400 pages",
@@ -401,11 +398,7 @@
     {"text":"Throw him a rope","then":["It takes a while, and your team is tired after. He tips.","hurt 0.1","money 100"]},
     {
      "text": "Walk away",
-     "then": [
-      "Surveyor: I am filing a complaint! Form 9-C!",
-      "The next clinics will hear about this.",
-      "fx 2 price what=heal mult=1.5"
-     ]
+     "then": ["Surveyor: I am filing a complaint! Form 9-C!","The next clinics will hear about this.","curse clinic_backlog"]
     }
    ],
    "weight": 1,
@@ -417,10 +410,7 @@
    "title": "Motivational Poster Grove",
    "intro": ["Every tree here has a poster nailed to it. HANG IN THERE. HUSTLE. THE GRIND IS THE REWARD."],
    "options": [
-    {
-     "text": "Read them all",
-     "then": ["Your team reads every one. They are furious, and it helps.","fx 1 stat stat=lev stages=1"]
-    },
+    {"text":"Read them all","then":["Your team reads every one. They are furious, and it helps.","boon fired_up"]},
     {
      "text": "Let Regrowth grow over them",
      "need": "type:Grass",

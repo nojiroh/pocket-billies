@@ -255,3 +255,22 @@ test('PK-9 a run in progress loads: validRun takes an event’s own rows (before
   assert.equal(V(r), true);
   assert.ok(fn('fxOfRun')(r, data.PERKS).every(f => f.src !== 'boon:gone_boon'));
 });
+
+test('PK-9 the four events name their boons and curses, with the rows and places they had', () => {
+  const E = GAME_DATA.events.events,
+    B = GAME_DATA.boons,
+    lines = id => E[id].options.flatMap(o => o.then);
+  for (const [ev, cmd, places, fx] of [
+    ['ring_light', 'boon camera_ready', 1, [{ kind: 'stat', stat: 'hus', stages: 1 }]],
+    ['terms_of_service', 'curse surge_pricing', 3, [{ kind: 'price', what: 'shop', mult: 1.25 }]],
+    ['surveyor_hole', 'curse clinic_backlog', 2, [{ kind: 'price', what: 'heal', mult: 1.5 }]],
+    ['poster_grove', 'boon fired_up', 1, [{ kind: 'stat', stat: 'lev', stages: 1 }]],
+  ]) {
+    assert.ok(lines(ev).includes(cmd), `${ev}: ${cmd}`);
+    assert.ok(!lines(ev).some(l => /^fx /.test(l)), `${ev}: no unnamed row left`);
+    const id = cmd.split(' ')[1];
+    assert.equal(B[id].places, places, id);
+    assert.deepEqual(B[id].fx, fx, id);
+    assert.equal(!!B[id].curse, cmd.startsWith('curse'), id);
+  }
+});

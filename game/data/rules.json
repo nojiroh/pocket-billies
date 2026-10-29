@@ -336,10 +336,7 @@
     {
      "id": "boon_money",
      "w": 19,
-     "fx": [
-      {"kind":"money","mult":1.1}
-     ],
-     "places": 3,
+     "boon": "glittering_water",
      "say": ["Plink! The water glitters. Your next run’s first places pay a little more."]
     },
     {
@@ -351,10 +348,7 @@
     {
      "id": "boon_catch",
      "w": 18,
-     "fx": [
-      {"kind":"catch","mult":1.05}
-     ],
-     "places": 3,
+     "boon": "lucky_ripples",
      "say": ["Lucky ripples. Pyramids fly a little truer in your next run’s first places."]
     },
     {
@@ -370,10 +364,7 @@
     {
      "id": "curse",
      "w": 10,
-     "fx": [
-      {"kind":"price","what":"shop","mult":1.1}
-     ],
-     "places": 2,
+     "boon": "stamped_insufficient",
      "say": ["The coin bobs back up, stamped “Insufficient”. Shops charge a little more in your next run’s first two places."]
     },
     {

@@ -474,7 +474,11 @@ export function dataSquareRules(D) {
         const at = `square.wish.outcomes[${i}]`;
         if (!o || typeof o !== 'object') return problem(`${at}: not an outcome`);
         for (const k of Object.keys(o))
-          if (!['id', 'w', 'say', 'fx', 'places', 'give', 'pay'].includes(k)) problem(`${at}.${k}: no such rule`);
+          if (!['id', 'w', 'say', 'boon', 'fx', 'places', 'give', 'pay'].includes(k))
+            problem(`${at}.${k}: no such rule`);
+        /* PK-9: a boon or curse of boons.json for the next run's first places */
+        if (o.boon != null && !(typeof o.boon === 'string' && D.boons && D.boons[o.boon]))
+          problem(`${at}.boon: no boon or curse "${o.boon}" (boons.json)`);
         if (!/^[a-z0-9_]{1,32}$/.test(o.id || '') || O.findIndex((/** @type {any} */ q) => q && q.id === o.id) !== i)
           problem(`${at}.id: an id of its own (a-z, 0-9, _)`);
         if (!(typeof o.w === 'number' && o.w > 0)) problem(`${at}.w: a weight above 0`);
