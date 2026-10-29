@@ -221,6 +221,12 @@ Both terrain lanes and the vegetation lane meet here, so no lane waits on anothe
 ## 5. Sessions
 
 ### Wave 1 (parallel, all at once)
+Each lane is its own session in its own worktree, cut from `track/assets`, on a branch `claude/as-<n>-<words>`,
+ending in a draft PR into `track/assets` (not main). Its brief is one line: "You are lane AS-<n> of
+docs/phases/assets-track.md: read CLAUDE.md, VISION, ART 'The style', this file's sections 1, 1.1, 2, 5 AS-<n>, 6, 7,
+9, 10 and the newest HANDOFF entry, then plan and build on your own". Before any edit it checks its branch, makes its
+"before" pictures (section 10), and never edits another lane's files (section 6).
+
 
 #### AS-1 The sky train's ride looks right
 - **Windows:** a moving prop's windows are seeded by its own key (the placement id) and the windows' model-space
@@ -371,7 +377,8 @@ golden snapshots and the rng hash.
 - **The perf gate** (`tools/check-perf.py`, +10% draws or memory against `validation/perf-baseline.json`) will go red
   when the vegetation and routes change on purpose: rewrite it with `--baseline` in the lane that changes it and say
   why in HANDOFF.
-- **Windows PCs:** `python3` is the Store stub on the owner's PC; use `python`. Two unit tests (check-data-snapshot's
+- **Windows PCs:** `python3` is the Store stub on the owner's PC; use `python`. If `git push` hangs (the Windows credential
+  manager's prompt), push with `git -c credential.helper= -c "credential.helper=!gh auth git-credential" push`. Two unit tests (check-data-snapshot's
   symlinks, data-rigs' and faces' paths) fail on Windows on main too; CI runs them.
 
 ## 10. Pictures and numbers: how each lane checks itself
