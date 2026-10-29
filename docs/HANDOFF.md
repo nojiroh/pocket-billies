@@ -58,7 +58,7 @@ sees changes. No "Ask me before" item came up: the scene grew only by section 5'
   for a whole run. A reload in a build step leaves the place as shipped on the next tap (the scene is rebuilt).
 - Verified: lint, typecheck, check:modules (582 names), format:check, check:data (183 files), build. `npm test` 2,347
   pass (one failed first: the Studio worker's module list, fixed). Smoke 7 of 7 in 493 s. The walking-rules step:
-  33 test scenes, 89 checks, 24 bench segments walk. Full quick check: running at the time of writing (RL-8 failed, as on main).
+  33 test scenes, 89 checks, 24 bench segments walk. Full quick check: 38 of 42 in 4,355 s; the four failing are main's, recorded in earlier entries: RL-8's seam, room light, the lab's room at its door, Battle music (the timing flake).
 - Next: TD-3 (the same path headless, and the gates) on `track/test-data`, started automatically in a new session.
 - For the owner on the phone: debug menu → Graphics test. Untick groups to about 15 minutes (the time-of-day looks
   are about 4 min each) and run it on Firefox with Beautiful. If the page reloads, tap Graphics test again: it should
