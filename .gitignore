@@ -72,4 +72,5 @@ game/data/gamedata.js
 validation/st1/
 validation/terrain-look/
 validation/load/
+validation/perf/
 validation/look-talk*/
