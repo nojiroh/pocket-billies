@@ -7,7 +7,7 @@ exports[`check-data: planted arenas (WM-7) 1`] = `
 `;
 
 exports[`check-data: planted battle animations (VFX-8) 1`] = `
-"  warning: maps/copperleaf.json: Scene Copperleaf Town: bridge 3 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  warning: maps/test_props_island.json: Scene Test: the island props (island track IS-4): bridge 1 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  battleAnims.json: defaults.H: no family \\"nosuchfamily\\"\\n  battleAnims.json: families.legacy_hit.steps[1].color: no colour \\"nosuchcolour\\" in colors\\n  battleAnims.json: families.legacy_cast.steps[2].types: no type \\"Nosuchtype\\" (types.json)\\n  battleAnims.json: families.legacy_guard: hits at 900 ms, after its 700 ms\\n  moves.json: handshake.anim: \\"nosuchscene\\" is no family or scene (battleAnims.json)\\ngame data: 5 problem(s) in 179 files\\n(exit 1)"
+"  warning: maps/copperleaf.json: Scene Copperleaf Town: bridge 3 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  warning: maps/test_props_island.json: Scene Test: the island props (island track IS-4): bridge 1 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  battleAnims.json: defaults.H: no family \\"nosuchfamily\\"\\n  battleAnims.json: families.strike.steps[1].color: no colour \\"nosuchcolour\\" in colors\\n  battleAnims.json: families.shot.steps[2].types: no type \\"Nosuchtype\\" (types.json)\\n  battleAnims.json: families.guard: hits at 900 ms, after its 700 ms\\n  moves.json: handshake.anim: \\"nosuchscene\\" is no family or scene (battleAnims.json)\\ngame data: 5 problem(s) in 179 files\\n(exit 1)"
 `;
 
 exports[`check-data: planted battle effect budgets (VFX-12) 1`] = `
