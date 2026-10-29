@@ -615,7 +615,7 @@
   }
  },
  "clothes": {
-  "note": "CH-5b: each wardrobe item's clothes on the figure (logic/figure-kit.js lookFigure). Knobs for the body's own parts: a top's `sleeves` (none, short, long); an outer's `covers` (false: the arms and collar show, the apron), `puff` (its sleeves' bulk), `open` (a front shows: the flair's lapels) and `long` (to the knees: no belt, the flair's tails); a bottom's `legs` (full, shorts, skirt), `fit` (the legs' width) and `belt` (false: none); shoes' `length` (the foot's), `flat` (a sandal: bare feet on a sole), `boot` (up the shin) and `sole` (1: the item's second colour, else dark). `stripe` paints stripes round a part. `use` adds pieces' rows and marks first. Rows are shapes as in accessories, added at their `stage` (torso: after the torso; shell: after the legs; details, the default: after neckwear and bags), left out when their `when` frame value is 0 (or with !, when it isn't). `marks` are painted on a part (buttons, pockets, a zip). An item with no entry dresses as tee, trousers, or with nothing for an outer or shoes.",
+  "note": "CH-5b: each wardrobe item's clothes on the figure (logic/figure-kit.js lookFigure). Knobs for the body's own parts: a top's sleeves (none, short, long); an outer's covers (false: the arms and collar show, the apron), puff (its sleeves' bulk), open (a front shows: the flair's lapels) and long (to the knees: no belt, the flair's tails); a bottom's legs (full, shorts, skirt), fit (the legs' width) and belt (false: none); shoes' length (the foot's), flat (a sandal: bare feet on a sole), boot (up the shin) and sole (1: the item's second colour, else dark). stripe paints stripes round a part. use adds pieces' rows and marks first. Rows are shapes as in accessories, added at their stage (torso: after the torso; shell: after the legs; details, the default: after neckwear and bags), left out when their when frame value is 0 (or with !, when it isn't). marks are painted on a part (buttons, pockets, a zip). An item with no entry dresses as tee, trousers, or with nothing for an outer or shoes.",
   "tee": {"use":["collar"]},
   "tee_stripe": {
    "use": ["collar"],
@@ -1057,7 +1057,7 @@
   "sandals": {"flat":true}
  },
  "pieces": {
-  "note": "CH-5b: rows and marks many garments share (a garment's `use`)",
+  "note": "CH-5b: rows and marks many garments share (a garment's use)",
   "collar": {
    "rows": [
     {
