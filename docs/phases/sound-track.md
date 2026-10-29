@@ -706,7 +706,7 @@ Water and nature, synthesized:
 | SND-12 (part 1 and SND-12b done 2026-10-28; SND-12c done 2026-10-29) | Arrangements | A/B forms of 16-32 bars (`prog` loses its fixed 8), fills, new lines; every song re-voiced as named placeholders, in batches the owner approves (part 1: the forms and batch 1, the hub, the route, towns) | SND-11 | the songs rewritten |
 | SND-14 (done 2026-10-28) | Nature and weather | rain by intensity (a wash, patter, roofs), thunder by a bolt counter and distance (not the visual flash), wind and gusts, leaves, birds by biome and hour (a dawn chorus), insects, frogs, fire, footsteps by surface, town life instead of a murmur, room tones | SND-10 | none |
 | SND-15 (done 2026-10-29) | Mix and phone pass | about −18 LUFS through the master, the compressor and a limiter; ducking (jingles, cries, talk); slider defaults; the owner's phone; Studio polish | all | as needed |
-| SND-16 (optional) | Effects pass | sounds for things that have none: the airship's engine, the sky train and its rail, the world map, steam vents, wells. Battle sounds (moves, hits, throws, catches, hurt sounds, the recall) are the VFX track's VFX-19, on this track's tools (agreed 2026-10-28, "How the sessions run") | SND-9 | the effects |
+| SND-16 (optional) | Effects pass | sounds for things that have none: the airship's engine, the sky train and its rail, the world map, steam vents, wells. Battle sounds (moves, hits, throws, catches, hurt sounds, the recall) are the VFX track's VFX-19, on this track's tools (agreed 2026-10-28, "How the sessions run"); and (the VFX track's wishes, 2026-10-29) battle scenes with their own sound (section "SND-16: scene sounds") | SND-9 | the effects |
 
 SND-17 needs only SND-11's instruments, so the jingles come early. SND-13 may come before SND-12 (layers work on the
 first ensembles; arrangements are long and go in batches), and the world (SND-10, SND-14) and music (SND-11..SND-13)
@@ -1858,6 +1858,20 @@ TABLE_AFTER
 
 **Not done here**: VFX-19's battle sounds (not on main yet: the report's effect rows and true peaks will show where
 they sit); per-song trims from the phone pass; SND-16.
+
+## SND-16: scene sounds (the VFX track's wishes, recorded 2026-10-29; optional, waits for the owner)
+Today every battle scene plays its family's sound: VFX-19 reads `scenes.<id>.family`. A music.json `battle.scenes` key
+would be the place for a scene's own sound. Scenes that would like one: CUDA Call (fans spinning up), Per Minute (a
+clock's tick), Smart Contract (a lock's click), Sunday Red (a club's swing and a ball dropping in), Shuffle Play (a
+record skip), Ship Direct (a doorbell), Gives Wings (a can), One-handed Backhand (a racket), Cyclone (a whoosh),
+Fifteen Seconds (a short tune), the Retrieval Unit boss's shield phase (barriers slamming up). Also new and optional:
+logic/battle-anims.js `hurtKoAhead(events, i)` (koAhead's shape), for hurt lines that knock out, if SND-13's intensity
+wants it.
+
+**For whoever tunes VFX-19's battle sounds through SND-15's chain** (the VFX track's note): if the loudest layered hits
+(super4, a crit and a KO on top of a family) meet the limiter, lower those voices' `vol` in music.json `battle`, not
+`mix.sfx`, so the families keep their balance and the other effects their level. The loudness report's effect rows
+list every battle sound with its true peak (since SND-15).
 
 ## Ask me before (Part 2; the first four before SND-8a)
 Since the owner's standing instruction (2026-10-27, "How the sessions run"), each session takes the recommended
