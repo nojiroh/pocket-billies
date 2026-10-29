@@ -150,12 +150,14 @@ expose({
   playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
   runArriveSound: [() => runArriveSound, v => (runArriveSound = v)],
   soundBedDuck: [() => soundBedDuck, v => (soundBedDuck = v)],
+  soundChainSample: [() => soundChainSample, v => (soundChainSample = v)],
   soundDebugLines: [() => soundDebugLines, v => (soundDebugLines = v)],
   soundDuck: [() => soundDuck, v => (soundDuck = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
   soundLog: [() => soundLog, v => (soundLog = v)],
+  soundMixLine: [() => soundMixLine, v => (soundMixLine = v)],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   soundPreferences: [() => soundPreferences],
   soundSessionApply: [() => soundSessionApply, v => ((soundSessionApply = v), provide({ soundSessionApply }))],
@@ -593,6 +595,7 @@ export function musicVariant(name, night) {
 setInterval(() => {
   try {
     musicSync();
+    soundChainSample();
   } catch (e) {}
 }, 1000);
 /* a short tune that plays once (victory, level up, evolution), after which the place's music comes back */
@@ -1553,6 +1556,40 @@ export function soundDebugLines() {
     /* SND-11: the music's ensemble: which one the song names, whether it plays (or gb: GB Sounds, its notes not baked
        yet), GB Sounds, the songs made ready on arrival */
     ensemble: musicEnsembleLine(),
+    /* SND-15: the master chain, the buses' levels, the ducks and the audio session */
+    mix: soundMixLine(),
+  };
+}
+/* SND-15: once a second, the most each stage of the master chain has cut this minute (dB) */
+function soundChainSample() {
+  const ch = soundEngine.chain;
+  if (!ch || !soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
+  const r = ch.reduction(),
+    m = soundEngine.chainMost || { glue: 0, limit: 0, at: performance.now() };
+  if (performance.now() - m.at > 60000) Object.assign(m, { glue: 0, limit: 0, at: performance.now() });
+  m.glue = Math.min(m.glue, r.glue);
+  m.limit = Math.min(m.limit, r.limit);
+  soundEngine.chainMost = m;
+}
+/* SND-15: the debug log's mix line: each stage's cut now and the most this minute (dB), each bus's gain (its slider
+   squared times the mix's trim), the ducks so far by kind and those under way, and how the page plays (iPhones:
+   navigator.audioSession, the silent switch) */
+function soundMixLine() {
+  const ch = soundEngine.chain,
+    T = soundEngine.tracker,
+    L = soundLevels(soundPreferences(), MUSIC.mix),
+    B = soundEngine.bedsDucker,
+    M = soundEngine.chainMost,
+    AS = typeof navigator !== 'undefined' ? /** @type {any} */ (navigator).audioSession : null;
+  return {
+    cut: ch ? ch.reduction() : null,
+    cutMost: M ? { glue: M.glue, limit: M.limit } : null,
+    makeup: MUSIC.mix && MUSIC.mix.makeup,
+    levels: Object.fromEntries(Object.entries(L).map(([k, v]) => [k, Math.round(v * 1000) / 1000])),
+    ducks: { music: T && T.ducker ? T.ducker.count : null, beds: B ? B.count : null },
+    ducking: { music: T && T.ducker ? T.ducker.live() : [], beds: B ? B.live() : [] },
+    session: AS ? AS.type : 'none',
+    playSilenced: !!soundPreferences().playSilenced,
   };
 }
 /* SND-11: the debug log's ensemble line (no save data: the song's and ensemble's ids, on or off) */
