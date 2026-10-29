@@ -11,7 +11,7 @@ exports[`check-data: planted battle animations (VFX-8) 1`] = `
 `;
 
 exports[`check-data: planted battle effect budgets (VFX-12) 1`] = `
-"  warning: maps/copperleaf.json: Scene Copperleaf Town: bridge 3 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  warning: maps/test_props_island.json: Scene Test: the island props (island track IS-4): bridge 1 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  battleAnims.json: budgets.particles: quality 2 allows more (300) than quality 1\\n  battleAnims.json: budgets.burst: quality 3 allows more (60) than quality 2\\n  battleAnims.json: budgets.burst: 60 at quality 3, more than the pool\\ngame data: 3 problem(s) in 179 files\\n(exit 1)"
+"  warning: maps/copperleaf.json: Scene Copperleaf Town: bridge 3 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  warning: maps/test_props_island.json: Scene Test: the island props (island track IS-4): bridge 1 ends in the water, so nobody can step onto it. Drag it from bank to bank.\\n  battleAnims.json: budgets.particles: quality 2 allows more (300) than quality 1\\n  battleAnims.json: budgets.burst: quality 3 allows more (60) than quality 2\\n  battleAnims.json: budgets.burst: 60 at quality 3, more than the pool\\ngame data: 3 problem(s) in 180 files\\n(exit 1)"
 `;
 
 exports[`check-data: planted bosses (RL-14b) 1`] = `
