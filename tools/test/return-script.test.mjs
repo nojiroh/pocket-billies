@@ -84,7 +84,7 @@ test('the pickup: two Bureau clerks run up, the stamp, the square portal, won or
     const S = story(id),
       said = await play(S.script, 'story:' + id);
     assert.deepEqual(said, SAID[id], id);
-    assert.equal(S.who, 'intake');
+    assert.equal(S.who, 'bureau_clerk_a');
     assert.deepEqual(
       said.filter(s => s.cmd).map(s => s.cmd),
       ['camera run-up', 'walk Intake beside me', 'walk Outtake beside me', 'portal'],
@@ -99,8 +99,9 @@ test('the pickup: two Bureau clerks run up, the stamp, the square portal, won or
       `${id} stamps ${stamp}`
     );
     /* both clerks speak in the Bureau's bubble, the one that takes stamps */
-    for (const who of ['intake', 'outtake']) assert.equal(talkSkinOf(GAME_DATA.talkSkins, who), 'bureau', who);
-    assert.ok(GAME_DATA.people.intake && GAME_DATA.people.outtake, 'the clerks are people with a look');
+    for (const who of ['bureau_clerk_a', 'bureau_clerk_b'])
+      assert.equal(talkSkinOf(GAME_DATA.talkSkins, who), 'bureau', who);
+    assert.ok(GAME_DATA.people.bureau_clerk_a && GAME_DATA.people.bureau_clerk_b, 'the clerks are people with a look');
   }
 });
 

@@ -1,0 +1,63 @@
+[
+ {
+  "who": "chosen",
+  "expr": "surprised",
+  "text": "You’re awake! Good. I was going to carry you, but I’m more of a leader than a lifter."
+ },
+ {
+  "who": "kappi",
+  "expr": null,
+  "text": "Don’t sit up too fast. The train came down, and everyone walked away from it. Even the train, nearly."
+ },
+ {
+  "who": "chosen",
+  "expr": null,
+  "text": "Do you remember your name? No? Don’t worry. Mine came to me in a dream. It was “Chosen”."
+ },
+ {
+  "who": "kappi",
+  "expr": null,
+  "text": "Just before we hit, there was a square of light on the rails ahead. Square. Nobody else saw it."
+ },
+ {
+  "who": "chosen",
+  "expr": "happy",
+  "text": "I saw it. I see everything. Right now I see that we need a plan."
+ },
+ {
+  "who": "chosen",
+  "expr": null,
+  "text": "The cargo held three Billies. Every hero needs a companion. Not me, obviously. You."
+ },
+ {
+  "cmd": "throw-coins"
+ },
+ {
+  "who": "chosen",
+  "expr": null,
+  "text": "Three Billies, three types. Each one beats one of the others. Choose wisely. Like I would."
+ },
+ {
+  "cmd": "pick-starter"
+ },
+ {
+  "who": "chosen",
+  "expr": "happy",
+  "text": "Emberox! Bold. I’d have picked that one too. I didn’t. But I would have."
+ },
+ {
+  "who": "kappi",
+  "expr": null,
+  "text": "The cargo had five pyramids and a potion too. Take them. A tired wild Billie is easier to keep."
+ },
+ {
+  "who": "kappi",
+  "expr": null,
+  "text": "The station’s rescue beacon is at the far end of this valley. The arrows at the edge point the way."
+ },
+ {
+  "who": "chosen",
+  "expr": "happy",
+  "text": "We’ll guard the wreck. Bravely. From here."
+ }
+]

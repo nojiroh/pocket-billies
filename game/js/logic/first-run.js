@@ -16,6 +16,7 @@
 import { expose } from '../test-globals.js';
 import { FIRST_RUN, MAPGEN_VERSION, encOf } from '../hooks.js';
 import { turnedPoint } from './prop-turn.js';
+import { rivalRunStart } from './rival.js';
 import { newRun } from './run-state.js';
 import { runForecastDays, runMapGrid, runReveal, runRevealAll } from './run-map.js';
 /* eslint-disable no-func-assign */
@@ -25,6 +26,8 @@ expose({
   firstRunBoss: [() => firstRunBoss, v => (firstRunBoss = v)],
   // @ts-expect-error -- replaced on purpose
   firstRunCrash: [() => firstRunCrash, v => (firstRunCrash = v)],
+  // @ts-expect-error -- replaced on purpose
+  firstRunCutscene: [() => firstRunCutscene, v => (firstRunCutscene = v)],
   // @ts-expect-error -- replaced on purpose
   firstRunEvents: [() => firstRunEvents, v => (firstRunEvents = v)],
   firstRunLine: [() => firstRunLine],
@@ -45,6 +48,8 @@ expose({
   firstRunRows: [() => firstRunRows, v => (firstRunRows = v)],
   // @ts-expect-error -- replaced on purpose
   firstRunSpots: [() => firstRunSpots, v => (firstRunSpots = v)],
+  // @ts-expect-error -- replaced on purpose
+  firstRunStarter: [() => firstRunStarter, v => (firstRunStarter = v)],
   firstRunStock: [() => firstRunStock],
   firstRunTeam: [() => firstRunTeam],
   firstRunTrainers: [() => firstRunTrainers],
@@ -232,6 +237,78 @@ export function firstRunCrash(scene, F = FIRST_RUN) {
   scene.props = scene.props.filter((/** @type {any} */ p) => p === m || p.act || !near(p));
   scene.props.push(...put);
   return put;
+}
+
+/** IN-5: the crash cutscene (game/data/cutscenes/crash.json, `landing`) laid on the landing's scene: its spots and its
+ * shots' eye and target, written as metres from the mast, turned as the mast is into the scene's metres; its map the
+ * landing's own (the view it is mounted in may hold more). Null when the scene has no mast
+ * @param {any} C the cutscene's file @param {any} scene @param {string} mapId @returns {any} */
+export function firstRunCutscene(C, scene, mapId) {
+  const m = firstRunMast(scene);
+  if (!m || !C) return null;
+  const r2 = (/** @type {number} */ v) => Math.round(v * 100) / 100,
+    P = (/** @type {number[]} */ p) => {
+      const [x, z] = turnedPoint(m, p[0], p[1]);
+      return [r2(x), r2(z)];
+    },
+    P3 = (/** @type {number[]} */ p) => {
+      const [x, z] = P([p[0], p[2]]);
+      return [x, p[1], z];
+    };
+  /* what is cleared while filming: an area turned with the mast is no longer square to the map, so it clears the
+     square round its four turned corners; the eyes are points */
+  const K = C.clear,
+    box = (/** @type {number[]} */ [a, b, c, d]) => {
+      const q = [P([a, b]), P([c, b]), P([a, d]), P([c, d])];
+      return [
+        Math.min(...q.map(v => v[0])),
+        Math.min(...q.map(v => v[1])),
+        Math.max(...q.map(v => v[0])),
+        Math.max(...q.map(v => v[1])),
+      ];
+    },
+    clear = K
+      ? {
+          ...K,
+          ...(K.areas ? { areas: K.areas.map(box) } : {}),
+          ...(K.eyes ? { eyes: K.eyes.map(P) } : {}),
+        }
+      : undefined;
+  return {
+    ...C,
+    map: mapId,
+    ...(clear ? { clear } : {}),
+    spots: Object.fromEntries(Object.entries(C.spots || {}).map(([k, p]) => [k, P(/** @type {number[]} */ (p))])),
+    shots: Object.fromEntries(
+      Object.entries(C.shots || {}).map(([k, s]) => [
+        k,
+        { .../** @type {any} */ (s), eye: P3(/** @type {any} */ (s).eye), tgt: P3(/** @type {any} */ (s).tgt) },
+      ])
+    ),
+  };
+}
+
+/** IN-5: the starter picked in the crash scene takes the place of the stand-in New game started the run with: the
+ * same uid (so the run's home, the buddy and the hub's snapshot still name it), the run's lead (its rival's counter,
+ * which the counter lane's wild Billies follow: firstRunPool) and the dex. `m` is the picked Billie, made by the page
+ * (logic/rules.js makeBilly). Returns the Billie it replaced, or null when there was no run or nobody to replace
+ * @param {any} s the save @param {any} m @param {string} line the starter's line */
+export function firstRunStarter(s, m, line) {
+  const run = s && s.run,
+    old = s && s.team && s.team[0];
+  if (!run || !old) return null;
+  m.uid = old.uid;
+  s.team[0] = m;
+  s.buddy = m.uid;
+  s.starter = line;
+  if (s.caught) s.caught[m.sp] = 1;
+  if (s.seen) s.seen[m.sp] = 1;
+  if (run.start && Array.isArray(run.start.team))
+    run.start.team = run.start.team.map((/** @type {any} */ x) =>
+      x.uid === m.uid ? JSON.parse(JSON.stringify(m)) : x
+    );
+  run.rival = rivalRunStart(m.sp, s.meta && s.meta.history);
+  return old;
 }
 
 /**

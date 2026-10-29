@@ -60,7 +60,9 @@ BLUR_CEILING = {}
 # Guide 39 -> 40 in PK-12: the Field Guide's fourth tab, Perks (perks-track.md section 9)
 # DL-4: dialogue, a stack of three bubbles over the walk (20 at DL-4: the walk's 14 and the bubbles, each older one a
 # single piece)
-ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 29, 'guide': 40, 'profile': 55, 'shop': 66, 'battle': 23, 'dialogue': 20}
+# IN-5: map 25 -> 29: New game now plays the first run before the hub, so the phone flow reaches the map tab with a run
+# ended, and its header shows what runs brought home (map-tab.js: Research and Scrap chips once meta.runs > 0)
+ELEMENT_CEILING = {'walk': 18, 'map': 29, 'team': 29, 'guide': 40, 'profile': 55, 'shop': 66, 'battle': 23, 'dialogue': 20}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
@@ -1083,26 +1085,41 @@ def palettes_step(P):
     return f'{sum(seen.values())} texts read over 6 looks x 4 screens; none under 3:1; {len(under)} under AA (a note)'
 
 
-@step('Phone: opening, the station, screens and a battle', 260)
+@step('Phone: the crash, the first run’s way back, the station, screens and a battle', 360)
 def phone_flow(P):
     pg, R = P.pg, P.R
     pg.click('[data-a=intro]')
-    if not until(pg, 'cutscene.on', 15): raise Exception('the opening cutscene didn’t start')
+    if not until(pg, 'cutscene.on', 60): raise Exception('the crash scene didn’t start')
+    # IN-5: New game is the cold open: a save with a stand-in starter, the prepared first run (run.first), and the crash
+    # scene on its landing (cutscenes/crash.json, filmed on the landing); the pick is the crash's
+    if not pg.evaluate("!!saveData.run&&saveData.run.first===true&&saveData.run.at.phase==='crash'"): raise Exception('New game didn’t start the prepared run: ' + str(pg.evaluate("saveData.run&&[saveData.run.first,saveData.run.at.phase]")))
     skip = "cutscene.say&&cutscene.say.tap();cutscene.skip||skipCutscene()"
-    if not until(pg, 'dressingRoom.on', 60, skip): raise Exception('never reached the dressing room')
-    pg.click('[data-a=dr-preset][data-i="2"]'); pg.fill('#drName', 'Checker'); pg.click('[data-a=dr-save]')
-    if not until(pg, 'cutscene.choosing', 60, skip): raise Exception('never reached the starter picker')
-    shot(pg, 'phone-opening-pick')
+    if not until(pg, 'cutscene.choosing', 90, skip): raise Exception('never reached the starter picker at the crash')
+    if not pg.evaluate("!!(cutscene.set&&cutscene.set.landing)"): raise Exception('the starter pick isn’t the crash scene’s')
+    shot(pg, 'phone-crash-pick')
     pg.click('[data-a=cs-next]'); ui(pg); pg.click('[data-a=cs-choose]'); pg.click('[data-a=cs-yes]')
-    if not until(pg, 'saveData.started', 40, skip): raise Exception('the game didn’t start after picking a starter')
+    if not until(pg, "!cutscene.on&&!!saveData.run&&saveData.run.at.phase==='walk'", 60, skip): raise Exception('the run didn’t start after the crash: ' + str(pg.evaluate("[cutscene.on,saveData.run&&saveData.run.at.phase]")))
+    R['crash'] = pg.evaluate("[saveData.starter,saveData.team.length,saveData.team[0].sp,saveData.se,saveData.pyramids.pyramid,saveData.items.potion,!!saveData.caught[saveData.team[0].sp]]")
+    if R['crash'][2] != R['crash'][0] + '0' or R['crash'][1] != 1 or not R['crash'][6]: raise Exception(f'the picked starter isn’t the one on the run: {R["crash"]}')
+    if R['crash'][3:6] != [0, 5, 1]: raise Exception(f'the crash’s gift is {R["crash"][3:6]} (Moneys, Pyramids, Potions), not 0, 5 and 1')
+    # the first run's end, lost: the Bureau's pickup where it ended, the fall from its portal, the lab scene (IN-4)
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();runOver(false);0")
+    if not until(pg, "storyRun.on&&storyRun.id==='story:pickup-lost'", 30): raise Exception('the first run’s end didn’t play the pickup: ' + str(pg.evaluate("[storyRun.id,saveData.run&&saveData.run.at.phase]")))
+    pick = "storyRun.control&&(storyRun.control.skipping=true),talkBox.cur&&talkBox.cur.done(),0"
+    if not until(pg, "typeof cutscene!=='undefined'&&cutscene.on&&cutscene.back", 40, pick): raise Exception('the way back never took the screen')
+    if not until(pg, 'dressingRoom.on', 90, skip): raise Exception('the lab scene never reached the dressing room')
+    pg.click('[data-a=dr-preset][data-i="2"]'); pg.fill('#drName', 'Checker'); pg.click('[data-a=dr-save]')
+    if not until(pg, "!!uiState.modal&&uiState.modal.cls==='run-payout'&&!!document.querySelector('#ov pb-payout')", 40, skip): raise Exception('no payout sheet in the lab scene')
+    shot(pg, 'phone-lab-payout')
+    pg.evaluate("document.querySelector('#ov [data-a=mb]').click();0")
+    if not until(pg, "!saveData.run&&saveData.meta.runs===1&&!cutscene.on", 60, skip): raise Exception('the lab scene didn’t finish the first run: ' + str(pg.evaluate("[!!saveData.run,saveData.meta.runs,cutscene.on]")))
     R['opening'] = pg.evaluate('[saveData.starter,saveData.avatar.name,saveData.team.length,LOCATIONS[saveData.trip.node].id]')
-    if R['opening'][3] != 'copperleaf': raise Exception(f'the game started at {R["opening"][3]}, not in Copperleaf')
-    # RL-8 (the owner's "fall only"): Blake left the opening: no fight of Kappi's, no battle of his; the welcome
-    # sheet comes straight after the pick
-    if pg.evaluate('!!cutscene.foeName||!!activeBattle'): raise Exception('Blake is still in the opening (Kappi’s fight or his battle)')
-    if not until(pg, '!!uiState.modal', 30): raise Exception('no welcome sheet after the opening')
-    R['afterOpening'] = pg.evaluate("({welcome:uiState.modal&&uiState.modal.title,rival0:(saveData.story||{}).rival0||null})")
-    pg.evaluate("closeModal();0")
+    if R['opening'][3] != 'copperleaf': raise Exception(f'the first run ended at {R["opening"][3]}, not in Copperleaf')
+    if R['opening'][1] != 'Checker': raise Exception(f'the name made at the lab wasn’t kept: {R["opening"][1]!r}')
+    # the device now offers to skip the crash on the next New game
+    R['afterOpening'] = pg.evaluate("({introDone:localStorage.getItem('pb-intro-done'),team:saveData.team.map(m=>m.sp)})")
+    if R['afterOpening']['introDone'] != '1': raise Exception('the finished cold open isn’t remembered (Skip the crash)')
+    pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;renderOverlay();0")
     # RL-8: Copperleaf's station offers a run (HB-7: Skyline Station, act 'station'; the airship is scenery): tapped
     # (walkPick, as a tap on it does), its sheet has "Start a run"; a real tap on that row opens the run's sheet (left
     # there: the fast check and the full check fly it)
@@ -1181,7 +1198,7 @@ def phone_flow(P):
         raise Exception(f'the exported debug log has no people counters, or more than numbers in them: {ppl!r}'[:300])
     # kept for comparing logs across a phase (validation/ is not committed)
     shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
-    return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen besides the bars (with them): {", ".join(f"{k} {v} ({blurAll[k]})" for k, v in blur.items())}; pieces per screen: {", ".join(f"{k} {v}" for k, v in elems.items())}'
+    return f'the crash, the starter at the wreck, the prepared run, the pickup, the fall, the lab’s dressing room and payout (IN-5), the station’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen besides the bars (with them): {", ".join(f"{k} {v} ({blurAll[k]})" for k, v in blur.items())}; pieces per screen: {", ".join(f"{k} {v}" for k, v in elems.items())}'
 
 
 def all_maps(pg, sec=180):

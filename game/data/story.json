@@ -45,8 +45,8 @@
   "Cass": "cass",
   "Vinylla": "vinylla",
   "You": "me",
-  "Intake": "intake",
-  "Outtake": "outtake"
+  "Intake": "bureau_clerk_a",
+  "Outtake": "bureau_clerk_b"
  },
  "scripts": {
   "chapter1-end": {
@@ -124,7 +124,7 @@
   },
   "pickup-lost": {
    "about": "IN-4: the first run lost: two Bureau clerks run up where it ended, stamp you and drop you through their square portal (run.js runPickup; then the fall and the lab: cutscene/return-scene.js)",
-   "who": "intake",
+   "who": "bureau_clerk_a",
    "script": [
     "camera run-up",
     "walk Intake beside me",
@@ -140,7 +140,7 @@
   },
   "pickup-won": {
    "about": "IN-4: the first run won: two Bureau clerks run up where it ended, stamp you and drop you through their square portal (run.js runPickup; then the fall and the lab: cutscene/return-scene.js)",
-   "who": "intake",
+   "who": "bureau_clerk_a",
    "script": [
     "camera run-up",
     "walk Intake beside me",

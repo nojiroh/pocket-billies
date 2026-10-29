@@ -84,27 +84,27 @@
    "cmd": "walk Outtake beside me"
   },
   {
-   "who": "intake",
+   "who": "bureau_clerk_a",
    "expr": null,
    "text": "Don’t get up. You’re exactly where the form says you’d be."
   },
   {
-   "who": "outtake",
+   "who": "bureau_clerk_b",
    "expr": null,
    "text": "One person, unregistered. Fell off a train. No ticket. Also lost a fight."
   },
   {
-   "who": "intake",
+   "who": "bureau_clerk_a",
    "expr": null,
    "text": "Several fights. It’s all on the form. We have a form for that."
   },
   {
-   "who": "outtake",
+   "who": "bureau_clerk_b",
    "expr": null,
    "text": "Sender, unclear. Address, unclear. So it goes back to the default address."
   },
   {
-   "who": "intake",
+   "who": "bureau_clerk_a",
    "expr": null,
    "text": "Returned to sender.",
    "stamp": "returned"
@@ -124,22 +124,22 @@
    "cmd": "walk Outtake beside me"
   },
   {
-   "who": "intake",
+   "who": "bureau_clerk_a",
    "expr": null,
    "text": "Hold still. You beat our retrieval scout. That scout was on loan."
   },
   {
-   "who": "outtake",
+   "who": "bureau_clerk_b",
    "expr": null,
    "text": "One person, unregistered. One scout, dented. Both found at the scene."
   },
   {
-   "who": "intake",
+   "who": "bureau_clerk_a",
    "expr": null,
    "text": "Good work, technically. We don’t do good work here. We do paperwork."
   },
   {
-   "who": "intake",
+   "who": "bureau_clerk_a",
    "expr": null,
    "text": "Recovered property.",
    "stamp": "recovered"

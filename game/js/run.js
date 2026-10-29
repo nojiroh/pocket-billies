@@ -16,6 +16,7 @@ import {
   boardsGhost,
   boardsPost,
   closeModal,
+  crashStart,
   labMilestones,
   mapIdAt,
   modal,
@@ -105,6 +106,7 @@ expose({
   runCatch: [() => runCatch],
   runChallengesOpen: [() => runChallengesOpen],
   runClinicEach: [() => runClinicEach],
+  runCrashLand: [() => runCrashLand, v => (runCrashLand = v)],
   runEndHome: [() => runEndHome, v => (runEndHome = v)],
   runEndHomeGo: [() => runEndHomeGo, v => (runEndHomeGo = v)],
   runEndLab: [() => runEndLab, v => (runEndLab = v)],
@@ -360,6 +362,11 @@ function runHomeTold(pay, opened) {
 export function runResume() {
   const run = saveData.run;
   if (!run) return;
+  /* IN-5: killed in the crash scene (before the run was handed over): the crash again */
+  if (run.at.phase === 'crash') {
+    if (typeof crashStart === 'function') crashStart({ resume: true });
+    return;
+  }
   /* IN-4: killed in the first run's pickup, its fall or at the lab: the lab again */
   if (run.at.phase === 'return') {
     if (typeof returnStart === 'function') returnStart();
@@ -729,7 +736,9 @@ export function runTakeOff(seed, map, mods, pick, expedition, board) {
  * travels alone, healed, with the file's gift; no train ride (the crash already put you on the landing): the places
  * are made behind the loading screen, then you stand on the landing as any take-off leaves you. The debug menu's
  * "Prepared run" until New game plays it (IN-5). Returns whether it started */
-function runTakeOffPrepared() {
+/** o.crash (IN-5, New game): instead of standing on the landing, the run waits there at phase 'crash' and o.crash()
+ * films the crash scene on it (cutscene/crash-scene.js) @param {{ crash?: () => any }} [o] */
+export function runTakeOffPrepared(o = {}) {
   if (!runStartable() || !saveData.team.length) return false;
   uiState.runPick = uiState.runPack = null;
   uiState.runExp = uiState.runChal = uiState.runMonoType = uiState.runKind = null;
@@ -746,9 +755,24 @@ function runTakeOffPrepared() {
   const seed = s.run.seed;
   runWorldMake(runLoadPlaces).then(() => {
     if (saveData !== s || !s.run || runWorld.seed !== seed) return;
-    runTakeOffGo(s, data);
+    if (o.crash) runCrashLand(s, data, o.crash);
+    else runTakeOffGo(s, data);
   });
   return true;
+}
+/** IN-5: the prepared run's take-off for New game: day 1 on the landing like runTakeOffGo, saved at phase 'crash' (a
+ * reload plays the crash scene again), the landing's loading begun, then the scene @param {any} s @param {any} data
+ * @param {() => any} film */
+function runCrashLand(s, data, film) {
+  runArrive(s, 0, data);
+  s.visited[s.trip.node] = 1;
+  s.run.at.phase = 'crash';
+  saveNow();
+  if (typeof debugLog !== 'undefined') debugLog.add('scene', `the first run starts: ${s.run.map.nodes.length} places`);
+  uiState.inside = uiState.goingIn = uiState.backAt = uiState.roam = uiState.mapSel = null;
+  uiState.tab = 'walk';
+  runLoadLanding(s.trip.node);
+  film();
 }
 /** the take-off once the run's world is in: day 1 on the landing (runArrive), saved with the account; then (not on a
  * resume, which stands you there itself) you stand on the landing and its loading's own stages begin.

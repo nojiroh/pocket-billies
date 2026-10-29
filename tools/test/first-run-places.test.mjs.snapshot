@@ -11,8 +11,8 @@ exports[`the prepared run’s places and its crash site stay where they are 1`] 
       "seed": 145490293,
       "ground": "7288c8c4",
       "props": [
-        773,
-        "0eee38ae"
+        734,
+        "7090b50e"
       ]
     },
     {
@@ -114,8 +114,8 @@ exports[`the prepared run’s places and its crash site stay where they are 1`] 
   },
   "spots": {
     "wreck": {
-      "x": 77.75,
-      "z": 33
+      "x": 75.75,
+      "z": 34.5
     },
     "me": {
       "x": 83.75,
@@ -125,9 +125,17 @@ exports[`the prepared run’s places and its crash site stay where they are 1`] 
       "x": 80.75,
       "z": 29.5
     },
+    "chosen_from": {
+      "x": 79.25,
+      "z": 32
+    },
     "kappi": {
       "x": 86.75,
       "z": 26.5
+    },
+    "kappi_from": {
+      "x": 88.25,
+      "z": 30.5
     },
     "star1": {
       "x": 81.75,
@@ -144,10 +152,10 @@ exports[`the prepared run’s places and its crash site stay where they are 1`] 
   },
   "crash": [
     {
-      "k": "train_greenbelt",
-      "x": 77.75,
-      "z": 33,
-      "rot": 17
+      "k": "train_wreck",
+      "x": 75.75,
+      "z": 34.5,
+      "rot": 8
     },
     {
       "k": "bureau_crate",
@@ -162,26 +170,28 @@ exports[`the prepared run’s places and its crash site stay where they are 1`] 
       "rot": 34
     }
   ],
-  "key": "1 wreck, 2 me, 3 chosen, 4 kappi, 5 star1, 6 star2, 7 star3",
+  "key": "1 wreck, 2 me, 3 chosen, 4 chosen_from, 5 kappi, 6 kappi_from, 7 star1, 8 star2, 9 star3",
   "picture": [
-    " 37 o*o*GGGggGGGGGGGGGGGGGpp*u*pp",
-    " 36 oooGGGGgGGGGGGGGGG*G*p*GGuppp",
-    " 35 oooGGGGGGGGGGGGGGGGGGGGG*gupp",
-    " 34 *ooGGGGGGGGGGGGGGGGGGGG*GG*up",
-    " 33 GCCGGGGG&1&ggggGG*GGGGGGG**up",
-    " 32 CCCCCGG&&&&&ggggGGGGGGGGGGGuu",
-    " 31 CCCCCG&&&&&&ggggWGGgggggGGGGu",
-    " 30 C*CCCG&&&&fgggggg*gggggggGGGg",
-    " 29 CCCCWG&&&&fg3ggg&&*gggggggGgg",
-    " 28 CCC*CG&&&&&&&&&&&&gggMggggGgg",
-    " 27 CCCCCG&&&&&&&&&2&&ggggggggggg",
-    " 26 gGC*GGG&&&&&&&&&&&4Cgssssgggg",
-    " 25 g*GGGf&&&&&&&5&fg7&sswwwwsggf",
-    " 24 gGG*Gf&&&&&&fff6gCsswwwwwwsGf",
-    " 23 *GGG*G&&&*&*ffffgsswwwsswwwsG",
-    " 22 ggG*GC&&*&&f*fggsswwwsGswwwsC",
-    " 21 ggGGCC&&&&&ffCCsswwwsGswwwsGC",
-    " 20 g*GGCCC&&CCCC*swwwwsGswwwssCC"
+    " 39 ooooog&&&Ggg&&&GCCGGGGCCGGupppug*",
+    " 38 oooooGGGGGgGGGGGGGGGGG*GGGppppugg",
+    " 37 oooooGGGGggGGGGGGGGGGGGGpp*u*ppgg",
+    " 36 oooooGGGGgGGGGGGGGGGGGGp*GGupppug",
+    " 35 oooooGGGGGGGGGGGGGGGGGGGGG*gupp*u",
+    " 34 oooooGGGG1GGGGGGGGGGGGGGGGGG*uppu",
+    " 33 GGGCCGGGGG&&&ggggGGGGGGGGGGG*uppp",
+    " 32 CCCCCCCGG&&&&4ggggGGGGGGGGGGGuupp",
+    " 31 CCCCCCCG&&&&&&ggggWGGgggggGGGGupp",
+    " 30 CCCCCCCG&&&&fgggggg&gg6ggggGGGgup",
+    " 29 CCCCCCWG&&&&fg3ggg&&&gggggggGgguu",
+    " 28 CCCCCCCG&&&&&&&&&&&&gggMggggGgggu",
+    " 27 ggCCCCCG&&&&&&&&&2&&ggggggggggggg",
+    " 26 gggGCGGGG&&&&&&&&&&&5Cgssssggggff",
+    " 25 gggGGGGf&&&&&&&7&fg9&sswwwwsggfff",
+    " 24 gggGGGGf&&&&&&fff8gCsswwwwwwsGff*",
+    " 23 gg*GGGGG&&&&&fffffgsswwwsswwwsGff",
+    " 22 ggggG*GC&&&&&fffggsswwwsGswwwsC*C",
+    " 21 ggggGGCC&&&&&ffCCsswwwsGswwwsGCCC",
+    " 20 g*g*GGCCC&&CCCCsswwwwsGswwwssCCCC"
   ]
 }
 `;

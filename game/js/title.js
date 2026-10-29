@@ -20,6 +20,7 @@ import {
   closeModal,
   mapIdAt,
   modal,
+  newGameStart,
   render,
   showPendingWindows,
 } from './hooks.js';
@@ -48,7 +49,7 @@ import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { mountWalkView } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
-import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene/opening.js';
+import { cutsceneMapId, cutsceneStartName, cutsceneWanted } from './cutscene/opening.js';
 /* eslint-disable no-func-assign */
 expose({
   TITLE_AUTO_MS: [() => TITLE_AUTO_MS],
@@ -295,11 +296,8 @@ function titleEnd() {
 function titleNew() {
   if (!saveData.started) {
     titleEnd();
-    if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
-    else {
-      uiState.openingFailed = 'cant';
-      render();
-    }
+    /* IN-5: the crash (cutscene/crash-scene.js), or the choice to skip it */
+    newGameStart();
     return;
   }
   modal({
@@ -322,11 +320,7 @@ function titleNew() {
           applyPreferences();
           closeModal();
           titleEnd();
-          if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
-          else {
-            uiState.openingFailed = 'cant';
-            render();
-          }
+          newGameStart();
         },
       },
       { l: 'Keep playing this one', c: 'quiet', f: closeModal },

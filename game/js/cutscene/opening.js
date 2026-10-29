@@ -84,10 +84,10 @@ export function setCutsceneStart(v) {
 /* v47b: the opening (and the title behind it) is filmed in the same view of Copperleaf the game then walks in: the town
    with the first stretch of each road. So nothing is built again between the title, the opening, Blake's battle
    and your first steps (it was a pause of most of a second as the battle began) */
-export function cutsceneMapId() {
-  const id = mapIdAt(START_NODE);
+export function cutsceneMapId(node = START_NODE) {
+  const id = mapIdAt(node);
   try {
-    const v = typeof seamlessRoamView === 'function' ? seamlessRoamView(START_NODE, null) : null;
+    const v = typeof seamlessRoamView === 'function' ? seamlessRoamView(node, null) : null;
     if (v && v.id && mapById(v.id)) return v.id;
   } catch (e) {
     console.error(e);
@@ -107,7 +107,7 @@ export function cutsceneWanted() {
 export const cutsceneStartName = () =>
   typeof locationFullName === 'function' && LOCATIONS[START_NODE]
     ? locationFullName(LOCATIONS[START_NODE])
-    : 'the Hollow Earth';
+    : 'Copperleaf';
 
 /* ---------- the cutscene ---------- */
 /* opts.quick (phase 16 test boot, js/test-boot.js): no fall, and the dressing room keeps a random look on its own,
@@ -128,7 +128,9 @@ export async function cutsceneStart(opts) {
      stays for later) nor the fall's street leg, its stand-in */
   if (typeof fallPlay === 'function' && !cutscene.test && !cutscene.quick) {
     try {
-      await fallPlay(run, { from: 'crust' });
+      /* IN-5: New game's Skip the crash; the fall from the Bureau's square portal with no captions (the owner: no
+         Hollow Earth in the intro), as the first run's way back falls */
+      await fallPlay(run, { from: 'portal' });
     } catch (e) {
       console.error(e);
       const f = $('#csFade');
@@ -193,10 +195,10 @@ export function cutsceneBegin(opts) {
   updateNav(false);
   return run;
 }
-/* the cutscene's map mounted on the walk scene's canvas after the fall, the set cleared (the cutscene's file: key),
-   the ground drawn before the white lifts. False if it couldn't (no 3D view, the set has no place here): abort was
-   called */
-export async function cutsceneMount(run, id, key, label, abort) {
+/* the cutscene's map mounted on the walk scene's canvas after the fall, the set cleared (the cutscene's file: key, or
+   IN-5 `set`, the file already laid on the view), the ground drawn before the white lifts. False if it couldn't (no 3D
+   view, the set has no place here): abort was called */
+export async function cutsceneMount(run, id, key, label, abort, set = null) {
   let cv = $('#dio');
   if (!cv) {
     cv = document.createElement('canvas');
@@ -222,7 +224,7 @@ export async function cutsceneMount(run, id, key, label, abort) {
   cv.classList.add('in');
   const sc = walkView.sc,
     C0 = walkData().sc,
-    C = CUTSCENES[key],
+    C = set || CUTSCENES[key],
     off = C && cutsceneOffset(sc, C.map);
   if (!off) {
     if (typeof debugLog !== 'undefined')
@@ -352,7 +354,7 @@ export async function openingDressingRoom() {
   uiState.trainerDraft = uiState.avatarDraft;
 }
 /* throw-coins: the Chosen's three coins fly to the starters' spots (star1-3) and pop open into the three Billies */
-async function openingThrowCoins() {
+export async function openingThrowCoins() {
   const C = cutscene.set,
     H = cutscene.actors[cutsceneLook('Chosen')];
   if (typeof soundEffect === 'function') soundEffect('throw');
@@ -399,7 +401,7 @@ async function openingThrowCoins() {
 }
 /* pick-starter: the pick card; skipping stops here. The one you pick cheers, the others go; {starter} and {counter}
    (the one Blake will take) are known from here, and "starter" names the picked one's place */
-async function openingPickStarter() {
+export async function openingPickStarter() {
   cutscene.skip = false;
   const l = await chooseStarter();
   cutscene.choosing = false;
@@ -422,7 +424,7 @@ async function openingPickStarter() {
 }
 /* what the opening draws of its own each frame: the starters (and Blake's first Billie) popping, cheering and going,
    the light on the one you're looking at, the coins in the air */
-function openingLayer(items, parts, lights, now, t) {
+export function openingLayer(items, parts, lights, now, t) {
   const drawn = cutscene.foe ? [...cutscene.stars, cutscene.foe] : cutscene.stars;
   drawn.forEach((s, i) => {
     if (s.popT) {
