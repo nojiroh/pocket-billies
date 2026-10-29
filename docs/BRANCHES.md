@@ -50,6 +50,8 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | Branch | What it is |
 |---|---|
 | `main` | The game. |
+| `track/buildings` | Buildings track (docs/phases/buildings-track.md): planned 2026-10-29 (BD-0, docs only) on `ccr-d224d90d-qlnty6`; the owner makes this branch from that branch or main, and BD-1 starts here. Every BD session works here. To main by pull request. |
+| `ccr-d224d90d-qlnty6` | Buildings track BD-0 (the plan, research, audits; docs only), written here because `track/buildings` didn't exist yet (2026-10-29). Draft PR into main. Delete once its PR merges or is superseded. |
 | `track/intro` | Intro track (docs/phases/intro-track.md): planned 2026-10-29 (IN-0, docs only) from main bb658f52. Wave 1 (IN-1 the prepared run, IN-2 Kappi's tips, IN-3 the art, IN-4 the way back) runs at once on side branches `claude/in-<n>-<words>`, each with a draft PR into this branch; wave 2 (IN-5, IN-6) works here after. To main by one draft PR after IN-6; the owner merges. |
 | `track/test-data` | Test data track (docs/phases/test-data-track.md): planned 2026-10-29 on `ccr-b95ade74-f8w3vy`; made from that branch by TD-0's session at the owner's word (2026-10-29, "start every step automatically in a new session"). Every TD session works here, one after another, each starting the next. TD-2 and TD-3 may run at once. TD-1 (quick fixes) done 2026-10-29; TD-2 (the graphics test walks a benchmark path) done 2026-10-29; TD-3 next. To main by one draft pull request, updated by each session. |
 | `ccr-b95ade74-f8w3vy` | Test data track TD-0 (the plan, research and audits; docs only), written here because `track/test-data` didn't exist yet (2026-10-29). Draft PR into main. Delete once its PR merges or is superseded. |

@@ -2,6 +2,29 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-0 - the plan: Copperleaf's buildings redone, a modular house kit - 2026-10-29
+Branch `ccr-d224d90d-qlnty6` (the cloud session's own, main at 73b2f8b1). Plan approved in Plan Mode. Docs only: a
+new track, docs/phases/buildings-track.md, from the owner's brief ("redo the 3D buildings of the main hub island ...
+cozy whimsical retro futuristic", then "all houses look way too similar now, add a lot of modular variety").
+- Changed: docs/phases/buildings-track.md (the owner's answers, two code audits with file references, the research
+  with sources, the look vocabulary, sessions BD-1 to BD-8, Ask me before, risks); ROADMAP.md and BRANCHES.md rows. A
+  suggestion page (private Artifact, linked in the track file): 2D sketches of every building, a house roller showing
+  the kit's variety with a neighbour rule, the new surfaces and palette, day and night.
+- The owner's answers: all 15 building kinds; the cozy mix (storybook homes with copper, portholes and glowing tubes,
+  Googie on the civic buildings); storybook wonk; footprints may change; houses with a lot of modular variety; hub
+  first (run towns keep today's houses); palette copper, cream, verdigris, terracotta, neon only at night.
+- Found, not changed (for BD-7; details in the track file, section 3): doors are written at 32 px/m but read at ppu 34
+  (about 6% short of the model's door); tools/clear-windows.py ignores `rot` (most hub buildings are at rot 90); the
+  lighthouse and station have no `door`, so lowpoly-props.test.mjs gives them the 4k prop budget; cottage_juniper gets
+  a random size (no `vary.size`, "cottage" not in prop-look.js's building pattern); only workshop, gene_bank and
+  train_station have pictures baked from their models.
+- Risky: nothing in the game changed. For the track: the normal sheet's and the extra meshes' phone cost (BD-2,
+  BD-8 measure); footprints ripple through the town tools and ~8 checks (held in BD-7).
+- Verified: lint, format:check, `npm test` 2392 of 2392 (docs only). Pictures of today's cottages and houses
+  (tools/look-hub-buildings.py --times=rows, scratchpad, not committed). The suggestion page looked at once at phone
+  width, light and dark: no sideways scroll, no script errors.
+- Next: BD-1 (new recipe shapes) on `track/buildings`, which the owner makes from this branch or main.
+
 ### Fix - Kappi's stall clock counts only free walking - 2026-10-29
 Branch `fix/kappi-stall-clock` from main 7f661239, PR into main. From the owner's first phone log of the new intro
 (deploy 7f661239, Android, Adreno 750): New game -> the crash scene at 15.6 s -> Cartotter picked at 42.8 s (27 s into
