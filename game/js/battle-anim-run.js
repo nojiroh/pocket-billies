@@ -278,7 +278,8 @@ function animStep(S, c) {
       K.tween(s, 'ox', s.ox + c.dir * (2 + 4 * k), 30);
       K.tween(s, 'ox', 0, 90, 'out', 30);
       if (!reducedMotion) battleStage.shk = Math.max(battleStage.shk, 1 + 2 * k);
-      s.white = Math.max(s.white || 0, 0.25 + 0.25 * k);
+      /* VFX-20: at most half strength with Flashes off (rule 9), as hitFx's own sprite flash */
+      s.white = Math.max(s.white || 0, (0.25 + 0.25 * k) * (K.flashesOff() ? 0.5 : 1));
       K.tween(s, 'white', 0, BATTLE_ANIMS.tiers ? BATTLE_ANIMS.tiers.cell : 42, 'in');
       return;
     }

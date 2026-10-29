@@ -229,7 +229,8 @@ function battleLookStat(an, ev) {
   battleStageKit.setActorAction(i, up ? 'buff' : 'dizzy', 700);
   lookBurst(i, C.B, reduced ? Math.min(2, C.n) : C.n);
   if (up) battleStageKit.groundRing(i, BATTLE_ANIMS.colors.guard, C.sharp ? 2 : 1.6, 520);
-  battleStageKit.tween(s, 'white', 0.3, 120);
+  /* VFX-20: at most half strength with Flashes off (rule 9) */
+  battleStageKit.tween(s, 'white', lookFlashesOff() ? 0.15 : 0.3, 120);
   battleStageKit.tween(s, 'white', 0, 240, 'lin', 140);
   return { dur: 680, hit: 0 };
 }
@@ -405,7 +406,8 @@ function battleLooksTick() {
             y: w.y + C.up * hh,
             z: w.z - C.out * hh * 0.4 + C.across * hh * 0.3,
           },
-          { frame: flash ? D.flashFrame : j >= n - cracked ? D.crackFrame : D.frame, alpha: flash ? 1 : (D.a ?? 1) }
+          /* VFX-20: with Flashes off a block's flash cell shows at the dome's own strength, not whole and bright */
+          { frame: flash ? D.flashFrame : j >= n - cracked ? D.crackFrame : D.frame, alpha: bright ? 1 : (D.a ?? 1) }
         )
       );
     }

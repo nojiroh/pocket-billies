@@ -2557,7 +2557,8 @@ export function battleStagePlay(an, ev) {
         );
       if (an.amt && typeof hudPop === 'function') scheduleAt(120, () => hudPop(an.si, '+' + an.amt, 'heal'));
       groundRing(an.si, H ? BATTLE_ANIMS.colors[H.color] || BATTLE_ANIMS.colors.heal : '#5DFF8A', 1.5, 600);
-      tween(battleStage.s[an.si], 'white', 0.35, 150);
+      /* VFX-20: at most half strength with Flashes off (rule 9) */
+      tween(battleStage.s[an.si], 'white', flashesOff() ? 0.175 : 0.35, 150);
       tween(battleStage.s[an.si], 'white', 0, 260, 'lin', 160);
       return { dur: 720, hit: 200 };
     }
@@ -2955,6 +2956,7 @@ const burstMax = () => fxBudget('burst');
 /* VFX-8: what the move runner (battle-anim-run.js) plays its steps with */
 export const battleStageKit = {
   tween,
+  flashesOff,
   flush: battleStageFlush,
   setActorAction,
   camTo,

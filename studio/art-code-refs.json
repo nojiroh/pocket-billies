@@ -1765,7 +1765,7 @@
    "game/js/walk-tab.js:324"
   ],
   "excl": [
-   "game/js/battle-anim-run.js:636"
+   "game/js/battle-anim-run.js:637"
   ],
   "eye": [
    "game/js/figures.js:429",
@@ -1948,12 +1948,12 @@
    "game/js/battle-stage.js:2140",
    "game/js/battle-stage.js:2222",
    "game/js/battle-stage.js:2552",
-   "game/js/battle-stage.js:2639",
-   "game/js/battle-stage.js:2670",
-   "game/js/battle-stage.js:2710",
-   "game/js/battle-stage.js:2741",
+   "game/js/battle-stage.js:2640",
+   "game/js/battle-stage.js:2671",
+   "game/js/battle-stage.js:2711",
    "game/js/battle-stage.js:2742",
-   "game/js/battle-stage.js:2891",
+   "game/js/battle-stage.js:2743",
+   "game/js/battle-stage.js:2892",
    "game/js/battle.js:1657",
    "game/js/billie-sheet.js:84",
    "game/js/billie-sheet.js:159",
@@ -1982,8 +1982,8 @@
    "game/js/battle-stage.js:1688",
    "game/js/battle-stage.js:2107",
    "game/js/battle-stage.js:2108",
-   "game/js/battle-stage.js:2585",
-   "game/js/battle-stage.js:2906",
+   "game/js/battle-stage.js:2586",
+   "game/js/battle-stage.js:2907",
    "game/js/cutscene/opening.js:344"
   ],
   "tag": [
