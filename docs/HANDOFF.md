@@ -2,6 +2,33 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test data track TD-0 - the plan: tests and logs that give Claude useful bug and speed data on every device - 2026-10-29
+Branch `ccr-b95ade74-f8w3vy` (the cloud session's own; main fast-forwarded to 8e37809c first). Plan approved in Plan
+Mode through the owner's answers. Docs only: the plan, research and three read-only audits (in-game tests, headless
+checks, the owner's log); no code changed. `track/test-data` made from this branch at the owner's word, and TD-1
+started there in a new session (each TD session starts the next).
+- Changed: docs/phases/test-data-track.md (new: the owner's answers, the 2026-10-29 Firefox log, the audit with a
+  table of the Graphics test dials a standing spot can't measure, the research with sources, sessions TD-1..TD-5);
+  ROADMAP's "Test data track" row (top of "Tracks alongside"); BRANCHES rows for `track/test-data` and this branch.
+- The owner's answers: graphics memory budget 300 MB on phones; perf gates block at +10% over the baseline (late
+  compiles: any rise); the test that reloaded was the per-setting Graphics test on Beautiful with battery saver on.
+- Found, not changed (all in the track file, TD-1 fixes them):
+  - tools/read-debug-log.py reads `bench.result`, but debug-log.js `build()` stores the result as `bench`: the reader
+    always says "Full test: no result". The debug-log skill's jq line has the same mistake.
+  - The per-setting Graphics test leaves automatic quality on, rebuilds the scene at extreme values each step and
+    keeps its results only in memory (lost on the reload); about 180 of its 392 steps can't measure their dial at
+    the standing spot (always 15:00, no folk, the pond off to the side, nothing between camera and player).
+  - The Graphics cost test sets `debugLog.bench`, wiping an earlier full-test result from the debug log.
+  - The full test's failure context is taken after the step's `finally`: the light lab's refused draw
+    (drawArrays 1282 on the owner's Firefox) reads as Copperleaf loading, not the light scene that failed.
+  - The headless tools measure draws, uploads and graphics memory but nothing gates on, keeps or compares them; no
+    page runs above DPR 1.
+- Risky: nothing changed in code. The 300 MB budget is the game's own estimate; real use may be higher.
+- Verified: docs only; no checks needed beyond the hooks. Findings above re-checked in the code at 8e37809c.
+- Next: TD-1 on `track/test-data`, started automatically in a new session.
+- For the owner on the phone: nothing to test yet. If you can, note whether the page reloads again on Beautiful in
+  the Graphics test; TD-1's crash marker will record it in the next log.
+
 ### Sound track SND-15 - the mix and a phone pass: a master chain at -18 LUFS, slider defaults near the top, ducks for cries, talk and jingles, Play when silenced, the debug log's mix line; Part 2 done - 2026-10-29
 Branch `track/sound`, after both lanes. main merged three times: ca19d9cd (98 commits, the Perks track; no sound files;
 art-code-refs made again at 60a89260), 798226e9 (VFX-19's battle sounds in #331, the dialogue track #322 and others:
