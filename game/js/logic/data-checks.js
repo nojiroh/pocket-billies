@@ -2518,6 +2518,10 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   shopClosed: [1, 1, 'times (it is on or off)'],
   /* PK-9: the newest Perk held does nothing (the curse Permit Revoked; effects.js fxMuted): only a boon or curse */
   muteNewest: [1, 1, 'times (it is on or off)'],
+  /* PK-9: curses last n places less (Correction Fluid; run-loop.js runBoonGive) */
+  curseShorter: [1, 3, 'places'],
+  /* PK-9: the first n curses of a run are erased (Correction Fluid) */
+  curseErase: [1, 1, 'curses a run'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];

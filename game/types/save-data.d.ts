@@ -463,6 +463,8 @@ export interface RunEnc {
   /** effect rows an event left: this place and `left` more; PK-9: a named boon or curse (boons.json) by its `id`, its
    * rows read from the data (no `fx`) */
   boons: { fx?: import('./game-data').FxRow[]; id?: string; left: number; src: string }[];
+  /** PK-9: how many curses were erased this run (Correction Fluid's curseErase); missing: none */
+  erased?: number;
   /** reward picks made so far (the next pick's stream) */
   rewardN: number;
   /** the reward pick waiting (saved before it shows), or null */

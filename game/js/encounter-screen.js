@@ -61,8 +61,8 @@ import { residentCandidate, residentInvite } from './logic/residents.js';
 import { runHome } from './logic/run-state.js';
 import { caseFile, caseStampMoment, redactSplit } from './logic/case-file.js';
 import { runMapNode } from './logic/run-map.js';
-import { runEventSafe, runImmune } from './logic/run-loop.js';
-import { encBoon, encBoonGive, encBoonLine, encOf, fxRowOf } from './logic/run-enc.js';
+import { runBoonGive, runEventSafe, runImmune } from './logic/run-loop.js';
+import { encBoon, encBoonLine, encOf, fxRowOf } from './logic/run-enc.js';
 import { perkTeamOf } from './logic/perks.js';
 import {
   encChanges,
@@ -82,7 +82,7 @@ import {
   eventPlayed,
 } from './logic/encounters.js';
 import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
-import { startTrainer, startWild } from './logic/battle-engine.js';
+import { fxSrcName, startTrainer, startWild } from './logic/battle-engine.js';
 import { parseScript } from './logic/script-parse.js';
 import { runScript, storyHolds } from './logic/script.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
@@ -372,10 +372,13 @@ function encBoonCmd(bid, id) {
   const run = saveData.run,
     B = BOONS[bid];
   if (!run || !B) return;
-  const left = encBoonGive(run, bid, id);
+  /* PK-9: through the Perks' curse rules (Correction Fluid) */
+  const { left, erased } = runBoonGive(run, bid, id, PERKS);
   saveNow();
-  if (typeof debugLog !== 'undefined') debugLog.add('run', `${B.curse ? 'curse' : 'boon'} ${bid} from ${id}`);
-  encNote(encBoonLine(B, left));
+  if (typeof debugLog !== 'undefined')
+    debugLog.add('run', `${B.curse ? 'curse' : 'boon'} ${bid} from ${id}${erased ? ' (erased)' : ''}`);
+  if (erased) encNote(`${fxSrcName(erased)}: the curse ${B.name} was erased before it took hold.`);
+  else encNote(encBoonLine(B, left));
 }
 /** the stage an event's script plays on: lines, choices and the event commands @param {string} id
  * @param {number} i the map node (-1: from the debug menu, the place you are at counts) */

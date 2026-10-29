@@ -812,6 +812,8 @@ const PK9_GOOD = [
   { kind: 'turnHurt', share: 0.05, when: 'arrive' },
   { kind: 'rule', rule: 'rewardPick', n: -1 },
   { kind: 'rule', rule: 'shopClosed', n: 1 },
+  { kind: 'rule', rule: 'curseShorter', n: 1 },
+  { kind: 'rule', rule: 'curseErase', n: 1 },
 ];
 const PK9_BAD = [[{ kind: 'turnHurt', share: 0.05, when: 'hit' }, "a turnHurt row can't act at hit"]];
 test('PK-9: dataPerks and the schema take the curses’ kinds and name their faults', async () => {

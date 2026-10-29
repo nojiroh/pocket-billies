@@ -20,7 +20,7 @@ expose({
   // @ts-expect-error -- replaced on purpose
   encBoon: [() => encBoon, v => (encBoon = v)],
   // @ts-expect-error -- replaced on purpose
-  encBoonGive: [() => encBoonGive, v => (encBoonGive = v)],
+  encBoonGive: [() => encBoonGive, v => ((encBoonGive = v), provide({ encBoonGive }))],
   // @ts-expect-error -- replaced on purpose
   encBoonLine: [() => encBoonLine, v => (encBoonLine = v)],
   encBoonRows: [() => encBoonRows],
@@ -31,7 +31,7 @@ expose({
   fxRowOf: [() => fxRowOf, v => (fxRowOf = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ encArrive });
+provide({ encArrive, encBoonGive });
 /* to-module: end */
 /** a run's encounter state, made the first time it is asked for @param {Run} run @returns {RunEnc} */
 export function encOf(run) {
@@ -53,13 +53,20 @@ export const encBoonRows = (run, boons = BOONS) =>
 
 /** PK-9: give a named boon or curse (boons.json): it lasts this place and its `places` more. Given again while it is
  * on, it lasts the longer of the two (it never stacks). Returns the places it lasts after this one, or -1 when there
- * is no such boon @param {Run} run @param {string} id @param {string} src who gave it (an event's id, 'fountain')
- * @param {Record<string, Boon>} [boons] @returns {number} */
-export function encBoonGive(run, id, src, boons = BOONS) {
+ * is no such boon. PK-9: a curse lasts `shorter` places less (Correction Fluid's curseShorter), and while fewer than
+ * `erase` curses were erased this run (run.enc.erased) it is erased instead: -2, nothing given
+ * @param {Run} run @param {string} id @param {string} src who gave it (an event's id, 'fountain')
+ * @param {Record<string, Boon>} [boons] @param {{ shorter?: number, erase?: number }} [rule]
+ * @returns {number} */
+export function encBoonGive(run, id, src, boons = BOONS, rule = {}) {
   const B = boons && boons[id];
   if (!B) return -1;
-  const left = Math.max(0, Math.floor(B.places)),
-    E = encOf(run),
+  const E = encOf(run);
+  if (B.curse && (E.erased || 0) < (rule.erase || 0)) {
+    E.erased = (E.erased || 0) + 1;
+    return -2;
+  }
+  const left = Math.max(0, Math.floor(B.places) - (B.curse ? rule.shorter || 0 : 0)),
     on = E.boons.find(b => b.id === id);
   if (on) on.left = Math.max(on.left, left);
   else E.boons.push({ id, left, src });

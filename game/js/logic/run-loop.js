@@ -17,6 +17,7 @@
 import { expose } from '../test-globals.js';
 import {
   encArrive,
+  encBoonGive,
   fxAt,
   fxFire,
   fxHealShare,
@@ -26,6 +27,7 @@ import {
   fxRunBossHp,
   fxRunFoeLevels,
   fxRunMarks,
+  fxRunRule,
   fxStateful,
   unlockOpen,
 } from '../hooks.js';
@@ -64,6 +66,8 @@ expose({
   runBattleSeed: [() => runBattleSeed],
   // @ts-expect-error -- replaced on purpose
   runBattleWeather: [() => runBattleWeather, v => (runBattleWeather = v)],
+  // @ts-expect-error -- replaced on purpose
+  runBoonGive: [() => runBoonGive, v => (runBoonGive = v)],
   // @ts-expect-error -- replaced on purpose
   runBossFor: [() => runBossFor, v => (runBossFor = v)],
   runBuyFx: [() => runBuyFx],
@@ -259,6 +263,20 @@ export function runEventSafe(s, perks) {
   const fx = s.run ? fxOfRun(s.run, perks) : null,
     f = fx && fxAt(fx, {}, { run: s.run && s.run.perkState }).find(r => r.kind === 'rule' && r.rule === 'eventHurt');
   return f && f.n > 0 ? f.src : '';
+}
+/** PK-9: an event gives a named boon or curse (boons.json) on the run, through the Perks' curse rules (Correction
+ * Fluid): a curse lasts curseShorter places less, and the first curseErase curses of the run are erased. Returns the
+ * places it lasts after this one (-1: no such boon), and the source that erased it ('' when given)
+ * @param {Run} run @param {string} id @param {string} src @param {Record<string, any>} perks
+ * @returns {{ left: number, erased: string }} */
+export function runBoonGive(run, id, src, perks) {
+  const shorter = fxRunRule(run, 'curseShorter', perks),
+    erase = fxRunRule(run, 'curseErase', perks),
+    left = encBoonGive(run, id, src, undefined, { shorter, erase });
+  if (left !== -2) return { left, erased: '' };
+  const fx = fxOfRun(run, perks),
+    f = fx && fxAt(fx, {}, { run: run.perkState }).find(r => r.kind === 'rule' && r.rule === 'curseErase');
+  return { left: -1, erased: f ? f.src : 'curseErase' };
 }
 /** PK-9: is a run town's shop shut (a shopClosed rule row: the curse Out of Office)? Its source ('' when open). A
  * market stall stays open @param {SaveData} s @param {Record<string, any>} perks */

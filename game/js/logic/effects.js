@@ -37,7 +37,9 @@
              battle-rewards.js battleRewards; PK-8: unstableSafe, an Unstable splice of yours loses no HP at a turn's
              end, battle-engine.js endTurn; sidePerk, a side area's place holds a Perk lying on the ground,
              route-finds.js routeFindsPerk; PK-9: shopClosed, a run town's shop is shut, run-loop.js runShopShut;
-             muteNewest, the newest Perk held does nothing and counts toward no set, fxMuted: a curse's only)
+             muteNewest, the newest Perk held does nothing and counts toward no set, fxMuted: a curse's only;
+             curseShorter, curses last n places less, and curseErase, the first n curses of the run are erased,
+             run-loop.js runBoonGive: Correction Fluid)
              (PK-4,
              run-map.js
              runForecastDays; later waves add rules)
@@ -587,6 +589,8 @@ export const FX_RULES = /** @type {const} */ ([
   'sidePerk',
   'shopClosed',
   'muteNewest',
+  'curseShorter',
+  'curseErase',
 ]);
 /** PK-4: what a run's rule rows add to rule `id` (their n summed, with growth; 0 when none). Read on the run where no
  * battle or team is known, so a row with `if` never counts @param {any} run @param {string} id

@@ -176,6 +176,11 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     'Side areas hold a Perk',
     () => 'On (1): each side area’s place has a Perk lying on the ground (a pick of one when you walk onto it).',
   ],
+  curseShorter: ['Curses last fewer places', () => 'Places fewer for each curse given (boons.json; at most 3).'],
+  curseErase: [
+    'The run’s first curse is erased',
+    () => 'On (1): the first curse handed out on a run is erased at once.',
+  ],
   muteNewest: [
     'The newest Perk does nothing',
     () => 'On (1): the last Perk taken gives nothing and counts toward no set (a curse’s only; boons.json).',

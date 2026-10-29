@@ -401,7 +401,9 @@ export function validRunEnc(e) {
       (c.n === undefined || wholeIn(c.n, 1, 99));
   return (
     plain(e) &&
-    Object.keys(e).every(k => ['n', 'node', 'seen', 'boons', 'rewardN', 'reward', 'play'].includes(k)) &&
+    Object.keys(e).every(k => ['n', 'node', 'seen', 'boons', 'rewardN', 'reward', 'play', 'erased'].includes(k)) &&
+    /* PK-9: the curses Correction Fluid erased this run */
+    (e.erased === undefined || wholeIn(e.erased, 0, 99)) &&
     (e.play == null ||
       (plain(e.play) &&
         Object.keys(e.play).every(k => ['id', 'i', 'opt', 'at', 'foe'].includes(k)) &&
