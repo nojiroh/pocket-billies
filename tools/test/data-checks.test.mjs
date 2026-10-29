@@ -41,8 +41,11 @@ const FAMILIES = [
   'dataQuests',
   'dataResidents',
   'dataPerks',
+  'dataPerkSets',
   'dataEvents',
   'dataBanter',
+  'dataTalkSkins',
+  'dataEmotes',
   'dataRewards',
   'dataCurrencies',
   'dataBuildings',
@@ -188,6 +191,30 @@ test('a planted fault is found by its family, in the file check-data names', () 
     plant(D.banter);
     found('dataBanter', D, text);
   }
+  // DL-3: the talk skins: a speaker or a class naming no skin, nobody, or no class
+  for (const [plant, text] of [
+    [T => (T.speakers.chosen = 'gold'), 'speakers.chosen: no skin "gold"'],
+    [T => (T.speakers.nobody_here = 'folk'), 'speakers.nobody_here: nobody of that id'],
+    [T => (T.classes.bureau_clerk = 'gold'), 'classes.bureau_clerk: no skin "gold"'],
+    [T => (T.classes.no_class = 'bureau'), 'classes.no_class: no trainer class of that id'],
+    [T => (T.default = 'gold'), 'default: no skin "gold"'],
+  ]) {
+    D = copy();
+    plant(D.talkSkins);
+    found('dataTalkSkins', D, text);
+  }
+  // DL-5: the emotes: one a line can ask for is missing, a picture the wrong size or with a letter of no colour, a
+  // face's own emote that isn't drawn
+  for (const [plant, text] of [
+    [E => delete E.emotes.heart, 'no picture for "heart"'],
+    [E => (E.emotes.sweat = E.emotes.sweat.slice(1)), 'emotes.sweat: not 12 × 12'],
+    [E => (E.emotes['!'] = E.emotes['!'].map(r => r.replace(/r/g, 'q'))), 'emotes.!: no colour for "q"'],
+    [E => (E.auto.sad = 'tear'), 'auto.sad: no emote "tear"'],
+  ]) {
+    D = copy();
+    plant(D.emotes);
+    found('dataEmotes', D, text);
+  }
   // Studio plan T4.1: the code's limits (effects.js FX_LIMIT, FX_STAGES) on a row
   D = copy();
   D.perks.lucky_charm.fx[0].mult = 0.05;
@@ -325,6 +352,37 @@ test('PK-2: dataPerkArt: a missing picture or a bad SVG is an error, no img a wa
   );
 });
 
+test('PK-11: dataItemArt: an img off items/<id>.svg, missing or not an icon is an error, an item without one a warning (PK-10: held ones too)', () => {
+  const icon = readFileSync(join(import.meta.dirname, '../../game/art/ui/relic.svg'), 'utf8'),
+    files = { 'items/a.svg': icon, 'items/c.svg': '<svg viewBox="0 0 12 12"></svg>', 'items/z.svg': icon },
+    read = (/** @type {string} */ p) => files[p] ?? null,
+    I = {
+      a: { img: 'items/a.svg' },
+      b: { img: 'items/b.svg' },
+      c: { img: 'items/c.svg' },
+      d: { icon: 'tonic' },
+      e: { img: 'items/z.svg' },
+      f: { icon: 'bell', hold: [] },
+    };
+  assert.deepEqual(
+    C.dataItemArt(I, read).map(f => [f.lvl, f.msg]),
+    [
+      ['error', 'b.img: no picture art/items/b.svg'],
+      ['error', 'c.img: art/items/c.svg is not an icon: An icon’s box is viewBox="0 0 36 36".'],
+      ['warn', "d: no img, so it draws the old atlas's i_tonic (tools/build-icons.mjs)"],
+      ['error', 'e.img: items/e.svg (its id, in the items folder), not "items/z.svg"'],
+      ['warn', "f: no img, so it draws the old atlas's i_bell (tools/build-icons.mjs)"],
+    ]
+  );
+  const ART = join(import.meta.dirname, '../../game/art'),
+    disk = (/** @type {string} */ p) => (existsSync(join(ART, p)) ? readFileSync(join(ART, p), 'utf8') : null);
+  assert.deepEqual(
+    C.dataItemArt(GAME_DATA.items, disk),
+    [],
+    'every item names a picture that is there (PK-11: the 13 Bag items; PK-10: the 24 held items)'
+  );
+});
+
 test('RS-4: a resident’s service and its rows: one entry a level, one power level, names that exist, rows in order', () => {
   let D = copy();
   D.residents.mo.service.pop();
@@ -421,14 +479,59 @@ test('PK-1: dataPerks checks when, if, every, grow, per, once and say; other row
   const E = structuredClone(GAME_DATA);
   E.perks.lucky_charm.say = 'x'.repeat(41);
   assert.ok(C.dataPerks(E).some(p => p[1].includes('lucky_charm.say')));
-  /* a held item's rows are a Billie's own: no timing there (it would be ignored) */
+  /* a held item's rows are a Billie's own: PK-10: a when only where a held row can act (a stat row at hit or hurt) */
   const F = structuredClone(GAME_DATA),
-    held = Object.keys(F.items).find(k => F.items[k].hold);
+    held = Object.keys(F.items).find(k => F.items[k].hold && F.items[k].hold[0].kind !== 'stat');
   F.items[held].hold[0].when = 'hit';
   assert.ok(
-    C.dataHeldItems(F).some(p => p[1].includes(`${held}.hold[0].when: only a run's rows`)),
+    C.dataHeldItems(F).some(p =>
+      p[1].includes(`${held}.hold[0].when: a held ${F.items[held].hold[0].kind} row can't act at hit`)
+    ),
     JSON.stringify(C.dataHeldItems(F))
   );
+});
+
+test("data checks: PK-10: a held item's row says when (a stat row at hit or hurt), if (what the hit knows) and once: battle", () => {
+  const ok = { kind: 'stat', stat: 'lev', stages: 2, when: 'hurt', if: ['superEffective', 'cat:H'], once: 'battle' };
+  for (const [row, text] of [
+    [ok, ''],
+    [{ ...ok, when: 'ko' }, "can't act at ko"],
+    [{ ...ok, if: 'lead' }, `"lead" isn't known at a held item's moment`],
+    [{ ...ok, if: 'hp<2' }, 'hp<x: a share of HP'],
+    [{ ...ok, once: 'run' }, 'once: battle'],
+    [{ ...ok, every: 2 }, 'can say when, if and once only'],
+    [{ kind: 'stat', stat: 'lev', stages: 1, if: 'superEffective' }, 'if: only with a when'],
+    [{ kind: 'stat', stat: 'lev', stages: 1, once: 'battle' }, 'once: only with a when'],
+    [{ kind: 'survive' }, ''],
+    [{ kind: 'survive', share: 0.5 }, 'share: a survive row takes no other field'],
+    [{ kind: 'survive', when: 'hurt' }, "can't act at hurt"],
+    [{ kind: 'reflect', share: 0.125, cat: 'H' }, ''],
+    [{ kind: 'reflect', share: 0.75 }, 'share: a share of the hitter'],
+    [{ kind: 'reflect', share: 0.1, cat: 'X' }, 'cat: H or S'],
+    [{ kind: 'drain', share: 0.125 }, ''],
+    [{ kind: 'drain', share: 0 }, 'share: a share of the damage dealt'],
+    [{ kind: 'drain', share: 0.1, cat: 'H' }, 'cat: a drain row takes share'],
+    [{ kind: 'immune', type: 'Ground', until: 'hurt' }, ''],
+    [{ kind: 'immune', type: 'Ground' }, ''],
+    [{ kind: 'immune', what: 'brn' }, 'what: an immune row takes type, until'],
+    [{ kind: 'immune', type: 'Nope' }, 'type: a held immune row names a type'],
+    [{ kind: 'immune', type: 'Ground', until: 'win' }, 'until: hurt'],
+    [{ kind: 'first', chance: 0.2 }, ''],
+    [{ kind: 'first' }, "chance: a held first row's chance"],
+    [{ kind: 'first', chance: 0.9 }, "chance: a held first row's chance"],
+    [{ kind: 'last' }, ''],
+    [{ kind: 'last', n: 1 }, 'n: a last row takes no other field'],
+  ]) {
+    const F = structuredClone(GAME_DATA);
+    F.items.iron_vest.hold = [row];
+    const all = C.dataHeldItems(F).map(p => p[1]);
+    if (!text) assert.deepEqual(all, [], JSON.stringify(all));
+    else
+      assert.ok(
+        all.some(w => w.startsWith('iron_vest.hold[0]') && w.includes(text)),
+        `${text} in ${JSON.stringify(all)}`
+      );
+  }
 });
 
 // PK-3: the battle kit's kinds (crit, immune, inflict, chip, first, revive): good rows pass check-data and the schema,
@@ -529,7 +632,7 @@ const PK4_BAD = [
   [{ kind: 'benchXp', share: 0.5, when: 'win' }, "a benchXp row can't act at win"],
   [
     { kind: 'rule', rule: 'luck', n: 1 },
-    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind, eventHurt (effects.js FX_RULES)',
+    'rule: forecastDays, rewardPick, rerollFree, mapReveal, cap, sideOpen, sideFind, eventHurt, noDrop, faintPaysNothing,',
   ],
   [{ kind: 'rule', rule: 'forecastDays', n: 20 }, 'n: a whole number of days from 1 to 14'],
   [{ kind: 'rule', rule: 'forecastDays', n: 3, if: 'lead' }, 'a rule row is read where no battle'],
@@ -583,7 +686,7 @@ const PK5_BAD = [
   [{ kind: 'free' }, 'a free row needs a moment (buy)'],
   [{ kind: 'salvage', mult: 9 }, 'mult: 9 is outside the code'],
   [{ kind: 'salvage', mult: 2, when: 'win' }, "a salvage row can't act at win"],
-  [{ kind: 'rule', rule: 'rewardPick', n: 3 }, 'n: a whole number of cards from 1 to 2'],
+  [{ kind: 'rule', rule: 'rewardPick', n: 3 }, 'n: a whole number of cards from -1 to 2, not 0'],
   [{ kind: 'rule', rule: 'rerollFree', n: 0 }, 'n: a whole number of rerolls from 1 to 3'],
   [{ kind: 'rule', rule: 'mapReveal', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
 ];
@@ -650,6 +753,153 @@ test('PK-6: dataPerks and the schema take Wave D’s kinds and name their faults
   }
 });
 
+/* PK-7: Fine Print's kinds (perks-track.md 5.6) */
+const PK7_GOOD = [
+  { kind: 'recoil', share: 0.08 },
+  { kind: 'recoil', share: 0.1, if: 'cat:H' },
+  { kind: 'money', add: -15, when: 'arrive' },
+  { kind: 'money', add: 20, when: 'arrive', every: 2 },
+  { kind: 'loot', table: 'common', when: 'arrive' },
+  { kind: 'loot', table: 'auction', n: 3, when: 'arrive', if: 'place:town' },
+  { kind: 'rule', rule: 'noDrop', n: 1 },
+  { kind: 'rule', rule: 'faintPaysNothing', n: 1 },
+];
+const PK7_BAD = [
+  [{ kind: 'recoil', share: 0.6 }, 'share: a share of HP above 0, at most 0.5'],
+  [{ kind: 'recoil', share: 0.1, when: 'hit' }, "a recoil row can't act at hit"],
+  [{ kind: 'money', add: 0, when: 'arrive' }, 'add: a whole number of Moneys from -9999 to 9999, not 0'],
+  [{ kind: 'money', add: -15 }, 'a money add needs a moment (arrive)'],
+  [{ kind: 'money', add: -15, mult: 1.2, when: 'arrive' }, 'a money add has no mult'],
+  [{ kind: 'money', add: -15, when: 'win' }, "a money row can't act at win"],
+  [{ kind: 'loot', table: 'gold', when: 'arrive' }, 'table: no loot table "gold" (events.json loot'],
+  [{ kind: 'loot', table: 'common', n: 4, when: 'arrive' }, 'n: a whole number of items from 1 to 3'],
+  [{ kind: 'loot', table: 'common' }, 'a loot row needs a moment (arrive)'],
+  [{ kind: 'loot', table: 'common', when: 'win' }, "a loot row can't act at win"],
+  [{ kind: 'rule', rule: 'noDrop', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
+  [{ kind: 'rule', rule: 'faintPaysNothing', n: 1, if: 'lead' }, 'a rule row is read where no battle'],
+];
+test('PK-7: dataPerks and the schema take Fine Print’s kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK7_GOOD.length; i += 4)
+    D.perks['test_pk7_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK7_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK7_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
+/* PK-8: the kinds the Perk sets' bonuses need (perks-track.md 5.7) */
+const PK8_GOOD = [
+  { kind: 'price', what: 'perk', mult: 0.5 },
+  { kind: 'heldBoost', mult: 1.5 },
+  { kind: 'damage', side: 'deal', mult: 1.2, if: 'unstable' },
+  { kind: 'rule', rule: 'unstableSafe', n: 1 },
+  { kind: 'rule', rule: 'sidePerk', n: 1 },
+];
+const PK8_BAD = [
+  [{ kind: 'heldBoost', mult: 1 }, 'mult: above 1 (held items work better)'],
+  [{ kind: 'heldBoost', mult: 1.5, if: 'lead' }, 'a heldBoost row is read where no battle'],
+  [{ kind: 'heldBoost', mult: 1.5, when: 'hit' }, "a heldBoost row can't act at hit"],
+  [{ kind: 'rule', rule: 'unstableSafe', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
+];
+test('PK-8: dataPerks and the schema take the sets’ kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK8_GOOD.length; i += 4)
+    D.perks['test_pk8_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK8_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK8_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+
+/* PK-9: the kinds the boons' curses need (perks-track.md 5.9) */
+const PK9_GOOD = [
+  { kind: 'last', if: 'turn:1' },
+  { kind: 'turnHurt', share: 0.05, when: 'arrive' },
+  { kind: 'rule', rule: 'rewardPick', n: -1 },
+  { kind: 'rule', rule: 'shopClosed', n: 1 },
+  { kind: 'rule', rule: 'curseShorter', n: 1 },
+  { kind: 'rule', rule: 'curseErase', n: 1 },
+];
+const PK9_BAD = [[{ kind: 'turnHurt', share: 0.05, when: 'hit' }, "a turnHurt row can't act at hit"]];
+test('PK-9: dataPerks and the schema take the curses’ kinds and name their faults', async () => {
+  const D = structuredClone(GAME_DATA);
+  for (let i = 0; i < PK9_GOOD.length; i += 4)
+    D.perks['test_pk9_' + i] = { name: 'Test', d: 'A test.', rarity: 'common', fx: PK9_GOOD.slice(i, i + 4) };
+  assert.deepEqual(C.dataPerks(D), []);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false }),
+    ok = ajv.compile(JSON.parse(readFileSync(join(DATA, 'schema', 'perks.schema.json'), 'utf8')));
+  assert.ok(ok(D.perks), JSON.stringify(ok.errors));
+  for (const [row, text] of PK9_BAD) {
+    const E = structuredClone(GAME_DATA);
+    E.perks.lucky_charm.fx = [row];
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes('lucky_charm.fx[0]') && w.includes(text)),
+      `${JSON.stringify(row)}: ${text} in ${JSON.stringify(all)}`
+    );
+  }
+});
+test('PK-7: the fine rarity: a leader rule names a rarity some Perk has; an event never names Fine Print', () => {
+  const D = structuredClone(GAME_DATA);
+  D.perks.lucky_charm.rarity = 'fine';
+  D.rules.run.perks.leader = { rarity: 'fine', pick: 3 };
+  assert.deepEqual(C.dataPerks(D), []);
+  for (const [leader, text] of [
+    [{ rarity: 'gold', pick: 3 }, 'run.perks.leader.rarity: one of common, uncommon, rare, fine'],
+    [{ rarity: 'fine', pick: 9 }, 'run.perks.leader.pick is not a whole number from 1 to 5'],
+    [{ rarity: 'fine', pick: 3, n: 1 }, 'run.perks.leader.n: no such rule'],
+  ]) {
+    const E = structuredClone(D);
+    E.rules.run.perks.leader = leader;
+    const all = C.dataPerks(E).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.includes(text)),
+      `${text} in ${JSON.stringify(all)}`
+    );
+  }
+  const F = structuredClone(GAME_DATA);
+  F.rules.run.perks.leader = { rarity: 'fine', pick: 3 };
+  for (const P of Object.values(F.perks)) if (P.rarity === 'fine') P.rarity = 'rare';
+  assert.ok(C.dataPerks(F).some(p => p.join(': ').includes('no Perk in perks.json is fine')));
+  /* fine has no weight or price of its own */
+  F.rules.run.perks.rarity.fine = 1;
+  assert.ok(C.dataPerks(F).some(p => p.join(': ').includes('run.perks.rarity.fine: no such rarity')));
+  /* a reward pick's perk card names no item */
+  const H = structuredClone(GAME_DATA);
+  assert.deepEqual(C.dataRewards(H), []);
+  H.rewards.perk.item = 'potion';
+  assert.ok(C.dataRewards(H).some(p => p.join(': ').includes('perk: a perk card names no item (it draws a Perk)')));
+  /* an event's perk command never names Fine Print */
+  const G = structuredClone(D);
+  G.events.events.form_27b.options[0].then[0] = 'perk lucky_charm';
+  assert.ok(
+    C.dataEvents(G).some(p => p.join(': ').includes('lucky_charm is Fine Print, offered only at a leader’s win')),
+    JSON.stringify(C.dataEvents(G))
+  );
+});
+
 test('PK-4: a Perk’s needs name conditions an offer can know (the team)', () => {
   const D = structuredClone(GAME_DATA);
   D.perks.lucky_charm.needs = 'team:Fire';
@@ -687,4 +937,100 @@ test('PK-4: a Perk’s tags are types or themes; rules.json run.perks.bias a fac
     all.some(w => w.includes('run.perks.bias is not a factor from 1 to 10')),
     JSON.stringify(all)
   );
+});
+
+test('PK-8: dataPerkSets: the schema, each row as a Perk’s, a need its Perks can meet, a Perk in one set at most', async () => {
+  assert.deepEqual(C.dataPerkSets(GAME_DATA), []);
+  assert.equal(Object.keys(GAME_DATA.perkSets).length, 7);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false });
+  for (const f of ['perks.schema.json', 'perkSets.schema.json'])
+    ajv.addSchema(JSON.parse(readFileSync(join(DATA, 'schema', f), 'utf8')));
+  assert.ok(ajv.validate('perkSets.schema.json', GAME_DATA.perkSets), JSON.stringify(ajv.errors));
+  const bad = structuredClone(GAME_DATA.perkSets);
+  bad.office.fx = [{ kind: 'money', mult: 1.2, sparkle: 1 }];
+  assert.equal(ajv.validate('perkSets.schema.json', bad), false, 'a row the Perks’ schema refuses');
+  delete bad.office.fx;
+  assert.equal(ajv.validate('perkSets.schema.json', bad), false, 'no rows');
+  for (const [plant, text, where = 'perkSets.json'] of [
+    [D => (D.perkSets.office.fx = [{ kind: 'money', mult: 9 }]), "office.fx[0].mult: 9 is outside the code's limits"],
+    [D => (D.perkSets.tech.fx = [{ kind: 'heldBoost', mult: 1.5, if: 'lead' }]), 'tech.fx[0].if: a heldBoost row'],
+    [D => (D.perkSets.lab.fx = [{ kind: 'copy' }]), 'lab.fx[0]: a set has no copy row'],
+    [D => (D.perkSets.lab.need = 5), 'lab.need: 5, but only 4 Perks are tagged "lab"'],
+    [
+      D => D.perks.umbrella.tags.push('lab'),
+      'umbrella.tags: a Perk is in one set at most (weather, lab)',
+      'perks.json',
+    ],
+  ]) {
+    const D = structuredClone(GAME_DATA);
+    plant(D);
+    const all = C.dataPerkSets(D).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.startsWith(where) && w.includes(text)),
+      `${text} in ${JSON.stringify(all)}`
+    );
+  }
+  /* a tag is a type or a set's id: a set's tag goes with its set */
+  const D = structuredClone(GAME_DATA);
+  delete D.perkSets.weather;
+  assert.ok(
+    C.dataPerks(D).some(([, w]) =>
+      w.includes('umbrella.tags: "weather" is no type (types.json) or set (perkSets.json')
+    ),
+    JSON.stringify(C.dataPerks(D))
+  );
+});
+
+test('PK-9: dataBoons: the schema, each row as a Perk’s, no copy, no count or mark; dataBoonArt checks the pictures', async () => {
+  assert.deepEqual(C.dataBoons(GAME_DATA), []);
+  assert.equal(Object.keys(GAME_DATA.boons).length, 20);
+  const { default: Ajv2020 } = await import('ajv/dist/2020.js'),
+    ajv = new Ajv2020({ allErrors: true, strict: false });
+  for (const f of ['perks.schema.json', 'boons.schema.json'])
+    ajv.addSchema(JSON.parse(readFileSync(join(DATA, 'schema', f), 'utf8')));
+  assert.ok(ajv.validate('boons.schema.json', GAME_DATA.boons), JSON.stringify(ajv.errors));
+  const bad = structuredClone(GAME_DATA.boons);
+  bad.tailwind.places = 21;
+  assert.equal(ajv.validate('boons.schema.json', bad), false, 'at most 20 more places');
+  bad.tailwind.places = 2;
+  bad.tailwind.curse = false;
+  assert.equal(ajv.validate('boons.schema.json', bad), false, 'curse is true or left out');
+  for (const [plant, text] of [
+    [D => (D.boons.pep_talk.fx = [{ kind: 'damage', side: 'deal', mult: 9 }]), 'pep_talk.fx[0].mult: 9 is outside'],
+    [D => (D.boons.pep_talk.fx = [{ kind: 'copy' }]), 'pep_talk.fx[0]: a boon has no copy row'],
+    [
+      D => (D.boons.pep_talk.fx = [{ kind: 'heal', share: 0.1, when: 'arrive', every: 2 }]),
+      'pep_talk.fx[0].every: a boon keeps no count or mark',
+    ],
+  ]) {
+    const D = structuredClone(GAME_DATA);
+    plant(D);
+    const all = C.dataBoons(D).map(p => p.join(': '));
+    assert.ok(
+      all.some(w => w.startsWith('boons.json') && w.includes(text)),
+      `${text} in ${JSON.stringify(all)}`
+    );
+  }
+  const svg = id => readFileSync(join(DATA, '..', 'art', 'boons', id + '.svg'), 'utf8'),
+    read = p => (p.startsWith('boons/') && GAME_DATA.boons[p.slice(6, -4)] ? svg(p.slice(6, -4)) : null);
+  assert.deepEqual(C.dataBoonArt(GAME_DATA.boons, read), []);
+  const art = C.dataBoonArt({ x: { img: 'boons/x.svg' }, y: {} }, read).map(f => `${f.lvl} ${f.where} ${f.msg}`);
+  assert.deepEqual(art, [
+    'error boons.json x.img: no picture art/boons/x.svg',
+    'warn boons.json y: no img, so it shows the relic icon (tools/build-icons.mjs)',
+  ]);
+});
+
+test('PK-9: an event’s boon and curse commands name a boon or a curse of boons.json', () => {
+  const plant = line => {
+    const D = structuredClone(GAME_DATA);
+    D.events.events.ring_light.options[0].then = [line];
+    return C.dataEvents(D).map(p => p.join(': '));
+  };
+  assert.deepEqual(plant('boon tailwind'), []);
+  assert.deepEqual(plant('curse audit_trail'), []);
+  assert.ok(plant('boon audit_trail').some(w => w.includes('"audit_trail" is a curse (curse audit_trail)')));
+  assert.ok(plant('curse tailwind').some(w => w.includes('"tailwind" is a boon (boon tailwind)')));
+  assert.ok(plant('boon no_such').some(w => w.includes('no boon or curse "no_such" (boons.json)')));
 });

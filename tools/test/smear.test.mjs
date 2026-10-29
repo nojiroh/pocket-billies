@@ -292,13 +292,11 @@ test('the impact frame shows the negative, then the positive, then (a crit) the 
 
 /* VFX-5: attack lunges */
 import {
-  LUNGE_DASH,
   LUNGE_GHOSTS,
   LUNGE_LEAN_BACK,
   LUNGE_LEAN_MAX,
   LUNGE_RIBBON_MAX,
   LUNGE_RIBBON_MIN,
-  lungeDash,
   lungeGhostCount,
   lungeLean,
   lungeLeanFor,
@@ -402,12 +400,18 @@ test('the lunge smears thin out with the quality and stop under Reduced motion',
 test("the dash moves are real moves and their ribbon is the Billie's size", () => {
   const moves = JSON.parse(readFileSync(new URL('../../game/data/moves.json', import.meta.url), 'utf8')),
     list = Array.isArray(moves) ? moves : Object.entries(moves).map(([id, m]) => ({ id, ...m }));
-  for (const id of LUNGE_DASH) {
-    const m = list.find(x => x.id === id);
-    assert.ok(m, `${id} is a move`);
-    assert.equal(m.c, 'H', `${id} is a hit (it lunges)`);
-  }
-  assert.ok(lungeDash('flashsale') && !lungeDash('tackle') && !lungeDash(null));
+  /* VFX-11: the dash moves are the `dash` family's (VFX-5's six); VFX-18b: a signature scene's, its family's */
+  const scenes = JSON.parse(readFileSync(new URL('../../game/data/battleAnims.json', import.meta.url), 'utf8')).scenes,
+    dash = list.filter(m => (scenes[m.anim] ? scenes[m.anim].family : m.anim) === 'dash');
+  assert.deepEqual(dash.map(m => m.id).sort(), [
+    'dashkick',
+    'flashsale',
+    'frontrun',
+    'justdoit',
+    'movefast',
+    'pipeline',
+  ]);
+  for (const m of dash) assert.equal(m.c, 'H', `${m.id} is a hit (it lunges)`);
   assert.equal(lungeRibbonHalf(0), LUNGE_RIBBON_MIN);
   assert.equal(lungeRibbonHalf(10), LUNGE_RIBBON_MAX);
   assert.ok(Math.abs(lungeRibbonHalf(1) - 0.3) < 1e-12);
@@ -415,4 +419,49 @@ test("the dash moves are real moves and their ribbon is the Billie's size", () =
   const R = smearRibbon(H, 220, RIBBON_CELLS, null, null, 0.3);
   assert.ok(R.length >= 2 && Math.abs(R[0].w - 0.3) < 1e-12, 'a ribbon at the given width');
   assert.ok(Math.abs(smearRibbon(H, 220, RIBBON_CELLS)[0].w - RIBBON_HALF) < 1e-12, "a throw's width by default");
+});
+
+/* VFX-12: the dials are battleAnims.json `smears` (the Studio's Battle effects tunes them) */
+test('the dials are set from data and read back in its shape; what is missing stays', async () => {
+  const S = await import('../../game/js/logic/smear.js'),
+    before = S.smearDials();
+  try {
+    S.smearDialsSet({
+      ghosts: [{ fade: 0.5, glow: 0.4 }, { fade: 0.3 }],
+      ribbon: { cells: 8, half: 0.3, steps: 'x' },
+      stretch: { k: 0.5 },
+      lean: { max: 0.2 },
+    });
+    assert.deepEqual(S.SMEAR_GHOSTS, [
+      { fade: 0.5, glow: 0.4 },
+      { fade: 0.3, glow: before.ghosts[1].glow },
+    ]);
+    assert.equal(S.RIBBON_CELLS, 8);
+    assert.equal(S.RIBBON_HALF, 0.3);
+    assert.equal(S.RIBBON_STEPS, before.ribbon.steps, 'a value that is no number keeps the dial');
+    assert.equal(S.STRETCH_K, 0.5);
+    assert.equal(S.STRETCH_MAX, before.stretch.max);
+    assert.equal(S.LUNGE_LEAN_MAX, 0.2);
+    assert.equal(S.SMEAR_KEEP, 8, 'the history keeps what the ribbon needs');
+    assert.equal(S.smearCount(false, 0), 2, 'the copies drawn follow the list');
+    assert.equal(S.lungeLeanFor(10, 1), 0.2);
+    S.smearDialsSet(null);
+    assert.equal(S.RIBBON_CELLS, 8, 'nothing to set: nothing changes');
+  } finally {
+    S.smearDialsSet(before);
+  }
+  assert.deepEqual(S.smearDials(), before, 'put back');
+  assert.equal(S.SMEAR_KEEP, Math.max(before.ghosts.length + 1, before.ribbon.cells));
+});
+
+test("battleAnims.json's smears name every dial (the game sets them from it)", async () => {
+  const S = await import('../../game/js/logic/smear.js'),
+    A = JSON.parse(readFileSync(new URL('../../game/data/battleAnims.json', import.meta.url), 'utf8')),
+    before = S.smearDials();
+  try {
+    S.smearDialsSet(A.smears);
+    assert.deepEqual(S.smearDials(), A.smears);
+  } finally {
+    S.smearDialsSet(before);
+  }
 });

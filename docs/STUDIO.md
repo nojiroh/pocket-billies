@@ -100,7 +100,7 @@ The Studio is built for wide screens (up to 3440 x 1440) and still works on a ta
 
 - **Workspaces** (Studio art track SA-4). The section list is in workspaces that fold away (the one you're in always
   shows): **Game** (Rules, Check), **Art** (Art browser, Art workbench), **Creatures** (Billies, Roster board, Part
-  rules, Genes, Coats, Moves, Types, Battle preview), **World** (Walk scenes, Hub island, Props, World & encounters,
+  rules, Genes, Coats, Moves, Types, Battle effects), **World** (Walk scenes, Hub island, Props, World & encounters,
   Engine, Camera), **People & story** (Trainers, Characters, Lore & story, Story scripts), **Runs** (Run Lab, Perks,
   Unlocks & hub, Economy, Robots, Items & pyramids), **Sound & UI** (Music & sound, UI look) and **Legacy** (Legacy
   world). **Characters** is one row for two sections, Looks and Wardrobe, with a switch on top of both. The list is
@@ -116,7 +116,7 @@ The Studio is built for wide screens (up to 3440 x 1440) and still works on a ta
   its list puts its cards in two columns, and the battle preview's stage fills the height with the controls beside it.
 - **Two sections side by side.** The ⇥ button next to a section in the list (or Shift-click) opens it on the right.
   Drag the line between the two panes; **Swap** or **Close** on the right pane's bar. Walk scenes, Hub island, Props, Engine
-  and the Battle preview have a 3D view (there is one), so they only open on the left. Undo and Save cover both panes. The
+  and Battle effects have a 3D view (there is one), so they only open on the left. Undo and Save cover both panes. The
   split comes back when you open the Studio again; below 1000 px the right pane hides.
 - **Layout presets** (top bar, from 1200 px): Auto (sizes follow the window), Compact, Wide, Ultrawide and Split (two
   sections). A preset sets every section's sizes; after a drag it says "adjusted", and Reset sizes goes back to it.
@@ -566,6 +566,21 @@ graph, or a value a run overrides. Edits are ordinary fields: saved, undone and 
   as `id:n` pairs, at take), and the rules cap (Perks held more), sideOpen, sideFind and eventHurt. Needs take **side**
   (a side area still ahead). `--only=relics` opens the 11 Wave D Perks, Boarding Pass's Moneys and items, Rusty Key's
   Needs.
+  **Fine Print** (PK-7): the Rarity choice has **fine** (a leader's win only: rules.json `run.perks.leader`; the list and
+  the head say so instead of a weight and a price). Kinds recoil (a share of HP an attack that lands costs its user),
+  loot (an events.json loot table, items 1-3, at arrive), xp (the XP from a battle), a money row's **add** (Moneys paid,
+  or charged below 0, at arrive) and the rules noDrop and faintPaysNothing. `--only=relics` opens the 12 Fine Print
+  Perks (rows, kinds, rarity fine), Subscription Box's loot table and charge.
+  **Perk sets** (PK-8, perkSets.json): a Perk's **Set** (the set's id written in its Tags; one set at most) and a
+  **Perk sets** card under each Perk: every set's name, bonus title, Perks needed and text as fields, its Perks and its
+  rows in words (the rows are edited in perkSets.json), with dataPerkSets's messages. Kinds heldBoost (held items work
+  ×), a price row's **perk** (a run shop's Perk) and the rules unstableSafe and sidePerk. `--only=relics` reads Running
+  Shoes's set, swaps it and undoes it, proposes a set's title and undoes it, and names a need past a set's Perks.
+  **Boons and curses** (PK-9, boons.json): a card under the sets: each boon's name, places more after the first, text,
+  Boon or Curse, its picture (Edit art; Draw one makes a blank art/boons/<id>.svg) and its rows in words (the rows are
+  edited in boons.json), with dataBoons's messages. Rule words for shopClosed, muteNewest (a curse's only),
+  curseShorter and curseErase; the kind last; rewardPick down to -1. `--only=relics` checks the 20 with their
+  pictures, proposes a name and undoes it, makes a boon a curse and undoes it, and names a copy row.
 - **Unlocks & hub** (unlocks.json, buildings.json, currencies.json, rules.json `ranch` costs). The **unlock graph**: a
   column per building with the rows sold there and their cost in its currency, the earned rows apart, an arrow from
   each row a row needs; click a row to edit it (name, bought or earned, where and for how much or when, what it gives,
@@ -772,6 +787,19 @@ source**: tools/build-terrain-v47.py retired (decision 1). Its rules are in `too
 - **Items & pyramids → Pyramids**: each pyramid's two icons (`coins/<id>_16.png` and `_32.png`, each drawn at its own
   size, never scaled) at their size and larger, with **Edit pixels** on each (Done comes back). Its 3D model
   (`coins/<id>.json`) is not edited here. tools/build-pyramids.py drew them all.
+- **Items & pyramids → Items** (PK-11): an item with its own picture (`img`, `art/items/<id>.svg`, drawn as the UI
+  icons are) shows it at the game's 72 and 36 px with **Edit art** (the icon editor) and no atlas Icon field; one
+  without shows its old atlas rectangle (`i_` + its icon) with the Icon field, and **Draw one** makes a blank
+  `art/items/<id>.svg` its picture and opens it (two undo steps). **Use an atlas icon** goes back only while the
+  item's rectangle is still on the sheet. (The PNG upload is gone: an item's picture is an icon, `dataItemArt`.)
+  Check: `check-studio-github.py --only=items`.
+- **Items & pyramids → Items, a held item** (PK-10, studio/js/held-editor.js): its **Tier** (the loot ladder, UI-14b)
+  and its 1-4 effect rows (items.json `hold`), each by its kind (data-checks.js `HOLD_KINDS`: money, stat, damage, xp,
+  turnHeal, pinchHeal, immune by type, first by chance, survive, reflect, drain, last) with that kind's fields; a stat
+  row's **When** (hit: its holder lands a hit; hurt: its holder is hit), and with one its **If** (superEffective, cat,
+  type, hp<) and **Once** (a battle). dataHeldItems's messages show on the row. **+ Add an effect**, a row's ✕,
+  **Make it a held item** (a plain item: one money row, common) and **Not a held item**. Every item has its own
+  picture since PK-10 (no `i_` rectangle is left on the atlas). Check: `check-studio-github.py --only=items`.
 - Checks: `check-studio-github.py --only=robot_art`, `studio-shots.py --views robots,pyramids`.
 
 ## UI icons (Studio art track SA-2b)
@@ -792,9 +820,9 @@ files are the source** (decision 6): tools/build-ui-icons.py retired. Open one w
   An unsaved icon also shows in the Studio's own previews of the menus.
 - **New icon**: a name (lower case, digits and -), blank or a copy. `tools/test/ui-icons.test.mjs` counts the set (52; SY-3 added `bureau`, the Bureau's emblem):
   raise the count when a new icon goes in.
-- **The Perks' pictures** (PK-2): `art/perks/<id>.svg` (and later `art/items/`, `art/boons/`: `ICON_DIRS` in
-  svg-pixels.js) are drawn the same way and open here too, from the Art browser's **Edit icon** or the Perks editor's
-  **Edit art**. Such an icon is known as `perks/<id>` (`svgIconKey`). Beside it are its own folder's pictures, the
+- **The Perks' pictures** (PK-2): `art/perks/<id>.svg` (PK-11, PK-10: and the items' `art/items/<id>.svg`; later
+  `art/boons/`: `ICON_DIRS` in svg-pixels.js) are drawn the same way and open here too, from the Art browser's **Edit
+  icon**, the Perks editor's or the items editor's **Edit art**. Such an icon is known as `perks/<id>` (`svgIconKey`). Beside it are its own folder's pictures, the
   preview shows 18, 36, 72 and 108 px (the game draws them at 36 in rows and 72 on pick cards), an unsaved one reaches
   the Studio's previews through `artURL`, and **New icon** makes one in the open folder (an id: lower case, digits and
   _). They were first drawn as grids by `tools/build-icons.mjs` (`tools/art/icon-grids/<folder>.json`); once written
@@ -853,11 +881,11 @@ beside the painter (drawn again after each stroke). Lighting is flat: the sun, s
 | **Edit pixels and skeleton** | Pixel editor on the real sprite sheets (the pixel canvas, above): every tool, part outlines, an onion skin of the other view, a live animated preview. Download a sheet, edit it in another app, upload it back. Nudge where each body part attaches and how parts stack. |
 | **Skeleton builder** | Build or reshape a body: add parts (blank or from a PNG), drag parts and pivots, tilt, re-parent, mirror a limb with everything attached to it, choose which motion each part follows, switch the body plan, and copy a layout between the front and back views. Whole-step zoom with the pixel canvas's keys; **Parts on the workbench** for boxes, pivots and draw order on the sheet. |
 | **+ New Billie** | Start from a blank body (biped, four-legged, flyer, fish, blob or worm) in a color you pick, or copy an existing Billie's skeleton and recolored art. Either way it works in the game immediately. Add or remove evolution stages, duplicate, recolor or reorder lines. |
-| **Battle preview** | The game's battle stage with your unsaved changes. Pick any two Billies (each in any coat) and a backdrop, then play any move with any outcome, status effects, wild and trainer intros, taxes, faints, sandstorms and camera moves at ½×, 1× or 2× speed. Sky and haze colors change live. |
+| **Battle effects** | VFX-12 (the battle preview grown). The game's battle stage, in a walk scene, with your unsaved changes. Pick any two Billies (each in any coat), then a move in any of the 8 outcomes the look tool films (a normal hit, super effective ×2 and ×4, not very effective, a crit, a super-effective crit, a miss, blocked by Guard) or an event (heal, stat up or down, statuses, level up, sandstorm, faints, wild and trainer intros, send-out, recall, a throw caught or breaking free), and play it from your side or theirs at ¼×, ½×, Normal, Fast, Faster or 4×, at quality 0-3, with Full, Calm or Reduced motion and Flashes on or off. Its steps (the runner's timeline from battleAnims.json) show on a 24 fps scrubber with the hit and the line's end marked: drag it or step a cell at a time and the stage holds there (the clip plays again on a clock of its own up to that cell); ❚❚ holds or goes on. Below the stage, panes tune battleAnims.json like any section (drafts, Undo, Propose): Timing and flashes (shown, not tuned: no move gets longer), the Budgets by quality, Part 1's Smears (afterimages, ribbon, stretch, a lunge's lean), and Ramps and Sprite cells once the effect art (VFX-10) adds them. Later steps add their panes (`battleFxPanes`). Leaving the section gives the Studio its own motion and Flashes back. |
 | **Robots** | Phase 17. Torsos, arms, legs and gems: names, types, weight, toughness, what the legs carry, the move each part gives, stats, and pictures (front and back, a torso's head, a gem's chest picture), with a colour and shape for the stand-in when a part has no picture. Rules: the stat floor, upgrades, the gem's type bonus, weight, part HP and where hits land. **Try a build** draws any gem and parts as the game does and shows its types, weight, stats and moves. A trainer's team entry can be a robot (Trainers). |
 | **Moves** | Name, type, kind, power, accuracy, priority, description and an effects builder (status, stat changes, healing, draining, hedging, hype, rent, market shock, delayed delivery and more). |
 | **Types** | Colors, the full matchup chart (click to cycle 2× / ½×), each type's battle ability and particle effects. Renaming a type updates everything that uses it. |
-| **Items & pyramids** | Prices, effects, icons (or upload your own). SA-3: Town shops and Day Jobs are gone (both were empty since RL-5; run shops stock from `run.shop`). |
+| **Items & pyramids** | Prices, effects, pictures (PK-11: a Bag item's own, Edit art or Draw one; PK-10: a held item's tier and rows, every item's own picture). SA-3: Town shops and Day Jobs are gone (both were empty since RL-5; run shops stock from `run.shop`). |
 | **World & encounters** | Opens on wild encounter tables; fishing; battle backdrop colors and ambience; the legacy world map and its look. Since RL-5 the game's world is one place, Copperleaf, with no roads (the rest is in Legacy); a run's places are made at run time (RL-7). SA-3: Route stops (Copperleaf's own fields are under Hub island) and the walk Eggs are gone. |
 | **Prop editor** (in Walk scenes) | Open any prop and edit everything about it on its picture: drag the base point, click to add lamp glows, lit windows, fires, smoke, water spray and sparkles exactly where they belong (drag to move, Delete to remove), set the door, see the footprint. Add **layers** (from a PNG or a copy of the main picture) and place each one in front of or behind the main picture in meters, shift it, make it face the camera, stay put as the world turns, or lie flat, and let it glow. A 3D turntable shows the prop in the game's renderer while you work. |
 | **Walk scenes** | The scene for each stop: shape the land (raise, lower, smooth, flatten); paint the ground tiles; place, move, resize and mirror props; drag the **hub** (where you stand when you stay) and the **exits** roads leave through; choose what a prop does when tapped (shop, clinic, a message), its label and its words; distant hills, townsfolk and what they say, wind, sun rays, sky, haze, shade, tilt-shift blur and camera. The live preview runs the game's renderer: walk around in it and tap things. Paint prop pictures and ground tiles pixel by pixel; set a prop's shadow, sway, solid footprint, door and walkable area; add new props (blank or from a PNG) and new ground types. **People who talk** edit each person's id, spot, facing, `when` / `unless` and script. **Story preview**: pick a start preset and switch flags; who isn't there for them is hidden in the 3D preview and faded on the map. **Play from here** opens the game in this place on the spot you pick (Pick the spot, or where the preview's walker stands), at the preview's preset and flags, with your unsaved changes. **Free camera** (🎥 under the preview, or C): the camera leaves the walker and flies over the scene like a map app: drag to move (the ground stays under the pointer), right-drag to turn and tilt, the wheel to zoom towards the pointer, double-click to look at a spot; on a phone one finger moves, pinch zooms, twist turns, two fingers up or down tilt; W A S D, Q E, R F and Page Up/Down too. **Top view**, ▲ ▼, **Walker here** and **Back to the walker**; each scene keeps its camera while the Studio is open, and Play from here starts where it looks. |

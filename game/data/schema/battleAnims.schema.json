@@ -3,7 +3,7 @@
  "$id": "battleAnims.schema.json",
  "title": "game/data/battleAnims.json: how the battle plays a move, as data (VFX-8; logic/battle-anims.js, battle-anim-run.js)",
  "type": "object",
- "required": ["bigPower", "longPower", "extraMs", "shortSpeed", "maxMs", "flashes", "colors", "defaults", "intro", "families", "scenes"],
+ "required": ["bigPower", "longPower", "extraMs", "shortSpeed", "maxMs", "flashes", "budgets", "smears", "colors", "defaults", "intro", "families", "scenes", "sprites", "ramps", "iconSprites", "events", "tiers"],
  "additionalProperties": false,
  "properties": {
   "about": {"type": "string"},
@@ -32,6 +32,72 @@
     "redShare": {"type": "number", "exclusiveMinimum": 0.33, "maximum": 1}
    }
   },
+  "budgets": {
+   "description": "VFX-9's budgets, by the battle's quality 0-3 (VFX-12 made them data): particles alive in the one pool (ambient ones at most a quarter), a burst's most, effect lights (3 slots: keys 8-10), at most lightsPhone on a phone and lightsAll battle lights in all (the scars' cap is VFX-15's scars.cap)",
+   "type": "object",
+   "required": ["particles", "burst", "lights", "lightsPhone", "lightsAll"],
+   "additionalProperties": false,
+   "properties": {
+    "particles": {"$ref": "#/$defs/byQuality"},
+    "burst": {"$ref": "#/$defs/byQuality"},
+    "lights": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 3}},
+    "lightsPhone": {"type": "integer", "minimum": 0, "maximum": 3},
+    "lightsAll": {"type": "integer", "minimum": 0, "maximum": 8}
+   }
+  },
+  "smears": {
+   "description": "Part 1's dials (VFX-1..VFX-5; logic/smear.js smearDialsSet, VFX-12): the afterimages, the ribbon, a dash's ribbon, the stretch, a lunge's lean",
+   "type": "object",
+   "required": ["ghosts", "lungeGhosts", "ribbon", "dashRibbon", "stretch", "lean"],
+   "additionalProperties": false,
+   "properties": {
+    "ghosts": {"description": "a throw's afterimages, newest first", "$ref": "#/$defs/smearLooks"},
+    "lungeGhosts": {"description": "a lunge's afterimages, newest first", "$ref": "#/$defs/smearLooks"},
+    "ribbon": {
+     "type": "object",
+     "required": ["cells", "half", "twist", "bright", "core", "fray", "steps"],
+     "additionalProperties": false,
+     "properties": {
+      "cells": {"description": "the kept places it runs along (24 a second)", "type": "integer", "minimum": 2, "maximum": 12},
+      "half": {"description": "half width at its head, metres", "type": "number", "minimum": 0, "maximum": 1},
+      "twist": {"description": "share of a spinning throw's tumble it twists by", "type": "number", "minimum": 0, "maximum": 1},
+      "bright": {"description": "its colour's value times this", "type": "number", "minimum": 1, "maximum": 2},
+      "core": {"description": "the white core's share of its width", "type": "number", "minimum": 0, "maximum": 1},
+      "fray": {"description": "how much of its tail erodes in flight", "type": "number", "minimum": 0, "maximum": 1},
+      "steps": {"description": "erosion steps once the object stops (one a 24 fps cell)", "type": "integer", "minimum": 1, "maximum": 8}
+     }
+    },
+    "dashRibbon": {
+     "type": "object",
+     "required": ["half", "min", "max"],
+     "additionalProperties": false,
+     "properties": {
+      "half": {"description": "half width as a share of the Billie's height", "type": "number", "minimum": 0, "maximum": 1},
+      "min": {"type": "number", "minimum": 0, "maximum": 1}, "max": {"type": "number", "minimum": 0, "maximum": 1}
+     }
+    },
+    "stretch": {
+     "type": "object",
+     "required": ["pace", "k", "max"],
+     "additionalProperties": false,
+     "properties": {
+      "pace": {"description": "a cell stretches at this times the throw's mean speed or more", "type": "number", "minimum": 1, "maximum": 2},
+      "k": {"description": "share of the way back to the place a cell ago", "type": "number", "minimum": 0, "maximum": 1},
+      "max": {"description": "at most, metres", "type": "number", "minimum": 0, "maximum": 2}
+     }
+    },
+    "lean": {
+     "type": "object",
+     "required": ["k", "max", "back"],
+     "additionalProperties": false,
+     "properties": {
+      "k": {"description": "lean per stage px a ms of sideways speed", "type": "number", "minimum": 0, "maximum": 4},
+      "max": {"description": "at most (the top's shift per metre of height)", "type": "number", "minimum": 0, "maximum": 0.6},
+      "back": {"description": "share of the lean moving back home", "type": "number", "minimum": 0, "maximum": 1}
+     }
+    }
+   }
+  },
   "colors": {"description": "named colours steps use (or `type`: the move type's)", "type": "object", "additionalProperties": {"$ref": "#/$defs/hex"}},
   "defaults": {
    "description": "the family for each outcome and category when a move names none",
@@ -45,11 +111,137 @@
   },
   "intro": {"description": "steps every move plays first", "type": "array", "items": {"$ref": "#/$defs/step"}},
   "families": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}},
-  "scenes": {"description": "signature scenes by id (VFX-17); a family's shape", "type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/family"}}
+  "scenes": {"description": "signature scenes by id (VFX-17): a family's shape, the family it plays where its models can't be drawn or under Reduced motion, and its short version (the prop and the hit) for its second use in a battle and the Faster speed", "type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"$ref": "#/$defs/scene"}},
+  "moods": {"description": "VFX-15: the battle mood over the place mood (logic/battle-stage-look.js battleMoodFor; the grade pass): a darken and a type tint on big moves and super-effective hits, the row wave, heat", "type": "object", "required": ["dark", "tint", "inMs", "outMs", "superEffective", "bureau", "wave", "heat"], "additionalProperties": false, "properties": {
+   "about": {"type": "string"},
+   "dark": {"description": "how much darker, at most .2 (the owner's pick)", "type": "number", "minimum": 0, "maximum": 0.2},
+   "tint": {"type": "number", "minimum": 0, "maximum": 1},
+   "inMs": {"type": "number", "minimum": 0},
+   "outMs": {"type": "number", "minimum": 0},
+   "superEffective": {"type": "boolean"},
+   "bureau": {"$ref": "#/$defs/hex"},
+   "wave": {"type": "object", "required": ["types", "bureau", "px", "bigPx", "rowPx", "speed"], "additionalProperties": false, "properties": {"types": {"type": "array", "items": {"type": "string"}}, "bureau": {"type": "boolean"}, "px": {"type": "integer", "minimum": 0, "maximum": 8}, "bigPx": {"type": "integer", "minimum": 0, "maximum": 8}, "rowPx": {"type": "integer", "minimum": 1, "maximum": 32}, "speed": {"type": "number", "minimum": 0}}},
+   "heat": {"type": "object", "required": ["types", "amount"], "additionalProperties": false, "properties": {"types": {"type": "array", "items": {"type": "string"}}, "amount": {"type": "number", "minimum": 0, "maximum": 1.5}}}
+  }},
+  "weather": {"description": "VFX-15: the walk weather on the battle stage (walk/fountains-weather.js drawWeather)", "type": "object", "required": ["rain", "settle", "sunny", "sand"], "additionalProperties": false, "properties": {
+   "about": {"type": "string"},
+   "rain": {"type": "object", "required": ["splash", "r"], "additionalProperties": false, "properties": {"splash": {"type": "number", "minimum": 0}, "r": {"type": "number", "minimum": 0}}},
+   "settle": {"type": "object", "required": ["ms", "cap", "r"], "additionalProperties": false, "properties": {"ms": {"type": "number", "minimum": 0}, "cap": {"type": "integer", "minimum": 0, "maximum": 200}, "r": {"type": "number", "minimum": 0}}},
+   "sunny": {"type": "object", "required": ["warm", "rays"], "additionalProperties": false, "properties": {"warm": {"type": "number", "minimum": 0, "maximum": 1}, "rays": {"type": "number", "minimum": 0, "maximum": 3}}},
+   "sand": {"type": "object", "required": ["n", "gust", "gustMs", "colors"], "additionalProperties": false, "properties": {"n": {"type": "integer", "minimum": 0, "maximum": 400}, "gust": {"type": "number", "minimum": 1}, "gustMs": {"type": "number", "minimum": 0}, "colors": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/hex"}}}}
+  }},
+  "scars": {"description": "VFX-15: battle scars (walk/battle-scars.js; logic/battle-stage-look.js scarKindFor, scarCap, scarAdd)", "type": "object", "required": ["cap", "maxM", "fadeMs", "fadeSteps", "heavy", "kinds"], "additionalProperties": false, "properties": {
+   "about": {"type": "string"},
+   "cap": {"description": "at most this many by the battle's quality 0-3", "type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 12}},
+   "maxM": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.2},
+   "fadeMs": {"type": "number", "minimum": 0},
+   "fadeSteps": {"type": "integer", "minimum": 1, "maximum": 8},
+   "heavy": {"type": "number", "minimum": 0, "maximum": 1},
+   "kinds": {"type": "object", "propertyNames": {"$ref": "#/$defs/id"}, "additionalProperties": {"type": "object", "required": ["m", "sprite", "color"], "additionalProperties": false, "properties": {"types": {"type": "array", "items": {"type": "string"}}, "sandstorm": {"type": "boolean"}, "heavy": {"type": "boolean"}, "m": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.2}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "color": {"$ref": "#/$defs/hex"}}}}
+  }}
+,
+  "artAbout": {"type": "string"},
+  "sprites": {
+   "description": "VFX-10: the effect strips by id: game/art/battle/anims/<id>.png, frames side by side in 8 greys (tools/build-battle-anims.py --check holds the strips to this)",
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["cell", "frames", "anchor"],
+    "additionalProperties": false,
+    "properties": {
+     "about": {"type": "string"},
+     "cell": {"description": "one frame's width and height, px", "type": "array", "items": {"type": "integer", "minimum": 1, "maximum": 64}, "minItems": 2, "maxItems": 2},
+     "frames": {"description": "frames in the strip (3-8 for an effect; a mark on the ground may have 1)", "type": "integer", "minimum": 1, "maximum": 8},
+     "anchor": {"description": "the px, from the top left, that sits on the effect's place", "type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 2, "maxItems": 2},
+     "fps": {"description": "frames a second (12 when left out)", "type": "number", "minimum": 1, "maximum": 30},
+     "impact": {"description": "its first two frames play at 24 fps", "type": "boolean"},
+     "loop": {"description": "plays round while it lives (else once, ending with its life)", "type": "boolean"},
+     "ground": {"description": "a mark on the ground at 32 px/m (VFX-15's scars); else a texel is a stage pixel at its depth", "type": "boolean"}
+    }
+   }
+  },
+  "ramps": {
+   "description": "VFX-10: what colours a sprite, by id (a type id, None, Bureau, up, down, heal): grey index i is the ramp's step i (0-6), 7 stays white",
+   "type": "object",
+   "propertyNames": {"type": "string", "pattern": "^[A-Za-z0-9_]+$"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["ramp", "light"],
+    "additionalProperties": false,
+    "properties": {
+     "about": {"type": "string"},
+     "ramp": {
+      "description": "an NW_PALETTE ramp (game/art/next/palette.js) or 8 hexes, darkest first",
+      "oneOf": [
+       {"type": "string", "enum": ["skin", "skin_deep", "ember", "crimson", "gold", "straw", "olive", "leaf", "pine", "mint", "teal", "sky", "cobalt", "indigo", "violet", "orchid", "rose", "rust", "steel", "stone"]},
+       {"type": "array", "items": {"$ref": "#/$defs/hex"}, "minItems": 8, "maxItems": 8}
+      ]
+     },
+     "light": {"description": "the colour it lights the stage with: a hex, or type (the type's glow, types.json)", "oneOf": [{"const": "type"}, {"$ref": "#/$defs/hex"}]}
+    }
+   }
+  },
+  "types": {"description": "VFX-11: the type kits by type id, None and Bureau (logic/battle-anims.js battleKitFor): what a family's steps draw with in that type", "type": "object", "properties": {"about": {"type": "string"}}, "additionalProperties": {"$ref": "#/$defs/kit"}},
+  "iconSprites": {
+   "description": "VFX-10: the icons.png particles the stage draws with a strip instead, like for like (sprite), and the ramp an untyped one takes",
+   "type": "object",
+   "additionalProperties": {
+    "type": "object",
+    "required": ["sprite", "ramp"],
+    "additionalProperties": false,
+    "properties": {"sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}}
+   }
+  },
+  "eventsAbout": {"type": "string"},
+  "tiers": {"description": "VFX-13: the hit tiers (logic/battle-anims.js hitLook, battle-stage.js hitFx)", "type": "object", "required": ["cell", "resisted", "neutral", "super", "super4", "crit", "ko", "last"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "cell": {"type": "number", "exclusiveMinimum": 0}, "resisted": {"$ref": "#/$defs/tierRow"}, "neutral": {"$ref": "#/$defs/tierRow"}, "super": {"$ref": "#/$defs/tierRow"}, "super4": {"$ref": "#/$defs/tierRow"}, "crit": {"$ref": "#/$defs/tierRow"}, "superCritPunch": {"type": "number", "minimum": 0, "maximum": 0.1}, "ko": {"$ref": "#/$defs/tierKo"}, "last": {"$ref": "#/$defs/tierKo"}, "drainAbout": {"type": "string"}, "drain": {"type": "object", "required": ["n", "every", "ms", "sprite", "ramp"], "additionalProperties": false, "properties": {"n": {"type": "integer", "minimum": 0, "maximum": 24}, "every": {"type": "number", "minimum": 0}, "ms": {"type": "number", "minimum": 0}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}}}, "heal": {"type": "object", "required": ["n", "every", "sprite", "ramp", "color"], "additionalProperties": false, "properties": {"n": {"type": "integer", "minimum": 0, "maximum": 24}, "every": {"type": "number", "minimum": 0}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "color": {"type": "string"}}}, "recoil": {"type": "object", "required": ["kb", "puff", "sprite"], "additionalProperties": false, "properties": {"kb": {"type": "number", "minimum": 0}, "puff": {"type": "integer", "minimum": 0}, "sprite": {"$ref": "#/$defs/tierSprite"}}}}},
+  "events": {
+   "description": "VFX-14: statuses, stat changes and short effects on the stage (logic/battle-looks.js, battle-looks.js); the battle's flow moments and the stage effects of statuses and stats, by event: each step adds its own keys (VFX-16: vs, sendOut, recall, catch, faint, levelUp, victory, defeat, item; VFX-14: its own)",
+   "type": "object",
+   "required": ["pulseMs", "cells", "brn", "par", "slp", "confused", "broken", "stat", "protect", "shield", "soaked", "fork", "delayed", "stones", "glint"],
+   "additionalProperties": false,
+   "properties": {
+    "pulseMs": {"description": "ms a lasting loop pulses once a turn under Calm", "type": "number", "minimum": 0},
+    "cells": {"description": "the most lasting-look particles at once, by quality 0-3", "type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 4, "maxItems": 4},
+    "brn": {"$ref": "#/$defs/look"},
+    "par": {"$ref": "#/$defs/look"},
+    "slp": {"$ref": "#/$defs/look"},
+    "confused": {"$ref": "#/$defs/look"},
+    "broken": {"$ref": "#/$defs/look"},
+    "soaked": {"$ref": "#/$defs/look"},
+    "fork": {"$ref": "#/$defs/look"},
+    "stat": {"type": "object", "required": ["up", "down", "sharply"], "additionalProperties": false, "properties": {"up": {"$ref": "#/$defs/lookBurst"}, "down": {"$ref": "#/$defs/lookBurst"}, "sharply": {"description": "times as many chevrons for 2 stages or more", "type": "number", "minimum": 1}}},
+    "protect": {"$ref": "#/$defs/lookDome"},
+    "shield": {"$ref": "#/$defs/lookDome"},
+    "delayed": {"type": "object", "required": ["sprite", "ramp", "y"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "y": {"description": "m up", "type": "number", "minimum": 0}}},
+    "stones": {"type": "object", "required": ["sprite", "ramp", "n", "r"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "n": {"type": "integer", "minimum": 1}, "r": {"description": "m", "type": "number", "minimum": 0}, "frame": {"type": "integer", "minimum": 0}, "glint": {"$ref": "#/$defs/lookBurst"}}},
+    "glint": {"type": "object", "required": ["sprite", "life", "gapMs", "ramps"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "life": {"description": "ms", "type": "number", "minimum": 0}, "k": {"type": "integer", "minimum": 1}, "gapMs": {"description": "ms between two in one line", "type": "number", "minimum": 0}, "ramps": {"type": "object", "additionalProperties": {"type": "string"}}}},
+    "about": {"type": "string"},
+    "vs": {"type": "object", "required": ["foes", "rivals", "scale", "hold"], "additionalProperties": false, "properties": {"foes": {"type": "array", "items": {"enum": ["miniboss", "boss", "rival"]}}, "rivals": {"type": "array", "items": {"$ref": "#/$defs/id"}}, "scale": {"type": "integer", "minimum": 1, "maximum": 4}, "hold": {"type": "number", "minimum": 0, "maximum": 700}}},
+    "sendOut": {"type": "object", "required": ["riseMs", "burst", "kinds", "glint"], "additionalProperties": false, "properties": {"riseMs": {"type": "number", "minimum": 0}, "burst": {"type": "integer", "minimum": 0}, "kinds": {"type": "object", "additionalProperties": {"type": "string"}}, "glint": {"type": "object", "required": ["coat", "prime", "n"], "additionalProperties": false, "properties": {"coat": {"type": "string"}, "prime": {"type": "string"}, "n": {"type": "integer", "minimum": 0}}}}},
+    "recall": {"type": "object", "required": ["w", "outMs"], "additionalProperties": false, "properties": {"w": {"type": "number", "minimum": 0}, "outMs": {"type": "number", "minimum": 0}}},
+    "catch": {"type": "object", "required": ["squash", "dust", "ringR", "shards"], "additionalProperties": false, "properties": {"squash": {"type": "number", "minimum": 0, "maximum": 0.5}, "dust": {"type": "integer", "minimum": 0}, "ringR": {"type": "number", "minimum": 0}, "shards": {"type": "integer", "minimum": 0}}},
+    "faint": {"type": "object", "required": ["holdMs", "outMs", "dust", "bolts", "smoke"], "additionalProperties": false, "properties": {"holdMs": {"type": "number", "minimum": 0}, "outMs": {"type": "number", "minimum": 0}, "dust": {"type": "integer", "minimum": 0}, "bolts": {"type": "integer", "minimum": 0}, "smoke": {"type": "integer", "minimum": 0}}},
+    "levelUp": {"type": "object", "required": ["ramp", "n", "h", "ringR"], "additionalProperties": false, "properties": {"ramp": {"type": "string"}, "n": {"type": "integer", "minimum": 0}, "h": {"type": "number", "minimum": 0}, "ringR": {"type": "number", "minimum": 0}}},
+    "victory": {"type": "object", "required": ["sparkles", "cheerMs"], "additionalProperties": false, "properties": {"sparkles": {"type": "integer", "minimum": 0}, "cheerMs": {"type": "number", "minimum": 0}}},
+    "defeat": {"type": "object", "required": ["fadeMs"], "additionalProperties": false, "properties": {"fadeMs": {"type": "number", "minimum": 0}}},
+    "item": {"type": "object", "required": ["flyMs"], "additionalProperties": false, "properties": {"flyMs": {"type": "number", "minimum": 0}}},
+    "bossPhase": {"description": "VFX-18b: a Bureau boss's phase with a shield: steps (prop steps, VFX-17's shape) played on the boss inside the phase's own time (battle-anim-run.js battleBossPhaseScene); none under Reduced motion or with 3D props off", "type": "object", "required": ["faction", "steps"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "faction": {"description": "the faction (factions.json) whose boss plays it, read from bosses.json faction", "type": "string"}, "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}}}}
+   }
+  }
  },
  "$defs": {
+  "tierRow": {"description": "VFX-13: a hit tier's row (tiers.about)", "type": "object", "required": ["stop", "shake", "kb", "burst", "spread", "light", "ring"], "additionalProperties": false, "properties": {"stop": {"description": "hit-stop ms (real time)", "type": "number", "minimum": 0, "maximum": 120}, "stopW": {"type": "number", "minimum": 0, "maximum": 120}, "shake": {"type": "number", "minimum": 0}, "shakeW": {"type": "number", "minimum": 0}, "kb": {"description": "knockback px", "type": "number", "minimum": 0}, "kbW": {"type": "number", "minimum": 0}, "burst": {"type": "integer", "minimum": 0}, "spread": {"description": "m/s", "type": "number", "minimum": 0}, "light": {"description": "times the kit's light", "type": "number", "minimum": 0, "maximum": 2}, "lightCol": {"type": "string"}, "ring": {"description": "m", "type": "number", "minimum": 0}, "ringW": {"type": "number", "minimum": 0}, "punch": {"type": "number", "minimum": 0, "maximum": 0.2}, "punchW": {"type": "number", "minimum": 0, "maximum": 1}, "handheld": {"type": "number", "minimum": 0, "maximum": 2}, "flash": {"type": "object", "required": ["color", "a", "ms"], "additionalProperties": false, "properties": {"color": {"type": "string"}, "a": {"description": "at most .55 (rule 9)", "type": "number", "minimum": 0, "maximum": 0.55}, "ms": {"type": "number", "minimum": 0}}}, "ca": {"description": "chromatic pulse ms", "type": "number", "minimum": 0, "maximum": 400}, "impact": {"enum": ["crit", "ko"]}, "sprite": {"$ref": "#/$defs/tierSprite"}, "puff": {"type": "integer", "minimum": 0}}},
+  "tierSprite": {"type": "object", "required": ["ms"], "additionalProperties": false, "properties": {"white": {"type": "number", "minimum": 0, "maximum": 1}, "dark": {"type": "number", "minimum": 0, "maximum": 1}, "ms": {"type": "number", "minimum": 0}, "darkMs": {"type": "number", "minimum": 0}}},
+  "tierKo": {"type": "object", "additionalProperties": false, "properties": {"stop": {"description": "ms more hit-stop", "type": "number", "minimum": 0, "maximum": 84}, "shake": {"type": "number", "minimum": 0}, "shakeTo": {"type": "number", "minimum": 0}, "kb": {"type": "number", "minimum": 0}, "burst": {"type": "integer", "minimum": 0}, "scar": {"type": "integer", "minimum": 0, "maximum": 2}, "sprite": {"$ref": "#/$defs/tierSprite"}, "impact": {"enum": ["crit", "ko"]}, "freeze": {"description": "the last KO's hit-stop in all, ms (about 250: the one place time is added)", "type": "number", "minimum": 0, "maximum": 300}}},
+  "kit": {"type": "object", "required": ["ramp", "shot", "impact", "bits", "path", "motion", "light"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "ramp": {"type": "string"}, "ramp2": {"type": "string"}, "shot": {"$ref": "#/$defs/id"}, "impact": {"$ref": "#/$defs/id"}, "small": {"$ref": "#/$defs/id"}, "bits": {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1}, "burstSprites": {"description": "VFX-20: the icons.png particles a hit's burst sprays in turn (were types.json and untyped.json fx); a kit without one sprays None's", "type": "array", "items": {"type": "string"}, "minItems": 1}, "icons": {"type": "array", "items": {"type": "string"}}, "path": {"enum": ["straight", "arc", "zigzag", "spiral", "wave", "stamp"]}, "motion": {"enum": ["flicker", "arc", "spiral", "zigzag", "thud", "sweep", "wave", "rings", "twotone", "plain", "stamp"]}, "light": {"type": "object", "required": ["k", "ms"], "additionalProperties": false, "properties": {"k": {"type": "number", "minimum": 0, "maximum": 2}, "ms": {"description": "at most 300 (Budgets)", "type": "number", "minimum": 0, "maximum": 300}, "flicker": {"type": "boolean"}}}, "cast": {"type": "array", "items": {"$ref": "#/$defs/step"}}, "hit": {"type": "array", "items": {"$ref": "#/$defs/step"}}}},
   "id": {"type": "string", "pattern": "^[a-z0-9_]+$"},
   "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+  "smearLooks": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"type": "object", "required": ["fade", "glow"], "additionalProperties": false, "properties": {"fade": {"description": "how much is drawn (dithered)", "type": "number", "minimum": 0, "maximum": 1}, "glow": {"description": "how much brighter in its own colours", "type": "number", "minimum": 0, "maximum": 2}}}},
+  "byQuality": {"description": "one number for each of the battle's quality levels 0-3 (0 the best)", "type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "integer", "minimum": 0, "maximum": 1024}},
+  "lookBurst": {"description": "VFX-14: a burst of strips (eventsAbout)", "type": "object", "required": ["sprite"], "additionalProperties": false, "properties": {"sprite": {"$ref": "#/$defs/id"}, "ramp": {"description": "a ramps id, or type (the move's type)", "type": "string"}, "n": {"type": "integer", "minimum": 1}, "every": {"description": "ms apart", "type": "number", "minimum": 0}, "life": {"description": "ms each lives", "type": "number", "minimum": 0}, "vy": {"description": "m/s up (down below 0)", "type": "number"}, "spread": {"description": "m across", "type": "number", "minimum": 0}, "y": {"enum": ["feet", "mid", "top"]}, "k": {"description": "scale, a whole number", "type": "integer", "minimum": 1}, "frame": {"description": "a fixed frame (else it plays)", "type": "integer", "minimum": 0}, "flip": {"type": "boolean"}, "glow": {"type": "boolean"}}},
+  "look": {"description": "VFX-14: a status's or a short effect's look (eventsAbout)", "type": "object", "additionalProperties": false, "properties": {"about": {"type": "string"}, "tint": {"$ref": "#/$defs/hex"}, "tintA": {"type": "number", "minimum": 0, "maximum": 1}, "start": {"$ref": "#/$defs/lookBurst"}, "loop": {"$ref": "#/$defs/lookBurst"}, "tick": {"$ref": "#/$defs/lookBurst"}, "end": {"$ref": "#/$defs/lookBurst"}, "bonk": {"$ref": "#/$defs/lookBurst"}, "flicker": {"type": "array", "items": {"type": "number", "minimum": 0, "maximum": 1}, "minItems": 1}, "hold": {"description": "ms a lost turn's frame is held", "type": "number", "minimum": 0}, "edge": {"type": "object", "required": ["color", "a", "cells"], "additionalProperties": false, "properties": {"color": {"$ref": "#/$defs/hex"}, "a": {"type": "number", "minimum": 0, "maximum": 1}, "cells": {"type": "integer", "minimum": 1}}}, "idle": {"type": "object", "additionalProperties": false, "properties": {"slow": {"type": "number", "exclusiveMinimum": 0, "maximum": 1}, "sink": {"description": "px lower", "type": "number", "minimum": 0}, "droop": {"type": "number"}}}, "hop": {"description": "px a pop hops", "type": "number", "minimum": 0}, "orbit": {"type": "object", "required": ["n", "r", "turnMs"], "additionalProperties": false, "properties": {"n": {"type": "integer", "minimum": 1}, "r": {"description": "half-heights", "type": "number", "minimum": 0}, "turnMs": {"type": "number", "exclusiveMinimum": 0}}}, "dx": {"description": "m", "type": "number", "minimum": 0}, "fade": {"type": "number", "minimum": 0, "maximum": 1}}},
+  "lookDome": {"description": "VFX-14: discs of hex cells round a Billie (protect, shield)", "type": "object", "required": ["sprite", "ramp", "frame", "flashFrame", "crackFrame", "cells", "r", "h", "flashMs"], "additionalProperties": false, "properties": {"about": {"type": "string"}, "sprite": {"$ref": "#/$defs/id"}, "ramp": {"type": "string"}, "frame": {"type": "integer", "minimum": 0}, "flashFrame": {"type": "integer", "minimum": 0}, "crackFrame": {"type": "integer", "minimum": 0}, "a": {"description": "how much of a cell shows (eroded, dithered); a flash shows it all", "type": "number", "minimum": 0, "maximum": 1}, "cells": {"description": "cells by quality 0-3", "type": "array", "items": {"type": "integer", "minimum": 0}, "minItems": 4, "maxItems": 4}, "r": {"description": "half-heights out", "type": "number", "minimum": 0}, "h": {"description": "half-heights up", "type": "number", "minimum": 0}, "flashMs": {"description": "ms", "type": "number", "minimum": 0}, "end": {"$ref": "#/$defs/lookBurst"}}},
   "timeline": {
    "type": "object",
    "required": ["dur", "hit", "steps"],
@@ -65,7 +257,20 @@
    "properties": {
     "about": {"type": "string"},
     "dur": true, "hit": true, "steps": true,
-    "short": {"description": "the Faster variant", "$ref": "#/$defs/timeline"}
+    "short": {"description": "the Faster variant", "$ref": "#/$defs/timeline"},
+    "miss": {"description": "VFX-13: its own miss, a whiff that fits the family (its time today's miss's)", "$ref": "#/$defs/timeline"}
+   },
+   "additionalProperties": false
+  },
+  "scene": {
+   "allOf": [{"$ref": "#/$defs/timeline"}],
+   "type": "object",
+   "required": ["family"],
+   "properties": {
+    "about": {"type": "string"},
+    "family": {"description": "VFX-17: the family it plays instead (3D props off, its models not loaded, Reduced motion)", "$ref": "#/$defs/id"},
+    "dur": true, "hit": true, "steps": true,
+    "short": {"description": "VFX-17: the repeat (its second use in a battle) and the Faster variant: the prop and the hit, no wind-up", "$ref": "#/$defs/timeline"}
    },
    "additionalProperties": false
   },
@@ -73,13 +278,23 @@
    "type": "object",
    "required": ["do"],
    "properties": {
-    "do": {"enum": ["focus", "camAt", "camTo", "camHome", "toTarget", "handheld", "action", "lunge", "dust", "ring", "groundRing", "beam", "lob", "fling", "converge", "blink", "dodge", "pop", "hit"]},
+    "do": {"enum": ["focus", "camAt", "camTo", "camHome", "toTarget", "handheld", "action", "lunge", "dust", "ring", "groundRing", "beam", "lob", "fling", "converge", "blink", "dodge", "pop", "hit", "projectile", "ray", "impact", "spray", "rain", "orbit", "rise", "light", "shake", "jump", "pulse", "kit", "beat", "prop", "stamp", "cut"], "description": "VFX-17 adds: prop (a low-poly model, game/art/scene/next/models/<prop>.json, flown on a path to its place: from above, below, the side or the attacker; held, then eroded), stamp (a drawn sound word, a strip, stepped in from big to its size), cut (the camera cuts to a Billie with the impact frame, through Flashes and the flash limiter). VFX-13 adds beat (a flurry's lighter hit on the beat, each repeat harder, the last the hit itself). VFX-11 adds: projectile (a sprite flying on a path from one Billie to another, a trail of copies behind it), ray (a beam strip with its caps), impact (one strip at a Billie), spray (strips thrown out, or toward a Billie), rain (strips falling round a Billie), orbit (strips circling a Billie), rise (strips rising, or falling with down), light (a point light in the kit's colour), shake, jump (a Billie up and down again), pulse (a ring flying to a Billie), kit (the kit's cast or hit steps)"},
     "at": {"description": "stage ms after the move starts (missing: at once)", "type": "number", "minimum": 0},
     "n": {"description": "repeats (every ms apart)", "type": "integer", "minimum": 1},
     "every": {"type": "number", "minimum": 0},
-    "if": {"type": "array", "items": {"enum": ["H", "S", "X", "self", "protect", "dmg", "landed", "power80", "gl", "motion", "!H", "!S", "!X", "!self", "!protect", "!dmg", "!landed", "!power80", "!gl", "!motion"]}},
+    "if": {"description": "VFX-11 adds drain, heal, drop (it lowers a foe's stat), spread (it hits every foe), aim (it hit a robot's part it aimed at), bureau (a Bureau bot's move)", "type": "array", "items": {"enum": ["H", "S", "X", "self", "protect", "dmg", "landed", "power80", "gl", "motion", "drain", "heal", "drop", "spread", "aim", "bureau", "!H", "!S", "!X", "!self", "!protect", "!dmg", "!landed", "!power80", "!gl", "!motion", "!drain", "!heal", "!drop", "!spread", "!aim", "!bureau"]}},
     "types": {"type": "array", "items": {"type": "string"}},
-    "on": {"enum": ["attacker", "target", "subject", "wide"]},
+    "on": {"enum": ["attacker", "target", "subject", "foe", "wide", "past"]},
+    "from": {"description": "VFX-17: a prop also flies from above, below, side (off the stage beyond the attacker) or behind (behind the attacker)", "enum": ["attacker", "target", "subject", "foe", "above", "below", "side", "behind"]},
+    "prop": {"description": "VFX-17: a prop step's model, a recipe id in game/art/scene/next/models", "$ref": "#/$defs/id"},
+    "to": {"enum": ["attacker", "target", "subject", "foe", "past"]},
+    "toward": {"enum": ["attacker", "target", "subject", "foe", "past"]},
+    "spr": {"description": "VFX-11: a strip (sprites) or a kit role (shot, impact, small, bits), or several taken in turn", "oneOf": [{"$ref": "#/$defs/id"}, {"type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1}]},
+    "icon": {"description": "VFX-11: an icons.png particle instead of a strip; VFX-17: or several, taken in turn (a scene's icon props)", "oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}, "minItems": 1}]},
+    "ramp": {"description": "VFX-11: the ramp a strip takes (ramps; the kit's when left out)", "type": "string"},
+    "ramp2": {"type": "string"},
+    "path": {"enum": ["kit", "straight", "arc", "zigzag", "spiral", "wave", "stamp"]},
+    "part": {"enum": ["cast", "hit"]},
     "color": {"type": "string"},
     "pop": {"enum": ["miss", "hedged"]},
     "pose": {"type": "string"},

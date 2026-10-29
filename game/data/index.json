@@ -21,6 +21,8 @@
   "music",
   "soundscape",
   "perks",
+  "perkSets",
+  "boons",
   "events",
   "rewards",
   "currencies",
@@ -58,6 +60,8 @@
   "lore",
   "story",
   "banter",
+  "talkSkins",
+  "emotes",
   "relations",
   "showcase",
   "cutscenes"

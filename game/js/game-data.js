@@ -20,6 +20,7 @@ expose({
   BANTER: [() => BANTER],
   BATTLE_ANIMS: [() => BATTLE_ANIMS],
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BOONS: [() => BOONS],
   BOSSES: [() => BOSSES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
@@ -28,13 +29,13 @@ expose({
   DATA_WARN: [() => DATA_WARN],
   DEFAULT_EVOLUTIONS: [() => DEFAULT_EVOLUTIONS],
   DEX_ORDER: [() => DEX_ORDER],
+  EMOTES: [() => EMOTES],
   EVENTS: [() => EVENTS],
   FACTIONS: [() => FACTIONS],
   FESTIVALS: [() => FESTIVALS],
   FIELD_MOVES: [() => FIELD_MOVES],
   GENES: [() => GENES],
   GHOST_KEEPS: [() => GHOST_KEEPS],
-  HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
   LINES: [() => LINES],
@@ -49,6 +50,7 @@ expose({
   PASSIVE_INFO: [() => PASSIVE_INFO],
   PEOPLE: [() => PEOPLE],
   PERKS: [() => PERKS],
+  PERK_SETS: [() => PERK_SETS],
   POOLS: [() => POOLS],
   PYRAMIDS: [() => PYRAMIDS],
   QUESTS: [() => QUESTS],
@@ -73,6 +75,7 @@ expose({
   STAT_IDS: [() => STAT_IDS],
   STAT_NAMES: [() => STAT_NAMES],
   STORY_DATA: [() => STORY_DATA],
+  TALK_SKINS: [() => TALK_SKINS],
   TRAINERS: [() => TRAINERS],
   TYPES: [() => TYPES],
   TYPE_COLORS: [() => TYPE_COLORS],
@@ -161,11 +164,7 @@ export const TYPE_RESISTED_BY = Object.fromEntries(
   gameData.types.map(t => [t.id, (t.weak || []).filter(x => TYPE_COLORS[x])])
 );
 export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
-export const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
-  gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']])
-);
-provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
-HIT_EFFECTS_BY_TYPE.None = gameData.untyped.fx || ['pow', 'star'];
+provide({ PASSIVE }); /* to-module */
 export const typesWith = p => TYPES.filter(t => PASSIVE[t] === p);
 export const hasPassive = (types, p) => types.some(t => PASSIVE[t] === p);
 /** RF-3: a passive's name and text as the player reads them (types.json passiveName, passiveText), by type */
@@ -412,6 +411,10 @@ export const SOUNDSCAPE = gameData.soundscape || { beds: {} };
 /* roguelite track RL-R2: the field moves that open a run's side areas (fieldMoves.json; logic/run-side.js) */
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
 provide({ FIELD_MOVES }); /* to-module */
+/* dialogue track DL-3: each character's own speech bubble (talkSkins.json; logic/talk-skins.js, talk.js) */
+export const TALK_SKINS = gameData.talkSkins || { default: 'folk', skins: {}, speakers: {}, classes: {} };
+/* dialogue track DL-5: the emotes that pop beside a talking head (emotes.json; talk.js) */
+export const EMOTES = gameData.emotes || { size: 12, outline: '', colors: {}, auto: {}, emotes: {} };
 /* splicing track SP-2: what spliced parts do (genes.json; logic/genes.js) */
 export const GENES = /** @type {import('../types/game-data').Genes} */ (
   gameData.genes || {
@@ -460,10 +463,12 @@ export const SHOWCASE = /** @type {import('../types/game-data').ShowcaseData} */
 export const FACTIONS = /** @type {Record<string, import('../types/game-data').Faction>} */ (
   (gameData.factions && gameData.factions.factions) || {}
 );
+provide({ FACTIONS }); /* to-module */
 /* roguelite track RL-14b: a run's bosses that are not a leader's Billie: the Voltron (bosses.json; battle-engine.js makeBossRobot) */
 export const BOSSES = /** @type {Record<string, import('../types/game-data').BossDef>} */ (
   (gameData.bosses && gameData.bosses.bosses) || {}
 );
+provide({ BOSSES }); /* to-module */
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
 /* residents track RS-1: the people a run can invite to Copperleaf (residents.json; logic/residents.js) */
@@ -476,6 +481,12 @@ export const FESTIVALS = /** @type {import('../types/game-data').FestivalsData |
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
 provide({ PERKS }); /* to-module */
+/* perks track PK-8: Perk sets, a bonus for holding `need` of a set's Perks (perkSets.json; logic/perks.js perkSetsOn) */
+export const PERK_SETS = /** @type {Record<string, import('../types/game-data').PerkSet>} */ (gameData.perkSets || {});
+provide({ PERK_SETS }); /* to-module */
+/* perks track PK-9: boons and curses, named effects that last a few places (boons.json; logic/run-enc.js) */
+export const BOONS = /** @type {Record<string, import('../types/game-data').Boon>} */ (gameData.boons || {});
+provide({ BOONS }); /* to-module */
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 provide({ REWARDS }); /* to-module */
@@ -602,15 +613,20 @@ export const worldExtra = {
   pools: /** @type {string[]} */ ([]),
   shops: /** @type {string[]} */ ([]),
   trainers: /** @type {string[]} */ ([]),
+  /* PK-7: the levels its foes were made with (run-scenes.js runWorldTables' foeUp; null: the hub's, or none given) */
+  foeUp: /** @type {number | null} */ (null),
+  foeSeed: '',
 };
 provide({ worldExtra }); /* to-module */
 /** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS;
  * RL-8b: and its own world map look
  * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,
- *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any }} w */
+ *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any, foeUp?: number, foeSeed?: string }} w */
 export function worldPut(w) {
   worldHubBack();
   worldExtra.look = w.look || null;
+  worldExtra.foeUp = typeof w.foeUp === 'number' ? w.foeUp : null;
+  worldExtra.foeSeed = w.foeSeed || '';
   Object.assign(worldExtra.maps, w.maps);
   Object.assign(gameData.maps, w.maps);
   Object.assign(POOLS, w.pools);
@@ -630,6 +646,8 @@ export function worldAddTrainers(trainers) {
 }
 export function worldHubBack() {
   worldExtra.look = null;
+  worldExtra.foeUp = null;
+  worldExtra.foeSeed = '';
   for (const id of Object.keys(worldExtra.maps)) {
     delete gameData.maps[id];
     delete worldExtra.maps[id];

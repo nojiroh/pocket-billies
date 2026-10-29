@@ -173,13 +173,24 @@ test('check-data: planted battle animations (VFX-8)', t => {
     checkDataOn({
       'battleAnims.json': A => {
         A.defaults.H = 'nosuchfamily';
-        A.families.legacy_hit.steps[1].color = 'nosuchcolour';
-        A.families.legacy_cast.steps[2].types = ['Nosuchtype'];
-        A.families.legacy_guard.hit = 900;
+        A.families.strike.steps[1].color = 'nosuchcolour';
+        A.families.shot.steps[2].types = ['Nosuchtype'];
+        A.families.guard.hit = 900;
       },
       'moves.json': M => {
         M.handshake.anim = 'nosuchscene';
-        M.hedge.anim = 'legacy_guard';
+        M.hedge.anim = 'guard';
+      },
+    })
+  );
+});
+
+test('check-data: planted battle effect budgets (VFX-12)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'battleAnims.json': A => {
+        A.budgets.particles[2] = 300;
+        A.budgets.burst[3] = 60;
       },
     })
   );

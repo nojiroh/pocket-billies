@@ -20,7 +20,7 @@ import { META_GENES, META_MAX } from './meta-state.js';
 import { factionBotOf, factionOfClass } from './factions.js';
 import { fieldBadgeKey } from './run-side.js';
 import { runFragileDrop, runFxMoment } from './run-loop.js';
-import { fxMoney, fxOfBillie, fxSalvage, fxSplice } from './effects.js';
+import { fxHeldBoost, fxMoney, fxOfBillie, fxSalvage, fxSplice } from './effects.js';
 import { perkOfferMake, perkTeamOf } from './perks.js';
 import { rewardDataGame, rewardOfferMake, salvageOfferMake } from './rewards.js';
 import { battleRoll, fxBattleRows, fxFoeTags } from './battle-engine.js';
@@ -54,12 +54,13 @@ export const battleOutcome = (kind, over) => (over === 'draw' ? (kind === 'wild'
  * What a battle that has ended pays and costs. `rules` defaults to the game's. RL-10: it draws no chance any more
  * (a wild win's egg drop, the one roll it took, is gone: eggs come from the ranch); `roll`, the battle's chance, is
  * still taken so every caller's arguments keep their places.
- * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[], fx?: any[] }} b b.fx: a run's
- *   Perks (logic/effects.js), which change the money a win pays
+ * @param {{ kind: string, over: string | null, T?: any, tid?: string, foe: { lvl: number }[], fx?: any[], fainted?: number }} b
+ *   b.fx: a run's Perks (logic/effects.js), which change the money a win pays; PK-7: with a faintPaysNothing rule row
+ *   (Influencer Contract) a win in which one of yours fainted (b.fainted) pays no Moneys (`noPay`: that row's source)
  * @param {{ se: number, flags: Record<string, number>, seats: string[], run?: any }} s
  * @param {(() => number) | null} roll unused since RL-10
  * @param {{ battle: { loseFee: number } }} [rules]
- * @returns {{ o: string | null, fee: number, prize: number, reward: number, first: boolean,
+ * @returns {{ o: string | null, fee: number, prize: number, reward: number, first: boolean, noPay?: string,
  *   seat: null | { id: string, nu: boolean, pyramids: Record<string, number>, items: Record<string, number> } }}
  */
 export function battleRewards(b, s, roll, rules = RULES) {
@@ -81,15 +82,26 @@ export function battleRewards(b, s, roll, rules = RULES) {
     if (st && !run)
       out.seat = { id: st.id, nu: !s.seats.includes(st.id), pyramids: st.pyramids || {}, items: st.items || {} };
   }
+  /* PK-7: Influencer Contract: one of yours fainted, so the win pays no Moneys */
+  const no =
+    o === 'win' && (b.fainted || 0) > 0
+      ? (b.fx || []).find(f => f.kind === 'rule' && f.rule === 'faintPaysNothing' && f.n > 0)
+      : null;
+  if (no && (out.prize || out.reward)) {
+    out.prize = 0;
+    out.reward = 0;
+    /** @type {any} */ (out).noPay = no.src;
+  }
   return out;
 }
 
 /** RL-12c: the rows that change a battle's money: the run's (b.fx) and the money rows of the held items of yours still
- * standing (null with none) @param {any} b */
+ * standing (null with none; PK-8: worked better by the run's heldBoost rows) @param {any} b */
 export function battleMoneyFx(b) {
-  const held = b.sides[0].team
-    .filter((/** @type {any} */ m) => m.hp > 0)
-    .flatMap((/** @type {any} */ m) => (fxOfBillie(m, ITEMS) || []).filter(f => f.kind === 'money'));
+  const boost = b.fx ? fxHeldBoost(b.fx) : 1,
+    held = b.sides[0].team
+      .filter((/** @type {any} */ m) => m.hp > 0)
+      .flatMap((/** @type {any} */ m) => (fxOfBillie(m, ITEMS, boost) || []).filter(f => f.kind === 'money'));
   /* PK-1: the run's rows whose conditions hold for this battle (battle-engine.js fxBattleRows) */
   const run = fxBattleRows(b);
   return held.length ? [...(run || []), ...held] : run;
@@ -107,7 +119,16 @@ export function battleMoneyFx(b) {
  */
 export function battleSettle(b, s) {
   const pay = battleRewards(
-      { kind: b.kind, over: b.over, T: b.T, tid: b.tid, foe: b.sides[1].team, fx: battleMoneyFx(b) || undefined },
+      {
+        kind: b.kind,
+        over: b.over,
+        T: b.T,
+        tid: b.tid,
+        foe: b.sides[1].team,
+        fx: battleMoneyFx(b) || undefined,
+        /* PK-7: how many of yours fainted (Influencer Contract's faintPaysNothing) */
+        fainted: b.fainted || 0,
+      },
       s,
       battleRoll
     ),
@@ -192,7 +213,9 @@ export function battleSettleWin(b, s, pay, run) {
     /* RL-S2: a side area's leader beaten finds Beans */
     if (run && b.T && run.map && run.map.side && b.T.from && b.T.from === run.map.side.leader)
       runBeans(s, (RULES.run.beans || {}).side, run);
-    if (run && b.T && b.T.runFoe === 'miniboss') perkOfferMake(run, PERKS, RULES.run.perks, perkTeamOf(s.team));
+    /* PK-7: a leader's win offers Fine Print alone (rules.json run.perks.leader) */
+    if (run && b.T && b.T.runFoe === 'miniboss')
+      perkOfferMake(run, PERKS, RULES.run.perks, perkTeamOf(s.team), 'leader');
     /* RL-12b: a route trainer (or the rival, or ON-2's ghost) leaves a reward pick (logic/rewards.js), saved with the
        battle's end */
     if (!salvage && run && b.T && ['route', 'rival', 'ghost'].includes(b.T.runFoe))

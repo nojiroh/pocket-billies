@@ -20,6 +20,7 @@ import { RUN_MARK_TYPES } from './run-marks.js';
 import { waterKindKnown } from './water-kinds.js';
 import { wadeWalkable } from './wading.js';
 import { runRegionData, runRegionMake } from './run-region.js';
+import { BATTLE_KIT_ROLES, redShare } from './battle-anims.js';
 import { caseFile, redactProblem } from './case-file.js';
 import {
   RUN_GRID,
@@ -53,6 +54,7 @@ import {
   FX_IMMUNE,
   FX_KINDS,
   FX_LIMIT,
+  FX_LOOT_N,
   FX_ONCE,
   FX_PASSIVE_KEYS,
   FX_PER,
@@ -63,10 +65,15 @@ import {
   FX_WEATHER,
   FX_WHEN,
   FX_WHEN_BATTLE,
+  HELD_FX_KINDS,
+  HELD_IFS,
+  HELD_OWN_FORMS,
+  HELD_WHEN,
 } from './effects.js';
 import { conditionNames, conditionProblem, conditionTree } from './conditions.js';
 import { BANTER_WHO } from './story-pick.js';
 import { islandProblems } from './island.js';
+import { MARKUP_EMOTES } from './line-markup.js';
 import { parseScript, scriptProblem } from './script-parse.js';
 import { svgProblem } from './svg-pixels.js';
 /* eslint-disable no-func-assign */
@@ -78,14 +85,15 @@ expose({
   FX_TIMING: [() => FX_TIMING],
   FX_WHEN_KINDS: [() => FX_WHEN_KINDS],
   GENE_KINDS: [() => GENE_KINDS],
+  HELD_WHEN_KINDS: [() => HELD_WHEN_KINDS],
   HOLD_KINDS: [() => HOLD_KINDS],
   PERK_NEEDS: [() => PERK_NEEDS],
-  PERK_THEMES: [() => PERK_THEMES],
   RARITY_TIERS: [() => RARITY_TIERS],
   ROBOT_FITS: [() => ROBOT_FITS],
   RUN_MAP_ROLE_NAMES: [() => RUN_MAP_ROLE_NAMES],
   RUN_MAP_ROLE_TYPES: [() => RUN_MAP_ROLE_TYPES],
   RUN_RULE_KEYS: [() => RUN_RULE_KEYS],
+  TIER_STOP_MAX: [() => TIER_STOP_MAX],
   base64Bytes: [() => base64Bytes],
   // @ts-expect-error -- replaced on purpose
   dataArenas: [() => dataArenas, v => (dataArenas = v)],
@@ -94,9 +102,17 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataBattleAnims: [() => dataBattleAnims, v => (dataBattleAnims = v)],
   // @ts-expect-error -- replaced on purpose
+  dataBattleFlowEvents: [() => dataBattleFlowEvents, v => (dataBattleFlowEvents = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBattleRules: [() => dataBattleRules, v => (dataBattleRules = v)],
   // @ts-expect-error -- replaced on purpose
+  dataBattleTiers: [() => dataBattleTiers, v => (dataBattleTiers = v)],
+  // @ts-expect-error -- replaced on purpose
   dataBiomes: [() => dataBiomes, v => (dataBiomes = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataBoonArt: [() => dataBoonArt, v => (dataBoonArt = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataBoons: [() => dataBoons, v => (dataBoons = v)],
   // @ts-expect-error -- replaced on purpose
   dataBosses: [() => dataBosses, v => (dataBosses = v)],
   // @ts-expect-error -- replaced on purpose
@@ -107,6 +123,8 @@ expose({
   dataCatchArt: [() => dataCatchArt, v => (dataCatchArt = v)],
   // @ts-expect-error -- replaced on purpose
   dataCurrencies: [() => dataCurrencies, v => (dataCurrencies = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataEmotes: [() => dataEmotes, v => (dataEmotes = v)],
   // @ts-expect-error -- replaced on purpose
   dataEvents: [() => dataEvents, v => (dataEvents = v)],
   // @ts-expect-error -- replaced on purpose
@@ -120,11 +138,15 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataHeldItems: [() => dataHeldItems, v => (dataHeldItems = v)],
   // @ts-expect-error -- replaced on purpose
+  dataItemArt: [() => dataItemArt, v => (dataItemArt = v)],
+  // @ts-expect-error -- replaced on purpose
   dataModifiers: [() => dataModifiers, v => (dataModifiers = v)],
   // @ts-expect-error -- replaced on purpose
   dataNodeTypes: [() => dataNodeTypes, v => (dataNodeTypes = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerkArt: [() => dataPerkArt, v => (dataPerkArt = v)],
+  // @ts-expect-error -- replaced on purpose
+  dataPerkSets: [() => dataPerkSets, v => (dataPerkSets = v)],
   // @ts-expect-error -- replaced on purpose
   dataPerks: [() => dataPerks, v => (dataPerks = v)],
   // @ts-expect-error -- replaced on purpose
@@ -168,6 +190,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   dataSquareRules: [() => dataSquareRules, v => (dataSquareRules = v)],
   // @ts-expect-error -- replaced on purpose
+  dataTalkSkins: [() => dataTalkSkins, v => (dataTalkSkins = v)],
+  // @ts-expect-error -- replaced on purpose
   dataUiTheme: [() => dataUiTheme, v => (dataUiTheme = v)],
   // @ts-expect-error -- replaced on purpose
   dataUnderscoreKeys: [() => dataUnderscoreKeys, v => (dataUnderscoreKeys = v)],
@@ -185,7 +209,13 @@ expose({
   // @ts-expect-error -- replaced on purpose
   fxWhenProblems: [() => fxWhenProblems, v => (fxWhenProblems = v)],
   // @ts-expect-error -- replaced on purpose
+  heldKindProblems: [() => heldKindProblems, v => (heldKindProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  heldRowProblems: [() => heldRowProblems, v => (heldRowProblems = v)],
+  // @ts-expect-error -- replaced on purpose
   perkNeedsProblems: [() => perkNeedsProblems, v => (perkNeedsProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkRowProblems: [() => perkRowProblems, v => (perkRowProblems = v)],
   // @ts-expect-error -- replaced on purpose
   runMapProblems: [() => runMapProblems, v => (runMapProblems = v)],
   // @ts-expect-error -- replaced on purpose
@@ -454,7 +484,11 @@ export function dataSquareRules(D) {
         const at = `square.wish.outcomes[${i}]`;
         if (!o || typeof o !== 'object') return problem(`${at}: not an outcome`);
         for (const k of Object.keys(o))
-          if (!['id', 'w', 'say', 'fx', 'places', 'give', 'pay'].includes(k)) problem(`${at}.${k}: no such rule`);
+          if (!['id', 'w', 'say', 'boon', 'fx', 'places', 'give', 'pay'].includes(k))
+            problem(`${at}.${k}: no such rule`);
+        /* PK-9: a boon or curse of boons.json for the next run's first places */
+        if (o.boon != null && !(typeof o.boon === 'string' && D.boons && D.boons[o.boon]))
+          problem(`${at}.boon: no boon or curse "${o.boon}" (boons.json)`);
         if (!/^[a-z0-9_]{1,32}$/.test(o.id || '') || O.findIndex((/** @type {any} */ q) => q && q.id === o.id) !== i)
           problem(`${at}.id: an id of its own (a-z, 0-9, _)`);
         if (!(typeof o.w === 'number' && o.w > 0)) problem(`${at}.w: a weight above 0`);
@@ -588,6 +622,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'points',
   'pack',
   'healCost',
+  'appealCost',
   'shop',
   'foes',
   'perks',
@@ -874,6 +909,9 @@ export function dataRunLoop(D) {
     }
     if (!whole(R.healCost, 0, 100000))
       problem('rules.json', 'run.healCost is not a whole number of Moneys (0-100,000)');
+    /* PK-9: a clinic's fee to lift a curse (run-loop.js runAppeal) */
+    if (R.appealCost !== undefined && !whole(R.appealCost, 0, 100000))
+      problem('rules.json', 'run.appealCost is not a whole number of Moneys (0-100,000)');
     if (!rec(SH) || !Array.isArray(SH.always) || !whole(SH.more, 0, 12) || !rec(SH.pick))
       problem('rules.json', 'run.shop: always (a list), more (whole, 0-12) and pick (weights) are needed');
     else {
@@ -1389,7 +1427,7 @@ export function dataSetPieces(D, valid = () => true) {
 }
 // VFX-8: battleAnims.json (how the battle plays a move): the schema; every default a family; every step's colour a
 // named colour or `type`, its types types (types.json); every move's `anim` a family or a scene, and moves.json has no
-// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit)
+// schema, so it is checked here; a family's dur and hit in order (hit 999: no hit); VFX-12: the budgets in order, the dash ribbon's bounds
 /** VFX-8: battleAnims.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
 export function dataBattleAnims(D, valid = () => true) {
   /** @type {DataProblem[]} */
@@ -1403,8 +1441,14 @@ export function dataBattleAnims(D, valid = () => true) {
     fam = (/** @type {string} */ id) => !!(A.families[id] || A.scenes[id]),
     steps = (/** @type {string} */ where, /** @type {any[]} */ L) =>
       L.forEach((S, i) => {
-        if (S.color && S.color !== 'type' && !A.colors[S.color])
+        if (S.color && S.color !== 'type' && S.color !== 'kit' && !A.colors[S.color])
           problem(`${where}[${i}].color: no colour "${S.color}" in colors`);
+        /* VFX-11: a strip a step names (not a kit role) is a sprite; its ramp is a ramp */
+        for (const sp of [S.spr].flat())
+          if (typeof sp === 'string' && !BATTLE_KIT_ROLES.includes(sp) && A.sprites && !A.sprites[sp])
+            problem(`${where}[${i}].spr: no sprite "${sp}"`);
+        for (const r of [S.ramp, S.ramp2])
+          if (typeof r === 'string' && A.ramps && !A.ramps[r]) problem(`${where}[${i}].ramp: no ramp "${r}"`);
         for (const t of S.types || [])
           if (types.size && !types.has(t)) problem(`${where}[${i}].types: no type "${t}" (types.json)`);
       });
@@ -1416,16 +1460,210 @@ export function dataBattleAnims(D, valid = () => true) {
       for (const [w, V] of [
         ['', T],
         ['.short', T.short],
+        ['.miss', T.miss],
       ])
         if (V) {
           steps(`${sec}.${id}${w}.steps`, V.steps);
           if (V.hit !== 999 && V.hit > V.dur) problem(`${sec}.${id}${w}: hits at ${V.hit} ms, after its ${V.dur} ms`);
         }
+      /* VFX-13: a family's miss lasts no longer than a miss did, and hits nothing */
+      if (T.miss && T.miss.dur > A.maxMs.miss)
+        problem(`${sec}.${id}.miss: ${T.miss.dur} ms, longer than a miss (${A.maxMs.miss} ms)`);
+      if (T.miss && T.miss.hit !== 999) problem(`${sec}.${id}.miss: a miss hits nothing (hit 999)`);
     }
+  /* VFX-12: a budget never grows as the quality drops, and a burst fits in the pool */
+  const B = A.budgets;
+  for (const k of ['particles', 'burst', 'lights'])
+    for (let q = 1; q < 4; q++)
+      if (B[k][q] > B[k][q - 1]) problem(`budgets.${k}: quality ${q} allows more (${B[k][q]}) than quality ${q - 1}`);
+  for (let q = 0; q < 4; q++)
+    if (B.burst[q] > B.particles[q]) problem(`budgets.burst: ${B.burst[q]} at quality ${q}, more than the pool`);
+  if (A.smears.dashRibbon.min > A.smears.dashRibbon.max) problem('smears.dashRibbon: min is above max');
   for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {})))
     if (M && M.anim !== undefined && (typeof M.anim !== 'string' || !fam(M.anim)))
       problem(`${id}.anim: "${M.anim}" is no family or scene (battleAnims.json)`, 'moves.json');
+    /* VFX-11: no normal move longer than before: its family (full and short) ends within its category's maxMs */ else if (
+      M &&
+      typeof M.anim === 'string' &&
+      A.families[M.anim] &&
+      /** @type {Record<string, number>} */ (A.maxMs)[M.c] !== undefined
+    )
+      for (const V of [A.families[M.anim], A.families[M.anim].short])
+        if (V && V.dur > /** @type {Record<string, number>} */ (A.maxMs)[M.c])
+          problem(`${id}.anim: "${M.anim}" plays ${V.dur} ms, over ${M.c}'s ${A.maxMs[M.c]} (maxMs)`, 'moves.json');
+  /* VFX-17: a scene plays at most its category's maxMs + extraMs (none longer), its short version (a repeat, Faster)
+     within maxMs */
+  for (const [id, M] of Object.entries(/** @type {Record<string, any>} */ (D.moves || {}))) {
+    const S = M && typeof M.anim === 'string' ? A.scenes[M.anim] : null,
+      cap = M ? /** @type {Record<string, number>} */ (A.maxMs)[M.c] : undefined;
+    if (!S || cap === undefined) continue;
+    if (S.dur > cap + A.extraMs)
+      problem(`${id}.anim: the scene "${M.anim}" plays ${S.dur} ms, over ${M.c}'s ${cap} + ${A.extraMs}`, 'moves.json');
+    if (S.short && S.short.dur > cap)
+      problem(`${id}.anim: the scene "${M.anim}"'s short version plays ${S.short.dur} ms, over ${cap}`, 'moves.json');
+  }
+  /* VFX-17: a scene falls back to a family; its prop steps name a model */
+  for (const [id, S] of Object.entries(/** @type {Record<string, any>} */ (A.scenes))) {
+    if (!A.families[S.family]) problem(`scenes.${id}.family: no family "${S.family}"`);
+    for (const st of [...S.steps, ...(S.short ? S.short.steps : [])])
+      if (st.do === 'prop' && typeof st.prop !== 'string') problem(`scenes.${id}: a prop step names no model (prop)`);
+  }
+  /* VFX-11: a kit for every type and None; its strips are sprites, its ramps ramps, its light within the budget */
+  if (A.types) {
+    const K = /** @type {Record<string, any>} */ (A.types);
+    for (const t of [...types, 'None']) if (!K[/** @type {string} */ (t)]) problem(`types: no kit for the type "${t}"`);
+    for (const [id, k] of Object.entries(K)) {
+      if (id === 'about' || !k || typeof k !== 'object') continue;
+      if (id !== 'None' && id !== 'Bureau' && types.size && !types.has(id)) problem(`types.${id}: no type "${id}"`);
+      for (const sp of [k.shot, k.impact, k.small, ...(k.bits || [])])
+        if (sp !== undefined && A.sprites && !A.sprites[sp]) problem(`types.${id}: no sprite "${sp}"`);
+      /* VFX-20: a burst's particles (were types.json fx) */
+      if (k.burstSprites !== undefined && (!Array.isArray(k.burstSprites) || !k.burstSprites.length))
+        problem(`types.${id}.burstSprites: a list of one icon or more`);
+      for (const r of [k.ramp, k.ramp2]) if (r !== undefined && !A.ramps[r]) problem(`types.${id}: no ramp "${r}"`);
+      steps(`types.${id}.cast`, k.cast || []);
+      steps(`types.${id}.hit`, k.hit || []);
+      for (const S of [...(k.cast || []), ...(k.hit || [])])
+        if (S.do === 'kit') problem(`types.${id}: a kit's steps can't play a kit`);
+    }
+  }
+  // VFX-15: the stage's moods and scars name real types; a scar no wider than maxM; one Sandstorm kind, one heavy kind
+  const ty = (/** @type {string} */ where, /** @type {string[] | undefined} */ L) => {
+    for (const t of L || []) if (types.size && !types.has(t)) problem(`${where}: no type "${t}" (types.json)`);
+  };
+  if (A.moods) {
+    ty('moods.wave.types', A.moods.wave.types);
+    ty('moods.heat.types', A.moods.heat.types);
+  }
+  if (A.scars) {
+    const K = Object.entries(/** @type {Record<string, any>} */ (A.scars.kinds)),
+      seen = new Map();
+    for (const [k, S] of K) {
+      ty(`scars.kinds.${k}.types`, S.types);
+      for (const t of S.types || []) {
+        if (seen.has(t)) problem(`scars.kinds.${k}: type "${t}" already leaves ${seen.get(t)}`);
+        seen.set(t, k);
+      }
+      if (S.m > A.scars.maxM) problem(`scars.kinds.${k}.m: ${S.m} m, over maxM ${A.scars.maxM}`);
+      if (S.ramp && A.ramps && !A.ramps[S.ramp]) problem(`scars.kinds.${k}.ramp: no ramp "${S.ramp}"`);
+      if (A.sprites && A.sprites[S.sprite] && !A.sprites[S.sprite].ground)
+        problem(`scars.kinds.${k}.sprite: "${S.sprite}" is no mark on the ground`);
+    }
+    for (const f of ['sandstorm', 'heavy'])
+      if (K.filter(([, S]) => S[f]).length > 1) problem(`scars.kinds: more than one ${f} kind`);
+  }
+  /* VFX-10: the effect art: an anchor inside its cell; an effect has 3-8 frames, a mark on the ground at most 38 px
+     (1.2 m at 32 px/m); every type and None has a ramp; the icons drawn as strips name a sprite and a ramp */
+  for (const [id, S] of Object.entries(/** @type {Record<string, any>} */ (A.sprites))) {
+    if (S.anchor[0] >= S.cell[0] || S.anchor[1] >= S.cell[1])
+      problem(`sprites.${id}.anchor: [${S.anchor}] is outside its ${S.cell[0]}x${S.cell[1]} cell`);
+    if (!S.ground && S.frames < 3) problem(`sprites.${id}: an effect has 3 to 8 frames, not ${S.frames}`);
+    if (S.ground && Math.max(S.cell[0], S.cell[1]) > 38)
+      problem(`sprites.${id}: a mark on the ground is at most 38 px (1.2 m), not ${Math.max(S.cell[0], S.cell[1])}`);
+  }
+  for (const t of [...types, 'None'])
+    if (!A.ramps[/** @type {string} */ (t)]) problem(`ramps: no ramp for the type "${t}"`);
+  for (const [k, I] of Object.entries(/** @type {Record<string, any>} */ (A.iconSprites))) {
+    if (!A.sprites[I.sprite]) problem(`iconSprites.${k}.sprite: no sprite "${I.sprite}"`);
+    if (!A.ramps[I.ramp]) problem(`iconSprites.${k}.ramp: no ramp "${I.ramp}"`);
+  }
+  /* VFX-14: the stage's statuses and short effects: every sprite a strip, every ramp a ramp (`type` only where the
+     move's type is known: the delayed hit), a fixed frame inside its strip, no count growing as the quality drops */
+  const E = A.events,
+    strip = (
+      /** @type {string} */ where,
+      /** @type {string} */ id,
+      /** @type {number | undefined} */ frame = undefined
+    ) => {
+      const S = A.sprites[id];
+      if (!S) problem(`${where}.sprite: no sprite "${id}"`);
+      else if (frame !== undefined && frame >= S.frames)
+        problem(`${where}: frame ${frame}, but "${id}" has ${S.frames} frames`);
+    },
+    ramp = (/** @type {string} */ where, /** @type {string | undefined} */ r, typeOk = false) => {
+      if (r !== undefined && !A.ramps[r] && !(typeOk && r === 'type')) problem(`${where}.ramp: no ramp "${r}"`);
+    },
+    burst = (/** @type {string} */ where, /** @type {any} */ b) => {
+      if (!b) return;
+      strip(where, b.sprite, b.frame);
+      ramp(where, b.ramp);
+    },
+    falls = (/** @type {string} */ where, /** @type {number[]} */ L) => {
+      if (L.some((v, i) => i && v > L[i - 1])) problem(`${where}: [${L}] grows as the quality drops`);
+    };
+  if (E) {
+    falls('events.cells', E.cells);
+    for (const k of ['brn', 'par', 'slp', 'confused', 'broken', 'soaked', 'fork'])
+      for (const b of ['start', 'loop', 'tick', 'end', 'bonk']) burst(`events.${k}.${b}`, E[k][b]);
+    burst('events.stat.up', E.stat.up);
+    burst('events.stat.down', E.stat.down);
+    for (const k of ['protect', 'shield']) {
+      const D = E[k];
+      for (const f of ['frame', 'flashFrame', 'crackFrame']) strip(`events.${k}.${f}`, D.sprite, D[f]);
+      ramp(`events.${k}`, D.ramp);
+      falls(`events.${k}.cells`, D.cells);
+      burst(`events.${k}.end`, D.end);
+    }
+    strip('events.delayed', E.delayed.sprite);
+    ramp('events.delayed', E.delayed.ramp, true);
+    strip('events.stones', E.stones.sprite, E.stones.frame);
+    ramp('events.stones', E.stones.ramp);
+    burst('events.stones.glint', E.stones.glint);
+    strip('events.glint', E.glint.sprite);
+    for (const [k, r] of Object.entries(/** @type {Record<string, string>} */ (E.glint.ramps)))
+      ramp(`events.glint.ramps.${k}`, r);
+  }
+  dataBattleFlowEvents(D, A, problem);
+  dataBattleTiers(A, problem);
   return out;
+}
+/** VFX-13: the hit tiers in battleAnims.json `tiers`: every colour resolves (type or a colours key), no flash in
+ * saturated red, and no row's hit-stop past today's longest (a crit's 90 ms): only the KO's cell (at most one more)
+ * and the last KO's freeze add time @param {any} A @param {(what: string) => void} problem */
+export function dataBattleTiers(A, problem) {
+  const T = A.tiers;
+  if (!T) return;
+  const col = (/** @type {string} */ where, /** @type {string | undefined} */ c) => {
+    if (c !== undefined && c !== 'type' && c !== 'kit' && !A.colors[c])
+      problem(`tiers.${where}: no colour "${c}" in colors`);
+  };
+  for (const k of ['resisted', 'neutral', 'super', 'super4', 'crit']) {
+    const R = T[k];
+    col(`${k}.lightCol`, R.lightCol);
+    if (R.flash) {
+      col(`${k}.flash.color`, R.flash.color);
+      const hex = A.colors[R.flash.color];
+      if (hex && redShare(hex) >= A.flashes.redShare) problem(`tiers.${k}.flash: ${hex} is a saturated red`);
+    }
+    if (R.stop + (R.stopW || 0) > TIER_STOP_MAX)
+      problem(
+        `tiers.${k}: a hit-stop of up to ${R.stop + (R.stopW || 0)} ms, past ${TIER_STOP_MAX} (no hit gets longer)`
+      );
+  }
+  if ((T.ko.stop || 0) > T.cell) problem(`tiers.ko.stop: ${T.ko.stop} ms, more than one cell (${T.cell} ms)`);
+}
+/** VFX-13: the longest hit-stop a tier's row may have: today's longest, a crit's */
+export const TIER_STOP_MAX = 90;
+/** VFX-16: the flow moments in battleAnims.json `events`: every pyramid kind has a ramp, each named ramp exists, the
+ * rivals are trainers @param {any} D @param {any} A @param {(what: string) => void} problem */
+export function dataBattleFlowEvents(D, A, problem) {
+  const E = A.events || {},
+    ramp = (/** @type {string} */ where, /** @type {string} */ r) => {
+      if (!A.ramps[r]) problem(`events.${where}: no ramp "${r}"`);
+    };
+  if (E.sendOut) {
+    for (const [k, r] of Object.entries(/** @type {Record<string, string>} */ (E.sendOut.kinds))) {
+      if (D.pyramids && !D.pyramids[k]) problem(`events.sendOut.kinds.${k}: no pyramid "${k}" (pyramids.json)`);
+      ramp(`sendOut.kinds.${k}`, r);
+    }
+    for (const k of Object.keys(D.pyramids || {}))
+      if (!E.sendOut.kinds[k]) problem(`events.sendOut.kinds: pyramid "${k}" has no ramp`);
+    ramp('sendOut.glint.coat', E.sendOut.glint.coat);
+    ramp('sendOut.glint.prime', E.sendOut.glint.prime);
+  }
+  if (E.levelUp) ramp('levelUp.ramp', E.levelUp.ramp);
+  if (E.vs && D.trainers)
+    for (const id of E.vs.rivals) if (!D.trainers[id]) problem(`events.vs.rivals: no trainer "${id}"`);
 }
 // WM-7: the leaders' arenas (arenas.json): the schema; every theme a type (types.json), `bureau` or `plain`; its grounds
 // scenery.json terrains; its fence and gate props with a box (logic/arena-gen.js lays them along the rim), its posts and
@@ -1833,6 +2071,9 @@ export function dataEvents(D, valid = () => true) {
       case 'perk':
         if (a != null && !['common', 'uncommon', 'rare'].includes(a) && !perks[a])
           problem(`${at}: not a rarity (common, uncommon, rare) or a Perk (perks.json)`);
+        /* PK-7: Fine Print comes only from a leader's win */
+        else if (a != null && perks[a] && perks[a].rarity === 'fine')
+          problem(`${at}: ${a} is Fine Print, offered only at a leader’s win`);
         return;
       case 'status':
         if (statuses.size && !statuses.has(a)) problem(`${at}: no status "${a}" (statuses.json)`);
@@ -1871,6 +2112,15 @@ export function dataEvents(D, valid = () => true) {
           problem(`${at}: a kind (item, tutor, candy, evo)`);
         if (b != null && !(Number.isInteger(num(b)) && num(b) >= 1 && num(b) <= 5)) problem(`${at}: 1-5 cards`);
         return;
+      /* PK-9: a named boon or curse (boons.json): `boon` gives a boon, `curse` a curse */
+      case 'boon':
+      case 'curse': {
+        const B = D.boons && D.boons[a];
+        if (!B) problem(`${at}: no boon or curse "${a}" (boons.json)`);
+        else if (!!B.curse !== (n.name === 'curse'))
+          problem(`${at}: "${a}" is a ${B.curse ? 'curse' : 'boon'} (${B.curse ? 'curse' : 'boon'} ${a})`);
+        return;
+      }
       case 'fx': {
         const places = num(a),
           row = fxRowOf(n.args.slice(1));
@@ -1977,6 +2227,8 @@ export function dataRewards(D, valid = () => true) {
     if (r.kind === 'tutor' && (r.item || r.pyramid || r.n)) problem(`${k}: a tutor card names no item`);
     /* RL-12c: a held card draws its item from items.json's held items, so it names none, and there must be some */
     if (r.kind === 'held' && (r.item || r.pyramid || r.n)) problem(`${k}: a held card names no item (it draws one)`);
+    /* PK-7: a perk card draws an ordinary Perk, so it names none */
+    if (r.kind === 'perk' && (r.item || r.pyramid || r.n)) problem(`${k}: a perk card names no item (it draws a Perk)`);
     if (r.kind === 'held' && r.weight > 0 && !Object.values(items).some((/** @type {any} */ I) => I.hold))
       problem(`${k}: no held item in items.json (hold) for it to offer`);
   }
@@ -2078,6 +2330,58 @@ export function dataBanter(D, valid = () => true) {
   return out;
 }
 
+// DL-3: talkSkins.json: the schema; the default and every skin a speaker or a class names are skins; a speaker is
+// someone (people/*.json, story.json speakers, me) and a class is a run trainer's class (events.json classes)
+/** DL-3: talkSkins.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataTalkSkins(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['talkSkins.json', what]),
+    T = D.talkSkins;
+  if (!T) return [['talkSkins.json', 'missing']];
+  if (!valid('talkSkins.schema.json', T, 'talkSkins.json')) return out;
+  const skins = T.skins || {},
+    people = new Set(['me', ...Object.keys(D.people || {}), ...Object.values((D.story && D.story.speakers) || {})]),
+    classes = (D.events && D.events.classes) || {};
+  if (!skins[T.default]) problem(`default: no skin "${T.default}"`);
+  for (const [who, k] of Object.entries(/** @type {Record<string, string>} */ (T.speakers || {}))) {
+    if (!skins[k]) problem(`speakers.${who}: no skin "${k}"`);
+    if (!people.has(who)) problem(`speakers.${who}: nobody of that id (people/*.json, story.json speakers)`);
+  }
+  for (const [c, k] of Object.entries(/** @type {Record<string, string>} */ (T.classes || {}))) {
+    if (!skins[k]) problem(`classes.${c}: no skin "${k}"`);
+    if (!classes[c]) problem(`classes.${c}: no trainer class of that id (events.json classes)`);
+  }
+  return out;
+}
+
+// DL-5: emotes.json: the schema; every emote a line can ask for ([emote=x], logic/line-markup.js MARKUP_EMOTES) is
+// drawn; each picture is size × size and uses only its colours; a face's own emote is one of them
+/** DL-5: emotes.json @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataEmotes(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['emotes.json', what]),
+    E = D.emotes;
+  if (!E) return [['emotes.json', 'missing']];
+  if (!valid('emotes.schema.json', E, 'emotes.json')) return out;
+  const n = E.size,
+    colors = E.colors || {},
+    pics = E.emotes || {};
+  for (const k of MARKUP_EMOTES) if (!pics[k]) problem(`emotes: no picture for "${k}" ([emote=${k}] asks for it)`);
+  for (const [k, rows] of Object.entries(/** @type {Record<string, string[]>} */ (pics))) {
+    if (!MARKUP_EMOTES.includes(k))
+      problem(`emotes.${k}: no line can ask for it (MARKUP_EMOTES in logic/line-markup.js)`);
+    if (rows.length !== n || rows.some(r => r.length !== n)) problem(`emotes.${k}: not ${n} × ${n}`);
+    const bad = [...new Set(rows.join('').replace(/\./g, ''))].filter(c => !colors[c]);
+    if (bad.length) problem(`emotes.${k}: no colour for ${bad.map(c => `"${c}"`).join(', ')}`);
+    if (!/[^.]/.test(rows.join(''))) problem(`emotes.${k}: nothing drawn`);
+  }
+  for (const [face, k] of Object.entries(/** @type {Record<string, string>} */ (E.auto || {})))
+    if (!pics[k]) problem(`auto.${face}: no emote "${k}"`);
+  return out;
+}
+
 // RL-12: Perks (relics): the schema, the types their damage rows name; rules.json run.perks: a cap of 1-12 held, a
 // pick of 1-5 (run.offer holds up to 5), a weight of 0 or more and a whole price ($0-100,000) for each rarity, and
 // something to offer
@@ -2090,32 +2394,14 @@ export function dataPerks(D, valid = () => true) {
     const RR = D.rules && D.rules.run && D.rules.run.perks,
       RARITIES = ['common', 'uncommon', 'rare'],
       whole = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi,
-      types = new Set((D.types || []).map(t => t.id)),
-      stats = new Set((D.stats || []).map(t => t.id));
+      types = new Set((D.types || []).map(t => t.id));
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
       for (const [k, R] of Object.entries(D.perks))
         R.fx.forEach((f, n) => {
-          if (f.type && !types.has(f.type))
-            problem('perks.json', `${k}.fx[${n}].type: no type "${f.type}" (types.json)`);
-          // Studio plan T4.1: the limits that live in the code (effects.js): a factor within FX_LIMIT, stages within
-          // FX_STAGES (the schema allows 0-4 and -6 to 6; a factor under FX_LIMIT.lo would be clamped up)
-          if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
-            problem(
-              'perks.json',
-              `${k}.fx[${n}].mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
-            );
-          if ('stages' in f && !(Number.isInteger(f.stages) && Math.abs(f.stages) <= FX_STAGES))
-            problem(
-              'perks.json',
-              `${k}.fx[${n}].stages: ${f.stages} is not a whole number of stages from -${FX_STAGES} to ${FX_STAGES} (effects.js FX_STAGES)`
-            );
-          /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
-          if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
-            problem('perks.json', `${k}.fx[${n}].stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
-          /* PK-1: when, if, every, grow, per and once */
-          fxWhenProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
-          /* PK-3: the battle kit's kinds */
-          fxKindProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
+          perkRowProblems(f, `${k}.fx[${n}]`, D, what => problem('perks.json', what));
+          /* PK-9: a Perk can't turn the newest Perk off (effects.js fxMuted reads the boons alone) */
+          if (f && f.kind === 'rule' && f.rule === 'muteNewest')
+            problem('perks.json', `${k}.fx[${n}].rule: muteNewest is a curse's only (boons.json)`);
         });
     /* PK-1: a Perk's battle line */
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
@@ -2126,15 +2412,19 @@ export function dataPerks(D, valid = () => true) {
     if (D.perks && valid('perks.schema.json', D.perks, 'perks.json'))
       for (const [k, R] of Object.entries(D.perks)) {
         perkNeedsProblems(R.needs, `${k}.needs`, D, w => problem('perks.json', w));
-        /* PK-4: its tags: types of types.json and the themes of perks.js PERK_THEMES */
+        /* PK-4: its tags: types of types.json and themes; PK-8: the themes are the Perk sets (perkSets.json) */
+        const themes = Object.keys(D.perkSets || {});
         for (const t of R.tags || [])
-          if (!types.has(t) && !(/** @type {readonly string[]} */ (PERK_THEMES).includes(t)))
-            problem('perks.json', `${k}.tags: "${t}" is no type (types.json) or theme (${PERK_THEMES.join(', ')})`);
+          if (!types.has(t) && !themes.includes(t))
+            problem(
+              'perks.json',
+              `${k}.tags: "${t}" is no type (types.json) or set (perkSets.json: ${themes.join(', ')})`
+            );
       }
     if (!RR || typeof RR !== 'object' || Array.isArray(RR)) problem('rules.json', 'run.perks missing');
     else {
       for (const k of Object.keys(RR))
-        if (!['cap', 'pick', 'rarity', 'price', 'bias'].includes(k))
+        if (!['cap', 'pick', 'rarity', 'price', 'bias', 'leader'].includes(k))
           problem('rules.json', `run.perks.${k}: no such rule`);
       /* PK-4: the lean toward a Perk whose tags match (1 is none) */
       if (RR.bias != null && !(typeof RR.bias === 'number' && RR.bias >= 1 && RR.bias <= 10))
@@ -2154,8 +2444,98 @@ export function dataPerks(D, valid = () => true) {
       }
       if (D.perks && !Object.values(D.perks).some(R => (RR.rarity || {})[R.rarity] > 0))
         problem('rules.json', 'run.perks.rarity gives every Perk in perks.json a weight of 0: nothing can be offered');
+      /* PK-7: a leader's win offers one rarity alone (Fine Print); fine itself has no weight or price (never in an
+         ordinary pick, a shop, an event or a reward pick) */
+      const LR = RR.leader;
+      if (LR != null) {
+        if (!LR || typeof LR !== 'object' || Array.isArray(LR))
+          problem('rules.json', 'run.perks.leader: {rarity, pick}, the pick after a leader’s win');
+        else {
+          for (const k of Object.keys(LR))
+            if (!['rarity', 'pick'].includes(k)) problem('rules.json', `run.perks.leader.${k}: no such rule`);
+          if (![...RARITIES, 'fine'].includes(LR.rarity))
+            problem('rules.json', `run.perks.leader.rarity: one of ${[...RARITIES, 'fine'].join(', ')}`);
+          else if (D.perks && !Object.values(D.perks).some(R => R.rarity === LR.rarity))
+            problem('rules.json', `run.perks.leader.rarity: no Perk in perks.json is ${LR.rarity}`);
+          if (!whole(LR.pick, 1, 5)) problem('rules.json', 'run.perks.leader.pick is not a whole number from 1 to 5');
+        }
+      }
     }
   }
+  return out;
+}
+/** RL-12: one effect row of a Perk (PK-8: or of a Perk set): the type and stat it names, its numbers within the code's
+ * limits, its timing (PK-1) and its kind's own fields (PK-3 on) @param {any} f @param {string} at @param {any} D
+ * @param {(what: string) => void} problem */
+export function perkRowProblems(f, at, D, problem) {
+  const types = new Set((D.types || []).map((/** @type {any} */ t) => t.id)),
+    stats = new Set((D.stats || []).map((/** @type {any} */ t) => t.id));
+  if (f.type && !types.has(f.type)) problem(`${at}.type: no type "${f.type}" (types.json)`);
+  // Studio plan T4.1: the limits that live in the code (effects.js): a factor within FX_LIMIT, stages within
+  // FX_STAGES (the schema allows 0-4 and -6 to 6; a factor under FX_LIMIT.lo would be clamped up)
+  if ('mult' in f && !(typeof f.mult === 'number' && f.mult >= FX_LIMIT.lo && f.mult <= FX_LIMIT.hi))
+    problem(
+      `${at}.mult: ${f.mult} is outside the code's limits, ${FX_LIMIT.lo} to ${FX_LIMIT.hi} (effects.js FX_LIMIT)`
+    );
+  if ('stages' in f && !(Number.isInteger(f.stages) && Math.abs(f.stages) <= FX_STAGES))
+    problem(
+      `${at}.stages: ${f.stages} is not a whole number of stages from -${FX_STAGES} to ${FX_STAGES} (effects.js FX_STAGES)`
+    );
+  /* T1.3: the stats from stats.json (a stage of HP means nothing), not a list in the schema */
+  if (f.kind === 'stat' && (f.stat === 'hp' || !stats.has(f.stat)))
+    problem(`${at}.stat: no stat "${f.stat}" a stage can raise (stats.json, not hp)`);
+  /* PK-1: when, if, every, grow, per and once */
+  fxWhenProblems(f, at, D, problem);
+  /* PK-3: the battle kit's kinds */
+  fxKindProblems(f, at, D, problem);
+}
+/** PK-8: perkSets.json, the Perk sets: the schema, each row as a Perk's (perkRowProblems; a copy row stands for a Perk
+ * above it, so a set has none), a need its Perks can meet (those tagged with its id in perks.json), and no Perk in two
+ * sets @param {any} D @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataPerkSets(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ where, /** @type {string} */ what) => out.push([where, what]),
+    S = D.perkSets;
+  if (!S || !valid('perkSets.schema.json', S, 'perkSets.json')) return out;
+  const perks = D.perks || {};
+  for (const [id, T] of Object.entries(S)) {
+    T.fx.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
+      if (f.kind === 'copy')
+        problem('perkSets.json', `${id}.fx[${n}]: a set has no copy row (it copies a Perk above it)`);
+      else if (f.kind === 'rule' && f.rule === 'muteNewest')
+        problem('perkSets.json', `${id}.fx[${n}].rule: muteNewest is a curse's only (boons.json)`);
+      else perkRowProblems(f, `${id}.fx[${n}]`, D, what => problem('perkSets.json', what));
+    });
+    const members = Object.keys(perks).filter(k => (perks[k].tags || []).includes(id));
+    if (T.need > members.length)
+      problem(
+        'perkSets.json',
+        `${id}.need: ${T.need}, but only ${members.length} Perk${members.length === 1 ? ' is' : 's are'} tagged "${id}" in perks.json`
+      );
+  }
+  for (const [k, R] of Object.entries(perks)) {
+    const sets = /** @type {any} */ (R.tags || []).filter((/** @type {string} */ t) => Object.hasOwn(S, t));
+    if (sets.length > 1) problem('perks.json', `${k}.tags: a Perk is in one set at most (${sets.join(', ')})`);
+  }
+  return out;
+}
+/** PK-9: boons.json: the schema, each row as a Perk's (perkRowProblems; no copy row: a boon has no Perk above it), and
+ * no row that keeps a count or a mark (every, grow, once: a boon's marks would outlive it) @param {any} D
+ * @param {DataValid} [valid] @returns {DataProblem[]} */
+export function dataBoons(D, valid = () => true) {
+  /** @type {DataProblem[]} */
+  const out = [],
+    problem = (/** @type {string} */ what) => out.push(['boons.json', what]),
+    B = D.boons;
+  if (!B || !valid('boons.schema.json', B, 'boons.json')) return out;
+  for (const [id, T] of Object.entries(B))
+    T.fx.forEach((/** @type {any} */ f, /** @type {number} */ n) => {
+      if (f.kind === 'copy') problem(`${id}.fx[${n}]: a boon has no copy row (it copies a Perk above it)`);
+      else perkRowProblems(f, `${id}.fx[${n}]`, D, problem);
+      for (const key of ['every', 'grow', 'once'])
+        if (key in f) problem(`${id}.fx[${n}].${key}: a boon keeps no count or mark (it lasts a few places)`);
+    });
   return out;
 }
 /** RL-12c, SP-2: one effect row a Billie has (a held item's or a Gene's): one of `kinds`, its numbers within the code's
@@ -2239,8 +2619,14 @@ export function fxKindProblems(f, at, D, problem) {
       problem(`${at}.max: a money share needs its most, a whole number of Moneys from 1 to 9999`);
     if ('mult' in f) problem(`${at}.mult: a money share has no mult`);
     if (f.when == null) problem(`${at}.when: a money share needs a moment (arrive)`);
+  } else if (f.kind === 'money' && 'add' in f) {
+    /* PK-7: Moneys paid or charged (below 0) on arrival (Subscription Box) */
+    if (!(Number.isInteger(f.add) && f.add !== 0 && Math.abs(f.add) <= 9999))
+      problem(`${at}.add: a whole number of Moneys from -9999 to 9999, not 0`);
+    if ('mult' in f) problem(`${at}.mult: a money add has no mult`);
+    if (f.when == null) problem(`${at}.when: a money add needs a moment (arrive)`);
   } else if (f.kind === 'money' && f.when != null)
-    problem(`${at}.when: a money row at ${f.when} is a share (share, max)`);
+    problem(`${at}.when: a money row at ${f.when} is a share (share, max) or an add`);
   /* PK-6: a give row's Moneys and Bag items (items.json), given when the Perk is taken */
   if (f.kind === 'give') {
     const items = f.items || {},
@@ -2255,6 +2641,15 @@ export function fxKindProblems(f, at, D, problem) {
         problem(`${at}.items.${id}: a whole number from 1 to 99`);
     }
   }
+  /* PK-7: a loot row brings 1 to FX_LOOT_N items of an events.json loot table, at its moment (Subscription Box) */
+  if (f.kind === 'loot') {
+    const E = D.events && D.events.loot;
+    if (E && !(typeof f.table === 'string' && E[f.table]))
+      problem(`${at}.table: no loot table "${f.table}" (events.json loot: ${Object.keys(E).join(', ')})`);
+    if (f.n != null && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= FX_LOOT_N))
+      problem(`${at}.n: a whole number of items from 1 to ${FX_LOOT_N} (effects.js FX_LOOT_N)`);
+    if (f.when == null) problem(`${at}.when: a loot row needs a moment (arrive)`);
+  }
   /* PK-5: a free row acts at a purchase (Punch Card) */
   if (f.kind === 'free' && f.when == null) problem(`${at}.when: a free row needs a moment (buy)`);
   /* PK-5: what a missed throw gives back, at that moment */
@@ -2266,6 +2661,12 @@ export function fxKindProblems(f, at, D, problem) {
   /* PK-5: the levels a caught Billie joins higher, 1 to FX_CATCH_LEVEL */
   if (f.kind === 'catchLevel' && !(Number.isInteger(f.n) && f.n >= 1 && f.n <= FX_CATCH_LEVEL))
     problem(`${at}.n: a whole number of levels from 1 to ${FX_CATCH_LEVEL} (effects.js FX_CATCH_LEVEL)`);
+  /* PK-7: what an attack of yours that deals damage costs its user, at most a half of its HP */
+  if (f.kind === 'recoil' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))
+    problem(`${at}.share: a share of HP above 0, at most 0.5`);
+  /* PK-8: held items work better, never worse */
+  if (f.kind === 'heldBoost' && !(typeof f.mult === 'number' && f.mult > 1))
+    problem(`${at}.mult: above 1 (held items work better)`);
   if (f.kind === 'benchXp' && !(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
     problem(`${at}.share: a share of XP above 0, at most 1`);
   /* PK-4: a run rule of FX_RULES and how much it changes (FX_RULE_N: forecastDays 1 to 14 more days...) */
@@ -2273,14 +2674,15 @@ export function fxKindProblems(f, at, D, problem) {
     const R = FX_RULE_N[f.rule];
     if (!(/** @type {readonly string[]} */ (FX_RULES).includes(f.rule)) || !R)
       problem(`${at}.rule: ${FX_RULES.join(', ')} (effects.js FX_RULES)`);
-    else if (!(Number.isInteger(f.n) && f.n >= R[0] && f.n <= R[1]))
-      problem(`${at}.n: a whole number of ${R[2]} from ${R[0]} to ${R[1]}`);
+    else if (!(Number.isInteger(f.n) && f.n >= R[0] && f.n <= R[1] && f.n !== 0))
+      problem(`${at}.n: a whole number of ${R[2]} from ${R[0]} to ${R[1]}${R[0] < 0 ? ', not 0' : ''}`);
   }
 }
 /** PK-4, PK-5: each run rule's n, the least and the most, and what it counts */
 export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */ ({
   forecastDays: [1, 14, 'days'],
-  rewardPick: [1, 2, 'cards'],
+  /* PK-9: below 0, fewer cards (the curse Pending Review; never under one) */
+  rewardPick: [-1, 2, 'cards'],
   rerollFree: [1, 3, 'rerolls'],
   mapReveal: [1, 1, 'times (it is on or off)'],
   /* PK-6: Perks held more (Accordion File) */
@@ -2291,6 +2693,22 @@ export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */
   sideFind: [1, 2, 'finds'],
   /* PK-6: an event's hurt does nothing (Ten-Foot Pole) */
   eventHurt: [1, 1, 'times (it is on or off)'],
+  /* PK-7: no Perk held can be let go (Non-Refundable Ticket) */
+  noDrop: [1, 1, 'times (it is on or off)'],
+  /* PK-7: a win in which one of yours fainted pays no Moneys (Influencer Contract) */
+  faintPaysNothing: [1, 1, 'times (it is on or off)'],
+  /* PK-8: an Unstable splice of yours loses no HP at a turn's end (the Lab Kit set) */
+  unstableSafe: [1, 1, 'times (it is on or off)'],
+  /* PK-8: a side area's place holds a Perk lying on the ground (the Adventurer's Pack set; route-finds.js) */
+  sidePerk: [1, 1, 'times (it is on or off)'],
+  /* PK-9: a run town's shop is shut (the curse Out of Office; run-loop.js runShopShut) */
+  shopClosed: [1, 1, 'times (it is on or off)'],
+  /* PK-9: the newest Perk held does nothing (the curse Permit Revoked; effects.js fxMuted): only a boon or curse */
+  muteNewest: [1, 1, 'times (it is on or off)'],
+  /* PK-9: curses last n places less (Correction Fluid; run-loop.js runBoonGive) */
+  curseShorter: [1, 3, 'places'],
+  /* PK-9: the first n curses of a run are erased (Correction Fluid) */
+  curseErase: [1, 1, 'curses a run'],
 });
 /** PK-4: the numbers every passive row can take (effects.js FX_PASSIVE_KEYS has which passive takes which) */
 export const FX_PASSIVE_ALL = ['rate', 'hp', 'mult', 'uses', 'always', 'rolls', 'all', 'stat', 'stages'];
@@ -2326,9 +2744,6 @@ export function fxPassiveProblems(f, at, D, problem) {
       problem(`${at}.stages: a whole number of stages from 1 to ${FX_STAGES}`);
   }
 }
-/** PK-4: the themes a Perk's tags may name besides types: the Perk sets planned for PK-8 (perks-track.md 5.7, which
- * makes them a data section) */
-export const PERK_THEMES = ['office', 'influencer', 'tech', 'lab', 'adventurer', 'weather', 'classics'];
 /** PK-4: the conditions a Perk's needs can name: those an offer knows (the team); PK-5: bots, a scrapyard still
  * ahead on the run's map (perks.js perkRunBots: needs alone, not a row's condition); PK-6: side, a side area still
  * ahead (perks.js perkRunSide) */
@@ -2368,6 +2783,10 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   free: ['buy'],
   /* PK-6: Moneys and items when the Perk is taken */
   give: ['take'],
+  /* PK-7: a random item on walking into a place */
+  loot: ['arrive'],
+  /* PK-9: HP lost on walking into a place (the curse Paper Cuts) */
+  turnHurt: ['arrive'],
   /* PK-5: a missed throw's pyramid back */
   refund: ['throwMiss'],
 });
@@ -2382,6 +2801,8 @@ export const FX_PLAIN = /** @type {Record<string, string[]>} */ ({
   rule: ['if', 'per'],
   /* PK-6: a copy row stands for the rows above it; it has no timing of its own (the schema refuses any) */
   copy: ['if', 'grow', 'per', 'once'],
+  /* PK-8: read as a battle's held items are (battle-engine.js heldBoostOf): no condition, no growth */
+  heldBoost: ['if', 'grow', 'per', 'every', 'once'],
 });
 /** PK-1: one condition word: '' when fine, else what is wrong @param {string} c @param {any} D */
 export function fxCondProblem(c, D) {
@@ -2484,7 +2905,16 @@ export function fxWhenProblems(f, at, D, problem) {
 }
 // RL-12c: items.json's held items: 1-4 `hold` rows of the kinds a holder can have, their numbers within the code's
 // limits, and nothing else an item does (a held item is never used up); UI-14b: each its rarity, and only they have one
-export const HOLD_KINDS = ['money', 'stat', 'damage', 'xp', 'turnHeal', 'pinchHeal'];
+export const HOLD_KINDS = [
+  'money',
+  'stat',
+  'damage',
+  'xp',
+  'turnHeal',
+  'pinchHeal',
+  ...HELD_OWN_FORMS,
+  ...HELD_FX_KINDS,
+];
 /** UI-14b: the loot ladder's tiers (the owner's answer 9): the colour code's rarity ids (logic/signals.js) */
 export const RARITY_TIERS = UI_SIGNALS.filter(s => s[2] === 'rarity').map(s => s[0]);
 /** RL-12c: items.json `hold` @param {any} D @returns {DataProblem[]} */
@@ -2507,11 +2937,77 @@ export function dataHeldItems(D) {
       problem(`${k}.rarity: one of ${RARITY_TIERS.join(', ')}`);
     for (const use of ['hp', 'hpAll', 'cure', 'revive', 'evoItem', 'lvlUp', 'repair'])
       if (/** @type {any} */ (I)[use] != null) problem(`${k}: a held item can't also be used (${use})`);
-    H.forEach((/** @type {any} */ f, /** @type {number} */ n) =>
-      fxRowProblems(f, `${k}.hold[${n}]`, HOLD_KINDS, D, problem)
-    );
+    H.forEach((/** @type {any} */ f, /** @type {number} */ n) => heldRowProblems(f, `${k}.hold[${n}]`, D, problem));
   }
   return out;
+}
+/** PK-10: the kinds a hold row may give a when, and at which moments (effects.js HELD_WHEN) */
+export const HELD_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({ stat: HELD_WHEN });
+/** RL-12c, PK-10: one hold row: its kind and numbers (fxRowProblems, the timing set aside), then its timing: a `when`
+ * of HELD_WHEN_KINDS, and only with one an `if` of what that moment knows (HELD_IFS) and `once: battle`; no every,
+ * grow or per (a holder keeps no count over the run) @param {any} f @param {string} at @param {any} D
+ * @param {(what: string) => void} problem */
+export function heldRowProblems(f, at, D, problem) {
+  if (!f || typeof f !== 'object') return fxRowProblems(f, at, HOLD_KINDS, D, problem);
+  const plain = { ...f };
+  for (const key of ['when', 'if', 'once']) delete plain[key];
+  fxRowProblems(plain, at, HOLD_KINDS, D, problem);
+  for (const key of ['every', 'grow', 'per'])
+    if (key in f) problem(`${at}.${key}: a held item's row can say when, if and once only`);
+  heldKindProblems(f, at, D, problem);
+  if (f.when != null && !(HELD_WHEN_KINDS[f.kind] || []).includes(f.when))
+    problem(
+      `${at}.when: a held ${f.kind} row can't act at ${f.when} (${HELD_WHEN_KINDS[f.kind] ? HELD_WHEN_KINDS[f.kind].join(', ') : 'no moment'})`
+    );
+  if (f.when == null)
+    for (const key of ['if', 'once']) if (key in f) problem(`${at}.${key}: only with a when (${HELD_WHEN.join(', ')})`);
+  if (f.once != null && f.once !== 'battle') problem(`${at}.once: battle (a held item's marks last one battle)`);
+  if (f.if != null) {
+    const L = Array.isArray(f.if) ? f.if : [f.if];
+    if (!L.length || L.length > 4) problem(`${at}.if: one condition, or a list of 1-4`);
+    for (const c of L) {
+      const why = fxCondProblem(c, D),
+        key = typeof c === 'string' ? (c.startsWith('hp<') ? 'hp<' : c.split(':')[0]) : '';
+      if (why) problem(`${at}.if: ${why}`);
+      else if (!(/** @type {readonly string[]} */ (HELD_IFS).includes(key)))
+        problem(`${at}.if: "${c}" isn't known at a held item's moment (${HELD_IFS.join(', ')})`);
+    }
+  }
+}
+/** PK-10: the held kinds' own fields (effects.js HELD_FX_KINDS): survive and last take no number; reflect a share (at most
+ * half) and a category or none; drain a share of the damage dealt;
+ * immune a type (not a Perk's what), until: hurt or none; first a chance
+ * @param {any} f @param {string} at @param {any} D @param {(what: string) => void} problem */
+export function heldKindProblems(f, at, D, problem) {
+  const extra = (/** @type {string[]} */ own) =>
+    Object.keys(f)
+      .filter(key => !['kind', 'when', 'if', 'once', ...own].includes(key))
+      .forEach(key =>
+        problem(`${at}.${key}: ${fxA(f.kind)} row takes ${own.length ? own.join(', ') : 'no other field'}`)
+      );
+  if (f.kind === 'survive' || f.kind === 'last') extra([]);
+  if (f.kind === 'reflect') {
+    extra(['share', 'cat']);
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 0.5))
+      problem(`${at}.share: a share of the hitter's HP above 0, at most 0.5`);
+    if (f.cat != null && !['H', 'S'].includes(f.cat)) problem(`${at}.cat: H or S`);
+  }
+  if (f.kind === 'immune') {
+    extra(['type', 'until']);
+    if (!(D.types || []).some((/** @type {any} */ t) => t.id === f.type))
+      problem(`${at}.type: a held immune row names a type its moves miss the holder with (types.json)`);
+    if (f.until != null && f.until !== 'hurt') problem(`${at}.until: hurt (until its holder is hit), or none`);
+  }
+  if (f.kind === 'first') {
+    extra(['chance']);
+    if (!(typeof f.chance === 'number' && f.chance > 0 && f.chance <= FX_CHANCE))
+      problem(`${at}.chance: a held first row's chance, above 0, at most ${FX_CHANCE} (effects.js FX_CHANCE)`);
+  }
+  if (f.kind === 'drain') {
+    extra(['share']);
+    if (!(typeof f.share === 'number' && f.share > 0 && f.share <= 1))
+      problem(`${at}.share: a share of the damage dealt above 0, at most 1`);
+  }
 }
 // SP-2: genes.json: the schema; every kind is a part kind of partKits.json with a trait that exists, and every kind a
 // recipe's slot bone uses (the parts a splice swaps) has one; a part's dominant type and move exist; a trait's rows are
@@ -2666,6 +3162,45 @@ export function dataPerkArt(perks, read) {
     else {
       const bad = svgProblem(t);
       if (bad) out.push({ lvl: 'error', where: 'perks.json', msg: `${k}.img: art/${R.img} is not an icon: ${bad}` });
+    }
+  }
+  return out;
+}
+/** PK-9: the boons' pictures, as dataPerkArt checks the Perks': an img that is there and is an icon; a boon without one
+ * shows the relic icon (a warning) @param {any} boons @param {(path: string) => string | null} read
+ * @returns {DataFinding[]} */
+export function dataBoonArt(boons, read) {
+  return dataPerkArt(boons, read).map(f => ({ ...f, where: 'boons.json' }));
+}
+/**
+ * PK-11: the items' pictures, as dataPerkArt checks the Perks'. items.json has no schema, so the path's form is checked
+ * here: an item's img is `items/<its id>.svg`, there, and an icon (svgProblem). An item without one draws its old atlas
+ * rectangle (`i_` + its icon; battle.js itemIcon): a warning (PK-10: held items too, now that each has its own).
+ * @param {any} items @param {(path: string) => string | null} read @returns {DataFinding[]}
+ */
+export function dataItemArt(items, read) {
+  /** @type {DataFinding[]} */
+  const out = [],
+    error = (/** @type {string} */ msg) => out.push({ lvl: 'error', where: 'items.json', msg });
+  for (const [k, I] of Object.entries(items || {})) {
+    if (!I || typeof I !== 'object') continue;
+    if (I.img === undefined) {
+      out.push({
+        lvl: 'warn',
+        where: 'items.json',
+        msg: `${k}: no img, so it draws the old atlas's i_${I.icon || k} (tools/build-icons.mjs)`,
+      });
+      continue;
+    }
+    if (I.img !== `items/${k}.svg`) {
+      error(`${k}.img: items/${k}.svg (its id, in the items folder), not ${JSON.stringify(I.img)}`);
+      continue;
+    }
+    const t = read(I.img);
+    if (t == null) error(`${k}.img: no picture art/${I.img}`);
+    else {
+      const bad = svgProblem(t);
+      if (bad) error(`${k}.img: art/${I.img} is not an icon: ${bad}`);
     }
   }
   return out;

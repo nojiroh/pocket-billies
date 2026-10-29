@@ -23,6 +23,7 @@ expose({
   artLoad: [() => artLoad, v => setArtLoad(v)],
   artPixels: [() => artPixels, v => setArtPixels(v)],
   artReady: [() => artReady],
+  artSilHTML: [() => artSilHTML, v => (artSilHTML = v)],
   artURL: [() => artURL],
   bayerThreshold: [() => bayerThreshold],
   darkCopy: [() => darkCopy, v => (darkCopy = v)],
@@ -191,6 +192,18 @@ export function artIconHTML(img, size = 36, fallback = 'relic') {
   return img
     ? iconTag('uico art-ic', fallback, size, '', new URL(artURL(img), document.baseURI).href)
     : uiIconHTML(fallback, size);
+}
+/** PK-12: a picture's silhouette (the Field Guide's Perks tab, for one not seen yet): the SVG as a mask filled with
+ * the text's colour, at `size` px; without a picture, the UI icon `fallback`'s
+ * @param {string | undefined} img @param {number} [size] @param {string} [fallback] */
+export function artSilHTML(img, size = 36, fallback = 'relic') {
+  return iconTag(
+    'ugl art-ic art-sil',
+    fallback,
+    size,
+    '',
+    img ? new URL(artURL(img), document.baseURI).href : uiIconURL(fallback)
+  );
 }
 /** UI-13: a mark's glyph (logic/signals.js UI_GLYPHS: a status, a short effect, a family, a pickup's kind), its SVG
  * as a mask filled with its colour code. `tint`: 'text' the side's text shade (light and dark screens), 'fill' the

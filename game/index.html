@@ -51,6 +51,8 @@
 <link rel="stylesheet" href="css/opening.css">
 <link rel="stylesheet" href="css/battle-ui.css">
 <link rel="stylesheet" href="css/dialogue.css">
+<link rel="stylesheet" href="css/talk-text.css">
+<link rel="stylesheet" href="css/talk-skins.css">
 <link rel="stylesheet" href="css/menus.css">
 <link rel="stylesheet" href="css/case-file.css">
 <link rel="stylesheet" href="css/bureau-battle.css">
@@ -150,6 +152,9 @@
 <script type="module" src="js/logic/battle-facing.js"></script>
 <script type="module" src="js/logic/smear.js"></script>
 <script type="module" src="js/logic/battle-anims.js"></script>
+<script type="module" src="js/logic/battle-flow.js"></script>
+<script type="module" src="js/logic/battle-looks.js"></script>
+<script type="module" src="js/logic/battle-stage-look.js"></script>
 <script type="module" src="js/logic/hit-numbers.js"></script>
 <script type="module" src="js/logic/case-file.js"></script>
 <script type="module" src="js/logic/bureau-battle.js"></script>
@@ -167,6 +172,7 @@
 <script type="module" src="js/logic/ambience-sound.js"></script>
 <script type="module" src="js/logic/sound-bake.js"></script>
 <script type="module" src="js/logic/soundscape.js"></script>
+<script type="module" src="js/logic/battle-sounds.js"></script>
 <script type="module" src="js/logic/mapgen.js"></script>
 <script type="module" src="js/logic/water-gen.js"></script>
 <script type="module" src="js/logic/arena-gen.js"></script>
@@ -190,6 +196,7 @@
 <script type="module" src="js/ui-marks-kit.js"></script>
 <script type="module" src="js/ui-motion.js"></script>
 <script type="module" src="js/ui-idle.js"></script>
+<script type="module" src="js/logic/collection.js"></script>
 <script type="module" src="js/logic/saves.js"></script>
 <script type="module" src="js/logic/online.js"></script>
 <script type="module" src="js/logic/online-legal.js"></script>
@@ -216,6 +223,11 @@
 <script type="module" src="js/logic/bowl-island.js"></script>
 <script type="module" src="js/logic/float-island.js"></script>
 <script type="module" src="js/logic/cutscene-set.js"></script>
+<script type="module" src="js/logic/line-markup.js"></script>
+<script type="module" src="js/logic/talk-type.js"></script>
+<script type="module" src="js/logic/talk-skins.js"></script>
+<script type="module" src="js/logic/talk-stack.js"></script>
+<script type="module" src="js/logic/talk-director.js"></script>
 <script type="module" src="js/logic/script-parse.js"></script>
 <script type="module" src="js/logic/square-talk.js"></script>
 <script type="module" src="js/logic/story-checks.js"></script>
@@ -251,6 +263,8 @@
 <script type="module" src="js/skeleton-rig.js"></script>
 <script type="module" src="js/battle-stage.js"></script>
 <script type="module" src="js/battle-anim-run.js"></script>
+<script type="module" src="js/battle-looks.js"></script>
+<script type="module" src="js/battle-stage-look.js"></script>
 <script type="module" src="js/walk-view.js"></script>
 <script type="module" src="js/engine/settings.js"></script>
 <script type="module" src="js/engine/webgl.js"></script>
@@ -286,6 +300,7 @@
 <script type="module" src="js/walk/fountains-weather.js"></script>
 <script type="module" src="js/walk/effects.js"></script>
 <script type="module" src="js/walk/battle-fx.js"></script>
+<script type="module" src="js/walk/battle-scars.js"></script>
 <script type="module" src="js/walk/fog-grid.js"></script>
 <script type="module" src="js/walk/input.js"></script>
 <script type="module" src="js/walk-view-gl.js"></script>
@@ -306,7 +321,9 @@
 <script type="module" src="js/audio/levels.js"></script>
 <script type="module" src="js/audio/tracker.js"></script>
 <script type="module" src="js/audio/soundscape-player.js"></script>
+<script type="module" src="js/audio/battle-voices.js"></script>
 <script type="module" src="js/sound.js"></script>
+<script type="module" src="js/audio/battle-sounds.js"></script>
 <script type="module" src="js/soundscape-here.js"></script>
 <script type="module" src="js/sound-test.js"></script>
 <script type="module" src="js/talk.js"></script>

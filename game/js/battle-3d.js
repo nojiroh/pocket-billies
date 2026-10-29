@@ -8,6 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  BATTLE_ANIMS,
   COATS,
   PYRAMIDS,
   activeBattle,
@@ -20,7 +21,24 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { battleTurnPoint, battleWaterFacing } from './logic/battle-facing.js';
-import { RIBBON_CORE, ribbonEdges, ribbonTone, smearGhosts, smearRibbon } from './logic/smear.js';
+import {
+  RIBBON_CORE,
+  STRETCH_PACE,
+  ribbonEdges,
+  ribbonTone,
+  smearGhosts,
+  smearRecord,
+  smearRibbon,
+  smearStretch,
+} from './logic/smear.js';
+import {
+  battleAnimFrame,
+  battleEventProps,
+  battleIconSprite,
+  battlePathAt,
+  battlePropAt,
+  battleSceneProps,
+} from './logic/battle-anims.js';
 import { coatFoil, foilOn } from './logic/coat-foil.js';
 import { hexToRgb, pyramidCanvas } from './art.js';
 import {
@@ -50,34 +68,48 @@ import {
   trainerBattleFrame,
   trainerMetersPerPixel,
 } from './battle-stage.js';
+import { battleLookGhost } from './battle-looks.js';
+import { battleStageLookFrame } from './battle-stage-look.js';
 import { stopWalkView, walkData, walkView } from './walk-view.js';
 import { graphicsOff } from './engine/settings.js';
 import { gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { BATTLE_FX_KIND } from './walk/battle-fx.js';
+import { BATTLE_FX_KIND, battleFxHasAnim } from './walk/battle-fx.js';
+import { battleScarsEnd } from './walk/battle-scars.js';
 import { loadPropModelRecipe, propModelsOn } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
   BATTLE_RGB: [() => BATTLE_RGB],
-  EFFECT_LIGHT_BUDGET: [() => EFFECT_LIGHT_BUDGET],
   PHONE_BATTLE: [() => PHONE_BATTLE],
+  PROP_PICS: [() => PROP_PICS],
   RIG_DARK: [() => RIG_DARK],
   RIG_HITS: [() => RIG_HITS],
+  RIG_RISES: [() => RIG_RISES],
   SMEAR_LOOKS: [() => SMEAR_LOOKS],
+  TRAIL_CELL_MS: [() => TRAIL_CELL_MS],
   battle3d: [() => battle3d],
   battle3dAttach: [() => battle3dAttach, v => (battle3dAttach = v)],
   battle3dEffectLights: [() => battle3dEffectLights, v => (battle3dEffectLights = v)],
   battle3dFrame: [() => battle3dFrame, v => (battle3dFrame = v)],
   battle3dHit: [() => battle3dHit, v => (battle3dHit = v)],
   battle3dLayout: [() => battle3dLayout, v => ((battle3dLayout = v), provide({ battle3dLayout }))],
-  battle3dRgb: [() => battle3dRgb, v => (battle3dRgb = v)],
+  battle3dProps: [() => battle3dProps, v => (battle3dProps = v)],
+  battle3dRgb: [() => battle3dRgb, v => ((battle3dRgb = v), provide({ battle3dRgb }))],
+  battle3dRise: [() => battle3dRise, v => (battle3dRise = v)],
+  battle3dScenePoint: [() => battle3dScenePoint, v => ((battle3dScenePoint = v), provide({ battle3dScenePoint }))],
   battle3dStart: [() => battle3dStart, v => ((battle3dStart = v), provide({ battle3dStart }))],
   battle3dStop: [() => battle3dStop, v => ((battle3dStop = v), provide({ battle3dStop }))],
+  battle3dTrail: [() => battle3dTrail, v => (battle3dTrail = v)],
   battle3dTurnedCam: [() => battle3dTurnedCam, v => (battle3dTurnedCam = v)],
   battle3dWanted: [() => battle3dWanted, v => (battle3dWanted = v)],
   battleFoil: [() => battleFoil, v => (battleFoil = v)],
   battleFoilOn: [() => battleFoilOn, v => (battleFoilOn = v)],
+  battlePropPath: [() => battlePropPath],
+  battlePropsPreload: [() => battlePropsPreload, v => (battlePropsPreload = v)],
+  battlePropsReady: [() => battlePropsReady, v => ((battlePropsReady = v), provide({ battlePropsReady }))],
+  propItem: [() => propItem, v => (propItem = v)],
+  propWorldItem: [() => propWorldItem, v => (propWorldItem = v)],
   pyramidItem: [() => pyramidItem, v => (pyramidItem = v)],
   pyramidModelPath: [() => pyramidModelPath],
   pyramidWorldItem: [() => pyramidWorldItem, v => (pyramidWorldItem = v)],
@@ -87,7 +119,15 @@ expose({
   smearLook: [() => smearLook, v => (smearLook = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battle3dLayout, battle3dStart, battle3dStop, ribbonColour });
+provide({
+  battle3dLayout,
+  battle3dRgb,
+  battle3dScenePoint,
+  battle3dStart,
+  battle3dStop,
+  battlePropsReady,
+  ribbonColour,
+});
 /* to-module: end */
 export const battle3d = {
   on: false,
@@ -123,6 +163,8 @@ export function battle3dAttach(o = {}) {
     host = $('#camWorld');
   if (!host || !cv) return false;
   battle3d.detach = !!o.detach;
+  /* VFX-17: the scenes' models are loaded at the battle's start, so a scene's first use finds them */
+  battlePropsPreload();
   const sc = walkView.sc,
     P = walkView.pl,
     C0 = walkData().sc,
@@ -213,6 +255,8 @@ export function battle3dLayout() {
 export function battle3dStop() {
   if (!battle3d.on) return;
   battle3d.on = false;
+  /* VFX-15: the battle's scars go (walk/battle-scars.js, four dithered steps) */
+  if (typeof battleScarsEnd === 'function') battleScarsEnd();
   walkView.battle = null;
   walkRenderer.bt = null;
   walkRenderer.camT = null;
@@ -300,6 +344,8 @@ function battle3dFrame() {
       foil: B.s.coat ? battleFoil(B.s.coat, `b${i}:${B.s.seed || 0}`) : null,
       /* VFX-9: its hit flash on the GPU (walk/sprites.js uHit), so a flash no longer redraws and uploads its picture */
       hit: battle3dHit(B.s, i),
+      /* VFX-16: dithering in from its feet up, or out (battle-stage.js s.rise: the share shown) */
+      rise: battle3dRise(B.s, i, G.base / B.R.BH, G.top / B.R.BH),
     });
     /* VFX-5: its afterimages, the same picture at older places of its lunge, dithered and brighter, with the lean it
        had there; no shadow, no contact shade (walk/shadows.js, walk/lighting.js and walk/ground-draw.js skip ghosts) */
@@ -316,6 +362,24 @@ function battle3dFrame() {
         aoR: 0,
         fade: g.fade * B.s.a,
         glow: g.glow,
+        ghost: true,
+        foil: null,
+        hit: null,
+      });
+    }
+    /* VFX-14: Fork's flickering copy, aside of it (battle-looks.js), drawn as an afterimage */
+    const fg = typeof battleLookGhost === 'function' ? battleLookGhost(i) : null;
+    if (fg) {
+      const [kx, kz] = T(w.x + fg.dx, w.z);
+      items.push({
+        ...rig,
+        x: kx,
+        z: kz,
+        y: standingHeightAt(kx, kz) + Math.max(0, w.y),
+        sh: 0,
+        aoR: 0,
+        fade: fg.fade * B.s.a,
+        glow: 0.3,
         ghost: true,
         foil: null,
         hit: null,
@@ -396,16 +460,54 @@ function battle3dFrame() {
   const fx = battle3d.fx || (battle3d.fx = []);
   fx.length = 0;
   for (const p of battleStage.parts) {
-    if (p.img) continue;
+    /* VFX-11: a light step's particle shows nothing */
+    if (p.img || p.hide) continue;
     let a = p.fade === false ? 1 : 1 - p.age / p.life;
     if (p.twinkle) a *= 0.5 + 0.5 * Math.sin(p.age / 120);
     if (a <= 0.01) continue;
     const [px, pz] = T(p.x, p.z),
       q = { k: 0, x: px, y: battle3d.gy + p.y, z: pz, a: clamp(a, 0, 1), glow: !!p.glow };
-    if (p.spr) {
+    if (p.anim && !p.spr && !p.beam) {
+      /* VFX-14: a strip named by id alone (battleAnims.json sprites; VFX-11's particles name it beside an icon, below) in
+         its ramp: its frame fixed (a still look) or stepped on the stage clock; nothing until the strips have loaded */
+      if (!battleFxHasAnim(p.anim)) continue;
+      const S = BATTLE_ANIMS.sprites[p.anim];
+      q.k = BATTLE_FX_KIND.sprite;
+      q.anim = p.anim;
+      q.ramp = p.ramp || 'None';
+      q.f = p.frame ?? battleAnimFrame(S, p.age, p.life);
+      q.scale = p.k || 1;
+      q.flipY = !!p.flipY;
+      if (!S.loop || p.frame != null) q.a = p.alpha ?? 1;
+    } else if ((p.spr || p.strip) && !p.beam) {
       q.k = BATTLE_FX_KIND.sprite;
       q.key = p.spr;
       q.s = (p.k || 1) / 30;
+      /* VFX-10: an icon with a strip like it (battleAnims.json iconSprites) is drawn as that strip, in its type's ramp
+         (else the icon's), its frame stepped on the stage clock; a strip that plays once carries its own fade (its
+         last frames erode), so only a looping one also erodes by its age. VFX-11: a particle may name its strip
+         (anim) itself; Electric's hold each frame twice (a stutter); a flipped one (flip -1) is mirrored. VFX-16: or
+         name it as strip, with its ramp */
+      const I =
+        p.anim && battleFxHasAnim(p.anim)
+          ? { sprite: p.anim, ramp: p.ramp }
+          : p.strip
+            ? { sprite: p.strip, ramp: BATTLE_ANIMS.ramps[p.ramp] ? p.ramp : 'None' }
+            : battleIconSprite(BATTLE_ANIMS, p.spr, p.ramp);
+      if (I && battleFxHasAnim(I.sprite)) {
+        const S = BATTLE_ANIMS.sprites[I.sprite],
+          age = p.stutter ? p.age - (p.age % 167) : p.age;
+        q.anim = I.sprite;
+        q.ramp = I.ramp;
+        q.f = battleAnimFrame(S, age, p.life);
+        q.scale = p.k || 1;
+        /* VFX-17: a stamped word lands in steps: two sizes bigger, one bigger, its own, a 24 fps cell each */
+        if (p.stampIn) q.scale += Math.max(0, 2 - Math.floor(p.age / TRAIL_CELL_MS));
+        q.flip = p.flip < 0 ? -1 : 1;
+        if (!S.loop) q.a = p.twinkle ? clamp(0.5 + 0.5 * Math.sin(p.age / 120), 0, 1) : 1;
+        /* VFX-11: a projectile's trail: copies of it where its path had it a cell (42 ms) ago, and before, eroding */
+        if (p.path && p.trail) battle3dTrail(fx, p, q, T);
+      }
     } else if (p.ring) {
       q.k = BATTLE_FX_KIND.ring;
       q.r = (p.r0 + (p.r1 - p.r0) * EASE.out(p.age / p.life)) / 30;
@@ -421,6 +523,13 @@ function battle3dFrame() {
       q.z2 = z2;
       q.w = (p.w || 1) / 30;
       q.col = battle3dRgb(p.col);
+      /* VFX-11: a ray's strip (beam_strip), tiled along it in its ramp; else VFX-9's flat beam */
+      if (p.anim && battleFxHasAnim(p.anim)) {
+        q.anim = p.anim;
+        q.ramp = p.ramp;
+        q.f = battleAnimFrame(BATTLE_ANIMS.sprites[p.anim], p.age, p.life);
+        q.scale = p.k || 1;
+      }
     } else {
       q.k = BATTLE_FX_KIND.square;
       q.size = Math.max(1, (p.size || 2) * 0.6) / 30;
@@ -457,6 +566,8 @@ function battle3dFrame() {
       items.push(it);
     }
   }
+  /* VFX-17: a signature scene's summoned models (battleStage.props), with the thrown pyramid's smears */
+  battle3dProps(items, T);
   /* VFX-4: the impact frame now (battle-stage.js impactFx), its hit point in the walk scene (walk-view-gl.js projects
      it for the grade pass) */
   const IS = battleImpact();
@@ -480,6 +591,8 @@ function battle3dFrame() {
     impact,
     /* VFX-9: the chromatic flash, a pulse in the grade pass */
     caPulse: battleStageChromaticPulse(),
+    /* VFX-15: the stage's mood, the battle's weather look and the Sandstorm (battle-stage-look.js) */
+    stageLook: typeof battleStageLookFrame === 'function' ? battleStageLookFrame() : null,
     hide: battle3d.hide,
     lights,
     focus: d.zf,
@@ -487,19 +600,60 @@ function battle3dFrame() {
     center: [actionCenter.x + O[0], actionCenter.z + O[1]],
   };
 }
+/* VFX-15: a point of the battle (battle space, metres) in the walk scene (battle-stage-look.js lays scars there) */
+function battle3dScenePoint(x, z) {
+  return battleTurnPoint(x, z, battle3d.yaw || 0, actionCenter, battle3d.off);
+}
 /* VFX-9: a Billie's white and dark flashes (s.white, s.dark: 0..1, white first, then dark, as rigTint laid them on
    the picture) as one colour and amount after the light: [r, g, b, a], or null with none */
 const RIG_DARK = [12 / 255, 10 / 255, 22 / 255],
   RIG_HITS = [];
+/* VFX-16: a rig's dither in or out as the sprite shader takes it ([share hidden, the feet's and the head's places down
+   its picture]), or null when it is whole */
+const RIG_RISES = /** @type {number[][]} */ ([]);
+function battle3dRise(s, i, feet, head) {
+  if (s.rise == null || s.rise >= 1) return null;
+  const R = RIG_RISES[i] || (RIG_RISES[i] = [0, 0, 0]);
+  R[0] = clamp(1 - s.rise, 0, 1);
+  R[1] = clamp(feet, 0.05, 1);
+  R[2] = clamp(head, 0, R[1] - 0.05);
+  return R;
+}
 function battle3dHit(s, i) {
   const w = clamp(s.white || 0, 0, 1),
-    d = clamp(s.dark || 0, 0, 1);
-  if (w <= 0.001 && d <= 0.001) return null;
-  const a = 1 - (1 - w) * (1 - d),
-    H = RIG_HITS[i] || (RIG_HITS[i] = [0, 0, 0, 0]);
+    d = clamp(s.dark || 0, 0, 1),
+    /* VFX-14: a status's tint ([r, g, b, a], battle-looks.js: a burn's flicker, a lost turn's edge, Reduced motion's
+       still tint) under the flashes */
+    tn = s.tint,
+    ta = tn ? clamp(tn[3], 0, 1) : 0;
+  if (w <= 0.001 && d <= 0.001 && ta <= 0.001) return null;
+  const H = RIG_HITS[i] || (RIG_HITS[i] = [0, 0, 0, 0]);
+  if (w <= 0.001 && d <= 0.001) {
+    for (let j = 0; j < 3; j++) H[j] = tn[j];
+    H[3] = ta;
+    return H;
+  }
+  const a = 1 - (1 - w) * (1 - d);
   for (let j = 0; j < 3; j++) H[j] = (w * (1 - d) + RIG_DARK[j] * d) / a;
   H[3] = a;
+  if (ta > 0.001) {
+    const a2 = 1 - (1 - a) * (1 - ta);
+    for (let j = 0; j < 3; j++) H[j] = (H[j] * a + tn[j] * ta * (1 - a)) / a2;
+    H[3] = a2;
+  }
   return H;
+}
+/* VFX-11: a projectile's trail: copies of its strip where its path had it 1, 2... cells (42 ms) ago, each eroded a
+   little more (the pool's fade), so it reads as Part 1's afterimages without a draw of its own */
+const TRAIL_CELL_MS = 42;
+function battle3dTrail(fx, p, q, T) {
+  for (let j = 1; j <= p.trail; j++) {
+    const u = (p.age - j * TRAIL_CELL_MS) / p.life;
+    if (u <= 0) break;
+    const w = battlePathAt(p.path, u),
+      [x, z] = T(w[0], w[2]);
+    fx.push({ ...q, x, y: battle3d.gy + w[1], z, a: q.a * (1 - j / (p.trail + 1)), glow: false });
+  }
 }
 /* VFX-9: a particle's colour (a hex) as the pool takes it, 0..1, made once a colour */
 const BATTLE_RGB = new Map();
@@ -512,15 +666,16 @@ function battle3dRgb(col) {
   return c;
 }
 /* VFX-9: the effect lights (glowing move particles with a colour, the newest first): 3 / 2 / 1 / 0 by the battle's
-   quality, at most 2 on a phone and 6 battle lights in all; 2.4 m. Each keeps its key (8, 9 or 10) while it shines */
+   quality, at most 2 on a phone and 6 battle lights in all; 2.4 m. Each keeps its key (8, 9 or 10) while it shines.
+   VFX-12: the numbers are battleAnims.json `budgets` (the Studio's Battle effects tunes them) */
 const PHONE_BATTLE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
-const EFFECT_LIGHT_BUDGET = [3, 2, 1, 0];
 function battle3dEffectLights(lights, at3) {
-  const P = battleStage.parts,
+  const B = BATTLE_ANIMS.budgets,
+    P = battleStage.parts,
     max = Math.min(
-      EFFECT_LIGHT_BUDGET[clamp(battleStage.q.lvl | 0, 0, 3)],
-      PHONE_BATTLE ? 2 : 3,
-      Math.max(0, 6 - lights.length)
+      B.lights[clamp(battleStage.q.lvl | 0, 0, 3)],
+      PHONE_BATTLE ? B.lightsPhone : 3,
+      Math.max(0, B.lightsAll - lights.length)
     ),
     pick = [];
   for (let i = P.length - 1; i >= 0 && pick.length < max; i--) {
@@ -537,7 +692,8 @@ function battle3dEffectLights(lights, at3) {
       p.lk = [8, 9, 10].find(k => !taken.has(k)) || 10;
       taken.add(p.lk);
     }
-    const k = Math.max(0, 1 - p.age / p.life),
+    /* VFX-11: a kit's light strength (lightK), and a flicker (Fire, Electric) stepped at 12 fps */
+    const k = Math.max(0, 1 - p.age / p.life) * (p.lightK || 1) * (p.flick && Math.floor(p.age / 83) % 2 ? 0.6 : 1),
       c = battle3dRgb(p.col);
     lights.push({
       p: at3(p.x, battle3d.gy + Math.max(0.1, p.y), p.z),
@@ -584,6 +740,8 @@ function pyramidItem(C, T) {
   const it = pyramidWorldItem(C.kind, x, y, z, spin, C.sz);
   if (!it) return null;
   C.in3d = battleStage.t;
+  /* VFX-16: squashed on a catch's wobble (battle-stage.js C.sq) */
+  if (C.sq) it.squash = C.sq;
   /* the capstone glows a little; any pyramid glows as it seals */
   const glow = C.glow || 0;
   if (C.kind === 'capstone' || glow > 0.05)
@@ -648,31 +806,123 @@ function smearLook(glow) {
 }
 /* a catch pyramid's model as a world item, in the walk scene's metres: y its base point (the recipe's own lift
    included), spin its turn (it.spin, as prop-models.js propModelInstanceValues reads it); null while it can't be drawn (3D props off, the GPU
-   lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js) */
+   lost, its recipe not loaded yet). The opening's throws use it too (cutscene/opening.js). VFX-17: propWorldItem's */
 export function pyramidWorldItem(kind, x, y, z, spin, size = 1) {
-  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof PYRAMIDS === 'undefined' || !PYRAMIDS[kind])
-    return null;
-  const path = pyramidModelPath(kind),
-    rec = loadPropModelRecipe(path);
-  if (!rec || !(rec.layers || []).length) return null;
-  return {
+  if (typeof PYRAMIDS === 'undefined' || !PYRAMIDS[kind]) return null;
+  return propWorldItem(pyramidModelPath(kind), x, y, z, spin, PYRAMID_SCALE * size, PYRAMID_YAW, {
     k: 'pyramid',
     /* its icon: never drawn (a model item), but the renderer sorts and keys items by their picture */
     im: pyramidCanvas(kind, 32),
+  });
+}
+/* ================= VFX-17: SUMMONED MODELS =================
+   Any low-poly recipe (path, inside art/) as a world item, the thrown pyramid's way: x, y (its base point), z in the
+   walk scene's metres, spin its turn about its middle, s its scale, rot its heading (radians: the model's +x along
+   cos, sin). o: k (its kind), im (its picture: never drawn, but the renderer sorts and keys items by it), w, h, mpp
+   (its box for culling). null while it can't be drawn (3D props off, the GPU lost, the recipe not loaded yet) */
+const PROP_PICS = new Map();
+function propWorldItem(path, x, y, z, spin, s = 1, rot = 0, o = {}) {
+  if (typeof propModelsOn !== 'function' || !propModelsOn()) return null;
+  const rec = loadPropModelRecipe(path);
+  if (!rec || !(rec.layers || []).length) return null;
+  let im = o.im;
+  if (!im) {
+    im = PROP_PICS.get(path);
+    if (!im) {
+      im = document.createElement('canvas');
+      im.width = im.height = 1;
+      PROP_PICS.set(path, im);
+    }
+  }
+  const w = o.w || 16,
+    h = o.h || 16;
+  return {
+    k: o.k || 'battleProp',
+    im,
     vox: rec,
     voxPath: path,
-    p: { x, z, s: PYRAMID_SCALE * size, rot: PYRAMID_YAW },
+    p: { x, z, s, rot },
     x,
     y,
     z,
-    w: 16,
-    h: 16,
-    mpp: 0.03,
-    ox: -8,
-    oy: -16,
+    w,
+    h,
+    mpp: o.mpp || 0.03,
+    ox: -w / 2,
+    oy: -h,
     flip: 1,
     fade: 1,
     spin,
     light: null,
   };
+}
+/* a scene's model by its recipe id (game/art/scene/next/models; battleAnims.json scenes' prop steps) */
+const battlePropPath = id => `scene/next/models/${id}.json`;
+/* every scene's models, asked for now (prop-models.js loads them; a scene whose models aren't in yet plays its family) */
+function battlePropsPreload() {
+  if (typeof propModelsOn !== 'function' || !propModelsOn() || typeof BATTLE_ANIMS === 'undefined') return;
+  for (const id of battleSceneProps(BATTLE_ANIMS)) loadPropModelRecipe(battlePropPath(id));
+  /* VFX-18b: and a Bureau boss's shield phase's (battleBossPhaseScene) */
+  for (const id of battleEventProps(BATTLE_ANIMS)) loadPropModelRecipe(battlePropPath(id));
+}
+/* whether every model of a scene can be drawn now (3D props on, each recipe loaded and not empty) */
+function battlePropsReady(ids) {
+  if (typeof propModelsOn !== 'function' || !propModelsOn()) return false;
+  return ids.every(id => {
+    const rec = loadPropModelRecipe(battlePropPath(id));
+    return !!rec && (rec.layers || []).length > 0;
+  });
+}
+/* one summoned model at its place now (S: logic/battle-anims.js battlePropAt, or a kept place for an afterimage) */
+function propItem(P, S, T) {
+  const [x, z] = T(S.x, S.z),
+    [x1, z1] = T(S.x + Math.cos(S.yaw), S.z + Math.sin(S.yaw)),
+    spin = S.tum ? { a: P.ax || [0, 0, 1], an: S.tum, c: [0, P.mid || 0.5, 0] } : undefined,
+    it = propWorldItem(battlePropPath(P.prop), x, battle3d.gy + S.y, z, spin, P.s || 1, Math.atan2(z1 - z, x1 - x), {
+      w: 64,
+      h: 64,
+      mpp: P.mpp || 0.04,
+    });
+  return it;
+}
+/* VFX-17: the scene's models now: each at its place on its path (logic/battle-anims.js battlePropAt), its places kept
+   on the 24 fps grid for its afterimages and, on its fastest cells, its stretch (as the thrown pyramid's); one that
+   has eroded away leaves the list */
+function battle3dProps(items, T) {
+  const L = battleStage.props;
+  if (!L || !L.length) return;
+  const t = battleStage.t,
+    n = battleSmearCount();
+  for (let i = L.length - 1; i >= 0; i--) {
+    const P = L[i];
+    if (!P || !P.path) continue;
+    if (t < P.t0) continue;
+    const S = battlePropAt(P, t);
+    if (S.gone) {
+      L.splice(i, 1);
+      continue;
+    }
+    /* k 0 marks a fast cell (smear.js reads its pace from k), 0.5 a slow one */
+    if (S.flying)
+      smearRecord(P.trail, t, { x: S.x, y: S.y, z: S.z, yaw: S.yaw, tum: S.tum, k: S.pace >= STRETCH_PACE ? 0 : 0.5 });
+    const it = propItem(P, S, T);
+    if (!it) continue;
+    it.fade = S.fade;
+    const St = S.flying ? smearStretch(P.trail, t, n > 0, battleStage.V) : null;
+    if (St) {
+      const [x0, z0] = T(S.x, S.z),
+        [x1, z1] = T(S.x + St.d[0], S.z + St.d[2]);
+      it.smear = { d: [x1 - x0, St.d[1], z1 - z0], seed: St.seed };
+    }
+    items.push(it);
+    for (const g of smearGhosts(P.trail, t, n, battleStage.V)) {
+      const G = propItem(P, g.s, T);
+      if (!G) continue;
+      G.fade = g.fade * S.fade;
+      G.glow = g.glow;
+      G.lk = smearLook(g.glow);
+      G.ghost = true;
+      items.push(G);
+    }
+  }
 }

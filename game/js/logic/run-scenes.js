@@ -701,9 +701,12 @@ export function runWildLevels(map, i, data, more = 0) {
 }
 /** the run's world: Copperleaf (`hub`, world node 0) and a place per map node, the seam roads between them (each
  * node's east exits to its children's west ones) and each node's pool (its biome's species at its row's levels).
- * A place is an ordinary row (game-data.js worldSetGraph) plus runNode, its map node
+ * A place is an ordinary row (game-data.js worldSetGraph) plus runNode, its map node. PK-7: `foeUp`, the levels the
+ * foes were made with, and `foeSeed`, the run's seed (run-loop.js runFoesSync moves them when a Perk taken later
+ * changes it)
  * @param {Run} run @param {LocationData} hub @param {RunWorldData} data
- * @returns {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, shops: Record<string, any> }} */
+ * @returns {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, shops: Record<string, any>,
+ *   foeUp: number, foeSeed: string }} */
 export function runWorldTables(run, hub, data) {
   const map = /** @type {RunMap} */ (run.map),
     /* RL-R1: the run's region: its dex (data.dex stands in when given) and its varieties */
@@ -715,7 +718,9 @@ export function runWorldTables(run, hub, data) {
     roads = [],
     /** @type {Record<string, any>} */
     shops = {},
-    nos = runRouteNumbers(map, data);
+    nos = runRouteNumbers(map, data),
+    /* PK-1: every run row's levels (logic loaded alone, without the effects module: the modifiers' alone) */
+    up = typeof fxRunFoeLevels === 'function' ? fxRunFoeLevels(run) : modFoeLevels(run);
   const places = map.nodes.map((node, i) => {
     const B = data.biomes[node.biome || ''] || /** @type {Biome} */ ({}),
       T = data.nodeTypes[node.type],
@@ -727,8 +732,7 @@ export function runWorldTables(run, hub, data) {
     /* RL-R2: a side area's places meet its own species (lines the region left out), when it has them */
     const own = node.side && map.side && map.side.dex ? map.side.dex : null;
     pools[id] = {
-      /* PK-1: every run row's levels (logic loaded alone, without the effects module: the modifiers' alone) */
-      lv: runWildLevels(map, i, data, typeof fxRunFoeLevels === 'function' ? fxRunFoeLevels(run) : modFoeLevels(run)),
+      lv: runWildLevels(map, i, data, up),
       list: own ? wildPoolList(source.list, own, null) : wildPoolList(source.list, dex, region ? region.swap : null),
     };
     /** @type {LocationData} */
@@ -815,5 +819,5 @@ export function runWorldTables(run, hub, data) {
   }
   /* RL-8b: the run's map is its own land: Copperleaf stays world node 0 (flying home, a save's checks) but is off it */
   const home = { ...hub, bowl: { a: 0, r: 0, ...hub.bowl, off: true } };
-  return { locations: [home, ...places], roads, pools, shops };
+  return { locations: [home, ...places], roads, pools, shops, foeUp: up, foeSeed: run.seed };
 }

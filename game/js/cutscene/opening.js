@@ -15,6 +15,7 @@ import { $, clamp } from '../util.js';
 import { CUTSCENES, LOCATIONS, RULES, SPECIES, START_NODE, locationFullName } from '../game-data.js';
 import { CHOSEN, FAST_SKIPS, FAST_SKIP_MS, hotTake, speedWatch } from '../logic/chosen.js';
 import { cutsceneCleared, cutsceneOffset, cutscenePoint } from '../logic/cutscene-set.js';
+import { plainOf } from '../logic/line-markup.js';
 import { uiState } from '../game-state.js';
 import { userFps } from '../frame-scheduler.js';
 import { artLoad } from '../art.js';
@@ -464,7 +465,7 @@ function chosenHotTake() {
   const line = cutscene.pickList[cutscene.sel],
     n = cutscene.takes[line] || 0;
   cutscene.takes[line] = n + 1;
-  b.textContent = hotTake(line, n);
+  b.textContent = plainOf(hotTake(line, n));
   const q = worldToScreen(walkView.C, g.x, 2.1 + standingHeightAt(g.x, g.z), g.z),
     r = walkView.cv.getBoundingClientRect();
   b.hidden = false;

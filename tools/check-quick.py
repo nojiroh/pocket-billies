@@ -54,8 +54,11 @@ BLUR_CEILING = {}
 # UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps, lowered when
 # a screen sheds pieces. Set from UI-15's counts (before it: walk 27, map 25, team 28, guide 39, profile 55, shop 73,
 # battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in. Team 28 -> 29 in the UI
-# checks session: UI-14b's rarity pill on the lead's card (the owner's answer 9: rarity on Billie cards, common too)
-ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 29, 'guide': 39, 'profile': 55, 'shop': 66, 'battle': 23}
+# checks session: UI-14b's rarity pill on the lead's card (the owner's answer 9: rarity on Billie cards, common too).
+# Guide 39 -> 40 in PK-12: the Field Guide's fourth tab, Perks (perks-track.md section 9)
+# DL-4: dialogue, a stack of three bubbles over the walk (20 at DL-4: the walk's 14 and the bubbles, each older one a
+# single piece)
+ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 29, 'guide': 40, 'profile': 55, 'shop': 66, 'battle': 23, 'dialogue': 20}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
@@ -605,6 +608,8 @@ def safety_step(P):
     pg.evaluate(CHECK_SHOP + "uiState.modal=null;uiState.mq=[];renderOverlay();openShop('check_shop');0"); ui(pg); check('shop'); shown.append('shop')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();document.querySelector('[data-a=inbox]')?.click();0"); ui(pg); check('inbox'); shown.append('inbox')
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();toast(saveData.team[0].nick+' leads the team now.');talkLine('me',saveData.avatar.name+' says hi.');0"); until(pg, "!!talkBox.on", 5); ui(pg); check('toast and dialogue'); shown.append('toast'); shown.append('dialogue')
+    # DL-4: the name moved up the stack in an older bubble, and in the Log
+    pg.evaluate("talkLine('chosen','Hello, '+saveData.avatar.name+'.');talkLine('kappi','Hi.');document.querySelector('.talk-logbtn').click();0"); ui(pg); check('talk stack and Log'); shown.append('talk stack')
     pg.evaluate("talkHide();uiState.modal=null;uiState.mq=[];renderOverlay();openDressingRoom({});0"); until(pg, "!!dressingRoom.on", 10); ui(pg); check('dressing room'); shown.append('dressing room')
     pg.evaluate("typeof closeDressingRoom==='function'&&closeDressingRoom();screenWipe=f=>f();saveData.team.forEach(m=>{m.hp=maxHp(m)});const q={id:'tq',sp:saveData.team[0].sp,lvl:3,no:1};saveData.queue=[q];startWild(q);0")
     if wait_phase(pg, ('choose',), 120) != 'choose': raise Exception('the battle never reached the move menu')
@@ -1115,6 +1120,17 @@ def phone_flow(P):
     ui(pg); shot(pg, 'phone-battle')
     blur['battle'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['battle'] = pg.evaluate('uiBlurCount()')
     elems['battle'] = pg.evaluate('uiElementCount()')
+    # DL-4: a conversation's stack over the walk: three bubbles at most, one current name tag and line (the older ones'
+    # are .talk-was and .talk-said), the bubbles within 40% of the screen over the bar, and its pieces counted
+    pg.evaluate("stopTimers();activeBattle=null;battleStageStop();uiState.tab='walk';render();talkLine('chosen','So. You fell through the crust.');talkLine('kappi','[whisper] They are not furniture, Professor.');talkLine('chad','Out of my way, I was here first and I am next in line for the airship, obviously.');talkLine('chosen','Mostly furniture does that.');0")
+    if not until(pg, "!!talkBox.cur&&!talkBox.cur.typing&&!talkBox.cur.wait", 20): raise Exception('the stack’s last line never finished')
+    ui(pg); shot(pg, 'phone-dialogue')
+    elems['dialogue'] = pg.evaluate('uiElementCount()')
+    st = pg.evaluate("(()=>{const S=document.querySelector('.talk-stack'),b=S.querySelector('.talk-box:not(.talk-old)').getBoundingClientRect();return {bubbles:S.querySelectorAll('.talk-box').length,who:document.querySelectorAll('.talk-who').length,line:document.querySelectorAll('.talk-line').length,over:(b.bottom-S.getBoundingClientRect().top)/innerHeight}})()")
+    pg.evaluate("talkHide();0")
+    if st['bubbles'] > 3 or st['who'] != 1 or st['line'] != 1: raise Exception(f'the talk stack shows {st["bubbles"]} bubbles, {st["who"]} name tags and {st["line"]} lines (at most 3, one, one)')
+    if st['over'] > 0.41: raise Exception(f'the talk stack reaches {st["over"]:.0%} of the screen over the bar (at most 40%)')
+    R['talkStack'] = st
     pg.evaluate("if(typeof postcardState!=='undefined')postcardState.on=false;0")
     R['blurPerScreen'] = blur; R['blurPerScreenWithBars'] = blurAll
     # UI-15: the pieces each screen shows (uiElementCount: words and icons on screen), logged so clutter is seen going

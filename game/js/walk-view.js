@@ -14,6 +14,7 @@ import {
   ALTERNATE_PROPS,
   FIELD_MOVES,
   ITEMS,
+  PERKS,
   PYRAMIDS,
   RESIDENTS,
   REWARDS,
@@ -50,6 +51,9 @@ import {
   paintGroundRect,
   paintWorkerState,
   pastureTap,
+  perkFindMake,
+  perkPickOpen,
+  perkTeamOf,
   propModelArtPaths,
   provide,
   rawHeightAt,
@@ -58,6 +62,7 @@ import {
   routeFindAt,
   routeFindGive,
   routeFindsMore,
+  routeFindsPerk,
   saveData,
   saveNow,
   seamlessMapById,
@@ -88,6 +93,7 @@ import { folkCap, squareGoers, squareSlot, squareStopFor, squareStops } from './
 import { residentHomes, residentsHere } from './logic/residents.js';
 import { fieldMoveText } from './logic/run-side.js';
 import { SURF_COST, SURF_SPEED, climbAt, fallDir, fallTop, surfCan, surfable } from './logic/surf.js';
+import { plainOf } from './logic/line-markup.js';
 import { stepCellsJoined, stepCornerHeight, stepGridCorners } from './logic/step-grid.js';
 import { orbitStickYaw, orbitWalkStep } from './logic/camera-orbit.js';
 import { frameStop } from './frame-scheduler.js';
@@ -218,10 +224,16 @@ expose({
   mapWaterCells: [() => mapWaterCells, v => (mapWaterCells = v)],
   modelRoofVariant: [() => modelRoofVariant, v => (modelRoofVariant = v)],
   movePlayer: [() => movePlayer, v => (movePlayer = v)],
+  navAheadOf: [() => navAheadOf, v => (navAheadOf = v)],
   navCellAt: [() => navCellAt, v => (navCellAt = v)],
   navCostAt: [() => navCostAt, v => (navCostAt = v)],
   navGrid: [() => navGrid, v => setNavGrid(v)],
+  navGridSteps: [() => navGridSteps, v => setNavGridSteps(v)],
+  navKept: [() => navKept, v => (navKept = v)],
   navOpen: [() => navOpen],
+  navPrepWork: [() => navPrepWork, v => (navPrepWork = v)],
+  navPrepare: [() => navPrepare, v => (navPrepare = v)],
+  navReady: [() => navReady, v => (navReady = v)],
   nearestWalkableCell: [() => nearestWalkableCell, v => (nearestWalkableCell = v)],
   newStepGrid: [() => newStepGrid, v => (newStepGrid = v)],
   openingHoursKind: [() => openingHoursKind, v => (openingHoursKind = v)],
@@ -252,6 +264,7 @@ expose({
   sendFolk: [() => sendFolk, v => (sendFolk = v)],
   setArtImage: [() => setArtImage, v => (setArtImage = v)],
   setNavGrid: [() => setNavGrid, v => (setNavGrid = v)],
+  setNavGridSteps: [() => setNavGridSteps, v => (setNavGridSteps = v)],
   setScreenToGround: [() => setScreenToGround, v => (setScreenToGround = v)],
   setStopWalkView: [() => setStopWalkView, v => (setStopWalkView = v)],
   setWalkData: [() => setWalkData, v => (setWalkData = v)],
@@ -361,8 +374,13 @@ export const walkView = {
   ready: false,
   nav: null,
   navKey: '',
-  /** LD-5: true while the walking grid is built (walk/heights.js): the heights and bridges looked at once, held */
-  navBuilding: false,
+  /** LD-5: the view whose walking grid is being built (walk/heights.js): its heights and bridges looked at once, held
+   * (the crossing hitch: the view, not true, as the next view's grid is built a slice a frame meanwhile) */
+  navBuilding: /** @type {any} */ (null),
+  /** the crossing hitch (2026-10-28): the walking grids of views about to be shown, built ahead (navPrepare: the
+   * next view's, a view on screen made again), and how many grids were built in one go (navGrid) */
+  navAhead: /** @type {any[]} */ ([]),
+  navBuilds: 0,
   folk: [],
   folkId: '',
   parts: [],
@@ -629,6 +647,8 @@ export function propShown(p) {
     if (typeof saveData === 'undefined' || !saveData) return true;
     /* PK-6: a side place's find more shows while a sideFind rule says so (Rusty Key) */
     if (p.more && !(routeFindsMore(saveData.run) >= p.more)) return false;
+    /* PK-8: a side place's Perk on the ground shows while a sidePerk rule holds (the Adventurer's Pack set) */
+    if (p.perk && !routeFindsPerk(saveData.run)) return false;
     return !(saveData.flags || {})[p.cut || p.find];
   }
   /* Project Story S2: "when" / "unless": only while the story allows (logic/script.js storyAllows) */
@@ -2761,7 +2781,7 @@ export function mapBridges(sc = walkView.sc) {
   if (!L || !L.length) return null;
   let E = STEP_GRID_CACHE.get(L);
   /* LD-5 (cutscenes session): held while the walking grid is built (walk/heights.js), which looked at them first */
-  if (E && walkView.navBuilding) return E.list;
+  if (E && walkView.navBuilding === sc) return E.list;
   /* IS-5: asked once a vertex while a ground is built (the island's: hundreds of thousands); the bridges' words are
      compared again only after a quarter of a second (the Studio edits them in place) */
   const now = performance.now();
@@ -2828,13 +2848,30 @@ export function navGrid() {
     Object.assign(walkView, { navSc: sc, navG: K.G, navP: K.P, navT: K.T, navKey: K.key });
     return (walkView.nav = K.nav);
   }
-  const C = walkData().sc,
-    key = walkView.gkey;
+  /* the crossing hitch (2026-10-28): a grid prepared ahead for this view, a slice a frame (navPrepWork) */
+  const A = navAheadOf(sc, walkView.gkey);
+  if (A && A.nav) {
+    walkView.navAhead = walkView.navAhead.filter(a => a !== A);
+    Object.assign(walkView, { navSc: sc, navG: A.G, navP: A.P, navT: A.T, navKey: A.G });
+    return (walkView.nav = A.nav);
+  }
   walkView.navSc = sc;
   walkView.navG = walkView.gkey;
   walkView.navP = (sc.props || []).length;
   walkView.navT = tk;
-  const N = NAV_CELLS_PER_M,
+  /* in one go: the steps below run to their end (counted: the crossing check wants none on a seam) */
+  walkView.navBuilds++;
+  const it = navGridSteps(sc);
+  let r = it.next();
+  while (!r.done) r = it.next();
+  walkView.navKey = walkView.gkey;
+  return (walkView.nav = r.value);
+}
+/* the walking grid of a view, a row or a few props a step (the crossing hitch, 2026-10-28: the next view's grid is
+   built ahead a slice a frame, navPrepWork; navGrid runs it in one go). walk/heights.js adds the steep ground */
+export function* navGridSteps(sc) {
+  const C = walkData().sc,
+    N = NAV_CELLS_PER_M,
     gw = Math.max(1, Math.round(sc.w * N)),
     gh = Math.max(1, Math.round(sc.h * N)),
     rows = sc.tiles || [],
@@ -2843,7 +2880,8 @@ export function navGrid() {
     cost = new Float32Array(gw * gh).fill(1),
     dry = new Uint8Array(gw * gh) /* WA-6a: over water but out of it (a stepping stone, a jetty, a bridge deck) */,
     surf = new Uint8Array(gw * gh); /* WA-6b: deep water the player may Surf on (blocked for everyone else) */
-  for (let j = 0; j < gh; j++)
+  for (let j = 0; j < gh; j++) {
+    if (j) yield;
     for (let i = 0; i < gw; i++) {
       const ti = Math.floor(i / N),
         tz = Math.floor(j / N),
@@ -2869,6 +2907,7 @@ export function navGrid() {
                   ? SURF_COST
                   : 1;
     }
+  }
   const each = (x0, z0, x1, z1, fn) => {
     for (let j = Math.max(0, Math.floor(z0 * N)); j < Math.min(gh, Math.ceil(z1 * N)); j++)
       for (let i = Math.max(0, Math.floor(x0 * N)); i < Math.min(gw, Math.ceil(x1 * N)); i++)
@@ -2879,7 +2918,9 @@ export function navGrid() {
       if (Math.hypot(x - cx, z - cz) <= r) blk[q] = v;
     });
   /* stepping stones and bridges open water first, then solid things close ground */
+  let pn = 0;
   for (const p of sc.props || []) {
+    if (++pn % 32 === 0) yield;
     const M = C.props[p.k];
     if (M && M.walk) {
       const r = M.walk * (p.s || 1);
@@ -2890,6 +2931,7 @@ export function navGrid() {
     }
   }
   for (const p of sc.props || []) {
+    if (++pn % 32 === 0) yield;
     const M = C.props[p.k];
     if (!M || M.walk || !propShown(p)) continue;
     const s = p.s || 1,
@@ -2931,7 +2973,8 @@ export function navGrid() {
       [c0, d0, cw, cd] = F ? F.rect : R,
       c1 = c0 + cw,
       d1 = d0 + cd;
-    for (let j = 0; j < gh; j++)
+    for (let j = 0; j < gh; j++) {
+      if (j) yield;
       for (let i = 0; i < gw; i++) {
         const x = (i + 0.5) / N,
           z = (j + 0.5) / N;
@@ -2940,11 +2983,13 @@ export function navGrid() {
           if (u < c0 + 0.3 || u > c1 - 0.3 || v < d0 + 0.25 || v > d1 - 0.3) blk[j * gw + i] = 1;
         } else if (x < a0 || x > a1 || z < b0 || z > b1) blk[j * gw + i] = 1;
       }
+    }
   }
   /* alpha 0.2: in a joined view you walk in the place and where the next places meet it, not out into the countryside */
   if (sc.inside) {
     const I = sc.inside;
-    for (let j = 0; j < gh; j++)
+    for (let j = 0; j < gh; j++) {
+      if (j) yield;
       for (let i = 0; i < gw; i++) {
         const x = (i + 0.5) / N,
           z = (j + 0.5) / N;
@@ -2956,6 +3001,7 @@ export function navGrid() {
           }
         if (!ok) blk[j * gw + i] = 1;
       }
+    }
   }
   /* v18: the height you stand at in each cell (ground, terrace, stair or bridge deck) and where you may hop down a ledge;
     a bridge deck opens the water or the drop under it */
@@ -2968,7 +3014,8 @@ export function navGrid() {
     i1 = RW ? Math.min(gw, Math.ceil((RW[0] + RW[2] + 1) * N)) : gw,
     j0 = RW ? Math.max(0, Math.floor((RW[1] - 1) * N)) : 0,
     j1 = RW ? Math.min(gh, Math.ceil((RW[1] + RW[3] + 1) * N)) : gh;
-  for (let j = j0; j < j1; j++)
+  for (let j = j0; j < j1; j++) {
+    if (j) yield;
     for (let i = i0; i < i1; i++) {
       const x = (i + 0.5) / N,
         z = (j + 0.5) / N,
@@ -2990,6 +3037,7 @@ export function navGrid() {
       lv[q] = h;
       if (E && E.M[stepCellAt(x, z, E)] & 16) hop[q] = 1;
     }
+  }
   if (BR)
     for (const p of sc.props || []) {
       const M = C.props[p.k];
@@ -3026,13 +3074,91 @@ export function navGrid() {
       if (blk[q] || dry[q]) surf[q] = 0;
       else blk[q] = 1;
     }
-  walkView.navKey = key;
-  return (walkView.nav = { N, gw, gh, blk, cost, lv, hop, dry, surf });
+  return { N, gw, gh, blk, cost, lv, hop, dry, surf };
 }
 /* phase 04d: walk/heights.js puts the 3D version in place */
 export function setNavGrid(v) {
   navGrid = v; // eslint-disable-line no-func-assign
   provide({ navGrid });
+}
+export function setNavGridSteps(v) {
+  navGridSteps = v; // eslint-disable-line no-func-assign
+  provide({ navGridSteps });
+}
+/* the crossing hitch (2026-10-28: a walking grid built in one frame at every seam, 75-600 ms on a fast PC): is the
+   walking grid of view sc ready for the switch to it (on screen, kept from before, or built ahead)? */
+export function navReady(sc, G = groundKey(sc)) {
+  if (walkView.nav && walkView.navSc === sc && walkView.navG === G) return true;
+  return navKept(sc, G);
+}
+/* a grid kept from before or built ahead for view sc with ground key G */
+export function navKept(sc, G) {
+  const tk = timedPropsKey(sc),
+    P = (sc.props || []).length;
+  if ((walkView.navKeep || []).some(k => k.sc === sc && k.G === G && k.P === P && k.T === tk)) return true;
+  const A = navAheadOf(sc, G);
+  return !!(A && A.nav);
+}
+/* the ahead build of view sc's grid, if it still fits it (the same ground, props and timed props) */
+function navAheadOf(sc, G) {
+  const tk = timedPropsKey(sc),
+    P = (sc.props || []).length;
+  return walkView.navAhead.find(a => a.sc === sc && a.G === G && a.P === P && a.T === tk) || null;
+}
+/* start building view sc's walking grid ahead, a slice a frame (navPrepWork), unless it is ready or on its way. The
+   next view's and a view on screen made again can be on their way together (a list, the oldest let go past three).
+   urgent: a crossing waits for it (seamless-world.js seamlessGate): built first, with the ground's urgent budget.
+   Returns whether it is ready */
+export function navPrepare(sc, urgent) {
+  const G = groundKey(sc);
+  if (navReady(sc, G)) return true;
+  const J = navAheadOf(sc, G);
+  if (J) {
+    if (urgent) J.urgent = 1;
+    return false;
+  }
+  /* (an older build of this view, for ground or props it no longer has: let go) */
+  const L = walkView.navAhead.filter(a => a.sc !== sc);
+  L.push({
+    sc,
+    G,
+    P: (sc.props || []).length,
+    T: timedPropsKey(sc),
+    it: navGridSteps(sc),
+    nav: null,
+    ms: 0,
+    urgent: urgent ? 1 : 0,
+  });
+  walkView.navAhead = L.slice(-3);
+  return false;
+}
+/* a slice of the walking grids built ahead (one a crossing waits for first, then the oldest), in budget ms (one a
+   crossing waits for: as the ground's, twice that times the gate's boost, walk/map-cache.js groundPrepWork); their
+   heights and bridges are held only while one runs */
+export function navPrepWork(budget) {
+  const A = walkView.navAhead.find(a => a.it && a.urgent) || walkView.navAhead.find(a => a.it);
+  if (!A || !(budget > 0)) return;
+  if (A.urgent) budget *= 2 * (walkRenderer.prepBoost || 1);
+  const t0 = performance.now(),
+    was = walkView.navBuilding;
+  walkView.navBuilding = A.sc;
+  try {
+    while (performance.now() - t0 < budget) {
+      const r = A.it.next();
+      if (r.done) {
+        A.nav = r.value;
+        A.it = null;
+        break;
+      }
+    }
+  } catch (e) {
+    walkView.navAhead = walkView.navAhead.filter(a => a !== A);
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('webgl', 'the walking grid ahead failed: ' + ((e && e.message) || e));
+  } finally {
+    walkView.navBuilding = was;
+    A.ms += performance.now() - t0;
+  }
 }
 /* may you step from nav cell c to its neighbour q? Up to MAX_STEP_RISE up or down; further down only off a ledge */
 export function canStepBetween(G, c, q, noHop) {
@@ -3158,8 +3284,23 @@ export function routeFindStep(P) {
   const sc = walkView.sc;
   if (!sc || !saveData || !saveData.run || !(sc.props || []).some(p => p.find)) return;
   const F = saveData.flags || (saveData.flags = {}),
-    R = routeFindAt(sc, P.x, P.z, F, routeFindsMore(saveData.run));
+    R = routeFindAt(sc, P.x, P.z, F, routeFindsMore(saveData.run), routeFindsPerk(saveData.run));
   if (!R) return;
+  /* PK-8: a Perk lying on the ground (the sidePerk rule): a pick of one (logic/perks.js perkFindMake), saved first */
+  if (R.card === 'perk') {
+    if (saveData.run.offer) return;
+    F[R.flag] = 1;
+    const id = perkFindMake(saveData.run, R.flag, PERKS, RULES.run.perks, perkTeamOf(saveData.team));
+    if (typeof debugLog !== 'undefined') debugLog.add('scene', `find: perk ${id || '(none left)'}`);
+    if (typeof saveNow === 'function') saveNow();
+    if (!id) {
+      if (typeof toast === 'function') toast('Something lay here once. Nothing you can use.');
+      return;
+    }
+    if (typeof soundEffect === 'function') soundEffect('coin');
+    if (typeof perkPickOpen === 'function') perkPickOpen({ text: 'A Perk was tucked away here.' });
+    return;
+  }
   const got = routeFindGive(saveData, REWARDS[R.card]);
   F[R.flag] = 1;
   if (!got) return;
@@ -3432,6 +3573,7 @@ export function stopWalkView() {
   walkView.cv = null;
   walkView.ready = false;
   walkView.keys = {};
+  walkView.navAhead = []; /* (the crossing hitch: grids built ahead for views of a walk that stopped) */
 }
 /* phase 04d: walk-view-gl.js puts the 3D version in place */
 export function setStopWalkView(v) {
@@ -4762,6 +4904,7 @@ function drawSpeechTail(x, cx, y, u, fill, line) {
   x.fillRect(cx - u, y, 2 * u, u);
 }
 export function drawSpeech(x, cx, cy, txt, a) {
+  txt = plainOf(txt);
   if (!txt) return;
   const s = canvasPixels(12),
     u = pixelUnit();

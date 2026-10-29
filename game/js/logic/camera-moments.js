@@ -21,6 +21,8 @@ expose({
   momentNew: [() => momentNew, v => (momentNew = v)],
   // @ts-expect-error -- replaced on purpose
   momentStep: [() => momentStep, v => (momentStep = v)],
+  // @ts-expect-error -- replaced on purpose
+  talkLiftShare: [() => talkLiftShare, v => (talkLiftShare = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -175,4 +177,14 @@ export function momentStep(st, I, D, dt) {
   else if (id === 'idle') goals.push({ id: 'idle', w: 1, blend: D.idleBlend, out: 0.3, zoom: D.idleZoom });
   else if (id === 'run') goals.push({ id: 'run', w: 1, blend: D.runBlend, zoom: D.runZoom });
   return { id, goals };
+}
+
+/** DL-4: talking, the stack of speech bubbles covers the screen's bottom (`cover`, a share of its height from the
+ * bottom; the header covers `top`): how far up the screen (a share of its height) you and the speaker should move, so
+ * the two-shot sits in the middle of the space left between them; 0 when the middle is already clear
+ * @param {number} cover @param {number} [top] */
+export function talkLiftShare(cover, top = 0.1) {
+  const c = Math.min(0.9, Math.max(0, Number(cover) || 0));
+  if (!c) return 0;
+  return Math.max(0, 0.5 - (top + 1 - c) / 2);
 }

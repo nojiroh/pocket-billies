@@ -80,7 +80,11 @@
     "action": {"kind":"cut","size":"cutLg","radius":22},
     "tab": {"kind":"cut","size":"cutMd","corners":["tl","tr"],"radius":12},
     "toast": {"kind":"cut","size":"cutMd","radius":18},
-    "bubble": {"kind":"cut","size":"cutLg","corners":["tl","br"],"radius":22}
+    "bubble": {"kind":"cut","size":"cutLg","corners":["tl","br"],"radius":22},
+    "bubbleSoft": {"kind":"rounded","size":"cutLg","corners":[],"radius":22},
+    "bubbleNote": {"kind":"cut","size":"cutMd","corners":["tl","tr","br","bl"],"radius":12},
+    "bubbleShout": {"kind":"jag","size":"cutLg","corners":[],"radius":22,"depth":9,"spikes":8},
+    "bubbleThink": {"kind":"rounded","size":"cutLg","corners":[],"radius":30}
    }
   },
   "space": {"s1":4,"s2":8,"s3":12,"s4":16,"s5":24,"s6":32,"s7":48,"gutter":16},
@@ -94,6 +98,11 @@
    "exit": 180,
    "pop": 150,
    "float": 600,
+   "bubbleResponse": 0.35,
+   "bubbleDamping": 0.7,
+   "bubblePop": 0.6,
+   "bubbleTilt": 3,
+   "bubbleIdle": 0.6,
    "easeOut": [0.2,0.8,0.2,1],
    "easeIn": [0.4,0,1,1],
    "spring": [0.3,1.6,0.5,1]

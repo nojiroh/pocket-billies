@@ -24,6 +24,7 @@ import {
   uiState,
 } from './hooks.js';
 import { clamp } from './util.js';
+import { creatureFace, faceToken } from './logic/talk-director.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { ART_CACHE, artImg, hexToRgb, makeCanvas } from './art.js';
 /* eslint-disable no-func-assign */
@@ -73,6 +74,7 @@ expose({
   pictureKey: [() => pictureKey, v => (pictureKey = v)],
   portraitHTML: [() => portraitHTML, v => (portraitHTML = v)],
   portraitRect: [() => portraitRect, v => (portraitRect = v)],
+  portraitSize: [() => portraitSize, v => (portraitSize = v)],
   portraitURL: [() => portraitURL, v => (portraitURL = v)],
   recolorPiece: [() => recolorPiece, v => (recolorPiece = v)],
   rgbToHsl: [() => rgbToHsl, v => (rgbToHsl = v)],
@@ -623,10 +625,11 @@ export function personRig(L, view, expr) {
       if (!it) continue;
       const defs = it.colors.map(c => c[1]),
         want = wornColors(L, id);
-      /* an expression (blink, happy, talk…) swaps in that item's pieces for it when it has them */
-      const hasX = !!expr && it.pieces.some(p => p.v === view && p.x === expr);
+      /* an expression (blink, happy, talk…) swaps in that item's pieces for it when it has them. DL-5: expressions
+         combine ('happy+talk'): each item wears the last one it has pieces for (the eyes happy, the mouth talking) */
+      const x = faceToken(expr, t => it.pieces.some(p => p.v === view && p.x === t));
       for (const p of it.pieces)
-        if (p.v === view && (hasX ? p.x === expr : !p.x)) add(it, p, p.z != null ? p.z : bz[p.b] + s.layer, defs, want);
+        if (p.v === view && (x ? p.x === x : !p.x)) add(it, p, p.z != null ? p.z : bz[p.b] + s.layer, defs, want);
     }
     const F = W.figure || 74,
       BW = Math.round(F * 0.78 * h * Math.max(1, B.head)),
@@ -744,7 +747,7 @@ function creatureFrame(Cr, view, act, ph, t, mirror, expr) {
   }
   const a = CREATURE_ACTS[act] || 'idle',
     P = rigPose(a, a === 'walk' ? (ph || 0) * 560 : a === 'idle' ? 0 : 120 + (ph || 0) * 400, t || 0, 0);
-  P.face = expr === 'blink' || expr === 'talk' ? expr : expr === 'happy' ? 'happy' : 'idle';
+  P.face = creatureFace(expr);
   const c = makeCanvas(R.BW, R.BH),
     x = c.getContext('2d');
   x.imageSmoothingEnabled = false;
@@ -1041,7 +1044,12 @@ function creaturePortrait(cv, Cr, expr, t) {
     k = 2;
   x.drawImage(f, Math.round(cx - w / (2 * k)), Math.round(cy - (h * 0.5) / k), w / k, h / k, 0, 0, w, h);
 }
-function portraitURL(who, expr) {
+/** VFX-16: a portrait's size in art pixels [w, h] (the bust crop), so a caller can draw it at a whole-number scale */
+export function portraitSize() {
+  const r = portraitRect();
+  return [r[2], r[3]];
+}
+export function portraitURL(who, expr) {
   const L = lookOf(who);
   return cachedPersonArt('porurl|' + (expr || '') + '|' + lookKey(L) + '|' + personArtVersion(), () => {
     /* LD-1: a canvas kept in memory (willReadFrequently: drawPortrait's getContext gets the same), so its PNG is

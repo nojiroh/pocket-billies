@@ -120,6 +120,7 @@ export const SIGNAL_LOOPS = [
   { file: 'game/css/opening.css', sel: '.btip-hot', why: 'the tutorial’s hint' },
   { file: 'game/css/talk.css', sel: '.talk .dlg .pb::before', why: 'tap for more' },
   { file: 'game/css/talk.css', sel: '.talk-box.done .talk-more', why: 'tap for more' },
+  { file: 'game/css/talk-text.css', sel: '.talk-glyphs .fx-wave', why: 'a line’s [wave] words' },
   { file: 'game/css/title.css', sel: '.ttl-hint', why: 'tap to start' },
   { file: 'game/css/walk-tab.css', sel: '.wob', why: 'an egg ready to hatch' },
   { file: 'game/css/walk-tab.css', sel: '.wh-down.new', why: 'news in Actions' },
