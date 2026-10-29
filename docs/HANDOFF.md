@@ -2,6 +2,270 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-18b - Signature scenes 3: 19 more scenes, four sound words, the boss's shield phase - 2026-10-29
+Side branch `claude/vfx-18b-scenes-3` (wave 4, beside VFX-18 on `claude/vfx-18-scenes-2`), made from VFX-17's finished
+branch (b34ab164, which had merged `track/vfx` b475bb15); `origin/track/vfx` merged in at b4922c4c (8bc377f5: VFX-17
+and VFX-19 merged, VFX-13's docs, VFX-20's first commits: burstSprites, types.json `fx` and the old 2D effect drawing
+removed; only conflict the generated studio/art-code-refs.json, regenerated), again at 7cdb0bdf (VFX-20's anim log
+line) and a9a9686a (VFX-20's event traces; main ed5c6857), and VFX-18's finished branch (707a47ab, reported done) merged in: both sides kept (its 19 scenes before mine in
+`scenes`, its four words before mine in `sprites` and SPRITES, its W in GLYPHS so mine adds only P and D, both
+storyboard sections and rows, both HANDOFF entries; battleAnims.json rebuilt from both sides' additions, nothing else
+differed; the auto-merged battle-anims snapshot equals a remake on the merged data); draft PR #330 into `track/vfx`. Run under
+the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and
+listed below. No tag (main's CLAUDE.md). Told first: VFX-18 (the shared tests, the glyphs, the scene order, every
+shared line the boss phase touches; it agreed, adopted my test edits and touches none of those lines), the style
+coordinator (the boss phase; its answers: no clash with SY-5, pick the boss by faction, bureau_barrier now carries
+SY-7's red tape; after pushing, the commit). No sound file touched; VFX-19's sounds read `scenes.<id>.family`.
+- The plan: read VFX-17's entry, the runner (`animSceneStep`, `battleAnimPlay`), the stage's `alphaPhase` and `break`,
+  robots.json, bosses.json and the engine's boss phases; check each move in moves.json; write the batch's storyboards
+  and commit them first; the stamped words; the scenes as data with VFX-17's primitives only; tests and the snapshot;
+  films of every scene; tune; the boss's own; measure against VFX-17's head; merge track/vfx; the full check; docs.
+- Changed (one cause per commit):
+  - Storyboards (b5c0942f): 19 one-liners, "VFX-18b's storyboards" under VFX-17's in vfx-track.md "Signature scenes",
+    before any scene was built, plus what the bots and the boss have of their own.
+  - Art (1f8dc9d4): build-battle-anims.py draws word_whoosh "WHOOSH!", word_pssht "PSSHT!", word_dingdong "DING-DONG!",
+    word_thwock "THWOCK!" (VFX-17's `word()`; the letters W, P, D in a `GLYPHS.update` after VFX-17's dict; VFX-18's W
+    is the same rows); battleAnims.json `sprites` names them (51 sprites, `--check` clean).
+  - Scenes (19bd5667, tuned in 959a3fac): battleAnims.json `scenes` cyclone .. kisses, one block after VFX-17's last,
+    each `family` the family it had and a `short` version; moves.json `anim` of the 19 is its scene. Built with
+    VFX-17's primitives only (no new primitive): `prop` (rocks_b, crate_goods, sofa, waymarker_post,
+    wind_turbine_small), `stamp`, icon props (soda, pick, hanger, anchor, paper, chart, cup, map_house, tag, tv,
+    vcoin, phone, map_flag, box, heart). Times (H maxMs 880, S 1060, X 1000): Cyclone 1460, State-sized Pit 1340,
+    Harbour Fee 1480, Front Run 1000, Wrong Name 1400, Cleaning Fee 1400, Autoplay 1480, Counts to Two 1200, Fifteen
+    Seconds 1300, Stake in Everything 1460, Ship Direct 1400, One-handed Backhand 1200, Green Hydrogen 1500, Kisses
+    1100; the five status scenes (Gives Wings, Perfect Fold, Principle No. 212, Fork, Quiet Gift) 1000 each, no extra
+    time and no hit step (their families have none); each short 560-1000. Tests: tools/test/battle-scenes-3.test.mjs
+    (7: the batch and its families, times, props off, a foe's side and a repeat, stamps, the bots' moves, the boss
+    phase); VFX-17's battle-scenes.test.mjs takes later batches and status scenes; VFX-11's smear.test.mjs dash list
+    counts a scene by its family (Front Run). The battle-anims snapshot remade on purpose: only the 19 moves.
+  - The boss's own (1c66b48b): battleAnims.json `events.bossPhase` (`faction` 'bureau', two prop steps): as the
+    Retrieval Unit's shield phase comes up, two bureau_barrier models rise either side of it, hold and erode by
+    ~1150 ms, inside the phase's own 1200 ms. battle-anim-run.js `battleBossPhaseScene(an)` (a new function: VFX-17's
+    prop step played on the boss), picked by SY-5's `battleFactionOf` (bosses.json `faction`, as the style
+    coordinator asked, not the `bot:` prefix); logic/battle-anims.js `battleEventProps(A)` (a new export) and one line
+    in battle-3d.js `battlePropsPreload`; one call in battle-stage.js case 'alphaPhase' after its own steps; schema
+    (events.bossPhase), types. None under Reduced motion, on the 2D stage, with 3D props off or before its model has
+    loaded, or on a phase without a shield (the limb break keeps its own); no stamp (Bureau), no flash of its own; the
+    join intro untouched.
+- What the bots and the boss have of their own (checked in the data and the code): every part and gem move in
+  robots.json (Piston Jab, Auger Bore, Grip Crush, Cinder Shot, Arc Whip, Jet Blast, Anchor Down, Dash Kick, Skim
+  Guard, Flare Core, Self-Repair, Overclock) is a regular move with a family: they keep it (a test). The boss
+  (bosses.json, the Retrieval Unit) has no move of its own: it fights with its parts' moves. Its own are its two
+  phases (battle-engine.js `bossPhase`, played as battle-stage.js `alphaPhase`: a shield with stages; then stages and
+  a limb that tears loose, the `break` event). The shield phase got the barriers; the limb break already has its own
+  choreography (sparks, the part's picture falling off: phase 17, RL-14) and no finisher move exists, so nothing was
+  invented for it.
+- Where the brief or the data was wrong or vague (checked):
+  - Quiet Gift's text says it heals "the active ally... or itself when alone"; the engine (useMove's `fx.heal` on a
+    status move) heals the user itself only. The scene plays on the user, as the engine does.
+  - Counts to Two says "Hits twice"; its data has no multi-hit, so one hit lands: the scene shows two strikes, the
+    second the hit, then a third wind-up that stops short.
+  - The atlas's `scale` icon is a 5 px fish scale (a kit icon), not a balance: Principle No. 212 flips a big page
+    instead (noted under its storyboard).
+  - Status moves have no `hit` step in their families, so VFX-17's scene test (a hit step at every scene's `hit`)
+    needed the X case; the self-only buff and heal families have no `miss` of their own, so a "miss" of Gives Wings,
+    Principle or Quiet Gift played the family before and plays the scene now (the engine never makes them miss).
+  - A model "behind the attacker" sits between the camera and the attacker and isn't seen, and one 1.3 m behind the
+    foe hides behind its rig: the turbine and the sofa moved beside them (VFX-17's furnace placement, dx -0.6 dz 1).
+  - The look tool's `--repeat` films every outcome on both sides (16 films a move), so a run of two hit its time limit
+    after the first.
+- Decided for the owner, to review:
+  - The 19 storyboards (taken as approved, written before building; "VFX-18b's storyboards" in vfx-track.md).
+  - Stamped words: WHOOSH! (Cyclone), PSSHT! (Gives Wings: a can opening), DING-DONG! (Ship Direct: a doorbell),
+    THWOCK! (One-handed Backhand), KA-CHING! (VFX-17's, Harbour Fee); sound words only, never a move's name or a
+    slogan (rule 10); none against a Bureau bot.
+  - Rule 10's generic objects: a can (soda), a pick, a hanger, an anchor and a crate, a page, a chart, cups (no
+    names on them), a house and a price tag, a sofa and a tv, coins, a phone with notes, a post and a flag, a crate
+    and a doorbell word, a ball and an arc, a small wind turbine and bubbles, a box and hearts, hearts and dust. No
+    logo, lettering, likeness or trade dress (Kisses uses hearts, not a wrapped sweet).
+  - Status scenes stay within X's 1000 ms (no extra time) and keep their families' shape (no hit step).
+  - The boss's special: the shield phase's barriers (inside its time); nothing invented for the limb break or the
+    bots.
+  - Under Reduced motion a scene plays its family. With 3D props off the six with a model (State-sized Pit, Harbour
+    Fee, Autoplay, Stake in Everything, Ship Direct, Green Hydrogen) play their families; the other 13 (icons, strips
+    and stamps only) play anyway, as VFX-17's Siu! and Cut To do.
+- Wishes for the owner (props that don't exist; the nearest generic one used): a balance (Principle No. 212: a page),
+  a vacuum-like funnel or dust bin (Cyclone: dust and leaves only), a delivery van (Ship Direct: a crate), a tennis
+  ball and racket (One-handed Backhand: a small shot sprite and the slash arc), a gift box with a ribbon (Quiet Gift:
+  the icon box), a hydrogen tank or bubbles strip (Green Hydrogen: the bubble strip).
+- Sounds: none of its own (VFX-19 plays a scene's family). For the sound track's later pass, scenes that would like a
+  sound of their own: Ship Direct's doorbell, Gives Wings' can, One-handed Backhand's racket, Cyclone's whoosh,
+  Fifteen Seconds' short tune, the boss's barriers slamming up.
+- Measurements (headless, software GPU, quality 0, the town fixture, side 0, a hit; before = VFX-17's head b34ab164 in
+  a worktree with its own tool, the moves playing their families; after = this branch at 959a3fac; one after the other
+  on an idle machine; statesizedpit, autoplay, shipdirect, greenhydrogen, cyclone):
+  - The pool's own draws (`battleFx`) 3 at most in every film, before and after (budget 3); the effects pass's draws
+    129-131 at most, before and after.
+  - All draws a frame at the busiest frame, mean over the 5: 714.8 before, 690.0 after (the models replace other
+    drawing at their peak; Ship Direct's crate near the lens 849 -> 776).
+  - Time a frame during the move: 538.5 ms mean before, 737.0 after (p90 2392 -> 4206): software rendering, only the
+    direction counts, and the films' first frames carry the shader compiles; the phone's own numbers need the debug
+    log. Rig redraws 17.2 -> 22.4 a film (the scenes are longer).
+  - Effect lights: the families' kinds only (the hit's `light`, the kits' casts, lit shots), all through
+    battle3dEffectLights' budget; the models add none.
+  - Times: every attack scene at most its category's maxMs + 500 ms, every status scene and every short version within
+    maxMs, none longer under Reduced motion (the data check and battle-scenes-3.test.mjs).
+- Films (look-battle-anims.py, in the scratchpad's validation folder, not committed): all 19 with `--sheets --cells=20
+  --outcomes=hit --sides=0`, the 10 retuned ones again; Harbour Fee and Autoplay from the foe's side (`--sides=1`: the
+  crate lands on your Billie, KA-CHING! over the foe); State-sized Pit's repeat (`--repeat`, all 8 outcomes, both
+  sides: the rocks at once, the hit at 400 ms); the boss phase (`--events --only=shield --bot`: the red-taped barriers
+  rise round the Bureau bot with its golden shield and are gone before the phase ends). Seen and tuned from them:
+  icons at the foe too small at k 1 (k 2 now), the sofa hidden behind the foe and the turbine behind the camera
+  (moved beside), the rocks, crate and post too small (bigger), Fork's coins and Kisses' hearts bigger.
+- Risky:
+  - Draws on the phone: a model and its afterimages add draws while it is up; the five measured stayed level here, but
+    the phone's count needs the debug log.
+  - The boss phase's barriers are filmed against the Bureau courier (the look tool's `--bot`), not the Voltron itself;
+    the smoke check's Voltron step plays its phases without errors.
+  - Ship Direct's crate flies from behind the attacker past the lens for a few cells (the smears skip copies within
+    2 m of it).
+  - battle-stage.js case 'alphaPhase' and battle-anim-run.js are shared with VFX-18 and VFX-20: each change is one
+    added line or a new function.
+- Phone checks for the owner (listed, not waited for): each of the 19 once (Cyclone, Gives Wings, State-sized Pit,
+  Perfect Fold, Harbour Fee, Principle No. 212, Front Run, Wrong Name, Cleaning Fee, Autoplay, Fork, Counts to Two,
+  Fifteen Seconds, Stake in Everything, Ship Direct, One-handed Backhand, Green Hydrogen, Quiet Gift, Kisses); a
+  short repeat (the same scene twice in one battle); Autoplay or Stake in Everything with 3D props off (its family);
+  the Retrieval Unit's shield phase (the barriers) on an Expedition; the stamped words read at phone size.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; `npm test` 1988 of
+  1988 before the merges, 1997 of 1997 after track/vfx's 8bc377f5, 2004 of 2004 with track/vfx's 7cdb0bdf and VFX-18 merged
+  (smoke 7 of 7 there too), and again 2004 of 2004 with smoke 7 of 7 after track/vfx's a9a9686a; `build-battle-anims.py --check` (51 sprites); smoke 7 of 7
+  on 19bd5667's tree and again on 959a3fac's. CI smoke on b5c0942f and 19bd5667: red only on "Camera follow ... the
+  page stopped drawing" (known; it failed on the docs-only storyboards commit too; noted on the PR).
+  Full quick check on the merged head b4922c4c: 37 of 42 in 2005 s. Known or load's: RL-8's seam (never shown), Room
+  light (locally), Battle music's drums (both on the known list); "RT-2: route trainers ... no battle started" and
+  "Copperleaf: Granny Juniper ... didn't say anything" each pass alone, on this head and on track/vfx's 8bc377f5. The
+  battle steps (A battle plays to the end, the Voltron's phases, a run's battles) passed.
+- Next: VFX-20 (the main line) merges this branch, which already carries VFX-18's (all 56 signature scenes now have
+  one; VFX-18's block first in `scenes`, then this one).
+### VFX track VFX-18 - Signature scenes 2: 19 more scenes on VFX-17's primitives, four drawn sound words - 2026-10-29
+Side branch `claude/vfx-18-scenes-2` (wave 4, beside VFX-18b on `claude/vfx-18b-scenes-3`; VFX-20 on `track/vfx`),
+made from VFX-17's finished `claude/vfx-17-scenes-1` at b34ab164 (track/vfx b475bb15 already in it); `origin/track/vfx`
+merged in at d339a162 (8607080a: VFX-13's docs, VFX-17 and VFX-19 merged) and again at 5a818ecf (8bc377f5: VFX-20's burstSprites, types.json fx and the old 2D effect drawing removed; npm test 1995 of 1995 and traces of the 19 x hit, crit, miss, blocked from both sides clean after it); draft PR #329 into `track/vfx`. Run under
+the owner's standing instruction (2026-10-28): no Plan Mode, the plan written here, recommended options taken and
+listed below. No tag (main's CLAUDE.md). Told first: VFX-18b (every shared place: the word strips and GLYPHS, the
+scenes block, VFX-17's scene test, the snapshot, the film tool); no shared function, schema, sound file or style
+code touched, so no message to the sound or style coordinators was needed.
+- The plan: check each move's type, category, power and mechanics in moves.json; write the batch's storyboards in
+  VFX-17's format into vfx-track.md and commit them first; draw the stamped words; build the 19 scenes as data with
+  VFX-17's steps only (no new primitive); tests and the snapshot; film every scene, tune from the films, film again;
+  a foe-side film, the short repeat; measure against VFX-17's head; merge track/vfx; the full checks; docs.
+- Changed (one cause per commit):
+  - Storyboards (69ea1c20): 19 one-liners, "VFX-18's storyboards" under VFX-17's in vfx-track.md "Signature scenes",
+    before any scene was built.
+  - Art (f4a92294): tools/build-battle-anims.py's GLYPHS gain W, R, E, F, L (VFX-18b's W is the same rows); the
+    strips word_whirr "WHIRR!", word_tick "TICK!", word_click "CLICK!", word_fore "FORE!" (VFX-17's `word()`);
+    battleAnims.json `sprites` names them.
+  - The film tool (4c6e82fb): look-battle-anims.py waits until both Billies' rig buffers have pixels (as check-quick's
+    starter battle does). On a loaded machine every film had shown the foe alone: the films began before your
+    Billie's rig was drawn.
+  - Scenes (8b9b682f; tuned in 226ff592, f536de58, e960e747): battleAnims.json `scenes`, 19 as one block after
+    VFX-17's billionsserved in the batch's order, each with `family` (the family it had) and `short`; moves.json `anim`
+    of the 19 is its scene. tools/test/battle-scenes-2.test.mjs (5 tests); the battle-anims snapshot remade on
+    purpose (only these 19 moves' lines change).
+  - Agreed with VFX-18b (c07a65b7): status scenes land no hit step, as the hex and heal families have none;
+    tools/test/battle-scenes.test.mjs (VFX-17's, which counted exactly 18 scenes and required a hit step) and
+    smear.test.mjs (VFX-11's dash list, which a dash move's scene broke: Just Do It) taken verbatim from VFX-18b's
+    branch, so the two branches merge cleanly.
+- The scenes (scene id, family it falls back to, prop; times full / short against the cap):
+  | Move | Family | Prop | Full / cap | Short / maxMs |
+  | --- | --- | --- | --- | --- |
+  | CUDA Call (S) | breath | wind_turbine_small x3, WHIRR! | 1480 / 1560 | 1000 / 1060 |
+  | Rollback (H) | charge | tires (in, then back), the tag icon | 1300 / 1380 | 860 / 880 |
+  | Terminal Fee (X) | hex | the laptop icon, coins | 1000 / 1000 | 700 / 1000 |
+  | One More Thing (S) | shot | the excl icon | 1500 / 1560 | 1000 / 1060 |
+  | Just Do It (H) | dash | the sneaker icon | 1000 / 1380 | 700 / 880 |
+  | Fast Fashion (S) | shot | laundry_line, hanger and tag icons | 1460 / 1560 | 1000 / 1060 |
+  | Spruce Dive (S) | dive | forest_canopy_pine | 1400 / 1560 | 900 / 1060 |
+  | Pop the Collar (X) | hex | the shades and sparkle icons | 1000 / 1000 | 700 / 1000 |
+  | Assembly Line (H) | flurry | crate_goods x3, the cog icon | 1300 / 1380 | 860 / 880 |
+  | Per Minute (X) | hex | wall_clock, TICK!, coins | 1000 / 1000 | 700 / 1000 |
+  | I'm Out (H) | strike | none | 1340 / 1380 | 860 / 880 |
+  | Feeling Lucky (S) | beam | the dice icon | 1460 / 1560 | 1000 / 1060 |
+  | Character Limit (S) | shot | the bubble icon | 1400 / 1560 | 900 / 1060 |
+  | Shuffle Play (S) | wave | none (notes) | 1540 / 1560 | 960 / 1060 |
+  | Smart Contract (S) | shot | the paper and cbox icons, CLICK! | 1440 / 1560 | 1000 / 1060 |
+  | Buy the Dip (X) | heal | the chart, down and coin icons | 1000 / 1000 | 640 / 1000 |
+  | In Sync (H) | flurry | rowboat | 1340 / 1380 | 860 / 880 |
+  | Empire State (S) | slash | city_tower_hero | 1480 / 1560 | 1000 / 1060 |
+  | Sunday Red (H) | strike | flag_pole (the pin), FORE! | 1340 / 1380 | 860 / 880 |
+- Where the track file or the brief was wrong or vague (checked in the code):
+  - The VFX-18 row's "the other 38" is two steps now (VFX-18 and VFX-18b, 19 each).
+  - The Families table's family for each of the 19 is right (checked against moves.json `anim`). Assembly Line and In
+    Sync are flurry moves with one hit (no `hits` mechanic): their beats are only the look.
+  - Status moves: maxMs X is 1000 and the hex and heal families already play 1000 ms, so a status scene is a
+    restaging inside its family's time, never longer (the +0.5 s is for power 100+ or a scene, but the brief keeps
+    status scenes within maxMs; none of the batch has power 100+).
+  - Rule 2 and Props: tree_pine_small's needles are picture-card (`img`) layers, and a summoned model showed only its
+    trunk; forest_canopy_pine (all cones) is the spruce. flag_pole has no flag (a bare pin). city_tower_hero's
+    "logo panel" is blank (generic). The icon atlas's sneaker is a plain shoe with a tag, the bubble a speech bubble.
+  - A step aims at a Billie's middle or its feet; nothing aims at its head, so Pop the Collar's shades sit high on the
+    body, not on the face.
+  - The film tool started filming before your Billie's rig had pixels on a busy machine (fixed, above).
+- Decided for the owner, to review:
+  - The 19 storyboards (taken as approved, written before building; "VFX-18's storyboards" in vfx-track.md). Built as
+    written except: Spruce Dive's model (above); Rollback's "down chevron on the foe" became the tag icon (a chevron
+    reads as a stat drop in the colour code, and Rollback lowers nothing).
+  - Rule 10: generic objects only, no logo, mark, slogan, name or likeness. No stamp on the four moves whose names are
+    slogans or catchphrases (Just Do It, I'm Out, Feeling Lucky, One More Thing). The stamped words are sound words:
+    WHIRR!, TICK!, CLICK! and FORE! (a golfer's shout), in the move's type ramp.
+  - The repeat (second use in a battle, and Faster) is the short version: the prop and the hit, no wind-up; every
+    short version fits maxMs and lands sooner than the full scene.
+  - Under Reduced motion a scene plays its family; with 3D props off a scene with a model plays its family, and one
+    with icons only (One More Thing, Just Do It, I'm Out, Feeling Lucky, Character Limit, Shuffle Play, Smart
+    Contract, Terminal Fee, Pop the Collar, Buy the Dip) plays anyway (not under Reduced motion).
+  - Status scenes have no hit step (agreed with VFX-18b), as their families.
+  - Props and placement: the fans and the clothes line beside the attacker on its open side (behind it they filled the
+    lens); the tyre, the crates and the rowboat come from beyond the attacker; the clock and the pin at the foe; the
+    spruce drops from above; the tower rises behind the attacker and swings over in a quarter-turn hook. Icon props
+    near the attacker at k 1 (near the lens), at the foe at k 2.
+  - No sound of its own: each scene plays its family's sound (VFX-19 reads `scenes.<id>.family`). For the sound
+    track, scenes that would like their own: CUDA Call (fans spinning up), Per Minute (a clock's tick), Smart
+    Contract (a lock's click), Sunday Red (a club's swing and a ball dropping in), Shuffle Play (a record skip).
+  - Prop wishes for the owner (the nearest generic one stands in): a big wooden flying boat (Spruce Dive), a dorsal
+    fin (I'm Out), a jukebox (Shuffle Play), a flag for the pin (Sunday Red), a single tyre (Rollback: the model is a
+    stack), a fan with blades that spin (CUDA Call: the whole turbine turns), a clothes rail (Fast Fashion).
+- Measurements (headless, software GPU, quality 0, the town fixture, side 0, a hit; before = VFX-17's head b34ab164
+  in a worktree with this branch's film tool, the moves playing their families; after = this branch at e960e747; one
+  after the other on an idle machine; cudacall, sprucedive, assemblyline, smartcontract, insync, empirestate):
+  - The pool's own draws (`battleFx`) 3 at most in every film, before and after (budget 3); the effects pass 129-131
+    at most, before and after.
+  - All draws a frame at the busiest frame: 733.2 mean before, 716.2 after (noise; the models' draws fall inside the
+    wide shot's peak).
+  - Time a frame during the move: 590.6 ms mean before, 669.8 after; p90 2254.8 and 3345.3 (software rendering: the
+    rest frames before the move swing as much, 2436 and 1684, so only the direction counts and it is within noise).
+  - Rig redraws 30.0 before, 23.7 after. Effect lights: the kits' and the families' `light` steps only, through
+    battle3dEffectLights' budget; the models add none. Flashes: none of the 19 uses `cut` or a flash of its own.
+  - Times: every scene at most its category's maxMs + 500 ms, the four status scenes at most 1000 (maxMs), every short
+    version within maxMs (tests); under Reduced motion each plays its family (at most maxMs).
+- Films (look-battle-anims.py `--sheets --cells=20 --outcomes=hit --sides=0`, in the scratchpad, not committed): all
+  19, then the nine tuned ones again. Seen: the fans and WHIRR!; the tyre rolling to the foe and back; the laptop and
+  the coins; One More Thing's step back, the "!", the orb; the sneaker and the instant dash; the clothes line and its
+  hangers; the attacker's jump and the spruce falling with afterimages; the shades and the falling chevrons; three
+  crates sliding in; the clock, TICK! and coins; I'm Out's hop, held beat and dart; the die, the thin ray and the
+  star; the speech bubbles; the notes and the rings; the sheet, the block chain and CLICK!; the chart and the heal;
+  the rowboat and the double splashes; the tower's hook; the pin, FORE! and the ball. From the foe's side (`--sides=1`,
+  rollback, empirestate): the tyre comes from beyond the foe and rolls back, the tower rises behind the foe and swings
+  at your Billie (the heading VFX-17 had not filmed is right). `--repeat` (cudacall, sprucedive): the short version,
+  its hit within half a second. Traces of every film: no errors.
+- Risky:
+  - Models near the lens: In Sync's rowboat (and less so Assembly Line's crates) passes close to the camera for a few
+    cells as it comes from beyond the attacker, as VFX-17's train does; the smears skip copies within 2 m of it.
+  - The phone's draws while the tower, the rowboat or the fans are up (headless the peak is unchanged; the phone needs
+    the debug log).
+  - The four status scenes add no time but replace their family's look; a status scene's stat-drop chevrons need the
+    real line's snapshots (the film's preview event has none), so Pop the Collar's sharply falling chevrons are seen
+    only in a real battle.
+- Phone checks for the owner (listed, not waited for): each of the 19 once (CUDA Call, Rollback, Terminal Fee, One More
+  Thing, Just Do It, Fast Fashion, Spruce Dive, Pop the Collar, Assembly Line, Per Minute, I'm Out, Feeling Lucky,
+  Character Limit, Shuffle Play, Smart Contract, Buy the Dip, In Sync, Empire State, Sunday Red); a short repeat (the
+  same scene twice in one battle); one scene with 3D props off (Empire State plays the slash family; Feeling Lucky,
+  icons only, plays its scene); the stamped words at phone size; the frame rate while the tower or the rowboat is up.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; `npm test` 1995 of
+  1995 on the merged head d339a162; `build-battle-anims.py --check` (51 sprites). CI smoke on e960e747: red only on
+  "Camera follow ... the page stopped drawing" (known; commented on #329, re-run once). The full quick check on the merged head d339a162: 39 of 42 in 1529 s. Not this branch's: "Walking left and right ... room light" (known); "Battle music ... the drums never came in on a throw" (known; passes alone here); "RL-8: a run from the mast ... the town's shop has no Perk (RL-12)", which fails alone here too and fails the same way on track/vfx's head 8607080a in a worktree (track/vfx's or main's, for VFX-20). Passed here: every battle step (A battle plays to the end, the Voltron, Starters, a run's battles), the in-game full test, the Studio's, Camera follow and the bowl. CI smoke on cbccff3a: Camera follow and the bowl (both known; commented on #329).
+- Next: VFX-20 merges this branch into `track/vfx` (after VFX-18b's; this branch merges cleanly with it in the shared
+  tests, and the two `scenes` blocks both follow billionsserved: keep both, mine first); then the phone pass.
+
 ### VFX track VFX-13 - Hit tiers: the tier table, KO and last-KO looks, a flurry on the beat, drain, heal and recoil, misses per family - 2026-10-28
 Branch `track/vfx`, the main line of wave 3 (VFX-17 on `claude/vfx-17-scenes-1` and VFX-19 on
 `claude/vfx-19-move-sounds` ran beside it; both were told the shared sections before the edits and the commits after;

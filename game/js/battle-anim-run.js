@@ -11,6 +11,8 @@
 import { expose } from './test-globals.js';
 import {
   BATTLE_ANIMS,
+  BOSSES,
+  FACTIONS,
   MOVES,
   TYPE_GLOW,
   activeBattle,
@@ -27,12 +29,14 @@ import {
   battleAnimFor,
   battleAnimLogLine,
   battleAnimTimeline,
+  battleEventProps,
   battlePartOffset,
   battleSceneProps,
   flashGate,
   hitLook,
   koAhead,
 } from './logic/battle-anims.js';
+import { battleFactionOf } from './logic/bureau-battle.js';
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -56,6 +60,10 @@ expose({
   battleAnim: [() => battleAnim],
   battleAnimPlay: [() => battleAnimPlay, v => ((battleAnimPlay = v), provide({ battleAnimPlay }))],
   battleAnimSkip: [() => battleAnimSkip, v => (battleAnimSkip = v)],
+  battleBossPhaseScene: [
+    () => battleBossPhaseScene,
+    v => ((battleBossPhaseScene = v), provide({ battleBossPhaseScene })),
+  ],
   battleFlashGate: [() => battleFlashGate, v => ((battleFlashGate = v), provide({ battleFlashGate }))],
   battleStageAt: [() => battleStageAt, v => (battleStageAt = v)],
   brightColor: [() => brightColor],
@@ -64,7 +72,7 @@ expose({
   sideFocus: [() => sideFocus],
 });
 /* eslint-enable no-func-assign */
-provide({ battleAnimPlay, battleFlashGate });
+provide({ battleAnimPlay, battleBossPhaseScene, battleFlashGate });
 /* to-module: end */
 /** the runner's state: the full-screen flashes shown in the last second (flashGate), the move playing (its id, its
  * timeline, the quality, the flashes held back) */
@@ -683,6 +691,25 @@ function animLog(C) {
 function animBureau(i) {
   const s = battleStage.s[i];
   return !!(s && typeof s.sp === 'string' && s.sp.startsWith('bot:'));
+}
+/** VFX-18b: a Bureau boss's phase with a shield (battle-stage.js alphaPhase; bosses.json phases): events.bossPhase's
+ * prop steps on the boss (the "attacker" of VFX-17's prop step; the target the side it faces), inside the phase's own
+ * time. None under Reduced motion, on the 2D stage, with 3D props off or before its models have loaded, for a phase
+ * without a shield, or for a boss of another faction (an Alpha Billie's phase keeps its own look) */
+function battleBossPhaseScene(an) {
+  const E = BATTLE_ANIMS && BATTLE_ANIMS.events && BATTLE_ANIMS.events.bossPhase,
+    si = an.si,
+    s = battleStage.s[si],
+    /* the boss's faction (bosses.json faction, as SY-5 reads it), not its bot look: another faction's boss gets none */
+    f = s ? battleFactionOf(FACTIONS, BOSSES, { sp: s.sp, boss: true }, activeBattle && activeBattle.T) : null;
+  if (!E || reducedMotion || !battleStage.gl || an.shield === false || !f || f.faction !== E.faction) return;
+  if (!battlePropsReady(battleEventProps(BATTLE_ANIMS))) return;
+  const K = battleStageKit,
+    ti = battleStage.s.findIndex((s, k) => s && s.show && K.actorTeam(k) !== K.actorTeam(si)),
+    A = actorCenter(si),
+    T = ti >= 0 ? actorCenter(ti) : { ...A, x: A.x + (K.actorTeam(si) === 0 ? 4 : -4) },
+    c = { si, ti, P: { attacker: A, target: T }, idx: { attacker: si, target: ti }, foes: [ti] };
+  for (const S of E.steps) animAt(S.at || 0, () => animSceneStep(S, c), null);
 }
 /** VFX-8: plays a move event (the engine's `an`, only read) on the stage; {dur, hit} for battle.js */
 function battleAnimPlay(an, ev) {

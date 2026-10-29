@@ -78,6 +78,8 @@ SEEDED = """(()=>{let s=1;window.__seed=n=>{s=(n>>>0)%2147483646+1};Math.random=
 RENDER = """(()=>{let G;Object.defineProperty(window,'GAMEDATA',{configurable:true,get(){return G},set(v){if(v&&typeof v==='object'){
  v.engine=v.engine||{};v.engine.defaults=Object.assign({},v.engine.defaults||{},{quality:{resolution:.34,shadowMap:1024,auto:false}})}G=v}})})()"""
 READY = "typeof walkView!=='undefined'&&walkView.ready&&!!saveData.started&&!document.getElementById('loader')"
+RIGS_READY = ("(()=>{const n=i=>{const B=actorBuffer(i);if(!B)return 0;const d=B.buf.getContext('2d').getImageData(0,0,B.buf.width,B.buf.height).data;"
+              "let k=0;for(let j=3;j<d.length;j+=4)if(d[j]>0)k++;return k};return n(0)>=500&&n(1)>=500})()")
 
 # the film's machinery, put on the page once: the stage's frame task taken off the loop, a clock of its own
 SETUP = r"""(()=>{
@@ -380,6 +382,9 @@ def main():
         if not CF.until(pg, "activeBattle&&activeBattle.phase==='choose'", 120, "activeBattle&&activeBattle.phase==='playing'&&tapMessage()"):
             raise Exception('the battle never reached the move menu')
         CF.until(pg, 'battleStage.gl', 30)
+        # VFX-18: wait for both Billies' rigs to have pixels (on a loaded machine the films began before your
+        # Billie's rig was drawn, and every film showed the foe alone); the quick check waits the same way
+        CF.until(pg, RIGS_READY, 60)
         pg.wait_for_timeout(1500)
         pg.evaluate(SETUP)
         # VFX-20: --quality=N films at the battle's quality N (0-3; the budgets' ladder), else 0

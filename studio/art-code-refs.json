@@ -18,7 +18,7 @@
   {
    "p": "battle/anims/*",
    "at": [
-    "game/js/logic/battle-anims.js:447"
+    "game/js/logic/battle-anims.js:449"
    ]
   },
   {
@@ -64,7 +64,7 @@
   {
    "p": "coins/*.json",
    "at": [
-    "game/js/battle-3d.js:720",
+    "game/js/battle-3d.js:721",
     "game/js/logic/data-checks.js:2833"
    ]
   },
@@ -222,7 +222,7 @@
   {
    "p": "scene/next/models/*.json",
    "at": [
-    "game/js/battle-3d.js:859"
+    "game/js/battle-3d.js:860"
    ]
   },
   {
@@ -1670,9 +1670,9 @@
   ],
   "coin": [
    "game/js/art.js:207",
-   "game/js/battle-stage.js:1584",
-   "game/js/battle-stage.js:1747",
-   "game/js/battle-stage.js:2531",
+   "game/js/battle-stage.js:1585",
+   "game/js/battle-stage.js:1748",
+   "game/js/battle-stage.js:2532",
    "game/js/battle.js:1297",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
@@ -1756,8 +1756,8 @@
   "drop": [
    "game/js/boot.js:163",
    "game/js/logic/battle-anims.js:20",
-   "game/js/logic/battle-anims.js:337",
-   "game/js/logic/battle-anims.js:390",
+   "game/js/logic/battle-anims.js:339",
+   "game/js/logic/battle-anims.js:392",
    "game/js/logic/perks.js:230",
    "game/js/logic/perks.js:241",
    "game/js/logic/ui-dials.js:147",
@@ -1765,7 +1765,7 @@
    "game/js/walk-tab.js:324"
   ],
   "excl": [
-   "game/js/battle-anim-run.js:637"
+   "game/js/battle-anim-run.js:645"
   ],
   "eye": [
    "game/js/figures.js:429",
@@ -1777,7 +1777,7 @@
    "game/js/logic/figure-pose.js:747"
   ],
   "flame": [
-   "game/js/battle-stage.js:2516",
+   "game/js/battle-stage.js:2517",
    "game/js/walk-view.js:398",
    "game/js/walk/effects.js:380"
   ],
@@ -1880,7 +1880,7 @@
    "game/js/opening-fall.js:922"
   ],
   "pebble": [
-   "game/js/battle-stage.js:2501"
+   "game/js/battle-stage.js:2502"
   ],
   "phone": [
    "game/js/walk-view-gl.js:684",
@@ -1909,20 +1909,20 @@
    "game/js/self-test.js:3227"
   ],
   "plus": [
-   "game/js/battle-stage.js:1911",
-   "game/js/battle-stage.js:2555",
+   "game/js/battle-stage.js:1912",
+   "game/js/battle-stage.js:2556",
    "game/js/billie-sheet.js:197",
    "game/js/boot.js:156",
    "game/js/map-tab.js:69",
    "game/js/shop.js:183"
   ],
   "pow": [
-   "game/js/battle-stage.js:1691",
-   "game/js/battle-stage.js:1864",
-   "game/js/battle-stage.js:1944"
+   "game/js/battle-stage.js:1692",
+   "game/js/battle-stage.js:1865",
+   "game/js/battle-stage.js:1945"
   ],
   "ring": [
-   "game/js/battle-anim-run.js:177",
+   "game/js/battle-anim-run.js:185",
    "game/js/engine/webgl.js:785",
    "game/js/walk/map-cache.js:78",
    "game/js/walk/map-cache.js:415"
@@ -1942,18 +1942,18 @@
   ],
   "spark": [
    "game/js/bag.js:29",
-   "game/js/battle-stage.js:914",
-   "game/js/battle-stage.js:928",
-   "game/js/battle-stage.js:2071",
-   "game/js/battle-stage.js:2143",
-   "game/js/battle-stage.js:2225",
-   "game/js/battle-stage.js:2555",
-   "game/js/battle-stage.js:2643",
-   "game/js/battle-stage.js:2674",
-   "game/js/battle-stage.js:2714",
-   "game/js/battle-stage.js:2745",
-   "game/js/battle-stage.js:2746",
-   "game/js/battle-stage.js:2895",
+   "game/js/battle-stage.js:915",
+   "game/js/battle-stage.js:929",
+   "game/js/battle-stage.js:2072",
+   "game/js/battle-stage.js:2144",
+   "game/js/battle-stage.js:2226",
+   "game/js/battle-stage.js:2556",
+   "game/js/battle-stage.js:2644",
+   "game/js/battle-stage.js:2677",
+   "game/js/battle-stage.js:2717",
+   "game/js/battle-stage.js:2748",
+   "game/js/battle-stage.js:2749",
+   "game/js/battle-stage.js:2898",
    "game/js/battle.js:1657",
    "game/js/billie-sheet.js:84",
    "game/js/billie-sheet.js:159",
@@ -1979,11 +1979,11 @@
    "game/js/walk/effects.js:458"
   ],
   "star": [
-   "game/js/battle-stage.js:1691",
-   "game/js/battle-stage.js:2110",
+   "game/js/battle-stage.js:1692",
    "game/js/battle-stage.js:2111",
-   "game/js/battle-stage.js:2589",
-   "game/js/battle-stage.js:2910",
+   "game/js/battle-stage.js:2112",
+   "game/js/battle-stage.js:2590",
+   "game/js/battle-stage.js:2913",
    "game/js/cutscene/opening.js:344"
   ],
   "tag": [

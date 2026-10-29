@@ -21,6 +21,7 @@ import {
   battle3dStart,
   battle3dStop,
   battleAnimPlay,
+  battleBossPhaseScene,
   battleCardColumn,
   battleCatchSoundPlay,
   battleFlashGate,
@@ -2646,6 +2647,8 @@ export function battleStagePlay(an, ev) {
           });
         });
       buzz([20, 40, 20]);
+      /* VFX-18b: a Bureau boss's shield phase: its barriers rise either side of it (battle-anim-run.js) */
+      battleBossPhaseScene(an);
       scheduleAt(1100, () => battleStageFocus('wide'));
       return { dur: 1200, hit: 0 };
     }
