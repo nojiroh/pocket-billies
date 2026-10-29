@@ -191,7 +191,7 @@
    "at": [
     "game/js/postcards.js:49",
     "game/js/walk-view.js:781",
-    "game/js/walk/frame-items.js:200"
+    "game/js/walk/frame-items.js:203"
    ]
   },
   {
@@ -1649,8 +1649,8 @@
    "game/js/logic/unlocks.js:49",
    "game/js/logic/unlocks.js:50",
    "game/js/solid-props.js:1173",
-   "game/js/walk/frame-items.js:171",
-   "game/js/walk/frame-items.js:269",
+   "game/js/walk/frame-items.js:174",
+   "game/js/walk/frame-items.js:272",
    "game/js/walk/prop-look.js:55",
    "game/js/walk/prop-look.js:65",
    "game/js/walk/prop-look.js:418",
@@ -1715,13 +1715,13 @@
    "game/js/logic/marks.js:109",
    "game/js/logic/person-view.js:6",
    "game/js/logic/person-view.js:10",
-   "game/js/logic/person-view.js:56",
-   "game/js/logic/person-view.js:59",
-   "game/js/logic/person-view.js:74",
-   "game/js/logic/person-view.js:100",
-   "game/js/logic/person-view.js:114",
-   "game/js/logic/person-view.js:138",
-   "game/js/logic/person-view.js:148",
+   "game/js/logic/person-view.js:58",
+   "game/js/logic/person-view.js:61",
+   "game/js/logic/person-view.js:76",
+   "game/js/logic/person-view.js:102",
+   "game/js/logic/person-view.js:116",
+   "game/js/logic/person-view.js:140",
+   "game/js/logic/person-view.js:150",
    "game/js/logic/run-scenes.js:611",
    "game/js/logic/run-scenes.js:640",
    "game/js/logic/run-scenes.js:662",
@@ -1739,9 +1739,9 @@
    "game/js/walk-view.js:3748",
    "game/js/walk-view.js:3859",
    "game/js/walk-view.js:4180",
-   "game/js/walk/frame-items.js:319",
-   "game/js/walk/frame-items.js:469",
-   "game/js/walk/frame-items.js:489"
+   "game/js/walk/frame-items.js:322",
+   "game/js/walk/frame-items.js:473",
+   "game/js/walk/frame-items.js:493"
   ],
   "drop": [
    "game/js/boot.js:163",
@@ -2008,9 +2008,9 @@
    "game/js/logic/music-studio.js:71",
    "game/js/logic/online-legal.js:246",
    "game/js/logic/person-view.js:5",
-   "game/js/logic/person-view.js:56",
-   "game/js/logic/person-view.js:59",
-   "game/js/logic/person-view.js:114",
+   "game/js/logic/person-view.js:58",
+   "game/js/logic/person-view.js:61",
+   "game/js/logic/person-view.js:116",
    "game/js/person-art.js:802",
    "game/js/person-art.js:881",
    "game/js/train-ride.js:272",
