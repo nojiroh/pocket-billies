@@ -29,11 +29,6 @@
  "note": ["Signed its only letter with a name nobody can find."],
  "parody": "Satoshi Nakamoto",
  "cry": [
-  {
-   "base": "slime",
-   "pitch": 62,
-   "length": 1.1,
-   "name": "placeholder: a hum that echoes your Billie's cry, wrong (Claude's draft)"
-  }
+  {"base":"slime","pitch":62,"length":1.1,"name":"a hum that echoes your Billie's cry, wrong"}
  ]
 }

@@ -11,7 +11,9 @@ This is the second clean-up. The first (PR #283, merged 2026-10-28 from `claude/
 tools (4 dead ones, 13 legacy-era generators), moved 13 finished briefs into docs/archive/ and deleted the 04e
 patches, a kit-starter sample and 7 bowl pictures. The Studio art track's SA-5 (2026-10-27) cleared unused art.
 
-**Status:** CU-0 done (2026-10-28). Next: round 1, four sessions at once (lanes S, D, R, T), then round 2 alone.
+**Status:** CU-0 and round 1 (lanes S, D, R, T) done 2026-10-28; round 2 done 2026-10-29 (PR #328). What is left is in
+section 7, each item with its blocker: a later session (CU-3) does them once the blockers are gone. Tag `cleanup-done`
+when section 7 is empty.
 
 Before editing, every lane checks the facts it relies on against main and says in its HANDOFF entry what differs:
 they come from read-only audits on 2026-10-28 (main at 4423a457, re-checked at 3f559c3b). Line numbers drift; find
@@ -407,14 +409,19 @@ validation/icon-sheets/ (the perks track remakes them each session), validation/
    owner tags `cleanup-done` and the branch goes (docs/BRANCHES.md).
 
 ## 7. Waiting (blocked items and what unblocks them)
+Re-checked in round 2 (2026-10-29, after main took #331 VFX, #322 Dialogue, #308, #291 and #327). Done then:
+ART-NOTES.md -> docs/ART.md, style-track.md to the archive with its code comments, ROADMAP's 07 and Camera rows and
+lane S's link, 30 gone branches' rows, `validation/st3/`, the deferred pointers. #291's merge kept
+docs/samples/perk-icons.* deleted. Live now: track/characters (with #314), track/sound (#292), track/roster. Still
+waiting:
+
 | Item | Lane | Waits for |
 |---|---|---|
-| The music step: 40 names, the marker, its tests, schemas, docs; the guard's music files | S (round 2) | track/sound (#292) and `claude/vfx-19-move-sounds` (#325, into track/vfx: #295/#326) merged into main |
-| ART-NOTES.md -> docs/ART.md, with the look skill and the ui-track and perks-track pointers | D (round 2) | track/perks-items merged (it appends to ART-NOTES.md) |
-| .gitignore rewrite to `validation/*` with exceptions | T (round 2) | the VFX branches and `claude/laughing-tesla-roy32r` (#314) merged |
-| eslint.config.js's `tools/art-source/` ignore | T (round 2) | #314 merged |
-| style-track.md to the archive; its code comments (gallery.html, ui-run-kit.js, CSS) | D (round 2) | the files not live |
-| docs/samples/perk-icons.* staying deleted | owner | close #291 (`ccr-24be55e6-2bmqci`): merging it would bring them back |
+| The music step: 40 names, the marker, its tests, schemas, docs; then the guard's MUSIC and MUSIC_LINES go | S | track/sound (#292) merged into main (the VFX move sounds are in) |
+| .gitignore: drop `validation/rooms/`, then the rewrite to `validation/*` with exceptions | T | track/characters merged (its line after `validation/fast/` is within 3 lines) |
+| eslint.config.js's `tools/art-source/` ignore (its comment names the deleted portrait prototype) | T | track/characters merged |
+| HANDOFF.md's header line (it asks for a `phase-NN-done` tag) | D | no live branch inserting at HANDOFF's top (track/characters and track/sound do) |
+| BRANCHES: the rows of `ccr-c0505a05-bzef90` and `ccr-3df446bb-9jvdvq` (gone from GitHub); the two style rows' path into docs/archive/tracks/ | round 2 | track/characters merged (its row insertion is next to them) |
 
 ## 8. Not in this track
 - **Code that keeps old saves loading** (saves older than format 5, which `loadSave` already refuses):

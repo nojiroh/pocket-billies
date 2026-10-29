@@ -7,12 +7,17 @@
    (tools/test/music-studio.test.mjs). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { MUSIC_PATTERN_ARP, MUSIC_PATTERN_BASS, MUSIC_PATTERN_DRUMS, musicJingleKitNote } from './music-patterns.js';
 import { battleMoveFamilies, battleSoundFindings } from './battle-sounds.js';
 /* eslint-disable no-func-assign */
 expose({
   MUSIC_CHOICES: [() => MUSIC_CHOICES],
   MUSIC_CODE_SONGS: [() => MUSIC_CODE_SONGS],
+  MUSIC_FORM_BARS: [() => MUSIC_FORM_BARS],
+  MUSIC_RECIPE_KEYS: [() => MUSIC_RECIPE_KEYS],
   MUSIC_SCALES: [() => MUSIC_SCALES],
+  MUSIC_STYLE_OF: [() => MUSIC_STYLE_OF],
+  MUSIC_VERSION_LINES: [() => MUSIC_VERSION_LINES],
   NOTE_NAMES: [() => NOTE_NAMES],
   ROMAN: [() => ROMAN],
   // @ts-expect-error -- replaced on purpose
@@ -81,7 +86,33 @@ export const MUSIC_CHOICES = {
     ['drive', 'Drive'],
     ['march', 'March'],
     ['bossa', 'Bossa'],
+    ['walk', 'Walk (a light backbeat: the walking beat)'],
     ['none', 'None'],
+  ],
+  /* SND-11: what an ensemble's part plays (music.schema.json ensemblePart.line) */
+  line: [
+    ['lead', 'Lead (the tune)'],
+    ['counter', 'Counter (the countermelody)'],
+    ['bass', 'Bass (the bass pattern)'],
+    ['arp', 'Arpeggio (the arp pattern)'],
+    ['pad', 'Pad (the bar’s chord, held)'],
+    ['stabs', 'Stabs (the chord, short)'],
+    ['timp', 'Timpani (roots and a roll)'],
+    ['drums', 'Drums (the drum pattern on a kit)'],
+    /* SND-12 */
+    ['ostinato', 'Ostinato (the chord in eighths)'],
+    ['chime', 'Chime (a bell now and then)'],
+    ['drone', 'Drone (root and fifth, held)'],
+    ['hits', 'Hits (as each section starts)'],
+  ],
+  /* SND-11: an instrument's kind (instrument.kind) */
+  kind: [
+    ['pluck', 'Pluck (a string)'],
+    ['fm', 'FM (bells, an e-piano)'],
+    ['partials', 'Partials (struck bars, timpani)'],
+    ['stack', 'Stack (strings, reeds, a choir, brass)'],
+    ['wind', 'Wind (a flute, a clarinet, a bass)'],
+    ['hit', 'Hit (a drum, a shaker)'],
   ],
   /* VFX-19: a battle sound's noise filter (music.json battle; schema $defs battleVoice) */
   noise: [
@@ -104,6 +135,41 @@ export const MUSIC_CHOICES = {
     ['seal', 'Seal'],
   ],
 };
+/** SND-11: the keys a recipe may have (music.schema.json $defs.recipe), so musicFindings can catch a typo in a night,
+    tense or arc version (the schema leaves a recipe open there); plus the lines a version may write anew */
+export const MUSIC_RECIPE_KEYS = [
+  'bpm',
+  'key',
+  'scale',
+  'prog',
+  'lead',
+  'bass',
+  'arp',
+  'drums',
+  'seed',
+  'swing',
+  'echo',
+  'trim',
+  'seventh',
+  'extra',
+  'pluck',
+  'arpOctave',
+  'counterAuto',
+  'ensemble',
+  'form',
+  'sections',
+];
+export const MUSIC_VERSION_LINES = ['hook', 'counter', 'intro'];
+/** SND-11: which patterns a part's style may name, by its line */
+export const MUSIC_STYLE_OF = /** @type {Record<string, string[]>} */ ({
+  bass: MUSIC_PATTERN_BASS,
+  arp: MUSIC_PATTERN_ARP,
+  drums: MUSIC_PATTERN_DRUMS,
+  /* SND-12 */
+  ostinato: ['sixteenth'],
+});
+/** SND-12: a loop's length a form should keep to, in bars (Part 2's design: 16-32) */
+export const MUSIC_FORM_BARS = [16, 32];
 /** the songs the game's code starts by name (title.js and story.js the title, opening-fall.js the fall), not the
     where table: tools/test/music-studio.test.mjs checks this list against the code */
 export const MUSIC_CODE_SONGS = ['title', 'fall'];
@@ -178,9 +244,11 @@ export function musicSongUses(music, more = {}) {
  * the music's problems: errors (a rule names no song, a node type or biome that doesn't exist, a last rule that
  * doesn't always match, a place's song that isn't one) and warnings (a song nothing plays). Each says which song or
  * rule (its index) it is about, so the Studio can show it. SND-4: notes (info) on hooks and jingles still named as
- * placeholders; SND-6: on base cries and the species' cries (more.lines) too. VFX-19: the battle section's
- * (logic/battle-sounds.js battleSoundFindings), its families and types held to battleAnims.json (more.battleAnims)
- * @param {{songs: Record<string, any>, where: Record<string, any>[], jingles?: Record<string, any>, cries?: {bases?: Record<string, any>}, battle?: import('./battle-sounds.js').BattleSoundsData}} music
+ * placeholders; SND-6: on base cries and the species' cries (more.lines) too; SND-11: ensembles and instruments a song,
+ * its versions or a part names that don't exist, a pattern a part can't play, typos in night, tense and arc versions.
+ * VFX-19: the battle section's (logic/battle-sounds.js battleSoundFindings), its families and types held to
+ * battleAnims.json (more.battleAnims)
+ * @param {{songs: Record<string, any>, where: Record<string, any>[], jingles?: Record<string, any>, cries?: {bases?: Record<string, any>}, instruments?: Record<string, any>, ensembles?: Record<string, any>, run?: {arc?: any[]}, battle?: import('./battle-sounds.js').BattleSoundsData}} music
  * @param {{nodeTypes?: Record<string, unknown>, biomes?: Record<string, unknown>, locations?: any[], scriptText?: string, lines?: {id: string, names: string[], cry?: any[]}[], battleAnims?: {families?: Record<string, unknown>, types?: Record<string, unknown>, defaults?: Record<string, string>}}} [more]
  * @returns {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, cry?: string, rule?: number, place?: string, battle?: string}[]}
  */
@@ -207,11 +275,115 @@ export function musicFindings(music, more = {}) {
   for (const L of more.locations || [])
     if (L && L.music && !songs[L.music])
       out.push({ lvl: 'error', msg: `${L.id}: music "${L.music}" is not a song (music.json)`, place: L.id });
+  /* SND-11: ensembles: the ids songs and their versions name, the instruments their parts name, typos in versions */
+  const ens = /** @type {Record<string, any>} */ (music.ensembles || {}),
+    inst = /** @type {Record<string, any>} */ (music.instruments || {}),
+    ensOk = (/** @type {unknown} */ id) => id === undefined || id === 'gb' || (typeof id === 'string' && !!ens[id]);
+  for (const [id, S] of Object.entries(songs)) {
+    if (!ensOk(S.ensemble)) out.push({ lvl: 'error', msg: `song "${id}": no ensemble "${S.ensemble}"`, song: id });
+    for (const v of ['night', 'tense'])
+      if (S[v] && typeof S[v] === 'object') {
+        if (!ensOk(S[v].ensemble))
+          out.push({ lvl: 'error', msg: `song "${id}" ${v}: no ensemble "${S[v].ensemble}"`, song: id });
+        for (const k of Object.keys(S[v]))
+          if (!MUSIC_RECIPE_KEYS.includes(k) && !MUSIC_VERSION_LINES.includes(k))
+            out.push({ lvl: 'warn', msg: `song "${id}" ${v}: "${k}" is not part of a recipe (a typo?)`, song: id });
+      }
+  }
+  /* SND-12: forms: sections the form names that don't exist, sections it never plays, a loop outside 16-32 bars, a
+     section's hook past its first two bars */
+  for (const [id, S] of Object.entries(songs)) {
+    const secs = /** @type {Record<string, any>} */ (S.sections || {});
+    for (const [k, X] of Object.entries(secs))
+      for (const line of ['hook', 'counter'])
+        if ((X[line] || []).some((/** @type {number[]} */ N) => N[0] > 31))
+          out.push({ lvl: 'warn', msg: `song "${id}" section ${k}: its ${line} plays only steps 0-31`, song: id });
+    if (!Array.isArray(S.form)) {
+      if (Object.keys(secs).length)
+        out.push({ lvl: 'warn', msg: `song "${id}": sections but no form plays them`, song: id });
+      continue;
+    }
+    for (const k of S.form)
+      if (k !== 'A' && !secs[k]) out.push({ lvl: 'error', msg: `song "${id}" form: no section "${k}"`, song: id });
+    for (const k of Object.keys(secs))
+      if (!S.form.includes(k))
+        out.push({ lvl: 'warn', msg: `song "${id}": the form never plays section ${k}`, song: id });
+    const bars = S.form.reduce(
+      (/** @type {number} */ a, /** @type {string} */ k) =>
+        a + ((k === 'A' ? S.prog : secs[k] && secs[k].prog) || []).length,
+      0
+    );
+    if (bars < MUSIC_FORM_BARS[0] || bars > MUSIC_FORM_BARS[1])
+      out.push({
+        lvl: 'warn',
+        msg: `song "${id}": its form loops after ${bars} bars (${MUSIC_FORM_BARS[0]}-${MUSIC_FORM_BARS[1]} keeps it from tiring)`,
+        song: id,
+      });
+  }
+  ((music.run && music.run.arc) || []).forEach((/** @type {any} */ B) => {
+    const ch = (B && B.changes) || {};
+    if (!ensOk(ch.ensemble)) out.push({ lvl: 'error', msg: `run arc "${B.name}": no ensemble "${ch.ensemble}"` });
+    for (const k of Object.keys(ch))
+      if (!MUSIC_RECIPE_KEYS.includes(k))
+        out.push({ lvl: 'warn', msg: `run arc "${B.name}": "${k}" is not part of a recipe (a typo?)` });
+  });
+  for (const [id, E] of Object.entries(ens))
+    ((E && E.parts) || []).forEach((/** @type {any} */ P, i) => {
+      const at = `ensemble "${id}" part ${i + 1} (${P.line})`;
+      if (P.inst && !inst[P.inst]) out.push({ lvl: 'error', msg: `${at}: no instrument "${P.inst}"` });
+      for (const [hit, k] of Object.entries(P.kit || {}))
+        if (!inst[k]) out.push({ lvl: 'error', msg: `${at}: its ${hit} names no instrument "${k}"` });
+      if (P.line === 'drums' && !P.kit) out.push({ lvl: 'warn', msg: `${at}: drums with no kit play nothing` });
+      if (P.style && !(MUSIC_STYLE_OF[P.line] || []).includes(P.style))
+        out.push({ lvl: 'error', msg: `${at}: "${P.style}" is not a ${P.line} pattern` });
+    });
+  /* SND-17: a jingle's ensemble and the lines its parts read */
+  for (const [id, J] of Object.entries(/** @type {Record<string, any>} */ (music.jingles || {}))) {
+    if (!ensOk(J.ensemble)) {
+      out.push({ lvl: 'error', msg: `jingle "${id}": no ensemble "${J.ensemble}"`, jingle: id });
+      continue;
+    }
+    const E = J.ensemble && J.ensemble !== 'gb' ? ens[J.ensemble] : null,
+      lines = (E && E.parts ? E.parts : []).map((/** @type {any} */ P) => P.line),
+      has = (/** @type {string[]} */ L) => L.some(l => lines.includes(l)),
+      perc = /** @type {number[][]} */ (J.perc || []);
+    if (!E && (J.harmony || J.bass || J.perc))
+      out.push({
+        lvl: 'warn',
+        msg: `jingle "${id}": harmony, bass and perc play only on an ensemble (it has none)`,
+        jingle: id,
+      });
+    if (!E) continue;
+    if (J.harmony && J.harmony.length && !has(['pad', 'stabs', 'arp']))
+      out.push({
+        lvl: 'warn',
+        msg: `jingle "${id}": no part of "${J.ensemble}" plays its harmony (pad, stabs or arp)`,
+        jingle: id,
+      });
+    if (J.bass && J.bass.length && !has(['bass']))
+      out.push({ lvl: 'warn', msg: `jingle "${id}": no part of "${J.ensemble}" plays its bass`, jingle: id });
+    if (perc.some(N => musicJingleKitNote(N[1])) && !has(['drums']))
+      out.push({
+        lvl: 'warn',
+        msg: `jingle "${id}": no drums part of "${J.ensemble}" plays its kit notes`,
+        jingle: id,
+      });
+    if (perc.some(N => !musicJingleKitNote(N[1])) && !has(['timp']))
+      out.push({
+        lvl: 'warn',
+        msg: `jingle "${id}": no timp part of "${J.ensemble}" plays its pitched perc notes`,
+        jingle: id,
+      });
+  }
   const uses = musicSongUses(music, more);
   for (const [id, u] of Object.entries(uses))
     if (!u.length) out.push({ lvl: 'warn', msg: `song "${id}": no where-rule, place or script plays it`, song: id });
   /* SND-4: hooks and jingles still named as placeholders (Claude's drafts, for the owner to keep, change or rename) */
-  const songsLeft = Object.keys(songs).filter(id => isMusicPlaceholder(songs[id].hookName)),
+  const songsLeft = Object.keys(songs).filter(
+      id =>
+        isMusicPlaceholder(songs[id].hookName) ||
+        Object.values(songs[id].sections || {}).some((/** @type {any} */ X) => isMusicPlaceholder(X && X.hookName))
+    ),
     jingles = music.jingles || {},
     jinglesLeft = Object.keys(jingles).filter(id => isMusicPlaceholder(jingles[id].name));
   if (songsLeft.length)
@@ -219,6 +391,13 @@ export function musicFindings(music, more = {}) {
       lvl: 'info',
       msg: `placeholder hooks (${songsLeft.length}): ${songsLeft.join(', ')}. Keep, change or rename each`,
       song: songsLeft[0],
+    });
+  /* SND-12: arrangements (ensembles) still named as placeholders */
+  const ensLeft = Object.keys(ens).filter(k => isMusicPlaceholder(ens[k] && ens[k].name));
+  if (ensLeft.length)
+    out.push({
+      lvl: 'info',
+      msg: `placeholder arrangements (${ensLeft.length}): ${ensLeft.join(', ')}. Keep, change or rename each on the Instruments tab`,
     });
   if (jinglesLeft.length)
     out.push({

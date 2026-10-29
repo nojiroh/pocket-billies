@@ -5,7 +5,7 @@
 // (game/data/lines/<line>.json "parts"). The committed art was the Python builder's output byte for byte (Pillow
 // 12.3.0) when this test was written, and stayed equal until the builder retired (Phase 5, session 3), so the JS baker
 // is that builder. A recipe or a kit part's picture changed without a bake fails here.
-// Roster track RO-3b: a Billie on its placeholder (game/data/bodyPlans.json forms) keeps its recipe but not its kit
+// Roster track RO-3b: a sketch Billie (game/data/bodyPlans.json forms) keeps its recipe but not its kit
 // art, so its bake is compared with the fingerprints in tools/test/kit-bake.json instead (written from the committed
 // kit art before the move: `node tools/bake-kit-billies.mjs --fingerprints`); every recipe is compared with them.
 import assert from 'node:assert/strict';
@@ -27,9 +27,7 @@ const RIGS = (() => {
   return box.window.RIGS_NEXT;
 })();
 const PRINTS = JSON.parse(readFileSync(join(ROOT, 'tools/test/kit-bake.json'), 'utf8'));
-const PLACEHOLDER = new Set(
-  JSON.parse(readFileSync(join(ROOT, 'game/data/bodyPlans.json'), 'utf8')).forms.map(f => f.rig)
-);
+const SKETCH = new Set(JSON.parse(readFileSync(join(ROOT, 'game/data/bodyPlans.json'), 'utf8')).forms.map(f => f.rig));
 const cache = new Map();
 const pics = (id, view) => {
   const key = id + '|' + view;
@@ -92,7 +90,7 @@ test('every kit Billie bakes as committed (the retired Python builder, number fo
     for (const k of ['sheet', 'rig'])
       if (print[k] !== PRINTS[form.name]?.[k])
         problems.push(`${where} ${k}: fingerprint ${print[k]}, kit-bake.json has ${PRINTS[form.name]?.[k]}`);
-    if (!PLACEHOLDER.has(form.rig)) {
+    if (!SKETCH.has(form.rig)) {
       const sheet = pixelDiff(made.sheet, readPng(join(ROOT, `game/art/next/billionaires/${form.name}.png`)));
       if (sheet) problems.push(`${where} sheet: ${sheet}`);
       for (const d of jsonDiff(JSON.parse(JSON.stringify(made.rig)), RIGS[form.rig], 'rig'))

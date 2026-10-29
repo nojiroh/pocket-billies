@@ -52,7 +52,7 @@ stay for comparison only.
 
 "Drawn px" are the scene buffer's pixels: the scene draws at about 0.73 of the device's pixels (860×1861 here) and
 is stretched to the screen (camera.js:306, walk-view-gl.js:513-524). The arithmetic is in the CH-0 HANDOFF entry.
-The old style guide already had the rule: "32 px/m in the world, 64 in battle" (docs/archive/LEGACY-CHANGELOG.md:858).
+The old style guide already had the rule: "32 px/m in the world, 64 in battle" (the legacy build's changelog, on the `legacy` branch).
 
 ## What the game has (checked in the code, 2026-10-27)
 1. **Too fine, so blurred:** people are 66.5 px/m (wardrobe.json `ppm`; 116.4 px for 1.75 m) in a 32-34 px/m world

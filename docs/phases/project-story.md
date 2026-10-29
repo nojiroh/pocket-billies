@@ -64,8 +64,8 @@ but his name and costume are what to change before any public release.
   running ("Oh! Another one!"), you can't remember your name, you make yourself in the dressing room, she throws three
   coins, Blake runs in, Hazel fights him (staged inside the cutscene, made to look like a battle: Gildlet, plates,
   one hit), then the starter pick, then Blake's battle.
-- **Hazel's lines** (`logic/hazel.js`, 159 lines): one table `HAZEL`: hot takes per starter, annoyed lines, `meta`,
-  `tooFastPicks`, `tooFastSkips`; `hotTake`, `hazelTip`. Unit tested in `tools/test/hazel.test.mjs`.
+- **Hazel's lines** (now Professor Chosen's: `logic/chosen.js`, 133 lines): one table `CHOSEN`: hot takes per starter,
+  annoyed lines, `meta`, `tooFastPicks`, `tooFastSkips`; `hotTake`, `chosenTip`. Unit tested in `tools/test/chosen.test.mjs`.
 - **Blake's battle tips**: `battleTutor` (opening-fall.js), called from battle.js each turn: a HOT TIP card over the
   move buttons until tapped. Fast-pick and fast-skip comments via `speedWatch`.
 - **Dialogue and story** (`talk.js` 259 lines, `story.js` 433 lines): one dialogue box with `[expr]` portrait
@@ -159,7 +159,7 @@ game at this place and spot with a chosen start preset and the unsaved draft. On
 the command line.
 
 ### S4: Story bible and parody fixes
-Written to `docs/STORY.md`. Claude proposes; nothing is locked until you pick.
+To be written to `docs/STORY.md` (not written yet). Claude proposes; nothing is locked until you pick.
 1. **The world.** The Hollow Earth as an alternative future; how the portal and the fall connect the surface to the
    interior. The surface/interior contrast is drafted two ways (strong contrast, or blurred with surface tech leaking
    in) for you to choose.

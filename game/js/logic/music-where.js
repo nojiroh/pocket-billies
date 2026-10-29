@@ -128,6 +128,8 @@ export function musicWeatherCut(weather, run) {
  * what plays stays, so dusk doesn't flip the song back and forth. SND-5: in battle, the tense version ('wild@tense',
  * trackerTense) while the lead Billie is in the red zone (state.redZone), unless the song has `tense: false`. In a run, the
  * arc band's version first ('meadow@late', musicArcBand), unless the song has `arc: false`; at night 'meadow@late@night'.
+ * SND-13: a song naming an ensemble hears the arc as layers instead (logic/music-layers.js musicLayerArc: its `peak`
+ * parts), so it keeps its name; with GB Sounds on (state.gb) it plays gb and takes the band's version as before.
  * @param {string | null} name the song for the place (songFor)
  * @param {Record<string, any>} state songFor's state plus `night`, the environment's night level (0 day, 1 night)
  * @param {Record<string, any>} songs
@@ -139,7 +141,8 @@ export function songVariant(name, state, songs, playing = null, run = undefined)
   const S = name ? songs[name] : null;
   if (S && state.battle) return state.redZone && S.tense !== false ? name + '@tense' : name;
   if (!S || state.indoor) return name;
-  const band = S.arc === false ? null : musicArcBand(state, run),
+  const layered = !!(S.ensemble && S.ensemble !== 'gb' && !state.gb),
+    band = S.arc === false || layered ? null : musicArcBand(state, run),
     day = band ? name + '@' + band : name;
   if (S.night === false) return day;
   const n = state.night || 0,

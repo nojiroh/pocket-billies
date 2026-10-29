@@ -46,9 +46,9 @@ export interface GameData {
   partKits?: PartKits;
   /** Studio plan Phase 5 (T5.1): the kit Billies' recipes, baked by logic/kit-assemble.js (game/data/kitBuilds.json) */
   kitBuilds?: KitBuilds;
-  /** roster track RO-3a: the body plans and the placeholder Billies, baked by logic/placeholder-art.js
+  /** roster track RO-3a: the body plans and the sketch Billies, baked by logic/sketch-art.js
    * (game/data/bodyPlans.json; its shapes are typed there as BodyPlans) */
-  bodyPlans?: import('../js/logic/placeholder-art.js').BodyPlans;
+  bodyPlans?: import('../js/logic/sketch-art.js').BodyPlans;
   /** splicing track SP-2: Genes (game/data/genes.json; logic/genes.js) */
   genes?: Genes;
   /** phase 10: the world map's look: the sea, the relief, each region's ground and trees (game/data/worldmap.json) */

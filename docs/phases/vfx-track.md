@@ -823,7 +823,7 @@ commit of its own.
   tools/test/check-data-snapshot.test.mjs`, said in the commit message); sound.js, hooks.js and both index pages merge
   clean. Whichever track reaches main second resolves it so.
 ## Fitting with the style track (found 2026-10-28)
-The style track (docs/phases/style-track.md, PR #279; its planning session `session_019UpAFyAJSkEVjDLuVMFQkS`, steps
+The style track (docs/archive/tracks/style-track.md, PR #279; its planning session `session_019UpAFyAJSkEVjDLuVMFQkS`, steps
 on `track/style`, merged to main through PR #289) also works in battle. How the two split, agreed with its planning
 session (2026-10-28):
 - `flashFor` reaches main through #289 (SY-1 and SY-2; #279 carries the same SY-1 commit): merge whichever lands

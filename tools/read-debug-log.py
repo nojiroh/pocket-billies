@@ -25,6 +25,37 @@ def num(v, nd=0):
     return f'{v:.{nd}f}' if nd else f'{round(v)}'
 
 
+def flat(v, keys=None, n=8):
+    """a dict's plain values as k=v (lists by their length), at most n; keys picks them in order"""
+    if not isinstance(v, dict): return str(v)
+    ks = [k for k in (keys or v.keys()) if k in v and not isinstance(v[k], dict)][:n]
+    return ', '.join(f"{k} {len(v[k]) if isinstance(v[k], list) else v[k]}" for k in ks)
+
+
+def audio(a):
+    """SND-15: the sound's lines (sound.js soundDebugLines): the context, glitches, beds and sources, the bank, the
+    reverb, the water, nature, the music's ensemble and layers, and the mix (the master chain's cut, the levels, the
+    ducks, the audio session)"""
+    if not a: print('Audio: none in this log (sound never started)'); return
+    st = a.get('states') or []
+    print(f"Audio: {a.get('state')} at {a.get('rate')} Hz, song {a.get('song')}, late steps {a.get('lateSteps')}, "
+          f"sources a minute {a.get('sourcesLastMinute')}, beds live {len(a.get('liveBeds') or {})} of {a.get('worldBeds')} "
+          f"({a.get('liveSources')} sources), latency {flat(a.get('latencyMs'))} ms"
+          + (f"; states {', '.join(str(x.get('at')) + ' s ' + str(x.get('state')) for x in st[-4:])}" if st else ''))
+    for k, keys in (('bank', ['mb', 'withOtherMb', 'zones', 'dropped', 'bakeMs', 'sliceMaxMs', 'stepMaxMs']),
+                    ('reverb', ['bakeMs', 'readyMs', 'setMs', 'place', 'sec']), ('water', None), ('nature', None)):
+        if a.get(k): print(f"  {k}: {flat(a[k], keys)}")
+    e = a.get('ensemble') or {}
+    if e: print(f"  music: {e.get('song')} on {e.get('ensemble')} playing {e.get('playing')}, GB Sounds {e.get('gbSounds')}, "
+                f"section {flat(e.get('section'))}, last jingle {flat(e.get('jingle'))}")
+    m = a.get('mix') or {}
+    if m:
+        print(f"  mix: cut now {flat(m.get('cut'))} dB, most this minute {flat(m.get('cutMost'))} dB, make-up {m.get('makeup')} dB; "
+              f"levels {flat(m.get('levels'))}")
+        print(f"       ducks {flat((m.get('ducks') or {}).get('music'))} (music), {flat((m.get('ducks') or {}).get('beds'))} (beds); "
+              f"under way {m.get('ducking')}; session {m.get('session')}, play when silenced {m.get('playSilenced')}")
+
+
 def main():
     if not ARGS: print(__doc__); sys.exit(2)
     src = sys.stdin.read() if ARGS[0] == '-' else Path(ARGS[0]).read_text(encoding='utf-8')
@@ -68,6 +99,8 @@ def main():
             if a: print(f"  atlas: {'on' if a.get('on') else 'off'}, {a.get('people')} people in {a.get('cells')} cells ({a.get('use')} of it), "
                         f"{a.get('draws')} drawn ({num(a.get('ms'))} ms; {a.get('faceDraws', 0)} for a face: talking, blinks, expressions), {a.get('rows')} ramp rows, full {a.get('full')}"
                         + (f", FAILED {a.get('failed')}" if a.get('failed') else ''))
+
+    audio(((d.get('more') or {}).get('audio')))
 
     ld = d.get('load') or {}
     if ld: print(f"Load: {num(ld.get('ms'))} ms, {ld.get('files')} files" + (f", FAILED: {ld.get('failed')}" if ld.get('failed') else ''))

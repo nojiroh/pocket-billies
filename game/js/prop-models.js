@@ -243,7 +243,7 @@ export function loadPropModelRecipe(path) {
   if (propModelState.recipes.has(path)) return propModelState.recipes.get(path);
   propModelState.recipes.set(path, null);
   const url = typeof artURL === 'function' ? artURL(path) : 'art/' + path;
-  /* v46: in the single-page build the recipe is inlined as a data: link; inside the Claude app a fetch of it is refused,
+  /* v46: in the single-page build the recipe is inlined as a data: link; inside some apps' web views a fetch of it is refused,
     which left every recipe empty on the phone. It is decoded here directly and is ready at once. */
   if (url.startsWith('data:')) {
     let j = null;

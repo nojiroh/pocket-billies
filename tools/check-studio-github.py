@@ -23,9 +23,9 @@ Studio track ST-T: the Studio self-test runs whole and must pass (no errors, eve
 no token in its report); its times are not judged here.
 Studio plan Phase 5 (T5.1): a kit Billie's recipe edited in Part mode bakes at once (one undo step), and the proposal
 carries its sheet (pixel-equal to the Node bake), rigs-next.js, kitBuilds.json and its line.
-Roster track RO-3b: every kit Billie is on its placeholder (bodyPlans.json), its recipe kept. So the kit steps still run
-on a kit Billie, the stand-in serves the first recipe's Billie off its placeholder: bodyPlans.json without its form,
-its sheet and rig as `npm run bake:kits` bakes them (kit_off_placeholder). Nothing on disk changes.
+Roster track RO-3b: every kit Billie is a sketch (bodyPlans.json), its recipe kept. So the kit steps still run
+on a kit Billie, the stand-in serves the first recipe's Billie off its sketch: bodyPlans.json without its form,
+its sheet and rig as `npm run bake:kits` bakes them (kit_off_sketch). Nothing on disk changes.
 Studio plan Phase 5 (T5.2): Replace from Parts Library greys a part a child can't hang on, shows before and after,
 and a head swapped keeps a blink as one undo step.
 Studio plan Phase 5 (T5.4): Repack sheet makes a hand-drawn Billie's sheet smaller, drawn the same, one undo step.
@@ -1648,7 +1648,7 @@ def kit_write_steps(pg, errs):
         while time.time() - t0 < limit and (pg.evaluate("studioState.undo.length") < steps0 + k or not pg.evaluate(idle)): time.sleep(0.2)
 
     # parity through the browser: every kit Billie baked in the Studio is its committed sheet and rig (RO-3b: the one
-    # the stand-in serves off its placeholder; the others' recipes are kept, not baked)
+    # the stand-in serves off its sketch; the others' recipes are kept, not baked)
     par = pg.evaluate("""(async () => { const out = [];
       for (const f of studioState.D.kitBuilds.forms.filter(f => kitFormOf(f.rig))) {
         const m = await kitBakeInStudio(f), i = new Image(); i.src = '../game/art/next/billionaires/' + f.name + '.png'; await i.decode();
@@ -1687,7 +1687,7 @@ def kit_write_steps(pg, errs):
     pg.evaluate("redo()"); time.sleep(0.5)
     if json.loads(pg.evaluate(state)) != s1: errs.append('redo did not put the bake back whole')
     pg.evaluate("window.__kitWrite = " + json.dumps({'name': name, 'rig': sp, 'line': form['line'], 'form': s1['form']}))
-    # RO-3b: a Billie on its placeholder shows its recipe as kept, with nothing to bake or write
+    # RO-3b: a sketch Billie shows its recipe as kept, with nothing to bake or write
     kept = pg.evaluate("studioState.D.kitBuilds.forms[1]")
     pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(kept['rig'])}; wbPart.id = ''; render()")
     pg.wait_for_selector(f'[data-kit-kept="{kept["name"]}"]', timeout=20000)
@@ -1797,10 +1797,10 @@ def repack_steps(pg, errs):
     """Studio plan Phase 5 (T5.4): Repack sheet on a hand-drawn rig (the first rig that is not a kit Billie: since RO-2c
     every game species is one, so a legacy rig): the sheet gets smaller, both views are
     drawn pixel for pixel as before (neutral pose, every face), it is one undo step and undo puts the sheet and rig
-    back; on a kit Billie it refuses (the recipe packs its sheet), and on a placeholder Billie (RO-3b: its body plan
+    back; on a kit Billie it refuses (the recipe packs its sheet), and on a sketch Billie (RO-3b: its body plan
     does)."""
     n = len(errs)
-    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && !placeholderFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
+    sp = pg.evaluate("Object.keys(studioState.rigs).sort().find(s => !kitFormOf(s) && !sketchFormOf(s) && studioState.rigs[s].front && studioState.rigs[s].back) || ''")
     if not sp:
         errs.append('repack: no hand-drawn rig left to repack'); return
     pg.evaluate(f"wbPart.src = 'species'; wbPart.sp = {json.dumps(sp)}; wbPart.id = 'head'; workbench.mode = 'part'; void openSection('workbench')")
@@ -1830,10 +1830,10 @@ def repack_steps(pg, errs):
     ph = pg.evaluate("studioState.D.bodyPlans.forms[0].rig")
     pg.evaluate(f"wbPart.sp = {json.dumps(ph)}; render()"); time.sleep(0.5)
     pg.locator('[data-act=wbsRepack]').first.click(); time.sleep(0.8)
-    if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its body plan').count(): errs.append('Repack sheet on a placeholder Billie did not refuse')
+    if pg.evaluate("studioState.undo.length") != k0 or not pg.locator('.toast', has_text='baked from its body plan').count(): errs.append('Repack sheet on a sketch Billie did not refuse')
     pg.evaluate("wbPart.src = 'kits'; wbPart.id = ''; workbench.mode = 'sheet'")
     if len(errs) > n: errs[n:] = [f'repack: {e}' for e in errs[n:]]
-    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie and a placeholder Billie refused', flush=True)
+    print(f'repack: {sp} {s0} -> {s1}, drawn the same front and back (4 faces), one undo step, undone; a kit Billie and a sketch Billie refused', flush=True)
 
 
 def density_steps(pg, errs):
@@ -1888,6 +1888,18 @@ def music_steps(pg, errs):
     if got != ['town', 100, 5, 100]: errs.append(f'music: undo gave {got} (playing, its tempo and second chord, the data’s tempo)')
     left = pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)")
     if left: errs.append(f'music: after the undo these still differ from GitHub: {left}')
+    # SND-12: the Form card: a new section B (A's chords copied) plays at once after A (16 bars), its chord changes
+    # reach the song playing, the hook roll's section picker shows; both undone (hills has no form)
+    pg.click('#musList [data-act=musPick][data-song=hills]'); pg.click('#musList [data-act=musPlay][data-song=hills]'); time.sleep(0.3)
+    pg.click('#main [data-act=musSectionNew]'); time.sleep(0.3)
+    got = pg.evaluate("[studioState.D.music.songs.hills.form, musicStudio.tracker.song.D.steps, (musicStudio.tracker.song.D.played || []).map(x => x.name).join(' ')]")
+    if got != [['A', 'B'], 256, 'A B']: errs.append(f'music: a new section gave {got} (the form, the song playing’s steps and sections)')
+    pg.select_option('#main select[data-p="music.songs.hills.sections.B.prog.0"]', '5'); time.sleep(0.3)
+    if pg.evaluate("musicStudio.tracker.song.D.prog[8]") != 5: errs.append('music: a section’s chord did not reach the song playing')
+    if not pg.locator('#main [data-act=musSectionPick][data-s=B]').count(): errs.append('music: the hook roll has no section picker')
+    pg.click('#undoBtn'); pg.click('#undoBtn'); time.sleep(0.3)
+    if pg.evaluate("'form' in studioState.D.music.songs.hills || 'sections' in studioState.D.music.songs.hills || musicStudio.tracker.song.D.steps !== 128"):
+        errs.append('music: undoing the new section left a form')
     # the hook roll: a click on an empty cell of the roll writes a note, a drag makes it longer, and the song playing
     # plays the hook at once; a click on the note takes it away; the countermelody is its own line; all undone
     # SND-4: on hills, whose rolls are empty (town has a placeholder hook and counter now), played and picked first
@@ -1969,9 +1981,28 @@ def music_steps(pg, errs):
     pg.click('[data-act=musJinglePick][data-j=hatch]')
     pg.click('.list-head [data-act=musStop]'); time.sleep(0.6)
     pg.evaluate("(() => { const T = musicStudio.tracker, f = T.synthVoice; window.__mv = 0; T.synthVoice = (...a) => { window.__mv++; return f(...a); }; window.__mvf = f })()")
-    pg.click('.card [data-act=musJinglePlay][data-j=hatch].primary'); time.sleep(0.2)
-    if pg.evaluate("window.__mv") != 6: errs.append(f'music: the hatch jingle started {pg.evaluate("window.__mv")} voices, not 6 (3 notes, each with its bass)')
+    # SND-17: its 8-bit version (as GB Sounds plays it)
+    pg.click('.card [data-act=musJinglePlay][data-j=hatch][data-gb]'); time.sleep(0.2)
+    if pg.evaluate("window.__mv") != 6: errs.append(f'music: the hatch jingle (8-bit) started {pg.evaluate("window.__mv")} voices, not 6 (3 notes, each with its bass)')
     pg.evaluate("void (musicStudio.tracker.synthVoice = window.__mvf)")
+    # SND-17: and on its ensemble (twinkle: a music box, a celesta under it and its chord), its notes baked first
+    if pg.evaluate("studioState.D.music.jingles.hatch.ensemble"):
+        pg.evaluate("(() => { const T = musicStudio.tracker, f = T.sampleVoice; window.__sv = []; T.sampleVoice = (b, v) => { window.__sv.push(v.inst); return f(b, v); }; window.__svf = f })()")
+        pg.click('.card [data-act=musJinglePlay][data-j=hatch].primary')
+        if not until(pg, "window.__sv.length > 0", 20): errs.append('music: the hatch jingle never played on its ensemble')
+        time.sleep(0.3)
+        got = sorted(set(pg.evaluate("window.__sv")))
+        if got != ['celesta', 'musicbox']: errs.append(f'music: the hatch jingle on its ensemble played {got}')
+        pg.evaluate("void (musicStudio.tracker.sampleVoice = window.__svf)")
+        # its harmony line on the roll: a note drawn, undone
+        h0 = pg.evaluate("(studioState.D.music.jingles.hatch.harmony || []).length")
+        pg.click('[data-act=musJLine][data-l=harmony]')
+        pg.locator('#musJRoll').scroll_into_view_if_needed(); box = pg.locator('#musJRoll').bounding_box()
+        pg.mouse.click(box['x'] + 40 + 1 * 22 + 11, box['y'] + 18 + 2 * 16 + 8)
+        if pg.evaluate("(studioState.D.music.jingles.hatch.harmony || []).length") != h0 + 1: errs.append('music: a harmony note drawn on the hatch jingle did not land')
+        pg.click('#undoBtn')
+        if pg.evaluate("(studioState.D.music.jingles.hatch.harmony || []).length") != h0: errs.append('music: undo did not take the harmony note back')
+        pg.click('[data-act=musJLine][data-l=notes]')
     pg.locator('#musJRoll').scroll_into_view_if_needed(); box = pg.locator('#musJRoll').bounding_box()
     pg.mouse.click(box['x'] + 40 + 10 * 22 + 11, box['y'] + 18 + 2 * 16 + 8)
     got = pg.evaluate("studioState.D.music.jingles.hatch.notes")
@@ -2004,6 +2035,39 @@ def music_steps(pg, errs):
     if not until(pg, "Object.keys(musicStudio.scape.P.stats().voices).length===0", 15):
         errs.append(f'music: the World sounds card left {pg.evaluate("JSON.stringify(musicStudio.scape.P.stats().voices)")} playing after Stop')
     if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing a world sound changed the data')
+    # SND-14: nature's rows: steps on gravel start sources through nature's player; Stop ends them; the data unchanged
+    pg.click('[data-act=musNature][data-k="step:gravel"]')
+    if not until(pg, "!!musicStudio.nature&&musicStudio.nature.P.stats().started>=6", 10):
+        errs.append('music: the World sounds card never played steps on gravel')
+    pg.click('[data-act=musScapeStop]')
+    if pg.evaluate("musicStudio.nature.want") is not None: errs.append('music: Stop left nature playing')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing nature changed the data')
+    # SND-11: the player is on the game's chain (music.json mix's compressor); the Instruments tab: an instrument bakes
+    # and plays its run, an ensemble's song plays as the ensemble (its parts' stems, no chip drums), GB Sounds puts it
+    # back on gb from the next bar, a part's level edited and undone
+    # SND-15: the whole master chain (audio/mix-chain.js): the compressor, the make-up and the limiter as the mix says
+    chain = pg.evaluate("(() => { const C = musicStudio.chain.chain, M = studioState.D.music.mix, r = v => Math.round(v * 1000) / 1000; return [[C.glue.threshold.value, C.glue.ratio.value, r(20 * Math.log10(C.makeup.gain.value)), C.limit.threshold.value].map(r), [M.compressor.threshold, M.compressor.ratio, M.makeup, M.limiter.threshold].map(r)]; })()")
+    if chain[0] != chain[1]:
+        errs.append(f'music: the player\'s master chain is {chain[0]}, not the mix\'s {chain[1]}')
+    pg.click('[data-act=musTab][data-t=instruments]')
+    pg.wait_for_selector('[data-act=musInst][data-k=harp]', timeout=10000)
+    pg.evaluate("(() => { const T = musicStudio.tracker, f = T.sampleVoice; window.__sv = []; T.sampleVoice = (o, v) => { const r = f(o, v); window.__sv.push([v.inst, !!r]); return r; }; window.__svf = f })()")
+    pg.click('[data-act=musInst][data-k=celesta]')
+    if not until(pg, "window.__sv.filter(([i, ok]) => i === 'celesta' && ok).length >= 7", 20): errs.append(f'music: celesta played {pg.evaluate("JSON.stringify(window.__sv)")}')
+    pg.evaluate("window.__sv = []; document.getElementById('musEns_route').open = true")
+    pg.click('[data-act=musEnsPlay][data-song=route]')
+    if not until(pg, "musicPlaying() === 'route' && musicStudio.tracker.song.ensOn && window.__sv.some(([i, ok]) => i === 'pizz' && ok)", 30):
+        errs.append(f'music: route did not play as its ensemble ({pg.evaluate("[musicPlaying(), !!(musicStudio.tracker.song && musicStudio.tracker.song.ensOn), JSON.stringify(window.__sv.slice(0, 6))]")})')
+    pg.check('#musGb')
+    if not until(pg, "musicStudio.tracker.song && !musicStudio.tracker.song.ensOn", 10): errs.append('music: GB Sounds did not put route on gb')
+    pg.uncheck('#musGb')
+    pg.evaluate("void (musicStudio.tracker.sampleVoice = window.__svf)")
+    box = pg.locator('#main input[data-p="music.ensembles.route.parts.1.level"]')
+    box.fill('0.5'); box.press('Tab')
+    if pg.evaluate("studioState.D.music.ensembles.route.parts[1].level") != 0.5: errs.append('music: an ensemble part\'s level did not change')
+    pg.click('#undoBtn')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: undoing the part\'s level left something to propose')
+    pg.click('.list-head [data-act=musStop]')
     # VFX-19: the Battle card: every battle sound's play button starts its voices (tones and noises) through the game's
     # player (audio/battle-voices.js), as many as its preview lists; a name edited and undone leaves nothing changed
     r = pg.evaluate("""(() => { const T = musicStudio.tracker || null; const B = studioState.D.music.battle, A = studioState.D.battleAnims;
@@ -2052,7 +2116,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped, every battle sound on the Battle card heard and a name edited and undone; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, SND-12: a new section B on hills heard at once and its chord changed, undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brooa brook 3 m away played on the World sounds card and stopped, every battle sound on the Battle card heard and a name edited and undone; SND-11: the game’s compressor, an instrument and an ensemble played on the Instruments tab, GB Sounds, a part’s level undone; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
@@ -2443,20 +2507,20 @@ def leaders_steps(pg, errs):
 
 def economy_steps(pg, errs):
     """Studio plan T4.4: the Economy page lists a line per source and sink with its value; a link opens the field;
-    the simulator's numbers are a placeholder that says so."""
+    the simulator's numbers are a notice that says so."""
     n = len(errs)
     pg.evaluate("void openSection('economy')")
     pg.wait_for_selector('#main .eco', timeout=20000)
     rows = pg.evaluate("document.querySelectorAll('#main [data-eco]').length")
     want = pg.evaluate("economyLines(studioState.D).length")
     if rows != want or rows < 20: errs.append(f'economy: {rows} lines shown, economyLines gives {want}')
-    if not pg.locator('#main [data-eco-sim="none"]').count(): errs.append('economy: no placeholder for the simulator numbers')
+    if not pg.locator('#main [data-eco-sim="none"]').count(): errs.append('economy: no notice for the simulator numbers')
     pg.click('#main [data-act="ecoGo"][data-path="unlocks.ranch_2.cost"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec") != 'unlocks' or not pg.locator('#main [data-p="unlocks.ranch_2.cost"]').count(): errs.append('economy: the ranch_2 cost link did not open its field')
     pg.evaluate("void openSection('economy')"); time.sleep(0.3)
     pg.click('#main [data-act="ecoGo"][data-path="perks.lucky_charm.fx.0.mult"]'); time.sleep(0.5)
     if pg.evaluate("studioState.sec + ':' + studioState.sel.relic") != 'relics:lucky_charm': errs.append('economy: the Lucky Charm link did not open that Perk')
-    if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator placeholder shown', flush=True)
+    if len(errs) == n: print(f'economy: {rows} lines, links open their fields, the simulator notice shown', flush=True)
 
 
 # Studio plan Phase 6 (T6.7): every WebGL context the page makes is counted (a canvas that gets one), and the GPU's
@@ -3634,7 +3698,7 @@ def hub_checks(b, url, errs):
     ctx.close()
 
 
-def kit_off_placeholder():
+def kit_off_sketch():
     """RO-3b: the files the stand-in serves in place of the repository's so the first kit recipe's Billie is a kit
     Billie again: {path from the root: bytes}, and that recipe's name and rig"""
     node = r"""
@@ -3666,8 +3730,8 @@ def kit_off_placeholder():
 
 def main():
     _srv, base = serve(ROOT)
-    kit_files, kit_name, kit_rig = kit_off_placeholder()
-    print(f'stand-in: {kit_name} ({kit_rig}) served off its placeholder, as its kit recipe bakes', flush=True)
+    kit_files, kit_name, kit_rig = kit_off_sketch()
+    print(f'stand-in: {kit_name} ({kit_rig}) served off its sketch, as its kit recipe bakes', flush=True)
     tree = [{'type': 'blob', 'path': str(p.relative_to(ROOT)), 'sha': 'x', 'size': p.stat().st_size}
             for p in (ROOT / 'game').rglob('*') if p.is_file()]
     posts, bodies = [], []

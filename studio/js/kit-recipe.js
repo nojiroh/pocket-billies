@@ -38,13 +38,13 @@ expose({
 provide({ kitBakeInStudio });
 /* to-module: end */
 /** the recipe of a species' rig, with its index in kitBuilds.json forms; null when there is none or when the Billie
- * is on its placeholder (RO-3b: a bodyPlans.json form owns the rig, so the recipe is kept but not baked) */
+ * is a sketch (RO-3b: a bodyPlans.json form owns the rig, so the recipe is kept but not baked) */
 export function kitFormOf(sp) {
   const forms = studioState.D?.kitBuilds?.forms || [],
     i = forms.findIndex(f => f.rig === sp);
   return i < 0 || kitKept(sp) ? null : { form: forms[i], i };
 }
-/** RO-3b: the kept recipe of a Billie on its placeholder, or null */
+/** RO-3b: the kept recipe of a sketch Billie, or null */
 function kitKept(sp) {
   const P = studioState.D?.bodyPlans?.forms || [];
   return P.some(f => f.rig === sp) ? (studioState.D?.kitBuilds?.forms || []).find(f => f.rig === sp) || null : null;
@@ -181,7 +181,7 @@ export function kitRecipeHTML(sp) {
   const at = kitFormOf(sp),
     kept = !at && kitKept(sp);
   if (kept)
-    return `<div class="px-sec kit-recipe" data-kit-kept="${escapeHtml(kept.name)}"><h4>Kit recipe <small class="mono">${escapeHtml(kept.name)}</small></h4><p class="help">Kept in kitBuilds.json, not baked: this Billie is on its placeholder (bodyPlans.json). To bring the kit look back, take it out of bodyPlans.json forms and bake again (<span class="mono">npm run bake:kits</span>).</p></div>`;
+    return `<div class="px-sec kit-recipe" data-kit-kept="${escapeHtml(kept.name)}"><h4>Kit recipe <small class="mono">${escapeHtml(kept.name)}</small></h4><p class="help">Kept in kitBuilds.json, not baked: this Billie is a sketch (bodyPlans.json). To bring the kit look back, take it out of bodyPlans.json forms and bake again (<span class="mono">npm run bake:kits</span>).</p></div>`;
   if (!at) return '';
   const { form } = at,
     D = studioState.D,

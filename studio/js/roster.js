@@ -116,7 +116,7 @@ ACTIONS.roDensity = () => {
       )
       .map(
         r =>
-          `<tr><td class="mono">${esc(r.sp)}</td><td>${esc(speciesName(r.sp))}</td><td>${r.pxPerM}</td><td>${r.perArtPx}</td><td>${r.perGroundPx}</td><td>${r.grid === 'off grid' ? '<b>off grid</b>' : r.grid}</td><td>${r.kit ? `${esc(r.kit)} ×${r.fit}` : r.placeholder ? `${esc(r.placeholder)}: ${esc(r.plan)} placeholder, scale ${r.scale}` : ''}</td><td>${r.parts
+          `<tr><td class="mono">${esc(r.sp)}</td><td>${esc(speciesName(r.sp))}</td><td>${r.pxPerM}</td><td>${r.perArtPx}</td><td>${r.perGroundPx}</td><td>${r.grid === 'off grid' ? '<b>off grid</b>' : r.grid}</td><td>${r.kit ? `${esc(r.kit)} ×${r.fit}` : r.sketch ? `${esc(r.sketch)}: ${esc(r.plan)} sketch, scale ${r.scale}` : ''}</td><td>${r.parts
             .filter(p => p.flag)
             .map(p => `${esc(p.what)} ${esc(p.part)} ×${p.vsBody}`)
             .join(', ')}</td></tr>`
@@ -192,9 +192,9 @@ async function silhouetteOf(id, size = 24) {
   if (SILHOUETTE_CACHE.has(id + size)) return SILHOUETTE_CACHE.get(id + size);
   let src = null;
   /* Studio plan Phase 5: a kit Billie has no piece layout (its rig says kit: kitBuilds.json); it is drawn by its rig.
-     RO-3b: nor has a placeholder Billie (placeholder: bodyPlans.json) */
+     RO-3b: nor has a sketch Billie (sketch: bodyPlans.json) */
   const F = studioState.rigs?.[rosterSpeciesId(id)]?.front,
-    baked = F?.kit || F?.placeholder;
+    baked = F?.kit || F?.sketch;
   if (!baked)
     try {
       const im = await loadImage('../game/art/next/billionaires/' + id + '.png');

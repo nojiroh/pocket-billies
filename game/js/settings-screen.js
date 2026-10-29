@@ -11,6 +11,7 @@ import {
   FIXTURE_NAMES,
   POST_EFFECT_SHADERS,
   SOLID_PROP_SHADERS,
+  SOUND_DEFAULTS,
   WALK_SHADERS,
   WORLD_BOWL_SHADERS,
   account,
@@ -36,6 +37,8 @@ import {
   runFullTest,
   runGraphicsBench,
   selfTest,
+  soundSessionApply,
+  soundSessionSupported,
   stopTimers,
   testVolume,
   toast,
@@ -500,26 +503,51 @@ function settingsHTML() {
       );
   else if (tab === 'sound')
     body =
-      volumeSliderHTML('master', 'Volume', 'Everything together. Mute keeps your levels for later.', 1) +
-      volumeSliderHTML('music', 'Music', 'Tunes for each place and battle.', 0.55) +
+      volumeSliderHTML(
+        'master',
+        'Volume',
+        'Everything together. Mute keeps your levels for later.',
+        SOUND_DEFAULTS.master
+      ) +
+      volumeSliderHTML('music', 'Music', 'Tunes for each place and battle.', SOUND_DEFAULTS.music) +
       volumeSliderHTML(
         'sfx',
         'Sound effects',
         'Buttons, battles, catches, and the short tunes for a win or a level up.',
-        0.8
+        SOUND_DEFAULTS.sfx
       ) +
-      volumeSliderHTML('world', 'World sounds', 'Water, fountains, fire, rain, wind and animals near you.', 0.5) +
+      volumeSliderHTML(
+        'world',
+        'World sounds',
+        'Water, fountains, fire, rain, wind and animals near you.',
+        SOUND_DEFAULTS.world
+      ) +
       volumeSliderHTML(
         'amb',
         'Ambience',
         'Birdsong by day, crickets at night, leaves, a town’s murmur, a room’s clock.',
-        0.5
+        SOUND_DEFAULTS.amb
       ) +
       settingsRowHTML(
         'Low HP beep',
         'The classic beep while your lead Billie is under a quarter of its HP. The battle music turns tense either way.',
         switchHTML('lowHpBeep', !!p.lowHpBeep, '1', '')
       ) +
+      /* SND-11: every song on the four Game Boy voices, as HeartGold's GB Sounds did (sound.js reads it at each bar) */
+      settingsRowHTML(
+        'GB Sounds',
+        'Every song on the four Game Boy voices, as they first were. Off: the fuller band (harp, strings, flute, drums).',
+        switchHTML('gbSounds', !!p.gbSounds, '1', '')
+      ) +
+      /* SND-15: iPhones (iOS 17 on) mute web sound with the silent switch unless the page asks to play as media
+         (navigator.audioSession, sound.js soundSessionApply); browsers without it don't show the row */
+      (soundSessionSupported()
+        ? settingsRowHTML(
+            'Play when silenced',
+            'Sound plays even with the iPhone’s silent switch on. Music from other apps may pause while the game plays.',
+            switchHTML('playSilenced', !!p.playSilenced, '1', '')
+          )
+        : '') +
       `<p class="note">Sounds fade in when you arrive somewhere.</p>`;
   else if (tab === 'graphics') {
     const gp = p.aim === 'off' ? 'off' : p.aim === 'smooth' ? 'balanced' : 'best',
@@ -635,7 +663,8 @@ function changePreference(k, v) {
     return;
   }
   if (k === 'haptics') v = v !== 'off';
-  if (k === 'bigTargets' || k === 'alwaysRun' || k === 'lowHpBeep') v = v === '1';
+  if (k === 'bigTargets' || k === 'alwaysRun' || k === 'lowHpBeep' || k === 'gbSounds' || k === 'playSilenced')
+    v = v === '1';
   if (k === 'tilt') {
     v = v === 'on';
     if (v)
@@ -656,6 +685,7 @@ function changePreference(k, v) {
       navigator.vibrate(12);
     } catch (e) {}
   if ((k === 'world' || k === 'amb') && typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
+  if (k === 'playSilenced' && typeof soundSessionApply === 'function') soundSessionApply();
 }
 export function settingsRefresh() {
   if (!uiState.modal || !uiState.modal.settings) return;

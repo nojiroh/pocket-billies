@@ -150,7 +150,10 @@ function soundscapeHere(sc, E, t) {
   const A = ambience.scape,
     P = typeof walkView !== 'undefined' ? walkView.pl : null;
   if (!A) return;
-  if (!sc || !P) return void A.update([], t);
+  if (!sc || !P) {
+    ambience.scapeWant = [];
+    return void A.update([], t);
+  }
   const M = soundscapeOf(sc),
     S = SOUNDSCAPE,
     R = (walkView.C && walkView.C.right) || [1, 0, 0],
@@ -178,5 +181,7 @@ function soundscapeHere(sc, E, t) {
   }
   /* Surf: the wake round you while you ride and move */
   if (S.wake && P.surf && P.walk) want.push({ recipe: S.wake, k: 0, level: 1, d: 0.5, pan: 0 });
+  /* SND-14: the frogs sing by the still water among these (nature-here.js) */
+  ambience.scapeWant = want;
   A.update(want, t);
 }

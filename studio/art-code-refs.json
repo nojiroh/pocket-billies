@@ -133,7 +133,7 @@
    "p": "next/billionaires/*.png",
    "at": [
     "game/js/logic/kit-assemble.js:445",
-    "game/js/logic/placeholder-art.js:521"
+    "game/js/logic/sketch-art.js:520"
    ]
   },
   {
@@ -243,114 +243,6 @@
    "p": "figures/rogue.png",
    "at": [
     "game/art/figures/rogue.json"
-   ]
-  },
-  {
-   "p": "scene/build/detail.png",
-   "at": [
-    "game/art/scene/build.json"
-   ]
-  },
-  {
-   "p": "scene/build/rooms.png",
-   "at": [
-    "game/art/scene/build.json"
-   ]
-  },
-  {
-   "p": "scene/life/car_blue.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/car_mint.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/car_red.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/car_yellow.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/cat.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/chicken.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/crab.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/duck.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/frog.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/goat.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/gull.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/lizard.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/pigeon.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/rabbit.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/sheep.png",
-   "at": [
-    "game/art/scene/life.json"
-   ]
-  },
-  {
-   "p": "scene/life/squirrel.png",
-   "at": [
-    "game/art/scene/life.json"
    ]
   },
   {
@@ -1210,377 +1102,11 @@
    "at": [
     "game/art/scene/next/models/tree_willow.json"
    ]
-  },
-  {
-   "p": "scene/props/clock_tower_hh.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/clock_tower_hm.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/flag_mast.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_berry_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_berry_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_flower_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_flower_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_round_b_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_round_b_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_round_c_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_round_c_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_round_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/bush_round_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/dry_bush_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/dry_bush_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/hedge_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/hedge_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/neon_sign_lit.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/street_tree_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/street_tree_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_birch_b_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_birch_b_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_birch_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_birch_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_blossom_great_lb.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_blossom_great_lf.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_blossom_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_blossom_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_fruit_b_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_fruit_b_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_fruit_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_fruit_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_giant_autumn_lb.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_giant_autumn_lf.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_giant_lb.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_giant_lf.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_jungle_lb.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_jungle_lf.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_mangrove_lb.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_mangrove_lf.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_maple_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_maple_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_oak_autumn_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_oak_autumn_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_oak_b_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_oak_b_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_oak_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_oak_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_oak_small_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_oak_small_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_pine_b_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_pine_b_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_pine_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_pine_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_pine_small_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_pine_small_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_willow_lb.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_willow_lean_lb.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_willow_lean_lf.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
-  },
-  {
-   "p": "scene/props/layers/tree_willow_lf.png",
-   "at": [
-    "game/art/scene/layers.json"
-   ]
-  },
-  {
-   "p": "scene/props/windmill_blades.png",
-   "at": [
-    "game/art/scene/props.json"
-   ]
   }
  ],
  "atlas": {
   "bag": [
-   "game/js/battle.js:1305",
+   "game/js/battle.js:1304",
    "game/js/billie-sheet.js:120",
    "game/js/billie-sheet.js:173",
    "game/js/billie-sheet.js:182",
@@ -1618,12 +1144,12 @@
    "game/js/ui-run-kit.js:93"
   ],
   "box": [
-   "game/js/battle.js:1469",
+   "game/js/battle.js:1468",
    "game/js/engine/gpu-counters.js:61",
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
    "game/js/logic/cutscene-set.js:142",
-   "game/js/logic/rules.js:951",
+   "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
    "game/js/prop-models.js:220",
    "game/js/prop-models.js:349",
@@ -1644,8 +1170,8 @@
   "bubble": [
    "game/js/logic/idle-life.js:50",
    "game/js/logic/idle-life.js:89",
-   "game/js/logic/sound-bake.js:80",
-   "game/js/logic/sound-bake.js:398",
+   "game/js/logic/sound-bake.js:100",
+   "game/js/logic/sound-bake.js:728",
    "game/js/logic/soundscape.js:117",
    "game/js/logic/soundscape.js:123",
    "game/js/logic/ui-dials.js:103",
@@ -1672,12 +1198,15 @@
    "game/js/world-bowl.js:1737",
    "game/js/world-bowl.js:1767"
   ],
+  "cart": [
+   "game/js/audio/nature-player.js:243"
+  ],
   "coin": [
    "game/js/art.js:220",
    "game/js/battle-stage.js:1585",
    "game/js/battle-stage.js:1748",
    "game/js/battle-stage.js:2532",
-   "game/js/battle.js:1305",
+   "game/js/battle.js:1304",
    "game/js/boot.js:146",
    "game/js/logic/conditions.js:380",
    "game/js/logic/idle-life.js:53",
@@ -1692,8 +1221,8 @@
    "game/js/shop.js:182",
    "game/js/shop.js:192",
    "game/js/shop.js:267",
-   "game/js/sound.js:544",
-   "game/js/sound.js:1803",
+   "game/js/sound.js:738",
+   "game/js/sound.js:2113",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:100",
@@ -1715,7 +1244,7 @@
    "game/js/walk/effects.js:1146"
   ],
   "cup": [
-   "game/js/logic/placeholder-art.js:280"
+   "game/js/logic/sketch-art.js:279"
   ],
   "down": [
    "game/js/cutscene/director.js:132",
@@ -1806,11 +1335,11 @@
    "game/js/logic/robot-joints.js:48",
    "game/js/logic/robot-joints.js:87",
    "game/js/logic/robot-joints.js:193",
-   "game/js/logic/rules.js:686",
-   "game/js/logic/rules.js:702",
-   "game/js/logic/rules.js:727",
-   "game/js/logic/rules.js:729",
-   "game/js/logic/rules.js:736",
+   "game/js/logic/rules.js:685",
+   "game/js/logic/rules.js:701",
+   "game/js/logic/rules.js:726",
+   "game/js/logic/rules.js:728",
+   "game/js/logic/rules.js:735",
    "game/js/robot-art.js:324",
    "game/js/robot-art.js:326",
    "game/js/robot-art.js:328",
@@ -1862,13 +1391,14 @@
    "game/js/walk-tab.js:230"
   ],
   "key": [
+   "game/js/logic/music-studio.js:142",
    "game/js/ui-run-kit.js:1893"
   ],
   "leaf": [
-   "game/js/battle.js:398",
+   "game/js/battle.js:397",
    "game/js/boot.js:137",
    "game/js/field-moves.js:148",
-   "game/js/logic/placeholder-art.js:270",
+   "game/js/logic/sketch-art.js:269",
    "game/js/minimap.js:82",
    "game/js/minimap.js:83",
    "game/js/self-test.js:3543",
@@ -1883,9 +1413,9 @@
    "game/js/world-bowl.js:4282"
   ],
   "moon": [
-   "game/js/battle.js:643",
+   "game/js/battle.js:642",
    "game/js/boot.js:168",
-   "game/js/environment.js:658"
+   "game/js/environment.js:659"
   ],
   "palm": [
    "game/js/logic/bowl-things.js:135",
@@ -1908,8 +1438,8 @@
   "pick": [
    "game/js/augment-screen.js:208",
    "game/js/augment-screen.js:230",
-   "game/js/battle.js:1120",
-   "game/js/battle.js:1355",
+   "game/js/battle.js:1119",
+   "game/js/battle.js:1354",
    "game/js/gene-bank-screen.js:207",
    "game/js/gene-bank-screen.js:229",
    "game/js/logic/data-checks.js:918",
@@ -1951,6 +1481,7 @@
    "game/js/walk/quality-cull.js:185"
   ],
   "scale": [
+   "game/js/logic/music-studio.js:143",
    "game/js/logic/ui-dials.js:223"
   ],
   "sheet": [
@@ -1973,7 +1504,7 @@
    "game/js/battle-stage.js:2748",
    "game/js/battle-stage.js:2749",
    "game/js/battle-stage.js:2898",
-   "game/js/battle.js:1667",
+   "game/js/battle.js:1666",
    "game/js/billie-sheet.js:84",
    "game/js/billie-sheet.js:159",
    "game/js/billie-sheet.js:216",
@@ -2007,7 +1538,7 @@
    "game/js/cutscene/opening.js:345"
   ],
   "tag": [
-   "game/js/battle.js:729",
+   "game/js/battle.js:728",
    "game/js/logic/figure-kit.js:629",
    "game/js/logic/figure-kit.js:1570",
    "game/js/opening-fall.js:922",
@@ -2018,7 +1549,6 @@
    "game/js/logic/figure-kit.js:453"
   ],
   "up": [
-   "game/js/audio/tracker.js:976",
    "game/js/augment-screen.js:148",
    "game/js/augment-screen.js:259",
    "game/js/cutscene/director.js:168",
@@ -2033,7 +1563,9 @@
    "game/js/logic/data-checks.js:976",
    "game/js/logic/data-checks.js:1020",
    "game/js/logic/marks.js:110",
-   "game/js/logic/music-studio.js:72",
+   "game/js/logic/music-patterns.js:75",
+   "game/js/logic/music-patterns.js:135",
+   "game/js/logic/music-studio.js:77",
    "game/js/logic/online-legal.js:246",
    "game/js/logic/person-view.js:5",
    "game/js/logic/person-view.js:58",

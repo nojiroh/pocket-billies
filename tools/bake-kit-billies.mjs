@@ -5,15 +5,15 @@
 // - its rig in game/art/next/rigs-next.js (the file is written as the Studio writes it, and only when a rig changed);
 // - the stage's native parts in game/data/lines/<line>.json "parts" (not for a regional form's recipe: it is only a look).
 // Nothing is written for a recipe that bakes as committed, so a run on an unchanged tree changes no file.
-// Roster track RO-3b: a recipe whose rig is a placeholder Billie's (game/data/bodyPlans.json forms) is kept on disk but
-// not baked or written: its sheet, rig and line parts stay the placeholder's. To bring a kit look back, take the
+// Roster track RO-3b: a recipe whose rig is a sketch Billie's (game/data/bodyPlans.json forms) is kept on disk but
+// not baked or written: its sheet, rig and line parts stay the sketch's. To bring a kit look back, take the
 // Billie out of bodyPlans.json forms and bake again. tools/test/kit-bake.json keeps every recipe's bake as fingerprints
 // (written by --fingerprints), so the kit baker stays checked while its art is not committed.
 //
 //   node tools/bake-kit-billies.mjs                    bake every form, write what changed
 //   node tools/bake-kit-billies.mjs --only=emberox,... only these forms
 //   node tools/bake-kit-billies.mjs --check            write nothing; list what would change (exit 1 if anything)
-//   node tools/bake-kit-billies.mjs --fingerprints     write tools/test/kit-bake.json (every recipe, placeholders too)
+//   node tools/bake-kit-billies.mjs --fingerprints     write tools/test/kit-bake.json (every recipe, sketches too)
 //
 // Unlike the Python builder it draws no preview sheet and no piece layout (<name>.json): the rig holds all a layout did.
 import { createHash } from 'node:crypto';
@@ -29,8 +29,8 @@ const SHEETS = join(ART, 'next', 'billionaires');
 const RIGS = join(ART, 'next', 'rigs-next.js');
 const PRINTS = join(ROOT, 'tools', 'test', 'kit-bake.json');
 
-/** the rigs a placeholder Billie owns (bodyPlans.json forms): the kit baker leaves them alone */
-export const placeholderRigs = () => new Set((readJson('bodyPlans.json').forms || []).map(f => f.rig));
+/** the rigs a sketch Billie owns (bodyPlans.json forms): the kit baker leaves them alone */
+export const sketchRigs = () => new Set((readJson('bodyPlans.json').forms || []).map(f => f.rig));
 
 /** a bake as fingerprints: the sheet's shown pixels (size, alpha, colour where alpha is not 0) and the rig */
 export function kitFingerprint(made) {
@@ -86,7 +86,7 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
     pics = kitPics(K),
     forms = only ? B.forms.filter(f => only.includes(f.name)) : B.forms,
     changed = [],
-    kept = placeholderRigs(),
+    kept = sketchRigs(),
     { head, rigs } = readRigs();
   if (only)
     for (const n of only) if (!B.forms.some(f => f.name === n)) throw new Error(`no form ${n} in kitBuilds.json`);
@@ -95,7 +95,7 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
   const lines = {};
   for (const form of forms) {
     if (kept.has(form.rig)) {
-      log(`${form.rig.padEnd(12)} ${form.name.padEnd(13)} kept: on its placeholder (bodyPlans.json)`);
+      log(`${form.rig.padEnd(12)} ${form.name.padEnd(13)} kept: a sketch (bodyPlans.json)`);
       continue;
     }
     const made = kitBakeWhole(data, form, pics),
@@ -138,7 +138,7 @@ export function bakeKitBillies({ only = null, check = false, log = console.log }
   return changed;
 }
 
-/** every recipe baked (placeholders' too) as fingerprints, by form name */
+/** every recipe baked (sketches' too) as fingerprints, by form name */
 export function kitFingerprints() {
   const K = readJson('partKits.json'),
     B = readJson('kitBuilds.json'),

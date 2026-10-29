@@ -1,9 +1,9 @@
 # Testing: what every phase does
 
-Phase 13 reworks the tests (docs/phases/13-testing-and-debugging.md; sub-sessions 13a, 13b, 13c, see
-docs/HANDOFF.md). This file is the contract for every later phase: where a new test goes, what a phase updates when
-it changes or removes a system, and what must pass before a phase ends. Parts marked **(13b)** or **(13c)** arrive with
-those sessions; until then, follow the rule next to them.
+This file is the contract for every phase and track: where a new test goes, what a session updates when it changes or
+removes a system, and what must pass before it ends; parts marked **(13b)** or **(13c)** come from phase 13's plan
+(docs/archive/13-testing-and-debugging.md), are not built yet (13c is parked), and until then the rule next to them
+holds.
 
 ## The tiers
 
@@ -244,7 +244,7 @@ Two rules hold everywhere:
   People > Figures and Townsfolk as figures on in the game-wide defaults, `PB_FIGURE=mannequin` for the code figure
   (the Rogue by default). A session that changes the figures or the talk's portraits runs the quick check with them
   off and on.
-- The test cleanup track's TC-1 (docs/phases/test-cleanup-track.md, lane B) deleted the steps another check already
+- The test cleanup track's TC-1 (docs/archive/tracks/test-cleanup-track.md, lane B) deleted the steps another check already
   covers (Code, Messages, Team, Studio opens, Shaders, Paths, Scenes, Crowd, RL-7's run roads, the joystick, Battles,
   v36's split evolution) and the outdated ones (old place names, v34, v35, v37, v38, v39/v40, v44, v47, Things to do
   with its system). What still mattered stayed as small steps: Data (only what check-data does not refuse), Battle
@@ -307,8 +307,6 @@ same phase:
   (check-fast.py `nav_tap`); the fast check's "Every screen opens with its parts" opens each screen by the buttons a
   player taps, and a move that must change nothing on screen proves it with `tools/style-diff.py` (0 differences
   against HEAD).
-- **07 Portraits**: `tools/test/expressions.test.mjs` checks that every expression asked for has face pieces;
-  replace it with the real tag-to-expression mapping test (task 8's second half). Add a portrait to the full test.
 - **08 Step tracking removed, maps and rooms (Part A and B)**: remove or replace everything driven by steps:
   - the full test's Road step (it switches travel to steps for its run since 13a);
   - check-quick's `play()` (it sets `RULES.travel='steps'` and adds 2,400 steps) and the steps in the steps
@@ -328,9 +326,8 @@ same phase:
   baseline afterwards (Actions → Check → Run workflow → "Make the picture baseline").
 - **10 World-map bowl**: `tools/test/world-graph.test.mjs` must pass unchanged (positions may move, connections may
   not). Replace the full test's two World map steps, v32's miniatures and the airship step with checks of the bowl.
-- **11 Opening**: the smoke phone flow and the full test's two Opening steps play the opening; update them with it.
-- **12 Ranch**: a full-test step for the ranch, a quick-check step that edits it, and its save fields in the save
-  tests (`saves.test.mjs`, `validSave`). RL-9: `tools/test/ranch.test.mjs` (training's logic on the game's rules),
+- **Ranch** (phase 12, absorbed by RL-9 and RL-10): its save fields in the save tests (`saves.test.mjs`,
+  `validSave`). RL-9: `tools/test/ranch.test.mjs` (training's logic on the game's rules),
   check-fast's ranch step on `?fixture=ranch` (Train, a level with the page's clock moved on, the cap, a clock turned
   back, a reload) and the in-game test's "The ranch: training between runs". RL-9b: check-fast's "Packing for a run"
   on `?fixture=ranch` (a trainee from storage picked, two Potions packed; kept on a loss, back in storage once; a win
@@ -369,11 +366,7 @@ same phase:
   check-data and blocks the Studio's Propose, a `warn` is shown and never blocks. `check-data-snapshot.test.mjs` holds
   check-data's whole output on the game data and on two planted copies (in a temp copy made with `PB_DATA_DIR`): a
   change meant to alter its words remakes it with `--test-update-snapshots`, said in the commit.
-- **15 Design and story**: write down the balance bounds the simulations will assert (with the owner).
-- **16 Billies**: write the breeding simulation first, against the prototype, before the full build (the owner
-  agreed in 13a's plan); agree its bounds. The roster steps (v35, v38, v39/v40) that counted the legacy roster were
-  deleted in TC-1; a roster check for the slimmed roster goes into unit tests.
-- **17 Robots**: the robot battle rules live in `game/js/logic/` with unit tests (`tools/test/robots.test.mjs`); the
+- **Robots** (phase 17's prototype, the bots of RL-14): the robot battle rules live in `game/js/logic/` with unit tests (`tools/test/robots.test.mjs`); the
   simulation (no build dominates) comes before the full build: `node tools/test/sim/robot-sim.mjs` fights every build
   the data allows against a reference set of robots and Billies and reports win rates per build and part
   (`--quick` for a sample; `robot-sim.test.mjs` checks it runs). Its bounds are still to be agreed with the owner.
@@ -602,6 +595,59 @@ same phase:
   schema and `soundscapeFindings` (a kind without a recipe, a recipe or bank named that doesn't exist).
   `check-studio-github.py --only=music` plays a brook 3 m away on the Sounds tab's World sounds card and stops it. The
   Animals step's "at least 9 beds" holds exactly (the 14 beds became 9; the water is the soundscape's player).
+  SND-14: `--loudness` adds nature's rows (rain light, steady and heavy, on a roof and indoors, thunder at 0.6 and 4
+  km, gusts, a forest's wind, birds at dawn and noon, an owl, grasshoppers, cicadas, frogs, fires by size, the town's
+  life, rooms by kind, steps on each surface); a bed row warns over either ceiling, an event row over the events'.
+  Unit tests: `nature-sound.test.mjs` (logic/nature-sound.js: curves, rain, roofs, patter, thunder by distance,
+  wind and gusts, birds by the hour, insects, bouts, lockouts, frogs, fire by size, every terrain's footstep surface,
+  the town's life, rooms, findings, never `Math.random`); `ambience-sound.test.mjs` counts 13 beds. check:data runs
+  `natureFindings`. `check-studio-github.py --only=music` plays steps on gravel from the World sounds card.
+  SND-11: check-sound renders every existing part with GB Sounds on (today's sound whatever a song's ensemble) and adds
+  parts `ensemble` and `ensemble-night` for a song (or its night version) naming an ensemble, its notes and the reverb
+  baked first (204 fingerprints: Copperleaf and the route by day and night, wild); `--loudness` adds each ensemble's
+  row against its gb version. Unit tests: `music-patterns.test.mjs` (the patterns, the ensembles' steps and needs),
+  `sound-bake.test.mjs` the new kinds and every music.json instrument, `tracker.test.mjs` the stems and the ensemble
+  path (gb until baked, GB Sounds, only the zones played), `music-studio.test.mjs` the new choices and findings.
+  SND-17: check-sound renders a jingle naming an ensemble once more on it (`jingles` `<name>@ensemble`: 216
+  fingerprints), every other jingle part with GB Sounds on (the 8-bit jingle); `--loudness` adds each jingle's row on
+  its ensemble against its 8-bit version, measured whole, on a page of its own. Unit tests: `music-patterns.test.mjs`
+  (a jingle's parts and needs, a stinger's beat and key), `tracker.test.mjs` (8-bit until baked, GB Sounds, a stinger
+  on the beat with its stems dropped and the fader alone, the fanfares' duck), `music-studio.test.mjs` (the jingles'
+  findings and schema), `logic.test.mjs` (`jinglePlay` a seam). `check-studio-github.py --only=music` plays hatch
+  8-bit and on its ensemble and draws a harmony note.
+  SND-13: check-sound renders each layer in play of a song whose ensemble has layers (`layer:<name>`, and
+  `layer:<name>@night` on a night version with its own ensemble: 234 fingerprints), GB Sounds off, the layers' notes
+  baked, logic/music-layers.js `MUSIC_LAYER_TESTS`' levels from the first step; every other part hears no layer levels
+  (layer parts silent, nothing dimmed); `--loudness` adds each layered row against the ensemble's. Unit tests:
+  `music-layers.test.mjs` (a part's gain, its beat or bar line, walking, the weather, the busker's earshot and
+  listening, a battle's build and peak from its lines with the real hitTier and koAhead, the arc, the schema's names),
+  `music-patterns.test.mjs` (the walk pattern, skip, a layer out of the bake and of a jingle), `tracker.test.mjs` (a
+  layered part's own gain after the part's, ramps at step times on the beat or bar, out until baked),
+  `sound.test.mjs` (an ensemble song keeps its name in an arc band, GB Sounds takes the band's version).
+  `check-studio-github.py --only=music` checks the player's compressor, an instrument, an ensemble and GB Sounds on
+  the Instruments tab. A Node record of every gb synth call (scratch, not committed) proved the refactor call for call.
+  SND-12: a song with a form renders whole (its 16-32 bars: Copperleaf's 32 bars are about 87 s), so check-sound and
+  the loudness report take longer per song; the fingerprints of a re-arranged song change on purpose (gb plays the new
+  arrangement too). Unit tests: `music-form.test.mjs` (a song with no form composes as before, every one in
+  music.json; the plan, the hook kept, a repeat varied, the turnaround and the loop's end, the night's sections, the
+  fills, the bass's walk-up, the lift, the new lines, a part's `in`, the findings). `check-studio-github.py
+  --only=music` adds a section B on hills, hears it at once, changes its chord and undoes both.
+  SND-12c: check-sound's game page stops drawing once its sound code is loaded (`NO_DRAW`: `requestAnimationFrame` a
+  no-op there): the title's live scene, drawn in software in the cloud container, took over 3 of its 4 cores. A full
+  render (337 renders since batch 3) takes about 13 minutes (774 s; 9.3 minutes for the 317 before batch 3, over 3.5
+  hours before the change); `--only=<songs>` a few minutes. Spreading the renders over 2 or 4 pages was measured and
+  not kept: no faster (570 s and 723 s against 561 s), as one page already renders its chunk of 12 on parallel threads.
+  Two full renders of the same code differ in a few windows by the last digit (0.00001 RMS, 2 crossings: timers in
+  the page landing on an offline render under load), inside the tolerance; prove a tool change byte for byte on a
+  sample (`--only=copperleaf,wild,trainer,title,victory,levelup`), or by the comparison.
+  SND-15: the game's sound ends in a master chain (game/js/audio/mix-chain.js: a gentle compressor, a make-up gain and
+  a limiter, music.json mix), so every fingerprint went up about 13.6 dB with the baseline written again; the ducks
+  (logic/sound-duck.js, `sound-levels.test.mjs`) move no render alone. `--loudness` now gives each row its true peak
+  (dBTP) and each song its loudness range, adds effect rows (a cry of each base, talk, the buttons) and warns when the
+  route song as it plays strays over 1 LU from -18 LUFS or a song's or jingle's true peak passes -1 dBTP. Its pages stop
+  drawing too (SND-12c's `NO_DRAW`): a sample 1110 s -> 408 s, the songs', layers', beds' and nature's rows identical;
+  a few water and scene rows driven by events moved 0.1-0.6 LU (they also vary by up to 0.3 run to run). The whole
+  `--loudness` run took 66 minutes here (the fingerprints 21, the report's rows about 45: they render one at a time). `tools/read-debug-log.py` prints the log's audio lines.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo
@@ -613,8 +659,8 @@ same phase:
   rules in words, where songs play, the findings, the schema's choices, jingles as notes and back),
   `tracker.test.mjs` (the hook and counter; the tracker is a page module, so it is read through the test globals),
   `cries.test.mjs`.
-- **18 Trading and battles with friends**: every new Firestore rule gets emulator tests in `firebase/test/`;
-  trade validation is logic with unit tests.
+- **Online track** (docs/phases/online-track.md; phase 18 absorbed): every new Firestore rule gets emulator tests in
+  `firebase/test/`; trade validation is logic with unit tests.
 
 ## Before a phase ends
 

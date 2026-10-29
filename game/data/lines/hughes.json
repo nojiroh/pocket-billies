@@ -42,9 +42,9 @@
  ],
  "parody": "Howard Hughes",
  "cry": [
-  {"base":"bird","pitch":70,"length":0.6,"name":"placeholder: a gosling's peep (Claude's draft)"},
-  {"base":"bird","pitch":60,"length":0.9,"name":"placeholder: a wooden honk (Claude's draft)"},
-  {"base":"bird","pitch":53,"length":1.2,"name":"placeholder: a honk like an engine (Claude's draft)"}
+  {"base":"bird","pitch":70,"length":0.6,"name":"a gosling's peep"},
+  {"base":"bird","pitch":60,"length":0.9,"name":"a wooden honk"},
+  {"base":"bird","pitch":53,"length":1.2,"name":"a honk like an engine"}
  ],
  "parts": [
   {"head":"chick_head","body":"chick_torso","front":"chick_wing","back":"duck_foot","sig":"chick_tail"},

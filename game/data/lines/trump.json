@@ -41,9 +41,9 @@
  ],
  "parody": "Donald Trump",
  "cry": [
-  {"base":"slime","pitch":57,"length":0.9,"name":"placeholder: a gilded bloop (Claude's draft)"},
-  {"base":"suit","pitch":50,"length":1.2,"name":"placeholder: a tower's laugh (Claude's draft)"},
-  {"base":"slime","pitch":43,"length":1.6,"name":"placeholder: a tremendous bloop (Claude's draft)"}
+  {"base":"slime","pitch":57,"length":0.9,"name":"a gilded bloop"},
+  {"base":"suit","pitch":50,"length":1.2,"name":"a tower's laugh"},
+  {"base":"slime","pitch":43,"length":1.6,"name":"a tremendous bloop"}
  ],
  "parts": [
   {"head":"bear_head","body":"bear_torso","front":"bear_arm","back":"reptile_tail","sig":"beasts_mane"},

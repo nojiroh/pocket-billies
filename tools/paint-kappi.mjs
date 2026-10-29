@@ -1,6 +1,6 @@
-// Kappi the Wise (people/kappi.json creature): paints the capybara's drawing sheet (game/art/next/placeholders/kappi.png)
+// Kappi the Wise (people/kappi.json creature): paints the capybara's drawing sheet (game/art/next/sketches/kappi.png)
 // into the cells of its body-plan form (bodyPlans.json form `kappi`, quad, no tail, a talking face), then bakes it
-// (tools/bake-placeholders.mjs) into game/art/next/billionaires/kappi.png and its rig in rigs-next.js.
+// (tools/bake-sketches.mjs) into game/art/next/billionaires/kappi.png and its rig in rigs-next.js.
 //   node tools/paint-kappi.mjs                 paint, store and bake
 //   node tools/paint-kappi.mjs --preview=dir   also write preview.png there: both views at rest and the three faces, x4
 // The cells are drawn as they show on screen: the front view faces left, the back view faces right (no face).
@@ -10,8 +10,8 @@ import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
 import { ROOT } from './data-files.mjs';
 import { encodePng, readPng } from './test/png.mjs';
-import { placeholderBones, placeholderCellSpecs, placeholderSheet } from '../game/js/logic/placeholder-art.js';
-import { bakePlaceholders, placeholderData } from './bake-placeholders.mjs';
+import { sketchBones, sketchCellSpecs, sketchSheet } from '../game/js/logic/sketch-art.js';
+import { bakeSketches, sketchData } from './bake-sketches.mjs';
 
 const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
 /* warm browns, darker from behind */
@@ -173,16 +173,16 @@ function ear(p, bx, by, bw, bh, back) {
 
 /** every cell of the form, both views */
 export function paintKappi(P, form) {
-  const bones = Object.fromEntries(placeholderBones(P, form).map(b => [b.n, b])),
+  const bones = Object.fromEntries(sketchBones(P, form).map(b => [b.n, b])),
     cells = { front: {}, back: {} };
   for (const view of ['front', 'back'])
-    for (const c of placeholderCellSpecs(P, form)) {
+    for (const c of sketchCellSpecs(P, form)) {
       if (view === 'back' && c.frame !== 'main') continue;
       const b = bones[c.bone],
         back = view === 'back',
         p = blank(c.w, c.h),
         [bw, bh] = b.size;
-      /* the bone's box sits where the placeholder painter puts it: its pivot on the cell's pivot */
+      /* the bone's box sits where the sketch painter puts it: its pivot on the cell's pivot */
       const px = back ? c.pxb : c.px,
         bx = Math.round(px - (back ? 1 - b.pv[0] : b.pv[0]) * bw),
         by = Math.round(c.py - b.pv[1] * bh);
@@ -256,14 +256,14 @@ function preview(rig, sheet, k = 4) {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
-  const { P } = placeholderData(),
+  const { P } = sketchData(),
     form = P.forms.find(f => f.name === 'kappi');
   if (!form) throw new Error('no form kappi in bodyPlans.json');
   const cells = paintKappi(P, form),
-    dir = join(ROOT, 'game', 'art', 'next', 'placeholders');
+    dir = join(ROOT, 'game', 'art', 'next', 'sketches');
   mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, 'kappi.png'), encodePng(placeholderSheet(P, [form], { kappi: cells })));
-  bakePlaceholders({ only: ['kappi'] });
+  writeFileSync(join(dir, 'kappi.png'), encodePng(sketchSheet(P, [form], { kappi: cells })));
+  bakeSketches({ only: ['kappi'] });
   const pv = process.argv.find(a => a.startsWith('--preview='));
   if (pv) {
     const box = { window: {} };

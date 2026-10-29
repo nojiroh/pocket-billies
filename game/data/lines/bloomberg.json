@@ -36,8 +36,8 @@
  ],
  "parody": "Michael Bloomberg",
  "cry": [
-  {"base":"slime","pitch":72,"length":0.5,"name":"placeholder: a soft bud's pop (Claude's draft)"},
-  {"base":"machine","pitch":64,"length":0.8,"name":"placeholder: a ticker's chatter (Claude's draft)"},
-  {"base":"machine","pitch":52,"length":1.2,"name":"placeholder: a terminal's start-up chord (Claude's draft)"}
+  {"base":"slime","pitch":72,"length":0.5,"name":"a soft bud's pop"},
+  {"base":"machine","pitch":64,"length":0.8,"name":"a ticker's chatter"},
+  {"base":"machine","pitch":52,"length":1.2,"name":"a terminal's start-up chord"}
  ]
 }

@@ -24,6 +24,7 @@ import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { musicFindings } from '../game/js/logic/music-studio.js';
 import { soundscapeFindings } from '../game/js/logic/soundscape.js';
+import { natureFindings } from '../game/js/logic/nature-sound.js';
 import { WATER_KINDS } from '../game/js/logic/water-kinds.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { islandProblems } from '../game/js/logic/island.js';
@@ -384,6 +385,8 @@ if (D.music && check('music.schema.json', D.music, 'music.json')) {
 // SND-10: the world's sounds (soundscape.json): the schema
 if (D.soundscape && check('soundscape.schema.json', D.soundscape, 'soundscape.json') && D.soundscape.water)
   for (const m of soundscapeFindings(D.soundscape, WATER_KINDS)) problem('soundscape.json', m);
+// SND-14: the nature section (the beds it names, the rooms' default, the footsteps' surfaces, the curves)
+if (D.soundscape && D.soundscape.nature) for (const m of natureFindings(D.soundscape)) problem('soundscape.json', m);
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
   const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));
@@ -477,7 +480,7 @@ if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {
     if (P.mirrorOf && !K.parts[P.mirrorOf]) problem('partKits.json', `part ${id} mirrors ${P.mirrorOf}, no such part`);
   }
 }
-// roster track RO-3a: the body plans and the placeholder Billies: the schema, then every bone's parent and mirror
+// roster track RO-3a: the body plans and the sketch Billies: the schema, then every bone's parent and mirror
 // there, the plans the animation knows, a form's plan, and no name or rig twice
 if (D.bodyPlans && check('bodyPlans.schema.json', D.bodyPlans, 'bodyPlans.json')) {
   const B = D.bodyPlans,

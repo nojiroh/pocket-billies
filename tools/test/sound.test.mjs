@@ -195,6 +195,13 @@ test('songVariant in a run: the band first, then night; arc: false keeps the son
   assert.equal(v('cave', { row: 7, night: 1 }), 'cave@late', 'no night version, the band still');
   assert.equal(v('meadow', { row: 7, indoor: true }), 'meadow');
   assert.equal(v('meadow', { row: 7, battle: 'wild' }), 'meadow');
+  /* SND-13: a song on an ensemble hears the arc as layers (keeps its name), unless GB Sounds plays it */
+  const E = { band: { ensemble: 'route' }, chip: { ensemble: 'gb' } },
+    w = (name, o) => songVariant(name, out({ nodeType: 'route', ...o }), E, null, MUSIC.run);
+  assert.equal(w('band', { row: 7 }), 'band');
+  assert.equal(w('band', { row: 7, night: 1 }), 'band@night');
+  assert.equal(w('band', { row: 7, gb: true }), 'band@late');
+  assert.equal(w('chip', { row: 4 }), 'chip@mid');
 });
 
 test('no deadline version (the owner dropped the deadline): a run song keeps its band on any day', () => {

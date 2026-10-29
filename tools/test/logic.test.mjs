@@ -21,8 +21,8 @@ const SEAMS = new Set([
   'showPendingWindows',
   'openBattle',
   'playTurnEvents',
-  'jingle',
-  'JINGLES',
+  /* SND-17: a jingle by its name (the evolution's), so it can play on its ensemble */
+  'jinglePlay',
   'soundEffect',
   'environmentOdds',
   'battleWeatherMultiplier',
