@@ -80,6 +80,13 @@ kept aside in the browser).
   and a bell instead of a murmur, and an inn, a library, a lab, a workshop or a barn each sound like themselves. All
   of it sits well under the music; the debug menu's Sound test and the Studio's Sounds tab play each.
 
+- **Battles get an orchestra** (sound track SND-12c): trainer, rival and leader battles play the chip tune over
+  driving strings, brass, timpani and a full drum kit, and a boss battle adds a choir and orchestra hits. Each battle
+  starts lighter and builds as it goes, the brass and drums coming in, and peaks with a choir when a fight turns. Every
+  battle song, wild battles too, now has a second section before it repeats. The title screen's theme gains a harp,
+  strings and timpani; the opening fall a celesta, soft strings and a low drone; Professor Hazel's theme a harp and a
+  flute; the mall an electric piano over a walking bass. Each sits as loud as before; GB Sounds plays the 8-bit
+  versions. Every arrangement is a first draft, named as a placeholder for the Studio.
 - **The caves, the biomes and the run's map get their instruments** (sound track SND-12b): the cave's song is bells,
   a low drone and dripping plucked strings in a lot of echo; the meadow a harp and a flute; the spore wood and the
   crystal caves bells and soft strings; the trench a deep pad and a drone with a clarinet; the hills an accordion over a

@@ -1477,7 +1477,7 @@ bake. The K-weighted `--loudness` report was not run whole (over 90 minutes; its
 **Not done here**: festival players (HB-10e has none in the data); ensembles for other songs and their layers (SND-12);
 an e-piano night lead (only the route's flute so far); the mix of the layers on the phone (SND-15).
 
-## SND-12: arrangements (as built: the forms and batch 1, SND-12b's batch 2; SND-12c below)
+## SND-12: arrangements (as built: the forms and batch 1, SND-12b's batch 2, SND-12c's batch 3)
 ### SND-12 as built, part 1 (2026-10-28, branch `track/sound`, the music lane, tag `snd-12a-done` for the owner to push)
 One cause per commit. The code commits moved no fingerprint (`check-sound.py --only=copperleaf,route,town,city,wild`:
 35, 0 changed); batch 1's data commit changed exactly its four songs' renders and added the new ensembles' renders,
@@ -1667,6 +1667,118 @@ of the arc at 0.6; a phone listen.
 `wild` (in a form, its `battle` ensemble kept), `trainer`, `rival`, `leader` (the chip lead over a string ostinato,
 brass stabs, timpani, a full kit), `boss` (a choir, hits), then `mall`, `hazel`, `title`, `fall`, `variants`. Tell the
 VFX planning session when it lands (its battle effects play over these songs).
+
+### SND-12c as built (2026-10-29, branch `track/sound`, the music lane, tag `snd-12c-done` for the owner to push)
+One cause per commit. The tool commit moved no number (a sample byte for byte the same); the data commit changed
+exactly batch 3's ten songs' renders and added their ensembles'; the baseline for batches 2 and 3 written once with
+plain `--baseline` after a full render showed only those 19 songs differ.
+
+| Commit | What |
+|---|---|
+| a0c670ee | check-sound: the game page stops drawing once its sound code is loaded (`NO_DRAW`; renders unchanged) |
+| a9549340 | batch 3: wild in a form on its `battle` ensemble; `trainer`, `rival`, `leader`, `boss`, `mall`, `hazel`, `title`, `fall`, `variants` in forms, each on an ensemble of its own; trims; music-form.test.mjs's batch-3 tests |
+| c3d2705d | the sound baseline, written once with plain `--baseline`: batches 2 and 3 (the other files byte for byte the same) |
+
+**The render speedup**: the game page drew its title's live scene in software (SwiftShader) the whole time:
+Chromium's GPU process took 330-390 % of the container's 4 cores and the renders about 30 %. Once the sound code
+is loaded, check-sound makes `requestAnimationFrame` a no-op in its page (no sound code waits on a frame: the bank
+bakes in `setTimeout` slices), and the renderer's own threads take the cores (each `OfflineAudioContext` of a chunk
+renders on a thread of its own). A sample of 31 renders (copperleaf, wild, trainer, title, two jingles): 1058 s ->
+75 s, byte for byte the same. The full set (317 renders before batch 3): over 3.5 hours (SND-12b's, stopped) -> about
+9.3 minutes (551-561 s); with batch 3 (337 renders) about 13 minutes (774 s; writing the baseline 759 s).
+
+**Not done: the renders spread over several pages** (the brief's first step). Built and measured (a scratch copy;
+each page its own context and renderer, its sounds' renders kept together so its ensembles bake there, the costliest
+first, polled without blocking so check-quick's sync browser could still call it): byte for byte the same on the
+sample, but the full set took 561 s on one page, 570 s on two and 723 s on four (load average 27): a page already
+renders its 12 contexts on parallel threads, so more pages only oversubscribe 4 cores. One page stays.
+
+**Run-to-run jitter** (found here, not new): two full renders with the same tool and data differ in 2-7 of the 317
+renders' ~400,000 windows, each by the RMS's last digit (0.00001) or 2 zero crossings, always inside the check's
+tolerance (0.0001, 2 crossings). Different windows each run, in gb and ensemble parts alike; the sample of 31 has
+never shown it. Most likely the page's real-time timers (`setTimeout` disconnects, `musicSync`) landing at a point of
+an offline render that depends on the machine's load. Harmless for the comparison; a byte-for-byte proof needs a
+sample, or the tolerance.
+
+**Batch 3** (Claude's drafts, named as placeholders; the owner's ears decide; GB Sounds compares). B is a seeded walk over
+its own chords (no written hook, each with a placeholder hook name); every ensemble keeps the song's chip lead; the
+intros stay on the lead parts as before:
+- `wild` (E minor, 152 bpm): AABA, 32 bars (51 s); B over iv-iv-i-i-VI-VII-v-v. Its `battle` ensemble kept as it was
+  (SND-13's build and peak).
+- `trainer` (D minor, 162): AABA, 32 bars (47 s); B over VI-VII-i-i-iv-v-VI-v. The chip lead (p12) over a spiccato
+  ostinato (eighths, low-high-middle-high), sixteenths above it in B, brass stabs, timpani, a warm bass, a full kit on
+  the song's march.
+- `rival` (B minor, 146): ABAB, 32 bars (53 s); B over iv-v-VI-VII-iv-v-v-v. The ostinato in sixteenths; brass hits
+  into each B; brass stabs, timpani, a full kit.
+- `leader` (D minor, 150): AABA, 32 bars (51 s); B over VI-iv-VII-III-VI-iv-v-v. The ostinato, brass stabs, the tune on
+  brass an octave under in B, timpani, the orchestral snare on the march.
+- `boss` (A minor, 168): ABAB, 32 bars (46 s); B over VI-VI-VII-VII-i-i-v-v. A choir throughout and orchestra hits into
+  each section and on the fills, the ostinato in sixteenths, brass stabs, timpani, a full kit; at the peak the tune on
+  brass an octave under and orchestra stabs (its choir is already there).
+- In each battle: while calm (a battle's intro, `build` 0) the ostinato at half, the brass out, the timpani at 0.3, the
+  kit at 0.6, the boss's choir at 0.4 and hits at half (`dim {calm}`), all full by the build's top; trainer, rival and
+  leader a choir and orchestra hits at the peak, as the wild battle. The instruments are the wild battle's (spiccato,
+  bass, brass, timpani, kick, snare, hat, choir, orchestra hit; the leader's orchestral snare), so their zones are
+  shared.
+- `mall` (F lydian, 108, bossa): AABA, 32 bars (71 s); B over vi-II-V-I-vi-II-V-V. The chip lead (p50), an e-piano's
+  chords, a walking bass, a brush kit with a woodblock rim, a glockenspiel in B; walk a tambourine.
+- `hazel` (F major, 88): ABA, 24 bars (65 s); B over IV-V-I-vi-IV-V-ii-V. The chip triangle, a harp, soft strings, a
+  warm bass, a flute on the tune and a celesta now and then in B; no drums.
+- `title` (D mixolydian, 92, the motif): AABA, 32 bars (83 s); B over vi-IV-bVII-I-vi-IV-v-bVII. The chip lead, a harp,
+  strings, a warm bass, timpani rolls into each section, a soft kit; in B brass stabs and a flute an octave under.
+- `fall` (A dorian, 72): ABA, 24 bars (80 s); B over IV-IV-VII-VII-i-i-v-v. The chip triangle, a celesta's drip, soft
+  strings, a drone, a bell in B, heavy reverb; no drums.
+- `variants` (C# minor, 132, legacy places only): AABA, 32 bars (58 s); B over VI-iv-VII-III-VI-iv-v-v. The chip lead
+  (p12), a pizzicato arpeggio, a warm bass, brass stabs, a kit with the orchestral snare on the march, a spiccato
+  ostinato in B. Its night version inherits the ensemble.
+- No weather layers for these: the battles have build and peak; the title, the fall and hazel are moments, not
+  places; the mall is mostly indoors (walk only); the variants are legacy.
+
+**Levels** (the loudness report's song rows run alone, K-weighted, whole songs, default sliders), gb before -> the
+ensemble after its trim: wild -29.3 (its ensemble -29.2) -> -29.2 LUFS (the battle's trim unchanged), trainer -30.1 ->
+-30.1 (trim -4.5 dB), rival -30.2 -> -30.3 (-5.0), leader -30.4 -> -30.4 (-5.5), boss -30.0 -> -30.0 (-5.3), mall -31.3
+-> -31.4 (0), hazel -35.2 -> -35.3 (-1.7), title -31.9 -> -31.9 (+1.5), fall -31.0 -> -31.0 (+4.0), variants -30.0 ->
+-30.0 (-3.4): every one within 0.1 LU. Their gb versions in the forms moved 0.0-0.1 LU. Peaks -14.0 to -25.0 dBFS.
+Before the trims the four fights were 4.5-5.6 LU loud (a full orchestra on every part), the fall 4.0 LU quiet. The
+battles' layered renders (mono RMS of the fingerprints against the plain ensemble, as SND-13 measured the wild battle): intensity 1
+(calm) -4.0 to -4.2 dB (wild -4.1, trainer -4.0, rival -4.1, leader -4.2, boss -4.1), intensity 3 (the peak) +0.0 to +0.1 dB and
+brighter (zero crossings 63 -> 65 a window for the rival, 64 -> 68 the wild battle); the mall standing still -1.7 dB,
+walking +0.0 dB (its tambourine: 44 -> 62 crossings). No NaN; the K-weighted layered rows not run (the owner's word).
+
+**Memory** (Node, 48 kHz, the zones a song's bars need, then with its peak parts):
+
+| Song | Bars | With peak | Note |
+|---|---|---|---|
+| wild | 1.79 MB (13 zones) | 2.50 | was 1.59 / 2.30 before its B |
+| trainer | 1.59 (12) | 2.30 | |
+| rival | 1.97 (13) | 2.67 | |
+| leader | 1.67 (12) | 2.38 | |
+| boss | 2.47 (17) | 2.61 | its choir and hits in the bars |
+| all five battles together | | 3.42 (25 zones) | shared instruments |
+| mall | 1.51 (9) | 1.57 with walk | |
+| hazel | 1.88 (14) | | |
+| title | 2.44 (20) | | |
+| fall | 2.84 (13) | | the drone's and strings' long zones |
+| variants | 1.24 (12) | | night 1.56 |
+
+A run's place bakes on arrival its song (bars, walk, rain, peak) and the wild battle's bars and peak (sound.js
+`musicPrepare`); the other battles bake as they start (gb until ready, on a bar line). With the wild battle's B the
+worst place is the trench at 4.57 MB of song zones (was 4.37; cave 4.52, meadow 4.46, crystal 4.28, spire 4.13, spore
+3.98, map 3.96, hills 3.30, the inner sun 2.78), about 7.4 MB with SND-11's ~2.8 MB of water, beds' noise and reverb:
+inside the 8 MB budget before stingers, as SND-12b left it (stingers bake on first play there). A boss battle in that
+place adds 0.31 MB (4.88), a rival 0.17. No instrument was dropped. The title, the fall and hazel play away from a
+run's places; the bank drops their zones first once the hub's songs play.
+
+**Corrections found in SND-12c** (checked in the code):
+- "check-sound renders every job on one page in chunks of 6": the fingerprints' renders go in chunks of 12
+  (`render_all`); 6 is the loudness report's.
+- "Spread the jobs across 3-4 pages": slower here (above); the time went to the page's own drawing, not to one page.
+- SND-12b's "a run's place holds about 5.4-7.2 MB before any stinger" stays true with the wild battle's B (+0.2 MB).
+- `variants` is not reached in the run or the hub (three parked legacy places name it) and `mall` only in legacy maps
+  (lanternhall, pepperpot): both arranged anyway, as the brief lists them, with the fewest parts.
+
+**Not done here**: weather layers for the battle and moment songs; a written hook for any B; the arc at 0.6's render;
+a phone listen (SND-15).
 
 ## Ask me before (Part 2; the first four before SND-8a)
 Since the owner's standing instruction (2026-10-27, "How the sessions run"), each session takes the recommended

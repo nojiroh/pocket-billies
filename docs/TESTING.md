@@ -595,6 +595,14 @@ same phase:
   music.json; the plan, the hook kept, a repeat varied, the turnaround and the loop's end, the night's sections, the
   fills, the bass's walk-up, the lift, the new lines, a part's `in`, the findings). `check-studio-github.py
   --only=music` adds a section B on hills, hears it at once, changes its chord and undoes both.
+  SND-12c: check-sound's game page stops drawing once its sound code is loaded (`NO_DRAW`: `requestAnimationFrame` a
+  no-op there): the title's live scene, drawn in software in the cloud container, took over 3 of its 4 cores. A full
+  render (337 renders since batch 3) takes about 13 minutes (774 s; 9.3 minutes for the 317 before batch 3, over 3.5
+  hours before the change); `--only=<songs>` a few minutes. Spreading the renders over 2 or 4 pages was measured and
+  not kept: no faster (570 s and 723 s against 561 s), as one page already renders its chunk of 12 on parallel threads.
+  Two full renders of the same code differ in a few windows by the last digit (0.00001 RMS, 2 crossings: timers in
+  the page landing on an offline render under load), inside the tolerance; prove a tool change byte for byte on a
+  sample (`--only=copperleaf,wild,trainer,title,victory,levelup`), or by the comparison.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

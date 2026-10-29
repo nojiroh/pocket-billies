@@ -2,6 +2,91 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-12c - check-sound renders in minutes (its page stops drawing); arrangements, batch 3: the battles that build and peak, the boss, the mall, hazel, the title, the fall and the variants; the baseline for batches 2 and 3 - 2026-10-29
+Branch `track/sound`, the music lane (main already merged: nothing new on main since SND-12b's merge at d71cdf61).
+Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode, plan below,
+recommended options taken. One cause per commit. Tag `snd-12c-done` (for the owner to push) on this session's last
+commit. PR #292. Details: sound-track.md "SND-12c as built".
+- **Plan**: (0) make check-sound's renders fast: the jobs over 3-4 pages, each baking its own ensembles, a tool-only
+  commit with the numbers identical on a sample, and a cheap in-page speedup in its own commit if obvious; (1) batch 3
+  as sound-track.md's SND-12c names it, as named placeholders, levels within 1 LU by the ensembles' trims, memory
+  against the 8 MB budget; tell the VFX planning session; (2) a full render to confirm only batches 2 and 3 changed,
+  then plain `--baseline` once in its own commit; the docs.
+- **The render speedup** (a0c670ee): the game page drew the title's live scene in software the whole time (the GPU
+  process at 330-390 % of 4 cores, the renders about 30 %). check-sound now makes `requestAnimationFrame` a no-op in
+  its page once the sound code is loaded. A sample of 31 renders 1058 s -> 75 s, byte for byte the same. A full render
+  now takes about 9.3 minutes for SND-12b's 317 renders (over 3.5 hours before, stopped) and about 13 minutes for
+  the 337 since batch 3 (774 s).
+- **Not done: several pages.** Built in a scratch copy and measured: the same numbers, but no faster (the full set
+  561 s on one page, 570 s on two, 723 s on four): one page already renders its chunk of 12 contexts on parallel
+  threads, so more pages oversubscribed the 4 cores (load average 27). Not committed; one page stays.
+- **Found: run-to-run jitter** (not new): two full renders of the same tool and data differ in 2-7 windows of ~400,000,
+  by the RMS's last digit or 2 zero crossings, inside the tolerance; most likely the page's timers landing on an
+  offline render under load. The sample of 31 never showed it, and the baseline write left the 7 untouched files byte
+  for byte the same.
+- **Batch 3** (a9549340; Claude's drafts, named as placeholders; B a seeded walk over its own chords; every ensemble
+  keeps the song's chip lead):
+  - wild AABA (32 bars, 51 s), its `battle` ensemble kept.
+  - trainer AABA (47 s), rival ABAB (53 s), leader AABA (51 s): new ensembles: the chip lead over a spiccato ostinato,
+    brass stabs, timpani, a warm bass, a full kit; while calm the ostinato at half, brass out, timpani 0.3, kit 0.6; a
+    choir and orchestra hits at the peak. Trainer: sixteenths above the ostinato in B; rival: sixteenths throughout,
+    brass hits into B; leader: the tune on brass in B, the orchestral snare.
+  - boss ABAB (46 s): a choir and orchestra hits throughout (dimmed while calm), spiccato sixteenths, brass, timpani, a
+    kit; the peak: the tune on brass, orchestra stabs.
+  - mall AABA (71 s, bossa): e-piano, walking bass, a brush kit with woodblock, glockenspiel in B; walk a tambourine.
+  - hazel ABA (65 s): harp, soft strings, warm bass, a flute and celesta in B. title AABA (83 s, the motif): harp,
+    strings, warm bass, timpani rolls, a soft kit, brass and a flute in B. fall ABA (80 s): a celesta's drip, soft
+    strings, a drone, a bell in B. variants AABA (58 s, legacy places): pizzicato, brass, a march kit, an ostinato in B.
+- **The baseline** (c3d2705d): a full render first showed exactly the 19 songs changed (SND-12b's nine and these ten)
+  and no NaN; then plain `--baseline`: 337 fingerprints in 26 files, exactly those 19 files changed, the other 7
+  byte for byte the same.
+- **Levels** (the loudness report's song rows run alone, K-weighted; gb before -> ensemble after its trim): wild
+  -29.3 (ensemble -29.2) -> -29.2 LUFS (trim kept), trainer -30.1 -> -30.1 (-4.5 dB), rival -30.2 -> -30.3 (-5.0),
+  leader -30.4 -> -30.4 (-5.5), boss -30.0 -> -30.0 (-5.3), mall -31.3 -> -31.4 (0), hazel -35.2 -> -35.3 (-1.7), title
+  -31.9 -> -31.9 (+1.5), fall -31.0 -> -31.0 (+4.0), variants -30.0 -> -30.0 (-3.4): all within 0.1 LU. The gb
+  versions in the forms moved 0.0-0.1 LU. The battles' build (fingerprints' RMS): calm -4.0 to -4.2 dB, peak +0.0 to
+  +0.1 dB and brighter, as the wild battle's.
+- **Memory** (Node, 48 kHz, bars / with peak): wild 1.79 / 2.50 MB (2.30 before its B), trainer 1.59 / 2.30, rival
+  1.97 / 2.67, leader 1.67 / 2.38, boss 2.47 / 2.61, all five 3.42 (shared instruments); mall 1.51, hazel 1.88, title
+  2.44, fall 2.84, variants 1.24 (night 1.56). A run's place bakes the wild battle on arrival: worst the trench at 4.57
+  MB of song zones (was 4.37), about 7.4 MB with the water, beds and reverb: inside 8 MB; a boss battle there adds
+  0.31. No instrument dropped; the budget stays 8 MB.
+- **Risky or unfinished**:
+  - Claude can't hear: the arrangements are judged by numbers (levels, memory, the build's dB, no NaN, the tests);
+    placeholders, the owner's ears decide.
+  - Four full orchestral fights needed -4.5 to -5.5 dB trims; on a phone speaker their density may read louder than
+    the LUFS say (SND-15's phone pass).
+  - The run's place is 0.2 MB fuller with the wild battle's B; stingers there keep baking on first play.
+  - The renders' jitter (above): a tool change's byte-for-byte proof needs a sample.
+- **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules`, `npm run check:data` (179 files fine;
+  the check-data snapshot test passes, unchanged), the music unit tests (with batch 3's two), `npm test` 2057 of 2057;
+  `check-sound.py --only=<the ten>` (53 fingerprints, as expected); the full comparison and the baseline (above);
+  `npm run check:smoke` 7 of 7 (at c3d2705d, 337 s); `check-quick.py --steps="Battle music"` ok alone (45 s: the wild
+  battle and a mini-boss's leader song with their intros, the drums in on the throw).
+- **Skipped at the owner's word** (2026-10-28 21:18 UTC, "You can skip the checks"): the full `npm run check:quick`
+  and the whole `check-sound.py --loudness` report (the levels above are its song rows run alone), with them the
+  K-weighted layered rows and `check-studio-github.py --only=music` (no Studio code changed).
+- **Decided for the owner, to review**:
+  - Renders on one page, not 3-4 (measured slower); the page stops drawing instead.
+  - The ten arrangements and their forms (above): fights in 32 bars (AABA trainer, leader, wild; ABAB rival, boss),
+    the moment songs in ABA 24 (hazel, fall) or AABA 32 (title, mall, variants).
+  - The fights share the wild battle's instruments (zones shared, memory near the wild battle's) and its build: the
+    ostinato, brass, timpani and kit dimmed while calm; the boss's choir and hits throughout, brass on the tune at
+    its peak.
+  - No weather layers on the battle and moment songs; the mall walk only.
+  - Trims on the ensembles, not the songs; wild's `battle` trim kept (within 0.1 LU in the form).
+  - `mall` and `variants` arranged though only legacy places play them (as the brief lists them), with few parts.
+- **The owner's listening list** (phone, silent switch OFF; the debug menu's Sound test -> a song "As its ensemble",
+  then GB Sounds; or in play):
+  - A wild battle, a trainer, the rival, a leader and a boss against GB Sounds: A, B with its own chords, the fills
+    into each section; the intro on the chip lead, then the drums on the throw.
+  - A battle building to its peak (SND-13's layers on the new ensembles): it starts light (brass out, strings at half),
+    builds over the turns and KOs, a choir and orchestra hits in the red zone or as a boss changes phase; the Sound
+    test's layer row plays intensity 1-3.
+  - The title, the mall, hazel (before a new game starts) and the opening fall.
+- **Next**: SND-15 (the mix and a phone pass; the full check, with SND-12b's Starters note), then SND-16 at the
+  owner's word.
+
 ### Sound track SND-12b - arrangements, batch 2: the cave, the seven biome songs and the run's map on ensembles in forms, with peak parts so the run's arc is heard, and walk, rain and snow layers - 2026-10-28
 Branch `track/sound`, the music lane (main merged first at 62c20703, a merge: HANDOFF kept both entries, art-code-refs
 made again in its own commit; no sound files from main; main merged again at d71cdf61 with VFX-13, #295 and #326:
