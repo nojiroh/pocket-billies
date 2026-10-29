@@ -63,7 +63,8 @@ tag (CLAUDE.md). docs/phases/characters-track.md (CH-7) has the design.
     errors.
   - CI on #335: smoke's Camera follow (CAM-1, "the page stopped drawing") failed as it does on main (run 3143), noted
     on the PR.
-  - Full quick check: see the line below.
+  - Full quick check on 88a0609e: 37 of 42 in 2,634 s. Failing: RL-8's landing, room light and Battle music
+    (recorded before), Ground tiles and Postcards (both passed alone afterwards, 114 s and 78 s, as in CH-5b).
 - Next: CH-8 (the old pieces to `art/legacy` once nothing draws them: the 2D tiles still do while Figures is off) or
   CH-9 (getting around), on `track/characters`.
 - For the owner on the phone: debug menu, Figures on (Atlas live); open Edit look on the trainer card; try every tab
