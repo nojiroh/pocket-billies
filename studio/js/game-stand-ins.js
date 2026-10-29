@@ -9,8 +9,8 @@ import { provide, studioState } from '../../game/js/hooks.js';
 expose({
   BATTLE_ANIMS: [() => BATTLE_ANIMS],
   BATTLE_STAGES: [() => BATTLE_STAGES],
-  HIT_EFFECTS_BY_TYPE: [() => HIT_EFFECTS_BY_TYPE],
   MOVES: [() => MOVES],
+  PASSIVE: [() => PASSIVE],
   PEOPLE: [() => PEOPLE],
   RULES: [() => RULES],
   TYPE_COLORS: [() => TYPE_COLORS],
@@ -19,6 +19,7 @@ expose({
   escapeHtml: [() => escapeHtml],
   liveMap: [() => liveMap],
   reducedMotion: [() => reducedMotion, v => setReducedMotion(v)],
+  robotIdsFromSp: [() => robotIdsFromSp],
   saveData: [() => saveData, v => ((saveData = v), provide({ saveData }))],
   setReducedMotion: [() => setReducedMotion, v => (setReducedMotion = v)],
   uiState: [() => uiState, v => ((uiState = v), provide({ uiState }))],
@@ -84,9 +85,14 @@ const TYPE_GLOW = liveMap(D => {
   return o;
 });
 provide({ TYPE_GLOW }); /* to-module */
-const HIT_EFFECTS_BY_TYPE = liveMap(D => {
-  const o = Object.fromEntries(D.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']]));
-  o.None = (D.untyped || {}).fx || ['pow', 'star'];
-  return o;
-});
-provide({ HIT_EFFECTS_BY_TYPE }); /* to-module */
+/* VFX-20: a type's passive (game-data.js PASSIVE: the battle's glints name the passive's type) */
+const PASSIVE = liveMap(D => Object.fromEntries(D.types.map(t => [t.id, t.passive || ''])));
+provide({ PASSIVE }); /* to-module */
+/* VFX-20: a Bureau bot's gem and parts from its sp (logic/fighters.js robotIdsFromSp, which needs the game's data
+   module): the battle stage's faint and broken-part looks read it */
+const robotIdsFromSp = sp => {
+  if (typeof sp !== 'string' || !sp.startsWith('bot:')) return null;
+  const a = sp.slice(4).split('.');
+  return a.length === 5 ? { gem: a[0], torso: a[1], armL: a[2], armR: a[3], legs: a[4] } : null;
+};
+provide({ robotIdsFromSp }); /* to-module */

@@ -167,3 +167,28 @@ test('the Reduced motion tint: the status first, then the effects; none without 
   assert.equal(L.lookTint(E, new Set(['shield'])), null);
   assert.equal(L.lookTint(E, new Set()), null);
 });
+test('VFX-20: lookSnaps changes a copy; BATTLE_LOOK_FILMS: labelled, lines in time order, events the stage plays', async () => {
+  const { lookSnaps, BATTLE_LOOK_FILMS } = await import('../../game/js/logic/battle-looks.js');
+  const base = [{ st: null }, { st: null, fx: { protect: 1 } }],
+    s = lookSnaps(base, [
+      { i: 1, st: 'brn', fx: null, stg: { lev: 2 }, hp: 0 },
+      { i: 5, st: 'x' },
+    ]);
+  assert.deepEqual(s[1], { st: 'brn', stg: { lev: 2 }, hp: 0 });
+  assert.deepEqual(base[1], { st: null, fx: { protect: 1 } }, 'the snapshots before stay');
+  const kinds = new Set(['move', 'hurt', 'heal', 'status', 'stat', 'hype', 'alphaPhase', 'block']);
+  for (const [k, F] of Object.entries(BATTLE_LOOK_FILMS)) {
+    assert.ok(F.label, k);
+    let t = 0;
+    for (const x of F.lines) {
+      assert.ok((x.at || 0) >= t, `${k}: lines in time order`);
+      t = x.at || 0;
+      if (x.an) assert.ok(kinds.has(x.an.k), `${k}: ${x.an.k}`);
+    }
+  }
+  for (const k of ['brn_ko', 'spread_ko', 'delayed_ko'])
+    assert.ok(
+      BATTLE_LOOK_FILMS[k].lines.some(x => x.ka && x.ka.ko),
+      k
+    );
+});

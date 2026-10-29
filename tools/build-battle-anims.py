@@ -940,6 +940,64 @@ def scar_dent():
     return [erode(f, 0.95, False)]
 
 
+
+# ---------- VFX-17: stamped words (sound words only, rule 10: nothing the game would translate) ----------
+GLYPHS = {
+    'S': ['.###', '#...', '.##.', '...#', '###.'],
+    'I': ['###', '.#.', '.#.', '.#.', '###'],
+    'U': ['#..#', '#..#', '#..#', '#..#', '.##.'],
+    '!': ['#', '#', '#', '.', '#'],
+    'K': ['#..#', '#.#.', '##..', '#.#.', '#..#'],
+    'A': ['.##.', '#..#', '####', '#..#', '#..#'],
+    '-': ['...', '...', '###', '...', '...'],
+    'C': ['.###', '#...', '#...', '#...', '.###'],
+    'H': ['#..#', '#..#', '####', '#..#', '#..#'],
+    'N': ['#..#', '##.#', '#.##', '#..#', '#..#'],
+    'G': ['.###', '#...', '#.##', '#..#', '.###'],
+    'T': ['###', '.#.', '.#.', '.#.', '.#.'],
+    'O': ['.##.', '#..#', '#..#', '#..#', '.##.'],
+    # VFX-18's letters
+    'W': ['#...#', '#...#', '#.#.#', '##.##', '#...#'],
+    'R': ['###.', '#..#', '###.', '#.#.', '#..#'],
+    'E': ['####', '#...', '###.', '#...', '####'],
+    'F': ['####', '#...', '###.', '#...', '#...'],
+    'L': ['#...', '#...', '#...', '#...', '####'],
+}
+# VFX-18b: the letters its words add (P, D; W is VFX-18's, the same rows)
+GLYPHS.update({
+    'P': ['###.', '#..#', '###.', '#...', '#...'],
+    'D': ['###.', '#..#', '#..#', '#..#', '###.'],
+})
+
+
+def word_cell(text):
+    """a word's cell: its letters a pixel apart, a pixel of outline all round"""
+    w = sum(len(GLYPHS[ch][0]) for ch in text) + len(text) - 1 + 2
+    return [w, 7]
+
+
+def word(text):
+    """a sound word in pixel letters: the top rows white, the lower ones a step darker, a dark outline round them;
+    held whole, then wearing off over its last two frames (it plays once, ending with its particle)"""
+    def make():
+        w, h = word_cell(text)
+        f = Frame(w, h)
+        x = 1
+        for ch in text:
+            G = GLYPHS[ch]
+            for gy, row in enumerate(G):
+                for gx, c in enumerate(row):
+                    if c == '#':
+                        f.put(x + gx, 1 + gy, 7 if gy < 3 else 6)
+            x += len(G[0]) + 1
+        o = f.copy()
+        for y in range(h):
+            for xx in range(w):
+                if f.p[y][xx] < 0 and any(f.get(xx + dx, y + dy) >= 0 for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+                    o.p[y][xx] = 0
+        return [o, erode(o, 0.6, True, 1, 1), erode(o, 0.25, True, 1, 1)]
+    return make
+
 # id: (draw, [w, h], anchor, extra data, about)
 SPRITES = {
     'spark': (spark, [8, 8], [3, 3], {}, 'a four-pointed spark'),
@@ -986,6 +1044,17 @@ SPRITES = {
     'scar_leaf': (scar_leaf, [32, 32], [16, 16], {'ground': True}, 'leaf litter (Grass), from above'),
     'scar_sand': (scar_sand, [36, 24], [18, 12], {'ground': True}, 'a sand drift (Sandstorm), from above'),
     'scar_dent': (scar_dent, [32, 32], [16, 16], {'ground': True}, 'a dent (a heavy hit), from above'),
+    'word_siu': (word('SIU!'), word_cell('SIU!'), [8, 3], {}, 'VFX-17: the word SIU! (a shout), stamped in'),
+    'word_kaching': (word('KA-CHING!'), word_cell('KA-CHING!'), [20, 3], {}, 'VFX-17: the word KA-CHING! (a till), stamped in'),
+    'word_toot': (word('TOOT!'), word_cell('TOOT!'), [11, 3], {}, "VFX-17: the word TOOT! (a train's whistle), stamped in"),
+    'word_whirr': (word('WHIRR!'), word_cell('WHIRR!'), [14, 3], {}, 'VFX-18: the word WHIRR! (fans spinning up), stamped in'),
+    'word_tick': (word('TICK!'), word_cell('TICK!'), [10, 3], {}, "VFX-18: the word TICK! (a clock's hand), stamped in"),
+    'word_click': (word('CLICK!'), word_cell('CLICK!'), [13, 3], {}, 'VFX-18: the word CLICK! (a lock shutting), stamped in'),
+    'word_fore': (word('FORE!'), word_cell('FORE!'), [11, 3], {}, "VFX-18: the word FORE! (a golfer's warning shout), stamped in"),
+    'word_whoosh': (word('WHOOSH!'), word_cell('WHOOSH!'), [17, 3], {}, 'VFX-18b: the word WHOOSH! (a gust), stamped in'),
+    'word_pssht': (word('PSSHT!'), word_cell('PSSHT!'), [13, 3], {}, 'VFX-18b: the word PSSHT! (a can opening), stamped in'),
+    'word_dingdong': (word('DING-DONG!'), word_cell('DING-DONG!'), [23, 3], {}, 'VFX-18b: the word DING-DONG! (a doorbell), stamped in'),
+    'word_thwock': (word('THWOCK!'), word_cell('THWOCK!'), [16, 3], {}, 'VFX-18b: the word THWOCK! (a ball struck), stamped in'),
 }
 
 

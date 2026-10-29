@@ -20,6 +20,7 @@ import '../../game/js/logic/battle-facing.js';
 import '../../game/js/logic/battle-flow.js';
 import '../../game/js/logic/battle-looks.js';
 import '../../game/js/logic/battle-rewards.js';
+import '../../game/js/logic/battle-sounds.js';
 import '../../game/js/logic/battle-stage-look.js';
 import '../../game/js/logic/battle-state.js';
 import '../../game/js/logic/blue-noise.js';

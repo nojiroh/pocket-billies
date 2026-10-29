@@ -1855,7 +1855,7 @@ def music_steps(pg, errs):
     """SND-3: the Music & sound section (studio/js/music-editor.js): a song plays through the game's tracker on the
     Studio's own AudioContext (a real click starts it), the bar playing shows, Stop stops it, and leaving the section
     stops it too (no scheduler left running). SND-10: the Sounds tab's World sounds card plays a water recipe and
-    stops."""
+    stops. VFX-19: the Battle card plays every battle sound and edits one."""
     n = len(errs)
     pg.evaluate("void openSection('music')")
     # the section opens on the tab last used; an earlier step (the full run's) can leave it on Where they play
@@ -1998,6 +1998,27 @@ def music_steps(pg, errs):
     if not until(pg, "Object.keys(musicStudio.scape.P.stats().voices).length===0", 15):
         errs.append(f'music: the World sounds card left {pg.evaluate("JSON.stringify(musicStudio.scape.P.stats().voices)")} playing after Stop')
     if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: playing a world sound changed the data')
+    # VFX-19: the Battle card: every battle sound's play button starts its voices (tones and noises) through the game's
+    # player (audio/battle-voices.js), as many as its preview lists; a name edited and undone leaves nothing changed
+    r = pg.evaluate("""(() => { const T = musicStudio.tracker || null; const B = studioState.D.music.battle, A = studioState.D.battleAnims;
+      const names = battleSoundNames(B), btns = [...document.querySelectorAll('[data-act=musBattle]')].map(b => b.dataset.k);
+      const out = { names: names.length, btns: btns.length, bad: [] };
+      for (const k of names) { const b = document.querySelector(`summary [data-act=musBattle][data-k="${k}"]`); if (!b) { out.bad.push(k + ' has no button'); continue; }
+        const t = musicStudio.tracker; let n = 0; const fv = t && t.synthVoice, fn = t && t.synthNoise;
+        if (t) { t.synthVoice = (...a) => { n++; return fv(...a); }; t.synthNoise = (...a) => { n++; return fn(...a); }; }
+        b.click(); const T2 = musicStudio.tracker; if (!t) { /* the first click makes the tracker: count from the next */ continue; }
+        t.synthVoice = fv; t.synthNoise = fn;
+        const [g, id] = k.split('.'), F = g === 'families' && A.families[id], want = battleSoundPreview(battleSoundGet(B, k), F && F.hit < 999 ? F.hit / 1000 : 0.3).length;
+        if (n !== want) out.bad.push(`${k} started ${n} voices, not ${want}`); }
+      return out; })()""")
+    if r['names'] < 37 or r['btns'] != r['names'] or r['bad']:
+        errs.append(f"music: the Battle card: {r['names']} sounds, {r['btns']} buttons; {'; '.join(r['bad'][:5])}")
+    pg.evaluate("void (document.querySelector('[data-act=musBattle][data-k=\\'families.charge\\']').closest('details').open = true)")
+    m = pg.locator('#main input[data-p="music.battle.families.charge.name"]')
+    m.fill('a test name'); m.press('Tab')
+    if pg.evaluate("studioState.D.music.battle.families.charge.name") != 'a test name': errs.append('music: the Battle card did not edit a sound\'s name')
+    pg.click('#undoBtn')
+    if pg.evaluate("changedDataFiles(studioState.D).map(f => f.path)"): errs.append('music: undo did not put the Battle card back')
     # a Billy's cry (the Billies page; SND-6: every stage has one): a new pitch keeps its base and plays the base's
     # notes from it, and its low-HP version a third down; undone, nothing to propose
     pg.evaluate("void openSection('billionaires')")
@@ -2025,7 +2046,7 @@ def music_steps(pg, errs):
     time.sleep(0.5)
     if pg.evaluate("[musicPlaying(), !!musicStudio.tracker.timer]") != ['', False]: errs.append('music: leaving the section left the song playing')
     if len(errs) > n: errs[n:] = [f'music: {e}' if not e.startswith('music:') else e for e in errs[n:]]
-    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
+    else: print('music: town played (context running, bar shown), its tempo and a chord changed while playing and undone, a hook note and a counter note drawn and heard and undone (on hills), an intro note drawn and undone, wild with its intro and its tense version, stopped; the where table: a rule moved, a condition, a rule added, Try a place following, an arc band’s drums, all undone; a jingle played and lengthened and undone; the Sounds tab: a base cry and a button sound heard, the mix changed and undone, a brook 3 m away played on the World sounds card and stopped, every battle sound on the Battle card heard and a name edited and undone; a cry’s pitch set, heard (and low on health) and undone; the Check’s music findings and Show me; meadow stopped when the section was left', flush=True)
 
 
 CONTENT_NODE = """import { GAME_DATA as D, modules } from './tools/test/setup-real.mjs';
@@ -2296,6 +2317,16 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("battleFxSeek(600)")
     ev = pg.evaluate("[battleFx.clip, battleFx.at>=599, battleFx.T]")
     if ev[0] != 'event:catch:0' or not ev[1] or ev[2] is not None: errs.append(f'battle effects: the catch event played and seeked as {ev}')
+    # VFX-20: every event plays (the flow's, the stage's others and the look films), the page with no error; a look
+    # film's scrubber runs past its last line
+    evs = pg.evaluate("[...document.querySelectorAll('#main [data-bp=ev] option')].map(o=>o.value)")
+    for v in evs:
+        pick('#main [data-bp=ev]', v); time.sleep(0.05)
+        clk('#main [data-act=bfxPlay][data-side="0"]'); time.sleep(0.35)
+        if not pg.evaluate(f"battleFx.clip==='event:'+{json.dumps(v)}+':0'"): errs.append(f'battle effects: the event {v} did not play ({pg.evaluate("battleFx.clip")})')
+    looks = [v for v in evs if v.startswith('look:')]
+    if len(looks) < 20 or 'look:brn_ko' not in looks or 'win' not in evs: errs.append(f'battle effects: the events are {evs}')
+    if pg.evaluate("battleFx.dur") < 1600: errs.append(f'battle effects: the last look film runs {pg.evaluate("battleFx.dur")} ms on the scrubber')
     clk('#main [data-act=bfxSet][data-k=clip][data-v=move]'); time.sleep(0.5)
     pick('#main [data-p="battleAnims.budgets.burst.0"]', '20'); time.sleep(0.6)
     if pg.evaluate("studioState.D.battleAnims.budgets.burst[0]") != 20: errs.append('battle effects: a burst budget of 20 did not reach the data')
@@ -2314,6 +2345,12 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("undo()"); time.sleep(0.3)
     if pg.evaluate("studioState.D.battleAnims.tiers.super4.shake") != 9: errs.append('battle effects: undo did not put the tier dial back')
     if not pg.evaluate("!!document.querySelector('#main select[data-bp=ko]')"): errs.append('battle effects: no Knocks out choice beside the outcome')
+    # VFX-20: a family's miss is tuned in the Misses pane (proposed, undone)
+    pick('#main [data-p="battleAnims.families.shot.miss.dur"]', '700'); time.sleep(0.6)
+    if pg.evaluate("studioState.D.battleAnims.families.shot.miss.dur") != 700: errs.append('battle effects: the shot miss length 700 did not reach the data')
+    if not pending_files(pg, 'battleAnims\\.json$'): errs.append('battle effects: after a miss edit Propose would not send battleAnims.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.battleAnims.families.shot.miss.dur") != 760: errs.append('battle effects: undo did not put the miss back')
     empty = pg.evaluate("[document.querySelector('#bfxPane-ramps').textContent, document.querySelector('#bfxPane-cells').textContent]")
     has = pg.evaluate("[!!studioState.D.battleAnims.ramps, !!studioState.D.battleAnims.sprites]")
     for (t, h, k) in zip(empty, has, ('ramps', 'cells')):
@@ -2321,8 +2358,15 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("void openSection('types')"); time.sleep(0.3)
     back = pg.evaluate("[reducedMotion, (saveData.preferences||{}).flashes||null, document.documentElement.dataset.motion||null]")
     if back != [False, None, None]: errs.append(f'battle effects: leaving the section left the motion and Flashes at {back}')
+    # VFX-20: a type's battle particles are its kit's burstSprites (battleAnims.json types; were types.json fx)
+    before = pg.evaluate("JSON.stringify(studioState.D.battleAnims.types.Fire.burstSprites)")
+    clk('#main [data-act=typeFx][data-t="Fire"][data-k="star"]'); time.sleep(0.3)
+    got = pg.evaluate("studioState.D.battleAnims.types.Fire.burstSprites")
+    if 'star' not in (got or []) or not pending_files(pg, 'battleAnims\\.json$'): errs.append(f'types: the Fire particle picker gave {got}, or Propose would not send battleAnims.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("JSON.stringify(studioState.D.battleAnims.types.Fire.burstSprites)") != before: errs.append('types: undo did not put the Fire particles back')
     pg.evaluate("Object.assign(battlePreview,{clip:'move',speed:1,q:0,motion:'full',flashes:true,res:'hit'})")
-    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget, a smear and a tier dial proposed and undone, Knocks out, the empty ramps and cells panes, the settings back on leaving', flush=True)
+    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget, a smear and a tier dial proposed and undone, Knocks out, every event and look film, a miss tuned and undone, the empty ramps and cells panes, the settings back on leaving, a type\'s particles in its kit', flush=True)
 
 
 def unlocks_steps(pg, errs):

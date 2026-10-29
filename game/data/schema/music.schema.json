@@ -185,6 +185,217 @@
      "type": "boolean"
     }
    }
+  },
+  "battleVoice": {
+   "description": "VFX-19: a voice of a battle sound: a tone in the cries' shape (at, note, len; optionally wave, inst, vol, slide, vib) or a noise (at, noise, dur; optionally vol)",
+   "oneOf": [
+    {
+     "type": "object",
+     "required": [
+      "at",
+      "note",
+      "len"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "at": {
+       "description": "when it starts, in seconds from its part's start",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 2
+      },
+      "note": {
+       "description": "semitones over the sound's pitch",
+       "type": "integer",
+       "minimum": -36,
+       "maximum": 36
+      },
+      "len": {
+       "description": "seconds",
+       "type": "number",
+       "exclusiveMinimum": 0,
+       "maximum": 2
+      },
+      "wave": {
+       "$ref": "#/$defs/wave"
+      },
+      "inst": {
+       "description": "a baked instrument (SND-9/SND-11 music.json instruments: harp, pizz, ... kick, snare, hat, orchhit); the wave plays until the bank has it",
+       "$ref": "#/$defs/id"
+      },
+      "vol": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 0.2
+      },
+      "slide": {
+       "description": "where the note ends, x its frequency (1: no slide)",
+       "type": "number",
+       "minimum": 0.1,
+       "maximum": 4
+      },
+      "vib": {
+       "description": "a wobble's depth: 1 is 1.2 % of the note, at 5.5 Hz (0: none)",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 10
+      }
+     }
+    },
+    {
+     "type": "object",
+     "required": [
+      "at",
+      "noise",
+      "dur"
+     ],
+     "additionalProperties": false,
+     "properties": {
+      "at": {
+       "description": "when it starts, in seconds from its part's start",
+       "type": "number",
+       "minimum": 0,
+       "maximum": 2
+      },
+      "noise": {
+       "description": "the noise's filters (synthNoise's options): low-pass, high-pass and band-pass in Hz (one or more), q their sharpness",
+       "type": "object",
+       "minProperties": 1,
+       "additionalProperties": false,
+       "properties": {
+        "lp": {
+         "type": "number",
+         "minimum": 20,
+         "maximum": 20000
+        },
+        "hp": {
+         "type": "number",
+         "minimum": 20,
+         "maximum": 20000
+        },
+        "bp": {
+         "type": "number",
+         "minimum": 20,
+         "maximum": 20000
+        },
+        "q": {
+         "type": "number",
+         "exclusiveMinimum": 0,
+         "maximum": 30
+        }
+       }
+      },
+      "dur": {
+       "description": "seconds to fade out",
+       "type": "number",
+       "exclusiveMinimum": 0,
+       "maximum": 2
+      },
+      "vol": {
+       "type": "number",
+       "minimum": 0,
+       "maximum": 0.4
+      }
+     }
+    }
+   ]
+  },
+  "battleSound": {
+   "description": "VFX-19: a battle sound: a few voices",
+   "type": "object",
+   "required": [
+    "wave",
+    "voices"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "name": {
+     "description": "a name for the sound. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+     "type": "string",
+     "maxLength": 80
+    },
+    "pitch": {
+     "description": "the midi note its notes sit over (60 when left out)",
+     "type": "integer",
+     "minimum": 24,
+     "maximum": 96
+    },
+    "wave": {
+     "$ref": "#/$defs/wave"
+    },
+    "echo": {
+     "description": "how much of its tones goes to the effects' echo (0 when left out)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "voices": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 8,
+     "items": {
+      "$ref": "#/$defs/battleVoice"
+     }
+    }
+   }
+  },
+  "battleMoveSound": {
+   "description": "VFX-19: a move family's sound or a type's layer: cast from the move's start, hit from its hit (a miss or a block: the cast alone)",
+   "type": "object",
+   "required": [
+    "wave"
+   ],
+   "anyOf": [
+    {
+     "required": [
+      "cast"
+     ]
+    },
+    {
+     "required": [
+      "hit"
+     ]
+    }
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "name": {
+     "description": "a name for the sound. Claude's drafts start with \"placeholder\" (the Studio's Check lists them)",
+     "type": "string",
+     "maxLength": 80
+    },
+    "pitch": {
+     "description": "the midi note its notes sit over (60 when left out)",
+     "type": "integer",
+     "minimum": 24,
+     "maximum": 96
+    },
+    "wave": {
+     "$ref": "#/$defs/wave"
+    },
+    "echo": {
+     "description": "how much of its tones goes to the effects' echo (0 when left out)",
+     "type": "number",
+     "minimum": 0,
+     "maximum": 1
+    },
+    "cast": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 8,
+     "items": {
+      "$ref": "#/$defs/battleVoice"
+     }
+    },
+    "hit": {
+     "type": "array",
+     "minItems": 1,
+     "maxItems": 8,
+     "items": {
+      "$ref": "#/$defs/battleVoice"
+     }
+    }
+   }
   }
  },
  "properties": {
@@ -514,6 +725,74 @@
     },
     "cancel": {
      "$ref": "#/$defs/uiPick"
+    }
+   }
+  },
+  "battle": {
+   "description": "VFX-19: the battle's sounds (logic/battle-sounds.js; audio/battle-sounds.js plays them): a sound per move family, a layer per type, the hurt sounds, the recall, the throw and catch",
+   "type": "object",
+   "required": [
+    "families",
+    "types"
+   ],
+   "additionalProperties": false,
+   "properties": {
+    "about": {
+     "type": "string"
+    },
+    "families": {
+     "description": "by move family (battleAnims.json families, not the legacy ones)",
+     "type": "object",
+     "propertyNames": {
+      "$ref": "#/$defs/id"
+     },
+     "additionalProperties": {
+      "$ref": "#/$defs/battleMoveSound"
+     }
+    },
+    "types": {
+     "description": "by type kit (battleAnims.json types: the types, None and Bureau)",
+     "type": "object",
+     "propertyNames": {
+      "pattern": "^[A-Z][A-Za-z]*$"
+     },
+     "additionalProperties": {
+      "$ref": "#/$defs/battleMoveSound"
+     }
+    },
+    "hurt": {
+     "description": "by what hurt",
+     "type": "object",
+     "propertyNames": {
+      "enum": [
+       "burn",
+       "recoil",
+       "spread",
+       "delayed"
+      ]
+     },
+     "additionalProperties": {
+      "$ref": "#/$defs/battleSound"
+     }
+    },
+    "recall": {
+     "$ref": "#/$defs/battleSound"
+    },
+    "catch": {
+     "description": "the pyramid's: throw (a send-out or a catch), pop (a send-out), land, wobble, seal",
+     "type": "object",
+     "propertyNames": {
+      "enum": [
+       "throw",
+       "pop",
+       "land",
+       "wobble",
+       "seal"
+      ]
+     },
+     "additionalProperties": {
+      "$ref": "#/$defs/battleSound"
+     }
     }
    }
   },

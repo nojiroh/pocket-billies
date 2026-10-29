@@ -52,6 +52,7 @@ expose({
   battleLookStat: [() => battleLookStat, v => ((battleLookStat = v), provide({ battleLookStat }))],
   battleLookStatus: [() => battleLookStatus, v => ((battleLookStatus = v), provide({ battleLookStatus }))],
   battleLooks: [() => battleLooks],
+  battleLooksIdleOn: [() => battleLooksIdleOn, v => ((battleLooksIdleOn = v), provide({ battleLooksIdleOn }))],
   battleLooksLine: [() => battleLooksLine, v => (battleLooksLine = v)],
   battleLooksReset: [() => battleLooksReset, v => ((battleLooksReset = v), provide({ battleLooksReset }))],
   battleLooksTick: [() => battleLooksTick, v => ((battleLooksTick = v), provide({ battleLooksTick }))],
@@ -75,6 +76,7 @@ provide({
   battleLookSleepPose,
   battleLookStat,
   battleLookStatus,
+  battleLooksIdleOn,
   battleLooksReset,
   battleLooksTick,
 });
@@ -97,7 +99,7 @@ const battleLooks = {
   cell: -1,
 };
 /** a new battle: nothing on the stage yet */
-function battleLooksReset() {
+export function battleLooksReset() {
   battleLooks.seen = null;
   battleLooks.lastEv = null;
   battleLooks.s = [];
@@ -229,7 +231,8 @@ function battleLookStat(an, ev) {
   battleStageKit.setActorAction(i, up ? 'buff' : 'dizzy', 700);
   lookBurst(i, C.B, reduced ? Math.min(2, C.n) : C.n);
   if (up) battleStageKit.groundRing(i, BATTLE_ANIMS.colors.guard, C.sharp ? 2 : 1.6, 520);
-  battleStageKit.tween(s, 'white', 0.3, 120);
+  /* VFX-20: at most half strength with Flashes off (rule 9) */
+  battleStageKit.tween(s, 'white', lookFlashesOff() ? 0.15 : 0.3, 120);
   battleStageKit.tween(s, 'white', 0, 240, 'lin', 140);
   return { dur: 680, hit: 0 };
 }
@@ -405,7 +408,8 @@ function battleLooksTick() {
             y: w.y + C.up * hh,
             z: w.z - C.out * hh * 0.4 + C.across * hh * 0.3,
           },
-          { frame: flash ? D.flashFrame : j >= n - cracked ? D.crackFrame : D.frame, alpha: flash ? 1 : (D.a ?? 1) }
+          /* VFX-20: with Flashes off a block's flash cell shows at the dome's own strength, not whole and bright */
+          { frame: flash ? D.flashFrame : j >= n - cracked ? D.crackFrame : D.frame, alpha: bright ? 1 : (D.a ?? 1) }
         )
       );
     }
@@ -499,6 +503,11 @@ function battleLookSleepPose(P, sl) {
   P.head += sl.droop;
   P.face = 'blink';
   return P;
+}
+/** VFX-20: whether the stage's idle loops move now (rule 9): always under Full, in the turn's pulse under Calm, never
+ * under Reduced motion; the stage's ambient motes and leaves follow it as the lasting looks do */
+function battleLooksIdleOn() {
+  return lookLoopOn(lookMotionNow(), battleStage.t, battleLooks.pulse);
 }
 /** VFX-14: Fork's flickering copy of Billie i (battle-3d.js draws it as an afterimage): how far aside and how strong;
  * null when it shows none (Calm outside its pulse, Reduced motion: a tint instead) */
