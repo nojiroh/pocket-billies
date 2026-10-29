@@ -240,6 +240,10 @@ Two rules hold everywhere:
 - The shared helpers of every browser check (server, clock, accounts, test globals, low graphics, `until`, page
   opening, console text, log) are in `tools/browser_check.py`; a new check imports them from there.
 - The checks never reach accounts or the network (`NO_ACCOUNTS`), and nothing they do is saved for real.
+- Figures on (dialogue track DL-6): `PB_FIGURES=1 python3 tools/check-quick.py` (any browser check) runs with Engine >
+  People > Figures and Townsfolk as figures on in the game-wide defaults, `PB_FIGURE=mannequin` for the code figure
+  (the Rogue by default). A session that changes the figures or the talk's portraits runs the quick check with them
+  off and on.
 - The test cleanup track's TC-1 (docs/phases/test-cleanup-track.md, lane B) deleted the steps another check already
   covers (Code, Messages, Team, Studio opens, Shaders, Paths, Scenes, Crowd, RL-7's run roads, the joystick, Battles,
   v36's split evolution) and the outdated ones (old place names, v34, v35, v37, v38, v39/v40, v44, v47, Things to do

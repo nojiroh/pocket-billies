@@ -65,7 +65,11 @@
       "action": {"$ref": "#/$defs/familyShape"},
       "tab": {"$ref": "#/$defs/familyShape"},
       "toast": {"$ref": "#/$defs/familyShape"},
-      "bubble": {"$ref": "#/$defs/familyShape"}
+      "bubble": {"$ref": "#/$defs/familyShape"},
+      "bubbleSoft": {"$ref": "#/$defs/familyShape"},
+      "bubbleNote": {"$ref": "#/$defs/familyShape"},
+      "bubbleShout": {"$ref": "#/$defs/jagShape"},
+      "bubbleThink": {"$ref": "#/$defs/familyShape"}
      }
     }
    }
@@ -74,7 +78,7 @@
    "type": "object",
    "additionalProperties": false,
    "properties": {
-    "kind": {"enum": ["cut", "rounded", "square"], "description": "cut is the look; rounded and square are for comparing"},
+    "kind": {"enum": ["cut", "rounded", "square", "jag"], "description": "cut is the look; rounded and square are for comparing; jag (DL-3) is a shout's seeded burst"},
     "size": {"enum": ["cutSm", "cutMd", "cutLg"], "description": "which cut size the family's cuts use"},
     "corners": {
      "type": "array",
@@ -86,6 +90,8 @@
     "radius": {"type": "number", "minimum": 0, "maximum": 48, "description": "px, when the family is rounded"}
    }
   },
+  "jagShape": {"type": "object", "additionalProperties": false, "description": "DL-3: a family that may be a jagged burst (a shout): a family's shape plus its spikes", "properties": {"kind": {"enum": ["cut", "rounded", "square", "jag"], "description": "cut is the look; rounded and square are for comparing; jag (DL-3) is a shout's seeded burst"}, "size": {"enum": ["cutSm", "cutMd", "cutLg"], "description": "which cut size the family's cuts use"}, "corners": {"type": "array", "uniqueItems": true, "maxItems": 4, "items": {"enum": ["tl", "tr", "br", "bl"]}, "description": "which corners are cut (the long hexagons, action and toast, cut both ends and ignore it)"}, "radius": {"type": "number", "minimum": 0, "maximum": 48, "description": "px, when the family is rounded"}, "depth": {"type": "number", "minimum": 2, "maximum": 24, "description": "DL-3: px, how deep a jagged burst's valleys go"}, "spikes": {"type": "integer", "minimum": 3, "maximum": 16, "description": "DL-3: a jagged burst's spikes along its top and bottom edges"}}},
+
   "type": {
    "type": "object",
    "additionalProperties": false,
@@ -183,6 +189,11 @@
     "exit": {"type": "number", "minimum": 0, "maximum": 1000, "description": "UI-16a: --m-exit, ms: things leaving (a toast, a sheet's fly-to)"},
     "pop": {"type": "number", "minimum": 0, "maximum": 1000, "description": "UI-16a: --m-pop, ms: a number's or a target's pop"},
     "float": {"type": "number", "minimum": 0, "maximum": 2000, "description": "UI-16a: --m-float, ms: a floating number's rise after its pop"},
+    "bubbleResponse": {"type": "number", "minimum": 0.1, "maximum": 1, "description": "DL-3: s, the dialogue bubble's spring: how long one swing takes (--bubble-spring, logic/motion.js springEase)"},
+    "bubbleDamping": {"type": "number", "minimum": 0.3, "maximum": 1, "description": "DL-3: the bubble's spring's damping: 1 never overshoots, lower bounces more"},
+    "bubblePop": {"type": "number", "minimum": 0.3, "maximum": 1, "description": "DL-3: --bubble-pop, the size a bubble pops in from (1: no pop)"},
+    "bubbleTilt": {"type": "number", "minimum": 0, "maximum": 8, "description": "DL-3: --bubble-tilt, degrees: the most a bubble's frame tilts (each line picks its own, a skin may lean more or less)"},
+    "bubbleIdle": {"type": "number", "minimum": 0, "maximum": 2, "description": "DL-3: --bubble-idle: the active bubble's float, wiggle and breathing, times UI-2's"},
     "easeOut": {"$ref": "#/$defs/ease"},
     "easeIn": {"$ref": "#/$defs/ease"},
     "spring": {"$ref": "#/$defs/ease"}

@@ -265,8 +265,9 @@ const storyGameStage = {
           l.text,
           l.expr,
           /* RT-2: a pair's second trainer by its own class's name */
+          /* DL-3: the class also picks the bubble (talkSkins.json classes: the Bureau's agents) */
           T && T.cls && who === T.who
-            ? { name: T.mate ? T.name.split(' & ')[0] : T.name }
+            ? { name: T.mate ? T.name.split(' & ')[0] : T.name, cls: T.cls }
             : T && T.mate && who === T.mate.who
               ? { name: T.mate.name }
               : {}

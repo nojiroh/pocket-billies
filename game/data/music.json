@@ -2431,6 +2431,633 @@
    ]
   }
  },
+ "battle": {
+  "about": "VFX-19: the battle's sounds (the shape agreed with the sound track): families, a sound per move family (battleAnims.json families: cast from the move's start, hit from its hit); types, a layer per type kit over it (the Bureau's for a Bureau bot); hurt, by what hurt (a burn, recoil and any other damage that isn't a move's, a spread move's second target, the delayed hit landing); recall, the recall's beam; catch, the pyramid's throw (a send-out or a catch), pop (a send-out), land, wobble and seal. Each voice is a cry's (at s, note over the sound's pitch, 60 when it sets none, len s, and optionally wave, vol, slide, vib; inst a baked instrument, the wave until the bank has it) or a noise (noise: lp, hp or bp in Hz with q, dur s, vol); echo sends that much to the effects' echo. Played on the Sound effects bus on the stage clock (audio/battle-sounds.js); the hit tiers' own sounds (hit, super, weak, crit, miss) stay sound.js's. Placeholders until the owner's listening pass",
+  "families": {
+   "charge": {
+    "name": "placeholder: a rush of air, then a heavy thump (Claude's draft)",
+    "wave": "sine",
+    "cast": [
+     {
+      "at": 0,
+      "noise": {"bp":500,"q":0.5},
+      "dur": 0.25,
+      "vol": 0.1
+     }
+    ],
+    "hit": [
+     {"at":0,"note":-24,"len":0.15,"vol":0.14,"slide":0.4},
+     {
+      "at": 0,
+      "noise": {"lp":600},
+      "dur": 0.18,
+      "vol": 0.2
+     }
+    ]
+   },
+   "dash": {
+    "name": "placeholder: a quick hiss, a sharp knock (Claude's draft)",
+    "wave": "p25",
+    "cast": [
+     {
+      "at": 0,
+      "noise": {"hp":2500},
+      "dur": 0.12,
+      "vol": 0.08
+     }
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":1500,"q":0.8},
+      "dur": 0.1,
+      "vol": 0.16
+     }
+    ]
+   },
+   "dive": {
+    "name": "placeholder: a whistle falling, a heavy landing (Claude's draft)",
+    "wave": "p25",
+    "cast": [
+     {"at":0,"note":24,"len":0.35,"vol":0.05,"slide":0.3}
+    ],
+    "hit": [
+     {"at":0,"note":-24,"len":0.18,"wave":"sine","vol":0.14,"slide":0.35},
+     {
+      "at": 0,
+      "noise": {"lp":500},
+      "dur": 0.3,
+      "vol": 0.24
+     }
+    ]
+   },
+   "strike": {
+    "name": "placeholder: a short swing, a punchy hit (Claude's draft)",
+    "wave": "square",
+    "cast": [
+     {
+      "at": 0,
+      "noise": {"bp":900},
+      "dur": 0.06,
+      "vol": 0.06
+     }
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":1200,"q":1},
+      "dur": 0.08,
+      "vol": 0.18
+     },
+     {"at":0,"note":-12,"len":0.06,"vol":0.06,"slide":0.5}
+    ]
+   },
+   "slash": {
+    "name": "placeholder: a swish, a bright cut (Claude's draft)",
+    "wave": "p12",
+    "cast": [
+     {
+      "at": 0,
+      "noise": {"hp":4000},
+      "dur": 0.15,
+      "vol": 0.1
+     }
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"hp":3000},
+      "dur": 0.12,
+      "vol": 0.14
+     },
+     {"at":0,"note":24,"len":0.05,"vol":0.04,"slide":0.6}
+    ]
+   },
+   "quake": {
+    "name": "placeholder: a low rumble, the ground giving (Claude's draft)",
+    "wave": "sine",
+    "cast": [
+     {
+      "at": 0,
+      "noise": {"lp":180},
+      "dur": 0.35,
+      "vol": 0.2
+     }
+    ],
+    "hit": [
+     {"at":0,"note":-30,"len":0.3,"vol":0.16,"slide":0.5},
+     {
+      "at": 0,
+      "noise": {"lp":300},
+      "dur": 0.5,
+      "vol": 0.28
+     }
+    ]
+   },
+   "flurry": {
+    "name": "placeholder: three quick knocks (Claude's draft)",
+    "wave": "p25",
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":1400},
+      "dur": 0.05,
+      "vol": 0.12
+     },
+     {
+      "at": 0.07,
+      "noise": {"bp":1600},
+      "dur": 0.05,
+      "vol": 0.12
+     },
+     {
+      "at": 0.14,
+      "noise": {"bp":1300},
+      "dur": 0.05,
+      "vol": 0.14
+     }
+    ]
+   },
+   "shot": {
+    "name": "placeholder: a rising zip, a pop on the foe (Claude's draft)",
+    "wave": "p25",
+    "cast": [
+     {"at":0,"note":12,"len":0.12,"vol":0.05,"slide":1.8},
+     {
+      "at": 0,
+      "noise": {"hp":3000},
+      "dur": 0.1,
+      "vol": 0.05
+     }
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":1800},
+      "dur": 0.1,
+      "vol": 0.14
+     },
+     {"at":0,"note":0,"len":0.06,"wave":"p50","vol":0.05,"slide":0.5}
+    ]
+   },
+   "beam": {
+    "name": "placeholder: a humming beam, a fizzing hit (Claude's draft)",
+    "wave": "sawtooth",
+    "cast": [
+     {"at":0,"note":7,"len":0.45,"vol":0.04,"vib":4},
+     {"at":0,"note":19,"len":0.45,"wave":"p12","vol":0.03,"vib":6}
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":2400,"q":0.6},
+      "dur": 0.25,
+      "vol": 0.14
+     }
+    ]
+   },
+   "breath": {
+    "name": "placeholder: a roaring breath, a wash on the foe (Claude's draft)",
+    "wave": "p25",
+    "cast": [
+     {
+      "at": 0,
+      "noise": {"bp":900,"q":0.5},
+      "dur": 0.5,
+      "vol": 0.12
+     }
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"lp":1500},
+      "dur": 0.3,
+      "vol": 0.15
+     }
+    ]
+   },
+   "wave": {
+    "name": "placeholder: a swell rising, a crash (Claude's draft)",
+    "wave": "sine",
+    "cast": [
+     {"at":0,"note":0,"len":0.4,"vol":0.06,"slide":2}
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"lp":900},
+      "dur": 0.4,
+      "vol": 0.18
+     },
+     {"at":0,"note":-5,"len":0.3,"wave":"triangle","vol":0.06,"slide":0.5}
+    ]
+   },
+   "storm": {
+    "name": "placeholder: wind and a far roll, then the strike (Claude's draft)",
+    "wave": "p25",
+    "cast": [
+     {
+      "at": 0,
+      "noise": {"hp":1500},
+      "dur": 0.5,
+      "vol": 0.07
+     },
+     {
+      "at": 0.2,
+      "noise": {"lp":300},
+      "dur": 0.4,
+      "vol": 0.1
+     }
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":2000},
+      "dur": 0.15,
+      "vol": 0.16
+     },
+     {
+      "at": 0.05,
+      "noise": {"lp":400},
+      "dur": 0.4,
+      "vol": 0.2
+     }
+    ]
+   },
+   "buff": {
+    "name": "placeholder: three notes up, a bright ring (Claude's draft)",
+    "wave": "p25",
+    "cast": [
+     {"at":0,"note":0,"len":0.08,"vol":0.05},
+     {"at":0.07,"note":4,"len":0.08,"vol":0.05},
+     {"at":0.14,"note":7,"len":0.08,"vol":0.05}
+    ],
+    "hit": [
+     {"at":0,"note":12,"len":0.15,"vol":0.05,"slide":1.2,"vib":2}
+    ]
+   },
+   "hex": {
+    "name": "placeholder: a sour wobble, a sinking tone (Claude's draft)",
+    "wave": "p12",
+    "cast": [
+     {"at":0,"note":6,"len":0.35,"vol":0.045,"slide":0.7,"vib":6}
+    ],
+    "hit": [
+     {"at":0,"note":-6,"len":0.3,"wave":"triangle","vol":0.06,"slide":0.5,"vib":3}
+    ]
+   },
+   "guard": {
+    "name": "placeholder: a soft hum, a glassy ping (Claude's draft)",
+    "wave": "sine",
+    "echo": 0.3,
+    "cast": [
+     {"at":0,"note":12,"len":0.25,"vol":0.05,"vib":1}
+    ],
+    "hit": [
+     {"at":0,"note":19,"len":0.06,"wave":"p50","vol":0.04},
+     {
+      "at": 0,
+      "noise": {"bp":4000,"q":2},
+      "dur": 0.08,
+      "vol": 0.06
+     }
+    ]
+   },
+   "heal": {
+    "name": "placeholder: two soft notes, a chime climbing (Claude's draft)",
+    "wave": "sine",
+    "echo": 0.4,
+    "cast": [
+     {"at":0,"note":7,"len":0.12,"vol":0.04},
+     {"at":0.08,"note":12,"len":0.12,"vol":0.04}
+    ],
+    "hit": [
+     {"at":0,"note":12,"len":0.15,"vol":0.04},
+     {"at":0.06,"note":16,"len":0.15,"vol":0.04},
+     {"at":0.12,"note":19,"len":0.15,"vol":0.04}
+    ]
+   }
+  },
+  "types": {
+   "Fire": {
+    "name": "placeholder: a crackle and a whump (Claude's draft)",
+    "wave": "p25",
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":2500,"q":0.5},
+      "dur": 0.3,
+      "vol": 0.08
+     },
+     {
+      "at": 0,
+      "noise": {"lp":600},
+      "dur": 0.25,
+      "vol": 0.08
+     }
+    ]
+   },
+   "Water": {
+    "name": "placeholder: a plip and a splash (Claude's draft)",
+    "wave": "sine",
+    "hit": [
+     {"at":0,"note":12,"len":0.1,"vol":0.05,"slide":0.4},
+     {
+      "at": 0,
+      "noise": {"bp":1200,"q":0.7},
+      "dur": 0.2,
+      "vol": 0.08
+     }
+    ]
+   },
+   "Grass": {
+    "name": "placeholder: a rustle and a tick (Claude's draft)",
+    "wave": "triangle",
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"hp":5000},
+      "dur": 0.18,
+      "vol": 0.05
+     },
+     {"at":0,"note":19,"len":0.06,"vol":0.03}
+    ]
+   },
+   "Electric": {
+    "name": "placeholder: a buzz, a zap (Claude's draft)",
+    "wave": "p12",
+    "cast": [
+     {"at":0,"note":24,"len":0.1,"vol":0.03,"vib":10}
+    ],
+    "hit": [
+     {"at":0,"note":31,"len":0.08,"wave":"square","vol":0.04,"slide":0.3},
+     {
+      "at": 0,
+      "noise": {"hp":6000},
+      "dur": 0.1,
+      "vol": 0.07
+     }
+    ]
+   },
+   "Ground": {
+    "name": "placeholder: a deep thud of earth (Claude's draft)",
+    "wave": "sine",
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"lp":250},
+      "dur": 0.3,
+      "vol": 0.14
+     }
+    ]
+   },
+   "Flying": {
+    "name": "placeholder: a gust, a light chirp (Claude's draft)",
+    "wave": "p25",
+    "cast": [
+     {
+      "at": 0,
+      "noise": {"bp":1800,"q":0.4},
+      "dur": 0.25,
+      "vol": 0.06
+     }
+    ],
+    "hit": [
+     {"at":0,"note":24,"len":0.06,"vol":0.03,"slide":1.5}
+    ]
+   },
+   "Psychic": {
+    "name": "placeholder: a wavering tone, a soft fall (Claude's draft)",
+    "wave": "sine",
+    "cast": [
+     {"at":0,"note":19,"len":0.35,"vol":0.035,"vib":8}
+    ],
+    "hit": [
+     {"at":0,"note":24,"len":0.2,"vol":0.04,"slide":0.5}
+    ]
+   },
+   "Steel": {
+    "name": "placeholder: a metal clang (Claude's draft)",
+    "wave": "triangle",
+    "hit": [
+     {"at":0,"note":31,"len":0.25,"vol":0.04},
+     {"at":0,"note":36,"len":0.2,"wave":"p50","vol":0.025}
+    ]
+   },
+   "Dragon": {
+    "name": "placeholder: a low growl, a heavy boom (Claude's draft)",
+    "wave": "sawtooth",
+    "cast": [
+     {"at":0,"note":-12,"len":0.3,"vol":0.04,"slide":1.3,"vib":3}
+    ],
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"lp":400},
+      "dur": 0.3,
+      "vol": 0.1
+     }
+    ]
+   },
+   "None": {
+    "name": "placeholder: a plain tap (Claude's draft)",
+    "wave": "p25",
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":1000},
+      "dur": 0.06,
+      "vol": 0.05
+     }
+    ]
+   },
+   "Bureau": {
+    "name": "placeholder: a stamp's click and thunk (Claude's draft)",
+    "wave": "square",
+    "hit": [
+     {
+      "at": 0,
+      "noise": {"bp":2800,"q":3},
+      "dur": 0.03,
+      "vol": 0.1
+     },
+     {"at":0.03,"note":-5,"len":0.05,"vol":0.04}
+    ]
+   }
+  },
+  "hurt": {
+   "burn": {
+    "name": "placeholder: a hiss of flame, a small wince (Claude's draft)",
+    "wave": "triangle",
+    "voices": [
+     {
+      "at": 0,
+      "noise": {"bp":2200,"q":0.6},
+      "dur": 0.25,
+      "vol": 0.1
+     },
+     {
+      "at": 0,
+      "noise": {"lp":500},
+      "dur": 0.2,
+      "vol": 0.08
+     },
+     {"at":0,"note":-5,"len":0.15,"vol":0.04,"slide":0.7}
+    ]
+   },
+   "recoil": {
+    "name": "placeholder: a dull thump back (Claude's draft)",
+    "wave": "square",
+    "voices": [
+     {
+      "at": 0,
+      "noise": {"lp":700},
+      "dur": 0.15,
+      "vol": 0.18
+     },
+     {"at":0,"note":-17,"len":0.08,"vol":0.06,"slide":0.5}
+    ]
+   },
+   "spread": {
+    "name": "placeholder: a lighter knock on the second foe (Claude's draft)",
+    "wave": "p25",
+    "voices": [
+     {
+      "at": 0,
+      "noise": {"bp":1400},
+      "dur": 0.08,
+      "vol": 0.12
+     },
+     {"at":0,"note":-12,"len":0.05,"vol":0.04,"slide":0.6}
+    ]
+   },
+   "delayed": {
+    "name": "placeholder: a thud and two coin notes (Claude's draft)",
+    "wave": "p50",
+    "voices": [
+     {
+      "at": 0,
+      "noise": {"lp":900},
+      "dur": 0.2,
+      "vol": 0.2
+     },
+     {"at":0,"note":24,"len":0.05,"vol":0.04},
+     {"at":0.05,"note":28,"len":0.07,"vol":0.04}
+    ]
+   }
+  },
+  "recall": {
+   "name": "placeholder: a beam drawing back, falling (Claude's draft)",
+   "wave": "p25",
+   "echo": 0.3,
+   "voices": [
+    {"at":0,"note":12,"len":0.3,"vol":0.05,"slide":0.5,"vib":2},
+    {"at":0,"note":24,"len":0.35,"wave":"sine","vol":0.03,"slide":0.5},
+    {
+     "at": 0,
+     "noise": {"hp":3000},
+     "dur": 0.3,
+     "vol": 0.04
+    }
+   ]
+  },
+  "catch": {
+   "throw": {
+    "name": "placeholder: today's throw with an arm's thump and air (Claude's draft)",
+    "pitch": 74,
+    "wave": "p25",
+    "echo": 0.2,
+    "voices": [
+     {"at":0,"note":0,"len":0.18,"vol":0.06,"slide":2.4},
+     {
+      "at": 0,
+      "noise": {"hp":3000},
+      "dur": 0.15,
+      "vol": 0.05
+     },
+     {
+      "at": 0,
+      "noise": {"bp":900,"q":0.5},
+      "dur": 0.25,
+      "vol": 0.07
+     },
+     {"at":0,"note":-24,"len":0.1,"wave":"sine","vol":0.06,"slide":0.6}
+    ]
+   },
+   "pop": {
+    "name": "placeholder: today's pop with a low body (Claude's draft)",
+    "pitch": 81,
+    "wave": "p50",
+    "echo": 0.25,
+    "voices": [
+     {"at":0,"note":0,"len":0.05,"vol":0.07,"slide":1.6},
+     {
+      "at": 0.02,
+      "noise": {"bp":4000,"q":1},
+      "dur": 0.1,
+      "vol": 0.08
+     },
+     {"at":0,"note":-24,"len":0.1,"wave":"sine","vol":0.08,"slide":0.5}
+    ]
+   },
+   "land": {
+    "name": "placeholder: a stone clunk with a low body (Claude's draft)",
+    "pitch": 48,
+    "wave": "sine",
+    "echo": 0.2,
+    "voices": [
+     {"at":0,"note":-12,"len":0.14,"vol":0.14,"slide":0.35},
+     {
+      "at": 0,
+      "noise": {"lp":900},
+      "dur": 0.12,
+      "vol": 0.16
+     },
+     {
+      "at": 0.005,
+      "noise": {"bp":2400,"q":2},
+      "dur": 0.03,
+      "vol": 0.06
+     }
+    ]
+   },
+   "wobble": {
+    "name": "placeholder: a rocking knock (Claude's draft)",
+    "pitch": 62,
+    "wave": "triangle",
+    "echo": 0.15,
+    "voices": [
+     {"at":0,"note":0,"len":0.06,"vol":0.1,"slide":0.8},
+     {
+      "at": 0,
+      "noise": {"bp":1200},
+      "dur": 0.04,
+      "vol": 0.06
+     },
+     {"at":0,"note":-12,"len":0.05,"wave":"sine","vol":0.05}
+    ]
+   },
+   "seal": {
+    "name": "placeholder: today's seal: a click, a shimmer up, a low body (Claude's draft)",
+    "pitch": 84,
+    "wave": "sine",
+    "echo": 0.35,
+    "voices": [
+     {
+      "at": 0,
+      "noise": {"bp":3200,"q":3},
+      "dur": 0.025,
+      "vol": 0.08
+     },
+     {"at":0.05,"note":0,"len":0.14,"vol":0.045},
+     {"at":0.1,"note":7,"len":0.14,"vol":0.045},
+     {"at":0.15,"note":12,"len":0.14,"vol":0.045},
+     {"at":0.2,"note":19,"len":0.14,"vol":0.045},
+     {"at":0,"note":-24,"len":0.12,"vol":0.06,"slide":0.6}
+    ]
+   }
+  }
+ },
  "mix": {
   "about": "SND-6: the mix. Each bus's trim (x the square of its Settings slider): master leaves headroom for the compressor after it, amb sits the ambience a little under the world sounds. bedsUnderSong: dB the world and ambience beds come down while a four-voice song plays (not the title or the fall). compressor: on the master, threshold in dB and ratio. SND-15: the master chain (audio/mix-chain.js): the compressor a gentle glue (threshold and knee in dB, ratio, attack and release in s), makeup the dB the whole mix is lifted after it so the music sits near -18 LUFS at the default sliders, the limiter last (threshold dB, release s) so the true peaks stay under -1 dBTP. SND-15 also raised the sliders' defaults (audio/levels.js SOUND_DEFAULTS: music 0.8, sound effects 1, world and ambience 0.75) and set sfx, world and amb here so every bus keeps its level against the music as it was",
   "master": 0.9,

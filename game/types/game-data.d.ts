@@ -73,6 +73,9 @@ export interface GameData {
   events?: EventsData;
   /** RL-S1: the story director's lines */
   banter?: Record<DataId, BanterLine>;
+  /** DL-3: each character's own speech bubble (logic/talk-skins.js) */
+  talkSkins?: TalkSkins;
+  emotes?: Emotes;
   /** RL-S2: the hub folk and you (relations.json) */
   relations?: RelationsData;
   /** ON-3: the Showcase's weekly themes and ribbons (game/data/showcase.json) */
@@ -219,17 +222,14 @@ export interface BillyType {
   /** RF-3: the passive's name and what it does, as the player reads them */
   passiveName?: string;
   passiveText?: string;
-  /** hit effects (default pow, star) */
-  fx?: string[];
 }
 
-/** untyped.json: the colours and hit effects of 'None' */
+/** untyped.json: the colours of 'None' (VFX-20: its battle particles are battleAnims.json types.None.burstSprites) */
 export interface Untyped {
   color: Color;
   /** UI-13: its colour in battle's 3D effects (default `color`) */
   glow?: Color;
   text?: Color;
-  fx?: string[];
 }
 
 /** moves.json: a move */
@@ -2677,7 +2677,7 @@ export interface BattleAnimsData {
   defaults: Record<'H' | 'S' | 'X' | 'miss' | 'protect' | 'blocked', DataId>;
   intro: BattleAnimStep[];
   families: Record<DataId, BattleAnimFamily>;
-  scenes: Record<DataId, BattleAnimFamily>;
+  scenes: Record<DataId, BattleAnimScene>;
   /** VFX-15: the battle mood (logic/battle-stage-look.js battleMoodFor) */
   moods?: BattleMoods;
   /** VFX-15: the walk weather on the battle stage */
@@ -2711,6 +2711,9 @@ export interface BattleAnimKit {
   impact: DataId;
   small?: DataId;
   bits: DataId[];
+  /** VFX-20: the icons.png particles a hit's burst sprays in turn (were types.json and untyped.json `fx`); a kit
+   * without one sprays None's */
+  burstSprites?: string[];
   /** icons.png particles sprayed beside the strips (cog, scale, pow) */
   icons?: string[];
   path: 'straight' | 'arc' | 'zigzag' | 'spiral' | 'wave' | 'stamp';
@@ -2950,6 +2953,8 @@ export interface BattleAnimEvents {
   victory?: { sparkles: number; cheerMs: number };
   defeat?: { fadeMs: number };
   item?: { flyMs: number };
+  /** VFX-18b: a Bureau boss's phase with a shield: prop steps played on the boss inside the phase's own time */
+  bossPhase?: { about?: string; faction: string; steps: BattleAnimStep[] };
 }
 /** VFX-15: a darken and tint on big moves and super-effective hits, the row wave, heat (battleAnims.json `moods`) */
 export interface BattleMoods {
@@ -3003,6 +3008,11 @@ export interface BattleAnimFamily extends BattleAnimTimeline {
   /** VFX-13: its own miss (a whiff that fits it) */
   miss?: BattleAnimTimeline;
 }
+/** VFX-17: a signature scene: a family's shape, the family it plays where its models can't be drawn or under Reduced
+ * motion, and its short version (the prop and the hit) for its second use in a battle and the Faster speed */
+export interface BattleAnimScene extends BattleAnimFamily {
+  family: string;
+}
 /** a step: what it does, when (stage ms), its gates and its own numbers */
 export interface BattleAnimStep {
   do: string;
@@ -3024,7 +3034,10 @@ export interface BattleAnimStep {
   ramp2?: string;
   path?: string;
   part?: 'cast' | 'hit';
-  icon?: string;
+  /** VFX-17: or several icons, taken in turn */
+  icon?: string | string[];
+  /** VFX-17: a prop step's model (a recipe id in game/art/scene/next/models) */
+  prop?: string;
   [k: string]: unknown;
 }
 /** WM-7: arenas.json: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's
@@ -3204,4 +3217,32 @@ export interface RelationLevel {
   pyramids?: Record<string, number>;
   /** a wardrobe piece given once, when the level is reached */
   wardrobe?: string;
+}
+
+/** DL-3: a speech bubble's skin (talkSkins.json; css/talk-skins.css) */
+export interface TalkSkin {
+  name: string;
+  family: 'bubble' | 'bubbleSoft' | 'bubbleNote';
+  slant?: number;
+  tilt?: number;
+  entrance: 'pop' | 'soft' | 'still';
+  blip: 'voice' | 'typewriter' | 'calm';
+  deco: string[];
+}
+/** DL-3: talkSkins.json: the skins, and who wears which */
+export interface TalkSkins {
+  about?: string;
+  default: string;
+  skins: Record<DataId, TalkSkin>;
+  speakers: Record<DataId, DataId>;
+  classes: Record<DataId, DataId>;
+}
+/** DL-5: emotes.json: the emotes that pop beside a talking head, as pixel grids */
+export interface Emotes {
+  about?: string;
+  size: number;
+  outline: string;
+  colors: Record<string, string>;
+  auto: Record<string, string>;
+  emotes: Record<string, string[]>;
 }

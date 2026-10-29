@@ -1,0 +1,121 @@
+/* ================= DL-3: each character's own speech bubble =================
+   docs/phases/dialogue-track.md, "Every character has their own bubble"; the owner chose the DL-0 mockup's looks
+   (docs/samples/dialogue-mockup.html). talk.js puts the speaker's skin on the box (data-skin, from talkSkins.json via
+   logic/talk-skins.js); each skin only sets --skin-* variables, which dialogue.css's rules read: the fill and edge
+   (backgrounds, so a gradient works), the line's ink, the name tag's colours and outline, a drop shadow, and the
+   decoration layer (.talk-deco: the shine, the form number, a halftone). Shapes come from the skin's family
+   (talk.js --talk-clip). The skins keep their colours in both themes, as printed paper would; folk and narration
+   follow the theme. */
+
+/* townsfolk and trainers: today's bubble, the tag and edge in a colour of their own (talk.js --talk-hue) */
+.talk-box[data-skin='folk'] {
+  --skin-tag: hsl(var(--talk-hue, 40) 62% 76%);
+  --skin-tag-ink: var(--c-ink);
+  --skin-edge: hsl(var(--talk-hue, 40) 38% 50%);
+}
+
+/* Professor Chosen: pompous gold, a thick gilded edge, one shine as the bubble arrives (talk.js), a star on the tag */
+.talk-box[data-skin='chosen'] {
+  --skin-ew: 3px;
+  --skin-fill: #fbf4e2;
+  --skin-edge: linear-gradient(180deg, #ffe39a, #b9801c);
+  --skin-shine: rgba(255, 248, 222, 0.9);
+  --skin-ink: #2e2140;
+  --skin-tag: linear-gradient(180deg, #ffe39a, #d18e35);
+  --skin-tag-ink: #3a2408;
+}
+.talk-box[data-skin='chosen'] .talk-who::before {
+  content: '\2726\00a0';
+}
+
+/* Kappi the Wise: a soft, rounded, leaf-green bubble (the bubbleSoft family), a leaf of a tag */
+.talk-box[data-skin='kappi'] {
+  --skin-fill: #e8f0d8;
+  --skin-edge: #6f8f48;
+  --skin-ink: #26331a;
+  --skin-tag: #6f8f48;
+  --skin-tag-ink: #f4f8ea;
+  --skin-tag-clip: none;
+}
+.talk-box[data-skin='kappi'] .talk-who {
+  border-radius: var(--r-sm) var(--r-xxs) var(--r-sm) var(--r-xxs);
+}
+
+/* Blake: brash pop art: the frame slanted (talkSkins.json slant), a thick ink edge, a hard offset shadow in the plum
+   outline colour, a halftone corner, a red slanted tag in capitals */
+.talk-box[data-skin='blake'] {
+  --skin-ew: 3px;
+  --skin-fill: #ffffff;
+  --skin-edge: var(--c-shadow);
+  --skin-ink: #1b1420;
+  --skin-drop: drop-shadow(5px 5px 0 var(--c-shadow));
+  --skin-deco: radial-gradient(circle, rgba(200, 50, 60, 0.4) 1.5px, transparent 1.8px) 0 0 / 7px 7px;
+  --skin-deco-mask: linear-gradient(315deg, #000 0 16%, transparent 34%);
+  --skin-tag: #c8323c;
+  --skin-tag-ink: #ffffff;
+}
+.talk-box[data-skin='blake'] .talk-who {
+  font-style: italic;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* the Bureau: form paper with faint ruled lines, a form number in the corner (talk.js, factions.json
+   bureau.look.forms), the case files' typed face (case-file.css --font-case), a stamp on its best lines (talk.js) */
+.talk-box[data-skin='bureau'] {
+  --skin-fill: repeating-linear-gradient(180deg, transparent 0 21px, rgba(90, 120, 160, 0.2) 21px 22px), #f3ecd8;
+  --skin-edge: #9a8f78;
+  --skin-ink: #24231f;
+  --skin-form: #9a8f78;
+  --skin-tag: #5d5446;
+  --skin-tag-ink: #f6f1e3;
+  --skin-tag-clip: none;
+}
+.talk-box[data-skin='bureau'] .talk-who {
+  font-family: var(--font-case, var(--font-voice));
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.talk-box[data-skin='bureau'] .talk-line {
+  font-family: var(--font-case, var(--font-prose));
+}
+
+/* you: the outsider from the neon city: dark, a cyan edge, a magenta glow (no lines of your own yet: the owner's
+   answer in DL-3; talkSkins.json keeps it for when you have some) */
+.talk-box[data-skin='you'] {
+  --skin-ew: 2px;
+  --skin-fill: #191428;
+  --skin-edge: #3ff2e6;
+  --skin-ink: #eaf6ff;
+  --skin-drop: drop-shadow(0 0 6px #ff4fd8);
+  --skin-tag: #191428;
+  --skin-tag-ink: #3ff2e6;
+}
+
+/* narration (the field moves' prompts and results, said as "me"): a quiet note with no tail that never tilts */
+.talk-box[data-skin='narration'] {
+  --skin-fill: color-mix(in srgb, var(--g-solid) 90%, var(--g-bg2));
+  --skin-tag: var(--g-bg2);
+  --skin-tag-ink: var(--text2);
+}
+
+/* a thick edge (--skin-ew): the edge is the whole shape under a fill set in by it */
+.talk-box:is([data-skin='chosen'], [data-skin='blake'], [data-skin='you'])::before {
+  inset: calc(var(--skin-ew) - var(--bubble-tail, 18px)) var(--skin-ew) var(--skin-ew) var(--skin-ew);
+}
+.talk-box:is([data-skin='chosen'], [data-skin='blake'], [data-skin='you'])::after {
+  clip-path: var(--talk-clip, var(--clip-bubble));
+  z-index: var(--z-under);
+}
+.talk-box[data-skin='blake'] .talk-deco {
+  -webkit-mask: var(--skin-deco-mask);
+  mask: var(--skin-deco-mask);
+}
+
+/* a stamp on the Bureau's bubble (talk.js talkStamp): over the lower right of the line, never taking taps */
+.talk-stamp {
+  position: absolute;
+  right: var(--s5);
+  bottom: var(--s2);
+  pointer-events: none;
+}

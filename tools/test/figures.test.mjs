@@ -82,6 +82,7 @@ function fakeDocument(opts = {}) {
             fills: [],
             fillStyle: '',
             drawImage: (...a) => cv.x.draws.push(a),
+            clearRect: () => {},
             fillRect: (...a) => cv.x.fills.push([cv.x.fillStyle, ...a]),
             imageSmoothingEnabled: true,
           });
@@ -99,7 +100,17 @@ function freshBaker(opts) {
   const D = fakeDocument(opts),
     B = G.figureBaker;
   Object.assign(B, { cv: null, gl: null, ready: false, lost: 0, failed: '', fb: null, size: [0, 0], res: new Map() });
-  Object.assign(B, { bakes: 0, ms: 0, losses: 0, frame: -1, frameBakes: 0, bytes: 0 });
+  Object.assign(B, {
+    bakes: 0,
+    ms: 0,
+    losses: 0,
+    frame: -1,
+    frameBakes: 0,
+    bytes: 0,
+    busts: 0,
+    bustMs: 0,
+    bustAt: -1e9,
+  });
   G.figureCacheClear();
   G.document.createElement = D.createElement;
   G.gpuState.fr = 1000;
@@ -365,6 +376,87 @@ test('figures: at most 48 MB of pictures kept: big plain 3D pictures go sooner',
     assert.ok(R.pictures < 300, `${R.pictures} pictures`);
     G.figureCacheClear();
     assert.equal(G.figureReport().mb, 0);
+  } finally {
+    G.document.createElement = was;
+  }
+});
+
+/* ---------- DL-6: the talk's close-ups ---------- */
+test('figures: a close-up: the rest pose first, kept by stepped head angle, the nearest shown until baked', () => {
+  try {
+    const D = freshBaker(),
+      B = G.figureBaker,
+      next = () => (B.bustAt = -1e9);
+    const rest = G.figureBustPicture('mannequin', { yaw: 10, pitch: 0, roll: 0 });
+    assert.ok(rest, 'a picture at once');
+    assert.deepEqual(rest.head, { yaw: 0, pitch: 0, roll: 0 }, 'the rest pose before the angle asked for');
+    assert.deepEqual([rest.width, rest.height], [G.BUST_PX, G.BUST_PX]);
+    assert.equal(rest.x.fills.length, 0, 'no face on the kept picture');
+    assert.ok(rest.face && rest.face.F && rest.face.J, 'what the face needs, kept on it');
+    /* within the gap: no bake, the nearest kept */
+    assert.equal(G.figureBustPicture('mannequin', { yaw: 10, pitch: 0, roll: 0 }), rest);
+    assert.equal(G.figureReport().bustBakes, 1);
+    next();
+    const turned = G.figureBustPicture('mannequin', { yaw: 10, pitch: 0, roll: 0 });
+    assert.notEqual(turned, rest);
+    assert.deepEqual(turned.head, { yaw: 12, pitch: 0, roll: 0 });
+    next();
+    assert.equal(G.figureBustPicture('mannequin', { yaw: 11.9, pitch: 1, roll: -2 }), turned, 'the same step');
+    /* the head's matrix differs between the two, the body's not */
+    const uJ = D.made.gl.calls.filter(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ').map(c => c[3]),
+      F = G.mannequinFigure(),
+      at = id => F.parts.findIndex(p => p.id === id) * 16;
+    assert.equal(uJ.length, 2);
+    assert.deepEqual(uJ[0].slice(at('torso'), at('torso') + 16), uJ[1].slice(at('torso'), at('torso') + 16));
+    assert.notDeepEqual(uJ[0].slice(at('head'), at('head') + 16), uJ[1].slice(at('head'), at('head') + 16));
+    /* seen level: the clip matrix of a tilt of 0 */
+    const R = G.figureReport();
+    assert.deepEqual([R.busts, R.bustBakes], [2, 2]);
+    assert.ok(R.bustMs >= 0 && R.bakes === 2, 'counted with the bakes too');
+    G.figureCacheClear();
+    assert.equal(G.figureReport().busts, 0);
+  } finally {
+    G.document.createElement = was;
+  }
+});
+
+test('figures: a close-up’s face is painted on a copy, with the talk’s eyes and mouth', () => {
+  try {
+    const D = freshBaker(),
+      im = G.figureBustPicture('mannequin', null),
+      out = D.createElement('canvas');
+    G.figureBustFace(out, im, { eyes: 'open', mouth: 'shut' });
+    assert.deepEqual([out.width, out.height], [im.width, im.height]);
+    const open = out.x.fills.length;
+    assert.equal(open, 7, 'two eyes, two glints, a mouth, two blushes');
+    out.x.fills.length = 0;
+    G.figureBustFace(out, im, { eyes: 'shut', mouth: 'open' });
+    assert.equal(out.x.fills.length, 5, 'no glints with the eyes shut');
+    assert.equal(im.x.fills.length, 0, 'the kept picture untouched');
+    assert.equal(G.figureReport().bustBakes, 1, 'a face costs no bake');
+  } finally {
+    G.document.createElement = was;
+  }
+});
+
+test('figures: every head angle of a figure kept in each style (45 each)', () => {
+  try {
+    freshBaker();
+    const B = G.figureBaker;
+    for (const n of ['mannequin'])
+      for (const st of ['pixel', 'smooth']) {
+        /* the rest pose first (it would be baked before any other angle) */
+        B.bustAt = -1e9;
+        G.figureBustPicture(n, null, st);
+        for (let y = -12; y <= 12; y += 6)
+          for (let p = -8; p <= 8; p += 8)
+            for (let r = -8; r <= 8; r += 8) {
+              B.bustAt = -1e9;
+              G.figureBustPicture(n, { yaw: y, pitch: p, roll: r }, st);
+            }
+      }
+    assert.equal(G.figureReport().busts, 90);
+    assert.ok(90 <= G.FIGURE_BUST_MAX);
   } finally {
     G.document.createElement = was;
   }

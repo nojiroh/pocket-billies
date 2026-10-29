@@ -8,6 +8,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { MUSIC_PATTERN_ARP, MUSIC_PATTERN_BASS, MUSIC_PATTERN_DRUMS, musicJingleKitNote } from './music-patterns.js';
+import { battleMoveFamilies, battleSoundFindings } from './battle-sounds.js';
 /* eslint-disable no-func-assign */
 expose({
   MUSIC_CHOICES: [() => MUSIC_CHOICES],
@@ -112,6 +113,26 @@ export const MUSIC_CHOICES = {
     ['stack', 'Stack (strings, reeds, a choir, brass)'],
     ['wind', 'Wind (a flute, a clarinet, a bass)'],
     ['hit', 'Hit (a drum, a shaker)'],
+  ],
+  /* VFX-19: a battle sound's noise filter (music.json battle; schema $defs battleVoice) */
+  noise: [
+    ['lp', 'Low-pass (dull, deep)'],
+    ['bp', 'Band-pass (a band around it)'],
+    ['hp', 'High-pass (hiss)'],
+  ],
+  /* VFX-19: the hurt sounds and the throw and catch sounds (logic/battle-sounds.js BATTLE_SOUND_HURT, BATTLE_SOUND_CATCH) */
+  battleHurt: [
+    ['burn', 'Burn'],
+    ['recoil', 'Recoil (and other damage not from a move)'],
+    ['spread', 'A spread move’s second target'],
+    ['delayed', 'The delayed hit landing'],
+  ],
+  battleCatch: [
+    ['throw', 'Throw (a send-out or a catch)'],
+    ['pop', 'Pop (a send-out opening)'],
+    ['land', 'Land'],
+    ['wobble', 'Wobble'],
+    ['seal', 'Seal'],
   ],
 };
 /** SND-11: the keys a recipe may have (music.schema.json $defs.recipe), so musicFindings can catch a typo in a night,
@@ -224,13 +245,15 @@ export function musicSongUses(music, more = {}) {
  * doesn't always match, a place's song that isn't one) and warnings (a song nothing plays). Each says which song or
  * rule (its index) it is about, so the Studio can show it. SND-4: notes (info) on hooks and jingles still named as
  * placeholders; SND-6: on base cries and the species' cries (more.lines) too; SND-11: ensembles and instruments a song,
- * its versions or a part names that don't exist, a pattern a part can't play, typos in night, tense and arc versions
- * @param {{songs: Record<string, any>, where: Record<string, any>[], jingles?: Record<string, any>, cries?: {bases?: Record<string, any>}, instruments?: Record<string, any>, ensembles?: Record<string, any>, run?: {arc?: any[]}}} music
- * @param {{nodeTypes?: Record<string, unknown>, biomes?: Record<string, unknown>, locations?: any[], scriptText?: string, lines?: {id: string, names: string[], cry?: any[]}[]}} [more]
- * @returns {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, cry?: string, rule?: number, place?: string}[]}
+ * its versions or a part names that don't exist, a pattern a part can't play, typos in night, tense and arc versions.
+ * VFX-19: the battle section's (logic/battle-sounds.js battleSoundFindings), its families and types held to
+ * battleAnims.json (more.battleAnims)
+ * @param {{songs: Record<string, any>, where: Record<string, any>[], jingles?: Record<string, any>, cries?: {bases?: Record<string, any>}, instruments?: Record<string, any>, ensembles?: Record<string, any>, run?: {arc?: any[]}, battle?: import('./battle-sounds.js').BattleSoundsData}} music
+ * @param {{nodeTypes?: Record<string, unknown>, biomes?: Record<string, unknown>, locations?: any[], scriptText?: string, lines?: {id: string, names: string[], cry?: any[]}[], battleAnims?: {families?: Record<string, unknown>, types?: Record<string, unknown>, defaults?: Record<string, string>}}} [more]
+ * @returns {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, cry?: string, rule?: number, place?: string, battle?: string}[]}
  */
 export function musicFindings(music, more = {}) {
-  /** @type {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, cry?: string, rule?: number, place?: string}[]} */
+  /** @type {{lvl: 'error' | 'warn' | 'info', msg: string, song?: string, jingle?: string, cry?: string, rule?: number, place?: string, battle?: string}[]} */
   const out = [];
   const songs = music.songs || {},
     where = music.where || [];
@@ -399,6 +422,14 @@ export function musicFindings(music, more = {}) {
       lvl: 'info',
       msg: `placeholder Billie cries (${criesLeft.length}): ${criesLeft.join(', ')}. Keep, change or rename each in its Cry card`,
     });
+  /* VFX-19: the battle's sounds */
+  const A = more.battleAnims;
+  out.push(
+    ...battleSoundFindings(music.battle, {
+      families: A && A.families ? battleMoveFamilies({ families: A.families, defaults: A.defaults }) : undefined,
+      types: A && A.types ? Object.keys(A.types).filter(k => k !== 'about') : undefined,
+    })
+  );
   return out;
 }
 /** SND-4: a hook's or jingle's name marks it as a placeholder while it starts with "placeholder" @param {unknown} name */

@@ -18,6 +18,7 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  BATTLE_LOOK_FILMS: [() => BATTLE_LOOK_FILMS],
   BATTLE_LOOK_KEYS: [() => BATTLE_LOOK_KEYS],
   LOOK_CELL_MS: [() => LOOK_CELL_MS],
   // @ts-expect-error -- replaced on purpose
@@ -48,6 +49,8 @@ expose({
   lookSelfHit: [() => lookSelfHit, v => (lookSelfHit = v)],
   // @ts-expect-error -- replaced on purpose
   lookSet: [() => lookSet, v => (lookSet = v)],
+  // @ts-expect-error -- replaced on purpose
+  lookSnaps: [() => lookSnaps, v => (lookSnaps = v)],
   // @ts-expect-error -- replaced on purpose
   lookStageChange: [() => lookStageChange, v => (lookStageChange = v)],
   // @ts-expect-error -- replaced on purpose
@@ -241,4 +244,156 @@ export function lookTint(E, S) {
     if (S.has(k) && L && L.tint) return { col: L.tint, a: L.tintA ?? 0.2 };
   }
   return null;
+}
+
+/** VFX-20 (from VFX-13/14's look-battle-anims.py EVENT_FILMS): short runs of battle lines that show the lasting looks,
+ * the drain and recoil and hurt lines that knock out, on the foe (slot 1). Each line: `at` (ms after the first), `an`
+ * (the event, or none), `mods` (what it changes in the snapshots: [{i, st, fx, stg, hp}], lookSnaps), `after`
+ * (lineAfterMove's), `ka` (koAhead's or hurtKoAhead's), `by` (the glints' sources). The Studio's Battle effects plays
+ * them as events and tools/look-battle-anims.py --events films them: one list for both
+ * @type {Record<string, { label: string, lines: any[] }>} */
+export const BATTLE_LOOK_FILMS = {
+  drain: {
+    label: 'Drain (Sap Drain, then its heal)',
+    lines: [
+      { an: { k: 'move', si: 0, ti: 1, mid: 'harvest', dmg: 12, te: 1 } },
+      { at: 1000, an: { k: 'heal', si: 0, amt: 6 }, after: { kind: 'drain', from: 1, mid: 'harvest' } },
+    ],
+  },
+  recoil: {
+    label: 'Recoil (a crash after a miss)',
+    lines: [
+      { an: { k: 'move', si: 0, ti: 1, mid: 'margincall', miss: true } },
+      { at: 900, an: { k: 'hurt', si: 0, dmg: 20 }, after: { kind: 'recoil', from: 1, mid: 'margincall' } },
+    ],
+  },
+  brn: {
+    label: 'Burned: start, tick, end',
+    lines: [
+      { at: 0, an: { k: 'status', si: 1, st: 'brn' }, mods: [{ i: 1, st: 'brn' }] },
+      { at: 2000, an: { k: 'hurt', si: 1, fx: 'brn', dmg: 3 } },
+      { at: 3200, mods: [{ i: 1, st: null }] },
+    ],
+  },
+  par: {
+    label: 'Paralyzed',
+    lines: [
+      { at: 0, an: { k: 'status', si: 1, st: 'par' }, mods: [{ i: 1, st: 'par' }] },
+      { at: 1800, an: { k: 'status', si: 1, st: 'par' }, mods: [{ i: 1, st: 'par' }] },
+    ],
+  },
+  slp: {
+    label: 'Asleep: start, wake',
+    lines: [
+      { at: 0, an: { k: 'status', si: 1, st: 'slp' }, mods: [{ i: 1, st: 'slp' }] },
+      { at: 1800, an: { k: 'status', si: 1, st: 'slp' }, mods: [{ i: 1, st: 'slp' }] },
+      { at: 3000, mods: [{ i: 1, st: null }] },
+    ],
+  },
+  confused: {
+    label: 'Confused: hurts itself',
+    lines: [
+      { an: { k: 'hype', si: 1 }, mods: [{ i: 1, fx: { confused: 3 } }] },
+      { at: 1900, an: { k: 'hurt', si: 1, dmg: 4 }, mods: [{ i: 1, fx: { confused: 2 } }] },
+      { at: 3200, mods: [{ i: 1, fx: null }] },
+    ],
+  },
+  stat_up: { label: 'Stat up', lines: [{ an: { k: 'stat', si: 1, up: true }, mods: [{ i: 1, stg: { lev: 1 } }] }] },
+  stat_up2: {
+    label: 'Stat sharply up',
+    lines: [{ an: { k: 'stat', si: 1, up: true }, mods: [{ i: 1, stg: { lev: 2 } }] }],
+  },
+  stat_down: {
+    label: 'Stat down',
+    lines: [{ an: { k: 'stat', si: 1, up: false }, mods: [{ i: 1, stg: { law: -1 } }] }],
+  },
+  stat_down2: {
+    label: 'Stat sharply down',
+    lines: [{ an: { k: 'stat', si: 1, up: false }, mods: [{ i: 1, stg: { law: -2 } }] }],
+  },
+  protect: {
+    label: 'Protect and a block',
+    lines: [
+      { an: { k: 'move', si: 1, ti: 1, mid: 'hedge', protect: true }, mods: [{ i: 1, fx: { protect: 1 } }] },
+      { at: 1500, an: { k: 'move', si: 0, ti: 1, mid: 'quakestomp', blocked: true } },
+    ],
+  },
+  shield: {
+    label: 'The Alpha shield: block, wear, break',
+    lines: [
+      { an: { k: 'alphaPhase', si: 1 }, mods: [{ i: 1, fx: { shield: 2 } }] },
+      { at: 1500, an: { k: 'block', si: 1 } },
+      { at: 2100, mods: [{ i: 1, fx: { shield: 1 } }] },
+      { at: 3000, an: { k: 'stat', si: 1, up: false }, mods: [{ i: 1, fx: null }] },
+    ],
+  },
+  soaked: { label: 'Soaked', lines: [{ an: { k: 'stat', si: 1, up: false }, mods: [{ i: 1, fx: { soaked: 3 } }] }] },
+  fork: { label: 'Fork', lines: [{ an: { k: 'stat', si: 1, up: true }, mods: [{ i: 1, fx: { fork: 3 } }] }] },
+  delayed: {
+    label: 'The delayed hit',
+    lines: [
+      { an: { k: 'move', si: 0, ti: 1, mid: 'twoday', self: true } },
+      { at: 2600, an: { k: 'hurt', si: 1, fx: 'mail', dmg: 5 } },
+    ],
+  },
+  stones: {
+    label: 'Sharp stones',
+    lines: [
+      { an: { k: 'move', si: 0, ti: 1, mid: 'quakestomp', dmg: 8, te: 1 } },
+      { at: 2400, an: { k: 'hurt', si: 1, fx: 'stones', dmg: 3 } },
+    ],
+  },
+  glint: {
+    label: 'Glints (Perk, held item, passive)',
+    lines: [
+      {
+        an: { k: 'stat', si: 1, up: true },
+        mods: [{ i: 1, stg: { lev: 1 } }],
+        by: [
+          { src: 'perk:x', si: 1 },
+          { src: 'held:y', si: 1 },
+          { src: 'passive:kindling', si: 1 },
+        ],
+      },
+    ],
+  },
+  broken: { label: 'A broken part', lines: [{ an: { k: 'status', si: 1 } }] },
+  brn_ko: {
+    label: 'A burn that knocks out (the last KO)',
+    lines: [
+      { at: 0, an: { k: 'status', si: 1, st: 'brn' }, mods: [{ i: 1, st: 'brn' }] },
+      { at: 1500, an: { k: 'hurt', si: 1, fx: 'brn', dmg: 3 }, ka: { ko: true, si: [1], last: true } },
+    ],
+  },
+  spread_ko: {
+    label: "A spread move's second target knocked out",
+    lines: [
+      { an: { k: 'hurt', si: 1, fx: 'spread', dmg: 9, te: 2, t: 'Water' }, ka: { ko: true, si: [1], last: false } },
+    ],
+  },
+  delayed_ko: {
+    label: 'The delayed hit knocks out (the last KO)',
+    lines: [
+      { an: { k: 'move', si: 0, ti: 1, mid: 'twoday', self: true } },
+      { at: 2600, an: { k: 'hurt', si: 1, fx: 'mail', dmg: 5 }, ka: { ko: true, si: [1], last: true } },
+    ],
+  },
+};
+
+/** VFX-20: snapshots after a film line's changes (a copy; the line's mods on the ones before)
+ * @param {any[]} base @param {any[] | undefined} mods @returns {any[]} */
+export function lookSnaps(base, mods) {
+  const s = JSON.parse(JSON.stringify(base));
+  for (const m of mods || []) {
+    const x = s[m.i];
+    if (!x) continue;
+    if ('st' in m) x.st = m.st;
+    if ('fx' in m) {
+      if (m.fx) x.fx = m.fx;
+      else delete x.fx;
+    }
+    if (m.stg) x.stg = m.stg;
+    if (m.hp != null) x.hp = m.hp;
+  }
+  return s;
 }

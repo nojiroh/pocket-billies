@@ -96,6 +96,7 @@ expose({
   baseStats: [() => baseStats, v => (baseStats = v)],
   cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
   evolutionRowHTML: [() => evolutionRowHTML, v => (evolutionRowHTML = v)],
+  fxPick: [() => fxPick, v => (fxPick = v)],
   iconSpriteHTML: [() => iconSpriteHTML, v => (iconSpriteHTML = v)],
   itemArtButtonsHTML: [() => itemArtButtonsHTML, v => (itemArtButtonsHTML = v)],
   itemArtKey: [() => itemArtKey, v => (itemArtKey = v)],
@@ -113,6 +114,7 @@ expose({
   statsCard: [() => statsCard, v => (statsCard = v)],
   trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
   typeFxIcons: [() => typeFxIcons, v => (typeFxIcons = v)],
+  typeKit: [() => typeKit],
   whereCard: [() => whereCard, v => (whereCard = v)],
 });
 /* eslint-enable no-func-assign */
@@ -970,12 +972,17 @@ const FX_ICONS = [
   'down',
 ];
 /* VFX-10: the particle picker offers every icon a type uses (flame, leaf, pebble, feather, orb, cog and scale were
-   missing, so 7 types' particles showed none picked) and the icons the battle draws as strips, after the old list */
+   missing, so 7 types' particles showed none picked) and the icons the battle draws as strips, after the old list.
+   VFX-20: a type's particles are its battle kit's burstSprites (battleAnims.json types; were types.json fx) */
+const typeKit = (D, id) => {
+  const K = D.battleAnims && D.battleAnims.types;
+  return K && K[id] && typeof K[id] === 'object' ? K[id] : null;
+};
 function typeFxIcons(D) {
+  const kits = Object.values((D.battleAnims && D.battleAnims.types) || {});
   const keys = [
     ...FX_ICONS,
-    ...(D.types || []).flatMap(t => t.fx || []),
-    ...((D.untyped && D.untyped.fx) || []),
+    ...kits.flatMap(k => (k && k.burstSprites) || []),
     ...Object.keys((D.battleAnims && D.battleAnims.iconSprites) || {}),
   ];
   return [...new Set(keys)].filter(k => !ARTMAN.icons || ARTMAN.icons[k]);
@@ -998,14 +1005,9 @@ SECTIONS.types = () => {
       t,
       i
     ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES), textField('Ability name', `types.${i}.passiveName`, { max: 20, help: 'What the player reads in the Guide and in battle.' }), textField('What it does', `types.${i}.passiveText`, { area: 1, rows: 2, help: 'One sentence for the Guide.' }))}
-  <div class="fxpick"><span>Battle particles</span>${typeFxIcons(D)
-    .map(
-      k =>
-        `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`
-    )
-    .join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
+  ${fxPick(D, t.id)}<button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
-  return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
+  return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}${fxPick(D, 'None')}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
 ACTIONS.mx = d => {
   const t = studioState.D.types[+d.a],
@@ -1019,11 +1021,26 @@ ACTIONS.mx = d => {
   changed();
   render();
 };
+/* a type's battle particles (its kit's burstSprites); a type with no kit yet has none to pick (the Check names it) */
+function fxPick(D, id) {
+  const K = typeKit(D, id);
+  if (!K) return '';
+  const on = K.burstSprites || [];
+  return `<div class="fxpick"><span>Battle particles</span>${typeFxIcons(D)
+    .map(
+      k =>
+        `<button class="icb ${on.includes(k) ? 'on' : ''}" data-act="typeFx" data-t="${escapeHtml(id)}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`
+    )
+    .join('')}</div>`;
+}
 ACTIONS.typeFx = d => {
-  const t = studioState.D.types[+d.i];
-  t.fx = t.fx || [];
-  const k = d.k;
-  t.fx = t.fx.includes(k) ? t.fx.filter(x => x !== k) : t.fx.concat(k);
+  const K = typeKit(studioState.D, d.t);
+  if (!K) return;
+  const k = d.k,
+    L = K.burstSprites || [];
+  const next = L.includes(k) ? L.filter(x => x !== k) : L.concat(k);
+  if (next.length) K.burstSprites = next;
+  else delete K.burstSprites;
   changed();
   render();
 };

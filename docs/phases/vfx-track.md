@@ -125,6 +125,85 @@ branch; the build sessions start on `track/vfx` after VFX-5 (fetch it first: a f
 session's branch). Three read-only passes (what a battle draws; data, Studio and tests; the renderer), outside
 research, and a review of the plan against the code, whose corrections are in "How it's built".
 
+## Part 2 as built (VFX-20, 2026-10-29)
+What exists, where, and how to tune it. Everything a battle shows comes from one data file, game/data/battleAnims.json
+(its schema in game/data/schema/battleAnims.schema.json, checked by logic/data-checks.js `dataBattleAnims`), and is
+tuned in the Studio's **Creatures › Battle effects** (studio/js/battle-preview.js), which plays any move or event on
+the real battle stage at any speed, quality, Animation setting and Flashes, on a 24 fps scrubber, and saves the data
+like any section (drafts, Propose).
+- **Moves:** every move has an `anim` (moves.json): one of 16 **families** (`families`: charge, dash, dive, strike,
+  slash, quake, flurry, shot, beam, breath, wave, storm, buff, hex, guard, heal, each with a Faster `short` and,
+  for the 13 that can, its own `miss`) or a **signature scene** (`scenes`, VFX-17/18/18b: a family to fall back to,
+  low-poly props, stamped sound words, a short repeat; all 56 signature moves have one, and the Retrieval Unit boss's
+  shield phase has `events.bossPhase`). A family plays in its move's **type kit** (`types`: ramp,
+  strips by role, path, motion, light, cast and hit steps, `burstSprites`; the Bureau's for a bot's moves). Studio:
+  Moves › Animation picks it; Battle effects shows the timeline; the Families, Misses and Type kits panes.
+- **The resolver and runner:** logic/battle-anims.js (browser-free: `battleAnimFor`, `battleAnimTimeline`, `hitTier`,
+  `koAhead`, `hurtKoAhead`, `hitLook`, the flash limiter `flashGate`) and game/js/battle-anim-run.js (`battleAnimPlay`:
+  the steps on the stage clock; a tap skips). `{dur, hit}` per outcome are capped by `maxMs` (+`extraMs` 500 for
+  scenes and power 100+, none under Reduced motion).
+- **Hits:** the tier table (`tiers`: resisted, neutral, super, super ×4, crit; then what a KO and the last KO add; drain,
+  heal, recoil), played by battle-stage.js `hitFx`; a hurt line that knocks out takes the KO's look too. Studio: the
+  Hit tiers pane; Outcome and Knocks out beside the move.
+- **Statuses and short effects:** `events` (VFX-14's brn, par, slp, confused, stat, protect, shield, soaked, fork,
+  delayed, stones, glint, broken; VFX-16's vs, sendOut, recall, catch, faint, levelUp, victory, defeat, item), drawn by
+  game/js/battle-looks.js and battle-stage.js's flow block; logic/battle-looks.js `BATTLE_LOOK_FILMS` are the Studio's
+  look films (Event list) and the film tool's.
+- **The stage:** `moods` (darken, tint, the row wave, heat), `weather`, `scars` (walk/battle-scars.js); the effects'
+  pool, atlas and strips (walk/battle-fx.js, game/art/battle/anims/, drawn by tools/build-battle-anims.py; repaint them
+  in the Art browser); `ramps`, `sprites`, `iconSprites`.
+- **Budgets and settings:** `budgets` (particles, burst, lights, lightsPhone, lightsAll by quality; the Budgets pane),
+  `smears` (Part 1's dials), `flashes` (the limiter: perSecond, gapMs, redShare). The quality ladder, Calm, Reduced and
+  Flashes off: the table in VFX-20's HANDOFF entry.
+- **Sound:** music.json `battle` (VFX-19; Music & sound › Sounds › Battle), on the stage clock.
+- **Tools:** tools/look-battle-anims.py (films, sheets, `--measure`, `--events`, `--flow`, `--vs`, `--flashes=off`,
+  `--quality=N`), tools/flash-audit.py (rule 9 over the films), tools/build-battle-anims.py (the art),
+  tools/check-studio-github.py `--only=battle_fx`. The debug log's `anim` line per move: its family or scene (and the
+  scene a family stands in for), tier (+ko, +last), variant, quality and motion, and any flash the limiter held.
+
+## Phone checks for all of Part 2, in one sitting (VFX-20)
+Nothing here was waited for; every step listed its own, and they are gathered here in the order one sitting meets
+them. Send a debug log at the end (it has an `anim` line per move). Settings: Animation Full, Flashes on, Battle speed
+Normal, unless a line says otherwise.
+1. **A wild battle in Copperleaf** (frame rate first: does it hold while a big move plays?).
+   - The start: the swoop; a wild Billie's reveal. The send-out: the pyramid's landing, the dither climbing from the
+     feet, the burst in its type (a Coat's gold glint).
+   - Choosing a move: the gold ring under yours; in a double battle the target rings.
+   - One move of each family: Tackle (charge), Quick Strike (dash: afterimages and the ribbon), Wing Strike (dive),
+     Piston Jab (strike), Vine Lash (slash), Quake Stomp (quake), Assembly Line (flurry: three beats, the last the
+     hit), Spark Shot (shot), Overcharge (beam), Inferno (breath), Mind Pulse (wave), Petal Storm (storm), Charge Up
+     (buff), Static Wave (hex), Guard, Sunbathe (heal). Their colours by type; effects the size of the Billies' pixels;
+     the eroding rim on fades; lights (Fire's warm flicker, Electric's brief gold); the move sounds (placeholders).
+   - Hits by tier: resisted (grey flash, dull puff), neutral, super (type tint, chromatic pulse), ×4, crit (impact
+     frame, warm flash), a KO (white, then ink, a second scar), the last KO's freeze; the scars fading when it ends.
+   - A miss of a few families (a shot, a beam, a dash). A drain (Harvest), a crash (Margin Call missing).
+   - Tap during a move: it stops cleanly, the plates and number show, a second tap moves on.
+   - Statuses on both sides: burned's embers and flicker (and a burn that knocks out: the KO's look), paralyzed's sparks
+     and gold edge, asleep's Z's and lower idle, waking's pop, confused's stars and bonk; stat chevrons, sharply;
+     Protect's bubble and its flash on a block; Soaked's drips; Fork's copy; the delayed hit's mark (and when it
+     knocks out); stones at the feet; glints when a Perk or held item fires.
+   - The stage: the darken and tint on a big move; the row wave on a Psychic move; heat on a big Fire move; rain
+     splashing, snow settling, the Sandstorm's streaks (if the weather comes).
+   - A throw: the squash on each wobble, the dust, the seal's ring; an escape's shards. An item used. The recall
+     beam (swap a Billie) and its sound. A faint (the sink and dither). Level-up (the sky column, on the right Billie
+     in a double). A win (the cheer); a loss (your side fades).
+2. **Signature scenes:** each scene once (VFX-17's 18, VFX-18's and 18b's, the bots' and the boss's specials: the
+   lists in their HANDOFF entries), the same scene twice in a battle (the short repeat), a foe using one (the model's
+   heading), the stamped words readable at phone size, the frame rate while a tower or the train is up.
+3. **A leader, Blake and a boss:** the VS splash (portraits crisp, the type colour, the slant, gone before the first
+   line); the boss's join intro with the Notice; the Retrieval Unit's shield phase raising two Bureau barriers
+   (VFX-18b); an Alpha's shield dome cracking and shattering; a bot's faint (limbs
+   drop, smoke); an aimed move on a bot's arm (Auger Bore).
+4. **Settings, one battle each:** Faster (short variants; a tap still skips); quality 3 in Graphics (fewer particles,
+   no smears, no scars, no impact cells; still readable); Calm (status loops and ambient motes pulse once a turn;
+   actions play in full); Reduced motion (tints instead of loops, no shake, camera, dithers or extra time, scenes play
+   their family, no tag pops); Flashes off (no full-screen flash brighter than a faint tint, sprite flashes at half,
+   a hurt's blink at most 3 a second, Cut To without its two-tone frame); 3D props off (scenes play their family).
+5. **The Studio on the phone:** Creatures › Battle effects: play a move and an event (a look film), scrub to the hit,
+   step a cell, change a tier dial and a miss, undo; Types: a type's battle particles.
+6. **Listening pass** (Music & sound › Sounds › Battle): each placeholder sound, nothing too loud over the song.
+7. **The repaint list:** `python3 tools/build-battle-anims.py --sheet` (which strips to redraw).
+
 ## The owner's answers (2026-10-27)
 - **Home:** Part 2 of this track, sessions VFX-8 on, on `track/vfx`. VFX-6 folds in (see Part 1's sessions).
 - **Effect art:** Claude draws it (a tool makes grayscale pixel sprites and short flipbooks at the Billies' pixel
@@ -469,6 +548,162 @@ storyboard is the owner's to approve before it is built. Examples:
 The first batch (VFX-17) is the 12 of power 100+ (Tower Drop, Zero to One, Vision Fund, The Decision, Concrete Pour,
 Blast Furnace, Hallucinate, Developers!, Siu!, Full Steam, Standard Oil, Golden Caravan) and about 6 more.
 
+**VFX-17's storyboards** (written 2026-10-28 before any scene was built; taken as approved under the owner's standing
+instruction, listed for review). Each: the scene id (moves.json `anim`), the family it falls back to (3D props off,
+Reduced motion), its prop, then wind-up, hit, fade. "Repeat:" is the short version from its second use in a battle
+(and at Faster): the prop and the hit, no wind-up. Models are low-poly recipes from game/art/scene/next/models; icon
+props are icons.png cells; stamped words are drawn sound words only (rule 10). Each at most its category's `maxMs` +
+500 ms (H 1380, S 1560); the repeat within `maxMs`.
+- Tower Drop (`towerdrop`, Ground H, dive; city_tower_slab): the attacker crouches and points up; a city tower drops
+  from above onto the foe with Part 1's stretch and afterimages; a shake, a dust ring, the hit, a crack; the tower
+  erodes away. Repeat: the tower drops, the hit.
+- Library Slam (`libraryslam`, Steel H, dive; library): the library drops on the foe; pages (paper) scatter both ways;
+  a steel ring. Repeat: the drop, the hit.
+- Siu! (`siu`, Fire H, dive; no prop): a jump, two turns in the air, the landing on the foe in a fire ring, "SIU!"
+  stamped over the attacker as it lands back. Repeat: the landing ring, the stamp, the hit.
+- Full Steam (`fullsteam`, Electric H, charge; train_greenbelt): "TOOT!" stamped; a train runs in from the attacker's
+  side, through the foe and off the stage; sparks along the rails; the hit as it passes. Repeat: the train, the hit.
+- Golden Caravan (`goldencaravan`, Dragon S, storm; market_cart): the market cart rolls in on a high arc onto the foe;
+  coins rain in the Dragon's two-tone (gold and indigo); "KA-CHING!"; the hit. Repeat: the cart lands, coins, the
+  hit.
+- Developers! (`developers`, Fire H, flurry; the megaphone icon): a megaphone at the attacker; three shouts in a row,
+  a ring and a lunge each; the third lands the hit. Repeat: one shout and the hit.
+- The Decision (`thedecision`, Fire H, strike; the mic icon): a mic pops up before the attacker, a held beat; then a
+  leap and a slam down onto the foe, a fire ring. Repeat: the slam, the hit.
+- Concrete Pour (`concretepour`, Ground H, quake; wheelbarrow): a wheelbarrow tips over the foe; grey pebbles and dust
+  pour down; it sets with a shake and a ring. Repeat: the pour, the hit.
+- Blast Furnace (`blastfurnace`, Fire H, strike; fireplace as the furnace): a furnace rises behind the attacker and
+  glows; flame tongues blast toward the foe; the hit with heat. Repeat: the blast, the hit.
+- Standard Oil (`standardoil`, Fire H, strike; barrel): a drum drops beside the foe and bursts: a dark spray, then
+  flames lick over it. Repeat: the drum, the hit.
+- Zero to One (`zerotoone`, Psychic S, shot; the rocket icon): one dot blinks at the attacker (the zero), swells, and
+  flies to the foe as a rocket on an arc; one big impact. Repeat: the rocket, the hit.
+- Vision Fund (`visionfund`, Psychic S, beam; the chart icon): coins rush into the attacker from all sides; a chart
+  pops over it; a ray twice as wide; a ring. Repeat: the ray, the hit.
+- Hallucinate (`hallucinate`, Psychic S, wave; the tv, dice and phone icons): three wrong things orbit the foe while
+  rose rings travel to it; they pop, and the real pulse hits. Repeat: the rings, the hit.
+- Cut To (`cutto`, Psychic S, wave; no prop): the camera cuts hard to the foe, already reeling: a two-tone frame (the
+  impact frame, through Flashes and the limiter) and a shock ring. Repeat: the cut, the hit.
+- Open Sesame (`opensesame`, Fire S, storm; stall): a market stall rises beside the foe; its goods (bag, box, soda,
+  burger icons) pour out over the foe. Repeat: the goods, the hit.
+- Yacht Race (`yachtrace`, Water S, shot; fishing_boat): a boat skims in on a wave, turns hard and rams the foe; a
+  splash crown. Repeat: the ram, the hit.
+- Flatpack (`flatpack`, Steel S, storm; crate_goods): three crates fly in one after another and stack on the foe; one
+  chip bounces off (the screw to spare). Repeat: the crates, the hit.
+- Billions Served (`billionsserved`, Fire H, flurry; the burger icon): burgers served in a row, one per hit, three
+  hits; a coin ring at the end. Repeat: one burger, the hit.
+
+**VFX-18's storyboards** (written 2026-10-29 before any of them was built; taken as approved under the owner's
+standing instruction, listed for review). The same format as VFX-17's. These moves allude to real people and
+companies, so rule 10 is strict here: generic objects only, no logo, mark, slogan, real name or likeness; no move
+whose name is a slogan or catchphrase (Just Do It, I'm Out, Feeling Lucky, One More Thing) has it stamped. New drawn
+sound words: WHIRR!, TICK!, CLICK!, FORE!. Caps: H 1380, S 1560; status moves (X, maxMs 1000) stay within 1000 and add
+no time; every repeat within `maxMs`.
+- CUDA Call (`cudacall`, Electric S, breath; wind_turbine_small x3 as the fans): three fans rise behind the attacker
+  and spin up, "WHIRR!"; a gold jet roars from the attacker over the foe, sparks spraying; the hit; the fans erode.
+  Repeat: the fans spin, the jet, the hit.
+- Rollback (`rollback`, Steel H, charge; tires): a tyre rolls in from beyond the attacker, through the foe (the hit
+  as it passes), then rolls back the way it came; a down chevron on the foe. Repeat: the tyre in, the hit.
+- Terminal Fee (`terminalfee`, Electric X, hex; the laptop and coin icons): a screen (the laptop icon) pops over the
+  attacker; coins lift off the foe and fly to it; the hex's ring, and the burn's embers. Repeat: the screen, the
+  coins, the ring.
+- One More Thing (`onemorething`, Psychic S, shot; the excl icon): the attacker turns away and the camera starts to
+  pull home, as if it's over; a beat; a "!" pops over it, it turns back, and a rose orb flies at the foe; the hit.
+  Repeat: the "!", the orb, the hit.
+- Just Do It (`justdoit`, Flying H, dash; the sneaker icon): a sneaker pops at the attacker's feet; the dash comes at
+  once, before any wind-up, afterimages and feathers; the hit; the sneaker drifts off. Repeat: the dash, the hit.
+- Fast Fashion (`fastfashion`, Grass S, shot; laundry_line, the hanger and tag icons): a clothes line rises beside
+  the attacker; hangers and tags fly off it at the foe, one every two cells, leaves spinning after them; the last one
+  hits. Repeat: three hangers, the hit.
+- Spruce Dive (`sprucedive`, Flying S, dive; forest_canopy_pine, built: tree_pine_small's needles are picture cards a summoned model doesn't draw): the attacker jumps out of view; a spruce drops out of
+  the sky onto the foe with Part 1's stretch; feathers and a wind ring; the hit; the spruce erodes. (Wish: a big
+  wooden flying boat.) Repeat: the spruce drops, the hit.
+- Pop the Collar (`popthecollar`, Psychic X, hex; the shades icon): shades pop onto the attacker with a sparkle, a held
+  pose; a rose ring over the foe and its chevrons fall sharply (the hex's drop). Repeat: the shades, the ring and the
+  chevrons.
+- Assembly Line (`assemblyline`, Steel H, flurry; crate_goods): three identical crates slide in a row along the ground
+  from beyond the attacker into the foe, a cog spark at each; the third lands the hit. Repeat: one crate, the hit.
+- Per Minute (`perminute`, Electric X, hex; wall_clock): a clock appears over the foe and ticks, "TICK!" stamped
+  over it; a coin drops off the foe on each tick; the hex's ring and the burn's embers. Repeat: the clock, the ring.
+- I'm Out (`imout`, Water H, strike; no prop): the attacker hops back and turns away, a held beat (wide), then darts
+  in: the strike, a splash crown and droplets. (Wish: a dorsal fin.) Repeat: the dart, the splash, the hit.
+- Feeling Lucky (`feelinglucky`, Psychic S, beam; the dice icon): a die tumbles before the attacker and lands; a thin
+  ray flicks to the foe in a quarter of a second; a star on the weak spot, the hit. Repeat: the ray, the star, the
+  hit.
+- Character Limit (`charlimit`, Flying S, shot; the bubble icon): speech bubbles fire in a tight row from the
+  attacker; the last bursts into feathers on the foe; the hit. Repeat: three bubbles, the hit.
+- Shuffle Play (`shuffleplay`, Electric S, wave; no model, notes): notes orbit the attacker out of order, then pulse
+  to the foe one after another, a ring with each; the last ring hits. (Wish: a jukebox.) Repeat: one pulse, the hit.
+- Smart Contract (`smartcontract`, Electric S, shot; the paper and cbox icons): a sheet (the paper icon) at the
+  attacker; small blocks chain from it to the foe in a straight line; the sheet flies down the chain and locks on,
+  "CLICK!"; the hit in a square burst. Repeat: the sheet, the hit.
+- Buy the Dip (`buythedip`, Steel X, heal; the chart, down and coin icons): a chart over the attacker, a down arrow
+  falls; coins rise into the attacker with the heal's sparkles and light. Repeat: the coins, the heal.
+- In Sync (`insync`, Water H, flurry; rowboat): a rowboat skims in from the attacker's side on two strokes; two
+  splashes land at once on the foe, twice; the hit. Repeat: the boat, the hit.
+- Empire State (`empirestate`, Flying S, slash; city_tower_hero): a tower rises behind the attacker and swings over
+  in a hook across the foe, a slash arc and a wind ring; the hit; the tower erodes. Repeat: the swing, the hit.
+- Sunday Red (`sundayred`, Grass H, strike; flag_pole as the pin): a flag on a pole rises beside the foe; "FORE!"; the
+  attacker swings (a lunge) and a ball arcs low and drops in at the foe; leaves burst; the hit. Repeat: the ball,
+  the hit.
+
+**VFX-18b's storyboards** (written 2026-10-29 before any scene was built; taken as approved under the owner's standing
+instruction, listed for review). VFX-17's format. Each attack at most its category's `maxMs` + 500 ms (H 1380, S
+1560); the 5 status moves (X) stay within X's `maxMs` (1000 ms: no extra time); every repeat within `maxMs`. Props
+are generic objects only (rule 10): no logo, brand mark, slogan, real name or likeness. New stamped words are sound
+words: WHOOSH!, PSSHT!, DING-DONG!, THWOCK! (KA-CHING! is VFX-17's, reused); none against a Bureau bot.
+- Cyclone (`cyclone`, Electric S, storm; no model, bits and leaves): a funnel over the foe: dust, leaves and sparks
+  spiral up round it, tightening; "WHOOSH!" stamped at the attacker; the funnel pulls in to the foe and the hit.
+  Repeat: the funnel, the hit.
+- Gives Wings (`giveswings`, Flying X, buff; the soda icon): a can pops up at the attacker, "PSSHT!"; bubbles fizz up,
+  feathers whirl round it, the up chevrons rise twice as fast. Within 1000 ms. Repeat: the can, the chevrons.
+- State-sized Pit (`statesizedpit`, Ground H, quake; the pick icon, rocks_b): a pick at the attacker strikes the
+  ground; the ground drops under the foe (it sinks a little), a dark dust ring; rocks heave up from below beside it
+  and the hit; the rocks erode away. Repeat: the rocks, the hit.
+- Perfect Fold (`perfectfold`, Steel X, hex; the hanger icon): a hanger over the foe; paper sheets fly in and close
+  round it in two neat folds (orbits tightening); the down chevrons. Within 1000 ms. Repeat: the folds, the chevrons.
+- Harbour Fee (`harbourfee`, Steel S, wave; crate_goods, the anchor icon): water rings lap at the foe's feet; an
+  anchor icon over it; a crate lowers from above onto the foe; coins fly from the foe to the attacker, "KA-CHING!";
+  the hit. Repeat: the crate, the hit.
+- Principle No. 212 (`principle`, Psychic X, buff; the scale and paper icons): pages orbit the attacker, a balance
+  (scale) over it tips one way, then the other, and settles; a ring on each side; the up chevrons. Within 1000 ms.
+  Repeat: the scale, the chevrons. (As built: the atlas's `scale` is a 5 px fish scale, not a balance, so a big page
+  flips one way, then the other, and settles; a balance icon is on the owner's wish list.)
+- Front Run (`frontrun`, Flying H, dash; the chart icon): a chart pops over the foe; before it has finished, the
+  attacker is already there: the dash's afterimages and feathers, the hit, the chart erodes. Repeat: the dash, the
+  hit.
+- Wrong Name (`wrongname`, Water S, wave; the cup icon): a cup at the attacker; three cups fly to the foe one after
+  another, each a little off; the last splashes over it (a splash crown). Repeat: one cup, the splash, the hit.
+- Cleaning Fee (`cleaningfee`, Water S, shot; the house and tag icons): a small house beside the attacker; soap
+  bubbles stream to the foe; the shot lands and a price tag pops over the foe. Repeat: the bubbles, the tag, the hit.
+- Autoplay (`autoplay`, Psychic S, wave; sofa, the tv icon): a sofa rises behind the foe; a tv over it plays one
+  pulse, and the next starts before it ends (three, overlapping); the hit. Repeat: two pulses, the hit.
+- Fork (`fork`, Steel X, hex; the vcoin icon): a chain of coins runs from the foe toward the attacker and splits in
+  two; one branch closes on the attacker (it takes the foe's types), a ring each. Within 1000 ms. Repeat: the split,
+  the ring.
+- Counts to Two (`countstotwo`, Water H, flurry; no prop): two quick strikes, a splash each, the second the hit; a
+  third wind-up starts and stops short (the attacker turns back). Repeat: the two strikes.
+- Fifteen Seconds (`fifteensec`, Electric S, shot; the phone icon): a phone at the attacker; a short shot, notes
+  rising; at once another shot; the second lands the hit. Repeat: one shot, the hit.
+- Stake in Everything (`stakeineverything`, Water S, shot; waymarker_post, the flag icon): a post drops from above
+  and stakes the ground beside the foe; a small flag pops on the foe; then the shot and a water ring. Repeat: the
+  post, the hit.
+- Ship Direct (`shipdirect`, Electric S, shot; crate_goods): "DING-DONG!" at the foe; a crate flies straight from
+  behind the attacker onto the foe on sparks, no stop on the way; the hit. Repeat: the crate, the hit.
+- One-handed Backhand (`onehandedbackhand`, Flying H, slash; no model): the attacker winds back; one long arc, swept
+  the other way; a small ball flies from it to the foe, "THWOCK!"; the hit. Repeat: the arc, the ball, the hit.
+- Green Hydrogen (`greenhydrogen`, Grass S, beam; wind_turbine_small): a small wind turbine rises behind the attacker;
+  bubbles rise, a held beat (promised); then the leafy ray, twice as wide (delivered, hard). Repeat: the ray, the hit.
+- Quiet Gift (`quietgift`, Water X, heal; the box and heart icons): a box rises over the attacker and opens quietly:
+  hearts and heal sparkles drift down on the one it heals. Within 1000 ms. Repeat: the box, the sparkles.
+- Kisses (`kisses`, Ground H, charge; the heart icon): the attacker lowers its head (antlers first) and charges;
+  hearts burst out of the impact with the dust. Repeat: the charge, the hearts, the hit.
+- The bots' and the boss's specials: the bots' part and gem moves (Piston Jab, Auger Bore, Grip Crush, Cinder Shot,
+  Arc Whip, Jet Blast, Anchor Down, Dash Kick, Skim Guard, Flare Core, Self-Repair, Overclock) are regular moves and
+  keep their families. The boss (the Retrieval Unit) has no move of its own; what is its own is its phase change and
+  the limb that tears loose, events with their own choreography (battle-stage.js `alphaPhase`, `break`); see VFX-18b's
+  HANDOFF entry for what was done with them.
+
 ## Move sounds (the owner's pick)
 A sound per family, layered by type, in music.json's `battle` section (the shape agreed with the sound track, "Talking
 to the sound track": voices in the cries' shape, noise voices for hits, whooshes and splashes, baked instruments
@@ -515,10 +750,11 @@ change; the quick check at its end; HANDOFF; tag `vfx-N-done`. "Phone" marks the
 | VFX-14 (done 2026-10-28) | Statuses and stats | the lasting looks, "sharply", Protect, the shield dome, Soaked, Fork, the delayed hit, stones, glints (with UI-16b's events if they have landed). As built (side branch `claude/vfx-14-statuses`): battleAnims.json `events` (pulseMs, cells, brn, par, slp, confused, broken, stat, protect, shield, soaked, fork, delayed, stones, glint; schema defs lookBurst, look, lookDome); logic/battle-looks.js (browser-free: what began and ended between two lines' snapshots, the stage change for sharply, a status line's kind, the confused self-hit, what a landed move leaves, glints, cracks, dome cells, the 12 fps clocks, the Reduced tint); battle-looks.js on the stage (`battleLooksLine` from battle.js beside the plates' repaint and on a tap, `battleLooksTick` from the stage's frame, `battleLookStatus`, `battleLookStat`, `battleLookHurt`, `battleLookBlock`, `battleLookPose` and `battleLookSleepPose` in actorBuffer, `battleLookGhost` in battle3dFrame); still looks redrawn each 12 fps cell as particles that live one cell (`anim`: a strip by id, a fixed `frame`, `alpha` eroded, `flipY`); battle3dHit takes a status tint (`s.tint`) under the flashes; the old status fizz is gone; both bugs fixed (a broken part's status, the stat-drop sound); look-battle-anims.py `--events` and `--motion=` | statuses visible | the golden record untouched; Calm read if UI-16a has landed. Phone |
 | VFX-15 (built 2026-10-28, `claude/vfx-15-stage`) | The stage | moods, the row wave, heat, weather on the stage, scars. As built: battleAnims.json `moods`, `weather`, `scars` (schema, types, checks, the Studio's type rename); logic/battle-stage-look.js (`battleMoodFor`, `scarKindFor`, `scarCap`, `scarAdd`, `scarFadeShare`) with tests; battle-stage-look.js tweens the mood on the stage clock from battleAnimPlay (in to the hit, out to the move's end: no time added) and hands `stageLook` to the renderer through battle3dFrame; the grade pass darkens (20% at most) and tints the gain, adds warmth, and the row wave is `uWave` (highp under Medium precision); Fire's heat rides `uHeat`; a Bureau move is a `bot:` attacker's (the Bureau has no type); weather in walk/fountains-weather.js (stage splashes, settled snow and ash, `drawBattleSand` in the weather batch); scars in walk/battle-scars.js (own program, one draw under the `battleFx` tag, placeholder art until VFX-10) | the stage reacts | decal cap tests; frame budget on the Graphics bench. Phone |
 | VFX-16 (done 2026-10-28, side branch `claude/vfx-16-battle-flow`, PR #319) | Battle flow | the VS splash; send-out per pyramid; the recall beam (its sound in VFX-19); catch; faint and bots' faint; level-up, victory, defeat; items used; XP. As built: battleAnims.json `events` (VFX-16's keys vs, sendOut, recall, catch, faint, levelUp, victory, defeat, item; VFX-14 adds its own) and ramps `growth` and `pyr_*` (one per pyramid kind); logic/battle-flow.js (`lvlSlot`, `vsSplashFor`, `riseShare`, `pyramidRamp`, `vsPortraitScale`); the rig's feet-up dither `uRise` (vec3) in the plain sprite shader, a landed pyramid's `uSquash` (prop-models.js), particles naming a strip (`strip`, `ramp`); battle-stage.js's flow block (send-out, recall, catch, faint with the bot's shed, level-up, `item`, `battleStageOutcome` from battle.js afterEvents); the VS splash is UI-17's pb-name-banner with `faces` and `color`, from hudMoment's trainerIn; the level-up slot and the xp snapshot fixed (the engine commit alone remade the golden record); look-battle-anims.py `--flow`, `--vs`, `--flow --measure` | the flow | films; Reduced motion seen in each. Phone |
-| VFX-17 | Signature scenes 1 | `propWorldItem`, the stamp, the +0.5 s rule; the 12 power 100+ scenes and about 6 more | first scenes | storyboards approved first; films. Phone |
-| VFX-18 | Signature scenes 2 | the other 38 (split in two if it runs long); the bots' and the boss's specials | every scene | films. Phone |
-| VFX-19 | Move sounds | music.json's `battle` section (the shape agreed with the sound track): family x type, hurt sounds, the recall, throws and catches; its schema, enums and checks; the Studio's Battle card | sounds | check-sound.py fingerprints; music-studio tests. Phone (listen) |
-| VFX-20 | Phone pass | tuning from the owner's phone notes, the quality ladder, a flash audit of filmed frames, the old 2D effect code and types.json `fx` removed (Ask me before), docs; tag `vfx-done` | tuning | the owner's phone log |
+| VFX-17 (built 2026-10-28, side branch `claude/vfx-17-scenes-1`, PR #324) | Signature scenes 1 | `propWorldItem`, the stamp, the +0.5 s rule; the 12 power 100+ scenes and about 6 more. As built: the 18 storyboards committed first (516a7327, in "Signature scenes"); battle-3d.js `propWorldItem(path, x, y, z, spin, s, rot, o)` (pyramidWorldItem calls it), `battlePropsPreload` (every scene's models asked for in battle3dAttach), `battlePropsReady`, `battle3dProps` (battleStage.props drawn with the thrown pyramid's afterimages and stretch, eroded in 12 fps steps); logic/battle-anims.js `battleSceneFallback` (a scene plays its `family` where its models can't be drawn: 3D props off, the 2D stage, not loaded; and under Reduced motion), `battleSceneProps`, `battlePropAt`, a timeline's `repeat`; battle-anim-run.js `animSceneStep`: `prop` (a recipe from game/art/scene/next/models flown from above, below, the side, behind or a Billie, on a path, held, eroded; `stack`, `until`, `through`), `stamp` (a `word_*` strip stepped in at +2, +1, its size, a 24 fps cell each; none against a Bureau bot, SY-5's), `cut` (the camera cuts, the impact frame through Flashes and the limiter: battle-stage.js `impactCut`); icon props (one or several icons.png cells); battleStage.scenesSeen per battle (a second use plays the short version, as Faster does); battleAnims.json `scenes` (18, each with `family` and `short`), 3 word strips (build-battle-anims.py's pixel letters), moves.json `anim` of the 18; the +0.5 s rule was VFX-8's already (`longPower`, `extraMs`, none under Reduced motion), and the data check now holds a scene to maxMs + extraMs and its short version to maxMs; look-battle-anims.py `--cells=`, `--repeat` | first scenes | storyboards approved first; films. Phone |
+| VFX-18 (built 2026-10-29, side branch `claude/vfx-18-scenes-2`, PR #329) | Signature scenes 2 | the other 38 (split in two if it runs long); the bots' and the boss's specials. As built: split in two (VFX-18 and VFX-18b, 19 each). VFX-18: the 19 storyboards committed first (69ea1c20, "VFX-18's storyboards" in "Signature scenes"); the drawn words WHIRR!, TICK!, CLICK!, FORE! (GLYPHS W, R, E, F, L); battleAnims.json `scenes` cudacall..sundayred as one block after billionsserved, each with `family` and `short`, built from VFX-17's steps only (no new primitive); moves.json `anim` of the 19; status scenes (Terminal Fee, Pop the Collar, Per Minute, Buy the Dip) within maxMs 1000 and with no hit step, as their families; no stamp on a slogan's name (Just Do It, I'm Out, Feeling Lucky, One More Thing); Spruce Dive's spruce is forest_canopy_pine (tree_pine_small's needle cards don't draw as a summoned model); tools/test/battle-scenes-2.test.mjs; the film tool waits for both rigs; filmed from both sides and as a repeat | 19 more scenes | storyboards first; films. Phone |
+| VFX-18b (built 2026-10-29, side branch `claude/vfx-18b-scenes-3`, PR #330) | Signature scenes 3 | the second half of VFX-18's 38 (19 moves) and the bots' and the boss's specials. As built: the 19 storyboards committed first (b5c0942f, "VFX-18b's storyboards" in "Signature scenes"); four drawn sound words (WHOOSH!, PSSHT!, DING-DONG!, THWOCK!; letters W, P, D) in build-battle-anims.py; battleAnims.json `scenes` cyclone .. kisses (each `family` the family it had, a `short` version; built with VFX-17's primitives only: `prop` with rocks_b, crate_goods, sofa, waymarker_post, wind_turbine_small; `stamp`; icon props), moves.json `anim` of the 19; status scenes (Gives Wings, Perfect Fold, Principle No. 212, Fork, Quiet Gift) within X's 1000 ms and with no hit step; the bots' part and gem moves are regular moves and keep their families; the boss's own, its shield phase, gets `events.bossPhase` (two bureau_barrier models rise either side of the boss inside the phase's 1200 ms; picked by bosses.json `faction`; battle-anim-run.js `battleBossPhaseScene`, logic/battle-anims.js `battleEventProps`, preloaded with the scenes'; one call in battle-stage.js alphaPhase); tests tools/test/battle-scenes-3.test.mjs, VFX-17's scene tests and VFX-11's dash list made to take later batches | 19 scenes; the boss's barriers | storyboards first; films of every scene, a repeat, a foe's side, the boss phase. Phone |
+| VFX-19 (built 2026-10-28, `claude/vfx-19-move-sounds`, PR #325) | Move sounds | music.json's `battle` section (the shape agreed with the sound track): family x type, hurt sounds, the recall, throws and catches; its schema, enums and checks; the Studio's Battle card. As built: `battle` = families (16, `cast` and `hit` parts), types (11 kits), hurt (burn, recoil, spread, delayed), recall, catch (throw, pop, land, wobble, seal), 37 placeholders; voices in the cries' shape or synthNoise's, `inst` optional (T.sampleShot, else the wave); logic/battle-sounds.js (tested), audio/battle-voices.js (the player, game and Studio), audio/battle-sounds.js (the game's glue: Sound effects bus, `T.echoFx`, `battleStageAt`); sound.js battleSoundEffect's move, hurt, recall and enter cases (the tier sounds stay; a move on itself plays its family instead of the status blip); battle-stage.js catchSound tries the data first; MUSIC_CHOICES `noise`, `battleHurt`, `battleCatch`; musicFindings against battleAnims.json; the Battle card on the Sounds tab; check-sound.py's battle.json (the baseline only added it). The engine has no recoil fx: every other hurt plays recoil | sounds | check-sound.py fingerprints; music-studio tests. Phone (listen) |
+| VFX-20 (done 2026-10-29, `track/vfx`, draft PR #331) | Phone pass | tuning from the owner's phone notes, the quality ladder, a flash audit of filmed frames, the old 2D effect code and types.json `fx` removed (Ask me before), docs; tag `vfx-done`. As built: no phone notes yet, so tuned from films and measurements. VFX-17, 19, 18 and 18b merged (18b's head carried 18), and main after the owner merged #295. types.json and untyped.json `fx` moved into battleAnims.json `types.<kit>.burstSprites` (the Studio's Types picker edits it), then removed; the 2D canvas's old rings, icons, beams and pixels removed (dead since VFX-9). A hurt line that knocks out takes the KO's look (logic/battle-anims.js `hurtKoAhead`; `koAhead` untouched). The event films are one list (logic/battle-looks.js `BATTLE_LOOK_FILMS`) for the film tool and the Studio, whose Battle effects now plays every event and look film and has a Misses pane; Studio stand-ins fixed the faints, a part breaking and glints. The debug log's `anim` line names a scene's fallback, the KO and the motion. Rule 9 and the ladder: blinks at most 3 a second with Flashes off or Reduced; every sprite flash half with Flashes off; Calm's ambient motes once a turn; every burst on the burst budget (the runner's repeated steps and the stage's loops). tools/flash-audit.py over the films' full-screen probe passes for every family, tier and scene, Flashes on and off; the budgets hold at quality 0-3 (`--measure --quality=N`). No tag (CLAUDE.md since #283) | tuning; Part 2 as built and the one-sitting phone checks at the top of Part 2 | the owner's phone log |
 
 ## How the sessions run (the owner, 2026-10-28)
 The owner, after VFX-7: "Continue this plan automatically until it is done. Automatically open next steps in new

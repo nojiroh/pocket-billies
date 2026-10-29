@@ -62,6 +62,10 @@ counts when the signal passes from under -0.0001 to over +0.0001 or back (so a n
 counts), and a window quieter than 0.0001 RMS counts 0. A baseline without brightness compares the RMS alone and says
 how many brightness arrays it lacks (written with --baseline).
 
+VFX-19: every battle sound (music.json battle: each move family with its hit at its family's hit, each type layer, the
+hurt sounds, the recall, the throw and catch) renders into battle.json as it is heard alone (audio/battle-sounds.js
+battleSoundPreviewPlay), on code that has them.
+
 A window may differ by 1% (or 0.0001) before it counts as changed; a brightness window by 2% (or 2 crossings). The
 baseline is committed: SND-4 and SND-5 write it again on purpose, like the picture baseline."""
 import json, sys, time
@@ -141,6 +145,8 @@ RENDER = r"""async ({jobs, rate, win}) => {
       len = 0.05 + jingles[name].reduce((a, [, l]) => a + l, 0) * 60 / bpm / 4 + 1.2;
       /* SND-17: on its ensemble, as long as its longest line, and its baked notes' tails (a bell rings 1.6 s) */
       if (ens(part)) len = 0.05 + musicJingleParts(J, MUSIC.ensembles[J.ensemble], { instruments: MUSIC.instruments }).steps * 60 / bpm / 4 + 2; }
+    /* VFX-19: a battle sound lasts 1.5 s at most (battle-sounds.test.mjs), then its release and echo */
+    else if (kind === 'battle') len = 2.5;
     const oc = new OfflineAudioContext(1, Math.ceil(len * rate), rate);
     let now = 0;
     Object.defineProperty(oc, 'currentTime', { get: () => now, configurable: true });
@@ -159,6 +165,7 @@ RENDER = r"""async ({jobs, rate, win}) => {
         if (typeof musicTick === 'function') musicTick(); else E.tracker.tick();
       } else if (kind === 'jingle') { if (typeof jinglePlay === 'function') jinglePlay(name); else jingle(jingles[name]); }
       else if (kind === 'ui') uiSound(name);
+      else if (kind === 'battle') battleSoundPreviewPlay(name);
       else if (part === 'low') cryPlay(name, true);
       else soundEffect('cry', { sp: name });
     } finally {
@@ -433,14 +440,15 @@ def loudness(b, base, only=None):
 
 
 def render_all(pg, only=None):
-    """{file name: {part: [rms, ...]}} for every song (day and night), jingle, cry (and its low-HP version) and UI sound"""
+    """{file name: {part: [rms, ...]}} for every song (day and night), jingle, cry (and its low-HP version), UI sound and (VFX-19) battle sound"""
     N = pg.evaluate("({ songs: Object.keys(SONGS), jingles: Object.keys(JINGLES), cries: (gameData.lines || []).flatMap(L => L.names.map((n, i) => L.id + i)),"
                     " jens: typeof musicJingleParts === 'function' ? Object.keys(JINGLES).filter(j => { const J = MUSIC.jingles[j]; return J && J.ensemble && J.ensemble !== 'gb' && MUSIC.ensembles && MUSIC.ensembles[J.ensemble]; }) : [],"
                     " low: typeof cryPlay === 'function', ui: typeof uiSound === 'function' && typeof UI_SOUND_NAMES !== 'undefined' ? UI_SOUND_NAMES : [],"
+                    " battle: typeof battleSoundPreviewPlay === 'function' && MUSIC.battle ? battleSoundNames(MUSIC.battle) : [],"
                     " parts: Object.fromEntries(Object.keys(SONGS).map(s => [s, ['day', 'night'].concat(typeof musicParts === 'function' ? musicParts(s) : [])])) })")
     keep = lambda n: not only or n in only
     jobs = [(s, p, {'kind': 'song', 'name': s, 'night': p == 'night', 'part': p}) for s in N['songs'] if keep(s) for p in N['parts'][s]]
-    jobs += [(file, n, {'kind': kind, 'name': n, 'night': False}) for kind, file in (('jingle', 'jingles'), ('cry', 'cries'), ('ui', 'ui')) for n in N[file] if keep(n)]
+    jobs += [(file, n, {'kind': kind, 'name': n, 'night': False}) for kind, file in (('jingle', 'jingles'), ('cry', 'cries'), ('ui', 'ui'), ('battle', 'battle')) for n in N[file] if keep(n)]
     # SND-17: each jingle naming an ensemble, once more on it (GB Sounds off, its notes baked first), beside it in jingles.json
     jobs += [('jingles', n + '@ensemble', {'kind': 'jingle', 'name': n, 'night': False, 'part': 'ensemble'}) for n in N['jens'] if keep(n)]
     # SND-6: each cry's low-HP version, beside it in cries.json

@@ -139,7 +139,7 @@ function uiBlurCount(o = {}) {
 /** UI-15: how many pieces a screen shows: visible elements that draw words of their own or are an icon or picture (the
  * scene's canvases not counted), shadow trees included. Opacity is not read (a tile half way through rising in still
  * counts); what fades away also turns visibility: hidden. The smoke run logs it per screen, so clutter can only go down
- * (check-quick.py ELEMENT_CEILING) */
+ * (check-quick.py ELEMENT_CEILING). DL-2: a [data-one-piece] element (a spoken line's letters) counts as one piece */
 function uiElementCount() {
   let n = 0;
   const icon = /** @param {Element} el */ el =>
@@ -160,7 +160,10 @@ function uiElementCount() {
     for (const el of root.querySelectorAll('*')) {
       if (el.shadowRoot) walk(el.shadowRoot);
       if (el.closest('svg') && el.tagName !== 'svg') continue;
-      if ((icon(el) || own(el)) && shown(el)) n++;
+      /* DL-2: a [data-one-piece] subtree (a spoken line drawn letter by letter) is one piece */
+      const piece = el.closest('[data-one-piece]');
+      if (piece && piece !== el) continue;
+      if (piece ? /\S/.test(el.textContent || '') && shown(el) : (icon(el) || own(el)) && shown(el)) n++;
     }
   };
   walk(document.body);
