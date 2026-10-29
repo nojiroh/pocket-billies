@@ -80,7 +80,7 @@ shaded by `game/js/logic/icon-block.js` (`iconBlockKeyed`: a 2 px block side to 
 the 45-degree line through its middle with the upper half paler, a lit top and left edge, a darker seam where two
 colours meet) and written by `game/js/logic/svg-pixels.js` (`pixelsToSvg`; `svgProblem` checks an icon). Colours are
 `ICON_PALETTE` letters (g G y o r t b B w W p s k n v V c) or one `ICON_RAMPS` hue (gold, red, green, steel, blue,
-teal, violet; digits 1-4 light, mid, dark, ink). ART-NOTES.md "UI icons, 36x36": the same colours on both themes,
+teal, violet; digits 1-4 light, mid, dark, ink). docs/ART.md "UI icons, 36x36": the same colours on both themes,
 nothing darker than slate `#4A5544`, 45-degree lines, octagons for circles, strokes of 3 px. The original grids are
 `tools/test/fixtures/ui-icon-grids.json`; since SA-2b the SVGs are the source, edited in the Studio's icon editor
 (`studio/js/icon-editor.js`, "Shade as a block"). `tools/test/ui-icons.test.mjs:18` pins art/ui at 51 icons with
@@ -501,8 +501,8 @@ unused-art gate.
   letters as accents), shaded by `iconBlockKeyed` and written by `pixelsToSvg`: a 36x36 SVG. One object per icon,
   a silhouette that reads filled with one colour, at most 4-5 colour letters, 45-degree lines, octagons for circles,
   main strokes of 3 px. The same colours on both themes; a cream or pale shape must not sit alone on the background
-  (PK-0 found a cream sparkle vanishing on the light panel). The samples (docs/samples/perk-icons.png, grids in
-  docs/samples/perk-icon-samples.json): Lucky Charm, Rubber Stamp, Click Pen, Warranty Card, Bellows, Mic Drop,
+  (PK-0 found a cream sparkle vanishing on the light panel). PK-0's eight samples (now real grids in
+  tools/art/icon-grids/perks.json): Lucky Charm, Rubber Stamp, Click Pen, Warranty Card, Bellows, Mic Drop,
   Umbrella, Glass Trophy. Lucky Charm is a horseshoe: the clover read as a gem at 36 px.
 - **Folders**: `game/art/perks/`, `game/art/items/`, `game/art/boons/` (art/ui stays 51). File names are the ids.
 - **Data**: an `img` field with the path (`"perks/rubber_stamp.svg"`), as items already have, so art-refs and the
@@ -533,7 +533,7 @@ unused-art gate.
   the unused-art gate stays green with nothing else to keep in step; `--force` is the only way over an SVG on disk.
 - In a one-colour (`mono`) picture the ramp's shades get no seam, so a detail drawn in a darker shade can vanish in the
   pale top half (Power Gloves' thumb, Gene Lure's helix in the first drafts). A same-colour letter (`r` beside the red
-  ramp's `2`) is its own block and gets a seam: ART-NOTES.md "Perk pictures".
+  ramp's `2`) is its own block and gets a seam: docs/ART.md "Perk pictures".
 - The picture check is its own data check, `dataPerkArt` (it reads files, which `dataPerks` doesn't), run by
   check-data: an error for an `img` that isn't there or fails `svgProblem`, a warning for a Perk without one.
 - The art browser and art-refs needed no change for "Used by" (perks.json's `img` is data text naming the path);

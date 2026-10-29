@@ -165,7 +165,7 @@ function friendsError(e) {
   console.warn('friends:', (e && e.message) || e);
   friends.err =
     e && e.code === 'permission-denied'
-      ? 'Friends need the updated database rules (see README → Friends).'
+      ? 'Friends need the updated database rules (firebase/firestore.rules).'
       : 'Friends are offline right now.';
   refreshFriends();
 }

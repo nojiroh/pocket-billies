@@ -479,7 +479,7 @@ if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {
     if (P.mirrorOf && !K.parts[P.mirrorOf]) problem('partKits.json', `part ${id} mirrors ${P.mirrorOf}, no such part`);
   }
 }
-// roster track RO-3a: the body plans and the placeholder Billies: the schema, then every bone's parent and mirror
+// roster track RO-3a: the body plans and the sketch Billies: the schema, then every bone's parent and mirror
 // there, the plans the animation knows, a form's plan, and no name or rig twice
 if (D.bodyPlans && check('bodyPlans.schema.json', D.bodyPlans, 'bodyPlans.json')) {
   const B = D.bodyPlans,

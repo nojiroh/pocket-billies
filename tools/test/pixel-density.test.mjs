@@ -1,6 +1,6 @@
 // Studio plan Phase 5, T5.7: the pixel-density report (logic/pixel-density.js) on the game's data. The world's metres
 // per pixel moved there from world-billies.js unchanged; the report covers every species with a rig, kit Billies with
-// their parts (RO-3b: placeholder Billies with their plan and scale), and names the part sizes that are not whole numbers.
+// their parts (RO-3b: sketch Billies with their plan and scale), and names the part sizes that are not whole numbers.
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -62,13 +62,13 @@ test("the grid a Billie sits on, and a kit Billie's parts against its torso", ()
 test('the report covers every species with a rig, kit Billies with their parts, and the sizes that are not whole', () => {
   const R = densityReport(GAME_DATA, RIGS, SPECIES);
   assert.equal(R.rows.length, Object.keys(RIGS).filter(sp => SPECIES[sp]).length);
-  /* RO-3b: every kit Billie is on its placeholder now: its recipe is kept, its row shows the plan and scale */
+  /* RO-3b: every kit Billie is a sketch now: its recipe is kept, its row shows the plan and scale */
   assert.equal(R.rows.filter(r => r.kit).length, 0);
   /* RO-3f: as many rows as bodyPlans.json has species forms, not a number each roster session would bump (a
      person's form, Kappi's, has a rig but no species, so no row) */
-  assert.equal(R.rows.filter(r => r.placeholder).length, GAME_DATA.bodyPlans.forms.filter(f => SPECIES[f.rig]).length);
+  assert.equal(R.rows.filter(r => r.sketch).length, GAME_DATA.bodyPlans.forms.filter(f => SPECIES[f.rig]).length);
   assert.ok(GAME_DATA.bodyPlans.forms.length >= 54, "the 40 species, the 11 forms and RO-3f's 3 at least");
-  for (const r of R.rows.filter(r => r.placeholder)) assert.ok(r.plan && r.scale > 0 && !r.parts.length, r.sp);
+  for (const r of R.rows.filter(r => r.sketch)) assert.ok(r.plan && r.scale > 0 && !r.parts.length, r.sp);
   for (const r of R.rows)
     assert.ok(r.pxPerM > 20 && r.pxPerM < 400 && ['whole', 'quarter', 'off grid'].includes(r.grid), JSON.stringify(r));
   assert.deepEqual(R.nonInteger, ['S 0.85', 'L 1.2']);

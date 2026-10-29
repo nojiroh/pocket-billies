@@ -184,7 +184,7 @@
    "dur": 1.4,
    "stats": {"hp":55,"law":45,"pr":40,"lev":10},
    "art": {"color":"#4F5A6E","shape":"block","w":34,"h":30},
-   "d": "RL-14b: the Retrieval Unit's leader bot, a filing cabinet that walks. Placeholder art."
+   "d": "The Retrieval Unit's leader bot, a filing cabinet that walks."
   },
   "seizer": {
    "name": "Seizure Arm",
@@ -196,7 +196,7 @@
    "move": "gripcrush",
    "stats": {"lev":40,"law":20},
    "art": {"color":"#6E6A8C","shape":"claw","w":14,"h":24},
-   "d": "RL-14b: one of the Retrieval Unit's arm-bots. It takes things into custody. Placeholder art."
+   "d": "One of the Retrieval Unit's arm-bots. It takes things into custody."
   },
   "franker": {
    "name": "Franking Cannon",
@@ -208,7 +208,7 @@
    "move": "cindershot",
    "stats": {"lob":40,"hus":10},
    "art": {"color":"#B5473A","shape":"cannon","w":13,"h":24},
-   "d": "RL-14b: the Retrieval Unit's other arm-bot. It stamps everything it hits. Placeholder art."
+   "d": "The Retrieval Unit's other arm-bot. It stamps everything it hits."
   },
   "conveyor": {
    "name": "Conveyor Treads",
@@ -221,7 +221,7 @@
    "move": "anchor",
    "stats": {"hp":25,"law":30,"pr":25,"hus":10},
    "art": {"color":"#3F4A3E","shape":"treads","w":34,"h":14},
-   "d": "RL-14b: the Retrieval Unit's leg-bot, a conveyor belt that walks. Placeholder art."
+   "d": "The Retrieval Unit's leg-bot, a conveyor belt that walks."
   }
  },
  "gems": {

@@ -1,6 +1,6 @@
 // @ts-check
 'use strict';
-/* ================= DRAFT RECORD (Studio plan Phase 1, T1.1, docs/plans/studio-roguelite-improvement-plan.md) =================
+/* ================= DRAFT RECORD (Studio plan Phase 1, T1.1, docs/archive/tracks/studio-roguelite-improvement-plan.md) =================
    The Studio keeps what you haven't proposed yet in this browser (IndexedDB, studio/js/drafts.js), so a closed tab or
    a crash loses nothing. A draft holds only what is pending, not the whole game data:
    - files: the text of each data file that differs from the commit the Studio loaded (game/data paths, index.json

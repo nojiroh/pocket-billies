@@ -2,14 +2,14 @@
 
 Internal names only: files, functions, variables, constants, data sections, data keys and ids. Player-facing words
 (and the Studio's labels, the debug log's words, URL parameters) stay as they are unless a phase says otherwise.
-Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
-[archive/phase-05-renames.md](archive/phase-05-renames.md), for reading old debug logs, branches and notes.
+Lint enforces what it can (see the end). Phase 05's old -> new list (for old debug logs, branches and notes) was
+deleted on 2026-10-28: `git log --diff-filter=D --oneline -- docs/archive/phase-05-renames.md` finds it.
 
 ## Vocabulary
 
 | Concept | Name in code and data | Notes |
 |---------|-----------------------|-------|
-| The 3D overview of the whole world | `worldMap` (world-map.js, world-map-gl.js, `worldMap*`, `worldMapGl*`, `worldMapMini*`) | was map, MAP, mgl, mm |
+| The 3D overview of the whole world | `worldMap` (world-bowl.js, logic/bowl*.js, `worldMap*`) | was map, MAP, mgl, mm |
 | A walkable area: a town, a route area, a room | `map` (data section `maps`, files `maps/<id>.json`, `mapById`, a location's `mapId`) | was scene |
 | The view of a map you walk in | `walkView` (walk-view.js) | was DIO, dio*, diorama |
 | Its WebGL renderer | `walkRenderer` (walk/walk-state.js) and descriptive names (`drawGround`, `shadowPass`) | was DGL, dgl* |
@@ -33,6 +33,7 @@ Lint enforces what it can (see the end). Every old -> new name of phase 05 is in
 | Phase 16 part kits | `partKits` (data section, game/data/partKits.json; a part is a `KitPart`), logic/sheet-slice.js `sheet*` | studio track ST-3; was game/art/next/parts/parts.json. Not `parts`: rules.json `parts` are the part sizes and robots.json `parts` the robot parts |
 | A part slot | `head`, `body`, `front`, `back`, `sig` (rules.json `parts.slots`, lines' `parts`, skeleton-rig.js `boneSlot`); partKits.json adds `headExtra` and `bodyExtra` for the extras (ears, horns, crests; shells, ruffs) | Studio plan T5.5: partKits said `signature`, `head-extra`, `body-extra`. partKits `slots` maps every kind to one (tail, tailfin, spikes, mane, sail -> sig). `boneSlot`'s rules for the hand-drawn rigs' bone names (`mane` -> head, `shell` -> body) are about those rigs and stay |
 | A kit Billie's recipe | `kitBuilds` (game/data/kitBuilds.json: `bake`, `colours`, `forms`), baked by logic/kit-assemble.js `kit*` (tools/bake-kit-billies.mjs) | Studio plan T5.1; was tools/art-source/part-kit/builds.json |
+| A Billie whose pictures are painted from its body plan, to be drawn over | a sketch Billie (`sketch*`, logic/sketch-art.js, art/next/sketches/, `npm run bake:sketches`; a rig's `sketch: "bodyPlans.json"`) | was placeholder (CU, the owner 2026-10-28) |
 
 | The world map's look | `worldmap` (data section `worldmap`: `sea`, `relief`, `regions`, `kinds`; a place's `landmark` prop key; Studio `wml*`) | phase 10; the map itself is the bowl (`bowl*` in logic/bowl*.js, `worldBowl*` in world-bowl.js) |
 | Drawn people | `person*` (person-art.js) | was tr*, trainer.js |

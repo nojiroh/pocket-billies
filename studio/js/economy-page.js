@@ -5,7 +5,7 @@
    unlocks' grants, each building's unlock costs and the ranch's), each with a link to the field that sets it, and
    each currency's kept rule. Read-mostly: the numbers are edited where they live. There is no economy data model.
    The money in and out of simulated runs (Phase 3's balance dashboard, T3.4) belongs here too; it has not landed on
-   this branch, so a placeholder says so. */
+   this branch, so a notice says so. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../../game/js/test-globals.js';
 import { escapeHtml } from './game-stand-ins.js';

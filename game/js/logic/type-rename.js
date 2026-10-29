@@ -1,6 +1,6 @@
 // @ts-check
 'use strict';
-/* ================= TYPE RENAME (Studio plan Phase 6, T6.6, docs/plans/studio-roguelite-improvement-plan.md) =================
+/* ================= TYPE RENAME (Studio plan Phase 6, T6.6, docs/archive/tracks/studio-roguelite-improvement-plan.md) =================
    A type's id is written wherever the data names a type. Renaming a type in the Studio's Types section (or deleting
    it, to = null) rewrites every one of those places, so the data stays whole and check-data stays green.
    Logic only: no DOM, runs in Node (tools/test/type-rename.test.mjs). studio/js/data-editors.js uses it. */
