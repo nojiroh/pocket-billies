@@ -127,8 +127,10 @@ def arena(b, base, errs, notes):
     pg.evaluate(f"(o=>{{const P=walkView.pl,f={A['from']},c=[{A['x']},{A['z']}],d=Math.hypot(f[0]-c[0],f[1]-c[1])||1;P.x=f[0]+(f[0]-c[0])/d*2.5+o[0];P.z=f[1]+(f[1]-c[1])/d*2.5+o[1];P.route=null;P.goal=null;walkRenderer.camT=null;return 0}})(walkView.sc.baseOff||[0,0])")
     pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};0")
     # the camera at the ring, from its way in (walkView.opt.look, as look-hub-buildings.py aims it)
-    pg.evaluate(f"""(o=>{{const f={A['from']},c=[{A['x']},{A['z']}],d=Math.hypot(f[0]-c[0],f[1]-c[1])||1,u=[(f[0]-c[0])/d,(f[1]-c[1])/d],x=c[0]+o[0],z=c[1]+o[1],y=groundHeightAt(x,z);
-      walkView.opt.look=()=>({{eye:[x+u[0]*(d+7),y+7,z+u[1]*(d+7)],tgt:[x,y+0.8,z],fov:50}});return 0}})(walkView.sc.baseOff||[0,0])""")
+    shots.settle(pg, 4)
+    # the camera on the leader where they stand (walkView.npcAt), from the ring's way in, 7 m back and up
+    pg.evaluate(f"""(o=>{{const f={A['from']},L=walkView.npcAt['{foe}']||[{A['x']}+o[0],{A['z']}+o[1]],fx=f[0]+o[0],fz=f[1]+o[1],d=Math.hypot(fx-L[0],fz-L[1])||1,u=[(fx-L[0])/d,(fz-L[1])/d],y=groundHeightAt(L[0],L[1]);
+      walkView.opt.look=()=>({{eye:[L[0]+u[0]*7,y+6,L[1]+u[1]*7],tgt:[L[0],y+0.9,L[1]],fov:45}});return 0}})(walkView.sc.baseOff||[0,0])""")
     r = shot(pg, 'arena', 16)
     r.update(leader=pg.evaluate(f"walkState().npcs.find(p=>p.id==='{foe}').who"))
     notes.append(r)
