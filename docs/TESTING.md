@@ -647,7 +647,7 @@ same phase:
   route song as it plays strays over 1 LU from -18 LUFS or a song's or jingle's true peak passes -1 dBTP. Its pages stop
   drawing too (SND-12c's `NO_DRAW`): a sample 1110 s -> 408 s, the songs', layers', beds' and nature's rows identical;
   a few water and scene rows driven by events moved 0.1-0.6 LU (they also vary by up to 0.3 run to run). The whole
-  report takes about 20 minutes with the fingerprints. `tools/read-debug-log.py` prints the log's audio lines.
+  `--loudness` run took 66 minutes here (the fingerprints 21, the report's rows about 45: they render one at a time). `tools/read-debug-log.py` prints the log's audio lines.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

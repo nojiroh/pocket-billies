@@ -2,6 +2,172 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Sound track SND-15 - the mix and a phone pass: a master chain at -18 LUFS, slider defaults near the top, ducks for cries, talk and jingles, Play when silenced, the debug log's mix line; Part 2 done - 2026-10-29
+Branch `track/sound`, after both lanes. main merged three times: ca19d9cd (98 commits, the Perks track; no sound files;
+art-code-refs made again at 60a89260), 798226e9 (VFX-19's battle sounds in #331, the dialogue track #322 and others:
+the ten "keep both" files and sound.js's blip; art-code-refs 1f1eaa3d) and 2e2b88b1 (the clean-up track #328: HANDOFF
+is main's re-trimmed file with Part 2's sound entries on top). Started by the planning session
+under the owner's standing instruction (2026-10-27): no Plan Mode, plan below, recommended options taken. One cause per
+commit, the generated files in their own commits, the baseline once at the end, the docs. Tag `snd-15-done` (for the
+owner to push) on this session's last commit. PR #292. Details: sound-track.md "SND-15 as built" and "Part 2 done".
+- **Plan**: (g) first make the loudness report fast (its pages stop drawing, as SND-12c's fingerprint page) and give
+  it true peaks, a loudness range and effect rows, numbers unchanged; measure where everything stands; (a) a master
+  chain (a gentle compressor, a make-up, a limiter) tuned on the songs, jingles and beds so the route song sits at -18
+  LUFS with true peaks under -1 dBTP; (b) ducks on gains of their own (jingles, stingers, cries, talk; the music and the
+  beds), never writing another owner's gain; (c) slider defaults from the measurements; (d) Play when silenced; (e)
+  the debug log's audio lines complete for the phone pass; (f) the Studio's Mix card and player on the same chain;
+  (h) VFX-19 reached main during the session (PR #331): merged, its 37 battle sounds in the baseline and the report; (i) each change commit rendered
+  against the one before, the baseline once at the end.
+- **Found** (checked in the code at 6052ea68): the route song at **-31.6 LUFS** at default sliders (13.6 dB under the
+  target); one compressor on the master (-14 dB, 3:1, the browser's 30 dB knee), no limiter; a jingle ducked the song by
+  rewriting its fader (a jingle in a fade-in cancelled the fade); nothing ducked under a cry or talk; the beds never
+  ducked under a jingle; "a full render takes 13 minutes" held for the fingerprints only (the loudness pages still drew
+  the title's scene in software: SND-14's and SND-17's "over 90 minutes"); `tools/read-debug-log.py` printed none of
+  the audio lines.
+- **Changed** (commits, one cause each):
+  - 24b9340f, be4fec99, d74f72f3 (tools): the loudness pages stop drawing (a sample 1110 s -> 408 s); the measure takes
+    typed subarrays; true peak (dBTP, 4x oversampled) and LRA columns; effect rows (a cry of each base, talk, buttons);
+    the targets as warnings.
+  - 4fe58c03: the master chain, game/js/audio/mix-chain.js `mixChainMake`, in sound.js and the Studio's player:
+    compressor -36 dB, knee 12, 1.5:1, 20 ms, 1 s; make-up; limiter -5 dB (hard knee, 20:1, 1 ms, 100 ms release).
+  - 8412347d: the songs' duck on gains of its own (logic/sound-duck.js plans dips, overlaps take the lower;
+    `mixDuckerMake` schedules them): the jingle's duck moved off the song's fader, the same shape.
+  - df4b175a: music.json mix `duck`: cry music -4 / beds -6 dB, talk -3 / -5 (each blip holds 0.35 s), jingle beds -6
+    (music to 0.15 as before), stinger beds -3; the world's and the ambience's buses on a duck gain of their own.
+  - a69a0e20: slider defaults music 0.8, sound effects 1, world 0.75, ambience 0.75 (were 0.55, 0.8, 0.5, 0.5; Settings
+    reads audio/levels.js `SOUND_DEFAULTS`); mix trims sfx 1.35, world 0.94, amb 0.85 keep every bus against the music
+    as it was (within 0.1 dB, a unit test); make-up 2.8 dB.
+  - 0092fbdd: Settings -> Sound -> **Play when silenced** (`preferences.playSilenced`, off by default):
+    `navigator.audioSession.type` 'playback' / 'auto', set before the context and on each change; shown only where
+    `navigator.audioSession` exists.
+  - a7d54897, f25fd5f9: the debug log's `audio.mix` (the chain's cut now and most this minute, the make-up, the buses'
+    gains, ducks so far and under way, the session); 1bb6e7c4: read-debug-log.py prints the audio block.
+  - 2b426ca7: the Studio's Mix card (the chain's settings, the ducks' dB; its texts say the chain);
+    check-studio-github compares the player's chain with the mix.
+  - 8ab311dc: the report's effect rows include VFX-19's battle sounds. 14be6f5b, 60a89260, 1f1eaa3d: art-code-refs
+    made again; the merges above; 1696f517: the sound baseline.
+- **Loudness, before -> after** (the report at default sliders, K-weighted; songs as they play, on their ensembles;
+  before from the old chain's renders at 6052ea68, after the whole report at 8ab311dc):
+
+  | | before | after |
+  |---|---|---|
+  | route (the target, -18 LUFS) | -31.6 LUFS, true peak -15.6 dBTP | **-17.9 LUFS**, -2.9 dBTP |
+  | Copperleaf / town / map | -33.3 / -31.5 / -31.8 | -18.1 / -17.5 / -17.9 |
+  | cave / meadow / hazel (the soft ones) | -35.1 / -34.3 / -35.3 | -19.2 / -19.4 / -19.4 |
+  | wild / trainer / leader / boss | -29.2 / -30.1 / -30.4 / -30.0 (wild -14.0 dBTP) | -16.3 / -16.6 / -16.6 / -16.8 (wild -1.8 dBTP) |
+  | title / fall / the inner sun | -31.9 / -31.0 / -29.6 | -17.7 / -16.5 / -16.5 |
+  | songs' spread | 5.9 LU (-29.2 to -35.3) | 3.1 LU (-16.3 to -19.4) |
+  | jingles: victory / level-up / catch / run_won | -28.3 / -29.3 / -28.3 / -27.7 | -15.3 / -15.2 / -14.8 / -14.8 (worst -1.5 dBTP) |
+  | cries (loudest 3 s, against the route song) | -7.4 to -20.2 LU | -6.1 to -18.1 LU |
+  | talk: Kappi / a townsperson | +0.4 / -7.9 LU | +1.0 / -5.9 LU |
+  | VFX-19's battle sounds | (new) | -6.2 to -33 LU, true peaks -5.9 dBTP at worst |
+  | beds alone (rain, heavy rain, the sea, a brook 3 m) | -14.2 / -12.9 / -18.2 / -16.1 LU | -11.0 / -9.9 / -14.7 / -12.8 LU (see Risky) |
+
+  Every song's and jingle's true peak is under -1 dBTP (the worst -1.5); the songs' loudness ranges 0.4-4.1 LU; no
+  NaN. The report warns on 14 bed and water rows (rain, heavy rain, a roof at 1 m, a bonfire at 3 m, the water at 1 m):
+  every world row rose by the same 3.0-3.5 LU, which is the compressor's cut on the music (Risky).
+- **Fingerprints**: the tool commits move no render. 4fe58c03 (the chain) moved all 337 (659 arrays with brightness, no
+  NaN), as planned: every render about 13.6 dB louder through the chain. 8412347d and df4b175a (the ducks): 337, **0
+  changed** (rendered together against a scratch baseline written at 4fe58c03; nothing ducks in a render alone). a69a0e20
+  (the defaults and the make-up) moves all, as planned (the level reaches the chain's compressor 6.5 dB higher).
+  Then plain `--baseline` once, after merging main (VFX-19's battle sounds): 374 fingerprints in 27 files
+  (1696f517); compared file by file with a scratch baseline written at a69a0e20: the 337 songs, jingles, cries and
+  buttons **0 changed** (so nothing after a69a0e20 moved a render: the silent-switch setting, the debug log, the Studio,
+  the reader, both merges); VFX-19's 37 battle renders moved against main's, as planned (through the chain).
+- **Risky or unfinished**:
+  - Claude can't hear: the chain, the defaults and the ducks are judged by numbers (K-weighted, true peaks, phone band);
+    the owner's phone decides.
+  - Everything is about 13.6 dB louder at default sliders. A save whose sliders were moved keeps its own slider values,
+    and comes out several dB louder than before through the make-up and the compressor: the owner may
+    want to move the sliders once, or reset them to 80/100/75/75.
+  - Sound effects default to 100 % (no room to raise them; they keep their old level against the music).
+  - The phone band: the four orchestral fights are 1-5 dB *under* the route song in a phone's 400 Hz-6 kHz band (their
+    weight is in the lows), so they should not read louder; the fall (+6.7 dB there), Copperleaf (+4.5), the cave and
+    hazel (+3-4) are the ones a phone speaker makes louder. Not trimmed (K-weighted is the standard; for the ears).
+  - Kappi's talk is as loud as the music over 3 s (+0.4 LU); a townsperson's 8 LU under. Not changed.
+  - The limiter is the browser's compressor at 20:1 (6 ms look-ahead), not a true-peak limiter: a render's true peaks
+    measured -1.7 dBTP at worst; music, a jingle and a cry together go through it harder. The debug log's
+    `mix.cutMost.limit` shows how hard it works on the phone.
+  - **The beds' and the water's rows now warn** (14 rows over the -12 LU or -8 LU ceilings): the report renders each
+    bed alone, so the compressor barely works on it, while it cuts the songs (the debug log read 1.5-2.2 dB on the
+    title's song in headless Chromium; the reference, the route song, is louder); every world row rose by the same
+    3.0-3.5 LU. In play the beds sit under the music, the music drives the compressor and the beds share its cut, so
+    their balance against the music should be as SND-8a..SND-14 set it. Not proven in a mixed render (for the next
+    session: measure a bed under the playing route song, or the phone's ears). The ceilings were not loosened.
+  - `navigator.audioSession` is tested with a stand-in object in headless Chromium, not on an iPhone; 'playback' may
+    pause another app's music.
+  - The report's event-driven water and scene rows move 0.1-0.6 LU between runs and tools (timing in the page).
+  - VFX-19's battle sounds play through the chain since the merge (peaks -5.9 dBTP at worst alone); a layered hit (a
+    family, a type, a crit, a KO) may meet the limiter: lower those voices' `vol` in music.json `battle`, not `mix.sfx`
+    (the VFX track's note, sound-track.md SND-16).
+- **Verified**: `npm run lint`, `npm run typecheck`, `npm run check:modules`, `npm run check:data` after every commit;
+  `npm test` 2062 of 2062 (the change commits), 2157 (after the first main merge), 2255 (after VFX-19's), 2258 (after
+  the clean-up's); the unit tests for the ducks (sound-levels.test.mjs: a dip, overlaps, the mix's dB), the defaults
+  (every bus against the music within 0.1 dB), the true peak and the range (sound-loudness.test.mjs), the tracker's
+  duck gains (tracker.test.mjs). `check-sound.py`: 659 arrays moved at 4fe58c03 (no NaN), 0 changed at df4b175a
+  against 4fe58c03, the baseline as above; the whole `--loudness` report (66 minutes with the fingerprints). Browser
+  probes (headless Chromium, a real AudioContext): a cry dips the beds to 0.50 (-6 dB) and back to 1, talk to 0.56, a
+  jingle to 0.50; the song's fader untouched; the silent-switch row only with a stand-in `navigator.audioSession`
+  (`playback` on, `auto` off), 52 x 32 px with the game's 7 px tap margin; the sliders show 100/80/100/75/75; the
+  debug log's `audio.mix` and read-debug-log.py's Audio section from a log the page exported; no page errors.
+  `npm run check:smoke` 7 of 7 at 2e2b88b1 (362 s: the phone, the palettes, the Actions bar, the in-game full test). CI smoke on PR #292: red at d74f72f3, 60a89260 and 29267d6b on check-fast's frame-timed steps (the bowl's
+  zoom "never settled", Camera follow "the page stopped drawing"), commits that touch no map or camera; commented on
+  the PR.
+- **Skipped**: the full `npm run check:quick` (the owner's word to SND-12, "You can skip the checks", and the merge
+  coordinator's "don't wait on a full quick check" for today's merges), so SND-12b's "Starters' rig buffers" load note
+  was not checked again; `check-studio-github.py --only=music` (its chain step was updated, not run).
+- **Decided for the owner, to review**:
+  - The target: -18 LUFS integrated for the route song as it plays (its ensemble) at default sliders (recommended);
+    reached -17.9; true peaks under -1 dBTP (the worst -1.5).
+  - The master chain: a compressor at -36 dB, knee 12, 1.5:1, 20 ms, 1 s (the research's glue: -40 and 1.4:1 measured
+    the same spread), the make-up 2.8 dB, a limiter at -5 dB (true peaks about -1.7 dBTP at worst).
+  - New slider defaults (recommended "as needed"): Music 0.8, Sound effects 1, World 0.75, Ambience 0.75, with the mix's
+    trims set so every balance the earlier steps tuned stays (instead of a 10 dB make-up that left Music's slider 10 dB
+    of room into the limiter).
+  - Ducks: jingle music 0.15 (unchanged) and beds -6 dB; stinger beds -3 dB; cry music -4, beds -6 dB; talk music -3,
+    beds -5 dB held 0.35 s after each blip; the payout's coins none; the Sound effects bus is never ducked.
+  - Play when silenced (recommended): a setting, off by default; the row only on browsers with navigator.audioSession.
+  - No trims for the soft songs' phone-band level or Kappi's blips: listed for the ears instead.
+  - The loudness report on one page per kind as before (its slowness was the drawing).
+- **The owner's listening list for Part 2** (one list for SND-8a to SND-15; phone, **silent switch OFF**, or turn on
+  Settings -> Sound -> Play when silenced; leave the sliders where they come, or put them at the new defaults: Music 80,
+  Sound effects 100, World 75, Ambience 75). In this order:
+  1. **Settings -> Sound**: the new defaults; Play when silenced (iPhone only): on, flip the silent switch, sound goes on;
+     off, it stops. GB Sounds on and off while a song plays (switches at the next bar).
+  2. **The title and hazel** (before a new game), **the opening fall**: the moment songs on their ensembles; the whole
+     game is now about 13.6 dB louder at the default sliders (the route song -18 LUFS, was -31.6), nothing should clip.
+  3. **Copperleaf by day and at night**: AABA on the music box, harp and strings, the flute at night; walk, stop, walk
+     (the tambourine on the beat); pass the busker's case (its accordion from its side), stop within 5 m after a run (its
+     theme); the square at midday (the sea and the fountain under the song, the town's life); a house, the inn, the lab
+     (rooms by kind); real rain (under the eaves, indoors). Talk to Kappi and a townsperson: the music and the beds dip a
+     little while the text types (Kappi's blips are loud: as loud as the music, say if they grate).
+  4. **A route**: the chip lead over strings and pizzicato, the ostinato in B; the walking snare; a forest's wind and
+     leaves; birds by the hour (a dawn chorus), grasshoppers, a pond at night with frogs; steps on grass, sand, a bridge,
+     gravel, snow, mud; a brook, a river and the sea from near and far.
+  5. **A wild battle**: it starts light and builds; the drums on the throw; each cry dips the music and the beds a
+     little; a KO and the red zone bring the choir and hits; the victory fanfare (the music nearly away under it, the beds
+     down 6 dB); a level-up and a catch. **A trainer, the rival, a leader and a boss**: the four orchestral fights, dense
+     on a phone (their phone-band level measured 1-5 dB under the route song's, so they should not read louder).
+  6. **A run**: the day's tock and the reveal on arrival (on the beat, in the key; the beds dip 3 dB); a Perk's relic
+     (the tune steps back, no full duck); biome songs and the arc (rows 3-5 at 0.6, 6-8 full); a cave (bells, reverb,
+     drips); the run's map song; the payout's coins, then run_won or run_lost.
+  7. **Debug menu -> Sound test**: every song "As its ensemble" and GB; the layer row (walk, rain, snow, storm, night,
+     intensity 1-3, the busker at 1-10 m); every jingle both ways; the instrument row; the world sounds and nature rows.
+  8. **Export a debug log** after a few minutes of play and send it: its `audio` lines (python3 tools/read-debug-log.py
+     now prints them): the bank (mb, withOtherMb under 8, dropped), the reverb's setMs, late steps near 0, the water and
+     nature counts, the ensemble and its section, and the new `mix` line: the compressor's and limiter's cut (the
+     limiter should rarely pass -3 dB), the levels, the ducks so far, the session (`playback` with Play when silenced on).
+  Listen for: nothing clipping or pumping, rain and water never louder than the music, battles not harsher than the
+  route, the fall and Copperleaf not too loud on the phone speaker (they carry the most energy in a phone's band: the
+  fall 6.7 dB and Copperleaf 4.5 dB over the route song there), jingles and cries clear over the music.
+- **Tags for the owner to push** (Part 2): `snd-8a-done` 7384ddf1, `snd-8b-done` aa0c837e, `snd-9-done` a0fd75a9,
+  `snd-10-done` 13fd96aa, `snd-11-done` 754508ab, `snd-17-done` 928b1472, `snd-13-done` a18a94e5, `snd-12a-done`
+  ec6d21db, `snd-12b-done` 3eb19ae7, `snd-12c-done` 6052ea68, `snd-14-done` 977cbc98, `snd-15-done` on this entry's
+  commit.
+- **Next**: the owner's phone pass (the list above) and the merge of PR #292; SND-16 (an effects pass: the airship, the
+  sky train, the world map, steam vents, wells) only at the owner's word; VFX-19's battle sounds into the loudness
+  report once on main.
+
 ### Sound track SND-12c - check-sound renders in minutes (its page stops drawing); arrangements, batch 3: the battles that build and peak, the boss, the mall, hazel, the title, the fall and the variants; the baseline for batches 2 and 3 - 2026-10-29
 Branch `track/sound`, the music lane (main already merged: nothing new on main since SND-12b's merge at d71cdf61).
 Started by the planning session under the owner's standing instruction (2026-10-27): no Plan Mode, plan below,

@@ -1839,11 +1839,34 @@ sample peaks about -15 dBFS; battles 1.3-2.6 LU over it, caves and hazel 3-4 und
   subarrays; each row's true peak (4x oversampled, a 48-tap windowed sinc, BS.1770-4 annex 2) and each song's loudness
   range (EBU Tech 3342); effect rows; the targets as warnings (the route song within 1 LU of -18, true peaks under -1).
 
-TABLE_AFTER
+**Loudness, before -> after** (the report at default sliders, K-weighted; songs as they play, on their ensembles;
+before from the old chain's renders at 6052ea68, after the whole report at 8ab311dc):
+
+| | before | after |
+|---|---|---|
+| route (the target, -18 LUFS) | -31.6 LUFS, true peak -15.6 dBTP | **-17.9 LUFS**, -2.9 dBTP |
+| Copperleaf / town / map | -33.3 / -31.5 / -31.8 | -18.1 / -17.5 / -17.9 |
+| cave / meadow / hazel (the soft ones) | -35.1 / -34.3 / -35.3 | -19.2 / -19.4 / -19.4 |
+| wild / trainer / leader / boss | -29.2 / -30.1 / -30.4 / -30.0 (wild -14.0 dBTP) | -16.3 / -16.6 / -16.6 / -16.8 (wild -1.8 dBTP) |
+| title / fall / the inner sun | -31.9 / -31.0 / -29.6 | -17.7 / -16.5 / -16.5 |
+| songs' spread | 5.9 LU (-29.2 to -35.3) | 3.1 LU (-16.3 to -19.4) |
+| jingles: victory / level-up / catch / run_won | -28.3 / -29.3 / -28.3 / -27.7 | -15.3 / -15.2 / -14.8 / -14.8 (worst -1.5 dBTP) |
+| cries (loudest 3 s, against the route song) | -7.4 to -20.2 LU | -6.1 to -18.1 LU |
+| talk: Kappi / a townsperson | +0.4 / -7.9 LU | +1.0 / -5.9 LU |
+| VFX-19's battle sounds | (new) | -6.2 to -33 LU, true peaks -5.9 dBTP at worst |
+| beds alone (rain, heavy rain, the sea, a brook 3 m) | -14.2 / -12.9 / -18.2 / -16.1 LU | -11.0 / -9.9 / -14.7 / -12.8 LU (see Risky) |
+
+Every song's and jingle's true peak is under -1 dBTP (the worst -1.5); the songs' loudness ranges 0.4-4.1 LU; no
+NaN. The report warns on 14 bed and water rows (rain, heavy rain, a roof at 1 m, a bonfire at 3 m, the water at 1 m):
+every world row rose by the same 3.0-3.5 LU, which is the compressor's cut on the music (Risky).
+
+**Fingerprints**: 374 in 27 files (1696f517): every song, jingle, cry and button through the chain; VFX-19's 37
+battle sounds made again through it. The duck commits moved none.
 
 **Corrections found in SND-15** (checked in the code):
 - "Since SND-12c a full render takes about 13 minutes" held for the fingerprints only: the loudness pages still drew
-  the title's scene (SND-14 and SND-17's "over 90 minutes"); fixed here.
+  the title's scene (SND-14 and SND-17's "over 90 minutes"); stopped here (a sample 2.7 times faster). The whole run
+  still took 66 minutes (its rows render one job at a time on one core: a page per batch would be the next step).
 - The brief's "ducking ambience under important sounds" had a seam: the jingle's duck wrote the song's fader, so a
   jingle in a song's fade-in cancelled the fade. The duck now has gains of its own.
 - The four orchestral fights' "dense on a phone speaker" (SND-12c): in the phone's band (400 Hz-6 kHz) they measure
@@ -1856,8 +1879,9 @@ TABLE_AFTER
 - Kappi's talk (a blip every 84 ms) measures as loud as the route song over 3 s (+0.4 LU), a townsperson's 8 LU under.
   Not changed (talk is the UI's sound); for the owner's ears.
 
-**Not done here**: VFX-19's battle sounds (not on main yet: the report's effect rows and true peaks will show where
-they sit); per-song trims from the phone pass; SND-16.
+**Not done here**: the beds measured under a playing song (the report renders them alone, so since the chain they warn
+3.0-3.5 LU over their ceilings; HANDOFF's Risky); per-song trims from the phone pass; the full quick check (skipped);
+SND-16.
 
 ## SND-16: scene sounds (the VFX track's wishes, recorded 2026-10-29; optional, waits for the owner)
 Today every battle scene plays its family's sound: VFX-19 reads `scenes.<id>.family`. A music.json `battle.scenes` key
