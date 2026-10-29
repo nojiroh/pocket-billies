@@ -94,10 +94,11 @@ test('rule 10: icons are icons.png cells; stamps are the drawn sound words, and 
     assert.ok(!stepsOf(id).some(s => s.do === 'stamp'), `${id} stamps nothing`);
 });
 
-test('every scene lands its hit step at its hit; a status scene’s hit step does nothing without damage', () => {
+test('a damaging scene lands its hit step at its hit; a status scene has none, as its family', () => {
   for (const id of IDS)
     for (const V of [A.scenes[id], A.scenes[id].short]) {
       const hit = V.steps.find(s => s.do === 'hit');
-      assert.ok(hit && hit.at === V.hit && hit.if.includes('dmg'), id);
+      if (MOVES[id].c === 'X') assert.ok(!hit, `${id}: no hit step`);
+      else assert.ok(hit && hit.at === V.hit && hit.if.includes('dmg'), id);
     }
 });

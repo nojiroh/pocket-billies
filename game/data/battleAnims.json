@@ -2101,7 +2101,6 @@
     {"at":600,"do":"light","on":"foe","ms":240},
     {"at":600,"do":"blink","on":"target","ms":240,"if":["!self"]},
     {"at":600,"do":"action","on":"target","pose":"dizzy","ms":700,"if":["!self"]},
-    {"at":600,"do":"hit","if":["dmg"]},
     {"do":"camHome","d":460,"delay":800},
     {"at":1250,"do":"focus","on":"wide"}
    ],
@@ -2129,7 +2128,6 @@
      {"at":120,"do":"toTarget","on":"foe","d":160},
      {"at":400,"do":"ring","on":"foe","color":"kit","r0":0.2,"r1":1.1,"life":360},
      {"at":400,"do":"blink","on":"target","ms":200,"if":["!self"]},
-     {"at":400,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":400},
      {"at":820,"do":"focus","on":"wide"}
     ]
@@ -2402,7 +2400,6 @@
     {"at":600,"do":"light","on":"foe","ms":240},
     {"at":600,"do":"blink","on":"target","ms":240,"if":["!self"]},
     {"at":600,"do":"action","on":"target","pose":"dizzy","ms":700,"if":["!self"]},
-    {"at":600,"do":"hit","if":["dmg"]},
     {"do":"camHome","d":460,"delay":800},
     {"at":1250,"do":"focus","on":"wide"}
    ],
@@ -2415,7 +2412,6 @@
      {"at":420,"n":4,"every":50,"do":"rise","on":"foe","spr":"chevron","ramp":"down","down":1,"life":420,"if":["drop"]},
      {"at":400,"do":"ring","on":"foe","color":"kit","r0":0.2,"r1":1.1,"life":360},
      {"at":400,"do":"blink","on":"target","ms":200,"if":["!self"]},
-     {"at":400,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":400},
      {"at":820,"do":"focus","on":"wide"}
     ]
@@ -2510,7 +2506,6 @@
     {"at":640,"do":"light","on":"foe","ms":240},
     {"at":640,"do":"blink","on":"target","ms":240,"if":["!self"]},
     {"at":640,"do":"action","on":"target","pose":"dizzy","ms":700,"if":["!self"]},
-    {"at":640,"do":"hit","if":["dmg"]},
     {"do":"camHome","d":460,"delay":800},
     {"at":1250,"do":"focus","on":"wide"}
    ],
@@ -2523,7 +2518,6 @@
      {"at":220,"do":"spray","on":"target","spr":"coin","ramp":"Electric","speed":1,"up":0.8,"life":400,"if":["!self"]},
      {"at":380,"do":"ring","on":"foe","color":"kit","r0":0.2,"r1":1.1,"life":360},
      {"at":380,"do":"blink","on":"target","ms":200,"if":["!self"]},
-     {"at":380,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":400},
      {"at":820,"do":"focus","on":"wide"}
     ]
@@ -2781,7 +2775,6 @@
     {"at":380,"do":"light","on":"attacker","ms":300,"color":"heal"},
     {"at":600,"do":"ring","on":"attacker","color":"heal","r0":0.2,"r1":1.1,"life":420},
     {"at":600,"do":"groundRing","on":"attacker","color":"heal","r1":1.6,"life":520},
-    {"at":600,"do":"hit","if":["dmg"]},
     {"do":"camHome","d":460,"delay":800},
     {"at":1250,"do":"focus","on":"wide"}
    ],
@@ -2792,7 +2785,6 @@
      {"at":60,"n":4,"every":50,"do":"rise","on":"attacker","icon":"coin","life":420},
      {"at":100,"n":3,"every":70,"do":"rise","on":"attacker","spr":"heal_sparkle","ramp":"heal","life":420},
      {"at":360,"do":"ring","on":"attacker","color":"heal","r0":0.2,"r1":1.1,"life":360},
-     {"at":360,"do":"hit","if":["dmg"]},
      {"do":"camHome","d":360,"delay":340},
      {"at":760,"do":"focus","on":"wide"}
     ]
