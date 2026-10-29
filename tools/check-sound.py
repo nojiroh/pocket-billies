@@ -52,7 +52,7 @@ layer parts stay silent and nothing is dimmed: today's sound. --loudness adds ea
 ensemble's.
 
 SND-15: --loudness gives each row its true peak (dBTP, 4x oversampled) and each song its loudness range (LRA, EBU Tech
-3342); adds effect rows (a cry of each base, talk, the buttons, their loudest 3 s against the route song); and checks
+3342); adds effect rows (a cry of each base, talk, the buttons and VFX-19's battle sounds, their loudest 3 s against the route song); and checks
 the targets: the route song as it plays (its ensemble) within 1 LU of -18 LUFS at the default sliders, every song's
 and jingle's true peak under -1 dBTP (a warning, as the ceilings). Its pages stop drawing, as the fingerprints' do.
 
@@ -257,7 +257,7 @@ LOUD = r"""async ({jobs, rate}) => {
         jinglePlay(job.jingle);
       } else if (job.fx) {
         /* SND-15: effects at their times: [s, soundEffect's name, its options] (a cry, talk's blips) or [s, 'ui', name] */
-        for (const [at, name, o] of job.fx) { now = at; if (name === 'ui') uiSound(o); else soundEffect(name, o); }
+        for (const [at, name, o] of job.fx) { now = at; if (name === 'ui') uiSound(o); else if (name === 'battle') battleSoundPreviewPlay(o); else soundEffect(name, o); }
       } else {
         Object.assign(ambience, { bus: null, amb: null, lpA: null, lpW: null, beds: {}, flash: 0, arrive: -9, id: null, lastCall: 0, ev: {}, birdAt: null });
         if (!initAmbience()) throw new Error('initAmbience failed on the offline context');
@@ -322,12 +322,16 @@ TARGET_LUFS, TARGET_WITHIN, TARGET_TP = -18, 1, -1   # SND-15: the music's loudn
 
 def loud_effects(pg):
     """SND-15: the effect rows: (name, [[s, effect, options]...], seconds): a cry of each base (the first species by id
-    that has it), Kappi's and a townsperson's talk (a blip every 84 ms for 3 s, as talk.js types), the buttons"""
+    that has it), Kappi's and a townsperson's talk (a blip every 84 ms for 3 s, as talk.js types), the buttons, and
+    VFX-19's battle sounds"""
     cries = pg.evaluate("Object.keys(MUSIC.cries.bases).map(b => [b, Object.keys(SPECIES).sort().find(s => cryRecipe(s, (SPECIES[s] || {}).cry, MUSIC.cries.bases).base === b)]).filter(x => x[1])")
     talk = [round(0.05 + i * 0.084, 3) for i in range(36)]
     rows = [(f'cry ({b}: {sp})', [[0.05, 'cry', {'sp': sp}]], 3) for b, sp in cries]
     rows += [(f'talk ({w})', [[t, 'blip', {'who': w}] for t in talk], 4) for w in ('kappi', 'folk3')]
     rows += [('buttons', [[0.05 + 0.4 * i, 'ui', u] for i, u in enumerate(['select', 'confirm', 'cancel', 'cant', 'sheet', 'toast'])], 3.5)]
+    # VFX-19's battle sounds (music.json battle), each as heard alone (battleSoundPreviewPlay), on code that has them
+    battle = pg.evaluate("typeof battleSoundPreviewPlay === 'function' && MUSIC.battle ? battleSoundNames(MUSIC.battle) : []")
+    rows += [(f'battle {n}', [[0.05, 'battle', n]], 2.5) for n in battle]
     return rows
 # SND-10: every water recipe (soundscape.json `water`) at 1, 3 and 10 m, a fall at its height; both ceilings apply (its
 # bed's integrated level and its events' loudest 3 s)
