@@ -97,7 +97,7 @@ const battleLooks = {
   cell: -1,
 };
 /** a new battle: nothing on the stage yet */
-function battleLooksReset() {
+export function battleLooksReset() {
   battleLooks.seen = null;
   battleLooks.lastEv = null;
   battleLooks.s = [];

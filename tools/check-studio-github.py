@@ -2272,6 +2272,16 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("battleFxSeek(600)")
     ev = pg.evaluate("[battleFx.clip, battleFx.at>=599, battleFx.T]")
     if ev[0] != 'event:catch:0' or not ev[1] or ev[2] is not None: errs.append(f'battle effects: the catch event played and seeked as {ev}')
+    # VFX-20: every event plays (the flow's, the stage's others and the look films), the page with no error; a look
+    # film's scrubber runs past its last line
+    evs = pg.evaluate("[...document.querySelectorAll('#main [data-bp=ev] option')].map(o=>o.value)")
+    for v in evs:
+        pick('#main [data-bp=ev]', v); time.sleep(0.05)
+        clk('#main [data-act=bfxPlay][data-side="0"]'); time.sleep(0.35)
+        if not pg.evaluate(f"battleFx.clip==='event:'+{json.dumps(v)}+':0'"): errs.append(f'battle effects: the event {v} did not play ({pg.evaluate("battleFx.clip")})')
+    looks = [v for v in evs if v.startswith('look:')]
+    if len(looks) < 20 or 'look:brn_ko' not in looks or 'win' not in evs: errs.append(f'battle effects: the events are {evs}')
+    if pg.evaluate("battleFx.dur") < 1600: errs.append(f'battle effects: the last look film runs {pg.evaluate("battleFx.dur")} ms on the scrubber')
     clk('#main [data-act=bfxSet][data-k=clip][data-v=move]'); time.sleep(0.5)
     pick('#main [data-p="battleAnims.budgets.burst.0"]', '20'); time.sleep(0.6)
     if pg.evaluate("studioState.D.battleAnims.budgets.burst[0]") != 20: errs.append('battle effects: a burst budget of 20 did not reach the data')
@@ -2290,6 +2300,12 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("undo()"); time.sleep(0.3)
     if pg.evaluate("studioState.D.battleAnims.tiers.super4.shake") != 9: errs.append('battle effects: undo did not put the tier dial back')
     if not pg.evaluate("!!document.querySelector('#main select[data-bp=ko]')"): errs.append('battle effects: no Knocks out choice beside the outcome')
+    # VFX-20: a family's miss is tuned in the Misses pane (proposed, undone)
+    pick('#main [data-p="battleAnims.families.shot.miss.dur"]', '700'); time.sleep(0.6)
+    if pg.evaluate("studioState.D.battleAnims.families.shot.miss.dur") != 700: errs.append('battle effects: the shot miss length 700 did not reach the data')
+    if not pending_files(pg, 'battleAnims\\.json$'): errs.append('battle effects: after a miss edit Propose would not send battleAnims.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("studioState.D.battleAnims.families.shot.miss.dur") != 760: errs.append('battle effects: undo did not put the miss back')
     empty = pg.evaluate("[document.querySelector('#bfxPane-ramps').textContent, document.querySelector('#bfxPane-cells').textContent]")
     has = pg.evaluate("[!!studioState.D.battleAnims.ramps, !!studioState.D.battleAnims.sprites]")
     for (t, h, k) in zip(empty, has, ('ramps', 'cells')):
@@ -2297,8 +2313,15 @@ def battle_fx_steps(pg, errs):
     pg.evaluate("void openSection('types')"); time.sleep(0.3)
     back = pg.evaluate("[reducedMotion, (saveData.preferences||{}).flashes||null, document.documentElement.dataset.motion||null]")
     if back != [False, None, None]: errs.append(f'battle effects: leaving the section left the motion and Flashes at {back}')
+    # VFX-20: a type's battle particles are its kit's burstSprites (battleAnims.json types; were types.json fx)
+    before = pg.evaluate("JSON.stringify(studioState.D.battleAnims.types.Fire.burstSprites)")
+    clk('#main [data-act=typeFx][data-t="Fire"][data-k="star"]'); time.sleep(0.3)
+    got = pg.evaluate("studioState.D.battleAnims.types.Fire.burstSprites")
+    if 'star' not in (got or []) or not pending_files(pg, 'battleAnims\\.json$'): errs.append(f'types: the Fire particle picker gave {got}, or Propose would not send battleAnims.json')
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("JSON.stringify(studioState.D.battleAnims.types.Fire.burstSprites)") != before: errs.append('types: undo did not put the Fire particles back')
     pg.evaluate("Object.assign(battlePreview,{clip:'move',speed:1,q:0,motion:'full',flashes:true,res:'hit'})")
-    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget, a smear and a tier dial proposed and undone, Knocks out, the empty ramps and cells panes, the settings back on leaving', flush=True)
+    if len(errs) == n: print(f'battle effects: {mid} at x4 ({want["id"]}, {rows} rows), They use it, two cells on, the scrubber to its hit, Faster / q2 / Reduced / Flashes off on the stage, the catch event seeked, a budget, a smear and a tier dial proposed and undone, Knocks out, every event and look film, a miss tuned and undone, the empty ramps and cells panes, the settings back on leaving, a type\'s particles in its kit', flush=True)
 
 
 def unlocks_steps(pg, errs):
