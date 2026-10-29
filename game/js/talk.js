@@ -67,7 +67,7 @@ provide({ talkFolk });
 export const talkBox = {
   on: false,
   cur: null,
-  por: /** @type {{ who: string | null, expr: string | null, t: number, creature?: boolean }} */ ({
+  por: /** @type {{ who: string | null, expr: string | null, t: number, creature?: boolean, fig?: string | null }} */ ({
     who: null,
     expr: null,
     t: 0,
@@ -765,8 +765,9 @@ function talkPortraitFrame(who, ex, ts, S) {
     drawPortrait(src, who, ex, ts);
     return src;
   }
-  const fig = talkFigure(who),
-    im = fig ? figureBustPicture(fig, S ? S.head : null, figureStyle()) : null;
+  /* the speaker's figure, worked out once a line */
+  if (P.fig === undefined) P.fig = talkFigure(who);
+  const im = P.fig ? figureBustPicture(P.fig, S ? S.head : null, figureStyle()) : null;
   if (im) return figureBustFace(talkBox.fig || (talkBox.fig = document.createElement('canvas')), im, S);
   const breath = Math.round(Math.sin(ts / 650)),
     key = who + '|' + (ex || '') + '|' + breath;
