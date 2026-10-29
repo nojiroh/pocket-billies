@@ -163,6 +163,7 @@ export const TYPE_RESISTED_BY = Object.fromEntries(
   gameData.types.map(t => [t.id, (t.weak || []).filter(x => TYPE_COLORS[x])])
 );
 export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
+provide({ PASSIVE }); /* to-module */
 export const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
   gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']])
 );

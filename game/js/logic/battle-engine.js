@@ -76,6 +76,7 @@ import {
   makeBilly,
   makeRobot,
   maxHp,
+  maxLevel,
   moveSourceLimbs,
   moveUsable,
   movesOf,
@@ -923,10 +924,13 @@ export function useMove(k, mid, tk0, part) {
     }
   }
   if (fx.stones) {
-    if (td.stones) {
+    /* VFX-13: always on the foe's side, as the line says: a status move's target was the user itself (onFoe false),
+       so Scatter Stones laid them on its own side */
+    const sd = battleNow().sides[ACTOR_SIDE[k] ^ 1];
+    if (sd.stones) {
       if (M.c === 'X') battleSay('Sharp stones are already scattered there.');
     } else {
-      td.stones = true;
+      sd.stones = true;
       battleSay(`Sharp stones are scattered around ${ACTOR_SIDE[k] === 0 ? 'their' : 'your'} side.`);
     }
   }
@@ -1079,8 +1083,15 @@ export function award(e) {
   const on = liveActors(0).map(k => fighter(k));
   on.forEach(m => {
     const k = allActors().find(q => fighter(q) === m);
-    const got = heldXp(m, amt);
-    battleSay(`${billyName(m)} gained ${formatNumber(got)} XP.`, { k: 'xp', si: k });
+    const got = heldXp(m, amt),
+      line = battleSay(`${billyName(m)} gained ${formatNumber(got)} XP.`, { k: 'xp', si: k });
+    /* VFX-16: the line's snapshot shows the XP added (its bar moves with its line, not a line late); the level-ups
+       gainXp says after it keep their own */
+    if (got > 0 && m.lvl < maxLevel()) {
+      m.xp += got;
+      line.s = allSnapshots();
+      m.xp -= got;
+    }
     gainXp(m, got, battleSay);
   });
   /* phase 08: your buddy gets the full amount even when it didn't fight (it got its XP from walking before) */

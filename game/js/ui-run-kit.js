@@ -1137,9 +1137,19 @@ const PbStamp = class extends LitElement {
    ("Boss"), a bar in the family's colour (`tone`: a --sig-* name, bad by default: bosses share the red family with
    Crests) with the main action's long hexagon, slammed in from the left on the spring, held, then gone to the right.
    Put it in a positioned box and call play(hold) (or use pbNameBanner); it tells the page pb-banner-done and leaves.
-   Reduced motion: it fades in and out. Words only from the caller (translated there) */
+   Reduced motion: it fades in and out. Words only from the caller (translated there).
+   VFX-16: the VS splash is the same banner with `faces` (two portraits, [{src, w, h}], yours on the left facing in,
+   at whole-number scales: the caller sizes them) in slanted frames that come in from the sides with the bar, and
+   `color` (a type's colour, darkened under the white words) in place of the tone */
 const PbNameBanner = class extends LitElement {
-  static properties = { name: {}, kicker: {}, tone: { reflect: true }, _at: { state: true } };
+  static properties = {
+    name: {},
+    kicker: {},
+    tone: { reflect: true },
+    color: {},
+    faces: { attribute: false },
+    _at: { state: true },
+  };
   static styles = [
     runKitBase,
     runKitMotion,
@@ -1183,6 +1193,81 @@ const PbNameBanner = class extends LitElement {
       .bar.in {
         animation: pb-banner-in var(--m-base) var(--spring) both;
       }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--s2);
+        max-width: 100%;
+      }
+      .row .bar {
+        min-width: 0;
+        flex: 0 1 auto;
+        padding-inline: calc(var(--s3) + 10px);
+      }
+      .row .n {
+        font-size: 24px;
+      }
+      .face {
+        flex: none;
+        line-height: 0;
+        padding: var(--s1) calc(var(--s2) + 4px);
+        /* the kit's slant (--slant, an angle) across the frame's height (--fh, set with the picture) */
+        --slant-x: calc((var(--fh, 64px) + 2 * var(--s1)) * tan(var(--slant)));
+        clip-path: polygon(var(--slant-x) 0, 100% 0, calc(100% - var(--slant-x)) 100%, 0 100%);
+        background: color-mix(in srgb, var(--tone) 45%, black);
+        opacity: 0;
+      }
+      .face img {
+        image-rendering: pixelated;
+      }
+      .face.me img {
+        transform: scaleX(-1);
+      }
+      .face.in {
+        animation: pb-face-in var(--m-base) var(--spring) both;
+      }
+      .face.foe.in {
+        animation-name: pb-face-in-r;
+      }
+      .face.out {
+        animation: pb-face-out var(--m-exit, 180ms) var(--ease-in, ease-in) both;
+      }
+      .face.f-in {
+        animation: m-fade var(--m-fast) linear both;
+      }
+      .face.f-out {
+        opacity: 1;
+        animation: m-fade var(--m-fast) linear reverse both;
+      }
+      @keyframes pb-face-in {
+        from {
+          opacity: 0;
+          transform: translateX(-60%);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes pb-face-out {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      @keyframes pb-face-in-r {
+        from {
+          opacity: 0;
+          transform: translateX(60%);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
       .bar.out {
         animation: pb-banner-out var(--m-exit, 180ms) var(--ease-in, ease-in) both;
       }
@@ -1222,6 +1307,9 @@ const PbNameBanner = class extends LitElement {
     this.name = '';
     this.kicker = '';
     this.tone = '';
+    this.color = '';
+    /** @type {{ src: string, w: number, h: number }[] | null} */
+    this.faces = null;
     this._at = '';
     this._timers = /** @type {number[]} */ ([]);
   }
@@ -1251,22 +1339,32 @@ const PbNameBanner = class extends LitElement {
     });
   }
   willUpdate() {
-    if (this.tone) this.style.setProperty('--tone', `var(${sigVar(this.tone)})`);
+    if (this.color) this.style.setProperty('--tone', `color-mix(in srgb, ${this.color} 62%, black)`);
+    else if (this.tone) this.style.setProperty('--tone', `var(${sigVar(this.tone)})`);
+    if (this.faces && this.faces[0]) this.style.setProperty('--fh', `${this.faces[0].h}px`);
   }
   render() {
-    return html`<div class="bar ${this._at}" role="status">
-      ${this.kicker ? html`<span class="k">${this.kicker}</span>` : nothing}<span class="n">${this.name}</span>
-    </div>`;
+    const bar = html`<div class="bar ${this._at}" role="status">
+        ${this.kicker ? html`<span class="k">${this.kicker}</span>` : nothing}<span class="n">${this.name}</span>
+      </div>`,
+      F = this.faces,
+      face = (/** @type {{ src: string, w: number, h: number }} */ f, /** @type {string} */ k) =>
+        html`<span class="face ${k} ${this._at}"><img src=${f.src} width=${f.w} height=${f.h} alt="" /></span>`;
+    if (!F || F.length < 2) return bar;
+    return html`<div class="row">${face(F[0], 'me')}${bar}${face(F[1], 'foe')}</div>`;
   }
 };
 /** UI-17: a name banner in `host` (a positioned box): kicker over name, held `hold` ms, then removed; the whole of it
  * fits a stage intro's time (in 240 ms, out 180 ms). Returns the element; its play() promise is el.done
- * @param {Element} host @param {{ name: string, kicker?: string, tone?: string, hold?: number }} o */
+ * @param {Element} host @param {{ name: string, kicker?: string, tone?: string, hold?: number, color?: string,
+ *   faces?: { src: string, w: number, h: number }[] }} o VFX-16: faces and color make it the VS splash */
 export function pbNameBanner(host, o) {
   const el = /** @type {any} */ (document.createElement('pb-name-banner'));
   el.name = o.name;
   el.kicker = o.kicker || '';
   el.tone = o.tone || '';
+  el.color = o.color || '';
+  el.faces = o.faces || null;
   host.appendChild(el);
   el.done = el.updateComplete.then(() => el.play(o.hold ?? 700)).then(() => el.remove());
   return el;

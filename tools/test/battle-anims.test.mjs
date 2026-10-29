@@ -18,8 +18,11 @@ import {
   battlePartOffset,
   battlePathAt,
   flashGate,
+  hitLook,
   hitTier,
   koAhead,
+  lineAfterMove,
+  TIER_ROWS,
   redShare,
 } from '../../game/js/logic/battle-anims.js';
 
@@ -39,11 +42,16 @@ function legacyDurHit(an, M) {
 }
 
 /* VFX-11: the gates, repeats and variants below were written against the legacy families: they run on a move with
-   no anim of its own, with the legacy families as the defaults (as before VFX-11) */
-const L = {
-  ...A,
-  defaults: { ...A.defaults, H: 'legacy_hit', S: 'legacy_cast', X: 'legacy_status', protect: 'legacy_guard' },
-};
+   no anim of its own, with the legacy families as the defaults (as before VFX-11). VFX-13 took them out of the game's
+   data (nothing named them): they are a fixture here */
+const LEGACY = JSON.parse(
+    readFileSync(new URL('./fixtures/battle-anims-legacy.json', import.meta.url), 'utf8')
+  ).families,
+  L = {
+    ...A,
+    families: { ...A.families, ...LEGACY },
+    defaults: { ...A.defaults, H: 'legacy_hit', S: 'legacy_cast', X: 'legacy_status', protect: 'legacy_guard' },
+  };
 const bare = mid => {
   const { anim: _a, ...M } = MOVES[mid];
   return M;
@@ -88,8 +96,10 @@ test('VFX-11: every move names one of the 16 families, the table’s counts', ()
     guard: 2,
     heal: 5,
   });
+  /* the outcome families (a miss's whiff, a block) keep today's one timing, as the legacy ones did */
   for (const [id, F] of Object.entries(A.families))
-    if (!id.startsWith('legacy_')) assert.ok(F.short, `${id} has a short variant`);
+    if (!id.startsWith('legacy_') && id !== 'whiff' && id !== 'blocked')
+      assert.ok(F.short, `${id} has a short variant`);
 });
 
 test('the family: a move’s own anim when it lands, else its outcome’s or category’s default', () => {
@@ -97,12 +107,12 @@ test('the family: a move’s own anim when it lands, else its outcome’s or cat
     M = bare(H);
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, A), { id: 'strike', kind: 'family' });
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), MOVES[H], A), { id: MOVES[H].anim, kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'legacy_miss', kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'blocked'), M, A), { id: 'legacy_blocked', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'whiff', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'blocked'), M, A), { id: 'blocked', kind: 'family' });
   M.anim = 'legacy_cast';
-  assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, A), { id: 'legacy_cast', kind: 'family' });
-  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, A), { id: 'legacy_miss', kind: 'family' }, 'a miss is a miss');
-  const S = { ...A, scenes: { big: A.families.legacy_hit } };
+  assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, L), { id: 'legacy_cast', kind: 'family' });
+  assert.deepEqual(battleAnimFor(moveAn(H, 'miss'), M, L), { id: 'whiff', kind: 'family' }, 'a miss is a miss');
+  const S = { ...A, scenes: { big: LEGACY.legacy_hit } };
   M.anim = 'big';
   assert.deepEqual(battleAnimFor(moveAn(H, 'hit'), M, S), { id: 'big', kind: 'scene' });
   M.anim = 'nosuch';
@@ -121,6 +131,166 @@ test('hit tiers', () => {
   assert.equal(hitTier({ k: 'move', dmg: 5, te: 4 }), 'super4');
   assert.equal(hitTier({ k: 'move', dmg: 5, te: 2, crit: true }), 'crit');
   assert.equal(hitTier({ k: 'move', dmg: 5, miss: true }), 'none');
+});
+
+/* VFX-13: the tier table (battleAnims.json tiers) as hitLook plays it */
+const hit = (/** @type {any} */ o) => ({ k: 'move', dmg: 5, te: 1, ...o });
+test('VFX-13 hit tiers: each row’s numbers, with the hit’s weight', () => {
+  const T = A.tiers,
+    n = hitLook(hit({}), null, 0.5, A);
+  assert.equal(n.tier, 'neutral');
+  assert.equal(n.ko, null);
+  assert.equal(n.stop, 20 + 70 * 0.5, 'today’s 20+70w');
+  assert.equal(n.shake, 1.4 + 6 * 0.5);
+  assert.equal(n.kb, 4 + 9 * 0.5, 'today’s 4+9w');
+  assert.equal(n.burst, 10);
+  assert.ok(n.punch > 0, 'a heavy neutral hit punches, as before');
+  assert.equal(hitLook(hit({}), null, 0.3, A).punch, 0, 'a light one doesn’t');
+  assert.equal(n.flash, null, 'no full-screen flash on a normal hit');
+  assert.deepEqual([n.sprite.white, n.sprite.ms], [0.5, T.cell], 'a one-cell sprite flash');
+  const r = hitLook(hit({ te: 0.5 }), null, 0.5, A);
+  assert.equal(r.tier, 'resisted');
+  assert.equal(r.stop, 20);
+  assert.ok(r.sprite.white > 0 && r.sprite.dark > 0, 'a grey sprite flash');
+  assert.ok(r.puff > 0 && r.burst < n.burst && r.light < n.light, 'a dull puff, a smaller burst, a dim light');
+  const s2 = hitLook(hit({ te: 2 }), null, 0.5, A),
+    s4 = hitLook(hit({ te: 4 }), null, 0.5, A);
+  assert.deepEqual([s2.tier, s2.flash.col, s2.flash.a, s2.ca], ['super', 'type', 0.35, 180]);
+  assert.deepEqual([s4.tier, s4.flash.col, s4.flash.a], ['super4', 'type', 0.45]);
+  assert.ok(s4.shake > s2.shake && s4.burst > s2.burst && s4.light > s2.light && s4.kb > s2.kb, 'x4 is bigger');
+  assert.equal(s2.stop, 80, 'today’s');
+  assert.equal(s4.stop, 80, 'no longer than today’s super');
+  const c = hitLook(hit({ crit: true }), null, 0.5, A),
+    sc = hitLook(hit({ crit: true, te: 2 }), null, 0.5, A);
+  assert.deepEqual([c.tier, c.impact, c.flash.col, c.flash.a, c.stop, c.ca], ['crit', 'crit', 'crit', 0.5, 90, 0]);
+  assert.equal(c.lightCol, 'crit', 'a warm light');
+  assert.equal(sc.tier, 'crit', 'a super crit is a crit (hitTier’s name)');
+  assert.equal(sc.ca, 180, '...with the super’s chromatic pulse');
+  assert.ok(sc.burst >= s2.burst && sc.punch > c.punch);
+  assert.equal(hitLook(hit({ miss: true }), null, 1, A), null);
+  assert.equal(hitLook(hit({ dmg: 0 }), null, 1, A), null);
+  assert.equal(hitLook(hit({}), null, 1, { ...A, tiers: undefined }), null, 'no table, nothing');
+  assert.deepEqual(TIER_ROWS, ['resisted', 'neutral', 'super', 'super4', 'crit', 'ko', 'last']);
+});
+
+test('VFX-13 a KO: one cell more and a scar; the last KO or a boss’s: the ~250 ms freeze and the impact frame', () => {
+  const T = A.tiers,
+    base = hitLook(hit({}), null, 0.4, A),
+    ko = hitLook(hit({}), { ko: true, last: false }, 0.4, A),
+    last = hitLook(hit({}), { ko: true, last: true }, 0.4, A),
+    boss = hitLook(hit({}), { ko: true, last: false }, 0.4, A, true);
+  assert.equal(ko.ko, 'ko');
+  assert.equal(ko.stop - base.stop, T.cell, 'the KO’s extra cell');
+  assert.ok(Math.abs(ko.shake - base.shake - 2) < 1e-9);
+  assert.equal(ko.burst - base.burst, 6);
+  assert.equal(ko.scar, 1, 'one more scar');
+  assert.ok(ko.sprite.white > 0.8 && ko.sprite.dark > 0 && ko.sprite.darkMs > 0, 'white, then ink');
+  assert.equal(last.ko, 'last');
+  assert.equal(last.stop, T.last.freeze, 'a freeze of about 250 ms in all');
+  assert.ok(last.stop >= 240 && last.stop <= 260);
+  assert.ok(last.shake >= 10 && last.burst === ko.burst + 10 && last.kb > ko.kb);
+  assert.equal(last.impact, 'ko', 'the impact frame');
+  assert.deepEqual(boss, { ...last }, 'a boss falling is the last KO’s look');
+  assert.equal(hitLook(hit({ crit: true }), { ko: true, last: true }, 0.4, A).impact, 'crit', 'a crit keeps its frame');
+  assert.equal(hitLook(hit({}), { ko: false, last: false }, 0.4, A).ko, null, 'no KO, no KO row');
+});
+
+test('VFX-13 time: no tier’s hit-stop past today’s longest (90 ms); only the KO’s cell and the last KO’s freeze add', () => {
+  for (const k of ['resisted', 'neutral', 'super', 'super4', 'crit']) {
+    const R = A.tiers[k];
+    assert.ok(R.stop + (R.stopW || 0) <= 90, `${k}: ${R.stop + (R.stopW || 0)} ms`);
+    for (const w of [0, 0.5, 1])
+      for (const crit of [false, true]) {
+        const L0 = hitLook(
+          hit({ crit, te: { resisted: 0.5, neutral: 1, super: 2, super4: 4, crit: 1 }[k] }),
+          null,
+          w,
+          A
+        );
+        assert.ok(L0.stop <= 90, `${k} w ${w}: ${L0.stop} ms`);
+        assert.ok(hitLook(hit({ crit }), { ko: true }, w, A).stop <= L0.stop + A.tiers.cell || k !== 'neutral');
+      }
+  }
+});
+
+test('VFX-13 drain and recoil: a heal after a draining hit, a hurt after a crash; nothing else', () => {
+  const drain = Object.keys(MOVES).find(k => (MOVES[k].fx || {}).drain),
+    crash = Object.keys(MOVES).find(k => (MOVES[k].fx || {}).missCost),
+    plain = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && !MOVES[k].fx);
+  assert.ok(drain && crash && plain);
+  const L = (/** @type {any[]} */ ...an) => an.map(a => ({ an: a }));
+  assert.deepEqual(
+    lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: drain, dmg: 9 }, null, { k: 'heal', si: 0, amt: 4 }), 2, MOVES),
+    { kind: 'drain', from: 1, mid: drain }
+  );
+  assert.equal(
+    lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: drain, miss: true }, { k: 'heal', si: 0 }), 1, MOVES),
+    null
+  );
+  assert.equal(lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: plain, dmg: 9 }, { k: 'heal', si: 0 }), 1, MOVES), null);
+  assert.equal(lineAfterMove(L({ k: 'move', si: 1, ti: 0, mid: drain, dmg: 9 }, { k: 'heal', si: 0 }), 1, MOVES), null);
+  assert.deepEqual(
+    lineAfterMove(L({ k: 'move', si: 1, ti: 0, mid: crash, miss: true }, { k: 'hurt', si: 1, dmg: 20 }), 1, MOVES),
+    {
+      kind: 'recoil',
+      from: 0,
+      mid: crash,
+    }
+  );
+  assert.equal(lineAfterMove(L({ k: 'move', si: 1, ti: 0, mid: crash, dmg: 5 }, { k: 'hurt', si: 1 }), 1, MOVES), null);
+  assert.equal(lineAfterMove(L({ k: 'hurt', si: 0 }), 0, MOVES), null, 'no move before it');
+  assert.equal(lineAfterMove(L({ k: 'move', si: 0, ti: 1, mid: drain, dmg: 9 }), 0, MOVES), null, 'a move is no heal');
+});
+
+test('VFX-13 misses per family: each attacking family whiffs its own way, in a miss’s time; the rest take whiff', () => {
+  const own = [
+    'charge',
+    'dash',
+    'dive',
+    'strike',
+    'slash',
+    'quake',
+    'flurry',
+    'shot',
+    'beam',
+    'breath',
+    'wave',
+    'storm',
+    'hex',
+  ];
+  for (const [id, F] of Object.entries(A.families))
+    assert.equal(!!F.miss, own.includes(id), `${id}: a miss of its own`);
+  for (const mid of Object.keys(MOVES)) {
+    const M = MOVES[mid],
+      an = moveAn(mid, 'miss');
+    if (!an.miss) continue;
+    const T = battleAnimTimeline(an, M, { gl: true, q: 0, speed: 1 }, A),
+      F = A.families[M.anim];
+    assert.equal(T.id, F && F.miss ? M.anim : 'whiff', mid);
+    assert.equal(T.variant, F && F.miss ? 'miss' : 'full', mid);
+    assert.deepEqual([T.dur, T.hit], [760, 999], `${mid}: a miss’s time`);
+    assert.ok(
+      T.steps.some(S => S.do === 'pop' && S.pop === 'miss'),
+      `${mid} says Miss`
+    );
+    assert.ok(
+      T.steps.some(S => S.do === 'dodge'),
+      `${mid}: the target sidesteps`
+    );
+    assert.ok(!T.steps.some(S => S.do === 'hit'), `${mid}: hits nothing`);
+  }
+  const shot = Object.keys(MOVES).find(k => MOVES[k].anim === 'shot');
+  assert.ok(
+    battleAnimTimeline(moveAn(shot, 'miss'), MOVES[shot], {}, A).steps.some(
+      S => S.do === 'projectile' && S.to === 'past'
+    ),
+    'a shot flies past'
+  );
+  assert.equal(
+    battleAnimTimeline(moveAn(shot, 'miss'), MOVES[shot], { speed: 2.2 }, A).variant,
+    'miss',
+    'no Faster miss'
+  );
 });
 
 test('the 8 preview outcomes land in their tiers (VFX-12)', () => {
@@ -191,7 +361,7 @@ test('gates, repeats, a skip’s classes and the order steps start in', () => {
 test('the Faster variant, the quality and the cap on extra time', () => {
   const H = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && (MOVES[k].p || 0) < A.longPower),
     Lg = Object.keys(MOVES).find(k => MOVES[k].c === 'H' && (MOVES[k].p || 0) >= A.longPower),
-    fam = A.families.legacy_hit,
+    fam = LEGACY.legacy_hit,
     B = {
       ...L,
       families: {
