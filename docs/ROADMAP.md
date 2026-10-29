@@ -265,7 +265,7 @@ town node needs it.
   VFX-7 (Part 2's plan, with research) done 2026-10-27 on `ccr-7526d712-gliikp`; VFX-8..VFX-20 (13 sessions) on
   `track/vfx` after VFX-5, each in a new session started by VFX-7's, plans approved automatically (the owner,
   2026-10-28), sound steps agreed with the sound track's planning session. No per-session tags (CLAUDE.md since #283). Branch `track/vfx`.
-- **Camera track** (docs/phases/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
+- **Camera track** (docs/archive/tracks/camera-track.md, the owner's brief and answers 2026-10-22): a follow with dead and
   soft zones and a joystick look-ahead (CAM-1), zooms for moments of interest (CAM-2), a diorama tilt-shift blur with
   a player slider (CAM-3); each session brings its Studio dials and preview overlays. Runs now, beside the RL track.
   CAM-1 (the follow) done 2026-10-22 (PR #127); CAM-2 (moments of interest) done 2026-10-22 (PR #132); CAM-3 (the
