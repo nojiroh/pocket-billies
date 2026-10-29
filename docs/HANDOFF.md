@@ -2,6 +2,97 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Intro track IN-1 - the prepared first run (logic and data) - 2026-10-29
+Branch `claude/in-1-prepared-run-29643a` (wave 1, from `track/intro` at 61d90751), draft PR into `track/intro`.
+Planned and built at once (intro-track.md section 1: the owner's standing answer). No section 6 item came up: nothing
+changes a later run (the usual gift, loss rule and balance are untouched; every new rule reads `run.first`). New game
+still plays today's opening: the prepared run starts from the debug menu only, until IN-5.
+- Facts checked (intro-track.md 3.2, against 61d90751), and where they differ:
+  - **The boss name clashes:** Expedition I's Voltron already has the id `retrieval` and the name "The Retrieval
+    Unit". The first run's bot is **`retrieval_scout`, "The Retrieval Scout"** (name provisional).
+  - **The mini-boss's "reward pick" is a Perk pick** (rules.json run.perks.leader: three "fine" Perks), not an item
+    pick, so the planted aha is a Perk: **Heavy Crown** (your lead hits 40% harder and takes 20% less), the natural
+    find for a starter that mostly fights alone.
+  - **Every place rolls wild Billies** (a landing, a town with tall grass, a waystation, a mini-boss's place), Expedition
+    I's routes stand 4-6 route trainers (one a Bureau agent with a bot), and a mini-boss's place a line of arena
+    trainers. One idea per place needs all of that pinned, so the file pins each place's stock and trainers.
+  - **Each leader's type punishes one starter** (Rocco's Ground beats Fire, Morel's Flying/Psychic Grass); the file
+    names the mini-boss's two Billies instead (Morel's ring, two pure Psychic Billies, even against all three).
+  - A bot's types are its torso's and legs' (logic/robot-math.js), not its gem's. A prop's `rot` is in degrees.
+  - The short-run row rule (runMapRows: a free row before the boss) doesn't fit the plan's map (a town right before
+    the boss); the hand-written map doesn't go through runMapRows, so it keeps the plan's shape.
+  - The rest held: a fixed seed works everywhere, a fixed map didn't exist, `plan.map` can be replaced between
+    runStartPlan and runStartOn, places are made by mapgen from the node seeds (MAPGEN_VERSION 27), the gift is
+    rules.json run.start ($600, 5 Pyramids, 2 Potions), the bot parts are RL-14's.
+- Changed:
+  - New `game/data/firstRun.json` + schema, `FIRST_RUN` in game-data.js, a `dataFirstRun` check. The map (lane 0 the
+    southern): 0 landing (the crash site, nothing wild) -> 1 route, the catch lane (3 Goslings, level 3, no trainers) or
+    2 route, the counter lane (one level-2 wild of the starter's counter type: Pupfin for Emberox, Cliplet for
+    Cartotter, Pilotbat for Kidling; no trainers) -> 3 a hamlet (clinic, shop) or 4 a waystation (Abandoned Pyramid
+    Cart) -> 5 the mini-boss (Mother Morel's ring, Kontourlet and Festival Kontourlet, levels 2-3, doubles; Heavy Crown
+    planted in its pick) -> 6 a hamlet -> 7 the boss (the Retrieval Scout, level 4, HP x2.4). Biomes: meadow, then
+    thicket. Lane 1 also leads to the hamlet (one diagonal).
+  - New `game/js/logic/first-run.js`: the file's map laid on the region grid (runMapGrid, so its places are made like
+    any run's), the plan (region zones and leaders, forecast, no rival, ghost or side area), the pinned pools, stock,
+    trainers, foe levels, team, boss and plant, the crash site and its spots, the file's problems.
+  - `runStartPrepared(s, data)` in logic/run-start.js: runStartPlan on the file's seed and rows, the map replaced,
+    runStartOn with rules.json **run.first** `{se: 0, pyramids: {pyramid: 5}, items: {potion: 1}}`, only the lead
+    travels, no hub bonus or gift rides along, the event pinned, `run.first = true` (validRun checks it).
+  - **The keep rule:** `runEnd` keeps the whole party when `run.first`, won or lost (`keep` isn't read).
+  - Small hooks, each reading `run.first`: runFoes (the file's boss, foe levels, mini-boss team), runWorldTables (the
+    pinned pools and stock), rules.js encounterStock (`L.stock`), runRouteTrainers (the count), perkOfferMake (the
+    plant, first pick only), runSceneMake (the crash site on the landing).
+  - bosses.json `retrieval_scout`: Bulwark torso, Clamp and Piston arms, Crawler Treads, Volt gem (Steel/Ground),
+    `expeditions: []` (never a later run's boss), one shield phase at half HP. Expedition I's Voltron is unchanged.
+  - **The crash site:** firstRun.json `crash`, offsets in metres from the landing's mast, turned with it. Props: the
+    wreck (a **stand-in, `train_greenbelt`**, until IN-3's wreck prop: change `crash.props[0].k`) and two
+    `bureau_crate`s, put down with `crash: 1` after clearing the ground round them and the spots. **Spots** (IN-5):
+    `wreck`, `me`, `chosen`, `kappi`, `star1`, `star2`, `star3`; `firstRunSpots(scene)` gives them in the landing's
+    metres. West of the mast, clear of the road (east of it) and the pond (south-east).
+  - The page: `runTakeOffPrepared()` in run.js (no train ride: the loading screen, then the landing, as a take-off
+    ends); the debug menu's Run section has **"Prepared run"** (on the current save: a run sets the hub aside and puts
+    it back at its end, plus every Billie it kept).
+  - Run sim `--prepared` (logic/run-sim.js): the file's run on every seed; the seed picks the starter and salts the
+    battles' and catches' luck (one map for everyone), and the bot takes the planted Perk (a player would; the greedy
+    bot otherwise takes the first "fine" Perk in file order).
+  - Tests: tools/test/first-run.test.mjs (11: the file and its check, the run is valid and the file's, the pinned
+    places, foes, boss and plant, the keep rule both ways, the crash props and spots); first-run-places.test.mjs
+    (slow tier: every place's fingerprint, the mast, spots and crash props, and a picture of the crash site in its
+    ground letters, so a mapgen change shows what moved; remake with --test-update-snapshots on purpose only).
+  - Windows tooling (own commits): load-logic imports by file URL (every Node test and the sim failed on Windows),
+    build-data and to-module run as scripts (`npm run data` and `npm run modules` did nothing), to-module and
+    check-names keep page paths with forward slashes.
+- **Balance** (`node tools/test/sim/run-sim.mjs --prepared --balance --runs=300`): **won 69 of 300, 23%**
+  (Cartotter 45%, Emberox 18%, Kidling 8%). Lost on a route 20 (7%), at the mini-boss 69 (23%), at the boss 142 (47%):
+  the boss is the wall. The bot's top level ends near 6; the sim clock says about 7 minutes (its guess, not a play).
+  The full mode (with scenes) gives the same outcomes. Levers in the file: the counter lane's level, the mini-boss's
+  and boss's `up`, bosses.json `retrieval_scout.boss.hp`.
+- Risky:
+  - **The starters' spread is the type chart's:** the bot is Steel/Ground, so Water hits it double and Cartotter wins
+    every boss it reaches (it dies more on the counter lane and at the mini-boss); Kidling hits it neutral and takes
+    neutral Steel hits twice a turn. No pair of RL-14 parts is neutral to all three (swept: every arm pair, other
+    frames). IN-3 may give the bot its own parts; IN-6 tunes from the owner's debug log.
+  - The sim's bot fights at most two wild Billies a place and catches little, so a player levels more: the real win
+    rate is likely above the sim's.
+  - Small edits in shared logic (run-loop, run-scenes, perks, route-trainers, rules, run-state, run-sim) and
+    hooks.js regenerated; IN-4 owns runOver/runEndHome. studio/art-code-refs.json regenerated (line numbers).
+  - The crash site's ground: checked in the tiles (not water, not road); heights and slopes only by eye (below).
+- Lines (drafts in bosses.json, for the owner): call "{name} has found you. It acts twice a turn. Your team steps up
+  together." join "A Bureau bot rolls out of the smoke. It is holding a clipboard with your name on it." phase "{name}
+  files an emergency extension! A golden shield flickers up." win "Retrieval postponed. Please wait to be collected."
+- Verified (on Windows, so CI's Linux run is the reference): lint, typecheck, check:modules (586 names),
+  check:data (184 files), check-data-text, first-run.test.mjs 11 of 11, first-run-places.test.mjs, logic-worker.
+  `npm test` here: the only failures are Windows ones (a `D:\D:\` path, CSS file lists, timing budgets) and
+  check-data-snapshot, which can't run here (its file count was raised to 184 by hand; CI checks it). On the page
+  (town fixture, headless): the debug menu's path starts it, the loading screen shows the region with the file's
+  leaders, and you land on the prepared landing with `run.first` true, 0 Moneys, 5 Pyramids, 1 Potion and the three
+  crash props down. No 3D picture of the crash site: software drawing at phone size timed out twice on this machine;
+  the snapshot's picture (ground letters) is the record until IN-3/IN-5 look at it. Note: the walk view's composed
+  scene is offset from the landing's own scene, so call `firstRunSpots` on the scene the cutscene stands in.
+- Next: IN-3 swaps its wreck prop into `crash.props[0].k` (and may restyle `retrieval_scout`); IN-4 needs no keep
+  picker on the first run (`run.first`); IN-5 starts it from New game with `runStartPrepared` and stands the crash
+  cutscene on `firstRunSpots`; IN-6 tunes the numbers above from a phone run.
+
 ### Test data track TD-2 - the graphics test walks a benchmark path - 2026-10-29
 Branch `track/test-data` (TD-1's pushes and main, 4b64e3d6, merged in at the start; four conflicts kept both sides:
 HANDOFF, webgl.js's target record, the reader's helpers, art-code-refs regenerated). Plan written, then built at once:
