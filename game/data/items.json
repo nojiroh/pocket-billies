@@ -269,10 +269,10 @@
   "n": "Costume Fangs",
   "price": 1000,
   "rarity": "uncommon",
-  "d": "Held: its holder heals 1/8 of the damage it deals.",
+  "d": "Held: its holder heals 1/16 of the damage it deals.",
   "img": "items/costume_fangs.svg",
   "hold": [
-   {"kind":"drain","share":0.125}
+   {"kind":"drain","share":0.0625}
   ]
  },
  "express_pass": {

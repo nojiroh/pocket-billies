@@ -171,10 +171,10 @@ test('battle held PK-10: Party Balloon keeps Ground moves off until its holder i
   assert.equal(fn('heldFloats')(0, 'Ground'), false);
 });
 
-test('battle held PK-10: Costume Fangs heals an eighth of the damage dealt', () => {
+test('battle held PK-10: Costume Fangs heals a sixteenth of the damage dealt (PK-12: an eighth before)', () => {
   const { me } = battle('costume_fangs');
   me.hp = 3;
-  fn('heldAfterHit')(0, 1, { c: 'H' }, { dmg: 16 });
+  fn('heldAfterHit')(0, 1, { c: 'H' }, { dmg: 32 });
   assert.equal(me.hp, 5);
 });
 
