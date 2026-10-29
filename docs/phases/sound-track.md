@@ -455,6 +455,20 @@ online and make suggestions." Planned in Plan Mode in SND-7 (branch `ccr-1e8a992
 listening page only); every later session works on `track/sound`, made by the owner from main. Tags `snd-N-done`
 (the owner pushes tags).
 
+## Part 2 done (2026-10-29)
+Every step but the optional SND-16 is built on `track/sound` (PR #292; SND-8a..SND-10 reached main with PR #292's first
+merge). What changed, by step: **SND-8a** calm beds (their own soft noise with drift, re-voiced rain, crickets, fire,
+water, birds one at a time, soft steps), a loudness report and the debug menu's Sound test; **SND-8b** the echo bugs,
+a trim per song (the hub song 13.5 dB up), the rain's softer muffle, iOS's "interrupted"; **SND-9** instruments baked
+from numbers, the tracker's bank, one reverb; **SND-10** water from the scene, a recipe per kind, falls by height, the
+surf on the tide; **SND-11** stems, 29 instruments, ensembles, GB Sounds, the Studio's Instruments tab; **SND-17** the
+12 jingles on ensembles, stingers on the beat; **SND-13** layers in play (walking, weather, night, a battle's build, the
+run's arc, the busker); **SND-12, 12b, 12c** song forms and every song arranged on ensembles (named placeholders);
+**SND-14** nature and weather; **SND-15** the master chain at -18 LUFS with true peaks under -1 dBTP, slider defaults
+near the top, ducks for cries, talk and jingles, Play when silenced, the debug log's mix line. Everything audible is
+Claude's draft judged by numbers: the owner's phone pass (HANDOFF SND-15's listening list) decides. SND-16 (the
+airship, the sky train, the world map, steam vents, wells) waits for the owner's word.
+
 ## The owner's answers (2026-10-27, Plan Mode)
 | Question | Answer |
 |---|---|
@@ -689,9 +703,9 @@ Water and nature, synthesized:
 | SND-11 | Stems and ensembles | the tick's patterns factored into pure functions; stems; `instruments` and `ensembles` in music.json; `gb` reserved for today's code; GB Sounds; the first ensembles; the Studio's Instruments tab and its mix on the game's chain | SND-9 | none: the new `gb` must equal the old by day and night |
 | SND-17 | Jingles and stingers | the 12 jingles given the new instruments (a DS fanfare for victory, a glockenspiel and harp run for a level-up, strings swelling into an evolution...), stingers on the song's beat and in its key, GB Sounds keeping today's 8-bit ones; added at the owner's question (2026-10-27) | SND-11 | the 12 jingles |
 | SND-13 | Layers in play | the walking beat, weather and night, building intensity, street musicians (simulated until the busker resident, RS-5) | SND-11 | the layers' renders |
-| SND-12 (part 1 and SND-12b done 2026-10-28; SND-12c next) | Arrangements | A/B forms of 16-32 bars (`prog` loses its fixed 8), fills, new lines; every song re-voiced as named placeholders, in batches the owner approves (part 1: the forms and batch 1, the hub, the route, towns) | SND-11 | the songs rewritten |
+| SND-12 (part 1 and SND-12b done 2026-10-28; SND-12c done 2026-10-29) | Arrangements | A/B forms of 16-32 bars (`prog` loses its fixed 8), fills, new lines; every song re-voiced as named placeholders, in batches the owner approves (part 1: the forms and batch 1, the hub, the route, towns) | SND-11 | the songs rewritten |
 | SND-14 (done 2026-10-28) | Nature and weather | rain by intensity (a wash, patter, roofs), thunder by a bolt counter and distance (not the visual flash), wind and gusts, leaves, birds by biome and hour (a dawn chorus), insects, frogs, fire, footsteps by surface, town life instead of a murmur, room tones | SND-10 | none |
-| SND-15 | Mix and phone pass | about −18 LUFS through the master, the compressor and a limiter; ducking (jingles, cries, talk); slider defaults; the owner's phone; Studio polish | all | as needed |
+| SND-15 (done 2026-10-29) | Mix and phone pass | about −18 LUFS through the master, the compressor and a limiter; ducking (jingles, cries, talk); slider defaults; the owner's phone; Studio polish | all | as needed |
 | SND-16 (optional) | Effects pass | sounds for things that have none: the airship's engine, the sky train and its rail, the world map, steam vents, wells. Battle sounds (moves, hits, throws, catches, hurt sounds, the recall) are the VFX track's VFX-19, on this track's tools (agreed 2026-10-28, "How the sessions run") | SND-9 | the effects |
 
 SND-17 needs only SND-11's instruments, so the jingles come early. SND-13 may come before SND-12 (layers work on the
@@ -1779,6 +1793,71 @@ run's places; the bank drops their zones first once the hub's songs play.
 
 **Not done here**: weather layers for the battle and moment songs; a written hook for any B; the arc at 0.6's render;
 a phone listen (SND-15).
+
+## SND-15: the mix and a phone pass (as built, 2026-10-29)
+Branch `track/sound`, after both lanes. Plans pre-approved (the owner's standing instruction); the recommended options
+taken (HANDOFF "Decided for the owner"). One cause per commit; the baseline written once at the end.
+
+**What the code did** (checked at 6052ea68): one `DynamicsCompressor` on the master (music.json mix: -14 dB, 3:1, the
+browser's 30 dB knee, 3 ms attack, 250 ms release) straight to the speakers, no limiter; sliders 0.55 / 0.8 / 0.5 /
+0.5 (squared); a jingle ducked the song by rewriting the song's fader (to 0.15 over 0.1 s, back over 0.8 s); stingers
+set their busy stems (SND-17), the layers their own gains (SND-13); nothing ducked under a cry or talk, and the beds
+never ducked under anything but a playing song (`bedsUnderSong`). The loudness report had sample peaks only, no
+loudness range, no effect rows, and its pages still drew the title's scene in software (SND-12c stopped it only on the
+fingerprint page).
+
+**The level found**: the route song at **-31.6 LUFS** at default sliders (the brief's "about -18" needs +13.6 dB); its
+sample peaks about -15 dBFS; battles 1.3-2.6 LU over it, caves and hazel 3-4 under; jingles about 3 LU over the songs.
+
+**Built**:
+- **The master chain** (game/js/audio/mix-chain.js `mixChainMake`, used by sound.js and the Studio's player alike):
+  the master's trim -> a gentle compressor (threshold -36 dB, knee 12, ratio 1.5, attack 20 ms, release 1 s: the
+  research's glue, the browser caps release at 1 s) -> a make-up gain (music.json mix `makeup`, 2.8 dB) -> a limiter
+  (a hard knee at 20:1, 1 ms attack, the browser's 6 ms look-ahead, threshold -5 dB, release 100 ms). The browser's
+  compressor adds its own make-up (0.6 of the gain it takes at 0 dBFS), so the numbers are measured, not summed.
+- **Slider defaults** (audio/levels.js `SOUND_DEFAULTS`, which Settings now reads): music 0.8, sound effects 1, world
+  and ambience 0.75 (were 0.55, 0.8, 0.5, 0.5): near the top, so Music at 100 % is +1.9 dB, not +10 dB into the
+  limiter. The mix's trims keep every bus where it stood against the music (sfx 1.35, world 0.94, amb 0.85; a unit
+  test holds each within 0.1 dB).
+- **Ducks** (music.json mix `duck`, logic/sound-duck.js plans them, audio/mix-chain.js `mixDuckerMake` schedules them):
+  gains of the ducker's own after every song's fader, its echo send and its reverb send (tracker.js `T.duck`), and
+  between the world's and the ambience's buses and the master (sound.js `soundDuck`). A dip comes over its attack,
+  holds to its end, goes over its release; dips that overlap take the lower gain, planned again from now on each add,
+  so no param ever holds another owner's ramps. Jingle: the music to 0.15 (-16.5 dB, as before), the beds -6 dB;
+  stinger: the beds -3 dB (its busy parts drop as SND-17 made them); cry: the music -4 dB, the beds -6 dB (30 ms in,
+  0.5 s out); talk: the music -3 dB, the beds -5 dB, each letter's blip holding it 0.35 s. The payout's coins (`duck:
+  false`) duck nothing.
+- **Play when silenced** (Settings -> Sound, `preferences.playSilenced`, off by default): `navigator.audioSession.type`
+  `'playback'` (iOS 17 on), else `'auto'`; set before the context is made and on each change; the row is shown only
+  where `navigator.audioSession` exists. Its switch is the game's (52 x 32 px with its 7 px tap margin).
+- **The debug log's `audio.mix`**: each stage's cut now and the most this minute, the make-up, every bus's gain, the
+  ducks so far by kind and those under way, the audio session's type and the setting. `tools/read-debug-log.py` now
+  prints the whole audio block (it printed none of it).
+- **The Studio's Mix card**: the chain's knee, attack, release, make-up and limiter and the ducks' dB; its player on
+  the same chain (check-studio-github's music step compares the chain with the mix, not with -14 and 3).
+- **The loudness report** (tools only): its pages stop drawing (a sample 1110 s -> 408 s); the measure takes typed
+  subarrays; each row's true peak (4x oversampled, a 48-tap windowed sinc, BS.1770-4 annex 2) and each song's loudness
+  range (EBU Tech 3342); effect rows; the targets as warnings (the route song within 1 LU of -18, true peaks under -1).
+
+TABLE_AFTER
+
+**Corrections found in SND-15** (checked in the code):
+- "Since SND-12c a full render takes about 13 minutes" held for the fingerprints only: the loudness pages still drew
+  the title's scene (SND-14 and SND-17's "over 90 minutes"); fixed here.
+- The brief's "ducking ambience under important sounds" had a seam: the jingle's duck wrote the song's fader, so a
+  jingle in a song's fade-in cancelled the fade. The duck now has gains of its own.
+- The four orchestral fights' "dense on a phone speaker" (SND-12c): in the phone's band (400 Hz-6 kHz) they measure
+  1-5 dB *under* the route song; their weight is in the lows a phone drops. The soft songs are the ones a phone hears
+  louder: the fall 6.7 dB and Copperleaf 4.5 dB over the route song in that band, cave and hazel 3-4. Not trimmed
+  (K-weighted levels are the standard; the owner's ears decide).
+- The research's "threshold under -40 dBFS": at -40 and 1.4:1 every song came out about 0.6 LU quieter at the same
+  make-up, the spread between songs the same; -36 and 1.5:1 kept (the research's ratio range, a threshold the quiet
+  songs still reach).
+- Kappi's talk (a blip every 84 ms) measures as loud as the route song over 3 s (+0.4 LU), a townsperson's 8 LU under.
+  Not changed (talk is the UI's sound); for the owner's ears.
+
+**Not done here**: VFX-19's battle sounds (not on main yet: the report's effect rows and true peaks will show where
+they sit); per-song trims from the phone pass; SND-16.
 
 ## Ask me before (Part 2; the first four before SND-8a)
 Since the owner's standing instruction (2026-10-27, "How the sessions run"), each session takes the recommended

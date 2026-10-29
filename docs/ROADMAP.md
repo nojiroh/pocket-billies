@@ -215,8 +215,12 @@ town node needs it.
   peak parts so the run's arc is heard, and walk, rain and snow layers) done 2026-10-28. SND-12c (check-sound's page
   stops drawing: a full render 13 minutes, was over 3.5 hours; batch 3: the wild battle in a form, the trainer, rival,
   leader and boss on ensembles that build and peak, the mall, hazel, the title, the fall and the variants; the
-  baseline for batches 2 and 3) done 2026-10-29. Two lanes on the branch since 2026-10-28: music (done with SND-12c) and world (done with SND-14); next the mix and a phone
-  pass (SND-15). Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
+  baseline for batches 2 and 3) done 2026-10-29. Two lanes on the branch since 2026-10-28: music (done with SND-12c) and world (done with SND-14).
+  SND-15 (the mix: a master chain of a gentle compressor, a make-up and a limiter so the music sits at -18 LUFS with
+  true peaks under -1 dBTP, the sliders' defaults near the top, cries, talk and jingles ducking the music and the beds,
+  Settings' Play when silenced for iPhones, the debug log's mix line, the loudness report faster with true peaks)
+  done 2026-10-29: **Part 2 is done**; the owner's phone pass is its listening list (HANDOFF). SND-16 (an effects
+  pass) is optional and waits for the owner's word. Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
   plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
   art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the

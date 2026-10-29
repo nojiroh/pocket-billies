@@ -643,6 +643,14 @@ same phase:
   Two full renders of the same code differ in a few windows by the last digit (0.00001 RMS, 2 crossings: timers in
   the page landing on an offline render under load), inside the tolerance; prove a tool change byte for byte on a
   sample (`--only=copperleaf,wild,trainer,title,victory,levelup`), or by the comparison.
+  SND-15: the game's sound ends in a master chain (game/js/audio/mix-chain.js: a gentle compressor, a make-up gain and
+  a limiter, music.json mix), so every fingerprint went up about 13.6 dB with the baseline written again; the ducks
+  (logic/sound-duck.js, `sound-levels.test.mjs`) move no render alone. `--loudness` now gives each row its true peak
+  (dBTP) and each song its loudness range, adds effect rows (a cry of each base, talk, the buttons) and warns when the
+  route song as it plays strays over 1 LU from -18 LUFS or a song's or jingle's true peak passes -1 dBTP. Its pages stop
+  drawing too (SND-12c's `NO_DRAW`): a sample 1110 s -> 408 s, the songs', layers', beds' and nature's rows identical;
+  a few water and scene rows driven by events moved 0.1-0.6 LU (they also vary by up to 0.3 run to run). The whole
+  report takes about 20 minutes with the fingerprints. `tools/read-debug-log.py` prints the log's audio lines.
   SND-3: the cry fingerprints are the 24 species by id (bezos0), as the game asks for them (they were the roster's
   names, which the game never passes). The Studio's **Music & sound** section: `python3 tools/check-studio-github.py
   --only=music` (about a minute) plays a song with a real click (the context running, the bar shown), changes its tempo

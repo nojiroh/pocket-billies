@@ -80,6 +80,13 @@ kept aside in the browser).
   and a bell instead of a murmur, and an inn, a library, a lab, a workshop or a barn each sound like themselves. All
   of it sits well under the music; the debug menu's Sound test and the Studio's Sounds tab play each.
 
+- **Sound at a phone's level** (sound track SND-15): the whole game was quiet (its music about 14 dB under what
+  phone games aim for); a gentle compressor, a lift and a limiter at the end now bring it up to that level without
+  clipping, and keep loud and soft songs closer together. The volume sliders start nearer the top (Music 80, Sound
+  effects 100, World sounds and Ambience 75) with every sound keeping its balance against the music, so turning the
+  music up no longer squashes it. Cries and talk now dip the music and the world's sounds a little, and the short tunes
+  for a win or a level up dip the world's sounds too. On an iPhone, Settings > Sound > Play when silenced lets the game
+  play with the silent switch on (off unless you turn it on). A debug log now says how hard the sound's limiter works.
 - **Battles get an orchestra** (sound track SND-12c): trainer, rival and leader battles play the chip tune over
   driving strings, brass, timpani and a full drum kit, and a boss battle adds a choir and orchestra hits. Each battle
   starts lighter and builds as it goes, the brass and drums coming in, and peaks with a choir when a fight turns. Every
