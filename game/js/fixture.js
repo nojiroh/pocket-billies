@@ -246,6 +246,22 @@ export function fixtureStart() {
       })();
       return;
     }
+    /* DL-5: &faces=1 plays faces: a mid-line face, emotes, a face's own emote and a listener, tapped on by the caller
+       (tools/look-talk.py --only=faces) */
+    if (q.get('faces')) {
+      const lines = /** @type {[string, string, any][]} */ ([
+        ['chosen', '[happy] Welcome back! The lab missed you. Mostly the [face=sad]floors did.', {}],
+        ['kappi', 'The kettle is on.[emote=note] It always is.', {}],
+        ['chad', '[surprised] You again? I thought the crust ate you!', {}],
+        ['chosen', 'Blake, please. [face=angry]Not on the carpet.[emote=sweat]', {}],
+        ['kappi', '[happy] I like the carpet.[emote=heart]', {}],
+      ]);
+      (async () => {
+        for (const [who, text, o] of lines) await talkLine(who, text, null, o);
+        talkHide();
+      })();
+      return;
+    }
     const said = (/^(shout|whisper|think)$/.test(style) ? `[${style}] ` : '') + pick[1];
     talkLine(pick[0], said, null, pick[2]);
   }
