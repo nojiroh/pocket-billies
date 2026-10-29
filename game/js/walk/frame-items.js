@@ -28,7 +28,7 @@ import {
   worldBillyItem,
 } from '../hooks.js';
 import { turnedPoint } from '../logic/prop-turn.js';
-import { personHeading, seenFacing, seenToward, seenWord } from '../logic/person-view.js';
+import { keptRecord, personHeading, seenFacing, seenToward, seenWord } from '../logic/person-view.js';
 import { FIGURE_FPS, figureTick } from '../logic/figure-pose.js';
 import { WADE_DEPTH } from '../logic/wading.js';
 import { artImg } from '../art.js';
@@ -74,6 +74,7 @@ import { figureFaceFor, figureFolk, figureFor, figurePersonPicture, figureStyle,
 expose({
   SUNKEN_FOOTPRINT_PROPS: [() => SUNKEN_FOOTPRINT_PROPS],
   gatherFrameItems: [() => gatherFrameItems, v => setGatherFrameItems(v)],
+  npcFigureRecs: [() => npcFigureRecs],
   personItem: [() => personItem, v => (personItem = v)],
   propBaseHeight: [() => propBaseHeight, v => ((propBaseHeight = v), provide({ propBaseHeight }))],
   reedPush: [() => reedPush, v => (reedPush = v)],
@@ -87,6 +88,8 @@ export function setGatherFrameItems(v) {
   provide({ gatherFrameItems });
 }
 /* to-module: end */
+/** CH-3c: each map person's figure record (logic/person-view.js keptRecord) */
+const npcFigureRecs = new Map();
 export function gatherFrameItems(st, C, PPU, C0) {
   const sc = walkView.sc,
     P = walkView.pl,
@@ -324,7 +327,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
     if (figuresOn() && figureFolk()) {
       const near = Math.hypot(P.x - pos[0], P.z - pos[1]) < 4.5,
         g = figurePersonPicture(
-          n,
+          /* CH-3c: their figure's record kept by place and id (a room's people are made afresh each frame) */
+          keptRecord(npcFigureRecs, walkView.id + '|' + n.id),
           figureFor(n.who),
           t,
           'idle',

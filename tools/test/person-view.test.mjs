@@ -8,6 +8,7 @@ import {
   faceWay,
   faceWord,
   facingWord,
+  keptRecord,
   personHeading,
   seenFacing,
   seenToward,
@@ -155,4 +156,13 @@ test('person view: only what the original has is copied', () => {
   assert.deepEqual(copiedAnchor({ width: 8 }), {});
   assert.deepEqual(copiedAnchor({ width: 8, ppm: 32 }), { ppm: 32 });
   assert.deepEqual(copiedAnchor({ width: 8, ax: 0, ay: 0 }), { ax: 0, ay: 0 });
+});
+
+test('person view: a record kept by key (CH-3c: a room\u2019s people are made afresh each frame)', () => {
+  const store = new Map(),
+    a = keptRecord(store, 'int_shop|_keeper:int_shop');
+  assert.equal(keptRecord(store, 'int_shop|_keeper:int_shop'), a, 'the same record every frame');
+  assert.notEqual(keptRecord(store, 'int_inn|_keeper:int_inn'), a);
+  for (let i = 0; i < 10; i++) keptRecord(store, 'k' + i, 4);
+  assert.ok(store.size <= 4, 'the store starts again past its size');
 });

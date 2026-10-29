@@ -33,6 +33,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   facingWord: [() => facingWord, v => (facingWord = v)],
   // @ts-expect-error -- replaced on purpose
+  keptRecord: [() => keptRecord, v => (keptRecord = v)],
+  // @ts-expect-error -- replaced on purpose
   ownHeading: [() => ownHeading, v => (ownHeading = v)],
   // @ts-expect-error -- replaced on purpose
   personHeading: [() => personHeading, v => (personHeading = v)],
@@ -182,4 +184,19 @@ export function copiedAnchor(src, mirror = false) {
   if (src.ppm != null) out.ppm = src.ppm;
   if (src.noNormal) out.noNormal = true;
   return out;
+}
+/**
+ * CH-3c: a person's own record, kept in `store` by `key` (a map person's id in their place): what a figure keeps
+ * against a person (its movement, its picture, its atlas cell) lives on the record. A room's people are made afresh
+ * each frame (walk-control.js roomState), so keyed by the object they would start over every frame (a new atlas cell
+ * that is never drawn in time: nobody seen in a room). The store starts again past `max` records.
+ * @param {Map<string, object>} store @param {string} key @param {number} [max] @returns {object}
+ */
+export function keptRecord(store, key, max = 256) {
+  let r = store.get(key);
+  if (!r) {
+    if (store.size >= max) store.clear();
+    store.set(key, (r = {}));
+  }
+  return r;
 }
