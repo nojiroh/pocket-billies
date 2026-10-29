@@ -1223,6 +1223,17 @@ export function dataBiomes(D, valid = () => true) {
       for (const k of Object.keys(B.fences || {}))
         if (props[k] && !props[k].box) problem('biomes.json', `${b}.fences: ${k} has no box (scenery.json)`);
       for (const L of B.life || []) if (!life[L.k]) problem('biomes.json', `${b}.life: no animal ${L.k}`);
+      /* AS-0: each flora layer grows from a list the biome has, once, with spacings that make sense */
+      const seen = new Set();
+      for (const L of B.flora || []) {
+        const at = `${b}.flora.${L.layer}`;
+        if (seen.has(L.layer)) problem('biomes.json', `${at}: two layers of that name`);
+        seen.add(L.layer);
+        if (!Object.keys(B[L.from] || {}).length) problem('biomes.json', `${at}: the biome has no ${L.from} to grow`);
+        if (L.r && L.r[0] > L.r[1]) problem('biomes.json', `${at}.r: dense ${L.r[0]} is wider than sparse ${L.r[1]}`);
+        if (L.clumps && L.clumps.size[0] > L.clumps.size[1])
+          problem('biomes.json', `${at}.clumps.size: lowest ${L.clumps.size[0]} over highest ${L.clumps.size[1]}`);
+      }
       /* TW-1: a run town's props are real, its houses have a door and a footprint, its square a real ground */
       if (B.town) {
         for (const k of Object.keys(B.town.houses))
