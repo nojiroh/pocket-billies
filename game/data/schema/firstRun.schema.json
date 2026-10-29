@@ -68,7 +68,7 @@
       "properties": {
        "k": {"description": "a scenery.json prop", "type": "string"},
        "at": {"$ref": "#/$defs/offset"},
-       "rot": {"description": "its turn past the mast's (radians)", "type": "number"},
+       "rot": {"description": "its turn past the mast's (degrees)", "type": "number"},
        "clear": {"description": "metres cleared of props round it", "type": "number", "minimum": 0, "maximum": 12}
       }
      }

@@ -2429,7 +2429,7 @@ export interface FirstRunData {
   /** the Perk planted in the first mini-boss's pick */
   plant?: string;
   nodes: FirstRunNode[];
-  /** the crash site on the landing: offsets in metres from the landing's mast, turned with it */
+  /** the crash site on the landing: offsets in metres from the landing's mast, turned with it (`rot`: degrees) */
   crash: {
     clear: number;
     props: { k: string; at: [number, number]; rot?: number; clear?: number }[];
