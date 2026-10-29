@@ -1757,12 +1757,12 @@
   ],
   "eye": [
    "game/js/figures.js:429",
-   "game/js/logic/figure-pose.js:131",
-   "game/js/logic/figure-pose.js:315",
-   "game/js/logic/figure-pose.js:316",
-   "game/js/logic/figure-pose.js:736",
-   "game/js/logic/figure-pose.js:739",
-   "game/js/logic/figure-pose.js:747"
+   "game/js/logic/figure-pose.js:161",
+   "game/js/logic/figure-pose.js:345",
+   "game/js/logic/figure-pose.js:346",
+   "game/js/logic/figure-pose.js:771",
+   "game/js/logic/figure-pose.js:774",
+   "game/js/logic/figure-pose.js:788"
   ],
   "flame": [
    "game/js/battle-stage.js:2509",
