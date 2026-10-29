@@ -158,6 +158,7 @@ import '../../game/js/logic/run-state.js';
 import '../../game/js/logic/run-test.js';
 import '../../game/js/logic/run-world-data.js';
 import '../../game/js/logic/saves.js';
+import '../../game/js/logic/scatter.js';
 import '../../game/js/logic/script-parse.js';
 import '../../game/js/logic/script.js';
 import '../../game/js/logic/sea.js';
