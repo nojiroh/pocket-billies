@@ -25,6 +25,23 @@ def num(v, nd=0):
     return f'{v:.{nd}f}' if nd else f'{round(v)}'
 
 
+def screen_of(s):
+    """the summary's name for a sample's screen (debug-log.js summary())"""
+    v = s.get('view')
+    return f"walk:{s.get('scene') or '?'}" if v == 'walk' else ('battle' if v == 'battle' else str(v or '-'))
+
+
+def ctx_lines(c):
+    """a failed step's context (debug-log.js diag()), a few short lines"""
+    if not isinstance(c, dict): return []
+    out = [f"ctx: {c.get('view')} | scene {c.get('scene')} | {c.get('renderer')}"
+           + (f" | at {c['at']}" if c.get('at') else '')]
+    for k in ('refused', 'errors', 'slow', 'long', 'events'):
+        v = c.get(k)
+        if v: out.append(f"{k}: {json.dumps(v)[:220]}")
+    return out
+
+
 def main():
     if not ARGS: print(__doc__); sys.exit(2)
     src = sys.stdin.read() if ARGS[0] == '-' else Path(ARGS[0]).read_text(encoding='utf-8')
@@ -67,15 +84,18 @@ def main():
     if h: print(f"Hitches over {h.get('overMs')} ms: {h.get('count')} in {h.get('frames')} frames, {num(h.get('totalMs'))} ms in all, "
                 f"worst {num(h.get('maxMs'))} ms; by size {h.get('by')}")
 
+    # the full test's result: build() stores it as `bench` itself (TD-1); `bench.result` is kept for older logs
     bench = d.get('bench')
-    res = bench.get('result') if isinstance(bench, dict) else None
+    res = (bench if 'phases' in bench else bench.get('result')) if isinstance(bench, dict) else None
     if res:
         phases = res.get('phases') or []
         bad = [p for p in phases if not p.get('ok')]
         print(f"Full test ({res.get('kind')}): {'passed' if res.get('passed') else 'PROBLEMS'}"
               f"{', stopped' if res.get('stopped') else ''}, {num(res.get('seconds'))} s, {len(phases)} steps, {len(bad)} not ok")
         for p in bad[:12]:
-            print(f"  x {p.get('name')}: {(p.get('note') or p.get('why') or p.get('detail') or '')[:150]}")
+            print(f"  x {p.get('name')}: {(p.get('note') or '')[:150]}")
+            if p.get('why') and p.get('why') != p.get('note'): print(f"      why: {str(p.get('why'))[:200]}")
+            for line in ctx_lines(p.get('ctx')): print('      ' + line)
         slow = sorted((p for p in phases if p.get('worstFrameMs')), key=lambda p: -p['worstFrameMs'])[:5]
         if slow: print('  worst frames: ' + '; '.join(f"{p.get('name')} {num(p.get('worstFrameMs'))} ms" for p in slow))
         if res.get('stress'): print(f"  stress: {json.dumps(res.get('stress'))[:200]}")
@@ -83,6 +103,36 @@ def main():
         print(f"Full test: no result ({json.dumps(bench)[:120]})")
     else:
         print('Full test: not run in this page')
+
+    gm = (d.get('more') or {}).get('gpuMemory') or {}
+    kinds = gm.get('kinds') if isinstance(gm, dict) else None
+    if isinstance(kinds, dict) and kinds:
+        tot = sum((v or {}).get('mb') or 0 for v in kinds.values() if isinstance(v, dict))
+        parts = sorted(((k, v) for k, v in kinds.items() if isinstance(v, dict)), key=lambda kv: -((kv[1].get('mb')) or 0))
+        print(f"Graphics memory (estimate) {num(tot)} MB: " + ', '.join(
+            f"{k} {num(v.get('mb'))}" + (f" ({v.get('dropped')} dropped)" if v.get('dropped') else '') for k, v in parts))
+        if gm.get('lateCompiles'): print(f"  late compiles: {', '.join(map(str, gm['lateCompiles']))[:200]}")
+
+    samples = d.get('samples') or []
+    peak = {}
+    for s in samples:
+        if isinstance(s.get('gmb'), (int, float)):
+            k = screen_of(s)
+            peak[k] = max(peak.get(k, 0), s['gmb'])
+    if peak:
+        print('Graphics memory peak by screen (MB): ' + ', '.join(f"{k} {v}" for k, v in sorted(peak.items(), key=lambda kv: -kv[1])[:8]))
+    tl, prev = [], None
+    for s in samples:
+        cur = (s.get('q'), s.get('res'))
+        if cur != prev and (cur[0] is not None or cur[1] is not None):
+            tl.append(f"{num((s.get('t') or 0) / 1000)} s q{cur[0] if cur[0] is not None else '?'} res {cur[1] if cur[1] is not None else '?'}")
+            prev = cur
+    if tl: print(f"Quality and resolution ({len(tl)} changes): " + '; '.join(tl[:10] + (['...'] + tl[-3:] if len(tl) > 13 else tl[10:])))
+
+    ev = [e for e in (d.get('events') or []) if e.get('kind') in ('visibility', 'webgl')]
+    if ev:
+        print(f"Visibility and graphics-context events ({len(ev)}): " + '; '.join(
+            f"{num((e.get('t') or 0) / 1000)} s {e.get('kind')} {e.get('msg')}" for e in ev[-12:]))
 
     errs = d.get('errors') or []
     warn = [e for e in errs if str(e.get('kind', '')).endswith('warn')]
