@@ -1196,7 +1196,8 @@ debugLog.hook = () => {
     timed(n, l);
   /* the renderer's own sections, timed every frame */
   for (const [n, l, m] of [
-    ['gatherFrameItems', 'items'],
+    /* TD-1: gathering and sorting the frame's items on the CPU, not drawing them */
+    ['gatherFrameItems', 'items', 'gathering frame items'],
     ['shadowPass', 'shadows'],
     ['drawSprites', 'sprites'],
     ['drawGrass', 'grass'],
