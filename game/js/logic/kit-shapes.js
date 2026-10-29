@@ -490,6 +490,7 @@ export function kitClothesProblems(kit, items) {
     for (const u of G.use || [])
       if (u === 'note' || !(kit.pieces || {})[u]) out.push(`clothes: ${id} uses no piece ${u}`);
     rows(`clothes: ${id}`, G);
+    if (G.outer) rows(`clothes: ${id} worn as an outer`, G.outer);
   }
   for (const [id, P] of Object.entries(kit.pieces || {})) if (id !== 'note') rows(`pieces: ${id}`, P);
   for (const [id, F] of Object.entries(kit.flair || {})) if (id !== 'note') rows(`flair: ${id}`, F);

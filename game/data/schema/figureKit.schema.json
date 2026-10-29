@@ -170,6 +170,7 @@
     "length": {"description": "shoes': the foot's length (1 when not given; oxfords longer)", "type": "number", "minimum": 0.5, "maximum": 2},
     "stripe": {"description": "stripes painted round a part", "type": "object", "required": ["part", "col", "every", "from"], "additionalProperties": false,
      "properties": {"part": {"type": "string"}, "col": {"type": "string"}, "every": {"type": "number", "exclusiveMinimum": 0}, "from": {"type": "number"}}},
+    "outer": {"description": "an item of another slot worn as an outer (Chad's track top): its knobs, rows and marks there", "$ref": "#/$defs/garment"},
     "use": {"description": "pieces whose rows and marks come first", "type": "array", "items": {"$ref": "#/$defs/id"}},
     "vars": {"$ref": "#/$defs/vars"},
     "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}},

@@ -1673,6 +1673,8 @@ export interface FigureGarment {
   vars?: Record<string, string | number>;
   rows?: any[];
   marks?: any[];
+  /** an item of another slot worn as an outer (Chad's track top): its knobs, rows and marks there */
+  outer?: FigureGarment;
 }
 /** figureKit.json faces (characters track CH-6): eye and brow styles, mouth frames, moods, which style a wardrobe id
  * draws */

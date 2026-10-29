@@ -36,10 +36,6 @@ import {
 /* eslint-disable no-func-assign */
 expose({
   KIT_INK: [() => KIT_INK],
-  KIT_JACKETS: [() => KIT_JACKETS],
-  KIT_LONG_COATS: [() => KIT_LONG_COATS],
-  KIT_LONG_SLEEVES: [() => KIT_LONG_SLEEVES],
-  KIT_SLEEVELESS: [() => KIT_SLEEVELESS],
   // @ts-expect-error -- replaced on purpose
   figureKitData: [() => figureKitData, v => (figureKitData = v)],
   // @ts-expect-error -- replaced on purpose
@@ -106,10 +102,6 @@ export function kitRandomHeads(kit) {
 }
 /** the eye's and the outline's dark (the props' plum) */
 export const KIT_INK = /** @type {Vec3} */ ([36, 25, 54]);
-export const KIT_SLEEVELESS = new Set(['tank', 'crop']),
-  KIT_LONG_SLEEVES = new Set(['longsleeve', 'sweater', 'dress_shirt', 'tunic', 'track_top']),
-  KIT_JACKETS = new Set(['blazer', 'denim_jacket', 'track_top', 'puffer']),
-  KIT_LONG_COATS = new Set(['labcoat', 'trench']);
 
 /** @typedef {import('../../types/game-data').FigureKit} FigureKitData */
 /**
@@ -220,6 +212,19 @@ export function lookFigure(look, items, opts = {}) {
     chestOut = BK.chestOut || 0,
     neckL = 0.035 * (BK.neck ?? 1) * PR.neck,
     tk = hk * (0.96 + 0.04 * girth) * PR.torso;
+  /* CH-5b: each slot's clothes (figureKit.json clothes: knobs, rows and marks); an item with none dresses as a tee or
+     trousers, or with nothing for an outer or shoes */
+  const CL = /** @type {Record<string, any>} */ (KIT.clothes || {}),
+    garment = (/** @type {string} */ id, /** @type {string} */ fb) =>
+      /** @type {import('../../types/game-data').FigureGarment} */ ((id !== 'note' && CL[id]) || (fb && CL[fb]) || {}),
+    TOP = garment(wear.top || 'tee', 'tee'),
+    /* an item of another slot worn as an outer (Chad's track top) dresses by its `outer` */
+    OUT0 = wear.outer ? garment(wear.outer, '') : null,
+    OUT = OUT0 && OUT0.outer ? OUT0.outer : OUT0,
+    BOT = garment(wear.bottom || 'trousers', 'trousers'),
+    SHO = garment(wear.shoes || 'sneakers', ''),
+    /* an outer that covers the arms and the collar (not the apron) */
+    covered = !!OUT && OUT.covers !== false;
   /* colours: the look's own, else each item's first */
   /** @type {Record<string, Vec3>} */
   const colours = {};
@@ -236,9 +241,7 @@ export function lookFigure(look, items, opts = {}) {
   colours.top = itemCol(wear.top, 0, [62, 143, 176]);
   colours.pants = itemCol(wear.bottom, 0, [70, 84, 112]);
   colours.shoe = itemCol(wear.shoes, 0, [60, 50, 50]);
-  colours.sole = /sneakers|runners|hightops/.test(wear.shoes || 'sneakers')
-    ? itemCol(wear.shoes, 1, [240, 236, 226])
-    : figureDark(colours.shoe, 0.55);
+  colours.sole = SHO.sole === 1 ? itemCol(wear.shoes, 1, [240, 236, 226]) : figureDark(colours.shoe, 0.55);
   colours.top2 = itemCol(wear.top, 1, figureMix(colours.top, [250, 248, 240], 0.75));
   colours.pants2 = itemCol(wear.bottom, 1, figureDark(colours.pants, 0.7));
   colours.belt = [74, 50, 38];
@@ -256,6 +259,11 @@ export function lookFigure(look, items, opts = {}) {
   colours.lash = figureMix(KIT_INK, colours.hair, 0.25);
   /** @type {FigurePart[]} */
   const parts = [];
+  /** @type {FaceMark[]} */
+  const clothMarks = [];
+  /** a mark painted on a part (a button, a pocket, a zip: a garment's marks)
+   * @param {string} kind @param {string} part @param {Vec3} at @param {number} w @param {number} h @param {string} col */
+  const cloth = (kind, part, at, w, h, col) => clothMarks.push({ part, kind, at, n: [0, 0, 1], w, h, col, min: 0.35 });
   /** @param {string} id @param {string | null} parent @param {Vec3} at @param {FigureShape} sh @param {string} col */
   const add = (id, parent, at, sh, col) => {
     parts.push({ id, parent: parent == null ? -1 : parts.findIndex(p => p.id === parent), at, shape: sh, col });
@@ -267,10 +275,9 @@ export function lookFigure(look, items, opts = {}) {
     hipY = thighL + shinL + footH,
     hipW = 0.08 * Math.sqrt(girth) * hipK,
     legR = 0.066 * Math.sqrt(girth),
-    bottom = wear.bottom || 'trousers',
-    skirt = bottom === 'skirt',
-    shorts = bottom === 'shorts',
-    legging = bottom === 'leggings';
+    legs = BOT.legs || 'full',
+    skirt = legs === 'skirt',
+    shorts = legs === 'shorts';
   add(
     'hips',
     null,
@@ -305,14 +312,45 @@ export function lookFigure(look, items, opts = {}) {
       seg: 16,
     });
   add('torso', 'hips', [0, 0.1, 0], torso, 'top');
-  if (wear.top === 'crop')
-    add(
-      'waist',
-      'torso',
-      [0, 0, 0],
-      { kind: 'ellipsoid', c: [0, 0.0, 0], r: [tw(0.158), 0.06, tw(0.118)], seg: 12, rings: 5 },
-      'skin'
-    );
+  /* CH-5b: the body's frame the clothes' rows are laid out in (kit-shapes.js KIT_FRAME_SAMPLE), the torso's profile
+     (trx0..6, trz0..6) and the flags a row's `when` names */
+  const TL = /** @type {{ rx: number[], rz: number[] }} */ (/** @type {unknown} */ (torso)),
+    /** @type {Record<string, number>} */
+    BF = {
+      tk,
+      girth,
+      hipK,
+      torsoZ: TL.rz[4],
+      shK,
+      legK,
+      armK,
+      thighL,
+      shinL,
+      legR,
+      hipW,
+      waist,
+      belly,
+      chest,
+      chestOut,
+    };
+  BF.neckL = neckL;
+  TL.rx.forEach((v, i) => (BF['trx' + i] = v));
+  TL.rz.forEach((v, i) => (BF['trz' + i] = v));
+  BF.bare = covered ? 0 : 1;
+  BF.open = OUT && OUT.open ? 1 : 0;
+  BF.long = OUT && OUT.long ? 1 : 0;
+  BF.belted = BOT.belt !== false && !BF.long ? 1 : 0;
+  BF.boot = SHO.boot ? 1 : 0;
+  BF.neck = wear.neck ? 1 : 0;
+  BF.hat = wear.hat ? 1 : 0;
+  /** a garment's rows and marks of one stage, its pieces' first @param {any} G @param {string} stage */
+  const dress = (G, stage) => {
+    if (!G) return;
+    for (const u of G.use || [])
+      if (KIT.pieces && KIT.pieces[u]) kitAccessory(add, KIT.pieces[u], BF, 'torso', { stage, mark: cloth });
+    kitAccessory(add, G, BF, 'torso', { stage, mark: cloth });
+  };
+  dress(TOP, 'torso');
   /* ---- the head ---- */
   /* the head (the kit's proportions.chibi.head, a direction's own): room for the face, hair and expressions, and the portraits'
      close-ups; it grows a little with the body too, so a small figure is smaller all over and a tall one taller.
@@ -367,15 +405,15 @@ export function lookFigure(look, items, opts = {}) {
       seg: 12,
       rings: 6,
     },
-    wear.outer && wear.outer !== 'apron' ? 'outer' : KIT_SLEEVELESS.has(wear.top || '') ? 'skin' : 'top'
+    covered ? 'outer' : TOP.sleeves === 'none' ? 'skin' : 'top'
   );
   /* ---- arms, sleeves by the top and the jacket ---- */
   const outer = wear.outer || null,
-    sleeved = outer && outer !== 'apron',
-    upperCol = sleeved ? 'outer' : KIT_SLEEVELESS.has(wear.top || '') ? 'skin' : 'top',
-    lowerCol = sleeved ? 'outer' : KIT_LONG_SLEEVES.has(wear.top || '') ? 'top' : 'skin',
-    puff = outer === 'puffer' ? 1.3 : sleeved ? 1.08 : 1,
+    upperCol = covered ? 'outer' : TOP.sleeves === 'none' ? 'skin' : 'top',
+    lowerCol = covered ? 'outer' : TOP.sleeves === 'long' ? 'top' : 'skin',
+    puff = covered && OUT ? (OUT.puff ?? 1.08) : 1,
     armR = 0.058 * Math.sqrt(girth) * Math.pow(shK, 0.7) * puff;
+  BF.armR = armR;
   if (outer) colours.outer = itemCol(outer, 0, [200, 200, 200]);
   for (const s of [1, -1]) {
     const k = s > 0 ? 'A' : 'B',
@@ -423,7 +461,7 @@ export function lookFigure(look, items, opts = {}) {
   const shoes = wear.shoes || 'sneakers';
   for (const s of [1, -1]) {
     const k = s > 0 ? 'A' : 'B',
-      r0 = legR * (legging ? 0.88 : 1.06);
+      r0 = legR * (BOT.fit ?? 1.06);
     add(
       'thigh' + k,
       'hips',
@@ -438,8 +476,9 @@ export function lookFigure(look, items, opts = {}) {
       { kind: 'capsule', a: [0, 0, 0], b: [0, -shinL, 0], r0: r0 * 0.88, r1: r0 * 0.82, seg: 9 },
       skirt || shorts ? 'skin' : 'pants'
     );
-    const long = shoes === 'oxfords' ? 1.12 : 1,
-      tall = shoes === 'boots' || shoes === 'hightops';
+    const long = SHO.length ?? 1,
+      tall = !!SHO.boot,
+      flat = !!SHO.flat;
     add(
       'foot' + k,
       'shin' + k,
@@ -447,11 +486,11 @@ export function lookFigure(look, items, opts = {}) {
       {
         kind: 'ellipsoid',
         c: [0, -0.03, 0.04 * long],
-        r: [0.072, shoes === 'sandals' ? 0.025 : 0.042, 0.105 * long],
+        r: [0.072, flat ? 0.025 : 0.042, 0.105 * long],
         seg: 10,
         rings: 6,
       },
-      shoes === 'sandals' ? 'skin' : 'shoe'
+      flat ? 'skin' : 'shoe'
     );
     /* a sole under every shoe: white on trainers, dark on boots and smart shoes, the strap's colour on sandals */
     add(
@@ -459,7 +498,7 @@ export function lookFigure(look, items, opts = {}) {
       'foot' + k,
       [0, -0.06, 0],
       { kind: 'ellipsoid', c: [0, 0, 0.042 * long], r: [0.078, 0.016, 0.112 * long], seg: 12, rings: 4 },
-      shoes === 'sandals' ? 'shoe' : 'sole'
+      flat ? 'shoe' : 'sole'
     );
     if (tall)
       add(
@@ -470,191 +509,43 @@ export function lookFigure(look, items, opts = {}) {
         'shoe'
       );
   }
-  if (skirt)
-    add(
-      'skirt',
-      'hips',
-      [0, 0.06, 0],
-      {
-        kind: 'lathe',
-        c: [0, 0, 0],
-        y: [-0.26 * legK, -0.18 * legK, -0.02, 0.04],
-        rx: [0.21 * girth * hipK, 0.19 * girth * hipK, 0.155 * girth * hipK, 0],
-        rz: [0.17 * girth, 0.15 * girth, 0.115 * girth, 0],
-        seg: 12,
-      },
-      'pants'
-    );
-  /* ---- jackets, long coats and the apron ---- */
-  if (outer && KIT_JACKETS.has(outer)) {
-    const p = outer === 'puffer' ? 1.2 : 1.07;
-    add(
-      'jacket',
-      'torso',
-      [0, 0, 0],
-      {
-        kind: 'lathe',
-        c: [0, 0, 0],
-        y: [-0.07, 0.04, 0.17, 0.29, 0.36, 0.42].map(y => y * tk),
-        rx: [1, 2, 3, 4, 5, 0].map(i => (torso.kind === 'lathe' ? torso.rx[i] : 0) * p + (i < 5 ? 0.008 : 0)),
-        rz: [1, 2, 3, 4, 5, 0].map(i => (torso.kind === 'lathe' ? torso.rz[i] : 0) * p + (i < 5 ? 0.01 : 0)),
-        seg: 12,
-      },
-      'outer'
-    );
-  }
-  if (outer && KIT_LONG_COATS.has(outer)) {
-    const R = torso.kind === 'lathe' ? torso : null,
-      rx = R ? R.rx : [],
-      rz = R ? R.rz : [];
-    add(
-      'coat',
-      'torso',
-      [0, 0, 0],
-      {
-        kind: 'lathe',
-        c: [0, 0, 0],
-        y: [-0.1 - thighL * 0.95, -0.08, 0.04 * tk, 0.17 * tk, 0.29 * tk, 0.37 * tk, 0.42 * tk],
-        rx: [rx[2] * 1.32 * hipK, rx[1] * 1.25 + 0.03, rx[2] + 0.012, rx[3] + 0.012, rx[4] + 0.012, rx[5] + 0.01, 0],
-        rz: [rz[2] * 1.3, rz[1] * 1.3 + 0.02, rz[2] + 0.014, rz[3] + 0.014, rz[4] + 0.014, rz[5] + 0.01, 0],
-        seg: 12,
-      },
-      'outer'
-    );
-  }
-  if (outer === 'apron') {
-    const R = torso.kind === 'lathe' ? torso : null;
-    add(
-      'apron',
-      'torso',
-      [0, 0, 0],
-      {
-        kind: 'ellipsoid',
-        c: [0, 0.02 * tk, (R ? R.rz[3] : 0.12) * 0.9],
-        r: [(R ? R.rx[3] : 0.17) * 0.8, 0.28 * tk, 0.035],
-        seg: 10,
-        rings: 6,
-        sq: 0.8,
-      },
-      'outer'
-    );
-  }
+  /* ---- the skirt, then jackets, long coats and the apron (CH-5b: the garments' shell rows) ---- */
+  dress(BOT, 'shell');
+  dress(OUT, 'shell');
   /* ---- neckwear and bags (CH-5: their shapes in game/data/figureKit.json accessories) ---- */
-  const neck = wear.neck || null,
-    torsoZ = torso.kind === 'lathe' ? torso.rz[4] : 0.11,
-    /* the body's frame the shapes are laid out in */
-    bodyFrame = { tk, girth, hipK, torsoZ };
+  const neck = wear.neck || null;
   if (neck) colours.neck = itemCol(neck, 0, [217, 67, 75]);
   const neckKit = neck ? KIT.accessories[neck] : null;
   if (neckKit) {
     if (neckKit.colour) colours.neck = [neckKit.colour[0], neckKit.colour[1], neckKit.colour[2]];
-    kitAccessory(add, neckKit, bodyFrame, 'torso');
+    kitAccessory(add, neckKit, BF, 'torso');
   }
   const bag = wear.bag || null;
   if (bag) {
     colours.bag = itemCol(bag, 0, [212, 156, 70]);
     colours.bag2 = itemCol(bag, 1, figureDark(colours.bag, 0.7));
     /* a bag the kit has no shapes for is a bum bag */
-    kitAccessory(add, KIT.accessories[bag] || KIT.accessories.fannypack, bodyFrame, 'torso');
+    kitAccessory(add, KIT.accessories[bag] || KIT.accessories.fannypack, BF, 'torso');
   }
   /* ---- the details that make clothes read at 48 px a metre ---- */
   const R4 = torso.kind === 'lathe' ? torso : null,
     zAt = (/** @type {number} */ i) => (R4 ? R4.rz[i] : 0.12),
-    xAt = (/** @type {number} */ i) => (R4 ? R4.rx[i] : 0.16),
-    top = wear.top || 'tee';
-  /** @param {string} kind @param {string} part @param {Vec3} at @param {number} w @param {number} h @param {string} col */
-  const cloth = (kind, part, at, w, h, col) => clothMarks.push({ part, kind, at, n: [0, 0, 1], w, h, col, min: 0.35 });
-  /** @type {FaceMark[]} */
-  const clothMarks = [];
-  /* a collar: a ring at the neck, flaps on a polo or a shirt */
-  if (!outer || outer === 'apron')
-    add(
-      'collar',
-      'torso',
-      [0, 0.37 * tk, 0.005],
-      {
-        kind: 'torus',
-        c: [0, 0, 0],
-        R: [0.062 * Math.sqrt(girth), 0.055 * Math.sqrt(girth)],
-        r: 0.018,
-        seg: 12,
-        rings: 4,
-      },
-      top === 'tank' || top === 'crop' ? 'top' : 'top2'
-    );
-  if (top === 'polo' || top === 'dress_shirt')
-    for (const s of [1, -1])
-      add(
-        'flap' + (s > 0 ? 'A' : 'B'),
-        'torso',
-        [s * 0.04, 0.37 * tk, zAt(4) * 0.55],
-        { kind: 'ellipsoid', c: [0, -0.015, 0], r: [0.045, 0.028, 0.03], seg: 8, rings: 4, sq: 0.5 },
-        'top2'
-      );
-  if (top === 'tee_stripe') {
-    const T = parts.find(q => q.id === 'torso');
-    if (T) T.stripe = { col: 'top2', every: 0.045, from: 0 };
-  }
-  if (top === 'polo' || top === 'dress_shirt')
-    for (let i = 0; i < (top === 'polo' ? 2 : 4); i++)
-      cloth('button', 'torso', [0, (0.31 - i * 0.07) * tk, zAt(3) + 0.01], 0.02, 0.02, 'button');
-  /* an open jacket or coat shows the top down its front, with buttons along one edge; a puffer is quilted, a track
-     top zipped */
-  if (outer && (KIT_JACKETS.has(outer) || KIT_LONG_COATS.has(outer)) && outer !== 'puffer' && outer !== 'track_top') {
-    const z = zAt(3) * (KIT_LONG_COATS.has(outer) ? 1.02 : 1.07) + 0.013;
-    add(
-      'front',
-      'torso',
-      [0, 0.2 * tk, z],
-      { kind: 'ellipsoid', c: [0, 0, 0], r: [xAt(3) * 0.3, 0.17 * tk, 0.02], seg: 10, rings: 6, sq: 0.6, taper: 0.3 },
-      'top'
-    );
-    for (let i = 0; i < 3; i++)
-      cloth('button', 'torso', [xAt(3) * 0.42, (0.22 - i * 0.08) * tk, z], 0.022, 0.022, 'button');
-    if (outer === 'labcoat')
-      for (const s of [1, -1])
-        cloth('pocket', 'torso', [s * xAt(2) * 0.7, -0.02 * tk, zAt(2) + 0.02], 0.07, 0.05, 'outer2');
-  }
-  if (outer === 'puffer') {
-    const J = parts.find(q => q.id === 'jacket');
-    if (J) J.stripe = { col: 'outer2', every: 0.05, from: 0.02 };
-  }
-  if (outer === 'track_top') cloth('zip', 'torso', [0, 0.2 * tk, zAt(3) * 1.07 + 0.012], 0.018, 0.26 * tk, 'outer2');
-  if (outer) colours.outer2 = itemCol(outer, 1, figureDark(colours.outer, 0.78));
-  /* a belt and its buckle on trousers, jeans and shorts */
-  if (!skirt && !legging && bottom !== 'track_pants' && !KIT_LONG_COATS.has(outer || '')) {
-    add(
-      'belt',
-      'hips',
-      [0, 0.085, 0],
-      { kind: 'torus', c: [0, 0, 0], R: [0.15 * girth * hipK, 0.107 * girth], r: 0.02, seg: 16, rings: 4 },
-      'belt'
-    );
-    cloth('buckle', 'hips', [0, 0.085, 0.107 * girth + 0.02], 0.04, 0.03, 'button');
-  }
-  /* pockets on cargo and work trousers; a stripe down a track suit's legs */
-  if (bottom === 'cargo' || bottom === 'work_pants')
-    for (const k of ['A', 'B']) cloth('pocket', 'thigh' + k, [0, -thighL * 0.55, legR * 1.02], 0.06, 0.06, 'pants2');
-  if (bottom === 'track_pants')
-    for (const [k, s] of /** @type {[string, number][]} */ ([
-      ['A', 1],
-      ['B', -1],
-    ])) {
-      add(
-        'tstripe' + k,
-        'thigh' + k,
-        [s * legR * 0.98, 0, 0],
-        { kind: 'capsule', a: [0, -0.01, 0], b: [0, -thighL, 0], r0: 0.013, r1: 0.013, seg: 6 },
-        'pants2'
-      );
-      add(
-        'sstripe' + k,
-        'shin' + k,
-        [s * legR * 0.88, 0, 0],
-        { kind: 'capsule', a: [0, 0, 0], b: [0, -shinL * 0.9, 0], r0: 0.012, r1: 0.012, seg: 6 },
-        'pants2'
-      );
+    xAt = (/** @type {number} */ i) => (R4 ? R4.rx[i] : 0.16);
+  /* the top's (a collar under no jacket, a polo's flaps and buttons), then the outer's (an open front, its buttons,
+     pockets) (CH-5b: the garments' detail rows and marks) */
+  dress(TOP, 'details');
+  dress(OUT, 'details');
+  /* stripes round a part: a striped tee's torso, a puffer's quilting */
+  for (const G of [TOP, OUT])
+    if (G && G.stripe) {
+      const st = G.stripe,
+        T = parts.find(q => q.id === st.part);
+      if (T) T.stripe = { col: st.col, every: st.every, from: st.from };
     }
+  if (outer) colours.outer2 = itemCol(outer, 1, figureDark(colours.outer, 0.78));
+  /* the bottom's: a belt and its buckle, pockets, a track suit's stripes */
+  dress(BOT, 'details');
+  BF.belt = parts.some(q => q.id === 'belt') ? 1 : 0;
   /* ---- hair and hats ---- */
   const hat = wear.hat || null;
   if (hat) colours.hat = itemCol(hat, 0, [217, 67, 75]);
@@ -744,7 +635,7 @@ export function lookFigure(look, items, opts = {}) {
     colours.leather = [92, 58, 46];
     colours.gold = [232, 190, 84];
     /* lapels down an open jacket or coat */
-    if (outer && (KIT_JACKETS.has(outer) || KIT_LONG_COATS.has(outer)) && outer !== 'puffer' && outer !== 'track_top')
+    if (BF.open)
       for (const s of [1, -1])
         add(
           'lapel' + (s > 0 ? 'A' : 'B'),
@@ -765,7 +656,7 @@ export function lookFigure(look, items, opts = {}) {
           'outer2'
         );
     /* a long coat's tails, split behind */
-    if (outer && KIT_LONG_COATS.has(outer))
+    if (BF.long)
       for (const s of [1, -1])
         add(
           'tail' + (s > 0 ? 'A' : 'B'),

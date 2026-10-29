@@ -614,6 +614,487 @@
    ]
   }
  },
+ "clothes": {
+  "note": "CH-5b: each wardrobe item's clothes on the figure (logic/figure-kit.js lookFigure). Knobs for the body's own parts: a top's `sleeves` (none, short, long); an outer's `covers` (false: the arms and collar show, the apron), `puff` (its sleeves' bulk), `open` (a front shows: the flair's lapels) and `long` (to the knees: no belt, the flair's tails); a bottom's `legs` (full, shorts, skirt), `fit` (the legs' width) and `belt` (false: none); shoes' `length` (the foot's), `flat` (a sandal: bare feet on a sole), `boot` (up the shin) and `sole` (1: the item's second colour, else dark). `stripe` paints stripes round a part. `use` adds pieces' rows and marks first. Rows are shapes as in accessories, added at their `stage` (torso: after the torso; shell: after the legs; details, the default: after neckwear and bags), left out when their `when` frame value is 0 (or with !, when it isn't). `marks` are painted on a part (buttons, pockets, a zip). An item with no entry dresses as tee, trousers, or with nothing for an outer or shoes.",
+  "tee": {"use":["collar"]},
+  "tee_stripe": {
+   "use": ["collar"],
+   "stripe": {"part":"torso","col":"top2","every":0.045,"from":0}
+  },
+  "tank": {
+   "sleeves": "none",
+   "rows": [
+    {
+     "id": "collar",
+     "parent": "torso",
+     "at": [0,"0.37 * tk",0.005],
+     "when": "bare",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.062 * sqrt(girth)","0.055 * sqrt(girth)"],"r":0.018,"seg":12,"rings":4},
+     "col": "top"
+    }
+   ]
+  },
+  "crop": {
+   "sleeves": "none",
+   "rows": [
+    {
+     "id": "waist",
+     "parent": "torso",
+     "stage": "torso",
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["0.158 * girth",0.06,"0.118 * girth"],"seg":12,"rings":5},
+     "col": "skin"
+    },
+    {
+     "id": "collar",
+     "parent": "torso",
+     "at": [0,"0.37 * tk",0.005],
+     "when": "bare",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.062 * sqrt(girth)","0.055 * sqrt(girth)"],"r":0.018,"seg":12,"rings":4},
+     "col": "top"
+    }
+   ]
+  },
+  "longsleeve": {"sleeves":"long","use":["collar"]},
+  "hoodie": {"use":["collar"]},
+  "sweater": {"sleeves":"long","use":["collar"]},
+  "polo": {
+   "use": ["collar"],
+   "rows": [
+    {
+     "sides": true,
+     "id": "flap",
+     "parent": "torso",
+     "at": ["s * 0.04","0.37 * tk","trz4 * 0.55"],
+     "shape": {"kind":"ellipsoid","c":[0,-0.015,0],"r":[0.045,0.028,0.03],"seg":8,"rings":4,"sq":0.5},
+     "col": "top2"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 2,
+     "kind": "button",
+     "part": "torso",
+     "at": [0,"(0.31 - i * 0.07) * tk","trz3 + 0.01"],
+     "w": 0.02,
+     "h": 0.02,
+     "col": "button"
+    }
+   ]
+  },
+  "dress_shirt": {
+   "sleeves": "long",
+   "use": ["collar"],
+   "rows": [
+    {
+     "sides": true,
+     "id": "flap",
+     "parent": "torso",
+     "at": ["s * 0.04","0.37 * tk","trz4 * 0.55"],
+     "shape": {"kind":"ellipsoid","c":[0,-0.015,0],"r":[0.045,0.028,0.03],"seg":8,"rings":4,"sq":0.5},
+     "col": "top2"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 4,
+     "kind": "button",
+     "part": "torso",
+     "at": [0,"(0.31 - i * 0.07) * tk","trz3 + 0.01"],
+     "w": 0.02,
+     "h": 0.02,
+     "col": "button"
+    }
+   ]
+  },
+  "jersey": {"use":["collar"]},
+  "track_top": {
+   "sleeves": "long",
+   "use": ["collar"],
+   "outer": {
+    "rows": [
+     {
+      "id": "jacket",
+      "parent": "torso",
+      "stage": "shell",
+      "shape": {
+       "kind": "lathe",
+       "c": [0,0,0],
+       "y": ["-0.07 * tk","0.04 * tk","0.17 * tk","0.29 * tk","0.36 * tk","0.42 * tk"],
+       "rx": [
+        "trx1 * 1.07 + 0.008",
+        "trx2 * 1.07 + 0.008",
+        "trx3 * 1.07 + 0.008",
+        "trx4 * 1.07 + 0.008",
+        "trx5 * 1.07",
+        "trx0 * 1.07 + 0.008"
+       ],
+       "rz": ["trz1 * 1.07 + 0.01","trz2 * 1.07 + 0.01","trz3 * 1.07 + 0.01","trz4 * 1.07 + 0.01","trz5 * 1.07","trz0 * 1.07 + 0.01"],
+       "seg": 12
+      },
+      "col": "outer"
+     }
+    ],
+    "marks": [
+     {
+      "id": "zip",
+      "kind": "zip",
+      "part": "torso",
+      "at": [0,"0.2 * tk","trz3 * 1.07 + 0.012"],
+      "w": 0.018,
+      "h": "0.26 * tk",
+      "col": "outer2"
+     }
+    ]
+   }
+  },
+  "tunic": {"sleeves":"long","use":["collar"]},
+  "blazer": {
+   "open": true,
+   "rows": [
+    {
+     "id": "jacket",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.07 * tk","0.04 * tk","0.17 * tk","0.29 * tk","0.36 * tk","0.42 * tk"],
+      "rx": [
+       "trx1 * 1.07 + 0.008",
+       "trx2 * 1.07 + 0.008",
+       "trx3 * 1.07 + 0.008",
+       "trx4 * 1.07 + 0.008",
+       "trx5 * 1.07",
+       "trx0 * 1.07 + 0.008"
+      ],
+      "rz": ["trz1 * 1.07 + 0.01","trz2 * 1.07 + 0.01","trz3 * 1.07 + 0.01","trz4 * 1.07 + 0.01","trz5 * 1.07","trz0 * 1.07 + 0.01"],
+      "seg": 12
+     },
+     "col": "outer"
+    },
+    {
+     "id": "front",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","fz"],
+     "vars": {"fz":"trz3 * 1.07 + 0.013"},
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["trx3 * 0.3","0.17 * tk",0.02],"seg":10,"rings":6,"sq":0.6,"taper":0.3},
+     "col": "top"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 3,
+     "kind": "button",
+     "part": "torso",
+     "vars": {"fz":"trz3 * 1.07 + 0.013"},
+     "at": ["trx3 * 0.42","(0.22 - i * 0.08) * tk","fz"],
+     "w": 0.022,
+     "h": 0.022,
+     "col": "button"
+    }
+   ]
+  },
+  "denim_jacket": {
+   "open": true,
+   "rows": [
+    {
+     "id": "jacket",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.07 * tk","0.04 * tk","0.17 * tk","0.29 * tk","0.36 * tk","0.42 * tk"],
+      "rx": [
+       "trx1 * 1.07 + 0.008",
+       "trx2 * 1.07 + 0.008",
+       "trx3 * 1.07 + 0.008",
+       "trx4 * 1.07 + 0.008",
+       "trx5 * 1.07",
+       "trx0 * 1.07 + 0.008"
+      ],
+      "rz": ["trz1 * 1.07 + 0.01","trz2 * 1.07 + 0.01","trz3 * 1.07 + 0.01","trz4 * 1.07 + 0.01","trz5 * 1.07","trz0 * 1.07 + 0.01"],
+      "seg": 12
+     },
+     "col": "outer"
+    },
+    {
+     "id": "front",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","fz"],
+     "vars": {"fz":"trz3 * 1.07 + 0.013"},
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["trx3 * 0.3","0.17 * tk",0.02],"seg":10,"rings":6,"sq":0.6,"taper":0.3},
+     "col": "top"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 3,
+     "kind": "button",
+     "part": "torso",
+     "vars": {"fz":"trz3 * 1.07 + 0.013"},
+     "at": ["trx3 * 0.42","(0.22 - i * 0.08) * tk","fz"],
+     "w": 0.022,
+     "h": 0.022,
+     "col": "button"
+    }
+   ]
+  },
+  "puffer": {
+   "puff": 1.3,
+   "rows": [
+    {
+     "id": "jacket",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.07 * tk","0.04 * tk","0.17 * tk","0.29 * tk","0.36 * tk","0.42 * tk"],
+      "rx": ["trx1 * 1.2 + 0.008","trx2 * 1.2 + 0.008","trx3 * 1.2 + 0.008","trx4 * 1.2 + 0.008","trx5 * 1.2","trx0 * 1.2 + 0.008"],
+      "rz": ["trz1 * 1.2 + 0.01","trz2 * 1.2 + 0.01","trz3 * 1.2 + 0.01","trz4 * 1.2 + 0.01","trz5 * 1.2","trz0 * 1.2 + 0.01"],
+      "seg": 12
+     },
+     "col": "outer"
+    }
+   ],
+   "stripe": {"part":"jacket","col":"outer2","every":0.05,"from":0.02}
+  },
+  "labcoat": {
+   "open": true,
+   "long": true,
+   "rows": [
+    {
+     "id": "coat",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.1 - thighL * 0.95",-0.08,"0.04 * tk","0.17 * tk","0.29 * tk","0.37 * tk","0.42 * tk"],
+      "rx": ["trx2 * 1.32 * hipK","trx1 * 1.25 + 0.03","trx2 + 0.012","trx3 + 0.012","trx4 + 0.012","trx5 + 0.01",0],
+      "rz": ["trz2 * 1.3","trz1 * 1.3 + 0.02","trz2 + 0.014","trz3 + 0.014","trz4 + 0.014","trz5 + 0.01",0],
+      "seg": 12
+     },
+     "col": "outer"
+    },
+    {
+     "id": "front",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","fz"],
+     "vars": {"fz":"trz3 * 1.02 + 0.013"},
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["trx3 * 0.3","0.17 * tk",0.02],"seg":10,"rings":6,"sq":0.6,"taper":0.3},
+     "col": "top"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 3,
+     "kind": "button",
+     "part": "torso",
+     "vars": {"fz":"trz3 * 1.02 + 0.013"},
+     "at": ["trx3 * 0.42","(0.22 - i * 0.08) * tk","fz"],
+     "w": 0.022,
+     "h": 0.022,
+     "col": "button"
+    },
+    {
+     "sides": true,
+     "id": "pocket",
+     "kind": "pocket",
+     "part": "torso",
+     "at": ["s * trx2 * 0.7","-0.02 * tk","trz2 + 0.02"],
+     "w": 0.07,
+     "h": 0.05,
+     "col": "outer2"
+    }
+   ]
+  },
+  "trench": {
+   "open": true,
+   "long": true,
+   "rows": [
+    {
+     "id": "coat",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.1 - thighL * 0.95",-0.08,"0.04 * tk","0.17 * tk","0.29 * tk","0.37 * tk","0.42 * tk"],
+      "rx": ["trx2 * 1.32 * hipK","trx1 * 1.25 + 0.03","trx2 + 0.012","trx3 + 0.012","trx4 + 0.012","trx5 + 0.01",0],
+      "rz": ["trz2 * 1.3","trz1 * 1.3 + 0.02","trz2 + 0.014","trz3 + 0.014","trz4 + 0.014","trz5 + 0.01",0],
+      "seg": 12
+     },
+     "col": "outer"
+    },
+    {
+     "id": "front",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","fz"],
+     "vars": {"fz":"trz3 * 1.02 + 0.013"},
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["trx3 * 0.3","0.17 * tk",0.02],"seg":10,"rings":6,"sq":0.6,"taper":0.3},
+     "col": "top"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 3,
+     "kind": "button",
+     "part": "torso",
+     "vars": {"fz":"trz3 * 1.02 + 0.013"},
+     "at": ["trx3 * 0.42","(0.22 - i * 0.08) * tk","fz"],
+     "w": 0.022,
+     "h": 0.022,
+     "col": "button"
+    }
+   ]
+  },
+  "apron": {
+   "covers": false,
+   "rows": [
+    {
+     "id": "apron",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {"kind":"ellipsoid","c":[0,"0.02 * tk","trz3 * 0.9"],"r":["trx3 * 0.8","0.28 * tk",0.035],"seg":10,"rings":6,"sq":0.8},
+     "col": "outer"
+    }
+   ]
+  },
+  "jeans": {"use":["belt"]},
+  "chinos": {"use":["belt"]},
+  "trousers": {"use":["belt"]},
+  "shorts": {"legs":"shorts","use":["belt"]},
+  "cargo": {
+   "use": ["belt"],
+   "marks": [
+    {
+     "sides": true,
+     "id": "pocket",
+     "kind": "pocket",
+     "part": "thigh$",
+     "at": [0,"-thighL * 0.55","legR * 1.02"],
+     "w": 0.06,
+     "h": 0.06,
+     "col": "pants2"
+    }
+   ]
+  },
+  "work_pants": {
+   "use": ["belt"],
+   "marks": [
+    {
+     "sides": true,
+     "id": "pocket",
+     "kind": "pocket",
+     "part": "thigh$",
+     "at": [0,"-thighL * 0.55","legR * 1.02"],
+     "w": 0.06,
+     "h": 0.06,
+     "col": "pants2"
+    }
+   ]
+  },
+  "skirt": {
+   "legs": "skirt",
+   "belt": false,
+   "rows": [
+    {
+     "id": "skirt",
+     "parent": "hips",
+     "at": [0,0.06,0],
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.26 * legK","-0.18 * legK",-0.02,0.04],
+      "rx": ["0.21 * girth * hipK","0.19 * girth * hipK","0.155 * girth * hipK",0],
+      "rz": ["0.17 * girth","0.15 * girth","0.115 * girth",0],
+      "seg": 12
+     },
+     "col": "pants"
+    }
+   ]
+  },
+  "leggings": {"fit":0.88,"belt":false},
+  "track_pants": {
+   "belt": false,
+   "rows": [
+    {
+     "sides": true,
+     "id": "track",
+     "rows": [
+      {
+       "id": "tstripe",
+       "parent": "thigh$",
+       "at": ["s * legR * 0.98",0,0],
+       "shape": {"kind":"capsule","a":[0,-0.01,0],"b":[0,"-thighL",0],"r0":0.013,"r1":0.013,"seg":6},
+       "col": "pants2"
+      },
+      {
+       "id": "sstripe",
+       "parent": "shin$",
+       "at": ["s * legR * 0.88",0,0],
+       "shape": {"kind":"capsule","a":[0,0,0],"b":[0,"-shinL * 0.9",0],"r0":0.012,"r1":0.012,"seg":6},
+       "col": "pants2"
+      }
+     ]
+    }
+   ]
+  },
+  "sneakers": {"sole":1},
+  "runners": {"sole":1},
+  "hightops": {"sole":1,"boot":true},
+  "boots": {"boot":true},
+  "oxfords": {"length":1.12},
+  "sandals": {"flat":true}
+ },
+ "pieces": {
+  "note": "CH-5b: rows and marks many garments share (a garment's `use`)",
+  "collar": {
+   "rows": [
+    {
+     "id": "collar",
+     "parent": "torso",
+     "at": [0,"0.37 * tk",0.005],
+     "when": "bare",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.062 * sqrt(girth)","0.055 * sqrt(girth)"],"r":0.018,"seg":12,"rings":4},
+     "col": "top2"
+    }
+   ]
+  },
+  "belt": {
+   "rows": [
+    {
+     "id": "belt",
+     "parent": "hips",
+     "at": [0,0.085,0],
+     "when": "belted",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.15 * girth * hipK","0.107 * girth"],"r":0.02,"seg":16,"rings":4},
+     "col": "belt"
+    }
+   ],
+   "marks": [
+    {
+     "id": "buckle",
+     "kind": "buckle",
+     "part": "hips",
+     "at": [0,0.085,"0.107 * girth + 0.02"],
+     "when": "belted",
+     "w": 0.04,
+     "h": 0.03,
+     "col": "button"
+    }
+   ]
+  }
+ },
  "faces": {
   "note": "Characters track CH-6: the face, painted as marks on the head (logic/figure-kit.js kitFaceMarks), in the portrait kit's styles (portraits.json). Sizes are metres on the usual head (k scales them to this one). eyes: each style's white (w, h); a heavy lid over it (lid: [y, w, h] as parts of the eye); how far apart (gap); the iris's size (iris); lash flicks (flicks: 0 to 3) and how long the outer one (wing); a shaded lid (shade), bags under (bags) and lines (lines, close-ups); whether its wearer blushes (blush). brows: each style's width (w) and thickness (t), how high it arches (arch), its own tilt (tilt: above 0 down to the nose, below 0 up), a peak, one side raised (uneven), a crease between (knit), tufts (bushy), flat. mouths: each mouth frame's marks (kind, x, y from the mouth's middle, w, h, shape oval, arc, cap or slant, dir, t, min, close, col). eyeFrames: how each frame of an eye (the portrait kit's) changes it: open (how much of it shows), scale, iris, shut, happy (shut, curved up), slant (an angry lid), flat (a bored lid), look (a glance). expressions: the portrait kit's seven, as figures show them: the eyes frame, the mouth frame (else the look's), the brows' tilt and lift (metres up), blush, and the talking frames. talk: the talking frames when an expression has none. moods: how a resting face holds its lids (lid: where the upper lid sits, as a part of the eye's height). rest: a look's resting mood, the first rule its wardrobe ids match. skin: a ramp of five shades (deep, shadow, base, light, shine) for each of the wardrobe's skin swatches, shadows warm and red, the deep a little lavender, lights yellow; a skin between swatches takes the nearest one's, shifted to it. wardrobe: the style or mouth frame each wardrobe id draws. defaults: the style when an id isn't in wardrobe.",
   "eyes": {
