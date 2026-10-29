@@ -1888,7 +1888,8 @@ def route_finds_step(P):
 @step('RL-8: a run from the mast — the flight, a battle, a seam, a paid heal, the shop, a mini-boss and its Perk pick (RL-12), the boss, the payout, home', 420)
 def rl8_run_from_mast(P):
     """Copperleaf's mast sheet (tapped as walkPick does) offers "Start a run"; its sheet's "Take off" puts a run on the
-    save with its world and flies to the landing (skipped to the end: day 1, beside the landing's mast); a wild
+    save with its world and flies to the landing (skipped to the end: day 1, by the landing's sky train halt, AS-2: the
+    run's train parked there, its arrival skipped); a wild
     battle won pays and lets saving go on; the north seam walked (cross()) is day 2; "Go there" walks to the first
     town: the clinic charges 60 Moneys a hurt Billie (after a yes), the shop has the day's stock and (RL-12) a Perk;
     on to the first mini-boss, which blocks the way north and fights a double battle (won): "Pick a Perk" opens
@@ -1918,6 +1919,15 @@ def rl8_run_from_mast(P):
         if not until(pg, "runLoad.ready&&!document.getElementById('runload')", 40): raise Exception("the landing's loading screen never lifted")
         land = pg.evaluate("[saveData.run.seed, saveData.trip.node, saveData.run.clock, !!uiState.roam, runWorld.scenes]")
         if land[1] != 1 or land[2] != 1: raise Exception(f'landed at node {land[1]} on day {land[2]}')
+        # AS-2: the landing's sky train halt (where the airship's mast stood), the run's train parked at it, having set
+        # down there as the loading screen lifted (halt-arrival.js; skipped once it films)
+        h = pg.evaluate("(()=>{const sc=walkView.sc,h=sc.props.find(p=>p.act==='fly'),t=sc.props.find(p=>p.parked);return {k:h&&h.k,label:h&&h.label,train:t&&t.k,ride:typeof haltArrival!=='undefined'&&(haltArrival.on||haltArrival.skipped||haltArrival.t>0)}})()")
+        if h['k'] != 'train_halt' or h['label'] != 'Sky train halt': raise Exception(f'the landing has no sky train halt: {h}')
+        if not h['train']: raise Exception('no sky train parked at the landing’s halt')
+        if not h['ride']: raise Exception('the sky train never set down at the halt')
+        until(pg, "!haltArrival.on||!!haltArrival.W", 30)
+        pg.evaluate("haltArriveSkip();0")
+        if not until(pg, "!haltArrival.on&&!walkView.director", 10): raise Exception('the train’s arrival didn’t end when skipped')
         # a wild battle, won
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();startWild(encountersHere()[0]);0")
         if not until(pg, "!!activeBattle&&saveHeld()", 20): raise Exception('a run battle didn’t hold the save')
