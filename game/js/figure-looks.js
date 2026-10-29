@@ -202,7 +202,7 @@ function figureLookCrop(F, ext, crop) {
     case 'head':
       return box(neck - 0.05, top + 0.02, 0.86);
     case 'face':
-      return box(head - 0.04, head + 0.52 * (F.height - head), 1.03);
+      return box(head - 0.05, head + 0.72 * (F.height - head), 1.03);
     case 'body':
       return box(hips - 0.1, neck + 0.08, 0.87);
     case 'legs':

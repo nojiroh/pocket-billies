@@ -714,7 +714,7 @@ function dressingFigureTiles() {
  * walking or posing on the figure's 12 fps clock, drawn in whole pixels; the last picture while the next is built.
  * False until there is one (the 2D preview shows meanwhile).
  */
-function dressingFigurePreview(x, W, H, t) {
+function dressingFigurePreview(x, W, H, t, r) {
   const R = dressingRoom;
   let clip = 'idle',
     frame = clipFrameAt('idle', t);
@@ -729,10 +729,15 @@ function dressingFigurePreview(x, W, H, t) {
     clip = 'walk';
     frame = Math.floor(t / (1000 / 12)) % 8;
   }
-  const look = (R.slT && R.held) || R.look,
+  /* standing on the view bar, not behind it (the whole figure shows: its feet too) */
+  const bar = $('#dressing .dr-viewbar'),
+    b = bar && bar.getBoundingClientRect(),
+    gy = b && b.height ? Math.min(H * 0.93, Math.round(((b.top - r.top) * H) / r.height) - 6) : H * 0.93,
+    room = gy - H * 0.04,
+    look = (R.slT && R.held) || R.look,
     /* about 96 px a metre, in whole steps on the canvas; smaller when the canvas is short */
-    s = Math.max(1, Math.floor((0.82 * H) / (2 * 96))),
-    ppm = Math.min(96, Math.floor((0.82 * H) / (2 * s))),
+    s = Math.max(1, Math.floor(room / (2 * 96))),
+    ppm = Math.max(24, Math.min(96, Math.floor(room / (2 * s)))),
     blink = reducedMotion ? 0 : figureBlinkAt(t, 7),
     key = JSON.stringify([look, clip, frame, Math.round(R.turn * 16), blink, ppm]);
   if (key !== R.figKey && t - R.figAt >= 60) {
@@ -748,9 +753,9 @@ function dressingFigurePreview(x, W, H, t) {
   x.imageSmoothingEnabled = false;
   x.fillStyle = 'rgba(20,14,40,.18)';
   x.beginPath();
-  x.ellipse(W / 2, H * 0.93, 0.2 * f.ppm * s, 0.045 * f.ppm * s, 0, 0, 7);
+  x.ellipse(W / 2, gy, 0.2 * f.ppm * s, 0.045 * f.ppm * s, 0, 0, 7);
   x.fill();
-  x.drawImage(f, Math.round(W / 2 - f.ax * s), Math.round(H * 0.93 - f.ay * s), f.width * s, f.height * s);
+  x.drawImage(f, Math.round(W / 2 - f.ax * s), Math.round(gy - f.ay * s), f.width * s, f.height * s);
   dressingFigureTiles();
   return true;
 }
@@ -781,7 +786,7 @@ function dressingPreviewLoop(ts) {
   const x = cv.getContext('2d');
   x.setTransform(1, 0, 0, 1, 0, 0);
   x.clearRect(0, 0, W, H);
-  if (dressingRoom.fig && dressingFigurePreview(x, W, H, ts)) return;
+  if (dressingRoom.fig && dressingFigurePreview(x, W, H, ts, r)) return;
   const [view, mir] = DRESSING_VIEWS[dressingRoom.view],
     t = ts;
   let act = 'idle',
