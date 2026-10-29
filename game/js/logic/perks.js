@@ -18,16 +18,29 @@
    Logic only: no DOM, no Date, no Math.random (tools/test/perks.test.mjs). */
 /** @import { Run } from '../../types/save-data' */
 /** @import { Perk } from '../../types/game-data' */
-/** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number>, bias?: number }} PerkRules */
+/** @typedef {{ cap: number, pick: number, rarity: Record<string, number>, price: Record<string, number>, bias?: number,
+ *   leader?: { rarity: string, pick: number } }} PerkRules */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { toast } from '../hooks.js';
+import { provide, toast } from '../hooks.js';
+import { PERK_SETS } from '../game-data.js';
 import { rngFrom } from './rng.js';
 import { billyTypes } from './rules.js';
 import { modHas } from './modifiers.js';
 import { runNodeSeed, runRevealAll } from './run-map.js';
-import { runFxMoment, runGaveText } from './run-loop.js';
-import { fxCond, fxCopyOf, fxPerkRows, fxRunRule } from './effects.js';
+import { runFoesSync, runFxMoment, runGaveText } from './run-loop.js';
+import {
+  fxAt,
+  fxCond,
+  fxCopyOf,
+  fxLivePerks,
+  fxMuted,
+  fxOfRun,
+  fxPerkRows,
+  fxPrice,
+  fxRunRule,
+  fxSetHeld,
+} from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -42,7 +55,14 @@ expose({
   // @ts-expect-error -- replaced on purpose
   perkDropOk: [() => perkDropOk, v => (perkDropOk = v)],
   // @ts-expect-error -- replaced on purpose
+  perkFindMake: [() => perkFindMake, v => ((perkFindMake = v), provide({ perkFindMake }))],
+  // @ts-expect-error -- replaced on purpose
   perkFits: [() => perkFits, v => (perkFits = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkGroups: [() => perkGroups, v => (perkGroups = v)],
+  perkLeaderRule: [() => perkLeaderRule],
+  // @ts-expect-error -- replaced on purpose
+  perkNoDrop: [() => perkNoDrop, v => (perkNoDrop = v)],
   perkOffer: [() => perkOffer],
   // @ts-expect-error -- replaced on purpose
   perkOfferMake: [() => perkOfferMake, v => (perkOfferMake = v)],
@@ -55,7 +75,12 @@ expose({
   // @ts-expect-error -- replaced on purpose
   perkRunSide: [() => perkRunSide, v => (perkRunSide = v)],
   // @ts-expect-error -- replaced on purpose
+  perkSetLine: [() => perkSetLine, v => (perkSetLine = v)],
+  perkSetOf: [() => perkSetOf],
+  // @ts-expect-error -- replaced on purpose
   perkShelf: [() => perkShelf, v => (perkShelf = v)],
+  // @ts-expect-error -- replaced on purpose
+  perkShopPrice: [() => perkShopPrice, v => (perkShopPrice = v)],
   // @ts-expect-error -- replaced on purpose
   perkTake: [() => perkTake, v => (perkTake = v)],
   perkTeamOf: [() => perkTeamOf],
@@ -63,6 +88,7 @@ expose({
   perkWeight: [() => perkWeight, v => (perkWeight = v)],
 });
 /* eslint-enable no-func-assign */
+provide({ perkFindMake });
 /* to-module: end */
 /** PK-3: what a held Perk's card and row show of its marks on the run (perks-track.md rule 4: no hidden numbers): a
  * counter as "5/8" for a row that acts every Nth time, "VOID" once a once-a-run row is spent ('' with neither); PK-6: a
@@ -76,6 +102,8 @@ export function perkCount(run, id, perks) {
     out = /** @type {string[]} */ ([]),
     held = run ? run.perks.indexOf(id) : -1;
   if (!P) return '';
+  /* PK-9: the Perk a curse turns off (Permit Revoked) */
+  if (run && fxMuted(run) === id) return 'REVOKED';
   /* PK-6: a copier shows what it copies, and the copied rows' counters (its own marks) */
   if (P.fx.some(f => f.kind === 'copy') && run && held >= 0) {
     const c = fxCopyOf(run.perks, held, perks);
@@ -95,8 +123,46 @@ export function perkCount(run, id, perks) {
   return [...new Set(out)].join(' · ');
 }
 
+/** PK-8: the Perk set a Perk is in: the first of its tags that is a set's id (perkSets.json), '' with none
+ * @param {string} id @param {Record<string, Perk>} perks
+ * @param {Record<string, import('../../types/game-data').PerkSet>} [sets] */
+export const perkSetOf = (id, perks, sets = PERK_SETS) =>
+  ((perks[id] && perks[id].tags) || []).find(t => Object.hasOwn(sets || {}, t)) || '';
+/** PK-8: a Perk's set line on its card and row (perks-track.md rule 4), "Office Supplies 2/3": its set's name, then how
+ * many of the set's Perks the run holds with this one (held or not: an offered card says what taking it makes; at most
+ * the need, so a fourth held reads 3/3); '' for a Perk in no set
+ * @param {Run | null | undefined} run @param {string} id @param {Record<string, Perk>} perks
+ * @param {Record<string, import('../../types/game-data').PerkSet>} [sets] */
+export function perkSetLine(run, id, perks, sets = PERK_SETS) {
+  const S = perkSetOf(id, perks, sets);
+  if (!S) return '';
+  /* PK-9: a Perk a curse turns off counts toward no set (fxLivePerks) */
+  const ids = run ? fxLivePerks(run) : [],
+    n = fxSetHeld(run && run.perks.includes(id) ? ids : [...ids, id], S, perks);
+  return `${sets[S].name} ${Math.min(n, sets[S].need)}/${sets[S].need}`;
+}
+/** PK-8: the Perks tab's groups: each set with a Perk held, in perkSets.json's order ({set, ids, n, need, on}: on once
+ * `need` are held), then the Perks of no set ({set: ''}), each in the order held; none empty
+ * @param {Run} run @param {Record<string, Perk>} perks
+ * @param {Record<string, import('../../types/game-data').PerkSet>} [sets]
+ * @returns {{ set: string, ids: string[], n: number, need: number, on: boolean }[]} */
+export function perkGroups(run, perks, sets = PERK_SETS) {
+  const held = run.perks.filter(id => perks[id]),
+    out = [];
+  for (const S of Object.keys(sets || {})) {
+    const ids = held.filter(id => perkSetOf(id, perks, sets) === S);
+    if (!ids.length) continue;
+    /* PK-9: a Perk a curse turns off counts toward no set */
+    const n = fxSetHeld(fxLivePerks(run), S, perks);
+    out.push({ set: S, ids, n, need: sets[S].need, on: n >= sets[S].need });
+  }
+  const rest = held.filter(id => !perkSetOf(id, perks, sets));
+  if (rest.length) out.push({ set: '', ids: rest, n: 0, need: 0, on: false });
+  return out;
+}
+
 /** PK-4: a Perk's weight in a draw: its rarity's (rules.json run.perks.rarity), times run.perks.bias when one of its
- * tags is a type on the team (each Billie's types) or a tag of a Perk held (data-checks.js PERK_THEMES: the themes) (itemization's lean toward the build,
+ * tags is a type on the team (each Billie's types) or a tag of a Perk held (PK-8: a Perk set's id, perkSets.json) (itemization's lean toward the build,
  * the rest still offered) @param {Run} run @param {string} id @param {Record<string, Perk>} perks
  * @param {PerkRules} rule @param {string[][]} [team] */
 export function perkWeight(run, id, perks, rule, team) {
@@ -110,6 +176,7 @@ export function perkWeight(run, id, perks, rule, team) {
 /** PK-4: a team as the offers see it: each Billie's types @param {any[]} team the save's team
  * @returns {string[][]} */
 export const perkTeamOf = team => (team || []).map(m => billyTypes(m));
+provide({ perkTeamOf }); /* to-module */
 /** PK-5: can the run still meet bots (for `needs: bots`): a scrapyard on its map not yet visited (every wild one
  * there is a bot: factions.js factionWildChance). True when the run or its map isn't known
  * @param {Run | null | undefined} run */
@@ -170,22 +237,46 @@ export function perkDraw(g, pool, perks, rule, n, weigh) {
   return out;
 }
 
-/** the next pick's Perks (the run is not changed): run.offerN's stream, rule.pick of them, none held
+/** PK-7: the rules a leader's (mini-boss's) pick draws by: run.perks.leader's rarity alone (Fine Print), each Perk of
+ * it as likely, leader.pick of them; the rules themselves without a leader rule @param {PerkRules} rule
+ * @returns {PerkRules} */
+export const perkLeaderRule = rule =>
+  rule.leader ? { ...rule, rarity: { [rule.leader.rarity]: 1 }, pick: rule.leader.pick, bias: 1 } : rule;
+/** the next pick's Perks (the run is not changed): run.offerN's stream, rule.pick of them, none held. PK-7: `from`
+ * 'leader' draws a leader's win's (perkLeaderRule: Fine Print only)
  * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string[][]} [team]
- * @returns {string[]} */
-export const perkOffer = (run, perks, rule, team) =>
-  perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, perks, rule, [], team), perks, rule, rule.pick, id =>
-    perkWeight(run, id, perks, rule, team)
+ * @param {'leader'} [from] @returns {string[]} */
+export const perkOffer = (run, perks, rule, team, from) => {
+  const R = from === 'leader' ? perkLeaderRule(rule) : rule;
+  return perkDraw(rngFrom(run.seed, 'relic|' + run.offerN), perkPool(run, perks, R, [], team), perks, R, R.pick, id =>
+    perkWeight(run, id, perks, R, team)
   );
+};
 
 /** make the next pick: run.offer is set (null when nothing is left to offer) and the counter moves on; the caller
- * saves before showing it @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule
- * @param {string[][]} [team] the team's types (perkTeamOf) */
-export function perkOfferMake(run, perks, rule, team) {
-  const ids = perkOffer(run, perks, rule, team);
+ * saves before showing it. PK-7: `from` 'leader' for a leader's win (Fine Print only, perkOffer)
+ * @param {Run} run @param {Record<string, Perk>} perks @param {PerkRules} rule
+ * @param {string[][]} [team] the team's types (perkTeamOf) @param {'leader'} [from] */
+export function perkOfferMake(run, perks, rule, team, from) {
+  const ids = perkOffer(run, perks, rule, team, from);
   run.offerN++;
   run.offer = ids.length ? ids : null;
   return run.offer;
+}
+
+/** PK-8: a side area's Perk lying on the ground (the sidePerk rule, the Adventurer's Pack set; route-finds.js), found:
+ * one Perk drawn (as a pick's, with the bias) from the run's stream for that find (its flag), put in run.offer as a pick
+ * of one; the caller saves and opens it (a reload shows it again). '' and nothing changed when a pick is already open or
+ * nothing is left to offer @param {Run} run @param {string} key the find's flag @param {Record<string, Perk>} perks
+ * @param {PerkRules} rule @param {string[][]} [team] the team's types (perkTeamOf) */
+export function perkFindMake(run, key, perks, rule, team) {
+  if (run.offer) return '';
+  const id = perkDraw(rngFrom(run.seed, 'relic|' + key), perkPool(run, perks, rule, [], team), perks, rule, 1, k =>
+    perkWeight(run, k, perks, rule, team)
+  )[0];
+  if (!id) return '';
+  run.offer = [id];
+  return id;
 }
 
 /** a run shop's Perk on a day ('' when bought or none is left): drawn once from the shop's node and the day, then
@@ -211,12 +302,19 @@ export function perkShelf(run, i, day, perks, rule, team) {
  * Photocopier below one copies it), at least 1. The Perks held count, so letting a cap Perk go lowers it at once
  * @param {Run | null | undefined} run @param {PerkRules} rule @param {Record<string, Perk>} perks */
 export const perkCap = (run, rule, perks) => Math.max(1, rule.cap + (run ? fxRunRule(run, 'cap', perks) : 0));
+/** PK-7: the Perk whose noDrop rule row says no Perk held can be let go (Non-Refundable Ticket; a Photocopier just below
+ * it copies that too), or '' when none does @param {Run | null | undefined} run @param {Record<string, Perk>} perks */
+export function perkNoDrop(run, perks) {
+  const fx = run ? fxOfRun(run, perks) : null,
+    f = fx && fxAt(fx, {}, { run: run && run.perkState }).find(r => r.kind === 'rule' && r.rule === 'noDrop');
+  return f && f.n > 0 ? f.src : '';
+}
 /** PK-6: may `drop` be let go for `id`: with `id` in its place the run still holds no more than its cap (letting
- * Accordion File go at 7 held would leave 7 over a cap of 6) @param {Run} run @param {string} drop @param {string} id
- * @param {Record<string, Perk>} perks @param {PerkRules} rule */
+ * Accordion File go at 7 held would leave 7 over a cap of 6); PK-7: never while a noDrop row is held (perkNoDrop)
+ * @param {Run} run @param {string} drop @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule */
 export function perkDropOk(run, drop, id, perks, rule) {
   const at = run.perks.indexOf(drop);
-  if (at < 0) return false;
+  if (at < 0 || perkNoDrop(run, perks)) return false;
   const after = run.perks.slice();
   after[at] = id;
   return after.length <= perkCap({ ...run, perks: after }, rule, perks);
@@ -224,11 +322,19 @@ export function perkDropOk(run, drop, id, perks, rule) {
 
 /** what a shop asks for a Perk ($, by its rarity) @param {Perk} R @param {PerkRules} rule */
 export const perkPrice = (R, rule) => rule.price[R.rarity] || 0;
+/** PK-8: what a run shop asks for a Perk on this run: its price (perkPrice) with the run's price rows of the shop, then
+ * those of a Perk (`what: perk`: the Office Supplies set's half price) @param {Run | null | undefined} run
+ * @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule */
+export function perkShopPrice(run, id, perks, rule) {
+  const fx = run ? fxOfRun(run, perks) : null;
+  return fxPrice(fx, 'perk', fxPrice(fx, 'shop', perkPrice(perks[id], rule)));
+}
 
 /**
  * Hold a Perk: '' when done, or why not: 'none' (no such Perk), 'held' (already), 'full' (at the cap and no
  * `drop` given), 'drop' (`drop` isn't held), 'cap' (PK-6: letting `drop` go would leave more than the cap:
- * perkDropOk). With `drop`, it takes that one's place. PK-1: with the save it is
+ * perkDropOk), 'noDrop' (PK-7: a noDrop rule is held: none can be let go, perkNoDrop). With `drop`, it takes that
+ * one's place. PK-1: with the save it is
  * taken on (`s`, s.run being `run`), its rows of the take moment act (run-loop.js runFxMoment)
  * @param {Run} run @param {string} id @param {Record<string, Perk>} perks @param {PerkRules} rule @param {string} [drop]
  * @param {any} [s]
@@ -239,6 +345,8 @@ export function perkTake(run, id, perks, rule, drop, s) {
   if (drop != null) {
     const at = run.perks.indexOf(drop);
     if (at < 0) return 'drop';
+    /* PK-7: Non-Refundable Ticket: nothing held is ever let go */
+    if (perkNoDrop(run, perks)) return 'noDrop';
     /* PK-6: never left over the cap (a cap Perk let go) */
     if (!perkDropOk(run, drop, id, perks, rule)) return 'cap';
     run.perks[at] = id;
@@ -254,6 +362,9 @@ export function perkTake(run, id, perks, rule, drop, s) {
   }
   /* PK-5: a mapReveal rule (Tour Brochure) shows the map at once */
   runRevealAll(run, perks);
+  /* PK-7: a level or bossHp row (Early Access Pass, Paid Promotion) moves the foes at once, not when the world is
+     made again */
+  runFoesSync(run, perks);
   return '';
 }
 
@@ -291,7 +402,8 @@ export function perkBuy(run, i, day, perks, rule, drop, s) {
 
 /**
  * Studio plan T4.1: a seed's Perk picks in order, as the game makes them after each mini-boss (perkOfferMake on a
- * run of that seed, then perkChoose): what is offered at each pick and what is taken. `take` is who chooses: 'none'
+ * run of that seed, then perkChoose; PK-7: a leader's pick, Fine Print only): what is offered at each pick and what is
+ * taken. `take` is who chooses: 'none'
  * takes nothing (the Run Lab's preview), 'first' the first offered, or a Perk's id, taken when offered (else
  * nothing). A taken one leaves the pool of the picks after it; past the cap nothing more is taken. Shops are left out.
  * PK-4: `team` (each Billie's types) asks the Perks' needs; without one they are not asked
@@ -302,7 +414,7 @@ export function perkOfferOrder(seed, perks, rule, picks, take = 'none', team) {
   const run = /** @type {Run} */ (/** @type {any} */ ({ seed, perks: [], offer: null, offerN: 0, shelf: {} })),
     out = [];
   for (let k = 0; k < picks; k++) {
-    const offer = (perkOfferMake(run, perks, rule, team) || []).slice(),
+    const offer = (perkOfferMake(run, perks, rule, team, 'leader') || []).slice(),
       want = take === 'first' ? offer[0] : take !== 'none' && offer.includes(take) ? take : null,
       took = want && run.perks.length < perkCap(run, rule, perks) && !perkChoose(run, want, perks, rule) ? want : null;
     if (!took && run.offer) perkChoose(run, null, perks, rule);

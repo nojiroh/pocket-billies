@@ -1,0 +1,192 @@
+{
+ "glittering_water": {
+  "name": "Glittering Water",
+  "d": "Wins pay 10% more Moneys.",
+  "places": 3,
+  "img": "boons/glittering_water.svg",
+  "fx": [
+   {"kind":"money","mult":1.1}
+  ]
+ },
+ "lucky_ripples": {
+  "name": "Lucky Ripples",
+  "d": "Billies are 5% easier to catch.",
+  "places": 3,
+  "img": "boons/lucky_ripples.svg",
+  "fx": [
+   {"kind":"catch","mult":1.05}
+  ]
+ },
+ "camera_ready": {
+  "name": "Camera-Ready",
+  "d": "Your Billies take the field with their Speed up.",
+  "places": 1,
+  "img": "boons/camera_ready.svg",
+  "fx": [
+   {"kind":"stat","stat":"hus","stages":1}
+  ]
+ },
+ "fired_up": {
+  "name": "Fired Up",
+  "d": "Your Billies take the field with their Attack up.",
+  "places": 1,
+  "img": "boons/fired_up.svg",
+  "fx": [
+   {"kind":"stat","stat":"lev","stages":1}
+  ]
+ },
+ "tailwind": {
+  "name": "Tailwind",
+  "d": "Your Billies take the field with their Speed up.",
+  "places": 2,
+  "img": "boons/tailwind.svg",
+  "fx": [
+   {"kind":"stat","stat":"hus","stages":1}
+  ]
+ },
+ "pep_talk": {
+  "name": "Pep Talk",
+  "d": "Your Billies hit 10% harder.",
+  "places": 2,
+  "img": "boons/pep_talk.svg",
+  "fx": [
+   {"kind":"damage","side":"deal","mult":1.1}
+  ]
+ },
+ "grand_opening": {
+  "name": "Grand Opening",
+  "d": "Run shops charge 20% less.",
+  "places": 2,
+  "img": "boons/grand_opening.svg",
+  "fx": [
+   {"kind":"price","what":"shop","mult":0.8}
+  ]
+ },
+ "second_breakfast": {
+  "name": "Second Breakfast",
+  "d": "Walking into a place heals your team 10%.",
+  "places": 3,
+  "img": "boons/second_breakfast.svg",
+  "fx": [
+   {"kind":"heal","share":0.1}
+  ]
+ },
+ "viral_moment": {
+  "name": "Viral Moment",
+  "d": "Wins pay 25% more Moneys.",
+  "places": 3,
+  "img": "boons/viral_moment.svg",
+  "fx": [
+   {"kind":"money","mult":1.25}
+  ]
+ },
+ "beginners_luck": {
+  "name": "Beginner’s Luck",
+  "d": "Billies are 15% easier to catch.",
+  "places": 3,
+  "img": "boons/beginners_luck.svg",
+  "fx": [
+   {"kind":"catch","mult":1.15}
+  ]
+ },
+ "stamped_insufficient": {
+  "name": "Stamped Insufficient",
+  "d": "Run shops charge 10% more.",
+  "curse": true,
+  "places": 2,
+  "img": "boons/stamped_insufficient.svg",
+  "fx": [
+   {"kind":"price","what":"shop","mult":1.1}
+  ]
+ },
+ "surge_pricing": {
+  "name": "Surge Pricing",
+  "d": "Run shops charge 25% more.",
+  "curse": true,
+  "places": 3,
+  "img": "boons/surge_pricing.svg",
+  "fx": [
+   {"kind":"price","what":"shop","mult":1.25}
+  ]
+ },
+ "clinic_backlog": {
+  "name": "Clinic Backlog",
+  "d": "Clinics charge 50% more.",
+  "curse": true,
+  "places": 2,
+  "img": "boons/clinic_backlog.svg",
+  "fx": [
+   {"kind":"price","what":"heal","mult":1.5}
+  ]
+ },
+ "pending_review": {
+  "name": "Pending Review",
+  "d": "Reward picks show one card fewer.",
+  "curse": true,
+  "places": 2,
+  "img": "boons/pending_review.svg",
+  "fx": [
+   {"kind":"rule","rule":"rewardPick","n":-1}
+  ]
+ },
+ "mandatory_training": {
+  "name": "Mandatory Training",
+  "d": "Your Billies take the field with their Speed down.",
+  "curse": true,
+  "places": 2,
+  "img": "boons/mandatory_training.svg",
+  "fx": [
+   {"kind":"stat","stat":"hus","stages":-1}
+  ]
+ },
+ "audit_trail": {
+  "name": "Audit Trail",
+  "d": "Wins pay 25% fewer Moneys.",
+  "curse": true,
+  "places": 3,
+  "img": "boons/audit_trail.svg",
+  "fx": [
+   {"kind":"money","mult":0.75}
+  ]
+ },
+ "hold_music": {
+  "name": "Hold Music",
+  "d": "Your Billies move last on each battle’s first turn.",
+  "curse": true,
+  "places": 2,
+  "img": "boons/hold_music.svg",
+  "fx": [
+   {"kind":"last","if":"turn:1"}
+  ]
+ },
+ "permit_revoked": {
+  "name": "Permit Revoked",
+  "d": "Your newest Perk does nothing.",
+  "curse": true,
+  "places": 2,
+  "img": "boons/permit_revoked.svg",
+  "fx": [
+   {"kind":"rule","rule":"muteNewest","n":1}
+  ]
+ },
+ "out_of_office": {
+  "name": "Out of Office",
+  "d": "Run towns’ shops are shut. The market stalls stay open.",
+  "curse": true,
+  "places": 3,
+  "img": "boons/out_of_office.svg",
+  "fx": [
+   {"kind":"rule","rule":"shopClosed","n":1}
+  ]
+ },
+ "paper_cuts": {
+  "name": "Paper Cuts",
+  "d": "Each place you walk into costs your team 5% of their HP.",
+  "curse": true,
+  "places": 3,
+  "img": "boons/paper_cuts.svg",
+  "fx": [
+   {"kind":"turnHurt","share":0.05,"when":"arrive"}
+  ]
+ }
+}

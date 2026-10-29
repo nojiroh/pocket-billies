@@ -1,0 +1,68 @@
+{
+ "office": {
+  "name": "Office Supplies",
+  "title": "Middle Management",
+  "need": 3,
+  "d": "Perks in run shops cost half.",
+  "fx": [
+   {"kind":"price","what":"perk","mult":0.5}
+  ]
+ },
+ "influencer": {
+  "name": "Influencer Kit",
+  "title": "Verified",
+  "need": 3,
+  "d": "Wins pay 25% more Moneys, and your team’s first attack in each battle is a critical hit.",
+  "fx": [
+   {"kind":"money","mult":1.25},
+   {"kind":"crit","when":"move","if":"cat:H|S","once":"battle"}
+  ]
+ },
+ "tech": {
+  "name": "Tech Gear",
+  "title": "Power User",
+  "need": 3,
+  "d": "Your Billies’ held items work 50% better.",
+  "fx": [
+   {"kind":"heldBoost","mult":1.5}
+  ]
+ },
+ "lab": {
+  "name": "Lab Kit",
+  "title": "Mad Science",
+  "need": 3,
+  "d": "Your Unstable Billies hit 20% harder, and their cells never hurt them.",
+  "fx": [
+   {"kind":"damage","side":"deal","mult":1.2,"if":"unstable"},
+   {"kind":"rule","rule":"unstableSafe","n":1}
+  ]
+ },
+ "adventurer": {
+  "name": "Adventurer’s Pack",
+  "title": "Seasoned Adventurer",
+  "need": 3,
+  "d": "Every side area has a Perk lying on the ground.",
+  "fx": [
+   {"kind":"rule","rule":"sidePerk","n":1}
+  ]
+ },
+ "weather": {
+  "name": "Weather Kit",
+  "title": "Weather Person",
+  "need": 3,
+  "d": "Your Billies hit 15% harder in rain, storms, snow, fog and ash.",
+  "fx": [
+   {"kind":"damage","side":"deal","mult":1.15,"if":"weather:rain|storm|snow|fog|ash"}
+  ]
+ },
+ "classics": {
+  "name": "Trainer Classics",
+  "title": "Old School",
+  "need": 3,
+  "d": "Your Billies get 25% more XP, and Billies are 10% easier to catch.",
+  "fx": [
+   {"kind":"xp","mult":1.25},
+   {"kind":"catch","mult":1.1}
+  ]
+ }
+}

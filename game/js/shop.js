@@ -15,12 +15,14 @@ import {
   runShopOpen,
   runShopReroll,
   runShopRerolled,
+  runShopShut,
   runStallStock,
 } from './logic/run-loop.js';
 import { fxRunPrice } from './logic/effects.js';
-import { perkBuy, perkCap, perkPrice, perkShelf, perkTeamOf } from './logic/perks.js';
+import { perkBuy, perkCap, perkSetLine, perkShelf, perkShopPrice, perkTeamOf } from './logic/perks.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbGainFly, recentPress } from './ui-motion.js';
+import { fxSrcName } from './logic/battle-engine.js';
 import { escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
 import { artIconHTML, glyphHTML, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { portraitHTML } from './person-art.js';
@@ -118,7 +120,8 @@ function shopPerk(sh) {
   if (sh.runNode == null || !run || sh.stall) return null;
   const id = run.shelf[sh.runNode + ':' + run.clock];
   if (!id || !PERKS[id]) return null;
-  return { id, price: fxRunPrice(run, PERKS, 'shop', perkPrice(PERKS[id], RULES.run.perks)) };
+  /* PK-8: with the run's Perk price rows too (the Office Supplies set) */
+  return { id, price: perkShopPrice(run, id, PERKS, RULES.run.perks) };
 }
 /** RL-12: the Perk's row: what it does, its rarity and price, Buy */
 function shopPerkHTML(id, sh) {
@@ -127,7 +130,7 @@ function shopPerkHTML(id, sh) {
   const R = PERKS[L.id],
     can = saveData.se >= L.price;
   /* UI-14b: the Perk's tier (frame, name colour, pill), its stat rows as tags, its kind by the Perk glyph (violet) */
-  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}>${rarityFoilHTML(R.rarity)}<span class="w-ic">${artIconHTML(R.img, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run · you hold ${saveData.run.perks.length} of ${RULES.run.perks.cap}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
+  return `<div class="ware2 k-card rar-row"${rarityRowAttr(R.rarity)}>${rarityFoilHTML(R.rarity)}<span class="w-ic">${artIconHTML(R.img, 36)}</span><span class="w-t"><b class="rar-name">${escapeHtml(R.name)}</b>${rarityPillHTML(R.rarity)}<small>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</small><small class="note">${glyphHTML('kind', 'perk', 12)} A Perk, for the rest of the run${perkSetLine(saveData.run, id, PERKS) ? ` · ${escapeHtml(perkSetLine(saveData.run, id, PERKS))}` : ''} · you hold ${saveData.run.perks.length} of ${perkCap(saveData.run, RULES.run.perks, PERKS)}</small></span><span class="w-buy"><button class="pb small ${can ? 'gold' : ''}" data-a="shoprelic" data-s="${id}" ${can ? '' : 'disabled'}>${moneyHTML(L.price)}</button></span></div>`;
 }
 /** RS-4: Mo's service on a run: ask this run shop for a fresh stock today (logic/run-loop.js runShopReroll) */
 function shopRerollHTML(id, sh) {
@@ -209,6 +212,12 @@ export function openShop(id) {
     /* WM-5: a village's or a town's market stall: the day's held items, no Perk (logic/run-loop.js runStallStock) */
     sh.stock = runStallStock(saveData.run, sh.runNode, saveData.run.clock, RULES.run.town.stall);
   } else if (sh.runNode != null && saveData.run) {
+    /* PK-9: a shopClosed rule (the curse Out of Office) shuts a run town's shop; its stall stays open */
+    const shut = runShopShut(saveData, PERKS);
+    if (shut) {
+      toast(`${fxSrcName(shut)}: the shop is shut. A sign on the door says “Back soon.”`);
+      return;
+    }
     /* RL-11: only the wares the run has unlocked (its copy, run.unlocks) */
     sh.stock = runShopOpen(saveData.run, sh.runNode, saveData.run.clock, RULES.run.shop, UNLOCK_DATA);
     /* RL-12: and a Perk, drawn the first time it opens today (kept on the run, saved with the next save) */

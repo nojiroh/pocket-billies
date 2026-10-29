@@ -2,6 +2,447 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-12 - Collection and wrap-up: the Field Guide's Perks tab, the balance pass, the art review; the track is done - 2026-10-29
+Branch `track/perks` (this session's outcome branch, at 0fbef2a6: PK-9; main ed5c6857 was already in, so nothing to
+merge). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode, the
+plan below written first and carried out. Details and the audit: perks-track.md section 14, "Corrected in PK-12".
+- The plan (as set at the start): (1) the Field Guide's Perks tab: a save record of what was seen and taken, following
+  `seen`/`caught` (a new field, `collection`; no SAVE_VERSION bump, a missing one reads as empty), noted on every save
+  from what the run shows; a fourth tab listing every Perk, set, held item and boon or curse with silhouettes of the
+  unseen (the SVG as a mask); phone screenshots light and dark; (2) the balance pass: the run sim gets options to start
+  holding Perks, boons and a held item; everything at once must stay finite; each one alone over the same seeds against
+  a baseline; tune only clear outliers, one commit each with the numbers; list the rest; rerolls a recommendation only;
+  (3) the art review: redraw Steady Hand, Screen Protector and Rubber Boots, remake the contact sheets, check every icon
+  is distinct across the folders, `--check`; (4) the section 14 audit, the tag line fixed; (5) the owner's summary of
+  every decision; ROADMAP, BRANCHES, TESTING, ART-NOTES; (6) every check tier, CI, PR #323's description.
+- Changed (6 commits of code, data, art and tests, besides this docs commit):
+  - **The record** (c5b3f557): game/js/logic/collection.js (`collectionNew`, `collectionFill`, `collectionNote`,
+    `collectionRows`); saves.js newSave/saveFill/validSave; `collection` in save-data.d.ts; game-state.js save() notes
+    it; index.html and the Studio's logic worker load it. tools/test/collection.test.mjs (4).
+  - **The tab** (7cdd9fb8): guide.js `renderPerkGuide` (Seen / Taken / Total over all 130, a chip per kind with its
+    count, the kind's list in the data's order: picture or silhouette, name or Unknown, text, rarity pill, "seen" or
+    "taken"; a set shows its bonus and its Perks' pictures), art.js `artSilHTML`, guide.css, ui.js's `pkgk`;
+    check-fast's perks step opens the tab; check-quick.py's guide ceiling 39 -> 40 (the tab's button).
+  - **The run sim** (8853c17e): `perks`, `boons` (`SIM_BOON_PLACES` 99) and `held` options and the CLI's `--perks`,
+    `--boons`, `--held` ('all' for every one); a run-sim test with all of them at once.
+  - **Art** (9d74b7c6): Steady Hand, Screen Protector, Rubber Boots redrawn (grids, SVGs, ART-NOTES.md); the perks
+    sheets remade, the items' and boons' remade unchanged.
+  - **Balance** (98f971c6): Costume Fangs 1/8 -> 1/16 (text and test).
+  - Docs: perks-track.md (PK-12 done, section 14 audited, the tag line), ROADMAP (the track done), BRANCHES
+    (`perks-done` after #323), TESTING.md, this entry.
+- **The balance pass** (the run sim, `--balance --policy=never-pick --team=3 --pack=5 --lvl=25 --unlocks=all`, the
+  same 300 seeds each; a bot, not a player: it plays three of the starter, never rerolls or catches much, so type
+  Perks for other types, catching, shop and map Perks show 0; with `--held` every Billie holds the item; a boon lasts
+  the whole run). Without any: 17.0% won, 6.64 places, 3,600 Moneys left. **Everything at once** (79 Perks, 20 boons
+  and curses, Quick Laces held): 100 runs, 89% won, every number finite.
+  - Tuned (one clear outlier): **Costume Fangs** 1/8 -> 1/16 of the damage dealt: 68.3% -> 40.7% won (the rare
+    Leftover Sandwich 41.7%).
+  - For the owner to tune on the phone (win rate alone vs 17.0%; Moneys left vs 3,600):
+    - Strongest Perks: Warranty Card 44.7% (rare, once a run), Heavy Crown 37.7% (Fine Print: its cost barely shows
+      for a bot that leads with its best), Power Bank 37.0%, **Oven Mitts 34.7% (a common; the run's foes burn a lot)**,
+      Plot Armor 31.7%, Screen Protector 31.0%, Matching Hoodies 30.0% (a mono team is the bot's default), Hazmat Suit
+      27.7%.
+    - Fine Print that only hurts the bot: **Overclock Chip 0.3%** (5% recoil: 5.3%, 3%: 15.3%), **Early Access Pass
+      0.7%** (+2 levels: 4.0%, +1: 6.3%), Hustle Planner 9.7% (but +3,000 Moneys), Glass Trophy 11.3%, Paid Promotion
+      11.7%, Energy Drink 12.0%. A player picks these knowingly; the bot can't value a map or tempo.
+    - Held items: Snack Pack 49.3% (common, 800) and Leftover Sandwich 41.7%, Cactus Keyring 40.0%, Party Balloon
+      35.0%, Iron Vest 30.0%; **Ankle Weights 3.3%** (moving last; +50% or +70% damage barely helps: 4.3%, 4.7%: a design
+      call, not a number); Lucky Coin +2,503 Moneys (three holders multiply: 1.25 cubed).
+    - Boons and curses: Fired Up 36.7% (Attack up, the run long; 3 places in play), Pep Talk 21.0%; curses Mandatory
+      Training 11.3%, Paper Cuts 12.0%, Hold Music 12.7%; Audit Trail -787 Moneys, Viral Moment +797.
+    - Money: Influencer Contract +2,832, Hustle Planner +3,000, Lucky Charm +633, Bounty Poster +430, Tip Jar +226.
+  - **Rerolls** (section 11, item 6; an "Ask me before"): recommended unchanged at 50, doubling. The bot never rerolls,
+    so the sim can't judge them; Fortune Cookie frees only the first reroll of each pick and Gift Receipt adds a card,
+    which the doubling still bounds.
+- **The owner's summary: every "Decided for the owner, to review" of the track** (PK-0..PK-12, grouped; the entry
+  named in brackets has the details):
+  - *Names and texts* (all drafts): the 66 new Perks' names and card texts as perks-track.md 5.2-5.6 with the changes
+    each wave's entry lists (Click Pen "Every 8th attack", Power Bank "ends a turn below a quarter", Alarm Clock without
+    "always" [PK-3]; Group Chat gives the bench the full XP, not half, Snorkel/Knee Pads/Kite/Union Card/Heirloom
+    Locket/Barometer wording [PK-4]; Bug Net, Pyramid Pouch, Music Box, Punch Card, Gift Receipt, Tour Brochure wording
+    [PK-5]; Photocopier, Streak Tracker, Coil of Rope, Time Card wording [PK-6]; the Fine Print texts with every
+    downside stated [PK-7]); Correction Fluid's text [PK-9]; the 7 sets' bonus names and texts [PK-8]; the 20 boons'
+    and curses' names and texts [PK-9]; the 16 new held items' names and lines (Express Pass "each turn", Ankle Weights
+    "moves after the others", Complaint Form "once a battle") [PK-10]; the five Bureau events Mandatory Orientation,
+    Routine Audit, Please Hold, Permit Inspection, Paperwork Avalanche and their lines [PK-9].
+  - *Battle lines*: "<Perk>: <say>", a stat row's "<Perk>: X's Speed rose.", turnHurt's "lost a little HP" [PK-1];
+    Rubber Stamp "Approved!", Click Pen "Click! X lines up a critical hit.", Screen Protector, Joy Buzzer, Oven Mitts,
+    Alarm Clock, Warranty Card [PK-3]; the held items' six lines (Seatbelt, Cactus Keyring, Complaint Form, Party
+    Balloon, Costume Fangs, Express Pass) [PK-10].
+  - *The look*: Fine Print in the ladder's top orange #F77036 with a small red tilted "FINE PRINT" stamp, and the foil
+    [PK-7]; Lucky Charm a horseshoe [PK-0, PK-2]; pictures at 72 px on cards and 36 px in rows, the drop sheet at 36
+    [PK-2]; the Bag's battle list and the Billie sheet at 36 px too [PK-11]; the Perks tab grouped by set, "(on)" in
+    bold [PK-8]; boons on the Perks tab and an 18 px strip beside the day on the Map tab [PK-9]; the Field Guide's
+    Perks tab (a chip per kind, silhouettes of the unseen, "seen"/"taken" in hand-written ink) [PK-12].
+  - *Every picture* (about 140, contact sheets in validation/icon-sheets/; redraw any in the Studio's icon editor):
+    13 existing Perks redrawn [PK-2], 11 [PK-3], 13 [PK-4], 12 [PK-5], 11 [PK-6], 11 [PK-7], Correction Fluid and the
+    20 boons [PK-9], 25 held items with Form 99-A [PK-10], 13 Bag items [PK-11]; Steady Hand, Screen Protector and
+    Rubber Boots redrawn [PK-12]. Still the weakest reads: Garden Trowel (a hammer?), Snack Pack, Ankle Weights
+    [PK-10], Max Revive's small heart and Trail Mix [PK-11], Knee Pads (a robot head?) and Static Socks (boxy) [PK-4].
+  - *Rarities and numbers*: rarity weights 6/3/1 unchanged with Fine Print out of the ordinary pool; a leader's pick
+    draws its 12 evenly; the reward pick's Perk card weight 2 of 41 [PK-7]; the 13 existing Perks keep their numbers
+    [PK-0]; the cap stays 6 (Accordion File +1, Non-Refundable Ticket +2), and letting Accordion File go at the cap it
+    raises is refused [PK-6]; Wave A-D rarities as the plan [PK-3..PK-6]; held items: the 9 type boosters common
+    (800), the 7 tricks uncommon (1000), Seatbelt 1200 [PK-10]; the appeal 50 Moneys at a run town's clinic [PK-9];
+    rerolls unchanged at 50, doubling (Fortune Cookie makes only the first free) [PK-5, PK-12]; the bias toward the
+    team's types and held sets at x2 [PK-4]; heldBoost rounds stages half up, chances stop at 50% [PK-8]; the PK-12
+    balance list below (numbers to tune on the phone).
+  - *How things work* (rules chosen where the plan was open): `every` counts over the whole run [PK-1]; a run's
+    pinchHeal heals each Billie once a battle [PK-1]; a growth stays between 0 and its max, and shows "+0%" before it
+    grows [PK-1, PK-6]; "VOID" on a spent once-a-run row [PK-3]; an event's status skips the whole team when a guard
+    holds [PK-3]; `needs` ignored where no team is given [PK-4]; Punch Card refunds one of a stack, Tip Jar is a money
+    row, Music Box rolls once a foe, `needs: bots` is a scrapyard not yet visited [PK-5]; a copier's marks are its own,
+    sideOpen at a side area's obstacle only, sideFind at most 2, eventHurt stops only the `hurt` command [PK-6];
+    Influencer Contract's triple pay on every trainer battle and its "pays nothing" zeroes Moneys only, Subscription Box
+    draws from the `common` loot table, Overclock Chip's cost can knock its user out, Non-Refundable Ticket at the cap
+    may still let one go [PK-7]; a copy doesn't count toward a set, the set line counts with the card's Perk [PK-8]; a
+    boon given again lasts the longer, never stacks; Correction Fluid's erase counts once a run [PK-9]; the held kinds
+    stay out of FX_KINDS [PK-10]; the Studio's PNG upload for items gone (Draw one and Edit art) [PK-11]; the Perks tab's
+    record notes on every save, a set counts as taken once its bonus has been on, Bag items are not listed [PK-12].
+  - *Every seed's offers and event draws changed* as Perks and events were added (the pool follows the file's order),
+    accepted as SP-6 did [PK-3..PK-9].
+- Decided for the owner in PK-12, to review: the record's name `collection` and what counts as seen and taken (above);
+  the tab's place (second, between Billies and Lore) and words ("Everything a run can hand you", "Runs hand them out.
+  Take them all.", "Not seen yet."); Bag items not listed; a set shown with the relic icon and its Perks' small
+  pictures; the guide's piece ceiling 39 -> 40; the three redraws; Costume Fangs 1/16; rerolls unchanged.
+- **Phone checks for the whole track** (none done yet; light and dark each): the Field Guide's Perks tab (the chips
+  fit? the 79 rows scroll, silhouettes read) [PK-12]; a mini-boss's pick of three Fine Print cards and the red stamp,
+  the reward pick's Perk card and "Let one go" at the cap, Non-Refundable Ticket at 8, Subscription Box, Influencer
+  Contract and Overclock Chip lines, Early Access mid-run [PK-7]; every picture crisp at 72 and 36 px (PK-2..PK-11,
+  the three redraws [PK-12]); Click Pen's "n/8" and its critical 8th attack, Warranty Card's VOID, Alarm Clock [PK-3];
+  no type Perk offered without its type, Barometer's 10-day forecast, Umbrella in rain, Kite's free switches [PK-4];
+  Gift Receipt's four cards, Fortune Cookie's free reroll, Tour Brochure mid-run, Pyramid Pouch, Tip Jar, Punch Card,
+  Name Tags [PK-5]; Accordion File's "n of 7", Photocopier's note, Boarding Pass, Like Button and Streak Tracker's
+  "+N%", Coil of Rope, Rusty Key, Ten-Foot Pole, Time Card, Travel Pillow [PK-6]; the Perks tab grouped by set, the set
+  line on cards and shop rows, Adventurer's Pack's pyramid, Tech Gear with Quick Laces, the Lab Kit's splice, the
+  Influencer's first critical [PK-8]; an event's boon and curse, the Map tab's strip on a narrow phone with 3-4 on, the
+  clinic's appeal, Out of Office, Hold Music, Permit Revoked's REVOKED, Correction Fluid's erase [PK-9]; the Bag and
+  reward picks' held cards, Party Balloon and Express Pass in battle, the Billie sheet's held line [PK-10]; the Bag's
+  rows, a run shop's item rows, the battle's Bag [PK-11].
+- Risky:
+  - Every save now runs collectionNote (a walk over the run, the bag and the team: about 130 checks). A save that holds
+    junk in `collection` loads with it cleaned; one where `collection` isn't an object fails validSave (a backup import).
+  - What counts as "seen" comes from what a save holds: a shop's Perk seen only once the shelf is drawn and saved, a
+    held item in a town's market stall not seen until bought or offered in a reward pick.
+  - The balance numbers measure a bot; Fine Print and Ankle Weights especially need a person's judgment.
+- Verified: after every change lint, typecheck and `npm test` (2063 at the start, 2068 at the end); before every
+  commit check:modules, format:check, check:data (181 files fine; its two bridge warnings are main's) and build;
+  `check:smoke` on every commit touching game/, run in a second worktree on the exact commit: no problems on c5b3f557,
+  9d74b7c6 and 98f971c6; on the tab's first version it found the Guide screen at 40 pieces over its ceiling of 39,
+  fixed in the same commit (7cdd9fb8: no problems). The tab seen at 390 x 844, light and dark, every kind (no page
+  errors, no sideways scroll). `check:fast --only=perks` ok with the new tab step. `check-studio-github.py
+  --only=relics` ok. `npm run test:slow` 109 passed. `build-icons.mjs perks|items|boons --check` fine. The run sim:
+  `--balance` runs finish (the numbers above); the default scenes mode stops at "runSceneParams: node 8 has no exit
+  north3", main's (PK-5..PK-9). **In-game full test** (`--selftest`, 98f971c6): one problem, "A room that opens in
+  place: the town's walking grid changed", main's (PK-7's and PK-9's entries). **Full quick check** (98f971c6): 42
+  steps, 37 passed in 1711 s; room light and Battle music (the drums on a throw) are main's known reds; RL-8 ("crossed
+  into Meadow Route but its view never showed"), RT-2's pair and Granny Juniper, run again alone with `--steps=`: RT-2
+  and Granny Juniper passed, RL-8 stopped at "the town's shop has no Perk", main's known red (PK-5..PK-9): the same five
+  as PK-9's run. **CI** on 9cd4fa75 (this entry's first push): lint, rules and the pull request's smoke green; the push
+  run's second smoke hit the 30-minute job timeout (main's).
+- Next: the track is done. The owner reviews the summary above, the phone checks and PR #323; once #323 merges,
+  `track/perks` gets the `perks-done` tag and it and `track/perks-items` are deleted (docs/BRANCHES.md).
+
+### Perks track PK-9 - Boons and curses - 2026-10-29
+Branch `track/perks` (this session's outcome branch, at ab776fc1: PK-8; main 6ca60be6 was already in, so nothing to
+merge at the start). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no
+Plan Mode, the plan below written first and carried out. Details and the plan's corrections: perks-track.md 5.9,
+"Corrected in PK-9".
+- The plan (as set at the start): (1) the kinds the new curses need, one per commit with tests, schema, data checks,
+  types and the Studio's row inputs: `last` on a run's rows (Hold Music: yours move last on the first turn), a
+  `turnHurt` row at `arrive` (Paper Cuts: each place costs HP), `rewardPick` below 0 (Pending Review: one card
+  fewer), the rules `shopClosed` (Out of Office) and `muteNewest` (Permit Revoked: the newest Perk does nothing and
+  counts toward no set); (2) the `boons` data section: boons.json (name, d, curse, places, img, fx), its index.json
+  key, boons.schema.json, `Boon` in game-data.d.ts, game-data.js `BOONS`, data-checks.js `dataBoons` in check-data and
+  the Studio's Check; the 20 of 5.9 with drafted texts; (3) the run keeps a named boon by id (run.enc.boons `id`, its
+  rows read from the data, src `boon:<id>`; an unnamed `fx` boon of a pack as before; validRun takes both, so a run in
+  progress loads), battle lines and the debug log name it; the event commands `boon <id>` and `curse <id>`; the 4
+  events and the fountain refer to them by id with today's numbers; (4) Correction Fluid, the 79th Perk (rules
+  `curseShorter` and `curseErase`), in Office Supplies, with its picture; (5) the clinic's appeal (rules.json
+  run.appeal, placeholder 50 Moneys) lifts a curse; (6) 5 new Bureau events that hand out curses (drafted lines);
+  (7) on screen: the Perks tab lists the boons and curses on, each with its picture and places left; the Map tab's
+  head row (the run's HUD beside the day) shows their pictures with places left; (8) the Studio edits boons (their
+  words, places and picture; rows as JSON as the sets'); (9) the 21 pictures (a helper draws the grids; `node
+  tools/build-icons.mjs boons` and `perks`, `--check`, the contact sheets); (10) tests: every boon has a name and a
+  picture, each works and expires, the appeal, Correction Fluid, the new events, every Perk, set and boon at once
+  finite, golden battles unchanged; (11) docs.
+- Changed (15 commits of code, data, art and tests, besides the plan, this docs commit and the merge of main):
+  - **Kinds** (one per commit; effects.js, schema, game-data.d.ts, data-checks.js, the Studio's rows, tests): `last` on
+    a run's rows (battle-engine.js fxLastActs; it moved from HELD_FX_KINDS to FX_KINDS and HELD_OWN_FORMS), a turnHurt
+    row at `arrive` (run-loop.js runArriveHurt, run.js's toast), rewardPick -1 (rewards.js), the rules shopClosed
+    (run-loop.js runShopShut, shop.js), muteNewest (effects.js fxMuted, fxLivePerks; perks.js perkCount "REVOKED",
+    perkSetLine, perkGroups), curseShorter and curseErase (run-loop.js runBoonGive, run.enc.erased).
+  - **Data**: game/data/boons.json (the 20), boons.schema.json, index.json, `Boon`, game-data.js `BOONS`, data-checks.js
+    `dataBoons` and `dataBoonArt` (check-data.mjs, studio/js/check.js); rules.json square.wish outcomes' `boon` and
+    run.appealCost; events.json's four events by id and the five new Bureau events; perks.json Correction Fluid.
+  - **Run**: run-enc.js encBoonGive, encBoonRows by id, encBoonsOn, encBoonLine; run-state.js validRun (named boons,
+    `erased`); battle-engine.js fxSrcName `boon:`; the commands `boon` and `curse` (script-parse.js,
+    encounter-screen.js, docs/SCRIPTS.md); fountain-wish.js; debug-log.js; the appeal (run-loop.js runAppeal,
+    walk-tab.js clinicAppealOpen).
+  - **Page**: perk-screen.js boonsHTML (the Perks tab) and boonStripHTML (the Map tab's head), map-tab.js, bag.css,
+    map-tab.css.
+  - **Studio**: perks-editor.js the Boons and curses card, the rule words and the kind last; check-studio-github.py
+    `--only=relics`'s boons step.
+  - **Art**: tools/art/icon-grids/boons.json (20 grids, drawn by a helper and checked on contact sheets) and Correction
+    Fluid's in perks.json; game/art/boons/ 20 SVGs and game/art/perks/correction_fluid.svg; build-icons.mjs's sheet
+    knows boons; validation/icon-sheets/boons-{light,dark}.png new, perks-{light,dark}.png remade.
+  - Tests: battle-boons.test.mjs (new, 14), data-checks (PK-9 rows, dataBoons, dataBoonArt, the commands),
+    fountain-wish (by id), battle-perk-sets (Office Supplies' 7th), battle-perks-fine (66 of Waves A-D and Fine
+    Print), perks.test.mjs's bias test draws 6000 shelves (1500 left too few to settle once the pool grew); the
+    check-data snapshots count 181 files; check-fast.py's perks step reads the boons on screen and an appeal.
+  - Docs: perks-track.md (PK-9 done, "Corrected in PK-9" in 5.9), ROADMAP, STUDIO.md, TESTING.md, ART-NOTES.md "Boon
+    and curse pictures", SCRIPTS.md.
+- Merged main ed5c6857 (track/vfx VFX-13, #295) at the end: HANDOFF kept every entry; hooks.js and art-code-refs.json
+  regenerated; the check-data snapshots count 181 files.
+- Risky:
+  - Every seed's offers (Correction Fluid joins the pool) and event draws (five more events) changed.
+  - Permit Revoked mutes the newest Perk: an Accordion File muted lowers the cap while it lasts (the run may then hold
+    one past it; taking another opens "Let one go"); a muted Early Access Pass's foe levels stay until the next Perk is
+    taken (runFoesSync runs on taking a Perk, not when a curse comes or goes).
+  - Out of Office shuts every run town's shop for its places, not only the next one.
+  - A boon given again lasts the longer of the two (no stacking); the old unnamed rows of a run saved before PK-9 keep
+    working until they run out.
+  - Hold Music and Alarm Clock together: a Billie both first and last moves first (early sorts before late).
+- Verified: after every change lint, typecheck and `npm test` (2021 at the start, 2038 at the end; 2063 with main's
+  after the merge); before every commit check:modules, format:check, check:data (181 files fine; its two bridge
+  warnings are main's) and build; `check:smoke` on every commit touching game/, run in a second worktree on the exact
+  commit (no problems each; Python Playwright 1.63.0). Golden battles unchanged (no snapshot remade). `check:fast
+  --only=perks` ok with its boons step. `check-studio-github.py --only=relics` ok with the boons step. `npm run
+  test:slow` 109 passed. `node tools/build-icons.mjs boons --check` and `perks --check` fine. The 1,000-maps timing
+  test failed only while a smoke run loaded the machine and passed alone (main's known flake). **The run sim**:
+  `--runs=50` stops in scene mode with "runSceneParams: node 8 has no exit north3", main's (PK-5..PK-8); `--balance`
+  finishes its 50 runs.
+  **The in-game full test** (`--selftest`) on 49d3fde5: two problems, "A run's road: arrived but the view is still
+  w:run_0_2210*" and "A room that opens in place: the town's walking grid changed"; ab776fc1 (PK-8, before any PK-9
+  change) fails the same two in the same run, so neither is PK-9's (the second is main's, PK-7's entry). **Full quick
+  check** on c5055fda (main merged): 42 steps, 37 passed in 1725 s; room light and Battle music (the drums on a throw)
+  are main's known reds; RL-8 (that run: "crossed into Thicket Route but its view never showed"), RT-2's pair and
+  Granny Juniper were run again alone with `--steps=`: RT-2 and Granny Juniper passed, RL-8 crossed the seam and
+  stopped at "the town's shop has no Perk", main's known red (PK-5..PK-8). **CI** on c5055fda: lint and rules green;
+  smoke red on "Camera follow: the page stopped drawing" (main's known red; commented on #323), and its second run on
+  the same commit passed every step it reached before the 30-minute job timeout (also main's).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 20 names and texts** (drafts, 5.9's names): Glittering Water "Wins pay 10% more Moneys.", Lucky Ripples
+    "Billies are 5% easier to catch.", Camera-Ready and Tailwind "Your Billies take the field with their Speed up.",
+    Fired Up "...Attack up.", Pep Talk "Your Billies hit 10% harder.", Grand Opening "Run shops charge 20% less.",
+    Second Breakfast "Walking into a place heals your team 10%.", Viral Moment "Wins pay 25% more Moneys.", Beginner's
+    Luck "Billies are 15% easier to catch."; curses Stamped Insufficient "Run shops charge 10% more.", Surge Pricing
+    "...25% more.", Clinic Backlog "Clinics charge 50% more.", Pending Review "Reward picks show one card fewer.",
+    Mandatory Training "Your Billies take the field with their Speed down.", Audit Trail "Wins pay 25% fewer Moneys.",
+    Hold Music "Your Billies move last on each battle's first turn.", Permit Revoked "Your newest Perk does nothing.",
+    Out of Office "Run towns' shops are shut. The market stalls stay open.", Paper Cuts "Each place you walk into
+    costs your team 5% of their HP." Places as 5.9 (Out of Office 3).
+  - **The appeal** (section 11 item 7): 50 Moneys at a run town's clinic, one button per curse, not changed by clinic
+    price rows; shut under "No healing".
+  - **Correction Fluid**: uncommon, Office Supplies; "Curses last one place less, and the first curse you're handed
+    this run is erased at once."; the erase counts once a run even if it is let go and taken again.
+  - **The five Bureau events and their lines** (events.json): Mandatory Orientation, Routine Audit, Please Hold, Permit
+    Inspection, Paperwork Avalanche (options and outcomes in perks-track.md "Corrected in PK-9" and the commit).
+  - **A boon given again lasts the longer**, never stacks. A curse's row on the Perks tab says "A clinic's appeal lifts
+    it."
+  - **The HUD**: the Map tab's head row beside the day (18 px pictures with the places left, the name and text as a
+    title); the Perks tab's "Boons and curses" list under the Perks.
+  - **The 21 pictures** (validation/icon-sheets/boons-light.png and -dark.png, perks-* for Correction Fluid; redraw any
+    in the Studio's icon editor), described in ART-NOTES.md "Boon and curse pictures".
+- Phone checks to do (listed, not waited for): an event giving a boon and a curse (the sheet's "Curse: ..., for this
+  place and 3 more." line); the Perks tab's Boons and curses list light and dark; the Map tab's strip beside the day
+  (does it fit beside the day and the menu on a narrow phone with 3-4 on?); the clinic's appeal sheet; a shop shut by
+  Out of Office; Hold Music's "moves last" line; Permit Revoked's REVOKED on the newest Perk and a set losing its
+  bonus; Correction Fluid's erase line; the 21 pictures at 36 and 18 px.
+- Next: PK-12 (the Field Guide's Perks tab, the run sim over every Perk, the full check, the summary of every decision
+  for the owner) on `track/perks`.
+
+### Perks track PK-8 - Perk sets - 2026-10-28
+Branch `track/perks` (this session's outcome branch, at 528c321e: PK-7 with main 3f559c3b merged; main had not moved,
+so nothing to merge at the start). Started by PK-0's session under the owner's standing instruction (perks-track.md
+section 10): no Plan Mode, the plan below written first and carried out. Details and the plan's corrections:
+perks-track.md 5.7, "Corrected in PK-8".
+- The plan (as set at the start): (1) the kinds the 7 bonuses need, one per commit with tests, schema, data checks,
+  types and the Studio's row inputs: a price row for a run shop's Perk (`what: perk`, Office), `heldBoost` (Tech: your
+  held items' numbers half again), the condition `unstable` (Lab's damage), the rules `unstableSafe` (Lab: an Unstable
+  splice's cells never hurt it) and `sidePerk` (Adventurer: a side area's place holds a Perk lying on the ground);
+  (2) the `perkSets` data section: perkSets.json, its index.json key, perkSets.schema.json, `PerkSet` in
+  game-data.d.ts, `dataPerkSets` (check-data and the Studio's Check), game-data.js `PERK_SETS`; the 7 sets with drafted
+  texts; a set's members are the Perks tagged with its id, so the themes come from the section (PERK_THEMES goes);
+  (3) fxOfRun adds a set's rows (src `set:<id>`) while `need` of its members are held (copies don't count); battle
+  lines name a set by its title; (4) the card's set line ("Office Supplies 2/3") on pick cards, rows and the shop, the
+  Perks tab grouped by set with each set's bonus; (5) the Studio's Perks editor: a Perk's set, and the sets' names,
+  titles and texts; (6) tests: a set's bonus starts and stops with its third member (taken, let go, swapped), each
+  set's bonus, every Perk and every set at once finite, golden battles unchanged; (7) docs.
+- Changed (10 commits of code and tests, besides the plan, this docs commit and the merge of main):
+  - **Kinds** (effects.js, schema, game-data.d.ts, data-checks.js, the Studio's rows, tests): a price row's `what:
+    perk` (perks.js `perkShopPrice`, read by shop.js and the run sim); `heldBoost` (`fxHeldBoost`, `fxBoostRow`;
+    fxOfBillie and fxHeldAt take a boost; battle-engine.js `heldBoostOf`/`heldFx` for yours only, battle-state.js's
+    start stages, battle-rewards.js's money rows); the condition `unstable` (fxBattleCtx); the rules `unstableSafe`
+    (endTurn) and `sidePerk` (route-finds.js `routeFindsPerk` and the Perk's find on a side place, perks.js
+    `perkFindMake`, walk-view.js's pickup and propShown).
+  - **Data**: game/data/perkSets.json (the 7 sets), perkSets.schema.json, index.json, `PerkSet`, game-data.js
+    `PERK_SETS`; data-checks.js `dataPerkSets` and `perkRowProblems` (dataPerks' row checks moved, same words),
+    `PERK_THEMES` gone (tags read the sets); check-data.mjs and studio/js/check.js run it.
+  - **The bonus**: effects.js `fxSetHeld`, `fxSetsOn`, `fxSetRows`, fxOfRun adds them (src `set:<id>`);
+    battle-engine.js fxSrcName and battle.js's blips name a set by its title; debug-log.js `relicSets`.
+  - **Page**: perks.js `perkSetOf`, `perkSetLine`, `perkGroups`; perk-screen.js (the card's set line, the Perks tab
+    grouped by set), reward-screen.js and shop.js (the set line).
+  - **Studio**: perks-editor.js a Perk's Set select and the Perk sets card; check-studio-github.py `--only=relics`'s
+    set step.
+  - Tests: battle-perk-sets.test.mjs (new, 20), perks.test.mjs (perkShopPrice; perkSetOf, perkSetLine, perkGroups),
+    data-checks.test.mjs (the kinds, dataPerkSets; a PK-4 message that pinned the whole rule list now checks its
+    start), battle-perks-wave-d.test.mjs (the sideFind test leaves the Perk's find out of the place's own); the
+    check-data snapshots count 180 files. check-fast.py's relics step expects Old School's catch row.
+  - Docs: perks-track.md (PK-8 done, "Corrected in PK-8" in 5.7, section 8's tags), ROADMAP, STUDIO.md, TESTING.md.
+- Merged main 6ca60be6 (track/vfx VFX-5..12 and VFX-15, #295/#326) after the Studio commit: HANDOFF kept every entry,
+  art-code-refs.json and hooks.js regenerated, VFX-12's new check-data snapshot counts 180 files.
+- Risky:
+  - Sets change balance at once for runs holding three of a set (the relics fixture holds three Trainer Classics, so
+    Old School is on there). Numbers are placeholders.
+  - heldBoost scales every held number of yours, take rows too (Iron Vest's ×0.85 becomes ×0.775) and Seatbelt-like
+    rows with no number not at all; +1 stage becomes +2 (rounded half up), so Quick Laces doubles.
+  - The side area's Perk find is put in every side place's scene, shown only with the rule; a pick of one reopened
+    after a reload reads the mini-boss's line. If a pick is already open, walking onto the find does nothing until it
+    is answered.
+  - Influencer's critical first attack spends its once-a-battle mark on the first attack that moves (a miss spends it
+    too, as Rubber Stamp's PK-3 rule).
+  - The Studio's need field shows its message after the section redraws (a number field doesn't redraw it).
+- Verified: after every change lint, typecheck and `npm test` (1973 at the start, 2020 with main's tests after the
+  merge); before every commit check:modules, format:check, check:data (180 files fine; its two bridge warnings are
+  main's) and build; `check:smoke` on every commit touching game/ (no problems each, run in a second worktree on the
+  exact commit; Python Playwright 1.63.0), and on the merged head. Golden battles unchanged (no snapshot remade).
+  `check:fast --only=perks` ok (after its expectation took the set's catch row). `check-studio-github.py
+  --only=relics` ok with the set step. `npm run test:slow` 109 passed. A phone-sized look at the relics fixture: the
+  pick's cards read "Perk · Weather Kit 3/3" and "Perk · Office Supplies 1/3"; the Perks tab groups Office Supplies
+  2/3 and Weather Kit 3/3 ("Weather Person (on)") then "No set". **The run sim**: `--runs=50` stops in scene mode with
+  "runSceneParams: node 8 has no exit north3", main's (PK-5..PK-7); `--balance` finishes its 50 runs.
+  **Full quick check** on 01d8472a: 42 steps, 39 passed in 1374 s; the three problems are main's known reds recorded
+  in the PK-7 and PK-10 entries (RL-8's "the town's shop has no Perk", room light, Battle music "wild: the drums never
+  came in on a throw"). **CI** on 5af1266b: lint and rules green; the fast check (smoke) green on the push's run.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **A copy doesn't count toward a set**; a Photocopier counts as itself (Office Supplies). Non-Refundable Ticket is
+    in no set.
+  - **The 7 bonuses and their texts** as listed in perks-track.md 5.7 "Corrected in PK-8"; where the plan's draft
+    didn't fit the code: Office's "stocks a Perk" was already true (half price kept); Lab's "lose no HP" needed its own
+    rule; Weather's "any weather but clear" lists rain, storms, snow, fog and ash; Adventurer's Perk lies on the
+    ground as a find (a pick of one), drawn like a pick's (ordinary rarities, the bias).
+  - **heldBoost's rounding**: stages round half up (+1 to +2), chances stop at FX_CHANCE (0.5).
+  - **The set line counts with the card's Perk** ("3/3" on the card that would complete a set), never past the need.
+  - **The Perks tab**: sets in perkSets.json's order with their bonus text, "(on)" in bold once held, then "No set".
+  - No set picture (section 6 asks none); the Studio edits a set's words and need, its rows in perkSets.json.
+- Phone checks to do (listed, not waited for): the Perks tab grouped (a set's head, "(on)"), light and dark; a pick
+  card's and a shop row's set line; a side area with three Adventurer's Pack Perks: the pyramid on the ground and its
+  pick of one; Tech Gear with Quick Laces (+2 Speed) and Express Pass; an Unstable splice under the Lab Kit (no
+  "unstable cells" line); Influencer's first attack critical.
+- Next: PK-9 (boons and curses: the `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the
+  fountain by id, the appeal, 4-5 Bureau events, Correction Fluid) on `track/perks`; Permit Revoked must keep a
+  muted Perk out of a set's count (effects.js fxSetHeld).
+
+### Perks track PK-7 - Fine Print - 2026-10-28
+Branch `track/perks` (this session's outcome branch; PR #318 had merged PK-6 into main, so main 4423a457 came in first
+as a fast-forward, hooks.js unchanged; main 6acee223, the UI fixes #309, merged at the end: only the generated
+art-code-refs.json met, regenerated, hooks.js remade by `npm run modules`; that merge commit, c503ff47, left
+conflict markers in this file by mistake, fixed by the next merge). At the planning session's request the items lane,
+`track/perks-items` at 0c138c24 (PK-11 and PK-10, PR #310), merged last: HANDOFF keeps every entry, ROADMAP both
+lines, art-code-refs.json and hooks.js regenerated; then the commit tier, 1971 unit tests, smoke (7/7), `check:fast --only=perks` and the Studio check.
+`check:fast --only=held` alone fails at once here ("Cannot read properties of undefined (reading 'name')") on main
+4423a457, the items lane and this branch alike; CI's whole fast check passes that step. Main 3f559c3b (the hub island
+polish, #315) merged after that: only HANDOFF met (both entries kept); hooks.js and art-code-refs regenerated. Started by PK-0's session under the owner's standing instruction (perks-track.md
+section 10): no Plan Mode, the plan below written first and carried out. Details and the plan's corrections:
+perks-track.md section 8, "Corrected in PK-7". The items lane (`track/perks-items`, PR #310) had not landed in
+track/perks until the end (merged then, above); nothing of items.json, itemIcon, bag.js or art/items was touched by PK-7
+(Subscription Box draws from events.json's loot tables). New draft PR #323 (track/perks to main, "Perks track (PK-7 onward): Fine Print").
+- The plan (as set at the start): (1) merge main; (2) the kinds Fine Print needs, one per commit with tests, schema,
+  data checks, types and the Studio's inputs: recoil, a money row's add (Subscription Box's charge), loot, the rules
+  noDrop and faintPaysNothing; level and bossHp rows taken mid-run applied at once; (3) the `fine` rarity and a leader's
+  pick drawn from it alone, with its look (the ladder's top orange, a red stamp); (4) the reward pick's Perk card;
+  (5) the 12 pictures as grids (drawn by three helpers in parallel, checked on contact sheets); (6) the 12 Perks in
+  perks.json; (7) rules.json's leader rule; (8) a test per Perk with its downside, Non-Refundable Ticket with Accordion
+  File and Photocopier, every Perk of Waves A-D and Fine Print at once; (9) the contact sheets; (10) the Studio check;
+  (11) docs.
+- Changed (18 commits and this entry; the merge of main was a fast-forward):
+  - **effects.js**: kinds `recoil` (`fxRecoil`) and `loot` (`FX_LOOT_N`); FX_RULES gains noDrop and faintPaysNothing.
+  - **Battle**: battle-engine.js `fxRecoilHurt` after an attack of yours that dealt damage; battle-rewards.js
+    battleRewards zeroes a win's Moneys under faintPaysNothing when one of yours fainted (`noPay`; battle.js toasts it).
+  - **Run**: run-loop.js runFxMoment pays or charges a money row's `add` (`cost`) and brings loot (`runLoot`: an
+    events.json loot table, the run's stream for the row and the place); run.js toasts both; `runFoesSync` /
+    `runFoesRelevel` move a run world's pools, trainers and boss when a level or bossHp row comes or goes
+    (run-scenes.js runWorldTables' `foeUp`/`foeSeed`, game-data.js worldPut keeps them).
+  - **Offers** (perks.js): `perkNoDrop` (perkDropOk, perkTake 'noDrop'), `perkLeaderRule`, perkOffer/perkOfferMake
+    `from` 'leader' (battle-rewards.js, the debug menu, the relics fixture, the run preview, perkOfferOrder); perkTake
+    ends with runFoesSync. rewards.js: the `perk` card (rewardDraw, rewardTake with `drop`, rewardDataGame's perks);
+    run-state.js validRunEnc keeps a perk card.
+  - **Page**: perk-screen.js (the pick's and the "Let one go" sheet's words under noDrop; perkDropOpen exported),
+    reward-screen.js (the Perk card, the cap's sheet, its toast, jingle and flight), shop.js, debug-menu.js and run.js
+    read perkCap (PK-6 had left four texts on rules.json's 6); marks.js `fine` and `rarityColour`, ui-marks-kit.js,
+    ui-run-kit.js (the stamp), ui-kit.css.
+  - **Data**: perks.json the 12 Fine Print Perks with `img`; rules.json `run.perks.leader`; rewards.json `perk`;
+    perks.schema.json (recoil, loot, xp, the money row's add, the rules, rarity fine), rewards.schema.json;
+    data-checks.js (the kinds, the leader rule, an event never naming Fine Print, a perk card naming no item);
+    game-data.d.ts (PerkRarity with fine, PerkTier), save-data.d.ts (RewardCard perk).
+  - **Studio**: the Perks editor's kinds recoil, loot, xp, the money add, the two rules' words, the rarity fine and its
+    head; check-studio-github.py `--only=relics` opens the 12 Fine Print Perks.
+  - **Art**: tools/art/icon-grids/perks.json the 11 new grids; game/art/perks/ 12 SVGs; the contact sheets.
+  - **Run sim**: moneyOut.perks counts what Perks charge on arrival; the "first item" policy skips a Perk card.
+  - **In-game full test**: the mini-boss's pick must be all Fine Print.
+  - Tests: battle-perks-fine.test.mjs (new, 22 tests), data-checks (PK-7 good rows and planted faults, the leader
+    rule, events, rewards), ui-marks (the tier), perks and run-preview (the leader's pick).
+  - Docs: perks-track.md (PK-7 done, "Corrected in PK-7"), ROADMAP, STUDIO.md, TESTING.md.
+- Risky:
+  - Every seed's leader picks changed (Fine Print only) and every reward pick's draw (one more card in the deck).
+  - Fine Print numbers are placeholders and strong on purpose: Glass Trophy x1.5 with Overclock Chip x1.35 and Terms
+    x1.3 stack within FX_LIMIT (x4); Heavy Crown's -15% applies only in double battles (the second place).
+  - Non-Refundable Ticket at its cap means no new Perk until the run ends (by design); the online run record still
+    keeps 6 Perks.
+  - runFoesSync moves the levels of every trainer of the world, beaten ones too (harmless), and leaves a place already
+    stocked this visit as it was.
+  - Subscription Box costs 15 Moneys at every place, also the landing places of side areas.
+- Verified: after every change lint (eslint, names, ui-lint at its ceilings, unused CSS, art-code-refs), typecheck
+  and `npm test` (1924 at the start, 1946 at the end); before every commit check:modules, format:check, check:data
+  (179 files fine; its two bridge warnings are main's) and build; `check:smoke` on every commit touching game/ (7/7
+  each, run in a second worktree on the exact commit; Python Playwright 1.63.0). Golden battles unchanged (no snapshot
+  remade). `check:fast --only=perks` ok (the fixture's pick offered Non-Refundable Ticket, Influencer Contract and Paid
+  Promotion; a beaten mini-boss's stored pick Early Access Pass, Glass Trophy and Terms and Conditions).
+  `check-studio-github.py --only=relics` ok with its new Fine Print step. `npm run test:slow` 108 passed.
+  `node tools/build-icons.mjs perks --check` fine. `check:ui` differs from its baseline the same on main and on this
+  branch (the container's drawing), so its pictures were not remade. A phone-sized screenshot of the relics fixture's
+  pick showed the three orange Fine Print cards with their red stamps. **The run sim**: `--runs=50` stops in scene mode
+  with "runSceneParams: node 8 has no exit north3", the same as on main (PK-5, PK-6); `--balance` finishes its 50 runs.
+  **The in-game full test** (`--selftest`) on 78d638e6: the run's Perk steps passed (the mini-boss's pick all Fine
+  Print); two problems: "A room that opens in place: the town's walking grid changed" (main 4423a457 fails it the
+  same) and "the scene isn't drawing (black screen): no frames in 3 s", inside the clinic on one run and the Gene Bank
+  on the next (main's run passed it once): a different room each time, nothing here touches rooms or drawing, so read
+  as the container's frame timing, not established. **Full quick check** on 78d638e6: 42 steps, 36 passed; Terraces,
+  RL-8's "the town's shop has no Perk" and room light are main's known reds (#306's, PK-5's and PK-6's entries); RT-2's
+  pair, Granny Juniper and the run map's music passed alone right after (`--steps=`), so read as the full run's load.
+  **CI** on 78d638e6: lint and rules green; smoke (the fast check) red on "The world map opens as the bowl" and "Camera
+  follow", the steps main's own run 40744420002 (4423a457) fails too.
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The look** (section 11, item 1): the ladder's top orange (#F77036, mythical's colour code) for frames, pills and
+    names, and a small red tilted "FINE PRINT" stamp on the pick card where the pill sits; rows show the orange pill.
+  - **The reward card's weight** (item 3): 2 of 41. **Weights** (item 2): 6/3/1 unchanged; a leader's pick draws its 12
+    evenly.
+  - **The 12 pictures** (validation/icon-sheets/perks-light.png and -dark.png; redraw any in the Studio's icon
+    editor): Terms and Conditions (a paper scroll on wood rollers with gold knobs, slate fine print, a red seal),
+    Energy Drink (a deep violet can, steel rim and ring-pull, a gold bolt), Glass Trophy (PK-0's sample), Overclock Chip
+    (a slate chip, steel pins, a teal die with a red-hot flame), Ethics Waiver (a wood clipboard, steel clip, a cream
+    form with a violet helix and a red tick, a folded corner), Hustle Planner (a red spiral planner, a slate calendar,
+    a gold coin), Influencer Contract (a deep violet phone-shaped contract, a red signature, a gold verified badge),
+    Non-Refundable Ticket (a red ticket with bitten ends on the diagonal, a steel padlock), Early Access Pass (a wide
+    gold keycard on a red strap, a slate clock), Subscription Box (a cardboard box, teal tape, a red renewal arrow),
+    Heavy Crown (a wide gold crown, red and violet gems), Paid Promotion (a red megaphone on the diagonal, a gold coin).
+  - Texts (drafts, every downside stated): as 5.6, with "In exchange" (Terms), "take the field with their Speed up
+    two stages" (Energy Drink: also on a switch in), "every attack that lands" (Overclock Chip), "Hold 8 Perks instead
+    of 6" (Ticket), "brings a random item, and charges you 15 Moneys" (Subscription Box).
+  - Influencer Contract's triple pay is every trainer battle (`if: foe:trainer`); its "pays nothing" zeroes Moneys
+    only (picks and badges stay).
+  - Subscription Box draws from events.json's `common` loot table (the plan's "loot common"), one item a place.
+  - Overclock Chip's cost can knock its user out (as Life Orb's); misses and status moves cost nothing.
+  - Taking Non-Refundable Ticket at the cap may still let one go (the rule acts once it is held).
+  - Fine Print gets the foil, as rare and mythical do.
+- Phone checks to do (listed, not waited for): a mini-boss's pick of three Fine Print cards (orange frames, the red
+  stamp) light and dark; the Perks tab's orange "Fine Print" pill; the reward pick's Perk card and its "Let one go"
+  at the cap; Non-Refundable Ticket at 8 (the sheet says none can go); Subscription Box's two toasts on walking in;
+  Influencer Contract's "paid nothing" toast; Overclock Chip's line after a hit; Early Access Pass taken mid-run (the
+  map shown, wild Billies of the next place three levels up); the 11 new pictures at 72 and 36 px.
+- Next: PK-8 (Perk sets: the `perkSets` data section, the 7 sets, the card's set line, the Perks tab grouped) on
+  `track/perks`.
 ### Clean-up track CU lane S - the Studio's words: no "placeholder", "AI" or "Claude"; Sketch Billies - 2026-10-28
 Branch `track/cleanup` (origin/main merged first: up to date). Lane S's plan and the owner's answers were approved
 before the session (docs/phases/cleanup-track.md sections 1, 3, 4, "Lane S"); steps 1-8 done, the music step waits
@@ -836,6 +1277,164 @@ save or data change but one preference). No tag: not a phase or track step. Draf
   still worded); Settings > Controls > Shrink the bar while walking off; tap Actions in Copperleaf and on a run, tap
   a "?" button (you walk to it, then battle); a battle on a wide screen or a tablet on its side. Send a debug log
   if anything stutters.
+### Perks track PK-10 - Held items: 16 new, the 8 existing redrawn, the held kinds (the items lane) - 2026-10-28
+Branch `track/perks-items` (the items lane, PK-11 finished at b1440794). origin/main (a2a0963c) then origin/track/perks
+(183a5c09, PK-5) merged first (HANDOFF and art-code-refs conflicts; hooks.js by `npm run modules`); near the end main
+(76aea599: ON-4, TR-5) and track/perks (17b085ae: PK-6's kinds) merged again. Started by PK-0's session under the
+owner's standing instruction (perks-track.md section 10): no Plan Mode, the plan below written first and carried out.
+Details and the brief's corrections: perks-track.md 5.8, "Corrected in PK-10".
+- The plan (as set at the start): (1) merge main, then track/perks; (2) the Studio's items editor edits hold rows (it
+  had none); (3) hold rows may say when (hit, hurt), if and once: battle (Complaint Form); (4) the held kinds, one per
+  commit with tests, data checks, types and the Studio: survive, reflect, drain, immune by type until hit, first by
+  chance, last, kept in their own functions and out of FX_KINDS so merges with the Perk lane stay small; (5) the 16
+  items' data (placeholder prices; tiers: boosters common, tricks uncommon) and a battle test for each by name;
+  (6) the 24 pictures (`node tools/build-icons.mjs items`), the atlas's last i_ rectangles retired through the gate
+  (atlasUses), contact sheets; (7) the Studio checks, check:ui, test:slow, the full quick check; (8) docs.
+- Changed (17 commits of PK-10's own, besides the merges):
+  - **Studio** (studio/js/held-editor.js, new): a held item's Tier and its rows by kind, When/If/Once on a stat row,
+    + Add an effect, a row's remove, Make it a held item, Not a held item; dataHeldItems's messages on each row.
+    check-studio-github.py's `items` step edits them (and, with no item left on the atlas, makes a new item to try
+    Draw one on); the `atlas` step renames a type's particle key instead of an item icon's.
+  - **Engine**: effects.js `fxHeldAt`, `HELD_FX_KINDS` (survive, reflect, drain, last), `HELD_OWN_FORMS` (immune by
+    type, first by chance), `HELD_WHEN`, `HELD_IFS`, `fxHeldRow`; fxOfBillie leaves rows with a when out.
+    battle-engine.js, its own PK-10 section: `heldMarks` (b.heldState, per holder), `heldMoment`/`heldHitMoments`
+    (after each hit), `heldSurvives` (after Bedrock), `heldAfterHit` (reflect, drain, the balloon popping),
+    `heldFloats` (in useMove before the accuracy roll, and in aiDamage), `heldFirstActs` and `heldLastActs` (runTurn's
+    order: priority, early, late, Speed). A held item works for whichever side holds it.
+  - **Checks and types**: data-checks.js `heldRowProblems` (the timing), `heldKindProblems` (the kinds' fields),
+    `HELD_WHEN_KINDS`, `HOLD_KINDS` grown; dataItemArt warns for a held item without a picture too. game-data.d.ts
+    `HeldRow`, `HeldKindRow`; `Item.hold` is HeldRow[]. type-rename.js reaches hold rows.
+  - **Data**: items.json the 16 new held items; `img` on all 24 and on Form 99-A (`transfer`, main's ON-4), `icon`
+    gone from every item.
+  - **Art**: 25 grids in tools/art/icon-grids/items.json, game/art/items/*.svg; the last 9 i_ rectangles left
+    art/manifest.js and art/icons/icons.png. validation/icon-sheets/items-{light,dark}.png.
+  - Tests: battle-held-kinds.test.mjs (new: the kinds and moments on test-only items), battle-held.test.mjs (each new
+    item by name), data-checks, held-items, type-rename, atlas-rects; the run-start snapshot (the starting bag lists
+    every item: 16 more zeros, and its hash).
+  - Docs: perks-track.md (PK-10 done, "Corrected in PK-10" in 5.8), ROADMAP, STUDIO.md, ART-NOTES.md ("Held item
+    pictures"), TESTING.md.
+- Risky:
+  - **The atlas has no item rectangles left**: a branch or pack naming an item `icon` draws nothing until it gets an
+    `img` (check-data warns). Main's ON-4 did exactly that mid-step (Form 99-A on i_settlement); fixed here.
+  - Held items now act for foes too (they always did for damage, money and stat rows); a trainer given Express Pass or
+    Party Balloon would use them. No trainer holds one today.
+  - Express Pass adds rolls to the battle's stream only when something holds it; golden battles unchanged.
+  - Party Balloon blocks damaging moves only (a status move of its type still lands); the AI sees 0 damage while it
+    floats, so a foe stops using Ground moves on it.
+  - The Billie sheet's held line (14 px), the Trainer card's list (24) and the run start's packing list (30) now draw
+    the new SVGs at sizes that aren't multiples of 36 (they drew the atlas before): small text rows, left as they were.
+  - In the Studio, undoing a step that added a data key (a new item) rebuilds the whole data and marks the rigs dirty,
+    so the next Save writes rigs.js and rigs-next.js back unchanged (seen in the items check: "blobs" x3). Existing
+    behaviour (studio-app.js restoreParts), not this step's.
+- Verified: after every change lint, typecheck and `npm test` (1868 at the start, 1934 at the end with PK-6 merged;
+  all passing but the 1,000-maps timing test, main's known flake, which failed only while a smoke ran beside it and
+  passed alone); before every commit check:modules, format:check, check:data (179 files fine) and build; check:smoke
+  on every commit touching game/ (run on that commit in its own worktree: "no problems" each time, 446-502 s), also
+  on the merged head. `node tools/build-icons.mjs items --check` fine. `check-studio-github.py
+  --only=items,icons,art_browser,atlas,relics` ok. `npm run test:slow` 108/108. `check:ui`: 16 pictures differ
+  (case, alive and loading pages), the same 16 on origin/main and on this branch's first merge commit: main's.
+  Full quick check (before the last merges, at dd77f926): 42 steps, 38 passed; the four PROBLEMs are the four
+  recorded as main's since PK-1 (Terraces "props in the air: train_station", RL-8 "crossed into Thicket Route but its
+  view never showed", "room light", Battle music "wild: no battle cue").
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 25 pictures** (validation/icon-sheets/items-light.png and -dark.png; ART-NOTES.md "Held item pictures"
+    lists each): weakest reads Garden Trowel (could pass for a hammer), Snack Pack (a puffed bag) and Ankle Weights (a
+    cuff). Redraw any in the Studio's items editor (Edit art).
+  - Names and lines as drafted in 5.8; Express Pass's text says "each turn"; Ankle Weights' "moves after the others"
+    (not "always": a priority move still goes first); Complaint Form's "once a battle".
+  - Tiers: the 9 boosters common, the 7 tricks uncommon (Answer 5). Prices: boosters 800, tricks 1000, Seatbelt 1200.
+  - Battle lines: "X held on with its Seatbelt!", "Y was hurt by X's Cactus Keyring.", "Complaint Form: X's Attack
+    rose sharply.", "X floated clear on its Party Balloon." / "X's Party Balloon popped!", "X restored HP with its
+    Costume Fangs.", "X's Express Pass let it go first!".
+  - The held kinds stay out of FX_KINDS (a Perk can't name them); immune and first read their own way on a hold row.
+  - Every i_ rectangle retired, including the six finance-era ones nothing used; Form 99-A drawn rather than its
+    rectangle kept.
+- Phone checks to do (listed, not waited for): the Bag and a reward pick's held cards with the new pictures, a battle
+  with Party Balloon (the miss line) and Express Pass, the Billie sheet's held line; light and dark themes.
+- Next: the items lane is finished. PR #310 carries PK-11 and PK-10 into `track/perks`; the Perk lane goes on there
+  (PK-6 now). PK-8's set rows (`heldBoost`) will read held items.
+### Perks track PK-11 - Bag item icons (the items lane) - 2026-10-28
+Branch `track/perks-items` (this session's outcome branch, made from `track/perks` at 8af07402; origin/main 48ded9d2
+merged in first: WM-5b's run-map.js imports and studio/art-code-refs.json were the conflicts). The second lane beside
+the Perk waves (the owner, 2026-10-28: "2 lanes": PK-11 then PK-10 here, the Perk steps on `track/perks`). Started by
+PK-0's session under the owner's standing instruction (perks-track.md section 10): no Plan Mode, the plan below written
+first and carried out. Details and the brief's corrections: perks-track.md 5.10, "Corrected in PK-11".
+- The plan (as set at the start): (1) merge main; (2) `--sheet` names items from items.json; (3) the 13 grids in
+  tools/art/icon-grids/items.json (section 6's rules); (4) `img` on the 13, the types, a data check like dataPerkArt,
+  the SVGs written; (5) the screens at whole multiples (Bag 36, reward cards 72; shop already 36) and a check-fast
+  assertion; (6) the Studio: the items editor's picture with Edit art (the icon editor and art browser already knew
+  art/items), its checks; (7) the atlas's rectangles retired through the atlas editor's gate (`atlasUses`), keeping
+  those held items still draw; (8) contact sheets; (9) docs. One cause per commit, no renames.
+- Changed (9 commits after the merge):
+  - **tools/build-icons.mjs** `--sheet` names the items folder from items.json (Bag item, or a held item's tier).
+  - **Art**: tools/art/icon-grids/items.json (13 grids, drawn with octagons and 45-degree shapes); game/art/items/*.svg
+    written by `node tools/build-icons.mjs items`.
+  - **Data**: items.json `img` on the 13 (and their `icon` dropped once the atlas retired); game-data.d.ts `Item.img`,
+    `Item.icon` optional; data-checks.js `dataItemArt` (items.json has no schema, so it checks the path's form,
+    `items/<id>.svg`, as well as there-and-an-icon; a Bag item without `img` warns; held items wait for PK-10), run by
+    check-data; its test.
+  - **Screens**: `itemIcon` default 36; the Bag 36 (was 30), reward cards 72 (was 40), the battle's Bag 36 (was 32),
+    the Billie sheet's use and give lists 36 (was 34). check-fast's screens step checks the Bag rows at 36 px.
+  - **Studio**: the items editor (data-editors.js `itemPicHTML`, `itemArtButtonsHTML`, `itemArtKey`): an item's own
+    picture at 72 and 36 px with **Edit art**, no atlas Icon field; **Draw one** (a blank art/items/<id>.svg, two undo
+    steps) replaced the PNG upload; **Use an atlas icon** only while the rectangle exists; a new item starts with no
+    atlas icon ("No picture"). studio.css sizes; icon-editor.js's comment. check-studio-github.py: a new `items`
+    step; `icons` paints an item's picture; `art_browser` checks Used by items.json and Edit icon.
+  - **Atlas**: atlas-rects.js `atlasUses`: an item with `img` uses no key (its test); the 9 rectangles (i_potion,
+    i_hipotion, i_salve, i_tonic, i_tea, i_revive, i_maxrevive, i_stone, i_remedy) left art/manifest.js and their
+    pixels left art/icons/icons.png; i_pretzel, i_trailmix, i_bell stay (Leftover Sandwich, Snack Pack, Lucky Coin).
+  - **validation/icon-sheets/items-{light,dark}.png**: the contact sheets.
+  - Docs: perks-track.md (PK-11 done, "Corrected in PK-11" in 5.10), ROADMAP, STUDIO.md, ART-NOTES.md ("Bag item
+    pictures"), TESTING.md.
+- Risky:
+  - **Merging with the Perk lane**: both lanes touch perks-track.md (section 9's rows, different lines), ROADMAP's
+    Perks paragraph (this lane added its own lines after "PK-5 ... next."), HANDOFF.md's top, studio/art-code-refs.json
+    (regenerate with `node tools/art-code-refs.mjs`, never by hand) and game/js/hooks.js (`npm run modules`; this lane
+    added `iconEditOpen` and `iconSrc` to it).
+  - The atlas pixels are gone from icons.png: a branch still naming one of the 9 keys draws an empty 1x1 (none on
+    main or `track/perks` at 8af07402).
+  - In the Studio, undoing a just-drawn (unsaved, new) picture **after** closing the icon editor makes the art browser
+    ask the site for the file once (a console 404); undone with the editor open, nothing. Seen while writing the
+    items check (it undoes with the editor open, as the icons check's New icon does); the same holds for a Perk's
+    Draw one. Not fixed (the art browser's, not this step's).
+  - studio/art-code-refs.json now lists `items/*` at atlas-rects.js (`'items/' + id` in a message): a hint, harmless.
+  - Every picture is new art for the owner's eye; nothing checked on a phone yet.
+- Verified: after every change lint (eslint, names, ui-lint, unused CSS, art-code-refs), typecheck and `npm test`
+  (1726 at the start, 1728 at the end, all passing); before every commit touching game/ check:modules, format:check,
+  check:data (176 files fine) and build, and `check:smoke` 7/7 (Python Playwright 1.63.0). `node tools/build-icons.mjs
+  items --check` fine. check-fast `screens` (the Bag rows at 36 px) and `Perks` passed; Blake's run (a reward pick)
+  passed. `check:ui` passed (129 pictures). `check-studio-github.py --only=items,icons,art_browser,relics` and
+  `--only=atlas,items,studio_test` ok. `art-unused.mjs --check`: 0 unused, 0 missing. Full quick check on a61e1644:
+  42 steps, 36 passed. Four PROBLEMs are the four PK-1/PK-2 recorded as main's (Terraces "props in the air:
+  train_station", RL-8 "crossed into Lakeside Route but its view never showed", "room light", Battle music "the drums
+  never came in on a throw"). Two more were load flakes: "Actions sheet: a run's sheet has no day chip" (its known 5 s
+  wait) passed on a re-run, and "Ground tiles ... the lab's room didn't open in place" failed twice beside a second
+  browser (boots 72-77 s) but passed alone, on main 48ded9d2, on track/perks 8af07402, on this branch's merge commit
+  and on 2b15598f in a clean worktree. CI on #310: lint and rules green; smoke red on the two Studio steps main's run
+  2592 (5b0d43e) also fails ("The Studio's world map look": no Auto landmark for Copperleaf, and the Camera section,
+  with 404s for `game/art/billionaires/*.png`), noted on the PR. `npm run test:slow` not run (no scene, map or run-sim
+  code changed).
+- Decided for the owner, to review (the standing instruction; each the recommended or simplest option):
+  - **The 13 pictures** (validation/icon-sheets/items-light.png and -dark.png; redraw any in the Studio's icon editor
+    or the items editor's Edit art): Potion (a round red flask, steel neck, wood cork), Hi-Potion (a tall violet
+    bottle, a gold star on a cream label, slate cap), Burn Salve (a wide blue tin, steel lid, a blue drop on a cream
+    label), Nerve Tonic (a gold dropper bottle with a red bulb, a slate bolt on its label), Wake-Up Tea (a green mug,
+    the tea bag's gold tag over the rim), Revive (a red heart, a cream cross), Max Revive (a gold heart with blue
+    wings, a cream cross), Full Remedy (a red and teal capsule on the 45-degree line), Shining Stone (a violet cut gem
+    with a gold glint), Protein Bar (a red wrapped bar on the 45-degree line, crimped steel ends, a gold stripe), Trail
+    Mix (a wood bowl heaped with nuts, raisins and a cranberry), Pretzel (a dark gold knot, three holes, salt), Repair
+    Kit (a red toolbox, slate handle, steel latch and wrench). Weakest reads: Max Revive's small heart, Trail Mix.
+  - The battle's Bag and the Billie sheet's lists also moved to 36 px (whole multiples; not in the brief).
+  - A held item without `img` gets no check-data warning until PK-10 (eight warnings would have changed every
+    check-data snapshot).
+  - The Studio's PNG upload for items is gone (Draw one and Edit art instead): an item's picture is an icon.
+  - The retired rectangles' pixels were cleared from icons.png, not just their rectangles.
+  - No items schema added (the path is checked in `dataItemArt`).
+- Phone checks to do (listed, not waited for): the Bag's rows at 36 px, a run shop's item rows, a reward pick with an
+  item card at 72 px, the battle's Bag; light and dark themes.
+- Next: PK-10 (held items: 16 new, the 8 existing redrawn, the held kinds, rarity tiers) on `track/perks-items`; it
+  retires i_pretzel, i_trailmix, i_bell and the other held rectangles the same way. Main moved on during this
+  session (5b0d43e, #305: the Style track and the Perks PR #301 merged): PK-10 merges it first.
 
 ### VFX track VFX-11 - Families x types: 16 families, 11 type kits, every move's anim, projectiles, rays and lights in GL - 2026-10-28
 Branch `track/vfx`, the main line of wave 2 (VFX-14 on `claude/vfx-14-statuses` and VFX-16 on
