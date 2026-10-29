@@ -48,6 +48,13 @@ before the owner has played the first cut on the phone.** MG-3 (towns from the g
 town node needs it.
 
 ## Tracks alongside
+- **Fluid track** (docs/phases/fluid-track.md, the owner's brief and answers 2026-10-29): the frame rate you set held
+  (a steady half rate when it can't be), assets batched under the 400-draw budget, the draw order the phone's GPU
+  wants (no `discard` in opaque shaders, sky last), and a fluid UI (the world frozen behind menus, no live blur over
+  the moving 3D on phones). FL-0 (the plan, research and verification; docs only) done 2026-10-29 on
+  `ccr-36d73c36-2xv56p`. Next: FL-0b (the owner's phone run), then FL-1a..FL-7, about 11-12 sessions; it takes over
+  phase 20's remaining switches (Pictures in batches and Sky last on in FL-2a, the owner's answer). Tag `fluid-done`.
+  Branch `track/fluid`.
 - **Test data track** (docs/phases/test-data-track.md, the owner's brief and answers 2026-10-29): tests and logs
   that give Claude useful bug and speed data on every device. TD-0 (the plan, research and audits; docs only) done
   2026-10-29 on `ccr-b95ade74-f8w3vy`. TD-1 quick fixes (the log reader, a crash marker that survives a reload,
@@ -503,7 +510,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 17 | 17-robots | prototype built, unapproved, untagged, debug-only | absorbed: RL-14 (bots as enemies, the Voltron); playable bots much later |
 | 18 | archive/18-friend-trading-and-battles | not started | absorbed: the online track (docs/phases/online-track.md, 2026-10-26): ON-4 friend trades, ON-6 live friend battles |
 | 19 | 19-battle-core (branch `plan/engine-phases-19-21`) | plan only | absorbed: RL-2, RL-4 (core), RL-12 (effect handlers), RL-15 (replay) |
-| 20 | 20-renderer-batching (branch `track/renderer`) | A-C, H and rounds R1-R3 done; R4 defaults lane done (2026-10-26): models, shadows, rain, phone lamps and battle rigs on their batched paths only, three losing paths deleted; D2 built (2026-10-27): the bloom, rays and grade in `mediump` behind `quality.mediump` (off); left: Medium precision, Sky last, Pictures in batches, Steady lamps, the phone pixel budget (owner's checks), then `phase-20-done` | active: R4, the owner's checks |
+| 20 | 20-renderer-batching (branch `track/renderer`) | Remaining switches decided in the fluid track (FL-2a, FL-7; docs/phases/fluid-track.md). A-C, H and rounds R1-R3 done; R4 defaults lane done (2026-10-26): models, shadows, rain, phone lamps and battle rigs on their batched paths only, three losing paths deleted; D2 built (2026-10-27): the bloom, rays and grade in `mediump` behind `quality.mediump` (off); left: Medium precision, Sky last, Pictures in batches, Steady lamps, the phone pixel budget (owner's checks), then `phase-20-done` | active: R4, the owner's checks |
 | 21 | 21-texture-atlases-and-ktx2 (branch `plan/engine-phases-19-21`) | plan only | parked: after phase 20 |
 
 ## Questions I want to be asked (do not decide these alone)

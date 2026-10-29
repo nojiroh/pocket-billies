@@ -2,6 +2,40 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-0 - the plan: hold the frame rate you set, batching, render layering, a fluid UI - 2026-10-29
+Branch `ccr-36d73c36-2xv56p` (the cloud session's own, at main 73b2f8b1). Plan approved in Plan Mode with the owner's
+answers. Docs only: the plan, web research and read-only code studies (nine studies, seven verifiers that tried to
+refute the key claims, a plan critic); no code changed.
+- Changed: docs/phases/fluid-track.md (new: the owner's answers, the numbers, "are assets batched correctly?" as a
+  table, render layering from the research against this game's frame, why the set fps isn't held, sessions
+  FL-0b..FL-7 with gates, Ask me before, sources); ROADMAP's "Fluid track" row (top of "Tracks alongside") and a
+  pointer on phase 20's row; BRANCHES rows for `track/fluid` and this branch.
+- The owner's answers: a steady half rate when the set rate can't be held; on phones automatic quality may thin far
+  props and folk, use a 2048 far shadow map, tint the HUD glass while walking and draw far trees as one picture;
+  Pictures in batches and Sky last on by default (after three small fixes); the world frozen behind menus and windows.
+- Found, not changed (all in the track file with file:line):
+  - Batching: pictures are not batched by default (`quality.spriteInstances` off): one draw and about 30 GL calls
+    each; leaf clumps are 260 separate textures; each fountain is 151-247 draws; spin layers 96 where 7 would do; the
+    ground (316k triangles) is never culled and drawn in up to 5 passes. Models, shadow pictures, grass, rain:
+    batched.
+  - Every depth-writing scene shader contains `discard`, so the Adreno's LRZ never gets a write; the sky is drawn
+    first; cut-outs come before the opaque models.
+  - Chrome and Opera on Android give a page every other refresh above about 108 Hz (120 → 60): the 120 option gives
+    60 there. iOS about 60, 30 in Low Power Mode. Firefox adds no cap.
+  - Automatic quality aims at 60 at most (not the setting) except on Balanced, counts background jobs as frame cost,
+    and steps down each time a menu closes (a Node simulation reaches the floor in 8 cycles).
+  - The scheduler catches up after a late frame (25 then 8 ms); 60 on a 90 Hz screen runs at 45; `gl.getError` and a
+    fully wrapped counted frame once a second for every player; a 4096² far shadow map plus a copy a frame on phones.
+  - UI: the world draws behind menus (20 fps behind windows; a window over a screen back to 20); the theme sheet's
+    12 px blur beats the phone's 9 px; the Actions button blurs behind an opaque fill; battle plates force layout
+    every frame and that time lowers the battle's quality.
+- Risky: nothing changed in code. Counts quoted from R2/R4 are headless and from an older commit; FL-2a re-measures.
+- Verified: docs only; the key claims re-checked by the verifiers at 73b2f8b1 (corrections are in the track file).
+- Next: FL-0b, the owner's phone run below; then FL-1a on `track/fluid` (the owner makes it from this branch).
+- For the owner on the phone: run the Graphics cost test and the Diagnostics on the Android phone, then send the
+  debug log of a Copperleaf walk by day. Note the browser and whether battery saver is on. Then make `track/fluid`
+  from `ccr-36d73c36-2xv56p` and start FL-1a there.
+
 ### Fix - Kappi's stall clock counts only free walking - 2026-10-29
 Branch `fix/kappi-stall-clock` from main 7f661239, PR into main. From the owner's first phone log of the new intro
 (deploy 7f661239, Android, Adreno 750): New game -> the crash scene at 15.6 s -> Cartotter picked at 42.8 s (27 s into
