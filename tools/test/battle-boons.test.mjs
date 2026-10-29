@@ -3,7 +3,7 @@
 // curses of boons.json, each working and running out, the appeal, Correction Fluid, and everything at once finite.
 import assert from 'node:assert/strict';
 import { beforeEach, test } from 'node:test';
-import { data, fn, hooks, reseed, said, startedSave } from './setup-real.mjs';
+import { GAME_DATA, data, fn, hooks, modules, reseed, said, startedSave } from './setup-real.mjs';
 
 const { RULES, SPECIES } = data;
 const starter = () => Object.keys(SPECIES).find(k => SPECIES[k].line === RULES.start.starters[0]);
@@ -84,4 +84,49 @@ test('PK-9 last: on turn 1 yours move after a slower foe (with a line); from tur
       fn('runTurn')([{ who: 0, k: 'move', mid: H, tk: 1 }], b);
       assert.match(order(b), /^0,1/, `turn 2, held ${held}`);
     });
+});
+
+/* ---------- the run ---------- */
+
+/** a started save on a fresh run holding these Perks (its map made) */
+function runSave(perkIds = []) {
+  reseed(3);
+  const s = startedSave(starter(), 30),
+    G = GAME_DATA;
+  s.run = modules['run-state'].newRun('BOONSEED01', 1, 1, { team: [] });
+  s.run.perks = perkIds;
+  modules['run-map'].runMapStart(s.run, { nodeTypes: G.nodeTypes, biomes: G.biomes, rules: G.rules.run });
+  return s;
+}
+const top = m => fn('maxHp')(m);
+
+/* ---------- turnHurt at arrive ---------- */
+
+test('PK-9 turnHurt at arrive: each place walked into costs a share of HP (rounded up), never below 1 HP', () => {
+  const L = modules['run-loop'],
+    { P } = perks({ id: 'test_cuts', name: 'Test Cuts', fx: [{ kind: 'turnHurt', share: 0.05, when: 'arrive' }] });
+  withPerks(P, () => {
+    const s = runSave(['test_cuts']),
+      m = s.team[0],
+      out = {};
+    m.hp = top(m);
+    L.runArriveFx(s, data.PERKS, out);
+    assert.equal(m.hp, top(m) - Math.ceil(top(m) * 0.05));
+    assert.equal(out.hurt, Math.ceil(top(m) * 0.05));
+    assert.deepEqual(out.hurtBy, ['test_cuts']);
+    m.hp = 2;
+    L.runArriveFx(s, data.PERKS, out);
+    assert.equal(m.hp, 1, 'never below 1 HP');
+    m.hp = 0;
+    L.runArriveFx(s, data.PERKS, out);
+    assert.equal(m.hp, 0, 'a fainted Billie is left as it is');
+    /* in battle a row with a when is read only at its moment: no turn-end hurt */
+    const fx = fn('fxOfRun')(s.run, data.PERKS);
+    assert.equal(modules.effects.fxAt(fx, {}, {}).length, 0);
+  });
+  const t = runSave([]),
+    n = t.team[0];
+  n.hp = top(n);
+  L.runArriveFx(t, data.PERKS, {});
+  assert.equal(n.hp, top(n), 'without the row nothing is lost');
 });

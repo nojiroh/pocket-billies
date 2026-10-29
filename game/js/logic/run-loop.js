@@ -58,6 +58,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   runArriveHeal: [() => runArriveHeal, v => (runArriveHeal = v)],
   // @ts-expect-error -- replaced on purpose
+  runArriveHurt: [() => runArriveHurt, v => (runArriveHurt = v)],
+  // @ts-expect-error -- replaced on purpose
   runBattleExtra: [() => runBattleExtra, v => (runBattleExtra = v)],
   runBattleSeed: [() => runBattleSeed],
   // @ts-expect-error -- replaced on purpose
@@ -135,6 +137,19 @@ export function runArriveHeal(team, share) {
   }
   return gained;
 }
+/** PK-9: a turnHurt row at arrive (the curse Paper Cuts): every Billie standing loses `share` of its HP (rounded up),
+ * never below 1 HP; returns the HP lost @param {Billy[]} team @param {number} share */
+export function runArriveHurt(team, share) {
+  let lost = 0;
+  if (!(share > 0)) return 0;
+  for (const m of team) {
+    if (m.hp <= 0) continue;
+    const to = Math.max(1, m.hp - Math.ceil(maxHp(m) * share));
+    lost += m.hp - to;
+    m.hp = to;
+  }
+  return lost;
+}
 /** PK-1: what a moment on the run knows for a row's `if` (logic/effects.js fxCond): your team's types, the place you
  * stand in (its node type) and its weather today; `more` adds the moment's own (a won battle's foe...)
  * @param {SaveData} s @param {any} [more] @returns {import('./effects.js').FxCtx} */
@@ -158,22 +173,25 @@ export function fxRunCtx(s, more) {
  * when below 0 (`cost`: what was taken, never more than was carried).
  * @param {SaveData} s @param {Record<string, any>} perks @param {string} when @param {any} [more]
  * @param {string} [only]
- * @returns {{ rows: any[], hp: number, money: number, cost: number, items: Record<string, number> }}
+ * @returns {{ rows: any[], hp: number, money: number, cost: number, items: Record<string, number>, hurt: number }}
  */
 export function runFxMoment(s, perks, when, more, only) {
   const fx = s.run ? fxOfRun(s.run, perks) : null;
   /* nothing of that moment: no marks made */
   if (!fx || !fx.some(f => f.when === when || (f.grow && (f.grow.on === when || f.grow.reset === when))))
-    return { rows: [], hp: 0, money: 0, cost: 0, items: {} };
+    return { rows: [], hp: 0, money: 0, cost: 0, items: {}, hurt: 0 };
   const rows = fxFire(fx, when, fxRunCtx(s, more), { run: fxRunMarks(s.run) }, only),
     se = s.se,
     /** @type {Record<string, number>} */
     items = {};
   let hp = 0,
     money = 0,
-    cost = 0;
+    cost = 0,
+    hurt = 0;
   for (const f of rows) {
     if (f.kind === 'heal') hp += runArriveHeal(s.team, f.share);
+    /* PK-9: a turnHurt row at its moment (Paper Cuts: each place you walk into costs HP) */
+    if (f.kind === 'turnHurt') hurt += runArriveHurt(s.team, f.share);
     money += fxMoneyShare(f, se);
     /* PK-7: a money row's add: Moneys paid, or charged when below 0 (Subscription Box) */
     if (f.kind === 'money' && typeof f.add === 'number') {
@@ -199,7 +217,7 @@ export function runFxMoment(s, perks, when, more, only) {
   /* PK-7: a charge takes what is carried, never below 0 */
   cost = Math.min(cost, Math.max(0, s.se));
   s.se -= cost;
-  return { rows, hp, money, cost, items };
+  return { rows, hp, money, cost, items, hurt };
 }
 /** PK-7: what a loot row brings as it acts: n items (1 when not given) drawn by weight from its events.json loot table
  * (`table`: the events' `loot` command's tables, common...), from the run's own stream for the row and the place
@@ -263,7 +281,7 @@ export const runBuyFx = (s, perks, price = 0) => {
  * heal rows whose conditions hold here, then the arrive moment's rows. PK-5: `out.money` gets the Moneys its money
  * share rows paid (Tip Jar); PK-7: `out.cost` what they charged (Subscription Box) @param {SaveData} s
  * @param {Record<string, any>} perks perks.json
- * @param {{ money?: number, cost?: number, items?: Record<string, number> }} [out] */
+ * @param {{ money?: number, cost?: number, items?: Record<string, number>, hurt?: number, hurtBy?: string[] }} [out] */
 export function runArriveFx(s, perks, out) {
   /* RL-12b: an event's boons count one place down first (logic/run-enc.js) */
   if (s.run) encArrive(s.run);
@@ -276,6 +294,9 @@ export function runArriveFx(s, perks, out) {
     /* PK-7: what the Perks charged, and what their loot rows brought (Subscription Box) */
     out.cost = m.cost;
     out.items = m.items;
+    /* PK-9: what the turnHurt rows at arrive cost, and whose they were (Paper Cuts) */
+    out.hurt = m.hurt;
+    out.hurtBy = [...new Set(m.rows.filter(f => f.kind === 'turnHurt').map(f => f.src))];
   }
   return healed + m.hp;
 }

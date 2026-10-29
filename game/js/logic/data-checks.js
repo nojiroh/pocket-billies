@@ -2547,6 +2547,8 @@ export const FX_WHEN_KINDS = /** @type {Record<string, readonly string[]>} */ ({
   give: ['take'],
   /* PK-7: a random item on walking into a place */
   loot: ['arrive'],
+  /* PK-9: HP lost on walking into a place (the curse Paper Cuts) */
+  turnHurt: ['arrive'],
   /* PK-5: a missed throw's pyramid back */
   refund: ['throwMiss'],
 });

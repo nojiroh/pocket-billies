@@ -58,6 +58,7 @@ import {
   BATTLE_RULES,
   battleHost,
   battleSay,
+  fxSrcName,
   joinNames,
   liveActors,
   newBattle,
@@ -767,7 +768,7 @@ function runBattleAgain() {
 export const runClinicEach = () => fxRunPrice(saveData.run, PERKS, 'heal', RULES.run.healCost);
 /** walking into a place on a run: a Perk's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
-  const out = { money: 0, cost: 0, items: {} },
+  const out = { money: 0, cost: 0, items: {}, hurt: 0, hurtBy: [] },
     gained = runArriveFx(saveData, PERKS, out);
   if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
   /* PK-5: a money share row (Tip Jar) */
@@ -777,6 +778,8 @@ export function runArrivedFx() {
   if (got) toast(`Your Perks brought you ${got}.`);
   /* PK-7: a money row that charges (Subscription Box) */
   if (out.cost > 0) toast(`Your Perks charged you ${plural(out.cost, 'Money')}.`);
+  /* PK-9: a curse's turnHurt row at arrive (Paper Cuts) */
+  if (out.hurt > 0) toast(`${out.hurtBy.map(fxSrcName).join(' and ')}: your team lost ${formatNumber(out.hurt)} HP.`);
   /* TW-3: a parcel delivered (quest-board.js) */
   if (typeof questArrived === 'function') questArrived();
 }
