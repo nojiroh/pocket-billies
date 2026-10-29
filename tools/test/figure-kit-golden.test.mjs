@@ -93,3 +93,27 @@ test('figure kit golden: every head with every build', t => {
       out[head + '/' + build] = hash(lookFigure(base, W.items, { name: head + build, figure: { head, build } }));
   t.assert.snapshot(out);
 });
+
+/* CH-5b: the rules between garments (a jacket hides the collar and dresses the arms, a long coat the belt, the apron
+   neither), every shoe under the flair's boot cuffs, and each look without its slot's item (the kit's defaults) */
+test('figure kit golden: every top and bottom under every outer', t => {
+  const base = PEOPLE.chosen.look,
+    out = {};
+  for (const outer of [null, ...ids('outer')]) {
+    for (const top of ids('top')) {
+      const look = { ...base, wear: { ...base.wear, outer, top } };
+      out[outer + '/' + top] = hash(lookFigure(look, W.items, { name: 'o' + top }));
+    }
+    for (const bottom of ids('bottom')) {
+      const look = { ...base, wear: { ...base.wear, outer, bottom } };
+      out[outer + '/' + bottom] = hash(lookFigure(look, W.items, { name: 'o' + bottom }));
+      out[outer + '/' + bottom + '+flair'] = hash(lookFigure(look, W.items, { name: 'o' + bottom, flair: FLAIR }));
+    }
+  }
+  for (const slot of ['top', 'outer', 'bottom', 'shoes', 'neck', 'hat']) {
+    const look = { ...base, wear: { ...base.wear, [slot]: null } };
+    out['no ' + slot] = hash(lookFigure(look, W.items, { name: 'none' }));
+    out['no ' + slot + '+flair'] = hash(lookFigure(look, W.items, { name: 'none', flair: FLAIR }));
+  }
+  t.assert.snapshot(out);
+});
