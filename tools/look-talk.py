@@ -12,9 +12,12 @@ with the director's state, the emote's size in device pixels and the dimmed list
     python3 tools/look-talk.py --dark           # the dark theme
     python3 tools/look-talk.py --only=stack     # only the stack
     python3 tools/look-talk.py --only=faces     # only the faces
+    python3 tools/look-talk.py --only=faces --figures[=rogue]  # DL-6: the faces with figure close-ups (the mannequin
+                                                # by default), each portrait also pictured alone, 4x
 
 Run `npm run data` first. Uses the browser checks' page set-up (tools/browser_check.py: the clock, no accounts, the
 test globals). Nothing is sent anywhere."""
+import base64
 import sys
 from pathlib import Path
 
@@ -24,6 +27,8 @@ import browser_check as CF  # noqa: E402
 ARGS = sys.argv[1:]
 ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only=')), None)
 DARK = '--dark' in ARGS
+FIGS = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a.startswith('--figures')), None)
+PRE = f'figures-{FIGS}-' if FIGS else ''
 OUT = ROOT / 'validation' / ('look-talk-dark' if DARK else 'look-talk')
 SKINS = ['folk', 'chosen', 'kappi', 'blake', 'bureau', 'narration', 'you']
 SHOTS = [(f'1-{s}', s, '') for s in SKINS] + [
@@ -104,22 +109,36 @@ def faces(b, base, errs):
     # the page records each line's face every frame (asking from here is slower than the letters), and holds an emote's
     # fade until its picture is taken
     pg.add_init_script("window.__rec=new Map();(function f(){const B=window.talkBox,D=B&&B.dir,C=B&&B.cur;if(D&&C){const r=window.__rec.get(C)||{m:new Set(),e:[]};window.__rec.set(C,r);if(C.typing)r.m.add(D.at(performance.now()).mouth);const e=document.querySelector('.talk-box:not(.talk-old) .talk-emote');if(e&&!r.e.includes(e.dataset.emote)){r.e.push(e.dataset.emote);for(const a of e.getAnimations())a.effect.getTiming().delay?a.pause():a.finish();e.dataset.held=''}}requestAnimationFrame(f)})()")
-    pg.goto(f'{base}/?fixture=talk&faces=1')
+    pg.goto(f'{base}/?fixture=talk&faces=1' + (f'&figures={FIGS}' if FIGS else ''))
     if DARK: pg.evaluate("document.documentElement.dataset.theme='dark'")
     for i in range(1, 6):
         if not CF.until(pg, "typeof talkBox!=='undefined'&&talkBox.cur&&!talkBox.cur.wait&&talkBox.cur.n>3&&!document.body.classList.contains('ld-on')&&loadingScreen.el===null", 120):
             CF.log(f'faces {i}: the line never started'); break
         if pg.evaluate("!!document.querySelector('.talk-box:not(.talk-old) .talk-emote')") or CF.until(pg, "!!document.querySelector('.talk-box:not(.talk-old) .talk-emote')", 3):
-            pg.screenshot(path=str(OUT / f'4-faces-{i}-emote.png'), clip={'x': 0, 'y': 244, 'width': 390, 'height': 600})
+            pg.screenshot(path=str(OUT / f'{PRE}4-faces-{i}-emote.png'), clip={'x': 0, 'y': 244, 'width': 390, 'height': 600})
             CF.log(f'faces {i}: the emote {pg.evaluate(FACE_STATE)["emote"]}')
             pg.evaluate("for(const e of document.querySelectorAll('.talk-emote[data-held]')){delete e.dataset.held;for(const a of e.getAnimations())a.play()}")
         CF.until(pg, "talkBox.cur&&!talkBox.cur.typing", 30)
         mouths, emotes = pg.evaluate("(()=>{const r=window.__rec.get(talkBox.cur)||{m:new Set(),e:[]};return [[...r.m].map(String),r.e]})()")
         pg.wait_for_timeout(250)
-        pg.screenshot(path=str(OUT / f'4-faces-{i}.png'), clip={'x': 0, 'y': 244, 'width': 390, 'height': 600})
+        pg.screenshot(path=str(OUT / f'{PRE}4-faces-{i}.png'), clip={'x': 0, 'y': 244, 'width': 390, 'height': 600})
+        if FIGS:
+            # the portrait alone, 4x and crisp (its canvas copied out, each pixel a 4x4 block), and the baker's numbers
+            url = pg.evaluate("(()=>{const c=document.querySelector('.talk-box:not(.talk-old) .talk-por');if(!c||!c.width)return null;const o=document.createElement('canvas');o.width=c.width*4;o.height=c.height*4;const x=o.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(c,0,0,o.width,o.height);return o.toDataURL()})()")
+            if url: (OUT / f'{PRE}4-faces-{i}-portrait.png').write_bytes(base64.b64decode(url.split(',', 1)[1]))
+            CF.log(f'faces {i}: figures {pg.evaluate("figureReport()")}')
         CF.log(f'faces {i}: mouths while typing {sorted(str(m) for m in mouths)}, emotes {emotes}; {pg.evaluate(FACE_STATE)}')
         pg.evaluate("window.__st=talkBox.cur;talkBox.cur&&talkBox.cur.tap();0")
         CF.until(pg, "talkBox.cur!==window.__st", 10)
+    if FIGS:
+        # DL-6: the head's hits and held poses as the close-up shows them (a headless page ticks too seldom to catch a
+        # hit while it plays): each baked at once and painted with a face, side by side, 4x
+        url = pg.evaluate(f"""(()=>{{const H=[['rest',0,0,0,'open','shut'],['talk',0,0,0,'open','open'],['blink',0,0,0,'shut','shut'],['nod',0,8,0,'open','shut'],['jolt',0,-8,0,'open','open'],['shake-',-12,0,0,'open','shut'],['shake+',12,0,0,'open','shut'],['droop',0,8,0,'open','shut'],['tilt',0,0,8,'open','shut']],B=figureBaker,
+          s=4,o=document.createElement('canvas');o.width=H.length*64*s;o.height=64*s;const x=o.getContext('2d');x.imageSmoothingEnabled=false;x.fillStyle='#f4ecd8';x.fillRect(0,0,o.width,o.height);
+          H.forEach(([n,yaw,pitch,roll,eyes,mouth],i)=>{{let im=null;for(let k=0;k<3;k++){{B.bustAt=-1e9;im=figureBustPicture('{FIGS}',{{yaw,pitch,roll}},figureStyle());if(im&&im.head.yaw===yaw&&im.head.pitch===pitch&&im.head.roll===roll)break}}
+            if(!im)return;const c=figureBustFace(document.createElement('canvas'),im,{{eyes,mouth}});x.drawImage(c,i*64*s,0,64*s,64*s)}});return o.toDataURL()}})()""")
+        (OUT / f'{PRE}5-heads.png').write_bytes(base64.b64decode(url.split(',', 1)[1]))
+        CF.log(f'heads: rest, talk, blink, nod, jolt, shake -12 and +12, droop, tilt; figures {pg.evaluate("figureReport()")}')
     ctx.close()
 
 

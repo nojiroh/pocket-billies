@@ -592,7 +592,7 @@ export function figureBustPicture(name, head, style = 'pixel') {
     const h = FIGURE_BUSTS.has(base + headKey(rest)) ? want : rest,
       S = bustSize(Fig.ext),
       clip = Fig.kind === 'code' ? 'idle' : Fig.clips.idle ? 'idle' : Object.keys(Fig.clips)[0],
-      t0 = performance.now(),
+      ms0 = B.ms,
       im = bakeFigure(Fig, clip, 0, { rel: Math.PI - FIGURE_BUST_TURN, tilt: 0 }, S.ppm, outline, style, {
         bust: S,
         head: h,
@@ -601,7 +601,8 @@ export function figureBustPicture(name, head, style = 'pixel') {
     B.bustAt = now;
     if (im) {
       B.busts++;
-      B.bustMs += performance.now() - t0;
+      /* the bake's own time (as `ms` counts it), not the baker's one-off start */
+      B.bustMs += B.ms - ms0;
       im.head = h;
       FIGURE_BUSTS.set(base + headKey(h), im);
       while (FIGURE_BUSTS.size > FIGURE_BUST_MAX) FIGURE_BUSTS.delete(FIGURE_BUSTS.keys().next().value);

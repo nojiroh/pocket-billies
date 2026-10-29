@@ -210,7 +210,16 @@ export function fixtureStart() {
   if (FIXTURE === 'talk') {
     /* DL-3: &skin= shows a skin's bubble with a line of its own, &style= says it as a shout, a whisper or a thought */
     const q = new URLSearchParams(location.search),
-      pick = /** @type {Record<string, [string, string, any]>} */ ({
+      /* DL-6: &figures=mannequin (or rogue, or 1: the default figure) talks with figure close-ups: Engine > People >
+         Figures and Townsfolk as figures on, as a player's own dials (the fixture's save only) */
+      figs = q.get('figures');
+    if (figs) {
+      const p = (saveData.preferences = saveData.preferences || {}),
+        people = { figures: true, folk: true, ...(/^[a-z]+$/.test(figs) ? { figure: figs } : {}) };
+      p.expert = true;
+      p.eng = { ...(p.eng || {}), people: { ...((p.eng && p.eng.people) || {}), ...people } };
+    }
+    const pick = /** @type {Record<string, [string, string, any]>} */ ({
         chosen: ['chosen', 'This is the dialogue box. The Studio shows it with the look you are editing.', {}],
         kappi: ['kappi', 'Breathe in. The water always knows the way down.', {}],
         blake: ['chad', 'Oh, it’s [b]you[/b] again. Try to keep up this time.', {}],
