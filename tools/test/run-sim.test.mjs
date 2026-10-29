@@ -283,3 +283,23 @@ test('RS-2: a run’s log names its resident (Dottie on a fresh save) and whethe
     for (const p of log.places) if (p.resident) assert.ok(R.towns.includes(p.i));
   }
 });
+
+test('run sim: PK-12: a run can start holding every Perk, with every boon and curse on and a held item; it stays finite', () => {
+  const held = Object.keys(data.ITEMS).find(k => data.ITEMS[k].hold),
+    o = {
+      ...T,
+      policy: 'never-pick',
+      perks: Object.keys(data.PERKS),
+      boons: Object.keys(data.BOONS),
+      held,
+    };
+  for (let k = 0; k < 4; k++) {
+    const { stats: x } = runSim(`SIMALL${k}`, o);
+    assert.deepEqual(x.perks.slice().sort(), Object.keys(data.PERKS).sort(), 'every Perk held to the end');
+    for (const key of ['battles', 'turns', 'se', 'research', 'places', 'days'])
+      assert.ok(Number.isFinite(x[key]) && x[key] >= 0, `${key}: ${x[key]}`);
+    for (const v of [...Object.values(x.moneyIn), ...Object.values(x.moneyOut)]) assert.ok(Number.isFinite(v));
+  }
+  const { stats: plain } = runSim('SIMALL0', { ...T, policy: 'never-pick' });
+  assert.deepEqual(plain.perks, [], 'without the options none');
+});

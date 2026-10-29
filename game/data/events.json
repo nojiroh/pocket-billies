@@ -167,10 +167,7 @@
     {
      "text": "Like and subscribe",
      "cost": 100,
-     "then": [
-      "The Billie looks right at you and nods. Engagement is up. Your team feels faster for a while.",
-      "fx 1 stat stat=hus stages=1"
-     ]
+     "then": ["The Billie looks right at you and nods. Engagement is up. Your team feels faster for a while.","boon camera_ready"]
     },
     {
      "text": "Overload it with Live Wire",
@@ -207,7 +204,7 @@
    "options": [
     {
      "text": "Accept without reading",
-     "then": ["perk","fx 3 price what=shop mult=1.25","Founder: Great! You also agreed to surge pricing. For three places."]
+     "then": ["perk","curse surge_pricing","Founder: Great! You also agreed to surge pricing. For three places."]
     },
     {
      "text": "Read all 400 pages",
@@ -401,11 +398,7 @@
     {"text":"Throw him a rope","then":["It takes a while, and your team is tired after. He tips.","hurt 0.1","money 100"]},
     {
      "text": "Walk away",
-     "then": [
-      "Surveyor: I am filing a complaint! Form 9-C!",
-      "The next clinics will hear about this.",
-      "fx 2 price what=heal mult=1.5"
-     ]
+     "then": ["Surveyor: I am filing a complaint! Form 9-C!","The next clinics will hear about this.","curse clinic_backlog"]
     }
    ],
    "weight": 1,
@@ -417,10 +410,7 @@
    "title": "Motivational Poster Grove",
    "intro": ["Every tree here has a poster nailed to it. HANG IN THERE. HUSTLE. THE GRIND IS THE REWARD."],
    "options": [
-    {
-     "text": "Read them all",
-     "then": ["Your team reads every one. They are furious, and it helps.","fx 1 stat stat=lev stages=1"]
-    },
+    {"text":"Read them all","then":["Your team reads every one. They are furious, and it helps.","boon fired_up"]},
     {
      "text": "Let Regrowth grow over them",
      "need": "type:Grass",
@@ -609,6 +599,157 @@
    "bureau": 1,
    "redact": ["humming"],
    "biomes": ["ridge","canyon","badlands","cave"]
+  },
+  "mandatory_orientation": {
+   "title": "Mandatory Orientation",
+   "intro": [
+    "A folding table blocks the path under a banner: WELCOME, NEW HIRES. An agent taps a laminated badge.",
+    "Agent: You are not on the list, so you must be new. Orientation is mandatory. It is only forty slides."
+   ],
+   "options": [
+    {
+     "text": "Sit through it",
+     "then": [
+      "You sit through all forty. Slide 38 is a photo of a stapler.",
+      "curse mandatory_training",
+      "Agent: Congratulations, you are oriented. Here is your welcome pack.",
+      "loot common"
+     ]
+    },
+    {
+     "text": "Slip the presenter a tip",
+     "cost": 80,
+     "then": ["Agent: I did not see that. Nobody saw that. Between us? You've got this.","boon pep_talk"]
+    },
+    {"text":"Walk around the table","then":["The table is very long. Your team is tired by the end of it.","hurt 0.1"]}
+   ],
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["banner","laminated"]
+  },
+  "routine_audit": {
+   "title": "Routine Audit",
+   "intro": [
+    "A grey van is parked across the road. Two agents in green visors are counting something on an abacus.",
+    "Agent: Random audit. Your winnings, please. All of them, for review."
+   ],
+   "options": [
+    {
+     "text": "Comply",
+     "then": [
+      "The agents count every Money twice and stamp a receipt.",
+      "curse audit_trail",
+      "Agent: Everything is in order. We will be watching your earnings for a while."
+     ]
+    },
+    {
+     "text": "Pay the expedite fee",
+     "cost": 100,
+     "then": ["Agent: Expedited. You were never here. Take a coupon, they just opened a shop.","boon grand_opening"]
+    },
+    {
+     "text": "Make a run for it",
+     "then": [
+      "Agent: Stop! In the name of the Bureau!",
+      "foe bureau_clerk",
+      "Someone filmed the whole chase. It is everywhere by lunch.",
+      "boon viral_moment"
+     ]
+    }
+   ],
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["visors","abacus"]
+  },
+  "please_hold": {
+   "title": "Please Hold",
+   "intro": [
+    "A payphone stands alone in the grass, miles from any wire. It rings as you pass.",
+    "Recorded voice: Thank you for calling the Bureau. Your call is important to us. Please hold."
+   ],
+   "options": [
+    {
+     "text": "Hold",
+     "then": [
+      "You hold. The music is a pan-flute cover of a song you almost know. It gets into your team's heads.",
+      "curse hold_music",
+      "Recorded voice: Your call has been resolved. A gift has been dispatched.",
+      "loot common"
+     ]
+    },
+    {
+     "text": "Press 0 for an operator",
+     "need": "type:Electric",
+     "then": ["Your Electric Billie shorts the line. The phone spits out every coin it ever ate.","money 60"]
+    },
+    {
+     "text": "Hang up",
+     "then": ["You hang up. Something rattles in the coin return: a pyramid, polished to a shine.","boon beginners_luck"]
+    }
+   ],
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["payphone"]
+  },
+  "permit_inspection": {
+   "title": "Permit Inspection",
+   "intro": [
+    "A ring of traffic cones and a tiny desk. An inspector peers at your Perks through a jeweller's loupe.",
+    "Inspector: This one. Your newest. Where is its permit? No permit, no use."
+   ],
+   "options": [
+    {
+     "text": "Hand it over for review",
+     "then": [
+      "The inspector stamps your newest Perk VOID. Temporarily. Probably.",
+      "curse permit_revoked",
+      "Inspector: You may proceed. Carefully."
+     ]
+    },
+    {"text":"Pay the late fee","cost":120,"then":["Inspector: Late fee received. Permit renewed. Next!"]},
+    {
+     "text": "Argue",
+     "then": [
+      "You argue. The inspector calls for backup.",
+      "foe bureau_clerk 1",
+      "Inspector: Fine! Keep it! And take the wind out of here with you.",
+      "boon tailwind"
+     ]
+    }
+   ],
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["cones","loupe"]
+  },
+  "paperwork_avalanche": {
+   "title": "Paperwork Avalanche",
+   "intro": [
+    "A filing cabinet has tipped over across the path. Forms everywhere. A clerk is on their knees, sorting.",
+    "Clerk: Don't just stand there. These must be refiled before the office reopens. Which is never, at this rate."
+   ],
+   "options": [
+    {
+     "text": "Help refile",
+     "then": [
+      "Your team refiles four hundred forms. The edges are sharp.",
+      "curse paper_cuts",
+      "Clerk: You've been a great help. Have half my breakfast. I insist.",
+      "boon second_breakfast"
+     ]
+    },
+    {
+     "text": "File a complaint",
+     "then": [
+      "Clerk: A complaint! Wonderful. It will be reviewed. Everything you do will be reviewed.",
+      "curse pending_review",
+      "loot common"
+     ]
+    },
+    {"text":"Walk on","then":["Clerk: Fine! Then the office closes early. All of them!","curse out_of_office"]}
+   ],
+   "weight": 1,
+   "bureau": 1,
+   "redact": ["cabinet"]
   }
  }
 }

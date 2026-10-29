@@ -155,6 +155,22 @@ body.on-map #bgfx {
   justify-content: space-between;
   gap: var(--s2);
 }
+/* PK-9: the boons and curses on (perk-screen.js boonStripHTML): pictures at 18 px with the places left */
+.boon-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2);
+  margin-right: auto;
+}
+.boon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: var(--fs-caption);
+}
+.boon-chip.curse small {
+  color: var(--sig-bad-text);
+}
 .map-more > summary {
   list-style: none;
   cursor: pointer;

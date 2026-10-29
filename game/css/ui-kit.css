@@ -537,7 +537,8 @@ hr.pb-rule::after {
   --rar: var(--sig-rare);
   --rar-t: var(--sig-rare-text);
 }
-[data-rarity='mythical'] {
+/* PK-7: Fine Print (perks.json rarity fine) wears the ladder's top orange */
+:is([data-rarity='mythical'], [data-rarity='fine']) {
   --rar: var(--sig-mythical);
   --rar-t: var(--sig-mythical-text);
 }

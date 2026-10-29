@@ -24,7 +24,7 @@ import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
 import { STATUS_NAMES } from './game-data.js';
 import { glyphOf, sigVar } from './logic/signals.js';
-import { MARK_RARITY, chipLook, fxTags, rarityTier, tagLook } from './logic/marks.js';
+import { MARK_RARITY, chipLook, fxTags, rarityColour, rarityTier, tagLook } from './logic/marks.js';
 import { LitElement, css, html, nothing, patternVars, typeGlyphURL } from './ui-kit.js';
 import { PbCoin, runIconURL, runKitMotion, runNumber } from './ui-run-kit.js';
 expose({
@@ -498,7 +498,10 @@ const PbRarity = class extends LitElement {
     const t = rarityTier(this.tier),
       /* UI-14b: the tier's name in the player's language (text in a shadow root isn't swapped by i18n.js) */
       say = typeof i18nText === 'function' ? i18nText : (/** @type {string} */ x) => x;
-    return t ? html`<span class="pill" style=${`--fill:var(${sigVar(t)})`}>${say(MARK_RARITY[t])}</span>` : nothing;
+    /* PK-7: Fine Print in the ladder's top orange (rarityColour) */
+    return t
+      ? html`<span class="pill" style=${`--fill:var(${sigVar(rarityColour(t))})`}>${say(MARK_RARITY[t])}</span>`
+      : nothing;
   }
 };
 
@@ -532,10 +535,10 @@ export const rarityPillHTML = tier => {
   return t ? `<pb-rarity tier="${t}"></pb-rarity>` : '';
 };
 /** UI-17: a rare or mythical row's foil (pb-foil, idle life: the frame shimmers), put just inside the row; '' below
- * rare @param {string | undefined} tier */
+ * rare (PK-7: Fine Print has one too) @param {string | undefined} tier */
 export const rarityFoilHTML = tier => {
   const t = rarityTier(tier);
-  return t === 'rare' || t === 'mythical' ? '<pb-foil></pb-foil>' : '';
+  return t === 'rare' || t === 'mythical' || t === 'fine' ? '<pb-foil></pb-foil>' : '';
 };
 /** a list row's rarity: ' data-rarity="rare"' for the row's element (with .rar-row: the bar and thin frame), or '' */
 export const rarityRowAttr = (/** @type {string | undefined} */ tier) => {
