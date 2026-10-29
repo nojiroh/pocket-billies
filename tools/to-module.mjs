@@ -503,7 +503,7 @@ export async function run(args) {
   return { modules: [...modules], changed: stale, hooks: slots.length };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.filename === process.argv[1]) {
   run(process.argv.slice(2)).then(
     r => {
       console.log(`${r.modules.length} modules, ${r.changed.length} changed`);
