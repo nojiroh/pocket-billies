@@ -30,6 +30,7 @@ import {
   FX_PLAIN,
   FX_RULE_N,
   FX_WHEN_KINDS,
+  dataBoons,
   dataPerkSets,
   dataPerks,
 } from '../../game/js/logic/data-checks.js';
@@ -61,6 +62,7 @@ expose({
   PERK_ROW_NEW: [() => PERK_ROW_NEW],
   PERK_RULES: [() => PERK_RULES],
   PERK_WHEN: [() => PERK_WHEN],
+  boonsCardHTML: [() => boonsCardHTML, v => (boonsCardHTML = v)],
   perkArtHTML: [() => perkArtHTML, v => (perkArtHTML = v)],
   perkCoverage: [() => perkCoverage, v => (perkCoverage = v)],
   perkEd: [() => perkEd],
@@ -270,7 +272,11 @@ const PERK_RARITIES = ['common', 'uncommon', 'rare'];
 const perkProblems = () => {
   try {
     /* PK-8: and the Perk sets' (perkSets.json; a Perk in two sets is a perks.json message) */
-    return [...dataPerks(studioState.D), ...dataPerkSets(studioState.D)].map(([f, m]) => ({ f, m }));
+    /* PK-9: and the boons' and curses' (boons.json) */
+    return [...dataPerks(studioState.D), ...dataPerkSets(studioState.D), ...dataBoons(studioState.D)].map(([f, m]) => ({
+      f,
+      m,
+    }));
   } catch (e) {
     return [{ f: 'perks.json', m: `the check stopped: ${e.message || e}` }];
   }
@@ -746,6 +752,7 @@ SECTIONS.relics = () => {
    }
  )}
  ${perkSetsHTML(D, P)}
+ ${boonsCardHTML(D, P)}
  ${perkRarityHTML(D, cov, P)}</div></div>`;
 };
 
@@ -798,6 +805,53 @@ function perkSetsHTML(/** @type {any} */ D, /** @type {{ f: string, m: string }[
       .join(''),
     {
       sub: 'PK-8: holding a set’s Perks (those tagged with its id) up to its need adds its bonus’s rows to the run. A Photocopier counts as itself, never as the Perk it copies. The rows are edited in perkSets.json.',
+    }
+  );
+}
+/** PK-9: the boons and curses (boons.json): each one's name, how many more places it lasts, its text, Boon or Curse,
+ * its picture (Edit art, or Draw one) and its rows in words (edit the rows in boons.json), with boons.json's messages */
+function boonsCardHTML(/** @type {any} */ D, /** @type {{ f: string, m: string }[]} */ P) {
+  const B = D.boons || {};
+  if (!Object.keys(B).length) return '';
+  const there = (/** @type {string} */ p) => artPictures().includes(p) || studioState.textDirty.has(p),
+    rowWords = (/** @type {any} */ f) =>
+      [
+        f.kind,
+        f.what || f.rule || f.side || f.stat || '',
+        'mult' in f ? `×${f.mult}` : '',
+        'stages' in f ? `${f.stages > 0 ? '+' : ''}${f.stages}` : '',
+        'share' in f ? `${Math.round(f.share * 100)}%` : '',
+        'n' in f ? `n ${f.n}` : '',
+        f.when ? `at ${f.when}` : '',
+        f.if ? `if ${[].concat(f.if).join(', ')}` : '',
+      ]
+        .filter(Boolean)
+        .join(' '),
+    art = (/** @type {string} */ id, /** @type {any} */ T) => {
+      const key = T.img ? svgIconKey('art/' + T.img) : '';
+      if (key && there('art/' + T.img))
+        return `<div class="seg-row boon-art"><img class="pix" src="${escapeHtml(iconSrc(key))}" alt="" width="36" height="36"><span class="help mono">${escapeHtml(T.img)}</span><button class="btn sm" data-act="icOpen" data-n="${escapeHtml(key)}">Edit art</button></div>`;
+      return `<div class="seg-row boon-art"><p class="help">No picture yet: the game shows the relic icon.</p><button class="btn sm" data-act="boonArt" data-id="${escapeHtml(id)}">Draw one</button></div>`;
+    };
+  return card(
+    'Boons and curses',
+    Object.keys(B)
+      .map(id => {
+        const p = `boons.${id}`,
+          T = B[id];
+        return `<div data-boon="${escapeHtml(id)}"><h4 class="mono">${escapeHtml(id)}</h4>${grid(
+          textField('Name', `${p}.name`, { max: 40 }),
+          numberField('More places after the first', `${p}.places`, { min: 0, max: 20, step: 1 }),
+          `<label class="fld"><span>Boon or curse (a clinic’s appeal lifts a curse)</span><select data-boon-curse="${escapeHtml(id)}"><option value=""${T.curse ? '' : ' selected'}>Boon</option><option value="1"${T.curse ? ' selected' : ''}>Curse</option></select></label>`
+        )}${textField('What it does while it lasts (one sentence)', `${p}.d`, { area: 1, rows: 2, max: 160 })}${art(id, T)}<p class="help mono">${(T.fx || []).map((/** @type {any} */ f) => escapeHtml(rowWords(f))).join(' · ')}</p>${P.filter(
+          q => q.f === 'boons.json' && q.m.startsWith(id + '.')
+        )
+          .map(q => `<p class="err relic-err">${escapeHtml(q.m)}</p>`)
+          .join('')}</div>`;
+      })
+      .join(''),
+    {
+      sub: 'PK-9: named effects that last the place they are given in and the places more set here; events give them (boon <id>, curse <id>) and the fountain’s wish. The rows are edited in boons.json.',
     }
   );
 }
@@ -943,6 +997,17 @@ document.addEventListener('change', ev => {
   changed();
   render();
 });
+/* PK-9: a boon becomes a curse (curse: true) or a boon again (no curse) */
+document.addEventListener('change', ev => {
+  const el = /** @type {HTMLSelectElement} */ (ev.target);
+  if (!el.dataset || !el.dataset.boonCurse) return;
+  const T = /** @type {any} */ ((studioState.D.boons || {})[el.dataset.boonCurse]);
+  if (!T || !!T.curse === !!el.value) return;
+  if (el.value) T.curse = true;
+  else delete T.curse;
+  changed();
+  render();
+});
 /* PK-8: a Perk's set: the set ids leave its tags, the one picked goes in (none removes them; no tags left, none) */
 document.addEventListener('change', ev => {
   const el = /** @type {HTMLSelectElement} */ (ev.target);
@@ -1040,6 +1105,18 @@ ACTIONS.relicArt = () => {
   R.img = `perks/${k}.svg`;
   changed();
   iconEditOpen(`perks/${k}`);
+};
+/** PK-9: a boon without a picture: a blank art/boons/<id>.svg, named by its img, opened in the icon editor */
+ACTIONS.boonArt = (/** @type {any} */ d) => {
+  const k = (d && d.id) || '',
+    T = (studioState.D.boons || {})[k],
+    path = `art/boons/${k}.svg`;
+  if (!T) return;
+  if (!artPictures().includes(path) && !studioState.textDirty.has(path))
+    textStep(path, null, pixelsToSvg(new Uint8ClampedArray(36 * 36 * 4), 36, 36));
+  T.img = `boons/${k}.svg`;
+  changed();
+  iconEditOpen(`boons/${k}`);
 };
 ACTIONS.relicRowAdd = () => {
   const R = studioState.D.perks[studioState.sel.relic];

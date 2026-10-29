@@ -2236,7 +2236,21 @@ def relics_steps(pg, errs):
     if not wait_js(pg, "/lab.need: 6, but only 4 Perks/.test(document.querySelector('#main').textContent)", 10): errs.append('perks: sets: a need past its Perks showed no message')
     pg.evaluate("undo()"); time.sleep(0.3)
     if pg.evaluate("studioState.D.perkSets.lab.need") != 3: errs.append('perks: sets: undo left the Lab Kit needing ' + str(pg.evaluate("studioState.D.perkSets.lab.need")))
-    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs; the 12 Fine Print Perks' rows with no error and their rarity fine, Subscription Box's loot table and charge; the 7 Perk sets, Running Shoes's set swapped and undone, a set's title proposed and undone, a need past its Perks named", flush=True)
+    # PK-9: the boons and curses: the card shows the 20 with their pictures and no message; a name edit is proposed in
+    # boons.json and undone; a boon made a curse and undone; a copy row's message
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    bn = pg.evaluate("[document.querySelectorAll('#main [data-boon] [data-p$=\".name\"][data-p^=\"boons.\"]').length, document.querySelectorAll('#main [data-boon] .boon-art img.pix').length, document.querySelectorAll('#main [data-boon-curse]').length, [...document.querySelectorAll('#main [data-boon] .relic-err')].map(e=>e.textContent)]")
+    if bn != [20, 20, 20, []]: errs.append(f'perks: boons: names, pictures, kinds, messages {bn}')
+    edit_undo(pg, errs, 'perks: boons', '#main [data-p="boons.tailwind.name"]', 'Following Wind', 'boons.tailwind.name', 'boons\\.json$')
+    pg.evaluate("void openSection('relics', { relic: 'running_shoes' })"); time.sleep(0.3)
+    pg.select_option('#main [data-boon-curse="tailwind"]', '1'); time.sleep(0.3)
+    if pg.evaluate("studioState.D.boons.tailwind.curse") is not True: errs.append('perks: boons: Tailwind made a curse reads ' + str(pg.evaluate("studioState.D.boons.tailwind.curse")))
+    pg.evaluate("undo()"); time.sleep(0.3)
+    if pg.evaluate("'curse' in studioState.D.boons.tailwind"): errs.append('perks: boons: undo left Tailwind a curse')
+    pg.evaluate("studioState.D.boons.pep_talk.fx.push({kind:'copy'}); void openSection('relics', { relic: 'running_shoes' })")
+    if not wait_js(pg, "/pep_talk.fx\\[1\\]: a boon has no copy row/.test(document.querySelector('#main').textContent)", 10): errs.append('perks: boons: a copy row showed no message')
+    pg.evaluate("studioState.D.boons.pep_talk.fx.pop(); void openSection('relics', { relic: 'running_shoes' })")
+    if len(errs) == n: print(f"perks: Running Shoes's Speed {W['running_shoes']['before']} -> {hus} as the game, LAB1's offers as the Run Lab's, a stages edit proposed and undone, the limit on its row, a kind change undone, When and If set, checked and undone; Lucky Charm's picture at 72 and 36 px, Edit art in the icon editor; the 15 Wave A Perks' rows (crit, immune, inflict, chip, first, revive) with no error; the 15 Wave B Perks' rows (passive, weather, benchXp, rule) with no error, Bellows's Needs and Tags, a bad need's message undone; the 12 Wave C Perks' rows with no error, Tip Jar's share and most, Magnet on a String's Needs; the 11 Wave D Perks' rows with no error, Boarding Pass's Moneys and items, Rusty Key's Needs; the 12 Fine Print Perks' rows with no error and their rarity fine, Subscription Box's loot table and charge; the 7 Perk sets, Running Shoes's set swapped and undone, a set's title proposed and undone, a need past its Perks named; the 20 boons and curses with their pictures, a name proposed and undone, one made a curse and undone, a copy row named", flush=True)
 
 
 def battle_fx_steps(pg, errs):
