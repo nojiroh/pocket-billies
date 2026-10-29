@@ -127,7 +127,7 @@ code touched, so no message to the sound or style coordinators was needed.
   icons only, plays its scene); the stamped words at phone size; the frame rate while the tower or the rowboat is up.
 - Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; `npm test` 1995 of
   1995 on the merged head d339a162; `build-battle-anims.py --check` (51 sprites). CI smoke on e960e747: red only on
-  "Camera follow ... the page stopped drawing" (known; commented on #329, re-run once). The full quick check on d339a162: running (this line is updated when it ends).
+  "Camera follow ... the page stopped drawing" (known; commented on #329, re-run once). The full quick check on the merged head d339a162: 39 of 42 in 1529 s. Not this branch's: "Walking left and right ... room light" (known); "Battle music ... the drums never came in on a throw" (known; passes alone here); "RL-8: a run from the mast ... the town's shop has no Perk (RL-12)", which fails alone here too and fails the same way on track/vfx's head 8607080a in a worktree (track/vfx's or main's, for VFX-20). Passed here: every battle step (A battle plays to the end, the Voltron, Starters, a run's battles), the in-game full test, the Studio's, Camera follow and the bowl. CI smoke on cbccff3a: Camera follow and the bowl (both known; commented on #329).
 - Next: VFX-20 merges this branch into `track/vfx` (after VFX-18b's; this branch merges cleanly with it in the shared
   tests, and the two `scenes` blocks both follow billionsserved: keep both, mine first); then the phone pass.
 
