@@ -55,7 +55,7 @@ export function storyScripts(dir = DATA) {
 /** gives each line without an id (or with an id seen before) a new one; returns how many */
 export const giveLineIds = scripts => giveIds(scripts, seed => createHash('sha1').update(seed).digest('hex'));
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.filename === process.argv[1]) {
   const scripts = storyScripts();
   if (process.argv.includes('--check')) {
     const P = lineIdProblems(scripts);
