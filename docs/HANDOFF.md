@@ -2,6 +2,167 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### VFX track VFX-20 - Phone pass: VFX-17, 18, 18b and 19 merged, fx and the old 2D code out, the flash audit, the quality ladder, Part 2 as built - 2026-10-29
+Branch `track/vfx`, the main line of wave 5 and Part 2's last step. Run under the owner's standing instruction
+(2026-10-28): no Plan Mode, the plan written here, recommended options taken and listed below. No tags (CLAUDE.md
+since #283). The owner merged PR #295 into main at VFX-13's head (ed5c6857) while this ran; main is merged back in
+(8a3f8d5e, no changes) and the rest of Part 2 goes to main through draft PR #331. No phone notes from the owner yet:
+tuned from films and measurements.
+- The plan: merge main, VFX-17 and VFX-19; message VFX-18 and 18b before touching what they might use; then the
+  Ask-me-before removal (fx, the old 2D effect code) in its own commits; VFX-13's and VFX-17's leftovers (the hurt KO
+  look, the Studio's events and misses, the debug log line, the foe-side film, the texel note); a browser-free flash
+  audit over filmed frames; the budgets measured at quality 0-3; the quality ladder read from the code (a subagent's
+  read, checked) and its gaps fixed one cause a commit; VFX-18b (carrying VFX-18) merged last; the audit, budgets and
+  films again over all 56 scenes; the full quick check; docs; the coordinators told.
+- Merges (each a merge, the unit tests after each): origin/main already in at the start (6ca60be6); VFX-17
+  `claude/vfx-17-scenes-1` b34ab164 (d2321650; HANDOFF and ROADMAP both; 1974 tests); VFX-19
+  `claude/vfx-19-move-sounds` 957efb6a (8607080a; HANDOFF and ROADMAP both, hooks.js and art-code-refs regenerated;
+  1990 tests; check-sound 236 fingerprints, 0 changed; smoke 7 of 7); main ed5c6857 (8a3f8d5e); VFX-18b
+  `claude/vfx-18b-scenes-3` 4973c477, which carries VFX-18's 707a47ab (f4b243f3; clean; 2004 tests, the 1,000-maps
+  timing test failing only under load and passing alone; snapshot and battle tests 256 of 256; check:data; check-sound
+  236, 0 changed; smoke no problems). The side branches' PRs (#324, #325, #329, #330) show merged.
+- Merging with track/sound (whichever of track/sound or track/vfx reaches main second): VFX-19's HANDOFF entry lists
+  the ten both-added conflicts (keep both). track/sound's SND-12c (a9549340, PR #292, not on main) also changed the
+  battle songs' forms and gave each its own ensemble (songs' form, sections and ensemble, and `ensembles`, in
+  music.json; loudness within 0.1 LU); battleSoundEffect, the battle recipes and music.json's top-level shape are
+  untouched, so VFX-19's `battle` section sits beside it: keep both, then `npm run modules`, studio/art-code-refs.json
+  and the check-data snapshot regenerated, check-sound's baseline once in its own commit.
+- Changed (one cause per commit; smoke on each game or Studio commit, in a second worktree on that commit):
+  - d651ff6c (Ask me before) a type's burst particles move from types.json `fx` into battleAnims.json
+    `types.<kit>.burstSprites` (same lists; None's from untyped.json; the Bureau falls back to None's as before):
+    battle-stage.js `typeSprite` reads the kit; game-data.js `HIT_EFFECTS_BY_TYPE` and its Studio stand-in gone; the
+    Studio's Types "Battle particles" picker edits the kit (None's row gets one); atlas-rects counts and renames a
+    kit's particles; schema, types, a data check and the atlas test.
+  - e6b30a7e types.json and untyped.json `fx` removed (read by nothing after d651ff6c).
+  - 8bc377f5 the old 2D effect drawing removed: battle-stage.js drawParticles' rings, icons, beams and plain pixels
+    (never ran since VFX-9: the canvas draws only with the 3D stage on, where they were skipped). The picture branch
+    (a bot's dropped part), drawPixelRing (the selection, target and catch rings) and particleSprite (the opening and
+    cutscenes) stay; no icons.png cell removed.
+  - 6f0b0e90 a hurt line that knocks out takes the KO's look (VFX-13's leftover): logic/battle-anims.js
+    `hurtKoAhead(events, i)` (koAhead's shape; tested); case 'hurt' plays it through hitFx (white then ink, the KO's
+    cell and scar; the last KO's freeze and impact frame) for a burn, the delayed hit, a spread move's second target,
+    recoil, stones, the storm. `koAhead` and `hitTier` untouched (SND-13 reads them).
+  - dc1bedcb the event films are one list, logic/battle-looks.js `BATTLE_LOOK_FILMS` and `lookSnaps`, read by the
+    film tool and the Studio; three new films: brn_ko, spread_ko, delayed_ko.
+  - 34bad0f5 tools/flash-audit.py and the film tool's full-screen probe and `--flashes=off` (below).
+  - f327bd7e the Studio's battle stage gets `PASSIVE` and `robotIdsFromSp` stand-ins: They faint, Yours faints, A part
+    breaks and glints threw on the Studio page (the faints since VFX-16); found by the new Studio check step.
+  - 90a67efc the Studio's Battle effects plays every event (item used, Alpha phase, shield blocks, a part breaks, cry,
+    run away, victory, defeat) and every look film, and a Misses pane tunes each family's miss (sidestep time and
+    distance, the Miss tag's time, the miss's length up to maxMs.miss). Every scene already played from the Move list.
+    check-studio-github.py `--only=battle_fx` plays every event, tunes and undoes a miss, toggles a type's particles.
+  - 7cdb0bdf the debug log's `anim` line names the scene a family stands in for (`for:scene:<id>`), a KO (`+ko`,
+    `+last`) and Calm or Reduced; still no names or save data.
+  - 82801ed0 rule 9: with Flashes off or under Reduced motion a blink steps at 167 ms of real time (at most 3 a
+    second at any speed; it was every 60 ms of the stage clock, about 8 a second and faster at Faster).
+  - e9ec3706 every burst keeps the burst budget (24 / 16 / 10 / 6): the runner's repeated particle steps (dust, lob,
+    fling, converge, impact, rain, orbit, rise; one guard at animStep) and the stage's own loops (burstN).
+  - 5d04c2c6 rule 9: with Flashes off every sprite flash is at most half (a flurry's beat, a stat change, a heal, a
+    dome's flash cell on a block).
+  - 580aef80 rule 9: under Calm the stage's ambient motes and leaves come only in the turn's pulse (battle-looks.js
+    `battleLooksIdleOn`).
+  - 39776f86, a9a9686a the film tool: `--measure` counts particles, made a frame, effect lights, scars, frames over
+    33 ms, and takes `--quality=N`; event traces step the stage alone (fast).
+  - Docs: vfx-track.md's "Part 2 as built" and the one-sitting phone checks (105fc22a); ROADMAP's VFX line (Part 2
+    done), BRANCHES' track/vfx row (4ec9ce89); this entry and the VFX-20 row's as built (the last commit).
+- The flash audit (tools/flash-audit.py; browser-free over look-battle-anims.py's traces; a flash is a #flash brighter
+  than Flashes off's 15% tint, the impact frame's two-tone or the chromatic pulse, ones that touch counted as one; at
+  most 3 a second, 333 ms apart, none saturated red; Flashes off none; blinks at most 3 a second with Flashes off):
+  at f4b243f3 (all 56 scenes), Flashes on: 2197 films (122 moves x 2 sides x 8 outcomes, the 56 scene moves in hit+ko,
+  crit+last and secrit, 21 event films); 857 with a full-screen flash; most in any second 1 (each source counted
+  alone: 3, the crit's two-tone, warm flash and pulse together); no two within 333 ms; saturated red 0; most blinks
+  a second 4 (a sprite, Full); breaches 0. Flashes off: the same 2197 films; 0 with a full-screen flash; most blinks
+  a second 3; breaches 0. (A first pass at 34bad0f5-a9a9686a over 1973 films said the same.) Reproduce:
+  `python3 tools/look-battle-anims.py --events --out=DIR/on` (it also films every move) and `--only=<scene moves>
+  --outcomes=hit+ko,crit+last,secrit --out=DIR/onko`, the same with `--flashes=off` into DIR/off and DIR/offko, then
+  `python3 tools/flash-audit.py --on=DIR/on,DIR/onko --off=DIR/off,DIR/offko`.
+- Budgets (look-battle-anims.py `--measure --quality=N`, headless, software GPU, the town fixture, side 0, a super
+  crit and a last KO each; the busiest moves and scenes):
+  | Quality | Particles alive (budget) | Made in a frame (burst 24/16/10/6, several bursts can land at once) | Effect lights (budget) | Scars (budget) | battleFx draws (3) |
+  | --- | --- | --- | --- | --- | --- |
+  | 0 | 49 / 67 (256) | 40 / 39 | 2 (3) | 12 (12) | 3 / 3 |
+  | 1 | 42 / 59 (160) | 34 / 32 | 2 (2) | 8 (8) | 3 / 3 |
+  | 2 | 36 / 45 (96) | 28 / 26 | 1 (1) | 4 (4) | 3 / 3 |
+  | 3 | 32 / 33 (48) | 24 / 21 | 0 (0) | 0 (0) | 2 / 2 |
+  Each cell: VFX-17's busiest (Golden Caravan, Flatpack, Tower Drop, Vision Fund, Overload) at 580aef80 / VFX-18 and
+  18b's busiest (CUDA Call, Cyclone, Gives Wings, Character Limit, Green Hydrogen) at f4b243f3. Everything holds at
+  every quality; scars fill to their cap and stop. Couldn't measure headless: the phone's 400 draws a frame (the
+  headless frame draws about 805-850 at every quality: the desktop-quality town scene, not the battle's share) and no
+  frame over 33 ms (software GPU: 0.5-8 s a frame); effect lights at most 2 on a phone is the code's
+  (`budgets.lightsPhone`, by user agent). The debug log on the phone answers both.
+- The quality ladder (read from the code; "fixed" marks this step's commits):
+  | System | q1 / q2 / q3 | Calm | Reduced | Flashes off |
+  | --- | --- | --- | --- | --- |
+  | Families, kits, scenes' steps | no step has a quality gate; they thin through the pool (256/160/96/48) and, fixed, every repeated particle step stops at the burst budget (24/16/10/6) | play in full | no camera moves, shake, handheld or hit-stop; no extra time; a scene plays its family | as below |
+  | Hit tiers | burst by quality; impact cells 2/2/1/0, lines 24/24/16/16; lights by the light budget; shake, punch, flash and hit-stop unchanged | play | no hit-stop, shake, punch, flash, impact frame or pulse; knockback still moves | flash held to 15%, no pulse, no two-tone cells (a crit's lines stay), sprite flashes half |
+  | Statuses and stats | look cells 24/16/10/6 a cell; dome cells 9/7/5/4 (Protect 3/3/2/1) | loops pulse once a turn | tints instead of loops | gold edge and burn's tint half; fixed: chevron flash and dome's flash cell half |
+  | The stage | scars 12/8/4/0; mood, wave and heat unchanged | plays (the walk weather keeps falling) | darken and tint stepped, no wave or heat, no battle splashes; sand drifts at 0.2 | - |
+  | Flow | bursts by quality (fixed: every loop) | plays | no dithers, camera or wobble | full-screen flashes through flashFor; heal fixed to half |
+  | Smears | afterimages 3/3/2/0, ribbon 6/6/4/0, lunge ghosts 2/2/1/0, lean off at 3 | play (an action) | none | - |
+  | Budgets | particles 256/160/96/48, ambient a quarter; effect lights 3/2/1/0, 2 on phones; render scale halved at q2; depth blur off at q3 | fixed: ambient motes pulse once a turn | no ambient particles | - |
+  | Sounds | unchanged by quality or settings (the Sound effects slider) | - | - | - |
+  | Blinks | - | - | fixed: 3 a second | fixed: 3 a second |
+- Where the track file and the brief were wrong or vague (checked in the code):
+  - "Flashes off = none full-screen": SY-1's `flashFor` holds a bright flash to a 15% tint rather than none; the audit
+    counts only what is brighter than that (rule 9's own wording).
+  - The Budgets' "a burst at most 24 / 16 / 10 / 6" held only for burst(), two flow helpers and the spray step; fixed.
+  - The ladder: no family, kit or scene step has a quality gate (`maxQ` is read by stepOn but set nowhere): moves step
+    down only through the particle budgets; kept so (the budgets were the plan's mechanism).
+  - "The Studio's battle preview plays every scene and every event": every scene did (from the move list); the events
+    list lacked a dozen, and three of its own threw.
+  - "Leftover: the KO look for a spread move's second target": koAhead already counted a spread move's KOs, but the
+    hit step plays on the target only, so the second target's KO never showed; it now shows on its hurt line.
+  - PR #295 was merged, not open: PR #331 replaces it.
+- Decided for the owner, to review:
+  - types.json `fx` and the old icon particles removed after moving the keys into the kits (recommended); the old 2D
+    effect drawing removed; icons.png's cells all stay (other screens and the kits use them).
+  - The flash limiter as rule 9 (recommended); the crit's two-tone and its warm flash, and a super's tint and pulse,
+    count as one flash each (they touch); the impact frame itself isn't gated by the limiter (it's at most one per
+    hit and never within 333 ms of another in any film).
+  - Blinks at Full stay at 60 ms (up to 4 a second in the films; a sprite, not the screen); 167 ms with Flashes off
+    or Reduced.
+  - A hurt that knocks out plays a full KO hit look (knockback, ring, burst), not only the white and ink.
+  - Under Reduced motion knockback, lunges and dodges still move the sprites a little (the rule names shake, camera,
+    smears and extra time, not these): kept, listed for the phone.
+  - Scenes at quality 3 still summon their props (their smears go); the alternative is their family, as with 3D props
+    off: kept, the owner's call.
+  - VFX-17's scaled models (a tower x0.05, a train x0.24) show texels finer than 32 px/m: kept (a full-size tower
+    would be 58 m); a battle-scale model set is the owner's call.
+  - A foe's scene (side 1, filmed for the first time: Tower Drop, Full Steam): the heading is right, but the tower
+    and the train pass close to the lens and fill a third to half of the frame for a few cells: kept, a phone check.
+  - The weather keeps falling under Calm (the world's, not the battle's idle loop); the Sandstorm's streaks drift at
+    0.2 under Reduced: kept.
+- Wishes passed on (from VFX-18 and 18b): props that don't exist (a balance, a dust funnel, a delivery van, a tennis
+  racket, a gift box, a hydrogen tank; a wooden flying boat, a dorsal fin, a jukebox, a flag pin, a single tyre, a fan
+  with spinning blades, a clothes rail) and scene sounds (Ship Direct's doorbell, Gives Wings' can, One-handed
+  Backhand's racket, Cyclone's whoosh, Fifteen Seconds' tune, the boss's barriers; CUDA Call's fans, Per Minute's
+  tick, Smart Contract's lock, Sunday Red's swing, Shuffle Play's record skip) to the owner and the sound coordinator.
+- Risky:
+  - The phone's own numbers: headless frames draw about 850 (the desktop-quality scene) and take 0.5-8 s (software
+    GPU), so the phone's 400 draws and 33 ms need the debug log; the battle's own share stayed at 3 effect draws or
+    fewer a move at every quality.
+  - Burst budgets now thin rain-heavy scenes at quality 2-3 (Golden Caravan's coins, Cyclone, CUDA Call): check they
+    still read.
+  - The Studio's look films replay lines with their own snapshots; a film's lasting looks clear on the next clip.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build before each commit; the unit tests
+  after each change (2004 at the end; only the 1,000-maps timing test failed, under load, and passes alone);
+  battle-anims, battle-scenes and battle-looks tests; check-sound 236 of 236 equal after each sound-bearing merge;
+  smoke no problems on every game and Studio commit and on the merges (82801ed0 once timed out the in-game full
+  test's download under load, then passed alone); check-studio-github.py `--only=battle_fx` (every event and look
+  film, a miss, a type's particles); films: the burn, spread and delayed KOs, both scenes from side 1. Full quick
+  check at f4b243f3: 36 of 42 in 2600 s, with the films running beside it. RL-8 (crossed into Lakeside
+  Route but its view never showed) and room light are on the known list; RT-2's pair, Granny Juniper, Ground tiles'
+  lab room and Battle music ("the drums never came in on a throw": its 8 s fallback fired first) each pass alone on
+  this head (406 s for the four together; Battle music alone 74 s; also on a9a9686a, 8607080a, d2321650 and main).
+  CI on #331: lint and rules green; smoke red only on Camera follow, the bowl and Tall ground (main's; commented on
+  the PR).
+- Phone checks for the owner: the whole of Part 2 in one sitting is in docs/phases/vfx-track.md ("Phone checks for all
+  of Part 2"). This step's own: a burn or the delayed hit that knocks out; Flashes off (no bright full-screen flash, a
+  hurt's blink slow, sprite flashes soft); Calm (the motes come once a turn); quality 3 (bursts thinner, scenes still
+  read); the Studio's every event and Misses pane; the debug log's anim lines.
+- Next: Part 2 is done. The owner's phone pass and listening pass; merging PR #331 is the owner's. Left for later:
+  quality gates on heavy steps if the phone needs them, the props and sounds wished for above.
+
 ### VFX track VFX-18b - Signature scenes 3: 19 more scenes, four sound words, the boss's shield phase - 2026-10-29
 Side branch `claude/vfx-18b-scenes-3` (wave 4, beside VFX-18 on `claude/vfx-18-scenes-2`), made from VFX-17's finished
 branch (b34ab164, which had merged `track/vfx` b475bb15); `origin/track/vfx` merged in at b4922c4c (8bc377f5: VFX-17
