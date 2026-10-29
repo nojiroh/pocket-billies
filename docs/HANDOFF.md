@@ -2,6 +2,30 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Perks track PK-9 - Boons and curses - 2026-10-29
+Branch `track/perks` (this session's outcome branch, at ab776fc1: PK-8; main 6ca60be6 was already in, so nothing to
+merge at the start). Started by PK-0's session under the owner's standing instruction (perks-track.md section 10): no
+Plan Mode, the plan below written first and carried out. Details and the plan's corrections: perks-track.md 5.9,
+"Corrected in PK-9".
+- The plan (as set at the start): (1) the kinds the new curses need, one per commit with tests, schema, data checks,
+  types and the Studio's row inputs: `last` on a run's rows (Hold Music: yours move last on the first turn), a
+  `turnHurt` row at `arrive` (Paper Cuts: each place costs HP), `rewardPick` below 0 (Pending Review: one card
+  fewer), the rules `shopClosed` (Out of Office) and `muteNewest` (Permit Revoked: the newest Perk does nothing and
+  counts toward no set); (2) the `boons` data section: boons.json (name, d, curse, places, img, fx), its index.json
+  key, boons.schema.json, `Boon` in game-data.d.ts, game-data.js `BOONS`, data-checks.js `dataBoons` in check-data and
+  the Studio's Check; the 20 of 5.9 with drafted texts; (3) the run keeps a named boon by id (run.enc.boons `id`, its
+  rows read from the data, src `boon:<id>`; an unnamed `fx` boon of a pack as before; validRun takes both, so a run in
+  progress loads), battle lines and the debug log name it; the event commands `boon <id>` and `curse <id>`; the 4
+  events and the fountain refer to them by id with today's numbers; (4) Correction Fluid, the 79th Perk (rules
+  `curseShorter` and `curseErase`), in Office Supplies, with its picture; (5) the clinic's appeal (rules.json
+  run.appeal, placeholder 50 Moneys) lifts a curse; (6) 5 new Bureau events that hand out curses (drafted lines);
+  (7) on screen: the Perks tab lists the boons and curses on, each with its picture and places left; the Map tab's
+  head row (the run's HUD beside the day) shows their pictures with places left; (8) the Studio edits boons (their
+  words, places and picture; rows as JSON as the sets'); (9) the 21 pictures (a helper draws the grids; `node
+  tools/build-icons.mjs boons` and `perks`, `--check`, the contact sheets); (10) tests: every boon has a name and a
+  picture, each works and expires, the appeal, Correction Fluid, the new events, every Perk, set and boon at once
+  finite, golden battles unchanged; (11) docs.
+
 ### Perks track PK-8 - Perk sets - 2026-10-28
 Branch `track/perks` (this session's outcome branch, at 528c321e: PK-7 with main 3f559c3b merged; main had not moved,
 so nothing to merge at the start). Started by PK-0's session under the owner's standing instruction (perks-track.md
