@@ -707,7 +707,7 @@
    "level": 1.2,
    "seeds": {}
   },
-  "patched": ["water --river","terrain --seam","terrain --roll","terrain --pond"]
+  "patched": ["water --river","terrain --seam","terrain --roll","terrain --pond","water --bridge"]
  },
  "hub": [152.38,60.86],
  "exits": [],
@@ -793,11 +793,11 @@
   "dddddddwwwwSSssssssssssssssEGGEMppMMlllllCllllCCClCCCCCCClllllyGyyyyyyGEGGGGCggggGGtttGGGGGGGGGGGGGErrrCMPPrwwwwpEEgpppggggggggggggggggGGGGpppGGGGGGGgggggggggggHHHHBppBBBBBBSSwwwwddddddddddd",
   "dddddddwwwwSSsssssPssssssssEEEEEppyMllllllllllCCCCCCCCCCllllllyLyyyyyrGyFGGGGGggGtttttCGGGGGGGGGGgggggrrrCCrwwdwPEEEGpppGGGGBggggggggggGGGpppPGGGGGGGgggggggggggHHHHBppBBBBBBSSwwwwddddddddddd",
   "ddddddddwwwwSssssssssssssssEEEEEppyyllllllllllCCllllClCCllllCCyyyyyyyyFFFGGGGGGGGtttttCGGGGGGGGGGgggggGGrrrrwwwwPMGGGppppGGGGggggggggggGGGpppGGGGGGGGgggggggggggGyyMMppBBBBCCSSwwwwddddddddddd",
-  "ddddddddwwwwSsPsssssssssssssEEEEppGGCCllllllllClllllClllllllCCyyyyyyyyyFFGGGGGGGgggtttCfGGGGGGGGGgggggGGpppppwwwwPGGGppppGGGGggggggggggEEpppGGMMyGGEEgggggggggggLyyMMppBBBCCCSSwwwwddddddddddd",
-  "ddddddddwwwwSssssssssssssssEEEEEppGGllCCClllllllllllClClllllClyyyyyyyyyLFGGGGGGGgggggtgGGGGGGGGGGgggggGppppEGPwwwPGGEGpppEEGGggggggggggEEpppGGGyGGEEEgggggggggggCgyMpppBBBCCsSSwwwwddddddddddd",
-  "ddddddddwwwwSssssssssssssssEEEEEpppEllCCClllllllCCCCCllllllCCClMMyyEEEyyyGGGGGGGggggggggGGGGGGGGGGGCgGGppGGGGPwwwPMGGGppppEEGggggggggggEpppGGGGGGGGGGGGGGGGGGgCCCCCHppHHHggCsSSwwwwddddddddddd",
-  "ddddddddwwwwSssssssssssssssEEEGGGppGllCCClllllllCCCCllllllCCCCCMMyEEEEEEEMGGGGgggCCCPgggGGGGGGGGGGfCgGGGppGGEGPwwwPGGfppppEEGggggggggggppppGGGGGGGccccGGGGGGGgCCCGGHppHHHGGGsSSwwwwddddddddddd",
-  "ddddddddwwwwSSssssssssssssssEEGGGppGllCllClllllCCCCClllllCClCCCMEEEEEGGGGMMggggggggggggGGGGGGGGGGGGCCGGGppGGEEPwwwPGGGGppppGGggggggggggpppGGGGGGccccccccccGGGGCCCfffppHHGGGssSwwwwwddddddddddd",
+  "ddddddddwwwwSsPsssssssssssssEEEEppGGCCllllllllClllllClllllllCCyyyyyyyyyFFGGGGGGGgggtttCfGGGGGGGGGgggggGGpppppwwwwPGGpppppGGGGggggggggggEEpppGGMMyGGEEgggggggggggLyyMMppBBBCCCSSwwwwddddddddddd",
+  "ddddddddwwwwSssssssssssssssEEEEEppGGllCCClllllllllllClClllllClyyyyyyyyyLFGGGGGGGgggggtgGGGGGGGGGGgggggGppppEppwwwPGppGpppEEGGggggggggggEEpppGGGyGGEEEgggggggggggCgyMpppBBBCCsSSwwwwddddddddddd",
+  "ddddddddwwwwSssssssssssssssEEEEEpppEllCCClllllllCCCCCllllllCCClMMyyEEEyyyGGGGGGGggggggggGGGGGGGGGGGCgGGppGGGGpwwwPpGGGppppEEGggggggggggEpppGGGGGGGGGGGGGGGGGGgCCCCCHppHHHggCsSSwwwwddddddddddd",
+  "ddddddddwwwwSssssssssssssssEEEGGGppGllCCClllllllCCCCllllllCCCCCMMyEEEEEEEMGGGGgggCCCPgggGGGGGGGGGGfCgGGGppGGEpPwwwPGGfppppEEGggggggggggppppGGGGGGGccccGGGGGGGgCCCGGHppHHHGGGsSSwwwwddddddddddd",
+  "ddddddddwwwwSSssssssssssssssEEGGGppGllCllClllllCCCCClllllCClCCCMEEEEEGGGGMMggggggggggggGGGGGGGGGGGGCCGGGppGGEpPwwwPGGGGppppGGggggggggggpppGGGGGGccccccccccGGGGCCCfffppHHGGGssSwwwwwddddddddddd",
   "ddddddddwwwwSSssssssssssssssEEGGyppMllllCCCllllllCCCClllllCCCllEEEEGGGGGGGGgggggggggGGGGGGGrGGGGGGGGGGGGppGGGGPwwwPGEEGppppGGgggggggggppppGGGGcccccccccccccccGGCGGGpppGGGGGssSwwwwdddddddddddd",
   "ddddddddwwwwSSssPsssssssssPsGGGGyppyylllCCCCCClllCCCCllllCCCCllEEEEGGGgGGgggggggggggGGGGGGGGGGGGGGGGrPGGGppGGGCPwwwPEEECppppCgggggggggpppGGGGcccccccccccccccccGGGPGppGGGGGGsSSwwwwdddddddddddd",
   "ddddddddwwwwSSssssssssssssssGGGGGppyylllClllllllllCCClllCCCCCCEEEEEGGCggggggggggggggGGGGGGGGGGGGGGGGrGGgGppGEGGPwwwPMEGGpppppCgggggggppppGpGccccccccccccccccccGGGrpppGGGGGGsSwwwwwdddddddddddd",
@@ -1115,7 +1115,7 @@
  "edgeExits": [],
  "bridges": [
   {"a":[123.5,52.78],"b":[119.24,51.34],"w":2,"kind":"wood"},
-  {"a":[111.55,75.61],"b":[108.3,72.69],"w":2,"kind":"wood"},
+  {"a":[114.02,70.44],"b":[109.94,68.86],"w":2,"kind":"wood"},
   {"a":[111.49,32.83],"b":[115.94,26.18],"w":1.7,"kind":"wood","pier":1}
  ],
  "props": [
