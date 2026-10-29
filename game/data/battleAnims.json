@@ -2428,7 +2428,7 @@
      "do": "prop",
      "prop": "crate_goods",
      "from": "side",
-     "off": 3,
+     "off": 1.6,
      "path": "straight",
      "ms": 320,
      "hold": 0,
@@ -2458,7 +2458,7 @@
       "do": "prop",
       "prop": "crate_goods",
       "from": "side",
-      "off": 3,
+      "off": 1.6,
       "path": "straight",
       "ms": 320,
       "hold": 0,
@@ -2484,7 +2484,7 @@
    "dur": 1000,
    "hit": 640,
    "steps": [
-    {"do":"prop","prop":"wall_clock","from":"above","h":0.6,"y":1.5,"out":200,"s":0.7,"at":80,"ms":240,"until":860},
+    {"do":"prop","prop":"wall_clock","from":"above","h":0.6,"y":1.5,"out":200,"s":1.1,"at":80,"ms":240,"until":860},
     {"at":160,"do":"kit","part":"cast","on":"attacker"},
     {"at":200,"do":"toTarget","on":"foe","d":240},
     {"at":360,"do":"stamp","on":"target","spr":"word_tick","dy":1.2,"k":2,"life":520},
@@ -2513,7 +2513,7 @@
     "dur": 700,
     "hit": 380,
     "steps": [
-     {"do":"prop","prop":"wall_clock","from":"above","h":0.6,"y":1.5,"out":200,"s":0.7,"at":0,"ms":200,"until":600},
+     {"do":"prop","prop":"wall_clock","from":"above","h":0.6,"y":1.5,"out":200,"s":1.1,"at":0,"ms":200,"until":600},
      {"at":100,"do":"toTarget","on":"foe","d":160},
      {"at":220,"do":"spray","on":"target","spr":"coin","ramp":"Electric","speed":1,"up":0.8,"life":400,"if":["!self"]},
      {"at":380,"do":"ring","on":"foe","color":"kit","r0":0.2,"r1":1.1,"life":360},
@@ -2566,7 +2566,7 @@
    "dur": 1460,
    "hit": 960,
    "steps": [
-    {"at":60,"do":"spray","on":"attacker","icon":"dice","speed":1.2,"up":1.4,"floor":1,"life":760,"k":2},
+    {"at":60,"do":"spray","on":"attacker","icon":"dice","speed":1.2,"up":1.4,"floor":1,"life":760,"k":1},
     {"at":120,"do":"kit","part":"cast","on":"attacker"},
     {"at":600,"do":"ring","on":"attacker","color":"kit","r0":0.9,"r1":0.1,"life":220},
     {"at":660,"do":"light","on":"attacker","ms":220},
@@ -2721,7 +2721,7 @@
    "dur": 1440,
    "hit": 920,
    "steps": [
-    {"at":60,"do":"impact","on":"attacker","icon":"paper","dy":0.4,"k":2,"life":560},
+    {"at":60,"do":"impact","on":"attacker","icon":"paper","dy":0.4,"k":1,"life":560},
     {"at":200,"do":"kit","part":"cast","on":"attacker"},
     {
      "at": 260,
@@ -2736,7 +2736,7 @@
      "k": 2
     },
     {"at":480,"do":"toTarget","d":220},
-    {"at":620,"do":"projectile","icon":"paper","path":"straight","from":"attacker","to":"target","ms":300,"k":2,"trail":2},
+    {"at":620,"do":"projectile","icon":"paper","path":"straight","from":"attacker","to":"target","ms":300,"k":1,"trail":2},
     {"at":920,"do":"ring","on":"target","color":"kit","r0":0.6,"r1":0.2,"life":260},
     {"at":940,"do":"stamp","on":"target","spr":"word_click","dy":1.2,"k":2,"life":500},
     {"at":920,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
@@ -2750,7 +2750,7 @@
     "dur": 1000,
     "hit": 400,
     "steps": [
-     {"at":100,"do":"projectile","icon":"paper","path":"straight","from":"attacker","to":"target","ms":300,"k":2,"trail":2},
+     {"at":100,"do":"projectile","icon":"paper","path":"straight","from":"attacker","to":"target","ms":300,"k":1,"trail":2},
      {"at":120,"do":"toTarget","d":180},
      {"at":420,"do":"stamp","on":"target","spr":"word_click","dy":1.2,"k":2,"life":460},
      {"at":400,"do":"impact","on":"target","spr":"impact","k":1,"life":420},
@@ -2770,7 +2770,7 @@
    "steps": [
     {"at":60,"do":"impact","on":"attacker","icon":"chart","dy":1,"k":1,"life":560},
     {"at":200,"do":"rise","on":"attacker","icon":"down","down":1,"life":360,"glow":0},
-    {"at":300,"n":6,"every":50,"do":"rise","on":"attacker","icon":"coin","life":480},
+    {"at":300,"n":6,"every":50,"do":"rise","on":"attacker","icon":"coin","life":480,"k":2},
     {"at":380,"n":3,"every":90,"do":"rise","on":"attacker","spr":"heal_sparkle","ramp":"heal","life":560},
     {"at":380,"do":"light","on":"attacker","ms":300,"color":"heal"},
     {"at":600,"do":"ring","on":"attacker","color":"heal","r0":0.2,"r1":1.1,"life":420},
@@ -2782,7 +2782,7 @@
     "dur": 640,
     "hit": 360,
     "steps": [
-     {"at":60,"n":4,"every":50,"do":"rise","on":"attacker","icon":"coin","life":420},
+     {"at":60,"n":4,"every":50,"do":"rise","on":"attacker","icon":"coin","life":420,"k":2},
      {"at":100,"n":3,"every":70,"do":"rise","on":"attacker","spr":"heal_sparkle","ramp":"heal","life":420},
      {"at":360,"do":"ring","on":"attacker","color":"heal","r0":0.2,"r1":1.1,"life":360},
      {"do":"camHome","d":360,"delay":340},
@@ -2801,8 +2801,8 @@
      "do": "prop",
      "prop": "rowboat",
      "from": "side",
-     "off": 3,
-     "dz": 1,
+     "off": 1.4,
+     "dz": 1.4,
      "path": "wave",
      "amp": 0.1,
      "turns": 2,
@@ -2834,8 +2834,8 @@
       "do": "prop",
       "prop": "rowboat",
       "from": "side",
-      "off": 3,
-      "dz": 1,
+      "off": 1.4,
+      "dz": 1.4,
       "path": "wave",
       "amp": 0.1,
       "turns": 2,
@@ -2940,7 +2940,7 @@
      "ms": 260,
      "until": 1100,
      "out": 250,
-     "s": 0.4
+     "s": 1
     },
     {"at":200,"do":"stamp","on":"attacker","spr":"word_fore","dy":1,"k":2,"life":500},
     {"do":"lunge","dx":18,"dy":-2,"dur":110,"ease":"in","delay":420,"backDur":200,"backAt":560},
