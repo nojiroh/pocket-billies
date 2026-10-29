@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { clamp } from '../util.js';
 import { seaCentre } from '../logic/sea.js';
+import { halfFloats } from '../logic/half-float.js';
 import { valueNoise2d, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuFree, gpuSized, gpuState, gpuTexture } from '../engine/webgl.js';
@@ -539,7 +540,8 @@ export function flowTexture(T, F) {
   if (!F || !F.d.some(v => v !== 0)) return;
   T.flowTex = gpuTexture('ground', F.W2 * F.H2 * 8);
   gl.bindTexture(gl.TEXTURE_2D, T.flowTex);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, F.W2, F.H2, 0, gl.RGBA, gl.FLOAT, F.d);
+  /* half floats made here, as the kinds' texture (walk/water.js kindTexture): the Adreno phone kept zeros from full floats */
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, F.W2, F.H2, 0, gl.RGBA, gl.HALF_FLOAT, halfFloats(F.d));
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
