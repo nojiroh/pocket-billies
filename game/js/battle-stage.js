@@ -95,6 +95,8 @@ expose({
   AREAS: [() => AREAS],
   BATTLE_STAGE_ART: [() => BATTLE_STAGE_ART],
   BAYER4: [() => BAYER4],
+  BLINK_HALF_MS: [() => BLINK_HALF_MS],
+  BLINK_SLOW_HALF_MS: [() => BLINK_SLOW_HALF_MS],
   CAMERA_KEYS: [() => CAMERA_KEYS],
   CANVAS_FILTER_WORKS: [() => CANVAS_FILTER_WORKS],
   CLOSE_UP_CAMERAS: [() => CLOSE_UP_CAMERAS],
@@ -178,6 +180,7 @@ expose({
   battleStageToCss: [() => battleStageToCss, v => (battleStageToCss = v)],
   battleStretch: [() => battleStretch, v => (battleStretch = v)],
   blinkActor: [() => blinkActor, v => (blinkActor = v)],
+  blinkHidden: [() => blinkHidden, v => (blinkHidden = v)],
   blurAt: [() => blurAt, v => (blurAt = v)],
   burst: [() => burst, v => (burst = v)],
   burstMax: [() => burstMax],
@@ -1386,7 +1389,7 @@ export const rigStats = { calls: 0, redraws: 0, bytes: 0, ms: 0 };
 export function actorBuffer(i) {
   const s = battleStage.s[i];
   if (!s.show || !s.sp || s.a <= 0.01 || s.sc <= 0.01) return null;
-  if (battleStage.t < s.blinkUntil && Math.floor(battleStage.t / 60) % 2) return null;
+  if (battleStage.t < s.blinkUntil && blinkHidden()) return null;
   const k = ACTOR_RIG_SCALES[i],
     R = rigParts(s.sp, k, s.coat, s.graft),
     view = actorTeam(i) === 0 ? 'back' : 'front',
@@ -1749,6 +1752,15 @@ function afterImpact(F, fn) {
   const ms = impactLength(F);
   if (ms > 0) setTimeout(fn, ms);
   else fn();
+}
+/* VFX-20: a blink hides the sprite every other 60 ms of the stage clock; with Flashes off or under Reduced motion
+   every other 167 ms of real time, so at most 3 blinks a second at any battle speed (rule 9) */
+const BLINK_HALF_MS = 60,
+  BLINK_SLOW_HALF_MS = 167;
+function blinkHidden() {
+  return flashesOff() || reducedMotion
+    ? Math.floor(performance.now() / BLINK_SLOW_HALF_MS) % 2 === 1
+    : Math.floor(battleStage.t / BLINK_HALF_MS) % 2 === 1;
 }
 function blinkActor(i, ms = 380) {
   battleStage.s[i].blinkUntil = battleStage.t + ms;
