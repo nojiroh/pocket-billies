@@ -4,17 +4,27 @@
    and any world sound alone or in a made-up scene, at a distance. It plays through the game's own sound code
    (soundEngine; sound.js ambiencePreviewTick, the same preview tools/check-sound.py --loudness measures), never writes
    the save, and stops when the menu closes: the place's own music and world sounds come back. SND-9: and the first
-   baked instrument, the harp, playing Copperleaf's tune and chords with a little reverb, as in a chosen place. */
+   baked instrument, the harp, playing Copperleaf's tune and chords with a little reverb, as in a chosen place. SND-11:
+   any instrument (music.json instruments; a drum plays a beat), and a song as its ensemble or with GB Sounds. SND-17:
+   any jingle on its ensemble or 8-bit, or every jingle both ways, over the place's song. SND-13: the song's layers as
+   switches (walking, the weather, night, a battle's intensity 1-3) and the busker at a distance, for the song the test
+   plays (logic/music-layers.js; an ensemble's layered parts move on their beat or bar line). */
 /* the world sounds it can play: [id, label, [[kind, metres or 'd' for the distance picked], ...]] */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, toast } from './hooks.js';
+import { MUSIC } from './game-data.js';
+import { musicEnsembleFit } from './logic/music-patterns.js';
+import { MUSIC_LAYER_TESTS, musicLayerBusker } from './logic/music-layers.js';
 import { uiState } from './game-state.js';
-import { SONGS, ambience, music, musicSync, musicVariant, soundEngine, unlockSound } from './sound.js';
+import { SONGS, ambience, jinglePlay, music, musicSync, musicVariant, soundEngine, unlockSound } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
+  SOUND_TEST_AS: [() => SOUND_TEST_AS],
+  SOUND_TEST_BUSKER: [() => SOUND_TEST_BUSKER],
   SOUND_TEST_DISTANCES: [() => SOUND_TEST_DISTANCES],
   SOUND_TEST_HARP: [() => SOUND_TEST_HARP],
+  SOUND_TEST_LAYERS: [() => SOUND_TEST_LAYERS],
   SOUND_TEST_PLACES: [() => SOUND_TEST_PLACES],
   SOUND_TEST_WORLD: [() => SOUND_TEST_WORLD],
   soundTest: [() => soundTest],
@@ -23,6 +33,8 @@ expose({
   soundTestHTML: [() => soundTestHTML, v => ((soundTestHTML = v), provide({ soundTestHTML }))],
   soundTestHarp: [() => soundTestHarp, v => (soundTestHarp = v)],
   soundTestHarpStop: [() => soundTestHarpStop, v => (soundTestHarpStop = v)],
+  soundTestJingle: [() => soundTestJingle, v => (soundTestJingle = v)],
+  soundTestLayers: [() => soundTestLayers, v => (soundTestLayers = v)],
   soundTestSelect: [() => soundTestSelect],
   soundTestStop: [() => soundTestStop, v => (soundTestStop = v)],
 });
@@ -30,14 +42,69 @@ expose({
 provide({ soundTestAction, soundTestHTML });
 /* to-module: end */
 const SOUND_TEST_WORLD = [
-  ['rain', 'Rain', [['rain', 0]]],
-  ['wind', 'Storm wind', [['wind', 0]]],
-  ['leaves', 'Leaves in the woods', [['leaves', 0]]],
+  /* SND-14: rain by how hard it falls (a third value), on a roof and indoors; thunder by its distance (km) */
+  ['rain_light', 'Light rain', [['rain', 0, 0.3]]],
+  ['rain', 'Rain', [['rain', 0, 1]]],
+  ['rain_heavy', 'Heavy rain (a storm)', [['rain', 0, 1.6]]],
+  [
+    'rain_roof',
+    'Rain on a roof (stand under the eaves)',
+    [
+      ['rain', 0, 1],
+      ['roof', 'd', 1],
+    ],
+  ],
+  ['rain_indoors', 'Rain on the roof, indoors', [['roofIn', 0, 1]]],
+  [
+    'thunder_near',
+    'Thunder, near (0.6 km)',
+    [
+      ['rain', 0, 1.6],
+      ['thunder', 0, 0.6],
+    ],
+  ],
+  [
+    'thunder_far',
+    'Thunder, far off (4 km)',
+    [
+      ['rain', 0, 1],
+      ['thunder', 0, 4],
+    ],
+  ],
+  ['wind', 'Storm wind', [['wind', 0, 1]]],
+  ['gusts', 'A breeze and its gusts', [['gusts', 0]]],
+  [
+    'leaves',
+    'Wind in a forest',
+    [
+      ['gusts', 0],
+      ['leaves', 0],
+    ],
+  ],
+  ['dawn', 'A dawn chorus', [['birds', 0, 6]]],
+  ['birds', 'Birds in the morning', [['birds', 0, 9]]],
+  ['noon', 'Birds at noon', [['birds', 0, 13]]],
+  ['owl', 'An owl at night', [['owl', 0]]],
   ['crickets', 'Crickets at night', [['crickets', 0]]],
-  ['birds', 'Birds', [['birds', 0]]],
-  ['town', 'A town’s murmur', [['town', 0]]],
+  ['grasshopper', 'Grasshoppers (a summer meadow)', [['grasshopper', 0]]],
+  ['cicada', 'Cicadas (a summer desert)', [['cicada', 0]]],
+  [
+    'frogs',
+    'Frogs by a pond at night',
+    [
+      ['pond', 'd'],
+      ['crickets', 0],
+      ['frogs', 'd'],
+    ],
+  ],
+  ['townLife', 'A town’s life', [['townLife', 0]]],
+  ['room', 'A room (a house)', [['roomTone', 0, 'house']]],
+  ['room_inn', 'An inn', [['roomTone', 0, 'inn']]],
+  ['room_library', 'A library', [['roomTone', 0, 'library']]],
+  ['room_lab', 'A lab', [['roomTone', 0, 'lab']]],
+  ['room_workshop', 'A workshop', [['roomTone', 0, 'workshop']]],
+  ['room_barn', 'A barn', [['roomTone', 0, 'barn']]],
   ['cave', 'A cave', [['cave', 0]]],
-  ['room', 'A room', [['room', 0]]],
   /* SND-10: the water, a recipe each (soundscape.json `water`): [recipe, metres, a fall's height] */
   ['brook', 'A brook', [['brook', 'd']]],
   ['river', 'A river', [['river', 'd']]],
@@ -84,17 +151,28 @@ const SOUND_TEST_WORLD = [
     ],
   ],
   ['wake', 'Surfing (the wake)', [['wake', 1]]],
-  ['fire', 'A campfire', [['fire', 'd']]],
-  ['steps_l', 'Steps on a lawn', [['steps', 0, 'l']]],
-  ['steps_e', 'Steps on stone', [['steps', 0, 'e']]],
-  ['steps_b', 'Steps on boards', [['steps', 0, 'b']]],
+  /* SND-14: a fire by its size (a third value) */
+  ['fire_small', 'A fireplace', [['fire', 'd', 0.55]]],
+  ['fire', 'A campfire', [['fire', 'd', 1]]],
+  ['bonfire', 'A bonfire', [['fire', 'd', 2]]],
+  /* SND-14: footsteps by the surface */
+  ['steps_grass', 'Steps on grass', [['steps', 0, 'grass']]],
+  ['steps_sand', 'Steps on sand', [['steps', 0, 'sand']]],
+  ['steps_dirt', 'Steps on a dirt path', [['steps', 0, 'dirt']]],
+  ['steps_gravel', 'Steps on gravel', [['steps', 0, 'gravel']]],
+  ['steps_stone', 'Steps on stone', [['steps', 0, 'stone']]],
+  ['steps_wood', 'Steps on boards (a bridge, a dock)', [['steps', 0, 'wood']]],
+  ['steps_snow', 'Steps on snow', [['steps', 0, 'snow']]],
+  ['steps_mud', 'Steps on mud', [['steps', 0, 'mud']]],
+  ['steps_wet', 'Steps on wet ground', [['steps', 0, 'wet']]],
+  ['steps_carpet', 'Steps on a carpet', [['steps', 0, 'carpet']]],
   [
     'square',
     'Copperleaf’s square',
     [
       ['sea_coast', 0],
       ['fountain', 'd'],
-      ['town', 0],
+      ['townLife', 0],
       ['birds', 0],
     ],
   ],
@@ -102,7 +180,8 @@ const SOUND_TEST_WORLD = [
     'route_rain',
     'A route in the rain',
     [
-      ['rain', 0],
+      ['rain', 0, 1],
+      ['gusts', 0],
       ['leaves', 0],
     ],
   ],
@@ -127,7 +206,76 @@ const SOUND_TEST_PLACES = [
 ];
 /* the harp's own send to the reverb (a little), its notes' levels */
 const SOUND_TEST_HARP = { send: 0.35, lead: 0.36, chord: 0.16 };
-const soundTest = { song: null, world: null, timer: 0, harp: null };
+/* SND-11: how a song plays in the test: as its ensemble (when it has one; gb until its notes are baked) or GB Sounds */
+const SOUND_TEST_AS = [
+  ['ensemble', 'As its ensemble'],
+  ['gb', 'GB Sounds'],
+];
+/* SND-13: the layer switches: [select id, [value, label]...]; the busker's distances (m; 'off' out of earshot) */
+const SOUND_TEST_LAYERS = [
+  [
+    'sndWalk',
+    [
+      ['still', 'Standing'],
+      ['walk', 'Walking'],
+    ],
+  ],
+  [
+    'sndWeather',
+    [
+      ['clear', 'Clear'],
+      ['rain', 'Rain'],
+      ['snow', 'Snow'],
+      ['storm', 'A storm'],
+    ],
+  ],
+  [
+    'sndNightLayer',
+    [
+      ['day', 'Day layers'],
+      ['night', 'Night layer'],
+    ],
+  ],
+  [
+    'sndIntensity',
+    [
+      ['intensity2', 'Intensity 2 (full)'],
+      ['intensity1', 'Intensity 1 (a battle’s intro)'],
+      ['intensity3', 'Intensity 3 (the peak)'],
+    ],
+  ],
+];
+const SOUND_TEST_BUSKER = ['off', 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+const soundTest = {
+  song: null,
+  world: null,
+  timer: 0,
+  harp: null,
+  as: 'ensemble',
+  inst: 'harp',
+  jingle: 'victory',
+  queue: 0,
+  /* SND-13: the layer switches' values (SOUND_TEST_LAYERS ids, sndBusk) */
+  layers: { sndWalk: 'still', sndWeather: 'clear', sndNightLayer: 'day', sndIntensity: 'intensity2', sndBusk: 'off' },
+};
+/* SND-13: the layer levels the switches make (logic/music-layers.js MUSIC_LAYER_TESTS; the busker by distance, a
+   little to the right) */
+function soundTestLayers(V) {
+  const T = MUSIC_LAYER_TESTS,
+    d = V.sndBusk === 'off' ? null : +V.sndBusk,
+    w = V.sndWeather === 'clear' ? {} : T[V.sndWeather] || {};
+  return {
+    walk: V.sndWalk === 'walk' ? 1 : 0,
+    rain: 0,
+    snow: 0,
+    storm: 0,
+    ...w,
+    night: V.sndNightLayer === 'night' ? 1 : 0,
+    ...(T[V.sndIntensity] || T.intensity2),
+    busker: d == null ? 0 : musicLayerBusker(d, true).level,
+    buskerPan: 0.4,
+  };
+}
 const soundTestSelect = (id, opts, val) =>
   `<select id="${id}">${opts.map(([v, n]) => `<option value="${v}"${v === val ? ' selected' : ''}>${n}</option>`).join('')}</select>`;
 const soundTestButton = (x, l) => `<button class="pb small" data-a="dbg" data-x="${x}">${l}</button>`;
@@ -141,7 +289,12 @@ function soundTestHTML() {
       ['night', 'At night'],
     ],
     soundTest.song && soundTest.song.endsWith('@night') ? 'night' : 'day'
-  )}${soundTestButton('sndSong', 'Play the song')}</div>
+  )}${soundTestSelect('sndAs', SOUND_TEST_AS, soundTest.as)}${soundTestButton('sndSong', 'Play the song')}</div>
+  <div class="dbg-row">${SOUND_TEST_LAYERS.map(([id, opts]) => soundTestSelect(id, opts, soundTest.layers[id])).join('')}${soundTestSelect(
+    'sndBusk',
+    SOUND_TEST_BUSKER.map(d => [String(d), d === 'off' ? 'No busker' : `The busker ${d} m away`]),
+    soundTest.layers.sndBusk
+  )}${soundTestButton('sndLayers', 'Set the layers')}</div>
   <div class="dbg-row">${soundTestSelect(
     'sndWorld',
     SOUND_TEST_WORLD.map(([id, l]) => [id, l]),
@@ -151,9 +304,21 @@ function soundTestHTML() {
     SOUND_TEST_DISTANCES.map(d => [String(d), d + ' m away']),
     soundTest.world ? String(soundTest.world.d) : '3'
   )}${soundTestButton('sndWorld', 'Play the sound')}</div>
-  <div class="dbg-row">${soundTestSelect('sndPlace', SOUND_TEST_PLACES, soundTest.harp ? soundTest.harp.place : 'town')}${soundTestButton(
+  <div class="dbg-row">${soundTestSelect(
+    'sndInst',
+    Object.keys(MUSIC.instruments || {}).map(k => [k, k]),
+    soundTest.inst
+  )}${soundTestSelect('sndPlace', SOUND_TEST_PLACES, soundTest.harp ? soundTest.harp.place : 'town')}${soundTestButton(
     'sndHarp',
-    'Play the harp'
+    'Play the instrument'
+  )}</div>
+  <div class="dbg-row">${soundTestSelect(
+    'sndJingle',
+    Object.keys(MUSIC.jingles || {}).map(k => [k, k]),
+    soundTest.jingle
+  )}${soundTestSelect('sndJAs', SOUND_TEST_AS, soundTest.as)}${soundTestButton('sndJingle', 'Play the jingle')}${soundTestButton(
+    'sndJingles',
+    'Every jingle both ways'
   )}</div>
   <div class="dbg-row">${soundTestButton('sndStop', 'Stop the test')}</div>
   <p class="note">Plays at your sliders over the place’s sound; the song and the world sound can play together. Closing the menu stops the test. iPhones mute the game with the silent switch.</p>`;
@@ -165,13 +330,39 @@ function soundTestAction(x) {
     return e ? /** @type {HTMLSelectElement} */ (e).value : null;
   };
   unlockSound();
-  if (x === 'sndSong') {
+  /* SND-13: the layer switches as they stand, for the song the test plays (soundEngine.testLayers) */
+  const readLayers = () => {
+    for (const id of [...SOUND_TEST_LAYERS.map(L => L[0]), 'sndBusk']) {
+      const val = v(id);
+      if (val != null) soundTest.layers[id] = val;
+    }
+    soundEngine.testLayers = soundTestLayers(soundTest.layers);
+  };
+  if (x === 'sndSong' || x === 'sndLayers') readLayers();
+  if (x === 'sndLayers') {
+    const L = soundTest.layers;
+    toast(
+      soundEngine.test && soundTest.song
+        ? `Layers: ${L.sndWalk}, ${L.sndWeather}, ${L.sndNightLayer} layers, ${L.sndIntensity.replace('intensity', 'intensity ')}, ${L.sndBusk === 'off' ? 'no busker' : 'the busker ' + L.sndBusk + ' m away'} (on the next beat or bar).`
+        : 'Layers set: play a song with an ensemble to hear them.'
+    );
+  } else if (x === 'sndSong') {
     const name = v('sndSong');
     if (!name) return;
     soundTest.song = v('sndTime') === 'night' ? musicVariant(name, 1) : name;
+    soundTest.as = v('sndAs') || 'ensemble';
     soundEngine.test = true;
-    music(soundTest.song, { restart: true });
-    toast(`Playing ${soundTest.song}.`);
+    /* SND-11: GB Sounds for the test alone (the setting is left as it is); an ensemble's notes baked first */
+    soundEngine.testGb = soundTest.as === 'gb';
+    const T = soundEngine.tracker,
+      song = soundTest.song,
+      go = () => soundTest.song === song && music(song, { restart: true });
+    if (T && T.prepare && !soundEngine.testGb) T.prepare(song).then(go);
+    else go();
+    const D = T && T.recipe ? T.recipe(song) : null;
+    toast(
+      `Playing ${song}${soundEngine.testGb ? ' with GB Sounds' : D && D.ensemble && D.ensemble !== 'gb' ? ` as ${D.ensemble}` : ' (gb: it has no ensemble)'}.`
+    );
   } else if (x === 'sndWorld') {
     const W = SOUND_TEST_WORLD.find(w => w[0] === v('sndWorld'));
     if (!W) return;
@@ -185,9 +376,30 @@ function soundTestAction(x) {
     toast(`Playing ${W[1].toLowerCase()}${W[2].some(e => e[1] === 'd') ? `, ${d} m away` : ''}.`);
   } else if (x === 'sndHarp') {
     const place = v('sndPlace') || 'town';
-    soundTestHarp(place);
+    soundTest.inst = v('sndInst') || 'harp';
+    soundTestHarp(place, soundTest.inst);
     const P = SOUND_TEST_PLACES.find(q => q[0] === place);
-    toast(`Playing the harp, ${(P ? P[1] : place).toLowerCase()}.`);
+    toast(`Playing the ${soundTest.inst}, ${(P ? P[1] : place).toLowerCase()}.`);
+  } else if (x === 'sndJingle') {
+    /* SND-17: a jingle over the place's song, on its ensemble (its notes baked first) or the 8-bit one */
+    const id = v('sndJingle') || 'victory';
+    soundTest.jingle = id;
+    soundTest.as = v('sndJAs') || 'ensemble';
+    const J = MUSIC.jingles[id];
+    soundTestJingle(id, soundTest.as === 'gb');
+    toast(
+      `Playing ${id}${soundTest.as === 'gb' ? ' (8-bit)' : J && J.ensemble && J.ensemble !== 'gb' ? ` on ${J.ensemble}` : ' (8-bit: it has no ensemble)'}.`
+    );
+  } else if (x === 'sndJingles') {
+    /* every jingle, the 8-bit version then its ensemble, one after another */
+    const ids = Object.keys(MUSIC.jingles || {}),
+      token = ++soundTest.queue,
+      next = k => {
+        if (token !== soundTest.queue || k >= ids.length * 2) return;
+        soundTestJingle(ids[k >> 1], !(k & 1)).then(d => setTimeout(() => next(k + 1), (d || 0) * 1000 + 700));
+      };
+    next(0);
+    toast(`Playing ${ids.length} jingles, each 8-bit then on its ensemble.`);
   } else if (x === 'sndStop') {
     soundTestStop();
     toast('Sound test stopped.');
@@ -199,14 +411,32 @@ function soundTestAction(x) {
       if (!(uiState.modal && uiState.modal.dbg)) soundTestStop();
     }, 500);
 }
+/* SND-17: a jingle by its name as the game plays it, GB Sounds as asked for the test alone; its ensemble's notes baked
+   first. Resolves how long it lasts (s) */
+function soundTestJingle(id, gb) {
+  const T = soundEngine.tracker,
+    J = MUSIC.jingles[id];
+  const play = () => {
+    const was = soundEngine.testGb;
+    soundEngine.testGb = gb;
+    const d = jinglePlay(id);
+    soundEngine.testGb = was;
+    return d;
+  };
+  if (!T || !J || gb || !T.jingleEnsemble || !T.jingleEnsemble(J)) return Promise.resolve(play());
+  return T.jinglePrepare(J).then(play);
+}
 /* back to the place's own music and world sounds */
 function soundTestStop() {
+  soundTest.queue++;
   if (soundTest.timer) clearInterval(soundTest.timer);
   soundTest.timer = 0;
   soundTest.song = null;
   soundTest.world = null;
   soundTestHarpStop();
   ambience.preview = null;
+  soundEngine.testGb = null;
+  soundEngine.testLayers = null;
   if (soundEngine.test) {
     soundEngine.test = false;
     musicSync();
@@ -214,8 +444,9 @@ function soundTestStop() {
 }
 /* SND-9: the harp (the first baked instrument, logic/sound-bake.js) plays Copperleaf's tune once, with its chords
    plucked low, alone: the place's song stops for it (soundEngine.test). The bank bakes it on the first press (in
-   slices, so nothing stalls) and the reverb is made with its impulse; then the notes are scheduled */
-function soundTestHarp(place) {
+   slices, so nothing stalls) and the reverb is made with its impulse; then the notes are scheduled. SND-11: any
+   instrument (inst), its notes moved by octaves into its range; a drum (one note) plays a beat of eighths */
+function soundTestHarp(place, inst = 'harp') {
   const T = soundEngine.tracker,
     c = soundEngine.ctx;
   if (!T || !c) return;
@@ -234,23 +465,30 @@ function soundTestHarp(place) {
     stem.connect(H.send);
     H.send.connect(T.reverbSend('music'));
   }
-  Promise.all([T.bankReady('harp'), place !== 'dry' ? T.reverbReady() : null]).then(() => {
+  Promise.all([T.bankReady(inst), place !== 'dry' ? T.reverbReady() : null]).then(() => {
     if (soundTest.harp !== H) return;
-    const D = T.compose('copperleaf');
-    if (!D) return;
+    const D = T.compose('copperleaf'),
+      R = (MUSIC.instruments || {})[inst];
+    if (!D || !R) return;
     const spb = 60 / D.bpm / 4,
-      t0 = c.currentTime + 0.1;
+      t0 = c.currentTime + 0.1,
+      fit = m => musicEnsembleFit(m, R);
+    if (R.lo === R.hi) {
+      for (let k = 0; k < 32; k++)
+        T.sampleVoice(stem, { inst, midi: R.lo, t: t0 + k * 2 * spb, dur: spb, vol: k % 4 ? 0.3 : 0.6 });
+      return;
+    }
     for (let st = 0; st < D.steps; st++) {
       const N = D.notes[st],
         t = t0 + st * spb;
-      if (N) T.sampleVoice(stem, { inst: 'harp', midi: N[0], t, dur: N[1] * spb, vol: SOUND_TEST_HARP.lead });
+      if (N) T.sampleVoice(stem, { inst, midi: fit(N[0]), t, dur: N[1] * spb, vol: SOUND_TEST_HARP.lead });
       /* each bar's chord, plucked up from its root an octave under the tune */
       if (st % 16 === 0) {
         const ch = D.prog[st / 16];
         [0, 2, 4].forEach((x, i) =>
           T.sampleVoice(stem, {
-            inst: 'harp',
-            midi: D.deg(ch + x) - 12,
+            inst,
+            midi: fit(D.deg(ch + x) - 12),
             t: t + i * spb,
             dur: 14 * spb,
             vol: SOUND_TEST_HARP.chord,

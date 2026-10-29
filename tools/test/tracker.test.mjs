@@ -14,9 +14,10 @@ const { trackerArc, trackerCompose, trackerCreate, trackerNight, trackerRecipe, 
 );
 
 const MUSIC = JSON.parse(readFileSync(new URL('../../game/data/music.json', import.meta.url), 'utf8'));
-// town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own
+// town's recipe without its written lines (SND-4 gave it a placeholder hook): the tests write their own. SND-12: and
+// without its form (these are the composer of one section; tools/test/music-form.test.mjs holds the forms)
 const town = Object.fromEntries(
-  Object.entries(MUSIC.songs.town).filter(([k]) => !['hook', 'counter', 'hookName'].includes(k))
+  Object.entries(MUSIC.songs.town).filter(([k]) => !['hook', 'counter', 'hookName', 'form', 'sections'].includes(k))
 );
 
 test('an empty hook and counter change nothing', () => {
@@ -334,18 +335,23 @@ function recordingContext() {
   return c;
 }
 
-test("SND-8b: a song's echo send moves with its fader (the fade-in, a jingle's duck, a stop)", () => {
+test("SND-8b: a song's echo send moves with its fader (the fade-in, a stop); SND-15: a jingle's duck on the duck's own gains", () => {
   const c = recordingContext(),
     T = trackerCreate(c, {}, { songs: { s: town } }),
     sg = T.play('s');
   clearInterval(T.timer);
-  assert.ok(sg.echo.to.includes(T.echoIn), 'the send goes to the echo');
+  /* SND-15: the song's level and its echo send each pass through a gain of the duck's own */
+  const [dIn] = sg.gain.to,
+    [dEcho] = sg.echo.to;
+  assert.ok(dEcho.to.includes(T.echoIn), 'the send goes to the echo');
   const moves = n => n.gain.calls.map(([m, v]) => [m, v]);
   assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the fade-in');
   assert.deepEqual(moves(sg.gain).at(-1), ['linearRampToValueAtTime', 1]);
+  const before = moves(sg.gain).length;
   T.jingle([[72, 4]], 150, 'p25', {});
-  assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the duck');
-  assert.ok(moves(sg.echo).some(([m, v]) => m === 'linearRampToValueAtTime' && v === 0.15));
+  assert.equal(moves(sg.gain).length, before, 'the fader is left alone');
+  assert.deepEqual(moves(dEcho), moves(dIn), 'the duck');
+  assert.ok(moves(dEcho).some(([m, v]) => m === 'linearRampToValueAtTime' && v === 0.15));
   T.stop();
   assert.deepEqual(moves(sg.echo), moves(sg.gain), 'the stop');
   assert.deepEqual(moves(sg.echo).at(-1), ['linearRampToValueAtTime', 0]);
@@ -387,7 +393,9 @@ test("SND-8b: a song's trim (dB) is its fader's top; a jingle ducks it to 0.15 o
   const lv = Math.round(Math.pow(10, 6 / 20) * 1e4) / 1e4;
   assert.deepEqual(tops(sg.gain), [lv]);
   T.jingle([[72, 4]], 150, 'p25', {});
-  assert.deepEqual(tops(sg.echo), [lv, Math.round(0.15 * lv * 1e4) / 1e4, Math.round(0.15 * lv * 1e4) / 1e4, lv]);
+  /* SND-15: the duck is a share of whatever the fader holds: its own gains go to 0.15 and back, the fader stays */
+  assert.deepEqual(tops(sg.echo), [lv]);
+  assert.deepEqual(tops(sg.echo.to[0]), [1, 0.15, 0.15, 1]);
   const p = T.play('plain');
   clearInterval(T.timer);
   assert.equal(p.level, 1);
@@ -439,6 +447,8 @@ function bankContext(rate) {
   return new Proxy(t, { get: (o, k) => (k in o ? o[k] : any()) });
 }
 const { soundBakeBank, SOUND_BAKE_BUDGET } = /** @type {any} */ (globalThis);
+/* SND-11: the instruments are music.json's, given to a tracker as opts.instruments (the bank's recipes are shared) */
+trackerCreate(fakeContext(), {}, { instruments: MUSIC.instruments });
 
 test('SND-9: the bank bakes in slices, once per rate; bankReady resolves when every zone is in', async () => {
   const c = bankContext(22050),
@@ -588,7 +598,7 @@ test('SND-10: the bank takes recipes from data; sampleShot plays a zone once, mo
   await T.bankReady('tdrop');
   assert.ok(T.bankStats().instruments.some(k => k.startsWith('tdrop@16000')));
   /* the harp keeps its own recipe (an id the bank has is never replaced) */
-  assert.equal(soundBakeBank.recipes.harp, undefined);
+  assert.equal(soundBakeBank.recipes.harp, MUSIC.instruments.harp);
   const v = T.sampleShot(out, { inst: 'tdrop', midi: 71, t: 2, vol: 0.4, rate: 1.1 });
   const z = soundBakeBank.entries.get('tdrop@16000').zones.find(q => 71 >= q.lo && 71 <= q.hi);
   assert.ok(Math.abs(v.source.playbackRate.value - Math.pow(2, (71 - z.root) / 12) * 1.1) < 1e-9);
@@ -615,4 +625,394 @@ test('SND-10: the reverb has a World send, scaled by the World slider', async ()
   assert.ok(Math.abs(w.gain.value - 0.2 * 0.8) < 1e-9, 'a town sends 0.8 of the slider');
   T.reverbLevels(0.5, 0.25);
   assert.ok(Math.abs(w.gain.calls.at(-1)[1] - 0.2 * 0.8) < 1e-9, 'left out, the World level stays');
+});
+
+/* SND-11: a context whose nodes remember what they connect to and what made them */
+function wireContext() {
+  const made = [],
+    param = () => new Proxy({ value: 1 }, { get: (t, k) => (k in t ? t[k] : () => {}) }),
+    node = kind => {
+      const n = { kind, to: [], gain: param(), connect: x => n.to.push(x), disconnect: () => (n.to = []) };
+      made.push(n);
+      return n;
+    };
+  const any = () => new Proxy(function () {}, { get: (t, k) => (k === 'value' ? 0 : any()), apply: () => any() });
+  const c = new Proxy(
+    { currentTime: 0, sampleRate: 8000, made },
+    {
+      get: (t, k) =>
+        k in t
+          ? t[k]
+          : k === 'createGain'
+            ? () => node('gain')
+            : k === 'createStereoPanner'
+              ? () => node('panner')
+              : k === 'createBuffer'
+                ? () => ({ getChannelData: () => new Float32Array(8), length: 8 })
+                : any(),
+    }
+  );
+  return c;
+}
+
+test('SND-11: the gb path plays each line into its own stem: plain gains under the fader, no panner', () => {
+  const D = { ...MUSIC.songs.route, extra: false },
+    c = wireContext(),
+    T = trackerCreate(c, {}, { songs: { s: { ...D, night: false } } }),
+    seen = new Map();
+  const tap = k => (bus, o) => seen.set(bus, (seen.get(bus) || new Set()).add(k));
+  T.synthVoice = (bus, o) => tap(o.type)(bus);
+  T.synthNoise = tap('noise');
+  T.synthKick = tap('kick');
+  T.play('s');
+  clearInterval(T.timer);
+  c.currentTime = 4;
+  T.tick();
+  clearInterval(T.timer);
+  const S = T.song.stems;
+  assert.deepEqual(Object.keys(S).sort(), ['bass', 'counter', 'drums', 'harmony', 'lead', 'pad']);
+  assert.equal(S.drums, T.song.drums, "the drums' stem is the drums' own bus");
+  for (const k of ['lead', 'counter', 'bass', 'harmony', 'pad']) {
+    assert.equal(S[k].gain.value, 1, k);
+    assert.deepEqual(S[k].to, [T.song.gain], k + ' goes straight to the fader');
+  }
+  assert.ok(!seen.has(T.song.gain), 'nothing plays on the fader itself');
+  assert.ok(seen.get(S.lead).has(D.lead) && seen.get(S.bass).has('triangle') && seen.get(S.harmony).has('p12'));
+  assert.ok(seen.get(S.drums).has('kick') && seen.get(S.drums).has('noise'));
+  assert.ok(!c.made.some(n => n.kind === 'panner'), 'no StereoPanner on the gb path (a centred one costs 3 dB)');
+});
+
+/* SND-11: a small ensemble: the chip lead, a pizzicato bass, a kick and a hat */
+const BAND = {
+  parts: [
+    { line: 'lead', wave: 'p25' },
+    { line: 'bass', inst: 'pizz', pan: -0.3, verb: 0.2 },
+    { line: 'drums', kit: { kick: 'kick', hat: 'hat' } },
+  ],
+};
+function bandPlay(rate, o = {}) {
+  const c = bankContext(rate);
+  /* a plain convolver (the catch-all stand-in would look like a promise to the reverb's ready) */
+  c.createConvolver = () => ({ connect() {}, buffer: null });
+  const S = { ...MUSIC.songs.route, ensemble: 'band', night: false },
+    gb = { on: !!o.gb },
+    T = trackerCreate(
+      c,
+      {},
+      { songs: { s: S, g: { ...S, ensemble: 'gb' } }, ensembles: { band: BAND }, gb: () => gb.on }
+    ),
+    seen = [];
+  T.synthVoice = (bus, v) => seen.push(['chip', T.song.step, bus, v.type]);
+  T.synthNoise = bus => seen.push(['noise', T.song.step, bus]);
+  T.synthKick = bus => seen.push(['kick', T.song.step, bus]);
+  const sample = T.sampleVoice;
+  T.sampleVoice = (bus, v) => (seen.push(['baked', T.song.step, bus, v.inst]), sample(bus, v));
+  return { c, T, seen, gb };
+}
+const run16 = (c, T, bars = 1) => {
+  for (let k = 0; k < 16 * bars; k++) {
+    c.currentTime = T.song.next - 0.13;
+    T.tick();
+  }
+  clearInterval(T.timer);
+};
+
+test('SND-11: a song with an ensemble plays gb until its notes are baked, then the ensemble from the next bar line', async () => {
+  const { c, T, seen } = bandPlay(11025);
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  assert.ok(
+    seen.some(([k]) => k === 'noise'),
+    'the first bar is gb (its noise drums)'
+  );
+  assert.ok(!seen.some(([k]) => k === 'baked'));
+  await T.prepare('s');
+  assert.ok(T.ensembleReady('s'));
+  seen.length = 0;
+  run16(c, T, 2);
+  assert.ok(!seen.some(([k]) => k === 'noise'), 'then no chip drums');
+  const baked = new Set(seen.filter(([k]) => k === 'baked').map(x => x[3]));
+  assert.deepEqual([...baked].sort(), ['hat', 'kick', 'pizz']);
+  /* each part into its own stem; the drums' through the drums' bus */
+  const sg = T.song;
+  assert.equal(sg.parts.length, 3);
+  assert.ok(seen.filter(([k, , , i]) => i === 'pizz').every(([, , bus]) => bus === sg.parts[1]));
+  assert.deepEqual(sg.parts[2].to, [sg.drums]);
+  assert.ok(
+    seen.some(([k, , bus, type]) => k === 'chip' && type === 'p25' && bus === sg.parts[0]),
+    'the chip lead'
+  );
+  /* the bass's reverb send goes to the song's own reverb fader */
+  assert.ok(sg.verb, 'a reverb fader');
+});
+
+test('SND-11: only the zones an ensemble plays are baked; GB Sounds plays gb whatever is baked; gb is reserved', async () => {
+  const { c, T, seen, gb } = bandPlay(12000, { gb: true });
+  const N = T.needs('s');
+  assert.ok(N.pizz.length >= 1 && N.kick.length === 1 && !N.harp);
+  await T.prepare('s');
+  const E = soundBakeBank.entries.get('pizz@12000');
+  assert.ok(
+    E.zones.some(z => !z),
+    'the pizz zones nothing plays stay unbaked'
+  );
+  assert.ok(E.zones.some(Boolean));
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  assert.ok(seen.some(([k]) => k === 'noise') && !seen.some(([k]) => k === 'baked'), 'GB Sounds: gb');
+  gb.on = false;
+  seen.length = 0;
+  run16(c, T);
+  assert.ok(
+    seen.some(([k]) => k === 'baked'),
+    'GB Sounds off: the ensemble from the next bar'
+  );
+  /* a song (or a version) naming gb plays today's code, with nothing to bake */
+  assert.equal(T.needs('g'), null);
+  assert.equal(await T.prepare('g'), false);
+});
+
+/* ---------- SND-13: layers in play ---------- */
+/* the band and a walking hat (a layer), a bass that thins at night (a dim) */
+const LBAND = {
+  parts: [
+    { line: 'lead', wave: 'p25' },
+    { line: 'bass', inst: 'pizz', dim: { night: 0.5 } },
+    { line: 'drums', kit: { hat: 'hat' }, style: 'walk', layer: 'walk' },
+  ],
+};
+function layerPlay(rate, L) {
+  const c = bankContext(rate);
+  c.createConvolver = () => ({ connect() {}, buffer: null });
+  const S = { ...MUSIC.songs.route, ensemble: 'lband', night: false },
+    T = trackerCreate(c, {}, { songs: { s: S }, ensembles: { lband: LBAND }, levels: () => L }),
+    seen = [];
+  T.synthVoice = () => {};
+  const sample = T.sampleVoice;
+  T.sampleVoice = (bus, v) => (seen.push([T.song.step, bus, v.inst]), sample(bus, v));
+  return { c, T, seen };
+}
+
+test('SND-13: with no layer levels a layer part is silent and nothing is dimmed; its notes are not in the bar bake', async () => {
+  const { c, T, seen } = layerPlay(11025, { drums: 1 });
+  assert.deepEqual(Object.keys(T.needs('s')).sort(), ['pizz'], 'the walking hat bakes when it is wanted');
+  await T.prepare('s');
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T, 2);
+  const sg = T.song;
+  assert.ok(!seen.some(([, , i]) => i === 'hat'), 'no hat');
+  assert.ok(seen.some(([, , i]) => i === 'pizz'));
+  assert.equal(sg.lay[1].cur, 1, 'the bass undimmed');
+  assert.equal(sg.lay[2].cur, 0);
+  assert.equal(sg.lay[0], undefined, 'a part with no layer has no layer gain');
+  /* the part's own gain (a stinger's) goes into the layer's gain, and that one on to the drums' bus */
+  assert.deepEqual(sg.parts[2].to, [sg.lay[2].g]);
+  assert.deepEqual(sg.lay[2].g.to, [sg.drums]);
+});
+
+test('SND-13: walking brings the hat in on the next beat once baked, out from a bar line; night dims the bass on a bar line; every ramp at a step time', async () => {
+  const L = { drums: 1, layers: { walk: 0, night: 0 } },
+    { c, T, seen } = layerPlay(11030, L);
+  await T.prepare('s');
+  await T.layersPrepare('s', ['walk']);
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  const sg = T.song,
+    spb = 60 / sg.D.bpm / 4,
+    t0 = sg.next - sg.step * spb;
+  /* you start walking at step 17 (mid-beat): the hat comes in on step 20, over a beat */
+  c.currentTime = sg.next - 0.13;
+  T.tick();
+  L.layers.walk = 1;
+  run16(c, T);
+  const hat = sg.lay[2].g.gain.calls;
+  const up = hat.find(x => x[0] === 'linearRampToValueAtTime' && x[1] === 1);
+  assert.ok(up, 'a ramp up');
+  const start = hat[hat.indexOf(up) - 1];
+  assert.equal(start[0], 'setValueAtTime');
+  const stepOf = t => Math.round((t - t0) / spb);
+  assert.equal(stepOf(start[2]) % 4, 0, 'on a beat');
+  assert.ok(Math.abs(up[2] - start[2] - 4 * spb) < 1e-9, 'over a beat');
+  assert.ok(
+    seen.some(([st, , i]) => i === 'hat' && st >= stepOf(start[2])),
+    'the hat plays'
+  );
+  assert.ok(!seen.some(([st, , i]) => i === 'hat' && st < stepOf(start[2])));
+  /* you stop and night falls: both go on the next bar line (the hat over two beats, the bass over a bar) */
+  L.layers.walk = 0;
+  L.layers.night = 1;
+  run16(c, T, 2);
+  const down = hat.find(x => x[0] === 'linearRampToValueAtTime' && x[1] === 0);
+  assert.ok(down);
+  assert.equal(stepOf(hat[hat.indexOf(down) - 1][2]) % 16, 0, 'from a bar line');
+  const bass = sg.lay[1].g.gain.calls.find(x => x[0] === 'linearRampToValueAtTime');
+  assert.equal(bass[1], 0.5);
+  assert.equal(stepOf(sg.lay[1].g.gain.calls[0][2]) % 16, 0);
+  assert.ok(!hat.some(x => x[0] === 'setTargetAtTime' || x[0] === 'cancelScheduledValues'));
+  /* once out, the hat plays nothing */
+  seen.length = 0;
+  run16(c, T, 2);
+  assert.ok(!seen.some(([, , i]) => i === 'hat'));
+  assert.deepEqual(
+    T.layerStats().map(x => [x.layer, x.gain]),
+    [
+      [null, 0.5],
+      ['walk', 0],
+    ]
+  );
+});
+
+test('SND-13: a layer wanted before its notes are baked stays out and asks for them; it comes in once they are', async () => {
+  const L = { drums: 1, layers: { walk: 1 } },
+    { c, T, seen } = layerPlay(11040, L);
+  await T.prepare('s');
+  T.play('s');
+  clearInterval(T.timer);
+  run16(c, T);
+  assert.equal(T.song.lay[2].cur, 0);
+  assert.ok(!seen.some(([, , i]) => i === 'hat'));
+  await T.layersPrepare('s', ['walk']);
+  run16(c, T);
+  assert.equal(T.song.lay[2].cur, 1);
+  assert.ok(seen.some(([, , i]) => i === 'hat'));
+});
+
+/* ---------- SND-17: jingles on an ensemble ---------- */
+const JBAND = {
+  trim: -6,
+  parts: [
+    { line: 'lead', wave: 'p25' },
+    { line: 'lead', inst: 'glock', pan: 0.2, verb: 0.3 },
+    { line: 'pad', inst: 'strings' },
+    { line: 'drums', kit: { snare: 'snare' } },
+  ],
+};
+const JING = {
+  notes: [
+    [72, 2],
+    [76, 2],
+    [79, 4],
+  ],
+  ensemble: 'fan',
+  harmony: [
+    [0, 60, 8],
+    [0, 64, 8],
+  ],
+  perc: [[0, 38, 1]],
+};
+function jinglePlayer(rate, o = {}) {
+  const c = bankContext(rate);
+  c.createConvolver = () => ({ connect() {}, buffer: null });
+  const gb = { on: !!o.gb },
+    T = trackerCreate(c, {}, { songs: { s: MUSIC.songs.route }, ensembles: { fan: JBAND }, gb: () => gb.on, fx: {} }),
+    seen = [];
+  const synth = T.synthVoice,
+    sample = T.sampleVoice;
+  T.synthVoice = (bus, v) => (seen.push(['chip', v.t, bus, v.type, v.vol]), synth(bus, v));
+  T.sampleVoice = (bus, v) => (seen.push(['baked', v.t, bus, v.inst, v.midi]), sample(bus, v));
+  /* the song's drums (the fake params have no exponential ramps) */
+  T.synthKick = T.synthNoise = () => {};
+  return { c, T, seen, gb };
+}
+
+test('SND-17: a jingle naming an ensemble plays the 8-bit jingle until its notes are baked, then on its parts', async () => {
+  const { c, T, seen } = jinglePlayer(13000);
+  const fx = { fx: true };
+  const end0 = T.jingle(JING.notes, 150, 'p25', fx, { jingle: JING });
+  assert.deepEqual(
+    seen.map(x => x[3]),
+    ['p25', 'triangle', 'p25', 'triangle', 'p25', 'triangle'],
+    'the first time: the 8-bit jingle (its notes asked for)'
+  );
+  await T.jinglePrepare(JING);
+  assert.ok(T.jingleReady(JING));
+  seen.length = 0;
+  const end = T.jingle(JING.notes, 150, 'p25', fx, { jingle: JING });
+  assert.ok(Math.abs(end - end0) < 1e-9, 'the same length (its tune is the longest line)');
+  const kinds = seen.map(x => x[0] + ':' + x[3]);
+  assert.equal(kinds.filter(k => k === 'chip:p25').length, 3, 'the chip lead plays the tune');
+  assert.ok(!kinds.includes('chip:triangle'), 'no triangle under it');
+  assert.equal(kinds.filter(k => k === 'baked:glock').length, 3);
+  assert.equal(kinds.filter(k => k === 'baked:strings').length, 2);
+  assert.equal(kinds.filter(k => k === 'baked:snare').length, 1);
+  /* the chip lead at level 1 plays as loud as the 8-bit jingle's (0.12) */
+  assert.ok(seen.filter(x => x[3] === 'p25').every(x => Math.abs(x[4] - 0.12) < 1e-9));
+  /* each part into a gain of its own carrying the ensemble's trim */
+  const buses = new Set(seen.map(x => x[2]));
+  assert.equal(buses.size, 4);
+  for (const g of buses) assert.ok(Math.abs(g.gain.value - Math.pow(10, -6 / 20)) < 1e-9);
+  void c;
+});
+
+test('SND-17: GB Sounds plays the 8-bit jingle whatever is baked; a jingle naming gb or nothing bakes nothing', async () => {
+  const { T, seen, gb } = jinglePlayer(14000, { gb: true });
+  await T.jinglePrepare(JING);
+  T.jingle(JING.notes, 150, 'p25', {}, { jingle: JING });
+  assert.ok(seen.every(x => x[0] === 'chip') && seen.length === 6);
+  gb.on = false;
+  seen.length = 0;
+  T.jingle(JING.notes, 150, 'p25', {}, { jingle: JING });
+  assert.ok(seen.some(x => x[0] === 'baked'));
+  assert.equal(T.jingleNeeds({ notes: [[72, 2]], ensemble: 'gb' }), null);
+  assert.equal(await T.jinglePrepare({ notes: [[72, 2]] }), false);
+});
+
+test("SND-17: a stinger over a song starts on the song's next beat, in its key, and drops its busy stems, not its fader", async () => {
+  const { c, T, seen } = jinglePlayer(15000);
+  const ST = { ...JING, stinger: true, perc: [] };
+  await T.jinglePrepare(ST);
+  const sg = T.play('s');
+  clearInterval(T.timer);
+  /* six steps scheduled: the next is step 6 */
+  for (let k = 0; k < 6; k++) {
+    c.currentTime = sg.next - 0.13;
+    T.tick();
+  }
+  clearInterval(T.timer);
+  const spb = 60 / sg.D.bpm / 4;
+  c.currentTime = sg.next - 0.05;
+  const fader0 = sg.gain.gain.calls.length;
+  seen.length = 0;
+  T.jingle(ST.notes, 150, 'p25', {}, { jingle: ST });
+  const first = Math.min(...seen.map(x => x[1]));
+  /* the beat after now: step 8 */
+  assert.ok(Math.abs(first - (sg.next + 2 * spb)) < 1e-9, 'on step 8');
+  const shift = ((((((sg.D.key - 60) % 12) + 12) % 12) + 6) % 12) - 6;
+  assert.equal(seen.filter(x => x[0] === 'chip').length, 3, 'the chip lead');
+  const glock = seen.filter(x => x[3] === 'glock').map(x => x[4]);
+  assert.deepEqual(
+    glock.map(m => (((m - 72 - shift) % 12) + 12) % 12),
+    [0, 4, 7],
+    "the tune moved into the song's key"
+  );
+  assert.equal(sg.gain.gain.calls.length, fader0, 'the fader is left alone');
+  for (const k of ['lead', 'counter', 'harmony']) {
+    const calls = sg.stems[k].gain.calls;
+    assert.ok(
+      calls.some(([m, v]) => m === 'linearRampToValueAtTime' && v === 0.2),
+      k + ' drops'
+    );
+    assert.equal(calls.at(-1)[1], 1, k + ' comes back');
+  }
+  assert.equal(sg.stems.bass.gain.calls.length, 0, 'the bass stays');
+  /* a second stinger at once goes to the beat after */
+  seen.length = 0;
+  T.jingle(ST.notes, 150, 'p25', {}, { jingle: ST });
+  assert.ok(Math.min(...seen.map(x => x[1])) > first + 0.01);
+});
+
+test('SND-17: a jingle that is no stinger ducks the song (the battle fanfares)', async () => {
+  const { c, T } = jinglePlayer(16000);
+  await T.jinglePrepare(JING);
+  const sg = T.play('s');
+  clearInterval(T.timer);
+  c.currentTime = 0.5;
+  T.jingle(JING.notes, 150, 'p25', {}, { jingle: JING });
+  /* SND-15: on the songs' duck (the gain after the fader), not the fader */
+  assert.ok(sg.gain.to[0].gain.calls.some(([m, v]) => m === 'linearRampToValueAtTime' && Math.abs(v - 0.15) < 1e-9));
+  assert.equal(sg.stems.lead.gain.calls.length, 0);
 });

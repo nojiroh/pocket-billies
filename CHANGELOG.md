@@ -76,6 +76,68 @@ kept aside in the browser).
   splash when you land the fish, and frogs, fish and diving birds splash. All of it sits well under the music. The
   debug menu's Sound test plays each at a distance, and so does the Studio's Sounds tab.
 
+- **Weather and wildlife you can hear** (sound track SND-14): rain sounds as hard as it falls, from a light hiss to a
+  storm's roar, with drops pattering round you; under the eaves you hear it drum on the roof and drip off the edge, and
+  indoors on the roof over you. Thunder follows every lightning bolt, late and low when it is far, closer and fuller
+  when near, and you hear it with reduced motion or the flashes off too. The wind rises with the gusts you see in the
+  grass and the leaves rustle with them. Birds sing a dawn chorus, go quiet at noon and give way to an owl at night;
+  grasshoppers and cicadas chirr by day, frogs croak by ponds at night, a fire crackles by its size, footsteps sound
+  of grass, sand, dirt, gravel, stone, boards, snow, mud or a carpet, a town has doors, carts, a far voice, a dog
+  and a bell instead of a murmur, and an inn, a library, a lab, a workshop or a barn each sound like themselves. All
+  of it sits well under the music; the debug menu's Sound test and the Studio's Sounds tab play each.
+
+- **Sound at a phone's level** (sound track SND-15): the whole game was quiet (its music about 14 dB under what
+  phone games aim for); a gentle compressor, a lift and a limiter at the end now bring it up to that level without
+  clipping, and keep loud and soft songs closer together. The volume sliders start nearer the top (Music 80, Sound
+  effects 100, World sounds and Ambience 75) with every sound keeping its balance against the music, so turning the
+  music up no longer squashes it. Cries and talk now dip the music and the world's sounds a little, and the short tunes
+  for a win or a level up dip the world's sounds too. On an iPhone, Settings > Sound > Play when silenced lets the game
+  play with the silent switch on (off unless you turn it on). A debug log now says how hard the sound's limiter works.
+- **Battles get an orchestra** (sound track SND-12c): trainer, rival and leader battles play the chip tune over
+  driving strings, brass, timpani and a full drum kit, and a boss battle adds a choir and orchestra hits. Each battle
+  starts lighter and builds as it goes, the brass and drums coming in, and peaks with a choir when a fight turns. Every
+  battle song, wild battles too, now has a second section before it repeats. The title screen's theme gains a harp,
+  strings and timpani; the opening fall a celesta, soft strings and a low drone; Professor Hazel's theme a harp and a
+  flute; the mall an electric piano over a walking bass. Each sits as loud as before; GB Sounds plays the 8-bit
+  versions. Every arrangement is a first draft, named as a placeholder for the Studio.
+- **The caves, the biomes and the run's map get their instruments** (sound track SND-12b): the cave's song is bells,
+  a low drone and dripping plucked strings in a lot of echo; the meadow a harp and a flute; the spore wood and the
+  crystal caves bells and soft strings; the trench a deep pad and a drone with a clarinet; the hills an accordion over a
+  walking bass; the inner sun brass, timpani and driving strings; the spire a celesta over strings; the run's map a
+  harp, strings and a flute. Each now has a second section (24-32 bars before it repeats). A run builds as you go
+  deeper: from the first mini-boss's row some of a song's big parts come in (a march snare, strings, brass or a choir,
+  timpani), and from the second all of them. Walking adds a light beat, and rain and snow add their own sounds. Each
+  sits as loud as before; GB Sounds plays the 8-bit versions. Every arrangement is a first draft, named as a
+  placeholder for the Studio.
+- **Longer songs** (sound track SND-12, part 1): Copperleaf, the routes and the towns' songs now have a second
+  section with its own chords and tune, so they run 24-32 bars (up to a minute and a half) before they repeat. Each
+  section ends with a drum fill and the bass walking into the next, repeats change a little, and the B section brings
+  its own colour: a flute and a glockenspiel in Copperleaf, a string ostinato on a route. Towns and cities have their own
+  instruments now: an accordion, an e-piano, a walking bass and brushes. GB Sounds plays the same new songs on the four
+  chip voices. Every arrangement is a first draft, named as a placeholder for the Studio.
+
+- **Music that listens** (sound track SND-13): the songs with the new instruments now change as you play, a beat or a
+  bar at a time. Walk through Copperleaf and a tambourine joins in (a snare on a route), and it drops out about a bar
+  after you stop. Rain adds a light celesta and brushes, snow sleigh bells, a storm low strings and timpani; on a
+  route at night a flute takes the tune. A wild battle starts lean and builds as the turns pass, KOs land and big hits
+  strike, with a choir and orchestra hits in the red zone and as a KO lands. In Copperleaf you hear the busker's
+  accordion inside the town's song as you pass, from the side where it plays; stop and listen a moment and it plays
+  your last run's theme. **GB Sounds** keeps the old behaviour. The debug menu's Sound test has a switch for each layer
+  and the busker at a distance.
+- **Fanfares with a band** (sound track SND-17): the jingles play on real-sounding instruments too: the victory a
+  brass fanfare with strings and timpani, a level up on glockenspiel and harp, an evolution's string swell and harp
+  glissando, a catch on plucked strings with a snare roll, a hatch on a music box, and the run's own: a sly clarinet
+  for a Perk, bells for new places on the map, a woodblock's tock for a passing day, a glockenspiel coin per payout
+  row. Over a song the short ones now land on its beat and in its key, and only the busy parts of the song step back
+  for them. **GB Sounds** plays every jingle the old 8-bit way. The debug menu's Sound test plays each jingle both
+  ways.
+
+- **A fuller band** (sound track SND-11): Copperleaf, the routes and wild battles now have a band around the chip
+  tune: in Copperleaf a music box, a harp and soft strings (a flute at night); on a route strings, plucked strings and
+  an orchestral snare; in a wild battle quick strings, brass, timpani and a full drum kit. All of it is made by the
+  game itself, no sound files. Settings -> Sound -> **GB Sounds** plays every song the old way, on the four Game Boy
+  voices. The debug menu's Sound test plays any song either way and any of the 29 instruments.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)

@@ -14,6 +14,9 @@ import {
   battleRecallSoundPlay,
   cutscene,
   mapIdAt,
+  natureHere,
+  naturePreviewTick,
+  natureStart,
   provide,
   soundscapeFish,
   soundscapeHere,
@@ -26,8 +29,16 @@ import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SOUNDSCAPE, SPECIES } from 
 import { isRobotSp } from './logic/fighters.js';
 import { maxHp } from './logic/rules.js';
 import { squareBuskSong, squareBusker } from './logic/square-day.js';
+import { hitTier, koAhead } from './logic/battle-anims.js';
 import { runWeather } from './logic/run-map.js';
-import { musicBattleKind, musicRedZone, musicWeatherCut, songFor, songVariant } from './logic/music-where.js';
+import {
+  musicArcBand,
+  musicBattleKind,
+  musicRedZone,
+  musicWeatherCut,
+  songFor,
+  songVariant,
+} from './logic/music-where.js';
 import { cryLowHealth, cryOfBot, cryRecipe, cryVoices } from './logic/cries.js';
 import { uiSoundFor, uiSoundVoices } from './logic/ui-sounds.js';
 import {
@@ -43,7 +54,20 @@ import {
   ambienceRandom,
   ambienceStep,
 } from './logic/ambience-sound.js';
+import {
+  musicLayerArc,
+  musicLayerBattle,
+  musicLayerBusker,
+  musicLayerFight,
+  musicLayerFightStart,
+  musicLayerListen,
+  musicLayerPan,
+  musicLayerTests,
+  musicLayerWalk,
+  musicLayerWeather,
+} from './logic/music-layers.js';
 import { soundscapePreview } from './logic/soundscape.js';
+import { natureBetween, natureBirdWait, natureBirds, natureStep, natureStepSurface } from './logic/nature-sound.js';
 import { fighter, liveActors } from './logic/battle-engine.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { battleStage } from './battle-stage.js';
@@ -62,7 +86,9 @@ import {
 } from './walk-view.js';
 import { environment, environmentHour, environmentState } from './environment.js';
 import { bedDuck, mixTrim, soundLevel, soundLevels } from './audio/levels.js';
-import { midiToFrequency, trackerCreate } from './audio/tracker.js';
+import { mixDuck } from './logic/sound-duck.js';
+import { mixChainMake, mixDuckerMake } from './audio/mix-chain.js';
+import { midiToFrequency, trackerCreate, trackerRecipe } from './audio/tracker.js';
 /* eslint-disable no-func-assign */
 expose({
   BIRD_CALLS: [() => BIRD_CALLS],
@@ -70,7 +96,12 @@ expose({
   BIRD_PITCH: [() => BIRD_PITCH],
   CRIES: [() => CRIES],
   JINGLES: [() => JINGLES],
+  JINGLES_ROOM_MB: [() => JINGLES_ROOM_MB],
   LIVE_VOLUMES: [() => LIVE_VOLUMES],
+  MUSIC_JINGLES_BATTLE: [() => MUSIC_JINGLES_BATTLE],
+  MUSIC_JINGLES_BOSS: [() => MUSIC_JINGLES_BOSS],
+  MUSIC_JINGLES_HUB: [() => MUSIC_JINGLES_HUB],
+  MUSIC_JINGLES_RUN: [() => MUSIC_JINGLES_RUN],
   RARE_BIRDS: [() => RARE_BIRDS],
   SONGS: [() => SONGS],
   ambience: [() => ambience],
@@ -92,36 +123,52 @@ expose({
   battleDrumsIn: [() => battleDrumsIn, v => (battleDrumsIn = v)],
   battleMusicStart: [() => battleMusicStart, v => (battleMusicStart = v)],
   battleSoundEffect: [() => battleSoundEffect, v => ((battleSoundEffect = v), provide({ battleSoundEffect }))],
+  buskerCase: [() => buskerCase, v => (buskerCase = v)],
   buskerSongNear: [() => buskerSongNear, v => (buskerSongNear = v)],
   cryPlay: [() => cryPlay, v => (cryPlay = v)],
   footstepAt: [() => footstepAt, v => (footstepAt = v)],
   initAmbience: [() => initAmbience, v => (initAmbience = v)],
   initSound: [() => initSound, v => (initSound = v)],
-  jingle: [() => jingle, v => ((jingle = v), provide({ jingle }))],
-  jinglePlay: [() => jinglePlay, v => (jinglePlay = v)],
+  jingle: [() => jingle, v => (jingle = v)],
+  jinglePlay: [() => jinglePlay, v => ((jinglePlay = v), provide({ jinglePlay }))],
+  jinglesPrepare: [() => jinglesPrepare, v => (jinglesPrepare = v)],
   lowHpBeep: [() => lowHpBeep, v => (lowHpBeep = v)],
   music: [() => music, v => (music = v)],
+  musicBuskerNow: [() => musicBuskerNow, v => (musicBuskerNow = v)],
+  musicEnsembleLine: [() => musicEnsembleLine, v => (musicEnsembleLine = v)],
   musicFor: [() => musicFor, v => (musicFor = v)],
+  musicLayersIntensity: [() => musicLayersIntensity, v => (musicLayersIntensity = v)],
+  musicLayersNow: [() => musicLayersNow, v => (musicLayersNow = v)],
+  musicLayersPrepare: [() => musicLayersPrepare, v => (musicLayersPrepare = v)],
   musicMapCut: [() => musicMapCut, v => (musicMapCut = v)],
   musicParts: [() => musicParts, v => (musicParts = v)],
+  musicPrepare: [() => musicPrepare, v => (musicPrepare = v)],
+  musicSectionLine: [() => musicSectionLine, v => (musicSectionLine = v)],
   musicState: [() => musicState, v => (musicState = v)],
   musicStop: [() => musicStop, v => (musicStop = v)],
   musicSync: [() => musicSync, v => (musicSync = v)],
   musicVariant: [() => musicVariant, v => (musicVariant = v)],
-  nearestSoundSource: [() => nearestSoundSource, v => (nearestSoundSource = v)],
   playBirdCall: [() => playBirdCall, v => (playBirdCall = v)],
   playClockTick: [() => playClockTick, v => (playClockTick = v)],
   playOwlCall: [() => playOwlCall, v => (playOwlCall = v)],
   playScrapClank: [() => playScrapClank, v => (playScrapClank = v)],
   runArriveSound: [() => runArriveSound, v => (runArriveSound = v)],
   soundBedDuck: [() => soundBedDuck, v => (soundBedDuck = v)],
+  soundChainSample: [() => soundChainSample, v => (soundChainSample = v)],
   soundDebugLines: [() => soundDebugLines, v => (soundDebugLines = v)],
+  soundDuck: [() => soundDuck, v => (soundDuck = v)],
   soundEffect: [() => soundEffect, v => ((soundEffect = v), provide({ soundEffect }))],
   soundEffectAt: [() => soundEffectAt, v => ((soundEffectAt = v), provide({ soundEffectAt }))],
   soundEngine: [() => soundEngine],
   soundLog: [() => soundLog, v => (soundLog = v)],
+  soundMixLine: [() => soundMixLine, v => (soundMixLine = v)],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   soundPreferences: [() => soundPreferences],
+  soundSessionApply: [() => soundSessionApply, v => ((soundSessionApply = v), provide({ soundSessionApply }))],
+  soundSessionSupported: [
+    () => soundSessionSupported,
+    v => ((soundSessionSupported = v), provide({ soundSessionSupported })),
+  ],
   soundStarts: [() => soundStarts],
   soundWake: [() => soundWake, v => (soundWake = v)],
   synthKick: [() => synthKick, v => (synthKick = v)],
@@ -139,9 +186,11 @@ provide({
   applyAmbienceVolume,
   applyVolumes,
   battleSoundEffect,
-  jingle,
+  jinglePlay,
   soundEffect,
   soundEffectAt,
+  soundSessionApply,
+  soundSessionSupported,
   testVolume,
   uiSound,
 });
@@ -180,23 +229,43 @@ const soundPreferences = () => (typeof saveData !== 'undefined' && saveData && s
 function volumePreference(k) {
   return soundLevel(soundPreferences(), k);
 }
+/* SND-15: iPhones (iOS 17 on) mute web sound with the silent switch unless the page plays as media
+   (navigator.audioSession.type 'playback'); Settings -> Sound -> "Play when silenced" (preferences.playSilenced, off by
+   default) asks for it. Browsers without navigator.audioSession don't show the row */
+function soundSessionSupported() {
+  try {
+    const AS = /** @type {any} */ (navigator).audioSession;
+    return !!AS && 'type' in AS;
+  } catch (e) {
+    return false;
+  }
+}
+function soundSessionApply() {
+  if (!soundSessionSupported()) return;
+  try {
+    /** @type {any} */ (navigator).audioSession.type = soundPreferences().playSilenced ? 'playback' : 'auto';
+  } catch (e) {}
+}
 function initSound() {
   if (soundEngine.ctx) return true;
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return false;
+  soundSessionApply();
   try {
     const c = new AC();
     soundEngine.ctx = c;
-    /* SND-6: the compressor's settings and the master's trim are music.json mix */
-    const comp = c.createDynamicsCompressor(),
-      CM = (MUSIC.mix && MUSIC.mix.compressor) || {};
-    comp.threshold.value = CM.threshold ?? -14;
-    comp.ratio.value = CM.ratio ?? 3;
-    comp.connect(c.destination);
-    soundEngine.comp = comp;
+    /* SND-15: the master chain (audio/mix-chain.js: a gentle compressor, a make-up gain, a limiter; music.json mix),
+       after the master's trim (SND-6) */
+    const chain = mixChainMake(c, MUSIC.mix);
+    soundEngine.chain = chain;
     soundEngine.master = c.createGain();
     soundEngine.master.gain.value = mixTrim(MUSIC.mix, 'master');
-    soundEngine.master.connect(comp);
+    soundEngine.master.connect(chain.input);
+    /* SND-15: the world sounds' and the ambience's duck: a gain of the ducker's own between their buses and the master
+       (soundDuck), so a jingle, a cry or talk dips them without touching their sliders, fade-in or bedsUnderSong */
+    soundEngine.bedsDuck = c.createGain();
+    soundEngine.bedsDuck.connect(soundEngine.master);
+    soundEngine.bedsDucker = mixDuckerMake(c, () => [soundEngine.bedsDuck.gain]);
     soundEngine.mus = c.createGain();
     soundEngine.fx = c.createGain();
     /* v27: a filter on the music, closed a little in the rain */ soundEngine.musLP = c.createBiquadFilter();
@@ -211,8 +280,21 @@ function initSound() {
     const T = trackerCreate(c, soundEngine.mus, {
       songs: SONGS,
       run: MUSIC.run,
-      levels: () => soundEngine.L,
+      /* SND-11: the baked instruments and the ensembles that play them (music.json instruments, ensembles); GB Sounds
+         (Settings -> Sound) plays every song on today's four chip voices; the music's reverb stays off at Graphics Off */
+      instruments: MUSIC.instruments,
+      ensembles: MUSIC.ensembles,
+      /* the Sound test's own choice (soundEngine.testGb) while it plays a song */
+      gb: () => (soundEngine.testGb != null ? soundEngine.testGb : !!soundPreferences().gbSounds),
+      reverb: () => soundPreferences().aim !== 'off',
+      /* SND-13: the Sound test's layer switches while it plays a song (soundEngine.testLayers) */
+      levels: () =>
+        soundEngine.testLayers && soundEngine.test
+          ? { ...soundEngine.L, layers: soundEngine.testLayers }
+          : soundEngine.L,
       fx: soundEngine.fx,
+      /* SND-15: what a jingle ducks the music by (music.json mix duck) */
+      mix: () => MUSIC.mix,
       /* SND-9: the beds' noise counts toward the baked buffers' budget (the tracker's bank) */
       memory: () => (ambience.noise ? (ambience.noise.pink.length + ambience.noise.brown.length) * 4 : 0),
       /* SND-9: the reverb returns to the master, after the sliders' own buses */
@@ -356,6 +438,8 @@ function musicState() {
     map: id,
     placeKind: r && r.t === 'city' ? 'city' : r && r.town ? 'town' : null,
     placeMusic: buskerSongNear(run, sc) || (r && r.music) || null,
+    /* SND-13: GB Sounds (a song on an ensemble then takes its arc band's version, not its layers) */
+    gb: !!(soundEngine.testGb != null ? soundEngine.testGb : soundPreferences().gbSounds),
     /* a run's place: its node's type, biome and row (logic/run-map.js) */
     nodeType: node ? node.type : null,
     biome: node ? node.biome || null : null,
@@ -363,14 +447,43 @@ function musicState() {
   };
 }
 /* HB-10d: near the square's busker (a resident who busks, logic/square-day.js squareBusker) your last run's region
-   theme plays in place of the town's own song, within rules.json square.busk.near metres of the busker's case */
+   theme plays in place of the town's own song. SND-13: only when you stop to listen (still within rules.json
+   square.busk.near metres for 3 s, until you are 2 m further off: musicBuskerNow); passing by, its accordion plays inside Copperleaf's song instead (the busker layer) */
 function buskerSongNear(run, sc) {
   const K = RULES.square && RULES.square.busk;
-  if (!K || run || !sc || sc.indoor || typeof walkView === 'undefined' || !walkView.pl) return null;
-  if (!squareBusker(saveData.meta, /** @type {any} */ (RESIDENTS))) return null;
-  const c = (sc.props || []).find(p => p.k === 'busker_case');
-  if (!c || Math.hypot(c.x - walkView.pl.x, c.z - walkView.pl.z) > K.near) return null;
+  if (!K || run || !sc || sc.indoor || !soundEngine.busk || !soundEngine.busk.listen) return null;
   return squareBuskSong(saveData.meta.history, K.songs);
+}
+/* SND-13: the busker's case in this scene, while someone busks there: the resident who busks (HB-10d, RS-5), or,
+   while no resident in the data busks yet, the case alone (simulated: a fixed spot) */
+function buskerCase(run, sc) {
+  if (run || !sc || sc.indoor || typeof walkView === 'undefined' || !walkView.pl || !saveData) return null;
+  const c = (sc.props || []).find(p => p.k === 'busker_case');
+  if (!c) return null;
+  const R = /** @type {Record<string, any>} */ (RESIDENTS || {}),
+    anyBusks = Object.values(R).some(r => r && r.busk);
+  return !anyBusks || squareBusker(saveData.meta, /** @type {any} */ (R)) ? c : null;
+}
+/* SND-13: the busker as you pass (logic/music-layers.js): its level by distance (in earshot under 8 m, out past 9,
+   full within 2 m), its pan from where it stands, and whether you stopped to listen */
+function musicBuskerNow(sc, stillSec) {
+  const B = soundEngine.busk || (soundEngine.busk = { on: false, listen: false, level: 0, pan: 0 }),
+    run = typeof saveData !== 'undefined' && saveData ? saveData.run : null,
+    c = buskerCase(run, sc),
+    P = c ? soundPlacement(c.x, c.z, 1e6) : null;
+  if (!P) return Object.assign(B, { on: false, listen: false, level: 0, pan: 0 });
+  const r = musicLayerBusker(P.d, B.on);
+  return Object.assign(B, {
+    on: r.on,
+    level: r.level,
+    pan: musicLayerPan(P.pan),
+    listen: musicLayerListen(
+      P.d,
+      stillSec,
+      B.listen,
+      RULES.square && RULES.square.busk ? RULES.square.busk.near : undefined
+    ),
+  });
 }
 export function musicSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
@@ -389,7 +502,47 @@ export function musicSync() {
     soundEngine.cued = B;
     soundLog('battle ' + st.battle + ': no flash, the song without its intro');
   }
-  music(songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want, MUSIC.run));
+  const name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, soundEngine.want, MUSIC.run);
+  music(name);
+  musicPrepare(st, name);
+}
+/* SND-11: baked on arrival: where you are changes (the song asked for does), the ensembles of the song, its night
+   version (from dusk) and, in a run's place, a wild battle's song are baked in the bank's slices (only the notes they play), and the reverb is
+   made then, at a load, not on a song's first note. Songs on gb bake nothing */
+function musicPrepare(st, name) {
+  const T = soundEngine.tracker;
+  if (!T || !T.prepare || !name || soundEngine.prepared === name) return;
+  soundEngine.prepared = name;
+  const base = name.split('@')[0],
+    /* a battle's song only where battles happen (a run's places; never the hub) */
+    wild = st.battle || !st.nodeType ? null : { ...st, battle: 'wild' },
+    /* the night version once evening comes (by day its zones would only crowd the bank) */
+    want = new Set([name, st.night > 0 ? songVariant(base, { ...st, night: 1 }, SONGS, null, MUSIC.run) : null]);
+  if (wild) want.add(songVariant(songFor(wild, MUSIC.where, SONGS), wild, SONGS, null, MUSIC.run));
+  for (const n of want) if (n) T.prepare(n).then(ok => ok && musicLayersPrepare(n));
+  /* SND-17: the jingles this place can play: a run's stingers in its places, the title's motif in the hub (a run
+     starts there) */
+  jinglesPrepare(st.nodeType ? MUSIC_JINGLES_RUN : MUSIC_JINGLES_HUB);
+}
+/* SND-17: which jingles are baked ahead (their ensembles' notes), and when: a run's stingers on arriving in its places,
+   the battle's fanfares as a battle starts (the run's end ones too in a boss battle), the motif in the hub. One at a
+   time, in this order, while the bank keeps JINGLES_ROOM_MB free for the songs (a run's place already holds its songs,
+   water and beds near the budget); the rest bake on their first play, which plays 8-bit */
+const MUSIC_JINGLES_RUN = ['day', 'reveal', 'relic', 'payout_coin'],
+  MUSIC_JINGLES_HUB = ['motif'],
+  MUSIC_JINGLES_BATTLE = ['victory', 'levelup', 'caught', 'evolve'],
+  MUSIC_JINGLES_BOSS = ['run_won', 'run_lost'],
+  JINGLES_ROOM_MB = 1.5;
+function jinglesPrepare(ids) {
+  const T = soundEngine.tracker;
+  if (!T || !T.jinglePrepare || (T.gbOn && T.gbOn())) return;
+  const next = k => {
+    const S = k < ids.length && T.bankStats();
+    if (!S || S.withOtherMb > S.budgetMb - JINGLES_ROOM_MB) return;
+    const J = MUSIC.jingles[ids[k]];
+    (J ? T.jinglePrepare(J) : Promise.resolve()).then(() => next(k + 1));
+  };
+  next(0);
 }
 /* SND-5: a battle's music, timed as Masuda timed it: the song starts on the encounter's flash (or the trainer coming
    in) with its intro, and the drums wait for the first throw (battleDrumsIn) */
@@ -400,7 +553,12 @@ function battleMusicStart() {
   const st = musicState(),
     name = songVariant(songFor(st, MUSIC.where, SONGS), st, SONGS, null, MUSIC.run);
   if (!name) return;
+  /* SND-17: its fanfares baked while it plays */
+  jinglesPrepare(st.battle === 'boss' ? [...MUSIC_JINGLES_BATTLE, ...MUSIC_JINGLES_BOSS] : MUSIC_JINGLES_BATTLE);
   music(name, { intro: true, hold: true, restart: true });
+  /* SND-13: its peak's parts baked now (a KO's peak lasts a line or two: too short to bake on its first want) */
+  const T = soundEngine.tracker;
+  if (T && T.layersPrepare) T.layersPrepare(name, ['peak']);
   const sg = soundEngine.song;
   soundLog('battle ' + st.battle + ': ' + name + (sg && sg.name === name && sg.D.introSteps ? ', its intro' : ''));
 }
@@ -421,6 +579,17 @@ function musicParts(name) {
   /* a run's songs (a biome's): each arc band */
   if (S && S.arc !== false && MUSIC.where.some(W => W.biome && W.song === name))
     for (const B of (MUSIC.run && MUSIC.run.arc) || []) out.push(B.name);
+  /* SND-11: a song (or its night version) that names an ensemble, as its ensemble plays it: new fingerprints beside the
+     gb ones (which check-sound renders with GB Sounds on) */
+  const ens = D => D && D.ensemble && D.ensemble !== 'gb' && MUSIC.ensembles && MUSIC.ensembles[D.ensemble];
+  if (ens(S)) out.push('ensemble');
+  if (S && S.night !== false && ens(trackerRecipe(SONGS, musicVariant(name, 1), MUSIC.run))) out.push('ensemble-night');
+  /* SND-13: its ensemble's layers each in play (layer:walk, layer:rain, ... logic/music-layers.js musicLayerTests) by
+     day, and its night version's (layer:walk@night ...) when the night names an ensemble of its own */
+  const E = ens(S),
+    N = S && S.night !== false ? ens(trackerRecipe(SONGS, musicVariant(name, 1), MUSIC.run)) : null;
+  if (E) for (const k of musicLayerTests(E)) out.push('layer:' + k);
+  if (N && N !== E) for (const k of musicLayerTests(N)) out.push('layer:' + k + '@night');
   return out;
 }
 /* SND-4: a song's name as it plays at this night level (1 night, 0 day): 'town@night' or the name itself */
@@ -430,28 +599,52 @@ export function musicVariant(name, night) {
 setInterval(() => {
   try {
     musicSync();
+    soundChainSample();
   } catch (e) {}
 }, 1000);
 /* a short tune that plays once (victory, level up, evolution), after which the place's music comes back */
 /* SND-1: bus is where it plays, the effects bus unless asked (Settings → Sound → Music's Test plays one on the music bus) */
 export function jingle(notes, bpm = 150, type = 'p25', bus = null) {
   if (!initSound() || soundEngine.ctx.state !== 'running') return;
-  const end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - soundEngine.ctx.currentTime;
+  const t0 = soundEngine.ctx.currentTime,
+    end = soundEngine.tracker.jingle(notes, bpm, type, bus || soundEngine.fx) - t0;
   soundEngine.jingle = performance.now() + end * 1000 + 200;
+  soundDuck('jingle', t0, t0 + end, false);
 }
-/* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave); o.shift moves it by
+/* SND-6: a jingle by its name, at its own tempo and wave (music.json jingles bpm, wave; SND-17: o.bpm, the battle's
+   level up at 180); on its ensemble when it names one (tracker.js T.jingle); o.shift moves it by
    semitones, o.duck false plays it over the song without ducking it (and doesn't hold the music sync). Logs
    'jingle <name>' in soundEngine.log (in memory, never sent). Returns how long it lasts (s), 0 when silent */
 export function jinglePlay(id, o = {}) {
   const J = MUSIC.jingles[id];
   if (!J || !initSound() || soundEngine.ctx.state !== 'running') return 0;
+  const T = soundEngine.tracker,
+    ens = T.jingleEnsemble(J);
+  soundEngine.lastJingle = {
+    id,
+    as: !ens ? 'gb' : T.gbOn() ? 'gb (GB Sounds)' : T.jingleReady(J) ? J.ensemble : 'gb (baking)',
+  };
   const out = o.bus || soundEngine.fx,
+    t0 = soundEngine.ctx.currentTime,
     end =
-      soundEngine.tracker.jingle(J.notes, J.bpm || 150, J.wave || 'p25', out, { shift: o.shift, duck: o.duck }) -
-      soundEngine.ctx.currentTime;
+      soundEngine.tracker.jingle(J.notes, o.bpm || J.bpm || 150, J.wave || 'p25', out, {
+        shift: o.shift,
+        duck: o.duck,
+        jingle: J,
+      }) - t0;
   if (o.duck !== false) soundEngine.jingle = performance.now() + end * 1000 + 200;
+  /* SND-15: the beds dip under it too (the tracker dips the music, or a stinger its busy parts) */
+  if (o.duck !== false) soundDuck(J.stinger ? 'stinger' : 'jingle', t0, t0 + end, false);
   soundLog('jingle ' + id + (o.shift ? ' +' + o.shift : ''));
   return end;
+}
+/* SND-15: a jingle, a stinger, a cry or talk ducks the music (the tracker's duck, when music is true) and the world
+   sounds and ambience (their own), by music.json mix duck, from t0 to end (the context's clock), held `hold` more */
+function soundDuck(kind, t0, end, music = true) {
+  const T = soundEngine.tracker,
+    D = mixDuck(MUSIC.mix, kind);
+  if (music && T && T.song && D.music < 1) T.duck(t0, end + D.hold, D.music, D.a, D.r, kind);
+  if (soundEngine.bedsDucker && D.beds < 1) soundEngine.bedsDucker.add(t0, end + D.hold, D.beds, D.a, D.r, kind);
 }
 /* SND-6: walking into a run's next place: a day passes (the day jingle), then the reveal jingle when the map shows more
    than it did */
@@ -461,7 +654,6 @@ export function runArriveSound(revealed) {
 }
 /* SND-2: the jingles are data (music.json jingles); here each is its note list, as jingle() takes it */
 export const JINGLES = Object.fromEntries(Object.entries(MUSIC.jingles).map(([k, J]) => [k, J.notes]));
-provide({ JINGLES }); /* to-module */
 /* ---------- sound effects ---------- */
 /* SND-2: the base cries are data (music.json cries.bases); a species picks one by its name */
 const CRIES = MUSIC.cries.bases;
@@ -476,6 +668,8 @@ export function soundEffect(name, o = {}) {
       uiSound('select');
       break;
     case 'blip': {
+      /* SND-15: talk dips the music and the beds a little; each letter's blip holds the dip (mix duck talk hold) */
+      soundDuck('talk', t, t + 0.05);
       /* DL-2: the voice follows the line's style: a shout higher and louder, a whisper softer; a [big] letter an accent
          (a thought never blips: talk.js) */
       const loud = o.style === 'shout' ? 1.5 : o.style === 'whisper' ? 0.45 : o.big ? 1.3 : 1,
@@ -677,7 +871,10 @@ function cryPlay(sp, low) {
       slide: v.slide,
       vib: v.vib,
     });
-  return Math.max(0, ...V.map(v => v.at + v.dur));
+  const len = Math.max(0, ...V.map(v => v.at + v.dur));
+  /* SND-15: the music and the beds dip under it */
+  if (len > 0) soundDuck('cry', t, t + len);
+  return len;
 }
 /* SND-6: a Billie's cry in battle, from the line's snapshot of its slot (ev.s: its species and its HP then): its low-HP
    cry in the red zone (logic/music-where.js musicRedZone, as the music's tense version); RL-14: a bot's too */
@@ -777,10 +974,10 @@ function battleSoundEffect(an, r, ev) {
       break;
     }
     case 'caught':
-      jingle(JINGLES.caught);
+      jinglePlay('caught');
       break;
     case 'lvl':
-      jingle(JINGLES.levelup, 180);
+      jinglePlay('levelup', { bpm: 180 });
       break;
     case 'run':
       soundEffect('run');
@@ -959,10 +1156,10 @@ function initAmbience() {
   const c = soundEngine.ctx;
   ambience.bus = c.createGain();
   ambience.bus.gain.value = 0;
-  ambience.bus.connect(soundEngine.master);
+  ambience.bus.connect(soundEngine.bedsDuck || soundEngine.master);
   ambience.amb = c.createGain();
   ambience.amb.gain.value = 0;
-  ambience.amb.connect(soundEngine.master);
+  ambience.amb.connect(soundEngine.bedsDuck || soundEngine.master);
   /* v47: the outdoors comes through a low-pass of its own, closed down when you are in a room laid into the place:
     the town's murmur, the birds, the rain on the roof and the fountain outside reach you through the walls */
   const lp = to => {
@@ -992,6 +1189,8 @@ function initAmbience() {
   ambience.rng = ambienceRandom(0x50d3);
   /* SND-10: the water (soundscape.json `water`), its banks baked in the tracker's slices (soundscape-here.js) */
   ambience.scape = soundscapeStart(c);
+  /* SND-14: the weather's, the wild's and the town's one-shots (nature-here.js, audio/nature-player.js) */
+  ambience.naturePlayer = natureStart(c);
   /* a layer of a bed (soundscape.json beds): its filters and its gain, waiting for its noise (ambienceBedStart) */
   const layer = (L, dest, b) => {
     const F = [];
@@ -1022,7 +1221,8 @@ function initAmbience() {
     const g = c.createGain(),
       p = c.createStereoPanner ? c.createStereoPanner() : null,
       tr = c.createGain(),
-      bus = B.bus === 'amb' ? (name === 'cave' || name === 'room' ? ambience.amb : ambience.lpA) : ambience.lpW,
+      /* SND-14: a dry bed (a room's or a cave's own tone) never goes through the outdoors' muffle */
+      bus = B.bus === 'amb' ? (B.dry ? ambience.amb : ambience.lpA) : ambience.lpW,
       b = { g, p, tr, drifts: [], parts: [], srcs: [], st: {}, eventGain: B.eventGain || 1 };
     g.gain.value = 0;
     /* the bed's trim (tools/check-sound.py --loudness) between its layers and its level */
@@ -1105,11 +1305,23 @@ function ambienceApply(T, pans, t) {
    open country's) and ['steps', 0, ground] */
 function ambiencePreviewTick(list, t) {
   if (!ambience.bus && !initAmbience()) return;
-  ambienceApply(ambiencePreview(list), {}, t);
+  /* SND-14: and nature's (rain by how hard, roofs, thunder, wind and gusts, insects, frogs, a fire by its size, the
+     town's life, a room's tone: nature-here.js) */
+  const T = ambiencePreview(list);
+  naturePreviewTick(list, T, t);
+  ambienceApply(T, {}, t);
   /* SND-10: water recipes [id, metres, a fall's height] */
   if (ambience.scape) ambience.scape.update(soundscapePreview(SOUNDSCAPE, list), t);
-  if (list.some(([k]) => k === 'birds')) ambienceBirds(t, ['lark', 'lark', 'song'], false, 1, 0, 1);
-  /* footsteps ['steps', 0, ground], one every 0.35 s (walking) */
+  /* birds ['birds', 0, hour] (the open country's); SND-14: ['owl'] a night's */
+  const B = list.find(([k]) => k === 'birds' || k === 'owl');
+  if (B) {
+    const owl = B[0] === 'owl';
+    /* SND-14: a new preview's first bird calls at once */
+    if (ambience.previewBirds !== B) ambience.birdAt = t + 0.3;
+    ambience.previewBirds = B;
+    ambienceBirds(t, ['lark', 'lark', 'song'], false, owl ? 0 : 1, 0, 1, owl ? 23 : (B[2] ?? 9), owl ? 1 : 0);
+  }
+  /* footsteps ['steps', 0, ground or surface], one every 0.35 s (walking) */
   const st = list.find(([k]) => k === 'steps');
   if (st) {
     if (!ambience.stepAt || ambience.stepAt < t || ambience.stepAt > t + 1) ambience.stepAt = t;
@@ -1148,7 +1360,7 @@ function ambienceEvents(b, t) {
       ambience.started++;
     }
   if (b.events === 'crackles')
-    for (const e of ambienceCrackles(b.ev, t, t + 0.3, r)) {
+    for (const e of ambienceCrackles(b.ev, t, t + 0.3, r, b.crackle)) {
       /* a few milliseconds of noise, band-passed at a random pitch, snapping in and dying away */
       const s = c.createBufferSource(),
         F = c.createBiquadFilter(),
@@ -1188,7 +1400,7 @@ function ambienceDriftTick(b, t) {
   }
 }
 /* where a sound is, as a volume and a left-right pan, from where you stand and which way the camera faces */
-function soundPlacement(x, z, range) {
+export function soundPlacement(x, z, range) {
   const P = walkView.pl,
     C = walkView.C;
   if (!P) return null;
@@ -1197,15 +1409,6 @@ function soundPlacement(x, z, range) {
   const R = (C && C.right) || [1, 0, 0],
     dx = (x - P.x) * R[0] + (z - P.z) * R[2];
   return { v: Math.pow(1 - d / range, 1.6), pan: clamp(dx / 7, -1, 1) * 0.75, d };
-}
-function nearestSoundSource(list, get, range) {
-  let best = null;
-  for (const it of list || []) {
-    const [x, z] = get(it);
-    const w = soundPlacement(x, z, range);
-    if (w && (!best || w.d < best.d)) best = w;
-  }
-  return best;
 }
 export function updateAmbience() {
   if (!soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
@@ -1228,47 +1431,16 @@ export function updateAmbience() {
     (uiState.tab === 'walk' || (typeof activeBattle !== 'undefined' && activeBattle));
   const E = typeof environment !== 'undefined' && environment.on ? environment : null,
     sc = walk ? walkView.sc : null;
-  let pans = {};
+  const pans = {};
   if (sc) {
-    const put = (k, w, mul = 1) => {
-      if (w && w.v * mul > (T[k] || 0)) {
-        T[k] = w.v * mul;
-        pans[k] = w.pan;
-      }
-    };
     /* SND-10: the water near you is soundscape-here.js's (every kind, falls by height, the surf); the sea's own bed
        stays, coast-wide */
     if (sc.flatFar || sc.waterKind === 'sea' || sc.far === 'sea') {
       T.sea = AMBIENCE_FIXED.sea_coast.gain;
       pans.sea = 0;
     }
-    const C0 = walkData().sc,
-      props = sc.props || [];
-    put(
-      'fire',
-      nearestSoundSource(
-        props.filter(p => {
-          const M = C0.props[p.k];
-          return M && (M.fx || []).some(e => e.k === 'fire');
-        }),
-        p => [p.x, p.z],
-        7
-      ),
-      0.35
-    );
-    const thru = !sc.indoor ? 1 : sc.roomRect ? 0.45 : 0;
-    if (E && thru) {
-      T.rain = Math.min(1, E.rain) * 0.42 * thru;
-      T.wind = (E.storm * 0.4 + (E.climate === 'alpine' ? 0.16 : 0) + E.snow * 0.1) * thru;
-      pans.rain = pans.wind = 0;
-    }
-    /* thunder a moment after the flash */
-    if (E && E.flash > 0.9 && !ambience.flash) {
-      ambience.flash = 1;
-      const d = 0.5 + Math.random() * 1.6;
-      synthNoise(ambience.bus, { t: t + d, dur: 2.6, vol: 0.55, lp: 180 });
-      synthNoise(ambience.bus, { t: t + d + 0.1, dur: 1.2, vol: 0.25, lp: 420 });
-    } else if (E && E.flash < 0.5) ambience.flash = 0;
+    /* SND-14: the fire by its size, the rain, the wind and the thunder (from the weather's bolts, not the flash) are
+       nature-here.js's */
   }
   /* arriving somewhere: everything fades in */
   const sid = sc ? baseMapId() : null;
@@ -1284,29 +1456,81 @@ export function updateAmbience() {
       ambience.lpW.frequency.setTargetAtTime(muf ? 850 : 20000, t, 0.3);
     }
   }
-  if (sc) ambienceBeds(sc, E, T, pans, t);
+  if (sc) {
+    ambienceBeds(sc, E, T, pans, t);
+    natureHere(sc, E, T, pans, t);
+  }
   ambienceApply(T, pans, t);
   soundscapeHere(sc, E, t);
-  /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain */
+  /* the music listens: drums soften when you stand still or at night, a pad at night, muffled in the rain. SND-13: a
+     song playing its ensemble hears its layers instead (musicLayersNow): the walking beat, the weather, night */
   const night = E ? (E.raw || E).night : 0,
     moving = sc && walkView.pl && walkView.pl.walk;
   soundEngine.L = {
     drums: (moving || (typeof activeBattle !== 'undefined' && activeBattle) ? 1 : 0.45) * (1 - night * 0.4),
     pad: sc && !sc.indoor ? night : 0,
     night: sc && !sc.indoor ? night : 0,
+    layers: musicLayersNow(sc, E, !!moving, sc && !sc.indoor ? night : 0),
   };
+  const ens = !!(soundEngine.song && soundEngine.song.ensOn);
+  /* SND-13: on an ensemble the walking beat and the night's dims replace the drums' bus level (gb keeps it) */
   if (soundEngine.song && soundEngine.song.drums)
-    soundEngine.song.drums.gain.setTargetAtTime(soundEngine.L.drums, t, 0.6);
+    soundEngine.song.drums.gain.setTargetAtTime(ens ? 1 : soundEngine.L.drums, t, 0.6);
   if (soundEngine.musLP) {
     const cut = musicMapCut();
     soundEngine.musLP.frequency.setTargetAtTime(
-      /* SND-8b: the rain's muffle softened from 2.2 to 4 kHz (the owner's pick, 2026-10-27; SND-13's rain layer
-         replaces it) */
-      cut != null ? cut : E && sc && !sc.indoor && E.rain > 0.3 ? 4000 : 20000,
+      /* SND-8b: the rain's muffle softened from 2.2 to 4 kHz (the owner's pick, 2026-10-27). SND-13: an ensemble has
+         its rain layer instead; gb keeps the muffle */
+      cut != null ? cut : !ens && E && sc && !sc.indoor && E.rain > 0.3 ? 4000 : 20000,
       t,
       0.8
     );
   }
+}
+/* SND-13: the layer levels the music hears (logic/music-layers.js; the tracker moves an ensemble's layered parts on
+   their beat or bar line): walk (as you walk, a moment after you stop), the weather and night where you are (outdoors;
+   the environment's rain, snow and storm, as the rain's muffle reads them), build full and no peak (a battle's
+   intensity and the run's arc set them, below) */
+function musicLayersNow(sc, E, moving, night) {
+  const now = performance.now();
+  if (moving || soundEngine.walkAt == null) soundEngine.walkAt = now;
+  const W = musicLayerWeather(E, !sc || !!sc.indoor),
+    still = (now - soundEngine.walkAt) / 1000,
+    busk = musicBuskerNow(sc, still);
+  return {
+    walk: sc ? musicLayerWalk(moving, still) : 0,
+    rain: W.rain,
+    snow: W.snow,
+    storm: W.storm,
+    night: Math.round(night * 50) / 50,
+    busker: busk.level,
+    buskerPan: busk.pan,
+    ...musicLayersIntensity(),
+  };
+}
+/* SND-13: a battle's intensity (build from its intro to full as turns pass, KOs land, big hits and a boss's phases;
+   peak in the red zone, as a KO lands, once a boss has changed phase), heard from the lines played so far
+   (activeBattle.events up to .ev; the VFX track's hitTier and koAhead, logic/battle-anims.js); out of a battle full
+   and no peak */
+function musicLayersIntensity() {
+  const B = typeof activeBattle !== 'undefined' && activeBattle;
+  if (!B || !B.events) {
+    soundEngine.fight = null;
+    /* the run's arc: rows 3-5 add some of the peak's parts, 6-8 all of them (music.json run.arc's bands) */
+    return { build: 1, peak: musicLayerArc(musicArcBand(musicState(), MUSIC.run)) };
+  }
+  if (!soundEngine.fight || soundEngine.fight.B !== B) soundEngine.fight = { B, F: musicLayerFightStart() };
+  const F = musicLayerFight(soundEngine.fight.F, B.events, B.ev || 0, { hitTier, koAhead }),
+    st = musicState();
+  return musicLayerBattle(F, !!st.redZone, st.battle === 'boss' || st.battle === 'leader');
+}
+/* SND-13: the walking beat, the weather and night a song's ensemble has layers for, baked ahead on arrival (the rest
+   bake when they first come) */
+function musicLayersPrepare(name) {
+  const T = soundEngine.tracker,
+    lv = soundEngine.L && soundEngine.L.layers;
+  if (!T || !T.layersPrepare) return;
+  T.layersPrepare(name, ['walk', ...['rain', 'snow', 'storm', 'night', 'busker'].filter(k => lv && lv[k] > 0)]);
 }
 setInterval(() => {
   try {
@@ -1353,8 +1577,79 @@ export function soundDebugLines() {
     /* SND-10: the water: live voices and their levels, sources, events played and dropped; the scene's emitters (made
        in ms, from the renderer's grid or the tiles, how many of each) */
     water: ambience.scape ? { ...ambience.scape.stats(), scene: ambience.scapeBuilt || null } : null,
+    /* SND-14: nature's one-shots (sources started, thunder rolls so far and now), the bolts heard, the last thunder's
+       distance and delay */
+    nature: ambience.naturePlayer
+      ? {
+          ...ambience.naturePlayer.stats(),
+          bolts: ambience.natureSt ? ambience.natureSt.bolts : null,
+          lastThunder: ambience.lastThunder || null,
+        }
+      : null,
     reverb: T && T.reverbStats ? T.reverbStats() : null,
+    /* SND-11: the music's ensemble: which one the song names, whether it plays (or gb: GB Sounds, its notes not baked
+       yet), GB Sounds, the songs made ready on arrival */
+    ensemble: musicEnsembleLine(),
+    /* SND-15: the master chain, the buses' levels, the ducks and the audio session */
+    mix: soundMixLine(),
   };
+}
+/* SND-15: once a second, the most each stage of the master chain has cut this minute (dB) */
+function soundChainSample() {
+  const ch = soundEngine.chain;
+  if (!ch || !soundEngine.ctx || soundEngine.ctx.state !== 'running') return;
+  const r = ch.reduction(),
+    m = soundEngine.chainMost || { glue: 0, limit: 0, at: performance.now() };
+  if (performance.now() - m.at > 60000) Object.assign(m, { glue: 0, limit: 0, at: performance.now() });
+  m.glue = Math.min(m.glue, r.glue);
+  m.limit = Math.min(m.limit, r.limit);
+  soundEngine.chainMost = m;
+}
+/* SND-15: the debug log's mix line: each stage's cut now and the most this minute (dB), each bus's gain (its slider
+   squared times the mix's trim), the ducks so far by kind and those under way, and how the page plays (iPhones:
+   navigator.audioSession, the silent switch) */
+function soundMixLine() {
+  const ch = soundEngine.chain,
+    T = soundEngine.tracker,
+    L = soundLevels(soundPreferences(), MUSIC.mix),
+    B = soundEngine.bedsDucker,
+    M = soundEngine.chainMost,
+    AS = typeof navigator !== 'undefined' ? /** @type {any} */ (navigator).audioSession : null;
+  return {
+    cut: ch ? ch.reduction() : null,
+    cutMost: M ? { glue: M.glue, limit: M.limit } : null,
+    makeup: MUSIC.mix && MUSIC.mix.makeup,
+    levels: Object.fromEntries(Object.entries(L).map(([k, v]) => [k, Math.round(v * 1000) / 1000])),
+    ducks: { music: T && T.ducker ? T.ducker.count : null, beds: B ? B.count : null },
+    ducking: { music: T && T.ducker ? T.ducker.live() : [], beds: B ? B.live() : [] },
+    session: AS ? AS.type : 'none',
+    playSilenced: !!soundPreferences().playSilenced,
+  };
+}
+/* SND-11: the debug log's ensemble line (no save data: the song's and ensemble's ids, on or off) */
+function musicEnsembleLine() {
+  const T = soundEngine.tracker,
+    sg = T && T.song;
+  return {
+    song: sg ? sg.name : null,
+    ensemble: sg && sg.D && sg.D.ensemble ? sg.D.ensemble : 'gb',
+    playing: sg ? (sg.ensOn ? 'ensemble' : 'gb') : null,
+    gbSounds: !!soundPreferences().gbSounds,
+    prepared: soundEngine.prepared || null,
+    /* SND-17: the last jingle: its id and what played it (its ensemble, or gb: GB Sounds, none, its notes baking) */
+    jingle: soundEngine.lastJingle || null,
+    /* SND-13: the layer levels the music hears, and each layered part's gain now (its layer, baked or not) */
+    layers: soundEngine.L && soundEngine.L.layers ? soundEngine.L.layers : null,
+    parts: T && T.layerStats ? T.layerStats() : null,
+    /* SND-12: where the song is in its form: the section, its repeat (0 the first time), the bar of how many */
+    section: musicSectionLine(sg),
+  };
+}
+function musicSectionLine(sg) {
+  if (!sg || !sg.D || !sg.D.played || sg.step < 0) return null;
+  const b = Math.floor((sg.step % sg.D.steps) / 16),
+    S = sg.D.played.find(x => b >= x.bar && b < x.bar + x.bars);
+  return S ? { name: S.name, k: S.k, bar: b + 1, of: sg.D.steps / 16 } : null;
 }
 /* the ambience: which beds play here, and the occasional bird, owl and clock tick */
 function ambienceBeds(sc, E, T, pans, t) {
@@ -1367,8 +1662,7 @@ function ambienceBeds(sc, E, T, pans, t) {
     dt = 0.2,
     ev = ambience.ev,
     room = !!sc.room,
-    cave = sc.indoor && sc.far === 'cave',
-    ss = st.season || st.ss;
+    cave = sc.indoor && sc.far === 'cave';
   /* v47: a room laid into a place hears the place outside, quieter and through the walls (the low-pass in updateAmbience) */
   const thru = !sc.indoor ? 1 : sc.roomRect ? 0.45 : 0;
   const node =
@@ -1376,6 +1670,9 @@ function ambienceBeds(sc, E, T, pans, t) {
         ? LOCATIONS[saveData.trip.node]
         : null,
     town = thru > 0 && !!((node && node.town) || (!sc.indoor && (sc.far === 'town' || sc.far === 'city')));
+  /* SND-14: nature-here.js reads these (the town's life, the patter on leaves) */
+  ambience.town = town;
+  ambience.trees = 0;
   if (thru) {
     const C0 = walkData().sc,
       P = walkView.pl;
@@ -1385,30 +1682,27 @@ function ambienceBeds(sc, E, T, pans, t) {
       const g = (C0.props[p.k] || {}).group || p.k;
       if (/tree|bush|hedge/.test(g)) trees++;
     }
+    ambience.trees = trees;
     T.leaves = Math.min(1, trees / 8) * 0.22 * (0.5 + 0.5 * (sc.wind || 1)) * (1 + (E ? E.storm : 0) * 0.8) * thru;
     pans.leaves = 0;
-    T.crickets = night * (1 - Math.min(1, rain)) * (town ? 0.05 : 0.11) * (ss === 'winter' ? 0.2 : 1) * thru;
+    /* SND-14: the crickets (insects by the biome and hour) and the town's life instead of its murmur are
+       nature-here.js's */
     pans.crickets = 0;
-    if (town) {
-      T.town = 0.13 * (1 - night * 0.6) * thru;
-      pans.town = 0;
-    }
-    /* birds: a short call now and then by day, fewer in the rain; v47: the birds of the place (BIRD_CALLS) */
-    ambienceBirds(t, BIRD_CALLS[sc.biome] || BIRD_CALLS._, town, day, rain, thru);
-    /* the farm's rooster at first light */
     const hr = typeof environmentHour === 'function' ? environmentHour() : 12;
+    /* birds: a short call now and then by day, fewer in the rain; v47: the birds of the place (BIRD_CALLS); SND-14: by
+       the hour, a dawn chorus, quiet at noon, the owl at night (one at a time) */
+    ambienceBirds(t, BIRD_CALLS[sc.biome] || BIRD_CALLS._, town, day, rain, thru, hr, night);
+    /* the farm's rooster at first light */
     if (sc.biome === 'farm' && hr > 5 && hr < 8.5 && Math.random() < dt * 0.03 * thru) playBirdCall(t, 'rooster');
     /* the scrap yard: metal shifting somewhere, the crane's cable creaking when nobody is looking */
     if (sc.biome === 'bins' && Math.random() < dt * 0.035 * thru) playScrapClank(t);
-    if (night > 0.6 && !town && Math.random() < dt * 0.025 * thru) playOwlCall(t);
   }
   if (cave) {
     T.cave = 0.3;
     pans.cave = 0;
   }
+  /* SND-14: a room's tone by its kind is nature-here.js's; its clock ticks here */
   if (room) {
-    T.room = 0.16;
-    pans.room = 0;
     if ((sc.props || []).some(p => /clock/.test(p.k))) {
       if (!ev.tick || ev.tick < t - 1) ev.tick = t + 0.05;
       while (ev.tick < t + 0.25) {
@@ -1419,20 +1713,26 @@ function ambienceBeds(sc, E, T, pans, t) {
     }
   }
 }
-/* birds of the list L now and then (by day, fewer in the rain and in towns) */
-function ambienceBirds(t, L, town, day, rain, thru) {
+/* birds of the list L now and then (by day, fewer in the rain and in towns). SND-14: by the hour (hr): a dawn chorus
+   with short gaps, quiet at noon, by night the owl alone (logic/nature-sound.js natureBirds, natureBirdWait) */
+function ambienceBirds(t, L, town, day, rain, thru, hr = 10, night = 1 - day) {
   /* SND-8a: one at a time: the next call waits for the last to end, then a gap of about 10 s outside towns (rarer in
      one: logic/ambience-sound.js ambienceBirdWait); fewer by dusk, in the rain and through a wall */
-  if (!L.length || day <= 0.3 || thru <= 0) return;
-  const r = ambience.rng || Math.random;
-  if (ambience.birdAt == null || ambience.birdAt > t + 60) ambience.birdAt = t + ambienceBirdWait(r, town) * r();
+  const B = SOUNDSCAPE.nature && SOUNDSCAPE.nature.birds,
+    list = B ? natureBirds(B, L, hr, night, town) : L,
+    owl = list.length === 1 && list[0] === 'owl';
+  if (!list.length || (!owl && day <= 0.3) || thru <= 0) return;
+  const r = ambience.rng || Math.random,
+    wait = () => (!B ? ambienceBirdWait(r, town) : owl ? natureBetween(B.owlWait, r) : natureBirdWait(B, r, hr, town));
+  if (ambience.birdAt == null || ambience.birdAt > t + 90) ambience.birdAt = t + wait() * r();
   if (t < ambience.birdAt) return;
   let end = t;
-  if (r() < day * (1 - Math.min(1, rain) * 0.8) * thru) {
-    const k = L[Math.floor(Math.random() * L.length)];
-    if (Math.random() < (RARE_BIRDS[k] || 1)) end = playBirdCall(t, k);
+  if (r() < (owl ? 1 : day) * (1 - Math.min(1, rain) * 0.8) * thru) {
+    const k = list[Math.floor(r() * list.length)];
+    if (k === 'owl') end = playOwlCall(t);
+    else if (r() < (RARE_BIRDS[k] || 1)) end = playBirdCall(t, k);
   }
-  ambience.birdAt = end + ambienceBirdWait(r, town);
+  ambience.birdAt = end + wait();
 }
 /* SND-8a: a footstep at time t: each a little different (its pitch and level), the feet a little left and right, the
    natural grounds (lawn, forest floor, sand, dirt, mud, marsh...) soft (logic/ambience-sound.js ambienceStep); on the
@@ -1440,6 +1740,14 @@ function ambienceBirds(t, L, town, day, rain, thru) {
 function ambienceStepPlay(ter, t) {
   const c = soundEngine.ctx;
   soundEngine.foot = soundEngine.foot ? 0 : 1;
+  /* SND-14: by the surface (soundscape.json nature.steps: grass, sand, dirt, gravel, stone, wood, snow, mud, wet,
+     carpet), played by audio/nature-player.js; ter is a terrain code or a surface's name */
+  const N = SOUNDSCAPE.nature;
+  if (ambience.naturePlayer && N && N.steps) {
+    const surface = N.steps.surfaces[ter] ? ter : natureStepSurface(N.steps, ter);
+    ambience.naturePlayer.step(ambience.bus, natureStep(N.steps, surface, ambience.natureRng, soundEngine.foot), t);
+    return;
+  }
   const S = ambienceStep(ter, ambience.rng || Math.random, soundEngine.foot),
     W = ambience.bus || soundEngine.fx;
   let dest = W;
@@ -1764,8 +2072,9 @@ function playScrapClank(t) {
       cut: 900,
     });
 }
+/* SND-14: it says when its call ends (the birds' one at a time) */
 function playOwlCall(t) {
-  const g = ambienceOutput((Math.random() - 0.5) * 1.2);
+  const g = ambienceOutput(((ambience.rng || Math.random)() - 0.5) * 1.2);
   [0, 0.42].forEach((d, i) =>
     synthVoice(g, {
       type: 'sine',
@@ -1778,6 +2087,7 @@ function playOwlCall(t) {
       vib: 3,
     })
   );
+  return t + 1;
 }
 function playClockTick(t, tock) {
   const g = ambienceOutput(0.15, true);
@@ -1799,7 +2109,7 @@ function testVolume(k) {
       [72, 79].forEach((n, i) =>
         synthVoice(soundEngine.master, { type: 'p25', freq: midiToFrequency(n), t: t + i * 0.12, dur: 0.14, vol: 0.06 })
       );
-    else if (k === 'music') jingle(JINGLES.levelup, 150, 'p25', soundEngine.mus);
+    else if (k === 'music') jinglePlay('levelup', { bus: soundEngine.mus });
     else if (k === 'sfx') soundEffect('coin');
     else if (k === 'world') {
       synthNoise(ambience.bus, { t, dur: 1.2, vol: 0.35, bp: 1500, q: 0.9 });

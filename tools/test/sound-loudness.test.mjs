@@ -56,3 +56,25 @@ test('a NaN is reported', () => {
   d[100] = NaN;
   assert.equal(soundLoudness([d], 44100).nan, true);
 });
+
+// SND-15: the true peak (4x oversampled) and the loudness range (EBU Tech 3342)
+test('the true peak finds the over between samples that the sample peak misses', () => {
+  const r = 48000,
+    /* a quarter-rate sine at 45 degrees: every sample at 0.707 (-3 dB), its peaks between them at 1 */
+    x = Float32Array.from({ length: r * 2 }, (_, i) => Math.sin((2 * Math.PI * i) / 4 + Math.PI / 4)),
+    L = soundLoudness([x], r, 0.5);
+  near(L.peak, -3.01, 0.02, 'sample peak');
+  near(L.tp, 0, 0.1, 'true peak');
+  const y = soundLoudness([sine(997, 0.5, 2, r)], r, 0.5);
+  near(y.tp, y.peak, 0.05, 'a low tone: true peak = sample peak');
+});
+
+test('the loudness range: a steady tone has none, 10 s at -20 and 10 s at -30 dB spans 10 LU', () => {
+  const r = 44100;
+  near(soundLoudness([sine(997, 0.3, 8, r)], r, 0.5).lra, 0, 0.05, 'steady');
+  const z = Float32Array.from(
+    { length: r * 20 },
+    (_, i) => (i < r * 10 ? 0.1 : 0.0316) * Math.sin((2 * Math.PI * 1000 * i) / r)
+  );
+  near(soundLoudness([z, z], r).lra, 10, 0.3, 'two levels');
+});

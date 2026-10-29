@@ -12,10 +12,22 @@ import { MUSIC_BATTLE_KINDS, MUSIC_WHERE_KEYS, musicWhereMatches, songFor } from
 import { cryLowHealth, cryRecipe, cryVoices } from '../../game/js/logic/cries.js';
 import { UI_SOUND_NAMES, uiSoundVoices } from '../../game/js/logic/ui-sounds.js';
 import { ambienceNoiseLoop, ambienceRandom } from '../../game/js/logic/ambience-sound.js';
-import { soundscapePreview } from '../../game/js/logic/soundscape.js';
+import { soundscapeBubbles, soundscapePreview } from '../../game/js/logic/soundscape.js';
+import {
+  natureBouts,
+  natureEvery,
+  naturePatter,
+  natureRain,
+  natureStep,
+  natureThunder,
+  natureTown,
+} from '../../game/js/logic/nature-sound.js';
 import { battleSoundGet, battleSoundNames, battleSoundPreview } from '../../game/js/logic/battle-sounds.js';
+import { soundLevels } from '../../game/js/audio/levels.js';
+import { mixChainMake } from '../../game/js/audio/mix-chain.js';
 import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
 import { soundscapePlayerCreate } from '../../game/js/audio/soundscape-player.js';
+import { naturePlayerCreate } from '../../game/js/audio/nature-player.js';
 import { battleVoicesPlay } from '../../game/js/audio/battle-voices.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
@@ -52,6 +64,8 @@ import { legacyLoad, legacyView } from './legacy-view.js';
 expose({
   MUSIC_CRY_PREVIEW: [() => MUSIC_CRY_PREVIEW],
   MUSIC_JINGLE_BPM: [() => MUSIC_JINGLE_BPM],
+  MUSIC_JINGLE_LINES: [() => MUSIC_JINGLE_LINES],
+  MUSIC_NATURE: [() => MUSIC_NATURE],
   MUSIC_SCAPE_AT: [() => MUSIC_SCAPE_AT],
   MUSIC_SCAPE_HEIGHT: [() => MUSIC_SCAPE_HEIGHT],
   MUSIC_TABS: [() => MUSIC_TABS],
@@ -68,9 +82,15 @@ expose({
   musicCryPlay: [() => musicCryPlay, v => (musicCryPlay = v)],
   musicCryTidy: [() => musicCryTidy, v => ((musicCryTidy = v), provide({ musicCryTidy }))],
   musicData: [() => musicData],
+  musicEnsemblesHTML: [() => musicEnsemblesHTML, v => (musicEnsemblesHTML = v)],
+  musicFormEdit: [() => musicFormEdit],
+  musicFormHTML: [() => musicFormHTML, v => (musicFormHTML = v)],
   musicHookHTML: [() => musicHookHTML, v => (musicHookHTML = v)],
   musicHookMount: [() => musicHookMount, v => (musicHookMount = v)],
+  musicInstrumentPlay: [() => musicInstrumentPlay, v => (musicInstrumentPlay = v)],
+  musicInstrumentsHTML: [() => musicInstrumentsHTML, v => (musicInstrumentsHTML = v)],
   musicJingleHTML: [() => musicJingleHTML, v => (musicJingleHTML = v)],
+  musicJingleLine: [() => musicJingleLine],
   musicJingleMount: [() => musicJingleMount, v => (musicJingleMount = v)],
   musicJinglePlay: [() => musicJinglePlay, v => (musicJinglePlay = v)],
   musicJingleSelected: [() => musicJingleSelected],
@@ -78,7 +98,10 @@ expose({
   musicLineSet: [() => musicLineSet, v => (musicLineSet = v)],
   musicListColHTML: [() => musicListColHTML],
   musicLoopHTML: [() => musicLoopHTML],
+  musicMixApply: [() => musicMixApply, v => (musicMixApply = v)],
   musicMixHTML: [() => musicMixHTML, v => (musicMixHTML = v)],
+  musicNature: [() => musicNature, v => (musicNature = v)],
+  musicNatureTick: [() => musicNatureTick, v => (musicNatureTick = v)],
   musicNoteHear: [() => musicNoteHear, v => (musicNoteHear = v)],
   musicNowShow: [() => musicNowShow, v => (musicNowShow = v)],
   musicPartHTML: [() => musicPartHTML],
@@ -91,6 +114,9 @@ expose({
   musicRunHTML: [() => musicRunHTML, v => (musicRunHTML = v)],
   musicScape: [() => musicScape, v => (musicScape = v)],
   musicScapeHTML: [() => musicScapeHTML, v => (musicScapeHTML = v)],
+  musicSection: [() => musicSection],
+  musicSectionOf: [() => musicSectionOf],
+  musicSectionTune: [() => musicSectionTune],
   musicSelected: [() => musicSelected],
   musicSongIds: [() => musicSongIds],
   musicSongListHTML: [() => musicSongListHTML, v => (musicSongListHTML = v)],
@@ -116,9 +142,14 @@ export const musicStudio = {
   loop: true,
   /** SND-4: play songs' night versions (town@night) */ night: false,
   /** SND-5: play another version: tense or a run arc band ('' as written) */ part: '',
+  /** SND-11: GB Sounds: every song on the four chip voices (the game's Settings -> Sound switch) */ gb: false,
+  /** SND-11: the player's master, (SND-15) master chain and music bus (built from music.json mix, as the game's) */
+  /** @type {any} */ chain: null,
   shown: '',
   /** the where rule last moved, added or shown (marked in the table) */ picked: -1,
   /** the line the hook roll edits: hook, counter or (SND-5) intro */ line: 'hook',
+  /** SND-17: the line the jingle roll edits: the tune (notes), harmony, bass or perc */ jline: 'notes',
+  /** SND-12: the section the hook roll edits (A: the song's own hook) */ section: 'A',
   /** Try a place: where you are, made up */
   tryState: /** @type {Record<string, any>} */ ({
     started: true,
@@ -132,10 +163,31 @@ export const musicStudio = {
   }),
   /** SND-10: the World sounds card's player (audio/soundscape-player.js), what it plays and its timer */
   /** @type {any} */ scape: null,
+  /** SND-14: the card's nature player (audio/nature-player.js), what it plays and its timer */
+  /** @type {any} */ nature: null,
 };
 const musicData = () => studioState.D.music;
 /** the line the hook roll edits */
-const musicLine = () => (['counter', 'intro'].includes(musicStudio.line) ? musicStudio.line : 'hook');
+const musicLine = () =>
+  musicStudio.line === 'counter' || (musicStudio.line === 'intro' && musicSection() === 'A')
+    ? musicStudio.line
+    : 'hook';
+/** SND-12: the section the hook roll edits, if the selected song still has it */
+const musicSection = () => {
+  const S = musicData().songs[musicSelected()];
+  return S && S.sections && S.sections[musicStudio.section] ? musicStudio.section : 'A';
+};
+/** SND-12: the object a section's lines live on (A: the song itself) */
+const musicSectionOf = (S, sec) => (sec === 'A' ? S : S.sections[sec]);
+/** SND-12: a section composed alone (its own tune, as its first time through the form plays it) */
+const musicSectionTune = (S, sec) => {
+  const X = musicSectionOf(S, sec);
+  return trackerCompose(
+    sec === 'A'
+      ? { ...S, form: undefined }
+      : { ...S, form: undefined, prog: X.prog, hook: X.hook, counter: X.counter, seed: X.seed ?? S.seed + 97 }
+  );
+};
 const musicSongIds = () => Object.keys(musicData().songs);
 const musicSelected = () => {
   const ids = musicSongIds();
@@ -154,18 +206,40 @@ function musicUses() {
 }
 
 /* ---------- the player ---------- */
+/* SND-11: the player's chain is the game's (sound.js initSound): the music bus, the master's trim and (SND-15) the
+   master chain (audio/mix-chain.js: the gentle compressor, the make-up gain, the limiter), each from music.json mix at
+   the game's default sliders (audio/levels.js soundLevels), so a song's balance and level sound here as they do in the
+   game. An edit to the mix is heard at once */
+function musicMixApply() {
+  const C = musicStudio.chain;
+  if (!C) return;
+  const mix = musicData().mix || {},
+    L = soundLevels({}, mix);
+  C.chain.apply(mix);
+  C.master.gain.value = L.master;
+  C.music.gain.value = L.music;
+}
 function musicTracker() {
   if (musicStudio.tracker) return musicStudio.tracker;
   const AC = window.AudioContext || window.webkitAudioContext,
     ctx = new AC(),
     out = ctx.createGain(),
-    squash = ctx.createDynamicsCompressor();
-  out.gain.value = 0.8;
-  out.connect(squash);
-  squash.connect(ctx.destination);
-  /* SND-5: the run's arc as the data has it now (an edit or an undo replaces it) */
+    master = ctx.createGain(),
+    chain = mixChainMake(ctx, musicData().mix || {});
+  out.connect(master);
+  master.connect(chain.input);
+  musicStudio.chain = { chain, comp: chain.glue, master, music: out };
+  musicMixApply();
+  /* SND-5: the run's arc as the data has it now (an edit or an undo replaces it); SND-11: the instruments, the
+     ensembles as the data has them now, GB Sounds as the box beside Night says, the reverb returning to the master */
   const T = trackerCreate(ctx, out, {
     songs: musicData().songs,
+    instruments: musicData().instruments,
+    get ensembles() {
+      return musicData().ensembles;
+    },
+    gb: () => musicStudio.gb,
+    master,
     get run() {
       return musicData().run;
     },
@@ -264,7 +338,14 @@ function musicRecipeHTML(id) {
       selectField('Lead', `${p}.lead`, MUSIC_CHOICES.wave),
       selectField('Bass', `${p}.bass`, MUSIC_CHOICES.bass),
       selectField('Arpeggio', `${p}.arp`, MUSIC_CHOICES.arp),
-      selectField('Drums', `${p}.drums`, MUSIC_CHOICES.drums)
+      selectField('Drums', `${p}.drums`, MUSIC_CHOICES.drums),
+      /* SND-11: the ids come from the data (music.json ensembles); gb is today's four chip voices */
+      selectField(
+        'Ensemble',
+        `${p}.ensemble`,
+        [['gb', 'gb: the four chip voices'], ...Object.keys(musicData().ensembles || {}).map(k => [k, k])],
+        { opt: 1, none: 'gb (none named)', help: 'What plays the song (the Instruments tab). GB Sounds plays gb.' }
+      )
     ) +
     `<div class="mus-chords">${chords}</div>` +
     grid(
@@ -298,9 +379,91 @@ function musicRecipeHTML(id) {
       `<div class="fld"><span>Seed (the tune)</span><span class="seg-row"><input type="number" data-p="${p}.seed" data-k="num" step="1" value="${S.seed}" aria-label="Seed"><button class="btn subtle" data-act="musSeed" title="Another tune over the same chords">New tune</button></span></div>`
     );
   return card('Recipe', body, {
-    sub: 'The game composes the tune from this: a seeded walk over the chords; bars 5-6 repeat 1-2, bar 8 comes home. A written hook takes bars 1-2 and 5-6, and bars 3-4 answer it on their chords.',
+    sub: 'The game composes the tune from this: a seeded walk over the chords; bars 5-6 repeat 1-2, bar 8 comes home. A written hook takes bars 1-2 and 5-6, and bars 3-4 answer it on their chords. With a form (the Form card) these chords are section A’s.',
   });
 }
+/* ---------- SND-12: the form: sections A, B... in order, 16-32 bars a loop ----------
+   A is the song's own chords, hook and counter (the Recipe and Hook cards); B and on have their own chords, seed and,
+   if written, hook (the Hook card's section picker). The composer varies each repeat, puts a fill and a turnaround at
+   each section's end and brings the loop's last bar home */
+function musicFormHTML(id) {
+  const S = musicData().songs[id],
+    p = `music.songs.${id}`,
+    secs = S.sections || {},
+    names = ['A', ...Object.keys(secs)],
+    form = S.form || [],
+    bars = form.reduce((a, k) => a + ((k === 'A' ? S.prog : secs[k] && secs[k].prog) || []).length, 0);
+  const chips = form.length
+    ? form.map((k, i) => `<span class="tag">${i + 1}. ${escapeHtml(k)}</span>`).join(' ')
+    : '<small>No form: the song is one section (A), as before.</small>';
+  const adds = names
+    .map(
+      k =>
+        `<button class="btn subtle" data-act="musFormAdd" data-s="${escapeHtml(k)}" title="Play ${escapeHtml(k)} next">+ ${escapeHtml(k)}</button>`
+    )
+    .join('');
+  const chord = (sec, deg, b) =>
+    `<label class="fld mus-chord"><span>Bar ${b + 1}</span><select data-p="${p}.sections.${sec}.prog.${b}" data-k="num">${[
+      0, 1, 2, 3, 4, 5, 6,
+    ]
+      .map(
+        d =>
+          `<option value="${d}" ${d === deg ? 'selected' : ''}>${chordNumeral(S.scale, d)} · ${musicNoteName(S.key + MUSIC_SCALES[S.scale][d]).replace(/-?\d+$/, '')}</option>`
+      )
+      .join('')}</select></label>`;
+  const sections = Object.entries(secs)
+    .map(
+      ([k, X]) =>
+        `<div class="mus-section"><div class="seg-row"><b>Section ${escapeHtml(k)}</b> <small>${X.prog.length} bars</small><span class="grow"></span><button class="btn subtle" data-act="musSectionBars" data-s="${escapeHtml(k)}" data-n="-1" ${X.prog.length <= 4 ? 'disabled' : ''}>− bar</button><button class="btn subtle" data-act="musSectionBars" data-s="${escapeHtml(k)}" data-n="1" ${X.prog.length >= 16 ? 'disabled' : ''}>+ bar</button><button class="btn subtle" data-act="musSectionSeed" data-s="${escapeHtml(k)}" title="Another tune over the same chords">New tune</button><button class="btn subtle" data-act="musSectionDel" data-s="${escapeHtml(k)}">Remove</button></div><div class="mus-chords">${X.prog.map((d, b) => chord(k, d, b)).join('')}</div>${textField('Hook name', `${p}.sections.${k}.hookName`, { opt: 1, ph: 'unnamed' })}</div>`
+    )
+    .join('');
+  const body = `<div class="seg-row">${chips}</div>
+<div class="seg-row">${adds}<button class="btn subtle" data-act="musFormPop" ${form.length ? '' : 'disabled'}>Take the last off</button><span class="grow"></span><button class="btn subtle" data-act="musSectionNew" ${names.length >= 6 ? 'disabled' : ''}>New section</button></div>
+${form.length ? `<small>${bars} bars a loop${bars < 16 || bars > 32 ? ' (16-32 keeps it from tiring)' : ''}</small>` : ''}${sections}`;
+  return card('Form', body, {
+    sub: 'The sections in the order they play, then it loops. A is the song’s own chords and hook; each repeat is varied a little, each section ends with a drum fill and the bass walking into the next, and the loop’s last bar comes home.',
+  });
+}
+const musicFormEdit = f => {
+  const id = musicSelected(),
+    S = musicData().songs[id];
+  f(S);
+  if (S.form && !S.form.length) delete S.form;
+  if (S.sections && !Object.keys(S.sections).length) delete S.sections;
+  changed();
+  commit(true);
+  if (musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
+  render();
+};
+ACTIONS.musFormAdd = d => musicFormEdit(S => (S.form = [...(S.form || []), d.s]));
+ACTIONS.musFormPop = () => musicFormEdit(S => S.form && S.form.pop());
+ACTIONS.musSectionNew = () =>
+  musicFormEdit(S => {
+    S.sections = S.sections || {};
+    const k = 'BCDEF'.split('').find(c => !S.sections[c]);
+    if (!k) return;
+    S.sections[k] = { prog: [...S.prog] };
+    if (!S.form) S.form = ['A'];
+    S.form.push(k);
+  });
+ACTIONS.musSectionDel = d =>
+  musicFormEdit(S => {
+    if (S.sections) delete S.sections[d.s];
+    if (S.form) S.form = S.form.filter(k => k !== d.s);
+    if (musicStudio.section === d.s) musicStudio.section = 'A';
+  });
+ACTIONS.musSectionBars = d =>
+  musicFormEdit(S => {
+    const X = S.sections && S.sections[d.s];
+    if (!X) return;
+    if (+d.n > 0 && X.prog.length < 16) X.prog.push(X.prog[X.prog.length - 1]);
+    else if (+d.n < 0 && X.prog.length > 4) X.prog.pop();
+  });
+ACTIONS.musSectionSeed = d =>
+  musicFormEdit(S => {
+    const X = S.sections && S.sections[d.s];
+    if (X) X.seed = Math.floor(Math.random() * 1000);
+  });
 studioState.hooks.music = path => {
   if (path.startsWith('music.songs.') && musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
 };
@@ -331,7 +494,7 @@ function musicRollRows(key, scale, base, span) {
 /**
  * draw a roll and let it be edited
  * @param {HTMLCanvasElement} cv
- * @param {{steps: number, rows: number[], home?: number, notes: number[][], ghost?: number[][], labels?: string[], onChange: (notes: number[][]) => void, onNote?: (midi: number) => void}} o
+ * @param {{steps: number, rows: number[], home?: number, notes: number[][], ghost?: number[][], labels?: string[], poly?: boolean, onChange: (notes: number[][]) => void, onNote?: (midi: number) => void}} o
  */
 function musicRollMount(cv, o) {
   const W = ROLL_LEFT + o.steps * ROLL_CELL_W,
@@ -391,8 +554,9 @@ function musicRollMount(cv, o) {
     if (st < 0 || st >= o.steps || row < 0 || row >= o.rows.length) return null;
     return { st, midi: o.rows[o.rows.length - 1 - row] };
   };
-  /* a note written over others: the ones it overlaps go */
-  const place = n => notes.filter(m => m === n || m[0] + m[2] <= n[0] || m[0] >= n[0] + n[2]);
+  /* a note written over others: the ones it overlaps go (SND-17: o.poly, only on its own row: chords, kit hits) */
+  const place = n =>
+    notes.filter(m => m === n || (o.poly && m[1] !== n[1]) || m[0] + m[2] <= n[0] || m[0] >= n[0] + n[2]);
   cv.addEventListener('pointerdown', ev => {
     const c = cell(ev);
     if (!c) return;
@@ -448,13 +612,24 @@ function musicNoteHear(midi, type = 'p25') {
 
 /* ---------- the hook card ---------- */
 function musicHookHTML(id) {
-  const S = musicData().songs[id],
+  const S0 = musicData().songs[id],
+    sec = musicSection(),
+    S = musicSectionOf(S0, sec),
     line = musicLine(),
     has = k => (S[k] || []).length;
+  /* SND-12: which section's lines the roll edits */
+  const secTabs = S0.sections
+    ? `<div class="seg-row"><span>Section</span>${['A', ...Object.keys(S0.sections)]
+        .map(
+          k =>
+            `<button class="seg ${k === sec ? 'on' : ''}" data-act="musSectionPick" data-s="${escapeHtml(k)}" aria-pressed="${k === sec}">${escapeHtml(k)}</button>`
+        )
+        .join('')}</div>`
+    : '';
   const tabs = [
     ['hook', `Hook${has('hook') ? ` (${has('hook')})` : ''}`],
     ['counter', `Countermelody${has('counter') ? ` (${has('counter')})` : ''}`],
-    ['intro', `Intro${has('intro') ? ` (${has('intro')})` : ''}`],
+    ...(sec === 'A' ? [['intro', `Intro${has('intro') ? ` (${has('intro')})` : ''}`]] : []),
   ]
     .map(
       ([k, n]) =>
@@ -463,11 +638,12 @@ function musicHookHTML(id) {
     .join('');
   return card(
     'Hook',
-    textField('Name', `music.songs.${id}.hookName`, {
+    textField('Name', `music.songs.${id}${sec === 'A' ? '' : `.sections.${sec}`}.hookName`, {
       opt: 1,
       ph: 'unnamed',
       help: 'One name for the hook, its countermelody and the intro. Claude’s drafts start with “placeholder”; the Check lists them until you rename them.',
     }) +
+      secTabs +
       `<div class="seg-row">${tabs}<span class="grow"></span><button class="btn subtle" data-act="musHookFromTune" ${line === 'hook' ? '' : 'hidden'} title="Start from the composed tune’s first two bars">Copy the tune’s bars 1-2</button><button class="btn subtle" data-act="musLineClear" ${has(line) ? '' : 'disabled'}>Clear</button></div>
 <div class="mus-roll-wrap"><canvas id="musRoll" class="mus-roll" aria-label="${line === 'hook' ? 'Hook' : line === 'intro' ? 'Intro' : 'Countermelody'} roll, 32 sixteenths: ${(S[line] || []).map(n => musicNoteName(n[1]) + ' at ' + (n[0] + 1)).join(', ') || 'empty'}"></canvas></div>`,
     {
@@ -483,9 +659,11 @@ function musicHookHTML(id) {
 function musicHookMount(id) {
   const cv = /** @type {HTMLCanvasElement | null} */ (document.getElementById('musRoll'));
   if (!cv) return;
-  const S = musicData().songs[id],
+  const S0 = musicData().songs[id],
+    sec = musicSection(),
+    S = { ...S0, ...musicSectionOf(S0, sec) },
     line = musicLine(),
-    C = trackerCompose(S),
+    C = musicSectionTune(S0, sec),
     base = S.key >= 64 ? S.key - 12 : S.key;
   const lead = [];
   for (let st = 0; st < 32; st++) if (C.notes[st]) lead.push([st, C.notes[st][0], C.notes[st][1]]);
@@ -506,7 +684,7 @@ function musicHookMount(id) {
   });
 }
 function musicLineSet(id, line, notes) {
-  const S = musicData().songs[id];
+  const S = musicSectionOf(musicData().songs[id], musicSection());
   if (notes.length) S[line] = notes.map(n => [n[0], n[1], n[2]]);
   else delete S[line];
   changed();
@@ -519,9 +697,13 @@ ACTIONS.musLine = d => {
   render();
 };
 ACTIONS.musLineClear = () => musicLineSet(musicSelected(), musicLine(), []);
+ACTIONS.musSectionPick = d => {
+  musicStudio.section = d.s;
+  render();
+};
 ACTIONS.musHookFromTune = () => {
   const id = musicSelected(),
-    C = trackerCompose(musicData().songs[id]),
+    C = musicSectionTune(musicData().songs[id], musicSection()),
     out = [];
   for (let st = 0; st < 32; st++) if (C.notes[st]) out.push([st, C.notes[st][0], C.notes[st][1]]);
   musicLineSet(id, 'hook', out);
@@ -532,6 +714,14 @@ ACTIONS.musHookFromTune = () => {
    game plays them at 150 bpm on a 25 % pulse with a triangle an octave down (the level up at 180 in battle). SND-6: a
    jingle may set its own tempo and wave (the run's beats do; sound.js jinglePlay) */
 const MUSIC_JINGLE_BPM = 150;
+/* SND-17: the lines a jingle's roll edits, with the rows each shows ([lowest midi, semitones up]) */
+const MUSIC_JINGLE_LINES = [
+  ['notes', 'Tune', 60, 31],
+  ['harmony', 'Harmony', 48, 31],
+  ['bass', 'Bass', 31, 31],
+  ['perc', 'Perc', 35, 25],
+];
+const musicJingleLine = () => (MUSIC_JINGLE_LINES.some(L => L[0] === musicStudio.jline) ? musicStudio.jline : 'notes');
 const musicJingleSelected = () => {
   const ids = Object.keys(musicData().jingles || {});
   if (!ids.includes(studioState.sel.musicJingle)) studioState.sel.musicJingle = ids[0];
@@ -541,22 +731,46 @@ function musicJingleHTML() {
   const J = musicData().jingles || {},
     cur = musicJingleSelected();
   if (!cur) return card('Jingles', '<p class="help">music.json has no jingles.</p>');
-  const len = J[cur].notes.reduce((a, n) => a + n[1], 0);
+  const len = J[cur].notes.reduce((a, n) => a + n[1], 0),
+    line = musicJingleLine();
   const picks = Object.keys(J)
     .map(
       k =>
         `<span class="mus-jpick"><button class="btn subtle mus-play" data-act="musJinglePlay" data-j="${escapeHtml(k)}" aria-label="Play ${escapeHtml(k)}" title="Play ${escapeHtml(k)}">▶</button><button class="seg ${k === cur ? 'on' : ''}" data-act="musJinglePick" data-j="${escapeHtml(k)}" aria-pressed="${k === cur}">${escapeHtml(k)}</button></span>`
     )
     .join('');
+  /* SND-17: the line the roll edits (the tune, or a line its ensemble plays) */
+  const lines = MUSIC_JINGLE_LINES.map(
+    ([k, n]) =>
+      `<button class="seg ${k === line ? 'on' : ''}" data-act="musJLine" data-l="${k}" aria-pressed="${k === line}">${n}${k !== 'notes' && (J[cur][k] || []).length ? ` (${J[cur][k].length})` : ''}</button>`
+  ).join('');
+  const ens = J[cur].ensemble && J[cur].ensemble !== 'gb' ? J[cur].ensemble : '';
   return card(
     'Jingles',
     `<div class="seg-row">${picks}</div>
-<div class="seg-row"><b>${escapeHtml(cur)}</b><small class="help">${len} sixteenths · ${J[cur].notes.filter(n => n[0]).length} notes</small><span class="grow"></span><button class="btn primary" data-act="musJinglePlay" data-j="${escapeHtml(cur)}">▶ Play</button></div>
+<div class="seg-row"><b>${escapeHtml(cur)}</b><small class="help">${len} sixteenths · ${J[cur].notes.filter(n => n[0]).length} notes</small><span class="grow"></span><button class="btn primary" data-act="musJinglePlay" data-j="${escapeHtml(cur)}">▶ Play</button><button class="btn" data-act="musJinglePlay" data-j="${escapeHtml(cur)}" data-gb="1" title="As GB Sounds plays it: the 8-bit jingle">▶ 8-bit</button></div>
 ${textField('Name', `music.jingles.${cur}.name`, { opt: 1, ph: 'unnamed', help: 'Claude’s drafts start with “placeholder”; the Check lists them until you rename them.' })}
 ${grid(numberField('Tempo', `music.jingles.${cur}.bpm`, { opt: 1, min: 40, max: 400, step: 1, unit: 'bpm', ph: `${MUSIC_JINGLE_BPM}` }), selectField('Wave', `music.jingles.${cur}.wave`, MUSIC_CHOICES.wave, { opt: 1, none: 'Pulse 25 % (as most)' }))}
-<div class="mus-roll-wrap"><canvas id="musJRoll" class="mus-roll" aria-label="${escapeHtml(cur)} roll: ${J[cur].notes.map(n => (n[0] ? musicNoteName(n[0]) : 'rest') + ' ' + n[1]).join(', ')}"></canvas></div>`,
+${grid(
+  selectField(
+    'Ensemble',
+    `music.jingles.${cur}.ensemble`,
+    [['gb', 'gb: the 8-bit jingle'], ...Object.keys(musicData().ensembles || {}).map(k => [k, k])],
     {
-      sub: 'One note at a time, in sixteenths; a gap is a rest. With a triangle an octave down, at 150 bpm on a 25 % pulse unless it sets its own tempo and wave (the battle’s level up plays at 180). They play on Sound effects.',
+      opt: 1,
+      rr: 1,
+      help: 'What plays it (the Instruments tab): lead and counter parts play the tune, pad, stabs and arp the harmony, bass the bass, drums the perc’s kit notes, timp its other notes. GB Sounds plays the 8-bit jingle.',
+    }
+  ),
+  checkboxField(
+    'Stinger (over a song: on its beat, in its key, its busy parts dropped)',
+    `music.jingles.${cur}.stinger`
+  )
+)}
+<div class="seg-row">${lines}<span class="grow"></span><small class="help">${line === 'notes' ? 'One note at a time; a gap is a rest.' : line === 'perc' ? 'Kit: 36 kick, 38 snare, 42 hat, 37 rim; other notes on the timpani.' : ens ? `Played by ${escapeHtml(ens)}’s ${line === 'bass' ? 'bass' : 'pad, stabs and arp'} parts.` : 'Plays only on an ensemble.'}</small></div>
+<div class="mus-roll-wrap"><canvas id="musJRoll" class="mus-roll" aria-label="${escapeHtml(cur)} ${line} roll: ${line === 'notes' ? J[cur].notes.map(n => (n[0] ? musicNoteName(n[0]) : 'rest') + ' ' + n[1]).join(', ') : (J[cur][line] || []).map(n => n[0] + ': ' + musicNoteName(n[1]) + ' ' + n[2]).join(', ') || 'empty'}"></canvas></div>`,
+    {
+      sub: 'In sixteenths. With a triangle an octave down, at 150 bpm on a 25 % pulse unless it sets its own tempo and wave (the battle’s level up plays at 180), or on its ensemble once its notes are baked (SND-17). They play on Sound effects.',
     }
   );
 }
@@ -564,31 +778,55 @@ function musicJingleMount() {
   const cv = /** @type {HTMLCanvasElement | null} */ (document.getElementById('musJRoll')),
     id = musicJingleSelected();
   if (!cv || !id) return;
-  const list = musicData().jingles[id].notes,
-    len = list.reduce((a, n) => a + n[1], 0);
+  const J = musicData().jingles[id],
+    line = musicJingleLine(),
+    L = MUSIC_JINGLE_LINES.find(x => x[0] === line) || MUSIC_JINGLE_LINES[0],
+    tune = musicJingleNotes(J.notes),
+    len = Math.max(
+      J.notes.reduce((a, n) => a + n[1], 0),
+      ...['harmony', 'bass', 'perc'].map(k => Math.max(0, ...(J[k] || []).map(n => n[0] + n[2])))
+    );
   musicRollMount(cv, {
     steps: Math.max(16, Math.ceil((len + 4) / 4) * 4),
-    rows: musicRollRows(60, 'major', 60, 31),
+    rows: musicRollRows(60, line === 'perc' ? 'chromatic' : 'major', L[2], L[3]),
     home: 60,
-    notes: musicJingleNotes(list),
-    onNote: m => musicNoteHear(m),
+    notes: line === 'notes' ? tune : (J[line] || []).map(n => [...n]),
+    /* the tune shows faintly behind the other lines */
+    ghost: line === 'notes' ? undefined : tune,
+    poly: line !== 'notes',
+    onNote: m => line !== 'perc' && musicNoteHear(m),
     onChange: notes => {
-      if (!notes.length) return render();
-      musicData().jingles[id].notes = musicJingleList(notes);
+      if (line === 'notes') {
+        if (!notes.length) return render();
+        J.notes = musicJingleList(notes);
+      } else if (notes.length) J[line] = [...notes].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      else delete J[line];
       changed();
       commit(true);
       render();
     },
   });
 }
-function musicJinglePlay(id) {
+/* SND-17: on its ensemble (its notes baked first) unless the 8-bit is asked for or GB Sounds is on */
+function musicJinglePlay(id, gb = false) {
   const T = musicTracker(),
     J = musicData().jingles[id];
   if (!J) return;
   if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
-  T.jingle(J.notes, J.bpm || MUSIC_JINGLE_BPM, J.wave || 'p25', T.bus);
+  const go = () => {
+    const was = musicStudio.gb;
+    musicStudio.gb = was || gb;
+    T.jingle(J.notes, J.bpm || MUSIC_JINGLE_BPM, J.wave || 'p25', T.bus, { jingle: J });
+    musicStudio.gb = was;
+  };
+  if (!gb && !musicStudio.gb && T.jingleEnsemble(J)) T.jinglePrepare(J).then(go);
+  else go();
 }
-ACTIONS.musJinglePlay = d => musicJinglePlay(d.j);
+ACTIONS.musJinglePlay = d => musicJinglePlay(d.j, !!d.gb);
+ACTIONS.musJLine = d => {
+  musicStudio.jline = d.l;
+  render();
+};
 ACTIONS.musJinglePick = d => {
   studioState.sel.musicJingle = d.j;
   render();
@@ -812,7 +1050,7 @@ function musicMixHTML() {
     'Mix',
     grid(
       ...[
-        ['Master', 'master', 'Headroom for the compressor after it'],
+        ['Master', 'master', 'Headroom for the master chain after it'],
         ['Music', 'music', ''],
         ['Sound effects', 'sfx', 'Jingles, cries and the buttons'],
         ['World sounds', 'world', 'Water, fire, rain, animals'],
@@ -835,10 +1073,34 @@ function musicMixHTML() {
         step: 1,
         unit: 'dB',
       }),
-      numberField('Compressor ratio', `${p}.compressor.ratio`, { opt: 1, min: 1, max: 20, step: 0.5, unit: ': 1' })
+      numberField('Compressor ratio', `${p}.compressor.ratio`, { opt: 1, min: 1, max: 20, step: 0.1, unit: ': 1' }),
+      /* SND-15: the master chain's other settings (audio/mix-chain.js) */
+      numberField('Compressor knee', `${p}.compressor.knee`, { opt: 1, min: 0, max: 40, step: 1, unit: 'dB' }),
+      numberField('Compressor attack', `${p}.compressor.attack`, { opt: 1, min: 0, max: 1, step: 0.005, unit: 's' }),
+      numberField('Compressor release', `${p}.compressor.release`, { opt: 1, min: 0, max: 1, step: 0.05, unit: 's' }),
+      numberField('Make-up', `${p}.makeup`, {
+        opt: 1,
+        min: -12,
+        max: 24,
+        step: 0.5,
+        unit: 'dB',
+        help: 'The whole mix lifted after the compressor: the music near -18 LUFS at the default sliders',
+      }),
+      numberField('Limiter threshold', `${p}.limiter.threshold`, {
+        opt: 1,
+        min: -24,
+        max: 0,
+        step: 0.5,
+        unit: 'dB',
+        help: 'Last on the master: the peaks stay under -1 dBTP',
+      }),
+      ...['jingle', 'stinger', 'cry', 'talk'].flatMap(k => [
+        numberField(`Under a ${k}: music`, `${p}.duck.${k}.music`, { opt: 1, min: -40, max: 0, step: 0.5, unit: 'dB' }),
+        numberField(`Under a ${k}: beds`, `${p}.duck.${k}.beds`, { opt: 1, min: -40, max: 0, step: 0.5, unit: 'dB' }),
+      ])
     ),
     {
-      sub: 'Each bus’s trim, times the square of its slider in the game’s Settings → Sound. The game uses these; the Studio’s own player does not, so try a change in the game.',
+      sub: 'Each bus’s trim, times the square of its slider in the game’s Settings → Sound; then (SND-15) the master chain: a gentle compressor, the make-up and a limiter, and what dips under a jingle, a stinger, a cry or talk. The game uses these, and so does the Studio’s player, at the game’s default sliders.',
     }
   );
 }
@@ -860,14 +1122,109 @@ function musicScapeHTML() {
         ).join('')}</div>`
     )
     .join('');
+  /* SND-14: nature's one-shots (soundscape.json nature, audio/nature-player.js); its beds play in the game's Sound test */
+  const nat = S.nature
+    ? MUSIC_NATURE.map(
+        ([k, label]) =>
+          `<div class="seg-row"><b class="grow">${escapeHtml(label)}</b><button class="btn subtle${musicStudio.nature && musicStudio.nature.want === k ? ' on' : ''}" data-act="musNature" data-k="${k}" aria-label="Play ${escapeHtml(label)}">▶ Play</button></div>`
+      ).join('')
+    : '';
   return card(
     'World sounds',
-    `${rows}<div class="seg-row"><button class="btn" data-act="musScapeStop">■ Stop</button></div>`,
+    `${rows}${nat}<div class="seg-row"><button class="btn" data-act="musScapeStop">■ Stop</button></div>`,
     {
-      sub: 'Each water recipe in soundscape.json at a distance (a fall at its height: small 1.5 m, tall and its pool 6 m), through the game’s own player. Its level here is the Studio’s; the game’s World slider and the loudness report (tools/check-sound.py --loudness) say how it sits under a song.',
+      sub: 'Each water recipe in soundscape.json at a distance (a fall at its height: small 1.5 m, tall and its pool 6 m), then nature’s one-shots (thunder, patter, insects, frogs, the town, rooms, footsteps), through the game’s own players. Its level here is the Studio’s; the game’s World slider and the loudness report (tools/check-sound.py --loudness) say how it sits under a song. Nature’s beds (the rain’s wash, wind, a room’s tone) play in the game’s debug menu → Sound test.',
     }
   );
 }
+/* SND-14: nature's one-shots the card plays: [id, label] (steps: on a surface of soundscape.json nature.steps) */
+const MUSIC_NATURE = [
+  ['thunderNear', 'Thunder, near (0.6 km)'],
+  ['thunderFar', 'Thunder, far off (4 km)'],
+  ['patterLight', 'Patter, light rain'],
+  ['patterHeavy', 'Patter, a storm'],
+  ['drips', 'Drips off the eaves'],
+  ['grasshopper', 'Grasshoppers'],
+  ['cicada', 'Cicadas'],
+  ['frogs', 'Frogs'],
+  ['town', 'A town’s life'],
+  ['page', 'A library’s pages'],
+  ['clink', 'An inn’s cups'],
+  ['tool', 'A workshop’s tools'],
+  ['straw', 'A barn’s straw'],
+  ...['grass', 'sand', 'dirt', 'gravel', 'stone', 'wood', 'snow', 'mud', 'wet', 'carpet'].map(k => [
+    'step:' + k,
+    'Steps on ' + k,
+  ]),
+];
+/** nature's player on the Studio's context (the scape's noise and tracker), its seeded random and where each stream
+ * left off */
+function musicNature() {
+  if (musicStudio.nature) return musicStudio.nature;
+  const M = musicScape(),
+    c = /** @type {AudioContext} */ (musicStudio.ctx);
+  musicStudio.nature = {
+    P: naturePlayerCreate(c, { noise: M.noise, tracker: musicTracker(), rng: ambienceRandom(0x50d6) }),
+    r: ambienceRandom(0x50d7),
+    st: {},
+    want: /** @type {string | null} */ (null),
+    timer: 0,
+  };
+  return musicStudio.nature;
+}
+/** what a nature row plays in the next 0.3 s (every 200 ms, as the game's updateAmbience) */
+function musicNatureTick(/** @type {any} */ M, /** @type {number} */ t) {
+  const N = studioState.D.soundscape.nature,
+    out = musicTracker().bus,
+    k = M.want,
+    st = M.st,
+    r = M.r;
+  if (k === 'thunderNear' || k === 'thunderFar') {
+    if (st.at == null || t >= st.at) {
+      M.P.thunder(out, natureThunder(N.thunder, r, k === 'thunderNear' ? 0.6 : 4), t + 0.1, N.thunder.cap, 1);
+      st.at = t + 12;
+    }
+  } else if (k === 'patterLight' || k === 'patterHeavy') {
+    const R = natureRain(N.rain, k === 'patterLight' ? 0.3 : 1.6);
+    for (const e of naturePatter(N.rain.patter, (st.p = st.p || {}), t, t + 0.3, r, R.patter, 0.5))
+      M.P.drop(out, e, 1, N.rain.patter.bank);
+  } else if (k === 'drips') {
+    for (const b of soundscapeBubbles(N.rain.drips, (st.d = st.d || {}), t, t + 0.3, r, 1)) M.P.drip(out, b, 1);
+  } else if (k === 'grasshopper') {
+    const G = N.insects.grasshopper;
+    for (const e of natureBouts((st.h = st.h || [{}, {}]), t, t + 0.3, r, G))
+      M.P.chirr(out, e.t, G, e.gain, e.who ? 0.45 : -0.4);
+  } else if (k === 'cicada') {
+    const C = N.insects.cicada;
+    for (const at of natureEvery((st.c = st.c || { next: t }), t, t + 0.3, r, C.every)) M.P.cicada(out, at, C, 1, 0);
+  } else if (k === 'frogs') {
+    const F = N.frogs;
+    for (const e of natureBouts((st.f = st.f || [{}, {}]), t, t + 0.3, r, F))
+      M.P.croak(out, e.t, F, e.gain, e.who ? 0.25 : -0.25, e.who);
+  } else if (k === 'town') {
+    for (const e of natureTown(N.town, (st.w = st.w || { next: t }), t, t + 0.3, r, 0))
+      M.P.town(out, e, N.town.kinds[e.kind].gain);
+  } else if (['page', 'clink', 'tool', 'straw'].includes(String(k))) {
+    for (const at of natureEvery((st.o = st.o || { next: t }), t, t + 0.3, r, [2, 5])) M.P.room(out, k, 1, at);
+  } else if (String(k).startsWith('step:')) {
+    if (st.s == null || st.s < t) st.s = t;
+    for (; st.s < t + 0.3; st.s += 0.35)
+      M.P.step(out, natureStep(N.steps, String(k).slice(5), r, (st.foot = st.foot ? 0 : 1)), st.s);
+  }
+}
+ACTIONS.musNature = d => {
+  ACTIONS.musScapeStop({});
+  const M = musicNature();
+  if (musicStudio.ctx && musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  M.want = d.k;
+  M.st = {};
+  clearInterval(M.timer);
+  M.timer = setInterval(() => {
+    if (!sectionShown('music') || !M.want) return ACTIONS.musScapeStop({});
+    musicNatureTick(M, /** @type {AudioContext} */ (musicStudio.ctx).currentTime);
+  }, 200);
+  render();
+};
 /** the player on the Studio's context, made once: the beds' noise, the water's banks baked in the tracker's slices */
 function musicScape() {
   if (musicStudio.scape) return musicStudio.scape;
@@ -893,7 +1250,7 @@ function musicScape() {
   T.bankAdd(env.S.banks);
   const P = soundscapePlayerCreate(c, env);
   T.bankReady(P.banks());
-  musicStudio.scape = { P, want: null, timer: 0 };
+  musicStudio.scape = { P, want: null, timer: 0, noise: env.noise };
   return musicStudio.scape;
 }
 ACTIONS.musScape = d => {
@@ -913,6 +1270,12 @@ ACTIONS.musScape = d => {
   render();
 };
 ACTIONS.musScapeStop = () => {
+  /* SND-14: nature's one-shots stop too (what is ringing dies away) */
+  const Nm = musicStudio.nature;
+  if (Nm) {
+    clearInterval(Nm.timer);
+    Nm.want = null;
+  }
   const M = musicStudio.scape;
   if (!M) return;
   M.want = null;
@@ -1216,6 +1579,84 @@ ACTIONS.musRuleShow = d => {
   const r = document.getElementById('musRule' + d.i);
   if (r) r.scrollIntoView({ block: 'center' });
 };
+/* ---------- SND-11: the Instruments tab ----------
+   Each instrument (music.json instruments, baked by logic/sound-bake.js through the tracker's bank) previewed: a run
+   up and down its notes (a drum: a beat), and each ensemble: the songs that name it played as it (GB Sounds off for
+   them), its parts' instrument, level, pan and reverb send edited (heard from the next bar). Through the game's chain */
+function musicInstrumentsHTML() {
+  const I = musicData().instruments || {};
+  const rows = Object.keys(I)
+    .map(
+      k =>
+        `<div class="mus-row"><button class="btn subtle mus-play" data-act="musInst" data-k="${escapeHtml(k)}" aria-label="Play ${escapeHtml(k)}" title="Play ${escapeHtml(k)}">▶</button><span class="lt"><b>${escapeHtml(k)}</b> <small class="help">${escapeHtml(I[k].kind)} · ${escapeHtml(musicNoteName(I[k].lo))}-${escapeHtml(musicNoteName(I[k].hi))} · ${escapeHtml(I[k].name || '')}</small></span></div>`
+    )
+    .join('');
+  return card('Instruments', rows || '<p class="help">No instruments in music.json.</p>', {
+    sub: 'Synthesised once into memory (no sound files), then played like a DS sound bank. ▶ plays a run over its notes; a drum plays a beat. Their recipes are in music.json instruments (their ids stay: ensembles and battle sounds name them).',
+  });
+}
+function musicEnsemblesHTML() {
+  const E = musicData().ensembles || {},
+    songs = musicData().songs,
+    insts = Object.keys(musicData().instruments || {}).map(k => [k, k]);
+  const body = Object.keys(E)
+    .map(id => {
+      const using = Object.keys(songs).filter(
+        s => songs[s].ensemble === id || (songs[s].night && songs[s].night.ensemble === id)
+      );
+      const plays = using.length
+        ? using
+            .map(
+              s =>
+                `<button class="btn" data-act="musEnsPlay" data-song="${escapeHtml(s)}" data-night="${songs[s].ensemble === id ? '' : '1'}">▶ ${escapeHtml(s)}${songs[s].ensemble === id ? '' : ' at night'}</button>`
+            )
+            .join('')
+        : '<small class="help">No song names it.</small>';
+      const parts = E[id].parts
+        .map((P, i) => {
+          const p = `music.ensembles.${id}.parts.${i}`;
+          return `<div class="mus-part"><b>${i + 1}. ${escapeHtml(P.line)}</b> ${P.wave ? `<small class="help">chip ${escapeHtml(P.wave)}</small>` : P.kit ? `<small class="help">kit ${escapeHtml(Object.values(P.kit).join(', '))}</small>` : selectField('Instrument', `${p}.inst`, insts)}${grid(
+            numberField('Level', `${p}.level`, { opt: 1, min: 0, max: 4, step: 0.05, ph: '1' }),
+            numberField('Pan', `${p}.pan`, { opt: 1, min: -1, max: 1, step: 0.05, ph: '0' }),
+            numberField('Reverb', `${p}.verb`, { opt: 1, min: 0, max: 1, step: 0.05, ph: '0' })
+          )}</div>`;
+        })
+        .join('');
+      return `<details class="mus-ens" id="musEns_${escapeHtml(id)}"><summary><b>${escapeHtml(id)}</b> <small class="help">${escapeHtml(E[id].name || '')}</small></summary><div class="seg-row">${plays}</div>${numberField('Trim', `music.ensembles.${id}.trim`, { opt: 1, min: -24, max: 24, step: 0.1, unit: 'dB', help: 'On top of the song’s own trim, so it sits where the song’s gb version does (tools/check-sound.py --loudness)' })}${parts}</details>`;
+    })
+    .join('');
+  return card('Ensembles', body || '<p class="help">No ensembles in music.json.</p>', {
+    sub: 'Chip+ meets DS-era: the parts that play a song in place of the four chip voices. A song picks one in its recipe; GB Sounds plays gb. Judge the balance on the phone (the Sound test), not here.',
+  });
+}
+/** SND-11: an instrument's preview: a run up and down its notes from near middle C, or a drum's beat */
+function musicInstrumentPlay(id) {
+  const T = musicTracker(),
+    R = (musicData().instruments || {})[id];
+  if (!R) return;
+  if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  const out = musicStudio.chain.music;
+  T.bankReady(id).then(() => {
+    const t0 = musicStudio.ctx.currentTime + 0.05;
+    if (R.lo === R.hi) {
+      for (let k = 0; k < 16; k++)
+        T.sampleVoice(out, { inst: id, midi: R.lo, t: t0 + k * 0.2, dur: 0.1, vol: k % 4 ? 0.3 : 0.6 });
+      return;
+    }
+    const base = Math.max(R.lo, Math.min(60, R.hi - 24)),
+      run = [0, 4, 7, 12, 16, 19, 24, 19, 16, 12, 7, 4, 0].map(x => base + x).filter(m => m <= R.hi);
+    run.forEach((m, k) => T.sampleVoice(out, { inst: id, midi: m, t: t0 + k * 0.22, dur: 0.2, vol: 0.4 }));
+  });
+}
+ACTIONS.musInst = d => musicInstrumentPlay(d.k);
+ACTIONS.musEnsPlay = d => {
+  musicStudio.gb = false;
+  musicStudio.night = !!d.night;
+  const T = musicTracker(),
+    name = d.night ? d.song + '@night' : d.song;
+  /* its notes baked first, so it plays as the ensemble from its first bar */
+  T.prepare(name).then(() => musicPlay(d.song));
+};
 ACTIONS.musTab = d => {
   studioState.sel.musicTab = d.t;
   render();
@@ -1227,6 +1668,7 @@ SECTIONS.music = () => {
       if (sectionShown('music')) render();
     });
   if (musicStudio.tracker) musicStudio.tracker.refresh(musicData().songs);
+  musicMixApply();
   /* the Check's Show me: a where rule to mark and scroll to */
   if (studioState.sel.musicRule != null) {
     const r = +studioState.sel.musicRule;
@@ -1246,12 +1688,15 @@ SECTIONS.music = () => {
   musicStudio.shown = '';
   afterRender(musicNowShow);
   afterRender(() => musicHookMount(id));
-  const tab = ['where', 'jingles', 'sounds'].includes(studioState.sel.musicTab) ? studioState.sel.musicTab : 'songs',
+  const tab = ['where', 'jingles', 'sounds', 'instruments'].includes(studioState.sel.musicTab)
+      ? studioState.sel.musicTab
+      : 'songs',
     tabs = `<div class="seg-row tabs" role="tablist">${[
       ['songs', 'Songs'],
       ['where', 'Where they play'],
       ['jingles', 'Jingles'],
       ['sounds', 'Sounds'],
+      ['instruments', 'Instruments'],
     ]
       .map(
         ([k, n]) =>
@@ -1279,12 +1724,15 @@ SECTIONS.music = () => {
   }
   if (tab === 'where')
     return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicWhereHTML()}</div></div>`;
+  /* SND-11: the instruments and the ensembles */
+  if (tab === 'instruments')
+    return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicEnsemblesHTML()}${musicInstrumentsHTML()}</div></div>`;
   return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside>
  <div class="ed-col">${tabs}<div class="ed-head"><div><small class="mono">music.json · songs.${escapeHtml(id)}</small><h2>${escapeHtml(id)}</h2></div><div class="seg-row"><button class="btn primary" data-act="musPlay" data-song="${escapeHtml(id)}">▶ Play</button><button class="btn" data-act="musStop">■ Stop</button></div></div>
- ${musicRecipeHTML(id)}${musicHookHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
+ ${musicRecipeHTML(id)}${musicFormHTML(id)}${musicHookHTML(id)}${card('Where it plays', plays, { sub: 'From the where table (first rule that fits wins), the places’ own songs, the story scripts and the game’s code.' })}</div></div>`;
 };
 const musicLoopHTML = () =>
-  `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label><label class="mus-loop" title="On: the night version, as outdoors at night (slower and lower unless the song writes its own)"><input type="checkbox" id="musNight" ${musicStudio.night ? 'checked' : ''}>Night</label>${musicPartHTML()}`;
+  `<label class="mus-loop" title="Off: a song stops after its last bar"><input type="checkbox" id="musLoop" ${musicStudio.loop ? 'checked' : ''}>Loop</label><label class="mus-loop" title="On: the night version, as outdoors at night (slower and lower unless the song writes its own)"><input type="checkbox" id="musNight" ${musicStudio.night ? 'checked' : ''}>Night</label><label class="mus-loop" title="On: every song on the four chip voices, as the game's Settings → Sound → GB Sounds (from the next bar)"><input type="checkbox" id="musGb" ${musicStudio.gb ? 'checked' : ''}>GB Sounds</label>${musicPartHTML()}`;
 /* SND-5: which version ▶ plays: as written, a battle song's tense version, or a run song's arc
    band (Night goes over a band) */
 const musicPartHTML = () =>
@@ -1301,6 +1749,8 @@ const musicPartHTML = () =>
 document.addEventListener('change', ev => {
   const el = /** @type {HTMLInputElement} */ (ev.target);
   if (el && el.id === 'musLoop') musicStudio.loop = el.checked;
+  /* SND-11: the song playing switches on its next bar line */
+  if (el && el.id === 'musGb') musicStudio.gb = el.checked;
   if (el && (el.id === 'musNight' || el.id === 'musPart')) {
     if (el.id === 'musNight') musicStudio.night = el.checked;
     else musicStudio.part = el.value;

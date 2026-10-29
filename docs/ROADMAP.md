@@ -213,11 +213,30 @@ town node needs it.
   changed) done 2026-10-28. SND-10 (water: `soundscape.json` with a recipe per water kind, emitters from the scene
   (shores, river lines, falls by height and their pools, fountains), far water low and soft and near water bright, the
   surf on the tide, rain on water, wading, Surf, fishing and plops, a World sounds card in the Studio; WA-8's water
-  sounds, decided as recommended) done 2026-10-28. Next stems and ensembles in a
-  Chip+ and DS-era mix with a GB Sounds switch (SND-11), layers in play (SND-13: a walking beat, street musicians,
-  weather and night, building intensity), arrangements (SND-12), nature and weather (SND-14), the mix and a phone
-  pass (SND-15); SND-17 (the jingles with the new instruments, stingers on the beat) right after SND-11, added at the
-  owner's question. Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
+  sounds, decided as recommended) done 2026-10-28. SND-11 (stems and ensembles: the tick's patterns as pure
+  functions, a stem per line, 29 baked instruments and the first ensembles in music.json, Copperleaf by day and night,
+  the route and a wild battle in a Chip+ and DS-era mix, GB Sounds in Settings -> Sound, the Studio's Instruments tab
+  and its player on the game's chain; today's songs unchanged under GB Sounds) done 2026-10-28. SND-17 (jingles and
+  stingers: the 12 jingles on ensembles of SND-11's instruments as placeholder arrangements, a run's short stingers on
+  the song's beat and in its key with its busy parts dropped, the 8-bit jingles under GB Sounds, the Studio's Jingles
+  card and the Sound test both ways) done 2026-10-28. SND-13 (layers in play: an ensemble's parts brought in and out on
+  their beat or bar line by walking, the rain, snow, a storm, night, a battle's intensity and the run's arc; the
+  busker's accordion inside Copperleaf's song by distance, its theme only when you stop to listen; the Sound test's
+  layer switches) done 2026-10-28. SND-14 (nature and weather: rain by how hard it falls with patter,
+  roofs and indoors, thunder from the weather's bolts by distance, wind with the grass's gusts, birds by the hour, insects
+  and frogs, fires by size, footsteps by surface, the town's life, rooms by kind; the world lane's last step) done
+  2026-10-28. SND-12 part 1 (song forms: sections A and B of 16-32 bars, fills and turnarounds, varied repeats, new
+  lines, a part's sections; the Studio's Form card; batch 1 re-voiced as placeholders: Copperleaf, the route, town and city)
+  done 2026-10-28. SND-12b (batch 2 on ensembles in forms: the cave, the seven biome songs and the run's map, each with
+  peak parts so the run's arc is heard, and walk, rain and snow layers) done 2026-10-28. SND-12c (check-sound's page
+  stops drawing: a full render 13 minutes, was over 3.5 hours; batch 3: the wild battle in a form, the trainer, rival,
+  leader and boss on ensembles that build and peak, the mall, hazel, the title, the fall and the variants; the
+  baseline for batches 2 and 3) done 2026-10-29. Two lanes on the branch since 2026-10-28: music (done with SND-12c) and world (done with SND-14).
+  SND-15 (the mix: a master chain of a gentle compressor, a make-up and a limiter so the music sits at -18 LUFS with
+  true peaks under -1 dBTP, the sliders' defaults near the top, cries, talk and jingles ducking the music and the beds,
+  Settings' Play when silenced for iPhones, the debug log's mix line, the loudness report faster with true peaks)
+  done 2026-10-29: **Part 2 is done**; the owner's phone pass is its listening list (HANDOFF). SND-16 (an effects
+  pass) is optional and waits for the owner's word. Branch `track/sound`. The owner (2026-10-27): the steps run one after another in new sessions,
   plans pre-approved; open choices take the recommended option, listed in each HANDOFF entry for review.
 - **VFX track** (docs/phases/vfx-track.md, the owner's brief and answers 2026-10-26): stylized smears that fit the
   art, stepped and dithered, never blurred: the eased throw and afterimages (VFX-1), a motion-line ribbon (VFX-2), the

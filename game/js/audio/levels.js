@@ -8,6 +8,7 @@
    the values below. Pure: no audio and no page, so the unit tests run it in Node. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
+import { provide } from '../hooks.js';
 /* eslint-disable no-func-assign */
 expose({
   AMBIENCE_TRIM: [() => AMBIENCE_TRIM],
@@ -21,7 +22,10 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-const SOUND_DEFAULTS = { master: 1, music: 0.55, sfx: 0.8, world: 0.5, amb: 0.5 };
+/* SND-15: the defaults near the top, so the slider has little room left to push the music into the limiter (music.json
+   mix's trims keep each bus's level against the music as it was at 0.55, 0.8, 0.5 and 0.5) */
+const SOUND_DEFAULTS = { master: 1, music: 0.8, sfx: 1, world: 0.75, amb: 0.75 };
+provide({ SOUND_DEFAULTS }); /* to-module */
 const MASTER_HEADROOM = 0.9;
 const AMBIENCE_TRIM = 0.9;
 /* SND-6: music.json mix when it leaves a bus out: today's trims (master's headroom, the ambience a little under) */
