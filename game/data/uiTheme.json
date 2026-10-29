@@ -109,6 +109,7 @@
    "trainers": true,
    "billies": true
   },
+  "style": {"stampScale":1,"stampSlant":8,"rollMs":380,"popMin":24,"popMax":40,"foilPeriod":3500,"foilSweep":700,"foilHalf":0.2},
   "signals": {
    "fill": {
     "good": "#40D9C1",

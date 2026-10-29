@@ -25,10 +25,12 @@
 import { expose } from './test-globals.js';
 import { i18nText } from './hooks.js';
 import { glyphOf, sigVar } from './logic/signals.js';
-import { chipLook, rarityTier } from './logic/marks.js';
+import { chipLook, rarityColour, rarityTier } from './logic/marks.js';
 import { motionCountAt, motionCountMs } from './logic/motion.js';
 import { RUN_MARK_ART, runMarkLook, runMarkPixels } from './logic/run-marks.js';
-import { LitElement, css, html, nothing, pbSlideBar, pbSound, reduced } from './ui-kit.js';
+import { styleNote } from './theme-sheet.js';
+import { caseTyped } from './logic/case-file.js';
+import { LitElement, css, html, nothing, pbSound, reduced } from './ui-kit.js';
 /* eslint-disable no-func-assign */
 expose({
   PbCoin: [() => PbCoin],
@@ -41,6 +43,7 @@ expose({
   PbPayout: [() => PbPayout],
   PbPickCard: [() => PbPickCard],
   PbStamp: [() => PbStamp],
+  PbTyped: [() => PbTyped],
   RUN_CURRENCY_ICONS: [() => RUN_CURRENCY_ICONS],
   RUN_NAV_SETS: [() => RUN_NAV_SETS],
   RUN_WEATHER_ICONS: [() => RUN_WEATHER_ICONS],
@@ -56,6 +59,7 @@ expose({
   runMsVar: [() => runMsVar],
   runNumber: [() => runNumber],
   runSvg: [() => runSvg],
+  typedAt: [() => typedAt],
   unsafeCSS: [() => unsafeCSS],
 });
 /* eslint-enable no-func-assign */
@@ -606,6 +610,21 @@ const PbPickCard = class extends LitElement {
       :host([rarity]) h3 {
         color: var(--rar-t, inherit);
       }
+      /* PK-7: Fine Print's stamp (perks-track.md section 11, item 1): a small red rubber stamp in place of the tier's
+         pill, a double red edge, tilted */
+      .stamp {
+        padding: 1px 5px;
+        border: 2px double var(--sig-bad-text);
+        border-radius: 2px;
+        color: var(--sig-bad-text);
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.2;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        transform: rotate(-6deg);
+      }
       /* UI-14b: what kind of pickup (the colour code's "family colour + frame shape: the card's ribbon"): kind="..." (a
          UI_GLYPHS.kind id: perk, held, item, candy, evo, tutor, part, scrap) draws the sub line as a slanted ribbon
          in its family's tint with a bar of its fill and its glyph in its text shade; a neutral kind (item) stays
@@ -776,7 +795,9 @@ const PbPickCard = class extends LitElement {
   }
   render() {
     const t = rarityTier(this.rarity),
-      rar = t ? `--rar:var(--sig-${t});--rar-t:var(--sig-${t}-text)` : '';
+      /* PK-7: Fine Print in the ladder's top orange (rarityColour), its red stamp in place of the pill */
+      c = rarityColour(t),
+      rar = t ? `--rar:var(--sig-${c});--rar-t:var(--sig-${c}-text)` : '';
     return html`<button
       part="button"
       ?disabled=${this.disabled}
@@ -789,9 +810,9 @@ const PbPickCard = class extends LitElement {
           ${
             t
               ? html`<span class="rar" aria-hidden="true"></span>${
-                  /* UI-17: a rare or mythical card's foil (pb-foil: idle life) */
-                  t === 'rare' || t === 'mythical' ? html`<pb-foil></pb-foil>` : nothing
-                }<pb-rarity class="tier" tier=${t}></pb-rarity>`
+                  /* UI-17: a rare or mythical card's foil (pb-foil: idle life); PK-7: Fine Print's too */
+                  t === 'rare' || t === 'mythical' || t === 'fine' ? html`<pb-foil></pb-foil>` : nothing
+                }${t === 'fine' ? html`<span class="tier stamp">Fine Print</span>` : html`<pb-rarity class="tier" tier=${t}></pb-rarity>`}`
               : nothing
           }
           <span class="art"><slot name="art"></slot></span>
@@ -1033,7 +1054,7 @@ const PbStamp = class extends LitElement {
         padding: 0.3em 0.5em 0.22em;
         border: max(2px, 0.14em) solid currentColor;
         color: var(--stamp-ink, var(--redink));
-        font: 700 var(--stamp-fs) / 1 var(--font-voice);
+        font: 700 calc(var(--stamp-fs) * var(--stamp-scale, 1)) / 1 var(--font-voice);
         letter-spacing: 0.08em;
         text-transform: uppercase;
         white-space: nowrap;
@@ -1091,6 +1112,7 @@ const PbStamp = class extends LitElement {
       ink.classList.add('go');
     }
     const land = reduced() ? 0 : runMsVar(this, '--m-base', 240) * 0.55;
+    styleNote('stamp');
     this._timer = setTimeout(
       () =>
         this.dispatchEvent(
@@ -1100,7 +1122,8 @@ const PbStamp = class extends LitElement {
     );
   }
   willUpdate() {
-    this.style.setProperty('--tilt', `${Number(this.tilt) || 0}deg`);
+    /* SY-8: the Studio's slant dial (uiTheme.json style stampSlant, 8 by default) scales the page's tilt */
+    this.style.setProperty('--tilt', `calc(${Number(this.tilt) || 0}deg * var(--stamp-slant, 8) / 8)`);
   }
   render() {
     const go = this.still || !this._go ? '' : 'go';
@@ -1114,9 +1137,19 @@ const PbStamp = class extends LitElement {
    ("Boss"), a bar in the family's colour (`tone`: a --sig-* name, bad by default: bosses share the red family with
    Crests) with the main action's long hexagon, slammed in from the left on the spring, held, then gone to the right.
    Put it in a positioned box and call play(hold) (or use pbNameBanner); it tells the page pb-banner-done and leaves.
-   Reduced motion: it fades in and out. Words only from the caller (translated there) */
+   Reduced motion: it fades in and out. Words only from the caller (translated there).
+   VFX-16: the VS splash is the same banner with `faces` (two portraits, [{src, w, h}], yours on the left facing in,
+   at whole-number scales: the caller sizes them) in slanted frames that come in from the sides with the bar, and
+   `color` (a type's colour, darkened under the white words) in place of the tone */
 const PbNameBanner = class extends LitElement {
-  static properties = { name: {}, kicker: {}, tone: { reflect: true }, _at: { state: true } };
+  static properties = {
+    name: {},
+    kicker: {},
+    tone: { reflect: true },
+    color: {},
+    faces: { attribute: false },
+    _at: { state: true },
+  };
   static styles = [
     runKitBase,
     runKitMotion,
@@ -1160,6 +1193,81 @@ const PbNameBanner = class extends LitElement {
       .bar.in {
         animation: pb-banner-in var(--m-base) var(--spring) both;
       }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--s2);
+        max-width: 100%;
+      }
+      .row .bar {
+        min-width: 0;
+        flex: 0 1 auto;
+        padding-inline: calc(var(--s3) + 10px);
+      }
+      .row .n {
+        font-size: 24px;
+      }
+      .face {
+        flex: none;
+        line-height: 0;
+        padding: var(--s1) calc(var(--s2) + 4px);
+        /* the kit's slant (--slant, an angle) across the frame's height (--fh, set with the picture) */
+        --slant-x: calc((var(--fh, 64px) + 2 * var(--s1)) * tan(var(--slant)));
+        clip-path: polygon(var(--slant-x) 0, 100% 0, calc(100% - var(--slant-x)) 100%, 0 100%);
+        background: color-mix(in srgb, var(--tone) 45%, black);
+        opacity: 0;
+      }
+      .face img {
+        image-rendering: pixelated;
+      }
+      .face.me img {
+        transform: scaleX(-1);
+      }
+      .face.in {
+        animation: pb-face-in var(--m-base) var(--spring) both;
+      }
+      .face.foe.in {
+        animation-name: pb-face-in-r;
+      }
+      .face.out {
+        animation: pb-face-out var(--m-exit, 180ms) var(--ease-in, ease-in) both;
+      }
+      .face.f-in {
+        animation: m-fade var(--m-fast) linear both;
+      }
+      .face.f-out {
+        opacity: 1;
+        animation: m-fade var(--m-fast) linear reverse both;
+      }
+      @keyframes pb-face-in {
+        from {
+          opacity: 0;
+          transform: translateX(-60%);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      @keyframes pb-face-out {
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
+      }
+      @keyframes pb-face-in-r {
+        from {
+          opacity: 0;
+          transform: translateX(60%);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
       .bar.out {
         animation: pb-banner-out var(--m-exit, 180ms) var(--ease-in, ease-in) both;
       }
@@ -1199,6 +1307,9 @@ const PbNameBanner = class extends LitElement {
     this.name = '';
     this.kicker = '';
     this.tone = '';
+    this.color = '';
+    /** @type {{ src: string, w: number, h: number }[] | null} */
+    this.faces = null;
     this._at = '';
     this._timers = /** @type {number[]} */ ([]);
   }
@@ -1228,22 +1339,32 @@ const PbNameBanner = class extends LitElement {
     });
   }
   willUpdate() {
-    if (this.tone) this.style.setProperty('--tone', `var(${sigVar(this.tone)})`);
+    if (this.color) this.style.setProperty('--tone', `color-mix(in srgb, ${this.color} 62%, black)`);
+    else if (this.tone) this.style.setProperty('--tone', `var(${sigVar(this.tone)})`);
+    if (this.faces && this.faces[0]) this.style.setProperty('--fh', `${this.faces[0].h}px`);
   }
   render() {
-    return html`<div class="bar ${this._at}" role="status">
-      ${this.kicker ? html`<span class="k">${this.kicker}</span>` : nothing}<span class="n">${this.name}</span>
-    </div>`;
+    const bar = html`<div class="bar ${this._at}" role="status">
+        ${this.kicker ? html`<span class="k">${this.kicker}</span>` : nothing}<span class="n">${this.name}</span>
+      </div>`,
+      F = this.faces,
+      face = (/** @type {{ src: string, w: number, h: number }} */ f, /** @type {string} */ k) =>
+        html`<span class="face ${k} ${this._at}"><img src=${f.src} width=${f.w} height=${f.h} alt="" /></span>`;
+    if (!F || F.length < 2) return bar;
+    return html`<div class="row">${face(F[0], 'me')}${bar}${face(F[1], 'foe')}</div>`;
   }
 };
 /** UI-17: a name banner in `host` (a positioned box): kicker over name, held `hold` ms, then removed; the whole of it
  * fits a stage intro's time (in 240 ms, out 180 ms). Returns the element; its play() promise is el.done
- * @param {Element} host @param {{ name: string, kicker?: string, tone?: string, hold?: number }} o */
+ * @param {Element} host @param {{ name: string, kicker?: string, tone?: string, hold?: number, color?: string,
+ *   faces?: { src: string, w: number, h: number }[] }} o VFX-16: faces and color make it the VS splash */
 export function pbNameBanner(host, o) {
   const el = /** @type {any} */ (document.createElement('pb-name-banner'));
   el.name = o.name;
   el.kicker = o.kicker || '';
   el.tone = o.tone || '';
+  el.color = o.color || '';
+  el.faces = o.faces || null;
   host.appendChild(el);
   el.done = el.updateComplete.then(() => el.play(o.hold ?? 700)).then(() => el.remove());
   return el;
@@ -1255,7 +1376,7 @@ export function pbNameBanner(host, o) {
    is wide (uiTheme.json minimap tileW x tileH, 232 x 184) and stands out of the bar's frame by --rise; the bar is a
    plain cut outline from --rise down, so the world shows on both sides of the tile's top. A narrow bar shrinks the
    whole tile, keeping its shape, so each side keeps 60 px. `compact` (while walking): a square tile (tileCompact),
-   icon-only buttons side by side. */
+   the two buttons of a side side by side, still with their words; the change eases (--nav-k). */
 const navStep = (/** @type {number} */ i) => {
   /* the outline inset by i px (0: the outer line; 1: the edge line's inside); 45° corners move by i·tan(22.5°) */
   const k = i * 0.4142,
@@ -1281,28 +1402,32 @@ const PbNavBar = class extends LitElement {
   static styles = [
     runKitBase,
     css`
-      /* the host is the container: its width (cqw) sizes the tile; a side keeps 60 px plus 8 px of margins */
+      /* the host is the container: its width (cqw) sizes the tile. --nav-k runs 0 (full) to 1 (compact, while
+         walking): every size below is a mix of the two by it, so the tile, the bar, its outline and the tabs move
+         together. It is registered in tokens.css (@property), so it eases on --m-base; unregistered it just jumps.
+         Full: the wide tile, a side keeps 60 px; compact: a square tile, a side keeps two 58 px tabs side by side. */
       :host {
-        --tile-w: min(var(--minimap-tile-w, 232px), 100cqw - 136px);
-        --tile-h: min(var(--minimap-tile-h, 184px), (100cqw - 136px) * var(--minimap-tile-aspect, 0.7931));
-        --bar-h: 128px;
-        --rise: max(0px, var(--tile-h) + var(--s2) - var(--bar-h));
+        --nav-k: 0;
+        --tile-fw: min(var(--minimap-tile-w, 232px), 100cqw - 136px);
+        --tile-fh: min(var(--minimap-tile-h, 184px), (100cqw - 136px) * var(--minimap-tile-aspect, 0.7931));
+        --tile-cw: min(var(--minimap-tile-compact, 112px), 100cqw - 256px);
+        --tile-w: calc(var(--tile-fw) + (var(--tile-cw) - var(--tile-fw)) * var(--nav-k));
+        --tile-h: calc(var(--tile-fh) + (var(--tile-cw) - var(--tile-fh)) * var(--nav-k));
+        --bar-h: calc(128px - 44px * var(--nav-k));
+        --rise: max(0px, var(--tile-h) + var(--s2) - var(--s1) * var(--nav-k) - var(--bar-h));
         display: block;
         position: relative;
         isolation: isolate;
         container-type: inline-size;
+        /* UI-16a: at once under Reduced (--m-k 0) */
+        transition: --nav-k calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
-      /* walking: a square; a side keeps two 46 px buttons */
       :host([compact]) {
-        --tile-w: min(var(--minimap-tile-compact, 112px), 100cqw - 208px);
-        --tile-h: var(--tile-w);
-        --bar-h: 76px;
-        --rise: max(0px, var(--tile-h) + 4px - var(--bar-h));
+        --nav-k: 1;
       }
       nav {
         position: relative;
         height: calc(var(--rise) + var(--bar-h) + env(safe-area-inset-bottom, 0px));
-        transition: height calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       .glass,
       .edge {
@@ -1321,26 +1446,18 @@ const PbNavBar = class extends LitElement {
         clip-path: polygon(evenodd, ${unsafeCSS(navStep(0))}, ${unsafeCSS(navStep(1))});
         background: var(--edge);
       }
+      /* a side: two tabs, one over the other (full) sliding to side by side (compact) */
       .side {
-        --apart: var(--s2); /* its margin and the gap to the tile: 60 px columns at the narrowest */
         position: absolute;
         top: calc(var(--rise) + var(--s1));
-        width: calc((100% - var(--tile-w)) / 2 - var(--apart));
-        display: flex;
-        flex-direction: column;
-        gap: var(--s1);
+        width: calc((100% - var(--tile-w)) / 2 - var(--s2));
+        height: calc(var(--bar-h) - var(--s2));
       }
       .side.l {
         left: var(--s1);
       }
       .side.r {
         right: var(--s1);
-      }
-      :host([compact]) .side {
-        flex-direction: row;
-      }
-      :host([compact]) .side.r {
-        justify-content: flex-end;
       }
       button {
         position: relative;
@@ -1351,16 +1468,28 @@ const PbNavBar = class extends LitElement {
         color: var(--text2);
         font: 15px/1 var(--font-voice);
       }
-      /* standing: the icon over the word */
+      /* the icon over the word, in both sizes; the word gets smaller, never hidden */
       .tab {
+        position: absolute;
+        top: 0;
+        left: 0;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         gap: 2px;
         min-width: 0;
-        min-height: 52px;
+        width: calc(100% - (50% + var(--s1) / 2) * var(--nav-k));
+        height: calc(52px + var(--s1) * var(--nav-k));
         padding: 0 var(--s1);
+        font-size: calc(15px - 3px * var(--nav-k));
+      }
+      .tab.t1 {
+        top: calc((52px + var(--s1)) * (1 - var(--nav-k)));
+        left: calc((50% + var(--s1) / 2) * var(--nav-k));
+      }
+      .tab.solo {
+        width: 100%;
       }
       .tab .ic {
         width: 24px;
@@ -1373,28 +1502,26 @@ const PbNavBar = class extends LitElement {
         text-overflow: ellipsis;
         white-space: nowrap;
       }
-      :host([compact]) .tab {
-        justify-content: center;
-        width: 46px;
-        min-height: 46px;
-        padding: 0;
-      }
-      :host([compact]) .tab span {
-        display: none;
-      }
+      /* the open tab: a soft gold pill that fades and grows in (no slant: it read as angular on the owner's phone) */
       .tab::before {
-        content: none; /* only the current tab has the gold bar */
+        content: '';
         position: absolute;
-        inset: 3px 4px;
+        inset: 2px;
         z-index: var(--z-below);
-        transform: skewX(calc(var(--slant) * -1));
+        border-radius: var(--r-md);
         background: linear-gradient(180deg, var(--gold-a), var(--gold-b));
+        opacity: 0;
+        transform: scale(0.86);
+        transition:
+          opacity calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+          transform calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       .tab[aria-current='page'] {
         color: var(--goldink, #3a2408);
       }
       .tab[aria-current='page']::before {
-        content: '';
+        opacity: 1;
+        transform: none;
       }
       .badge {
         position: absolute;
@@ -1410,28 +1537,14 @@ const PbNavBar = class extends LitElement {
         color: var(--c-surface);
         font-size: 12px;
       }
-      :host([compact]) .badge {
-        left: auto;
-        right: 0;
-        top: 0;
-      }
       /* the minimap tile: the card family's outline (four small cuts), its edge gold and a gold notch when open */
       .map {
         position: absolute;
-        top: var(--s1);
+        top: calc(var(--s1) - 2px * var(--nav-k));
         left: calc(50% - var(--tile-w) / 2);
         width: var(--tile-w);
         height: var(--tile-h);
         padding: 0;
-        /* UI-16a: at once under Reduced (--m-k 0) */
-        transition:
-          width calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
-          height calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
-          left calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
-          top calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
-      }
-      :host([compact]) .map {
-        top: 2px;
       }
       .map .face {
         position: absolute;
@@ -1499,15 +1612,6 @@ const PbNavBar = class extends LitElement {
     this.hide = '';
     this.compact = false;
   }
-  /* UI-16a: the gold bar slides from the tab that was open to the new one (where the old one stood, before the redraw) */
-  willUpdate(ch) {
-    this._from =
-      ch.has('value') && ch.get('value') != null ? this.tabEl(ch.get('value'))?.getBoundingClientRect() : null;
-  }
-  updated() {
-    if (this._from) pbSlideBar(this._from, this.tabEl(this.value)?.getBoundingClientRect() || null);
-    this._from = null;
-  }
   /** a tab's button (the fly-to's target for a gain: Bag, Perks) @param {string} id */
   tabEl(id) {
     return this.renderRoot.querySelector(`[data-t="${CSS.escape(String(id))}"]`);
@@ -1536,9 +1640,10 @@ const PbNavBar = class extends LitElement {
       map = all.find(t => t.id === 'map'),
       rest = all.filter(t => t !== map),
       half = Math.ceil(rest.length / 2);
-    const tab = t =>
+    /* a tab's place in its side: t0 first, t1 second (stacked, or side by side when compact); alone, the whole side */
+    const tab = (t, i, side) =>
       html`<button
-        class="tab"
+        class=${`tab t${i}${side.length === 1 ? ' solo' : ''}`}
         part="tab"
         data-t=${t.id}
         aria-label=${say(t.label)}
@@ -1774,6 +1879,92 @@ const PbLoading = class extends LitElement {
   }
 };
 
+/* ---------- SY-4: lines typed in, a letter at a time (a case file's) ---------- */
+/* <pb-typed key="7" skip="2"> around a sheet's lines (.ev-line): the lines after the first `skip` type in, one after
+   another, a letter every CASE_TYPE_MS (logic/case-file.js). Light DOM, so the page's own styles and words stay as
+   they are. The overlay draws a sheet again from its HTML on any render, so where the typing is comes from the clock
+   since `key` first showed, never from the element: a redraw picks it up where it was. A tap on the sheet's body shows
+   it all; a tap on a redaction bar (.redact) lifts it. Reduced motion: all at once. The buttons work all the time, so
+   the typing never makes an event longer. */
+/** when each key's typing began (performance.now()); -Infinity once it is all shown */
+const typedAt = new Map();
+const PbTyped = class extends HTMLElement {
+  connectedCallback() {
+    const key = this.getAttribute('key') || '';
+    if (!typedAt.has(key)) {
+      typedAt.set(key, performance.now());
+      if (typedAt.size > 40) typedAt.delete(typedAt.keys().next().value);
+    }
+    this._key = key;
+    this._units = this._prep();
+    this._tap = (/** @type {Event} */ e) => {
+      const bar = /** @type {HTMLElement | null} */ (e.target instanceof Element ? e.target.closest('.redact') : null);
+      if (bar && this.contains(bar) && typedAt.get(key) === -Infinity) bar.classList.add('lifted');
+      typedAt.set(key, -Infinity);
+      this._tick();
+    };
+    this._area = this.closest('.body') || this;
+    this._area.addEventListener('click', this._tap);
+    this._tick();
+  }
+  disconnectedCallback() {
+    cancelAnimationFrame(this._raf || 0);
+    if (this._area) this._area.removeEventListener('click', this._tap);
+  }
+  /** the letters to type, in order: each text node, and each redaction bar as one piece (it shows whole) */
+  _prep() {
+    const skip = Number(this.getAttribute('skip')) || 0,
+      /** @type {{ node?: Text, bar?: HTMLElement, text: string, len: number, rest?: HTMLElement }[]} */
+      units = [];
+    for (const line of [...this.querySelectorAll('.ev-line')].slice(skip)) {
+      const walk = document.createTreeWalker(line, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
+        acceptNode: n =>
+          n.nodeType === 1
+            ? /** @type {Element} */ (n).classList.contains('redact')
+              ? NodeFilter.FILTER_ACCEPT
+              : NodeFilter.FILTER_SKIP
+            : /** @type {Element | null} */ (n.parentElement)?.closest('.redact')
+              ? NodeFilter.FILTER_REJECT
+              : NodeFilter.FILTER_ACCEPT,
+      });
+      for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+        const text = n.textContent || '';
+        if (n.nodeType === 1) units.push({ bar: /** @type {HTMLElement} */ (n), text, len: text.length });
+        else if (text) units.push({ node: /** @type {Text} */ (n), text, len: text.length });
+      }
+    }
+    return units;
+  }
+  _tick() {
+    const units = this._units || [],
+      total = units.reduce((t, u) => t + u.len, 0),
+      at = typedAt.get(this._key),
+      n = reduced() || at === -Infinity ? total : caseTyped(total, performance.now() - at);
+    let left = n;
+    for (const u of units) {
+      const show = Math.max(0, Math.min(u.len, left));
+      left -= u.len;
+      if (u.bar) u.bar.classList.toggle('tw-wait', show === 0);
+      else if (u.node) {
+        u.node.data = u.text.slice(0, show);
+        if (show < u.len) {
+          if (!u.rest) {
+            u.rest = document.createElement('span');
+            u.rest.className = 'tw-rest';
+            u.node.after(u.rest);
+          }
+          u.rest.textContent = u.text.slice(show);
+        } else if (u.rest) {
+          u.rest.remove();
+          u.rest = undefined;
+        }
+      }
+    }
+    if (n < total) this._raf = requestAnimationFrame(() => this._tick());
+    else typedAt.set(this._key, -Infinity);
+  }
+};
+
 for (const [tag, cls] of /** @type {const} */ ([
   ['pb-day-chip', PbDayChip],
   ['pb-forecast', PbForecast],
@@ -1784,6 +1975,7 @@ for (const [tag, cls] of /** @type {const} */ ([
   ['pb-nav-bar', PbNavBar],
   ['pb-loading', PbLoading],
   ['pb-stamp', PbStamp],
+  ['pb-typed', PbTyped],
   ['pb-name-banner', PbNameBanner],
 ]))
   if (!customElements.get(tag)) customElements.define(tag, cls);

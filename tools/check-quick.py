@@ -54,8 +54,9 @@ BLUR_CEILING = {}
 # UI-15: the most pieces (words and icons: uiElementCount) a screen may show in the smoke run's phone steps, lowered when
 # a screen sheds pieces. Set from UI-15's counts (before it: walk 27, map 25, team 28, guide 39, profile 55, shop 73,
 # battle 42); walk keeps room for its hint, which shows for 6 s when a Billie wanders in. Team 28 -> 29 in the UI
-# checks session: UI-14b's rarity pill on the lead's card (the owner's answer 9: rarity on Billie cards, common too)
-ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 29, 'guide': 39, 'profile': 55, 'shop': 66, 'battle': 23}
+# checks session: UI-14b's rarity pill on the lead's card (the owner's answer 9: rarity on Billie cards, common too).
+# Guide 39 -> 40 in PK-12: the Field Guide's fourth tab, Perks (perks-track.md section 9)
+ELEMENT_CEILING = {'walk': 18, 'map': 25, 'team': 29, 'guide': 40, 'profile': 55, 'shop': 66, 'battle': 23}
 ARGS = sys.argv[1:]
 # phase 01: --smoke is a fast subset (the data checks, Start-Game on a phone with the debug log export, one step of the
 # in-game test, the actions sheet); every push runs tools/check-fast.py, which also opens the Studio. The full check
@@ -449,13 +450,14 @@ SAVE_SPY = r"""(()=>{window.__st={w:[],ls:[]};account.user={uid:'check',name:'Ch
   save();__st.team=saveData.team.map(m=>m.uid)})();0"""
 
 
-@step('Actions sheet: a wheel never opens it; its button and Tab do; Esc, Tab and its buttons close it; the hub marker; a run\'s status', 150)
+@step('Actions bar: a wheel never opens it; its button and Tab do; Esc, Tab and its buttons close it; the hub marker; a wild Billie walks you there; a run\'s day', 150)
 def actions_sheet_step(P):
-    """the Actions sheet (walk-tab.js walkSheetSync) is a <pb-sheet> over the world: it used to be page content under the
-    scene, so a mouse wheel scrolled it into view. In the hub: wheel, button, Esc, Tab, a "show me the way" that closes
-    it and marks the ranch. The full check also opens a run's sheet for its day, type and weather"""
+    """the Actions bar (walk-tab.js walkSheetSync): a row of small buttons right on top of the bottom bar (it was a
+    sheet over half the screen, and before that page content a mouse wheel scrolled into view). In the hub: wheel,
+    button, Esc, Tab, a "show me the way" that closes it and marks the ranch, a wild Billie's button that walks you
+    to it (the battle starts there, not at once). The full check also opens a run's bar for its day and the map"""
     pg = P.pg
-    is_open = "[uiState.walkSheet,!!document.querySelector('#walkSheet[open]')]"
+    is_open = "[uiState.walkSheet,!!document.querySelector('#walkSheet.open')]"
     def ready(fix):
         if fix != P.fixture: P.goto(fix)
         pg.wait_for_function("typeof walkView!=='undefined'&&walkView.ready&&!!document.querySelector('.wh-down')", timeout=90000)
@@ -465,35 +467,61 @@ def actions_sheet_step(P):
     pg.mouse.move(640, 400)
     for dy in (400, 400, -400, 400): pg.mouse.wheel(0, dy); ui(pg)
     if pg.evaluate(is_open) != [False, False] or pg.evaluate('scrollY') != 0:
-        raise Exception(f'a mouse wheel opened the sheet or scrolled the page: {pg.evaluate(is_open)}, scrollY {pg.evaluate("scrollY")}')
+        raise Exception(f'a mouse wheel opened the bar or scrolled the page: {pg.evaluate(is_open)}, scrollY {pg.evaluate("scrollY")}')
     pg.evaluate("document.querySelector('.wh-down').click()")
-    if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('the Actions button did not open the sheet')
+    if not until(pg, "!!document.querySelector('#walkSheet.open')", 5): raise Exception('the Actions button did not open the bar')
     acts = pg.evaluate("[...document.querySelectorAll('#walkSheet [data-a]')].map(e=>e.dataset.a)")
     for want in ('walkrun', 'walkmark'):
-        if want not in acts: raise Exception(f'the hub sheet has no {want} button: {acts}')
+        if want not in acts: raise Exception(f'the hub bar has no {want} button: {acts}')
     for gone in ('stoptrip', 'rest', 'customize'):
-        if gone in acts: raise Exception(f'the sheet still has {gone}: {acts}')
+        if gone in acts: raise Exception(f'the bar still has {gone}: {acts}')
+    # a bar, not a sheet: one row, its top in the screen's lower part, over the bottom bar (once it has slid in)
+    # (a busy page's animations may crawl: the slide is finished at once rather than waited for)
+    pg.evaluate("document.querySelector('#walkSheet').getAnimations().forEach(a=>a.finish());document.documentElement.getAnimations().forEach(a=>a.finish());0")
+    box = pg.evaluate("(()=>{const t=document.querySelector('#walkSheet').getBoundingClientRect(),n=document.querySelector('#nav').getBoundingClientRect();return [t.top,t.bottom,n.top,innerHeight]})()")
+    if box[0] < box[3] * 0.6 or box[1] > box[2] + 1: raise Exception(f'the Actions bar is not a row over the bottom bar: top {box[0]:.0f}, bottom {box[1]:.0f}, the bar at {box[2]:.0f} of {box[3]}')
+    pg.evaluate("document.querySelector('.wh-down').click()")
+    if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet.open')", 5): raise Exception('the Actions button did not close the bar')
+    pg.evaluate("document.querySelector('.wh-down').click()")
+    if not until(pg, "!!document.querySelector('#walkSheet.open')", 5): raise Exception('the Actions button did not open the bar again')
     pg.keyboard.press('Escape')
-    if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet[open]')", 5): raise Exception('Esc did not close the sheet')
+    if not until(pg, "!uiState.walkSheet&&!document.querySelector('#walkSheet.open')", 5): raise Exception('Esc did not close the bar')
     pg.evaluate("document.activeElement&&document.activeElement.blur&&document.activeElement.blur();0")
     pg.keyboard.press('Tab')
-    if not until(pg, "!!document.querySelector('#walkSheet[open]')", 5): raise Exception('Tab did not open the sheet')
-    if not until(pg, "!!document.activeElement&&!!document.activeElement.closest('#walkSheet')", 5): raise Exception('Tab opened the sheet without its first button taking the focus')
+    if not until(pg, "!!document.querySelector('#walkSheet.open')", 5): raise Exception('Tab did not open the bar')
+    if not until(pg, "!!document.activeElement&&!!document.activeElement.closest('#walkSheet')", 5): raise Exception('Tab opened the bar without its first button taking the focus')
     pg.keyboard.press('Tab')
-    if not until(pg, "!uiState.walkSheet", 5): raise Exception('Tab did not close the sheet')
+    if not until(pg, "!uiState.walkSheet", 5): raise Exception('Tab did not close the bar')
     pg.evaluate("document.querySelector('.wh-down').click()"); until(pg, "!!document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]')", 5)
     pg.evaluate("document.querySelector('#walkSheet [data-a=walkmark][data-k=ranch]').click()")
     m = pg.evaluate("[uiState.walkSheet, walkView.mark&&walkView.mark.act]")
-    if m != [False, 'ranch']: raise Exception(f'"show me the way" to the ranch: sheet open, marker {m}')
-    out = ['wheel ×4: closed, no scroll', 'button, Esc, Tab, Tab', 'the ranch marked, the sheet closed']
+    if m != [False, 'ranch']: raise Exception(f'"show me the way" to the ranch: bar open, marker {m}')
+    out = ['wheel ×4: closed, no scroll', 'a row over the bottom bar', 'button ×3, Esc, Tab, Tab', 'the ranch marked, the bar closed']
+    # a wild Billie: nearest first; its button walks you there (a route, no battle yet)
+    pg.evaluate("document.querySelector('.wh-down').click()"); until(pg, "!!document.querySelector('#walkSheet.open')", 5)
+    ids = pg.evaluate("[...document.querySelectorAll('#walkSheet [data-a=encgo]')].map(e=>e.dataset.id)")
+    if ids:
+        far = pg.evaluate("(ids=>ids.map(id=>{const e=walkView.enc[id],P=walkView.pl;return e?Math.hypot(e.x-P.x,e.z-P.z):1e9}))", ids)
+        if far != sorted(far): raise Exception(f'the wild Billies are not nearest first: {far}')
+        pg.evaluate("walkView.pl.route=null;document.querySelector('#walkSheet [data-a=encgo]').click();0")
+        w = pg.evaluate("[uiState.walkSheet, !!walkView.pl.route, !!activeBattle]")
+        if w != [False, True, False]: raise Exception(f"a wild Billie's button: [bar open, walking there, battle at once] = {w}")
+        pg.evaluate("walkView.pl.route=null;walkView.pl.goal=null;0")
+        out.append(f'{len(ids)} wild Billies nearest first, the first walked to')
+    else:
+        pg.keyboard.press('Escape')
+        out.append('no wild Billies placed here')
     if not SMOKE:
         ready('run')
         pg.evaluate("document.querySelector('.wh-down').click()")
-        if not until(pg, "!!document.querySelector('#walkSheet .ws-status pb-day-chip')", 5): raise Exception("a run's sheet has no day chip")
-        t = pg.evaluate("document.querySelector('#walkSheet .ws-status').innerText")
-        if 'Today' not in t or not pg.evaluate("!!document.querySelector('#walkSheet [data-a=tab][data-t=map]')"):
-            raise Exception(f"a run's sheet lacks today's weather or the way on: {t!r}")
-        out.append("a run's day, type and weather: " + ' / '.join(x for x in t.splitlines() if x.strip())[:120])
+        if not until(pg, "!!document.querySelector('#walkSheet.open [data-a=wtday]')", 5): raise Exception("a run's bar has no day button")
+        t = pg.evaluate("document.querySelector('#walkSheet [data-a=wtday]').innerText")
+        if 'Day' not in t or not pg.evaluate("!!document.querySelector('#walkSheet [data-a=tab][data-t=map]')"):
+            raise Exception(f"a run's bar lacks the day or the way on: {t!r}")
+        pg.evaluate("document.querySelector('#walkSheet [data-a=wtday]').click()")
+        said = pg.evaluate("[uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text).join(' ')")
+        if 'Today' not in said or not pg.evaluate("uiState.walkSheet"): raise Exception(f"the day button: the bar closed or no weather said: {said!r}")
+        out.append("a run's day and the map; the day says: " + said.strip()[:100])
     return '; '.join(out)
 
 
@@ -554,6 +582,21 @@ def safety_step(P):
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();uiState.tab='profile';showcase.tab='new';render();{js};0"); ui(pg); check(name)
     pg.evaluate("friends.on=false;friends.uid=null;showcase.pages={};showcase.mod={list:null,entries:{},hidden:null,err:'',busy:false};saveData.preferences.online=false;delete saveData.team[0].ribbons;saveData.meta.show=newShowMeta();uiState.modal=null;uiState.mq=[];renderOverlay();0")
     shown.append('showcase')
+    # ON-4: friend trades (the trade sheet open, both ready, sent, refused; the picker; picking a friend; the history),
+    # names and nicknames as stored in the offer and the save
+    pg.evaluate("""(()=>{const X=window.__X,sp=saveData.team[0].sp;friends.on=true;friends.uid='me';
+      const b=(uid,o)=>({k:'b',d:JSON.stringify({uid,sp,lvl:5,nick:'Nick'+X,ot:{u:'u1',n:'OT'+X},...o})});
+      const o={a:'me',b:'u1',na:'Me'+X,nb:'Friend'+X,ga:[b('m1')],gb:[b('f1'),{k:'e',d:JSON.stringify({egg:{uid:'e1',sp,lvl:5,nick:X}})},{k:'p',d:JSON.stringify({uid:'p1',id:Object.keys(ROBOTS.parts)[0],up:1})}],oa:0,ob:0,da:false,db:false,ta:0,tb:0,ra:false,rb:false,ka:false,kb:false,x:'',by:'',v:2,k:'k1',t:0};
+      window.__offers=[o,{...o,oa:2,ob:2},{...o,oa:2,ob:2,da:true,ta:Date.now()},{...o,oa:2,ob:2,da:true,db:true,ta:1,tb:1,x:'refused',by:'u1'}];
+      saveData.meta.trades=[{k:'me_u1:k0',at:Date.now(),u:'u1',n:'Friend'+X,st:'done',gave:[{k:'b',sp,lvl:5,nick:'Gave'+X}],got:[{k:'e',sp,lvl:5}]}];0})()""")
+    for i, name in enumerate(['open', 'ready', 'sent', 'refused']):
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();trade.open='';trade.offers={{me_u1:window.__offers[{i}]}};uiState.tab='profile';render();document.querySelector('[data-a=td-open]')?.click();0"); ui(pg); check('trade ' + name)
+        if not pg.evaluate("!!(uiState.modal&&uiState.modal.cls==='trade-sheet')"): raise Exception(f'the trade sheet did not open ({name})')
+    for name, js in [('trade picker', "tradePickSheet('u1')"), ('trade with a friend', "tradeFriendSheet(saveData.team[0])"), ('trades on the Trainer card', "0")]:
+        pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();trade.offers={{me_u1:window.__offers[0]}};uiState.tab='profile';render();{js};0"); ui(pg); check(name)
+    if not pg.evaluate("!!document.querySelector('.pf-trades')"): raise Exception('the Trainer card showed no trades')
+    pg.evaluate("trade.offers={};trade.open='';friends.on=false;friends.uid=null;saveData.meta.trades=[];delete window.__offers;uiState.modal=null;uiState.mq=[];renderOverlay();0")
+    shown.append('trades')
     for k in ['sum', 'build', 'moves', 'evo']:
         pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();billySheet(saveData.team[0]);document.querySelector('[data-a=ms-tab][data-k={k}]')?.click();0"); ui(pg); check('details ' + k)
     shown.append('details')
@@ -568,7 +611,7 @@ def safety_step(P):
     if wait_phase(pg, ('choose',), 120) != 'choose': raise Exception('the battle never reached the move menu')
     ui(pg); check('battle'); shown.append('battle')
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")
-    return f'a payload in the trainer, nicknames, a friend, a request, the friend code, friends\' boards and the Showcase stayed text on {len(shown)} screens: ' + ', '.join(shown)
+    return f'a payload in the trainer, nicknames, a friend, a request, the friend code, friends\' boards, the Showcase and trades stayed text on {len(shown)} screens: ' + ', '.join(shown)
 
 
 @step('Tap targets: every control on the main screens is big enough to tap (phase 06-4)', 240)
@@ -671,16 +714,16 @@ def sound_step(P):
         except Exception: pass
 
 
-@step('Debug menu: ten sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
+@step('Debug menu: eleven sections, plain labels, search, remembered sections, a message per button (UI-7c)', 60)
 def debug_menu_step(P):
-    """UI-7c: the debug menu on a 390 px phone: the ten sections in their order (ON-3 added Moderation), no phase or track code in what it
+    """UI-7c: the debug menu on a 390 px phone: the eleven sections in their order (ON-3 added Moderation, SND-8a the Sound test), no phase or track code in what it
     says, one copy of each test, the search box narrowing the buttons and putting the sections back, the open sections
     kept across closing and opening, and a button saying what it changed (not "Done.")"""
     pg = P.pg
     if not until(pg, "typeof walkView!=='undefined'&&walkView.ready", 120): raise Exception('the town never opened')
     pg.evaluate("localStorage.removeItem('pb-debug-open');uiState.modal=null;uiState.mq=[];renderOverlay();openDebug();0"); until(pg, "!!document.querySelector('.dbg details[data-k]')", 10); ui(pg)
     keys = pg.evaluate("[...document.querySelectorAll('.dbg details[data-k]')].map(d=>d.dataset.k)")
-    want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'story', 'ranch', 'save', 'mod']
+    want = ['tests', 'give', 'billies', 'battle', 'run', 'places', 'sound', 'story', 'ranch', 'save', 'mod']
     if keys != want: raise Exception(f'sections {keys}, wanted {want}')
     text = pg.evaluate("document.querySelector('.dbg').textContent")
     codes = sorted(set(re.findall(r'\b(?:[Pp]hase \d+|(?:RL|UI|TR|ST|MG|IS|SND|CAM)-\d+|v\d{2}\b|S\d\b)', text)))
@@ -703,7 +746,7 @@ def debug_menu_step(P):
     said = pg.evaluate("JSON.stringify([uiState.toastOn,...(uiState.toastQ||[])].filter(Boolean).map(t=>t.text))")
     if 'Moneys.' not in said or 'Done.' in said: raise Exception(f'+1,000 Moneys said {said[:160]}')
     if pg.evaluate("saveData.se") != se + 1000: raise Exception('+1,000 Moneys didn’t add 1,000')
-    return 'ten sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
+    return 'eleven sections in order, no phase codes, each button once, search narrowed to +50 Scrap and put the sections back, Give me kept open across reopening, +1,000 Moneys said what it changed'
 
 
 @step('Song fingerprints: every song, jingle and cry renders as in validation/sound-baseline (SND-2)', 180)
@@ -862,7 +905,8 @@ def sound_effects_step(P):
     # a cry as each side's Billie comes out; the lead in the red zone cries low
     clear()
     pg.evaluate("screenWipe=f=>f();const q={id:'tse',sp:'swift1',lvl:3,no:1};encountersHere().splice(0,1e9,q);saveData.team.forEach(m=>{m.hp=maxHp(m)});saveData.team[0].hp=1;startWild(q);0")
-    if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('cry ')&&e.e.endsWith(' low'))", 20, "uiState.evReady&&nextEvent()"): raise Exception(f'no low-HP cry as the lead came out: {log()}')
+    # VFX-8: the send-out's cry waits on the battle stage's clock (frames), not real time: a busy machine draws slowly
+    if not until(pg, "soundEngine.log.some(e=>e.e.startsWith('cry ')&&e.e.endsWith(' low'))", 45, "uiState.evReady&&nextEvent()"): raise Exception(f'no low-HP cry as the lead came out: {log()}')
     cries = [e for e in log() if e.startswith('cry ')]
     if 'cry swift1' not in cries: raise Exception(f'the wild Swift did not cry: {cries}')
     out.append('cries: ' + ', '.join(cries[:3]))
@@ -1049,6 +1093,10 @@ def phone_flow(P):
     # TC-4: the screens as the opening left them (play() gave the team, money and encounters the old step counter
     # brought; nothing below needs them): only the messages and toasts are cleared, as play() did
     pg.evaluate("closeModal();uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];renderOverlay();render();0")
+    # PK-5: Copperleaf's postcard comes after 3 s of calm walking in town (postcards.js postcardCheck); held off while the
+    # screens are pictured and counted, so whether it slid in yet doesn't move the walk screen's count (it did after
+    # main's style track met PK-5: walk 20 of 18, the card's four pieces); let go after the battle's count
+    pg.evaluate("if(typeof postcardState!=='undefined')postcardState.on=true;0")
     # UI-1: how many surfaces blur what's behind them on each screen; UI-6b: a failure above the budget (BLUR_BUDGET), or
     # for a screen already over it, above its count when UI-6b began (BLUR_CEILING)
     blur, blurAll, elems = {}, {}, {}
@@ -1068,6 +1116,7 @@ def phone_flow(P):
     ui(pg); shot(pg, 'phone-battle')
     blur['battle'] = pg.evaluate('uiBlurCount({bars:false})'); blurAll['battle'] = pg.evaluate('uiBlurCount()')
     elems['battle'] = pg.evaluate('uiElementCount()')
+    pg.evaluate("if(typeof postcardState!=='undefined')postcardState.on=false;0")
     R['blurPerScreen'] = blur; R['blurPerScreenWithBars'] = blurAll
     # UI-15: the pieces each screen shows (uiElementCount: words and icons on screen), logged so clutter is seen going
     # down; a screen may not show more than its ceiling (ELEMENT_CEILING, lowered when a screen sheds pieces)
@@ -1089,6 +1138,12 @@ def phone_flow(P):
     if not isinstance(dlog, dict) or not dlog: raise Exception('the exported debug log is empty')
     names = [n for n in ('Checker', 'Zorblax') if n.lower() in Path(d.path()).read_text(encoding='utf-8').lower()]
     if names: raise Exception(f'the exported debug log holds a name: {names}')
+    # characters track CH-1: the people in the log (walk-view-gl.js peopleReport): drawn, draws, pictures, MB: numbers only
+    ppl = (dlog.get('more') or {}).get('people')
+    nums = lambda v: isinstance(v, (int, float)) and not isinstance(v, bool)
+    if not isinstance(ppl, dict) or not all(nums(ppl.get(k)) for k in ('drawn', 'draws', 'textures', 'mb')) \
+            or not all(nums(v) for v in (ppl.get('byPass') or {}).values()):
+        raise Exception(f'the exported debug log has no people counters, or more than numbers in them: {ppl!r}'[:300])
     # kept for comparing logs across a phase (validation/ is not committed)
     shutil.copyfile(d.path(), OUT / 'phone-debug-log.json')
     return f'the fall, Kappi, dressing room, starter (no Blake: RL-8), the welcome sheet, the mast’s run sheet, five screens, shop, battle, speech kept out of the debug picture, debug log ({len(json.dumps(dlog)) // 1024} KB, no names); blurred surfaces per screen besides the bars (with them): {", ".join(f"{k} {v} ({blurAll[k]})" for k, v in blur.items())}; pieces per screen: {", ".join(f"{k} {v}" for k, v in elems.items())}'
@@ -1243,6 +1298,14 @@ def animals(P):
     until(pg, "typeof soundEngine==='undefined'||!soundEngine.ctx||(soundEngine.ctx.state==='running'&&typeof ambience!=='undefined'&&Object.keys(ambience.beds).length>=9)", 8)
     snd = pg.evaluate("typeof soundEngine==='undefined'||!soundEngine.ctx?'no sound in this browser':soundEngine.ctx.state!=='running'?'sound not started ('+soundEngine.ctx.state+')':(typeof ambience!=='undefined'&&Object.keys(ambience.beds).length>=9?'ok':'beds missing')")
     if snd == 'beds missing': raise Exception('the world sound beds didn’t start')
+    if snd == 'ok':
+        # SND-8a: a bed starts only when wanted: by a snowy late morning in Copperleaf some play, never all 14, never
+        # the crickets
+        until(pg, "Object.values(ambience.beds).some(b=>b.st&&b.st.live)", 6)
+        live = pg.evaluate("Object.keys(ambience.beds).filter(k=>ambience.beds[k].st&&ambience.beds[k].st.live)")
+        if not live: raise Exception('no world sound bed is live in Copperleaf')
+        if len(live) == len(pg.evaluate("Object.keys(ambience.beds)")) or 'crickets' in live: raise Exception(f'beds live that shouldn’t be: {live}')
+        snd = 'ok, live: ' + ', '.join(live)
     pg.evaluate("environment.force=null;0")
     return f'animals at the pond: {", ".join(kinds)}; a rabbit bolted; {prints} footprints; world sounds: {snd}'   # RL-5: a rabbit, not a frog
 
@@ -1656,7 +1719,8 @@ def name_caught_room_windows(P):
 def terraces_and_floating(P):
     """the land between metre corners is smooth and terraces of rock round off at the top and fan out at the foot:
     from every place's hub you reach exactly the same half-metre cells and exits as without that shaping, and no
-    prop's base is more than 15 cm above the ground under its footprint (fences and the like follow the slope)"""
+    prop's base is more than 15 cm above the ground under its footprint, turned with it (fences and the like follow
+    the slope; a turned station's box was measured unturned, off its levelled pad)"""
     pg = P.pg
     all_maps(pg)   # TC-4: this step reads every map (the page's other steps may have run without them)
     R2 = pg.evaluate("""(()=>{const out=[],C=walkData().sc,keep=walkView.sc;
@@ -1665,7 +1729,7 @@ def terraces_and_floating(P):
         let n=0;for(const v of seen)n+=v;let ex=0;for(const e of sc.exits||[]){const c=nearestWalkableCell(e[0],e[1]);if(c&&seen[c.j*gw+c.i])ex++}return [n,ex]};
       for(const id of LOCATIONS.map(r=>r.mapId).filter(Boolean)){const sc=mapById(id);if(!sc)continue;walkView.sc=sc;walkView.noShape=1;const a=reach(sc);walkView.noShape=0;const b=reach(sc);
         let fl=[];for(const p of sc.props||[]){const M=C.props[p.k];if(!M||M.flat||M.walk||M.build||M.door!=null||(typeof propShown==='function'&&!propShown(p)))continue;const g=(M.group||'')+' '+p.k;if(SLOPE_HUGGERS.test(g)&&!/tree|lamp|post|sign|pole/.test(g))continue;
-          const s=p.s||1,y=propBaseHeight(p,M),lv=stepLevelAt(p.x,p.z);let pts;if(M.box){const bw=M.box[0]*s/2,bd=M.box[1]*s;pts=[[p.x-bw,p.z-.05],[p.x+bw,p.z-.05],[p.x-bw,p.z+bd],[p.x+bw,p.z+bd]]}else{const r=Math.min(.45,(M.shadow||0)*.3*s);if(r<.08)continue;pts=[[p.x-r,p.z],[p.x+r,p.z],[p.x,p.z-r*.6],[p.x,p.z+r*.6]]}
+          const s=p.s||1,y=propBaseHeight(p,M),lv=stepLevelAt(p.x,p.z);let pts;if(M.box){const bw=M.box[0]*s/2,bd=M.box[1]*s,r=(p.rot||0)*Math.PI/180,c=Math.cos(r),sn=Math.sin(r);pts=[[-bw,-.05],[bw,-.05],[-bw,bd],[bw,bd]].map(([u,w])=>[p.x+u*c-w*sn,p.z+u*sn+w*c])}else{const r=Math.min(.45,(M.shadow||0)*.3*s);if(r<.08)continue;pts=[[p.x-r,p.z],[p.x+r,p.z],[p.x,p.z-r*.6],[p.x,p.z+r*.6]]}
           let lo=1e9;for(const [x,z] of pts)if(Math.abs(stepLevelAt(x,z)-lv)<=.05)lo=Math.min(lo,standingHeightAt(x,z));if(lo<1e8&&y-lo>.15)fl.push(p.k+'@'+p.x.toFixed(1)+','+p.z.toFixed(1))}
         out.push({id,a,b,fl})}
       walkView.sc=keep;walkView.nav=null;walkView.navSc=null;return out})()""")

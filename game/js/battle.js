@@ -11,7 +11,6 @@ import {
   battleTipHide,
   battleTutor,
   battleWeather,
-  battleWeatherMultiplier,
   closeModal,
   fieldBadgeLine,
   jingle,
@@ -34,12 +33,17 @@ import {
 } from './hooks.js';
 import { $, $$, clamp, random } from './util.js';
 import {
+  BATTLE_ANIMS,
+  BOSSES,
+  FACTIONS,
   GENES,
   ITEMS,
   MOVES,
+  NODE_TYPES,
   PASSIVE,
   PASSIVE_INFO,
   PERKS,
+  PERK_SETS,
   PYRAMIDS,
   STATUS_NAMES,
   STAT_NAMES,
@@ -66,8 +70,19 @@ import {
   plural,
 } from './logic/rules.js';
 import { MARK_STAT_SHORT, markRow, tagLook } from './logic/marks.js';
+import { styleDials, styleNote } from './theme-sheet.js';
 import { modMonoType, modTypeFits } from './logic/modifiers.js';
-import { ROLL_MS, popSize, rollValue } from './logic/hit-numbers.js';
+import { lvlSlot, vsPortraitScale, vsSplashFor } from './logic/battle-flow.js';
+import { popSize, rollValue } from './logic/hit-numbers.js';
+import {
+  JOIN_LOCK_MS,
+  battleFactionOf,
+  factionSerial,
+  koBy,
+  koStampMoment,
+  noticeOf,
+  noticeTimes,
+} from './logic/bureau-battle.js';
 import { pbBurst, typeGlyphHTML, typeGlyphURL } from './ui-kit.js';
 import { pbNameBanner } from './ui-run-kit.js';
 import {
@@ -85,6 +100,8 @@ import {
   effectiveStat,
   enemyOnly,
   fighter,
+  fxSrcName,
+  fxWeatherFor,
   isMulti,
   liveActors,
   runTurn,
@@ -93,8 +110,8 @@ import {
 } from './logic/battle-engine.js';
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
-import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
-import { portraitHTML } from './person-art.js';
+import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML, uiIconURL } from './art.js';
+import { portraitHTML, portraitSize, portraitURL } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
 import {
   AREAS,
@@ -104,6 +121,7 @@ import {
   battleStage,
   battleStageCatch,
   battleStageFocus,
+  battleStageOutcome,
   battleStagePlay,
   battleStagePrepare,
   battleStageResize,
@@ -115,6 +133,8 @@ import {
   battleStageToCss,
   camAt,
 } from './battle-stage.js';
+import { battleAnimSkip } from './battle-anim-run.js';
+import { battleLooksLine } from './battle-looks.js';
 import { walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
 import { WEATHER_NAMES } from './environment.js';
@@ -132,6 +152,8 @@ expose({
   afterEvents: [() => afterEvents, v => (afterEvents = v)],
   afterStageTime: [() => afterStageTime, v => (afterStageTime = v)],
   backButtonHTML: [() => backButtonHTML],
+  battleCardColumn: [() => battleCardColumn, v => ((battleCardColumn = v), provide({ battleCardColumn }))],
+  battleFactionLook: [() => battleFactionLook, v => (battleFactionLook = v)],
   battleFreeArea: [() => battleFreeArea, v => ((battleFreeArea = v), provide({ battleFreeArea }))],
   battleLayoutChanged: [() => battleLayoutChanged, v => ((battleLayoutChanged = v), provide({ battleLayoutChanged }))],
   battleLeave: [() => battleLeave, v => (battleLeave = v)],
@@ -140,18 +162,25 @@ expose({
   battleRise: [() => battleRise, v => (battleRise = v)],
   battleSeamless: [() => battleSeamless, v => (battleSeamless = v)],
   battleShell: [() => battleShell, v => (battleShell = v)],
+  battleStamp: [() => battleStamp, v => (battleStamp = v)],
   battleSwoop: [() => battleSwoop, v => (battleSwoop = v)],
+  battleVsSplash: [() => battleVsSplash, v => (battleVsSplash = v)],
   billyPickHTML: [() => billyPickHTML, v => (billyPickHTML = v)],
   bindAim: [() => bindAim, v => (bindAim = v)],
   bindMoveInfo: [() => bindMoveInfo, v => (bindMoveInfo = v)],
   blipLook: [() => blipLook, v => (blipLook = v)],
   boxAnims: [() => boxAnims, v => (boxAnims = v)],
+  bureauFaintStamp: [() => bureauFaintStamp, v => (bureauFaintStamp = v)],
+  bureauNotice: [() => bureauNotice, v => (bureauNotice = v)],
+  bureauNoticeClose: [() => bureauNoticeClose, v => (bureauNoticeClose = v)],
+  bureauUi: [() => bureauUi],
   chooseMessage: [() => chooseMessage, v => (chooseMessage = v)],
   cmdButtonHTML: [() => cmdButtonHTML, v => (cmdButtonHTML = v)],
   doThrow: [() => doThrow, v => (doThrow = v)],
   effectivenessLabel: [() => effectivenessLabel, v => (effectivenessLabel = v)],
   endBattle: [() => endBattle, v => setEndBattle(v)],
   eventBlips: [() => eventBlips, v => (eventBlips = v)],
+  factionAt: [() => factionAt],
   fieldChipHTML: [() => fieldChipHTML, v => (fieldChipHTML = v)],
   fieldStripUpdate: [() => fieldStripUpdate, v => (fieldStripUpdate = v)],
   fieldTip: [() => fieldTip, v => (fieldTip = v)],
@@ -166,6 +195,7 @@ expose({
   hudPop: [() => hudPop, v => ((hudPop = v), provide({ hudPop }))],
   itemIcon: [() => itemIcon],
   koThisEvent: [() => koThisEvent, v => (koThisEvent = v)],
+  lineReady: [() => lineReady, v => (lineReady = v)],
   logLine: [() => logLine, v => (logLine = v)],
   moveInfoHide: [() => moveInfoHide, v => (moveInfoHide = v)],
   moveInfoNodes: [() => moveInfoNodes, v => (moveInfoNodes = v)],
@@ -208,9 +238,20 @@ expose({
   teamPick: [() => teamPick, v => (teamPick = v)],
   turnBar: [() => turnBar, v => (turnBar = v)],
   typeText: [() => typeText, v => (typeText = v)],
+  winLineHTML: [() => winLineHTML, v => (winLineHTML = v)],
 });
 /* eslint-enable no-func-assign */
-provide({ battleFreeArea, battleLayoutChanged, hudHit, hudPop, openBattle, platesTick, playTurnEvents, stopTimers });
+provide({
+  battleCardColumn,
+  battleFreeArea,
+  battleLayoutChanged,
+  hudHit,
+  hudPop,
+  openBattle,
+  platesTick,
+  playTurnEvents,
+  stopTimers,
+});
 export function setPaintActions(v) {
   paintActions = v; // eslint-disable-line no-func-assign
   provide({ paintActions });
@@ -475,27 +516,34 @@ function showEvent() {
   if (!activeBattle || !$('#msg')) return;
   if (activeBattle.ev >= activeBattle.events.length) return afterEvents();
   const ev = activeBattle.events[activeBattle.ev];
+  /* SY-5: the join's notice never outlives its line */
+  bureauNoticeClose();
   logLine(activeBattle.ev);
   showSpeakerFace(ev.face);
   const tt = ev.t ? typeText(ev.t) : 0,
     r = ev.an ? battleStagePlay(ev.an, ev) : { dur: 0, hit: 0 };
   if (ev.an && typeof battleSoundEffect === 'function') battleSoundEffect(ev.an, r, ev);
-  if (ev.an) hudMoment(ev.an);
+  if (ev.an) hudMoment(ev.an, ev);
   boxAnims(ev);
   const k = 1 / battleStage.speed;
   afterStageTime('hpT', r.hit >= 999 ? 0 : r.hit, 0, () => {
     paintBoxes(ev.s, ev.mk, true);
     eventBlips(ev);
+    /* VFX-14: the stage's statuses and short effects take the same line's state (battle-looks.js) */
+    battleLooksLine(ev);
   });
   $('#msg').classList.remove('ready');
   uiState.evReady = false;
   /* the next line waits for the animation on the scene's own clock (a slow device draws fewer frames, so it takes
     longer in real time) as well as for the text to finish typing */
-  afterStageTime('evT', r.dur + 120, tt + 120 * k, () => {
-    uiState.evReady = true;
-    $('#msg') && $('#msg').classList.add('ready');
-    uiState.evT = setTimeout(nextEvent, (reducedMotion ? 1300 : 820) * k);
-  });
+  afterStageTime('evT', r.dur + 120, tt + 120 * k, lineReady);
+}
+/* the line is ready: a tap moves on, or it moves on by itself after a while */
+function lineReady() {
+  clearTimeout(uiState.evT);
+  uiState.evReady = true;
+  $('#msg') && $('#msg').classList.add('ready');
+  uiState.evT = setTimeout(nextEvent, (reducedMotion ? 1300 : 820) / battleStage.speed);
 }
 function afterStageTime(slot, sceneMs, realMs, fn) {
   const t0 = battleStage.t,
@@ -541,13 +589,23 @@ function showSpeakerFace(f) {
 }
 export function tapMessage() {
   if (!activeBattle || activeBattle.phase !== 'playing' || !$('#msg')) return;
+  /* SY-5: a tap hides the join's notice, as it would skip ahead */
+  if (bureauUi.notice) bureauNoticeClose();
+  if (uiState.evReady) return nextEvent();
+  /* VFX-8: a tap skips: what the animation still had to show and play is dropped (its end framing and the hit's
+     numbers stay), the line's plates are painted, its text shown whole, and the line is ready (a second tap moves on) */
   if (uiState.typing) {
     clearInterval(uiState.typeT);
     uiState.typing = false;
     $('#msgT').textContent = uiState.typeFull || '';
-    return;
   }
-  if (uiState.evReady) nextEvent();
+  clearTimeout(uiState.hpT);
+  battleAnimSkip();
+  const ev = activeBattle.events[activeBattle.ev];
+  if (ev) paintBoxes(ev.s, ev.mk, true);
+  /* VFX-14: and the stage's looks */
+  if (ev) battleLooksLine(ev);
+  lineReady();
 }
 /* phase 06-4: the corner cards are gone (the plates in the scene show everything); a Billie coming in repaints them */
 function boxAnims(ev) {
@@ -559,6 +617,9 @@ function boxAnims(ev) {
   if (an.fx === 'mail' && an.si != null) fieldUi.mail[ACTOR_SIDE[an.si]] = 0;
   if (an.k === 'wild' || an.k === 'enter')
     setTimeout(() => paintBoxes(ev.s, ev.mk, false), an.k === 'wild' ? 620 : 420);
+  /* SY-5: the Bureau's stamp on a knockout, its notice in its boss's join intro */
+  if (an.k === 'faint') bureauFaintStamp(ev);
+  if (an.k === 'join') bureauNotice(an);
 }
 /* UI-16b: Atk, Def, SpA, SpD, Spe (logic/marks.js, as Pokémon Showdown writes them; it printed "SP." for both Sp. stats) */
 const statShortName = k => (MARK_STAT_SHORT[k] || [(STAT_NAMES[k] || k).slice(0, 3)])[0];
@@ -662,13 +723,17 @@ function koThisEvent(si) {
    size follows the hit, the largest on a KO (SY-2, logic/hit-numbers.js), the kind's colour on top */
 function hudPop(si, text, kind, w) {
   const L = $('#pops');
-  if (!L || !battleStage.L || (reducedMotion && kind === 'tag')) return;
+  if (!L || !battleStage.L || (reducedMotion && String(kind).split(' ')[0] === 'tag')) return;
   const q = battleStageToCss(actorTop(si));
   if (!q) return;
   const e = document.createElement('div');
   e.className = 'pop ' + kind;
   e.textContent = text;
-  if (typeof w === 'number') e.style.fontSize = popSize(w, koThisEvent(si)) + 'px';
+  if (typeof w === 'number') {
+    const D = styleDials();
+    e.style.fontSize = popSize(w, koThisEvent(si), D.popMin, D.popMax) + 'px';
+    styleNote('pop');
+  }
   e.style.left = clamp(q.x, 40, battleStage.L.vw - 40) + 'px';
   e.style.top = Math.max(30, q.y) + 'px';
   e.style.setProperty('--dx', ((random() - 0.5) * 36).toFixed(0) + 'px');
@@ -679,12 +744,13 @@ function hudPop(si, text, kind, w) {
    sky (the growth family) round its plate's level, a catch bursts teal (good) round the pyramid, and a boss's name
    banner slams in as its trainer comes in, inside the trainer's own 1150 ms (no time added). The banner is the kit's
    pb-name-banner, which RL-14b's stage intro and VFX-16's VS splash can call the same way */
-function hudMoment(an) {
+function hudMoment(an, ev) {
   const L = $('#pops');
   if (!L) return;
   const box = L.getBoundingClientRect();
   if (an.k === 'lvl') {
-    const lv = $(`#plates .bplate[data-k="${an.si ?? 0}"] .pl-lv`);
+    /* VFX-16: the Billie the line is about (the engine names it by uid; it read slot 0) */
+    const lv = $(`#plates .bplate[data-k="${lvlSlot(an, ev)}"] .pl-lv`);
     if (!lv) return;
     const r = lv.getBoundingClientRect();
     if (r.width) pbBurst(r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top, HUD_BURSTS.lvl(L));
@@ -692,10 +758,33 @@ function hudMoment(an) {
     const q = battleStage.coin && battleStageToCss(battleStage.coin);
     if (q) pbBurst(q.x, q.y, HUD_BURSTS.caught(L));
   } else if (an.k === 'trainerIn') {
-    const T = activeBattle && activeBattle.T;
-    if (T && (T.boss || T.alpha))
+    const T = activeBattle && activeBattle.T,
+      E = BATTLE_ANIMS.events && BATTLE_ANIMS.events.vs,
+      V = vsSplashFor(T, E);
+    if (V && E) battleVsSplash(T, V, E, $('#stage') || L);
+    else if (T && (T.boss || T.alpha))
       pbNameBanner($('#stage') || L, { name: T.name, kicker: 'Boss', tone: 'bad', hold: 640 });
   }
+}
+/* VFX-16: the VS splash for a leader, the rival or a boss as its trainer comes in: UI-17's name banner with the two
+   portraits (yours and theirs, at a whole-number scale), the name and the run role's title as the game shows them
+   (nodeTypes.json), the leader's type colour (a boss keeps the red family), the kit's slant. It fits inside
+   trainerIn's 1150 ms (in 240 + hold + out 180) and goes before a boss's join intro and SY-5's notice; under Reduced
+   motion it fades in and out, standing still */
+function battleVsSplash(T, V, E, host) {
+  const [cw, ch] = portraitSize(),
+    r = host.getBoundingClientRect(),
+    k = vsPortraitScale(r.width, cw, E.scale, r.height, ch),
+    face = (/** @type {string} */ who) => ({ src: portraitURL(who), w: cw * k, h: ch * k }),
+    NT = NODE_TYPES[V.role];
+  pbNameBanner(host, {
+    name: T.name,
+    kicker: NT ? NT.name : '',
+    tone: V.role === 'boss' ? 'bad' : 'special',
+    color: V.role !== 'boss' && V.type ? TYPE_GLOW[V.type] || '' : '',
+    faces: [face('me'), face(T.who)],
+    hold: E.hold,
+  });
 }
 const HUD_BURSTS = {
   lvl: (/** @type {Element} */ L) => ({ tone: 'var(--sig-growth)', size: 56, in: L }),
@@ -731,6 +820,168 @@ function hudBanner(si, text, kind) {
     else e.remove();
   }, 1100);
 }
+/* ================= SY-5: THE BUREAU IN BATTLE =================
+   A faction with a look (factions.json look: the Bureau) shows its paperwork only where it is (logic/bureau-battle.js):
+   one stamp at a time on a paper slip (VOID, RETRIEVED, DENIED: pb-stamp), the Notice of Retrieval during its boss's
+   join intro, and its bots' plates on form paper. Nothing here adds time: the stamps sit beside the battle's own waits
+   and the notice is gone as the bots lock together. */
+const bureauUi = { stamp: null, notice: null, timers: [] };
+/** the faction fighter k fights for in a snapshot (one with a look), or null */
+const factionAt = (s, k) => battleFactionOf(FACTIONS, BOSSES, s && s[k], activeBattle && activeBattle.T);
+/** whether a foe of this battle fights for a faction with a look; its look, or null */
+function battleFactionLook() {
+  const T = activeBattle && activeBattle.T,
+    team = (activeBattle && activeBattle.sides && activeBattle.sides[1] && activeBattle.sides[1].team) || [];
+  for (const m of team) {
+    const f = battleFactionOf(FACTIONS, BOSSES, m, T);
+    if (f) return f.look;
+  }
+  return null;
+}
+/** a stamp slammed on a paper slip over fighter si (or the stage's middle), replacing the one before: one at a time */
+function battleStamp(si, word, big) {
+  const L = $('#pops');
+  if (!L || !battleStage.L || !word) return;
+  if (bureauUi.stamp) bureauUi.stamp.remove();
+  const q = si == null ? { x: battleStage.L.vw / 2, y: battleStage.L.vh * 0.4 } : battleStageToCss(actorTop(si));
+  if (!q) return;
+  const e = document.createElement('div');
+  e.className = 'bt-stamp' + (big ? ' big' : '');
+  const st = document.createElement('pb-stamp');
+  st.setAttribute('word', word);
+  st.setAttribute('size', 'lg');
+  st.setAttribute('tilt', String(si == null ? -6 : ACTOR_SIDE[si] ? 8 : -8));
+  e.appendChild(st);
+  e.style.left = clamp(q.x, 120, battleStage.L.vw - 120) + 'px';
+  e.style.top = clamp(q.y + (si == null ? 0 : 40), 60, battleStage.L.vh - 60) + 'px';
+  L.appendChild(e);
+  bureauUi.stamp = e;
+  setTimeout(
+    () => {
+      if (bureauUi.stamp !== e) return;
+      const out =
+        e.animate && !reducedMotion
+          ? e.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, fill: 'forwards' })
+          : null;
+      const gone = () => {
+        e.remove();
+        if (bureauUi.stamp === e) bureauUi.stamp = null;
+      };
+      if (out) out.onfinish = gone;
+      else gone();
+    },
+    big ? 2200 : 1300
+  );
+}
+/** a faint's stamp: VOID when the faction's bot falls, RETRIEVED when its hit knocked out one of yours */
+function bureauFaintStamp(ev) {
+  const i = activeBattle.ev,
+    m = koStampMoment(
+      activeBattle.events,
+      i,
+      k => ACTOR_SIDE[k],
+      k => !!factionAt(ev.s, k)
+    );
+  if (!m) return;
+  const by = m === 'retrieved' ? koBy(activeBattle.events, i) : ev.an.si,
+    f = by != null && factionAt(ev.s, by);
+  if (f && f.look.stamps[m]) setTimeout(() => battleStamp(ev.an.si, f.look.stamps[m]), 220);
+}
+/** the Notice of Retrieval: a form slides up over the stage, lists the boss's bots as line items, is stamped and
+   slides away as they lock together (JOIN_LOCK_MS, on the scene's clock: a faster battle speed plays it faster). A
+   tap hides it (tapMessage); so does the next line */
+function bureauNotice(an) {
+  bureauNoticeClose();
+  const T = activeBattle && activeBattle.T,
+    D = T && T.boss && BOSSES[T.boss],
+    f = D && factionAt(activeBattle.events[activeBattle.ev].s, an.si),
+    N = f && noticeOf(f.look, D, T.boss),
+    L = $('#pops');
+  if (!N || !L) return;
+  const t = noticeTimes(JOIN_LOCK_MS, N.lines.length),
+    k = 1 / (battleStage.speed || 1),
+    at = (ms, fn) => bureauUi.timers.push(setTimeout(fn, ms * k)),
+    e = document.createElement('div');
+  e.className = 'bt-notice';
+  const head = document.createElement('p');
+  head.className = 'bn-head';
+  const em = document.createElement('img');
+  em.className = 'bn-emblem';
+  em.src = uiIconURL(f.look.emblem);
+  em.alt = '';
+  em.width = em.height = 18;
+  const title = document.createElement('b');
+  title.textContent = N.title;
+  const form = document.createElement('span');
+  form.className = 'bn-form';
+  form.textContent = N.form;
+  head.append(em, title, form);
+  const ol = document.createElement('ol');
+  for (const w of N.lines) {
+    const li = document.createElement('li');
+    li.textContent = w;
+    ol.appendChild(li);
+  }
+  e.append(head, ol);
+  L.appendChild(e);
+  bureauUi.notice = e;
+  /* just above the message box (the dock and the stage run under it), in the lower middle where your side comes out after the join */
+  const msg = $('#msg'),
+    sr = L.getBoundingClientRect(),
+    dt = msg ? msg.getBoundingClientRect().top - sr.top : sr.height * 0.8;
+  e.style.top = Math.max(48, Math.min(sr.height * 0.62, dt) - e.offsetHeight - 12) + 'px';
+  if (reducedMotion) {
+    /* Reduced: no slide, every line at once, the stamp already on */
+    e.classList.add('all');
+    const st = document.createElement('pb-stamp');
+    st.setAttribute('word', f.look.stamps.filed);
+    st.setAttribute('still', '');
+    st.setAttribute('tilt', '-10');
+    e.appendChild(st);
+  } else {
+    if (e.animate)
+      e.animate(
+        [
+          { transform: 'translate(-50%, 40px)', opacity: 0 },
+          { transform: 'translate(-50%, 0)', opacity: 1 },
+        ],
+        { duration: Math.max(1, t.up * k), easing: 'ease-out', fill: 'backwards' }
+      );
+    [...ol.children].forEach((li, n) => at(t.lines[n], () => li.classList.add('in')));
+    at(t.stamp, () => {
+      if (bureauUi.notice !== e) return;
+      const st = document.createElement('pb-stamp');
+      st.setAttribute('word', f.look.stamps.filed);
+      st.setAttribute('tilt', '-10');
+      e.appendChild(st);
+    });
+    at(t.away, () => {
+      if (bureauUi.notice !== e || !e.animate) return;
+      e.animate(
+        [
+          { transform: 'translate(-50%, 0)', opacity: 1 },
+          { transform: 'translate(-50%, -30px)', opacity: 0 },
+        ],
+        { duration: Math.max(1, (t.gone - t.away) * k), easing: 'ease-in', fill: 'forwards' }
+      );
+    });
+  }
+  at(t.gone, bureauNoticeClose);
+}
+/** the win sheet's line: a faction boss's (bosses.json faction) is stamped PENDING (its look's word) */
+function winLineHTML(T) {
+  const D = T && T.boss && BOSSES[T.boss],
+    F = D && D.faction && FACTIONS[D.faction],
+    w = F && F.look && F.look.stamps.pending;
+  if (!w || !T.win) return `<p>${escapeHtml((T && T.win) || '')}</p>`;
+  return `<p class="win-line">${escapeHtml(T.win)} <pb-stamp word="${escapeHtml(w)}" tilt="-7"></pb-stamp></p>`;
+}
+function bureauNoticeClose() {
+  bureauUi.timers.forEach(clearTimeout);
+  bureauUi.timers = [];
+  if (bureauUi.notice) bureauUi.notice.remove();
+  bureauUi.notice = null;
+}
 function afterEvents() {
   if (!activeBattle) return;
   const msg = $('#msg');
@@ -738,6 +989,11 @@ function afterEvents() {
   if (activeBattle.over) {
     activeBattle.phase = 'end';
     paintActions();
+    /* VFX-16: the winners cheer with sparkles, or your side fades (no time added: the end waits on the player) */
+    battleStageOutcome(activeBattle.over);
+    /* SY-5: a win over the Bureau is DENIED (it replaces a knockout's stamp: one at a time) */
+    const look = activeBattle.over === 'win' && battleFactionLook();
+    if (look) battleStamp(null, look.stamps.denied, true);
     return;
   }
   if (activeBattle.needSwitch && activeBattle.needSwitch.length) {
@@ -879,7 +1135,10 @@ function teamPick(back) {
 }
 const backButtonHTML = () =>
   `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back</b><kbd>Esc</kbd></button>`;
-export const itemIcon = (k, size = 30) => {
+/* PK-11: an item's own picture (its img, a 36 px icon in art/items) at a whole multiple of 36 px, pixelated (.pxi);
+   without one, its rectangle of the old atlas (`i_` + its icon). The Bag, a shop and the battle's Bag draw 36 px, a
+   reward card 72 */
+export const itemIcon = (k, size = 36) => {
   const I = ITEMS[k] || {};
   return I.img
     ? `<img class="pxi" src="${artURL(I.img)}" width="${size}" height="${size}" alt="">`
@@ -888,14 +1147,11 @@ export const itemIcon = (k, size = 30) => {
 /* phase 06-3: the move tiles, shown on the first menu (no Fight button first) and after Back from aiming. UI-15: a
    tile shows the type's glyph, the name, the power and the effectiveness; the rest (type, accuracy, same-type bonus,
    weather, the move's text) on a long press, or on hover and keyboard focus (moveInfoShow) */
-const moveWeatherMark = M =>
-  M.p && typeof battleWeatherMultiplier === 'function'
-    ? battleWeatherMultiplier(M.t) > 1
-      ? ' ▲'
-      : battleWeatherMultiplier(M.t) < 1
-        ? ' ▼'
-        : ''
-    : '';
+/* PK-4: the weather's arrow for the fighter choosing, with the run's weather rows (Umbrella: no arrow down) */
+const moveWeatherMark = M => {
+  const w = M.p && activeBattle ? fxWeatherFor(activeBattle.cur, M.t) : 1;
+  return w > 1 ? ' ▲' : w < 1 ? ' ▼' : '';
+};
 function moveTilesHTML(m) {
   /* SP-5: and the moves its Augments bring */
   return `<div class="moves">${movesOf(m)
@@ -1093,7 +1349,7 @@ export function paintActions() {
             .map(k => {
               const I = ITEMS[k],
                 ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(k, m));
-              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 32)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
+              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 36)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
             })
             .join('')
         : '<p class="note">No items. Buy some at a town shop.</p>'
@@ -1217,11 +1473,18 @@ function finishThrow(res, id, lab, spin) {
     return playTurnEvents();
   }
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
+  /* PK-5: a refund row (Pyramid Pouch): the pyramid that missed comes back (logic/battle-engine.js catchRoll) */
+  if (res.refund) {
+    saveData.pyramids[id] = (saveData.pyramids[id] || 0) + 1;
+    battleSay(`${res.refund}: the ${PYRAMIDS[id].n} came back.`);
+    save();
+  }
   enemyOnly();
   playTurnEvents();
 }
 export function endBattle() {
   stopTimers();
+  bureauNoticeClose();
   const kind = activeBattle.kind,
     T = activeBattle.T,
     tid = activeBattle.tid,
@@ -1269,6 +1532,8 @@ export function endBattle() {
      a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
   if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
+  /* PK-7: a faintPaysNothing row (Influencer Contract) kept the win's Moneys */
+  if (pay.noPay) toast(`${fxSrcName(pay.noPay)}: one of yours fainted, so the battle paid nothing.`);
   /* SP-3: a spliced wild Billie knocked out: its DNA, and a sheet for a Gene sampled for the first time */
   const spliced =
     /** @type {{ dna?: number, sampled?: { gene: string, words: string }[], parts?: { id: string, words: string }[] }} */ (
@@ -1307,7 +1572,11 @@ export function endBattle() {
         title: `You beat ${escapeHtml(T.name)}`,
         top: `<div class="sheet-art">${portraitHTML(T.who, 96, 'sad')}</div>`,
         /* RL-R2: a run leader's first win of its type keeps that badge for good (logic/battle-rewards.js) */
-        html: `<p>${escapeHtml(T.win || '')}</p><p>You earned ${moneyHTML(pay.reward)}${extra}.</p>${pay.badge && typeof fieldBadgeLine === 'function' ? `<p class="note"><b>${escapeHtml(pay.badge)} Badge!</b> ${escapeHtml(fieldBadgeLine(pay.badge))}</p>` : ''}${pay.bossParts ? `<p class="note"><b>Salvaged:</b> ${escapeHtml(pay.bossParts.join(', '))}. It goes home with you, whatever happens.</p>` : ''}`,
+        html: `${winLineHTML(T)}<p>You earned ${moneyHTML(pay.reward)}${extra}.</p>${pay.badge && typeof fieldBadgeLine === 'function' ? `<p class="note"><b>${escapeHtml(pay.badge)} Badge!</b> ${escapeHtml(fieldBadgeLine(pay.badge))}</p>` : ''}${pay.bossParts ? `<p class="note"><b>Salvaged:</b> ${escapeHtml(pay.bossParts.join(', '))}. It goes home with you, whatever happens.</p>` : ''}`,
+        /* SY-5: PENDING slams on the boss's win line once; a redraw shows it already stamped */
+        after() {
+          this.html = this.html.replace('<pb-stamp ', '<pb-stamp still ');
+        },
         btns: [
           {
             c: 'dark',
@@ -1392,7 +1661,7 @@ function plateElement(k) {
   e.dataset.a = 'btarget';
   e.dataset.t = k;
   e.tabIndex = -1;
-  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}<span class="pl-procs"></span>`;
+  e.innerHTML = `<span class="pl-top"><b class="pl-n"></b><span class="pl-cr" hidden>${uiIconHTML('spark', 11)}</span><span class="pl-lv tnum"></span></span><span class="pl-hp"><i class="ghost"></i><i class="fill"></i></span><span class="pl-bot"><span class="pl-st"></span><span class="pl-sg"></span><span class="pl-serial tnum" hidden></span><span class="pl-num tnum"></span></span><span class="pl-parts" hidden></span><span class="pl-pips" hidden></span><span class="pl-prop" hidden></span>${ACTOR_SIDE[k] ? '' : '<span class="pl-xp"><i></i></span>'}<span class="pl-procs"></span>`;
   L.appendChild(e);
   return e;
 }
@@ -1454,6 +1723,15 @@ function paintPlates(s, anim) {
     /* UI-2: the shared bot plate: the limb pips, and the plate itself in steel with the panel's cuts */
     pr.innerHTML = x.bot ? limbPipsHTML(x.bot.ph) : '';
     e.classList.toggle('bot', !!x.bot);
+    /* SY-5: a faction's bot (the Bureau's) has an ID plate: form paper, its serial beside the tag row, its property line */
+    const fa = factionAt(s, k),
+      sr = e.querySelector('.pl-serial'),
+      prop = e.querySelector('.pl-prop');
+    e.classList.toggle('form', !!fa);
+    sr.hidden = !fa;
+    sr.textContent = fa ? factionSerial(fa.id) : '';
+    prop.hidden = !(fa && fa.look.property);
+    prop.textContent = (fa && fa.look.property) || '';
     const pips = e.querySelector('.pl-pips'),
       party = k === 0 ? saveData.team : k === 1 && activeBattle.kind === 'trainer' ? activeBattle.sides[1].team : null;
     pips.hidden = !party || party.length < 2;
@@ -1489,6 +1767,8 @@ function blipLook(b) {
     pct = b.mult && b.mult !== 1 ? ` ${b.mult > 1 ? '+' : '−'}${Math.round(Math.abs(b.mult - 1) * 100)}%` : '',
     o = { stat: b.stat || '', stages: b.stat ? b.stages || 1 : 0 };
   if (kind === 'perk') return { ...o, group: 'kind', mark: 'perk', text: ((PERKS[id] || {}).name || id) + pct };
+  /* PK-8: a Perk set's bonus, by its title */
+  if (kind === 'set') return { ...o, group: 'kind', mark: 'perk', text: ((PERK_SETS[id] || {}).title || id) + pct };
   if (kind === 'held') return { ...o, group: 'kind', mark: 'held', text: ((ITEMS[id] || {}).n || id) + pct };
   if (kind === 'gene')
     return { ...o, group: 'family', mark: 'bio', text: (((GENES.traits || {})[id] || {}).name || id) + pct };
@@ -1582,6 +1862,7 @@ function plateTags(e, x, anim) {
     .join('');
 }
 /* SY-2: a plate's HP number (your hp/max, a boss's %) counts to its new value over the fill's .38 s instead of jumping
+   (SY-8: the time is the Studio's HP roll dial, uiTheme.json style rollMs, the fill's too)
    (logic/hit-numbers.js rollValue). Display only: the battle's numbers never change. A new fighter, a repaint without
    a hit and Reduced motion set it at once. v null: no number (a foe that isn't a boss) */
 function rollPlateNumber(el, v, tail, uid, anim) {
@@ -1600,11 +1881,13 @@ function rollPlateNumber(el, v, tail, uid, anim) {
     el.textContent = v + tail;
     return;
   }
-  const t0 = performance.now();
+  const t0 = performance.now(),
+    ms = styleDials().rollMs;
+  styleNote('roll');
   const step = () => {
     const t = performance.now() - t0;
-    el.textContent = rollValue(from, v, t) + tail;
-    R.raf = t < ROLL_MS ? requestAnimationFrame(step) : 0;
+    el.textContent = rollValue(from, v, t, ms) + tail;
+    R.raf = t < ms ? requestAnimationFrame(step) : 0;
   };
   step();
 }
@@ -1644,6 +1927,15 @@ function turnBar() {
    readable size, stay in the lower part of the screen within thumb reach, and are page elements, so the scene's
    lighting never touches them (css/battle-ui.css) */
 const floatPos = { acts: null, msg: null };
+/** the battle cards' column (the text over the menu): its width in screen px, its zoom (big screens zoom the dock:
+    battle-screen.css), the gap to the fighters and the margin to the screen's edge. battle-stage.js lays the fighters
+    out beside it on a wide screen @param {number} vw @param {boolean} land */
+function battleCardColumn(vw, land) {
+  const dock = $('#dock'),
+    z = (dock && parseFloat(getComputedStyle(dock).zoom)) || 1,
+    cwd = Math.min((vw - 32) / z, land ? 360 : 400);
+  return { cwd, cw: cwd * z, z, gap: 32, edge: land ? Math.max(24, Math.round(vw * 0.03)) : 16 };
+}
 function floatTick() {
   const B = $('#battle'),
     acts = $('#acts'),
@@ -1680,17 +1972,16 @@ function floatTick() {
      right third in landscape), so neither card covers a fighter and both stay within thumb reach */
   /* big screens zoom the dock (style.css, 1.18 or 1.35) so the cards grow with the screen: sizes below are in screen
      pixels, and the translate is divided back into the dock's own units */
-  const z = parseFloat(getComputedStyle(acts.parentElement).zoom) || 1,
-    cwd = Math.min((vw - 2 * pad) / z, land ? 360 : 400);
+  const { cwd, cw, z, gap: apart, edge } = battleCardColumn(vw, land);
   acts.style.width = msg.style.width = cwd + 'px';
-  const cw = cwd * z,
-    ah = hasActs ? acts.offsetHeight * z : 0,
+  const ah = hasActs ? acts.offsetHeight * z : 0,
     mh = msg.offsetHeight * z,
     gap = 8 * z,
     colH = mh + (hasActs ? gap + ah : 0);
-  /* wide screens (owner, 2026-10-19): a column on the right, clear of the edge, centred top to bottom */
-  const edge = land ? Math.max(24, Math.round(vw * 0.03)) : pad;
-  let x = land ? vw - cw - edge : a ? a.x - cw * 0.3 : (vw - cw) / 2,
+  /* wide screens (owner, 2026-10-19): a column on the right, clear of the edge, centred top to bottom; where the
+     fighters were moved in to sit beside it (battle-stage.js battleStageLayout), right next to them (2026-10-28) */
+  const beside = land && L.beside ? L.fx + L.fw + apart : vw - cw - edge;
+  let x = land ? beside : a ? a.x - cw * 0.3 : (vw - cw) / 2,
     y = land ? (vh - colH) / 2 : a ? a.y + 12 : vh - colH - pad;
   x = clamp(x, edge, vw - cw - edge);
   y = clamp(y, land ? top0 : vh * 0.42, vh - colH - edge - 8);

@@ -33,6 +33,7 @@ import { uiIconHTML } from './art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
 import { showcaseAct } from './showcase.js';
+import { tradeAct } from './trade.js';
 import { hpBar, progressBarHTML, typeBadgeHTML } from './ui-bits.js';
 import { closeModal, modal, nextModal, toast } from './overlay.js';
 import { runEvolution } from './pending-windows.js';
@@ -149,7 +150,8 @@ function billySheet(m) {
             },
           }
     );
-  if (e && e.k === 'item' && m.lvl >= e.min) {
+  /* ON-4: an `acquire` evolution's item is its route without a trade */
+  if (e && (e.k === 'item' || e.k === 'acquire') && m.lvl >= e.min) {
     const ik = e.item || 'bell',
       I = ITEMS[ik] || { n: 'Shining Stone' },
       have = saveData.items[ik] || 0;
@@ -262,6 +264,9 @@ function billySheet(m) {
   /* ON-3: share its look to the Showcase (signed in; the sheet asks for Online play) */
   const shareAct = typeof showcaseAct === 'function' ? showcaseAct(m) : null;
   if (shareAct) acts.push(shareAct);
+  /* ON-4: trade it with a friend (signed in) */
+  const tradeBtn = typeof tradeAct === 'function' ? tradeAct(m) : null;
+  if (tradeBtn) acts.push(tradeBtn);
   /* alpha 0.5: the details open on a summary (meters, a stat chart, where it joined you, what it's like), with tabs
     for the exact stats, the moves and how it evolves */
   const base = s.base || [],
@@ -342,7 +347,7 @@ function healPick(m, back) {
     title: `Heal ${escapeHtml(billyName(m))}`,
     html: `<div class="ms-meters">${meter('HP', hpBar(m.hp, maxHp(m)), `${m.hp}/${maxHp(m)}`)}</div>${
       its.length
-        ? `<div class="list">${its.map(k => `<button class="pickrow" data-a="mhealuse" data-u="${m.uid}" data-it="${k}"${back ? ' data-b="1"' : ''}>${itemIcon(k, 34)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`
+        ? `<div class="list">${its.map(k => `<button class="pickrow" data-a="mhealuse" data-u="${m.uid}" data-it="${k}"${back ? ' data-b="1"' : ''}>${itemIcon(k, 36)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`
         : `<p>None of your items can help right now.</p><p class="note">Rest at a town clinic for free, or buy Potions at a town shop.</p>`
     }`,
     btns: [
@@ -364,7 +369,7 @@ function heldPick(m) {
   const its = heldIds(ITEMS).filter(k => saveData.items[k] > 0 && k !== m.held);
   modal({
     title: `Give ${escapeHtml(billyName(m))} an item to hold`,
-    html: `${m.held ? `<p class="note">It gives back its ${escapeHtml(ITEMS[m.held].n)}.</p>` : ''}<div class="list">${its.map(k => `<button class="pickrow" data-a="mheldgive" data-u="${m.uid}" data-it="${k}">${itemIcon(k, 34)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`,
+    html: `${m.held ? `<p class="note">It gives back its ${escapeHtml(ITEMS[m.held].n)}.</p>` : ''}<div class="list">${its.map(k => `<button class="pickrow" data-a="mheldgive" data-u="${m.uid}" data-it="${k}">${itemIcon(k, 36)}<span class="pr-t"><b>${escapeHtml(ITEMS[k].n)}</b><small>${escapeHtml(ITEMS[k].d)}</small></span><span class="pr-n tnum">×${saveData.items[k]}</span></button>`).join('')}</div>`,
     btns: [
       {
         l: 'Cancel',

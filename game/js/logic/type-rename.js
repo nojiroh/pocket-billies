@@ -9,10 +9,31 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
+  renameTypeConds: [() => renameTypeConds, v => (renameTypeConds = v)],
+  // @ts-expect-error -- replaced on purpose
   renameTypeIn: [() => renameTypeIn, v => (renameTypeIn = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
+/** PK-4: the type names in a condition field (an effect row's `if`, a Perk's `needs`: one condition or a list) after
+ * type: and team: renamed; with `to` null a deleted type's name goes, a condition left with none goes, and a field
+ * left with none goes (the row or the Perk then asks nothing of that type) @param {any} o @param {string} key
+ * @param {string} from @param {string | null} to */
+export function renameTypeConds(o, key, from, to) {
+  if (o[key] == null) return;
+  const one = (/** @type {string} */ c) => {
+    const m = /^(type|team):(.*)$/.exec(c);
+    if (!m) return c;
+    const names = m[2]
+      .split('|')
+      .map(x => (x === from ? to : x))
+      .filter(Boolean);
+    return names.length ? `${m[1]}:${names.join('|')}` : null;
+  };
+  const L = (Array.isArray(o[key]) ? o[key] : [o[key]]).map(one).filter(Boolean);
+  if (!L.length) delete o[key];
+  else o[key] = Array.isArray(o[key]) ? L : L[0];
+}
 /** renames type `from` to `to` everywhere the data names it; `to` null removes it (a move or robot part becomes Normal, a
  * Billie loses it, a rule takes the first type left, a Perk's damage row counts for any type)
  * @param {any} D the game data @param {string} from @param {string | null} to */
@@ -58,12 +79,43 @@ export function renameTypeIn(D, from, to) {
     hab[k] = hab[k].map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
     if (!hab[k].length) delete hab[k];
   }
-  for (const L of Object.values(D.perks || {}))
-    for (const f of /** @type {any} */ (L).fx || [])
+  for (const L of Object.values(D.perks || {})) {
+    const P = /** @type {any} */ (L);
+    for (const f of P.fx || []) {
       if (f.type === from) {
         if (to) f.type = to;
         else delete f.type; /* a damage row for any type */
       }
+      /* PK-4: a row's conditions (and its growth's) name types after type: and team: */
+      renameTypeConds(f, 'if', from, to);
+      if (f.grow) renameTypeConds(f.grow, 'if', from, to);
+    }
+    /* PK-4: what a Perk needs to be offered (team:<Type>) and its tags (a deleted type's tag goes) */
+    renameTypeConds(P, 'needs', from, to);
+    if (Array.isArray(P.tags)) {
+      P.tags = P.tags.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+      if (!P.tags.length) delete P.tags;
+    }
+  }
+  /* PK-10: a held item's rows: a damage row's type (a deleted one: for any type), an immune row's (a deleted one: the
+     row goes, and an item left with no row is no longer a held one) and its conditions */
+  for (const I of Object.values(D.items || {})) {
+    const H = /** @type {any} */ (I);
+    if (!Array.isArray(H.hold)) continue;
+    H.hold = H.hold.filter((/** @type {any} */ f) => {
+      if (f.type === from) {
+        if (to) f.type = to;
+        else if (f.kind === 'immune') return false;
+        else delete f.type;
+      }
+      renameTypeConds(f, 'if', from, to);
+      return true;
+    });
+    if (!H.hold.length) {
+      delete H.hold;
+      delete H.rarity;
+    }
+  }
   /* SP-2: a Gene's dominant type (a deleted one leaves the part with none, and a part with nothing left goes) and its
      traits' damage rows */
   const G = D.genes;
@@ -99,6 +151,78 @@ export function renameTypeIn(D, from, to) {
     if (WF.type === from) WF.type = left;
     if (Array.isArray(WF.badges))
       WF.badges = [...new Set(WF.badges.map((/** @type {string} */ t) => (t === from ? left : t)))];
+  }
+  /* VFX-8: a battle animation step kept to some move types (battleAnims.json `types`) */
+  const BA = D.battleAnims,
+    timelines = BA
+      ? [
+          { steps: BA.intro },
+          ...[...Object.values(BA.families), ...Object.values(BA.scenes)].flatMap(F => [F, F.short, F.miss]),
+        ]
+      : [];
+  for (const T of timelines)
+    for (const S of (T && T.steps) || [])
+      if (Array.isArray(S.types))
+        S.types = S.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  /* VFX-15: the battle stage's moods and scars (battleAnims.json moods.wave, moods.heat, scars.kinds) */
+  const swapTypes = (/** @type {any} */ o) => {
+    if (o && Array.isArray(o.types))
+      o.types = o.types.map((/** @type {string} */ x) => (x === from ? to : x)).filter(Boolean);
+  };
+  if (BA && BA.moods) [BA.moods.wave, BA.moods.heat].forEach(swapTypes);
+  if (BA && BA.scars)
+    for (const K of Object.values(BA.scars.kinds)) {
+      swapTypes(K);
+      /* its decal's ramp, which a type names (a deleted one's: None's) */
+      if (/** @type {any} */ (K).ramp === from) /** @type {any} */ (K).ramp = to || 'None';
+    }
+  /* VFX-10: a type's ramp moves with it (a deleted type's goes), and an icon's ramp that named it names the new id, or
+     None */
+  if (BA && BA.ramps && Object.hasOwn(BA.ramps, from)) {
+    /** @type {Record<string, any>} */
+    const out = {};
+    for (const [k, R] of Object.entries(BA.ramps))
+      if (k !== from) out[k] = R;
+      else if (to) out[to] = R;
+    BA.ramps = out;
+  }
+  for (const I of Object.values((BA && BA.iconSprites) || {}))
+    if (/** @type {any} */ (I).ramp === from) /** @type {any} */ (I).ramp = to || 'None';
+  /* VFX-14: a status's or effect's ramp (battleAnims.json events) that named it names the new id, or None */
+  const looks = (/** @type {any} */ o) => {
+    if (!o || typeof o !== 'object') return;
+    for (const [k, v] of Object.entries(o))
+      if ((k === 'ramp' || o === (BA && BA.events && BA.events.glint && BA.events.glint.ramps)) && v === from)
+        o[k] = to || 'None';
+      else looks(v);
+  };
+  if (BA) looks(BA.events);
+  /* VFX-16: the flow moments' ramps that name a type (a Coat's glint, the level-up's) likewise */
+  const EV = BA && BA.events;
+  if (EV && EV.sendOut) {
+    const G = EV.sendOut.glint;
+    for (const k of ['coat', 'prime']) if (G[k] === from) G[k] = to || 'None';
+    for (const [k, r] of Object.entries(EV.sendOut.kinds)) if (r === from) EV.sendOut.kinds[k] = to || 'None';
+  }
+  if (EV && EV.levelUp && EV.levelUp.ramp === from) EV.levelUp.ramp = to || 'None';
+  /* VFX-11: a type's kit moves with it (a deleted type's goes); a kit or a step whose ramp named it names the new id, or
+     None */
+  if (BA && BA.types) {
+    /** @type {Record<string, any>} */
+    const out = {};
+    for (const [k, K] of Object.entries(BA.types))
+      if (k !== from) out[k] = K;
+      else if (to) out[to] = K;
+    BA.types = out;
+    const reRamp = (/** @type {any} */ o) => {
+      for (const f of ['ramp', 'ramp2']) if (o && o[f] === from) o[f] = to || 'None';
+    };
+    for (const K of Object.values(BA.types)) {
+      if (!K || typeof K !== 'object') continue;
+      reRamp(K);
+      for (const S of [...(K.cast || []), ...(K.hit || [])]) reRamp(S);
+    }
+    for (const T of timelines) for (const S of (T && T.steps) || []) reRamp(S);
   }
   for (const T of Object.values((D.regions && D.regions.themes) || {})) {
     const lean = /** @type {any} */ (T).types || {};

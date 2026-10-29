@@ -11,6 +11,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -24,7 +25,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "iron_vest": 0,
         "quick_laces": 0,
         "brass_knuckles": 0,
-        "smart_specs": 0
+        "smart_specs": 0,
+        "matchbook": 0,
+        "water_bottle": 0,
+        "seed_packet": 0,
+        "spare_battery": 0,
+        "garden_trowel": 0,
+        "paper_plane": 0,
+        "tarot_card": 0,
+        "socket_wrench": 0,
+        "dragon_fruit": 0,
+        "seatbelt": 0,
+        "cactus_keyring": 0,
+        "complaint_form": 0,
+        "party_balloon": 0,
+        "costume_fangs": 0,
+        "express_pass": 0,
+        "ankle_weights": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -34,7 +51,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 25,
+      "mapgenV": 27,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -594,6 +611,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -607,7 +625,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "iron_vest": 0,
         "quick_laces": 0,
         "brass_knuckles": 0,
-        "smart_specs": 0
+        "smart_specs": 0,
+        "matchbook": 0,
+        "water_bottle": 0,
+        "seed_packet": 0,
+        "spare_battery": 0,
+        "garden_trowel": 0,
+        "paper_plane": 0,
+        "tarot_card": 0,
+        "socket_wrench": 0,
+        "dragon_fruit": 0,
+        "seatbelt": 0,
+        "cactus_keyring": 0,
+        "complaint_form": 0,
+        "party_balloon": 0,
+        "costume_fangs": 0,
+        "express_pass": 0,
+        "ankle_weights": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -617,7 +651,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 25,
+      "mapgenV": 27,
       "unlocks": [
         "biome_autumn",
         "biome_ridge",
@@ -1181,6 +1215,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "wake_tea": 0,
         "revive": 0,
         "bell": 0,
+        "transfer": 0,
         "protein_bar": 0,
         "trailmix": 0,
         "pretzel": 0,
@@ -1194,7 +1229,23 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
         "iron_vest": 0,
         "quick_laces": 0,
         "brass_knuckles": 0,
-        "smart_specs": 0
+        "smart_specs": 0,
+        "matchbook": 0,
+        "water_bottle": 0,
+        "seed_packet": 0,
+        "spare_battery": 0,
+        "garden_trowel": 0,
+        "paper_plane": 0,
+        "tarot_card": 0,
+        "socket_wrench": 0,
+        "dragon_fruit": 0,
+        "seatbelt": 0,
+        "cactus_keyring": 0,
+        "complaint_form": 0,
+        "party_balloon": 0,
+        "costume_fangs": 0,
+        "express_pass": 0,
+        "ankle_weights": 0
       },
       "pyramids": {
         "pyramid": 5,
@@ -1204,7 +1255,7 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       },
       "seed": "S0START",
       "expedition": 1,
-      "mapgenV": 25,
+      "mapgenV": 27,
       "unlocks": [],
       "mods": [],
       "clock": 1,
@@ -1526,6 +1577,6 @@ exports[`a run starts as runTakeOff starts it: 200 seeds, no unlocks, every unlo
       }
     }
   },
-  "all": "5c6c66e9e3123ce79ce548ee2d85d65559cc6438b9f573b2454f35e30d006459"
+  "all": "18d5d0149756b1c4846ae91fc60ab87bb2ea9d824ec8faf82d330f6c0585d590"
 }
 `;

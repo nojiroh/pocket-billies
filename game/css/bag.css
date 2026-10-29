@@ -112,3 +112,7 @@
 .bag-act .pb {
   min-width: 96px;
 }
+/* PK-9: a curse's row on the Perks tab: its places left in the bad signal's text colour */
+.boon-row.curse .boon-left {
+  color: var(--sig-bad-text);
+}

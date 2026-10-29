@@ -42,6 +42,18 @@ function typeFields(D, ids = new Set(D.types.map(t => t.id))) {
 const planted = () => {
   const D = copy();
   D.perks._planted = { name: 'P', d: 'P', fx: [{ kind: 'damage', side: 'deal', type: D.types[0].id, mult: 1.5 }] };
+  /* PK-10: and a held item's damage row, immune row and condition */
+  D.items._planted = {
+    n: 'H',
+    price: 1,
+    rarity: 'common',
+    d: 'H',
+    hold: [
+      { kind: 'damage', side: 'deal', type: D.types[1].id, mult: 1.2 },
+      { kind: 'stat', stat: 'lev', stages: 1, when: 'hit', if: 'type:' + D.types[2].id },
+    ],
+  };
+  D.items._planted2 = { n: 'I', price: 1, rarity: 'common', d: 'I', hold: [{ kind: 'immune', type: D.types[3].id }] };
   return D;
 };
 
@@ -57,7 +69,8 @@ test('a rename rewrites every field of the data that names the type', () => {
       typeFields(D)
         .filter(([, v]) => v === 'Zz' + id)
         .map(([p]) => p),
-      before.map(([p]) => p)
+      /* VFX-11: a type's kit (battleAnims.json types, keyed by the type) moves to the new key */
+      before.map(([p]) => p.replace(`battleAnims.types.${id}.`, `battleAnims.types.Zz${id}.`))
     );
   }
 });
@@ -96,4 +109,51 @@ test('deleting the type the battle rules name gives them a type that is left', (
         `${id}: ${k}`
       );
   }
+});
+
+test('PK-4: a rename reaches a Perk’s tags, its needs and the type names in its rows’ conditions; a delete drops them', () => {
+  const D = copy(),
+    [a, b] = D.types.map(t => t.id);
+  D.perks._p = {
+    name: 'P',
+    d: 'P',
+    rarity: 'common',
+    needs: [`team:${a}|${b}`, 'mono'],
+    tags: [a, 'weather'],
+    fx: [
+      {
+        kind: 'damage',
+        side: 'deal',
+        mult: 1.1,
+        if: `type:${a}`,
+        grow: { on: 'win', by: 0.1, max: 1, if: [`team:${a}`] },
+      },
+    ],
+  };
+  T.renameTypeIn(D, a, 'Zz');
+  assert.deepEqual(D.perks._p.needs, [`team:Zz|${b}`, 'mono']);
+  assert.deepEqual(D.perks._p.tags, ['Zz', 'weather']);
+  assert.equal(D.perks._p.fx[0].if, 'type:Zz');
+  assert.deepEqual(D.perks._p.fx[0].grow.if, ['team:Zz']);
+  T.renameTypeIn(D, 'Zz', null);
+  assert.deepEqual(D.perks._p.needs, [`team:${b}`, 'mono']);
+  assert.deepEqual(D.perks._p.tags, ['weather']);
+  assert.equal(D.perks._p.fx[0].if, undefined, 'a condition left with no type goes');
+  assert.equal(D.perks._p.fx[0].grow.if, undefined);
+  D.perks._p.needs = `team:${b}`;
+  D.perks._p.tags = [b];
+  T.renameTypeIn(D, b, null);
+  assert.equal(D.perks._p.needs, undefined);
+  assert.equal(D.perks._p.tags, undefined);
+});
+
+test("PK-10: deleting a type: a held damage row counts for any type, a held immune row of it goes (and the item's held-ness with its last row)", () => {
+  const D = planted(),
+    gone = D.types[3].id;
+  D.items._planted.hold[0].type = gone;
+  T.renameTypeIn(D, gone, null);
+  assert.equal(D.items._planted.hold[0].type, undefined);
+  assert.equal(D.items._planted.hold.length, 2);
+  assert.equal(D.items._planted2.hold, undefined);
+  assert.equal(D.items._planted2.rarity, undefined);
 });

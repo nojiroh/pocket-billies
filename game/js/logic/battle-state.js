@@ -8,7 +8,7 @@
 import { expose } from '../test-globals.js';
 import { ITEMS, RULES, STAT_IDS } from '../game-data.js';
 import { rngFn } from './rng.js';
-import { fxOfBillie, fxStages } from './effects.js';
+import { fxHeldBoost, fxOfBillie, fxStages } from './effects.js';
 /* eslint-disable no-func-assign */
 expose({
   // @ts-expect-error -- replaced on purpose
@@ -91,17 +91,14 @@ export function makeBattle(kind, team, foe, extra) {
   );
   addAct(b.sides[0]);
   addAct(b.sides[1]);
-  /* RL-12: a run's Perks (b.fx, logic/effects.js): stat stages for yours on the field as it starts */
-  if (b.fx) {
-    const up = fxStages(b.fx),
-      most = RULES.battle.stageMax;
-    for (const f of b.sides[0].f)
-      if (f.on) for (const s in up) f.v.st[s] = Math.max(-most, Math.min(most, (f.v.st[s] || 0) + up[s]));
-  }
-  /* RL-12c: a held item's stat stages for each fighter on the field as it starts (doSwitch for those coming in) */
+  /* RL-12: a run's Perks' stat stages (b.fx) are given by the engine as each of yours takes the field (PK-1:
+     battle-engine.js fxBattleStart, doSwitch) */
+  /* RL-12c: a held item's stat stages for each fighter on the field as it starts (doSwitch for those coming in); PK-8:
+     yours worked better by the run's heldBoost rows (the Tech Gear set) */
   for (const sd of b.sides)
     for (const f of sd.f) {
-      const up = f.on ? fxStages(fxOfBillie(sd.team[f.act], ITEMS)) : {},
+      const boost = sd === b.sides[0] && b.fx ? fxHeldBoost(b.fx) : 1,
+        up = f.on ? fxStages(fxOfBillie(sd.team[f.act], ITEMS, boost)) : {},
         most = RULES.battle.stageMax;
       for (const s in up) f.v.st[s] = Math.max(-most, Math.min(most, (f.v.st[s] || 0) + up[s]));
     }

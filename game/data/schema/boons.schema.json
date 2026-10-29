@@ -1,0 +1,28 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "boons.schema.json",
+ "title": "game/data/boons.json: boons and curses (perks track PK-9): named effects that last a few places, handed out by events (`boon <id>`, `curse <id>`) and the fountain's wish; while one is on its rows join the run's (logic/effects.js fxOfRun, src boon:<id>)",
+ "type": "object",
+ "propertyNames": {
+  "pattern": "^[a-z][a-z0-9_]*$"
+ },
+ "additionalProperties": {
+  "type": "object",
+  "required": ["name", "d", "places", "fx"],
+  "additionalProperties": false,
+  "properties": {
+   "name": {"description": "what the player reads; battle lines and the Perks tab name it", "type": "string", "minLength": 1, "maxLength": 40},
+   "d": {"description": "what it does while it lasts, in one sentence", "type": "string", "minLength": 1, "maxLength": 160},
+   "curse": {"description": "a curse (the Bureau's Red Tape): a clinic's appeal lifts it, Correction Fluid shortens or erases it; a boon when left out", "const": true},
+   "places": {"description": "how long it lasts: the place it is given in and this many more (0-20; each place walked into counts one down)", "type": "integer", "minimum": 0, "maximum": 20},
+   "img": {"description": "its picture, a 36 x 36 icon under game/art (tools/build-icons.mjs boons draws it; the Studio's icon editor edits it); without one it shows the relic icon", "type": "string", "pattern": "^boons/[a-z][a-z0-9_]*\\.svg$"},
+   "fx": {
+    "description": "its effect rows, as a Perk's (perks.schema.json)",
+    "type": "array",
+    "minItems": 1,
+    "maxItems": 4,
+    "items": {"$ref": "perks.schema.json#/additionalProperties/properties/fx/items"}
+   }
+  }
+ }
+}

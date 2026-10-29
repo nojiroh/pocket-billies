@@ -43,6 +43,8 @@ expose({
   runRestore: [() => runRestore, v => (runRestore = v)],
   runSnapshot: [() => runSnapshot],
   // @ts-expect-error -- replaced on purpose
+  validPerkState: [() => validPerkState, v => (validPerkState = v)],
+  // @ts-expect-error -- replaced on purpose
   validRun: [() => validRun, v => (validRun = v)],
   // @ts-expect-error -- replaced on purpose
   validRunEnc: [() => validRunEnc, v => (validRunEnc = v)],
@@ -142,6 +144,26 @@ export function validRunRegion(R) {
     recordOf(R.forms, 100, id) &&
     Object.keys(R.forms).every(id) &&
     ids(R.leaders, 16)
+  );
+}
+/** PK-1: run.perkState: at most 200 marks by '<source>/<row>', each a count (n, 0-99), a growth (v, within +-100)
+ * and a once-a-run mark (used: 1), nothing else @param {any} P @returns {boolean} */
+export function validPerkState(P) {
+  if (!P || typeof P !== 'object' || Array.isArray(P) || Object.hasOwn(P, '__proto__')) return false;
+  const keys = Object.keys(P);
+  return (
+    keys.length <= 200 &&
+    keys.every(k => /^[a-z0-9_:]{1,64}\/\d{1,2}$/.test(k)) &&
+    Object.values(P).every(
+      m =>
+        !!m &&
+        typeof m === 'object' &&
+        !Array.isArray(m) &&
+        Object.keys(m).every(q => ['n', 'v', 'used'].includes(q)) &&
+        (m.n === undefined || wholeIn(m.n, 0, 99)) &&
+        (m.v === undefined || (Number.isFinite(m.v) && Math.abs(m.v) <= 100)) &&
+        (m.used === undefined || m.used === 1)
+    )
   );
 }
 /** the load check for saveData.run: strict, like validSave (the Billies in run.start.team are checked there) */
@@ -268,7 +290,7 @@ export function validRun(o) {
     return false;
   if (
     o.reshop !== undefined &&
-    (!list(o.reshop, 9) || !o.reshop.every(k => typeof k === 'string' && /^\d{1,3}:\d{1,3}$/.test(k)))
+    (!list(o.reshop, 9) || !o.reshop.every(k => typeof k === 'string' && /^\d{1,3}:\d{1,3}(:s)?$/.test(k)))
   )
     return false;
   /* RL-S2: Blake in the run (missing on a run from before) */
@@ -296,6 +318,8 @@ export function validRun(o) {
   if (o.beat !== undefined && (!list(o.beat, 16) || !o.beat.every(id))) return false;
   /* RO-3f: a mythical met this run */
   if (o.myth !== undefined && o.myth !== 1) return false;
+  /* PK-1: the Perks' counters, growth and once-a-run marks (logic/effects.js; missing until a row keeps state) */
+  if (o.perkState !== undefined && !validPerkState(o.perkState)) return false;
   /* TW-3: its quests (missing until the first is taken) */
   if (o.quests !== undefined && !validRunQuests(o.quests)) return false;
   /* RS-1: the resident invited (logic/residents.js) */
@@ -367,15 +391,19 @@ export function validRunEnc(e) {
       Object.values(f).every(v => num(v) || (typeof v === 'string' && v.length <= 20)),
     card = (/** @type {any} */ c) =>
       plain(c) &&
-      Object.keys(c).every(k => ['id', 'kind', 'item', 'n', 'move'].includes(k)) &&
+      Object.keys(c).every(k => ['id', 'kind', 'item', 'n', 'move', 'perk'].includes(k)) &&
       id(c.id) &&
-      ['item', 'candy', 'evo', 'tutor', 'held', 'part', 'scrap'].includes(c.kind) &&
+      ['item', 'candy', 'evo', 'tutor', 'held', 'part', 'scrap', 'perk'].includes(c.kind) &&
       (c.item === undefined || id(c.item)) &&
       (c.move === undefined || id(c.move)) &&
+      /* PK-7: a perk card's Perk */
+      (c.perk === undefined || id(c.perk)) &&
       (c.n === undefined || wholeIn(c.n, 1, 99));
   return (
     plain(e) &&
-    Object.keys(e).every(k => ['n', 'node', 'seen', 'boons', 'rewardN', 'reward', 'play'].includes(k)) &&
+    Object.keys(e).every(k => ['n', 'node', 'seen', 'boons', 'rewardN', 'reward', 'play', 'erased'].includes(k)) &&
+    /* PK-9: the curses Correction Fluid erased this run */
+    (e.erased === undefined || wholeIn(e.erased, 0, 99)) &&
     (e.play == null ||
       (plain(e.play) &&
         Object.keys(e.play).every(k => ['id', 'i', 'opt', 'at', 'foe'].includes(k)) &&
@@ -399,8 +427,14 @@ export function validRunEnc(e) {
     Array.isArray(e.boons) &&
     e.boons.length <= 32 &&
     e.boons.every(
+      /* PK-9: a named boon (boons.json) by its id, or an event's own rows (fx) */
       (/** @type {any} */ b) =>
-        plain(b) && Array.isArray(b.fx) && b.fx.length <= 8 && b.fx.every(row) && wholeIn(b.left, 0, 99) && id(b.src)
+        plain(b) &&
+        Object.keys(b).every(k => ['fx', 'id', 'left', 'src'].includes(k)) &&
+        (b.id === undefined ? Array.isArray(b.fx) : id(b.id) && b.fx === undefined) &&
+        (b.fx === undefined || (Array.isArray(b.fx) && b.fx.length <= 8 && b.fx.every(row))) &&
+        wholeIn(b.left, 0, 99) &&
+        id(b.src)
     ) &&
     wholeIn(e.rewardN, 0, 1e6) &&
     (e.reward === null ||

@@ -9,6 +9,67 @@ written in one place, game/version.js. The legacy build's changelog is in docs/a
 The fresh base. Numbering starts over; saves from the legacy build don't load (a new game starts and the old save is
 kept aside in the browser).
 
+- **A smoother bottom bar and a quick Actions bar** (the owner's phone notes, 2026-10-28): the bottom bar folds down
+  while you walk in one smooth motion, and its buttons keep their words when small. Settings > Controls has "Shrink the
+  bar while walking" to keep it full size. The selected tab is a soft gold pill, and pressing a tab squashes only that
+  tab. Actions now opens a row of small buttons right above the bar instead of a sheet over half the screen: the run's
+  day and the map, or Start a run and the hub's buildings, the place's shop, clinic and trainers, and every wild Billie
+  hiding here, nearest first. Tap one and you walk up to it and the battle starts.
+- **Battles on wide screens** keep the fighters and the move menu together in the middle; the menu used to sit against
+  the right edge, far from the action.
+- **Friend trades** (online track ON-4): trade Billies, ready eggs and spare robot parts with a friend, up to three
+  each side. Open it from a friend's row (Trainer > Friends) or a Billie's sheet (Trade…), put in what you give, see
+  what they put in, both say Ready, then Trade!. If one side's game closes midway, the trade finishes the next time
+  it starts. A traded Billie keeps its original trainer and ribbons, gains 1.5x XP, and waits a week before it can be
+  traded again; its held item stays in your bag. Two Billies evolve when acquired in a trade: Cliplet into
+  Tiktokferret and Feedopus into Metapus. Without a friend, a Form 99-A does it: the Form 27-B clerk files one for you,
+  and the Bureau Checkpoint is back on the roads with one after its inspection. The Trainer card lists your latest
+  trades.
+- **Terraces that follow the land** (terrain track TR-5): on routes with terraces, a hill's top is now a terrace above
+  its foot instead of bands that always rise toward the back (the ledge-drop routes keep mostly bands, for their
+  ledges). A terrace's front may be a cliff, a grassy bank, a stepped front with a shelf halfway up, or in a town a
+  dressed-stone wall. Any terrace you couldn't get onto (or off again), and any building door or mountain summit that
+  was cut off, gets a short flight of stone steps; no summit trail is a dead end any more. In the Studio's map
+  generator: Terrace lie and Terrace fronts.
+- **People face the way you see them** (characters track CH-1): on Copperleaf's island, in rooms and whenever you turn
+  the camera, you and the people round you show the side that faces the camera: walking away from it shows your back,
+  and someone turning to you shows their front. Coming out of Kappi's lab, or any door that faces east or west, you
+  face out of the door, not the camera. In the opening, Chosen runs out of the lab toward you face first, and Kappi
+  turns to you once you're up.
+- **Figures to try** (characters track CH-2 and CH-3, off by default): a row of Figures switches in the debug menu
+  turns you into a small 3D figure drawn as pixel art on the world's own grid, facing any way and walking, running and
+  breathing on a 12 fps clock: a stand-in made from KayKit's free (CC0) Rogue, or a code-built mannequin. They also
+  give the same figure as plain 3D to compare, townsfolk as figures, and both trainers in battle at twice the detail.
+  The look is a test for the owner's pick.
+- **People in the debug log** (characters track CH-1): how many people are drawn, how many draw calls they cost and
+  how much graphics memory their pictures take, in each exported log.
+- **Calmer world sounds** (sound track SND-8a): rain, streams, fountains, the sea, wind, leaves, a town's murmur, a
+  campfire and crickets are re-made from soft noise that wanders instead of wobbling, and sit well under the music
+  (rain was louder than the songs; now every one is at least 12 LU under the route song). Crickets chirp in groups
+  with rests, a fire crackles, birds call one at a time about every ten seconds, footsteps differ a little each step
+  and are soft on grass, sand and earth, and follow the World slider. Rooms hear the place's night outside. Sounds
+  that aren't heard stop running, which saves the phone work. The debug menu has a Sound test.
+
+- **Copperleaf's music can be heard** (sound track SND-8b): the hub song was about 15 LU quieter than the others, so
+  the sea and the fountain covered it; it now sits with them. A song's echo fades and ducks with the song, jingles
+  echo with the Sound effects slider (at 0 none is left), the rain muffles the music less, and on an iPhone sound
+  comes back after a call or Siri.
+
+- **The first synthesized instrument and a sense of space** (sound track SND-9): the game can now build instruments
+  from numbers when it starts using them, a little at a time so nothing stutters, and play them through one shared
+  reverb. The debug menu's Sound test has a harp playing Copperleaf's tune, with the room of Copperleaf, a route, a
+  forest, a room or a cave. The songs themselves sound as before. The debug log says how long the instruments took to
+  make and how much memory they use.
+
+- **Water you can hear** (sound track SND-10): every kind of water has its own sound now: a babbling brook, a river,
+  rapids, waterfalls by their height with their splashing pool, waves on the shore that grow at high tide and in a
+  storm, a lake's laps, a pond's plops, a bubbling hot spring, a marsh, a bog, lava, a canal, a fountain and drips
+  echoing in a cave. Water far off is a soft low rumble and near water is bright; a river you walk beside sounds in
+  front of you. Rain makes little plinks on water, wading splashes by how deep you are (no more clicks), Surf
+  splashes as you get on and off with a wake while you ride, fishing has a cast, nibbles, a bite, a reel and a
+  splash when you land the fish, and frogs, fish and diving birds splash. All of it sits well under the music. The
+  debug menu's Sound test plays each at a distance, and so does the Studio's Sounds tab.
+
 - **The Showcase** (online track ON-3): share up to three Billies' looks from their sheet (with Online play on) and
   vote on everyone's on the Trainer screen: this week's theme by votes, last week's winners, the newest, your friends'
   and your own. Each week has a theme (Best abomination, Most Bureau, Best splice); the top three on Sunday night (UTC)

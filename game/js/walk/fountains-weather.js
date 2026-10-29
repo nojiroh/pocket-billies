@@ -4,7 +4,8 @@
    walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { LIFE_KIND, SOLID_PROP_PARTS, ambientLife, reducedMotion } from '../hooks.js';
+import { BATTLE_ANIMS, LIFE_KIND, SOLID_PROP_PARTS, ambientLife, reducedMotion } from '../hooks.js';
+import { hexToRgb } from '../art.js';
 import { isWalkable, terrainAt, walkView } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
 import { freeMesh, gpuState, normalize3, uploadMesh, windGustAt } from '../engine/webgl.js';
@@ -18,6 +19,7 @@ import { addRipple, waterAt } from './water.js';
 expose({
   FOOTPRINT_COLORS: [() => FOOTPRINT_COLORS],
   addFootprint: [() => addFootprint, v => (addFootprint = v)],
+  drawBattleSand: [() => drawBattleSand, v => (drawBattleSand = v)],
   drawFootprints: [() => drawFootprints, v => (drawFootprints = v)],
   drawFountainEffects: [() => drawFountainEffects, v => (drawFountainEffects = v)],
   drawLifeEffects: [() => drawLifeEffects, v => (drawLifeEffects = v)],
@@ -272,6 +274,10 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
     n = nR + nS + nA,
     wind = (walkView.sc.wind || 1) * (0.35 + E.storm * 0.9),
     sp = rm ? 1 : 0.2;
+  /* VFX-15: in a battle (battleAnims.json weather): more splashes on the stage's ground, snow and ash settling there */
+  const WB = BT && BT.stageLook && !reducedMotion ? BATTLE_ANIMS.weather : null,
+    near = (/** @type {number} */ x, /** @type {number} */ z, /** @type {number} */ r) =>
+      (x - P.x) * (x - P.x) + (z - P.z) * (z - P.z) < r * r;
   /* phase 20 R2 (pixels): every quad below goes into one draw (walk/effects.js), each with its own up axis; nothing is
      drawn until the picture is loaded */
   const B = quad.batch('spray');
@@ -320,6 +326,9 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
       q.x += (Math.sin(walkView.t * 0.0011 + q.ph) * 0.45 + wind * 0.5) * dt * sp;
       q.z += Math.cos(walkView.t * 0.0009 + q.ph * 1.3) * 0.2 * dt * sp;
       if (q.y < gy) {
+        const ST = W.st || (W.st = []);
+        if (WB && ST.length < WB.settle.cap && near(q.x, q.z, WB.settle.r))
+          ST.push({ x: q.x, z: q.z, y: gy, a: 0, kd });
         home(q);
         continue;
       }
@@ -330,6 +339,37 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
     }
   }
   setUp(Up);
+  /* VFX-15: rain on the battle's ground: splashes there (ripples on water) */
+  if (WB && rain > 0)
+    for (let k = dt * WB.rain.splash * rain; k > 0; k--) {
+      if (Math.random() >= Math.min(1, k)) continue;
+      const x = P.x + (Math.random() - 0.5) * 2 * WB.rain.r,
+        z = P.z + (Math.random() - 0.5) * 2 * WB.rain.r,
+        g = waterAt(x, z);
+      if (g && g.dep > 0) {
+        if (walkRenderer.wgrid && !WATER_KIND_LOOKS[g.kind].mode) addRipple(x, z, 0.25);
+      } else if (W.sp.length < 64) W.sp.push({ x, z, y: standingHeightAt(x, z), a: 0 });
+    }
+  /* VFX-15: snow and ash settled on the battle's ground, lying flat, gone in four steps */
+  if (W.st && W.st.length) {
+    if (!WB) W.st.length = 0;
+    else {
+      const ms = WB.settle.ms / 1000;
+      setUp([-R[2], 0, R[0]]);
+      for (let i = W.st.length - 1; i >= 0; i--) {
+        const s = W.st[i];
+        s.a += dt;
+        if (s.a > ms) {
+          W.st.splice(i, 1);
+          continue;
+        }
+        const f = Math.ceil((1 - s.a / ms) * 4) / 4;
+        if (s.kd === 1) put('spray', 1, s.x, s.y + 0.015, s.z, 0.075, 0.075, 0.9 * f, [0.98, 0.99, 1]);
+        else put('spray', 1, s.x, s.y + 0.015, s.z, 0.065, 0.065, 0.75 * f, [0.3, 0.27, 0.26]);
+      }
+      setUp(Up);
+    }
+  }
   for (let i = W.sp.length - 1; i >= 0; i--) {
     const s = W.sp[i];
     s.a += dt;
@@ -348,6 +388,51 @@ export function drawWeather(quad, glows, U, R, Up, dt, rm) {
     /* water track WA-5b: no rings on lava or ice (a kind drawn in its own mode) */
     if (g && g.dep > 0 && !WATER_KIND_LOOKS[g.kind].mode) addRipple(x, z, 0.3);
   }
+}
+/* VFX-15: the Sandstorm in battle (battle-stage-look.js: BT.stageLook.sand, 1 steady, more in its gust): streaks of
+   sand blown across the stage in the weather's batch (one draw), never the 2D canvas; drawn indoors too */
+export function drawBattleSand(quad, R, dt, rm) {
+  const BT = walkRenderer.bt,
+    SL = BT && BT.stageLook,
+    WB = BATTLE_ANIMS.weather,
+    W = walkRenderer.wx || (walkRenderer.wx = { p: [], sp: [] }),
+    S = W.sand || (W.sand = []);
+  if (!SL || !SL.sand || !WB) {
+    S.length = 0;
+    return;
+  }
+  const n = Math.round(WB.sand.n * Math.min(3, SL.sand) * (walkView.R < 0.75 ? 0.5 : 1)),
+    P = { x: BT.center[0], z: BT.center[1] },
+    rl = Math.hypot(R[0], R[2]) || 1,
+    rx = R[0] / rl,
+    rz = R[2] / rl,
+    sp = rm ? 1 : 0.2,
+    cols = W.sandCols || (W.sandCols = WB.sand.colors.map(h => hexToRgb(h).map(v => v / 255)));
+  const spawn = (/** @type {any} */ q, /** @type {boolean} */ edge) => {
+    q.u = edge ? -7 - Math.random() * 2 : (Math.random() - 0.5) * 14;
+    q.f = -3 + Math.random() * 9;
+    q.y = 0.1 + Math.random() * 2.6;
+    q.v = 6 + Math.random() * 5;
+    q.c = Math.random() < 0.5 ? 0 : 1;
+    q.l = 0.25 + Math.random() * 0.3;
+  };
+  while (S.length < n) {
+    const q = {};
+    spawn(q, false);
+    S.push(q);
+  }
+  if (S.length > n) S.length = n;
+  const B = quad.batch('spray');
+  if (!B) return;
+  for (const q of S) {
+    q.u += q.v * dt * sp;
+    if (q.u > 7) spawn(q, true);
+    const x = P.x + rx * q.u - rz * q.f,
+      z = P.z + rz * q.u + rx * q.f;
+    /* a snow flake's round picture pulled out along the wind into a streak */
+    B.put(1, x, standingHeightAt(x, z) + q.y, z, q.l, 0.035, 0.7, cols[q.c % cols.length], [0, 1, 0]);
+  }
+  B.flush();
 }
 /* v27: footprints in snow, sand, ash and mud (and anywhere after rain): yours and the animals', fading in half a minute */
 const FOOTPRINT_COLORS = {

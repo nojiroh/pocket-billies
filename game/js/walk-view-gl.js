@@ -35,9 +35,10 @@ import {
   worldExtra,
   worldMapPrewarm,
 } from './hooks.js';
+import { personPicture } from './logic/person-view.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { FOG_MARCH_STEPS, fogGridBox, fogMarchOn } from './logic/fog-grid.js';
-import { gpuPass } from './engine/gpu-counters.js';
+import { gpuCountSummary, gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameTask, userFps } from './frame-scheduler.js';
 import {
   drawBubble,
@@ -80,6 +81,7 @@ import {
   ensurePrograms,
   gpuLoading,
   gpuOnRestore,
+  gpuPictureBytes,
   gpuState,
   initWebgl,
   normalize3,
@@ -120,6 +122,7 @@ import {
 import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
+import { figureReport, figuresOn } from './figures.js';
 import { gatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawPlayerSilhouette, drawSprites, hideQueriesLost } from './walk/sprites.js';
 import { battleCamera, cutsceneCamera, screenRay, startSceneZoom, walkCamera } from './walk/camera.js';
@@ -128,6 +131,8 @@ import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shad
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
+import { BATTLE_FX_SHADERS } from './walk/battle-fx.js';
+import { BATTLE_SCAR_SHADERS } from './walk/battle-scars.js';
 import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
 import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
@@ -146,6 +151,7 @@ expose({
   litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  peopleReport: [() => peopleReport, v => (peopleReport = v)],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
@@ -305,6 +311,29 @@ export function setMountWalkView(v) {
   mountWalkView = v; // eslint-disable-line no-func-assign
   provide({ mountWalkView });
 }
+/* CH-1: people in the debug log (debug-log.js `people` and the samples' `ppl`; tools/look-people.py): how many the last
+   frame drew, their draws in the last counted frame (engine/gpu-counters.js's `person` tag) in all and by pass, and
+   their pictures on the graphics card with their MB (engine/webgl.js gpuPictureBytes). Numbers only. */
+export function peopleReport() {
+  const g = gpuCountSummary(),
+    byPass = {};
+  let draws = 0;
+  for (const p in (g && g.dct) || {})
+    if (g.dct[p].person) {
+      byPass[p] = g.dct[p].person;
+      draws += g.dct[p].person;
+    }
+  const T = gpuPictureBytes(personPicture);
+  return {
+    drawn: walkRenderer.people || 0,
+    draws: Math.round(draws * 10) / 10,
+    byPass,
+    textures: T.n,
+    mb: Math.round((T.bytes / 1048576) * 10) / 10,
+    /* CH-2: the figure baker's numbers, once it has baked (figures.js figureReport) */
+    ...(typeof figureReport === 'function' && (figuresOn() || figureReport().bakes) ? { figures: figureReport() } : {}),
+  };
+}
 /* the GL context on this canvas, with the walk scene's programs (v47: also used by the opening's fall, which draws the
    world map on the same canvas before Sundown is mounted; a context made by the map alone gets the walk programs here) */
 export function ensureWalkGl(cv) {
@@ -340,6 +369,10 @@ export function ensureWalkGl(cv) {
       WEATHER_FX_SHADERS,
       /* VFX-2: a thrown pyramid's ribbon, so the first throw doesn't compile it */
       RIBBON_SHADERS,
+      /* VFX-9: the battle effects' pool */
+      BATTLE_FX_SHADERS,
+      /* VFX-15: the battle's scars */
+      BATTLE_SCAR_SHADERS,
       /* phase 20 R3: the instanced shadow pictures' and shadow models' programs */
       SHADOW_INSTANCE_SHADERS,
       typeof MODEL_SHADOW_SHADERS !== 'undefined' && MODEL_SHADOW_SHADERS,
@@ -624,6 +657,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     for (const it of BT.items) items.push(it);
   } else walkView.hits = hits;
   cullItems(items, C);
+  /* CH-1: the people in this frame, for the debug log (peopleReport); people are never culled (walk/quality-cull.js) */
+  let people = 0;
+  for (let i = 0; i < items.length; i++) if (personPicture(items[i].im)) people++;
+  walkRenderer.people = people;
   coverItems(items, C, dt);
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lk = engineContext.env && !sc.indoor ? environment.lampK : 0,
@@ -778,9 +815,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       dofRef: BT ? null : 16,
       dofView: !!walkView.opt.dofView /* CAM-3: the Studio's blur heatmap */,
       plane: FP && tilt > 0 ? [FP.g[0], FP.g[1], FP.g[2], FP.h] : null /* (tilt 0: the old slab, to the bit) */,
-      heat: heatHaze(sc),
+      /* VFX-15: a battle's Fire big moves shimmer too; the battle's mood, its row wave, the sun's warmth and shafts
+         (battle-stage-look.js) */
+      heat: Math.max(heatHaze(sc), BT && BT.stageLook ? BT.stageLook.heat : 0),
       heatS: heatSources(C),
       mood: easedMood(sc),
+      stageLook: BT ? BT.stageLook || null : null,
       sun: sc.indoor ? null : litSunScreenPosition(C, sun),
       sunCol: engineSetting('sun', 'followLight') ? sun.col : null,
       X,
@@ -794,6 +834,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
         ? { tex: FGS.tex, G: FGS.G, B: fogBox, k: fogK, lk: engineSetting('air', 'fogLamps') ?? 1, steps: fogSteps }
         : null,
       impact: BT && BT.impact ? impactOnScreen(C, BT.impact) : null,
+      caPulse: BT ? BT.caPulse || 0 : 0,
     });
   /* CAM-3: what the blur did this frame, for the debug log, the Studio's blur guides and the checks (no names) */
   walkRenderer.lensInfo = {

@@ -14,13 +14,14 @@
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
  * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all', residents?: 'none' | 'all',
  *   policy?: string, scenes?: 'make' | 'skip', expedition?: number, mods?: string[], lvl?: number,
- *   badges?: 'none' | 'all' }} SimOptions
+ *   badges?: 'none' | 'all', perks?: string[], boons?: string[], held?: string }} SimOptions
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   MAX_TURNS: [() => MAX_TURNS],
+  SIM_BOON_PLACES: [() => SIM_BOON_PLACES],
   SIM_CLOCK: [() => SIM_CLOCK],
   SIM_LITE_PLACE: [() => SIM_LITE_PLACE],
   SIM_NOTE: [() => SIM_NOTE],
@@ -40,6 +41,8 @@ expose({
 /** a guard against a battle that never ends in the simulation: the game itself ends one at rules.json battle.turnCap
  * (battle-engine.js turnCapCheck), so this is never reached by a battle the game plays */
 export const MAX_TURNS = 60;
+/** PK-12: how many places a boon or curse the options start a run with lasts (longer than any run) */
+export const SIM_BOON_PLACES = 99;
 /**
  * Studio plan T3.2: the player's part, the bot policy. Every number the simulation uses that isn't the game's own rule is
  * here, by name, and every report names the policy and its settings: the results measure this bot, not a player.
@@ -138,12 +141,12 @@ export function runSimOn(env) {
   const { RULES, TRAINERS } = data;
   const R = RULES.run,
     { runArrive, runNext, runTownSize, runWorldNode, runWeather } = modules['run-map'],
-    { fieldBadgeKey, fieldMoveState, runSideOpen } = modules['run-side'],
+    { fieldBadgeKey, fieldMoveState, fieldRope, runSideOpen } = modules['run-side'],
     MOVES = (GAME_DATA.fieldMoves && GAME_DATA.fieldMoves.moves) || {},
     { runByExpedition, runEnd } = modules['run-state'],
     { runScenesMake, runWorldTables } = modules['run-scenes'],
     { eventAt } = modules.encounters,
-    { runArriveFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen, runStallStock } =
+    { runArriveFx, runBuyFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen, runStallStock } =
       modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
     { runStartOn, runStartPlan } = modules['run-start'],
@@ -151,7 +154,7 @@ export function runSimOn(env) {
     { runUnlocks } = modules.unlocks,
     { routeTrainerTally, runRouteTrainers } = modules['route-trainers'],
     { rewardDataGame, rewardTake } = modules.rewards,
-    { perkBuy, perkChoose, perkPrice, perkShelf } = modules.perks,
+    { perkBuy, perkCap, perkChoose, perkShelf, perkShopPrice, perkTeamOf } = modules.perks,
     { pointBudget, pointPick } = modules['starter-points'],
     { modTypeFits } = modules.modifiers,
     { residentCandidate } = modules.residents,
@@ -289,6 +292,12 @@ export function runSimOn(env) {
       ),
       { home, pack }
     );
+    /* PK-12, the balance pass: a run that starts holding these Perks (past the cap), with these boons and curses on for
+       the whole run, and this held item on each Billie (the policy `never-pick` keeps it to them) */
+    for (const id of o.perks || []) if (data.PERKS[id] && !run.perks.includes(id)) run.perks.push(id);
+    for (const id of o.boons || [])
+      if (data.BOONS[id]) modules['run-enc'].encOf(run).boons.push({ id, left: SIM_BOON_PLACES, src: 'sim' });
+    if (o.held && data.ITEMS[o.held] && data.ITEMS[o.held].hold) for (const m of s.team) m.held = o.held;
     const balance = o.scenes === 'skip',
       scenes = balance ? null : runScenesMake(run, worldData()),
       W = runWorldTables(run, data.LOCATIONS[0], worldData()),
@@ -340,7 +349,7 @@ export function runSimOn(env) {
         /** the lost place's row on the map (null: not lost there) @type {number | null} */
         lostRow: null,
         /** money in by where it came from, and out by what it paid for (Studio plan T3.4) */
-        moneyIn: { prize: 0, reward: 0 },
+        moneyIn: { prize: 0, reward: 0, perks: 0 },
         moneyOut: { heal: 0, shop: 0, perks: 0 },
         /** each run foe fought: its leader, its node's type, won or not @type {any[]} */
         foes: [],
@@ -399,13 +408,27 @@ export function runSimOn(env) {
           const stock = runShopOpen(run, i, run.clock, R.shop, UNLOCK_DATA);
           /* the shop's Perk, drawn as the shop opens (perks.js perkShelf), bought as the policy says, keeping the
              reserve (shop.js shopPerkBuy: its price with the price rows) */
-          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks);
+          const shelf = perkShelf(run, i, run.clock, data.PERKS, R.perks, perkTeamOf(s.team));
           if (shelf) {
-            const cost = fxRunPrice(run, data.PERKS, 'shop', perkPrice(data.PERKS[shelf], R.perks)),
-              c = s.se >= cost + P.reserve ? simPerkChoice([shelf], run.perks, data.PERKS, R.perks, P) : null;
+            const cost = perkShopPrice(run, shelf, data.PERKS, R.perks),
+              c =
+                s.se >= cost + P.reserve
+                  ? simPerkChoice(
+                      [shelf],
+                      run.perks,
+                      data.PERKS,
+                      { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+                      P
+                    )
+                  : null;
             at.relic = { id: shelf, price: cost };
-            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop)) {
+            const se0 = s.se;
+            if (c && !perkBuy(run, i, run.clock, data.PERKS, R.perks, c.drop, s)) {
+              /* PK-6: a give row's Moneys on taking it (Boarding Pass) */
+              stats.moneyIn.perks += s.se - se0;
               s.se -= cost;
+              /* PK-1: the buy moment (shop.js shopPerkBuy); PK-5: a free row gives the price back */
+              stats.moneyIn.perks += runBuyFx(s, data.PERKS, cost).free;
               stats.spent += cost;
               stats.moneyOut.perks += cost;
               at.relic.bought = c.drop ? { drop: c.drop } : 1;
@@ -421,6 +444,8 @@ export function runSimOn(env) {
           ) {
             s.se -= price;
             s.pyramids.pyramid = (s.pyramids.pyramid || 0) + 1;
+            /* PK-1: the buy moment (shop.js shopBuy); PK-5: a free row gives the price back */
+            stats.moneyIn.perks += runBuyFx(s, data.PERKS, price).free;
             stats.spent += price;
             stats.moneyOut.shop += price;
           }
@@ -467,7 +492,8 @@ export function runSimOn(env) {
           const pick = run.enc && run.enc.reward,
             c =
               pick && P.rewards === 'first-item'
-                ? pick.cards.findIndex((/** @type {any} */ x) => x.kind !== 'tutor')
+                ? /* PK-7: items only: a perk card is no item */
+                  pick.cards.findIndex((/** @type {any} */ x) => x.kind !== 'tutor' && x.kind !== 'perk')
                 : -1;
           if (pick) rewardTake(run, s, c >= 0 ? c : null, rewardDataGame(s.team));
         }
@@ -514,6 +540,8 @@ export function runSimOn(env) {
               if (q.graft) stats.caughtSpliced++;
               res = { over: 'caught', turns: B.turn };
             } else {
+              /* PK-5: a refund row's pyramid comes back (battle.js finishThrow) */
+              if (c.refund) s.pyramids.pyramid++;
               /* a miss: the foe's turn */
               fn('enemyOnly')();
             }
@@ -573,9 +601,18 @@ export function runSimOn(env) {
           stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simPerkChoice(run.offer, run.perks, data.PERKS, R.perks, P);
+            const c = simPerkChoice(
+              run.offer,
+              run.perks,
+              data.PERKS,
+              { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+              P
+            );
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
-            perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined);
+            const se0 = s.se;
+            perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined, s);
+            /* PK-6: a give row's Moneys on taking it (Boarding Pass) */
+            stats.moneyIn.perks += s.se - se0;
           }
           if (node.type === 'boss') {
             stats.won = true;
@@ -585,7 +622,7 @@ export function runSimOn(env) {
         /* on: into the side area when its field move can be used here (the policy takes it), out by its way out
            at its last place, else a lane drawn from the seed */
         const next = runNext(run.map, i),
-          side = simSideNext(run.map, i, s.meta.badges, simTypes());
+          side = simSideNext(run.map, i, s.meta.badges, simTypes(), fieldRope(run));
         if (side) {
           if (side.open) {
             runSideOpen(run.map);
@@ -596,7 +633,11 @@ export function runSimOn(env) {
         else i = next[modules.rng.rngFrom(seed, 'sim|path|' + i).int(0, next.length - 1)];
         runArrive(s, i, MAP_DATA);
         /* walking in: the Perks' heal rows (run-loop.js runArriveFx, as walk-control.js through runArrivedFx) */
-        fxHealed = runArriveFx(s, data.PERKS);
+        const paid = { money: 0, cost: 0 };
+        fxHealed = runArriveFx(s, data.PERKS, paid);
+        /* PK-5: a money share row (Tip Jar); PK-7: what a Perk charges on arrival (Subscription Box) */
+        stats.moneyIn.perks += paid.money || 0;
+        stats.moneyOut.perks += paid.cost || 0;
       }
     } finally {
       data.worldHubBack();
@@ -729,12 +770,13 @@ export function runSimOn(env) {
    * RL-R2b: the policy at a side area: from the obstacle's place into the side when its field move can be used (the
    * badge kept and a Billie of the type standing: `open`), from its last place out by its way out; else null (the
    * lane as usual) @param {any} map @param {number} i @param {Record<string, number>} badges
-   * @param {{ name: string, types: string[] }[]} team @returns {{ to: number, open?: boolean } | null}
+   * @param {{ name: string, types: string[] }[]} team @param {boolean} [rope] PK-6: a sideOpen rule held (Coil of
+   * Rope: the badge alone) @returns {{ to: number, open?: boolean } | null}
    */
-  function simSideNext(map, i, badges, team) {
+  function simSideNext(map, i, badges, team, rope = false) {
     const S = map.side;
     if (!S) return null;
-    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team).state === 'ask')
+    if (i === S.from && MOVES[S.move] && fieldMoveState(MOVES[S.move], badges, team, rope).state === 'ask')
       return { to: S.nodes[0], open: true };
     if (i === S.nodes[S.nodes.length - 1] && S.to >= 0) return { to: S.to };
     return null;

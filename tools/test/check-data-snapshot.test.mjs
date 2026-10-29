@@ -168,6 +168,34 @@ test('check-data: planted arenas (WM-7)', t => {
   );
 });
 
+test('check-data: planted battle animations (VFX-8)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'battleAnims.json': A => {
+        A.defaults.H = 'nosuchfamily';
+        A.families.strike.steps[1].color = 'nosuchcolour';
+        A.families.shot.steps[2].types = ['Nosuchtype'];
+        A.families.guard.hit = 900;
+      },
+      'moves.json': M => {
+        M.handshake.anim = 'nosuchscene';
+        M.hedge.anim = 'guard';
+      },
+    })
+  );
+});
+
+test('check-data: planted battle effect budgets (VFX-12)', t => {
+  t.assert.snapshot(
+    checkDataOn({
+      'battleAnims.json': A => {
+        A.budgets.particles[2] = 300;
+        A.budgets.burst[3] = 60;
+      },
+    })
+  );
+});
+
 test('check-data: planted Expeditions and challenges (RL-13)', t => {
   t.assert.snapshot(
     checkDataOn({

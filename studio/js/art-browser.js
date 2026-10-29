@@ -19,7 +19,8 @@ import {
   tileSetOpen,
 } from '../../game/js/hooks.js';
 import { $ } from '../../game/js/util.js';
-import { artURL } from '../../game/js/art.js';
+import { battleRampColors } from '../../game/js/logic/battle-anims.js';
+import { ART_CACHE, artURL } from '../../game/js/art.js';
 import { EFFECT_FRAMES } from '../../game/js/walk-view.js';
 import { escapeHtml } from './game-stand-ins.js';
 import { offPalette, paletteColors, pixelKeyAction } from '../../game/js/logic/pixel-ops.js';
@@ -37,6 +38,7 @@ import {
 } from '../../game/js/logic/art-search.js';
 import { LEGACY_DIR, artRefIndex, artRefInputs, artRefState, artReport } from '../../game/js/logic/art-refs.js';
 import { stripOf } from '../../game/js/logic/frame-strips.js';
+import { svgIconKey } from '../../game/js/logic/svg-pixels.js';
 import {
   ACTIONS,
   SECTIONS,
@@ -75,6 +77,7 @@ import { legacyLoad, legacyView } from './legacy-view.js';
 import { mountStripPlayers, stripPlayerHTML } from './strip-player.js';
 /* eslint-disable no-func-assign */
 expose({
+  BATTLE_ANIM_GREYS: [() => BATTLE_ANIM_GREYS],
   SHOWN: [() => SHOWN],
   SIZES_KEY: [() => SIZES_KEY],
   SIZE_KEY: [() => SIZE_KEY],
@@ -94,6 +97,8 @@ expose({
   artSizesRead: [() => artSizesRead, v => (artSizesRead = v)],
   artStripOf: [() => artStripOf],
   artTreeHas: [() => artTreeHas, v => (artTreeHas = v)],
+  battleAnimArtShown: [() => battleAnimArtShown, v => (battleAnimArtShown = v)],
+  battleAnimRampsHTML: [() => battleAnimRampsHTML, v => (battleAnimRampsHTML = v)],
   detailHTML: [() => detailHTML, v => (detailHTML = v)],
   editCardHTML: [() => editCardHTML, v => (editCardHTML = v)],
   fileOf: [() => fileOf],
@@ -102,6 +107,7 @@ expose({
   metaOf: [() => metaOf],
   mountArtBrowser: [() => mountArtBrowser, v => (mountArtBrowser = v)],
   mountArtPixels: [() => mountArtPixels, v => (mountArtPixels = v)],
+  mountBattleAnimRamps: [() => mountBattleAnimRamps, v => (mountBattleAnimRamps = v)],
   reportHTML: [() => reportHTML, v => (reportHTML = v)],
   sizeKey: [() => sizeKey],
   sizeStore: [() => sizeStore, v => (sizeStore = v)],
@@ -343,7 +349,71 @@ ACTIONS.abReport = () => {
 const metaOf = (path, ix) => ({ ...(artSize(path) || {}), state: ix ? artRefState(ix.get(path)) : undefined });
 /* SA-2a: a picture's frames, when the game animates it (logic/frame-strips.js), and the builder that draws it */
 export const artStripOf = path =>
-  stripOf(path, { effects: EFFECT_FRAMES, life: (studioState.D.scenery || {}).life || {} });
+  stripOf(path, {
+    effects: EFFECT_FRAMES,
+    life: (studioState.D.scenery || {}).life || {},
+    anims: (studioState.D.battleAnims || {}).sprites || {},
+  });
+/* VFX-10: a battle effect strip (art/battle/anims) through every ramp of battleAnims.json, as the battle colours it:
+   grey index i is the ramp's step i, 7 stays white; a pixel off the 8 greys shows magenta */
+const BATTLE_ANIM_GREYS = [36, 64, 96, 128, 160, 192, 224, 255];
+function battleAnimRampsHTML(path) {
+  const A = studioState.D.battleAnims;
+  if (!A || !A.ramps || !/^art\/battle\/anims\/[\w-]+\.png$/.test(path)) return '';
+  return `<h4>In each ramp</h4><div class="ab-ramps" data-src="${escapeHtml(thumbSrc(path))}">${Object.keys(A.ramps)
+    .map(
+      id => `<figure><canvas data-ramp="${escapeHtml(id)}"></canvas><figcaption>${escapeHtml(id)}</figcaption></figure>`
+    )
+    .join('')}</div>`;
+}
+/* the game's battle effects read the game's picture cache: a repainted strip's unsaved canvas goes there (as the
+   Robots editor does), so the battle preview draws it */
+function battleAnimArtShown() {
+  for (const [path, c] of studioState.artDirty)
+    if (/^art\/battle\/anims\//.test(path) && ART_CACHE.img[path.slice(4)] !== c)
+      ART_CACHE.img[path.slice(4)] = Object.assign(c, {
+        complete: true,
+        naturalWidth: c.width,
+        naturalHeight: c.height,
+      });
+}
+function mountBattleAnimRamps(root = document) {
+  battleAnimArtShown();
+  const A = studioState.D.battleAnims;
+  root.querySelectorAll('.ab-ramps').forEach(box => {
+    const im = new Image();
+    im.onload = () => {
+      const c0 = document.createElement('canvas');
+      c0.width = im.naturalWidth;
+      c0.height = im.naturalHeight;
+      const x0 = c0.getContext('2d');
+      x0.drawImage(im, 0, 0);
+      const src = x0.getImageData(0, 0, c0.width, c0.height),
+        types = Object.fromEntries((studioState.D.types || []).map(t => [t.id, t.glow || t.color])),
+        pal = (window.NW_PALETTE && window.NW_PALETTE.ramps) || {};
+      box.querySelectorAll('canvas').forEach(cv => {
+        const C = battleRampColors(
+            A.ramps[cv.dataset.ramp],
+            pal,
+            (A.colors && A.colors.white) || '#FFFFFF',
+            types[cv.dataset.ramp]
+          ),
+          rgb = (C ? C.steps : []).map(h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16))),
+          out = new ImageData(src.width, src.height);
+        for (let i = 0; i < src.data.length; i += 4) {
+          if (src.data[i + 3] < 128) continue;
+          const g = BATTLE_ANIM_GREYS.indexOf(src.data[i]),
+            c = g >= 0 && rgb[g] ? rgb[g] : [255, 0, 255];
+          out.data.set([c[0], c[1], c[2], 255], i);
+        }
+        cv.width = src.width;
+        cv.height = src.height;
+        cv.getContext('2d').putImageData(out, 0, 0);
+      });
+    };
+    im.src = box.dataset.src;
+  });
+}
 function artMadeByHTML(path) {
   const t = artMadeBy(path);
   return t
@@ -433,7 +503,7 @@ function detailHTML(path, ix) {
     refs = ix ? ix.get(path) || [] : null,
     ro = artReadOnly(path),
     png = /\.png$/i.test(path) && !ro,
-    icon = !ro && /^art\/ui\/([\w-]+)\.svg$/.exec(path),
+    icon = !ro && svgIconKey(path),
     eds = ix ? artEditorsFor(path) : [];
   const used =
     refs == null
@@ -455,11 +525,11 @@ function detailHTML(path, ix) {
         : '';
   const pal = artBrowser.pal && artBrowser.pal.path === path ? artBrowser.pal.text : '';
   return `<div class="ab-big"><img src="${escapeHtml(thumbSrc(path))}" alt=""></div>
-  ${strip ? stripPlayerHTML(path, strip) : ''}${scenePreviewHTML(path)}
+  ${strip ? stripPlayerHTML(path, strip) : ''}${scenePreviewHTML(path)}${battleAnimRampsHTML(path)}
   <p class="mono ab-path">${escapeHtml(path)}</p>
   <p class="help">${s ? `${s.w}×${s.h} px` : 'size not read yet'}${f ? ` · ${(f.size / 1024).toFixed(1)} KB` : ''}${studioState.artDirty.has(path) || studioState.textDirty.has(path) ? ' · edited, not saved' : ''}${frames ? ' · ' + escapeHtml(frames) : ''}</p>
   ${pal ? `<p class="help">${escapeHtml(pal)}</p>` : ''}${artMadeByHTML(path)}${ro ? '<p class="help">Legacy art (art/legacy): kept for reference, read-only here. Download it to look at it closer.</p>' : ''}
-  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon[1])}">Edit icon</button>` : ''}${path === 'art/icons/icons.png' ? '<button class="btn sm" data-act="atOpen">Edit the rectangles</button>' : ''}${ro ? '' : `<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button>`}<button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
+  <div class="seg-row ab-acts">${png ? `<button class="btn sm primary" data-act="abEdit" data-p="${escapeHtml(path)}">Edit pixels</button>` : ''}${icon ? `<button class="btn sm primary" data-act="icOpen" data-n="${escapeHtml(icon)}">Edit icon</button>` : ''}${path === 'art/icons/icons.png' ? '<button class="btn sm" data-act="atOpen">Edit the rectangles</button>' : ''}${ro ? '' : `<button class="btn sm" data-act="abReplace" data-p="${escapeHtml(path)}">Replace…</button>`}<button class="btn sm" data-act="abDownload" data-p="${escapeHtml(path)}">Download</button>${eds.map(([label], i) => `<button class="btn sm" data-act="abOpen" data-i="${i}" data-p="${escapeHtml(path)}">Open in ${escapeHtml(label)}</button>`).join('')}</div>
   <h4>Used by</h4>${used}`;
 }
 function gridHTML(ix) {
@@ -554,6 +624,7 @@ function mountArtBrowser() {
   else artDetailNotes(artBrowser.sel);
   mountStripPlayers();
   mountScenePreviews();
+  mountBattleAnimRamps();
 }
 /* a file of game/ is in the repository's tree (the file list keeps pictures only; the tree has every file) */
 let treeFiles = null;
@@ -600,6 +671,7 @@ async function artDetailNotes(path) {
       side.innerHTML = detailHTML(path, artBrowser.ix);
       mountStripPlayers(side);
       mountScenePreviews(side);
+      mountBattleAnimRamps(side);
     }
   }
 }

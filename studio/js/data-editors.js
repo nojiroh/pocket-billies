@@ -7,6 +7,10 @@ import {
   PLAN_INFO,
   artPaint,
   artPicSrc,
+  artPictures,
+  heldItemHTML,
+  iconEditOpen,
+  iconSrc,
   loadWardrobe,
   makeBlankBody,
   musicCryCardHTML,
@@ -28,6 +32,7 @@ import {
 } from '../../game/js/person-art.js';
 import { drawRig, rigPose } from '../../game/js/skeleton-rig.js';
 import { escapeHtml } from './game-stand-ins.js';
+import { pixelsToSvg, svgIconKey } from '../../game/js/logic/svg-pixels.js';
 import { renameTypeIn } from '../../game/js/logic/type-rename.js';
 import {
   ACTIONS,
@@ -63,18 +68,17 @@ import {
   updateTopBar,
   writePath,
 } from './studio-app.js';
+import { textStep } from './pixel-canvas.js';
 import { conditionField, scriptField } from './story-editor.js';
 import {
   ATLAS_CACHE,
   atlasGet,
   atlasPath,
-  fileToCanvas,
   hueShift,
   loadedAtlas,
   markArt,
   mountPreviews,
   openPixelEditor,
-  pickFile,
   playSpritePreviewAction,
   rigFor,
   spritePreviewHTML,
@@ -93,7 +97,11 @@ expose({
   cloneSpeciesArt: [() => cloneSpeciesArt, v => (cloneSpeciesArt = v)],
   evolutionRowHTML: [() => evolutionRowHTML, v => (evolutionRowHTML = v)],
   iconSpriteHTML: [() => iconSpriteHTML, v => (iconSpriteHTML = v)],
+  itemArtButtonsHTML: [() => itemArtButtonsHTML, v => (itemArtButtonsHTML = v)],
+  itemArtKey: [() => itemArtKey, v => (itemArtKey = v)],
+  itemPicHTML: [() => itemPicHTML, v => (itemPicHTML = v)],
   lineIndexOf: [() => lineIndexOf],
+  moveAnimField: [() => moveAnimField, v => (moveAnimField = v)],
   personLook: [() => personLook, v => (personLook = v)],
   personPreviewHTML: [() => personPreviewHTML, v => (personPreviewHTML = v)],
   poolName: [() => poolName],
@@ -104,6 +112,7 @@ expose({
   selectedLineIndex: [() => selectedLineIndex],
   statsCard: [() => statsCard, v => (statsCard = v)],
   trainerRobotHTML: [() => trainerRobotHTML, v => (trainerRobotHTML = v)],
+  typeFxIcons: [() => typeFxIcons, v => (typeFxIcons = v)],
   whereCard: [() => whereCard, v => (whereCard = v)],
 });
 /* eslint-enable no-func-assign */
@@ -785,6 +794,22 @@ SIDE_LIST_RENDERERS.mq = () => {
     )
     .join('');
 };
+/* VFX-11: the move's animation (moves.json anim): one of battleAnims.json's families (the 16 first, then the legacy
+   ones) or a signature scene; empty plays its kind's default */
+function moveAnimField(D, p) {
+  const A = D.battleAnims || { families: {}, scenes: {} },
+    fams = Object.keys(A.families || {}),
+    opts = [
+      ...fams.filter(k => !k.startsWith('legacy_')).map(k => [k, k]),
+      ...Object.keys(A.scenes || {}).map(k => [k, `${k} (scene)`]),
+      ...fams.filter(k => k.startsWith('legacy_')).map(k => [k, `${k} (before VFX-11)`]),
+    ];
+  return selectField('Animation', `${p}.anim`, opts, {
+    none: 'Its kind’s default',
+    opt: 1,
+    help: 'The family (or signature scene) it plays when it lands; its type’s kit colours it. Misses and blocks play their own.',
+  });
+}
 SECTIONS.moves = () => {
   const D = studioState.D;
   if (!D.moves[studioState.sel.move]) studioState.sel.move = Object.keys(D.moves)[0];
@@ -824,6 +849,7 @@ SECTIONS.moves = () => {
   return `<div class="split"><aside class="list-col"><div class="list-head"><input type="search" placeholder="Search moves" data-search="mq" data-list="moveList" value="${escapeHtml(studioState.sel.mq || '')}"><button class="btn primary" data-act="moveNew">+ New move</button></div><div class="llist" id="moveList">${SIDE_LIST_RENDERERS.mq()}</div></aside>
  <div class="ed-col"><div class="ed-head"><div><small class="mono">${escapeHtml(k)}</small><h2>${escapeHtml(M.n)}</h2></div><div class="seg-row"><button class="btn" data-act="bpMove" data-id="${escapeHtml(k)}" title="Play this move on the battle stage">▶ Preview animation</button><button class="btn subtle" data-act="moveDup">Duplicate</button><button class="btn danger" data-act="moveDel">Delete</button></div></div>
  ${card('Basics', grid(textField('Name', `${p}.n`, { max: 28 }), selectField('Type', `${p}.t`, typeOptions(true), { rr: 1 }), selectField('Kind', `${p}.c`, MOVE_CATEGORIES, { rr: 1 }), numberField('Power', `${p}.p`, { opt: 1, min: 0, max: 250, step: 5, help: M.c === 'X' ? 'Status moves usually have no power.' : '' }), numberField('Accuracy', `${p}.a`, { unit: '%', min: 0, max: 100, step: 5, help: '0 means it never misses.' }), numberField('Priority', `${p}.pr`, { opt: 1, min: -3, max: 5, step: 1, help: 'Higher goes first. Guard uses 4.' })) + textField('Description', `${p}.d`, { area: 1, rows: 2 }))}
+ ${card('Animation', moveAnimField(D, p), { sub: 'How the battle plays it (Battle effects: battleAnims.json).' })}
  ${card('Effects', fxB, { sub: 'Leave anything empty to switch it off.' })}
  ${card(
    'Learned by',
@@ -943,6 +969,17 @@ const FX_ICONS = [
   'zz',
   'down',
 ];
+/* VFX-10: the particle picker offers every icon a type uses (flame, leaf, pebble, feather, orb, cog and scale were
+   missing, so 7 types' particles showed none picked) and the icons the battle draws as strips, after the old list */
+function typeFxIcons(D) {
+  const keys = [
+    ...FX_ICONS,
+    ...(D.types || []).flatMap(t => t.fx || []),
+    ...((D.untyped && D.untyped.fx) || []),
+    ...Object.keys((D.battleAnims && D.battleAnims.iconSprites) || {}),
+  ];
+  return [...new Set(keys)].filter(k => !ARTMAN.icons || ARTMAN.icons[k]);
+}
 SECTIONS.types = () => {
   const D = studioState.D,
     T = D.types;
@@ -961,7 +998,12 @@ SECTIONS.types = () => {
       t,
       i
     ) => `<div class="type-row">${typeChipHTML(t.id)}${grid(textField('Name', `types.${i}.id`, { max: 14, help: 'Renaming updates every move, Billie and rule that uses it.' }), colorField('Color', `types.${i}.color`), colorField('Text color', `types.${i}.text`), selectField('Ability', `types.${i}.passive`, PASSIVES), textField('Ability name', `types.${i}.passiveName`, { max: 20, help: 'What the player reads in the Guide and in battle.' }), textField('What it does', `types.${i}.passiveText`, { area: 1, rows: 2, help: 'One sentence for the Guide.' }))}
-  <div class="fxpick"><span>Battle particles</span>${FX_ICONS.map(k => `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`).join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
+  <div class="fxpick"><span>Battle particles</span>${typeFxIcons(D)
+    .map(
+      k =>
+        `<button class="icb ${(t.fx || []).includes(k) ? 'on' : ''}" data-act="typeFx" data-i="${i}" data-k="${k}" title="${k}">${iconSpriteHTML(k, 2, k)}</button>`
+    )
+    .join('')}</div><button class="btn danger subtle" data-act="typeDel" data-i="${i}">Delete type</button></div>`
   ).join('');
   return `<div class="ed-col solo"><div class="ed-head"><h2>Types</h2><button class="btn primary" data-act="typeNew">+ New type</button></div>${card('Matchups', matrix)}${card('Types', rows + `<div class="type-row">${typeChipHTML('None')}${grid(colorField('Normal color', 'untyped.color'), colorField('Normal text', 'untyped.text'))}</div>`, { sub: 'Each type can have one ability. Abilities and their numbers are tuned under Rules → Battle.' })}</div>`;
 };
@@ -1046,25 +1088,51 @@ document.addEventListener('change', ev => {
 const ITEM_ICONS = Object.keys(ARTMAN.icons)
   .filter(k => k.startsWith('i_'))
   .map(k => k.slice(2));
+/* PK-11: an item's own picture's key ('items/<id>') while its file is there (on disk or made here, not saved), else '' */
+function itemArtKey(I) {
+  const key = I.img ? svgIconKey('art/' + I.img) : '',
+    path = 'art/' + I.img;
+  return key && (artPictures().includes(path) || studioState.textDirty.has(path)) ? key : '';
+}
+/* PK-11: an item's picture: its own (img, art/items/<id>.svg, drawn as the UI icons are) at the game's 72 and 36 px,
+   else its rectangle of the old atlas at 3x */
+function itemPicHTML(k, I) {
+  const key = itemArtKey(I);
+  if (!key)
+    return ARTMAN.icons['i_' + (I.icon || k)]
+      ? `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`
+      : '<span class="help">No picture</span>';
+  const src = escapeHtml(iconSrc(key));
+  return `<img class="pix item-art" src="${src}" alt="" width="72" height="72"><img class="pix item-art" src="${src}" alt="" width="36" height="36">`;
+}
+/* PK-11: Edit art opens its picture in the icon editor; Draw one makes art/items/<id>.svg (blank, or the one there) its
+   picture; back to the atlas only where its rectangle is still on the sheet */
+function itemArtButtonsHTML(k, I) {
+  const key = itemArtKey(I),
+    atlas = !!ARTMAN.icons['i_' + (I.icon || k)];
+  return `${key ? `<button class="btn subtle" data-act="icOpen" data-n="${escapeHtml(key)}">Edit art</button>` : `<button class="btn subtle" data-act="itemArt" data-k="${escapeHtml(k)}">Draw one</button>`}${I.img && atlas ? `<button class="btn subtle" data-act="itemImgOff" data-k="${escapeHtml(k)}">Use an atlas icon</button>` : ''}`;
+}
 SECTIONS.items = () => {
   const D = studioState.D;
   const items = Object.entries(D.items)
     .map(([k, I]) => {
       const p = `items.${k}`;
-      return `<div class="item-row"><div class="item-ic">${I.img ? `<img src="../game/art/${escapeHtml(I.img)}" width="40" height="40" class="pix">` : `<img src="${iconURL('i_' + (I.icon || k), 3)}" class="pix" alt="">`}<small class="mono">${escapeHtml(k)}</small></div>
+      return `<div class="item-row"><div class="item-ic">${itemPicHTML(k, I)}<small class="mono">${escapeHtml(k)}</small></div>
   <div>${grid(
     textField('Name', `${p}.n`, { max: 24 }),
     numberField('Shop price (Moneys)', `${p}.price`, { min: 0, step: 10 }),
     checkboxField('Sold in the Shop', `${p}.mint`, { help: 'Untick to make it a town-shop special.' }),
-    selectField(
-      'Icon',
-      `${p}.icon`,
-      ITEM_ICONS.map(i => [i, i]),
-      { rr: 1 }
-    )
+    I.img
+      ? ''
+      : selectField(
+          'Icon',
+          `${p}.icon`,
+          ITEM_ICONS.map(i => [i, i]),
+          { rr: 1 }
+        )
   )}
   ${grid(numberField('Restores HP', `${p}.hp`, { opt: 1, min: 0, step: 5 }), numberField('Restores everyone', `${p}.hpAll`, { opt: 1, min: 0, step: 5, help: 'Heals the whole team at once.' }), selectField('Cures', `${p}.cure`, [['any', 'Any status'], ...statusOptions()], { none: 'Nothing', opt: 1 }), numberField('Revives at', `${p}.revive`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Fraction of max HP after fainting (1 = full).' }), checkboxField('Evolution item (not used in battle)', `${p}.evoItem`, { num: 1 }), numberField('Repairs robot parts', `${p}.repair`, { opt: 1, min: 0, max: 1, step: 0.05, help: 'Phase 17: fixes this share of each part of one robot (1 = all).' }))}
-  ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}<div class="seg-row"><button class="btn subtle" data-act="itemImg" data-k="${k}">Upload a custom icon</button>${I.img ? `<button class="btn subtle" data-act="itemImgOff" data-k="${k}">Use an atlas icon</button>` : ''}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
+  ${textField('Description', `${p}.d`, { area: 1, rows: 2 })}${heldItemHTML(k, I)}<div class="seg-row">${itemArtButtonsHTML(k, I)}<span class="grow"></span><button class="btn danger subtle" data-act="itemDel" data-k="${k}">Delete</button></div></div></div>`;
     })
     .join('');
   const pyramids = Object.entries(D.pyramids)
@@ -1089,7 +1157,8 @@ ACTIONS.pyrPaint = d => artPaint(d.p, { label: 'Items & pyramids', fn: () => ope
 ACTIONS.itemNew = () => {
   const D = studioState.D,
     k = uniqueKey('item', x => !!D.items[x]);
-  D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', icon: 'potion', mint: true };
+  /* PK-11: no atlas icon: Draw one gives it its picture */
+  D.items[k] = { n: 'New Item', price: 200, hp: 30, d: 'Restores 30 HP.', mint: true };
   changed();
   render();
 };
@@ -1101,17 +1170,18 @@ ACTIONS.itemDel = async d => {
   changed();
   render();
 };
-ACTIONS.itemImg = async d => {
-  const f = await pickFile('image/png');
-  if (!f) return;
-  const c = await fileToCanvas(f);
-  if (c.width > 64 || c.height > 64) return toast('Use a small pixel icon (16×16 works best).', 'err');
-  const path = `art/items/${d.k}.png`;
-  markArt(path, c);
-  studioState.D.items[d.k].img = path.slice(4);
+/* PK-11: an item's own picture, art/items/<id>.svg: made blank first when it isn't there, named in its img, then open in
+   the icon editor (the new file and the img are two steps of the undo; Propose sends both). It replaces the PNG upload:
+   an item's picture is an icon (logic/data-checks.js dataItemArt) */
+ACTIONS.itemArt = d => {
+  const I = studioState.D.items[d.k],
+    path = `art/items/${d.k}.svg`;
+  if (!I) return;
+  if (!artPictures().includes(path) && !studioState.textDirty.has(path))
+    textStep(path, null, pixelsToSvg(new Uint8ClampedArray(36 * 36 * 4), 36, 36));
+  I.img = `items/${d.k}.svg`;
   changed();
-  render();
-  toast('Icon added. Save to game to keep it.');
+  iconEditOpen(`items/${d.k}`);
 };
 ACTIONS.itemImgOff = d => {
   delete studioState.D.items[d.k].img;

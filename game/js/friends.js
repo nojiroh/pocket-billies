@@ -21,14 +21,18 @@ import {
   provide,
   render,
   toast,
+  tradeRowNote,
+  tradeSheet,
+  tradeStart,
 } from './hooks.js';
 import { COATS, LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, plural } from './logic/rules.js';
+import { seenToward } from './logic/person-view.js';
 import { REPORT_REASONS, blockListClean, friendListFrom, reportHidden, reportTarget } from './logic/online.js';
 import { escapeHtml, saveData, saveHold, uiState } from './game-state.js';
 import { personWalkFrames, portraitHTML, warmPerson } from './person-art.js';
 import { rigCanvasHTML } from './skeleton-rig.js';
-import { directionOf, walkView } from './walk-view.js';
+import { seenYaw, walkView } from './walk-view.js';
 import { personItem } from './walk/frame-items.js';
 import { buddyBilly, worldBillyItem } from './world-billies.js';
 import { worldMap, worldMapSelect } from './world-bowl.js';
@@ -129,6 +133,8 @@ export async function initFriends() {
     watchFriends();
     /* ON-2: runs finished while offline go to my ghosts/<uid> now (boards.js) */
     if (typeof boardsPost === 'function') boardsPost(null);
+    /* ON-4: my trades, watched from here; one left midway finishes now (trade.js) */
+    if (typeof tradeStart === 'function') tradeStart();
     friends.unsub.push(
       db
         .collection('requests')
@@ -475,7 +481,7 @@ export function friendsHTML() {
         p = d.partner;
       return `<div class="fr-row">
   <span class="fr-face">${typeof portraitHTML === 'function' ? portraitHTML('friend:' + u, 44) : ''}</span>
-  <span class="fr-t"><b>${escapeHtml(friendShownName(u, d.name))}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${timeAgo(a.t)}` : 'Not seen yet'}</small>${p && SPECIES[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SPECIES[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}</span>
+  <span class="fr-t"><b>${escapeHtml(friendShownName(u, d.name))}</b><small>${a.place ? `In ${escapeHtml(a.place)} · ${timeAgo(a.t)}` : 'Not seen yet'}</small>${p && SPECIES[p.sp] ? `<small class="fr-pt">with ${escapeHtml(p.name || SPECIES[p.sp].n)} · Lv ${p.lvl || 1}</small>` : ''}${typeof tradeSheet === 'function' ? `<button class="pb small fr-trade${tradeRowNote(u) ? ' gold' : ''}" data-a="td-open" data-u="${escapeHtml(u)}" aria-label="Trade with ${escapeHtml(friendShownName(u, d.name, 'friend'))}${tradeRowNote(u) ? ` (${escapeHtml(tradeRowNote(u).toLowerCase())})` : ''}">Trade</button>` : ''}</span>
   ${p && SPECIES[p.sp] ? `<span class="fr-mon">${rigCanvasHTML(p.sp, 48, { build: p.build, coat: p.coat })}</span>` : ''}
   <span class="fr-acts">${a.node != null && LOCATIONS[a.node] && !saveData.run ? `<button class="pb small" data-a="fr-map" data-n="${a.node}">Map</button>` : ''}<button class="pb small quiet" data-a="fr-rm" data-u="${escapeHtml(u)}" aria-label="Remove, block or report ${escapeHtml(friendShownName(u, d.name, 'friend'))}">✕</button></span></div>`;
     })
@@ -626,7 +632,8 @@ function friendWorldItems(out, t, C0) {
     if (!fr) continue;
     if (typeof warmPerson === 'function') warmPerson(who);
     const P = walkView.pl,
-      dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? directionOf(P.x - x, P.z - z) : 'down',
+      /* CH-1: turned to you as the camera sees it (logic/person-view.js), else facing the camera */
+      dir = P && Math.hypot(P.x - x, P.z - z) < 5 ? seenToward(P.x - x, P.z - z, seenYaw()) : 'down',
       set = fr[dir] || fr.down,
       im = set && set[0];
     if (im) out.push(personItem('friend', im, x, z, C0, { fr: u }));

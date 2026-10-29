@@ -42,14 +42,23 @@ import { runByExpedition, runEnd } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
 import { runCardHome } from './logic/run-card.js';
 import { runWorldData } from './logic/run-world-data.js';
-import { runArriveFx, runBattleExtra, runRelease, runReleasePays, runWareHeals } from './logic/run-loop.js';
+import {
+  runArriveFx,
+  runBattleExtra,
+  runGaveText,
+  runRelease,
+  runReleasePays,
+  runWareHeals,
+} from './logic/run-loop.js';
 import { fxOfRun, fxPayoutRates, fxRunPrice } from './logic/effects.js';
+import { perkCap } from './logic/perks.js';
 import { boardPlan, boardPlayed } from './logic/daily.js';
 import { runRecord } from './logic/run-record.js';
 import {
   BATTLE_RULES,
   battleHost,
   battleSay,
+  fxSrcName,
   joinNames,
   liveActors,
   newBattle,
@@ -759,8 +768,18 @@ function runBattleAgain() {
 export const runClinicEach = () => fxRunPrice(saveData.run, PERKS, 'heal', RULES.run.healCost);
 /** walking into a place on a run: a Perk's heal row heals the team (before the arrival's save) */
 export function runArrivedFx() {
-  const gained = runArriveFx(saveData, PERKS);
+  const out = { money: 0, cost: 0, items: {}, hurt: 0, hurtBy: [] },
+    gained = runArriveFx(saveData, PERKS, out);
   if (gained > 0) toast(`Your Perks paid out: your team healed ${formatNumber(gained)} HP.`);
+  /* PK-5: a money share row (Tip Jar) */
+  if (out.money > 0) toast(`Your Perks paid out: ${plural(out.money, 'Money')}.`);
+  /* PK-7: a loot row's items (Subscription Box) */
+  const got = runGaveText({ money: 0, items: out.items });
+  if (got) toast(`Your Perks brought you ${got}.`);
+  /* PK-7: a money row that charges (Subscription Box) */
+  if (out.cost > 0) toast(`Your Perks charged you ${plural(out.cost, 'Money')}.`);
+  /* PK-9: a curse's turnHurt row at arrive (Paper Cuts) */
+  if (out.hurt > 0) toast(`${out.hurtBy.map(fxSrcName).join(' and ')}: your team lost ${formatNumber(out.hurt)} HP.`);
   /* TW-3: a parcel delivered (quest-board.js) */
   if (typeof questArrived === 'function') questArrived();
 }
@@ -779,8 +798,8 @@ const RUN_HINTS = {
   scrapyard: () => 'A Bureau scrapyard. Every wild one here is a bot, and bots leave salvage.',
   boss: () => 'The boss. Beat it and the run is won.',
   rival: () => 'Blake is here, and his team is built to beat yours. Win and you pick a reward.',
-  relic: () =>
-    `Perks last the run: hold up to ${RULES.run.perks.cap}. The Perks tab shows what each one does; town shops sell them too.`,
+  relic: run =>
+    `Perks last the run: hold up to ${perkCap(run, RULES.run.perks, PERKS)}. The Perks tab shows what each one does; town shops sell them too.`,
 };
 /** show a first-run hint once (nothing on a later run, or once shown) @param {keyof typeof RUN_HINTS} id */
 export function runHint(id) {

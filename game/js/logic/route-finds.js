@@ -21,9 +21,11 @@ import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { rngFrom } from './rng.js';
 import { runNodeSeed } from './run-map.js';
+import { fxRunRule } from './effects.js';
 import { routeUnderCanopy } from './route-trainers.js';
 /* eslint-disable no-func-assign */
 expose({
+  ROUTE_FIND_MORE: [() => ROUTE_FIND_MORE],
   ROUTE_FIND_REACH: [() => ROUTE_FIND_REACH],
   ROUTE_FIND_SPOTS: [() => ROUTE_FIND_SPOTS],
   // @ts-expect-error -- replaced on purpose
@@ -32,6 +34,8 @@ expose({
   routeFindCard: [() => routeFindCard, v => (routeFindCard = v)],
   // @ts-expect-error -- replaced on purpose
   routeFindGive: [() => routeFindGive, v => ((routeFindGive = v), provide({ routeFindGive }))],
+  routeFindsMore: [() => routeFindsMore],
+  routeFindsPerk: [() => routeFindsPerk],
   // @ts-expect-error -- replaced on purpose
   routeFindsPlace: [() => routeFindsPlace, v => (routeFindsPlace = v)],
 });
@@ -41,6 +45,18 @@ provide({ routeFindAt, routeFindGive });
 /** the spot kinds a find lies on, the hard ones first: a clearing only when no dead end or pocket is free (most dead
  * ends lie under a forest's canopy, where the camera can't see a pyramid) */
 export const ROUTE_FIND_SPOTS = ['deadend', 'pocket', 'clearing'];
+/** PK-6: the most finds more a side area's place holds (a sideFind rule's n: Rusty Key; data-checks.js FX_RULE_N) */
+export const ROUTE_FIND_MORE = 2;
+/** PK-6: how many more finds side areas hold for a run now: its sideFind rows' n (0 to ROUTE_FIND_MORE). The extra
+ * finds are always put in a side place's scene, each marked `more: k`, and show while this is k or more, so a Perk
+ * taken mid-run shows them at once @param {any} run */
+export const routeFindsMore = run =>
+  run && typeof fxRunRule === 'function' ? Math.max(0, Math.min(ROUTE_FIND_MORE, fxRunRule(run, 'sideFind'))) : 0;
+provide({ routeFindsMore }); /* to-module */
+/** PK-8: does a side area's place show its Perk lying on the ground: the run's sidePerk rule (the Adventurer's Pack
+ * set). The Perk's find is always put in a side place's scene (`perk: 1`) and shows while this holds @param {any} run */
+export const routeFindsPerk = run => !!run && typeof fxRunRule === 'function' && fxRunRule(run, 'sidePerk') > 0;
+provide({ routeFindsPerk }); /* to-module */
 /** how near (m) you walk to a find to pick it up */
 export const ROUTE_FIND_REACH = 0.8;
 
@@ -67,12 +83,17 @@ export function routeFindCard(g, cards, F) {
 /**
  * RT-4b: each run route's finds and its bramble row, put into its scene as props ({ k, x, z, find, card } and
  * { k: 'bush_bramble', act: 'field', move: 'cut', cut, unless }, both marked `rt4b`; those already there are put
- * again, so making the world twice gives one set). On the places routeRareSpots fills, after it.
+ * again, so making the world twice gives one set). On the places routeRareSpots fills, after it. PK-6: a side area's
+ * place also gets up to ROUTE_FIND_MORE finds more, after its own (`more: 1`, `more: 2`; their cards from a stream of
+ * their own, 'route|finds|more', so every other draw stays the same); they show only while the run's sideFind rule
+ * says so (routeFindsMore). They are left out of what the place got (`finds`) and listed in `more`. PK-8: and a Perk's
+ * find (card `perk`, `perk: 1`, flag find.<node>.perk) on the next free spot, shown while the run's sidePerk rule holds
+ * (routeFindsPerk); `perk: 1` in what the place got.
  * @param {Run} run @param {Record<string, any>} trainers the run's route trainers (routeTrainersPlace)
  * @param {any[]} scenes the run's scenes by node @param {Record<number, [number, number]>} rare routeRareSpots'
  * @param {{ rules: FindRules, cards: Record<string, FindCard> }} D
- * @returns {Record<number, { finds: string[], cut: string }>} what each place got (the debug log's)
- */
+ * @returns {Record<number, { finds: string[], cut: string, more?: string[], perk?: 1 }>} what each place got (the debug
+ * log's) */
 export function routeFindsPlace(run, trainers, scenes, rare, D) {
   /** @type {Record<number, [number, number][]>} */
   const stand = {};
@@ -81,7 +102,7 @@ export function routeFindsPlace(run, trainers, scenes, rare, D) {
       (stand[T.runNode] ||= []).push(T.route.at);
       if (T.route.mate) stand[T.runNode].push(T.route.mate);
     }
-  /** @type {Record<number, { finds: string[], cut: string }>} */
+  /** @type {Record<number, { finds: string[], cut: string, more?: string[], perk?: 1 }>} */
   const out = {};
   const F = D.rules;
   if (!run.map || !F) return out;
@@ -123,6 +144,48 @@ export function routeFindsPlace(run, trainers, scenes, rare, D) {
       sc.props.push({ k: 'find_pyramid', x: p.x, z: p.z, find: flag, card, unless: `opened:${flag}`, rt4b: 1 });
       return card;
     });
+    /* PK-6: a side place's finds more (Rusty Key), on the free spots left, from their own stream */
+    const more = /** @type {string[]} */ ([]);
+    let perk = 0;
+    if (run.map.nodes[i] && run.map.nodes[i].side) {
+      const gm = rngFrom(runNodeSeed(run.seed, i), 'route|finds|more'),
+        all = took.slice();
+      for (const p of free) {
+        if (more.length >= ROUTE_FIND_MORE) break;
+        if (!all.every(q => Math.hypot(q.x - p.x, q.z - p.z) > 6)) continue;
+        all.push(p);
+        const card = routeFindCard(gm, D.cards, F),
+          flag = `find.${i}.m${more.length + 1}`;
+        sc.props.push({
+          k: 'find_pyramid',
+          x: p.x,
+          z: p.z,
+          find: flag,
+          card,
+          unless: `opened:${flag}`,
+          rt4b: 1,
+          more: more.length + 1,
+        });
+        more.push(card);
+      }
+      /* PK-8: a Perk lying on the ground (the sidePerk rule: the Adventurer's Pack set), on the next free spot */
+      for (const p of free) {
+        if (!all.every(q => Math.hypot(q.x - p.x, q.z - p.z) > 6)) continue;
+        const flag = `find.${i}.perk`;
+        sc.props.push({
+          k: 'find_pyramid',
+          x: p.x,
+          z: p.z,
+          find: flag,
+          card: 'perk',
+          unless: `opened:${flag}`,
+          rt4b: 1,
+          perk: 1,
+        });
+        perk = 1;
+        break;
+      }
+    }
     /* the bramble row: in front of the rarer one or a find, where mapgen found a mouth */
     const guard = spots.filter((/** @type {any} */ p) => p.mouth && (isRare(p) || took.includes(p)));
     let cut = '';
@@ -145,17 +208,21 @@ export function routeFindsPlace(run, trainers, scenes, rare, D) {
       );
       cut = key;
     }
-    if (finds.length || cut) out[i] = { finds, cut };
+    if (finds.length || cut || more.length || perk)
+      out[i] = { finds, cut, ...(more.length ? { more } : {}), ...(perk ? { perk: /** @type {1} */ (1) } : {}) };
   }
   return out;
 }
 
-/** the find you are passing at (x, z): the first find prop within ROUTE_FIND_REACH whose flag is not set, or null
+/** the find you are passing at (x, z): the first find prop within ROUTE_FIND_REACH whose flag is not set, or null.
+ * PK-6: a side place's find more (`more: k`) only while `more` (routeFindsMore) is k or more; PK-8: its Perk's find
+ * (`perk: 1`) only with `perk` (routeFindsPerk)
  * @param {any} sc @param {number} x @param {number} z @param {Record<string, any>} flags the run's flags
- * @returns {{ card: string, flag: string } | null} */
-export function routeFindAt(sc, x, z, flags) {
+ * @param {number} [more] @param {boolean} [perk] @returns {{ card: string, flag: string } | null} */
+export function routeFindAt(sc, x, z, flags, more = 0, perk = false) {
   for (const p of (sc && sc.props) || []) {
-    if (!p.find || Math.hypot(p.x - x, p.z - z) > ROUTE_FIND_REACH) continue;
+    if (!p.find || Math.hypot(p.x - x, p.z - z) > ROUTE_FIND_REACH || (p.more || 0) > more || (p.perk && !perk))
+      continue;
     if (!(flags || {})[p.find]) return { card: p.card, flag: p.find };
   }
   return null;

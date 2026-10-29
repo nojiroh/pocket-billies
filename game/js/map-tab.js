@@ -11,12 +11,14 @@ import {
   POOLS,
   RESIDENTS,
   ROADS_BY_NODE,
+  RULES,
   SHOPS,
   gameData,
   locationSubtitle,
   trainersAt,
 } from './game-data.js';
 import { canEnter, canRide, distanceText, gateText, riderName, setTrip, stopTrip, tripTo } from './logic/rules.js';
+import { runForecastDays } from './logic/run-map.js';
 import { RUN_WEATHER_ICONS } from './ui-run-kit.js';
 import { kindChipHTML } from './ui-marks-kit.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
@@ -32,6 +34,7 @@ import {
   worldMapZoom,
 } from './world-bowl.js';
 import { runHint } from './run.js';
+import { boonStripHTML } from './perk-screen.js';
 import { questListHTML } from './quest-board.js';
 import { toast } from './overlay.js';
 /* eslint-disable no-func-assign */
@@ -52,13 +55,13 @@ provide({ paintWorldMapCard });
 /* to-module: end */
 export function renderWorldMapTab() {
   if (saveData.run) runHint('map');
-  /* RL-7: on a run, its day (ui-run-kit.js pb-day-chip; RL-R2: no deadline) */
+  /* RL-7: on a run, its day (ui-run-kit.js pb-day-chip; RL-R2: no deadline); PK-9: the boons and curses on beside it */
   const run = saveData.run && saveData.run.map ? saveData.run : null,
     M = saveData.meta,
     /* RL-8: on a run, the way to give it up (UI-18: in the header's ⋯ menu, a red button only once it is opened); in
        the hub, once a run has ended, what the runs brought home */
     day = run
-      ? `<div class="map-hrow"><pb-day-chip class="map-day" day="${run.clock}"></pb-day-chip><details class="map-more"><summary class="mbtn k-btn" aria-label="More" title="More">${uiIconHTML('more', 24)}</summary><div class="map-more-menu"><button class="pb small red" data-a="rungiveup">Give up the run</button></div></details></div>`
+      ? `<div class="map-hrow"><pb-day-chip class="map-day" day="${run.clock}"></pb-day-chip>${boonStripHTML(run)}<details class="map-more"><summary class="mbtn k-btn" aria-label="More" title="More">${uiIconHTML('more', 24)}</summary><div class="map-more-menu"><button class="pb small red" data-a="rungiveup">Give up the run</button></div></details></div>`
       : M && M.runs
         ? `<p class="map-meta"><pb-chip kind="research" value="${M.research}" label="Research"></pb-chip>${M.scrap ? ` <pb-chip kind="scrap" value="${M.scrap}" label="Scrap"></pb-chip>` : ''}${M.crests ? ` <pb-chip kind="crests" value="${M.crests}" label="Crests"></pb-chip>` : ''}${M.dna ? ` <pb-chip kind="dna" value="${M.dna}" label="DNA"></pb-chip>` : ''}</p>`
         : '';
@@ -72,10 +75,12 @@ function poolStrip(pool) {
   if (!P) return '';
   return `<div class="poolstrip">${P.list.map(([id]) => (saveData.seen[id] ? rigCanvasHTML(id, 36) : rigCanvasHTML(id, 36, { sil: 1, still: 1 }))).join('')}</div>`;
 }
-/* RL-7: a run's place's weather for a week from today (its forecast; ui-run-kit.js pb-forecast), today marked */
+/* RL-7: a run's place's weather for a week from today (its forecast; ui-run-kit.js pb-forecast), today marked; PK-4:
+   for as many days as the run shows (rules.json run.clock.ahead and Barometer's days: run-map.js runForecastDays) */
 function runForecastHTML(node) {
   const run = saveData.run,
-    days = ((run && run.forecast[node]) || []).slice(run.clock - 1, run.clock + 6);
+    n = run ? runForecastDays(run, gameData.biomes, RULES.run.clock.ahead) : 0,
+    days = ((run && run.forecast[node]) || []).slice(run.clock - 1, run.clock - 1 + n);
   return days.length
     ? `<pb-forecast class="mc-fc" label="Forecast" items="${escapeHtml(days.map(w => `${w}:${WEATHER_NAMES[w] || w}`).join(','))}" from="${run.clock}" value="${run.clock}"></pb-forecast>`
     : '';

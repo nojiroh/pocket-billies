@@ -23,6 +23,8 @@ import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { DATA, PB_DATA } from './data-files.mjs';
 import { musicFindings } from '../game/js/logic/music-studio.js';
+import { soundscapeFindings } from '../game/js/logic/soundscape.js';
+import { WATER_KINDS } from '../game/js/logic/water-kinds.js';
 import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js';
 import { islandProblems } from '../game/js/logic/island.js';
 import { POSES_BY_PLAN } from '../game/js/body-plan-animation.js';
@@ -35,6 +37,9 @@ import {
   dataCameraStops,
   dataBuildings,
   dataCatchArt,
+  dataPerkArt,
+  dataBoonArt,
+  dataItemArt,
   dataCurrencies,
   dataNodeTypes,
   dataRanchRules,
@@ -42,6 +47,7 @@ import {
   dataFieldMoves,
   dataSetPieces,
   dataArenas,
+  dataBattleAnims,
   dataModifiers,
   dataFactions,
   dataBosses,
@@ -51,6 +57,8 @@ import {
   dataResidents,
   dataFestivals,
   dataPerks,
+  dataPerkSets,
+  dataBoons,
   dataEvents,
   dataBanter,
   dataRelations,
@@ -322,6 +330,7 @@ for (const family of [
   dataFieldMoves,
   dataSetPieces,
   dataArenas,
+  dataBattleAnims,
   dataModifiers,
   dataFactions,
   dataBosses,
@@ -332,6 +341,8 @@ for (const family of [
   dataFestivals,
   dataNodeTypes,
   dataPerks,
+  dataPerkSets,
+  dataBoons,
   dataEvents,
   dataBanter,
   dataRelations,
@@ -364,6 +375,9 @@ if (D.music && check('music.schema.json', D.music, 'music.json')) {
         );
     });
 }
+// SND-10: the world's sounds (soundscape.json): the schema
+if (D.soundscape && check('soundscape.schema.json', D.soundscape, 'soundscape.json') && D.soundscape.water)
+  for (const m of soundscapeFindings(D.soundscape, WATER_KINDS)) problem('soundscape.json', m);
 // phase 10: the world map's look: the schema, then the terrain keys it names and the regions it covers
 if (D.worldmap && check('worldmap.schema.json', D.worldmap, 'worldmap.json')) {
   const terr = new Set(Object.keys((D.scenery && D.scenery.terrains) || {}));
@@ -402,6 +416,27 @@ for (const [where, what] of dataCatchArt(D.pyramids, p => {
   return existsSync(f) ? readFileSync(f, 'utf8') : null;
 }))
   problem(where, what);
+// PK-2: the Perks' pictures (an img that is there and is an icon; a Perk without one warns)
+for (const f of dataPerkArt(D.perks, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
+// PK-9: the boons' pictures (an img that is there and is an icon; a boon without one warns)
+for (const f of dataBoonArt(D.boons, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
+// PK-11: the items' pictures (an img at items/<id>.svg that is there and is an icon; an item without one warns)
+for (const f of dataItemArt(D.items, p => {
+  const f = join(DATA, '..', 'art', p);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}))
+  if (f.lvl === 'error') problem(f.where, f.msg);
+  else console.log(`  warning: ${f.where}: ${f.msg}`);
 // studio track ST-3: the part kits: the schema, then every picture they name is there with the size given
 // (ST-4: and the S/L pictures, turn limits that run least to most, slots the socket rules name, the part mirrored)
 if (D.partKits && check('partKits.schema.json', D.partKits, 'partKits.json')) {

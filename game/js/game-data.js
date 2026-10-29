@@ -18,7 +18,9 @@ import { formSpeciesOf } from './logic/forms.js';
 expose({
   ARENAS: [() => ARENAS],
   BANTER: [() => BANTER],
+  BATTLE_ANIMS: [() => BATTLE_ANIMS],
   BATTLE_STAGES: [() => BATTLE_STAGES],
+  BOONS: [() => BOONS],
   BOSSES: [() => BOSSES],
   BUILDINGS: [() => BUILDINGS],
   COATS: [() => COATS],
@@ -48,6 +50,7 @@ expose({
   PASSIVE_INFO: [() => PASSIVE_INFO],
   PEOPLE: [() => PEOPLE],
   PERKS: [() => PERKS],
+  PERK_SETS: [() => PERK_SETS],
   POOLS: [() => POOLS],
   PYRAMIDS: [() => PYRAMIDS],
   QUESTS: [() => QUESTS],
@@ -63,6 +66,7 @@ expose({
   SET_PIECES: [() => SET_PIECES],
   SHOPS: [() => SHOPS],
   SHOWCASE: [() => SHOWCASE],
+  SOUNDSCAPE: [() => SOUNDSCAPE],
   SPECIES: [() => SPECIES],
   SPECIES_FORMS: [() => SPECIES_FORMS],
   STAND_IN_LINES: [() => STAND_IN_LINES],
@@ -159,6 +163,7 @@ export const TYPE_RESISTED_BY = Object.fromEntries(
   gameData.types.map(t => [t.id, (t.weak || []).filter(x => TYPE_COLORS[x])])
 );
 export const PASSIVE = Object.fromEntries(gameData.types.map(t => [t.id, t.passive || '']));
+provide({ PASSIVE }); /* to-module */
 export const HIT_EFFECTS_BY_TYPE = Object.fromEntries(
   gameData.types.map(t => [t.id, t.fx && t.fx.length ? t.fx : ['pow', 'star']])
 );
@@ -405,6 +410,8 @@ export const SHOPS = /** @type {Record<string, import('../types/game-data').Shop
 export const NODE_TYPES = gameData.nodeTypes || {};
 /* sound track SND-2: the songs, jingles, cries' bases and where each song plays (music.json; audio/tracker.js plays them) */
 export const MUSIC = gameData.music || { songs: {}, jingles: {}, cries: { bases: [] }, where: [] };
+/* sound track SND-10: the world's sounds as recipes (soundscape.json; sound.js plays them) */
+export const SOUNDSCAPE = gameData.soundscape || { beds: {} };
 /* roguelite track RL-R2: the field moves that open a run's side areas (fieldMoves.json; logic/run-side.js) */
 export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) || {};
 provide({ FIELD_MOVES }); /* to-module */
@@ -435,6 +442,9 @@ provide({ GENES }); /* to-module */
 export const SET_PIECES = /** @type {import('../types/game-data').SetPiecesData | null} */ (gameData.setPieces || null);
 /* WM-7: the leaders' arenas, a raised, fenced ring on a mini-boss's place and the boss's (arenas.json; logic/arena-gen.js) */
 export const ARENAS = /** @type {import('../types/game-data').ArenasData | null} */ (gameData.arenas || null);
+/* VFX-8: how the battle plays a move, as data (battleAnims.json; logic/battle-anims.js, battle-anim-run.js) */
+export const BATTLE_ANIMS = /** @type {import('../types/game-data').BattleAnimsData} */ (gameData.battleAnims);
+provide({ BATTLE_ANIMS }); /* to-module */
 /* roguelite track RL-13: a run's Expeditions and challenges (modifiers.json; logic/modifiers.js) */
 export const MODIFIERS = /** @type {import('../types/game-data').ModifiersData} */ (
   gameData.modifiers || { expeditions: [{ name: 'Expedition I', d: '', fx: [] }], challenges: {} }
@@ -468,6 +478,13 @@ provide({ RESIDENTS }); /* to-module */
 export const FESTIVALS = /** @type {import('../types/game-data').FestivalsData | null} */ (gameData.festivals || null);
 /* roguelite track RL-12: a run's Perks (relics) and their effect rows (logic/effects.js) */
 export const PERKS = /** @type {Record<string, Perk>} */ (gameData.perks || {});
+provide({ PERKS }); /* to-module */
+/* perks track PK-8: Perk sets, a bonus for holding `need` of a set's Perks (perkSets.json; logic/perks.js perkSetsOn) */
+export const PERK_SETS = /** @type {Record<string, import('../types/game-data').PerkSet>} */ (gameData.perkSets || {});
+provide({ PERK_SETS }); /* to-module */
+/* perks track PK-9: boons and curses, named effects that last a few places (boons.json; logic/run-enc.js) */
+export const BOONS = /** @type {Record<string, import('../types/game-data').Boon>} */ (gameData.boons || {});
+provide({ BOONS }); /* to-module */
 /** RL-12b: the reward pick's cards */
 export const REWARDS = /** @type {Record<string, import('../types/game-data').RewardRow>} */ (gameData.rewards || {});
 provide({ REWARDS }); /* to-module */
@@ -594,15 +611,20 @@ export const worldExtra = {
   pools: /** @type {string[]} */ ([]),
   shops: /** @type {string[]} */ ([]),
   trainers: /** @type {string[]} */ ([]),
+  /* PK-7: the levels its foes were made with (run-scenes.js runWorldTables' foeUp; null: the hub's, or none given) */
+  foeUp: /** @type {number | null} */ (null),
+  foeSeed: '',
 };
 provide({ worldExtra }); /* to-module */
 /** RL-8: and its shops (a run town's) into SHOPS and its trainers (a run's mini-bosses and boss) into TRAINERS;
  * RL-8b: and its own world map look
  * @param {{ locations: LocationData[], roads: RoadLink[], pools: Record<string, Pool>, maps: Record<string, any>,
- *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any }} w */
+ *   shops?: Record<string, any>, trainers?: Record<string, any>, look?: any, foeUp?: number, foeSeed?: string }} w */
 export function worldPut(w) {
   worldHubBack();
   worldExtra.look = w.look || null;
+  worldExtra.foeUp = typeof w.foeUp === 'number' ? w.foeUp : null;
+  worldExtra.foeSeed = w.foeSeed || '';
   Object.assign(worldExtra.maps, w.maps);
   Object.assign(gameData.maps, w.maps);
   Object.assign(POOLS, w.pools);
@@ -622,6 +644,8 @@ export function worldAddTrainers(trainers) {
 }
 export function worldHubBack() {
   worldExtra.look = null;
+  worldExtra.foeUp = null;
+  worldExtra.foeSeed = '';
   for (const id of Object.keys(worldExtra.maps)) {
     delete gameData.maps[id];
     delete worldExtra.maps[id];
