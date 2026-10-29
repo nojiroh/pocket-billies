@@ -2,6 +2,55 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-4: the stack (sides, links, the cut, the "…", choices, the Log, the height budget, the camera lift) - 2026-10-28
+Branch `track/dialogue` (main already merged in at the start). Plan approved in Plan Mode. Code, CSS, data, a schema,
+tests, checks, a look tool, docs. No session tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-4".
+- Decided by the owner (Ask me before 4): **`[wait]` for anyone**; the automatic "…" is Kappi's (talkSkins.json
+  `"wait": "first"`); **the stamp is the Bureau's alone** (a `[stamp]` on another skin does nothing; the Studio's story
+  check warns). Narration (the "me" notes) sits in the middle of the stack, never links, never turns the sides.
+- Changed:
+  - New logic/talk-stack.js (`stackStep`, `stackFit`, `waitMs`, `cutAt`, `knockOf`) + talk-stack.test.mjs; in the
+    page, the Studio and the logic worker's list.
+  - talk.js: `.talk-layer > .talk-stack`, the live `.talk-box` last; `talkDemote` (the older bubble as a copy:
+    `.talk-old was-1/was-2`, `.talk-was` in `.talk-said`, one piece, inert, aria-hidden, its own small portrait; FLIP
+    up on the Web Animations API; linked: no portrait or name, a `.talk-bridge`; cut: `knocked`), `talkStackFit` (the
+    budget; publishes `talkBox.cover`), `talkCutLine`, the "…" (`.talk-wait`, a timer, tap skips), the Log
+    (`.talk-logbtn`, `.talk-log`, `talkBox.log`: memory only, cleared by `talkHide`; a tap or Escape closes it),
+    choices hide the older bubbles. Every lookup of the box is `.talk-box:not(.talk-old)` (older bubbles keep the
+    class for their shape).
+  - CSS: dialogue.css (the stack, sides mirrored by `--flip`/`--flip-dx` in the layers' transform with the text
+    level, older bubbles, link, knock, the "…", the Log), talk.css (the cutscene placement moved to the stack),
+    motion.css (`m-talk-wait`).
+  - Camera: `talkLiftShare` (logic/camera-moments.js, tested); walk/camera.js lowers the aim by it while any talk is
+    open (the hub's orbit camera too), followed as a goal so the dead zone doesn't eat it.
+  - talkSkins.json + schema: `wait`. logic/story-checks.js: the stamp warning (+ tests). docs/SCRIPTS.md.
+  - `?fixture=talk&stack=1&choice=1`; tools/look-talk.py `--only=stack` (pictures and measures); the gallery's
+    `talk-stack` section and baseline (its own commit); check-quick.py: the phone step's stack (one `.talk-who` and
+    `.talk-line`, at most 3 bubbles, the 40% budget, `ELEMENT_CEILING['dialogue'] = 20`) and the Safety step's name in
+    an older bubble and the Log.
+- Found, not changed / corrections: the track's height sum (130 + 146 + 64 + 64 = 404, not ~300): the cap counts the
+  bubbles above the bar only. The bottom bar with the minimap tile is ~190 px on 390×844, not 130, so three bubbles
+  reached ~62% of the screen and covered you at mid-screen: hence the camera lift. The "two-shot (talk.js:316)" is
+  walk/camera.js + logic/camera-moments.js, and the hub's free camera has no two-shot. RL-8 (a run's seam: "crossed
+  into … but its view never showed") and "Walking left and right … settings tabs" fail the same way on the commit
+  before DL-4 (1ebb2d55): not this session's.
+- Risky: the camera lift pans the hub's orbit camera up to ~19 m while a long talk is open (eased by the follow; not
+  seen on a phone). The "…" and the cut's auto-advance use timers. Older bubbles keep 2 rows; the budget often keeps
+  2 older bubbles, not 3, when the newest is a shout or has a stamp. `:has()` scopes the name tag's room for the Log
+  button (Safari 15.4+). FLIP and the pop-in are not measured on a phone.
+- Verified: lint, typecheck, format:check, check:modules, check:data (180 files), build clean. Unit tests 1968 pass
+  (talk-stack 9, camera-moments 11, story-checks 8 among them). check-fast 42: 37 in the full run, the 5 others
+  (perks, breeding, income, every screen, tall ground) passed alone (the full run shared the machine with my look
+  runs). Full quick check: 37 of 42 in 2304 s; of the 5, RT-2 (the pair's talk), Granny Juniper and rooms passed
+  alone; RL-8 and the walking/settings step fail identically at 1ebb2d55. Gallery `dialogue` and `talk-skins`
+  unchanged, `talk-stack` judged and saved. Pictures at 390×844 (look-talk.py `--only=stack`): sides, a linked pair,
+  the cut and the knock, the [wait] "…", the stamp in a stack, the Log, a choice: judged.
+- Next: DL-5 (faces) on `track/dialogue`. The owner (2026-10-29) asked for the next sessions to start by themselves
+  with their plans approved: DL-5 starts DL-6, DL-6 starts DL-7; DL-8 is the owner's call.
+- For the owner on the phone: `?fixture=talk&stack=1&choice=1`: tap through. Do the sides, the linked Kappi pair, Blake
+  cut off and knocked aside, the clerk's "…", the stamp and the choice read well? Tap Log on the third line. Then talk
+  to Chosen or Kappi in the lab: do you and they stay in view above the bubbles, and is the camera's pan gentle?
+
 ### Dialogue track DL-3: bubbles (skins, shout/whisper/think shapes, tilt, pop-in and grow spring, the stamp) - 2026-10-28
 Branch `track/dialogue` (DL-2's code fast-forwarded in before the first edit; origin/track/dialogue with DL-2's
 handoff and main merged in later: conflicts in the generated studio/art-code-refs.json, regenerated, and the ui-lint
