@@ -2,6 +2,55 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Dialogue track DL-6: figure close-ups (the bust bake, the head in stepped angles, the face from the director) - 2026-10-29
+Branch `track/dialogue` (main ed5c6857 already in: nothing to merge). Run under the owner's standing instruction
+(2026-10-29): plan written in the session's reply, approved in advance, no Plan Mode. Code, tests, a fixture flag, check
+and look tools, docs. No session tag (CLAUDE.md). Details: docs/phases/dialogue-track.md, "Done in DL-6".
+- Changed:
+  - logic/figure-pose.js: `bustSize` (a 64 px square of the figure's top 60%, level, about 55 px a metre), `headStep`
+    (yaw 6° steps to ±12, pitch and roll 8° steps to ±8: 45 angles), `headKey`, `nearestHead`, `turnHeadPose` (a code
+    figure's head part turned, hair and face with it), `meshHeadPivot` + `turnJointAbout` (a model's head joint turned
+    about its neck), `FACE_MOUTH_OPEN`; `figureFaceMarks(..., state)`: the `{eyes, mouth}` face state, the seam CH-6
+    fills (eyes shut a line, the mouth open 2 px taller and darker). 5 new tests in figure-pose.test.mjs.
+  - figures.js: `bakeFigure(..., o)` (`bust`, `head`, `face: false`); `figureBustPicture` (its own cache of at most
+    135, the rest pose first, one bake every 50 ms, the nearest kept angle meanwhile) and `figureBustFace` (the face
+    painted on a copy each tick); `figureReport` gains `busts`, `bustBakes`, `bustMs` (the debug log). 3 new tests in
+    figures.test.mjs.
+  - talk.js: `talkFigure`: with Engine > People > Figures on you are your figure, and with Townsfolk as figures on
+    every other person speaker too (Kappi stays a creature), as in the world and in battle; the portrait is then the
+    close-up, the head turned by the director's `head`, the face from its `eyes` and `mouth`; the older bubbles' small
+    portraits use the rest close-up. Figures off: unchanged (today's portrait).
+  - Tools: `?fixture=talk&figures=mannequin` (or `rogue`), look-talk.py `--figures[=rogue]` (each portrait alone and
+    a sheet of the head's hits), `PB_FIGURES=1` (and `PB_FIGURE=`) for any browser check (browser_check.py,
+    docs/TESTING.md).
+- Decided for the owner (provisional; DL-6 had no "Ask me before" item): who gets a close-up (above); the angle steps;
+  a three-quarter view (0.3 rad round); the open mouth (2 px taller, darker inside); the bust's framing (top 60%).
+- Found, not changed / corrections: "figures on" is only the Engine > People dials (off by default) and the debug
+  menu's switches, as DL-5 said. The track said the Rogue's head waits for CH-12: its `head` joint is a leaf, so it
+  turns now, about its neck; its face is its texture, so no blinks or mouth until CH-6. "One bake a frame through the
+  existing gate" became a 50 ms timer: the world's gate counts the world's frames, which a talk need not advance. CH-6
+  is still not in (the characters track waits at CH-3 on the owner's pick).
+- Risky: a close-up bake reads its picture back from the graphics chip (about 0.65 ms here in software drawing; the
+  phone's debug log says its own as `bustMs` / `bustBakes`). The head's hits last 250-700 ms against a 70 ms tick, so
+  a phone that drops ticks shows fewer steps of a nod. The headless browser ticks too seldom to catch a hit as it
+  plays: the head sheet bakes each angle directly. Every close-up is your chosen figure for now (as the townsfolk
+  are): Chosen and Blake look alike until the characters track gives each their own.
+- Verified: lint, typecheck, format:check, check:modules, check:data (181 files), build clean. Unit tests 2040 pass
+  (one failed in a run beside the smoke run, all passed alone). Smoke 7 of 7 (389 s). Full quick check with figures
+  off: 37 of 42 (1641 s); with figures on (`PB_FIGURES=1`, the Rogue): 37 of 42 (1611 s), the same five. At the commit
+  before this session (d01a94d4, a worktree) the full run failed RL-8, Route trainers (RT-2), Granny Juniper and
+  "Walking … settings tabs" too (38 of 42); RL-8 fails alone at both ("the town's shop has no Perk"); RT-2 and Juniper
+  pass alone on mine with figures off and on (fixed waits round talk under a full run's load). Battle music failed in
+  both my full runs and passed alone twice (DL-5 saw the same). Pictures at 390×844: `--figures` and
+  `--figures=rogue`: the mannequin and the Rogue nod, jolt, shake and tilt in their steps; the mannequin blinks and
+  talks; listeners dim; emotes crisp.
+- Next: DL-7 (the writing pass) on `track/dialogue`, started by this session with its plan approved; it is the last
+  automatic session.
+- For the owner on the phone: Settings' debug menu → Figures on, Townsfolk figures, then talk to Chosen (or
+  `?fixture=talk&faces=1&figures=mannequin`). Do the heads nod on happy, jolt on surprised, shake on angry, droop on
+  sad, and do the mouth and blinks read on the mannequin? Is the three-quarter view right? Send a debug log after a
+  talk: its people section has `busts`, `bustBakes` and `bustMs`.
+
 ### Dialogue track DL-5: faces (the director, combined expressions, blinks and the mouth, emotes, the bounce, the listener dimmed) - 2026-10-29
 Branch `track/dialogue`; main ed5c6857 (#295, VFX-13) merged in at the start (HANDOFF both sides, art-code-refs and the
 check-data snapshot remade). Run under the owner's standing instruction (2026-10-29): plan written in the session's
