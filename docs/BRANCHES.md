@@ -50,7 +50,7 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | Branch | What it is |
 |---|---|
 | `main` | The game. |
-| `track/cleanup` | Clean-up track (docs/phases/cleanup-track.md): made 2026-10-28 from `ccr-4d35b293-6rc24z` (CU-0's plan) at the owner's approval of the plan. Round 1's four lanes (S, D, R, T) work here at the same time, then round 2. One draft PR into main. |
+| `track/cleanup` | Clean-up track (docs/phases/cleanup-track.md): made 2026-10-28 from `ccr-4d35b293-6rc24z` (CU-0's plan) at the owner's approval of the plan. Round 1's four lanes (S, D, R, T) worked here at the same time (2026-10-28), round 2 closed it out (2026-10-29). PR #328 into main. After it merges: tag `cleanup-done` once section 7 of the plan is empty, then delete the branch (until then later CU sessions work here). |
 | `ccr-4d35b293-6rc24z` | Clean-up track CU-0 (the plan, research and audits; docs only), written here because `track/cleanup` didn't exist yet (2026-10-28). Draft PR into main; `track/cleanup` carries the same commits. Delete once its PR merges or is superseded. |
 | `legacy` | The old build (Net Worth v47.x / alpha 0.5), reference only (CLAUDE.md). Tag `legacy` on 0314a22. |
 | `track/sound` | Sound track Part 2 (docs/phases/sound-track.md): made 2026-10-27 by SND-7's session at the owner's word ("Continue with next steps in this plan automatically in new sessions") from `ccr-1e8a9924-tt5x1q`, so it carries Part 2 before PR #285 merges; every SND session from SND-8a on works here, one after another. To main by pull request. |
