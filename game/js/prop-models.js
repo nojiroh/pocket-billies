@@ -1684,6 +1684,8 @@ function propModelImageItems(it, out) {
     f: it.flip || 1,
     turn: propTurn(it),
     bob: mooredBob(it),
+    /* AS-1: a tipped model's layers tip with it (a climbing train's headlamp and name boards) */
+    spin: it.spin || null,
   };
   const F = typeof gameData !== 'undefined' && gameData.pixelFacts;
   for (const L of rec.layers || []) {
