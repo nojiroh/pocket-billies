@@ -46,6 +46,9 @@ Sessions act on these without asking again.
 - **Hub first.** The new house kit goes under new keys; run towns (biomes.json `town.houses`) keep today's houses
   until a later step outside this track.
 - **Palette: copper, cream, verdigris teal, terracotta**, with brass and warm wood; neon accents only at night.
+- **More Pokémon generation 5** (Black and White) in the style (the owner, after the first sketches, 2026-10-29: "The
+  sketches look great. Put a little more Pokemon generation 5 in the style"). Section 5 says what that means here;
+  the sketch page shows it. Original designs only: no copied buildings, logos or names.
 
 ## 2. What the buildings are made of today (audit, 2026-10-29)
 - **Recipes.** Each building is a JSON recipe in game/art/scene/next/models/<key>.json (`{ppm: 32, cel, layers}`),
@@ -146,7 +149,20 @@ Each building gets **one signature silhouette** that reads from the orbit camera
   by doors, laundry, rain barrels (many exist as props already).
 - **Palette**: walls cream, butter and terracotta plaster, warm wood; roofs copper, verdigris teal, terracotta and
   moss; trims brass and cream; night neon in teal, pink and amber.
-- **Surfaces** (BD-2): fish-scale shingles, copper standing seam, barrel tiles, cob/stucco, half-timber, riveted
+- **A little more Black and White** (the owner, 2026-10-29). The builders already aim at "Unova-style town crossed
+  with retro-futuristic solarpunk" (tools/build-props-batch7.py:3); the redo leans into it:
+  - **The high three-quarter view**: roofs and a side wall always show, so every house reads as a chunky block from
+    the orbit camera; designs are judged from that camera, not head-on.
+  - **Clean, bold shapes**: thick eaves with a dark underside, a glossy band along the roof (the normal sheet and a
+    stronger spec on roof cells), bold red, navy and teal roofs on white walls among the copper ones, less texture
+    noise (trim-sheet contrast kept low).
+  - **A New York streak** (Unova's own inspiration): a brick townhouse body (arched windows, a cornice, a stoop),
+    fire escapes, rooftop water towers and striped awnings as kit add-ons; Nacrene-like brick and arched windows for the
+    Workshop or the archive if BD-3 likes them.
+  - **Big readable signs**: a rounded board and a round emblem on the shop and the station; Copperleaf gets its own
+    leaf emblem.
+  - **Tidier civic buildings**: the storybook lean stays on homes and is turned down on the square's buildings.
+- **Surfaces** (BD-2a, BD-2b): fish-scale shingles, copper standing seam, barrel tiles, cob/stucco, half-timber, riveted
   panels, glass block, mosaic tile; each with a normal cell.
 
 ## 6. Sessions
@@ -155,17 +171,31 @@ Each building gets **one signature silhouette** that reads from the orbit camera
 |---|---|---|---|---|
 | BD-0 | The plan (done 2026-10-29) | This file; the suggestion page; ROADMAP and BRANCHES rows | none | 1 |
 | BD-1 | New shapes | The recipe shapes the look needs, in the mesher and the world map; unit tests; a shapes showcase map | BD-0 | 1-2 |
-| BD-2 | Surfaces and normal maps | The sheet to 8x4 with the new cells; a matching normal sheet sampled in the model shader; a graphics setting; phone cost measured | BD-1 | 1-2 |
-| BD-3 | Look sketches | 3 directions on one house and the shop, as pictures; the owner picks | BD-2 | 1 |
+| BD-2a | Surfaces painted | The sheet to 8x4 with the new cells and their height maps, painted in Python (no shader work) | BD-0 | 1 |
+| BD-2b | Normal maps | The normal sheet sampled in the model shader; a graphics setting; phone cost measured | BD-1, BD-2a | 1 |
+| BD-3 | Look sketches | 3 directions on one house and the shop, as pictures; the owner picks | BD-2b | 1 |
 | BD-4a | The house kit | tools/build-house-kit.py: ~24 houses from modules, one catalogue kind with `variants`; a contact sheet | BD-3 | 1-2 |
 | BD-4b | Houses placed | Every hub house a different variant (a neighbour rule); Granny Juniper's cottage a one-off | BD-4a, BD-7 | 1 |
 | BD-5 | Civic | Shop, inn, library, lab | BD-3 | 1-2 |
 | BD-6 | Landmarks | Workshop, Gene Bank, lighthouse, windmill, barn, Skyline Station | BD-3 | 1-2 |
 | BD-7 | The town re-laid | New footprints and doors through the town tools; the fixes in section 3; tests | BD-4a, BD-5, BD-6 | 1-2 |
+| BD-F | Window check fix | tools/clear-windows.py reads `rot` (section 3); a tools-only fix with its own test | none | part of 1 |
 | BD-8 | Phone pass | Pictures day and night; the owner's play test and debug log; frame times | all | 1 |
 
-About 10-14 sessions. BD-5 and BD-6 may run beside BD-4a on side branches (they touch different tools); BD-7 alone
-owns copperleaf.json and the island tools. BD-4b's placing is done inside BD-7 when that is simpler.
+About 10-14 sessions, in five waves. Sessions in one wave run at the same time; side sessions work on their own
+`claude/bd-<n>-<words>` branch with a draft PR into `track/buildings` (the intro track's way), and the wave's last
+session merges them.
+
+| Wave | At the same time | Why they don't collide |
+|---|---|---|
+| 1 | BD-1 new shapes; BD-2a surfaces painted; BD-F the window check fix | BD-1 owns prop-models.js; BD-2a only paints PNGs in Python (the sheet and its height maps); BD-F only tools/clear-windows.py |
+| 2 | BD-2b normal maps | the model shader is in prop-models.js and buildings.js, BD-1's files: after BD-1 |
+| 3 | BD-3 look sketches | needs the shapes and the surfaces; the owner's pick sets the ranges for wave 4 |
+| 4 | BD-4a the house kit; BD-5 civic; BD-6 landmarks | separate builders (a new build-house-kit.py; batch 7 and 3; build-props-hub, -island, build-station-trains). They all write game/data/scenery.json, but different keys: merge one at a time and rebuild data (`npm run data`) after each |
+| 5 | BD-7 the town re-laid (with BD-4b's placing), then BD-8 the phone pass | BD-7 alone owns copperleaf.json and the island tools; BD-8 needs everything |
+
+Not at the same time: BD-1 and BD-2b (the same shader files); anything with BD-7 (copperleaf.json); BD-3 before
+wave 4 (its pick changes their ranges).
 
 ### BD-1 New shapes
 In `lowPolyFromRecipe` (prop-models.js), each a new field or kind with its own unit test (bounds, normals pointing
@@ -184,7 +214,9 @@ out, triangle count, a stable vertex hash):
 - A showcase map of every new shape (like test_hub_buildings), pictures with tools/look-hub-buildings.py.
 - The Studio's model editor reads the new fields (shows them; editing them can wait).
 
-### BD-2 Surfaces and normal maps
+### BD-2a Surfaces painted, BD-2b normal maps
+BD-2a paints (Python, no shader): the new cells and a height map per cell. BD-2b wires the normal sheet into the
+shader and measures it.
 - The tone sheet grows from 8x3 to 8x4 cells (512x256): fish-scale shingles, copper standing seam, barrel tiles,
   cob/stucco, half-timber, riveted panels, glass block, mosaic tile; painted in Python in the same five shade levels,
   low contrast (trim-sheet rule). New names in `LOW_POLY_TEXTURE_CELLS` and `BUILDING_TEXTURE_NAMES`.
@@ -196,7 +228,7 @@ out, triangle count, a stable vertex hash):
   bench and tools on the emulated phone: shader cost, memory (TD's phone budget is 300 MB).
 
 ### BD-3 Look sketches
-Three directions on one house body and the shop, built with BD-1 and BD-2, as headless phone pictures at noon and
+Three directions on one house body and the shop, built with BD-1, BD-2a and BD-2b, as headless phone pictures at noon and
 dusk: (A) gentle wonk, sparse details; (B) storybook wonk, medium details (the answers' default); (C) strong wonk,
 dense details. The owner picks or mixes; the pick sets the kit's ranges.
 
@@ -204,13 +236,15 @@ dense details. The owner picks or mixes; the pick sets the kit's ranges.
 tools/build-house-kit.py, beside batch 7's `House` (reuse its windows, doors, lamps, chimneys where they fit):
 - **Slots, picked by a seed** with style rules (one dominant shape per house; at most one round body part; the shared
   palette; add-ons on free walls only; the door on the front, on a quarter turn):
-  - Bodies: narrow tall, wide low, L-shape, round tower-house, jettied two-storey, A-frame, half-dome cob.
-  - Roofs: steep gable, gambrel, saltbox, upswept, bulb dome, mushroom thatch, mansard, flat with a roof garden.
+  - Bodies: narrow tall, wide low, L-shape, round tower-house, jettied two-storey, A-frame, half-dome cob, brick
+    townhouse (with its cornice roof and stoop).
+  - Roofs: steep gable, low-pitch slab (Unova's wide thick eaves), gambrel, saltbox, upswept, bulb dome, mushroom
+    thatch, mansard, flat with a roof garden.
   - Add-ons, 0-3: turret, bay window, dormer, lean-to, balcony, porch canopy, bubble greenhouse, solar sail, water
-    tank, antenna or weathervane, wind spinner, outside stair.
+    tower, fire escape, striped awning, antenna or weathervane, wind spinner, outside stair.
   - Chimneys: crooked brick, stovepipe, copper rocket. Doors: round, arched, porthole, Dutch. Windows: porthole,
     round-top, bay, crossed square, ribbon.
-  - 6-8 palettes from section 5; wonk (lean, sag, bulge) from the seed within BD-3's ranges.
+  - 8-10 palettes from section 5 (the copper ones and white walls with red, navy or teal roofs); wonk (lean, sag, bulge) from the seed within BD-3's ranges.
 - It writes ~24 house recipes and one catalogue kind (name per docs/NAMING.md, e.g. `house_kit`) whose `variants`
   swap `model`, `box`, `door` and `fx` (walk-view.js `plainPropVariant` already lets a variant replace any field), in
   small, medium and large footprints so plots can take them. Glass and roof marks written by the kit itself.
@@ -257,7 +291,7 @@ sends a debug log; frame times against the last log's.
 ## 7. Ask me before (recommendation first)
 1. The normal sheet by default: on above Low graphics (rec) / always / off.
 2. Signs: keep the pixel-font decals (rec) / painted signs.
-3. Triangle budget per house: 4k (rec, checked in BD-2's measures) / 6k.
+3. Triangle budget per house: 4k (rec, checked in BD-2b's measures) / 6k.
 
 ## 8. Not in this track
 - Run towns' houses (biomes.json `town.houses`): a later step swaps them to the kit per biome palette.
@@ -265,9 +299,9 @@ sends a debug log; frame times against the last log's.
 - The airship and its mast, the portal, the sky rail, props (benches, lamps, stalls).
 
 ## 9. Risks
-- **Phone cost**: the normal sheet (one more texture read a pixel), more triangles, more meshes. BD-2 and BD-8 measure.
+- **Phone cost**: the normal sheet (one more texture read a pixel), more triangles, more meshes. BD-2b and BD-8 measure.
 - **Footprints** ripple through the town tools, locked zones, rooms, the opening's spots and ~8 checks: held in BD-7.
-- **One owner per file**: copperleaf.json and the island tools in BD-7 only; prop-models.js in BD-1 and BD-2.
+- **One owner per file**: copperleaf.json and the island tools in BD-7 only; prop-models.js in BD-1, then BD-2b.
 - **Builders overwrite**: a builder's rerun replaces hand edits of its recipes and catalogue entries; edit the tools.
 - **Colour swaps**: add-building-variants.py swaps by hex; the new builders write their own variants instead.
 

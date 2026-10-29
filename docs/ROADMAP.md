@@ -51,10 +51,11 @@ town node needs it.
 - **Buildings track** (docs/phases/buildings-track.md, the owner's brief and answers 2026-10-29): Copperleaf's 15
   building kinds redone in a cozy, storybook retro-futurism (copper, cream, verdigris, terracotta; Googie on the civic
   buildings; neon only at night), new surfaces with a normal sheet, and a modular house kit so no two houses look
-  alike; footprints may change; run towns keep today's houses for now. BD-0 (the plan, research, audits and a
-  suggestion page; docs only) done 2026-10-29 on `ccr-d224d90d-qlnty6`. Next: BD-1 (new recipe shapes: tilting
-  boxes, prisms, lathes, tapers, bevels, a baked warp, glowing layers), then BD-2 surfaces and normal maps, BD-3 look
-  sketches, BD-4a/4b the house kit, BD-5 civic, BD-6 landmarks, BD-7 the town re-laid, BD-8 the phone pass. Branch
+  alike, with a little more Pokémon Black and White (the high 3/4 view, thick eaves, bold roofs on white walls, brick
+  townhouses); footprints may change; run towns keep today's houses for now. BD-0 (the plan, research, audits and a
+  suggestion page; docs only) done 2026-10-29 on `ccr-d224d90d-qlnty6`. Next, in five waves: BD-1 new recipe shapes
+  beside BD-2a surfaces painted and BD-F the window check fix; BD-2b normal maps; BD-3 look sketches; BD-4a the house
+  kit beside BD-5 civic and BD-6 landmarks; BD-7 the town re-laid (with BD-4b), then BD-8 the phone pass. Branch
   `track/buildings`.
 - **Test data track** (docs/phases/test-data-track.md, the owner's brief and answers 2026-10-29): tests and logs
   that give Claude useful bug and speed data on every device. TD-0 (the plan, research and audits; docs only) done

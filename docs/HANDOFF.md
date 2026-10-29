@@ -12,7 +12,11 @@ cozy whimsical retro futuristic", then "all houses look way too similar now, add
   the kit's variety with a neighbour rule, the new surfaces and palette, day and night.
 - The owner's answers: all 15 building kinds; the cozy mix (storybook homes with copper, portholes and glowing tubes,
   Googie on the civic buildings); storybook wonk; footprints may change; houses with a lot of modular variety; hub
-  first (run towns keep today's houses); palette copper, cream, verdigris, terracotta, neon only at night.
+  first (run towns keep today's houses); palette copper, cream, verdigris, terracotta, neon only at night. After the
+  first sketches: "a little more Pokémon generation 5" (the track file's section 5; the sketch page redrawn with the
+  high 3/4 view, thick eaves, white walls with bold roofs, a brick townhouse body, fire escapes, water towers,
+  awnings, a big shop sign). BD-2 split into BD-2a (painting) and BD-2b (the shader); sessions grouped in five waves
+  that can run side by side (section 6).
 - Found, not changed (for BD-7; details in the track file, section 3): doors are written at 32 px/m but read at ppu 34
   (about 6% short of the model's door); tools/clear-windows.py ignores `rot` (most hub buildings are at rot 90); the
   lighthouse and station have no `door`, so lowpoly-props.test.mjs gives them the 4k prop budget; cottage_juniper gets
