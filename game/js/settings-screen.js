@@ -37,6 +37,8 @@ import {
   runFullTest,
   runGraphicsBench,
   selfTest,
+  soundSessionApply,
+  soundSessionSupported,
   stopTimers,
   testVolume,
   toast,
@@ -526,6 +528,15 @@ function settingsHTML() {
         'Every song on the four Game Boy voices, as they first were. Off: the fuller band (harp, strings, flute, drums).',
         switchHTML('gbSounds', !!p.gbSounds, '1', '')
       ) +
+      /* SND-15: iPhones (iOS 17 on) mute web sound with the silent switch unless the page asks to play as media
+         (navigator.audioSession, sound.js soundSessionApply); browsers without it don't show the row */
+      (soundSessionSupported()
+        ? settingsRowHTML(
+            'Play when silenced',
+            'Sound plays even with the iPhone’s silent switch on. Music from other apps may pause while the game plays.',
+            switchHTML('playSilenced', !!p.playSilenced, '1', '')
+          )
+        : '') +
       `<p class="note">Sounds fade in when you arrive somewhere.</p>`;
   else if (tab === 'graphics') {
     const gp = p.aim === 'off' ? 'off' : p.aim === 'smooth' ? 'balanced' : 'best',
@@ -641,7 +652,8 @@ function changePreference(k, v) {
     return;
   }
   if (k === 'haptics') v = v !== 'off';
-  if (k === 'bigTargets' || k === 'alwaysRun' || k === 'lowHpBeep' || k === 'gbSounds') v = v === '1';
+  if (k === 'bigTargets' || k === 'alwaysRun' || k === 'lowHpBeep' || k === 'gbSounds' || k === 'playSilenced')
+    v = v === '1';
   if (k === 'tilt') {
     v = v === 'on';
     if (v)
@@ -662,6 +674,7 @@ function changePreference(k, v) {
       navigator.vibrate(12);
     } catch (e) {}
   if ((k === 'world' || k === 'amb') && typeof applyAmbienceVolume === 'function') applyAmbienceVolume();
+  if (k === 'playSilenced' && typeof soundSessionApply === 'function') soundSessionApply();
 }
 export function settingsRefresh() {
   if (!uiState.modal || !uiState.modal.settings) return;

@@ -158,6 +158,11 @@ expose({
   soundLog: [() => soundLog, v => (soundLog = v)],
   soundPlacement: [() => soundPlacement, v => (soundPlacement = v)],
   soundPreferences: [() => soundPreferences],
+  soundSessionApply: [() => soundSessionApply, v => ((soundSessionApply = v), provide({ soundSessionApply }))],
+  soundSessionSupported: [
+    () => soundSessionSupported,
+    v => ((soundSessionSupported = v), provide({ soundSessionSupported })),
+  ],
   soundStarts: [() => soundStarts],
   soundWake: [() => soundWake, v => (soundWake = v)],
   synthKick: [() => synthKick, v => (synthKick = v)],
@@ -178,6 +183,8 @@ provide({
   jinglePlay,
   soundEffect,
   soundEffectAt,
+  soundSessionApply,
+  soundSessionSupported,
   testVolume,
   uiSound,
 });
@@ -216,10 +223,28 @@ const soundPreferences = () => (typeof saveData !== 'undefined' && saveData && s
 function volumePreference(k) {
   return soundLevel(soundPreferences(), k);
 }
+/* SND-15: iPhones (iOS 17 on) mute web sound with the silent switch unless the page plays as media
+   (navigator.audioSession.type 'playback'); Settings -> Sound -> "Play when silenced" (preferences.playSilenced, off by
+   default) asks for it. Browsers without navigator.audioSession don't show the row */
+function soundSessionSupported() {
+  try {
+    const AS = /** @type {any} */ (navigator).audioSession;
+    return !!AS && 'type' in AS;
+  } catch (e) {
+    return false;
+  }
+}
+function soundSessionApply() {
+  if (!soundSessionSupported()) return;
+  try {
+    /** @type {any} */ (navigator).audioSession.type = soundPreferences().playSilenced ? 'playback' : 'auto';
+  } catch (e) {}
+}
 function initSound() {
   if (soundEngine.ctx) return true;
   const AC = window.AudioContext || window.webkitAudioContext;
   if (!AC) return false;
+  soundSessionApply();
   try {
     const c = new AC();
     soundEngine.ctx = c;
