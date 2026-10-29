@@ -10,7 +10,7 @@ water while standing at water or see through while not standing behind things." 
 written on `ccr-b95ade74-f8w3vy`; every later session works on `track/test-data`, made from that branch by TD-0's
 session at the owner's word (2026-10-29).
 
-**Status:** TD-0 done (2026-10-29). Next: TD-1.
+**Status:** TD-0 done (2026-10-29). TD-1 done (2026-10-29; its HANDOFF entry lists what differed from this file). Next: TD-2.
 
 Before editing, every session checks the facts it relies on against main and says in its HANDOFF entry what differs:
 they come from read-only audits on 2026-10-29 (main at a90c9301; this file written at 8e37809c). Line numbers drift;

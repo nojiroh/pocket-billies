@@ -2,6 +2,57 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test data track TD-1 - quick fixes: the log reader, a crash breadcrumb, loading apart, refused calls located - 2026-10-29
+Branch `track/test-data` (main merged in at the start: already up to date). Plan written, then built at once: the
+owner's standing answer (track file section 1) is the approval. Debug-log, full-test and reader code; nothing a
+player sees changes. No "Ask me before" item came up. Track-end tags only (CLAUDE.md), none for this session.
+- Facts checked (track file sections 3.3, 3.4): all held, except that `?glerr` didn't exist (TD-1 adds it).
+- Changed:
+  - tools/read-debug-log.py reads the full test from `bench` (`bench.result` kept for old logs) and prints failed
+    steps' why and ctx, graphics memory by kind with its peak per screen, the q/res changes, the visibility and
+    context-lost events, loading seconds, the slow-frame share and the previous page. The debug-log skill's jq line
+    is fixed. New unit test: tools/test/read-debug-log.test.mjs.
+  - debug-log.js: the "drawing items" label is now "gathering frame items" (its own commit). Slow frames count towards
+    every overlapping cause, by share (`slowFramesBy` gains `share`). Samples carry `ld: 1` while a place loads, and
+    `summary()` keeps `loadingSeconds` apart.
+  - Crash breadcrumb (`debugLog.crumb`, localStorage `pb-crumb`, numbers and ids only). It is written every 2 s, at each
+    full-test and graphics-test step, and on hide; `pagehide` marks it clean. On the next boot the log gets
+    `previousPage.endedUnexpectedly` (or `endedInBackground`), and `boot.navigation` says how the page was opened.
+    New debug-menu button: "Pretend the page was killed".
+  - The graphics cost test no longer wipes the full test's result. Both graphics tests write `debugLog.bench.step`.
+  - Refused calls: `drawErrorWatch` (engine/gpu-counters.js) is one watcher on the draws, uploads and blits. It
+    reports the call, code, pass, program and target; programs and render targets carry `pbName`. An error held before
+    a call reads "before <call>". The light lab uses it, takes its context at the failure, and reads an error left
+    from an earlier step apart (a note, not a failure). `?glerr` turns the watcher on for the whole page. The debug
+    log now reads WebGL's error once a second (`webgl: WebGL error N in the last second at <place> (<step>)`).
+  - tools/check-quick.py: the full test's no-save step allows `pb-crumb`. docs/TESTING.md: a TD-1 bullet.
+- Found, not changed:
+  - The owner's refused draw didn't reproduce in headless Chromium. Firefox can't be downloaded here (the network
+    policy blocks Playwright's download hosts). A likely cause: WebGL keeps an error until someone reads it, and play
+    never did, so an error from any of the 44 earlier steps could surface as the light lab's single "drawArrays 1282".
+    The next phone log will say which: the once-a-second check names the place and step, and the lab names the call.
+  - One run of all five light-lab stops, while the unit tests loaded the CPU, saw 1281 then 1282 in test_light_air's
+    sprites pass (program `sprite`, before the watcher could tell "before" errors apart). Six more runs (two with
+    6x CPU throttling) and an upload-call wrapper saw none. A picture uploaded on first use in that pass is the
+    suspect (texImage2D refused, then generateMipmap). No PNG over 4096 px exists; a canvas made in code still could.
+  - A background audit of every `drawArrays` in the light scenes found no Firefox-only refusal. Two defensive ideas
+    from it, not done: engine/light.js gives `uLampSh1` its sampler only when `uLampSh0` is active, and
+    post-effects.js leaves colour targets on units 12-13.
+- Risky: the once-a-second `getError` is a sync call on some browsers (one per second; not measured on a phone). It can
+  now fail full-test steps that passed before, when WebGL holds an error during them: that is the data, not a
+  regression. With two tabs open, each overwrites the other's breadcrumb.
+- Verified: lint, typecheck, check:modules (562 names), format:check, check:data (182 files), build. `npm test`
+  2,171 pass. Smoke: 6 of 7 steps ok; its no-save step flagged `pb-crumb`, which is fixed and passed on the rerun.
+  The full quick check was stopped at the owner's word after 19 steps: 18 ok, and 1 problem (RL-8's run from the
+  mast) that the clean-up entry below already records on main. Headless checks: a pretend kill reads as unexpected
+  on the next boot, a normal reload as clean. A refused draw planted in test_light_props is named there with its
+  hour, pass and program. One planted in Copperleaf before the lab goes to Copperleaf's second, not to the lab.
+- Next: TD-2 (the graphics test walks) on `track/test-data`, started automatically in a new session.
+- For the owner on the phone: run the full test on Firefox and send the log. The light lab now names the refused call
+  and where it happened, and an error from an earlier step shows under that step. Optionally, debug menu → "Pretend
+  the page was killed", then export the log: it should begin with "PREVIOUS PAGE ENDED UNEXPECTEDLY". If the
+  Graphics test reloads the page again, the next log names the step it died on.
+
 ### Test data track TD-0 - the plan: tests and logs that give Claude useful bug and speed data on every device - 2026-10-29
 Branch `ccr-b95ade74-f8w3vy` (the cloud session's own; main fast-forwarded to 8e37809c first). Plan approved in Plan
 Mode through the owner's answers. Docs only: the plan, research and three read-only audits (in-game tests, headless
