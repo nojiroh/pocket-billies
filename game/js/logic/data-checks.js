@@ -612,6 +612,7 @@ export const RUN_RULE_KEYS = Object.freeze([
   'points',
   'pack',
   'healCost',
+  'appealCost',
   'shop',
   'foes',
   'perks',
@@ -898,6 +899,9 @@ export function dataRunLoop(D) {
     }
     if (!whole(R.healCost, 0, 100000))
       problem('rules.json', 'run.healCost is not a whole number of Moneys (0-100,000)');
+    /* PK-9: a clinic's fee to lift a curse (run-loop.js runAppeal) */
+    if (R.appealCost !== undefined && !whole(R.appealCost, 0, 100000))
+      problem('rules.json', 'run.appealCost is not a whole number of Moneys (0-100,000)');
     if (!rec(SH) || !Array.isArray(SH.always) || !whole(SH.more, 0, 12) || !rec(SH.pick))
       problem('rules.json', 'run.shop: always (a list), more (whole, 0-12) and pick (weights) are needed');
     else {

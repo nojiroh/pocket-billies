@@ -306,3 +306,31 @@ test('PK-9 Correction Fluid: the run’s first curse is erased, later curses las
   const B = { quick: { name: 'Quick', d: 'A test.', curse: true, places: 0, fx: [{ kind: 'money', mult: 0.9 }] } };
   assert.equal(modules['run-enc'].encBoonGive(u.run, 'quick', 'x', B, { shorter: 1, erase: 1 }), 0);
 });
+
+/* ---------- the appeal ---------- */
+
+test('PK-9 the appeal: a clinic’s fee lifts a curse at once; not a boon, not without the money, not when shut', () => {
+  const L = modules['run-loop'],
+    E = modules['run-enc'],
+    fee = GAME_DATA.rules.run.appealCost,
+    s = runSave([]);
+  assert.equal(fee, 50);
+  E.encBoonGive(s.run, 'audit_trail', 'x');
+  E.encBoonGive(s.run, 'tailwind', 'x');
+  s.se = 40;
+  assert.deepEqual(L.runAppeal(s, 'audit_trail', fee), { paid: 0, why: 'poor' });
+  s.se = 120;
+  assert.deepEqual(L.runAppeal(s, 'tailwind', fee), { paid: 0, why: 'none' }, 'a boon is not appealed');
+  assert.deepEqual(L.runAppeal(s, 'surge_pricing', fee), { paid: 0, why: 'none' }, 'not on');
+  assert.deepEqual(L.runAppeal(s, 'audit_trail', fee), { paid: 50 });
+  assert.equal(s.se, 70);
+  assert.deepEqual(
+    s.run.enc.boons.map(b => b.id),
+    ['tailwind']
+  );
+  assert.ok(E.encBoonRows(s.run).every(f => f.src !== 'boon:audit_trail'));
+  /* the "No healing" challenge shuts the clinic: no appeal either */
+  E.encBoonGive(s.run, 'audit_trail', 'x');
+  s.run.mods = ['noheal'];
+  assert.deepEqual(L.runAppeal(s, 'audit_trail', fee), { paid: 0, why: 'shut' });
+});

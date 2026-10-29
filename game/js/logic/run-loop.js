@@ -33,6 +33,7 @@ import {
 } from '../hooks.js';
 import {
   BANTER,
+  BOONS,
   BOSSES,
   EVENTS,
   ITEMS,
@@ -55,6 +56,8 @@ import { runLeaderPicks, runWildLevels } from './run-scenes.js';
 expose({
   // @ts-expect-error -- replaced on purpose
   fxRunCtx: [() => fxRunCtx, v => (fxRunCtx = v)],
+  // @ts-expect-error -- replaced on purpose
+  runAppeal: [() => runAppeal, v => (runAppeal = v)],
   // @ts-expect-error -- replaced on purpose
   runArriveFx: [() => runArriveFx, v => (runArriveFx = v)],
   // @ts-expect-error -- replaced on purpose
@@ -348,6 +351,20 @@ export function runClinic(s, each) {
   return { hurt, cost, paid: cost };
 }
 
+/** PK-9: an appeal at a run town's clinic: pay `cost` and the curse `id` (a named one on now) is lifted at once. Nothing
+ * changes when it isn't on, isn't a curse, the money isn't there or the clinic is shut (the "No healing" challenge).
+ * Returns what was paid (0: nothing done) and why not @param {SaveData} s @param {string} id @param {number} cost
+ * @param {Record<string, any>} [boons] @returns {{ paid: number, why?: 'shut' | 'none' | 'poor' }} */
+export function runAppeal(s, id, cost, boons = BOONS) {
+  const run = s.run;
+  if (run && modHas(run, 'noheal')) return { paid: 0, why: 'shut' };
+  const at = run && run.enc ? run.enc.boons.findIndex(b => b.id === id) : -1;
+  if (at < 0 || !(boons && boons[id] && boons[id].curse)) return { paid: 0, why: 'none' };
+  if (s.se < cost) return { paid: 0, why: 'poor' };
+  s.se -= cost;
+  /** @type {any} */ (run).enc.boons.splice(at, 1);
+  return { paid: cost };
+}
 /** a run town's wares on a day: `always`, then `more` drawn by weight from `pick` (none twice, none already there),
  * as shop stock rows ({item} or {coin}); WM-5: `stream` 'stall' for a town's market stall (a stream of its own, and
  * a fresh stock of its own) @param {Run} run @param {number} i the map node @param {number} day

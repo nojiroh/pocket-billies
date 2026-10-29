@@ -1089,6 +1089,8 @@ export interface Rules {
     points: StarterPointRules;
     /** RL-8: a run town's clinic: $ per hurt Billie (free in the hub) */
     healCost: number;
+    /** PK-9: a clinic's fee to lift a curse (an appeal; logic/run-loop.js runAppeal) */
+    appealCost?: number;
     /** RL-8: a run town's shop: `always` on sale, then `more` wares a day drawn by weight from `pick` (an item id, or
         `coin:<id>`), at their own prices; drawn from the town's seed and the day */
     shop: { always: string[]; more: number; pick: Record<string, number> };
