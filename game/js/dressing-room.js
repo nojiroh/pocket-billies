@@ -111,6 +111,7 @@ export const dressingRoom = {
   turn: 1,
   figPic: null,
   figKey: '',
+  figKept: new Map(),
   figAt: -1e9,
   held: null,
   figThumbs: new Map(),
@@ -740,12 +741,21 @@ function dressingFigurePreview(x, W, H, t, r) {
     ppm = Math.max(24, Math.min(96, Math.floor(room / (2 * s)))),
     blink = reducedMotion ? 0 : figureBlinkAt(t, 7),
     key = JSON.stringify([look, clip, frame, Math.round(R.turn * 16), blink, ppm]);
-  if (key !== R.figKey && t - R.figAt >= 60) {
-    const im = figureLookPicture(look, { clip, frame, turn: R.turn, ppm, face: { blink } });
-    if (im) {
-      R.figPic = im;
+  if (key !== R.figKey) {
+    /* the idle's loop, a blink or a turn seen before: no bake */
+    const kept = R.figKept.get(key);
+    if (kept) {
+      R.figPic = kept;
       R.figKey = key;
-      R.figAt = t;
+    } else if (t - R.figAt >= 60) {
+      const im = figureLookPicture(look, { clip, frame, turn: R.turn, ppm, face: { blink } });
+      if (im) {
+        R.figPic = im;
+        R.figKey = key;
+        R.figAt = t;
+        R.figKept.set(key, im);
+        while (R.figKept.size > 64) R.figKept.delete(R.figKept.keys().next().value);
+      }
     }
   }
   const f = R.figPic;
@@ -762,6 +772,7 @@ function dressingFigurePreview(x, W, H, t, r) {
 /** the room's figures let go (it closed) */
 function dressingFigureForget() {
   dressingRoom.figPic = null;
+  dressingRoom.figKept.clear();
   dressingRoom.figKey = '';
   dressingRoom.held = null;
   dressingRoom.figJobs.clear();

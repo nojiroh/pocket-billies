@@ -91,6 +91,8 @@ const figureLooks = {
 function figureLookShape(L) {
   const wear = { ...(L.wear || {}) };
   for (const k of FIGURE_LOOK_PAINTED) delete wear[k];
+  /* facial hair is painted too, but a beard (a shell over the jaw: logic/figure-kit.js) */
+  if (wear.facial !== 'facial_beard') delete wear.facial;
   return JSON.stringify([L.body || {}, L.build || null, wear]);
 }
 /** a direction's detail for the look you wear, or a tile's (lower: a tile is small) */

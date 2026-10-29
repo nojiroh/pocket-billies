@@ -742,7 +742,14 @@ test('CH-7: a look’s shape names its mesh; colours and the face are painted on
       hair: '#C8323C',
       eyes: '#112233',
       colors: { tee: ['#123456'] },
-      wear: { ...look.wear, eyes: 'eyes_sleepy', brows: 'brows_thick', mouth: 'mouth_grin', glasses: 'glasses_round' },
+      wear: {
+        ...look.wear,
+        eyes: 'eyes_sleepy',
+        brows: 'brows_thick',
+        mouth: 'mouth_grin',
+        glasses: 'glasses_round',
+        facial: 'facial_stache',
+      },
     };
   assert.equal(G.figureLookShape(painted), G.figureLookShape(look), 'colours, skin and the face: the same shape');
   assert.notEqual(G.figureLookShape({ ...look, build: 'round' }), G.figureLookShape(look));
