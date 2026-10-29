@@ -5,8 +5,19 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { fn, modules, startedSave } from './setup-fixture.mjs';
 
-const { newRun, validRun, runBegin, runEnd, runRestore, payoutOf, runNodeCount, RUN_FIELDS, runHome, runByExpedition } =
-  modules['run-state'];
+const {
+  newRun,
+  validRun,
+  runBegin,
+  runEnd,
+  runEnded,
+  runRestore,
+  payoutOf,
+  runNodeCount,
+  RUN_FIELDS,
+  runHome,
+  runByExpedition,
+} = modules['run-state'];
 const { runReleasePays } = modules['run-loop'];
 const { newMeta, validMeta } = modules['meta-state'];
 const RATES = {
@@ -94,6 +105,11 @@ test('run: the load check refuses broken or tampered runs', () => {
   assert.equal(validRun(ok), true);
   assert.equal(validRun({ ...ok, map: { nodes: MAP.nodes.map(n => ({ ...n, seen: 2, biome: 'meadow' })) } }), true);
   assert.equal(validRun({ ...ok, at: { phase: 'payout', battle: -1, won: 1 } }), true);
+  assert.equal(
+    validRun({ ...ok, at: { phase: 'return', battle: -1, won: 0 } }),
+    true,
+    'IN-4: the first run’s way back'
+  );
   assert.equal(validRun({ ...ok, at: { phase: 'battle', battle: 3, foe: FOE } }), true);
   assert.equal(validRun({ ...ok, unlocks: ['biome_ridge', 'shop_revive'] }), true, 'RL-11: the run’s copy');
   assert.equal(validRun({ ...ok, unlocks: [] }), true);
@@ -367,4 +383,12 @@ test('run: PK-1: run.perkState, missing or with bounded marks, passes; anything 
     Object.fromEntries(Array.from({ length: 201 }, (_, i) => [`p${i}/0`, {}])),
   ])
     assert.equal(validRun({ ...r(), perkState: P }), false, JSON.stringify(P).slice(0, 80));
+});
+
+test('run: IN-4, a run at its payout or on the first run’s way back is over; any other phase is still on', () => {
+  const at = phase => ({ at: { phase, battle: -1 } });
+  assert.equal(runEnded(at('payout')), true);
+  assert.equal(runEnded(at('return')), true);
+  for (const p of ['fly', 'walk', 'battle', 'menu']) assert.equal(runEnded(at(p)), false, p);
+  assert.equal(runEnded(null), false);
 });

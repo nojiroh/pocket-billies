@@ -1,0 +1,115 @@
+{
+ "about": "Intro track IN-1: the prepared first run, written by hand (docs/phases/intro-track.md section 5; logic/first-run.js; logic/run-start.js runStartPrepared). New game's crash lands you on its landing (IN-5). Its map is these nodes, numbered row by row and lane by lane (to: the next row's nodes it leads to); each place is still made by mapgen from the run's seed and the node's number, so a mapgen change moves them (tools/test/first-run.test.mjs keeps a snapshot). Lane 0 is the southern one. A node may pin its wild Billies (wild: levels, how many, the species, or by the starter's line: the starter's counter type), its route trainers (trainers), a waystation's event, a town's size, a mini-boss's or the boss's leader (the arena's theme and the mini-boss's team type) and levels over its row (up). boss is the bosses.json bot on the boss node; plant the Perk planted in the mini-boss's pick (the aha). crash: the crash site on the landing, offsets in metres from the landing's mast (x east, z north, turned as the mast is; rot degrees past the mast's): the props put down (the wreck: a stand-in until IN-3's wreck prop lands) after clearing clear metres round each spot, and the spots IN-5's cutscene stands on. Balanced with tools/test/sim/run-sim.mjs --prepared to a win rate of about 20% (the owner).",
+ "seed": "FIRSTRUN",
+ "expedition": 1,
+ "boss": "retrieval_scout",
+ "plant": "heavy_crown",
+ "nodes": [
+  {
+   "type": "landing",
+   "row": 0,
+   "lane": 0,
+   "biome": "meadow",
+   "to": [1,2],
+   "wild": {"lv":[2,2],"stock":0,"list":["hughes0"]},
+   "note": "the crash site: nothing wild by the wreck"
+  },
+  {
+   "type": "route",
+   "row": 1,
+   "lane": 0,
+   "biome": "meadow",
+   "to": [3],
+   "trainers": 0,
+   "wild": {"lv":[3,3],"stock":3,"list":["hughes0"]},
+   "note": "the catch: a weak, catchable wild one"
+  },
+  {
+   "type": "route",
+   "row": 1,
+   "lane": 1,
+   "biome": "meadow",
+   "to": [3,4],
+   "trainers": 0,
+   "wild": {
+    "lv": [2,2],
+    "stock": 1,
+    "by": {"musk":["cuban0"],"bezos":["yiming0"],"gates":["hastings0"]}
+   },
+   "note": "the fight: the starter's counter type"
+  },
+  {
+   "type": "town",
+   "row": 2,
+   "lane": 0,
+   "biome": "meadow",
+   "to": [5],
+   "size": "hamlet",
+   "wild": {"lv":[4,4],"stock":0,"list":["hughes0"]},
+   "note": "the clinic and the shop"
+  },
+  {
+   "type": "event",
+   "row": 2,
+   "lane": 1,
+   "biome": "meadow",
+   "to": [5],
+   "event": "pyramid_cart",
+   "wild": {"lv":[4,4],"stock":0,"list":["hughes0"]},
+   "note": "a choice"
+  },
+  {
+   "type": "miniboss",
+   "row": 3,
+   "lane": 0,
+   "biome": "thicket",
+   "to": [6],
+   "trainers": 0,
+   "leader": "morel",
+   "team": ["kardashian0","kardashian_festival0"],
+   "up": -5,
+   "wild": {"lv":[5,5],"stock":0,"list":["hughes0"]},
+   "note": "one leader, doubles: two Psychic Billies, even against every starter; the pick after it holds the plant"
+  },
+  {
+   "type": "town",
+   "row": 4,
+   "lane": 0,
+   "biome": "thicket",
+   "to": [7],
+   "size": "hamlet",
+   "wild": {"lv":[6,6],"stock":0,"list":["hughes0"]},
+   "note": "a town after each mini-boss"
+  },
+  {
+   "type": "boss",
+   "row": 5,
+   "lane": 0,
+   "biome": "thicket",
+   "to": [],
+   "leader": "markdown",
+   "up": -6,
+   "wild": {"lv":[6,6],"stock":0,"list":["hughes0"]},
+   "note": "the Retrieval Scout; the leader only themes its arena"
+  }
+ ],
+ "crash": {
+  "clear": 6,
+  "props": [
+   {"k":"train_wreck","at":[-14,6.5],"rot":8,"clear":12},
+   {"k":"bureau_crate","at":[-5.5,3],"clear":1},
+   {"k":"bureau_crate","at":[-17,1.5],"rot":34,"clear":1}
+  ],
+  "spots": {
+   "wreck": [-14,6.5],
+   "me": [-6,-1],
+   "chosen": [-9,1.5],
+   "chosen_from": [-10.5,4],
+   "kappi": [-3,-1.5],
+   "kappi_from": [-1.5,2.5],
+   "star1": [-8,-2.5],
+   "star2": [-6,-3.5],
+   "star3": [-4,-2.5]
+  }
+ }
+}

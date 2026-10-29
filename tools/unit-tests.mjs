@@ -30,6 +30,7 @@ export const SLOW_TESTS = [
   'run-signs.test.mjs',
   'run-sim-scenes.test.mjs',
   'run-world-real.test.mjs',
+  'first-run-places.test.mjs',
   'resident-towns.test.mjs',
   'weather-before.test.mjs',
 ];

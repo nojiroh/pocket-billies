@@ -28,6 +28,7 @@ import {
   worldBillyItem,
 } from '../hooks.js';
 import { turnedPoint } from '../logic/prop-turn.js';
+import { openingFrame } from '../logic/prop-open.js';
 import { keptRecord, personHeading, seenFacing, seenToward, seenWord } from '../logic/person-view.js';
 import { FIGURE_FPS, figureTick } from '../logic/figure-pose.js';
 import { WADE_DEPTH } from '../logic/wading.js';
@@ -109,11 +110,17 @@ export function gatherFrameItems(st, C, PPU, C0) {
   const prop = (p, far) => {
     const M = propWithVariant(p, C0.props[p.k]);
     if (!M || !propShown(p)) return;
-    const path = alternatePropImage(p, M, C0, sc),
+    /* intro track IN-3: an opening prop (the Bureau's portal) draws its opening frame while it opens or shuts
+       (logic/prop-open.js); a frame not loaded yet asks for them all and draws nothing that frame */
+    const of = M.opens && (p.open != null || p.shut != null) ? openingFrame(M.opens, p, t, !!reducedMotion) : -1;
+    if (of === null) return;
+    const OF = of >= 0 ? M.opens.frames[of] : null,
+      path = OF ? OF.img : alternatePropImage(p, M, C0, sc),
       im = artImage(path);
     if (!imageReady(im)) {
       /* LD-3: a picture its place's list didn't name (pictures load per place now) is asked for once */
       if (!im && path) artImg(path);
+      if (OF) for (const f of M.opens.frames) if (!artImage(f.img)) artImg(f.img);
       return;
     }
     const lk = far ? null : propLook(p, M, sc),
@@ -142,7 +149,7 @@ export function gatherFrameItems(st, C, PPU, C0) {
     /* v34: a flat picture (a sign, a painted board) stands upright: no random lean, only the wind */
     out.push({
       k: far ? 'farp' : 'prop',
-      still: !far && !M.sway && !S.bob && !S.flag && !p.moving,
+      still: !far && !M.sway && !S.bob && !S.flag && !p.moving && !OF,
       /* phase 20 R3: it rocks on the water (its model moves with it; walk/shadows.js keeps it out of the far cache) */
       bobs: !far && !!S.bob,
       lk,
@@ -153,8 +160,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
       z: p.z,
       y: y2,
       mpp: s,
-      ox: M.ox,
-      oy: M.oy,
+      ox: OF ? OF.ox : M.ox,
+      oy: OF ? OF.oy : M.oy,
       w,
       h,
       flip: p.f ? -1 : 1,
@@ -167,6 +174,8 @@ export function gatherFrameItems(st, C, PPU, C0) {
             : 0
           : undefined,
       flat: M.flat,
+      /* IN-3: a flat picture of light (the Bureau's portal): drawn unlit (walk/sprites.js drawFlatItem) */
+      emit: M.emit,
       sh: (p.lift || 0) > 3 ? 0 : (M.shadow || 0) * (p.s || 1),
       far,
       fixed: M.face !== 'billboard',

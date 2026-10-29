@@ -431,6 +431,12 @@ function settingsHTML() {
         'Your buddy follows you around the world. Tap it to see how it’s doing.',
         switchHTML('buddyWalk', p.buddyWalk !== 'off', 'on', 'off')
       ) +
+      /* IN-2: Kappi's word on a run when you seem stuck (kappi.js) */
+      settingsRowHTML(
+        'Kappi’s tips',
+        'On a run, Kappi says a word now and then when you seem stuck. Each tip comes once.',
+        switchHTML('kappiTips', p.kappiTips !== 'off', 'on', 'off')
+      ) +
       settingsRowHTML(
         'Language',
         'Menus and buttons. Stories and names stay in English.',

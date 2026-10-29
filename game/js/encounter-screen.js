@@ -58,7 +58,7 @@ import {
 } from './logic/rules.js';
 import { META_MAX } from './logic/meta-state.js';
 import { residentCandidate, residentInvite } from './logic/residents.js';
-import { runHome } from './logic/run-state.js';
+import { runEnded, runHome } from './logic/run-state.js';
 import { caseFile, caseStampMoment, redactSplit } from './logic/case-file.js';
 import { runMapNode } from './logic/run-map.js';
 import { runBoonGive, runEventSafe, runImmune } from './logic/run-loop.js';
@@ -300,7 +300,7 @@ async function encounterPlay(resume, before) {
   if (saveData.run && saveData.run.enc) saveData.run.enc.play = null;
   saveNow();
   render();
-  if (stopped || !saveData.run || saveData.run.at.phase === 'payout') {
+  if (stopped || !saveData.run || runEnded(saveData.run)) {
     encSheetClose();
     return;
   }
@@ -362,7 +362,7 @@ async function encFight(start) {
   await encWait(() => !!activeBattle);
   await encWait(() => !!uiState.modal || uiState.mq.length > 0);
   const run = saveData.run;
-  if (!run || run.at.phase === 'payout' || !saveData.team.some(m => m.hp > 0)) throw ENC_STOP;
+  if (!run || runEnded(run) || !saveData.team.some(m => m.hp > 0)) throw ENC_STOP;
   encLines = [];
   encTyped = 0;
 }

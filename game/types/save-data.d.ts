@@ -109,6 +109,8 @@ export interface Meta {
   unlocks: Record<string, 1>;
   /** hub building id -> level (buildings.json, RL-11) */
   buildings: Record<string, number>;
+  /** IN-2: Kappi's tips said (kappiTips.json ids) and the run hints met (`hint:<id>`, run.js RUN_HINTS), once ever */
+  tipsSeen: Record<string, 1>;
   /** runs ended (won or lost) and runs won */
   runs: number;
   wins: number;
@@ -359,7 +361,7 @@ export interface Run {
       the seed). Where the player is stays saveData.trip.node: 0 Copperleaf, i + 1 the map's node i */
   /** RL-8: won, at the payout (1 won, 0 lost or given up) */
   /** RL-8: in a battle, its foe as it began (a reload starts the same battle again) */
-  at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout'; battle: number; won?: 0 | 1; foe?: RunFoe };
+  at: { phase: 'fly' | 'walk' | 'battle' | 'menu' | 'payout' | 'return'; battle: number; won?: 0 | 1; foe?: RunFoe };
   /** the day (one per node arrival, backtracking included) */
   clock: number;
   /** each node's weather by day: forecast[world node][day - 1] (a weather id; world node i + 1 is the map's node i,
@@ -417,6 +419,9 @@ export interface Run {
   beat?: string[];
   /** RO-3f: a mythical was met (battled or fled from) this run: no other stands in for a rarer one (logic/rules.js spawnMyth) */
   myth?: 1;
+  /** IN-1: the prepared first run (game/data/firstRun.json; logic/run-start.js runStartPrepared): its map, wild Billies,
+   * leaders and boss are the file's, and it keeps every Billie, won or lost (run-state.js runEnd) */
+  first?: true;
   /** TW-3: its quests (logic/run-quests.js); missing until the first is taken */
   quests?: RunQuests;
   /** RS-1: the resident invited this run (residents.json); they move in when it ends, won or lost */

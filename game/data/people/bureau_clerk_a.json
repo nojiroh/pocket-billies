@@ -1,0 +1,4 @@
+{
+ "look": {"name":"Intake Clerk"},
+ "creature": {"rig":"bot:volt.intake.seizer.franker.striders","ht":1.5}
+}

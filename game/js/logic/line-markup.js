@@ -36,7 +36,8 @@ expose({
 /* to-module: end */
 export const MARKUP_COLOURS = ['gold', 'red', 'teal', 'grey'];
 export const MARKUP_EMOTES = ['!', '?', 'sweat', 'anger', 'sparkle', 'note', 'heart'];
-export const MARKUP_STAMPS = ['denied', 'approved', 'pending', 'filed', 'void'];
+/* IN-4: returned and recovered, the Bureau's pickup after the first run (the words talk.js stamps: STAMP_WORDS) */
+export const MARKUP_STAMPS = ['denied', 'approved', 'pending', 'filed', 'void', 'returned', 'recovered'];
 /** the longest pause `[p=…]` may ask for, in seconds, and the default one */
 export const MARKUP_PAUSE_MAX = 3,
   MARKUP_PAUSE = 0.4;

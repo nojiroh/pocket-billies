@@ -51,6 +51,7 @@ import { modHas } from './modifiers.js';
 import { resRerolls } from './residents.js';
 import { RUN_DAYS, runHome } from './run-state.js';
 import { runMapNode, runNodeSeed, runWeather, runWorldNode } from './run-map.js';
+import { firstRunBoss, firstRunTeam, firstRunUp } from './first-run.js';
 import { runLeaderPicks, runWildLevels } from './run-scenes.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -488,7 +489,8 @@ export const runFoeId = i => `run_${i}_foe`;
  * (logic/rival.js rivalTeam: against run.rival.lead, one meeting more than the last), at its row's top wild level +
  * run.rival.up; a reward pick after it (battle-rewards.js), never blocking. RL-14b: on an Expedition with a
  * bosses.json boss (the Voltron), the boss node's foe is that boss at the same level instead of the leader's Billie
- * (`boss`: its id; battle-engine.js startTrainer builds it); data.bosses defaults to the game's.
+ * (`boss`: its id; battle-engine.js startTrainer builds it); data.bosses defaults to the game's. IN-1: the prepared
+ * first run's boss is its file's bot and its foes' levels over their row may be the file's (logic/first-run.js).
  * @param {Run} run
  * @param {{ leaders: any[], rival?: import('../../types/game-data').RivalRules, rules: { foes: Record<'miniboss' | 'boss', { up: number, reward: number }>, rival?: import('../../types/game-data').RivalRules,
  *   ghost?: import('../../types/game-data').GhostRules,
@@ -576,22 +578,30 @@ export function runFoes(run, data) {
     const T = want || from[rngFrom(runNodeSeed(run.seed, i), 'foe').int(0, from.length - 1)];
     used.add(T.id);
     const F = data.rules.foes[node.type],
-      top = runWildLevels(map, i, /** @type {any} */ (data), fxRunFoeLevels(run))[1] + F.up,
+      /* IN-1: the prepared first run's file may set a foe's levels over its row (logic/first-run.js) */
+      top = runWildLevels(map, i, /** @type {any} */ (data), fxRunFoeLevels(run))[1] + (firstRunUp(run, i) ?? F.up),
       high = Math.max(...T.team.map(e => e.lvl || 1)),
       lv = (/** @type {number} */ l) => Math.max(1, Math.min(100, top - (high - (l || 1)))),
       /* RL-13: the leader's team is built for the run, of its own type (its file's team sets how many and the
          level spread; the region's dex first) */
-      team = runLeaderTeam(
-        rngFrom(runNodeSeed(run.seed, i), 'team'),
-        T,
-        T.team.map((/** @type {any} */ e) => lv(e.lvl)),
-        SPECIES,
-        (run.region && run.region.dex) || null
-      ),
+      /* IN-1: the prepared first run's file may name its Billies (at the leader's strongest levels) */
+      pinned = firstRunTeam(run, i),
+      team = pinned
+        ? pinned.map((sp, k, L) => ({ sp, lvl: lv(T.team[T.team.length - L.length + k]?.lvl || high) }))
+        : runLeaderTeam(
+            rngFrom(runNodeSeed(run.seed, i), 'team'),
+            T,
+            T.team.map((/** @type {any} */ e) => lv(e.lvl)),
+            SPECIES,
+            (run.region && run.region.dex) || null
+          ),
       boss = node.type === 'boss',
       /* RL-14b: a bosses.json boss (the Voltron) is the run's boss on its Expeditions; the leader is still drawn, so
          every other foe stays as it was */
-      BB = boss ? runBossFor(data.bosses || BOSSES, run.expedition || 1) : null;
+      BB = boss
+        ? /* IN-1: the prepared first run's boss is its file's (the Retrieval Scout) */
+          firstRunBoss(run, data.bosses || BOSSES) || runBossFor(data.bosses || BOSSES, run.expedition || 1)
+        : null;
     if (BB) {
       const [bid, D] = BB;
       out[runFoeId(i)] = {

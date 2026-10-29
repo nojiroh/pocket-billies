@@ -43,6 +43,7 @@ expose({
   FALL_LEG_PIXELS: [() => FALL_LEG_PIXELS],
   FALL_PALETTE: [() => FALL_PALETTE],
   FALL_PLAYER_PIXELS: [() => FALL_PLAYER_PIXELS],
+  FALL_PORTAL_MS: [() => FALL_PORTAL_MS],
   battleTip: [() => battleTip, v => (battleTip = v)],
   battleTipHide: [() => battleTipHide, v => ((battleTipHide = v), provide({ battleTipHide }))],
   battleTutor: [() => battleTutor, v => ((battleTutor = v), provide({ battleTutor }))],
@@ -57,6 +58,7 @@ expose({
   fallLandAt: [() => fallLandAt, v => (fallLandAt = v)],
   fallOverWorldMap: [() => fallOverWorldMap, v => (fallOverWorldMap = v)],
   fallPlay: [() => fallPlay, v => ((fallPlay = v), provide({ fallPlay }))],
+  fallPortal: [() => fallPortal, v => (fallPortal = v)],
   fallRandom: [() => fallRandom],
   fallSky: [() => fallSky, v => (fallSky = v)],
   fallStreaks: [() => fallStreaks, v => (fallStreaks = v)],
@@ -728,7 +730,8 @@ function fallHoldLift(ms = 600) {
   cv.style.opacity = '0';
   setTimeout(() => cv.remove(), ms + 50);
 }
-export function fallOverWorldMap(run, ms) {
+/* o.captions false (IN-4, the way back from the Bureau's portal): the dive without the Hollow Earth's captions */
+export function fallOverWorldMap(run, ms, o = {}) {
   return new Promise(res => {
     if (typeof worldBowlFilm !== 'function' || !gpuState.gl) {
       res();
@@ -743,8 +746,9 @@ export function fallOverWorldMap(run, ms) {
     }
     const t0 = performance.now(),
       P = worldMapFallFrame(fallLandAt());
-    let capA = 0,
-      capB = P ? 1 : 0;
+    const caps = o.captions !== false;
+    let capA = caps ? 0 : 1,
+      capB = P || !caps ? 1 : 0;
     const step = ts => {
       if (!cutscene.on || cutscene.run !== run || cutscene.skip || gpuState.lost) {
         res();
@@ -786,10 +790,45 @@ function fallLandAt() {
   const C = typeof CUTSCENES !== 'undefined' ? CUTSCENES.opening : null;
   return C && C.spots && C.spots.me ? C.spots.me : undefined;
 }
+/* ---- IN-4, the way back: the first picture of the fall from the Bureau's square portal. Its light fills the
+   screen, then the square shrinks away overhead as you drop out of it into the sky over the island ---- */
+const FALL_PORTAL_MS = 1400;
+function fallPortal(t) {
+  const x = openingFall.x,
+    W = openingFall.W,
+    H = openingFall.H,
+    k = clamp(t / (FALL_PORTAL_MS / 1000), 0, 1),
+    e = 1 - (1 - k) ** 3,
+    cx = Math.round(W / 2),
+    cy = Math.round(H * (0.36 - 0.12 * e)),
+    big = Math.max(W, H) * 1.5,
+    side = big + (12 - big) * e;
+  x.fillStyle = '#7FA6E0';
+  x.fillRect(0, 0, W, H);
+  /* the light round the square, in steps, then the square itself: sharp-edged, like a drawer of light */
+  for (let i = 3; i >= 0; i--) {
+    const h = side / 2 + (i + 1) * (2 + 4 * e);
+    x.fillStyle = `rgba(232,244,255,${(0.16 + (3 - i) * 0.1) * (0.4 + 0.6 * (1 - e))})`;
+    x.fillRect(Math.round(cx - h), Math.round(cy - h), Math.round(h * 2), Math.round(h * 2));
+  }
+  const h = side / 2;
+  x.fillStyle = '#FFF8EC';
+  x.fillRect(Math.round(cx - h), Math.round(cy - h), Math.round(h * 2), Math.round(h * 2));
+  /* you, falling away from it, once it is small enough to see you under it */
+  if (k > 0.3) {
+    x.save();
+    x.translate(cx, Math.round(cy + h + 10 + e * H * 0.28));
+    x.rotate(((Math.round(t * 2) % 4) * Math.PI) / 2);
+    drawFallingPlayer(-3, -8, 1, false);
+    x.restore();
+  }
+}
 /* the whole fall; resolves on a white screen (or the dive's last picture held: fallHold), ready for Copperleaf */
 /* o.from 'crust': the city opening (cutscenes/city.json) came before, so the fall starts in the crust; the street
-   under the billboard plays only when the city couldn't */
-async function fallPlay(run, o = {}) {
+   under the billboard plays only when the city couldn't. IN-4: o.from 'portal', the way back after the first run:
+   out of the Bureau's square portal (fallPortal), then the dive with no captions; the street and the crust stay for
+   the story to bring back */
+export async function fallPlay(run, o = {}) {
   const alive = () => cutscene.on && cutscene.run === run && !cutscene.skip;
   openingFall.run = run;
   /* the island the fall ends over, made ready while the street and the crust play */
@@ -817,8 +856,16 @@ async function fallPlay(run, o = {}) {
       };
       tick();
     });
-  const street = o.from !== 'crust';
-  if (!street && fade) {
+  const portal = o.from === 'portal',
+    street = !portal && o.from !== 'crust';
+  if (portal) {
+    /* the portal's light: the screen is white already (the pickup's veil), and the first picture is that light */
+    if (typeof soundEffect === 'function' && alive()) soundEffect('whoosh', { dur: 2 });
+    fallCanvas();
+    fallPortal(0);
+    if (fade) fade.classList.remove('on');
+    await anim(t => fallPortal(t), FALL_PORTAL_MS);
+  } else if (!street && fade) {
     /* out of the city's flash: the crust comes up from it */
     fade.classList.remove('on');
     setTimeout(() => (fade.style.background = ''), 700);
@@ -846,9 +893,11 @@ async function fallPlay(run, o = {}) {
       }
     }, 7600);
   /* through the crust, faster (the owner: a shorter fall; 2.9 s to 2 s) */
-  if (alive()) await anim(t => fallCrust(t * 1.45), 2000);
+  if (alive() && !portal) await anim(t => fallCrust(t * 1.45), 2000);
   const gcv = alive() && !reducedMotion ? fallWorldMapCanvas() : null;
-  if (!gcv && alive()) {
+  /* IN-4: from the portal with no 3D map (reduced motion, no WebGL): its light holds a moment, no Inner Sun */
+  if (!gcv && alive() && portal) await anim(t => fallPortal(FALL_PORTAL_MS / 1000 + t), 900);
+  else if (!gcv && alive()) {
     cutsceneCaption('At the centre of everything', 'The Inner Sun', 2600);
     await anim(t => fallSky(t), reducedMotion ? 2600 : 3400);
   }
@@ -871,7 +920,7 @@ async function fallPlay(run, o = {}) {
     if (openingFall.cv) openingFall.cv.hidden = true;
     if (fade) fade.classList.remove('on');
     if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 3 });
-    await fallOverWorldMap(run, worldMapFallFrame() ? 5200 : 9000);
+    await fallOverWorldMap(run, worldMapFallFrame() ? 5200 : 9000, { captions: !portal });
   }
   cancelAnimationFrame(openingFall.raf);
   const streaks = $('#csStreaks');
@@ -1003,7 +1052,7 @@ function tutorSkip() {
 }
 /* a word from someone at the top of the battle, without stopping it; it goes after a while, or with a tap.
    phase 06-2b: hot = the professor's HOT TIP: big, in the middle, over everything (the move buttons too), until tapped */
-function battleTip(who, text, btn, hot) {
+export function battleTip(who, text, btn, hot) {
   let el = $('#btip');
   if (!el) {
     el = document.createElement('div');
@@ -1017,10 +1066,11 @@ function battleTip(who, text, btn, hot) {
     ex = m[1];
     text = text.slice(m[0].length);
   }
-  const name = who === 'chosen' ? 'Professor Chosen' : escapeHtml(who),
+  /* IN-2: Kappi's tips use the card too, in Kappi's colours (kappi.js) */
+  const name = who === 'chosen' ? 'Professor Chosen' : who === 'kappi' ? 'Kappi' : escapeHtml(who),
     face = typeof portraitHTML === 'function' ? portraitHTML(who, hot ? 72 : 44, ex) : '',
     b = btn ? `<button class="pb small quiet btip-b" data-a="${btn.a}">${escapeHtml(btn.l)}</button>` : '';
-  el.className = hot ? 'btip hot' : 'btip';
+  el.className = hot ? 'btip hot' : who === 'kappi' ? 'btip kappi' : 'btip';
   el.innerHTML = hot
     ? `<div class="btip-card m-pop"><span class="btip-hot" aria-hidden="true">HOT TIP!</span><span class="btip-face">${face}</span><span class="btip-t"><b>${name}</b>${escapeHtml(text)}</span>${b}<small class="btip-dismiss">Tap anywhere to close</small></div>`
     : `<span class="btip-face">${face}</span><span class="btip-t"><b>${name}</b>${escapeHtml(text)}${b}</span>`;

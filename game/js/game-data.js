@@ -34,10 +34,12 @@ expose({
   FACTIONS: [() => FACTIONS],
   FESTIVALS: [() => FESTIVALS],
   FIELD_MOVES: [() => FIELD_MOVES],
+  FIRST_RUN: [() => FIRST_RUN],
   GENES: [() => GENES],
   GHOST_KEEPS: [() => GHOST_KEEPS],
   HUB_LOCATIONS: [() => HUB_LOCATIONS],
   ITEMS: [() => ITEMS],
+  KAPPI_TIPS: [() => KAPPI_TIPS],
   LINES: [() => LINES],
   LINE_BY_ID: [() => LINE_BY_ID],
   LOCATIONS: [() => LOCATIONS],
@@ -413,6 +415,10 @@ export const FIELD_MOVES = (gameData.fieldMoves && gameData.fieldMoves.moves) ||
 provide({ FIELD_MOVES }); /* to-module */
 /* dialogue track DL-3: each character's own speech bubble (talkSkins.json; logic/talk-skins.js, talk.js) */
 export const TALK_SKINS = gameData.talkSkins || { default: 'folk', skins: {}, speakers: {}, classes: {} };
+/* intro track IN-2: Kappi's tips during a run (kappiTips.json; logic/kappi-tips.js, kappi.js) */
+export const KAPPI_TIPS = /** @type {import('../types/game-data').KappiTips} */ (
+  gameData.kappiTips || { caps: { run: 5, place: 1 }, tips: {} }
+);
 /* dialogue track DL-5: the emotes that pop beside a talking head (emotes.json; talk.js) */
 export const EMOTES = gameData.emotes || { size: 12, outline: '', colors: {}, auto: {}, emotes: {} };
 /* splicing track SP-2: what spliced parts do (genes.json; logic/genes.js) */
@@ -469,6 +475,9 @@ export const BOSSES = /** @type {Record<string, import('../types/game-data').Bos
   (gameData.bosses && gameData.bosses.bosses) || {}
 );
 provide({ BOSSES }); /* to-module */
+/* intro track IN-1: the prepared first run, written by hand (firstRun.json; logic/first-run.js); null without it */
+export const FIRST_RUN = /** @type {import('../types/game-data').FirstRunData | null} */ (gameData.firstRun || null);
+provide({ FIRST_RUN }); /* to-module */
 /* towns track TW-3: a run's quests (quests.json; logic/run-quests.js) */
 export const QUESTS = /** @type {import('../types/game-data').QuestsData} */ (gameData.quests);
 /* residents track RS-1: the people a run can invite to Copperleaf (residents.json; logic/residents.js) */

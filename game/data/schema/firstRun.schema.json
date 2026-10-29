@@ -1,0 +1,80 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "firstRun.schema.json",
+ "title": "game/data/firstRun.json: the prepared first run, written by hand (intro track IN-1; logic/first-run.js)",
+ "type": "object",
+ "required": ["seed", "boss", "nodes", "crash"],
+ "additionalProperties": false,
+ "$defs": {
+  "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+  "offset": {"description": "metres from the landing's mast: x east, z north, turned as the mast is", "type": "array", "items": {"type": "number", "minimum": -40, "maximum": 40}, "minItems": 2, "maxItems": 2},
+  "species": {"type": "array", "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}, "minItems": 1, "maxItems": 8, "uniqueItems": true}
+ },
+ "properties": {
+  "about": {"type": "string"},
+  "seed": {"description": "the run's seed (its places, wild stock, shops and battles are made from it)", "type": "string", "pattern": "^[A-Za-z0-9_-]{1,40}$"},
+  "expedition": {"type": "integer", "minimum": 1, "maximum": 9},
+  "boss": {"description": "the bosses.json boss on the boss node", "$ref": "#/$defs/id"},
+  "plant": {"description": "the Perk (perks.json) planted in the first mini-boss's pick", "$ref": "#/$defs/id"},
+  "nodes": {
+   "description": "the map, row by row and lane by lane (a node's number is its place in this list)",
+   "type": "array",
+   "minItems": 3,
+   "maxItems": 32,
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["type", "row", "lane", "biome", "to"],
+    "properties": {
+     "type": {"description": "a nodeTypes.json type", "$ref": "#/$defs/id"},
+     "row": {"type": "integer", "minimum": 0, "maximum": 31},
+     "lane": {"type": "integer", "minimum": 0, "maximum": 1},
+     "biome": {"description": "a biomes.json biome", "$ref": "#/$defs/id"},
+     "to": {"description": "the next row's nodes it leads to", "type": "array", "items": {"type": "integer", "minimum": 0}, "maxItems": 2, "uniqueItems": true},
+     "wild": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lv"],
+      "properties": {
+       "lv": {"type": "array", "items": {"type": "integer", "minimum": 1, "maximum": 100}, "minItems": 2, "maxItems": 2},
+       "stock": {"description": "how many wild Billies it holds (else the game's count)", "type": "integer", "minimum": 0, "maximum": 12},
+       "list": {"description": "its species", "$ref": "#/$defs/species"},
+       "by": {"description": "its species by the starter's line (rules.json start.starters)", "type": "object", "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"}, "additionalProperties": {"$ref": "#/$defs/species"}}
+      }
+     },
+     "trainers": {"description": "route trainers on it (a mini-boss's place: the line before its ring)", "type": "integer", "minimum": 0, "maximum": 8},
+     "event": {"description": "a waystation's events.json event", "$ref": "#/$defs/id"},
+     "size": {"description": "a town's size (rules.json run.map.townSizes.cells)", "$ref": "#/$defs/id"},
+     "leader": {"description": "a mini-boss's or the boss's leader (a trainer with miniboss)", "$ref": "#/$defs/id"},
+     "up": {"description": "a mini-boss's or the boss's levels over its row's top wild level", "type": "integer", "minimum": -10, "maximum": 20},
+     "team": {"description": "a mini-boss's Billies, at its leader's strongest levels (else its leader's team built for the run)", "$ref": "#/$defs/species"},
+     "note": {"type": "string"}
+    }
+   }
+  },
+  "crash": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": ["clear", "props", "spots"],
+   "properties": {
+    "clear": {"description": "metres cleared of props round each spot", "type": "number", "minimum": 0, "maximum": 12},
+    "props": {
+     "type": "array",
+     "maxItems": 12,
+     "items": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["k", "at"],
+      "properties": {
+       "k": {"description": "a scenery.json prop", "type": "string"},
+       "at": {"$ref": "#/$defs/offset"},
+       "rot": {"description": "its turn past the mast's (degrees)", "type": "number"},
+       "clear": {"description": "metres cleared of props round it", "type": "number", "minimum": 0, "maximum": 12}
+      }
+     }
+    },
+    "spots": {"description": "the cutscene's named spots (IN-5)", "type": "object", "propertyNames": {"pattern": "^[a-z][a-z0-9_]*$"}, "additionalProperties": {"$ref": "#/$defs/offset"}}
+   }
+  }
+ }
+}

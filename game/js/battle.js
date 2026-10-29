@@ -13,6 +13,7 @@ import {
   closeModal,
   fieldBadgeLine,
   jinglePlay,
+  kappiCatch,
   limbPipsHTML,
   modal,
   perkPickOpen,
@@ -1472,8 +1473,11 @@ function finishThrow(res, id, lab, spin) {
       battleSay(`Your party is full. After the battle, pick who leaves it.`);
     }
     save();
+    /* IN-2: Kappi counts the misses in a row (kappi.js) */
+    if (typeof kappiCatch === 'function') kappiCatch(true);
     return playTurnEvents();
   }
+  if (typeof kappiCatch === 'function') kappiCatch(false);
   battleSay(['It broke free right away.', 'It almost stayed in.', 'So close. It wobbled twice.'][res.w]);
   /* PK-5: a refund row (Pyramid Pouch): the pyramid that missed comes back (logic/battle-engine.js catchRoll) */
   if (res.refund) {

@@ -232,9 +232,10 @@ function cutsceneHidden(p, on) {
 
 /** plays a cutscene's script on the director, already mounted on its map's view; resolves when it is over
  * @param {string} id @param {{ extra?: Record<string, (args: string[]) => any>, slots?: Record<string, () => any>,
- *   save?: any }} [o] */
+ *   save?: any, set?: CutsceneData }} [o] o.set: the cutscene already laid on its view (IN-5: the crash, on the
+ *   prepared landing: logic/first-run.js firstRunCutscene), in place of its file */
 export async function cutscenePlayScript(id, o = {}) {
-  const C = /** @type {CutsceneData | undefined} */ (CUTSCENES[id]);
+  const C = /** @type {CutsceneData | undefined} */ (o.set || CUTSCENES[id]);
   if (!C) throw new Error(`no cutscene "${id}" (game/data/cutscenes)`);
   const off = cutsceneOffset(/** @type {any} */ (walkView.sc), C.map);
   if (!off) throw new Error(`cutscene ${id} is filmed on ${C.map}, which isn't in this view`);

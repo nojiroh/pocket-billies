@@ -1,0 +1,45 @@
+{
+ "about": "Intro track IN-2: Kappi's tips during a run, said only when you struggle or stall (logic/kappi-tips.js decides, kappi.js shows them). Each tip: its trigger (when), a world cue tried first (cue, after cueS seconds for a stall), the seconds a stall takes before Kappi speaks (s), and Kappi's line. Caps: never in a run's first battle, at most caps.place per place and caps.run per run, each tip once ever (meta.tipsSeen). Settings: Kappi's tips.",
+ "caps": {"run":5,"place":1},
+ "near": 2,
+ "keepS": 30,
+ "showS": 4,
+ "tips": {
+  "catch": {
+   "when": "catchFails",
+   "n": 2,
+   "cue": "catchButton",
+   "line": "Two misses. From my notes: a fresh Billie jumps right out. A tired one stays in.[p] Tire it first. #l:4da8"
+  },
+  "faint": {
+   "when": "faint",
+   "line": "Fainted, not gone. They nap it off.[p] Send in someone rested. A town’s clinic does the rest. #l:d2c9"
+  },
+  "potion": {
+   "when": "potionUnused",
+   "hp": 0.34,
+   "cue": "itemsButton",
+   "line": "You carried a potion through that whole fight. I watched it [i]not[/i] get used.[p] It’s in the Bag. #l:c01a"
+  },
+  "pyramids": {
+   "when": "noPyramids",
+   "near": 10,
+   "line": "No pyramids left. Wild ones still fight, and fights pay.[p] Shops sell more. #l:bcf2"
+  },
+  "sheet": {
+   "when": "sheetStall",
+   "cue": "sheetPulse",
+   "cueS": 12,
+   "s": 20,
+   "line": "There’s no wrong choice here. Only a slow one.[p] Leaving counts as a choice. #l:2643"
+  },
+  "stall": {
+   "when": "placeStall",
+   "cue": "roadMarker",
+   "cueS": 40,
+   "s": 60,
+   "line": "Lovely spot. The arrows at the edge point the way on.[p] No hurry. I’m only noting it. #l:2611"
+  },
+  "counter": {"when":"foeBeatsLead","line":"Its type beats yours. Brave.[p] Switching is brave too. Just less dramatic. #l:d1c5"}
+ }
+}

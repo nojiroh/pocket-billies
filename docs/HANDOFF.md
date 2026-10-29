@@ -2,6 +2,439 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Intro track IN-5 - New game: the crash scene, wired end to end - 2026-10-29
+Branch `claude/in-5-new-game` from `track/intro` 17de7135 (wave 1 merged), built in the planning session at the
+owner's word ("Dew it": sessions couldn't be started over Remote Control). Merged into `track/intro`, then main, at
+the owner's word ("When done merge with main").
+- What differs from the plan (section 5, IN-5):
+  - **The picked starter replaces a stand-in.** The crash is filmed on the prepared landing, which exists only once
+    the run's world is made, and the run's counter lane follows the starter. So New game starts the run with the first
+    starter as a stand-in; the pick swaps it in (`firstRunStarter`: same uid, the hub's snapshot, the run's lead, the
+    dex) and the pools are made again (`runWorldRepool`). Nothing else of the world depends on the starter.
+  - **Skip the crash is the old opening**, not "the pick card, then the lab scene without a payout": the opening
+    (`opening.json`) already is the fall, the lab door, the dressing room, the pick and the station; it now falls from
+    the Bureau's portal with no captions, its "through the crust" and "airship at the mast" lines are changed (below),
+    and `cutsceneStartName`'s fallback is Copperleaf. So `opening.json` stays (the plan said replace it).
+  - **Dead code not removed** (`staged-fight.js`, Blake's HOT TIP tutor, `blake-first-battle`, `cutscene.test`,
+    `uiState.intro`): the cut was optional and every one of them is outside the new path; left for a clean-up.
+  - **No debug jumps to each beat:** the debug menu's "Prepared run" and "Jump to the pickup" (wave 1) cover the run
+    and the way back; New game is the crash.
+- Changed:
+  - New `game/data/cutscenes/crash.json` (`landing: true`, `map: first_run`; schema `landing`; check-data: its spots
+    must equal `firstRun.json` `crash.spots`), played by new `game/js/cutscene/crash-scene.js` (`newGameStart`,
+    `crashStart`, `crashFilm`, `crashPick`, `crashFinish`). Under 60 s to the pick at reading speed (about 35 s of lines
+    and moves); skipping stops at the pick.
+  - `logic/first-run.js`: `firstRunCutscene` (the file laid on the landing: spots, shots and clear areas turned with
+    the mast), `firstRunStarter`. Run phase `crash` (`RUN_PHASES`); `runResume` plays the crash again.
+  - `run.js` `runTakeOffPrepared({ crash })` and `runCrashLand`; `run-world.js` `runWorldRepool`; `stage.js`
+    `cutscenePlayScript(id, { set })` and `opening.js` `cutsceneMount(..., set)` take a laid-out cutscene;
+    `cutsceneMapId(node)`; `openingThrowCoins`, `openingPickStarter`, `openingLayer` exported.
+  - New game: `ui.js` `intro`, `title.js` `titleNew` (both places) call `newGameStart`. Settings' erase reaches it
+    through the intro screen's Start. `return-scene.js` marks the device (`introMark`) when the way back ends.
+  - The crash site: IN-3's `train_wreck` replaces the stand-in train (at -14, 6.5 from the mast, rot 8, clear 12),
+    spots `chosen_from` and `kappi_from` added, the ring cleared round each spot 2.5 -> 6 m (the cameras stood in
+    trees: a crash makes a clearing), and the scene hides two more areas while filming (camera side and stage).
+  - The boss: `retrieval_scout`'s fighter is IN-3's look (intake, seizer, franker, conveyor). The sim: **won 68 of
+    300 (23%)**, lost on a route 20, at the mini-boss 69, at the boss 143 (as before).
+  - The clerks: IN-4's stand-ins (`people/intake.json`, `outtake.json`) gone; the pickup's `Intake` and `Outtake` are
+    IN-3's bots (`bureau_clerk_a` "Intake Clerk", `bureau_clerk_b` "Outtake Clerk"), Bureau bubbles.
+  - Tests: new `tools/test/crash-script.test.mjs` + `crash-said.json`; two in `first-run.test.mjs` (the scene laid
+    on the landing, the starter swap); `first-run-places` snapshot remade (the landing only: the wreck, the spots, 39
+    fewer props); `check-quick.py` `phone_flow` now plays New game -> the crash -> pick -> the run -> a loss -> the
+    pickup -> the fall -> the lab's dressing room ("Checker") and payout -> Copperleaf -> the station's run sheet, and
+    asserts the gift (0 Moneys, 5 Pyramids, 1 Potion) and the device's Skip note; its map ceiling 25 -> 29 (the map's
+    header shows Research and Scrap once a run has ended, which every new player now has). Return tests and check-fast
+    follow the clerk swap. `tools/story-ids.mjs` runs on Windows (own commit).
+- **The lines, for the owner** (drafts; `#l:` ids):
+  - The crash (cutscenes/crash.json):
+    - `#l:3dc6` [surprised] Chosen: You’re awake! Good. I was going to carry you, but I’m more of a [i]leader[/i] than a lifter.
+    - `#l:4976` Kappi: Don’t sit up too fast. The train came down, and everyone walked away from it.[p] Even the train, nearly.
+    - `#l:70df` Chosen: Do you remember your name? No? Don’t worry. Mine came to me in a dream.[p] It was “Chosen”.
+    - `#l:9009` Kappi: Just before we hit, there was a square of light on the rails ahead. [i]Square.[/i][p] Nobody else saw it.
+    - `#l:3ea3` [happy] Chosen: I saw it. I see everything. Right now I see that we need a plan.
+    - `#l:4ee2` Chosen: The cargo held three Billies. Every hero needs a companion.[p] Not me, obviously. [b]You.[/b]
+    - `#l:fb3f` Chosen: Three Billies, three types. Each one beats one of the others. Choose wisely.[p] Like I would.
+    - (the pick) `#l:1b2d` [happy] Chosen: {starter}! Bold. I’d have picked that one too.[p] I didn’t. But I [i]would[/i] have.
+    - `#l:d273` Kappi: The cargo had five pyramids and a potion too. Take them. A tired wild Billie is easier to keep.
+    - (caption "From the cargo | 5 Pyramids and a Potion")
+    - `#l:4f1c` Kappi: The station’s rescue beacon is at the far end of this valley. The arrows at the edge point the way.
+    - `#l:b089` [happy] Chosen: We’ll guard the wreck. Bravely.[p] From here.
+  - The opening (Skip the crash), changed: `#l:b29c` "Stuff falls out of the sky round here sometimes. Mostly
+    furniture." (was "comes down through the crust"); `#l:9e1c` "One more thing. Skyline Station, just up the hill. Its
+    trains go out past the island, to wild places nobody’s mapped yet." (was the airship at the mast).
+- Risky:
+  - The crash site's cameras are placed by numbers, checked in headless pictures only (the wreck behind you, the
+    three starters in front); the owner's phone is the judge. A mapgen change can move trees back in front of a camera
+    (the places snapshot shows it).
+  - The pick swaps the run's lead after its world is made: only the pools are made again. If a later change makes
+    something else of the world follow the starter, it must be remade there too.
+  - A save made in the crash scene and killed before the pick resumes into the crash with the stand-in; the pick then
+    swaps it as usual.
+- Verified (Windows; CI on Linux is the reference): lint 0 errors, type-check, check:modules (591 names), check:data
+  (190 files), format; unit tests: the same 24 Windows-only failures as `track/intro` (the data snapshot needs
+  symlinks, `D:\D:\` paths, CSS lists), no others; first-run (13), crash-script (4), return-script, opening-script,
+  figure golden, first-run-places (remade); `check-quick.py --smoke`: 6 of 7, the phone flow above passing, the one
+  failure "Unused" the known Windows tool guard; `check-fast.py` "way back", "Kappi", the lab and the lab room: 5 of 5.
+  The crash scene watched headless at reading speed: the loading screen lifts, the dark fades in, every line plays.
+- Next: IN-6, the owner plays it on the phone and sends a debug log; the lines, the cameras and the boss tuned from it.
+
+### Intro track IN-1 - the prepared first run (logic and data) - 2026-10-29
+Branch `claude/in-1-prepared-run-29643a` (wave 1, from `track/intro` at 61d90751), draft PR into `track/intro`.
+Planned and built at once (intro-track.md section 1: the owner's standing answer). No section 6 item came up: nothing
+changes a later run (the usual gift, loss rule and balance are untouched; every new rule reads `run.first`). New game
+still plays today's opening: the prepared run starts from the debug menu only, until IN-5.
+- Facts checked (intro-track.md 3.2, against 61d90751), and where they differ:
+  - **The boss name clashes:** Expedition I's Voltron already has the id `retrieval` and the name "The Retrieval
+    Unit". The first run's bot is **`retrieval_scout`, "The Retrieval Scout"** (name provisional).
+  - **The mini-boss's "reward pick" is a Perk pick** (rules.json run.perks.leader: three "fine" Perks), not an item
+    pick, so the planted aha is a Perk: **Heavy Crown** (your lead hits 40% harder and takes 20% less), the natural
+    find for a starter that mostly fights alone.
+  - **Every place rolls wild Billies** (a landing, a town with tall grass, a waystation, a mini-boss's place), Expedition
+    I's routes stand 4-6 route trainers (one a Bureau agent with a bot), and a mini-boss's place a line of arena
+    trainers. One idea per place needs all of that pinned, so the file pins each place's stock and trainers.
+  - **Each leader's type punishes one starter** (Rocco's Ground beats Fire, Morel's Flying/Psychic Grass); the file
+    names the mini-boss's two Billies instead (Morel's ring, two pure Psychic Billies, even against all three).
+  - A bot's types are its torso's and legs' (logic/robot-math.js), not its gem's. A prop's `rot` is in degrees.
+  - The short-run row rule (runMapRows: a free row before the boss) doesn't fit the plan's map (a town right before
+    the boss); the hand-written map doesn't go through runMapRows, so it keeps the plan's shape.
+  - The rest held: a fixed seed works everywhere, a fixed map didn't exist, `plan.map` can be replaced between
+    runStartPlan and runStartOn, places are made by mapgen from the node seeds (MAPGEN_VERSION 27), the gift is
+    rules.json run.start ($600, 5 Pyramids, 2 Potions), the bot parts are RL-14's.
+- Changed:
+  - New `game/data/firstRun.json` + schema, `FIRST_RUN` in game-data.js, a `dataFirstRun` check. The map (lane 0 the
+    southern): 0 landing (the crash site, nothing wild) -> 1 route, the catch lane (3 Goslings, level 3, no trainers) or
+    2 route, the counter lane (one level-2 wild of the starter's counter type: Pupfin for Emberox, Cliplet for
+    Cartotter, Pilotbat for Kidling; no trainers) -> 3 a hamlet (clinic, shop) or 4 a waystation (Abandoned Pyramid
+    Cart) -> 5 the mini-boss (Mother Morel's ring, Kontourlet and Festival Kontourlet, levels 2-3, doubles; Heavy Crown
+    planted in its pick) -> 6 a hamlet -> 7 the boss (the Retrieval Scout, level 4, HP x2.4). Biomes: meadow, then
+    thicket. Lane 1 also leads to the hamlet (one diagonal).
+  - New `game/js/logic/first-run.js`: the file's map laid on the region grid (runMapGrid, so its places are made like
+    any run's), the plan (region zones and leaders, forecast, no rival, ghost or side area), the pinned pools, stock,
+    trainers, foe levels, team, boss and plant, the crash site and its spots, the file's problems.
+  - `runStartPrepared(s, data)` in logic/run-start.js: runStartPlan on the file's seed and rows, the map replaced,
+    runStartOn with rules.json **run.first** `{se: 0, pyramids: {pyramid: 5}, items: {potion: 1}}`, only the lead
+    travels, no hub bonus or gift rides along, the event pinned, `run.first = true` (validRun checks it).
+  - **The keep rule:** `runEnd` keeps the whole party when `run.first`, won or lost (`keep` isn't read).
+  - Small hooks, each reading `run.first`: runFoes (the file's boss, foe levels, mini-boss team), runWorldTables (the
+    pinned pools and stock), rules.js encounterStock (`L.stock`), runRouteTrainers (the count), perkOfferMake (the
+    plant, first pick only), runSceneMake (the crash site on the landing).
+  - bosses.json `retrieval_scout`: Bulwark torso, Clamp and Piston arms, Crawler Treads, Volt gem (Steel/Ground),
+    `expeditions: []` (never a later run's boss), one shield phase at half HP. Expedition I's Voltron is unchanged.
+  - **The crash site:** firstRun.json `crash`, offsets in metres from the landing's mast, turned with it. Props: the
+    wreck (a **stand-in, `train_greenbelt`**, until IN-3's wreck prop: change `crash.props[0].k`) and two
+    `bureau_crate`s, put down with `crash: 1` after clearing the ground round them and the spots. **Spots** (IN-5):
+    `wreck`, `me`, `chosen`, `kappi`, `star1`, `star2`, `star3`; `firstRunSpots(scene)` gives them in the landing's
+    metres. West of the mast, clear of the road (east of it) and the pond (south-east).
+  - The page: `runTakeOffPrepared()` in run.js (no train ride: the loading screen, then the landing, as a take-off
+    ends); the debug menu's Run section has **"Prepared run"** (on the current save: a run sets the hub aside and puts
+    it back at its end, plus every Billie it kept).
+  - Run sim `--prepared` (logic/run-sim.js): the file's run on every seed; the seed picks the starter and salts the
+    battles' and catches' luck (one map for everyone), and the bot takes the planted Perk (a player would; the greedy
+    bot otherwise takes the first "fine" Perk in file order).
+  - Tests: tools/test/first-run.test.mjs (11: the file and its check, the run is valid and the file's, the pinned
+    places, foes, boss and plant, the keep rule both ways, the crash props and spots); first-run-places.test.mjs
+    (slow tier: every place's fingerprint, the mast, spots and crash props, and a picture of the crash site in its
+    ground letters, so a mapgen change shows what moved; remake with --test-update-snapshots on purpose only).
+  - Windows tooling (own commits): load-logic imports by file URL (every Node test and the sim failed on Windows),
+    build-data and to-module run as scripts (`npm run data` and `npm run modules` did nothing), to-module and
+    check-names keep page paths with forward slashes.
+- **Balance** (`node tools/test/sim/run-sim.mjs --prepared --balance --runs=300`): **won 69 of 300, 23%**
+  (Cartotter 45%, Emberox 18%, Kidling 8%). Lost on a route 20 (7%), at the mini-boss 69 (23%), at the boss 142 (47%):
+  the boss is the wall. The bot's top level ends near 6; the sim clock says about 7 minutes (its guess, not a play).
+  The full mode (with scenes) gives the same outcomes. Levers in the file: the counter lane's level, the mini-boss's
+  and boss's `up`, bosses.json `retrieval_scout.boss.hp`.
+- Risky:
+  - **The starters' spread is the type chart's:** the bot is Steel/Ground, so Water hits it double and Cartotter wins
+    every boss it reaches (it dies more on the counter lane and at the mini-boss); Kidling hits it neutral and takes
+    neutral Steel hits twice a turn. No pair of RL-14 parts is neutral to all three (swept: every arm pair, other
+    frames). IN-3 may give the bot its own parts; IN-6 tunes from the owner's debug log.
+  - The sim's bot fights at most two wild Billies a place and catches little, so a player levels more: the real win
+    rate is likely above the sim's.
+  - Small edits in shared logic (run-loop, run-scenes, perks, route-trainers, rules, run-state, run-sim) and
+    hooks.js regenerated; IN-4 owns runOver/runEndHome. studio/art-code-refs.json regenerated (line numbers).
+  - The crash site's ground: checked in the tiles (not water, not road); heights and slopes only by eye (below).
+- Lines (drafts in bosses.json, for the owner): call "{name} has found you. It acts twice a turn. Your team steps up
+  together." join "A Bureau bot rolls out of the smoke. It is holding a clipboard with your name on it." phase "{name}
+  files an emergency extension! A golden shield flickers up." win "Retrieval postponed. Please wait to be collected."
+- Verified (on Windows, so CI's Linux run is the reference): lint, typecheck, check:modules (586 names),
+  check:data (184 files), check-data-text, first-run.test.mjs 11 of 11, first-run-places.test.mjs, logic-worker.
+  `npm test` here: the only failures are Windows ones (a `D:\D:\` path, CSS file lists, timing budgets) and
+  check-data-snapshot, which can't run here (its file count was raised to 184 by hand; CI checks it). On the page
+  (town fixture, headless): the debug menu's path starts it, the loading screen shows the region with the file's
+  leaders, and you land on the prepared landing with `run.first` true, 0 Moneys, 5 Pyramids, 1 Potion and the three
+  crash props down. No 3D picture of the crash site: software drawing at phone size timed out twice on this machine;
+  the snapshot's picture (ground letters) is the record until IN-3/IN-5 look at it. Note: the walk view's composed
+  scene is offset from the landing's own scene, so call `firstRunSpots` on the scene the cutscene stands in.
+- Next: IN-3 swaps its wreck prop into `crash.props[0].k` (and may restyle `retrieval_scout`); IN-4 needs no keep
+  picker on the first run (`run.first`); IN-5 starts it from New game with `runStartPrepared` and stands the crash
+  cutscene on `firstRunSpots`; IN-6 tunes the numbers above from a phone run.
+### Intro track IN-3 - The art: the wreck, the square portal, the clerks, the boss - 2026-10-29
+Branch `claude/in-3-intro-art-a49f03` (from `track/intro` 61d90751), draft PR into `track/intro`. Wave 1, built straight
+in (section 1: sessions run on their own; art is judged on the phone). Not placed in any scene or cutscene: IN-1, IN-4
+and IN-5 do that. Hand-over note for the other wave 1 sessions: the shared notes folder's `in-3-art-ids.md`.
+- Facts checked (plan section 5 and the brief, against 61d90751):
+  - A recipe's boxes always stand upright (prop-models.js lowPolyFromRecipe: no turn but a round shape's `rot`), so
+    a tipped carriage can't be a recipe. The wreck is a prebuilt mesh in the airship's format (kind `mesh`, v 1: the
+    buildings' 32 px texture cells), tessellated from the trains' own recipes the way lowPolyFromRecipe draws them.
+  - bosses.json already has a boss called "The Retrieval Unit" (`retrieval`, the Voltron of Expedition I, built from
+    the boss parts intake, seizer, franker, conveyor). IN-1 had no commits when this was built; it pushed
+    later: its boss is `retrieval_scout` ("The Retrieval Scout"), fighter
+    bulwark/clamp/piston/treads as a stand-in for IN-3's look; the look below goes in its row (IN-1's file).
+  - RL-14's boss parts had no pictures (drawn as stand-ins from a colour and a shape); bots are drawn only in battle
+    (robot-art.js robotRig), and in the world only as a creature person on a `bot:` rig (person-art.js creatureFrame:
+    skeleton-rig.js rigParts takes `bot:` sp). With figures on, every creature person was drawn as Kappi's capybara
+    (figures.js figureFromLook).
+  - The VFX track's particles (VFX-20's ladder) are the battle's; the walk view's prop fx (walk/effects.js) and its
+    quality step (`walkRenderer.qe`) are the world's equivalent, so the smoke is a walk fx on that step.
+  - No prop picture could lie on the ground lit as light: flat props (walk/sprites.js drawFlatItem) were always lit
+    and tinted by the scene.
+- Changed:
+  - New tools/build-intro-art.py (rerunnable) builds everything below; new tools/look-intro-art.py takes the pictures.
+  - **`train_wreck`** (scenery.json, tags intro/station/train): the crashed sky train, one prop, about 22 x 10 m, its
+    footprint behind its base point. The train's recipe with its battered colours (HB-8's swap; windows dark), cut in
+    two at its middle: the front carriage pitched 21 degrees nose down, 0.7 m into a dirt heap; the second rolled 82
+    degrees onto its side; a broken piece of sky rail behind; five `bureau_crate`s spilled in front; two torn panels.
+    Smoke: fx `plume` at the front's tail and two on the tipped carriage. One look per Skyline Station train (its
+    `form` its region theme): base lakeland (4,254 triangles), v 1 greenbelt, v 2 wildwood, v 3 highland, v 4 harvest
+    (2,370-3,714; the Zephyr's gasbag comes down deflated beside it). Files: game/art/scene/next/models/train_wreck*.json (1.4 MB for all five; a run loads one),
+    pictures in game/art/scene/next/intro/.
+  - **`sky_rail_broken`**: the broken rail piece alone (448 triangles).
+  - **`bureau_portal`**: the Bureau's square portal, flat on the ground (flat on purpose), 2.5 m, its middle at its
+    base point. Light only: a white and cyan rim, the drawer's walls going down in rings to a bright eye, specks, a bar
+    of light under its front edge (the drawer's handle), sparks; drawn unlit (`emit`), a cyan glow light. Its `opens`:
+    six frames from a line to the square over 700 ms. A placement's `open = walkView.t` plays them; `shut =
+    walkView.t` plays them back and then hides it (Kappi's "like someone shutting a drawer"). New
+    game/js/logic/prop-open.js `openingFrame` (tested), walk/frame-items.js picks the frame, walk/sprites.js draws an
+    `emit` flat picture unlit.
+  - **The plume** (walk/effects.js fx `plume`): a thick, dark column, 9 puffs at quality step 0, 7, 5, 3 at step 3 (a
+    struggling phone).
+  - **The clerks**: game/data/people/bureau_clerk_a.json (`bot:volt.intake.seizer.franker.striders`, walks) and
+    bureau_clerk_b.json (`bot:tide.intake.franker.seizer.hover`, hovers): creature people on a bot rig, so `actor`,
+    `walk`, `face` and the story stage use them as anyone. figures.js gives a bot person no figure (it keeps its bot
+    picture, never a capybara); figure-kit-golden skips them (snapshot unchanged).
+  - **The stamp pose**: `act <who> stamp [s]` (logic/cutscene-set.js CUTSCENE_POSES, script-parse's help,
+    docs/CUTSCENES.md): skeleton-rig.js rigPose `stamp` (the right arm, a clerk's Franking Cannon, raised over 350 ms,
+    slammed down with a squash at 350-450, held), person-art.js draws it at its progress (12 steps), director.js plays it
+    over 0.9 s. A person (not a bot) throws instead.
+  - **The boss's look**: pictures for RL-14's four boss parts in the placeholder sheet's look
+    (game/art/robots/intake, intake_head, seizer, franker, conveyor and their backs; robots.json `art`): the Intake
+    Frame a filing cabinet (two drawers, label holders, mustard handles, red tape, the gem's socket), its head a slate box
+    with two red lamps, the Seizure Arm a claw holding a manila folder, the Franking Cannon a rubber stamp, the
+    Conveyor Treads a belt with parcels. **For IN-1's bosses.json row:** `fighter
+    {"gem":"volt","torso":"intake","armL":"seizer","armR":"franker","legs":"conveyor"}`, a single bot (no `bots`,
+    no `join`). The Voltron uses the same parts, so Expedition I's boss gains the same pictures (art only).
+  - New showcase map test_intro_art (`?test=1&scene=test_intro_art`): the five wrecks, the broken rail, the portal,
+    the clerks.
+  - Windows, each its own commit: tools/test/load-logic.mjs imports logic modules by file URL (the same line IN-1
+    committed); tools/browser_check.py's test server listens with a queue of 256 (Python's 5 refused a page's module
+    loads). Also: a bot person drawn while its pictures load isn't cached (person-art.js), so it is drawn again with
+    them; the new module is listed in game/index.html, studio/index.html and the Studio's logic worker.
+- Shots (tools/look-intro-art.py, copies in docs/samples/intro-art/):
+  - The wrecks, each train (a phone held sideways): docs/samples/intro-art/wreck-lakeland.webp, wreck-greenbelt,
+    wreck-wildwood (its gasbag torn off and deflated on the ground), wreck-highland, wreck-harvest; nearer on a phone:
+    wreck-close.webp (22 m is wider than the phone's view: you see the gap, the rail and the crates).
+  - The portal opening (phone sized, the two clerks either side): portal-1.webp (a line), portal-3, portal-5,
+    portal-7.webp (open).
+  - The clerks, drawn by the game at 3x: clerk-stamp.png (both clerks' stamp, 13 steps: raised, slammed, held),
+    clerk-walk.png (walk cycles, down and up). The boss bot: boss.png (front, back, stamp raised, slammed).
+- Risky:
+  - The wreck is big (22 m) and its footprint a rectangle: on the landing, IN-1 must leave room in front of it. Its
+    triangle count (3-4k) is over the import checks' 2,000 warning; it is one model a run.
+  - A wreck mesh doesn't take colour swaps (a mesh, not a recipe): each train is its own file.
+  - The Voltron's look changes (stand-ins to pictures); its fight is unchanged.
+  - The portal's frames load on demand the first time it opens (a frame or two of nothing): IN-4 can ask for them
+    ahead (`artImg` on `opens.frames[].img`).
+- Verified: lint (0 errors), type-check, `check:data`, `art-code-refs --check`, unused art (none, none missing), the
+  new unit test (prop-open.test.mjs), figure-kit-golden and logic-worker; `python tools/check-quick.py --smoke --workers=1`: 5 of 7 steps pass (the phone flow: Start-Game, the opening, the
+  dressing room, the starter, the station's run sheet, five screens, a battle, the debug log; the in-game full test's
+  first step; palettes; windows; ground). Two can't pass on this Windows machine: "Unused" (tools/art-unused.mjs's
+  `file://` + argv guard prints nothing; its report run directly: 0 unused, 0 missing) and "Actions bar" (its page
+  load passes 90 s here: the in-game full test, on the same town fixture, booted in 88 s). Shots: the look tool,
+  no page errors.
+  On this Windows machine several tools don't run as written (they compare paths with `/` or `file://` + argv):
+  `npm run data` and `npm run modules` write nothing, and 20 unit tests fail on paths (`D:\D:\...`) or symlinks
+  without admin rights; they pass on Linux CI. to-module was run with node:path swapped for its POSIX version.
+- Decided for the owner, to review: the wreck's train is the Lakeland Clipper by default (any of the five by `v`);
+  the portal is cyan and violet like the sky portal, a drawer's handle of light at its front; the clerks walk on
+  Striders and hover; the boss parts' pictures replace the Voltron's stand-ins too.
+- Next: IN-1 puts `train_wreck` on the prepared landing (firstRun.json `crash`) and sets `retrieval_scout`'s fighter; IN-4 uses the portal (`open`,
+  `shut`) and the clerks (`act ... stamp`); the owner judges the art on the phone.
+### Intro track IN-4 - the way back: the Bureau's pickup, the fall from its portal, the lab - 2026-10-29
+Branch `claude/in-4-way-back-74f4bd` (made from `track/intro` 61d90751), draft PR into `track/intro`. Wave 1, run
+alongside IN-1 to IN-3 under the owner's standing answer (intro-track.md section 1: plan and build, no approval stop).
+No "Ask me before" item came up. New game is unchanged (IN-5 wires it).
+- Facts checked against the code (plan sections 3.1 and 3.2, main bb658f52): all held. Two notes: `fallPlay`'s
+  fallback with no 3D map (reduced motion, no WebGL) draws the Inner Sun (`fallSky`) with its caption, so the portal
+  fall has a fallback of its own (the portal's light held, no sky); and `runEndHomeGo` leaves `story.pending =
+  'back-lost'` after a loss, which the lab scene replaces on the first run (cleared there).
+- Changed:
+  - **The pickup.** `runOver` (run.js): when `run.first` (IN-1) or the debug jump, the run's phase is `return` at once
+    (a new RUN_PHASES value, saved before anything plays), then `runPickup`: once the battle and its windows are gone,
+    story.json `pickup-lost` / `pickup-won` on the story stage: `camera run-up`, two Bureau clerks walk over (the story
+    stage's `walk X beside me` now takes a second person, on your other side), the stamp, then the new command
+    `portal` (story-stage.js `storyPortal`): the square portal opens under you (IN-3's `bureau_portal` prop with its
+    `open` time once the scenery has it; until then a stand-in square of sparkle light), you drop, and a white veil
+    (`#backVeil`, the portal's light) covers the screen until the way back takes it.
+  - **The stamps.** Markup `[stamp=returned]` and `[stamp=recovered]` (line-markup.js MARKUP_STAMPS), stamped as
+    "RETURNED TO SENDER" / "RECOVERED PROPERTY" in the small size (talk.js STAMP_WORDS), on the Bureau's bubble.
+  - **The clerks (stand-ins).** people/intake.json and outtake.json ("Intake Clerk", "Outtake Clerk", in the clerk's
+    look), speakers `Intake` / `Outtake` in story.json, the Bureau's bubble in talkSkins.json.
+  - **The fall.** `fallPlay(run, { from: 'portal' })` (opening-fall.js): `fallPortal` draws the first picture, the
+    portal's light filling the screen, then the square shrinking overhead as you drop under it (1.4 s), then
+    `fallOverWorldMap` with the new `{ captions: false }` onto `me`. The street and crust legs are untouched.
+  - **The lab.** game/data/cutscenes/return.json (the opening's set: map, spots, shots, clear; tools/build-copperleaf.mjs
+    now gives it the opening's whenever it moves them) played by the new game/js/cutscene/return-scene.js
+    (`returnStart`). opening.js's start is split into `cutsceneBegin` and `cutsceneMount` (shared; the opening plays
+    as before). The scene's `dressing-room` saves your look and name at once; the new cutscene command `payout` opens
+    the payout sheet over the scene in a lab mode (run-payout.js: "What you brought back", Kappi's words, no keep-one
+    cards since everyone comes home on the first run, "Done" goes back to the scene; skipping stops there). The scene's
+    end: `runEndLab` (run.js), which is `runEndHomeGo` with everyone kept, no train, standing at return.json's `me`
+    outside the lab door (`standByLab`), then what the run brought home is told. If the 3D view can't run or the scene
+    breaks, the run still ends the same way.
+  - **Resume.** A run at phase `return` reopens at the lab (`runResume`), with no fall. `runEnded` (logic/run-state.js)
+    treats `return` like `payout`: no run battle, no encounter, no giving up, no second ending. ui.js `render` leaves
+    the screen to the way back while it plays (`cutscene.back`); the director doesn't skip past the open payout.
+  - **Debug menu:** on a run, "Jump to the pickup (win)" / "(loss)" ends this run the first run's way.
+  - Docs: CUTSCENES.md ("The way back"), SCRIPTS.md (`payout`, `portal`, the second walker, the two stamps).
+- **The lines, for the owner** (drafts in the cast's voice; `#l:` line ids; change freely):
+  - The lab scene (cutscenes/return.json), after you wake:
+    - `#l:0135` [surprised] Chosen: You came out of the sky.[p] [b]Again.[/b] Once is an accident. Twice is a [i]brand[/i].
+    - `#l:88e1` Chosen: I took the next train home, by the way. First class. They gave me a blanket for the shock.[p] I wasn’t in shock. I kept the blanket.
+    - `#l:2a5d` Kappi: You’re outside the lab, in Copperleaf. Nothing’s broken. I checked.[p] Twice.
+    - `#l:f85b` Chosen: Before anything else: who [i]are[/i] you? Still nothing? Fine. We’ll build you from scratch.[p] Like a legend.
+    - (the dressing room)
+    - `#l:b9d5` [happy] Chosen: {name}. Strong name.[p] Second-strongest on this porch.
+    - `#l:04bf` Kappi: Now, what you brought back. Empty your pockets. I’ll count.
+    - (the payout sheet, "What you brought back": "Kappi counts it up. It turns into Research, for the Lab, and your
+      bag goes into Copperleaf’s." after a win; "... and everyone you caught comes home with you." after a loss)
+    - `#l:0084` Kappi: That square of light in front of the train? You came down through one just now. It’s the Bureau’s.
+    - `#l:dd9c` [surprised] Chosen: The Bureau? Paperwork people. Don’t sign [b]anything[/b].[p] I signed one thing once. I still get letters.
+    - `#l:c0d7` Chosen: Here’s the plan. Skyline Station, just up the hill. Its trains go out past the island, to wild places nobody’s mapped.
+    - `#l:d777` Kappi: Every trip is a new region. New Billies, new leaders. You never get the same one twice.
+    - `#l:1c6e` Kappi: What you catch can come home with you. What you learn turns into Research, for the lab. That stays, whatever happens out there.
+    - `#l:14c0` [happy] Chosen: And every trip, you come back stronger. Like a training montage.[p] I [i]love[/i] a montage.
+    - `#l:20d9` Kappi: Rest first. The station isn’t going anywhere.[p] Neither are we.
+  - The pickup after a loss (story.json `pickup-lost`):
+    - `#l:ad1f` Intake: Don’t get up. You’re [i]exactly[/i] where the form says you’d be.
+    - `#l:5af2` Outtake: One person, unregistered. Fell off a train. No ticket.[p] Also lost a fight.
+    - `#l:ca6b` Intake: Several fights. It’s all on the form. We have a form for that.
+    - `#l:65eb` Outtake: Sender, unclear. Address, unclear. So it goes back to the default address.
+    - `#l:b5f8` [shout] Intake: Returned to sender.[stamp=returned]
+  - The pickup after a win (story.json `pickup-won`; IN-1's boss is "The Retrieval Scout"):
+    - `#l:ad5e` Intake: Hold still. You beat our retrieval scout.[p] That scout was [i]on loan[/i].
+    - `#l:66e8` Outtake: One person, unregistered. One scout, dented. Both found at the scene.
+    - `#l:c180` Intake: Good work, technically. We don’t do good work here. We do [b]paperwork[/b].
+    - `#l:ec95` [shout] Intake: Recovered property.[stamp=recovered]
+- Risky:
+  - **Stand-ins until IN-3 merges.** The clerks are people in the clerk's apron (people/intake.json, outtake.json).
+    IN-3's bots are `bureau_clerk_a` / `bureau_clerk_b` (creature people, no portraits). The swap: story.json
+    `speakers` (`Intake` to `bureau_clerk_a`, `Outtake` to `bureau_clerk_b`), talkSkins.json `speakers` (both to
+    `bureau`), delete the two stand-in people files and their rows in the figure golden snapshot. IN-3's `act <clerk>
+    stamp` pose is a cutscene command; the story stage has no `act`, so the stamp stays the bubble's. The portal takes
+    IN-3's prop by itself once `bureau_portal` is in the scenery (not seen running: IN-3 hasn't committed it yet).
+  - The pickup waits for the battle's windows to close (at most 8 s), then plays even if one is still open.
+  - A reload with the payout sheet open at the lab starts the lab scene again from the top (the plan allows beat 8).
+  - Windows: the repo's Node tools run their main block only on POSIX paths (`import.meta.url === file://argv[1]`)
+    and `to-module.mjs` compares POSIX paths; IN-1 fixed both on its branch. This session ran them through a local
+    wrapper (not committed). 24 unit tests fail on Windows on `track/intro` itself; the same 24 fail here, no others.
+- Verified: lint (eslint 0 errors; the names, ui-lint, unused-css, art-refs and modules checks), type-check, the data
+  check, the unit tests (new tools/test/return-script.test.mjs with return-said.json: the lab scene's and both
+  pickups' lines and commands in order, the stamps, the Bureau's bubble, no Hollow Earth, the set equal to the
+  opening's, `payout` a cutscene's; run-state.test.mjs: `return` loads, `runEnded`), and a new check-fast step,
+  "The first run's way back" (`?fixture=run`): the pickup with both clerks, the phase stored at once, a reload plays
+  the lab, skipping stops at the dressing room and at the payout (no cards), Done, the end: no run, one more run
+  ended, standing on the lab door's spot. The smoke check: its four browser steps pass (the phone flow plays the real
+  opening through the split `cutsceneStart`; palettes; the actions bar; the in-game test's step). Its data step
+  "Unused: art, props and songs" fails on Windows on clean `track/intro` too (a Node tool's POSIX main guard).
+- Next: IN-5 wires New game to the crash and `runStartPrepared`; then the way back plays for real. Swap the clerks
+  for IN-3's bots when it merges (above). IN-6: the owner reads the lines on the phone.
+### Intro track IN-2 - Kappi's tips - 2026-10-29
+Branch `claude/in-2-kappi-tips-8cada0` (from `track/intro` 61d90751), a draft PR into `track/intro` (wave 1, beside
+IN-1, IN-3 and IN-4). Built at once: the owner's standing answer (intro-track.md section 1) is the approval. No "Ask me
+before" item came up.
+- Facts checked (intro-track.md 3.2, against 61d90751): `RUN_HINTS`/`runHint` are as described (toasts once a run while
+  `meta.runs` is 0; 10 hints). Today a later run shows **none** of them, so "the second run on keeps them as toasts
+  while `meta.tipsSeen` lacks them" (section 5) is a change for later runs: it is what the plan says, so it is built,
+  but see Risky. `#btip`/`battleTip` (opening-fall.js) is dormant as said; its card's CSS is in opening-old.css. There
+  was no `meta.tipsSeen`, no `run.first` yet (IN-1 adds `run.first === true`), and no pulse flag for a road's arrows.
+- Changed:
+  - New game/js/logic/kappi-tips.js (pure, Node-tested): the run's counters and the decision. Triggers: two failed
+    catches in a row; the run's first faint; one of yours under a third of its HP with a heal in the bag and none used
+    by the battle's end; no pyramids with a wild one within 10 m; 20 s on a choice sheet (reward pick, Perk pick, event,
+    shop) without a real choice (the clock restarts only when the sheet closes or its pick, money, Perks, heals or
+    pyramids change); 60 s in a place without getting 2 m nearer a road on; the first fight against a foe whose type is
+    strong against your lead. Caps: nothing in a run's first battle (not said, not cued, not kept for later), one tip a
+    place, five a run, each tip once ever (`meta.tipsSeen`), never while busy (a battle not at its menu, a throw, a talk,
+    a card or bubble already up, a sheet still opening, any other sheet). A fired tip waits up to 30 s for a quiet
+    moment, then is dropped. Cues first: the Catch button glows after one miss when the foe is under half HP; the Bag
+    button glows when one of yours is low with a heal in the bag; a sheet's picks and its main button glow at 12 s; the
+    arrows of the roads on glow gold and bolder at 40 s. Kappi speaks only when the trigger still fires after its cue.
+  - New game/data/kappiTips.json + schema (triggers, cues, seconds, caps, the lines with line ids); data-checks.js
+    `dataKappiTips` (one tip per trigger, known cues, a cue before its line, line ids, markup), in check-data and the
+    Studio's Check. tools/story-ids.mjs gives the tips' lines their ids.
+  - New game/js/kappi.js: watches the game twice a second (and right after each throw: battle.js finishThrow calls
+    `kappiCatch`), shows the cues and Kappi's voice. Out of battle: a bubble at the top of the screen, under the top
+    bar, in Kappi's skin (talk-skins.css kappi, dialogue.css's bubble) with Kappi's face; a tap closes it, else it goes
+    after 4 s (50 ms a letter for a longer line). In battle: the dormant `#btip` card in Kappi's leaf green
+    (opening-fall.js `battleTip` now knows `kappi` and is exported; only that block changed). Kappi doesn't walk with
+    you. The debug log gets a `scene` line per cue and tip (its id only). New game/css/kappi-tip.css; motion.css `m-cue`.
+  - walk-view.js: `walkView.exitPulse`; `drawExitMarks` draws those exits gold and bolder while it lasts.
+  - run.js `runHint` (the RUN_HINTS block only): on the first run (`run.first`, else `meta.runs === 0`) every hint is
+    dropped and counted as met (`meta.tipsSeen['hint:<id>']`); Kappi's struggle tips and cues take their place. From
+    the second run on a hint is a toast once ever, while not met. The landing hint is dropped on the first run: IN-5's
+    crash scene ends with the way; until then the 60 s stall cue and tip cover a lost player.
+  - Settings, Game tab: "Kappi's tips" (on by default; `preferences.kappiTips` 'on'/'off'). Off also stops the cues.
+    The later runs' hint toasts are not Kappi's and stay on either way.
+  - `meta.tipsSeen` (meta-state.js: in `newMeta`, checked by `validMeta`, a broken one dropped alone by `metaFill`).
+  - tools/check-fast.py "Kappi's tips" (run fixture, a page of its own): past the run's first battle, two throws miss
+    (the roll is made to miss): one tip in Kappi's card, `tipsSeen.catch` set, nothing after a third miss.
+  - tools/test/kappi-tips.test.mjs (15 tests), meta-state.test.mjs; tools/test/load-logic.mjs imports by file URL (the
+    same one-line Windows fix IN-1 made; identical lines merge cleanly); the Studio's logic worker lists the new module.
+- Kappi's lines (drafts for the owner, kappiTips.json):
+  - catch (2 misses in a row): "Two misses. From my notes: a fresh Billie jumps right out. A tired one stays in.[p] Tire
+    it first." `#l:4da8`
+  - faint (the run's first): "Fainted, not gone. They nap it off.[p] Send in someone rested. A town’s clinic does the
+    rest." `#l:d2c9`
+  - potion (low, a heal unused all battle; said after it): "You carried a potion through that whole fight. I watched it
+    [i]not[/i] get used.[p] It’s in the Bag." `#l:c01a`
+  - pyramids (none left, a wild one near): "No pyramids left. Wild ones still fight, and fights pay.[p] Shops sell
+    more." `#l:bcf2`
+  - sheet (20 s on a choice sheet): "There’s no wrong choice here. Only a slow one.[p] Leaving counts as a choice."
+    `#l:2643`
+  - stall (60 s in a place): "Lovely spot. The arrows at the edge point the way on.[p] No hurry. I’m only noting it."
+    `#l:2611`
+  - counter (a foe whose type beats your lead): "Its type beats yours. Brave.[p] Switching is brave too. Just less
+    dramatic." `#l:d1c5`
+- Risky:
+  - **Later runs' hint toasts** now show on the second and later runs until each is met (before: never after the first
+    run). That is section 5's wording; if the owner reads "Ask me before" item 2 as covering it, `hintPlan` returning
+    `skip` for a run that isn't the first restores the old behaviour in one line.
+  - The counters live in memory: a reload mid-run starts them over (the once-ever list is saved). After a reload the
+    next battle counts as the run's first, so nothing fires in it.
+  - The road cue relies on `walkView.st.exits` and the map's `to` links; the gold arrows were not seen in a screenshot
+    (the headless low-graphics page drew no exit arrows where I looked). The stall clock runs only when such an exit is
+    known.
+  - kappi.js runs a 500 ms timer on every page (it returns at once without a run).
+  - Merge spots: run.js (the RUN_HINTS block only), opening-fall.js (`battleTip` only), battle.js (two lines in
+    `finishThrow`), hooks.js (re-run `npm run modules`), studio/art-code-refs.json (regenerate), meta-state.js.
+- Windows note: the repo's tools (`npm run modules`, `data`, `story:ids`, the art refs) compare `import.meta.url` with
+  `file://${argv[1]}` and do nothing on Windows; to-module also needs forward-slash paths, and the check scripts' local
+  server (listen backlog 5) refuses connections there. I ran them through a scratch wrapper (forward-slash `node:path`,
+  a bigger backlog); nothing in the repo changed for it except load-logic.mjs.
+- Verified: lint (eslint 0 errors; check-names, unused-css, to-module --check; ui-lint counted by hand on Windows:
+  every rule under its ceiling), typecheck, format:check, check:data (184 files), line ids. `npm test`: kappi-tips
+  15/15, meta-state; the quick tier's other local failures are Windows-only (the same on the base commit; a 1,000-map
+  timing test failed once under load), except check-data's 18 snapshots, which CI showed need the file count 184 (fixed
+  in tools/test/check-data-snapshot.test.mjs.snapshot; they can't run on Windows: they make a symlink). check-fast "Kappi's tips" passed.
+  check:smoke: **2 of 7 here, the same 2 of 7 with the same five failures on the base
+  commit 61d90751** on this Windows machine (page loads past the 90 s limit: Phone, Actions bar, the full test, and
+  Palettes on the page that didn't load; Unused: a node tool that prints nothing on Windows). So smoke is not shown
+  passing: CI or a Linux run should confirm it.
+  Screenshots (phone size, headless): the world bubble with Kappi's face under the top bar; the battle card with the
+  Catch button glowing.
+- Next: IN-5 calls nothing new (the tips run on any run; the prepared run is `run.first`). IN-6 tunes the seconds
+  from the owner's debug log (each cue and tip is a `scene` line). The owner reads the lines.
+
 ### Test data track TD-2 - the graphics test walks a benchmark path - 2026-10-29
 Branch `track/test-data` (TD-1's pushes and main, 4b64e3d6, merged in at the start; four conflicts kept both sides:
 HANDOFF, webgl.js's target record, the reader's helpers, art-code-refs regenerated). Plan written, then built at once:

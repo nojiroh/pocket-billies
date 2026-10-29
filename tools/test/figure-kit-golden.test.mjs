@@ -46,6 +46,8 @@ test('figure kit golden: every person', t => {
   const out = {};
   for (const [who, p] of Object.entries(PEOPLE)) {
     if (p.creature) {
+      /* IN-3: a bot person (a Bureau clerk) has no figure (figures.js keeps its bot picture) */
+      if (/^bot:/.test(p.creature.rig)) continue;
       out[who] = hash(kappiFigure({ name: who }));
       continue;
     }

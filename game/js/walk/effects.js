@@ -326,7 +326,28 @@ export function effectsPass(C, items, X, dark, t, dt) {
             0.55 * (1 - ph) * Math.min(1, ph * 6)
           );
         }
-      else if (e.k === 'spray') {
+      else if (e.k === 'plume') {
+        /* intro track IN-3: a wreck's smoke, a thick dark column rising and leaning with the wind; fewer puffs at the
+           walk view's lower quality steps (walkRenderer.qe: 0 best, 3 a struggling phone), so weak phones draw less */
+        const qe = walkRenderer.qe || 0,
+          np = qe >= 3 ? 3 : qe >= 2 ? 5 : qe >= 1 ? 7 : 9;
+        for (let n = 0; n < np; n++) {
+          const ph = ((t * rm) / 5200 + n / np + sd * 0.13) % 1,
+            sz = 0.7 + 1.9 * ph,
+            g = 0.42 + 0.3 * ph;
+          quad(
+            'smoke',
+            Math.floor(ph * 4),
+            x + (ph * 1.6 + 0.25 * Math.sin(ph * 5 + n + sd)) * (sc.wind || 1),
+            y + ph * 5.5,
+            z + ph * 0.5,
+            sz,
+            sz,
+            0.75 * (1 - ph) * Math.min(1, ph * 8),
+            [g, g * 0.97, g * 0.94]
+          );
+        }
+      } else if (e.k === 'spray') {
         if (walkRenderer.basinP && walkRenderer.basinP.has(it.p)) return;
         for (let n = 0; n < 14; n++) {
           const ph = ((t * rm) / 1100 + n / 14) % 1,

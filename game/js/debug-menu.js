@@ -27,6 +27,7 @@ import {
   runOver,
   runStartable,
   runTakeOff,
+  runTakeOffPrepared,
   showModHTML,
   soundTestAction,
   soundTestHTML,
@@ -324,7 +325,7 @@ function debugHTML() {
   const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
-    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
+    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugButtonHTML('pickupwin', 'Jump to the pickup (win)')}${debugButtonHTML('pickuplose', 'Jump to the pickup (loss)')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRelic',
         Object.keys(PERKS).map(k => [k, PERKS[k].name]),
         uiState.dbgRelic || Object.keys(PERKS)[0] || ''
@@ -333,7 +334,7 @@ function debugHTML() {
         Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
         uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''
       )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}${debugButtonHTML('routetrainer', 'Walk into a route trainer’s sight')}${debugButtonHTML('heldpick', 'A held item’s pick')}${debugButtonHTML('heldall', 'Every held item into the bag')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
-    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (6 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
+    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (6 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugButtonHTML('runprep', 'Prepared run', 'gold')}</div><p class="note">The first run, written by hand (firstRun.json): your lead alone, 5 Pyramids and a Potion, the crash site on the landing. It keeps every Billie, won or lost. New game doesn’t start it yet (IN-5).</p><div class="dbg-row">${debugSelectHTML(
         'dbgRunSide',
         [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
         uiState.dbgRunSide || ''
@@ -832,6 +833,13 @@ function debugAction(x) {
       );
       return;
     }
+    /* IN-1: the prepared first run on this save (run.js runTakeOffPrepared) */
+    case 'runprep':
+      if (!runStartable() || !saveData.team.length)
+        return refreshDebugMenu('A run can’t start now (on a run, in a battle, or nobody in the team).');
+      uiState.modal = null;
+      runTakeOffPrepared();
+      return;
     /* RL-13: every Expedition open, to try the harder ones */
     case 'expopen':
       saveData.meta.expedition = MODIFIERS.expeditions.length;
@@ -932,6 +940,15 @@ function debugAction(x) {
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
       uiState.modal = null;
       runOver(x === 'runwin');
+      return;
+    /* IN-4: this run ends the first run's way: the Bureau's pickup here, the fall, the lab (cutscene/return-scene.js) */
+    case 'pickupwin':
+    case 'pickuplose':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      uiState.modal = null;
+      render();
+      uiState.pickupTest = true;
+      runOver(x === 'pickupwin');
       return;
     case 'fillq': {
       /* a town without wild Billies gets a route's worth, so there is always something to test with */

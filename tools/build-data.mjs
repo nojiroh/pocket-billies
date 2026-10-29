@@ -39,7 +39,7 @@ export function buildData(out = DATA) {
   return text.length;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.filename === process.argv[1]) {
   const o = process.argv.find(a => a.startsWith('--out='));
   const n = buildData(o ? o.slice(6) : DATA);
   console.log(`gamedata.js: ${(n / 1e6).toFixed(2)} MB`);

@@ -344,6 +344,8 @@ function figureDef(name) {
       L = typeof lookOf === 'function' ? lookOf(who) : null,
       items = figureItems();
     if (!L || (!L.creature && !items)) return null;
+    /* IN-3: a bot person (a Bureau clerk: a creature on a bot rig) has no figure; it keeps its bot picture */
+    if (L.creature && /^bot:/.test(L.creature.rig)) return (FIGURE_DEFS[name] = false);
     const F = figureFromLook(name, who, L, look0, items, figureKitNow());
     /* CH-4: one build of its mesh, at the detail its direction draws it, gives its extent and its first GPU mesh, on
        the helper thread (figure-meshes.js): until it is in, the person keeps today's picture */

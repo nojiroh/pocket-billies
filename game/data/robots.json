@@ -183,7 +183,16 @@
    "wt": 70,
    "dur": 1.4,
    "stats": {"hp":55,"law":45,"pr":40,"lev":10},
-   "art": {"color":"#4F5A6E","shape":"block","w":34,"h":30},
+   "art": {
+    "color": "#4F5A6E",
+    "shape": "block",
+    "w": 34,
+    "h": 30,
+    "img": "robots/intake.png",
+    "imgB": "robots/intake_back.png",
+    "head": "robots/intake_head.png",
+    "headB": "robots/intake_head_back.png"
+   },
    "d": "The Retrieval Unit's leader bot, a filing cabinet that walks."
   },
   "seizer": {
@@ -195,7 +204,7 @@
    "dur": 1.2,
    "move": "gripcrush",
    "stats": {"lev":40,"law":20},
-   "art": {"color":"#6E6A8C","shape":"claw","w":14,"h":24},
+   "art": {"color":"#6E6A8C","shape":"claw","w":14,"h":24,"img":"robots/seizer.png","imgB":"robots/seizer_back.png"},
    "d": "One of the Retrieval Unit's arm-bots. It takes things into custody."
   },
   "franker": {
@@ -207,7 +216,7 @@
    "dur": 1,
    "move": "cindershot",
    "stats": {"lob":40,"hus":10},
-   "art": {"color":"#B5473A","shape":"cannon","w":13,"h":24},
+   "art": {"color":"#B5473A","shape":"cannon","w":13,"h":24,"img":"robots/franker.png","imgB":"robots/franker_back.png"},
    "d": "The Retrieval Unit's other arm-bot. It stamps everything it hits."
   },
   "conveyor": {
@@ -220,7 +229,7 @@
    "carry": 170,
    "move": "anchor",
    "stats": {"hp":25,"law":30,"pr":25,"hus":10},
-   "art": {"color":"#3F4A3E","shape":"treads","w":34,"h":14},
+   "art": {"color":"#3F4A3E","shape":"treads","w":34,"h":14,"img":"robots/conveyor.png","imgB":"robots/conveyor_back.png"},
    "d": "The Retrieval Unit's leg-bot, a conveyor belt that walks."
   }
  },
