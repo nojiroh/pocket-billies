@@ -571,6 +571,13 @@ art pipeline (phase 17 task 11).
 - In a one-colour (`mono`) picture the ramp's shades get no seam between them, so a detail in a darker shade can vanish
   in the pale top half. To part two areas of one colour, draw one of them with the matching letter (the letter `r` is
   the red ramp's mid): a letter is its own block, so a seam is drawn between them (Power Gloves' thumb).
+- PK-12 redrew the three weakest reads the reviews named: Steady Hand ("Pyramids catch more often") is a gold pyramid
+  in a red crosshair ring with slate ticks (the cream fingers that pinched it vanished on the light panel); Screen
+  Protector is an ice pane with cream glints over a slate phone, its corner peeling (the cracked screen read as an X);
+  Rubber Boots is two-tone, a gold B body with a pale gold toe cap, a red cuff and pull tab, a slate sole and blue drops
+  (the one-colour boot washed out in its pale top half). Across the folders (perks, items, boons and ui) the closest
+  pairs that can show together are boxy cards and forms told apart by colour: Gift Receipt and Tarot Card 91%, Trail
+  Snacks and Study Notes 90%; Screen Protector and Tarot Card read 95% before the redraw.
 
 ## Bag item pictures, 36x36 (Perks track PK-11, 2026-10-28)
 - The 13 Bag items (consumables) have their own pictures in the Perks' look: `game/art/items/<id>.svg`, named by the
