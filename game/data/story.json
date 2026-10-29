@@ -51,9 +51,9 @@
    "about": "RL-S2: Chapter 1's last beat, after the Voltron is beaten (RL-14 calls it: saveData.story.pending = 'chapter1-end' after storyHomeArrive, as back-lost); it moves the story on to chapter 2",
    "who": "kappi",
    "script": [
-    "Kappi: That thing was retrieving. It was built to bring things back. #l:6616",
-    "Chosen: Like me. With you. Constantly. #l:85a4",
-    "Kappi: ...Yes. Exactly like that. Which is the problem. #l:af32",
+    "Kappi: That thing was [i]retrieving[/i]. It was built to bring things back. #l:6616",
+    "Chosen: Like me. With you.[p] Constantly. #l:85a4",
+    "Kappi: ...Yes. Exactly like that.[p] [face=sad]Which is the problem. #l:af32",
     "chapter 2"
    ]
   },
@@ -65,12 +65,12 @@
     "  pick back_lost",
     "else",
     "  set firstLoss",
-    "  [happy] Chosen: There you are! Face-down by the mast. You’re welcome. #l:4571",
-    "  Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how. I don’t know either. #l:bd04",
-    "  Kappi: He was asleep in the lab when you landed. #l:d779",
+    "  [happy] Chosen: There you are! Face-down by the mast.[p] You’re welcome. #l:4571",
+    "  Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how.[p] I don’t know either. #l:bd04",
+    "  Kappi: He was [i]asleep[/i] in the lab when you landed. #l:d779",
     "  Kappi: You came through a little hole in the sky over the dock. Like the first time, only smaller. #l:b000",
-    "  Kappi: It closed behind you. Neatly. Like someone shutting a drawer. #l:7301",
-    "  [happy] Chosen: A drawer. My drawer. Professor powers. #l:978e",
+    "  Kappi: It closed behind you. [slow]Neatly.[/slow] Like someone shutting a drawer. #l:7301",
+    "  [happy] Chosen: A drawer. [b]My[/b] drawer. Professor powers. #l:978e",
     "  Kappi: ...Get some rest. I’d like to look at that hole again before it forgets where it was. #l:03eb"
    ]
   },
@@ -80,13 +80,13 @@
    "script": [
     "[happy] {name}! My sidekick returns. How’s the Index? {caught} caught so far. #l:2c0a",
     "if caught >= 15",
-    "  [happy] That’s a proper collection. Kappi says they might cite you in their paper. I said put me first. #l:5e16",
+    "  [happy] That’s a proper collection. Kappi says they might cite you in their paper.[p] I said put me [b]first[/b]. #l:5e16",
     "elif caught >= 5",
-    "  [surprised] You’re getting good at this. Not chosen good. But good. Some of them only show up in caves or in the malls. #l:251a",
+    "  [surprised] You’re getting good at this. Not [i]chosen[/i] good. But good. Some of them only show up in caves or in the malls. #l:251a",
     "if badges = 1",
-    "  1 badge already. The arena leaders talk about you. Not as much as about me. But they talk. #l:4eb4",
+    "  1 badge already. The arena leaders talk about you. Not as much as about [b]me[/b]. But they talk. #l:4eb4",
     "elif badges",
-    "  {badges} badges already. The arena leaders talk about you. Not as much as about me. But they talk. #l:be0b"
+    "  {badges} badges already. The arena leaders talk about you. Not as much as about [b]me[/b]. But they talk. #l:be0b"
    ]
   },
   "blake-first-battle": {
@@ -94,17 +94,17 @@
    "who": "chosen",
    "script": [
     "if rival0 = win",
-    "  [surprised] Blake: What? I lost to someone who fell out of the sky an hour ago? #l:0008",
-    "  [angry] Blake: Mine only knows Tackle. That’s my excuse and I’m sticking to it. #l:4d19",
+    "  [surprised] Blake: What? I lost to someone who [i]fell out of the sky[/i] an hour ago? #l:0008",
+    "  [angry] Blake: Mine only knows [b]Tackle[/b]. That’s my excuse and I’m sticking to it. #l:4d19",
     "elif rival0 = lose",
-    "  [happy] Blake: Ha! Told you. Mine beats yours. #l:5707",
+    "  [happy][shout] Blake: Ha! Told you. Mine beats yours. #l:5707",
     "  Blake: Don’t feel bad. You only got here today. #l:b848",
     "if rival0 = win or rival0 = lose",
     "  Blake: I’m off to train on the golf course. Next time I’ll have a whole team. Try to keep up! #l:2d35",
     "heal",
-    "[happy] There. Good as new. I have healing hands. Kappi has a first-aid kit and a hot bath. Same thing. #l:256f",
+    "[happy] There. Good as new. I have healing hands. Kappi has a first-aid kit and a hot bath.[p] Same thing. #l:256f",
     "Granny Juniper made up a room for you in her cottage, by the hives. Every hero needs a base. #l:68e0",
-    "Now go and explore! The road teaches more than any book. I’ve read zero books, and look at me. #l:36c7"
+    "Now go and explore! The road teaches more than any book. I’ve read [b]zero[/b] books, and look at me. #l:36c7"
    ]
   },
   "ending": {
@@ -112,10 +112,10 @@
    "who": "chosen",
    "script": [
     "[sad] Vinylla: Gold. Everywhere. On the floor, on the press, on the record... #l:82ed",
-    "[happy] Aurumansa. The golden caravan. I foresaw this. I didn’t write it down, but I foresaw it. #l:8b79",
+    "[happy] Aurumansa. The golden caravan. I foresaw this.[p] I didn’t write it down, but I foresaw it. #l:8b79",
     "Look at it, Vinylla. Gold all over the pressing floor. Nothing here is limited any more. #l:3e56",
     "[angry] Vinylla: Do you know what a record is worth if everyone can have one? #l:960e",
-    "[happy] Blake: About what it’s worth to listen to it. Turns out that was the point. #l:d97e",
+    "[happy] Blake: About what it’s worth to listen to it.[p] Turns out that was the point. #l:d97e",
     "And you. You were the sound engineer on her tour. You read the plans, and Cass made sure you fell. #l:ac5c",
     "[happy] Welcome back. The sun is still up. It will be up tomorrow too. #l:299a"
    ]

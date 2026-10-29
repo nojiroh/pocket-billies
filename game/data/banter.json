@@ -3,16 +3,16 @@
   "who": "back_lost",
   "priority": 1,
   "script": [
-   "Chosen: Rescued you again. Don’t thank me. Actually, do. #l:0caf",
-   "Kappi: Same spot over the dock. To the metre. #l:11db"
+   "Chosen: Rescued you again. Don’t thank me.[p] Actually, do. #l:0caf",
+   "Kappi: Same spot over the dock.[p] To the metre. #l:11db"
   ]
  },
  "lost_reflexes": {
   "who": "back_lost",
   "priority": 1,
   "script": [
-   "Chosen: Yanked you out just in time. Professor reflexes. #l:bd0a",
-   "Kappi: You landed exactly in the mast’s shadow. Exactly. #l:abb6"
+   "Chosen: Yanked you out just in time. Professor [b]reflexes[/b]. #l:bd0a",
+   "Kappi: You landed exactly in the mast’s shadow.[p] [i]Exactly.[/i] #l:abb6"
   ]
  },
  "lost_charge": {
@@ -30,8 +30,8 @@
   "priority": 6,
   "once": true,
   "script": [
-   "Chosen: You lost to a clerk and I still saved you. Generous of me. #l:ba8e",
-   "Kappi: There was a stamp on your sleeve. “Returned to sender.” It wasn’t there when you left. #l:0df7"
+   "Chosen: You lost to a [i]clerk[/i] and I still saved you. Generous of me. #l:ba8e",
+   "Kappi: There was a stamp on your sleeve. “Returned to sender.”[p] It wasn’t there when you left. #l:0df7"
   ]
  },
  "lost_postcard": {
@@ -39,7 +39,7 @@
   "when": "lastby:rival",
   "priority": 6,
   "script": [
-   "Chosen: Blake sent a postcard. It just says “Ha.” #l:3c86",
+   "Chosen: Blake sent a postcard. It just says[p] “Ha.” #l:3c86",
    "Kappi: Same spot over the dock. He didn’t even ruffle you. #l:5ea5"
   ]
  },
@@ -49,7 +49,7 @@
   "priority": 10,
   "once": true,
   "must": true,
-  "script": ["You fell out of the sky once. Fine. Now you do it on a schedule. #l:44ee","set ch1_drop"]
+  "script": ["You fell out of the sky once. Fine.[p] Now you do it on a [i]schedule[/i]. #l:44ee","set ch1_drop"]
  },
  "ch1_blake": {
   "who": "chosen",
@@ -57,7 +57,7 @@
   "priority": 10,
   "once": true,
   "must": true,
-  "script": ["Blake? Loud, tall, counters everything you own? I taught him that. Not on purpose. #l:8d8e","set ch1_blake"]
+  "script": ["Blake? Loud, tall, counters everything you own? I taught him that.[p] Not on purpose. #l:8d8e","set ch1_blake"]
  },
  "ch1_beans": {
   "who": "kappi",
@@ -66,7 +66,7 @@
   "once": true,
   "must": true,
   "script": [
-   "These Beans. Every crate the Bureau loses has them. Nobody eats them. Nobody throws them out. #l:c6c3",
+   "These Beans. Every crate the Bureau loses has them. Nobody eats them.[p] Nobody throws them out. #l:c6c3",
    "set ch1_beans"
   ]
  },
@@ -76,7 +76,7 @@
   "priority": 10,
   "once": true,
   "must": true,
-  "script": ["Their forms number lost things. I found yours. You’re item four hundred and something. #l:a7b4","set ch1_number"]
+  "script": ["Their forms number lost things. I found yours.[p] You’re item four hundred and something. #l:a7b4","set ch1_number"]
  },
  "ch1_signal": {
   "who": "chosen",
@@ -84,7 +84,7 @@
   "priority": 10,
   "once": true,
   "must": true,
-  "script": ["Something big walked across Kappi’s instruments. I’m claiming it was me. Emotionally. #l:1dd7","set ch1_signal"]
+  "script": ["Something big walked across Kappi’s instruments. I’m claiming it was me.[p] Emotionally. #l:1dd7","set ch1_signal"]
  },
  "fav_chosen_ask": {
   "who": "chosen",
@@ -92,7 +92,7 @@
   "priority": 7,
   "once": true,
   "must": true,
-  "script": ["Beat a leader and tell them Professor Chosen sends his regards. Loudly. #l:7d69","quest fav_chosen asked"]
+  "script": ["Beat a leader and tell them Professor Chosen sends his regards.[p] [b]Loudly.[/b] #l:7d69","quest fav_chosen asked"]
  },
  "fav_chosen_thanks": {
   "who": "chosen",
@@ -100,7 +100,7 @@
   "priority": 8,
   "once": true,
   "must": true,
-  "script": ["They remembered me? Brand awareness. Have two points of my respect. #l:5363"]
+  "script": ["They remembered me? [b]Brand awareness.[/b] Have two points of my respect. #l:5363"]
  },
  "fav_kappi_ask": {
   "who": "kappi",
@@ -116,7 +116,7 @@
   "priority": 8,
   "once": true,
   "must": true,
-  "script": ["Readings. Real ones. The numbers hum near their crates. #l:e544"]
+  "script": ["Readings. [i]Real[/i] ones. The numbers hum near their crates. #l:e544"]
  },
  "fav_juniper_ask": {
   "who": "juniper",
@@ -140,83 +140,85 @@
   "priority": 9,
   "must": true,
   "once": true,
-  "script": ["Your first expedition! I’d have done it faster, but I was busy being chosen. #l:b1b0"]
+  "script": ["Your first expedition! I’d have done it faster, but I was busy being [i]chosen[/i]. #l:b1b0"]
  },
  "chosen_won": {
   "who": "chosen",
   "when": "last:won",
   "priority": 5,
-  "script": ["[happy] You won! I taught you that. I’m not sure when. Possibly in a dream we shared. #l:ed8d"]
+  "script": ["[happy] You won! I taught you that. I’m not sure when.[p] Possibly in a dream we shared. #l:ed8d"]
  },
  "chosen_early": {
   "who": "chosen",
   "when": "last:lost and last:row <= 3",
   "priority": 4,
-  "script": ["Down that early? Bold. Avant-garde. Next time try the part where you win. #l:3752"]
+  "script": ["Down that early? Bold. Avant-garde.[p] Next time try the part where you [b]win[/b]. #l:3752"]
  },
  "chosen_boss": {
   "who": "chosen",
   "when": "lastby:boss",
   "priority": 6,
-  "script": ["You reached the big one and blinked. I respect a dramatic exit. #l:ef10"]
+  "script": ["You reached the big one and blinked.[p] I respect a dramatic exit. #l:ef10"]
  },
  "chosen_montage": {
   "who": "chosen",
   "when": "history:lstreak >= 3",
   "priority": 7,
   "cooldown": 5,
-  "script": ["[surprised] Three in a row. I’ve decided this is a training montage. Montages end well. Usually. #l:f8bc"]
+  "script": ["[surprised] Three in a row. I’ve decided this is a [b]training montage[/b]. Montages end well.[p] Usually. #l:f8bc"]
  },
  "chosen_quit": {
   "who": "chosen",
   "when": "last:quit",
   "priority": 5,
-  "script": ["Home early. Leave them wanting more. That’s what I always say. I’ve never said that. #l:5806"]
+  "script": ["Home early. Leave them wanting more. That’s what I always say.[p] I’ve never said that. #l:5806"]
  },
  "chosen_clerk": {
   "who": "chosen",
   "when": "lastby:bureau",
   "priority": 6,
-  "script": ["[angry] A clerk? You lost to paperwork? I once lost to a form. We don’t talk about the form. #l:0564"]
+  "script": [
+   "[angry] A clerk? You lost to [i]paperwork[/i]? I once lost to a form.[p] [face=sad]We don’t talk about the form. #l:0564"
+  ]
  },
  "kappi_rounder": {
   "who": "kappi",
   "when": "last:lost",
   "priority": 4,
-  "script": ["You came back through the same hole. I measured it from the bath. It’s getting rounder. #l:5be0"]
+  "script": ["You came back through the same hole. I measured it from the bath.[p] It’s getting [i]rounder[/i]. #l:5be0"]
  },
  "kappi_tidy": {
   "who": "kappi",
   "when": "history:losses >= 2",
   "priority": 6,
   "once": true,
-  "script": ["Every time you lose out there, you land in the same spot. Things don’t fall that tidily. #l:2b31"]
+  "script": ["Every time you lose out there, you land in the same spot.[p] Things don’t fall that tidily. #l:2b31"]
  },
  "kappi_won": {
   "who": "kappi",
   "when": "last:won",
   "priority": 4,
-  "script": ["You won and came home by train. Good. The other way home makes my instruments hum. #l:df6c"]
+  "script": ["You won and came home by train. Good. The other way home makes my instruments [wave]hum[/wave]. #l:df6c"]
  },
  "kappi_file": {
   "who": "kappi",
   "when": "lastby:bureau",
   "priority": 7,
   "once": true,
-  "script": ["The clerk who beat you. Did they mention a file? A number? ...No reason. #l:41c7"]
+  "script": ["The clerk who beat you. Did they mention a file? A number? [emote=sweat]...No reason. #l:41c7"]
  },
  "kappi_perks": {
   "who": "kappi",
   "when": "last:perks >= 4",
   "priority": 3,
-  "script": ["That many Perks in one run. You sound like someone I work with. Not a compliment. #l:1d8e"]
+  "script": ["That many Perks in one run. You sound like someone I work with.[p] Not a compliment. #l:1d8e"]
  },
  "kappi_scrapbook": {
   "who": "kappi",
   "when": "history:runs >= 5",
   "priority": 5,
   "once": true,
-  "script": ["Five expeditions. Juniper started a scrapbook. Someone in a lab coat keeps pasting himself into it. #l:6ba3"]
+  "script": ["Five expeditions. Juniper started a scrapbook. Someone in a lab coat keeps pasting [i]himself[/i] into it. #l:6ba3"]
  },
  "juniper_lost": {
   "who": "juniper",
@@ -249,34 +251,34 @@
   "priority": 9,
   "once": true,
   "must": true,
-  "script": ["“Blake. You’ve heard of me. You haven’t? Weird. I’ve been out here being heard of.” #l:7ea4"]
+  "script": ["“Blake. You’ve heard of me. You haven’t?[p] Weird. I’ve been out here being [b]heard of[/b].” #l:7ea4"]
  },
- "rival_built": {"who":"rival","priority":1,"script":["“I built this team for yours. Specifically. It took ages.” #l:8db3"]},
+ "rival_built": {"who":"rival","priority":1,"script":["“I built this team for yours. [b]Specifically.[/b] It took ages.” #l:8db3"]},
  "rival_warmup": {
   "who": "rival",
   "when": "history:rivalwon >= 1",
   "priority": 4,
-  "script": ["“Last time doesn’t count. I was warming up. For a whole battle.” #l:239c"]
+  "script": ["“Last time doesn’t count. I was warming up.[p] For a whole battle.” #l:239c"]
  },
  "rival_longway": {
   "who": "rival",
   "when": "history:rivallost >= 1",
   "priority": 5,
-  "script": ["“Last time I sent you home the long way. Through the sky.” #l:6a21"]
+  "script": ["“Last time I sent you home the long way.[p] Through the [i]sky[/i].” #l:6a21"]
  },
  "rival_routes": {
   "who": "rival",
   "when": "rival >= 1",
   "priority": 6,
-  "script": ["“Our routes aren’t the same route. Stop following me.” #l:acbd"]
+  "script": ["“Our routes aren’t the same route.[p] Stop [b]following[/b] me.” #l:acbd"]
  },
  "thanks_chosen": {
   "who": "thanks_chosen",
   "priority": 1,
   "script": [
    "cycle",
-   "  - A Bean. For me. Naturally. #l:12fd",
-   "  - I’ll add it to the collection. The collection is one Bean. #l:a3ac"
+   "  - A Bean. For me.[p] Naturally. #l:12fd",
+   "  - I’ll add it to the collection.[p] The collection is one Bean. #l:a3ac"
   ]
  },
  "thanks_chosen_1": {
@@ -284,43 +286,45 @@
   "when": "rel:chosen >= 1",
   "priority": 2,
   "once": true,
-  "script": ["You’ve noticed me. Most people do. Eventually. #l:35e2"]
+  "script": ["You’ve noticed me. Most people do.[p] Eventually. #l:35e2"]
  },
  "thanks_chosen_2": {
   "who": "thanks_chosen",
   "when": "rel:chosen >= 2",
   "priority": 3,
   "once": true,
-  "script": ["Take this. Moneys, a little extra each trip. I’ll say I invented interest. #l:6c17"]
+  "script": ["Take this. Moneys, a little extra each trip. I’ll say I invented [i]interest[/i]. #l:6c17"]
  },
  "thanks_chosen_3": {
   "who": "thanks_chosen",
   "when": "rel:chosen >= 3",
   "priority": 4,
   "once": true,
-  "script": ["You’re on my list of people I tolerate. It’s a short list. Mostly mirrors. #l:e0e4"]
+  "script": ["You’re on my list of people I tolerate. It’s a short list.[p] Mostly mirrors. #l:e0e4"]
  },
  "thanks_chosen_4": {
   "who": "thanks_chosen",
   "when": "rel:chosen >= 4",
   "priority": 5,
   "once": true,
-  "script": ["Wear these. Sunglasses. Now you look chosen. Adjacent. #l:5d53"]
+  "script": ["Wear these. Sunglasses. Now you look chosen.[p] Adjacent. #l:5d53"]
  },
  "thanks_chosen_5": {
   "who": "thanks_chosen",
   "when": "rel:chosen >= 5",
   "priority": 6,
   "once": true,
-  "script": ["Can I tell you something? I didn’t rescue you. Not once. ...Don’t tell Kappi I said that. They know. #l:608e"]
+  "script": [
+   "Can I tell you something? I didn’t rescue you. Not once.[p] [emote=sweat]...Don’t tell Kappi I said that. They know. #l:608e"
+  ]
  },
  "thanks_kappi": {
   "who": "thanks_kappi",
   "priority": 1,
   "script": [
    "cycle",
-   "  - Thanks. I’ll test it. I mean that literally. #l:1c33",
-   "  - Another one. They’re warm. Why are they warm? #l:f5c6"
+   "  - Thanks. I’ll test it. I mean that [i]literally[/i]. #l:1c33",
+   "  - Another one. They’re warm.[p] Why are they warm? #l:f5c6"
   ]
  },
  "thanks_kappi_1": {
@@ -328,21 +332,21 @@
   "when": "rel:kappi >= 1",
   "priority": 2,
   "once": true,
-  "script": ["Oh. Thank you. People don’t usually give me things. They give me forms. #l:5db1"]
+  "script": ["Oh. Thank you. People don’t usually give me things.[p] They give me forms. #l:5db1"]
  },
  "thanks_kappi_2": {
   "who": "thanks_kappi",
   "when": "rel:kappi >= 2",
   "priority": 3,
   "once": true,
-  "script": ["Here. A Potion for every trip. Don’t tell him where they come from. He thinks they grow. #l:355b"]
+  "script": ["Here. A Potion for every trip. Don’t tell him where they come from.[p] He thinks they grow. #l:355b"]
  },
  "thanks_kappi_3": {
   "who": "thanks_kappi",
   "when": "rel:kappi >= 3",
   "priority": 4,
   "once": true,
-  "script": ["I’m adding you to my notes. Under “reliable.” It’s a short section. #l:79b4"]
+  "script": ["I’m adding you to my notes. Under “reliable.”[p] It’s a short section. #l:79b4"]
  },
  "thanks_kappi_4": {
   "who": "thanks_kappi",
@@ -350,7 +354,7 @@
   "priority": 5,
   "once": true,
   "script": [
-   "My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence. Not snacks. #l:fbdf"
+   "My spare lab coat. It never fit me; I have the wrong number of legs. It has pockets for evidence.[p] Not snacks. #l:fbdf"
   ]
  },
  "thanks_kappi_5": {
@@ -358,7 +362,7 @@
   "when": "rel:kappi >= 5",
   "priority": 6,
   "once": true,
-  "script": ["My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans. #l:9a5c"]
+  "script": ["[whisper] My notes on the drop point. All of them. If something happens to me, they’re in the jar of beans. #l:9a5c"]
  },
  "thanks_juniper": {
   "who": "thanks_juniper",
@@ -413,24 +417,24 @@
   "priority": 2,
   "script": ["“Word is you’ve beaten a boss. Word says a lot of things.” #l:a4ee"]
  },
- "bureau_lost": {"who":"bureau","priority":1,"script":["“You look lost. That is our department.” #l:492a"]},
+ "bureau_lost": {"who":"bureau","priority":1,"script":["“You look lost.[p] That is our department.” #l:492a"]},
  "bureau_file": {
   "who": "bureau",
   "when": "history:losses >= 1",
   "priority": 3,
-  "script": ["“Ah. You’re on file. Returned item, handled once.” #l:7ffb"]
+  "script": ["“Ah. You’re on file.[stamp=filed] Returned item, handled once.” #l:7ffb"]
  },
  "bureau_drawer": {
   "who": "bureau",
   "when": "history:losses >= 3",
   "priority": 5,
-  "script": ["“Your file is getting thick. We’ll need a bigger drawer.” #l:2ca8"]
+  "script": ["“Your file is getting thick.[p] We’ll need a [b]bigger[/b] drawer.” #l:2ca8"]
  },
  "bureau_win": {
   "who": "bureau",
   "when": "last:won",
   "priority": 4,
-  "script": ["“A win, recorded. Wins are reviewed. Reviews take time.” #l:aaec"]
+  "script": ["“A win, recorded. Wins are reviewed. Reviews take time.”[stamp=pending] #l:aaec"]
  },
  "sq_lost_smoke": {"who":"square_lost","priority":1,"script":["The train came home smoking again. #l:8d97"]},
  "sq_lost_spat": {"who":"square_lost","priority":1,"script":["Back already? The sky spat them out. #l:32b3"]},
