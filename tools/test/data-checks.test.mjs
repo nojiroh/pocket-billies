@@ -660,7 +660,7 @@ const PK5_BAD = [
   [{ kind: 'free' }, 'a free row needs a moment (buy)'],
   [{ kind: 'salvage', mult: 9 }, 'mult: 9 is outside the code'],
   [{ kind: 'salvage', mult: 2, when: 'win' }, "a salvage row can't act at win"],
-  [{ kind: 'rule', rule: 'rewardPick', n: 3 }, 'n: a whole number of cards from 1 to 2'],
+  [{ kind: 'rule', rule: 'rewardPick', n: 3 }, 'n: a whole number of cards from -1 to 2, not 0'],
   [{ kind: 'rule', rule: 'rerollFree', n: 0 }, 'n: a whole number of rerolls from 1 to 3'],
   [{ kind: 'rule', rule: 'mapReveal', n: 2 }, 'n: a whole number of times (it is on or off) from 1 to 1'],
 ];
@@ -810,6 +810,7 @@ test('PK-8: dataPerks and the schema take the sets’ kinds and name their fault
 const PK9_GOOD = [
   { kind: 'last', if: 'turn:1' },
   { kind: 'turnHurt', share: 0.05, when: 'arrive' },
+  { kind: 'rule', rule: 'rewardPick', n: -1 },
 ];
 const PK9_BAD = [[{ kind: 'turnHurt', share: 0.05, when: 'hit' }, "a turnHurt row can't act at hit"]];
 test('PK-9: dataPerks and the schema take the curses’ kinds and name their faults', async () => {

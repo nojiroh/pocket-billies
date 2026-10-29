@@ -168,9 +168,10 @@ export function rewardDraw(g, D, o = {}) {
  * saves before showing it @param {Run} run @param {string} from who left it (a trainer's id, 'event:<id>')
  * @param {RewardData} D @param {{ kind?: string, n?: number }} [o] @returns {RunReward | null} */
 export function rewardOfferMake(run, from, D, o = {}) {
-  /* PK-5: the run's rewardPick rule rows (Gift Receipt) show more cards; the pick keeps its count for a reroll */
+  /* PK-5: the run's rewardPick rule rows (Gift Receipt) show more cards; the pick keeps its count for a reroll. PK-9:
+     below 0 (the curse Pending Review) fewer, never under one card */
   const more = fxRunRule(run, 'rewardPick'),
-    n = more > 0 ? (o.n || D.rules.pick) + more : o.n;
+    n = more !== 0 ? Math.max(1, (o.n || D.rules.pick) + more) : o.n;
   const e = encOf(run),
     cards = rewardDraw(rngFrom(run.seed, 'reward|' + e.rewardN + '|0'), D, { ...o, n, run });
   e.rewardN++;

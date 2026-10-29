@@ -2445,14 +2445,15 @@ export function fxKindProblems(f, at, D, problem) {
     const R = FX_RULE_N[f.rule];
     if (!(/** @type {readonly string[]} */ (FX_RULES).includes(f.rule)) || !R)
       problem(`${at}.rule: ${FX_RULES.join(', ')} (effects.js FX_RULES)`);
-    else if (!(Number.isInteger(f.n) && f.n >= R[0] && f.n <= R[1]))
-      problem(`${at}.n: a whole number of ${R[2]} from ${R[0]} to ${R[1]}`);
+    else if (!(Number.isInteger(f.n) && f.n >= R[0] && f.n <= R[1] && f.n !== 0))
+      problem(`${at}.n: a whole number of ${R[2]} from ${R[0]} to ${R[1]}${R[0] < 0 ? ', not 0' : ''}`);
   }
 }
 /** PK-4, PK-5: each run rule's n, the least and the most, and what it counts */
 export const FX_RULE_N = /** @type {Record<string, [number, number, string]>} */ ({
   forecastDays: [1, 14, 'days'],
-  rewardPick: [1, 2, 'cards'],
+  /* PK-9: below 0, fewer cards (the curse Pending Review; never under one) */
+  rewardPick: [-1, 2, 'cards'],
   rerollFree: [1, 3, 'rerolls'],
   mapReveal: [1, 1, 'times (it is on or off)'],
   /* PK-6: Perks held more (Accordion File) */

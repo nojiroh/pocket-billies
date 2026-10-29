@@ -130,3 +130,24 @@ test('PK-9 turnHurt at arrive: each place walked into costs a share of HP (round
   L.runArriveFx(t, data.PERKS, {});
   assert.equal(n.hp, top(n), 'without the row nothing is lost');
 });
+
+/* ---------- rewardPick below 0 ---------- */
+
+test('PK-9 rewardPick below 0: reward picks show one card fewer, never under one; the pick keeps its count', () => {
+  const W = modules.rewards,
+    { P } = perks({ id: 'test_review', name: 'Test Review', fx: [{ kind: 'rule', rule: 'rewardPick', n: -1 }] });
+  withPerks(P, () => {
+    const s = runSave(['test_review']),
+      D = W.rewardDataGame(s.team),
+      R = W.rewardOfferMake(s.run, 'test', D);
+    assert.equal(R.cards.length, GAME_DATA.rules.run.rewards.pick - 1);
+    assert.equal(R.n, GAME_DATA.rules.run.rewards.pick - 1);
+    const one = W.rewardOfferMake(s.run, 'test', D, { n: 1 });
+    assert.equal(one.cards.length, 1, 'never under one card');
+  });
+  const t = runSave([]);
+  assert.equal(
+    W.rewardOfferMake(t.run, 'test', W.rewardDataGame(t.team)).cards.length,
+    GAME_DATA.rules.run.rewards.pick
+  );
+});

@@ -138,8 +138,9 @@ const PERK_RULES = /** @type {Record<string, [string, () => string]>} */ ({
     () => `Days more than rules.json’s ${studioState.D.rules.run.clock.ahead}.`,
   ],
   rewardPick: [
-    'Reward picks show more cards',
-    () => `Cards more than rules.json’s ${studioState.D.rules.run.rewards.pick}.`,
+    'Reward picks show more cards (or fewer)',
+    () =>
+      `Cards more than rules.json’s ${studioState.D.rules.run.rewards.pick}; -1 shows one fewer (a curse; never under one).`,
   ],
   rerollFree: [
     'The first rerolls of a reward pick are free',
