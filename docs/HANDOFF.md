@@ -134,7 +134,12 @@ plan below written first and carried out. Details and the audit: perks-track.md 
   --only=relics` ok. `npm run test:slow` 109 passed. `build-icons.mjs perks|items|boons --check` fine. The run sim:
   `--balance` runs finish (the numbers above); the default scenes mode stops at "runSceneParams: node 8 has no exit
   north3", main's (PK-5..PK-9). **In-game full test** (`--selftest`, 98f971c6): one problem, "A room that opens in
-  place: the town's walking grid changed", main's (PK-7's and PK-9's entries). The full quick check and CI: below.
+  place: the town's walking grid changed", main's (PK-7's and PK-9's entries). **Full quick check** (98f971c6): 42
+  steps, 37 passed in 1711 s; room light and Battle music (the drums on a throw) are main's known reds; RL-8 ("crossed
+  into Meadow Route but its view never showed"), RT-2's pair and Granny Juniper, run again alone with `--steps=`: RT-2
+  and Granny Juniper passed, RL-8 stopped at "the town's shop has no Perk", main's known red (PK-5..PK-9): the same five
+  as PK-9's run. **CI** on 9cd4fa75 (this entry's first push): lint, rules and the pull request's smoke green; the push
+  run's second smoke hit the 30-minute job timeout (main's).
 - Next: the track is done. The owner reviews the summary above, the phone checks and PR #323; once #323 merges,
   `track/perks` gets the `perks-done` tag and it and `track/perks-items` are deleted (docs/BRANCHES.md).
 
