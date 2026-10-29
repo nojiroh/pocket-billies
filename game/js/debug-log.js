@@ -278,6 +278,14 @@ debugLog.loading = () =>
     (typeof GAME.walkRenderer !== 'undefined' && (GAME.walkRenderer.prep || GAME.walkRenderer.grassJob)) ||
     (typeof GAME.paintWorkerState !== 'undefined' && GAME.paintWorkerState && GAME.paintWorkerState.jobs.size)
   );
+/* FL-1b (agreed with the test-data track, TD-1's check): getError is asked only during a test (the full test, the
+   Graphics cost test), with ?glerr and while the debug menu is open. Measured headless (software drawing) on 2026-10-29 it held the main
+   thread 0.66 s a second on average (2 s at worst): it waits for the frame the GPU is still drawing, and play never
+   needed the answer */
+debugLog.askGlError = () =>
+  !!(debugLog.bench && debugLog.bench.step) ||
+  /[?&]glerr\b/.test(location.search) ||
+  !!(typeof GAME.uiState !== 'undefined' && GAME.uiState.modal && GAME.uiState.modal.dbg);
 debugLog.flush = ts => {
   const dt = debugLog.secT ? ts - debugLog.secT : 1000;
   debugLog.secT = ts;
@@ -311,8 +319,12 @@ debugLog.flush = ts => {
      up only when a test's check read it, blamed on that test. Asked once a second, an error is put to the second,
      place and test step it happened in (a 'webgl' event) */
   const gl = typeof GAME.gpuState !== 'undefined' ? GAME.gpuState.gl : null;
-  if (gl && !GAME.gpuState.lost) {
+  if (gl && !GAME.gpuState.lost && debugLog.askGlError()) {
+    /* FL-1b: what the once-a-second getError costs (it waits until the GPU's queue is worked through): `glErr` in
+       each sample that asked, ms */
+    const ge0 = performance.now();
     const e = gl.getError();
+    s.glErr = Math.round((performance.now() - ge0) * 100) / 100;
     /* an event, not an error: it can't say which call raised it, so it would fail whichever test step was running
        (a CI run's Voltron step, 2026-10-29); a step notes it instead, and ?glerr names the call */
     if (e)
@@ -814,6 +826,17 @@ debugLog.stage = name => {
 addEventListener('DOMContentLoaded', () => debugLog.stage('page parsed'));
 addEventListener('load', () => debugLog.stage('page loaded'));
 debugLog.hitch = { frames: 0, n: 0, ms: 0, max: 0, by: { '36-50': 0, '50-100': 0, '100-250': 0, '250+': 0 }, list: [] };
+/* FL-1b: frames over the set rate's slot (the tick below) */
+debugLog.hitch.missed = 0;
+/* FL-1b: a frame missed at the set rate (a gap over the slot plus half a refresh: 25 ms at 60 on a 60 Hz screen, 21 on a
+   120 Hz one) is counted beside the hitches, whose 36 ms can't see a missed 60 fps frame; the slot is the set rate's
+   (frame-scheduler.js userFps) held to the screen's refresh */
+debugLog.slotMs = () => {
+  const S = typeof GAME.frameScheduler !== 'undefined' ? GAME.frameScheduler : null,
+    hz = (S && S.hz) || 60,
+    fps = typeof GAME.userFps === 'function' ? GAME.userFps() : 60;
+  return 1000 / Math.min(fps, hz) + 500 / hz;
+};
 /* Chrome's long animation frames name the scripts that held a frame (file and character position: the source map
    finds the function in the built bundle); matched to the hitches when the log is built */
 debugLog.loaf = [];
@@ -857,6 +880,7 @@ try {
     requestAnimationFrame(tick);
     if (document.hidden) return void (last = 0);
     H.frames++;
+    if (last && ts - last > debugLog.slotMs()) H.missed++;
     if (!walkSeen && typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.frames > 0) {
       walkSeen = true;
       debugLog.stage('first walk frame');
@@ -922,6 +946,9 @@ debugLog.hitchReport = () => {
     overMs: HITCH_MS,
     frames: H.frames,
     count: H.n,
+    /* FL-1b: frames over the set rate's slot plus half a refresh, and that line now */
+    missed: H.missed,
+    missedOverMs: Math.round(debugLog.slotMs() * 10) / 10,
     totalMs: Math.round(H.ms),
     maxMs: Math.round(H.max),
     by: H.by,
