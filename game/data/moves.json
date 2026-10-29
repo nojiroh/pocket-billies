@@ -380,7 +380,7 @@
   "d": "Every fan on its back roars at once.",
   "sig": "huang",
   "p": 90,
-  "anim": "breath"
+  "anim": "cudacall"
  },
  "yachtrace": {
   "n": "Yacht Race",
@@ -410,7 +410,7 @@
   "d": "Rolls the price, and the foe, back.",
   "sig": "walton",
   "p": 75,
-  "anim": "charge"
+  "anim": "rollback"
  },
  "terminalfee": {
   "n": "Terminal Fee",
@@ -420,10 +420,28 @@
   "d": "Charges rent for reading the numbers: the foe loses a little HP each turn.",
   "sig": "bloomberg",
   "fx": {"status":"brn"},
-  "anim": "hex"
+  "anim": "terminalfee"
  },
- "onemorething": {"n":"One More Thing","t":"Psychic","c":"S","a":100,"d":"Just when it seemed over.","sig":"jobs","p":95,"anim":"shot"},
- "justdoit": {"n":"Just Do It","t":"Flying","c":"H","a":100,"d":"Does it before anyone asked.","sig":"knight","p":80,"anim":"dash"},
+ "onemorething": {
+  "n": "One More Thing",
+  "t": "Psychic",
+  "c": "S",
+  "a": 100,
+  "d": "Just when it seemed over.",
+  "sig": "jobs",
+  "p": 95,
+  "anim": "onemorething"
+ },
+ "justdoit": {
+  "n": "Just Do It",
+  "t": "Flying",
+  "c": "H",
+  "a": 100,
+  "d": "Does it before anyone asked.",
+  "sig": "knight",
+  "p": 80,
+  "anim": "justdoit"
+ },
  "billionsserved": {
   "n": "Billions Served",
   "t": "Fire",
@@ -452,9 +470,18 @@
   "d": "A new look every two weeks; the old one is thrown at the foe.",
   "sig": "ortega",
   "p": 70,
-  "anim": "shot"
+  "anim": "fastfashion"
  },
- "sprucedive": {"n":"Spruce Dive","t":"Flying","c":"S","a":90,"d":"Flies once, and it counts.","sig":"hughes","p":95,"anim":"dive"},
+ "sprucedive": {
+  "n": "Spruce Dive",
+  "t": "Flying",
+  "c": "S",
+  "a": 90,
+  "d": "Flies once, and it counts.",
+  "sig": "hughes",
+  "p": 95,
+  "anim": "sprucedive"
+ },
  "libraryslam": {
   "n": "Library Slam",
   "t": "Steel",
@@ -475,7 +502,7 @@
   "fx": {
    "tgtStage": {"lev":-2}
   },
-  "anim": "hex"
+  "anim": "popthecollar"
  },
  "assemblyline": {
   "n": "Assembly Line",
@@ -485,7 +512,7 @@
   "d": "Hits in a row of identical parts.",
   "sig": "ford",
   "p": 85,
-  "anim": "flurry"
+  "anim": "assemblyline"
  },
  "perminute": {
   "n": "Per Minute",
@@ -495,7 +522,7 @@
   "d": "Charges by the minute: the foe loses HP every turn.",
   "sig": "slim",
   "fx": {"status":"brn"},
-  "anim": "hex"
+  "anim": "perminute"
  },
  "imout": {
   "n": "I'm Out",
@@ -505,7 +532,7 @@
   "d": "Says it is out, waits a beat, and invests the hit anyway.",
   "sig": "cuban",
   "p": 85,
-  "anim": "strike"
+  "anim": "imout"
  },
  "feelinglucky": {
   "n": "Feeling Lucky",
@@ -515,7 +542,7 @@
   "d": "Finds the one weak spot in a quarter of a second.",
   "sig": "pagebrin",
   "p": 90,
-  "anim": "beam"
+  "anim": "feelinglucky"
  },
  "zerotoone": {
   "n": "Zero to One",
@@ -535,7 +562,7 @@
   "d": "Says it in a hundred and forty.",
   "sig": "dorsey",
   "p": 70,
-  "anim": "shot"
+  "anim": "charlimit"
  },
  "shuffleplay": {
   "n": "Shuffle Play",
@@ -545,7 +572,7 @@
   "d": "The next song before the last is done.",
   "sig": "ek",
   "p": 80,
-  "anim": "wave"
+  "anim": "shuffleplay"
  },
  "visionfund": {
   "n": "Vision Fund",
@@ -565,7 +592,7 @@
   "d": "Executes exactly as written, no appeal.",
   "sig": "buterin",
   "p": 85,
-  "anim": "shot"
+  "anim": "smartcontract"
  },
  "buythedip": {
   "n": "Buy the Dip",
@@ -575,7 +602,7 @@
   "d": "Buys low: restores half its HP.",
   "sig": "saylor",
   "fx": {"heal":0.5},
-  "anim": "heal"
+  "anim": "buythedip"
  },
  "insync": {
   "n": "In Sync",
@@ -585,10 +612,10 @@
   "d": "Both heads row the same stroke.",
   "sig": "winklevoss",
   "p": 80,
-  "anim": "flurry"
+  "anim": "insync"
  },
- "empirestate": {"n":"Empire State","t":"Flying","c":"S","a":100,"d":"A city-sized hook.","sig":"jayz","p":90,"anim":"slash"},
- "sundayred": {"n":"Sunday Red","t":"Grass","c":"H","a":95,"d":"Sinks it on the last hole.","sig":"woods","p":95,"anim":"strike"},
+ "empirestate": {"n":"Empire State","t":"Flying","c":"S","a":100,"d":"A city-sized hook.","sig":"jayz","p":90,"anim":"empirestate"},
+ "sundayred": {"n":"Sunday Red","t":"Grass","c":"H","a":95,"d":"Sinks it on the last hole.","sig":"woods","p":95,"anim":"sundayred"},
  "thedecision": {
   "n": "The Decision",
   "t": "Fire",

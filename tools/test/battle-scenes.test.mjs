@@ -40,7 +40,7 @@ test('the batch: the 12 signature moves of power 100+ and 6 more each name their
     assert.equal(MOVES[mid].anim, mid);
   }
   const named = Object.keys(MOVES).filter(k => A.scenes[MOVES[k].anim]);
-  assert.equal(named.length, 18);
+  assert.ok(named.length >= 18, 'VFX-17’s 18 and the later batches’');
   for (const k of named) assert.ok(MOVES[k].sig, `${k} is a signature move`);
   assert.deepEqual(named.sort(), SCENES.slice().sort());
   for (const k of Object.keys(MOVES)) if (MOVES[k].sig && MOVES[k].p >= A.longPower) assert.ok(named.includes(k), k);
