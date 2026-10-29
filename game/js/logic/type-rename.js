@@ -97,6 +97,25 @@ export function renameTypeIn(D, from, to) {
       if (!P.tags.length) delete P.tags;
     }
   }
+  /* PK-10: a held item's rows: a damage row's type (a deleted one: for any type), an immune row's (a deleted one: the
+     row goes, and an item left with no row is no longer a held one) and its conditions */
+  for (const I of Object.values(D.items || {})) {
+    const H = /** @type {any} */ (I);
+    if (!Array.isArray(H.hold)) continue;
+    H.hold = H.hold.filter((/** @type {any} */ f) => {
+      if (f.type === from) {
+        if (to) f.type = to;
+        else if (f.kind === 'immune') return false;
+        else delete f.type;
+      }
+      renameTypeConds(f, 'if', from, to);
+      return true;
+    });
+    if (!H.hold.length) {
+      delete H.hold;
+      delete H.rarity;
+    }
+  }
   /* SP-2: a Gene's dominant type (a deleted one leaves the part with none, and a part with nothing left goes) and its
      traits' damage rows */
   const G = D.genes;

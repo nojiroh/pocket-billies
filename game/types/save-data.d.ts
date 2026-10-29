@@ -32,6 +32,9 @@ export interface SaveData {
   /** species seen and caught: 1 */
   seen: Record<SpeciesId, number>;
   caught: Record<SpeciesId, number>;
+  /** perks track PK-12: the Field Guide's Perks tab, '<kind>:<id>' (perk, set, item, boon) seen and taken: 1
+      (logic/collection.js); it lasts between runs */
+  collection: { seen: Record<string, number>; taken: Record<string, number> };
   /** money, dollars */
   se: number;
   /** how many of each coin and item you have (every key of gameData.pyramids and gameData.items) */
@@ -460,8 +463,11 @@ export interface RunEnc {
   node: Record<string, string>;
   /** the events played this run, in order */
   seen: string[];
-  /** effect rows an event left: this place and `left` more */
-  boons: { fx: import('./game-data').FxRow[]; left: number; src: string }[];
+  /** effect rows an event left: this place and `left` more; PK-9: a named boon or curse (boons.json) by its `id`, its
+   * rows read from the data (no `fx`) */
+  boons: { fx?: import('./game-data').FxRow[]; id?: string; left: number; src: string }[];
+  /** PK-9: how many curses were erased this run (Correction Fluid's curseErase); missing: none */
+  erased?: number;
   /** reward picks made so far (the next pick's stream) */
   rewardN: number;
   /** the reward pick waiting (saved before it shows), or null */
@@ -485,10 +491,12 @@ export interface RunReward {
 export interface RewardCard {
   id: string;
   /** RL-14: a salvage pick's `part` (item: a robots.json part, into saveData.parts) and `scrap` (n: Scrap) */
-  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held' | 'part' | 'scrap';
+  kind: 'item' | 'candy' | 'evo' | 'tutor' | 'held' | 'part' | 'scrap' | 'perk';
   item?: string;
   n?: number;
   move?: string;
+  /** PK-7: a perk card's Perk (perks.json, an ordinary one) */
+  perk?: string;
 }
 
 /** the player's travel: where you are, and the locations still ahead (the gold arrows' guide) */

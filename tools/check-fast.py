@@ -937,7 +937,11 @@ def relics(pg, base):
     st = pg.evaluate("startWild(encountersHere()[0]);[!!activeBattle.fx,activeBattle.sides[0].f[0].v.st.hus]")
     if st != [True, 1]: raise Exception(f'a battle’s Perks and Speed stage: {st}')
     odds = pg.evaluate("[catchOdds('pyramid',1,false),(activeBattle.fx=null,catchOdds('pyramid',1,false))]")
-    if abs(odds[0] - min(1, odds[1] * 1.25)) > 1e-9: raise Exception(f'the catch row: {odds}')
+    # PK-8: Steady Hand's 1.25, and Old School's 1.1 (the fixture holds three Trainer Classics: Steady Hand, Running
+    # Shoes, Trail Snacks)
+    sets = pg.evaluate("fxSetsOn(saveData.run.perks,PERKS)")
+    if sets != ['classics']: raise Exception(f'the Perk sets on: {sets}')
+    if abs(odds[0] - min(1, odds[1] * 1.25 * 1.1)) > 1e-9: raise Exception(f'the catch row: {odds}')
     pg.evaluate("stopTimers();activeBattle.over='ran';endBattle();0")
     if not until(pg, "!activeBattle", 20): raise Exception('the battle didn’t end')
     heal = pg.evaluate("uiState.modal=null;uiState.mq=[];saveData.team[0].hp=1;runArrivedFx();saveData.team[0].hp")
@@ -963,6 +967,17 @@ def relics(pg, base):
     after = pg.evaluate("[saveData.se,saveData.run.perks.length,Object.values(saveData.run.shelf)[0],!!document.querySelector('#ov .shop-sheet [data-a=shoprelic]')]")
     if after != [se - price, 6, '', False]: raise Exception(f'after buying: money, held, shelf, row {after} (paid {se - after[0]}, price {price})')
     if stored()['shelf'] != {f'{town}:{pg.evaluate("saveData.run.clock")}': ''}: raise Exception(f'the bought shelf isn’t stored: {stored()["shelf"]}')
+    # PK-9: a boon and a curse on the run: the Perks tab lists them (picture, places left), the Map tab's head shows
+    # them beside the day, an appeal at the clinic lifts the curse
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();encBoonGive(saveData.run,'tailwind','check');encBoonGive(saveData.run,'audit_trail','check');uiState.tab='perks';render();0")
+    if not until(pg, "document.querySelectorAll('.s-perks .boon-row').length===2", 10): raise Exception('the Perks tab doesn’t list the boon and the curse')
+    rows = pg.evaluate("[...document.querySelectorAll('.s-perks .boon-row')].map(e=>[e.dataset.boon,e.querySelector('.art-ic').offsetWidth,(getComputedStyle(e.querySelector('.art-ic')).backgroundImage.match(/art\\/(boons\\/\\w+\\.svg)/)||[])[1]||'',e.querySelector('.boon-left').textContent])")
+    if rows != [['tailwind', 36, 'boons/tailwind.svg', 'Boon · 3 places left'], ['audit_trail', 36, 'boons/audit_trail.svg', 'Curse · 4 places left']]:
+        raise Exception(f'the boons’ rows: {rows}')
+    pg.evaluate("uiState.tab='map';render();0")
+    if not until(pg, "document.querySelectorAll('.map-hrow .boon-strip .boon-chip').length===2", 10): raise Exception('the Map tab’s head doesn’t show the boons')
+    appeal = pg.evaluate("(()=>{const se=saveData.se;saveData.se=500;const r=runAppeal(saveData,'audit_trail',RULES.run.appealCost);const out=[r.paid,saveData.run.enc.boons.map(b=>b.id)];saveData.se=se;saveData.run.enc.boons=[];uiState.tab='walk';render();return out})()")
+    if appeal != [50, ['tailwind']]: raise Exception(f'the appeal: {appeal}')
     # a mini-boss beaten: the pick is stored with the battle's end, before its sheet
     mb = pg.evaluate("saveData.run.map.nodes.findIndex(n=>n.type==='miniboss')")
     if not pg.evaluate(f"uiState.modal=null;uiState.mq=[];renderOverlay();runJump({mb}+1)"): raise Exception('couldn’t walk to a mini-boss')
@@ -980,7 +995,12 @@ def relics(pg, base):
     if pg.evaluate("saveData.run.offer") != offer2: raise Exception('a reload showed another pick')
     pg.evaluate("document.querySelectorAll('#ov [data-a=mb]')[1].click();0")
     if not until(pg, "!saveData.run.offer&&!(uiState.modal&&uiState.modal.cls==='relic-pick')", 10): raise Exception('Take none didn’t clear the pick')
-    return f'the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
+    # PK-12: the Field Guide's Perks tab lists every Perk, the held ones taken, the unseen as silhouettes
+    pg.evaluate("save();uiState.tab='guide';uiState.guideTab='perks';uiState.perkGuideK='perk';render();0")
+    if not until(pg, "document.querySelectorAll('.pkg-row').length===Object.keys(PERKS).length", 10): raise Exception('the Field Guide’s Perks tab doesn’t list every Perk')
+    guide = pg.evaluate("[saveData.run.perks.every(id=>document.querySelector(`.pkg-row[data-pkg='perk:${id}']`).classList.contains('taken')),document.querySelectorAll('.pkg-row.none .art-sil').length,document.querySelectorAll('.pkg-row.none').length,!!JSON.parse(localStorage.getItem(SAVE_KEY)).collection.taken['perk:'+saveData.run.perks[0]]]")
+    if not guide[0] or guide[1] != guide[2] or not guide[3]: raise Exception(f'the Perks tab’s marks: {guide}')
+    return f'the Field Guide’s Perks tab ({guide[2]} unseen as silhouettes); the pick ({", ".join(offer)}), {took} taken; six on the tab; a battle with Speed +1 and catch x1.25; walking in healed to {heal} HP; the clinic ${clinic[0]}; {shelf} bought for ${price} in place of {held[0]}; a mini-boss beaten: a stored pick ({", ".join(offer2)}), the same after a reload, none taken'
 
 
 def income(pg, base):
@@ -1543,6 +1563,13 @@ def screens(pg, base):
                     ('bag', '.bag-tabs,.bag-list,.bag-empty,[data-a^=bag]'), ('lab', '.lab-sec .lab-row')):
         if not pg.evaluate(nav_tap(t)): raise Exception(f'no {t} tab to tap')
         need(t, screen(t, part))
+    # PK-11: the Bag's rows draw each item's own picture (art/items) at 36 px, a whole multiple of the icon's 36
+    pg.evaluate(nav_tap('bag'))
+    need('the Bag again', screen('bag', '.bag-list'))
+    pics = pg.evaluate("[...document.querySelectorAll('.screen.s-bag .bag-row .bag-ic img')].filter(e=>/art\\/items\\//.test(e.getAttribute('src'))).map(e=>e.getBoundingClientRect().width)")
+    if not pics or any(w != 36 for w in pics): raise Exception(f'the Bag rows’ item pictures: {pics} (36 px each)')
+    pg.evaluate(nav_tap('lab'))
+    need('lab again', screen('lab', '.lab-sec .lab-row'))
     # the world is the base view: the open tab tapped again, or Esc, goes back to it
     pg.evaluate(nav_tap('lab'))
     need('the world (the open tab again)', screen('walk', '#walkHero'))

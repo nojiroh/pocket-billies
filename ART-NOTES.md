@@ -571,6 +571,63 @@ art pipeline (phase 17 task 11).
 - In a one-colour (`mono`) picture the ramp's shades get no seam between them, so a detail in a darker shade can vanish
   in the pale top half. To part two areas of one colour, draw one of them with the matching letter (the letter `r` is
   the red ramp's mid): a letter is its own block, so a seam is drawn between them (Power Gloves' thumb).
+- PK-12 redrew the three weakest reads the reviews named: Steady Hand ("Pyramids catch more often") is a gold pyramid
+  in a red crosshair ring with slate ticks (the cream fingers that pinched it vanished on the light panel); Screen
+  Protector is an ice pane with cream glints over a slate phone, its corner peeling (the cracked screen read as an X);
+  Rubber Boots is two-tone, a gold B body with a pale gold toe cap, a red cuff and pull tab, a slate sole and blue drops
+  (the one-colour boot washed out in its pale top half). Across the folders (perks, items, boons and ui) the closest
+  pairs that can show together are boxy cards and forms told apart by colour: Gift Receipt and Tarot Card 91%, Trail
+  Snacks and Study Notes 90%; Screen Protector and Tarot Card read 95% before the redraw.
+
+## Bag item pictures, 36x36 (Perks track PK-11, 2026-10-28)
+- The 13 Bag items (consumables) have their own pictures in the Perks' look: `game/art/items/<id>.svg`, named by the
+  item's `img` (the ids are items.json's: `bell` is the Shining Stone, `trailmix` Trail Mix, `repairkit` the Repair
+  Kit). Same rules as "Perk pictures" above. Drawn as grids in `tools/art/icon-grids/items.json` and written by
+  `node tools/build-icons.mjs items`; contact sheets `validation/icon-sheets/items-{light,dark}.png`.
+- Shapes chosen so each reads alone at 36 px: round flask (Potion), tall square bottle (Hi-Potion), wide low tin (Burn
+  Salve), dropper bottle (Nerve Tonic), mug (Wake-Up Tea), heart (Revive), winged gold heart (Max Revive), capsule on
+  the 45-degree line (Full Remedy), cut gem (Shining Stone), wrapped bar on the 45-degree line (Protein Bar), bowl
+  (Trail Mix), knot with three holes (Pretzel), toolbox (Repair Kit). Cream only inside a shape (glints, labels, salt).
+- Shown at whole multiples: 36 px in the Bag, a shop, the battle's Bag and the Billie sheet's lists, 72 px on a reward
+  card (`itemIcon`, `.pxi` pixelated). The old atlas (`art/icons/icons.png`) keeps only what held items still draw
+  until PK-10.
+
+## Held item pictures, 36x36 (Perks track PK-10, 2026-10-28)
+- The 24 held items have their own pictures too (`game/art/items/<id>.svg`, `img` in items.json), the same rules and
+  pipeline as "Bag item pictures" above (grids in `tools/art/icon-grids/items.json`, drawn with octagons, 45-degree
+  lines and 3 px strokes). No item draws from the old atlas any more: every `i_` rectangle left `art/manifest.js` and
+  `art/icons/icons.png`.
+- Shapes: Leftover Sandwich a triangle half (lettuce, tomato), Snack Pack a puffed blue chip bag, Lucky Coin a gold
+  octagon with a clover, Study Notes a spiral notebook (rings down the side), Iron Vest a steel plated vest, Quick Laces
+  a red running shoe, Brass Knuckles four gold rings over a grip, Smart Specs slate glasses with ice lenses; the type
+  boosters Matchbook (a red book, a match alight on the 45-degree line), Water Bottle (a blue sports bottle), Seed
+  Packet (a green packet cut open, a sprout), Spare Battery (slate and gold, a plus), Garden Trowel (a steel blade, a
+  wood handle), Paper Plane (ice and blue), Tarot Card (deep violet, a gold star), Socket Wrench (steel, slate grip),
+  Dragon Fruit (red with green scales); the tricks Seatbelt (a steel buckle and red button on a slate strap), Cactus
+  Keyring (a potted cactus on a gold ring), Complaint Form (a clipboard, a red stamp), Party Balloon (red, on a
+  string), Costume Fangs (a wide mouth, cream fangs), Express Pass (a gold ticket, a red double arrow), Ankle Weights
+  (a teal cuff with steel pockets and a gold buckle).
+- `--check`'s silhouette rule made four of them change shape (the notebook, the chip bag and the seed packet were
+  three boxes alike; the fangs were the coin's octagon).
+
+## Boon and curse pictures, 36x36 (Perks track PK-9, 2026-10-29)
+- The 20 boons and curses have their own pictures in the Perks' look: `game/art/boons/<id>.svg`, named by the boon's
+  `img` in boons.json. Same rules as "Perk pictures" above. Drawn as grids in `tools/art/icon-grids/boons.json` and
+  written by `node tools/build-icons.mjs boons`; contact sheets `validation/icon-sheets/boons-{light,dark}.png`.
+  Correction Fluid's (a cream bottle in a steel outline, a red label, a slate brush cap) is with the Perks.
+- Boons are warm, happy objects; the curses are the Bureau's Red Tape (paperwork, stamps, red tape, slate and cream
+  paper, steel outlines so cream never sits alone): a water drop with gold glints (Glittering Water), teal ripple rings
+  round a coin (Lucky Ripples), a ring light round a phone (Camera-Ready), a red and gold flame (Fired Up), wind
+  swirls on the diagonal (Tailwind), a speech bubble with a gold "!" (Pep Talk), gold scissors cutting a red ribbon
+  (Grand Opening), a fried egg on a plate (Second Breakfast), a red heart with gold sparks (Viral Moment), two red dice
+  (Beginner's Luck); a coin under a red stamp bar (Stamped Insufficient), a price tag with a red up arrow (Surge
+  Pricing), a queue ticket with a red cross (Clinic Backlog), an hourglass (Pending Review), a ring binder with a red
+  band (Mandatory Training), a magnifier over a coin (Audit Trail), a handset with violet notes (Hold Music), a permit
+  card under a no-sign (Permit Revoked), a hanging wood sign (Out of Office), a paper sheet with a red cut (Paper Cuts).
+- Shown at 36 px on the Perks tab's rows and the Studio's card, 18 px in the run's HUD strip (the Map tab's head).
+- `--check`'s silhouette rule redrew three while drafting (Paper Cuts and Complaint Form, Permit Revoked and Warranty
+  Card, an early Fired Up and Lucky Coin); the closest pairs now are 88% (Out of Office and Early Access Pass, Clinic
+  Backlog and Complaint Form).
 
 ## Terrain TR-4 (2026-10-26): the biomes' cliff faces
 - `scene/build/walls.png` is now a 4 x 4 atlas (256 x 256). The first three rows are the 12 cells from before, kept

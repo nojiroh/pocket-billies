@@ -42,6 +42,7 @@ import {
   PASSIVE,
   PASSIVE_INFO,
   PERKS,
+  PERK_SETS,
   PYRAMIDS,
   STATUS_NAMES,
   STAT_NAMES,
@@ -98,6 +99,7 @@ import {
   effectiveStat,
   enemyOnly,
   fighter,
+  fxSrcName,
   fxWeatherFor,
   isMulti,
   liveActors,
@@ -1132,7 +1134,10 @@ function teamPick(back) {
 }
 const backButtonHTML = () =>
   `<button class="bt back wide" data-a="bback">${uiIconHTML('back', 16)}<b>Back</b><kbd>Esc</kbd></button>`;
-export const itemIcon = (k, size = 30) => {
+/* PK-11: an item's own picture (its img, a 36 px icon in art/items) at a whole multiple of 36 px, pixelated (.pxi);
+   without one, its rectangle of the old atlas (`i_` + its icon). The Bag, a shop and the battle's Bag draw 36 px, a
+   reward card 72 */
+export const itemIcon = (k, size = 36) => {
   const I = ITEMS[k] || {};
   return I.img
     ? `<img class="pxi" src="${artURL(I.img)}" width="${size}" height="${size}" alt="">`
@@ -1343,7 +1348,7 @@ export function paintActions() {
             .map(k => {
               const I = ITEMS[k],
                 ok = I.hpAll ? teamNeedsHp() : saveData.team.some(m => canUse(k, m));
-              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 32)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
+              return `<button class="pick" data-a="bitem" data-it="${k}" ${ok ? '' : 'disabled'}>${itemIcon(k, 36)}<span class="pk-t"><b>${escapeHtml(I.n)}</b><small>${escapeHtml(I.d)}</small></span><span class="pk-s tnum">×${saveData.items[k]}</span></button>`;
             })
             .join('')
         : '<p class="note">No items. Buy some at a town shop.</p>'
@@ -1526,6 +1531,8 @@ export function endBattle() {
      a run's mini-boss a pick of Perks, saved on the run before it shows (logic/battle-rewards.js battleSettleWin) */
   battleSettleWin(activeBattle, saveData, pay, run);
   if (kind === 'wild' && o === 'win' && pay.prize > 0) toast(`You earned ${plural(pay.prize, 'Money')}.`);
+  /* PK-7: a faintPaysNothing row (Influencer Contract) kept the win's Moneys */
+  if (pay.noPay) toast(`${fxSrcName(pay.noPay)}: one of yours fainted, so the battle paid nothing.`);
   /* SP-3: a spliced wild Billie knocked out: its DNA, and a sheet for a Gene sampled for the first time */
   const spliced =
     /** @type {{ dna?: number, sampled?: { gene: string, words: string }[], parts?: { id: string, words: string }[] }} */ (
@@ -1759,6 +1766,8 @@ function blipLook(b) {
     pct = b.mult && b.mult !== 1 ? ` ${b.mult > 1 ? '+' : '−'}${Math.round(Math.abs(b.mult - 1) * 100)}%` : '',
     o = { stat: b.stat || '', stages: b.stat ? b.stages || 1 : 0 };
   if (kind === 'perk') return { ...o, group: 'kind', mark: 'perk', text: ((PERKS[id] || {}).name || id) + pct };
+  /* PK-8: a Perk set's bonus, by its title */
+  if (kind === 'set') return { ...o, group: 'kind', mark: 'perk', text: ((PERK_SETS[id] || {}).title || id) + pct };
   if (kind === 'held') return { ...o, group: 'kind', mark: 'held', text: ((ITEMS[id] || {}).n || id) + pct };
   if (kind === 'gene')
     return { ...o, group: 'family', mark: 'bio', text: (((GENES.traits || {})[id] || {}).name || id) + pct };

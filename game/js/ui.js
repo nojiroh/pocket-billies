@@ -376,6 +376,7 @@ document.addEventListener('click', ev => {
     case 'dex':
     case 'dexback':
     case 'dexf':
+    case 'pkgk':
     case 'guidetab':
     case 'loresec':
     case 'lorebook':

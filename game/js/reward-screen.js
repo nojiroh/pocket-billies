@@ -3,15 +3,17 @@
    The pick after a route trainer's battle (or an event's "reward"): run.enc.reward's cards (logic/rewards.js), saved
    before the sheet shows, as face-up pick cards. Tap one, then "Take it"; "Reroll" draws them again for Moneys (the
    price doubles each time); "Take none" leaves them. A tutor card asks which Billie learns the move, then, when its
-   moves are full, which one it forgets. A held item's card (RL-12c) asks who holds it (or into the bag). The sheet can't be closed any other way, and a reload opens it again
+   moves are full, which one it forgets. A held item's card (RL-12c) asks who holds it (or into the bag). PK-7: a Perk's
+   card holds it for the run; at the cap it asks which to let go first (perk-screen.js perkDropOpen). The sheet can't be closed any other way, and a reload opens it again
    (run.js runResume). Every change is saved at once (saveNow). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast, typeBadgeHTML } from './hooks.js';
-import { CURRENCIES, ITEMS, MOVES, PYRAMIDS, RULES } from './game-data.js';
+import { CURRENCIES, ITEMS, MOVES, PERKS, PYRAMIDS, RULES } from './game-data.js';
 import { ROBOT_SLOT_NAMES, robotPartDef } from './logic/fighters.js';
 import { billyName } from './logic/rules.js';
 import { rarityTier } from './logic/marks.js';
+import { perkCap, perkSetLine } from './logic/perks.js';
 import {
   rewardDataGame,
   rewardReroll,
@@ -24,9 +26,11 @@ import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML } from './ui-marks-kit.js';
 import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
 import { escapeHtml, saveData, saveNow, uiState } from './game-state.js';
-import { artURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
+import { artIconHTML, artURL, moneyHTML, pyramidHTML, uiIconHTML } from './art.js';
 import { bustHTML } from './skeleton-rig.js';
 import { itemIcon } from './battle.js';
+import { jinglePlay } from './sound.js';
+import { perkDropOpen } from './perk-screen.js';
 /* eslint-disable no-func-assign */
 expose({
   rarityAttr: [() => rarityAttr],
@@ -53,6 +57,13 @@ const rarityAttr = r => (rarityTier(r) ? ` rarity="${rarityTier(r)}"` : '');
 /** a card as a pick card @param {import('../types/save-data').RewardCard} c @param {number} k @param {boolean} on */
 function rewardCardHTML(c, k, on) {
   const n = c.n && c.n > 1 ? `${c.n} × ` : '';
+  /* PK-7: an ordinary Perk, as a pick's card (its picture at 72 px, its rarity's frame) */
+  if (c.kind === 'perk') {
+    const P = PERKS[/** @type {string} */ (c.perk)] || { name: c.perk, d: '', rarity: '', fx: [] },
+      /* PK-8: its set's line ("Perk · Office Supplies 2/3", with it held: logic/perks.js perkSetLine) */
+      set = PERKS[c.perk] ? perkSetLine(saveData.run, /** @type {string} */ (c.perk), PERKS) : '';
+    return `<pb-pick-card data-k="${k}" kind="perk"${rarityAttr(P.rarity)} heading="${escapeHtml(P.name)}" sub="Perk${set ? ' · ' + escapeHtml(set) : ''}"${on ? ' selected' : ''}><span slot="art">${artIconHTML(P.img, 72)}</span>${escapeHtml(P.d || '')}${fxTagsHTML(P.fx)}</pb-pick-card>`;
+  }
   /* RL-14: a salvage pick's cards: a bot's part (into your parts) and a stack of Scrap */
   if (c.kind === 'part') {
     const P = robotPartDef(/** @type {string} */ (c.item)) || { name: c.item, d: '', type: 'None' },
@@ -76,7 +87,7 @@ function rewardCardHTML(c, k, on) {
   const I = /** @type {any} */ (ITEMS[/** @type {string} */ (c.item)] || { n: c.item, d: '' }),
     sub = c.kind === 'candy' ? 'Candy' : c.kind === 'evo' ? 'Evolution item' : c.kind === 'held' ? 'Held item' : 'Item',
     kind = c.kind === 'candy' || c.kind === 'evo' || c.kind === 'held' ? c.kind : 'item';
-  return `<pb-pick-card data-k="${k}" kind="${kind}"${c.kind === 'held' ? rarityAttr(I.rarity) : ''} heading="${escapeHtml(n + I.n)}" sub="${sub}"${on ? ' selected' : ''}><span slot="art">${itemIcon(/** @type {string} */ (c.item), 40)}</span>${escapeHtml(I.d || '')}${c.kind === 'held' ? fxTagsHTML(I.hold) : ''}</pb-pick-card>`;
+  return `<pb-pick-card data-k="${k}" kind="${kind}"${c.kind === 'held' ? rarityAttr(I.rarity) : ''} heading="${escapeHtml(n + I.n)}" sub="${sub}"${on ? ' selected' : ''}><span slot="art">${itemIcon(/** @type {string} */ (c.item), 72)}</span>${escapeHtml(I.d || '')}${c.kind === 'held' ? fxTagsHTML(I.hold) : ''}</pb-pick-card>`;
 }
 /** show the pick's sheet (in place when it is up; ahead of any other) */
 function rewardSheet(M) {
@@ -153,6 +164,15 @@ function rewardTakeTap(k) {
     rewardHolder(k);
     return;
   }
+  /* PK-7: a Perk past the cap: which to let go first (Keep them comes back to the pick) */
+  if (c.kind === 'perk' && run.perks.length >= perkCap(run, RULES.run.perks, PERKS)) {
+    perkDropOpen(
+      /** @type {string} */ (c.perk),
+      drop => rewardAnswer(k, { drop }),
+      () => rewardPickOpen()
+    );
+    return;
+  }
   if (c.kind !== 'tutor') {
     rewardAnswer(k);
     return;
@@ -214,7 +234,7 @@ function rewardTeach(k, uid) {
   });
 }
 /** the pick answered (a card, or none): saved, the sheet closed @param {number | null} k
- * @param {{ uid?: string, forget?: string }} [o] */
+ * @param {{ uid?: string, forget?: string, drop?: string }} [o] */
 function rewardAnswer(k, o) {
   const run = saveData.run,
     R = run && run.enc && run.enc.reward;
@@ -232,7 +252,10 @@ function rewardAnswer(k, o) {
   uiState.rewardSel = null;
   saveNow();
   if (typeof debugLog !== 'undefined')
-    debugLog.add('scene', `reward pick: ${c ? c.id + (c.move ? ' ' + c.move : '') : 'none'}`);
+    debugLog.add(
+      'scene',
+      `reward pick: ${c ? c.id + (c.move ? ' ' + c.move : '') + (c.perk ? ' ' + c.perk : '') : 'none'}${o && o.drop ? ` for ${o.drop}` : ''}`
+    );
   closeModal();
   render();
   if (c && c.kind === 'tutor' && o && o.uid) {
@@ -243,9 +266,15 @@ function rewardAnswer(k, o) {
     if (m && m.held === c.item) toast(`${billyName(m)} is holding the ${ITEMS[/** @type {string} */ (c.item)].n}.`);
   } else if (c && c.kind === 'part') toast(`Into your parts, for the Workshop.`);
   else if (c && c.kind === 'scrap') toast(`${c.n || 1} Scrap sent home.`);
-  else if (c && c.item) toast(`Into the bag.`);
+  /* PK-7: a Perk held for the run (its own toast and jingle, as the pick's) */
+  else if (c && c.kind === 'perk' && c.perk && PERKS[c.perk]) {
+    toast(`${PERKS[c.perk].name}: ${PERKS[c.perk].d}`);
+    if (typeof jinglePlay === 'function') jinglePlay('relic');
+  } else if (c && c.item) toast(`Into the bag.`);
   /* UI-16a: an item that went into the bag flies to the Bag tab (one held by a Billie stays with it) */
   if (c && c.item && !(c.kind === 'held' && o && o.uid)) pbGainFly(from, 'bag', 'bag');
+  /* PK-7: a Perk flies to the Perks tab */
+  if (c && c.kind === 'perk') pbGainFly(from, 'perks', 'relic');
   rewardDone();
 }
 /** an event waiting on the pick goes on */

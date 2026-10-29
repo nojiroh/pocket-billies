@@ -7,7 +7,7 @@ Also make it so they have their own art in a style that fits. Do research online
 for next steps and start them in new sessions until this plan is finished."
 
 This file is the plan (session PK-0, planning and art samples only; nothing in the game changed). Sessions follow
-CLAUDE.md (one cause per commit, the test tiers of docs/TESTING.md, a HANDOFF entry, a tag `pk-N-done` to suggest),
+CLAUDE.md (one cause per commit, the test tiers of docs/TESTING.md, a HANDOFF entry; no per-session tags: see section 14),
 except that the owner pre-approved every step's plan: see "How the sessions run". Numbers and lines below were read at
 main 07c9b28 (2026-10-27); verify again before each session and correct this file where the code disagrees.
 
@@ -315,6 +315,54 @@ own object; the card shows a small red "Fine Print" stamp.
 A Perk belongs to at most one set (field `set`). `fxOfRun` adds a set's rows (src `set:<id>`) while `need` (3) of its
 members are held; cards show the set and "2/3"; the Perks tab groups by set.
 
+**Corrected in PK-8** (built 2026-10-28 on `track/perks`; where the code or the plan above was wrong or vague):
+- **No `set` field**: PK-4 had already tagged the 34 members with their set's id (the tags above matched the table
+  exactly; Correction Fluid waits for PK-9). A set's Perks are those tagged with its id, so perkSets.json is the
+  themes' source (data-checks.js `PERK_THEMES` is gone; a tag is a type or a set's id) and `dataPerkSets` refuses a
+  Perk tagged with two sets. The Studio's Set select writes the tag.
+- The section: game/data/perkSets.json (index.json key after `perks`), perkSets.schema.json (its rows are a Perk's by
+  `$ref`), `PerkSet` in game-data.d.ts, game-data.js `PERK_SETS`, data-checks.js `dataPerkSets` in check-data and the
+  Studio's Check (each row as a Perk's: dataPerks' row checks moved to `perkRowProblems` with the same words; a need
+  its Perks can meet; no copy row). Fields: name, title (the bonus's name: battle lines and blips name the set by it),
+  need (2-6), d, fx. No picture: section 6 asks none for sets.
+- **Counting** (effects.js `fxSetHeld`, `fxSetsOn`, `fxSetRows`): the Perks held tagged with the id, each once. The
+  set rows come after the Perks' own in fxOfRun (before boons). **A copy doesn't count** (decided): a Photocopier counts
+  as itself, an Office Supplies Perk, never as the Perk it copies, so it can complete Office Supplies but never another
+  set. Non-Refundable Ticket is in no set; while it is held no set Perk can be let go, so a bonus can't be lost.
+  Nothing can turn a held Perk off yet: PK-9's Permit Revoked ("your newest Perk does nothing") must leave that Perk
+  out of fxSetHeld's list too.
+- **The bonuses as built** (texts drafted for the owner's review):
+  - Office Supplies, Middle Management: "Perks in run shops cost half." Every run shop already stocks a Perk a day
+    (perkShelf), so the plan's "stocks a Perk" was there; the bonus is a price row of the new `what: perk` (perks.js
+    `perkShopPrice`: the shop's rows, then the Perk's; shop.js and the run sim read it).
+  - Influencer Kit, Verified: "Wins pay 25% more Moneys, and your team's first attack in each battle is a critical
+    hit." money ×1.25; crit `when: move`, `if: cat:H|S`, `once: battle`.
+  - Tech Gear, Power User: "Your Billies' held items work 50% better." The new kind **heldBoost** (×1.5): effects.js
+    `fxBoostRow` moves a held row's factor 1.5 times as far from 1 (×1.2 is ×1.3, a take of ×0.85 is ×0.775), its
+    stages 1.5 times rounded half up (+1 is +2), shares and chances 1.5 times (at most 1 and FX_CHANCE); battle-engine.js
+    `heldBoostOf`/`heldFx` give it to yours only (a foe's held item is as it was), also the battle's start stages and
+    a win's money rows. No condition, no when.
+  - Lab Kit, Mad Science: "Your Unstable Billies hit 20% harder, and their cells never hurt them." A damage row with the
+    new condition **unstable** (the Billie acting is an Unstable splice: rules.js billyUnstable), and the new rule
+    **unstableSafe** (FX_LIMIT floors an `unstable` row at ×0.1, so "lose no HP" needed a rule: battle-engine.js endTurn
+    skips the hurt on your side).
+  - Adventurer's Pack, Seasoned Adventurer: "Every side area has a Perk lying on the ground." The new rule **sidePerk**:
+    route-finds.js always puts a Perk's find (card `perk`, `perk: 1`, flag `find.<node>.perk`) on a side place's next
+    free spot, 6 m from the others; it shows and is picked up only while the rule holds (`routeFindsPerk`). Walking
+    onto it draws one ordinary Perk from the run's stream for that find (perks.js `perkFindMake`, with the bias) as a
+    pick of one in run.offer, saved first ("A Perk was tucked away here."); at the cap it asks which to let go, as any
+    pick. A reload reopens it with the mini-boss's words (as an event's offer).
+  - Weather Kit, Weather Person: "Your Billies hit 15% harder in rain, storms, snow, fog and ash." `if:
+    weather:rain|storm|snow|fog|ash` (a run's clear forecast is `sunny`, PK-1's note; cloudy has no battle weather).
+  - Trainer Classics, Old School: "Your Billies get 25% more XP, and Billies are 10% easier to catch." xp ×1.25, catch
+    ×1.1.
+- **On screen**: the set line ("Perk · Office Supplies 2/3", perks.js `perkSetLine`) counts the run's Perks of the set
+  **with this one** (an offered card says what taking it makes; never past the need) on the pick's and the reward
+  pick's cards and the shop's Perk row; the Perks tab groups the Perks held by set (`perkGroups`: each set with its
+  count, its bonus's title and text, "(on)" once it holds; then "No set"). The debug log lists the sets on
+  (`relicSets`). The relics fixture holds three Trainer Classics, so Old School is on there (check-fast expects its
+  catch row).
+
 ### 5.8 Held items (PK-10; 16 new, the 8 existing redrawn)
 Type boosters, "Held: its holder's <Type> moves hit 20% harder." (`damage` deal, `type`, x1.2): Matchbook (Fire),
 Water Bottle (Water), Seed Packet (Grass), Spare Battery (Electric), Garden Trowel (Ground), Paper Plane (Flying),
@@ -332,6 +380,38 @@ The 8 existing (Leftover Sandwich, Snack Pack, Lucky Coin, Study Notes, Iron Ves
 Specs) get their own pictures. Held items' rarity tiers follow UI-14's ladder (recommendation: type boosters common,
 tricks uncommon).
 
+**Corrected in PK-10** (built 2026-10-28 on `track/perks-items`, the items lane):
+- **Rarity tiers already existed** (UI-14b: `rarity` on every held item, data-checks.js `RARITY_TIERS`, the loot
+  ladder's common, uncommon, rare, mythical); the new items take the recommendation: type boosters common, tricks
+  uncommon. The reward pick's `held` card draws among held items evenly (rewards.js), not by tier; that was kept.
+- **The held kinds are not FX_KINDS**: `survive`, `reflect`, `drain` and `last` live in effects.js `HELD_FX_KINDS`
+  (no Perk, boon, modifier or event row can name them); `immune` and `first` are FX_KINDS read their own way on a
+  hold row (`HELD_OWN_FORMS`): immune names a `type` (with `until: hurt`), not a Perk's `what`; first takes a
+  `chance` (at most FX_CHANCE). data-checks.js `HOLD_KINDS` lists them; `heldKindProblems` checks their fields.
+  game-data.d.ts `HeldRow` (an FxRow or a `HeldKindRow`) types `Item.hold`. Their engine code is its own section of
+  battle-engine.js (`heldSurvives`, `heldAfterHit`, `heldFloats`, `heldFirstActs`, `heldLastActs`, `heldMoment`),
+  so merges with the Perk lane stay small.
+- **A held item acts on either side** (a foe's Billie may hold one; a trainer's could): every held kind is read for
+  the fighter holding it, unlike the run's rows (yours only). Its once-a-battle marks are the battle's `b.heldState`,
+  one set per holder.
+- **when, if and once on hold rows** (Complaint Form): a hold row may say `when` hit or hurt (stat rows only:
+  data-checks.js `HELD_WHEN_KINDS`), and only with one an `if` of what a hit knows about the holder (effects.js
+  `HELD_IFS`: superEffective, cat, type, hp<) and `once: battle`; no every, grow or per. A row with a when is left out
+  of fxOfBillie (it acts only at its moment: `fxHeldAt`). Complaint Form is two such stat rows (Attack, Sp. Atk +2).
+- Seatbelt's survive is Bedrock's rule for a held item (full HP, once a battle; Bedrock goes first). Cactus Keyring's
+  reflect takes `cat: H` ("physical"). Party Balloon blocks damaging moves of its type with no accuracy roll and is
+  spent by the first damaging hit ("popped"); the foe AI's damage estimate sees 0 while it floats. Express Pass rolls
+  once per act of its holder, after the Perks' first rows (no roll without one held). Ankle Weights' last sorts after
+  priority and the early acts, before Speed; its text says "moves after the others" (a priority move still goes
+  first, so "always" was dropped); its damage is an ordinary deal row x1.3.
+- The Studio's items editor had **no hold rows at all** (held items were edited as JSON only): studio/js/held-editor.js
+  gives a held item its tier and rows by kind (with When, If and Once), Make it a held item and back.
+- The Studio's type rename now reaches hold rows (a type booster's type, Party Balloon's, a row's `type:` condition).
+- All 24 pictures drawn (the 8 existing redrawn); every i_ item rectangle retired (i_pretzel, i_trailmix, i_bell and
+  the finance-era i_appeal, i_settlement, i_taxbreak, i_bailout, i_loophole, i_apology): no item draws from the atlas.
+  dataItemArt now warns for any item without a picture. Main's ON-4 (merged mid-step) had added Form 99-A
+  (`transfer`) on i_settlement: it got its own picture too (a stamped carbon-copy form).
+
 ### 5.9 Boons and curses (PK-9; data section `boons`; 20)
 Named from today's rows: Glittering Water (fountain, Moneys +10%, 3 places), Lucky Ripples (fountain, catch +5%, 3),
 Stamped Insufficient (fountain curse, shops +10%, 2), Camera-Ready (ring_light, Speed +1, 1), Surge Pricing
@@ -345,11 +425,76 @@ A clinic takes an appeal fee to lift a curse (placeholder 50 Moneys). Events and
 id (`boon <id>`, `curse <id>`; `fx` stays for packs). 4-5 new Bureau events hand curses out (drafted lines). The
 Perks tab lists them with places left; battle lines name them, not "event:ring_light".
 
+**Corrected in PK-9** (built 2026-10-29 on `track/perks`; where the code or the plan above was wrong or vague):
+- Section 2's claims held at ab776fc1: the `fx N kind k=v` command (4 uses: ring_light, terms_of_service,
+  surveyor_hole, poster_grove), the fountain's three rows (src `fountain`), each lasting the place it is given in and N
+  more (encArrive counts down at each place walked into, before the arrival's rows). **Nothing showed a boon on
+  screen**: the "run HUD where timed effects show today" did not exist; the run's HUD is now the Map tab's head row
+  (a strip of pictures at 18 px with the places left, beside the day), and the Perks tab lists them under the Perks.
+- **The section**: game/data/boons.json (index.json key after perkSets), boons.schema.json (rows as a Perk's by `$ref`;
+  name, d, `curse: true` or none, places 0-20, img), `Boon` in game-data.d.ts, game-data.js `BOONS`, data-checks.js
+  `dataBoons` (no copy row; no every, grow or once: a boon keeps no marks) and `dataBoonArt` in check-data and the
+  Studio's Check. `places` is today's N: the place it is given in and that many more ("3 places" in 5.9 means N 3).
+- **On the run**: a named boon is kept by id (run.enc.boons `{id, left, src}`, run-enc.js `encBoonGive`); its rows are
+  read from the data (src `boon:<id>`; battle-engine.js fxSrcName names it), so a run in progress keeps working after
+  a data change and validRun takes both forms (an event's own `fx` rows, as before PK-9, still load and work; a boon
+  the data no longer has gives nothing). **Given again while on, it lasts the longer of the two** (no stacking). The
+  `fx` command stays for packs. The debug log lists a named boon by its id.
+- **Commands**: `boon <id>` and `curse <id>` (script-parse.js; encounter-screen.js says "Curse: Surge Pricing, for this
+  place and 3 more. Run shops charge 25% more."); data-checks.js refuses a boon given by `curse` and the other way.
+  The four events and the fountain name theirs with the same rows and places (rules.json square.wish outcomes' `boon`;
+  an outcome's own fx and places still work). Terms of Service's line "For three places" predates PK-9 (it is this
+  place and 3 more); kept, player words.
+- **The kinds as built** (one per commit): Hold Music's **last** was a held kind only (PK-10, Ankle Weights): it is now
+  one of FX_KINDS (a run's row, read with `if: turn:1` in the turn's order: battle-engine.js fxLastActs, "Hold Music: X
+  moves last.") and read its own way on a hold row (HELD_OWN_FORMS). Paper Cuts needed a kind the plan did not name: a
+  **turnHurt row at `arrive`** (run-loop.js runArriveHurt: rounded up, never below 1 HP; "Paper Cuts: your team lost N
+  HP."). Pending Review is **rewardPick -1** (FX_RULE_N -1 to 2, not 0; never under one card; rules.json's 3 make 2).
+  **shopClosed**: Out of Office shuts every run town's shop while it lasts (3 more places), not only "the next town's"
+  (a place-counted effect can't know which town is next); the market stalls stay open. **muteNewest**: the newest Perk
+  is the last of run.perks; effects.js fxMuted/fxLivePerks keep it out of fxOfRun's Perk and set rows (PK-8's note:
+  fxSetHeld's list), perkSetLine and perkGroups; its card and row read "REVOKED". It is a curse's only (data-checks.js
+  refuses it on a Perk or a set: fxMuted reads the boons alone, so fxOfRun never asks itself). Mandatory Training is a
+  stat row of -1 Speed as each of yours takes the field (PK-1's rule), so "at battle start" reads "take the field".
+- **Correction Fluid** (79th Perk, uncommon, Office Supplies' 7th): the rules **curseShorter** (1-3) and
+  **curseErase** (1), read when a boon is given (run-loop.js runBoonGive; the commands use it). "The first curse each
+  run" is counted on the run (run.enc.erased), so letting it go and taking it again erases no second; its text says
+  "the first curse you're handed this run". A curse never lasts less than its own place. The fountain's curse comes at
+  take-off, before any Perk is held, so it is never erased.
+- **The appeal**: rules.json `run.appealCost` (50, section 11 item 7); at a run town's clinic with a curse on, the sheet
+  shows heal (when someone is hurt) and one "Appeal <curse>" button for each curse (walk-tab.js clinicAppealOpen,
+  run-loop.js runAppeal). The fee is plain (clinic price rows don't change it); the "No healing" challenge shuts it too.
+- **Five Bureau events** (case files, weight 1; lines drafted): Mandatory Orientation, Routine Audit, Please Hold,
+  Permit Inspection, Paperwork Avalanche. Between them they hand out all 7 Red Tape curses and the 6 new boons, so
+  every one of the 20 can be met.
+
 ### 5.10 Bag item icons (PK-11)
 Potion, Hi-Potion, Burn Salve, Nerve Tonic, Wake-Up Tea, Revive, Max Revive, Full Remedy, Shining Stone, Protein Bar,
 Trail Mix, Pretzel and Repair Kit get 36 px pictures (`img: "items/<id>.svg"`); `itemIcon` already prefers `img`;
 the Bag draws 36 px (was 30), reward cards 72 px; the atlas's `i_*` rectangles retire through the Studio's
 unused-art gate.
+
+**Corrected in PK-11** (built 2026-10-28 on `track/perks-items`, the items lane beside the Perk waves):
+- **items.json has no schema** (section 2 and the step's brief said "schema"): `dataItemArt` (data-checks.js, run by
+  check-data, beside PK-2's `dataPerkArt`) checks the path's form too: an item's `img` is `items/<its id>.svg`, there,
+  and an icon (svgProblem). A Bag item without `img` warns; a held item is left alone until PK-10 draws them (eight
+  warnings would have changed every check-data snapshot). Adding a whole items schema was left out (not this step's).
+- The Shining Stone's id is `bell` and its atlas icon `stone`; `i_bell` is **Lucky Coin's** (held). So the 9
+  rectangles retired are i_potion, i_hipotion, i_salve, i_tonic, i_tea, i_revive, i_maxrevive, i_stone, i_remedy;
+  i_pretzel (Leftover Sandwich), i_trailmix (Snack Pack) and i_bell (Lucky Coin) stay for PK-10. Protein Bar drew
+  i_trailmix and the Repair Kit i_tonic (borrowed pictures).
+- The "unused-art gate" for an atlas rectangle is the atlas editor's Delete, refused while `atlasUses` finds a data
+  use; it counted an item by `i_` + (icon or id) even with an `img`. Now an item with its own picture uses no key; the
+  13 drop `icon` (`Item.icon` is optional), the 9 rectangles leave art/manifest.js and their pixels leave
+  art/icons/icons.png (so the editor's Add finds a clean spot).
+- `itemIcon` already drew `img` as `<img class="pxi">` (pixelated); only the sizes changed: the Bag 36 (was 30), a
+  reward card 72 (was 40), and also the battle's Bag 36 (was 32) and the Billie sheet's use and give lists 36 (was 34),
+  which the brief did not name. Kept: the shop 36, a town square stall 36, the Billie sheet's held line 14, the Trainer
+  card's list 24 and the run start's packing list 30 (small text rows; their held items still draw the atlas).
+- The Studio's items editor had "Upload a custom icon" (a PNG named `items/<id>.png`, which `dataItemArt` would
+  refuse): replaced by **Draw one** (a blank `art/items/<id>.svg`, as the Perks editor's) and **Edit art**; the atlas
+  Icon field shows only for an item without a picture. The icon editor and the art browser needed nothing new (`items`
+  was in `ICON_DIRS` since PK-2).
 
 ## 6. The art (every Perk, held item, Bag item and boon)
 - **Look**: exactly the UI icons'. A flat 34x34 front in `ICON_PALETTE` letters or one `ICON_RAMPS` hue (digits 1-4,
@@ -590,7 +735,7 @@ unused-art gate.
   passed by every game caller (the pick, the shop, an event, the debug menu, the fixture, the run sim); a preview from
   the seed alone (run-preview.js, the Studio's offer order) gives none, and then needs are not asked.
 - **tags** are types and themes; the themes are 5.7's set ids (data-checks.js `PERK_THEMES`) until PK-8 makes the
-  sets a data section. A tag matches a type on the team or a tag of a Perk held; the bias applies once
+  sets a data section (PK-8: done; a tag is a type or a perkSets.json id). A tag matches a type on the team or a tag of a Perk held; the bias applies once
   (`perkWeight`). The 17 existing Perks of a planned set got their theme as a tag (Union Card, Rainbow Lanyard and
   the Wave A Perks without a set have none but types).
 - The Studio's **type rename** didn't reach Perk fields naming types inside conditions (`if`, `grow.if` since PK-1)
@@ -602,6 +747,43 @@ unused-art gate.
   type, plus relevance (no type Perk without its type, in a pick, a shelf and an event) and the bias (a matching type
   Perk about twice as often as an untagged one of its rarity). Golden battles unchanged.
 
+**Corrected in PK-7** (built 2026-10-28; where the code or the plan above was wrong or vague):
+- Section 5.6's claims checked at 4423a457 (main, PK-6 merged by #318). Terms and Conditions, Glass Trophy, Ethics
+  Waiver, Paid Promotion, Energy Drink and Heavy Crown needed data only (damage, price, splice, dna, bossHp, a stat row
+  as each takes the field, PK-1's `if: lead` / `notLead` on damage rows, both sides). **xp on a Perk** was missing:
+  battle-engine.js heldXp read a run's xp rows since RL-S2, but perks.schema.json didn't admit the kind (it does now).
+  Influencer Contract's "Trainers pay triple" is a money row with `if: foe:trainer` (every trainer battle: route
+  trainers, the rival, leaders, the boss); wild prizes are as before.
+- **recoil** (`share`, at most 0.5 together) costs one of yours that share of its max HP after an attack of its that
+  dealt damage, once a move (a spread move too); a miss, a block, a status move or the foe's attack costs nothing. It
+  can knock its user out. Overclock Chip's text says "every attack that lands".
+- **loot** names an events.json loot table (`table`: common...), as the plan's "`loot` common" meant: the first build
+  drew from the reward picks' item cards, then moved to the tables in its own commit. n items (1-3) by weight from the
+  run's stream for the row and the place (a reload brings the same). Subscription Box's charge is a **money row's
+  `add`** (-15 at arrive; paid first, then charged, never below none carried; the run sim counts it in moneyOut.perks).
+- **rule noDrop**: nothing held can be let go (perks.js perkNoDrop; perkTake answers 'noDrop'), so at the cap no new
+  Perk can be taken (the "Let one go" sheet says so and shows no card; a pick can still be answered with none). Taking
+  the Ticket itself may let one go. With Accordion File the cap is 9; a Photocopier just below the Ticket copies its +2
+  and its noDrop (11 with all three).
+- **rule faintPaysNothing**: a won battle in which one of yours fainted (b.fainted, so a Billie Warranty Card revived
+  counts) pays no Moneys; reward and salvage picks, badges and the rest stay.
+- **Foes' levels and the boss's HP taken mid-run** (PK-5/PK-6's note): they were worked out only when the run's world
+  was made. run-scenes.js runWorldTables now says what they were made with (`foeUp`, for the run `foeSeed`), worldPut
+  keeps it, and perkTake ends with run-loop.js runFoesSync: every pool, every trainer of the world and the boss's
+  hpMult move at once (and back when the Perk goes). A place already stocked this visit keeps its wild Billies.
+- **The fine rarity** has no weight or price in rules.json (the ordinary picks, shops, events and the reward card never
+  draw it; an event's `perk` naming a Fine Print Perk is a data error). rules.json `run.perks.leader` {rarity: fine,
+  pick: 3}: a leader's pick draws that rarity alone, **each Perk as likely** (no bias; perks.js perkLeaderRule), from
+  the same stream as before. The debug menu's mini-boss pick, the relics fixture, the run preview and the Studio's
+  offer order are the leader's pick too.
+- **The reward pick's Perk card** (rewards.json `perk`, weight 2 of 41) draws an ordinary Perk (perkPool, the bias)
+  from the pick's stream and is taken through perkTake (at the cap the "Let one go" sheet, "Keep them" back to the
+  pick). The run sim's "first item" policy skips it. Every reward pick's draw changed (one more card in the deck).
+- **On screen**: logic/marks.js MARK_RARITY gains `fine`, named "Fine Print", drawn in the ladder's top orange
+  (`rarityColour`: mythical's colour code; no new signal). A pick card shows a small red tilted "Fine Print" stamp
+  where the pill is; rows show the orange "Fine Print" pill; Fine Print has the foil. PK-6 had left four texts on
+  rules.json's cap of 6 (the pick's note, the shop's Perk row, the debug menu, the first-run hint): they read perkCap.
+
 ## 9. Sessions (one at a time, each on `track/perks`)
 | # | Session | Does | Done when |
 |---|---|---|---|
@@ -612,12 +794,12 @@ unused-art gate.
 | PK-4 | Wave B (**done 2026-10-28**, `track/perks`; "Corrected in PK-4" in section 8) | 15 Perks of 5.3, `needs`, `tags` and the bias (section 8) | no type Perk offered without its type |
 | PK-5 | Wave C (**done 2026-10-28**, `track/perks`; "Corrected in PK-5" in section 7) | 12 Perks of 5.4 | catching, shop, reward and map rules tested |
 | PK-6 | Wave D (**done 2026-10-28**, `track/perks`; "Corrected in PK-6" in section 7) | 11 Perks of 5.5 (Correction Fluid waits for PK-9) | growth and copy tested over a simulated run |
-| PK-7 | Fine Print | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
-| PK-8 | Sets | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |
-| PK-9 | Boons and curses | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
-| PK-10 | Held items | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
-| PK-11 | Bag item icons | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
-| PK-12 | Collection and wrap-up | the Field Guide's Perks tab (seen, taken, silhouettes of the unseen: the SVGs work as masks), the run sim over every Perk, the full check, the summary of every decision for the owner | the track's done-when (section 14) |
+| PK-7 | Fine Print (**done 2026-10-28**, `track/perks`; "Corrected in PK-7" in section 8) | 12 Perks of 5.6, the `fine` rarity, the leader pick from it, the reward-pick Perk card | leaders offer only Fine Print |
+| PK-8 | Sets (**done 2026-10-28**, `track/perks`; "Corrected in PK-8" in 5.7) | `perkSets` data section (file, index.json key, schema, types, check-data block, export), the 7 sets, the card's set line, the Perks tab grouped | a set's bonus starts and stops with its third member |
+| PK-9 | Boons and curses (**done 2026-10-29**, `track/perks`; "Corrected in PK-9" in 5.9) | `boons` data section, the 20 of 5.9 with art, `boon`/`curse` commands, the fountain by id, the appeal, 4-5 Bureau events, Correction Fluid | every timed effect has a name and a picture |
+| PK-10 | Held items (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-10" in 5.8) | 16 new, 8 redrawn, the held kinds, rarity tiers | every held item has its own picture |
+| PK-11 | Bag item icons (**done 2026-10-28**, `track/perks-items`, the items lane; "Corrected in PK-11" in 5.10) | 13 consumables drawn, `itemIcon` sizes, atlas `i_*` retired | no item draws from the atlas |
+| PK-12 | Collection and wrap-up (**done 2026-10-29**, `track/perks`; "Corrected in PK-12" in section 14) | the Field Guide's Perks tab (seen, taken, silhouettes of the unseen: the SVGs work as masks), the run sim over every Perk, the full check, the summary of every decision for the owner | the track's done-when (section 14) |
 
 About 12 sessions after this one. Each one merges main into `track/perks` first (a merge, not a rebase; `npm run
 modules` for hooks.js, never by hand).
@@ -678,8 +860,30 @@ modules` for hooks.js, never by hand).
 ## 14. Done when (the track)
 79 Perks (13 + 66), each with its own picture; Fine Print at leader wins and a Perk card in the reward pick; 7 sets;
 24 held items and 13 Bag items with pictures; 20 named boons and curses with pictures; the Field Guide's Perks tab;
-every test tier green but main's known red step; HANDOFF lists every decision taken for the owner; tags `pk-N-done`
-suggested.
+every test tier green but main's known red step; HANDOFF lists every decision taken for the owner. No per-session tags
+(CLAUDE.md, 2026-10-28): once the owner merges the track's PR (#323), `track/perks` gets the `perks-done` tag and it
+and `track/perks-items` are deleted (docs/BRANCHES.md).
+
+**The track is done (PK-12, 2026-10-29).** **Corrected in PK-12** (each claim checked against the code at PK-12's
+commits on `track/perks`):
+- 79 Perks, each with its picture in art/perks: yes (28 common, 27 uncommon, 12 rare, 12 fine). Fine Print at leader
+  wins: yes (rules.json run.perks.leader `{rarity: fine, pick: 3}`, a leader's pick draws its 12 evenly). The reward
+  pick's Perk card: yes (rewards.json `perk`, weight 2 of 41). 7 sets: yes (perkSets.json). 24 held items with
+  pictures: yes. **Bag items: 14, not 13**: Form 99-A (main's ON-4 trade item, drawn in PK-10) joined the 13; all 14
+  have pictures and no item draws from the atlas. 20 boons and curses (10 each) with pictures: yes.
+- The Field Guide's Perks tab: built in PK-12 (guide.js renderPerkGuide, logic/collection.js). The save's new field
+  `collection` (`seen` and `taken`, keys `<kind>:<id>` for perk, set, item, boon) is filled in by every save
+  (game-state.js save() calls collectionNote): a Perk seen when offered (a pick, a run shop's shelf, a reward pick's
+  card), taken once held; a set seen with one of its Perks, taken once its bonus has been on; a held item seen in a
+  reward pick, taken once in the bag or held; a boon or curse seen and taken once on. A save without the field loads
+  (it reads as empty), so SAVE_VERSION stays 5. Bag items are not listed (section 9 names Perks, sets, held items and
+  boons). The Guide screen's piece ceiling in check-quick.py went 39 -> 40 for the fourth tab's button.
+- Every test tier green but main's known reds: see HANDOFF "Perks track PK-12" for the runs and which reds are main's.
+- The balance pass: the run sim learned `--perks`, `--boons` and `--held` (a run starts holding them); every Perk,
+  boon, curse and a held item at once plays finite runs (a unit test, and 100 runs: 89% won). Each one alone against
+  the same 300 seeds is in HANDOFF; one clear outlier tuned (Costume Fangs 1/8 -> 1/16), the rest listed for the owner.
+- Rerolls (section 11, item 6): unchanged at 50, doubling. The sim's bot never rerolls, so it can't judge them; Fortune
+  Cookie makes only the first reroll of each pick free and Gift Receipt adds a card, which doubling still bounds.
 
 ## 15. Sources (research, 2026-10-27)
 - Slay the Spire relics: https://slaythespire.wiki.gg/wiki/Relics; boss relic downsides:

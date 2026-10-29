@@ -399,6 +399,15 @@ same phase:
   byte for byte; every grid file in tools/art/icon-grids passes `--check`, and every picture the data names is
   written; a grid's faults; silhouettes; never over an SVG without `--force`), `data-checks.test.mjs` the Perks'
   `img` (dataPerkArt), and check-fast's Perks step each card's and row's picture at 72 and 36 px.
+  PK-11: `data-checks.test.mjs` the Bag items' `img` (dataItemArt: items/<id>.svg, there, an icon), `atlas-rects.test.mjs`
+  that an item with its own picture uses no atlas key, check-fast's screens step the Bag rows' item pictures at 36 px,
+  and `check-studio-github.py --only=items` the items editor's picture, Edit art and Draw one.
+  PK-10: `tools/test/battle-held-kinds.test.mjs` checks the held kinds and moments with test-only items (a stat row at
+  hurt if superEffective once a battle, survive, reflect, drain, immune by type until hit and the foe AI's estimate,
+  first by chance with no roll when none is held, last in a real turn), `battle-held.test.mjs` each of the 16 new held
+  items by name, `data-checks.test.mjs` hold rows' kinds and timing (heldRowProblems), `held-items.test.mjs`
+  fxHeldAt, `type-rename.test.mjs` the rename reaching hold rows, and `check-studio-github.py --only=items` the held
+  rows' editor (a kind change, a row added, Make it a held item, every kind's fields).
   PK-3: `tools/test/battle-perks-wave-a.test.mjs` checks the battle kit's kinds with test-only Perks (crit, immune,
   inflict and its 50% cap on one roll of the battle's stream, chip, first, revive in singles and doubles), then each
   of the 15 Wave A Perks of perks.json in a battle, and battles holding all 15 that end within 200 turns, replayable;
@@ -423,6 +432,37 @@ same phase:
   of the 11 Wave D Perks of perks.json, Like Button and Streak Tracker over a run of wins and faints and in real
   battles, a Photocopier copying a growing Perk, and battles holding all 53 Wave A-D Perks; `data-checks.test.mjs` the
   kinds' rows and needs side; the run sim counts a take's Moneys (moneyIn.perks).
+  PK-7: `tools/test/battle-perks-fine.test.mjs` checks Fine Print's kinds with test-only Perks (recoil, a money add on
+  arrival, loot from an events.json table, the rules noDrop with cap rows and a copier, faintPaysNothing, xp on a Perk),
+  a level and a bossHp row taken mid-run moving a run world's pools, trainers and boss at once and back, the `fine`
+  rarity (a leader rule draws it alone; ordinary picks, shops and events never), the reward pick's Perk card, then
+  each of the 12 Fine Print Perks of perks.json with its downside, Non-Refundable Ticket with Accordion File and
+  Photocopier, a mini-boss win offering only Fine Print, and battles holding all 65 Perks of Waves A-D and Fine Print;
+  `data-checks.test.mjs` the kinds' rows, the leader rule and an event never naming Fine Print; `ui-marks.test.mjs` the
+  Fine Print tier. The in-game full test checks the mini-boss's pick is all Fine Print; the run sim's "first item"
+  policy skips a Perk card and counts what Perks charge on arrival (moneyOut.perks).
+  PK-8: `tools/test/battle-perk-sets.test.mjs` checks the sets' kinds (heldBoost on yours only, the condition unstable,
+  the rules unstableSafe and sidePerk, a side area's Perk find and its pick of one), then the 7 sets of perkSets.json:
+  their Perks, a bonus starting with the third and stopping when one is let go or swapped, copies (a Photocopier counts
+  as itself), Non-Refundable Ticket, each set's bonus, and every Perk and set at once in whole, replayable battles;
+  `perks.test.mjs` perkShopPrice, perkSetLine and perkGroups; `data-checks.test.mjs` dataPerkSets and the kinds' rows.
+  check-fast's relics step expects the fixture's Trainer Classics set (its catch row).
+  PK-9: `tools/test/battle-boons.test.mjs` checks the curses' kinds with test-only rows (last on the first turn, a
+  turnHurt row at arrive, rewardPick -1, the rules shopClosed and muteNewest), then the named boons of boons.json: given
+  by id, read as `boon:<id>`, counting down, never stacking, a run in progress loading (validRun with an event's own
+  rows and a named boon), the four events and the fountain with their old numbers, Correction Fluid (the first curse
+  erased, later ones a place shorter), the clinic's appeal, the five new Bureau events played option by option, every
+  boon's name and picture, and every Perk, set, boon and curse at once in whole, replayable battles. `data-checks`
+  checks dataBoons, dataBoonArt and the boon and curse commands. check-fast's perks step gives a boon and a curse and
+  reads the Perks tab's rows, the Map tab's strip and an appeal.
+  PK-12: `tools/test/collection.test.mjs` checks the Field Guide's Perks tab record (logic/collection.js: offered Perks
+  seen, held ones taken, a set taken with its bonus on, held items from a reward pick, the bag and the team, boons once
+  on, the record cleaned on load, a save with or without it valid). `run-sim.test.mjs` plays runs holding every Perk,
+  boon and curse at once with a held item (the sim's `perks`, `boons`, `held`; the CLI's `--perks=all --boons=all
+  --held=<id>`), all finite. check-fast's perks step opens the Field Guide's Perks tab (every Perk listed, the held
+  ones taken, the unseen as silhouettes, the record stored). The balance pass: each Perk, boon or held item alone over
+  the same seeds (`--balance --policy=never-pick --team=3 --pack=5 --lvl=25 --unlocks=all`: the bot wins about 17%
+  without any, so a change shows; fewer runs out of the box end within two places).
   UI-4: `tools/test/run-marks.test.mjs` checks the run map's node outlines (logic/run-marks.js: the plan's shapes,
   inside their box, clockwise, distinct; hidden reads "?"; the canvas painter draws whole pixels in the role
   colours). The run parts (js/ui-run-kit.js) are in the gallery's run-hud, run-nodes, picks and payout sections; the

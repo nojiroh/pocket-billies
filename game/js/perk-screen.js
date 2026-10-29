@@ -9,9 +9,10 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { closeModal, provide, render, renderOverlay, toast } from './hooks.js';
-import { PERKS, RULES } from './game-data.js';
+import { PERKS, PERK_SETS, RULES } from './game-data.js';
 import { rarityTier } from './logic/marks.js';
-import { perkCap, perkChoose, perkCount, perkDropOk } from './logic/perks.js';
+import { encBoonsOn } from './logic/run-enc.js';
+import { perkCap, perkChoose, perkCount, perkDropOk, perkGroups, perkNoDrop, perkSetLine } from './logic/perks.js';
 import { pbNudge } from './ui-kit.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr } from './ui-marks-kit.js';
 import { pbFlipFresh, pbFlipIn, pbGainFly } from './ui-motion.js';
@@ -21,6 +22,9 @@ import { jinglePlay } from './sound.js';
 import { runHint } from './run.js';
 /* eslint-disable no-func-assign */
 expose({
+  boonLeftText: [() => boonLeftText],
+  boonStripHTML: [() => boonStripHTML, v => (boonStripHTML = v)],
+  boonsHTML: [() => boonsHTML, v => (boonsHTML = v)],
   perkCardHTML: [() => perkCardHTML, v => (perkCardHTML = v)],
   perkCardsOn: [() => perkCardsOn, v => (perkCardsOn = v)],
   perkDropOpen: [() => perkDropOpen, v => ((perkDropOpen = v), provide({ perkDropOpen }))],
@@ -38,13 +42,16 @@ provide({ perkDropOpen, perkPickOpen });
 /** a Perk as a pick card (the pick, letting one go), its picture at `size` px (PK-2: 72 on the pick, 36 on the
  * longer list of letting one go); PK-3: a held one's counter after "Perk" ("Perk · 5/8", perkCount)
  * UI-14b: its rarity as the card's frame, pill and name colour (it was the caption), its kind as the Perk ribbon
- * (violet), its stat rows as Atk..Spe tags
+ * (violet), its stat rows as Atk..Spe tags. PK-8: its set's line after "Perk" ("Perk · Office Supplies 2/3": with this one
+ * held, logic/perks.js perkSetLine)
  * @param {string} id @param {boolean} on @param {number} [size] @param {any} [run] the run holding it */
 function perkCardHTML(id, on, size = 72, run = null) {
   const R = PERKS[id],
     t = rarityTier(R.rarity),
-    n = perkCount(run, id, PERKS);
-  return `<pb-pick-card data-id="${escapeHtml(id)}" kind="perk"${t ? ` rarity="${t}"` : ''} heading="${escapeHtml(R.name)}" sub="Perk${n ? ' · ' + escapeHtml(n) : ''}"${on ? ' selected' : ''}><span slot="art">${artIconHTML(R.img, size)}</span>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</pb-pick-card>`;
+    n = perkCount(run, id, PERKS),
+    set = perkSetLine(saveData && saveData.run, id, PERKS),
+    sub = ['Perk', set, n].filter(Boolean).join(' · ');
+  return `<pb-pick-card data-id="${escapeHtml(id)}" kind="perk"${t ? ` rarity="${t}"` : ''} heading="${escapeHtml(R.name)}" sub="${escapeHtml(sub)}"${on ? ' selected' : ''}><span slot="art">${artIconHTML(R.img, size)}</span>${escapeHtml(R.d)}${fxTagsHTML(R.fx)}</pb-pick-card>`;
 }
 /** show a sheet of this class in place when it is already up; otherwise ahead of any other (as the payout does) */
 function perkSheet(M) {
@@ -72,8 +79,11 @@ export function perkPickOpen(o) {
     perkPickThen = o.then || null;
   }
   if (!run || !run.offer) return;
-  const rule = RULES.run.perks,
-    ids = run.offer.filter(id => PERKS[id]),
+  const ids = run.offer.filter(id => PERKS[id]),
+    /* PK-7: the run's cap (PK-6's cap rows: Accordion File), as the "Let one go" sheet and the Perks tab say */
+    cap = perkCap(run, RULES.run.perks, PERKS),
+    /* PK-7: a noDrop row (Non-Refundable Ticket) */
+    stuck = perkNoDrop(run, PERKS),
     /* UI-16a: the first time this offer shows, its cards come face down and turn over one by one */
     flipKey = `perk:${ids.join(',')}`,
     flip = pbFlipFresh(flipKey),
@@ -82,7 +92,7 @@ export function perkPickOpen(o) {
     title: 'Pick a Perk',
     cls: 'relic-pick',
     lock: true,
-    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${rule.cap}.${run.perks.length >= rule.cap ? ' Taking one means letting another go.' : ''}</p><div class="relic-cards">${ids.map(id => (flip ? perkCardHTML(id, false).replace('<pb-pick-card ', '<pb-pick-card facedown dealt ') : perkCardHTML(id, id === sel))).join('')}</div>`,
+    html: `<p>${escapeHtml(perkPickText || 'The mini-boss left a few perks behind.')} Take ${ids.length > 1 ? 'one' : 'it'} for the rest of the run.</p><p class="note">You hold ${run.perks.length} of ${cap}.${run.perks.length >= cap ? (stuck ? ` ${escapeHtml(PERKS[stuck] ? PERKS[stuck].name : stuck)} says you can never let one go.` : ' Taking one means letting another go.') : ''}</p><div class="relic-cards">${ids.map(id => (flip ? perkCardHTML(id, false).replace('<pb-pick-card ', '<pb-pick-card facedown dealt ') : perkCardHTML(id, id === sel))).join('')}</div>`,
     btns: [
       { l: 'Take it', c: 'gold', dis: !sel, f: () => perkPickTake(/** @type {string} */ (sel)) },
       { l: ids.length > 1 ? 'Take none' : 'Leave it', c: 'quiet', f: () => perkPickDone(null) },
@@ -135,17 +145,20 @@ function perkPickDone(id, drop) {
 
 /* ---------- past the cap: let one go ---------- */
 /**
- * Which Perk to let go for `id`: the held ones as cards; a tap answers `then(itsId)`; "Keep them" goes `back`.
+ * Which Perk to let go for `id`: the held ones as cards; a tap answers `then(itsId)`; "Keep them" goes `back`. PK-7:
+ * with a noDrop row held (Non-Refundable Ticket) it says none can go and shows no card.
  * @param {string} id @param {(drop: string) => void} then @param {() => void} back
  */
-function perkDropOpen(id, then, back) {
+export function perkDropOpen(id, then, back) {
   const run = saveData.run;
   if (!run || !PERKS[id]) return;
+  /* PK-7: a noDrop row (Non-Refundable Ticket): none can go, so the new one can't be taken */
+  const stuck = perkNoDrop(run, PERKS);
   perkSheet({
     title: 'Let one go',
     cls: 'relic-drop',
     lock: true,
-    html: `<p>You can hold ${perkCap(run, RULES.run.perks, PERKS)} Perks. Tap one to let it go for ${escapeHtml(PERKS[id].name)}.</p><div class="relic-cards">${run.perks
+    html: `<p>You can hold ${perkCap(run, RULES.run.perks, PERKS)} Perks. ${stuck ? `${escapeHtml(PERKS[stuck] ? PERKS[stuck].name : stuck)} says you can never let one go, so ${escapeHtml(PERKS[id].name)} can’t be taken.` : `Tap one to let it go for ${escapeHtml(PERKS[id].name)}.`}</p><div class="relic-cards">${run.perks
       /* PK-6: not one whose going would leave too many held (Accordion File at the cap it raises) */
       .filter(k => PERKS[k] && perkDropOk(run, k, id, PERKS, RULES.run.perks))
       .map(k => perkCardHTML(k, false, 36, run))
@@ -168,22 +181,58 @@ function perkDropOpen(id, then, back) {
   });
 }
 
+/* ---------- PK-9: boons and curses ---------- */
+/** how long a boon or curse still lasts, counting the place you are in ("Last place", "3 places left")
+ * @param {number} left the places after this one */
+const boonLeftText = left => (left > 0 ? `${left + 1} places left` : 'Last place');
+/** the run's named boons and curses (logic/run-enc.js encBoonsOn) as the Perks tab's rows: picture, name, what it does,
+ * Boon or Curse and how long it lasts; '' when none is on @param {any} run */
+function boonsHTML(run) {
+  const on = encBoonsOn(run);
+  if (!on.length) return '';
+  const row = (/** @type {(typeof on)[number]} */ b) =>
+    `<div class="bag-row k-card boon-row${b.boon.curse ? ' curse' : ''}" data-boon="${escapeHtml(b.id)}"><span class="bag-ic">${artIconHTML(b.boon.img, 36)}</span><span class="bag-t"><b>${escapeHtml(b.boon.name)}</b><small>${escapeHtml(b.boon.d)}${b.boon.curse ? ' A clinic’s appeal lifts it.' : ''}</small></span><small class="note boon-left tnum">${b.boon.curse ? 'Curse' : 'Boon'} · ${boonLeftText(b.left)}</small></div>`;
+  return `<section class="tpanel relics boons"><div class="sec-h"><h2>Boons and curses</h2><span class="count tnum">${on.length}</span></div><div class="bag-list">${on.map(row).join('')}</div></section>`;
+}
+/** the run's HUD strip (the Map tab's head row, beside the day): each boon or curse on as its picture at 18 px with the
+ * places it still lasts; '' when none @param {any} run */
+export function boonStripHTML(run) {
+  const on = encBoonsOn(run);
+  if (!on.length) return '';
+  return `<span class="boon-strip">${on
+    .map(b => {
+      const t = escapeHtml(`${b.boon.name} (${b.boon.curse ? 'curse' : 'boon'}): ${b.boon.d} ${boonLeftText(b.left)}.`);
+      return `<span class="boon-chip${b.boon.curse ? ' curse' : ''}" data-boon="${escapeHtml(b.id)}" title="${t}" aria-label="${t}">${artIconHTML(b.boon.img, 18)}<small class="tnum">${b.left + 1}</small></span>`;
+    })
+    .join('')}</span>`;
+}
+
 /* ---------- the Perks tab ---------- */
-/** the run's Perks, each with what it does (PK-3: and its counter, perkCount) */
+/** the run's Perks, each with what it does (PK-3: and its counter, perkCount); PK-8: grouped by set (logic/perks.js
+ * perkGroups), each set's head with its name, how many are held of its need and its bonus (on, or what it will do), then
+ * the Perks of no set */
 export function renderPerks() {
   const run = saveData.run,
     cap = perkCap(run, RULES.run.perks, PERKS);
   if (!run) return `<p class="note bag-empty">Perks come with a run. Start one at Skyline Station.</p>`;
-  const held = run.perks.filter(id => PERKS[id]);
+  /* PK-9: the boons and curses on, under the Perks */
+  const boons = boonsHTML(run);
+  const held = run.perks.filter(id => PERKS[id]),
+    row = id => {
+      /* PK-3: a held Perk's counter ("5/8", "VOID") beside its rarity pill (UI-14b) */
+      const n = escapeHtml(perkCount(run, id, PERKS));
+      return `<div class="bag-row k-card rar-row"${rarityRowAttr(PERKS[id].rarity)}>${rarityFoilHTML(PERKS[id].rarity)}<span class="bag-ic">${artIconHTML(PERKS[id].img, 36)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}${fxTagsHTML(PERKS[id].fx)}</small></span>${rarityPillHTML(PERKS[id].rarity)}${n ? `<small class="note" data-perk-count="${n}">${n}</small>` : ''}</div>`;
+    },
+    groups = perkGroups(run, PERKS),
+    /* PK-8: a set's head: "Office Supplies 2/3", then its bonus ("Middle Management: ..."), marked once it holds */
+    head = g => {
+      if (!g.set) return groups.length > 1 ? `<h3>No set</h3>` : '';
+      const S = PERK_SETS[g.set];
+      return `<h3 data-perk-set="${escapeHtml(g.set)}">${escapeHtml(S.name)} <small class="tnum">${Math.min(g.n, g.need)}/${g.need}</small></h3><p class="note">${g.on ? '<b>' : ''}${escapeHtml(S.title)}${g.on ? ' (on)</b>' : ` at ${g.need}`}: ${escapeHtml(S.d)}</p>`;
+    };
   return `<section class="tpanel relics"><div class="sec-h"><h2>Perks</h2><span class="count tnum">${held.length} of ${cap}</span></div>${
     held.length
-      ? `<div class="bag-list">${held
-          .map(id => {
-            /* PK-3: a held Perk's counter ("5/8", "VOID") beside its rarity pill (UI-14b) */
-            const n = escapeHtml(perkCount(run, id, PERKS));
-            return `<div class="bag-row k-card rar-row"${rarityRowAttr(PERKS[id].rarity)}>${rarityFoilHTML(PERKS[id].rarity)}<span class="bag-ic">${artIconHTML(PERKS[id].img, 36)}</span><span class="bag-t"><b class="rar-name">${escapeHtml(PERKS[id].name)}</b><small>${escapeHtml(PERKS[id].d)}${fxTagsHTML(PERKS[id].fx)}</small></span>${rarityPillHTML(PERKS[id].rarity)}${n ? `<small class="note" data-perk-count="${n}">${n}</small>` : ''}</div>`;
-          })
-          .join('')}</div>`
+      ? groups.map(g => `${head(g)}<div class="bag-list">${g.ids.map(row).join('')}</div>`).join('')
       : `<p class="note bag-empty">None yet. Beat a mini-boss for a pick of ${RULES.run.perks.pick}, or buy one in a town’s shop. They last the run.</p>`
-  }</section>`;
+  }</section>${boons}`;
 }
