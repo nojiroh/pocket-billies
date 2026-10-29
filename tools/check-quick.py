@@ -1194,8 +1194,11 @@ def test_checks(P):
     all_maps(pg)   # TC-4: this step reads every map (the page's other steps may have run without them)
     r = pg.evaluate("(()=>{const o={};for(const id of testMaps())o[id]=testMapChecks(id);return o})()")
     R['testChecks'] = r; bad = [f'{k}: {c["what"]}' for k, v in r.items() for c in v if not c['ok']]
+    # TD-2: the Graphics test's benchmark path (logic/bench-path.js) walks, segment by segment (planned, not run)
+    bp = pg.evaluate("benchPathChecks()"); R['benchPath'] = bp
+    bad += [f"bench path {c['seg']}: {c['what']}" for c in bp if not c['ok']]
     if bad: raise Exception('; '.join(bad[:6]))
-    return f'{len(r)} test scenes, {sum(len(v) for v in r.values())} checks'
+    return f'{len(r)} test scenes, {sum(len(v) for v in r.values())} checks; the bench path\'s {len(bp)} segments walk'
 
 
 # --tests only
