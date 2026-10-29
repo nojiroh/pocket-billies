@@ -82,10 +82,15 @@
    "key": 65,
    "scale": "lydian",
    "prog": [0,1,2,1,0,1,3,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {"prog":[5,1,4,0,5,1,4,4],"hookName":"placeholder: the mall's B, a walk over vi-II-V-I (lydian) (Claude's draft)"}
+   },
    "lead": "p50",
    "bass": "walk",
    "arp": "chord7",
    "drums": "bossa",
+   "ensemble": "mall",
    "night": false,
    "seed": 31,
    "seventh": 1
@@ -95,10 +100,15 @@
    "key": 65,
    "scale": "major",
    "prog": [0,3,4,0,5,3,1,4],
+   "form": ["A","B","A"],
+   "sections": {
+    "B": {"prog":[3,4,0,5,3,4,1,4],"hookName":"placeholder: hazel's B, a walk over IV-V-I-vi (major) (Claude's draft)"}
+   },
    "lead": "triangle",
    "bass": "long",
    "arp": "up",
    "drums": "none",
+   "ensemble": "hazel",
    "night": false,
    "seed": 41,
    "echo": 0.3,
@@ -131,6 +141,13 @@
    "key": 64,
    "scale": "minor",
    "prog": [0,5,6,0,0,5,3,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [3,3,0,0,5,6,4,4],
+     "hookName": "placeholder: the wild battle's B, a walk over iv-i-VI-VII-v (minor) (Claude's draft)"
+    }
+   },
    "lead": "p25",
    "bass": "drive",
    "arp": "up",
@@ -161,10 +178,18 @@
    "key": 62,
    "scale": "minor",
    "prog": [0,3,6,2,0,3,4,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [5,6,0,0,3,4,5,4],
+     "hookName": "placeholder: the trainer battle's B, a walk over VI-VII-i-iv-v (minor) (Claude's draft)"
+    }
+   },
    "lead": "p12",
    "bass": "drive",
    "arp": "updown",
    "drums": "march",
+   "ensemble": "trainer",
    "night": false,
    "seed": 71,
    "hookName": "placeholder: trainer hook and intro (Claude's draft)",
@@ -198,10 +223,15 @@
    "key": 59,
    "scale": "minor",
    "prog": [0,6,5,6,0,6,3,4],
+   "form": ["A","B","A","B"],
+   "sections": {
+    "B": {"prog":[3,4,5,6,3,4,4,4],"hookName":"placeholder: the rival's B, a climb over iv-v-VI-VII (minor) (Claude's draft)"}
+   },
    "lead": "p25",
    "bass": "drive",
    "arp": "up",
    "drums": "drive",
+   "ensemble": "rival",
    "night": false,
    "seed": 81,
    "hookName": "placeholder: rival hook and intro (Claude's draft)",
@@ -213,10 +243,18 @@
    "key": 62,
    "scale": "minor",
    "prog": [0,6,3,0,0,5,6,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [5,3,6,2,5,3,4,4],
+     "hookName": "placeholder: the leader's B, a walk over VI-iv-VII-III-v (minor) (Claude's draft)"
+    }
+   },
    "lead": "p25",
    "bass": "drive",
    "arp": "updown",
    "drums": "march",
+   "ensemble": "leader",
    "night": false,
    "seed": 191,
    "hookName": "placeholder: the motif in minor, hook and intro (Claude's draft)",
@@ -242,10 +280,15 @@
    "key": 57,
    "scale": "minor",
    "prog": [0,5,6,0,0,5,3,4],
+   "form": ["A","B","A","B"],
+   "sections": {
+    "B": {"prog":[5,5,6,6,0,0,4,4],"hookName":"placeholder: the boss's B, VI-VII-i-v two bars each (minor) (Claude's draft)"}
+   },
    "lead": "p25",
    "bass": "drive",
    "arp": "up",
    "drums": "drive",
+   "ensemble": "boss",
    "night": false,
    "seed": 201,
    "hookName": "placeholder: boss hook and intro (Claude's draft)",
@@ -276,10 +319,18 @@
    "key": 62,
    "scale": "mixo",
    "prog": [0,6,3,0,0,6,3,6],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [5,3,6,0,5,3,4,6],
+     "hookName": "placeholder: the title's B, a walk over vi-IV-bVII-I (mixolydian) (Claude's draft)"
+    }
+   },
    "lead": "p25",
    "bass": "long",
    "arp": "updown",
    "drums": "soft",
+   "ensemble": "title",
    "extra": true,
    "night": false,
    "seed": 7,
@@ -292,10 +343,15 @@
    "key": 57,
    "scale": "dorian",
    "prog": [0,6,5,6,0,3,6,4],
+   "form": ["A","B","A"],
+   "sections": {
+    "B": {"prog":[3,3,6,6,0,0,4,4],"hookName":"placeholder: the fall's B, IV-VII-i-v two bars each (dorian) (Claude's draft)"}
+   },
    "lead": "triangle",
    "bass": "long",
    "arp": "drip",
    "drums": "none",
+   "ensemble": "fall",
    "extra": true,
    "night": false,
    "seed": 13,
@@ -306,10 +362,18 @@
    "key": 61,
    "scale": "minor",
    "prog": [0,5,3,6,0,5,4,4],
+   "form": ["A","A","B","A"],
+   "sections": {
+    "B": {
+     "prog": [5,3,6,2,5,3,4,4],
+     "hookName": "placeholder: the variants' B, a walk over VI-iv-VII-III-v (minor) (Claude's draft)"
+    }
+   },
    "lead": "p12",
    "bass": "bounce",
    "arp": "chord7",
    "drums": "march",
+   "ensemble": "variants",
    "seed": 23,
    "seventh": 1
   },
@@ -1944,6 +2008,313 @@
      "level": 0.5
     },
     {"line":"timp","inst":"timpani","oct":1,"layer":"peak","verb":0.3,"level":0.7}
+   ]
+  },
+  "trainer": {
+   "name": "placeholder: a trainer (AABA): chip lead, spiccato ostinato (sixteenths in B), brass stabs, timpani, a full kit; they build in from the intro; peak: choir, orchestra hits (Claude's draft)",
+   "trim": -4.5,
+   "parts": [
+    {"line":"lead","wave":"p12","level":0.9},
+    {
+     "line": "ostinato",
+     "inst": "spiccato",
+     "style": "sixteenth",
+     "centre": 67,
+     "in": ["B"],
+     "dim": {"calm":0.5},
+     "pan": -0.25,
+     "verb": 0.15,
+     "level": 0.5
+    },
+    {
+     "line": "ostinato",
+     "inst": "spiccato",
+     "centre": 55,
+     "dim": {"calm":0.5},
+     "pan": 0.25,
+     "verb": 0.15,
+     "level": 0.8
+    },
+    {"line":"bass","inst":"bass","oct":1,"pan":-0.05,"level":0.8},
+    {
+     "line": "stabs",
+     "inst": "brass",
+     "centre": 60,
+     "dim": {"calm":0},
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.75
+    },
+    {
+     "line": "timp",
+     "inst": "timpani",
+     "oct": 1,
+     "dim": {"calm":0.3},
+     "verb": 0.25,
+     "level": 0.8
+    },
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"snare","hat":"hat"},
+     "dim": {"calm":0.6},
+     "verb": 0.05,
+     "level": 0.8
+    },
+    {"line":"pad","inst":"choir","centre":60,"layer":"peak","verb":0.3,"level":1.1},
+    {"line":"stabs","inst":"orchhit","centre":58,"layer":"peak","pan":0.1,"verb":0.2,"level":0.8}
+   ]
+  },
+  "rival": {
+   "name": "placeholder: the rival (ABAB): the chip lead over a spiccato ostinato in sixteenths, brass stabs (brass hits into each B), timpani, a full kit; a choir and orchestra hits at the peak (Claude's draft)",
+   "trim": -5,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.9},
+    {
+     "line": "hits",
+     "inst": "brass",
+     "centre": 60,
+     "in": ["B"],
+     "dim": {"calm":0},
+     "pan": 0.15,
+     "verb": 0.2,
+     "level": 0.7
+    },
+    {
+     "line": "ostinato",
+     "inst": "spiccato",
+     "style": "sixteenth",
+     "centre": 55,
+     "dim": {"calm":0.5},
+     "pan": 0.25,
+     "verb": 0.15,
+     "level": 0.8
+    },
+    {"line":"bass","inst":"bass","oct":1,"pan":-0.05,"level":0.8},
+    {
+     "line": "stabs",
+     "inst": "brass",
+     "centre": 60,
+     "dim": {"calm":0},
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.75
+    },
+    {
+     "line": "timp",
+     "inst": "timpani",
+     "oct": 1,
+     "dim": {"calm":0.3},
+     "verb": 0.25,
+     "level": 0.8
+    },
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"snare","hat":"hat"},
+     "dim": {"calm":0.6},
+     "verb": 0.05,
+     "level": 0.8
+    },
+    {"line":"pad","inst":"choir","centre":60,"layer":"peak","verb":0.3,"level":1.1},
+    {"line":"stabs","inst":"orchhit","centre":58,"layer":"peak","pan":0.1,"verb":0.2,"level":0.8}
+   ]
+  },
+  "leader": {
+   "name": "placeholder: a leader (AABA): chip lead, spiccato ostinato, brass stabs, brass on the tune in B, timpani, a kit with the orchestral snare; peak: choir, orchestra hits (Claude's draft)",
+   "trim": -5.5,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.9},
+    {
+     "line": "lead",
+     "inst": "brass",
+     "oct": -1,
+     "in": ["B"],
+     "dim": {"calm":0},
+     "pan": -0.1,
+     "verb": 0.2,
+     "level": 0.5
+    },
+    {
+     "line": "ostinato",
+     "inst": "spiccato",
+     "centre": 55,
+     "dim": {"calm":0.5},
+     "pan": 0.25,
+     "verb": 0.15,
+     "level": 0.8
+    },
+    {"line":"bass","inst":"bass","oct":1,"pan":-0.05,"level":0.8},
+    {
+     "line": "stabs",
+     "inst": "brass",
+     "centre": 60,
+     "dim": {"calm":0},
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.75
+    },
+    {
+     "line": "timp",
+     "inst": "timpani",
+     "oct": 1,
+     "dim": {"calm":0.3},
+     "verb": 0.25,
+     "level": 0.8
+    },
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"osnare","hat":"hat"},
+     "dim": {"calm":0.6},
+     "verb": 0.05,
+     "level": 0.8
+    },
+    {"line":"pad","inst":"choir","centre":60,"layer":"peak","verb":0.3,"level":1.1},
+    {"line":"stabs","inst":"orchhit","centre":58,"layer":"peak","pan":0.1,"verb":0.2,"level":0.8}
+   ]
+  },
+  "boss": {
+   "name": "placeholder: a boss (ABAB): chip lead, a choir, orchestra hits into each section, spiccato sixteenths, brass, timpani, a full kit; peak: brass on the tune, orchestra stabs (Claude's draft)",
+   "trim": -5.3,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.9},
+    {
+     "line": "pad",
+     "inst": "choir",
+     "centre": 60,
+     "dim": {"calm":0.4},
+     "verb": 0.3,
+     "level": 0.9
+    },
+    {
+     "line": "hits",
+     "inst": "orchhit",
+     "centre": 58,
+     "dim": {"calm":0.5},
+     "pan": 0.1,
+     "verb": 0.2,
+     "level": 0.8
+    },
+    {
+     "line": "ostinato",
+     "inst": "spiccato",
+     "style": "sixteenth",
+     "centre": 55,
+     "dim": {"calm":0.5},
+     "pan": 0.25,
+     "verb": 0.15,
+     "level": 0.8
+    },
+    {"line":"bass","inst":"bass","oct":1,"pan":-0.05,"level":0.8},
+    {
+     "line": "stabs",
+     "inst": "brass",
+     "centre": 60,
+     "dim": {"calm":0},
+     "pan": -0.2,
+     "verb": 0.2,
+     "level": 0.75
+    },
+    {
+     "line": "timp",
+     "inst": "timpani",
+     "oct": 1,
+     "dim": {"calm":0.3},
+     "verb": 0.25,
+     "level": 0.8
+    },
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"snare","hat":"hat"},
+     "dim": {"calm":0.6},
+     "verb": 0.05,
+     "level": 0.8
+    },
+    {"line":"lead","inst":"brass","oct":-1,"layer":"peak","pan":-0.1,"verb":0.2,"level":0.55},
+    {"line":"stabs","inst":"orchhit","centre":58,"layer":"peak","pan":0.1,"verb":0.2,"level":0.7}
+   ]
+  },
+  "mall": {
+   "name": "placeholder: the mall (AABA), bossa: the chip lead, an e-piano's chords, a walking bass, a brush kit with a woodblock rim, a glockenspiel in B; walk: a tambourine (Claude's draft)",
+   "trim": 0,
+   "parts": [
+    {"line":"lead","wave":"p50","level":0.9},
+    {"line":"stabs","inst":"epiano","centre":62,"pan":0.2,"verb":0.25,"level":0.8},
+    {"line":"bass","inst":"bass","oct":1,"style":"walk","pan":-0.05,"verb":0.05,"level":0.9},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker","rim":"woodblock"},
+     "dim": {"still":0.7},
+     "verb": 0.1,
+     "level": 0.7
+    },
+    {"line":"chime","inst":"glock","in":["B"],"pan":0.3,"verb":0.35,"level":0.4},
+    {
+     "line": "drums",
+     "kit": {"snare":"tambourine","hat":"tambourine"},
+     "style": "walk",
+     "layer": "walk",
+     "pan": 0.2,
+     "verb": 0.15,
+     "level": 0.5
+    }
+   ]
+  },
+  "hazel": {
+   "name": "placeholder: hazel (ABA): the chip triangle, a harp, soft strings, a warm bass, a flute on the tune and a celesta now and then in B, no drums (Claude's draft)",
+   "trim": -1.7,
+   "parts": [
+    {"line":"lead","wave":"triangle","level":0.85},
+    {"line":"lead","inst":"flute","in":["B"],"pan":-0.15,"verb":0.3,"level":0.55},
+    {"line":"arp","inst":"harp","pan":0.3,"verb":0.3,"level":0.7},
+    {"line":"pad","inst":"softstrings","centre":62,"verb":0.3,"level":0.55},
+    {"line":"bass","inst":"bass","oct":1,"pan":-0.05,"verb":0.1,"level":0.8},
+    {"line":"chime","inst":"celesta","in":["B"],"pan":0.3,"verb":0.4,"level":0.45}
+   ]
+  },
+  "title": {
+   "name": "placeholder: the title (AABA), the motif: chip lead, harp, strings, warm bass, timpani rolls, a soft kit; in B brass stabs and a flute under the tune (Claude's draft)",
+   "trim": 1.5,
+   "parts": [
+    {"line":"lead","wave":"p25","level":0.9},
+    {"line":"lead","inst":"flute","oct":-1,"in":["B"],"pan":-0.15,"verb":0.3,"level":0.5},
+    {"line":"arp","inst":"harp","pan":0.3,"verb":0.3,"level":0.65},
+    {"line":"pad","inst":"strings","centre":60,"verb":0.3,"level":0.5},
+    {"line":"bass","inst":"bass","oct":1,"pan":-0.05,"verb":0.1,"level":0.8},
+    {"line":"timp","inst":"timpani","oct":1,"verb":0.3,"level":0.6},
+    {"line":"stabs","inst":"brass","centre":60,"in":["B"],"pan":-0.2,"verb":0.25,"level":0.55},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"brush","hat":"shaker"},
+     "verb": 0.1,
+     "level": 0.6
+    }
+   ]
+  },
+  "fall": {
+   "name": "placeholder: the fall (ABA): the chip triangle, a celesta's drip, soft strings, a drone, a bell now and then in B, heavy reverb, no drums (Claude's draft)",
+   "trim": 4,
+   "parts": [
+    {"line":"lead","wave":"triangle","level":0.85},
+    {"line":"arp","inst":"celesta","pan":0.3,"verb":0.5,"level":0.65},
+    {"line":"pad","inst":"softstrings","centre":57,"verb":0.45,"level":0.5},
+    {"line":"drone","inst":"drone","centre":45,"verb":0.4,"level":0.6},
+    {"line":"chime","inst":"bell","in":["B"],"pan":-0.3,"verb":0.5,"level":0.45}
+   ]
+  },
+  "variants": {
+   "name": "placeholder: the variants (AABA, legacy places): the chip lead, a pizzicato arpeggio, a warm bass, brass stabs, a kit with the orchestral snare on the march, a spiccato ostinato in B (Claude's draft)",
+   "trim": -3.4,
+   "parts": [
+    {"line":"lead","wave":"p12","level":0.9},
+    {"line":"arp","inst":"pizz","pan":0.25,"verb":0.2,"level":0.7},
+    {"line":"bass","inst":"bass","oct":1,"pan":-0.05,"verb":0.05,"level":0.8},
+    {"line":"stabs","inst":"brass","centre":60,"pan":-0.2,"verb":0.2,"level":0.6},
+    {"line":"ostinato","inst":"spiccato","centre":55,"in":["B"],"pan":-0.25,"verb":0.15,"level":0.5},
+    {
+     "line": "drums",
+     "kit": {"kick":"kick","snare":"osnare","hat":"hat"},
+     "verb": 0.05,
+     "level": 0.75
+    }
    ]
   },
   "fanfare": {

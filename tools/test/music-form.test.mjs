@@ -276,3 +276,55 @@ test('batch 2: every ensemble has peak parts (the arc), a walking beat, rain and
     assert.match(E.name, /^placeholder: /, id);
   }
 });
+
+/* SND-12c: batch 3, the battles, the boss and the rest */
+const BATCH3 = ['wild', 'trainer', 'rival', 'leader', 'boss', 'mall', 'hazel', 'title', 'fall', 'variants'];
+const FIGHTS = ['trainer', 'rival', 'leader', 'boss'];
+test('batch 3: the battle songs, the boss and the rest in forms of 16-32 bars, each on an ensemble (wild keeps battle)', () => {
+  for (const id of BATCH3) {
+    const S = MUSIC.songs[id];
+    assert.equal(S.ensemble, id === 'wild' ? 'battle' : id, id);
+    assert.ok(MUSIC.ensembles[S.ensemble], id);
+    const D = trackerCompose(S),
+      bars = D.steps / 16;
+    assert.ok(bars >= 16 && bars <= 32, `${id}: ${bars} bars`);
+    assert.ok(D.played && D.played.some(P => P.name === 'B'), `${id} plays its B`);
+    if (S.intro) assert.ok(D.introSteps > 0, `${id} keeps its intro`);
+    const E = MUSIC.ensembles[S.ensemble];
+    assert.ok(
+      E.parts.some(P => !P.layer && P.wave === S.lead),
+      `${id} keeps its chip lead`
+    );
+    assert.match(E.name, /^placeholder: /, id);
+    assert.ok(E.parts.length <= 16, id);
+  }
+});
+
+test('batch 3: a battle builds (brass, timpani and the kit dimmed while calm) and peaks; trainers, the rival and leaders over a string ostinato, the boss with a choir and hits', () => {
+  for (const id of ['wild', ...FIGHTS]) {
+    const E = MUSIC.ensembles[MUSIC.songs[id].ensemble],
+      has = (/** @type {any} */ f) => E.parts.some(f);
+    assert.ok(
+      has((/** @type {any} */ P) => P.layer === 'peak'),
+      `${id}: peak parts`
+    );
+    for (const inst of ['brass', 'timpani'])
+      assert.ok(
+        has((/** @type {any} */ P) => P.inst === inst && P.dim && P.dim.calm != null),
+        `${id}: ${inst} builds`
+      );
+    assert.ok(
+      has((/** @type {any} */ P) => P.line === 'drums' && P.kit.kick && P.kit.snare && P.kit.hat),
+      `${id}: a full kit`
+    );
+  }
+  for (const id of FIGHTS)
+    assert.ok(
+      MUSIC.ensembles[id].parts.some(P => P.line === 'ostinato' && P.inst === 'spiccato' && !P.layer),
+      `${id}: a string ostinato`
+    );
+  const B = MUSIC.ensembles.boss.parts;
+  assert.ok(
+    B.some(P => P.inst === 'choir' && !P.layer) && B.some(P => P.line === 'hits' && P.inst === 'orchhit' && !P.layer)
+  );
+});
