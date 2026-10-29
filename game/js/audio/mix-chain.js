@@ -97,8 +97,8 @@ export function mixDuckerMake(c, params) {
         for (let i = 1; i < P.length; i++) p.linearRampToValueAtTime(P[i][1], P[i][0]);
       }
     },
-    /** the ducks still under way (the debug log) */
-    live: () => list.filter(d => Math.max(d.end, d.t0 + d.a) + d.r > c.currentTime).map(d => d.kind),
+    /** the kinds of dip still under way, each once (the debug log) */
+    live: () => [...new Set(list.filter(d => Math.max(d.end, d.t0 + d.a) + d.r > c.currentTime).map(d => d.kind))],
   };
   return D;
 }
