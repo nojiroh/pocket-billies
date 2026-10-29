@@ -22,7 +22,14 @@ import {
   reducedMotion,
 } from './hooks.js';
 import { smearDialsSet } from './logic/smear.js';
-import { battleAnimLogLine, battleAnimTimeline, battlePartOffset, flashGate } from './logic/battle-anims.js';
+import {
+  battleAnimLogLine,
+  battleAnimTimeline,
+  battlePartOffset,
+  flashGate,
+  hitLook,
+  koAhead,
+} from './logic/battle-anims.js';
 import { actorCenter, battleStage, battleStageFocus, battleStageKit, camAt, camHome } from './battle-stage.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -31,7 +38,10 @@ expose({
   animBureau: [() => animBureau, v => (animBureau = v)],
   animColor: [() => animColor],
   animFamilyStep: [() => animFamilyStep, v => (animFamilyStep = v)],
+  animKo: [() => animKo, v => (animKo = v)],
+  animKoAhead: [() => animKoAhead, v => (animKoAhead = v)],
   animLog: [() => animLog, v => (animLog = v)],
+  animPast: [() => animPast, v => (animPast = v)],
   animPoint: [() => animPoint, v => (animPoint = v)],
   animScar: [() => animScar, v => (animScar = v)],
   animStep: [() => animStep, v => (animStep = v)],
@@ -247,10 +257,26 @@ function animStep(S, c) {
     case 'pop':
       if (typeof hudPop === 'function') hudPop(i, S.pop === 'hedged' ? 'Hedged' : 'Miss', 'miss');
       return;
-    case 'hit':
-      K.hitFx(c.ti, c.hitAn);
-      animScar(c);
+    case 'beat': {
+      /* VFX-13: a flurry's hit before the last, on the beat: a knock, a shake and a one-cell flash, each a little
+         harder than the one before (the last, the hit step, the strongest); no hit-stop, so no time is added */
+      const s = battleStage.s[c.ti],
+        k = (S.i + 1) / ((S.n || 1) + 1);
+      if (!s || !c.an.dmg) return;
+      K.setActorAction(c.ti, 'hurt', 200);
+      K.tween(s, 'ox', s.ox + c.dir * (2 + 4 * k), 30);
+      K.tween(s, 'ox', 0, 90, 'out', 30);
+      if (!reducedMotion) battleStage.shk = Math.max(battleStage.shk, 1 + 2 * k);
+      s.white = Math.max(s.white || 0, 0.25 + 0.25 * k);
+      K.tween(s, 'white', 0, BATTLE_ANIMS.tiers ? BATTLE_ANIMS.tiers.cell : 42, 'in');
       return;
+    }
+    case 'hit': {
+      /* VFX-13: the tier's look; a KO's extra scar */
+      const Lk = K.hitFx(c.ti, c.hitAn, null, animKo(c, c.ti));
+      animScar(c, Lk);
+      return;
+    }
     default:
       animFamilyStep(S, c, i);
   }
@@ -430,7 +456,7 @@ function animFamilyStep(S, c, i) {
     }
     case 'ray': {
       const A = c.P.attacker,
-        T = c.P.target,
+        T = c.P[S.to || 'target'] || c.P.target,
         life = S.life || 360,
         St = { anim: 'beam_strip', ramp: S.ramp || c.type, spr: K.typeSprite(c.type, 0) };
       K.addParticle({
@@ -466,15 +492,22 @@ function animFamilyStep(S, c, i) {
     }
     case 'light': {
       const P = animPoint(c, S.on),
-        L = kit ? kit.light : { k: 1, ms: 200 };
+        L = kit ? kit.light : { k: 1, ms: 200 },
+        /* VFX-13: a light on the target follows the hit's tier: dim when resisted, brighter for a super or a crit
+           (a crit's warm), never more lights */
+        Tl = (S.on || 'target') === 'target' && c.look ? c.look : null;
       K.addParticle({
         ...P,
         y: P.y + 0.4,
         hide: 1,
         glow: 1,
-        col: S.color ? animColor(c, S.color) : kitLight(c, S.ramp),
+        col: S.color
+          ? animColor(c, S.color)
+          : Tl && Tl.lightCol !== 'kit'
+            ? animColor(c, Tl.lightCol)
+            : kitLight(c, S.ramp),
         life: Math.min(300, S.ms || L.ms || 200),
-        lightK: L.k ?? 1,
+        lightK: Math.min(2, (L.k ?? 1) * (Tl ? Tl.light : 1)),
         flick: L.flicker ? 1 : 0,
       });
       return;
@@ -513,13 +546,21 @@ function animFamilyStep(S, c, i) {
 /** what a skipped step still does: the hit's numbers */
 function animStepInfo(S, c) {
   if (S.do === 'hit' && typeof hudHit === 'function') hudHit(c.ti, c.hitAn);
-  /* VFX-15: a scar stays for the battle, so a skipped hit leaves its scar too */
-  if (S.do === 'hit') animScar(c);
+  /* VFX-15: a scar stays for the battle, so a skipped hit leaves its scar too (VFX-13: and a KO's) */
+  if (S.do === 'hit') animScar(c, c.look);
 }
-/** VFX-15: the scar a landed hit leaves at the target's feet (battle-stage-look.js) */
-function animScar(c) {
-  if (typeof battleScarAt === 'function' && c.an.dmg)
-    battleScarAt(c.ti, { type: c.type, w: battleStageKit.hitWeight(c.ti, c.an) });
+/** VFX-15: the scar a landed hit leaves at the target's feet (battle-stage-look.js); VFX-13: a KO leaves one more (its
+ * tier row's `scar`: the heavy kind) */
+function animScar(c, L) {
+  if (typeof battleScarAt !== 'function' || !c.an.dmg) return;
+  const w = battleStageKit.hitWeight(c.ti, c.an);
+  battleScarAt(c.ti, { type: c.type, w });
+  for (let k = 0; k < ((L && L.scar) || 0); k++) battleScarAt(c.ti, { w, ko: true });
+}
+/** VFX-13: koAhead's for Billie i: whether this move knocks it out, and whether that is the battle's last KO */
+function animKo(c, i) {
+  const K = c.ka;
+  return K && K.ko && K.si.includes(i) ? { ko: true, last: K.last } : null;
 }
 /** the move's `anim` line in the debug log, once (when its time is up, or a skip ends it) */
 function animLog(C) {
@@ -570,13 +611,24 @@ function battleAnimPlay(an, ev) {
       type: M.t,
       /* the move's type rides on a copy: the engine's event isn't written */
       hitAn: { ...an, t: M.t },
-      P: { attacker: A, target: Ta, subject: an.self ? A : Ta, foe: foe === ti ? Ta : actorCenter(foe) },
-      idx: { attacker: si, target: ti, subject: an.self ? si : ti, foe },
+      P: {
+        attacker: A,
+        target: Ta,
+        subject: an.self ? A : Ta,
+        foe: foe === ti ? Ta : actorCenter(foe),
+        /* VFX-13: where a miss goes: beside the target across the line of the attack, a little past it and up */
+        past: animPast(A, Ta),
+      },
+      idx: { attacker: si, target: ti, subject: an.self ? si : ti, foe, past: ti },
       foes: foes.length ? foes : [ti],
       one: false,
       kit: (T.kit && BATTLE_ANIMS.types && BATTLE_ANIMS.types[T.kit]) || null,
+      /* VFX-13: whether it knocks out what it hits (koAhead, read ahead in the turn's lines), and its tier's row */
+      ka: animKoAhead(ev),
+      look: null,
     },
     C = (battleAnim.cur = { mid: an.mid, T, q, held: [], logged: false });
+  c.look = hitLook(c.hitAn, animKo(c, ti), battleStageKit.hitWeight(ti, an), BATTLE_ANIMS);
   /* VFX-9: the effects' random numbers for this event: the move, its sides and the event's place in the battle */
   battleStageKit.fxSeed(
     `${an.mid}|${si}|${ti}|${typeof activeBattle !== 'undefined' && activeBattle ? activeBattle.events.length : 0}`
@@ -596,6 +648,22 @@ function battleAnimPlay(an, ev) {
   return { dur: T.dur, hit: T.hit };
 }
 
+/** VFX-13: a spot a miss goes to: 0.8 m beside the target across the line from the attacker, 0.4 m past it, 0.4 up */
+function animPast(A, T) {
+  const dx = T.x - A.x,
+    dz = T.z - A.z,
+    L = Math.hypot(dx, dz) || 1;
+  return { x: T.x + (dz / L) * 0.8 + (dx / L) * 0.4, y: T.y + 0.4, z: T.z - (dx / L) * 0.8 + (dz / L) * 0.4 };
+}
+/** VFX-13: koAhead for the line playing, read from the battle's lines; a preview's line (the Studio's Battle effects,
+ * tools/look-battle-anims.py) may carry its own (`ka`) */
+function animKoAhead(ev) {
+  if (ev && ev.ka) return ev.ka;
+  const B = typeof activeBattle !== 'undefined' ? activeBattle : null;
+  if (!B || !B.events) return null;
+  const i = B.events.indexOf(ev);
+  return i < 0 ? null : koAhead(B.events, i);
+}
 const brightColor = col => {
   const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(col || '');
   return !!m && 0.2126 * parseInt(m[1], 16) + 0.7152 * parseInt(m[2], 16) + 0.0722 * parseInt(m[3], 16) > 128;
