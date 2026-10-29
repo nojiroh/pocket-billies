@@ -13,8 +13,10 @@ import { cryLowHealth, cryRecipe, cryVoices } from '../../game/js/logic/cries.js
 import { UI_SOUND_NAMES, uiSoundVoices } from '../../game/js/logic/ui-sounds.js';
 import { ambienceNoiseLoop, ambienceRandom } from '../../game/js/logic/ambience-sound.js';
 import { soundscapePreview } from '../../game/js/logic/soundscape.js';
+import { battleSoundGet, battleSoundNames, battleSoundPreview } from '../../game/js/logic/battle-sounds.js';
 import { midiToFrequency, trackerCompose, trackerCreate } from '../../game/js/audio/tracker.js';
 import { soundscapePlayerCreate } from '../../game/js/audio/soundscape-player.js';
+import { battleVoicesPlay } from '../../game/js/audio/battle-voices.js';
 import { escapeHtml } from './game-stand-ins.js';
 import {
   MUSIC_CHOICES,
@@ -58,6 +60,9 @@ expose({
   ROLL_LEFT: [() => ROLL_LEFT],
   ROLL_TOP: [() => ROLL_TOP],
   musicBaseCriesHTML: [() => musicBaseCriesHTML, v => (musicBaseCriesHTML = v)],
+  musicBattleSoundHTML: [() => musicBattleSoundHTML, v => (musicBattleSoundHTML = v)],
+  musicBattleSoundsHTML: [() => musicBattleSoundsHTML, v => (musicBattleSoundsHTML = v)],
+  musicBattleVoicesHTML: [() => musicBattleVoicesHTML, v => (musicBattleVoicesHTML = v)],
   musicCheckFindings: [() => musicCheckFindings, v => ((musicCheckFindings = v), provide({ musicCheckFindings }))],
   musicCryCardHTML: [() => musicCryCardHTML, v => ((musicCryCardHTML = v), provide({ musicCryCardHTML }))],
   musicCryPlay: [() => musicCryPlay, v => (musicCryPlay = v)],
@@ -727,6 +732,80 @@ function musicUiSoundsHTML() {
     sub: 'Every button makes one: can’t when it is disabled, else cancel or confirm by its class or action (listed below; music.json ui), else select. Then the UI’s own four (UI-16a): sheet when a sheet opens, flip when a pick card turns over, count when a number finishes ticking up, toast when a notice drops in. stamp is the thunk of a Bureau stamp landing (SY-3). Their notes are in music.json ui.',
   });
 }
+/* ---------- VFX-19: the Battle card: music.json battle (logic/battle-sounds.js; the game plays them from
+   audio/battle-sounds.js), each sound's voices editable as the base cries' are, ▶ through the same player as the game's
+   (audio/battle-voices.js) ---------- */
+/** a battle sound's voices (one part) as fields: a tone's as a cry's, a noise's filters, length and volume */
+function musicBattleVoicesHTML(p, V, title) {
+  if (!V || !V.length) return '';
+  const rows = V.map((v, i) => {
+    const q = `${p}.${i}`;
+    if (v && v.noise)
+      return `<div class="grid">${[
+        ['Starts', 'at', { min: 0, max: 2, step: 0.005, unit: 's' }],
+        ['Length', 'dur', { min: 0.01, max: 2, step: 0.01, unit: 's' }],
+        ['Volume', 'vol', { opt: 1, min: 0, max: 0.4, step: 0.005, ph: '0.12' }],
+        ...MUSIC_CHOICES.noise.map(([k, n]) => [
+          n.replace(/ \(.*/, ''),
+          `noise.${k}`,
+          { opt: 1, min: 20, max: 20000, step: 10, unit: 'Hz' },
+        ]),
+        ['Sharpness', 'noise.q', { opt: 1, min: 0.1, max: 30, step: 0.1, ph: '1' }],
+      ]
+        .map(([n, f, o]) => numberField(`${i + 1} noise: ${n}`, `${q}.${f}`, o))
+        .join('')}</div>`;
+    return `<div class="grid">${[
+      ['Starts', 'at', { min: 0, max: 2, step: 0.005, unit: 's' }],
+      ['Note', 'note', { min: -36, max: 36, step: 1, unit: '+st' }],
+      ['Length', 'len', { min: 0.01, max: 2, step: 0.01, unit: 's' }],
+      ['Volume', 'vol', { opt: 1, min: 0, max: 0.2, step: 0.005, ph: '0.06' }],
+      ['Slide', 'slide', { opt: 1, min: 0.1, max: 4, step: 0.05, ph: '1', unit: '×' }],
+      ['Wobble', 'vib', { opt: 1, min: 0, max: 10, step: 0.5, ph: '0' }],
+    ]
+      .map(([n, f, o]) => numberField(`${i + 1}: ${n}`, `${q}.${f}`, o))
+      .join(
+        ''
+      )}${selectField(`${i + 1}: Wave`, `${q}.wave`, MUSIC_CHOICES.wave, { opt: 1, none: 'the sound’s' })}${textField(`${i + 1}: Instrument`, `${q}.inst`, { opt: 1, ph: 'none (baked, once the bank has it)' })}</div>`;
+  }).join('');
+  return `<h4>${title}</h4>${rows}`;
+}
+function musicBattleSoundHTML(name, label) {
+  const S = battleSoundGet(musicData().battle, name);
+  if (!S) return '';
+  const p = `music.battle.${name}`,
+    parts = S.voices
+      ? musicBattleVoicesHTML(`${p}.voices`, S.voices, 'Voices')
+      : musicBattleVoicesHTML(`${p}.cast`, S.cast, 'Cast (from the move’s start)') +
+        musicBattleVoicesHTML(`${p}.hit`, S.hit, 'Hit (from its hit)');
+  return `<details class="mus-cry"><summary><button class="btn subtle mus-play" data-act="musBattle" data-k="${escapeHtml(name)}" aria-label="Play ${escapeHtml(label)}" title="Play ${escapeHtml(label)}">▶</button><b>${escapeHtml(label)}</b> <small class="help">${escapeHtml(S.name || '')}</small></summary>${grid(
+    textField('Name', `${p}.name`, { opt: 1, ph: 'unnamed' }),
+    selectField('Wave', `${p}.wave`, MUSIC_CHOICES.wave),
+    numberField('Pitch', `${p}.pitch`, { opt: 1, min: 24, max: 96, step: 1, ph: '60', unit: 'midi' }),
+    numberField('Echo', `${p}.echo`, { opt: 1, min: 0, max: 1, step: 0.05, ph: '0' })
+  )}${parts}</details>`;
+}
+function musicBattleSoundsHTML() {
+  const B = musicData().battle;
+  if (!B) return '';
+  const words = (/** @type {string[][]} */ L) => Object.fromEntries(L),
+    hurt = words(MUSIC_CHOICES.battleHurt),
+    katch = words(MUSIC_CHOICES.battleCatch),
+    group = (title, names, label) =>
+      names.length
+        ? `<h4>${title}</h4>${names.map(n => musicBattleSoundHTML(n, label(n.split('.')[1] || n))).join('')}`
+        : '';
+  const N = battleSoundNames(B),
+    of = g => N.filter(n => n.startsWith(g + '.'));
+  const body =
+    group('Move families', of('families'), k => k) +
+    group('Type layers', of('types'), k => k) +
+    group('Hurt', of('hurt'), k => hurt[k] || k) +
+    (B.recall ? `<h4>Recall</h4>${musicBattleSoundHTML('recall', 'Recall')}` : '') +
+    group('Throw and catch', of('catch'), k => katch[k] || k);
+  return card('Battle', body, {
+    sub: 'The battle’s own sounds (music.json battle, VFX-19), on the Sound effects bus. A move plays its family’s sound and its type’s layer over it: the cast as it starts, the hit when it lands (a miss: the cast alone); the hit’s weight (hit, super, weak, crit) stays its own sound. Hurt sounds play on a burn, recoil, a spread move’s second target and the delayed hit; then the recall’s beam, and the pyramid’s throw, pop, landing, wobbles and seal. A voice is a note over the sound’s pitch, as a cry’s, or a noise through its filters. ▶ plays it as the game does, a family’s hit at its hit in battleAnims.json. Placeholders until a listening pass.',
+  });
+}
 function musicMixHTML() {
   const p = 'music.mix';
   return card(
@@ -853,6 +932,24 @@ ACTIONS.musBaseCry = d => {
   const C = cryRecipe('x', { base: d.k, pitch: MUSIC_CRY_PREVIEW, length: 1 }, musicData().cries.bases);
   musicVoicesPlay(cryVoices(d.low ? cryLowHealth(C) : C));
 };
+ACTIONS.musBattle = d => {
+  const B = musicData().battle,
+    S = battleSoundGet(B, d.k),
+    [g, k] = String(d.k).split('.'),
+    F = g === 'families' && ((studioState.D.battleAnims || {}).families || {})[k];
+  if (!S) return;
+  const T = musicTracker();
+  if (musicStudio.ctx.state !== 'running') musicStudio.ctx.resume().catch(() => {});
+  battleVoicesPlay(
+    T,
+    T.bus,
+    battleSoundPreview(S, F && F.hit < 999 ? F.hit / 1000 : 0.3),
+    musicStudio.ctx.currentTime + 0.03,
+    {
+      echoTo: T.echoIn,
+    }
+  );
+};
 ACTIONS.musUiSound = d => {
   const S = ((musicData().ui || {}).sounds || {})[d.k];
   if (S) musicVoicesPlay(uiSoundVoices(S));
@@ -873,6 +970,7 @@ function musicCheckFindings() {
     locations: [...(D.locations || []), ...parked],
     scriptText: JSON.stringify([D.story, D.trainers, D.cutscenes, legacyView.data ? legacyView.data.trainers : null]),
     lines: D.lines,
+    battleAnims: D.battleAnims,
   })) {
     if (f.lvl === 'warn' && !legacyView.data) continue;
     const sel = f.song
@@ -888,6 +986,8 @@ function musicCheckFindings() {
       continue;
     }
     if (f.cry) Object.assign(sel, { musicTab: 'sounds', musicCry: f.cry });
+    /* VFX-19: the battle's sounds are on the Sounds tab's Battle card */
+    if (f.battle) Object.assign(sel, { musicTab: 'sounds' });
     out.push({ lvl: f.lvl, msg: `Music: ${f.msg}`, go: f.place ? 'world' : 'music', sel: f.place ? {} : sel });
   }
   const species = D.lines.flatMap(L => L.names.map((n, i) => (L.cry || [])[i])),
@@ -1175,7 +1275,7 @@ SECTIONS.music = () => {
         }
       });
     }
-    return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicBaseCriesHTML()}${musicUiSoundsHTML()}${musicScapeHTML()}${musicMixHTML()}</div></div>`;
+    return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicBaseCriesHTML()}${musicUiSoundsHTML()}${musicBattleSoundsHTML()}${musicScapeHTML()}${musicMixHTML()}</div></div>`;
   }
   if (tab === 'where')
     return `<div class="split"><aside class="list-col">${musicListColHTML(uses)}</aside><div class="ed-col">${tabs}${musicWhereHTML()}</div></div>`;
