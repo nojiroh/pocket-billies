@@ -32,6 +32,9 @@ export interface SaveData {
   /** species seen and caught: 1 */
   seen: Record<SpeciesId, number>;
   caught: Record<SpeciesId, number>;
+  /** perks track PK-12: the Field Guide's Perks tab, '<kind>:<id>' (perk, set, item, boon) seen and taken: 1
+      (logic/collection.js); it lasts between runs */
+  collection: { seen: Record<string, number>; taken: Record<string, number> };
   /** money, dollars */
   se: number;
   /** how many of each coin and item you have (every key of gameData.pyramids and gameData.items) */
