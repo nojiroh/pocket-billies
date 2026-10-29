@@ -68,7 +68,6 @@ game/data/gamedata.js
 # ESLint cache (npm run lint, phase 04e)
 .eslintcache
 validation/st1/
-validation/st3/
 validation/terrain-look/
 validation/load/
 validation/look-talk*/
