@@ -1,0 +1,1421 @@
+{
+ "note": "Characters track CH-5: the figure kit's shapes as data (game/js/logic/figure-kit.js builds everyone's figure from their look with these; logic/kit-shapes.js reads the shape lists). heads: each head shape's knobs (r: its radii as parts of the usual head's; jaw: how V, below 0 wider at the jaw; chin: how far it drops; cheek: the cheekbones; crown: the back of the skull; face: how flat; nose: a fixed nose, 0 button, 1 straight, 2 long, 3 broad, else each person's own); hero is the main character's and never picked at random. vary: how far each person strays from their head shape (size, its radii, jaw and face plus or minus half the number) ([base, spread] times a number from their seed). builds: multipliers on the look's sliders (k), how each walks (gait), and how much more V its jaw (jaw). folk: the builds townsfolk are picked from. proportions: chibi (head, legs, torso, arms, neck) and sliderGain (how much more a slider counts on a figure). hair: each style's recipe: cut (the hairline: front, side, back), thin (a close cap), under (what shows under a hat: len [min, max] metres at the usual head, w, strand, lift; tail), and steps (grow, spikes, bun, tie, twin) with their strands' numbers (grav, stiff, wave, freq, curl, hug). accessories: each wardrobe id's shapes: vars (named values, in order), and rows: id, parent part, at, shape (a primitive of logic/figure-pose.js, or dome, disc, lathe, band and curls round the head), col (a colour slot); sides makes an A and a B mirrored (s is 1 then -1), repeat n makes id0..id(n-1) (i); a value is a number or a sum like 'bx * 0.98' of the frame's values (a hat's: k, rx, yb, zc, bx, bz, top; the head's: k, hx, hy, c1; the body's: tk, girth, hipK, torsoZ) with sqrt, sin, cos and pi. fringe: a fringe shows under this hat. colour: the slot's own colour over the item's.",
+ "heads": {
+  "round": {"r":[1.02,0.98,1],"jaw":0.2,"chin":0.25,"cheek":1.25,"crown":1,"face":0.4},
+  "oval": {"r":[0.95,1.03,0.98],"jaw":0.55,"chin":0.5,"cheek":0.9,"crown":1.05,"face":0.55},
+  "square": {"r":[1,0.96,0.98],"jaw":-0.15,"chin":0.45,"cheek":1,"crown":0.95,"face":0.75},
+  "long": {"r":[0.9,1.1,0.96],"jaw":0.45,"chin":0.85,"cheek":0.85,"crown":1.1,"face":0.6},
+  "pear": {"r":[0.98,0.98,1],"jaw":-0.35,"chin":0.35,"cheek":0.75,"crown":0.9,"face":0.5},
+  "heart": {"r":[1.02,1,0.98],"jaw":0.95,"chin":0.55,"cheek":1.3,"crown":1.05,"face":0.5},
+  "diamond": {"r":[0.95,1.03,0.98],"jaw":0.8,"chin":0.7,"cheek":1.5,"crown":0.9,"face":0.55},
+  "broad": {"r":[1.08,0.95,1],"jaw":0.05,"chin":0.3,"cheek":1.1,"crown":0.95,"face":0.85},
+  "hero": {"r":[0.97,1.02,0.98],"jaw":0.72,"chin":0.62,"cheek":1.1,"crown":1.12,"face":0.65,"random":false}
+ },
+ "vary": {
+  "size": [0.96,0.08],
+  "rx": [0.95,0.1],
+  "ry": [0.95,0.1],
+  "rz": [0.96,0.08],
+  "jaw": 0.16,
+  "chin": [0.85,0.3],
+  "cheek": [0.85,0.3],
+  "brow": [0.8,0.4],
+  "face": 0.3,
+  "noseK": [0.85,0.4],
+  "ears": [0.85,0.35]
+ },
+ "builds": {
+  "average": {
+   "k": {},
+   "gait": {}
+  },
+  "slim": {
+   "k": {"body":0.8,"shoulders":0.94,"hips":0.94,"legs":1.04},
+   "gait": {"swing":1.05,"bounce":1.15}
+  },
+  "stocky": {
+   "k": {"body":1.2,"shoulders":1.14,"legs":0.88,"height":0.95},
+   "gait": {"swing":0.85,"hang":0.1,"lean":0.03}
+  },
+  "round": {
+   "k": {"body":1.42,"shoulders":1.02,"hips":1.1,"legs":0.84,"height":0.94,"belly":1},
+   "gait": {"swing":0.72,"arms":0.8,"hang":0.16,"bounce":0.7,"lean":-0.03},
+   "jaw": -0.25
+  },
+  "tall": {
+   "k": {"height":1.1,"legs":1.14,"body":0.9,"arms":1.06,"neck":1.5},
+   "gait": {"swing":1.12,"lean":-0.02}
+  },
+  "small": {
+   "k": {"height":0.84,"legs":0.86,"head":1.08,"neck":0.5},
+   "gait": {"swing":1.15,"bounce":1.7}
+  },
+  "athletic": {
+   "k": {"shoulders":1.32,"hips":0.86,"waist":0.78,"legs":1.04,"arms":1.06,"chestOut":1},
+   "gait": {"swing":1.1,"arms":1.25,"lean":-0.04}
+  },
+  "pear": {
+   "k": {"shoulders":0.84,"hips":1.32,"legs":0.92,"body":1.06,"waist":1.1},
+   "gait": {"swing":0.9,"hang":0.08}
+  },
+  "lanky": {
+   "k": {"height":1.12,"legs":1.2,"arms":1.16,"body":0.74,"shoulders":0.96,"neck":1.8},
+   "gait": {"swing":1.15,"lean":0.07,"head":0.1,"bounce":1.25}
+  },
+  "elder": {
+   "k": {"height":0.9,"legs":0.88,"body":1.06,"head":0.96,"waist":1.1},
+   "gait": {"swing":0.6,"arms":0.5,"lean":0.17,"head":0.08,"bounce":0.3,"hang":0.08}
+  }
+ },
+ "folk": ["average","average","slim","stocky","athletic","pear","lanky","round","elder"],
+ "proportions": {
+  "chibi": {"head":1.13,"legs":0.86,"torso":0.92,"arms":0.9,"neck":0.8},
+  "sliderGain": 2
+ },
+ "hair": {
+  "hair_short": {
+   "under": {
+    "len": [0.07,0.11],
+    "w": 0.055,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.08,"freq":1.3,"hug":0.3},
+    "lift": 0.08
+   },
+   "steps": [
+    {
+     "op": "grow",
+     "every": 3,
+     "len": [0.13,0.19],
+     "w": 0.06,
+     "strand": {"grav":0.7,"wave":0.14,"hug":0.6},
+     "lift": 0.12
+    }
+   ]
+  },
+  "hair_buzz": {
+   "cut": {"front":0.42,"side":0.1,"back":-0.2},
+   "thin": true,
+   "steps": []
+  },
+  "hair_sidepart": {
+   "under": {
+    "len": [0.07,0.11],
+    "w": 0.055,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.08,"freq":1.3,"hug":0.3},
+    "lift": 0.08
+   },
+   "steps": [
+    {
+     "op": "grow",
+     "every": 3,
+     "len": [0.14,0.2],
+     "w": 0.06,
+     "strand": {"grav":0.7,"wave":0.12,"hug":0.7},
+     "lift": 0.1,
+     "from": [0.35,0.94,0.1],
+     "mirror": true
+    }
+   ]
+  },
+  "hair_bob": {
+   "cut": {"front":0.3,"side":-0.4,"back":-0.7},
+   "under": {
+    "len": [0.2,0.26],
+    "w": 0.055,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.08,"freq":1.3,"curl":0.7,"hug":0.3},
+    "lift": 0.08
+   },
+   "steps": [
+    {
+     "op": "grow",
+     "every": 2,
+     "len": [0.26,0.32],
+     "w": 0.065,
+     "strand": {"grav":0.95,"stiff":0.75,"wave":0.08,"curl":0.8,"hug":0.35},
+     "lift": 0.15,
+     "from": [0,1,-0.05]
+    }
+   ]
+  },
+  "hair_long": {
+   "cut": {"front":0.3,"side":-0.4,"back":-0.7},
+   "under": {
+    "len": [0.5,0.68],
+    "w": 0.07,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.2,"freq":1.3,"hug":0.3},
+    "lift": 0.08
+   },
+   "steps": [
+    {
+     "op": "grow",
+     "every": 2,
+     "len": [0.55,0.78],
+     "w": 0.065,
+     "strand": {"grav":1,"stiff":0.75,"wave":0.25,"freq":1.4,"hug":0.25},
+     "lift": 0.15,
+     "from": [0,0.85,0.55]
+    }
+   ]
+  },
+  "hair_spiky": {
+   "under": {
+    "len": [0.07,0.11],
+    "w": 0.055,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.08,"freq":1.3,"hug":0.3},
+    "lift": 0.08
+   },
+   "steps": [
+    {
+     "op": "spikes",
+     "every": 7,
+     "front": 0.4,
+     "root": 0.035,
+     "len": 0.15,
+     "lenVar": 0.09,
+     "w": 0.085,
+     "strand": {"grav":0.4,"stiff":0.9,"wave":0.12,"freq":0.6}
+    },
+    {
+     "op": "grow",
+     "every": 4,
+     "len": [0.1,0.14],
+     "w": 0.06,
+     "strand": {"grav":0.5,"hug":0.5},
+     "lift": 0.15
+    }
+   ]
+  },
+  "hair_curly": {
+   "under": {
+    "len": [0.07,0.11],
+    "w": 0.055,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.08,"freq":1.3,"hug":0.3},
+    "lift": 0.08
+   },
+   "steps": [
+    {
+     "op": "grow",
+     "every": 2,
+     "len": [0.1,0.15],
+     "w": 0.05,
+     "strand": {"grav":0.25,"stiff":0.6,"wave":0.9,"freq":2.6},
+     "lift": 0.7
+    }
+   ]
+  },
+  "hair_bun": {
+   "under": {
+    "len": [0.07,0.11],
+    "w": 0.055,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.08,"freq":1.3,"hug":0.3},
+    "lift": 0.08
+   },
+   "steps": [
+    {
+     "op": "bun",
+     "at": [0,0.78,-0.62],
+     "every": 4,
+     "tie": 0.05,
+     "out": 0.1,
+     "size": [0.11,0.1,0.11],
+     "coil": 14,
+     "turns": 1.6,
+     "coilR": 0.1,
+     "coilShrink": 0.025,
+     "coilRise": 0.06,
+     "coilW": 0.035
+    }
+   ]
+  },
+  "hair_pony": {
+   "under": {
+    "len": [0.07,0.11],
+    "w": 0.055,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.08,"freq":1.3,"hug":0.3},
+    "lift": 0.08,
+    "tail": {"at":[0,-0.45,-0.95],"back":0.03,"dir":[0,-0.6,-0.8],"n":9,"len":0.36}
+   },
+   "steps": [
+    {
+     "op": "tie",
+     "at": [0,0.25,-0.97],
+     "back": 0.03,
+     "every": 4,
+     "knot": [0.05,0.05,0.04],
+     "tail": {"dir":[0,-0.5,-0.85],"n":9,"len":0.42}
+    }
+   ]
+  },
+  "hair_twin": {
+   "under": {
+    "len": [0.07,0.11],
+    "w": 0.055,
+    "strand": {"grav":1,"stiff":0.75,"wave":0.08,"freq":1.3,"hug":0.3},
+    "lift": 0.08
+   },
+   "steps": [
+    {
+     "op": "twin",
+     "at": [0.95,0.3,-0.25],
+     "out": 0.02,
+     "every": 5,
+     "len": 0.4,
+     "tail": {"dir":[0.5,-0.8,-0.2],"n":7,"len":0.36}
+    },
+    {
+     "op": "grow",
+     "every": 9,
+     "len": [0.1,0.12],
+     "w": 0.045,
+     "strand": {"grav":0.6},
+     "lift": 0.2
+    }
+   ]
+  }
+ },
+ "accessories": {
+  "hat_cap": {
+   "fringe": true,
+   "rows": [
+    {
+     "id": "hat",
+     "shape": {"kind":"dome","y":"yb - 0.01","h":"top - yb + 0.02","sx":"bx * 0.98","sz":"bz * 0.98","cut":-0.05},
+     "col": "hat"
+    },
+    {
+     "id": "button",
+     "shape": {"kind":"disc","y":"top + 0.008","rx":"0.022 * k","rz":"0.022 * k","th":"0.012 * k"},
+     "col": "hat2"
+    },
+    {
+     "id": "peak",
+     "shape": {
+      "kind": "tube",
+      "a": [0,"yb + 0.012","zc + bz * 0.8"],
+      "ctrl": [0,"yb + 0.004","zc + bz * 1.3"],
+      "b": [0,"yb - 0.035 * k","zc + bz * 1.6"],
+      "r0": "bx * 0.66",
+      "r1": "bx * 0.56",
+      "flat": 0.06,
+      "n": [0,1,0],
+      "seg": 14,
+      "steps": 6
+     },
+     "col": "hat2"
+    }
+   ]
+  },
+  "hat_beanie": {
+   "fringe": true,
+   "rows": [
+    {
+     "id": "hat",
+     "shape": {"kind":"dome","y":"yb - 0.03","h":"top - yb + 0.04","sx":"bx * 0.97","sz":"bz * 0.99","dz":-0.008,"cut":-0.02},
+     "col": "hat"
+    },
+    {
+     "id": "slouch",
+     "shape": {
+      "kind": "ellipsoid",
+      "c": [0,"top - 0.05 * k","zc - bz * 0.28"],
+      "r": ["bx * 0.6","0.065 * k","bz * 0.55"],
+      "seg": 14,
+      "rings": 8
+     },
+     "col": "hat"
+    },
+    {
+     "id": "fold",
+     "shape": {"kind":"band","y":"yb - 0.012","R":"bx * 0.96","th":"0.034 * k"},
+     "col": "hat"
+    },
+    {
+     "id": "bobble",
+     "shape": {"kind":"ellipsoid","c":[0,"top + 0.06 * k","zc - 0.04 * k"],"r":["0.07 * k","0.065 * k","0.07 * k"],"seg":10,"rings":7},
+     "col": "hat2"
+    }
+   ]
+  },
+  "hat_hardhat": {
+   "rows": [
+    {
+     "id": "hat",
+     "shape": {"kind":"dome","y":"yb","h":"top - yb + 0.035","sx":"bx * 1.04","sz":"bz * 1.04"},
+     "col": "hat"
+    },
+    {
+     "id": "ridge",
+     "shape": {"kind":"ellipsoid","c":[0,"top + 0.028","zc"],"r":["0.028 * k","0.022 * k","bz * 0.55"],"seg":8,"rings":8},
+     "col": "hat"
+    },
+    {
+     "id": "brim",
+     "shape": {"kind":"disc","y":"yb + 0.004","rx":"bx * 1.24","rz":"bz * 1.3","th":"0.014 * k","dz":"bz * 0.08"},
+     "col": "hat"
+    }
+   ]
+  },
+  "hat_bucket": {
+   "vars": {"m":"(yb + top) / 2"},
+   "rows": [
+    {
+     "id": "hat",
+     "shape": {"kind":"lathe","y":["yb - 0.012","yb - 0.006","m","top - 0.012","top + 0.012"],"rx":[0,"bx","bx * 0.97","bx * 0.86",0]},
+     "col": "hat"
+    },
+    {
+     "id": "brim",
+     "shape": {
+      "kind": "lathe",
+      "y": ["yb + 0.008","yb","yb - 0.05 * k","yb - 0.064 * k","yb - 0.02","yb - 0.012"],
+      "rx": [0,"bx * 1.01","bx * 1.42","bx * 1.42","bx * 0.98",0]
+     },
+     "col": "hat"
+    },
+    {
+     "id": "band",
+     "shape": {"kind":"band","y":"yb + 0.02","R":"bx * 1.0","th":"0.016 * k"},
+     "col": "hat2"
+    }
+   ]
+  },
+  "hat_cowboy": {
+   "vars": {"t":"top + 0.1 * k"},
+   "rows": [
+    {
+     "id": "hat",
+     "shape": {
+      "kind": "lathe",
+      "y": ["yb - 0.01","yb - 0.004","(yb + t) / 2","t - 0.01","t - 0.03 * k"],
+      "rx": [0,"bx * 0.98","bx * 0.95","bx * 0.74",0]
+     },
+     "col": "hat"
+    },
+    {
+     "id": "brim",
+     "shape": {"kind":"disc","y":"yb - 0.006","rx":"bx * 1.72","rz":"bz * 1.56","th":"0.016 * k"},
+     "col": "hat"
+    },
+    {
+     "id": "curl",
+     "shape": {"kind":"curls","y":"yb - 0.006","wx":"bx * 1.72","wz":"bz * 1.56","lift":"0.04 * k","th":"0.026 * k"},
+     "col": "hat"
+    },
+    {
+     "id": "band",
+     "shape": {"kind":"band","y":"yb + 0.026 * k","R":"bx * 0.97","th":"0.02 * k"},
+     "col": "hat2"
+    }
+   ]
+  },
+  "hat_tophat": {
+   "vars": {"t":"top + 0.34 * k"},
+   "rows": [
+    {
+     "id": "hat",
+     "shape": {
+      "kind": "lathe",
+      "y": ["yb - 0.01","yb - 0.004","(yb + t) / 2","t","t + 0.006"],
+      "rx": [0,"bx * 0.93","bx * 0.9","bx * 0.99",0]
+     },
+     "col": "hat"
+    },
+    {
+     "id": "brim",
+     "shape": {"kind":"disc","y":"yb - 0.004","rx":"bx * 1.36","rz":"bz * 1.28","th":"0.014 * k"},
+     "col": "hat"
+    },
+    {
+     "id": "curl",
+     "shape": {"kind":"curls","y":"yb - 0.004","wx":"bx * 1.36","wz":"bz * 1.28","lift":"0.025 * k","th":"0.02 * k"},
+     "col": "hat"
+    },
+    {
+     "id": "band",
+     "shape": {"kind":"band","y":"yb + 0.05 * k","R":"bx * 0.93","th":"0.03 * k"},
+     "col": "hat2"
+    }
+   ]
+  },
+  "hat_chef": {
+   "rows": [
+    {
+     "id": "hat",
+     "shape": {"kind":"lathe","y":["yb - 0.01","yb - 0.004","top - 0.01","top"],"rx":[0,"bx","bx * 1.03",0]},
+     "col": "hat"
+    },
+    {
+     "id": "puff",
+     "shape": {"kind":"ellipsoid","c":[0,"top + 0.1 * k","zc"],"r":["bx * 1.18","0.15 * k","bz * 1.12"],"seg":18,"rings":9},
+     "col": "hat"
+    },
+    {
+     "id": "pleat",
+     "repeat": 6,
+     "vars": {"a":"(i / 6) * pi * 2"},
+     "shape": {
+      "kind": "ellipsoid",
+      "c": ["sin(a) * bx * 0.72","top + 0.15 * k","zc + cos(a) * bz * 0.68"],
+      "r": ["0.11 * k","0.12 * k","0.11 * k"],
+      "seg": 10,
+      "rings": 6
+     },
+     "col": "hat"
+    }
+   ]
+  },
+  "hat_crown": {
+   "vars": {"y":"top - 0.06 * k","R":"rx * 0.62"},
+   "rows": [
+    {
+     "id": "hat",
+     "shape": {"kind":"band","y":"y","R":"R","th":"0.026 * k"},
+     "col": "hat"
+    },
+    {
+     "id": "point",
+     "repeat": 5,
+     "vars": {"a":"(i / 5) * pi * 2"},
+     "shape": {
+      "kind": "cone",
+      "a": ["sin(a) * R","y","zc + cos(a) * R * (bz / bx)"],
+      "b": ["sin(a) * R * 1.08","y + 0.11 * k","zc + cos(a) * R * 1.08 * (bz / bx)"],
+      "r": "0.035 * k",
+      "seg": 5
+     },
+     "col": "hat"
+    },
+    {
+     "id": "jewel",
+     "shape": {
+      "kind": "ellipsoid",
+      "c": [0,"y + 0.01","zc + R * (bz / bx) + 0.02 * k"],
+      "r": ["0.025 * k","0.025 * k","0.015 * k"],
+      "seg": 8,
+      "rings": 5
+     },
+     "col": "hat2"
+    }
+   ]
+  },
+  "headset": {
+   "rows": [
+    {
+     "sides": true,
+     "id": "cup",
+     "shape": {"kind":"ellipsoid","c":["s * hx * 1.02","c1 - hy * 0.05",0],"r":[0.035,0.07,0.065],"seg":8,"rings":5},
+     "col": "gear"
+    },
+    {
+     "id": "band",
+     "shape": {"kind":"torus","c":[0,"c1 + hy * 0.1",0],"R":["hx * 1.06",0.05],"r":0.018,"seg":14,"rings":4},
+     "col": "gear"
+    }
+   ]
+  },
+  "scarf": {
+   "rows": [
+    {
+     "id": "scarf",
+     "parent": "torso",
+     "at": [0,"0.36 * tk",0],
+     "shape": {"kind":"torus","c":[0,0,0.005],"R":["0.105 * sqrt(girth)","0.085 * sqrt(girth)"],"r":0.042,"seg":12,"rings":6},
+     "col": "neck"
+    }
+   ]
+  },
+  "chain": {
+   "colour": [226,184,74],
+   "rows": [
+    {
+     "id": "chain",
+     "parent": "torso",
+     "at": [0,"0.33 * tk",0.01],
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.1 * girth","torsoZ + 0.005"],"r":0.012,"seg":12,"rings":4},
+     "col": "neck"
+    }
+   ]
+  },
+  "tie": {
+   "rows": [
+    {
+     "id": "tie",
+     "parent": "torso",
+     "at": [0,"0.36 * tk","torsoZ + 0.012"],
+     "shape": {"kind":"capsule","a":[0,0,0],"b":[0,"-0.2 * tk",0.015],"r0":0.02,"r1":0.032,"seg":6},
+     "col": "neck"
+    }
+   ]
+  },
+  "bowtie": {
+   "rows": [
+    {
+     "sides": true,
+     "id": "bow",
+     "parent": "torso",
+     "at": [0,"0.365 * tk","torsoZ + 0.012"],
+     "shape": {"kind":"ellipsoid","c":["s * 0.03",0,0],"r":[0.032,0.022,0.016],"seg":8,"rings":5},
+     "col": "neck"
+    }
+   ]
+  },
+  "backpack": {
+   "rows": [
+    {
+     "id": "pack",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","-torsoZ - 0.055"],
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["0.13 * sqrt(girth)","0.15 * tk",0.07],"seg":10,"rings":6,"sq":0.9},
+     "col": "bag"
+    },
+    {
+     "id": "flap",
+     "parent": "pack",
+     "at": [0,"0.07 * tk",-0.045],
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["0.12 * sqrt(girth)","0.07 * tk",0.04],"seg":10,"rings":5,"sq":0.8},
+     "col": "bag2"
+    },
+    {
+     "sides": true,
+     "id": "strap",
+     "parent": "torso",
+     "at": ["s * 0.09 * sqrt(girth)","0.36 * tk",0],
+     "shape": {"kind":"torus","c":[0,"-0.1 * tk",0],"R":[0.03,"torsoZ + 0.012"],"r":0.014,"seg":10,"rings":4},
+     "col": "bag2"
+    }
+   ]
+  },
+  "satchel": {
+   "rows": [
+    {
+     "id": "satchel",
+     "parent": "hips",
+     "at": ["-0.17 * girth * hipK - 0.02",0,0.02],
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":[0.04,0.08,0.11],"seg":8,"rings":5,"sq":0.6},
+     "col": "bag"
+    },
+    {
+     "id": "sling",
+     "parent": "torso",
+     "at": [0,"0.12 * tk",0],
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.19 * girth","torsoZ + 0.015"],"r":0.013,"seg":14,"rings":4},
+     "col": "bag2"
+    }
+   ]
+  },
+  "fannypack": {
+   "rows": [
+    {
+     "id": "fanny",
+     "parent": "hips",
+     "at": [0,0.05,"0.105 * girth + 0.02"],
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":[0.09,0.045,0.04],"seg":8,"rings":5,"sq":0.4},
+     "col": "bag"
+    }
+   ]
+  }
+ },
+ "clothes": {
+  "note": "CH-5b: each wardrobe item's clothes on the figure (logic/figure-kit.js lookFigure). Knobs for the body's own parts: a top's sleeves (none, short, long); an outer's covers (false: the arms and collar show, the apron), puff (its sleeves' bulk), open (a front shows: the flair's lapels) and long (to the knees: no belt, the flair's tails); a bottom's legs (full, shorts, skirt), fit (the legs' width) and belt (false: none); shoes' length (the foot's), flat (a sandal: bare feet on a sole), boot (up the shin) and sole (1: the item's second colour, else dark). stripe paints stripes round a part. use adds pieces' rows and marks first. Rows are shapes as in accessories, added at their stage (torso: after the torso; shell: after the legs; details, the default: after neckwear and bags), left out when their when frame value is 0 (or with !, when it isn't). marks are painted on a part (buttons, pockets, a zip). An item with no entry dresses as tee, trousers, or with nothing for an outer or shoes.",
+  "tee": {"use":["collar"]},
+  "tee_stripe": {
+   "use": ["collar"],
+   "stripe": {"part":"torso","col":"top2","every":0.045,"from":0}
+  },
+  "tank": {
+   "sleeves": "none",
+   "rows": [
+    {
+     "id": "collar",
+     "parent": "torso",
+     "at": [0,"0.37 * tk",0.005],
+     "when": "bare",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.062 * sqrt(girth)","0.055 * sqrt(girth)"],"r":0.018,"seg":12,"rings":4},
+     "col": "top"
+    }
+   ]
+  },
+  "crop": {
+   "sleeves": "none",
+   "rows": [
+    {
+     "id": "waist",
+     "parent": "torso",
+     "stage": "torso",
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["0.158 * girth",0.06,"0.118 * girth"],"seg":12,"rings":5},
+     "col": "skin"
+    },
+    {
+     "id": "collar",
+     "parent": "torso",
+     "at": [0,"0.37 * tk",0.005],
+     "when": "bare",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.062 * sqrt(girth)","0.055 * sqrt(girth)"],"r":0.018,"seg":12,"rings":4},
+     "col": "top"
+    }
+   ]
+  },
+  "longsleeve": {"sleeves":"long","use":["collar"]},
+  "hoodie": {"use":["collar"]},
+  "sweater": {"sleeves":"long","use":["collar"]},
+  "polo": {
+   "use": ["collar"],
+   "rows": [
+    {
+     "sides": true,
+     "id": "flap",
+     "parent": "torso",
+     "at": ["s * 0.04","0.37 * tk","trz4 * 0.55"],
+     "shape": {"kind":"ellipsoid","c":[0,-0.015,0],"r":[0.045,0.028,0.03],"seg":8,"rings":4,"sq":0.5},
+     "col": "top2"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 2,
+     "kind": "button",
+     "part": "torso",
+     "at": [0,"(0.31 - i * 0.07) * tk","trz3 + 0.01"],
+     "w": 0.02,
+     "h": 0.02,
+     "col": "button"
+    }
+   ]
+  },
+  "dress_shirt": {
+   "sleeves": "long",
+   "use": ["collar"],
+   "rows": [
+    {
+     "sides": true,
+     "id": "flap",
+     "parent": "torso",
+     "at": ["s * 0.04","0.37 * tk","trz4 * 0.55"],
+     "shape": {"kind":"ellipsoid","c":[0,-0.015,0],"r":[0.045,0.028,0.03],"seg":8,"rings":4,"sq":0.5},
+     "col": "top2"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 4,
+     "kind": "button",
+     "part": "torso",
+     "at": [0,"(0.31 - i * 0.07) * tk","trz3 + 0.01"],
+     "w": 0.02,
+     "h": 0.02,
+     "col": "button"
+    }
+   ]
+  },
+  "jersey": {"use":["collar"]},
+  "track_top": {
+   "sleeves": "long",
+   "use": ["collar"],
+   "outer": {
+    "rows": [
+     {
+      "id": "jacket",
+      "parent": "torso",
+      "stage": "shell",
+      "shape": {
+       "kind": "lathe",
+       "c": [0,0,0],
+       "y": ["-0.07 * tk","0.04 * tk","0.17 * tk","0.29 * tk","0.36 * tk","0.42 * tk"],
+       "rx": [
+        "trx1 * 1.07 + 0.008",
+        "trx2 * 1.07 + 0.008",
+        "trx3 * 1.07 + 0.008",
+        "trx4 * 1.07 + 0.008",
+        "trx5 * 1.07",
+        "trx0 * 1.07 + 0.008"
+       ],
+       "rz": ["trz1 * 1.07 + 0.01","trz2 * 1.07 + 0.01","trz3 * 1.07 + 0.01","trz4 * 1.07 + 0.01","trz5 * 1.07","trz0 * 1.07 + 0.01"],
+       "seg": 12
+      },
+      "col": "outer"
+     }
+    ],
+    "marks": [
+     {
+      "id": "zip",
+      "kind": "zip",
+      "part": "torso",
+      "at": [0,"0.2 * tk","trz3 * 1.07 + 0.012"],
+      "w": 0.018,
+      "h": "0.26 * tk",
+      "col": "outer2"
+     }
+    ]
+   }
+  },
+  "tunic": {"sleeves":"long","use":["collar"]},
+  "blazer": {
+   "open": true,
+   "rows": [
+    {
+     "id": "jacket",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.07 * tk","0.04 * tk","0.17 * tk","0.29 * tk","0.36 * tk","0.42 * tk"],
+      "rx": [
+       "trx1 * 1.07 + 0.008",
+       "trx2 * 1.07 + 0.008",
+       "trx3 * 1.07 + 0.008",
+       "trx4 * 1.07 + 0.008",
+       "trx5 * 1.07",
+       "trx0 * 1.07 + 0.008"
+      ],
+      "rz": ["trz1 * 1.07 + 0.01","trz2 * 1.07 + 0.01","trz3 * 1.07 + 0.01","trz4 * 1.07 + 0.01","trz5 * 1.07","trz0 * 1.07 + 0.01"],
+      "seg": 12
+     },
+     "col": "outer"
+    },
+    {
+     "id": "front",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","fz"],
+     "vars": {"fz":"trz3 * 1.07 + 0.013"},
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["trx3 * 0.3","0.17 * tk",0.02],"seg":10,"rings":6,"sq":0.6,"taper":0.3},
+     "col": "top"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 3,
+     "kind": "button",
+     "part": "torso",
+     "vars": {"fz":"trz3 * 1.07 + 0.013"},
+     "at": ["trx3 * 0.42","(0.22 - i * 0.08) * tk","fz"],
+     "w": 0.022,
+     "h": 0.022,
+     "col": "button"
+    }
+   ]
+  },
+  "denim_jacket": {
+   "open": true,
+   "rows": [
+    {
+     "id": "jacket",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.07 * tk","0.04 * tk","0.17 * tk","0.29 * tk","0.36 * tk","0.42 * tk"],
+      "rx": [
+       "trx1 * 1.07 + 0.008",
+       "trx2 * 1.07 + 0.008",
+       "trx3 * 1.07 + 0.008",
+       "trx4 * 1.07 + 0.008",
+       "trx5 * 1.07",
+       "trx0 * 1.07 + 0.008"
+      ],
+      "rz": ["trz1 * 1.07 + 0.01","trz2 * 1.07 + 0.01","trz3 * 1.07 + 0.01","trz4 * 1.07 + 0.01","trz5 * 1.07","trz0 * 1.07 + 0.01"],
+      "seg": 12
+     },
+     "col": "outer"
+    },
+    {
+     "id": "front",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","fz"],
+     "vars": {"fz":"trz3 * 1.07 + 0.013"},
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["trx3 * 0.3","0.17 * tk",0.02],"seg":10,"rings":6,"sq":0.6,"taper":0.3},
+     "col": "top"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 3,
+     "kind": "button",
+     "part": "torso",
+     "vars": {"fz":"trz3 * 1.07 + 0.013"},
+     "at": ["trx3 * 0.42","(0.22 - i * 0.08) * tk","fz"],
+     "w": 0.022,
+     "h": 0.022,
+     "col": "button"
+    }
+   ]
+  },
+  "puffer": {
+   "puff": 1.3,
+   "rows": [
+    {
+     "id": "jacket",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.07 * tk","0.04 * tk","0.17 * tk","0.29 * tk","0.36 * tk","0.42 * tk"],
+      "rx": ["trx1 * 1.2 + 0.008","trx2 * 1.2 + 0.008","trx3 * 1.2 + 0.008","trx4 * 1.2 + 0.008","trx5 * 1.2","trx0 * 1.2 + 0.008"],
+      "rz": ["trz1 * 1.2 + 0.01","trz2 * 1.2 + 0.01","trz3 * 1.2 + 0.01","trz4 * 1.2 + 0.01","trz5 * 1.2","trz0 * 1.2 + 0.01"],
+      "seg": 12
+     },
+     "col": "outer"
+    }
+   ],
+   "stripe": {"part":"jacket","col":"outer2","every":0.05,"from":0.02}
+  },
+  "labcoat": {
+   "open": true,
+   "long": true,
+   "rows": [
+    {
+     "id": "coat",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.1 - thighL * 0.95",-0.08,"0.04 * tk","0.17 * tk","0.29 * tk","0.37 * tk","0.42 * tk"],
+      "rx": ["trx2 * 1.32 * hipK","trx1 * 1.25 + 0.03","trx2 + 0.012","trx3 + 0.012","trx4 + 0.012","trx5 + 0.01",0],
+      "rz": ["trz2 * 1.3","trz1 * 1.3 + 0.02","trz2 + 0.014","trz3 + 0.014","trz4 + 0.014","trz5 + 0.01",0],
+      "seg": 12
+     },
+     "col": "outer"
+    },
+    {
+     "id": "front",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","fz"],
+     "vars": {"fz":"trz3 * 1.02 + 0.013"},
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["trx3 * 0.3","0.17 * tk",0.02],"seg":10,"rings":6,"sq":0.6,"taper":0.3},
+     "col": "top"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 3,
+     "kind": "button",
+     "part": "torso",
+     "vars": {"fz":"trz3 * 1.02 + 0.013"},
+     "at": ["trx3 * 0.42","(0.22 - i * 0.08) * tk","fz"],
+     "w": 0.022,
+     "h": 0.022,
+     "col": "button"
+    },
+    {
+     "sides": true,
+     "id": "pocket",
+     "kind": "pocket",
+     "part": "torso",
+     "at": ["s * trx2 * 0.7","-0.02 * tk","trz2 + 0.02"],
+     "w": 0.07,
+     "h": 0.05,
+     "col": "outer2"
+    }
+   ]
+  },
+  "trench": {
+   "open": true,
+   "long": true,
+   "rows": [
+    {
+     "id": "coat",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.1 - thighL * 0.95",-0.08,"0.04 * tk","0.17 * tk","0.29 * tk","0.37 * tk","0.42 * tk"],
+      "rx": ["trx2 * 1.32 * hipK","trx1 * 1.25 + 0.03","trx2 + 0.012","trx3 + 0.012","trx4 + 0.012","trx5 + 0.01",0],
+      "rz": ["trz2 * 1.3","trz1 * 1.3 + 0.02","trz2 + 0.014","trz3 + 0.014","trz4 + 0.014","trz5 + 0.01",0],
+      "seg": 12
+     },
+     "col": "outer"
+    },
+    {
+     "id": "front",
+     "parent": "torso",
+     "at": [0,"0.2 * tk","fz"],
+     "vars": {"fz":"trz3 * 1.02 + 0.013"},
+     "shape": {"kind":"ellipsoid","c":[0,0,0],"r":["trx3 * 0.3","0.17 * tk",0.02],"seg":10,"rings":6,"sq":0.6,"taper":0.3},
+     "col": "top"
+    }
+   ],
+   "marks": [
+    {
+     "id": "button",
+     "repeat": 3,
+     "kind": "button",
+     "part": "torso",
+     "vars": {"fz":"trz3 * 1.02 + 0.013"},
+     "at": ["trx3 * 0.42","(0.22 - i * 0.08) * tk","fz"],
+     "w": 0.022,
+     "h": 0.022,
+     "col": "button"
+    }
+   ]
+  },
+  "apron": {
+   "covers": false,
+   "rows": [
+    {
+     "id": "apron",
+     "parent": "torso",
+     "stage": "shell",
+     "shape": {"kind":"ellipsoid","c":[0,"0.02 * tk","trz3 * 0.9"],"r":["trx3 * 0.8","0.28 * tk",0.035],"seg":10,"rings":6,"sq":0.8},
+     "col": "outer"
+    }
+   ]
+  },
+  "jeans": {"use":["belt"]},
+  "chinos": {"use":["belt"]},
+  "trousers": {"use":["belt"]},
+  "shorts": {"legs":"shorts","use":["belt"]},
+  "cargo": {
+   "use": ["belt"],
+   "marks": [
+    {
+     "sides": true,
+     "id": "pocket",
+     "kind": "pocket",
+     "part": "thigh$",
+     "at": [0,"-thighL * 0.55","legR * 1.02"],
+     "w": 0.06,
+     "h": 0.06,
+     "col": "pants2"
+    }
+   ]
+  },
+  "work_pants": {
+   "use": ["belt"],
+   "marks": [
+    {
+     "sides": true,
+     "id": "pocket",
+     "kind": "pocket",
+     "part": "thigh$",
+     "at": [0,"-thighL * 0.55","legR * 1.02"],
+     "w": 0.06,
+     "h": 0.06,
+     "col": "pants2"
+    }
+   ]
+  },
+  "skirt": {
+   "legs": "skirt",
+   "belt": false,
+   "rows": [
+    {
+     "id": "skirt",
+     "parent": "hips",
+     "at": [0,0.06,0],
+     "stage": "shell",
+     "shape": {
+      "kind": "lathe",
+      "c": [0,0,0],
+      "y": ["-0.26 * legK","-0.18 * legK",-0.02,0.04],
+      "rx": ["0.21 * girth * hipK","0.19 * girth * hipK","0.155 * girth * hipK",0],
+      "rz": ["0.17 * girth","0.15 * girth","0.115 * girth",0],
+      "seg": 12
+     },
+     "col": "pants"
+    }
+   ]
+  },
+  "leggings": {"fit":0.88,"belt":false},
+  "track_pants": {
+   "belt": false,
+   "rows": [
+    {
+     "sides": true,
+     "id": "track",
+     "rows": [
+      {
+       "id": "tstripe",
+       "parent": "thigh$",
+       "at": ["s * legR * 0.98",0,0],
+       "shape": {"kind":"capsule","a":[0,-0.01,0],"b":[0,"-thighL",0],"r0":0.013,"r1":0.013,"seg":6},
+       "col": "pants2"
+      },
+      {
+       "id": "sstripe",
+       "parent": "shin$",
+       "at": ["s * legR * 0.88",0,0],
+       "shape": {"kind":"capsule","a":[0,0,0],"b":[0,"-shinL * 0.9",0],"r0":0.012,"r1":0.012,"seg":6},
+       "col": "pants2"
+      }
+     ]
+    }
+   ]
+  },
+  "sneakers": {"sole":1},
+  "runners": {"sole":1},
+  "hightops": {"sole":1,"boot":true},
+  "boots": {"boot":true},
+  "oxfords": {"length":1.12},
+  "sandals": {"flat":true}
+ },
+ "pieces": {
+  "note": "CH-5b: rows and marks many garments share (a garment's use)",
+  "collar": {
+   "rows": [
+    {
+     "id": "collar",
+     "parent": "torso",
+     "at": [0,"0.37 * tk",0.005],
+     "when": "bare",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.062 * sqrt(girth)","0.055 * sqrt(girth)"],"r":0.018,"seg":12,"rings":4},
+     "col": "top2"
+    }
+   ]
+  },
+  "belt": {
+   "rows": [
+    {
+     "id": "belt",
+     "parent": "hips",
+     "at": [0,0.085,0],
+     "when": "belted",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["0.15 * girth * hipK","0.107 * girth"],"r":0.02,"seg":16,"rings":4},
+     "col": "belt"
+    }
+   ],
+   "marks": [
+    {
+     "id": "buckle",
+     "kind": "buckle",
+     "part": "hips",
+     "at": [0,0.085,"0.107 * girth + 0.02"],
+     "when": "belted",
+     "w": 0.04,
+     "h": 0.03,
+     "col": "button"
+    }
+   ]
+  }
+ },
+ "flair": {
+  "note": "CH-5b: the directions' flair (figures.js FIGURE_LOOKS says who wears what) as rows on the body's and the head's frames; their colours stay in code",
+  "scarf": {
+   "rows": [
+    {
+     "id": "fscarf",
+     "parent": "torso",
+     "at": [0,"0.36 * tk",0],
+     "when": "!neck",
+     "shape": {"kind":"torus","c":[0,0,0.005],"R":["0.11 * sqrt(girth)","0.095 * sqrt(girth)"],"r":0.048,"seg":14,"rings":7},
+     "col": "flair"
+    },
+    {
+     "id": "ftail",
+     "parent": "torso",
+     "at": [0.06,"0.35 * tk",-0.08],
+     "when": "!neck",
+     "shape": {
+      "kind": "tube",
+      "a": [0,0,0],
+      "ctrl": [0.12,-0.05,-0.16],
+      "b": [0.2,"-0.26 * tk",-0.2],
+      "r0": 0.05,
+      "r1": 0.035,
+      "flat": 0.35,
+      "n": [0,0,-1],
+      "seg": 8,
+      "steps": 7
+     },
+     "col": "flair"
+    }
+   ]
+  },
+  "cape": {
+   "rows": [
+    {
+     "id": "cape",
+     "parent": "torso",
+     "at": [0,"0.36 * tk","-trz4 - 0.02"],
+     "shape": {
+      "kind": "tube",
+      "a": [0,0,0],
+      "ctrl": [0,"-0.2 * tk",-0.1],
+      "b": [0,"-0.36 * tk - thighL * 0.85",-0.06],
+      "r0": "trx4 * 1.05",
+      "r1": "trx3 * 1.5",
+      "flat": 0.16,
+      "n": [0,0,-1],
+      "seg": 10,
+      "steps": 8
+     },
+     "col": "flair"
+    }
+   ]
+  },
+  "detail": {
+   "rows": [
+    {
+     "sides": true,
+     "id": "lapel",
+     "parent": "torso",
+     "when": "open",
+     "shape": {
+      "kind": "tube",
+      "a": ["s * trx4 * 0.3","0.38 * tk","trz4 * 1.05"],
+      "ctrl": ["s * trx3 * 0.62","0.3 * tk","trz3 * 1.18"],
+      "b": ["s * trx3 * 0.3","0.12 * tk","trz3 * 1.12"],
+      "r0": 0.035,
+      "r1": 0.012,
+      "flat": 0.3,
+      "n": [0,0,1],
+      "seg": 7,
+      "steps": 6
+     },
+     "col": "outer2"
+    },
+    {
+     "sides": true,
+     "id": "tail",
+     "parent": "hips",
+     "at": ["s * 0.07",0.02,"-0.11 * girth"],
+     "when": "long",
+     "shape": {
+      "kind": "tube",
+      "a": [0,0,0],
+      "ctrl": ["s * 0.05","-thighL * 0.5",-0.07],
+      "b": ["s * 0.09","-thighL * 1.05",-0.04],
+      "r0": 0.07,
+      "r1": 0.1,
+      "flat": 0.22,
+      "n": [0,0,-1],
+      "seg": 8,
+      "steps": 6
+     },
+     "col": "outer"
+    },
+    {
+     "sides": true,
+     "id": "pouch",
+     "parent": "hips",
+     "at": ["s * 0.14 * girth * hipK",0.05,"0.05 * girth"],
+     "when": "belt",
+     "chance": 0.7,
+     "salt": "200 + s",
+     "shape": {"kind":"ellipsoid","c":[0,-0.02,0],"r":[0.032,0.045,0.035],"seg":8,"rings":5,"sq":0.8},
+     "col": "leather"
+    },
+    {
+     "sides": true,
+     "id": "bcuff",
+     "parent": "shin$",
+     "at": [0,"-shinL * 0.55",0],
+     "when": "boot",
+     "shape": {"kind":"torus","c":[0,0,0],"R":["legR * 1.05","legR * 1.05"],"r":0.02,"seg":10,"rings":4},
+     "col": "sole"
+    }
+   ]
+  },
+  "goggles": {
+   "vars": {"gy":"c1 + hy * 0.42","gz":"c2 - hz * 0.06","gRx":"hx * 1.06","gRz":"hz * 1.1"},
+   "rows": [
+    {
+     "id": "gband",
+     "parent": "head",
+     "shape": {"kind":"torus","c":[0,"gy","gz"],"R":["gRx","gRz"],"r":0.02,"seg":18,"rings":4},
+     "col": "gear"
+    },
+    {
+     "sides": true,
+     "id": "goggle",
+     "parent": "head",
+     "shape": {
+      "kind": "ellipsoid",
+      "c": ["s * hx * 0.36","gy + 0.01","gz + gRz * 0.93"],
+      "r": ["0.055 * (hx / 0.31)","0.045 * (hx / 0.31)",0.032],
+      "seg": 12,
+      "rings": 6
+     },
+     "col": "lensG"
+    }
+   ]
+  },
+  "fur": {
+   "rows": [
+    {
+     "repeat": 9,
+     "id": "fur",
+     "parent": "torso",
+     "at": [0,"0.36 * tk",0],
+     "shape": {
+      "kind": "ellipsoid",
+      "c": ["sin(i / 9 * pi * 2) * 0.13 * sqrt(girth)",0,"cos(i / 9 * pi * 2) * 0.11 * sqrt(girth)"],
+      "r": [0.07,0.055,0.07],
+      "seg": 9,
+      "rings": 5
+     },
+     "col": "fur"
+    }
+   ]
+  },
+  "earrings": {
+   "rows": [
+    {
+     "sides": true,
+     "id": "ring",
+     "parent": "head",
+     "shape": {"kind":"ellipsoid","c":["s * hx * 0.98","c1 - hy * 0.28",0],"r":[0.02,0.028,0.02],"seg":8,"rings":5},
+     "col": "gold"
+    }
+   ]
+  }
+ },
+ "faces": {
+  "note": "Characters track CH-6: the face, painted as marks on the head (logic/figure-kit.js kitFaceMarks), in the portrait kit's styles (portraits.json). Sizes are metres on the usual head (k scales them to this one). eyes: each style's white (w, h); a heavy lid over it (lid: [y, w, h] as parts of the eye); how far apart (gap); the iris's size (iris); lash flicks (flicks: 0 to 3) and how long the outer one (wing); a shaded lid (shade), bags under (bags) and lines (lines, close-ups); whether its wearer blushes (blush). brows: each style's width (w) and thickness (t), how high it arches (arch), its own tilt (tilt: above 0 down to the nose, below 0 up), a peak, one side raised (uneven), a crease between (knit), tufts (bushy), flat. mouths: each mouth frame's marks (kind, x, y from the mouth's middle, w, h, shape oval, arc, cap or slant, dir, t, min, close, col). eyeFrames: how each frame of an eye (the portrait kit's) changes it: open (how much of it shows), scale, iris, shut, happy (shut, curved up), slant (an angry lid), flat (a bored lid), look (a glance). expressions: the portrait kit's seven, as figures show them: the eyes frame, the mouth frame (else the look's), the brows' tilt and lift (metres up), blush, and the talking frames. talk: the talking frames when an expression has none. moods: how a resting face holds its lids (lid: where the upper lid sits, as a part of the eye's height). rest: a look's resting mood, the first rule its wardrobe ids match. skin: a ramp of five shades (deep, shadow, base, light, shine) for each of the wardrobe's skin swatches, shadows warm and red, the deep a little lavender, lights yellow; a skin between swatches takes the nearest one's, shifted to it. wardrobe: the style or mouth frame each wardrobe id draws. defaults: the style when an id isn't in wardrobe.",
+  "eyes": {
+   "lashes": {"w":0.072,"h":0.048,"flicks":2,"blush":true},
+   "round": {"w":0.072,"h":0.048},
+   "almond": {"w":0.078,"h":0.04,"wing":1.4},
+   "sharp": {"w":0.078,"h":0.034,"wing":1.3},
+   "soft": {"w":0.07,"h":0.044,"flicks":0},
+   "small": {"w":0.062,"h":0.038,"iris":0.9},
+   "big": {"w":0.076,"h":0.06,"iris":1.08},
+   "wide_set": {"w":0.07,"h":0.046,"gap":1.16},
+   "hooded": {"w":0.072,"h":0.032,"lid":[0.3,1.08,0.55]},
+   "lashy": {"w":0.074,"h":0.046,"flicks":3},
+   "shadowed": {"w":0.074,"h":0.04,"shade":true},
+   "tired": {"w":0.072,"h":0.036,"bags":true},
+   "weary": {"w":0.072,"h":0.036,"bags":true,"lines":true}
+  },
+  "eyeFrames": {
+   "open": {},
+   "half": {"open":0.55},
+   "closed": {"shut":true},
+   "happy": {"happy":true},
+   "angry": {"open":0.8,"slant":1},
+   "wide": {"scale":1.12,"iris":0.82},
+   "narrow": {"open":0.4},
+   "bored": {"open":0.5,"flat":true},
+   "look_l": {"look":-1},
+   "look_r": {"look":1}
+  },
+  "brows": {
+   "soft": {"w":0.075,"t":0.016},
+   "arched": {"w":0.09,"t":0.02,"arch":0.012},
+   "angled": {"w":0.092,"t":0.022,"tilt":2},
+   "slanted": {"w":0.09,"t":0.02,"tilt":-1.5},
+   "flat": {"w":0.09,"t":0.022,"flat":true},
+   "peaked": {"w":0.09,"t":0.02,"peak":true},
+   "thick": {"w":0.09,"t":0.03},
+   "thin": {"w":0.085,"t":0.012},
+   "uneven": {"w":0.09,"t":0.02,"uneven":0.012},
+   "knit": {"w":0.088,"t":0.024,"tilt":1.5,"knit":true},
+   "bushy": {"w":0.094,"t":0.034,"bushy":true},
+   "sharp": {"w":0.088,"t":0.014,"tilt":-1}
+  },
+  "mouths": {
+   "closed": [
+    {"kind":"mouth","w":0.055,"h":0.012},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "neutral": [
+    {"kind":"mouth","w":0.06,"h":0.014},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "smile": [
+    {"kind":"mouth","w":0.085,"h":0.03,"shape":"arc"},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "grin": [
+    {"kind":"mouth","w":0.105,"h":0.05,"shape":"oval"},
+    {"kind":"teeth","y":0.014,"w":0.08,"h":0.018,"min":0.3}
+   ],
+   "o": [
+    {"kind":"mouth","w":0.042,"h":0.046,"shape":"oval"},
+    {"kind":"tongue","y":-0.012,"w":0.03,"h":0.016,"min":0.3,"shape":"oval","close":true}
+   ],
+   "shout": [
+    {"kind":"mouth","w":0.08,"h":0.07,"shape":"oval"},
+    {"kind":"teeth","y":0.024,"w":0.06,"h":0.014,"min":0.3},
+    {"kind":"tongue","y":-0.022,"w":0.048,"h":0.018,"min":0.3,"shape":"oval","close":true}
+   ],
+   "talk_a": [
+    {"kind":"mouth","w":0.06,"h":0.03,"shape":"oval"},
+    {"kind":"tongue","y":-0.008,"w":0.034,"h":0.012,"min":0.3,"shape":"oval","close":true}
+   ],
+   "talk_b": [
+    {"kind":"mouth","w":0.072,"h":0.046,"shape":"oval"},
+    {"kind":"teeth","y":0.014,"w":0.052,"h":0.012,"min":0.3}
+   ],
+   "talk_c": [
+    {"kind":"mouth","w":0.044,"h":0.04,"shape":"oval"}
+   ],
+   "angry": [
+    {"kind":"mouth","w":0.09,"h":0.036,"shape":"oval"},
+    {"kind":"teeth","w":0.072,"h":0.016,"min":0.3}
+   ],
+   "frown": [
+    {"kind":"mouth","w":0.075,"h":0.026,"shape":"cap"},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "kiss": [
+    {"kind":"mouth","w":0.03,"h":0.03,"shape":"oval"},
+    {"kind":"lip","y":-0.022,"w":0.036,"h":0.012,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "wince": [
+    {"kind":"mouth","w":0.08,"h":0.026},
+    {"kind":"teeth","w":0.066,"h":0.012,"min":0.3}
+   ],
+   "smirk": [
+    {"kind":"mouth","x":0.016,"w":0.07,"h":0.024,"shape":"slant","dir":-1,"t":0.014},
+    {"kind":"lip","y":-0.03,"w":0.05,"h":0.014,"col":"lip","close":true,"min":0.35,"shape":"oval"}
+   ],
+   "tongue": [
+    {"kind":"mouth","w":0.085,"h":0.03,"shape":"arc"},
+    {"kind":"tongue","y":-0.02,"w":0.03,"h":0.022,"min":0.3,"shape":"oval"}
+   ]
+  },
+  "expressions": {
+   "idle": {"eyes":"open"},
+   "happy": {"eyes":"happy","mouth":"smile","lift":0.006,"blush":true,"talk":["smile","talk_b","talk_c"]},
+   "sad": {"eyes":"bored","mouth":"frown","tilt":-2},
+   "angry": {"eyes":"angry","mouth":"angry","tilt":2,"lift":-0.004},
+   "surprised": {"eyes":"wide","mouth":"o","lift":0.012},
+   "hurt": {"eyes":"narrow","mouth":"wince","tilt":-2,"lift":-0.004},
+   "smug": {"eyes":"half","mouth":"smirk","tilt":1}
+  },
+  "talk": ["talk_a","talk_b","talk_c"],
+  "moods": {
+   "calm": {"lid":0.46},
+   "glad": {"lid":0.52}
+  },
+  "rest": [
+   {"mouth":["mouth_grin","mouth_open"],"mood":"glad"}
+  ],
+  "wardrobe": {
+   "eyes_round": "round",
+   "eyes_wide": "big",
+   "eyes_sharp": "sharp",
+   "eyes_sleepy": "hooded",
+   "eyes_lashes": "lashes",
+   "brows_soft": "soft",
+   "brows_straight": "flat",
+   "brows_thick": "thick",
+   "brows_arched": "arched",
+   "brows_stern": "angled",
+   "mouth_smile": "smile",
+   "mouth_neutral": "neutral",
+   "mouth_grin": "grin",
+   "mouth_open": "o",
+   "mouth_smirk": "smirk"
+  },
+  "defaults": {"eyes":"round","brows":"flat","mouth":"smile"},
+  "skin": [
+   {"base":"#F7D9C4","ramp":["#8D6E6D","#C5A192","#F7D9C4","#F9DBBF","#FBE3CA"]},
+   {"base":"#F0C3A0","ramp":["#8A645D","#C09279","#F0C3A0","#F4CAA4","#F7D7B6"]},
+   {"base":"#E6B08A","ramp":["#855C54","#B9856A","#E6B08A","#ECBC93","#F1CDAA"]},
+   {"base":"#D49A6E","ramp":["#7D5348","#AC7657","#D49A6E","#DEAB7E","#E7C19B"]},
+   {"base":"#B97D58","ramp":["#72463E","#9A6247","#B97D58","#CA956D","#D8B18F"]},
+   {"base":"#9A6446","ramp":["#643B36","#85513B","#9A6446","#B0754F","#C1895F"]},
+   {"base":"#7A4A34","ramp":["#56302E","#6F3F2F","#7A4A34","#9D6543","#B17D56"]},
+   {"base":"#5A3628","ramp":["#492729","#593126","#5A3628","#8A5A3C","#A27451"]}
+  ]
+ }
+}

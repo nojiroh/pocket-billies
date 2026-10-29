@@ -17,6 +17,27 @@
                                                     # one sheet at 4 screen pixels a pixel (figure-sheet-*.png), no shots;
                                                     # with --density (a list: 16,32,48 gives a sheet each), --steps,
                                                     # --outline, --style and --tilt=DEGREES (26: Normal)
+    python3 tools/look-people.py --cast=chosen,chad,kappi  # CH-3b: people as their figures (the figure kit), a row
+                                                    # each: today's picture, then the figure from the front, three
+                                                    # quarters, the side and the back, walking and cheering, at 4
+                                                    # screen pixels a pixel (figure-cast-*.png), no shots; --cast=npcs
+                                                    # for everyone in game/data/people, --cast=folk for 12 townsfolk,
+                                                    # 'me' for you; with --density, --tilt and --outline
+    python3 tools/look-people.py --styles=toy,hd2d,cel,paint,comic,facet --cast=me,chosen,marina,vault
+                                                    # CH-3b: the directions to choose from (figures.js FIGURE_LOOKS):
+                                                    # a panel each, the people three quarters on at the direction's
+                                                    # density and proportions, and a portrait (figure-styles-*.png)
+    python3 tools/look-people.py --styles=gnight --player=girl --cast=me
+                                                    # you as the girl (or the boy) preset, not the save's look
+    python3 tools/look-people.py --faces[=chosen]    # CH-6: one person's face in every eye style, brow style,
+                                                    # expression and talking frame (figureKit.json faces), up close
+                                                    # (160 px a metre) and at walking size (48), at 4 screen pixels a
+                                                    # pixel (figure-faces-*.png), no shots
+    python3 tools/look-people.py --moves[=chosen]   # CH-3c: one person in every build (figureKit.json builds), a row a
+                                                    # build: the walk's 8 frames, the jog's 6, the sprint's 4, the step
+                                                    # off and the settle, side on at the Normal tilt (48 px a metre),
+                                                    # at 3 screen pixels a pixel
+                                                    # (figure-moves-*.png), no shots
     python3 tools/look-people.py --figures --battle # CH-3: a trainer battle in its intro, the trainers on the stage, you
                                                     # (and with --folk=1 the rival) as figures at 64 px a metre
                                                     # (battle-*.png); --no-shots for the battle (or --lose) alone
@@ -55,6 +76,11 @@ LOSE = '--lose' in ARGS
 BATTLE = '--battle' in ARGS
 NO_SHOTS = '--no-shots' in ARGS
 SHEET = next((a.split('=', 1)[1] if '=' in a else 'mannequin' for a in ARGS if a.startswith('--sheet')), None)
+CAST = arg('cast')
+STYLES = arg('styles')
+FACES = next((a.split('=', 1)[1] if '=' in a else 'chosen' for a in ARGS if a.startswith('--faces')), None)
+MOVES = next((a.split('=', 1)[1] if '=' in a else 'chosen' for a in ARGS if a.startswith('--moves')), None)
+PLAYER = arg('player')  # boy or girl: you in that preset (people/<id>.json's look) instead of the save's look
 TILT = float(arg('tilt', 26))
 FIG_DIALS = {k: v for k, v in (('density', arg('density')), ('yawSteps', arg('steps')), ('outline', arg('outline')),
                                ('figure', arg('figure')), ('style', arg('style')), ('folk', arg('folk'))) if v is not None}
@@ -109,6 +135,228 @@ SHEET_JS = """((name, tilt, dials) => {const Fig=figureDef(name); if(!Fig) retur
    const im=bakeFigure(Fig,clip,f,V,ppm,outline,dials.style||'pixel'); if(!im) return 'loading'; row.push(im.toDataURL('image/png'))}
   rows.push(row)}
  return {rows, ppm, steps, report: figureReport()}})"""
+
+
+# CH-3b: each person's figure (figures.js figureFor, the figure kit) baked as the game does: today's picture first, then
+# the figure turned to the front, three quarters, the side and the back standing, walking and cheering
+CAST_JS = """((whos, tilt, dials) => {const ppm=dials.density||engineSetting('people','density')||48, steps=16, outline=dials.outline!==false, rows=[];
+ const T=tilt*Math.PI/180, view=h=>figureView(h,0,T,steps);
+ const cols=[[Math.PI,'idle',0],[Math.PI*0.75,'idle',0],[Math.PI*0.5,'idle',0],[0,'idle',0],[Math.PI*0.75,'walk',2],[Math.PI,'cheer',1]];
+ for (const who of whos){const name=figureFor(who), Fig=figureDef(name); if(!Fig) return 'loading';
+  const fr=personWalkFrames(who), now=fr&&fr.down&&fr.down[0], row=[now&&now.toDataURL?now.toDataURL('image/png'):null];
+  for (const [h,clip,f] of cols){const im=bakeFigure(Fig,clip,f,view(h),ppm,outline,'pixel'); if(!im) return 'loading'; row.push(im.toDataURL('image/png'))}
+  const pt=figurePortrait(who); if(!pt) return 'loading';
+  rows.push({who, name, kit: Fig.F.kit||null, height: Math.round(Fig.F.height*100)/100, row, portrait: pt.toDataURL('image/png')})}
+ return {rows, ppm, report: figureReport()}})"""
+
+
+STYLES_JS = """((looks, whos, tilt) => {const T=tilt*Math.PI/180, out=[];
+ for (const L of looks){const lk=FIGURE_LOOKS[L], row=[];
+  for (const who of whos){const Fig=figureDef('look:'+who+'@'+L); if(!Fig) return 'loading';
+   const im=bakeFigure(Fig,'idle',0,figureView(Math.PI*0.82,0,T,16),lk.ppm,true,L); if(!im) return 'loading';
+   row.push(im.toDataURL('image/png'))}
+  const bk=bakeFigure(figureDef('look:'+whos[0]+'@'+L),'walk',2,figureView(Math.PI*0.2,0,T,16),lk.ppm,true,L); if(!bk) return 'loading';
+  row.push(bk.toDataURL('image/png'));
+  const pt=figurePortrait(whos[0],0,0.9,L); if(!pt) return 'loading';
+  const pts=[]; for (const who of whos){const q=figurePortrait(who,0,0.9,L); if(!q) return 'loading'; pts.push(q.toDataURL('image/png'))}
+  out.push({look:L, ppm:lk.ppm, row, portrait:pt.toDataURL('image/png'), portraits:pts})}
+ return out})"""
+
+
+FACES_JS = """((who, rows, style) => {const L=lookOf(who), D=GAMEDATA, base=(PEOPLE[who]&&PEOPLE[who].figure)||{}, out=[];
+ for (const [label, fig, face] of rows){const row=[];
+  for (const [ppm, turn] of [[160,1],[160,0.85],[48,1]]){
+   const im=figurePreview({who, look:L, items:D.wardrobe.items, kit:D.figureKit, figure:{...base,...fig}, face, rev:1, style, ppm, turn, crop:'bust'});
+   if(!im) return 'loading'; row.push(im.toDataURL('image/png'))}
+  out.push({label, row})}
+ return out})"""
+
+
+# CH-3c: one person in each build, every frame of the walk, jog and sprint, the step off and the settle, side on
+MOVES_JS = """((who, tilt, ppm) => {const L=lookOf(who), D=GAMEDATA, base=(PEOPLE[who]&&PEOPLE[who].figure)||{}, out=[];
+ const clips=[['walk',8],['jog',6],['sprint',4],['start',1],['stop',2]];
+ Object.keys(D.figureKit.builds).forEach((build, b)=>{const row=[];
+  for (const [clip,n] of clips) for (let f=0;f<n;f++){
+   const im=figurePreview({who, look:L, items:D.wardrobe.items, kit:D.figureKit, figure:{...base,build}, rev:100+b, style:'pixel', ppm, turn:0.5, tilt:tilt*Math.PI/180, clip, frame:f});
+   if(!im) return; row.push([clip, im.toDataURL('image/png')])}
+  out.push({build, row})});
+ return out.length===Object.keys(D.figureKit.builds).length&&out.every(r=>r.row.length===21)?out:'loading'})"""
+
+
+def moves(pg, t0):
+    """the --moves sheet: a row a build, each frame of each gait"""
+    import base64, io
+    from PIL import Image, ImageDraw
+    ppm = int(FIG_DIALS.get('density') or 48)
+    for _ in range(240):
+        r = pg.evaluate(f'{MOVES_JS}({json.dumps(MOVES)},{TILT},{ppm})')
+        if r != 'loading': break
+        pg.wait_for_timeout(500)
+    if not r or r == 'loading': raise Exception(f'no moves for {MOVES}')
+    S, lab = 3, 14
+    dec = lambda u: Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1])))
+    rows = [(R, [(c, dec(u)) for c, u in R['row']]) for R in r]
+    cw = max(i.width for _, ims in rows for _, i in ims) + 2
+    ch = max(i.height for _, ims in rows for _, i in ims) + 2
+    out = Image.new('RGBA', (cw * 21 * S, (ch * S + lab) * len(rows) + lab), (196, 214, 170, 255))
+    d = ImageDraw.Draw(out)
+    x = 0
+    for c, n in (('walk', 8), ('jog', 6), ('sprint', 4), ('start', 1), ('stop', 2)):
+        d.text((x * cw * S + 4, 1), c, fill=(36, 25, 54, 255))
+        x += n
+    for y, (R, ims) in enumerate(rows):
+        oy = lab + y * (ch * S + lab)
+        d.text((4, oy + 1), R['build'], fill=(36, 25, 54, 255))
+        for x, (_, i) in enumerate(ims):
+            out.alpha_composite(i.resize((i.width * S, i.height * S), Image.NEAREST), (x * cw * S + (cw * S - i.width * S) // 2, oy + lab + (ch * S - i.height * S)))
+    name = f'figure-moves-{MOVES}-{ppm}ppm-{int(TILT)}deg.png'
+    out.save(OUT / name)
+    print(f'[{time.time() - t0:5.0f}s] {name}: {len(rows)} builds', flush=True)
+    return {'shot': name, 'builds': [R['build'] for R, _ in rows]}
+
+
+def faces(pg, t0):
+    """the --faces sheet: a row a face (each eye style, brow style, expression and talking frame), up close facing and
+    three quarters on, then at walking size"""
+    import base64, io
+    from PIL import Image, ImageDraw
+    K = pg.evaluate('GAMEDATA.figureKit.faces')
+    rows = [[f'eyes {e}', {'eyes': e}, None] for e in K['eyes']]
+    rows += [[f'brows {b}', {'brows': b}, None] for b in K['brows']]
+    rows += [[f'face {x}', {}, {'expr': x}] for x in (K.get('expressions') or {})]
+    rows += [[f'mouth {m}', {}, {'mouth': m}] for m in K['mouths']]
+    style = pg.evaluate('figureStyle()')
+    for _ in range(120):
+        r = pg.evaluate(f'{FACES_JS}({json.dumps(FACES)},{json.dumps(rows)},{json.dumps(style)})')
+        if r != 'loading': break
+        pg.wait_for_timeout(500)
+    if not r or r == 'loading': raise Exception(f'no faces for {FACES}')
+    dec = lambda u: Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1])))
+    S = [2, 2, 4]
+    ims = [[dec(u) for u in R['row']] for R in r]
+    cw = [max(i[c].width for i in ims) * S[c] + 16 for c in range(3)]
+    ch = max(max(i[c].height * S[c] for c in range(3)) for i in ims) + 18
+    per = 2
+    n = (len(ims) + per - 1) // per
+    out = Image.new('RGBA', (sum(cw) * per + 20, ch * n), (228, 222, 206, 255))
+    d = ImageDraw.Draw(out)
+    for k, (R, row) in enumerate(zip(r, ims)):
+        ox, oy = (k // n) * (sum(cw) + 20), (k % n) * ch
+        d.text((ox + 6, oy + 2), R['label'], fill=(36, 25, 54, 255))
+        x = ox
+        for c, im in enumerate(row):
+            out.alpha_composite(im.resize((im.width * S[c], im.height * S[c]), Image.NEAREST), (x + 8, oy + ch - im.height * S[c] - 2))
+            x += cw[c]
+    name = f'figure-faces-{FACES}.png'
+    out.save(OUT / name)
+    print(f"[{time.time() - t0:5.0f}s] {name}: {len(r)} faces", flush=True)
+    return {'shot': name, 'faces': [R['label'] for R in r]}
+
+
+def styles(pg, t0):
+    """the --styles sheet: a panel a direction, its people scaled so a metre is as tall on the sheet whatever the
+    density (a coarser direction shows bigger pixels), and the first person's portrait in it"""
+    import base64, io
+    from PIL import Image, ImageDraw
+    looks = STYLES.split(',')
+    whos = (CAST or 'me,chosen,marina,vault').split(',')
+    if PLAYER:
+        pg.evaluate("p => { saveData.avatar = JSON.parse(JSON.stringify(PEOPLE[p].look)); for (const k of Object.keys(FIGURE_DEFS)) if (k.startsWith('look:me')) delete FIGURE_DEFS[k]; return 0 }", PLAYER)
+    for _ in range(60):
+        r = pg.evaluate(f'{STYLES_JS}({json.dumps(looks)},{json.dumps(whos)},{TILT})')
+        if r != 'loading': break
+        pg.wait_for_timeout(500)
+    if not r or r == 'loading': raise Exception(f'no styles {STYLES}')
+    dec = lambda u: Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1])))
+    PX_M = 200  # sheet pixels a metre
+    panels = []
+    for R in r:
+        k = max(1, round(PX_M / R['ppm']))
+        figs = [dec(u) for u in R['row']]
+        figs = [f.resize((f.width * k, f.height * k), Image.NEAREST) for f in figs]
+        pt = dec(R['portrait'])
+        pt = pt.resize((pt.width * 2, pt.height * 2), Image.NEAREST)
+        w = sum(f.width for f in figs) + pt.width + 40 * (len(figs) + 1)
+        h = max(max(f.height for f in figs), pt.height) + 60
+        P = Image.new('RGBA', (w, h), (214, 222, 196, 255))
+        d = ImageDraw.Draw(P)
+        d.text((12, 8), f"{R['look']}  ({R['ppm']} px a metre)", fill=(36, 25, 54, 255))
+        x = 20
+        for f in figs:
+            P.alpha_composite(f, (x, h - f.height - 10)); x += f.width + 40
+        P.alpha_composite(pt, (x, h - pt.height - 10))
+        panels.append(P)
+    W = max(p.width for p in panels)
+    out = Image.new('RGBA', (W, sum(p.height + 12 for p in panels)), (240, 236, 226, 255))
+    y = 0
+    for p in panels:
+        out.alpha_composite(p, (0, y)); y += p.height + 12
+    name = f"figure-styles-{STYLES.replace(',', '-')}.png"
+    out.save(OUT / name)
+    # every person's portrait in each direction, a row a direction, at 2 screen pixels a pixel
+    for R in r:
+        ps = [dec(u) for u in R['portraits']]
+        ps = [p.resize((p.width * 2, p.height * 2), Image.NEAREST) for p in ps]
+        sheet = Image.new('RGBA', (sum(p.width + 20 for p in ps) + 20, max(p.height for p in ps) + 40), (228, 222, 206, 255))
+        x = 20
+        for p in ps:
+            sheet.alpha_composite(p, (x, sheet.height - p.height - 10)); x += p.width + 20
+        sheet.save(OUT / f"figure-portraits-{R['look']}.png")
+    print(f"[{time.time() - t0:5.0f}s] {name}: {len(panels)} directions", flush=True)
+    return {'shot': name, 'looks': looks, 'people': whos}
+
+
+def cast(pg, t0):
+    """the --cast sheet: a row a person, laid out and enlarged here (today's picture shrunk to the same pixels a metre)"""
+    import base64, io
+    from PIL import Image, ImageDraw
+    dials = dial_values()
+    whos = CAST.split(',')
+    if CAST == 'npcs': whos = pg.evaluate('Object.keys(PEOPLE).sort()')
+    if CAST == 'folk': whos = [f'folk:{s}' for s in (11, 23, 37, 41, 58, 64, 77, 89, 93, 105, 118, 131)]
+    for _ in range(60):
+        r = pg.evaluate(f'{CAST_JS}({json.dumps(whos)},{TILT},{json.dumps(dials)})')
+        if r != 'loading': break
+        pg.wait_for_timeout(500)
+    if not r or r == 'loading': raise Exception(f'no figures for {CAST}')
+    S, ppm = 4, r['ppm']
+    dec = lambda u: Image.open(io.BytesIO(base64.b64decode(u.split(',', 1)[1]))) if u else None
+    rows = []
+    for R in r['rows']:
+        ims = [dec(u) for u in R['row']]
+        # today's picture is drawn at its own pixels a metre (wardrobe.json ppm): shrunk to the figures' for the row
+        if ims[0] is not None:
+            k = ppm / 66.5
+            ims[0] = ims[0].resize((max(1, round(ims[0].width * k)), max(1, round(ims[0].height * k))), Image.NEAREST)
+        rows.append((R, ims))
+    cw = max(i.width for _, ims in rows for i in ims if i) + 2
+    ch = max(i.height for _, ims in rows for i in ims if i) + 2
+    lab = 14
+    out = Image.new('RGBA', (cw * 7 * S, (ch * S + lab) * len(rows)), (196, 214, 170, 255))
+    d = ImageDraw.Draw(out)
+    for y, (R, ims) in enumerate(rows):
+        oy = y * (ch * S + lab)
+        kit = R['kit'] or {}
+        d.text((4, oy + 1), f"{R['who']}  {kit.get('head', '')} {kit.get('build', '')}  {R['height']} m", fill=(36, 25, 54, 255))
+        for x, i in enumerate(ims):
+            if i: out.alpha_composite(i.resize((i.width * S, i.height * S), Image.NEAREST), (x * cw * S + (cw * S - i.width * S) // 2, oy + lab + (ch * S - i.height * S)))
+    name = f"figure-cast-{CAST.replace(',', '-').replace(':', '')[:60]}-{ppm}ppm-{int(TILT)}deg.png"
+    out.save(OUT / name)
+    # CH-3b: the portraits (figures.js figurePortrait: head and shoulders at 160 px a metre), four to a row, at 2 screen
+    # pixels a pixel
+    pts = [(R, dec(R['portrait'])) for R in r['rows']]
+    pw = max(p.width for _, p in pts) * 2 + 16
+    ph = max(p.height for _, p in pts) * 2 + 16 + lab * 2
+    per = 4
+    sheet2 = Image.new('RGBA', (pw * per, ph * ((len(pts) + per - 1) // per)), (228, 222, 206, 255))
+    d2 = ImageDraw.Draw(sheet2)
+    for i, (R, p) in enumerate(pts):
+        ox, oy = (i % per) * pw, (i // per) * ph
+        d2.text((ox + 8, oy + 4), R['who'], fill=(36, 25, 54, 255))
+        sheet2.alpha_composite(p.resize((p.width * 2, p.height * 2), Image.NEAREST), (ox + 8, oy + lab * 2))
+    sheet2.save(OUT / name.replace('figure-cast-', 'figure-portraits-'))
+    print(f"[{time.time() - t0:5.0f}s] {name}: {len(rows)} people, the baker {r['report']}", flush=True)
+    return {'shot': name, 'people': [{k: R[k] for k in ('who', 'name', 'kit', 'height')} for R, _ in rows], 'figures': r['report']}
 
 
 def dial_values():
@@ -225,6 +473,30 @@ def main():
         shots.settle(pg, 4)
         # you face the camera (a plain word: logic/person-view.js faceWord), as a fresh view stands you
         pg.evaluate("(()=>{const P=walkView.pl;if(typeof faceWord==='function')faceWord(P,'down');else P.dir='down';return 0})()")
+        if STYLES:
+            rows.append(styles(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'styles': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
+        if MOVES:
+            rows.append(moves(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'moves': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
+        if FACES:
+            rows.append(faces(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'faces': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
+        if CAST:
+            rows.append(cast(pg, t0))
+            ctx.close(); b.close(); srv.shutdown()
+            (OUT / 'notes.json').write_text(json.dumps({'cast': rows, 'errors': errs[:6]}, indent=1))
+            print('errors:', errs[:6])
+            return
         if SHEET:
             for d in (FIG_DIALS.get('density') or '32').split(','):
                 rows.append(sheet(pg, t0, int(d)))

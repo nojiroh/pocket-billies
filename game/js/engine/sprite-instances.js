@@ -12,7 +12,7 @@
    (the picture's own axes; unused when cam is set: it faces the camera), fixed, noRecv, flipN, lk (a prop's look:
    hsv, wear, tint, mask; null for none), fol (foliage, snow), self (self-shade amount and way), fade, emit, lit, rim,
    shade, mt (a SURFACE_MATERIALS entry). Round 3's shadow sprites can use the same buffer: their program reads only
-   the base, the offset, the axes, the sway and the UV (locations 1-4). */
+   the base, the offset, the axes, the sway and the UV (locations 1-4), and CH-4's cell (12). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { SURFACE_MATERIALS, gpuBuffer, gpuSized, gpuState, gpuVao } from './webgl.js';
@@ -32,6 +32,7 @@ expose({
   halfBits: [() => halfBits, v => (halfBits = v)],
   halfValue: [() => halfValue, v => (halfValue = v)],
   materialIndex: [() => materialIndex, v => (materialIndex = v)],
+  packCell: [() => packCell, v => (packCell = v)],
   packShadowInstance: [() => packShadowInstance, v => (packShadowInstance = v)],
   packSpriteInstance: [() => packSpriteInstance, v => (packSpriteInstance = v)],
   packSpriteInstances: [() => packSpriteInstances, v => (packSpriteInstances = v)],
@@ -46,7 +47,8 @@ expose({
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* the attributes after the corner (location 0, per vertex): [location, name, components, format, byte offset].
-   f32: float; f16: half float; u8n: a byte read as 0-1; u8i: a byte read as an integer (vertexAttribIPointer) */
+   f32: float; f16: half float; u8n: a byte read as 0-1; u8i: a byte read as an integer (vertexAttribIPointer); u16n:
+   16 bits read as 0-1 */
 const SPRITE_INSTANCE_LAYOUT = [
   [1, 'base', 3, 'f32', 0],
   [2, 'offset', 4, 'f32', 12],
@@ -59,10 +61,12 @@ const SPRITE_INSTANCE_LAYOUT = [
   [9, 'selfFade', 4, 'f16', 72] /* self-shade amount, way x, way y, fade */,
   [10, 'light', 4, 'f16', 80] /* emit, lit, rim, shade */,
   [11, 'flags', 4, 'u8i', 88] /* flags, material, spare, spare */,
+  [12, 'cell', 4, 'u16n', 92] /* CH-4: the picture's rect of its texture: u, v, width, height shown */,
 ];
-export const SPRITE_INSTANCE_STRIDE = 92;
+export const SPRITE_INSTANCE_STRIDE = 100;
 /* the flags byte */
-const SPRITE_FLAG = { fixed: 1, noRecv: 2, flipN: 4, flip: 8, cam: 16 };
+/* CH-4: fig, a figure's cell of the live atlas (lit by walk-shaders.js FIGURE_SPRITE_GLSL) */
+const SPRITE_FLAG = { fixed: 1, noRecv: 2, flipN: 4, flip: 8, cam: 16, fig: 32 };
 /* the materials by index (the instanced programs' uniform table holds them in this order) */
 const SPRITE_MATERIALS = Object.keys(SURFACE_MATERIALS);
 const MATERIAL_INDEX = new Map();
@@ -175,10 +179,16 @@ export function packSpriteInstance(i, r, cam) {
     (r.noRecv ? SPRITE_FLAG.noRecv : 0) |
     (r.flipN < 0 ? SPRITE_FLAG.flipN : 0) |
     (r.flip < 0 ? SPRITE_FLAG.flip : 0) |
-    (cam ? SPRITE_FLAG.cam : 0);
+    (cam ? SPRITE_FLAG.cam : 0) |
+    (r.fig ? SPRITE_FLAG.fig : 0);
   b[o + 89] = materialIndex(r.mt);
   b[o + 90] = 0;
   b[o + 91] = 0;
+  packCell(h, o2 + 46, r.uv);
+}
+/* CH-4: a rect of 0-1 numbers as four 16-bit units (the atlas's cells: a 2048 px atlas to a 32nd of a pixel) */
+function packCell(h, at, uv) {
+  for (let k = 0; k < 4; k++) h[at + k] = Math.round(Math.max(0, Math.min(1, uv[k])) * 65535);
 }
 /* phase 20 R3 (E9): a shadow map's quad into instance i: only what the shadow program reads (the base, the offset
    and size, its right along the ground as the axes' first half, the shear and the share shown, the flip flag); the
@@ -202,6 +212,7 @@ export function packShadowInstance(i, q) {
   h[o2 + 19] = halfBits(q.shear);
   h[o2 + 21] = halfBits(q.shown);
   B.u8[o + 88] = q.flip < 0 ? SPRITE_FLAG.flip : 0;
+  packCell(h, o2 + 46, q.uv);
 }
 /* records [from, to) into instances 0...; cam(r) says whether a record faces the camera. The byte count */
 function packSpriteInstances(records, from, to, cam) {
@@ -247,7 +258,9 @@ function unpackSpriteInstance(i) {
     flipN: fl & SPRITE_FLAG.flipN ? -1 : 1,
     flip: fl & SPRITE_FLAG.flip ? -1 : 1,
     cam: !!(fl & SPRITE_FLAG.cam),
+    fig: fl & SPRITE_FLAG.fig ? 1 : 0,
     mat: SPRITE_MATERIALS[B.u8[o + 89]],
+    cell: [0, 1, 2, 3].map(k => B.u16[o2 + 46 + k] / 65535),
   };
 }
 /* ---------- the buffer (phase 20 E7) ---------- */
@@ -303,8 +316,14 @@ export function bindSpriteInstances(first) {
       gl.vertexAttribPointer(
         loc,
         n,
-        fmt === 'f32' ? gl.FLOAT : fmt === 'f16' ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE,
-        fmt === 'u8n',
+        fmt === 'f32'
+          ? gl.FLOAT
+          : fmt === 'f16'
+            ? gl.HALF_FLOAT
+            : fmt === 'u16n'
+              ? gl.UNSIGNED_SHORT
+              : gl.UNSIGNED_BYTE,
+        fmt === 'u8n' || fmt === 'u16n',
         SPRITE_INSTANCE_STRIDE,
         o + off
       );

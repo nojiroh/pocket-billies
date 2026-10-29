@@ -960,6 +960,8 @@ export function setTextureParams(o = {}) {
 /* an image or canvas as a texture. Small or far sprites use mipmaps (no shimmer); a soft normal map ("pillow" shading
    from the outline) is made in the background, a few per frame, so a new scene never freezes */
 export function imageTexture(im, o = {}) {
+  /* CH-4: a figure's cell of the live atlas: the atlas's own textures (figure-atlas.js), its rect in im.uv */
+  if (im && im.atlasT) return im.atlasT;
   if (!imageReady(im)) return null;
   const v = typeof artCacheVersion === 'function' ? artCacheVersion() : 0,
     dv = im.__v;
@@ -1320,7 +1322,9 @@ export function makeNormalMap(im, w, h, old, bleed = null) {
   }
   return t;
 }
-/* ---------- render targets ---------- */
+/* ---------- render targets ----------
+   o: depth (a depth texture as well), depthOnly, hdr (half floats where the device can), and CH-4's colors: that many
+   more RGBA8 colour textures (cs, COLOR_ATTACHMENT1...; drawn to together), nearest: no smoothing when read */
 export function renderTarget(name, w, h, o = {}) {
   const gl = gpuState.gl,
     F = gpuState.fb[name];
@@ -1329,11 +1333,14 @@ export function renderTarget(name, w, h, o = {}) {
     gpuFree(F.f);
     gpuFree(F.c);
     gpuFree(F.d);
+    for (const t of F.cs || []) gpuFree(t);
   }
   const f = gpuFramebuffer('targets');
   gl.bindFramebuffer(gl.FRAMEBUFFER, f);
   let c = null,
     d = null;
+  /** @type {WebGLTexture[]} */
+  const cs = [];
   if (!o.depthOnly) {
     const hdr = o.hdr && gpuState.hdr;
     c = gpuTexture('targets', w * h * (hdr ? 8 : 4));
@@ -1349,8 +1356,17 @@ export function renderTarget(name, w, h, o = {}) {
       hdr ? gl.HALF_FLOAT : gl.UNSIGNED_BYTE,
       null
     );
-    setTextureParams({ linear: true });
+    setTextureParams({ linear: !o.nearest });
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, c, 0);
+    for (let i = 1; i <= (o.colors || 0); i++) {
+      const t = gpuTexture('targets', w * h * 4);
+      gl.bindTexture(gl.TEXTURE_2D, t);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+      setTextureParams({ linear: !o.nearest });
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0 + i, gl.TEXTURE_2D, t, 0);
+      cs.push(t);
+    }
+    if (cs.length) gl.drawBuffers([gl.COLOR_ATTACHMENT0, ...cs.map((_, i) => gl.COLOR_ATTACHMENT0 + i + 1)]);
   }
   if (o.depth || o.depthOnly) {
     d = gpuTexture('targets', w * h * 4);
@@ -1366,7 +1382,7 @@ export function renderTarget(name, w, h, o = {}) {
     gl.drawBuffers([gl.NONE]);
     gl.readBuffer(gl.NONE);
   }
-  return (gpuState.fb[name] = { f, c, d, w, h });
+  return (gpuState.fb[name] = { f, c, d, w, h, cs });
 }
 /* v43: a quad split into a grid (for cloth that waves); the same aC attribute as the quad */
 export function bindGridQuad(nx = 16, ny = 4) {

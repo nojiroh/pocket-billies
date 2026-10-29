@@ -70,6 +70,8 @@ const GPU_PASSES = [
   'lamp0',
   'lamp1',
   'reflection',
+  /* CH-4: the figures drawn into their atlas (figure-atlas.js) */
+  'figures',
 ];
 /* the fields of each pass's slot (R1 measure: texKinds and vaoKinds, the distinct textures and vertex arrays the pass
    bound in the frame: the fewest draws grouping by picture or mesh could reach) */

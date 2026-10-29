@@ -2,6 +2,343 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Characters track CH-5b - Clothes as data - 2026-10-29
+Branch `track/characters` (PR #314 merged into it first, at the owner's word "merge #314 first"; main merged in at the
+start, e888b09f, and again at the end for the merge into main). Plan approved in Plan Mode. Data, figure, Studio and
+test work; figures still off by default, so the game's pictures are unchanged. Draft PR #332 into main. No session tag
+(CLAUDE.md). docs/phases/characters-track.md (CH-5b) has the design.
+- The owner's answers: CH-5b before CH-7; **knobs + rows**; **the flair's shapes to data, FIGURE_LOOKS stays in code**.
+- Found (checked against the code):
+  - Most clothes were not shapes but the colour of the body's own parts: sleeves colour the arms, the bottom the thighs
+    and shins, the shoe the foot; the kinds were four sets (KIT_SLEEVELESS, KIT_LONG_SLEEVES, KIT_JACKETS,
+    KIT_LONG_COATS) and id checks. The body's frame rows could name had only tk, girth, hipK and torsoZ.
+  - Chad wears the track top (a top in the wardrobe) as his outer, so its jacket shell and zip are drawn there only
+    (I first took that code for dead; the golden test showed otherwise).
+  - The first merge of main met the Dialogue track's DL-6, built on the older figure code: bakeFigure's options
+    object (bust window, head angles, a faceless bake) now also carries CH-4's light and CH-6's face; the talk
+    director's {eyes, mouth, expr} maps onto a kit figure's face set; the mannequin keeps DL-6's open mouth. CH-6's
+    expression-tag test now reads a line as the talk does ([whisper] is a style), DL-6's close-up test counts the
+    shadow pass.
+- Changed:
+  - game/data/figureKit.json `clothes` (every wardrobe top, outer, bottom and shoe): knobs (sleeves; covers, puff,
+    open, long; legs, fit, belt; length, sole, boot, flat), `stripe`, rows at a stage (torso, shell, details), marks
+    (buttons, pockets, a zip, a buckle), `use` (the shared `pieces`: collar, belt) and `outer` (worn as an outer);
+    `flair` (scarf, cape, detail, goggles, fur, earrings) as rows; schema, types, check:data (kitClothesProblems).
+  - logic/kit-shapes.js kitAccessory: `stage`, `when` (bare, open, long, belted, belt, boot, neck, hat; ! for not),
+    `chance` on the figure's dice, side groups, a side's part (`thigh$`), marks; KIT_FRAME_SAMPLE has the body's sizes
+    and the torso's profile (trx0..6, trz0..6).
+  - logic/figure-kit.js lookFigure reads them (`dress` per stage, BF the body's frame); 1,901 to 1,640 lines.
+  - The Studio's Clothes tab (knobs, shapes and marks, worn on the turntable; "+ Give it clothes"; the shared pieces)
+    and Flair tab (figures.js figurePreview `flair`); the rows' editor shared with Hats & things.
+  - Tests: the golden test grew to 707 figures (every top and bottom under every outer, each slot empty) before the
+    move and held through every commit; tools/test/figure-clothes.test.mjs; kit-shapes tests for the new row fields.
+- Risky:
+  - The Studio's editing is untested by a person (headless: the Clothes and Flair tabs drew; a widened lab-coat hem
+    showed on the next draw).
+  - A garment's knobs and rows are as today's code made them; new garments need 2D art for the old path too.
+- Verified:
+  - lint, both type checks, format, check:modules, check:data, build; check-data-text after CI caught backticks in two
+    notes (fixed).
+  - Unit tests: 2,242 pass (the map-checks timing test fails only beside a browser check, as before).
+  - Smoke: no problems after the merge (514 s), the garments (463 s) and the flair and Studio (476 s).
+  - Full quick check on ad28dd78: 37 of 42 in 2,447 s. Failing: RL-8's seam, room light and Battle music (recorded
+    before), Starters and Ground tiles (both failed in busy runs in CH-5 and passed alone then; the rerun alone was
+    stopped at the merge coordinator's word, the owner having said checks can be skipped).
+- Next: CH-7 (the dressing room on the figure), on `track/characters` after #332 merges into main.
+- For the owner: in the Studio, Characters > Figures > Clothes (pick a garment, edit its shapes, watch the turntable)
+  and Flair. On the phone, CH-4's and CH-3c's gate is still owed (debug menu: Figures on, Atlas live; walk Copperleaf
+  by day and night, talk to someone; send the debug log from Settings > Help).
+
+### Characters track CH-3c - The rest of the cast and the movement pass - 2026-10-29
+Branch `claude/laughing-tesla-roy32r` (the owner chose to continue here, so PR #314 grows; main merged in at the start,
+834fed3f; the CH-6 session's hat fix and the PR watcher's art-code-refs fix merged in on the way). Plan approved in
+Plan Mode. Figure, game and tool work; figures still off by default, so the game's pictures are unchanged. No session
+tag (CLAUDE.md). docs/phases/characters-track.md (CH-3c) has the design.
+- The owner's answers: continue on #314's branch; **walk, jog, sprint** (keep the game's speeds and the 12 fps clock);
+  **keep today's keepers** (cashier, Vera and the townsfolk keepers; Mo and Bertha stay outside).
+- Found (checked against the code):
+  - `npm test` alone at the start: 1,975 of 1,975 passed. CH-6's one failure was the map-checks timing test (1,000
+    maps in under 1.5 s: about 0.34 s alone, 1.1 s beside a browser check).
+  - Feet slid: you walk at 3.4 m/s (run 5.78, a light push 2.04), townsfolk at 1.25, but the walk clip covered 2.4 m
+    a cycle while an average build's legs reach about 0.77 m (the foot moved at about 68% of the body's speed).
+    Townsfolk counted 1.4 m/s of wall time even standing; a map's people were always posed idle (a trainer coming
+    over slid); turns, start and stop were instant.
+  - Copperleaf has no arena: leaders stand in a run's arenas. Keepers already stood in their rooms (walk-control.js
+    roomState). 27 of 43 people had no `figure` block (12 of them legacy only).
+  - The debug menu's Atlas switch was drawn but had no case (a tap did nothing). The phone's Settings has no Figures
+    switch: on the phone it is the debug menu's Figures switches (the earlier phone-gate notes said Engine > People).
+  - **With the live atlas nobody in a room was seen** (Chosen, Kappi, the keepers): roomState makes a room's people
+    afresh each frame, and the atlas keeps a cell per record, so each frame made a new, undrawn cell (and redrew it).
+- Changed:
+  - logic/figure-pose.js: FIGURE_GAITS (walk 8 frames, jog 6, sprint 4); figureStride, each build's cycle from its
+    own legs, at least the gait's `min` so a cycle shows 4 frames or more at its usual speed (average: walk 0.73 m,
+    jog 1.45, sprint 1.90; tall 1.01, 2.01, 2.42; round and elder 0.45, 1.15, 1.90); locoPose (the foot down moves
+    straight back under the hip, the knee solved, so it stays put; the body rises between a jog's steps); the step
+    off and the settle (`start`, `stop`); figureGaitFor (jog from 1.9 m/s, sprint from 4.6, a gap at each edge);
+    figureTurn (a half turn in about 0.25 s); figureMotion and figureMotionClip (a tick at a time).
+  - figures.js figurePersonPicture runs the movement for everyone; frame-items.js: townsfolk and the lineup pass no
+    clock-made count; a map person's figure record kept by place and id (logic/person-view.js keptRecord).
+  - people/<id>.json `figure` (head, build, eyes, brows) for the 8 residents, cashier, Vera, Granny Juniper and the
+    hiker; test_people's row of the rest of the cast; the golden hashes remade for those 12 in their own commit.
+  - The debug log: figureReport().moves (person-ticks per gait); read-debug-log.py prints Figures on/off, everyone
+    else, your figure and the kit. debug-menu.js: the Atlas switch handled (a test checks every figure switch).
+  - Tools: look-people `--moves`; tools/look-places.py (Copperleaf by day and night, every keeper's room, a run arena's
+    leader, the dressing room with Figures on and off).
+- Risky:
+  - Untested on a phone. A walking person's cell is drawn about once a tick (12 a second); the debug log's moves line
+    shows which gaits were reached.
+  - The jog's cycle is a choice: at your 3.4 m/s an average build shows about 5 frames a cycle, short builds 4.
+  - Short builds jog with a longer moment in the air (a duty down to 0.15) to keep 4 frames a cycle.
+  - At walking size Mo's cap, Hayden's and Juniper's hats hide their faces from the camera's height, and Seamus's
+    fringe covers his eyes (the cast sheets).
+  - Cutscene actors are moved by straight lerps: their gait now follows their speed (story-stage.js's fixed 1.5 s
+    moves can jog or sprint).
+- Verified:
+  - lint, both type checks, check:modules, format:check, check:data, build.
+  - Unit tests: 1,988 pass alone (new: tools/test/figure-moves.test.mjs: every build's planted foot in each gait,
+    the 4-frame floor, the air, the gait by speed, the step off and settle, turns, the tick-by-tick movement;
+    debug-menu-switches.test.mjs; keptRecord in person-view.test.mjs).
+  - Smoke before each game commit: no problems (442 s, 390 s, 359 s).
+  - Full quick check on 89974890, alone: 37 of 42 in 1,816 s. Failing: Terraces (train_station), RL-8's seam, room
+    light, Battle music (all recorded as failing before this session), and Postcards (passed alone in 69 s).
+  - CI's check-fast on #314: 41 of 42; Camera follow ("the page stopped drawing") fails on main too (the PR watcher).
+  - Headless pictures (validation/look-people, validation/look-places): the moves sheet (every build); the 12 new
+    people's cast sheets; Copperleaf by day and night; the lab, shop, inn and library (after the fix: Chosen and Kappi
+    in the lab, the cashier behind the counter); a run arena's leader (Iris) in the ring; the dressing room's 59
+    pictures the same with Figures on and off.
+- Next: CH-5b (clothes as data) or CH-7 (the dressing room on the figure), in a new session; #314's merge first is
+  the owner's call.
+- For the owner on the phone (CH-4's gate and this one): open the debug menu, turn on Figures (and Atlas: live), walk
+  and run round Copperleaf by day and at night, go into the shop and the lab, talk to someone, then send the debug log
+  (Settings > Help), not the Diagnostics. Its figures line should say ON and list the moves.
+
+### Characters track CH-6 - Faces - 2026-10-28
+Branch `claude/laughing-tesla-roy32r` (main merged in at the start, c7dc2c23: the Perks PK-6 merge; the owner chose to
+continue here, so PR #314 grows). Plan approved in Plan Mode. Data, figure, game and Studio work; figures still off by
+default, so the game's pictures are unchanged. Done ahead of CH-3c. No session tag (CLAUDE.md).
+docs/phases/characters-track.md (CH-6) has the design.
+- The owner's answers: continue on #314's branch; the face's data **in figureKit.json with a Studio Faces tab**;
+  **all of the portrait kit's styles** for figures (13 eyes, 12 brows), the wardrobe's ids each drawing its nearest.
+- Found (checked against the code):
+  - portraits.json (the 32-bit portrait kit) is used by nothing but check-data. The dialogue box draws the wardrobe
+    rig's portraits (person-art.js drawPortrait). So "matched" means figures now share the kit's style names, frames
+    and expressions; wiring a portrait is still open.
+  - figurePortrait has no callers; figures didn't draw `facial_goatee`.
+  - Expression tags in the non-legacy data: `[happy]` 46, `[surprised]` 5, `[angry]` 3, `[sad]` 1.
+  - talk.js's typing hook had no listener. A line's `who` is a person, look, `folk:<seed>` or `me`. Copperleaf's people
+    are in `walkView.folk`; `st.npcs` is route trainers and the like.
+  - A face change redraws the person's whole atlas cell (no separate face layer); with one speaker that is cheap.
+- Changed:
+  - game/data/figureKit.json `faces` (schema, types, check:data's kitFaceProblems): eye styles, eye frames, brows,
+    the kit's 15 mouth frames as rows of marks, its 7 expressions, the talking frames, resting moods, skin ramps (five
+    shades for each of the wardrobe's 8 swatches) and the wardrobe's styles; people/<id>.json `figure.eyes` and
+    `figure.brows` (person.schema.json).
+  - logic/figure-kit.js: kitFaceMarks draws every eye frame, each expression's brows and every mouth frame once, each
+    mark tagged (`when`); kitFaceStyles, kitFaceSet, kitSkinRamp; a goatee; a brow's rim its own thickness
+    (figures.js figurePaintMark, figure-pose.js).
+  - logic/figure-pose.js: figureFaceState (expression, blink, talking frame; part of a picture's name and an atlas
+    cell's key), figureBlinkAt (the kit's timing, everyone, walking too; replaces the idle's frame-14 blink in the
+    world), figureTalkFace (about 8 frames a second while typing; rests on punctuation and under Reduced motion).
+  - figures.js figureFaceFor: the one on the dialogue box (you; a cutscene actor by who; a townsperson, resident or map
+    person within 1.5 m of where the talk began) talks with their line's expression until the box closes.
+    frame-items.js and cutscene/director.js pass it. figurePreview repaints a face on the same mesh.
+  - The Studio's Faces tab (studio/js/figure-editor.js): eye styles and frames, brows, mouths, expressions, skin,
+    wardrobe; on the turntable Eyes, Brows, Face, Talk, Blink and "Give <who> these eyes and brows".
+  - The debug log: figureReport().atlas.faceDraws (atlas redraws for a face), printed by read-debug-log.py.
+  - tools/look-people.py `--faces[=who]`; tools/studio-shots.py `figure-faces`.
+- Risky:
+  - Untested on a phone: a talker's cell redraws about 8 times a second and everyone's blink adds 2 or 3 redraws every
+    few seconds a person. faceDraws in the debug log will show it.
+  - The speaker usually faces you, so the camera often sees their back or side, and a face shows only from the front.
+    In a headless Copperleaf talk the townsperson's cell was drawn with happy eyes and talking frames (its atlas key),
+    but the camera saw the back of their head.
+  - Faces at walking size are a few pixels: the styles and expressions read best in close-ups (the --faces sheet at
+    160 px a metre). The fringe hides many brows.
+  - Resting moods changed: stern brows are the kit's angled style (slanting down) and arched brows an arch, no longer
+    a worried slant. Grin and open mouths still raise the lids.
+  - A figure's face is about 200 marks (was 37); lookFigure went from about 19 to 33 ms in Node (once per figure).
+  - The skin ramps are a first pick, generated from the swatches and tuned by eye; tune them in the Studio.
+- Verified:
+  - lint, both type checks, format, check:modules, check:data and build.
+  - Unit tests: 1,975 passed at the Studio commit (the golden hashes remade in their own commits: 4f4c636b held them,
+    15fe1e4c, 6445f2d0, 67fa5e8c remade them). New tests in tools/test/figure-faces.test.mjs and figures.test.mjs:
+    the data and its problems, every style at 32, 48 and 96 px a metre, expressions, the face state, blinks, talking,
+    the speaker lookup, every expression tag in the data, skin ramps.
+  - Smoke after the blinks commit: no problems (367 s).
+  - Not run, at the owner's word ("Skip the checks"): the full quick check was stopped after 3 steps, and a last `npm
+    test` (after the docs) showed 1 failure while the quick check ran beside it. That failure wasn't identified; the
+    map-checks timing test has failed this way before when a browser check ran beside it.
+  - Headless pictures: the --faces sheet (broker), the Studio's Faces tab, a Copperleaf talk.
+- Also read: the owner's Diagnostics (Android, Adreno 750, 2026-10-28 21:42). Copperleaf runs at 13-17 fps by day
+  (the 2026-10-26 baseline was 17 and 12.5), with about 700 sprite draws, 650 of them model leaf pictures: the
+  renderer track's known cost, not the figures. The Diagnostics file has no figures line, so CH-4's phone gate needs
+  the debug log with Figures on.
+- Next: CH-3c (the rest of the cast and the movement pass) or CH-5b (clothes as data), in a new session.
+- For the owner:
+  - In the Studio: Characters > Figures > Faces. Try a Face, Talk and Blink on the turntable.
+  - On the phone (CH-4's gate and this one): turn on Engine > People > Figures, walk Copperleaf by day and at night,
+    talk to a townsperson, then send the debug log (Settings > Help), not the Diagnostics.
+
+### Characters track CH-5 - The kit's data - 2026-10-28
+Branch `claude/laughing-tesla-roy32r` (level with main at the start: main was already merged in; the owner chose to
+continue here, so PR #314 grows). Plan approved in Plan Mode. Data, logic and Studio work; figures still off by
+default, so the game's pictures are unchanged. Done ahead of CH-3c. No session tag (CLAUDE.md).
+docs/phases/characters-track.md (CH-5, and the new CH-5b) has the design.
+- The owner's answers: continue on #314's branch; **hybrid** data (accessories as shape lists, heads and builds as
+  tables of knobs, hair as recipes, the head sculptor and the strand grower kept in code); **clothes in a CH-5b**.
+- Found (checked against the code):
+  - The helper thread was never in the way. The page builds a figure from its look and the thread meshes the finished
+    figure, which is already plain data, so the kit's data never reaches the thread.
+  - person.schema.json listed 6 head shapes; the kit has 8 and `hero` (diamond, broad and hero were refused).
+  - Glasses and the name tag are painted marks, not shapes; they stay marks (faces are CH-6).
+  - **The brief's "a bake cached by the look" can't share figures between people**: the seed picks each person's head
+    shape and its variation, so two people with the same look still differ. What CH-5 caches by is everything a
+    figure is built from (see below).
+- Changed:
+  - game/data/figureKit.json, with its schema and check:data's figureKitProblems:
+    - heads; vary (how far each person strays); builds (a round build's squarer jaw is now the build's own `jaw`);
+      folk; proportions;
+    - hair: each style's hairline, what shows under a hat, and its steps (grow, spikes, bun, tie, twin);
+    - accessories: the 8 hats, the headset, scarf, chain, tie, bow tie and the 3 bags, as rows of shapes on a part.
+  - game/js/logic/kit-shapes.js (new): reads the rows. Every place and size is a number or a sum of the head's or
+    body's frame (`bx * 0.98`), parsed (never run as code) in JavaScript's order.
+  - logic/figure-kit.js reads all of it (`opts.kit`, else `GAMEDATA.figureKit`): FIGURE_HEADS, FIGURE_BUILDS,
+    KIT_RANDOM_HEADS (now kitRandomHeads), KIT_CHIBI and FIGURE_SLIDER_GAIN are gone; kitHat's switch and kitHair's
+    switch became the data.
+  - figures.js:
+    - Every figure is named `look:<who>#<hash>`, a hash of the look, the `figure` choice and the kit data's revision
+      (portraits and snapshots too), so an edit makes a new figure, never a stale one. figureKitUse(kit) builds with
+      other kit data. The debug log's figures line has `kit` (the revision).
+    - figureFromLook is figureDef's look-to-figure code, shared. figurePreview is the Studio's turntable picture: a
+      figure from a look with the Studio's data, built on the page once per edit, the old mesh freed (the baker now
+      keeps each mesh's buffer).
+  - person.schema.json: `figure.head` and `build` take any id; check:data checks it is the kit's.
+  - The Studio's Figures section (studio/js/figure-editor.js; the Characters row is now Looks | Wardrobe | Figures):
+    - a turntable with person, head shape, build, style and clip pickers, whole or the head close up;
+    - tabs: head shapes (sliders, copy as new), builds, hair (each step's numbers), hats and things (rows, each value a
+      number or a sum; duplicate, delete, give a wardrobe item shapes), variety and proportions;
+    - "Give <who> this head and build".
+  - tools/studio-shots.py: the `figures` and `figure-hats` views.
+- Risky:
+  - Untested by a person: the Studio section's editing. Headless, it built Professor Chosen in 694 ms and the boy's
+    head close up in 390-400 ms; an edit (a bigger bobble on the beanie) showed on the next draw.
+  - A sum typed wrong (a name the frame doesn't have) makes that figure fail to build. The preview says why and
+    check:data reports it, but in the game that person keeps today's picture.
+  - The Studio's number fields write numbers and its text fields strings: an edited accessory value is saved as a
+    string ("0.07"), which the schema and the parser accept.
+  - CH-4's risks stand: 4.6 MB a gouache-night mesh, one draw a person in the main sprite pass; its phone gate is still
+    owed.
+- Verified:
+  - lint, both type checks, format:check, check:modules, check:data, build.
+  - 1,945 unit tests pass. The map-checks timing test failed once while a smoke ran beside it, and passed alone.
+  - New tests: the golden figures (a hash of 485 figures: every person, item, hat with each hair style, head with each
+    build and the directions' extras; it held through every move commit), the sum parser (JavaScript's order, refusals),
+    the rows (sides, repeat, vars, curls), figureKitProblems, the cache names, the preview.
+  - Smoke after each game commit (4 runs, no problems, 471-553 s).
+  - The full quick check on a40c5c2a was stopped from outside the session after 36 of its 42 steps (it stopped at
+    Sound settings): 28 ok, 8 problems.
+    - Five are the ones recorded on main: Terraces (train_station), RL-8's seam, RT-2's pair, Granny Juniper, room light.
+    - Starters and Ground tiles passed when run alone on the same commit (Ground tiles had failed twice in a busy run:
+      the lab's room didn't open within its 90 s wait).
+    - Battle music (the drums on a throw) fails alone at the session's starting commit 2154f97f too, so it isn't this
+      session's.
+    - The last 6 steps did not run.
+  - Headless pictures of the Studio's Figures section (studio-shots `figures`, `figure-hats`).
+- Next:
+  - The owner's call: CH-3c (the rest of the cast and the movement pass) or CH-5b (clothes as data), in a new
+    session. The recommended branch is `track/characters` after #314 merges.
+  - Still owed: CH-4's phone gate.
+- For the owner:
+  - In the Studio: Characters > Figures. Try a head shape or build on someone, then edit a hat's rows and watch the
+    turntable.
+  - On the phone (CH-4's gate): turn on Engine > People > Figures, walk Copperleaf by day and at night, and send a
+    debug log.
+### Characters track CH-4 - The live atlas - 2026-10-28
+Branch `claude/laughing-tesla-roy32r` (CH-3b's branch, main merged in first at db0bbcdc; the owner chose to continue
+here, so PR #314 grows). Plan approved in Plan Mode. Engine and figure work, behind Engine > People > Figures (still
+off by default). Done ahead of CH-3c. No session tag (CLAUDE.md). docs/phases/characters-track.md (CH-4) has the
+whole design.
+- The owner's answers: continue on #314's branch; **the unlit atlas, as briefed** (over keeping CH-3b's baked
+  lighting).
+- Found (checked against the code): a new figure's mesh was built twice on the frame (figure-kit.js kitExtent, then
+  figures.js figureRes); renderTarget had one colour attachment; neither instanced batch had a picture rect. Measured
+  in Node: a gouache-night figure takes about 150 ms to measure and 230 ms to mesh at its detail (1.5), and its mesh
+  is 144k vertices (4.6 MB).
+- Changed:
+  - figure-kit.js kitBuild: one build gives the extent and the GPU mesh.
+  - figure-worker.js, figure-worker-modules.js and figure-meshes.js: meshes are built on a helper thread, bundled for
+    the built site (vite.config.js); a person keeps today's picture until theirs is in.
+  - engine/webgl.js: renderTarget `colors` (MRT) and `nearest`; imageTexture gives a cell's atlas textures.
+  - sprite-instances.js and the sprite and shadow shaders: a per-instance rect (location 12, stride 100), and the flags
+    packed into one varying.
+  - figure-atlas.js and logic/atlas-pack.js: the atlas, its cells, the ramp texture, the passes and the face marks;
+    walk-view-gl.js runs the `figures` pass before the shadows.
+  - walk-shaders.js FIGURE_SPRITE_GLSL: figures lit where they stand.
+  - Density by distance (figure-pose.js figureDensityStep, figures.js figureFarPpm).
+  - figures.js figureSnapshot: the snapshot service, from the baker's own context (the atlas is unlit).
+  - A 64 MB cap on the atlas's meshes.
+  - Engine > People > Live atlas and the debug menu's Atlas switch.
+  - The debug log's figureReport().atlas and .meshes, which tools/read-debug-log.py now prints.
+- Risky:
+  - Untested on a phone: frame times, the cost of the atlas pass, the memory. Headless, a figure's cell took about
+    0.4 ms (132 draws in 50 ms, software drawing).
+  - Meshes are big: 13 figures held 47.7 MB on the graphics card (capped at 64). Indexed or smaller meshes would cut
+    that.
+  - People still take about one draw each in the main sprite pass: runs follow the depth order, and props stand
+    between people (Copperleaf at night: 12 people, 12 draws). Their shadows did batch (5.5 draws to 1), and their
+    pictures went from 1.7 MB of textures to the shared 16 MB atlas.
+  - Lighting moved from per figure to per pixel, and from the figure's own shadow map to the world's. Side-by-side
+    sheets by day and at night matched CH-3b's bake closely, but only the test map and Copperleaf were looked at.
+  - The plain 3D style, a battle's close-ups and the CC0 stand-in still bake as before.
+- Verified:
+  - lint, both type checks, format, check:modules, check:data, build.
+  - 1,934 unit tests pass. New ones cover one build per figure, the worker against the page, MRT targets, atlas
+    packing, the cell rect, the atlas passes, density by distance, the restore, the mesh cap and snapshots. The
+    sprite-records call-log snapshots were remade for the stride and the figure uniforms.
+  - Smoke passed after each game commit (no problems, 290-350 s).
+  - Full quick check on c75c9aa9: 37 of 42 in 1,489 s. The five failures are the ones TR-5 and the Perks track
+    recorded on main: Terraces (train_station), RL-8's seam, RT-2's pair, Granny Juniper, room light.
+  - Headless probes: the test map and Copperleaf by day and at night, the live atlas against the baked pictures; a
+    forced context loss (everyone drawn again, no errors); the built site's worker (18 meshes built on the thread,
+    none on the page).
+- Next: the phone gate below. Then CH-5 (the kit's data) or CH-3c in a new session. The recommended branch is
+  `track/characters` after #314 merges.
+- For the owner on the phone: turn on Engine > People > Figures, with Everyone else as figures. Walk Copperleaf by
+  day and at night, then send a debug log; its people lines show the atlas and the meshes. The debug menu's Atlas
+  switch (live or baked) compares the two looks.
+### Characters track CH-3b - The figure kit, the cast and its look - 2026-10-28
+Branch `claude/laughing-tesla-roy32r` (`track/characters` with main merged in), pushed for review into
+`track/characters`. The owner picked C (the 3D pixel puppet, from the mannequin's simpler shapes) and steered the
+look round by round in the same session; docs/phases/characters-track.md (CH-3b) lists every round.
+- Changed:
+  - logic/figure-kit.js (new): everyone's figure from their look: sculpted heads (eight shapes and the main
+    character's `hero`, varied per person), ten builds with their own gaits, every wardrobe slot as shapes, hair as
+    locks (long hair flowing), hats fitted round the head, the face as painted marks (almond eyes under a heavy lid,
+    brows, mouths, glasses; a close-up's crease, lower lid and lip), Kappi as a capybara.
+  - logic/figure-pose.js: headDeform, tubes, tapered and squarer ellipsoids, the GPU mesh with a matrix only for
+    moving parts (figures of 50 parts and more), figureSceneLight.
+  - figures.js: directions (FIGURE_LOOKS; gouache night the default style), the light's shadow map, rims, ink line
+    and occlusion; the scene's light (its sun, moon, room light and the lamps near each figure, stepped, the
+    pictures kept by it); portraits (figurePortrait) in a studio light; battles at 96 px a metre.
+  - Engine > People: Figure style (gouache night, HD-2D, painterly, pixel puppet, plain 3D), 48 px a metre; figures
+    still off by default (Figures (test)).
+  - people/<id>.json `figure` for the cast; people/girl.json in a beanie with long hair.
+  - tools/look-people.py: --cast, --styles (a panel and portraits a direction), --player=girl|boy.
+- Risky:
+  - The baked pictures are kept by the scene's light too: at night near lamps more pictures are baked (a phone
+    check of the bake count and memory, figureReport in the debug log, is owed).
+  - The in-world run (look-people --figures) takes 14 minutes headless for one shot; only a day shot was looked at.
+  - LOOK_PRESETS (the new game's default looks) are unchanged (a cap, a ponytail): changing them changes the
+    quick check's baseline pictures; the people/boy.json and girl.json looks are the figure presets.
+  - Figure portraits are not wired in place of the 32-bit portraits (the CLAUDE.md commitment); to decide.
+- Verified: lint, both type checks, format, 1,688 unit tests (the kit: every person and wardrobe item builds, faces
+  at 48 px, hair never through a hat's crown, the GPU mesh; figureSceneLight's sides, turn, steps, lamps), the
+  smoke checks (no problems); sheets of the cast, townsfolk, the boy and the girl in gouache night.
+- Round 6 (same entry): heads and hair as blended shapes (signed distances, surface nets): one flowing surface
+  each, strands grown from the scalp; tests: no hair through any hat, the hair stays out of the head, the face marks
+  on the blended face. Risky: a figure takes about 200 ms to build its mesh the first time (a hitch per new figure on
+  a phone; CH-4's atlas or a worker should take it off the frame), a portrait's finer grid longer.
+- Next: CH-4 (the live atlas), in a new session.
 ### Test data track TD-0 - the plan: tests and logs that give Claude useful bug and speed data on every device - 2026-10-29
 Branch `ccr-b95ade74-f8w3vy` (the cloud session's own; main fast-forwarded to 8e37809c first). Plan approved in Plan
 Mode through the owner's answers. Docs only: the plan, research and three read-only audits (in-game tests, headless

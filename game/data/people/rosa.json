@@ -25,5 +25,6 @@
    "hat_bucket": ["#E9D8B0","#3F8A63"],
    "backpack": ["#B8423A","#6A2A22"]
   }
- }
+ },
+ "figure": {"head":"heart","build":"slim","eyes":"almond","brows":"peaked"}
 }

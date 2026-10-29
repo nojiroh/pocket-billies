@@ -124,6 +124,7 @@ import { drawSky } from './walk/sky.js';
 import { drawRoomFront } from './walk/rooms.js';
 import { drawWater, reflectionPass } from './walk/water.js';
 import { figureReport, figuresOn } from './figures.js';
+import { figureAtlasPass } from './figure-atlas.js';
 import { gatherFrameItems } from './walk/frame-items.js';
 import { drawBoxFaces, drawPlayerSilhouette, drawSprites, hideQueriesLost } from './walk/sprites.js';
 import { battleCamera, cutsceneCamera, screenRay, startSceneZoom, walkCamera } from './walk/camera.js';
@@ -665,6 +666,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   for (let i = 0; i < items.length; i++) if (personPicture(items[i].im)) people++;
   walkRenderer.people = people;
   coverItems(items, C, dt);
+  /* CH-4: the people whose pictures changed drawn into the figures' atlas, before the shadows read it */
+  if (typeof figureAtlasPass === 'function' && figuresOn()) {
+    gpuPass('figures');
+    figureAtlasPass();
+    gpuPass('other');
+  }
   const dark0 = sc.tint && sc.tint !== '#000000' ? 1 : sc.indoor ? 0.7 : 0,
     lk = engineContext.env && !sc.indoor ? environment.lampK : 0,
     dark = Math.max(dark0, lk > 0.4 ? lk : 0);

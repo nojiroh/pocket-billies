@@ -24,5 +24,6 @@
    "boots": ["#6A4A32","#4A3220"],
    "hat_bucket": ["#E9C46A","#E25C3A"]
   }
- }
+ },
+ "figure": {"head":"round","build":"small"}
 }

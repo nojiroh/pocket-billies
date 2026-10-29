@@ -21,6 +21,7 @@ validation/quick/
 validation/rooms/
 validation/quick-baseline/
 validation/fast/
+validation/ch5/
 validation/tall-ground/
 validation/behind/
 validation/look-blur/
@@ -36,6 +37,7 @@ validation/look-station/
 validation/look-hub-buildings/
 validation/look-pasture/
 validation/look-people/
+validation/look-places/
 validation/look-air/
 validation/look-opening/
 validation/look-run-screens/

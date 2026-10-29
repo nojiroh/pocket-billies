@@ -132,6 +132,9 @@ export interface GameData {
   roads?: RoadLink[];
   engine: Engine;
   wardrobe: Wardrobe;
+  /** characters track CH-5: the figure kit's shapes as data (game/data/figureKit.json; its schema has every field,
+   * logic/figure-kit.js and logic/kit-shapes.js read it) */
+  figureKit?: FigureKit;
   /** fishing spots' encounter lists, keyed by the water ('pond', 'sea'...) */
   fishing: Record<string, Pool>;
   moods: Record<DataId, Mood>;
@@ -1612,6 +1615,140 @@ export interface Mood {
 export interface Engine {
   defaults: Record<string, any>;
   presets: Record<string, any>;
+}
+
+/** figureKit.json (characters track CH-5): head shapes, how far people vary, builds, the builds townsfolk are picked
+ * from, proportions, hair recipes and the accessories' shape lists (game/data/schema/figureKit.schema.json) */
+export interface FigureKit {
+  note?: string;
+  heads: Record<
+    DataId,
+    {
+      r: number[];
+      jaw: number;
+      chin: number;
+      cheek: number;
+      crown: number;
+      face: number;
+      nose?: number;
+      random?: boolean;
+    }
+  >;
+  vary: Record<string, number | number[]>;
+  builds: Record<DataId, { k: Record<string, number>; gait: Record<string, number>; jaw?: number }>;
+  folk: DataId[];
+  proportions: { chibi: Record<'head' | 'legs' | 'torso' | 'arms' | 'neck', number>; sliderGain: number };
+  hair: Record<
+    DataId,
+    { cut?: { front: number; side: number; back: number }; thin?: boolean; under?: any; steps: any[] }
+  >;
+  accessories: Record<
+    DataId,
+    { rows: any[]; vars?: Record<string, string | number>; fringe?: boolean; colour?: number[] }
+  >;
+  /** CH-6: the face's marks (logic/figure-kit.js kitFaceMarks) */
+  faces: FigureKitFaces;
+  /** CH-5b: each wardrobe item's clothes on the figure (its knobs, rows and marks), the pieces garments share, the
+   * directions' flair */
+  clothes?: Record<DataId, FigureGarment> & { note?: string };
+  pieces?: Record<DataId, { rows?: any[]; marks?: any[]; vars?: Record<string, string | number> }> & { note?: string };
+  flair?: Record<DataId, { rows: any[]; vars?: Record<string, string | number> }> & { note?: string };
+}
+/** figureKit.json clothes (characters track CH-5b): a garment's knobs for the body's own parts, rows and marks */
+export interface FigureGarment {
+  sleeves?: 'none' | 'short' | 'long';
+  covers?: boolean;
+  puff?: number;
+  open?: boolean;
+  long?: boolean;
+  legs?: 'full' | 'shorts' | 'skirt';
+  fit?: number;
+  belt?: boolean;
+  sole?: 0 | 1;
+  boot?: boolean;
+  flat?: boolean;
+  length?: number;
+  stripe?: { part: string; col: string; every: number; from: number };
+  use?: DataId[];
+  vars?: Record<string, string | number>;
+  rows?: any[];
+  marks?: any[];
+  /** an item of another slot worn as an outer (Chad's track top): its knobs, rows and marks there */
+  outer?: FigureGarment;
+}
+/** figureKit.json faces (characters track CH-6): eye and brow styles, mouth frames, moods, which style a wardrobe id
+ * draws */
+export interface FigureKitFaces {
+  note?: string;
+  eyes: Record<
+    DataId,
+    {
+      w: number;
+      h: number;
+      lid?: number[];
+      flicks?: number;
+      wing?: number;
+      gap?: number;
+      iris?: number;
+      shade?: boolean;
+      bags?: boolean;
+      lines?: boolean;
+      blush?: boolean;
+    }
+  >;
+  brows: Record<
+    DataId,
+    {
+      w: number;
+      t: number;
+      arch?: number;
+      tilt?: number;
+      flat?: boolean;
+      peak?: boolean;
+      uneven?: number;
+      knit?: boolean;
+      bushy?: boolean;
+    }
+  >;
+  eyeFrames: Record<
+    DataId,
+    {
+      open?: number;
+      scale?: number;
+      iris?: number;
+      shut?: boolean;
+      happy?: boolean;
+      slant?: number;
+      flat?: boolean;
+      look?: number;
+    }
+  >;
+  mouths: Record<DataId, FigureKitMouthMark[]>;
+  expressions: Record<
+    DataId,
+    { eyes: DataId; mouth?: DataId; tilt?: number; lift?: number; blush?: boolean; talk?: DataId[] }
+  >;
+  talk: DataId[];
+  /** CH-6: hand-picked skin ramps: a swatch's five shades (deep, shadow, base, light, shine) */
+  skin?: { base: string; ramp: string[] }[];
+  moods: Record<DataId, { lid: number; tilt?: number; lift?: number }>;
+  rest: { eyes?: string[]; brows?: string[]; mouth?: string[]; mood: DataId }[];
+  wardrobe: Record<string, DataId>;
+  defaults: { eyes: DataId; brows: DataId; mouth: DataId };
+}
+/** a mark of a mouth frame: sizes in metres on the usual head, x and y from the mouth's middle */
+export interface FigureKitMouthMark {
+  kind: string;
+  x?: number;
+  y?: number;
+  w: number;
+  h: number;
+  t?: number;
+  shape?: 'oval' | 'arc' | 'cap' | 'slant';
+  dir?: number;
+  min?: number;
+  close?: boolean;
+  col?: string;
 }
 
 /** wardrobe.json: the dressing room's body, slots and clothes (dressing-room.js, person-art.js) */

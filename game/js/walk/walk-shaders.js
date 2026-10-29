@@ -8,6 +8,7 @@ import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL, SKY_GLSL } from '../engine/webgl.js
 /* eslint-disable no-func-assign */
 expose({
   FALL_GLSL: [() => FALL_GLSL],
+  FIGURE_SPRITE_GLSL: [() => FIGURE_SPRITE_GLSL],
   PIXEL_WATER_GLSL: [() => PIXEL_WATER_GLSL],
   RING_AT_GLSL: [() => RING_AT_GLSL],
   ROCK_GLSL: [() => ROCK_GLSL],
@@ -73,6 +74,34 @@ const RING_AT_GLSL = `float ringAt(vec2 cc,out vec2 ruv){ruv=vec2(0.);if(uCanvas
 /* the ground's bump ring is filtered smoothly: its lookup stays half a texel (at the level the filter reads) inside its own
    16 m square, so the filter never mixes in the next slot, an unrelated square (seams along every square's edge) */
 vec2 ringIn(vec2 u,vec2 dx,vec2 dy,float sz){vec2 s=floor(u*4.)/4.;float h=.5*max(1.,max(length(dx),length(dy))*sz)/sz;return clamp(u,s+h,s+.25-h);}`;
+/* characters track CH-4: a figure's cell of the live atlas (figure-atlas.js) lit where it stands. Its normal texture
+   holds the surface's normal (x right, y down, z toward the eye) and its colour's ramp row (uFigRamp: five shades and
+   a skin mark; row 0 unlit: the outline, the face); its colour texture the light-independent shading as a multiplier.
+   A pixel takes the shade of its band by the key light where it stands (the sun or moon by its height, and every lamp
+   by how strongly it reaches it, as points() falls off; not the pools or your own lantern: uFigSkip), the world's
+   shadow, the rims and the key's and sky's tints, as the figure baker lit CH-3b's pictures (figures.js FIGURE_FS);
+   then the sprite's own light as for any person. uFigMode: the direction's mode and its back rim's strength. */
+const FIGURE_SPRITE_GLSL = `uniform sampler2D uFigRamp;uniform vec4 uFigB,uFigFx;uniform vec2 uFigMode;uniform int uFigSkip;uniform float uFigDark;
+float figLum(vec3 c){return dot(c,vec3(.3,.59,.11));}
+vec3 figHue(vec3 c,float k){float l=figLum(c);return l>1e-4?1.+(clamp(c/l,.55,1.5)-1.)*k:vec3(1.);}
+vec4 figKey(vec3 p,out vec3 KC){float sI=figLum(uSunCol)*clamp(uSunDir.y*3.+.15,0.,1.);vec3 K=uSunDir*sI;KC=uSunCol*sI;float tot=sI;
+ for(int i=0;i<16;i++){if(i>=uNL)break;if(((uFigSkip>>i)&1)!=0)continue;vec4 L=uLP[i];vec3 d=L.xyz-p;float l=length(d),x=l/max(abs(L.w),.01);if(x>=1.||l<1e-3)continue;
+  float f=(1.-x*x)*(1.-x*x)/(1.+l*l*.6),I=figLum(uLC[i].rgb)*f;K+=d/l*I;KC+=uLC[i].rgb*f;tot+=I;}return vec4(K,tot);}
+vec3 figLit(vec3 c,vec4 fn,vec2 uv,vec3 R,vec3 B,float fN,vec3 p,float px){int row=int(fn.w*255.+.5);if(row<=0)return c;
+ vec3 nc=fn.xyz*2.-1.,nw=normalize(R*nc.x*fN-vec3(0.,nc.y,0.)+B*nc.z);vec3 KC;vec4 K=figKey(p,KC);float kl=length(K.xyz);
+ vec3 kd=kl>1e-4?K.xyz/kl:normalize(vec3(-.4,.7,.3));float ambI=figLum(uAmbTop),fl=clamp(ambI/(ambI+K.w+1e-3)-.2,0.,1.)*1.4,d=mix(dot(nw,kd),.3,fl*.45);
+ ivec2 ap=ivec2(floor(uv*vec2(textureSize(uNrm,0))))&1;float bay=(ap.x==ap.y?(ap.x==0?0.:.5):(ap.x==0?.75:.25))-.375;
+ bool m7=uFigMode.x>6.5,m1=abs(uFigMode.x-1.)<.5;float dd=m7?d+bay*uFigFx.x:d;int b=dd>uFigB.z?3:(dd>uFigB.x?2:(dd>uFigB.y?1:(dd>uFigB.w?0:-1)));
+ bool shd=d>uFigB.y&&shadowAt(p+uSunH*(abs(px)*.9+.35)+vec3(0.,.05,0.),.0015)<.5;
+ vec3 n3=vec3(nc.x*fN,-nc.y,-nc.z),k3=vec3(dot(kd,R),kd.y,-dot(kd,B));bool rim=!shd&&n3.z>-.25&&dot(normalize(n3.xy+1e-4),normalize(k3.xy+1e-4))>.55;
+ int b0=b;if(shd)b=min(b,0);else if(rim&&b>=0&&!m1)b=max(b,2);if(m7&&texelFetch(uFigRamp,ivec2(5,row),0).r>.5)b=max(b,0);
+ vec3 sh=texelFetch(uFigRamp,ivec2(1,row),0).rgb,ba=texelFetch(uFigRamp,ivec2(2,row),0).rgb,li=texelFetch(uFigRamp,ivec2(3,row),0).rgb,sn=texelFetch(uFigRamp,ivec2(4,row),0).rgb;
+ vec3 f=texelFetch(uFigRamp,ivec2(b+1,row),0).rgb;if(m1)f=(d>-.05&&!shd)?((d>uFigB.z&&sn!=li)?sn:ba):sh;if(m7&&shd&&b0>=1)f=mix(sh,ba,.4);
+ f*=c*2.;vec3 keyT=figHue(KC,.45),ambT=figHue(uAmbTop,.4);
+ if(m7){if(rim)f=mix(f,min(vec3(1.),vec3(1.,.839,.588)*keyT),.32*uFigFx.w);vec3 r2=normalize(vec3(-k3.x,.35,.6));
+  if(uFigMode.y>0.&&dot(n3,r2)>.5&&n3.z>-.5)f=mix(f,min(vec3(.97),floor(figHue(uAmbTop,1.)*200./8.)*8./255.),uFigMode.y*(.3+.7*uFigDark));}
+ return clamp(f*mix(ambT,keyT,shd?0.:smoothstep(uFigB.w,uFigB.x,d)),0.,1.);}
+`;
 export const WALK_SHADERS = {
   ground: [
     `#version 300 es
@@ -178,7 +207,7 @@ void main(){vRip=0.;float px=(uOff.x+aC.x*uOff.z),py=(uOff.y+aC.y*uOff.w);float 
     the same pixels), so only rock clearly nearer than you shows it, not the ground at your feet */
  if(uGhostV.w>0.)p+=normalize(uGhostV.xyz-p)*uGhostV.w;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv;uniform vec4 uMat,uUV;uniform vec3 uSelf;uniform vec4 uGhost,uHit;uniform float uGhostE;uniform vec4 uFoil;uniform vec3 uRise;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}
+precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv,uFig;uniform vec4 uMat,uUV;uniform vec3 uSelf;uniform vec4 uGhost,uHit;uniform float uGhostE;uniform vec4 uFoil;uniform vec3 uRise;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}${FIGURE_SPRITE_GLSL}
 float bayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
  /* terrain TR-3: your silhouette through rock: a flat tint (uGhost.rgb) over uGhost.w of the pixels; player visibility:
@@ -187,6 +216,8 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
   for(int i=0;i<4;i++){vec2 u=vUV+ts*(i==0?vec2(1.,0.):i==1?vec2(-1.,0.):i==2?vec2(0.,1.):vec2(0.,-1.));if(any(lessThan(u,lo))||any(greaterThan(u,hi))||textureLod(uTex,u,0.).a<.5)e=true;}}
   if(!e&&bayer(gl_FragCoord.xy)>uGhost.w)discard;o=vec4(uGhost.rgb,uAlpha);return;}
  if(uFade<.99&&bayer(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;
+ /* CH-4: a figure's cell: its colour by its ramp and the light where it stands (FIGURE_SPRITE_GLSL) */
+ if(uFig>.5)c.rgb=figLit(c.rgb,texture(uNrm,vUV),vUV,uRight,uBack,uFlipN,vW,vPx);
  /* VFX-16: a Billie dithering in from its feet up (a send-out) or out (a recall, a faint): uRise.x the share hidden from
     the top, uRise.y and uRise.z the feet's and the head's places down the picture (0..1); a hard step against the Bayer pattern on the art's own
     pixels, with a bright rim on the eroding edge. 0 for everything else and in the instanced program */
@@ -194,10 +225,10 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
   if(h>e)discard;rr=h>e-.08?.75:0.;}
  /* v47: one outline rule: a near-black texel on the picture's edge takes a deep shade of the colour beside it, so
     outlines are coloured, as the newer art draws them (the pictures themselves are not changed) */
- if(uSelOut>0.&&dot(c.rgb,vec3(.3,.59,.11))<.17){vec2 ts=1./vec2(textureSize(uTex,0));vec4 q[4]=vec4[4](texture(uTex,vUV+vec2(ts.x,0.)),texture(uTex,vUV-vec2(ts.x,0.)),texture(uTex,vUV+vec2(0.,ts.y)),texture(uTex,vUV-vec2(0.,ts.y)));
+ if(uSelOut>0.&&uFig<.5&&dot(c.rgb,vec3(.3,.59,.11))<.17){vec2 ts=1./vec2(textureSize(uTex,0));vec4 q[4]=vec4[4](texture(uTex,vUV+vec2(ts.x,0.)),texture(uTex,vUV-vec2(ts.x,0.)),texture(uTex,vUV+vec2(0.,ts.y)),texture(uTex,vUV-vec2(0.,ts.y)));
   float ed=0.,n=0.;vec3 s=vec3(0.);for(int i=0;i<4;i++){if(q[i].a<.5)ed+=1.;else if(dot(q[i].rgb,vec3(.3,.59,.11))>=.17){s+=q[i].rgb;n+=1.;}}
   if(ed>0.&&n>0.)c.rgb=mix(c.rgb,s/n*vec3(.5,.45,.56),uSelOut);}
- vec3 nn=texture(uNrm,vUV).xyz*2.-1.;vec3 n=normalize(uRight*nn.x*uFlipN+vec3(0.,-nn.y,0.)+uBack*max(nn.z,.2));c.rgb=lookOn(c.rgb,floor(vUV*vec2(textureSize(uTex,0))),vH,uBaseP);c.rgb=snowOn(seasonal(c.rgb,uBaseP),vW,n.y);
+ vec3 nn=uFig>.5?vec3(0.,0.,1.):texture(uNrm,vUV).xyz*2.-1.;vec3 n=normalize(uRight*nn.x*uFlipN+vec3(0.,-nn.y,0.)+uBack*max(nn.z,.2));c.rgb=lookOn(c.rgb,floor(vUV*vec2(textureSize(uTex,0))),vH,uBaseP);c.rgb=snowOn(seasonal(c.rgb,uBaseP),vW,n.y);
  /* shadows from other things. A picture that stays put in the world is itself in the shadow map, so it is looked up
     just in front of its own plane; one that turns to face the camera is looked up a little toward the sun instead */
  vec3 sp=uFixed>.5?vW+uBack*.06+vec3(0.,.03,0.):vW+uSunH*(abs(vPx)*.9+.35)+vec3(0.,.05,0.);
@@ -524,16 +555,18 @@ provide({ WALK_SHADERS }); /* to-module */
    those values read from flat varyings instead of uniforms (#defines put in before its main, so its lighting stays
    the very same text). A picture's own axes lie flat (right.y = back.y = 0, as every camera's do); one facing the
    camera takes the camera's (uCamRight, uCamBack). */
-const SPRITE_INSTANCE_VARYINGS = `flat {io} vec4 vAxes,vBaseF,vLight,vMat,vSelfS,vWear,vHsv,vTint,vMaskFol;flat {io} vec3 vFlags;`;
+/* CH-4: vSelfS.w holds the flags as one number (1 flipN, 2 fixed, 4 noRecv, 8 a figure's cell), so the picture's rect
+   (vCell) fits the 15 varying rows */
+const SPRITE_INSTANCE_VARYINGS = `flat {io} vec4 vAxes,vBaseF,vLight,vMat,vSelfS,vWear,vHsv,vTint,vMaskFol,vCell;`;
 const SPRITE_INSTANCE_VS = `#version 300 es
 precision highp float;layout(location=0) in vec2 aC;layout(location=1) in vec3 iBase;layout(location=2) in vec4 iOff;layout(location=3) in vec4 iAxes;layout(location=4) in vec4 iBend;
-layout(location=5) in vec4 iHsv;layout(location=6) in vec4 iWear;layout(location=7) in vec4 iTint;layout(location=8) in vec4 iMaskFol;layout(location=9) in vec4 iSelfFade;layout(location=10) in vec4 iLight;layout(location=11) in uvec4 iFlags;
+layout(location=5) in vec4 iHsv;layout(location=6) in vec4 iWear;layout(location=7) in vec4 iTint;layout(location=8) in vec4 iMaskFol;layout(location=9) in vec4 iSelfFade;layout(location=10) in vec4 iLight;layout(location=11) in uvec4 iFlags;layout(location=12) in vec4 iCell;
 uniform mat4 uVP;uniform vec3 uCamRight,uCamBack,uFwd;uniform float uCurveOn;uniform vec4 uMats[8];out vec2 vUV;out vec3 vW;out float vH;out float vPx;out float vRip;${SPRITE_INSTANCE_VARYINGS.replace(/\{io\}/g, 'out')}${COMMON_GLSL}
 void main(){uint fl=iFlags.x;bool cam=(fl&16u)!=0u;vec2 R=cam?uCamRight.xz:iAxes.xy,B=cam?uCamBack.xz:iAxes.zw;float flip=(fl&8u)!=0u?-1.:1.;vec3 r=vec3(R.x,0.,R.y);
  vRip=0.;float px=(iOff.x+aC.x*iOff.z),py=(iOff.y+aC.y*iOff.w);float h=-py;float fh=clamp(h/max(.01,-iOff.y),0.,1.),sh=iBend.y*h*(.25+.75*fh);vec3 p=iBase+uFwd*iBend.z+r*(px*flip+sh)+vec3(0.,h+iBend.x*px*flip-abs(sh)*.35*fh,0.);
- p.y+=curveY(iBase.xz)*uCurveOn;vW=p;vPx=px*flip+sh;vH=fh;vUV=vec2(aC.x,aC.y*iBend.w);
- vAxes=vec4(R,B);vBaseF=vec4(iBase,iSelfFade.w);vLight=iLight;vMat=uMats[int(min(iFlags.y,7u))];vSelfS=vec4(iSelfFade.xyz,iBend.w);vWear=iWear;vHsv=iHsv;vTint=iTint;vMaskFol=iMaskFol;
- vFlags=vec3((fl&4u)!=0u?-1.:1.,float(fl&1u),float((fl>>1)&1u));gl_Position=uVP*vec4(p,1.);}`;
+ p.y+=curveY(iBase.xz)*uCurveOn;vW=p;vPx=px*flip+sh;vH=fh;vUV=iCell.xy+aC*iCell.zw;vCell=iCell;
+ vAxes=vec4(R,B);vBaseF=vec4(iBase,iSelfFade.w);vLight=iLight;vMat=uMats[int(min(iFlags.y,7u))];vWear=iWear;vHsv=iHsv;vTint=iTint;vMaskFol=iMaskFol;
+ vSelfS=vec4(iSelfFade.xyz,float(((fl>>2)&1u)|((fl&1u)<<1)|(((fl>>1)&1u)<<2)|(((fl>>5)&1u)<<3)));gl_Position=uVP*vec4(p,1.);}`;
 /* each per-picture uniform of the sprite fragment shader and the varying it reads instead */
 const SPRITE_INSTANCE_DEFINES = [
   ['uRight', 'vec3(vAxes.x,0.,vAxes.y)'],
@@ -546,10 +579,11 @@ const SPRITE_INSTANCE_DEFINES = [
   ['uShade', 'vLight.w'],
   ['uMat', 'vMat'],
   ['uSelf', 'vSelfS.xyz'],
-  ['uUV', 'vec4(0.,0.,1.,vSelfS.w)'],
-  ['uFlipN', 'vFlags.x'],
-  ['uFixed', 'vFlags.y'],
-  ['uNoRecv', 'vFlags.z'],
+  ['uUV', 'vCell'],
+  ['uFlipN', '(mod(vSelfS.w,2.)>.5?-1.:1.)'],
+  ['uFixed', 'mod(floor(vSelfS.w*.5),2.)'],
+  ['uNoRecv', 'mod(floor(vSelfS.w*.25),2.)'],
+  ['uFig', 'floor(vSelfS.w*.125)'],
   ['lookOn(c,px,h,bp)', 'lookOnP(c,px,h,bp,vWear,vHsv,vTint,vMaskFol.xy)'],
   ['seasonal(c,p)', 'seasonalF(c,p,vMaskFol.zw)'],
   ['snowOn(c,p,u)', 'snowOnF(c,p,u,vMaskFol.zw)'],

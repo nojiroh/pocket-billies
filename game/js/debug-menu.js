@@ -226,6 +226,7 @@ const FIGURE_SWITCHES = [
     'figure',
     'Figure',
     [
+      ['look', 'your look'],
       ['rogue', 'stand-in'],
       ['mannequin', 'mannequin'],
     ],
@@ -240,12 +241,21 @@ const FIGURE_SWITCHES = [
     ],
   ],
   [
+    'figatlas',
+    'atlas',
+    'Atlas',
+    [
+      [true, 'live'],
+      [false, 'baked'],
+    ],
+  ],
+  [
     'figfolk',
     'folk',
-    'Townsfolk',
+    'Everyone else',
     [
-      [false, 'as they are'],
       [true, 'figures'],
+      [false, 'as they are'],
     ],
   ],
   [
@@ -662,6 +672,7 @@ function debugAction(x) {
     case 'figon':
     case 'figwho':
     case 'figstyle':
+    case 'figatlas':
     case 'figfolk':
     case 'figppm':
     case 'figturns':

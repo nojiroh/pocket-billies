@@ -78,6 +78,27 @@ def main():
                   f"{str(v.get('last') or '').splitlines()[0][:160]}")
     mem = (d.get('more') or {}).get('memoryMB') or {}
     if mem: print(f"Memory: JS heap {mem.get('used')} of {mem.get('total')} MB (limit {mem.get('limit')})")
+    # characters track: people (walk-view-gl.js peopleReport) and, with Figures on, the figures' numbers (figures.js
+    # figureReport): the baker, CH-4's meshes on the helper thread and the live atlas
+    ppl = (d.get('more') or {}).get('people')
+    if isinstance(ppl, dict):
+        print(f"People: {ppl.get('drawn')} drawn, {ppl.get('draws')} draws {json.dumps(ppl.get('byPass') or {})}, "
+              f"{ppl.get('textures')} pictures {ppl.get('mb')} MB")
+        fg = ppl.get('figures')
+        if isinstance(fg, dict):
+            # CH-3c: whether Figures and Everyone else were on, and whose figure you were (a phone log names it)
+            print(f"  figures: {'ON' if fg.get('on') else 'off'}, everyone else {'on' if fg.get('folk') else 'off'}, you {fg.get('figure')}, kit {fg.get('kit')}, "
+                  f"style {fg.get('style')}, {fg.get('density')} px/m, {fg.get('bakes')} baked ({num(fg.get('ms'))} ms), "
+                  f"{fg.get('pictures')} kept {fg.get('mb')} MB, lost {fg.get('losses')}" + (f", FAILED {fg.get('failed')}" if fg.get('failed') else ''))
+            m = fg.get('meshes') or {}
+            if m: print(f"  meshes: thread {m.get('thread')}, {m.get('builds')} built ({num(m.get('ms'))} ms), {m.get('page')} on the page "
+                        f"({num(m.get('pageMs'))} ms), {m.get('waiting')} waiting, {m.get('kept')} kept {m.get('mb')} MB")
+            mv = fg.get('moves') or {}
+            if mv: print('  moves (person-ticks): ' + ', '.join(f'{k} {v}' for k, v in mv.items()))
+            a = fg.get('atlas') or {}
+            if a: print(f"  atlas: {'on' if a.get('on') else 'off'}, {a.get('people')} people in {a.get('cells')} cells ({a.get('use')} of it), "
+                        f"{a.get('draws')} drawn ({num(a.get('ms'))} ms; {a.get('faceDraws', 0)} for a face: talking, blinks, expressions), {a.get('rows')} ramp rows, full {a.get('full')}"
+                        + (f", FAILED {a.get('failed')}" if a.get('failed') else ''))
 
     audio(((d.get('more') or {}).get('audio')))
 

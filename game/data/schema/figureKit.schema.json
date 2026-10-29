@@ -1,0 +1,499 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "figureKit.schema.json",
+ "title": "game/data/figureKit.json: the figure kit's shapes as data (characters track CH-5; game/js/logic/figure-kit.js builds everyone's figure with them, logic/kit-shapes.js reads the shape lists)",
+ "type": "object",
+ "required": ["heads", "vary", "builds", "folk", "proportions", "hair", "accessories", "faces"],
+ "additionalProperties": false,
+ "$defs": {
+  "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+  "vec3": {"type": "array", "items": {"type": "number"}, "minItems": 3, "maxItems": 3},
+  "range": {"description": "[base, spread]: base + spread times a number from the person's seed", "type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+  "sum": {
+   "description": "a number, or a sum of the frame's values like 'bx * 0.98' (numbers, names, + - * / and brackets, sqrt, sin, cos, pi)",
+   "anyOf": [{"type": "number"}, {"type": "string", "pattern": "^[-+*/(). 0-9A-Za-z_]+$"}]
+  },
+  "value": {
+   "anyOf": [
+    {"$ref": "#/$defs/sum"},
+    {"type": "boolean"},
+    {"type": "array", "items": {"$ref": "#/$defs/value"}},
+    {"type": "object", "additionalProperties": {"$ref": "#/$defs/value"}}
+   ]
+  },
+  "faceMark": {
+   "description": "a face mark: its kind, x and y from its anchor, w by h (metres on the usual head), shape, a slant's dir and thickness t, how much it must face the camera (min), close-ups only (close), its colour slot (col)",
+   "type": "object",
+   "required": ["kind", "w", "h"],
+   "additionalProperties": false,
+   "properties": {
+    "kind": {"type": "string", "pattern": "^[a-zA-Z]+$"},
+    "x": {"type": "number"},
+    "y": {"type": "number"},
+    "w": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+    "h": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+    "t": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.1},
+    "shape": {"enum": ["oval", "arc", "cap", "slant"]},
+    "dir": {"enum": [-1, 1]},
+    "min": {"type": "number", "minimum": -1, "maximum": 1},
+    "close": {"type": "boolean"},
+    "col": {"type": "string", "pattern": "^[a-zA-Z]+$"}
+   }
+  },
+  "vars": {"description": "named values, worked out in order", "type": "object", "propertyNames": {"pattern": "^[A-Za-z_]\\w*$"}, "additionalProperties": {"$ref": "#/$defs/sum"}},
+  "strand": {
+   "description": "how a strand grows: grav (how much it falls), stiff (how much it keeps its way), wave and freq, curl (in at its tip), hug (over that much of its length it lies along the head)",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "grav": {"type": "number", "minimum": 0, "maximum": 3},
+    "stiff": {"type": "number", "minimum": 0, "maximum": 1.5},
+    "wave": {"type": "number", "minimum": 0, "maximum": 2},
+    "freq": {"type": "number", "minimum": 0, "maximum": 6},
+    "curl": {"type": "number", "minimum": 0, "maximum": 2},
+    "hug": {"type": "number", "minimum": 0, "maximum": 1}
+   }
+  },
+  "tail": {
+   "description": "a tail of strands from a tie: its way (dir), how many strands (n) and how long (metres at the usual head)",
+   "type": "object",
+   "required": ["dir", "n", "len"],
+   "additionalProperties": false,
+   "properties": {
+    "at": {"description": "under a hat: where it is tied, on the skull (y from the hat's band)", "$ref": "#/$defs/vec3"},
+    "back": {"type": "number"},
+    "dir": {"$ref": "#/$defs/vec3"},
+    "n": {"type": "integer", "minimum": 1, "maximum": 24},
+    "len": {"type": "number", "exclusiveMinimum": 0, "maximum": 1.5}
+   }
+  },
+  "lengths": {"description": "[shortest, longest] metres at the usual head", "type": "array", "items": {"type": "number", "minimum": 0, "maximum": 1.5}, "minItems": 2, "maxItems": 2},
+  "step": {
+   "type": "object",
+   "required": ["op"],
+   "properties": {"op": {"enum": ["grow", "spikes", "bun", "tie", "twin"]}},
+   "allOf": [
+    {"if": {"properties": {"op": {"const": "grow"}}}, "then": {
+     "description": "every root (one in `every`) grown as a strand, combed from the whorl or `from` (mirrored to a side picked by the seed)",
+     "required": ["every", "len", "w", "strand", "lift"],
+     "additionalProperties": false,
+     "properties": {"op": true, "every": {"type": "integer", "minimum": 1}, "len": {"$ref": "#/$defs/lengths"}, "w": {"type": "number", "exclusiveMinimum": 0}, "strand": {"$ref": "#/$defs/strand"}, "lift": {"type": "number"}, "from": {"$ref": "#/$defs/vec3"}, "mirror": {"type": "boolean"}}
+    }},
+    {"if": {"properties": {"op": {"const": "spikes"}}}, "then": {
+     "description": "thick clumps swept back and up, the front ones (past `front` on the skull) flicked forward",
+     "required": ["every", "front", "root", "len", "lenVar", "w", "strand"],
+     "additionalProperties": false,
+     "properties": {"op": true, "every": {"type": "integer", "minimum": 1}, "front": {"type": "number"}, "root": {"type": "number"}, "len": {"type": "number"}, "lenVar": {"type": "number"}, "w": {"type": "number"}, "strand": {"$ref": "#/$defs/strand"}}
+    }},
+    {"if": {"properties": {"op": {"const": "bun"}}}, "then": {
+     "description": "every root (one in `every`) swept to a bun at `at` on the skull, and the bun wound round",
+     "required": ["at", "every", "tie", "out", "size", "coil", "turns", "coilR", "coilShrink", "coilRise", "coilW"],
+     "additionalProperties": false,
+     "properties": {"op": true, "at": {"$ref": "#/$defs/vec3"}, "every": {"type": "integer", "minimum": 1}, "tie": {"type": "number"}, "out": {"type": "number"}, "size": {"$ref": "#/$defs/vec3"}, "coil": {"type": "integer", "minimum": 0, "maximum": 40}, "turns": {"type": "number"}, "coilR": {"type": "number"}, "coilShrink": {"type": "number"}, "coilRise": {"type": "number"}, "coilW": {"type": "number"}}
+    }},
+    {"if": {"properties": {"op": {"const": "tie"}}}, "then": {
+     "description": "every root swept to a tie at `at` on the skull (`back` behind it), a knot, and a tail",
+     "required": ["at", "back", "every", "knot", "tail"],
+     "additionalProperties": false,
+     "properties": {"op": true, "at": {"$ref": "#/$defs/vec3"}, "back": {"type": "number"}, "every": {"type": "integer", "minimum": 1}, "knot": {"$ref": "#/$defs/vec3"}, "tail": {"$ref": "#/$defs/tail"}}
+    }},
+    {"if": {"properties": {"op": {"const": "twin"}}}, "then": {
+     "description": "two ties at each side (`at`, mirrored), each side's roots swept to its tie, and a tail from each",
+     "required": ["at", "out", "every", "len", "tail"],
+     "additionalProperties": false,
+     "properties": {"op": true, "at": {"$ref": "#/$defs/vec3"}, "out": {"type": "number"}, "every": {"type": "integer", "minimum": 1}, "len": {"type": "number"}, "tail": {"$ref": "#/$defs/tail"}}
+    }}
+   ]
+  },
+  "row": {
+   "type": "object",
+   "required": ["id"],
+   "oneOf": [{"required": ["shape", "col"]}, {"required": ["rows", "sides"]}],
+   "additionalProperties": false,
+   "properties": {
+    "id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+    "parent": {"description": "the part it hangs from (the head for a hat or the headset when none); CH-5b: $ is a side's letter (thigh$: thighA, then thighB)", "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*\\$?$"},
+    "stage": {"description": "CH-5b, a garment's: where in the build it is added (torso: after the torso; shell: after the legs; details, the default: after neckwear and bags)", "enum": ["torso", "shell", "details"]},
+    "when": {"description": "CH-5b: left out when this frame value is 0 (with !, when it isn't): bare, open, long, belted, belt, boot, neck, hat", "type": "string", "pattern": "^!?[A-Za-z]\\w*$"},
+    "chance": {"description": "CH-5b: the share of figures that have it, by the figure's own dice", "type": "number", "minimum": 0, "maximum": 1},
+    "salt": {"description": "CH-5b: which of the figure's dice `chance` reads (a sum)", "$ref": "#/$defs/sum"},
+    "rows": {"description": "CH-5b, with sides: all of these for side A, then for B (each id gets the side's letter)", "type": "array", "items": {"$ref": "#/$defs/row"}},
+    "at": {"type": "array", "items": {"$ref": "#/$defs/sum"}, "minItems": 3, "maxItems": 3},
+    "shape": {
+     "type": "object",
+     "required": ["kind"],
+     "properties": {"kind": {"enum": ["ellipsoid", "lathe", "torus", "cone", "capsule", "tube", "dome", "disc", "band", "curls"]}},
+     "additionalProperties": {"$ref": "#/$defs/value"}
+    },
+    "col": {"description": "its colour slot (hat, hat2, neck, bag, bag2, gear...)", "type": "string", "minLength": 1},
+    "sides": {"description": "an A and a B, mirrored: s is 1, then -1", "type": "boolean"},
+    "repeat": {"description": "this many copies, id0, id1...: i counts them", "type": "integer", "minimum": 1, "maximum": 32},
+    "vars": {"$ref": "#/$defs/vars"}
+   }
+  },
+  "mark": {
+   "description": "CH-5b: a mark painted on a part (a button, a pocket, a zip, a buckle)",
+   "type": "object",
+   "required": ["id", "kind", "part", "at", "w", "h", "col"],
+   "additionalProperties": false,
+   "properties": {
+    "id": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+    "kind": {"type": "string", "minLength": 1},
+    "part": {"description": "the part it is painted on ($: a side's letter)", "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*\\$?$"},
+    "at": {"type": "array", "items": {"$ref": "#/$defs/sum"}, "minItems": 3, "maxItems": 3},
+    "w": {"$ref": "#/$defs/sum"},
+    "h": {"$ref": "#/$defs/sum"},
+    "col": {"type": "string", "minLength": 1},
+    "stage": {"enum": ["torso", "shell", "details"]},
+    "when": {"type": "string", "pattern": "^!?[A-Za-z]\\w*$"},
+    "sides": {"type": "boolean"},
+    "repeat": {"type": "integer", "minimum": 1, "maximum": 32},
+    "vars": {"$ref": "#/$defs/vars"}
+   }
+  },
+  "garment": {
+   "description": "CH-5b: a wardrobe item's clothes on the figure: knobs for the body's own parts, rows and marks",
+   "type": "object",
+   "additionalProperties": false,
+   "properties": {
+    "sleeves": {"description": "a top's: none, short (the default) or long", "enum": ["none", "short", "long"]},
+    "covers": {"description": "an outer's: false shows the arms and the collar (the apron)", "type": "boolean"},
+    "puff": {"description": "an outer's sleeves' bulk (1.08 when not given)", "type": "number", "minimum": 0.5, "maximum": 2},
+    "open": {"description": "an outer's front shows the top (the flair's lapels)", "type": "boolean"},
+    "long": {"description": "an outer to the knees: no belt (the flair's tails)", "type": "boolean"},
+    "legs": {"description": "a bottom's: full (the default), shorts or skirt (bare legs)", "enum": ["full", "shorts", "skirt"]},
+    "fit": {"description": "a bottom's legs' width (1.06 when not given)", "type": "number", "minimum": 0.5, "maximum": 2},
+    "belt": {"description": "a bottom's: false has none", "type": "boolean"},
+    "sole": {"description": "shoes': 1 for a sole of the item's second colour, else a dark one", "enum": [0, 1]},
+    "boot": {"description": "shoes up the shin", "type": "boolean"},
+    "flat": {"description": "a sandal: a bare foot on a sole of the shoe's colour", "type": "boolean"},
+    "length": {"description": "shoes': the foot's length (1 when not given; oxfords longer)", "type": "number", "minimum": 0.5, "maximum": 2},
+    "stripe": {"description": "stripes painted round a part", "type": "object", "required": ["part", "col", "every", "from"], "additionalProperties": false,
+     "properties": {"part": {"type": "string"}, "col": {"type": "string"}, "every": {"type": "number", "exclusiveMinimum": 0}, "from": {"type": "number"}}},
+    "outer": {"description": "an item of another slot worn as an outer (Chad's track top): its knobs, rows and marks there", "$ref": "#/$defs/garment"},
+    "use": {"description": "pieces whose rows and marks come first", "type": "array", "items": {"$ref": "#/$defs/id"}},
+    "vars": {"$ref": "#/$defs/vars"},
+    "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}},
+    "marks": {"type": "array", "items": {"$ref": "#/$defs/mark"}}
+   }
+  }
+ },
+ "properties": {
+  "note": {"type": "string"},
+  "heads": {
+   "description": "the head shapes: each head's knobs",
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "minProperties": 1,
+   "additionalProperties": {
+    "type": "object",
+    "required": ["r", "jaw", "chin", "cheek", "crown", "face"],
+    "additionalProperties": false,
+    "properties": {
+     "r": {"description": "its radii (across, up, front to back) as parts of the usual head's", "type": "array", "items": {"type": "number", "minimum": 0.6, "maximum": 1.5}, "minItems": 3, "maxItems": 3},
+     "jaw": {"description": "how V its jaw (below 0 wider at the jaw than the cheeks)", "type": "number", "minimum": -1, "maximum": 1.5},
+     "chin": {"description": "how far its chin drops", "type": "number", "minimum": 0, "maximum": 2},
+     "cheek": {"description": "its cheekbones", "type": "number", "minimum": 0, "maximum": 2.5},
+     "crown": {"description": "how big the back of its skull", "type": "number", "minimum": 0.6, "maximum": 1.5},
+     "face": {"description": "how flat its face", "type": "number", "minimum": 0, "maximum": 1.5},
+     "nose": {"description": "a fixed nose (0 a button, 1 straight, 2 long, 3 broad); else each person's own", "enum": [0, 1, 2, 3]},
+     "random": {"description": "false: never picked by a seed (the main character's)", "type": "boolean"}
+    }
+   }
+  },
+  "vary": {
+   "description": "how far each person strays from their head shape",
+   "type": "object",
+   "required": ["size", "rx", "ry", "rz", "jaw", "chin", "cheek", "brow", "face", "noseK", "ears"],
+   "additionalProperties": false,
+   "properties": {
+    "size": {"description": "the head's size", "$ref": "#/$defs/range"},
+    "rx": {"$ref": "#/$defs/range"},
+    "ry": {"$ref": "#/$defs/range"},
+    "rz": {"$ref": "#/$defs/range"},
+    "jaw": {"description": "plus or minus half this", "type": "number", "minimum": 0},
+    "chin": {"$ref": "#/$defs/range"},
+    "cheek": {"$ref": "#/$defs/range"},
+    "brow": {"$ref": "#/$defs/range"},
+    "face": {"description": "plus or minus half this", "type": "number", "minimum": 0},
+    "noseK": {"$ref": "#/$defs/range"},
+    "ears": {"$ref": "#/$defs/range"}
+   }
+  },
+  "builds": {
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "required": ["average"],
+   "additionalProperties": {
+    "type": "object",
+    "required": ["k", "gait"],
+    "additionalProperties": false,
+    "properties": {
+     "k": {
+      "description": "multipliers on the look's sliders (height, legs, arms, body, shoulders, hips, head, neck), and a belly, a waist and a chest out",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "height": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+       "legs": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "arms": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "body": {"type": "number", "minimum": 0.5, "maximum": 1.8},
+       "shoulders": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "hips": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "head": {"type": "number", "minimum": 0.6, "maximum": 1.4},
+       "neck": {"type": "number", "minimum": 0, "maximum": 3},
+       "belly": {"type": "number", "minimum": 0, "maximum": 2},
+       "waist": {"type": "number", "minimum": 0.5, "maximum": 1.6},
+       "chestOut": {"type": "number", "minimum": 0, "maximum": 2}
+      }
+     },
+     "gait": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "swing": {"type": "number", "minimum": 0, "maximum": 2},
+       "arms": {"type": "number", "minimum": 0, "maximum": 2},
+       "bounce": {"type": "number", "minimum": 0, "maximum": 3},
+       "lean": {"type": "number", "minimum": -0.4, "maximum": 0.4},
+       "head": {"type": "number", "minimum": -0.4, "maximum": 0.4},
+       "hang": {"type": "number", "minimum": 0, "maximum": 0.5}
+      }
+     },
+     "jaw": {"description": "added to the head's jaw (below 0 squarer)", "type": "number", "minimum": -1, "maximum": 1}
+    }
+   }
+  },
+  "folk": {"description": "the builds townsfolk are picked from (a build twice is twice as likely)", "type": "array", "items": {"$ref": "#/$defs/id"}, "minItems": 1},
+  "proportions": {
+   "type": "object",
+   "required": ["chibi", "sliderGain"],
+   "additionalProperties": false,
+   "properties": {
+    "chibi": {
+     "description": "the head, legs, torso, arms and neck against a real body's",
+     "type": "object",
+     "required": ["head", "legs", "torso", "arms", "neck"],
+     "additionalProperties": false,
+     "properties": {
+      "head": {"type": "number", "minimum": 0.5, "maximum": 2},
+      "legs": {"type": "number", "minimum": 0.5, "maximum": 2},
+      "torso": {"type": "number", "minimum": 0.5, "maximum": 2},
+      "arms": {"type": "number", "minimum": 0.5, "maximum": 2},
+      "neck": {"type": "number", "minimum": 0, "maximum": 3}
+     }
+    },
+    "sliderGain": {"description": "how much more a look's slider counts on a figure (1 as the wardrobe draws it)", "type": "number", "minimum": 0, "maximum": 4}
+   }
+  },
+  "hair": {
+   "description": "each hair style's recipe (wardrobe ids); a style missing here grows as hair_short",
+   "type": "object",
+   "required": ["hair_short"],
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["steps"],
+    "additionalProperties": false,
+    "properties": {
+     "cut": {
+      "description": "the hairline: how far down the skull it reaches at the front, side and back (1 the top, -1 the bottom)",
+      "type": "object",
+      "required": ["front", "side", "back"],
+      "additionalProperties": false,
+      "properties": {"front": {"type": "number", "minimum": -1, "maximum": 1}, "side": {"type": "number", "minimum": -1, "maximum": 1}, "back": {"type": "number", "minimum": -1, "maximum": 1}}
+     },
+     "thin": {"description": "a close cap (a buzz cut's)", "type": "boolean"},
+     "under": {
+      "description": "what shows under a hat",
+      "type": "object",
+      "required": ["len", "w", "strand", "lift"],
+      "additionalProperties": false,
+      "properties": {"len": {"$ref": "#/$defs/lengths"}, "w": {"type": "number", "exclusiveMinimum": 0}, "strand": {"$ref": "#/$defs/strand"}, "lift": {"type": "number"}, "tail": {"$ref": "#/$defs/tail"}}
+     },
+     "steps": {"type": "array", "items": {"$ref": "#/$defs/step"}}
+    }
+   }
+  },
+  "accessories": {
+   "description": "each wardrobe id's shapes (hats, the headset, neckwear, bags); a hat missing here is a plain crown",
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "additionalProperties": {
+    "type": "object",
+    "required": ["rows"],
+    "additionalProperties": false,
+    "properties": {
+     "vars": {"$ref": "#/$defs/vars"},
+     "fringe": {"description": "a hat a fringe shows under (a cap, a beanie)", "type": "boolean"},
+     "colour": {"description": "the slot's own colour over the item's", "$ref": "#/$defs/vec3"},
+     "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}}
+    }
+   }
+  },
+  "clothes": {
+   "description": "CH-5b: each wardrobe item's clothes on the figure (tops, outers, bottoms, shoes); an item missing here dresses as tee or trousers, or with nothing for an outer or shoes",
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "properties": {"note": {"type": "string"}},
+   "additionalProperties": {"$ref": "#/$defs/garment"}
+  },
+  "pieces": {
+   "description": "CH-5b: rows and marks many garments share (a garment's use: the collar, the belt)",
+   "type": "object",
+   "propertyNames": {"$ref": "#/$defs/id"},
+   "properties": {"note": {"type": "string"}},
+   "additionalProperties": {"type": "object", "additionalProperties": false, "properties": {"vars": {"$ref": "#/$defs/vars"}, "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}}, "marks": {"type": "array", "items": {"$ref": "#/$defs/mark"}}}}
+  },
+  "flair": {
+   "description": "CH-5b: the directions' flair (figures.js FIGURE_LOOKS: who wears what) as rows on the body's and the head's frames",
+   "type": "object",
+   "properties": {"note": {"type": "string"}},
+   "additionalProperties": {"type": "object", "required": ["rows"], "additionalProperties": false, "properties": {"vars": {"$ref": "#/$defs/vars"}, "rows": {"type": "array", "items": {"$ref": "#/$defs/row"}}}}
+  },
+  "faces": {
+   "description": "CH-6: the face as marks (logic/figure-kit.js kitFaceMarks); sizes in metres on the usual head",
+   "type": "object",
+   "required": ["eyes", "eyeFrames", "brows", "mouths", "expressions", "talk", "moods", "rest", "wardrobe", "defaults"],
+   "additionalProperties": false,
+   "properties": {
+    "note": {"type": "string"},
+    "eyes": {
+     "description": "each eye style: its white (w, h), a heavy lid ([y, w, h] as parts of the eye), lash flicks and the outer one's length (wing), how far apart (gap), the iris's size, a shaded lid, bags, lines, whether its wearer blushes",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "required": ["w", "h"],
+      "additionalProperties": false,
+      "properties": {
+       "w": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+       "h": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+       "lid": {"$ref": "#/$defs/vec3"},
+       "flicks": {"type": "integer", "minimum": 0, "maximum": 3},
+       "wing": {"type": "number", "minimum": 0, "maximum": 3},
+       "gap": {"type": "number", "minimum": 0.6, "maximum": 1.6},
+       "iris": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+       "shade": {"type": "boolean"},
+       "bags": {"type": "boolean"},
+       "lines": {"type": "boolean"},
+       "blush": {"type": "boolean"}
+      }
+     }
+    },
+    "eyeFrames": {
+     "description": "how each frame of an eye changes it: open (how much shows), scale, iris, shut, happy (shut, curved up), slant (an angry lid), flat (a bored lid), look (a glance: -1 or 1)",
+     "type": "object",
+     "required": ["open", "half", "closed"],
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+       "open": {"type": "number", "minimum": 0.2, "maximum": 1},
+       "scale": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+       "iris": {"type": "number", "minimum": 0.5, "maximum": 1.5},
+       "shut": {"type": "boolean"},
+       "happy": {"type": "boolean"},
+       "slant": {"type": "number", "minimum": -1, "maximum": 1},
+       "flat": {"type": "boolean"},
+       "look": {"type": "number", "minimum": -1, "maximum": 1}
+      }
+     }
+    },
+    "expressions": {
+     "description": "the portrait kit's expressions as figures show them (a dialogue line's [tag]): the eyes frame, the mouth frame (else the look's own), the brows' tilt (above 0 down to the nose) and lift (metres up), blush, the talking frames",
+     "type": "object",
+     "required": ["idle"],
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "required": ["eyes"],
+      "additionalProperties": false,
+      "properties": {
+       "eyes": {"$ref": "#/$defs/id"},
+       "mouth": {"$ref": "#/$defs/id"},
+       "tilt": {"type": "number", "minimum": -4, "maximum": 4},
+       "lift": {"type": "number", "minimum": -0.05, "maximum": 0.05},
+       "blush": {"type": "boolean"},
+       "talk": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/id"}}
+      }
+     }
+    },
+    "talk": {"description": "the talking mouth frames when an expression has none of its own", "type": "array", "minItems": 1, "items": {"$ref": "#/$defs/id"}},
+    "brows": {
+     "description": "each brow style: its width (w) and thickness (t), arch, its own tilt (above 0 down to the nose), flat, a peak, one side raised (uneven), a crease between (knit), tufts (bushy)",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "required": ["w", "t"],
+      "additionalProperties": false,
+      "properties": {
+       "w": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.3},
+       "t": {"type": "number", "exclusiveMinimum": 0, "maximum": 0.1},
+       "arch": {"type": "number", "minimum": 0, "maximum": 0.05},
+       "tilt": {"type": "number", "minimum": -4, "maximum": 4},
+       "flat": {"type": "boolean"},
+       "peak": {"type": "boolean"},
+       "uneven": {"type": "number", "minimum": -0.05, "maximum": 0.05},
+       "knit": {"type": "boolean"},
+       "bushy": {"type": "boolean"}
+      }
+     }
+    },
+    "mouths": {
+     "description": "each mouth frame's marks",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/faceMark"}}
+    },
+    "moods": {
+     "description": "a resting face: where the upper lid sits (a part of the eye's height), the brows' tilt (above 0 down to the nose) and lift",
+     "type": "object",
+     "propertyNames": {"$ref": "#/$defs/id"},
+     "additionalProperties": {
+      "type": "object",
+      "required": ["lid"],
+      "additionalProperties": false,
+      "properties": {"lid": {"type": "number", "minimum": -1, "maximum": 1}, "tilt": {"type": "number", "minimum": -4, "maximum": 4}, "lift": {"type": "number", "minimum": -0.1, "maximum": 0.1}}
+     }
+    },
+    "rest": {
+     "description": "a look's resting mood: the first rule whose wardrobe ids it wears",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": ["mood"],
+      "additionalProperties": false,
+      "properties": {
+       "eyes": {"type": "array", "items": {"type": "string"}},
+       "brows": {"type": "array", "items": {"type": "string"}},
+       "mouth": {"type": "array", "items": {"type": "string"}},
+       "mood": {"$ref": "#/$defs/id"}
+      }
+     }
+    },
+    "skin": {
+     "description": "the skin's ramps: for a swatch (base), five shades (deep, shadow, base, light, shine)",
+     "type": "array",
+     "items": {
+      "type": "object",
+      "required": ["base", "ramp"],
+      "additionalProperties": false,
+      "properties": {
+       "base": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"},
+       "ramp": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}}
+      }
+     }
+    },
+    "wardrobe": {"description": "the style or mouth frame each wardrobe id draws", "type": "object", "additionalProperties": {"$ref": "#/$defs/id"}},
+    "defaults": {
+     "type": "object",
+     "required": ["eyes", "brows", "mouth"],
+     "additionalProperties": false,
+     "properties": {"eyes": {"$ref": "#/$defs/id"}, "brows": {"$ref": "#/$defs/id"}, "mouth": {"$ref": "#/$defs/id"}}
+    }
+   }
+  }
+ }
+}

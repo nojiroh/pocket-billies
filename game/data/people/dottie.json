@@ -27,5 +27,6 @@
    "nametag": ["#F2EEE2","#B8423A"],
    "satchel": ["#8A5A32","#5A3A20"]
   }
- }
+ },
+ "figure": {"head":"oval","build":"slim","eyes":"tired","brows":"flat"}
 }

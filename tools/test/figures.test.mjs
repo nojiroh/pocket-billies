@@ -1,5 +1,6 @@
 // Characters track CH-2: the figure baker (game/js/figures.js) against a stand-in WebGL2 context: what one bake sends,
 // the pictures it keeps, how many it bakes a frame, and a lost context (the baker's own) and its return. No graphics.
+import './figure-kit-data.mjs';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -95,7 +96,9 @@ function fakeDocument(opts = {}) {
   return { made, createElement };
 }
 
-/* a fresh baker on a stand-in document; the engine's dials at their defaults (density 32, 16 turns, the outline) */
+/* a fresh baker on a stand-in document; the engine's dials at their defaults (density 48 since CH-3b, 16 turns, the
+   outline) */
+const PPM = 48;
 function freshBaker(opts) {
   const D = fakeDocument(opts),
     B = G.figureBaker;
@@ -128,8 +131,8 @@ test('figures: one bake draws the mannequin and its outline, and gives a person�
       rec = {},
       im = G.figurePicture(rec, 'mannequin', 'idle', 0, Math.PI, 0, TILT);
     assert.ok(im, 'a picture');
-    const S = G.cardSize(32, 13 * G.TILT_STEP);
-    assert.deepEqual([im.width, im.height, im.ax, im.ay, im.ppm, im.noNormal], [S.w, S.h, S.ax, S.ay, 32, true]);
+    const S = G.cardSize(PPM, 13 * G.TILT_STEP);
+    assert.deepEqual([im.width, im.height, im.ax, im.ay, im.ppm, im.noNormal], [S.w, S.h, S.ax, S.ay, PPM, true]);
     assert.ok(G.personPicture(im), 'counted as a person’s picture (logic/person-view.js)');
     const calls = D.made.gl.calls,
       draws = calls.filter(c => c[0] === 'drawArrays');
@@ -137,12 +140,13 @@ test('figures: one bake draws the mannequin and its outline, and gives a person�
       draws.map(c => c.slice(1)),
       [
         ['TRIANGLES', 0, G.figureMesh(G.mannequinFigure()).count],
+        ['TRIANGLES', 0, G.figureMesh(G.mannequinFigure()).count],
         ['TRIANGLES', 0, 6],
       ],
-      'the figure, then the outline pass'
+      'the figure from the light (CH-3b: its own shadows), the figure, then the outline pass'
     );
     const J = calls.find(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ');
-    assert.equal(J[3].length, G.mannequinFigure().parts.length * 16, 'a matrix for each part');
+    assert.equal(J[3].length, G.figureGpuMesh(G.mannequinFigure()).slots.length * 16, 'a matrix for each moving part');
     const out = calls.find(c => c[0] === 'uniform1f' && c[1] === 'uOut');
     assert.equal(out[2], 1, 'the outline on');
     /* copied from the bottom rows of the baker's canvas */
@@ -226,7 +230,11 @@ test('figures: the baker’s lost context bakes nothing, and bakes again once it
     G.gpuState.fr++;
     const b = G.figurePicture(rec, 'mannequin', 'idle', 1, Math.PI, 0, TILT);
     assert.ok(b && b !== a, 'baked again');
-    assert.equal(D.made.gl.programs(), progs + 2, 'its two programs made again');
+    assert.equal(
+      D.made.gl.programs(),
+      progs + 3,
+      'its three programs made again (the figure, its shadow, the outline)'
+    );
     assert.equal(G.figureReport().losses, 1);
     /* the pictures baked before the loss are plain canvases, still kept */
     assert.equal(G.figurePicture({}, 'mannequin', 'idle', 0, Math.PI, 0, TILT), a);
@@ -278,7 +286,8 @@ test('figures: at most 600 pictures kept, the longest unused going first', () =>
 });
 
 test('figures: a figure made from a model (the stand-in): its triangles by index, its texture, a joint each', () => {
-  const was2 = G.artImg;
+  const was2 = G.artImg,
+    wasChoice = G.figureChoice;
   try {
     const D = freshBaker(),
       file = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/art/figures/rogue.json'), 'utf8'));
@@ -290,13 +299,17 @@ test('figures: a figure made from a model (the stand-in): its triangles by index
     assert.equal(Fig.clips.walk.mats.length, file.clips.walk.frames * file.joints.length * 12);
     G.FIGURE_DEFS.rogue = Fig;
     const im = G.figurePersonPicture({}, 'rogue', 0, 'idle', 0, Math.PI);
-    assert.ok(im && im.ppm === 32, 'a person’s picture at 32 px a metre');
-    const S = G.cardSize(32, 13 * G.TILT_STEP, file.extent);
+    assert.ok(im && im.ppm === PPM, 'a person’s picture at the dial’s pixels a metre');
+    const S = G.cardSize(PPM, 13 * G.TILT_STEP, file.extent);
     assert.deepEqual([im.width, im.height], [S.w, S.h], 'as big as its extent');
     const calls = D.made.gl.calls;
     assert.deepEqual(
       calls.filter(c => c[0] === 'drawElements').map(c => c.slice(1)),
-      [['TRIANGLES', file.counts.triangles * 3, 'UNSIGNED_SHORT', 0]]
+      [
+        ['TRIANGLES', file.counts.triangles * 3, 'UNSIGNED_SHORT', 0],
+        ['TRIANGLES', file.counts.triangles * 3, 'UNSIGNED_SHORT', 0],
+      ],
+      'from the light, then as seen'
     );
     assert.equal(calls.find(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ')[3].length, file.joints.length * 16);
     assert.equal(calls.find(c => c[0] === 'uniform1f' && c[1] === 'uTexOn')[2], 1, 'coloured by its texture');
@@ -317,15 +330,22 @@ test('figures: a figure made from a model (the stand-in): its triangles by index
     G.gpuState.fr++;
     assert.ok(G.figurePersonPicture({}, 'rogue', 0, 'cheer', 0, Math.PI));
     assert.ok(G.figurePersonPicture({}, 'rogue', 0, 'dance', 0, Math.PI));
-    /* in battle: at 64 px a metre, square to the level camera, the throw by how far through it the battle is */
+    /* in battle: at FIGURE_BATTLE_PPM (96), square to the level camera, the throw by how far through it the battle is (you
+       as the stand-in: Engine > People > Your figure; CH-3b's default is your own look) */
+    G.figureChoice = () => 'rogue';
     G.gpuState.fr++;
     const T = {},
       bp = G.figureBattlePicture(T, 0, 0, 'throw', 0.5);
-    assert.ok(bp && bp.ppm === 64 && bp.figure === 'rogue');
-    const S0 = G.cardSize(64, 0, file.extent);
+    assert.ok(bp && bp.ppm === G.FIGURE_BATTLE_PPM && bp.figure === 'rogue');
+    const S0 = G.cardSize(G.FIGURE_BATTLE_PPM, 0, file.extent);
     assert.deepEqual([bp.width, bp.height], [S0.w, S0.h], 'no tilt: the card as tall as the figure');
     const J = calls.filter(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ').pop()[3],
-      want = G.meshClipMatrices(Fig.clips.throw, Math.floor(0.5 * Fig.clips.throw.frames), file.joints.length, 64);
+      want = G.meshClipMatrices(
+        Fig.clips.throw,
+        Math.floor(0.5 * Fig.clips.throw.frames),
+        file.joints.length,
+        G.FIGURE_BATTLE_PPM
+      );
     assert.ok(
       J.every((v, k) => Math.abs(v - want[k]) < 1e-5),
       'the throw half way through'
@@ -335,6 +355,7 @@ test('figures: a figure made from a model (the stand-in): its triangles by index
   } finally {
     G.document.createElement = was;
     G.artImg = was2;
+    G.figureChoice = wasChoice;
     delete G.FIGURE_DEFS.rogue;
   }
 });
@@ -381,6 +402,81 @@ test('figures: at most 48 MB of pictures kept: big plain 3D pictures go sooner',
   }
 });
 
+test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, Kappi the capybara', () => {
+  const was3 = [G.lookOf, G.figureChoice, G.figureItems, G.figureStyle],
+    W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+    looks = {
+      me: { body: {}, skin: '#E6B08A', wear: { hair: 'hair_short', top: 'tee' } },
+      clerk: { body: {}, skin: '#E6B08A', wear: { hair: 'hair_bun', top: 'longsleeve', glasses: 'glasses_round' } },
+      kappi: { name: 'Kappi', creature: { rig: 'kappi', ht: 0.8 } },
+    };
+  try {
+    const D = freshBaker();
+    G.lookOf = who => looks[who === 'boy' || who === 'girl' ? 'me' : who];
+    G.figureItems = () => W.items;
+    G.figureChoice = () => 'look';
+    /* a direction with designs of its own builds everyone its way (its name after '@') */
+    G.figureStyle = () => 'gnight';
+    assert.match(G.figureFor('clerk'), /^look:clerk#[0-9a-z]+@gnight$/);
+    assert.match(G.figureFor('me'), /^look:me#[0-9a-z]+@gnight$/);
+    G.figureStyle = () => 'pixel';
+    /* CH-5: named by what each is built from (their look, figure choice and the kit's revision) */
+    const clerk = G.figureFor('clerk');
+    assert.match(clerk, /^look:clerk#[0-9a-z]+$/);
+    assert.match(G.figureFor('folk:12'), /^look:folk:12#[0-9a-z]+$/);
+    const me = G.figureFor('boy');
+    assert.ok(me.startsWith('look:me#'));
+    assert.equal(G.figureFor('girl'), me, 'boy, girl and me are your look');
+    looks.me = { ...looks.me, wear: { ...looks.me.wear, top: 'tank' } };
+    assert.notEqual(G.figureFor('me'), me, 'a new look, a new figure');
+    /* CH-5: the Studio's kit data (an edit): everyone is a new figure; the game's again: the same names as before */
+    const kit = structuredClone(G.GAMEDATA.figureKit);
+    kit.heads.round.jaw += 0.1;
+    G.figureKitUse(kit);
+    assert.notEqual(G.figureFor('clerk'), clerk, 'an edited kit, a new figure');
+    assert.equal(G.figureReport().kit.endsWith(' (own)'), true);
+    G.figureKitUse(null);
+    assert.equal(G.figureFor('clerk'), clerk, 'the game’s kit again');
+    G.figureChoice = () => 'mannequin';
+    assert.equal(G.figureFor('me'), 'mannequin', 'or the spike’s figure you picked');
+    /* built by the kit, baked as a person's picture; Kappi on four legs */
+    const im = G.figurePersonPicture({}, clerk, 0, 'idle', 0, Math.PI);
+    assert.ok(im && im.ppm === PPM && im.figure === clerk);
+    assert.ok(im.x.fills.length >= 6, 'a face: eyes, glints, irises, a mouth, glasses');
+    assert.ok(G.FIGURE_DEFS[clerk].F.kit, 'the head and build the kit chose');
+    G.gpuState.fr++;
+    assert.ok(G.figurePersonPicture({}, 'look:kappi', 0, 'walk', 0.6, Math.PI));
+    assert.ok(G.FIGURE_DEFS['look:kappi'].F.parts.some(p => p.id === 'legBR'));
+    /* the card fits a cheer's raised arms */
+    const ext = G.FIGURE_DEFS[clerk].ext;
+    assert.ok(ext.top > G.FIGURE_DEFS[clerk].F.height, `${ext.top}`);
+    assert.ok(D.made.gl.calls.some(c => c[0] === 'drawArrays'));
+  } finally {
+    G.document.createElement = was;
+    [G.lookOf, G.figureChoice, G.figureItems, G.figureStyle] = was3;
+    for (const k of Object.keys(G.FIGURE_DEFS)) if (k.startsWith('look:')) delete G.FIGURE_DEFS[k];
+  }
+});
+
+test('CH-4: the snapshot service: a UI picture baked once in the studio light, then kept', () => {
+  const look = G.engineContext.look;
+  try {
+    freshBaker();
+    G.engineContext.look = { people: { figure: 'mannequin', style: 'pixel' } };
+    const a = G.figureSnapshot('me', { crop: 'whole', turn: 1 });
+    assert.ok(a && a.figure === 'mannequin', 'your figure (here the mannequin) as a canvas');
+    assert.equal(a.ppm, G.FIGURE_PORTRAIT_PPM);
+    assert.equal(G.figureReport().bakes, 1);
+    assert.equal(G.figureSnapshot('me', { crop: 'whole', turn: 1 }), a, 'kept');
+    assert.equal(G.figureReport().bakes, 1);
+    assert.notEqual(G.figureSnapshot('me', { crop: 'whole', turn: 0 }), a, 'another turn, another picture');
+    assert.equal(G.figureReport().bakes, 2);
+  } finally {
+    G.engineContext.look = look;
+    G.document.createElement = was;
+  }
+});
+
 /* ---------- DL-6: the talk's close-ups ---------- */
 test('figures: a close-up: the rest pose first, kept by stepped head angle, the nearest shown until baked', () => {
   try {
@@ -403,10 +499,19 @@ test('figures: a close-up: the rest pose first, kept by stepped head angle, the 
     next();
     assert.equal(G.figureBustPicture('mannequin', { yaw: 11.9, pitch: 1, roll: -2 }), turned, 'the same step');
     /* the head's matrix differs between the two, the body's not */
+    /* each bake sends them twice (CH-3b: the shadow pass, then the picture); a code figure's moving parts only (its
+       mesh's slots) */
     const uJ = D.made.gl.calls.filter(c => c[0] === 'uniformMatrix4fv' && c[1] === 'uJ').map(c => c[3]),
       F = G.mannequinFigure(),
-      at = id => F.parts.findIndex(p => p.id === id) * 16;
-    assert.equal(uJ.length, 2);
+      slots = [...B.res.values()][0].slots,
+      at = id => {
+        const i = F.parts.findIndex(p => p.id === id);
+        return (slots ? slots.indexOf(i) : i) * 16;
+      };
+    assert.equal(uJ.length, 4);
+    assert.ok(at('head') >= 0 && at('torso') >= 0);
+    uJ.splice(0, 1);
+    uJ.splice(1, 1);
     assert.deepEqual(uJ[0].slice(at('torso'), at('torso') + 16), uJ[1].slice(at('torso'), at('torso') + 16));
     assert.notDeepEqual(uJ[0].slice(at('head'), at('head') + 16), uJ[1].slice(at('head'), at('head') + 16));
     /* seen level: the clip matrix of a tilt of 0 */
@@ -415,6 +520,45 @@ test('figures: a close-up: the rest pose first, kept by stepped head angle, the 
     assert.ok(R.bustMs >= 0 && R.bakes === 2, 'counted with the bakes too');
     G.figureCacheClear();
     assert.equal(G.figureReport().busts, 0);
+  } finally {
+    G.document.createElement = was;
+  }
+});
+
+test('CH-5: the Studio’s figure preview: built once per edit with its own kit data, turned, the old one let go', () => {
+  try {
+    const D = freshBaker(),
+      W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+      kit = structuredClone(G.GAMEDATA.figureKit),
+      look = { body: {}, skin: '#E6B08A', wear: { hair: 'hair_bun', top: 'tee', hat: 'hat_cap' } },
+      o = { look, items: W.items, kit, who: 'clerk', figure: { head: 'square', build: 'round' }, rev: 1 };
+    const a = G.figurePreview({ ...o, turn: 1 });
+    assert.ok(a && a.ppm === 64 && a.figure === 'preview:clerk:1@pixel');
+    assert.deepEqual(a.kit, { head: 'square', build: 'round', bust: a.kit.bust }, 'the head and build asked for');
+    assert.ok(a.ms >= 0);
+    const built = G.figurePreviewState.def;
+    /* another turn, a close-up: the same figure, baked again */
+    const b = G.figurePreview({ ...o, turn: 0.25, ppm: 120 });
+    assert.ok(b && b !== a);
+    assert.equal(G.figurePreviewState.def, built, 'not built again for a turn');
+    assert.equal(G.figureBaker.res.size, 1, 'one mesh at one detail');
+    /* an edit (the Studio counts it): built again with the edited kit, the old mesh let go */
+    kit.accessories.hat_cap.rows = kit.accessories.hat_cap.rows.slice(0, 1);
+    const c = G.figurePreview({ ...o, rev: 2 });
+    assert.ok(c && c.figure === 'preview:clerk:2@pixel');
+    assert.notEqual(G.figurePreviewState.def, built);
+    assert.ok(!G.figurePreviewState.def.F.parts.some(p => p.id === 'peak'), 'the edited cap has no peak');
+    assert.ok(built.F.parts.some(p => p.id === 'peak'));
+    assert.deepEqual(
+      [...G.figureBaker.res.keys()].map(k => k.split('|')[0]),
+      ['preview:clerk:2@pixel']
+    );
+    assert.ok(
+      D.made.gl.calls.some(x => x[0] === 'deleteBuffer'),
+      'the old mesh’s buffer freed'
+    );
+    G.figurePreviewForget();
+    assert.equal(G.figureBaker.res.size, 0);
   } finally {
     G.document.createElement = was;
   }
@@ -439,6 +583,70 @@ test('figures: a close-up’s face is painted on a copy, with the talk’s eyes 
   }
 });
 
+test('figures: CH-6 the one talking moves their mouth with their line’s expression; nobody else does', async () => {
+  const { figureFaceFor } = await import('../../game/js/figures.js');
+  const H = await import('../../game/js/hooks.js'),
+    real = H.talkBox,
+    /* the dialogue box's state (talk.js talkBox), a stand-in */
+    talkBox = { on: false, cur: null, por: null },
+    at = G.walkRenderer.talkAt;
+  H.provide({ talkBox });
+  try {
+    talkBox.on = true;
+    talkBox.cur = { who: 'broker', text: 'Hello there, friend', n: 3, typing: true };
+    talkBox.por = { who: 'broker', expr: 'happy', t: 0 };
+    G.walkRenderer.talkAt = { x: 5, z: 5, t: 0 };
+    const f = figureFaceFor('broker', 5.2, 5);
+    assert.equal(f.expr, 'happy');
+    assert.ok(Number.isInteger(f.talk));
+    /* someone else with the same look further off, another person, you: no */
+    assert.equal(figureFaceFor('broker', 9, 9), null);
+    assert.equal(figureFaceFor('concierge', 5, 5), null);
+    assert.equal(figureFaceFor('boy', 5, 5, true), null);
+    /* an actor (no place) by who they are; your own line by 'me' */
+    assert.equal(figureFaceFor('broker').expr, 'happy');
+    talkBox.cur = { who: 'me', text: 'Hi.', n: 3, typing: true };
+    talkBox.por = { who: 'me', expr: null, t: 0 };
+    const me = figureFaceFor('boy', 0, 0, true);
+    assert.ok(me && me.talk === undefined, 'a full stop rests the mouth');
+    /* the line typed out: the expression stays, the mouth rests; the box shut: nothing */
+    talkBox.cur = { who: 'broker', text: 'Hello', n: 5, typing: false };
+    talkBox.por = { who: 'broker', expr: 'sad', t: 0 };
+    assert.deepEqual(figureFaceFor('broker', 5, 5), { expr: 'sad' });
+    talkBox.on = false;
+    assert.equal(figureFaceFor('broker', 5, 5), null);
+  } finally {
+    H.provide({ talkBox: real });
+    G.walkRenderer.talkAt = at;
+  }
+});
+
+test('figures: CH-6 a face mark is left out where something nearer covers it (a brim over the eyes)', async () => {
+  const figureMarkClip = G.figureMarkClip;
+  const { FIGURE_MARK_HIDE, figureMarkHidden } = await import('../../game/js/logic/figure-pose.js');
+  const S = { w: 4, h: 3 },
+    depth = new Uint8Array(S.w * S.h * 4),
+    /* the picture's depth alpha at (x, y from the top), rows from the bottom as read back */
+    put = (x, y, a) => (depth[((S.h - 1 - y) * S.w + x) * 4 + 3] = Math.round(a * 255)),
+    d = 0.5;
+  for (let y = 0; y < 3; y++) for (let x = 0; x < 4; x++) put(x, y, d);
+  put(1, 0, d + FIGURE_MARK_HIDE + 0.02);
+  const calls = [],
+    x = { fillRect: (...a) => calls.push(a) };
+  /* nothing in front of the bottom row: one rect */
+  figureMarkClip(x, depth, S, d).fillRect(0, 2, 4, 1);
+  assert.deepEqual(calls, [[0, 2, 4, 1]]);
+  calls.length = 0;
+  /* the brim at (1, 0): the top row painted round it */
+  figureMarkClip(x, depth, S, d).fillRect(0, 0, 3, 1);
+  assert.deepEqual(calls, [
+    [0, 0, 1, 1],
+    [2, 0, 1, 1],
+  ]);
+  /* the face itself (a little nearer than the smooth surface the mark sits on) doesn't hide it */
+  assert.equal(figureMarkHidden(d + FIGURE_MARK_HIDE * 0.5, d), false);
+  assert.equal(figureMarkHidden(0.9, undefined), false);
+});
 test('figures: every head angle of a figure kept in each style (45 each)', () => {
   try {
     freshBaker();

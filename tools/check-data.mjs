@@ -30,6 +30,7 @@ import { seamRulesLinks, seamRulesPlaces } from '../game/js/logic/seam-rules.js'
 import { islandProblems } from '../game/js/logic/island.js';
 import { POSES_BY_PLAN } from '../game/js/body-plan-animation.js';
 import { formProblems, lineSpeciesIds } from '../game/js/logic/forms.js';
+import { figureKitProblems } from '../game/js/logic/kit-shapes.js';
 // CAM-4b: the zoom stops reach data-checks.js through hooks.js (the page's load order), so they are loaded first
 import '../game/js/logic/camera-zoom.js';
 import {
@@ -592,6 +593,10 @@ if (D.kitBuilds && check('kitBuilds.schema.json', D.kitBuilds, 'kitBuilds.json')
     }
   }
 }
+// characters track CH-5: the figure kit's shapes (figureKit.json): the schema, then every sum works out and every id
+// it names is a build or a wardrobe item
+if (D.figureKit && check('figureKit.schema.json', D.figureKit, 'figureKit.json'))
+  for (const p of figureKitProblems(D.figureKit, (D.wardrobe && D.wardrobe.items) || {}, D.people || {})) problem('figureKit.json', p);
 // phase 07: portraits: the schema, then every picture named is there and every face uses parts that exist
 if (D.portraits) {
   const P = D.portraits,

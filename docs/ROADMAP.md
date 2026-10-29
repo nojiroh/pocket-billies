@@ -380,8 +380,26 @@ town node needs it.
   the sprite-sheet exporter retired) done 2026-10-27; the spike CH-2 (the figure baker: jointed rigid figures baked
   into pixel pictures down today's sprite path, behind Engine > People > Figures; a code-built mannequin, made rounder
   at the owner's word) and CH-3 (KayKit's CC0 Rogue through tools/gltf-figure.mjs, the plain 3D figure beside it, a
-  Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; next **the owner's phone
-  and pick** ("Ask me before" 1). About 14 sessions in all if the pick is C. Tags `ch-N-done`. Branch `track/characters` (made
+  Billie, townsfolk and battles at 64 px/m, the debug menu's figure switches) done 2026-10-28; **the owner's pick
+  (2026-10-28): C, built in code from the mannequin's simpler shapes, with more variety and personality**; CH-3b (the
+  figure kit: six head shapes, six builds with their own gaits, every wardrobe slot, painted faces; every NPC, Kappi
+  as a capybara and you as your look, behind Figures) done 2026-10-28; CH-4 (the live atlas: figures drawn each
+  step by the game's renderer into one shared unlit atlas and lit where they stand; meshes on a helper thread;
+  density by distance; the snapshot service) done 2026-10-28 on `claude/laughing-tesla-roy32r` ahead of CH-3c (the
+  plan approved in Plan Mode), its phone gate owed; CH-5 (the kit's data: head shapes, builds, hair recipes and the
+  hats, headset, neckwear and bags as shape lists in game/data/figureKit.json, figures cached by what makes them, the
+  Studio's Figures section with a turntable; clothes split into CH-5b) done 2026-10-28 there too, ahead of CH-3c; CH-6
+  (faces: the portrait kit's 13 eye and 12 brow styles, its 15 mouth frames and 7 expressions as marks, blinks for
+  everyone, talking mouths with the line's [tag], hand-picked skin ramps, all in figureKit.json `faces` with the
+  Studio's Faces tab) done 2026-10-28 there too, ahead of CH-3c; CH-3c (the movement pass: walk, jog and sprint by
+  speed with each build's stride from its legs, the step off, the settle and eased turns; figure data for the
+  residents, keepers, Granny Juniper and the hiker; a room's people seen with the live atlas; tools/look-places.py)
+  done 2026-10-29 there too, its phone gate owed with CH-4's. PR #314 merged into `track/characters` 2026-10-29 (the
+  owner: "merge #314 first"). CH-5b (clothes as data: each wardrobe top, outer, bottom and shoe as knobs, rows and
+  marks in figureKit.json clothes, the shared pieces, the directions' flair as rows; the Studio's Clothes and Flair
+  tabs; main merged in, DL-6's figure close-ups joined with the kit's faces) done 2026-10-29 on `track/characters`
+  (draft PR #332 into main); next CH-7 (the dressing room on the figure).
+  About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's
   relics) with lots of variety, each with its own picture in the UI icon set's 36 px block-and-split look, drawn as

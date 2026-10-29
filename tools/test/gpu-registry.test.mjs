@@ -149,6 +149,31 @@ test("the engine's own objects go through it: a render target resized frees the 
     }
   }));
 
+test('CH-4: a render target with more colour textures draws to all of them and frees them all', () => {
+  const draws = [];
+  withGL(
+    gl => {
+      const fb = G.gpuState.fb;
+      G.gpuState.fb = {};
+      try {
+        const A = G.renderTarget('mrt', 4, 2, { colors: 1, nearest: true });
+        assert.equal(A.cs.length, 1);
+        assert.equal(G.gpuRes.n.targets, 3, 'framebuffer and two colour textures');
+        assert.deepEqual(draws, [[0x8ce0, 0x8ce1]], 'COLOR_ATTACHMENT0 and 1');
+        G.renderTarget('mrt', 8, 2, { colors: 1, nearest: true });
+        assert.deepEqual(gl.deleted.sort(), [A.f.id, A.c.id, A.cs[0].id].sort());
+        assert.deepEqual(G.renderTarget('one', 2, 2).cs, [], 'one colour texture, as before');
+      } finally {
+        G.gpuState.fb = fb;
+      }
+    },
+    {
+      COLOR_ATTACHMENT0: 0x8ce0,
+      drawBuffers: b => draws.push(b),
+    }
+  );
+});
+
 /* a context whose shaders compile and link (stat: what getShaderParameter and LINK_STATUS answer) */
 const linking = stat => ({
   getShaderParameter: () => stat,

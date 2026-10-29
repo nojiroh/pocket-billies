@@ -27,5 +27,6 @@
    "fannypack": ["#2A2A2A","#4A4A4A"],
    "facial_beard": ["#1E1A18"]
   }
- }
+ },
+ "figure": {"head":"square","build":"stocky","eyes":"sharp","brows":"thick"}
 }
