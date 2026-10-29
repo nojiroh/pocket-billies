@@ -59,7 +59,6 @@ import { foliageAmount, setPropLookUniforms } from './prop-look.js';
 expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   DOOR_INTEREST: [() => DOOR_INTEREST],
-  IMAGE_IDS: [() => IMAGE_IDS],
   OUTLINE_COLOURS: [() => OUTLINE_COLOURS],
   PICTURE_LIGHTNESS: [() => PICTURE_LIGHTNESS],
   REFLECTION_MATERIALS: [() => REFLECTION_MATERIALS],
@@ -73,7 +72,7 @@ expose({
   SPRITE_RUN: [() => SPRITE_RUN],
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
-  byImageId: [() => byImageId],
+  byTexture: [() => byTexture],
   clearSpriteHit: [() => clearSpriteHit, v => (clearSpriteHit = v)],
   copySpriteLook: [() => copySpriteLook, v => (copySpriteLook = v)],
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
@@ -91,8 +90,6 @@ expose({
   groundTintOf: [() => groundTintOf, v => (groundTintOf = v)],
   hideQueriesLost: [() => hideQueriesLost, v => (hideQueriesLost = v)],
   hideQuery: [() => hideQuery],
-  imageId: [() => imageId, v => (imageId = v)],
-  imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
   interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
   newSpriteRecord: [() => newSpriteRecord, v => (newSpriteRecord = v)],
@@ -121,6 +118,8 @@ expose({
   spriteSideEffects: [() => spriteSideEffects, v => (spriteSideEffects = v)],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   talkPartner: [() => talkPartner, v => (talkPartner = v)],
+  textureKey: [() => textureKey, v => (textureKey = v)],
+  textureKeyCount: [() => textureKeyCount, v => (textureKeyCount = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   useFxProgram: [() => useFxProgram, v => (useFxProgram = v)],
 });
@@ -139,15 +138,13 @@ export function setDrawSprites(v) {
   provide({ drawSprites });
 }
 /* to-module: end */
-const IMAGE_IDS = new WeakMap();
-let imageIdCount = 0;
-function imageId(im) {
-  let n = IMAGE_IDS.get(im);
-  if (n === undefined) {
-    n = ++imageIdCount;
-    IMAGE_IDS.set(im, n);
-  }
-  return n;
+/* FL-2a: a texture's place in the sort, given the first time it is sorted and kept on the texture's entry
+   (engine/webgl.js imageTexture), so pictures that share a texture (figures' cells of the live atlas) sort together */
+let textureKeyCount = 0;
+function textureKey(it) {
+  if (it.vox) return 0; /* a model draws no picture here: its picture is never uploaded for the sort */
+  const T = imageTexture(it.im);
+  return T ? T.sortKey || (T.sortKey = ++textureKeyCount) : 0;
 }
 /* alpha 0.4.1: the title's town springs up out of the loading screen (startTownRise from js/boot.js) */
 export function startTownRise(load) {
@@ -191,15 +188,17 @@ function townRiseAmount(it) {
 /* phase 20 C2: the sprite pass's list, kept from frame to frame (engine/frame-lists.js) */
 const SPRITE_LIST = [],
   spriteDrawn = it => !(it.flat || it.vol || it.vis === false),
-  byImageId = (a, b) => imageId(a.im) - imageId(b.im);
+  byTexture = (a, b) => a.texKey - b.texKey;
 /* phase 20 E1: the pictures the sprite pass draws, grouped by picture (v32: fewer texture switches; depth decides what
-   is in front, so order matters only where two pictures share a plane): imageId's first-seen order, then item order */
+   is in front, so order matters only where two pictures share a plane). FL-2a: by texture (textureKey's first-seen
+   order, then item order: the sort is stable), each item's key worked out once before the sort */
 function spriteDrawList(items) {
-  return filterInto(items, spriteDrawn, SPRITE_LIST).sort(byImageId);
+  return sortByPicture(filterInto(items, spriteDrawn, SPRITE_LIST));
 }
 /* a list of pictures in the same order (the reflection's) */
 function sortByPicture(L) {
-  return L.sort(byImageId);
+  for (let i = 0; i < L.length; i++) L[i].texKey = textureKey(L[i]);
+  return L.sort(byTexture);
 }
 /* phase 20 E1: what the pass works out once a frame: the camera, how much a crown shades itself and toward where (the
    sun across the picture), and how much a tree's crossing picture shows (by the camera's turn) */
