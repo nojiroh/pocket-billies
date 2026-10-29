@@ -94,13 +94,13 @@
   {
    "p": "figures/rogue.json",
    "at": [
-    "game/js/figures.js:107"
+    "game/js/figures.js:132"
    ]
   },
   {
    "p": "figures/rogue.png",
    "at": [
-    "game/js/figures.js:108"
+    "game/js/figures.js:133"
    ]
   },
   {
@@ -1637,7 +1637,7 @@
    "game/js/logic/soundscape.js:117",
    "game/js/logic/soundscape.js:123",
    "game/js/logic/ui-dials.js:103",
-   "game/js/talk.js:239"
+   "game/js/talk.js:243"
   ],
   "building": [
    "game/js/bowl-map-test.js:344",
@@ -1756,7 +1756,7 @@
    "game/js/walk-tab.js:324"
   ],
   "eye": [
-   "game/js/figures.js:429",
+   "game/js/figures.js:459",
    "game/js/logic/figure-pose.js:161",
    "game/js/logic/figure-pose.js:345",
    "game/js/logic/figure-pose.js:346",

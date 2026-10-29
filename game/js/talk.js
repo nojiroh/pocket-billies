@@ -20,6 +20,7 @@ import { frameStop, frameTask } from './frame-scheduler.js';
 import { drawPortrait, lookOf } from './person-art.js';
 import { turnToPlayer, walkView } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
+import { figureBustFace, figureBustPicture, figureChoice, figureFolk, figureStyle, figuresOn } from './figures.js';
 import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -43,6 +44,7 @@ expose({
   talkEmote: [() => talkEmote, v => (talkEmote = v)],
   talkEmoteArt: [() => talkEmoteArt],
   talkEmoteCanvas: [() => talkEmoteCanvas, v => (talkEmoteCanvas = v)],
+  talkFigure: [() => talkFigure, v => (talkFigure = v)],
   talkFolk: [() => talkFolk, v => ((talkFolk = v), provide({ talkFolk }))],
   talkHide: [() => talkHide, v => (talkHide = v)],
   talkLetters: [() => talkLetters, v => (talkLetters = v)],
@@ -87,6 +89,8 @@ export const talkBox = {
    * and face while the talk is open */
   dir: /** @type {ReturnType<typeof talkDirector> | null} */ (null),
   frames: /** @type {Map<string, HTMLCanvasElement>} */ (new Map()),
+  /** DL-6: the close-up with its face this tick (talkPortraitFrame) */
+  fig: /** @type {HTMLCanvasElement | null} */ (null),
 };
 provide({ talkBox }); /* to-module */
 const SPEAKER_NAMES = { chosen: 'Professor Chosen' };
@@ -562,7 +566,11 @@ function talkMiniPortrait(who, expr) {
   cv.className = 'talk-mini';
   cv.setAttribute('aria-hidden', 'true');
   try {
-    drawPortrait(src, who, expr, performance.now());
+    /* DL-6: a figure's close-up in its rest pose when there is one, else today's portrait */
+    const fig = talkFigure(who),
+      im = fig ? figureBustPicture(fig, null, figureStyle()) : null;
+    if (im) figureBustFace(src, im, { eyes: 'open', mouth: 'shut' });
+    else drawPortrait(src, who, expr, performance.now());
   } catch (e) {
     return cv;
   }
@@ -706,9 +714,9 @@ export async function talk(lines, o = {}) {
    portrait stays inside the 96 px slot (exactly
    1.5× on a 2× phone), and the canvas is sized to match */
 const TALK_PORTRAIT_SCALE = 1.5;
-function drawTalkPortrait(cv, who, ex, ts) {
+function drawTalkPortrait(cv, who, ex, ts, S) {
   if (!cv) return;
-  const src = talkPortraitFrame(who, ex, ts);
+  const src = talkPortraitFrame(who, ex, ts, S);
   if (!src || !src.width || !src.height) return;
   const dpr = devicePixelRatio || 1,
     k = Math.max(1, Math.floor(TALK_PORTRAIT_SCALE * dpr + 0.25)),
@@ -725,10 +733,25 @@ function drawTalkPortrait(cv, who, ex, ts) {
   x.clearRect(0, 0, w, h);
   x.drawImage(src, 0, 0, w, h);
 }
+/** DL-6: the figure a speaker's close-up is (figures.js), or null for today's portrait: with Engine > People > Figures
+ * on, you as your figure, and anyone else who is a person (not a creature: Kappi) as the townsfolk are, when they are
+ * figures too (Townsfolk as figures) */
+function talkFigure(who) {
+  if (!who || typeof figuresOn !== 'function' || !figuresOn()) return null;
+  if (who !== 'me' && !figureFolk()) return null;
+  try {
+    if (/** @type {any} */ (lookOf(who))?.creature) return null;
+  } catch (e) {
+    return null;
+  }
+  return figureChoice();
+}
 /** DL-5: the speaker's portrait with a face (a combination like 'happy+talk'): a person's pictures are kept per face
  * and breath (three steps of person-art.js's idle breathing) while the talk is open, so a blink or a mouth costs a
- * copy, not a new drawing; a creature (Kappi) moves on its own clock and is drawn each time */
-function talkPortraitFrame(who, ex, ts) {
+ * copy, not a new drawing; a creature (Kappi) moves on its own clock and is drawn each time. DL-6: with figures on, a
+ * person is their figure's close-up (figures.js figureBustPicture), the head turned by the director's `S.head` and
+ * the face painted from its eyes and mouth; today's portrait until the close-up is baked */
+function talkPortraitFrame(who, ex, ts, S) {
   const P = talkBox.por;
   if (P.creature === undefined) {
     try {
@@ -742,6 +765,9 @@ function talkPortraitFrame(who, ex, ts) {
     drawPortrait(src, who, ex, ts);
     return src;
   }
+  const fig = talkFigure(who),
+    im = fig ? figureBustPicture(fig, S ? S.head : null, figureStyle()) : null;
+  if (im) return figureBustFace(talkBox.fig || (talkBox.fig = document.createElement('canvas')), im, S);
   const breath = Math.round(Math.sin(ts / 650)),
     key = who + '|' + (ex || '') + '|' + breath;
   let c = talkBox.frames.get(key);
@@ -775,7 +801,7 @@ function talkTick(ts) {
       else if (p.kind === 'face' && talkBox.last) talkBox.last.expr = p.v || null;
   const ex = S ? S.combo : P.expr;
   try {
-    drawTalkPortrait(el.querySelector('.talk-por'), P.who, ex, ts);
+    drawTalkPortrait(el.querySelector('.talk-por'), P.who, ex, ts, S);
   } catch (e) {}
 }
 /** DL-5: the circle behind the portrait squashes and springs back (the picture itself never stretches) */
