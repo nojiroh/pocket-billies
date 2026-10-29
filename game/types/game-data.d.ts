@@ -1648,6 +1648,31 @@ export interface FigureKit {
   >;
   /** CH-6: the face's marks (logic/figure-kit.js kitFaceMarks) */
   faces: FigureKitFaces;
+  /** CH-5b: each wardrobe item's clothes on the figure (its knobs, rows and marks), the pieces garments share, the
+   * directions' flair */
+  clothes?: Record<DataId, FigureGarment> & { note?: string };
+  pieces?: Record<DataId, { rows?: any[]; marks?: any[]; vars?: Record<string, string | number> }> & { note?: string };
+  flair?: Record<DataId, { rows: any[]; vars?: Record<string, string | number> }> & { note?: string };
+}
+/** figureKit.json clothes (characters track CH-5b): a garment's knobs for the body's own parts, rows and marks */
+export interface FigureGarment {
+  sleeves?: 'none' | 'short' | 'long';
+  covers?: boolean;
+  puff?: number;
+  open?: boolean;
+  long?: boolean;
+  legs?: 'full' | 'shorts' | 'skirt';
+  fit?: number;
+  belt?: boolean;
+  sole?: 0 | 1;
+  boot?: boolean;
+  flat?: boolean;
+  length?: number;
+  stripe?: { part: string; col: string; every: number; from: number };
+  use?: DataId[];
+  vars?: Record<string, string | number>;
+  rows?: any[];
+  marks?: any[];
 }
 /** figureKit.json faces (characters track CH-6): eye and brow styles, mouth frames, moods, which style a wardrobe id
  * draws */

@@ -15,6 +15,7 @@ import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
   KIT_CONSTS: [() => KIT_CONSTS],
+  KIT_FLAGS: [() => KIT_FLAGS],
   KIT_FRAME_SAMPLE: [() => KIT_FRAME_SAMPLE],
   KIT_FUNCS: [() => KIT_FUNCS],
   KIT_PARSED: [() => KIT_PARSED],
@@ -23,6 +24,10 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitAccessory: [() => kitAccessory, v => (kitAccessory = v)],
   // @ts-expect-error -- replaced on purpose
+  kitClothesProblems: [() => kitClothesProblems, v => (kitClothesProblems = v)],
+  // @ts-expect-error -- replaced on purpose
+  kitCopies: [() => kitCopies, v => (kitCopies = v)],
+  // @ts-expect-error -- replaced on purpose
   kitCurls: [() => kitCurls, v => (kitCurls = v)],
   // @ts-expect-error -- replaced on purpose
   kitExpr: [() => kitExpr, v => (kitExpr = v)],
@@ -30,6 +35,8 @@ expose({
   kitFaceProblems: [() => kitFaceProblems, v => (kitFaceProblems = v)],
   // @ts-expect-error -- replaced on purpose
   kitParse: [() => kitParse, v => (kitParse = v)],
+  // @ts-expect-error -- replaced on purpose
+  kitRowIn: [() => kitRowIn, v => (kitRowIn = v)],
   // @ts-expect-error -- replaced on purpose
   kitShapeOf: [() => kitShapeOf, v => (kitShapeOf = v)],
   // @ts-expect-error -- replaced on purpose
@@ -42,9 +49,18 @@ expose({
 /** @typedef {number | string | KitValue[] | { [k: string]: KitValue }} KitValue a number, a sum, or lists and
  * objects of them */
 /** @typedef {{ id: string, parent?: string, at?: KitValue[], shape: Record<string, KitValue>, col: string,
- *   sides?: boolean, repeat?: number, vars?: Record<string, string | number> }} KitRow one shape on a part: `sides` an
- * A and a B mirrored (`s` is 1, then -1), `repeat` n copies id0..id(n-1) (`i` counts them), `vars` named values */
-/** @typedef {{ rows: KitRow[], vars?: Record<string, string | number>, fringe?: boolean, colour?: number[] }} KitAccessory */
+ *   sides?: boolean, repeat?: number, vars?: Record<string, string | number>, stage?: string, when?: string,
+ *   chance?: number, salt?: KitValue, rows?: KitRow[] }} KitRow one shape on a part: `sides` an A and a B mirrored
+ * (`s` is 1, then -1), `repeat` n copies id0..id(n-1) (`i` counts them), `vars` named values; CH-5b: `stage`, `when`,
+ * `chance` and `salt`, and `rows` for a group (kitAccessory) */
+/** @typedef {{ id: string, kind: string, part: string, at: KitValue[], w: KitValue, h: KitValue, col: string,
+ *   sides?: boolean, repeat?: number, vars?: Record<string, string | number>, stage?: string, when?: string,
+ *   chance?: number, salt?: KitValue }} KitMarkRow CH-5b: a mark painted on a part (a button, a pocket, a zip) */
+/** @typedef {{ rows?: KitRow[], marks?: KitMarkRow[], vars?: Record<string, string | number>, fringe?: boolean,
+ *   colour?: number[] }} KitAccessory */
+/** @typedef {{ stage?: string, rnd?: (salt: number) => number, mark?: (kind: string, part: string,
+ *   at: [number, number, number], w: number, h: number, col: string) => void }} KitAccessoryOpts CH-5b: the stage
+ * added now, the figure's dice, where marks go */
 /** @typedef {(id: string, parent: string | null, at: [number, number, number], sh: any, col: string) => void} KitAdd */
 
 export const KIT_FUNCS = /** @type {Record<string, (x: number) => number>} */ ({
@@ -215,33 +231,81 @@ export function kitShapeOf(S, V) {
 }
 
 /**
- * an accessory's rows added to the figure: each row's copies (sides, repeat) with their values worked out
- * @param {KitAdd} add @param {KitAccessory} acc @param {Record<string, number>} frame the frame's values
- * @param {string} parent the part a row hangs from when it names none
+ * whether a row is in: its `when` (a frame value that must not be 0, or with `!` one that must be) and its `chance` (the
+ * share kept, by the figure's dice `rnd` on its `salt`)
+ * @param {KitRow | KitMarkRow} row @param {Record<string, number>} V @param {KitAccessoryOpts} o
  */
-export function kitAccessory(add, acc, frame, parent) {
+export function kitRowIn(row, V, o) {
+  if (row.when) {
+    const no = row.when[0] === '!',
+      v = V[no ? row.when.slice(1) : row.when];
+    if (no ? !!v : !v) return false;
+  }
+  if (row.chance !== undefined && o.rnd) return o.rnd(kitValue(row.salt ?? 0, V)) < row.chance;
+  return true;
+}
+
+/** a row's copies: an A and a B (`s` 1, then -1), n numbered (`i`), or the one
+ * @param {{ id: string, sides?: boolean, repeat?: number }} row */
+export function kitCopies(row) {
+  return row.sides
+    ? [
+        { s: 1, id: row.id + 'A', side: 'A' },
+        { s: -1, id: row.id + 'B', side: 'B' },
+      ]
+    : row.repeat
+      ? Array.from({ length: row.repeat }, (_, i) => ({ i, id: row.id + i, side: '' }))
+      : [{ id: row.id, side: '' }];
+}
+
+/**
+ * an accessory's (CH-5b: a garment's, a piece's, a flair's) rows added to the figure: each row's copies (sides,
+ * repeat) with their values worked out. CH-5b: `o.stage` adds only the rows of that stage (a row without one is in
+ * 'details'; no stage given: every row); a row is left out by its `when` or its `chance` (kitRowIn); a row with `rows`
+ * and `sides` adds all its rows for side A, then for B; a part named with `$` is that side's ('thigh$': thighA)
+ * @param {KitAdd} add @param {KitAccessory} acc @param {Record<string, number>} frame the frame's values
+ * @param {string} parent the part a row hangs from when it names none @param {KitAccessoryOpts} [o]
+ */
+export function kitAccessory(add, acc, frame, parent, o = {}) {
   const V0 = kitVars(acc.vars, frame);
   for (const row of acc.rows || []) {
-    const copies = row.sides
-      ? [
-          { s: 1, id: row.id + 'A' },
-          { s: -1, id: row.id + 'B' },
-        ]
-      : row.repeat
-        ? Array.from({ length: row.repeat }, (_, i) => ({ i, id: row.id + i }))
-        : [{ id: row.id }];
-    for (const cp of copies) {
+    if (o.stage !== undefined && (row.stage || 'details') !== o.stage) continue;
+    for (const cp of kitCopies(row)) {
       /** @type {Record<string, number>} */
       const V1 = { ...V0 };
       if ('s' in cp) V1.s = /** @type {number} */ (cp.s);
       if ('i' in cp) V1.i = /** @type {number} */ (cp.i);
-      const V = kitVars(row.vars, V1),
-        at = row.at ? kitValue(row.at, V) : [0, 0, 0],
-        par = row.parent || parent;
-      if (row.shape.kind === 'curls') kitCurls(add, row, V, par, at);
-      else add(cp.id, par, at, kitShapeOf(row.shape, V), row.col);
+      for (const r of row.rows ? row.rows : [row]) {
+        const id = row.rows ? r.id + cp.side : cp.id,
+          V = kitVars(r.vars, r === row ? V1 : kitVars(row.vars, V1));
+        if (!kitRowIn(r, V, o) || (r !== row && !kitRowIn(row, V, o))) continue;
+        const at = r.at ? kitValue(r.at, V) : [0, 0, 0],
+          par = (r.parent || parent).replace('$', cp.side);
+        if (r.shape.kind === 'curls') kitCurls(add, { ...r, id }, V, par, at);
+        else add(id, par, at, kitShapeOf(r.shape, V), r.col);
+      }
     }
   }
+  if (o.mark)
+    for (const row of acc.marks || []) {
+      if (o.stage !== undefined && (row.stage || 'details') !== o.stage) continue;
+      for (const cp of kitCopies(row)) {
+        /** @type {Record<string, number>} */
+        const V1 = { ...V0 };
+        if ('s' in cp) V1.s = /** @type {number} */ (cp.s);
+        if ('i' in cp) V1.i = /** @type {number} */ (cp.i);
+        const V = kitVars(row.vars, V1);
+        if (!kitRowIn(row, V, o)) continue;
+        o.mark(
+          row.kind,
+          row.part.replace('$', cp.side),
+          kitValue(row.at, V),
+          kitValue(row.w, V),
+          kitValue(row.h, V),
+          row.col
+        );
+      }
+    }
 }
 
 /** a brim's edges rolled up at each side (a cowboy hat's, a top hat's): two bent tubes, id + A and B
@@ -293,7 +357,48 @@ export const KIT_FRAME_SAMPLE = Object.freeze({
   girth: 1,
   hipK: 1,
   torsoZ: 0.11,
+  /* CH-5b: the body's sizes clothes fit (an average build), the torso's profile (its lathe's x and z radii, bottom to
+     top), the head's depth and centre (goggles), and the flags a row's `when` names */
+  shK: 1,
+  legK: 0.9,
+  armK: 0.9,
+  thighL: 0.22,
+  shinL: 0.17,
+  legR: 0.066,
+  armR: 0.063,
+  hipW: 0.08,
+  waist: 1,
+  belly: 0,
+  chest: 0.2,
+  chestOut: 0,
+  neckL: 0.03,
+  trx0: 0,
+  trx1: 0.1,
+  trx2: 0.165,
+  trx3: 0.172,
+  trx4: 0.15,
+  trx5: 0.1,
+  trx6: 0,
+  trz0: 0,
+  trz1: 0.08,
+  trz2: 0.12,
+  trz3: 0.125,
+  trz4: 0.108,
+  trz5: 0.075,
+  trz6: 0,
+  hz: 0.3,
+  c2: 0.02,
+  bare: 1,
+  open: 1,
+  long: 1,
+  belted: 1,
+  belt: 1,
+  boot: 1,
+  neck: 0,
+  hat: 0,
 });
+/** CH-5b: the flags a row's `when` may name (lookFigure sets them) */
+export const KIT_FLAGS = Object.freeze(['bare', 'open', 'long', 'belted', 'belt', 'boot', 'neck', 'hat']);
 
 /**
  * what is wrong with the figure kit's data, as sentences (tools/check-data.mjs): people's head shapes and builds are
@@ -338,9 +443,59 @@ export function figureKitProblems(kit, items, people = {}) {
       out.push(`accessories: ${id}: ${/** @type {Error} */ (e).message}`);
     }
   }
+  out.push(...kitClothesProblems(kit, items));
   out.push(...kitFaceProblems(kit, items));
   return out;
 }
+/**
+ * CH-5b: the clothes, pieces and flair: each garment is a wardrobe item of a slot it can dress (top, outer, bottom,
+ * shoes), its pieces exist, a `when` names a flag, and every row's and mark's sum works out on the frame
+ * @param {any} kit @param {Record<string, { slot?: string }>} items @returns {string[]}
+ */
+export function kitClothesProblems(kit, items) {
+  /** @type {string[]} */
+  const out = [];
+  const rows = (/** @type {string} */ where, /** @type {KitAccessory} */ acc) => {
+    const check = (/** @type {{ id: string, when?: string, rows?: any[] }} */ r, /** @type {string} */ id) => {
+      if (r.when && !KIT_FLAGS.includes(r.when.replace(/^!/, '')))
+        out.push(`${where} ${id}: when ${r.when} is not one of ${KIT_FLAGS.join(', ')}`);
+      for (const q of r.rows || []) check(q, id + ' ' + q.id);
+    };
+    for (const r of acc.rows || []) check(r, r.id);
+    for (const r of acc.marks || []) check(r, r.id);
+    try {
+      kitAccessory(
+        (pid, _parent, at, sh) => {
+          if (JSON.stringify([at, sh]).match(/null/)) out.push(`${where} ${pid}: a value is not a number`);
+        },
+        acc,
+        { ...KIT_FRAME_SAMPLE },
+        'torso',
+        {
+          rnd: () => 0,
+          mark: (kind, _part, at, w, h) => {
+            if (JSON.stringify([at, w, h]).match(/null/)) out.push(`${where} ${kind}: a mark's value is not a number`);
+          },
+        }
+      );
+    } catch (e) {
+      out.push(`${where}: ${/** @type {Error} */ (e).message}`);
+    }
+  };
+  for (const [id, G] of Object.entries(kit.clothes || {})) {
+    if (id === 'note') continue;
+    const slot = items[id] && items[id].slot;
+    if (!slot) out.push(`clothes: ${id} is not in the wardrobe`);
+    else if (!['top', 'outer', 'bottom', 'shoes'].includes(slot)) out.push(`clothes: ${id} is a ${slot}, not clothes`);
+    for (const u of G.use || [])
+      if (u === 'note' || !(kit.pieces || {})[u]) out.push(`clothes: ${id} uses no piece ${u}`);
+    rows(`clothes: ${id}`, G);
+  }
+  for (const [id, P] of Object.entries(kit.pieces || {})) if (id !== 'note') rows(`pieces: ${id}`, P);
+  for (const [id, F] of Object.entries(kit.flair || {})) if (id !== 'note') rows(`flair: ${id}`, F);
+  return out;
+}
+
 /**
  * CH-6: the faces section's references: each wardrobe id is in the wardrobe and draws a style its slot has, the
  * defaults and the resting moods exist

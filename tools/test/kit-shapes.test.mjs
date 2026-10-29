@@ -7,6 +7,7 @@ import {
   KIT_FRAME_SAMPLE,
   figureKitProblems,
   kitAccessory,
+  kitClothesProblems,
   kitExpr,
   kitShapeOf,
   kitValue,
@@ -114,4 +115,79 @@ test('kit shapes: the game data has no problems; a broken kit has', () => {
     'people/b.json: figure.head cube is no head shape',
     'people/b.json: figure.build giant is no build',
   ]);
+});
+
+test('kit shapes (CH-5b): stages, when, chance, side groups, a side’s part and marks', () => {
+  const made = [],
+    marks = [],
+    add = (id, parent, at) => made.push([id, parent, at[0]]),
+    shape = { kind: 'ellipsoid', c: [0, 0, 0], r: [0.1, 0.1, 0.1] },
+    G = {
+      vars: { w: 'girth * 2' },
+      rows: [
+        { id: 'early', stage: 'torso', shape, col: 'top' },
+        { id: 'bare', when: 'bare', shape, col: 'top' },
+        { id: 'covered', when: '!bare', shape, col: 'top' },
+        { sides: true, id: 'pouch', parent: 'hips', at: ['s', 0, 0], chance: 0.5, salt: '200 + s', shape, col: 'x' },
+        {
+          sides: true,
+          id: 'track',
+          rows: [
+            { id: 't', parent: 'thigh$', at: ['s * w', 0, 0], shape, col: 'p' },
+            { id: 'u', parent: 'shin$', shape, col: 'p' },
+          ],
+        },
+      ],
+      marks: [{ id: 'b', repeat: 2, kind: 'button', part: 'torso', at: [0, 'i', 0], w: 0.02, h: 'w', col: 'button' }],
+    };
+  const o = {
+    stage: 'details',
+    rnd: salt => (salt === 201 ? 0.2 : 0.9),
+    mark: (kind, part, at, w, h, col) => marks.push([kind, part, at[1], w, h, col]),
+  };
+  kitAccessory(add, G, { girth: 1, bare: 1 }, 'torso', o);
+  assert.deepEqual(made, [
+    ['bare', 'torso', 0],
+    ['pouchA', 'hips', 1],
+    ['tA', 'thighA', 2],
+    ['uA', 'shinA', 0],
+    ['tB', 'thighB', -2],
+    ['uB', 'shinB', 0],
+  ]);
+  assert.deepEqual(marks, [
+    ['button', 'torso', 0, 0.02, 2, 'button'],
+    ['button', 'torso', 1, 0.02, 2, 'button'],
+  ]);
+  made.length = 0;
+  kitAccessory(add, G, { girth: 1, bare: 0 }, 'torso', { stage: 'torso' });
+  assert.deepEqual(made, [['early', 'torso', 0]], 'only the stage asked for');
+  made.length = 0;
+  kitAccessory(add, G, { girth: 1, bare: 0 }, 'torso', { stage: 'details' });
+  assert.deepEqual(
+    made.map(m => m[0]),
+    ['covered', 'pouchA', 'pouchB', 'tA', 'uA', 'tB', 'uB'],
+    'no dice: every chance row in'
+  );
+});
+
+test('kit shapes (CH-5b): the clothes’ problems', () => {
+  assert.deepEqual(kitClothesProblems(KIT, W.items), []);
+  const shape = { kind: 'ellipsoid', c: [0, 'nope', 0], r: [0.1, 0.1, 0.1] };
+  const bad = {
+    clothes: {
+      hat_cap: {},
+      ghost: {},
+      tee: { use: ['zip'], rows: [{ id: 'x', when: 'sunny', shape: { ...shape, c: [0, 0, 0] }, col: 'top' }] },
+      jeans: { rows: [{ id: 'y', shape, col: 'pants' }] },
+    },
+  };
+  const P = kitClothesProblems(bad, W.items).join('\n');
+  for (const want of [
+    'hat_cap is a hat',
+    'ghost is not in the wardrobe',
+    'uses no piece zip',
+    'when sunny',
+    'no value named nope',
+  ])
+    assert.ok(P.includes(want), want + ' in ' + P);
 });
