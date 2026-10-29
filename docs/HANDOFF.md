@@ -38,7 +38,8 @@ Branch `ccr-15aa5647-90bz3r` (this session's branch, made from `track/assets` f8
   train and skip the arrival; `airship_moored` is the hub's airship and stays. Tests: new halt.test.mjs (7);
   mapgen-lots, first-run on the halt; snapshots remade: first-run-places (only the landing moved), the data check's
   file count (191).
-- Found, not changed: `ui-lint` reports the colour count in game js at 618 -> 612 on `track/assets` already (a ratchet
+- Found, not changed: check-quick.py's RL-8 step fails at its town shop ("no Perk", line 1952) on `track/assets`
+  before this lane too; `ui-lint` reports the colour count in game js at 618 -> 612 on `track/assets` already (a ratchet
   waiting for `--save`); the crash scene's haze hides most of the wreck past about 15 m (AS-7's "fog too much").
 - Facts checked against `track/assets` (section 2.5): all held. One addition: the hub's lost-run line said "by the
   mast" though the ride home leaves you at Skyline Station.
@@ -46,7 +47,12 @@ Branch `ccr-15aa5647-90bz3r` (this session's branch, made from `track/assets` f8
   world; AS-8 settles the version with AS-6's change); the halt lot is 12.6 x 7.6 m, so on a tight landing it may not
   fit (mapgen-lots: at least 87 of 90 test places fit; a landing without room gets a note and no halt, as before);
   the arrival's camera and the parked train on a real phone; `prop-models.js` untouched.
-- Verified: (see below)
+- Verified: lint, typecheck, format:check, check:modules (422 modules), check:data (191 files), build clean; unit
+  tests quick 2408 of 2409 (the one, run-map-checks' "1,000 maps in under 1.5 s", took 1.65 s with a browser drawing
+  beside it and passes alone), slow 110 of 110 after the first-run-places snapshot was remade; `check-quick.py --smoke`
+  7 of 7 in 382 s (the in-game full test and the crash scene included); `--steps=RL-8` passes the new halt checks and
+  then stops at "the town's shop has no Perk (RL-12)", which fails the same way on `track/assets` f835b311 (not this
+  lane's); the full quick check not run (AS-8 runs it).
 - Pictures (validation/look-halt/, validation/look-crash/, not in git): the halt from five sides on test_halt; the
   arrival held at 0-4000 ms and after; the crash site from above, the south and the scene's cameras.
 - Next: the other wave-1 lanes; AS-8 merges them and does the renames.
