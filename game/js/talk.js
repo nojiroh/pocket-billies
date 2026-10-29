@@ -3,15 +3,18 @@
    One dialogue box for everyone who talks: Professor Chosen and Kappi, your rival Blake, townsfolk, trainers and the opening cutscene.
    A portrait that blinks and moves its mouth while the line types out, the speaker's name, a voice blip per few
    letters (sound.js), tap or Enter to finish the line or go on. Lines may start with an expression in brackets:
-   "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). */
+   "[happy] Nice to meet you!" (happy, surprised, sad, angry, blink, talk). DL-5: the face is directed
+   (logic/talk-director.js): blinks, the mouth on the vowels, a mid-line [face=x], emotes ([emote=x]) and the frame's
+   bounce. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { mapChatLines, playStoryScript, provide, residentHomeTalk, storyFreshTake, storyGiftOffer } from './hooks.js';
-import { FACTIONS, PEOPLE, TALK_SKINS, TRAINERS } from './game-data.js';
+import { EMOTES, FACTIONS, PEOPLE, TALK_SKINS, TRAINERS } from './game-data.js';
 import { parseLine, plainOf } from './logic/line-markup.js';
 import { letterTimes } from './logic/talk-type.js';
 import { talkAccentHue, talkSeed, talkSkinOf, talkTilt, talkVariant } from './logic/talk-skins.js';
 import { cutAt, knockOf, stackFit, stackStep, waitMs } from './logic/talk-stack.js';
+import { EMOTE_MS, talkDirector } from './logic/talk-director.js';
 import { reducedMotion, saveData } from './game-state.js';
 import { frameStop, frameTask } from './frame-scheduler.js';
 import { drawPortrait, lookOf } from './person-art.js';
@@ -29,6 +32,7 @@ expose({
   drawTalkPortrait: [() => drawTalkPortrait, v => (drawTalkPortrait = v)],
   talk: [() => talk, v => (talk = v)],
   talkArrive: [() => talkArrive, v => (talkArrive = v)],
+  talkBounce: [() => talkBounce, v => (talkBounce = v)],
   talkBox: [() => talkBox],
   talkChoose: [() => talkChoose, v => (talkChoose = v)],
   talkChosen: [() => talkChosen, v => (talkChosen = v)],
@@ -36,6 +40,9 @@ expose({
   talkDemote: [() => talkDemote, v => (talkDemote = v)],
   talkDress: [() => talkDress, v => (talkDress = v)],
   talkEl: [() => talkEl, v => (talkEl = v)],
+  talkEmote: [() => talkEmote, v => (talkEmote = v)],
+  talkEmoteArt: [() => talkEmoteArt],
+  talkEmoteCanvas: [() => talkEmoteCanvas, v => (talkEmoteCanvas = v)],
   talkFolk: [() => talkFolk, v => ((talkFolk = v), provide({ talkFolk }))],
   talkHide: [() => talkHide, v => (talkHide = v)],
   talkLetters: [() => talkLetters, v => (talkLetters = v)],
@@ -45,6 +52,7 @@ expose({
   talkMiniPortrait: [() => talkMiniPortrait, v => (talkMiniPortrait = v)],
   talkMotion: [() => talkMotion, v => (talkMotion = v)],
   talkName: [() => talkName, v => (talkName = v)],
+  talkPortraitFrame: [() => talkPortraitFrame, v => (talkPortraitFrame = v)],
   talkStackClear: [() => talkStackClear, v => (talkStackClear = v)],
   talkStackFit: [() => talkStackFit, v => (talkStackFit = v)],
   talkStamp: [() => talkStamp, v => (talkStamp = v)],
@@ -57,7 +65,11 @@ provide({ talkFolk });
 export const talkBox = {
   on: false,
   cur: null,
-  por: { who: null, expr: null, t: 0 },
+  por: /** @type {{ who: string | null, expr: string | null, t: number, creature?: boolean }} */ ({
+    who: null,
+    expr: null,
+    t: 0,
+  }),
   el: null,
   onType: /** @type {((e: { who: string, ch: string, n: number, done: boolean }) => void)[]} */ ([]),
   /* Project Story: the choice on screen (talkChoose), if any */
@@ -71,6 +83,10 @@ export const talkBox = {
   last: /** @type {{ who: string, name: string, text: string, cut: boolean, expr?: string | null } | null} */ (null),
   /** the share of the screen's height the stack covers, from the bottom (0 when the talk is closed) */
   cover: 0,
+  /** DL-5: the newest line's face (logic/talk-director.js talkDirector), and the portrait's pictures kept per speaker
+   * and face while the talk is open */
+  dir: /** @type {ReturnType<typeof talkDirector> | null} */ (null),
+  frames: /** @type {Map<string, HTMLCanvasElement>} */ (new Map()),
 };
 provide({ talkBox }); /* to-module */
 const SPEAKER_NAMES = { chosen: 'Professor Chosen' };
@@ -292,6 +308,18 @@ export function talkLine(who, text, expr, o = {}) {
     waitFor = waits ? waitMs(dress.seed) : 0;
   talkBox.spoke.add(skin);
   talkBox.last = { who, name, text, cut: cut >= 0, expr: expr || null };
+  /* DL-5: the face's director for this line; the older bubbles of anyone else are the listeners, dimmed */
+  box.dataset.who = who;
+  for (const o of el.querySelectorAll('.talk-old'))
+    o.classList.toggle('listening', /** @type {HTMLElement} */ (o).dataset.who !== who);
+  talkBox.dir = talkDirector({
+    seed: dress.seed,
+    expr: expr || null,
+    events: parsed.events,
+    reduced: reducedMotion || document.documentElement.dataset.motion === 'reduced',
+    auto: EMOTES.auto,
+    blinkAt: talkBox.dir?.nextBlink(),
+  });
   talkBox.log.push({ name, text });
   box.classList.toggle('waiting', waits);
   const letters = talkLetters(line, parsed),
@@ -338,6 +366,13 @@ export function talkLine(who, text, expr, o = {}) {
       while (n < chars.length && times[n] <= now) n++;
       st.n = n;
       for (let i = n0; i < n; i++) letters[i]?.classList.add('on');
+      /* DL-5: the face's events at the letters reached ([face=x], [emote=x]); the letters themselves reach it through
+         onType */
+      const D = talkBox.dir;
+      if (D) {
+        D.start(performance.now());
+        D.reach(n, performance.now());
+      }
       /* DL-3: a stamp lands when the letters reach it */
       while (stamps.length && stamps[0].at <= n) talkStamp(box, stamps.shift().v, dress.seed);
       /* phase 06-3: the typing hook (phase 07's mouth animation listens here): each new character, who says it */
@@ -358,6 +393,7 @@ export function talkLine(who, text, expr, o = {}) {
       }
       if (n >= chars.length) {
         st.typing = false;
+        D?.done();
         box.classList.add('done');
         /* DL-4: an interrupted line goes on by itself, 250 ms after it breaks off */
         if (cut >= 0) setTimeout(() => st.done(), 250);
@@ -516,6 +552,8 @@ function talkStackClear(el) {
   talkBox.log = [];
   talkBox.spoke = new Set();
   talkBox.last = null;
+  talkBox.dir = null;
+  talkBox.frames.clear();
 }
 /** the speaker's portrait, small, for an older bubble: a whole number of device pixels per art pixel */
 function talkMiniPortrait(who, expr) {
@@ -557,7 +595,8 @@ function talkDemote(el, box, step) {
   c.setAttribute('aria-hidden', 'true');
   c.inert = true;
   c.dataset.onePiece = '';
-  for (const q of c.querySelectorAll('.talk-more,.talk-logbtn,.talk-wait,.talk-choices,.talk-por')) q.remove();
+  for (const q of c.querySelectorAll('.talk-more,.talk-logbtn,.talk-wait,.talk-choices,.talk-por,.talk-emote'))
+    q.remove();
   for (const q of c.querySelectorAll('pb-stamp')) q.setAttribute('still', '');
   c.querySelector('.talk-slot')?.append(talkMiniPortrait(L.who, L.expr));
   /* the name as a small tag at the start of the line, the line clamped to two rows (dialogue.css) */
@@ -669,9 +708,8 @@ export async function talk(lines, o = {}) {
 const TALK_PORTRAIT_SCALE = 1.5;
 function drawTalkPortrait(cv, who, ex, ts) {
   if (!cv) return;
-  const src = talkBox.src || (talkBox.src = document.createElement('canvas'));
-  drawPortrait(src, who, ex, ts);
-  if (!src.width || !src.height) return;
+  const src = talkPortraitFrame(who, ex, ts);
+  if (!src || !src.width || !src.height) return;
   const dpr = devicePixelRatio || 1,
     k = Math.max(1, Math.floor(TALK_PORTRAIT_SCALE * dpr + 0.25)),
     w = src.width * k,
@@ -687,6 +725,33 @@ function drawTalkPortrait(cv, who, ex, ts) {
   x.clearRect(0, 0, w, h);
   x.drawImage(src, 0, 0, w, h);
 }
+/** DL-5: the speaker's portrait with a face (a combination like 'happy+talk'): a person's pictures are kept per face
+ * and breath (three steps of person-art.js's idle breathing) while the talk is open, so a blink or a mouth costs a
+ * copy, not a new drawing; a creature (Kappi) moves on its own clock and is drawn each time */
+function talkPortraitFrame(who, ex, ts) {
+  const P = talkBox.por;
+  if (P.creature === undefined) {
+    try {
+      P.creature = !!(/** @type {any} */ (lookOf(who))?.creature);
+    } catch (e) {
+      P.creature = false;
+    }
+  }
+  if (P.creature) {
+    const src = talkBox.src || (talkBox.src = document.createElement('canvas'));
+    drawPortrait(src, who, ex, ts);
+    return src;
+  }
+  const breath = Math.round(Math.sin(ts / 650)),
+    key = who + '|' + (ex || '') + '|' + breath;
+  let c = talkBox.frames.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    drawPortrait(c, who, ex, 650 * Math.asin(breath));
+    talkBox.frames.set(key, c);
+  }
+  return c;
+}
 function talkTick(ts) {
   const P = talkBox.por,
     el = talkBox.el;
@@ -695,15 +760,98 @@ function talkTick(ts) {
     frameStop('talk');
     return;
   }
-  if (ts - P.t < 70) return;
+  if (ts - P.t < 50) return;
   P.t = ts;
-  const typing = talkBox.cur && talkBox.cur.typing,
-    blink = ts % 3700 < 130 && P.expr !== 'happy';
-  const ex = blink ? 'blink' : typing && !P.expr && Math.floor(ts / 120) % 2 ? 'talk' : P.expr;
+  /* DL-5: the director says the face (blinks, the mouth, the line's face), and what starts now: an emote, the frame's
+     bounce, a new face (kept for the line's small portrait once it moves up the stack) */
+  const D = talkBox.dir,
+    S = D ? D.at(performance.now()) : null,
+    box = el.querySelector('.talk-box:not(.talk-old)'),
+    slot = box?.querySelector('.talk-slot');
+  if (D && slot)
+    for (const p of D.drain())
+      if (p.kind === 'bounce') talkBounce(slot);
+      else if (p.kind === 'emote' && p.v) talkEmote(slot, p.v);
+      else if (p.kind === 'face' && talkBox.last) talkBox.last.expr = p.v || null;
+  const ex = S ? S.combo : P.expr;
   try {
     drawTalkPortrait(el.querySelector('.talk-por'), P.who, ex, ts);
   } catch (e) {}
 }
+/** DL-5: the circle behind the portrait squashes and springs back (the picture itself never stretches) */
+function talkBounce(slot) {
+  if (!slot.animate || reducedMotion || document.documentElement.dataset.motion === 'reduced') return;
+  try {
+    slot.animate(
+      [{ scale: '1 1' }, { scale: '1.08 0.9', offset: 0.25 }, { scale: '0.96 1.04', offset: 0.6 }, { scale: '1 1' }],
+      { duration: 380, easing: 'ease-out', pseudoElement: '::before' }
+    );
+  } catch (e) {}
+}
+/** DL-5: an emote's picture (emotes.json: a pixel grid, outlined), drawn once at a whole number of device pixels */
+const talkEmoteArt = new Map();
+function talkEmoteCanvas(v) {
+  const E = EMOTES,
+    rows = E.emotes[v];
+  if (!rows) return null;
+  const dpr = devicePixelRatio || 1,
+    k = Math.max(1, Math.round(2 * dpr)),
+    key = v + '|' + k;
+  let art = talkEmoteArt.get(key);
+  if (!art) {
+    const n = E.size,
+      c = document.createElement('canvas'),
+      x = c.getContext('2d'),
+      at = (/** @type {number} */ i, /** @type {number} */ j) =>
+        i >= 0 && j >= 0 && i < n && j < n && rows[j][i] !== '.' && rows[j][i] !== undefined;
+    c.width = c.height = n * k;
+    for (let j = 0; j < n; j++)
+      for (let i = 0; i < n; i++) {
+        const fill = at(i, j)
+          ? E.colors[rows[j][i]]
+          : at(i - 1, j) || at(i + 1, j) || at(i, j - 1) || at(i, j + 1)
+            ? E.outline
+            : '';
+        if (!fill) continue;
+        x.fillStyle = fill;
+        x.fillRect(i * k, j * k, k, k);
+      }
+    talkEmoteArt.set(key, (art = c));
+  }
+  const cv = document.createElement('canvas');
+  cv.className = 'talk-emote';
+  cv.setAttribute('aria-hidden', 'true');
+  cv.dataset.emote = v;
+  cv.width = art.width;
+  cv.height = art.height;
+  cv.style.width = art.width / dpr + 'px';
+  cv.style.height = art.height / dpr + 'px';
+  cv.getContext('2d').drawImage(art, 0, 0);
+  return cv;
+}
+/** DL-5: an emote pops beside the head (0 → 1.2 → 1 over 200 ms; Reduced: no pop) and fades after about a second
+ * (logic/talk-director.js emoteAt has the same times) */
+function talkEmote(slot, v) {
+  for (const o of slot.querySelectorAll('.talk-emote')) o.remove();
+  const cv = talkEmoteCanvas(v);
+  if (!cv) return;
+  slot.append(cv);
+  const reduced = reducedMotion || document.documentElement.dataset.motion === 'reduced';
+  if (cv.animate) {
+    if (!reduced)
+      cv.animate([{ scale: '0' }, { scale: '1.2', offset: 0.6 }, { scale: '1' }], {
+        duration: 200,
+        easing: 'ease-out',
+      });
+    cv.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: EMOTE_MS - 1000,
+      delay: 1000,
+      fill: 'forwards',
+    }).onfinish = () => cv.remove();
+  } else setTimeout(() => cv.remove(), EMOTE_MS);
+}
+/* DL-5: the director hears every letter typed (phase 06-3's onType hook): vowels open the mouth */
+talkBox.onType.push(e => talkBox.dir?.type(e.ch, performance.now()));
 document.addEventListener('keydown', ev => {
   if (talkBox.choice && /^[1-9]$/.test(ev.key) && +ev.key <= talkBox.choice.n) {
     ev.preventDefault();
