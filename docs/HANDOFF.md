@@ -62,7 +62,18 @@ its own switch, **off** until the owner's phone run. No tag (the track's tag com
   stopped: ground in tiles on/on 5.14% of pixels apart (stall awnings and townsfolk change on their own), on/off
   4.10%, off/on 2.85%: the same ground, no holes (looked at); far trees off/on 0.15%, merged glow 0.26%.
 - Verified (in progress): lint, types, format, modules clean; unit tests 2,533 of 2,535 before the two fixes (both fixed; the third, the 1,000-maps timing test beside a browser, as in FL-5a); check-perf --only=copperleaf no problems (290-314 draws as shipped, effects 5-8); check-look-trades every gate. Baseline at the round's start (ee9c4be8, a worktree, 45 pictures, 2,903 s, 38 of 42: RL-8's crossing, room light, walking out of the lab, battle music's drums).
-- Next: FL-7 (close-out) waits for the owner's phone run (FL-0b); see the round note below.
+- Next: round 5's other lane, FL-4b, was still running when this entry was written, so it is round 5's last lane and
+  starts round 6 (FL-7, the close-out) only once the owner's phone run with the round 4-5 switches has reported.
+- The owner's phone results relayed during this session (the "Open PRs merge" session, 2026-10-30 about 12:40, main at
+  about e3cf601 with FL-4's and FL-5a's switches, all off; Adreno 750, Chrome 155, 60 Hz): Copperleaf by day 27.7 fps
+  at resolution 0.6 and 11 at the phone's own (DPR 3.5), a 0.6 frame about 36 ms with 19.9 ms of processor time; by
+  night 18 / 15.5; jungle 29.5 / 11.5; run town 35 / 15.5; battle 54 / 28. Draws 308 by day, 346 at night; the
+  jungle's reflection 74 (56 leaf pictures). Opening Copperleaf hitched 4.6 s ("setting up the ground"). The graphics
+  test's per-dial costs all read 0 (the median frame is quantised at 60/30 on a vsynced phone: passed to the test-data
+  track), so compare its steps' fps instead. Reading for this lane: the phone is fill-bound at its own pixels and
+  still about 20 ms of processor time at 0.6, so the look trades here (fewer far-map pixels, fewer ground triangles in
+  every pass, the glow at quarter size, fewer leaf pictures) are the GPU half; the processor half (props 2.65 ms, the
+  final pass 2.43 ms) is FL-4b's and FL-7's.
 - For the owner on the phone: in the debug menu turn on "Phone shadow map", "Ground in tiles" (then walk into
   another place and back so the ground is built in tiles), "Phone effects merged" and "One-picture far trees", walk
   Copperleaf's square and a run route for a minute each, then turn them off for a minute (ABAB, twice); send the debug
