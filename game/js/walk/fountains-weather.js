@@ -463,8 +463,7 @@ function addFootprint(x, z, a, paw) {
   if (P.length > 140) P.splice(0, P.length - 140);
 }
 export function drawFootprints(quad, U, R, Up, dt) {
-  const pl = walkView.pl,
-    gl = gpuState.gl;
+  const pl = walkView.pl;
   if (walkRenderer.printId !== walkView.id) {
     walkRenderer.printId = walkView.id;
     walkRenderer.prints = [];
@@ -496,13 +495,11 @@ export function drawFootprints(quad, U, R, Up, dt) {
   for (const q of P) {
     const ca = Math.cos(q.a),
       sa = Math.sin(q.a);
-    gl.uniform3f(U.uRight, sa, 0, -ca);
-    gl.uniform3f(U.uUp, ca, 0, sa);
+    quad.ax([sa, 0, -ca], [ca, 0, sa]);
     const f = Math.min(1, (30 - q.age) / 8);
     quad('print', q.paw, q.x, q.y + 0.015, q.z, q.paw ? 0.12 : 0.15, q.paw ? 0.14 : 0.22, 0.7 * f, q.col);
   }
-  gl.uniform3fv(U.uRight, R);
-  gl.uniform3fv(U.uUp, Up);
+  quad.ax();
 }
 /* v47: a living world, in the effects pass. Bees round the hives by day; fireflies over the grass on warm nights
    (glowing moths in the Spore Forest); in autumn, leaves skittering along the streets in the wind. Each is a handful

@@ -34,6 +34,8 @@ export const frameScheduler = {
   /* FL-1a: the steady half rate (the owner's answer): the tasks that follow the set rate run every other slot; the
      automatic quality's controller (FL-3a) turns it on and off (frameHalf) */
   half: false,
+  /* FL-3a: the task whose controller asked for the half rate */
+  halfBy: '',
   last: 0,
   lastWork: 0,
   /* FL-1a: the overlay's numbers come from the main drawing task's own runs (the walk view, else the battle, else the
@@ -52,9 +54,11 @@ export function userFps() {
 function framePace(cap) {
   return 1000 / (paceSlot(cap, frameScheduler.period) * frameScheduler.period);
 }
-/** FL-1a: the steady half rate on or off (the controller, FL-3a); the overlay and the debug log show it */
-function frameHalf(on) {
+/** FL-1a: the steady half rate on or off (the controller, FL-3a); the overlay and the debug log show it. FL-3a: owner
+ * names the task that asked for it: when that task stops, the half rate goes with it (frameStop) */
+export function frameHalf(on, owner = '') {
   frameScheduler.half = !!on;
+  frameScheduler.halfBy = on ? owner : '';
 }
 /* add or replace a task; cap() returns the frames per second it wants right now */
 export function frameTask(name, fn, cap) {
@@ -66,6 +70,7 @@ export function frameTask(name, fn, cap) {
 }
 export function frameStop(name) {
   frameScheduler.tasks.delete(name);
+  if (frameScheduler.half && frameScheduler.halfBy === name) frameHalf(false);
 }
 function frameLoop(ts) {
   if (!frameScheduler.tasks.size) {

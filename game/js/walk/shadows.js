@@ -59,6 +59,7 @@ expose({
   shadowMapArea: [() => shadowMapArea, v => (shadowMapArea = v)],
   shadowPass: [() => shadowPass, v => setShadowPass(v)],
   shadowQuad: [() => shadowQuad, v => (shadowQuad = v)],
+  shadowSpinsOnly: [() => shadowSpinsOnly, v => (shadowSpinsOnly = v)],
   shadowSpriteQuads: [() => shadowSpriteQuads, v => (shadowSpriteQuads = v)],
 });
 /* eslint-enable no-func-assign */
@@ -104,7 +105,7 @@ function shadowMapArea(C) {
 /* v43: two cascades. The far map is the fitted view as before (cached for what never moves); the near map is a tight
    square round you at a finer texel, drawn every frame from the things in it, so shadows near you are crisp */
 /* phase 20 C2: the shadow passes' lists of what they draw, refilled in place each frame (engine/frame-lists.js) */
-const SHADOW_LISTS = { near: [], far: [], stat: [], dyn: [], lamp: [] };
+const SHADOW_LISTS = { near: [], far: [], stat: [], dyn: [], spin: [], lamp: [] };
 export function shadowPass(items0, sun, C) {
   gpuPass('shadowFar');
   const far = fittedShadowPass(items0, sun, C);
@@ -240,14 +241,22 @@ function fittedShadowPass(items0, sun, C) {
     tr = sun.travel;
   /* phase 20 R3: models whose mesh holds still are cached too (F8, shadowHoldsStill), and so is what only the wind
      sways, drawn at its rest (E11, the owner's option a); within the near map (13 m) shadows sway as before */
+  /* FL-2b: a model whose only moving parts turn (a windmill's sails) has its body in the cache and only those parts
+     drawn each frame (a depth map: what is drawn on top of the copy gives the same map as drawing it all) */
   const fs = cache,
     still = fs
-      ? it => shadowHoldsStill(it) || (it.k === 'prop' && !it.vol && !it.vox && it.rest !== undefined)
+      ? it =>
+          shadowHoldsStill(it) ||
+          (it.k === 'prop' && !it.vol && !it.vox && it.rest !== undefined) ||
+          shadowSpinsOnly(it)
       : shadowHoldsStill,
     stat = cache ? filterInto(items, still, SHADOW_LISTS.stat) : items,
     dyn = cache
       ? filterInto(items, it => !still(it), SHADOW_LISTS.dyn)
-      : ((SHADOW_LISTS.dyn.length = 0), SHADOW_LISTS.dyn);
+      : ((SHADOW_LISTS.dyn.length = 0), SHADOW_LISTS.dyn),
+    spin = cache
+      ? filterInto(stat, shadowSpinsOnly, SHADOW_LISTS.spin)
+      : ((SHADOW_LISTS.spin.length = 0), SHADOW_LISTS.spin);
   const q = v => Math.round(v * 500);
   const key = cache
     ? [
@@ -293,7 +302,7 @@ function fittedShadowPass(items0, sun, C) {
     sprites(stat, fs);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, stat);
     if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);
-    if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, stat);
+    if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, stat, cache ? 1 : 0);
     if (cache) {
       const S2 = renderTarget('shadowS', res, res, { depthOnly: true });
       gl.bindFramebuffer(gl.READ_FRAMEBUFFER, SF.f);
@@ -308,7 +317,10 @@ function fittedShadowPass(items0, sun, C) {
   if (cache) {
     sprites(dyn);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, dyn);
-    if (typeof drawPropModelShadows === 'function') drawPropModelShadows(SH, dyn);
+    if (typeof drawPropModelShadows === 'function') {
+      drawPropModelShadows(SH, dyn);
+      if (spin.length) drawPropModelShadows(SH, spin, 2);
+    }
   }
   if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
   endShadow();
@@ -509,6 +521,13 @@ function shadowHoldsStill(it) {
   if (it.bobs || it.spin || (it.p && it.p.moving) || (it.M && it.M.bob)) return false;
   const m = typeof propModelMesh === 'function' ? propModelMesh(it.voxPath, it.vox) : null;
   return !!m && !(m.spins && m.spins.length);
+}
+/* FL-2b: a model that holds still but for its turning parts (sails, propellers): its body can be cached */
+function shadowSpinsOnly(it) {
+  if (it.k !== 'prop' || it.vol || !it.vox) return false;
+  if (it.bobs || it.spin || (it.p && it.p.moving) || (it.M && it.M.bob)) return false;
+  const m = typeof propModelMesh === 'function' ? propModelMesh(it.voxPath, it.vox) : null;
+  return !!m && !!(m.spins && m.spins.length);
 }
 /* which items the cached map holds: a number from each one's place and whether it is a model, in order, so a model
    that finished loading (it was its picture before) or an item gone or added draws the cache again */

@@ -32,3 +32,12 @@ test('every picture path switch the debug menu draws is handled and names a Qual
   }
   assert.match(src, /PICTURE_PATH_SWITCHES\.map\(/, 'drawn in the menu');
 });
+
+// fluid track FL-3a: the controller's switch is drawn with the picture paths, handled, and off by default until the
+// owner's phone run
+test('the frame controller switch is handled and off by default', () => {
+  assert.match(src, /\['fl3ctl', 'controller', 'Frame controller'\]/);
+  assert.match(src, /case 'fl3ctl':/);
+  const settings = readFileSync(new URL('../../game/js/engine/settings.js', import.meta.url), 'utf8');
+  assert.match(settings, /\n {4}controller: false,/);
+});

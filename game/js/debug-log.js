@@ -222,6 +222,14 @@ debugLog.ctx = () => {
     if (typeof GAME.walkView !== 'undefined' && GAME.walkView.held) c.held = GAME.walkView.held;
     if (typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on) {
       c.q = GAME.walkRenderer.qe || 0;
+      /* FL-3a: the frame controller (quality.controller): its CPU level, the half rate, the fence lag in frames and its
+         last step ({ t, act, lever, why }) */
+      if (GAME.walkRenderer.ctl) {
+        c.qc = GAME.walkRenderer.qc || 0;
+        c.half = GAME.frameScheduler && GAME.frameScheduler.half ? 1 : 0;
+        c.lag = GAME.walkRenderer.fenceLag ?? null;
+        if (GAME.walkRenderer.ctlLast) c.ctl = GAME.walkRenderer.ctlLast;
+      }
       if (GAME.walkRenderer.cullOf) c.cull = [GAME.walkRenderer.culled, GAME.walkRenderer.cullOf];
       if (GAME.walkRenderer.gridSkip) c.grid = GAME.walkRenderer.gridSkip;
       if (GAME.walkRenderer.shHit !== undefined || GAME.walkRenderer.shMiss !== undefined) {
