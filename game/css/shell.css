@@ -529,6 +529,20 @@ button.tb-where .uico:first-child {
   clip-path: var(--edge-panel);
   background: var(--edge);
 }
+/* FL-6 (the owner's answer): on a phone, while walking, the two bars are tinted glass with no live blur: a backdrop
+   blur over the moving 3D is redone by the phone's GPU every frame. The fill is thicker so the bars read the same
+   (--hud-tint: the surface colour, 88%). Behind a screen the world is frozen, so the blur stays there */
+:root {
+  --hud-tint: color-mix(in srgb, var(--c-surface) 88%, transparent);
+}
+@media (hover: none) and (pointer: coarse) and (max-width: 959px) {
+  body.on-walk .topbar.glass::before,
+  body.on-walk pb-nav-bar#nav::part(glass) {
+    background: var(--hud-tint);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
 
 /* ---------- UI-5: the bottom bar is the kit's <pb-nav-bar id="nav"> (ui.js updateNav) ---------- */
 pb-nav-bar#nav {
@@ -543,6 +557,18 @@ pb-nav-bar#nav {
 }
 pb-nav-bar#nav[hidden] {
   display: none;
+}
+/* FL-6: the minimap's picture (js/minimap.js) is the tile and --minimap-pad more on every side, moved under you by
+   transform between its five pictures a second (the tile's clip hides the margin); you and north sit still above it */
+pb-nav-bar#nav canvas.minimap {
+  --minimap-pad: 24px;
+  inset: calc(var(--minimap-pad) * -1);
+  width: calc(100% + 2 * var(--minimap-pad));
+  height: calc(100% + 2 * var(--minimap-pad));
+  will-change: transform;
+}
+pb-nav-bar#nav canvas.minimap-you {
+  pointer-events: none;
 }
 /* UI-8: what sits above the bar (the dialogue box, the hint and Actions, sheets' sticky rows, the d-pad) clears it by
    --nav-h: the bar's top (its raised minimap tile, full or compact) and a gap; with no bar shown, the old height */

@@ -9,6 +9,7 @@ import { closeModal, modal, render, toast } from './hooks.js';
 import { ITEMS, PYRAMIDS } from './game-data.js';
 import { billyName, formatNumber, maxHp } from './logic/rules.js';
 import { fxTagsHTML, rarityFoilHTML, rarityPillHTML, rarityRowAttr, statusTagHTML } from './ui-marks-kit.js';
+import { pbPatch } from './ui-motion.js';
 import { applyItem, canUse, teamNeedsHp } from './logic/battle-engine.js';
 import { escapeHtml, saveData, uiState } from './game-state.js';
 import { pyramidHTML, uiIconHTML } from './art.js';
@@ -19,6 +20,7 @@ expose({
   BAG_POCKETS: [() => BAG_POCKETS],
   bagHeal: [() => bagHeal],
   bagList: [() => bagList, v => (bagList = v)],
+  bagRefresh: [() => bagRefresh, v => (bagRefresh = v)],
   renderBag: [() => renderBag, v => (renderBag = v)],
 });
 /* eslint-enable no-func-assign */
@@ -77,6 +79,13 @@ export function renderBag() {
     Object.keys(PYRAMIDS).reduce((a, k) => a + (saveData.pyramids[k] || 0), 0);
   return `<header class="bar"><div><div class="sub">${formatNumber(total)} things carried</div><h1 class="where">Bag</h1></div></header>${tabs}${body}${act}`;
 }
+/* FL-6: choosing a pocket or a thing changes the Bag in place (ui-motion.js pbPatch: the rows that changed and the use
+   panel), not the whole page again; anything else (no Bag on screen) draws the page as before */
+function bagRefresh() {
+  const sc = document.querySelector('#app > .screen.s-bag');
+  if (sc && uiState.tab === 'bag') pbPatch(sc, renderBag());
+  else render();
+}
 document.addEventListener('click', ev => {
   const el = ev.target.closest && ev.target.closest('[data-a^="bag-"]');
   if (!el) return;
@@ -84,12 +93,12 @@ document.addEventListener('click', ev => {
   if (d.a === 'bag-p') {
     uiState.bagP = d.p;
     uiState.bagSel = null;
-    render();
+    bagRefresh();
     return;
   }
   if (d.a === 'bag-sel') {
     uiState.bagSel = uiState.bagSel === d.k ? null : d.k;
-    render();
+    bagRefresh();
     return;
   }
   if (d.a === 'bag-use') {

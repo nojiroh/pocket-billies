@@ -3,7 +3,7 @@
 /* UI-5: the walk scene behind the Walk tab (rooms and their doors, what a tap on the scene does, crossing a seam, the map's look-ahead), moved from ui.js as it was; not a screen, so it keeps its shape */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, render } from './hooks.js';
+import { provide, render, selfTest } from './hooks.js';
 import { $, clamp } from './util.js';
 import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, trainersAt } from './game-data.js';
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
@@ -94,6 +94,7 @@ expose({
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => ((walkPick = v), provide({ walkPick }))],
   walkState: [() => walkState, v => (walkState = v)],
+  worldMoving: [() => worldMoving, v => (worldMoving = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ leaveRoom, mapIdAt, mapOffsetInView, roomState, walkPick });
@@ -882,6 +883,19 @@ setInterval(() => {
 }, 400);
 /* FL-1b: the walk screen's free band (between its top card and its foot), kept for one frame */
 const safeBand = { t: -1, v: null };
+/* FL-6: the windows (and moments) that keep the world moving behind them instead of freezing it: a window that asks
+   for it (modal({world: true})), the debug menu (its live numbers), Settings' Display tab (the graphics dials show a
+   change at once), a picture the debug log is waiting for, a scene being played (cutscene/director.js) and the
+   in-game tests (their steps wait on frames). Asked of the owner (docs/HANDOFF.md FL-6) */
+function worldMoving() {
+  const M = uiState.modal;
+  return !!(
+    (M && (M.world || M.dbg || (M.settings && uiState.setTab === 'graphics'))) ||
+    walkRenderer.snapReq ||
+    walkView.director ||
+    (typeof selfTest !== 'undefined' && selfTest.on)
+  );
+}
 export function walkMapSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
   /* in a battle the scene keeps running inside the battle stage (battle-3d.js) when it can; otherwise it stops */
@@ -1012,7 +1026,13 @@ export function walkMapSync() {
            menus crawl. FL-1b: at once (it drew 0.8 s more at 24, each frame at full cost, while the tab opened) */
         if (w !== walkView.held) walkView.heldT = performance.now();
         walkView.held = w;
-        return w === 'hidden' || w === 'screen' ? 1 : w === 'window' ? 20 : userFps();
+        if (w === 'hidden') return 1;
+        /* FL-6 (the owner's answer): behind a full screen or a window the world is frozen: a change of rate draws
+           one frame at once (frame-scheduler.js paceDue), then the scheduler's floor (0.1: one frame in 10 s).
+           The world's clock runs inside the draw, so the game pauses there. Some windows keep the world moving
+           (worldMoving below), at the rates they had: 1 behind a screen, 20 behind a window */
+        if (w === 'screen' || w === 'window') return worldMoving() ? (w === 'screen' ? 1 : 20) : 0.1;
+        return userFps();
       },
     }).then(() => cv.classList.add('in'));
   }

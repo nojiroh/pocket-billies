@@ -866,9 +866,127 @@ try {
         ]);
       debugLog.loaf.push([Math.round(e.startTime), Math.round(e.duration), Math.round(e.blockingDuration || 0), s]);
       if (debugLog.loaf.length > 80) debugLog.loaf.shift();
+      debugLog.uiFrame(e);
     }
   }).observe({ type: 'long-animation-frame', buffered: true });
 } catch (e) {}
+/* FL-6 (with TD-4): how the page answers a tap, and what the long frames spent on style, layout and painting.
+   Event Timing: each tap (one interaction: its pointerdown, pointerup and click) from the touch to the next paint
+   (rounded to 8 ms by the browser), split into the wait before its handlers, the handlers and the paint after them,
+   with the screen and what was tapped (its data-a, data-pref-set or data-p: names of controls, never save data).
+   Long animation frames (over 50 ms): the frame's rendering (from renderStart) and its style and layout (from
+   styleAndLayoutStart), which is where a whole-screen rebuild or a forced layout shows */
+debugLog.ui = {
+  taps: { n: 0, maxMs: 0, over100: 0, last: [] },
+  frames: { n: 0, renderMs: 0, styleMs: 0, maxStyleMs: 0 },
+};
+debugLog.tapWhat = '';
+document.addEventListener(
+  'pointerdown',
+  ev => {
+    const t = /** @type {any} */ (ev.target),
+      el = t && t.closest ? t.closest('[data-a],[data-pref-set],[data-p],[data-t]') : null,
+      d = el ? el.dataset : null;
+    debugLog.tapWhat = d ? String(d.a || (d.prefSet ? 'pref:' + d.prefSet : '') || d.p || d.t || '').slice(0, 24) : '';
+  },
+  { capture: true, passive: true }
+);
+/* every tap's own touch-to-paint (Event Timing reports only those over 16 ms): from the click to the first task
+   after the next frame's painting (an animation frame, then a task), with where it was and what */
+debugLog.ui.paint = { n: 0, maxMs: 0, sumMs: 0, last: [] };
+document.addEventListener(
+  'click',
+  ev => {
+    const t0 = ev.timeStamp,
+      where = debugLog.tapWhere(),
+      what = debugLog.tapWhat;
+    requestAnimationFrame(() =>
+      setTimeout(() => {
+        const P = debugLog.ui.paint,
+          ms = Math.round(performance.now() - t0);
+        P.n++;
+        P.sumMs += ms;
+        P.maxMs = Math.max(P.maxMs, ms);
+        P.last.push([Math.round(t0 - debugLog.t0), ms, where, what]);
+        if (P.last.length > 40) P.last.shift();
+      }, 0)
+    );
+  },
+  { capture: true, passive: true }
+);
+debugLog.tapWhere = () => {
+  const U = typeof GAME.uiState !== 'undefined' ? GAME.uiState : null,
+    M = U && U.modal;
+  if (typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle) return 'battle';
+  if (M) return M.settings ? 'settings' : M.dbg ? 'debug menu' : 'window';
+  return U ? String(U.tab || '') : '';
+};
+debugLog.uiFrame = e => {
+  const F = debugLog.ui.frames,
+    end = e.startTime + e.duration,
+    r = e.renderStart ? end - e.renderStart : 0,
+    st = e.styleAndLayoutStart ? end - e.styleAndLayoutStart : 0;
+  F.n++;
+  F.renderMs += r;
+  F.styleMs += st;
+  F.maxStyleMs = Math.max(F.maxStyleMs, st);
+};
+try {
+  let lastId = 0;
+  new PerformanceObserver(l => {
+    const T = debugLog.ui.taps;
+    for (const e of /** @type {any[]} */ (l.getEntries())) {
+      if (!e.interactionId) continue;
+      const row = [
+        Math.round(e.startTime - debugLog.t0),
+        Math.round(e.duration),
+        e.name,
+        debugLog.tapWhere(),
+        debugLog.tapWhat,
+        Math.round(e.processingStart - e.startTime),
+        Math.round(e.processingEnd - e.processingStart),
+        Math.round(e.startTime + e.duration - e.processingEnd),
+      ];
+      /* one row per tap: its slowest event */
+      if (e.interactionId === lastId && T.last.length) {
+        if (row[1] > T.last[T.last.length - 1][1]) T.last[T.last.length - 1] = row;
+      } else {
+        lastId = e.interactionId;
+        T.n++;
+        T.last.push(row);
+        if (T.last.length > 40) T.last.shift();
+      }
+      T.maxMs = Math.max(T.maxMs, row[1]);
+      if (row[1] > 100) T.over100++;
+    }
+  }).observe(/** @type {any} */ ({ type: 'event', durationThreshold: 16, buffered: true }));
+} catch (e) {}
+debugLog.uiReport = () => {
+  const T = debugLog.ui.taps,
+    F = debugLog.ui.frames;
+  return {
+    taps: {
+      count: T.n,
+      maxMs: T.maxMs,
+      over100: T.over100,
+      /* [ms since the page started, touch to paint, event, screen, what, wait, handlers, paint after] */
+      last: T.last,
+    },
+    /* every tap: [ms since the page started, click to paint, screen, what] */
+    paint: {
+      count: debugLog.ui.paint.n,
+      meanMs: debugLog.ui.paint.n ? Math.round(debugLog.ui.paint.sumMs / debugLog.ui.paint.n) : 0,
+      maxMs: debugLog.ui.paint.maxMs,
+      last: debugLog.ui.paint.last,
+    },
+    longFrames: {
+      count: F.n,
+      renderMs: F.n ? Math.round(F.renderMs / F.n) : 0,
+      styleMs: F.n ? Math.round(F.styleMs / F.n) : 0,
+      maxStyleMs: Math.round(F.maxStyleMs),
+    },
+  };
+};
 (() => {
   const H = debugLog.hitch;
   let last = 0,
@@ -1198,6 +1316,8 @@ debugLog.build = () => ({
   /* LD-0: the boot's timeline and every frame held over 33 ms */
   boot: debugLog.bootReport(),
   hitches: debugLog.hitchReport(),
+  /* FL-6: taps (touch to paint) and the long frames' style and layout time */
+  ui: debugLog.uiReport(),
   /* TD-1: the page before this one ended without its clean mark (see debugLog.crumb) */
   previousPage: debugLog.previousPage,
   summary: debugLog.summary(),
