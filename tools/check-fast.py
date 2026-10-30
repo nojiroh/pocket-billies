@@ -265,6 +265,9 @@ def bowl_map(pg, base):
     if hit: raise Exception(f'a touch on the map lands on {hit}, not the map')
     # UI-8c: the map's seven buttons are the kit's 44 px chips with the icon set's pictures (no typed symbols), and
     # the look-around group stands clear of the place card
+    # the map's layout after the resize: the place card and the button groups settle over a few frames, more on a slow
+    # runner (CI once measured the look-around group 16 px into the card), so wait for them to stand clear first
+    until(pg, "(()=>{const v=document.querySelector('.map-full .mapview'),c=document.querySelector('#mapcard');if(!v||!c)return true;const a=v.getBoundingClientRect(),k=c.getBoundingClientRect();return !(a.bottom>k.top+.5&&a.top<k.bottom&&a.right>k.left&&a.left<k.right)})()", 5)
     chips = pg.evaluate("""(()=>{const out=[],bs=[...document.querySelectorAll('.map-full .mapctl .mbtn,.map-full .mapview .mbtn')];
       for(const b of bs){const r=b.getBoundingClientRect();if(Math.round(r.width)<44||Math.round(r.height)<44||!b.querySelector('.uico')||b.textContent.trim())out.push((b.dataset.a||b.dataset.k)+' '+Math.round(r.width)+'x'+Math.round(r.height))}
       const v=document.querySelector('.map-full .mapview'),c=document.querySelector('#mapcard');let over='';
