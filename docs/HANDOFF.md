@@ -284,6 +284,39 @@ cozy whimsical retro futuristic", then "all houses look way too similar now, add
   width, light and dark: no sideways scroll, no script errors.
 - Next: wave 1, started by this session: BD-1 (new recipe shapes) on `track/buildings`, BD-2a (surfaces painted) on
   `claude/bd-2a-surfaces`, BD-F (the window check reads `rot`) on `claude/bd-f-window-check`.
+### Fix - water on the Adreno phone, Copperleaf's spring stream and bridge - 2026-10-30
+Branch `ccr-8236e72e-tie1ht` (the session's branch, from main 73b2f8b1), PR into main. The owner: water doesn't show on
+the phone (desktop and iPad fine); then "water above the pond for no reason" and "the bridge under the waterfall is too
+close". From the owner's phone log (deploy 73b2f8b1, Android, Adreno 750, 2026-10-29 22:44): the water drew every frame
+(1 draw, no GL error), and its picture showed Copperleaf's river as a dark, see-through strip.
+- **Found**: the water's kinds texture (WA-5b, 2026-10-26: RGBA16F, uploaded as FLOAT from a Float32Array) reads as
+  zeros on the Adreno: no colour, clarity or foam. Headless, zeroing that texture gives the log's picture exactly; no
+  phone-only code path (Android UA, q4, phone pixels) drops the water.
+- Changed (one cause a commit):
+  - New `logic/half-float.js` (`halfFloatBits`, `halfFloats`, half-float.test.mjs); the kinds texture and the flow map
+    upload as HALF_FLOAT made in JS (same RGBA16F formats; desktop pictures unchanged).
+  - water-data.js `setFlowUniforms`: the flow map on texture unit 4 (was 7, the soft shadows' raw depth `uShadowD`:
+    the water's shadow blocker search read the flow map, on every device).
+  - `tools/patch-copperleaf-water.mjs --bridge`: the bridge below the pond's fall moved 5 m down the river (its middle
+    6.9 m from the lip, was 2 m, over the plunge pool), square across and centred on the water, a path to each end
+    (9 tiles).
+  - `--unfeed`: the spring stream into the pond (patch-copperleaf-terrain.mjs FEED) is gone. It started 1 m below the
+    pond's water across a 2.3-2.8 m dip between the mountain's foot and the terrace, so its level floated up to 2.3 m
+    over the ground; nothing uphill can feed the terrace (the owner chose removal over a ridge or a rim spring). Its 16
+    channel tiles take the commonest dry tile round them, 11 bed corners filled. The dressing is laid again in full
+    (island-dress.test wants the generator's own), so some dressing props moved elsewhere on the island.
+  - water-flow.js: a river cell's level is cut to the highest dry ground within 2 m plus 5 cm (`F.levCapped`). 0 cells
+    on Copperleaf, test_water, test_bridges; 2 on legacy test_graphics (0.13 and 0.47 m over their banks).
+- Risky: the Adreno cause is shown headless, not on the phone: the owner's next log and a look at Copperleaf's river
+  confirm it. The bank cap could cut a generated river that runs in a channel narrower than the dry ground's 2 m look
+  only if its level stands over every bank, which is a float anyway. Both patch steps are rerunnable (a second run
+  changes nothing).
+- Verified: lint, typecheck, check:modules, format:check, check:data, `npm test` 2,398 pass; the new tests fail
+  before their fixes; check:smoke 7 of 7 (440 s; the in-game
+  full test's shader step: 39 shaders built). Pictures (scratchpad, not committed): the river normal, zeroed (the
+  phone's look) and after; the pond and the old channel after; the bridge after.
+- For the owner, on the phone: Copperleaf's river and pond (clear blue, white water at the fall and the outflow), the
+  bridge's new place, and the hillside behind the pond (no stream).
 
 ### Fix - Kappi's stall clock counts only free walking - 2026-10-29
 Branch `fix/kappi-stall-clock` from main 7f661239, PR into main. From the owner's first phone log of the new intro
