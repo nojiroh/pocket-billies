@@ -1565,8 +1565,10 @@ def run_town_life(pg, base):
     if chat < 6: raise Exception(f'the town says {chat} lines, not its biome\'s 6 and more')
     n = pg.evaluate("(walkState().npcs||[]).filter(n=>String(n.id).startsWith('_talk:local')).length")
     if not n: raise Exception('no named local in the town')
+    # the talk box's own name tag (#talk): Kappi's bubble (kappi.js, #ktip) has a .talk-who too, and once a tip has shown
+    # it stays in the page, so a bare .talk-who can read "Kappi"
     name = pg.evaluate("(()=>{const n=walkState().npcs.find(n=>String(n.id).startsWith('_talk:local'));walkPick({k:'npc',n});return n.talk.name})()")
-    if not until(pg, f"talkBox.on&&document.querySelector('.talk-who')&&document.querySelector('.talk-who').textContent==={json.dumps(name)}", 20):
+    if not until(pg, f"talkBox.on&&document.querySelector('#talk .talk-who')&&document.querySelector('#talk .talk-who').textContent==={json.dumps(name)}", 20):
         raise Exception(f'tapping {name} didn’t open the talk box with their name')
     pg.evaluate("talkHide();0")
     return f'{want} folk ({pg.evaluate("walkView.folk.length")} drawn, cap {cap}), walked and went indoors; animals {life}; {chat} lines; {n} local(s), {name} talked'
@@ -1583,7 +1585,7 @@ def run_town_quests(pg, base):
     if not until(pg, "(walkState().npcs||[]).some(n=>n.id==='_talk:quest')", 20): raise Exception('no quest giver in the town')
     if not pg.evaluate("questMarked(walkState().npcs.find(n=>n.id==='_talk:quest').talk)"): raise Exception('the giver has no "!"')
     name = pg.evaluate("(()=>{const n=walkState().npcs.find(n=>n.id==='_talk:quest');walkPick({k:'npc',n});return n.talk.name})()")
-    if not until(pg, f"talkBox.on&&document.querySelector('.talk-who').textContent==={json.dumps(name)}", 20):
+    if not until(pg, f"talkBox.on&&document.querySelector('#talk .talk-who')&&document.querySelector('#talk .talk-who').textContent==={json.dumps(name)}", 20):
         raise Exception(f'tapping {name} didn’t open the talk box with their name')
     # through the offer: Yes at the choice, every line tapped on
     if not until(pg, "!talkBox.on", 30, "if(talkBox.choice)talkBox.choice.pick(0);else if(talkBox.cur)talkBox.cur.done()"):
