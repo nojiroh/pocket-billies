@@ -4,6 +4,7 @@
 //
 //   node tools/patch-copperleaf-water.mjs --river    # the pond's outflow: a slope with a little rapids, no fall
 //   node tools/patch-copperleaf-water.mjs --bridge   # the bridge below the pond's fall moved down the river
+//   node tools/patch-copperleaf-water.mjs --unfeed   # the spring stream into the pond taken away
 //
 // --river: the river left the pond by a 0.45 m drop over its first metre (island-gen.js, the dial stream.fall 0.8,
 // capped), which the walk view drew as a staircase of fall sheets. Its bed now ramps from the pond's level down to the
@@ -14,6 +15,11 @@
 // pond's fall stood over its plunge pool, its middle 2 m from the lip. It moves BRIDGE_DOWN metres further down the
 // river's line, square across the water there and centred on it, at least as long as it was; a path ('p') is laid
 // from each end to the nearest path tile. A bridge already more than BRIDGE_NEAR metres from the lip is left alone.
+// --unfeed (the owner, 2026-10-29: "water above the pond for no reason"): the thin stream from a spring into the pond
+// (patch-copperleaf-terrain.mjs --pond, its FEED) starts 1 m below the pond's water, across a dip of 2.3-2.8 m between
+// the mountain's foot and the pond's terrace, so its level floated up to 2.3 m over the ground. The owner chose to take
+// it away: the stream entry goes, its channel's water tiles (within FEED_HALF metres of its line) take the commonest
+// dry tile round them, and its carved bed is filled from the ground beside it (never lowered).
 // (WA-10's --square, the square paved to about 8 m, is now hub track HB-10a's tools/patch-copperleaf-square.mjs.)
 // Written through tools/write-data.mjs, as every build tool writes the data.
 import { execFileSync } from 'node:child_process';
@@ -27,13 +33,15 @@ const RIVER_HALF = 1.5; /* the river's half width (island-gen.js ISLAND_RIVER_W 
 const BRIDGE_DOWN = 5; /* metres the bridge moves down the river */
 const BRIDGE_NEAR = 4; /* a bridge whose middle is this close to the fall's lip is the one moved (m) */
 const BRIDGE_PATH = 8; /* how far from an end a path tile is looked for (m) */
+const FEED_HALF = 0.75; /* the spring stream's channel: its water tiles this close to its line (the terrain patch's) */
+const FEED_FILL = [1.1, 2.4]; /* its bed is filled from the corners this far from its line (m) */
 
 const D = readGameData(),
   M = D.maps.copperleaf,
   { w, h } = M,
   args = process.argv.slice(2);
-if (!args.includes('--river') && !args.includes('--bridge')) {
-  console.error('usage: node tools/patch-copperleaf-water.mjs --river --bridge');
+if (!['--river', '--bridge', '--unfeed'].some(k => args.includes(k))) {
+  console.error('usage: node tools/patch-copperleaf-water.mjs --river --bridge --unfeed');
   process.exit(1);
 }
 /* corner heights: rows from the far edge (island-gen.js islandDecodeGround), j counted from the south */
@@ -213,6 +221,72 @@ if (args.includes('--bridge')) {
         `(its middle ${r2(Math.hypot(mid(B)[0] - lip.x, mid(B)[1] - lip.z))} m from the lip, was ` +
         `${r2(Math.hypot(m0[0] - lip.x, m0[1] - lip.z))} m); ${laid} path tiles laid to its ends`
     );
+  }
+}
+
+if (args.includes('--unfeed')) {
+  const k = M.streams.findIndex(s => s.src === 'spring' && s.mouth === 'lake'),
+    F = k >= 0 ? M.streams[k].pts : null;
+  if (!F) notes.push('the spring stream: none (taken away already)');
+  else {
+    const dist = (x, z) => {
+      let b = Infinity;
+      for (let n = 0; n < F.length - 1; n++) {
+        const [a, c] = [F[n], F[n + 1]],
+          l2 = (c[0] - a[0]) ** 2 + (c[1] - a[1]) ** 2,
+          t = Math.max(0, Math.min(1, ((x - a[0]) * (c[0] - a[0]) + (z - a[1]) * (c[1] - a[1])) / l2));
+        b = Math.min(b, Math.hypot(a[0] + (c[0] - a[0]) * t - x, a[1] + (c[1] - a[1]) * t - z));
+      }
+      return b;
+    };
+    const [x0, x1, z0, z1] = [
+      Math.floor(Math.min(...F.map(p => p[0])) - 4),
+      Math.ceil(Math.max(...F.map(p => p[0])) + 4),
+      Math.floor(Math.min(...F.map(p => p[1])) - 4),
+      Math.ceil(Math.max(...F.map(p => p[1])) + 4),
+    ];
+    /* the channel's tiles, then each one the commonest dry tile among its neighbours that are not the channel */
+    const chan = [];
+    for (let j = z0; j <= z1; j++)
+      for (let i = x0; i <= x1; i++) if (tile(i, j) === 'w' && dist(i + 0.5, j + 0.5) <= FEED_HALF) chan.push([i, j]);
+    const inChan = new Set(chan.map(([i, j]) => i + ',' + j));
+    for (const [i, j] of chan) {
+      const count = {};
+      for (let b = -1; b <= 1; b++)
+        for (let a = -1; a <= 1; a++) {
+          const ch = tile(i + a, j + b);
+          if ((a || b) && ch && !'wd'.includes(ch) && !inChan.has(i + a + ',' + (j + b)))
+            count[ch] = (count[ch] || 0) + 1;
+        }
+      const best = Object.entries(count).sort((p, q) => q[1] - p[1] || (p[0] < q[0] ? -1 : 1))[0];
+      setTile(i, j, best ? best[0] : 'G');
+    }
+    /* the bed: each corner the carve could reach takes the mean of the corners beside the channel, if that is higher */
+    const fill = [];
+    for (let j = z0; j <= z1; j++)
+      for (let i = x0; i <= x1; i++) {
+        if (dist(i, j) > 0.9) continue;
+        let s = 0,
+          c = 0;
+        for (let b = -3; b <= 3; b++)
+          for (let a = -3; a <= 3; a++) {
+            const d = dist(i + a, j + b);
+            if (d >= FEED_FILL[0] && d <= FEED_FILL[1] && Math.hypot(a, b) <= 3) {
+              s += H(i + a, j + b);
+              c++;
+            }
+          }
+        if (c) fill.push([i, j, s / c]);
+      }
+    let raised = 0;
+    for (const [i, j, v] of fill)
+      if (v > H(i, j) + 0.005) {
+        setH(i, j, v);
+        raised++;
+      }
+    M.streams.splice(k, 1);
+    M.islandGen.patched = [...new Set([...(M.islandGen.patched || []), 'water --unfeed'])];
+    notes.push(`the spring stream taken away: ${chan.length} channel tiles dry again, ${raised} bed corners filled`);
   }
 }
 
