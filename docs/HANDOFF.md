@@ -2,6 +2,68 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-5 - Civic: the shop, inn, library and lab rebuilt (look B with C's showpieces) - 2026-10-30
+Branch `claude/bd-5-civic` (wave 4 side session, made from `track/buildings`; main and `track/buildings` had nothing
+new). Plan written in Plan Mode's shape and built at once (the owner's advance approval, track section 1), on the
+owner's look pick "B base + C showpieces". Tools, models, pictures and their catalogue entries; no game code. No
+per-session tag (CLAUDE.md).
+- Changed:
+  - New tools/build-civic.py builds four models under their old keys and model paths. It reuses BD-3's helpers
+    (tools/build-look-sketches.py), BD-1's shapes and BD-2a's surfaces. Lean in degrees, converted by the model's
+    height (`warp()`). Civic buildings stay plumb with a soft swell; the inn leans 1 degree.
+    - `shop` (1,880 triangles): a Streamline corner store with a round corner and speed lines, a big window of goods,
+      a striped awning, a slab roof over dark eaves, the round leaf emblem board with a neon ring, a starburst, the
+      SHOP board and a neon under the eaves. C's showpieces: a Googie canopy over the door and string lights.
+    - `inn` (3,805): three floors stacked, the first turned +3 degrees and the top -4 (a `turned()` helper turns a
+      group of parts), jettied, with two balconies, a teacup sign, the INN board, an upswept verdigris roof, an atomic
+      finial and a chimney with smoke. C's showpieces: string lights and a blossom street tree.
+    - `library` (3,510): the Bureau's archive. A cream rotunda with the arched door, the LIBRARY board and a clock;
+      brick wings fronted with filing drawers under arched windows; an upswept fan of books round a copper drum; ivy.
+      C's showpiece: glowing tubes under the cornice.
+    - `lab` (2,878): an observatory dome with its slit open and a telescope out of it, a radio dish with a glowing
+      feed, a copper tower with a glowing ring and a beacon, a pneumatic tube along the front, a Googie canopy over
+      the doors, and Kappi's corner (a porthole at Kappi's height, a bench with a cushion, a little lamp; the track
+      named the corner but not what it is, so this is my reading). The drawn window view (batch 3's
+      decals/lab_window.png) is kept. C's showpiece: a copper rocket chimney with fins.
+  - Footprints and doors are kept as they were: shop [3.8, 2.4] door 30 px; inn [5.6, 3.4] door 0; library [5.4, 3.4]
+    door 0; lab [6, 3] door 62 px. **BD-7 has nothing to move for these four.** `fx` (windows, lamps, smoke) and the
+    glass numbers are new and written by the tool.
+  - Pictures are baked from the game's own mesh. The new tools/model-triangles.mjs runs `lowPolyFromRecipe` in Node
+    and hands the triangles to build-props-island.py's `bake`, as build-intro-art.py's `bake_mesh` does. Pictures go
+    in scene/next/hub/; the old scene/props/{shop,inn,library,lab}.png are removed, as the Workshop's were.
+  - tools/build-props-batch7.py no longer builds the shop, inn or library, and tools/build-props-batch3.py no longer
+    builds the lab, so their reruns can't overwrite BD-5's models. Their showcase rows still show the four.
+  - New tools/test/civic-buildings.test.mjs (5 tests): under 6,000 triangles, the old box and door, each building's
+    signature parts, numbered glass, glows, roof marks, decals facing the front, a lean of 1.5 degrees at most, a
+    baked picture, and the inn's floors turned against each other.
+  - studio/art-code-refs.json regenerated.
+- Checked against the track file: the footprints and doors in section 3 are right (shop door 0.94 m = 30 px, lab
+  1.94 m = 62 px). Wrong: build-props-island.py's `bake` meshes recipes itself and knows no prism, lathe, tilt or warp,
+  so it can't draw BD-1's shapes. That is why the bake now goes through the game's mesher.
+- Found, not changed:
+  - A `face: 'fixed'` decal needs about 4 cm in front of the surface behind it. At 1 cm the lab's window view didn't
+    draw on Copperleaf. And a board hung a metre out under the turned balcony drew without its lettering, though it had
+    the same clearance. Builders should keep decals 4 cm out, on a wall, not under an overhang. BD-4a's kit may meet
+    this too.
+  - Fronts read dark at noon from the orbit camera on Copperleaf (rot 90, the sun behind); every building there does
+    the same. A BD-8 lighting point.
+- Risky:
+  - The shop's model is also the run towns' shop (mapgen.js). Its footprint is unchanged, so they still fit, but run
+    towns now show the new look.
+  - build-civic.py swaps two names inside build-props-island.py while it bakes (`mesh`, `PICS`). If BD-6 renames
+    them, the bake breaks loudly.
+  - scenery.json: this branch writes only `shop`, `inn`, `library` and `lab` (and three `img` paths in
+    art-code-refs.json). On merge, rerun `python3 tools/build-civic.py`, then `npm run data` and
+    `node tools/art-code-refs.mjs`.
+  - Phone cost isn't measured: 300-1,000 more triangles each, about 12k for the four.
+- Verified: (being run; filled in before the PR)
+- Next: wave 4 ends when BD-4a (`track/buildings`) and BD-6 (`claude/bd-6-landmarks`) have their entries; neither had
+  one when this session ended, so the last of them starts BD-7 on `track/buildings`. BD-7 merges this branch's draft
+  PR.
+- For the owner on the phone: walk round the square by day and at night: the shop, the inn, the library (the Bureau's
+  archive) and the lab. Look at the neon, the string lights and the lit windows after dark, and check that every door
+  still opens its room.
+
 ### Buildings track BD-3 - Look sketches: three directions on one house and the shop - 2026-10-30
 Branch `track/buildings` (wave 3, the main line; pulled 29 commits from its remote, main had nothing new). Plan written
 in Plan Mode's shape and built at once (the owner's advance approval, track section 1). Tools, test models and a
