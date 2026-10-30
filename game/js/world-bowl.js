@@ -26,6 +26,7 @@ import {
 } from './game-data.js';
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { RUN_MARK_ART, runMarkDraw, runMarkLook, runMarkPixels } from './logic/run-marks.js';
+import { warpOn } from './logic/model-shapes.js';
 import { RUN_GRID, runSpotBoxes, runSpotOutline } from './logic/run-map.js';
 import { mapgenExitPoint } from './logic/mapgen.js';
 import {
@@ -1608,11 +1609,27 @@ function worldBowlTreeModelShape(pk) {
 function worldBowlModelShape(path) {
   const rec = loadPropModelRecipe(path);
   if (!rec) return null;
-  const layers = (rec.layers || [])
-    .filter(l => l.k !== 'img' && l.k !== 'limb' && !l.hide)
-    .filter(l => Math.max(l.w || 0, l.d || 0, l.h || 0, (l.r || 0) * 2) >= 0.35)
-    .map(l => ({ ...l, sides: Math.min(l.sides || 8, 8), rings: Math.min(l.rings || 4, 4), lump: 0 }));
-  const M = layers.length ? lowPolyFromRecipe({ ...rec, layers }) : null;
+  /* BD-1: a prism's or a lathe's size from its profile; prisms keep few bend steps, lathes fewer sides, boxes lose
+     their bevels; the warp is measured on the whole model (as the walk view does) and baked in the same way */
+  const ext = l =>
+      Array.isArray(l.pts)
+        ? l.k === 'lathe'
+          ? Math.max(...l.pts.map(q => Math.max(2 * (+q[0] || 0), +q[1] || 0)))
+          : Math.max(l.d || 0, ...l.pts.map(q => Math.max(Math.abs(+q[0] || 0) * 2, +q[1] || 0)))
+        : 0,
+    all = (rec.layers || []).filter(l => l.k !== 'img' && !l.hide),
+    full = warpOn(rec.warp) ? lowPolyFromRecipe({ ...rec, layers: all.filter(l => !l.spin) }) : null;
+  const layers = all
+    .filter(l => l.k !== 'limb')
+    .filter(l => Math.max(l.w || 0, l.d || 0, l.h || 0, (l.r || 0) * 2, ext(l)) >= 0.35)
+    .map(l =>
+      l.k === 'prism'
+        ? { ...l, segs: Math.min(l.segs || 6, 3) }
+        : l.k === 'lathe'
+          ? { ...l, sides: Math.min(l.sides || 6, 6) }
+          : { ...l, sides: Math.min(l.sides || 8, 8), rings: Math.min(l.rings || 4, 4), lump: 0, bevel: 0 }
+    );
+  const M = layers.length ? lowPolyFromRecipe({ ...rec, layers, warpFrame: full ? full.warpFrame : undefined }) : null;
   if (!M) return new Float32Array(0);
   const i16 = new Int16Array(M.vb),
     i8 = new Int8Array(M.vb),

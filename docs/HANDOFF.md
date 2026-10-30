@@ -2,6 +2,81 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-5a - draw order and discard (behind a switch) - 2026-10-30
+Branch `track/fluid` (round 4's last lane; FL-6b, added by the owner's answers at c13050b0, ran beside it in CSS and
+UI files only; its commits merged in). Plan approved by the owner's standing answer (fluid-track.md section 1). Code: two new paths, each behind
+its own switch, **off** until the owner's phone run; the program link times in the debug log for everyone. No tag (the
+track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + rounds 1-3): section 4 holds: every depth-writing scene program holds
+  `discard` (ground: room hole, wall thinning, rock circle; pictures; grass; models: fade and rock, low-poly own
+  texture; solid props; box faces; buildings and structures, `bld`); nothing is depth sorted; pictures come before
+  models. Differs: the sky is already drawn after the opaque things for everyone (`quality.skyLast` on since FL-2a);
+  the ground's walls are **already one contiguous index range** (walk/ground-mesh.js pushes every floor cell, then
+  every wall, then the far land), so no mesh change was needed, only the range recorded; models with their own
+  texture are already drawn apart from the batches (ST-7); WALK_SHADERS carry no mediump edits (only the post passes
+  do), so the variants need none; the headless frame of Copperleaf has 106-118 scene draws, 95-107 of them with a
+  discard program and 0 without.
+- Changed:
+  - game/js/engine/shader-precision.js `solidFragment(fs, edits)`: exact-once edits that take every cut out; null when
+    an edit no longer fits or a `discard` is left (then the old program draws everything).
+  - The variants: `groundS` (walk-shaders.js `groundSolidShaders`, GROUND_SOLID_EDITS: hole, wall thinning, rock);
+    `voxIS`, `mdlIS` (prop-models.js `propModelSolidShaders`: fade, rock, own-texture cut). Same vertex shaders.
+  - `quality.drawOrder` (Engine row "Solid first", debug menu switch): walk-view-gl.js's scene pass draws the floors and
+    far land with `groundS` (walk/ground-draw.js `drawGround(C, X, 'solid')`, the walls' range `mesh.walls` left), the
+    models that are whole (fade ≥ 0.99), not stretched and without their own texture with `voxIS`/`mdlIS`, nearest
+    first (so their batches come nearest first too); then the walls with the ground program, the room front, grass,
+    pictures, solid props, the other models (`drawPropModels(..., 'cut')`), box faces, buildings, structures; the sky;
+    building fronts, water, effects, ribbons; your outline (depth GREATER, its occlusion query) last. A frame with the
+    rock circle on (walk/draw-common.js `rockCircleOn`), a room's hole or floor, or a lit room keeps the programs with
+    cuts (the lit room keeps the old order whole). The reflection's models keep the old path.
+  - The variants are precompiled at the 3D view's start while the switch is on, and when the debug menu turns it on
+    (`precompileDrawOrder`).
+  - `quality.groundSlice` (FL-4's leftover; Engine row "Ground built in slices", debug switch): when the same view's
+    ground changes (a run day's water, a Studio edit) and nothing is ready, walk-view-gl.js keeps the old ground and
+    key on screen and asks `prepareMapGround(urgent)`; the frame's `groundPrepWork` builds it, then the swap takes the
+    prepared one. Not for a new view, a room, a borrowed ground or a battle; at most 5 s, then built on the spot.
+  - engine/webgl.js finishProgramCompile: `gpuState.linkMs[name]` = [ms waited on the link status, ms from the compile's
+    start]; the debug log's gpuMemory.linkMs; tools/read-debug-log.py prints ground/groundS, voxI/voxIS, mdlI/mdlIS.
+    debug-log.js samples (additions): `dord` [on, models drawn first], `gwt` (frames the old ground was kept).
+  - tools/check-draw-order.py (headless gates), tools/test/draw-order.test.mjs (5 tests).
+- Measured headless (counts only; `check-draw-order.py`, Copperleaf phone sized, the game's own graphics): off, 0
+  depth-writing draws with a discard-free program; on, 11-12 (2 ground, 9-10 models) and all before the first cut draw,
+  0 depth-writing draws after the sky, 0 draws after the outline, 0 late compiles (0 compiled on the spot, 0 started
+  after load). Scene draws 106-118 off, 117-121 on (the ground split: +2). Pictures in one page with the world's clock
+  stopped: on/on 0.45% of pixels apart, on/off 0.57%, off/on 0.34% (dither and the Actions button's pulse): the same
+  look; the coplanar question (pictures now after the solid models, so a picture on a model's face wins a tie at
+  LEQUAL where the model won before) shows nothing at the square.
+- Not done: buildings and structures (`bld`, 3 bridges in Copperleaf) keep their cuts (a `bldS` variant is the same
+  two edits); solid props, box faces, grass and pictures are cut-outs by nature (an opaque core split from a cut rim
+  is FL-5b/phase 21's atlas work). Front to back only for the models (the ground is one draw). The ABAB phone run (3+
+  runs per arm, per-pass timings) and iOS link times: the owner's phone (below). The far map and shadow passes keep
+  their programs (depth-only, cut where needed).
+- Risky: both switches off, nothing changes for players. On: an item fading in or out moves from the solid draw to the
+  cut draw (a program change); the outline now draws over effects and water in front of a hidden you; a variant that
+  fails to compile throws like any program (the full test's Shaders step compiles them only while the switch is on).
+  groundSlice shows the old water/ground for up to 5 s after a change.
+- Verified: lint, types, format, modules clean; unit tests 2,461 of 2,462 (the 1,000-maps timing test, beside a browser: 3.5 s; alone it passes); smoke no problems but the phone crash step ("w:copperleaf* stopped drawing", as at the start commit); alone it passed twice (once "dialogue 23 pieces", also flaky; the start commit passed it alone); `check-perf.py
+  --only=copperleaf` no problems (301-336 draws as shipped, effects 5-7); check-draw-order every gate. Full quick check 35 of 42 (4,220 s, 2 workers) against a baseline made at
+  the round's start (a909d44c, in a worktree, 38 pictures, 4,337 s, 37 of 42: RL-8's crossing, room light, walking out
+  of the lab, the phone crash step ("w:copperleaf* stopped drawing"), battle music's drums). Here the same 5 fail, plus Starters ("battle rig buffers nearly empty") and Postcards ("coming
+  back showed no stamp"), both passing alone (154 s). 6 pictures over the threshold: battle-alpha, starter-battle,
+  windows-night, world-buddy and the two failed steps' (other moments; the switches are off there).
+- Next: round 5 (FL-5b phone GPU look trades, FL-4b the load overlap), started by this lane in new sessions. FL-5b
+  could add `bldS` and, with its one-picture far trees, an opaque crown core. FL-6b (round 4's other lane) finished
+  first, so this lane starts round 5.
+- The owner's phone Diagnostics (relayed by the FL-0 coordinating session, 2026-10-30 09:55, main 3923881a = rounds 1-3;
+  Adreno 750, Chrome 155, 60 Hz; old ladder at q4, res 0.6), for FL-7 and round 5 (passed into both briefs): draws are
+  solved (Copperleaf by day 304-309, sprites 127, uniforms 640); the phone is pixel and GPU bound at the game's own
+  values (Copperleaf day r1 48 fps against own 12.7, phone pixels 20, all on 22.7; night r1 17.3, own 14.7; jungle r1
+  45, own 18.5; battle r1 56.7, own 28.7); in play the automatic quality held a steady 30 (Copperleaf 32, worst 28; CPU
+  16-17 ms); jungle's reflection 74 draws (56 leaf pictures); night's lamp maps 45 draws; Copperleaf's open 5.3 s
+  "setting up the ground" in one hitch; JS heap 788 MB, 118 MB of pictures on the card. So the GPU work (this
+  session's order, FL-5b's trades, the post chain, the phone pixel budget) is where the remaining fps is.
+- For the owner on the phone: open the debug menu, turn "Solid first" on, close it, walk Copperleaf's square for a
+  minute, then off for a minute, twice each (ABAB), and send the debug log (its `dord` samples and the frame times per
+  pass sit side by side; on iOS its "program links" line has the variants' link times). The look should not change.
+  "Ground built in slices": on a run day whose weather floods the water, the new water should arrive without a hitch.
+
 ### Fluid track FL-6b - glass fixes and the bottom bar's shrink on transforms - 2026-10-30
 Branch `track/fluid` (round 4 lane, beside FL-5a). Plan approved by the owner's standing answer (fluid-track.md section
 1, and the answers to FL-6's questions of 2026-10-30). Code: the page's CSS, the theme sheet, the bottom bar. No tag
@@ -55,13 +130,381 @@ Branch `track/fluid` (round 4 lane, beside FL-5a). Plan approved by the owner's 
   baseline; the bottom bar's pictures not among them). Full quick check: 39 of 42 (2,575 s; the
   tree under it took the main merge mid-run): RL-8's Lakeside Route crossing, room light and Battle music (drums) fail
   as in FL-6's entry. CI's fast check on the PR: Kappi's tips (IN-2, failed already on the merge before this
-  session's push) and Tall ground; both pass alone here (148 s, 127 s); re-run once on CI.
+  session's push) and Tall ground; both pass alone here (148 s, 127 s). The re-run failed them again, and the world
+  map's look-around group over its card by 16 px. Kappi's tips reproduced here in a full fast check (44 of 45:
+  `[2,2,[],"choose"]`): a raised tip waits at most keepS (30 s) of real time, and on a loaded machine the throw took
+  longer, so it was dropped; tools/check-fast.py now lifts keepS for that step and waits 90 s (3 copies at once
+  pass). Tall ground (the GPU's hidden query never said hidden in 92 frames) and the map card (`--mapcard-h`,
+  world-bowl.js, measured before the card grew; both boxes sit on `--nav-h`) passed in that full run: left to the
+  test-data track.
 - For other lanes: none needed. track/ui: `--nav-hl`, `--nav-dy` and `--tray-dy` are the new names for what sits over
   the bar (shell.css); anything new over the bar that's on screen while walking should use them.
 - Next: FL-5a finishes round 4 and starts round 5 (FL-4b, FL-5b).
 - For the owner on the phone: walk until the bar shrinks, stop until it grows: the glide should look as before. With
   Settings' Reduce transparency (iOS: Accessibility, Display, Reduce Transparency) or Increase Contrast on, every
   glass is solid. A debug log's `ui.longFrames.styleMs` shows the shrink's style time.
+
+### Buildings track BD-4a - The house kit: 24 houses from modules, kind `house_kit` - 2026-10-30
+Branch `track/buildings` (wave 4, the main line; pulled 39 commits from its remote, then merged main twice: nothing
+new at the start, the water fixes #352 at the end, only HANDOFF.md conflicting, both entries kept). Plan written in
+Plan Mode's shape and built at once (the owner's advance approval, track section 1). Tools, recipes, one catalogue
+kind and a test map: nothing placed on Copperleaf, no game code changed. No per-session tag (CLAUDE.md).
+- Changed:
+  - Track file section 1: the owner's look pick "B base + C showpieces" (2026-10-30), with the lean in degrees
+    converted by each model's height (`lean = tan(degrees) x top`, the warp frame's top: the still parts' highest
+    point, antennas and chimneys included). The kit draws 3.5-4.5 degrees, sag 0.08-0.16 m, bulge 0.03-0.06.
+  - New tools/build-house-kit.py (reuses BD-3's parts from build-look-sketches.py: windows, lamp, ivy, finial,
+    antenna). A seed (`SEED = 7`) picks, per house: one of 9 bodies (narrow tall, wide low, L-shape, round
+    tower-house, jettied, A-frame, half-dome cob, brick townhouse with cornice and stoop, saucer pod on legs with a
+    fold-down stair and an underglow), one of the roofs that suit that body (`BODY_ROOFS`; 10 in all: steep gable,
+    low slab, butterfly, gambrel, saltbox, upswept, bulb dome, mushroom thatch, mansard, roof garden), 2-3 of 18
+    add-ons, a chimney (crooked brick, stovepipe, copper rocket), a door (round, arched, porthole, Dutch) and windows
+    (porthole, round-top, crossed, ribbon; the bay is an add-on), and one of 9 palettes.
+    - Style rules: at most one round body part (no turret on round bodies), add-ons only on free walls (slots), at
+      least one retro-future add-on (the first pick), one rooftop ornament at most (look B's glowing-tip antenna
+      when none was picked), neon under the eaves on about two thirds of houses.
+    - The add-ons are spread over the kit by least use.
+    - The nature pass on every house: flower boxes, ivy on about 60% of tall bodies, hanging baskets, roof moss
+      (`roof: 2`) and shrubs.
+    - `garden` hints per variant: tree and bush kinds from the existing props, with sides (back, back_left/right,
+      left/right, front) for BD-7's town tools.
+    - Showpieces: the first jettied and the first narrow house get C's set (onion-domed turret, rocket chimney,
+      bubble greenhouse behind the turret, glowing tube, dish, wind spinner, baskets, moss, flared eaves).
+    - Roofs are shells drawn out over the body (`shell_roof`: a top line, a thickness, the gable ends filled to the
+      wall's width), so one function covers gable, saltbox, gambrel, slab, butterfly and upswept, both ridge ways.
+    - Each house is centred on its own footprint (the box is read as x +-w/2), so a lean-to on one side doesn't widen
+      both. Side add-ons are only taken while the box stays within 4.6 m, and the tool fails if a box outgrows
+      4.6 x 3.44 m.
+  - Output: game/art/scene/next/models/house_kit_01..24.json (1,206 to 3,478 triangles; recipe `kit` says body, roof,
+    palette, add-ons, chimney, door, windows, lean in degrees, nature) and one catalogue kind `house_kit`. Its 23
+    `variants` swap `model`, `box`, `door`, `fx`, `name`, `garden` and `kit` (body, roof, palette, size). `--list`
+    prints the houses without writing.
+  - Glass ids (unique, at most 8 a house) and roof marks (`roof: 1` on every roof part, so a placement's `roof`
+    style still restyles it) are the kit's own. Doors and fx are written at the catalogue's ppu 34, the scale the
+    game reads (not the old builders' 32: see Found). fx follow the lean at their height.
+  - Test map `test_house_kit` (debug menu, Test scenes): the 24 in four rows of six.
+  - New tools/look-house-kit.py: close-ups through look-hub-buildings.py (`--scene=test_house_kit --only=house_kit
+    --angle=35`), tiled into validation/look-house-kit/contact-noon.png with each house's number, body, roof, palette
+    and box. look-hub-buildings.py has a camera distance for `house_kit`.
+  - New tools/test/house-kit.test.mjs (6 tests): the counts (9 bodies, 10 roofs, 8-10 palettes, 2 showpieces, a
+    model each); no two share body + roof + palette; under 6,000 triangles and 3-5 degrees of lean by the mesher's
+    own height; glass and roof marked, window fx; a retro-future part, nature, one ornament at most, garden kinds
+    that exist; boxes within 4.6 x 3.44 with the door inside, all three sizes present. check-data's snapshot remade
+    (one more data file).
+- Checked against the track file: the BD-4a section on main at the session's start had 9 bodies, 10 roofs and 18
+  add-ons (the saucer pod, the butterfly roof and the starburst wall lamp came in after the 4th sketches), not the
+  8, 9 and 17 of the older copy: built to the newer one. `plainPropVariant` replaces any field, as claimed. Loose:
+  "small, medium and large footprints so plots can take them": today's house plots are 3.8-4.6 x 2.8-3.44, so the
+  kit's sizes are small (at most 3.6 x 2.8: 1 house), medium (4.1 x 3.1: 8) and large (up to 4.6 x 3.44: 15);
+  every house fits the largest plot, but only one fits the smallest (3.8 x 2.8). Most of today's plots are too small
+  for most kit houses: BD-7 widens the house plots (the owner's answer: footprints may change, BD-7 carries it) or
+  BD-4b picks by plot.
+- Found, not changed:
+  - The door px/m mismatch (track section 3) stands for the old builders; the kit writes at ppu 34. If BD-7 changes
+    the reader to 32 instead of the builders, rerun this tool with `PPU = 32`.
+  - The kit's picture (`img`) is a stand-in (cottage_moss.png) until BD-7 bakes pictures from the models; the room
+    check and clear-windows read pictures.
+  - Software drawing here is about 2.5 minutes a close-up: the contact run reached 20 of 24 houses before the
+    session's 1-hour background limit, so the sheet has 4 blank tiles (21-24). Rerun `tools/look-house-kit.py` to
+    fill them.
+- Risky: little for the game (a new kind and a test map; nothing places the kind yet). The houses haven't been seen
+  at night or on the phone. The glow parts (neon, antenna tips, tube, underglow) follow BD-1's glow rules. The kit
+  adds up to 24 meshes when placed (one draw per part a mesh), far under the 400-draw phone budget.
+- Verified: lint, typecheck, format:check, check:modules (421 modules), check:data (193 files, all fine) and build
+  clean. `npm test` (main merged): 2,427 of 2,428. The one failure is "the game's rules: 1,000 maps hold every
+  check, in under 1.5 seconds", a timing budget that failed under load; its file passed alone, 5 of 5 (BD-F met
+  the same one). The new test passes 6 of 6. Smoke 7 of 7 (461 s). The full quick check was not run: no game code
+  changed, and it takes over an hour here (BD-2b's entry).
+  Pictures: 20 of 24 close-ups at noon from 35 degrees round (scratchpad and validation/, not committed). Every one
+  reads as its own silhouette, and the showpieces carry their turrets, domes and greenhouses. White walls and glass
+  read pale at noon, as BD-3 found.
+- Next: wave 5 (BD-7 the town re-laid, with BD-4b placing the kit's houses by a neighbour rule) on
+  `track/buildings`, once BD-5 (`claude/bd-5-civic`) and BD-6 (`claude/bd-6-landmarks`) have their HANDOFF entries;
+  the last of the three to finish starts it. Neither had one when this session ended.
+- For the owner on the phone: debug menu, Test scenes, "Test: the house kit": walk the four rows by day and at night.
+
+### Buildings track BD-3 - Look sketches: three directions on one house and the shop - 2026-10-30
+Branch `track/buildings` (wave 3, the main line; pulled 29 commits from its remote, main had nothing new). Plan written
+in Plan Mode's shape and built at once (the owner's advance approval, track section 1). Tools, test models and a
+test map only: no hub building, catalogue kind (other than the test kind) or game code changed. No per-session tag
+(CLAUDE.md). **Waits for the owner's look pick; wave 4 starts after it, from this session.**
+- Changed:
+  - New tools/build-look-sketches.py: six recipes (game/art/scene/next/models/look_house_a/b/c, look_shop_a/b/c), one
+    test kind `look_sketch` (variants swap the model) and the test map `test_look_sketches` (debug menu, Test scenes).
+    Built only from BD-1's shapes, BD-2a's surfaces (cob, halftimber, standingseam, fishscale, riveted, glassblock,
+    barreltile, tilewall) and BD-2b's normal sheet.
+    - The house: a cob ground floor, a jettied half-timber upper floor, a gable-front verdigris gambrel over thick dark
+      eaves, an oversized round door. A: lean 0.15 m at the top (about 1.5 degrees), sparse (one flower box, an atomic
+      finial, a straight brick chimney); 1,038 triangles. B: lean 0.5 m (about 4 degrees), sag and bulge, medium (gable
+      porthole, crooked flared chimney, ivy, lamp, rain barrel, shrubs, antenna with a glowing tip); 2,332. C: lean
+      0.9 m (about 7 degrees) with twist, dense (onion-domed turret, copper rocket chimney with fins, bubble
+      greenhouse, glowing pneumatic tube, satellite dish, wind spinner, hanging baskets, roof moss, flared eaves);
+      3,952.
+    - The shop (a Streamline corner store, door where today's catalogue has it, x +0.94 m): a rounded corner, a thick
+      slab roof with a dark underside, a big window, a striped awning, a round sign with a leaf emblem. The lean is
+      turned down at every level (section 5, tidy civic). A: plumb; 808 triangles. B: a soft swell, speed lines, a
+      starburst, planters, a lamp; 1,462. C: lean 0.15 m, a Googie canopy, a rooftop water tower, string lights, a
+      blossom street tree, ivy; 2,351.
+  - tools/look-hub-buildings.py: `--times=dusk` (20.3 h) and `--angle=` (degrees round from the front: the high
+    three-quarter view).
+  - New tools/test/look-sketches.test.mjs (3 tests): every sketch under 6,000 triangles, detail and lean grow from A
+    to C, the kind names all six. check-data's snapshot remade for the new map (pushed by another push to this branch).
+- Checked against the track file: right that the shapes, surfaces and normal sheet are all in place (no gap met).
+  Loose: the warp's `lean` is metres at the model's top, antennas and chimneys included, so "3-6 degrees" depends
+  on the tallest part: the kit (BD-4a) should give its lean in degrees and convert by the model's height.
+- Found, not changed:
+  - Window glass reads pale (nearly white) at noon from the three-quarter view on these models; the existing houses
+    show the same. A BD-4a/BD-8 tuning point, not a sketch problem.
+  - At 20.3 h the glows are still off (they follow the window-light hour); the neon shows only at night.
+- Risky: none for the game (test content only). The sketches are a look, not the kit's modules: BD-4a rebuilds
+  them as slots.
+- Verified: lint, typecheck, format:check, check:modules, check:data and build clean; `npm test` 2,416 of 2,416; smoke 7 of
+  7 (453 s). The full quick check was not run: no game code changed, and it takes over an hour here (BD-2b's entry).
+  Pictures (look-hub-buildings.py, noon and dusk, 35 degrees round, scratchpad, not committed): no page errors.
+- Next: the owner picks A, B, C or a mix; then wave 4 (BD-4a the house kit on `track/buildings`, BD-5 civic on
+  `claude/bd-5-civic`, BD-6 landmarks on `claude/bd-6-landmarks`), started from this session with the pick written
+  into the track file.
+- For the owner on the phone: debug menu, Test scenes, "Test: the look sketches A, B, C": walk round the six by day
+  and at night.
+
+### Buildings track BD-2b - Normal maps: the normal sheet in the buildings' and models' shader, on above Off - 2026-10-30
+Branch `track/buildings` (wave 2, the main line). First merged the wave-1 side branches `claude/bd-2a-surfaces` and
+`claude/bd-f-window-check` (merges, no rebase; HANDOFF entries kept, newest on top; studio/art-code-refs.json
+regenerated; BRANCHES and ROADMAP rows joined by hand); main had nothing new. Plan written in Plan Mode's shape and
+built at once (the owner's advance approval, track section 1). No per-session tag (CLAUDE.md).
+- Changed:
+  - tools/build-surfaces.py also writes game/art/scene/build/detail-a04b-normal.png (512x256 RGB, `normal_sheet` of
+    the height map: x across the cell, y up the face, z out, 0.5-centred); `--check` covers it. The sheet and the
+    height map are byte for byte as BD-2a left them.
+  - game/data/scenery.json `buildArt.normal` names it; tools/check-data.mjs checks the file when it is named.
+  - buildings.js `BUILDING_BUMP_GLSL`: `bldBump` reads the normal sheet (`uNrm`) once a pixel at the texel's centre
+    (nearest: the light steps texel by texel), wrapping in the 2 m cell, a smaller mip level where a texel is under a
+    pixel, faded out at a sixth of a pixel (as before). The frame is the face's UV axes from the screen's derivatives
+    (the same cotangent frame the old bump used), so boxes, prisms, caps and round shapes each get theirs, mirrored
+    models included; no vertex data. It replaces the three height reads of the old bump (`bldH` is gone).
+  - New `bindBuildingNormals(p, A)` (buildings.js): the sheet on texture unit 3 (free while buildings draw: the
+    ground and the world map bind their own there), its sampler cleared, back to unit 0, and `uBStr` from the setting,
+    or 0 (flat) while the sheet is loading or a scene names none. Called by the buildings, the low-poly models (plain
+    and instanced: one program each) and structures.js. The sheet is preloaded with the building sheet
+    (prop-models.js, walk-view.js).
+  - Setting: the existing dial `world.buildingBumps` ("Building bumpiness", no rename) now defaults to 1, and the
+    graphics preset Off sets it to 0 (`OFF_LOOK`): on in Balanced and Beautiful, the owner's "on above Low" (the game
+    has no Low preset: Balanced, Beautiful, Off). The graphics bench already lists the dial (the Depth corridor
+    station; bench-path's houses group), so the in-game graphics test shows its cost on the phone.
+  - New tools/test/building-normals.test.mjs (5 tests): the sheet's size and unit normals facing out, one read in the
+    shader, the models' shaders, the binding (own unit, back to 0, flat without a sheet), the defaults.
+- Checked against the track file: right that the sheet is 8x4 of 64 px and that `bldBump` was derived from the tone
+  sheet. Wrong or loose: "a graphics setting" already existed (`world.buildingBumps`, off by default since it was
+  added); "the presets" have no Low (see above); "round shapes use the arc direction" needs nothing extra, the
+  derivative frame follows the UVs on any face.
+- Found, not changed:
+  - structures.js drew with the buildings' program but never set `uAtl` or `uBStr`: it inherited whatever the last
+    building draw left. Now set there (a fix, needed because the sheet's unit must be bound).
+- Risky:
+  - Every building and low-poly model now bumps by default. Fine on the hub at noon in the pictures; not yet seen at
+    night or on the phone.
+  - The cost on a real phone is not measured. Software drawing can't resolve it: on the emulated phone (390x844,
+    test_hub_buildings, auto quality off, 5 repeats of 8 frames, medians) the new build drew 4.16 s a frame flat and
+    4.82 s with the bumps, the old build 4.69 s flat and 4.40 s with its old bump; repeats spread from 1.8 to 6.6 s, so
+    those differences are noise. Per pixel the new bump is one texture read (the old one was three) and a few dozen
+    arithmetic operations, on building and model pixels only. Memory: one 512x256 RGBA texture with mips, about
+    0.7 MB (TD's phone budget is 300 MB).
+  - A strong sheet: `normal_sheet(strength=2.0)`; deep seams tilt a lot. The dial (0-3) scales it; BD-3 judges it.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build and `build-surfaces.py --check` clean; `npm test` 2,413 of 2,413; smoke 7 of 7 (432 s); full quick check: 36 steps ok and 4 problems in 3,500 s, then cut off (my cap) while "Song fingerprints"
+  hung. "RL-8" (node 8 has no exit north) and "Walking left and right" (room light at night) are the two BD-2a found
+  failing on `track/buildings` before this work. "Ground tiles, building plans..." (the lab's room didn't open in place) and
+  "Postcards" (no stamp on the way back) passed when run on their own (146 s, no problems), so they were load flakes
+  in the full run. "Song fingerprints" hangs on its own too (over 10 minutes against its 180 s budget), on this code
+  and on the code before BD-2b's changes alike: a sound-side problem, not this session's (BD-2a's "hang on Safety" was
+  probably this step: Safety finished at 2,532 s here). Steps that bear on this change all passed: "Props made of
+  shapes", "Windows and lamps by night", "Off-screen culling ... prop wear", "The airship moored in Copperleaf", the
+  in-game test's Shaders step (39 shaders built), the phone run Pictures (look-hub-buildings.py, noon, the Workshop and the windmill, before and after;
+  scratchpad, not committed): brick, the dome's ribs, the corrugated roof and the stone tower catch the light texel by
+  texel; the door planks and glass unchanged; no page errors.
+- Next: wave 3, BD-3 (look sketches) on `track/buildings`: three directions on one house and the shop, the owner
+  picks.
+- For the owner on the phone: walk round Copperleaf by day and at night (Graphics Off shows it flat, as before). Run
+  the graphics test (its Depth corridor turns the dial on and off and times it) and send its debug log. The dial is in
+  the Studio's engine editor (World → Building bumpiness), not in the player's Expert list.
+
+### Buildings track BD-F - the window check reads a building's turn - 2026-10-30
+Branch `claude/bd-f-window-check` (made from `track/buildings`; wave 1 side session). Plan written in Plan Mode's shape
+and built at once (the owner's advance approval, track section 1). Tools only: no building, map or game code changed.
+- Changed: tools/clear-windows.py. The claim held: `windows_of`, `hides`/`occluders` and `blocked` never read `rot`, and
+  16 of Copperleaf's 21 window-bearing buildings are at rot 90 (front facing +x, east of the orbit middle). Each window
+  now carries its building's base point and turn; props are judged in that frame (`in_frame`, with `turned_point` and
+  `point_in_prop` ported from game/js/logic/prop-turn.js); footprints and doorways turn in `blocked`; `--fix` steps
+  sideways and toward the camera along the front of the window the prop hides; a room window slides along its own wall.
+  The functions' arguments and returns are unchanged (check-quick and build-solarpunk.py call them as before).
+- Added: tools/test/clear-windows.test.mjs (4 tests on a made-up scene: a rot-90 hut's window found on its turned
+  front, a tree out of that front hides it and one where an unturned front would be doesn't; rot 0 judged as before;
+  the turned footprint and doorway; `--fix` slides the tree along the east front, clear of the hut).
+- Copperleaf with the fix: 40 windows (26 on turned buildings), 9 props within 6 m in front of a turned window, none
+  hides any of it: 0 hidden, so no `--fix` was run and nothing moved. All 44 scenes: 61 windows, 0 hidden.
+- check-quick's windows step needed no change (it calls the same functions; it passes).
+- Found, not changed: none new. The other "Found, to fix in BD-7" items in the track file stand.
+- Risky: little. The judgement assumes the camera looks straight at a turned front, which matches Copperleaf's orbit
+  camera (from 4 m out of each front its forward is within 32 degrees of head-on, most within 15); a building turned
+  away from the orbit camera would be judged from its front all the same.
+- Verified: lint ok; typecheck ok; check:modules, format:check, check:data ok; unit tests 2,395 of 2,396 with the
+  full quick check running beside them (run-map-checks' 1.5 s budget took 2.65 s), that file 5 of 5 run alone; the
+  new test 4 of 4 (it fails on the old tool); full quick check: 36 of 42 steps ok, 0 failed, stopped at the session's
+  1-hour background limit with 6 steps still running (with the unit tests sharing the machine); the windows step ok
+  (61 windows in 44 scenes).
+- Next: wave 1 ends when BD-1 (`track/buildings`) and BD-2a (`claude/bd-2a-surfaces`) have their entries; the last of
+  them starts BD-2b. This session's draft PR into `track/buildings` is merged by wave 2's session.
+### Buildings track BD-2a - surfaces painted: the building sheet 8x4 and its height map - 2026-10-30
+Branch `claude/bd-2a-surfaces` (a side session of wave 1, made from `track/buildings` at 5ad61530, main already in).
+Plan written in Plan Mode's shape and built at once (the owner's standing approval, the track file section 1). Art
+and data tables only: no shader or renderer change.
+- Changed: new tools/build-surfaces.py. It keeps the sheet's cells 0-23 byte for byte and paints row four of
+  game/art/scene/build/detail-a04b.png (now 512x256): 24 fishscale, 25 standingseam, 26 barreltile, 27 cob,
+  28 halftimber, 29 riveted, 30 glassblock, 31 mosaic. They use the same five levels (0/63/126/189/252, R=G=B), are
+  mostly level 2 with thin seams and a lit edge (the trim-sheet rule), and each is seamless. New
+  game/art/scene/build/detail-a04b-height.png (512x256 grey, 255 the highest, each cell seamless). The new cells'
+  heights are built with them: every scale, tile, block and plate has its own height and bevel. The old cells are
+  bevelled from their joints where the joint's shade level is known (`OLD_GAPS`: siding, brick, stone, panels, tile
+  wall, roof tiles, shingles, slate, metal, planks, rivets), with each element raised by its own small amount. The
+  rest (plaster, battens, corrugated, thatch...) get a smoothed shade level, as `bldBump` does today. The tool has
+  `normal_sheet()` (the normals from the heights, sampled within each cell, +y up the face) for BD-2b, and `--check`
+  (fails when the files differ from what it paints). Contact picture: validation/build-surfaces/contact.png (each
+  cell coloured through rampC, its heights, and lit by `normal_sheet`).
+- Names (data only): prop-models.js `LOW_POLY_TEXTURE_CELLS` (the eight keys above, cells 24-31) and
+  buildings.js `BUILDING_TEXTURE_NAMES`. That list stopped at 'Rings' (cell 21), so 'Bark' and 'Rock' are added
+  before the eight new names. Also wall-ramp.js `BUILD_CELL_NAMES` (its test pins it to the sheet's 32 cells),
+  build-intro-art.py's copy of the cell table, art-search.js `ART_BUILDERS` (and its test), and studio/art-keep.json
+  (the height map, until BD-2b reads it). studio/art-code-refs.json and hooks.js were regenerated.
+- Checked against the track file: the figures were right (8x3 cells of 64 px, 32 px/m, five levels in red). The
+  renderer needs nothing for a fourth row: buildings.js `buildingTextureGrid` reads the rows from the picture's
+  height, and the vertex stores the cell as `tx % 8`, `tx / 8`. In the game the sheet loads as 512x256, the grid
+  reads [8, 4], and a recipe with `mosaic`, `fishscale` and `brick` lands on cells 31, 24 and 2 (a headless page
+  check, no page errors).
+- Found, not changed: tools/build-airship.py `--force` rebuilds detail-a04b.png from detail-a04.png (three rows). That
+  already wiped batch 1's bark and rock, and now also row four. The order after it is build-props-batch1.py, then
+  build-surfaces.py (in the tool's notes). The full quick check is slow here (it hung for 30 minutes on "Safety:
+  hostile names"; run on its own, that step passes in 264 s).
+- Risky: no recipe uses the new cells yet, so they haven't been seen on a model in the game's light. Fish-scale at 25
+  cm a scale reads as rows of scallops more than single scales; BD-3 judges it on a roof. The old cells' heights are a
+  first cut from their joints, and BD-2b may repaint any of them in this tool.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build all clean; `npm test` 2392 of 2392;
+  the unused-art check (0 unused, 17 kept); `build-surfaces.py --check` matches. Smoke 6 of 7: "Actions bar" failed
+  once with "Esc did not close the bar" and passed when run alone (70 s). The full quick check ran 38 steps ok, then
+  hung on "Safety" (passed alone). Its two problems, "Walking left and right ..." (room light at night, and on a
+  rerun the settings tabs) and "RL-8" (the route's view, and on a rerun "the town's shop has no Perk"), fail the same
+  way on `track/buildings` without this change, so they are not this session's.
+- Next: BD-2b (normal maps) on `track/buildings`, once BD-1 and BD-F have their entries. It merges this branch, makes
+  the normal sheet from detail-a04b-height.png (`normal_sheet` in tools/build-surfaces.py) and wires it into the
+  model shader in place of `bldBump`.
+### Buildings track BD-1 - New shapes: rot/tilt, prism, lathe, box taper/lean/bevel, warp, glow - 2026-10-30
+Branch `track/buildings` (main merged in, up to date; BD-0's docs update from `ccr-d224d90d-qlnty6` merged at its
+session's request). Plans approved in advance by the owner (2026-10-29). Engine and tools: the low-poly mesher, the
+world map's copy, the Studio's model editor (shows only), a showcase map. No placed building changed. No per-session
+tag (CLAUDE.md); the track's `buildings-done` tag comes at its end.
+- Changed: game/js/prop-models.js `lowPolyFromRecipe`. Each layer is built by its own function, then turned:
+  - `rot` (yaw) on box, limb and prism. Round shapes and lathes already turned themselves.
+  - `tilt: [about across, about depth]` on every solid, about its base point. Normals turn too; UVs are made
+    before the turn, so they follow the faces.
+  - `prism`: `pts` [[across, up]] drawn out `d` deep. Concave caps (ear-clipped), `bend` with `segs`; normals soft
+    under 25° (`smooth`: all).
+  - `lathe`: `pts` [[radius, up]] from the bottom up, `sides`, `ry` (depth over width). Sharp rims over 35°, caps
+    where an end has a radius. A profile that ends where it starts is a ring with no caps.
+  - Box `taper` [top w, top d], `lean` [dx, dy] and `bevel` (vertical and top edges), built as rings. A plain box keeps
+    its old path.
+  - Recipe `warp: {lean, bulge, sag, twist}`, by height against the still parts' bounds. Normals go through the
+    warp's Jacobian; glass bounds follow it. A spinning part is moved by the warp at its pivot, not bent
+    (`rec.move`).
+  - `glow` on solid layers (`'#hex'`, `true` = its colour, `{col, day}` or `glowDay`): flag byte 33 or 34, the colour
+    as 5-6-5 bits in the vertex's two spare bytes (19 and the colour's alpha, 23). `MDL_ATTRIBS` 3 and 4 now read
+    four components and the vertex shaders decode `vGl`. `glassLit` lays the glow over the lit colour at the window
+    strength `uWinK` (a day glow never under 1). A glow-only model is flagged `it.glows`, so walk/lighting.js
+    computes its strength.
+  - The maths is in a new module, game/js/logic/model-shapes.js (`earClip`, `profileNormals`, `layerTurn`,
+    `warpFrame`/`warpPoint`/`warpNormal`, `glowCode`), on both pages and in studio/js/logic-worker-modules.js.
+- Changed, elsewhere:
+  - game/js/world-bowl.js `worldBowlModelShape`: prisms keep at most 3 bend steps, lathes at most 6 sides, boxes lose
+    bevels. A profile's size counts against the 0.35 m cut. The warp is measured on the whole model, as the walk
+    view does.
+  - studio/js/model-editor.js: Prism and Lathe in the shape list. The new fields and the recipe's warp are shown as
+    notes; editing them waits.
+  - Showcase: tools/build-shape-showcase.py writes 7 recipes (game/art/scene/next/models/shape_*.json), one
+    catalogue kind `shape_showcase` (its `variants` swap the model) and the test map `test_shapes`.
+  - tools/look-hub-buildings.py takes `--scene=`. Its night pass now lifts a test map's `plain` flag (see Found).
+- Facts checked (the track's section 2, against main at this branch): seven solid kinds, no box rotation, round `rot`
+  only, the 24-byte vertex, world-metre planar UVs, and the world map's cuts (no img or limbs, under 0.35 m dropped,
+  at most 8 sides; also rings at most 4 and no lumps) were all right. Wrong or loose:
+  - `PROP_MODEL_SHAPES` is not what the Studio reads. It is unused; the editor has its own `MODEL_LAYER_KINDS`
+    (both updated).
+  - "Check where a flag fits in the 24-byte vertex": bytes 19 and 23 were free (padding and an unread alpha), and
+    the flag byte 18 had room after glass (2-32).
+  - "Through the window-light hour rules": windows are lit one by one by the hour (`windowLit`). A glow takes the
+    building's strength `uWinK` only, so all of a building's glows come on together.
+- Found, not changed:
+  - Test maps are `plain: 1`, which turns the hour off (walk-view-gl.js `engineContext.env`). So
+    look-hub-buildings.py's night pictures of `test_hub_buildings` (HB-5) were daylight. Fixed in the tool, not in
+    the maps.
+  - BD-2a (`claude/bd-2a-surfaces`) adds 8 cells to `LOW_POLY_TEXTURE_CELLS` in prop-models.js. It is away from
+    BD-1's lines and should merge cleanly.
+- Risky:
+  - Every low-poly model's attributes 3 and 4 now read four components. All 264 catalogue recipes build
+    byte-identical meshes and windows (hashed before and after), but the shaders changed. On the phone, check that
+    models still draw.
+  - The thin pink neon reads nearly white under bloom; the hue shows on thicker parts. Tune in BD-8 on the phone.
+  - A tilted part may dip below the ground (by design).
+  - Phone cost of the new shapes is not measured: the showcase models are 38-300 triangles.
+- Verified:
+  - Lint, typecheck, format:check, check:modules, check:data and build all passed.
+  - `npm test`: 2,403 of 2,403 before the ring fix. New tools/test/lowpoly-shapes.test.mjs: 12 tests (bounds,
+    normals facing out, triangle counts, stable hashes, the arch's cap area, the ring, warp, glow bytes, the world
+    map's copy).
+  - check-data's snapshot remade (one more data file: the new map).
+  - Quick check: two full runs, each cut off by my 50- and 58-minute timeouts. This container's software drawing is
+    slow, and the first run shared the CPU with the picture runs. The second run passed 36 steps, 5 had problems:
+    - RL-8, "Walking left and right" (settings tabs) and "Ground tiles" (the lab's room didn't open in place) fail the
+      same way on the commit before BD-1 (5ad61530, rerun with `--steps=`). Not BD-1's.
+    - Postcards failed inside the full runs but passed alone, twice on head and once on base: timing under load.
+    - Phone passed alone on both (its full-run complaint, "dialogue 23 pieces, at most 20", did not come back).
+    - "Props made of shapes", "Windows and lamps by night", "Test scenes" and Copperleaf passed.
+  - Pictures with look-hub-buildings.py (noon and night, the hour on): turns, prisms (gambrel, saltbox, arch, swoop),
+    lathes (onion, oval bulb, flared chimney, finned rocket, mushroom, tank), taper/lean/bevel, glows (neon tube,
+    ring by day too, lamp globe beside lit glass), two warped houses. Not committed (scratchpad).
+- Next: wave 2, BD-2b (normal maps) on `track/buildings`, once BD-2a and BD-F have their HANDOFF entries; the last of
+  the three to finish starts it. BD-2b merges `claude/bd-2a-surfaces` and `claude/bd-f-window-check` first.
+- For the owner on the phone: the debug menu's Test scenes, "Test: the new model shapes": walk round the seven models
+  by day and at night. Send a debug log if anything draws wrong or slowly.
+
+### Buildings track BD-0 - the plan: Copperleaf's buildings redone, a modular house kit - 2026-10-29
+Branch `ccr-d224d90d-qlnty6` (the cloud session's own, main at 73b2f8b1). Plan approved in Plan Mode. Docs only: a
+new track, docs/phases/buildings-track.md, from the owner's brief ("redo the 3D buildings of the main hub island ...
+cozy whimsical retro futuristic", then "all houses look way too similar now, add a lot of modular variety").
+- Changed: docs/phases/buildings-track.md (the owner's answers, two code audits with file references, the research
+  with sources, the look vocabulary, sessions BD-1 to BD-8, Ask me before, risks); ROADMAP.md and BRANCHES.md rows. A
+  suggestion page (private Artifact, linked in the track file): 2D sketches of every building, a house roller showing
+  the kit's variety with a neighbour rule, the new surfaces and palette, day and night.
+- The owner's answers: all 15 building kinds; the cozy mix (storybook homes with copper, portholes and glowing tubes,
+  Googie on the civic buildings); storybook wonk; footprints may change; houses with a lot of modular variety; hub
+  first (run towns keep today's houses); palette copper, cream, verdigris, terracotta, neon only at night. After the
+  first sketches: "a little more Pokémon generation 5" (the track file's section 5; the sketch page redrawn with the
+  high 3/4 view, thick eaves, white walls with bold roofs, a brick townhouse body, fire escapes, water towers,
+  awnings, a big shop sign). BD-2 split into BD-2a (painting) and BD-2b (the shader); sessions grouped in five waves
+  that can run side by side (section 6). Then: "a little more nature, bit more on the retro futuristic" (the sketch
+  page's fourth version: gardens on every plot, an atomic, dish, antenna or tube touch on every house, bubble cars);
+  the three Ask me before items answered (normal maps on above Low, pixel-font signs, 6,000 triangles a house); and
+  "more windmill variety and variants, more retro futuristic" (a windmill kit of nine designs and three colourways,
+  a saucer pod body, a butterfly roof, starburst wall lamps; the sketch page's fifth version); the sessions chained
+  (the owner: "All plans approved. Automatically start next steps in new session ... Run
+  simultaneously when you can"): this session made `track/buildings` and started wave 1 (BD-1, BD-2a, BD-F).
+- Found, not changed (for BD-7; details in the track file, section 3): doors are written at 32 px/m but read at ppu 34
+  (about 6% short of the model's door); tools/clear-windows.py ignores `rot` (most hub buildings are at rot 90); the
+  lighthouse and station have no `door`, so lowpoly-props.test.mjs gives them the 4k prop budget; cottage_juniper gets
+  a random size (no `vary.size`, "cottage" not in prop-look.js's building pattern); only workshop, gene_bank and
+  train_station have pictures baked from their models.
+- Risky: nothing in the game changed. For the track: the normal sheet's and the extra meshes' phone cost (BD-2,
+  BD-8 measure); footprints ripple through the town tools and ~8 checks (held in BD-7).
+- Verified: lint, format:check, `npm test` 2392 of 2392 (docs only). Pictures of today's cottages and houses
+  (tools/look-hub-buildings.py --times=rows, scratchpad, not committed). The suggestion page looked at once at phone
+  width, light and dark: no sideways scroll, no script errors.
+- Next: wave 1, started by this session: BD-1 (new recipe shapes) on `track/buildings`, BD-2a (surfaces painted) on
+  `claude/bd-2a-surfaces`, BD-F (the window check reads `rot`) on `claude/bd-f-window-check`.
 
 ### Fluid track FL-4 - even frames: arrivals and crossings (with the load track) - 2026-10-30
 Branch `track/fluid` (round 3 lane, beside FL-3b; its commits merged in). Plan approved by the owner's standing answer
@@ -1415,6 +1858,75 @@ player sees changes. No "Ask me before" item came up. Track-end tags only (CLAUD
   and where it happened, and an error from an earlier step shows under that step. Optionally, debug menu → "Pretend
   the page was killed", then export the log: it should begin with "PREVIOUS PAGE ENDED UNEXPECTEDLY". If the
   Graphics test reloads the page again, the next log names the step it died on.
+
+### Characters track CH-7 - The dressing room on the figure - 2026-10-29
+Branch `ccr-a3988157-1jxde7` (the session's assigned branch: main with #332 in, so `track/characters` plus the merge;
+the owner's choice: work here, PR into `track/characters`). Plan approved in Plan Mode. Figure, game, tool and test
+work; figures still off by default, so the game's pictures are unchanged (the build buttons gained Round and Lanky,
+and the world rests behind the room). PR #335 merged into `track/characters`; this entry's PR follows it. No session
+tag (CLAUDE.md). docs/phases/characters-track.md (CH-7) has the design.
+- The owner's answers: **follow the Figures switch**; **your picks win**; **smooth sliders, the build buttons pick
+  the build**; **tiles are you wearing the item, built in the background, the 2D tile until each is ready**.
+- Found (checked against the code):
+  - The boutiques can't be reached: shops.json went in SA-3; the `kind:'wardrobe'` shops are only in
+    game/data/legacy/shops.json, so the room's shop mode is kept working (opened directly) but not brought back.
+  - The room's pictures: 59 with More closed (Face 12, Hair 10, Outfit 16, Hat 8, Extras 13), about 112 open.
+  - figureSnapshot took only a `who`: in the room it would show the saved avatar, not the look tried on; it keeps 48;
+    nothing let a figure of a draft look go (about 4.6 MB a mesh at gouache-night's detail).
+  - Gouache-night's cast put a denim jacket on you over any outer, and pulled your colours 85% to its palette.
+  - A slider crossing a threshold swapped the whole build; athletic, pear and lanky couldn't be reached.
+  - The world drew at full speed behind the room, an opaque overlay (walk-control.js's cap knew only menus).
+  - A figure's mesh is the same whatever its colours, eyes, brows, mouth, glasses and facial hair (all painted),
+    but a beard (a shell); kitBuild at gouache-night's 1.5 took 0.8-1.1 s in Node here, 0.8 detail 0.2-0.3 s.
+  - The intro's `'outfits'` tab filter (dressing-room.js, dressingRoomHTML) matches no tab: dead, left.
+- Changed:
+  - figureKit.json builds' `preset` (the button: name and sliders; Round and Lanky new, elder none; schema, types);
+    `look.build` (cleanLook keeps a kit build); figure-kit.js figureShapeFor takes it, lookFigure counts a picked
+    build's sliders from its button and eases them into wider limits (kitEase). The room's build buttons come from
+    the kit and set the build; a look without one gets `average` when the room opens. The Studio's Copy as new drops a
+    build's button.
+  - figures.js: no direction wear on `me`, and `F.exact` keeps your colours out of the palette and saturation.
+  - game/js/figure-looks.js (new): figureLookPicture (any look as you, studio light, whole or cropped: head, face,
+    body, legs, feet, bust from the figure's joints); meshes named by the look's shape; tiles at 0.8 detail, one
+    build at a time, your look first; 16 figures kept (figure-meshes.js figureMeshDrop, figures.js figureResForget),
+    all let go when the room closes; figureReport().dress, which read-debug-log.py prints.
+  - dressing-room.js (Figures on and your figure your look): the preview on the figure's clock (idle with blinks,
+    walk, throw, cheer), about 96 px a metre in whole steps, standing on the view bar (the 2D preview's feet are
+    behind it on a phone), turned by drag (32 headings) or an eighth by the arrows, 64 pictures kept; a slider drag
+    holds the figure's look until let go; every tile, preset, saved outfit and intro portrait swaps to its figure's
+    picture when baked, one at a time in page order.
+  - walk-control.js: the world settles and nearly stops behind the room, as behind a full screen (Figures on or off).
+  - Tests: figure-kit.test.mjs (every button's build, a slider sweep with no jumps, kitEase); figures.test.mjs (you as
+    you picked under gnight; the shape key and the kit's meshes agreeing; pictures, crops, paint without a build,
+    tiles kept and in turn, the keep and the forgetting). tools/look-places.py `--only=dressing` (each tab with
+    Figures off and on, a picture of each).
+- Risky:
+  - Untested on a phone. Headless (software GL, the town behind) is very slow: the first preview mesh 55 s, a tile
+    mesh about 8 s, a bake 40-140 ms alone and several seconds amid the room; the Hat tab's 8 tiles in 274 s, the
+    Face tab's 12 in 215 s. The phone's numbers will be in the debug log's dressing room line.
+  - A colour or face change repaints each tile on the page (a figure made on the page, about 30 ms each on a desktop).
+  - Opening the room gives a look with no build `average`; a look the old thresholds made round or tall shows its
+    average build there (and in the world once saved).
+  - Your figure is no longer gouache-night's redesign: no denim jacket, colours as picked (less saturated beside the
+    cast).
+- Verified:
+  - lint, both type checks, check:modules, format:check, check:data, build.
+  - Unit tests: 2,338 of 2,339 beside a browser check (the map-checks timing test, as before; it passes alone).
+  - Smoke: no problems (7 of 7) after the build change (425 s) and after the room's changes (386 s).
+  - Headless (look-places and scripts): the room with Figures on (body, face, hair, outfit, hat: the figure, every
+    tile a figure); off as before; a boutique opened directly (SHOPS.thrift from the legacy data): the keeper, a
+    striped tee tried on, Buy and wear 420, owned and worn; a saved outfit's portrait a figure; a slider drag built
+    nothing until let go; Round and Lanky as they should look; after closing, no figure kept or waiting; no page
+    errors.
+  - CI on #335: smoke's Camera follow (CAM-1, "the page stopped drawing") failed as it does on main (run 3143), noted
+    on the PR.
+  - Full quick check on 88a0609e: 37 of 42 in 2,634 s. Failing: RL-8's landing, room light and Battle music
+    (recorded before), Ground tiles and Postcards (both passed alone afterwards, 114 s and 78 s, as in CH-5b).
+- Next: CH-8 (the old pieces to `art/legacy` once nothing draws them: the 2D tiles still do while Figures is off) or
+  CH-9 (getting around), on `track/characters`.
+- For the owner on the phone: debug menu, Figures on (Atlas live); open Edit look on the trainer card; try every tab
+  (watch the tiles turn into figures), drag the figure round, Walk, Cheer, a build button, a slider, a colour; save;
+  then send the debug log (Settings > Help). Its figures line has the dressing room's builds, waits and bakes.
 
 ### Characters track CH-5b - Clothes as data - 2026-10-29
 Branch `track/characters` (PR #314 merged into it first, at the owner's word "merge #314 first"; main merged in at the

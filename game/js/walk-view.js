@@ -795,6 +795,7 @@ export function mapArtPaths(sc) {
         const A = C.buildArt || { detail: 'scene/build/detail.png', rooms: 'scene/build/rooms.png' };
         L.add(A.detail);
         L.add(A.rooms);
+        if (A.normal) L.add(A.normal);
       }
     }
   }

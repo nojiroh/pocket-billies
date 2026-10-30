@@ -132,7 +132,7 @@ export function modelWindowLight(it, dark0) {
     mv = windowsMove(it.p),
     kept = mv && it.p.moving && it.p._winOn != null ? it.p._winOn : null;
   let on = 0;
-  for (const w of it.wins) {
+  for (const w of it.wins || []) {
     const x = w.p[0] * f * s,
       z = w.p[2] * s,
       nx = w.n[0] * f,
@@ -232,7 +232,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
       WN = null,
       fi = 0;
     /* a low-poly building's lit ground-floor windows, each pushed out its own way (its glass, not the picture's) */
-    if (it.wins) {
+    if (it.wins || it.glows) {
       it.winL = modelWindowLight(it, dark0L);
       if (!inRoom)
         for (const q of it.winL.P)

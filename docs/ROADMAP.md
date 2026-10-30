@@ -48,6 +48,17 @@ before the owner has played the first cut on the phone.** MG-3 (towns from the g
 town node needs it.
 
 ## Tracks alongside
+- **Buildings track** (docs/phases/buildings-track.md, the owner's brief and answers 2026-10-29): Copperleaf's 15
+  building kinds redone in a cozy, storybook retro-futurism (copper, cream, verdigris, terracotta; Googie on the civic
+  buildings; neon only at night), new surfaces with a normal sheet, and a modular house kit so no two houses look
+  alike, with a little more Pokémon Black and White (the high 3/4 view, thick eaves, bold roofs on white walls, brick
+  townhouses); footprints may change; run towns keep today's houses for now. BD-0 (the plan, research, audits and a
+  suggestion page; docs only) done 2026-10-29 on `ccr-d224d90d-qlnty6`; the owner's answers: more nature, more
+  retro-futurism, normal maps on above Low, pixel-font signs, 6,000 triangles a house, sessions chained and run side by
+  side without waiting for approval (BD-3's look pick waits for the owner). Wave 1 started 2026-10-29; BD-1 (new recipe shapes: rot/tilt, prism, lathe, box taper/lean/bevel, warp, glow; showcase `test_shapes`) done 2026-10-30; BD-F (the window check fix) done 2026-10-29 on `claude/bd-f-window-check`; BD-2a (surfaces painted: the sheet 8x4, a height map) done 2026-10-30 on `claude/bd-2a-surfaces`. Wave 2: BD-2b (normal maps: the normal sheet in the buildings' and models' shader, on except with graphics Off) done 2026-10-30; Wave 3: BD-3 (look sketches: three directions A gentle, B storybook, C strong on one house and the shop; test map `test_look_sketches`) built 2026-10-30; the owner's pick "B base + C showpieces" (2026-10-30). Wave 4: BD-4a (the house kit: tools/build-house-kit.py, 24 houses of kind `house_kit` from 9 bodies, 10 roofs and 18 add-ons, 9 palettes, look B's lean 3.5-4.5 degrees, two C showpieces; test map `test_house_kit`; not placed yet) done 2026-10-30; BD-5 civic and BD-6 landmarks beside it. Five waves: BD-1 new recipe shapes
+  beside BD-2a surfaces painted and BD-F the window check fix; BD-2b normal maps; BD-3 look sketches; BD-4a the house
+  kit beside BD-5 civic and BD-6 landmarks; BD-7 the town re-laid (with BD-4b), then BD-8 the phone pass. Branch
+  `track/buildings`.
 - **Fluid track** (docs/phases/fluid-track.md, the owner's brief and answers 2026-10-29): the frame rate you set held
   (a steady half rate when it can't be), assets batched under the 400-draw budget, the draw order the phone's GPU
   wants (no `discard` in opaque shaders, sky last), and a fluid UI (the world frozen behind menus, no live blur over
@@ -412,7 +423,11 @@ town node needs it.
   owner: "merge #314 first"). CH-5b (clothes as data: each wardrobe top, outer, bottom and shoe as knobs, rows and
   marks in figureKit.json clothes, the shared pieces, the directions' flair as rows; the Studio's Clothes and Flair
   tabs; main merged in, DL-6's figure close-ups joined with the kit's faces) done 2026-10-29 on `track/characters`
-  (draft PR #332 into main); next CH-7 (the dressing room on the figure).
+  (PR #332, merged into main 2026-10-29); CH-7 (the dressing room on the figure, with Figures on: a look picks the kit's
+  build and its sliders move it smoothly, you as you picked, figure-looks.js's figures of a look not yet saved, the
+  preview turned by drag, tiles from the figure in the background, the world resting behind the room) done
+  2026-10-29 on `ccr-a3988157-1jxde7` (PR #335, merged into `track/characters` 2026-10-29), its phone gate owed; next
+  CH-8 (the old pieces to `art/legacy`) or CH-9 (getting around).
   About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's

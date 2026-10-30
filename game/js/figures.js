@@ -34,6 +34,7 @@ import {
   figureAtlasOn,
   figureAtlasPicture,
   figureAtlasReport,
+  figureLooksReport,
   provide,
   reducedMotion,
   talkBox,
@@ -130,7 +131,7 @@ expose({
   figureBustPicture: [() => figureBustPicture, v => (figureBustPicture = v)],
   figureBytes: [() => figureBytes, v => (figureBytes = v)],
   figureCacheClear: [() => figureCacheClear, v => (figureCacheClear = v)],
-  figureChoice: [() => figureChoice, v => (figureChoice = v)],
+  figureChoice: [() => figureChoice, v => ((figureChoice = v), provide({ figureChoice }))],
   figureCompile: [() => figureCompile, v => (figureCompile = v)],
   figureCycle: [() => figureCycle, v => (figureCycle = v)],
   figureDef: [() => figureDef, v => (figureDef = v)],
@@ -171,6 +172,7 @@ expose({
   figurePreviewState: [() => figurePreviewState],
   figureReport: [() => figureReport, v => (figureReport = v)],
   figureRes: [() => figureRes, v => (figureRes = v)],
+  figureResForget: [() => figureResForget, v => (figureResForget = v)],
   figureSlotMatrices: [() => figureSlotMatrices, v => (figureSlotMatrices = v)],
   figureSnapshot: [() => figureSnapshot, v => (figureSnapshot = v)],
   figureStrides: [() => figureStrides],
@@ -181,7 +183,7 @@ expose({
   figuresOn: [() => figuresOn, v => ((figuresOn = v), provide({ figuresOn }))],
 });
 /* eslint-enable no-func-assign */
-provide({ figureBattlePicture, figureFolk, figuresOn });
+provide({ figureBattlePicture, figureChoice, figureFolk, figuresOn });
 /* to-module: end */
 const FIGURE_CACHE_MAX = 600,
   /** and at most this many bytes of them (a plain 3D picture at 128 px a metre is about 340 KB, a pixel one 23 KB) */
@@ -255,10 +257,10 @@ const FIGURE_LOOK_NAMES = new Map();
 /** CH-5: the figure kit's data the figures are built with: the Studio's while it previews (figureKitUse), else the
  * game's (game/data/figureKit.json); and its revision, a hash of it, in every figure's name */
 const figureKitState = { own: /** @type {any} */ (null), rev: '' };
-function figureKitNow() {
+export function figureKitNow() {
   return figureKitState.own || figureKitData();
 }
-function figureKitRevision() {
+export function figureKitRevision() {
   if (!figureKitState.rev) figureKitState.rev = figureSeed(JSON.stringify(figureKitNow())).toString(36);
   return figureKitState.rev;
 }
@@ -305,7 +307,7 @@ export function figureFor(who) {
   return n;
 }
 /** the '@direction' a figure's name carries when the style has designs of its own (figureDef reads it), else '' */
-function figureDesign(style) {
+export function figureDesign(style) {
   const LK = FIGURE_LOOKS[style];
   return LK && (LK.cast || LK.flair || LK.chibi) ? '@' + style : '';
 }
@@ -371,19 +373,21 @@ function figureDef(name) {
  * @param {any} items the wardrobe's items @param {any} kit the kit's data @param {any} [fig] their `figure` (the
  * Studio's draft), else the game data's
  */
-function figureFromLook(name, who, L, look0, items, kit, fig) {
+export function figureFromLook(name, who, L, look0, items, kit, fig) {
   const p = typeof PEOPLE !== 'undefined' && PEOPLE[who],
     /* the owner (2026-10-28): no backpack unless the person's own look has a bag (the wardrobe gives everyone one
        by default: person-art.js DEFAULT_WEAR); townsfolk and you keep the bag their look picked */
     own = p && p.look && p.look.wear,
     look1 = own && !own.bag && L.wear ? { ...L, wear: { ...L.wear, bag: null } } : L,
-    /* a hybrid variant can redress everyone (its flair's wear) and each of its cast (its cast table's) */
-    wear0 = look0
-      ? {
-          ...((look0.flair && look0.flair.wear) || {}),
-          ...((look0.cast && look0.cast[who] && look0.cast[who].wear) || {}),
-        }
-      : null,
+    /* a hybrid variant can redress everyone (its flair's wear) and each of its cast (its cast table's); CH-7 (the
+       owner: your picks win): never you, who wear what the dressing room picked */
+    wear0 =
+      look0 && who !== 'me'
+        ? {
+            ...((look0.flair && look0.flair.wear) || {}),
+            ...((look0.cast && look0.cast[who] && look0.cast[who].wear) || {}),
+          }
+        : null,
     look = wear0 && look1.wear && Object.keys(wear0).length ? { ...look1, wear: { ...look1.wear, ...wear0 } } : look1,
     F = L.creature
       ? kappiFigure({ name })
@@ -405,10 +409,12 @@ function figureFromLook(name, who, L, look0, items, kit, fig) {
           /* a direction's flair, and its design for this person (its cast table) */
           flair: look0 && look0.flair ? { ...look0.flair, ...((look0.cast && look0.cast[who]) || {}) } : undefined,
         });
+  /* CH-7: your colours as you picked them (a direction's palette and saturation leave them be) */
+  if (who === 'me' && F) F.exact = true;
   return F;
 }
 /** the wardrobe's items (their default colours), for the figure kit; null before the game data is in */
-function figureItems() {
+export function figureItems() {
   const W = typeof wardrobeData === 'function' ? wardrobeData() : null;
   return W ? W.items : null;
 }
@@ -1010,8 +1016,8 @@ FIGURE_PALETTES.gnight =
   '141833 1d2552 2e3a7a 4a5bb0 7d93d9 b8c9f0 2a9d8f 5fb7c0 a8e6e0 f1faee f2e8cf ffd166 f4a261 e76f51 e63946 9b2242 5c1a3a 3a0ca3 7b2cbf c77dff 6a994e a7c957 6d4c41 b07d62 e5b299';
 /** a figure's colour as a direction takes it: its saturation pushed (LK.sat), then pulled toward the nearest colour of
  * the direction's palette (LK.palette; skin only a little, eyes and shines not at all) */
-function figureLookColour(c, key, LK) {
-  if (!LK || (!LK.palette && !LK.sat)) return c;
+function figureLookColour(c, key, LK, exact = false) {
+  if (!LK || exact || (!LK.palette && !LK.sat)) return c;
   let v = [c[0], c[1], c[2]];
   if (LK.sat) {
     const l = 0.3 * v[0] + 0.59 * v[1] + 0.11 * v[2];
@@ -1063,7 +1069,7 @@ export function figurePalette(F, colours, ramp = 'props', LK = null) {
     const R =
         k === 'skin' && F.skinRamp && ramp !== 'cel'
           ? F.skinRamp
-          : figureLookRamp(figureLookColour(F.colours[k], k, LK), ramp),
+          : figureLookRamp(figureLookColour(F.colours[k], k, LK, !!F.exact), ramp),
       flat = k === 'eye' || k === 'glint';
     [
       flat ? R[2] : R[0],
@@ -1082,7 +1088,7 @@ export function figurePalette(F, colours, ramp = 'props', LK = null) {
  * bustSize) instead of the whole figure; `head`, angles (degrees) the head turns by; `face: false`, a code figure's
  * face left off and what painting it needs kept on the picture (`face`, for figureBustFace).
  */
-function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', o = {}) {
+export function bakeFigure(Fig, clip, frame, V, ppm, outline, style = 'pixel', o = {}) {
   /* CH-4: the scene's light; CH-6: the face state (or DL-6's talk face) */
   const light = o.light || null;
   const gl = figureGl();
@@ -1487,6 +1493,19 @@ function figurePreviewForget() {
   P.name = '';
   P.def = null;
 }
+/** CH-7: let a figure's buffers in the baker's context go (every detail of it), when nothing will bake it again */
+export function figureResForget(name) {
+  const B = figureBaker,
+    gl = B.gl;
+  for (const [k, R] of B.res)
+    if (k === name || k.startsWith(name + '|')) {
+      if (gl && !gl.isContextLost()) {
+        gl.deleteVertexArray(R.vao);
+        if (R.vb) gl.deleteBuffer(R.vb);
+      }
+      B.res.delete(k);
+    }
+}
 /** CH-4: the snapshots kept (figureSnapshot), the longest unused let go past this many */
 const FIGURE_SNAP_MAX = 48;
 const FIGURE_SNAPS = new Map();
@@ -1769,6 +1788,8 @@ export function figureReport() {
     atlas: typeof figureAtlasReport === 'function' ? figureAtlasReport() : null,
     /* CH-3c: the ticks people spent walking, jogging, sprinting, stepping off and settling */
     moves: { ...figureMoves },
+    /* CH-7: the dressing room's figures: built, their wait, kept, pictures and bakes */
+    dress: typeof figureLooksReport === 'function' ? figureLooksReport() : null,
   };
 }
 /** the checks: lose the baker's context on purpose, back after `ms` (WEBGL_lose_context); false if it can't */

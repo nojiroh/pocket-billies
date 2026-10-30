@@ -265,6 +265,9 @@ def bowl_map(pg, base):
     if hit: raise Exception(f'a touch on the map lands on {hit}, not the map')
     # UI-8c: the map's seven buttons are the kit's 44 px chips with the icon set's pictures (no typed symbols), and
     # the look-around group stands clear of the place card
+    # the map's layout after the resize: the place card and the button groups settle over a few frames, more on a slow
+    # runner (CI once measured the look-around group 16 px into the card), so wait for them to stand clear first
+    until(pg, "(()=>{const v=document.querySelector('.map-full .mapview'),c=document.querySelector('#mapcard');if(!v||!c)return true;const a=v.getBoundingClientRect(),k=c.getBoundingClientRect();return !(a.bottom>k.top+.5&&a.top<k.bottom&&a.right>k.left&&a.left<k.right)})()", 5)
     chips = pg.evaluate("""(()=>{const out=[],bs=[...document.querySelectorAll('.map-full .mapctl .mbtn,.map-full .mapview .mbtn')];
       for(const b of bs){const r=b.getBoundingClientRect();if(Math.round(r.width)<44||Math.round(r.height)<44||!b.querySelector('.uico')||b.textContent.trim())out.push((b.dataset.a||b.dataset.k)+' '+Math.round(r.width)+'x'+Math.round(r.height))}
       const v=document.querySelector('.map-full .mapview'),c=document.querySelector('#mapcard');let over='';
@@ -569,8 +572,10 @@ def kappi_tips(pg, base):
     nothing more (one tip a place, each once ever)"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    # a raised tip waits at most keepS (30 s) of real time for a quiet moment; a loaded machine's throw (CI, two
+    # browsers) can take longer, and the tip was dropped unsaid ([2,2,[],"choose"]): the wait is lifted here
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.meta.tipsSeen={};saveData.preferences.kappiTips='on';"
-                "kappiLook();kappi.st.battles=1;window.kappiRoll=catchRoll;catchRoll=()=>({caught:false,w:0,edge:false,P:0});"
+                "KAPPI_TIPS.keepS=600;kappiLook();kappi.st.battles=1;window.kappiRoll=catchRoll;catchRoll=()=>({caught:false,w:0,edge:false,P:0});"
                 "startWild(encountersHere()[0]);0")
     settle = ("(()=>{const p=activeBattle?activeBattle.phase:'none';if(p==='playing')tapMessage();"
               "if(p==='switch')document.querySelector('#acts [data-a=bswitch]:not([disabled])')?.click();return ['choose','end','none'].includes(p)})()")
@@ -589,7 +594,7 @@ def kappi_tips(pg, base):
                 time.sleep(1.2)
                 if pg.evaluate(said): raise Exception('Kappi spoke after one miss')
             if n == 1:
-                if not until(pg, "(()=>{" + settle + ";return !!document.querySelector('#btip.kappi.on:not(.off)')})()", 30):
+                if not until(pg, "(()=>{" + settle + ";return !!document.querySelector('#btip.kappi.on:not(.off)')})()", 90):
                     raise Exception(f'no tip after two misses: {pg.evaluate("JSON.stringify([kappi.st.fails,kappi.st.battles,kappi.st.due,activeBattle&&activeBattle.phase])")}')
                 tip = pg.evaluate("[document.querySelector('#btip .btip-t').textContent,saveData.meta.tipsSeen.catch,kappi.st.said]")
                 if 'Kappi' not in tip[0] or 'Tire it first' not in tip[0] or tip[1] != 1 or tip[2] != 1:
@@ -813,7 +818,8 @@ def camera_follow(pg, base):
     home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     stand(pg, home[0], home[1], 20)
     info = "(()=>{const I=walkRenderer.camInfo,T=walkRenderer.camT,R=I.right,F=[-R[1],R[0]],dx=I.goal[0]-T[0],dz=I.goal[1]-T[1];return {mode:I.mode,off:[dx*R[0]+dz*R[1],dx*F[0]+dz*F[1]],lead:[I.lead[0]*R[0]+I.lead[1]*R[1],I.lead[0]*F[0]+I.lead[1]*F[1]],soft:I.soft,P:[walkView.pl.x,walkView.pl.z],t:walkView.t}})()"
-    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 60) or (_ for _ in ()).throw(Exception('the page stopped drawing'))
+    # the game's clock runs slower than real time when the page draws slowly (CI), so the waits get room, as CAM-2's
+    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 150) or (_ for _ in ()).throw(Exception(f'the page stopped drawing (waiting {ms} ms of game time)'))
     wait(1500)
     a = pg.evaluate(info)
     if a['mode'] not in ('walk', 'orbit') or max(abs(v) for v in a['off'] + a['lead']) > 0.05: raise Exception(f'standing, the camera isn’t settled on its aim: {a}')
@@ -1565,8 +1571,10 @@ def run_town_life(pg, base):
     if chat < 6: raise Exception(f'the town says {chat} lines, not its biome\'s 6 and more')
     n = pg.evaluate("(walkState().npcs||[]).filter(n=>String(n.id).startsWith('_talk:local')).length")
     if not n: raise Exception('no named local in the town')
+    # the talk box's own name tag (#talk): Kappi's bubble (kappi.js, #ktip) has a .talk-who too, and once a tip has shown
+    # it stays in the page, so a bare .talk-who can read "Kappi"
     name = pg.evaluate("(()=>{const n=walkState().npcs.find(n=>String(n.id).startsWith('_talk:local'));walkPick({k:'npc',n});return n.talk.name})()")
-    if not until(pg, f"talkBox.on&&document.querySelector('.talk-who')&&document.querySelector('.talk-who').textContent==={json.dumps(name)}", 20):
+    if not until(pg, f"talkBox.on&&document.querySelector('#talk .talk-who')&&document.querySelector('#talk .talk-who').textContent==={json.dumps(name)}", 20):
         raise Exception(f'tapping {name} didn’t open the talk box with their name')
     pg.evaluate("talkHide();0")
     return f'{want} folk ({pg.evaluate("walkView.folk.length")} drawn, cap {cap}), walked and went indoors; animals {life}; {chat} lines; {n} local(s), {name} talked'
@@ -1583,7 +1591,7 @@ def run_town_quests(pg, base):
     if not until(pg, "(walkState().npcs||[]).some(n=>n.id==='_talk:quest')", 20): raise Exception('no quest giver in the town')
     if not pg.evaluate("questMarked(walkState().npcs.find(n=>n.id==='_talk:quest').talk)"): raise Exception('the giver has no "!"')
     name = pg.evaluate("(()=>{const n=walkState().npcs.find(n=>n.id==='_talk:quest');walkPick({k:'npc',n});return n.talk.name})()")
-    if not until(pg, f"talkBox.on&&document.querySelector('.talk-who').textContent==={json.dumps(name)}", 20):
+    if not until(pg, f"talkBox.on&&document.querySelector('#talk .talk-who')&&document.querySelector('#talk .talk-who').textContent==={json.dumps(name)}", 20):
         raise Exception(f'tapping {name} didn’t open the talk box with their name')
     # through the offer: Yes at the choice, every line tapped on
     if not until(pg, "!talkBox.on", 30, "if(talkBox.choice)talkBox.choice.pick(0);else if(talkBox.cur)talkBox.cur.done()"):

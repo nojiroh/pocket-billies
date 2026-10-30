@@ -458,6 +458,57 @@ test('figures: everyone their own figure (CH-3b): look:<who>, you by your look, 
   }
 });
 
+test('figures: you as you picked (CH-7): a direction keeps its extras but not its jacket or palette on you', () => {
+  const was3 = [G.lookOf, G.figureChoice, G.figureItems, G.figureStyle],
+    W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+    look = {
+      body: {},
+      skin: '#E6B08A',
+      hair: '#2B6CB0',
+      wear: { hair: 'hair_short', top: 'tee' },
+      colors: { tee: ['#C8323C'] },
+    };
+  try {
+    freshBaker();
+    G.lookOf = () => look;
+    G.figureItems = () => W.items;
+    G.figureChoice = () => 'look';
+    G.figureStyle = () => 'gnight';
+    const built = who => {
+      const name = G.figureFor(who);
+      G.gpuState.fr++;
+      assert.ok(G.figurePersonPicture({}, name, 0, 'idle', 0, Math.PI), who);
+      return G.FIGURE_DEFS[name].F;
+    };
+    const me = built('me'),
+      other = built('marina');
+    /* the direction's cast puts a denim jacket on Marina and once did on you: no longer */
+    assert.ok(
+      other.parts.some(p => p.col === 'outer'),
+      'Marina wears her direction’s jacket'
+    );
+    assert.ok(!me.parts.some(p => p.col === 'outer'), 'you wear no outer: none was picked');
+    /* its extras stay (goggles, gloves) */
+    assert.ok(me.parts.length > 0 && me.exact && !other.exact);
+    /* your colours as picked: the direction's palette and saturation leave them be, everyone else's are pulled */
+    const LK = G.FIGURE_LOOKS.gnight,
+      base = (F, k) => {
+        const P = G.figurePalette(F, [k], LK.ramp, LK),
+          M = G.figurePalette({ ...F, exact: true }, [k], LK.ramp, LK);
+        return [Array.from(P.slice(6, 9)), Array.from(M.slice(6, 9))];
+      };
+    const [mine, mineRaw] = base(me, 'top');
+    assert.deepEqual(mine, mineRaw);
+    assert.deepEqual(mine.map(Math.round), [200, 50, 60], 'the tee’s red as picked');
+    const [theirs, theirsRaw] = base(other, 'top');
+    assert.notDeepEqual(theirs, theirsRaw, 'the rest of the cast keep the direction’s palette');
+  } finally {
+    G.document.createElement = was;
+    [G.lookOf, G.figureChoice, G.figureItems, G.figureStyle] = was3;
+    for (const k of Object.keys(G.FIGURE_DEFS)) if (k.startsWith('look:')) delete G.FIGURE_DEFS[k];
+  }
+});
+
 test('CH-4: the snapshot service: a UI picture baked once in the studio light, then kept', () => {
   const look = G.engineContext.look;
   try {
@@ -667,5 +718,146 @@ test('figures: every head angle of a figure kept in each style (45 each)', () =>
     assert.ok(90 <= G.FIGURE_BUST_MAX);
   } finally {
     G.document.createElement = was;
+  }
+});
+
+/* ---------- CH-7: your look as a figure (game/js/figure-looks.js) ---------- */
+await import('../../game/js/figure-looks.js');
+
+test('CH-7: a look’s shape names its mesh; colours and the face are painted on it, and every mesh agrees', async () => {
+  const { kitBuild, lookFigure } = await import('../../game/js/logic/figure-kit.js'),
+    W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+    look = {
+      body: {},
+      build: 'average',
+      skin: '#E6B08A',
+      hair: '#5A3A2A',
+      eyes: '#3F8A63',
+      wear: { hair: 'hair_short', top: 'tee', bottom: 'jeans', shoes: 'sneakers', eyes: 'eyes_round' },
+      colors: {},
+    },
+    painted = {
+      ...look,
+      skin: '#7A4A34',
+      hair: '#C8323C',
+      eyes: '#112233',
+      colors: { tee: ['#123456'] },
+      wear: {
+        ...look.wear,
+        eyes: 'eyes_sleepy',
+        brows: 'brows_thick',
+        mouth: 'mouth_grin',
+        glasses: 'glasses_round',
+        facial: 'facial_stache',
+      },
+    };
+  assert.equal(G.figureLookShape(painted), G.figureLookShape(look), 'colours, skin and the face: the same shape');
+  assert.notEqual(G.figureLookShape({ ...look, build: 'round' }), G.figureLookShape(look));
+  assert.notEqual(G.figureLookShape({ ...look, wear: { ...look.wear, hat: 'hat_cap' } }), G.figureLookShape(look));
+  assert.notEqual(
+    G.figureLookShape({ ...look, wear: { ...look.wear, facial: 'facial_beard' } }),
+    G.figureLookShape(look)
+  );
+  /* the claim the shape key rests on: the kit's mesh is the same for both (its vertices and colour slots) */
+  const mesh = L => kitBuild(lookFigure(L, W.items, { name: 'me', figure: { head: 'hero' } }), 0.6);
+  const a = mesh(look),
+    b = mesh(painted);
+  assert.deepEqual(b.colours, a.colours);
+  assert.ok(Buffer.from(a.data.buffer).equals(Buffer.from(b.data.buffer)), 'the same vertices');
+});
+
+test('CH-7: a look as a picture: whole and cropped, a new colour paints without a build, forgotten on close', () => {
+  const was3 = [G.figureItems, G.figureStyle],
+    W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+    look = {
+      body: {},
+      build: 'average',
+      skin: '#E6B08A',
+      hair: '#5A3A2A',
+      eyes: '#3F8A63',
+      wear: { hair: 'hair_short', top: 'tee', bottom: 'jeans', shoes: 'sneakers' },
+      colors: {},
+    };
+  try {
+    freshBaker();
+    G.figureLooksForget();
+    G.figureItems = () => W.items;
+    G.figureStyle = () => 'pixel';
+    const L = G.figureLooks,
+      im = G.figureLookPicture(look, { ppm: 64 });
+    assert.ok(im && im.ppm === 64 && im.figure.startsWith('dress:'), 'your look, baked (built on the page in Node)');
+    assert.equal(L.builds, 1);
+    /* a colour: painted on the same mesh, no second build; another top: a new figure */
+    assert.ok(G.figureLookPicture({ ...look, colors: { tee: ['#123456'] } }, { ppm: 64 }));
+    assert.equal(L.builds, 1, 'a colour costs no build');
+    assert.ok(G.figureLookPicture({ ...look, wear: { ...look.wear, top: 'tank' } }, { ppm: 64 }));
+    assert.equal(L.builds, 2);
+    /* crops: each a canvas the size of its box at the density, cut round the ground point */
+    const F = L.defs.values().next().value.F,
+      ext = L.defs.values().next().value.ext;
+    for (const crop of ['head', 'face', 'body', 'legs', 'feet', 'bust']) {
+      const C = G.figureLookCrop(F, ext, crop);
+      assert.ok(C.x1 > C.x0 && C.y1 > C.y0 && C.y0 >= -0.05 && C.y1 <= ext.top + 0.05, crop);
+      const c = G.figureLookPicture(look, { ppm: 64, crop });
+      assert.equal(c.width, Math.max(4, Math.round((C.x1 - C.x0) * 64)), crop);
+    }
+    const head = G.figureLookCrop(F, ext, 'head'),
+      legs = G.figureLookCrop(F, ext, 'legs');
+    assert.ok(head.y0 > legs.y1, 'the head above the legs');
+    /* tiles: their own (lower) detail, kept, at most one baked every FIGURE_LOOK_GAP ms */
+    L.tileAt = -Infinity;
+    const t = G.figureLookPicture(look, { tile: true, crop: 'head' });
+    assert.ok(t && t.figure.endsWith(':t'));
+    assert.ok(G.figureLookKept(look, { crop: 'head' }));
+    assert.equal(G.figureLookPicture(look, { tile: true, crop: 'head' }), t, 'kept');
+    assert.equal(G.figureLookPicture(look, { tile: true, crop: 'body' }), null, 'the next tile waits its turn');
+    /* the report and the forgetting: no figure, mesh or buffer of the room's left */
+    const R = G.figureLooksReport();
+    assert.equal(R.builds, 3);
+    assert.ok(R.pictures === 1 && R.kept === 3 && R.bakes >= 9);
+    G.figureLooksForget();
+    assert.equal(G.figureLooksReport().kept, 0);
+    assert.ok(![...G.figureBaker.res.keys()].some(k => k.startsWith('dress:')));
+    assert.ok(![...G.figureMeshes.done.keys()].some(k => k.startsWith('dress:')));
+  } finally {
+    G.document.createElement = was;
+    [G.figureItems, G.figureStyle] = was3;
+  }
+});
+
+test('CH-7: tiles are built one at a time; the look you wear goes first; at most FIGURE_LOOK_KEEP kept', () => {
+  const was3 = [G.figureItems, G.figureStyle, G.figureMeshGet, G.figureMeshBuilding],
+    W = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/wardrobe.json'), 'utf8')),
+    look = { body: {}, build: 'average', wear: { hair: 'hair_short', top: 'tee' }, colors: {} },
+    tops = ['tee', 'tank', 'hoodie', 'sweater'];
+  try {
+    freshBaker();
+    G.figureLooksForget();
+    G.figureItems = () => W.items;
+    G.figureStyle = () => 'pixel';
+    /* a helper thread that hasn't finished anything yet */
+    const asked = [];
+    G.figureMeshGet = key => (asked.push(key), null);
+    G.figureMeshBuilding = key => asked.includes(key);
+    for (const top of tops) G.figureLookPicture({ ...look, wear: { ...look.wear, top } }, { tile: true });
+    assert.equal(asked.length, 1, 'one tile’s build at a time');
+    G.figureLookPicture({ ...look, wear: { ...look.wear, top: 'tank' } }, {});
+    assert.equal(asked.length, 2, 'the look you wear doesn’t wait for the tiles');
+    [, , G.figureMeshGet, G.figureMeshBuilding] = was3;
+    /* builds done (on the page here): every tile in, the longest unused let go past the keep */
+    G.figureLooks.tileAt = -Infinity;
+    const many = Object.keys(W.items).filter(id => W.items[id].slot === 'top' || W.items[id].slot === 'bottom');
+    for (const id of many) {
+      G.figureLooks.tileAt = -Infinity;
+      const L2 = { ...look, wear: { ...look.wear, [W.items[id].slot]: id } };
+      assert.ok(G.figureLookPicture(L2, { tile: true, crop: 'body' }), id);
+    }
+    assert.ok(many.length > G.FIGURE_LOOK_KEEP);
+    assert.equal(G.figureLooksReport().kept, G.FIGURE_LOOK_KEEP);
+    assert.ok([...G.figureBaker.res.keys()].filter(k => k.startsWith('dress:')).length <= G.FIGURE_LOOK_KEEP);
+  } finally {
+    G.document.createElement = was;
+    [G.figureItems, G.figureStyle, G.figureMeshGet, G.figureMeshBuilding] = was3;
+    G.figureLooksForget();
   }
 });

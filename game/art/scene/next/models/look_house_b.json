@@ -1,0 +1,1223 @@
+{
+ "about": "BD-3 look sketch B: the house",
+ "warp": {
+  "lean": [
+   0.5,
+   0.08
+  ],
+  "sag": 0.14,
+  "bulge": 0.05
+ },
+ "layers": [
+  {
+   "k": "box",
+   "x": 0,
+   "y": 1.1,
+   "z": 0,
+   "w": 3.4,
+   "d": 2.5,
+   "h": 0.15,
+   "col": "#B8B0A8",
+   "tex": "stone",
+   "bevel": 0.04,
+   "name": "plinth"
+  },
+  {
+   "k": "box",
+   "x": 0,
+   "y": 1.1,
+   "z": 0.15,
+   "w": 3.0,
+   "d": 2.2,
+   "h": 1.9,
+   "col": "#F2E2BE",
+   "tex": "cob",
+   "name": "ground floor"
+  },
+  {
+   "k": "box",
+   "x": 0,
+   "y": 1.1,
+   "z": 2.05,
+   "w": 3.3,
+   "d": 2.5,
+   "h": 0.14,
+   "col": "#9A6A44",
+   "tex": "wood",
+   "bevel": 0.03,
+   "name": "jetty floor"
+  },
+  {
+   "k": "box",
+   "x": 0,
+   "y": 1.1,
+   "z": 2.19,
+   "w": 3.2,
+   "d": 2.4,
+   "h": 1.4,
+   "col": "#F4D99A",
+   "tex": "halftimber",
+   "name": "upper floor"
+  },
+  {
+   "k": "box",
+   "x": 0,
+   "y": 1.1,
+   "z": 3.59,
+   "w": 3.8,
+   "d": 2.95,
+   "h": 0.12,
+   "col": "#3A2E2A",
+   "tex": "wood",
+   "name": "eaves"
+  },
+  {
+   "k": "prism",
+   "x": 0,
+   "y": 1.1,
+   "z": 3.71,
+   "pts": [
+    [
+     -1.95,
+     0
+    ],
+    [
+     1.95,
+     0
+    ],
+    [
+     1.6,
+     0.7
+    ],
+    [
+     0.7,
+     1.4
+    ],
+    [
+     -0.7,
+     1.4
+    ],
+    [
+     -1.6,
+     0.7
+    ]
+   ],
+   "d": 3.0,
+   "col": "#5FA898",
+   "tex": "standingseam",
+   "name": "gambrel roof",
+   "roof": 1
+  },
+  {
+   "k": "box",
+   "x": 0,
+   "y": 1.1,
+   "z": 5.09,
+   "w": 1.5,
+   "d": 3.05,
+   "h": 0.07,
+   "col": "#C9773E",
+   "tex": "metal",
+   "name": "ridge band",
+   "roof": 1
+  },
+  {
+   "k": "prism",
+   "x": -0.75,
+   "y": -0.02,
+   "z": 0.15,
+   "pts": [
+    [
+     -0.55,
+     0
+    ],
+    [
+     0.55,
+     0
+    ],
+    [
+     0.55,
+     1.2
+    ],
+    [
+     0.508,
+     1.41
+    ],
+    [
+     0.389,
+     1.589
+    ],
+    [
+     0.21,
+     1.708
+    ],
+    [
+     0.0,
+     1.75
+    ],
+    [
+     -0.21,
+     1.708
+    ],
+    [
+     -0.389,
+     1.589
+    ],
+    [
+     -0.508,
+     1.41
+    ],
+    [
+     -0.55,
+     1.2
+    ]
+   ],
+   "d": 0.04,
+   "col": "#B8B0A8",
+   "tex": "stone",
+   "name": "door arch"
+  },
+  {
+   "k": "prism",
+   "x": -0.75,
+   "y": -0.05,
+   "z": 0.15,
+   "pts": [
+    [
+     -0.45,
+     0
+    ],
+    [
+     0.45,
+     0
+    ],
+    [
+     0.45,
+     1.15
+    ],
+    [
+     0.416,
+     1.322
+    ],
+    [
+     0.318,
+     1.468
+    ],
+    [
+     0.172,
+     1.566
+    ],
+    [
+     0.0,
+     1.6
+    ],
+    [
+     -0.172,
+     1.566
+    ],
+    [
+     -0.318,
+     1.468
+    ],
+    [
+     -0.416,
+     1.322
+    ],
+    [
+     -0.45,
+     1.15
+    ]
+   ],
+   "d": 0.06,
+   "col": "#C8603E",
+   "tex": "wood",
+   "name": "round door"
+  },
+  {
+   "k": "sphere",
+   "x": -0.47,
+   "y": -0.1,
+   "z": 0.95,
+   "r": 0.05,
+   "col": "#D8B048",
+   "tex": "metal",
+   "sides": 6,
+   "rings": 3,
+   "name": "door knob"
+  },
+  {
+   "k": "box",
+   "x": -0.75,
+   "y": -0.25,
+   "z": 0,
+   "w": 1.2,
+   "d": 0.5,
+   "h": 0.15,
+   "col": "#B8B0A8",
+   "tex": "stone",
+   "bevel": 0.03,
+   "name": "door step"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": 0.0,
+   "z": 0.8,
+   "w": 0.87,
+   "d": 0.05,
+   "h": 0.85,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "window frame"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.02,
+   "z": 0.85,
+   "w": 0.75,
+   "d": 0.04,
+   "h": 0.75,
+   "col": "#9FC4D8",
+   "tex": "plain",
+   "glass": 1,
+   "name": "window"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.03,
+   "z": 1.205,
+   "w": 0.75,
+   "d": 0.03,
+   "h": 0.04,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "window bar"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.08,
+   "z": 0.77,
+   "w": 0.95,
+   "d": 0.14,
+   "h": 0.06,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "sill"
+  },
+  {
+   "k": "box",
+   "x": -0.75,
+   "y": -0.1,
+   "z": 2.49,
+   "w": 0.82,
+   "d": 0.05,
+   "h": 0.8,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "window frame"
+  },
+  {
+   "k": "box",
+   "x": -0.75,
+   "y": -0.12,
+   "z": 2.54,
+   "w": 0.7,
+   "d": 0.04,
+   "h": 0.7,
+   "col": "#9FC4D8",
+   "tex": "plain",
+   "glass": 2,
+   "name": "window"
+  },
+  {
+   "k": "box",
+   "x": -0.75,
+   "y": -0.13,
+   "z": 2.87,
+   "w": 0.7,
+   "d": 0.03,
+   "h": 0.04,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "window bar"
+  },
+  {
+   "k": "box",
+   "x": -0.75,
+   "y": -0.18,
+   "z": 2.46,
+   "w": 0.9,
+   "d": 0.14,
+   "h": 0.06,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "sill"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.1,
+   "z": 2.49,
+   "w": 0.82,
+   "d": 0.05,
+   "h": 0.8,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "window frame"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.12,
+   "z": 2.54,
+   "w": 0.7,
+   "d": 0.04,
+   "h": 0.7,
+   "col": "#9FC4D8",
+   "tex": "plain",
+   "glass": 3,
+   "name": "window"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.13,
+   "z": 2.87,
+   "w": 0.7,
+   "d": 0.03,
+   "h": 0.04,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "window bar"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.18,
+   "z": 2.46,
+   "w": 0.9,
+   "d": 0.14,
+   "h": 0.06,
+   "col": "#F4F1EA",
+   "tex": "wood",
+   "name": "sill"
+  },
+  {
+   "k": "lathe",
+   "x": 0,
+   "y": -0.4,
+   "z": 4.36,
+   "pts": [
+    [
+     0,
+     0
+    ],
+    [
+     0.33,
+     0
+    ]
+   ],
+   "col": "#D8B048",
+   "tex": "metal",
+   "tilt": [
+    -1.5707963267948966,
+    0
+   ],
+   "sides": 14,
+   "name": "porthole rim"
+  },
+  {
+   "k": "lathe",
+   "x": 0,
+   "y": -0.41,
+   "z": 4.36,
+   "pts": [
+    [
+     0,
+     0
+    ],
+    [
+     0.26,
+     0
+    ]
+   ],
+   "col": "#9FC4D8",
+   "tex": "plain",
+   "tilt": [
+    -1.5707963267948966,
+    0
+   ],
+   "sides": 14,
+   "glass": 4,
+   "name": "porthole"
+  },
+  {
+   "k": "lathe",
+   "x": 1.05,
+   "y": 1.7,
+   "z": 3.31,
+   "pts": [
+    [
+     0.26,
+     0
+    ],
+    [
+     0.24,
+     1.6
+    ],
+    [
+     0.38,
+     1.9
+    ],
+    [
+     0.38,
+     2.0
+    ],
+    [
+     0.2,
+     2.0
+    ]
+   ],
+   "col": "#C8603E",
+   "tex": "brick",
+   "sides": 8,
+   "tilt": [
+    -0.06981317007977318,
+    0.13962634015954636
+   ],
+   "name": "crooked chimney"
+  },
+  {
+   "k": "box",
+   "x": 0,
+   "y": -0.38,
+   "z": 3.54,
+   "w": 3.5,
+   "d": 0.05,
+   "h": 0.05,
+   "col": "#FFFFFF",
+   "tex": "plain",
+   "glow": "#5AE0FF",
+   "name": "neon under the eaves"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.12,
+   "z": 0.7,
+   "w": 0.9,
+   "d": 0.2,
+   "h": 0.16,
+   "col": "#9A6A44",
+   "tex": "wood",
+   "name": "flower box"
+  },
+  {
+   "k": "sphere",
+   "x": 0.39,
+   "y": -0.12,
+   "z": 0.9,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 0.42,
+   "y": -0.17,
+   "z": 0.97,
+   "r": 0.045,
+   "col": "#E85A6A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 0.57,
+   "y": -0.12,
+   "z": 0.9,
+   "r": 0.09,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 0.6,
+   "y": -0.17,
+   "z": 0.97,
+   "r": 0.045,
+   "col": "#F4E04A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 0.75,
+   "y": -0.12,
+   "z": 0.9,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 0.78,
+   "y": -0.17,
+   "z": 0.97,
+   "r": 0.045,
+   "col": "#E85A6A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 0.93,
+   "y": -0.12,
+   "z": 0.9,
+   "r": 0.09,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 0.96,
+   "y": -0.17,
+   "z": 0.97,
+   "r": 0.045,
+   "col": "#F4E04A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 1.11,
+   "y": -0.12,
+   "z": 0.9,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 1.14,
+   "y": -0.17,
+   "z": 0.97,
+   "r": 0.045,
+   "col": "#E85A6A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "box",
+   "x": -0.75,
+   "y": -0.22,
+   "z": 2.39,
+   "w": 0.85,
+   "d": 0.2,
+   "h": 0.16,
+   "col": "#9A6A44",
+   "tex": "wood",
+   "name": "flower box"
+  },
+  {
+   "k": "sphere",
+   "x": -1.09,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": -1.06,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#F09AC0",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": -0.92,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": -0.89,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#FFFFFF",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": -0.75,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": -0.72,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#F09AC0",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": -0.58,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": -0.55,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#FFFFFF",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": -0.41,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": -0.38,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#F09AC0",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "box",
+   "x": 0.75,
+   "y": -0.22,
+   "z": 2.39,
+   "w": 0.85,
+   "d": 0.2,
+   "h": 0.16,
+   "col": "#9A6A44",
+   "tex": "wood",
+   "name": "flower box"
+  },
+  {
+   "k": "sphere",
+   "x": 0.41,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 0.44,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#E85A6A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 0.58,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 0.61,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#F4E04A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 0.75,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 0.78,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#E85A6A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 0.92,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 0.95,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#F4E04A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 1.09,
+   "y": -0.22,
+   "z": 2.59,
+   "r": 0.09,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "box plant"
+  },
+  {
+   "k": "sphere",
+   "x": 1.12,
+   "y": -0.27,
+   "z": 2.66,
+   "r": 0.045,
+   "col": "#E85A6A",
+   "tex": "plain",
+   "sides": 5,
+   "rings": 2,
+   "name": "flower"
+  },
+  {
+   "k": "sphere",
+   "x": 1.45,
+   "y": 0.01,
+   "z": 0.3,
+   "r": 0.22,
+   "col": "#7AA64E",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "ivy"
+  },
+  {
+   "k": "sphere",
+   "x": 1.424,
+   "y": 0.01,
+   "z": 0.772,
+   "r": 0.195,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "ivy"
+  },
+  {
+   "k": "sphere",
+   "x": 1.476,
+   "y": 0.01,
+   "z": 1.245,
+   "r": 0.171,
+   "col": "#7AA64E",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "ivy"
+  },
+  {
+   "k": "sphere",
+   "x": 1.449,
+   "y": 0.01,
+   "z": 1.718,
+   "r": 0.146,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "ivy"
+  },
+  {
+   "k": "sphere",
+   "x": 1.424,
+   "y": 0.01,
+   "z": 2.19,
+   "r": 0.121,
+   "col": "#7AA64E",
+   "tex": "leaves",
+   "sides": 6,
+   "rings": 3,
+   "name": "ivy"
+  },
+  {
+   "k": "limb",
+   "x": -0.05,
+   "y": -0.02,
+   "z": 1.75,
+   "x2": -0.05,
+   "y2": -0.27,
+   "z2": 1.75,
+   "r": 0.015,
+   "r1": 0.015,
+   "col": "#333344",
+   "tex": "metal",
+   "sides": 6,
+   "name": "lamp arm"
+  },
+  {
+   "k": "sphere",
+   "x": -0.05,
+   "y": -0.29,
+   "z": 1.67,
+   "r": 0.08,
+   "col": "#FFE9B0",
+   "tex": "plain",
+   "sides": 8,
+   "rings": 4,
+   "glow": "#FFC860",
+   "name": "lamp globe"
+  },
+  {
+   "k": "lathe",
+   "x": -0.05,
+   "y": -0.29,
+   "z": 1.73,
+   "pts": [
+    [
+     0.1,
+     0
+    ],
+    [
+     0.02,
+     0.1
+    ]
+   ],
+   "col": "#333344",
+   "tex": "metal",
+   "sides": 8,
+   "name": "lamp hood"
+  },
+  {
+   "k": "cyl",
+   "x": 1.75,
+   "y": 0.35,
+   "z": 0,
+   "r": 0.26,
+   "h": 0.6,
+   "col": "#9A6A44",
+   "tex": "wood",
+   "sides": 10,
+   "name": "rain barrel"
+  },
+  {
+   "k": "cyl",
+   "x": 1.75,
+   "y": 0.35,
+   "z": 0.6,
+   "r": 0.28,
+   "h": 0.05,
+   "col": "#666670",
+   "tex": "metal",
+   "sides": 10,
+   "name": "barrel hoop"
+  },
+  {
+   "k": "sphere",
+   "x": -1.7,
+   "y": 0.2,
+   "z": 0.25,
+   "r": 0.32,
+   "col": "#5E9A48",
+   "tex": "leaves",
+   "sides": 7,
+   "rings": 4,
+   "lump": 0.25,
+   "name": "shrub"
+  },
+  {
+   "k": "sphere",
+   "x": -1.65,
+   "y": 0.75,
+   "z": 0.22,
+   "r": 0.28,
+   "col": "#86B85A",
+   "tex": "leaves",
+   "sides": 7,
+   "rings": 4,
+   "lump": 0.25,
+   "name": "shrub"
+  },
+  {
+   "k": "limb",
+   "x": -0.45,
+   "y": 1.1,
+   "z": 5.16,
+   "x2": -0.45,
+   "y2": 1.1,
+   "z2": 5.66,
+   "r": 0.025,
+   "r1": 0.025,
+   "col": "#D8B048",
+   "tex": "metal",
+   "sides": 6,
+   "name": "finial spike"
+  },
+  {
+   "k": "sphere",
+   "x": -0.45,
+   "y": 1.1,
+   "z": 5.46,
+   "r": 0.07,
+   "col": "#D8B048",
+   "tex": "metal",
+   "sides": 8,
+   "rings": 4,
+   "name": "finial ball"
+  },
+  {
+   "k": "lathe",
+   "x": -0.45,
+   "y": 1.1,
+   "z": 5.46,
+   "pts": [
+    [
+     0.17,
+     0
+    ],
+    [
+     0.2,
+     0
+    ],
+    [
+     0.2,
+     0.025
+    ],
+    [
+     0.17,
+     0.025
+    ],
+    [
+     0.17,
+     0
+    ]
+   ],
+   "col": "#D8B048",
+   "tex": "metal",
+   "sides": 12,
+   "tilt": [
+    1.0471975511965976,
+    0
+   ],
+   "name": "orbit ring"
+  },
+  {
+   "k": "lathe",
+   "x": -0.45,
+   "y": 1.1,
+   "z": 5.46,
+   "pts": [
+    [
+     0.17,
+     0
+    ],
+    [
+     0.2,
+     0
+    ],
+    [
+     0.2,
+     0.025
+    ],
+    [
+     0.17,
+     0.025
+    ],
+    [
+     0.17,
+     0
+    ]
+   ],
+   "col": "#D8B048",
+   "tex": "metal",
+   "sides": 12,
+   "tilt": [
+    -1.0471975511965976,
+    0.5235987755982988
+   ],
+   "name": "orbit ring"
+  },
+  {
+   "k": "limb",
+   "x": 0.5,
+   "y": 1.9,
+   "z": 5.11,
+   "x2": 0.5,
+   "y2": 1.9,
+   "z2": 6.21,
+   "r": 0.02,
+   "r1": 0.02,
+   "col": "#8C8C98",
+   "tex": "metal",
+   "sides": 6,
+   "name": "antenna"
+  },
+  {
+   "k": "limb",
+   "x": 0.28,
+   "y": 1.9,
+   "z": 5.77,
+   "x2": 0.72,
+   "y2": 1.9,
+   "z2": 5.77,
+   "r": 0.012,
+   "r1": 0.012,
+   "col": "#8C8C98",
+   "tex": "metal",
+   "sides": 6,
+   "name": "antenna bar"
+  },
+  {
+   "k": "limb",
+   "x": 0.36,
+   "y": 1.9,
+   "z": 5.99,
+   "x2": 0.64,
+   "y2": 1.9,
+   "z2": 5.99,
+   "r": 0.012,
+   "r1": 0.012,
+   "col": "#8C8C98",
+   "tex": "metal",
+   "sides": 6,
+   "name": "antenna bar"
+  },
+  {
+   "k": "sphere",
+   "x": 0.5,
+   "y": 1.9,
+   "z": 6.24,
+   "r": 0.05,
+   "col": "#FFE0E8",
+   "tex": "plain",
+   "sides": 6,
+   "rings": 3,
+   "glow": {
+    "col": "#FF5AB4",
+    "day": 1
+   },
+   "name": "antenna tip"
+  }
+ ],
+ "ppm": 32,
+ "cel": 0.6
+}
