@@ -835,6 +835,9 @@ debugLog.slotMs = () => {
   const S = typeof GAME.frameScheduler !== 'undefined' ? GAME.frameScheduler : null,
     hz = (S && S.hz) || 60,
     fps = typeof GAME.userFps === 'function' ? GAME.userFps() : 60;
+  /* with FL-1a's pacing: the slot as whole refreshes (60 on a 90 Hz screen: 2, 22.2 ms) and the half rate */
+  if (S && S.period && typeof GAME.paceSlot === 'function')
+    return GAME.paceSlot(fps, S.period, !!S.half) * S.period + S.period / 2;
   return 1000 / Math.min(fps, hz) + 500 / hz;
 };
 /* Chrome's long animation frames name the scripts that held a frame (file and character position: the source map
