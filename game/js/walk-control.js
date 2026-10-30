@@ -1028,10 +1028,11 @@ export function walkMapSync() {
         walkView.held = w;
         if (w === 'hidden') return 1;
         /* FL-6 (the owner's answer): behind a full screen or a window the world is frozen: a change of rate draws
-           one frame at once (frame-scheduler.js paceDue), then the scheduler's floor (0.1: one frame in 10 s).
+           one frame at once (logic/frame-pace.js paceDue), then none (FL-3b: a cap of 0; it was the scheduler's floor,
+           0.1, one frame in 10 s).
            The world's clock runs inside the draw, so the game pauses there. Some windows keep the world moving
            (worldMoving below), at the rates they had: 1 behind a screen, 20 behind a window */
-        if (w === 'screen' || w === 'window') return worldMoving() ? (w === 'screen' ? 1 : 20) : 0.1;
+        if (w === 'screen' || w === 'window') return worldMoving() ? (w === 'screen' ? 1 : 20) : 0;
         return userFps();
       },
     }).then(() => cv.classList.add('in'));

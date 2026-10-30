@@ -117,7 +117,10 @@ function dueFrameTasks(ts) {
     V = frameScheduler.period,
     fps = userFps();
   for (const [name, t] of frameScheduler.tasks) {
-    const cap = Math.max(0.1, +t.cap() || 0),
+    /* FL-3b (FL-6's ask): a cap of exactly 0 is a true freeze (paceDue: one frame at once, then none); anything else
+       not a number is the 0.1 floor */
+    const want = t.cap(),
+      cap = want === 0 ? 0 : Math.max(0.1, +want || 0),
       dt = paceDue(t, ts, cap, V, frameScheduler.half && cap === fps);
     if (dt >= 0) out.push([name, t, dt]);
   }
