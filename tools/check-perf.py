@@ -66,6 +66,9 @@ SPOT_LEG = 8                                  # a leg longer than this (m) gets 
 # 18,000 at low graphics, 860 draws; in batches 830 and 335; as shipped in batches 1,000-1,700 and 384-528 draws, the
 # grass's chunks and the fountains being FL-2b's, so as shipped the draws are a note until then)
 UNIFORM_CEILING = 2500
+# fluid track FL-2b: the effects pass at Copperleaf's square (the hub spot, both fountains in view), every quad and glow
+# in instanced runs: at most this many draws, at low and as shipped (measured 2026-10-30: 73-86 before)
+EFFECTS_CEILING = 20
 COPPERLEAF_SPOTS = ((0, 0), (8, 6), (-8, 6), (0, -10))   # metres from the hub
 SETTLE, COUNT = 2, 4                          # frames to settle at a spot, then frames counted (an even number:
                                               # some work runs every other frame)
@@ -358,6 +361,8 @@ def gates(R, B):
         msg = f"{what}: {cl['draws']} draws a frame, over the phone budget of {DRAW_BUDGET}"
         if cl['draws'] > DRAW_BUDGET: (problems if key == 'copperleaf' else notes).append(msg + ('' if key == 'copperleaf' else ' (FL-2b brings the grass and fountains down)'))
         if cl['uniforms'] > UNIFORM_CEILING: problems.append(f"{what}: {cl['uniforms']} uniform calls a frame, over the ceiling of {UNIFORM_CEILING}")
+        fx = ((cl['spots'][0].get('passes') or {}).get('effects') or 0) if cl.get('spots') else 0
+        if fx > EFFECTS_CEILING: problems.append(f"{what}: the effects pass at the square {fx} draws a frame, over FL-2b's ceiling of {EFFECTS_CEILING}")
     if B is not None:
         new = [n for n in R.get('lateCompiles', []) if n not in set(B.get('lateCompiles', []))]
         if new: problems.append('programs compiled after the place settled (a warm-up missed them): ' + ', '.join(new))
