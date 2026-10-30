@@ -1,5 +1,6 @@
-// Buildings track BD-4a: the house kit (tools/build-house-kit.py). One catalogue kind, house_kit, whose variants are
-// about two dozen houses put together from modules. No two share body + roof + palette; each builds within the owner's
+// Buildings track BD-4a: the house kit (tools/build-house-kit.py): about two dozen houses put together from modules,
+// a catalogue kind each (house_kit_NN in group house_kit; BD-7: a variant's own footprint and door are not read by the
+// game, so each house is its own kind), each with a picture baked from its model. No two share body + roof + palette; each builds within the owner's
 // 6,000 triangles, leans 3-5 degrees by its own height (look B), marks its glass and roof, carries a retro-future touch
 // and some nature, and fits the hub's largest house plot with its door on the front.
 import assert from 'node:assert/strict';
@@ -9,9 +10,10 @@ import { test } from 'node:test';
 await import('./walk-renderer.mjs');
 const { lowPolyFromRecipe } = await import('../../game/js/prop-models.js');
 const S = JSON.parse(fs.readFileSync(new URL('../../game/data/scenery.json', import.meta.url), 'utf8'));
-const K = S.props.house_kit,
-  PPU = S.ppu || 34,
-  ROWS = [K, ...K.variants],
+const PPU = S.ppu || 34,
+  ROWS = Object.entries(S.props)
+    .filter(([k, R]) => R.group === 'house_kit' && /^house_kit_\d\d$/.test(k))
+    .map(([, R]) => R),
   RETRO = [
     'antenna tip',
     'finial ball',
@@ -35,13 +37,25 @@ test('the kit: about two dozen houses, every body and roof in use, 8-10 palettes
   assert.ok(of('palette').size >= 8 && of('palette').size <= 10, 'palettes');
   assert.equal(HOUSES.filter(h => h.rec.kit.show).length, 2, 'showpieces');
   assert.equal(new Set(ROWS.map(r => r.model)).size, ROWS.length, 'each its own model');
+  assert.equal(S.props.house_kit, undefined, "BD-4a's one kind with variants is gone");
+});
+
+test('each house has a picture baked from its model (BD-7), its own', () => {
+  for (const row of ROWS) {
+    assert.match(row.img, /^scene\/next\/hub\/house_kit_\d\d\.png$/, `${row.name}: ${row.img}`);
+    assert.ok(fs.existsSync(new URL(`../../game/art/${row.img}`, import.meta.url)), row.img);
+  }
+  assert.equal(new Set(ROWS.map(r => r.img)).size, ROWS.length);
 });
 
 test('no two houses share body + roof + palette', () => {
   const keys = ROWS.map(r => `${r.kit.body}+${r.kit.roof}+${r.kit.palette}`);
   assert.equal(new Set(keys).size, keys.length, keys.join(' '));
   for (const { row, rec } of HOUSES)
-    assert.deepEqual([row.kit.body, row.kit.roof, row.kit.palette], [rec.kit.body, rec.kit.roof, rec.kit.palette]);
+    assert.deepEqual(
+      [row.kit.body, row.kit.roof, row.kit.palette, row.kit.show],
+      [rec.kit.body, rec.kit.roof, rec.kit.palette, rec.kit.show]
+    );
 });
 
 test('each house builds within 6,000 triangles and leans 3-5 degrees by its own height', () => {

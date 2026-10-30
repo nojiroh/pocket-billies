@@ -17,10 +17,13 @@ add-ons only on free walls, the door on the front):
            trees and bushes as `garden` hints for the town tools (existing prop kinds and the sides they go on)
   palettes PALETTES (track section 5: the copper ones, white walls with red, navy or teal roofs)
 
-Writes game/art/scene/next/models/house_kit_NN.json, one catalogue kind `house_kit` whose variants swap model, box,
-door, fx, name, garden and kit (body, roof, palette, size), and the test map test_house_kit (debug menu, Test
-scenes). Glass ids and roof marks (roof 1, moss 2) are the kit's own. Doors and fx are in picture pixels at the
-catalogue's ppu (34), the scale the game reads them at. Not placed on Copperleaf: BD-7 and BD-4b do that.
+Writes game/art/scene/next/models/house_kit_NN.json, a catalogue kind each, house_kit_NN in group `house_kit` (BD-7;
+BD-4a's one kind with variants could not give each look its own footprint and door), with its model, box, door, fx,
+name, garden and kit (body, roof, palette, size, show), and the test map test_house_kit (debug menu, Test
+scenes). Glass ids and roof marks (roof 1, moss 2) are the kit's own. Doors are in picture pixels at the catalogue's
+ppu (34), fx at the model's ppm (32): the scales the game reads them at (BD-7). BD-7 also bakes each house's picture
+from its model (scene/next/hub/house_kit_NN.png) and builds Granny Juniper's cottage (class Juniper; the kind
+cottage_juniper, model cottage_juniper_cob.json). tools/build-copperleaf.mjs places the kit on Copperleaf (BD-4b).
 Contact sheet: python3 tools/look-house-kit.py
 
     python3 tools/build-house-kit.py            # rerunnable: the same seed makes the same houses
@@ -75,9 +78,15 @@ PALETTES = {  # wall, upper wall, trim, roof, door, the night neon, flower colou
     'timber': dict(wall='#C99A68', wall2=CREAM, trim=CREAM, roof=TERRA, door=TEAL, neon=NEON_T, flowers=['#F4E04A', '#F09AC0'], tex='battens'),
     'brick': dict(wall='#B95A42', wall2='#C8704F', trim=WHITE, roof='#4A5272', door=TEAL, neon=NEON_P, flowers=['#FFFFFF', '#F4E04A'], tex='brick'),
 }
+# BD-7: Granny Juniper's one-off, kept out of PALETTES so the kit's seeded draw stays as it was: honey cob, golden
+# thatch, her green door, lavender
+ONE_OFF_PALETTES = {
+    'juniper': dict(wall='#E9C98A', wall2='#F2DCA8', trim=WOOD, roof='#C99A4E', door='#5EA88E', neon=NEON_A, flowers=['#B48AD8', '#F4E04A']),
+}
 PAL_WORDS = {'copper': 'cream and copper', 'verdigris': 'butter and verdigris', 'terracotta': 'terracotta and teal',
              'moss': 'cream and moss', 'white_red': 'white and red', 'white_navy': 'white and navy',
-             'white_teal': 'white and teal', 'timber': 'timber and terracotta', 'brick': 'red brick and slate'}
+             'white_teal': 'white and teal', 'timber': 'timber and terracotta', 'brick': 'red brick and slate',
+             'juniper': 'honey cob and thatch'}
 
 BODIES = ['narrow', 'wide', 'lshape', 'tower', 'jettied', 'aframe', 'cob', 'townhouse', 'saucer']
 BODY_COUNT = {'narrow': 3, 'wide': 3, 'lshape': 3, 'tower': 3, 'jettied': 3, 'aframe': 2, 'cob': 2, 'townhouse': 3, 'saucer': 2}
@@ -203,7 +212,7 @@ def top_of(L):
 # ---------------------------------------------------------------------------------------------- the house in hand
 class House:
     def __init__(s, i, body, roof, pal, rnd, show):
-        s.i, s.body, s.roof, s.pal, s.rnd, s.show = i, body, roof, PALETTES[pal], rnd, show
+        s.i, s.body, s.roof, s.pal, s.rnd, s.show = i, body, roof, PALETTES.get(pal) or ONE_OFF_PALETTES[pal], rnd, show
         s.palname = pal
         s.L, s.wins, s.glows, s.smoke = [], [], [], None
         s.glass = 0
@@ -1198,6 +1207,71 @@ class House:
         return {'trees': trees, 'bushes': bushes}
 
 
+class Juniper(House):
+    """BD-7 (BD-4b's one-off): Granny Juniper's cottage on the kit's cob body, a mushroom thatch in honey colours, a
+    teapot for a chimney (its smoke from the spout), a bee skep and honey pots by the door; C's dense extras"""
+
+    def chimney(s, kind, x, y, z0, top):
+        z0 = z0 + 0.2
+        s.add(cyl(x, y, z0 - 0.35, 0.24, 0.45, TERRA, 'brick', sides=8, name='teapot stand'),
+              lathe(x, y, z0, [(0.12, 0), (0.34, 0.04), (0.46, 0.22), (0.47, 0.38), (0.38, 0.56), (0.22, 0.62),
+                               (0.24, 0.68), (0.13, 0.72), (0.06, 0.8), (0.07, 0.86), (0, 0.9)],
+                    '#F4F1EA', 'plain', sides=12, smooth=1, name='teapot chimney'),
+              cyl(x, y, z0 + 0.3, 0.47, 0.06, '#5EA88E', sides=12, name='teapot band'),
+              limb((x + 0.38, y, z0 + 0.2), (x + 0.72, y - 0.05, z0 + 0.62), 0.07, '#F4F1EA', sides=6, name='teapot spout'),
+              limb((x - 0.4, y, z0 + 0.52), (x - 0.62, y, z0 + 0.36), 0.045, '#5EA88E', sides=5, name='teapot handle'),
+              limb((x - 0.62, y, z0 + 0.36), (x - 0.42, y, z0 + 0.14), 0.045, '#5EA88E', sides=5, name='teapot handle'),
+              sphere(x, y, z0 + 0.92, 0.07, BRASS, 'metal', sides=6, rings=3, name='teapot knob'))
+        s.smoke = (x + 0.76, z0 + 0.68)
+
+    def build_rest(s):
+        super().build_rest()
+        s.chimney_kind = 'teapot'
+        # a straw bee skep on a stump and two honey pots beside the door, on the side away from it
+        sx = 1 if s.door_x <= 0 else -1
+        bx, by = sx * (s.W / 2 + 0.05), s.cy - s.D / 2 + 0.1
+        s.add(cyl(bx, by, 0, 0.2, 0.32, WOOD, 'bark', sides=7, name='skep stump'),
+              lathe(bx, by, 0.32, [(0.26, 0), (0.27, 0.12), (0.24, 0.26), (0.17, 0.38), (0.08, 0.45), (0, 0.47)],
+                    '#D8B060', 'hay', sides=9, name='bee skep'),
+              sphere(bx + sx * 0.02, by - 0.22, 0.4, 0.04, DARK, sides=5, rings=2, name='skep door'))
+        for j, dx in enumerate((-0.5, -0.78)):
+            hx = s.door_x + (dx if s.door_x <= 0 else -dx) * -sx
+            s.add(lathe(hx, -0.35, 0, [(0.1, 0), (0.13, 0.08), (0.12, 0.17), (0.07, 0.2), (0.08, 0.23), (0, 0.24)],
+                        '#E8A53A' if j else '#D88A2A', 'plain', sides=8, smooth=1, name='honey pot'))
+        s.nature.append('planter')
+
+
+def bake(rec, name):
+    """the model's picture from the game's own mesh (build-props-island.py `bake`, tools/model-mesh.mjs), into
+    scene/next/hub; returns (path, ox, oy). BD-7: the kit's stand-in picture replaced"""
+    ISL = _load('island', 'build-props-island.py')
+    ISL.PICS = ISL.B1.ART / 'scene' / 'next' / 'hub'
+    return ISL.bake(rec, name)
+
+
+def build_juniper():
+    """Granny Juniper's cottage (BD-7): a House with her palette and her own chimney and garden things"""
+    rnd = random.Random(f'house-kit-{SEED}-juniper')
+    h = Juniper(99, 'cob', 'mushroom', 'juniper', rnd, True)
+    h.build_body()
+    h.build_roof()
+    h.choose_addons()
+    h.build_front()
+    h.build_addons()
+    h.build_rest()
+    h.centre()
+    warp = h.warp()
+    h.box = [round(h.foot[1] - h.foot[0], 2), round(h.foot[2] + 0.1, 2)]
+    rec = {'about': "BD-7: Granny Juniper's cottage, a one-off on the house kit (tools/build-house-kit.py Juniper): "
+                    'half-dome cob, mushroom thatch, a teapot chimney',
+           'ppm': 32, 'cel': 0.6, 'warp': warp,
+           'kit': {'body': 'cob', 'roof': 'mushroom', 'palette': 'juniper', 'addons': h.addons, 'chimney': 'teapot',
+                   'door': h.door_kind, 'windows': h.win_kind, 'show': True, 'lean_deg': round(h.lean_deg, 2),
+                   'nature': h.nature},
+           'layers': h.L}
+    return h, rec
+
+
 def build(i, body, roof, pal, show):
     rnd = random.Random(f'house-kit-{SEED}-{i}')
     h = House(i, body, roof, pal, rnd, show)
@@ -1261,25 +1335,25 @@ def plan():
     return out
 
 
-def catalogue(houses):
-    first = houses[0]
+def kind_of(i):
+    """the catalogue key of house i (0-based): house_kit_01 .. house_kit_24"""
+    return f'{KIND}_{i + 1:02d}'
 
+
+def catalogue(houses, pics):
+    """BD-7: one catalogue kind a house (house_kit_NN, group house_kit). BD-4a made one kind with variants, but the game
+    reads a building's footprint and door from its kind's row (walk-view.js doorOf, the walking grid, the pads, about
+    60 readers of box), not from a placement's variant: only the model and picture followed the look"""
     def row(h, i):
+        img, ox, oy = pics[i]
         return {'name': f'Kit house {i + 1:02d}: {BODY_WORDS[h.body]}, {ROOF_WORDS[h.roof]}',
-                'model': f'{MODELS}/house_kit_{i + 1:02d}.json', 'box': h.box,
+                'img': img, 'ox': ox, 'oy': oy, 'shadow': 1.6, 'sway': 0, 'flat': 0, 'tags': ['town', 'hub'], 'group': KIND,
+                'model': f'{MODELS}/house_kit_{i + 1:02d}.json', 'ppm': 32, 'box': h.box,
                 'door': {'x': px(h.door_x), 'y': 0}, 'fx': h.fx(), 'garden': h.garden(),
-                'kit': {'body': h.body, 'roof': h.roof, 'palette': h.palname, 'size': h.size}}
+                'kit': {'body': h.body, 'roof': h.roof, 'palette': h.palname, 'size': h.size, 'show': bool(h.show)},
+                'vary': {'rot': 0, 'lean': 0, 'size': 0}}
 
-    base = row(first, 0)
-    return {
-        **{'name': base['name']},
-        'img': 'scene/props/cottage_moss.png', 'ox': -71, 'oy': -172,  # a stand-in picture until BD-7 bakes them
-        'shadow': 1.6, 'sway': 0, 'flat': 0, 'tags': [], 'group': KIND,
-        'box': base['box'], 'door': base['door'], 'fx': base['fx'], 'model': base['model'], 'ppm': 32,
-        'garden': base['garden'], 'kit': base['kit'],
-        'vary': {'rot': 0, 'lean': 0, 'size': 0},
-        'variants': [row(h, i) for i, h in enumerate(houses) if i],
-    }
+    return {kind_of(i): row(h, i) for i, h in enumerate(houses)}
 
 
 def test_map(n):
@@ -1291,10 +1365,7 @@ def test_map(n):
     for i in range(n):
         c, rw = i % cols, i // cols
         x, z = round(8 + c * step_x, 2), round(8 + rw * step_z, 2)
-        p = {'k': KIND, 'x': x, 'z': z}
-        if i:
-            p['v'] = i
-        props.append(p)
+        props.append({'k': kind_of(i), 'x': x, 'z': z})
         row_ = H - 1 - int(z - 3)
         tiles[row_] = 'p' * W
     for rw in range(rows):
@@ -1321,13 +1392,27 @@ def main():
             print(f'{i + 1:02d} {h.body:9} {h.roof:9} {h.palname:10} {h.size:6} box {h.box} lean {h.lean_deg:.1f} '
                   f'{"SHOW " if h.show else ""}{",".join(h.addons)} chimney {h.chimney_kind} glass {h.glass}')
         return
+    pics = []
     for i, rec in enumerate(recs):
         (ROOT / 'game/art' / MODELS / f'house_kit_{i + 1:02d}.json').write_text(json.dumps(rec, indent=1) + '\n')
+        pics.append(bake(rec, f'house_kit_{i + 1:02d}'))
     D = gamedata.load()
-    D['scenery']['props'][KIND] = catalogue(houses)
+    C = D['scenery']['props']
+    C.pop(KIND, None)  # BD-4a's one kind with variants (see catalogue)
+    C.update(catalogue(houses, pics))
+    # BD-7: Granny Juniper's cottage, her kind's model, picture, footprint, door and fx (her room and act are the map's)
+    h, rec = build_juniper()
+    (ROOT / 'game/art' / MODELS / 'cottage_juniper_cob.json').write_text(json.dumps(rec, indent=1) + '\n')
+    img, ox, oy = bake(rec, 'cottage_juniper')
+    J = D['scenery']['props']['cottage_juniper']
+    J.update({'model': f'{MODELS}/cottage_juniper_cob.json', 'img': img, 'ox': ox, 'oy': oy, 'ppm': 32, 'box': h.box,
+              'door': {'x': px(h.door_x), 'y': 0}, 'fx': h.fx(), 'vary': {'rot': 0, 'lean': 0, 'size': 0},
+              'about': "BD-7: Granny Juniper's cottage, a one-off on the house kit (tools/build-house-kit.py)"})
+    for f in ('build', 'layers', 'vol', 'volDepth'):
+        J.pop(f, None)
     D['maps'][MAP_ID] = test_map(len(houses))
     gamedata.save(D)
-    print(f'wrote {len(recs)} house recipes, the {KIND} kind and game/data/maps/{MAP_ID}.json')
+    print(f'wrote {len(recs)} house recipes, kinds {kind_of(0)}..{kind_of(len(recs) - 1)}, and game/data/maps/{MAP_ID}.json')
 
 
 if __name__ == '__main__':

@@ -23,6 +23,7 @@ import { hashString } from '../game/js/logic/rng.js';
 import { pastureGround, pastureProps } from './build-pasture.mjs';
 import { islandDress } from './island-dress.mjs';
 import { fountainLooks, moveHub, squareEdgeProps, squareHubSpot } from './square-props.mjs';
+import { growPlots, kitLooks, pickHouses } from './hub-houses.mjs';
 
 const INPUT = join(ROOT, 'tools/data/copperleaf-town.json');
 const D = readGameData(),
@@ -133,6 +134,9 @@ for (const p of OLD) {
 }
 
 /* ---------- the plots: who stands where ---------- */
+/* BD-7: the house plots grown where the ground lets them (off streets, water and the other plots), so the house kit's
+   larger looks fit (tools/hub-houses.mjs); the map keeps the grown plots, so a rebuild grows them no more */
+G.plots = growPlots(G.plots, (x, z) => 'pvcwdS'.includes(tileAt(x, z)));
 const plots = G.plots.map((L, i) => ({ ...L, i })),
   plotOf = k => plots.find(L => L.k === k),
   well = plotOf('well'),
@@ -171,18 +175,33 @@ const pairs = [
     .filter(([L]) => plotOf(L))
     .map(([L, k, label, act]) => [{ k, x: 0, z: 0, ...(label ? { act: act || 'enter', label } : {}) }, plotOf(L)]),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
-  /* the new cottages: the two kinds and their looks taken in turn */
-  ...[...townHouses.slice(oldCottages.length), ...otherHouses].map((L, i) => [
-    { k: i % 2 ? 'cottage_solar' : 'cottage_moss', x: 0, z: 0, act: 'house', ...(i % 4 > 1 ? { v: 1 + (i % 3) } : {}) },
-    L,
-  ]),
+  /* the new houses on the plots left (BD-7: of the house kit, picked below) */
+  ...[...townHouses.slice(oldCottages.length), ...otherHouses].map(L => [{ k: 'house_kit_01', x: 0, z: 0, act: 'house' }, L]),
 ];
+/* BD-7 (BD-4b's placing): every house plot a house of the kit, each a different look, picked by tools/hub-houses.mjs
+   (fits its plot; neighbours share no body or roof; the showpieces nearest the square). The old cottages' gardens stay
+   with the houses that take their plots. Granny Juniper's cottage is a one-off (tools/build-house-kit.py Juniper), a
+   quarter bigger than drawn: storybook-oversized on her large plot */
+const asPlaced = new Map();
+{
+  const housePairs = pairs.filter(([B]) => B && B.act === 'house'),
+    ks = pickHouses(
+      housePairs.map(([, L]) => L),
+      kitLooks(C)
+    );
+  housePairs.forEach(([B], i) => {
+    const { roof: _roof, v: _v, ...rest } = B;
+    asPlaced.set(B, { ...rest, k: ks[i] });
+  });
+  const J = pairs.find(([B]) => B && B.act === 'home');
+  if (J) asPlaced.set(J[0], { ...J[0], s: 1.25 });
+}
 for (const [B, L] of pairs)
   if (!B || !L) throw new Error('a building or a plot is missing: ' + JSON.stringify([B && B.k, L && L.k]));
 
 /* ---------- the buildings on their plots, their gardens with them ---------- */
 const props = [],
-  left = { street: 0, water: 0, plot: 0, door: 0 },
+  left = { street: 0, water: 0, plot: 0, door: 0, house: 0 },
   doorFronts = [];
 const STREET = 'pvc',
   WATER = 'wdS',
@@ -218,7 +237,7 @@ function place(B, L) {
   return q;
 }
 for (const [B, L] of pairs) {
-  const N = place(B, L);
+  const N = place(asPlaced.get(B) || B, L);
   props.push(N);
   if (B.act === 'fly') {
     const ship = OLD.find(p => p.k === 'airship');
@@ -245,6 +264,11 @@ for (const [B, L] of pairs) {
       else delete q.rot;
     }
     q._from = L.i;
+    /* BD-7: not under the new house (a kit house can be bigger than the cottage it replaced) */
+    if (boxOf(N.k) && footDist(N, q.x, q.z) < 0.35) {
+      left.house++;
+      continue;
+    }
     props.push(q);
   }
 }
@@ -547,6 +571,8 @@ const GROUND = [
   'grassPatches',
   'checks',
   'landmarks',
+  /* BD-7: the pond's fall (patch-copperleaf-terrain.mjs --pond) is the ground's: a rebuild keeps it */
+  'falls',
 ];
 const sc = {};
 for (const k of [
@@ -567,6 +593,8 @@ for (const k of [
   'chat',
 ])
   if (k in TOWN) sc[k] = TOWN[k];
+/* BD-7: the square's folk (patch-copperleaf-square.mjs --folk) stay through a rebuild */
+if (G.folk != null) sc.folk = G.folk;
 for (const k of GROUND) if (k in G) sc[k] = G[k];
 Object.assign(sc, { edgeExits: [], bridges: bridgesOut, props: kept, people, npcSpots, life });
 /* IS-8: the fenced pasture, a step of its own limited to the pasture zone (tools/build-pasture.mjs); HB-6: then its
@@ -616,8 +644,9 @@ execFileSync('node', [join(ROOT, 'tools/write-data.mjs')], {
 const n = k => kept.filter(p => p.k === k).length;
 console.log(
   `wrote game/data/maps/copperleaf.json: ${sc.w} x ${sc.h} m, ${kept.length} props (${pairs.length + 1} buildings: ` +
-    `${n('cottage_moss') + n('cottage_solar')} cottages), ${people.length} people; left out: ${left.street} on streets, ` +
-    `${left.water} in water, ${left.plot} on other plots, ${left.door} before doors; ${loose.length} props of the old ` +
+    `${kept.filter(p => /^house_kit_/.test(p.k)).length} kit houses), ${people.length} people; left out: ${left.street} on streets, ` +
+    `${left.water} in water, ${left.plot} on other plots, ${left.door} before doors, ${left.house} under houses; ` +
+    `${loose.length} props of the old ` +
     `town belonged to no building`
 );
 if (dressed) {

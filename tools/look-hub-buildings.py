@@ -50,6 +50,16 @@ def settle(pg, frames=8):
     if not CF.until(pg, f'walkRenderer.frames>={f0 + frames}', 240): raise Exception('stopped drawing')
 
 
+def kind_in(k, names):
+    """k named, or one of a numbered family named by its stem (BD-7: --only=house_kit takes house_kit_01..24)"""
+    return k in names or any(k.startswith(n + '_') and k[len(n) + 1:].isdigit() for n in names)
+
+
+def stem(k):
+    head, _, tail = k.rpartition('_')
+    return head if head and tail.isdigit() else k
+
+
 def name_of(p):
     extra = ''.join(f"-{f}{p[f]}" for f in ('v', 'roof', 'rot') if p.get(f))
     return p['k'] + extra
@@ -83,7 +93,7 @@ def main():
                 pg.screenshot(path=str(OUT / f"row-{sh['label']}.png"))
                 print('row', sh['label'], flush=True)
             pg.set_viewport_size({'width': 390, 'height': 640})
-        close = [s for s in props if s['k'] in (ONLY or CLOSE)]
+        close = [s for s in props if kind_in(s['k'], ONLY or CLOSE)]
         close = close[:MAX] if MAX else close
         for time in [t for t in HOURS if t in TIMES]:
             pg.evaluate(f"environment.force={{time:{HOURS[time]},weather:'clear'}};0")
@@ -93,7 +103,7 @@ def main():
             if time != 'noon':
                 settle(pg, 30)
             for s in close:
-                dist, aim = TALL.get(s['k'], (8, 2))
+                dist, aim = TALL.get(s['k']) or TALL.get(stem(s['k']), (8, 2))
                 pg.evaluate(f"(()=>{{const r=({s['rot']}+{ANGLE})*Math.PI/180,f=[Math.sin(r),-Math.cos(r)],x={s['x']},z={s['z']},y=groundHeightAt(x,z);walkView.opt.look=()=>({{eye:[x+f[0]*{dist},y+{aim}+4,z+f[1]*{dist}],tgt:[x,y+{aim},z],fov:58}});return 0}})()")
                 settle(pg)
                 pg.screenshot(path=str(OUT / f"{name_of(s)}-{time}.png"))
@@ -109,7 +119,7 @@ def main():
             CF.drawing(pg)
             pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:12.5,weather:'clear'};0")
             for s in props:
-                if not s['act'] or (ONLY and s['k'] not in ONLY): continue
+                if not s['act'] or (ONLY and not kind_in(s['k'], ONLY)): continue
                 # the door 6 m ahead of you (a turned one to the side or further on, so its door faces you)
                 pg.evaluate(f"""(()=>{{const P=walkView.pl,r={s['rot']},p={{k:'{s['k']}',act:'{s['act']}',x:+P.x.toFixed(1),z:+(P.z+6).toFixed(1),rot:r}};
                   if(r===90)p.x-=6;if(r===180)p.z+=4;walkView.sc.props.push(p);walkRenderer.itemGen=(walkRenderer.itemGen||0)+1;window.__door=p;return 0}})()""")

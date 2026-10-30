@@ -11076,27 +11076,26 @@
   },
   "cottage_juniper": {
    "name": "Beekeeper’s cottage",
-   "img": "scene/props/cottage_juniper.png",
-   "ox": -99,
-   "oy": -192,
+   "img": "scene/next/hub/cottage_juniper.png",
+   "ox": -61,
+   "oy": -152,
    "shadow": 2,
    "sway": 0,
    "flat": 0,
    "tags": ["town","village"],
    "group": "cottage_juniper",
-   "box": [5.3,3.4],
-   "door": {"x":-19,"y":0},
+   "box": [3.11,3.06],
+   "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":42,"y":-43},
-    {"k":"window","x":-62,"y":-50},
-    {"k":"window","x":-32,"y":-110},
-    {"k":"window","x":32,"y":-110},
-    {"k":"glow","x":-57,"y":-50},
-    {"k":"smoke","x":53,"y":-189}
+    {"k":"window","x":-31,"y":-32},
+    {"k":"window","x":36,"y":-33},
+    {"k":"glow","x":28,"y":-52},
+    {"k":"smoke","x":47,"y":-100}
    ],
    "ppm": 32,
-   "vary": {"rot":0,"lean":0},
-   "model": "scene/next/models/cottage_juniper.json"
+   "vary": {"rot":0,"lean":0,"size":0},
+   "model": "scene/next/models/cottage_juniper_cob.json",
+   "about": "BD-7: Granny Juniper's cottage, a one-off on the house kit (tools/build-house-kit.py)"
   },
   "wind_sail_flower": {
    "name": "Flower wind sail",
@@ -13079,598 +13078,6 @@
     {"model":"scene/next/models/look_shop_c.json","name":"look_shop_c"}
    ]
   },
-  "house_kit": {
-   "name": "Kit house 01: narrow tall house, steep gable",
-   "img": "scene/props/cottage_moss.png",
-   "ox": -71,
-   "oy": -172,
-   "shadow": 1.6,
-   "sway": 0,
-   "flat": 0,
-   "tags": [],
-   "group": "house_kit",
-   "box": [3.9,2.54],
-   "door": {"x":-37,"y":0},
-   "fx": [
-    {"k":"window","x":0,"y":-39},
-    {"k":"window","x":-42,"y":-80},
-    {"k":"window","x":-2,"y":-80},
-    {"k":"window","x":-25,"y":-130},
-    {"k":"window","x":28,"y":-35},
-    {"k":"window","x":24,"y":-88},
-    {"k":"glow","x":-15,"y":-52},
-    {"k":"smoke","x":4,"y":-174}
-   ],
-   "model": "scene/next/models/house_kit_01.json",
-   "ppm": 32,
-   "garden": {
-    "trees": [
-     {"k":"tree_pine","side":"back"},
-     {"k":"tree_blossom","side":"back_left"}
-    ],
-    "bushes": [
-     {"k":"bush_roses","side":"left"},
-     {"k":"bush_flower","side":"front"}
-    ]
-   },
-   "kit": {"body":"narrow","roof":"gable","palette":"white_teal","size":"medium"},
-   "vary": {"rot":0,"lean":0,"size":0},
-   "variants": [
-    {
-     "name": "Kit house 02: wide low house, upswept roof",
-     "model": "scene/next/models/house_kit_02.json",
-     "box": [4.17,2.87],
-     "door": {"x":-10,"y":0},
-     "fx": [
-      {"k":"window","x":36,"y":-39},
-      {"k":"window","x":-44,"y":-39},
-      {"k":"glow","x":18,"y":-52},
-      {"k":"smoke","x":60,"y":-120}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_oak","side":"back"},
-       {"k":"tree_fruit","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"bush_round","side":"left"},
-       {"k":"bush_roses","side":"right"},
-       {"k":"bush_roses","side":"front"}
-      ]
-     },
-     "kit": {"body":"wide","roof":"upswept","palette":"copper","size":"large"}
-    },
-    {
-     "name": "Kit house 03: L-shaped house, low slab roof",
-     "model": "scene/next/models/house_kit_03.json",
-     "box": [4.32,3.35],
-     "door": {"x":-40,"y":0},
-     "fx": [
-      {"k":"window","x":29,"y":-38},
-      {"k":"window","x":32,"y":-82},
-      {"k":"glow","x":-10,"y":-61},
-      {"k":"smoke","x":65,"y":-154}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_oak","side":"back"},
-       {"k":"tree_blossom","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"bush_round","side":"left"},
-       {"k":"bush_box","side":"right"},
-       {"k":"flowers_mixed","side":"front"}
-      ]
-     },
-     "kit": {"body":"lshape","roof":"slab","palette":"timber","size":"large"}
-    },
-    {
-     "name": "Kit house 04: round tower-house, bulb dome",
-     "model": "scene/next/models/house_kit_04.json",
-     "box": [3.99,2.89],
-     "door": {"x":18,"y":0},
-     "fx": [
-      {"k":"window","x":2,"y":-85},
-      {"k":"window","x":42,"y":-85},
-      {"k":"window","x":-8,"y":-36},
-      {"k":"window","x":46,"y":-36},
-      {"k":"glow","x":44,"y":-52},
-      {"k":"smoke","x":50,"y":-197}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_oak","side":"back"},
-       {"k":"tree_fruit","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_flower","side":"right"},
-       {"k":"bush_box","side":"front"}
-      ]
-     },
-     "kit": {"body":"tower","roof":"bulb","palette":"terracotta","size":"medium"}
-    },
-    {
-     "name": "Kit house 05: jettied house, saltbox roof",
-     "model": "scene/next/models/house_kit_05.json",
-     "box": [4.3,2.45],
-     "door": {"x":40,"y":0},
-     "fx": [
-      {"k":"window","x":-5,"y":-38},
-      {"k":"window","x":-3,"y":-91},
-      {"k":"window","x":45,"y":-91},
-      {"k":"window","x":-34,"y":-35},
-      {"k":"window","x":-30,"y":-94},
-      {"k":"glow","x":17,"y":-52},
-      {"k":"smoke","x":-3,"y":-192}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_pine","side":"back"},
-       {"k":"tree_oak","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_box","side":"right"},
-       {"k":"bush_roses","side":"front"}
-      ]
-     },
-     "kit": {"body":"jettied","roof":"saltbox","palette":"white_navy","size":"large"}
-    },
-    {
-     "name": "Kit house 06: A-frame, steep gable",
-     "model": "scene/next/models/house_kit_06.json",
-     "box": [3.94,3.15],
-     "door": {"x":-19,"y":0},
-     "fx": [
-      {"k":"window","x":19,"y":-37},
-      {"k":"window","x":-7,"y":-94},
-      {"k":"glow","x":2,"y":-61},
-      {"k":"smoke","x":8,"y":-166}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_fruit","side":"back"},
-       {"k":"tree_blossom","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"bush_roses","side":"left"},
-       {"k":"bush_roses","side":"right"},
-       {"k":"bush_box","side":"front"}
-      ]
-     },
-     "kit": {"body":"aframe","roof":"gable","palette":"brick","size":"large"}
-    },
-    {
-     "name": "Kit house 07: half-dome cob house, mushroom thatch",
-     "model": "scene/next/models/house_kit_07.json",
-     "box": [4.32,3.12],
-     "door": {"x":20,"y":0},
-     "fx": [
-      {"k":"window","x":-13,"y":-32},
-      {"k":"window","x":54,"y":-33},
-      {"k":"glow","x":46,"y":-52},
-      {"k":"smoke","x":47,"y":-125}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_oak","side":"back"},
-       {"k":"tree_birch","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_box","side":"right"},
-       {"k":"bush_box","side":"front"}
-      ]
-     },
-     "kit": {"body":"cob","roof":"mushroom","palette":"verdigris","size":"large"}
-    },
-    {
-     "name": "Kit house 08: brick townhouse, mansard",
-     "model": "scene/next/models/house_kit_08.json",
-     "box": [4.24,2.75],
-     "door": {"x":40,"y":0},
-     "fx": [
-      {"k":"window","x":-8,"y":-50},
-      {"k":"window","x":-12,"y":-97},
-      {"k":"window","x":30,"y":-97},
-      {"k":"window","x":5,"y":-147},
-      {"k":"glow","x":9,"y":-63},
-      {"k":"smoke","x":-26,"y":-203}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_pine","side":"back"},
-       {"k":"tree_birch","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_roses","side":"right"},
-       {"k":"flowers_mixed","side":"front"}
-      ]
-     },
-     "kit": {"body":"townhouse","roof":"mansard","palette":"moss","size":"large"}
-    },
-    {
-     "name": "Kit house 09: saucer pod, roof garden",
-     "model": "scene/next/models/house_kit_09.json",
-     "box": [3.1,3.25],
-     "door": {"x":0,"y":0},
-     "fx": [
-      {"k":"window","x":-25,"y":-66},
-      {"k":"window","x":15,"y":-66},
-      {"k":"smoke","x":12,"y":-120}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_birch","side":"back"}
-      ],
-      "bushes": [
-       {"k":"bush_box","side":"front"}
-      ]
-     },
-     "kit": {"body":"saucer","roof":"garden","palette":"white_red","size":"large"}
-    },
-    {
-     "name": "Kit house 10: narrow tall house, gambrel",
-     "model": "scene/next/models/house_kit_10.json",
-     "box": [4.02,2.55],
-     "door": {"x":-3,"y":0},
-     "fx": [
-      {"k":"window","x":33,"y":-39},
-      {"k":"window","x":-8,"y":-80},
-      {"k":"window","x":31,"y":-80},
-      {"k":"window","x":8,"y":-130},
-      {"k":"glow","x":18,"y":-52},
-      {"k":"smoke","x":38,"y":-179}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_fruit","side":"back"},
-       {"k":"tree_birch","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_roses","side":"right"},
-       {"k":"bush_roses","side":"front"}
-      ]
-     },
-     "kit": {"body":"narrow","roof":"gambrel","palette":"verdigris","size":"medium"}
-    },
-    {
-     "name": "Kit house 11: wide low house, butterfly roof",
-     "model": "scene/next/models/house_kit_11.json",
-     "box": [4.16,3.03],
-     "door": {"x":10,"y":0},
-     "fx": [
-      {"k":"window","x":-36,"y":-39},
-      {"k":"window","x":44,"y":-39},
-      {"k":"glow","x":-18,"y":-52},
-      {"k":"smoke","x":-51,"y":-118}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_fruit","side":"back"},
-       {"k":"tree_birch","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"bush_box","side":"left"},
-       {"k":"bush_round","side":"right"},
-       {"k":"bush_flower","side":"front"}
-      ]
-     },
-     "kit": {"body":"wide","roof":"butterfly","palette":"moss","size":"large"}
-    },
-    {
-     "name": "Kit house 12: L-shaped house, mansard",
-     "model": "scene/next/models/house_kit_12.json",
-     "box": [4.36,3.35],
-     "door": {"x":-40,"y":0},
-     "fx": [
-      {"k":"window","x":25,"y":-38},
-      {"k":"window","x":22,"y":-82},
-      {"k":"window","x":19,"y":-127},
-      {"k":"glow","x":-17,"y":-52},
-      {"k":"smoke","x":44,"y":-183}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_blossom","side":"back"},
-       {"k":"tree_blossom","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"flowers_mixed","side":"left"},
-       {"k":"bush_flower","side":"right"},
-       {"k":"bush_round","side":"front"}
-      ]
-     },
-     "kit": {"body":"lshape","roof":"mansard","palette":"white_teal","size":"large"}
-    },
-    {
-     "name": "Kit house 13: round tower-house, mushroom thatch",
-     "model": "scene/next/models/house_kit_13.json",
-     "box": [2.72,2.67],
-     "door": {"x":0,"y":0},
-     "fx": [
-      {"k":"window","x":-26,"y":-85},
-      {"k":"window","x":14,"y":-85},
-      {"k":"window","x":-30,"y":-36},
-      {"k":"window","x":25,"y":-36},
-      {"k":"glow","x":20,"y":-61},
-      {"k":"smoke","x":8,"y":-182}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_pine","side":"back"},
-       {"k":"tree_oak","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"bush_round","side":"left"},
-       {"k":"flowers_mixed","side":"right"},
-       {"k":"bush_flower","side":"front"}
-      ]
-     },
-     "kit": {"body":"tower","roof":"mushroom","palette":"white_navy","size":"small"}
-    },
-    {
-     "name": "Kit house 14: jettied house, gambrel",
-     "model": "scene/next/models/house_kit_14.json",
-     "box": [4.1,2.45],
-     "door": {"x":-12,"y":0},
-     "fx": [
-      {"k":"window","x":31,"y":-38},
-      {"k":"window","x":-19,"y":-91},
-      {"k":"window","x":29,"y":-91},
-      {"k":"window","x":2,"y":-139},
-      {"k":"glow","x":9,"y":-52},
-      {"k":"smoke","x":41,"y":-189}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_fruit","side":"back"},
-       {"k":"tree_fruit","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_flower","side":"right"},
-       {"k":"bush_roses","side":"front"}
-      ]
-     },
-     "kit": {"body":"jettied","roof":"gambrel","palette":"copper","size":"medium"}
-    },
-    {
-     "name": "Kit house 15: A-frame, saltbox roof",
-     "model": "scene/next/models/house_kit_15.json",
-     "box": [4.04,3.21],
-     "door": {"x":-19,"y":0},
-     "fx": [
-      {"k":"window","x":20,"y":-37},
-      {"k":"window","x":13,"y":-94},
-      {"k":"glow","x":3,"y":-61},
-      {"k":"smoke","x":30,"y":-157}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_birch","side":"back"},
-       {"k":"tree_blossom","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"bush_box","side":"left"},
-       {"k":"bush_roses","side":"right"},
-       {"k":"bush_box","side":"front"}
-      ]
-     },
-     "kit": {"body":"aframe","roof":"saltbox","palette":"brick","size":"large"}
-    },
-    {
-     "name": "Kit house 16: half-dome cob house, bulb dome",
-     "model": "scene/next/models/house_kit_16.json",
-     "box": [3.28,3.23],
-     "door": {"x":0,"y":0},
-     "fx": [
-      {"k":"window","x":-36,"y":-33},
-      {"k":"window","x":31,"y":-32},
-      {"k":"glow","x":21,"y":-52},
-      {"k":"smoke","x":11,"y":-140}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_birch","side":"back"},
-       {"k":"tree_fruit","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"bush_flower","side":"left"},
-       {"k":"bush_flower","side":"right"},
-       {"k":"bush_round","side":"front"}
-      ]
-     },
-     "kit": {"body":"cob","roof":"bulb","palette":"white_red","size":"large"}
-    },
-    {
-     "name": "Kit house 17: brick townhouse, roof garden",
-     "model": "scene/next/models/house_kit_17.json",
-     "box": [4.21,2.75],
-     "door": {"x":40,"y":0},
-     "fx": [
-      {"k":"window","x":-7,"y":-50},
-      {"k":"window","x":31,"y":-97},
-      {"k":"window","x":-10,"y":-98},
-      {"k":"glow","x":10,"y":-63},
-      {"k":"smoke","x":-21,"y":-178}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_pine","side":"back"},
-       {"k":"tree_oak","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_box","side":"right"},
-       {"k":"bush_box","side":"front"}
-      ]
-     },
-     "kit": {"body":"townhouse","roof":"garden","palette":"terracotta","size":"large"}
-    },
-    {
-     "name": "Kit house 18: saucer pod, bulb dome",
-     "model": "scene/next/models/house_kit_18.json",
-     "box": [3.08,3.23],
-     "door": {"x":0,"y":0},
-     "fx": [
-      {"k":"window","x":-15,"y":-66},
-      {"k":"window","x":25,"y":-66},
-      {"k":"smoke","x":30,"y":-130}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_birch","side":"back"}
-      ],
-      "bushes": [
-       {"k":"bush_box","side":"front"}
-      ]
-     },
-     "kit": {"body":"saucer","roof":"bulb","palette":"timber","size":"large"}
-    },
-    {
-     "name": "Kit house 19: narrow tall house, upswept roof",
-     "model": "scene/next/models/house_kit_19.json",
-     "box": [3.82,2.48],
-     "door": {"x":32,"y":0},
-     "fx": [
-      {"k":"window","x":-11,"y":-39},
-      {"k":"window","x":26,"y":-80},
-      {"k":"window","x":-14,"y":-85},
-      {"k":"glow","x":3,"y":-52},
-      {"k":"smoke","x":-25,"y":-158}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_oak","side":"back"},
-       {"k":"tree_birch","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_round","side":"right"},
-       {"k":"bush_round","side":"front"}
-      ]
-     },
-     "kit": {"body":"narrow","roof":"upswept","palette":"white_teal","size":"medium"}
-    },
-    {
-     "name": "Kit house 20: wide low house, low slab roof",
-     "model": "scene/next/models/house_kit_20.json",
-     "box": [4.39,2.94],
-     "door": {"x":10,"y":0},
-     "fx": [
-      {"k":"window","x":-31,"y":-39},
-      {"k":"window","x":49,"y":-39},
-      {"k":"glow","x":-11,"y":-52},
-      {"k":"smoke","x":-39,"y":-115}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_oak","side":"back"},
-       {"k":"tree_blossom","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"flowers_mixed","side":"left"},
-       {"k":"bush_flower","side":"right"},
-       {"k":"bush_box","side":"front"}
-      ]
-     },
-     "kit": {"body":"wide","roof":"slab","palette":"copper","size":"large"}
-    },
-    {
-     "name": "Kit house 21: L-shaped house, butterfly roof",
-     "model": "scene/next/models/house_kit_21.json",
-     "box": [4.18,3.35],
-     "door": {"x":38,"y":0},
-     "fx": [
-      {"k":"window","x":-24,"y":-38},
-      {"k":"window","x":-21,"y":-82},
-      {"k":"glow","x":16,"y":-52},
-      {"k":"smoke","x":-32,"y":-155}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_birch","side":"back"},
-       {"k":"tree_pine","side":"back_left"}
-      ],
-      "bushes": [
-       {"k":"bush_flower","side":"left"},
-       {"k":"bush_flower","side":"right"},
-       {"k":"bush_flower","side":"front"}
-      ]
-     },
-     "kit": {"body":"lshape","roof":"butterfly","palette":"white_red","size":"large"}
-    },
-    {
-     "name": "Kit house 22: round tower-house, mushroom thatch",
-     "model": "scene/next/models/house_kit_22.json",
-     "box": [3.82,2.72],
-     "door": {"x":18,"y":0},
-     "fx": [
-      {"k":"window","x":-9,"y":-85},
-      {"k":"window","x":31,"y":-85},
-      {"k":"window","x":-13,"y":-36},
-      {"k":"window","x":41,"y":-36},
-      {"k":"glow","x":36,"y":-61},
-      {"k":"smoke","x":25,"y":-182}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_birch","side":"back"},
-       {"k":"tree_oak","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"flowers_mixed","side":"right"},
-       {"k":"flowers_mixed","side":"front"}
-      ]
-     },
-     "kit": {"body":"tower","roof":"mushroom","palette":"timber","size":"medium"}
-    },
-    {
-     "name": "Kit house 23: jettied house, mansard",
-     "model": "scene/next/models/house_kit_23.json",
-     "box": [4.08,2.45],
-     "door": {"x":-13,"y":0},
-     "fx": [
-      {"k":"window","x":30,"y":-38},
-      {"k":"window","x":-21,"y":-91},
-      {"k":"window","x":27,"y":-91},
-      {"k":"glow","x":8,"y":-52},
-      {"k":"smoke","x":38,"y":-188}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_oak","side":"back"},
-       {"k":"tree_blossom","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"bush_roses","side":"right"},
-       {"k":"bush_flower","side":"front"}
-      ]
-     },
-     "kit": {"body":"jettied","roof":"mansard","palette":"moss","size":"medium"}
-    },
-    {
-     "name": "Kit house 24: brick townhouse, low slab roof",
-     "model": "scene/next/models/house_kit_24.json",
-     "box": [3.84,2.75],
-     "door": {"x":-10,"y":0},
-     "fx": [
-      {"k":"window","x":36,"y":-50},
-      {"k":"window","x":39,"y":-97},
-      {"k":"window","x":-2,"y":-98},
-      {"k":"glow","x":19,"y":-63},
-      {"k":"smoke","x":60,"y":-175}
-     ],
-     "garden": {
-      "trees": [
-       {"k":"tree_blossom","side":"back"},
-       {"k":"tree_blossom","side":"back_right"}
-      ],
-      "bushes": [
-       {"k":"flowers_mixed","side":"right"},
-       {"k":"bush_roses","side":"front"}
-      ]
-     },
-     "kit": {"body":"townhouse","roof":"slab","palette":"verdigris","size":"medium"}
-    }
-   ]
-  },
   "train_halt": {
    "name": "Sky train halt",
    "img": "scene/next/halt/train_halt.png",
@@ -13723,6 +13130,826 @@
     }
    ],
    "about": "BD-6: a small hovering retro car, parked by the shop and the station (BD-7 places them); its looks are colour swaps; it bobs; its hover pad and thrusters glow at night"
+  },
+  "house_kit_01": {
+   "name": "Kit house 01: narrow tall house, steep gable",
+   "img": "scene/next/hub/house_kit_01.png",
+   "ox": -88,
+   "oy": -196,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_01.json",
+   "ppm": 32,
+   "box": [3.9,2.54],
+   "door": {"x":-37,"y":0},
+   "fx": [
+    {"k":"window","x":0,"y":-39},
+    {"k":"window","x":-42,"y":-80},
+    {"k":"window","x":-2,"y":-80},
+    {"k":"window","x":-25,"y":-130},
+    {"k":"window","x":28,"y":-35},
+    {"k":"window","x":24,"y":-88},
+    {"k":"glow","x":-15,"y":-52},
+    {"k":"smoke","x":4,"y":-174}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_pine","side":"back"},
+     {"k":"tree_blossom","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_roses","side":"left"},
+     {"k":"bush_flower","side":"front"}
+    ]
+   },
+   "kit": {"body":"narrow","roof":"gable","palette":"white_teal","size":"medium","show":true},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_02": {
+   "name": "Kit house 02: wide low house, upswept roof",
+   "img": "scene/next/hub/house_kit_02.png",
+   "ox": -80,
+   "oy": -146,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_02.json",
+   "ppm": 32,
+   "box": [4.17,2.87],
+   "door": {"x":-10,"y":0},
+   "fx": [
+    {"k":"window","x":36,"y":-39},
+    {"k":"window","x":-44,"y":-39},
+    {"k":"glow","x":18,"y":-52},
+    {"k":"smoke","x":60,"y":-120}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_oak","side":"back"},
+     {"k":"tree_fruit","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_round","side":"left"},
+     {"k":"bush_roses","side":"right"},
+     {"k":"bush_roses","side":"front"}
+    ]
+   },
+   "kit": {"body":"wide","roof":"upswept","palette":"copper","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_03": {
+   "name": "Kit house 03: L-shaped house, low slab roof",
+   "img": "scene/next/hub/house_kit_03.png",
+   "ox": -83,
+   "oy": -216,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_03.json",
+   "ppm": 32,
+   "box": [4.32,3.35],
+   "door": {"x":-40,"y":0},
+   "fx": [
+    {"k":"window","x":29,"y":-38},
+    {"k":"window","x":32,"y":-82},
+    {"k":"glow","x":-10,"y":-61},
+    {"k":"smoke","x":65,"y":-154}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_oak","side":"back"},
+     {"k":"tree_blossom","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_round","side":"left"},
+     {"k":"bush_box","side":"right"},
+     {"k":"flowers_mixed","side":"front"}
+    ]
+   },
+   "kit": {"body":"lshape","roof":"slab","palette":"timber","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_04": {
+   "name": "Kit house 04: round tower-house, bulb dome",
+   "img": "scene/next/hub/house_kit_04.png",
+   "ox": -64,
+   "oy": -230,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_04.json",
+   "ppm": 32,
+   "box": [3.99,2.89],
+   "door": {"x":18,"y":0},
+   "fx": [
+    {"k":"window","x":2,"y":-85},
+    {"k":"window","x":42,"y":-85},
+    {"k":"window","x":-8,"y":-36},
+    {"k":"window","x":46,"y":-36},
+    {"k":"glow","x":44,"y":-52},
+    {"k":"smoke","x":50,"y":-197}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_oak","side":"back"},
+     {"k":"tree_fruit","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_flower","side":"right"},
+     {"k":"bush_box","side":"front"}
+    ]
+   },
+   "kit": {"body":"tower","roof":"bulb","palette":"terracotta","size":"medium","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_05": {
+   "name": "Kit house 05: jettied house, saltbox roof",
+   "img": "scene/next/hub/house_kit_05.png",
+   "ox": -68,
+   "oy": -217,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_05.json",
+   "ppm": 32,
+   "box": [4.3,2.45],
+   "door": {"x":40,"y":0},
+   "fx": [
+    {"k":"window","x":-5,"y":-38},
+    {"k":"window","x":-3,"y":-91},
+    {"k":"window","x":45,"y":-91},
+    {"k":"window","x":-34,"y":-35},
+    {"k":"window","x":-30,"y":-94},
+    {"k":"glow","x":17,"y":-52},
+    {"k":"smoke","x":-3,"y":-192}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_pine","side":"back"},
+     {"k":"tree_oak","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_box","side":"right"},
+     {"k":"bush_roses","side":"front"}
+    ]
+   },
+   "kit": {"body":"jettied","roof":"saltbox","palette":"white_navy","size":"large","show":true},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_06": {
+   "name": "Kit house 06: A-frame, steep gable",
+   "img": "scene/next/hub/house_kit_06.png",
+   "ox": -73,
+   "oy": -196,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_06.json",
+   "ppm": 32,
+   "box": [3.94,3.15],
+   "door": {"x":-19,"y":0},
+   "fx": [
+    {"k":"window","x":19,"y":-37},
+    {"k":"window","x":-7,"y":-94},
+    {"k":"glow","x":2,"y":-61},
+    {"k":"smoke","x":8,"y":-166}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_fruit","side":"back"},
+     {"k":"tree_blossom","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_roses","side":"left"},
+     {"k":"bush_roses","side":"right"},
+     {"k":"bush_box","side":"front"}
+    ]
+   },
+   "kit": {"body":"aframe","roof":"gable","palette":"brick","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_07": {
+   "name": "Kit house 07: half-dome cob house, mushroom thatch",
+   "img": "scene/next/hub/house_kit_07.png",
+   "ox": -69,
+   "oy": -149,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_07.json",
+   "ppm": 32,
+   "box": [4.32,3.12],
+   "door": {"x":20,"y":0},
+   "fx": [
+    {"k":"window","x":-13,"y":-32},
+    {"k":"window","x":54,"y":-33},
+    {"k":"glow","x":46,"y":-52},
+    {"k":"smoke","x":47,"y":-125}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_oak","side":"back"},
+     {"k":"tree_birch","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_box","side":"right"},
+     {"k":"bush_box","side":"front"}
+    ]
+   },
+   "kit": {"body":"cob","roof":"mushroom","palette":"verdigris","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_08": {
+   "name": "Kit house 08: brick townhouse, mansard",
+   "img": "scene/next/hub/house_kit_08.png",
+   "ox": -69,
+   "oy": -226,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_08.json",
+   "ppm": 32,
+   "box": [4.24,2.75],
+   "door": {"x":40,"y":0},
+   "fx": [
+    {"k":"window","x":-8,"y":-50},
+    {"k":"window","x":-12,"y":-97},
+    {"k":"window","x":30,"y":-97},
+    {"k":"window","x":5,"y":-147},
+    {"k":"glow","x":9,"y":-63},
+    {"k":"smoke","x":-26,"y":-203}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_pine","side":"back"},
+     {"k":"tree_birch","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_roses","side":"right"},
+     {"k":"flowers_mixed","side":"front"}
+    ]
+   },
+   "kit": {"body":"townhouse","roof":"mansard","palette":"moss","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_09": {
+   "name": "Kit house 09: saucer pod, roof garden",
+   "img": "scene/next/hub/house_kit_09.png",
+   "ox": -55,
+   "oy": -157,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_09.json",
+   "ppm": 32,
+   "box": [3.1,3.25],
+   "door": {"x":0,"y":0},
+   "fx": [
+    {"k":"window","x":-25,"y":-66},
+    {"k":"window","x":15,"y":-66},
+    {"k":"smoke","x":12,"y":-120}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_birch","side":"back"}
+    ],
+    "bushes": [
+     {"k":"bush_box","side":"front"}
+    ]
+   },
+   "kit": {"body":"saucer","roof":"garden","palette":"white_red","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_10": {
+   "name": "Kit house 10: narrow tall house, gambrel",
+   "img": "scene/next/hub/house_kit_10.png",
+   "ox": -66,
+   "oy": -206,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_10.json",
+   "ppm": 32,
+   "box": [4.02,2.55],
+   "door": {"x":-3,"y":0},
+   "fx": [
+    {"k":"window","x":33,"y":-39},
+    {"k":"window","x":-8,"y":-80},
+    {"k":"window","x":31,"y":-80},
+    {"k":"window","x":8,"y":-130},
+    {"k":"glow","x":18,"y":-52},
+    {"k":"smoke","x":38,"y":-179}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_fruit","side":"back"},
+     {"k":"tree_birch","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_roses","side":"right"},
+     {"k":"bush_roses","side":"front"}
+    ]
+   },
+   "kit": {"body":"narrow","roof":"gambrel","palette":"verdigris","size":"medium","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_11": {
+   "name": "Kit house 11: wide low house, butterfly roof",
+   "img": "scene/next/hub/house_kit_11.png",
+   "ox": -84,
+   "oy": -144,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_11.json",
+   "ppm": 32,
+   "box": [4.16,3.03],
+   "door": {"x":10,"y":0},
+   "fx": [
+    {"k":"window","x":-36,"y":-39},
+    {"k":"window","x":44,"y":-39},
+    {"k":"glow","x":-18,"y":-52},
+    {"k":"smoke","x":-51,"y":-118}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_fruit","side":"back"},
+     {"k":"tree_birch","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_box","side":"left"},
+     {"k":"bush_round","side":"right"},
+     {"k":"bush_flower","side":"front"}
+    ]
+   },
+   "kit": {"body":"wide","roof":"butterfly","palette":"moss","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_12": {
+   "name": "Kit house 12: L-shaped house, mansard",
+   "img": "scene/next/hub/house_kit_12.png",
+   "ox": -85,
+   "oy": -216,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_12.json",
+   "ppm": 32,
+   "box": [4.36,3.35],
+   "door": {"x":-40,"y":0},
+   "fx": [
+    {"k":"window","x":25,"y":-38},
+    {"k":"window","x":22,"y":-82},
+    {"k":"window","x":19,"y":-127},
+    {"k":"glow","x":-17,"y":-52},
+    {"k":"smoke","x":44,"y":-183}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_blossom","side":"back"},
+     {"k":"tree_blossom","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"flowers_mixed","side":"left"},
+     {"k":"bush_flower","side":"right"},
+     {"k":"bush_round","side":"front"}
+    ]
+   },
+   "kit": {"body":"lshape","roof":"mansard","palette":"white_teal","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_13": {
+   "name": "Kit house 13: round tower-house, mushroom thatch",
+   "img": "scene/next/hub/house_kit_13.png",
+   "ox": -70,
+   "oy": -236,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_13.json",
+   "ppm": 32,
+   "box": [2.72,2.67],
+   "door": {"x":0,"y":0},
+   "fx": [
+    {"k":"window","x":-26,"y":-85},
+    {"k":"window","x":14,"y":-85},
+    {"k":"window","x":-30,"y":-36},
+    {"k":"window","x":25,"y":-36},
+    {"k":"glow","x":20,"y":-61},
+    {"k":"smoke","x":8,"y":-182}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_pine","side":"back"},
+     {"k":"tree_oak","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_round","side":"left"},
+     {"k":"flowers_mixed","side":"right"},
+     {"k":"bush_flower","side":"front"}
+    ]
+   },
+   "kit": {"body":"tower","roof":"mushroom","palette":"white_navy","size":"small","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_14": {
+   "name": "Kit house 14: jettied house, gambrel",
+   "img": "scene/next/hub/house_kit_14.png",
+   "ox": -73,
+   "oy": -215,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_14.json",
+   "ppm": 32,
+   "box": [4.1,2.45],
+   "door": {"x":-12,"y":0},
+   "fx": [
+    {"k":"window","x":31,"y":-38},
+    {"k":"window","x":-19,"y":-91},
+    {"k":"window","x":29,"y":-91},
+    {"k":"window","x":2,"y":-139},
+    {"k":"glow","x":9,"y":-52},
+    {"k":"smoke","x":41,"y":-189}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_fruit","side":"back"},
+     {"k":"tree_fruit","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_flower","side":"right"},
+     {"k":"bush_roses","side":"front"}
+    ]
+   },
+   "kit": {"body":"jettied","roof":"gambrel","palette":"copper","size":"medium","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_15": {
+   "name": "Kit house 15: A-frame, saltbox roof",
+   "img": "scene/next/hub/house_kit_15.png",
+   "ox": -73,
+   "oy": -189,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_15.json",
+   "ppm": 32,
+   "box": [4.04,3.21],
+   "door": {"x":-19,"y":0},
+   "fx": [
+    {"k":"window","x":20,"y":-37},
+    {"k":"window","x":13,"y":-94},
+    {"k":"glow","x":3,"y":-61},
+    {"k":"smoke","x":30,"y":-157}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_birch","side":"back"},
+     {"k":"tree_blossom","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_box","side":"left"},
+     {"k":"bush_roses","side":"right"},
+     {"k":"bush_box","side":"front"}
+    ]
+   },
+   "kit": {"body":"aframe","roof":"saltbox","palette":"brick","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_16": {
+   "name": "Kit house 16: half-dome cob house, bulb dome",
+   "img": "scene/next/hub/house_kit_16.png",
+   "ox": -66,
+   "oy": -174,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_16.json",
+   "ppm": 32,
+   "box": [3.28,3.23],
+   "door": {"x":0,"y":0},
+   "fx": [
+    {"k":"window","x":-36,"y":-33},
+    {"k":"window","x":31,"y":-32},
+    {"k":"glow","x":21,"y":-52},
+    {"k":"smoke","x":11,"y":-140}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_birch","side":"back"},
+     {"k":"tree_fruit","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_flower","side":"left"},
+     {"k":"bush_flower","side":"right"},
+     {"k":"bush_round","side":"front"}
+    ]
+   },
+   "kit": {"body":"cob","roof":"bulb","palette":"white_red","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_17": {
+   "name": "Kit house 17: brick townhouse, roof garden",
+   "img": "scene/next/hub/house_kit_17.png",
+   "ox": -69,
+   "oy": -202,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_17.json",
+   "ppm": 32,
+   "box": [4.21,2.75],
+   "door": {"x":40,"y":0},
+   "fx": [
+    {"k":"window","x":-7,"y":-50},
+    {"k":"window","x":31,"y":-97},
+    {"k":"window","x":-10,"y":-98},
+    {"k":"glow","x":10,"y":-63},
+    {"k":"smoke","x":-21,"y":-178}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_pine","side":"back"},
+     {"k":"tree_oak","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_box","side":"right"},
+     {"k":"bush_box","side":"front"}
+    ]
+   },
+   "kit": {"body":"townhouse","roof":"garden","palette":"terracotta","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_18": {
+   "name": "Kit house 18: saucer pod, bulb dome",
+   "img": "scene/next/hub/house_kit_18.png",
+   "ox": -47,
+   "oy": -167,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_18.json",
+   "ppm": 32,
+   "box": [3.08,3.23],
+   "door": {"x":0,"y":0},
+   "fx": [
+    {"k":"window","x":-15,"y":-66},
+    {"k":"window","x":25,"y":-66},
+    {"k":"smoke","x":30,"y":-130}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_birch","side":"back"}
+    ],
+    "bushes": [
+     {"k":"bush_box","side":"front"}
+    ]
+   },
+   "kit": {"body":"saucer","roof":"bulb","palette":"timber","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_19": {
+   "name": "Kit house 19: narrow tall house, upswept roof",
+   "img": "scene/next/hub/house_kit_19.png",
+   "ox": -70,
+   "oy": -179,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_19.json",
+   "ppm": 32,
+   "box": [3.82,2.48],
+   "door": {"x":32,"y":0},
+   "fx": [
+    {"k":"window","x":-11,"y":-39},
+    {"k":"window","x":26,"y":-80},
+    {"k":"window","x":-14,"y":-85},
+    {"k":"glow","x":3,"y":-52},
+    {"k":"smoke","x":-25,"y":-158}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_oak","side":"back"},
+     {"k":"tree_birch","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_round","side":"right"},
+     {"k":"bush_round","side":"front"}
+    ]
+   },
+   "kit": {"body":"narrow","roof":"upswept","palette":"white_teal","size":"medium","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_20": {
+   "name": "Kit house 20: wide low house, low slab roof",
+   "img": "scene/next/hub/house_kit_20.png",
+   "ox": -83,
+   "oy": -145,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_20.json",
+   "ppm": 32,
+   "box": [4.39,2.94],
+   "door": {"x":10,"y":0},
+   "fx": [
+    {"k":"window","x":-31,"y":-39},
+    {"k":"window","x":49,"y":-39},
+    {"k":"glow","x":-11,"y":-52},
+    {"k":"smoke","x":-39,"y":-115}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_oak","side":"back"},
+     {"k":"tree_blossom","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"flowers_mixed","side":"left"},
+     {"k":"bush_flower","side":"right"},
+     {"k":"bush_box","side":"front"}
+    ]
+   },
+   "kit": {"body":"wide","roof":"slab","palette":"copper","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_21": {
+   "name": "Kit house 21: L-shaped house, butterfly roof",
+   "img": "scene/next/hub/house_kit_21.png",
+   "ox": -80,
+   "oy": -184,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_21.json",
+   "ppm": 32,
+   "box": [4.18,3.35],
+   "door": {"x":38,"y":0},
+   "fx": [
+    {"k":"window","x":-24,"y":-38},
+    {"k":"window","x":-21,"y":-82},
+    {"k":"glow","x":16,"y":-52},
+    {"k":"smoke","x":-32,"y":-155}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_birch","side":"back"},
+     {"k":"tree_pine","side":"back_left"}
+    ],
+    "bushes": [
+     {"k":"bush_flower","side":"left"},
+     {"k":"bush_flower","side":"right"},
+     {"k":"bush_flower","side":"front"}
+    ]
+   },
+   "kit": {"body":"lshape","roof":"butterfly","palette":"white_red","size":"large","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_22": {
+   "name": "Kit house 22: round tower-house, mushroom thatch",
+   "img": "scene/next/hub/house_kit_22.png",
+   "ox": -63,
+   "oy": -212,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_22.json",
+   "ppm": 32,
+   "box": [3.82,2.72],
+   "door": {"x":18,"y":0},
+   "fx": [
+    {"k":"window","x":-9,"y":-85},
+    {"k":"window","x":31,"y":-85},
+    {"k":"window","x":-13,"y":-36},
+    {"k":"window","x":41,"y":-36},
+    {"k":"glow","x":36,"y":-61},
+    {"k":"smoke","x":25,"y":-182}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_birch","side":"back"},
+     {"k":"tree_oak","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"flowers_mixed","side":"right"},
+     {"k":"flowers_mixed","side":"front"}
+    ]
+   },
+   "kit": {"body":"tower","roof":"mushroom","palette":"timber","size":"medium","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_23": {
+   "name": "Kit house 23: jettied house, mansard",
+   "img": "scene/next/hub/house_kit_23.png",
+   "ox": -77,
+   "oy": -210,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_23.json",
+   "ppm": 32,
+   "box": [4.08,2.45],
+   "door": {"x":-13,"y":0},
+   "fx": [
+    {"k":"window","x":30,"y":-38},
+    {"k":"window","x":-21,"y":-91},
+    {"k":"window","x":27,"y":-91},
+    {"k":"glow","x":8,"y":-52},
+    {"k":"smoke","x":38,"y":-188}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_oak","side":"back"},
+     {"k":"tree_blossom","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"bush_roses","side":"right"},
+     {"k":"bush_flower","side":"front"}
+    ]
+   },
+   "kit": {"body":"jettied","roof":"mansard","palette":"moss","size":"medium","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
+  },
+  "house_kit_24": {
+   "name": "Kit house 24: brick townhouse, low slab roof",
+   "img": "scene/next/hub/house_kit_24.png",
+   "ox": -62,
+   "oy": -203,
+   "shadow": 1.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "house_kit",
+   "model": "scene/next/models/house_kit_24.json",
+   "ppm": 32,
+   "box": [3.84,2.75],
+   "door": {"x":-10,"y":0},
+   "fx": [
+    {"k":"window","x":36,"y":-50},
+    {"k":"window","x":39,"y":-97},
+    {"k":"window","x":-2,"y":-98},
+    {"k":"glow","x":19,"y":-63},
+    {"k":"smoke","x":60,"y":-175}
+   ],
+   "garden": {
+    "trees": [
+     {"k":"tree_blossom","side":"back"},
+     {"k":"tree_blossom","side":"back_right"}
+    ],
+    "bushes": [
+     {"k":"flowers_mixed","side":"right"},
+     {"k":"bush_roses","side":"front"}
+    ]
+   },
+   "kit": {"body":"townhouse","roof":"slab","palette":"verdigris","size":"medium","show":false},
+   "vary": {"rot":0,"lean":0,"size":0}
   }
  },
  "person": 1.75,
