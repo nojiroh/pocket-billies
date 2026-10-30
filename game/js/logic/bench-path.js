@@ -302,7 +302,8 @@ export const BENCH_NOT_HERE = {
   '-tilt': 'needs the phone’s tilt sensor',
   '-place': 'only in places the bench doesn’t have (caves, lava, desert, snowy heights, the sea)',
   '-clock': 'follows the real clock; the test sets the hour',
-  '-pinned': 'the test holds it to measure (automatic quality, warm-up, the graphics card’s timers, pixel budget)',
+  '-pinned':
+    'the test holds it to measure (automatic quality and its controller, warm-up, the graphics card’s timers, pixel budget)',
 };
 
 /* each dial's need: 'group.key ...' lists by need; a `group.*` stands for a whole time-of-day look. Every ENGINE_SPEC
@@ -369,7 +370,7 @@ export const NEEDS = {
   '-tilt': 'camera.tilt',
   '-place': 'air.caveDark air.heat world.snowLine water.tide',
   '-clock': 'sun.clock',
-  '-pinned': 'quality.auto quality.warmUp quality.gpuTimer quality.phonePixels',
+  '-pinned': 'quality.auto quality.warmUp quality.gpuTimer quality.phonePixels quality.controller',
 };
 /** dial ('group.key' or 'group.*') → its need */
 export const BENCH_DIAL_NEEDS = /** @type {Record<string, string>} */ ({});

@@ -11,6 +11,7 @@ import {
   controlRestore,
   controlSaved,
   frameControl,
+  worldSteps,
 } from '../../game/js/logic/frame-control.js';
 
 /**
@@ -22,6 +23,7 @@ import {
  * @param {(t: number, n: number) => number} o.gpu the frame's graphics time at the top levels (ms)
  * @param {boolean} [o.phone]
  * @param {boolean} [o.noLag] the fence lag unknown
+ * @param {boolean} [o.cpuLevers] false: no CPU level
  * @param {object} [o.state]
  */
 function play(o) {
@@ -51,6 +53,7 @@ function play(o) {
       V,
       phone: o.phone,
       floorR: o.phone ? 0.6 : 0.5,
+      cpu: o.cpuLevers,
     });
     if (r) steps.push({ t, ...r, lv: { ...s.lv } });
     last = t;
@@ -120,6 +123,13 @@ test('a CPU-bound trace leaves the resolution alone', () => {
     assert.ok(steps.every(x => x.lever !== 'R'));
     assert.ok(s.lv.c > 0, 'the CPU level goes down');
   }
+});
+
+test('off a phone the CPU level is left alone: q to 2, then the half rate', () => {
+  const { s, steps } = play({ ms: 30000, cpu: () => 26, gpu: () => 6, cpuLevers: false });
+  assert.equal(s.lv.c, 0);
+  assert.equal(s.lv.R, 1);
+  assert.ok(steps.some(x => x.lever === 'half'));
 });
 
 test('at the floor and still missing: the steady half rate, and back when there is room', () => {
@@ -225,4 +235,17 @@ test('the battle ladder: one lever list, then the half rate', () => {
   assert.ok(seen.every(l => l === 'q' || l === 'half' || l === ''));
   assert.equal(s.lv.half, true);
   assert.equal(s.lv.R, 1);
+});
+
+test('the world clock keeps real time down to 10 a second, in steps of at most 50 ms', () => {
+  assert.deepEqual(worldSteps(16.7), { ms: 16.7, n: 1, h: 0.0167 });
+  /* 12.5 a second: 80 ms of world, not 60 (it ran at 75%) */
+  const w = worldSteps(80);
+  assert.equal(w.ms, 80);
+  assert.equal(w.n, 2);
+  assert.ok(Math.abs(w.h - 0.04) < 1e-9);
+  /* a hitch: the world waits it out */
+  assert.equal(worldSteps(1000).ms, 100);
+  assert.equal(worldSteps(-5).ms, 0);
+  assert.equal(worldSteps(NaN).n, 1);
 });

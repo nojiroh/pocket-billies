@@ -38,6 +38,7 @@ import {
 import { personPicture } from './logic/person-view.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { FOG_MARCH_STEPS, fogGridBox, fogMarchOn } from './logic/fog-grid.js';
+import { worldSteps } from './logic/frame-control.js';
 import { gpuCountSummary, gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import {
@@ -616,8 +617,12 @@ function drawWalkFrame(ts, dtm) {
     ui.width = rw;
     ui.height = rh;
   }
-  const dms = Math.min(dtm, 60);
+  /* FL-3a: the world clock keeps real time down to 10 frames a second (logic/frame-control.js worldSteps); the walker,
+     the townsfolk and the wildlife move in even steps of at most 50 ms */
+  const WS = worldSteps(dtm),
+    dms = WS.ms;
   walkView.t += dms;
+  walkRenderer.worldSteps = WS;
   const dt = dms / 1000,
     t = walkView.t,
     C0 = walkData().sc,
@@ -637,6 +642,7 @@ function drawWalkFrame(ts, dtm) {
   }
 }
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
+  const WS = walkRenderer.worldSteps || worldSteps(dtm);
   if (typeof seamlessLookTick === 'function') seamlessLookTick();
   if (typeof seamlessPrepareAhead === 'function') seamlessPrepareAhead(performance.now());
   /* phase 20 C1: every dial looked up once for this frame (settings.js) */
@@ -670,15 +676,15 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const st = BT ? { who: null, npcs: [], enc: [], battle: 1 } : walkView.opt.state ? walkView.opt.state() : { t: 0 };
   if (!BT) {
     walkView.st = st;
-    updatePlayer(st, dt);
+    for (let k = 0; k < WS.n; k++) updatePlayer(st, WS.h);
   }
   const P = walkView.pl;
-  if (!BT && sc.folk && st.mode && st.mode !== 'line') updateFolk(sc.folk, dt);
+  if (!BT && sc.folk && st.mode && st.mode !== 'line') for (let k = 0; k < WS.n; k++) updateFolk(sc.folk, WS.h);
   else if (!BT) {
     walkView.folk = [];
     walkView.folkAll = [];
   }
-  if (!BT && typeof lifeStep === 'function') lifeStep(dt);
+  if (!BT && typeof lifeStep === 'function') for (let k = 0; k < WS.n; k++) lifeStep(WS.h);
   /* the Studio's free camera (studio/js/free-camera.js): a view's own eye and target instead of following the walker */
   const look = !BT && walkView.opt.look ? walkView.opt.look(dt) : null;
   const C = BT
@@ -976,7 +982,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     /* FL-1a: the automatic quality reads the frame's own work, not the one-off jobs' nor the counted tick's */
     own = Math.max(0, work - oneOffMs);
   if (!frameScheduler.counted) walkView.slow = walkView.slow * 0.9 + own * 0.1;
-  adaptQuality(dtm, own);
+  adaptQuality(dtm, own, oneOffMs);
   /* v30: how long frames take, for the debug log */ {
     const H = walkRenderer.hist || (walkRenderer.hist = [0, 0, 0, 0, 0, 0]);
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;

@@ -32,6 +32,8 @@ expose({
   THERMAL_HOLD_MS: [() => THERMAL_HOLD_MS],
   THERMAL_PAIR_MS: [() => THERMAL_PAIR_MS],
   UP_CALM_MS: [() => UP_CALM_MS],
+  WORLD_FRAME_MS: [() => WORLD_FRAME_MS],
+  WORLD_STEP_MS: [() => WORLD_STEP_MS],
   applyDown: [() => applyDown, v => (applyDown = v)],
   applyUp: [() => applyUp, v => (applyUp = v)],
   clearRing: [() => clearRing, v => (clearRing = v)],
@@ -42,6 +44,7 @@ expose({
   controlSaved: [() => controlSaved, v => (controlSaved = v)],
   frameControl: [() => frameControl, v => (frameControl = v)],
   leverDown: [() => leverDown, v => (leverDown = v)],
+  worldSteps: [() => worldSteps, v => (worldSteps = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -67,11 +70,12 @@ export const SETTLE_MS = 400,
  *   iv, wk, lag, at, ms: the ring (interval, work, fence lag (-1 unknown), time, missed); lv: the levels; taken: the
  *   levers stepped down, last on top (a raise undoes the top one)
  * @typedef {{ now: number, dt: number, work: number, lag?: number, slot: number, V: number, skip?: boolean,
- *   phone?: boolean, floorR?: number, levers?: string }} ControlInput
+ *   phone?: boolean, floorR?: number, levers?: string, cpu?: boolean }} ControlInput
  *   dt: the time since the last frame (ms); work: the frame's own work on the main thread (ms); lag: the fence lag in
  *   frames (-1 or missing: unknown); slot: the interval the scheduler delivers (ms, the half rate included); V: the
  *   refresh period (ms); skip: a frame with a one-off job or counted calls; floorR: the lowest resolution (0.6 on a
- *   phone, 0.5 elsewhere); levers: 'walk' (the bottleneck split, default) or 'one' (a single ladder on q: the battle)
+ *   phone, 0.5 elsewhere); levers: 'walk' (the bottleneck split, default) or 'one' (a single ladder on q: the battle);
+ *   cpu: false leaves the CPU level out (the owner allowed its look trades on phones only)
  * @typedef {{ act: 'down' | 'up' | 'revert' | 'floor', lever: string, why: string }} ControlStep
  */
 
@@ -143,15 +147,16 @@ export function controlBottleneck(s, slot, phone) {
 }
 
 /* the next lever down for a bottleneck, or '' at the floor */
-export function leverDown(lv, kind, floorR, levers) {
+export function leverDown(lv, kind, floorR, levers, cpu) {
   if (levers === 'one') return lv.q < CONTROL_LEVELS.q ? 'q' : !lv.half ? 'half' : '';
-  const R = lv.R > floorR + 0.05 ? 'R' : '';
+  const R = lv.R > floorR + 0.05 ? 'R' : '',
+    C = cpu && lv.c < CONTROL_LEVELS.c ? 'c' : '';
   const order =
     kind === 'gpu'
       ? [lv.q < CONTROL_LEVELS.q && 'q', R]
       : kind === 'cpu'
-        ? [lv.c < CONTROL_LEVELS.c && 'c', lv.q < 2 && 'q']
-        : [lv.q < 2 && 'q', lv.c < CONTROL_LEVELS.c && 'c', lv.q < CONTROL_LEVELS.q && 'q', R];
+        ? [C, lv.q < 2 && 'q']
+        : [lv.q < 2 && 'q', C, lv.q < CONTROL_LEVELS.q && 'q', R];
   const pick = order.find(Boolean);
   return pick || (!lv.half ? 'half' : '');
 }
@@ -247,7 +252,7 @@ export function controlFrame(s, i) {
       return { act: 'revert', lever, why };
     }
     const kind = levers === 'one' ? 'mixed' : controlBottleneck(s, slot, i.phone),
-      lever = leverDown(s.lv, kind, floorR, levers);
+      lever = leverDown(s.lv, kind, floorR, levers, i.cpu !== false);
     s.raised = '';
     if (!lever) {
       clearRing(s, now);
@@ -319,4 +324,22 @@ export function controlRestore(kept) {
     while (have++ < want[l]) s.taken.unshift(l);
   }
   return s;
+}
+
+/** FL-3a: the most world time one frame moves (ms): the world keeps real time down to 10 frames a second (was 60 ms:
+ * under 16.7 a second it ran slow, 12.5 a second at 75%); a longer gap is a hitch and the world waits it out */
+export const WORLD_FRAME_MS = 100;
+/** the longest single step of the walker, the townsfolk and the wildlife (ms; the old clamp, so no step is longer
+ * than they were ever given) */
+export const WORLD_STEP_MS = 50;
+
+/**
+ * A frame's world time and the even steps it is moved in.
+ * @param {number} dtm the time since the last frame (ms)
+ * @returns {{ ms: number, n: number, h: number }} ms: the world time (ms); n steps of h seconds each
+ */
+export function worldSteps(dtm) {
+  const ms = Math.max(0, Math.min(+dtm || 0, WORLD_FRAME_MS)),
+    n = Math.max(1, Math.ceil(ms / WORLD_STEP_MS));
+  return { ms, n, h: ms / n / 1000 };
 }

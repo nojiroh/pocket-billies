@@ -199,6 +199,16 @@ def main():
             tl.append(f"{num((s.get('t') or 0) / 1000)} s q{cur[0] if cur[0] is not None else '?'} res {cur[1] if cur[1] is not None else '?'}")
             prev = cur
     if tl: print(f"Quality and resolution ({len(tl)} changes): " + '; '.join(tl[:10] + (['...'] + tl[-3:] if len(tl) > 13 else tl[10:])))
+    # FL-3a: the frame controller's steps (quality.controller on): CPU level, half rate, fence lag, its last step
+    ct, prevc = [], None
+    for s in samples:
+        if 'qc' not in s: continue
+        c = s.get('ctl') or {}
+        cur = (s.get('qc'), s.get('half'), c.get('t'))
+        if cur != prevc:
+            ct.append(f"{num((s.get('t') or 0) / 1000)} s cpu {s.get('qc')}{' half rate' if s.get('half') else ''} lag {s.get('lag')}" + (f" ({c.get('act')} {c.get('lever')}: {c.get('why')})" if c else ''))
+            prevc = cur
+    if ct: print(f"Frame controller ({len(ct)} changes): " + '; '.join(ct[:10] + (['...'] + ct[-3:] if len(ct) > 13 else ct[10:])))
 
     ev = [e for e in (d.get('events') or []) if e.get('kind') in ('visibility', 'webgl')]
     if ev:

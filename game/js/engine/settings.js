@@ -390,6 +390,10 @@ export const ENGINE_DEFAULTS = {
        instanced program doesn't build or the first frame in batches raises a GL error (walk/sprites.js), and the
        debug menu's switch */
     spriteInstances: true,
+    /* FL-3a: the automatic quality's controller (logic/frame-control.js): aims at the rate the scheduler gives, steps
+       the graphics chip's levers or the main thread's by what holds frames back, and falls back to a steady half rate.
+       Off (the old ladder, logic/quality-step.js) until the owner's phone run; the debug menu's switch */
+    controller: false,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -1647,6 +1651,12 @@ export const ENGINE_SPEC = [
         'Pictures in batches',
         'bool',
         'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
+      ],
+      [
+        'controller',
+        'Frame controller',
+        'bool',
+        'The automatic quality aims at the frame rate the browser gives and lowers what holds frames back: the graphics card’s effects and resolution, or on a phone far small props and townsfolk. When even the lowest can’t keep up, it runs at a steady half rate and climbs back by itself. Off: the old ladder.',
       ],
       [
         'warmUp',
