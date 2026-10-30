@@ -330,6 +330,7 @@ export function mountWalkView(cv, id, opt = {}) {
    dropped (it failed), or one still not ready after 30 s. */
 /* phase 20 R2 (D4): a phone, as the automatic quality has it (walk/quality-cull.js); the iPad is not one */
 const PHONE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
+provide({ PHONE }); /* to-module */
 let phoneStarted = false;
 const GROUND_SLICE_MS = 10; /* an urgent job gets twice this (groundPrepWork) */
 function groundBuiltBeforeShow(id, sc) {

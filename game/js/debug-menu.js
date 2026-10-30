@@ -235,6 +235,11 @@ const PICTURE_PATH_SWITCHES = [
   ['fl4bup', 'uploadQueue', 'Pictures uploaded in turn'],
   ['fl4bmesh', 'meshWorker', 'Models built on a helper'],
   ['fl4bwarm', 'placeWarm', 'Next place warmed up'],
+  /* FL-5b: the phone look trades, off until the owner's phone run */
+  ['fl5shadow', 'phoneShadow', 'Phone shadow map'],
+  ['fl5tiles', 'groundTiles', 'Ground in tiles'],
+  ['fl5post', 'postMerge', 'Phone effects merged'],
+  ['fl5trees', 'farTrees', 'One-picture far trees'],
 ];
 /** a picture path switch's label: on, off, or off by itself after a GL error (walk/sprites.js firstInBatches) */
 function picturePathLabel([, k, l]) {
@@ -750,7 +755,11 @@ function debugAction(x) {
     case 'fl4bage':
     case 'fl4bup':
     case 'fl4bmesh':
-    case 'fl4bwarm': {
+    case 'fl4bwarm':
+    case 'fl5shadow':
+    case 'fl5tiles':
+    case 'fl5post':
+    case 'fl5trees': {
       const f = PICTURE_PATH_SWITCHES.find(t => t[0] === x),
         [, k, l] = f,
         E = (gameData.engine = gameData.engine || {}),

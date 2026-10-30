@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:183",
-    "game/js/prop-models.js:1807",
+    "game/js/prop-models.js:1870",
     "game/js/walk-view.js:795"
    ]
   },
@@ -188,7 +188,7 @@
    "p": "scene/build/walls.png",
    "at": [
     "game/js/walk-view.js:770",
-    "game/js/walk/ground-draw.js:102"
+    "game/js/walk/ground-draw.js:113"
    ]
   },
   {
@@ -1138,8 +1138,8 @@
   ],
   "barrel": [
    "game/js/logic/low-poly.js:535",
-   "game/js/prop-models.js:241",
-   "game/js/prop-models.js:425",
+   "game/js/prop-models.js:246",
+   "game/js/prop-models.js:430",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1164,16 +1164,16 @@
    "game/js/logic/low-poly.js:706",
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
-   "game/js/prop-models.js:237",
-   "game/js/prop-models.js:352",
+   "game/js/prop-models.js:242",
+   "game/js/prop-models.js:357",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1924",
-   "game/js/walk-view-gl.js:882"
+   "game/js/walk-view-gl.js:883"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
    "game/js/logic/wall-ramp.js:58",
-   "game/js/prop-models.js:226",
+   "game/js/prop-models.js:231",
    "game/js/structures.js:7",
    "game/js/structures.js:250",
    "game/js/structures.js:251",
@@ -1262,9 +1262,9 @@
    "game/js/cutscene/director.js:133",
    "game/js/cutscene/director.js:171",
    "game/js/cutscene/stage.js:119",
-   "game/js/engine/post-effects.js:476",
-   "game/js/engine/post-effects.js:480",
-   "game/js/engine/post-effects.js:576",
+   "game/js/engine/post-effects.js:483",
+   "game/js/engine/post-effects.js:487",
+   "game/js/engine/post-effects.js:591",
    "game/js/fishing.js:172",
    "game/js/friends.js:637",
    "game/js/halt-arrival.js:7",
@@ -1452,7 +1452,7 @@
    "game/js/battle-stage.js:2532"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:829",
+   "game/js/walk-view-gl.js:830",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1577,8 +1577,8 @@
    "game/js/augment-screen.js:148",
    "game/js/augment-screen.js:259",
    "game/js/cutscene/director.js:171",
-   "game/js/engine/post-effects.js:484",
-   "game/js/engine/post-effects.js:586",
+   "game/js/engine/post-effects.js:491",
+   "game/js/engine/post-effects.js:601",
    "game/js/fishing.js:172",
    "game/js/logic/bowl.js:133",
    "game/js/logic/cutscene-set.js:38",
@@ -1609,7 +1609,7 @@
    "game/js/workshop.js:102"
   ],
   "window": [
-   "game/js/debug-log.js:953",
+   "game/js/debug-log.js:962",
    "game/js/seamless-world.js:1197",
    "game/js/walk-control.js:1031",
    "game/js/walk-control.js:1045",

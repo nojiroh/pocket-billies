@@ -426,6 +426,16 @@ export const ENGINE_DEFAULTS = {
     uploadQueue: false,
     meshWorker: false,
     placeWarm: false,
+    /* FL-5b (the owner's look trades for phones), each off until the owner's phone run; the debug menu's switches: a
+       phone's far shadow map at 2048 from the first frame (4096 elsewhere), its smaller map chosen only when the
+       canvas changes size or the place changes, and a battle's map a target of its own (phoneShadow); the ground
+       drawn in 16 m tiles, only those a pass sees (groundTiles); a phone's post chain in fewer passes (postMerge) */
+    phoneShadow: false,
+    groundTiles: false,
+    postMerge: false,
+    /* FL-5b: a tree or bush past 42 m is one picture, its crown as painted, instead of a core and its leaf clumps (the
+       crown fading in over 6 m before that); off until the owner's phone run */
+    farTrees: false,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -1761,6 +1771,30 @@ export const ENGINE_SPEC = [
         'Next place warmed up',
         'bool',
         'Once the place ahead is ready to walk into, its pictures go to the graphics card and its models are built a little each frame, so crossing into it does not pause.',
+      ],
+      [
+        'phoneShadow',
+        'Phone shadow map',
+        'bool',
+        'On a phone the far sun shadow map is 2048 pixels square instead of 4096 from the first frame (a quarter of the memory), the smaller one for slow frames is chosen only when the picture changes size or you change place, and a battle draws its shadows into a map of its own, so the walk’s maps are never made again. Shadow edges a little softer far away.',
+      ],
+      [
+        'groundTiles',
+        'Ground in tiles',
+        'bool',
+        'The ground is kept in 16 m squares, and the view and each shadow map draw only the squares they can see instead of the whole place. The same look. Takes effect on the next place built.',
+      ],
+      [
+        'postMerge',
+        'Phone effects merged',
+        'bool',
+        'On a phone the glow starts from a quarter-size picture instead of a half-size one, the same number of steps, each a size smaller. The glow a little softer and wider.',
+      ],
+      [
+        'farTrees',
+        'One-picture far trees',
+        'bool',
+        'Trees and bushes more than about 42 m away are drawn as one picture, the crown as painted, instead of a core and about nine leaf clumps; the crown fades in over the last 6 m. Far crowns no longer turn their clumps as the camera goes round them.',
       ],
       [
         'warmUp',
