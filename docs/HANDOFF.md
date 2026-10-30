@@ -2,6 +2,90 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-4b - the load overlap: budget by the slot, pictures by time and in turn, meshes on a helper, the next place warmed - 2026-10-30
+Branch `track/fluid` (round 5 lane, beside FL-5b: separate containers, each with its own baseline; FL-5b finished
+first, so this is round 5's last lane). Plan approved by the owner's standing answer (fluid-track.md section 1); the
+overlap with LD-5 is the owner's answer (a) of 2026-10-30 ("all here, in the fluid track ... the budget follows the
+set rate, about a quarter of the paced slot"), confirmed again by the "Open PRs merge" session. Code: five new paths,
+each behind its own switch, **off** until the owner's phone run. No tag (the track's tag comes at FL-7).
+- **For the load track (LD-5):** the one-off budget sized from the slot, picture age by time, model meshes in a
+  worker, `createImageBitmap` and an upload queue, and the next place's warm-up moved here and are built (below);
+  docs/phases/load-track.md's LD-5 item says so (an addition). The world map's terrain in a worker stays LD-5's (done).
+- Facts checked against the code (ee9c4be8 = rounds 1-4): `FRAME_WORK_MS` 8 ms on phones, 10 elsewhere, whatever the
+  rate (walk/quality-cull.js), stamped at the frame's start; `walkRenderer.budMs` is read but never set. Picture age
+  is 600 frames (engine/webgl.js trimTextures, every 120 walk frames: never in a battle) and every picture counted
+  twice (a bump map assumed). First uploads (`texImage2D` of an `<img>`, `generateMipmap`) run inside the passes with
+  no budget. Differs: model meshes are mostly **low-poly** now (`world.voxelLowPoly` on by default: prop-models.js
+  lowPolyFromRecipe), not LD-5's voxelise/greedy mesh, which only recipes with imported voxels still use (left on the
+  page). `createImageBitmap` was already used, for the bump maps' helper only.
+- Changed:
+  - `quality.slotBudget`: walk/quality-cull.js `frameBudgetStart` (walk-view-gl.js calls it where `budT` was stamped):
+    a quarter of the walk's paced slot (its task's refreshes a frame, the half rate included, times the period;
+    logic/load-budget.js `slotWorkMs`, 2-12 ms: 4.2 at 60, 8.3 at 30 or the half rate, 2.1 at 120).
+  - `quality.texAge`: a picture's last use stamped with the tick's time (`gpuState.now`, set in `gpuFrame`); over the
+    cap, those unused 10 s go, the longest unused first (logic/load-budget.js `textureTrimOrder`), checked every 2 s
+    from `gpuFrame` on any screen; a picture without a bump map counted once.
+  - `quality.uploadQueue`: an `<img>`'s first upload waits for its bitmap (`createImageBitmap`, premultiplyAlpha
+    none, the browser's colour space: as the `<img>` upload), then uploads from it; the first of a tick always, then
+    about 1 ms, the rest while the one-off budget lasts (all behind a loading screen); canvases and redrawn pictures
+    as before; a bitmap that can't be made falls back to the picture. At most 192 bitmaps wait.
+  - `quality.meshWorker`: lowPolyFromRecipe and its helpers **moved** to logic/low-poly.js (a move, its own commit);
+    `lowPolyMeshData` (the still mesh and the turning groups, as the page laid them) is used by the page and by
+    game/js/prop-mesh-worker.js (+ -modules.js, bundled by vite.config.js); game/js/prop-meshes.js asks once per path
+    and recipe, the picture stands in until the mesh is in; no thread or a failed one: built on the page.
+  - `quality.placeWarm`: game/js/walk/place-warm.js. When the view ahead is ready (seamless-world.js, its ground and
+    walking grid), its props' pictures are unpacked ahead (webgl.js `uploadAhead`: a bitmap with the queue on, else
+    `img.decode()`; nothing goes to the card until drawn, so each bump map's material is set at its first draw as
+    before) and their meshes asked for on the helper (prop-models.js `propModelWarm`, with meshWorker), in what is
+    left of the frame's budget.
+  - Settings rows and debug-menu switches (additions), bench-path's perf group; debug-log.js (additions): the
+    sample's `bud`, gpuMemory `uploads`, `meshes`, `warm`; tools/read-debug-log.py prints them.
+  - tools/test/load-overlap.test.mjs (6 tests: the budget's numbers, the trim order, the helper's meshes byte for
+    byte against the page's for every low-poly prop in the data, the job flow, the upload queue's order);
+    tools/check-load-overlap.py (headless counts, off then on).
+  - FL-5b's four debug-menu switches had rows but no `case` labels (their buttons did nothing): added at the merge.
+- Measured headless (counts only; `check-load-overlap.py`, the run fixture phone sized, a walk to the next seam and
+  across): off, the budget 10 ms whatever the slot, no bitmaps, every mesh on the page; on, the budget 4.2 ms of a
+  16.7 ms slot, 53 of 83 pictures from bitmaps (0 failed; the rest still waiting at the moment counted), every picture
+  on the card stamped with a time, 43 meshes on the helper (170-195 ms there in all), 0 on the page, the next place
+  warmed before the crossing (36 pictures, 29-33 meshes). Models after the crossing come in a few a frame (the slot's
+  budget; headless frames about 1 a second): 25 at 8 s, the off arm's count later. Copperleaf's open (the town
+  fixture, phone sized, game's own graphics, a scratch probe): "drawing sprites" (first uploads) 3,060 ms off, 1,261
+  ms on; "warming up a scene" 5.9 s off, 4.1 s on. The phone's "setting up the ground" (4.5-5.3 s) does not show in
+  the fixture's open headless (the phone opens from Start-Game): not reproduced here, not fixed.
+- Not done: the voxel path (recipes with imported voxels: `voxelise`, `greedyVoxelMesh`) stays on the page (few props;
+  the same worker could take it). Copperleaf's open hitch on the phone ("setting up the ground", 4.5-5.3 s:
+  walk/map-cache.js swapMapCache, buildGroundMesh in one go although walk-view-gl.js builds the ground before the
+  place shows): not reproduced headless from the town fixture; the phone's debug log with the hitch list (Start-Game
+  into Copperleaf) would say whether its prepared ground misses its key at the first frame. Next for FL-7 or the
+  load track. Warmed pictures are unpacked, not uploaded (an upload ahead would set the bump map's material before
+  the first draw sets it).
+- Risky: all five switches off, so nothing changes for players until the owner's phone run. Always on: the move of
+  lowPolyFromRecipe (byte-equal meshes, tested), the tick's time stamp (`gpuState.now`, one `performance.now()` a
+  tick), `frameBudgetStart` (the same 8/10 ms with the switch off). On: with slotBudget a frame takes in fewer new
+  meshes and ground slices (4.2 ms at 60 instead of 8 on a phone), so a place fills in over more frames; with
+  uploadQueue a picture shows a frame or more after first wanted (pop-in), and with meshWorker a model's picture
+  stands in until its mesh is back (tens of ms on a phone); bitmaps waiting hold memory (at most 192); with texAge
+  the cap holds more pictures (counted once), so a phone keeps more on the card before trimming.
+- Verified: lint, types, format, modules, data clean; the build bundles the worker; unit tests 2,542 of 2,542; smoke: only the phone crash step ("w:copperleaf*
+  stopped drawing"), which passed alone; `check-perf.py --only=copperleaf` no problems (279-314 draws as shipped,
+  effects 5-7); `check-even-frames.py` every gate; `check-draw-order.py` every gate (pictures with the world stopped:
+  on/on 5.79%, on/off 0.41%, off/on 0.31%); `check-load-overlap.py` every gate. Full quick check 36 of 42 (3,844 s)
+  against a baseline made at the round's start (ee9c4be8, a worktree, 39 pictures, 4,694 s, 34 of 42; my unit tests
+  ran beside it for a while): the six that failed are the start commit's known ones (Starters, passing alone in
+  93 s; RL-8's run; room light; walking out of the lab; the phone crash step's "dialogue 23"; battle music's drums);
+  9 pictures over the threshold, the failed steps' and the known moving ones (battle-alpha, battle-rain, lamps-night,
+  phone-lab-payout, phone-run-sheet, room-lab), with every new switch off.
+- Next: round 5 is done (FL-5b finished first). Round 6 (FL-7, the close-out) waits for the owner's phone run: the
+  Diagnostics and the graphics test have been relayed (12:40), the debug logs with the round 4-5 switches on and off
+  have not, so it is not started here.
+- For the owner on the phone: open the debug menu, turn on "Jobs follow the frame rate", "Pictures kept by time",
+  "Pictures uploaded in turn", "Models built on a helper" and "Next place warmed up", close it; start in Copperleaf,
+  walk the square for a minute, then take a run and cross into its next place twice; send the debug log (its `bud`,
+  gpuMemory's uploads, meshes and warm, and the hitch list), and one with the five off for comparison. Things to look
+  for: pictures or models popping in late when you arrive, a picture missing for good (it should never be), a hitch
+  at a crossing. Each switch turns its part off alone.
+
 ### Fluid track - placing on phones, 16:9 and ultrawide; the frozen world's stall - 2026-10-30
 Branch `track/fluid` (FL-6's session, the owner's follow-up: "make sure the interface is reactive and looks correct on
 portrait phone, widescreen and ultrawide, especially the placing"; FL-5a, FL-5b and FL-6b merged in). The owner's
