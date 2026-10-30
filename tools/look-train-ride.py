@@ -70,6 +70,8 @@ def frames(pg, start, moments, tag):
 
 
 def hour(pg, h):
+    # the way home after a win opens what waited for it (an evolution: pending-windows.js): closed for the next pictures
+    pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();0")
     pg.evaluate(f"(()=>{{environment.force={{time:{h},weather:'clear'}};walkRenderer.adaptT=0;return 0}})()")
     settle(pg, 12)
 
