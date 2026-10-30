@@ -55,7 +55,7 @@ town node needs it.
   townhouses); footprints may change; run towns keep today's houses for now. BD-0 (the plan, research, audits and a
   suggestion page; docs only) done 2026-10-29 on `ccr-d224d90d-qlnty6`; the owner's answers: more nature, more
   retro-futurism, normal maps on above Low, pixel-font signs, 6,000 triangles a house, sessions chained and run side by
-  side without waiting for approval (BD-3's look pick waits for the owner). Wave 1 started 2026-10-29. Five waves: BD-1 new recipe shapes
+  side without waiting for approval (BD-3's look pick waits for the owner). Wave 1 started 2026-10-29; BD-F done 2026-10-29 on `claude/bd-f-window-check`. Five waves: BD-1 new recipe shapes
   beside BD-2a surfaces painted and BD-F the window check fix; BD-2b normal maps; BD-3 look sketches; BD-4a the house
   kit beside BD-5 civic and BD-6 landmarks; BD-7 the town re-laid (with BD-4b), then BD-8 the phone pass. Branch
   `track/buildings`.
