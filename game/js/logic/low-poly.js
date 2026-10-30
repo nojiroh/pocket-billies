@@ -16,11 +16,15 @@ import {
   warpOn,
   warpPoint,
 } from './model-shapes.js';
+import { joinMeshes, spinGroups } from './spin-merge.js';
 /* eslint-disable no-func-assign */
 expose({
+  LOW_POLY_STRIDE: [() => LOW_POLY_STRIDE],
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   limbPoints: [() => limbPoints, v => (limbPoints = v)],
   lowPolyFromRecipe: [() => lowPolyFromRecipe, v => (lowPolyFromRecipe = v)],
+  lowPolyMeshBuffers: [() => lowPolyMeshBuffers, v => (lowPolyMeshBuffers = v)],
+  lowPolyMeshData: [() => lowPolyMeshData, v => (lowPolyMeshData = v)],
   recipeRgb: [() => recipeRgb],
   voxelHash: [() => voxelHash, v => (voxelHash = v)],
 });
@@ -812,4 +816,53 @@ export function lowPolyFromRecipe(rec) {
     warpFrame: WF,
     glow: V.some((v, i) => i % 7 === 6 && !!v),
   };
+}
+/** the low-poly vertex stride (prop-models.js MDL_ATTRIBS: position, normal, texture coordinates, cell, colour) */
+export const LOW_POLY_STRIDE = 24;
+/**
+ * FL-4b: a low-poly recipe's meshes in plain numbers, as prop-models.js propModelMesh lays them on the card: the still
+ * layers in one mesh, and each group of layers that turn together (logic/spin-merge.js) in one more, moved with the
+ * warp at the point they turn about (BD-1). The same on the page and on the model-mesh helper thread
+ * (prop-mesh-worker.js), so a mesh built there is the mesh the page would build. Null: nothing to draw.
+ * @param {any} rec a recipe of shapes (its layers)
+ */
+export function lowPolyMeshData(rec) {
+  const L = rec.layers || [],
+    M = lowPolyFromRecipe({ ...rec, layers: L.filter(l => !l.spin) });
+  if (!M) return null;
+  const spins = [];
+  for (const g of spinGroups(L)) {
+    /* BD-1: under a warp a turning part moves with the point it turns about (it is not bent itself); a group's
+       layers share that point */
+    const c0 = g.spin.c,
+      c1 = M.warpFrame && warpOn(rec.warp) ? warpPoint(rec.warp, M.warpFrame, c0) : c0,
+      mv = [c1[0] - c0[0], c1[1] - c0[1], c1[2] - c0[2]],
+      S = joinMeshes(
+        g.layers.map(l => lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }], move: mv })),
+        LOW_POLY_STRIDE
+      );
+    if (S) spins.push({ vb: S.vb, ib: S.ib, n: S.n, spin: g.spin, c: c1 });
+  }
+  return { vb: M.vb, ib: M.ib, tris: M.tris, box: M.box, wins: M.wins, glow: M.glow, spins };
+}
+/**
+ * FL-4b: the buffers a mesh's data holds, to hand over to the page without a copy (each once)
+ * @param {any} D lowPolyMeshData's
+ * @returns {ArrayBuffer[]}
+ */
+export function lowPolyMeshBuffers(D) {
+  const out = new Set();
+  const add = a => {
+    const b = a instanceof ArrayBuffer ? a : a && a.buffer;
+    if (b instanceof ArrayBuffer) out.add(b);
+  };
+  if (D) {
+    add(D.vb);
+    add(D.ib);
+    for (const S of D.spins) {
+      add(S.vb);
+      add(S.ib);
+    }
+  }
+  return [...out];
 }

@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:183",
-    "game/js/prop-models.js:1799",
+    "game/js/prop-models.js:1789",
     "game/js/walk-view.js:795"
    ]
   },
@@ -1137,7 +1137,7 @@
    "game/js/ui.js:234"
   ],
   "barrel": [
-   "game/js/logic/low-poly.js:531",
+   "game/js/logic/low-poly.js:535",
    "game/js/prop-models.js:239",
    "game/js/prop-models.js:423",
    "game/js/robot-art.js:81"
@@ -1160,8 +1160,8 @@
    "game/js/logic/breeding.js:200",
    "game/js/logic/breeding.js:216",
    "game/js/logic/cutscene-set.js:142",
-   "game/js/logic/low-poly.js:340",
-   "game/js/logic/low-poly.js:702",
+   "game/js/logic/low-poly.js:344",
+   "game/js/logic/low-poly.js:706",
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
    "game/js/prop-models.js:235",

@@ -11,9 +11,8 @@
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
 import { decalPlace, propTurn } from './logic/prop-turn.js';
-import { warpOn, warpPoint } from './logic/model-shapes.js';
 import { joinMeshes, spinGroups } from './logic/spin-merge.js';
-import { limbPoints, lowPolyFromRecipe, voxelHash } from './logic/low-poly.js';
+import { limbPoints, lowPolyMeshData, voxelHash } from './logic/low-poly.js';
 import { leafCutKey, leafCutPixels, leafOutlineColour } from './logic/pixel-facts.js';
 import { gpuTag } from './engine/gpu-counters.js';
 import { solidFragment } from './engine/shader-precision.js';
@@ -49,6 +48,7 @@ import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
 import { lampLit, modelWindowLight } from './walk/lighting.js';
 import { BUILDING_SHADERS, bindBuildingNormals, buildingArt, buildingTextureGrid } from './buildings.js';
+import { propMeshGet } from './prop-meshes.js';
 /* eslint-disable no-func-assign */
 expose({
   GLASS_GLSL: [() => GLASS_GLSL],
@@ -740,36 +740,26 @@ function propModelMesh(path, rec) {
     return m;
   }
   if (lowPolyOn(rec)) {
-    const L = rec.layers || [],
-      M = lowPolyFromRecipe({ ...rec, layers: L.filter(l => !l.spin) });
-    m = M
+    /* FL-4b (quality.meshWorker): built on the helper thread (prop-meshes.js); until it is in, nothing is kept here
+       and the picture stands in */
+    const D = engineSetting('quality', 'meshWorker') ? propMeshGet(path, rec) : lowPolyMeshData(rec);
+    if (D === undefined) return null;
+    m = D
       ? {
-          ...uploadLowPolyMesh(M.vb, M.ib),
+          ...uploadLowPolyMesh(D.vb, D.ib),
           model: 1,
           lowpoly: 1,
-          tris: M.tris,
+          tris: D.tris,
           q: 1 / 256,
-          box: M.box,
+          box: D.box,
           spins: [],
-          wins: M.wins.length ? M.wins : null,
-          glow: M.glow,
+          wins: D.wins.length ? D.wins : null,
+          glow: D.glow,
         }
       : null;
-    /* FL-2b: the layers that turn together (logic/spin-merge.js) in one mesh, one draw: each layer built on its own
-       as before, laid end to end */
-    if (m)
-      for (const g of spinGroups(L)) {
-        /* BD-1: under a warp a turning part moves with the point it turns about (it is not bent itself); a group's
-           layers share that point */
-        const c0 = g.spin.c,
-          c1 = M.warpFrame && warpOn(rec.warp) ? warpPoint(rec.warp, M.warpFrame, c0) : c0,
-          mv = [c1[0] - c0[0], c1[1] - c0[1], c1[2] - c0[2]],
-          S = joinMeshes(
-            g.layers.map(l => lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }], move: mv })),
-            MDL_ATTRIBS.stride
-          );
-        if (S) m.spins.push({ ...uploadLowPolyMesh(S.vb, S.ib), ...g.spin, c: c1, n: S.n });
-      }
+    /* FL-2b: the layers that turn together (logic/spin-merge.js) in one mesh, one draw (logic/low-poly.js
+       lowPolyMeshData) */
+    if (m) for (const S of D.spins) m.spins.push({ ...uploadLowPolyMesh(S.vb, S.ib), ...S.spin, c: S.c, n: S.n });
     propModelState.meshes.set(path, m);
     return m;
   }

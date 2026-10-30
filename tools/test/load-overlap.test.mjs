@@ -3,7 +3,8 @@
 // (quality.texAge, textureTrimOrder). No graphics.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { slotWorkMs, textureTrimOrder, TEXTURE_AGE_MS } from '../../game/js/logic/load-budget.js';
+await import('./walk-renderer.mjs');
+const { slotWorkMs, textureTrimOrder, TEXTURE_AGE_MS } = await import('../../game/js/logic/load-budget.js');
 
 test('slotBudget: a quarter of the paced slot, 2 to 12 ms (the owner: 4 at 60, 8 at 30, 2 at 120)', () => {
   const at = fps => slotWorkMs(1000 / fps);
@@ -38,4 +39,104 @@ test('texAge: unused for longer than 10 s by the clock go, the longest unused fi
     textureTrimOrder([['x', { ut: 0 }]], 9000).map(x => x[0]),
     []
   );
+});
+
+// quality.meshWorker: a low-poly model's mesh built on the helper thread (game/js/prop-mesh-worker.js) is the mesh
+// the page builds (logic/low-poly.js lowPolyMeshData), handed over without a copy; the page asks once per recipe.
+const { readFileSync } = await import('node:fs');
+const { join } = await import('node:path');
+const { ROOT } = await import('./load-logic.mjs');
+await import('../../game/js/prop-models.js');
+const { lowPolyFromRecipe, lowPolyMeshData, lowPolyMeshBuffers } = await import('../../game/js/logic/low-poly.js');
+const { spinGroups } = await import('../../game/js/logic/spin-merge.js');
+await import('../../game/js/prop-meshes.js');
+const { propMeshes, propMeshGet, propMeshMessage, propMeshAhead } = /** @type {any} */ (globalThis);
+const { readGameData } = await import('../data-files.mjs');
+const MODELS = Object.entries(readGameData().scenery.props)
+  .filter(([, M]) => typeof M.model === 'string')
+  .map(([k, M]) => ({ k, rec: JSON.parse(readFileSync(join(ROOT, 'game/art', M.model), 'utf8')) }))
+  .filter(({ rec }) => rec.kind !== 'mesh' && !(rec.layers || []).some(l => l.k === 'raw' && !l.hide));
+const bytes = a => new Uint8Array(a instanceof ArrayBuffer ? a : a.buffer, a.byteOffset || 0, a.byteLength);
+
+test('meshWorker: the mesh data is the still layers’ mesh and one joined mesh per turning group', () => {
+  const W = MODELS.find(({ k }) => k === 'windmill');
+  assert.ok(W, 'the windmill has a recipe');
+  const D = lowPolyMeshData(W.rec),
+    still = lowPolyFromRecipe({ ...W.rec, layers: W.rec.layers.filter(l => !l.spin) });
+  assert.deepEqual(bytes(D.vb), bytes(still.vb));
+  assert.deepEqual([...D.ib], [...still.ib]);
+  assert.equal(D.spins.length, spinGroups(W.rec.layers).length);
+  assert.ok(D.spins[0].n > 0 && D.spins[0].spin && D.spins[0].c);
+});
+
+test('meshWorker: the helper thread’s reply, handed over, is the page’s mesh (every low-poly prop of the data)', async () => {
+  const sent = [];
+  globalThis.self = { postMessage: (m, transfer) => sent.push(structuredClone(m, { transfer })) };
+  await import('../../game/js/prop-mesh-worker.js');
+  let n = 0;
+  for (const { k, rec } of MODELS) {
+    await globalThis.self.onmessage({ data: { kind: 'mesh', id: ++n, rec: structuredClone(rec) } });
+    const r = sent.pop(),
+      D = lowPolyMeshData(rec);
+    assert.equal(r.kind, 'mesh', k);
+    if (!D) {
+      assert.equal(r.D, null, k);
+      continue;
+    }
+    assert.deepEqual(bytes(r.D.vb), bytes(D.vb), k);
+    assert.deepEqual([...r.D.ib], [...D.ib], k);
+    assert.equal(r.D.ib.constructor, D.ib.constructor, k);
+    assert.deepEqual(r.D.box, D.box, k);
+    assert.deepEqual(r.D.wins, D.wins, k);
+    assert.equal(r.D.glow, D.glow, k);
+    assert.equal(r.D.spins.length, D.spins.length, k);
+    for (let i = 0; i < D.spins.length; i++) assert.deepEqual(bytes(r.D.spins[i].vb), bytes(D.spins[i].vb), k);
+  }
+  assert.ok(n > 20, `${n} low-poly props`);
+  // every buffer handed over once
+  const D = lowPolyMeshData(MODELS.find(({ k }) => k === 'windmill').rec);
+  assert.equal(lowPolyMeshBuffers(D).length, new Set(lowPolyMeshBuffers(D)).size);
+  delete globalThis.self;
+});
+
+test('meshWorker: asked once while it is built, taken once, built again for a new recipe; on the page with no thread', () => {
+  const posts = [],
+    W0 = globalThis.Worker,
+    D0 = globalThis.document;
+  globalThis.document = { baseURI: 'http://x/' };
+  globalThis.Worker = class {
+    postMessage(m) {
+      posts.push(m);
+    }
+    terminate() {}
+  };
+  try {
+    Object.assign(propMeshes, { w: null, off: '' });
+    const rec = MODELS[0].rec;
+    assert.equal(propMeshGet('a', rec), undefined);
+    assert.equal(propMeshGet('a', rec), undefined);
+    assert.equal(posts.length, 1, 'asked once');
+    assert.equal(propMeshAhead('a', rec), false, 'already under way');
+    propMeshMessage({ kind: 'mesh', id: posts[0].id, D: lowPolyMeshData(rec) });
+    const D = propMeshGet('a', rec);
+    assert.ok(D && D.vb);
+    // a Studio edit: another recipe for the same path is built again, a late reply for the old one is let go
+    const rec2 = structuredClone(rec);
+    assert.equal(propMeshGet('a', rec2), undefined);
+    assert.equal(posts.length, 2);
+    propMeshMessage({ kind: 'mesh', id: posts[0].id, D: null });
+    assert.equal(propMeshGet('a', rec2), undefined);
+    // the thread fails: the page builds it
+    propMeshMessage({ kind: 'failed', id: posts[1].id, error: 'x' });
+    assert.ok(propMeshes.off);
+    const P = propMeshGet('a', rec2);
+    assert.ok(P && P.vb && propMeshes.page >= 1);
+  } finally {
+    globalThis.Worker = W0;
+    globalThis.document = D0;
+    Object.assign(propMeshes, { w: null, off: '' });
+    propMeshes.jobs.clear();
+    propMeshes.ids.clear();
+    propMeshes.done.clear();
+  }
 });
