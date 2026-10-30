@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-8 - The phone pass: Copperleaf's draws against main, pictures day, dusk and night; the track is done - 2026-10-30
+Branch `track/buildings` (wave 5, the main line; started by BD-7; main (#355) already in, the branch even with its
+remote). Plan written in Plan Mode's shape and built at once (track section 1). Measuring and pictures; one debug-only
+addition to the piece counter and the smoke check. No look change. The track is done: tag `buildings-done` (for the
+owner) once PR #357 merges, then the branch goes (CLAUDE.md, docs/BRANCHES.md).
+- Changed:
+  - theme-sheet.js `uiElementCount(names)`: given an array it also lists each counted piece (tag, first class, first
+    words); without one, nothing changes. check-quick.py keeps the dialogue step's list and a failed screen ceiling
+    now prints the pieces, so BD-7's flake ("dialogue 23 pieces (at most 20)", then 20 on a rerun) names its 3 extra
+    pieces the next time. The cause is not known yet (my guess: the walk's 6 s wander hint under the stack, which the
+    walk's own ceiling keeps room for and the dialogue's 20 doesn't).
+  - ROADMAP, BRANCHES and the track file: BD-8 done, the track done.
+- Measured (tools/check-perf.py --only=copperleaf, SwiftShader on a 390 x 844 phone page, the hub and three spots at
+  noon; counts repeat, the milliseconds don't; this branch against origin/main e3cf601c in a scratch worktree):
+
+  | Spot | Low: main -> BD | As shipped: main -> BD | Models' draws, shipped |
+  |---|---|---|---|
+  | hub 152.4, 60.9 | 222 -> 231.8 | 261.5 -> 298.3 (+14%) | 24.8 -> 34.3 |
+  | 160.4, 66.9 | 231 -> 243.3 | 290.5 -> 315.8 (+9%) | 43 -> 53 |
+  | 144.4, 66.9 | 214.8 -> 226.3 | 290.8 -> 303.8 (+4%) | 41 -> 49 |
+  | 152.4, 50.9 | 248.3 -> 252.3 | 312 -> 320.5 (+3%) | 43 -> 46 |
+
+  Every spot under the 400-draw phone budget (phase 20 A8); uniform calls +1-9%. The rise is all model draws (one per
+  part a mesh: the ten kit houses where two cottage meshes were, the windmills, the cars); sprites are level.
+  No perf baseline exists in validation/ (the check says "no baseline yet"), so these are notes, not gates.
+- Pictures (tools/island-shots.py at 12.5, 20.3 and 22.5 h: the square, the town from above, the south-east overview,
+  the station close, the windmill, the lighthouse, the east and west coasts; scratchpad, not committed; 0 page
+  errors): every building draws at all three hours; the kit houses, the civic four and the landmarks read as distinct
+  silhouettes from above; at night the windows, the Workshop's neon arch and the lamps light; at dusk the station's
+  Googie canopy, starburst clock and a bubble car read well.
+- Found, not changed:
+  - **The grey walls** (BD-3, BD-5, BD-7): the models' shader (prop-models.js, the `shade(...,vec4(.04,16.,0.,.2),.75)`
+    call) mixes 75% of a three-step cel light whose shadow step is .3; the Inner Sun circles (bowl-weather.js
+    `bowlSunAt`: azimuth 135 at 13 h), so at noon one side of every model sits on that .3 step and white walls read
+    grey. Every model draws through this line (the airship, trees' models too), so it is the owner's call (track
+    section 7): options in the final message.
+  - A red figure drawn as a labelled diagram (HEAD, BODY, TAIL, LE) walks beside the player in the pictures (by the
+    windmill, at the station). Not a prop (nothing within 4 m of the windmills in copperleaf.json) and not the part
+    art (game/art/next/parts has no lettering): likely the buddy drawn by a characters-track stand-in. Not this
+    track's; for the characters track to look at.
+- Risky: frame times on the phone are still the owner's log: counts are not milliseconds, and the models' extra draws
+  each bind a mesh. The last phone reading (Adreno 750, 2026-10-28) was 13-17 fps by day on Copperleaf.
+- Verified: lint, typecheck, check:modules, format:check, check:data (195 files, all fine) and build clean; `npm test`
+  2,540 of 2,540. Smoke 7 of 7 in 265 s, run alone after the pictures (the phone step 195 s, its dialogue count
+  within 20 this time); its unused note lists 5 props nothing names (airship_mast and four portal parts: not this
+  track's). The full quick check was not run (over an hour here, BD-2b's entry); smoke and the hub tests cover the steps.
+- Next: the track is done. The owner plays on the phone and sends a debug log (below); this session reads it if sent
+  here. Then PR #357 into main, the tag `buildings-done`, the branch deleted. Later, outside this track: run towns'
+  houses to the kit (section 8), the lighting answer.
+- For the owner on the phone: walk Copperleaf by day, at dusk and at night with the Diagnostics open: the ten kit
+  houses (by the inn and on the farmhouse plot), Granny Juniper's teapot chimney, the five windmills round the farm,
+  the bubble cars by the shop and the station. Walk into two or three house doors. Then send the debug log
+  (Settings -> Help) from the town. Its frame rates go beside the 13-17 fps of 2026-10-28.
+
 ### Buildings track BD-7 - The town re-laid: the house kit placed (BD-4b), Juniper's one-off, windmills, cars - 2026-10-30
 Branch `track/buildings` (wave 5, the main line; pulled BD-4a's merge from its remote, merged `claude/bd-5-civic`
 and `claude/bd-6-landmarks` (HANDOFF and ROADMAP conflicts, both entries kept; scenery.json settled by rerunning
