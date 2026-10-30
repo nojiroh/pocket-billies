@@ -29,7 +29,7 @@ CLOSE = ['workshop', 'gene_bank', 'lighthouse', 'windmill']  # the close-ups (by
 OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), ROOT / 'validation' / 'look-hub-buildings'))
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'test_hub_buildings')
 TURNING = {'workshop', 'gene_bank', 'lighthouse', 'windmill'}
-TALL = {'lighthouse': (14, 5.5), 'windmill': (12, 4.5), 'gene_bank': (10, 3), 'shape_showcase': (10, 1.4)}  # camera distance, aim height
+TALL = {'lighthouse': (14, 5.5), 'windmill': (12, 4.5), 'gene_bank': (10, 3), 'shape_showcase': (13, 1.4)}  # camera distance, aim height
 
 HIDE_HUD = """(()=>{const cv=walkView.cv;for(const el of document.body.querySelectorAll('*'))
  if(el!==cv&&!el.contains(cv))el.style.setProperty('visibility','hidden','important');

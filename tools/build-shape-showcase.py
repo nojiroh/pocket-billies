@@ -47,7 +47,6 @@ def arc(cx, cz, r, a0, a1, n):
 def turns():
     """rot and tilt: a box turned, a crooked chimney, a post leaned right, a cylinder laid on its side"""
     return [
-        box(-1.6, 1, 0, 1.2, 1.2, 1.0, CREAM, 'plaster', name='box turned 30'),
         box(-1.6, 1, 1.0, 1.0, 1.0, 0.25, COPPER, 'metal', rot=math.radians(30), name='cap turned'),
         box(-1.6, 1, 0, 1.2, 1.2, 1.0, CREAM, 'plaster', rot=math.radians(30), name='turned body'),
         box(0, 1, 0, 0.5, 0.5, 2.2, TERRA, 'brick', tilt=[math.radians(-6), math.radians(8)], name='crooked chimney'),

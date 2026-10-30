@@ -9,7 +9,7 @@ houses look way too similar now, add a lot of modular variety." BD-0 (this file 
 written on `ccr-d224d90d-qlnty6`; `track/buildings` was made from it by BD-0's session at the owner's word
 (2026-10-29), and every later session works there or on a side branch of it (section 6, "How the sessions run").
 
-**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once.
+**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once. BD-1 done 2026-10-30.
 
 The suggestion page (sketches of every building, a house roller, the new surfaces; private to the owner):
 https://claude.ai/artifact/3NF2Qp28uncV7fiCH5yP5b . Its sketches are 2D drawings of shapes and details, not the
@@ -188,7 +188,7 @@ Each building gets **one signature silhouette** that reads from the orbit camera
 | # | Session | Goal | Depends on | Sessions |
 |---|---|---|---|---|
 | BD-0 | The plan (done 2026-10-29) | This file; the suggestion page; ROADMAP and BRANCHES rows | none | 1 |
-| BD-1 | New shapes | The recipe shapes the look needs, in the mesher and the world map; unit tests; a shapes showcase map | BD-0 | 1-2 |
+| BD-1 | New shapes (done 2026-10-30) | The recipe shapes the look needs, in the mesher and the world map; unit tests; a shapes showcase map | BD-0 | 1-2 |
 | BD-2a | Surfaces painted | The sheet to 8x4 with the new cells and their height maps, painted in Python (no shader work) | BD-0 | 1 |
 | BD-2b | Normal maps | The normal sheet sampled in the model shader; a graphics setting; phone cost measured | BD-1, BD-2a | 1 |
 | BD-3 | Look sketches | 3 directions on one house and the shop, as pictures; the owner picks | BD-2b | 1 |

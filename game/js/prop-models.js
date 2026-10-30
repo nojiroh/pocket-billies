@@ -237,6 +237,9 @@ const PROP_MODEL_SHAPES = [
   ['barrel', 'Barrel'],
   ['limb', 'Limb (from x, y, z to x2, y2, z2)'],
   ['dome', 'Dome'],
+  /* BD-1 */
+  ['prism', 'Prism (a profile drawn out)'],
+  ['lathe', 'Lathe (a profile turned round)'],
 ];
 export function propModelsOn() {
   return typeof engineSetting === 'function' && (engineSetting('world', 'voxelProps') ?? true) && !propModelState.fail;
