@@ -236,6 +236,19 @@ debugLog.ctx = () => {
         c.shc = [GAME.walkRenderer.shHit || 0, GAME.walkRenderer.shMiss || 0];
         GAME.walkRenderer.shHit = GAME.walkRenderer.shMiss = 0;
       }
+      /* FL-4: far shadow maps used again unchanged (quality.shadowHold), grass strips sent and views planted ahead */
+      if (GAME.walkRenderer.shHeld) {
+        c.shh = GAME.walkRenderer.shHeld;
+        GAME.walkRenderer.shHeld = 0;
+      }
+      if (GAME.walkRenderer.grassStrips) {
+        c.gst = GAME.walkRenderer.grassStrips;
+        GAME.walkRenderer.grassStrips = 0;
+      }
+      if (GAME.walkRenderer.grassAheadDone) {
+        c.gah = GAME.walkRenderer.grassAheadDone;
+        GAME.walkRenderer.grassAheadDone = 0;
+      }
       /* phase 20: the point lights in the frame, and how many of them cast a shadow map */
       const X = GAME.walkRenderer.X;
       if (X && X.lights) c.lit = [X.lights.length, (X.lampSh || []).length];
