@@ -2,6 +2,71 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-2a - pictures: the draw budget - 2026-10-30
+Branch `track/fluid` (round 1's last lane, beside FL-1a and FL-1b; their commits merged in before the checks). Plan
+approved by the owner's standing answer (fluid-track.md section 1). Code: the picture pass's three fixes, its sort, the
+contact shade on the CPU, Pictures in batches and Sky last on by default, a Copperleaf gate. No tag (the track's tag
+comes at FL-7).
+- Facts checked against the code (73b2f8b1): the three review bugs are real (each has a test that fails on the old
+  code: (a) after a model with blades the pass thought the sprite program was bound while the instanced one was, so a
+  flashing picture right after it drew on the wrong program; (b) a flashing or rising crossing tree lost its crossing
+  picture in batches; (c) the reflection's batched record had no `fig` and its plain loop ignored `it.im.uv`, so a
+  figure's reflection drew the whole atlas). The sprite fragment shader ran `contactAO(uBaseP)` (64 steps, a uniform
+  point) in every pixel. Re-measured headless (counts only): Copperleaf at low graphics, settled, by day, 860 draws and
+  18,166 uniform calls a frame on the old paths, 335 and 830 with both switches on (R4 had 853 → 274); the model leaf
+  pictures 566 → 95 draws (R4: 643 → 94). As shipped on the phone page: 402-531 draws with the switches on (grass 104-113
+  and effects 73-86 of them, FL-2b's), 1,000-1,700 uniform calls.
+- Changed:
+  - game/js/walk/sprites.js: (a) the sprite program is put in use before a picture's blades or hands, whether or not
+    any are drawn; (b) the crossing picture drawn after a flashing or rising tree's plain draw; (c) reflectionRecord
+    sets `fig`. Sorted by texture (`textureKey`, the key kept on the texture's entry, so a figure atlas's cells sort
+    together; worked out once per item before the sort; models and pictures with no texture yet are 0) instead of
+    `imageId` (removed). The contact shade per picture (`r.cao`, uCAO). `firstInBatches`: each pass's first draw in
+    batches on a context (sprites, reflection) is wrapped in getError; an error turns batches off for the page and
+    logs `pictures in batches off: GL error N on the first <pass> in batches` (an error from before it is logged
+    apart). Two to four getErrors once per context, beside FL-1b's rule that getError is asked only in tests.
+  - game/js/walk/water.js: the plain reflection sends the picture's atlas rect (spriteGeometry) and uFig.
+  - game/js/logic/contact-shade.js (new): `contactShade`, the CPU twin of webgl.js contactAO. In both pages and the
+    Studio's logic worker list.
+  - game/js/walk/walk-shaders.js: the sprite shader reads `uCAO`; the instanced one carries it as the fraction of the
+    flags varying (still 15 varying rows; uFlipN reads the whole part). engine/sprite-instances.js packs it in the
+    flags' two spare bytes (16 bits); unpack reads it.
+  - game/js/engine/settings.js: `quality.skyLast` and `quality.spriteInstances` true (the owner's answer).
+  - game/js/debug-menu.js: a row "Pictures in batches" (On / Off / Off (GL error)) and "Sky last", for the session
+    (the game data's engine defaults, as the terrain switches).
+  - tools/check-perf.py (an addition to TD-3's check): `--only=copperleaf` (also in the full run): Copperleaf at noon
+    on the phone page, the hub and three spots, each counted until two counts agree. Gates: at most 400 draws at low
+    graphics; at most 2,500 uniform calls at low and as shipped. As shipped the draws are a note until FL-2b.
+  - Tests: sprite-records (the fixes, the contact shade sent and packed, the fallback; snapshots remade for the added
+    useProgram, uFig, uCAO and getError calls and the new order; its plain path pins the switch off),
+    contact-shade.test.mjs (the GLSL pinned, the twin against the shader's steps in float32, the flags' decoding),
+    debug-menu-switches (the new switches handled and on by default).
+- Not done, for other lanes: Sky last has no automatic fallback (it raises no GL error to catch); the debug switch is
+  its way back. As shipped Copperleaf stays over 400 until FL-2b merges grass chunk runs and draws fountains as one
+  batch; the leaf-clump runs (95-145 sprite draws) need the atlas (section 7, Ask me before).
+- Risky: everything a phone draws now goes through the instanced picture program and the sky after the opaque things
+  by default; the look was checked headless only (SwiftShader). The contact shade in the batched path is 16-bit (a
+  65535th) and in the plain path exact; on `quality.mediump` the old per-pixel loop ran at medium precision, the CPU
+  value is exact.
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,418 of 2,418 after merging FL-1a and FL-1b;
+  smoke 7 of 7 (298 s); `check-perf.py --only=copperleaf` no problems (431 s); a same-page pair of pictures (old paths
+  then new, Copperleaf by day) differs only where townsfolk moved. Full quick check (2,228 s, 42 steps, 39 passed)
+  against a baseline from 913720db (its own full run, 43 pictures; that run was cut off at 50 minutes before writing
+  the baseline, so its pictures were copied in by hand): the three problems are not this lane's: RL-8 (a run's
+  seam view) and room light failed the same way on 913720db; Battle music (drums timing) passes alone. 11 pictures
+  over the comparison's threshold, each traced: phone-crash-pick is taken during a fade (913720db's own smoke and full
+  runs differ by 83: brightness 50 against 133); phone-mast, props-lowpoly and env-day are other moments or spots
+  (the player elsewhere, 913720db's env-day differs by 19.3 from itself); the battle, room and night pictures sit at
+  15-20 with the same scenes. A same-page check (the same spot, old paths then new): by day under 1% of pixels apart
+  in the every-prop scene and Copperleaf; at night the new paths differ from themselves as much as from the old (the
+  camera still moving: every edge, the page's labels too, shifted a pixel). A new baseline is worth making on
+  `track/fluid` (`--baseline`) once round 2 starts.
+- Next: round 2 (FL-2b, FL-3a, FL-6): FL-1a and FL-1b were done, so this lane started them (each its own session).
+- For the owner on the phone: Copperleaf by day with the Diagnostics open: sprite draws should be about 100-150 (were
+  about 700). If anything looks wrong (missing trees, black pictures), the debug menu's "Pictures in batches" and
+  "Sky last" switch the old ways back on for the session; send the debug log either way (it says if batches fell back
+  by themselves).
+
 ### Fluid track FL-1b - stalls and page quick wins (no look change) - 2026-10-30
 Branch `track/fluid` (round 1 lane, beside FL-1a and FL-2a; their commits merged in before the last checks). Plan
 approved by the owner's standing answer (fluid-track.md section 1). Code: what the page does while nothing needs it.
@@ -54,61 +119,6 @@ No tag (the track's tag comes at FL-7).
 - For the owner on the phone: open Team or Bag from a walk and back: the world should stop at once and the menu
   scroll smoothly. The debug log of a walk now has `hitches.missed`; run the Graphics cost test once to get `glErr`
   (the phone's cost of getError).
-
-### Fluid track FL-2a - pictures: the draw budget - 2026-10-30
-Branch `track/fluid` (round 1 lane, beside FL-1a and FL-1b; their commits merged in before the checks). Plan
-approved by the owner's standing answer (fluid-track.md section 1). Code: the picture pass's three fixes, its sort, the
-contact shade on the CPU, Pictures in batches and Sky last on by default, a Copperleaf gate. No tag (the track's tag
-comes at FL-7).
-- Facts checked against the code (73b2f8b1): the three review bugs are real (each has a test that fails on the old
-  code: (a) after a model with blades the pass thought the sprite program was bound while the instanced one was, so a
-  flashing picture right after it drew on the wrong program; (b) a flashing or rising crossing tree lost its crossing
-  picture in batches; (c) the reflection's batched record had no `fig` and its plain loop ignored `it.im.uv`, so a
-  figure's reflection drew the whole atlas). The sprite fragment shader ran `contactAO(uBaseP)` (64 steps, a uniform
-  point) in every pixel. Re-measured headless (counts only): Copperleaf at low graphics, settled, by day, 860 draws and
-  18,166 uniform calls a frame on the old paths, 335 and 830 with both switches on (R4 had 853 → 274); the model leaf
-  pictures 566 → 95 draws (R4: 643 → 94). As shipped on the phone page: 402-531 draws with the switches on (grass 104-113
-  and effects 73-86 of them, FL-2b's), 1,000-1,700 uniform calls.
-- Changed:
-  - game/js/walk/sprites.js: (a) the sprite program is put in use before a picture's blades or hands, whether or not
-    any are drawn; (b) the crossing picture drawn after a flashing or rising tree's plain draw; (c) reflectionRecord
-    sets `fig`. Sorted by texture (`textureKey`, the key kept on the texture's entry, so a figure atlas's cells sort
-    together; worked out once per item before the sort; models and pictures with no texture yet are 0) instead of
-    `imageId` (removed). The contact shade per picture (`r.cao`, uCAO). `firstInBatches`: each pass's first draw in
-    batches on a context (sprites, reflection) is wrapped in getError; an error turns batches off for the page and
-    logs `pictures in batches off: GL error N on the first <pass> in batches` (an error from before it is logged
-    apart). Two to four getErrors once per context, beside FL-1b's rule that getError is asked only in tests.
-  - game/js/walk/water.js: the plain reflection sends the picture's atlas rect (spriteGeometry) and uFig.
-  - game/js/logic/contact-shade.js (new): `contactShade`, the CPU twin of webgl.js contactAO. In both pages and the
-    Studio's logic worker list.
-  - game/js/walk/walk-shaders.js: the sprite shader reads `uCAO`; the instanced one carries it as the fraction of the
-    flags varying (still 15 varying rows; uFlipN reads the whole part). engine/sprite-instances.js packs it in the
-    flags' two spare bytes (16 bits); unpack reads it.
-  - game/js/engine/settings.js: `quality.skyLast` and `quality.spriteInstances` true (the owner's answer).
-  - game/js/debug-menu.js: a row "Pictures in batches" (On / Off / Off (GL error)) and "Sky last", for the session
-    (the game data's engine defaults, as the terrain switches).
-  - tools/check-perf.py (an addition to TD-3's check): `--only=copperleaf` (also in the full run): Copperleaf at noon
-    on the phone page, the hub and three spots, each counted until two counts agree. Gates: at most 400 draws at low
-    graphics; at most 2,500 uniform calls at low and as shipped. As shipped the draws are a note until FL-2b.
-  - Tests: sprite-records (the fixes, the contact shade sent and packed, the fallback; snapshots remade for the added
-    useProgram, uFig, uCAO and getError calls and the new order; its plain path pins the switch off),
-    contact-shade.test.mjs (the GLSL pinned, the twin against the shader's steps in float32, the flags' decoding),
-    debug-menu-switches (the new switches handled and on by default).
-- Not done, for other lanes: Sky last has no automatic fallback (it raises no GL error to catch); the debug switch is
-  its way back. As shipped Copperleaf stays over 400 until FL-2b merges grass chunk runs and draws fountains as one
-  batch; the leaf-clump runs (95-145 sprite draws) need the atlas (section 7, Ask me before).
-- Risky: everything a phone draws now goes through the instanced picture program and the sky after the opaque things
-  by default; the look was checked headless only (SwiftShader). The contact shade in the batched path is 16-bit (a
-  65535th) and in the plain path exact; on `quality.mediump` the old per-pixel loop ran at medium precision, the CPU
-  value is exact.
-- Verified: lint, types, format, modules, data, build clean; unit tests 2,418 of 2,418 after merging FL-1a and FL-1b;
-  smoke 7 of 7 (298 s); `check-perf.py --only=copperleaf` no problems (431 s); a same-page pair of pictures (old paths
-  then new, Copperleaf by day) differs only where townsfolk moved. QUICK_RESULT.
-- Next: round 2 (FL-2b, FL-3a, FL-6), started by the round's last lane.
-- For the owner on the phone: Copperleaf by day with the Diagnostics open: sprite draws should be about 100-150 (were
-  about 700). If anything looks wrong (missing trees, black pictures), the debug menu's "Pictures in batches" and
-  "Sky last" switch the old ways back on for the session; send the debug log either way (it says if batches fell back
-  by themselves).
 
 ### Fluid track FL-1a - pacer and ladder bugs (no look change) - 2026-10-30
 Branch `track/fluid` (round 1 lane, beside FL-1b and FL-2a; FL-1b's commits merged in). Plan approved by the owner's
