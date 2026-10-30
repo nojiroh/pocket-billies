@@ -26,6 +26,7 @@ expose({
   CONTROL_LEVELS: [() => CONTROL_LEVELS],
   HOLD_MAX_MS: [() => HOLD_MAX_MS],
   HOLD_MS: [() => HOLD_MS],
+  RES_LEVELS: [() => RES_LEVELS],
   REVERT_MS: [() => REVERT_MS],
   SETTLE_MS: [() => SETTLE_MS],
   THERMAL_CALM_MS: [() => THERMAL_CALM_MS],
@@ -44,6 +45,10 @@ expose({
   controlSaved: [() => controlSaved, v => (controlSaved = v)],
   frameControl: [() => frameControl, v => (frameControl = v)],
   leverDown: [() => leverDown, v => (leverDown = v)],
+  resApply: [() => resApply, v => (resApply = v)],
+  resDrawLevel: [() => resDrawLevel, v => (resDrawLevel = v)],
+  resStepDown: [() => resStepDown, v => (resStepDown = v)],
+  resStepUp: [() => resStepUp, v => (resStepUp = v)],
   worldSteps: [() => worldSteps, v => (worldSteps = v)],
 });
 /* eslint-enable no-func-assign */
@@ -70,12 +75,13 @@ export const SETTLE_MS = 400,
  *   iv, wk, lag, at, ms: the ring (interval, work, fence lag (-1 unknown), time, missed); lv: the levels; taken: the
  *   levers stepped down, last on top (a raise undoes the top one)
  * @typedef {{ now: number, dt: number, work: number, lag?: number, slot: number, V: number, skip?: boolean,
- *   phone?: boolean, floorR?: number, levers?: string, cpu?: boolean }} ControlInput
+ *   phone?: boolean, floorR?: number, levers?: string, cpu?: boolean, resSteps?: number[] }} ControlInput
  *   dt: the time since the last frame (ms); work: the frame's own work on the main thread (ms); lag: the fence lag in
  *   frames (-1 or missing: unknown); slot: the interval the scheduler delivers (ms, the half rate included); V: the
  *   refresh period (ms); skip: a frame with a one-off job or counted calls; floorR: the lowest resolution (0.6 on a
  *   phone, 0.5 elsewhere); levers: 'walk' (the bottleneck split, default) or 'one' (a single ladder on q: the battle);
- *   cpu: false leaves the CPU level out (the owner allowed its look trades on phones only)
+ *   cpu: false leaves the CPU level out (the owner allowed its look trades on phones only); resSteps: FL-3b's
+ *   resolution levels (RES_LEVELS, quality.resSteps on): the resolution steps from one to the next, not by 0.1
  * @typedef {{ act: 'down' | 'up' | 'revert' | 'floor', lever: string, why: string }} ControlStep
  */
 
@@ -161,17 +167,18 @@ export function leverDown(lv, kind, floorR, levers, cpu) {
   return pick || (!lv.half ? 'half' : '');
 }
 
-export function applyDown(lv, lever, floorR) {
+export function applyDown(lv, lever, floorR, steps) {
   if (lever === 'q') lv.q++;
   else if (lever === 'c') lv.c++;
-  else if (lever === 'R') lv.R = Math.max(floorR, Math.round((lv.R - 0.1) * 10) / 10);
+  else if (lever === 'R')
+    lv.R = steps ? resStepDown(lv.R, floorR, steps) : Math.max(floorR, Math.round((lv.R - 0.1) * 10) / 10);
   else if (lever === 'half') lv.half = true;
 }
 
-export function applyUp(lv, lever) {
+export function applyUp(lv, lever, steps) {
   if (lever === 'q') lv.q = Math.max(0, lv.q - 1);
   else if (lever === 'c') lv.c = Math.max(0, lv.c - 1);
-  else if (lever === 'R') lv.R = Math.min(1, Math.round((lv.R + 0.1) * 10) / 10);
+  else if (lever === 'R') lv.R = steps ? resStepUp(lv.R, steps) : Math.min(1, Math.round((lv.R + 0.1) * 10) / 10);
   else if (lever === 'half') lv.half = false;
 }
 
@@ -193,7 +200,8 @@ export function controlFrame(s, i) {
   const now = i.now,
     slot = i.slot,
     floorR = i.floorR ?? 0.5,
-    levers = i.levers || 'walk';
+    levers = i.levers || 'walk',
+    steps = i.resSteps;
   if (i.skip) {
     s.skipNext = true;
     return null;
@@ -240,7 +248,7 @@ export function controlFrame(s, i) {
     /* a raise that comes down within 5 s goes back, and raising is held off (the hold doubling each time) */
     if (s.raised && now - s.raiseT < REVERT_MS) {
       const lever = s.raised;
-      applyDown(s.lv, lever, floorR);
+      applyDown(s.lv, lever, floorR, steps);
       s.taken.push(lever);
       s.raised = '';
       s.holdT = now + s.holdMs;
@@ -263,7 +271,7 @@ export function controlFrame(s, i) {
       if (now - s.lateDownT < THERMAL_PAIR_MS) s.thermalT = now + THERMAL_HOLD_MS;
       s.lateDownT = now;
     }
-    applyDown(s.lv, lever, floorR);
+    applyDown(s.lv, lever, floorR, steps);
     s.taken.push(lever);
     s.downs++;
     s.why = `${kind}: ${why}`;
@@ -283,7 +291,7 @@ export function controlFrame(s, i) {
   if (workP95 >= room * 0.7) return null;
   if ((top === 'q' || top === 'R' || top === 'half') && lagP90 >= 1.5) return null;
   if (s.taken.length) s.taken.pop();
-  applyUp(s.lv, top);
+  applyUp(s.lv, top, steps);
   s.raised = top;
   s.raiseT = now;
   s.ups++;
@@ -304,19 +312,24 @@ export function controlSaved(s) {
 /**
  * A controller started at a place kind's kept levels (the half rate is never kept: it is earned again).
  * @param {unknown} kept
+ * @param {number[]} [steps] FL-3b's resolution levels when they are on (the stack holds one R a level, not one a 0.1)
  * @returns {ControlState}
  */
-export function controlRestore(kept) {
+export function controlRestore(kept, steps) {
   const k = /** @type {any} */ (kept) || {},
     num = (v, lo, hi, d) => (Number.isFinite(+v) ? Math.min(hi, Math.max(lo, +v)) : d);
   const s = frameControl({
     q: Math.round(num(k.q, 0, CONTROL_LEVELS.q, 0)),
     c: Math.round(num(k.c, 0, CONTROL_LEVELS.c, 0)),
-    R: Math.round(num(k.R, 0.5, 1, 1) * 10) / 10,
+    R: steps ? resDrawLevel(num(k.R, 0.5, 1, 1), 1, steps) : Math.round(num(k.R, 0.5, 1, 1) * 10) / 10,
   });
   /* the stack is rebuilt to match the levels, so climbing undoes what is set */
   const taken = Array.isArray(k.taken) ? k.taken.filter(l => l === 'q' || l === 'c' || l === 'R') : [];
-  const want = { q: s.lv.q, c: s.lv.c, R: Math.round((1 - s.lv.R) * 10) },
+  const want = {
+      q: s.lv.q,
+      c: s.lv.c,
+      R: steps ? steps.filter(l => l > s.lv.R + 0.001).length : Math.round((1 - s.lv.R) * 10),
+    },
     left = { ...want };
   s.taken = taken.filter(l => left[l]-- > 0);
   for (const l of /** @type {('q'|'c'|'R')[]} */ (['R', 'c', 'q'])) {
@@ -342,4 +355,72 @@ export function worldSteps(dtm) {
   const ms = Math.max(0, Math.min(+dtm || 0, WORLD_FRAME_MS)),
     n = Math.max(1, Math.ceil(ms / WORLD_STEP_MS));
   return { ms, n, h: ms / n / 1000 };
+}
+
+/* ================= RESOLUTION LEVELS (FL-3b) =================
+   Behind quality.resSteps (off until the owner's phone run). Fewer, larger resolution steps than the ladders' 0.1:
+   each level is a size class of the canvas and of every screen-sized render target, so the targets are reused while
+   the level holds. A level the ladder asks for during a walk waits (walk-view-gl.js) until the canvas can change
+   unseen: behind a screen or a window, while the view fades in or out, behind a loading screen, or when the canvas
+   changes size anyway (a turn of the phone, the battle's frame). */
+/** the levels, highest first (a phone's floor is 0.6, elsewhere 0.5) */
+export const RES_LEVELS = [1, 0.8, 0.6, 0.5];
+
+/**
+ * The next level down from R, not below the floor.
+ * @param {number} R
+ * @param {number} floorR
+ * @param {number[]} [steps]
+ */
+export function resStepDown(R, floorR, steps = RES_LEVELS) {
+  const next = steps.find(l => l < R - 0.001);
+  return Math.max(floorR, next ?? floorR);
+}
+
+/**
+ * The next level up from R, at most 1.
+ * @param {number} R
+ * @param {number[]} [steps]
+ */
+export function resStepUp(R, steps = RES_LEVELS) {
+  let up = 1;
+  for (const l of steps) if (l > R + 0.001) up = l;
+  return Math.min(1, up);
+}
+
+/**
+ * The level to draw at for the resolution a ladder asks for, with hysteresis: going down the level is the lowest one
+ * still at or above the ask (0.9 keeps 1, 0.7 gives 0.8), going up the highest one at or below it (0.7 keeps 0.6, 1
+ * gives 1). So the old ladder's 0.1 steps move the size only when they cross a level, and back and forth across one
+ * 0.1 step changes nothing.
+ * @param {number} want the resolution asked for (0.5-1)
+ * @param {number} drawn the level drawn now (1 when none yet)
+ * @param {number[]} [steps]
+ * @returns {number}
+ */
+export function resDrawLevel(want, drawn, steps = RES_LEVELS) {
+  const w = Math.min(1, Math.max(steps[steps.length - 1], +want || 1)),
+    d = +drawn || 1;
+  if (Math.abs(w - d) < 0.001) return d;
+  if (w < d) {
+    let lv = steps[steps.length - 1];
+    for (const l of steps) if (l >= w - 0.001) lv = l;
+    return Math.min(d, lv);
+  }
+  return Math.max(d, steps.find(l => l <= w + 0.001) ?? steps[steps.length - 1]);
+}
+
+/**
+ * Whether a waiting level is taken now: when there is none drawn yet, or the moment hides the change.
+ * @param {{ drawn: number | null, want: number, held: boolean, fading: boolean, loading: boolean, resizing: boolean }} m
+ *   drawn: the level drawn (null: the view's first frame); want: the level asked for; held: behind a screen, a window
+ *   or a hidden page; fading: the view fading in or out; loading: a loading screen over it; resizing: the canvas
+ *   changes size this frame anyway (its CSS size, the Settings resolution, the pixel budget)
+ * @returns {{ R: number, why: string }} the level to draw now, and why it changed ('' when it didn't)
+ */
+export function resApply(m) {
+  if (m.drawn == null) return { R: m.want, why: 'first' };
+  if (Math.abs(m.want - m.drawn) < 0.001) return { R: m.drawn, why: '' };
+  const why = m.held ? 'held' : m.fading ? 'fade' : m.loading ? 'loading' : m.resizing ? 'resize' : '';
+  return { R: why ? m.want : m.drawn, why };
 }

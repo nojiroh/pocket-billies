@@ -394,6 +394,10 @@ export const ENGINE_DEFAULTS = {
        the graphics chip's levers or the main thread's by what holds frames back, and falls back to a steady half rate.
        Off (the old ladder, logic/quality-step.js) until the owner's phone run; the debug menu's switch */
     controller: false,
+    /* FL-3b: the resolution in fewer, larger steps (logic/frame-control.js RES_LEVELS: 1, 0.8, 0.6, 0.5), and the canvas
+       and its screen-sized targets resized only where it can't be seen (behind a screen or a window, a fade, a loading
+       screen); during a walk a step waits. Off until the owner's phone run; the debug menu's switch */
+    resSteps: false,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -1657,6 +1661,12 @@ export const ENGINE_SPEC = [
         'Frame controller',
         'bool',
         'The automatic quality aims at the frame rate the browser gives and lowers what holds frames back: the graphics card’s effects and resolution, or on a phone far small props and townsfolk. When even the lowest can’t keep up, it runs at a steady half rate and climbs back by itself. Off: the old ladder.',
+      ],
+      [
+        'resSteps',
+        'Resolution steps',
+        'bool',
+        'The automatic resolution moves in a few larger steps (full, 80%, 60%, 50%), and the picture changes size only where you can’t see it: behind a menu or a window, while a place fades in or out, behind a loading screen. While you walk a step waits, so walking never hitches on a resize. Off: steps of 10% at any moment.',
       ],
       [
         'warmUp',

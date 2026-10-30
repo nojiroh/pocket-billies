@@ -133,6 +133,8 @@ export const gpuState = {
   flatN: null,
   quad: null,
   fb: {},
+  /* FL-3b: render targets made again at another size, in all and by name (renderTarget) */
+  fbRe: { n: 0, by: /** @type {Record<string, number>} */ ({}) },
   hdr: false,
   samp: {},
   normQ: [],
@@ -1353,6 +1355,11 @@ export function renderTarget(name, w, h, o = {}) {
     F = gpuState.fb[name];
   if (F && F.w === w && F.h === h) return F;
   if (F) {
+    /* FL-3b: a target made again at another size (the screen-sized ones follow the canvas): counted by name for the
+       gates (tools/check-resolution.py) and the debug log */
+    const re = gpuState.fbRe;
+    re.n++;
+    re.by[name] = (re.by[name] || 0) + 1;
     gpuFree(F.f);
     gpuFree(F.c);
     gpuFree(F.d);

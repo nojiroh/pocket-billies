@@ -38,7 +38,7 @@ import {
 import { personPicture } from './logic/person-view.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { FOG_MARCH_STEPS, fogGridBox, fogMarchOn } from './logic/fog-grid.js';
-import { worldSteps } from './logic/frame-control.js';
+import { RES_LEVELS, resApply, resDrawLevel, worldSteps } from './logic/frame-control.js';
 import { gpuCountSummary, gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import {
@@ -161,6 +161,7 @@ expose({
   oneOffMs: [() => oneOffMs, v => (oneOffMs = v)],
   peopleReport: [() => peopleReport, v => (peopleReport = v)],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
+  resolutionDrawn: [() => resolutionDrawn, v => (resolutionDrawn = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   walkViewGpuLost: [() => walkViewGpuLost, v => (walkViewGpuLost = v)],
@@ -587,7 +588,8 @@ function drawWalkFrame(ts, dtm) {
   walkRenderer.budT = performance.now();
   runNormalMapJobs(walkView.warm ? 40 : 3);
   /* LD-2: behind a loading screen (the boot's, a run's) as many as fit in 12 ms a frame, so none is left for play */
-  pollPendingPrograms(1, document.body.classList.contains('ld-on') || document.getElementById('runload') ? 12 : 0);
+  const loading = document.body.classList.contains('ld-on') || !!document.getElementById('runload');
+  pollPendingPrograms(1, loading ? 12 : 0);
   groundOcclusionWork();
   groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   /* the crossing hitch (2026-10-28): the next view's walking grid, built ahead in what is left (walk-view.js) */
@@ -599,18 +601,27 @@ function drawWalkFrame(ts, dtm) {
   if (!cssW || !cssH) return;
   /* phase 20 R2 (D4): with quality.phonePixels a phone (Android, iPhone) draws at most 1.2 million pixels (1.6
      elsewhere), and its automatic resolution starts a step lower (0.9; it climbs back when frames have room) */
-  const phoneK = PHONE && !!engineSetting('quality', 'phonePixels');
+  const phoneK = PHONE && !!engineSetting('quality', 'phonePixels'),
+    steps = !!engineSetting('quality', 'resSteps');
   if (phoneK && !phoneStarted) {
     phoneStarted = true;
-    if (walkView.R >= 1) walkView.R = 0.9;
+    /* FL-3b: with the resolution levels a step lower is the level below full (0.8) */
+    if (walkView.R >= 1) walkView.R = steps ? RES_LEVELS[1] : 0.9;
   }
   const R0 = Math.min(devicePixelRatio || 1, 1.75) * engineSetting('quality', 'resolution'),
-    R = R0 * Math.min(1, Math.sqrt((phoneK ? 1.2e6 : 1.6e6) / (cssW * cssH * R0 * R0))) * walkView.R,
-    rw = Math.max(64, Math.min(2400, Math.round(cssW * R))),
-    rh = Math.max(64, Math.round((cssH * rw) / cssW));
+    RB = R0 * Math.min(1, Math.sqrt((phoneK ? 1.2e6 : 1.6e6) / (cssW * cssH * R0 * R0))),
+    /** the canvas's size at a resolution */
+    sizeAt = Rk => {
+      const w = Math.max(64, Math.min(2400, Math.round(cssW * RB * Rk)));
+      return [w, Math.max(64, Math.round((cssH * w) / cssW))];
+    };
+  const [rw, rh] = sizeAt(steps ? resolutionDrawn(cv, sizeAt, loading) : walkView.R);
+  if (!steps) walkRenderer.resD = null;
   if (cv.width !== rw || cv.height !== rh) {
     cv.width = rw;
     cv.height = rh;
+    /* FL-3b: every change of the canvas's size reallocates the screen-sized targets (the gates count them) */
+    walkRenderer.resizes = (walkRenderer.resizes || 0) + 1;
   }
   const ui = walkRenderer.ui;
   if (ui.width !== rw || ui.height !== rh) {
@@ -640,6 +651,28 @@ function drawWalkFrame(ts, dtm) {
     engineContext.env = false;
     endGpuTimer(gq);
   }
+}
+/* FL-3b (quality.resSteps): the resolution drawn this frame. The ladder's ask (walkView.R) is taken as its level
+   (logic/frame-control.js resDrawLevel: fewer, larger steps with hysteresis); a new level waits until the change can't be
+   seen (resApply: behind a screen or a window, the view fading in or out, a loading screen, or the canvas changing size
+   anyway), so a walk never reallocates the screen-sized targets for the ladder. walkRenderer.resD: the level drawn;
+   resWait: the level waiting (0: none); resWhy: why the last change was taken */
+function resolutionDrawn(cv, sizeAt, loading) {
+  const drawn = walkRenderer.resD ?? null,
+    want = resDrawLevel(walkView.R, drawn ?? 1),
+    [w, h] = sizeAt(drawn ?? want),
+    r = resApply({
+      drawn,
+      want,
+      held: !!walkView.held,
+      fading: !cv.classList.contains('in'),
+      loading,
+      resizing: cv.width !== w || cv.height !== h,
+    });
+  if (r.why) walkRenderer.resWhy = r.why;
+  walkRenderer.resD = r.R;
+  walkRenderer.resWait = Math.abs(want - r.R) < 0.001 ? 0 : want;
+  return r.R;
 }
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const WS = walkRenderer.worldSteps || worldSteps(dtm);
