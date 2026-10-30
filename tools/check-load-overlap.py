@@ -39,7 +39,7 @@ STATE = """(() => {
 })()"""
 
 
-def arm(b, base, on, cf):
+def arm(b, base, on, cf, target=0):
     errs = []
     ctx, pg = new_page(b, errs, width=390, height=844, mobile=True, low=False, timeout=300000)
     pg.goto(base + '/index.html?fixture=run')
@@ -68,6 +68,9 @@ def arm(b, base, on, cf):
     S = pg.evaluate(STATE)
     # and 8 s later: a mesh still on its way shows here (the count also follows where the camera ended up)
     pg.wait_for_timeout(8000)
+    # (headless frames come about once a second and the slot's budget takes in a few new meshes a frame: up to 40 s
+    # for the off arm's count, which a phone's 30-60 frames a second reach well within a second)
+    if target: until(pg, f"propModelState.drawn >= {target}", 40)
     S['later'] = pg.evaluate(STATE)
     S['pos'] = pg.evaluate("[Math.round(walkView.pl.x), Math.round(walkView.pl.z), walkView.id]")
     S['before'] = before
@@ -84,7 +87,7 @@ def main():
     with sync_playwright() as p:
         b = p.chromium.launch(args=LAUNCH)
         for on in (False, True):
-            S, errs = arm(b, base, on, cf)
+            S, errs = arm(b, base, on, cf, R[False]['later']['drawn'] if on else 0)
             R[on] = S
             name = 'on' if on else 'off'
             B, M, W, U = S['before'], S['meshes'], S['warm'], S['up']
