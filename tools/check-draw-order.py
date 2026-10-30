@@ -12,11 +12,11 @@ one frame (the last of 4):
 - draws that write depth with a discard-free program ("solid") and with a discard program ("cut"); solid draws after
   the first cut draw; depth-writing draws after the sky; draws after your outline (depth GREATER);
 - late compiles after load (gpuState.pcl: compiled on the spot, started after load) and their names;
-- pictures: two frames off, two on, at the same spot; the share of pixels that differ off/off, on/on and off/on
-  (townsfolk walk, so a pair of frames differs on its own): validation/check-draw-order/.
+- pictures: in the "on" page with the world's clock stopped, on, on, off, on: the share of pixels that differ
+  on/on (what differs on its own) against on/off and off/on: validation/check-draw-order/.
 Gates (exit status 1): no page errors; on: 0 solid draws after the first cut draw, 0 depth-writing draws after the sky,
 0 draws after the outline (when it draws), more solid draws than off, 0 compiled on the spot after load (TD-3); the
-off/on difference no larger than twice the larger same-arm difference plus 0.5% of the pixels."""
+on/off and off/on differences no larger than twice the on/on one plus 0.5% of the pixels."""
 import sys
 from pathlib import Path
 
@@ -83,7 +83,7 @@ def diff_share(a, b):
     from PIL import Image, ImageChops
     A, B = Image.open(a).convert('RGB'), Image.open(b).convert('RGB')
     d = ImageChops.difference(A, B).convert('L').point(lambda v: 255 if v > 12 else 0)
-    return sum(1 for v in d.getdata() if v) / (A.width * A.height)
+    return d.histogram()[255] / (A.width * A.height)
 
 
 def arm(b, base, on):
@@ -107,14 +107,18 @@ def arm(b, base, on):
     st['late'] = [late[0] - late0[0], late[1] - late0[1]]
     st['lateAll'] = late
     st['lateNames'] = pg.evaluate('gpuState.pclNames.slice()')
-    # two pictures at the same spot
-    OUT.mkdir(parents=True, exist_ok=True)
-    shots = []
-    for i in range(2):
-        frames(pg, 1, 120)
-        p = OUT / f"town-{'on' if on else 'off'}-{i}.png"
-        pg.locator('#dio').screenshot(path=str(p))
-        shots.append(p)
+    # pictures at one spot with the world's clock stopped (logic/frame-control.js worldSteps through its test
+    # setter): in the "on" page, on twice, then off, then on again; each after 3 frames
+    shots = {}
+    if on:
+        OUT.mkdir(parents=True, exist_ok=True)
+        pg.evaluate("window.__ws=worldSteps;worldSteps=()=>({ms:0,n:1,h:0});0")
+        for tag, val in (('on0', True), ('on1', True), ('off', False), ('on2', True)):
+            pg.evaluate("(v=>{const E=(gameData.engine=gameData.engine||{}),D=(E.defaults=E.defaults||{});D.quality={...(D.quality||{}),drawOrder:v};return 0})(%s)" % str(val).lower())
+            frames(pg, 3, 240)
+            p = OUT / f'town-{tag}.png'
+            pg.locator('#dio').screenshot(path=str(p))
+            shots[tag] = p
     ctx.close()
     return st, shots, errs
 
@@ -144,11 +148,12 @@ def main():
     if on['afterOutline']: fails.append(f"on: {on['afterOutline']} draws after your outline (0)")
     if on['solid'] <= off['solid']: fails.append(f"on: solid draws {on['solid']}, not more than off's {off['solid']}")
     if on['lateAll'][0]: fails.append(f"on: {on['lateAll'][0]} programs compiled on the spot after load (0; {on['lateNames']})")
-    d_off = diff_share(*S[False])
-    d_on = diff_share(*S[True])
-    d_x = diff_share(S[False][1], S[True][0])
-    log(f'pictures: pixels that differ off/off {d_off:.2%}, on/on {d_on:.2%}, off/on {d_x:.2%} ({OUT})')
-    if d_x > 2 * max(d_off, d_on) + 0.005: fails.append(f'the off/on pictures differ more than frames of one arm: {d_x:.2%}')
+    P = S[True]
+    d_on = diff_share(P['on0'], P['on1'])
+    d_x = diff_share(P['on1'], P['off'])
+    d_back = diff_share(P['off'], P['on2'])
+    log(f'pictures, the world stopped: pixels that differ on/on {d_on:.2%}, on/off {d_x:.2%}, off/on {d_back:.2%} ({OUT})')
+    if max(d_x, d_back) > 2 * d_on + 0.005: fails.append(f'the off/on pictures differ more than two "on" frames: {d_x:.2%}, {d_back:.2%}')
     for f in fails: log('FAIL ' + f)
     if not fails: log('ok: every gate')
     sys.exit(1 if fails else 0)
