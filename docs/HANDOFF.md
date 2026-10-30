@@ -2,6 +2,84 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-6 - Landmarks: Workshop, Gene Bank, lighthouse, barn, station, the windmill kit, bubble cars - 2026-10-30
+Branch `claude/bd-6-landmarks` (wave 4 side session, made from `track/buildings`; `track/buildings` and main merged
+in). Plan written in Plan Mode's shape and built at once (the owner's advance approval, track section 1). The owner's
+look pick "B base + C showpieces": lean given in degrees and converted by each model's height (tools/landmark_parts.py
+`lean_warp`). Models, builders, one engine change (turning parts), a test map. Nothing placed on Copperleaf (BD-7).
+No per-session tag (CLAUDE.md).
+- Changed:
+  - **Turning parts merged.** Every spin layer was its own mesh and draw (today's windmill's sails 37 draws, the Gene
+    Bank's helix 30, the Workshop's gear 10). BD-6 grouped layers with the same spin into one turning mesh in
+    prop-models.js; the fluid track's FL-2b did the same on main meanwhile (game/js/logic/spin-merge.js `spinGroups`,
+    `joinMeshes`, the same name), so at the merge of `track/buildings` FL-2b's version was kept and BD-6's dropped. The
+    landmarks are built for it: each rotor is layers sharing one spin. All recipes: 259 turning draws per mesh -> 21;
+    on Copperleaf (windmill, Gene Bank, Workshop, lighthouse, solar cottages) 87 -> 7.
+  - New tools/landmark_parts.py: BD-3's shapes and palette plus cogs, starbursts, rotors, lattice sails, rings, glass
+    bubble domes, neon tubes, a round lobby, an arched door, and `lean_warp(L, degrees)` (`tan(deg) x top`, the top
+    from the still parts).
+  - tools/build-props-hub.py: the **Workshop** as a quonset hut (verdigris corrugated shell, copper ribs, a cream
+    riveted front, a roll-up door under a big brass gear standing over the roofline and a small gear meshing the other
+    way, the crane kept with its hook swinging, a copper rocket stove pipe, bubble skylights, a neon arch, a workbench,
+    ivy, a pneumatic tube; 3.5 degrees). The **Gene Bank** rounder (a bulging lathe vault, a verdigris dome, four glass
+    bubble domes of seedlings, a barrel-vaulted porch with a round brass vault door, the GENE BANK marquee, drawer banks
+    turned to the curved wall, the helix's beads lit at night and turning as one; 2 degrees). The **lighthouse** as a
+    finned rocket (four fins, an exhaust ring lit at night, portholes, the gallery, the light room's glass and its
+    turning shutter kept, a nose cone with a glowing antenna; 1.5 degrees). The **bubble car**, new kind `bubble_car`
+    (a hovering retro car facing -x: glass bubble, tail fins, chrome bumper, headlights; a hover pad and thrusters that
+    glow at night; `bob` 0.03; looks mint, coral and sky as colour swaps). The file no longer writes `windmill`.
+  - tools/build-props-island.py: the **barn** (a gambrel of solar shingles with a copper ridge, white gable trim and
+    braced sliding doors, the loft and its hoist, a louvred cupola whose vane swings, a domed silo with hoops, a ladder,
+    a glowing porthole, a chute and a wind spinner; 4 degrees). Its four colours are kept, so its five looks still
+    swap. The old `Barn` class and `barn_door` are gone (only the barn used them).
+  - tools/build-station-trains.py: **Skyline Station**'s canopy is a Googie boomerang (a verdigris slab swept up into
+    a wide V, a dark underside, copper fascia, a neon line on its front edge, starbursts at its tips) on splayed V
+    columns, and a **starburst clock** stands on its middle (two faces). Platform, track bed, rail, `box` [12.6, 6.6]
+    and the portal unchanged; the trains rebuild byte for byte.
+  - New tools/build-windmill-kit.py, **the windmill kit**: `windmill` (its old key) has 27 looks, nine designs (copper
+    tower mill, Googie needle, helix turbine, solar-sail post mill, rocket mill, farm windpump, saucer tower, sky kite
+    turbine, tree mill) times three colourways (copper and cream; white, red and navy; brass and teal). One recipe per
+    design (game/art/scene/next/models/windmill_<design>.json); a colourway is a `swap` of the tokens that design uses.
+    Each variant carries `kit: {design, colours}`, its picture and a window fx. 600-1,500 still triangles and one
+    turning mesh each (the saucer tower two: its rotors turn opposite ways). Tall ones lean 1.5-2 degrees, homely ones
+    2.5-3.
+  - The test map `test_landmarks` (debug menu, Test scenes): the five landmarks along the front, the bubble cars by the
+    station, every windmill behind (a design a column, its colourways one behind another).
+  - Pictures: tools/model-mesh.mjs dumps a recipe's triangles from the game's own mesher; build-props-island.py
+    `bake` uses it for recipes with BD-1's shapes (older recipes bake as before, so their pictures stay). New pictures
+    for the landmarks, 27 windmill looks and 3 cars (scene/next/hub, scene/next/island/barn.png). The old flat pictures
+    scene/props/lighthouse.png, windmill.png, barn.png and the old models/windmill.json are deleted (nothing used them).
+  - tools/look-hub-buildings.py: framing for the station, barn and car; `--max=N`.
+  - New tools/test/landmarks.test.mjs (3 tests): each landmark under 10,000 triangles with glass, a door
+    inside its footprint and at most 3 turning meshes; the station's box; 27 windmill looks on 9 models, each swap's
+    colours found in its model; the car's looks, glow and bob. check-data's snapshot remade (one more map).
+- **For BD-7** (footprints and doors; doors and fx are now written at the catalogue's ppu 34, section 3's fix, for
+  these kinds): workshop box [4.6, 3.0] (same), door x -17 px (-0.5 m; was -27 px at 32 px/m); gene_bank [4.4, 4.6]
+  (same), door 0; lighthouse [3.6, 3.6] (same), no door (as before); barn [5.5, 4.1] (same), door x -26 px (-0.75 m,
+  the body moved left for the silo; was 0); train_station [12.6, 6.6] (same), no door; windmill [3.6, 3.6] for all 27
+  looks, door 0; bubble_car no box (a prop, solid 0.5, about 2.2 x 1.2 m), to park by the shop and the station. BD-7
+  places three to five windmills (`v` picks a look: design = v div 3, colourway = v mod 3, in the order above).
+- Checked against the track file: right that each building had its own builder, that station-place.mjs reads the
+  station's `box[1]`, and that variants can swap a model (walk-view.js `plainPropVariant`) and colours
+  (prop-models.js `swappedRecipe`). Wrong or loose: "spinning parts are instanced spins (one draw each per mesh)" was
+  one draw per spin *layer*, not per rotor (fixed, above, the FL-2b way). "The ring bobs like `mooredBob`": `bob` moves a whole model,
+  not a part; the kite's ring stays put and its rotor turns (a part's bob needs an engine change: not done).
+- Found, not changed:
+  - Picture layers (decals, the lettering) do not follow a recipe's warp: a bulge moved the Gene Bank's marquee out over
+    its GENE BANK decal and hid it. The lettered landmarks use lean without bulge; the house kit (BD-4a) and BD-5
+    should check their signs the same way.
+  - BD-5 (`claude/bd-5-civic`) added tools/model-triangles.mjs, much like tools/model-mesh.mjs here: BD-7 can keep one.
+- Risky:
+  - Phone frame times not measured (software drawing here can't); the draw saving is counted, not timed.
+  - The windmill kit and the bubble car are not on Copperleaf yet: only `test_landmarks` shows them.
+- Verified: VERIFIED_LINE
+- Next: wave 4 is done (BD-4a on `track/buildings`, BD-5 on `claude/bd-5-civic`, this). Wave 5: BD-7 (the town re-laid,
+  with BD-4b) on `track/buildings`, started from this session; it merges this branch and `claude/bd-5-civic` first
+  (scenery.json: rerun the builders, then `npm run data`; studio/art-code-refs.json: regenerate; check-data's
+  snapshot: remake).
+- For the owner on the phone: debug menu, Test scenes, "Test: the landmarks, the windmill kit and the bubble cars":
+  walk round them by day and at night (the neon, the bubble domes, the exhaust rings, the cars' hover glow), watch the
+  rotors, the Gene Bank's helix and the Workshop's gears turn. A debug log from there tells us the draw count.
 ### Buildings track BD-4a - The house kit: 24 houses from modules, kind `house_kit` - 2026-10-30
 Branch `track/buildings` (wave 4, the main line; pulled 39 commits from its remote, then merged main twice: nothing
 new at the start, the water fixes #352 at the end, only HANDOFF.md conflicting, both entries kept). Plan written in
