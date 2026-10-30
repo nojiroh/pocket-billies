@@ -61,10 +61,11 @@ DRAW_BUDGET = 400                             # phase 20 A8: draws a frame on a 
 MB_BUDGET = 300                               # the owner's answer (TD-0): graphics memory on a phone
 SPOT_LEG = 8                                  # a leg longer than this (m) gets a spot halfway along
 # fluid track FL-2a: Copperleaf by day on the phone page (the hub and three spots round it), fixed ceilings, not the
-# baseline: at the fast check's low graphics at most DRAW_BUDGET draws a frame; at low and as shipped at most
+# baseline: at low graphics and as shipped (FL-2b) at most DRAW_BUDGET draws a frame; at low and as shipped at most
 # UNIFORM_CEILING uniform calls a frame (measured 2026-10-30: the old one-draw-a-picture path, the fallback, about
 # 18,000 at low graphics, 860 draws; in batches 830 and 335; as shipped in batches 1,000-1,700 and 384-528 draws, the
-# grass's chunks and the fountains being FL-2b's, so as shipped the draws are a note until then)
+# grass's chunks and the fountains being FL-2b's). FL-2b: as shipped 273-335 draws (grass runs 12-13, effects 4-7),
+# so the draw budget blocks as shipped too
 UNIFORM_CEILING = 2500
 # fluid track FL-2b: the effects pass at Copperleaf's square (the hub spot, both fountains in view), every quad and glow
 # in instanced runs: at most this many draws, at low and as shipped (measured 2026-10-30: 73-86 before)
@@ -359,7 +360,7 @@ def gates(R, B):
         cl = R.get(key)
         if not cl: continue
         msg = f"{what}: {cl['draws']} draws a frame, over the phone budget of {DRAW_BUDGET}"
-        if cl['draws'] > DRAW_BUDGET: (problems if key == 'copperleaf' else notes).append(msg + ('' if key == 'copperleaf' else ' (FL-2b brings the grass and fountains down)'))
+        if cl['draws'] > DRAW_BUDGET: problems.append(msg)
         if cl['uniforms'] > UNIFORM_CEILING: problems.append(f"{what}: {cl['uniforms']} uniform calls a frame, over the ceiling of {UNIFORM_CEILING}")
         fx = ((cl['spots'][0].get('passes') or {}).get('effects') or 0) if cl.get('spots') else 0
         if fx > EFFECTS_CEILING: problems.append(f"{what}: the effects pass at the square {fx} draws a frame, over FL-2b's ceiling of {EFFECTS_CEILING}")

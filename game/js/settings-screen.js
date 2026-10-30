@@ -61,6 +61,7 @@ import { metresToKm, today } from './logic/rules.js';
 import { motionLevelOf } from './logic/motion.js';
 import { uiPalettes } from './logic/ui-theme.js';
 import { setUiPalette } from './theme-sheet.js';
+import { pbPatch } from './ui-motion.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSaveKeepingPreferences, saveAge, saveFill, validSave } from './logic/saves.js';
 import { onlinePlayOn } from './logic/online.js';
 import {
@@ -713,6 +714,12 @@ export function settingsRefresh() {
   const b = document.querySelector('.sheet .body'),
     y = b ? b.scrollTop : 0;
   uiState.modal.html = settingsHTML();
+  /* FL-6: the open sheet changes in place (ui-motion.js pbPatch: the switch, segment or tab that changed and what
+     follows from it), not the whole window again; its scroll and focus stay */
+  if (b && b.closest('.set-sheet') && uiState._lastM === uiState.modal) {
+    pbPatch(b, uiState.modal.html);
+    return;
+  }
   renderOverlay();
   const b2 = document.querySelector('.sheet .body');
   if (b2) b2.scrollTop = y;
