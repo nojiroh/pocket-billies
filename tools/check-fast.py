@@ -813,7 +813,8 @@ def camera_follow(pg, base):
     home = pg.evaluate('[walkView.pl.x, walkView.pl.z]')
     stand(pg, home[0], home[1], 20)
     info = "(()=>{const I=walkRenderer.camInfo,T=walkRenderer.camT,R=I.right,F=[-R[1],R[0]],dx=I.goal[0]-T[0],dz=I.goal[1]-T[1];return {mode:I.mode,off:[dx*R[0]+dz*R[1],dx*F[0]+dz*F[1]],lead:[I.lead[0]*R[0]+I.lead[1]*R[1],I.lead[0]*F[0]+I.lead[1]*F[1]],soft:I.soft,P:[walkView.pl.x,walkView.pl.z],t:walkView.t}})()"
-    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 60) or (_ for _ in ()).throw(Exception('the page stopped drawing'))
+    # the game's clock runs slower than real time when the page draws slowly (CI), so the waits get room, as CAM-2's
+    wait = lambda ms: until(pg, f'walkView.t>{pg.evaluate("walkView.t") + ms}', 150) or (_ for _ in ()).throw(Exception(f'the page stopped drawing (waiting {ms} ms of game time)'))
     wait(1500)
     a = pg.evaluate(info)
     if a['mode'] not in ('walk', 'orbit') or max(abs(v) for v in a['off'] + a['lead']) > 0.05: raise Exception(f'standing, the camera isn’t settled on its aim: {a}')
