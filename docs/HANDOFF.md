@@ -2,6 +2,62 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-1a - pacer and ladder bugs (no look change) - 2026-10-30
+Branch `track/fluid` (round 1 lane, beside FL-1b and FL-2a; FL-1b's commits merged in). Plan approved by the owner's
+standing answer (fluid-track.md section 1). Code: the frame scheduler's pacing, the automatic quality's feed; no
+look change. No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + FL-1b): all of section 5's items 3-5 hold. Two more found: the walk
+  view never fed the fps overlay (`walkView.opt.meter` is never set), so the overlay counted its own `meter` task's
+  ticks at the set rate, not the world's frames, and that task never stopped; the old refresh estimate needed a
+  tick with under 3 ms of work, so a page drawing every tick never read its screen. Simulated, the old pacer at 120 Hz
+  and cap 60 gives 16.7 / 25 / 8.3 after one miss.
+- Changed:
+  - game/js/logic/frame-pace.js (new, pure, in both pages and the Studio's logic worker): `refreshTick` /
+    `refreshPeriod` (the period from every tick: a delta counts when the tick before had under half of it as work or
+    when it is quicker than the period so far; the lower quarter of the last 0.5 s, near ones averaged, every 0.1 s,
+    no list), `paceSlot` (a rate as whole refreshes, nearest; the half rate doubles it), `paceDue` (locked to the
+    beat: `next = max(next + T, ts + T - V/2)`, due from `next`, a cap change starts the beat at once; each task's
+    `shown` interval in refreshes, `missed` (over a slot plus half a refresh), `misses`, `frames`), `ladderFeed` /
+    `ladderTake` (the automatic quality's feed), `phoneAgent` (one phone test: Android, iPhone, iPad, a touch Mac).
+  - game/js/frame-scheduler.js: uses them; `frameScheduler.period` (ms) beside `hz` (now whole, from the period);
+    `frameScheduler.half` and `frameHalf(on)` for FL-3a's controller (the tasks whose cap is the set rate take it);
+    the GPU counters wrap only a tick with a task due, and `frameScheduler.counted` marks it; a task is dropped on
+    its third throw in a row; the scheduler meters the main task itself (dio, else scene, else map: fps from its runs,
+    ms from its time); `frameCount` is kept for its callers and does nothing.
+  - game/js/engine/gpu-counters.js: after a counted tick that drew nothing, the next count waits 250 ms.
+  - game/js/walk/quality-cull.js adaptQuality: fed through `ladderTake`: below 30 a second nothing; a cap change
+    resets the averages and waits 1.5 s (the menu ratchet); the counted tick left out; the target is the paced slot
+    of min(cap, 60 or 999 with Balanced), so 60 on a 90 Hz screen (every second refresh) isn't read as slow. Its two
+    phone tests and FRAME_WORK_MS use `phoneAgent`.
+  - game/js/walk-view-gl.js: the ladder's work leaves out the one-off jobs (normal maps, program polls, ground and
+    walking-grid preparation, ensureGround and the map-cache swap, grass, far props, the near ring); `walkView.slow`
+    skips the counted tick. The histogram and the full frame time are unchanged.
+  - game/js/debug-menu.js: the overlay adds no task; it says "(half rate)" when the half rate is on.
+- Not done, for other lanes (their files): the other phone tests still disagree: walk/walk-state.js PREP_BUDGET_MS,
+  walk/lighting.js PHONE_LAMPS, battle-3d.js PHONE_BATTLE, walk-view-gl.js PHONE, engine/webgl.js:1555,
+  person-art.js, walk-view.js GROUND_CACHE_SIZE (all can call `phoneAgent(navigator.userAgent,
+  navigator.maxTouchPoints)`). battle-stage.js's ladder (FL-3a) still aims at `min(userFps(), hz)`: on a 90 Hz
+  screen it reads 45 as slow; it should aim at `paceSlot(...) * frameScheduler.period`. FL-1b's
+  `debugLog.slotMs` uses min(fps, hz) too: on 90 Hz every 22.2 ms frame sits on its line; the scheduler's
+  `tasks.get('dio').missed`/`.shown` are the paced numbers (TD-4).
+- Risky: an iPad (it reports a Mac) is now a phone in the automatic quality (graphics waits read as main-thread
+  work, the resolution not below 0.6) and gets the phone's 8 ms one-off budget. The refresh can read low if the GPU
+  holds back every frame with light main-thread work (a GPU-bound phone): then the slot follows what the page gets.
+  The battle's quality now reads the dio task's frames in a 3D battle (before: the scene task's). Frame times only
+  on the phone.
+- Verified: the gates (tools/test/frame-pace.test.mjs, 13 tests, Node vsync simulation with the real qualityStep):
+  120 Hz cap 60 one miss → 16.7 / 25 / 16.7, no 8.3; 61 Hz → 0 drops in 10 s; 120 → 60 re-read within 1 s; every
+  frame 40 ms → a steady 50 ms; 8 window/screen cycles at 11 ms → q and R unchanged (phone and desktop); 90 Hz at
+  5 ms → no step in 60 s; plus a slow frame still steps. gpu-counters test for the back-off. Lint, types, format,
+  modules, data, build clean; unit tests 2405 of 2406 with smoke running beside them (the 1,000-maps timing test,
+  which passes alone); smoke 7 of 7 (350 s) before and after merging FL-1b; QUICK_RESULT.
+- Ask me before (not settled by section 1): **a setting between divisors** (60 on a 90 Hz screen: 45 or 90). Today
+  it stays 45 (the nearest whole slot, as before) and the ladder aims at 45 there. Recommendation as in section 7:
+  the higher one while the controller holds it, else the lower, decided in FL-3a.
+- Next: round 2 (FL-2b, FL-3a, FL-6) once FL-1b and FL-2a are done; FL-3a uses `frameHalf` and `paceSlot`.
+- For the owner on the phone: the fps overlay now counts the world's own frames; open and close Team a few times
+  and check Q and the resolution stay put in the debug log.
+
 ### Fluid track FL-0 - the plan: hold the frame rate you set, batching, render layering, a fluid UI - 2026-10-29
 Branch `ccr-36d73c36-2xv56p` (the cloud session's own, at main 73b2f8b1). Plan approved in Plan Mode with the owner's
 answers. Docs only: the plan, web research and read-only code studies (nine studies, seven verifiers that tried to
