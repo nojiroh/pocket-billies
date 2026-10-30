@@ -5,8 +5,7 @@ Newest entry on top. Every phase session ends by adding an entry here and taggin
 ### AS-1 - the sky train's ride: steady windows, plume jet fire, decals that tip - 2026-10-29
 Branch `ccr-594e8978-1wbink` (this cloud session's branch, cut from `track/assets` f835b311 in place of
 `claude/as-1-<words>`: the session pushes only there), draft PR into `track/assets`. A wave-1 lane: planned and
-built without waiting (assets-track.md section 1). Tag `as-1-done` (for the owner to push) on this session's last
-commit.
+built without waiting (assets-track.md section 1).
 - Changed, windows: new `logic/window-seed.js` (unit tests `window-seed.test.mjs`): a moving model (placement
   `moving` or `trainRide`) seeds its windows' colour by its key and rolls "lit" by each window's place on the model,
   worked out once while it moves (`walk/lighting.js modelWindowLight`, kept on the placement); buildings keep the old
