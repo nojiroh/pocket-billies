@@ -220,7 +220,7 @@ test('the first run keeps the starter and every Billie caught, lost or won; a la
 });
 
 test('the crash site: the wreck and its cargo by the mast, turned with it, the area round the spots cleared', () => {
-  const mast = { k: 'airship_station', x: 50, z: 20, act: 'fly' },
+  const mast = { k: 'train_halt', x: 50, z: 20, act: 'fly' },
     scene = {
       props: [
         mast,
@@ -238,7 +238,7 @@ test('the crash site: the wreck and its cargo by the mast, turned with it, the a
   const keys = scene.props.filter(p => !p.crash).map(p => p.k + (p.act ? ':' + p.act : ''));
   assert.deepEqual(
     keys,
-    ['airship_station:fly', 'tree_oak_b', 'sign:sign'],
+    ['train_halt:fly', 'tree_oak_b', 'sign:sign'],
     'the tree on a spot went; the far one and a sign stayed'
   );
   /* turned a quarter: an offset east of the mast lands north of it */
@@ -250,7 +250,7 @@ test('the crash site: the wreck and its cargo by the mast, turned with it, the a
 
 test('IN-5: the crash cutscene laid on the landing: its spots are the crash site’s, its shots turned with the mast', () => {
   const C = GAME_DATA.cutscenes.crash,
-    mast = { k: 'airship_station', x: 50, z: 20, act: 'fly' };
+    mast = { k: 'train_halt', x: 50, z: 20, act: 'fly' };
   assert.ok(C && C.landing && C.map === 'first_run', 'crash.json is filmed on the landing');
   assert.deepEqual(C.spots, F.crash.spots, 'the cutscene’s spots are the crash site’s');
   const S = FR.firstRunCutscene(C, { props: [mast] }, 'run_landing');

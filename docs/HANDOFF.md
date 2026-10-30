@@ -36,6 +36,163 @@ close". From the owner's phone log (deploy 73b2f8b1, Android, Adreno 750, 2026-1
 - For the owner, on the phone: Copperleaf's river and pond (clear blue, white water at the fall and the outflow), the
   bridge's new place, and the hillside behind the pond (no stream).
 
+### AS-1 - the sky train's ride: steady windows, plume jet fire, decals that tip - 2026-10-29
+Branch `ccr-594e8978-1wbink` (this cloud session's branch, cut from `track/assets` f835b311 in place of
+`claude/as-1-<words>`: the session pushes only there), draft PR into `track/assets`. A wave-1 lane: planned and
+built without waiting (assets-track.md section 1).
+- Changed, windows: new `logic/window-seed.js` (unit tests `window-seed.test.mjs`): a moving model (placement
+  `moving` or `trainRide`) seeds its windows' colour by its key and rolls "lit" by each window's place on the model,
+  worked out once while it moves (`walk/lighting.js modelWindowLight`, kept on the placement); buildings keep the old
+  hash of where they stand (the same numbers). The glass shader (`prop-models.js GLASS_GLSL`) reads the seed from
+  `modelWindowLight` (both draw paths); a moving model's seed comes 2 higher (fract drops it from the colour) and its
+  sun glint is a soft sheen (`pow(.,10)*.18`) instead of the sharp `pow(.,80)` flash.
+- Changed, jet fire: new `walk/plume.js` (drawn in `walk-view-gl.js` after the effects when the director frame has
+  `plume`): per nozzle a cone and two crossed quads plus a ragged hot disc, placed by the train's whole pose (turn,
+  size, bob, tilt: `modelPointAt`), bent down while it holds the train up; scrolling noise through a stepped ramp
+  quantised to 48 px/m and dithered in the plume's pixels; premultiplied (its light over a little cover), so it reads
+  on a bright sky by day and glows by night (no `lampLit`); shock diamonds at full thrust. Smoke at lift-off and
+  touch-down, sparks at lift-off, from the ride's clock alone (a held moment is always the same). Heat shimmer on
+  Beautiful only (`aim` sharp, automatic quality not stepped down): a half-size copy of the scene read with a wobble,
+  freed at the ride's end (`plumeDone`). Beats: `logic/train-path.js trainPlume` (unit test in
+  `train-path.test.mjs`): long and down in the lift and the way down, short gliding in, a burst and a puff settling
+  to board, idle at the platform, off once home. `tools/build-station-trains.py`: the flame cards and
+  `train_rocket_flame.png` are gone; each train's recipe has `nozzles` ([x, back, up, radius]); the five trains
+  rebuilt.
+- Changed, decals: `logic/prop-turn.js decalPlace` takes the model's spin (`spinPoint`, the shaders' voxSpin), so a
+  climbing train's headlamp and name boards stay on it (`prop-models.js propModelImageItems` passes `it.spin`); the
+  pictures themselves stay upright. Unit test in `prop-turn.test.mjs`.
+- Changed, tools: `tools/look-train-ride.py` takes `--hours=`, `--only=` and `--windows` (steps both rides every
+  200 ms at night and fails when the train's windows change within a ride; `modelWindowLight` keeps `[lit bits,
+  seed]` on a moving placement for it), and makes the train's model before a ride starts.
+- Differs from the plan's audit: all of section 2.6 checks out (the seed from `it.x`/`it.z`, `windowLit` each frame,
+  the 64x20 `flame()` cards, `lampLit` on their glow, no tilt in `decalPlace`). Smoke and sparks are drawn in
+  `plume.js` from the ride's clock, not through `walk/effects.js`'s prop fx (those follow a prop's fx list, not a
+  moment of the ride). Files outside section 6's AS-1 list, each a small hunk: `walk-view-gl.js` (the one
+  `plumePass` call), `game/index.html` and `studio/index.html` (the two new modules), `logic-worker-modules.js`,
+  `prop-models.js` (`mooredBob` now provided through hooks.js for `plume.js`).
+- Found, not changed: on `track/assets` (f835b311) the full quick check's settings-tabs check and RL-8's shop Perk
+  check fail (above). The walk shaders' `uEye` lives in the light uniform block, so a new vertex shader can't declare
+  its own (`plume.js` uses `uCamP`). Software drawing makes one new model a frame, so a held moment can show a moving
+  model as its picture: tools that hold moments should make the model first (`look-train-ride.py WARM`). The parked
+  trains in `test_station_trains` and the hub no longer show fire (the cards burned all the time, even parked).
+- Risky: frame time on the phone isn't measured (software drawing): the plume is about 3 draws a nozzle (two nozzles)
+  plus one for smoke and sparks, only during the ride; Beautiful adds a half-size scene copy (a blit) a frame during
+  the ride. The plume's look (colours, length by beat) is a draft for the owner to judge on the phone.
+- Verified: unit tests 2409 of 2409 (`npm test`; the "1,000 maps in under 1.5 s" timing test failed once with two
+  software browsers running and passed alone); new tests: window-seed 5, train-path +1 (trainPlume), prop-turn +1
+  (decals tip). Lint, typecheck, check:modules, format:check, check:data (190 files) and build clean.
+  `check:smoke` 7 of 7 (568 s, with a browser tool running beside it). The window test (`look-train-ride.py
+  --windows --step=600`, night): one window state through the departure (18 moments) and the way home (13); the old
+  rule would have given 10 and 6 different seeds. `look-windows.py` before and after: the building and its windows
+  identical (the only differences: a walking animal, the surf, a button's animation). Full quick check: 40 of 42
+  steps pass (37 in the first run, cut at 1759 s by a worker restart; the other 5 run again with `--steps=`: tap
+  targets and song fingerprints ok). Two fail the same way on `track/assets` f835b311 without this lane (run there
+  with `--steps=RL-8,Walking left and right --workers=1`), so they are not AS-1's:
+  "settings tabs ...: [[7, 7], [5, 7], [6, 7], [7, 7], [5, 7], [1, 2], [1, 2]]" (check-quick.py: a tab's overflow
+  over 4) and RL-8 "the town's shop has no Perk (RL-12)" (with two browsers busy it stopped earlier, at a seam's
+  view).
+- Pictures: `validation/as-1-before/` (from `track/assets`, the same tool) and `validation/as-1-after/` (not in git):
+  `ride/` the departure and the way home after a win at 12.5 h (every beat), 19.6 and 22.5 h (the key beats; the
+  before set's night ones in `ride-night/`: after a way home after a win the fixture opens an evolution window over
+  later pictures, which the tool now closes), `windows/` (look-windows.py: buildings unchanged) and the window test's
+  `windows/windows.json`. By night the old fire was a flat white card; now an orange plume bends down from the
+  nozzles.
+- Next: the other wave-1 lanes; AS-8 merges. For AS-2: the halt's arrival can play the ride's "down" and "off"
+  frames with the same plume (`trainPlume(..., 'home', t)`).
+- For the owner on the phone: start a run from Skyline Station and come home: the windows should hold their colour
+  through the whole ride, the fire should sit on the nozzles (bent down as it lifts, straight back into the portal),
+  smoke at lift-off. Settings > Graphics Beautiful adds a heat shimmer. Send the debug log if anything stutters.
+
+### AS-2 - a sky train halt at every run's start - 2026-10-29
+Branch `ccr-15aa5647-90bz3r` (this session's branch, made from `track/assets` f835b311; the plan's name was
+`claude/as-2-<words>`), draft PR #344 into `track/assets`. Lane AS-2 of docs/phases/assets-track.md, built on its own
+(the owner's "Sessions run on their own"). Model, mapgen, a cutscene beat, words.
+- Changed: the halt (new `tools/build-halt.py`, catalogue `train_halt`, `ppm` 48, showcase map `test_halt`): a brick
+  platform with a pale coping and the yellow line, steps in the middle, a green timber canopy with a verdigris roof and
+  a fretted valance, a ticket kiosk with a solar panel and a stovepipe, a lamp post, the name board, two benches facing
+  the track, flower boxes, railings, the track with a buffer stop, curving away into the grass past its right end. Its
+  pictures (name board, TICKETS, lamp glass) are painted at 48 px/m with lit edges and hue-shifted ramps; the
+  low-poly parts use the shared texture cells (AS-4 repaints those). The platform is laid out as Skyline Station's
+  (logic/train-path.js TRAIN_RIDE, TRAIN_PLATFORM), so the train's path code works at it unchanged.
+- Changed: the landing (mapgen.js's landing block): the mast dial places `train_halt` ("Sky train halt") where the
+  `airship_station` stood; where you stand by it is its catalogue's `stand` (the foot of its steps), in mapgen (kept
+  clear, `mapgenStandSpot`) and in airship.js `standByMast`. A lot wider than about 8 m is kept clear as small circles
+  over it: `mapgenOccFree` looks only about 4 m round a spot, so one big circle let plants grow on the halt's ends
+  (clinic and shop lots unchanged). Studio's Generate dial and its "At the hub" line say the halt.
+- Changed: new `logic/halt.js` (which prop is the halt, the run's train by its region theme, where it stands parked);
+  run-scenes.js parks the run's train at the halt on every landing but the first run's (one line beside IN-1's crash
+  hook: AS-6's file). New `halt-arrival.js`: as the landing's loading screen lifts, the parked train hangs over the
+  track, comes straight down onto the rails and you step off down the steps (the ride home's "down" and "off" beats,
+  4.1 s), through the walk view's director; a tap skips, a battle/room/other place ends it, reduced motion has none;
+  a 'scene' line `train arrival <key> <ms> ms` in the debug log. run.js `runTakeOffGo` starts it.
+- Changed: the crash site (firstRun.json, cutscenes/crash.json) keeps off the halt: `kappi_from` at the foot of its
+  steps (was on the platform), a crate moved off the platform (-5.5, 3 -> -7.6, 3.2), the second filming clear area
+  stops at x -0.4 (it hid the halt, whose base point is 0, 0). Everything else stands where it stood relative to the
+  old mast: the scene plays in front of the halt's west end with the wreck to its north-west.
+- Changed (drafts, the owner may change them): "Sky train halt"; "The sky train waits here for the end of the run.
+  Riding home now gives the run up."; "Ride home"; lore "Sky train timetable" by "Skyline Rail & Portal Co." (its
+  first two pages reworded for trains); the shop's "We restock every time a sky train comes in. Roughly."; Chosen's
+  "Face-down on the platform." (was "by the mast": you come home at Skyline Station since HB-8); the run rules page;
+  VISION's run line.
+- Internal names stay for AS-8 (`airship.js`, `flyMenu`, act `fly`, `firstRunMast`, the `mast` dial).
+- Checks moved: `rl8_run_from_mast` (check-quick.py) and the in-game full test now check the landing's halt and parked
+  train and skip the arrival; `airship_moored` is the hub's airship and stays. Tests: new halt.test.mjs (7);
+  mapgen-lots, first-run on the halt; snapshots remade: first-run-places (only the landing moved), the data check's
+  file count (191).
+- CI (check-fast.py): the arrival's tap-to-skip swallowed the payout card's tap in "Packing for a run" (the payout
+  opens right after landing); fixed: a sheet, a battle or the run's end ends the arrival and the tap goes through.
+- Found, not changed: on `track/assets` f835b311 CI's smoke job hits its 30-minute limit and fails "A run town's life",
+  "A run town's quest" (the named locals' talk box) and later "Packing for a run" (the ride home never ended);
+  "Kappi's tips" is timing-sensitive (each throw about 20 s in software drawing against a 30 s wait: passes alone,
+  fails beside a second browser). check-quick.py's RL-8 step fails at its town shop ("no Perk", line 1952) on `track/assets`
+  before this lane too; `ui-lint` reports the colour count in game js at 618 -> 612 on `track/assets` already (a ratchet
+  waiting for `--save`); the crash scene's haze hides most of the wreck past about 15 m (AS-7's "fog too much").
+- Facts checked against `track/assets` (section 2.5): all held. One addition: the hub's lost-run line said "by the
+  mast" though the ride home leaves you at Skyline Station.
+- Risky: mapgen output changes on every run's landing (`MAPGEN_VERSION` not bumped: a run in progress keeps its saved
+  world; AS-8 settles the version with AS-6's change); the halt lot is 12.6 x 7.6 m, so on a tight landing it may not
+  fit (mapgen-lots: at least 87 of 90 test places fit; a landing without room gets a note and no halt, as before);
+  the arrival's camera and the parked train on a real phone; `prop-models.js` untouched.
+- Verified: lint, typecheck, format:check, check:modules (422 modules), check:data (191 files), build clean; unit
+  tests quick 2408 of 2409 (the one, run-map-checks' "1,000 maps in under 1.5 s", took 1.65 s with a browser drawing
+  beside it and passes alone), slow 110 of 110 after the first-run-places snapshot was remade; `check-quick.py --smoke`
+  7 of 7 in 382 s (the in-game full test and the crash scene included); `--steps=RL-8` passes the new halt checks and
+  then stops at "the town's shop has no Perk (RL-12)", which fails the same way on `track/assets` f835b311 (not this
+  lane's); the full quick check not run (AS-8 runs it).
+- Pictures (validation/look-halt/, validation/look-crash/, not in git): the halt from five sides on test_halt; the
+  arrival held at 0-4000 ms and after; the crash site from above, the south and the scene's cameras.
+- Next: the other wave-1 lanes; AS-8 merges them and does the renames.
+- For the owner on the phone: start a run at Skyline Station: after the loading screen the sky train sets down at the
+  landing's halt and you step off; tap the halt for "Ride home". New game: the crash scene should show the halt's west
+  end behind the group. Send the debug log (the `train arrival` line).
+
+### AS-0 - the assets track: plan, scatter module, flora layers - 2026-10-29
+Branch `track/assets` from main 73b2f8b1, draft PR into main. The owner's brief: raise every asset (props, a natural
+island and routes, varied vegetation with better leaf art, a train station instead of the airship station at the
+start of runs, the sky train's ride without flickering windows and odd jet fire), using the Godot port's coordinator
+session as inspiration, in lanes that run at once. Plan Mode answers: painted blob crowns (never round), a full
+Copperleaf regenerate, the phone a bit slower is fine (the floor: Balanced at most about 15% slower on the bench).
+- New: docs/phases/assets-track.md (audits, research, sources, seven wave-1 lanes AS-1..AS-7 with file ownership,
+  AS-8 together, AS-9 the owner's phone play, "Ask me before", risks, how each lane checks itself); ROADMAP and
+  BRANCHES rows.
+- New: `game/js/logic/scatter.js`: seeded Poisson-disc points (changing spacing, masks, earlier layers kept clear of
+  by their own footprint), seed-spread clumps (parents thinned after spreading), layers with kinds by weight, and
+  `scatterFlora(biome, area)` with a density per layer and spot. Not used by the game yet (AS-5, AS-6).
+- New: `flora` layers on all 12 biomes (biomes.json, schema, `BiomeFloraLayer`, `dataBiomes` checks): each layer
+  names one of the biome's own species lists, so AS-3 adds species there and AS-5/AS-6 read the layers.
+- Found while auditing (the lanes fix them): the sky train's windows re-roll colour and lit state every frame because
+  `uWinSeed` and `modelWindowLight` hash the train's live world position (prop-models.js, walk/lighting.js); the jet
+  fire is two flat hard-alpha cards that don't tip with the train and are dark by day (`lampLit`).
+- Verified: scatter.test.mjs 9 of 9, scatter-real.test.mjs 1 of 1; lint, types, check:data clean; the quick unit
+  tier passes except check-data-snapshot (symlinks), data-rigs and faces, which fail on main too on this Windows PC
+  (paths); `check-quick.py --smoke` 6 of 7, the seventh ("Unused": `art-unused.mjs --json` prints nothing on Windows)
+  fails on main too.
+- Baselines: 30 route pictures in `validation/assets-baseline/routes/` (not in git). The hub, ride and station sets
+  timed out with four software-drawn browsers at once; each lane makes its own before set (track file section 10).
+- On this PC `python3` is the Windows Store stub: run the tools with `python`.
+- Next: wave 1, AS-1 to AS-7 at once, each in its own session and worktree on `claude/as-<n>-<words>`, a draft PR
+  into `track/assets`.
+
 ### Fix - Kappi's stall clock counts only free walking - 2026-10-29
 Branch `fix/kappi-stall-clock` from main 7f661239, PR into main. From the owner's first phone log of the new intro
 (deploy 7f661239, Android, Adreno 750): New game -> the crash scene at 15.6 s -> Cartotter picked at 42.8 s (27 s into

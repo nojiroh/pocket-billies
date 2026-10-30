@@ -48,6 +48,13 @@ before the owner has played the first cut on the phone.** MG-3 (towns from the g
 town node needs it.
 
 ## Tracks alongside
+- **Assets track** (docs/phases/assets-track.md, the owner's brief and answers 2026-10-29): every asset raised: props
+  that look made, painted blob trees and many species, a regenerated Copperleaf and routes that feel like countryside,
+  a train halt instead of the airship mast at every run's start, the sky train's ride fixed (windows that flickered,
+  jet fire), steady light and subtle air after the Godot port's tuning. AS-0 (the plan, research and audits,
+  `logic/scatter.js` and the biomes' `flora` layers) done 2026-10-29 on `track/assets`. Wave 1 runs at once: AS-1 the
+  ride (done 2026-10-29: steady windows, plume jet fire, decals that tip), AS-2 the halt, AS-3 vegetation, AS-4 props, AS-5 Copperleaf v5, AS-6 routes, AS-7 light; then AS-8 together
+  and AS-9 the owner's phone play. Branch `track/assets`.
 - **Test data track** (docs/phases/test-data-track.md, the owner's brief and answers 2026-10-29): tests and logs
   that give Claude useful bug and speed data on every device. TD-0 (the plan, research and audits; docs only) done
   2026-10-29 on `ccr-b95ade74-f8w3vy`. TD-1 quick fixes (the log reader, a crash marker that survives a reload,
