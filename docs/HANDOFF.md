@@ -28,7 +28,7 @@ while the open ground fell from 49.9 to 41.3 fps over the 24-minute run. The rep
 - Not changed: the per-step table still shows p90 next to fps (fps is the mean already). `cost > 0.3` stays.
   graphics-bench-test.js (the older cost test, TD-5's tidy-up) has its own drift from its own numbers.
 - Risky: a format 3 report read later still has median costs; the reader says so when `costFrom` is missing. The
-  mean moves with one long hitch as well as with steady misses: a step with one 300 ms frame costs about 2 ms more
+  mean moves with one long hitch as well as with steady misses: a step with one 300 ms frame costs about 0.1 ms more
   over a 2,400-frame walk, which the noise (the shipped runs' spread) usually covers.
 - Verified: lint, typecheck, format:check; `npm test` 2,530 pass (a first run beside the smoke check had 2 failures it did not name; the rerun alone passed all); smoke 7 of 7 in 433 s. The full quick check was not run (a bug fix inside a track). The runner itself runs only
   on a phone by hand: not run here.
