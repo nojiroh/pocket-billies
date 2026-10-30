@@ -717,6 +717,15 @@ h4 {
   font-weight: 700;
   letter-spacing: 0.01em;
 }
+/* the owner (2026-10-30): on wide and ultrawide screens what lies over the world (the bars, the side panel, the battle's
+   cards) stays inside a centred 16:9 area, so the eyes don't travel to the far edges; the world fills the whole screen.
+   --hud-w is that area's width (the screen's on anything 16:9 or narrower), --hud-x its margin each side */
+:root {
+  --hud-w: min(100vw, 100vh * 16 / 9);
+  --hud-x: calc((100vw - var(--hud-w)) / 2);
+  /* the side panel's width (Team, Guide, Bag, Trainer on a wide screen) */
+  --side-w: min(580px, var(--hud-w) * 0.48);
+}
 @media (min-width: 960px) and (orientation: landscape) {
   /* ---------- 0.5 wide screens: the world stays in view; Team, Guide, Bag and Trainer open in a glass side panel ---------- */
   body.on-scene #dio {
@@ -726,13 +735,19 @@ h4 {
   body.on-scene::before {
     background: linear-gradient(90deg, transparent 35%, rgba(18, 14, 34, 0.22));
   }
+  /* the bottom bar sits left of the side panel, centred in what the panel leaves, instead of over the panel's foot */
+  body.on-scene pb-nav-bar#nav {
+    left: calc(var(--hud-x) + 8px);
+    right: calc(var(--hud-x) + var(--side-w) + 28px);
+  }
   body.on-scene #app {
     position: fixed;
     top: 12px;
     bottom: 12px;
-    right: 14px;
+    /* the owner (2026-10-30): on an ultrawide screen the panel stays at the right of the centred 16:9 area */
+    right: calc(var(--hud-x) + 14px);
     left: auto;
-    width: min(580px, 48vw);
+    width: var(--side-w);
     max-width: none;
     min-height: 0;
     margin: 0;
