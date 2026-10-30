@@ -2,6 +2,33 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-F - the window check reads a building's turn - 2026-10-30
+Branch `claude/bd-f-window-check` (made from `track/buildings`; wave 1 side session). Plan written in Plan Mode's shape
+and built at once (the owner's advance approval, track section 1). Tools only: no building, map or game code changed.
+- Changed: tools/clear-windows.py. The claim held: `windows_of`, `hides`/`occluders` and `blocked` never read `rot`, and
+  16 of Copperleaf's 21 window-bearing buildings are at rot 90 (front facing +x, east of the orbit middle). Each window
+  now carries its building's base point and turn; props are judged in that frame (`in_frame`, with `turned_point` and
+  `point_in_prop` ported from game/js/logic/prop-turn.js); footprints and doorways turn in `blocked`; `--fix` steps
+  sideways and toward the camera along the front of the window the prop hides; a room window slides along its own wall.
+  The functions' arguments and returns are unchanged (check-quick and build-solarpunk.py call them as before).
+- Added: tools/test/clear-windows.test.mjs (4 tests on a made-up scene: a rot-90 hut's window found on its turned
+  front, a tree out of that front hides it and one where an unturned front would be doesn't; rot 0 judged as before;
+  the turned footprint and doorway; `--fix` slides the tree along the east front, clear of the hut).
+- Copperleaf with the fix: 40 windows (26 on turned buildings), 9 props within 6 m in front of a turned window, none
+  hides any of it: 0 hidden, so no `--fix` was run and nothing moved. All 44 scenes: 61 windows, 0 hidden.
+- check-quick's windows step needed no change (it calls the same functions; it passes).
+- Found, not changed: none new. The other "Found, to fix in BD-7" items in the track file stand.
+- Risky: little. The judgement assumes the camera looks straight at a turned front, which matches Copperleaf's orbit
+  camera (from 4 m out of each front its forward is within 32 degrees of head-on, most within 15); a building turned
+  away from the orbit camera would be judged from its front all the same.
+- Verified: lint ok; typecheck ok; check:modules, format:check, check:data ok; unit tests 2,395 of 2,396 with the
+  full quick check running beside them (run-map-checks' 1.5 s budget took 2.65 s), that file 5 of 5 run alone; the
+  new test 4 of 4 (it fails on the old tool); full quick check: 36 of 42 steps ok, 0 failed, stopped at the session's
+  1-hour background limit with 6 steps still running (with the unit tests sharing the machine); the windows step ok
+  (61 windows in 44 scenes).
+- Next: wave 1 ends when BD-1 (`track/buildings`) and BD-2a (`claude/bd-2a-surfaces`) have their entries; the last of
+  them starts BD-2b. This session's draft PR into `track/buildings` is merged by wave 2's session.
+
 ### Buildings track BD-0 - the plan: Copperleaf's buildings redone, a modular house kit - 2026-10-29
 Branch `ccr-d224d90d-qlnty6` (the cloud session's own, main at 73b2f8b1). Plan approved in Plan Mode. Docs only: a
 new track, docs/phases/buildings-track.md, from the owner's brief ("redo the 3D buildings of the main hub island ...
