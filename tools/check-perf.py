@@ -3,7 +3,7 @@
 
     python3 tools/check-perf.py                  # the path on a phone page and the memory matrix, against the baseline
     python3 tools/check-perf.py --baseline       # rewrite validation/perf-baseline.json on purpose (HANDOFF says why)
-    python3 tools/check-perf.py --only=path      # or --only=matrix
+    python3 tools/check-perf.py --only=path      # or --only=matrix, or --only=copperleaf (fluid track FL-2a)
     python3 tools/check-perf.py --segments=open,lamps   # some segments only (the gates read only those)
     python3 tools/check-perf.py --walk           # also walk each route for real (bench-walk.js benchWalk: slow, notes)
     python3 tools/check-perf.py --plant=draws    # a regression on purpose (draws, memory, compile; comma-separated):
@@ -60,6 +60,13 @@ FLOOR = {'draws': 5, 'instances': 50, 'mb': 2}  # and at least this much, so a s
 DRAW_BUDGET = 400                             # phase 20 A8: draws a frame on a phone
 MB_BUDGET = 300                               # the owner's answer (TD-0): graphics memory on a phone
 SPOT_LEG = 8                                  # a leg longer than this (m) gets a spot halfway along
+# fluid track FL-2a: Copperleaf by day on the phone page (the hub and three spots round it), fixed ceilings, not the
+# baseline: at the fast check's low graphics at most DRAW_BUDGET draws a frame; at low and as shipped at most
+# UNIFORM_CEILING uniform calls a frame (measured 2026-10-30: the old one-draw-a-picture path, the fallback, about
+# 18,000 at low graphics, 860 draws; in batches 830 and 335; as shipped in batches 1,000-1,700 and 384-528 draws, the
+# grass's chunks and the fountains being FL-2b's, so as shipped the draws are a note until then)
+UNIFORM_CEILING = 2500
+COPPERLEAF_SPOTS = ((0, 0), (8, 6), (-8, 6), (0, -10))   # metres from the hub
 SETTLE, COUNT = 2, 4                          # frames to settle at a spot, then frames counted (an even number:
                                               # some work runs every other frame)
 PHONE = {'width': 390, 'height': 844, 'mobile': True,
@@ -204,6 +211,45 @@ def run_path(b, base, R):
         ctx.close()
 
 
+# ------------------------------------------------------------------ Copperleaf by day (fluid track FL-2a)
+# The hub town as shipped on the phone page, at noon in clear summer, at the hub and three spots round it. Copperleaf
+# keeps planting and building for minutes, so each spot is counted until two counts agree within 3% (at most 6)
+MEASURE_UNIFORMS = MEASURE.replace('programs:g?g.dc[2]:null,', 'programs:g?g.dc[2]:null,uniforms:g?g.dc[4]:null,passes:g?g.dcp:null,')
+
+
+def run_copperleaf(b, base, R, low):
+    errs = []
+    name = 'copperleaf' if low else 'copperleafShipped'
+    extra = {'user_agent': PHONE['ua']}
+    ctx, pg = fast.new_page(b, errs, width=PHONE['width'], height=PHONE['height'], mobile=True, low=low, timeout=900000,
+                            init=(PIN % f',resolution:{PATH_RES}',), **extra)
+    try:
+        pg.goto(f'{base}/index.html?fixture=town')
+        if not fast.until(pg, "typeof walkView!=='undefined'&&walkView.ready&&walkRenderer.on&&!!walkView.sc&&walkView.sc.baseId==='copperleaf'", 300):
+            raise Exception('Copperleaf never opened')
+        R.setdefault('renderer', renderer(pg))
+        pg.evaluate("environment.force={time:12.5,weather:'clear',season:'summer'};0")
+        hub = pg.evaluate('mapHub(walkView.sc)')
+        rows = []
+        for dx, dz in COPPERLEAF_SPOTS:
+            x, z = hub[0] + dx, hub[1] + dz
+            fast.stand(pg, x, z, frames=8)
+            last = None
+            for _ in range(6):
+                fast.frames(pg, SETTLE, 600)
+                r = pg.evaluate(f'{MEASURE_UNIFORMS}({COUNT})')
+                if last and abs(r['draws'] - last['draws']) <= 0.03 * max(1, last['draws']): break
+                last = r
+            r['at'] = [round(x, 1), round(z, 1)]
+            rows.append(r)
+            fast.log(f"{name} at {r['at']}: {r['draws']} draws, {r['uniforms']} uniform calls, {r['instances']} instances; "
+                     + ', '.join(f'{k} {v}' for k, v in sorted((r['passes'] or {}).items(), key=lambda kv: -kv[1])[:8]))
+        R[name] = {'spots': rows, 'draws': max(r['draws'] for r in rows), 'uniforms': max(r['uniforms'] for r in rows)}
+    finally:
+        with LOCK: R.setdefault('pageErrors', []).extend(errs[:10])
+        ctx.close()
+
+
 # ------------------------------------------------------------------ the memory matrix
 # a preset's values are read live each frame (only grass.density and world.farProps need the place built again, TD-2,
 # and no preset sets them): no rebuild, which took minutes on the desktop page
@@ -306,6 +352,12 @@ def gates(R, B):
                     problems.append(f"{sid}: {k} a frame ({m}) {b[k][m]} → {s[k][m]}, more than {round(GROW * 100)}% up")
         if same_res and over(s['mb'], b['mb'], FLOOR['mb']):
             problems.append(f"{sid}: graphics memory {b['mb']} → {s['mb']} MB, more than {round(GROW * 100)}% up")
+    for key, what in (('copperleaf', 'Copperleaf by day'), ('copperleafShipped', 'Copperleaf by day as shipped')):
+        cl = R.get(key)
+        if not cl: continue
+        msg = f"{what}: {cl['draws']} draws a frame, over the phone budget of {DRAW_BUDGET}"
+        if cl['draws'] > DRAW_BUDGET: (problems if key == 'copperleaf' else notes).append(msg + ('' if key == 'copperleaf' else ' (FL-2b brings the grass and fountains down)'))
+        if cl['uniforms'] > UNIFORM_CEILING: problems.append(f"{what}: {cl['uniforms']} uniform calls a frame, over the ceiling of {UNIFORM_CEILING}")
     if B is not None:
         new = [n for n in R.get('lateCompiles', []) if n not in set(B.get('lateCompiles', []))]
         if new: problems.append('programs compiled after the place settled (a warm-up missed them): ' + ', '.join(new))
@@ -345,6 +397,9 @@ def main():
     R = {'when': time.strftime('%Y-%m-%d %H:%M'), 'plant': PLANT, 'segmentsAsked': SEGMENTS or None}
     jobs = []
     if ONLY in (None, 'path'): jobs.append(('path', lambda b, base: run_path(b, base, R)))
+    if ONLY in (None, 'copperleaf') and not SEGMENTS:
+        jobs.append(('copperleaf', lambda b, base: run_copperleaf(b, base, R, True)))
+        jobs.append(('copperleaf shipped', lambda b, base: run_copperleaf(b, base, R, False)))
     if ONLY in (None, 'matrix') and not SEGMENTS:
         jobs.append(('matrix phone', lambda b, base: run_matrix(b, base, R, 'phone', PHONE)))
         jobs.append(('matrix desktop', lambda b, base: run_matrix(b, base, R, 'desktop', DESKTOP)))
