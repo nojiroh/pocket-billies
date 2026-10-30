@@ -1481,8 +1481,8 @@
   "ring": [
    "game/js/battle-anim-run.js:185",
    "game/js/engine/webgl.js:810",
-   "game/js/walk/map-cache.js:88",
-   "game/js/walk/map-cache.js:531"
+   "game/js/walk/map-cache.js:90",
+   "game/js/walk/map-cache.js:561"
   ],
   "sat": [
    "game/js/walk/quality-cull.js:224",
