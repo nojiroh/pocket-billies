@@ -1265,9 +1265,9 @@
   },
   "shop": {
    "name": "General store",
-   "img": "scene/props/shop.png",
-   "ox": -91,
-   "oy": -153,
+   "img": "scene/next/hub/shop.png",
+   "ox": -74,
+   "oy": -140,
    "shadow": 1.8,
    "sway": 0,
    "flat": 0,
@@ -1276,7 +1276,9 @@
    "box": [3.8,2.4],
    "door": {"x":30,"y":0},
    "fx": [
-    {"k":"window","x":-22,"y":-38}
+    {"k":"window","x":-18,"y":-38},
+    {"k":"window","x":30,"y":-35},
+    {"k":"glow","x":53,"y":-61}
    ],
    "model": "scene/next/models/shop.json",
    "ppm": 32,
@@ -1306,9 +1308,9 @@
   },
   "lab": {
    "name": "Research lab",
-   "img": "scene/props/lab.png",
-   "ox": -107,
-   "oy": -157,
+   "img": "scene/next/hub/lab.png",
+   "ox": -110,
+   "oy": -304,
    "shadow": 2.2,
    "sway": 0,
    "flat": 0,
@@ -1317,8 +1319,12 @@
    "box": [6,3],
    "door": {"x":62,"y":0},
    "fx": [
-    {"k":"window","x":-32,"y":-80},
-    {"k":"glow","x":62,"y":-74}
+    {"k":"window","x":-27,"y":-49},
+    {"k":"window","x":62,"y":-35},
+    {"k":"window","x":32,"y":-30},
+    {"k":"glow","x":62,"y":-74},
+    {"k":"glow","x":32,"y":-40},
+    {"k":"smoke","x":-88,"y":-180}
    ],
    "model": "scene/next/models/lab.json",
    "ppm": 32,
@@ -8804,9 +8810,9 @@
   },
   "inn": {
    "name": "Inn",
-   "img": "scene/props/inn.png",
-   "ox": -110,
-   "oy": -260,
+   "img": "scene/next/hub/inn.png",
+   "ox": -115,
+   "oy": -280,
    "shadow": 1.8,
    "sway": 0,
    "flat": 0,
@@ -8815,14 +8821,17 @@
    "box": [5.6,3.4],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":-62,"y":-40},
-    {"k":"window","x":62,"y":-40},
-    {"k":"window","x":-64,"y":-108},
-    {"k":"window","x":0,"y":-108},
-    {"k":"window","x":64,"y":-108},
-    {"k":"glow","x":-30,"y":-54},
-    {"k":"glow","x":30,"y":-54},
-    {"k":"smoke","x":-59,"y":-241}
+    {"k":"window","x":0,"y":-61},
+    {"k":"window","x":-64,"y":-42},
+    {"k":"window","x":64,"y":-42},
+    {"k":"window","x":-54,"y":-102},
+    {"k":"window","x":0,"y":-102},
+    {"k":"window","x":54,"y":-102},
+    {"k":"window","x":-29,"y":-173},
+    {"k":"window","x":29,"y":-173},
+    {"k":"glow","x":-32,"y":-56},
+    {"k":"glow","x":32,"y":-56},
+    {"k":"smoke","x":61,"y":-237}
    ],
    "model": "scene/next/models/inn.json",
    "ppm": 32,
@@ -8919,9 +8928,9 @@
   },
   "library": {
    "name": "Library",
-   "img": "scene/props/library.png",
-   "ox": -102,
-   "oy": -231,
+   "img": "scene/next/hub/library.png",
+   "ox": -97,
+   "oy": -228,
    "shadow": 1.8,
    "sway": 0,
    "flat": 0,
@@ -8930,10 +8939,12 @@
    "box": [5.4,3.4],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":-59,"y":-64},
-    {"k":"window","x":-30,"y":-64},
-    {"k":"window","x":30,"y":-64},
-    {"k":"window","x":59,"y":-64}
+    {"k":"window","x":-62,"y":-74},
+    {"k":"window","x":62,"y":-74},
+    {"k":"window","x":-38,"y":-96},
+    {"k":"window","x":38,"y":-96},
+    {"k":"glow","x":-40,"y":-58},
+    {"k":"glow","x":40,"y":-58}
    ],
    "model": "scene/next/models/library.json",
    "ppm": 32,
