@@ -34,6 +34,7 @@ expose({
   NORMAL_MAP_WORKER_SOURCE: [() => NORMAL_MAP_WORKER_SOURCE],
   SKY_GLSL: [() => SKY_GLSL],
   SURFACE_MATERIALS: [() => SURFACE_MATERIALS],
+  UPLOAD_FLOOR_MS: [() => UPLOAD_FLOOR_MS],
   applyAnisotropy: [() => applyAnisotropy, v => (applyAnisotropy = v)],
   attributeClashes: [() => attributeClashes, v => ((attributeClashes = v), provide({ attributeClashes }))],
   beginGpuTimer: [() => beginGpuTimer, v => (beginGpuTimer = v)],
@@ -1089,8 +1090,9 @@ export function imageTexture(im, o = {}) {
 }
 /* FL-4b: the upload queue (quality.uploadQueue). A picture (an <img>) is first made into a bitmap off the page
    (createImageBitmap: its decoding and unpacking leave the frame); once it is in, the upload takes it, the first of a
-   tick always, the rest while the frame's one-off budget lasts (walk/quality-cull.js frameBudgetLeft; behind a loading
+   tick always, then about 1 ms more, the rest while the frame's one-off budget lasts (walk/quality-cull.js frameBudgetLeft; behind a loading
    screen all). Canvases, redrawn pictures and a browser without createImageBitmap upload as before. */
+const UPLOAD_FLOOR_MS = 1;
 export const uploadQueue = {
   /** picture -> { bm: its bitmap once made, gl: the context it was asked on, bad: it couldn't be made } */
   wait: new Map(),
@@ -1170,7 +1172,9 @@ function queuedUploadSource(im) {
   const loading =
     typeof document !== 'undefined' &&
     (document.body.classList.contains('ld-on') || !!document.getElementById('runload'));
-  if (Q.n > 0 && !loading && !(typeof frameBudgetLeft === 'function' && frameBudgetLeft())) {
+  /* a frame always gets about 1 ms of uploads from bitmaps ready (they are quick: no decoding), more while the one-off
+     budget lasts; headless, with the budget spent by other jobs, one a frame left 80 waiting */
+  if (Q.n > 0 && !loading && Q.ms >= UPLOAD_FLOOR_MS && !(typeof frameBudgetLeft === 'function' && frameBudgetLeft())) {
     Q.held++;
     return null;
   }
