@@ -56,6 +56,10 @@ Sessions act on these without asking again.
     blur); an engine-made glass only later if the tinted bars read flat.
   - The bottom bar's shrink: **rebuilt on transforms now** (lane FL-6b), keeping UI-8b's glide as close as it can.
 
+- **Phone pixel budget on by default** (the owner, 2026-10-30, after the phone's Diagnostics at 09:55: Copperleaf by
+  day 12.7 → 20 fps at the game's own values, a battle 28.7 → 38.3; draws were already 304-309): `quality.phonePixels`
+  true. The Diagnostics' `own` stop now includes it; FL-7 deletes the old path after the next phone check.
+
 ### Rounds and lanes (parallel sessions)
 Every lane works on `track/fluid` (each cloud session started with it as its push branch). Before every push:
 `git pull --no-rebase origin track/fluid` (a merge, never a rebase or force push). A lane edits only its own files;
