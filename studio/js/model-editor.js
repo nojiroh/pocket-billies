@@ -44,12 +44,39 @@ expose({
   modelEditor: [() => modelEditor],
   modelEditorHTML: [() => modelEditorHTML, v => ((modelEditorHTML = v), provide({ modelEditorHTML }))],
   modelRecipeOf: [() => modelRecipeOf, v => (modelRecipeOf = v)],
+  modelShapeNotes: [() => modelShapeNotes, v => (modelShapeNotes = v)],
   ownModelRecipe: [() => ownModelRecipe, v => (ownModelRecipe = v)],
+  shapeNum: [() => shapeNum],
 });
 /* eslint-enable no-func-assign */
 provide({ modelEditorHTML });
 /* to-module: end */
 const modelEditor = { sel: null };
+/* buildings track BD-1: the new shape fields, shown (editing them waits; the builders write them) */
+const shapeNum = v => (Math.round((+v || 0) * 1000) / 1000).toString();
+function modelShapeNotes(l) {
+  const out = [];
+  if (l.k === 'prism' || l.k === 'lathe')
+    out.push(
+      `${l.k === 'prism' ? 'Profile (across, up)' : 'Profile (radius, up)'}: ${(l.pts || []).map(q => `${shapeNum(q[0])}, ${shapeNum(q[1])}`).join(' · ')}` +
+        (l.k === 'prism'
+          ? `; ${shapeNum(l.d || 1)} m deep${l.bend ? `, ends raised ${shapeNum(l.bend)} m` : ''}`
+          : `${l.sides ? `; ${l.sides} sides` : ''}${l.ry ? `; depth × ${shapeNum(l.ry)}` : ''}`)
+    );
+  if (l.rot && l.k !== 'cyl' && l.k !== 'cone' && l.k !== 'barrel' && l.k !== 'sphere' && l.k !== 'dome')
+    out.push(`Turned ${shapeNum(l.rot)} rad`);
+  if (Array.isArray(l.tilt)) out.push(`Leaned ${shapeNum(l.tilt[0])} rad back, ${shapeNum(l.tilt[1])} rad right`);
+  if (Array.isArray(l.taper)) out.push(`Top ${shapeNum(l.taper[0])} × ${shapeNum(l.taper[1])} m`);
+  if (Array.isArray(l.lean)) out.push(`Top moved ${shapeNum(l.lean[0])} m across, ${shapeNum(l.lean[1])} m back`);
+  if (l.bevel) out.push(`Edges bevelled ${shapeNum(l.bevel)} m`);
+  if (l.glow)
+    out.push(
+      `Glows ${typeof l.glow === 'object' ? l.glow.col || l.col || '' : typeof l.glow === 'string' ? l.glow : l.col || ''}${(l.glow && l.glow.day) || l.glowDay ? ', by day too' : ' at night'}`
+    );
+  return out.length
+    ? `<p class="help">${escapeHtml(out.join('. '))}. Set by its builder; not edited here yet.</p>`
+    : '';
+}
 const MODEL_LAYER_KINDS = [
   ['box', 'Box'],
   ['cyl', 'Cylinder'],
@@ -58,6 +85,8 @@ const MODEL_LAYER_KINDS = [
   ['barrel', 'Barrel'],
   ['limb', 'Limb (a branch)'],
   ['dome', 'Dome'],
+  ['prism', 'Prism (a profile drawn out)'],
+  ['lathe', 'Lathe (a profile turned round)'],
   ['img', 'Picture'],
   ['raw', 'Imported voxels'],
 ];
@@ -155,19 +184,22 @@ function modelEditorHTML(k) {
       body = `<p class="help">${escapeHtml(String(l.n || '?'))} voxels imported from ${escapeHtml(l.src || 'a .vox')}. Move it with the sliders; its colours are its own.</p><div class="grid">${pos}</div>`;
     else {
       const size =
-        kind === 'limb'
-          ? `${rangeField('To across (m)', `${p}.x2`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('To depth (m)', `${p}.y2`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('To up (m)', `${p}.z2`, { min: 0, max: 8, step: 0.02, def: 1 })}${rangeField('Radius at the start (m)', `${p}.r`, { min: 0.005, max: 1, step: 0.005, def: 0.1 })}${rangeField('Radius at the end (m)', `${p}.r1`, { min: 0.005, max: 1, step: 0.005, def: 0.07 })}`
-          : kind === 'box'
-            ? `${rangeField('Width (m)', `${p}.w`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Depth (m)', `${p}.d`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}`
-            : kind === 'sphere'
-              ? rangeField('Radius (m)', `${p}.r`, { min: 0.05, max: 3, step: 0.02, def: 0.3 })
-              : `${rangeField('Radius (m)', `${p}.r`, { min: 0.03, max: 3, step: 0.01, def: 0.3 })}${numberField('Depth radius (m)', `${p}.ry`, { opt: 1, min: 0.03, max: 3, step: 0.01, help: 'Empty: round. Set it for an oval, or a wheel seen from the side.' })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${kind === 'cone' ? rangeField('Radius at the top (m)', `${p}.r1`, { min: 0, max: 3, step: 0.01, def: 0 }) : ''}${kind === 'cone' ? numberField('Depth radius at the top (m)', `${p}.ry1`, { opt: 1, min: 0, max: 3, step: 0.01, help: 'Empty: narrows evenly. Set it with 4 sides and a turn of 0.785 for a hip roof with a ridge.' }) : ''}${numberField('Turn (radians)', `${p}.rot`, { opt: 1, min: -3.2, max: 3.2, step: 0.005, help: '0.785 turns a 4-sided shape square to the house.' })}${kind === 'barrel' ? rangeField('Bulge', `${p}.bulge`, { min: 0, max: 0.4, step: 0.01, def: 0.15 }) : ''}${numberField('Sides', `${p}.sides`, { opt: 1, min: 3, max: 32, step: 1, help: 'Empty: as many as its size needs. Few for a faceted rock.' })}${kind === 'sphere' || kind === 'dome' ? numberField('Bands', `${p}.rings`, { opt: 1, min: 2, max: 16, step: 1 }) : ''}${rangeField('Lumpy', `${p}.lump`, { min: 0, max: 0.6, step: 0.01, def: 0 })}${checkboxField('Flat faces', `${p}.facet`, { num: 1 })}`;
+        kind === 'prism' || kind === 'lathe'
+          ? ''
+          : kind === 'limb'
+            ? `${rangeField('To across (m)', `${p}.x2`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('To depth (m)', `${p}.y2`, { min: -3, max: 3, step: 0.02, def: 0 })}${rangeField('To up (m)', `${p}.z2`, { min: 0, max: 8, step: 0.02, def: 1 })}${rangeField('Radius at the start (m)', `${p}.r`, { min: 0.005, max: 1, step: 0.005, def: 0.1 })}${rangeField('Radius at the end (m)', `${p}.r1`, { min: 0.005, max: 1, step: 0.005, def: 0.07 })}`
+            : kind === 'box'
+              ? `${rangeField('Width (m)', `${p}.w`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Depth (m)', `${p}.d`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}`
+              : kind === 'sphere'
+                ? rangeField('Radius (m)', `${p}.r`, { min: 0.05, max: 3, step: 0.02, def: 0.3 })
+                : `${rangeField('Radius (m)', `${p}.r`, { min: 0.03, max: 3, step: 0.01, def: 0.3 })}${numberField('Depth radius (m)', `${p}.ry`, { opt: 1, min: 0.03, max: 3, step: 0.01, help: 'Empty: round. Set it for an oval, or a wheel seen from the side.' })}${rangeField('Height (m)', `${p}.h`, { min: 0.05, max: 6, step: 0.02, def: 0.5 })}${kind === 'cone' ? rangeField('Radius at the top (m)', `${p}.r1`, { min: 0, max: 3, step: 0.01, def: 0 }) : ''}${kind === 'cone' ? numberField('Depth radius at the top (m)', `${p}.ry1`, { opt: 1, min: 0, max: 3, step: 0.01, help: 'Empty: narrows evenly. Set it with 4 sides and a turn of 0.785 for a hip roof with a ridge.' }) : ''}${numberField('Turn (radians)', `${p}.rot`, { opt: 1, min: -3.2, max: 3.2, step: 0.005, help: '0.785 turns a 4-sided shape square to the house.' })}${kind === 'barrel' ? rangeField('Bulge', `${p}.bulge`, { min: 0, max: 0.4, step: 0.01, def: 0.15 }) : ''}${numberField('Sides', `${p}.sides`, { opt: 1, min: 3, max: 32, step: 1, help: 'Empty: as many as its size needs. Few for a faceted rock.' })}${kind === 'sphere' || kind === 'dome' ? numberField('Bands', `${p}.rings`, { opt: 1, min: 2, max: 16, step: 1 }) : ''}${rangeField('Lumpy', `${p}.lump`, { min: 0, max: 0.6, step: 0.01, def: 0 })}${checkboxField('Flat faces', `${p}.facet`, { num: 1 })}`;
       body = `<div class="grid">${selectField(
         'Shape',
         `${p}.k`,
         MODEL_LAYER_KINDS.filter(q => !['img', 'raw'].includes(q[0]))
       )}${textField('Name', `${p}.name`, { opt: 1 })}${colorField('Colour', `${p}.col`)}${selectField('Texture', `${p}.tex`, tex, { opt: 1 })}${checkboxField('Hidden', `${p}.hide`, { num: 1 })}${numberField('Window glass', `${p}.glass`, { opt: 1, min: 1, max: 31, step: 1, help: 'Empty: not a window. A number (1-31): this is a window’s glass, the sky in it by day and lit from inside after dark. Parts with the same number are one window (a tall window and its arched top).' })}${numberField('Roof part', `${p}.roof`, { opt: 1, min: 1, max: 2, step: 1, help: 'Empty: not the roof. 1: a roof part, recoloured by a placed roof style (moss, solar, chrome). 2: dressing that fits only this roof (moss tufts), hidden under another style.' })}</div><div class="grid">${pos}</div><div class="grid">${size}</div>`;
     }
+    if (kind !== 'img' && kind !== 'raw') body += modelShapeNotes(l);
     /* alpha 0.4: a part that turns (a propeller, a windmill's sails, a wheel): about which way, through which point, how fast */
     if (kind !== 'img') {
       const sp = l.spin;
@@ -183,7 +215,11 @@ function modelEditorHTML(k) {
     }
     return `<div class="vxe-layer on ${l.hide ? 'off' : ''}">${title}${body}</div>`;
   }).join('');
-  return `${head}${leavesHTML(M, L)}<p class="help">${L.length} layer${L.length === 1 ? '' : 's'}: low-poly with the buildings’ 32 px textures (wood is planks, stone is stone blocks, hay is thatch…), or voxels one to a pixel of the art with Props as low-poly off. Across is left–right, depth is toward the back, up is from the ground at the prop's base point. Everything shows on the turntable as you drag.</p>
+  const W = rec.warp,
+    warp = W
+      ? `<p class="help">${escapeHtml(`Warped: top leaned ${shapeNum((W.lean || [])[0])}, ${shapeNum((W.lean || [])[1])} m; bulge ${shapeNum(W.bulge)}; sag ${shapeNum(W.sag)} m; twist ${shapeNum(W.twist)} rad (baked into the mesh by height; set by its builder).`)}</p>`
+      : '';
+  return `${head}${leavesHTML(M, L)}${warp}<p class="help">${L.length} layer${L.length === 1 ? '' : 's'}: low-poly with the buildings’ 32 px textures (wood is planks, stone is stone blocks, hay is thatch…), or voxels one to a pixel of the art with Props as low-poly off. Across is left–right, depth is toward the back, up is from the ground at the prop's base point. Everything shows on the turntable as you drag.</p>
   ${rows}<div class="seg-row vxe-add"><span class="help">Add:</span>${['box', 'cyl', 'sphere', 'cone', 'barrel', 'limb', 'dome'].map(q => `<button class="btn sm" data-act="vxeAdd" data-k="${q}">+ ${names[q]}</button>`).join('')}<button class="btn sm" data-act="vxeAdd" data-k="img">+ Picture</button><button class="btn sm subtle" data-act="vxeImport">Import a .vox…</button></div>
   <div class="seg-row"><button class="btn sm subtle" data-act="vxeExport">Download as .json</button><button class="btn sm subtle danger" data-act="vxeOff">Remove the model</button></div>`;
 }

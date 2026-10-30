@@ -823,6 +823,9 @@ export interface PersonLook {
   eyes: Color;
   wear: Record<string, string | null>;
   colors: Record<string, any>;
+  /** CH-7: the figure kit's build the look picked in the dressing room (figureKit.json builds), its sliders counted
+   * from that build's preset; none: the figure's build follows the sliders */
+  build?: string;
 }
 
 /** trainers/<id>.json (trainer.schema.json): a trainer you can battle */
@@ -1641,7 +1644,16 @@ export interface FigureKit {
     }
   >;
   vary: Record<string, number | number[]>;
-  builds: Record<DataId, { k: Record<string, number>; gait: Record<string, number>; jaw?: number }>;
+  builds: Record<
+    DataId,
+    {
+      k: Record<string, number>;
+      gait: Record<string, number>;
+      jaw?: number;
+      /** CH-7: the dressing room's button for the build: its name and the sliders it sets */
+      preset?: { name: string; body: Record<string, number> };
+    }
+  >;
   folk: DataId[];
   proportions: { chibi: Record<'head' | 'legs' | 'torso' | 'arms' | 'neck', number>; sliderGain: number };
   hair: Record<

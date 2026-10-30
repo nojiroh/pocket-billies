@@ -41,11 +41,13 @@ import { setPropLookUniforms } from './walk/prop-look.js';
 /* eslint-disable no-func-assign */
 expose({
   BUILDING_BUMP_GLSL: [() => BUILDING_BUMP_GLSL],
+  BUILDING_NORMAL_UNIT: [() => BUILDING_NORMAL_UNIT],
   BUILDING_RAMP_GLSL: [() => BUILDING_RAMP_GLSL],
   BUILDING_ROOM_NAMES: [() => BUILDING_ROOM_NAMES],
   BUILDING_SHADERS: [() => BUILDING_SHADERS],
   BUILDING_SIGNATURE_CACHE: [() => BUILDING_SIGNATURE_CACHE],
   BUILDING_TEXTURE_NAMES: [() => BUILDING_TEXTURE_NAMES],
+  bindBuildingNormals: [() => bindBuildingNormals, v => (bindBuildingNormals = v)],
   buildingArt: [() => buildingArt, v => (buildingArt = v)],
   buildingBudgetLeft: [() => buildingBudgetLeft, v => (buildingBudgetLeft = v)],
   buildingColor: [() => buildingColor, v => (buildingColor = v)],
@@ -124,6 +126,16 @@ export const BUILDING_TEXTURE_NAMES = [
   'Rivets',
   'Stripes',
   'Rings',
+  'Bark',
+  'Rock',
+  'Fish-scale shingles',
+  'Standing seam',
+  'Barrel tiles',
+  'Cob',
+  'Half-timber',
+  'Riveted panels',
+  'Glass block',
+  'Mosaic',
 ];
 export const BUILDING_ROOM_NAMES = ['Living room', 'Kitchen', 'Bedroom', 'Shop', 'Office', 'Clinic', 'Lab', 'Stairs'];
 const buildingSignature = B =>
@@ -179,23 +191,41 @@ export function buildingTextureGrid(A) {
 }
 const BUILDING_RAMP_GLSL = `vec3 rampC(vec3 b,float t){vec3 d0=mix(b*.55,vec3(.235,.165,.439),.30),d1=mix(b*.79,vec3(.376,.29,.596),.17),l3=mix(b,vec3(1.,.957,.769),.30),l4=mix(b,vec3(1.,.988,.918),.60);return t<.5?d0:t<1.5?d1:t<2.5?b:t<3.5?l3:l4;}
 float bayer4(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}`;
-/* Building bumpiness (world.buildingBumps): bricks, planks and roof tiles catch the light from their own texels. The
-   sheet's shade level (0-4 in red) is the height: one flat normal per texel (three reads at full size, wrapping inside
-   the 2 m cell), tilted only at its seams as the ground's built kinds are (walk/ground-textures.js groundPixelNormal);
-   the tangent frame from the screen's derivatives (no vertex data). Where a texel is smaller than a screen pixel (the
-   walk camera's usual distance) the sheet's smaller size is read instead, so the relief is averaged, not flickering;
-   faded out only when a texel is a sixth of a pixel.
+/* Building bumpiness (world.buildingBumps; BD-2b: on by default, off with the graphics preset Off): bricks, planks and
+   roof tiles catch the light from their own texels. The normal sheet (scenery.buildArt.normal, painted from a height map
+   per cell by tools/build-surfaces.py) holds each texel's normal in the face's own frame: x across the cell, y up it, z
+   out. One read a pixel, at the texel's centre (nearest, so the light steps texel by texel: the pixel look), wrapping
+   inside the 2 m cell. The frame is the face's UV axes, found from the screen's derivatives of the world position and
+   the sheet coordinate (no vertex data): planar per face, so boxes, prisms and caps know theirs, and a round shape's
+   runs along its arc. Where a texel is smaller than a screen pixel (the walk camera's usual distance) the sheet's
+   smaller size is read instead, so the relief is averaged, not flickering; faded out only when a texel is a sixth of a
+   pixel. uBStr scales the tilt (0: flat; 0 too while the sheet hasn't loaded).
    Not on flat colour or glass (vTex.z). Shadows and snow keep the face's own normal. The low-poly models' shader is
    made from this one (prop-models.js), so they bump too */
-const BUILDING_BUMP_GLSL = `uniform float uBStr;
-float bldH(vec2 c0,vec2 f,float cs,float st,float L,vec2 ts){return textureLod(uDet,(c0+mod(f,cs)+.5*st)/ts,L).r;}
-vec3 bldBump(vec3 n,vec2 g){if(uBStr<=0.||vTex.z>.5)return n;vec2 ts=vec2(textureSize(uDet,0));float cs=ts.x/uAtl.x;
+const BUILDING_BUMP_GLSL = `uniform float uBStr;uniform sampler2D uNrm;
+vec3 bldBump(vec3 n,vec2 g){if(uBStr<=0.||vTex.z>.5)return n;vec2 ts=vec2(textureSize(uNrm,0));float cs=ts.x/uAtl.x;
  vec2 f=vec2(fract(g.x),1.-fract(g.y))*cs,tc=vTex.xy*cs+f,dtx=dFdx(tc),dty=dFdy(tc);float tpp=max(length(dtx),length(dty)),k=1.-smoothstep(3.,6.,tpp);if(k<=0.)return n;
- float L=max(0.,floor(log2(max(tpp,1.)))),st=exp2(L);vec2 c0=vTex.xy*cs,fs=floor(f/st)*st;
- float h0=bldH(c0,fs,cs,st,L,ts),hx=bldH(c0,fs+vec2(st,0.),cs,st,L,ts),hy=bldH(c0,fs+vec2(0.,st),cs,st,L,ts);
- vec2 gr=vec2(hx-h0,hy-h0);float gl=length(gr);if(gl<.07)return n;vec2 tl=clamp(-gr*(min(1.,(gl-.07)*6.)*.45/gl)*uBStr,-.45,.45)*k;
- vec3 dp1=dFdx(vW),dp2=dFdy(vW),p2=cross(dp2,n),p1=cross(n,dp1),T=p2*dtx.x+p1*dty.x,B=p2*dtx.y+p1*dty.y;float iv=inversesqrt(max(max(dot(T,T),dot(B,B)),1e-12));
- return normalize(n+(T*tl.x+B*tl.y)*iv);}`;
+ float L=max(0.,floor(log2(max(tpp,1.)))),st=exp2(L);vec2 fs=floor(f/st)*st;
+ vec3 t=textureLod(uNrm,(vTex.xy*cs+mod(fs,cs)+.5*st)/ts,L).xyz*2.-1.;t.xy*=uBStr*k;
+ vec3 dp1=dFdx(vW),dp2=dFdy(vW),p2=cross(dp2,n),p1=cross(n,dp1),T=p2*dtx.x+p1*dty.x,B=p2*dtx.y+p1*dty.y;
+ float lt=dot(T,T),lb=dot(B,B);if(lt<1e-12||lb<1e-12)return n;
+ return normalize(T*(t.x*inversesqrt(lt))-B*(t.y*inversesqrt(lb))+n*max(t.z,.05));}`;
+/* BD-2b: the texture unit the normal sheet is read from (the shadow maps take 6, 7 and 10-13; the models' own
+   pictures 5; unit 3 is the ground's and the world map's, each binding its own before it draws) */
+const BUILDING_NORMAL_UNIT = 3;
+/* bind the normal sheet for a program made with BUILDING_BUMP_GLSL and set its strength: the setting's, or 0 (flat)
+   while the sheet is loading or the scene names none */
+export function bindBuildingNormals(p, A) {
+  if (p.U.uNrm == null) return;
+  const gl = gpuState.gl,
+    nt = A.normal ? imageTexture(artImage(A.normal), { noNormal: true }) : null;
+  gl.activeTexture(gl.TEXTURE0 + BUILDING_NORMAL_UNIT);
+  gl.bindTexture(gl.TEXTURE_2D, nt ? nt.t : gpuState.white);
+  gl.bindSampler(BUILDING_NORMAL_UNIT, null);
+  gl.uniform1i(p.U.uNrm, BUILDING_NORMAL_UNIT);
+  gl.activeTexture(gl.TEXTURE0);
+  if (p.U.uBStr) gl.uniform1f(p.U.uBStr, nt ? engineSetting('world', 'buildingBumps') || 0 : 0);
+}
 export const BUILDING_SHADERS = {
   bld: [
     `#version 300 es
@@ -1608,7 +1638,7 @@ function drawBuildingsUnguarded(C, X, items, fades, part) {
     gl.bindTexture(gl.TEXTURE_2D, det.t);
     gl.uniform1i(p.U.uDet, 0);
     gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
-    if (p.U.uBStr) gl.uniform1f(p.U.uBStr, engineSetting('world', 'buildingBumps') || 0);
+    bindBuildingNormals(p, A);
     for (const it of L) {
       const E = buildingMesh(it);
       if (!E || !E.walls) continue;

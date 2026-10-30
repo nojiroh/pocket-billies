@@ -101,6 +101,7 @@ import '../../game/js/logic/model-bake.js';
 import '../../game/js/logic/model-gltf.js';
 import '../../game/js/logic/model-mesh.js';
 import '../../game/js/logic/model-obj.js';
+import '../../game/js/logic/model-shapes.js';
 import '../../game/js/logic/model-vox.js';
 import '../../game/js/logic/modifiers.js';
 import '../../game/js/logic/motion.js';

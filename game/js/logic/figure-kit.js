@@ -49,6 +49,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   kitBuild: [() => kitBuild, v => (kitBuild = v)],
   // @ts-expect-error -- replaced on purpose
+  kitEase: [() => kitEase, v => (kitEase = v)],
+  // @ts-expect-error -- replaced on purpose
   kitExtent: [() => kitExtent, v => (kitExtent = v)],
   // @ts-expect-error -- replaced on purpose
   kitFaceMarks: [() => kitFaceMarks, v => (kitFaceMarks = v)],
@@ -84,8 +86,8 @@ expose({
 /** @typedef {import('./figure-pose.js').FigureGait} FigureGait */
 /** @typedef {import('./figure-pose.js').Vec3} Vec3 */
 /** @typedef {{ body?: Record<string, number>, skin?: string, hair?: string, eyes?: string,
- *   wear?: Record<string, string | null>, colors?: Record<string, string[]> }} KitLook a cleaned look
- * (person-art.js cleanLook) */
+ *   wear?: Record<string, string | null>, colors?: Record<string, string[]>, build?: string }} KitLook a cleaned
+ * look (person-art.js cleanLook); `build` (CH-7): the kit's build the dressing room picked */
 /** @typedef {{ colors?: [string, string][] }} KitItem a wardrobe item (its colours: [name, hex]) */
 /** @typedef {{ head?: string, build?: string, eyes?: string, brows?: string, gait?: FigureGait, variety?: boolean }}
  * FigureShapeChoice a person's `figure` (CH-6: `eyes` and `brows`, a style of figureKit.json faces over the look's); `variety` (townsfolk) lets every build turn up, where anyone else's sliders decide it */
@@ -138,8 +140,9 @@ export function kitHex(hex, fb) {
 }
 
 /**
- * the head shape and build a person's figure has: their `figure` choice where it names one, else the build their
- * sliders lean to (a big body round, broad and big stocky, tall tall, thin slim) and a head shape from their seed
+ * the head shape and build a person's figure has: their `figure` choice where it names one, else the build their look
+ * picked (CH-7: look.build, from the dressing room), else the build their sliders lean to (a big body round, broad and
+ * big stocky, tall tall, thin slim) and a head shape from their seed
  * @param {KitLook} look @param {number} seed @param {FigureShapeChoice} [choice] @param {FigureKitData} [kit]
  * @returns {{ head: string, build: string }}
  */
@@ -147,7 +150,8 @@ export function figureShapeFor(look, seed, choice = {}, kit = figureKitData()) {
   const b = look.body || {},
     v = (/** @type {string} */ k, /** @type {number} */ d) => (Number.isFinite(b[k]) ? b[k] : d);
   let build = 'average';
-  if (v('body', 1) >= 1.15) build = 'round';
+  if (look.build && look.build in kit.builds) build = look.build;
+  else if (v('body', 1) >= 1.15) build = 'round';
   else if (v('body', 1) >= 1.06 && v('shoulders', 1) >= 1.04) build = 'stocky';
   else if (v('height', 1) >= 1.05) build = 'tall';
   else if (v('height', 1) <= 0.92) build = 'small';
@@ -163,6 +167,18 @@ export function figureShapeFor(look, seed, choice = {}, kit = figureKitData()) {
     head: choice.head && choice.head in kit.heads ? choice.head : head,
     build: choice.build && choice.build in kit.builds ? choice.build : build,
   };
+}
+
+/**
+ * CH-7: `x` kept between `lo` and `hi`, eased into them over the last 15% of the range (smooth, always moving, never
+ * past them), so a slider never stops dead at a limit
+ * @param {number} x @param {number} lo @param {number} hi
+ */
+export function kitEase(x, lo, hi) {
+  const d = (hi - lo) * 0.15;
+  if (x > hi - d) return hi - d + d * (1 - Math.exp(-(x - (hi - d)) / d));
+  if (x < lo + d) return lo + d - d * (1 - Math.exp(-(lo + d - x) / d));
+  return x;
 }
 
 /**
@@ -189,18 +205,22 @@ export function lookFigure(look, items, opts = {}) {
     BD = KIT.builds[shape.build],
     body = look.body || {},
     wear = look.wear || {},
+    /* CH-7: a build the look picked counts its sliders from the build's own button (its preset), so the button gives
+       the build as it is and a slider moves it smoothly from there, and eases into wider limits rather than stopping */
+    picked = !!look.build && shape.build === look.build,
+    base = /** @type {Record<string, number>} */ ((picked && BD.preset && BD.preset.body) || {}),
     /* a slider, exaggerated, times the build's */
     sl = (/** @type {string} */ k, /** @type {number} */ def = 1) => {
       const v = Number.isFinite(body[k]) ? body[k] : def,
         bk = /** @type {Record<string, number>} */ (BD.k)[k] ?? 1;
-      return (k === 'chest' ? v : 1 + (v - 1) * GAIN) * bk;
+      return (k === 'chest' ? v : 1 + (v - (base[k] ?? 1)) * GAIN) * bk;
     },
     /* the tallest and shortest a build and slider make (an exaggerated tall build would tower over the town) */
-    hk = Math.max(0.8, Math.min(1.14, sl('height'))),
+    hk = picked ? kitEase(sl('height'), 0.75, 1.2) : Math.max(0.8, Math.min(1.14, sl('height'))),
     legK = sl('legs') * hk * PR.legs,
     armK = sl('arms') * hk * PR.arms,
     /* the widest and thinnest (a round build on a big body slider would be a ball) */
-    girth = Math.max(0.75, Math.min(1.5, sl('body'))),
+    girth = picked ? kitEase(sl('body'), 0.55, 1.6) : Math.max(0.75, Math.min(1.5, sl('body'))),
     shK = sl('shoulders'),
     hipK = sl('hips'),
     /* heads vary a little from person to person, beyond the slider */

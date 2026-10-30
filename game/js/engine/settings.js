@@ -190,8 +190,9 @@ export const ENGINE_DEFAULTS = {
     groundBumps: 1,
     groundShine: 1,
     /* bricks, planks and roof tiles on the 3D buildings and the low-poly models catch the light from their own texels
-       (buildings.js bldBump); 0: flat walls and roofs, as before */
-    buildingBumps: 0,
+       (buildings.js bldBump, the normal sheet scenery.buildArt.normal); 0: flat walls and roofs. BD-2b: on by
+       default; the graphics preset Off turns it off (OFF_LOOK) */
+    buildingBumps: 1,
     /* terrain TR-4: a generated place's cliffs in its biome's own rock (biomes.json cliff: the wall atlas's material
        and three strata colours), steep smooth land included; off: the scene's rock and the rock ground picture */
     cliffFaces: false,
@@ -1839,7 +1840,7 @@ const OFF_LOOK = {
   shadows: { strength: 0, selfShade: 0, contact: 0, ao: 0, groundAO: 0, lampShadows: 0 },
   lights: { glow: 0, pools: 0, flicker: 0 },
   grass: { density: 0 },
-  world: { farProps: 0, farHills: 0 },
+  world: { farProps: 0, farHills: 0, buildingBumps: 0 },
   water: { reflection: 0, caustics: 0, glints: 0, foam: 0 },
 };
 export function graphicsOff() {
