@@ -1163,6 +1163,8 @@ def phone_flow(P):
     if not until(pg, "!!talkBox.cur&&!talkBox.cur.typing&&!talkBox.cur.wait", 20): raise Exception('the stack’s last line never finished')
     ui(pg); shot(pg, 'phone-dialogue')
     elems['dialogue'] = pg.evaluate('uiElementCount()')
+    # BD-8: the dialogue count once read 23 (and 20 on a rerun): keep what it counted, so a failure names the extra pieces
+    pieces = {'dialogue': pg.evaluate('(()=>{const a=[];uiElementCount(a);return a})()')}
     st = pg.evaluate("(()=>{const S=document.querySelector('.talk-stack'),b=S.querySelector('.talk-box:not(.talk-old)').getBoundingClientRect();return {bubbles:S.querySelectorAll('.talk-box').length,who:document.querySelectorAll('.talk-who').length,line:document.querySelectorAll('.talk-line').length,over:(b.bottom-S.getBoundingClientRect().top)/innerHeight}})()")
     pg.evaluate("talkHide();0")
     if st['bubbles'] > 3 or st['who'] != 1 or st['line'] != 1: raise Exception(f'the talk stack shows {st["bubbles"]} bubbles, {st["who"]} name tags and {st["line"]} lines (at most 3, one, one)')
@@ -1174,7 +1176,9 @@ def phone_flow(P):
     # down; a screen may not show more than its ceiling (ELEMENT_CEILING, lowered when a screen sheds pieces)
     R['elementsPerScreen'] = elems
     more = [f'{k} {v} (at most {ELEMENT_CEILING[k]})' for k, v in elems.items() if k in ELEMENT_CEILING and v > ELEMENT_CEILING[k]]
-    if more: raise Exception('a screen shows more pieces than its ceiling (ui-track.md, less clutter): ' + ', '.join(more))
+    if more:
+        named = '; '.join(f'{k}: ' + ' | '.join(v) for k, v in pieces.items() if elems.get(k, 0) > ELEMENT_CEILING.get(k, 1e9))
+        raise Exception('a screen shows more pieces than its ceiling (ui-track.md, less clutter): ' + ', '.join(more) + (f' [{named}]' if named else ''))
     over = [f'{k} {v} (at most {max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))})' for k, v in blur.items() if v > max(BLUR_BUDGET, BLUR_CEILING.get(k, 0))]
     if over: raise Exception('more surfaces blur what is behind them than allowed (ui-track.md, the blur budget): ' + ', '.join(over))
     pg.evaluate("stopTimers();activeBattle=null;battleStageStop();render();0")

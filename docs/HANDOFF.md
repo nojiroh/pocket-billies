@@ -2,6 +2,298 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-8 - The phone pass: Copperleaf's draws against main, pictures day, dusk and night; the track is done - 2026-10-30
+Branch `track/buildings` (wave 5, the main line; started by BD-7; main (#355) already in, the branch even with its
+remote). Plan written in Plan Mode's shape and built at once (track section 1). Measuring and pictures; one debug-only
+addition to the piece counter and the smoke check. No look change. The track is done: tag `buildings-done` (for the
+owner) once PR #357 merges, then the branch goes (CLAUDE.md, docs/BRANCHES.md).
+- Changed:
+  - theme-sheet.js `uiElementCount(names)`: given an array it also lists each counted piece (tag, first class, first
+    words); without one, nothing changes. check-quick.py keeps the dialogue step's list and a failed screen ceiling
+    now prints the pieces, so BD-7's flake ("dialogue 23 pieces (at most 20)", then 20 on a rerun) names its 3 extra
+    pieces the next time. The cause is not known yet (my guess: the walk's 6 s wander hint under the stack, which the
+    walk's own ceiling keeps room for and the dialogue's 20 doesn't).
+  - ROADMAP, BRANCHES and the track file: BD-8 done, the track done.
+- Measured (tools/check-perf.py --only=copperleaf, SwiftShader on a 390 x 844 phone page, the hub and three spots at
+  noon; counts repeat, the milliseconds don't; this branch against origin/main e3cf601c in a scratch worktree):
+
+  | Spot | Low: main -> BD | As shipped: main -> BD | Models' draws, shipped |
+  |---|---|---|---|
+  | hub 152.4, 60.9 | 222 -> 231.8 | 261.5 -> 298.3 (+14%) | 24.8 -> 34.3 |
+  | 160.4, 66.9 | 231 -> 243.3 | 290.5 -> 315.8 (+9%) | 43 -> 53 |
+  | 144.4, 66.9 | 214.8 -> 226.3 | 290.8 -> 303.8 (+4%) | 41 -> 49 |
+  | 152.4, 50.9 | 248.3 -> 252.3 | 312 -> 320.5 (+3%) | 43 -> 46 |
+
+  Every spot under the 400-draw phone budget (phase 20 A8); uniform calls +1-9%. The rise is all model draws (one per
+  part a mesh: the ten kit houses where two cottage meshes were, the windmills, the cars); sprites are level.
+  No perf baseline exists in validation/ (the check says "no baseline yet"), so these are notes, not gates.
+- Pictures (tools/island-shots.py at 12.5, 20.3 and 22.5 h: the square, the town from above, the south-east overview,
+  the station close, the windmill, the lighthouse, the east and west coasts; scratchpad, not committed; 0 page
+  errors): every building draws at all three hours; the kit houses, the civic four and the landmarks read as distinct
+  silhouettes from above; at night the windows, the Workshop's neon arch and the lamps light; at dusk the station's
+  Googie canopy, starburst clock and a bubble car read well.
+- Found, not changed:
+  - **The grey walls** (BD-3, BD-5, BD-7): the models' shader (prop-models.js, the `shade(...,vec4(.04,16.,0.,.2),.75)`
+    call) mixes 75% of a three-step cel light whose shadow step is .3; the Inner Sun circles (bowl-weather.js
+    `bowlSunAt`: azimuth 135 at 13 h), so at noon one side of every model sits on that .3 step and white walls read
+    grey. Every model draws through this line (the airship, trees' models too), so it is the owner's call (track
+    section 7): options in the final message.
+  - A red figure drawn as a labelled diagram (HEAD, BODY, TAIL, LE) walks beside the player in the pictures (by the
+    windmill, at the station). Not a prop (nothing within 4 m of the windmills in copperleaf.json) and not the part
+    art (game/art/next/parts has no lettering): likely the buddy drawn by a characters-track stand-in. Not this
+    track's; for the characters track to look at.
+- Risky: frame times on the phone are still the owner's log: counts are not milliseconds, and the models' extra draws
+  each bind a mesh. The last phone reading (Adreno 750, 2026-10-28) was 13-17 fps by day on Copperleaf.
+- Verified: lint, typecheck, check:modules, format:check, check:data (195 files, all fine) and build clean; `npm test`
+  2,540 of 2,540. Smoke 7 of 7 in 265 s, run alone after the pictures (the phone step 195 s, its dialogue count
+  within 20 this time); its unused note lists 5 props nothing names (airship_mast and four portal parts: not this
+  track's). The full quick check was not run (over an hour here, BD-2b's entry); smoke and the hub tests cover the steps.
+- Next: the track is done. The owner plays on the phone and sends a debug log (below); this session reads it if sent
+  here. Then PR #357 into main, the tag `buildings-done`, the branch deleted. Later, outside this track: run towns'
+  houses to the kit (section 8), the lighting answer.
+- For the owner on the phone: walk Copperleaf by day, at dusk and at night with the Diagnostics open: the ten kit
+  houses (by the inn and on the farmhouse plot), Granny Juniper's teapot chimney, the five windmills round the farm,
+  the bubble cars by the shop and the station. Walk into two or three house doors. Then send the debug log
+  (Settings -> Help) from the town. Its frame rates go beside the 13-17 fps of 2026-10-28.
+
+### Buildings track BD-7 - The town re-laid: the house kit placed (BD-4b), Juniper's one-off, windmills, cars - 2026-10-30
+Branch `track/buildings` (wave 5, the main line; pulled BD-4a's merge from its remote, merged `claude/bd-5-civic`
+and `claude/bd-6-landmarks` (HANDOFF and ROADMAP conflicts, both entries kept; scenery.json settled by rerunning
+every builder), then main (#355, the characters track)). Plan written in Plan Mode's shape and built at once (the
+owner's advance approval, track section 1). Tools, data, models, pictures, one Studio panel; no game code. No
+per-session tag (CLAUDE.md).
+- Changed:
+  - **The merge.** BD-5's tools/model-triangles.mjs and BD-6's tools/model-mesh.mjs did the same job: kept
+    model-mesh.mjs (the island baker's), build-civic.py bakes through it (pictures byte for byte the same).
+  - **Doors and fx scales** (track section 3, corrected): doors are read at the catalogue's ppu 34 (prop-turn.js
+    `propDoor`), but fx (windows, glows, smoke) at the kind's own `ppm`, 32 (walk/frame-items.js `mpp`), so BD-4a's and
+    BD-6's fx written at 34 were 6% out the other way. Builders now write doors with `px` (34) and fx with `fxpx` (32)
+    (landmark_parts.py, build-house-kit.py, build-props-hub.py, build-windmill-kit.py, build-props-island.py); the civic
+    four's doors moved to 34 (shop 30 -> 32 px, lab 62 -> 66); the moss and solar cottages' doors (run towns) to 34.
+  - **The kit is 24 kinds**, `house_kit_01`..`24` in group `house_kit`, not one kind with variants: the game reads a
+    building's `box` and `door` from its kind's row (walk-view.js `doorOf`, the walking grid, pads, about 60 readers of
+    `box`), so BD-4a's per-variant footprints and doors were ignored (only model and picture followed). Each house's
+    picture is baked from its model (scene/next/hub/house_kit_NN.png; the cottage_moss stand-in is gone).
+  - **BD-4b's placing**, new tools/hub-houses.mjs used by tools/build-copperleaf.mjs: house plots grow where the ground
+    lets them (front line kept, back and sideways, up to 4.8 x 3.6 m; the one at 134.95, 60.49 already touches a street
+    and keeps 3.8 x 2.8); then each house plot gets a kit house that fits, none twice, no two within 20 m sharing a body
+    or a roof (nor a palette where possible), the showpieces nearest the square. On Copperleaf now: 01 narrow/gable and
+    05 jettied/saltbox (the showpieces), 18 saucer/bulb and 20 wide/slab in the east cluster; 13 tower/mushroom, 12
+    L-shape/mansard, 10 narrow/gambrel, 17 townhouse/roof garden, 11 wide/butterfly, 16 cob/bulb on the farmhouse plot.
+    The old cottages' gardens stay; props a bigger house would cover are left out (3); each kit house's `garden` hints
+    plant trees behind and bushes beside it where its old garden has nothing (29 plants), under the gardens' rules.
+    cottage_moss and cottage_solar stay in the catalogue for the run towns (mapgen.js).
+  - **Granny Juniper's cottage**, a one-off (`class Juniper` in build-house-kit.py, model cottage_juniper_cob.json):
+    the kit's half-dome cob body, a honey thatch mushroom roof, her green door, a teapot chimney whose smoke comes out
+    of the spout, a bee skep and honey pots; C's dense extras; placed at 1.25x (3.9 x 3.8 m on her 6.1 x 5.3 m plot,
+    her lavender and hives kept). `vary.size` 0 (section 3's random +-6% fixed). Its palette is kept out of `PALETTES`
+    so the kit's seeded draw is unchanged.
+  - **Windmills and cars**: four more windmills of the kit on level farmland round the windmill plot, 14 m apart, off
+    streets, zones and plots (a solar-sail post mill, a farm windpump, a sky kite turbine, a helix turbine; v 9, 16,
+    23, 7); four bubble cars, two beside the General store and two before Skyline Station's platform (clear of
+    patch-station's way, the doors and anything solid), three looks.
+  - **Rebuilds are faithful**: build-copperleaf.mjs keeps the map's `folk` (10) and the pond's `falls`, which a bare
+    rebuild dropped. The chain after a box or door change is now: `node tools/build-copperleaf.mjs`,
+    `node tools/patch-station.mjs`, `python3 tools/clear-windows.py --fix` (the water, square and terrain patches are
+    the ground's and must not be rerun on the committed map: they carve the river and the pond again).
+  - **Pictures from the models** for every hub building (the lab, shop, inn, library, Workshop, Gene Bank, lighthouse,
+    windmills, barn and station were already; now the kit, Juniper's cottage and the barn's five colour looks,
+    `bake_looks`). Six drawn pictures nothing used any more were removed (scene/props/barn_v1..5.png,
+    cottage_juniper.png).
+  - **The Studio**: the map editor's prop panel shows a modelled kind's looks by name (the windmill kit's 27, the
+    cars), and a kit house can be swapped for another of the 24 (studio/js/map-editor.js `scKitHouse`).
+  - Tests: new tools/test/hub-houses.test.mjs (growing and picking on small cases; on Copperleaf every house plot one
+    kit house that fits, none twice, the neighbour rule; Juniper's one-off; the windmills' designs; the cars);
+    house-kit.test.mjs reads the 24 kinds and their pictures; civic-buildings.test.mjs the doors at 34;
+    lowpoly-props.test.mjs gives the doorless landmarks (lighthouse, station) the building budget (section 3's fix).
+    tools/look-hub-buildings.py `--only=house_kit` takes the numbered kinds; look-house-kit.py reads them.
+- Checked against the track file: section 3's door claim is right for doors; wrong to stop there (fx, above). "A
+  variant can replace any field" holds for drawing only (above). clear-windows reads `rot` (BD-F). Section 3's
+  "lighthouse and station have no door" stands: they keep none and get the building budget instead.
+- Found, not changed:
+  - prop-look.js's building pattern still lacks "cottage" (material and wear for cottage_moss/solar in run towns);
+    `vary.size: 0` already stops the size change, so it was left.
+  - Picture decals don't follow a recipe's warp (BD-6's note) and `face: 'fixed'` decals need about 4 cm off a wall
+    (BD-5's): the kit's houses have no lettering, so nothing to fix here.
+- Risky:
+  - Copperleaf's house plots changed size (grown) and the houses differ in footprint and door: rooms, residents and
+    the full test's door walks follow the data, and the hub tests pass, but the phone hasn't seen it.
+  - More meshes on the hub: 10 kit-house meshes where the two cottage meshes were, 4 more windmill designs and the
+    car (its looks are colour swaps), each one draw per part. Counted, not timed (BD-8).
+  - The smoke's phone step failed once at "dialogue 23 pieces (at most 20)" and passed alone right after with 20,
+    the same list as on main (main passes too). A timing flake in the count, not this change, but watch for it.
+  - Run towns are unchanged except the moss and solar cottages' doors moved 4 cm (32 -> 34 px/m).
+- Verified: lint, typecheck, check:modules (432 modules), format:check, check:data (195 files, all fine) and build
+  clean; `npm test` 2,540 of 2,540 (the new hub-houses test 4 of 4). Smoke 6 of 7 in 612 s, the 7th being the phone step,
+  which failed once on a frame timeout while a picture run shared the CPU, once on the piece count (above), then passed
+  alone (288 s; the same step on main also passed, 239 s). tools/clear-windows.py: 0 props hide a window; the
+  unused-art check: 0 unused. The full quick check was not run: it takes over an hour here (BD-2b's entry), and the
+  smoke tier and the hub tests cover these steps. Pictures (look-hub-buildings.py on Copperleaf at noon, scratchpad,
+  not committed): Juniper's cottage reads as a honey-thatched cob house with its teapot chimney, skep and honey pots
+  in her kept garden; kit house 13 (round tower, water tower) stands on its street plot. White walls read grey from
+  the east at noon, as BD-3 and BD-5 found (a BD-8 lighting point). The kit's and Juniper's baked pictures were
+  checked one by one.
+- Next: BD-8, the phone pass (pictures at noon, dusk and night; the owner's play test and debug log; frame times), on
+  `track/buildings`, started from this session (track section 6).
+- For the owner on the phone: walk Copperleaf by day and at night: the ten kit houses (the east cluster by the inn,
+  the farmhouse plot), Granny Juniper's teapot chimney, the windmills round the farm, the bubble cars by the shop and
+  the station. Walk into a few house doors (each opens a room) and send a debug log from the town.
+
+### Buildings track BD-6 - Landmarks: Workshop, Gene Bank, lighthouse, barn, station, the windmill kit, bubble cars - 2026-10-30
+Branch `claude/bd-6-landmarks` (wave 4 side session, made from `track/buildings`; `track/buildings` and main merged
+in). Plan written in Plan Mode's shape and built at once (the owner's advance approval, track section 1). The owner's
+look pick "B base + C showpieces": lean given in degrees and converted by each model's height (tools/landmark_parts.py
+`lean_warp`). Models, builders, one engine change (turning parts), a test map. Nothing placed on Copperleaf (BD-7).
+No per-session tag (CLAUDE.md).
+- Changed:
+  - **Turning parts merged.** Every spin layer was its own mesh and draw (today's windmill's sails 37 draws, the Gene
+    Bank's helix 30, the Workshop's gear 10). BD-6 grouped layers with the same spin into one turning mesh in
+    prop-models.js; the fluid track's FL-2b did the same on main meanwhile (game/js/logic/spin-merge.js `spinGroups`,
+    `joinMeshes`, the same name), so at the merge of `track/buildings` FL-2b's version was kept and BD-6's dropped. The
+    landmarks are built for it: each rotor is layers sharing one spin. All recipes: 259 turning draws per mesh -> 21;
+    on Copperleaf (windmill, Gene Bank, Workshop, lighthouse, solar cottages) 87 -> 7.
+  - New tools/landmark_parts.py: BD-3's shapes and palette plus cogs, starbursts, rotors, lattice sails, rings, glass
+    bubble domes, neon tubes, a round lobby, an arched door, and `lean_warp(L, degrees)` (`tan(deg) x top`, the top
+    from the still parts).
+  - tools/build-props-hub.py: the **Workshop** as a quonset hut (verdigris corrugated shell, copper ribs, a cream
+    riveted front, a roll-up door under a big brass gear standing over the roofline and a small gear meshing the other
+    way, the crane kept with its hook swinging, a copper rocket stove pipe, bubble skylights, a neon arch, a workbench,
+    ivy, a pneumatic tube; 3.5 degrees). The **Gene Bank** rounder (a bulging lathe vault, a verdigris dome, four glass
+    bubble domes of seedlings, a barrel-vaulted porch with a round brass vault door, the GENE BANK marquee, drawer banks
+    turned to the curved wall, the helix's beads lit at night and turning as one; 2 degrees). The **lighthouse** as a
+    finned rocket (four fins, an exhaust ring lit at night, portholes, the gallery, the light room's glass and its
+    turning shutter kept, a nose cone with a glowing antenna; 1.5 degrees). The **bubble car**, new kind `bubble_car`
+    (a hovering retro car facing -x: glass bubble, tail fins, chrome bumper, headlights; a hover pad and thrusters that
+    glow at night; `bob` 0.03; looks mint, coral and sky as colour swaps). The file no longer writes `windmill`.
+  - tools/build-props-island.py: the **barn** (a gambrel of solar shingles with a copper ridge, white gable trim and
+    braced sliding doors, the loft and its hoist, a louvred cupola whose vane swings, a domed silo with hoops, a ladder,
+    a glowing porthole, a chute and a wind spinner; 4 degrees). Its four colours are kept, so its five looks still
+    swap. The old `Barn` class and `barn_door` are gone (only the barn used them).
+  - tools/build-station-trains.py: **Skyline Station**'s canopy is a Googie boomerang (a verdigris slab swept up into
+    a wide V, a dark underside, copper fascia, a neon line on its front edge, starbursts at its tips) on splayed V
+    columns, and a **starburst clock** stands on its middle (two faces). Platform, track bed, rail, `box` [12.6, 6.6]
+    and the portal unchanged; the trains rebuild byte for byte.
+  - New tools/build-windmill-kit.py, **the windmill kit**: `windmill` (its old key) has 27 looks, nine designs (copper
+    tower mill, Googie needle, helix turbine, solar-sail post mill, rocket mill, farm windpump, saucer tower, sky kite
+    turbine, tree mill) times three colourways (copper and cream; white, red and navy; brass and teal). One recipe per
+    design (game/art/scene/next/models/windmill_<design>.json); a colourway is a `swap` of the tokens that design uses.
+    Each variant carries `kit: {design, colours}`, its picture and a window fx. 600-1,500 still triangles and one
+    turning mesh each (the saucer tower two: its rotors turn opposite ways). Tall ones lean 1.5-2 degrees, homely ones
+    2.5-3.
+  - The test map `test_landmarks` (debug menu, Test scenes): the five landmarks along the front, the bubble cars by the
+    station, every windmill behind (a design a column, its colourways one behind another).
+  - Pictures: tools/model-mesh.mjs dumps a recipe's triangles from the game's own mesher; build-props-island.py
+    `bake` uses it for recipes with BD-1's shapes (older recipes bake as before, so their pictures stay). New pictures
+    for the landmarks, 27 windmill looks and 3 cars (scene/next/hub, scene/next/island/barn.png). The old flat pictures
+    scene/props/lighthouse.png, windmill.png, barn.png and the old models/windmill.json are deleted (nothing used them).
+  - tools/look-hub-buildings.py: framing for the station, barn and car; `--max=N`.
+  - New tools/test/landmarks.test.mjs (3 tests): each landmark under 10,000 triangles with glass, a door
+    inside its footprint and at most 3 turning meshes; the station's box; 27 windmill looks on 9 models, each swap's
+    colours found in its model; the car's looks, glow and bob. check-data's snapshot remade (one more map).
+- **For BD-7** (footprints and doors; doors and fx are now written at the catalogue's ppu 34, section 3's fix, for
+  these kinds): workshop box [4.6, 3.0] (same), door x -17 px (-0.5 m; was -27 px at 32 px/m); gene_bank [4.4, 4.6]
+  (same), door 0; lighthouse [3.6, 3.6] (same), no door (as before); barn [5.5, 4.1] (same), door x -26 px (-0.75 m,
+  the body moved left for the silo; was 0); train_station [12.6, 6.6] (same), no door; windmill [3.6, 3.6] for all 27
+  looks, door 0; bubble_car no box (a prop, solid 0.5, about 2.2 x 1.2 m), to park by the shop and the station. BD-7
+  places three to five windmills (`v` picks a look: design = v div 3, colourway = v mod 3, in the order above).
+- Checked against the track file: right that each building had its own builder, that station-place.mjs reads the
+  station's `box[1]`, and that variants can swap a model (walk-view.js `plainPropVariant`) and colours
+  (prop-models.js `swappedRecipe`). Wrong or loose: "spinning parts are instanced spins (one draw each per mesh)" was
+  one draw per spin *layer*, not per rotor (fixed, above, the FL-2b way). "The ring bobs like `mooredBob`": `bob` moves a whole model,
+  not a part; the kite's ring stays put and its rotor turns (a part's bob needs an engine change: not done).
+- Found, not changed:
+  - Picture layers (decals, the lettering) do not follow a recipe's warp: a bulge moved the Gene Bank's marquee out over
+    its GENE BANK decal and hid it. The lettered landmarks use lean without bulge; the house kit (BD-4a) and BD-5
+    should check their signs the same way.
+  - BD-5 (`claude/bd-5-civic`) added tools/model-triangles.mjs, much like tools/model-mesh.mjs here: BD-7 can keep one.
+- Risky:
+  - Phone frame times not measured (software drawing here can't); the draw saving is counted, not timed.
+  - The windmill kit and the bubble car are not on Copperleaf yet: only `test_landmarks` shows them.
+- Verified: lint, typecheck, format:check, check:modules, check:data (195 files) and build clean; `npm test` 2,525 of
+  2,525 (after the merge; FL-2b's spin-merge test loosened to allow up to three ways of turning a model, BD-6's
+  Workshop and barn have two or three); smoke 7 of 7 (268 s); the unused-art check 0 unused (the three old flat
+  pictures deleted). The full quick check was not run (over an hour here, BD-2b's entry; no check-quick step reads
+  these models beyond those that ran). Pictures with look-hub-buildings.py on `test_landmarks` (noon, night, rows;
+  scratchpad, not committed): every model draws, no page errors; GENE BANK and WORKSHOP lettering show; the gears
+  turn between frames; at night the neon arch, helix beads, exhaust rings, silo porthole, canopy neon and the cars'
+  hover glow light up. Triangles (the game's mesher): Workshop 2.4k still + 0.8k turning, Gene Bank 4.7k + 1.7k,
+  lighthouse 2.4k, barn 2.3k, station 2.7k, windmills 0.6-1.5k + 0.1-0.6k, car 1.2k.
+- Next: wave 4 is done (BD-4a on `track/buildings`, BD-5 on `claude/bd-5-civic`, this). Wave 5: BD-7 (the town re-laid,
+  with BD-4b) on `track/buildings`, started from this session; it merges this branch and `claude/bd-5-civic` first
+  (scenery.json: rerun the builders, then `npm run data`; studio/art-code-refs.json: regenerate; check-data's
+  snapshot: remake).
+- For the owner on the phone: debug menu, Test scenes, "Test: the landmarks, the windmill kit and the bubble cars":
+  walk round them by day and at night (the neon, the bubble domes, the exhaust rings, the cars' hover glow), watch the
+  rotors, the Gene Bank's helix and the Workshop's gears turn. A debug log from there tells us the draw count.
+
+### Buildings track BD-5 - Civic: the shop, inn, library and lab rebuilt (look B with C's showpieces) - 2026-10-30
+Branch `claude/bd-5-civic` (wave 4 side session, made from `track/buildings`; main and `track/buildings` had nothing
+new). Plan written in Plan Mode's shape and built at once (the owner's advance approval, track section 1), on the
+owner's look pick "B base + C showpieces". Tools, models, pictures and their catalogue entries; no game code. No
+per-session tag (CLAUDE.md).
+- Changed:
+  - New tools/build-civic.py builds four models under their old keys and model paths. It reuses BD-3's helpers
+    (tools/build-look-sketches.py), BD-1's shapes and BD-2a's surfaces. Lean in degrees, converted by the model's
+    height (`warp()`). Civic buildings stay plumb with a soft swell; the inn leans 1 degree.
+    - `shop` (1,880 triangles): a Streamline corner store with a round corner and speed lines, a big window of goods,
+      a striped awning, a slab roof over dark eaves, the round leaf emblem board with a neon ring, a starburst, the
+      SHOP board and a neon under the eaves. C's showpieces: a Googie canopy over the door and string lights.
+    - `inn` (3,825): three floors stacked, the first turned +3 degrees and the top -4 (a `turned()` helper turns a
+      group of parts), jettied, with two balconies, a teacup sign, the INN board, an upswept verdigris roof, an atomic
+      finial and a chimney with smoke; the INN board stands on posts beside the steps. C's showpieces: string lights and a blossom street tree.
+    - `library` (3,510): the Bureau's archive. A cream rotunda with the arched door, the LIBRARY board and a clock;
+      brick wings fronted with filing drawers under arched windows; an upswept fan of books round a copper drum; ivy.
+      C's showpiece: glowing tubes under the cornice.
+    - `lab` (2,878): an observatory dome with its slit open and a telescope out of it, a radio dish with a glowing
+      feed, a copper tower with a glowing ring and a beacon, a pneumatic tube along the front, a Googie canopy over
+      the doors, and Kappi's corner (a porthole at Kappi's height, a bench with a cushion, a little lamp; the track
+      named the corner but not what it is, so this is my reading). The drawn window view (batch 3's
+      decals/lab_window.png) is kept. C's showpiece: a copper rocket chimney with fins.
+  - Footprints and doors are kept as they were: shop [3.8, 2.4] door 30 px; inn [5.6, 3.4] door 0; library [5.4, 3.4]
+    door 0; lab [6, 3] door 62 px. **BD-7 has nothing to move for these four.** `fx` (windows, lamps, smoke) and the
+    glass numbers are new and written by the tool.
+  - Pictures are baked from the game's own mesh. The new tools/model-triangles.mjs runs `lowPolyFromRecipe` in Node
+    and hands the triangles to build-props-island.py's `bake`, as build-intro-art.py's `bake_mesh` does. Pictures go
+    in scene/next/hub/; the old scene/props/{shop,inn,library,lab}.png are removed, as the Workshop's were.
+  - tools/build-props-batch7.py no longer builds the shop, inn or library, and tools/build-props-batch3.py no longer
+    builds the lab, so their reruns can't overwrite BD-5's models. Their showcase rows still show the four.
+  - New tools/test/civic-buildings.test.mjs (5 tests): under 6,000 triangles, the old box and door, each building's
+    signature parts, numbered glass, glows, roof marks, decals facing the front, a lean of 1.5 degrees at most, a
+    baked picture, and the inn's floors turned against each other.
+  - studio/art-code-refs.json regenerated.
+- Checked against the track file: the footprints and doors in section 3 are right (shop door 0.94 m = 30 px, lab
+  1.94 m = 62 px). Wrong: build-props-island.py's `bake` meshes recipes itself and knows no prism, lathe, tilt or warp,
+  so it can't draw BD-1's shapes. That is why the bake now goes through the game's mesher.
+- Found, not changed:
+  - A `face: 'fixed'` decal needs about 4 cm in front of the surface behind it. At 1 cm the lab's window view didn't
+    draw on Copperleaf (at 5 cm it does). A board hung out on the inn's balcony rail drew without its lettering, cause
+    not found. Builders should keep decals 4 cm out, on a wall or on their own posts; BD-4a's kit may meet this too.
+  - From the high orbit camera, a deep balcony hides the wall about half a metre below it. The INN board went there
+    twice and was hidden, so it now stands on two posts beside the steps.
+  - Fronts read dark at noon from the orbit camera on Copperleaf (rot 90, the sun behind); every building there does
+    the same. A BD-8 lighting point.
+- Risky:
+  - The shop's model is also the run towns' shop (mapgen.js). Its footprint is unchanged, so they still fit, but run
+    towns now show the new look.
+  - build-civic.py swaps two names inside build-props-island.py while it bakes (`mesh`, `PICS`). If BD-6 renames
+    them, the bake breaks loudly.
+  - scenery.json: this branch writes only `shop`, `inn`, `library` and `lab` (and three `img` paths in
+    art-code-refs.json). On merge, rerun `python3 tools/build-civic.py`, then `npm run data` and
+    `node tools/art-code-refs.mjs`.
+  - Phone cost isn't measured: 300-1,000 more triangles each, about 12k for the four.
+- Verified: lint, typecheck, format:check, check:modules, check:data and build clean; `npm test` 2,421 of 2,421 (the
+  new test 5 of 5); the unused-art check 0 unused; tools/clear-windows.py on Copperleaf: 0 props hide a window; smoke
+  7 of 7 (421 s) on the final models. The full quick check was not run: it takes over an hour here (BD-2b's entry), and
+  no game code changed. Pictures (look-hub-buildings.py, scratchpad, not committed), all without page errors: the
+  shop, inn and library on test_hub_buildings at noon and night (35 degrees round), and the four on Copperleaf (rot 90)
+  at noon and night. Rooms were not opened in the pictures; doors, boxes and rooms are unchanged in the catalogue.
+- Next: wave 4 ends when BD-4a (`track/buildings`) and BD-6 (`claude/bd-6-landmarks`) have their entries; neither had
+  one when this session ended, so the last of them starts BD-7 on `track/buildings`. BD-7 merges this branch's draft
+  PR.
+- For the owner on the phone: walk round the square by day and at night: the shop, the inn, the library (the Bureau's
+  archive) and the lab. Look at the neon, the string lights and the lit windows after dark, and check that every door
+  still opens its room.
+
 ### Test data track fix - the Graphics test's costs and drift from the mean frame, not the median - 2026-10-30
 Branch `track/test-data` (main, e3cf601c, merged in at the start, no conflicts). Planned, then built at once (the
 track's standing answer, section 1). A bug fix between TD sessions, from the owner's phone graphics report of
