@@ -46,7 +46,15 @@ built at once (the owner's advance approval, track section 1). No per-session ta
     arithmetic operations, on building and model pixels only. Memory: one 512x256 RGBA texture with mips, about
     0.7 MB (TD's phone budget is 300 MB).
   - A strong sheet: `normal_sheet(strength=2.0)`; deep seams tilt a lot. The dial (0-3) scales it; BD-3 judges it.
-- Verified: lint, typecheck, check:modules, format:check, check:data, build and `build-surfaces.py --check` clean; `npm test` 2,413 of 2,413; smoke 7 of 7 (432 s); full quick check: QUICK_RESULT. Pictures (look-hub-buildings.py, noon, the Workshop and the windmill, before and after;
+- Verified: lint, typecheck, check:modules, format:check, check:data, build and `build-surfaces.py --check` clean; `npm test` 2,413 of 2,413; smoke 7 of 7 (432 s); full quick check: 36 steps ok and 4 problems in 3,500 s, then cut off (my cap) while "Song fingerprints"
+  hung. "RL-8" (node 8 has no exit north) and "Walking left and right" (room light at night) are the two BD-2a found
+  failing on `track/buildings` before this work. "Ground tiles, building plans..." (the lab's room didn't open in place) and
+  "Postcards" (no stamp on the way back) passed when run on their own (146 s, no problems), so they were load flakes
+  in the full run. "Song fingerprints" hangs on its own too (over 10 minutes against its 180 s budget), on this code
+  and on the code before BD-2b's changes alike: a sound-side problem, not this session's (BD-2a's "hang on Safety" was
+  probably this step: Safety finished at 2,532 s here). Steps that bear on this change all passed: "Props made of
+  shapes", "Windows and lamps by night", "Off-screen culling ... prop wear", "The airship moored in Copperleaf", the
+  in-game test's Shaders step (39 shaders built), the phone run Pictures (look-hub-buildings.py, noon, the Workshop and the windmill, before and after;
   scratchpad, not committed): brick, the dome's ribs, the corrugated roof and the stone tower catch the light texel by
   texel; the door planks and glass unchanged; no page errors.
 - Next: wave 3, BD-3 (look sketches) on `track/buildings`: three directions on one house and the shop, the owner
