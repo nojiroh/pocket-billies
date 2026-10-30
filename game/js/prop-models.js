@@ -61,6 +61,10 @@ import { lampLit, modelWindowLight } from './walk/lighting.js';
 import { BUILDING_SHADERS, bindBuildingNormals, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
+  FAR_TREES: [() => FAR_TREES],
+  FAR_TREE_BAND_M: [() => FAR_TREE_BAND_M],
+  FAR_TREE_M: [() => FAR_TREE_M],
+  FAR_TREE_OUT: [() => FAR_TREE_OUT],
   GLASS_GLSL: [() => GLASS_GLSL],
   GLOW_RGB_GLSL: [() => GLOW_RGB_GLSL],
   INSTANCE_IN_GLSL: [() => INSTANCE_IN_GLSL],
@@ -111,6 +115,7 @@ expose({
   drawPropModels: [() => drawPropModels, v => setDrawPropModels(v)],
   drawSpinningParts: [() => drawSpinningParts, v => (drawSpinningParts = v)],
   drawVoxItems: [() => drawVoxItems, v => (drawVoxItems = v)],
+  farTreeLook: [() => farTreeLook, v => (farTreeLook = v)],
   flushPropModelMeshes: [
     () => flushPropModelMeshes,
     v => ((flushPropModelMeshes = v), provide({ flushPropModelMeshes })),
@@ -2066,9 +2071,14 @@ function propModelImageItems(it, out) {
   let pool = LEAF_ITEMS.get(it.p);
   if (!pool || pool.rec !== rec) LEAF_ITEMS.set(it.p, (pool = { rec, list: [] }));
   let li = -1;
+  /* FL-5b (quality.farTrees): a far tree is one picture, its crown as painted (the picture its clumps are cut from and
+     placed to rebuild, farTreeLook), instead of a core and about 9 clumps */
+  const FT = farTreeLook(it, rec),
+    nl = (rec.layers || []).length;
   for (const L of rec.layers || []) {
     li++;
     if (L.k !== 'img' || L.hide) continue;
+    if (FT && FT.t >= 1 && L.clip && FT.imgs.has(L.img)) continue;
     const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
     /* LD-1: a leaf clump's baked cut (tools/bake-pixel-facts.mjs), so its crown picture is never read (or even
        loaded) in the page; the Studio painting the crown (_ver) or moving the clump (a key with no bake) cuts it here */
@@ -2084,7 +2094,12 @@ function propModelImageItems(it, out) {
       if (typeof artImg === 'function' && L.img) artImg(L.img);
       continue;
     }
-    const im = baked ? artImage(baked) : L.clip || L.shade ? leafCut(im0, L) : im0;
+    /* FL-5b: past the band the core is the crown itself (uncut, not darkened), pulled toward the eye */
+    const crown = !!(FT && FT.t >= 1 && L.shade && !L.clip && im0 && (im0.naturalWidth || im0.width));
+    /* (the crown picture itself is loaded only for far trees: LD-1's baked cuts never need it) */
+    if (FT && L.shade && !L.clip && !(im0 && (im0.naturalWidth || im0.width)) && typeof artImg === 'function')
+      artImg(L.img);
+    const im = crown ? im0 : baked ? artImage(baked) : L.clip || L.shade ? leafCut(im0, L) : im0;
     if (!im) continue;
     const d = decalPlace(it, L, m),
       s = d.s,
@@ -2125,8 +2140,56 @@ function propModelImageItems(it, out) {
     o.layer = L;
     o.still = it.still;
     o.voxImg = 1;
+    if (crown) o.eyeward = FT.front * s;
     out.push(o);
+    /* FL-5b: in the band the crown fades in (dithered) in front of the core and its clumps, which stay whole under it;
+       no shadow of its own (the core's is there) */
+    if (FT && FT.t > 0 && FT.t < 1 && L.shade && !L.clip && im0 && (im0.naturalWidth || im0.width)) {
+      const c = leafItem(pool.list, nl + li);
+      Object.assign(c, o);
+      c.im = im0;
+      c.w = im0.naturalWidth || im0.width;
+      c.h = im0.naturalHeight || im0.height;
+      c.ox = -(c.w / 2);
+      c.oy = -(c.h - 1);
+      c.sh = 0;
+      c.eyeward = FT.front * s;
+      c.fade = FT.t;
+      out.push(c);
+    }
   }
+}
+/* FL-5b (quality.farTrees, the owner's look trade for phones): how far into the far-tree band a model with leaf clumps
+   stands from you: null when the switch is off, it has no crown core (a layer with a shade and no clip), or it is
+   nearer than the band. t 0..1 across FAR_TREE_BAND_M before FAR_TREE_M (the crown fading in over the clumps), 1 past
+   it (the crown alone); imgs: the crown pictures; front: how far the crown is pulled toward the eye to stand in front
+   of its clumps (the clumps' widest reach from the core, m before the model's size) */
+const FAR_TREE_M = 42,
+  FAR_TREE_BAND_M = 6,
+  FAR_TREES = new WeakMap(),
+  FAR_TREE_OUT = { t: 0, imgs: null, front: 0 };
+function farTreeLook(it, rec) {
+  if (!engineSetting('quality', 'farTrees') || typeof walkView === 'undefined' || !walkView.pl) return null;
+  let K = FAR_TREES.get(rec);
+  if (!K) {
+    const L = (rec.layers || []).filter(l => l && l.k === 'img' && !l.hide),
+      cores = L.filter(l => l.shade && !l.clip),
+      imgs = new Set(cores.map(l => l.img));
+    let r = 0;
+    for (const c of L)
+      if (c.clip && imgs.has(c.img))
+        for (const k of cores) r = Math.max(r, Math.hypot((c.x || 0) - (k.x || 0), (c.y || 0) - (k.y || 0)));
+    K = cores.length ? { imgs, front: r + 0.3 } : { imgs: null, front: 0 };
+    FAR_TREES.set(rec, K);
+  }
+  if (!K.imgs) return null;
+  const d = Math.hypot(it.x - walkView.pl.x, it.z - walkView.pl.z),
+    t = (d - (FAR_TREE_M - FAR_TREE_BAND_M)) / FAR_TREE_BAND_M;
+  if (t <= 0) return null;
+  FAR_TREE_OUT.t = Math.min(1, t);
+  FAR_TREE_OUT.imgs = K.imgs;
+  FAR_TREE_OUT.front = K.front;
+  return FAR_TREE_OUT;
 }
 /* phase 09 batch 1: a tree's leaves are one picture, its crown as drawn (paint it in the Studio like any prop picture).
    Each clump is cut from it at run time: clip [x, y, r] is a circle in that picture's pixels; the cut is a square

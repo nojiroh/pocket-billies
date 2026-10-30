@@ -249,6 +249,16 @@ def main():
     if do:
         sm = sorted((s['dord'][1] if isinstance(s.get('dord'), list) and len(s['dord']) > 1 else 0) for s in do)
         print(f"Solid first (draw order): {len(do)} of {len(samples)} samples, models drawn first median {sm[len(sm) // 2]}")
+    # FL-5b: the phone look trades: the far shadow map's sizes, the ground's tiles (scene draws, tiles drawn of asked;
+    # the shadow passes' the same) and the merged glow
+    fs = sorted({s.get('fsm') for s in samples if s.get('fsm')})
+    if fs: print(f"Far shadow map: {', '.join(str(v) for v in fs)} (sizes seen)")
+    gt = [s['gtl'] for s in samples if isinstance(s.get('gtl'), list) and len(s['gtl']) >= 6]
+    if gt:
+        md = lambda k: sorted(g[k] for g in gt)[len(gt) // 2]
+        print(f"Ground in tiles: {len(gt)} samples, scene {md(0)} draws, {md(1)} of {md(2)} tiles; shadow maps {md(3)} draws, {md(4)} of {md(5)} tiles (medians)")
+    pm = sum(1 for s in samples if s.get('pmg'))
+    if pm: print(f"Phone effects merged: {pm} of {len(samples)} samples")
 
     ev = [e for e in (d.get('events') or []) if e.get('kind') in ('visibility', 'webgl')]
     if ev:

@@ -266,6 +266,15 @@ debugLog.ctx = () => {
         c.gwt = GAME.walkRenderer.groundWaited;
         GAME.walkRenderer.groundWaited = 0;
       }
+      /* FL-5b: the far shadow map's size this frame (quality.phoneShadow: 2048 on a phone), the ground's tiles
+         (quality.groundTiles: [scene draws, its tiles drawn, asked, shadow draws, their tiles drawn, asked]) and
+         the phone's merged glow (quality.postMerge) */
+      if (GAME.walkRenderer.farRes) c.fsm = GAME.walkRenderer.farRes;
+      if (GAME.walkRenderer.gtl) {
+        c.gtl = GAME.walkRenderer.gtl.slice();
+        GAME.walkRenderer.gtl = null;
+      }
+      if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.postMerged) c.pmg = 1;
       /* phase 20: the point lights in the frame, and how many of them cast a shadow map */
       const X = GAME.walkRenderer.X;
       if (X && X.lights) c.lit = [X.lights.length, (X.lampSh || []).length];

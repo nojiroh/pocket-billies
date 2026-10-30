@@ -229,6 +229,11 @@ const PICTURE_PATH_SWITCHES = [
   /* FL-5a: the draw order for tile GPUs, off until the owner's phone run */
   ['fl5order', 'drawOrder', 'Solid first'],
   ['fl5ground', 'groundSlice', 'Ground built in slices'],
+  /* FL-5b: the phone look trades, off until the owner's phone run */
+  ['fl5shadow', 'phoneShadow', 'Phone shadow map'],
+  ['fl5tiles', 'groundTiles', 'Ground in tiles'],
+  ['fl5post', 'postMerge', 'Phone effects merged'],
+  ['fl5trees', 'farTrees', 'One-picture far trees'],
 ];
 /** a picture path switch's label: on, off, or off by itself after a GL error (walk/sprites.js firstInBatches) */
 function picturePathLabel([, k, l]) {

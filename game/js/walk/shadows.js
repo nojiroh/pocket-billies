@@ -5,6 +5,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import {
+  PHONE,
   buildingFrontPicture,
   buildingGuard,
   buildingState,
@@ -41,6 +42,7 @@ import { inFrustum } from './quality-cull.js';
 import { screenRay } from './camera.js';
 /* eslint-disable no-func-assign */
 expose({
+  FAR_SHADOW_LATCH: [() => FAR_SHADOW_LATCH],
   LAMP_SHADOWED: [() => LAMP_SHADOWED],
   SHADOW_CELLS_NOW: [() => SHADOW_CELLS_NOW],
   SHADOW_CELL_M: [() => SHADOW_CELL_M],
@@ -55,6 +57,7 @@ expose({
   farShadowCellOf: [() => farShadowCellOf],
   farShadowCellsHold: [() => farShadowCellsHold, v => (farShadowCellsHold = v)],
   farShadowHoldSignature: [() => farShadowHoldSignature, v => (farShadowHoldSignature = v)],
+  farShadowSize: [() => farShadowSize, v => (farShadowSize = v)],
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
   holdIdN: [() => holdIdN, v => (holdIdN = v)],
   holdIds: [() => holdIds],
@@ -142,7 +145,7 @@ export function shadowPass(items0, sun, C) {
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
     gl.uniform1f(p.U.uCurveD0, ca[3]);
-    drawGroundDepth(p, walkView.sc);
+    drawGroundDepth(p, walkView.sc, SH.vp);
   }
   drawShadowSprites(SH, items, sun, ca);
   if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, items);
@@ -208,7 +211,7 @@ export function lampShadowMaps(items, X, dark) {
       gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
       gl.uniform3f(p.U.uCurve, ca[0], ca[1], ca[2]);
       gl.uniform1f(p.U.uCurveD0, ca[3]);
-      drawGroundDepth(p, walkView.sc);
+      drawGroundDepth(p, walkView.sc, SH.vp);
     }
     drawShadowSprites(SH, near, null, ca, l.p);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, near);
@@ -226,13 +229,36 @@ function drawShadowSprites(SH, L, sun, ca, lamp, rest) {
   if (!shadowInstancesReady()) return 0;
   return drawShadowSpritesInstanced(SH, L, sun, ca, lamp, rest);
 }
+/* FL-5b (quality.phoneShadow): the far map's size. Off: the setting (4096 from engine.json), 1024 at a resolution
+   under 0.8 or the ladder's step 2 and up, chosen every frame (a step of either made both maps again mid-walk). On: a
+   phone's map is 2048 at most from the first frame; the smaller one is chosen only when the canvas changes size
+   (walkRenderer.resizes: with quality.resSteps that is only out of sight, FL-3b) or the place changes, from the level
+   drawn (walkRenderer.resD); a battle reads its effective step (the battle's lite look is step 2) and draws into a map
+   of its own (shadowB), so the walk's map and its cache copy are kept through the battle. Returns [size, target] */
+const FAR_SHADOW_LATCH = { key: '', low: false };
+function farShadowSize() {
+  const full = engineSetting('quality', 'shadowMap'),
+    small = Math.min(1024, full);
+  if (!engineSetting('quality', 'phoneShadow'))
+    return [walkView.R < 0.8 || (walkRenderer.q || 0) >= 2 ? small : full, 'shadow'];
+  const top = PHONE ? Math.min(2048, full) : full;
+  if (walkRenderer.bt) {
+    const lite = engineSetting('quality', 'battleLite') ?? true;
+    return [lite || (walkRenderer.q || 0) >= 2 ? small : top, 'shadowB'];
+  }
+  const L = FAR_SHADOW_LATCH,
+    key = `${walkView.id}|${walkRenderer.resizes || 0}`;
+  if (L.key !== key) {
+    L.key = key;
+    L.low = (walkRenderer.resD ?? walkView.R) < 0.8 || (walkRenderer.q || 0) >= 2;
+  }
+  return [L.low ? small : top, 'shadow'];
+}
 function fittedShadowPass(items0, sun, C) {
   const sc = walkView.sc,
-    res =
-      walkView.R < 0.8 || (walkRenderer.q || 0) >= 2
-        ? Math.min(1024, engineSetting('quality', 'shadowMap'))
-        : engineSetting('quality', 'shadowMap'),
+    [res, target] = farShadowSize(),
     gl = gpuState.gl;
+  walkRenderer.farRes = res;
   let fit = shadowMapArea(C);
   const cache = (engineSetting('quality', 'shadowCache') ?? true) && !walkRenderer.bt && !!gl.blitFramebuffer;
   if (cache) fit = [Math.round(fit[0] / 3) * 3, Math.round(fit[1] / 3) * 3, fit[2] + 3];
@@ -304,13 +330,13 @@ function fittedShadowPass(items0, sun, C) {
     hold !== null &&
     walkRenderer.shHold &&
     walkRenderer.shHold.sig === hold &&
-    walkRenderer.shHold.SF === gpuState.fb.shadow
+    walkRenderer.shHold.SF === gpuState.fb[target]
   ) {
     walkRenderer.shHeld = (walkRenderer.shHeld || 0) + 1;
     return walkRenderer.shHold.SH;
   }
-  const SH = beginSunShadow(fit[0], fit[1], fit[2], sun, res);
-  const SF = gpuState.fb.shadow;
+  const SH = beginSunShadow(fit[0], fit[1], fit[2], sun, res, target);
+  const SF = gpuState.fb[target];
   if (hold !== null) Object.assign(walkRenderer.shHold || (walkRenderer.shHold = {}), { sig: hold, SF, SH });
   else walkRenderer.shHold = null;
   let hit = false;
@@ -332,7 +358,7 @@ function fittedShadowPass(items0, sun, C) {
     gl.useProgram(p.p);
     gl.uniformMatrix4fv(p.U.uVP, false, SH.vp);
     curve(p);
-    drawGroundDepth(p, sc);
+    drawGroundDepth(p, sc, SH.vp);
     sprites(stat, fs);
     if (typeof drawBuildingShadows === 'function') drawBuildingShadows(SH, stat);
     if (typeof drawStructureShadows === 'function') drawStructureShadows(SH);
