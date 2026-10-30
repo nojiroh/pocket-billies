@@ -168,6 +168,7 @@ import { cutscene, cutsceneTeardown } from './cutscene/director.js';
 import { fallOverWorldMap, fallWorldMapCanvas } from './opening-fall.js';
 import { runWorld, runWorldSync } from './run-world.js';
 import { trainRide, trainRideSkip } from './train-ride.js';
+import { haltArrival, haltArriveSkip } from './halt-arrival.js';
 import { runLoad } from './run-loading.js';
 import { runClinicEach, runJump, runTakeOff } from './run.js';
 import { fieldWayOutGo } from './field-moves.js';
@@ -2183,6 +2184,14 @@ async function runFullTest(mode) {
             /* HB-2: the landing's loading screen lifts (every stage ready, or the cap) */
             if (!(await wait(() => runLoad.ready && !document.getElementById('runload'), RULES.run.load.capMs + 5000)))
               throw new Error('the landing’s loading screen never lifted');
+            /* AS-2: the landing's sky train halt, the run's train parked at it after setting down there (skipped) */
+            if (!walkView.sc.props.some(p => p.k === 'train_halt' && p.act === 'fly'))
+              throw new Error('the landing has no sky train halt');
+            if (!walkView.sc.props.some(p => p.parked)) throw new Error('no sky train parked at the landing’s halt');
+            if (typeof haltArrival !== 'undefined') {
+              await wait(() => !haltArrival.on || !!haltArrival.W, 5000);
+              haltArriveSkip();
+            }
             /* RL-R1: the run's region: the short map’s 6 rows in its zones, each place its zone's biome (RL-R2: a
                side area's its field move's), its name on the Map tab */
             const G = saveData.run.region,

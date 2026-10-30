@@ -66,7 +66,7 @@ def hang(s, k, x, h=H):
 
 def int_shop():
     s = room('int_shop', 'Inside the shop', 'O', '#E6CFA2', 2601, 'shop', 'cashier', (7, 7.7),
-             ['Everything on these shelves is technically a collectible.', 'Limit three Capstones per customer. We have never had one.', 'We restock every time an airship lands. Roughly.'])
+             ['Everything on these shelves is technically a collectible.', 'Limit three Capstones per customer. We have never had one.', 'We restock every time a sky train comes in. Roughly.'])
     s.put('shop_counter', 7, 6.6, act='shop', label='Counter')
     for x in (2.2, 11.8): s.put('shop_shelf', x, 8.6)
     s.put('fridge_drinks', 4.4, 8.9); s.put('shop_shelf', 9.7, 8.6, .9)

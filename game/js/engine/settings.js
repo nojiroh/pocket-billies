@@ -381,12 +381,39 @@ export const ENGINE_DEFAULTS = {
        them (engine/post-effects.js postPrecisionFollow) */
     mediump: false,
     lights: 16,
-    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1) */
-    skyLast: false,
+    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1). FL-2a: on by default (the owner, 2026-10-29); the
+       old order stays one release (the debug menu's switch) */
+    skyLast: true,
     /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
     phonePixels: false,
-    /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
-    spriteInstances: false,
+    /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each).
+       FL-2a: on by default (the owner, 2026-10-29); the old path stays one release, the automatic fallback when the
+       instanced program doesn't build or the first frame in batches raises a GL error (walk/sprites.js), and the
+       debug menu's switch */
+    spriteInstances: true,
+    /* FL-3a: the automatic quality's controller (logic/frame-control.js): aims at the rate the scheduler gives, steps
+       the graphics chip's levers or the main thread's by what holds frames back, and falls back to a steady half rate.
+       Off (the old ladder, logic/quality-step.js) until the owner's phone run; the debug menu's switch */
+    controller: false,
+    /* FL-3b: the resolution in fewer, larger steps (logic/frame-control.js RES_LEVELS: 1, 0.8, 0.6, 0.5), and the canvas
+       and its screen-sized targets resized only where it can't be seen (behind a screen or a window, a fade, a loading
+       screen); during a walk a step waits. Off until the owner's phone run; the debug menu's switch */
+    resSteps: false,
+    /* FL-4 (even frames), each off until the owner's phone run; the debug menu's switches: the far shadow map's cache
+       keyed per prop-grid cell in view (shadowCells); last frame's far map used again when nothing in it moved
+       (shadowHold); grass planted with a view prepared ahead and sent to the card in strips (grassAhead); the page's
+       periodic jobs run in free time (freeTicks) */
+    shadowCells: false,
+    shadowHold: false,
+    grassAhead: false,
+    freeTicks: false,
+    /* FL-5a: the scene's draw order for tile GPUs: the opaque ground and models first with programs that hold no
+       `discard` (nearest models first), then the cut-out things, the sky, the blended ones, your outline last. Off
+       until the owner's phone run; the debug menu's switch */
+    drawOrder: false,
+    /* FL-5a (FL-4's leftover): the same view's new ground (a run day's water, a Studio edit) built a slice a frame while
+       the old one stays on screen, then swapped in, instead of in one frame. Off until the owner's phone run */
+    groundSlice: false,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -1644,6 +1671,54 @@ export const ENGINE_SPEC = [
         'Pictures in batches',
         'bool',
         'Trees, leaves, people and the other standing pictures are drawn in batches, one draw for all the copies of a picture, instead of one draw each. The same look; fewer calls to the graphics card.',
+      ],
+      [
+        'controller',
+        'Frame controller',
+        'bool',
+        'The automatic quality aims at the frame rate the browser gives and lowers what holds frames back: the graphics card’s effects and resolution, or on a phone far small props and townsfolk. When even the lowest can’t keep up, it runs at a steady half rate and climbs back by itself. Off: the old ladder.',
+      ],
+      [
+        'resSteps',
+        'Resolution steps',
+        'bool',
+        'The automatic resolution moves in a few larger steps (full, 80%, 60%, 50%), and the picture changes size only where you can’t see it: behind a menu or a window, while a place fades in or out, behind a loading screen. While you walk a step waits, so walking never hitches on a resize. Off: steps of 10% at any moment.',
+      ],
+      [
+        'shadowCells',
+        'Shadow cache by squares',
+        'bool',
+        'The kept far shadows are drawn again only when the still things in a square in view change, not each time a square comes into view or leaves it. The same shadows.',
+      ],
+      [
+        'shadowHold',
+        'Hold still far shadows',
+        'bool',
+        'When nothing in the far shadow map moved since the last frame, that map is used again instead of copied and drawn on. The same shadows.',
+      ],
+      [
+        'grassAhead',
+        'Grass planted ahead',
+        'bool',
+        'A place prepared before you reach it plants its grass then too, and big grass goes to the graphics card in strips over a few frames instead of in one.',
+      ],
+      [
+        'freeTicks',
+        'Jobs in free time',
+        'bool',
+        'The game’s regular background checks (story, sounds, trainers in sight and others) run when a frame leaves time free instead of at fixed moments that can land in a frame. The music keeps its own clock.',
+      ],
+      [
+        'drawOrder',
+        'Solid first',
+        'bool',
+        'The ground and the solid models are drawn first, nearest first, with programs that never cut pixels out, then the cut-out things (pictures, grass, walls that thin out), the sky, water and effects, your outline last. Phones’ graphics chips can then skip hidden pixels early. The same look.',
+      ],
+      [
+        'groundSlice',
+        'Ground built in slices',
+        'bool',
+        'When the ground of the place you are in changes (a run day’s water, an edit in the Studio), the old ground stays on screen while the new one is built a few milliseconds a frame, then swapped in, instead of building it all in one frame.',
       ],
       [
         'warmUp',

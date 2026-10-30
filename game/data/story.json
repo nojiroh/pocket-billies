@@ -67,7 +67,7 @@
     "  pick back_lost",
     "else",
     "  set firstLoss",
-    "  [happy] Chosen: There you are! Face-down by the mast.[p] You’re welcome. #l:4571",
+    "  [happy] Chosen: There you are! Face-down on the platform.[p] You’re welcome. #l:4571",
     "  Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how.[p] I don’t know either. #l:bd04",
     "  Kappi: He was [i]asleep[/i] in the lab when you landed. #l:d779",
     "  Kappi: You came through a little hole in the sky over the dock. Like the first time, only smaller. #l:b000",

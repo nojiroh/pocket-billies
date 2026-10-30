@@ -482,10 +482,11 @@ body.on-scene #app {
   -webkit-backdrop-filter: none !important;
   backdrop-filter: none !important;
 }
+/* FL-6: no filter transition on the canvas (a filter animating over the 3D is redone by the page every frame, not by
+   the compositor alone); the zoom and the fade stay, both compositor-only */
 #dio {
   transition:
     opacity 0.45s ease,
-    filter 0.5s ease,
     transform 0.6s ease;
 }
 #dioui {
@@ -504,8 +505,27 @@ body.on-scene #app {
   filter: none;
   image-rendering: auto;
 }
+/* FL-6: behind a screen the world is frozen (walk-control.js cap): the soft focus is a still filter on a still
+   canvas, and the dim is a black layer over it (body::after), 18% (brightness(0.82), the same pixels) and faded by
+   opacity, which the compositor does alone */
 body.on-scene #dio.gl {
-  filter: brightness(0.82) blur(0.8px);
+  filter: blur(0.8px);
+}
+/* (no z-index: after #dio in the page's order, under #app's 1) */
+:root {
+  --scene-dim: #000;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: var(--scene-dim);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+body.on-scene:has(> #dio.gl:not([hidden]))::after {
+  opacity: 0.18;
 }
 body.on-scene #dioui {
   display: none;

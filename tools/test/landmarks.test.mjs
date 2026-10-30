@@ -1,7 +1,6 @@
 // Buildings track BD-6: the landmarks (the Workshop, the Gene Bank, the lighthouse, the barn, Skyline Station), the
 // windmill kit (tools/build-windmill-kit.py: nine designs times three colourways as the windmill kind's variants)
-// and the bubble car; and turning layers that share one spin built as one turning mesh (prop-models.js spinGroups),
-// so a rotor of many parts costs one draw.
+// and the bubble car. A rotor of many parts turns as one mesh, one draw (logic/spin-merge.js spinGroups, FL-2b).
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -11,29 +10,12 @@ import { ROOT } from './load-logic.mjs';
 await import('./walk-renderer.mjs');
 const { lowPolyFromRecipe } = await import('../../game/js/prop-models.js');
 const { readGameData } = await import('../data-files.mjs');
-/* not exported: the test globals */
-const { spinGroups } = /** @type {any} */ (globalThis);
+const { spinGroups } = await import('../../game/js/logic/spin-merge.js');
 
 const D = readGameData(),
   CAT = D.scenery.props,
   recipe = path => JSON.parse(readFileSync(join(ROOT, 'game/art', path), 'utf8')),
   still = rec => lowPolyFromRecipe({ ...rec, layers: rec.layers.filter(l => !l.spin) });
-
-test('turning layers with the same spin are one group; other spins, still and hidden layers stay apart', () => {
-  const s = { axis: 'y', x: 0, y: 0, z: 2, rps: 0.2 },
-    b = { k: 'box', x: 0, y: 0, z: 2, w: 0.1, d: 0.1, h: 1, col: '#ffffff' },
-    G = spinGroups([
-      { ...b, spin: { ...s } },
-      { ...b, x: 1, spin: { ...s } },
-      { ...b, spin: { ...s, rps: -0.2 } },
-      { ...b, spin: { ...s }, hide: 1 },
-      { ...b },
-    ]);
-  assert.deepEqual(
-    G.map(g => g.length),
-    [2, 1]
-  );
-});
 
 test('the landmarks: under the building budget, glass marked, a door inside the footprint, rotors one draw each', () => {
   for (const k of ['workshop', 'gene_bank', 'lighthouse', 'barn', 'train_station']) {

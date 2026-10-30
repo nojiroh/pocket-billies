@@ -16,6 +16,7 @@ expose({
   CUT_UV: [() => CUT_UV],
   FULL_UV: [() => FULL_UV],
   ROCK_STATE: [() => ROCK_STATE],
+  rockCircleOn: [() => rockCircleOn, v => (rockCircleOn = v)],
   rockUniformsFor: [() => rockUniformsFor, v => (rockUniformsFor = v)],
   setRockUniforms: [() => setRockUniforms, v => (setRockUniforms = v)],
   setSpriteGeometry: [() => setSpriteGeometry, v => (setSpriteGeometry = v)],
@@ -90,6 +91,11 @@ function rockUniformsFor(C) {
     R.rock[2] = Math.max(0.8 * k, Math.min(0.85, +(engineSetting('camera', 'hideAmount') ?? 0.7)) * hk);
   }
   return R;
+}
+/* FL-5a: does this camera's frame thin rock round you (the programs with cuts then draw everything) */
+export function rockCircleOn(C) {
+  const R = rockUniformsFor(C);
+  return R.rock[1] > 0 && R.rock[2] > 0;
 }
 function setRockUniforms(p, C) {
   const gl = gpuState.gl,

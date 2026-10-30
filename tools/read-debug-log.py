@@ -149,6 +149,26 @@ def main():
     h = d.get('hitches') or {}
     if h: print(f"Hitches over {h.get('overMs')} ms: {h.get('count')} in {h.get('frames')} frames, {num(h.get('totalMs'))} ms in all, "
                 f"worst {num(h.get('maxMs'))} ms; by size {h.get('by')}")
+    # FL-1b: frames over the set rate's slot (plus half a refresh), which the 36 ms line can't see at 60 fps
+    if h and 'missed' in h: print(f"Frames over the set rate's slot ({h.get('missedOverMs')} ms): {h.get('missed')}")
+    # FL-1b: the once-a-second getError's time (ms), from the samples that have it
+    ge = [s.get('glErr') for s in (d.get('samples') or []) if isinstance(s, dict) and isinstance(s.get('glErr'), (int, float))]
+    if ge: print(f"getError once a second: {len(ge)} samples, mean {sum(ge) / len(ge):.2f} ms, worst {max(ge):.2f} ms")
+    # FL-6: taps from touch to paint (Event Timing) and the long frames' rendering and style and layout time
+    ui = d.get('ui') or {}
+    tp, lf = ui.get('taps') or {}, ui.get('longFrames') or {}
+    if tp.get('count'):
+        print(f"Taps (touch to paint, over 16 ms): {tp.get('count')}, worst {num(tp.get('maxMs'))} ms, over 100 ms: {tp.get('over100')}")
+        for r in (tp.get('last') or [])[-6:]:
+            if isinstance(r, list) and len(r) >= 8:
+                print(f"  {num(r[1]):>4s} ms {str(r[3])[:12]:12s} {str(r[4])[:16]:16s} wait {r[5]}, handlers {r[6]}, paint {r[7]}")
+    pt = ui.get('paint') or {}
+    if pt.get('count'):
+        print(f"Taps, click to paint (every tap): {pt.get('count')}, mean {pt.get('meanMs')} ms, worst {pt.get('maxMs')} ms")
+        for r in (pt.get('last') or [])[-6:]:
+            if isinstance(r, list) and len(r) >= 4: print(f"  {num(r[1]):>4s} ms {str(r[2])[:12]:12s} {str(r[3])[:16]}")
+    if lf.get('count'): print(f"Long frames: {lf.get('count')}, rendering {lf.get('renderMs')} ms and style and layout {lf.get('styleMs')} ms on average, "
+                             f"style and layout at most {lf.get('maxStyleMs')} ms")
 
     # the full test's result: build() stores it as `bench` itself (TD-1); `bench.result` is kept for older logs
     bench = d.get('bench')
@@ -178,6 +198,10 @@ def main():
         print(f"Graphics memory (estimate) {num(tot)} MB: " + ', '.join(
             f"{k} {num(v.get('mb'))}" + (f" ({v.get('dropped')} dropped)" if v.get('dropped') else '') for k, v in parts))
         if gm.get('lateCompiles'): print(f"  late compiles: {', '.join(map(str, gm['lateCompiles']))[:200]}")
+        # FL-5a: the draw order's variants' links beside their originals ([waited ms, ms from start])
+        lk = gm.get('linkMs') or {}
+        pairs = [f"{k} {lk[k]}" for k in ('ground', 'groundS', 'voxI', 'voxIS', 'mdlI', 'mdlIS') if k in lk]
+        if pairs: print(f"  program links (waited, from start, ms): {'; '.join(pairs)}")
 
     samples = d.get('samples') or []
     peak = {}
@@ -194,6 +218,32 @@ def main():
             tl.append(f"{num((s.get('t') or 0) / 1000)} s q{cur[0] if cur[0] is not None else '?'} res {cur[1] if cur[1] is not None else '?'}")
             prev = cur
     if tl: print(f"Quality and resolution ({len(tl)} changes): " + '; '.join(tl[:10] + (['...'] + tl[-3:] if len(tl) > 13 else tl[10:])))
+    # FL-3a: the frame controller's steps (quality.controller on): CPU level, half rate, fence lag, its last step
+    ct, prevc = [], None
+    for s in samples:
+        if 'qc' not in s: continue
+        c = s.get('ctl') or {}
+        cur = (s.get('qc'), s.get('half'), c.get('t'))
+        if cur != prevc:
+            ct.append(f"{num((s.get('t') or 0) / 1000)} s cpu {s.get('qc')}{' half rate' if s.get('half') else ''} lag {s.get('lag')}" + (f" ({c.get('act')} {c.get('lever')}: {c.get('why')})" if c else ''))
+            prevc = cur
+    if ct: print(f"Frame controller ({len(ct)} changes): " + '; '.join(ct[:10] + (['...'] + ct[-3:] if len(ct) > 13 else ct[10:])))
+    # FL-3b: the resolution levels (quality.resSteps on): the level drawn, a level waiting, why it changed, the
+    # canvas's size changes and the render targets made again (counts since the page opened)
+    rl, prevr = [], None
+    for s in samples:
+        if 'rd' not in s: continue
+        cur = (s.get('rd'), s.get('rwait'), s.get('rsz'), s.get('fbre'))
+        if cur != prevr:
+            rl.append(f"{num((s.get('t') or 0) / 1000)} s drawn {s.get('rd')}" + (f" waiting {s.get('rwait')}" if s.get('rwait') else '') + (f" ({s.get('rwhy')})" if s.get('rwhy') else '') + f" resizes {s.get('rsz') or 0} targets {s.get('fbre') or 0}")
+            prevr = cur
+    if rl: print(f"Resolution steps ({len(rl)} changes): " + '; '.join(rl[:10] + (['...'] + rl[-3:] if len(rl) > 13 else rl[10:])))
+    # FL-5a: the draw order for tile GPUs (quality.drawOrder): samples drawn with it, the models drawn first by
+    # discard-free programs (median), and the passes' times beside the samples without it
+    do = [s for s in samples if s.get('dord')]
+    if do:
+        sm = sorted((s['dord'][1] if isinstance(s.get('dord'), list) and len(s['dord']) > 1 else 0) for s in do)
+        print(f"Solid first (draw order): {len(do)} of {len(samples)} samples, models drawn first median {sm[len(sm) // 2]}")
 
     ev = [e for e in (d.get('events') or []) if e.get('kind') in ('visibility', 'webgl')]
     if ev:

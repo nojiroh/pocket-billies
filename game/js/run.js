@@ -56,6 +56,7 @@ import { ranchNow } from './logic/ranch-clock.js';
 import { ranchStop } from './logic/ranch.js';
 import { runByExpedition, runEnd, runEnded } from './logic/run-state.js';
 import { runArrive, runBack, runMapNode, runNext } from './logic/run-map.js';
+import { haltTrainKey } from './logic/halt.js';
 import { runCardHome } from './logic/run-card.js';
 import { runWorldData } from './logic/run-world-data.js';
 import {
@@ -94,6 +95,7 @@ import { jinglePlay } from './sound.js';
 import { standByMast } from './airship.js';
 import { runWorld, runWorldAheadStart, runWorldMake, runWorldSync } from './run-world.js';
 import { trainOfRun, trainRide, trainRideDepart, trainRideHome, trainVeil } from './train-ride.js';
+import { haltArrive } from './halt-arrival.js';
 import { runHomeScreen, runLoadBegin, runLoadLanding, runLoadPlaces, runLoadShow } from './run-loading.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -792,6 +794,8 @@ function runTakeOffGo(s, data, land = true) {
   runHint('landing');
   runLoadLanding(node);
   render();
+  /* AS-2: the run's sky train sets down at the landing's halt as the loading screen lifts (halt-arrival.js) */
+  if (typeof haltArrive === 'function') haltArrive(haltTrainKey(s.run, data));
 }
 
 /* ---------- arrivals ---------- */

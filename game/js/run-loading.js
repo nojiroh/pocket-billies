@@ -13,7 +13,7 @@
    The carriage goes in the screen's `view` slot (runLoadView) at a take-off. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { pillColor } from './hooks.js';
+import { pillColor, provide } from './hooks.js';
 import { RULES, TRAINERS, gameData } from './game-data.js';
 import { runLoadNew, runLoadPart, runLoadShare, runLoadSummary, runLoadTick } from './logic/run-load.js';
 import { runCardOut } from './logic/run-card.js';
@@ -87,6 +87,7 @@ export const runLoad = {
   /** @type {Record<string, number>} */
   more: {},
 };
+provide({ runLoad }); /* to-module */
 
 /** start a run's loading, the screen not shown yet (runLoadShow): a take-off behind the train's white-out (node -1:
  * the run's places first, runLoadPlaces counts them, then runLoadLanding once the world is in), a resume at boot (its

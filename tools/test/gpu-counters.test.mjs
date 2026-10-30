@@ -170,6 +170,16 @@ test('a test gets the average per counted frame, and the scheduler counts every 
   assert.equal(gpuCounters.want, 0);
 });
 
+test('FL-1a: after a counted tick that drew nothing, the next is a quarter second later, not the next tick', () => {
+  const gl = new FakeGL();
+  gpuCounters.lastT = 0;
+  countersOn(gl);
+  countersOff();
+  gpuFrameDone(20000);
+  assert.equal(G.gpuCountDue(20016), false);
+  assert.equal(G.gpuCountDue(20300), true);
+});
+
 test('tagged draws count apart in their pass, and an untagged summary has none', () => {
   const gl = new FakeGL(),
     { gpuTag } = G;

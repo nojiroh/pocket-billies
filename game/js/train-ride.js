@@ -29,6 +29,7 @@ import {
   trainHomeAt,
   trainHover,
   trainPlace,
+  trainPlume,
   trainWalkAt,
 } from './logic/train-path.js';
 import { reducedMotion, uiState } from './game-state.js';
@@ -37,6 +38,7 @@ import { mapById, walkData, walkView } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { personItem } from './walk/frame-items.js';
+import { plumeDone } from './walk/plume.js';
 import { soundEffect } from './sound.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -335,6 +337,8 @@ function trainRideFrame() {
     cut: 2.6,
     /* the shots out over the sea see further than a walk: the portal stands clear of the haze */
     hazeK: look.hazeK || 1,
+    /* AS-1: the rockets' fire, smoke and sparks (walk/plume.js), by the beat */
+    plume: trainPlume(F, T, R.kind === 'depart' ? 'depart' : 'home', t),
   };
 }
 /** you walking a path (logic/train-path.js trainBoardPath's points, heights over the station's ground y0), k of the
@@ -419,6 +423,7 @@ function trainRideEnd(skip) {
     walkRenderer.focus = null;
   }
   trainRideCaption(false);
+  if (typeof plumeDone === 'function') plumeDone();
   document.body.classList.remove('train-ride');
   if (W) {
     portalBack(W);
