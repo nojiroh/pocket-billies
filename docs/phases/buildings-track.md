@@ -53,6 +53,14 @@ Sessions act on these without asking again.
 - **More windmill variety and variants, more retro-futurism** (the owner, 2026-10-29, after the fourth sketches):
   windmills become a kit of their own (BD-6, "The windmill kit"); the house kit gains a saucer pod body, a butterfly
   roof and starburst wall lamps.
+- **The look pick: "B base + C showpieces"** (the owner, 2026-10-30, answering BD-3). Every building follows look B
+  (tools/build-look-sketches.py): about 4 degrees of lean with some sag and bulge, medium detail (porthole, crooked
+  flared chimney, ivy, lamp, shrubs, an antenna with a glowing tip). One or two houses of the kit, and the civic and
+  landmark showpieces, add C's dense extras (onion-domed turret, finned copper rocket chimney, bubble greenhouse,
+  glowing pneumatic tube, satellite dish, wind spinner, hanging baskets, roof moss, flared eaves). The lean is given in
+  **degrees** and converted by each model's own height: the warp's `lean` is metres at the model's top (the still
+  parts' highest point, antennas and chimneys included), so `lean = tan(degrees) x top`; the kit draws 3.5-4.5
+  degrees, sag 0.08-0.16 m, bulge 0.03-0.06. Civic fronts keep the lean turned down (section 5).
 - **Ask me before, answered** (2026-10-29): the normal sheet **on above Low** graphics; signs keep the **pixel-font
   decals**; **6,000 triangles** per kit house.
 - **Sessions run on their own** (the owner, 2026-10-29: "Continue with the next steps when done. All plans approved.
