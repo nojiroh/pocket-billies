@@ -162,7 +162,8 @@ test('SA-2a: the builder that draws a picture, for the Studio`s warning', () => 
   assert.equal(S.artMadeBy('art/robots/vane.png'), '');
   assert.equal(S.artMadeBy('art/ui/bag.svg'), ''); // SA-2b: the SVG files are the source
   assert.equal(S.artMadeBy('art/scene/far/hills.png'), '', 'SA-5: the far strips are retired');
-  assert.equal(S.artMadeBy('scene/build/detail-a04b.png'), 'tools/build-airship.py and tools/build-props-batch1.py');
+  assert.equal(S.artMadeBy('scene/build/detail-a04b.png'), 'tools/build-airship.py and tools/build-props-batch1.py and tools/build-surfaces.py');
+  assert.equal(S.artMadeBy('scene/build/detail-a04b-height.png'), 'tools/build-surfaces.py');
   for (const [, tools] of S.ART_BUILDERS)
     for (const tool of tools.split(' and ')) assert.ok(existsSync(join(ROOT, tool)), tool);
 });
