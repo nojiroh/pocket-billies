@@ -44,7 +44,7 @@ No tag (the track's tag comes at FL-7).
 - Verified: lint, types, format, modules, data, build clean; unit tests 2,392 of 2,392 (133 s); check-stalls all 11
   gates (after merging FL-1a and FL-2a): 5 s behind a screen 4 frames and 4 wrapped ticks, `bg` off on the walk and
   behind screens, 2 blurred surfaces with the bars (0 without), 0 label clears over 4 frames with no labels, 1 after a
-  drawing, 0 samples asking getError in play. Full quick check before and after (same machine, 4 cores): before 38 of
+  drawing, 0 samples asking getError in play; smoke 7 of 7 (287 s) after the merge. Full quick check before and after (same machine, 4 cores): before 38 of
   42 (2679 s), after 40 of 42 (2403 s); the two still failing failed before too (RL-8's run crossing "view never
   showed", room light). 7 pictures differ from the before-baseline: 4 from the "Time, weather and rooms" step that
   broke in the baseline run (room-day, room-night, room-in-place, windows-night), battle-rain (redone side by side at
