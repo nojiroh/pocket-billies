@@ -21,7 +21,7 @@
 
 The tipped pieces can't be recipes (a recipe's boxes stand upright), so the wreck and the broken rail are prebuilt
 meshes in the airship's format (tools/build-airship.py pack: the buildings' 32 px texture cells), tessellated here from
-the trains' own recipes the way prop-models.js lowPolyFromRecipe draws them, then turned and placed.
+the trains' own recipes the way logic/low-poly.js lowPolyFromRecipe draws them, then turned and placed.
 
     python tools/build-intro-art.py      # rerunnable; the models, pictures, scenery rows, robot pictures, people
     python tools/look-intro-art.py       # pictures of all of it (validation/look-intro-art/)
@@ -61,7 +61,7 @@ MODELS = B1.NEXT / 'models'
 FIXED = {'rot': 0, 'lean': 0, 'size': 0}
 Mesh = AIRSHIP.Mesh
 
-# prop-models.js LOW_POLY_TEXTURE_CELLS: a recipe texture's cell on the building sheet
+# logic/low-poly.js LOW_POLY_TEXTURE_CELLS: a recipe texture's cell on the building sheet
 CELLS = {'plain': 15, 'wood': 14, 'grain': 0, 'stone': 3, 'metal': 12, 'cloth': 18, 'hay': 11, 'leaves': 16, 'rust': 19,
          'stripes': 20, 'rings': 15, 'bark': 22, 'rock': 23, 'plaster': 0, 'siding': 1, 'brick': 2, 'battens': 4,
          'panels': 5, 'corrugated': 6, 'tilewall': 7, 'rooftiles': 8, 'shingles': 9, 'slate': 10, 'solar': 17,
@@ -90,7 +90,7 @@ def unit(a):
     return a / n if n > 1e-9 else a
 
 
-# ================================================================ a recipe as a mesh (prop-models.js lowPolyFromRecipe)
+# ================================================================ a recipe as a mesh (logic/low-poly.js lowPolyFromRecipe)
 # The mesh is in the game's model space: x across, y up, z depth (away from the viewer). A recipe's (x, y, z) is
 # (across, depth, up), so G() swaps them.
 def G(x, y, z):

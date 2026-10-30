@@ -7,7 +7,8 @@ import fs from 'node:fs';
 import { test } from 'node:test';
 
 await import('./walk-renderer.mjs');
-const { lowPolyFromRecipe } = await import('../../game/js/prop-models.js');
+await import('../../game/js/prop-models.js');
+const { lowPolyFromRecipe } = await import('../../game/js/logic/low-poly.js');
 const S = JSON.parse(fs.readFileSync(new URL('../../game/data/scenery.json', import.meta.url), 'utf8'));
 const K = S.props.house_kit,
   PPU = S.ppu || 34,

@@ -194,7 +194,7 @@ export function modelBakePicture(rec, tex, ppm = MODEL_PPM, o = {}) {
 }
 
 /* ---------------------------------------------------------------- Bake to 32 px/m */
-/** the building sheet's cells by material (prop-models.js LOW_POLY_TEXTURE_CELLS, the ones a bake picks) */
+/** the building sheet's cells by material (logic/low-poly.js LOW_POLY_TEXTURE_CELLS, the ones a bake picks) */
 export const MODEL_BAKE_CELLS = { plain: 15, wood: 14, stone: 3, metal: 12, hay: 11, leaves: 16, rock: 23 };
 /** buildings.js rampC: a colour at shade level t (0-4; 2 is the colour itself), 0-255 */
 export function modelRamp(rgb, t) {
