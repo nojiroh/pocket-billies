@@ -2,6 +2,85 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-4a - The house kit: 24 houses from modules, kind `house_kit` - 2026-10-30
+Branch `track/buildings` (wave 4, the main line; pulled 39 commits from its remote, then merged main twice: nothing
+new at the start, the water fixes #352 at the end, only HANDOFF.md conflicting, both entries kept). Plan written in
+Plan Mode's shape and built at once (the owner's advance approval, track section 1). Tools, recipes, one catalogue
+kind and a test map: nothing placed on Copperleaf, no game code changed. No per-session tag (CLAUDE.md).
+- Changed:
+  - Track file section 1: the owner's look pick "B base + C showpieces" (2026-10-30), with the lean in degrees
+    converted by each model's height (`lean = tan(degrees) x top`, the warp frame's top: the still parts' highest
+    point, antennas and chimneys included). The kit draws 3.5-4.5 degrees, sag 0.08-0.16 m, bulge 0.03-0.06.
+  - New tools/build-house-kit.py (reuses BD-3's parts from build-look-sketches.py: windows, lamp, ivy, finial,
+    antenna). A seed (`SEED = 7`) picks, per house: one of 9 bodies (narrow tall, wide low, L-shape, round
+    tower-house, jettied, A-frame, half-dome cob, brick townhouse with cornice and stoop, saucer pod on legs with a
+    fold-down stair and an underglow), one of the roofs that suit that body (`BODY_ROOFS`; 10 in all: steep gable,
+    low slab, butterfly, gambrel, saltbox, upswept, bulb dome, mushroom thatch, mansard, roof garden), 2-3 of 18
+    add-ons, a chimney (crooked brick, stovepipe, copper rocket), a door (round, arched, porthole, Dutch) and windows
+    (porthole, round-top, crossed, ribbon; the bay is an add-on), and one of 9 palettes.
+    - Style rules: at most one round body part (no turret on round bodies), add-ons only on free walls (slots), at
+      least one retro-future add-on (the first pick), one rooftop ornament at most (look B's glowing-tip antenna
+      when none was picked), neon under the eaves on about two thirds of houses.
+    - The add-ons are spread over the kit by least use.
+    - The nature pass on every house: flower boxes, ivy on about 60% of tall bodies, hanging baskets, roof moss
+      (`roof: 2`) and shrubs.
+    - `garden` hints per variant: tree and bush kinds from the existing props, with sides (back, back_left/right,
+      left/right, front) for BD-7's town tools.
+    - Showpieces: the first jettied and the first narrow house get C's set (onion-domed turret, rocket chimney,
+      bubble greenhouse behind the turret, glowing tube, dish, wind spinner, baskets, moss, flared eaves).
+    - Roofs are shells drawn out over the body (`shell_roof`: a top line, a thickness, the gable ends filled to the
+      wall's width), so one function covers gable, saltbox, gambrel, slab, butterfly and upswept, both ridge ways.
+    - Each house is centred on its own footprint (the box is read as x +-w/2), so a lean-to on one side doesn't widen
+      both. Side add-ons are only taken while the box stays within 4.6 m, and the tool fails if a box outgrows
+      4.6 x 3.44 m.
+  - Output: game/art/scene/next/models/house_kit_01..24.json (1,206 to 3,478 triangles; recipe `kit` says body, roof,
+    palette, add-ons, chimney, door, windows, lean in degrees, nature) and one catalogue kind `house_kit`. Its 23
+    `variants` swap `model`, `box`, `door`, `fx`, `name`, `garden` and `kit` (body, roof, palette, size). `--list`
+    prints the houses without writing.
+  - Glass ids (unique, at most 8 a house) and roof marks (`roof: 1` on every roof part, so a placement's `roof`
+    style still restyles it) are the kit's own. Doors and fx are written at the catalogue's ppu 34, the scale the
+    game reads (not the old builders' 32: see Found). fx follow the lean at their height.
+  - Test map `test_house_kit` (debug menu, Test scenes): the 24 in four rows of six.
+  - New tools/look-house-kit.py: close-ups through look-hub-buildings.py (`--scene=test_house_kit --only=house_kit
+    --angle=35`), tiled into validation/look-house-kit/contact-noon.png with each house's number, body, roof, palette
+    and box. look-hub-buildings.py has a camera distance for `house_kit`.
+  - New tools/test/house-kit.test.mjs (6 tests): the counts (9 bodies, 10 roofs, 8-10 palettes, 2 showpieces, a
+    model each); no two share body + roof + palette; under 6,000 triangles and 3-5 degrees of lean by the mesher's
+    own height; glass and roof marked, window fx; a retro-future part, nature, one ornament at most, garden kinds
+    that exist; boxes within 4.6 x 3.44 with the door inside, all three sizes present. check-data's snapshot remade
+    (one more data file).
+- Checked against the track file: the BD-4a section on main at the session's start had 9 bodies, 10 roofs and 18
+  add-ons (the saucer pod, the butterfly roof and the starburst wall lamp came in after the 4th sketches), not the
+  8, 9 and 17 of the older copy: built to the newer one. `plainPropVariant` replaces any field, as claimed. Loose:
+  "small, medium and large footprints so plots can take them": today's house plots are 3.8-4.6 x 2.8-3.44, so the
+  kit's sizes are small (at most 3.6 x 2.8: 1 house), medium (4.1 x 3.1: 8) and large (up to 4.6 x 3.44: 15);
+  every house fits the largest plot, but only one fits the smallest (3.8 x 2.8). Most of today's plots are too small
+  for most kit houses: BD-7 widens the house plots (the owner's answer: footprints may change, BD-7 carries it) or
+  BD-4b picks by plot.
+- Found, not changed:
+  - The door px/m mismatch (track section 3) stands for the old builders; the kit writes at ppu 34. If BD-7 changes
+    the reader to 32 instead of the builders, rerun this tool with `PPU = 32`.
+  - The kit's picture (`img`) is a stand-in (cottage_moss.png) until BD-7 bakes pictures from the models; the room
+    check and clear-windows read pictures.
+  - Software drawing here is about 2.5 minutes a close-up: the contact run reached 20 of 24 houses before the
+    session's 1-hour background limit, so the sheet has 4 blank tiles (21-24). Rerun `tools/look-house-kit.py` to
+    fill them.
+- Risky: little for the game (a new kind and a test map; nothing places the kind yet). The houses haven't been seen
+  at night or on the phone. The glow parts (neon, antenna tips, tube, underglow) follow BD-1's glow rules. The kit
+  adds up to 24 meshes when placed (one draw per part a mesh), far under the 400-draw phone budget.
+- Verified: lint, typecheck, format:check, check:modules (421 modules), check:data (193 files, all fine) and build
+  clean. `npm test` (main merged): 2,427 of 2,428. The one failure is "the game's rules: 1,000 maps hold every
+  check, in under 1.5 seconds", a timing budget that failed under load; its file passed alone, 5 of 5 (BD-F met
+  the same one). The new test passes 6 of 6. Smoke 7 of 7 (461 s). The full quick check was not run: no game code
+  changed, and it takes over an hour here (BD-2b's entry).
+  Pictures: 20 of 24 close-ups at noon from 35 degrees round (scratchpad and validation/, not committed). Every one
+  reads as its own silhouette, and the showpieces carry their turrets, domes and greenhouses. White walls and glass
+  read pale at noon, as BD-3 found.
+- Next: wave 5 (BD-7 the town re-laid, with BD-4b placing the kit's houses by a neighbour rule) on
+  `track/buildings`, once BD-5 (`claude/bd-5-civic`) and BD-6 (`claude/bd-6-landmarks`) have their HANDOFF entries;
+  the last of the three to finish starts it. Neither had one when this session ended.
+- For the owner on the phone: debug menu, Test scenes, "Test: the house kit": walk the four rows by day and at night.
+
 ### Buildings track BD-3 - Look sketches: three directions on one house and the shop - 2026-10-30
 Branch `track/buildings` (wave 3, the main line; pulled 29 commits from its remote, main had nothing new). Plan written
 in Plan Mode's shape and built at once (the owner's advance approval, track section 1). Tools, test models and a
