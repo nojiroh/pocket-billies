@@ -1439,8 +1439,9 @@ const PbNavBar = class extends LitElement {
       .glass {
         clip-path: polygon(${unsafeCSS(navStep(0))});
         background: color-mix(in srgb, var(--c-surface) calc(var(--glass, 0.7) * 100%), transparent);
-        -webkit-backdrop-filter: blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5));
-        backdrop-filter: blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5));
+        /* FL-6b: --nav-blur none under reduced transparency or high contrast (logic/ui-theme.js UI_CLEAR_GLASS) */
+        -webkit-backdrop-filter: var(--nav-blur, blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5)));
+        backdrop-filter: var(--nav-blur, blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5)));
       }
       .edge {
         clip-path: polygon(evenodd, ${unsafeCSS(navStep(0))}, ${unsafeCSS(navStep(1))});

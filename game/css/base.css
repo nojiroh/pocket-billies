@@ -434,8 +434,8 @@ section {
   #app {
     background: color-mix(in srgb, var(--panel) 88%, transparent);
     border-radius: 0;
-    -webkit-backdrop-filter: blur(6px);
-    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: var(--blur-own, blur(6px));
+    backdrop-filter: var(--blur-own, blur(6px));
   }
 }
 /* ================= v9: walk scene (tilt-shift diorama) ================= */
@@ -776,6 +776,23 @@ h4 {
     --blur-scrim-strong: blur(2px) saturate(1.05);
     --blur-chip: blur(7px);
     --blur-button: blur(3px);
+  }
+}
+/* FL-6b: less see-through or more contrast asked for: no surface blurs (the theme sheet does the same, and makes the
+   glass solid, from logic/ui-theme.js UI_CLEAR_GLASS; this copy holds where the sheet isn't loaded) */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active) {
+  :root:root {
+    --g-blur: none;
+    --blur: 0px;
+    --blur-glass: none;
+    --blur-glass-strong: none;
+    --blur-panel: none;
+    --blur-scrim: none;
+    --blur-scrim-strong: none;
+    --blur-chip: none;
+    --blur-button: none;
+    --nav-blur: none;
+    --blur-own: none;
   }
 }
 

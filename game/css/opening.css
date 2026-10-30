@@ -181,8 +181,8 @@ body.cs-fighting .cs-skip {
   padding: var(--gutter);
   border-radius: 0;
   background: var(--scrim);
-  -webkit-backdrop-filter: blur(2px);
-  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: var(--blur-own, blur(2px));
+  backdrop-filter: var(--blur-own, blur(2px));
   box-shadow: none;
   transform: none;
 }

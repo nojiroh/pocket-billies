@@ -1,7 +1,7 @@
 // UI-1: game/data/uiTheme.json as a style sheet (game/js/logic/ui-theme.js): the three selectors the CSS uses for
 // light and dark, the older variables each colour role also sets, presets over the defaults, and the fonts.
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { test } from 'node:test';
 import {
@@ -26,6 +26,9 @@ import {
   UI_ROLES,
   UI_SHAPE_DEFAULTS,
   BUBBLE_MOTION,
+  UI_CLEAR_GLASS,
+  UI_PHONE_MEDIA,
+  uiPhoneBlur,
 } from '../../game/js/logic/ui-theme.js';
 
 const THEME = JSON.parse(readFileSync(join(import.meta.dirname, '../../game/data/uiTheme.json'), 'utf8'));
@@ -416,6 +419,48 @@ test('UI-12: reduced transparency makes the glass solid on both sides, after the
   assert.match(rule, /:root:not\(\[data-theme='light'\]\),\n {2}:root\[data-theme='light'\] \{/);
   assert.match(rule, /--g-blur: none;/);
   assert.match(rule, /--g-bg: var\(--g-solid\);/);
+});
+
+test('FL-6b: high contrast clears the glass too, every blur token, and the stylesheets blur only through them', () => {
+  const css = uiThemeCss(THEME),
+    at = css.indexOf(
+      '@media (prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active)'
+    );
+  assert.ok(at > 0);
+  const rule = css.slice(at, css.indexOf('}\n}', at));
+  for (const l of UI_CLEAR_GLASS) assert.ok(rule.includes(l), l);
+  const cleared = new Set(UI_CLEAR_GLASS.map(l => l.split(':')[0]));
+  const dir = join(import.meta.dirname, '../../game');
+  const files = [
+    ...readdirSync(join(dir, 'css'))
+      .filter(f => f.endsWith('.css'))
+      .map(f => join(dir, 'css', f)),
+    join(dir, 'js/ui-kit.js'),
+    join(dir, 'js/ui-run-kit.js'),
+  ];
+  for (const f of files) {
+    const text = readFileSync(f, 'utf8');
+    for (const m of text.matchAll(/backdrop-filter:\s*([^;]+);/g)) {
+      const v = m[1].trim();
+      if (/^none( !important)?$/.test(v)) continue;
+      const tok = /^var\((--[\w-]+)/.exec(v);
+      assert.ok(tok && cleared.has(tok[1]), `${f}: backdrop-filter ${v} is not a cleared token`);
+    }
+  }
+  // base.css's copy for pages without the sheet
+  const base = readFileSync(join(dir, 'css/base.css'), 'utf8');
+  for (const k of cleared)
+    if (k !== '--g-bg') assert.match(base, new RegExp(`\\(forced-colors: active\\)[^@]*${k}:`), k);
+});
+
+test('FL-6b: a phone glass blurs at 9 px from the sheet (after the shared block), or three quarters of the blur', () => {
+  assert.equal(uiPhoneBlur(THEME.defaults.surface), 'blur(9px) saturate(1.35)');
+  assert.equal(uiPhoneBlur({ blur: 16, saturate: 1.5 }), 'blur(12px) saturate(1.5)');
+  assert.equal(uiPhoneBlur({}), '');
+  const css = uiThemeCss(THEME),
+    at = css.indexOf(`@media ${UI_PHONE_MEDIA}`);
+  assert.ok(at > css.indexOf('--g-blur: blur(12px)'), 'after the shared block');
+  assert.match(css.slice(at, css.indexOf('}\n}', at)), /--g-blur: blur\(9px\) saturate\(1\.35\);/);
 });
 
 // DL-3: a shout's burst (the jag kind) and a thought's cloud, drawn in the bubble's layer box
