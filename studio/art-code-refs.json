@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/prop-models.js:2156",
+    "game/js/prop-models.js:2160",
     "game/js/walk-view.js:793"
    ]
   },
@@ -814,16 +814,6 @@
    ]
   },
   {
-   "p": "scene/next/decals/train_rocket_flame.png",
-   "at": [
-    "game/art/scene/next/models/train_greenbelt.json",
-    "game/art/scene/next/models/train_harvest.json",
-    "game/art/scene/next/models/train_highland.json",
-    "game/art/scene/next/models/train_lakeland.json",
-    "game/art/scene/next/models/train_wildwood.json"
-   ]
-  },
-  {
    "p": "scene/next/decals/train_wildwood_name.png",
    "at": [
     "game/art/scene/next/models/train_wildwood.json"
@@ -1146,9 +1136,9 @@
    "game/js/ui.js:234"
   ],
   "barrel": [
-   "game/js/prop-models.js:224",
-   "game/js/prop-models.js:422",
-   "game/js/prop-models.js:1173",
+   "game/js/prop-models.js:225",
+   "game/js/prop-models.js:423",
+   "game/js/prop-models.js:1174",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1171,17 +1161,17 @@
    "game/js/logic/cutscene-set.js:142",
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
-   "game/js/prop-models.js:220",
-   "game/js/prop-models.js:349",
-   "game/js/prop-models.js:996",
+   "game/js/prop-models.js:221",
+   "game/js/prop-models.js:350",
+   "game/js/prop-models.js:997",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
-   "game/js/walk-view-gl.js:732"
+   "game/js/walk-view-gl.js:733"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
    "game/js/logic/wall-ramp.js:58",
-   "game/js/prop-models.js:209",
+   "game/js/prop-models.js:210",
    "game/js/structures.js:7",
    "game/js/structures.js:250",
    "game/js/structures.js:251",
@@ -1292,13 +1282,14 @@
    "game/js/logic/run-scenes.js:617",
    "game/js/logic/run-scenes.js:646",
    "game/js/logic/run-scenes.js:668",
-   "game/js/logic/train-path.js:204",
+   "game/js/logic/train-path.js:206",
+   "game/js/logic/train-path.js:303",
    "game/js/person-art.js:812",
    "game/js/person-art.js:892",
    "game/js/story-stage.js:240",
    "game/js/story-stage.js:280",
-   "game/js/train-ride.js:315",
-   "game/js/train-ride.js:322",
+   "game/js/train-ride.js:317",
+   "game/js/train-ride.js:324",
    "game/js/walk-control.js:416",
    "game/js/walk-control.js:424",
    "game/js/walk-control.js:536",
@@ -1457,7 +1448,7 @@
    "game/js/battle-stage.js:2502"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:694",
+   "game/js/walk-view-gl.js:695",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1603,7 +1594,7 @@
    "game/js/logic/person-view.js:116",
    "game/js/person-art.js:813",
    "game/js/person-art.js:892",
-   "game/js/train-ride.js:274",
+   "game/js/train-ride.js:276",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
    "game/js/walk-view.js:3890",
@@ -1616,7 +1607,7 @@
    "game/js/walk-control.js:998",
    "game/js/walk-control.js:1008",
    "game/js/walk/effects.js:413",
-   "game/js/walk/lighting.js:243"
+   "game/js/walk/lighting.js:254"
   ]
  }
 }

@@ -2,6 +2,73 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### AS-1 - the sky train's ride: steady windows, plume jet fire, decals that tip - 2026-10-29
+Branch `ccr-594e8978-1wbink` (this cloud session's branch, cut from `track/assets` f835b311 in place of
+`claude/as-1-<words>`: the session pushes only there), draft PR into `track/assets`. A wave-1 lane: planned and
+built without waiting (assets-track.md section 1).
+- Changed, windows: new `logic/window-seed.js` (unit tests `window-seed.test.mjs`): a moving model (placement
+  `moving` or `trainRide`) seeds its windows' colour by its key and rolls "lit" by each window's place on the model,
+  worked out once while it moves (`walk/lighting.js modelWindowLight`, kept on the placement); buildings keep the old
+  hash of where they stand (the same numbers). The glass shader (`prop-models.js GLASS_GLSL`) reads the seed from
+  `modelWindowLight` (both draw paths); a moving model's seed comes 2 higher (fract drops it from the colour) and its
+  sun glint is a soft sheen (`pow(.,10)*.18`) instead of the sharp `pow(.,80)` flash.
+- Changed, jet fire: new `walk/plume.js` (drawn in `walk-view-gl.js` after the effects when the director frame has
+  `plume`): per nozzle a cone and two crossed quads plus a ragged hot disc, placed by the train's whole pose (turn,
+  size, bob, tilt: `modelPointAt`), bent down while it holds the train up; scrolling noise through a stepped ramp
+  quantised to 48 px/m and dithered in the plume's pixels; premultiplied (its light over a little cover), so it reads
+  on a bright sky by day and glows by night (no `lampLit`); shock diamonds at full thrust. Smoke at lift-off and
+  touch-down, sparks at lift-off, from the ride's clock alone (a held moment is always the same). Heat shimmer on
+  Beautiful only (`aim` sharp, automatic quality not stepped down): a half-size copy of the scene read with a wobble,
+  freed at the ride's end (`plumeDone`). Beats: `logic/train-path.js trainPlume` (unit test in
+  `train-path.test.mjs`): long and down in the lift and the way down, short gliding in, a burst and a puff settling
+  to board, idle at the platform, off once home. `tools/build-station-trains.py`: the flame cards and
+  `train_rocket_flame.png` are gone; each train's recipe has `nozzles` ([x, back, up, radius]); the five trains
+  rebuilt.
+- Changed, decals: `logic/prop-turn.js decalPlace` takes the model's spin (`spinPoint`, the shaders' voxSpin), so a
+  climbing train's headlamp and name boards stay on it (`prop-models.js propModelImageItems` passes `it.spin`); the
+  pictures themselves stay upright. Unit test in `prop-turn.test.mjs`.
+- Changed, tools: `tools/look-train-ride.py` takes `--hours=`, `--only=` and `--windows` (steps both rides every
+  200 ms at night and fails when the train's windows change within a ride; `modelWindowLight` keeps `[lit bits,
+  seed]` on a moving placement for it), and makes the train's model before a ride starts.
+- Differs from the plan's audit: all of section 2.6 checks out (the seed from `it.x`/`it.z`, `windowLit` each frame,
+  the 64x20 `flame()` cards, `lampLit` on their glow, no tilt in `decalPlace`). Smoke and sparks are drawn in
+  `plume.js` from the ride's clock, not through `walk/effects.js`'s prop fx (those follow a prop's fx list, not a
+  moment of the ride). Files outside section 6's AS-1 list, each a small hunk: `walk-view-gl.js` (the one
+  `plumePass` call), `game/index.html` and `studio/index.html` (the two new modules), `logic-worker-modules.js`,
+  `prop-models.js` (`mooredBob` now provided through hooks.js for `plume.js`).
+- Found, not changed: on `track/assets` (f835b311) the full quick check's settings-tabs check and RL-8's shop Perk
+  check fail (above). The walk shaders' `uEye` lives in the light uniform block, so a new vertex shader can't declare
+  its own (`plume.js` uses `uCamP`). Software drawing makes one new model a frame, so a held moment can show a moving
+  model as its picture: tools that hold moments should make the model first (`look-train-ride.py WARM`). The parked
+  trains in `test_station_trains` and the hub no longer show fire (the cards burned all the time, even parked).
+- Risky: frame time on the phone isn't measured (software drawing): the plume is about 3 draws a nozzle (two nozzles)
+  plus one for smoke and sparks, only during the ride; Beautiful adds a half-size scene copy (a blit) a frame during
+  the ride. The plume's look (colours, length by beat) is a draft for the owner to judge on the phone.
+- Verified: unit tests 2409 of 2409 (`npm test`; the "1,000 maps in under 1.5 s" timing test failed once with two
+  software browsers running and passed alone); new tests: window-seed 5, train-path +1 (trainPlume), prop-turn +1
+  (decals tip). Lint, typecheck, check:modules, format:check, check:data (190 files) and build clean.
+  `check:smoke` 7 of 7 (568 s, with a browser tool running beside it). The window test (`look-train-ride.py
+  --windows --step=600`, night): one window state through the departure (18 moments) and the way home (13); the old
+  rule would have given 10 and 6 different seeds. `look-windows.py` before and after: the building and its windows
+  identical (the only differences: a walking animal, the surf, a button's animation). Full quick check: 40 of 42
+  steps pass (37 in the first run, cut at 1759 s by a worker restart; the other 5 run again with `--steps=`: tap
+  targets and song fingerprints ok). Two fail the same way on `track/assets` f835b311 without this lane (run there
+  with `--steps=RL-8,Walking left and right --workers=1`), so they are not AS-1's:
+  "settings tabs ...: [[7, 7], [5, 7], [6, 7], [7, 7], [5, 7], [1, 2], [1, 2]]" (check-quick.py: a tab's overflow
+  over 4) and RL-8 "the town's shop has no Perk (RL-12)" (with two browsers busy it stopped earlier, at a seam's
+  view).
+- Pictures: `validation/as-1-before/` (from `track/assets`, the same tool) and `validation/as-1-after/` (not in git):
+  `ride/` the departure and the way home after a win at 12.5 h (every beat), 19.6 and 22.5 h (the key beats; the
+  before set's night ones in `ride-night/`: after a way home after a win the fixture opens an evolution window over
+  later pictures, which the tool now closes), `windows/` (look-windows.py: buildings unchanged) and the window test's
+  `windows/windows.json`. By night the old fire was a flat white card; now an orange plume bends down from the
+  nozzles.
+- Next: the other wave-1 lanes; AS-8 merges. For AS-2: the halt's arrival can play the ride's "down" and "off"
+  frames with the same plume (`trainPlume(..., 'home', t)`).
+- For the owner on the phone: start a run from Skyline Station and come home: the windows should hold their colour
+  through the whole ride, the fire should sit on the nozzles (bent down as it lifts, straight back into the portal),
+  smoke at lift-off. Settings > Graphics Beautiful adds a heat shimmer. Send the debug log if anything stutters.
+
 ### AS-2 - a sky train halt at every run's start - 2026-10-29
 Branch `ccr-15aa5647-90bz3r` (this session's branch, made from `track/assets` f835b311; the plan's name was
 `claude/as-2-<words>`), draft PR #344 into `track/assets`. Lane AS-2 of docs/phases/assets-track.md, built on its own

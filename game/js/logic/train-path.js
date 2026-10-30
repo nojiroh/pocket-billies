@@ -42,6 +42,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   trainPlace: [() => trainPlace, v => (trainPlace = v)],
   // @ts-expect-error -- replaced on purpose
+  trainPlume: [() => trainPlume, v => (trainPlume = v)],
+  // @ts-expect-error -- replaced on purpose
   trainWalkAt: [() => trainWalkAt, v => (trainWalkAt = v)],
   // @ts-expect-error -- replaced on purpose
   turnTo: [() => turnTo, v => (turnTo = v)],
@@ -261,4 +263,49 @@ export function trainPlace(at, y0) {
     /* its top leans toward its own +x: nose up on a climb is a lean back */
     tilt: [-at.pitch, 0],
   };
+}
+
+/** AS-1: the rockets' fire through the ride (walk/plume.js draws it), t ms into it: len its length in metres (at full
+ * size), k how strong (0 off), bend (0 straight back .. 1 down: holding the train up), dia the shock diamonds, smoke and
+ * sparks (or null) from where the train stood when they started ({t0, p: its placement then, y: the ground, n, every,
+ * life, spread; sparks: up, how far over the ground they start}). Long and bent down in the lift and the way down,
+ * short in the glide, a burst and a puff as it settles to board, idle at the platform, off once home
+ * @param {TrainFrame} F @param {TrainPoint} tear @param {'depart' | 'home'} kind @param {number} t */
+export function trainPlume(F, tear, kind, t) {
+  const D = kind === 'depart' ? TRAIN_DEPART : TRAIN_HOME,
+    B = kind === 'depart' ? trainDepartAt(F, tear, t) : trainHomeAt(F, tear, t),
+    k = trainClamp(B.k),
+    y = F.y0 + TRAIN_RIDE.railTop + 0.15,
+    at = (/** @type {number} */ t0) => {
+      const q = trainPlace((kind === 'depart' ? trainDepartAt(F, tear, t0) : trainHomeAt(F, tear, t0)).at, F.y0);
+      return { x: q.x, z: q.z, rot: q.rot };
+    },
+    puff = (/** @type {number} */ t0, /** @type {number} */ n, /** @type {number} */ life, spread = 1) =>
+      t >= t0 && t < t0 + n * 80 + life ? { t0, p: at(t0), y, n, every: 80, life, spread } : null,
+    P = { t, len: 0, k: 0, bend: 0, dia: 0, smoke: /** @type {any} */ (null), sparks: /** @type {any} */ (null) };
+  if (kind === 'depart') {
+    const board = D.glide,
+      lift = board + D.board;
+    P.smoke = puff(lift, 26, 2200, 1.3) || puff(board, 8, 1400, 0.7);
+    if (t >= lift && t < lift + 1400) P.sparks = { t0: lift, p: at(lift), y, n: 30, every: 35, up: 1.1 };
+    if (B.beat === 'glide') Object.assign(P, { len: 1, k: 0.6, bend: 0.05 });
+    else if (B.beat === 'board') {
+      const b = trainClamp(k / 0.12);
+      Object.assign(P, { len: 0.9 - 0.55 * b, k: 0.6 - 0.46 * b, bend: 0.3 * (1 - b) });
+    } else if (B.beat === 'lift') Object.assign(P, { len: 2.4 + 0.6 * k, k: 1, bend: 0.9 - 0.25 * k, dia: 1 });
+    else if (B.beat === 'turn') Object.assign(P, { len: 2, k: 0.85, bend: 0.55, dia: 0.4 });
+    else if (B.beat === 'dash') Object.assign(P, { len: 3.6, k: 1, bend: 0, dia: 1 });
+  } else {
+    const down = D.open + D.out + D.turn;
+    P.smoke = puff(down + D.down * 0.55, 20, 2000, 1.1);
+    if (B.beat === 'out') Object.assign(P, { len: 2.4, k: 0.9, dia: 0.5 });
+    else if (B.beat === 'turn') Object.assign(P, { len: 1.9, k: 0.8, bend: 0.5 });
+    else if (B.beat === 'down')
+      Object.assign(P, { len: 2.4 - 0.8 * k, k: 0.95 - 0.25 * k, bend: 0.9, dia: 0.6 * (1 - k) });
+    else if (B.beat === 'off') {
+      const b = trainClamp(k / 0.25);
+      Object.assign(P, { len: 0.6, k: 0.3 * (1 - b) });
+    }
+  }
+  return P;
 }
