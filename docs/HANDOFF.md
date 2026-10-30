@@ -2,6 +2,50 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-3 - Look sketches: three directions on one house and the shop - 2026-10-30
+Branch `track/buildings` (wave 3, the main line; pulled 29 commits from its remote, main had nothing new). Plan written
+in Plan Mode's shape and built at once (the owner's advance approval, track section 1). Tools, test models and a
+test map only: no hub building, catalogue kind (other than the test kind) or game code changed. No per-session tag
+(CLAUDE.md). **Waits for the owner's look pick; wave 4 starts after it, from this session.**
+- Changed:
+  - New tools/build-look-sketches.py: six recipes (game/art/scene/next/models/look_house_a/b/c, look_shop_a/b/c), one
+    test kind `look_sketch` (variants swap the model) and the test map `test_look_sketches` (debug menu, Test scenes).
+    Built only from BD-1's shapes, BD-2a's surfaces (cob, halftimber, standingseam, fishscale, riveted, glassblock,
+    barreltile, tilewall) and BD-2b's normal sheet.
+    - The house: a cob ground floor, a jettied half-timber upper floor, a gable-front verdigris gambrel over thick dark
+      eaves, an oversized round door. A: lean 0.15 m at the top (about 1.5 degrees), sparse (one flower box, an atomic
+      finial, a straight brick chimney); 1,038 triangles. B: lean 0.5 m (about 4 degrees), sag and bulge, medium (gable
+      porthole, crooked flared chimney, ivy, lamp, rain barrel, shrubs, antenna with a glowing tip); 2,332. C: lean
+      0.9 m (about 7 degrees) with twist, dense (onion-domed turret, copper rocket chimney with fins, bubble
+      greenhouse, glowing pneumatic tube, satellite dish, wind spinner, hanging baskets, roof moss, flared eaves);
+      3,952.
+    - The shop (a Streamline corner store, door where today's catalogue has it, x +0.94 m): a rounded corner, a thick
+      slab roof with a dark underside, a big window, a striped awning, a round sign with a leaf emblem. The lean is
+      turned down at every level (section 5, tidy civic). A: plumb; 808 triangles. B: a soft swell, speed lines, a
+      starburst, planters, a lamp; 1,462. C: lean 0.15 m, a Googie canopy, a rooftop water tower, string lights, a
+      blossom street tree, ivy; 2,351.
+  - tools/look-hub-buildings.py: `--times=dusk` (20.3 h) and `--angle=` (degrees round from the front: the high
+    three-quarter view).
+  - New tools/test/look-sketches.test.mjs (3 tests): every sketch under 6,000 triangles, detail and lean grow from A
+    to C, the kind names all six. check-data's snapshot remade for the new map (pushed by another push to this branch).
+- Checked against the track file: right that the shapes, surfaces and normal sheet are all in place (no gap met).
+  Loose: the warp's `lean` is metres at the model's top, antennas and chimneys included, so "3-6 degrees" depends
+  on the tallest part: the kit (BD-4a) should give its lean in degrees and convert by the model's height.
+- Found, not changed:
+  - Window glass reads pale (nearly white) at noon from the three-quarter view on these models; the existing houses
+    show the same. A BD-4a/BD-8 tuning point, not a sketch problem.
+  - At 20.3 h the glows are still off (they follow the window-light hour); the neon shows only at night.
+- Risky: none for the game (test content only). The sketches are a look, not the kit's modules: BD-4a rebuilds
+  them as slots.
+- Verified: lint, typecheck, format:check, check:modules, check:data and build clean; `npm test` 2,416 of 2,416; smoke 7 of
+  7 (453 s). The full quick check was not run: no game code changed, and it takes over an hour here (BD-2b's entry).
+  Pictures (look-hub-buildings.py, noon and dusk, 35 degrees round, scratchpad, not committed): no page errors.
+- Next: the owner picks A, B, C or a mix; then wave 4 (BD-4a the house kit on `track/buildings`, BD-5 civic on
+  `claude/bd-5-civic`, BD-6 landmarks on `claude/bd-6-landmarks`), started from this session with the pick written
+  into the track file.
+- For the owner on the phone: debug menu, Test scenes, "Test: the look sketches A, B, C": walk round the six by day
+  and at night.
+
 ### Buildings track BD-2b - Normal maps: the normal sheet in the buildings' and models' shader, on above Off - 2026-10-30
 Branch `track/buildings` (wave 2, the main line). First merged the wave-1 side branches `claude/bd-2a-surfaces` and
 `claude/bd-f-window-check` (merges, no rebase; HANDOFF entries kept, newest on top; studio/art-code-refs.json
