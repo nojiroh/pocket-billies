@@ -135,6 +135,7 @@ expose({
   setItemSmear: [() => setItemSmear, v => (setItemSmear = v)],
   setItemSpin: [() => setItemSpin, v => (setItemSpin = v)],
   setPropModelUniforms: [() => setPropModelUniforms, v => (setPropModelUniforms = v)],
+  spinGroups: [() => spinGroups, v => (spinGroups = v)],
   spinPartAngle: [() => spinPartAngle, v => (spinPartAngle = v)],
   splitSmeared: [() => splitSmeared, v => (splitSmeared = v)],
   swappedRecipe: [() => swappedRecipe, v => (swappedRecipe = v)],
@@ -745,6 +746,19 @@ function meshAttribs(gl, A) {
     gl.vertexAttribPointer(loc, n, gl[ty], nm, A.stride, off);
   }
 }
+/* BD-6: a recipe's turning layers grouped by their spin (the same pivot, axis, speed and swing): each group is one
+   turning mesh, so a windmill's rotor of many parts costs one draw, not one a part */
+function spinGroups(L) {
+  const G = new Map();
+  for (const l of L)
+    if (l.spin && !l.hide) {
+      const s = l.spin,
+        k = JSON.stringify([s.x || 0, s.y || 0, s.z || 0, s.axis, s.rps ?? 1.5, +s.swing || 0]);
+      if (G.has(k)) G.get(k).push(l);
+      else G.set(k, [l]);
+    }
+  return [...G.values()];
+}
 /* the mesh of a recipe on the card (built once; the Studio asks for a rebuild after an edit) */
 function propModelMesh(path, rec) {
   let m = propModelState.meshes.get(path);
@@ -771,31 +785,31 @@ function propModelMesh(path, rec) {
         }
       : null;
     if (m)
-      for (const l of L)
-        if (l.spin && !l.hide) {
-          /* BD-1: under a warp a turning part moves with the point it turns about (it is not bent itself) */
-          const c0 = [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
-            c1 = M.warpFrame && warpOn(rec.warp) ? warpPoint(rec.warp, M.warpFrame, c0) : c0,
-            mv = [c1[0] - c0[0], c1[1] - c0[1], c1[2] - c0[2]],
-            S = lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }], move: mv }),
-            ax = l.spin.axis,
-            a = Array.isArray(ax)
-              ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
-              : ax === 'y'
-                ? [0, 0, 1]
-                : ax === 'z'
-                  ? [0, 1, 0]
-                  : [1, 0, 0],
-            al = Math.hypot(a[0], a[1], a[2]) || 1;
-          if (S)
-            m.spins.push({
-              ...uploadLowPolyMesh(S.vb, S.ib),
-              c: c1,
-              a: a.map(v => v / al),
-              rps: l.spin.rps ?? 1.5,
-              sw: +l.spin.swing || 0,
-            });
-        }
+      for (const G of spinGroups(L)) {
+        const l = G[0];
+        /* BD-1: under a warp a turning part moves with the point it turns about (it is not bent itself) */
+        const c0 = [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
+          c1 = M.warpFrame && warpOn(rec.warp) ? warpPoint(rec.warp, M.warpFrame, c0) : c0,
+          mv = [c1[0] - c0[0], c1[1] - c0[1], c1[2] - c0[2]],
+          S = lowPolyFromRecipe({ layers: G.map(g => ({ ...g, spin: undefined })), move: mv }),
+          ax = l.spin.axis,
+          a = Array.isArray(ax)
+            ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
+            : ax === 'y'
+              ? [0, 0, 1]
+              : ax === 'z'
+                ? [0, 1, 0]
+                : [1, 0, 0],
+          al = Math.hypot(a[0], a[1], a[2]) || 1;
+        if (S)
+          m.spins.push({
+            ...uploadLowPolyMesh(S.vb, S.ib),
+            c: c1,
+            a: a.map(v => v / al),
+            rps: l.spin.rps ?? 1.5,
+            sw: +l.spin.swing || 0,
+          });
+      }
     propModelState.meshes.set(path, m);
     return m;
   }
@@ -823,27 +837,27 @@ function propModelMesh(path, rec) {
   };
   m = { ...up(M), box: M.box, q: 1 / R, res: R, spins: [] };
   /* alpha 0.4: parts that turn (the airships' propellers): a layer with spin {x, y, z: its pivot in metres; axis: 'x' across, 'y' depth, 'z' up, or [x, y, z] any way at all; rps: turns a second} */
-  for (const l of L)
-    if (l.spin && !l.hide) {
-      const S = greedyVoxelMesh(voxelise({ vpm: rec.vpm, layers: [{ ...l, spin: undefined }] }, R), R),
-        ax = l.spin.axis,
-        a = Array.isArray(ax)
-          ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
-          : ax === 'y'
-            ? [0, 0, 1]
-            : ax === 'z'
-              ? [0, 1, 0]
-              : [1, 0, 0],
-        al = Math.hypot(a[0], a[1], a[2]) || 1;
-      if (S)
-        m.spins.push({
-          ...up(S),
-          c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
-          a: a.map(v => v / al),
-          rps: l.spin.rps ?? 1.5,
-          sw: +l.spin.swing || 0,
-        });
-    }
+  for (const G of spinGroups(L)) {
+    const l = G[0];
+    const S = greedyVoxelMesh(voxelise({ vpm: rec.vpm, layers: G.map(g => ({ ...g, spin: undefined })) }, R), R),
+      ax = l.spin.axis,
+      a = Array.isArray(ax)
+        ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
+        : ax === 'y'
+          ? [0, 0, 1]
+          : ax === 'z'
+            ? [0, 1, 0]
+            : [1, 0, 0],
+      al = Math.hypot(a[0], a[1], a[2]) || 1;
+    if (S)
+      m.spins.push({
+        ...up(S),
+        c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
+        a: a.map(v => v / al),
+        rps: l.spin.rps ?? 1.5,
+        sw: +l.spin.swing || 0,
+      });
+  }
   propModelState.meshes.set(path, m);
   return m;
 }
