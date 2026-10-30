@@ -1158,7 +1158,7 @@
    "game/js/prop-models.js:364",
    "game/js/prop-models.js:986",
    "game/js/ui-kit.js:988",
-   "game/js/ui-run-kit.js:1923",
+   "game/js/ui-run-kit.js:1924",
    "game/js/walk-view-gl.js:876"
   ],
   "brick": [
@@ -1372,7 +1372,7 @@
   "glass": [
    "game/js/logic/ui-dials.js:137",
    "game/js/structures.js:724",
-   "game/js/ui-run-kit.js:1721",
+   "game/js/ui-run-kit.js:1722",
    "game/js/walk/rooms.js:273",
    "game/js/walk/rooms.js:286",
    "game/js/walk/rooms.js:299"
@@ -1400,7 +1400,7 @@
   ],
   "key": [
    "game/js/logic/music-studio.js:142",
-   "game/js/ui-run-kit.js:1954"
+   "game/js/ui-run-kit.js:1955"
   ],
   "leaf": [
    "game/js/battle.js:408",
