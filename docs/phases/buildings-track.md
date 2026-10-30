@@ -9,7 +9,7 @@ houses look way too similar now, add a lot of modular variety." BD-0 (this file 
 written on `ccr-d224d90d-qlnty6`; `track/buildings` was made from it by BD-0's session at the owner's word
 (2026-10-29), and every later session works there or on a side branch of it (section 6, "How the sessions run").
 
-**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once.
+**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once. BD-1 done 2026-10-30.
 
 The suggestion page (sketches of every building, a house roller, the new surfaces; private to the owner):
 https://claude.ai/artifact/3NF2Qp28uncV7fiCH5yP5b . Its sketches are 2D drawings of shapes and details, not the
@@ -50,6 +50,9 @@ Sessions act on these without asking again.
   sketches look great. Put a little more Pokemon generation 5 in the style"). Section 5 says what that means here;
   the sketch page shows it. Original designs only: no copied buildings, logos or names.
 - **A little more nature, a bit more retro-futurism** (the owner, 2026-10-29, after the second sketches). Section 5.
+- **More windmill variety and variants, more retro-futurism** (the owner, 2026-10-29, after the fourth sketches):
+  windmills become a kit of their own (BD-6, "The windmill kit"); the house kit gains a saucer pod body, a butterfly
+  roof and starburst wall lamps.
 - **Ask me before, answered** (2026-10-29): the normal sheet **on above Low** graphics; signs keep the **pixel-font
   decals**; **6,000 triangles** per kit house.
 - **Sessions run on their own** (the owner, 2026-10-29: "Continue with the next steps when done. All plans approved.
@@ -188,7 +191,7 @@ Each building gets **one signature silhouette** that reads from the orbit camera
 | # | Session | Goal | Depends on | Sessions |
 |---|---|---|---|---|
 | BD-0 | The plan (done 2026-10-29) | This file; the suggestion page; ROADMAP and BRANCHES rows | none | 1 |
-| BD-1 | New shapes | The recipe shapes the look needs, in the mesher and the world map; unit tests; a shapes showcase map | BD-0 | 1-2 |
+| BD-1 | New shapes (done 2026-10-30) | The recipe shapes the look needs, in the mesher and the world map; unit tests; a shapes showcase map | BD-0 | 1-2 |
 | BD-2a | Surfaces painted | The sheet to 8x4 with the new cells and their height maps, painted in Python (no shader work) | BD-0 | 1 |
 | BD-2b | Normal maps | The normal sheet sampled in the model shader; a graphics setting; phone cost measured | BD-1, BD-2a | 1 |
 | BD-3 | Look sketches | 3 directions on one house and the shop, as pictures; the owner picks | BD-2b | 1 |
@@ -281,12 +284,13 @@ tools/build-house-kit.py, beside batch 7's `House` (reuse its windows, doors, la
 - **Slots, picked by a seed** with style rules (one dominant shape per house; at most one round body part; the shared
   palette; add-ons on free walls only; the door on the front, on a quarter turn):
   - Bodies: narrow tall, wide low, L-shape, round tower-house, jettied two-storey, A-frame, half-dome cob, brick
-    townhouse (with its cornice roof and stoop).
-  - Roofs: steep gable, low-pitch slab (Unova's wide thick eaves), gambrel, saltbox, upswept, bulb dome, mushroom
+    townhouse (with its cornice roof and stoop), saucer pod (a space-age pod on legs, oval windows, a fold-down stair,
+    a glow under it at night; its door is the stair's foot).
+  - Roofs: steep gable, low-pitch slab (Unova's wide thick eaves), butterfly (Googie's V roof), gambrel, saltbox, upswept, bulb dome, mushroom
     thatch, mansard, flat with a roof garden.
   - Add-ons, 0-3: turret, bay window, dormer, lean-to, balcony, porch canopy, bubble greenhouse, solar sail, water
     tower, fire escape, striped awning, antenna or weathervane, wind spinner, outside stair, atomic finial,
-    satellite dish, pneumatic tube. At least one retro-future add-on on every house; one rooftop ornament at most.
+    satellite dish, pneumatic tube, starburst wall lamp (lit at night). At least one retro-future add-on on every house; one rooftop ornament at most.
   - A nature pass on every house: flower boxes, ivy (60% of tall bodies), hanging baskets, moss; the plot's trees and
     shrubs are listed with the variant (`garden` hints for the town tools: tree kinds and sides).
   - Chimneys: crooked brick, stovepipe, copper rocket. Doors: round, arched, porthole, Dutch. Windows: porthole,
@@ -315,7 +319,18 @@ Lettering stays fixed decals, never mirrored (HB-1).
 - Workshop: a quonset hut (half-cylinder), a big gear over the door, the crane kept.
 - Gene Bank: the lab-vault with bubble domes and the helix, rounder.
 - Lighthouse: a finned rocket shape; its light room and turning shutter kept.
-- Windmill: a retro rotor on a tapered tower, its sails turning (`spin`).
+- **The windmill kit** (the owner: "more windmill variety and variants"): windmills become one catalogue kind
+  (`windmill`, its old key) whose `variants` swap the model: nine designs times three colourways (copper and cream;
+  white, red and navy; brass and teal), each rotor a `spin` layer. Designs (the sketch page draws each):
+  copper tower mill (today's, redone), Googie needle (a spire on boomerang fins, a saucer pod, a starburst rotor, a
+  halo ring), helix turbine (a twisted vertical scoop, a glowing core), solar-sail post mill (a wooden body on a
+  trestle, lattice sails of solar cloth), rocket mill (a finned rocket, a nose propeller, a glowing exhaust ring),
+  farm windpump (a lattice tower, a many-bladed wheel, a tail vane, a water tower), saucer tower (a flying-saucer
+  lookout, two rotors turning opposite ways), sky kite turbine (a ring turbine flying on a tether over a mooring hut;
+  the tether and ring are model layers, the ring bobs like `mooredBob`), tree mill (a rotor bolted to a great tree,
+  a cabin in its branches). BD-7 places three to five round the island (by the farm, on the hill, at the coast, on the
+  square's edge), no two the same design; the old `wind_turbine_small` stays or becomes a helix. Spinning parts are
+  instanced spins (one draw each per mesh): measured with the phone frame times.
 - Barn: a gambrel roof with solar shingles and a domed silo.
 - Bubble cars: a small hovering retro car prop (two or three colour variants, a glow under it at night), parked by
   the shop and the station.

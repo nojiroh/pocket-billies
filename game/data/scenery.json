@@ -12718,6 +12718,30 @@
     ]
    },
    "about": "Intro track IN-3: the Bureau's portal, a square of light on the ground like a filing drawer pulled open (Kappi, DL-7: \"like someone shutting a drawer\"); nothing but light (emit: drawn unlit), its middle at its base point. opens: its frames from a line to the square, played over ms when a placement gets open (walkView.t when it starts); shut plays them back and hides it (walk/frame-items.js)"
+  },
+  "shape_showcase": {
+   "name": "Shape showcase (BD-1)",
+   "img": "scene/props/well.png",
+   "ox": -40,
+   "oy": -99,
+   "shadow": 1.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": [],
+   "group": "test",
+   "solid": 1,
+   "model": "scene/next/models/shape_turns.json",
+   "ppm": 32,
+   "box": [6,2.4],
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {"model":"scene/next/models/shape_prisms.json","name":"shape_prisms"},
+    {"model":"scene/next/models/shape_lathes.json","name":"shape_lathes"},
+    {"model":"scene/next/models/shape_boxes.json","name":"shape_boxes"},
+    {"model":"scene/next/models/shape_glow.json","name":"shape_glow"},
+    {"model":"scene/next/models/shape_house_1.json","name":"shape_house_1"},
+    {"model":"scene/next/models/shape_house_2.json","name":"shape_house_2"}
+   ]
   }
  },
  "person": 1.75,

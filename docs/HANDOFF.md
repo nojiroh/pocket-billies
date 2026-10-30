@@ -41,9 +41,80 @@ and data tables only: no shader or renderer change.
   hung on "Safety" (passed alone). Its two problems, "Walking left and right ..." (room light at night, and on a
   rerun the settings tabs) and "RL-8" (the route's view, and on a rerun "the town's shop has no Perk"), fail the same
   way on `track/buildings` without this change, so they are not this session's.
-- Next: BD-2b (normal maps) on `track/buildings`, once BD-1 and BD-F have their entries. It merges this branch, makes
+- Next: BD-2b (normal maps) on `track/buildings`, once BD-F has its entry (BD-1 is done). It merges this branch, makes
   the normal sheet from detail-a04b-height.png (`normal_sheet` in tools/build-surfaces.py) and wires it into the
   model shader in place of `bldBump`.
+
+### Buildings track BD-1 - New shapes: rot/tilt, prism, lathe, box taper/lean/bevel, warp, glow - 2026-10-30
+Branch `track/buildings` (main merged in, up to date; BD-0's docs update from `ccr-d224d90d-qlnty6` merged at its
+session's request). Plans approved in advance by the owner (2026-10-29). Engine and tools: the low-poly mesher, the
+world map's copy, the Studio's model editor (shows only), a showcase map. No placed building changed. No per-session
+tag (CLAUDE.md); the track's `buildings-done` tag comes at its end.
+- Changed: game/js/prop-models.js `lowPolyFromRecipe`. Each layer is built by its own function, then turned:
+  - `rot` (yaw) on box, limb and prism. Round shapes and lathes already turned themselves.
+  - `tilt: [about across, about depth]` on every solid, about its base point. Normals turn too; UVs are made
+    before the turn, so they follow the faces.
+  - `prism`: `pts` [[across, up]] drawn out `d` deep. Concave caps (ear-clipped), `bend` with `segs`; normals soft
+    under 25° (`smooth`: all).
+  - `lathe`: `pts` [[radius, up]] from the bottom up, `sides`, `ry` (depth over width). Sharp rims over 35°, caps
+    where an end has a radius. A profile that ends where it starts is a ring with no caps.
+  - Box `taper` [top w, top d], `lean` [dx, dy] and `bevel` (vertical and top edges), built as rings. A plain box keeps
+    its old path.
+  - Recipe `warp: {lean, bulge, sag, twist}`, by height against the still parts' bounds. Normals go through the
+    warp's Jacobian; glass bounds follow it. A spinning part is moved by the warp at its pivot, not bent
+    (`rec.move`).
+  - `glow` on solid layers (`'#hex'`, `true` = its colour, `{col, day}` or `glowDay`): flag byte 33 or 34, the colour
+    as 5-6-5 bits in the vertex's two spare bytes (19 and the colour's alpha, 23). `MDL_ATTRIBS` 3 and 4 now read
+    four components and the vertex shaders decode `vGl`. `glassLit` lays the glow over the lit colour at the window
+    strength `uWinK` (a day glow never under 1). A glow-only model is flagged `it.glows`, so walk/lighting.js
+    computes its strength.
+  - The maths is in a new module, game/js/logic/model-shapes.js (`earClip`, `profileNormals`, `layerTurn`,
+    `warpFrame`/`warpPoint`/`warpNormal`, `glowCode`), on both pages and in studio/js/logic-worker-modules.js.
+- Changed, elsewhere:
+  - game/js/world-bowl.js `worldBowlModelShape`: prisms keep at most 3 bend steps, lathes at most 6 sides, boxes lose
+    bevels. A profile's size counts against the 0.35 m cut. The warp is measured on the whole model, as the walk
+    view does.
+  - studio/js/model-editor.js: Prism and Lathe in the shape list. The new fields and the recipe's warp are shown as
+    notes; editing them waits.
+  - Showcase: tools/build-shape-showcase.py writes 7 recipes (game/art/scene/next/models/shape_*.json), one
+    catalogue kind `shape_showcase` (its `variants` swap the model) and the test map `test_shapes`.
+  - tools/look-hub-buildings.py takes `--scene=`. Its night pass now lifts a test map's `plain` flag (see Found).
+- Facts checked (the track's section 2, against main at this branch): seven solid kinds, no box rotation, round `rot`
+  only, the 24-byte vertex, world-metre planar UVs, and the world map's cuts (no img or limbs, under 0.35 m dropped,
+  at most 8 sides; also rings at most 4 and no lumps) were all right. Wrong or loose:
+  - `PROP_MODEL_SHAPES` is not what the Studio reads. It is unused; the editor has its own `MODEL_LAYER_KINDS`
+    (both updated).
+  - "Check where a flag fits in the 24-byte vertex": bytes 19 and 23 were free (padding and an unread alpha), and
+    the flag byte 18 had room after glass (2-32).
+  - "Through the window-light hour rules": windows are lit one by one by the hour (`windowLit`). A glow takes the
+    building's strength `uWinK` only, so all of a building's glows come on together.
+- Found, not changed:
+  - Test maps are `plain: 1`, which turns the hour off (walk-view-gl.js `engineContext.env`). So
+    look-hub-buildings.py's night pictures of `test_hub_buildings` (HB-5) were daylight. Fixed in the tool, not in
+    the maps.
+  - BD-2a (`claude/bd-2a-surfaces`) adds 8 cells to `LOW_POLY_TEXTURE_CELLS` in prop-models.js. It is away from
+    BD-1's lines and should merge cleanly.
+- Risky:
+  - Every low-poly model's attributes 3 and 4 now read four components. All 264 catalogue recipes build
+    byte-identical meshes and windows (hashed before and after), but the shaders changed. On the phone, check that
+    models still draw.
+  - The thin pink neon reads nearly white under bloom; the hue shows on thicker parts. Tune in BD-8 on the phone.
+  - A tilted part may dip below the ground (by design).
+  - Phone cost of the new shapes is not measured: the showcase models are 38-300 triangles.
+- Verified:
+  - Lint, typecheck, format:check, check:modules, check:data and build all passed.
+  - `npm test`: 2,403 of 2,403 before the ring fix. New tools/test/lowpoly-shapes.test.mjs: 12 tests (bounds,
+    normals facing out, triangle counts, stable hashes, the arch's cap area, the ring, warp, glow bytes, the world
+    map's copy).
+  - check-data's snapshot remade (one more data file: the new map).
+  - Quick check: QUICK_RESULT.
+  - Pictures with look-hub-buildings.py (noon and night, the hour on): turns, prisms (gambrel, saltbox, arch, swoop),
+    lathes (onion, oval bulb, flared chimney, finned rocket, mushroom, tank), taper/lean/bevel, glows (neon tube,
+    ring by day too, lamp globe beside lit glass), two warped houses. Not committed (scratchpad).
+- Next: wave 2, BD-2b (normal maps) on `track/buildings`, once BD-2a and BD-F have their HANDOFF entries; the last of
+  the three to finish starts it. BD-2b merges `claude/bd-2a-surfaces` and `claude/bd-f-window-check` first.
+- For the owner on the phone: the debug menu's Test scenes, "Test: the new model shapes": walk round the seven models
+  by day and at night. Send a debug log if anything draws wrong or slowly.
 
 ### Buildings track BD-0 - the plan: Copperleaf's buildings redone, a modular house kit - 2026-10-29
 Branch `ccr-d224d90d-qlnty6` (the cloud session's own, main at 73b2f8b1). Plan approved in Plan Mode. Docs only: a
@@ -62,7 +133,9 @@ cozy whimsical retro futuristic", then "all houses look way too similar now, add
   that can run side by side (section 6). Then: "a little more nature, bit more on the retro futuristic" (the sketch
   page's fourth version: gardens on every plot, an atomic, dish, antenna or tube touch on every house, bubble cars);
   the three Ask me before items answered (normal maps on above Low, pixel-font signs, 6,000 triangles a house); and
-  the sessions chained (the owner: "All plans approved. Automatically start next steps in new session ... Run
+  "more windmill variety and variants, more retro futuristic" (a windmill kit of nine designs and three colourways,
+  a saucer pod body, a butterfly roof, starburst wall lamps; the sketch page's fifth version); the sessions chained
+  (the owner: "All plans approved. Automatically start next steps in new session ... Run
   simultaneously when you can"): this session made `track/buildings` and started wave 1 (BD-1, BD-2a, BD-F).
 - Found, not changed (for BD-7; details in the track file, section 3): doors are written at 32 px/m but read at ppu 34
   (about 6% short of the model's door); tools/clear-windows.py ignores `rot` (most hub buildings are at rot 90); the

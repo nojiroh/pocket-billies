@@ -12,6 +12,7 @@ the moment. Software drawing is slow: about a minute a picture.
     python3 tools/look-hub-buildings.py --only=windmill     # close-ups of only these props
     python3 tools/look-hub-buildings.py --times=noon        # only these of rows, noon, night, turning, rooms
     python3 tools/look-hub-buildings.py --out=DIR
+    python3 tools/look-hub-buildings.py --scene=test_shapes --only=shape_showcase --times=noon,night   # BD-1's shapes
 
 Uses the browser checks' page set-up (tools/browser_check.py: the clock, no accounts, the test globals), without the
 low graphics. The numbers go to notes.json there (not kept in git)."""
@@ -26,9 +27,9 @@ ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only
 TIMES = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--times=')), ['rows', 'noon', 'night', 'turning', 'rooms'])
 CLOSE = ['workshop', 'gene_bank', 'lighthouse', 'windmill']  # the close-ups (by default)
 OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), ROOT / 'validation' / 'look-hub-buildings'))
-SCENE = 'test_hub_buildings'
+SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'test_hub_buildings')
 TURNING = {'workshop', 'gene_bank', 'lighthouse', 'windmill'}
-TALL = {'lighthouse': (14, 5.5), 'windmill': (12, 4.5), 'gene_bank': (10, 3)}  # camera distance, aim height
+TALL = {'lighthouse': (14, 5.5), 'windmill': (12, 4.5), 'gene_bank': (10, 3), 'shape_showcase': (13, 1.4)}  # camera distance, aim height
 
 HIDE_HUD = """(()=>{const cv=walkView.cv;for(const el of document.body.querySelectorAll('*'))
  if(el!==cv&&!el.contains(cv))el.style.setProperty('visibility','hidden','important');
@@ -77,6 +78,11 @@ def main():
         close = [s for s in props if s['k'] in (ONLY or CLOSE)]
         for time in [t for t in ('noon', 'night') if t in TIMES]:
             pg.evaluate(f"environment.force={{time:{12.5 if time == 'noon' else 22.5},weather:'clear'}};0")
+            # BD-1: a test map is plain (walk-view-gl.js: no hours, no weather), so its night was daylight; the night
+            # pass lifts that for the moment
+            pg.evaluate(f"(()=>{{const sc=walkView.sc;if(sc.__plain===undefined)sc.__plain=sc.plain;sc.plain={'0' if time == 'night' else 'sc.__plain'};return 0}})()")
+            if time == 'night':
+                settle(pg, 30)
             for s in close:
                 dist, aim = TALL.get(s['k'], (8, 2))
                 pg.evaluate(f"(()=>{{const r={s['rot']}*Math.PI/180,f=[Math.sin(r),-Math.cos(r)],x={s['x']},z={s['z']},y=groundHeightAt(x,z);walkView.opt.look=()=>({{eye:[x+f[0]*{dist},y+{aim}+4,z+f[1]*{dist}],tgt:[x,y+{aim},z],fov:58}});return 0}})()")
