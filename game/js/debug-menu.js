@@ -90,7 +90,7 @@ import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { buildingLevel, unlockGrant } from './logic/unlocks.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
+import { frameScheduler, userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { applyPreferences, exportSave, settingsReset } from './settings-screen.js';
 import { battleStage, battleStageResize } from './battle-stage.js';
@@ -100,7 +100,6 @@ import { forceContextLoss, gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { rebuildFromSettings } from './walk/map-cache.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
-import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   DEBUG_LOOK: [() => DEBUG_LOOK],
@@ -485,7 +484,8 @@ function debugFps() {
     document.body.appendChild(el);
   }
   const m = frameScheduler.meter;
-  el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${frameScheduler.hz} Hz`;
+  /* FL-1a: the main drawing task's own frames (frame-scheduler.js frameMeter), and the steady half rate when it is on */
+  el.textContent = `${m.fps} fps${frameScheduler.half ? ' (half rate)' : ''} · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${frameScheduler.hz} Hz`;
 }
 /* SP-1: a random graft for a species (one slot, a random donor with a part that fits it), '' when none fits; RO-3c:
    a sketch Billie takes a slot from any sketch Billie of another line, whatever its body plan */
@@ -535,13 +535,12 @@ function debugAction(x) {
   switch (x) {
     case 'fps':
       debugMenu.fps = !debugMenu.fps;
+      /* FL-1a: the scheduler meters the walk view, the battle or the world map itself; no task of the overlay's own
+         (it counted its own ticks, at the set rate, and kept running after the overlay closed) */
       if (!debugMenu.fps) {
         const e = $('#fpsMeter');
         if (e) e.remove();
-      } else {
-        if (!battleStage.on && !worldMap.on) frameTask('meter', () => frameCount(0));
-        debugFps();
-      }
+      } else debugFps();
       return refreshDebugMenu();
     case 'foggrid':
       /* air track AIR-2: the fog grid's cells as see-through blocks in the walk view (not saved) */

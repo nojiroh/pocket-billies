@@ -7,6 +7,7 @@ import { expose } from '../test-globals.js';
 import { gameData, provide, saveData } from '../hooks.js';
 import { coverTarget, fadeEase, pictureCovers } from '../logic/occlude.js';
 import { propDrawFade, qualityStep } from '../logic/quality-step.js';
+import { ladderFeed, ladderTake, phoneAgent } from '../logic/frame-pace.js';
 import { frameScheduler } from '../frame-scheduler.js';
 import { mapMoodName, walkView, worldToScreen } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
@@ -19,6 +20,7 @@ expose({
   FRAME_WORK_MS: [() => FRAME_WORK_MS],
   FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
   NEUTRAL_MOOD: [() => NEUTRAL_MOOD],
+  PHONE_AGENT: [() => PHONE_AGENT],
   adaptQuality: [() => adaptQuality, v => setAdaptQuality(v)],
   computeFrustum: [() => computeFrustum, v => (computeFrustum = v)],
   coverFrame: [() => coverFrame, v => (coverFrame = v)],
@@ -35,6 +37,8 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ frameBudgetLeft });
 /* to-module: end */
+/* FL-1a: one phone test (logic/frame-pace.js phoneAgent: an iPad that says it is a Mac counts) */
+const PHONE_AGENT = typeof navigator !== 'undefined' && phoneAgent(navigator.userAgent, navigator.maxTouchPoints);
 /* v32: only what the camera can see is drawn. The six sides of the view are taken from the camera matrix once a
    frame; each thing is a ball round its middle (lifted by the horizon curve the shaders apply) tested against them.
    Things just outside still cast shadows in (the shadow pass keeps everything near the shadow map's square). */
@@ -79,7 +83,7 @@ export function cullItems(items, C) {
     fo = {
       minPx: engineSetting('quality', 'minPropPx') ?? 0,
       phoneDistance: engineSetting('quality', 'phonePropDistance') ?? 0,
-      phone: typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent),
+      phone: PHONE_AGENT,
     };
   for (const it of items) {
     if (!on || it.person || it.k === 'enc' || it.k === 'enc2') {
@@ -155,7 +159,7 @@ export function coverItems(items, C, dt) {
    for a frame or two instead of freezing the scene while they are worked out. LD-5: one budget for all of it, from the
    frame's start (walk-view-gl.js): the ground's preparing, the near ring, solid props, model meshes and buildings,
    FRAME_WORK_MS between them (they added up to about 35 ms); each still makes its first of a frame */
-const FRAME_WORK_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 8 : 10;
+const FRAME_WORK_MS = PHONE_AGENT ? 8 : 10;
 export function frameBudgetLeft() {
   return frameBudgetRemaining() > 0;
 }
@@ -229,15 +233,30 @@ export function adaptQuality(dtm, work) {
     return;
   }
   const cap = walkView.opt.cap ? walkView.opt.cap() : 60;
-  if (cap < 30 || walkView.warm) {
+  if (walkView.warm) {
     walkRenderer.int = 0;
     return;
   }
   /* alpha 0.1: the picture stays sharp at 60 frames a second; only Smoothest (preferences.aim) trades sharpness for more */
   const smooth =
-      typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.aim === 'smooth',
-    target = 1000 / Math.min(cap, frameScheduler.hz || 60, smooth ? 999 : 60);
-  walkRenderer.int = walkRenderer.int ? walkRenderer.int * 0.92 + dtm * 0.08 : dtm;
+    typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.aim === 'smooth';
+  /* FL-1a: what the step is fed (logic/frame-pace.js ladderTake): nothing below 30 a second or for a moment after the
+     rate changes (a window or a screen closing took a step down), nothing from the tick whose graphics calls were
+     counted, and the target is the frame's own slot of refreshes (60 on a 90 Hz screen is every second refresh) */
+  const feed = walkRenderer.feed || (walkRenderer.feed = ladderFeed()),
+    now = performance.now(),
+    took = ladderTake(feed, {
+      cap,
+      aim: smooth ? 999 : 60,
+      V: frameScheduler.period || 1000 / 60,
+      half: frameScheduler.half,
+      now,
+      dtm,
+      work,
+      counted: frameScheduler.counted,
+    });
+  walkRenderer.int = feed.int;
+  if (!took) return;
   /* the step itself: logic/quality-step.js */
   const st = qualityStep(
     {
@@ -249,13 +268,7 @@ export function adaptQuality(dtm, work) {
       holdT: walkRenderer.holdT,
       roomN: walkRenderer.roomN,
     },
-    {
-      int: walkRenderer.int,
-      slow: walkView.slow,
-      target,
-      now: performance.now(),
-      phone: typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent),
-    }
+    { int: took.int, slow: took.slow, target: took.target, now, phone: PHONE_AGENT }
   );
   walkRenderer.q = st.q;
   walkView.R = st.R;
