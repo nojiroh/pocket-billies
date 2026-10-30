@@ -7,8 +7,8 @@ that is set. Research render layering online and other necessary. Are assets cur
 (this file, docs only) was written on `ccr-36d73c36-2xv56p`; every later session works on `track/fluid`, which the
 owner makes from that branch (docs/BRANCHES.md).
 
-**Status:** FL-0 done (2026-10-29). Round 1 (FL-1a, FL-1b, FL-2a at once) started 2026-10-29. FL-1b done (2026-10-30). FL-0b (the owner's
-phone run) runs beside it.
+**Status:** FL-0 done (2026-10-29). Round 1 (FL-1a, FL-1b, FL-2a at once) started 2026-10-29; FL-1a done (2026-10-30);
+FL-1b done (2026-10-30). FL-0b (the owner's phone run) runs beside it.
 
 Before editing, every session checks the facts it relies on against main and says in its HANDOFF entry what differs.
 They come from read-only studies on 2026-10-29 at main 73b2f8b1: nine studies (frame pacing, sprite batching, world

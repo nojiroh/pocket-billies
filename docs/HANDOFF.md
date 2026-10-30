@@ -158,7 +158,7 @@ look change. No tag (the track's tag comes at FL-7).
   frame 40 ms → a steady 50 ms; 8 window/screen cycles at 11 ms → q and R unchanged (phone and desktop); 90 Hz at
   5 ms → no step in 60 s; plus a slow frame still steps. gpu-counters test for the back-off. Lint, types, format,
   modules, data, build clean; unit tests 2405 of 2406 with smoke running beside them (the 1,000-maps timing test,
-  which passes alone); smoke 7 of 7 (350 s) before and after merging FL-1b; QUICK_RESULT.
+  which passes alone); smoke 7 of 7 (350 s) before and after merging FL-1b. Full quick check: 38 of 42 steps (2650 s, 2 workers); the four problems were rerun on this tree and on the track's start (913720db): RL-8's Thicket Route crossing, room light and "walking out didn't bring the hamlet back" fail there too; the battle music step passed on the rerun (timing); with room light passed, the same step now reaches the settings tabs, which overflow 7 px on five tabs on both trees (already broken before the track; for the UI side, FL-6).
 - Ask me before (not settled by section 1): **a setting between divisors** (60 on a 90 Hz screen: 45 or 90). Today
   it stays 45 (the nearest whole slot, as before) and the ladder aims at 45 there. Recommendation as in section 7:
   the higher one while the controller holds it, else the lower, decided in FL-3a.
