@@ -4,11 +4,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
+import { solidFragment } from '../engine/shader-precision.js';
 import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL, SKY_GLSL } from '../engine/webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL_GLSL: [() => FALL_GLSL],
   FIGURE_SPRITE_GLSL: [() => FIGURE_SPRITE_GLSL],
+  GROUND_SOLID_EDITS: [() => GROUND_SOLID_EDITS],
   PIXEL_WATER_GLSL: [() => PIXEL_WATER_GLSL],
   RING_AT_GLSL: [() => RING_AT_GLSL],
   ROCK_GLSL: [() => ROCK_GLSL],
@@ -18,6 +20,8 @@ expose({
   SPRITE_INSTANCE_VS: [() => SPRITE_INSTANCE_VS],
   TIDE_GLSL: [() => TIDE_GLSL],
   WALK_SHADERS: [() => WALK_SHADERS],
+  groundSolidDefs: [() => groundSolidDefs, v => (groundSolidDefs = v)],
+  groundSolidShaders: [() => groundSolidShaders, v => (groundSolidShaders = v)],
   spriteInstanceFragment: [() => spriteInstanceFragment, v => (spriteInstanceFragment = v)],
 });
 /* eslint-enable no-func-assign */
@@ -207,7 +211,7 @@ void main(){vRip=0.;float px=(uOff.x+aC.x*uOff.z),py=(uOff.y+aC.y*uOff.w);float 
     the same pixels), so only rock clearly nearer than you shows it, not the ground at your feet */
  if(uGhostV.w>0.)p+=normalize(uGhostV.xyz-p)*uGhostV.w;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv,uFig;uniform vec4 uMat,uUV;uniform vec3 uSelf;uniform vec4 uGhost,uHit;uniform float uGhostE;uniform vec4 uFoil;uniform vec3 uRise;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}${FIGURE_SPRITE_GLSL}
+precision highp float;in vec2 vUV;in vec3 vW;in float vH;in float vPx;in float vRip;out vec4 o;uniform sampler2D uTex,uNrm;uniform vec3 uRight,uBack,uSunH,uBaseP;uniform float uFade,uRim,uLit,uAlpha,uShade,uEmit,uFlipN,uFixed,uSelOut,uNoRecv,uFig,uCAO;uniform vec4 uMat,uUV;uniform vec3 uSelf;uniform vec4 uGhost,uHit;uniform float uGhostE;uniform vec4 uFoil;uniform vec3 uRise;${LIGHT_GLSL}${LOOK_GLSL}${ROCK_GLSL}${FIGURE_SPRITE_GLSL}
 float bayer(vec2 p){ivec2 i=ivec2(mod(p,4.));int b[16]=int[16](0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5);return (float(b[i.y*4+i.x])+.5)/16.;}
 void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
  /* terrain TR-3: your silhouette through rock: a flat tint (uGhost.rgb) over uGhost.w of the pixels; player visibility:
@@ -237,7 +241,7 @@ void main(){vec4 c=texture(uTex,vUV);if(c.a<.5)discard;
     above (or beside, when the sun is low) put the trunk and the lower and inner leaves in shade, the crown stays lit */
  if(uSelf.x>0.){vec2 tz=vec2(textureSize(uTex,0)),d=uSelf.yz*uUV.w*tz.y*.045/tz;vec2 q=vUV+d*1.5;float hit=0.,wt=0.;
   for(int i=0;i<10;i++){q+=d;if(q.x<uUV.x||q.y<uUV.y||q.x>uUV.x+uUV.z||q.y>uUV.y+uUV.w)break;float w=1.-float(i)*.05;hit+=step(.5,texture(uTex,q).a)*w;wt+=w;}
-  sh=min(sh,1.-uSelf.x*smoothstep(1.2,4.2,hit));}float ao=mix(contactAO(uBaseP),1.,clamp(vH*3.,0.,1.));float occ=min(sh,ao);
+  sh=min(sh,1.-uSelf.x*smoothstep(1.2,4.2,hit));}float ao=mix(uCAO,1.,clamp(vH*3.,0.,1.));float occ=min(sh,ao);
  float nl=dot(n,uSunDir),wr=(nl+uMat.w)/(1.+uMat.w);float dif=mix(1.,max(wr,0.)*.75+.45,uShade);vec3 v=normalize(uEye-vW);float rim=pow(1.-max(dot(n,v),0.),3.)*uRim;
  float spc=pow(max(dot(n,normalize(uSunDir+v)),0.),uMat.y)*uMat.x*occ;
  /* light coming through leaves and cloth from behind */
@@ -556,7 +560,8 @@ provide({ WALK_SHADERS }); /* to-module */
    the very same text). A picture's own axes lie flat (right.y = back.y = 0, as every camera's do); one facing the
    camera takes the camera's (uCamRight, uCamBack). */
 /* CH-4: vSelfS.w holds the flags as one number (1 flipN, 2 fixed, 4 noRecv, 8 a figure's cell), so the picture's rect
-   (vCell) fits the 15 varying rows */
+   (vCell) fits the 15 varying rows. FL-2a: and the contact shade at the picture's base as its fraction (half of it:
+   0-.5, read back as fract(w)*2) */
 const SPRITE_INSTANCE_VARYINGS = `flat {io} vec4 vAxes,vBaseF,vLight,vMat,vSelfS,vWear,vHsv,vTint,vMaskFol,vCell;`;
 const SPRITE_INSTANCE_VS = `#version 300 es
 precision highp float;layout(location=0) in vec2 aC;layout(location=1) in vec3 iBase;layout(location=2) in vec4 iOff;layout(location=3) in vec4 iAxes;layout(location=4) in vec4 iBend;
@@ -566,7 +571,7 @@ void main(){uint fl=iFlags.x;bool cam=(fl&16u)!=0u;vec2 R=cam?uCamRight.xz:iAxes
  vRip=0.;float px=(iOff.x+aC.x*iOff.z),py=(iOff.y+aC.y*iOff.w);float h=-py;float fh=clamp(h/max(.01,-iOff.y),0.,1.),sh=iBend.y*h*(.25+.75*fh);vec3 p=iBase+uFwd*iBend.z+r*(px*flip+sh)+vec3(0.,h+iBend.x*px*flip-abs(sh)*.35*fh,0.);
  p.y+=curveY(iBase.xz)*uCurveOn;vW=p;vPx=px*flip+sh;vH=fh;vUV=iCell.xy+aC*iCell.zw;vCell=iCell;
  vAxes=vec4(R,B);vBaseF=vec4(iBase,iSelfFade.w);vLight=iLight;vMat=uMats[int(min(iFlags.y,7u))];vWear=iWear;vHsv=iHsv;vTint=iTint;vMaskFol=iMaskFol;
- vSelfS=vec4(iSelfFade.xyz,float(((fl>>2)&1u)|((fl&1u)<<1)|(((fl>>1)&1u)<<2)|(((fl>>5)&1u)<<3)));gl_Position=uVP*vec4(p,1.);}`;
+ vSelfS=vec4(iSelfFade.xyz,float(((fl>>2)&1u)|((fl&1u)<<1)|(((fl>>1)&1u)<<2)|(((fl>>5)&1u)<<3))+float(iFlags.z|(iFlags.w<<8u))/131070.);gl_Position=uVP*vec4(p,1.);}`;
 /* each per-picture uniform of the sprite fragment shader and the varying it reads instead */
 const SPRITE_INSTANCE_DEFINES = [
   ['uRight', 'vec3(vAxes.x,0.,vAxes.y)'],
@@ -580,10 +585,11 @@ const SPRITE_INSTANCE_DEFINES = [
   ['uMat', 'vMat'],
   ['uSelf', 'vSelfS.xyz'],
   ['uUV', 'vCell'],
-  ['uFlipN', '(mod(vSelfS.w,2.)>.5?-1.:1.)'],
+  ['uFlipN', '(mod(floor(vSelfS.w),2.)>.5?-1.:1.)'],
   ['uFixed', 'mod(floor(vSelfS.w*.5),2.)'],
   ['uNoRecv', 'mod(floor(vSelfS.w*.25),2.)'],
   ['uFig', 'floor(vSelfS.w*.125)'],
+  ['uCAO', '(fract(vSelfS.w)*2.)'],
   ['lookOn(c,px,h,bp)', 'lookOnP(c,px,h,bp,vWear,vHsv,vTint,vMaskFol.xy)'],
   ['seasonal(c,p)', 'seasonalF(c,p,vMaskFol.zw)'],
   ['snowOn(c,p,u)', 'snowOnF(c,p,u,vMaskFol.zw)'],
@@ -599,3 +605,20 @@ function spriteInstanceFragment(fs) {
 export const SPRITE_INSTANCE_SHADERS = {
   spriteI: [SPRITE_INSTANCE_VS, spriteInstanceFragment(WALK_SHADERS.sprite[1])],
 };
+/* FL-5a (quality.drawOrder): the ground without its cuts (engine/shader-precision.js solidFragment), for the floors and
+   the far land of a frame with no room hole and no rock circle; the walls (their own index range, walk/ground-mesh.js)
+   keep the ground program, whose wall thins out between the camera and you */
+const GROUND_SOLID_EDITS = [
+  ['if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;', ''],
+  ['if(bayerG(gl_FragCoord.xy)<max(wc,rockCut(vW)))discard;', ''],
+  ['if(rockHides(vW))discard;', ''],
+];
+let groundSolidDefs = null;
+/* { groundS } when the edits fit the ground's text, else {} (the ground program draws everything, as before) */
+export function groundSolidShaders() {
+  if (!groundSolidDefs) {
+    const fs = solidFragment(WALK_SHADERS.ground[1], GROUND_SOLID_EDITS);
+    groundSolidDefs = fs ? { groundS: [WALK_SHADERS.ground[0], fs] } : {};
+  }
+  return groundSolidDefs;
+}

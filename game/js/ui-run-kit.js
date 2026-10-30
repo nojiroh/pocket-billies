@@ -1657,7 +1657,7 @@ const PbNavBar = class extends LitElement {
         }
       </button>`;
     return html`<nav aria-label=${this.set === 'run' ? 'Run' : 'Hub'}>
-      <i class="glass" aria-hidden="true"></i><i class="edge" aria-hidden="true"></i>
+      <i class="glass" part="glass" aria-hidden="true"></i><i class="edge" aria-hidden="true"></i>
       <div class="side l">${rest.slice(0, half).map(tab)}</div>
       ${
         map

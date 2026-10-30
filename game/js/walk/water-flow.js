@@ -15,6 +15,8 @@
 import { expose } from '../test-globals.js';
 /* eslint-disable no-func-assign */
 expose({
+  BANK_LOOK: [() => BANK_LOOK],
+  BANK_OVER: [() => BANK_OVER],
   ESTUARY_COAST: [() => ESTUARY_COAST],
   ESTUARY_IN: [() => ESTUARY_IN],
   ESTUARY_OUT: [() => ESTUARY_OUT],
@@ -47,7 +49,7 @@ const FLOW_RAPIDS = 1.6; /* rapids run this much faster than the rest of the str
 
 /**
  * @typedef {{pts?: number[][], speed?: number, w?: number[] | number, rapids?: number[][], src?: string, mouth?: string}} FlowStream
- * @typedef {{W2: number, H2: number, d: Float32Array, cls?: Uint8Array, lev?: Float32Array}} FlowMap
+ * @typedef {{W2: number, H2: number, d: Float32Array, cls?: Uint8Array, lev?: Float32Array, levCapped?: number}} FlowMap
  * @typedef {{wet: (x: number, z: number) => boolean, bed: (x: number, z: number) => number, step: (x: number, z: number) => number, sea?: boolean}} FlowOpts
  */
 
@@ -242,6 +244,11 @@ const ESTUARY_COAST = 0.65;
 const PROFILE_HALF = 3;
 /* a drop between two points of the line this big (m) is a cliff the river falls over, never smoothed into a ramp */
 const PROFILE_DROP = 0.15;
+/* a river's water stands at most this far over the highest dry ground within BANK_LOOK metres of it: a line drawn
+   across a dip it can't fill (Copperleaf's spring stream ran from below its pond's terrace, and its level, held up by
+   the pond's, floated up to 2.3 m over the ground, 2026-10-29) is cut down to its banks instead */
+const BANK_OVER = 0.05;
+const BANK_LOOK = 2;
 
 /**
  * A river's water level along its line (water track WA-10): never rising, smoothed, and never under the water it
@@ -450,6 +457,20 @@ function flowChannels(sc, F, si, sa, o) {
         cliff[at0(s)] ? NaN : prof[at0(s)] - steps[at0(s)] + step,
     };
   });
+  /* the highest dry ground within BANK_LOOK of a cell (its bed rule's level + 0.12); Infinity where none is dry */
+  const BR = Math.round(BANK_LOOK * C);
+  let capped = 0;
+  const bankTop = (/** @type {number} */ q) => {
+    const i0 = q % W2,
+      j0 = (q - i0) / W2;
+    let top = -Infinity;
+    for (let j = Math.max(0, j0 - BR); j <= Math.min(H2 - 1, j0 + BR); j++)
+      for (let i = Math.max(0, i0 - BR); i <= Math.min(W2 - 1, i0 + BR); i++) {
+        if (wet[j * W2 + i] || (i - i0) ** 2 + (j - j0) ** 2 > BR * BR) continue;
+        top = Math.max(top, o.bed((i + 0.5) / C, (j + 0.5) / C) + 0.12);
+      }
+    return top === -Infinity ? Infinity : top;
+  };
   /* the channel: running cells between the two bodies; the estuary's last metres */
   for (let q = 0; q < n; q++) {
     d[q * 4 + 3] = 0;
@@ -462,6 +483,11 @@ function flowChannels(sc, F, si, sa, o) {
     }
     cls[q] = 1;
     lev[q] = L.levAt(s, o.step(((q % W2) + 0.5) / C, (Math.floor(q / W2) + 0.5) / C));
+    const top = bankTop(q);
+    if (lev[q] > top + BANK_OVER) {
+      lev[q] = top + BANK_OVER;
+      capped++;
+    }
     if (L.mouth && s > L.sm - ESTUARY_IN) {
       const f = Math.min(1, (s - (L.sm - ESTUARY_IN)) / ESTUARY_IN),
         sh = 1 - (1 - ESTUARY_COAST) * f * f * (3 - 2 * f);
@@ -503,4 +529,6 @@ function flowChannels(sc, F, si, sa, o) {
   }
   F.cls = cls;
   F.lev = lev;
+  /* how many river cells were cut down to their banks (BANK_OVER) */
+  F.levCapped = capped;
 }

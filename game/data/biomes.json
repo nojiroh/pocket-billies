@@ -77,7 +77,37 @@
   "life": [
    {"k":"rabbit","n":4}
   ],
-  "from": "tallgrass_meadow"
+  "from": "tallgrass_meadow",
+  "flora": [
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":20,"spread":3.5,"size":[1,5],"gap":3.8}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":10,"spread":1.6,"size":[2,5],"gap":1.1}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.5,
+    "clumps": {"apart":22,"spread":1.2,"size":[1,4],"gap":0.8}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":5,"spread":1.3,"size":[4,10],"gap":0.55}
+   },
+   {
+    "layer": "waterPlants",
+    "from": "waterPlants",
+    "clumps": {"apart":6,"spread":1,"size":[3,8],"gap":0.45}
+   }
+  ]
  },
  "thicket": {
   "name": "Thicket",
@@ -158,7 +188,27 @@
    {"k":"frog","n":2},
    {"k":"rabbit","n":2}
   ],
-  "from": "thicket"
+  "from": "thicket",
+  "flora": [
+   {"layer":"trees","from":"trees","clear":1.4,"r":[3.2,7]},
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":6,"spread":1.4,"size":[3,7],"gap":0.9}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.5,
+    "clumps": {"apart":18,"spread":1.2,"size":[1,4],"gap":0.8}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":4,"spread":1,"size":[4,10],"gap":0.5}
+   }
+  ]
  },
  "lake": {
   "name": "Lakeside",
@@ -240,7 +290,37 @@
    {"k":"frog","n":4},
    {"k":"rabbit","n":2}
   ],
-  "from": "willowmere"
+  "from": "willowmere",
+  "flora": [
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":16,"spread":3,"size":[2,6],"gap":3.4}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":9,"spread":1.5,"size":[2,6],"gap":1}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.5,
+    "clumps": {"apart":20,"spread":1.2,"size":[1,4],"gap":0.8}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":5,"spread":1.2,"size":[4,10],"gap":0.55}
+   },
+   {
+    "layer": "waterPlants",
+    "from": "waterPlants",
+    "clumps": {"apart":6,"spread":1,"size":[3,8],"gap":0.45}
+   }
+  ]
  },
  "canyon": {
   "name": "Canyon",
@@ -298,7 +378,32 @@
   "life": [
    {"k":"lizard","n":4}
   ],
-  "from": "stepstone_canyon"
+  "from": "stepstone_canyon",
+  "flora": [
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":26,"spread":2.5,"size":[1,3],"gap":4}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.6,
+    "clumps": {"apart":9,"spread":2,"size":[3,8],"gap":0.9}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":12,"spread":1.4,"size":[1,4],"gap":1.1}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":7,"spread":1.2,"size":[2,6],"gap":0.6}
+   }
+  ]
  },
  "volcano": {
   "name": "Volcano",
@@ -366,7 +471,32 @@
   "life": [
    {"k":"lizard","n":4}
   ],
-  "from": "cinderpeak"
+  "from": "cinderpeak",
+  "flora": [
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":30,"spread":2.5,"size":[1,2],"gap":4}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.6,
+    "clumps": {"apart":7,"spread":2,"size":[3,9],"gap":0.9}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":14,"spread":1.4,"size":[1,3],"gap":1.1}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":8,"spread":1.2,"size":[2,6],"gap":0.6}
+   }
+  ]
  },
  "tundra": {
   "name": "Tundra",
@@ -434,7 +564,32 @@
   "life": [
    {"k":"rabbit","n":2}
   ],
-  "from": "rimefrost"
+  "from": "rimefrost",
+  "flora": [
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":18,"spread":2.6,"size":[2,7],"gap":3}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.5,
+    "clumps": {"apart":14,"spread":1.6,"size":[2,5],"gap":0.8}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":12,"spread":1.4,"size":[1,4],"gap":1}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":6,"spread":1.2,"size":[3,8],"gap":0.55}
+   }
+  ]
  },
  "sea": {
   "name": "Coast",
@@ -492,7 +647,32 @@
    {"k":"gull","n":4},
    {"k":"crab","n":3}
   ],
-  "from": "driftwreck"
+  "from": "driftwreck",
+  "flora": [
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":18,"spread":2.4,"size":[1,4],"gap":3.5}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.5,
+    "clumps": {"apart":16,"spread":1.5,"size":[2,5],"gap":0.8}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":14,"spread":1.4,"size":[1,3],"gap":1}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":7,"spread":1.2,"size":[2,6],"gap":0.6}
+   }
+  ]
  },
  "ridge": {
   "name": "Ridge",
@@ -571,7 +751,32 @@
    {"k":"goat","n":3},
    {"k":"rabbit","n":1}
   ],
-  "from": "kitewind"
+  "from": "kitewind",
+  "flora": [
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":14,"spread":3,"size":[3,8],"gap":3.2}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.6,
+    "clumps": {"apart":10,"spread":1.8,"size":[2,6],"gap":0.8}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":9,"spread":1.5,"size":[2,5],"gap":1}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":5,"spread":1.2,"size":[4,10],"gap":0.55}
+   }
+  ]
  },
  "autumn": {
   "name": "Autumn wood",
@@ -652,7 +857,32 @@
    {"k":"squirrel","n":4},
    {"k":"rabbit","n":2}
   ],
-  "from": "russetwood"
+  "from": "russetwood",
+  "flora": [
+   {"layer":"trees","from":"trees","clear":1.5,"r":[4,8]},
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":8,"spread":1.5,"size":[2,6],"gap":1}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.5,
+    "clumps": {"apart":20,"spread":1.2,"size":[1,4],"gap":0.8}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":5,"spread":1.2,"size":[4,10],"gap":0.55}
+   },
+   {
+    "layer": "waterPlants",
+    "from": "waterPlants",
+    "clumps": {"apart":7,"spread":1,"size":[3,7],"gap":0.45}
+   }
+  ]
  },
  "badlands": {
   "name": "Badlands",
@@ -719,7 +949,32 @@
   "life": [
    {"k":"lizard","n":4}
   ],
-  "from": "badlands"
+  "from": "badlands",
+  "flora": [
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.6,
+    "clumps": {"apart":8,"spread":2,"size":[3,8],"gap":0.9}
+   },
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":34,"spread":2,"size":[1,2],"gap":4}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":12,"spread":1.4,"size":[1,3],"gap":1.1}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":9,"spread":1.4,"size":[1,5],"gap":0.6}
+   }
+  ]
  },
  "jungle": {
   "name": "Jungle",
@@ -798,7 +1053,32 @@
   "life": [
    {"k":"frog","n":4}
   ],
-  "from": "tanglewild"
+  "from": "tanglewild",
+  "flora": [
+   {"layer":"trees","from":"trees","clear":1.3,"r":[2.8,5.5]},
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":5,"spread":1.3,"size":[3,7],"gap":0.9}
+   },
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.5,
+    "clumps": {"apart":20,"spread":1.2,"size":[1,3],"gap":0.8}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":3.5,"spread":1,"size":[5,12],"gap":0.5}
+   },
+   {
+    "layer": "waterPlants",
+    "from": "waterPlants",
+    "clumps": {"apart":6,"spread":1,"size":[3,8],"gap":0.45}
+   }
+  ]
  },
  "cave": {
   "name": "Cave",
@@ -848,6 +1128,31 @@
     "Someone saw daylight once. We don’t talk about it."
    ]
   },
-  "from": "glimmershaft"
+  "from": "glimmershaft",
+  "flora": [
+   {
+    "layer": "rocks",
+    "from": "rocks",
+    "clear": 0.6,
+    "clumps": {"apart":7,"spread":2,"size":[3,8],"gap":0.9}
+   },
+   {
+    "layer": "trees",
+    "from": "trees",
+    "clear": 1.4,
+    "clumps": {"apart":26,"spread":2,"size":[1,3],"gap":4}
+   },
+   {
+    "layer": "shrubs",
+    "from": "shrubs",
+    "clear": 0.7,
+    "clumps": {"apart":12,"spread":1.4,"size":[1,4],"gap":1}
+   },
+   {
+    "layer": "plants",
+    "from": "plants",
+    "clumps": {"apart":6,"spread":1.2,"size":[2,6],"gap":0.55}
+   }
+  ]
  }
 }

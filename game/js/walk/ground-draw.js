@@ -18,11 +18,12 @@ import {
   walkView,
 } from '../walk-view.js';
 import { engineColor, engineContext, engineSetting } from '../engine/settings.js';
-import { gpuState, imageTexture } from '../engine/webgl.js';
+import { ensurePrograms, gpuState, imageTexture } from '../engine/webgl.js';
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { WALL_COLORS, biomeCliff, defaultWallMaterial, standingHeightAt, wallAtlasRows } from './heights.js';
-import { useWalkProgram, worldCurveDrop } from './draw-common.js';
+import { groundSolidShaders } from './walk-shaders.js';
+import { rockCircleOn, useWalkProgram, worldCurveDrop } from './draw-common.js';
 import { setShoreUniforms } from './water-data.js';
 import { buildGroundMeshSteps } from './ground-mesh.js';
 import { freeMapCacheEntry, setNearRingUniforms } from './map-cache.js';
@@ -81,10 +82,21 @@ function setTerrainLookUniforms(gl, U, sc, K) {
   }
   gl.uniform4f(U.uSnowL, snow ? K.snowLine : 0, 1.5, snow ? 1 : 0, 0);
 }
-export function drawGround(C, X) {
+/* FL-5a (quality.drawOrder): part 'solid' draws the floors and the far land with the discard-free program (groundS)
+   and leaves the walls for part 'walls', drawn after the other opaque things with the ground program; a frame with a
+   room's hole or floor, the rock circle, or a mesh without its walls' range draws everything in part 'solid' with the
+   ground program, as before. No part: everything, as before */
+export function drawGround(C, X, part) {
+  const sc = walkView.sc,
+    M = walkRenderer.mesh;
+  if (part === 'walls' && !walkRenderer.groundWallsLeft) return;
+  const W = part === 'solid' && M && M.walls,
+    SD = W && !sc.roomScene && !sc.room && !rockCircleOn(C) ? groundSolidShaders() : null;
+  if (SD && SD.groundS) ensurePrograms(SD);
+  const solid = !!(SD && SD.groundS);
+  walkRenderer.groundWallsLeft = 0;
   const gl = gpuState.gl,
-    sc = walkView.sc,
-    p = useWalkProgram('ground', C, X),
+    p = useWalkProgram(solid ? 'groundS' : 'ground', C, X),
     U = p.U,
     P = GROUND_BORDER_M;
   const wim = artImage(walkData().sc.wallArt || 'scene/build/walls.png'),
@@ -165,7 +177,18 @@ export function drawGround(C, X) {
   if (U.uOrg) gl.uniform3f(U.uOrg, 0, 0, 0);
   if (U.uHole) gl.uniform4fv(U.uHole, roomHole(sc));
   gl.bindVertexArray(walkRenderer.mesh.vao);
-  gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
+  if (solid) {
+    /* the floors, then the far land: the walls between them wait (4 bytes an index) */
+    const [w0, w1] = W;
+    if (w0 > 0) gl.drawElements(gl.TRIANGLES, w0, gl.UNSIGNED_INT, 0);
+    if (M.n > w1) gl.drawElements(gl.TRIANGLES, M.n - w1, gl.UNSIGNED_INT, w1 * 4);
+    walkRenderer.groundWallsLeft = w1 > w0 ? 1 : 0;
+  } else if (part === 'walls') {
+    const [w0, w1] = M.walls;
+    gl.drawElements(gl.TRIANGLES, w1 - w0, gl.UNSIGNED_INT, w0 * 4);
+    gl.bindVertexArray(null);
+    return;
+  } else gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
   /* phase 08b: the room's own floor and walls where the place left its hole: the room's picture, no near ring, no
      shore, no shade from the place's ground */
   const RT = roomFloorOf(sc);
@@ -453,16 +476,33 @@ export function drawGrass(C, X) {
       far = (walkRenderer.q || 0) >= 3 ? 38 : 1e9,
       Pp = walkView.pl;
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
-    let drawn = 0;
+    /* FL-2b: squares in view that sit next to each other in the buffer drawn as one run (the same blades in the same
+       order, so the same picture), a draw a run instead of one a square */
+    let drawn = 0,
+      off = 0,
+      n = 0,
+      runs = 0;
+    const run = () => {
+      if (!n) return;
+      gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, off * 32);
+      gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, off * 32 + 16);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, n);
+      runs++;
+    };
     for (const c of G.chunks) {
       if (!inFrustum(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r)) continue;
       if (far < 1e9 && Math.hypot(c.x - Pp.x, c.z - Pp.z) > far) continue;
-      gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, c.off * 32);
-      gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, c.off * 32 + 16);
-      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, c.n);
+      if (n && c.off === off + n) n += c.n;
+      else {
+        run();
+        off = c.off;
+        n = c.n;
+      }
       drawn += c.n;
     }
+    run();
     walkRenderer.grassDrawn = drawn;
+    walkRenderer.grassRuns = runs;
   }
   gl.bindVertexArray(null);
 }

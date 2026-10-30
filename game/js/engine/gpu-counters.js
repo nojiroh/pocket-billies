@@ -109,6 +109,8 @@ export const gpuCounters = {
   cur: new Int32Array(GPU_PASSES.length * FIELD_COUNT),
   last: null,
   lastT: 0,
+  /* FL-1a: the last counted tick that drew nothing */
+  noDrawT: 0,
   sum: new Float64Array(GPU_PASSES.length * FIELD_COUNT),
   /* the same for the tags: [pass][tag][draws, instances] */
   tag: 0,
@@ -299,7 +301,12 @@ export function countersOff() {
 }
 /* the scheduler's side: is this tick a counted one (one a second, or every tick while a test asks) */
 export function gpuCountDue(ts) {
-  return gpuCounters.want > 0 || ts - gpuCounters.lastT >= gpuCounters.everyMs;
+  if (gpuCounters.want > 0) return true;
+  /* FL-1a: after a tick that drew nothing (behind a screen the world draws once a second), wait a quarter second
+     before wrapping again, instead of wrapping every tick until one draws */
+  return (
+    ts - gpuCounters.lastT >= gpuCounters.everyMs && !(ts >= gpuCounters.noDrawT && ts - gpuCounters.noDrawT < 250)
+  );
 }
 /* a counted tick ended: keep it as the last one, and add it to a test's sum. A tick that drew nothing (no task was due
    in it, or the screen draws no WebGL) is not kept, and the next tick is counted instead */
@@ -307,7 +314,10 @@ export function gpuFrameDone(ts) {
   const c = gpuCounters.cur;
   let draws = 0;
   for (let p = 0; p < GPU_PASSES.length; p++) draws += c[p * FIELD_COUNT + F_DRAW];
-  if (!draws) return;
+  if (!draws) {
+    gpuCounters.noDrawT = ts;
+    return;
+  }
   gpuCounters.last = c.slice();
   gpuCounters.tlast = gpuCounters.tcur.slice();
   gpuCounters.lastT = ts;

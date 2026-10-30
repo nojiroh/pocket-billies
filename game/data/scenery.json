@@ -13357,6 +13357,26 @@
      "kit": {"body":"townhouse","roof":"slab","palette":"verdigris","size":"medium"}
     }
    ]
+  },
+  "train_halt": {
+   "name": "Sky train halt",
+   "img": "scene/next/halt/train_halt.png",
+   "ox": -304,
+   "oy": -288,
+   "shadow": 1.2,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["run","station"],
+   "group": "train_halt",
+   "model": "scene/next/models/train_halt.json",
+   "ppm": 48,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "box": [12.6,7.6],
+   "stand": [0,-1.4],
+   "fx": [
+    {"k":"glow","x":-189,"y":-150}
+   ],
+   "about": "The sky train halt (assets track AS-2) on every run's landing: a platform laid out as Skyline Station's, its track behind it (+y), where the run's sky train sets down (halt-arrival.js) and waits for the end of the run. stand: where you stand, metres from its base point (at the foot of its steps). Its act (fly) and label come from the map"
   }
  },
  "person": 1.75,

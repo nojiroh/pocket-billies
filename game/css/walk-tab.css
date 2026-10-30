@@ -255,6 +255,12 @@ body.on-walk .wh-foot > * {
     0 10px 24px -12px var(--shadow);
   cursor: pointer;
 }
+/* FL-1b: the button lost its .glass class (its gold fill hid the blur, which still cost a blur pass every frame);
+   high contrast keeps the look .glass gave it there */
+html[data-contrast='high'] .wh-down {
+  background: var(--panel-s);
+  outline: 2px solid var(--line);
+}
 /* UI-15: it bobs only while its sheet holds something you haven't opened it for (a new place, a Billie wandering in) */
 .wh-down.new {
   animation: whBob 2.4s ease-in-out infinite;

@@ -10,6 +10,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, storyRun } from './hooks.js';
+import { everyFree } from './free-tick.js';
 import { ITEMS, KAPPI_TIPS, typeEffectiveness } from './game-data.js';
 import { billyTypes, maxHp } from './logic/rules.js';
 import {
@@ -415,4 +416,4 @@ function kappiState(forget) {
 }
 
 /* about twice a second, while the page is open */
-if (typeof window !== 'undefined' && !kappi.timer) kappi.timer = /** @type {any} */ (setInterval(kappiLook, 500));
+if (typeof window !== 'undefined' && !kappi.timer) kappi.timer = /** @type {any} */ (everyFree(kappiLook, 500));

@@ -430,7 +430,8 @@ export function stillPropState(p, M, im, sc) {
 }
 /* HB-6: a model tipped off the upright (logic/prop-turn.js): one that spans two points (a fence rail between its posts:
    the catalogue's restEnds) rests on the ground under each end, tipped between them; any other leans by its placement's
-   tilt. Pictures don't tip. */
+   tilt. A model's picture layers move with its tip (logic/prop-turn.js decalPlace, AS-1: a climbing train's headlamp and
+   name boards stay on it), but each picture itself stays upright. */
 function propModelTip(p, M, c) {
   c.spin = null;
   if (!M.model) return;

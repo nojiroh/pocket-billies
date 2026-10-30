@@ -368,7 +368,7 @@ function walkHero() {
     q = encountersHere();
   return `<div class="walk-hero" id="walkHero">${locationCardHTML(escapeHtml(locationSubtitle(here)), escapeHtml(here.name), environmentLine(), '')}
  <div class="wh-foot">${walkHintHTML(q.length)}
-  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down glass k-btn${uiState.walkSheet ? ' open' : walkNewKey() !== uiState.walkSeen ? ' new' : ''}" data-a="walkdown" aria-expanded="${!!uiState.walkSheet}" aria-label="${uiState.walkSheet ? 'Hide actions' : 'Show actions'}">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
+  <div class="wh-row"><button class="pb small glass fish-btn" data-a="fish" hidden>${uiIconHTML('fish', 14)} Fish</button><button class="wh-down k-btn${uiState.walkSheet ? ' open' : walkNewKey() !== uiState.walkSeen ? ' new' : ''}" data-a="walkdown" aria-expanded="${!!uiState.walkSheet}" aria-label="${uiState.walkSheet ? 'Hide actions' : 'Show actions'}">${uiIconHTML('chev', 18)}<span>Actions</span></button></div></div></div>`;
 }
 export function renderWalk() {
   return walkHero();

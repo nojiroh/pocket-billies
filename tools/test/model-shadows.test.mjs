@@ -138,9 +138,9 @@ function oldDraws(L) {
   }
   return { out, gl };
 }
-function newDraws(L) {
+function newDraws(L, part) {
   const gl = setup();
-  G.drawPropModelShadows(SH, L);
+  G.drawPropModelShadows(SH, L, part);
   const parts = new Map();
   for (const it of L)
     if (it.vox) for (const q of [it.vox.mesh, ...(it.vox.mesh.more || []), ...it.vox.mesh.spins]) parts.set(q.sivao, q);
@@ -210,6 +210,22 @@ test('every item’s every part drawn once, with the old uniforms’ values; one
     'lamp, mill and its sails, house, tree and two parts, ship (part, two spins), arr'
   );
   assert.ok(draws < O.size);
+});
+
+test("FL-2b: the far cache's copy without turning parts and the turning parts alone make up every part", () => {
+  const { out: A } = newDraws(items()),
+    { out: body } = newDraws(items(), 1),
+    { out: spins } = newDraws(items(), 2),
+    spinVao = new Set(Object.values(meshes()).flatMap(m => m.spins.map(s => s.vao))),
+    isSpin = k => spinVao.has(k.split('|')[0]);
+  assert.ok(spinVao.size === 4);
+  assert.deepEqual([...body.keys()].filter(isSpin), []);
+  assert.deepEqual(
+    [...spins.keys()].filter(k => !isSpin(k)),
+    []
+  );
+  assert.deepEqual([...body.keys(), ...spins.keys()].sort(), [...A.keys()].sort());
+  for (const [k, v] of [...body, ...spins]) assert.deepEqual(v, A.get(k), k);
 });
 
 test('the fixture means something: bobs, turns, spins and an item not shown (the shadows draw it as before)', () => {

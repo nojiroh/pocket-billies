@@ -11,7 +11,7 @@
    height shown, someone wading), flip, slope, shear (the CPU's sway), dz (pulled toward the eye), right and back
    (the picture's own axes; unused when cam is set: it faces the camera), fixed, noRecv, flipN, lk (a prop's look:
    hsv, wear, tint, mask; null for none), fol (foliage, snow), self (self-shade amount and way), fade, emit, lit, rim,
-   shade, mt (a SURFACE_MATERIALS entry). Round 3's shadow sprites can use the same buffer: their program reads only
+   shade, mt (a SURFACE_MATERIALS entry), cao (FL-2a: the contact shade at its base, logic/contact-shade.js). Round 3's shadow sprites can use the same buffer: their program reads only
    the base, the offset, the axes, the sway and the UV (locations 1-4), and CH-4's cell (12). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -60,7 +60,7 @@ const SPRITE_INSTANCE_LAYOUT = [
   [8, 'maskFol', 4, 'f16', 64] /* mask low, mask width, foliage, snow */,
   [9, 'selfFade', 4, 'f16', 72] /* self-shade amount, way x, way y, fade */,
   [10, 'light', 4, 'f16', 80] /* emit, lit, rim, shade */,
-  [11, 'flags', 4, 'u8i', 88] /* flags, material, spare, spare */,
+  [11, 'flags', 4, 'u8i', 88] /* flags, material, then FL-2a's contact shade as 16 bits (low byte first) */,
   [12, 'cell', 4, 'u16n', 92] /* CH-4: the picture's rect of its texture: u, v, width, height shown */,
 ];
 export const SPRITE_INSTANCE_STRIDE = 100;
@@ -182,8 +182,9 @@ export function packSpriteInstance(i, r, cam) {
     (cam ? SPRITE_FLAG.cam : 0) |
     (r.fig ? SPRITE_FLAG.fig : 0);
   b[o + 89] = materialIndex(r.mt);
-  b[o + 90] = 0;
-  b[o + 91] = 0;
+  const ca = Math.round(Math.max(0, Math.min(1, r.cao ?? 1)) * 65535);
+  b[o + 90] = ca & 255;
+  b[o + 91] = ca >> 8;
   packCell(h, o2 + 46, r.uv);
 }
 /* CH-4: a rect of 0-1 numbers as four 16-bit units (the atlas's cells: a 2048 px atlas to a 32nd of a pixel) */
@@ -260,6 +261,7 @@ function unpackSpriteInstance(i) {
     cam: !!(fl & SPRITE_FLAG.cam),
     fig: fl & SPRITE_FLAG.fig ? 1 : 0,
     mat: SPRITE_MATERIALS[B.u8[o + 89]],
+    cao: (B.u8[o + 90] | (B.u8[o + 91] << 8)) / 65535,
     cell: [0, 1, 2, 3].map(k => B.u16[o2 + 46 + k] / 65535),
   };
 }

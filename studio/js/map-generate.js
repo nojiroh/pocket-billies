@@ -228,7 +228,7 @@ const GEN_DIALS = [
       ['props.benches', 'Benches', 0, 1, 0.05],
       ['props.bins', 'Bins by the benches', 0, 1, 0.05],
       ['props.folk', 'Townsfolk spots', 0, 1, 0.05],
-      ['props.mast', 'Airship mast at the hub', 'bool'],
+      ['props.mast', 'Sky train halt at the hub', 'bool'],
       ['props.clinic', 'Clinic at the hub', 'bool'],
       ['props.shop', 'Shop at the hub', 'bool'],
     ],
@@ -389,8 +389,8 @@ function genAgreeHTML(d) {
   const rules = seamRulesSides(d);
   if (rules.length) out.push(`<p class="help warn">As a place's map: ${rules.map(escapeHtml).join('; ')}</p>`);
   const built = d.props
-    .filter(p => ['clinic', 'shop', 'airship_station'].includes(p.k))
-    .map(p => p.k.replace('airship_station', 'airship mast'));
+    .filter(p => ['clinic', 'shop', 'train_halt'].includes(p.k))
+    .map(p => p.k.replace('train_halt', 'sky train halt'));
   if (built.length) out.push(`<p class="help">At the hub: ${built.join(', ')}</p>`);
   return out.join('');
 }

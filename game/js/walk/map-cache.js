@@ -18,29 +18,40 @@ import {
   PAINT_WORKER_WAIT,
   bigTilesOn,
   groundKey,
+  navKept,
+  navPrepare,
   paintGroundSteps,
   walkView,
 } from '../walk-view.js';
-import { engineSetting } from '../engine/settings.js';
+import { PLAIN_LOOK, engineContext, engineSetting } from '../engine/settings.js';
 import { freeMesh, gpuFree, gpuState, gpuTexture, setTextureParams } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { groundOcclusion } from './ground-textures.js';
+import { grassJob, grassStep } from './grass-build.js';
 import { buildGroundMesh, buildGroundMeshSteps } from './ground-mesh.js';
 /* eslint-disable no-func-assign */
 expose({
   MAP_CACHE_FIELDS: [() => MAP_CACHE_FIELDS],
+  MAP_KEY_MEMO: [() => MAP_KEY_MEMO],
   NEAR_RING_CHUNK_M: [() => NEAR_RING_CHUNK_M],
   NEAR_RING_SIZE: [() => NEAR_RING_SIZE],
   abortGroundPrep: [() => abortGroundPrep, v => (abortGroundPrep = v)],
   freeMapCacheEntry: [() => freeMapCacheEntry, v => (freeMapCacheEntry = v)],
   freeNearRing: [() => freeNearRing, v => ((freeNearRing = v), provide({ freeNearRing }))],
+  grassAheadPick: [() => grassAheadPick, v => (grassAheadPick = v)],
+  grassAheadStart: [() => grassAheadStart, v => (grassAheadStart = v)],
+  grassAheadWork: [() => grassAheadWork, v => (grassAheadWork = v)],
   groundOcclusionTexture: [
     () => groundOcclusionTexture,
     v => ((groundOcclusionTexture = v), provide({ groundOcclusionTexture })),
   ],
   groundPrepWork: [() => groundPrepWork, v => (groundPrepWork = v)],
   isGroundPrepared: [() => isGroundPrepared, v => (isGroundPrepared = v)],
+  keyMix: [() => keyMix, v => (keyMix = v)],
   mapCacheKey: [() => mapCacheKey, v => (mapCacheKey = v)],
+  mapCacheKeyMade: [() => mapCacheKeyMade, v => (mapCacheKeyMade = v)],
+  mapKeyRest: [() => mapKeyRest, v => (mapKeyRest = v)],
+  navGridOf: [() => navGridOf, v => (navGridOf = v)],
   nearRingHasChunk: [() => nearRingHasChunk, v => (nearRingHasChunk = v)],
   nearRingMissingCount: [() => nearRingMissingCount, v => (nearRingMissingCount = v)],
   nearRingSlot: [() => nearRingSlot],
@@ -49,6 +60,7 @@ expose({
   prepareMapGround: [() => prepareMapGround, v => (prepareMapGround = v)],
   rebuildFromSettings: [() => rebuildFromSettings, v => ((rebuildFromSettings = v), provide({ rebuildFromSettings }))],
   setNearRingUniforms: [() => setNearRingUniforms, v => (setNearRingUniforms = v)],
+  stopGrassAhead: [() => stopGrassAhead, v => (stopGrassAhead = v)],
   swapMapCache: [() => swapMapCache, v => setSwapMapCache(v)],
   updateNearRing: [() => updateNearRing, v => setUpdateNearRing(v)],
   wantedNearRingChunks: [() => wantedNearRingChunks, v => (wantedNearRingChunks = v)],
@@ -287,9 +299,61 @@ function groundOcclusionTexture(r) {
   setTextureParams({ linear: true });
   return t;
 }
-/* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, swapMapCache) */
+/* v46: the frame's key for a view's ground (its mesh, water and textures are kept under it, swapMapCache).
+   FL-4: asked every frame, it was a new string every frame (the ground key holds the whole tile map) and compared
+   in full with the last one; now the last key is given back while what it is made from is the same (the ground key
+   the same string, the waters' contents by a number), so the frame's comparison is one of the same string */
+const MAP_KEY_MEMO = { id: null, sc: null, gkey: null, rest: NaN, key: '' };
 export function mapCacheKey(id, sc, gkey) {
   if (sc.groundOf) return mapCacheKey(sc.roomBase, sc.groundOf, gkey); /* phase 08b: a room keeps its place's ground */
+  const m = MAP_KEY_MEMO,
+    rest = mapKeyRest(sc);
+  if (m.id === id && m.sc === sc && m.gkey === gkey && m.rest === rest) return m.key;
+  m.id = id;
+  m.sc = sc;
+  m.gkey = gkey;
+  m.rest = rest;
+  return (m.key = mapCacheKeyMade(id, sc, gkey));
+}
+/* everything but the id, the scene and the ground key that the key reads, as one number (no string made) */
+function mapKeyRest(sc) {
+  let h = keyMix(0x811c9dc5 | 0, (sc.props || []).length);
+  h = keyMix(h, sc.heights ? sc.heights.length : 0);
+  h = keyMix(h, sc.waters || 0);
+  h = keyMix(h, sc.waterKind || '');
+  h = keyMix(h, engineSetting('water', 'kinds') ? 1 : 0);
+  h = keyMix(h, sc.flatFar ? 1 : 0);
+  h = keyMix(h, sc.ride ? 1 : 0);
+  return h;
+}
+/* a value's contents into the number h, as JSON.stringify would tell them apart (numbers, strings, arrays, objects) */
+function keyMix(h, v) {
+  if (typeof v === 'number') {
+    h = Math.imul(h ^ (v | 0), 0x01000193);
+    return Math.imul(h ^ (((v - (v | 0)) * 1e6) | 0), 0x01000193) | 0;
+  }
+  if (typeof v === 'string') {
+    h = Math.imul(h ^ 0x73, 0x01000193);
+    for (let i = 0; i < v.length; i++) h = Math.imul(h ^ v.charCodeAt(i), 0x01000193);
+    return h | 0;
+  }
+  if (typeof v === 'boolean') return Math.imul(h ^ (v ? 0x74 : 0x66), 0x01000193) | 0;
+  if (Array.isArray(v)) {
+    h = Math.imul(h ^ 0x5b, 0x01000193);
+    for (const x of v) h = keyMix(h, x);
+    return Math.imul(h ^ v.length, 0x01000193) | 0;
+  }
+  if (v && typeof v === 'object') {
+    h = Math.imul(h ^ 0x7b, 0x01000193);
+    for (const k in v) {
+      h = keyMix(h, k);
+      h = keyMix(h, v[k]);
+    }
+    return h | 0;
+  }
+  return Math.imul(h ^ (v === null ? 0x6e : 0x75), 0x01000193) | 0;
+}
+function mapCacheKeyMade(id, sc, gkey) {
   return (
     id +
     '|' +
@@ -331,10 +395,14 @@ export function prepareMapGround(id, sc, G, urgent, focus) {
     prepared: 1,
     grass: null,
     grassKey: null,
+    /* FL-4: what grassAheadWork needs to plant it later */
+    of: { hk, sc, gkey },
   };
   walkRenderer.prep = {
     hk,
     id,
+    sc,
+    gkey,
     T,
     it: (function* () {
       yield* buildGroundMeshSteps(sc, G, T);
@@ -356,6 +424,80 @@ export function prepareMapGround(id, sc, G, urgent, focus) {
   };
   return false;
 }
+/* FL-4 (quality.grassAhead): a view prepared ahead plants its grass while it waits in the cache, on its own walking
+   grid once that is built (walk-view.js navPrepare), in what is left of the ground's budget; swapped in before it is
+   done, the job goes on for the view on screen (swapMapCache) */
+function grassAheadStart(J) {
+  stopGrassAhead();
+  if (!engineSetting('quality', 'grassAhead') || (J.sc.indoor && !J.sc.grass)) return;
+  walkRenderer.grassAhead = { hk: J.hk, T: J.T, sc: J.sc, gkey: J.gkey, J: null, t0: performance.now(), ms: 0 };
+}
+function stopGrassAhead() {
+  const A = walkRenderer.grassAhead;
+  walkRenderer.grassAhead = null;
+  if (A && A.J) A.J.abort();
+}
+/* a view prepared ahead and waiting in the cache with no grass yet (prepared before the switch was on, or its job let
+   go): the newest first */
+function grassAheadPick() {
+  const M = walkRenderer.sceneCache;
+  if (!M) return;
+  let N = null;
+  for (const T of M.values())
+    if (T.prepared && T.of && !T.grass && T.grassKey == null && !(T.of.sc.indoor && !T.of.sc.grass)) N = T;
+  if (N) grassAheadStart({ hk: N.of.hk, T: N, sc: N.of.sc, gkey: N.of.gkey });
+}
+/* view sc's walking grid for ground key G, if it is ready (on screen, kept from before or built ahead) */
+function navGridOf(sc, G) {
+  if (!navKept(sc, G) && !(walkView.nav && walkView.navSc === sc && walkView.navG === G)) return null;
+  if (walkView.nav && walkView.navSc === sc && walkView.navG === G) return walkView.nav;
+  const P = (sc.props || []).length,
+    K = (walkView.navKeep || []).find(k => k.sc === sc && k.G === G && k.P === P),
+    A = (walkView.navAhead || []).find(a => a.sc === sc && a.G === G && a.nav);
+  return (K && K.nav) || (A && A.nav) || null;
+}
+function grassAheadWork(budget) {
+  if (!(budget > 0)) return;
+  if (!walkRenderer.grassAhead && engineSetting('quality', 'grassAhead')) grassAheadPick();
+  const A = walkRenderer.grassAhead;
+  if (!A) return;
+  const M = walkRenderer.sceneCache;
+  if (!M || M.get(A.hk) !== A.T) {
+    stopGrassAhead();
+    return;
+  }
+  const t0 = performance.now();
+  if (!A.J) {
+    const G = navGridOf(A.sc, A.gkey);
+    if (!G) {
+      /* its walking grid built ahead too (the crossing needs it anyway; walk-view.js navPrepWork), asked for once */
+      if (!A.navAsked) {
+        A.navAsked = true;
+        navPrepare(A.sc, false);
+      }
+      return;
+    }
+    /* planted under the place's own look (its grass density), as its own frame would (walk-view-gl.js drawWalkFrame) */
+    const was = engineContext.look;
+    engineContext.look = A.sc.plain ? PLAIN_LOOK : A.sc.look || null;
+    try {
+      A.J = grassJob(A.sc, G, A.T);
+    } finally {
+      engineContext.look = was;
+    }
+  }
+  const done = grassStep(A.J, budget);
+  A.ms += performance.now() - t0;
+  if (!done) return;
+  A.T.grassKey = A.J.dk;
+  walkRenderer.grassAhead = null;
+  walkRenderer.grassAheadDone = (walkRenderer.grassAheadDone || 0) + 1;
+  if (typeof debugLog !== 'undefined')
+    debugLog.add(
+      'scene',
+      `planted ${A.hk.split('|')[0]}'s grass ahead (${Math.round(A.ms)} ms of work over ${Math.round(performance.now() - A.t0)} ms)`
+    );
+}
 function abortGroundPrep() {
   const J = walkRenderer.prep;
   if (!J) return;
@@ -367,7 +509,10 @@ function abortGroundPrep() {
 }
 export function groundPrepWork(budget) {
   const J = walkRenderer.prep;
-  if (!J) return;
+  if (!J) {
+    grassAheadWork(budget);
+    return;
+  }
   if (walkRenderer.hkey === J.hk) {
     abortGroundPrep();
     return;
@@ -392,6 +537,7 @@ export function groundPrepWork(budget) {
             M.delete(k);
           }
         }
+        grassAheadStart(J);
         if (typeof debugLog !== 'undefined')
           debugLog.add(
             'scene',
@@ -458,6 +604,7 @@ export function rebuildFromSettings() {
       freeMapCacheEntry(e);
     }
     if (walkRenderer.prep) abortGroundPrep();
+    stopGrassAhead();
   } catch (e) {
     console.warn(e);
   }
@@ -507,8 +654,31 @@ export function swapMapCache(oldKey, key) {
     walkRenderer.basinKey = null;
     if (!walkRenderer.gaoTex && walkView.sc) groundOcclusion(walkView.sc);
     /* v46: a view prepared ahead plants its grass now (sliced, a few ms a frame) */ if (hit.prepared) {
-      walkRenderer.grass = null;
-      walkRenderer.grassKey = null;
+      const dk = engineSetting('grass', 'density'),
+        A = walkRenderer.grassAhead;
+      /* FL-4 (quality.grassAhead): planted ahead, it is kept; still being planted, the job goes on for this view */
+      if (hit.grass && hit.grassKey === dk) {
+        /* (the last view's planting, if it was still going, is let go: it would mark this one unplanted) */
+        if (walkRenderer.grassJob) walkRenderer.grassJob.abort();
+        walkRenderer.grassJob = null;
+        walkRenderer.grassKey = dk;
+      } else if (A && A.hk === key && A.J && A.J.dk === dk && A.sc === walkView.sc) {
+        walkRenderer.grassAhead = null;
+        if (walkRenderer.grassJob) walkRenderer.grassJob.abort();
+        A.J.target = walkRenderer;
+        walkRenderer.grass = null;
+        walkRenderer.grassJob = A.J;
+        walkRenderer.grassKey = dk;
+      } else {
+        if (A && A.hk === key) stopGrassAhead();
+        if (hit.grass) {
+          gpuFree(hit.grass.vao);
+          gpuFree(hit.grass.ib);
+          gpuFree(hit.grass.vb);
+        }
+        walkRenderer.grass = null;
+        walkRenderer.grassKey = null;
+      }
     } else if (!walkRenderer.grass) {
       /* 0.1.0 alpha: a view left while its grass was still being planted kept none (marked planted); planted now */
       walkRenderer.grassKey = null;
