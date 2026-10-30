@@ -193,7 +193,8 @@
     "test_props_routes",
     "test_people",
     "test_intro_art",
-    "test_shapes"
+    "test_shapes",
+    "test_look_sketches"
    ]
   },
   "cutscenes": {"ids":["opening","city","return","crash"]}

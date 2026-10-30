@@ -12742,6 +12742,29 @@
     {"model":"scene/next/models/shape_house_1.json","name":"shape_house_1"},
     {"model":"scene/next/models/shape_house_2.json","name":"shape_house_2"}
    ]
+  },
+  "look_sketch": {
+   "name": "Look sketches (BD-3)",
+   "img": "scene/props/well.png",
+   "ox": -40,
+   "oy": -99,
+   "shadow": 1.8,
+   "sway": 0,
+   "flat": 0,
+   "tags": [],
+   "group": "test",
+   "solid": 1,
+   "model": "scene/next/models/look_house_a.json",
+   "ppm": 32,
+   "box": [4.4,3],
+   "vary": {"rot":0,"lean":0,"size":0},
+   "variants": [
+    {"model":"scene/next/models/look_house_b.json","name":"look_house_b"},
+    {"model":"scene/next/models/look_house_c.json","name":"look_house_c"},
+    {"model":"scene/next/models/look_shop_a.json","name":"look_shop_a"},
+    {"model":"scene/next/models/look_shop_b.json","name":"look_shop_b"},
+    {"model":"scene/next/models/look_shop_c.json","name":"look_shop_c"}
+   ]
   }
  },
  "person": 1.75,
