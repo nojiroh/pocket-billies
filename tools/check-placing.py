@@ -5,6 +5,7 @@ placing"). Counted from the page's own boxes, not pictures.
 
     python3 tools/check-placing.py              # every size
     python3 tools/check-placing.py --shots      # and a picture of each screen at each size in validation/placing/
+    python3 tools/check-placing.py --only=360,3440   # only the sizes whose names hold these
 
 One page (Copperleaf, ?fixture=town) is resized from size to size without reloading, so the layout must follow a
 resize (a phone turned, a window dragged). At each size, for the walk, Team, Bag, Guide, Trainer, Settings and a
@@ -31,8 +32,10 @@ OUT = ROOT / 'validation' / 'placing'
 # every box the gates read, in CSS pixels, and the 16:9 area
 BOXES = """(()=>{const r=e=>{if(!e)return null;const b=e.getBoundingClientRect();return b.width&&b.height?[b.left,b.top,b.right,b.bottom]:null};
 const cs=getComputedStyle(document.documentElement),W=innerWidth,H=innerHeight,hw=Math.min(W,H*16/9);
-const se=document.scrollingElement;se.scrollLeft=40;const sx=se.scrollLeft;se.scrollLeft=0;
-return {W,H,sx,area:[(W-hw)/2,0,(W+hw)/2,H],
+const se=document.scrollingElement;se.scrollLeft=40;const sx0=se.scrollLeft;se.scrollLeft=0;
+/* by hand: a root that clips (overflow-x clip or hidden) can't be slid by a finger or a wheel, only by a script */
+const sx=['clip','hidden'].includes(getComputedStyle(document.documentElement).overflowX)?0:sx0;
+return {W,H,sx,sx0,area:[(W-hw)/2,0,(W+hw)/2,H],
 top:r(document.querySelector('#app .topbar')),nav:r(document.querySelector('pb-nav-bar#nav:not([hidden])')),
 acts:r(document.querySelector('.wh-foot > *')),app:r(document.getElementById('app')),
 sheet:r(document.querySelector('#ov .sheet')),cards:[r(document.getElementById('acts')),r(document.getElementById('msg'))].filter(Boolean),
@@ -72,7 +75,8 @@ def main():
             CF.until(pg, "document.getAnimations().every(a=>a.playState!=='running'||!isFinite(a.effect.getComputedTiming().endTime))", 20)
             time.sleep(0.3)
 
-        for label, w, h in SIZES:
+        only = [a.split('=', 1)[1] for a in sys.argv if a.startswith('--only=')]
+        for label, w, h in [z for z in SIZES if not only or any(o in z[0] for o in only[0].split(','))]:
             pg.set_viewport_size({'width': w, 'height': h})
             tag = label.split()[1]
 
