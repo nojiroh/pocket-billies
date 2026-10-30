@@ -9,7 +9,7 @@ owner makes from that branch (docs/BRANCHES.md).
 
 **Status:** FL-0 done (2026-10-29). Round 1 (FL-1a, FL-1b, FL-2a at once) started 2026-10-29; FL-1a done (2026-10-30);
 FL-1b done (2026-10-30); FL-2a done (2026-10-30). Round 2 (FL-2b, FL-3a, FL-6) started 2026-10-30; FL-3a done (2026-10-30; the controller behind a switch, off); FL-6 done (2026-10-30; three questions for the owner in its entry); FL-2b done (2026-10-30). Round 3 (FL-3b,
-FL-4) started 2026-10-30; FL-3b done (2026-10-30; resolution levels behind a switch, off; the true freeze on). FL-4 done (2026-10-30; four switches, off; the LD-5 overlap asked in its entry). Round 4 (FL-5a) started 2026-10-30. FL-0b (the owner's phone run) runs beside it.
+FL-4) started 2026-10-30; FL-3b done (2026-10-30; resolution levels behind a switch, off; the true freeze on). FL-4 done (2026-10-30; four switches, off; the LD-5 overlap asked in its entry). Round 4 (FL-5a, FL-6b) started 2026-10-30; FL-6b done (2026-10-30; the phone glass at 9 px, every blur cleared under reduced transparency and high contrast, the bar's shrink on transforms). FL-0b (the owner's phone run) runs beside it.
 
 Before editing, every session checks the facts it relies on against main and says in its HANDOFF entry what differs.
 They come from read-only studies on 2026-10-29 at main 73b2f8b1: nine studies (frame pacing, sprite batching, world
@@ -55,6 +55,10 @@ Sessions act on these without asking again.
   - HUD glass: **both fixes now** (the phone blur at the intended 9 px, `prefers-reduced-transparency` clearing every
     blur); an engine-made glass only later if the tinted bars read flat.
   - The bottom bar's shrink: **rebuilt on transforms now** (lane FL-6b), keeping UI-8b's glide as close as it can.
+
+- **Phone pixel budget on by default** (the owner, 2026-10-30, after the phone's Diagnostics at 09:55: Copperleaf by
+  day 12.7 → 20 fps at the game's own values, a battle 28.7 → 38.3; draws were already 304-309): `quality.phonePixels`
+  true. The Diagnostics' `own` stop now includes it; FL-7 deletes the old path after the next phone check.
 
 ### Rounds and lanes (parallel sessions)
 Every lane works on `track/fluid` (each cloud session started with it as its push branch). Before every push:

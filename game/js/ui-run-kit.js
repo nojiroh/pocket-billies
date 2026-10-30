@@ -1376,7 +1376,9 @@ export function pbNameBanner(host, o) {
    is wide (uiTheme.json minimap tileW x tileH, 232 x 184) and stands out of the bar's frame by --rise; the bar is a
    plain cut outline from --rise down, so the world shows on both sides of the tile's top. A narrow bar shrinks the
    whole tile, keeping its shape, so each side keeps 60 px. `compact` (while walking): a square tile (tileCompact),
-   the two buttons of a side side by side, still with their words; the change eases (--nav-k). */
+   the two buttons of a side side by side, still with their words. FL-6b: --nav-k changes at once and the change
+   glides by transforms (glide below: the tile, the tabs and the glass from where they were), so no frame of it
+   lays the page out again. */
 const navStep = (/** @type {number} */ i) => {
   /* the outline inset by i px (0: the outer line; 1: the edge line's inside); 45° corners move by i·tan(22.5°) */
   const k = i * 0.4142,
@@ -1404,7 +1406,7 @@ const PbNavBar = class extends LitElement {
     css`
       /* the host is the container: its width (cqw) sizes the tile. --nav-k runs 0 (full) to 1 (compact, while
          walking): every size below is a mix of the two by it, so the tile, the bar, its outline and the tabs move
-         together. It is registered in tokens.css (@property), so it eases on --m-base; unregistered it just jumps.
+         together. It changes at once; the glide is transforms (FL-6b).
          Full: the wide tile, a side keeps 60 px; compact: a square tile, a side keeps two 58 px tabs side by side. */
       :host {
         --nav-k: 0;
@@ -1419,8 +1421,6 @@ const PbNavBar = class extends LitElement {
         position: relative;
         isolation: isolate;
         container-type: inline-size;
-        /* UI-16a: at once under Reduced (--m-k 0) */
-        transition: --nav-k calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
       }
       :host([compact]) {
         --nav-k: 1;
@@ -1439,8 +1439,9 @@ const PbNavBar = class extends LitElement {
       .glass {
         clip-path: polygon(${unsafeCSS(navStep(0))});
         background: color-mix(in srgb, var(--c-surface) calc(var(--glass, 0.7) * 100%), transparent);
-        -webkit-backdrop-filter: blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5));
-        backdrop-filter: blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5));
+        /* FL-6b: --nav-blur none under reduced transparency or high contrast (logic/ui-theme.js UI_CLEAR_GLASS) */
+        -webkit-backdrop-filter: var(--nav-blur, blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5)));
+        backdrop-filter: var(--nav-blur, blur(calc(var(--blur, 16px) * 0.75)) saturate(var(--saturate, 1.5)));
       }
       .edge {
         clip-path: polygon(evenodd, ${unsafeCSS(navStep(0))}, ${unsafeCSS(navStep(1))});
@@ -1554,6 +1555,13 @@ const PbNavBar = class extends LitElement {
         clip-path: var(--clip-card);
         background: color-mix(in srgb, var(--c-primary) 30%, var(--c-surface));
       }
+      /* FL-6b: the picture's own layer, scaled against the tile's glide so it keeps its shape */
+      .map .face .pic {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+      }
       .map .face ::slotted(*) {
         position: absolute;
         inset: 0;
@@ -1611,10 +1619,64 @@ const PbNavBar = class extends LitElement {
     this.badges = '';
     this.hide = '';
     this.compact = false;
+    /** @type {Map<HTMLElement, DOMRect> | null} */
+    this.glideFrom = null;
+    /** @type {Animation[]} */
+    this.glideAnims = [];
   }
   /** a tab's button (the fly-to's target for a gain: Bag, Perks) @param {string} id */
   tabEl(id) {
     return this.renderRoot.querySelector(`[data-t="${CSS.escape(String(id))}"]`);
+  }
+  /* FL-6b: the shrink's glide (FLIP): where the tile, the tabs and the glass are on screen before the change (a glide
+     under way included), then each moved and scaled from there to its new place by a transform animation, which the
+     compositor runs: two layouts for the change, none while it glides */
+  willUpdate(/** @type {Map<string, any>} */ ch) {
+    if (ch.has('compact') && this.hasUpdated) this.glideFrom = this.glideRects();
+  }
+  updated() {
+    const from = this.glideFrom;
+    this.glideFrom = null;
+    if (from) this.glide(from);
+  }
+  glideParts() {
+    return /** @type {HTMLElement[]} */ ([
+      ...this.renderRoot.querySelectorAll('nav > .glass, nav > .edge, .map, .tab'),
+    ]);
+  }
+  glideRects() {
+    return new Map(this.glideParts().map(el => [el, el.getBoundingClientRect()]));
+  }
+  /** @param {Map<HTMLElement, DOMRect>} from */
+  glide(from) {
+    for (const a of this.glideAnims || []) a.cancel();
+    this.glideAnims = [];
+    const cs = getComputedStyle(this),
+      base = cs.getPropertyValue('--m-base').trim(),
+      k = parseFloat(cs.getPropertyValue('--m-k')),
+      ms = (parseFloat(base) || 0) * (/ms$/.test(base) ? 1 : 1000) * (Number.isFinite(k) ? k : 1),
+      opt = { duration: ms, easing: cs.getPropertyValue('--ease-out').trim() || 'ease-out' };
+    if (!(ms > 0)) return;
+    /* every new place read first, then every animation started (a read after an animate would recalculate style) */
+    const now = this.glideParts().map(el => /** @type {[HTMLElement, DOMRect]} */ ([el, el.getBoundingClientRect()]));
+    for (const [el, z] of now) {
+      const a = from.get(el);
+      if (!a || !a.width || !a.height || !z.width || !z.height) continue;
+      const sx = a.width / z.width,
+        sy = a.height / z.height,
+        dx = a.left + a.width / 2 - (z.left + z.width / 2),
+        dy = a.top + a.height / 2 - (z.top + z.height / 2);
+      if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5 && Math.abs(sx - 1) < 0.005 && Math.abs(sy - 1) < 0.005) continue;
+      this.glideAnims.push(
+        el.animate([{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transform: 'none' }], opt)
+      );
+      /* the tile's picture: scaled back to one shape (the larger of the two), so it isn't squashed (the tile's clip
+         crops what's over) */
+      const pic = el.classList.contains('map') ? el.querySelector('.pic') : null,
+        c = Math.max(sx, sy);
+      if (pic)
+        this.glideAnims.push(pic.animate([{ transform: `scale(${c / sx}, ${c / sy})` }, { transform: 'none' }], opt));
+    }
   }
   /* UI-5: hide lists tabs to leave out (ids, comma-separated): a set's tab whose screen isn't built yet */
   get tabs() {
@@ -1668,7 +1730,7 @@ const PbNavBar = class extends LitElement {
             aria-current=${this.value === 'map' ? 'page' : nothing}
             @click=${() => this.pick('map')}
           >
-            <span class="face"><slot name="map">${runIcon(map.icon)}</slot></span>
+            <span class="face"><span class="pic"><slot name="map">${runIcon(map.icon)}</slot></span></span>
             <i class="edge" aria-hidden="true"></i><i class="notch" aria-hidden="true"></i>
             <span class="sr">${say(map.label)}</span>
           </button>`

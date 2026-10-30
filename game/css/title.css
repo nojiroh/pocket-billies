@@ -476,7 +476,7 @@ body.ld-on #app {
   color: #fff7e6;
   font: 600 13px var(--font-voice);
   cursor: pointer;
-  backdrop-filter: blur(4px);
+  backdrop-filter: var(--blur-own, blur(4px));
 }
 .acc-chip.google {
   background: #fff;

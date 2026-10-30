@@ -31,6 +31,8 @@
   "surface": {
    "blur": 12,
    "saturate": 1.4,
+   "phoneBlur": 9,
+   "phoneSaturate": 1.35,
    "light": {"glass":0.7,"highlight":0.95,"edgeHi":0.95,"edgeLo":0.3,"shadowTint":"text"},
    "dark": {"glass":0.7,"highlight":0.12,"edgeHi":0.2,"edgeLo":0.55,"shadowTint":"#000000"}
   },

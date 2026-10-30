@@ -1166,7 +1166,7 @@
    "game/js/prop-models.js:365",
    "game/js/prop-models.js:987",
    "game/js/ui-kit.js:988",
-   "game/js/ui-run-kit.js:1862",
+   "game/js/ui-run-kit.js:1924",
    "game/js/walk-view-gl.js:877"
   ],
   "brick": [
@@ -1314,7 +1314,7 @@
    "game/js/logic/kappi-tips.js:325",
    "game/js/logic/perks.js:337",
    "game/js/logic/perks.js:349",
-   "game/js/logic/ui-dials.js:151",
+   "game/js/logic/ui-dials.js:154",
    "game/js/map-tab.js:153",
    "game/js/walk-tab.js:384"
   ],
@@ -1382,9 +1382,9 @@
    "game/js/workshop.js:206"
   ],
   "glass": [
-   "game/js/logic/ui-dials.js:137",
+   "game/js/logic/ui-dials.js:140",
    "game/js/structures.js:724",
-   "game/js/ui-run-kit.js:1660",
+   "game/js/ui-run-kit.js:1722",
    "game/js/walk/rooms.js:273",
    "game/js/walk/rooms.js:286",
    "game/js/walk/rooms.js:299"
@@ -1412,7 +1412,7 @@
   ],
   "key": [
    "game/js/logic/music-studio.js:142",
-   "game/js/ui-run-kit.js:1893"
+   "game/js/ui-run-kit.js:1955"
   ],
   "leaf": [
    "game/js/battle.js:408",
@@ -1502,7 +1502,7 @@
   ],
   "scale": [
    "game/js/logic/music-studio.js:143",
-   "game/js/logic/ui-dials.js:223"
+   "game/js/logic/ui-dials.js:226"
   ],
   "sheet": [
    "game/js/kappi.js:319",

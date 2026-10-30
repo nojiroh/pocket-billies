@@ -2,6 +2,67 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-6b - glass fixes and the bottom bar's shrink on transforms - 2026-10-30
+Branch `track/fluid` (round 4 lane, beside FL-5a). Plan approved by the owner's standing answer (fluid-track.md section
+1, and the answers to FL-6's questions of 2026-10-30). Code: the page's CSS, the theme sheet, the bottom bar. No tag
+(the track's tag comes at FL-7).
+- Facts checked against the code (track/fluid at c13050b0). What differs from FL-6's entry and section 7:
+  - The phone blur bug is as FL-6 said: the theme sheet's `:root { --g-blur: blur(12px) saturate(1.4) }` (written
+    after every stylesheet) beat base.css's phone `:root` block (9 px) at equal specificity, so phones blurred at 12.
+  - Reduced transparency cleared only `--g-blur` and `--g-bg`; besides the tokens the brief names, the page also
+    blurs through `--blur-glass*`, `--blur-button`, the bottom bar's own `blur(calc(var(--blur) * 0.75))` and six
+    fixed blurs written as plain values (base.css, battle-screen.css x3, title.css, opening.css).
+  - The shrink's cost: not style passes (the old glide added only 1.6 to an idle 300 ms window, because Chrome folds
+    its per-frame recalculation into the pass the Actions button's bob already runs each frame) but style time (74.7
+    ms against 6.7 idle) and a layout every frame (15.2 layouts a change; `--nav-h` moved every fixed element over
+    the bar).
+- Changed:
+  - game/js/logic/ui-theme.js, uiTheme.json (+ schema): `surface.phoneBlur` 9 and `phoneSaturate` 1.35, written by
+    the sheet in base.css's phone query after its shared block (`uiPhoneBlur`; left out: three quarters of the blur).
+    `UI_CLEAR_GLASS` clears every blur token and makes the glass solid under `prefers-reduced-transparency: reduce`,
+    `prefers-contrast: more` and `forced-colors: active`; base.css has the same block for pages without the sheet.
+  - game/css (base, battle-screen, title, opening): the fixed backdrop blurs read `var(--blur-own, <their value>)`
+    (the same look; cleared with the rest). ui-run-kit.js: the bar's glass reads `--nav-blur` first (cleared too).
+    tools/test/ui-theme.test.mjs: every `backdrop-filter` in game/css and the two kits is `none` or a cleared token.
+  - The shrink (ui-run-kit.js PbNavBar, shell.css, tokens.css, walk-tab.css, controls.css): `--nav-k`, `--nav-kr`
+    and `--tray-k` are no longer registered or transitioned; the layout changes once. The bar glides by FLIP
+    (`willUpdate` reads where the glass, its edge, the tile and the tabs are, `glide` moves each from there with a
+    transform animation on --m-base and --ease-out; reads all, then animates). The tile's picture has its own layer
+    (`.pic`) scaled against the tile so it keeps one shape. Over the bar, the walk's foot (the hint and Actions), the
+    Actions bar and the d-pad sit on the full bar's top (`--nav-hl`) and move by `translate: 0 var(--nav-dy)` with a
+    transition (`--tray-dy` -68 px for the open Actions bar, as `--tray-lift` did; not in the short-screen layout,
+    where it never lifted). Other things over the bar (talk, dialogue, sheets' sticky rows, map cards) follow
+    `--nav-h` in one step now; they're rarely on screen while the bar changes.
+  - game/js/logic/ui-dials.js (an addition): the Studio's UI section has dials for the phone's blur and saturation
+    (ui-dials.test.mjs asks for a dial for every value the schema allows).
+  - tools/check-nav-glide.py (new): this session's gates.
+- Measured (tools/check-nav-glide.py: Copperleaf on a 390 x 844 touch page, every frame task stopped, CDP counters
+  from a change to 300 ms after, against the same window idle; 6 changes): before, 19.8 style passes (74.7 ms) and
+  15.2 layouts (6.2 ms) against idle 18.2 (6.7 ms) and 0; after, 22.2 (24.0 ms) and 3.0 (0.8 ms) against idle 18.8
+  (6.9 ms) and 0.2. So style time over idle 68 → 17 ms and layouts 15 → 3 a change, whatever the frame rate. The
+  first build added 9 style passes (a read after each animate); reading first fixed it.
+- Risky: the glide is an approximation of UI-8b's: the glass and edge scale (their 45° cuts and the 1 px edge stretch
+  for 240 ms), the tabs' words scale from the old size, and the tile's picture is shown cropped to cover while the
+  tile changes shape (pictures at 0, 60, 120, 180 and 400 ms beside the old glide looked alike). A change mid-glide
+  starts from where the parts are on screen. `translate` on the foot, the Actions bar and the d-pad makes each a
+  containing block for fixed children (none have any). High contrast now also drops every blur (the brief asked).
+- Verified: lint, types, modules, format, data, build clean; npm test 2,462 of 2,464 beside the smoke run: the missing
+  Studio dials (fixed: ui-dials and ui-theme tests 35 of 35 after) and one more that passed alone on the next run.
+  check-nav-glide: all 8 gates (layouts 2.8 a change, style passes 3.4 over idle; the phone's --g-blur 9 px; high
+  contrast and reduced transparency: 0 blurred surfaces on Team, 5 before). Smoke 7 of 7 in 357 s (blurred surfaces
+  besides the bars as before: walk 0, map 0, team 3, guide 3, profile 2, shop 2, battle 0; the UI lint at its
+  ceilings). check:ui: the same 73 of 145 pictures differ from the committed baseline as in FL-6's entry (a stale
+  baseline; the bottom bar's pictures not among them). Full quick check: 39 of 42 (2,575 s; the
+  tree under it took the main merge mid-run): RL-8's Lakeside Route crossing, room light and Battle music (drums) fail
+  as in FL-6's entry. CI's fast check on the PR: Kappi's tips (IN-2, failed already on the merge before this
+  session's push) and Tall ground; both pass alone here (148 s, 127 s); re-run once on CI.
+- For other lanes: none needed. track/ui: `--nav-hl`, `--nav-dy` and `--tray-dy` are the new names for what sits over
+  the bar (shell.css); anything new over the bar that's on screen while walking should use them.
+- Next: FL-5a finishes round 4 and starts round 5 (FL-4b, FL-5b).
+- For the owner on the phone: walk until the bar shrinks, stop until it grows: the glide should look as before. With
+  Settings' Reduce transparency (iOS: Accessibility, Display, Reduce Transparency) or Increase Contrast on, every
+  glass is solid. A debug log's `ui.longFrames.styleMs` shows the shrink's style time.
+
 ### Fluid track FL-4 - even frames: arrivals and crossings (with the load track) - 2026-10-30
 Branch `track/fluid` (round 3 lane, beside FL-3b; its commits merged in). Plan approved by the owner's standing answer
 (fluid-track.md section 1). Code: four new paths, each behind its own switch, **off** until the owner's phone run;
