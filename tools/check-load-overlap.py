@@ -66,6 +66,10 @@ def arm(b, base, on, cf):
     until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 240)
     pg.wait_for_timeout(8000)
     S = pg.evaluate(STATE)
+    # and 8 s later: a mesh still on its way shows here (the count also follows where the camera ended up)
+    pg.wait_for_timeout(8000)
+    S['later'] = pg.evaluate(STATE)
+    S['pos'] = pg.evaluate("[Math.round(walkView.pl.x), Math.round(walkView.pl.z), walkView.id]")
     S['before'] = before
     ctx.close()
     return S, errs
@@ -88,7 +92,8 @@ def main():
                 f"{U['asked']} asked, held {U['held']}, failed {U['failed']}; stamped with a time {S['stamped']} of {S['onCard']}; "
                 f"model meshes on the helper {M['builds']} ({M['ms']} ms there), on the page {M['page']}; "
                 f"warmed before the crossing: {B['warm']['done']} views, {B['warm']['pics']} pictures, {B['warm']['meshes']} meshes; "
-                f"models drawn after the crossing {S['drawn']} (low-poly {S['lowPoly']})")
+                f"models drawn after the crossing {S['drawn']} (low-poly {S['lowPoly']}), 8 s later {S['later']['drawn']}; "
+                f"meshes waiting {S['later']['meshes']['waiting']}, ready not taken {S['later']['meshes']['ready']}; at {S['pos']}")
             if errs: fails.append(f'{name}: page errors: {errs[:3]}')
     on, off = R[True], R[False]
     if not (abs(on['bud'] - max(2, min(12, on['slot'] / 4))) < 0.05): fails.append(f"on: the budget {on['bud']} isn't a quarter of the slot {on['slot']}")
@@ -99,7 +104,10 @@ def main():
     if on['meshes']['builds'] < 1 or on['meshes']['page']: fails.append('on: model meshes not (all) built on the helper thread')
     if off['meshes']['builds']: fails.append('off: model meshes built on the helper thread')
     if on['before']['warm']['done'] < 1: fails.append('on: the next place was not warmed before the crossing')
-    if on['drawn'] < off['drawn']: fails.append(f"on: fewer models drawn after the crossing ({on['drawn']} against {off['drawn']})")
+    # the meshes arrive: none waiting 16 s after the crossing, and at the same spot as many models drawn
+    if on['later']['meshes']['waiting']: fails.append(f"on: {on['later']['meshes']['waiting']} meshes still on the helper 16 s after the crossing")
+    if on['pos'] == off['pos'] and on['later']['drawn'] < off['later']['drawn']:
+        fails.append(f"on: fewer models drawn after the crossing ({on['later']['drawn']} against {off['later']['drawn']})")
     for f in fails: log('FAIL ' + f)
     if not fails: log('ok: every gate')
     sys.exit(1 if fails else 0)
