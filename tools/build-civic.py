@@ -472,10 +472,13 @@ def lab():
     ht = 3.6
     LAV, PANEL = '#A698CC', '#EAEEEC'
     L += [box(0, D, 0, w + 0.24, Dp + 0.24, 0.26, '#9A8CC0', 'brick', bevel=0.04, name='plinth'),
-          box(0, D, 0.26, w, Dp, ht - 0.26, PANEL, 'riveted', bevel=0.05, name='walls'),
+          box(0, D, 0.26, w, Dp, ht - 0.26, PANEL, 'panels', bevel=0.05, name='walls'),
           box(0, D, 1.2, w + 0.06, Dp + 0.06, 0.12, TEAL, 'metal', name='teal band'),
-          limb((-w / 2 + 0.1, -0.08, 1.42), (w / 2 - 0.1, -0.08, 1.42), 0.04, '#E0FAFF', 'plain', sides=6,
-               glow=NEON_T, name='pneumatic tube')]
+          limb((-w / 2 + 0.1, -0.08, 1.02), (0.6, -0.08, 1.02), 0.04, '#E0FAFF', 'plain', sides=6,
+               glow=NEON_T, name='pneumatic tube'),
+          limb((0.6, -0.08, 1.02), (0.6, -0.08, 0.26), 0.04, '#E0FAFF', 'plain', sides=6, glow=NEON_T,
+               name='pneumatic tube'),
+          sphere(0.6, -0.08, 0.97, 0.06, BRASS, 'metal', sides=6, rings=3, name='tube elbow')]
     for sx in (-1, 1):
         L.append(box(sx * (w / 2 - 0.02), 0.03, 0.26, 0.1, 0.1, ht - 0.26, '#D6DADC', 'metal', name='corner trim'))
     # the roof: teal trim, a lavender tiled edge round a flat roof
@@ -490,16 +493,13 @@ def lab():
           lathe(ox, oy, rt + 0.58, [(orr, 0)] + [(orr * math.cos(a), orr * math.sin(a))
                                                  for a in [i * math.pi / 12 for i in range(1, 6)]] + [(0, orr)],
                 PANEL, 'standingseam', sides=20, name='observatory dome', roof=1),
-          box(ox, oy - orr * 0.55, rt + 0.6, 0.42, orr * 1.0, orr * 0.95, '#2A2440', tilt=[-38 * DEG, 0],
-              name='dome slit'),
-          box(ox - 0.24, oy - orr * 0.55, rt + 0.6, 0.06, orr * 1.05, orr * 1.0, TEAL, 'metal', tilt=[-38 * DEG, 0],
-              name='slit rail'),
-          box(ox + 0.24, oy - orr * 0.55, rt + 0.6, 0.06, orr * 1.05, orr * 1.0, TEAL, 'metal', tilt=[-38 * DEG, 0],
-              name='slit rail'),
-          limb((ox, oy + 0.1, rt + 0.95), (ox, oy - 0.95, rt + 1.95), 0.13, BRASS, 'metal', sides=10,
-               name='telescope') | {'r1': 0.17},
-          lathe(ox, oy - 0.95, rt + 1.95, [(0.18, 0), (0.2, 0), (0.2, 0.08), (0.18, 0.08), (0.18, 0)], DARK, 'metal',
-                sides=10, tilt=[-45 * DEG, 0], name='telescope rim')]
+          ] + dome_band(ox, oy, rt + 0.58, orr + 0.015, orr - 0.06, 0.42, '#2A2440', 'dome slit')
+    L += [dome_band(ox + sx * 0.24, oy, rt + 0.58, orr + 0.05, orr - 0.02, 0.06, TEAL, 'slit rail')[0] for sx in (-1, 1)]
+    # the telescope looks out of the slit, up at 50 degrees
+    tel = (ox, oy - 1.05 * math.cos(50 * DEG), rt + 0.95 + 1.6 * math.sin(50 * DEG))
+    L += [limb((ox, oy + 0.15, rt + 0.75), tel, 0.13, BRASS, 'metal', sides=10, name='telescope') | {'r1': 0.17},
+          lathe(*tel, [(0.18, 0), (0.2, 0), (0.2, 0.08), (0.18, 0.08), (0.18, 0)], DARK, 'metal', sides=10,
+                tilt=[-40 * DEG, 0], name='telescope rim')]
     # the radio dish on the right, tipped up toward the sky, its feed glowing
     rx, ryy = 0.9, D + 0.2
     dish = [(0, 0), (0.25, 0.02), (0.5, 0.08), (0.7, 0.18), (0.78, 0.24), (0.74, 0.25), (0.48, 0.12), (0.0, 0.04)]
@@ -535,7 +535,7 @@ def lab():
             L.append(sphere(x - 0.22 + j * 0.22, 0.45, rt + 0.2, 0.14, LEAF if j % 2 else LEAF2, 'leaves', sides=8,
                             rings=4, name='roof plant'))
     # the big window: the drawn view inside, a slim white frame with mullions, a sill
-    wx, ww, wz0, wh = -0.85, 108 / PPM, 0.9, 41 / PPM
+    wx, ww, wz0, wh = -0.85, 108 / PPM, 1.5, 41 / PPM
     L.append(B1.img(LAB_WINDOW, wx, -0.01, wz0, face='fixed', recv=0, name='window view'))
     L += [box(wx, -0.03, wz0 - 0.08, ww + 0.16, 0.06, 0.08, '#F4F4F6', 'metal', name='window frame'),
           box(wx, -0.03, wz0 + wh, ww + 0.16, 0.06, 0.08, '#F4F4F6', 'metal', name='window frame'),
@@ -582,6 +582,14 @@ def lab():
     L += [box(x, Dp + 0.01, 1.65, 1.3, 0.04, 0.9, GLASS, glass=M.g(), name='back window') for x in (-1.6, 1.6)]
     return {'about': "BD-5: Professor Hazel's lab, an observatory (look B, C showpiece)", 'warp': warp(0, 8, 0.02, 0.02),
             'layers': L}, M
+
+
+def dome_band(x, y, z, r0, r1, w, col, name):
+    """a band lying on a dome's front, from its foot over toward the top (the slit and its rails): an arc profile
+    across the depth, drawn out w wide across (a prism turned a quarter)"""
+    A = [a * DEG for a in range(8, 101, 12)]
+    pts = [(-r0 * math.cos(a), r0 * math.sin(a)) for a in A] + [(-r1 * math.cos(a), r1 * math.sin(a)) for a in A[::-1]]
+    return [prism(x + w / 2, y, z, pts, w, col, rot=r3(math.pi / 2), name=name)]
 
 
 BUILDINGS = {'shop': shop, 'inn': inn, 'library': library, 'lab': lab}
