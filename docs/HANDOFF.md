@@ -193,7 +193,13 @@ tag (CLAUDE.md); the track's `buildings-done` tag comes at its end.
     normals facing out, triangle counts, stable hashes, the arch's cap area, the ring, warp, glow bytes, the world
     map's copy).
   - check-data's snapshot remade (one more data file: the new map).
-  - Quick check: QUICK_RESULT.
+  - Quick check: two full runs, each cut off by my 50- and 58-minute timeouts. This container's software drawing is
+    slow, and the first run shared the CPU with the picture runs. The second run passed 36 steps, 5 had problems:
+    - RL-8, "Walking left and right" (settings tabs) and "Ground tiles" (the lab's room didn't open in place) fail the
+      same way on the commit before BD-1 (5ad61530, rerun with `--steps=`). Not BD-1's.
+    - Postcards failed inside the full runs but passed alone, twice on head and once on base: timing under load.
+    - Phone passed alone on both (its full-run complaint, "dialogue 23 pieces, at most 20", did not come back).
+    - "Props made of shapes", "Windows and lamps by night", "Test scenes" and Copperleaf passed.
   - Pictures with look-hub-buildings.py (noon and night, the hour on): turns, prisms (gambrel, saltbox, arch, swoop),
     lathes (onion, oval bulb, flared chimney, finned rocket, mushroom, tank), taper/lean/bevel, glows (neon tube,
     ring by day too, lamp globe beside lit glass), two warped houses. Not committed (scratchpad).
