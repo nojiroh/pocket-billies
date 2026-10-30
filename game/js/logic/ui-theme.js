@@ -27,10 +27,13 @@ import { styleVarsCss } from './style-dials.js';
 expose({
   BUBBLE_MOTION: [() => BUBBLE_MOTION],
   RING: [() => RING],
+  UI_CLEAR_GLASS: [() => UI_CLEAR_GLASS],
+  UI_CLEAR_GLASS_MEDIA: [() => UI_CLEAR_GLASS_MEDIA],
   UI_CONTRAST: [() => UI_CONTRAST],
   UI_DERIVED: [() => UI_DERIVED],
   UI_FONTS: [() => UI_FONTS],
   UI_FROM_SIGNALS: [() => UI_FROM_SIGNALS],
+  UI_PHONE_MEDIA: [() => UI_PHONE_MEDIA],
   UI_ROLES: [() => UI_ROLES],
   UI_SCREENS: [() => UI_SCREENS],
   UI_SHAPE_DEFAULTS: [() => UI_SHAPE_DEFAULTS],
@@ -77,6 +80,8 @@ expose({
   solidOver: [() => solidOver, v => (solidOver = v)],
   // @ts-expect-error -- replaced on purpose
   uiPalettes: [() => uiPalettes, v => (uiPalettes = v)],
+  // @ts-expect-error -- replaced on purpose
+  uiPhoneBlur: [() => uiPhoneBlur, v => (uiPhoneBlur = v)],
   uiPlayerLook: [() => uiPlayerLook],
   uiRatio: [() => uiRatio],
   // @ts-expect-error -- replaced on purpose
