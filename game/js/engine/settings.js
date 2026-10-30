@@ -406,6 +406,13 @@ export const ENGINE_DEFAULTS = {
     shadowHold: false,
     grassAhead: false,
     freeTicks: false,
+    /* FL-5a: the scene's draw order for tile GPUs: the opaque ground and models first with programs that hold no
+       `discard` (nearest models first), then the cut-out things, the sky, the blended ones, your outline last. Off
+       until the owner's phone run; the debug menu's switch */
+    drawOrder: false,
+    /* FL-5a (FL-4's leftover): the same view's new ground (a run day's water, a Studio edit) built a slice a frame while
+       the old one stays on screen, then swapped in, instead of in one frame. Off until the owner's phone run */
+    groundSlice: false,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -1699,6 +1706,18 @@ export const ENGINE_SPEC = [
         'Jobs in free time',
         'bool',
         'The game’s regular background checks (story, sounds, trainers in sight and others) run when a frame leaves time free instead of at fixed moments that can land in a frame. The music keeps its own clock.',
+      ],
+      [
+        'drawOrder',
+        'Solid first',
+        'bool',
+        'The ground and the solid models are drawn first, nearest first, with programs that never cut pixels out, then the cut-out things (pictures, grass, walls that thin out), the sky, water and effects, your outline last. Phones’ graphics chips can then skip hidden pixels early. The same look.',
+      ],
+      [
+        'groundSlice',
+        'Ground built in slices',
+        'bool',
+        'When the ground of the place you are in changes (a run day’s water, an edit in the Studio), the old ground stays on screen while the new one is built a few milliseconds a frame, then swapped in, instead of building it all in one frame.',
       ],
       [
         'warmUp',

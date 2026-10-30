@@ -234,6 +234,12 @@ def main():
             rl.append(f"{num((s.get('t') or 0) / 1000)} s drawn {s.get('rd')}" + (f" waiting {s.get('rwait')}" if s.get('rwait') else '') + (f" ({s.get('rwhy')})" if s.get('rwhy') else '') + f" resizes {s.get('rsz') or 0} targets {s.get('fbre') or 0}")
             prevr = cur
     if rl: print(f"Resolution steps ({len(rl)} changes): " + '; '.join(rl[:10] + (['...'] + rl[-3:] if len(rl) > 13 else rl[10:])))
+    # FL-5a: the draw order for tile GPUs (quality.drawOrder): samples drawn with it, the models drawn first by
+    # discard-free programs (median), and the passes' times beside the samples without it
+    do = [s for s in samples if s.get('dord')]
+    if do:
+        sm = sorted((s['dord'][1] if isinstance(s.get('dord'), list) and len(s['dord']) > 1 else 0) for s in do)
+        print(f"Solid first (draw order): {len(do)} of {len(samples)} samples, models drawn first median {sm[len(sm) // 2]}")
 
     ev = [e for e in (d.get('events') or []) if e.get('kind') in ('visibility', 'webgl')]
     if ev:

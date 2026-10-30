@@ -24,6 +24,7 @@ import {
   lifeStep,
   noWebGL,
   propModelShaders,
+  propModelSolidShaders,
   propModelState,
   provide,
   runWaterWeatherSync,
@@ -99,7 +100,7 @@ import { POST_EFFECT_SHADERS, drawPostEffects, screenSnapshot, sunScreenPosition
 import { environment, environmentFrame } from './environment.js';
 import { PREP_BUDGET_MS, walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { SPRITE_INSTANCE_SHADERS, WALK_SHADERS } from './walk/walk-shaders.js';
+import { SPRITE_INSTANCE_SHADERS, WALK_SHADERS, groundSolidShaders } from './walk/walk-shaders.js';
 import { worldCurveDrop } from './walk/draw-common.js';
 import { groundOcclusionWork } from './walk/ground-textures.js';
 import { buildFarProps, buildGrass, grassWork } from './walk/grass-build.js';
@@ -141,6 +142,7 @@ import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
   GROUND_SLICE_MS: [() => GROUND_SLICE_MS],
+  GROUND_WAIT_MS: [() => GROUND_WAIT_MS],
   INK_CALLS: [() => INK_CALLS],
   PHONE: [() => PHONE],
   baseStopWalkView: [() => baseStopWalkView],
@@ -153,6 +155,7 @@ expose({
   dropWalkGpuCaches: [() => dropWalkGpuCaches, v => (dropWalkGpuCaches = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
+  groundWaits: [() => groundWaits, v => (groundWaits = v)],
   impactOnScreen: [() => impactOnScreen, v => (impactOnScreen = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
@@ -161,6 +164,7 @@ expose({
   oneOffMs: [() => oneOffMs, v => (oneOffMs = v)],
   peopleReport: [() => peopleReport, v => (peopleReport = v)],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
+  precompileDrawOrder: [() => precompileDrawOrder, v => (precompileDrawOrder = v)],
   resolutionDrawn: [() => resolutionDrawn, v => (resolutionDrawn = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
@@ -428,6 +432,8 @@ export function ensureWalkGl(cv) {
         precompilePrograms(
           d
         ); /* alpha 0.4: the low-poly props' too (they were built on first use, in the first place with props) */
+    /* FL-5a: the discard-free variants, while Engine > Quality "Solid first" is on */
+    if (engineSetting('quality', 'drawOrder')) precompileDrawOrder();
     ensurePrograms(WALK_SHADERS);
     ensurePrograms(POST_EFFECT_SHADERS);
   } catch (e) {
@@ -442,6 +448,37 @@ export function ensureWalkGl(cv) {
   walkRenderer.roomFloors = null;
   walkRenderer.wtex = null;
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
+  return true;
+}
+/* FL-5a: the draw order's discard-free programs (the ground's, the instanced models') start compiling in the
+   background: at the 3D view's start while the switch is on, or when the debug menu turns it on */
+export function precompileDrawOrder() {
+  precompilePrograms(groundSolidShaders());
+  if (typeof propModelSolidShaders === 'function') precompilePrograms(propModelSolidShaders());
+}
+/* FL-5a, FL-4's leftover (quality.groundSlice): the same view's ground changed (a run day's water, a Studio edit) and
+   nothing is ready for it: the old ground and its key stay on screen while the new one is built a slice a frame
+   (prepareMapGround, urgent; the frame's groundPrepWork), then it is swapped in, instead of buildGroundMesh in one
+   frame. Not for a new view (shown only once its ground is built, groundBuiltBeforeShow), a room, a borrowed ground or
+   a battle; at most 5 s, then built on the spot as before */
+const GROUND_WAIT_MS = 5000;
+function groundWaits(hk) {
+  const sc = walkView.sc,
+    id = walkView.id;
+  if (!engineSetting('quality', 'groundSlice') || !walkRenderer.mesh || walkRenderer.hid !== id) return false;
+  if (!walkView.ground || sc.groundOf || sc.roomScene || walkView.battle || gpuState.lost) return false;
+  const M = walkRenderer.sceneCache,
+    hit = M && M.get(hk);
+  if ((hit && hit.prepared) || isGroundPrepared(id, sc, walkView.gkey)) return false;
+  const now = performance.now();
+  if (!walkRenderer.groundWaitT) walkRenderer.groundWaitT = now;
+  if (now - walkRenderer.groundWaitT > GROUND_WAIT_MS) {
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('scene', `${id}: its new ground wasn't ready in 5 s; built on the spot`);
+    return false;
+  }
+  prepareMapGround(id, sc, walkView.ground, true);
+  walkRenderer.groundWaited = (walkRenderer.groundWaited || 0) + 1;
   return true;
 }
 /* phase 20 H: a restored context is the same object with nothing on it, so every cache that keeps a buffer or a
@@ -686,7 +723,9 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   let o0 = performance.now();
   ensureGround();
   const hk = mapCacheKey(walkView.id, sc, walkView.gkey);
-  if (walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) {
+  if ((walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) && !groundWaits(hk)) {
+    walkRenderer.hid = walkView.id;
+    walkRenderer.groundWaitT = 0;
     const old = walkRenderer.hkey;
     walkRenderer.gkey = walkView.gkey;
     walkRenderer.hkey = hk;
@@ -805,12 +844,26 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   /* phase 20 R2 (D1): with quality.skyLast the sky fills only what the opaque things left at the cleared depth (1.0),
      drawn after them and before anything blended (building fronts, water, effects); a room's front is blended over
      the ground, so a frame that shows one keeps the sky first */
-  const skyLast =
-      !!engineSetting('quality', 'skyLast') && !(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
+  const roomLit = !!(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
+    /* FL-5a (quality.drawOrder): for tile GPUs (an Adreno's LRZ, a Mali's early depth), the opaque ground and models
+       first with programs that hold no discard, nearest models first; then everything cut out (walls that thin, grass,
+       pictures, solid props, fading models, box faces, buildings, structures); the sky at the far plane; the blended
+       things; your outline (depth GREATER and its query) last. A lit room's frame keeps the old order (its front is
+       blended over the ground) */
+    order = !!engineSetting('quality', 'drawOrder') && !roomLit,
+    skyLast = order || (!!engineSetting('quality', 'skyLast') && !roomLit),
     bpart = skyLast ? 'solid' : undefined;
+  walkRenderer.dOrder = order ? 1 : 0;
+  walkRenderer.solidModels = 0;
   if (!skyLast) drawSky(C, sun);
   gpuPass('ground');
-  drawGround(C, X);
+  drawGround(C, X, order ? 'solid' : undefined);
+  if (order) {
+    gpuPass('models');
+    if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU, 'solid');
+    gpuPass('ground');
+    drawGround(C, X, 'walls');
+  }
   drawRoomFront(C, X);
   gpuPass('grass');
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
@@ -819,7 +872,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gpuPass('solid');
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
   gpuPass('models');
-  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
+  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU, order ? 'cut' : undefined);
   gpuPass('box');
   drawBoxFaces(C, items, X);
   gpuPass('buildings');
@@ -834,8 +887,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     gpuPass('buildings');
     drawBuildings(C, X, items, walkRenderer.bfade, 'fronts');
   }
-  gpuPass('silhouette');
-  drawPlayerSilhouette(C, items, X);
+  if (!order) {
+    gpuPass('silhouette');
+    drawPlayerSilhouette(C, items, X);
+  }
   gpuPass('water');
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
@@ -850,6 +905,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (BT && BT.ribbon) ribbonPass(C, BT.ribbon, X);
   /* VFX-5: a dashing Billie's (battle-3d.js) */
   if (BT && BT.rigRibbons) for (const R of BT.rigRibbons) ribbonPass(C, R, X);
+  if (order) {
+    gpuPass('silhouette');
+    drawPlayerSilhouette(C, items, X);
+  }
   gpuPass('post');
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,

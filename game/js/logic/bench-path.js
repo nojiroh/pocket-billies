@@ -315,7 +315,7 @@ export const NEEDS = {
     air.mist air.mistHeight air.particles
     world.moods world.groundBumps world.groundShine
     camera.pixelGrid camera.pitch camera.pitchAdd camera.height camera.distance camera.fov
-    quality.resolution quality.cull quality.sharpTex quality.hdrHalf quality.mediump quality.freeTicks`,
+    quality.resolution quality.cull quality.sharpTex quality.hdrHalf quality.mediump quality.freeTicks quality.drawOrder quality.groundSlice`,
   idle: 'camera.idleOn camera.idleDelay camera.idleZoom camera.idleBlend',
   shadows: `sun.angle sun.height sun.color sun.strength sun.ambientSky sun.ambientGround sun.ambient sun.shAmbient
     shadows.strength shadows.selfShade shadows.softness shadows.tint shadows.hue shadows.pixel shadows.pixelSize

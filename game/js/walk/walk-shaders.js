@@ -4,11 +4,13 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
+import { solidFragment } from '../engine/shader-precision.js';
 import { COMMON_GLSL, LIGHT_GLSL, LOOK_GLSL, SKY_GLSL } from '../engine/webgl.js';
 /* eslint-disable no-func-assign */
 expose({
   FALL_GLSL: [() => FALL_GLSL],
   FIGURE_SPRITE_GLSL: [() => FIGURE_SPRITE_GLSL],
+  GROUND_SOLID_EDITS: [() => GROUND_SOLID_EDITS],
   PIXEL_WATER_GLSL: [() => PIXEL_WATER_GLSL],
   RING_AT_GLSL: [() => RING_AT_GLSL],
   ROCK_GLSL: [() => ROCK_GLSL],
@@ -18,6 +20,8 @@ expose({
   SPRITE_INSTANCE_VS: [() => SPRITE_INSTANCE_VS],
   TIDE_GLSL: [() => TIDE_GLSL],
   WALK_SHADERS: [() => WALK_SHADERS],
+  groundSolidDefs: [() => groundSolidDefs, v => (groundSolidDefs = v)],
+  groundSolidShaders: [() => groundSolidShaders, v => (groundSolidShaders = v)],
   spriteInstanceFragment: [() => spriteInstanceFragment, v => (spriteInstanceFragment = v)],
 });
 /* eslint-enable no-func-assign */
@@ -601,3 +605,20 @@ function spriteInstanceFragment(fs) {
 export const SPRITE_INSTANCE_SHADERS = {
   spriteI: [SPRITE_INSTANCE_VS, spriteInstanceFragment(WALK_SHADERS.sprite[1])],
 };
+/* FL-5a (quality.drawOrder): the ground without its cuts (engine/shader-precision.js solidFragment), for the floors and
+   the far land of a frame with no room hole and no rock circle; the walls (their own index range, walk/ground-mesh.js)
+   keep the ground program, whose wall thins out between the camera and you */
+const GROUND_SOLID_EDITS = [
+  ['if(vW.x>uHole.x&&vW.x<uHole.z&&vW.z>uHole.y&&vW.z<uHole.w)discard;', ''],
+  ['if(bayerG(gl_FragCoord.xy)<max(wc,rockCut(vW)))discard;', ''],
+  ['if(rockHides(vW))discard;', ''],
+];
+let groundSolidDefs = null;
+/* { groundS } when the edits fit the ground's text, else {} (the ground program draws everything, as before) */
+export function groundSolidShaders() {
+  if (!groundSolidDefs) {
+    const fs = solidFragment(WALK_SHADERS.ground[1], GROUND_SOLID_EDITS);
+    groundSolidDefs = fs ? { groundS: [WALK_SHADERS.ground[0], fs] } : {};
+  }
+  return groundSolidDefs;
+}

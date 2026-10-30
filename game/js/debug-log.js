@@ -259,6 +259,13 @@ debugLog.ctx = () => {
         c.gah = GAME.walkRenderer.grassAheadDone;
         GAME.walkRenderer.grassAheadDone = 0;
       }
+      /* FL-5a: the draw order for tile GPUs (quality.drawOrder) on this frame, and the models it drew first */
+      if (GAME.walkRenderer.dOrder) c.dord = [1, GAME.walkRenderer.solidModels || 0];
+      /* FL-5a: frames that kept the old ground while the new one was built in slices (quality.groundSlice) */
+      if (GAME.walkRenderer.groundWaited) {
+        c.gwt = GAME.walkRenderer.groundWaited;
+        GAME.walkRenderer.groundWaited = 0;
+      }
       /* phase 20: the point lights in the frame, and how many of them cast a shadow map */
       const X = GAME.walkRenderer.X;
       if (X && X.lights) c.lit = [X.lights.length, (X.lampSh || []).length];

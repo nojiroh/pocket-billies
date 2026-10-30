@@ -14,6 +14,7 @@ import { decalPlace, propTurn } from './logic/prop-turn.js';
 import { joinMeshes, spinGroups } from './logic/spin-merge.js';
 import { leafCutKey, leafCutPixels, leafOutlineColour } from './logic/pixel-facts.js';
 import { gpuTag } from './engine/gpu-counters.js';
+import { solidFragment } from './engine/shader-precision.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -40,7 +41,7 @@ import {
 } from './engine/model-instances.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { ROCK_GLSL } from './walk/walk-shaders.js';
-import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
+import { rockCircleOn, useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { frameBudgetLeft } from './walk/quality-cull.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
@@ -58,6 +59,7 @@ expose({
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   MDL_ATTRIBS: [() => MDL_ATTRIBS],
   MDL_FLAT: [() => MDL_FLAT],
+  MDL_SOLID_EDITS: [() => MDL_SOLID_EDITS],
   MODEL_INSTANCES: [() => MODEL_INSTANCES],
   MODEL_SHADOW_INSTANCES: [() => MODEL_SHADOW_INSTANCES],
   MODEL_SHADOW_SHADERS: [() => MODEL_SHADOW_SHADERS],
@@ -77,6 +79,7 @@ expose({
   VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
   VOX_ATTRIBS: [() => VOX_ATTRIBS],
   VOX_FLAT: [() => VOX_FLAT],
+  VOX_SOLID_EDITS: [() => VOX_SOLID_EDITS],
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   asFlatInputs: [() => asFlatInputs, v => (asFlatInputs = v)],
   bindOwnTexture: [() => bindOwnTexture, v => (bindOwnTexture = v)],
@@ -114,6 +117,9 @@ expose({
   meshAttribs: [() => meshAttribs, v => (meshAttribs = v)],
   modelShadowInstancesReady: [() => modelShadowInstancesReady, v => (modelShadowInstancesReady = v)],
   modelShadowState: [() => modelShadowState],
+  modelSolidDefs: [() => modelSolidDefs, v => (modelSolidDefs = v)],
+  modelSolidItem: [() => modelSolidItem, v => (modelSolidItem = v)],
+  modelsNearestFirst: [() => modelsNearestFirst, v => (modelsNearestFirst = v)],
   mooredBob: [() => mooredBob, v => (mooredBob = v)],
   propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
@@ -121,6 +127,10 @@ expose({
   propModelInstanceValues: [() => propModelInstanceValues, v => (propModelInstanceValues = v)],
   propModelMesh: [() => propModelMesh, v => ((propModelMesh = v), provide({ propModelMesh }))],
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
+  propModelSolidShaders: [
+    () => propModelSolidShaders,
+    v => ((propModelSolidShaders = v), provide({ propModelSolidShaders })),
+  ],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
   setItemSmear: [() => setItemSmear, v => (setItemSmear = v)],
@@ -148,6 +158,7 @@ provide({
   propModelImageItems,
   propModelMesh,
   propModelShaders,
+  propModelSolidShaders,
   tagPropModel,
 });
 export function setDrawPropModels(v) {
@@ -1443,7 +1454,7 @@ export function propModelShaders() {
 }
 /* VFX-3: inst false for the stretched models (it.smear), drawn one at a time with the plain program, compiled on the
    first stretch */
-function drawLowPolyModels(C, X, L, inst = true) {
+function drawLowPolyModels(C, X, L, inst = true, solid = false) {
   if (!L.length || typeof BUILDING_SHADERS === 'undefined' || typeof buildingArt !== 'function') return;
   const gl = gpuState.gl;
   ensurePrograms(propModelShaders());
@@ -1451,7 +1462,7 @@ function drawLowPolyModels(C, X, L, inst = true) {
   const A = buildingArt(),
     det = imageTexture(artImage(A.detail), { noNormal: true });
   if (!det) return;
-  const p = useWalkProgram(inst ? 'mdlI' : 'mdl', C, X);
+  const p = useWalkProgram(inst ? (solid ? 'mdlIS' : 'mdlI') : 'mdl', C, X);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
@@ -1464,6 +1475,7 @@ function drawLowPolyModels(C, X, L, inst = true) {
   /* Building bumpiness: the models wear the buildings' sheet, and bump as the buildings do */
   if (p.U.uBStr) gl.uniform1f(p.U.uBStr, engineSetting('world', 'buildingBumps') || 0);
   if (!inst) drawLowPolyItems(p, L);
+  else if (solid) drawModelInstances(p, 'mdl', L);
   else {
     /* VFX-3: as the voxel props: a stretched one one at a time, with the plain program and the same textures */
     /* ST-7: a model with its own texture is drawn on its own (the batches share the building sheet) */
@@ -1473,6 +1485,24 @@ function drawLowPolyModels(C, X, L, inst = true) {
     if (many.length) drawModelInstances(p, 'mdl', many);
     if (one.length) drawLowPolyModels(C, X, one, false);
   }
+}
+/* FL-5a: an item the discard-free programs draw as the programs with cuts would: whole (no fade's dither), not stretched
+   (drawn one at a time), not a model with its own texture (cut where it is clear), its program made */
+function modelSolidItem(it, m, SD) {
+  if ((it.fade ?? 1) < 0.99 || it.smear) return false;
+  return m.model ? !m.own && !!SD.mdlIS : !!SD.voxIS;
+}
+/* FL-5a: a list of [item, mesh] nearest the eye first (a tile GPU's early depth then rejects what is behind), so the
+   instanced batches (engine/model-instances.js buildModelBatches, in order of first use) come nearest first too */
+function modelsNearestFirst(L, C) {
+  const e = C && C.eye;
+  if (!e || L.length < 2) return L;
+  /* the pairs are made for this frame (drawPropModels): the distance rides along as a third entry */
+  for (const x of L) {
+    const it = x[0];
+    x[2] = (it.x - e[0]) ** 2 + (it.y - e[1]) ** 2 + (it.z - e[2]) ** 2;
+  }
+  return L.sort((a, b) => a[2] - b[2]);
 }
 /* [the stretched (it.smear), the rest] of a list of [item, mesh] */
 function splitSmeared(L) {
@@ -1655,7 +1685,7 @@ function tagPropModel(it) {
 /* FL-2b: a placement's leaf items (prop-models.js propModelImageItems), reused each frame so a frame leaves ~650 fewer
    objects for the garbage collector. Each is filled from v with every key, and what other passes write on an item
    (quality-cull.js vis and fade, frame-items.js cut, prop-look.js slope and tilt, lighting.js winL, the sprite sort's
-   texKey, nearestFirst's d) is cleared, so it starts each frame as a new one would. Keyed by placement (a WeakMap),
+   texKey, modelsNearestFirst's d) is cleared, so it starts each frame as a new one would. Keyed by placement (a WeakMap),
    so a place left lets them go */
 const LEAF_ITEMS = new WeakMap(),
   LEAF_ITEM_CLEAR = ['vis', 'fade', 'cut', 'slope', 'tilt', 'winL', 'texKey', 'd'];
@@ -1878,21 +1908,46 @@ function drawVoxItems(p, L) {
     propModelState.drawn++;
   }
 }
-export function drawPropModels(C, items, X, hits, labels, PPU) {
-  propModelState.drawn = 0;
-  propModelState.lowPoly = 0;
+/* FL-5a (quality.drawOrder): part 'solid' draws only the items the discard-free programs can draw (modelSolidItem),
+   nearest first; part 'cut' draws the rest, as before. No part: every item, as before */
+export function drawPropModels(C, items, X, hits, labels, PPU, part) {
+  if (part !== 'cut') {
+    propModelState.drawn = 0;
+    propModelState.lowPoly = 0;
+  }
   if (!propModelsOn()) return;
   /* R1 measure: every draw a model makes counted apart, in whichever pass draws it (engine/gpu-counters.js) */
   gpuTag('model');
   propModelGuard(() => {
     const gl = gpuState.gl;
     ensurePrograms(propModelShaders());
-    const VL = [],
+    const SD = part ? propModelSolidShaders() : null;
+    if (SD) ensurePrograms(SD);
+    const solidOn = !!SD && !rockCircleOn(C);
+    let VL = [],
       ML = [];
     for (const it of items) {
       if (!it.vox || it.vis === false) continue;
       const m = propModelMesh(it.voxPath, it.vox);
-      if (m) (m.model ? ML : VL).push([it, m]);
+      if (!m) continue;
+      if (part && (solidOn && modelSolidItem(it, m, SD)) !== (part === 'solid')) continue;
+      (m.model ? ML : VL).push([it, m]);
+    }
+    if (part === 'solid') {
+      VL = modelsNearestFirst(VL, C);
+      ML = modelsNearestFirst(ML, C);
+      if (VL.length) {
+        const p = useWalkProgram('voxIS', C, X);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
+        gl.disable(gl.CULL_FACE);
+        drawModelInstances(p, 'vox', VL);
+      }
+      gl.bindVertexArray(null);
+      drawLowPolyModels(C, X, ML, true, true);
+      walkRenderer.solidModels = VL.length + ML.length;
+      return;
     }
     if (VL.length) {
       const p = useWalkProgram('voxI', C, X);
@@ -2042,6 +2097,31 @@ precision highp float;layout(location=0) in vec3 qPos;layout(location=1) in vec3
 void main(){vec3 P=qPos*uQ,N=qNrm;${INSTANCE_PLACE_GLSL}vW=w;vN=n;vC=qCol;gl_Position=uVP*vec4(w,1.);uBaseP=iBase.xyz;uFade=iTf.z;uEmit=iTf.w;}`,
     asFlatInputs(PROP_MODEL_SHADERS.vox[1], VOX_FLAT),
   ];
+}
+/* FL-5a (quality.drawOrder): the instanced pair without their cuts (engine/shader-precision.js solidFragment), for an
+   item that is whole (no fade), not stretched, without its own texture, on a frame with no rock circle; drawn first,
+   nearest first. {} when an edit no longer fits (everything keeps the programs with cuts) */
+const VOX_SOLID_EDITS = [['if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;', '']],
+  MDL_SOLID_EDITS = [
+    ['if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;', ''],
+    ['if(tx.a<.5)discard;', ''],
+  ];
+let modelSolidDefs = null;
+function propModelSolidShaders() {
+  if (modelSolidDefs) return modelSolidDefs;
+  const P = propModelShaders(),
+    D = {};
+  if (P.voxI) {
+    const f = solidFragment(P.voxI[1], VOX_SOLID_EDITS);
+    if (f) D.voxIS = [P.voxI[0], f];
+  }
+  if (P.mdlI) {
+    const f = solidFragment(P.mdlI[1], MDL_SOLID_EDITS);
+    if (f) D.mdlIS = [P.mdlI[0], f];
+  }
+  /* the low-poly pair needs the buildings' shaders; kept once both are made */
+  if (P.mdlI) modelSolidDefs = D;
+  return D;
 }
 function lowPolyInstancedShaders() {
   return [

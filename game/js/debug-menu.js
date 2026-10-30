@@ -100,6 +100,7 @@ import { forceContextLoss, gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { rebuildFromSettings } from './walk/map-cache.js';
 import { spriteInstanceState } from './walk/sprites.js';
+import { precompileDrawOrder } from './walk-view-gl.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -225,6 +226,9 @@ const PICTURE_PATH_SWITCHES = [
   ['fl4hold', 'shadowHold', 'Hold still far shadows'],
   ['fl4grass', 'grassAhead', 'Grass planted ahead'],
   ['fl4ticks', 'freeTicks', 'Jobs in free time'],
+  /* FL-5a: the draw order for tile GPUs, off until the owner's phone run */
+  ['fl5order', 'drawOrder', 'Solid first'],
+  ['fl5ground', 'groundSlice', 'Ground built in slices'],
 ];
 /** a picture path switch's label: on, off, or off by itself after a GL error (walk/sprites.js firstInBatches) */
 function picturePathLabel([, k, l]) {
@@ -733,13 +737,17 @@ function debugAction(x) {
     case 'fl4cells':
     case 'fl4hold':
     case 'fl4grass':
-    case 'fl4ticks': {
+    case 'fl4ticks':
+    case 'fl5order':
+    case 'fl5ground': {
       const f = PICTURE_PATH_SWITCHES.find(t => t[0] === x),
         [, k, l] = f,
         E = (gameData.engine = gameData.engine || {}),
         D = (E.defaults = E.defaults || {}),
         on = !engineSetting('quality', k);
       D.quality = { ...(D.quality || {}), [k]: on };
+      /* FL-5a: its programs start compiling now, not on the next frame */
+      if (k === 'drawOrder' && on && typeof precompileDrawOrder === 'function') precompileDrawOrder();
       return refreshDebugMenu(`${l} ${on ? 'on' : 'off'}.`);
     }
     case 'killpage':
