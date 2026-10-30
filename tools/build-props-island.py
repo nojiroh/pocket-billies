@@ -823,6 +823,17 @@ def flat_prop(key, name, pics, flat, sway, tags, group=None, shadow=0):
     return M
 
 
+def bake_looks(M, rec, key):
+    """BD-7: each colour look's picture baked from the model with its swap (key_v1, key_v2, ...), not the old drawn
+    ones: the room check and the window check read pictures"""
+    for i, V in enumerate(M.get('variants') or [], 1):
+        sw = {k.upper(): v for k, v in (V.get('swap') or {}).items() if k.startswith('#')}
+        if not sw: continue
+        R = {**rec, 'layers': [{**l, 'col': sw.get(str(l.get('col', '')).upper(), l.get('col'))} if 'col' in l else l
+                               for l in rec['layers']]}
+        V['img'], V['ox'], V['oy'] = bake(R, f'{key}_v{i}')
+
+
 def make_barn(C):
     """The barn swapped in under its key (batch 7's way for the town's buildings): its model, its door at the big
     doors, its lights; its old looks as colour swaps; its room, footprint, name and tags kept. BD-6: the new barn's
@@ -839,7 +850,9 @@ def make_barn(C):
     M['box'] = [5.5, 4.1]
     # the town looks: the old wall, roof and trim colours swapped into the model's (barn_v1..v5 keep their pictures)
     base = {'wallCol': BARN_WALL, 'roofCol': BARN_ROOF, 'trimCol': BARN_TRIM}
-    if B is None: return  # swapped in already (a rerun): its looks are swaps now
+    if B is None:  # swapped in already (a rerun): its looks are swaps now
+        bake_looks(M, rec, 'barn')
+        return
     vs = []
     for V in B.get('variants') or []:
         sw = {base[f]: V[f] for f in base if V.get(f) and V[f] != base[f]}
@@ -847,6 +860,7 @@ def make_barn(C):
             sw[BARN_DOOR] = V.get('trimCol', BARN_DOOR)  # the doors take the look's trim colour
         vs.append({k: v for k, v in (('img', V.get('img')), ('swap', sw)) if v})
     if vs: M['variants'] = vs
+    bake_looks(M, rec, 'barn')
     M['vary'] = {'rot': 0, 'lean': 0, 'size': 0}
     for f in ('build', 'layers', 'vol', 'volDepth'):
         M.pop(f, None)

@@ -9548,24 +9548,34 @@
    "ppm": 32,
    "variants": [
     {
-     "img": "scene/props/barn_v1.png",
-     "swap": {"#A8382E":"#F6E6BE","#545C70":"#A05040","#EAEEEC":"#84543C","#7E2E34":"#84543C"}
+     "img": "scene/next/island/barn_v1.png",
+     "swap": {"#A8382E":"#F6E6BE","#545C70":"#A05040","#EAEEEC":"#84543C","#7E2E34":"#84543C"},
+     "ox": -110,
+     "oy": -275
     },
     {
-     "img": "scene/props/barn_v2.png",
-     "swap": {"#A8382E":"#DEECD6","#545C70":"#547854","#EAEEEC":"#6E543C","#7E2E34":"#6E543C"}
+     "img": "scene/next/island/barn_v2.png",
+     "swap": {"#A8382E":"#DEECD6","#545C70":"#547854","#EAEEEC":"#6E543C","#7E2E34":"#6E543C"},
+     "ox": -110,
+     "oy": -275
     },
     {
-     "img": "scene/props/barn_v3.png",
-     "swap": {"#A8382E":"#F0D6D6","#545C70":"#785478","#EAEEEC":"#604860","#7E2E34":"#604860"}
+     "img": "scene/next/island/barn_v3.png",
+     "swap": {"#A8382E":"#F0D6D6","#545C70":"#785478","#EAEEEC":"#604860","#7E2E34":"#604860"},
+     "ox": -110,
+     "oy": -275
     },
     {
-     "img": "scene/props/barn_v4.png",
-     "swap": {"#A8382E":"#D6E2F0","#545C70":"#465A82","#EAEEEC":"#5A463C","#7E2E34":"#5A463C"}
+     "img": "scene/next/island/barn_v4.png",
+     "swap": {"#A8382E":"#D6E2F0","#545C70":"#465A82","#EAEEEC":"#5A463C","#7E2E34":"#5A463C"},
+     "ox": -110,
+     "oy": -275
     },
     {
-     "img": "scene/props/barn_v5.png",
-     "swap": {"#A8382E":"#ECDEB0","#545C70":"#B06E40","#EAEEEC":"#785038","#7E2E34":"#785038"}
+     "img": "scene/next/island/barn_v5.png",
+     "swap": {"#A8382E":"#ECDEB0","#545C70":"#B06E40","#EAEEEC":"#785038","#7E2E34":"#785038"},
+     "ox": -110,
+     "oy": -275
     }
    ],
    "vary": {"rot":0,"lean":0,"size":0}
