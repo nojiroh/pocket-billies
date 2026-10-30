@@ -182,8 +182,13 @@ body.on-walk .wh-foot > * {
   flex-direction: column;
   justify-content: space-between;
   gap: var(--s3);
-  padding: 2px 0 calc(var(--nav-h) - var(--s1) + var(--tray-lift, 0px) + env(safe-area-inset-bottom, 0px));
+  padding: 2px 0 calc(var(--nav-hl, var(--nav-h)) - var(--s1) + env(safe-area-inset-bottom, 0px));
   pointer-events: none;
+}
+/* FL-6b: the foot follows the bar's shrink and the open Actions bar by translate (shell.css --nav-dy, --tray-dy) */
+.walk-hero > .wh-foot {
+  translate: 0 calc(var(--nav-dy, 0px) + var(--tray-dy, 0px));
+  transition: translate calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
 }
 .wh-card {
   align-self: flex-start;
@@ -276,13 +281,14 @@ html[data-contrast='high'] .wh-down {
   transform: rotate(90deg);
 }
 /* the Actions bar (walk-tab.js walkSheetSync): one row of small buttons right on top of the bottom bar, as wide as it.
-   It follows the bar's shrink (--nav-h) and lifts the Actions button by its height while open (--tray-k, eased on
-   the page: shell.css) */
+   It follows the bar's shrink and lifts the Actions button by its height while open, by translate (FL-6b: shell.css
+   --nav-dy, --tray-dy) */
 .walk-tray {
   position: fixed;
   left: var(--s2);
   right: var(--s2);
-  bottom: calc(var(--nav-h) - 26px + var(--s1) + env(safe-area-inset-bottom, 0px));
+  bottom: calc(var(--nav-hl, var(--nav-h)) - 26px + var(--s1) + env(safe-area-inset-bottom, 0px));
+  translate: 0 var(--nav-dy, 0px);
   max-width: 480px;
   margin-inline: auto;
   display: flex;
@@ -303,6 +309,7 @@ html[data-contrast='high'] .wh-down {
   transition:
     opacity calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
     transform calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
+    translate calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
     visibility 0s linear calc(var(--m-base) * var(--m-k, 1));
 }
 .walk-tray::-webkit-scrollbar {
@@ -400,7 +407,11 @@ html:has(> body.on-walk) {
 @media (max-height: 520px) {
   .walk-hero {
     min-height: 0;
-    padding-bottom: calc(var(--nav-h) - var(--s5) + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(var(--nav-hl, var(--nav-h)) - var(--s5) + env(safe-area-inset-bottom, 0px));
+  }
+  /* here the open Actions bar never lifted the foot */
+  .walk-hero > .wh-foot {
+    translate: 0 var(--nav-dy, 0px);
   }
   .wh-card {
     padding: var(--s2) var(--s3) var(--s2);

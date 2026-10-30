@@ -578,25 +578,28 @@ pb-nav-bar#nav canvas.minimap-you {
 /* UI-8b: the bar's height is pb-nav-bar's (the tile and 8 px, or the 128 px bar on a narrow phone; walking, the square
    and 4 px, or the 84 px bar), worked out from the same --minimap-tile-* on the bar's width (the screen less 16 px, at
    most 480 px), plus its 6 px off the bottom and a 26 px gap: 224 px standing and 148 px walking on a 390 px phone.
-   The bar's shrink eases (pb-nav-bar's --nav-k); --nav-kr is the page's own copy of it (tokens.css @property, not
-   inherited), so what sits above the bar (the Actions button) glides with it instead of jumping */
+   --nav-kr is the page's copy of pb-nav-bar's compact (0 full, 1 compact).
+   FL-6b: the shrink changes no layout while it glides: --nav-h changes at once (what's rarely shown while walking
+   follows it in one step), and what sits over the bar while you walk (the walk's foot with the Actions button, the
+   Actions bar, the d-pad) is laid out on the full bar's top (--nav-hl) and moved down by --nav-dy with `translate`,
+   which the compositor eases (the bar's own parts glide by transforms too: ui-run-kit.js PbNavBar glide) */
 :root {
   --nav-kr: 0;
-  /* the Actions bar open (walk-tab.css .walk-tray): what sits above it is lifted by its height, eased the same way */
-  --tray-k: 0;
-  --tray-lift: calc(68px * var(--tray-k));
-  transition:
-    --nav-kr calc(var(--m-base) * var(--m-k, 1)) var(--ease-out),
-    --tray-k calc(var(--m-base) * var(--m-k, 1)) var(--ease-out);
+  --nav-hl: 96px;
+  --nav-dy: 0px;
+  /* the Actions bar open (walk-tab.css .walk-tray): the Actions button above it is lifted by its height, by translate */
+  --tray-dy: 0px;
 }
 :root.tray-open {
-  --tray-k: 1;
+  --tray-dy: -68px;
 }
 :root:has(pb-nav-bar#nav:not([hidden])) {
   --nav-bar-w: min(100vw - 16px, 480px);
   --nav-hf: max(min(var(--minimap-tile-h), (var(--nav-bar-w) - 136px) * var(--minimap-tile-aspect)) + var(--s2), 128px);
   --nav-hc: max(min(var(--minimap-tile-compact), var(--nav-bar-w) - 256px) + var(--s1), 84px);
-  --nav-h: calc(var(--nav-hf) + (var(--nav-hc) - var(--nav-hf)) * var(--nav-kr) + 32px);
+  --nav-hl: calc(var(--nav-hf) + 32px);
+  --nav-dy: calc((var(--nav-hf) - var(--nav-hc)) * var(--nav-kr));
+  --nav-h: calc(var(--nav-hl) - var(--nav-dy));
 }
 :root:has(pb-nav-bar#nav[compact]:not([hidden])) {
   --nav-kr: 1;
