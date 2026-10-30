@@ -2,6 +2,60 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track - placing on phones, 16:9 and ultrawide; the frozen world's stall - 2026-10-30
+Branch `track/fluid` (FL-6's session, the owner's follow-up: "make sure the interface is reactive and looks correct on
+portrait phone, widescreen and ultrawide, especially the placing"; FL-5a, FL-5b and FL-6b merged in). The owner's
+answers (2026-10-30): sizes portrait phones, 16:9 and 21:9 (not 32:9); on ultrawide the HUD in a centred 16:9 area;
+menus in the side panel as now; battle cards right of the fighters. Code: CSS placing, the walk's labels, the freeze.
+- Found (pictures of 8 screens at 8 sizes, then counted):
+  - On a wide screen the bottom bar sat over the side panel (Team, Bag, Guide, Trainer at 1366x768: the panel's foot
+    under Bag and Lab), and on an ultrawide the panel was pinned to the screen's far right edge.
+  - The walk's label band (walk-control.js `safe`) read the place card and the foot row, often hidden, so it fell back
+    to 10% / 88%: on a desktop labels slid under the top bar and the minimap tile; building labels (walk-view-gl.js)
+    were never kept on screen ("Skyline Station - Lv 1" cut at a phone's edge) and piled on each other.
+  - The Guide's filter chips ran past the side panel in a strip a mouse can't scroll.
+  - On a 360 px phone the page was 4 px wider than the screen (the canvas's 1.5% zoom behind a screen) and could
+    slide under a finger.
+  - A new battle's cards eased in from the last battle's place (their position was never reset).
+  - **The frozen world stalled the page** (FL-3b's true freeze, a cap of 0): after a window or screen kept the 3D
+    canvas without a new frame for 10 s or more, the page's frames stalled for about as long once it closed (8 s
+    frozen: 13 s stalled; 16 s: 20-27 s), the main thread and GPU idle (a Chrome trace: 2 main frames in 18 s). It
+    made smoke's phone flow fail ("w:copperleaf* stopped drawing"). Not the frame loop, the GPU's queue or the page
+    (a GPU heartbeat, a compositor animation and stopping the loop changed nothing); a redraw every 3 s or less, none.
+    Headless (SwiftShader); unknown on a phone.
+- Changed:
+  - game/css/base.css: `--hud-w` (min(100vw, 100vh x 16/9)), `--hud-x`, `--side-w`; the side panel at the right of the
+    16:9 area; behind it the bottom bar centred in what the panel leaves; `html { overflow-x: clip }`.
+  - game/js/walk-control.js `safe()`: the band from what shows: the top bar and place card above, the foot's buttons
+    and the bottom bar below. The freeze: the same still picture drawn again every 2 s (`walkView.still`, cap 0.5),
+    the world's clock taking no step (walk-view-gl.js `worldSteps(walkView.still ? 0 : dtm)`).
+  - game/js/walk-view.js `drawActLabel` (walk-view-gl.js calls it for building labels): kept whole on screen, drawn
+    only inside the band, moved up a row (at most three) off a label already drawn, else skipped.
+  - game/css/guide.css: the chips wrap on wide screens. game/js/battle.js: a new battle's cards start in place.
+  - game/js/debug-log.js: a tap's screen as the tap found it (the Event Timing rows named the screen after it).
+  - tools/check-placing.py (new): one page resized through 8 sizes (so the layout must follow a resize); gates: the
+    page never slides sideways, bars, panel, window and battle cards inside the screen and the 16:9 area, panel and
+    bar apart, cards beside the fighters, the label band between the bars. tools/check-fluid-ui.py: the freeze gates
+    for the still picture and the frames after a 16 s window. tools/check-quick.py: a view that stops drawing says
+    why (its cap, window, task state, the loop's last tick). validation/placing/ ignored.
+- Not done: the battle flash's forced style pass (battle-stage.js battleStageFlash `void f.offsetWidth`) stays:
+  deferring it hid every flash from tools/flash-audit.py (43 flashes on 43 films before, 0 after), so check-fluid-ui
+  allows one pass for it. post-effects.js reads `cv.clientWidth` in the grade pass (once in 10 s here; FL-5b's file).
+  32:9 screens not tuned (the owner left them out).
+- Risky: frozen now redraws the still world every 2 s (about one frame's cost each 2 s on a phone; water and sky
+  shaders keyed on real time may shift a little in it). Labels slid in from an edge stand a little off their building.
+  On a phone page the 4 px is clipped, not removed (a script could still scroll it; a finger can't).
+- Verified: lint, types, format, modules clean. check-placing at all 8 sizes: 133 of 134 gates (the 360 px Guide's
+  sideways slide, then fixed and passing alone at 360); after the merge 70 of 70 at 390x844, 1366x768, 2560x1080 and
+  3440x1440. check-fluid-ui all gates (after a 16 s window 12 frames in 15 s, the longest gap
+  1.4 s; was 2 frames and a 21 s gap). check-stalls passed before the merge. Smoke 7 of 7 (459 s). Pictures: each
+  screen at 360, 390, 430, 1366x768, 1920x1080, 2560x1080 and 3440x1440 (half device pixels on the big screens).
+- Next: FL-7's close-out (the owner's phone run).
+- For the owner on the phone and a desktop: walk in Copperleaf on the phone (labels whole and apart, none under the
+  bars); open Team, wait 20 s, close it: the world should move again at once. On a wide or ultrawide screen: open
+  Team, Bag, Guide: the panel at the right of the middle area, the bottom bar beside it; a battle's cards beside the
+  fighters.
+
 ### Fluid track FL-5b - phone GPU look trades (behind switches) - 2026-10-30
 Branch `track/fluid` (round 5 lane, beside FL-4b, the load overlap: separate containers and files, each with its own
 baseline). Plan approved by the owner's standing answer (fluid-track.md section 1). Code: four new paths, each behind
