@@ -1959,7 +1959,7 @@ function turnBar() {
    the one choosing; both follow the camera (which holds still while you choose, battle-stage.js camUpdate), keep a
    readable size, stay in the lower part of the screen within thumb reach, and are page elements, so the scene's
    lighting never touches them (css/battle-ui.css) */
-const floatPos = { acts: null, msg: null };
+const floatPos = { acts: null, msg: null, el: /** @type {Element | null} */ (null) };
 /** the battle cards' column (the text over the menu): its width in screen px, its zoom (big screens zoom the dock:
     battle-screen.css), the gap to the fighters and the margin to the screen's edge. battle-stage.js lays the fighters
     out beside it on a wide screen @param {number} vw @param {boolean} land */
@@ -2036,6 +2036,11 @@ function floatMeasure() {
   if (!B.classList.contains('ui3d')) {
     B.classList.add('ui3d');
     battleStageResize();
+  }
+  /* a new battle (its own #battle): the cards start where they belong, not easing in from the last battle's place */
+  if (floatPos.el !== B) {
+    floatPos.el = B;
+    floatPos.acts = floatPos.msg = null;
   }
   const L = battleStage.L,
     land = L.lay === 'landscape',
