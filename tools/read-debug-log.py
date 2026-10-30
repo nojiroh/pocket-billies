@@ -198,6 +198,10 @@ def main():
         print(f"Graphics memory (estimate) {num(tot)} MB: " + ', '.join(
             f"{k} {num(v.get('mb'))}" + (f" ({v.get('dropped')} dropped)" if v.get('dropped') else '') for k, v in parts))
         if gm.get('lateCompiles'): print(f"  late compiles: {', '.join(map(str, gm['lateCompiles']))[:200]}")
+        # FL-5a: the draw order's variants' links beside their originals ([waited ms, ms from start])
+        lk = gm.get('linkMs') or {}
+        pairs = [f"{k} {lk[k]}" for k in ('ground', 'groundS', 'voxI', 'voxIS', 'mdlI', 'mdlIS') if k in lk]
+        if pairs: print(f"  program links (waited, from start, ms): {'; '.join(pairs)}")
 
     samples = d.get('samples') or []
     peak = {}

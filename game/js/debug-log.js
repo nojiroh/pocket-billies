@@ -1264,6 +1264,9 @@ debugLog.more = () => {
           contexts: GAME.gpuState.made || 0,
           /* H5: the programs compiled after a place had settled (pcl's names): each one a warm-up missed */
           lateCompiles: (GAME.gpuState.pclNames || []).slice(),
+          /* FL-5a: the programs' links, [waited ms, ms from start], by name (all of them: the draw order's variants
+             groundS, voxIS, mdlIS beside ground, voxI, mdlI) */
+          linkMs: GAME.gpuState.linkMs || {},
         }
       : null
   );
