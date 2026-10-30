@@ -76,3 +76,6 @@ validation/load/
 validation/perf/
 validation/look-talk*/
 validation/assets-baseline/
+validation/look-halt/
+validation/as-2-*/
+validation/look-crash/
