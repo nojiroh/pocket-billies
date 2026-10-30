@@ -423,7 +423,11 @@ town node needs it.
   owner: "merge #314 first"). CH-5b (clothes as data: each wardrobe top, outer, bottom and shoe as knobs, rows and
   marks in figureKit.json clothes, the shared pieces, the directions' flair as rows; the Studio's Clothes and Flair
   tabs; main merged in, DL-6's figure close-ups joined with the kit's faces) done 2026-10-29 on `track/characters`
-  (draft PR #332 into main); next CH-7 (the dressing room on the figure).
+  (PR #332, merged into main 2026-10-29); CH-7 (the dressing room on the figure, with Figures on: a look picks the kit's
+  build and its sliders move it smoothly, you as you picked, figure-looks.js's figures of a look not yet saved, the
+  preview turned by drag, tiles from the figure in the background, the world resting behind the room) done
+  2026-10-29 on `ccr-a3988157-1jxde7` (PR #335, merged into `track/characters` 2026-10-29), its phone gate owed; next
+  CH-8 (the old pieces to `art/legacy`) or CH-9 (getting around).
   About 14 sessions in all. Tags `ch-N-done`. Branch `track/characters` (made
   2026-10-27 from `ccr-ffb6bdf7-fya7yi` by the CH-0 session at the owner's word).
 - **Perks track** (docs/phases/perks-track.md, the owner's brief and answers 2026-10-27): many more Perks (the run's

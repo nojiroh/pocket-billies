@@ -411,9 +411,35 @@ and rooms the camera barely turns (base yaw 0, camera.js:229), so 5 drawn views 
   - The Studio's Faces tab (studio/js/figure-editor.js) and look-people `--faces`.
   - Not in it: figure portraits in the dialogue box (it keeps the wardrobe rig's), glances driven, nods and talk
     gestures (CH-11), emote bubbles.
+- **CH-7 The dressing room on the figure.** Done 2026-10-29 on `ccr-a3988157-1jxde7` (this session's branch: main
+  with #332 in; draft PR #335 into `track/characters`, the owner's choice). HANDOFF has the numbers. The owner's
+  answers (Ask me before): **follow the Figures switch** (off: the room as before); **your picks win** (a direction's
+  redesign keeps its extras on you, not its jacket or palette); **smooth sliders, the build buttons pick the build**;
+  **tiles are you wearing the item, built in the background, the 2D tile until each is ready**.
+  - Checked against the code first: the boutiques can't be reached (shops.json went in SA-3; their `kind:'wardrobe'`
+    entries are in game/data/legacy/shops.json), so "shops kept" means the room's shop mode works when opened; the
+    room's 59 pictures (Face 12, Hair 10, Outfit 16, Hat 8, Extras 13; up to about 112 with More open); figureSnapshot
+    takes only a `who` (in the room it showed the saved avatar, not the look tried on) and keeps 48; drafts were never
+    let go; gouache-night put a denim jacket on you over any outer and pulled every colour to its palette; the build
+    jumped when a slider crossed a threshold, and athletic, pear and lanky couldn't be reached; the world drew at full
+    speed behind the room (an opaque overlay).
+  - A look picks a build (`look.build`, cleanLook keeps it): figureKit.json builds' `preset` (the button: a name and
+    the sliders it sets; Round and Lanky new, elder none); a picked build counts its sliders from its button and eases
+    into wider limits (kitEase); looks without one (every NPC) unchanged (the golden test held).
+  - You as you picked: no direction wear on `me`, and `F.exact` keeps your colours out of the palette pull.
+  - game/js/figure-looks.js: figureLookPicture bakes any look as you (the studio light), whole or cropped like the
+    tiles (head, face, body, legs, feet, bust: boxes from the figure's joints); its mesh named by the look's shape (body,
+    build, worn pieces but the face's painted ones: eyes, brows, mouth, glasses, facial hair but a beard), so colours
+    and faces paint on the same mesh; tiles at a lower detail, one build at a time, the look you wear first; at most 16
+    figures kept (figureMeshDrop, figureResForget), all let go when the room closes; figureReport().dress.
+  - dressing-room.js with Figures on: the preview on the figure's clock (idle with blinks, walk, throw, cheer), about
+    96 px a metre in whole steps, standing on the view bar, turned by drag through 32 headings or an eighth of a turn
+    by the arrows, its last 64 pictures kept; a slider drag holds the figure's look until let go; every tile, preset,
+    saved outfit and intro portrait keeps its 2D picture until its figure's is baked, one at a time in page order.
+  - The world rests behind the room (walk-control.js: as behind a full screen), Figures on or off.
+  - Not in it: a battle-size turntable and figure portraits elsewhere (CH-10); new garments, the neon outsider
+    (Ask 8); the boutiques brought back; Studio changes beyond Copy as new dropping a build's button.
 - **After CH-3c:**
-  - **CH-7** the dressing room: customisation on the figure (the sliders, every item, colours) with UI pictures from
-    snapshots; saved outfits and shops kept.
   - **CH-8** the old pieces to `art/legacy` once nothing draws them.
   - **CH-9** getting around (walk, jog, sprint, start, stop and turns came in CH-3c): slopes (lean as a spine bone), stairs, hops, wading,
     Surf, mounts; every NPC alive; the train ride, friends and the world-map pin. **Phone gate.**
@@ -477,6 +503,9 @@ Tags `ch-N-done` (the owner pushes them).
   figure-pose.js figureFaceState, figureBlinkAt and figureTalkFace, figures.js figureFaceFor,
   tools/test/figure-faces.test.mjs, look-people `--faces`, studio-shots `figure-faces`.
 
+- The dressing room (CH-7): game/js/figure-looks.js, dressing-room.js (figureThumb, dressingFigureTiles,
+  dressingFigurePreview), figureKit.json builds' `preset`, figure-kit.js kitEase, tools/test/figures.test.mjs (CH-7),
+  look-places `--only=dressing`.
 - Movement (CH-3c): figure-pose.js FIGURE_GAITS, figureStride, locoPose, figureGaitFor, figureTurn,
   figureMotion and figureMotionClip; figures.js figurePersonPicture; tools/test/figure-moves.test.mjs, look-people
   `--moves`, tools/look-places.py.
