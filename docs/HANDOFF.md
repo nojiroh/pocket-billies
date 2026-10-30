@@ -1872,6 +1872,75 @@ player sees changes. No "Ask me before" item came up. Track-end tags only (CLAUD
   the page was killed", then export the log: it should begin with "PREVIOUS PAGE ENDED UNEXPECTEDLY". If the
   Graphics test reloads the page again, the next log names the step it died on.
 
+### Characters track CH-7 - The dressing room on the figure - 2026-10-29
+Branch `ccr-a3988157-1jxde7` (the session's assigned branch: main with #332 in, so `track/characters` plus the merge;
+the owner's choice: work here, PR into `track/characters`). Plan approved in Plan Mode. Figure, game, tool and test
+work; figures still off by default, so the game's pictures are unchanged (the build buttons gained Round and Lanky,
+and the world rests behind the room). PR #335 merged into `track/characters`; this entry's PR follows it. No session
+tag (CLAUDE.md). docs/phases/characters-track.md (CH-7) has the design.
+- The owner's answers: **follow the Figures switch**; **your picks win**; **smooth sliders, the build buttons pick
+  the build**; **tiles are you wearing the item, built in the background, the 2D tile until each is ready**.
+- Found (checked against the code):
+  - The boutiques can't be reached: shops.json went in SA-3; the `kind:'wardrobe'` shops are only in
+    game/data/legacy/shops.json, so the room's shop mode is kept working (opened directly) but not brought back.
+  - The room's pictures: 59 with More closed (Face 12, Hair 10, Outfit 16, Hat 8, Extras 13), about 112 open.
+  - figureSnapshot took only a `who`: in the room it would show the saved avatar, not the look tried on; it keeps 48;
+    nothing let a figure of a draft look go (about 4.6 MB a mesh at gouache-night's detail).
+  - Gouache-night's cast put a denim jacket on you over any outer, and pulled your colours 85% to its palette.
+  - A slider crossing a threshold swapped the whole build; athletic, pear and lanky couldn't be reached.
+  - The world drew at full speed behind the room, an opaque overlay (walk-control.js's cap knew only menus).
+  - A figure's mesh is the same whatever its colours, eyes, brows, mouth, glasses and facial hair (all painted),
+    but a beard (a shell); kitBuild at gouache-night's 1.5 took 0.8-1.1 s in Node here, 0.8 detail 0.2-0.3 s.
+  - The intro's `'outfits'` tab filter (dressing-room.js, dressingRoomHTML) matches no tab: dead, left.
+- Changed:
+  - figureKit.json builds' `preset` (the button: name and sliders; Round and Lanky new, elder none; schema, types);
+    `look.build` (cleanLook keeps a kit build); figure-kit.js figureShapeFor takes it, lookFigure counts a picked
+    build's sliders from its button and eases them into wider limits (kitEase). The room's build buttons come from
+    the kit and set the build; a look without one gets `average` when the room opens. The Studio's Copy as new drops a
+    build's button.
+  - figures.js: no direction wear on `me`, and `F.exact` keeps your colours out of the palette and saturation.
+  - game/js/figure-looks.js (new): figureLookPicture (any look as you, studio light, whole or cropped: head, face,
+    body, legs, feet, bust from the figure's joints); meshes named by the look's shape; tiles at 0.8 detail, one
+    build at a time, your look first; 16 figures kept (figure-meshes.js figureMeshDrop, figures.js figureResForget),
+    all let go when the room closes; figureReport().dress, which read-debug-log.py prints.
+  - dressing-room.js (Figures on and your figure your look): the preview on the figure's clock (idle with blinks,
+    walk, throw, cheer), about 96 px a metre in whole steps, standing on the view bar (the 2D preview's feet are
+    behind it on a phone), turned by drag (32 headings) or an eighth by the arrows, 64 pictures kept; a slider drag
+    holds the figure's look until let go; every tile, preset, saved outfit and intro portrait swaps to its figure's
+    picture when baked, one at a time in page order.
+  - walk-control.js: the world settles and nearly stops behind the room, as behind a full screen (Figures on or off).
+  - Tests: figure-kit.test.mjs (every button's build, a slider sweep with no jumps, kitEase); figures.test.mjs (you as
+    you picked under gnight; the shape key and the kit's meshes agreeing; pictures, crops, paint without a build,
+    tiles kept and in turn, the keep and the forgetting). tools/look-places.py `--only=dressing` (each tab with
+    Figures off and on, a picture of each).
+- Risky:
+  - Untested on a phone. Headless (software GL, the town behind) is very slow: the first preview mesh 55 s, a tile
+    mesh about 8 s, a bake 40-140 ms alone and several seconds amid the room; the Hat tab's 8 tiles in 274 s, the
+    Face tab's 12 in 215 s. The phone's numbers will be in the debug log's dressing room line.
+  - A colour or face change repaints each tile on the page (a figure made on the page, about 30 ms each on a desktop).
+  - Opening the room gives a look with no build `average`; a look the old thresholds made round or tall shows its
+    average build there (and in the world once saved).
+  - Your figure is no longer gouache-night's redesign: no denim jacket, colours as picked (less saturated beside the
+    cast).
+- Verified:
+  - lint, both type checks, check:modules, format:check, check:data, build.
+  - Unit tests: 2,338 of 2,339 beside a browser check (the map-checks timing test, as before; it passes alone).
+  - Smoke: no problems (7 of 7) after the build change (425 s) and after the room's changes (386 s).
+  - Headless (look-places and scripts): the room with Figures on (body, face, hair, outfit, hat: the figure, every
+    tile a figure); off as before; a boutique opened directly (SHOPS.thrift from the legacy data): the keeper, a
+    striped tee tried on, Buy and wear 420, owned and worn; a saved outfit's portrait a figure; a slider drag built
+    nothing until let go; Round and Lanky as they should look; after closing, no figure kept or waiting; no page
+    errors.
+  - CI on #335: smoke's Camera follow (CAM-1, "the page stopped drawing") failed as it does on main (run 3143), noted
+    on the PR.
+  - Full quick check on 88a0609e: 37 of 42 in 2,634 s. Failing: RL-8's landing, room light and Battle music
+    (recorded before), Ground tiles and Postcards (both passed alone afterwards, 114 s and 78 s, as in CH-5b).
+- Next: CH-8 (the old pieces to `art/legacy` once nothing draws them: the 2D tiles still do while Figures is off) or
+  CH-9 (getting around), on `track/characters`.
+- For the owner on the phone: debug menu, Figures on (Atlas live); open Edit look on the trainer card; try every tab
+  (watch the tiles turn into figures), drag the figure round, Walk, Cheer, a build button, a slider, a colour; save;
+  then send the debug log (Settings > Help). Its figures line has the dressing room's builds, waits and bakes.
+
 ### Characters track CH-5b - Clothes as data - 2026-10-29
 Branch `track/characters` (PR #314 merged into it first, at the owner's word "merge #314 first"; main merged in at the
 start, e888b09f, and again at the end for the merge into main). Plan approved in Plan Mode. Data, figure, Studio and

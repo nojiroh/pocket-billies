@@ -1,5 +1,5 @@
 {
- "note": "Characters track CH-5: the figure kit's shapes as data (game/js/logic/figure-kit.js builds everyone's figure from their look with these; logic/kit-shapes.js reads the shape lists). heads: each head shape's knobs (r: its radii as parts of the usual head's; jaw: how V, below 0 wider at the jaw; chin: how far it drops; cheek: the cheekbones; crown: the back of the skull; face: how flat; nose: a fixed nose, 0 button, 1 straight, 2 long, 3 broad, else each person's own); hero is the main character's and never picked at random. vary: how far each person strays from their head shape (size, its radii, jaw and face plus or minus half the number) ([base, spread] times a number from their seed). builds: multipliers on the look's sliders (k), how each walks (gait), and how much more V its jaw (jaw). folk: the builds townsfolk are picked from. proportions: chibi (head, legs, torso, arms, neck) and sliderGain (how much more a slider counts on a figure). hair: each style's recipe: cut (the hairline: front, side, back), thin (a close cap), under (what shows under a hat: len [min, max] metres at the usual head, w, strand, lift; tail), and steps (grow, spikes, bun, tie, twin) with their strands' numbers (grav, stiff, wave, freq, curl, hug). accessories: each wardrobe id's shapes: vars (named values, in order), and rows: id, parent part, at, shape (a primitive of logic/figure-pose.js, or dome, disc, lathe, band and curls round the head), col (a colour slot); sides makes an A and a B mirrored (s is 1 then -1), repeat n makes id0..id(n-1) (i); a value is a number or a sum like 'bx * 0.98' of the frame's values (a hat's: k, rx, yb, zc, bx, bz, top; the head's: k, hx, hy, c1; the body's: tk, girth, hipK, torsoZ) with sqrt, sin, cos and pi. fringe: a fringe shows under this hat. colour: the slot's own colour over the item's.",
+ "note": "Characters track CH-5: the figure kit's shapes as data (game/js/logic/figure-kit.js builds everyone's figure from their look with these; logic/kit-shapes.js reads the shape lists). heads: each head shape's knobs (r: its radii as parts of the usual head's; jaw: how V, below 0 wider at the jaw; chin: how far it drops; cheek: the cheekbones; crown: the back of the skull; face: how flat; nose: a fixed nose, 0 button, 1 straight, 2 long, 3 broad, else each person's own); hero is the main character's and never picked at random. vary: how far each person strays from their head shape (size, its radii, jaw and face plus or minus half the number) ([base, spread] times a number from their seed). builds: multipliers on the look's sliders (k), how each walks (gait), how much more V its jaw (jaw), and its button in the dressing room (preset: a name and the sliders it sets; a look naming the build, look.build, counts its sliders from these, smoothly). folk: the builds townsfolk are picked from. proportions: chibi (head, legs, torso, arms, neck) and sliderGain (how much more a slider counts on a figure). hair: each style's recipe: cut (the hairline: front, side, back), thin (a close cap), under (what shows under a hat: len [min, max] metres at the usual head, w, strand, lift; tail), and steps (grow, spikes, bun, tie, twin) with their strands' numbers (grav, stiff, wave, freq, curl, hug). accessories: each wardrobe id's shapes: vars (named values, in order), and rows: id, parent part, at, shape (a primitive of logic/figure-pose.js, or dome, disc, lathe, band and curls round the head), col (a colour slot); sides makes an A and a B mirrored (s is 1 then -1), repeat n makes id0..id(n-1) (i); a value is a number or a sum like 'bx * 0.98' of the frame's values (a hat's: k, rx, yb, zc, bx, bz, top; the head's: k, hx, hy, c1; the body's: tk, girth, hipK, torsoZ) with sqrt, sin, cos and pi. fringe: a fringe shows under this hat. colour: the slot's own colour over the item's.",
  "heads": {
   "round": {"r":[1.02,0.98,1],"jaw":0.2,"chin":0.25,"cheek":1.25,"crown":1,"face":0.4},
   "oval": {"r":[0.95,1.03,0.98],"jaw":0.55,"chin":0.5,"cheek":0.9,"crown":1.05,"face":0.55},
@@ -27,40 +27,76 @@
  "builds": {
   "average": {
    "k": {},
-   "gait": {}
+   "gait": {},
+   "preset": {
+    "name": "Average",
+    "body": {}
+   }
   },
   "slim": {
    "k": {"body":0.8,"shoulders":0.94,"hips":0.94,"legs":1.04},
-   "gait": {"swing":1.05,"bounce":1.15}
+   "gait": {"swing":1.05,"bounce":1.15},
+   "preset": {
+    "name": "Slim",
+    "body": {"body":0.86,"shoulders":0.94,"hips":0.95}
+   }
   },
   "stocky": {
    "k": {"body":1.2,"shoulders":1.14,"legs":0.88,"height":0.95},
-   "gait": {"swing":0.85,"hang":0.1,"lean":0.03}
+   "gait": {"swing":0.85,"hang":0.1,"lean":0.03},
+   "preset": {
+    "name": "Sturdy",
+    "body": {"body":1.28,"shoulders":1.1,"hips":1.08}
+   }
   },
   "round": {
    "k": {"body":1.42,"shoulders":1.02,"hips":1.1,"legs":0.84,"height":0.94,"belly":1},
    "gait": {"swing":0.72,"arms":0.8,"hang":0.16,"bounce":0.7,"lean":-0.03},
+   "preset": {
+    "name": "Round",
+    "body": {"body":1.35,"hips":1.12,"legs":0.94,"height":0.96}
+   },
    "jaw": -0.25
   },
   "tall": {
    "k": {"height":1.1,"legs":1.14,"body":0.9,"arms":1.06,"neck":1.5},
-   "gait": {"swing":1.12,"lean":-0.02}
+   "gait": {"swing":1.12,"lean":-0.02},
+   "preset": {
+    "name": "Tall",
+    "body": {"height":1.1,"legs":1.1}
+   }
   },
   "small": {
    "k": {"height":0.84,"legs":0.86,"head":1.08,"neck":0.5},
-   "gait": {"swing":1.15,"bounce":1.7}
+   "gait": {"swing":1.15,"bounce":1.7},
+   "preset": {
+    "name": "Petite",
+    "body": {"height":0.9,"legs":0.94,"head":1.05}
+   }
   },
   "athletic": {
    "k": {"shoulders":1.32,"hips":0.86,"waist":0.78,"legs":1.04,"arms":1.06,"chestOut":1},
-   "gait": {"swing":1.1,"arms":1.25,"lean":-0.04}
+   "gait": {"swing":1.1,"arms":1.25,"lean":-0.04},
+   "preset": {
+    "name": "Athletic",
+    "body": {"body":1.05,"shoulders":1.16,"legs":1.04}
+   }
   },
   "pear": {
    "k": {"shoulders":0.84,"hips":1.32,"legs":0.92,"body":1.06,"waist":1.1},
-   "gait": {"swing":0.9,"hang":0.08}
+   "gait": {"swing":0.9,"hang":0.08},
+   "preset": {
+    "name": "Curvy",
+    "body": {"body":1.08,"hips":1.18,"chest":0.75,"shoulders":0.94}
+   }
   },
   "lanky": {
    "k": {"height":1.12,"legs":1.2,"arms":1.16,"body":0.74,"shoulders":0.96,"neck":1.8},
-   "gait": {"swing":1.15,"lean":0.07,"head":0.1,"bounce":1.25}
+   "gait": {"swing":1.15,"lean":0.07,"head":0.1,"bounce":1.25},
+   "preset": {
+    "name": "Lanky",
+    "body": {"height":1.12,"legs":1.14,"arms":1.12,"body":0.86}
+   }
   },
   "elder": {
    "k": {"height":0.9,"legs":0.88,"body":1.06,"head":0.96,"waist":1.1},

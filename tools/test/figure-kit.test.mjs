@@ -11,6 +11,7 @@ import {
   kappiFigure,
   kitBuild,
   kitExtent,
+  kitEase,
   kitHex,
   kitRandomHeads,
   lookFigure,
@@ -148,6 +149,59 @@ test('figure kit: shapes, builds and heights vary; a person’s choice wins', ()
   ]);
   /* each build moves its own way */
   assert.ok(by('round').gait.swing < by('tall').gait.swing);
+});
+
+test('figure kit: a look that picks a build (CH-7): the button gives the build, sliders move it smoothly', () => {
+  const KIT = figureKitData(),
+    look = { ...PEOPLE.chosen.look },
+    width = F => Math.max(...F.parts.find(p => p.id === 'torso').shape.rx),
+    fig = (build, body) => lookFigure({ ...look, build, body }, W.items, { name: 'me', figure: { head: 'hero' } });
+  /* every build but elder has a button; the look's build wins over its sliders, a person's own figure over both */
+  assert.deepEqual(
+    Object.entries(KIT.builds)
+      .filter(([, b]) => b.preset)
+      .map(([id]) => id),
+    ['average', 'slim', 'stocky', 'round', 'tall', 'small', 'athletic', 'pear', 'lanky']
+  );
+  assert.equal(figureShapeFor({ body: { body: 1.3 }, build: 'slim' }, 1).build, 'slim');
+  assert.equal(figureShapeFor({ build: 'slim' }, 1, { build: 'round' }).build, 'round');
+  assert.equal(figureShapeFor({ build: 'nope' }, 1).build, 'average');
+  /* each button's sliders with its build make the build as the kit has it (the sliders count from the button) */
+  for (const [id, b] of Object.entries(KIT.builds)) {
+    if (!b.preset) continue;
+    const F = fig(id, { ...b.preset.body }),
+      G = lookFigure({ ...look, body: {} }, W.items, { name: 'me', figure: { head: 'hero', build: id } });
+    /* (within a millimetre: without a pick, lanky's thin body stops at the old 0.75 limit) */
+    assert.ok(Math.abs(F.height - G.height) < 1e-3, `${id}: ${F.height} ${G.height}`);
+  }
+  /* a slider moves the figure a little at a time, never jumping a build, and always moves (eased at its limits) */
+  for (const [k, measure] of [
+    ['height', F => F.height],
+    ['body', width],
+  ]) {
+    let last = null,
+      step = 0;
+    for (let v = 0.82; v <= 1.351; v += 0.01) {
+      const m = measure(fig('average', { [k]: v }));
+      if (last != null) {
+        assert.ok(m > last, `${k} ${v.toFixed(2)}: ${m} after ${last}`);
+        step = Math.max(step, m - last);
+      }
+      last = m;
+    }
+    assert.ok(step < 0.05, `${k}: the biggest step ${step}`);
+  }
+  /* without a build the sliders still lean it (everyone else in the game is unchanged) */
+  assert.ok(
+    width(lookFigure({ ...look, body: { body: 1.2 } }, W.items, { name: 'x' })) >
+      width(fig('average', { body: 1.2 })) * 1.05
+  );
+  /* the ease: the middle as is, smooth into the limits, never past them */
+  assert.equal(kitEase(1, 0.8, 1.2), 1);
+  assert.ok(
+    kitEase(1.19, 0.8, 1.2) < 1.19 && kitEase(1.3, 0.8, 1.2) < 1.2 && kitEase(1.3, 0.8, 1.2) > kitEase(1.25, 0.8, 1.2)
+  );
+  assert.ok(kitEase(0.7, 0.8, 1.2) > 0.8 && kitEase(0.81, 0.8, 1.2) > 0.81);
 });
 
 test('figure kit: Kappi stands on four legs in glasses', () => {

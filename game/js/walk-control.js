@@ -17,6 +17,7 @@ import { storyAllows } from './logic/script.js';
 import { activeBattle, save, saveData, saveNow, uiState } from './game-state.js';
 import { userFps } from './frame-scheduler.js';
 import { artLoad } from './art.js';
+import { dressingRoom } from './dressing-room.js';
 import {
   closedText,
   doorLinkOf,
@@ -1017,14 +1018,15 @@ export function walkMapSync() {
           ? 'hidden'
           : walkView.battle
             ? ''
-            : uiState.tab !== 'walk'
+            : uiState.tab !== 'walk' || (typeof dressingRoom !== 'undefined' && dressingRoom.on)
               ? 'screen'
               : uiState.modal
                 ? 'window'
                 : '';
-        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...) the world nearly stops (1 a second): a still canvas
-           lets the browser keep its blurred backdrop instead of blurring it again every frame, which made a phone's
-           menus crawl. FL-1b: at once (it drew 0.8 s more at 24, each frame at full cost, while the tab opened) */
+        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...; CH-7: the dressing room, which covers it whole and
+           bakes its figures in its own loop) the world nearly stops (1 a second): a still canvas lets the browser keep
+           its blurred backdrop instead of blurring it again every frame, which made a phone's menus crawl. FL-1b: at
+           once (it drew 0.8 s more at 24, each frame at full cost, while the tab opened) */
         if (w !== walkView.held) walkView.heldT = performance.now();
         walkView.held = w;
         if (w === 'hidden') return 1;

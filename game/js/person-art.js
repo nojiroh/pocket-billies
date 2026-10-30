@@ -4,7 +4,8 @@
    one per view: front, back, side) with pictures on the bones, drawn and animated by skeleton-rig.js. The pictures are the
    body plus every item worn (hair, face, clothes, hat, glasses, neckwear, bag), each recoloured from its colour-area
    mask, and stretched by the body sliders (height, legs, arms, body, shoulders, hips, chest, head).
-   A look: {name, body:{…sliders}, skin, hair, eyes, wear:{slot:itemId|null}, colors:{itemId:[hex,…]}}. */
+   A look: {name, body:{…sliders}, skin, hair, eyes, wear:{slot:itemId|null}, colors:{itemId:[hex,…]}, build?}
+   (build, CH-7: the figure kit's build picked in the dressing room). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
@@ -50,6 +51,7 @@ expose({
   headCenter: [() => headCenter, v => (headCenter = v)],
   hslToRgb: [() => hslToRgb, v => (hslToRgb = v)],
   imageLoaded: [() => imageLoaded],
+  kitBuilds: [() => kitBuilds],
   lookFromOld: [() => lookFromOld, v => (lookFromOld = v)],
   lookKey: [() => lookKey, v => (lookKey = v)],
   lookOf: [() => lookOf, v => (lookOf = v)],
@@ -97,6 +99,11 @@ export const wardrobeData = () =>
   (typeof studioState !== 'undefined' && studioState.D && studioState.D.wardrobe) ||
   null;
 const wardrobeSlots = () => (wardrobeData() || {}).slots || [];
+/* CH-7: the figure kit's builds (figureKit.json), which a look can pick in the dressing room */
+const kitBuilds = () =>
+  (typeof gameData !== 'undefined' && gameData.figureKit && gameData.figureKit.builds) ||
+  (typeof studioState !== 'undefined' && studioState.D && studioState.D.figureKit && studioState.D.figureKit.builds) ||
+  {};
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 const DEFAULT_WEAR = {
   hair: 'hair_short',
@@ -208,6 +215,8 @@ export function cleanLook(L, fallback) {
         : s.def;
   }
   for (const k of ['skin', 'hair', 'eyes']) if (HEX_COLOR.test(L[k] || '')) out[k] = L[k];
+  /* CH-7: the figure's build the dressing room picked (kept only while the kit has it) */
+  if (typeof L.build === 'string' && L.build in kitBuilds()) out.build = L.build;
   for (const s of wardrobeSlots()) {
     let id =
       L.wear && s.id in L.wear ? L.wear[s.id] : base.wear && s.id in base.wear ? base.wear[s.id] : DEFAULT_WEAR[s.id];

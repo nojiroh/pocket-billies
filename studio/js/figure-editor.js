@@ -873,6 +873,8 @@ ACTIONS.figCopy = (/** @type {DOMStringMap} */ d) => {
     n = uniqueKey(k, (/** @type {string} */ x) => !!K[t][x]),
     v = clone(K[t][k]);
   if (t === 'heads') delete v.random;
+  /* CH-7: a copied build has no dressing room button of its own (two would share a name) */
+  if (t === 'builds') delete v.preset;
   K[t][n] = v;
   figureEditor.pick[t] = n;
   changed();
