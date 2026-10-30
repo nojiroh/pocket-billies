@@ -380,12 +380,16 @@ export const ENGINE_DEFAULTS = {
        them (engine/post-effects.js postPrecisionFollow) */
     mediump: false,
     lights: 16,
-    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1) */
-    skyLast: false,
+    /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1). FL-2a: on by default (the owner, 2026-10-29); the
+       old order stays one release (the debug menu's switch) */
+    skyLast: true,
     /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
     phonePixels: false,
-    /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each) */
-    spriteInstances: false,
+    /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each).
+       FL-2a: on by default (the owner, 2026-10-29); the old path stays one release, the automatic fallback when the
+       instanced program doesn't build or the first frame in batches raises a GL error (walk/sprites.js), and the
+       debug menu's switch */
+    spriteInstances: true,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,

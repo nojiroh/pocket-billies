@@ -142,7 +142,7 @@ function setup() {
     color: { outlines: 1 },
     shadows: { selfShade: 0.7, strength: 0.6 },
     grass: { wind: 1 },
-    quality: { cull: true },
+    quality: { cull: true, spriteInstances: false },
     world: { curve: 0 },
   };
   stubs(gl);
@@ -576,3 +576,40 @@ test("FL-2a: each picture's contact shade, as uCAO and in its instance", () => {
   G.drawSprites(camera(), fixture(), { ...XA, contact: 0 }, [], [], 32);
   assert.ok(gpuState.gl.calls.filter(c => c[1] === 'uCAO').every(c => c[2] === 1));
 });
+
+// FL-2a: the automatic fallback. The first frame in batches on a context ends with a getError; an error there turns
+// batches off for the page (the next frame draws one picture a draw), an error raised before it is not blamed on it
+for (const when of ['during', 'before'])
+  test(`FL-2a: a GL error ${when} the first frame in batches ${when === 'during' ? 'turns batches off' : 'leaves them on'}`, () => {
+    const gl = setupInstanced(),
+      errs = when === 'during' ? [0, 1282] : [1282, 0];
+    G.spriteInstanceState.bad = null;
+    gl.getError = () => errs.shift() ?? 0;
+    const logged = [];
+    const wasLog = G.debugLog;
+    G.debugLog = { add: (k, m) => logged.push(k + ': ' + m) };
+    const was = console.error;
+    console.error = () => {};
+    G.drawSprites(camera(), fixture(), X, [], [], 32);
+    console.error = was;
+    const n = gl.calls.filter(c => c[0] === 'drawArraysInstanced').length;
+    assert.ok(n > 0, 'the first frame drew in batches');
+    gl.calls.length = 0;
+    G.drawSprites(camera(), fixture(), X, [], [], 32);
+    const again = gl.calls.filter(c => c[0] === 'drawArraysInstanced').length;
+    if (when === 'during') {
+      assert.equal(again, 0, 'the old path after the error');
+      assert.ok(
+        logged.some(m => /pictures in batches off: GL error 1282/.test(m)),
+        logged.join('; ')
+      );
+    } else {
+      assert.equal(again, n, 'still in batches');
+      assert.ok(
+        logged.some(m => /GL error 1282 before the first sprites in batches/.test(m)),
+        logged.join('; ')
+      );
+    }
+    G.spriteInstanceState.bad = null;
+    G.debugLog = wasLog;
+  });

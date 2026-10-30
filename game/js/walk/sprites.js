@@ -82,11 +82,13 @@ expose({
   drawFoilRecord: [() => drawFoilRecord, v => (drawFoilRecord = v)],
   drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawReflectionRuns: [() => drawReflectionRuns, v => ((drawReflectionRuns = v), provide({ drawReflectionRuns }))],
+  drawReflectionRunsIn: [() => drawReflectionRunsIn, v => (drawReflectionRunsIn = v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
   drawSpriteRuns: [() => drawSpriteRuns, v => (drawSpriteRuns = v)],
   drawSpriteWave: [() => drawSpriteWave, v => (drawSpriteWave = v)],
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   easeHidden: [() => easeHidden, v => (easeHidden = v)],
+  firstInBatches: [() => firstInBatches, v => (firstInBatches = v)],
   flushSpriteRun: [() => flushSpriteRun, v => (flushSpriteRun = v)],
   groundTintOf: [() => groundTintOf, v => (groundTintOf = v)],
   hideQueriesLost: [() => hideQueriesLost, v => (hideQueriesLost = v)],
@@ -492,7 +494,7 @@ function drawSpriteWave(p, r) {
    its tree, so the pictures are drawn in the order they always were. A flag (the sprite program's grid quad) and a
    picture with turning blades or clock hands (drawn right after it) end a run. If the program does not build on this
    device the pass keeps one draw a picture (the debug log says so). */
-const spriteInstanceState = { bad: null };
+export const spriteInstanceState = { bad: null, checked: null, gen: -1, passes: {} };
 /* is the instanced program on and built (built on first use if the precompile list did not start it) */
 function spriteInstancesReady() {
   if (!engineSetting('quality', 'spriteInstances')) return false;
@@ -508,6 +510,30 @@ function spriteInstancesReady() {
       return false;
     }
   return true;
+}
+/* FL-2a: the automatic fallback (the old path kept one release). Each pass's first draw in batches on a context (the
+   sprites, the reflection) is wrapped in getError: an error raised before it is logged apart, not blamed on it; one
+   raised by it turns batches off for this page (the debug log says so), and the next frame draws the old way */
+function firstInBatches(gl, pass, draw) {
+  const S = spriteInstanceState;
+  if (S.gen !== gpuState.gen || S.checked !== gl) {
+    S.checked = gl;
+    S.gen = gpuState.gen;
+    S.passes = {};
+  }
+  if (S.passes[pass]) return draw();
+  S.passes[pass] = true;
+  const before = gl.getError() || 0,
+    out = draw(),
+    e = gl.getError() || 0;
+  const log = typeof debugLog !== 'undefined' ? debugLog : null;
+  if (before && log) log.add('webgl', 'GL error ' + before + ' before the first ' + pass + ' in batches');
+  if (e) {
+    S.bad = gl;
+    console.error('pictures in batches (' + pass + '): GL error ' + e);
+    if (log) log.add('webgl', 'pictures in batches off: GL error ' + e + ' on the first ' + pass + ' in batches');
+  }
+  return out;
 }
 function spriteInstanceProgram(C, X, sh) {
   if (!spriteInstancesReady()) return null;
@@ -659,7 +685,7 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   const F = spriteFrame(C, sun, X),
     L = spriteDrawList(items),
     ip = spriteInstanceProgram(C, X, sh);
-  if (ip) drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc);
+  if (ip) firstInBatches(gl, 'sprites', () => drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc));
   else
     for (let i = 0; i < L.length; i++) {
       const it = L[i],
@@ -1325,6 +1351,9 @@ function reflectionRecord(it, F, C, r) {
 /* the reflection's pictures (already in the main pass's order) on the mirrored camera RC; C is the frame's camera */
 function drawReflectionRuns(RC, C, X, pics, F) {
   if (!spriteInstancesReady()) return false;
+  return firstInBatches(gpuState.gl, 'reflection', () => drawReflectionRunsIn(RC, C, X, pics, F));
+}
+function drawReflectionRunsIn(RC, C, X, pics, F) {
   const gl = gpuState.gl,
     ip = useWalkProgram('spriteI', RC, X),
     U = ip.U,

@@ -69,6 +69,7 @@ exports[`as instances: the runs are the old draws grouped by picture, in order; 
   "uniform1f uCurveOn 1",
   "uniform1f uSelOut 1",
   "uniform4fv uMats 0.06,12,0,0.15,0.04,8,0.7,0.45,0.08,14,0,0.15,0.14,20,0,0.3,0.75,48,0,0,0.22,36,0,0.1,0.03,6,0.25,0.35,1,64,0.4,0.1",
+  "getError",
   "createVertexArray",
   "createBuffer",
   "bindVertexArray ",
@@ -320,6 +321,7 @@ exports[`as instances: the runs are the old draws grouped by picture, in order; 
   "useProgram sprite",
   "blades mill blade",
   "hit mill",
+  "getError",
   "uniform3fv uRight 0.8,0,0.6",
   "uniform3fv uBack 0.6,0,-0.8",
   "uniform1f uEmit 0",
@@ -1186,6 +1188,7 @@ exports[`the reflection as instances: the runs are its old draws grouped by pict
   "uniform1f uSelOut 0",
   "enable DEPTH_TEST",
   "disable BLEND",
+  "getError",
   "useProgram spriteI",
   "uniformMatrix4fv uVP false 1,0.01,0.02,0.03,-0.04,-1,-0.06,-0.07,0.08,0.09,1,0.11,0.14,0.63,0.17,1.035",
   "lights spriteI ",
@@ -1406,6 +1409,7 @@ exports[`the reflection as instances: the runs are its old draws grouped by pict
   "vertexAttribPointer 12 4 UNSIGNED_SHORT true 100 1392",
   "drawArraysInstanced TRIANGLES 0 6 1",
   "bindVertexArray ",
+  "getError",
   "models house"
 ]
 `;
