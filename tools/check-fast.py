@@ -584,13 +584,13 @@ def kappi_tips(pg, base):
     said = "kappi.st.said"
     try:
         for n in range(3):
-            if not until(pg, settle, 60) or pg.evaluate("!activeBattle||activeBattle.phase!=='choose'"):
+            if not until(pg, settle, 120) or pg.evaluate("!activeBattle||activeBattle.phase!=='choose'"):
                 raise Exception(f'the battle never came back to its menu before throw {n + 1}: {pg.evaluate("activeBattle&&activeBattle.phase")}')
             if n == 2:
                 pg.evaluate("document.getElementById('btip')?.click();0")
             pg.evaluate(throw)
             if n == 0:
-                if not until(pg, settle, 60): raise Exception('the first throw never finished')
+                if not until(pg, settle, 120): raise Exception('the first throw never finished')
                 time.sleep(1.2)
                 if pg.evaluate(said): raise Exception('Kappi spoke after one miss')
             if n == 1:
@@ -599,7 +599,8 @@ def kappi_tips(pg, base):
                 tip = pg.evaluate("[document.querySelector('#btip .btip-t').textContent,saveData.meta.tipsSeen.catch,kappi.st.said]")
                 if 'Kappi' not in tip[0] or 'Tire it first' not in tip[0] or tip[1] != 1 or tip[2] != 1:
                     raise Exception(f'the catch tip: {tip}')
-        if not until(pg, settle, 60): raise Exception('the third throw never finished')
+        # a throw's frames on CI's busy runner can take over a minute (the third once did)
+        if not until(pg, settle, 120): raise Exception('the third throw never finished')
         time.sleep(1.5)
         if pg.evaluate(said) != 1: raise Exception(f'{pg.evaluate(said)} tips after a third miss (one a place)')
     finally:

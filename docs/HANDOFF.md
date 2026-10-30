@@ -2,6 +2,87 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-5b - phone GPU look trades (behind switches) - 2026-10-30
+Branch `track/fluid` (round 5 lane, beside FL-4b, the load overlap: separate containers and files, each with its own
+baseline). Plan approved by the owner's standing answer (fluid-track.md section 1). Code: four new paths, each behind
+its own switch, **off** until the owner's phone run. No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + rounds 1-4): the far map's size is `walkView.R < 0.8 || q >= 2` in
+  walk/shadows.js fittedShadowPass, chosen every frame (4096 from engine.json, 2048 the settings default); a battle
+  reads `walkRenderer.q`, not its effective step (QE, 2 with the lite look), and draws into the walk's own `shadow`
+  target, so a battle re-made the walk's map whenever the sizes differed. The ground is indexed (not non-indexed as
+  section 3 says): floors, then walls (FL-5a's `mesh.walls`), then the far land; drawn whole by the scene and the far,
+  near and lamp maps (not the reflection). The post chain: AO, rays and the light in the air are off at q ≥ 1 / q ≥ 3
+  (walk-view-gl.js `noAO: QE >= 1`, `noRays`, `noVol`), so at the phone's usual q4 only the cheap blur (3 passes), the
+  glow (5 passes from half size) and the grade run; AO's blur is 5 taps inside the grade (there is no separate AO blur
+  pass). **Differs:** "linear depth once" and "AO's blur inside AO" would gain nothing on a phone at q ≥ 1 (AO and rays
+  off, the march's depth already its own quarter-size pass): not built. The leaf clumps are cut from each tree's
+  crown picture and placed to rebuild it (all 38 trees and bushes with clumps have a "crown core" layer, the same
+  picture darkened), so **the one-picture far tree needs no new bake**: it is the crown picture as painted
+  (tools/bake-pixel-facts.mjs unchanged).
+- Changed:
+  - `quality.phoneShadow` (walk/shadows.js `farShadowSize`): a phone's far map 2048 at most from the first frame; the
+    smaller map (1024) chosen only when the canvas changes size (`walkRenderer.resizes`: with FL-3b's resSteps only out
+    of sight) or the place changes, from the level drawn (`walkRenderer.resD ?? walkView.R`) and the step; a battle
+    reads its effective step (lite: 1024) and draws into a target of its own (`shadowB`), so the walk's map and its
+    cache copy live through the battle. `walkRenderer.farRes`.
+  - `quality.groundTiles`: game/js/logic/ground-tiles.js (new, pure): `groundTileOrder` puts the ground's quads in 16
+    m tiles, each group (floors, walls, far land) still one range in that order, so `mesh.walls` holds;
+    `groundTileRuns` keeps the tiles a view matrix can see (`groundBoxSeen`, the eight corners against the clip
+    planes; the box widened by the world's curve, `groundCurveLift`) and merges neighbouring ranges. walk/ground-mesh.js
+    orders a mesh built with the switch on (`mesh.tiles`); walk/ground-draw.js `groundTileDraw` in drawGround (whole,
+    'solid' = floors + far land, 'walls') and drawGroundDepth (now given the map's matrix: far, near, lamp maps).
+    `walkRenderer.gtl`. Same triangles, same vertices; a mesh built before the switch was on draws whole.
+  - `quality.postMerge` (engine/post-effects.js): on a phone the glow's bright pass writes straight at quarter size
+    (`brightq`: the bright pass with its taps two screen pixels apart, the same medium-precision edits), then the
+    same number of levels, each a step smaller (section 7's recommendation for "Fewer bloom levels on phones": 3
+    levels from quarter size at the slow steps). In POST_EFFECT_SHADERS, so precompiled with the post passes.
+  - `quality.farTrees` (prop-models.js `farTreeLook` in propModelImageItems): a model with a crown core past 42 m
+    from you draws its core as the crown picture (uncut, not darkened, pulled toward the eye by the clumps' widest
+    reach) and no clumps; over the 6 m before that the crown fades in (dithered, `fade`) in front of the core and
+    clumps, with no shadow of its own. The crown picture is loaded only for far trees (LD-1's cuts never need it).
+  - engine/settings.js (additions): the four switches and their Engine rows; debug menu "Phone shadow map", "Ground
+    in tiles", "Phone effects merged", "One-picture far trees"; bench-path.js needs; debug-log.js (additions): `fsm`
+    (far map size), `gtl` (ground tiles: scene draws, tiles drawn, asked; shadow maps the same), `pmg`;
+    tools/read-debug-log.py prints them. studio/js/logic-worker-modules.js loads ground-tiles.js.
+  - tools/check-look-trades.py (new; the gates below), tools/test/ground-tiles.test.mjs (5),
+    tools/test/look-trades.test.mjs (2: the latch and the battle's target; the far-tree band).
+- Not done: FL-4's steadier fit for the far map and gathering cells under the fit circle (frame-items.js); `bldS`
+  (FL-5a's variant file); an opaque crown core with a discard-free program (the crown is a cut-out picture; needs
+  FL-5a's sprite variant); linear depth and AO's blur (above). For FL-4b: nothing needed from its files.
+- Risky: all four off, nothing changes for players. On: the ground in tiles costs draws (Copperleaf phone sized: the
+  scene's ground 1 → 20 draws, the shadow maps about 14), well under the 400 budget (shipped 290-314) but against a
+  tile GPU's per-draw cost; gaps between visible tiles are not merged (a later trade). A tree crossing the far-tree
+  band changes the far map's casters, so the far cache draws again once (only while walking, when its 3 m fit moves
+  anyway). Far crowns no longer turn their clumps as the camera goes round. The merged glow is softer and wider (its
+  last level reads a quarter-size picture). With phoneShadow a battle keeps a small extra target (1024², 4 MB).
+- Measured headless (counts only; `check-look-trades.py`, Copperleaf phone sized with an Android user agent, the
+  game's own graphics): off: far map 4096, the ground 1 draw, the glow from 263 × 570; on: far map 2048, the scene
+  drew 96 of 517 ground tiles in 20 draws and the shadow maps 57 of 1,034 in 14, the glow from 131 × 285 (merged),
+  pictures drawn 301 → 295 (few trees past 42 m from the square), 0 late compiles. Pictures with the world's clock
+  stopped: ground in tiles on/on 5.14% of pixels apart (stall awnings and townsfolk change on their own), on/off
+  4.10%, off/on 2.85%: the same ground, no holes (looked at); far trees off/on 0.15%, merged glow 0.26%.
+- Verified (in progress): lint, types, format, modules clean; unit tests 2,533 of 2,535 before the two fixes (both fixed; the third, the 1,000-maps timing test beside a browser, as in FL-5a); check-perf --only=copperleaf no problems (290-314 draws as shipped, effects 5-8); check-look-trades every gate. Baseline at the round's start (ee9c4be8, a worktree, 45 pictures, 2,903 s, 38 of 42: RL-8's crossing, room light, walking out of the lab, battle music's drums).
+- Next: round 5's other lane, FL-4b, was still running when this entry was written, so it is round 5's last lane and
+  starts round 6 (FL-7, the close-out) only once the owner's phone run with the round 4-5 switches has reported.
+- The owner's phone results relayed during this session (the "Open PRs merge" session, 2026-10-30 about 12:40, main at
+  about e3cf601 with FL-4's and FL-5a's switches, all off; Adreno 750, Chrome 155, 60 Hz): Copperleaf by day 27.7 fps
+  at resolution 0.6 and 11 at the phone's own (DPR 3.5), a 0.6 frame about 36 ms with 19.9 ms of processor time; by
+  night 18 / 15.5; jungle 29.5 / 11.5; run town 35 / 15.5; battle 54 / 28. Draws 308 by day, 346 at night; the
+  jungle's reflection 74 (56 leaf pictures). Opening Copperleaf hitched 4.6 s ("setting up the ground"). The graphics
+  test's per-dial costs all read 0 (the median frame is quantised at 60/30 on a vsynced phone: passed to the test-data
+  track), so compare its steps' fps instead. Reading for this lane: the phone is fill-bound at its own pixels and
+  still about 20 ms of processor time at 0.6, so the look trades here (fewer far-map pixels, fewer ground triangles in
+  every pass, the glow at quarter size, fewer leaf pictures) are the GPU half; the processor half (props 2.65 ms, the
+  final pass 2.43 ms) is FL-4b's and FL-7's.
+- For the owner on the phone: in the debug menu turn on "Phone shadow map", "Ground in tiles" (then walk into
+  another place and back so the ground is built in tiles), "Phone effects merged" and "One-picture far trees", walk
+  Copperleaf's square and a run route for a minute each, then turn them off for a minute (ABAB, twice); send the debug
+  log (its "Far shadow map", "Ground in tiles" and "Phone effects merged" lines sit beside the frame times). Look for
+  far trees popping and the glow; the ground should look the same. Ask me before: "Fewer bloom levels on phones"
+  (section 7) is what "Phone effects merged" builds: on after your run (recommended, if the log shows the glow's
+  passes cheaper and it reads right), or kept off; "The leaf-clump atlas" was not reached (the far crowns already cut
+  far pictures to one per tree kind).
+
 ### Fluid track FL-5a - draw order and discard (behind a switch) - 2026-10-30
 Branch `track/fluid` (round 4's last lane; FL-6b, added by the owner's answers at c13050b0, ran beside it in CSS and
 UI files only; its commits merged in). Plan approved by the owner's standing answer (fluid-track.md section 1). Code: two new paths, each behind
