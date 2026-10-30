@@ -43,10 +43,10 @@ import { RES_LEVELS, resApply, resDrawLevel, worldSteps } from './logic/frame-co
 import { gpuCountSummary, gpuPass } from './engine/gpu-counters.js';
 import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import {
+  drawActLabel,
   drawBubble,
   drawExitLabels,
   drawExitMarks,
-  drawLabelPill,
   drawLevelTag,
   drawSpeech,
   drawTapMark,
@@ -1033,12 +1033,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       else if (l.k === 'say') {
         if (snapping) sayLater.push(l);
         else drawSpeech(x, l.x, l.y, l.t, l.a);
-      } else if (l.k === 'act' && l.y > rh * 0.1)
-        drawLabelPill(
+      } else if (l.k === 'act')
+        drawActLabel(
           x,
-          l.x,
-          l.y,
-          l.t,
+          C,
+          l,
           l.act === 'clinic'
             ? '#E8607A'
             : l.act === 'shop' || l.act === 'stall'

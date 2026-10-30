@@ -126,6 +126,18 @@
     max-width: 780px;
   }
 }
+/* wide screens (the side panel): the filter chips wrap onto a second line instead of running past the panel's edge
+   in a strip a mouse can't scroll */
+@media (min-width: 960px) and (orientation: landscape) {
+  #app .fchips {
+    flex-wrap: wrap;
+    overflow-x: visible;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
 .fchip:focus-visible,
 .qb:focus-visible,
 .tb-btn:focus-visible,
