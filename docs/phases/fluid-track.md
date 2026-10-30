@@ -47,6 +47,15 @@ Sessions act on these without asking again.
   before" item is still asked: the session ends its turn with the question, options and a recommendation instead of
   deciding, and the rest of its work goes on. The owner's standing answers above already settle the ones they cover.
 
+- **The owner's answers to FL-4's and FL-6's questions (2026-10-30):**
+  - FL-4's overlap with LD-5 (the one-off budget sized from the slot, picture age by time, model meshes in a worker,
+    `createImageBitmap` and an upload queue, the next place's warm-up): **all here, in the fluid track** (lane FL-4b,
+    round 5), with the load track told. The budget follows the set rate (about a quarter of the paced slot).
+  - Windows that keep the world moving: **kept as they are**; Settings' Display tab may freeze after FL-5b.
+  - HUD glass: **both fixes now** (the phone blur at the intended 9 px, `prefers-reduced-transparency` clearing every
+    blur); an engine-made glass only later if the tinted bars read flat.
+  - The bottom bar's shrink: **rebuilt on transforms now** (lane FL-6b), keeping UI-8b's glide as close as it can.
+
 ### Rounds and lanes (parallel sessions)
 Every lane works on `track/fluid` (each cloud session started with it as its push branch). Before every push:
 `git pull --no-rebase origin track/fluid` (a merge, never a rebase or force push). A lane edits only its own files;
@@ -67,6 +76,8 @@ additions only.
 | 3 | FL-3b resolution | walk-view-gl.js's canvas and target sizing, engine/webgl.js renderTarget |
 | 3 | FL-4 even frames | grass-build.js, map-cache.js, walk/shadows.js's far cache key, the timers |
 | 4 | FL-5a draw order | the opaque programs' variants, the scene-pass order in walk-view-gl.js |
+| 4 | FL-6b glass fixes and the bar shrink | game/css/* (the blur tokens, reduced transparency), ui-theme.js / uiTheme.json's blur, ui-run-kit.js's bottom bar, shell.css, tokens.css |
+| 5 | FL-4b the load overlap | walk/quality-cull.js's one-off budget, engine/webgl.js's picture age and uploads, a model-mesh worker, the next place's warm-up (with the load track) |
 | 5 | FL-5b look trades | shadow map size, far trees (tools/bake-pixel-facts.mjs), ground tiles, post-effects.js |
 | 6 | FL-7 close-out | everything, after the owner's phone run |
 The last lane of a round to finish (it checks the round's other HANDOFF entries on `track/fluid`) starts the next
