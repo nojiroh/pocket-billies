@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/prop-models.js:2156",
+    "game/js/prop-models.js:2464",
     "game/js/walk-view.js:793"
    ]
   },
@@ -1128,9 +1128,9 @@
    "game/js/ui.js:234"
   ],
   "barrel": [
-   "game/js/prop-models.js:224",
-   "game/js/prop-models.js:422",
-   "game/js/prop-models.js:1173",
+   "game/js/prop-models.js:237",
+   "game/js/prop-models.js:435",
+   "game/js/prop-models.js:1411",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1153,9 +1153,10 @@
    "game/js/logic/cutscene-set.js:142",
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
-   "game/js/prop-models.js:220",
-   "game/js/prop-models.js:349",
-   "game/js/prop-models.js:996",
+   "game/js/prop-models.js:233",
+   "game/js/prop-models.js:362",
+   "game/js/prop-models.js:1220",
+   "game/js/prop-models.js:1582",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
    "game/js/walk-view-gl.js:732"
@@ -1163,7 +1164,7 @@
   "brick": [
    "game/js/logic/wall-ramp.js:40",
    "game/js/logic/wall-ramp.js:58",
-   "game/js/prop-models.js:209",
+   "game/js/prop-models.js:222",
    "game/js/structures.js:7",
    "game/js/structures.js:250",
    "game/js/structures.js:251",
@@ -1197,8 +1198,8 @@
    "game/js/walk/prop-look.js:65",
    "game/js/walk/prop-look.js:418",
    "game/js/walk/sprites.js:940",
-   "game/js/world-bowl.js:1737",
-   "game/js/world-bowl.js:1767"
+   "game/js/world-bowl.js:1754",
+   "game/js/world-bowl.js:1784"
   ],
   "cart": [
    "game/js/audio/nature-player.js:243"
@@ -1376,7 +1377,7 @@
   ],
   "globe": [
    "game/js/boot.js:139",
-   "game/js/world-bowl.js:4243"
+   "game/js/world-bowl.js:4260"
   ],
   "goggles": [
    "game/js/logic/figure-kit.js:604"
@@ -1415,7 +1416,7 @@
    "game/js/walk/effects.js:744",
    "game/js/walk/effects.js:854",
    "game/js/walk/fountains-weather.js:602",
-   "game/js/world-bowl.js:4282"
+   "game/js/world-bowl.js:4299"
   ],
   "moon": [
    "game/js/battle.js:643",
@@ -1427,7 +1428,7 @@
    "game/js/logic/bowl-things.js:139",
    "game/js/logic/bowl-things.js:154",
    "game/js/logic/bowl-things.js:156",
-   "game/js/world-bowl.js:1538"
+   "game/js/world-bowl.js:1539"
   ],
   "paper": [
    "game/js/opening-fall.js:971"
