@@ -47,6 +47,7 @@ import {
   setFinishProgramCompile,
   setMakeNormalMap,
   setRunNormalMapJobs,
+  uploadQueue,
 } from './engine/webgl.js';
 import {
   drawDepthOfField,
@@ -90,7 +91,9 @@ import {
   setDrawSolidProps,
   solidPropState,
 } from './solid-props.js';
+import { propMeshReport } from './prop-meshes.js';
 import { drawPropModels, setDrawPropModels } from './prop-models.js';
+import { placeWarmReport } from './walk/place-warm.js';
 import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
 import { worldBillies } from './world-billies.js';
 import { seamlessWorld } from './seamless-world.js';
@@ -178,7 +181,9 @@ Object.defineProperties(GAME, {
   paintWorkerState: { get: () => paintWorkerState },
   peopleReport: { get: () => peopleReport },
   personBattleFrames: { get: () => personBattleFrames, set: setPersonBattleFrames },
+  placeWarmReport: { get: () => placeWarmReport },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },
+  propMeshReport: { get: () => propMeshReport },
   ranchSkew: { get: () => ranchSkew },
   reflectionPass: { get: () => reflectionPass, set: setReflectionPass },
   render: { get: () => render, set: setRender },
@@ -206,6 +211,7 @@ Object.defineProperties(GAME, {
   updateFolk: { get: () => updateFolk, set: setUpdateFolk },
   updateNearRing: { get: () => updateNearRing, set: setUpdateNearRing },
   updatePlayer: { get: () => updatePlayer, set: setUpdatePlayer },
+  uploadQueue: { get: () => uploadQueue },
   userFps: { get: () => userFps },
   walkRenderer: { get: () => walkRenderer },
   walkView: { get: () => walkView },

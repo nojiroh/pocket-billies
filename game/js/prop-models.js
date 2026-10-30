@@ -48,7 +48,7 @@ import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
 import { lampLit, modelWindowLight } from './walk/lighting.js';
 import { BUILDING_SHADERS, bindBuildingNormals, buildingArt, buildingTextureGrid } from './buildings.js';
-import { propMeshGet } from './prop-meshes.js';
+import { propMeshAhead, propMeshGet } from './prop-meshes.js';
 /* eslint-disable no-func-assign */
 expose({
   GLASS_GLSL: [() => GLASS_GLSL],
@@ -126,12 +126,14 @@ expose({
   propModelImageItems: [() => propModelImageItems, v => ((propModelImageItems = v), provide({ propModelImageItems }))],
   propModelInstanceValues: [() => propModelInstanceValues, v => (propModelInstanceValues = v)],
   propModelMesh: [() => propModelMesh, v => ((propModelMesh = v), provide({ propModelMesh }))],
+  propModelRecipe: [() => propModelRecipe, v => (propModelRecipe = v)],
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
   propModelSolidShaders: [
     () => propModelSolidShaders,
     v => ((propModelSolidShaders = v), provide({ propModelSolidShaders })),
   ],
   propModelState: [() => propModelState],
+  propModelWarm: [() => propModelWarm, v => (propModelWarm = v)],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
   setItemSmear: [() => setItemSmear, v => (setItemSmear = v)],
   setItemSpin: [() => setItemSpin, v => (setItemSpin = v)],
@@ -1136,6 +1138,35 @@ function swappedRecipe(path, rec, swap) {
   SWAPPED_RECIPES.set(path, { src: rec, rec: out });
   return out;
 }
+/* a placed prop's model recipe and the path its mesh is kept by: [rec (null while it loads), path] */
+function propModelRecipe(p, M) {
+  const spec = M.model;
+  let rec, path;
+  if (typeof spec === 'object') {
+    rec = spec;
+    path = 'inline:' + p.k + '#' + (M.voxV || 0);
+  } else {
+    rec = loadPropModelRecipe(spec);
+    path = spec;
+  }
+  /* phase 09 batch 1: a variant that swaps colours or pictures (an autumn oak: the same trunk, other leaves) */
+  if (rec && M.swap) {
+    path += '#' + (M._vk ?? JSON.stringify(M.swap));
+    rec = swappedRecipe(path, rec, M.swap);
+  }
+  return [rec, path];
+}
+/** FL-4b (quality.placeWarm): a prop of the next place has its low-poly mesh asked for ahead on the helper thread
+ * (quality.meshWorker; prop-meshes.js keeps it until the prop is drawn). False: nothing to do, or its recipe still
+ * loading (asked for now; try again later: null) */
+export function propModelWarm(p, M) {
+  if (!propModelsOn() || !M || !M.model || (p && p.model === 'card') || !engineSetting('quality', 'meshWorker'))
+    return false;
+  const [rec, path] = propModelRecipe(p, M);
+  if (!rec) return null;
+  if (rec.kind === 'mesh' || !lowPolyOn(rec) || propModelState.meshes.has(path)) return false;
+  return propMeshAhead(path, rec);
+}
 /* tag an item that draws as voxels (gatherFrameItems calls this): the sprite and the solid-prop body stand aside */
 function tagPropModel(it) {
   if (
@@ -1148,20 +1179,7 @@ function tagPropModel(it) {
     (it.p && it.p.model === 'card')
   )
     return;
-  const spec = it.M.model;
-  let rec, path;
-  if (typeof spec === 'object') {
-    rec = spec;
-    path = 'inline:' + it.p.k + '#' + (it.M.voxV || 0);
-  } else {
-    rec = loadPropModelRecipe(spec);
-    path = spec;
-  }
-  /* phase 09 batch 1: a variant that swaps colours or pictures (an autumn oak: the same trunk, other leaves) */
-  if (rec && it.M.swap) {
-    path += '#' + (it.M._vk ?? JSON.stringify(it.M.swap));
-    rec = swappedRecipe(path, rec, it.M.swap);
-  }
+  const [rec, path] = propModelRecipe(it.p, it.M);
   const R = voxelResolution() + (engineSetting('world', 'voxelLowPoly') ? 1000 : 0);
   if (propModelState.res !== R) {
     if (propModelState.res) flushPropModelMeshes();

@@ -207,6 +207,14 @@ def main():
         lk = gm.get('linkMs') or {}
         pairs = [f"{k} {lk[k]}" for k in ('ground', 'groundS', 'voxI', 'voxIS', 'mdlI', 'mdlIS') if k in lk]
         if pairs: print(f"  program links (waited, from start, ms): {'; '.join(pairs)}")
+        # FL-4b: the upload queue, the model meshes' helper thread and the next place's warm-up (each behind a switch)
+        up, me, wm = gm.get('uploads') or {}, gm.get('meshes') or {}, gm.get('warm') or {}
+        if up.get('asked'):
+            print(f"  pictures from bitmaps: {up.get('bitmaps')} of {up.get('asked')} asked; held for a later frame {up.get('held')}; failed {up.get('failed')}")
+        if me.get('builds') or me.get('page') or me.get('off'):
+            print(f"  model meshes: {me.get('builds')} on the helper ({me.get('ms')} ms there), {me.get('page')} on the page ({me.get('pageMs')} ms)" + (f"; off: {me['off']}" if me.get('off') else ''))
+        if wm.get('views'):
+            print(f"  next place warmed: {wm.get('done')} of {wm.get('views')} views, {wm.get('pics')} pictures, {wm.get('meshes')} meshes, {wm.get('ms')} ms")
 
     samples = d.get('samples') or []
     peak = {}

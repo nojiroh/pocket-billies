@@ -119,14 +119,14 @@ export function propMeshGet(path, rec) {
   return D;
 }
 /** FL-4b (quality.placeWarm): a mesh asked for ahead (the next place's), unless built, under way or kept already */
-function propMeshAhead(path, rec) {
+export function propMeshAhead(path, rec) {
   const M = propMeshes;
   if (M.done.has(path) || (M.jobs.get(path) || {}).rec === rec || !propMeshWorker()) return false;
   propMeshGet(path, rec);
   return true;
 }
 /** the debug log's counts */
-function propMeshReport() {
+export function propMeshReport() {
   const M = propMeshes;
   return {
     off: M.off || '',

@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:183",
-    "game/js/prop-models.js:1789",
+    "game/js/prop-models.js:1807",
     "game/js/walk-view.js:795"
    ]
   },
@@ -1138,8 +1138,8 @@
   ],
   "barrel": [
    "game/js/logic/low-poly.js:535",
-   "game/js/prop-models.js:239",
-   "game/js/prop-models.js:423",
+   "game/js/prop-models.js:241",
+   "game/js/prop-models.js:425",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1164,16 +1164,16 @@
    "game/js/logic/low-poly.js:706",
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
-   "game/js/prop-models.js:235",
-   "game/js/prop-models.js:350",
+   "game/js/prop-models.js:237",
+   "game/js/prop-models.js:352",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1924",
-   "game/js/walk-view-gl.js:878"
+   "game/js/walk-view-gl.js:882"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
    "game/js/logic/wall-ramp.js:58",
-   "game/js/prop-models.js:224",
+   "game/js/prop-models.js:226",
    "game/js/structures.js:7",
    "game/js/structures.js:250",
    "game/js/structures.js:251",
@@ -1452,7 +1452,7 @@
    "game/js/battle-stage.js:2532"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:825",
+   "game/js/walk-view-gl.js:829",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1493,7 +1493,7 @@
   ],
   "ring": [
    "game/js/battle-anim-run.js:185",
-   "game/js/engine/webgl.js:823",
+   "game/js/engine/webgl.js:824",
    "game/js/walk/map-cache.js:90",
    "game/js/walk/map-cache.js:561"
   ],
@@ -1609,8 +1609,8 @@
    "game/js/workshop.js:102"
   ],
   "window": [
-   "game/js/debug-log.js:951",
-   "game/js/seamless-world.js:1196",
+   "game/js/debug-log.js:953",
+   "game/js/seamless-world.js:1197",
    "game/js/walk-control.js:1031",
    "game/js/walk-control.js:1045",
    "game/js/walk/effects.js:444",

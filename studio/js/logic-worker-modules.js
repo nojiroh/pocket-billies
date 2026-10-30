@@ -93,6 +93,8 @@ import '../../game/js/logic/kit-shapes.js';
 import '../../game/js/logic/lens-focus.js';
 import '../../game/js/logic/line-markup.js';
 import '../../game/js/logic/lite-tile.js';
+import '../../game/js/logic/load-budget.js';
+import '../../game/js/logic/low-poly.js';
 import '../../game/js/logic/mapgen.js';
 import '../../game/js/logic/marks.js';
 import '../../game/js/logic/messages.js';

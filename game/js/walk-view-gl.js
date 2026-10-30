@@ -23,6 +23,7 @@ import {
   festivalArrive,
   lifeStep,
   noWebGL,
+  placeWarmWork,
   propModelShaders,
   propModelSolidShaders,
   propModelState,
@@ -633,6 +634,9 @@ function drawWalkFrame(ts, dtm) {
   groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   /* the crossing hitch (2026-10-28): the next view's walking grid, built ahead in what is left (walk-view.js) */
   navPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
+  /* FL-4b (quality.placeWarm): then the next place's pictures and models, only in what is left */
+  if (!walkRenderer.bt && typeof placeWarmWork === 'function')
+    placeWarmWork(Math.min(PREP_BUDGET_MS, frameBudgetRemaining()));
   /* FL-1a: the one-off jobs' time (above, and the ground's, the grass's and the near ring's below) is left out of
      the work the automatic quality reads: lowering the quality doesn't make them quicker */
   oneOffMs = performance.now() - w0;

@@ -98,6 +98,7 @@ expose({
   textureFromData: [() => textureFromData, v => (textureFromData = v)],
   trackTexture: [() => trackTexture, v => (trackTexture = v)],
   trimTextures: [() => trimTextures, v => (trimTextures = v)],
+  uploadAhead: [() => uploadAhead, v => (uploadAhead = v)],
   uploadMesh: [() => uploadMesh, v => (uploadMesh = v)],
   uploadQueue: [() => uploadQueue],
   watchContextLoss: [() => watchContextLoss, v => (watchContextLoss = v)],
@@ -1090,7 +1091,7 @@ export function imageTexture(im, o = {}) {
    (createImageBitmap: its decoding and unpacking leave the frame); once it is in, the upload takes it, the first of a
    tick always, the rest while the frame's one-off budget lasts (walk/quality-cull.js frameBudgetLeft; behind a loading
    screen all). Canvases, redrawn pictures and a browser without createImageBitmap upload as before. */
-const uploadQueue = {
+export const uploadQueue = {
   /** picture -> { bm: its bitmap once made, gl: the context it was asked on, bad: it couldn't be made } */
   wait: new Map(),
   /** uploads this tick and their time (ms), reset each tick (gpuFrame) */
@@ -1113,6 +1114,22 @@ const uploadQueue = {
     return this.onV;
   },
 };
+/** FL-4b (quality.placeWarm): a picture the next place shows unpacked ahead (its bitmap made with the upload queue
+ * on, else the browser's own decode), so its first upload there is quick; nothing goes to the card yet. False when
+ * there is nothing to do (on the card, under way, or too many waiting). */
+export function uploadAhead(im) {
+  if (!im || gpuState.tex.has(im) || typeof HTMLImageElement === 'undefined' || !(im instanceof HTMLImageElement))
+    return false;
+  if (uploadQueue.on()) {
+    if (uploadQueue.wait.has(im) || uploadQueue.wait.size >= 128) return false;
+    queuedUploadSource(im);
+    return true;
+  }
+  if (im.__dec || typeof im.decode !== 'function') return false;
+  im.__dec = 1;
+  im.decode().catch(() => {});
+  return true;
+}
 /** what to upload for a picture now: its bitmap, the picture itself (no bitmap can be made for it), or null (wait) */
 function queuedUploadSource(im) {
   if (typeof HTMLImageElement === 'undefined' || !(im instanceof HTMLImageElement)) return im;
@@ -1129,7 +1146,7 @@ function queuedUploadSource(im) {
     Q.wait.set(im, w);
     Q.asked++;
     /* the oldest asked for go if many wait (a picture never asked for again keeps no bitmap for long) */
-    if (Q.wait.size > 512) {
+    if (Q.wait.size > 192) {
       const [k0, w0] = Q.wait.entries().next().value;
       if (w0.bm && w0.bm.close) w0.bm.close();
       Q.wait.delete(k0);
