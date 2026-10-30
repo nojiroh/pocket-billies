@@ -9,9 +9,9 @@ speed.
     python3 tools/look-train-ride.py depart carriage    # some parts: depart, carriage, won, lost
     python3 tools/look-train-ride.py --train=train_highland --out=DIR
     python3 tools/look-train-ride.py depart --hours=12.5,19.6,22.5 --only=lift,dash   # AS-1: at these hours, these moments
-    python3 tools/look-train-ride.py --windows   # AS-1: the windows test (exit 1 when a window changes during a ride)
+    python3 tools/look-train-ride.py --windows [--step=600]   # AS-1: the windows test (exit 1 when a window changes during a ride)
 
-AS-1's windows test steps through both rides (every 200 ms, held moments, at night with the window light on) and reads
+AS-1's windows test steps through both rides (every 200 ms or --step, held moments, at night with the window light on) and reads
 back what each moment's windows were (walk/lighting.js modelWindowLight keeps [lit bits, colour seed] on the ride's
 placement): every moment of a ride must have the same. It also counts the colour seeds the old rule (by where the train
 was) would have given, for the notes. Results in OUT/windows.json.
@@ -32,6 +32,7 @@ PARTS = [a for a in ARGS if not a.startswith('--')] or ['depart', 'carriage', 'w
 HOURS = [float(h) for h in next((a.split('=', 1)[1] for a in ARGS if a.startswith('--hours=')), '12.5').split(',')]
 ONLY = next((a.split('=', 1)[1].split(',') for a in ARGS if a.startswith('--only=')), None)
 WINDOWS = '--windows' in ARGS
+STEP = int(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--step=')), '200'))
 # the moments (ms into the ride, train-ride.js DEPART and HOME) and what each shows
 DEPART = [(400, 'glide'), (1800, 'glide-low'), (3000, 'board-street'), (4000, 'board-steps'), (5000, 'board-platform'),
           (6600, 'lift'), (7600, 'lift-high'), (8500, 'turn'), (9600, 'dash'), (10200, 'into-the-portal')]
@@ -83,7 +84,7 @@ def windows_test(pg):
         pg.evaluate(f"trainRide.hold=0;{start};0")
         CF.until(pg, '!!trainRide.W', 20)
         seen, old = [], set()
-        for ms in range(0, total, 200):
+        for ms in range(0, total, STEP):
             pg.evaluate(f'trainRide.hold={ms};0')
             settle(pg, 2)
             w = pg.evaluate("(()=>{const p=trainRide.W&&trainRide.W.train;if(!p)return null;"
@@ -91,6 +92,7 @@ def windows_test(pg):
             if not w: continue
             seen.append([ms, w['win']])
             old.add(w['old'])
+            if len(seen) % 10 == 1: print(tag, ms, w['win'], flush=True)
         wins = {json.dumps(v) for _, v in seen if v}
         drawn = sum(1 for _, v in seen if v)
         ok = len(wins) == 1 and drawn > len(seen) // 2
