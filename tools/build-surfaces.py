@@ -33,6 +33,9 @@ build-airship's --force starts again from detail-a04.png, three rows high).
 Writes
   game/art/scene/build/detail-a04b.png          the sheet, 512 x 256 (rows one to three unchanged)
   game/art/scene/build/detail-a04b-height.png   the height map, 512 x 256
+  game/art/scene/build/detail-a04b-normal.png   BD-2b: the normal sheet (`normal_sheet` of the height map, RGB:
+                                                x across the face, y up it, z out of it, each 0.5-centred), which
+                                                the model shader reads (buildings.js `bldBump`, scenery.buildArt.normal)
   validation/build-surfaces/contact.png         every cell three ways: the sheet, coloured as a building would be;
                                                 the height map; lit from the upper left by `normal_sheet`
 """
@@ -46,6 +49,7 @@ ROOT = Path(__file__).resolve().parent.parent
 BUILD = ROOT / 'game' / 'art' / 'scene' / 'build'
 SHEET = BUILD / 'detail-a04b.png'
 HEIGHT = BUILD / 'detail-a04b-height.png'
+NORMAL = BUILD / 'detail-a04b-normal.png'
 OUT = ROOT / 'validation' / 'build-surfaces'
 N = 64        # a cell, in pixels: 2 m
 COLS = 8
@@ -378,6 +382,11 @@ def normal_sheet(height, strength=2.0):
     return out
 
 
+def normal_rgb(height):
+    """BD-2b: the normal sheet as the game reads it, 8 bits a channel (0.5 -> 128)"""
+    return np.clip(np.round((normal_sheet(height) * 0.5 + 0.5) * 255), 0, 255).astype(np.uint8)
+
+
 # ---------------------------------------------------------------- the contact picture
 def ramp(col, t):
     """buildings.js rampC, 0-1 colours"""
@@ -433,14 +442,18 @@ def main():
     if '--check' in sys.argv:
         on = np.array(Image.open(SHEET).convert('RGBA'))
         hon = np.array(Image.open(HEIGHT).convert('L')) if HEIGHT.exists() else None
-        ok = on.shape == sheet.shape and (on == sheet).all() and hon is not None and (hon == height).all()
+        non = np.array(Image.open(NORMAL).convert('RGB')) if NORMAL.exists() else None
+        ok = (on.shape == sheet.shape and (on == sheet).all() and hon is not None and (hon == height).all()
+              and non is not None and (non == normal_rgb(height)).all())
         print('build-surfaces: the files match' if ok else 'build-surfaces: the files differ from the tool')
         sys.exit(0 if ok else 1)
     Image.fromarray(sheet, 'RGBA').save(SHEET, optimize=True)
     Image.fromarray(height, 'L').save(HEIGHT, optimize=True)
+    Image.fromarray(normal_rgb(height), 'RGB').save(NORMAL, optimize=True)
     OUT.mkdir(parents=True, exist_ok=True)
     contact(sheet, height).save(OUT / 'contact.png')
     print(f'wrote {SHEET.relative_to(ROOT)} {sheet.shape[1]}x{sheet.shape[0]}, {HEIGHT.relative_to(ROOT)}, '
+          f'{NORMAL.relative_to(ROOT)}, '
           f'{(OUT / "contact.png").relative_to(ROOT)}')
 
 

@@ -23,7 +23,7 @@
   },
   {
    "p": "scene/build/detail-a04b-height.png",
-   "why": "the building sheet's height map (tools/build-surfaces.py, BD-2a); BD-2b makes the normal sheet from it"
+   "why": "the building sheet's height map (tools/build-surfaces.py, BD-2a): the input the normal sheet detail-a04b-normal.png is painted from"
   }
  ]
 }
