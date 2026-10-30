@@ -61,7 +61,18 @@ its own switch, **off** until the owner's phone run. No tag (the track's tag com
   pictures drawn 301 → 295 (few trees past 42 m from the square), 0 late compiles. Pictures with the world's clock
   stopped: ground in tiles on/on 5.14% of pixels apart (stall awnings and townsfolk change on their own), on/off
   4.10%, off/on 2.85%: the same ground, no holes (looked at); far trees off/on 0.15%, merged glow 0.26%.
-- Verified (in progress): lint, types, format, modules clean; unit tests 2,533 of 2,535 before the two fixes (both fixed; the third, the 1,000-maps timing test beside a browser, as in FL-5a); check-perf --only=copperleaf no problems (290-314 draws as shipped, effects 5-8); check-look-trades every gate. Baseline at the round's start (ee9c4be8, a worktree, 45 pictures, 2,903 s, 38 of 42: RL-8's crossing, room light, walking out of the lab, battle music's drums).
+- Verified: lint, types, format, modules clean; unit tests 2,542 of 2,542 after merging FL-4b (before: the two this
+  change broke, the Studio worker's module list and the medium-precision list, fixed; the 1,000-maps timing test
+  failed once beside a browser, as in FL-5a); smoke 7 of 7 (288 s, after the merge); `check-perf.py --only=copperleaf`
+  no problems (290-314 draws as shipped, effects 5-8); `check-draw-order.py` every gate (pictures on/off 0.34%, on/on
+  0.10%); `check-look-trades.py` every gate. Full quick check 37 of 42 (2,509 s) against a baseline made at the
+  round's start (ee9c4be8, in a worktree, 45 pictures, 2,903 s, 38 of 42: RL-8's crossing, room light, walking out of
+  the lab, battle music's drums). Here the same three fail but the drums (which passed), plus RT-2's route trainers
+  ("the pair talked but no battle started") and Granny Juniper ("didn't say anything"), both passing alone (131 s). 6
+  pictures over the threshold (battle-rain, phone-crash-pick, phone-mast, phone-run-sheet, props-lowpoly, room-lab;
+  every switch here off): props-lowpoly differs at the round's start commit against its own baseline too (another
+  spot of the scene), and alone room-lab matched. FL-4b found my four debug-menu buttons had no `case` labels and
+  added them in its merge (1f9a2c84): checked.
 - Next: round 5's other lane, FL-4b, was still running when this entry was written, so it is round 5's last lane and
   starts round 6 (FL-7, the close-out) only once the owner's phone run with the round 4-5 switches has reported.
 - The owner's phone results relayed during this session (the "Open PRs merge" session, 2026-10-30 about 12:40, main at
