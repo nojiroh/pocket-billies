@@ -261,11 +261,22 @@ debugLog.ctx = () => {
       }
       /* FL-5a: the draw order for tile GPUs (quality.drawOrder) on this frame, and the models it drew first */
       if (GAME.walkRenderer.dOrder) c.dord = [1, GAME.walkRenderer.solidModels || 0];
+      /* FL-4b: the one-off work's budget this frame when it follows the slot (quality.slotBudget), ms */
+      if (GAME.walkRenderer.budSlot) c.bud = Math.round(GAME.walkRenderer.budSlot * 10) / 10;
       /* FL-5a: frames that kept the old ground while the new one was built in slices (quality.groundSlice) */
       if (GAME.walkRenderer.groundWaited) {
         c.gwt = GAME.walkRenderer.groundWaited;
         GAME.walkRenderer.groundWaited = 0;
       }
+      /* FL-5b: the far shadow map's size this frame (quality.phoneShadow: 2048 on a phone), the ground's tiles
+         (quality.groundTiles: [scene draws, its tiles drawn, asked, shadow draws, their tiles drawn, asked]) and
+         the phone's merged glow (quality.postMerge) */
+      if (GAME.walkRenderer.farRes) c.fsm = GAME.walkRenderer.farRes;
+      if (GAME.walkRenderer.gtl) {
+        c.gtl = GAME.walkRenderer.gtl.slice();
+        GAME.walkRenderer.gtl = null;
+      }
+      if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.postMerged) c.pmg = 1;
       /* phase 20: the point lights in the frame, and how many of them cast a shadow map */
       const X = GAME.walkRenderer.X;
       if (X && X.lights) c.lit = [X.lights.length, (X.lampSh || []).length];
@@ -1269,6 +1280,20 @@ debugLog.more = () => {
           /* FL-5a: the programs' links, [waited ms, ms from start], by name (all of them: the draw order's variants
              groundS, voxIS, mdlIS beside ground, voxI, mdlI) */
           linkMs: GAME.gpuState.linkMs || {},
+          /* FL-4b: the upload queue (quality.uploadQueue: bitmaps asked for, uploaded from one, held for a later
+             frame, failed), the model meshes' helper thread (quality.meshWorker) and the next place's warm-up
+             (quality.placeWarm). Counts only */
+          uploads:
+            typeof GAME.uploadQueue !== 'undefined'
+              ? {
+                  asked: GAME.uploadQueue.asked,
+                  bitmaps: GAME.uploadQueue.bitmaps,
+                  held: GAME.uploadQueue.held,
+                  failed: GAME.uploadQueue.failed,
+                }
+              : null,
+          meshes: typeof GAME.propMeshReport === 'function' ? GAME.propMeshReport() : null,
+          warm: typeof GAME.placeWarmReport === 'function' ? GAME.placeWarmReport() : null,
         }
       : null
   );

@@ -8,8 +8,10 @@ import { expose } from '../test-globals.js';
 import {
   artCacheVersion,
   environment,
+  frameBudgetLeft,
   onGlContextRestored,
   provide,
+  textureTrimOrder,
   walkRenderer,
   worldBowlContextRestored,
 } from '../hooks.js';
@@ -87,6 +89,7 @@ expose({
   pollGpuTimers: [() => pollGpuTimers, v => (pollGpuTimers = v)],
   pollPendingPrograms: [() => pollPendingPrograms, v => (pollPendingPrograms = v)],
   precompilePrograms: [() => precompilePrograms, v => (precompilePrograms = v)],
+  queuedUploadSource: [() => queuedUploadSource, v => (queuedUploadSource = v)],
   renderTarget: [() => renderTarget, v => (renderTarget = v)],
   runNormalMapJobs: [() => runNormalMapJobs, v => setRunNormalMapJobs(v)],
   setTextureParams: [() => setTextureParams, v => (setTextureParams = v)],
@@ -95,7 +98,9 @@ expose({
   textureFromData: [() => textureFromData, v => (textureFromData = v)],
   trackTexture: [() => trackTexture, v => (trackTexture = v)],
   trimTextures: [() => trimTextures, v => (trimTextures = v)],
+  uploadAhead: [() => uploadAhead, v => (uploadAhead = v)],
   uploadMesh: [() => uploadMesh, v => (uploadMesh = v)],
+  uploadQueue: [() => uploadQueue],
   watchContextLoss: [() => watchContextLoss, v => (watchContextLoss = v)],
   webgl2Supported: [() => webgl2Supported, v => (webgl2Supported = v)],
   windBendAt: [() => windBendAt, v => (windBendAt = v)],
@@ -941,6 +946,18 @@ function gpuFrame() {
   gpuRes.fr++;
   const R = gpuRes.retired;
   while (R.length && R[0][0] <= gpuRes.fr) gpuFree(R.shift()[1]);
+  /* FL-4b: the tick's time (a picture's last use, quality.texAge) and its upload budget starts afresh
+     (quality.uploadQueue) */
+  const now = performance.now();
+  gpuState.now = now;
+  uploadQueue.n = 0;
+  uploadQueue.ms = 0;
+  /* FL-4b: with texAge the pictures over the cap are let go every 2 s on any screen (a battle too), not every 120
+     walk frames */
+  if (now - (gpuState.trimT || 0) > 2000) {
+    gpuState.trimT = now;
+    if (engineSetting('quality', 'texAge')) trimTextures();
+  }
   return true;
 }
 /* an owner's drop on a restore: forgets its handles (they died with the context) so it makes them again on next use */
@@ -1002,6 +1019,7 @@ export function imageTexture(im, o = {}) {
   let e = gpuState.tex.get(im);
   if (e && e.v === v && e.dv === dv) {
     e.u = gpuState.fr || 0;
+    e.ut = gpuState.now || 0;
     return e;
   }
   /* a canvas redrawn every frame (a billionaire mid-animation) carries a counter in __v: re-uploaded when it changes, no mipmaps or normal map */
@@ -1017,6 +1035,10 @@ export function imageTexture(im, o = {}) {
     gpuState.tex.set(im, ne);
     return ne;
   }
+  /* FL-4b (quality.uploadQueue): a picture's first upload waits for its bitmap (unpacked off the page) and for room
+     in the tick's budget; meanwhile the last version (an art change) or nothing (its picture shows a frame later) */
+  const bm = uploadQueue.on() ? queuedUploadSource(im) : im;
+  if (!bm) return e || null;
   const gl = gpuState.gl,
     w = im.naturalWidth || im.width,
     h = im.naturalHeight || im.height;
@@ -1027,7 +1049,11 @@ export function imageTexture(im, o = {}) {
   gpuSized(t, Math.round(w * h * 4 * 1.34));
   gl.bindTexture(gl.TEXTURE_2D, t);
   gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, bm);
+  if (bm !== im) {
+    uploadQueue.bitmaps++;
+    if (bm.close) bm.close();
+  }
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, o.repeat ? gl.NEAREST : gl.NEAREST_MIPMAP_LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   const wr = o.repeat ? gl.REPEAT : gl.CLAMP_TO_EDGE;
@@ -1045,15 +1071,111 @@ export function imageTexture(im, o = {}) {
     im,
     nDone: false,
     u: gpuState.fr || 0,
+    ut: gpuState.now || 0,
+    /* FL-4b (texAge): counted with a bump map only when one is made for it */
+    nn: !!(o.noNormal || im.noNormal),
     src,
     sw: w,
     sh: h,
   };
   gpuState.tex.set(im, ne);
   trackTexture(im, ne);
-  if (typeof debugLog !== 'undefined') debugLog.mark('uploading pictures', tU, performance.now());
+  const tE = performance.now();
+  uploadQueue.n++;
+  uploadQueue.ms += tE - tU;
+  if (typeof debugLog !== 'undefined') debugLog.mark('uploading pictures', tU, tE);
   if (!o.noNormal && !im.noNormal) gpuState.normQ.push(ne);
   return ne;
+}
+/* FL-4b: the upload queue (quality.uploadQueue). A picture (an <img>) is first made into a bitmap off the page
+   (createImageBitmap: its decoding and unpacking leave the frame); once it is in, the upload takes it, the first of a
+   tick always, the rest while the frame's one-off budget lasts (walk/quality-cull.js frameBudgetLeft; behind a loading
+   screen all). Canvases, redrawn pictures and a browser without createImageBitmap upload as before. */
+export const uploadQueue = {
+  /** picture -> { bm: its bitmap once made, gl: the context it was asked on, bad: it couldn't be made } */
+  wait: new Map(),
+  /** uploads this tick and their time (ms), reset each tick (gpuFrame) */
+  n: 0,
+  ms: 0,
+  /** counts for the debug log: bitmaps asked for, uploaded from a bitmap, held for a later tick, failed */
+  asked: 0,
+  bitmaps: 0,
+  held: 0,
+  failed: 0,
+  /** the switch, read at most once a tick */
+  onT: -1,
+  onV: false,
+  on() {
+    const t = gpuState.now || 0;
+    if (t !== this.onT) {
+      this.onT = t;
+      this.onV = !!engineSetting('quality', 'uploadQueue') && typeof createImageBitmap === 'function';
+    }
+    return this.onV;
+  },
+};
+/** FL-4b (quality.placeWarm): a picture the next place shows unpacked ahead (its bitmap made with the upload queue
+ * on, else the browser's own decode), so its first upload there is quick; nothing goes to the card yet. False when
+ * there is nothing to do (on the card, under way, or too many waiting). */
+export function uploadAhead(im) {
+  if (!im || gpuState.tex.has(im) || typeof HTMLImageElement === 'undefined' || !(im instanceof HTMLImageElement))
+    return false;
+  if (uploadQueue.on()) {
+    if (uploadQueue.wait.has(im) || uploadQueue.wait.size >= 128) return false;
+    queuedUploadSource(im);
+    return true;
+  }
+  if (im.__dec || typeof im.decode !== 'function') return false;
+  im.__dec = 1;
+  im.decode().catch(() => {});
+  return true;
+}
+/** what to upload for a picture now: its bitmap, the picture itself (no bitmap can be made for it), or null (wait) */
+function queuedUploadSource(im) {
+  if (typeof HTMLImageElement === 'undefined' || !(im instanceof HTMLImageElement)) return im;
+  const Q = uploadQueue,
+    gl = gpuState.gl;
+  let w = Q.wait.get(im);
+  if (w && w.gl !== gl) {
+    if (w.bm && w.bm.close) w.bm.close();
+    Q.wait.delete(im);
+    w = undefined;
+  }
+  if (!w) {
+    w = { bm: null, gl, bad: false };
+    Q.wait.set(im, w);
+    Q.asked++;
+    /* the oldest asked for go if many wait (a picture never asked for again keeps no bitmap for long) */
+    if (Q.wait.size > 192) {
+      const [k0, w0] = Q.wait.entries().next().value;
+      if (w0.bm && w0.bm.close) w0.bm.close();
+      Q.wait.delete(k0);
+    }
+    createImageBitmap(im, { premultiplyAlpha: 'none', colorSpaceConversion: 'default' })
+      .then(bm => {
+        if (Q.wait.get(im) === w && gpuState.gl === gl) w.bm = bm;
+        else if (bm.close) bm.close();
+      })
+      .catch(() => {
+        w.bad = true;
+        Q.failed++;
+      });
+    return null;
+  }
+  if (w.bad) {
+    Q.wait.delete(im);
+    return im;
+  }
+  if (!w.bm) return null;
+  const loading =
+    typeof document !== 'undefined' &&
+    (document.body.classList.contains('ld-on') || !!document.getElementById('runload'));
+  if (Q.n > 0 && !loading && !(typeof frameBudgetLeft === 'function' && frameBudgetLeft())) {
+    Q.held++;
+    return null;
+  }
+  Q.wait.delete(im);
+  return w.bm;
 }
 function applyAnisotropy() {
   const gl = gpuState.gl,
@@ -1561,7 +1683,10 @@ export function gpuPictureBytes(pick) {
 }
 function trackTexture(im, e) {
   const L = gpuState.texL || (gpuState.texL = new Map());
-  e.bytes = Math.round((e.sw || e.w || 1) * (e.sh || e.h || 1) * 4 * 1.34 * 2);
+  /* FL-4b (texAge): a picture without a bump map counted once (every picture was counted twice) */
+  e.bytes = Math.round(
+    (e.sw || e.w || 1) * (e.sh || e.h || 1) * 4 * 1.34 * (e.nn && engineSetting('quality', 'texAge') ? 1 : 2)
+  );
   if (!L.has(im)) gpuState.texB = (gpuState.texB || 0) + e.bytes;
   L.set(im, e);
 }
@@ -1573,7 +1698,10 @@ export function trimTextures(force) {
   if ((gpuState.texB || 0) <= cap) return 0;
   const gl = gpuState.gl,
     now = gpuState.fr || 0,
-    old = [...L.entries()].filter(([im, e]) => now - (e.u || 0) > 600).sort((a, b) => (a[1].u || 0) - (b[1].u || 0));
+    /* FL-4b (texAge): unused for 10 s by the clock (logic/load-budget.js textureTrimOrder), not 600 walk frames */
+    old = engineSetting('quality', 'texAge')
+      ? textureTrimOrder([...L.entries()], gpuState.now || performance.now())
+      : [...L.entries()].filter(([im, e]) => now - (e.u || 0) > 600).sort((a, b) => (a[1].u || 0) - (b[1].u || 0));
   let n = 0;
   for (const [im, e] of old) {
     if (gpuState.texB <= cap * 0.85) break;

@@ -43,6 +43,7 @@ import { smooth01 } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { isGroundPrepared, prepareMapGround } from './walk/map-cache.js';
 import { roomFloorReady } from './walk/ground-draw.js';
+import { placeWarmFor } from './walk/place-warm.js';
 import { lifeShift } from './ambient-life.js';
 import { shiftWorldBillies } from './world-billies.js';
 /* eslint-disable no-func-assign */
@@ -1818,7 +1819,8 @@ function seamlessPrepareAhead(now) {
   }
   if (!best) return;
   const id = 'w:' + mapIdAt(best.to) + '*';
-  if (seamlessViewReady(id)) return;
+  /* FL-4b (quality.placeWarm): ready to walk into, its pictures and models are readied next (walk/place-warm.js) */
+  if (seamlessViewReady(id)) return placeWarmFor(id);
   if (seamlessWorld.aheadFor !== id) {
     seamlessWorld.aheadFor = id;
     seamlessWorld.stats.ahead++;

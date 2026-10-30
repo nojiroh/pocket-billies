@@ -23,6 +23,7 @@ import {
   festivalArrive,
   lifeStep,
   noWebGL,
+  placeWarmWork,
   propModelShaders,
   propModelSolidShaders,
   propModelState,
@@ -119,6 +120,7 @@ import {
   cullItems,
   easedMood,
   frameBudgetRemaining,
+  frameBudgetStart,
   heatHaze,
   heatSources,
 } from './walk/quality-cull.js';
@@ -328,6 +330,7 @@ export function mountWalkView(cv, id, opt = {}) {
    dropped (it failed), or one still not ready after 30 s. */
 /* phase 20 R2 (D4): a phone, as the automatic quality has it (walk/quality-cull.js); the iPad is not one */
 const PHONE = typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent);
+provide({ PHONE }); /* to-module */
 let phoneStarted = false;
 const GROUND_SLICE_MS = 10; /* an urgent job gets twice this (groundPrepWork) */
 function groundBuiltBeforeShow(id, sc) {
@@ -623,7 +626,7 @@ function drawWalkFrame(ts, dtm) {
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
   /* LD-5: the one-off work's budget starts here (walk/quality-cull.js frameBudgetLeft) */
-  walkRenderer.budT = performance.now();
+  frameBudgetStart();
   runNormalMapJobs(walkView.warm ? 40 : 3);
   /* LD-2: behind a loading screen (the boot's, a run's) as many as fit in 12 ms a frame, so none is left for play */
   const loading = document.body.classList.contains('ld-on') || !!document.getElementById('runload');
@@ -632,6 +635,9 @@ function drawWalkFrame(ts, dtm) {
   groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   /* the crossing hitch (2026-10-28): the next view's walking grid, built ahead in what is left (walk-view.js) */
   navPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
+  /* FL-4b (quality.placeWarm): then the next place's pictures and models, only in what is left */
+  if (!walkRenderer.bt && typeof placeWarmWork === 'function')
+    placeWarmWork(Math.min(PREP_BUDGET_MS, frameBudgetRemaining()));
   /* FL-1a: the one-off jobs' time (above, and the ground's, the grass's and the near ring's below) is left out of
      the work the automatic quality reads: lowering the quality doesn't make them quicker */
   oneOffMs = performance.now() - w0;

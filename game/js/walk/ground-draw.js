@@ -4,7 +4,15 @@
    were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { paintGroundRect, provide, reducedMotion, waitForPaintWorker, worldBillies } from '../hooks.js';
+import {
+  groundCurveLift,
+  groundTileRuns,
+  paintGroundRect,
+  provide,
+  reducedMotion,
+  waitForPaintWorker,
+  worldBillies,
+} from '../hooks.js';
 import { clamp } from '../util.js';
 import { hexToRgb } from '../art.js';
 import {
@@ -23,7 +31,7 @@ import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { WALL_COLORS, biomeCliff, defaultWallMaterial, standingHeightAt, wallAtlasRows } from './heights.js';
 import { groundSolidShaders } from './walk-shaders.js';
-import { rockCircleOn, useWalkProgram, worldCurveDrop } from './draw-common.js';
+import { rockCircleOn, useWalkProgram, worldCurveArgs, worldCurveDrop } from './draw-common.js';
 import { setShoreUniforms } from './water-data.js';
 import { buildGroundMeshSteps } from './ground-mesh.js';
 import { freeMapCacheEntry, setNearRingUniforms } from './map-cache.js';
@@ -38,6 +46,8 @@ expose({
   GRASS_NO_TRAIL: [() => GRASS_NO_TRAIL],
   GRASS_PUSHER_BUFFER: [() => GRASS_PUSHER_BUFFER],
   GRASS_TRAIL_BUFFER: [() => GRASS_TRAIL_BUFFER],
+  GROUND_TILE_RUNS: [() => GROUND_TILE_RUNS],
+  GROUND_TILE_SHADOW: [() => GROUND_TILE_SHADOW],
   ROOM_FLOORS_KEPT: [() => ROOM_FLOORS_KEPT],
   ROOM_PICTURES: [() => ROOM_PICTURES],
   ROOM_PICTURES_PENDING: [() => ROOM_PICTURES_PENDING],
@@ -46,6 +56,7 @@ expose({
   drawGroundDepth: [() => drawGroundDepth, v => ((drawGroundDepth = v), provide({ drawGroundDepth }))],
   grassPushers: [() => grassPushers, v => (grassPushers = v)],
   grassTrail: [() => grassTrail, v => (grassTrail = v)],
+  groundTileDraw: [() => groundTileDraw, v => (groundTileDraw = v)],
   mapFlowers: [() => mapFlowers, v => (mapFlowers = v)],
   paintRoomFloor: [() => paintRoomFloor, v => (paintRoomFloor = v)],
   roomFloorOf: [() => roomFloorOf, v => ((roomFloorOf = v), provide({ roomFloorOf }))],
@@ -180,15 +191,17 @@ export function drawGround(C, X, part) {
   if (solid) {
     /* the floors, then the far land: the walls between them wait (4 bytes an index) */
     const [w0, w1] = W;
-    if (w0 > 0) gl.drawElements(gl.TRIANGLES, w0, gl.UNSIGNED_INT, 0);
-    if (M.n > w1) gl.drawElements(gl.TRIANGLES, M.n - w1, gl.UNSIGNED_INT, w1 * 4);
+    if (!groundTileDraw(M, C.vp, 5, true)) {
+      if (w0 > 0) gl.drawElements(gl.TRIANGLES, w0, gl.UNSIGNED_INT, 0);
+      if (M.n > w1) gl.drawElements(gl.TRIANGLES, M.n - w1, gl.UNSIGNED_INT, w1 * 4);
+    }
     walkRenderer.groundWallsLeft = w1 > w0 ? 1 : 0;
   } else if (part === 'walls') {
     const [w0, w1] = M.walls;
-    gl.drawElements(gl.TRIANGLES, w1 - w0, gl.UNSIGNED_INT, w0 * 4);
+    if (!groundTileDraw(M, C.vp, 2, true)) gl.drawElements(gl.TRIANGLES, w1 - w0, gl.UNSIGNED_INT, w0 * 4);
     gl.bindVertexArray(null);
     return;
-  } else gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
+  } else if (!groundTileDraw(M, C.vp, 7, true)) gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
   /* phase 08b: the room's own floor and walls where the place left its hole: the room's picture, no near ring, no
      shore, no shade from the place's ground */
   const RT = roomFloorOf(sc);
@@ -226,13 +239,51 @@ function roomFloorOf(sc) {
     T = RS && walkRenderer.roomFloors && walkRenderer.roomFloors.get(RS.id);
   return T && T.mesh ? T : null;
 }
-/* the ground and its walls into a depth map (the shadowG program in use): the place's with its hole, then the room's */
-function drawGroundDepth(p, sc) {
+/* ---------- FL-5b: the ground in 16 m tiles (quality.groundTiles) ----------
+   A mesh built with the switch on holds its indices in tile order (walk/ground-mesh.js, logic/ground-tiles.js); a pass
+   draws the tiles of the groups asked for (1 the floors, 2 the walls, 4 the far land) that its view matrix sees, the
+   neighbouring ones in one draw. False: nothing drawn here (no tiles, the switch off, no matrix), the caller draws as
+   before. walkRenderer.gtl, for the debug log and the gates: [the scene's draws, its tiles drawn, the tiles asked,
+   the shadow passes' draws, their tiles drawn, their tiles asked] (the shadow passes come before the scene's) */
+const GROUND_TILE_RUNS = [];
+const GROUND_TILE_SHADOW = [0, 0, 0];
+function groundTileDraw(M, vp, groups, scene) {
+  const T = M && M.tiles;
+  if (!T || !vp || !engineSetting('quality', 'groundTiles')) return false;
+  const gl = gpuState.gl,
+    ca = worldCurveArgs(),
+    r = groundTileRuns(T, vp, groups, o => groundCurveLift(T.box, o, ca), GROUND_TILE_RUNS),
+    R = r.runs;
+  for (let i = 0; i < R.length; i += 2) gl.drawElements(gl.TRIANGLES, R[i + 1], gl.UNSIGNED_INT, R[i] * 4);
+  const S = GROUND_TILE_SHADOW;
+  if (scene) {
+    const G = walkRenderer.gtl || (walkRenderer.gtl = [0, 0, 0, 0, 0, 0]);
+    if (groups !== 2) G.fill(0, 0, 3);
+    G[0] += R.length / 2;
+    G[1] += r.seen;
+    G[2] += r.tiles;
+    if (groups !== 2) {
+      G[3] = S[0];
+      G[4] = S[1];
+      G[5] = S[2];
+      S.fill(0);
+    }
+  } else {
+    S[0] += R.length / 2;
+    S[1] += r.seen;
+    S[2] += r.tiles;
+  }
+  return true;
+}
+/* the ground and its walls into a depth map (the shadowG program in use): the place's with its hole, then the room's.
+   FL-5b: vp, the map's view matrix: with quality.groundTiles only the tiles it sees */
+function drawGroundDepth(p, sc, vp) {
   const gl = gpuState.gl;
   if (p.U.uOrg) gl.uniform3f(p.U.uOrg, 0, 0, 0);
   if (p.U.uHole) gl.uniform4fv(p.U.uHole, roomHole(sc));
   gl.bindVertexArray(walkRenderer.mesh.vao);
-  gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
+  if (!groundTileDraw(walkRenderer.mesh, vp, 7, false))
+    gl.drawElements(gl.TRIANGLES, walkRenderer.mesh.n, gl.UNSIGNED_INT, 0);
   const RT = roomFloorOf(sc);
   if (RT) {
     const R = sc.roomRect;

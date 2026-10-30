@@ -225,6 +225,9 @@ export default [
       'studio/js/logic-worker-page.js',
       'game/js/figure-worker.js',
       'game/js/figure-worker-modules.js',
+      // FL-4b: the model meshes' helper thread (prop-meshes.js starts it)
+      'game/js/prop-mesh-worker.js',
+      'game/js/prop-mesh-worker-modules.js',
     ],
     languageOptions: { ecmaVersion: 'latest', sourceType: 'module', globals: globals.worker },
     rules: bugRules,

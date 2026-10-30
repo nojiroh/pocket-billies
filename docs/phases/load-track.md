@@ -225,6 +225,11 @@ check (LD-0), the full quick check at its end, a HANDOFF entry, tag `ld-N-done`.
   - Also fixed: `debugLog.hook` waits for `debug-log-names.js`. LD-0's early call could come first on a quick boot and
     log "no function render to wrap", which failed check-fast steps under two browsers.
   - Still left: model meshes in a worker, `createImageBitmap` and the upload queue, the next place's warm-up.
+  **Moved to the fluid track, 2026-10-30** (the owner's answer, docs/phases/fluid-track.md section 1): the one-off
+  budget sized from the paced slot, picture age by time, model meshes in a worker, `createImageBitmap` and the upload
+  queue, and the next place's warm-up are FL-4b's (round 5, on `track/fluid`), each behind its own switch, off until
+  the owner's phone run: `quality.slotBudget`, `texAge`, `uploadQueue`, `meshWorker`, `placeWarm` (FL-4b's HANDOFF
+  entry). The load track no longer plans them; the world map's terrain in a worker stays LD-5's (done above).
   **The crossing hitch, fixed 2026-10-28** on `claude/new-session-bcxme1` (the owner: "a hiccup moving from a route to
   another route"; their PC log: one frame of 3.2 s, one of 0.9 s, a 4.7 s hold, a walking grid in one frame at every
   seam). The day's water by the weather remakes only the views that show a changed place, the one on screen in the

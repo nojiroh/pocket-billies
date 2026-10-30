@@ -80,6 +80,7 @@ validation/load/
 validation/perf/
 validation/look-talk*/
 validation/check-draw-order/
+validation/check-look-trades/
 validation/assets-baseline/
 validation/look-halt/
 validation/as-2-*/

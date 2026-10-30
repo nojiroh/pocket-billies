@@ -6,7 +6,8 @@ import fs from 'node:fs';
 import { test } from 'node:test';
 
 await import('./walk-renderer.mjs');
-const { lowPolyFromRecipe } = await import('../../game/js/prop-models.js');
+await import('../../game/js/prop-models.js');
+const { lowPolyFromRecipe } = await import('../../game/js/logic/low-poly.js');
 const DIR = new URL('../../game/art/scene/next/models/', import.meta.url);
 const read = n => JSON.parse(fs.readFileSync(new URL(`${n}.json`, DIR), 'utf8'));
 const lean = r => Math.hypot(...((r.warp && r.warp.lean) || [0, 0]));
