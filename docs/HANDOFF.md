@@ -2,6 +2,89 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-6 - fluid UI - 2026-10-30
+Branch `track/fluid` (round 2 lane, beside FL-2b and FL-3a; FL-3a's and FL-2b's commits merged in). Plan approved by
+the owner's standing answer (fluid-track.md section 1). Code: the page's side (menus, bars, battle cards, minimap, Bag
+and Settings taps, the debug log's tap timing). No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + round 1). What differs from section 5 item 7 and section 6 FL-6:
+  - Item 8 is wrong: the voice font is Jersey 15 and prose is Oxanium (uiTheme.json `type`, written by the theme
+    sheet over tokens.css's Pixelify Sans), so the jersey preload is used; Chakra Petch and Tiny5 are the loader's.
+    No preload change.
+  - The scheduler floors every cap at 0.1 (frame-scheduler.js `Math.max(0.1, ...)`, not this lane's file): "frozen"
+    from walk-control.js is one frame at once, then one each 10 s. A true zero needs that line (FL-3b or FL-7).
+  - body.on-scene::before (the screen's gradient) paints under #dio (an earlier box at the same level), so it never
+    showed over the opaque canvas; left as it was.
+  - The bottom bar's blur is in the kit's shadow DOM (ui-run-kit.js `.glass`), reachable only with a `part`.
+  - talk.js (talk text on its own timer) is not in this lane: left for track/ui or FL-7.
+  - The battle's extra style pass came from battle-stage.js camApply writing the camera's transform in the frame
+    task, then the plates reading layout after it.
+- Changed:
+  - game/js/walk-control.js `cap()`: behind a full screen or a window the world is frozen (0.1: the rate change draws
+    the last frame at once). `worldMoving()` keeps today's rates (1 behind a screen, 20 behind a window) for: a window
+    with `modal({world: true})`, the debug menu, Settings' Display tab (the graphics dials show a change at once), a
+    picture the debug log waits for (`walkRenderer.snapReq`), a scene being played (`walkView.director`) and the
+    in-game tests (`selfTest.on`: their steps wait on frames). These are asked below.
+  - game/css/base.css: no filter transition on `#dio`; behind a screen the dim is `body::after`, black at 0.18 faded by
+    opacity (the same pixels as brightness(0.82): the Team screen's mean brightness 143.8 vs 144.1 before), the 0.8 px
+    blur a still filter on the frozen canvas.
+  - game/css/shell.css, game/js/ui-run-kit.js (`part="glass"` on the bar's glass, an addition for track/ui): on a phone
+    (the base.css phone query) while walking, the top bar and the bottom bar have no backdrop blur and a thicker fill
+    (`--hud-tint`: the surface colour at 88%).
+  - game/js/battle.js: the cards and plates are placed in a microtask after the battle frame (outside FL-3a's
+    `workOwn`, now near 0) and read no layout in it: their sizes, the strip's place and the dock's zoom come from a
+    ResizeObserver. The HP fill, its ghost and the XP fill are moved by `transform` (`--p`, battle-screen.css) inside
+    their frames; the two forced layouts in paintPlates (a new fighter's bar, the hit shake) wait two animation frames
+    instead. Battle text is typed on the frame loop ('type' task, the same 2 letters each 16 ms).
+  - game/js/ui-motion.js: `pbEnterRows` reads every row first and animates only the ones that start on screen;
+    `pbPatch(el, html)` changes a part in place (text, attributes, changed nodes; a kit element that differs is
+    replaced whole). game/js/bag.js (pocket and row taps) and game/js/settings-screen.js (`settingsRefresh`) use it
+    instead of a whole `#app` or sheet rebuild. game/css/guide.css: `content-visibility: auto` on the ledger's rows.
+  - game/js/minimap.js, shell.css: the picture is the tile and 24 px more each side, drawn 5 times a second and moved
+    under you by `transform` every frame (`minimapPan`, the 'minimapPan' task); you and north on a still canvas
+    (`.minimap-you`) drawn again only when you turn.
+  - game/js/debug-log.js (additions; with TD-4), tools/read-debug-log.py: the log's `ui`: `taps` (Event Timing, over
+    16 ms: touch to paint split into wait, handlers and paint, with the screen and what was tapped: a control's data-a,
+    never save data), `paint` (every tap's click to paint) and `longFrames` (rendering and style and layout time).
+  - tools/check-fluid-ui.py (new): this session's gates. tools/check-stalls.py: its window part opens a
+    `world: true` window (frames must come there) and the cap gates read "at most 1".
+- Not done: the bottom bar's shrink on transforms and the HUD glass beyond the tinted bars (asked below, section 7);
+  `.pbar` and `.u-hp` (Team, Bag, units) still animate `width` (their markup is written by files outside this lane;
+  the world is frozen behind them now); talk text; the font preloads (nothing to do).
+- For other lanes: frame-scheduler.js (FL-3b/FL-7): let a cap of 0 mean "not due" for a true freeze. FL-2b:
+  tools/test/model-shadows.test.mjs and spin-merge.test.mjs failed `format:check` here (411ba70b on the branch fixes
+  them). track/ui: `.pbar` and `.u-hp` to transforms; `part="glass"` on pb-nav-bar.
+- Risky: a window or screen that needs the world moving and isn't on the list now stands still (the game pauses
+  there); a check that waits for frames behind a window must open it with `world: true`. pbPatch keeps nodes, so a
+  row's running entrance stops if tapped mid-way, and a reflected attribute on a kit element makes it be replaced
+  each time (as before). content-visibility skips the ledger rows' paint off screen (their focus ring is clipped to
+  the row). The minimap's margin (24 px) holds about 5 m of walking between pictures at the default span.
+- Verified: lint, types, format (mine), modules, data, build clean; unit tests 2,442 of 2,443 (art-code-refs,
+  regenerated after; an earlier run's figures and 1,000-maps timing failures, run beside a browser, pass alone).
+  check-stalls: all 11 gates. check-fluid-ui: all 21 gates (frozen: 0 frames in 5 s behind a screen, 0 behind a
+  window; a battle's choosing phase: 0 layouts and 29 style passes in 28 frames, the camera's own transform write;
+  click to paint, software drawing: Bag pocket 126 ms, Settings tab 16 ms). Smoke 6 of 7 in 302 s beside another
+  browser check: the phone flow's walk "stopped drawing" (3 frames missed a 30 s wait); alone it passes (104 s).
+  check:ui: 73 pictures differ from the committed baseline on this tree and the same 73 on track/fluid without FL-6
+  (a stale baseline); the battle plates differed only by the gallery's XP fill, fixed (its inline width kept).
+  Full quick check: 39 of 42 (1,967 s); RL-8's Thicket Route crossing and room light fail as on the track's start
+  (round 1's entries), Battle music (drums timing) passes alone (44 s). Pictures: the walk on a phone (tinted bars,
+  the minimap gliding, the arrow centred), Team behind the dim (mean brightness 143.8 against 144.1 before), a
+  battle's plates (HP at 82/137) against the commit before FL-6 (the empty move menu headless is the same there).
+- Ask me before (section 7 and FL-6 item 1, not settled by section 1):
+  1. **Windows that keep the world moving.** Today (this session) these keep their old rates; every other window and
+     screen freezes. Options: (a) keep the list as it is; (b) freeze Settings' Display tab too (the dials' change
+     shows when you close it); (c) let these run at the set rate instead of 20. Recommendation: (a), and (b) once
+     FL-5b decides the phone's look trades.
+  2. **The bottom bar's shrink on transforms.** Recommendation (section 7): measure its style and layout time first;
+     the new `ui.longFrames.styleMs` in a phone log shows it.
+  3. **HUD glass beyond the tinted bars** (the 12 → 9 px phone blur fix, `prefers-reduced-transparency` clearing
+     every blur, an engine-made glass). Recommendation (section 7): the two fixes now, the engine glass later if the
+     tinted bars read flat on your phone.
+- Next: FL-2b finishes round 2; then round 3 (FL-3b, FL-4).
+- For the owner on the phone: open Team or a window from a walk: the world stops (one frame, then still) and the menu
+  scrolls smoothly; walking, the bars are tinted, not blurred; the minimap glides instead of stepping; tap around Bag
+  and Settings, then export the debug log: `ui.taps` and `ui.paint` give the tap-to-paint times.
+
 ### Fluid track FL-3a - the controller: aim at the set fps - 2026-10-30
 Branch `track/fluid` (round 2 lane, beside FL-2b and FL-6). Plan approved by the owner's standing answer
 (fluid-track.md section 1). Code: a new automatic-quality controller behind its own switch, **off** (section 6: a new

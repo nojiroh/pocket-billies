@@ -8,7 +8,7 @@ that is set. Research render layering online and other necessary. Are assets cur
 owner makes from that branch (docs/BRANCHES.md).
 
 **Status:** FL-0 done (2026-10-29). Round 1 (FL-1a, FL-1b, FL-2a at once) started 2026-10-29; FL-1a done (2026-10-30);
-FL-1b done (2026-10-30); FL-2a done (2026-10-30). Round 2 (FL-2b, FL-3a, FL-6) started 2026-10-30; FL-3a done (2026-10-30; the controller behind a switch, off). FL-0b (the
+FL-1b done (2026-10-30); FL-2a done (2026-10-30). Round 2 (FL-2b, FL-3a, FL-6) started 2026-10-30; FL-3a done (2026-10-30; the controller behind a switch, off); FL-6 done (2026-10-30; three questions for the owner in its entry). FL-0b (the
 owner's phone run) runs beside it.
 
 Before editing, every session checks the facts it relies on against main and says in its HANDOFF entry what differs.
