@@ -331,15 +331,15 @@ def inn():
           box(1.9, Dp - 0.6, z3 + 0.6, 0.6, 0.6, 0.08, STONE, 'stone', name='chimney cap'),
           cyl(1.9, Dp - 0.6, z3 + 0.68, 0.1, 0.2, COPPER, 'metal', sides=8, name='chimney pot')]
     M.smoke = (1.9, z3 + 1.2)
-    # the teacup sign and the INN board under it
+    # the teacup sign by the door; the INN board on the balcony rail
     L += teacup_sign(-1.25, -0.02, z1 - 0.7)
-    L += word_board(1.25, -0.06, z1 - 0.5, 'INN', '#7A4E34', '#F8E8B0', '#3A2418')
+    L += word_board(0.8, -1.0, z1 + 0.22, 'INN', '#7A4E34', '#F8E8B0', '#3A2418')  # hung on the balcony rail
     # C's showpieces: string lights from the balcony to a post by the tree; the blossom street tree
     L += string_lights((-1.6, -0.93, z1 + 0.7), (-2.75, -1.1, 2.4), 6, 0.22)
     L += string_lights((1.6, -0.93, z1 + 0.7), (2.75, -0.1, 2.0), 6, 0.2)
     L += [limb((2.75, -0.1, 0.2), (2.75, -0.1, 2.05), 0.03, DARK, 'metal', name='light post')]
     L += blossom_tree(-2.75, -1.1, 1.15)
-    L += LS.flower_box(0, -0.98, z1 + 0.2, 1.4, ['#F07090', '#F4D99A'])
+    L += LS.flower_box(-0.8, -0.98, z1 + 0.2, 1.1, ['#F07090', '#F4D99A'])
     # side and back windows
     for sx in (-1, 1):
         L += [box(sx * (W / 2 + 0.01), D, 0.9, 0.04, 0.8, 0.8, GLASS, glass=M.g(), name='side window')]
