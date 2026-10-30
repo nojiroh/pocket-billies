@@ -149,6 +149,11 @@ def main():
     h = d.get('hitches') or {}
     if h: print(f"Hitches over {h.get('overMs')} ms: {h.get('count')} in {h.get('frames')} frames, {num(h.get('totalMs'))} ms in all, "
                 f"worst {num(h.get('maxMs'))} ms; by size {h.get('by')}")
+    # FL-1b: frames over the set rate's slot (plus half a refresh), which the 36 ms line can't see at 60 fps
+    if h and 'missed' in h: print(f"Frames over the set rate's slot ({h.get('missedOverMs')} ms): {h.get('missed')}")
+    # FL-1b: the once-a-second getError's time (ms), from the samples that have it
+    ge = [s.get('glErr') for s in (d.get('samples') or []) if isinstance(s, dict) and isinstance(s.get('glErr'), (int, float))]
+    if ge: print(f"getError once a second: {len(ge)} samples, mean {sum(ge) / len(ge):.2f} ms, worst {max(ge):.2f} ms")
 
     # the full test's result: build() stores it as `bench` itself (TD-1); `bench.result` is kept for older logs
     bench = d.get('bench')
