@@ -67,7 +67,9 @@ path ships off until the owner's phone run); the world clock and the half rate's
   hold; levels kept and restored; the world clock's steps). Lint, types, modules, data, build clean; format clean on
   this lane's files (FL-2b's model-shadows and spin-merge tests, merged in mid-lane, are theirs to format); unit
   tests 2,443 of 2,443 (166 s) after merging FL-2b's commits; smoke 7 of 7 (428 s) before the merge; a headless page
-  with the controller on (Copperleaf, phone size): no errors. The full quick check's result follows below.
+  with the controller on (Copperleaf, phone size): no errors. Full quick check 38 of 42 (3,252 s, 2 workers): the
+  four problems are the four FL-1a met on the track's start (913720db): RL-8's crossing "view never showed", room
+  light, "walking out didn't bring the hamlet back", and Battle music's drums, which passed alone on rerun (54 s).
 - Ask me before (section 7, not settled by section 1; both kept as they are until you answer):
   - **Balanced vs Beautiful.** Today Beautiful aims at 60 at most (paceSlot of min(set, 60)) and Balanced at the set
     rate. Options: (a) one target for both, the set rate; the preset only orders the levers, Beautiful lowering the
