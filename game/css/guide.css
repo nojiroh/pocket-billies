@@ -224,6 +224,10 @@
 }
 .ledger li {
   border-bottom: 1px solid var(--rule);
+  /* FL-6: the ledger is the longest list (every Billie): rows off screen are skipped by layout and paint until they
+     scroll near, kept at their last size (a row is 64 px and its rule) */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 65px;
 }
 .ledger li:last-child {
   border-bottom: 0;

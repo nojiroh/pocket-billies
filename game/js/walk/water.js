@@ -25,13 +25,14 @@ import { walkData, walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from '../engine/settings.js';
 import { bindQuad, gpuState, gpuTexture, imageTexture, matrix4, renderTarget } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
-import { setSpriteUniforms, useWalkProgram } from './draw-common.js';
+import { setSpriteGeometry, spriteGeometry, useWalkProgram } from './draw-common.js';
 import { WATER_KIND_LOOKS, setFlowUniforms, setPixelWaterUniform, setShoreUniforms } from './water-data.js';
 import { computeFrustum, inFrustum } from './quality-cull.js';
 import { skyColors } from './sky.js';
 /* eslint-disable no-func-assign */
 expose({
   KIND_ROWS: [() => KIND_ROWS],
+  REFLECTION_GEOMETRY: [() => REFLECTION_GEOMETRY],
   REFLECTION_PICTURES: [() => REFLECTION_PICTURES],
   addRipple: [() => addRipple, v => ((addRipple = v), provide({ addRipple }))],
   addWakeRipple: [() => addWakeRipple, v => ((addWakeRipple = v), provide({ addWakeRipple }))],
@@ -103,7 +104,9 @@ function mirrorInView(F, it, L) {
   return inFrustum(F, it.x, 2 * L - cy, it.z, r);
 }
 /* phase 20: the reflection's pictures, kept from frame to frame */
-const REFLECTION_PICTURES = [];
+const REFLECTION_PICTURES = [],
+  /* FL-2a: one picture's geometry (walk/draw-common.js spriteGeometry), refilled for each */
+  REFLECTION_GEOMETRY = { uv: new Float32Array(4) };
 export function reflectionPass(items, C, rw, rh, X) {
   const gl = gpuState.gl,
     w = Math.max(32, rw >> 1),
@@ -141,7 +144,7 @@ export function reflectionPass(items, C, rw, rh, X) {
   gl.disable(gl.BLEND);
   /* alpha 0.2: near water by a summed table (a joined view can hold thousands of water tiles, and walking them all for
     every thing cost the iPad about 10 ms a frame), and only what shows in the water: its mirror image in view */
-  const SF = spriteFrame(C, X.sun),
+  const SF = spriteFrame(C, X.sun, X),
     FR = computeFrustum(C.vp),
     cut = engineSetting('quality', 'cull') ?? true,
     models = [],
@@ -181,7 +184,10 @@ export function reflectionPass(items, C, rw, rh, X) {
     gl.bindTexture(gl.TEXTURE_2D, T.t);
     gl.activeTexture(gl.TEXTURE1);
     gl.bindTexture(gl.TEXTURE_2D, T.n);
-    setSpriteUniforms(p, it);
+    /* FL-2a: a picture's rect of an atlas (it.im.uv, a figure's cell) and whether it is one, as in the main pass */
+    if (U.uFig) gl.uniform1f(U.uFig, it.im && it.im.figAtlas ? 1 : 0);
+    spriteGeometry(REFLECTION_GEOMETRY, it);
+    setSpriteGeometry(p, REFLECTION_GEOMETRY);
     gl.drawArrays(gl.TRIANGLES, 0, 6);
   }
   gpuTag(0);

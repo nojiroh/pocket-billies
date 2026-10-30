@@ -2,6 +2,605 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-4 - even frames: arrivals and crossings (with the load track) - 2026-10-30
+Branch `track/fluid` (round 3 lane, beside FL-3b; its commits merged in). Plan approved by the owner's standing answer
+(fluid-track.md section 1). Code: four new paths, each behind its own switch, **off** until the owner's phone run;
+`mapCacheKey` the same key without a new string a frame (no switch: the same value). No tag (the track's tag comes at
+FL-7). The items that overlap the load track's LD-5 are not built: asked below.
+- Facts checked against the code (73b2f8b1 + rounds 1-2): section 5 item 6 holds for this lane: the grass's first slice
+  is 12 ms (grass-build.js `grassWork(12)`) and its end (a counting sort and one `bufferData` of every blade) runs in
+  one call; a view prepared ahead plants nothing until it is swapped in (map-cache.js resets its grass); a cache miss
+  runs `buildGroundMesh` in one go; the one-off budget is `FRAME_WORK_MS` 8 ms on phones, 10 elsewhere
+  (walk/quality-cull.js), whatever the rate; picture age is counted in frames (engine/webgl.js trimTextures, 600).
+  Differs / found: the far cache's key misses because the frame's items come only from the 6 m prop-grid cells in view
+  (walk/frame-items.js), and the key held a signature of every still caster in the list, so any cell coming into view
+  or leaving it drew the 4096² map again; `mapCacheKey` concatenated the ground key (the whole tile map as JSON) into a
+  new string each frame and compared it in full; the grass reads the walking grid of the view on screen
+  (`isWalkable`), so a view not on screen couldn't be planted; about 30 timers, not 15 (13 moved, below).
+- Changed:
+  - game/js/walk/shadows.js (`quality.shadowCells`): the key keeps what doesn't follow the view (fit, sun, map size,
+    place, item generation, buildings, ...); each prop-grid cell in view keeps one number for its still casters
+    (`farShadowCellHashes`). The cache holds while every cell in view (the same frustum test as frame-items.js, on
+    `walkRenderer.frustum`) has the casters it had when the map was drawn, the grid and the far props unchanged
+    (`farShadowCellsHold`). A cell that left the view isn't asked; a prop hidden by the hour or a story flag, a model
+    that finished loading, a cell come in with new casters draw it again.
+    `quality.shadowHold`: when the cache holds and the moving casters are as last frame (every field of each moving
+    picture, in order; none a model, a solid prop, a building or a turning part, which move inside their own draws),
+    last frame's far map is returned before `beginSunShadow` (no clear, no 4096² copy, no draws). `walkRenderer.shHeld`.
+  - game/js/walk/map-cache.js: `mapCacheKey` gives back its last key while the id, the scene, the ground key string
+    and one number for the rest (props and heights counts, the waters' contents, water kind, flags) are the same.
+    `quality.grassAhead`: a view prepared ahead (`prepareMapGround`) plants its grass while it waits in the cache, in
+    what is left of the ground's budget (`grassAheadWork`, in `groundPrepWork` when no ground is being prepared), on
+    its own walking grid (asked for once with `navPrepare`; the crossing needs it anyway) and under the place's own
+    look (its grass density). Swapped in planted, the grass is kept (the last view's unfinished planting let go: it
+    marked the new view unplanted); still being planted, the job goes on for the view on screen. Views prepared before
+    the switch was on are picked up too (the cache's newest without grass).
+  - game/js/walk/grass-build.js: `grassJob(sc, G, target)` / `grassStep(J, ms)` (the old buildGrass/grassWork on top,
+    unchanged with the switch off); with `grassAhead` the first slice is 4 ms (was 12), the end is the sort in one
+    slice and then the blades in 1 MB strips (`bufferSubData`), the grass drawn once the last strip is in; a job let go
+    gives its buffers back (`J.abort`).
+  - game/js/free-tick.js (new; `quality.freeTicks`): `everyFree(fn, ms)`: the timer only asks; the work runs in free
+    time (`requestIdleCallback` with the period as its deadline; without it, Safari, just after the next frame, at the
+    latest one period later), never queued twice. Moved: the story checks (1.5 s), the held crossing's take-over
+    (0.4 s), trainers in sight (150 ms), the music's choice (1 s), the sound starts' tally (10 s), the idle scan, Kappi's
+    look, fishing's button, the painted battle's weather, the D-pad, the maps ahead, friends' publish, play time. Kept on
+    their timers: the music's 25 ms clock, the footsteps (50 ms), ambience and the low-HP beep (200 ms), loading
+    screens, tests. tools/to-module.mjs knows `everyFree` runs its callback later (one word).
+  - engine/settings.js (additions): the four switches with Engine rows; the debug menu's switches (beside FL-2a's and
+    FL-3a's); bench-path.js's needs. debug-log.js (additions): `shh`, `gst`, `gah` in each sample.
+  - tools/test/even-frames.test.mjs (8 tests), tools/check-even-frames.py (headless counts, off then on).
+- Not done, for other lanes (their files):
+  - **The cache-miss ground build sliced**: the frame that sees a new key (walk-view-gl.js's swap block, FL-3b's file
+    this round) clears the walking grid and needs ground that frame; sliced, it would keep the old ground and key until
+    `prepareMapGround(urgent)` is done, then swap (map-cache.js has the pieces). A miss happens on a new run day's water
+    (`runWaterWeatherSync` changes `sc.waters`), Studio edits and the 30 s fallback. Round 4 (walk-view-gl.js's scene
+    pass is FL-5a's) or FL-7.
+  - The far cache gathered by fit: frame-items.js could gather the cells under the far map's fit circle too (only on a
+    miss), so turning the camera wouldn't miss at all; the fit itself follows the view footprint (it moves when the
+    camera turns): FL-5b's 2048 map could take a steadier fit.
+  - `ensureGround` (walk-view.js, no lane) runs `groundKey(sc)`, a JSON of the whole tile map and every terrain, every
+    frame to compare it: the same kind of per-frame string as `mapCacheKey` was. Not measured; a memo like this one.
+  - Ground painting on `scheduler.postTask` (background): not done. The painting runs on the helper thread by default
+    (`quality.paintWorker`); only its upload is on the page, inside the frame budget.
+- Measured headless (counts only; `check-even-frames.py`, the run fixture, a walk to the next place's seam with its
+  preparation pushed along from the page as check-fast does, the crossing, 8 s standing): with the switches on the next
+  place's grass was planted ahead (314 ms of work over 1.7 s, software) and kept at the crossing (planted again 0;
+  off: 1, at the first frame there); the longest single grass call 7-10 ms on, 13-20 ms off (a note); 244-300 free-time
+  runs asked in the walk. The far map: off 26 drawn again of 85 passes, on 17 of 49 (headless frames come about once a
+  second, so each frame moves the fit: no gain shows here); **held 0 times** in either (a walker and townsfolk are in
+  every frame; the hold pays only where nothing moves, a room or a still route: the phone log's `shh` will say).
+- Risky: all four switches are off, so nothing changes for players until the owner's phone run. With `shadowCells` a
+  prop hidden while its cell is out of view keeps its far shadow until the cell comes back or the sun moves on (the old
+  key never drew casters out of view at all). With `freeTicks` a busy page runs those jobs up to one period late
+  (trainers in sight 150 → at most 300 ms). `mapCacheKey`'s memo is on for everyone: the same key by construction (a
+  test compares it with the old one, also after waters changed in place).
+- Verified: lint, types, format, modules, data clean; unit tests 2,457 of 2,457 after merging FL-3b; smoke no problems
+  (289 s); `check-perf.py --only=copperleaf` no problems (303-336 draws as shipped, effects 4-7). Full quick check
+  (2,599 s, 42 steps, 38 passed) against a baseline made at the round's start (8678e3f7, in a worktree, 45 pictures,
+  2,711 s, 38 passed): three problems fail on both (RL-8's Thicket Route crossing, room light, walking out of the lab);
+  battle music's drums passed this time; "Place views ..." failed once ("w:copperleaf* drew fewer than 2 frames in 90
+  s", early in the run beside the first boot's shader compiles) and passed alone (65 s). 3 pictures over the threshold:
+  the failed RL-8 step's, phone-battle and phone-run-sheet (other moments); alone, lamps-night differed only by the
+  baseline run's leftover test-results window. `check-even-frames.py`: grass planted ahead and kept (above).
+- Ask me before (section 7 "FL-4's items to the load track (LD-5) or here" and FL-4's "Ask first"; not settled by
+  section 1): **the items that overlap LD-5's leftovers**: the one-off budget sized from the slot, picture age by time,
+  and LD-5's model meshes in a worker, `createImageBitmap` and an upload queue, the next place's warm-up. Options:
+  (a) here, in the fluid track (round 4 or 5), with LD-5's owner told (recommended, section 7: the budget must follow
+  the set rate, e.g. a quarter of the paced slot: 4 ms at 60, 8 at 30, 2 at 120); (b) left to the load track's LD-5;
+  (c) split: the budget and picture age here, the worker, `createImageBitmap` and warm-up in LD-5.
+- Next: round 4 (FL-5a), started by this lane (round 3's last).
+- For the owner on the phone: open the debug menu, turn on "Shadow cache by squares", "Hold still far shadows", "Grass
+  planted ahead" and "Jobs in free time", close it, walk Copperleaf for a minute, cross into a run's next place twice
+  and stand in a room for 30 s; send the debug log (its `shc`, `shh`, `gah`, `gst` and the hitch list), and one with the
+  four off for comparison. If anything looks wrong (a shadow left behind, grass missing after a crossing), the same
+  switches turn each off.
+
+### Fluid track FL-3b - resolution without hitches (behind a switch) - 2026-10-30
+Branch `track/fluid` (round 3 lane, beside FL-4; FL-4's commits merged in). Plan approved by the owner's standing
+answer (fluid-track.md section 1). Code: the resolution's levels and when the canvas may change size, behind its own
+switch, **off**; FL-6's true freeze (a cap of 0) on for everyone. No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + rounds 1-2): section 5 item 6 holds: each 0.1 step of either ladder
+  (logic/quality-step.js, FL-3a's frame-control.js) changed `#dio` and `#dioui` at once and every screen-sized target
+  followed (headless, the old path: 11 canvas size changes in 8 frames of a walk with a ladder stepping; each made
+  `scene`, `refl`, `dof`, `vol0`, `volz`, `vol1` again). Differs: `walkView.warm` (read by adaptQuality and the
+  normal-map jobs) is never set anywhere: dead. FL-6's note holds: the scheduler floored every cap at 0.1 (a frame in
+  10 s behind a frozen screen). The 4096/1024 sun shadow map is chosen by `walkView.R < 0.8 || q >= 2`
+  (walk/shadows.js fittedShadowPass), so the ladder's q crossing 2 (and R crossing 0.8 on the old path) makes the shadow
+  maps again mid-walk: not in this lane (below).
+- Changed:
+  - game/js/logic/frame-control.js (additions): `RES_LEVELS` (1, 0.8, 0.6, 0.5: a phone's floor 0.6), `resStepDown`,
+    `resStepUp`, `resDrawLevel` (the old ladder's 0.1 asks as a level, with hysteresis: down to the lowest level at or
+    above the ask, up to the highest at or below it; 1 → 0.6 → 1 changes the size 4 times, not 8), `resApply` (a
+    waiting level is taken behind a screen, a window or a hidden page, while the view fades (`#dio` without `in`),
+    behind a loading screen, or when the canvas changes size anyway: its CSS size, the Settings resolution, the
+    pixel budget). The controller's R lever steps level to level with `resSteps` (`controlRestore(kept, steps)` keeps
+    one R on the stack a level).
+  - game/js/walk-view-gl.js: the canvas's size from the level drawn (`resolutionDrawn`); `walkRenderer.resD` (drawn),
+    `resWait` (waiting, 0 none), `resWhy`, `resizes` (every canvas size change). With the switch a phone starts at
+    0.8 (the level below full) instead of 0.9. `walkView.R` stays the ladder's ask, so its cheap uses (lighting's
+    lite mode, the weather's halving) still follow it at once.
+  - game/js/walk/quality-cull.js: the controller gets the levels with the switch on (and starts afresh when it flips).
+  - game/js/engine/webgl.js renderTarget: `gpuState.fbRe` counts targets made again at another size, by name.
+  - FL-6's ask: game/js/frame-scheduler.js passes an explicit 0 through; logic/frame-pace.js paceDue runs the change to
+    0 once (the last frame) and then never until the cap changes (the first gap after is one slot);
+    walk-control.js cap() returns 0 where it returned 0.1. A waiting level is taken on that last frame.
+  - engine/settings.js `quality.resSteps: false` with its Engine row; debug menu "Resolution steps" (On / Off for the
+    session); debug-log.js (additions): `rd`, `rwait`, `rwhy`, `rsz`, `fbre` in each sample; tools/read-debug-log.py
+    prints a "Resolution steps" line; bench-path.js: resSteps among the dials the test holds.
+  - tools/check-resolution.py (new, this session's gates); tools/test/res-steps.test.mjs (6 tests); check-fluid-ui.py's
+    freeze wording (0 or 0.1).
+- Not done, for other lanes: the shadow maps' size choice (walk/shadows.js, FL-5b's "shadow map size"): with the switch
+  on it should read the drawn level (`walkRenderer.resD ?? walkView.R`) instead of `walkView.R`, and the q >= 2
+  smaller map should change at the same moments (latch it when `walkRenderer.resWhy` changes), or the ladder's q step
+  still makes both shadow maps again during a walk. In a battle `walkView.held` is always '' (walk-control.js), so a
+  waiting level there waits for the battle's end (its canvas changes size then anyway).
+- Found, not changed: tools/check-stalls.py's "ticks wrapped by the GPU counters in 5 s behind a screen" fails on the
+  round's start commit too (7 there, 7-8 here; the gate says at most 6): FL-1a's 250 ms retry after a counted tick
+  that drew nothing, now that nothing draws behind a screen (engine/gpu-counters.js, FL-7).
+- Risky: the true freeze is on for everyone: a window or screen that needs frames and isn't on FL-6's `worldMoving`
+  list got one every 10 s before and now gets none (the full quick check and smoke pass; the in-game tests keep the
+  world moving). With the switch on, a GPU-bound phone on the old ladder keeps its size until the next menu, fade or
+  load (the ladder's cheaper levers act at once; the controller goes on to the half rate instead); a level kept from
+  0.1 steps comes back on the level at or above it.
+- Verified: lint, types, format, modules clean; unit tests 2,456 of 2,457 after merging FL-4 (the 1,000-maps timing
+  test, run beside a browser, which passes alone); smoke 7 of 7 (351 s). check-resolution all 12 (switch on: 0 canvas
+  size changes and 0 targets made again in a 16-frame walk with a ladder stepping 1 → 0.6 → 1; the level waits; behind
+  Team it is taken on the last frame (1 change, `held`), then 0 frames in 5 s (a cap of 0); back on the walk 0 more;
+  a fade takes it (`fade`); switch off: 11 changes in 8 frames; the real ladder: 0). check-fluid-ui: no gate failed
+  (0 frames in 5 s behind a screen, 1 behind a window). check-stalls: all but the wrapped-ticks gate (above).
+  Full quick check 37 of 42 (2,493 s, 2 workers) against a baseline made at the round's start (8678e3f7, 37 of 42, 44
+  pictures): RL-8's crossing, room light, "walking out didn't bring the hamlet back" and Battle music's drums fail as
+  there (the start's fifth, Song fingerprints, passed here); "Place views" drew 8 frames, then none in 90 s (`go_scene`)
+  and passed alone 3 times (56-62 s, once beside its worker's other steps): likely a window that came up during the jump
+  and now freezes the world for good, so tools/browser_check.py go_scene now clears a window that holds the world
+  after a jump (with a note naming it, as the fixtures' set-up does) and names the hold when it fails. 5 pictures
+  differed (battle-rain, the two failed steps', phone-crash-pick, phone-run-sheet); the phone step rerun alone: none.
+  check:modules, check:data, build clean.
+- Next: round 4 (FL-5a draw order) once FL-4 is done (the round's last lane starts it).
+- For the owner on the phone: open the debug menu, turn "Resolution steps" On (with "Frame controller" On too, if you
+  like), close it and walk a busy place with automatic quality on: the picture should never pop sharper or softer
+  while you walk, only behind Team, a window or a door's fade. Send the debug log: its "Resolution steps" line shows
+  the level drawn, any waiting and when it was taken.
+
+### Fluid track FL-2b - effects, spins, grass and same-look GPU cuts - 2026-10-30
+Branch `track/fluid` (round 2's last lane, beside FL-3a and FL-6; their commits merged in). Plan approved by the
+owner's standing answer (fluid-track.md section 1). Code: fewer draws and less garbage, the same pictures; no switch
+(each change draws what the old path drew, checked below). No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + round 1): every effect quad was its own `drawArrays` (5 uniforms and a
+  texture bind), only the weather used `weatherBatch`; glows a draw each; the grass a draw per visible 8 m square
+  (its squares are laid out row by row in one buffer); every spin layer its own mesh. Section 3's spin counts hold
+  (windmill 37 layers, gene_bank 30, workshop 10, clinic and cottage_solar 6, lighthouse 4, giant swing and the
+  Greenbelt train 3), and every spinning model turns one way only (one pivot, axis, speed and swing), so one mesh
+  each. The 4096² far map's "skip when nothing moved" and the reflection's skip are in files of other lanes
+  (walk/shadows.js's far cache key is FL-4's in round 3; water.js, walk-view-gl.js and the canvas context's
+  `depth: false` are not this lane's): not done here, below.
+- Changed:
+  - game/js/walk/effects.js: the effects pass's `quad()` puts every quad in the instanced batch (`weatherBatch`,
+    now 19 floats: a right axis per instance too, `quad.ax(right, up)` for the footprints and the stream leaves);
+    one draw per run of the same picture, in call order (so the blending is the same), flushed before anything else
+    draws in the pass (the room's windows, the battle's scars and particles, the glows). The glows are one more
+    instanced draw (fxW's `uGlow`: the fx program's additive disc). After the room's window draws the quads keep
+    uLitFx 0, as they did. Light shafts stay plain draws (at most 6). The 11 fx strips into one atlas: not done (the
+    strips are mipmapped; an atlas changes their small mip levels, a look change for a few draws).
+  - game/js/walk/fountains-weather.js: the footprints set their axes through `quad.ax` (no uniform calls).
+  - game/js/walk/ground-draw.js drawGrass: visible squares next to each other in the buffer drawn as one run (the
+    same blades in the same order); `walkRenderer.grassRuns` counts the runs.
+  - game/js/logic/spin-merge.js (new; both pages and the logic worker): `spinGroups` (layers by pivot, axis, rps,
+    swing), `joinMeshes` (meshes end to end, 32-bit indices past 65,535 vertices). game/js/prop-models.js
+    propModelMesh: low-poly and voxel spin layers built one by one as before, then joined: one spin mesh per model.
+    (Prebuilt `kind: mesh` models, the airship, keep a mesh per spin: not in Copperleaf.)
+  - game/js/walk/shadows.js + prop-models.js drawPropModelShadows(SH, items, part): a model that holds still but for
+    its turning parts (`shadowSpinsOnly`) has its body in the far map's cache (part 1) and only the turning parts
+    drawn each frame (part 2, `SHADOW_LISTS.spin`); a depth map, so the same map.
+  - prop-models.js propModelImageItems: a placement's leaf items are kept (a WeakMap by placement, one per picture
+    layer) and filled in again each frame with every key in one order; what other passes write on an item (vis,
+    fade, cut, slope, tilt, winL, texKey) is cleared first.
+  - tools/check-perf.py (additions): the effects pass at Copperleaf's square at most 20 draws (`EFFECTS_CEILING`), at
+    low and as shipped; the 400-draw budget now blocks as shipped too (it was a note until FL-2b).
+  - Tests: spin-merge.test.mjs (one group per real spinning model, joined meshes byte for byte, 32-bit indices,
+    propModelMesh one spin mesh per model), model-shadows (the cached copy and the turning parts make up every part),
+    shadow-cache (the mill's body cached, its sails each frame; leaf items kept and filled in as new ones).
+- Measured headless (counts only; `check-perf.py --only=copperleaf`, Copperleaf by day on the phone page): as shipped
+  **273-335 draws** a frame (were 402-531), grass 12-13 (were 104-113), effects 4-7 at the square (were 73-86), 596-1,287
+  uniform calls; at low graphics 238-271 draws, 473-480 uniform calls. Leaf items' garbage (Node, 650 clumps): 240 →
+  111 KB a frame. The page's own heap reading (performance.memory each frame) is 1.4-3.3 MB a frame on both trees
+  headless, too noisy to show it: the log's `alloc` is for the phone.
+- Not done, for other lanes: the far map's copy skipped when nothing in it moved (FL-4 owns its key; dyn is never
+  empty in a town with townsfolk); the reflection skipped with no water on screen (water.js, walk-view-gl.js); the
+  canvas context's `depth: false`; `mapCacheKey` without a string (walk/map-cache.js, FL-4); the main prop items
+  pooled like the leaf items (frame-items.js: tagPropModel, hugSlope and `spin` add fields conditionally, so each
+  needs clearing; a careful session's work), and `decalPlace`'s object per clump (logic/prop-turn.js). FL-3a's CPU
+  level (`walkRenderer.qc`) on shadow-caster distance and grass: new look trades, left for FL-5b/FL-7.
+- Risky: effects now draw through fxW (instanced) on every device; if it fails to build, no effects draw (the weather
+  had the same dependency since R4). Spin layers that overlap exactly now draw in one call (the same triangles in
+  layer order). A leaf item is now the same object from frame to frame: code that keeps an item across frames sees
+  it change (none found: lights key on the placement).
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,443 of 2,443 after merging FL-3a and FL-6
+  (before: 2,424 of 2,426, the logic worker's order and art-code-refs, both fixed); smoke 7 of 7 (321 s); `check-perf.py
+  --only=copperleaf` no problems (183 s). Full quick check (2,094 s, 42 steps, 37 passed) against a baseline made at
+  the round's start (c6576b10, in a worktree, 47 pictures, 2,259 s): the same 5 problems fail on both (RL-8's shop
+  Perk, RT-2's double, Granny Juniper, room light, battle music's drums). 11 pictures over the threshold, all other
+  moments: prints-snow and the battle pictures (another spot, a thrown pyramid mid-flight), life-copperleaf,
+  world-buddy, the room pictures and the two failed steps' pictures. A same-spot pair (the start commit and this
+  tree, reduced motion so the particles hold still, Copperleaf's square at noon and at night): 5% of pixels apart,
+  all townsfolk, their speech bubbles and labels; the fountain spray, chimney smoke and every lamp glow match.
+- Next: round 3 (FL-3b, FL-4): this lane was round 2's last, so it started them (each its own session).
+- For the owner on the phone: Copperleaf's square by day and at night with the Diagnostics open: the draws should be
+  about 270-340 (were 400-530); fountain spray, smoke, lamp glows, footprints in snow and rain should look as before.
+  A debug log of a walk there (its `alloc` against an older log's).
+
+### Fluid track FL-6 - fluid UI - 2026-10-30
+Branch `track/fluid` (round 2 lane, beside FL-2b and FL-3a; FL-3a's and FL-2b's commits merged in). Plan approved by
+the owner's standing answer (fluid-track.md section 1). Code: the page's side (menus, bars, battle cards, minimap, Bag
+and Settings taps, the debug log's tap timing). No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + round 1). What differs from section 5 item 7 and section 6 FL-6:
+  - Item 8 is wrong: the voice font is Jersey 15 and prose is Oxanium (uiTheme.json `type`, written by the theme
+    sheet over tokens.css's Pixelify Sans), so the jersey preload is used; Chakra Petch and Tiny5 are the loader's.
+    No preload change.
+  - The scheduler floors every cap at 0.1 (frame-scheduler.js `Math.max(0.1, ...)`, not this lane's file): "frozen"
+    from walk-control.js is one frame at once, then one each 10 s. A true zero needs that line (FL-3b or FL-7).
+  - body.on-scene::before (the screen's gradient) paints under #dio (an earlier box at the same level), so it never
+    showed over the opaque canvas; left as it was.
+  - The bottom bar's blur is in the kit's shadow DOM (ui-run-kit.js `.glass`), reachable only with a `part`.
+  - talk.js (talk text on its own timer) is not in this lane: left for track/ui or FL-7.
+  - The battle's extra style pass came from battle-stage.js camApply writing the camera's transform in the frame
+    task, then the plates reading layout after it.
+- Changed:
+  - game/js/walk-control.js `cap()`: behind a full screen or a window the world is frozen (0.1: the rate change draws
+    the last frame at once). `worldMoving()` keeps today's rates (1 behind a screen, 20 behind a window) for: a window
+    with `modal({world: true})`, the debug menu, Settings' Display tab (the graphics dials show a change at once), a
+    picture the debug log waits for (`walkRenderer.snapReq`), a scene being played (`walkView.director`) and the
+    in-game tests (`selfTest.on`: their steps wait on frames). These are asked below.
+  - game/css/base.css: no filter transition on `#dio`; behind a screen the dim is `body::after`, black at 0.18 faded by
+    opacity (the same pixels as brightness(0.82): the Team screen's mean brightness 143.8 vs 144.1 before), the 0.8 px
+    blur a still filter on the frozen canvas.
+  - game/css/shell.css, game/js/ui-run-kit.js (`part="glass"` on the bar's glass, an addition for track/ui): on a phone
+    (the base.css phone query) while walking, the top bar and the bottom bar have no backdrop blur and a thicker fill
+    (`--hud-tint`: the surface colour at 88%).
+  - game/js/battle.js: the cards and plates are placed in a microtask after the battle frame (outside FL-3a's
+    `workOwn`, now near 0) and read no layout in it: their sizes, the strip's place and the dock's zoom come from a
+    ResizeObserver. The HP fill, its ghost and the XP fill are moved by `transform` (`--p`, battle-screen.css) inside
+    their frames; the two forced layouts in paintPlates (a new fighter's bar, the hit shake) wait two animation frames
+    instead. Battle text is typed on the frame loop ('type' task, the same 2 letters each 16 ms).
+  - game/js/ui-motion.js: `pbEnterRows` reads every row first and animates only the ones that start on screen;
+    `pbPatch(el, html)` changes a part in place (text, attributes, changed nodes; a kit element that differs is
+    replaced whole). game/js/bag.js (pocket and row taps) and game/js/settings-screen.js (`settingsRefresh`) use it
+    instead of a whole `#app` or sheet rebuild. game/css/guide.css: `content-visibility: auto` on the ledger's rows.
+  - game/js/minimap.js, shell.css: the picture is the tile and 24 px more each side, drawn 5 times a second and moved
+    under you by `transform` every frame (`minimapPan`, the 'minimapPan' task); you and north on a still canvas
+    (`.minimap-you`) drawn again only when you turn.
+  - game/js/debug-log.js (additions; with TD-4), tools/read-debug-log.py: the log's `ui`: `taps` (Event Timing, over
+    16 ms: touch to paint split into wait, handlers and paint, with the screen and what was tapped: a control's data-a,
+    never save data), `paint` (every tap's click to paint) and `longFrames` (rendering and style and layout time).
+  - tools/check-fluid-ui.py (new): this session's gates. tools/check-stalls.py: its window part opens a
+    `world: true` window (frames must come there) and the cap gates read "at most 1".
+- Not done: the bottom bar's shrink on transforms and the HUD glass beyond the tinted bars (asked below, section 7);
+  `.pbar` and `.u-hp` (Team, Bag, units) still animate `width` (their markup is written by files outside this lane;
+  the world is frozen behind them now); talk text; the font preloads (nothing to do).
+- For other lanes: frame-scheduler.js (FL-3b/FL-7): let a cap of 0 mean "not due" for a true freeze. FL-2b:
+  tools/test/model-shadows.test.mjs and spin-merge.test.mjs failed `format:check` here (411ba70b on the branch fixes
+  them). track/ui: `.pbar` and `.u-hp` to transforms; `part="glass"` on pb-nav-bar.
+- Risky: a window or screen that needs the world moving and isn't on the list now stands still (the game pauses
+  there); a check that waits for frames behind a window must open it with `world: true`. pbPatch keeps nodes, so a
+  row's running entrance stops if tapped mid-way, and a reflected attribute on a kit element makes it be replaced
+  each time (as before). content-visibility skips the ledger rows' paint off screen (their focus ring is clipped to
+  the row). The minimap's margin (24 px) holds about 5 m of walking between pictures at the default span.
+- Verified: lint, types, format (mine), modules, data, build clean; unit tests 2,442 of 2,443 (art-code-refs,
+  regenerated after; an earlier run's figures and 1,000-maps timing failures, run beside a browser, pass alone).
+  check-stalls: all 11 gates. check-fluid-ui: all 21 gates (frozen: 0 frames in 5 s behind a screen, 0 behind a
+  window; a battle's choosing phase: 0 layouts and 29 style passes in 28 frames, the camera's own transform write;
+  click to paint, software drawing: Bag pocket 126 ms, Settings tab 16 ms). Smoke 6 of 7 in 302 s beside another
+  browser check: the phone flow's walk "stopped drawing" (3 frames missed a 30 s wait); alone it passes (104 s).
+  check:ui: 73 pictures differ from the committed baseline on this tree and the same 73 on track/fluid without FL-6
+  (a stale baseline); the battle plates differed only by the gallery's XP fill, fixed (its inline width kept).
+  Full quick check: 39 of 42 (1,967 s); RL-8's Thicket Route crossing and room light fail as on the track's start
+  (round 1's entries), Battle music (drums timing) passes alone (44 s). Pictures: the walk on a phone (tinted bars,
+  the minimap gliding, the arrow centred), Team behind the dim (mean brightness 143.8 against 144.1 before), a
+  battle's plates (HP at 82/137) against the commit before FL-6 (the empty move menu headless is the same there).
+- Ask me before (section 7 and FL-6 item 1, not settled by section 1):
+  1. **Windows that keep the world moving.** Today (this session) these keep their old rates; every other window and
+     screen freezes. Options: (a) keep the list as it is; (b) freeze Settings' Display tab too (the dials' change
+     shows when you close it); (c) let these run at the set rate instead of 20. Recommendation: (a), and (b) once
+     FL-5b decides the phone's look trades.
+  2. **The bottom bar's shrink on transforms.** Recommendation (section 7): measure its style and layout time first;
+     the new `ui.longFrames.styleMs` in a phone log shows it.
+  3. **HUD glass beyond the tinted bars** (the 12 → 9 px phone blur fix, `prefers-reduced-transparency` clearing
+     every blur, an engine-made glass). Recommendation (section 7): the two fixes now, the engine glass later if the
+     tinted bars read flat on your phone.
+- Next: FL-2b finishes round 2; then round 3 (FL-3b, FL-4).
+- For the owner on the phone: open Team or a window from a walk: the world stops (one frame, then still) and the menu
+  scrolls smoothly; walking, the bars are tinted, not blurred; the minimap glides instead of stepping; tap around Bag
+  and Settings, then export the debug log: `ui.taps` and `ui.paint` give the tap-to-paint times.
+
+### Fluid track FL-3a - the controller: aim at the set fps - 2026-10-30
+Branch `track/fluid` (round 2 lane, beside FL-2b and FL-6). Plan approved by the owner's standing answer
+(fluid-track.md section 1). Code: a new automatic-quality controller behind its own switch, **off** (section 6: a new
+path ships off until the owner's phone run); the world clock and the half rate's ownership are on for everyone. No tag
+(the track's tag comes at FL-7).
+- Facts checked against the code (main 73b2f8b1 + round 1): section 5 item 3 holds after FL-1a (the old ladder's 85% /
+  130% slow line and 60% / 110% room line, 0.9-1.2 s decisions, the 30 s hold, the phone's "graphics steps once q >= 2"
+  rule). Item 5's clamps hold: 60 ms a walk frame, 50 ms a battle frame. battle-stage.js's ladder aimed at
+  `min(userFps(), hz)` (FL-1a's note: 45 on a 90 Hz screen read as slow) and its `work` held the plates' page time.
+  Differs from section 6 FL-3a: the effects level `q` also cuts townsfolk (logic/square-day.js folkCap: 60% at q >= 2)
+  and far grass (walk/ground-draw.js, q >= 3), so `q` is not a pure GPU lever; and the battle is always drawn by the
+  3D walk view, so its frames already reach adaptQuality (as place kind `battle`): "the battle's ladder joins it" is
+  done by making the battle stage's detail level (0-3: particle budgets, smears, its canvas size) the controller's
+  CPU level in a battle.
+- Changed:
+  - game/js/logic/frame-control.js (new, pure; both pages and the Studio's logic worker): `frameControl`,
+    `controlFrame` (one frame in, a step out: `down`, `up`, `revert` or `floor`), `controlBottleneck`,
+    `controlSaved`/`controlRestore` (levels per place kind), `worldSteps`. Ring buffers of 120 frames (interval, work,
+    fence lag, missed). Target: the slot ladderTake gives (paceSlot of the set rate, the half rate included). Down:
+    2 missed in a row, > 5% missed in the last second, or work p90 > 90% of the slot; 0.4 s settle after a step. Up:
+    4 s with no miss and no step, work p95 < 70% of the slot (of the faster slot to leave the half rate), fence lag
+    p90 < 1.5 for a graphics lever; it undoes the last step taken (a stack). A raise that comes down within 5 s is
+    reverted and held 30 s, doubling to 8 min. GPU-bound (lag >= 2, or work p90 < 60% of the slot): q 1-4, then the
+    resolution to 0.6 (phone) / 0.5. CPU-bound (work p90 > 80%, lag < 1.5; with no fence, a phone counts as unclear):
+    the CPU level 1-3, then q to 2. Unclear: q to 2, CPU level, q to 4, resolution. Then the steady half rate. Thermal
+    hold: two step-downs, each after 30 s without one, within 2 minutes freeze climbing for 3 minutes. Frames with
+    one-off jobs over a quarter of the slot, counted ticks and the frame after either are left out.
+  - game/js/walk/quality-cull.js: `adaptQuality(dtm, work, oneOff)` runs the controller when `quality.controller` is
+    on (the old qualityStep path otherwise, unchanged); a fence after each frame, read on later frames (never waits;
+    up to 6 in flight) gives `walkRenderer.fenceLag`; levels kept per place kind (battle, room, town, route) in
+    localStorage `pb-frame-levels` (device-local, never the save; the half rate is never kept); the CPU level
+    (`walkRenderer.qc`) in cullItems on phones: small props fade from 0.8 / 0.65 / 0.5 of the set distance (from 90 m
+    when none is set), tiny props under 3 / 5 / 8 px go, townsfolk (not residents) past 45 / 30 m go at levels 2 / 3.
+    Off a phone the CPU level is only taken in a battle. The half rate is let go behind windows and screens.
+  - game/js/battle-stage.js: the plates' page time is timed apart and left out (`battleStage.workOwn` is added to the
+    3D frame's work for the controller); with the controller on, the detail level follows `walkRenderer.qc` in a
+    battle; the old ladder aims at the paced slot (paceSlot, the half rate included).
+  - game/js/walk-view-gl.js (the world clock): the world keeps real time down to 10 fps (was 60 ms a frame: 12.5 fps
+    ran the world at 75%); the walker, the townsfolk and the wildlife move in even steps of at most 50 ms (the old
+    longest); a longer gap is a hitch the world waits out. `adaptQuality` gets the frame's one-off time.
+  - game/js/frame-scheduler.js (an addition): `frameHalf(on, owner)`; `frameStop(owner)` lets the half rate go.
+  - engine/settings.js `quality.controller: false` with its Engine row; debug menu "Frame controller" (On / Off for the
+    session, beside FL-2a's picture switches); bench-path.js pins it with automatic quality.
+  - debug-log.js (additions): `qc`, `half`, `lag` and `ctl` (the last step: t, act, lever, why) in each sample while
+    the controller runs; tools/read-debug-log.py prints a "Frame controller" line.
+  - Lint's records after round 1's merges (ui-lint's colour ceiling 618 -> 612, art-code-refs): their own commit.
+- Not done, for other lanes (their files): the CPU levers section 6 also lists, shadow-caster distance, grass and
+  lamps, should read `walkRenderer.qc` (FL-2b: walk/shadows.js, walk/ground-draw.js; walk/lighting.js has no lane);
+  one-picture far trees and the 2048 far map join the levers when FL-5b has them; an upload burst isn't flagged to
+  the controller (texture uploads happen inside the sprite pass: a counter there could set a skip). The battle
+  clock's 50 ms clamp is unchanged (battle-stage.js outside the ladder). FL-3b's resolution steps should replace the
+  controller's 0.1 steps (`R` lever) when its switch is on.
+- Risky: the controller is new and only Node-tested on made-up traces; headless frames come about once a second, so
+  in the page nearly every tick is a counted one and it took no step there (checked: it runs with no errors, kind
+  `route`, the half rate let go behind Team, switching it off restores the old ladder and the half rate). The world
+  clock change is on for everyone: at 10-16 fps the walker now moves at full speed in two steps a frame (doors and
+  step counting are one-shot or time-throttled, checked). The fence lag needs `fenceSync` (WebGL2: everywhere the game
+  runs); on a phone with no fence high work reads as unclear, not CPU.
+- Verified: the gates (tools/test/frame-control.test.mjs, 16 tests: one-off spikes no step in 60 s; a sustained miss
+  (CPU, GPU, both) a step within 1 s; at most 1 revert in any 30 s over 3 minutes, the holds doubling; a GPU-bound
+  trace moves only q and the resolution; a CPU-bound trace (desktop and phone) leaves the resolution at 1; off a phone
+  q then the half rate; the half rate at the floor and back; climbing back to the top 4 s apart at least; the thermal
+  hold; levels kept and restored; the world clock's steps). Lint, types, modules, data, build clean; format clean on
+  this lane's files (FL-2b's model-shadows and spin-merge tests, merged in mid-lane, are theirs to format); unit
+  tests 2,443 of 2,443 (166 s) after merging FL-2b's commits; smoke 7 of 7 (428 s) before the merge; a headless page
+  with the controller on (Copperleaf, phone size): no errors. Full quick check 38 of 42 (3,252 s, 2 workers): the
+  four problems are the four FL-1a met on the track's start (913720db): RL-8's crossing "view never showed", room
+  light, "walking out didn't bring the hamlet back", and Battle music's drums, which passed alone on rerun (54 s).
+- Ask me before (section 7, not settled by section 1; both kept as they are until you answer):
+  - **Balanced vs Beautiful.** Today Beautiful aims at 60 at most (paceSlot of min(set, 60)) and Balanced at the set
+    rate. Options: (a) one target for both, the set rate; the preset only orders the levers, Beautiful lowering the
+    resolution last (recommended, section 7); (b) keep as now. With (a) a 120 setting on Beautiful starts aiming at 120.
+  - **A setting between divisors** (60 on a 90 Hz screen: 45 or 90; today 45). Options: (a) 90 while the controller
+    holds it, else 45 (recommended, section 7: the half-rate lever generalised); (b) always 45; (c) always 90.
+- Next: round 3 (FL-3b, FL-4) once FL-2b and FL-6 are done (the round's last lane starts them).
+- For the owner on the phone (the FL-3a phone gate): open the debug menu, turn "Frame controller" On, close it, then
+  run the Graphics cost test (TD-2's path) with automatic quality on, then walk Copperleaf by day for 2 minutes and a
+  run route for 2 minutes, and send the debug log. The gate: each holds the set rate or a steady half rate with under
+  2% missed frames (`hitches.missed`), and the "Frame controller" line shows which levers moved and why. If it looks
+  worse than with it off, say so and send the log: it switches off in the same menu.
+
+### Fluid track FL-2a - pictures: the draw budget - 2026-10-30
+Branch `track/fluid` (round 1's last lane, beside FL-1a and FL-1b; their commits merged in before the checks). Plan
+approved by the owner's standing answer (fluid-track.md section 1). Code: the picture pass's three fixes, its sort, the
+contact shade on the CPU, Pictures in batches and Sky last on by default, a Copperleaf gate. No tag (the track's tag
+comes at FL-7).
+- Facts checked against the code (73b2f8b1): the three review bugs are real (each has a test that fails on the old
+  code: (a) after a model with blades the pass thought the sprite program was bound while the instanced one was, so a
+  flashing picture right after it drew on the wrong program; (b) a flashing or rising crossing tree lost its crossing
+  picture in batches; (c) the reflection's batched record had no `fig` and its plain loop ignored `it.im.uv`, so a
+  figure's reflection drew the whole atlas). The sprite fragment shader ran `contactAO(uBaseP)` (64 steps, a uniform
+  point) in every pixel. Re-measured headless (counts only): Copperleaf at low graphics, settled, by day, 860 draws and
+  18,166 uniform calls a frame on the old paths, 335 and 830 with both switches on (R4 had 853 → 274); the model leaf
+  pictures 566 → 95 draws (R4: 643 → 94). As shipped on the phone page: 402-531 draws with the switches on (grass 104-113
+  and effects 73-86 of them, FL-2b's), 1,000-1,700 uniform calls.
+- Changed:
+  - game/js/walk/sprites.js: (a) the sprite program is put in use before a picture's blades or hands, whether or not
+    any are drawn; (b) the crossing picture drawn after a flashing or rising tree's plain draw; (c) reflectionRecord
+    sets `fig`. Sorted by texture (`textureKey`, the key kept on the texture's entry, so a figure atlas's cells sort
+    together; worked out once per item before the sort; models and pictures with no texture yet are 0) instead of
+    `imageId` (removed). The contact shade per picture (`r.cao`, uCAO). `firstInBatches`: each pass's first draw in
+    batches on a context (sprites, reflection) is wrapped in getError; an error turns batches off for the page and
+    logs `pictures in batches off: GL error N on the first <pass> in batches` (an error from before it is logged
+    apart). Two to four getErrors once per context, beside FL-1b's rule that getError is asked only in tests.
+  - game/js/walk/water.js: the plain reflection sends the picture's atlas rect (spriteGeometry) and uFig.
+  - game/js/logic/contact-shade.js (new): `contactShade`, the CPU twin of webgl.js contactAO. In both pages and the
+    Studio's logic worker list.
+  - game/js/walk/walk-shaders.js: the sprite shader reads `uCAO`; the instanced one carries it as the fraction of the
+    flags varying (still 15 varying rows; uFlipN reads the whole part). engine/sprite-instances.js packs it in the
+    flags' two spare bytes (16 bits); unpack reads it.
+  - game/js/engine/settings.js: `quality.skyLast` and `quality.spriteInstances` true (the owner's answer).
+  - game/js/debug-menu.js: a row "Pictures in batches" (On / Off / Off (GL error)) and "Sky last", for the session
+    (the game data's engine defaults, as the terrain switches).
+  - tools/check-perf.py (an addition to TD-3's check): `--only=copperleaf` (also in the full run): Copperleaf at noon
+    on the phone page, the hub and three spots, each counted until two counts agree. Gates: at most 400 draws at low
+    graphics; at most 2,500 uniform calls at low and as shipped. As shipped the draws are a note until FL-2b.
+  - Tests: sprite-records (the fixes, the contact shade sent and packed, the fallback; snapshots remade for the added
+    useProgram, uFig, uCAO and getError calls and the new order; its plain path pins the switch off),
+    contact-shade.test.mjs (the GLSL pinned, the twin against the shader's steps in float32, the flags' decoding),
+    debug-menu-switches (the new switches handled and on by default).
+- Not done, for other lanes: Sky last has no automatic fallback (it raises no GL error to catch); the debug switch is
+  its way back. As shipped Copperleaf stays over 400 until FL-2b merges grass chunk runs and draws fountains as one
+  batch; the leaf-clump runs (95-145 sprite draws) need the atlas (section 7, Ask me before).
+- Risky: everything a phone draws now goes through the instanced picture program and the sky after the opaque things
+  by default; the look was checked headless only (SwiftShader). The contact shade in the batched path is 16-bit (a
+  65535th) and in the plain path exact; on `quality.mediump` the old per-pixel loop ran at medium precision, the CPU
+  value is exact.
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,418 of 2,418 after merging FL-1a and FL-1b;
+  smoke 7 of 7 (298 s); `check-perf.py --only=copperleaf` no problems (431 s); a same-page pair of pictures (old paths
+  then new, Copperleaf by day) differs only where townsfolk moved. Full quick check (2,228 s, 42 steps, 39 passed)
+  against a baseline from 913720db (its own full run, 43 pictures; that run was cut off at 50 minutes before writing
+  the baseline, so its pictures were copied in by hand): the three problems are not this lane's: RL-8 (a run's
+  seam view) and room light failed the same way on 913720db; Battle music (drums timing) passes alone. 11 pictures
+  over the comparison's threshold, each traced: phone-crash-pick is taken during a fade (913720db's own smoke and full
+  runs differ by 83: brightness 50 against 133); phone-mast, props-lowpoly and env-day are other moments or spots
+  (the player elsewhere, 913720db's env-day differs by 19.3 from itself); the battle, room and night pictures sit at
+  15-20 with the same scenes. A same-page check (the same spot, old paths then new): by day under 1% of pixels apart
+  in the every-prop scene and Copperleaf; at night the new paths differ from themselves as much as from the old (the
+  camera still moving: every edge, the page's labels too, shifted a pixel). A new baseline is worth making on
+  `track/fluid` (`--baseline`) once round 2 starts.
+- Next: round 2 (FL-2b, FL-3a, FL-6): FL-1a and FL-1b were done, so this lane started them (each its own session).
+- For the owner on the phone: Copperleaf by day with the Diagnostics open: sprite draws should be about 100-150 (were
+  about 700). If anything looks wrong (missing trees, black pictures), the debug menu's "Pictures in batches" and
+  "Sky last" switch the old ways back on for the session; send the debug log either way (it says if batches fell back
+  by themselves).
+
+### Fluid track FL-1b - stalls and page quick wins (no look change) - 2026-10-30
+Branch `track/fluid` (round 1 lane, beside FL-1a and FL-2a; their commits merged in before the last checks). Plan
+approved by the owner's standing answer (fluid-track.md section 1). Code: what the page does while nothing needs it.
+No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1): section 5's items 6 and 7 that FL-1b touches all hold (24 fps for 0.8 s
+  behind a screen, then 1; a window over a screen back to 20; `getError` once a second; the Actions button's
+  `.glass` behind its gold fill; shadows and reflection both on even frames; `safe()` with two layout reads per exit
+  label and once more for the walk marker; `cv.clientWidth`/`clientHeight` every frame; a full clear of `#dioui` every
+  frame; the 36 ms hitch line). Nothing differed.
+- Changed:
+  - game/js/debug-log.js (additions; agreed with TD): `getError` is timed (`glErr`, ms, in each sample that asks) and
+    asked only during a test (`debugLog.bench.step`: the full test, the Graphics cost test), with `?glerr` and while
+    the debug menu is open (`debugLog.askGlError`). Measured first: headless it held the main thread 0.66-1.0 s per
+    call on average (2 s at worst), because it waits for the frame the GPU is still drawing; software drawing
+    exaggerates it, but it is a full sync point on a phone too. Every log field is kept. The hitch report gains
+    `missed` and `missedOverMs`: frames over the set rate's slot plus half a refresh (FL-1a's `paceSlot`, so 60 on a
+    90 Hz screen is two refreshes), beside the 36 ms list, which can't see a missed 60 fps frame.
+    tools/read-debug-log.py prints both.
+  - game/js/walk-control.js: behind a screen the 3D's cap is 1 at once (no 0.8 s at 24); a window over a screen counts
+    as the screen. A window over the walk stays at 20 (section 9's risk: a window that shows the world must be found
+    before freezing windows; FL-6). `safe()` is read once a frame (`safeBand`, keyed on `walkView.t`).
+  - game/js/pixel-sky.js: the `bg` task is stopped (frameStop) while a body class hides `#bgfx` (on-walk, on-scene,
+    on-map, in-cs; a MutationObserver) and started again when it shows.
+  - game/js/walk-tab.js, game/css/walk-tab.css: `.glass` off the Actions button; high contrast keeps the look
+    `.glass` gave it there.
+  - game/js/walk-view-gl.js: the canvas's CSS size from a ResizeObserver (clientWidth read in its callback, so the
+    numbers are the same); the label layer's drawing calls counted on its context (`_ink`), so `#dioui` is cleared
+    only after something was drawn on it (`walkRenderer.uiClears` counts clears); the reflection on odd frames, the
+    shadow map on even ones, when either skips.
+  - tools/check-stalls.py (new): this session's headless gates.
+  - studio/art-code-refs.json regenerated (line numbers moved; regenerate it after merges: `node
+    tools/art-code-refs.mjs`).
+- Not done: the hitch line itself is unchanged (LD's 36 ms list and its size buckets are log fields); the slot count
+  is the addition. The 3D still draws one full frame a second behind a screen (the owner's "one last frame, then
+  nothing" needs the frame clock and the waits on frames checked first; FL-6).
+- Risky: an error raised in play is now found only by the next test step's own check (self-test.js reads stale
+  errors before each step and names them as "from before this step"); `?glerr` still names the call. A screen that
+  needs the world to move behind it within 1 s would now look still. FL-1a's counted-tick retry (250 ms after a tick
+  that drew nothing) wraps about 4 ticks a second behind a screen on a phone (headless 4 in 5 s, the frames being slow).
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,392 of 2,392 (133 s); check-stalls all 11
+  gates (after merging FL-1a and FL-2a): 5 s behind a screen 4 frames and 4 wrapped ticks, `bg` off on the walk and
+  behind screens, 2 blurred surfaces with the bars (0 without), 0 label clears over 4 frames with no labels, 1 after a
+  drawing, 0 samples asking getError in play; smoke 7 of 7 (287 s) after the merge. Full quick check before and after (same machine, 4 cores): before 38 of
+  42 (2679 s), after 40 of 42 (2403 s); the two still failing failed before too (RL-8's run crossing "view never
+  showed", room light). 7 pictures differ from the before-baseline: 4 from the "Time, weather and rooms" step that
+  broke in the baseline run (room-day, room-night, room-in-place, windows-night), battle-rain (redone side by side at
+  0, 4 and 10 s: an entrance animation caught at another moment; the same once settled), life-copperleaf and the
+  failed step's picture (camera and timing).
+- Next: round 2 (FL-2b, FL-3a, FL-6), started by the round's last lane.
+- For the owner on the phone: open Team or Bag from a walk and back: the world should stop at once and the menu
+  scroll smoothly. The debug log of a walk now has `hitches.missed`; run the Graphics cost test once to get `glErr`
+  (the phone's cost of getError).
+
+### Fluid track FL-1a - pacer and ladder bugs (no look change) - 2026-10-30
+Branch `track/fluid` (round 1 lane, beside FL-1b and FL-2a; FL-1b's commits merged in). Plan approved by the owner's
+standing answer (fluid-track.md section 1). Code: the frame scheduler's pacing, the automatic quality's feed; no
+look change. No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + FL-1b): all of section 5's items 3-5 hold. Two more found: the walk
+  view never fed the fps overlay (`walkView.opt.meter` is never set), so the overlay counted its own `meter` task's
+  ticks at the set rate, not the world's frames, and that task never stopped; the old refresh estimate needed a
+  tick with under 3 ms of work, so a page drawing every tick never read its screen. Simulated, the old pacer at 120 Hz
+  and cap 60 gives 16.7 / 25 / 8.3 after one miss.
+- Changed:
+  - game/js/logic/frame-pace.js (new, pure, in both pages and the Studio's logic worker): `refreshTick` /
+    `refreshPeriod` (the period from every tick: a delta counts when the tick before had under half of it as work or
+    when it is quicker than the period so far; the lower quarter of the last 0.5 s, near ones averaged, every 0.1 s,
+    no list), `paceSlot` (a rate as whole refreshes, nearest; the half rate doubles it), `paceDue` (locked to the
+    beat: `next = max(next + T, ts + T - V/2)`, due from `next`, a cap change starts the beat at once; each task's
+    `shown` interval in refreshes, `missed` (over a slot plus half a refresh), `misses`, `frames`), `ladderFeed` /
+    `ladderTake` (the automatic quality's feed), `phoneAgent` (one phone test: Android, iPhone, iPad, a touch Mac).
+  - game/js/frame-scheduler.js: uses them; `frameScheduler.period` (ms) beside `hz` (now whole, from the period);
+    `frameScheduler.half` and `frameHalf(on)` for FL-3a's controller (the tasks whose cap is the set rate take it);
+    the GPU counters wrap only a tick with a task due, and `frameScheduler.counted` marks it; a task is dropped on
+    its third throw in a row; the scheduler meters the main task itself (dio, else scene, else map: fps from its runs,
+    ms from its time); `frameCount` is kept for its callers and does nothing.
+  - game/js/engine/gpu-counters.js: after a counted tick that drew nothing, the next count waits 250 ms.
+  - game/js/walk/quality-cull.js adaptQuality: fed through `ladderTake`: below 30 a second nothing; a cap change
+    resets the averages and waits 1.5 s (the menu ratchet); the counted tick left out; the target is the paced slot
+    of min(cap, 60 or 999 with Balanced), so 60 on a 90 Hz screen (every second refresh) isn't read as slow. Its two
+    phone tests and FRAME_WORK_MS use `phoneAgent`.
+  - game/js/walk-view-gl.js: the ladder's work leaves out the one-off jobs (normal maps, program polls, ground and
+    walking-grid preparation, ensureGround and the map-cache swap, grass, far props, the near ring); `walkView.slow`
+    skips the counted tick. The histogram and the full frame time are unchanged.
+  - game/js/debug-menu.js: the overlay adds no task; it says "(half rate)" when the half rate is on.
+- Not done, for other lanes (their files): the other phone tests still disagree: walk/walk-state.js PREP_BUDGET_MS,
+  walk/lighting.js PHONE_LAMPS, battle-3d.js PHONE_BATTLE, walk-view-gl.js PHONE, engine/webgl.js:1555,
+  person-art.js, walk-view.js GROUND_CACHE_SIZE (all can call `phoneAgent(navigator.userAgent,
+  navigator.maxTouchPoints)`). battle-stage.js's ladder (FL-3a) still aims at `min(userFps(), hz)`: on a 90 Hz
+  screen it reads 45 as slow; it should aim at `paceSlot(...) * frameScheduler.period`. FL-1b's
+  `debugLog.slotMs` uses min(fps, hz) too: on 90 Hz every 22.2 ms frame sits on its line; the scheduler's
+  `tasks.get('dio').missed`/`.shown` are the paced numbers (TD-4).
+- Risky: an iPad (it reports a Mac) is now a phone in the automatic quality (graphics waits read as main-thread
+  work, the resolution not below 0.6) and gets the phone's 8 ms one-off budget. The refresh can read low if the GPU
+  holds back every frame with light main-thread work (a GPU-bound phone): then the slot follows what the page gets.
+  The battle's quality now reads the dio task's frames in a 3D battle (before: the scene task's). Frame times only
+  on the phone.
+- Verified: the gates (tools/test/frame-pace.test.mjs, 13 tests, Node vsync simulation with the real qualityStep):
+  120 Hz cap 60 one miss → 16.7 / 25 / 16.7, no 8.3; 61 Hz → 0 drops in 10 s; 120 → 60 re-read within 1 s; every
+  frame 40 ms → a steady 50 ms; 8 window/screen cycles at 11 ms → q and R unchanged (phone and desktop); 90 Hz at
+  5 ms → no step in 60 s; plus a slow frame still steps. gpu-counters test for the back-off. Lint, types, format,
+  modules, data, build clean; unit tests 2405 of 2406 with smoke running beside them (the 1,000-maps timing test,
+  which passes alone); smoke 7 of 7 (350 s) before and after merging FL-1b. Full quick check: 38 of 42 steps (2650 s, 2 workers); the four problems were rerun on this tree and on the track's start (913720db): RL-8's Thicket Route crossing, room light and "walking out didn't bring the hamlet back" fail there too; the battle music step passed on the rerun (timing); with room light passed, the same step now reaches the settings tabs, which overflow 7 px on five tabs on both trees (already broken before the track; for the UI side, FL-6).
+- Ask me before (not settled by section 1): **a setting between divisors** (60 on a 90 Hz screen: 45 or 90). Today
+  it stays 45 (the nearest whole slot, as before) and the ladder aims at 45 there. Recommendation as in section 7:
+  the higher one while the controller holds it, else the lower, decided in FL-3a.
+- Next: round 2 (FL-2b, FL-3a, FL-6) once FL-1b and FL-2a are done; FL-3a uses `frameHalf` and `paceSlot`.
+- For the owner on the phone: the fps overlay now counts the world's own frames; open and close Team a few times
+  and check Q and the resolution stay put in the debug log.
+
+### Fluid track FL-0 - the plan: hold the frame rate you set, batching, render layering, a fluid UI - 2026-10-29
+Branch `ccr-36d73c36-2xv56p` (the cloud session's own, at main 73b2f8b1). Plan approved in Plan Mode with the owner's
+answers. Docs only: the plan, web research and read-only code studies (nine studies, seven verifiers that tried to
+refute the key claims, a plan critic); no code changed.
+- Changed: docs/phases/fluid-track.md (new: the owner's answers, the numbers, "are assets batched correctly?" as a
+  table, render layering from the research against this game's frame, why the set fps isn't held, sessions
+  FL-0b..FL-7 with gates, Ask me before, sources); ROADMAP's "Fluid track" row (top of "Tracks alongside") and a
+  pointer on phase 20's row; BRANCHES rows for `track/fluid` and this branch.
+- The owner's answers: a steady half rate when the set rate can't be held; on phones automatic quality may thin far
+  props and folk, use a 2048 far shadow map, tint the HUD glass while walking and draw far trees as one picture;
+  Pictures in batches and Sky last on by default (after three small fixes); the world frozen behind menus and windows.
+- Found, not changed (all in the track file with file:line):
+  - Batching: pictures are not batched by default (`quality.spriteInstances` off): one draw and about 30 GL calls
+    each; leaf clumps are 260 separate textures; each fountain is 151-247 draws; spin layers 96 where 7 would do; the
+    ground (316k triangles) is never culled and drawn in up to 5 passes. Models, shadow pictures, grass, rain:
+    batched.
+  - Every depth-writing scene shader contains `discard`, so the Adreno's LRZ never gets a write; the sky is drawn
+    first; cut-outs come before the opaque models.
+  - Chrome and Opera on Android give a page every other refresh above about 108 Hz (120 → 60): the 120 option gives
+    60 there. iOS about 60, 30 in Low Power Mode. Firefox adds no cap.
+  - Automatic quality aims at 60 at most (not the setting) except on Balanced, counts background jobs as frame cost,
+    and steps down each time a menu closes (a Node simulation reaches the floor in 8 cycles).
+  - The scheduler catches up after a late frame (25 then 8 ms); 60 on a 90 Hz screen runs at 45; `gl.getError` and a
+    fully wrapped counted frame once a second for every player; a 4096² far shadow map plus a copy a frame on phones.
+  - UI: the world draws behind menus (20 fps behind windows; a window over a screen back to 20); the theme sheet's
+    12 px blur beats the phone's 9 px; the Actions button blurs behind an opaque fill; battle plates force layout
+    every frame and that time lowers the battle's quality.
+- Risky: nothing changed in code. Counts quoted from R2/R4 are headless and from an older commit; FL-2a re-measures.
+- Verified: docs only; the key claims re-checked by the verifiers at 73b2f8b1 (corrections are in the track file).
+- Next: FL-0b, the owner's phone run below; then FL-1a on `track/fluid` (the owner makes it from this branch).
+- For the owner on the phone: run the Graphics cost test and the Diagnostics on the Android phone, then send the
+  debug log of a Copperleaf walk by day. Note the browser and whether battery saver is on. Then make `track/fluid`
+  from `ccr-36d73c36-2xv56p` and start FL-1a there.
+
 ### Fix - water on the Adreno phone, Copperleaf's spring stream and bridge - 2026-10-30
 Branch `ccr-8236e72e-tie1ht` (the session's branch, from main 73b2f8b1), PR into main. The owner: water doesn't show on
 the phone (desktop and iPad fine); then "water above the pond for no reason" and "the bridge under the waterfall is too

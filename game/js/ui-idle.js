@@ -8,6 +8,7 @@
    canvas reads data-idle itself (world-bowl.js bowlLifeOn). */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { everyFree } from './free-tick.js';
 import { IDLE_KINDS, idlePick, sheenAlpha } from './logic/idle-life.js';
 import { motionNow } from './ui-kit.js';
 /* eslint-disable no-func-assign */
@@ -47,7 +48,7 @@ function idleScan() {
 function idleStart() {
   idleScan();
   clearInterval(idleLife.timer);
-  idleLife.timer = setInterval(idleScan, 600);
+  idleLife.timer = everyFree(idleScan, 600);
   document.addEventListener('visibilitychange', idleScan);
   /* Settings' Animation and Flashes rows write these on <html>: answer at once */
   new MutationObserver(idleScan).observe(document.documentElement, {

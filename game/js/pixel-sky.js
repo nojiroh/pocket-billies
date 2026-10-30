@@ -6,22 +6,24 @@ import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
 import { random } from './util.js';
 import { activeBattle, reducedMotion } from './game-state.js';
-import { frameTask } from './frame-scheduler.js';
+import { frameStop, frameTask } from './frame-scheduler.js';
 import { makeCanvas } from './art.js';
 /* eslint-disable no-func-assign */
 expose({
+  SKY_HIDDEN: [() => SKY_HIDDEN],
   SKY_STOPS: [() => SKY_STOPS],
   buildPixelSky: [() => buildPixelSky, v => (buildPixelSky = v)],
   initPixelSky: [() => initPixelSky, v => (initPixelSky = v)],
   isDark: [() => isDark],
   pixelSky: [() => pixelSky],
+  pixelSkySync: [() => pixelSkySync, v => (pixelSkySync = v)],
   pixelSkyTick: [() => pixelSkyTick, v => (pixelSkyTick = v)],
   resizePixelSky: [() => resizePixelSky, v => (resizePixelSky = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
 /* ---------- animated pixel sky behind the app ---------- */
-const pixelSky = { cv: null, x: null, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], sp: [] };
+const pixelSky = { cv: null, x: null, on: false, last: 0, w: 160, h: 300, dark: null, base: null, isl: [], sp: [] };
 provide({ pixelSky }); /* to-module */
 const isDark = () => {
   const t = document.documentElement.dataset.theme;
@@ -59,7 +61,20 @@ export function initPixelSky() {
   pixelSky.x = c.getContext('2d');
   resizePixelSky();
   window.addEventListener('resize', resizePixelSky);
-  frameTask('bg', pixelSkyTick, () => (activeBattle ? 1 : 15));
+  /* FL-1b: the sky's task runs only while the sky shows (the walk, the scene behind screens, the map and cutscenes
+     hide it: the CSS for these body classes); it ran 15 times a second there for nothing */
+  new MutationObserver(pixelSkySync).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  pixelSkySync();
+}
+/* body classes whose CSS hides #bgfx (walk-tab.css, base.css, map-tab.css, opening-old.css) */
+const SKY_HIDDEN = ['on-walk', 'on-scene', 'on-map', 'in-cs'];
+function pixelSkySync() {
+  const cl = document.body.classList,
+    show = !SKY_HIDDEN.some(k => cl.contains(k));
+  if (show === !!pixelSky.on) return;
+  pixelSky.on = show;
+  if (show) frameTask('bg', pixelSkyTick, () => (activeBattle ? 1 : 15));
+  else frameStop('bg');
 }
 function resizePixelSky() {
   pixelSky.w = 160;

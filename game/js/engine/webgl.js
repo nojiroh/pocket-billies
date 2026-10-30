@@ -133,6 +133,8 @@ export const gpuState = {
   flatN: null,
   quad: null,
   fb: {},
+  /* FL-3b: render targets made again at another size, in all and by name (renderTarget) */
+  fbRe: { n: 0, by: /** @type {Record<string, number>} */ ({}) },
   hdr: false,
   samp: {},
   normQ: [],
@@ -463,12 +465,21 @@ function beginProgramCompile(def, name, plain) {
   gl.linkProgram(p);
   /* TD-1: a refused draw names its program (gpu-counters.js drawErrorWatch) */
   if (p) p.pbName = name;
-  return { p, a, b, name, gl, gen: gpuState.gen, def, mp };
+  return { p, a, b, name, gl, gen: gpuState.gen, def, mp, t0: performance.now() };
 }
 export function finishProgramCompile(j) {
   const gl = gpuState.gl,
-    p = j.p;
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+    p = j.p,
+    tw = performance.now(),
+    ok = gl.getProgramParameter(p, gl.LINK_STATUS);
+  /* FL-5a: each program's link, by name: [ms the page waited on the status read, ms from its start to here] (the
+     debug log's gpuMemory.linkMs; the draw order's variants beside their originals, for iOS) */
+  const now = performance.now();
+  (gpuState.linkMs || (gpuState.linkMs = {}))[j.name] = [
+    Math.round((now - tw) * 10) / 10,
+    Math.round(now - (j.t0 || tw)),
+  ];
+  if (!ok) {
     const e =
       (gl.getShaderParameter(j.a, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.a)) +
         (gl.getShaderParameter(j.b, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.b)) || gl.getProgramInfoLog(p);
@@ -1353,6 +1364,11 @@ export function renderTarget(name, w, h, o = {}) {
     F = gpuState.fb[name];
   if (F && F.w === w && F.h === h) return F;
   if (F) {
+    /* FL-3b: a target made again at another size (the screen-sized ones follow the canvas): counted by name for the
+       gates (tools/check-resolution.py) and the debug log */
+    const re = gpuState.fbRe;
+    re.n++;
+    re.by[name] = (re.by[name] || 0) + 1;
     gpuFree(F.f);
     gpuFree(F.c);
     gpuFree(F.d);

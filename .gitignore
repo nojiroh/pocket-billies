@@ -76,6 +76,7 @@ validation/terrain-look/
 validation/load/
 validation/perf/
 validation/look-talk*/
+validation/check-draw-order/
 validation/assets-baseline/
 validation/look-halt/
 validation/as-2-*/

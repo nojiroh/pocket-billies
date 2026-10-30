@@ -11,8 +11,10 @@
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
 import { decalPlace, propTurn } from './logic/prop-turn.js';
+import { joinMeshes, spinGroups } from './logic/spin-merge.js';
 import { leafCutKey, leafCutPixels, leafOutlineColour } from './logic/pixel-facts.js';
 import { gpuTag } from './engine/gpu-counters.js';
+import { solidFragment } from './engine/shader-precision.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -39,7 +41,7 @@ import {
 } from './engine/model-instances.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { ROCK_GLSL } from './walk/walk-shaders.js';
-import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
+import { rockCircleOn, useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { frameBudgetLeft } from './walk/quality-cull.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
@@ -52,9 +54,12 @@ expose({
   INSTANCE_PLACE_GLSL: [() => INSTANCE_PLACE_GLSL],
   LAYER_PROPS: [() => LAYER_PROPS],
   LEAF_CUTS: [() => LEAF_CUTS],
+  LEAF_ITEMS: [() => LEAF_ITEMS],
+  LEAF_ITEM_CLEAR: [() => LEAF_ITEM_CLEAR],
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   MDL_ATTRIBS: [() => MDL_ATTRIBS],
   MDL_FLAT: [() => MDL_FLAT],
+  MDL_SOLID_EDITS: [() => MDL_SOLID_EDITS],
   MODEL_INSTANCES: [() => MODEL_INSTANCES],
   MODEL_SHADOW_INSTANCES: [() => MODEL_SHADOW_INSTANCES],
   MODEL_SHADOW_SHADERS: [() => MODEL_SHADOW_SHADERS],
@@ -74,6 +79,7 @@ expose({
   VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
   VOX_ATTRIBS: [() => VOX_ATTRIBS],
   VOX_FLAT: [() => VOX_FLAT],
+  VOX_SOLID_EDITS: [() => VOX_SOLID_EDITS],
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   asFlatInputs: [() => asFlatInputs, v => (asFlatInputs = v)],
   bindOwnTexture: [() => bindOwnTexture, v => (bindOwnTexture = v)],
@@ -100,6 +106,7 @@ expose({
   invalidatePropModel: [() => invalidatePropModel, v => (invalidatePropModel = v)],
   layerProp: [() => layerProp, v => (layerProp = v)],
   leafCut: [() => leafCut, v => (leafCut = v)],
+  leafItem: [() => leafItem, v => (leafItem = v)],
   limbPoints: [() => limbPoints, v => (limbPoints = v)],
   loadPropModelRecipe: [() => loadPropModelRecipe, v => (loadPropModelRecipe = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
@@ -110,6 +117,9 @@ expose({
   meshAttribs: [() => meshAttribs, v => (meshAttribs = v)],
   modelShadowInstancesReady: [() => modelShadowInstancesReady, v => (modelShadowInstancesReady = v)],
   modelShadowState: [() => modelShadowState],
+  modelSolidDefs: [() => modelSolidDefs, v => (modelSolidDefs = v)],
+  modelSolidItem: [() => modelSolidItem, v => (modelSolidItem = v)],
+  modelsNearestFirst: [() => modelsNearestFirst, v => (modelsNearestFirst = v)],
   mooredBob: [() => mooredBob, v => ((mooredBob = v), provide({ mooredBob }))],
   propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
@@ -117,6 +127,10 @@ expose({
   propModelInstanceValues: [() => propModelInstanceValues, v => (propModelInstanceValues = v)],
   propModelMesh: [() => propModelMesh, v => ((propModelMesh = v), provide({ propModelMesh }))],
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
+  propModelSolidShaders: [
+    () => propModelSolidShaders,
+    v => ((propModelSolidShaders = v), provide({ propModelSolidShaders })),
+  ],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
   setItemSmear: [() => setItemSmear, v => (setItemSmear = v)],
@@ -145,6 +159,7 @@ provide({
   propModelImageItems,
   propModelMesh,
   propModelShaders,
+  propModelSolidShaders,
   tagPropModel,
 });
 export function setDrawPropModels(v) {
@@ -753,28 +768,16 @@ function propModelMesh(path, rec) {
           wins: M.wins.length ? M.wins : null,
         }
       : null;
+    /* FL-2b: the layers that turn together (logic/spin-merge.js) in one mesh, one draw: each layer built on its own
+       as before, laid end to end */
     if (m)
-      for (const l of L)
-        if (l.spin && !l.hide) {
-          const S = lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }] }),
-            ax = l.spin.axis,
-            a = Array.isArray(ax)
-              ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
-              : ax === 'y'
-                ? [0, 0, 1]
-                : ax === 'z'
-                  ? [0, 1, 0]
-                  : [1, 0, 0],
-            al = Math.hypot(a[0], a[1], a[2]) || 1;
-          if (S)
-            m.spins.push({
-              ...uploadLowPolyMesh(S.vb, S.ib),
-              c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
-              a: a.map(v => v / al),
-              rps: l.spin.rps ?? 1.5,
-              sw: +l.spin.swing || 0,
-            });
-        }
+      for (const g of spinGroups(L)) {
+        const S = joinMeshes(
+          g.layers.map(l => lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }] })),
+          MDL_ATTRIBS.stride
+        );
+        if (S) m.spins.push({ ...uploadLowPolyMesh(S.vb, S.ib), ...g.spin, n: S.n });
+      }
     propModelState.meshes.set(path, m);
     return m;
   }
@@ -801,28 +804,15 @@ function propModelMesh(path, rec) {
     return { vao, n: D.n, el: 1, u32: D.ib instanceof Uint32Array, quads: D.quads, bufs: [vb, eb] };
   };
   m = { ...up(M), box: M.box, q: 1 / R, res: R, spins: [] };
-  /* alpha 0.4: parts that turn (the airships' propellers): a layer with spin {x, y, z: its pivot in metres; axis: 'x' across, 'y' depth, 'z' up, or [x, y, z] any way at all; rps: turns a second} */
-  for (const l of L)
-    if (l.spin && !l.hide) {
-      const S = greedyVoxelMesh(voxelise({ vpm: rec.vpm, layers: [{ ...l, spin: undefined }] }, R), R),
-        ax = l.spin.axis,
-        a = Array.isArray(ax)
-          ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
-          : ax === 'y'
-            ? [0, 0, 1]
-            : ax === 'z'
-              ? [0, 1, 0]
-              : [1, 0, 0],
-        al = Math.hypot(a[0], a[1], a[2]) || 1;
-      if (S)
-        m.spins.push({
-          ...up(S),
-          c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
-          a: a.map(v => v / al),
-          rps: l.spin.rps ?? 1.5,
-          sw: +l.spin.swing || 0,
-        });
-    }
+  /* alpha 0.4: parts that turn (the airships' propellers): a layer with spin {x, y, z: its pivot in metres; axis: 'x' across, 'y' depth, 'z' up, or [x, y, z] any way at all; rps: turns a second}.
+     FL-2b: the layers that turn together in one mesh (logic/spin-merge.js), each voxelised on its own as before */
+  for (const g of spinGroups(L)) {
+    const S = joinMeshes(
+      g.layers.map(l => greedyVoxelMesh(voxelise({ vpm: rec.vpm, layers: [{ ...l, spin: undefined }] }, R), R)),
+      VOX_ATTRIBS.stride
+    );
+    if (S) m.spins.push({ ...up({ vb: S.vb, ib: S.ib, n: S.n, quads: S.verts / 4 }), ...g.spin });
+  }
   propModelState.meshes.set(path, m);
   return m;
 }
@@ -1466,7 +1456,7 @@ export function propModelShaders() {
 }
 /* VFX-3: inst false for the stretched models (it.smear), drawn one at a time with the plain program, compiled on the
    first stretch */
-function drawLowPolyModels(C, X, L, inst = true) {
+function drawLowPolyModels(C, X, L, inst = true, solid = false) {
   if (!L.length || typeof BUILDING_SHADERS === 'undefined' || typeof buildingArt !== 'function') return;
   const gl = gpuState.gl;
   ensurePrograms(propModelShaders());
@@ -1474,7 +1464,7 @@ function drawLowPolyModels(C, X, L, inst = true) {
   const A = buildingArt(),
     det = imageTexture(artImage(A.detail), { noNormal: true });
   if (!det) return;
-  const p = useWalkProgram(inst ? 'mdlI' : 'mdl', C, X);
+  const p = useWalkProgram(inst ? (solid ? 'mdlIS' : 'mdlI') : 'mdl', C, X);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
@@ -1487,6 +1477,7 @@ function drawLowPolyModels(C, X, L, inst = true) {
   /* Building bumpiness: the models wear the buildings' sheet, and bump as the buildings do */
   if (p.U.uBStr) gl.uniform1f(p.U.uBStr, engineSetting('world', 'buildingBumps') || 0);
   if (!inst) drawLowPolyItems(p, L);
+  else if (solid) drawModelInstances(p, 'mdl', L);
   else {
     /* VFX-3: as the voxel props: a stretched one one at a time, with the plain program and the same textures */
     /* ST-7: a model with its own texture is drawn on its own (the batches share the building sheet) */
@@ -1496,6 +1487,24 @@ function drawLowPolyModels(C, X, L, inst = true) {
     if (many.length) drawModelInstances(p, 'mdl', many);
     if (one.length) drawLowPolyModels(C, X, one, false);
   }
+}
+/* FL-5a: an item the discard-free programs draw as the programs with cuts would: whole (no fade's dither), not stretched
+   (drawn one at a time), not a model with its own texture (cut where it is clear), its program made */
+function modelSolidItem(it, m, SD) {
+  if ((it.fade ?? 1) < 0.99 || it.smear) return false;
+  return m.model ? !m.own && !!SD.mdlIS : !!SD.voxIS;
+}
+/* FL-5a: a list of [item, mesh] nearest the eye first (a tile GPU's early depth then rejects what is behind), so the
+   instanced batches (engine/model-instances.js buildModelBatches, in order of first use) come nearest first too */
+function modelsNearestFirst(L, C) {
+  const e = C && C.eye;
+  if (!e || L.length < 2) return L;
+  /* the pairs are made for this frame (drawPropModels): the distance rides along as a third entry */
+  for (const x of L) {
+    const it = x[0];
+    x[2] = (it.x - e[0]) ** 2 + (it.y - e[1]) ** 2 + (it.z - e[2]) ** 2;
+  }
+  return L.sort((a, b) => a[2] - b[2]);
 }
 /* [the stretched (it.smear), the rest] of a list of [item, mesh] */
 function splitSmeared(L) {
@@ -1675,6 +1684,47 @@ function tagPropModel(it) {
    sway (how much the wind moves it, times the prop's sway; the model itself stays still), glow (it lights up
    when the lamps come on, a lantern's glass), yaw (with face fixed: which way it faces, radians, pi/2 the right side,
    pi the back; batch 8, a tower's windows on every face), and the recipe its art's scale (ppm: pixels to the metre; else the scenery's) */
+/* FL-2b: a placement's leaf items (prop-models.js propModelImageItems), reused each frame so a frame leaves ~650 fewer
+   objects for the garbage collector. Each is filled from v with every key, and what other passes write on an item
+   (quality-cull.js vis and fade, frame-items.js cut, prop-look.js slope and tilt, lighting.js winL, the sprite sort's
+   texKey, modelsNearestFirst's d) is cleared, so it starts each frame as a new one would. Keyed by placement (a WeakMap),
+   so a place left lets them go */
+const LEAF_ITEMS = new WeakMap(),
+  LEAF_ITEM_CLEAR = ['vis', 'fade', 'cut', 'slope', 'tilt', 'winL', 'texKey', 'd'];
+function leafItem(list, i) {
+  let o = list[i];
+  if (!o)
+    return (list[i] = {
+      k: undefined,
+      p: undefined,
+      M: undefined,
+      im: undefined,
+      x: undefined,
+      z: undefined,
+      y: undefined,
+      mpp: undefined,
+      ox: undefined,
+      oy: undefined,
+      w: undefined,
+      h: undefined,
+      flip: undefined,
+      shear: undefined,
+      rest: undefined,
+      sh: undefined,
+      glow: undefined,
+      noRecv: undefined,
+      eyeward: undefined,
+      fixed: undefined,
+      plane: undefined,
+      yaw: undefined,
+      mat: undefined,
+      layer: undefined,
+      still: undefined,
+      voxImg: undefined,
+    });
+  for (const k of LEAF_ITEM_CLEAR) if (k in o) o[k] = undefined;
+  return o;
+}
 function propModelImageItems(it, out) {
   const rec = it.vox;
   if (!rec) return;
@@ -1689,7 +1739,12 @@ function propModelImageItems(it, out) {
     spin: it.spin || null,
   };
   const F = typeof gameData !== 'undefined' && gameData.pixelFacts;
+  /* FL-2b: this placement's leaf items, kept from frame to frame (one per picture layer) and filled in again */
+  let pool = LEAF_ITEMS.get(it.p);
+  if (!pool || pool.rec !== rec) LEAF_ITEMS.set(it.p, (pool = { rec, list: [] }));
+  let li = -1;
   for (const L of rec.layers || []) {
+    li++;
     if (L.k !== 'img' || L.hide) continue;
     const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
     /* LD-1: a leaf clump's baked cut (tools/bake-pixel-facts.mjs), so its crown picture is never read (or even
@@ -1714,40 +1769,40 @@ function propModelImageItems(it, out) {
       h = im.naturalHeight || im.height,
       mpp =
         (L.s || 1) / (rec.ppm || (typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.ppu) || 34);
-    out.push({
-      k: 'prop',
-      p: it.p,
-      M: layerProp(it.M),
-      im,
-      x: d.x,
-      z: d.z,
-      y: d.y,
-      mpp: mpp * s,
-      ox: -(w / 2),
-      oy: -(h - 1),
-      w,
-      h,
-      flip: d.flip,
-      shear: (it.shear || 0) * (L.sway ?? 1),
-      /* phase 20 R3: at rest (no wind) when the model itself stands still (walk/shadows.js, "Far shadows hold still") */
-      rest: it.rest !== undefined && !(it.M && it.M.bob) ? it.rest * (L.sway ?? 1) : undefined,
-      sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
-      /* a layer's day: how much it glows by day too (1: lit at every hour, the sky portal's layers) */
-      glow: L.glow
-        ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) * (1 - (L.day || 0)) + (L.day || 0) : 1)
-        : 0,
-      noRecv: L.recv === 0,
-      /* phase 09 batch 10: metres toward the eye (along the camera's line of sight), so a conifer's tiers, centred on
-         its modelled mast, stay in front of it from every side (walk/sprites.js uDZ) */
-      eyeward: L.front && L.face !== 'fixed' ? L.front * s : 0,
-      fixed: L.face === 'fixed',
-      plane: L.face === 'fixed',
-      yaw: d.yaw /* phase 09 batch 9: a decal turns with its model */,
-      mat: it.mat,
-      layer: L,
-      still: it.still,
-      voxImg: 1,
-    });
+    const o = leafItem(pool.list, li);
+    o.k = 'prop';
+    o.p = it.p;
+    o.M = layerProp(it.M);
+    o.im = im;
+    o.x = d.x;
+    o.z = d.z;
+    o.y = d.y;
+    o.mpp = mpp * s;
+    o.ox = -(w / 2);
+    o.oy = -(h - 1);
+    o.w = w;
+    o.h = h;
+    o.flip = d.flip;
+    o.shear = (it.shear || 0) * (L.sway ?? 1);
+    /* phase 20 R3: at rest (no wind) when the model itself stands still (walk/shadows.js, "Far shadows hold still") */
+    o.rest = it.rest !== undefined && !(it.M && it.M.bob) ? it.rest * (L.sway ?? 1) : undefined;
+    o.sh = L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0;
+    /* a layer's day: how much it glows by day too (1: lit at every hour, the sky portal's layers) */
+    o.glow = L.glow
+      ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) * (1 - (L.day || 0)) + (L.day || 0) : 1)
+      : 0;
+    o.noRecv = L.recv === 0;
+    /* phase 09 batch 10: metres toward the eye (along the camera's line of sight), so a conifer's tiers, centred on
+       its modelled mast, stay in front of it from every side (walk/sprites.js uDZ) */
+    o.eyeward = L.front && L.face !== 'fixed' ? L.front * s : 0;
+    o.fixed = L.face === 'fixed';
+    o.plane = L.face === 'fixed';
+    o.yaw = d.yaw; /* phase 09 batch 9: a decal turns with its model */
+    o.mat = it.mat;
+    o.layer = L;
+    o.still = it.still;
+    o.voxImg = 1;
+    out.push(o);
   }
 }
 /* phase 09 batch 1: a tree's leaves are one picture, its crown as drawn (paint it in the Studio like any prop picture).
@@ -1857,21 +1912,46 @@ function drawVoxItems(p, L) {
     propModelState.drawn++;
   }
 }
-export function drawPropModels(C, items, X, hits, labels, PPU) {
-  propModelState.drawn = 0;
-  propModelState.lowPoly = 0;
+/* FL-5a (quality.drawOrder): part 'solid' draws only the items the discard-free programs can draw (modelSolidItem),
+   nearest first; part 'cut' draws the rest, as before. No part: every item, as before */
+export function drawPropModels(C, items, X, hits, labels, PPU, part) {
+  if (part !== 'cut') {
+    propModelState.drawn = 0;
+    propModelState.lowPoly = 0;
+  }
   if (!propModelsOn()) return;
   /* R1 measure: every draw a model makes counted apart, in whichever pass draws it (engine/gpu-counters.js) */
   gpuTag('model');
   propModelGuard(() => {
     const gl = gpuState.gl;
     ensurePrograms(propModelShaders());
-    const VL = [],
+    const SD = part ? propModelSolidShaders() : null;
+    if (SD) ensurePrograms(SD);
+    const solidOn = !!SD && !rockCircleOn(C);
+    let VL = [],
       ML = [];
     for (const it of items) {
       if (!it.vox || it.vis === false) continue;
       const m = propModelMesh(it.voxPath, it.vox);
-      if (m) (m.model ? ML : VL).push([it, m]);
+      if (!m) continue;
+      if (part && (solidOn && modelSolidItem(it, m, SD)) !== (part === 'solid')) continue;
+      (m.model ? ML : VL).push([it, m]);
+    }
+    if (part === 'solid') {
+      VL = modelsNearestFirst(VL, C);
+      ML = modelsNearestFirst(ML, C);
+      if (VL.length) {
+        const p = useWalkProgram('voxIS', C, X);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
+        gl.disable(gl.CULL_FACE);
+        drawModelInstances(p, 'vox', VL);
+      }
+      gl.bindVertexArray(null);
+      drawLowPolyModels(C, X, ML, true, true);
+      walkRenderer.solidModels = VL.length + ML.length;
+      return;
     }
     if (VL.length) {
       const p = useWalkProgram('voxI', C, X);
@@ -2022,6 +2102,31 @@ void main(){vec3 P=qPos*uQ,N=qNrm;${INSTANCE_PLACE_GLSL}vW=w;vN=n;vC=qCol;gl_Pos
     asFlatInputs(PROP_MODEL_SHADERS.vox[1], VOX_FLAT),
   ];
 }
+/* FL-5a (quality.drawOrder): the instanced pair without their cuts (engine/shader-precision.js solidFragment), for an
+   item that is whole (no fade), not stretched, without its own texture, on a frame with no rock circle; drawn first,
+   nearest first. {} when an edit no longer fits (everything keeps the programs with cuts) */
+const VOX_SOLID_EDITS = [['if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;', '']],
+  MDL_SOLID_EDITS = [
+    ['if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;', ''],
+    ['if(tx.a<.5)discard;', ''],
+  ];
+let modelSolidDefs = null;
+function propModelSolidShaders() {
+  if (modelSolidDefs) return modelSolidDefs;
+  const P = propModelShaders(),
+    D = {};
+  if (P.voxI) {
+    const f = solidFragment(P.voxI[1], VOX_SOLID_EDITS);
+    if (f) D.voxIS = [P.voxI[0], f];
+  }
+  if (P.mdlI) {
+    const f = solidFragment(P.mdlI[1], MDL_SOLID_EDITS);
+    if (f) D.mdlIS = [P.mdlI[0], f];
+  }
+  /* the low-poly pair needs the buildings' shaders; kept once both are made */
+  if (P.mdlI) modelSolidDefs = D;
+  return D;
+}
 function lowPolyInstancedShaders() {
   return [
     `#version 300 es
@@ -2033,11 +2138,12 @@ void main(){vec3 P=mPos/256.,N=mNrm;${INSTANCE_PLACE_GLSL}vW=w;vN=n;vUV=mUV/64.;
     asFlatInputs(PROP_MODEL_SHADERS.mdl[1], MDL_FLAT),
   ];
 }
-function drawPropModelShadows(SH, items) {
+/* part (FL-2b, the far map's cache): 0 every part, 1 no turning parts (the cached copy), 2 the turning parts alone */
+function drawPropModelShadows(SH, items, part = 0) {
   if (!propModelsOn()) return;
   gpuTag('model');
   propModelGuard(() => {
-    if (modelShadowInstancesReady()) drawPropModelShadowsInstanced(SH, items);
+    if (modelShadowInstancesReady()) drawPropModelShadowsInstanced(SH, items, part);
   });
   gpuTag(0);
 }
@@ -2072,7 +2178,7 @@ function modelShadowInstancesReady() {
     }
   return true;
 }
-function drawPropModelShadowsInstanced(SH, items) {
+function drawPropModelShadowsInstanced(SH, items, part = 0) {
   const gl = gpuState.gl,
     L = modelShadowState.list,
     S = MODEL_SHADOW_INSTANCES,
@@ -2112,9 +2218,11 @@ function drawPropModelShadowsInstanced(SH, items) {
       A = m.model ? MDL_ATTRIBS : VOX_ATTRIBS,
       n = b.list.length;
     gl.uniform1f(p.U.uQ, m.q || 1);
-    drawModelShadowPart(m, A, I, S.buf, b.at, n);
-    for (const q of m.more || []) drawModelShadowPart(q, A, I, S.buf, b.at, n);
-    if (m.spins && m.spins.length) {
+    if (part !== 2) {
+      drawModelShadowPart(m, A, I, S.buf, b.at, n);
+      for (const q of m.more || []) drawModelShadowPart(q, A, I, S.buf, b.at, n);
+    }
+    if (part !== 1 && m.spins && m.spins.length) {
       gl.uniform1f(p.U.uPart, 1);
       for (const s of m.spins) {
         gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], spinPartAngle(s, t));

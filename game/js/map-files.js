@@ -14,6 +14,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, saveData, seamlessViewUses, seamlessWorld } from './hooks.js';
+import { everyFree } from './free-tick.js';
 import { LOCATIONS, ROADS_BY_NODE, START_NODE, gameData } from './game-data.js';
 import { chapterMap } from './logic/script.js';
 /* eslint-disable no-func-assign */
@@ -130,7 +131,7 @@ export function loadMapsAhead(node) {
 /* wherever you go (walking, the airship, a loaded game, the debug menu), the maps ahead follow */
 export function watchMapsAhead() {
   let at = null;
-  setInterval(() => {
+  everyFree(() => {
     const n = typeof saveData !== 'undefined' && saveData && saveData.trip ? saveData.trip.node : null;
     if (n == null || n === at) return;
     at = n;
