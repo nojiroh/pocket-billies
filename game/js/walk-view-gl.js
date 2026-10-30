@@ -668,7 +668,9 @@ function drawWalkFrame(ts, dtm) {
   }
   /* FL-3a: the world clock keeps real time down to 10 frames a second (logic/frame-control.js worldSteps); the walker,
      the townsfolk and the wildlife move in even steps of at most 50 ms */
-  const WS = worldSteps(dtm),
+  /* Placing (2026-10-30): behind a screen or a window the world is frozen (walk-control.js cap): its still picture is
+     drawn again now and then, and the clock takes no step */
+  const WS = worldSteps(walkView.still ? 0 : dtm),
     dms = WS.ms;
   walkView.t += dms;
   walkRenderer.worldSteps = WS;

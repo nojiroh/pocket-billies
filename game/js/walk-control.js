@@ -73,6 +73,7 @@ import { toast } from './overlay.js';
 import { clinicHeal } from './walk-tab.js';
 /* eslint-disable no-func-assign */
 expose({
+  STILL_FPS: [() => STILL_FPS],
   doorBuildingOf: [() => doorBuildingOf, v => (doorBuildingOf = v)],
   enterRoom: [() => enterRoom, v => (enterRoom = v)],
   exitPrompt: [() => exitPrompt, v => (exitPrompt = v)],
@@ -885,6 +886,8 @@ everyFree(() => {
 }, 400);
 /* FL-1b: the walk screen's free band (between its top card and its foot), kept for one frame */
 const safeBand = { t: -1, v: null };
+/** behind a screen or a window: the frozen world's still picture is drawn again this often (a second each) */
+const STILL_FPS = 0.5;
 /* FL-6: the windows (and moments) that keep the world moving behind them instead of freezing it: a window that asks
    for it (modal({world: true})), the debug menu (its live numbers), Settings' Display tab (the graphics dials show a
    change at once), a picture the debug log is waiting for, a scene being played (cutscene/director.js) and the
@@ -1036,13 +1039,21 @@ export function walkMapSync() {
            once (it drew 0.8 s more at 24, each frame at full cost, while the tab opened) */
         if (w !== walkView.held) walkView.heldT = performance.now();
         walkView.held = w;
+        walkView.still = false;
         if (w === 'hidden') return 1;
         /* FL-6 (the owner's answer): behind a full screen or a window the world is frozen: a change of rate draws
-           one frame at once (logic/frame-pace.js paceDue), then none (FL-3b: a cap of 0; it was the scheduler's floor,
-           0.1, one frame in 10 s).
-           The world's clock runs inside the draw, so the game pauses there. Some windows keep the world moving
-           (worldMoving below), at the rates they had: 1 behind a screen, 20 behind a window */
-        if (w === 'screen' || w === 'window') return worldMoving() ? (w === 'screen' ? 1 : 20) : 0;
+           one frame at once (logic/frame-pace.js paceDue), and the world's clock (which runs inside the draw) stops,
+           so the game pauses there. Some windows keep the world moving (worldMoving below), at the rates they had: 1
+           behind a screen, 20 behind a window.
+           Placing (2026-10-30): frozen is the same still picture drawn again every 2 s (walkView.still: the clock
+           takes no step, walk-view-gl.js), not no frames at all (FL-3b's cap of 0): a 3D canvas left without a new
+           frame for 10 s or more came back to a page whose frames stalled for about as long again once the window
+           closed (headless, measured: 8 s frozen, 13 s stalled; a redraw every 3 s or less, none) */
+        if (w === 'screen' || w === 'window') {
+          if (worldMoving()) return w === 'screen' ? 1 : 20;
+          walkView.still = true;
+          return STILL_FPS;
+        }
         return userFps();
       },
     }).then(() => cv.classList.add('in'));
