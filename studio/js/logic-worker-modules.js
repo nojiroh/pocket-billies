@@ -76,6 +76,7 @@ import '../../game/js/logic/gene-bank.js';
 import '../../game/js/logic/gene-events.js';
 import '../../game/js/logic/genes.js';
 import '../../game/js/logic/graft-art.js';
+import '../../game/js/logic/ground-tiles.js';
 import '../../game/js/logic/half-float.js';
 import '../../game/js/logic/halt.js';
 import '../../game/js/logic/held.js';

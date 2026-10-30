@@ -9,7 +9,7 @@ import './walk-renderer.mjs';
 
 const { POST_EFFECT_SHADERS, POST_MEDIUMP, gpuState, MEDIUMP_FROM, MEDIUMP_TO, mediumpFragment, mediumpMissing } =
   globalThis;
-const NAMES = ['bright', 'down', 'up', 'rays', 'grade'];
+const NAMES = ['bright', 'brightq', 'down', 'up', 'rays', 'grade'];
 
 test('the post passes that opt in are the ones meant, and each carries its list', () => {
   assert.deepEqual(Object.keys(POST_MEDIUMP).sort(), [...NAMES].sort());
