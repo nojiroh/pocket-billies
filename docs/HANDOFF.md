@@ -69,6 +69,69 @@ built without waiting (assets-track.md section 1).
   through the whole ride, the fire should sit on the nozzles (bent down as it lifts, straight back into the portal),
   smoke at lift-off. Settings > Graphics Beautiful adds a heat shimmer. Send the debug log if anything stutters.
 
+### AS-2 - a sky train halt at every run's start - 2026-10-29
+Branch `ccr-15aa5647-90bz3r` (this session's branch, made from `track/assets` f835b311; the plan's name was
+`claude/as-2-<words>`), draft PR #344 into `track/assets`. Lane AS-2 of docs/phases/assets-track.md, built on its own
+(the owner's "Sessions run on their own"). Model, mapgen, a cutscene beat, words.
+- Changed: the halt (new `tools/build-halt.py`, catalogue `train_halt`, `ppm` 48, showcase map `test_halt`): a brick
+  platform with a pale coping and the yellow line, steps in the middle, a green timber canopy with a verdigris roof and
+  a fretted valance, a ticket kiosk with a solar panel and a stovepipe, a lamp post, the name board, two benches facing
+  the track, flower boxes, railings, the track with a buffer stop, curving away into the grass past its right end. Its
+  pictures (name board, TICKETS, lamp glass) are painted at 48 px/m with lit edges and hue-shifted ramps; the
+  low-poly parts use the shared texture cells (AS-4 repaints those). The platform is laid out as Skyline Station's
+  (logic/train-path.js TRAIN_RIDE, TRAIN_PLATFORM), so the train's path code works at it unchanged.
+- Changed: the landing (mapgen.js's landing block): the mast dial places `train_halt` ("Sky train halt") where the
+  `airship_station` stood; where you stand by it is its catalogue's `stand` (the foot of its steps), in mapgen (kept
+  clear, `mapgenStandSpot`) and in airship.js `standByMast`. A lot wider than about 8 m is kept clear as small circles
+  over it: `mapgenOccFree` looks only about 4 m round a spot, so one big circle let plants grow on the halt's ends
+  (clinic and shop lots unchanged). Studio's Generate dial and its "At the hub" line say the halt.
+- Changed: new `logic/halt.js` (which prop is the halt, the run's train by its region theme, where it stands parked);
+  run-scenes.js parks the run's train at the halt on every landing but the first run's (one line beside IN-1's crash
+  hook: AS-6's file). New `halt-arrival.js`: as the landing's loading screen lifts, the parked train hangs over the
+  track, comes straight down onto the rails and you step off down the steps (the ride home's "down" and "off" beats,
+  4.1 s), through the walk view's director; a tap skips, a battle/room/other place ends it, reduced motion has none;
+  a 'scene' line `train arrival <key> <ms> ms` in the debug log. run.js `runTakeOffGo` starts it.
+- Changed: the crash site (firstRun.json, cutscenes/crash.json) keeps off the halt: `kappi_from` at the foot of its
+  steps (was on the platform), a crate moved off the platform (-5.5, 3 -> -7.6, 3.2), the second filming clear area
+  stops at x -0.4 (it hid the halt, whose base point is 0, 0). Everything else stands where it stood relative to the
+  old mast: the scene plays in front of the halt's west end with the wreck to its north-west.
+- Changed (drafts, the owner may change them): "Sky train halt"; "The sky train waits here for the end of the run.
+  Riding home now gives the run up."; "Ride home"; lore "Sky train timetable" by "Skyline Rail & Portal Co." (its
+  first two pages reworded for trains); the shop's "We restock every time a sky train comes in. Roughly."; Chosen's
+  "Face-down on the platform." (was "by the mast": you come home at Skyline Station since HB-8); the run rules page;
+  VISION's run line.
+- Internal names stay for AS-8 (`airship.js`, `flyMenu`, act `fly`, `firstRunMast`, the `mast` dial).
+- Checks moved: `rl8_run_from_mast` (check-quick.py) and the in-game full test now check the landing's halt and parked
+  train and skip the arrival; `airship_moored` is the hub's airship and stays. Tests: new halt.test.mjs (7);
+  mapgen-lots, first-run on the halt; snapshots remade: first-run-places (only the landing moved), the data check's
+  file count (191).
+- CI (check-fast.py): the arrival's tap-to-skip swallowed the payout card's tap in "Packing for a run" (the payout
+  opens right after landing); fixed: a sheet, a battle or the run's end ends the arrival and the tap goes through.
+- Found, not changed: on `track/assets` f835b311 CI's smoke job hits its 30-minute limit and fails "A run town's life",
+  "A run town's quest" (the named locals' talk box) and later "Packing for a run" (the ride home never ended);
+  "Kappi's tips" is timing-sensitive (each throw about 20 s in software drawing against a 30 s wait: passes alone,
+  fails beside a second browser). check-quick.py's RL-8 step fails at its town shop ("no Perk", line 1952) on `track/assets`
+  before this lane too; `ui-lint` reports the colour count in game js at 618 -> 612 on `track/assets` already (a ratchet
+  waiting for `--save`); the crash scene's haze hides most of the wreck past about 15 m (AS-7's "fog too much").
+- Facts checked against `track/assets` (section 2.5): all held. One addition: the hub's lost-run line said "by the
+  mast" though the ride home leaves you at Skyline Station.
+- Risky: mapgen output changes on every run's landing (`MAPGEN_VERSION` not bumped: a run in progress keeps its saved
+  world; AS-8 settles the version with AS-6's change); the halt lot is 12.6 x 7.6 m, so on a tight landing it may not
+  fit (mapgen-lots: at least 87 of 90 test places fit; a landing without room gets a note and no halt, as before);
+  the arrival's camera and the parked train on a real phone; `prop-models.js` untouched.
+- Verified: lint, typecheck, format:check, check:modules (422 modules), check:data (191 files), build clean; unit
+  tests quick 2408 of 2409 (the one, run-map-checks' "1,000 maps in under 1.5 s", took 1.65 s with a browser drawing
+  beside it and passes alone), slow 110 of 110 after the first-run-places snapshot was remade; `check-quick.py --smoke`
+  7 of 7 in 382 s (the in-game full test and the crash scene included); `--steps=RL-8` passes the new halt checks and
+  then stops at "the town's shop has no Perk (RL-12)", which fails the same way on `track/assets` f835b311 (not this
+  lane's); the full quick check not run (AS-8 runs it).
+- Pictures (validation/look-halt/, validation/look-crash/, not in git): the halt from five sides on test_halt; the
+  arrival held at 0-4000 ms and after; the crash site from above, the south and the scene's cameras.
+- Next: the other wave-1 lanes; AS-8 merges them and does the renames.
+- For the owner on the phone: start a run at Skyline Station: after the loading screen the sky train sets down at the
+  landing's halt and you step off; tap the halt for "Ride home". New game: the crash scene should show the halt's west
+  end behind the group. Send the debug log (the `train arrival` line).
+
 ### AS-0 - the assets track: plan, scatter module, flora layers - 2026-10-29
 Branch `track/assets` from main 73b2f8b1, draft PR into main. The owner's brief: raise every asset (props, a natural
 island and routes, varied vegetation with better leaf art, a train station instead of the airship station at the
