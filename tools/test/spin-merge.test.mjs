@@ -20,15 +20,21 @@ const D = readGameData(),
     .map(([k, M]) => ({ k, path: M.model, rec: JSON.parse(readFileSync(join(ROOT, 'game/art', M.model), 'utf8')) }))
     .filter(({ rec }) => rec.kind !== 'mesh' && (rec.layers || []).some(l => l.spin && !l.hide));
 
-test('the spinning models turn one way each: one group of layers per model', () => {
+// BD-6: a model may turn more than one way (the Workshop's two gears and its crane hook, the barn's vane and spinner):
+// one group per way, at most three
+test('the spinning models turn few ways each: one group of layers per way of turning', () => {
   const names = SPINNING.map(({ k }) => k);
   for (const k of ['windmill', 'gene_bank', 'workshop', 'cottage_solar', 'lighthouse', 'tree_giant_swing'])
     assert.ok(names.includes(k), `${k} spins`);
   for (const { k, rec } of SPINNING) {
     const g = spinGroups(rec.layers),
       n = rec.layers.filter(l => l.spin && !l.hide).length;
-    assert.equal(g.length, 1, `${k}: ${g.length} ways of turning`);
-    assert.equal(g[0].layers.length, n, k);
+    assert.ok(g.length >= 1 && g.length <= 3, `${k}: ${g.length} ways of turning`);
+    assert.equal(
+      g.reduce((a, q) => a + q.layers.length, 0),
+      n,
+      k
+    );
   }
 });
 
@@ -88,18 +94,22 @@ test('past 65,535 vertices the joined triangles use 32-bit indices', () => {
   assert.equal(joinMeshes([null], 16), null);
 });
 
-test('propModelMesh builds one spin mesh per spinning model, drawn as one part', () => {
+test('propModelMesh builds one spin mesh per way of turning, each drawn as one part', () => {
   G.gpuState.gl = recordingGL();
   for (const { k, path, rec } of SPINNING) {
     G.invalidatePropModel(path, true);
     const m = G.propModelMesh(path, rec);
     assert.ok(m, k);
-    assert.equal(m.spins.length, 1, `${k}: ${m.spins.length} spin meshes`);
+    assert.equal(m.spins.length, spinGroups(rec.layers).length, `${k}: ${m.spins.length} spin meshes`);
     const s = m.spins[0],
       n = rec.layers
         .filter(l => l.spin && !l.hide)
         .reduce((a, l) => a + ((lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }] }) || { n: 0 }).n || 0), 0);
-    assert.equal(s.n, n, `${k}: every layer's triangles`);
+    assert.equal(
+      m.spins.reduce((a, q) => a + q.n, 0),
+      n,
+      `${k}: every layer's triangles`
+    );
     assert.deepEqual(
       Object.keys(spinOf(rec.layers.find(l => l.spin).spin)).map(q => typeof s[q]),
       ['object', 'object', 'number', 'number']
