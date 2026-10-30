@@ -17,14 +17,13 @@ helpers (tools/build-look-sketches.py).
 Footprints (box) and doors stay as they were (shop 3.8 x 2.4, door 30 px; inn 5.6 x 3.4, door 0; library 5.4 x 3.4,
 door 0; lab 6 x 3, door 62 px), so the town tools (BD-7) have nothing to move for these four. Lettering stays
 pixel-font decals that face the front (never mirrored). Each model's picture (the fallback and the far view) is baked
-from the game's own mesh (tools/model-triangles.mjs) into scene/next/hub/<key>.png.
+from the game's own mesh (tools/model-mesh.mjs) into scene/next/hub/<key>.png.
 
     python3 tools/build-civic.py      # rerunnable: writes the four recipes, their pictures and catalogue entries
 """
 import importlib.util
 import json
 import math
-import subprocess
 import sys
 from pathlib import Path
 
@@ -598,21 +597,15 @@ BUILDINGS = {'shop': shop, 'inn': inn, 'library': library, 'lab': lab}
 
 
 # ------------------------------------------------------------------------------------------------------ the pictures
-def triangles(paths):
-    """the recipes' triangles as the game makes them (tools/model-triangles.mjs)"""
-    out = subprocess.run(['node', str(ROOT / 'tools/model-triangles.mjs'), *map(str, paths)], cwd=ROOT, check=True,
-                         capture_output=True, text=True).stdout
-    return {Path(o['file']).stem: [tuple(t) for t in o['tris']] for o in json.loads(out)}
-
-
 def bake(key, T):
-    """the model's picture with the island batch's baker, given the game's own triangles; in scene/next/hub"""
-    was, was_pics = ISL.mesh, ISL.PICS
-    ISL.mesh, ISL.PICS = (lambda _L: T), PICS
+    """the model's picture with the island batch's baker, given the game's own triangles (ISL.game_mesh, i.e.
+    tools/model-mesh.mjs); in scene/next/hub"""
+    was = ISL.mesh, ISL.needs_game_mesh, ISL.PICS
+    ISL.mesh, ISL.needs_game_mesh, ISL.PICS = (lambda _L: T), (lambda _r: False), PICS
     try:
-        return ISL.bake({'layers': [1]}, key)
+        return ISL.bake({'layers': []}, key)
     finally:
-        ISL.mesh, ISL.PICS = was, was_pics
+        ISL.mesh, ISL.needs_game_mesh, ISL.PICS = was
 
 
 def main():
@@ -624,7 +617,7 @@ def main():
         rec = {'ppm': PPM, 'cel': 0.62, **{k: v for k, v in rec.items() if v is not None}}
         rec['layers'] = sorted(rec['layers'], key=lambda l: l['k'] == 'img')
         built[key] = (B1.write_recipe(key, rec), M)
-    T = triangles([B1.ART / p for p, _ in built.values()])
+    T = {key: ISL.game_mesh(json.loads((B1.ART / p).read_text())) for key, (p, _) in built.items()}
     for key, (path, M) in built.items():
         P = C[key]
         img, ox, oy = bake(key, T[key])

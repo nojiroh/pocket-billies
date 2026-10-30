@@ -18,7 +18,9 @@ A shape or colour of one thing is a variant of one prop (phase 09 task 4). Each 
 Uses batch 1's parts (tools/build-props-batch1.py), batch 4's ring and batch 7's House kit for the barn.
 """
 import importlib.util
+import json
 import math
+import subprocess
 import sys
 from pathlib import Path
 
@@ -72,137 +74,122 @@ def plank(a, b, t, col, name, tex='wood'):
 
 
 # ================================================================ the barn
-class Barn(B7.House):
-    """The House kit with a gambrel roof (two slopes a side, the ridge running back), as the old barn picture."""
-
-    def roof_parts(s):
-        L, w, d = s.L, s.w, s.d
-        hw, hd = w / 2 + s.over, d / 2 + s.over
-        rz = s.top + 0.02
-        k, h1, h2 = 0.56, 1.45, 0.95  # the knee (how far in the steep slope ends), the steep and the shallow rise
-        L += [box(0, 0, rz - 0.04, 2 * hw, 2 * hd, 0.1, s.trim, 'wood', 'fascia')]
-        L.append(cyl(0, 0, rz + 0.06, hw * S2, h1, s.roof, s.rtex, 'roof', 4, k='cone', ry=r2(hd * S2),
-                     r1=r2(hw * k * S2), ry1=r2(hd * S2), rot=r2(math.pi / 4)) | {'roof': 1})
-        L.append(cyl(0, 0, rz + 0.06 + h1, hw * k * S2, h2, s.roof, s.rtex, 'roof', 4, k='cone', ry=r2(hd * S2),
-                     r1=0.02, ry1=r2(hd * S2), rot=r2(math.pi / 4)) | {'roof': 1})
-        # the knee and the ridge as trim lines, front to back
-        for sx in (-1, 1):
-            L.append(limb((sx * hw * k, -hd - 0.02, rz + 0.08 + h1), (sx * hw * k, hd + 0.02, rz + 0.08 + h1), 0.05, 0.05, s.trim, 'wood', 'knee', 4))
-        L.append(limb((0, -hd - 0.02, rz + 0.06 + h1 + h2), (0, hd + 0.02, rz + 0.06 + h1 + h2), 0.07, 0.07, '#3E4458', 'slate', 'ridge cap', 4))
-        # the gable ends, front and back, just outside the roof's closed ends (as the kit's gableF), under its line
-        a, b = hw - 0.22, hw * k - 0.16
-        for sy in (-1, 1):
-            y = sy * (hd + 0.035)
-            L.append(cyl(0, y, rz, a * S2, h1, s.wall, s.wtex, 'gable', 4, k='cone', ry=r2(0.03 * S2), r1=r2(b * S2),
-                         ry1=r2(0.03 * S2), rot=r2(math.pi / 4)))
-            L.append(cyl(0, y, rz + h1, b * S2, h2 * b / (hw * k), s.wall, s.wtex, 'gable', 4, k='cone', ry=r2(0.03 * S2),
-                         r1=0.02, ry1=r2(0.03 * S2), rot=r2(math.pi / 4)))
-            # the bargeboards: white trim along the roof's edge
-            pts = [(-hw, rz + 0.02), (-hw * k, rz + 0.08 + h1), (0, rz + 0.1 + h1 + h2), (hw * k, rz + 0.08 + h1), (hw, rz + 0.02)]
-            yy = sy * (hd + 0.02)
-            for (x0, z0), (x1, z1) in zip(pts, pts[1:]):
-                L.append(plank((x0, yy, z0), (x1, yy, z1), 0.06, s.trim, 'bargeboard'))
-        s.rz, s.rh = rz + 0.06, h1 + h2
-        s.ridge = s.rz + s.rh
-        s.slope = ('x', hw)
-        s.knee = (hw * k, rz + 0.06 + h1)
-
-
-def barn_door(L, x, fy, dw, dh, col, trim, name='door'):
-    """Two plank leaves with a white frame, each braced with a white X, a rail along the middle, the iron track
-    above that they slide on, and two handles."""
-    L += [box(x, fy - 0.03, 0.24, dw + 0.2, 0.06, dh + 0.12, trim, 'wood', name + ' frame'),
-          box(x, fy - 0.06, 0.24, dw, 0.04, dh, col, 'battens', name)]
-    for sx in (-1, 1):
-        cx = x + sx * dw / 4
-        x0, x1, z0, z1 = cx - dw / 4 + 0.07, cx + dw / 4 - 0.07, 0.3, 0.24 + dh - 0.06
-        L += [plank((x0, fy - 0.09, z0), (x1, fy - 0.09, z1), 0.035, trim, name + ' brace'),
-              plank((x1, fy - 0.09, z0), (x0, fy - 0.09, z1), 0.035, trim, name + ' brace'),
-              box(cx, fy - 0.085, 0.24, dw / 2 - 0.02, 0.03, 0.07, trim, 'wood', name + ' rail'),
-              box(cx, fy - 0.085, 0.24 + dh - 0.07, dw / 2 - 0.02, 0.03, 0.07, trim, 'wood', name + ' rail'),
-              box(cx - sx * (dw / 4 - 0.04), fy - 0.085, 0.24, 0.07, 0.03, dh, trim, 'wood', name + ' stile'),
-              sphere(x + sx * 0.12, fy - 0.12, 0.24 + dh * 0.45, 0.04, A['iron'], 'metal', name + ' handle', 6, 3)]
-    L += [box(x, fy - 0.085, 0.24 + dh / 2 - 0.035, dw, 0.03, 0.07, trim, 'wood', name + ' middle rail'),
-          box(x, fy - 0.03, 0.24 + dh + 0.12, dw * 2 + 0.3, 0.06, 0.06, A['iron'], 'metal', name + ' track'),
-          box(x, fy - 0.03, 0.24 + dh + 0.18, dw * 2 + 0.3, 0.05, 0.04, '#5A6278', 'metal', name + ' track cover')]
+LP = load('landmark_parts', 'landmark_parts.py')
+BARN_WALL, BARN_ROOF, BARN_TRIM, BARN_DOOR = '#A8382E', '#545C70', '#EAEEEC', '#7E2E34'  # the looks swap these
 
 
 def barn():
-    """The ranch barn: red board walls under a grey slate gambrel roof with white trim; big braced sliding doors to the
-    front, the hay loft door above them with its hoist beam and pulley, a lamp, a copper weather vane on the ridge;
-    windows down both sides; a small door, a loft window and a lean-to woodpile behind (the camera sees every side
-    on the island)."""
-    H = Barn(5.2, 3.8, 1, 2.75, '#A8382E', 'battens', '#EAEEEC', '#545C70', 'slate', 'gableF', 40, over=0.3)
-    L, fy, by = H.L, H.fy, H.d / 2
-    gy = -(H.d / 2 + H.over) - 0.07  # the front gable's face (the roof's end), where the loft door is
-    barn_door(L, 0, fy, 2.3, 2.35, '#7E2E34', H.trim)
-    H.lamp(0, 2.95)
-    # the loft door, open on its hay, and the hoist beam over it
-    lz, lw = H.top + 0.35, 0.95
-    L += [box(0, gy, lz, lw, 0.05, lw, '#4A2A26', 'plain', 'loft opening'),
-          sphere(-0.15, gy - 0.02, lz - 0.02, 0.28, HAY, 'hay', 'loft hay', 8, 3, 0.3, 0.42),
-          sphere(0.2, gy - 0.03, lz - 0.02, 0.24, HAY_D, 'hay', 'loft hay', 8, 3, 0.3, 0.36)]
-    B3.frame_box(L, 0, gy - 0.02, lz, lw, lw, H.trim, 0.08, 0.06, 'loft frame')
-    L += [box(-lw / 2 - 0.3, gy - 0.08, lz, 0.5, 0.04, lw, '#7E2E34', 'battens', 'loft door leaf'),
-          box(0, gy - 0.4, lz + lw + 0.3, 0.14, 0.9, 0.14, A['dwood'], 'wood', 'hoist beam'),
-          disc(0, gy - 0.75, lz + lw + 0.17, (1, 0, 0), 0.09, 0.05, A['iron'], 'metal', 'pulley', 10),
-          limb((0.02, gy - 0.75, lz + lw + 0.09), (0.02, gy - 0.75, lz + 0.2), 0.012, 0.012, '#D6C08A', 'cloth', 'hoist rope', 4),
-          cyl(0.02, gy - 0.75, lz + 0.05, 0.05, 0.15, A['iron'], 'metal', 'hoist hook', 6, k='cone', r1=0.01)]
-    H.wins.append((0, lz + lw / 2))
-    # the weather vane: a rod, the arrow and a little rooster, copper
-    vz = H.ridge + 0.05
-    L += [limb((0, fy + 0.3, vz), (0, fy + 0.3, vz + 0.75), 0.018, 0.015, A['iron'], 'metal', 'vane rod', 5),
-          sphere(0, fy + 0.3, vz + 0.02, 0.07, A['copper'], 'metal', 'vane ball', 8, 4),
-          plank((-0.32, fy + 0.3, vz + 0.55), (0.32, fy + 0.3, vz + 0.55), 0.018, A['copper'], 'vane arrow', 'metal'),
-          cyl(0.34, fy + 0.3, vz + 0.5, 0.06, 0.1, A['copper'], 'metal', 'vane head', 4, k='cone', r1=0.01, rot=r2(math.pi / 4)),
-          sphere(-0.04, fy + 0.3, vz + 0.63, 0.09, A['verd'], 'metal', 'vane rooster', 6, 3, h=0.16),
-          cyl(0.06, fy + 0.3, vz + 0.74, 0.03, 0.08, '#D6403C', 'metal', 'vane comb', 5),
-          cyl(-0.16, fy + 0.3, vz + 0.66, 0.06, 0.14, A['verd'], 'metal', 'vane tail', 4, k='cone', r1=0.01)]
-    for sx in (-1, 1):  # x and y letters of the compass
-        L.append(plank((sx * 0.22, fy + 0.3, vz + 0.35), (-sx * 0.22, fy + 0.3, vz + 0.35), 0.012, A['iron'], 'vane cross', 'metal'))
-    # the sides: two crossed windows each, a downpipe at each front corner
+    """BD-6: the ranch barn: red board walls under a gambrel roof of solar shingles (a copper ridge, white trim on the
+    gable), big sliding doors with white braces, the hay loft door and its hoist above them, a louvred cupola with a
+    swinging weather vane, and a domed silo beside it (copper hoops, a ladder, a glowing porthole under its verdigris
+    dome, a wind spinner on top); windows down the sides, a back door, a hay bale, a flower trough, a neon line under
+    the front gable at night. Look B: about 4 degrees of lean with a sag. Returns (recipe, fx, door x)."""
+    LPm, DEG = LP, LP.DEG
+    bx, by, bw, bd, wh = -0.75, 2.1, 4.0, 3.8, 2.55  # the body's middle across and in depth, its size, the wall height
+    fy = by - bd / 2
+    z0 = 0.2
+    zt = z0 + wh
+    outer = [(-2.32, 0), (-1.74, 1.22), (0, 1.98), (1.74, 1.22), (2.32, 0)]
+    inner = [(-2.04, 0), (-1.54, 1.06), (0, 1.76), (1.54, 1.06), (2.04, 0)]
+    gable = [(-2.0, 0.0), (2.0, 0.0), (1.52, 1.04), (0, 1.74), (-1.52, 1.04)]
+    L = [LPm.box(bx, by, 0, bw + 0.3, bd + 0.3, z0, LPm.STONE, 'stone', bevel=0.04, name='plinth'),
+         LPm.box(bx, by, z0, bw, bd, wh, BARN_WALL, 'battens', name='walls'),
+         LPm.prism(bx, by, zt, gable, bd, BARN_WALL, 'battens', name='gable walls'),
+         LPm.prism(bx, by, zt - 0.04, outer + inner[::-1], bd + 0.5, BARN_ROOF, 'solar', name='roof', roof=1),
+         LPm.box(bx, by, zt + 1.94, 0.26, bd + 0.55, 0.1, LPm.COPPER, 'metal', name='ridge cap', roof=1),
+         LPm.prism(bx, fy - 0.04, zt, [(x * 0.97, z * 0.97) for x, z in inner] + [(x * 0.9, z * 0.9) for x, z in inner][::-1],
+                   0.05, BARN_TRIM, 'wood', name='gable trim')]
+    for sx in (-1, 1):  # corner boards
+        for yy in (fy, by + bd / 2):
+            L.append(LPm.box(bx + sx * (bw / 2 - 0.02), yy, z0, 0.14, 0.14, wh, BARN_TRIM, 'wood', name='corner board'))
+    L.append(LPm.neon((bx - 1.5, fy - 0.12, zt + 0.95), (bx, fy - 0.12, zt + 1.62), LPm.NEON_A, 0.03, 'neon under the gable'))
+    L.append(LPm.neon((bx, fy - 0.12, zt + 1.62), (bx + 1.5, fy - 0.12, zt + 0.95), LPm.NEON_A, 0.03, 'neon under the gable'))
+    # the big sliding doors, their braces and track
+    dw, dh = 2.4, 2.25
+    L += [LPm.box(bx, fy - 0.02, z0, dw + 0.24, 0.05, dh + 0.12, BARN_TRIM, 'wood', name='door frame'),
+          LPm.box(bx, fy - 0.12, z0 + dh + 0.1, dw * 2 - 0.2, 0.08, 0.1, LPm.IRON, 'metal', name='door track')]
     for sx in (-1, 1):
-        for y in (-0.8, 0.8):
-            x = sx * (H.w / 2 + 0.01)
-            L += [box(x, y, 1.15, 0.03, 0.7, 0.75, B7.GLASS, 'plain', 'side window'),
-                  box(x + sx * 0.02, y, 1.15, 0.03, 0.84, 0.06, H.trim, 'wood', 'side window frame'),
-                  box(x + sx * 0.02, y, 1.84, 0.03, 0.84, 0.06, H.trim, 'wood', 'side window frame'),
-                  box(x + sx * 0.02, y - 0.39, 1.15, 0.03, 0.06, 0.75, H.trim, 'wood', 'side window frame'),
-                  box(x + sx * 0.02, y + 0.39, 1.15, 0.03, 0.06, 0.75, H.trim, 'wood', 'side window frame'),
-                  box(x + sx * 0.03, y, 1.15, 0.03, 0.04, 0.75, H.trim, 'wood', 'mullion'),
-                  box(x + sx * 0.03, y, 1.5, 0.03, 0.7, 0.04, H.trim, 'wood', 'mullion'),
-                  box(x + sx * 0.06, y, 1.08, 0.12, 0.84, 0.05, H.trim, 'wood', 'sill')]
-        L.append(limb((sx * (H.w / 2 + 0.05), fy - 0.05, 0.2), (sx * (H.w / 2 + 0.05), fy - 0.05, H.top), 0.035, 0.035, A['copper'], 'metal', 'downpipe', 6))
-    # the back: a plain door, a loft window, the woodpile under a little lean-to
-    L += [box(1.3, by + 0.03, 0.24, 0.95, 0.06, 1.95, H.trim, 'wood', 'back door frame'),
-          box(1.3, by + 0.06, 0.24, 0.8, 0.04, 1.85, '#7E2E34', 'battens', 'back door'),
-          plank((0.95, by + 0.09, 0.3), (1.65, by + 0.09, 2.0), 0.03, H.trim, 'back door brace'),
-          box(1.3, by + 0.4, 0, 1.0, 0.5, 0.12, A['stone'], 'stone', 'back step'),
-          box(0, -gy, H.top + 0.5, 0.7, 0.04, 0.6, B7.GLASS, 'plain', 'loft window')]
-    B3.frame_box(L, 0, -gy + 0.03, H.top + 0.5, 0.7, 0.6, H.trim, 0.07, -0.06, 'loft window frame')
-    H.wins.append((0, H.top + 0.8))
-    wx = -1.25
-    L += [box(wx, by + 0.45, 1.55, 1.9, 0.95, 0.06, '#545C70', 'slate', 'lean-to roof') | {'roof': 1},
-          box(wx - 0.92, by + 0.82, 0, 0.08, 0.08, 1.55, A['dwood'], 'wood', 'lean-to post'),
-          box(wx + 0.92, by + 0.82, 0, 0.08, 0.08, 1.55, A['dwood'], 'wood', 'lean-to post')]
-    for row in range(4):
-        for i in range(6 - (row % 2)):
-            x = wx - 0.75 + i * 0.3 + (row % 2) * 0.15
-            L.append(limb((x, by + 0.12, 0.13 + row * 0.24), (x, by + 0.78, 0.13 + row * 0.24), 0.12, 0.12, '#96684A', 'bark', 'log', 7))
-            L.append(disc(x, by + 0.12, 0.13 + row * 0.24, (0, -1, 0), 0.105, 0.015, '#DBB27E', 'plain', 'log end', 7))
-    # a hay bale and a pitchfork by the door, a trough of flowers on the other side
-    L += [box(-1.95, fy - 0.45, 0, 0.9, 0.5, 0.48, HAY, 'hay', 'hay bale'),
-          box(-1.95, fy - 0.705, 0.1, 0.9, 0.01, 0.03, HAY_D, 'plain', 'bale string'),
-          box(-1.95, fy - 0.705, 0.34, 0.9, 0.01, 0.03, HAY_D, 'plain', 'bale string'),
-          limb((-1.45, fy - 0.2, 0.0), (-1.3, fy - 0.12, 1.4), 0.025, 0.025, A['wood'], 'wood', 'fork handle', 5)]
-    for j in (-1, 0, 1):
-        L.append(limb((-1.3 + j * 0.05, fy - 0.12, 1.4), (-1.27 + j * 0.06, fy - 0.1, 1.68), 0.01, 0.006, A['iron'], 'metal', 'fork tine', 4))
-    B3.flower_box(L, 1.95, fy - 0.2, 0.0, 0.9, 61)
-    B3.path_stones(L, 0, fy, 3)
-    return H
+        cx = bx + sx * dw / 4
+        L.append(LPm.box(cx + sx * 0.12, fy - 0.07, z0, dw / 2 - 0.02, 0.06, dh, BARN_DOOR, 'battens', name='door leaf'))
+        x0, x1 = cx + sx * 0.12 - dw / 4 + 0.08, cx + sx * 0.12 + dw / 4 - 0.08
+        L += [LPm.limb((x0, fy - 0.11, z0 + 0.1), (x1, fy - 0.11, z0 + dh - 0.1), 0.035, BARN_TRIM, 'wood', sides=4, name='door brace'),
+              LPm.limb((x1, fy - 0.11, z0 + 0.1), (x0, fy - 0.11, z0 + dh - 0.1), 0.035, BARN_TRIM, 'wood', sides=4, name='door brace'),
+              LPm.box(cx + sx * 0.12, fy - 0.11, z0 + dh - 0.08, dw / 2 - 0.1, 0.03, 0.08, BARN_TRIM, 'wood', name='door rail')]
+    L.append(LPm.box(bx, fy - 0.35, 0, dw + 0.4, 0.55, z0, LPm.STONE, 'stone', bevel=0.03, name='door step'))
+    L += LPm.lamp(bx + dw / 2 + 0.3, fy, 2.35)
+    # the loft door on its hay, the hoist beam
+    lz, lw = zt + 0.25, 0.9
+    L += [LPm.box(bx, fy - 0.03, lz, lw, 0.05, lw, '#4A2A26', name='loft opening'),
+          LPm.sphere(bx - 0.15, fy - 0.12, lz - 0.05, 0.26, HAY, 'hay', sides=8, rings=3, name='loft hay'),
+          LPm.sphere(bx + 0.18, fy - 0.12, lz - 0.05, 0.22, HAY_D, 'hay', sides=8, rings=3, name='loft hay'),
+          LPm.box(bx - lw / 2 - 0.28, fy - 0.09, lz, 0.48, 0.04, lw, BARN_DOOR, 'battens', name='loft door leaf'),
+          LPm.box(bx, fy - 0.45, lz + lw + 0.15, 0.14, 0.95, 0.14, '#6A4630', 'wood', name='hoist beam'),
+          LPm.limb((bx, fy - 0.85, lz + lw + 0.1), (bx, fy - 0.85, lz + 0.25), 0.012, '#D6C08A', 'cloth', sides=4, name='hoist rope'),
+          LPm.lathe(bx, fy - 0.85, lz + 0.1, [(0.02, 0), (0.06, 0.08), (0.05, 0.16)], LPm.IRON, 'metal', sides=6, name='hoist hook')]
+    # the cupola on the ridge, its vane swinging in the wind
+    cz = zt + 1.84
+    L += [LPm.box(bx, by + 0.6, cz, 0.7, 0.7, 0.6, BARN_TRIM, 'battens', name='cupola'),
+          LPm.box(bx, by + 0.6 - 0.36, cz + 0.12, 0.5, 0.03, 0.36, '#4A2A26', name='cupola louvre'),
+          LPm.lathe(bx, by + 0.6, cz + 0.6, [(0.55, 0), (0.42, 0.18), (0.18, 0.42), (0.03, 0.55), (0, 0.6)], LPm.VERDI,
+                    'standingseam', sides=4, name='cupola roof', roof=1),
+          LPm.limb((bx, by + 0.6, cz + 1.15), (bx, by + 0.6, cz + 1.7), 0.015, LPm.IRON, 'metal', sides=4, name='vane rod')]
+    vane = {'axis': 'z', 'x': bx, 'y': by + 0.6, 'z': cz + 1.5, 'rps': 0.15, 'swing': 0.5}
+    L += LPm.spun([LPm.box(bx + 0.05, by + 0.6, cz + 1.48, 0.7, 0.02, 0.05, LPm.COPPER, 'metal', name='vane arrow'),
+                   LPm.prism(bx + 0.4, by + 0.6, cz + 1.4, [(0, 0), (0.16, 0.1), (0, 0.2)], 0.02, LPm.COPPER, 'metal', name='vane head'),
+                   LPm.prism(bx - 0.32, by + 0.6, cz + 1.45, [(0, 0), (0.0, 0.25), (-0.2, 0.3), (-0.16, 0.05)], 0.02, LPm.VERDI,
+                             'metal', name='vane rooster')], vane)
+    # the sides: crossed windows (left side two, right side one), a back door, a downpipe
+    g = 1
+    for y in (fy + 1.0, fy + 2.7):
+        L += _barn_window(bx - bw / 2 - 0.01, y, 1.15, -1, g); g += 1
+    L += _barn_window(bx + bw / 2 + 0.01, fy + 1.0, 1.15, 1, g); g += 1
+    L += [LPm.box(bx + 1.2, by + bd / 2 + 0.03, z0, 0.95, 0.06, 1.95, BARN_TRIM, 'wood', name='back door frame'),
+          LPm.box(bx + 1.2, by + bd / 2 + 0.06, z0, 0.8, 0.04, 1.85, BARN_DOOR, 'battens', name='back door'),
+          LPm.box(bx + 1.2, by + bd / 2 + 0.4, 0, 1.0, 0.5, 0.12, LPm.STONE, 'stone', name='back step'),
+          LPm.limb((bx - bw / 2 - 0.05, fy - 0.05, 0.2), (bx - bw / 2 - 0.05, fy - 0.05, zt), 0.035, LPm.COPPER, 'metal', sides=6, name='downpipe')]
+    # the domed silo, its hoops, ladder, porthole, a chute to the loft and a wind spinner on top
+    sx_, sy_, sr, sh = 2.02, 2.65, 0.68, 5.3
+    L += [LPm.cyl(sx_, sy_, 0, sr + 0.08, 0.2, LPm.STONE, 'stone', sides=14, name='silo plinth'),
+          LPm.cyl(sx_, sy_, 0.2, sr, sh, '#EDE4CE', 'riveted', sides=14, name='silo'),
+          LPm.lathe(sx_, sy_, 0.2 + sh, [(sr + 0.06, 0), (sr * 0.95, 0.35), (sr * 0.7, 0.7), (sr * 0.35, 0.92), (0, 0.98)],
+                    LPm.VERDI, 'standingseam', sides=14, smooth=1, name='silo dome', roof=1)]
+    for z in (1.2, 2.4, 3.6, 4.8):
+        L.append(LPm.ring(sx_, sy_, z, sr + 0.02, 0.06, LPm.COPPER, 'metal', sides=14, name='silo hoop'))
+    lx = sx_ - 0.22
+    for s in (-1, 1):
+        L.append(LPm.limb((lx + s * 0.18, sy_ - sr - 0.12, 0.2), (lx + s * 0.18, sy_ - sr - 0.12, 0.2 + sh), 0.02, LPm.IRON,
+                          'metal', sides=4, name='ladder rail'))
+    for i in range(9):
+        z = 0.5 + i * 0.55
+        L.append(LPm.limb((lx - 0.18, sy_ - sr - 0.12, z), (lx + 0.18, sy_ - sr - 0.12, z), 0.015, LPm.IRON, 'metal', sides=4, name='ladder rung'))
+    L += LPm.porthole(sx_ + 0.15, sy_ - sr - 0.01, 4.9, 0.2, g)
+    L[-1]['glow'] = LPm.NEON_A
+    L += [LPm.limb((sx_ - 0.45, sy_ - 0.3, 4.4), (bx + bw / 2 - 0.1, sy_ - 0.3, zt + 0.9), 0.12, LPm.COPPER, 'metal', sides=8, name='chute'),
+          LPm.limb((sx_, sy_, 0.2 + sh + 0.95), (sx_, sy_, 0.2 + sh + 1.45), 0.02, LPm.IRON, 'metal', sides=4, name='spinner post')]
+    spin = {'axis': 'y', 'x': sx_, 'y': sy_ - 0.06, 'z': 0.2 + sh + 1.4, 'rps': 0.5}
+    L += LPm.rotor(sx_, sy_ - 0.06, 0.2 + sh + 1.4, 4, 0.04, 0.34, 0.04, 0.12, LPm.RED, spin, d=0.02)
+    # by the doors: a hay bale and a pitchfork, a trough of flowers, path stones
+    L += [LPm.box(bx - 1.75, fy - 0.45, 0, 0.9, 0.5, 0.48, HAY, 'hay', name='hay bale'),
+          LPm.limb((bx - 1.25, fy - 0.2, 0.0), (bx - 1.1, fy - 0.12, 1.4), 0.025, '#9A6A44', 'wood', sides=5, name='fork handle')]
+    L += LPm.flower_box(bx + 1.75, fy - 0.12, 0.0, 0.9, ['#E85A6A', '#F4E04A'])
+    B3.path_stones(L, bx, fy, 3)
+    rec = LPm.recipe(L, LPm.lean_warp(L, 4.0, sag=0.1, bulge=0.04, side=(-1, 0.12)), about='BD-6: the barn')
+    fx = [{'k': 'window', 'x': LPm.px(sx_ + 0.15), 'y': -LPm.px(4.9)}, {'k': 'window', 'x': LPm.px(bx), 'y': -LPm.px(lz + 0.4)},
+          {'k': 'glow', 'x': LPm.px(bx + dw / 2 + 0.3), 'y': -LPm.px(2.25)}]
+    return rec, fx, bx
 
 
-# ================================================================ the pasture
+def _barn_window(x, y, z, side, glass):
+    """a crossed window on a side wall (x is the wall's face, side which way it faces)"""
+    LPm = LP
+    T = BARN_TRIM
+    return [LPm.box(x, y, z, 0.03, 0.7, 0.75, '#9FC4D8', glass=glass, name='side window'),
+            LPm.box(x + side * 0.02, y, z - 0.05, 0.03, 0.86, 0.85, T, 'wood', name='side window frame'),
+            LPm.box(x + side * 0.04, y, z, 0.03, 0.04, 0.75, T, 'wood', name='mullion'),
+            LPm.box(x + side * 0.04, y, z + 0.35, 0.03, 0.7, 0.04, T, 'wood', name='mullion'),
+            LPm.box(x + side * 0.07, y, z - 0.08, 0.12, 0.86, 0.05, T, 'wood', name='sill')]
+
+
 def fence_gate():
     """A field gate for the rail fence (fence_wood, 2.2 m a length): two stout posts with caps, a five-bar gate of
     planks between them with its diagonal brace, iron hinges and a latch."""
@@ -734,6 +721,23 @@ def mesh(L):
     return T
 
 
+NEW_SHAPES = ('prism', 'lathe')
+NEW_FIELDS = ('tilt', 'taper', 'lean', 'bevel')
+
+
+def needs_game_mesh(recipe):
+    """BD-6: a recipe with BD-1's shapes (prism, lathe, turned boxes, tilts, tapers, warps) is drawn from the game's
+    own mesh (tools/model-mesh.mjs); older recipes keep this file's mesh, so their pictures stay as they were."""
+    return bool(recipe.get('warp')) or any(l.get('k') in NEW_SHAPES or any(f in l for f in NEW_FIELDS) or
+                                           (l.get('k') in ('box', 'limb') and l.get('rot')) for l in recipe['layers'])
+
+
+def game_mesh(recipe):
+    out = subprocess.run(['node', str(ROOT / 'tools' / 'model-mesh.mjs')], input=json.dumps(recipe), text=True,
+                         capture_output=True, check=True, cwd=ROOT).stdout
+    return [((t[0], t[1], t[2]), (t[3], t[4], t[5]), (t[6], t[7], t[8]), t[9]) for t in json.loads(out)]
+
+
 TILT = 0.5  # how much of the depth shows as height in the picture: the camera looks down at about 30 degrees
 LIGHT = np.array([-0.45, -0.55, 0.7]) / np.linalg.norm([-0.45, -0.55, 0.7])
 
@@ -741,7 +745,7 @@ LIGHT = np.array([-0.45, -0.55, 0.7]) / np.linalg.norm([-0.45, -0.55, 0.7])
 def bake(recipe, name):
     """The model drawn as a picture: seen from the front and a little above, cel-lit in three tones from the upper
     left, outlined; returns (path, ox, oy) with the base point at (-ox, -oy)."""
-    T = mesh(recipe['layers'])
+    T = game_mesh(recipe) if needs_game_mesh(recipe) else mesh(recipe['layers'])
     if not T: return None
     P = np.array([[p for p in t[:3]] for t in T], float)  # (n, 3, 3)
     sx = P[..., 0]
@@ -821,23 +825,26 @@ def flat_prop(key, name, pics, flat, sway, tags, group=None, shadow=0):
 
 def make_barn(C):
     """The barn swapped in under its key (batch 7's way for the town's buildings): its model, its door at the big
-    doors, its lights; its old looks as colour swaps; its room, footprint, name and tags kept."""
+    doors, its lights; its old looks as colour swaps; its room, footprint, name and tags kept. BD-6: the new barn's
+    picture baked from its model (its looks keep their old pictures)."""
     M = C['barn']
     B = M.get('build')
-    H = barn()
-    M['model'] = B1.write_recipe('barn', H.done(0.62))
-    M['fx'] = H.fx()
+    rec, fx, dx = barn()
+    path, ox, oy = bake(rec, 'barn')
+    M.update({'img': path, 'ox': ox, 'oy': oy})
+    M['model'] = B1.write_recipe('barn', rec)
+    M['fx'] = fx
     M['ppm'] = PPM
-    M['door'] = {'x': 0, 'y': 0}
+    M['door'] = {'x': LP.px(dx), 'y': 0}
     M['box'] = [5.5, 4.1]
     # the town looks: the old wall, roof and trim colours swapped into the model's (barn_v1..v5 keep their pictures)
-    base = {'wallCol': '#A8382E', 'roofCol': '#545C70', 'trimCol': '#EAEEEC'}
+    base = {'wallCol': BARN_WALL, 'roofCol': BARN_ROOF, 'trimCol': BARN_TRIM}
     if B is None: return  # swapped in already (a rerun): its looks are swaps now
     vs = []
     for V in B.get('variants') or []:
         sw = {base[f]: V[f] for f in base if V.get(f) and V[f] != base[f]}
         if V.get('wallCol') and V['wallCol'] != base['wallCol']:
-            sw['#7E2E34'] = V.get('trimCol', '#7E2E34')  # the doors take the look's trim colour
+            sw[BARN_DOOR] = V.get('trimCol', BARN_DOOR)  # the doors take the look's trim colour
         vs.append({k: v for k, v in (('img', V.get('img')), ('swap', sw)) if v})
     if vs: M['variants'] = vs
     M['vary'] = {'rot': 0, 'lean': 0, 'size': 0}
@@ -987,9 +994,6 @@ def main(steps=STEPS):
     D = gamedata.load()
     C = D['scenery']['props']
     if 'barn' in steps:
-        M = C['barn']
-        if M.get('build') is None and 'model' in M:
-            M['model'] = B1.write_recipe('barn', barn().done(0.62))  # rebuilt; its looks stay as they are
         make_barn(C)
     if 'scree' in steps: swap_scree(C)
     if 'forest' in steps: swap_forest(C)

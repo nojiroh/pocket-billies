@@ -2165,9 +2165,9 @@
   },
   "windmill": {
    "name": "Windmill",
-   "img": "scene/props/windmill.png",
-   "ox": -55,
-   "oy": -194,
+   "img": "scene/next/hub/windmill_tower_copper.png",
+   "ox": -78,
+   "oy": -295,
    "shadow": 1.6,
    "sway": 0,
    "flat": 0,
@@ -2176,13 +2176,315 @@
    "box": [3.6,3.6],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":0,"y":-90}
+    {"k":"window","x":0,"y":-82}
    ],
    "landmark": 1,
-   "model": "scene/next/models/windmill.json",
+   "model": "scene/next/models/windmill_tower.json",
    "ppm": 32,
    "solid": 1,
-   "vary": {"rot":0,"lean":0,"size":0}
+   "vary": {"rot":0,"lean":0,"size":0},
+   "kit": {"design":"tower","colours":"copper"},
+   "about": "BD-6: the windmill kit, nine designs times three colourways (tools/build-windmill-kit.py); a placement picks one with v (its variants: model and colour swaps); every rotor turns as one part",
+   "variants": [
+    {
+     "img": "scene/next/hub/windmill_tower_navy.png",
+     "ox": -78,
+     "oy": -295,
+     "model": "scene/next/models/windmill_tower.json",
+     "fx": [
+      {"k":"window","x":0,"y":-82}
+     ],
+     "name": "Copper tower mill (white, red and navy)",
+     "kit": {"design":"tower","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288","#F2E8D1":"#FAF6F0"}
+    },
+    {
+     "img": "scene/next/hub/windmill_tower_teal.png",
+     "ox": -78,
+     "oy": -295,
+     "model": "scene/next/models/windmill_tower.json",
+     "fx": [
+      {"k":"window","x":0,"y":-82}
+     ],
+     "name": "Copper tower mill (brass and teal)",
+     "kit": {"design":"tower","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE","#F2E8D1":"#E8D8A8"}
+    },
+    {
+     "img": "scene/next/hub/windmill_needle_copper.png",
+     "ox": -52,
+     "oy": -339,
+     "model": "scene/next/models/windmill_needle.json",
+     "fx": [
+      {"k":"window","x":0,"y":-180}
+     ],
+     "name": "Googie needle (copper and cream)",
+     "kit": {"design":"needle","colours":"copper"}
+    },
+    {
+     "img": "scene/next/hub/windmill_needle_navy.png",
+     "ox": -52,
+     "oy": -339,
+     "model": "scene/next/models/windmill_needle.json",
+     "fx": [
+      {"k":"window","x":0,"y":-180}
+     ],
+     "name": "Googie needle (white, red and navy)",
+     "kit": {"design":"needle","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288"}
+    },
+    {
+     "img": "scene/next/hub/windmill_needle_teal.png",
+     "ox": -52,
+     "oy": -339,
+     "model": "scene/next/models/windmill_needle.json",
+     "fx": [
+      {"k":"window","x":0,"y":-180}
+     ],
+     "name": "Googie needle (brass and teal)",
+     "kit": {"design":"needle","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE"}
+    },
+    {
+     "img": "scene/next/hub/windmill_helix_copper.png",
+     "ox": -45,
+     "oy": -308,
+     "model": "scene/next/models/windmill_helix.json",
+     "fx": [
+      {"k":"window","x":0,"y":-60}
+     ],
+     "name": "Helix turbine (copper and cream)",
+     "kit": {"design":"helix","colours":"copper"}
+    },
+    {
+     "img": "scene/next/hub/windmill_helix_navy.png",
+     "ox": -45,
+     "oy": -308,
+     "model": "scene/next/models/windmill_helix.json",
+     "fx": [
+      {"k":"window","x":0,"y":-60}
+     ],
+     "name": "Helix turbine (white, red and navy)",
+     "kit": {"design":"helix","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288","#F2E8D1":"#FAF6F0"}
+    },
+    {
+     "img": "scene/next/hub/windmill_helix_teal.png",
+     "ox": -45,
+     "oy": -308,
+     "model": "scene/next/models/windmill_helix.json",
+     "fx": [
+      {"k":"window","x":0,"y":-60}
+     ],
+     "name": "Helix turbine (brass and teal)",
+     "kit": {"design":"helix","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE","#F2E8D1":"#E8D8A8"}
+    },
+    {
+     "img": "scene/next/hub/windmill_postmill_copper.png",
+     "ox": -94,
+     "oy": -267,
+     "model": "scene/next/models/windmill_postmill.json",
+     "fx": [
+      {"k":"window","x":0,"y":-160}
+     ],
+     "name": "Solar-sail post mill (copper and cream)",
+     "kit": {"design":"postmill","colours":"copper"}
+    },
+    {
+     "img": "scene/next/hub/windmill_postmill_navy.png",
+     "ox": -94,
+     "oy": -267,
+     "model": "scene/next/models/windmill_postmill.json",
+     "fx": [
+      {"k":"window","x":0,"y":-160}
+     ],
+     "name": "Solar-sail post mill (white, red and navy)",
+     "kit": {"design":"postmill","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288"}
+    },
+    {
+     "img": "scene/next/hub/windmill_postmill_teal.png",
+     "ox": -94,
+     "oy": -267,
+     "model": "scene/next/models/windmill_postmill.json",
+     "fx": [
+      {"k":"window","x":0,"y":-160}
+     ],
+     "name": "Solar-sail post mill (brass and teal)",
+     "kit": {"design":"postmill","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE"}
+    },
+    {
+     "img": "scene/next/hub/windmill_rocket_copper.png",
+     "ox": -56,
+     "oy": -329,
+     "model": "scene/next/models/windmill_rocket.json",
+     "fx": [
+      {"k":"window","x":0,"y":-95}
+     ],
+     "name": "Rocket mill (copper and cream)",
+     "kit": {"design":"rocket","colours":"copper"}
+    },
+    {
+     "img": "scene/next/hub/windmill_rocket_navy.png",
+     "ox": -56,
+     "oy": -329,
+     "model": "scene/next/models/windmill_rocket.json",
+     "fx": [
+      {"k":"window","x":0,"y":-95}
+     ],
+     "name": "Rocket mill (white, red and navy)",
+     "kit": {"design":"rocket","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288"}
+    },
+    {
+     "img": "scene/next/hub/windmill_rocket_teal.png",
+     "ox": -56,
+     "oy": -329,
+     "model": "scene/next/models/windmill_rocket.json",
+     "fx": [
+      {"k":"window","x":0,"y":-95}
+     ],
+     "name": "Rocket mill (brass and teal)",
+     "kit": {"design":"rocket","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE"}
+    },
+    {
+     "img": "scene/next/hub/windmill_windpump_copper.png",
+     "ox": -44,
+     "oy": -296,
+     "model": "scene/next/models/windmill_windpump.json",
+     "fx": [],
+     "name": "Farm windpump (copper and cream)",
+     "kit": {"design":"windpump","colours":"copper"}
+    },
+    {
+     "img": "scene/next/hub/windmill_windpump_navy.png",
+     "ox": -44,
+     "oy": -296,
+     "model": "scene/next/models/windmill_windpump.json",
+     "fx": [],
+     "name": "Farm windpump (white, red and navy)",
+     "kit": {"design":"windpump","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288"}
+    },
+    {
+     "img": "scene/next/hub/windmill_windpump_teal.png",
+     "ox": -44,
+     "oy": -296,
+     "model": "scene/next/models/windmill_windpump.json",
+     "fx": [],
+     "name": "Farm windpump (brass and teal)",
+     "kit": {"design":"windpump","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE"}
+    },
+    {
+     "img": "scene/next/hub/windmill_saucer_copper.png",
+     "ox": -53,
+     "oy": -291,
+     "model": "scene/next/models/windmill_saucer.json",
+     "fx": [
+      {"k":"window","x":0,"y":-183}
+     ],
+     "name": "Saucer tower (copper and cream)",
+     "kit": {"design":"saucer","colours":"copper"}
+    },
+    {
+     "img": "scene/next/hub/windmill_saucer_navy.png",
+     "ox": -53,
+     "oy": -291,
+     "model": "scene/next/models/windmill_saucer.json",
+     "fx": [
+      {"k":"window","x":0,"y":-183}
+     ],
+     "name": "Saucer tower (white, red and navy)",
+     "kit": {"design":"saucer","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288"}
+    },
+    {
+     "img": "scene/next/hub/windmill_saucer_teal.png",
+     "ox": -53,
+     "oy": -291,
+     "model": "scene/next/models/windmill_saucer.json",
+     "fx": [
+      {"k":"window","x":0,"y":-183}
+     ],
+     "name": "Saucer tower (brass and teal)",
+     "kit": {"design":"saucer","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE"}
+    },
+    {
+     "img": "scene/next/hub/windmill_kite_copper.png",
+     "ox": -43,
+     "oy": -357,
+     "model": "scene/next/models/windmill_kite.json",
+     "fx": [
+      {"k":"window","x":25,"y":-34}
+     ],
+     "name": "Sky kite turbine (copper and cream)",
+     "kit": {"design":"kite","colours":"copper"}
+    },
+    {
+     "img": "scene/next/hub/windmill_kite_navy.png",
+     "ox": -43,
+     "oy": -357,
+     "model": "scene/next/models/windmill_kite.json",
+     "fx": [
+      {"k":"window","x":25,"y":-34}
+     ],
+     "name": "Sky kite turbine (white, red and navy)",
+     "kit": {"design":"kite","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288"}
+    },
+    {
+     "img": "scene/next/hub/windmill_kite_teal.png",
+     "ox": -43,
+     "oy": -357,
+     "model": "scene/next/models/windmill_kite.json",
+     "fx": [
+      {"k":"window","x":25,"y":-34}
+     ],
+     "name": "Sky kite turbine (brass and teal)",
+     "kit": {"design":"kite","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE"}
+    },
+    {
+     "img": "scene/next/hub/windmill_treemill_copper.png",
+     "ox": -64,
+     "oy": -317,
+     "model": "scene/next/models/windmill_treemill.json",
+     "fx": [
+      {"k":"window","x":-32,"y":-143}
+     ],
+     "name": "Tree mill (copper and cream)",
+     "kit": {"design":"treemill","colours":"copper"}
+    },
+    {
+     "img": "scene/next/hub/windmill_treemill_navy.png",
+     "ox": -64,
+     "oy": -317,
+     "model": "scene/next/models/windmill_treemill.json",
+     "fx": [
+      {"k":"window","x":-32,"y":-143}
+     ],
+     "name": "Tree mill (white, red and navy)",
+     "kit": {"design":"treemill","colours":"navy"},
+     "swap": {"#F2E2BF":"#F4F1EA","#C9773F":"#D4483E","#8A4A2B":"#3E5288","#F2E8D1":"#FAF6F0"}
+    },
+    {
+     "img": "scene/next/hub/windmill_treemill_teal.png",
+     "ox": -64,
+     "oy": -317,
+     "model": "scene/next/models/windmill_treemill.json",
+     "fx": [
+      {"k":"window","x":-32,"y":-143}
+     ],
+     "name": "Tree mill (brass and teal)",
+     "kit": {"design":"treemill","colours":"teal"},
+     "swap": {"#F2E2BF":"#2E7F8A","#C9773F":"#D8B048","#8A4A2B":"#F2E2BE","#F2E8D1":"#E8D8A8"}
+    }
+   ]
   },
   "tree_oak_b": {
    "name": "Spreading oak",
@@ -5222,9 +5524,9 @@
   },
   "lighthouse": {
    "name": "Lighthouse",
-   "img": "scene/props/lighthouse.png",
-   "ox": -37,
-   "oy": -295,
+   "img": "scene/next/hub/lighthouse.png",
+   "ox": -59,
+   "oy": -440,
    "shadow": 1.6,
    "sway": 0,
    "flat": 0,
@@ -5232,7 +5534,7 @@
    "group": "lighthouse",
    "solid": 1,
    "fx": [
-    {"k":"glow","x":0,"y":-304}
+    {"k":"glow","x":0,"y":-329}
    ],
    "landmark": 1,
    "model": "scene/next/models/lighthouse.json",
@@ -9226,22 +9528,22 @@
   },
   "barn": {
    "name": "Barn",
-   "img": "scene/props/barn.png",
-   "ox": -105,
-   "oy": -208,
+   "img": "scene/next/island/barn.png",
+   "ox": -110,
+   "oy": -275,
    "shadow": 1.8,
    "sway": 0,
    "flat": 0,
    "tags": ["farm"],
    "group": "barn",
    "box": [5.5,4.1],
-   "door": {"x":0,"y":0},
+   "door": {"x":-26,"y":0},
    "room": "int_barn",
    "model": "scene/next/models/barn.json",
    "fx": [
-    {"k":"window","x":0,"y":-122},
-    {"k":"window","x":0,"y":-121},
-    {"k":"glow","x":0,"y":-99}
+    {"k":"window","x":74,"y":-167},
+    {"k":"window","x":-26,"y":-116},
+    {"k":"glow","x":26,"y":-76}
    ],
    "ppm": 32,
    "variants": [
@@ -11782,8 +12084,8 @@
   "train_station": {
    "name": "Skyline Station",
    "img": "scene/next/station/train_station.png",
-   "ox": -215,
-   "oy": -219,
+   "ox": -238,
+   "oy": -262,
    "shadow": 1.4,
    "sway": 0,
    "flat": 0,
@@ -12051,8 +12353,8 @@
   "workshop": {
    "name": "Workshop",
    "img": "scene/next/hub/workshop.png",
-   "ox": -85,
-   "oy": -196,
+   "ox": -76,
+   "oy": -164,
    "shadow": 1.8,
    "sway": 0,
    "flat": 0,
@@ -12062,19 +12364,19 @@
    "ppm": 32,
    "vary": {"rot":0,"lean":0,"size":0},
    "box": [4.6,3],
-   "door": {"x":-27,"y":0},
+   "door": {"x":-17,"y":0},
    "fx": [
-    {"k":"window","x":43,"y":-44},
-    {"k":"glow","x":11,"y":-59},
-    {"k":"smoke","x":51,"y":-167}
+    {"k":"window","x":44,"y":-55},
+    {"k":"glow","x":14,"y":-65},
+    {"k":"smoke","x":49,"y":-138}
    ],
    "room": "int_workshop"
   },
   "gene_bank": {
    "name": "Gene Bank",
    "img": "scene/next/hub/gene_bank.png",
-   "ox": -76,
-   "oy": -245,
+   "ox": -72,
+   "oy": -272,
    "shadow": 1.8,
    "sway": 0,
    "flat": 0,
@@ -12086,10 +12388,10 @@
    "box": [4.4,4.6],
    "door": {"x":0,"y":0},
    "fx": [
-    {"k":"window","x":61,"y":-66},
-    {"k":"window","x":-61,"y":-66},
-    {"k":"glow","x":-21,"y":-51},
-    {"k":"glow","x":21,"y":-51}
+    {"k":"window","x":68,"y":-75},
+    {"k":"window","x":-68,"y":-75},
+    {"k":"glow","x":-27,"y":-65},
+    {"k":"glow","x":27,"y":-65}
    ],
    "room": "int_gene_bank"
   },
@@ -13388,6 +13690,39 @@
     {"k":"glow","x":-189,"y":-150}
    ],
    "about": "The sky train halt (assets track AS-2) on every run's landing: a platform laid out as Skyline Station's, its track behind it (+y), where the run's sky train sets down (halt-arrival.js) and waits for the end of the run. stand: where you stand, metres from its base point (at the foot of its steps). Its act (fly) and label come from the map"
+  },
+  "bubble_car": {
+   "name": "Bubble car (mint)",
+   "img": "scene/next/hub/bubble_car.png",
+   "ox": -38,
+   "oy": -64,
+   "shadow": 0.6,
+   "sway": 0,
+   "flat": 0,
+   "tags": ["town","hub"],
+   "group": "bubble_car",
+   "model": "scene/next/models/bubble_car.json",
+   "ppm": 32,
+   "vary": {"rot":0,"lean":0,"size":0},
+   "solid": 0.5,
+   "bob": 0.03,
+   "variants": [
+    {
+     "img": "scene/next/hub/bubble_car_v1.png",
+     "ox": -38,
+     "oy": -64,
+     "swap": {"#8FD8C8":"#F08A7A","#2E7F8B":"#F4F1EA"},
+     "name": "Bubble car (coral)"
+    },
+    {
+     "img": "scene/next/hub/bubble_car_v2.png",
+     "ox": -38,
+     "oy": -64,
+     "swap": {"#8FD8C8":"#86B8EE","#2E7F8B":"#3E5288"},
+     "name": "Bubble car (sky)"
+    }
+   ],
+   "about": "BD-6: a small hovering retro car, parked by the shop and the station (BD-7 places them); its looks are colour swaps; it bobs; its hover pad and thrusters glow at night"
   }
  },
  "person": 1.75,

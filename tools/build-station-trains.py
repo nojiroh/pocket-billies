@@ -46,6 +46,7 @@ def load(name, file):
 
 B1 = load('batch1', 'build-props-batch1.py')
 ISL = load('island', 'build-props-island.py')
+LP = load('landmark_parts', 'landmark_parts.py')
 ISL.PICS = B1.ART / 'scene' / 'next' / 'station'  # the fallback pictures (the island batch's baker writes them here)
 PPM, A = B1.PPM, B1.AIR
 box, limb, cyl, sphere, img, r2 = B1.box, B1.limb, B1.cyl, B1.sphere, B1.img, B1.r2
@@ -233,15 +234,25 @@ def bench(L, x, y, face=1):
         L.append(box(x + sx * 0.65, y, 0.93, 0.06, 0.4, 0.42, A['iron'], 'metal', 'bench leg'))
 
 
-def clock(L, x, y, z):
-    """a two-faced clock hung under the ridge"""
-    L.append(limb((x, y, z + 0.4), (x, y, z + 1.0), 0.025, 0.025, A['iron'], 'metal', 'clock rod', 4))
-    L.append(limb((x, y - 0.11, z), (x, y + 0.11, z), 0.36, 0.36, A['brass'], 'metal', 'clock case', 16))
+def starburst_clock(x, y, z):
+    """BD-6: the starburst clock standing on the canopy's middle, two-faced (the street and the trains): a brass
+    starburst of twelve rays round a cream face with navy hands, on a short copper post, its rays lit at night"""
+    L = [LP.limb((x, y, z), (x, y, z + 0.6), 0.06, A['copper'], 'metal', sides=6, name='clock post')]
+    zc = z + 1.45
+    L += [LP.prism(x, y, zc, LP.star(1.05, 0.55, 12), 0.12, A['brass'], 'metal', name='clock starburst'),
+          LP.prism(x, y, zc, LP.star(0.72, 0.6, 12), 0.16, A['copper'], 'metal', name='clock ring')]
     for sy in (-1, 1):
-        L.append(limb((x, y + sy * 0.1, z), (x, y + sy * 0.13, z), 0.3, 0.3, '#F4F0E4', 'plain', 'clock face', 16))
-        yy = y + sy * 0.15
-        L.append(limb((x, yy, z), (x, yy, z + 0.22), 0.018, 0.018, BOARD, 'plain', 'clock hand', 4))
-        L.append(limb((x, yy, z), (x + 0.15, yy, z - 0.06), 0.018, 0.018, BOARD, 'plain', 'clock hand', 4))
+        yy = y + sy * 0.09
+        L += [LP.lathe(x, yy, zc, [(0, 0), (0.48, 0), (0.48, 0.02), (0, 0.02)], '#F4F0E4', sides=16,
+                       tilt=[sy * 90 * LP.DEG, 0], name='clock face'),
+              LP.box(x, yy + sy * 0.03, zc - 0.03, 0.05, 0.02, 0.36, BOARD, rot=0, tilt=[0, 0.4 * sy], name='clock hand'),
+              LP.box(x, yy + sy * 0.03, zc - 0.03, 0.04, 0.02, 0.26, BOARD, tilt=[0, -1.9 * sy], name='clock hand')]
+        for k in range(12):
+            a = k * math.pi / 6
+            L.append(LP.box(x + 0.4 * math.cos(a), yy + sy * 0.025, zc + 0.4 * math.sin(a) - 0.03, 0.05, 0.02, 0.06, BOARD,
+                            name='clock tick'))
+    L.append(LP.sphere(x, y, zc + 1.0, 0.1, '#FFF0C0', sides=6, rings=3, glow=LP.NEON_A, name='clock finial'))
+    return L
 
 
 def station():
@@ -260,22 +271,31 @@ def station():
         L.append(box(0, y0 - (3 - i) * 0.3 + 0.15, 0, 3.0, 0.3, (i + 1) * 0.29, COPING, 'stone', 'step'))
     for sx in (-1, 1):
         L.append(box(sx * 1.58, y0 - 0.45, 0, 0.16, 0.9, 0.95, STONE, 'stone', 'step cheek'))
-    # the canopy: iron columns with brass capitals, beams, a verdigris roof with its ridge along the platform
-    for x in (-5.0, -1.7, 1.7, 5.0):
-        for y in (y0 + 0.5, y0 + pd - 0.5):
-            L += [cyl(x, y, top, 0.09, 2.9, A['iron'], 'metal', 'column', 8),
-                  box(x, y, top + 2.75, 0.3, 0.3, 0.15, A['brass'], 'metal', 'capital')]
-    for y in (y0 + 0.5, y0 + pd - 0.5):
-        L.append(box(0, y, top + 2.9, 12.4, 0.16, 0.16, A['iron'], 'metal', 'canopy beam'))
-    rz, hl, hd = top + 3.06, 6.6, 2.7
-    L.append(cyl(0, y0 + pd / 2, rz, hl * S2, 0.75, A['verd'], 'corrugated', 'canopy roof', 4, k='cone', ry=r2(hd * S2),
-                 r1=r2(hl * S2), ry1=0.03, rot=r2(math.pi / 4)) | {'roof': 1})
-    L.append(box(0, y0 + pd / 2, rz + 0.72, 13.3, 0.14, 0.08, A['copper'], 'metal', 'ridge cap'))
+    # BD-6: a Googie boomerang canopy: a verdigris slab swept up into a wide V along the platform, a dark underside,
+    # copper fascia and a neon line along its front edge at night, on splayed V columns of iron with brass feet
+    rz, hl, hd = top + 2.95, 6.7, 2.25  # the canopy's lowest point (the middle), its half length and half depth
+    up = 1.35  # how far its tips sweep up
+    cyc = y0 + pd / 2
+    lo = lambda x: rz + up * abs(x) / hl  # the canopy's underside at x
+    V = [(-hl - 0.2, up + 0.02), (0, 0), (hl + 0.2, up + 0.02), (hl + 0.35, up + 0.3), (0, 0.24), (-hl - 0.35, up + 0.3)]
+    L += [LP.prism(0, cyc, rz, V, 2 * hd, A['verd'], 'standingseam', name='canopy roof', roof=1),
+          LP.prism(0, cyc, rz - 0.06, [(-hl - 0.1, up), (0, -0.0), (hl + 0.1, up), (hl + 0.1, up + 0.06), (0, 0.06),
+                                       (-hl - 0.1, up + 0.06)], 2 * hd - 0.1, BOARD, 'wood', name='canopy underside')]
     for sy in (-1, 1):
-        L.append(box(0, y0 + pd / 2 + sy * (hd + 0.02), rz - 0.1, 13.3, 0.06, 0.16, A['brass'], 'metal', 'fascia'))
-    for sx in (-1, 1):  # the gable ends: a glazed fan under the roof's ends
-        L.append(cyl(sx * (hl - 0.05), y0 + pd / 2, rz, 0.03 * S2, 0.7, '#9CC8D8', 'plain', 'gable glass', 4, k='cone',
-                     ry=r2((hd - 0.2) * S2), r1=0.03 * S2, ry1=0.03, rot=r2(math.pi / 4)) | {'glass': 1 + (sx > 0)})
+        y = cyc + sy * (hd + 0.03)
+        L += [LP.prism(0, y, rz, [(-hl - 0.35, up + 0.3), (0, 0.24), (hl + 0.35, up + 0.3), (hl + 0.35, up + 0.38),
+                                  (0, 0.32), (-hl - 0.35, up + 0.38)], 0.06, A['copper'], 'metal', name='fascia')]
+    for sx in (-1, 1):
+        L.append(LP.neon((0, cyc - hd + 0.1, rz - 0.04), (sx * hl, cyc - hd + 0.1, rz + up - 0.04), LP.NEON_T, 0.035,
+                         'canopy neon'))
+        L += LP.starburst(sx * (hl + 0.25), cyc - hd - 0.08, rz + up + 0.35, 0.42, 0.14, 8, A['brass'], d=0.05,
+                          core='#FFF0C0', glow=LP.NEON_A, name='tip starburst')
+    for x in (-5.0, -1.7, 1.7, 5.0):  # V columns: two legs from one brass foot, splayed along the platform
+        for y in (y0 + 0.55, y0 + pd - 0.55):
+            L.append(LP.cyl(x, y, top, 0.16, 0.18, A['brass'], 'metal', sides=8, name='column foot'))
+            for s in (-1, 1):
+                L.append(LP.limb((x, y, top + 0.15), (x + s * 0.55, y, lo(x + s * 0.55) - 0.05), 0.07, A['iron'], 'metal',
+                                 sides=6, name='column'))
     # the name boards: over the steps to the street, and over the boarding edge to the trains
     nb = name_board()
     for y, yaw in ((y0 - 0.2, 0), (y0 + pd + 0.2, math.pi)):
@@ -289,7 +309,7 @@ def station():
     L.append(box(bx, by_, bz, 2.4, 0.14, 1.5, BOARD, 'metal', 'departures board'))
     L.append(box(bx, by_, bz + 1.5, 2.5, 0.2, 0.08, A['brass'], 'metal', 'board top'))
     for sx in (-1, 1):
-        L.append(limb((bx + sx * 1.0, by_, bz + 1.58), (bx + sx * 1.0, by_, rz - 0.05), 0.025, 0.025, A['iron'], 'metal', 'board hanger', 4))
+        L.append(limb((bx + sx * 1.0, by_, bz + 1.58), (bx + sx * 1.0, by_, lo(bx + sx * 1.0) - 0.05), 0.025, 0.025, A['iron'], 'metal', 'board hanger', 4))
     for sy, yaw in ((-1, 0), (1, math.pi)):
         L.append(img(db, bx, by_ + sy * 0.08, bz + 0.06, face='fixed', yaw=r2(yaw), recv=0, sway=0, glow=0.4, name='departures'))
     # the ticket kiosk on the right: panelled walls, a glazed window to the street, a copper dome
@@ -302,12 +322,12 @@ def station():
           box(kx, ky - 0.8, top + 0.8, 1.3, 0.12, 0.06, A['wood'], 'wood', 'kiosk counter')]
     L.append(img(small_sign('TICKETS', 'station_tickets'), kx, ky - 0.79, top + 1.7, face='fixed', recv=0, sway=0, name='tickets sign'))
     # a clock under the ridge, benches facing the trains, lamps
-    clock(L, 0.0, y0 + pd / 2, rz - 0.75)
+    L += starburst_clock(0.0, cyc, rz + 0.2)
     bench(L, -0.9, y0 + pd - 1.0)
     bench(L, 1.6, y0 + pd - 1.0)
     bench(L, -5.0, y0 + 1.2, -1)
     for x in (-5.0, 0.0, 5.0):
-        lamp(L, x, y0 + pd - 0.5 if x else y0 + 0.6, rz - 1.05)
+        lamp(L, x, y0 + pd - 0.5 if x else y0 + 0.6, lo(x) - 1.05)
     # the track bed behind, the track on it (its right end meets sky_rail), a buffer stop at its left end
     L.append(box(0, yb, 0, 12.6, 2.9, 0.12, BALLAST, 'rock', 'track bed'))
     track(L, -6.3, 6.3, yb)

@@ -660,11 +660,9 @@
   {
    "p": "scene/next/decals/lantern_glass.png",
    "at": [
-    "game/art/scene/next/models/barn.json",
     "game/art/scene/next/models/cottage_juniper.json",
     "game/art/scene/next/models/cottage_moss.json",
     "game/art/scene/next/models/cottage_solar.json",
-    "game/art/scene/next/models/gene_bank.json",
     "game/art/scene/next/models/house_blue.json",
     "game/art/scene/next/models/house_large.json",
     "game/art/scene/next/models/house_red.json",
@@ -676,8 +674,7 @@
     "game/art/scene/next/models/train_highland.json",
     "game/art/scene/next/models/train_lakeland.json",
     "game/art/scene/next/models/train_station.json",
-    "game/art/scene/next/models/train_wildwood.json",
-    "game/art/scene/next/models/workshop.json"
+    "game/art/scene/next/models/train_wildwood.json"
    ]
   },
   {
