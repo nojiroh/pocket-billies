@@ -1132,8 +1132,9 @@ body.battle-3d #camFg {
   height: 100%;
   /* UI-12: XP is the Growth family; the plate is always dark glass, so its fill */
   background: linear-gradient(90deg, var(--sig-growth), color-mix(in srgb, var(--sig-growth) 55%, #ffffff));
-  /* FL-6: moved, not resized (as the HP fill above) */
-  transform: translateX(calc(var(--p, 0%) - 100%));
+  /* FL-6: moved, not resized (as the HP fill above; a page that writes a width instead, the Studio's gallery, keeps
+     it: with no --p the fill isn't moved) */
+  transform: translateX(calc(var(--p, 100%) - 100%));
   transition: transform 0.8s;
 }
 .bplate.cur {
