@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-1b - stalls and page quick wins (no look change) - 2026-10-30
+Branch `track/fluid` (round 1 lane, beside FL-1a and FL-2a; their commits merged in before the last checks). Plan
+approved by the owner's standing answer (fluid-track.md section 1). Code: what the page does while nothing needs it.
+No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1): section 5's items 6 and 7 that FL-1b touches all hold (24 fps for 0.8 s
+  behind a screen, then 1; a window over a screen back to 20; `getError` once a second; the Actions button's
+  `.glass` behind its gold fill; shadows and reflection both on even frames; `safe()` with two layout reads per exit
+  label and once more for the walk marker; `cv.clientWidth`/`clientHeight` every frame; a full clear of `#dioui` every
+  frame; the 36 ms hitch line). Nothing differed.
+- Changed:
+  - game/js/debug-log.js (additions; agreed with TD): `getError` is timed (`glErr`, ms, in each sample that asks) and
+    asked only during a test (`debugLog.bench.step`: the full test, the Graphics cost test), with `?glerr` and while
+    the debug menu is open (`debugLog.askGlError`). Measured first: headless it held the main thread 0.66-1.0 s per
+    call on average (2 s at worst), because it waits for the frame the GPU is still drawing; software drawing
+    exaggerates it, but it is a full sync point on a phone too. Every log field is kept. The hitch report gains
+    `missed` and `missedOverMs`: frames over the set rate's slot plus half a refresh (FL-1a's `paceSlot`, so 60 on a
+    90 Hz screen is two refreshes), beside the 36 ms list, which can't see a missed 60 fps frame.
+    tools/read-debug-log.py prints both.
+  - game/js/walk-control.js: behind a screen the 3D's cap is 1 at once (no 0.8 s at 24); a window over a screen counts
+    as the screen. A window over the walk stays at 20 (section 9's risk: a window that shows the world must be found
+    before freezing windows; FL-6). `safe()` is read once a frame (`safeBand`, keyed on `walkView.t`).
+  - game/js/pixel-sky.js: the `bg` task is stopped (frameStop) while a body class hides `#bgfx` (on-walk, on-scene,
+    on-map, in-cs; a MutationObserver) and started again when it shows.
+  - game/js/walk-tab.js, game/css/walk-tab.css: `.glass` off the Actions button; high contrast keeps the look
+    `.glass` gave it there.
+  - game/js/walk-view-gl.js: the canvas's CSS size from a ResizeObserver (clientWidth read in its callback, so the
+    numbers are the same); the label layer's drawing calls counted on its context (`_ink`), so `#dioui` is cleared
+    only after something was drawn on it (`walkRenderer.uiClears` counts clears); the reflection on odd frames, the
+    shadow map on even ones, when either skips.
+  - tools/check-stalls.py (new): this session's headless gates.
+  - studio/art-code-refs.json regenerated (line numbers moved; regenerate it after merges: `node
+    tools/art-code-refs.mjs`).
+- Not done: the hitch line itself is unchanged (LD's 36 ms list and its size buckets are log fields); the slot count
+  is the addition. The 3D still draws one full frame a second behind a screen (the owner's "one last frame, then
+  nothing" needs the frame clock and the waits on frames checked first; FL-6).
+- Risky: an error raised in play is now found only by the next test step's own check (self-test.js reads stale
+  errors before each step and names them as "from before this step"); `?glerr` still names the call. A screen that
+  needs the world to move behind it within 1 s would now look still. FL-1a's counted-tick retry (250 ms after a tick
+  that drew nothing) wraps about 4 ticks a second behind a screen on a phone (headless 4 in 5 s, the frames being slow).
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,392 of 2,392 (133 s); check-stalls all 11
+  gates (after merging FL-1a and FL-2a): 5 s behind a screen 4 frames and 4 wrapped ticks, `bg` off on the walk and
+  behind screens, 2 blurred surfaces with the bars (0 without), 0 label clears over 4 frames with no labels, 1 after a
+  drawing, 0 samples asking getError in play. Full quick check before and after (same machine, 4 cores): before 38 of
+  42 (2679 s), after 40 of 42 (2403 s); the two still failing failed before too (RL-8's run crossing "view never
+  showed", room light). 7 pictures differ from the before-baseline: 4 from the "Time, weather and rooms" step that
+  broke in the baseline run (room-day, room-night, room-in-place, windows-night), battle-rain (redone side by side at
+  0, 4 and 10 s: an entrance animation caught at another moment; the same once settled), life-copperleaf and the
+  failed step's picture (camera and timing).
+- Next: round 2 (FL-2b, FL-3a, FL-6), started by the round's last lane.
+- For the owner on the phone: open Team or Bag from a walk and back: the world should stop at once and the menu
+  scroll smoothly. The debug log of a walk now has `hitches.missed`; run the Graphics cost test once to get `glErr`
+  (the phone's cost of getError).
+
 ### Fluid track FL-2a - pictures: the draw budget - 2026-10-30
 Branch `track/fluid` (round 1 lane, beside FL-1a and FL-1b; their commits merged in before the checks). Plan
 approved by the owner's standing answer (fluid-track.md section 1). Code: the picture pass's three fixes, its sort, the
