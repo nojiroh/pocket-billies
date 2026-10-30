@@ -2,6 +2,81 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-5a - draw order and discard (behind a switch) - 2026-10-30
+Branch `track/fluid` (round 4's last lane; FL-6b, added by the owner's answers at c13050b0, ran beside it in CSS and
+UI files only; its commits merged in). Plan approved by the owner's standing answer (fluid-track.md section 1). Code: two new paths, each behind
+its own switch, **off** until the owner's phone run; the program link times in the debug log for everyone. No tag (the
+track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + rounds 1-3): section 4 holds: every depth-writing scene program holds
+  `discard` (ground: room hole, wall thinning, rock circle; pictures; grass; models: fade and rock, low-poly own
+  texture; solid props; box faces; buildings and structures, `bld`); nothing is depth sorted; pictures come before
+  models. Differs: the sky is already drawn after the opaque things for everyone (`quality.skyLast` on since FL-2a);
+  the ground's walls are **already one contiguous index range** (walk/ground-mesh.js pushes every floor cell, then
+  every wall, then the far land), so no mesh change was needed, only the range recorded; models with their own
+  texture are already drawn apart from the batches (ST-7); WALK_SHADERS carry no mediump edits (only the post passes
+  do), so the variants need none; the headless frame of Copperleaf has 106-118 scene draws, 95-107 of them with a
+  discard program and 0 without.
+- Changed:
+  - game/js/engine/shader-precision.js `solidFragment(fs, edits)`: exact-once edits that take every cut out; null when
+    an edit no longer fits or a `discard` is left (then the old program draws everything).
+  - The variants: `groundS` (walk-shaders.js `groundSolidShaders`, GROUND_SOLID_EDITS: hole, wall thinning, rock);
+    `voxIS`, `mdlIS` (prop-models.js `propModelSolidShaders`: fade, rock, own-texture cut). Same vertex shaders.
+  - `quality.drawOrder` (Engine row "Solid first", debug menu switch): walk-view-gl.js's scene pass draws the floors and
+    far land with `groundS` (walk/ground-draw.js `drawGround(C, X, 'solid')`, the walls' range `mesh.walls` left), the
+    models that are whole (fade ≥ 0.99), not stretched and without their own texture with `voxIS`/`mdlIS`, nearest
+    first (so their batches come nearest first too); then the walls with the ground program, the room front, grass,
+    pictures, solid props, the other models (`drawPropModels(..., 'cut')`), box faces, buildings, structures; the sky;
+    building fronts, water, effects, ribbons; your outline (depth GREATER, its occlusion query) last. A frame with the
+    rock circle on (walk/draw-common.js `rockCircleOn`), a room's hole or floor, or a lit room keeps the programs with
+    cuts (the lit room keeps the old order whole). The reflection's models keep the old path.
+  - The variants are precompiled at the 3D view's start while the switch is on, and when the debug menu turns it on
+    (`precompileDrawOrder`).
+  - `quality.groundSlice` (FL-4's leftover; Engine row "Ground built in slices", debug switch): when the same view's
+    ground changes (a run day's water, a Studio edit) and nothing is ready, walk-view-gl.js keeps the old ground and
+    key on screen and asks `prepareMapGround(urgent)`; the frame's `groundPrepWork` builds it, then the swap takes the
+    prepared one. Not for a new view, a room, a borrowed ground or a battle; at most 5 s, then built on the spot.
+  - engine/webgl.js finishProgramCompile: `gpuState.linkMs[name]` = [ms waited on the link status, ms from the compile's
+    start]; the debug log's gpuMemory.linkMs; tools/read-debug-log.py prints ground/groundS, voxI/voxIS, mdlI/mdlIS.
+    debug-log.js samples (additions): `dord` [on, models drawn first], `gwt` (frames the old ground was kept).
+  - tools/check-draw-order.py (headless gates), tools/test/draw-order.test.mjs (5 tests).
+- Measured headless (counts only; `check-draw-order.py`, Copperleaf phone sized, the game's own graphics): off, 0
+  depth-writing draws with a discard-free program; on, 11-12 (2 ground, 9-10 models) and all before the first cut draw,
+  0 depth-writing draws after the sky, 0 draws after the outline, 0 late compiles (0 compiled on the spot, 0 started
+  after load). Scene draws 106-118 off, 117-121 on (the ground split: +2). Pictures in one page with the world's clock
+  stopped: on/on 0.45% of pixels apart, on/off 0.57%, off/on 0.34% (dither and the Actions button's pulse): the same
+  look; the coplanar question (pictures now after the solid models, so a picture on a model's face wins a tie at
+  LEQUAL where the model won before) shows nothing at the square.
+- Not done: buildings and structures (`bld`, 3 bridges in Copperleaf) keep their cuts (a `bldS` variant is the same
+  two edits); solid props, box faces, grass and pictures are cut-outs by nature (an opaque core split from a cut rim
+  is FL-5b/phase 21's atlas work). Front to back only for the models (the ground is one draw). The ABAB phone run (3+
+  runs per arm, per-pass timings) and iOS link times: the owner's phone (below). The far map and shadow passes keep
+  their programs (depth-only, cut where needed).
+- Risky: both switches off, nothing changes for players. On: an item fading in or out moves from the solid draw to the
+  cut draw (a program change); the outline now draws over effects and water in front of a hidden you; a variant that
+  fails to compile throws like any program (the full test's Shaders step compiles them only while the switch is on).
+  groundSlice shows the old water/ground for up to 5 s after a change.
+- Verified: lint, types, format, modules clean; unit tests 2,461 of 2,462 (the 1,000-maps timing test, beside a browser: 3.5 s; alone it passes); smoke no problems but the phone crash step ("w:copperleaf* stopped drawing", as at the start commit); alone it passed twice (once "dialogue 23 pieces", also flaky; the start commit passed it alone); `check-perf.py
+  --only=copperleaf` no problems (301-336 draws as shipped, effects 5-7); check-draw-order every gate. Full quick check 35 of 42 (4,220 s, 2 workers) against a baseline made at
+  the round's start (a909d44c, in a worktree, 38 pictures, 4,337 s, 37 of 42: RL-8's crossing, room light, walking out
+  of the lab, the phone crash step ("w:copperleaf* stopped drawing"), battle music's drums). Here the same 5 fail, plus Starters ("battle rig buffers nearly empty") and Postcards ("coming
+  back showed no stamp"), both passing alone (154 s). 6 pictures over the threshold: battle-alpha, starter-battle,
+  windows-night, world-buddy and the two failed steps' (other moments; the switches are off there).
+- Next: round 5 (FL-5b phone GPU look trades, FL-4b the load overlap), started by this lane in new sessions. FL-5b
+  could add `bldS` and, with its one-picture far trees, an opaque crown core. FL-6b (round 4's other lane) finished
+  first, so this lane starts round 5.
+- The owner's phone Diagnostics (relayed by the FL-0 coordinating session, 2026-10-30 09:55, main 3923881a = rounds 1-3;
+  Adreno 750, Chrome 155, 60 Hz; old ladder at q4, res 0.6), for FL-7 and round 5 (passed into both briefs): draws are
+  solved (Copperleaf by day 304-309, sprites 127, uniforms 640); the phone is pixel and GPU bound at the game's own
+  values (Copperleaf day r1 48 fps against own 12.7, phone pixels 20, all on 22.7; night r1 17.3, own 14.7; jungle r1
+  45, own 18.5; battle r1 56.7, own 28.7); in play the automatic quality held a steady 30 (Copperleaf 32, worst 28; CPU
+  16-17 ms); jungle's reflection 74 draws (56 leaf pictures); night's lamp maps 45 draws; Copperleaf's open 5.3 s
+  "setting up the ground" in one hitch; JS heap 788 MB, 118 MB of pictures on the card. So the GPU work (this
+  session's order, FL-5b's trades, the post chain, the phone pixel budget) is where the remaining fps is.
+- For the owner on the phone: open the debug menu, turn "Solid first" on, close it, walk Copperleaf's square for a
+  minute, then off for a minute, twice each (ABAB), and send the debug log (its `dord` samples and the frame times per
+  pass sit side by side; on iOS its "program links" line has the variants' link times). The look should not change.
+  "Ground built in slices": on a run day whose weather floods the water, the new water should arrive without a hitch.
+
 ### Fluid track FL-6b - glass fixes and the bottom bar's shrink on transforms - 2026-10-30
 Branch `track/fluid` (round 4 lane, beside FL-5a). Plan approved by the owner's standing answer (fluid-track.md section
 1, and the answers to FL-6's questions of 2026-10-30). Code: the page's CSS, the theme sheet, the bottom bar. No tag
