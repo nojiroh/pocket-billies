@@ -23,7 +23,7 @@ import {
   paintGroundSteps,
   walkView,
 } from '../walk-view.js';
-import { engineSetting } from '../engine/settings.js';
+import { PLAIN_LOOK, engineContext, engineSetting } from '../engine/settings.js';
 import { freeMesh, gpuFree, gpuState, gpuTexture, setTextureParams } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
 import { groundOcclusion } from './ground-textures.js';
@@ -477,7 +477,14 @@ function grassAheadWork(budget) {
       }
       return;
     }
-    A.J = grassJob(A.sc, G, A.T);
+    /* planted under the place's own look (its grass density), as its own frame would (walk-view-gl.js drawWalkFrame) */
+    const was = engineContext.look;
+    engineContext.look = A.sc.plain ? PLAIN_LOOK : A.sc.look || null;
+    try {
+      A.J = grassJob(A.sc, G, A.T);
+    } finally {
+      engineContext.look = was;
+    }
   }
   const done = grassStep(A.J, budget);
   A.ms += performance.now() - t0;
@@ -650,8 +657,12 @@ export function swapMapCache(oldKey, key) {
       const dk = engineSetting('grass', 'density'),
         A = walkRenderer.grassAhead;
       /* FL-4 (quality.grassAhead): planted ahead, it is kept; still being planted, the job goes on for this view */
-      if (hit.grass && hit.grassKey === dk) walkRenderer.grassKey = dk;
-      else if (A && A.hk === key && A.J && A.J.dk === dk && A.sc === walkView.sc) {
+      if (hit.grass && hit.grassKey === dk) {
+        /* (the last view's planting, if it was still going, is let go: it would mark this one unplanted) */
+        if (walkRenderer.grassJob) walkRenderer.grassJob.abort();
+        walkRenderer.grassJob = null;
+        walkRenderer.grassKey = dk;
+      } else if (A && A.hk === key && A.J && A.J.dk === dk && A.sc === walkView.sc) {
         walkRenderer.grassAhead = null;
         if (walkRenderer.grassJob) walkRenderer.grassJob.abort();
         A.J.target = walkRenderer;
