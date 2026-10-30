@@ -111,6 +111,7 @@ import {
 import { battleSettle, battleSettleWin } from './logic/battle-rewards.js';
 import { plainOf } from './logic/line-markup.js';
 import { activeBattle, escapeHtml, reducedMotion, save, saveData, setActiveBattle, uiState } from './game-state.js';
+import { frameStop, frameTask } from './frame-scheduler.js';
 import { artURL, glyphHTML, iconURL, moneyHTML, pyramidHTML, uiIconHTML, uiIconURL } from './art.js';
 import { portraitHTML, portraitSize, portraitURL } from './person-art.js';
 import { RIG_BACK_VIEW, bustHTML, rigPreload } from './skeleton-rig.js';
@@ -187,8 +188,12 @@ expose({
   fieldTip: [() => fieldTip, v => (fieldTip = v)],
   fieldUi: [() => fieldUi],
   finishThrow: [() => finishThrow, v => (finishThrow = v)],
+  floatBox: [() => floatBox],
+  floatMeasure: [() => floatMeasure, v => (floatMeasure = v)],
+  floatPlace: [() => floatPlace, v => (floatPlace = v)],
   floatPos: [() => floatPos],
   floatTick: [() => floatTick, v => (floatTick = v)],
+  floatWatch: [() => floatWatch, v => (floatWatch = v)],
   hpMini: [() => hpMini, v => (hpMini = v)],
   hudBanner: [() => hudBanner, v => (hudBanner = v)],
   hudHit: [() => hudHit, v => ((hudHit = v), provide({ hudHit }))],
@@ -216,11 +221,15 @@ expose({
   pickTargetOrPart: [() => pickTargetOrPart, v => (pickTargetOrPart = v)],
   planBack: [() => planBack, v => (planBack = v)],
   planNext: [() => planNext, v => (planNext = v)],
+  plateAfterPaint: [() => plateAfterPaint, v => (plateAfterPaint = v)],
   plateElement: [() => plateElement, v => (plateElement = v)],
+  plateSize: [() => plateSize, v => (plateSize = v)],
   plateTagHTML: [() => plateTagHTML, v => (plateTagHTML = v)],
   plateTagId: [() => plateTagId],
   plateTagSpecs: [() => plateTagSpecs, v => (plateTagSpecs = v)],
   plateTags: [() => plateTags, v => (plateTags = v)],
+  platesQueued: [() => platesQueued, v => (platesQueued = v)],
+  platesRun: [() => platesRun, v => (platesRun = v)],
   platesTick: [() => platesTick, v => ((platesTick = v), provide({ platesTick }))],
   playTurnEvents: [() => playTurnEvents, v => ((playTurnEvents = v), provide({ playTurnEvents }))],
   rollPlateNumber: [() => rollPlateNumber, v => (rollPlateNumber = v)],
@@ -238,6 +247,7 @@ expose({
   tapMessage: [() => tapMessage, v => (tapMessage = v)],
   teamPick: [() => teamPick, v => (teamPick = v)],
   turnBar: [() => turnBar, v => (turnBar = v)],
+  typeStop: [() => typeStop, v => (typeStop = v)],
   typeText: [() => typeText, v => (typeText = v)],
   winLineHTML: [() => winLineHTML, v => (winLineHTML = v)],
 });
@@ -460,13 +470,19 @@ function screenWipe(mid) {
 export function stopTimers() {
   clearTimeout(uiState.evT);
   clearTimeout(uiState.hpT);
+  typeStop();
+}
+/* FL-6: the battle text is typed on the page's frame loop (frame-scheduler.js), not a 16 ms timer that runs beside the
+   frames: the same speed (sp letters each 16 ms, from when the line started), one write a frame at most */
+function typeStop() {
   clearInterval(uiState.typeT);
+  frameStop('type');
 }
 function typeText(t) {
   /* DL-1: plain text until the battle box draws markup (DL-8) */
   t = plainOf(t);
   const el = $('#msgT');
-  clearInterval(uiState.typeT);
+  typeStop();
   if (!el) return 0;
   if (reducedMotion) {
     el.textContent = t;
@@ -474,17 +490,21 @@ function typeText(t) {
     return 0;
   }
   el.textContent = '';
-  let i = 0;
+  let shown = 0;
   uiState.typing = true;
-  const sp = Math.max(1, Math.round(2 * battleStage.speed));
-  uiState.typeT = setInterval(() => {
-    i += sp;
-    el.textContent = t.slice(0, i);
-    if (i >= t.length) {
-      clearInterval(uiState.typeT);
+  const sp = Math.max(1, Math.round(2 * battleStage.speed)),
+    t0 = performance.now();
+  frameTask('type', () => {
+    const i = Math.min(t.length, Math.floor((performance.now() - t0) / 16) * sp);
+    if (i !== shown) {
+      shown = i;
+      el.textContent = t.slice(0, i);
+    }
+    if (i >= t.length || !el.isConnected) {
+      frameStop('type');
       uiState.typing = false;
     }
-  }, 16);
+  });
   uiState.typeFull = t;
   return Math.ceil(t.length / sp) * 16;
 }
@@ -598,7 +618,7 @@ export function tapMessage() {
   /* VFX-8: a tap skips: what the animation still had to show and play is dropped (its end framing and the hit's
      numbers stay), the line's plates are painted, its text shown whole, and the line is ready (a second tap moves on) */
   if (uiState.typing) {
-    clearInterval(uiState.typeT);
+    typeStop();
     uiState.typing = false;
     $('#msgT').textContent = uiState.typeFull || '';
   }
@@ -1671,6 +1691,10 @@ function plateElement(k) {
   L.appendChild(e);
   return e;
 }
+/** FL-6: f once a frame has been painted since now (two animation frames) @param {() => void} f */
+function plateAfterPaint(f) {
+  requestAnimationFrame(() => requestAnimationFrame(f));
+}
 function paintPlates(s, anim) {
   const L = $('#plates');
   if (!L) return;
@@ -1698,26 +1722,29 @@ function paintPlates(s, anim) {
     const p = Math.max(0, (x.hp / x.max) * 100),
       f = e.querySelector('.fill'),
       g = e.querySelector('.ghost');
+    /* FL-6: the fills are moved with transform inside their frame (--p, battle-screen.css), and a new fighter's bar
+       jumps (no transition for two frames) instead of forcing a layout to cut the transition */
     if (f.dataset.k !== x.uid) {
       f.dataset.k = x.uid;
       for (const q of [f, g]) {
         q.style.transition = 'none';
-        q.style.width = p + '%';
-        void q.offsetWidth;
-        q.style.transition = '';
+        q.style.setProperty('--p', p + '%');
       }
+      plateAfterPaint(() => {
+        for (const q of [f, g]) q.style.transition = '';
+      });
       f.dataset.p = p;
     }
     const prev = +(f.dataset.p || p);
     f.dataset.p = p;
-    f.style.width = p + '%';
+    f.style.setProperty('--p', p + '%');
     f.className = 'fill' + (p < 25 ? ' low' : p < 50 ? ' mid' : '');
     g.style.transitionDelay = p < prev ? '.45s' : '0s';
-    g.style.width = p + '%';
+    g.style.setProperty('--p', p + '%');
     if (p < prev && anim) {
+      /* the shake starts again after a painted frame without it (no forced layout) */
       e.classList.remove('hit');
-      void e.offsetWidth;
-      e.classList.add('hit');
+      plateAfterPaint(() => e.classList.add('hit'));
     }
     /* phase 06-4: what the corner cards used to show: stat changes, a robot's limbs, the party's dots (on the first
        plate of each side) */
@@ -1748,7 +1775,7 @@ function paintPlates(s, anim) {
     else if (ACTOR_SIDE[k]) rollPlateNumber(num, Math.round(p), '%', x.uid, anim);
     else rollPlateNumber(num, Math.max(0, x.hp), '/' + x.max, x.uid, anim);
     const xp = e.querySelector('.pl-xp i');
-    if (xp) xp.style.width = x.xp * 100 + '%';
+    if (xp) xp.style.setProperty('--p', x.xp * 100 + '%');
     if (battleStage.s[k] && battleStage.s[k].sp === x.sp) battleStage.s[k].st = x.hp > 0 ? x.st : null;
     if (k === 0) {
       const lo = $('#lowhp');
@@ -1936,13 +1963,65 @@ const floatPos = { acts: null, msg: null };
 /** the battle cards' column (the text over the menu): its width in screen px, its zoom (big screens zoom the dock:
     battle-screen.css), the gap to the fighters and the margin to the screen's edge. battle-stage.js lays the fighters
     out beside it on a wide screen @param {number} vw @param {boolean} land */
-function battleCardColumn(vw, land) {
-  const dock = $('#dock'),
-    z = (dock && parseFloat(getComputedStyle(dock).zoom)) || 1,
+function battleCardColumn(vw, land, zoom = 0) {
+  const dock = zoom ? null : $('#dock'),
+    z = zoom || (dock && parseFloat(getComputedStyle(dock).zoom)) || 1,
     cwd = Math.min((vw - 32) / z, land ? 360 : 400);
   return { cwd, cw: cwd * z, z, gap: 32, edge: land ? Math.max(24, Math.round(vw * 0.03)) : 16 };
 }
+/* FL-6: the cards and plates are placed after the battle's frame (a microtask once the frame task returns), so their
+   time isn't the 3D's work its automatic quality reads (battle-stage.js), and they read no layout in the frame: the
+   sizes they need come from a ResizeObserver (its callback runs after the browser's own layout, so reading there
+   forces nothing), where the camera's transform, written earlier in the frame, would force a second style pass */
+let platesQueued = false;
+/** what the cards and plates know of the page: the strip's bottom under the battle's top, the dock's zoom, the two
+ * cards' heights and each plate's size (border box) */
+const floatBox = {
+  strip: -1,
+  z: 0,
+  ah: 0,
+  mh: 0,
+  sizes: /** @type {WeakMap<Element, number[]>} */ (new WeakMap()),
+  ro: /** @type {ResizeObserver | null} */ (null),
+  seen: /** @type {WeakSet<Element>} */ (new WeakSet()),
+};
+/** watched: the battle, its strip, dock and cards, and every plate (a new element once, as it comes) */
+function floatWatch() {
+  if (typeof ResizeObserver === 'undefined') return false;
+  const F = floatBox;
+  if (!F.ro)
+    F.ro = new ResizeObserver(list => {
+      for (const e of list) {
+        if (!e.target.isConnected) {
+          F.ro.unobserve(e.target);
+          continue;
+        }
+        const b = e.borderBoxSize && e.borderBoxSize[0],
+          w = b ? b.inlineSize : e.target.getBoundingClientRect().width,
+          h = b ? b.blockSize : e.target.getBoundingClientRect().height;
+        F.sizes.set(e.target, [w, h]);
+        if (e.target.id === 'acts') F.ah = h;
+        if (e.target.id === 'msg') F.mh = h;
+      }
+      /* layout is clean here: the positions and the zoom read without forcing anything */
+      const B = $('#battle'),
+        tk = $('#fstrip'),
+        dock = $('#dock');
+      if (B) F.strip = tk ? tk.getBoundingClientRect().bottom - B.getBoundingClientRect().top : 24;
+      F.z = (dock && parseFloat(getComputedStyle(dock).zoom)) || 1;
+    });
+  for (const el of [$('#battle'), $('#fstrip'), $('#dock'), $('#acts'), $('#msg'), ...$$('#plates .bplate')])
+    if (el && !F.seen.has(el)) {
+      F.seen.add(el);
+      F.ro.observe(el);
+    }
+  return F.strip >= 0 && F.z > 0;
+}
 function floatTick() {
+  floatPlace(floatMeasure());
+}
+/** what the cards need from the page, all reads (the layout the last frame left) */
+function floatMeasure() {
   const B = $('#battle'),
     acts = $('#acts'),
     msg = $('#msg');
@@ -1952,36 +2031,62 @@ function floatTick() {
       battleStageResize();
     }
     floatPos.acts = floatPos.msg = null;
-    return;
+    return null;
   }
   if (!B.classList.contains('ui3d')) {
     B.classList.add('ui3d');
     battleStageResize();
   }
-  const ph = activeBattle.phase;
+  const L = battleStage.L,
+    land = L.lay === 'landscape',
+    FB = floatBox,
+    /* before the observer's first report (the battle's first frame), read once */
+    known = floatWatch() && FB.sizes.has(acts) && FB.sizes.has(msg),
+    tk = known ? null : $('#fstrip'),
+    col = battleCardColumn(L.vw, land, known ? FB.z : 0);
+  return {
+    B,
+    acts,
+    msg,
+    land,
+    col,
+    /* the top of the free band under the fighters' strip (the plates keep 4 px under it, the cards 8) */
+    strip: known ? FB.strip : tk ? tk.getBoundingClientRect().bottom - B.getBoundingClientRect().top : 24,
+    ah: known ? FB.ah : acts.offsetHeight,
+    mh: known ? FB.mh : msg.offsetHeight,
+  };
+}
+/** a plate's size (border box) as the observer saw it last, else read @param {HTMLElement} e */
+function plateSize(e) {
+  const v = floatBox.sizes.get(e);
+  return v ? v : [e.offsetWidth, e.offsetHeight];
+}
+/** the cards placed from what floatMeasure read: writes only @param {ReturnType<typeof floatMeasure>} F */
+function floatPlace(F) {
+  if (!F) return;
+  const { acts, msg, land, col } = F,
+    ph = activeBattle.phase;
   battleStage.calm = ph !== 'playing' && ph !== 'end';
   const L = battleStage.L,
     vw = L.vw,
     vh = L.vh,
     pad = 16,
-    land = L.lay === 'landscape',
-    tk = $('#fstrip'),
-    top0 = (tk ? tk.getBoundingClientRect().bottom - B.getBoundingClientRect().top : 24) + 8,
+    top0 = F.strip + 8,
     who = activeBattle.cur != null && battleStage.s[activeBattle.cur] ? activeBattle.cur : 0,
     w0 = actorWorldPoint(who),
     a = battleStageToCss({ x: w0.x, y: 0, z: w0.z }),
-    p0 = actorWorldPoint(0),
-    p1 = actorWorldPoint(1),
-    mid = battleStageToCss({ x: (p0.x + p1.x) / 2, y: 0, z: (p0.z + p1.z) / 2 }),
     hasActs = !!acts.firstChild && ph !== 'playing';
   /* a column under the one choosing: its feet, then the text, then the menu, in the lower part of the screen (the
      right third in landscape), so neither card covers a fighter and both stay within thumb reach */
   /* big screens zoom the dock (style.css, 1.18 or 1.35) so the cards grow with the screen: sizes below are in screen
      pixels, and the translate is divided back into the dock's own units */
-  const { cwd, cw, z, gap: apart, edge } = battleCardColumn(vw, land);
-  acts.style.width = msg.style.width = cwd + 'px';
-  const ah = hasActs ? acts.offsetHeight * z : 0,
-    mh = msg.offsetHeight * z,
+  const { cwd, cw, z, gap: apart, edge } = col,
+    wpx = cwd + 'px';
+  /* FL-6: written only when it changes (the heights read above are this width's, a frame later when it does) */
+  if (acts.style.width !== wpx) acts.style.width = wpx;
+  if (msg.style.width !== wpx) msg.style.width = wpx;
+  const ah = hasActs ? F.ah * z : 0,
+    mh = F.mh * z,
     gap = 8 * z,
     colH = mh + (hasActs ? gap + ah : 0);
   /* wide screens (owner, 2026-10-19): a column on the right, clear of the edge, centred top to bottom; where the
@@ -2002,29 +2107,48 @@ function floatTick() {
   msg.style.transform = `translate(${floatPos.msg.x.toFixed(1)}px, ${floatPos.msg.y.toFixed(1)}px)`;
   acts.classList.toggle('empty', !hasActs);
 }
+/* every battle frame (battle-stage.js): queued once, run when the frame task is done */
 function platesTick() {
-  floatTick();
-  const L = $('#plates');
-  if (!L || !activeBattle || !battleStage.L || !L.firstChild) return;
+  if (platesQueued) return;
+  platesQueued = true;
+  queueMicrotask(() => {
+    platesQueued = false;
+    try {
+      platesRun();
+    } catch (e) {
+      console.error('plates', e);
+    }
+  });
+}
+function platesRun() {
+  /* every read: the cards', then each plate's size */
+  const F = floatMeasure(),
+    L = $('#plates'),
+    on = !!(L && activeBattle && battleStage.L && L.firstChild),
+    sized = on
+      ? [...L.children].map(e => {
+          const [w, h] = plateSize(/** @type {HTMLElement} */ (e));
+          return { e, k: +(/** @type {HTMLElement} */ (e).dataset.k), w: w || 120, h: h || 44 };
+        })
+      : [];
+  /* then every write */
+  floatPlace(F);
+  if (!on) return;
   const tgt = activeBattle.phase === 'target',
     placed = [],
-    tk = $('#fstrip'),
-    top0 = (tk ? tk.getBoundingClientRect().bottom - $('#battle').getBoundingClientRect().top : 24) + 4;
-  const list = [...L.children]
-    .map(e => ({ e, k: +e.dataset.k }))
+    top0 = (F ? F.strip : 24) + 4;
+  const list = sized
     .sort(
       (a, b) => (battleStage.s[b.k] ? actorWorldPoint(b.k).z : 0) - (battleStage.s[a.k] ? actorWorldPoint(a.k).z : 0)
     )
     .reverse();
-  for (const { e, k } of list) {
+  for (const { e, k, w, h } of list) {
     const sd = battleStage.s[k];
     const vis = sd && sd.show && sd.a > 0.3 && !e.classList.contains('gone');
     e.classList.toggle('off', !vis);
     if (!vis) continue;
     const q = battleStageToCss(actorTop(k));
     if (!q) continue;
-    const w = e.offsetWidth || 120,
-      h = e.offsetHeight || 44;
     let x = clamp(q.x, w / 2 + 6, battleStage.L.vw - w / 2 - 6),
       y = clamp(q.y - 8, top0 + h, battleStage.L.vh - 40);
     /* nearer plates win; a farther one that would cover it moves up (or down if there's no room) */
