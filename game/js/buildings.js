@@ -124,6 +124,16 @@ export const BUILDING_TEXTURE_NAMES = [
   'Rivets',
   'Stripes',
   'Rings',
+  'Bark',
+  'Rock',
+  'Fish-scale shingles',
+  'Standing seam',
+  'Barrel tiles',
+  'Cob',
+  'Half-timber',
+  'Riveted panels',
+  'Glass block',
+  'Mosaic',
 ];
 export const BUILDING_ROOM_NAMES = ['Living room', 'Kitchen', 'Bedroom', 'Shop', 'Office', 'Clinic', 'Lab', 'Stairs'];
 const buildingSignature = B =>

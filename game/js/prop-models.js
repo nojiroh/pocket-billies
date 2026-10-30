@@ -981,6 +981,15 @@ const LOW_POLY_TEXTURE_CELLS = {
   shingles: 9,
   slate: 10,
   solar: 17,
+  /* Buildings track BD-2a: the sheet's fourth row (tools/build-surfaces.py) */
+  fishscale: 24,
+  standingseam: 25,
+  barreltile: 26,
+  cob: 27,
+  halftimber: 28,
+  riveted: 29,
+  glassblock: 30,
+  mosaic: 31,
 };
 export function lowPolyFromRecipe(rec) {
   const V = [],

@@ -172,15 +172,15 @@
   {
    "p": "scene/build/detail.png",
    "at": [
-    "game/js/buildings.js:171",
-    "game/js/prop-models.js:2472",
+    "game/js/buildings.js:181",
+    "game/js/prop-models.js:2481",
     "game/js/walk-view.js:793"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
-    "game/js/buildings.js:171",
+    "game/js/buildings.js:181",
     "game/js/walk-view.js:793"
    ]
   },
@@ -1130,7 +1130,7 @@
   "barrel": [
    "game/js/prop-models.js:237",
    "game/js/prop-models.js:438",
-   "game/js/prop-models.js:1418",
+   "game/js/prop-models.js:1427",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1155,8 +1155,8 @@
    "game/js/pending-windows.js:207",
    "game/js/prop-models.js:233",
    "game/js/prop-models.js:365",
-   "game/js/prop-models.js:1227",
-   "game/js/prop-models.js:1589",
+   "game/js/prop-models.js:1236",
+   "game/js/prop-models.js:1598",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
    "game/js/walk-view-gl.js:732"
@@ -1182,8 +1182,8 @@
   ],
   "building": [
    "game/js/bowl-map-test.js:344",
-   "game/js/buildings.js:349",
-   "game/js/buildings.js:1688",
+   "game/js/buildings.js:359",
+   "game/js/buildings.js:1698",
    "game/js/logic/bowl-things.js:90",
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",

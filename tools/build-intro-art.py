@@ -64,7 +64,9 @@ Mesh = AIRSHIP.Mesh
 # prop-models.js LOW_POLY_TEXTURE_CELLS: a recipe texture's cell on the building sheet
 CELLS = {'plain': 15, 'wood': 14, 'grain': 0, 'stone': 3, 'metal': 12, 'cloth': 18, 'hay': 11, 'leaves': 16, 'rust': 19,
          'stripes': 20, 'rings': 15, 'bark': 22, 'rock': 23, 'plaster': 0, 'siding': 1, 'brick': 2, 'battens': 4,
-         'panels': 5, 'corrugated': 6, 'tilewall': 7, 'rooftiles': 8, 'shingles': 9, 'slate': 10, 'solar': 17}
+         'panels': 5, 'corrugated': 6, 'tilewall': 7, 'rooftiles': 8, 'shingles': 9, 'slate': 10, 'solar': 17,
+         'fishscale': 24, 'standingseam': 25, 'barreltile': 26, 'cob': 27, 'halftimber': 28, 'riveted': 29,
+         'glassblock': 30, 'mosaic': 31}
 
 
 MAX_SIDES = 12  # fewer sides than the game's limit: the wreck is big and stays a few thousand triangles

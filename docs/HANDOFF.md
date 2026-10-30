@@ -2,6 +2,48 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-2a - surfaces painted: the building sheet 8x4 and its height map - 2026-10-30
+Branch `claude/bd-2a-surfaces` (a side session of wave 1, made from `track/buildings` at 5ad61530, main already in).
+Plan written in Plan Mode's shape and built at once (the owner's standing approval, the track file section 1). Art
+and data tables only: no shader or renderer change.
+- Changed: new tools/build-surfaces.py. It keeps the sheet's cells 0-23 byte for byte and paints row four of
+  game/art/scene/build/detail-a04b.png (now 512x256): 24 fishscale, 25 standingseam, 26 barreltile, 27 cob,
+  28 halftimber, 29 riveted, 30 glassblock, 31 mosaic. They use the same five levels (0/63/126/189/252, R=G=B), are
+  mostly level 2 with thin seams and a lit edge (the trim-sheet rule), and each is seamless. New
+  game/art/scene/build/detail-a04b-height.png (512x256 grey, 255 the highest, each cell seamless). The new cells'
+  heights are built with them: every scale, tile, block and plate has its own height and bevel. The old cells are
+  bevelled from their joints where the joint's shade level is known (`OLD_GAPS`: siding, brick, stone, panels, tile
+  wall, roof tiles, shingles, slate, metal, planks, rivets), with each element raised by its own small amount. The
+  rest (plaster, battens, corrugated, thatch...) get a smoothed shade level, as `bldBump` does today. The tool has
+  `normal_sheet()` (the normals from the heights, sampled within each cell, +y up the face) for BD-2b, and `--check`
+  (fails when the files differ from what it paints). Contact picture: validation/build-surfaces/contact.png (each
+  cell coloured through rampC, its heights, and lit by `normal_sheet`).
+- Names (data only): prop-models.js `LOW_POLY_TEXTURE_CELLS` (the eight keys above, cells 24-31) and
+  buildings.js `BUILDING_TEXTURE_NAMES`. That list stopped at 'Rings' (cell 21), so 'Bark' and 'Rock' are added
+  before the eight new names. Also wall-ramp.js `BUILD_CELL_NAMES` (its test pins it to the sheet's 32 cells),
+  build-intro-art.py's copy of the cell table, art-search.js `ART_BUILDERS` (and its test), and studio/art-keep.json
+  (the height map, until BD-2b reads it). studio/art-code-refs.json and hooks.js were regenerated.
+- Checked against the track file: the figures were right (8x3 cells of 64 px, 32 px/m, five levels in red). The
+  renderer needs nothing for a fourth row: buildings.js `buildingTextureGrid` reads the rows from the picture's
+  height, and the vertex stores the cell as `tx % 8`, `tx / 8`. In the game the sheet loads as 512x256, the grid
+  reads [8, 4], and a recipe with `mosaic`, `fishscale` and `brick` lands on cells 31, 24 and 2 (a headless page
+  check, no page errors).
+- Found, not changed: tools/build-airship.py `--force` rebuilds detail-a04b.png from detail-a04.png (three rows). That
+  already wiped batch 1's bark and rock, and now also row four. The order after it is build-props-batch1.py, then
+  build-surfaces.py (in the tool's notes). The full quick check is slow here (it hung for 30 minutes on "Safety:
+  hostile names"; run on its own, that step passes in 264 s).
+- Risky: no recipe uses the new cells yet, so they haven't been seen on a model in the game's light. Fish-scale at 25
+  cm a scale reads as rows of scallops more than single scales; BD-3 judges it on a roof. The old cells' heights are a
+  first cut from their joints, and BD-2b may repaint any of them in this tool.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build all clean; `npm test` 2392 of 2392;
+  the unused-art check (0 unused, 17 kept); `build-surfaces.py --check` matches. Smoke 6 of 7: "Actions bar" failed
+  once with "Esc did not close the bar" and passed when run alone (70 s). The full quick check ran 38 steps ok, then
+  hung on "Safety" (passed alone). Its two problems, "Walking left and right ..." (room light at night, and on a
+  rerun the settings tabs) and "RL-8" (the route's view, and on a rerun "the town's shop has no Perk"), fail the same
+  way on `track/buildings` without this change, so they are not this session's.
+- Next: BD-2b (normal maps) on `track/buildings`, once BD-1 and BD-F have their entries. It merges this branch, makes
+  the normal sheet from detail-a04b-height.png (`normal_sheet` in tools/build-surfaces.py) and wires it into the
+  model shader in place of `bldBump`.
 ### Buildings track BD-1 - New shapes: rot/tilt, prism, lathe, box taper/lean/bevel, warp, glow - 2026-10-30
 Branch `track/buildings` (main merged in, up to date; BD-0's docs update from `ccr-d224d90d-qlnty6` merged at its
 session's request). Plans approved in advance by the owner (2026-10-29). Engine and tools: the low-poly mesher, the

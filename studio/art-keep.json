@@ -20,6 +20,10 @@
   {
    "p": "scene/build/detail-a04.png",
    "why": "an input of tools/build-airship.py, which writes the live sheet detail-a04b.png"
+  },
+  {
+   "p": "scene/build/detail-a04b-height.png",
+   "why": "the building sheet's height map (tools/build-surfaces.py, BD-2a); BD-2b makes the normal sheet from it"
   }
  ]
 }

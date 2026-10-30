@@ -71,7 +71,7 @@ def tile_noise(seed, n=64):
 
 
 def paint_textures():
-    """Cells 22 and 23 of the building sheet (8 x 3 cells of 64 px, 2 m each): the red channel holds the tone step,
+    """Cells 22 and 23 of the building sheet (8 x 4 cells of 64 px, 2 m each; row four is tools/build-surfaces.py): the red channel holds the tone step,
     0, 63, 126 (the colour itself), 189, 252. Both tile seamlessly."""
     path = ART / 'scene' / 'build' / 'detail-a04b.png'
     im = np.array(Image.open(path).convert('RGBA'))
