@@ -49,6 +49,7 @@ import '../../game/js/logic/collection.js';
 import '../../game/js/logic/colors.js';
 import '../../game/js/logic/conditions.js';
 import '../../game/js/logic/contact-shade.js';
+import '../../game/js/logic/spin-merge.js';
 import '../../game/js/logic/content-preview.js';
 import '../../game/js/logic/cries.js';
 import '../../game/js/logic/cutscene-set.js';
