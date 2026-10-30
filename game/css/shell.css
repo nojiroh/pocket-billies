@@ -558,6 +558,18 @@ pb-nav-bar#nav {
 pb-nav-bar#nav[hidden] {
   display: none;
 }
+/* FL-6: the minimap's picture (js/minimap.js) is the tile and --minimap-pad more on every side, moved under you by
+   transform between its five pictures a second (the tile's clip hides the margin); you and north sit still above it */
+pb-nav-bar#nav canvas.minimap {
+  --minimap-pad: 24px;
+  inset: calc(var(--minimap-pad) * -1);
+  width: calc(100% + 2 * var(--minimap-pad));
+  height: calc(100% + 2 * var(--minimap-pad));
+  will-change: transform;
+}
+pb-nav-bar#nav canvas.minimap-you {
+  pointer-events: none;
+}
 /* UI-8: what sits above the bar (the dialogue box, the hint and Actions, sheets' sticky rows, the d-pad) clears it by
    --nav-h: the bar's top (its raised minimap tile, full or compact) and a gap; with no bar shown, the old height */
 :root {

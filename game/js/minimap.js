@@ -12,6 +12,7 @@
    While you walk a few seconds the bar goes compact (owner's choice); it comes back when you stop. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
+import { clamp } from './util.js';
 import { TRAINERS } from './game-data.js';
 import { turnedBounds } from './logic/prop-turn.js';
 import { runIconURL } from './ui-run-kit.js';
@@ -34,7 +35,10 @@ expose({
   minimapOK: [() => minimapOK, v => (minimapOK = v)],
   minimapPaint: [() => minimapPaint, v => (minimapPaint = v)],
   minimapPalette: [() => minimapPalette, v => (minimapPalette = v)],
+  minimapPan: [() => minimapPan, v => (minimapPan = v)],
   minimapRole: [() => minimapRole, v => (minimapRole = v)],
+  minimapYou: [() => minimapYou, v => (minimapYou = v)],
+  minimapYouDraw: [() => minimapYouDraw, v => (minimapYouDraw = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -52,6 +56,12 @@ const minimap = {
   walkT: 0,
   stopT: 0,
   draws: 0,
+  /* FL-6: the fixed layer over the panned picture (you and north), what it was drawn for, where you stood when the
+     picture was drawn (metres) and its CSS pixels a metre, and the pan written last */
+  you: /** @type {HTMLCanvasElement | null} */ (null),
+  youKey: '',
+  at: /** @type {{x: number, z: number, s: number, pad: number} | null} */ (null),
+  pan: '',
 };
 
 /** the dials (uiTheme.json minimap, written as --minimap-* by the theme; tokens.css holds the defaults): metres
@@ -110,6 +120,20 @@ export function minimapCanvas() {
     minimap.cv = cv;
   }
   return minimap.cv;
+}
+/** FL-6: the layer that stays still over the panned picture: you (the chevron) and north; it sits beside the picture
+ * in the tile's slot (made once, put there when the picture is) */
+function minimapYou() {
+  const cv = /** @type {HTMLCanvasElement} */ (minimap.cv);
+  if (!minimap.you) {
+    const y = document.createElement('canvas');
+    y.slot = 'map';
+    y.className = 'minimap-you';
+    y.setAttribute('aria-hidden', 'true');
+    minimap.you = y;
+  }
+  if (minimap.you.previousElementSibling !== cv) cv.after(minimap.you);
+  return minimap.you;
 }
 
 /** a colour role of the theme as [r, g, b] (the page resolves the variable, mixes and all) @param {string} role */
@@ -288,6 +312,10 @@ function minimapDraw(now = performance.now()) {
     cw = cv.clientWidth,
     ch = cv.clientHeight;
   if (!cw || !ch) return false;
+  /* FL-6: the picture is the tile and a margin on every side (--minimap-pad, shell.css), so between two pictures it is
+     moved under you by transform every frame (minimapPan) instead of stepping 5 times a second */
+  const padCss = parseFloat(getComputedStyle(cv).getPropertyValue('--minimap-pad')) || 0,
+    pad = Math.round(padCss * dpr);
   if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(ch * dpr)) {
     cv.width = Math.round(cw * dpr);
     cv.height = Math.round(ch * dpr);
@@ -311,8 +339,9 @@ function minimapDraw(now = performance.now()) {
   const c = /** @type {CanvasRenderingContext2D} */ (cv.getContext('2d')),
     W = cv.width,
     H = cv.height,
-    /* UI-8b: metres per pixel from the shorter side, so the wide tile keeps span top to bottom and shows more across */
-    S = Math.min(W, H),
+    /* UI-8b: metres per pixel from the shorter side, so the wide tile keeps span top to bottom and shows more across
+       (FL-6: the tile's side, the margin left out) */
+    S = Math.min(W, H) - 2 * pad,
     s = S / D.span,
     Pl = walkView.pl,
     P = minimap.pal,
@@ -379,6 +408,33 @@ function minimapDraw(now = performance.now()) {
     c.fillStyle = minimapCss(P.teal);
     c.fill();
   }
+  minimap.at = { x: Pl.x, z: Pl.z, s: s / dpr, pad: padCss };
+  minimap.pan = '';
+  cv.style.transform = '';
+  minimapYouDraw(dpr, unit, P);
+  minimap.draws++;
+  return true;
+}
+
+/** FL-6: you and north on the still layer, drawn again only when the way you face, its size or the colours change
+ * @param {number} dpr @param {number} unit @param {Record<string, number[]>} P */
+function minimapYouDraw(dpr, unit, P) {
+  const y = minimapYou(),
+    Pl = walkView.pl,
+    W0 = Math.round(y.clientWidth * dpr),
+    H0 = Math.round(y.clientHeight * dpr),
+    key = `${Pl.dir}|${W0}x${H0}|${minimap.look}|${unit}`;
+  if (key === minimap.youKey || !W0 || !H0) return;
+  minimap.youKey = key;
+  if (y.width !== W0 || y.height !== H0) {
+    y.width = W0;
+    y.height = H0;
+  }
+  const c = /** @type {CanvasRenderingContext2D} */ (y.getContext('2d')),
+    W = W0,
+    H = H0;
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.clearRect(0, 0, W, H);
   /* you: a gold chevron in the middle, pointing the way you face */
   const turn = { up: 0, sideR: 0.5, down: 1, side: 1.5 }[Pl.dir] || 0,
     r = Math.max(6, 7 * unit);
@@ -401,14 +457,28 @@ function minimapDraw(now = performance.now()) {
   c.fill();
   c.restore();
   /* north */
-  c.font = `${Math.round(12 * dpr)}px ${getComputedStyle(cv).getPropertyValue('--font-voice') || 'sans-serif'}`;
+  c.font = `${Math.round(12 * dpr)}px ${getComputedStyle(y).getPropertyValue('--font-voice') || 'sans-serif'}`;
   c.textAlign = 'right';
   c.textBaseline = 'top';
   c.fillStyle = minimapCss(P.text, 0.75);
   c.fillText('N', W - 5 * dpr, 4 * dpr);
-  minimap.draws++;
-  return true;
 }
+
+/** FL-6: every frame, the picture moved under you by how far you went since it was drawn (CSS pixels, at most its
+ * margin); a transform, which the compositor moves alone */
+function minimapPan() {
+  const A = minimap.at,
+    cv = minimap.cv,
+    Pl = walkView.pl;
+  if (!A || !cv || !Pl || !cv.isConnected || uiState.tab !== 'walk' || !minimapOK()) return;
+  const dx = clamp((A.x - Pl.x) * A.s, -A.pad, A.pad),
+    dy = clamp((Pl.z - A.z) * A.s, -A.pad, A.pad),
+    t = dx || dy ? `translate(${dx.toFixed(1)}px, ${dy.toFixed(1)}px)` : '';
+  if (t === minimap.pan) return;
+  minimap.pan = t;
+  cv.style.transform = t;
+}
+frameTask('minimapPan', minimapPan);
 
 /* a few times a second, on the page's one frame loop (frame-scheduler.js) */
 frameTask(
