@@ -52,7 +52,10 @@ Branch `track/fluid` (round 4 lane, beside FL-5a). Plan approved by the owner's 
   contrast and reduced transparency: 0 blurred surfaces on Team, 5 before). Smoke 7 of 7 in 357 s (blurred surfaces
   besides the bars as before: walk 0, map 0, team 3, guide 3, profile 2, shop 2, battle 0; the UI lint at its
   ceilings). check:ui: the same 73 of 145 pictures differ from the committed baseline as in FL-6's entry (a stale
-  baseline; the bottom bar's pictures not among them). Full quick check: running at the push (its result in the next commit).
+  baseline; the bottom bar's pictures not among them). Full quick check: 39 of 42 (2,575 s; the
+  tree under it took the main merge mid-run): RL-8's Lakeside Route crossing, room light and Battle music (drums) fail
+  as in FL-6's entry. CI's fast check on the PR: Kappi's tips (IN-2, failed already on the merge before this
+  session's push) and Tall ground; both pass alone here (148 s, 127 s); re-run once on CI.
 - For other lanes: none needed. track/ui: `--nav-hl`, `--nav-dy` and `--tray-dy` are the new names for what sits over
   the bar (shell.css); anything new over the bar that's on screen while walking should use them.
 - Next: FL-5a finishes round 4 and starts round 5 (FL-4b, FL-5b).
