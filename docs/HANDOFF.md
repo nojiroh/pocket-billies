@@ -284,6 +284,7 @@ cozy whimsical retro futuristic", then "all houses look way too similar now, add
   width, light and dark: no sideways scroll, no script errors.
 - Next: wave 1, started by this session: BD-1 (new recipe shapes) on `track/buildings`, BD-2a (surfaces painted) on
   `claude/bd-2a-surfaces`, BD-F (the window check reads `rot`) on `claude/bd-f-window-check`.
+
 ### Fix - water on the Adreno phone, Copperleaf's spring stream and bridge - 2026-10-30
 Branch `ccr-8236e72e-tie1ht` (the session's branch, from main 73b2f8b1), PR into main. The owner: water doesn't show on
 the phone (desktop and iPad fine); then "water above the pond for no reason" and "the bridge under the waterfall is too
