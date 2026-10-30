@@ -644,6 +644,8 @@ sc.props = fountainLooks(sc);
    build-props-hub.py; BD-6's notes). Each on a spot found by the rules below, before the dressing (which keeps clear of
    them) */
 {
+  const n0 = sc.props.length,
+    pastureMade = new Set(fenced.props.slice(fenced.props.length - fenced.made));
   const cornerH = (i, j) =>
       +(sc.heights[sc.h - Math.max(0, Math.min(sc.h, j))] || [])[Math.max(0, Math.min(sc.w, i))] || 0,
     zoneOf = k => G.zones.find(Z => Z.k === k),
@@ -740,6 +742,11 @@ sc.props = fountainLooks(sc);
         break;
       }
   }
+  /* placed before the pasture's own props, as the town's are: the pasture step rerun on the map finds the same list
+     (pasture.test.mjs) */
+  const added = sc.props.splice(n0),
+    at = sc.props.findIndex(p => pastureMade.has(p));
+  sc.props.splice(at < 0 ? sc.props.length : at, 0, ...added);
 }
 /* the walking checks are the island's (build-island.mjs: from the square to each plot's front, the barn, the summit,
    the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry). One that ends
