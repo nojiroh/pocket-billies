@@ -34,6 +34,8 @@ expose({
   // @ts-expect-error -- replaced on purpose
   spanFit: [() => spanFit, v => (spanFit = v)],
   // @ts-expect-error -- replaced on purpose
+  spinPoint: [() => spinPoint, v => (spinPoint = v)],
+  // @ts-expect-error -- replaced on purpose
   tiltSpin: [() => tiltSpin, v => (tiltSpin = v)],
   // @ts-expect-error -- replaced on purpose
   turnedBounds: [() => turnedBounds, v => (turnedBounds = v)],
@@ -163,8 +165,10 @@ export function pictureRight(it, cameraRight) {
  * its model as before.
  * @param {{ x: number, y: number, z: number }} at the model's base
  * @param {{ x?: number, y?: number, z?: number, yaw?: number, face?: string, flip?: unknown }} L the layer
- * @param {{ s: number, f?: number, turn: number, bob?: number[] | null }} m the model's size (with the wobble),
- *   mirror (-1), turn (radians, propTurn) and bob ([up, turn], prop-models.js mooredBob)
+ * AS-1: a model tipped off the upright (its spin, as the shaders turn it: HB-6's tilt, a climbing sky train) carries
+ * its layers with it, so a headlamp and a name board stay on the train; the pictures themselves stay upright.
+ * @param {{ s: number, f?: number, turn: number, bob?: number[] | null, spin?: ModelSpin | null }} m the model's size
+ *   (with the wobble), mirror (-1), turn (radians, propTurn), bob ([up, turn], prop-models.js mooredBob) and spin
  * @returns {{ x: number, y: number, z: number, s: number, yaw: number, flip: number }}
  */
 export function decalPlace(at, L, m) {
@@ -173,13 +177,16 @@ export function decalPlace(at, L, m) {
     ro = m.turn + (m.bob ? m.bob[1] : 0),
     c = Math.cos(ro),
     n = Math.sin(ro),
-    lx = (L.x || 0) * s * f,
-    lz = (L.y || 0) * s,
+    /* only a tipped model's layers are turned (every layer of every model passes here each frame: no array for the
+       upright ones) */
+    q = m.spin && m.spin.an ? spinPoint(m.spin, [L.x || 0, L.z || 0, L.y || 0]) : null,
+    lx = (q ? q[0] : L.x || 0) * s * f,
+    lz = (q ? q[2] : L.y || 0) * s,
     fixed = L.face === 'fixed';
   return {
     x: at.x + lx * c - lz * n,
     z: at.z + lx * n + lz * c,
-    y: at.y + (m.bob ? m.bob[0] : 0) + (L.z || 0) * s,
+    y: at.y + (m.bob ? m.bob[0] : 0) + (q ? q[1] : L.z || 0) * s,
     s,
     yaw: fixed ? (+(L.yaw || 0) || 0) * f + ro : 0,
     flip: fixed ? (L.flip ? -1 : 1) : L.flip ? -f : f,
@@ -202,6 +209,28 @@ export function decalPlace(at, L, m) {
 export function spanFit(len, h0, h1, flip = 1) {
   const an = len > 0 ? Math.asin(Math.max(-1, Math.min(1, (h1 - h0) / len))) * (flip < 0 ? -1 : 1) : 0;
   return { y: (h0 + h1) / 2, spin: Math.abs(an) > 1e-4 ? { a: [0, 0, 1], an, c: [0, 0, 0] } : null };
+}
+
+/**
+ * a point in a model's metres ([x, up, back]) turned by its spin about the spin's pivot, as the model shaders do
+ * (prop-models.js SPIN_GLSL voxSpin: Rodrigues' turn about the unit axis); unturned without one
+ * @param {ModelSpin | null | undefined} S @param {number[]} p @returns {number[]}
+ */
+export function spinPoint(S, p) {
+  if (!S || !S.an) return p;
+  const k = S.a,
+    c0 = S.c || [0, 0, 0],
+    dx = p[0] - c0[0],
+    dy = p[1] - c0[1],
+    dz = p[2] - c0[2],
+    co = Math.cos(S.an),
+    si = Math.sin(S.an),
+    kd = (k[0] * dx + k[1] * dy + k[2] * dz) * (1 - co);
+  return [
+    dx * co + (k[1] * dz - k[2] * dy) * si + k[0] * kd + c0[0],
+    dy * co + (k[2] * dx - k[0] * dz) * si + k[1] * kd + c0[1],
+    dz * co + (k[0] * dy - k[1] * dx) * si + k[2] * kd + c0[2],
+  ];
 }
 
 /**

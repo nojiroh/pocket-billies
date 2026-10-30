@@ -19,6 +19,7 @@ import {
 } from '../hooks.js';
 import { pictureRight } from '../logic/prop-turn.js';
 import { personPicture } from '../logic/person-view.js';
+import { halfFloats } from '../logic/half-float.js';
 import { gpuTag } from '../engine/gpu-counters.js';
 import { walkData, walkView } from '../walk-view.js';
 import { engineColor, engineSetting } from '../engine/settings.js';
@@ -219,7 +220,9 @@ function kindTexture() {
   });
   const t = gpuTexture('ground', N * KIND_ROWS * 8);
   gl.bindTexture(gl.TEXTURE_2D, t);
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, N, KIND_ROWS, 0, gl.RGBA, gl.FLOAT, d);
+  /* uploaded as half floats made here (logic/half-float.js): handed full floats, the owner's Adreno phone kept zeros,
+     and its water drew dark and see-through */
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA16F, N, KIND_ROWS, 0, gl.RGBA, gl.HALF_FLOAT, halfFloats(d));
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);

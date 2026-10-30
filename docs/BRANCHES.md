@@ -50,6 +50,8 @@ admin runs' summaries (Actions -> Repo admin), so any of them can be brought bac
 | Branch | What it is |
 |---|---|
 | `main` | The game. |
+| `track/assets` | Assets track (docs/phases/assets-track.md): planned 2026-10-29 (AS-0: the plan, `logic/scatter.js`, the biomes' `flora` layers) from main 73b2f8b1. Wave 1 (AS-1 to AS-7) runs at once on side branches `claude/as-<n>-<words>`, each with a draft PR into this branch; AS-8 brings them together here. To main by one draft PR; the owner merges. |
+| `ccr-594e8978-1wbink` | Assets track AS-1 (the sky train's ride: steady windows, `walk/plume.js` jet fire, decals that tip), 2026-10-29, cut from `track/assets` f835b311: this cloud session's own branch in place of `claude/as-1-<words>` (the session pushes only here). Draft PR into `track/assets`; gone once it merges. |
 | `track/intro` | Intro track (docs/phases/intro-track.md): planned 2026-10-29 (IN-0, docs only) from main bb658f52. Wave 1 (IN-1 the prepared run, IN-2 Kappi's tips, IN-3 the art, IN-4 the way back) runs at once on side branches `claude/in-<n>-<words>`, each with a draft PR into this branch; wave 2 (IN-5, IN-6) works here after. To main by one draft PR after IN-6; the owner merges. |
 | `track/fluid` | Fluid track (docs/phases/fluid-track.md): planned 2026-10-29 on `ccr-36d73c36-2xv56p`. Made from that branch at the owner's word (2026-10-29, "start each new step in a new session"); every FL session from FL-1a on works here, lanes of a round at once (fluid-track.md section 1). |
 | `ccr-36d73c36-2xv56p` | Fluid track FL-0 (the plan, research and verification; docs only), written here because `track/fluid` didn't exist yet (2026-10-29). Draft PR into main. Delete once its PR merges or is superseded. |

@@ -37,6 +37,7 @@ import {
   runTownSize,
 } from './run-map.js';
 import { firstRunCrash, firstRunNode, firstRunPool, firstRunStock } from './first-run.js';
+import { haltTrainKey, haltTrainPark } from './halt.js';
 import { MAPGEN_LAYOUTS, MAPGEN_SIDE_NAME, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 import { arenaGenGates } from './arena-gen.js';
 import { wildPoolList } from './wild-pool.js';
@@ -570,8 +571,10 @@ export function runSceneMake(run, i, scenes, data) {
   });
   runFieldProps(map, i, scene, data);
   runSignposts(map, i, scene, data);
-  /* IN-1: the prepared first run's landing is the crash site: the wreck by the mast (logic/first-run.js) */
+  /* IN-1: the prepared first run's landing is the crash site: the wreck by the halt (logic/first-run.js); AS-2: any
+     other run's landing has the run's train parked at its halt (logic/halt.js) */
   if (i === 0 && firstRunNode(run, 0)) firstRunCrash(scene);
+  else if (i === 0) haltTrainPark(scene, haltTrainKey(run, data), data.scenery.props);
   /* WM-7: a leader's gate, shut until it is beaten (its foe's id: run-loop.js runFoeId) */
   arenaGenGates(scene, data.scenery, `beat:${runPlaceId(i)}_foe`);
   if (scene.kind === 'town') {

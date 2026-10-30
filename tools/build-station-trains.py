@@ -59,8 +59,15 @@ GLOW = '#8FF4FF'
 CHROME, RED = '#DCE2EC', '#D6403C'
 
 
+NOZZLES = []  # AS-1: the rockets' nozzles of the model being built (rocket() adds them, rec() writes them)
+
+
 def rec(L, cel=0.7):
-    return {'ppm': PPM, 'cel': cel, 'layers': sorted(L, key=lambda l: l['k'] == 'img')}
+    R = {'ppm': PPM, 'cel': cel, 'layers': sorted(L, key=lambda l: l['k'] == 'img')}
+    if NOZZLES:
+        R['nozzles'] = [list(n) for n in NOZZLES]
+        NOZZLES.clear()
+    return R
 
 
 def plank(a, b, t, col, name, tex='metal'):
@@ -432,31 +439,10 @@ def name_sides(L, pic, x, z, y):
         L.append(img(pic, x, sy * y, z, face='fixed', yaw=r2(yaw), recv=0, sway=0, name='train name'))
 
 
-def flame(name):
-    """a rocket's plume, 2 m long (64 x 20 px), its root at the right: white core, yellow, orange, a ragged red tip"""
-    w, h = 64, 20
-    a = np.zeros((h, w, 4), np.uint8)
-    rng = np.random.default_rng(7)
-    yy, xx = np.mgrid[0:h, 0:w]
-    t = (w - 1 - xx) / (w - 1)  # 0 at the root, 1 at the tip
-    half = (h / 2 - 1) * (1 - t) ** 0.7 + rng.normal(0, 0.6, (h, w)) * t
-    d = np.abs(yy - (h - 1) / 2)
-    inside = d < half
-    k = np.clip((d / np.maximum(half, 0.5)) * 2.2 + t * 2.2, 0, 3).astype(int)
-    pal = np.array([rgb(c) for c in ('#FFFCEC', '#FFE08A', '#F49A3A', '#D6403C')])
-    a[..., :3] = pal[k]
-    a[..., 3] = np.where(inside, 255, 0)
-    return save_decal(a, name)
-
-
-FLAME = None
-
-
 def rocket(L, x, y, z, r=0.36, col=None, band=None):
     """a rocket engine pointing back (-x), its nozzle at x: a chrome nacelle with a coloured band, red fins, a dark bell
-    lit inside, the plume behind it (both faces of a fixed picture, so it reads from either side)"""
-    global FLAME
-    FLAME = FLAME or flame('train_rocket_flame')
+    lit inside. AS-1: its fire is no picture: the recipe's nozzles ([x, back, up, radius] at the bell's mouth) tell
+    walk/plume.js where to draw the plume on the ride"""
     col = col or CHROME
     L += [limb((x + 1.9, y, z), (x + 0.5, y, z), r * 0.55, r, col, 'metal', 'rocket', 12),
           limb((x + 0.5, y, z), (x + 0.1, y, z), r, r * 0.95, col, 'metal', 'rocket', 12),
@@ -465,9 +451,7 @@ def rocket(L, x, y, z, r=0.36, col=None, band=None):
           limb((x - 0.3, y, z), (x - 0.34, y, z), r * 1.0, r * 1.0, '#FFB45A', 'plain', 'rocket glow', 12)]
     for dy, dz in ((0, 1), (1, -0.6), (-1, -0.6)):  # three fins round its tail
         L.append(plank((x + 0.9, y + dy * r * 0.8, z + dz * r * 0.8), (x + 0.2, y + dy * (r + 0.45), z + dz * (r + 0.45)), 0.04, RED, 'rocket fin'))
-    for yaw in (0, math.pi):
-        L.append(img(FLAME, x - 1.35, y - 0.01 if not yaw else y + 0.01, z - 0.31, face='fixed', yaw=r2(yaw), glow=1, recv=0, sway=0,
-                     name='rocket flame'))
+    NOZZLES.append((r2(x - 0.34), r2(y), r2(z), r2(r * 1.0)))
 
 
 def gangway(L, x, col):
@@ -699,6 +683,8 @@ def add_props(C):
     for key, name, fn in TRAINS:
         r = fn()
         B1.shift_y(r['layers'], TRAIN_HALF)
+        for n in r.get('nozzles', []):
+            n[1] = r2(n[1] + TRAIN_HALF)
         C[key] = ISL.new_prop(key, name, r, group='sky_train', shadow=1.0, tags=('hub', 'station', 'train'), box_=(11.8, 2.6),
                               vary=FIXED, bob=0.04, variants=train_variants(key, name),
                               carriage={**CARRIAGES[key], 'bags': CARRIAGE_BAGS}, about=f'The {name} (HB-7), a sky '

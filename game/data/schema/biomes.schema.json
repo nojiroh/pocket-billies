@@ -164,6 +164,33 @@
    "from": {
     "description": "the hand-built place this recipe was first taken from (for reference)",
     "type": "string"
+   },
+   "flora": {
+    "description": "AS-0 (docs/phases/assets-track.md): how its plants grow, as layers placed in order by logic/scatter.js scatterFlora. Each layer takes its kinds from one of this biome's lists (from) and keeps the later layers clear of its points by clear metres. It is an even spread with spacing r ([dense, sparse] metres; a place's density picks between them) or clumps: parents apart metres apart, young spread metres round them (a Gaussian's sd), size young per clump (lowest, highest), never nearer than gap",
+    "type": "array",
+    "items": {
+     "type": "object",
+     "required": ["layer", "from"],
+     "additionalProperties": false,
+     "properties": {
+      "layer": { "type": "string", "pattern": "^[a-zA-Z][a-zA-Z0-9_]*$" },
+      "from": { "enum": ["trees", "shrubs", "plants", "rocks", "waterPlants", "canopy", "tall"] },
+      "clear": { "type": "number", "minimum": 0 },
+      "r": { "type": "array", "items": { "type": "number", "exclusiveMinimum": 0 }, "minItems": 2, "maxItems": 2 },
+      "clumps": {
+       "type": "object",
+       "required": ["apart", "spread", "size", "gap"],
+       "additionalProperties": false,
+       "properties": {
+        "apart": { "type": "number", "exclusiveMinimum": 0 },
+        "spread": { "type": "number", "exclusiveMinimum": 0 },
+        "size": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 2, "maxItems": 2 },
+        "gap": { "type": "number", "exclusiveMinimum": 0 }
+       }
+      }
+     },
+     "oneOf": [{ "required": ["r"] }, { "required": ["clumps"] }]
+    }
    }
   }
  },

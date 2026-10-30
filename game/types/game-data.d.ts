@@ -1954,6 +1954,15 @@ export interface WorldMapLook {
   kinds: Record<string, string>;
 }
 
+/** AS-0: one layer of a biome's plants (biomes.json flora) */
+export interface BiomeFloraLayer {
+  layer: string;
+  from: 'trees' | 'shrubs' | 'plants' | 'rocks' | 'waterPlants' | 'canopy' | 'tall';
+  clear?: number;
+  r?: [number, number];
+  clumps?: { apart: number; spread: number; size: [number, number]; gap: number };
+}
+
 /** biomes.json: what the map generator (logic/mapgen.js) grows and paints for a biome */
 export interface Biome {
   name: string;
@@ -1985,6 +1994,10 @@ export interface Biome {
   /** RT-1: the fence, wall or hedge of a laid-out route's runs */
   fences?: Record<string, number>;
   tall: Record<string, number>;
+  /** AS-0: how its plants grow, as layers in order (logic/scatter.js scatterFlora): each from one of the lists above,
+      clearing `clear` metres round its points for the layers after it; an even spread (r: [dense, sparse] spacing)
+      or clumps */
+  flora?: BiomeFloraLayer[];
   look?: Record<string, unknown>;
   life?: { k: string; n: number }[];
   /** TW-1: a run town's buildings and dressing (logic/mapgen.js mapgenStageTown): house props by weight (shut: for
