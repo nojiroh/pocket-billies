@@ -230,6 +230,16 @@ debugLog.ctx = () => {
         c.lag = GAME.walkRenderer.fenceLag ?? null;
         if (GAME.walkRenderer.ctlLast) c.ctl = GAME.walkRenderer.ctlLast;
       }
+      /* FL-3b: the resolution levels (quality.resSteps): the level drawn, the level waiting for a moment out of
+         sight (0: none), why the last change was taken, the canvas's size changes and the targets made again */
+      if (GAME.walkRenderer.resD != null) {
+        c.rd = GAME.walkRenderer.resD;
+        if (GAME.walkRenderer.resWait) c.rwait = GAME.walkRenderer.resWait;
+        if (GAME.walkRenderer.resWhy) c.rwhy = GAME.walkRenderer.resWhy;
+      }
+      if (GAME.walkRenderer.resizes) c.rsz = GAME.walkRenderer.resizes;
+      if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.fbRe && GAME.gpuState.fbRe.n)
+        c.fbre = GAME.gpuState.fbRe.n;
       if (GAME.walkRenderer.cullOf) c.cull = [GAME.walkRenderer.culled, GAME.walkRenderer.cullOf];
       if (GAME.walkRenderer.gridSkip) c.grid = GAME.walkRenderer.gridSkip;
       if (GAME.walkRenderer.shHit !== undefined || GAME.walkRenderer.shMiss !== undefined) {

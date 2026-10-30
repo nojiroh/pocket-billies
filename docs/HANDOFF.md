@@ -2,6 +2,66 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-3b - resolution without hitches (behind a switch) - 2026-10-30
+Branch `track/fluid` (round 3 lane, beside FL-4; FL-4's commits merged in). Plan approved by the owner's standing
+answer (fluid-track.md section 1). Code: the resolution's levels and when the canvas may change size, behind its own
+switch, **off**; FL-6's true freeze (a cap of 0) on for everyone. No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + rounds 1-2): section 5 item 6 holds: each 0.1 step of either ladder
+  (logic/quality-step.js, FL-3a's frame-control.js) changed `#dio` and `#dioui` at once and every screen-sized target
+  followed (headless, the old path: 11 canvas size changes in 8 frames of a walk with a ladder stepping; each made
+  `scene`, `refl`, `dof`, `vol0`, `volz`, `vol1` again). Differs: `walkView.warm` (read by adaptQuality and the
+  normal-map jobs) is never set anywhere: dead. FL-6's note holds: the scheduler floored every cap at 0.1 (a frame in
+  10 s behind a frozen screen). The 4096/1024 sun shadow map is chosen by `walkView.R < 0.8 || q >= 2`
+  (walk/shadows.js fittedShadowPass), so the ladder's q crossing 2 (and R crossing 0.8 on the old path) makes the shadow
+  maps again mid-walk: not in this lane (below).
+- Changed:
+  - game/js/logic/frame-control.js (additions): `RES_LEVELS` (1, 0.8, 0.6, 0.5: a phone's floor 0.6), `resStepDown`,
+    `resStepUp`, `resDrawLevel` (the old ladder's 0.1 asks as a level, with hysteresis: down to the lowest level at or
+    above the ask, up to the highest at or below it; 1 → 0.6 → 1 changes the size 4 times, not 8), `resApply` (a
+    waiting level is taken behind a screen, a window or a hidden page, while the view fades (`#dio` without `in`),
+    behind a loading screen, or when the canvas changes size anyway: its CSS size, the Settings resolution, the
+    pixel budget). The controller's R lever steps level to level with `resSteps` (`controlRestore(kept, steps)` keeps
+    one R on the stack a level).
+  - game/js/walk-view-gl.js: the canvas's size from the level drawn (`resolutionDrawn`); `walkRenderer.resD` (drawn),
+    `resWait` (waiting, 0 none), `resWhy`, `resizes` (every canvas size change). With the switch a phone starts at
+    0.8 (the level below full) instead of 0.9. `walkView.R` stays the ladder's ask, so its cheap uses (lighting's
+    lite mode, the weather's halving) still follow it at once.
+  - game/js/walk/quality-cull.js: the controller gets the levels with the switch on (and starts afresh when it flips).
+  - game/js/engine/webgl.js renderTarget: `gpuState.fbRe` counts targets made again at another size, by name.
+  - FL-6's ask: game/js/frame-scheduler.js passes an explicit 0 through; logic/frame-pace.js paceDue runs the change to
+    0 once (the last frame) and then never until the cap changes (the first gap after is one slot);
+    walk-control.js cap() returns 0 where it returned 0.1. A waiting level is taken on that last frame.
+  - engine/settings.js `quality.resSteps: false` with its Engine row; debug menu "Resolution steps" (On / Off for the
+    session); debug-log.js (additions): `rd`, `rwait`, `rwhy`, `rsz`, `fbre` in each sample; tools/read-debug-log.py
+    prints a "Resolution steps" line; bench-path.js: resSteps among the dials the test holds.
+  - tools/check-resolution.py (new, this session's gates); tools/test/res-steps.test.mjs (6 tests); check-fluid-ui.py's
+    freeze wording (0 or 0.1).
+- Not done, for other lanes: the shadow maps' size choice (walk/shadows.js, FL-5b's "shadow map size"): with the switch
+  on it should read the drawn level (`walkRenderer.resD ?? walkView.R`) instead of `walkView.R`, and the q >= 2
+  smaller map should change at the same moments (latch it when `walkRenderer.resWhy` changes), or the ladder's q step
+  still makes both shadow maps again during a walk. In a battle `walkView.held` is always '' (walk-control.js), so a
+  waiting level there waits for the battle's end (its canvas changes size then anyway).
+- Found, not changed: tools/check-stalls.py's "ticks wrapped by the GPU counters in 5 s behind a screen" fails on the
+  round's start commit too (7 there, 7-8 here; the gate says at most 6): FL-1a's 250 ms retry after a counted tick
+  that drew nothing, now that nothing draws behind a screen (engine/gpu-counters.js, FL-7).
+- Risky: the true freeze is on for everyone: a window or screen that needs frames and isn't on FL-6's `worldMoving`
+  list got one every 10 s before and now gets none (the full quick check and smoke pass; the in-game tests keep the
+  world moving). With the switch on, a GPU-bound phone on the old ladder keeps its size until the next menu, fade or
+  load (the ladder's cheaper levers act at once; the controller goes on to the half rate instead); a level kept from
+  0.1 steps comes back on the level at or above it.
+- Verified: lint, types, format, modules clean; unit tests 2,456 of 2,457 after merging FL-4 (the 1,000-maps timing
+  test, run beside a browser, which passes alone); smoke 7 of 7 (351 s). check-resolution all 12 (switch on: 0 canvas
+  size changes and 0 targets made again in a 16-frame walk with a ladder stepping 1 → 0.6 → 1; the level waits; behind
+  Team it is taken on the last frame (1 change, `held`), then 0 frames in 5 s (a cap of 0); back on the walk 0 more;
+  a fade takes it (`fade`); switch off: 11 changes in 8 frames; the real ladder: 0). check-fluid-ui: no gate failed
+  (0 frames in 5 s behind a screen, 1 behind a window). check-stalls: all but the wrapped-ticks gate (above).
+  Full quick check: QUICK_RESULT
+- Next: round 4 (FL-5a draw order) once FL-4 is done (the round's last lane starts it).
+- For the owner on the phone: open the debug menu, turn "Resolution steps" On (with "Frame controller" On too, if you
+  like), close it and walk a busy place with automatic quality on: the picture should never pop sharper or softer
+  while you walk, only behind Team, a window or a door's fade. Send the debug log: its "Resolution steps" line shows
+  the level drawn, any waiting and when it was taken.
+
 ### Fluid track FL-2b - effects, spins, grass and same-look GPU cuts - 2026-10-30
 Branch `track/fluid` (round 2's last lane, beside FL-3a and FL-6; their commits merged in). Plan approved by the
 owner's standing answer (fluid-track.md section 1). Code: fewer draws and less garbage, the same pictures; no switch

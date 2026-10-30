@@ -61,7 +61,7 @@ def main():
         # behind a full screen: frozen
         pg.evaluate("uiState.tab='team';render();0")
         cap = pg.evaluate('walkView.opt.cap()')
-        gate(cap <= 0.1, f'the 3D cap behind a screen: {cap} (0.1: frozen)')
+        gate(cap <= 0.1, f'the 3D cap behind a screen: {cap} (0 or 0.1: frozen)')
         tr = pg.evaluate("getComputedStyle(document.getElementById('dio')).transitionProperty")
         gate('filter' not in tr, f'no filter transition on the 3D canvas: {tr}')
         CF.until(pg, "getComputedStyle(document.body,'::after').opacity==='0.18'", 5)
@@ -75,7 +75,7 @@ def main():
         # behind a window: frozen; a window that asks for the world keeps 20
         pg.evaluate("modal({title:'check',html:'<p>check</p>'});0")
         cap = pg.evaluate('walkView.opt.cap()')
-        gate(cap <= 0.1, f'the 3D cap behind a window: {cap} (0.1: frozen)')
+        gate(cap <= 0.1, f'the 3D cap behind a window: {cap} (0 or 0.1: frozen)')
         n = frames_in(pg, 5)
         gate(n <= 2, f'frames drawn in 5 s behind a window: {n} (at most 2)')
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();modal({title:'check',world:true,html:'<p>check</p>'});0")

@@ -1159,7 +1159,7 @@
    "game/js/prop-models.js:975",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
-   "game/js/walk-view-gl.js:790"
+   "game/js/walk-view-gl.js:823"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1259,8 +1259,8 @@
    "game/js/fishing.js:172",
    "game/js/friends.js:637",
    "game/js/logic/cutscene-set.js:38",
-   "game/js/logic/frame-control.js:79",
-   "game/js/logic/frame-control.js:272",
+   "game/js/logic/frame-control.js:85",
+   "game/js/logic/frame-control.js:280",
    "game/js/logic/marks.js:110",
    "game/js/logic/person-view.js:6",
    "game/js/logic/person-view.js:10",
@@ -1439,7 +1439,7 @@
    "game/js/battle-stage.js:2532"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:751",
+   "game/js/walk-view-gl.js:784",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1480,7 +1480,7 @@
   ],
   "ring": [
    "game/js/battle-anim-run.js:185",
-   "game/js/engine/webgl.js:808",
+   "game/js/engine/webgl.js:810",
    "game/js/walk/map-cache.js:88",
    "game/js/walk/map-cache.js:531"
   ],
@@ -1574,8 +1574,8 @@
    "game/js/logic/data-checks.js:962",
    "game/js/logic/data-checks.js:987",
    "game/js/logic/data-checks.js:1031",
-   "game/js/logic/frame-control.js:79",
-   "game/js/logic/frame-control.js:292",
+   "game/js/logic/frame-control.js:85",
+   "game/js/logic/frame-control.js:300",
    "game/js/logic/marks.js:110",
    "game/js/logic/music-patterns.js:75",
    "game/js/logic/music-patterns.js:135",
@@ -1596,10 +1596,10 @@
    "game/js/workshop.js:102"
   ],
   "window": [
-   "game/js/debug-log.js:934",
+   "game/js/debug-log.js:944",
    "game/js/seamless-world.js:1196",
    "game/js/walk-control.js:1023",
-   "game/js/walk-control.js:1035",
+   "game/js/walk-control.js:1036",
    "game/js/walk/effects.js:444",
    "game/js/walk/lighting.js:243"
   ]

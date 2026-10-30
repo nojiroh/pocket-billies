@@ -40,7 +40,7 @@ export const LADDER_GRACE_MS = 1500;
 /**
  * @typedef {{ V: number, hz: number, samples: number[], times: number[], estT: number, lastTs: number, lastWork: number }} RefreshTracker
  *   V: the refresh period (ms); hz: refreshes a second, whole; samples, times: the deltas kept and when they came
- * @typedef {{ next: number, last: number, k: number, rate: number, capT: number, shown: number, missed: boolean, misses: number, frames: number }} PaceTask
+ * @typedef {{ next: number, last: number, k: number, rate: number, capT: number, shown: number, missed: boolean, misses: number, frames: number, frozen?: boolean }} PaceTask
  *   next: the earliest tick the task may run again; last: when it last ran; k: its slot (refreshes a frame); rate: the
  *   rate asked last; capT: when that changed; shown: the last frame's interval in refreshes; missed: it came late
  */
@@ -131,6 +131,20 @@ export function paceTask() {
  * @returns {number} the time since the task last ran (ms; one slot the first time), or -1 when it doesn't run
  */
 export function paceDue(t, ts, cap, V, half) {
+  /* FL-3b: a cap of 0 is frozen: the change to it runs once at once (the last frame, behind a screen or a window),
+     then the task is never due until the cap changes again (which starts the beat afresh, its first gap one slot) */
+  if (cap <= 0) {
+    if (t.frozen) return -1;
+    const dt = t.last ? ts - t.last : V;
+    t.frozen = true;
+    t.rate = 0;
+    t.k = 0;
+    t.capT = ts;
+    t.next = 0;
+    t.last = 0;
+    return dt;
+  }
+  t.frozen = false;
   const k = paceSlot(cap, V, half),
     T = k * V;
   if (cap !== t.rate || k !== t.k) {

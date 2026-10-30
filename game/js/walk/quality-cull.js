@@ -8,7 +8,7 @@ import { gameData, provide, saveData } from '../hooks.js';
 import { coverTarget, fadeEase, pictureCovers } from '../logic/occlude.js';
 import { propDrawFade, qualityStep } from '../logic/quality-step.js';
 import { ladderFeed, ladderTake, phoneAgent } from '../logic/frame-pace.js';
-import { controlFrame, controlRestore, controlSaved } from '../logic/frame-control.js';
+import { RES_LEVELS, controlFrame, controlRestore, controlSaved } from '../logic/frame-control.js';
 import { frameHalf, frameScheduler } from '../frame-scheduler.js';
 import { battleStage } from '../battle-stage.js';
 import { mapMoodName, walkView, worldToScreen } from '../walk-view.js';
@@ -384,13 +384,16 @@ function fenceLag() {
   return lag;
 }
 function controlQuality(dtm, work, oneOff, took, now) {
-  const kind = controlKind();
-  if (!walkRenderer.ctl || walkRenderer.ctlKind !== kind) {
+  const kind = controlKind(),
+    /* FL-3b: with quality.resSteps the resolution lever steps between the levels (logic/frame-control.js RES_LEVELS) */
+    steps = engineSetting('quality', 'resSteps') ? RES_LEVELS : undefined;
+  if (!walkRenderer.ctl || walkRenderer.ctlKind !== kind || walkRenderer.ctlSteps !== !!steps) {
     if (walkRenderer.ctl) controlLeave();
     const kept = controlStoreRead()[kind];
     walkRenderer.ctl = kept
-      ? controlRestore(kept)
-      : controlRestore({ q: walkRenderer.q || 0, R: walkView.R || 1, taken: walkView.R < 1 ? ['R'] : [] });
+      ? controlRestore(kept, steps)
+      : controlRestore({ q: walkRenderer.q || 0, R: walkView.R || 1, taken: walkView.R < 1 ? ['R'] : [] }, steps);
+    walkRenderer.ctlSteps = !!steps;
     walkRenderer.ctlKind = kind;
   }
   const s = walkRenderer.ctl,
@@ -417,6 +420,7 @@ function controlQuality(dtm, work, oneOff, took, now) {
         phone: PHONE_AGENT,
         floorR: PHONE_AGENT ? 0.6 : 0.5,
         cpu: PHONE_AGENT || kind === 'battle',
+        resSteps: steps,
       });
     if (r) {
       walkRenderer.ctlLast = { t: Math.round(now), act: r.act, lever: r.lever, why: r.why };

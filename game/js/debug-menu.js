@@ -218,6 +218,8 @@ const PICTURE_PATH_SWITCHES = [
   ['fl2sky', 'skyLast', 'Sky last'],
   /* FL-3a: the automatic quality's controller, off until the owner's phone run */
   ['fl3ctl', 'controller', 'Frame controller'],
+  /* FL-3b: the resolution levels, resized only out of sight, off until the owner's phone run */
+  ['fl3res', 'resSteps', 'Resolution steps'],
   /* FL-4: even frames, each off until the owner's phone run */
   ['fl4cells', 'shadowCells', 'Shadow cache by squares'],
   ['fl4hold', 'shadowHold', 'Hold still far shadows'],
@@ -727,6 +729,7 @@ function debugAction(x) {
     case 'fl2batch':
     case 'fl2sky':
     case 'fl3ctl':
+    case 'fl3res':
     case 'fl4cells':
     case 'fl4hold':
     case 'fl4grass':

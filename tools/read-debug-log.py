@@ -224,6 +224,16 @@ def main():
             ct.append(f"{num((s.get('t') or 0) / 1000)} s cpu {s.get('qc')}{' half rate' if s.get('half') else ''} lag {s.get('lag')}" + (f" ({c.get('act')} {c.get('lever')}: {c.get('why')})" if c else ''))
             prevc = cur
     if ct: print(f"Frame controller ({len(ct)} changes): " + '; '.join(ct[:10] + (['...'] + ct[-3:] if len(ct) > 13 else ct[10:])))
+    # FL-3b: the resolution levels (quality.resSteps on): the level drawn, a level waiting, why it changed, the
+    # canvas's size changes and the render targets made again (counts since the page opened)
+    rl, prevr = [], None
+    for s in samples:
+        if 'rd' not in s: continue
+        cur = (s.get('rd'), s.get('rwait'), s.get('rsz'), s.get('fbre'))
+        if cur != prevr:
+            rl.append(f"{num((s.get('t') or 0) / 1000)} s drawn {s.get('rd')}" + (f" waiting {s.get('rwait')}" if s.get('rwait') else '') + (f" ({s.get('rwhy')})" if s.get('rwhy') else '') + f" resizes {s.get('rsz') or 0} targets {s.get('fbre') or 0}")
+            prevr = cur
+    if rl: print(f"Resolution steps ({len(rl)} changes): " + '; '.join(rl[:10] + (['...'] + rl[-3:] if len(rl) > 13 else rl[10:])))
 
     ev = [e for e in (d.get('events') or []) if e.get('kind') in ('visibility', 'webgl')]
     if ev:
