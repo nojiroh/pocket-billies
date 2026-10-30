@@ -55,9 +55,8 @@ owner's standing answer (fluid-track.md section 1). Code: fewer draws and less g
   had the same dependency since R4). Spin layers that overlap exactly now draw in one call (the same triangles in
   layer order). A leaf item is now the same object from frame to frame: code that keeps an item across frames sees
   it change (none found: lights key on the placement).
-- Verified: lint (ui-lint's colour ceiling 618 → 612 and art-code-refs were already failing on the branch at its
-  start; art-code-refs regenerated here), types, format, modules, data, build clean; unit tests 2,424 of 2,426 before
-  the logic worker's order and art-code-refs fixes (both then pass); smoke 7 of 7 (321 s); `check-perf.py
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,443 of 2,443 after merging FL-3a and FL-6
+  (before: 2,424 of 2,426, the logic worker's order and art-code-refs, both fixed); smoke 7 of 7 (321 s); `check-perf.py
   --only=copperleaf` no problems (183 s). Full quick check (2,094 s, 42 steps, 37 passed) against a baseline made at
   the round's start (c6576b10, in a worktree, 47 pictures, 2,259 s): the same 5 problems fail on both (RL-8's shop
   Perk, RT-2's double, Granny Juniper, room light, battle music's drums). 11 pictures over the threshold, all other
