@@ -1168,7 +1168,7 @@
    "game/js/prop-models.js:357",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1924",
-   "game/js/walk-view-gl.js:883"
+   "game/js/walk-view-gl.js:885"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1294,10 +1294,10 @@
    "game/js/story-stage.js:280",
    "game/js/train-ride.js:317",
    "game/js/train-ride.js:324",
-   "game/js/walk-control.js:420",
-   "game/js/walk-control.js:428",
-   "game/js/walk-control.js:540",
-   "game/js/walk-control.js:558",
+   "game/js/walk-control.js:421",
+   "game/js/walk-control.js:429",
+   "game/js/walk-control.js:541",
+   "game/js/walk-control.js:559",
    "game/js/walk-view.js:352",
    "game/js/walk-view.js:3895",
    "game/js/walk-view.js:4006",
@@ -1452,7 +1452,7 @@
    "game/js/battle-stage.js:2532"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:830",
+   "game/js/walk-view-gl.js:832",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1609,10 +1609,10 @@
    "game/js/workshop.js:102"
   ],
   "window": [
-   "game/js/debug-log.js:962",
+   "game/js/debug-log.js:964",
    "game/js/seamless-world.js:1197",
-   "game/js/walk-control.js:1031",
-   "game/js/walk-control.js:1045",
+   "game/js/walk-control.js:1034",
+   "game/js/walk-control.js:1052",
    "game/js/walk/effects.js:444",
    "game/js/walk/lighting.js:254"
   ]
