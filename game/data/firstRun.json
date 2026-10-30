@@ -1,5 +1,5 @@
 {
- "about": "Intro track IN-1: the prepared first run, written by hand (docs/phases/intro-track.md section 5; logic/first-run.js; logic/run-start.js runStartPrepared). New game's crash lands you on its landing (IN-5). Its map is these nodes, numbered row by row and lane by lane (to: the next row's nodes it leads to); each place is still made by mapgen from the run's seed and the node's number, so a mapgen change moves them (tools/test/first-run.test.mjs keeps a snapshot). Lane 0 is the southern one. A node may pin its wild Billies (wild: levels, how many, the species, or by the starter's line: the starter's counter type), its route trainers (trainers), a waystation's event, a town's size, a mini-boss's or the boss's leader (the arena's theme and the mini-boss's team type) and levels over its row (up). boss is the bosses.json bot on the boss node; plant the Perk planted in the mini-boss's pick (the aha). crash: the crash site on the landing, offsets in metres from the landing's mast (x east, z north, turned as the mast is; rot degrees past the mast's): the props put down (the wreck: a stand-in until IN-3's wreck prop lands) after clearing clear metres round each spot, and the spots IN-5's cutscene stands on. Balanced with tools/test/sim/run-sim.mjs --prepared to a win rate of about 20% (the owner).",
+ "about": "Intro track IN-1: the prepared first run, written by hand (docs/phases/intro-track.md section 5; logic/first-run.js; logic/run-start.js runStartPrepared). New game's crash lands you on its landing (IN-5). Its map is these nodes, numbered row by row and lane by lane (to: the next row's nodes it leads to); each place is still made by mapgen from the run's seed and the node's number, so a mapgen change moves them (tools/test/first-run.test.mjs keeps a snapshot). Lane 0 is the southern one. A node may pin its wild Billies (wild: levels, how many, the species, or by the starter's line: the starter's counter type), its route trainers (trainers), a waystation's event, a town's size, a mini-boss's or the boss's leader (the arena's theme and the mini-boss's team type) and levels over its row (up). boss is the bosses.json bot on the boss node; plant the Perk planted in the mini-boss's pick (the aha). crash: the crash site on the landing, offsets in metres from the landing's sky train halt, the middle of its front (AS-2: was the airship's mast; x east, z north, turned as the halt is; rot degrees past the halt's; nothing on its platform, x -6.3 to 6.3, z 0 to 7.6): the props put down (the wreck: a stand-in until IN-3's wreck prop lands) after clearing clear metres round each spot, and the spots IN-5's cutscene stands on. Balanced with tools/test/sim/run-sim.mjs --prepared to a win rate of about 20% (the owner).",
  "seed": "FIRSTRUN",
  "expedition": 1,
  "boss": "retrieval_scout",
@@ -97,7 +97,7 @@
   "clear": 6,
   "props": [
    {"k":"train_wreck","at":[-14,6.5],"rot":8,"clear":12},
-   {"k":"bureau_crate","at":[-5.5,3],"clear":1},
+   {"k":"bureau_crate","at":[-7.6,3.2],"clear":1},
    {"k":"bureau_crate","at":[-17,1.5],"rot":34,"clear":1}
   ],
   "spots": {
@@ -106,7 +106,7 @@
    "chosen": [-9,1.5],
    "chosen_from": [-10.5,4],
    "kappi": [-3,-1.5],
-   "kappi_from": [-1.5,2.5],
+   "kappi_from": [0.5,-1.2],
    "star1": [-8,-2.5],
    "star2": [-6,-3.5],
    "star3": [-4,-2.5]

@@ -19,6 +19,7 @@ const {
   TRAIN_PLATFORM,
   trainBoardPath,
   trainWalkAt,
+  trainPlume,
 } = modules['train-path'];
 const near = (a, b, e = 1e-6) => assert.ok(Math.abs(a - b) < e, `${a} is not ${b}`);
 const sum = B => Object.values(B).reduce((a, b) => a + b, 0);
@@ -129,4 +130,32 @@ test("boarding (the owner, 2026-10-28): from where you stand, up the steps, acro
   let len = 0;
   for (let i = 1; i < path.length; i++) len += Math.hypot(path[i][0] - path[i - 1][0], path[i][1] - path[i - 1][1]);
   assert.ok(len / ((TRAIN_DEPART.board * 0.85) / 1000) < 3.6, `${len} m in ${TRAIN_DEPART.board} ms`);
+});
+
+test("AS-1: the rockets' fire by the beat: short gliding in, a puff settling to board, long and down in the lift, off home", () => {
+  const F = trainFrame({ x: 40, z: 30, rot: 0 }, 2),
+    tear = [70, 10, 16],
+    D = TRAIN_DEPART,
+    H = TRAIN_HOME,
+    at = (/** @type {'depart' | 'home'} */ kind, t) => trainPlume(F, tear, kind, t);
+  const glide = at('depart', D.glide / 2),
+    settle = at('depart', D.glide + 50),
+    idle = at('depart', D.glide + D.board * 0.6),
+    lift = at('depart', D.glide + D.board + D.lift / 2),
+    dash = at('depart', D.glide + D.board + D.lift + D.turn + D.dash / 2);
+  assert.ok(glide.k > 0 && glide.len < 1.5 && glide.bend < 0.2, 'short and straight back gliding in');
+  assert.ok(settle.smoke && settle.smoke.n > 0, 'a puff as it settles');
+  assert.ok(idle.k > 0 && idle.k < 0.3 && idle.len < 0.6, 'idling at the platform');
+  assert.ok(lift.len > 2.4 && lift.k === 1 && lift.bend > 0.6 && lift.dia > 0, 'long, full and bent down in the lift');
+  assert.ok(lift.smoke && lift.smoke.n >= 20, 'smoke at lift-off');
+  assert.ok(at('depart', D.glide + D.board + 300).sparks, 'sparks at lift-off');
+  assert.ok(dash.len > lift.len && dash.bend === 0, 'longest and straight back into the portal');
+  /* the smoke's spot is where the train stood when it started: the same placement all through */
+  near(lift.smoke.p.x, at('depart', D.glide + D.board + 10).smoke.p.x);
+  assert.equal(at('home', H.open / 2).k, 0, 'nothing while the portal opens');
+  const down = at('home', H.open + H.out + H.turn + H.down * 0.8);
+  assert.ok(down.bend > 0.6 && down.k > 0.5 && down.smoke, 'down on its engines, smoke at touch-down');
+  assert.equal(at('home', H.open + H.out + H.turn + H.down + H.off * 0.9).k, 0, 'off once home');
+  /* it never depends on anything but the ride's clock */
+  assert.deepEqual(at('depart', 7000), at('depart', 7000));
 });

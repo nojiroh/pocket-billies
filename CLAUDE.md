@@ -6,7 +6,7 @@ The game vision is in docs/VISION.md. Read it before any design or art work.
 
 ## Ground rules
 - Keep the custom WebGL2 renderer. Reuse existing code and art wherever it fits the new design. No engine swap.
-- Fixed art commitments: terrain textures and the airship style (low-poly models textured at 32 px/m) are the visual targets. Trainer portraits are 32-bit pixel art. Props that read better flat stay flat on purpose.
+- Fixed art commitments: terrain textures (32 px/m) and the airship style (low-poly models, painted at 48 px/m since 2026-10-29; docs/ART.md "The style": professional, high-resolution, painterly pixel art) are the visual targets. Trainer portraits are 32-bit pixel art. Props that read better flat stay flat on purpose.
 - Real-world step tracking is REMOVED. In-game walking with a joystick, the seamless maps and the rooms STAY (docs/VISION.md, How the game plays).
 - The game is a roguelite (docs/VISION.md; the plan: docs/phases/roguelite-track.md): a hub, Copperleaf Town, and runs on a node map generated from a seed. Every map outside the hub is legacy: kept for the Studio, not loaded by the game flow.
 - One rename per commit. Never mix a rename with a behavior change, so a failed check points at one cause.

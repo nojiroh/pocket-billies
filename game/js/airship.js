@@ -75,12 +75,12 @@ function flyFare(a, b) {
 export function flyMenu(p) {
   if (airshipFlight.on || !saveData.started || !saveData.run) return;
   modal({
-    title: escapeHtml((p && p.label) || 'Airship mast'),
+    title: escapeHtml((p && p.label) || 'Sky train halt'),
     cls: 'fly-sheet',
-    html: '<p>The airship waits here for the end of the run. Flying home now gives the run up.</p>',
+    html: '<p>The sky train waits here for the end of the run. Riding home now gives the run up.</p>',
     btns: [
       {
-        l: 'Fly home',
+        l: 'Ride home',
         c: 'red',
         f: () => {
           uiState.modal = null;
@@ -279,8 +279,14 @@ export function standByMast(b) {
     bx = M.box ? M.box[0] * s : 1.2;
   /* IS-5: beside it as it is turned (the island's mast faces its street); the walk puts you on open ground near it.
      Cutscenes track A: at the station, before the middle of its front, at the foot of its steps (the ride home walks
-     you down them) */
-  const [x, z] = m.act === 'station' ? turnedPoint(m, 0, -1.4) : turnedPoint(m, (bx / 2 + 0.9) * f, -0.9);
+     you down them). AS-2: where its catalogue's stand says (the run's halt: the foot of its steps, mapgen.js
+     mapgenStandSpot) */
+  const [x, z] =
+    m.act === 'station'
+      ? turnedPoint(m, 0, -1.4)
+      : Array.isArray(M.stand)
+        ? turnedPoint(m, M.stand[0] * f, M.stand[1])
+        : turnedPoint(m, (bx / 2 + 0.9) * f, -0.9);
   uiState.roam = { id: sid, node: b, x, z };
   return true;
 }

@@ -120,7 +120,7 @@ expose({
   modelSolidDefs: [() => modelSolidDefs, v => (modelSolidDefs = v)],
   modelSolidItem: [() => modelSolidItem, v => (modelSolidItem = v)],
   modelsNearestFirst: [() => modelsNearestFirst, v => (modelsNearestFirst = v)],
-  mooredBob: [() => mooredBob, v => (mooredBob = v)],
+  mooredBob: [() => mooredBob, v => ((mooredBob = v), provide({ mooredBob }))],
   propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
   propModelImageItems: [() => propModelImageItems, v => ((propModelImageItems = v), provide({ propModelImageItems }))],
@@ -154,6 +154,7 @@ provide({
   drawPropModelShadows,
   drawPropModels,
   flushPropModelMeshes,
+  mooredBob,
   propModelArtPaths,
   propModelImageItems,
   propModelMesh,
@@ -1409,11 +1410,12 @@ void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uS
 /* a window's glass (vTex.z 2-32: window 1-31): by day the sky in it, more of it at a grazing look, and a glint of the
    sun; lit from its room when its bit of uWinOn is set, as strongly as uWinK says (1 after dark), a warm lamp, a cooler
    kitchen or now and then a TV's blue, each window its own (uWinSeed: the building's), rolled off softly so it glows
-   and blooms the window's own shape */
+   and blooms the window's own shape. AS-1: a moving model's seed comes 2 higher (walk/lighting.js modelWindowLight;
+   fract drops it from the colour): its sun glint is a soft sheen, not a sharp flash that strobes as it turns */
 const GLASS_GLSL = `uniform int uWinOn;uniform float uWinK,uWinSeed;
 vec3 glassLit(vec3 lit,vec3 n,vec3 v,float sh){float id=floor(vTex.z+.5)-1.;if(id<.5)return lit;
  float ct=abs(dot(n,v)),fr=.15+.5*pow(1.-ct,3.);
- vec3 g=mix(lit,uAmbTop*(.6+.4*sh),fr)+uSunCol*pow(max(dot(reflect(-v,n),uSunDir),0.),80.)*sh;
+ float gd=max(dot(reflect(-v,n),uSunDir),0.);vec3 g=mix(lit,uAmbTop*(.6+.4*sh),fr)+uSunCol*(uWinSeed>1.5?pow(gd,10.)*.18:pow(gd,80.))*sh;
  if(uWinK<.001||((uWinOn>>int(id))&1)==0)return g;
  float h=fract(id*.6180339+uWinSeed);vec3 lc=h<.18?vec3(.62,.78,1.25)*(.85+.25*sin(uTime*.009+id)):h<.45?vec3(1.15,1.05,.85):vec3(1.25,1.,.7);
  vec3 e=lc*(.62+.6*fract(h*7.31))*uWinK;e=(1.-exp(-e*1.15))*1.6;
@@ -1526,7 +1528,7 @@ function drawLowPolyItems(p, L) {
       const W = it.wins ? it.winL || (it.winL = modelWindowLight(it, walkRenderer.dark || 0)) : null;
       gl.uniform1f(p.U.uWinK, W ? W.k : 0);
       gl.uniform1i(p.U.uWinOn, W ? W.on : 0);
-      gl.uniform1f(p.U.uWinSeed, W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0);
+      gl.uniform1f(p.U.uWinSeed, W ? W.seed : 0);
     }
     if (m.own && !bindOwnTexture(p, m)) continue;
     drawPropModelMesh(m);
@@ -1733,6 +1735,8 @@ function propModelImageItems(it, out) {
     f: it.flip || 1,
     turn: propTurn(it),
     bob: mooredBob(it),
+    /* AS-1: a tipped model's layers tip with it (a climbing train's headlamp and name boards) */
+    spin: it.spin || null,
   };
   const F = typeof gameData !== 'undefined' && gameData.pixelFacts;
   /* FL-2b: this placement's leaf items, kept from frame to frame (one per picture layer) and filled in again */
@@ -2004,7 +2008,7 @@ function propModelInstanceValues(it, kind, v) {
   v.k = kind === 'vox' ? (it.glow ? it.glow : 0) : it.vox && it.vox.cel != null ? it.vox.cel : 0.75;
   v.winK = W ? W.k : 0;
   v.winOn = W ? W.on : 0;
-  v.seed = W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0;
+  v.seed = W ? W.seed : 0;
   for (let j = 0; j < 4; j++) {
     v.wear[j] = L.wear[j];
     v.hsv[j] = L.hsv[j];

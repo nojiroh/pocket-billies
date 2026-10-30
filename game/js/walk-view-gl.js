@@ -135,6 +135,7 @@ import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shad
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
+import { plumePass } from './walk/plume.js';
 import { BATTLE_FX_SHADERS } from './walk/battle-fx.js';
 import { BATTLE_SCAR_SHADERS } from './walk/battle-scars.js';
 import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
@@ -905,6 +906,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (BT && BT.ribbon) ribbonPass(C, BT.ribbon, X);
   /* VFX-5: a dashing Billie's (battle-3d.js) */
   if (BT && BT.rigRibbons) for (const R of BT.rigRibbons) ribbonPass(C, R, X);
+  /* AS-1: the sky train's rocket fire on its ride (train-ride.js) */
+  if (BT && BT.plume) plumePass(C, items, X, BT.plume);
   if (order) {
     gpuPass('silhouette');
     drawPlayerSilhouette(C, items, X);

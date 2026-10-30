@@ -1,5 +1,5 @@
 {
- "about": "IN-5, the cold open: New game wakes you beside the crashed sky train on the prepared first run's landing (game/data/firstRun.json's crash site; cutscene/crash-scene.js). Chosen climbs out of the wreck, Kappi checks on you, the cargo's three pyramids pop open into the starters, you pick one, Kappi hands over 5 pyramids and a potion and points the way, and the run starts where you stand. Filmed on the landing (landing: spots and shots are metres from its mast). Lines: drafts for the owner.",
+ "about": "IN-5, the cold open: New game wakes you beside the crashed sky train on the prepared first run's landing (game/data/firstRun.json's crash site; cutscene/crash-scene.js). Chosen climbs out of the wreck, Kappi checks on you, the cargo's three pyramids pop open into the starters, you pick one, Kappi hands over 5 pyramids and a potion and points the way, and the run starts where you stand. Filmed on the landing (landing: spots and shots are metres from its sky train halt's base point, the middle of its front; AS-2: was the mast. Kappi comes down the halt's steps; the second clear area stops short of the halt, which stands at 0, 0, so it stays in the shots). Lines: drafts for the owner.",
  "map": "first_run",
  "landing": true,
  "spots": {
@@ -8,7 +8,7 @@
   "chosen": [-9,1.5],
   "chosen_from": [-10.5,4],
   "kappi": [-3,-1.5],
-  "kappi_from": [-1.5,2.5],
+  "kappi_from": [0.5,-1.2],
   "star1": [-8,-2.5],
   "star2": [-6,-3.5],
   "star3": [-4,-2.5]
@@ -23,7 +23,7 @@
   "picked": {"eye":[-5.5,2.2,-8],"tgt":[-6,0.6,-2],"fov":40,"w":5}
  },
  "clear": {
-  "areas": [[-17,-16,3,-2],[-13,-3,1,5]]
+  "areas": [[-17,-16,3,-2],[-13,-3,-0.4,5]]
  },
  "script": [
   "sound thud",
