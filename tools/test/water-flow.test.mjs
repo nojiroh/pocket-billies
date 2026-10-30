@@ -280,3 +280,60 @@ test("WA-10: a river's level: a bumpy bed never rises, a terrace's drop stays a 
   }
   assert.ok(at(20.75) - at(19.75) > 0.4, `the drop stays a drop (${at(20.75)} to ${at(19.75)})`);
 });
+
+test("a river's level never stands over its banks: a line across a dip into a raised pond is cut down", () => {
+  /* Copperleaf's spring stream (2026-10-29): from a spring at 1.5 m down into a 1 m deep dip, then up into a pond whose
+     water stands at 3 m; the line's level, held up by the pond's, floated over the dip */
+  const g = (x, z) => (z >= 30 ? 3.12 : 1.5 - Math.sin((Math.PI * z) / 30)),
+    sc = {
+      w: 20,
+      h: 40,
+      streams: [
+        {
+          pts: [
+            [10, 2],
+            [10, 34],
+          ],
+          speed: 0.9,
+        },
+      ],
+    },
+    F = waterFlowMap(sc, [], {
+      wet: (x, z) => (z >= 30 && z < 39 && x > 3 && x < 17) || (z < 30 && Math.abs(x - 10) < 1),
+      bed: (x, z) => g(x, z) - 0.12,
+      step: () => 0,
+    });
+  assert.ok(F.levCapped > 0, 'the floating cells were cut down');
+  let n = 0;
+  for (let z = 2.25; z < 29; z += 0.5) {
+    const v = F.lev[cellOf(F, 10.25, z)];
+    if (isNaN(v)) continue;
+    let bank = -Infinity;
+    for (let b = -2; b <= 2; b += 0.5) bank = Math.max(bank, g(12, Math.min(29.99, Math.max(0, z + b))));
+    assert.ok(v <= bank + 0.05 + 1e-6, `over its banks at z ${z}: ${v} (banks ${bank.toFixed(2)})`);
+    n++;
+  }
+  assert.ok(n > 20, 'levels along the channel');
+});
+
+test("a river's level in a channel cut below its banks is left alone", () => {
+  const sc = {
+      w: 20,
+      h: 40,
+      streams: [
+        {
+          pts: [
+            [10, 39],
+            [10, 1],
+          ],
+          speed: 1,
+        },
+      ],
+    },
+    F = waterFlowMap(sc, [], {
+      wet: x => Math.abs(x - 10) < 1.5,
+      bed: (x, z) => (Math.abs(x - 10) < 1.5 ? z * 0.01 - 0.6 : z * 0.01 + 0.4),
+      step: () => 0,
+    });
+  assert.equal(F.levCapped, 0);
+});
