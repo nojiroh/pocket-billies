@@ -130,7 +130,13 @@ Branch `track/fluid` (round 4 lane, beside FL-5a). Plan approved by the owner's 
   baseline; the bottom bar's pictures not among them). Full quick check: 39 of 42 (2,575 s; the
   tree under it took the main merge mid-run): RL-8's Lakeside Route crossing, room light and Battle music (drums) fail
   as in FL-6's entry. CI's fast check on the PR: Kappi's tips (IN-2, failed already on the merge before this
-  session's push) and Tall ground; both pass alone here (148 s, 127 s); re-run once on CI.
+  session's push) and Tall ground; both pass alone here (148 s, 127 s). The re-run failed them again, and the world
+  map's look-around group over its card by 16 px. Kappi's tips reproduced here in a full fast check (44 of 45:
+  `[2,2,[],"choose"]`): a raised tip waits at most keepS (30 s) of real time, and on a loaded machine the throw took
+  longer, so it was dropped; tools/check-fast.py now lifts keepS for that step and waits 90 s (3 copies at once
+  pass). Tall ground (the GPU's hidden query never said hidden in 92 frames) and the map card (`--mapcard-h`,
+  world-bowl.js, measured before the card grew; both boxes sit on `--nav-h`) passed in that full run: left to the
+  test-data track.
 - For other lanes: none needed. track/ui: `--nav-hl`, `--nav-dy` and `--tray-dy` are the new names for what sits over
   the bar (shell.css); anything new over the bar that's on screen while walking should use them.
 - Next: FL-5a finishes round 4 and starts round 5 (FL-4b, FL-5b).

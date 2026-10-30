@@ -572,8 +572,10 @@ def kappi_tips(pg, base):
     nothing more (one tip a place, each once ever)"""
     drawing(pg)
     if not until(pg, "!document.getElementById('loader')", 30): raise Exception('the loading screen never went')
+    # a raised tip waits at most keepS (30 s) of real time for a quiet moment; a loaded machine's throw (CI, two
+    # browsers) can take longer, and the tip was dropped unsaid ([2,2,[],"choose"]): the wait is lifted here
     pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();saveData.meta.tipsSeen={};saveData.preferences.kappiTips='on';"
-                "kappiLook();kappi.st.battles=1;window.kappiRoll=catchRoll;catchRoll=()=>({caught:false,w:0,edge:false,P:0});"
+                "KAPPI_TIPS.keepS=600;kappiLook();kappi.st.battles=1;window.kappiRoll=catchRoll;catchRoll=()=>({caught:false,w:0,edge:false,P:0});"
                 "startWild(encountersHere()[0]);0")
     settle = ("(()=>{const p=activeBattle?activeBattle.phase:'none';if(p==='playing')tapMessage();"
               "if(p==='switch')document.querySelector('#acts [data-a=bswitch]:not([disabled])')?.click();return ['choose','end','none'].includes(p)})()")
@@ -592,7 +594,7 @@ def kappi_tips(pg, base):
                 time.sleep(1.2)
                 if pg.evaluate(said): raise Exception('Kappi spoke after one miss')
             if n == 1:
-                if not until(pg, "(()=>{" + settle + ";return !!document.querySelector('#btip.kappi.on:not(.off)')})()", 30):
+                if not until(pg, "(()=>{" + settle + ";return !!document.querySelector('#btip.kappi.on:not(.off)')})()", 90):
                     raise Exception(f'no tip after two misses: {pg.evaluate("JSON.stringify([kappi.st.fails,kappi.st.battles,kappi.st.due,activeBattle&&activeBattle.phase])")}')
                 tip = pg.evaluate("[document.querySelector('#btip .btip-t').textContent,saveData.meta.tipsSeen.catch,kappi.st.said]")
                 if 'Kappi' not in tip[0] or 'Tire it first' not in tip[0] or tip[1] != 1 or tip[2] != 1:
