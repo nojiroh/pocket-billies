@@ -1168,7 +1168,7 @@
    "game/js/prop-models.js:1590",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1924",
-   "game/js/walk-view-gl.js:877"
+   "game/js/walk-view-gl.js:878"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1452,7 +1452,7 @@
    "game/js/battle-stage.js:2532"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:824",
+   "game/js/walk-view-gl.js:825",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1493,13 +1493,13 @@
   ],
   "ring": [
    "game/js/battle-anim-run.js:185",
-   "game/js/engine/webgl.js:819",
+   "game/js/engine/webgl.js:823",
    "game/js/walk/map-cache.js:90",
    "game/js/walk/map-cache.js:561"
   ],
   "sat": [
-   "game/js/walk/quality-cull.js:224",
-   "game/js/walk/quality-cull.js:231"
+   "game/js/walk/quality-cull.js:241",
+   "game/js/walk/quality-cull.js:248"
   ],
   "scale": [
    "game/js/logic/music-studio.js:143",

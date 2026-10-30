@@ -229,6 +229,12 @@ const PICTURE_PATH_SWITCHES = [
   /* FL-5a: the draw order for tile GPUs, off until the owner's phone run */
   ['fl5order', 'drawOrder', 'Solid first'],
   ['fl5ground', 'groundSlice', 'Ground built in slices'],
+  /* FL-4b: the load overlap (LD-5's leftovers), each off until the owner's phone run */
+  ['fl4bslot', 'slotBudget', 'Jobs follow the frame rate'],
+  ['fl4bage', 'texAge', 'Pictures kept by time'],
+  ['fl4bup', 'uploadQueue', 'Pictures uploaded in turn'],
+  ['fl4bmesh', 'meshWorker', 'Models built on a helper'],
+  ['fl4bwarm', 'placeWarm', 'Next place warmed up'],
 ];
 /** a picture path switch's label: on, off, or off by itself after a GL error (walk/sprites.js firstInBatches) */
 function picturePathLabel([, k, l]) {
@@ -739,7 +745,12 @@ function debugAction(x) {
     case 'fl4grass':
     case 'fl4ticks':
     case 'fl5order':
-    case 'fl5ground': {
+    case 'fl5ground':
+    case 'fl4bslot':
+    case 'fl4bage':
+    case 'fl4bup':
+    case 'fl4bmesh':
+    case 'fl4bwarm': {
       const f = PICTURE_PATH_SWITCHES.find(t => t[0] === x),
         [, k, l] = f,
         E = (gameData.engine = gameData.engine || {}),

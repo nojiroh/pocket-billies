@@ -415,6 +415,17 @@ export const ENGINE_DEFAULTS = {
     /* FL-5a (FL-4's leftover): the same view's new ground (a run day's water, a Studio edit) built a slice a frame while
        the old one stays on screen, then swapped in, instead of in one frame. Off until the owner's phone run */
     groundSlice: false,
+    /* FL-4b (the load overlap, LD-5's leftovers), each off until the owner's phone run; the debug menu's switches: the
+       one-off work's budget a quarter of the paced slot, not 8 or 10 ms whatever the rate (slotBudget); pictures leave
+       the card by the time they were last used, not frames, and counted once (texAge); a picture's first upload from
+       a bitmap made off the page (createImageBitmap) and the uploads of a frame held to its budget (uploadQueue);
+       model meshes built on a helper thread (meshWorker); the next place's pictures and meshes readied before you
+       reach it (placeWarm) */
+    slotBudget: false,
+    texAge: false,
+    uploadQueue: false,
+    meshWorker: false,
+    placeWarm: false,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -1720,6 +1731,36 @@ export const ENGINE_SPEC = [
         'Ground built in slices',
         'bool',
         'When the ground of the place you are in changes (a run day’s water, an edit in the Studio), the old ground stays on screen while the new one is built a few milliseconds a frame, then swapped in, instead of building it all in one frame.',
+      ],
+      [
+        'slotBudget',
+        'Jobs follow the frame rate',
+        'bool',
+        'The one-off jobs of a frame (getting the ground, models and pictures ready) take about a quarter of a frame’s time at the rate you set (4 ms at 60, 8 at 30) instead of 8 to 10 ms at any rate.',
+      ],
+      [
+        'texAge',
+        'Pictures kept by time',
+        'bool',
+        'When the graphics card holds too many pictures, the ones unused for 10 seconds go first, timed in seconds rather than frames, and each picture is counted once.',
+      ],
+      [
+        'uploadQueue',
+        'Pictures uploaded in turn',
+        'bool',
+        'A picture’s first trip to the graphics card is unpacked off the page first, and a frame sends only as many as its time allows; the rest show a frame or two later.',
+      ],
+      [
+        'meshWorker',
+        'Models built on a helper',
+        'bool',
+        'Solid models are worked out on a helper thread instead of during a frame; until one is in, its picture stands in.',
+      ],
+      [
+        'placeWarm',
+        'Next place warmed up',
+        'bool',
+        'Once the place ahead is ready to walk into, its pictures go to the graphics card and its models are built a little each frame, so crossing into it does not pause.',
       ],
       [
         'warmUp',

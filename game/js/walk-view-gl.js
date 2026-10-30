@@ -119,6 +119,7 @@ import {
   cullItems,
   easedMood,
   frameBudgetRemaining,
+  frameBudgetStart,
   heatHaze,
   heatSources,
 } from './walk/quality-cull.js';
@@ -623,7 +624,7 @@ function drawWalkFrame(ts, dtm) {
   gpuState.fr = (gpuState.fr || 0) + 1;
   if (gpuState.fr % 120 === 0) trimTextures();
   /* LD-5: the one-off work's budget starts here (walk/quality-cull.js frameBudgetLeft) */
-  walkRenderer.budT = performance.now();
+  frameBudgetStart();
   runNormalMapJobs(walkView.warm ? 40 : 3);
   /* LD-2: behind a loading screen (the boot's, a run's) as many as fit in 12 ms a frame, so none is left for play */
   const loading = document.body.classList.contains('ld-on') || !!document.getElementById('runload');
