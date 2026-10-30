@@ -77,6 +77,14 @@ export const BUILD_CELL_NAMES = [
   'rings',
   'bark',
   'rock',
+  'fish-scale shingles',
+  'standing seam',
+  'barrel tiles',
+  'cob',
+  'half-timber',
+  'riveted panels',
+  'glass block',
+  'mosaic',
 ];
 /* rooms.png: a row a room, its four columns the faces */
 export const ROOM_NAMES = ['living room', 'kitchen', 'bedroom', 'shop', 'office', 'clinic', 'lab', 'stairs'];

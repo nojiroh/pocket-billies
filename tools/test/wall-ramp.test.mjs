@@ -29,7 +29,7 @@ test('the ramp is the shaders’ own: rampW in walk-shaders.js and rampC in buil
   assert.deepEqual([0, 64, 128, 191, 255].map(R.wallLevel), [0, 1, 2, 3, 4]);
 });
 
-test('the names cover the sheets: 12 wall cells, 24 building cells, 8 rooms of 4 faces', () => {
+test('the names cover the sheets: 12 wall cells, 32 building cells, 8 rooms of 4 faces', () => {
   const [ww, wh] = size('walls.png'),
     [bw, bh] = size('detail-a04b.png'),
     [rw, rh] = size('rooms.png');

@@ -9,7 +9,11 @@ A prop hides a window when, seen from the walk camera, its picture covers more o
 looks down at about 31 degrees outside (43 in a room), so a prop a few metres in front of a wall only hides what is low
 on it: a bush under a window is fine, a tree in front of it is not. Moving tries small steps sideways first, then
 towards the camera, and only to ground of the same kind, clear of doors and of buildings. The builders call
-clear_scene() when they make a place (tools/build_places), so new places start clear."""
+clear_scene() when they make a place (tools/build_places), so new places start clear.
+
+A turned building (its `rot`) is judged in its own frame, as the game turns it (game/js/logic/prop-turn.js): its windows
+are on its turned front and the camera looks straight at that front, as the walk camera does when you stand before it
+(BD-F; on Copperleaf most buildings are at rot 90 and face east, and the orbit camera sees them from the east)."""
 import gamedata  # phase 04b: the data files in game/data
 import json, math, sys
 from pathlib import Path
@@ -53,6 +57,30 @@ def tan_of(sc):
     return math.tan(math.radians(pitch))
 
 
+def turned_point(p, dx, dz):
+    """a point in the prop's own metres (dx across its front, dz back from it) in the place's metres (prop-turn.js turnedPoint)"""
+    r = math.radians(float(p.get('rot') or 0))
+    if not r: return p['x'] + dx, p['z'] + dz
+    c, s = math.cos(r), math.sin(r)
+    return p['x'] + dx * c - dz * s, p['z'] + dx * s + dz * c
+
+
+def point_in_prop(p, x, z):
+    """a point of the place in the prop's own metres (prop-turn.js pointInProp, the inverse of turned_point)"""
+    r = math.radians(float(p.get('rot') or 0)); dx, dz = x - p['x'], z - p['z']
+    if not r: return dx, dz
+    c, s = math.cos(r), math.sin(r)
+    return dx * c + dz * s, -dx * s + dz * c
+
+
+def in_frame(Wn, x, z):
+    """a point of the place in a window's frame: the frame of its building straightened, so it reads as the place's metres
+    for a building that isn't turned (x across the front, z back from the camera, the wall at Wn['z'])"""
+    if not Wn.get('rot'): return x, z
+    dx, dz = point_in_prop(dict(x=Wn['bx'], z=Wn['bz'], rot=Wn['rot']), x, z)
+    return Wn['bx'] + dx, Wn['bz'] + dz
+
+
 def ground_at(sc, x, z):
     """the height of the ground (the scene's corner heights, rows from the far side)"""
     H = sc.get('heights') or []
@@ -80,7 +108,8 @@ def is_window_prop(k, M):
 
 
 def windows_of(sc, C, P):
-    """every window of a scene in metres: x0, x1 (across), y0, y1 (up from its own ground), z (the wall), g (its ground)"""
+    """every window of a scene in metres: x0, x1 (across), y0, y1 (up from its own ground), z (the wall), g (its ground),
+    in its building's frame (in_frame): bx, bz and rot are the building's base point and turn"""
     out = []
     for n, p in enumerate(sc.get('props') or []):
         M = C.get(p['k'])
@@ -99,20 +128,21 @@ def windows_of(sc, C, P):
             rects = window_rects(M)
         for (x, y, w, h) in rects:
             xa, xb = sorted((p['x'] + fl * x * s, p['x'] + fl * (x + w) * s))
-            out.append(dict(i=n, k=p['k'], x0=xa, x1=xb, y0=-(y + h) * s, y1=-y * s, z=p['z'], g=ground_at(sc, p['x'], p['z'])))
+            out.append(dict(i=n, k=p['k'], x0=xa, x1=xb, y0=-(y + h) * s, y1=-y * s, z=p['z'], g=ground_at(sc, p['x'], p['z']),
+                            bx=p['x'], bz=p['z'], rot=float(p.get('rot') or 0)))
     return out
 
 
 def hides(Wn, q, Mq, sc, P, tan, at=None, grid=7):
     """how much of window Wn the prop q hides (0..1), with q standing at `at` (x, z) if given"""
-    qx, qz = at or (q['x'], q['z'])
+    gq = ground_at(sc, *(at or (q['x'], q['z'])))
+    qx, qz = in_frame(Wn, *(at or (q['x'], q['z'])))
     d = Wn['z'] - qz
     if d <= .02 or d > 16: return 0.0
     A = alpha(Mq.get('img') or '')
     if not A: return 0.0
     w, h, a = A
     s = (q.get('s') or 1) / P; fl = -1 if q.get('f') else 1
-    gq = ground_at(sc, qx, qz)
     hit = 0
     for i in range(grid):
         X = Wn['x0'] + (i + .5) / grid * (Wn['x1'] - Wn['x0'])
@@ -138,8 +168,10 @@ def occluders(sc, C, P, wins=None):
         if not Mq or Mq.get('flat') == 2 or any(s in q['k'] for s in SKIP_KINDS): continue
         if Mq.get('build') or Mq.get('door') is not None: continue      # a building in front of a building: a street, not a prop in the way
         for Wn in wins:
-            if Wn['i'] == n or Wn['z'] - q['z'] <= .02 or Wn['z'] - q['z'] > 16: continue
-            if q['x'] < Wn['x0'] - 6 or q['x'] > Wn['x1'] + 6: continue
+            if Wn['i'] == n: continue
+            qx, qz = in_frame(Wn, q['x'], q['z'])
+            if Wn['z'] - qz <= .02 or Wn['z'] - qz > 16: continue
+            if qx < Wn['x0'] - 6 or qx > Wn['x1'] + 6: continue
             c = hides(Wn, q, Mq, sc, P, tan)
             if c > COVER: out.append((Wn, n, c))
     return out
@@ -161,16 +193,18 @@ def blocked(sc, C, P, n, x, z):
         M = C.get(p['k']) or {}
         if M.get('box'):
             s = p.get('s') or 1; bw, bd = M['box'][0] * s / 2, M['box'][1] * s
-            if p['x'] - bw - rq < x < p['x'] + bw + rq and p['z'] - .25 - rq < z < p['z'] + bd + rq: return True
+            lx, lz = point_in_prop(p, x, z)                  # in the building's own metres: its footprint and door turn with it
+            if -bw - rq < lx < bw + rq and -.25 - rq < lz < bd + rq: return True
             if M.get('door') is not None:
                 fl = -1 if p.get('f') else 1
-                dx = p['x'] + (M['door'].get('x') or 0) / P * s * fl
-                if abs(x - dx) < 1.0 + rq and p['z'] - 2.4 < z < p['z'] + .2: return True
+                dx = (M['door'].get('x') or 0) / P * s * fl
+                if abs(lx - dx) < 1.0 + rq and -2.4 < lz < .2: return True
     return False
 
 
-def move_clear(sc, C, P, n, wins):
-    """the nearest spot where prop n hides no window: sideways first, then towards the camera too"""
+def move_clear(sc, C, P, n, wins, rot=0):
+    """the nearest spot where prop n hides no window: sideways first, then towards the camera too, both along the front
+    of the window it hides (rot: that building's turn)"""
     q = sc['props'][n]; Mq = C[q['k']]; tan = tan_of(sc)
     t0 = tile_at(sc, q['x'], q['z'])
     steps = []
@@ -180,9 +214,9 @@ def move_clear(sc, C, P, n, wins):
                 dx = sg * k * .25
                 steps.append((abs(dx) + abs(dz) * 1.3, dx, dz))
     steps.sort()
-    near = [Wn for Wn in wins if abs((Wn['x0'] + Wn['x1']) / 2 - q['x']) < 12 and -1 < Wn['z'] - q['z'] < 18]
+    near = [Wn for Wn in wins if (lambda f: abs((Wn['x0'] + Wn['x1']) / 2 - f[0]) < 12 and -1 < Wn['z'] - f[1] < 18)(in_frame(Wn, q['x'], q['z']))]
     for _, dx, dz in steps:
-        x, z = round(q['x'] + dx, 2), round(q['z'] + dz, 2)
+        x, z = turned_point(dict(x=q['x'], z=q['z'], rot=rot), dx, dz); x, z = round(x, 2), round(z, 2)
         if not (1 <= x <= sc['w'] - 1 and 1 <= z <= sc['h'] - 1): continue
         if tile_at(sc, x, z) != t0: continue
         if blocked(sc, C, P, n, x, z): continue
@@ -194,16 +228,17 @@ def move_clear(sc, C, P, n, wins):
 def move_window(sc, C, P, wi, occ_idx):
     """in a room: the window slides along its wall to a spot nothing stands in front of (the furniture stays)"""
     w = sc['props'][wi]; tan = tan_of(sc)
-    others = [q for q in sc['props'] if q is not w and abs(q['z'] - w['z']) < .3]
+    others = [q for q in sc['props'] if q is not w and abs(point_in_prop(w, q['x'], q['z'])[1]) < .3]   # on the same wall
     M = C[w['k']]; hw = -M['ox'] / P * (w.get('s') or 1)
     for k in range(1, 41):
         for sg in (1, -1):
-            x = round(w['x'] + sg * k * .25, 2)
-            if x - hw < 1 or x + hw > sc['w'] - 1: continue
-            if any(abs(q['x'] - x) < hw + (-(C.get(q['k']) or {}).get('ox', -16) / P * (q.get('s') or 1)) + .1 for q in others): continue
-            t = dict(w, x=x); Wn = windows_of(dict(sc, props=[t]), C, P)
+            a = sg * k * .25; x, z = turned_point(w, a, 0); x, z = round(x, 2), round(z, 2)    # along its own wall
+            if not w.get('rot') and (x - hw < 1 or x + hw > sc['w'] - 1): continue
+            if w.get('rot') and not (1 <= x <= sc['w'] - 1 and 1 <= z <= sc['h'] - 1): continue
+            if any(abs(point_in_prop(w, q['x'], q['z'])[0] - a) < hw + (-(C.get(q['k']) or {}).get('ox', -16) / P * (q.get('s') or 1)) + .1 for q in others): continue
+            t = dict(w, x=x, z=z); Wn = windows_of(dict(sc, props=[t]), C, P)
             if any(hides(W, sc['props'][n], C[sc['props'][n]['k']], sc, P, tan) > MOVE_TO for W in Wn for n in range(len(sc['props'])) if sc['props'][n] is not w and C.get(sc['props'][n]['k'])): continue
-            return x
+            return x, z
     return None
 
 
@@ -214,13 +249,13 @@ def clear_scene(sc, C, P, fix=True, log=None):
         for _ in range(4):
             occ = occluders(sc, C, P)
             if not occ: break
-            Wn, n, c = occ[0]; x = move_window(sc, C, P, Wn['i'], n)
+            Wn, n, c = occ[0]; to = move_window(sc, C, P, Wn['i'], n)
             w = sc['props'][Wn['i']]
-            if x is None:
+            if to is None:
                 if log is not None: log.append((w['k'], w['x'], w['z'], c, 'left'))
                 left += 1; break
-            if log is not None: log.append((w['k'], w['x'], w['z'], c, 'moved', (x, w['z'])))
-            w['x'] = x; moved += 1
+            if log is not None: log.append((w['k'], w['x'], w['z'], c, 'moved', to))
+            w['x'], w['z'] = to; moved += 1
         return moved, removed, left
     for _ in range(3):
         wins = windows_of(sc, C, P)
@@ -233,7 +268,8 @@ def clear_scene(sc, C, P, fix=True, log=None):
             if not fix:
                 if log is not None: log.append((q['k'], q['x'], q['z'], c))
                 left += 1; continue
-            to = move_clear(sc, C, P, n, wins)
+            worst = max((o for o in occ if o[1] == n), key=lambda o: o[2])[0]
+            to = move_clear(sc, C, P, n, wins, rot=worst['rot'])
             if to:
                 if log is not None: log.append((q['k'], q['x'], q['z'], c, 'moved', to))
                 q['x'], q['z'] = to; moved += 1

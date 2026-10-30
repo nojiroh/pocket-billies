@@ -172,15 +172,15 @@
   {
    "p": "scene/build/detail.png",
    "at": [
-    "game/js/buildings.js:171",
-    "game/js/prop-models.js:2268",
+    "game/js/buildings.js:183",
+    "game/js/prop-models.js:2594",
     "game/js/walk-view.js:793"
    ]
   },
   {
    "p": "scene/build/rooms.png",
    "at": [
-    "game/js/buildings.js:171",
+    "game/js/buildings.js:183",
     "game/js/walk-view.js:793"
    ]
   },
@@ -201,7 +201,7 @@
    "p": "scene/flags/default.png",
    "at": [
     "game/js/postcards.js:49",
-    "game/js/walk-view.js:803",
+    "game/js/walk-view.js:804",
     "game/js/walk/frame-items.js:212"
    ]
   },
@@ -1137,9 +1137,9 @@
    "game/js/ui.js:234"
   ],
   "barrel": [
-   "game/js/prop-models.js:240",
-   "game/js/prop-models.js:438",
-   "game/js/prop-models.js:1164",
+   "game/js/prop-models.js:253",
+   "game/js/prop-models.js:454",
+   "game/js/prop-models.js:1419",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1162,9 +1162,10 @@
    "game/js/logic/cutscene-set.js:142",
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
-   "game/js/prop-models.js:236",
-   "game/js/prop-models.js:365",
-   "game/js/prop-models.js:987",
+   "game/js/prop-models.js:249",
+   "game/js/prop-models.js:381",
+   "game/js/prop-models.js:1228",
+   "game/js/prop-models.js:1590",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
    "game/js/walk-view-gl.js:877"
@@ -1172,7 +1173,7 @@
   "brick": [
    "game/js/logic/wall-ramp.js:40",
    "game/js/logic/wall-ramp.js:58",
-   "game/js/prop-models.js:225",
+   "game/js/prop-models.js:238",
    "game/js/structures.js:7",
    "game/js/structures.js:250",
    "game/js/structures.js:251",
@@ -1190,8 +1191,8 @@
   ],
   "building": [
    "game/js/bowl-map-test.js:344",
-   "game/js/buildings.js:349",
-   "game/js/buildings.js:1688",
+   "game/js/buildings.js:379",
+   "game/js/buildings.js:1718",
    "game/js/logic/bowl-things.js:90",
    "game/js/logic/bowl-things.js:96",
    "game/js/logic/bowl-things.js:97",
@@ -1206,8 +1207,8 @@
    "game/js/walk/prop-look.js:65",
    "game/js/walk/prop-look.js:418",
    "game/js/walk/sprites.js:986",
-   "game/js/world-bowl.js:1737",
-   "game/js/world-bowl.js:1767"
+   "game/js/world-bowl.js:1754",
+   "game/js/world-bowl.js:1784"
   ],
   "cart": [
    "game/js/audio/nature-player.js:243"
@@ -1240,8 +1241,8 @@
    "game/js/ui-run-kit.js:538",
    "game/js/ui.js:90",
    "game/js/ui.js:173",
-   "game/js/walk-view.js:3302",
-   "game/js/walk-view.js:3312"
+   "game/js/walk-view.js:3303",
+   "game/js/walk-view.js:3313"
   ],
   "cowboy": [
    "game/js/person-art.js:266"
@@ -1298,9 +1299,9 @@
    "game/js/walk-control.js:539",
    "game/js/walk-control.js:557",
    "game/js/walk-view.js:350",
-   "game/js/walk-view.js:3892",
-   "game/js/walk-view.js:4003",
-   "game/js/walk-view.js:4324",
+   "game/js/walk-view.js:3893",
+   "game/js/walk-view.js:4004",
+   "game/js/walk-view.js:4325",
    "game/js/walk/frame-items.js:331",
    "game/js/walk/frame-items.js:482",
    "game/js/walk/frame-items.js:502"
@@ -1391,7 +1392,7 @@
   ],
   "globe": [
    "game/js/boot.js:139",
-   "game/js/world-bowl.js:4243"
+   "game/js/world-bowl.js:4260"
   ],
   "goggles": [
    "game/js/logic/figure-kit.js:604"
@@ -1424,13 +1425,13 @@
    "game/js/self-test.js:3582",
    "game/js/walk-tab.js:382",
    "game/js/walk-view.js:418",
-   "game/js/walk-view.js:4178",
+   "game/js/walk-view.js:4179",
    "game/js/walk/battle-scars.js:146",
    "game/js/walk/effects.js:621",
    "game/js/walk/effects.js:775",
    "game/js/walk/effects.js:889",
    "game/js/walk/fountains-weather.js:599",
-   "game/js/world-bowl.js:4282"
+   "game/js/world-bowl.js:4299"
   ],
   "moon": [
    "game/js/battle.js:663",
@@ -1442,7 +1443,7 @@
    "game/js/logic/bowl-things.js:139",
    "game/js/logic/bowl-things.js:154",
    "game/js/logic/bowl-things.js:156",
-   "game/js/world-bowl.js:1538"
+   "game/js/world-bowl.js:1539"
   ],
   "paper": [
    "game/js/opening-fall.js:971"
@@ -1602,8 +1603,8 @@
    "game/js/train-ride.js:276",
    "game/js/unit-card.js:191",
    "game/js/unit-card.js:218",
-   "game/js/walk-view.js:3890",
-   "game/js/walk-view.js:3892",
+   "game/js/walk-view.js:3891",
+   "game/js/walk-view.js:3893",
    "game/js/walk/prop-look.js:154",
    "game/js/workshop.js:102"
   ],
