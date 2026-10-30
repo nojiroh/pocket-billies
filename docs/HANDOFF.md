@@ -2,6 +2,89 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-7 - The town re-laid: the house kit placed (BD-4b), Juniper's one-off, windmills, cars - 2026-10-30
+Branch `track/buildings` (wave 5, the main line; pulled BD-4a's merge from its remote, merged `claude/bd-5-civic`
+and `claude/bd-6-landmarks` (HANDOFF and ROADMAP conflicts, both entries kept; scenery.json settled by rerunning
+every builder), then main (#355, the characters track)). Plan written in Plan Mode's shape and built at once (the
+owner's advance approval, track section 1). Tools, data, models, pictures, one Studio panel; no game code. No
+per-session tag (CLAUDE.md).
+- Changed:
+  - **The merge.** BD-5's tools/model-triangles.mjs and BD-6's tools/model-mesh.mjs did the same job: kept
+    model-mesh.mjs (the island baker's), build-civic.py bakes through it (pictures byte for byte the same).
+  - **Doors and fx scales** (track section 3, corrected): doors are read at the catalogue's ppu 34 (prop-turn.js
+    `propDoor`), but fx (windows, glows, smoke) at the kind's own `ppm`, 32 (walk/frame-items.js `mpp`), so BD-4a's and
+    BD-6's fx written at 34 were 6% out the other way. Builders now write doors with `px` (34) and fx with `fxpx` (32)
+    (landmark_parts.py, build-house-kit.py, build-props-hub.py, build-windmill-kit.py, build-props-island.py); the civic
+    four's doors moved to 34 (shop 30 -> 32 px, lab 62 -> 66); the moss and solar cottages' doors (run towns) to 34.
+  - **The kit is 24 kinds**, `house_kit_01`..`24` in group `house_kit`, not one kind with variants: the game reads a
+    building's `box` and `door` from its kind's row (walk-view.js `doorOf`, the walking grid, pads, about 60 readers of
+    `box`), so BD-4a's per-variant footprints and doors were ignored (only model and picture followed). Each house's
+    picture is baked from its model (scene/next/hub/house_kit_NN.png; the cottage_moss stand-in is gone).
+  - **BD-4b's placing**, new tools/hub-houses.mjs used by tools/build-copperleaf.mjs: house plots grow where the ground
+    lets them (front line kept, back and sideways, up to 4.8 x 3.6 m; the one at 134.95, 60.49 already touches a street
+    and keeps 3.8 x 2.8); then each house plot gets a kit house that fits, none twice, no two within 20 m sharing a body
+    or a roof (nor a palette where possible), the showpieces nearest the square. On Copperleaf now: 01 narrow/gable and
+    05 jettied/saltbox (the showpieces), 18 saucer/bulb and 20 wide/slab in the east cluster; 13 tower/mushroom, 12
+    L-shape/mansard, 10 narrow/gambrel, 17 townhouse/roof garden, 11 wide/butterfly, 16 cob/bulb on the farmhouse plot.
+    The old cottages' gardens stay; props a bigger house would cover are left out (3); each kit house's `garden` hints
+    plant trees behind and bushes beside it where its old garden has nothing (29 plants), under the gardens' rules.
+    cottage_moss and cottage_solar stay in the catalogue for the run towns (mapgen.js).
+  - **Granny Juniper's cottage**, a one-off (`class Juniper` in build-house-kit.py, model cottage_juniper_cob.json):
+    the kit's half-dome cob body, a honey thatch mushroom roof, her green door, a teapot chimney whose smoke comes out
+    of the spout, a bee skep and honey pots; C's dense extras; placed at 1.25x (3.9 x 3.8 m on her 6.1 x 5.3 m plot,
+    her lavender and hives kept). `vary.size` 0 (section 3's random +-6% fixed). Its palette is kept out of `PALETTES`
+    so the kit's seeded draw is unchanged.
+  - **Windmills and cars**: four more windmills of the kit on level farmland round the windmill plot, 14 m apart, off
+    streets, zones and plots (a solar-sail post mill, a farm windpump, a sky kite turbine, a helix turbine; v 9, 16,
+    23, 7); four bubble cars, two beside the General store and two before Skyline Station's platform (clear of
+    patch-station's way, the doors and anything solid), three looks.
+  - **Rebuilds are faithful**: build-copperleaf.mjs keeps the map's `folk` (10) and the pond's `falls`, which a bare
+    rebuild dropped. The chain after a box or door change is now: `node tools/build-copperleaf.mjs`,
+    `node tools/patch-station.mjs`, `python3 tools/clear-windows.py --fix` (the water, square and terrain patches are
+    the ground's and must not be rerun on the committed map: they carve the river and the pond again).
+  - **Pictures from the models** for every hub building (the lab, shop, inn, library, Workshop, Gene Bank, lighthouse,
+    windmills, barn and station were already; now the kit, Juniper's cottage and the barn's five colour looks,
+    `bake_looks`). Six drawn pictures nothing used any more were removed (scene/props/barn_v1..5.png,
+    cottage_juniper.png).
+  - **The Studio**: the map editor's prop panel shows a modelled kind's looks by name (the windmill kit's 27, the
+    cars), and a kit house can be swapped for another of the 24 (studio/js/map-editor.js `scKitHouse`).
+  - Tests: new tools/test/hub-houses.test.mjs (growing and picking on small cases; on Copperleaf every house plot one
+    kit house that fits, none twice, the neighbour rule; Juniper's one-off; the windmills' designs; the cars);
+    house-kit.test.mjs reads the 24 kinds and their pictures; civic-buildings.test.mjs the doors at 34;
+    lowpoly-props.test.mjs gives the doorless landmarks (lighthouse, station) the building budget (section 3's fix).
+    tools/look-hub-buildings.py `--only=house_kit` takes the numbered kinds; look-house-kit.py reads them.
+- Checked against the track file: section 3's door claim is right for doors; wrong to stop there (fx, above). "A
+  variant can replace any field" holds for drawing only (above). clear-windows reads `rot` (BD-F). Section 3's
+  "lighthouse and station have no door" stands: they keep none and get the building budget instead.
+- Found, not changed:
+  - prop-look.js's building pattern still lacks "cottage" (material and wear for cottage_moss/solar in run towns);
+    `vary.size: 0` already stops the size change, so it was left.
+  - Picture decals don't follow a recipe's warp (BD-6's note) and `face: 'fixed'` decals need about 4 cm off a wall
+    (BD-5's): the kit's houses have no lettering, so nothing to fix here.
+- Risky:
+  - Copperleaf's house plots changed size (grown) and the houses differ in footprint and door: rooms, residents and
+    the full test's door walks follow the data, and the hub tests pass, but the phone hasn't seen it.
+  - More meshes on the hub: 10 kit-house meshes where the two cottage meshes were, 4 more windmill designs and the
+    car (its looks are colour swaps), each one draw per part. Counted, not timed (BD-8).
+  - The smoke's phone step failed once at "dialogue 23 pieces (at most 20)" and passed alone right after with 20,
+    the same list as on main (main passes too). A timing flake in the count, not this change, but watch for it.
+  - Run towns are unchanged except the moss and solar cottages' doors moved 4 cm (32 -> 34 px/m).
+- Verified: lint, typecheck, check:modules (432 modules), format:check, check:data (195 files, all fine) and build
+  clean; `npm test` 2,540 of 2,540 (the new hub-houses test 4 of 4). Smoke 6 of 7 in 612 s, the 7th being the phone step,
+  which failed once on a frame timeout while a picture run shared the CPU, once on the piece count (above), then passed
+  alone (288 s; the same step on main also passed, 239 s). tools/clear-windows.py: 0 props hide a window; the
+  unused-art check: 0 unused. The full quick check was not run: it takes over an hour here (BD-2b's entry), and the
+  smoke tier and the hub tests cover these steps. Pictures (look-hub-buildings.py on Copperleaf at noon, scratchpad,
+  not committed): Juniper's cottage reads as a honey-thatched cob house with its teapot chimney, skep and honey pots
+  in her kept garden; kit house 13 (round tower, water tower) stands on its street plot. White walls read grey from
+  the east at noon, as BD-3 and BD-5 found (a BD-8 lighting point). The kit's and Juniper's baked pictures were
+  checked one by one.
+- Next: BD-8, the phone pass (pictures at noon, dusk and night; the owner's play test and debug log; frame times), on
+  `track/buildings`, started from this session (track section 6).
+- For the owner on the phone: walk Copperleaf by day and at night: the ten kit houses (the east cluster by the inn,
+  the farmhouse plot), Granny Juniper's teapot chimney, the windmills round the farm, the bubble cars by the shop and
+  the station. Walk into a few house doors (each opens a room) and send a debug log from the town.
+
 ### Buildings track BD-6 - Landmarks: Workshop, Gene Bank, lighthouse, barn, station, the windmill kit, bubble cars - 2026-10-30
 Branch `claude/bd-6-landmarks` (wave 4 side session, made from `track/buildings`; `track/buildings` and main merged
 in). Plan written in Plan Mode's shape and built at once (the owner's advance approval, track section 1). The owner's
