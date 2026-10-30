@@ -89,6 +89,7 @@ expose({
   roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   runSeenSum: [() => runSeenSum, v => (runSeenSum = v)],
+  safeBand: [() => safeBand],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => ((walkPick = v), provide({ walkPick }))],
@@ -879,6 +880,8 @@ setInterval(() => {
     if (v && v.id && v.id !== walkView.id && !v.held) walkMapSync();
   } catch (e) {}
 }, 400);
+/* FL-1b: the walk screen's free band (between its top card and its foot), kept for one frame */
+const safeBand = { t: -1, v: null };
 export function walkMapSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
   /* in a battle the scene keeps running inside the battle stage (battle-3d.js) when it can; otherwise it stops */
@@ -978,34 +981,38 @@ export function walkMapSync() {
       },
       keys: () => !uiState.modal && uiState.tab === 'walk' && !uiState.walkSheet,
       active: () => uiState.tab === 'walk' && !uiState.modal && !routeSight.busy,
+      /* FL-1b: read once a frame (walkView.t moves every frame), not for each exit label: two layout reads each */
       safe: () => {
+        if (safeBand.t === walkView.t && safeBand.v) return safeBand.v;
         const a = $('.wh-card'),
           b = $('.wh-foot'),
           H = innerHeight;
-        return [
+        safeBand.t = walkView.t;
+        safeBand.v = [
           a ? clamp(a.getBoundingClientRect().bottom / H, 0, 0.5) : 0.1,
           b ? clamp(b.getBoundingClientRect().top / H, 0.5, 1) : 0.88,
         ];
+        return safeBand.v;
       },
       /* behind a menu the world runs at 20 a second: a frame stays under the 60 ms a frame may count
          (walk-view-gl.js drawWalkFrame), so it keeps its speed (at 10 it ran at 60% of it) */
       cap: () => {
+        /* FL-1b: a window over a screen counts as the screen (it stays at the screen's rate, not back to 20) */
         const w = document.hidden
           ? 'hidden'
           : walkView.battle
             ? ''
-            : uiState.modal
-              ? 'window'
-              : uiState.tab !== 'walk'
-                ? 'screen'
+            : uiState.tab !== 'walk'
+              ? 'screen'
+              : uiState.modal
+                ? 'window'
                 : '';
-        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...) the world settles for 0.8 s, then nearly stops (1 a
-           second): a still canvas lets the browser keep its blurred backdrop instead of blurring it again every frame,
-           which made a phone's menus crawl */
+        /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...) the world nearly stops (1 a second): a still canvas
+           lets the browser keep its blurred backdrop instead of blurring it again every frame, which made a phone's
+           menus crawl. FL-1b: at once (it drew 0.8 s more at 24, each frame at full cost, while the tab opened) */
         if (w !== walkView.held) walkView.heldT = performance.now();
         walkView.held = w;
-        if (w === 'screen') return performance.now() - (walkView.heldT || 0) > 800 ? 1 : 24;
-        return w === 'hidden' ? 1 : w === 'window' ? 20 : userFps();
+        return w === 'hidden' || w === 'screen' ? 1 : w === 'window' ? 20 : userFps();
       },
     }).then(() => cv.classList.add('in'));
   }

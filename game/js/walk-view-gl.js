@@ -39,7 +39,7 @@ import { personPicture } from './logic/person-view.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { FOG_MARCH_STEPS, fogGridBox, fogMarchOn } from './logic/fog-grid.js';
 import { gpuCountSummary, gpuPass } from './engine/gpu-counters.js';
-import { frameCount, frameTask, userFps } from './frame-scheduler.js';
+import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import {
   drawBubble,
   drawExitLabels,
@@ -140,9 +140,13 @@ import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
   GROUND_SLICE_MS: [() => GROUND_SLICE_MS],
+  INK_CALLS: [() => INK_CALLS],
   PHONE: [() => PHONE],
   baseStopWalkView: [() => baseStopWalkView],
+  canvasBox: [() => canvasBox],
+  canvasCssSize: [() => canvasCssSize, v => (canvasCssSize = v)],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
+  countInk: [() => countInk, v => (countInk = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
   dropWalkGpuCaches: [() => dropWalkGpuCaches, v => (dropWalkGpuCaches = v)],
@@ -153,6 +157,7 @@ expose({
   litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  oneOffMs: [() => oneOffMs, v => (oneOffMs = v)],
   peopleReport: [() => peopleReport, v => (peopleReport = v)],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
   screenToGround2d: [() => screenToGround2d],
@@ -191,6 +196,43 @@ function labelLayer(cv) {
   if (u.previousElementSibling !== cv) cv.after(u);
   u.hidden = false;
   return u;
+}
+/* FL-1b: the label layer's drawing calls counted on its context, so a frame that drew nothing there (and whose last
+   frame drew nothing) skips the full-screen clear */
+const INK_CALLS = ['fill', 'stroke', 'fillRect', 'strokeRect', 'fillText', 'strokeText', 'drawImage', 'putImageData'];
+function countInk(x) {
+  if (x._ink !== undefined) return;
+  x._ink = 0;
+  for (const k of INK_CALLS) {
+    const f = x[k];
+    if (typeof f !== 'function') continue;
+    x[k] = (...a) => {
+      x._ink++;
+      return f.apply(x, a);
+    };
+  }
+}
+/* FL-1b: the canvas's CSS size from a ResizeObserver (read in its callback, where layout is already done), not
+   cv.clientWidth in every frame; before its first answer, and without one, the old read */
+const canvasBox = { cv: null, ro: null, w: 0, h: 0 };
+function canvasCssSize(cv) {
+  if (typeof ResizeObserver === 'undefined') return [cv.clientWidth, cv.clientHeight];
+  if (canvasBox.cv !== cv) {
+    if (!canvasBox.ro)
+      canvasBox.ro = new ResizeObserver(es => {
+        for (const e of es)
+          if (e.target === canvasBox.cv) {
+            canvasBox.w = canvasBox.cv.clientWidth;
+            canvasBox.h = canvasBox.cv.clientHeight;
+          }
+      });
+    else canvasBox.ro.disconnect();
+    canvasBox.cv = cv;
+    canvasBox.w = cv.clientWidth;
+    canvasBox.h = cv.clientHeight;
+    canvasBox.ro.observe(cv);
+  }
+  return [canvasBox.w, canvasBox.h];
 }
 const baseStopWalkView = stopWalkView,
   worldToScreen2d = worldToScreen,
@@ -239,6 +281,7 @@ export function mountWalkView(cv, id, opt = {}) {
   if (!ensureWalkGl(cv)) return mountWalkView(cv, id, opt);
   const ui = labelLayer(cv);
   walkView.x = ui.getContext('2d');
+  countInk(walkView.x);
   walkRenderer.on = true;
   if (!cv._dioBound) {
     cv._dioBound = 1;
@@ -518,6 +561,8 @@ setScreenToGround(function (sx, sy) {
   return null;
 });
 /* ---------- frame ---------- */
+/* FL-1a: this frame's one-off jobs so far (ms) */
+let oneOffMs = 0;
 function drawWalkFrame(ts, dtm) {
   const cv = walkView.cv;
   if (!cv || !cv.isConnected) {
@@ -546,8 +591,10 @@ function drawWalkFrame(ts, dtm) {
   groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   /* the crossing hitch (2026-10-28): the next view's walking grid, built ahead in what is left (walk-view.js) */
   navPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
-  const cssW = cv.clientWidth,
-    cssH = cv.clientHeight;
+  /* FL-1a: the one-off jobs' time (above, and the ground's, the grass's and the near ring's below) is left out of
+     the work the automatic quality reads: lowering the quality doesn't make them quicker */
+  oneOffMs = performance.now() - w0;
+  const [cssW, cssH] = canvasCssSize(cv);
   if (!cssW || !cssH) return;
   /* phase 20 R2 (D4): with quality.phonePixels a phone (Android, iPhone) draws at most 1.2 million pixels (1.6
      elsewhere), and its automatic resolution starts a step lower (0.9; it climbs back when frames have room) */
@@ -597,6 +644,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
+  let o0 = performance.now();
   ensureGround();
   const hk = mapCacheKey(walkView.id, sc, walkView.gkey);
   if (walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) {
@@ -613,6 +661,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (walkRenderer.grassKey !== engineSetting('grass', 'density')) buildGrass();
   else grassWork(4);
   if (walkRenderer.farKey !== walkView.id + '|' + Math.round(engineSetting('world', 'farProps'))) buildFarProps();
+  oneOffMs += performance.now() - o0;
   /* a battle (battle-3d.js) borrows the scene: its own camera, the fighters as lit sprites, props in the way hidden */
   const BT =
     (walkView.battle && walkView.battle.frame ? walkView.battle.frame() : null) ||
@@ -649,7 +698,9 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
+    o0 = performance.now();
     updateNearRing(sc.groundOf || sc, fx, fz, Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
+    oneOffMs += performance.now() - o0;
   }
   /* phase 20: the GPU counters (engine/gpu-counters.js) put each call that follows in the pass named last */
   gpuPass('other');
@@ -702,7 +753,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   gpuPass('reflection');
-  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
+  /* FL-1b: on the frames the shadow map skips (opposite parities), so a struggling frame carries one of the two */
+  if (walkRenderer.water && !(QE >= 2 && !(walkRenderer.frames % 2) && gpuState.fb.refl))
     reflectionPass(items, C, rw, rh, X);
   gpuPass('sky');
   const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
@@ -861,7 +913,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   /* labels and markers stay sharp on the layer above */
   const x = walkView.x;
   x.setTransform(1, 0, 0, 1, 0, 0);
-  x.clearRect(0, 0, rw, rh);
+  if (x._ink !== 0) {
+    x.clearRect(0, 0, rw, rh);
+    x._ink = 0;
+    walkRenderer.uiClears = (walkRenderer.uiClears || 0) + 1;
+  }
   /* phase 13: the debug log's picture is taken from this layer, and speech can name a Billie (the buddy says its
      nickname): in that frame speech is drawn after the picture */
   const snapping = walkRenderer.snapReq && typeof debugLog !== 'undefined',
@@ -916,9 +972,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   }
   for (const l of sayLater) drawSpeech(x, l.x, l.y, l.t, l.a);
   walkRenderer.frames++;
-  const work = performance.now() - w0;
-  walkView.slow = walkView.slow * 0.9 + work * 0.1;
-  adaptQuality(dtm, work);
+  const work = performance.now() - w0,
+    /* FL-1a: the automatic quality reads the frame's own work, not the one-off jobs' nor the counted tick's */
+    own = Math.max(0, work - oneOffMs);
+  if (!frameScheduler.counted) walkView.slow = walkView.slow * 0.9 + own * 0.1;
+  adaptQuality(dtm, own);
   /* v30: how long frames take, for the debug log */ {
     const H = walkRenderer.hist || (walkRenderer.hist = [0, 0, 0, 0, 0, 0]);
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;

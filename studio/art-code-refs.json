@@ -1158,7 +1158,7 @@
    "game/js/prop-models.js:996",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
-   "game/js/walk-view-gl.js:732"
+   "game/js/walk-view-gl.js:784"
   ],
   "brick": [
    "game/js/logic/wall-ramp.js:40",
@@ -1278,10 +1278,10 @@
    "game/js/story-stage.js:280",
    "game/js/train-ride.js:315",
    "game/js/train-ride.js:322",
-   "game/js/walk-control.js:416",
-   "game/js/walk-control.js:424",
-   "game/js/walk-control.js:536",
-   "game/js/walk-control.js:554",
+   "game/js/walk-control.js:417",
+   "game/js/walk-control.js:425",
+   "game/js/walk-control.js:537",
+   "game/js/walk-control.js:555",
    "game/js/walk-view.js:350",
    "game/js/walk-view.js:3892",
    "game/js/walk-view.js:4003",
@@ -1436,7 +1436,7 @@
    "game/js/battle-stage.js:2502"
   ],
   "phone": [
-   "game/js/walk-view-gl.js:694",
+   "game/js/walk-view-gl.js:745",
    "game/js/walk/fog-grid.js:246",
    "game/js/walk/fog-grid.js:247"
   ],
@@ -1482,8 +1482,8 @@
    "game/js/walk/map-cache.js:415"
   ],
   "sat": [
-   "game/js/walk/quality-cull.js:178",
-   "game/js/walk/quality-cull.js:185"
+   "game/js/walk/quality-cull.js:182",
+   "game/js/walk/quality-cull.js:189"
   ],
   "scale": [
    "game/js/logic/music-studio.js:143",
@@ -1592,8 +1592,8 @@
   ],
   "window": [
    "game/js/seamless-world.js:1196",
-   "game/js/walk-control.js:998",
    "game/js/walk-control.js:1008",
+   "game/js/walk-control.js:1015",
    "game/js/walk/effects.js:413",
    "game/js/walk/lighting.js:243"
   ]
