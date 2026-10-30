@@ -30,7 +30,8 @@ close". From the owner's phone log (deploy 73b2f8b1, Android, Adreno 750, 2026-1
   only if its level stands over every bank, which is a float anyway. Both patch steps are rerunnable (a second run
   changes nothing).
 - Verified: lint, typecheck, check:modules, format:check, check:data, `npm test` 2,398 pass; the new tests fail
-  before their fixes; check:smoke running at the first push (its result in the PR). Pictures (scratchpad, not committed): the river normal, zeroed (the
+  before their fixes; check:smoke 7 of 7 (440 s; the in-game
+  full test's shader step: 39 shaders built). Pictures (scratchpad, not committed): the river normal, zeroed (the
   phone's look) and after; the pond and the old channel after; the bridge after.
 - For the owner, on the phone: Copperleaf's river and pond (clear blue, white water at the fall and the outflow), the
   bridge's new place, and the hillside behind the pond (no stream).
