@@ -69,6 +69,7 @@ import '../../game/js/logic/fog-grid.js';
 import '../../game/js/logic/forms.js';
 import '../../game/js/logic/fountain-wish.js';
 import '../../game/js/logic/frame-pace.js';
+import '../../game/js/logic/frame-control.js';
 import '../../game/js/logic/frame-strips.js';
 import '../../game/js/logic/free-camera.js';
 import '../../game/js/logic/gene-bank.js';
