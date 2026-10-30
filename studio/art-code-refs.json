@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/prop-models.js:2156",
+    "game/js/prop-models.js:2181",
     "game/js/walk-view.js:793"
    ]
   },
@@ -209,7 +209,7 @@
    "p": "scene/fx/*.png",
    "at": [
     "game/js/walk-view.js:772",
-    "game/js/walk/effects.js:262"
+    "game/js/walk/effects.js:287"
    ]
   },
   {
@@ -1128,9 +1128,9 @@
    "game/js/ui.js:234"
   ],
   "barrel": [
-   "game/js/prop-models.js:224",
-   "game/js/prop-models.js:422",
-   "game/js/prop-models.js:1173",
+   "game/js/prop-models.js:225",
+   "game/js/prop-models.js:423",
+   "game/js/prop-models.js:1149",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1153,9 +1153,9 @@
    "game/js/logic/cutscene-set.js:142",
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
-   "game/js/prop-models.js:220",
-   "game/js/prop-models.js:349",
-   "game/js/prop-models.js:996",
+   "game/js/prop-models.js:221",
+   "game/js/prop-models.js:350",
+   "game/js/prop-models.js:972",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
    "game/js/walk-view-gl.js:784"
@@ -1163,7 +1163,7 @@
   "brick": [
    "game/js/logic/wall-ramp.js:40",
    "game/js/logic/wall-ramp.js:58",
-   "game/js/prop-models.js:209",
+   "game/js/prop-models.js:210",
    "game/js/structures.js:7",
    "game/js/structures.js:250",
    "game/js/structures.js:251",
@@ -1243,7 +1243,7 @@
   ],
   "crown": [
    "game/js/logic/shaft-pick.js:40",
-   "game/js/walk/effects.js:1167"
+   "game/js/walk/effects.js:1204"
   ],
   "cup": [
    "game/js/logic/sketch-art.js:279"
@@ -1327,7 +1327,7 @@
   "flame": [
    "game/js/battle-stage.js:2517",
    "game/js/walk-view.js:418",
-   "game/js/walk/effects.js:401"
+   "game/js/walk/effects.js:432"
   ],
   "floppy": [
    "game/js/opening-fall.js:971"
@@ -1411,10 +1411,10 @@
    "game/js/walk-view.js:418",
    "game/js/walk-view.js:4178",
    "game/js/walk/battle-scars.js:146",
-   "game/js/walk/effects.js:590",
-   "game/js/walk/effects.js:744",
-   "game/js/walk/effects.js:854",
-   "game/js/walk/fountains-weather.js:602",
+   "game/js/walk/effects.js:621",
+   "game/js/walk/effects.js:775",
+   "game/js/walk/effects.js:889",
+   "game/js/walk/fountains-weather.js:599",
    "game/js/world-bowl.js:4282"
   ],
   "moon": [
@@ -1534,9 +1534,9 @@
    "game/js/lore.js:197",
    "game/js/story-stage.js:310",
    "game/js/walk-view.js:418",
-   "game/js/walk/effects.js:367",
-   "game/js/walk/effects.js:371",
-   "game/js/walk/effects.js:479"
+   "game/js/walk/effects.js:398",
+   "game/js/walk/effects.js:402",
+   "game/js/walk/effects.js:510"
   ],
   "star": [
    "game/js/battle-stage.js:1692",
@@ -1594,7 +1594,7 @@
    "game/js/seamless-world.js:1196",
    "game/js/walk-control.js:1008",
    "game/js/walk-control.js:1015",
-   "game/js/walk/effects.js:413",
+   "game/js/walk/effects.js:444",
    "game/js/walk/lighting.js:243"
   ]
  }
