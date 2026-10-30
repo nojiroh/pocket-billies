@@ -55,7 +55,14 @@ switch, **off**; FL-6's true freeze (a cap of 0) on for everyone. No tag (the tr
   Team it is taken on the last frame (1 change, `held`), then 0 frames in 5 s (a cap of 0); back on the walk 0 more;
   a fade takes it (`fade`); switch off: 11 changes in 8 frames; the real ladder: 0). check-fluid-ui: no gate failed
   (0 frames in 5 s behind a screen, 1 behind a window). check-stalls: all but the wrapped-ticks gate (above).
-  Full quick check: QUICK_RESULT
+  Full quick check 37 of 42 (2,493 s, 2 workers) against a baseline made at the round's start (8678e3f7, 37 of 42, 44
+  pictures): RL-8's crossing, room light, "walking out didn't bring the hamlet back" and Battle music's drums fail as
+  there (the start's fifth, Song fingerprints, passed here); "Place views" drew 8 frames, then none in 90 s (`go_scene`)
+  and passed alone 3 times (56-62 s, once beside its worker's other steps): likely a window that came up during the jump
+  and now freezes the world for good, so tools/browser_check.py go_scene now clears a window that holds the world
+  after a jump (with a note naming it, as the fixtures' set-up does) and names the hold when it fails. 5 pictures
+  differed (battle-rain, the two failed steps', phone-crash-pick, phone-run-sheet); the phone step rerun alone: none.
+  check:modules, check:data, build clean.
 - Next: round 4 (FL-5a draw order) once FL-4 is done (the round's last lane starts it).
 - For the owner on the phone: open the debug menu, turn "Resolution steps" On (with "Frame controller" On too, if you
   like), close it and walk a busy place with automatic quality on: the picture should never pop sharper or softer
