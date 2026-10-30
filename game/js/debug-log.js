@@ -876,7 +876,10 @@ try {
    with the screen and what was tapped (its data-a, data-pref-set or data-p: names of controls, never save data).
    Long animation frames (over 50 ms): the frame's rendering (from renderStart) and its style and layout (from
    styleAndLayoutStart), which is where a whole-screen rebuild or a forced layout shows */
-debugLog.ui = { taps: { n: 0, maxMs: 0, over100: 0, last: [] }, frames: { n: 0, renderMs: 0, styleMs: 0, maxStyleMs: 0 } };
+debugLog.ui = {
+  taps: { n: 0, maxMs: 0, over100: 0, last: [] },
+  frames: { n: 0, renderMs: 0, styleMs: 0, maxStyleMs: 0 },
+};
 debugLog.tapWhat = '';
 document.addEventListener(
   'pointerdown',
