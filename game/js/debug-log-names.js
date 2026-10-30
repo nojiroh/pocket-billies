@@ -7,6 +7,7 @@ import { styleLog } from './theme-sheet.js';
 import { ranchSkew } from './logic/ranch-clock.js';
 import { fxSetsOn, fxStateLog } from './logic/effects.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
+import { paceSlot } from './logic/frame-pace.js';
 import { mapFiles } from './map-files.js';
 import { activeBattle, save, saveData, saveHeld, setSave, uiState } from './game-state.js';
 import { gpuCountSummary, gpuCounters } from './engine/gpu-counters.js';
@@ -171,6 +172,7 @@ Object.defineProperties(GAME, {
   openBattle: { get: () => openBattle, set: setOpenBattle },
   openDressingRoom: { get: () => openDressingRoom, set: setOpenDressingRoom },
   openShop: { get: () => openShop, set: setOpenShop },
+  paceSlot: { get: () => paceSlot },
   paintActions: { get: () => paintActions, set: setPaintActions },
   paintWorkerReport: { get: () => paintWorkerReport },
   paintWorkerState: { get: () => paintWorkerState },
