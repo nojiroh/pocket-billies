@@ -2,6 +2,39 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Test data track fix - the Graphics test's costs and drift from the mean frame, not the median - 2026-10-30
+Branch `track/test-data` (main, e3cf601c, merged in at the start, no conflicts). Planned, then built at once (the
+track's standing answer, section 1). A bug fix between TD sessions, from the owner's phone graphics report of
+2026-10-30 (Adreno 750, Chrome 155, 60 Hz, build e3cf601): every dial cost 0 ms with noise 0 and the drift said 0%,
+while the open ground fell from 49.9 to 41.3 fps over the 24-minute run. The report stays out of git.
+- Cause (checked): `graphicsCosts` and `graphicsDrift` (game/js/graphics-test.js) worked from each step's `p50`. On a
+  phone held to its refresh rate frames come in whole intervals (16.7 / 33.3 / 50 ms), so the median is 16.7 while
+  more than half the frames make 60: cost, noise and drift all collapsed to 0, and the results' "Costliest here"
+  list (`!c.unsure && c.cost > 0.3`) was always empty on phones.
+- Changed:
+  - game/js/graphics-test.js: `graphicsFrameMs(step)` = 1000 / fps, the mean frame (bench-path.js benchFrameStats'
+    `fps` is frames over their summed gaps). Costs, their noise and unsure, and the drift are worked from it. The drift
+    also gives `fpsFirst` / `fpsLast`; its `first` / `last` / `change` keep their names (now mean ms). Report format
+    3 → 4 with a top-level `costFrom: 'mean frame ms (1000 / fps)'`. The results' drift line now says the fps at the
+    start and end. A step without fps (the old saved state always has it) is left out, as one without p50 was.
+  - tools/read-debug-log.py: a `kind: graphics` file gets its own summary (conditions, steps not ok, the slowest
+    steps, the dials' costs and what they are from, the drift); `kind: diagnostics` too (places, battle, world map,
+    memory, the passes, errors). Before, both printed only a warning and the debug log's empty fields.
+  - Tests: tools/test/graphics-test.test.mjs: the two cost and drift tests give `fps` where they gave `p50` (same
+    ms, same expected numbers; the reason is the change itself); a new test of a 60 Hz phone (every p50 16.7, fps
+    49.9 → 41.3) shows a cost over 4 ms, noise above 0, drift over 15% and a non-empty "costliest" list.
+    tools/test/read-debug-log.test.mjs: one test each for the two summaries. docs/TESTING.md and the debug-log skill
+    say so.
+- Not changed: the per-step table still shows p90 next to fps (fps is the mean already). `cost > 0.3` stays.
+  graphics-bench-test.js (the older cost test, TD-5's tidy-up) has its own drift from its own numbers.
+- Risky: a format 3 report read later still has median costs; the reader says so when `costFrom` is missing. The
+  mean moves with one long hitch as well as with steady misses: a step with one 300 ms frame costs about 2 ms more
+  over a 2,400-frame walk, which the noise (the shipped runs' spread) usually covers.
+- Verified: lint, typecheck, format:check; unit tests VERIFIED_UNIT; smoke VERIFIED_SMOKE. The runner itself runs only
+  on a phone by hand: not run here.
+- Next: the owner reruns the Graphics test on the phone (debug menu → Graphics test) and sends the report; the costs
+  and drift should now show. The track goes on with its next session as docs/ROADMAP.md lists it.
+
 ### Buildings track BD-4a - The house kit: 24 houses from modules, kind `house_kit` - 2026-10-30
 Branch `track/buildings` (wave 4, the main line; pulled 39 commits from its remote, then merged main twice: nothing
 new at the start, the water fixes #352 at the end, only HANDOFF.md conflicting, both entries kept). Plan written in

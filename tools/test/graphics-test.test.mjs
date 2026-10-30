@@ -4,8 +4,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-const { graphicsCosts, graphicsDrift, graphicsNames, graphicsNamesIn, graphicsReport, graphicsStepName } =
-  await import('../../game/js/graphics-test.js');
+const {
+  graphicsCosts,
+  graphicsDrift,
+  graphicsFrameMs,
+  graphicsNames,
+  graphicsNamesIn,
+  graphicsReport,
+  graphicsStepName,
+} = await import('../../game/js/graphics-test.js');
 
 const PLANTED = { trainer: 'Quillonda', nick: 'Zorblax' };
 const step = (name, extra = {}) => ({
@@ -53,6 +60,7 @@ test('the report keeps only what the test measured: no save, no history', () => 
     'budgetMb',
     'build',
     'conditions',
+    'costFrom',
     'costs',
     'created',
     'device',
@@ -73,13 +81,16 @@ test('the report keeps only what the test measured: no save, no history', () => 
   assert.deepEqual(Object.keys(r.steps[0]).sort(), ['fps', 'frames', 'kind', 'ok', 'p50', 'seg', 'step', 'worst']);
 });
 
-test("a dial's cost is its median frame over its segment's shipped runs; inside their spread it is unsure", () => {
+/* format 4: costs and drift come from the mean frame (1000 / fps), no longer the median; these steps give fps where
+   they gave p50 (1000 / 62.5 = 16 ms, 1000 / 47.62 = 21 ms, ...) */
+const at = ms => Math.round((1000 / ms) * 100) / 100;
+test("a dial's cost is its mean frame over its segment's shipped runs; inside their spread it is unsure", () => {
   const S = [
-    { kind: 'base', seg: 'pond', p50: 16 },
-    { kind: 'dial', seg: 'pond', dial: 'water.reflection', p50: 21 },
-    { kind: 'dial', seg: 'pond', dial: 'water.foam', p50: 16.5 },
-    { kind: 'base', seg: 'pond', p50: 17 },
-    { kind: 'dial', seg: 'lamps', dial: 'color.bloom', p50: 30 },
+    { kind: 'base', seg: 'pond', fps: at(16) },
+    { kind: 'dial', seg: 'pond', dial: 'water.reflection', fps: at(21) },
+    { kind: 'dial', seg: 'pond', dial: 'water.foam', fps: at(16.5) },
+    { kind: 'base', seg: 'pond', fps: at(17) },
+    { kind: 'dial', seg: 'lamps', dial: 'color.bloom', fps: at(30) },
   ];
   const c = graphicsCosts(S);
   assert.deepEqual(
@@ -92,9 +103,51 @@ test("a dial's cost is its median frame over its segment's shipped runs; inside 
 });
 
 test('the drift: the open ground as shipped, first and last', () => {
-  const S = [10, 11, 12.5].map(p50 => ({ kind: 'base', seg: 'open', p50, drift: true }));
-  assert.deepEqual(graphicsDrift(S), { first: 10, last: 12.5, runs: 3, change: 25, drifting: true });
+  const S = [10, 11, 12.5].map(ms => ({ kind: 'base', seg: 'open', fps: at(ms), drift: true }));
+  assert.deepEqual(graphicsDrift(S), {
+    first: 10,
+    last: 12.5,
+    fpsFirst: 100,
+    fpsLast: 80,
+    runs: 3,
+    change: 25,
+    drifting: true,
+  });
   assert.equal(graphicsDrift(S.slice(0, 1)), null);
+});
+
+test('a phone held to 60 Hz: every median is 16.7, but the costs and the drift still show (the mean frame)', () => {
+  /* frames come in whole refresh intervals, so the median stays 16.7 ms while more and more frames miss one */
+  const q = (extra = {}) => ({ p50: 16.7, p90: 33.3, frames: 2400, ...extra });
+  const S = [
+    q({ kind: 'base', seg: 'open', fps: 49.9, drift: true }),
+    q({ kind: 'base', seg: 'open', fps: 49.9 }),
+    q({ kind: 'dial', seg: 'open', dial: 'shadows.mapSize', fps: 40.1 }),
+    q({ kind: 'dial', seg: 'open', dial: 'grass.density', fps: 49.6 }),
+    q({ kind: 'base', seg: 'open', fps: 49.0 }),
+    q({ kind: 'base', seg: 'open', fps: 41.3, drift: true }),
+  ];
+  assert.equal(graphicsFrameMs({ fps: 49.9 }), 20.04);
+  assert.equal(graphicsFrameMs({ p50: 16.7 }), null);
+  const c = graphicsCosts(S);
+  const shadow = c.find(x => x.dial === 'shadows.mapSize');
+  assert.ok(shadow.cost > 4, `cost ${shadow.cost}`);
+  assert.equal(shadow.unsure, false);
+  assert.ok(shadow.noise > 0, 'the shipped runs differ, so the noise is not 0');
+  assert.equal(c.find(x => x.dial === 'grass.density').unsure, true);
+  const d = graphicsDrift(S);
+  assert.equal(d.runs, 4);
+  assert.ok(d.change > 15, `change ${d.change}%`);
+  assert.equal(d.drifting, true);
+  assert.deepEqual([d.fpsFirst, d.fpsLast], [49.9, 41.3]);
+  /* and the report names what costs and drift are worked from */
+  const r = graphicsReport({ steps: S.map((s, i) => ({ name: 'Step ' + i, ok: true, ...s })) }, []);
+  assert.equal(r.format, 4);
+  assert.match(r.costFrom, /mean/);
+  assert.ok(
+    r.costs.some(x => !x.unsure && x.cost > 0.3),
+    'the "costliest here" list is not empty'
+  );
 });
 
 test("a step's name says the segment, the dial and both values", () => {
