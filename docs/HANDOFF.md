@@ -2,6 +2,59 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-2b - Normal maps: the normal sheet in the buildings' and models' shader, on above Off - 2026-10-30
+Branch `track/buildings` (wave 2, the main line). First merged the wave-1 side branches `claude/bd-2a-surfaces` and
+`claude/bd-f-window-check` (merges, no rebase; HANDOFF entries kept, newest on top; studio/art-code-refs.json
+regenerated; BRANCHES and ROADMAP rows joined by hand); main had nothing new. Plan written in Plan Mode's shape and
+built at once (the owner's advance approval, track section 1). No per-session tag (CLAUDE.md).
+- Changed:
+  - tools/build-surfaces.py also writes game/art/scene/build/detail-a04b-normal.png (512x256 RGB, `normal_sheet` of
+    the height map: x across the cell, y up the face, z out, 0.5-centred); `--check` covers it. The sheet and the
+    height map are byte for byte as BD-2a left them.
+  - game/data/scenery.json `buildArt.normal` names it; tools/check-data.mjs checks the file when it is named.
+  - buildings.js `BUILDING_BUMP_GLSL`: `bldBump` reads the normal sheet (`uNrm`) once a pixel at the texel's centre
+    (nearest: the light steps texel by texel), wrapping in the 2 m cell, a smaller mip level where a texel is under a
+    pixel, faded out at a sixth of a pixel (as before). The frame is the face's UV axes from the screen's derivatives
+    (the same cotangent frame the old bump used), so boxes, prisms, caps and round shapes each get theirs, mirrored
+    models included; no vertex data. It replaces the three height reads of the old bump (`bldH` is gone).
+  - New `bindBuildingNormals(p, A)` (buildings.js): the sheet on texture unit 3 (free while buildings draw: the
+    ground and the world map bind their own there), its sampler cleared, back to unit 0, and `uBStr` from the setting,
+    or 0 (flat) while the sheet is loading or a scene names none. Called by the buildings, the low-poly models (plain
+    and instanced: one program each) and structures.js. The sheet is preloaded with the building sheet
+    (prop-models.js, walk-view.js).
+  - Setting: the existing dial `world.buildingBumps` ("Building bumpiness", no rename) now defaults to 1, and the
+    graphics preset Off sets it to 0 (`OFF_LOOK`): on in Balanced and Beautiful, the owner's "on above Low" (the game
+    has no Low preset: Balanced, Beautiful, Off). The graphics bench already lists the dial (the Depth corridor
+    station; bench-path's houses group), so the in-game graphics test shows its cost on the phone.
+  - New tools/test/building-normals.test.mjs (5 tests): the sheet's size and unit normals facing out, one read in the
+    shader, the models' shaders, the binding (own unit, back to 0, flat without a sheet), the defaults.
+- Checked against the track file: right that the sheet is 8x4 of 64 px and that `bldBump` was derived from the tone
+  sheet. Wrong or loose: "a graphics setting" already existed (`world.buildingBumps`, off by default since it was
+  added); "the presets" have no Low (see above); "round shapes use the arc direction" needs nothing extra, the
+  derivative frame follows the UVs on any face.
+- Found, not changed:
+  - structures.js drew with the buildings' program but never set `uAtl` or `uBStr`: it inherited whatever the last
+    building draw left. Now set there (a fix, needed because the sheet's unit must be bound).
+  - BD-1's HANDOFF entry still says "Quick check: QUICK_RESULT" (a placeholder it never filled in).
+- Risky:
+  - Every building and low-poly model now bumps by default. Fine on the hub at noon in the pictures; not yet seen at
+    night or on the phone.
+  - The cost on a real phone is not measured. Software drawing can't resolve it: on the emulated phone (390x844,
+    test_hub_buildings, auto quality off, 5 repeats of 8 frames, medians) the new build drew 4.16 s a frame flat and
+    4.82 s with the bumps, the old build 4.69 s flat and 4.40 s with its old bump; repeats spread from 1.8 to 6.6 s, so
+    those differences are noise. Per pixel the new bump is one texture read (the old one was three) and a few dozen
+    arithmetic operations, on building and model pixels only. Memory: one 512x256 RGBA texture with mips, about
+    0.7 MB (TD's phone budget is 300 MB).
+  - A strong sheet: `normal_sheet(strength=2.0)`; deep seams tilt a lot. The dial (0-3) scales it; BD-3 judges it.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build and `build-surfaces.py --check` clean; `npm test` 2,413 of 2,413; smoke 7 of 7 (432 s); full quick check: QUICK_RESULT. Pictures (look-hub-buildings.py, noon, the Workshop and the windmill, before and after;
+  scratchpad, not committed): brick, the dome's ribs, the corrugated roof and the stone tower catch the light texel by
+  texel; the door planks and glass unchanged; no page errors.
+- Next: wave 3, BD-3 (look sketches) on `track/buildings`: three directions on one house and the shop, the owner
+  picks.
+- For the owner on the phone: walk round Copperleaf by day and at night (Graphics Off shows it flat, as before). Run
+  the graphics test (its Depth corridor turns the dial on and off and times it) and send its debug log. The dial is in
+  the Studio's engine editor (World → Building bumpiness), not in the player's Expert list.
+
 ### Buildings track BD-F - the window check reads a building's turn - 2026-10-30
 Branch `claude/bd-f-window-check` (made from `track/buildings`; wave 1 side session). Plan written in Plan Mode's shape
 and built at once (the owner's advance approval, track section 1). Tools only: no building, map or game code changed.
