@@ -30,7 +30,7 @@ while the open ground fell from 49.9 to 41.3 fps over the 24-minute run. The rep
 - Risky: a format 3 report read later still has median costs; the reader says so when `costFrom` is missing. The
   mean moves with one long hitch as well as with steady misses: a step with one 300 ms frame costs about 2 ms more
   over a 2,400-frame walk, which the noise (the shipped runs' spread) usually covers.
-- Verified: lint, typecheck, format:check; unit tests VERIFIED_UNIT; smoke VERIFIED_SMOKE. The runner itself runs only
+- Verified: lint, typecheck, format:check; `npm test` 2,530 pass (a first run beside the smoke check had 2 failures it did not name; the rerun alone passed all); smoke 7 of 7 in 433 s. The full quick check was not run (a bug fix inside a track). The runner itself runs only
   on a phone by hand: not run here.
 - Next: the owner reruns the Graphics test on the phone (debug menu → Graphics test) and sends the report; the costs
   and drift should now show. The track goes on with its next session as docs/ROADMAP.md lists it.
