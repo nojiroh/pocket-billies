@@ -6,7 +6,7 @@ headless browser draws in software, so milliseconds are notes only).
 
 Opens Copperleaf (?fixture=town) phone sized with the checks' page set-up (tools/browser_check.py) and checks:
 - behind a full screen the 3D's cap is 1 at once (it was 24 for 0.8 s), also with a window over the screen, and it
-  draws at most 6 frames in 5 s;
+  draws at most 6 frames in 5 s, with at most 6 ticks wrapped by the GPU counters (FL-1a's counter change);
 - the pixel sky's task ('bg') is off while the walk hides the sky, and on again on a screen that shows it;
 - 2 blurred surfaces on the walk tab (uiBlurCount: the two bars; the Actions button's invisible blur is gone);
 - the label layer is not cleared while nothing is drawn on it (a window over the walk hides the labels);
@@ -66,10 +66,15 @@ def main():
         cap = pg.evaluate('walkView.opt.cap()')
         gate(cap == 1, f'a window over the screen keeps its rate: {cap} (1)')
         pg.evaluate('closeModal();0')
+        # each counted (wrapped) tick starts by zeroing gpuCounters.cur (engine/gpu-counters.js countersOn)
+        pg.evaluate("(()=>{const c=gpuCounters.cur,f=c.fill;window.__wraps=0;c.fill=function(...a){window.__wraps++;return f.apply(this,a)};return 0})()")
         f0 = pg.evaluate('walkRenderer.frames')
         time.sleep(5)
         n = pg.evaluate('walkRenderer.frames') - f0
+        wraps = pg.evaluate('window.__wraps')
+        pg.evaluate('delete gpuCounters.cur.fill;0')
         gate(n <= 6, f'frames drawn in 5 s behind a screen: {n} (at most 6)')
+        gate(wraps <= 6, f'ticks wrapped by the GPU counters in 5 s behind a screen: {wraps} (at most 6)')
         pg.evaluate("uiState.tab='walk';render();0")
         CF.frames(pg, 2)
 
