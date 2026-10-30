@@ -9,7 +9,7 @@ houses look way too similar now, add a lot of modular variety." BD-0 (this file 
 written on `ccr-d224d90d-qlnty6`; `track/buildings` was made from it by BD-0's session at the owner's word
 (2026-10-29), and every later session works there or on a side branch of it (section 6, "How the sessions run").
 
-**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once. BD-1, BD-2a and BD-F done 2026-10-30 (wave 1). Wave 2: BD-2b (normal maps) done 2026-10-30. Wave 3: BD-3's sketches built 2026-10-30 (`test_look_sketches`); the owner's pick next, then wave 4.
+**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once. BD-1, BD-2a and BD-F done 2026-10-30 (wave 1). Wave 2: BD-2b (normal maps) done 2026-10-30. Wave 3: BD-3's sketches built 2026-10-30 (`test_look_sketches`); the owner's pick "B base + C showpieces" (2026-10-30, section 1). Wave 4: BD-4a (the house kit) done 2026-10-30; BD-5 and BD-6 on their side branches.
 
 The suggestion page (sketches of every building, a house roller, the new surfaces; private to the owner):
 https://claude.ai/artifact/3NF2Qp28uncV7fiCH5yP5b . Its sketches are 2D drawings of shapes and details, not the
