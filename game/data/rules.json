@@ -185,6 +185,11 @@
    "pyramids": {"pyramid":5},
    "items": {"potion":2}
   },
+  "first": {
+   "se": 0,
+   "pyramids": {"pyramid":5},
+   "items": {"potion":1}
+  },
   "points": {
    "budget": [20,22,24,26,28],
    "rarity": {"common":1,"uncommon":2,"starter":2,"rare":3,"mythical":5},

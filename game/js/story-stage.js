@@ -29,10 +29,11 @@ import { parseScript } from './logic/script-parse.js';
 import { runBase, runScript, saveDuringRun, storyTeamLookups } from './logic/script.js';
 import { activeBattle, reducedMotion, save, saveData, uiState } from './game-state.js';
 import { lookOf } from './person-art.js';
-import { walkView, walkablePointNear } from './walk-view.js';
+import { particleSprite } from './battle-stage.js';
+import { walkData, walkView, walkablePointNear } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { music } from './sound.js';
+import { music, soundEffect } from './sound.js';
 import { talkBox, talkChoose, talkHide, talkLine } from './talk.js';
 import {
   cutscene,
@@ -49,9 +50,12 @@ import {
 import { trainRide } from './train-ride.js';
 /* eslint-disable no-func-assign */
 expose({
+  PORTAL_PROP: [() => PORTAL_PROP],
+  PORTAL_SIZE: [() => PORTAL_SIZE],
   cutsceneWorldBegin: [() => cutsceneWorldBegin, v => (cutsceneWorldBegin = v)],
   cutsceneWorldEnd: [() => cutsceneWorldEnd, v => (cutsceneWorldEnd = v)],
   playStoryScript: [() => playStoryScript, v => ((playStoryScript = v), provide({ playStoryScript }))],
+  storyBeside: [() => storyBeside, v => (storyBeside = v)],
   storyFreshTake: [() => storyFreshTake, v => ((storyFreshTake = v), provide({ storyFreshTake }))],
   storyGameStage: [() => storyGameStage],
   storyHold: [() => storyHold, v => (storyHold = v)],
@@ -61,6 +65,8 @@ expose({
   storyPickId: [() => storyPickId, v => ((storyPickId = v), provide({ storyPickId }))],
   storyPickPlay: [() => storyPickPlay, v => ((storyPickPlay = v), provide({ storyPickPlay }))],
   storyPickTree: [() => storyPickTree, v => (storyPickTree = v)],
+  storyPortal: [() => storyPortal, v => (storyPortal = v)],
+  storyPortalEnd: [() => storyPortalEnd, v => (storyPortalEnd = v)],
   storyResumeCheck: [() => storyResumeCheck, v => (storyResumeCheck = v)],
   storyRun: [() => storyRun],
   storyRunUp: [() => storyRunUp, v => (storyRunUp = v)],
@@ -203,7 +209,20 @@ async function storyWindowsClosed() {
   while (uiState.modal || activeBattle) await storyWait(200);
 }
 /* ---------- the scene in the walk scene you stand in ---------- */
-const storyScene = { on: false, run: 0, side: 1, to: /** @type {number[] | null} */ (null) };
+/* IN-4: from, where the one who ran up started (a second one, the pickup's other clerk, comes from there too); to2, the
+   spot beside you on your other side; by, who stands where (the first one to walk over takes to, the next to2); layer,
+   the square portal's light, prop its placement (storyPortal) */
+const storyScene = {
+  on: false,
+  run: 0,
+  side: 1,
+  to: /** @type {number[] | null} */ (null),
+  to2: /** @type {number[] | null} */ (null),
+  from: /** @type {number[] | null} */ (null),
+  by: /** @type {Record<string, number[]>} */ ({}),
+  layer: /** @type {any} */ (null),
+  prop: /** @type {any} */ (null),
+};
 /* `camera run-up`: someone runs up to you (Blake, Cass, Vinylla): the director on the walk scene, you and them on it,
    them out of sight beyond you, a wide shot */
 async function storyRunUp() {
@@ -214,8 +233,9 @@ async function storyRunUp() {
     sc = walkView.sc,
     side = P.x < sc.w / 2 ? 1 : -1,
     to = walkablePointNear(P.x + side * 1.4, P.z + 0.3),
+    to2 = walkablePointNear(P.x - side * 1.4, P.z + 0.3),
     from = walkablePointNear(clamp(P.x + side * 7, 1, sc.w - 1), clamp(P.z + 4.5, 1, sc.h - 1));
-  Object.assign(storyScene, { on: true, run, side, to });
+  Object.assign(storyScene, { on: true, run, side, to, to2, from, by: {}, layer: null });
   cutsceneActor('me', 'me', [P.x, P.z], side > 0 ? 'sideR' : 'side');
   cutsceneActor(who, who, from, 'down');
   cutscene.actors[who].hidden = true;
@@ -247,8 +267,88 @@ async function storySceneEnd(outro) {
     }
   } finally {
     storyScene.on = false;
+    storyPortalEnd();
     cutsceneWorldEnd();
   }
+}
+/* IN-4: the spot beside you for who: the first one to come over stands on the side they came from, the next on your
+   other side; someone not in the scene yet (the pickup's second clerk) comes from where the first one did */
+function storyBeside(who) {
+  const S = storyScene;
+  if (!S.by[who]) S.by[who] = /** @type {number[]} */ (Object.keys(S.by).length ? S.to2 : S.to);
+  if (!cutscene.actors[who] && S.from) {
+    cutsceneActor(who, who, [S.from[0] + (Object.keys(S.by).length - 1) * 0.8, S.from[1]], 'down');
+    cutscene.actors[who].hidden = true;
+  }
+  return S.by[who];
+}
+/* IN-4: the Bureau's square portal, under you: the intro track's prop (IN-3's bureau_portal, flat on the ground, opening
+   from a line to a square: its placement's `open` time) when the scenery has it, else a stand-in square of light round
+   your feet; you drop through it and its light fills the screen. A white veil (#backVeil) stays up over everything
+   until the way back takes the screen (cutscene/return-scene.js) */
+const PORTAL_SIZE = 1.3,
+  PORTAL_PROP = 'bureau_portal';
+async function storyPortal() {
+  talkHide();
+  const P = walkView.pl,
+    veil = () => {
+      if ($('#backVeil')) return;
+      const v = document.createElement('div');
+      v.id = 'backVeil';
+      v.className = 'back-veil';
+      document.body.appendChild(v);
+      void v.offsetWidth;
+      v.classList.add('on');
+    };
+  if (!storySceneOn() || !P) {
+    veil();
+    await storyWait(400);
+    return;
+  }
+  const at = [P.x, P.z],
+    t0 = cutsceneNow(),
+    spark = typeof particleSprite === 'function' ? particleSprite('sparkle') : null;
+  if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 1.6 });
+  const C0 = walkData().sc,
+    sc = walkView.sc;
+  if (C0 && C0.props && C0.props[PORTAL_PROP] && sc) {
+    storyScene.prop = { k: PORTAL_PROP, x: at[0], z: at[1], open: walkView.t };
+    (sc.props || (sc.props = [])).push(storyScene.prop);
+    walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
+  }
+  storyScene.layer = (/** @type {any[]} */ items, /** @type {any[]} */ parts, /** @type {any[]} */ lights, now) => {
+    const k = clamp((now - t0) / 900, 0, 1),
+      h = (PORTAL_SIZE / 2) * (0.15 + 0.85 * k),
+      y = standingHeightAt(at[0], at[1]) + 0.04;
+    lights.push({ p: [at[0], y + 0.4, at[1]], r: 2.2 + 2 * k, c: [1.1 * k + 0.3, 1.2 * k + 0.3, 1.4 * k + 0.4] });
+    if (storyScene.prop || !spark || spark.width <= 1) return;
+    /* the stand-in: the square's edge, a line of light on the ground */
+    for (let i = 0; i < 24; i++) {
+      const e = i % 4,
+        f = (Math.floor(i / 4) + 0.5) / 6 - 0.5,
+        u = e < 2 ? f * 2 * h : (e === 2 ? -1 : 1) * h,
+        v = e < 2 ? (e === 0 ? -1 : 1) * h : f * 2 * h;
+      parts.push({ im: spark, x: at[0] + u, y, z: at[1] + v, w: 0.2, h: 0.2, a: 0.6 + 0.4 * k, glow: true });
+    }
+  };
+  cutscene.layers.push(storyScene.layer);
+  await cutsceneWait(1000);
+  /* you drop through */
+  if (cutscene.actors.me) cutscene.actors.me.hidden = true;
+  if (typeof soundEffect === 'function') soundEffect('whoosh', { dur: 2.4 });
+  veil();
+  await storyWait(450);
+}
+function storyPortalEnd() {
+  if (storyScene.layer) cutscene.layers = cutscene.layers.filter(f => f !== storyScene.layer);
+  storyScene.layer = null;
+  const sc = walkView.sc,
+    P = storyScene.prop;
+  if (P && sc && sc.props) {
+    sc.props = sc.props.filter(p => p !== P);
+    walkRenderer.itemGen = (walkRenderer.itemGen || 0) + 1;
+  }
+  storyScene.prop = null;
 }
 /* the game's stage for the runner */
 const storyGameStage = {
@@ -297,15 +397,18 @@ const storyGameStage = {
     if (shot === 'run-up') return storyRunUp();
     if (typeof debugLog !== 'undefined') debugLog.add('story', `camera ${shot}: no such shot`);
   },
-  /* walk <who> beside me: the one who ran up comes over to stand beside you */
+  /* walk <who> beside me: the one who ran up comes over to stand beside you; IN-4: a second one too (the pickup's
+     other clerk), on your other side */
   walk: async ([name, ...where]) => {
     const who = storySpeaker(name);
-    if (!storySceneOn() || !cutscene.actors[who]) return;
     if (where.join(' ') !== 'beside me') throw new Error(`walk ${name} ${where.join(' ')}: only "beside me" for now`);
+    if (!storySceneOn()) return;
+    const to = storyBeside(who);
+    if (!cutscene.actors[who]) return;
     talkHide();
     const P = walkView.pl,
-      to = /** @type {number[]} */ (storyScene.to),
-      m = [(P.x + to[0]) / 2, (P.z + to[1]) / 2],
+      /* the second to come over: the shot centres on you, between the two */
+      m = Object.keys(storyScene.by).length > 1 ? [P.x, P.z] : [(P.x + to[0]) / 2, (P.z + to[1]) / 2],
       gy = standingHeightAt(m[0], m[1]);
     cutscene.actors[who].hidden = false;
     cutsceneShot({ eye: [m[0], gy + 2.3, m[1] - 5.2], tgt: [m[0], gy + 1.05, m[1] + 0.4], fov: 38, w: 4 }, 1600);
@@ -316,7 +419,9 @@ const storyGameStage = {
     const who = storySpeaker(name),
       A = cutscene.actors[who];
     if (!storySceneOn() || !A) return;
-    const toMe = storyScene.side > 0 ? 'side' : 'sideR';
+    /* IN-4: the second one beside you stands on your other side */
+    const other = !!storyScene.by[who] && storyScene.by[who] === storyScene.to2,
+      toMe = storyScene.side > 0 !== other ? 'side' : 'sideR';
     if (dir === 'me') {
       faceWord(A, toMe);
       if (cutscene.actors.me) faceWord(cutscene.actors.me, toMe === 'side' ? 'sideR' : 'side');
@@ -329,10 +434,14 @@ const storyGameStage = {
   /* skipping (hold the box): the scene's camera work and walks are passed over; a walk lands where it was going */
   skipTo: (cmd, args) => {
     if (cmd === 'walk' && storySceneOn() && storyScene.to) {
-      const A = cutscene.actors[storySpeaker(args[0])];
-      if (A) [A.x, A.z, A.hidden] = [storyScene.to[0], storyScene.to[1], false];
+      const who = storySpeaker(args[0]),
+        to = storyBeside(who),
+        A = cutscene.actors[who];
+      if (A && to) [A.x, A.z, A.hidden] = [to[0], to[1], false];
     }
   },
+  /* IN-4: the Bureau's square portal under you (the pickup after the first run); it plays when skipping too */
+  portal: () => storyPortal(),
 };
 /* line: the id of the line on screen (tools/story-ids.mjs), for the debug log */
 export const storyRun = { on: false, id: null, speaker: null, line: null, base: null, path: null, control: null };

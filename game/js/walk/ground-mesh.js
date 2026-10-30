@@ -304,7 +304,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       I.push(ids[0], ids[2], ids[1], ids[1], ids[2], ids[3]);
     }
   }
-  /* walls */
+  /* walls (FL-5a: one index range of their own, mesh.walls) */
+  const wall0 = I.length;
   /* a wall between two cells, from the lower to the higher corner at each end (they differ where a ramp meets a cliff) */
   const wall = (ax, az, bx, bz, ca, cb, la, ha, lb, hb, nrm, mat, IA, JA, IB, JB, hl, hh) => {
     const dl0 = disp(IA, JA, hl),
@@ -412,6 +413,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       }
     }
   }
+  const wall1 = I.length;
   /* the distant land around the scene, coarser */
   const R = 2,
     fx0 = -70,
@@ -458,6 +460,8 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
     36,
     'ground'
   );
+  /* FL-5a: the walls' indices [first, end): the floors before them and the far land after them never thin out */
+  if (T.mesh) T.mesh.walls = [wall0, wall1];
   /* v23: a gorge or valley floor well below where you walk gathers mist (Engine: Air, Mist in low ground) */
   T.valley = null;
   if (E && !sc.indoor) {

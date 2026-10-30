@@ -44,7 +44,9 @@
   "Nacre": "nacre",
   "Cass": "cass",
   "Vinylla": "vinylla",
-  "You": "me"
+  "You": "me",
+  "Intake": "bureau_clerk_a",
+  "Outtake": "bureau_clerk_b"
  },
  "scripts": {
   "chapter1-end": {
@@ -65,7 +67,7 @@
     "  pick back_lost",
     "else",
     "  set firstLoss",
-    "  [happy] Chosen: There you are! Face-down by the mast.[p] You’re welcome. #l:4571",
+    "  [happy] Chosen: There you are! Face-down on the platform.[p] You’re welcome. #l:4571",
     "  Chosen: I sensed you were in danger and pulled you back. Professor powers. Don’t ask how.[p] I don’t know either. #l:bd04",
     "  Kappi: He was [i]asleep[/i] in the lab when you landed. #l:d779",
     "  Kappi: You came through a little hole in the sky over the dock. Like the first time, only smaller. #l:b000",
@@ -118,6 +120,37 @@
     "[happy] Blake: About what it’s worth to listen to it.[p] Turns out that was the point. #l:d97e",
     "And you. You were the sound engineer on her tour. You read the plans, and Cass made sure you fell. #l:ac5c",
     "[happy] Welcome back. The sun is still up. It will be up tomorrow too. #l:299a"
+   ]
+  },
+  "pickup-lost": {
+   "about": "IN-4: the first run lost: two Bureau clerks run up where it ended, stamp you and drop you through their square portal (run.js runPickup; then the fall and the lab: cutscene/return-scene.js)",
+   "who": "bureau_clerk_a",
+   "script": [
+    "camera run-up",
+    "walk Intake beside me",
+    "walk Outtake beside me",
+    "face Intake me",
+    "Intake: Don’t get up. You’re [i]exactly[/i] where the form says you’d be. #l:ad1f",
+    "Outtake: One person, unregistered. Fell off a train. No ticket.[p] Also lost a fight. #l:5af2",
+    "Intake: Several fights. It’s all on the form. We have a form for that. #l:ca6b",
+    "Outtake: Sender, unclear. Address, unclear. So it goes back to the default address. #l:65eb",
+    "[shout] Intake: Returned to sender.[stamp=returned] #l:b5f8",
+    "portal"
+   ]
+  },
+  "pickup-won": {
+   "about": "IN-4: the first run won: two Bureau clerks run up where it ended, stamp you and drop you through their square portal (run.js runPickup; then the fall and the lab: cutscene/return-scene.js)",
+   "who": "bureau_clerk_a",
+   "script": [
+    "camera run-up",
+    "walk Intake beside me",
+    "walk Outtake beside me",
+    "face Intake me",
+    "Intake: Hold still. You beat our retrieval scout.[p] That scout was [i]on loan[/i]. #l:ad5e",
+    "Outtake: One person, unregistered. One scout, dented. Both found at the scene. #l:66e8",
+    "Intake: Good work, technically. We don’t do good work here. We do [b]paperwork[/b]. #l:c180",
+    "[shout] Intake: Recovered property.[stamp=recovered] #l:ec95",
+    "portal"
    ]
   }
  },

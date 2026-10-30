@@ -48,11 +48,36 @@ before the owner has played the first cut on the phone.** MG-3 (towns from the g
 town node needs it.
 
 ## Tracks alongside
+- **Buildings track** (docs/phases/buildings-track.md, the owner's brief and answers 2026-10-29): Copperleaf's 15
+  building kinds redone in a cozy, storybook retro-futurism (copper, cream, verdigris, terracotta; Googie on the civic
+  buildings; neon only at night), new surfaces with a normal sheet, and a modular house kit so no two houses look
+  alike, with a little more Pokémon Black and White (the high 3/4 view, thick eaves, bold roofs on white walls, brick
+  townhouses); footprints may change; run towns keep today's houses for now. BD-0 (the plan, research, audits and a
+  suggestion page; docs only) done 2026-10-29 on `ccr-d224d90d-qlnty6`; the owner's answers: more nature, more
+  retro-futurism, normal maps on above Low, pixel-font signs, 6,000 triangles a house, sessions chained and run side by
+  side without waiting for approval (BD-3's look pick waits for the owner). Wave 1 started 2026-10-29; BD-1 (new recipe shapes: rot/tilt, prism, lathe, box taper/lean/bevel, warp, glow; showcase `test_shapes`) done 2026-10-30; BD-F (the window check fix) done 2026-10-29 on `claude/bd-f-window-check`; BD-2a (surfaces painted: the sheet 8x4, a height map) done 2026-10-30 on `claude/bd-2a-surfaces`. Wave 2: BD-2b (normal maps: the normal sheet in the buildings' and models' shader, on except with graphics Off) done 2026-10-30; Wave 3: BD-3 (look sketches: three directions A gentle, B storybook, C strong on one house and the shop; test map `test_look_sketches`) built 2026-10-30; the owner's pick "B base + C showpieces" (2026-10-30). Wave 4: BD-4a (the house kit: tools/build-house-kit.py, 24 houses of kind `house_kit` from 9 bodies, 10 roofs and 18 add-ons, 9 palettes, look B's lean 3.5-4.5 degrees, two C showpieces; test map `test_house_kit`; not placed yet) done 2026-10-30; BD-5 civic and BD-6 landmarks beside it. Five waves: BD-1 new recipe shapes
+  beside BD-2a surfaces painted and BD-F the window check fix; BD-2b normal maps; BD-3 look sketches; BD-4a the house
+  kit beside BD-5 civic and BD-6 landmarks; BD-7 the town re-laid (with BD-4b), then BD-8 the phone pass. Branch
+  `track/buildings`.
+- **Fluid track** (docs/phases/fluid-track.md, the owner's brief and answers 2026-10-29): the frame rate you set held
+  (a steady half rate when it can't be), assets batched under the 400-draw budget, the draw order the phone's GPU
+  wants (no `discard` in opaque shaders, sky last), and a fluid UI (the world frozen behind menus, no live blur over
+  the moving 3D on phones). FL-0 (the plan, research and verification; docs only) done 2026-10-29 on
+  `ccr-36d73c36-2xv56p`. Next: FL-0b (the owner's phone run), then FL-1a..FL-7, about 11-12 sessions; it takes over
+  phase 20's remaining switches (Pictures in batches and Sky last on in FL-2a, the owner's answer). Tag `fluid-done`.
+  Branch `track/fluid`.
+- **Assets track** (docs/phases/assets-track.md, the owner's brief and answers 2026-10-29): every asset raised: props
+  that look made, painted blob trees and many species, a regenerated Copperleaf and routes that feel like countryside,
+  a train halt instead of the airship mast at every run's start, the sky train's ride fixed (windows that flickered,
+  jet fire), steady light and subtle air after the Godot port's tuning. AS-0 (the plan, research and audits,
+  `logic/scatter.js` and the biomes' `flora` layers) done 2026-10-29 on `track/assets`. Wave 1 runs at once: AS-1 the
+  ride (done 2026-10-29: steady windows, plume jet fire, decals that tip), AS-2 the halt, AS-3 vegetation, AS-4 props, AS-5 Copperleaf v5, AS-6 routes, AS-7 light; then AS-8 together
+  and AS-9 the owner's phone play. Branch `track/assets`.
 - **Test data track** (docs/phases/test-data-track.md, the owner's brief and answers 2026-10-29): tests and logs
   that give Claude useful bug and speed data on every device. TD-0 (the plan, research and audits; docs only) done
   2026-10-29 on `ccr-b95ade74-f8w3vy`. TD-1 quick fixes (the log reader, a crash marker that survives a reload,
-  loading apart from play, the light lab's refused draw), TD-2 the graphics test walks a benchmark path (water, behind
-  things, grass, lamps, fog, rain, rooms; quality pinned; 300 MB budget; resumes after a reload), TD-3 the same path
+  loading apart from play, the light lab's refused draw) done 2026-10-29 on `track/test-data`. TD-2 the graphics test walks a benchmark path (water, behind
+  things, grass, lamps, fog, rain, rooms; quality pinned; 300 MB budget; resumes after a reload) done 2026-10-29. TD-3 the same path
   headless with blocking gates (draws, memory +10%, late compiles), TD-4 a richer log and log comparison, TD-5 the
   test suite tidy-up. TD-2 and TD-3 can run at once. Tags `td-N-done`, then `test-data-done`. Branch `track/test-data`.
 - **Clean-up track** (docs/phases/cleanup-track.md, the owner's brief and answers 2026-10-28): main tidied and laid out
@@ -507,7 +532,7 @@ No `phase-NN-done` tag was ever pushed; "done" means the HANDOFF entry says the 
 | 17 | 17-robots | prototype built, unapproved, untagged, debug-only | absorbed: RL-14 (bots as enemies, the Voltron); playable bots much later |
 | 18 | archive/18-friend-trading-and-battles | not started | absorbed: the online track (docs/phases/online-track.md, 2026-10-26): ON-4 friend trades, ON-6 live friend battles |
 | 19 | 19-battle-core (branch `plan/engine-phases-19-21`) | plan only | absorbed: RL-2, RL-4 (core), RL-12 (effect handlers), RL-15 (replay) |
-| 20 | 20-renderer-batching (branch `track/renderer`) | A-C, H and rounds R1-R3 done; R4 defaults lane done (2026-10-26): models, shadows, rain, phone lamps and battle rigs on their batched paths only, three losing paths deleted; D2 built (2026-10-27): the bloom, rays and grade in `mediump` behind `quality.mediump` (off); left: Medium precision, Sky last, Pictures in batches, Steady lamps, the phone pixel budget (owner's checks), then `phase-20-done` | active: R4, the owner's checks |
+| 20 | 20-renderer-batching (branch `track/renderer`) | Remaining switches decided in the fluid track (FL-2a, FL-7; docs/phases/fluid-track.md). A-C, H and rounds R1-R3 done; R4 defaults lane done (2026-10-26): models, shadows, rain, phone lamps and battle rigs on their batched paths only, three losing paths deleted; D2 built (2026-10-27): the bloom, rays and grade in `mediump` behind `quality.mediump` (off); left: Medium precision, Sky last, Pictures in batches, Steady lamps, the phone pixel budget (owner's checks), then `phase-20-done` | active: R4, the owner's checks |
 | 21 | 21-texture-atlases-and-ktx2 (branch `plan/engine-phases-19-21`) | plan only | parked: after phase 20 |
 
 ## Questions I want to be asked (do not decide these alone)

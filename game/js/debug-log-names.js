@@ -7,6 +7,7 @@ import { styleLog } from './theme-sheet.js';
 import { ranchSkew } from './logic/ranch-clock.js';
 import { fxSetsOn, fxStateLog } from './logic/effects.js';
 import { battleStageKey, newBattle, setNewBattle } from './logic/battle-engine.js';
+import { paceSlot } from './logic/frame-pace.js';
 import { mapFiles } from './map-files.js';
 import { activeBattle, save, saveData, saveHeld, setSave, uiState } from './game-state.js';
 import { gpuCountSummary, gpuCounters } from './engine/gpu-counters.js';
@@ -93,7 +94,7 @@ import { drawPropModels, setDrawPropModels } from './prop-models.js';
 import { ambientLife, lifeStep, setLifeStep } from './ambient-life.js';
 import { worldBillies } from './world-billies.js';
 import { seamlessWorld } from './seamless-world.js';
-import { paintWorkerReport } from './ground-paint-worker.js';
+import { paintWorkerReport, paintWorkerState } from './ground-paint-worker.js';
 import { endBattle, openBattle, paintActions, setEndBattle, setOpenBattle, setPaintActions } from './battle.js';
 import { setWorldBowlRender, setWorldMapMount, worldBowlRender, worldMapMount } from './world-bowl.js';
 import { openShop, setOpenShop } from './shop.js';
@@ -171,8 +172,10 @@ Object.defineProperties(GAME, {
   openBattle: { get: () => openBattle, set: setOpenBattle },
   openDressingRoom: { get: () => openDressingRoom, set: setOpenDressingRoom },
   openShop: { get: () => openShop, set: setOpenShop },
+  paceSlot: { get: () => paceSlot },
   paintActions: { get: () => paintActions, set: setPaintActions },
   paintWorkerReport: { get: () => paintWorkerReport },
+  paintWorkerState: { get: () => paintWorkerState },
   peopleReport: { get: () => peopleReport },
   personBattleFrames: { get: () => personBattleFrames, set: setPersonBattleFrames },
   prepareMap: { get: () => prepareMap, set: setPrepareMap },

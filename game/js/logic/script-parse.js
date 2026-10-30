@@ -96,7 +96,7 @@ export const SCRIPT_COMMANDS = {
   act: {
     args: ['who', 'pose', 's?'],
     group: 'cutscene',
-    about: 'a pose for a while: throw, cheer, react, reach (doesn’t wait)',
+    about: 'a pose for a while: throw, cheer, react, reach, stamp (doesn’t wait)',
   },
   caption: {
     args: ['s', '...'],
@@ -241,6 +241,18 @@ export const SCRIPT_COMMANDS = {
   },
   'rival-battle': { args: [], group: 'opening', about: 'Blake’s battle starts when the opening ends' },
   fall: { args: [], group: 'opening', checkpoint: true, about: 'the fall through the crust' },
+  /* IN-4, the way back: the lab scene's own (cutscenes/return.json, cutscene/return-scene.js) */
+  payout: {
+    args: [],
+    group: 'opening',
+    checkpoint: true,
+    about: 'the lab scene: Kappi tallies what the first run brought back, on the payout sheet (skipping stops here)',
+  },
+  /* IN-4: the Bureau's pickup after the first run (story.json pickup-won, pickup-lost; story-stage.js) */
+  portal: {
+    args: [],
+    about: 'the Bureau’s square portal opens under you and you drop through it (the pickup, after camera run-up)',
+  },
 };
 /** the keywords, with how each is written and what it does, for the Studio's reference (S3) */
 export const KEYWORD_ABOUT = {

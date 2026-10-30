@@ -165,3 +165,21 @@
   font-size: 13px;
   color: var(--text2);
 }
+/* TD-2: the Graphics test's groups to walk, each with its time */
+.nb-picks {
+  display: grid;
+  gap: var(--s1);
+  margin: var(--s2) 0;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+.nb-pick {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  font-size: 14px;
+}
+.nb-pick small {
+  color: var(--text2);
+  font-size: 12px;
+}

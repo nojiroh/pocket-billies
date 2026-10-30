@@ -11,6 +11,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide, selfTest } from './hooks.js';
+import { everyFree } from './free-tick.js';
 import { RULES, TRAINERS } from './game-data.js';
 import { ARENA_FENCE_IN, arenaOct } from './logic/arena-gen.js';
 import { routeInSight } from './logic/route-trainers.js';
@@ -167,7 +168,7 @@ async function routeSpotted(id) {
     routeSight.busy = '';
   }
 }
-setInterval(() => {
+everyFree(() => {
   try {
     routeSightCheck();
   } catch (e) {

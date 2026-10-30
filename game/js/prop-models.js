@@ -11,8 +11,22 @@
 import { expose } from './test-globals.js';
 import { gameData, provide, reducedMotion } from './hooks.js';
 import { decalPlace, propTurn } from './logic/prop-turn.js';
+import {
+  earClip,
+  glowCode,
+  layerTurn,
+  profileArea,
+  profileNormals,
+  profilePoints,
+  warpFrame,
+  warpNormal,
+  warpOn,
+  warpPoint,
+} from './logic/model-shapes.js';
+import { joinMeshes, spinGroups } from './logic/spin-merge.js';
 import { leafCutKey, leafCutPixels, leafOutlineColour } from './logic/pixel-facts.js';
 import { gpuTag } from './engine/gpu-counters.js';
+import { solidFragment } from './engine/shader-precision.js';
 import { artImg, artURL, hexToRgb, makeCanvas } from './art.js';
 import { artImage, walkView } from './walk-view.js';
 import { engineSetting } from './engine/settings.js';
@@ -39,22 +53,26 @@ import {
 } from './engine/model-instances.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { ROCK_GLSL } from './walk/walk-shaders.js';
-import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
+import { rockCircleOn, useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
 import { frameBudgetLeft } from './walk/quality-cull.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
 import { lampLit, modelWindowLight } from './walk/lighting.js';
-import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
+import { BUILDING_SHADERS, bindBuildingNormals, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
   GLASS_GLSL: [() => GLASS_GLSL],
+  GLOW_RGB_GLSL: [() => GLOW_RGB_GLSL],
   INSTANCE_IN_GLSL: [() => INSTANCE_IN_GLSL],
   INSTANCE_PLACE_GLSL: [() => INSTANCE_PLACE_GLSL],
   LAYER_PROPS: [() => LAYER_PROPS],
   LEAF_CUTS: [() => LEAF_CUTS],
+  LEAF_ITEMS: [() => LEAF_ITEMS],
+  LEAF_ITEM_CLEAR: [() => LEAF_ITEM_CLEAR],
   LOW_POLY_TEXTURE_CELLS: [() => LOW_POLY_TEXTURE_CELLS],
   MDL_ATTRIBS: [() => MDL_ATTRIBS],
   MDL_FLAT: [() => MDL_FLAT],
+  MDL_SOLID_EDITS: [() => MDL_SOLID_EDITS],
   MODEL_INSTANCES: [() => MODEL_INSTANCES],
   MODEL_SHADOW_INSTANCES: [() => MODEL_SHADOW_INSTANCES],
   MODEL_SHADOW_SHADERS: [() => MODEL_SHADOW_SHADERS],
@@ -74,6 +92,7 @@ expose({
   VOXEL_TEXTURE_GRAIN: [() => VOXEL_TEXTURE_GRAIN],
   VOX_ATTRIBS: [() => VOX_ATTRIBS],
   VOX_FLAT: [() => VOX_FLAT],
+  VOX_SOLID_EDITS: [() => VOX_SOLID_EDITS],
   addRawVoxels: [() => addRawVoxels, v => (addRawVoxels = v)],
   asFlatInputs: [() => asFlatInputs, v => (asFlatInputs = v)],
   bindOwnTexture: [() => bindOwnTexture, v => (bindOwnTexture = v)],
@@ -100,6 +119,7 @@ expose({
   invalidatePropModel: [() => invalidatePropModel, v => (invalidatePropModel = v)],
   layerProp: [() => layerProp, v => (layerProp = v)],
   leafCut: [() => leafCut, v => (leafCut = v)],
+  leafItem: [() => leafItem, v => (leafItem = v)],
   limbPoints: [() => limbPoints, v => (limbPoints = v)],
   loadPropModelRecipe: [() => loadPropModelRecipe, v => (loadPropModelRecipe = v)],
   lowPolyFragmentShader: [() => lowPolyFragmentShader, v => (lowPolyFragmentShader = v)],
@@ -110,13 +130,20 @@ expose({
   meshAttribs: [() => meshAttribs, v => (meshAttribs = v)],
   modelShadowInstancesReady: [() => modelShadowInstancesReady, v => (modelShadowInstancesReady = v)],
   modelShadowState: [() => modelShadowState],
-  mooredBob: [() => mooredBob, v => (mooredBob = v)],
+  modelSolidDefs: [() => modelSolidDefs, v => (modelSolidDefs = v)],
+  modelSolidItem: [() => modelSolidItem, v => (modelSolidItem = v)],
+  modelsNearestFirst: [() => modelsNearestFirst, v => (modelsNearestFirst = v)],
+  mooredBob: [() => mooredBob, v => ((mooredBob = v), provide({ mooredBob }))],
   propModelArtPaths: [() => propModelArtPaths, v => ((propModelArtPaths = v), provide({ propModelArtPaths }))],
   propModelGuard: [() => propModelGuard, v => (propModelGuard = v)],
   propModelImageItems: [() => propModelImageItems, v => ((propModelImageItems = v), provide({ propModelImageItems }))],
   propModelInstanceValues: [() => propModelInstanceValues, v => (propModelInstanceValues = v)],
   propModelMesh: [() => propModelMesh, v => ((propModelMesh = v), provide({ propModelMesh }))],
   propModelShaders: [() => propModelShaders, v => ((propModelShaders = v), provide({ propModelShaders }))],
+  propModelSolidShaders: [
+    () => propModelSolidShaders,
+    v => ((propModelSolidShaders = v), provide({ propModelSolidShaders })),
+  ],
   propModelState: [() => propModelState],
   propModelsOn: [() => propModelsOn, v => (propModelsOn = v)],
   setItemSmear: [() => setItemSmear, v => (setItemSmear = v)],
@@ -140,10 +167,12 @@ provide({
   drawPropModelShadows,
   drawPropModels,
   flushPropModelMeshes,
+  mooredBob,
   propModelArtPaths,
   propModelImageItems,
   propModelMesh,
   propModelShaders,
+  propModelSolidShaders,
   tagPropModel,
 });
 export function setDrawPropModels(v) {
@@ -224,6 +253,9 @@ const PROP_MODEL_SHAPES = [
   ['barrel', 'Barrel'],
   ['limb', 'Limb (from x, y, z to x2, y2, z2)'],
   ['dome', 'Dome'],
+  /* BD-1 */
+  ['prism', 'Prism (a profile drawn out)'],
+  ['lathe', 'Lathe (a profile turned round)'],
 ];
 export function propModelsOn() {
   return typeof engineSetting === 'function' && (engineSetting('world', 'voxelProps') ?? true) && !propModelState.fail;
@@ -717,8 +749,9 @@ const VOX_ATTRIBS = {
       [0, 3, 'SHORT', false, 0],
       [1, 3, 'BYTE', true, 8],
       [2, 2, 'SHORT', false, 12],
-      [3, 3, 'UNSIGNED_BYTE', false, 16],
-      [4, 3, 'UNSIGNED_BYTE', true, 20],
+      /* BD-1: four each, the glow colour's two bytes in the fourths (19 and 23) */
+      [3, 4, 'UNSIGNED_BYTE', false, 16],
+      [4, 4, 'UNSIGNED_BYTE', true, 20],
     ],
   };
 /* a mesh's own attributes, into the vertex array and the buffer bound now */
@@ -750,30 +783,24 @@ function propModelMesh(path, rec) {
           box: M.box,
           spins: [],
           wins: M.wins.length ? M.wins : null,
+          glow: M.glow,
         }
       : null;
+    /* FL-2b: the layers that turn together (logic/spin-merge.js) in one mesh, one draw: each layer built on its own
+       as before, laid end to end */
     if (m)
-      for (const l of L)
-        if (l.spin && !l.hide) {
-          const S = lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }] }),
-            ax = l.spin.axis,
-            a = Array.isArray(ax)
-              ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
-              : ax === 'y'
-                ? [0, 0, 1]
-                : ax === 'z'
-                  ? [0, 1, 0]
-                  : [1, 0, 0],
-            al = Math.hypot(a[0], a[1], a[2]) || 1;
-          if (S)
-            m.spins.push({
-              ...uploadLowPolyMesh(S.vb, S.ib),
-              c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
-              a: a.map(v => v / al),
-              rps: l.spin.rps ?? 1.5,
-              sw: +l.spin.swing || 0,
-            });
-        }
+      for (const g of spinGroups(L)) {
+        /* BD-1: under a warp a turning part moves with the point it turns about (it is not bent itself); a group's
+           layers share that point */
+        const c0 = g.spin.c,
+          c1 = M.warpFrame && warpOn(rec.warp) ? warpPoint(rec.warp, M.warpFrame, c0) : c0,
+          mv = [c1[0] - c0[0], c1[1] - c0[1], c1[2] - c0[2]],
+          S = joinMeshes(
+            g.layers.map(l => lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }], move: mv })),
+            MDL_ATTRIBS.stride
+          );
+        if (S) m.spins.push({ ...uploadLowPolyMesh(S.vb, S.ib), ...g.spin, c: c1, n: S.n });
+      }
     propModelState.meshes.set(path, m);
     return m;
   }
@@ -800,28 +827,15 @@ function propModelMesh(path, rec) {
     return { vao, n: D.n, el: 1, u32: D.ib instanceof Uint32Array, quads: D.quads, bufs: [vb, eb] };
   };
   m = { ...up(M), box: M.box, q: 1 / R, res: R, spins: [] };
-  /* alpha 0.4: parts that turn (the airships' propellers): a layer with spin {x, y, z: its pivot in metres; axis: 'x' across, 'y' depth, 'z' up, or [x, y, z] any way at all; rps: turns a second} */
-  for (const l of L)
-    if (l.spin && !l.hide) {
-      const S = greedyVoxelMesh(voxelise({ vpm: rec.vpm, layers: [{ ...l, spin: undefined }] }, R), R),
-        ax = l.spin.axis,
-        a = Array.isArray(ax)
-          ? [ax[0] || 0, ax[2] || 0, ax[1] || 0]
-          : ax === 'y'
-            ? [0, 0, 1]
-            : ax === 'z'
-              ? [0, 1, 0]
-              : [1, 0, 0],
-        al = Math.hypot(a[0], a[1], a[2]) || 1;
-      if (S)
-        m.spins.push({
-          ...up(S),
-          c: [l.spin.x || 0, l.spin.z || 0, l.spin.y || 0],
-          a: a.map(v => v / al),
-          rps: l.spin.rps ?? 1.5,
-          sw: +l.spin.swing || 0,
-        });
-    }
+  /* alpha 0.4: parts that turn (the airships' propellers): a layer with spin {x, y, z: its pivot in metres; axis: 'x' across, 'y' depth, 'z' up, or [x, y, z] any way at all; rps: turns a second}.
+     FL-2b: the layers that turn together in one mesh (logic/spin-merge.js), each voxelised on its own as before */
+  for (const g of spinGroups(L)) {
+    const S = joinMeshes(
+      g.layers.map(l => greedyVoxelMesh(voxelise({ vpm: rec.vpm, layers: [{ ...l, spin: undefined }] }, R), R)),
+      VOX_ATTRIBS.stride
+    );
+    if (S) m.spins.push({ ...up({ vb: S.vb, ib: S.ib, n: S.n, quads: S.verts / 4 }), ...g.spin });
+  }
   propModelState.meshes.set(path, m);
   return m;
 }
@@ -959,6 +973,15 @@ const LOW_POLY_TEXTURE_CELLS = {
   shingles: 9,
   slate: 10,
   solar: 17,
+  /* Buildings track BD-2a: the sheet's fourth row (tools/build-surfaces.py) */
+  fishscale: 24,
+  standingseam: 25,
+  barreltile: 26,
+  cob: 27,
+  halftimber: 28,
+  riveted: 29,
+  glassblock: 30,
+  mosaic: 31,
 };
 export function lowPolyFromRecipe(rec) {
   const V = [],
@@ -966,28 +989,237 @@ export function lowPolyFromRecipe(rec) {
   let nv = 0;
   const T = (t, round) => (t === 'stone' && round ? 0 : (LOW_POLY_TEXTURE_CELLS[t || 'plain'] ?? 15));
   /* a window's glass (a layer's glass number, 1-31): its vertices carry the number, and each window its bounds */
-  let gw = 0;
+  let gw = 0,
+    /* BD-1: a glowing layer's code (logic/model-shapes.js glowCode): its flag and its colour's two bytes */
+    gc = null;
   const GB = {};
   const vert = (p, n, uv, tex, c) => {
-      V.push(p, n, uv, tex, c, gw);
-      if (gw) {
-        const b = GB[gw] || (GB[gw] = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]);
-        for (let q = 0; q < 3; q++) {
-          b[q] = Math.min(b[q], p[q]);
-          b[q + 3] = Math.max(b[q + 3], p[q]);
-        }
-      }
+      V.push(p, n, uv, tex, c, gw, gc);
       return nv++;
     },
     poly = (P, N, UV, tex, c) => {
       const k = P.map((p, j) => vert(p, Array.isArray(N[0]) ? N[j] : N, UV[j], tex, c));
       for (let j = 1; j < k.length - 1; j++) I.push(k[0], k[j], k[j + 1]);
     };
+  /* BD-1: a face's texture coordinates in world metres by which way it looks (as a box's: a side across and up, a top
+     across and depth; wood up a tall post runs up) */
+  const planarUV = (p, n, up) => {
+    const ax = Math.abs(n[0]),
+      ay = Math.abs(n[1]),
+      az = Math.abs(n[2]),
+      uv = ay >= ax && ay >= az ? [p[0], p[2]] : ax >= az ? [p[2], p[1]] : [p[0], p[1]];
+    return up && ay < Math.max(ax, az) ? [uv[1], uv[0]] : uv;
+  };
+  /* a flat face's normal from its corners (by its diagonals), turned to face away from a point inside */
+  const faceNormal = (Q, mid) => {
+    const e1 = [Q[2][0] - Q[0][0], Q[2][1] - Q[0][1], Q[2][2] - Q[0][2]],
+      e2 = [Q[3 % Q.length][0] - Q[1][0], Q[3 % Q.length][1] - Q[1][1], Q[3 % Q.length][2] - Q[1][2]],
+      n = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]],
+      m = [0, 1, 2].map(k => Q.reduce((a, q) => a + q[k], 0) / Q.length - mid[k]);
+    return n[0] * m[0] + n[1] * m[1] + n[2] * m[2] < 0 ? [-n[0], -n[1], -n[2]] : n;
+  };
+  /* BD-1: a box as rings bottom to top: its outline at each height (narrowed toward taper, moved toward lean, its
+     corners cut by bevel), flat sides between them, a flat top (and a bottom when it stands off the ground) */
+  const boxRings = (L, ya, yb, tx, up, c) => {
+    const w = L.w,
+      d = L.d,
+      h = yb - ya,
+      tp = Array.isArray(L.taper) ? L.taper : null,
+      tw = tp ? Math.max(0, +tp[0] || 0) : w,
+      td = tp ? Math.max(0, +tp[1] || 0) : d,
+      ln = Array.isArray(L.lean) ? [+L.lean[0] || 0, +L.lean[1] || 0] : [0, 0],
+      b = Math.max(
+        0,
+        Math.min(+L.bevel || 0, 0.45 * Math.min(w, d, h), tp ? 0.45 * Math.max(Math.min(tw, td), 0) : 1e9)
+      ),
+      cx = L.x || 0,
+      cz = L.y || 0,
+      ring = (k, inset, y) => {
+        const hx = Math.max(0, (w + (tw - w) * k) / 2 - inset),
+          hz = Math.max(0, (d + (td - d) * k) / 2 - inset),
+          ox = cx + ln[0] * k,
+          oz = cz + ln[1] * k,
+          e = Math.min(b, hx, hz);
+        return (
+          e > 0
+            ? [
+                [ox - hx + e, oz - hz],
+                [ox + hx - e, oz - hz],
+                [ox + hx, oz - hz + e],
+                [ox + hx, oz + hz - e],
+                [ox + hx - e, oz + hz],
+                [ox - hx + e, oz + hz],
+                [ox - hx, oz + hz - e],
+                [ox - hx, oz - hz + e],
+              ]
+            : [
+                [ox - hx, oz - hz],
+                [ox + hx, oz - hz],
+                [ox + hx, oz + hz],
+                [ox - hx, oz + hz],
+              ]
+        ).map(q => [q[0], y, q[1]]);
+      },
+      RS = b > 0 ? [ring(0, 0, ya), ring((h - b) / h, 0, yb - b), ring(1, b, yb)] : [ring(0, 0, ya), ring(1, 0, yb)];
+    for (let r = 0; r < RS.length - 1; r++) {
+      const A = RS[r],
+        B = RS[r + 1],
+        n = A.length,
+        k = (r + 0.5) / (RS.length - 1),
+        mid = [cx + ln[0] * k, (A[0][1] + B[0][1]) / 2, cz + ln[1] * k];
+      for (let j = 0; j < n; j++) {
+        const Q = [A[j], A[(j + 1) % n], B[(j + 1) % n], B[j]],
+          N = faceNormal(Q, mid);
+        if (Math.hypot(N[0], N[1], N[2]) < 1e-12) continue;
+        poly(
+          Q,
+          N,
+          Q.map(q => planarUV(q, N, up)),
+          tx,
+          c
+        );
+      }
+    }
+    const top = RS[RS.length - 1];
+    poly(
+      top.slice().reverse(),
+      [0, 1, 0],
+      top
+        .slice()
+        .reverse()
+        .map(q => [q[0], q[2]]),
+      tx,
+      c
+    );
+    if (ya > 0.01)
+      poly(
+        RS[0],
+        [0, -1, 0],
+        RS[0].map(q => [q[0], q[2]]),
+        tx,
+        c
+      );
+  };
+  /* BD-1: a prism: a 2D profile (pts [[across, up], ...] from the layer's x and z, in the front plane) drawn out d
+     deep about the layer's y; bend lifts its two ends by that many metres (a swoop along its length; segs steps).
+     Sides shade flat at corners and round where the profile turns gently (under 25 degrees; smooth: every joint) */
+  const prismShape = (L, x0, y0, z0, tx, c) => {
+    let P = profilePoints(L.pts, true);
+    if (P.length < 3) return;
+    if (profileArea(P) < 0) P = P.reverse();
+    const d = Math.max(0.01, +L.d || 1),
+      bend = +L.bend || 0,
+      segs = bend ? Math.max(1, Math.min(16, L.segs | 0 || 6)) : 1,
+      lift = t => bend * ((2 * t) / d) ** 2,
+      slope = t => (bend * 8 * t) / (d * d),
+      NE = profileNormals(P, true, (25 * Math.PI) / 180, !!L.smooth),
+      at = (q, t) => [x0 + q[0], z0 + q[1] + lift(t), y0 + t],
+      nAt = (m, t) => [m[0], m[1], -slope(t) * m[1]],
+      n = P.length;
+    let len = 0;
+    for (let i = 0; i < n; i++) {
+      const a = P[i],
+        b = P[(i + 1) % n],
+        el = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      for (let s = 0; s < segs; s++) {
+        const t0 = -d / 2 + (d * s) / segs,
+          t1 = -d / 2 + (d * (s + 1)) / segs;
+        poly(
+          [at(a, t0), at(b, t0), at(b, t1), at(a, t1)],
+          [nAt(NE[i][0], t0), nAt(NE[i][1], t0), nAt(NE[i][1], t1), nAt(NE[i][0], t1)],
+          [
+            [t0, len],
+            [t0, len + el],
+            [t1, len + el],
+            [t1, len],
+          ],
+          tx,
+          c
+        );
+      }
+      len += el;
+    }
+    for (const [t, nz] of [
+      [-d / 2, -1],
+      [d / 2, 1],
+    ])
+      for (const tri of earClip(P)) {
+        const Q = (nz < 0 ? tri : tri.slice().reverse()).map(k => at(P[k], t));
+        poly(
+          Q,
+          [0, 0, nz],
+          Q.map(q => [q[0], q[1]]),
+          tx,
+          c
+        );
+      }
+  };
+  /* BD-1: a lathe: a profile (pts [[radius, up], ...] from the layer's z, listed from the bottom up along its
+     outside) turned round the upright through x, y: sides round it, ry its depth over its width (an oval), rot its
+     turn. Round around; along the profile soft under 35 degrees (smooth: every joint), else a sharp rim. A flat cap
+     where an end has a radius (the bottom only off the ground) */
+  const latheShape = (L, x0, y0, z0, tx, stave, c) => {
+    let P = profilePoints(L.pts, false).map(q => [Math.max(0, q[0]), q[1]]);
+    /* a profile that ends where it starts is a loop (a ring, a tyre): turned all round, no caps */
+    const loop = P.length > 3 && Math.hypot(P[0][0] - P[P.length - 1][0], P[0][1] - P[P.length - 1][1]) < 1e-6;
+    if (loop) P.pop();
+    if (P.length < 2) return;
+    if ((loop ? profileArea(P) : profileArea([[0, P[0][1]], ...P, [0, P[P.length - 1][1]]])) < 0) P = P.reverse();
+    const rmax = Math.max(0.01, ...P.map(q => q[0])),
+      ryk = Math.max(0.05, +L.ry || 1),
+      n = L.sides
+        ? Math.max(3, Math.min(32, L.sides | 0))
+        : Math.max(6, Math.min(20, Math.round((2 * Math.PI * rmax * Math.max(1, ryk) * 32) / 5))),
+      rot = +L.rot || 0,
+      arc = (2 * Math.PI * rmax) / n,
+      NE = profileNormals(P, loop, (35 * Math.PI) / 180, !!L.smooth),
+      an = j => (2 * Math.PI * (j % n)) / n + rot,
+      at = (q, j) => [x0 + Math.cos(an(j)) * q[0], z0 + q[1], y0 + Math.sin(an(j)) * q[0] * ryk],
+      nAt = (m, j) => [Math.cos(an(j)) * m[0], m[1], (Math.sin(an(j)) * m[0]) / ryk],
+      uv = (j, v) => (stave ? [v, j * arc] : [j * arc, v]);
+    let len = 0;
+    for (let i = 0; i < P.length - (loop ? 0 : 1); i++) {
+      const a = P[i],
+        b = P[(i + 1) % P.length],
+        el = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (a[0] < 1e-4 && b[0] < 1e-4) {
+        len += el;
+        continue;
+      }
+      for (let j = 0; j < n; j++)
+        poly(
+          [at(a, j), at(b, j), at(b, j + 1), at(a, j + 1)],
+          [nAt(NE[i][0], j), nAt(NE[i][1], j), nAt(NE[i][1], j + 1), nAt(NE[i][0], j + 1)],
+          [uv(j, len), uv(j, len + el), uv(j + 1, len + el), uv(j + 1, len)],
+          tx,
+          c
+        );
+      len += el;
+    }
+    const cap = (q, ny) => {
+      const ct = [x0, z0 + q[1], y0];
+      for (let j = 0; j < n; j++) {
+        const A = at(q, j),
+          B = at(q, j + 1),
+          Q = ny > 0 ? [ct, B, A] : [ct, A, B];
+        poly(
+          Q,
+          [0, ny, 0],
+          Q.map(p => [p[0] - x0 + 1, p[2] - y0 + 1]),
+          tx,
+          c
+        );
+      }
+    };
+    const top = P[P.length - 1],
+      bot = P[0];
+    if (loop) return;
+    if (top[0] > 0.02) cap(top, 1);
+    if (bot[0] > 0.02 && z0 + bot[1] > 0.01) cap(bot, -1);
+  };
   let li3 = 0;
-  for (const L of rec.layers || []) {
-    li3 += 31;
-    if (L.k === 'img' || L.hide || L.k === 'raw') continue;
-    gw = L.glass > 0 ? Math.min(31, L.glass | 0) : 0;
+  /* one layer's shape into V and I (BD-1: a function now, so each layer can be turned after it is made) */
+  const layerShape = L => {
     const c = hexToRgb(L.col || '#888888'),
       t = L.tex || 'plain',
       x0 = L.x || 0,
@@ -1003,7 +1235,13 @@ export function lowPolyFromRecipe(rec) {
         tx = T(t),
         up = (t === 'wood' || t === 'grain') && L.h >= Math.max(L.w, L.d),
         sw = (u, v) => (up ? [v, u] : [u, v]);
-      if (yb <= ya) continue;
+      if (yb <= ya) return;
+      /* BD-1: a box tapered (taper: [top width, top depth]), leaned (lean: its top moved [across, depth]) or bevelled
+         (bevel: its upright and top edges cut by that many metres) is made as rings, bottom to top */
+      if (L.taper || L.lean || L.bevel) {
+        boxRings(L, ya, yb, tx, up, c);
+        return;
+      }
       poly(
         [
           [xa, ya, zb],
@@ -1087,12 +1325,12 @@ export function lowPolyFromRecipe(rec) {
         tx,
         c
       );
-      continue;
+      return;
     }
     /* phase 09 batch 1: a limb, a tapered branch along a few points (up is the model's y here), with a few sides */
     if (L.k === 'limb') {
       const P = limbPoints(L).map(q => [q[0], q[2], q[1], q[3]]);
-      if (P.length < 2) continue;
+      if (P.length < 2) return;
       const cr = (p, q) => [p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2], p[0] * q[1] - p[1] * q[0]],
         nz = v => {
           const l = Math.hypot(v[0], v[1], v[2]) || 1;
@@ -1160,7 +1398,15 @@ export function lowPolyFromRecipe(rec) {
           tx,
           c
         );
-      continue;
+      return;
+    }
+    if (L.k === 'prism') {
+      prismShape(L, x0, y0, z0, T(t), c);
+      return;
+    }
+    if (L.k === 'lathe') {
+      latheShape(L, x0, y0, z0, T(t, 1), t === 'wood' || t === 'grain', c);
+      return;
     }
     /* round shapes: rings up the shape, each its radius across (r) and in depth (ry) */
     const r = Math.max(L.r || 0.1, 0.01),
@@ -1329,8 +1575,61 @@ export function lowPolyFromRecipe(rec) {
         );
       }
     }
+  };
+  /* the still parts' bounds (the warp is measured against them, logic/model-shapes.js warpFrame) */
+  const SB = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9];
+  for (const L of rec.layers || []) {
+    li3 += 31;
+    if (L.k === 'img' || L.hide || L.k === 'raw') continue;
+    gw = L.glass > 0 ? Math.min(31, L.glass | 0) : 0;
+    gc = gw ? null : glowCode(L);
+    const s0 = nv;
+    layerShape(L);
+    /* BD-1: the part turned (rot: a box, a limb or a prism; a round shape or a lathe turns itself) and leaned (tilt,
+       every solid), about its base point; its normals with it */
+    const R = layerTurn(L.k === 'box' || L.k === 'limb' || L.k === 'prism' ? L.rot : 0, L.tilt, [
+      L.x || 0,
+      L.k === 'limb' ? L.z || 0 : Math.max(0, L.z || 0),
+      L.y || 0,
+    ]);
+    for (let i = s0; i < nv; i++) {
+      if (R) {
+        V[i * 7] = R(V[i * 7], false);
+        V[i * 7 + 1] = R(V[i * 7 + 1], true);
+      }
+      if (!L.spin) {
+        const p = V[i * 7];
+        for (let q = 0; q < 3; q++) {
+          SB[q] = Math.min(SB[q], p[q]);
+          SB[q + 3] = Math.max(SB[q + 3], p[q]);
+        }
+      }
+    }
   }
   if (!nv) return null;
+  /* BD-1: the recipe's warp (the storybook wonk), baked into every point and normal by height; a turning part's
+     pivot is moved, not bent (propModelMesh: rec.move), so its mesh moves with it */
+  const WP = warpOn(rec.warp) ? rec.warp : null,
+    WF = WP ? rec.warpFrame || warpFrame(SB[0] < 1e9 ? SB : [0, 0, 0, 0, 1, 0]) : null;
+  if (WP)
+    for (let i = 0; i < nv; i++) {
+      const p = V[i * 7];
+      V[i * 7 + 1] = warpNormal(WP, WF, p, V[i * 7 + 1]);
+      V[i * 7] = warpPoint(WP, WF, p);
+    }
+  const MV = Array.isArray(rec.move) ? rec.move : null;
+  if (MV) for (let i = 0; i < nv; i++) V[i * 7] = [V[i * 7][0] + MV[0], V[i * 7][1] + MV[1], V[i * 7][2] + MV[2]];
+  /* a window's glass bounds, where its points ended up */
+  for (let i = 0; i < nv; i++) {
+    const g = V[i * 7 + 5],
+      p = V[i * 7];
+    if (!g) continue;
+    const b = GB[g] || (GB[g] = [1e9, 1e9, 1e9, -1e9, -1e9, -1e9]);
+    for (let q = 0; q < 3; q++) {
+      b[q] = Math.min(b[q], p[q]);
+      b[q + 3] = Math.max(b[q + 3], p[q]);
+    }
+  }
   /* packed as the models are (24 bytes a vertex) */
   const vb = new ArrayBuffer(nv * 24),
     i16 = new Int16Array(vb),
@@ -1343,12 +1642,13 @@ export function lowPolyFromRecipe(rec) {
     y1 = -1e9,
     z1 = -1e9;
   for (let i = 0; i < nv; i++) {
-    const p = V[i * 6],
-      nn = V[i * 6 + 1],
-      uv = V[i * 6 + 2],
-      tx = V[i * 6 + 3],
-      c = V[i * 6 + 4],
-      g = V[i * 6 + 5],
+    const p = V[i * 7],
+      nn = V[i * 7 + 1],
+      uv = V[i * 7 + 2],
+      tx = V[i * 7 + 3],
+      c = V[i * 7 + 4],
+      g = V[i * 7 + 5],
+      gl = V[i * 7 + 6],
       o = i * 24,
       l = Math.hypot(nn[0], nn[1], nn[2]) || 1;
     i16[o / 2] = Math.round(p[0] * 256);
@@ -1367,12 +1667,14 @@ export function lowPolyFromRecipe(rec) {
     i16[o / 2 + 7] = Math.round(uv[1] * 64);
     u8[o + 16] = tx % 8;
     u8[o + 17] = (tx / 8) | 0;
-    /* 0 the building ramp, 1 its flat colour (a building's own mesh), 2-32 window glass 1-31 */
-    u8[o + 18] = g ? g + 1 : 0;
+    /* 0 the building ramp, 1 its flat colour (a building's own mesh), 2-32 window glass 1-31; BD-1: 33 a glow at
+       night, 34 a glow by day too, its colour (5-6-5 bits) in the two spare bytes (19, and the colour's alpha) */
+    u8[o + 18] = g ? g + 1 : gl ? gl.flag : 0;
+    u8[o + 19] = gl ? gl.hi : 0;
     u8[o + 20] = c[0];
     u8[o + 21] = c[1];
     u8[o + 22] = c[2];
-    u8[o + 23] = 255;
+    u8[o + 23] = gl ? gl.lo : 255;
   }
   /* each window: its number, its middle and which way it looks out (x, up, depth: along its thin side, away from the
      model's middle) */
@@ -1394,6 +1696,9 @@ export function lowPolyFromRecipe(rec) {
     tris: I.length / 3,
     box: [x0, y0, z0, x1, y1, z1],
     wins,
+    /* BD-1: the warp's frame (a turning part is moved by it) and whether any layer glows */
+    warpFrame: WF,
+    glow: V.some((v, i) => i % 7 === 6 && !!v),
   };
 }
 function lowPolyOn(rec) {
@@ -1410,20 +1715,28 @@ function drawPropModelMesh(m) {
   if (m.el) gl.drawElements(gl.TRIANGLES, m.n, m.u32 ? gl.UNSIGNED_INT : gl.UNSIGNED_SHORT, 0);
   else gl.drawArrays(gl.TRIANGLES, 0, m.n);
 }
+/* BD-1: a glowing layer's colour from its two spare bytes (5-6-5 bits; prop-models.js lowPolyFromRecipe packs it) */
+const GLOW_RGB_GLSL = `vec3 glowRgb(float hi,float lo){float g=hi*256.+floor(lo*255.+.5);return vec3(floor(g/2048.),mod(floor(g/32.),64.),mod(g,32.))/vec3(31.,63.,31.);}`;
 /* the model's program: its own vertex shader (placed, scaled, turned and spun like a voxel prop), the buildings' look */
 const lowPolyVertexShader = () => `#version 300 es
-precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;
-uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}${SMEAR_GLSL}
+precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec4 mTex;layout(location=4) in vec4 mCol;
+uniform mat4 uVP;uniform vec3 uBase,uSpinC;uniform vec4 uSpin;uniform float uS,uRot,uFlip;out vec3 vGl;${GLOW_RGB_GLSL}out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;${COMMON_GLSL}${SPIN_GLSL}${SMEAR_GLSL}
 void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uSpinC,n0=voxSpin(mNrm);vec3 p=vec3(q0.x*uFlip,q0.y,q0.z)*uS;p=vec3(p.x*cr-p.z*sr,p.y,p.x*sr+p.z*cr);p=squashY(smearDrag(p,cr,sr,mPos));vec3 n=vec3(n0.x*uFlip,n0.y,n0.z);n=vec3(n.x*cr-n.z*sr,n.y,n.x*sr+n.z*cr);
- vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);}`;
+ vec3 w=uBase+p;w.y+=curveY(uBase.xz);vW=w;vN=n;vUV=mUV/64.;vTex=mTex.xyz;vCol=mCol.rgb;vGl=glowRgb(mTex.w,mCol.a);gl_Position=uVP*vec4(w,1.);}`;
 /* a window's glass (vTex.z 2-32: window 1-31): by day the sky in it, more of it at a grazing look, and a glint of the
    sun; lit from its room when its bit of uWinOn is set, as strongly as uWinK says (1 after dark), a warm lamp, a cooler
    kitchen or now and then a TV's blue, each window its own (uWinSeed: the building's), rolled off softly so it glows
-   and blooms the window's own shape */
-const GLASS_GLSL = `uniform int uWinOn;uniform float uWinK,uWinSeed;
-vec3 glassLit(vec3 lit,vec3 n,vec3 v,float sh){float id=floor(vTex.z+.5)-1.;if(id<.5)return lit;
+   and blooms the window's own shape. AS-1: a moving model's seed comes 2 higher (walk/lighting.js modelWindowLight;
+   fract drops it from the colour): its sun glint is a soft sheen, not a sharp flash that strobes as it turns */
+/* BD-1: a glowing layer (vTex.z 33: at night, 34: by day too; its colour vGl) shines as the windows do after dark
+   (uWinK: 1 after dark, the daytime dial by day, none from inside a room): its own colour over the lit one, and
+   brighter than white where it is strong, so bloom takes it and it keeps its hue */
+const GLASS_GLSL = `uniform int uWinOn;uniform float uWinK,uWinSeed;in vec3 vGl;
+vec3 glassLit(vec3 lit,vec3 n,vec3 v,float sh){if(vTex.z>32.5){float k=vTex.z>33.5?max(uWinK,1.):uWinK;if(k<.001)return lit;
+ return mix(lit,vGl*1.2,.85*min(k,1.))+vGl*.3*k;}
+ float id=floor(vTex.z+.5)-1.;if(id<.5)return lit;
  float ct=abs(dot(n,v)),fr=.15+.5*pow(1.-ct,3.);
- vec3 g=mix(lit,uAmbTop*(.6+.4*sh),fr)+uSunCol*pow(max(dot(reflect(-v,n),uSunDir),0.),80.)*sh;
+ float gd=max(dot(reflect(-v,n),uSunDir),0.);vec3 g=mix(lit,uAmbTop*(.6+.4*sh),fr)+uSunCol*(uWinSeed>1.5?pow(gd,10.)*.18:pow(gd,80.))*sh;
  if(uWinK<.001||((uWinOn>>int(id))&1)==0)return g;
  float h=fract(id*.6180339+uWinSeed);vec3 lc=h<.18?vec3(.62,.78,1.25)*(.85+.25*sin(uTime*.009+id)):h<.45?vec3(1.15,1.05,.85):vec3(1.25,1.,.7);
  vec3 e=lc*(.62+.6*fract(h*7.31))*uWinK;e=(1.-exp(-e*1.15))*1.6;
@@ -1464,7 +1777,7 @@ export function propModelShaders() {
 }
 /* VFX-3: inst false for the stretched models (it.smear), drawn one at a time with the plain program, compiled on the
    first stretch */
-function drawLowPolyModels(C, X, L, inst = true) {
+function drawLowPolyModels(C, X, L, inst = true, solid = false) {
   if (!L.length || typeof BUILDING_SHADERS === 'undefined' || typeof buildingArt !== 'function') return;
   const gl = gpuState.gl;
   ensurePrograms(propModelShaders());
@@ -1472,7 +1785,7 @@ function drawLowPolyModels(C, X, L, inst = true) {
   const A = buildingArt(),
     det = imageTexture(artImage(A.detail), { noNormal: true });
   if (!det) return;
-  const p = useWalkProgram(inst ? 'mdlI' : 'mdl', C, X);
+  const p = useWalkProgram(inst ? (solid ? 'mdlIS' : 'mdlI') : 'mdl', C, X);
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
@@ -1482,9 +1795,10 @@ function drawLowPolyModels(C, X, L, inst = true) {
   gl.uniform1i(p.U.uDet, 0);
   gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
   if (p.U.uScroll) gl.uniform2f(p.U.uScroll, 0, 0);
-  /* Building bumpiness: the models wear the buildings' sheet, and bump as the buildings do */
-  if (p.U.uBStr) gl.uniform1f(p.U.uBStr, engineSetting('world', 'buildingBumps') || 0);
+  /* Building bumpiness: the models wear the buildings' sheet, and bump from its normal sheet as the buildings do */
+  bindBuildingNormals(p, A);
   if (!inst) drawLowPolyItems(p, L);
+  else if (solid) drawModelInstances(p, 'mdl', L);
   else {
     /* VFX-3: as the voxel props: a stretched one one at a time, with the plain program and the same textures */
     /* ST-7: a model with its own texture is drawn on its own (the batches share the building sheet) */
@@ -1494,6 +1808,24 @@ function drawLowPolyModels(C, X, L, inst = true) {
     if (many.length) drawModelInstances(p, 'mdl', many);
     if (one.length) drawLowPolyModels(C, X, one, false);
   }
+}
+/* FL-5a: an item the discard-free programs draw as the programs with cuts would: whole (no fade's dither), not stretched
+   (drawn one at a time), not a model with its own texture (cut where it is clear), its program made */
+function modelSolidItem(it, m, SD) {
+  if ((it.fade ?? 1) < 0.99 || it.smear) return false;
+  return m.model ? !m.own && !!SD.mdlIS : !!SD.voxIS;
+}
+/* FL-5a: a list of [item, mesh] nearest the eye first (a tile GPU's early depth then rejects what is behind), so the
+   instanced batches (engine/model-instances.js buildModelBatches, in order of first use) come nearest first too */
+function modelsNearestFirst(L, C) {
+  const e = C && C.eye;
+  if (!e || L.length < 2) return L;
+  /* the pairs are made for this frame (drawPropModels): the distance rides along as a third entry */
+  for (const x of L) {
+    const it = x[0];
+    x[2] = (it.x - e[0]) ** 2 + (it.y - e[1]) ** 2 + (it.z - e[2]) ** 2;
+  }
+  return L.sort((a, b) => a[2] - b[2]);
 }
 /* [the stretched (it.smear), the rest] of a list of [item, mesh] */
 function splitSmeared(L) {
@@ -1514,10 +1846,10 @@ function drawLowPolyItems(p, L) {
     setPropModelUniforms(p, it);
     setItemSpin(p, it);
     if (p.U.uWinK) {
-      const W = it.wins ? it.winL || (it.winL = modelWindowLight(it, walkRenderer.dark || 0)) : null;
+      const W = it.wins || it.glows ? it.winL || (it.winL = modelWindowLight(it, walkRenderer.dark || 0)) : null;
       gl.uniform1f(p.U.uWinK, W ? W.k : 0);
       gl.uniform1i(p.U.uWinOn, W ? W.on : 0);
-      gl.uniform1f(p.U.uWinSeed, W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0);
+      gl.uniform1f(p.U.uWinSeed, W ? W.seed : 0);
     }
     if (m.own && !bindOwnTexture(p, m)) continue;
     drawPropModelMesh(m);
@@ -1666,6 +1998,8 @@ function tagPropModel(it) {
   it.voxPath = path;
   /* a low-poly building's window glass (walk/lighting.js modelWindowLight lights it; its picture's window glows stay off) */
   if (m.wins) it.wins = m.wins;
+  /* BD-1: a model with glowing layers takes the windows' light by the hour too (glassLit), glass or none */
+  if (m.glow) it.glows = 1;
 }
 /* picture layers of a voxel prop as sprite items of their own (set in the model, metres from its base). Phase 09
    batch 1, for trees with a modelled trunk and drawn leaf clumps: a layer may say shadow (1: it casts its cut-out
@@ -1673,6 +2007,47 @@ function tagPropModel(it) {
    sway (how much the wind moves it, times the prop's sway; the model itself stays still), glow (it lights up
    when the lamps come on, a lantern's glass), yaw (with face fixed: which way it faces, radians, pi/2 the right side,
    pi the back; batch 8, a tower's windows on every face), and the recipe its art's scale (ppm: pixels to the metre; else the scenery's) */
+/* FL-2b: a placement's leaf items (prop-models.js propModelImageItems), reused each frame so a frame leaves ~650 fewer
+   objects for the garbage collector. Each is filled from v with every key, and what other passes write on an item
+   (quality-cull.js vis and fade, frame-items.js cut, prop-look.js slope and tilt, lighting.js winL, the sprite sort's
+   texKey, modelsNearestFirst's d) is cleared, so it starts each frame as a new one would. Keyed by placement (a WeakMap),
+   so a place left lets them go */
+const LEAF_ITEMS = new WeakMap(),
+  LEAF_ITEM_CLEAR = ['vis', 'fade', 'cut', 'slope', 'tilt', 'winL', 'texKey', 'd'];
+function leafItem(list, i) {
+  let o = list[i];
+  if (!o)
+    return (list[i] = {
+      k: undefined,
+      p: undefined,
+      M: undefined,
+      im: undefined,
+      x: undefined,
+      z: undefined,
+      y: undefined,
+      mpp: undefined,
+      ox: undefined,
+      oy: undefined,
+      w: undefined,
+      h: undefined,
+      flip: undefined,
+      shear: undefined,
+      rest: undefined,
+      sh: undefined,
+      glow: undefined,
+      noRecv: undefined,
+      eyeward: undefined,
+      fixed: undefined,
+      plane: undefined,
+      yaw: undefined,
+      mat: undefined,
+      layer: undefined,
+      still: undefined,
+      voxImg: undefined,
+    });
+  for (const k of LEAF_ITEM_CLEAR) if (k in o) o[k] = undefined;
+  return o;
+}
 function propModelImageItems(it, out) {
   const rec = it.vox;
   if (!rec) return;
@@ -1683,9 +2058,16 @@ function propModelImageItems(it, out) {
     f: it.flip || 1,
     turn: propTurn(it),
     bob: mooredBob(it),
+    /* AS-1: a tipped model's layers tip with it (a climbing train's headlamp and name boards) */
+    spin: it.spin || null,
   };
   const F = typeof gameData !== 'undefined' && gameData.pixelFacts;
+  /* FL-2b: this placement's leaf items, kept from frame to frame (one per picture layer) and filled in again */
+  let pool = LEAF_ITEMS.get(it.p);
+  if (!pool || pool.rec !== rec) LEAF_ITEMS.set(it.p, (pool = { rec, list: [] }));
+  let li = -1;
   for (const L of rec.layers || []) {
+    li++;
     if (L.k !== 'img' || L.hide) continue;
     const im0 = typeof artImage === 'function' ? artImage(L.img) : null;
     /* LD-1: a leaf clump's baked cut (tools/bake-pixel-facts.mjs), so its crown picture is never read (or even
@@ -1710,40 +2092,40 @@ function propModelImageItems(it, out) {
       h = im.naturalHeight || im.height,
       mpp =
         (L.s || 1) / (rec.ppm || (typeof gameData !== 'undefined' && gameData.scenery && gameData.scenery.ppu) || 34);
-    out.push({
-      k: 'prop',
-      p: it.p,
-      M: layerProp(it.M),
-      im,
-      x: d.x,
-      z: d.z,
-      y: d.y,
-      mpp: mpp * s,
-      ox: -(w / 2),
-      oy: -(h - 1),
-      w,
-      h,
-      flip: d.flip,
-      shear: (it.shear || 0) * (L.sway ?? 1),
-      /* phase 20 R3: at rest (no wind) when the model itself stands still (walk/shadows.js, "Far shadows hold still") */
-      rest: it.rest !== undefined && !(it.M && it.M.bob) ? it.rest * (L.sway ?? 1) : undefined,
-      sh: L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0,
-      /* a layer's day: how much it glows by day too (1: lit at every hour, the sky portal's layers) */
-      glow: L.glow
-        ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) * (1 - (L.day || 0)) + (L.day || 0) : 1)
-        : 0,
-      noRecv: L.recv === 0,
-      /* phase 09 batch 10: metres toward the eye (along the camera's line of sight), so a conifer's tiers, centred on
-         its modelled mast, stay in front of it from every side (walk/sprites.js uDZ) */
-      eyeward: L.front && L.face !== 'fixed' ? L.front * s : 0,
-      fixed: L.face === 'fixed',
-      plane: L.face === 'fixed',
-      yaw: d.yaw /* phase 09 batch 9: a decal turns with its model */,
-      mat: it.mat,
-      layer: L,
-      still: it.still,
-      voxImg: 1,
-    });
+    const o = leafItem(pool.list, li);
+    o.k = 'prop';
+    o.p = it.p;
+    o.M = layerProp(it.M);
+    o.im = im;
+    o.x = d.x;
+    o.z = d.z;
+    o.y = d.y;
+    o.mpp = mpp * s;
+    o.ox = -(w / 2);
+    o.oy = -(h - 1);
+    o.w = w;
+    o.h = h;
+    o.flip = d.flip;
+    o.shear = (it.shear || 0) * (L.sway ?? 1);
+    /* phase 20 R3: at rest (no wind) when the model itself stands still (walk/shadows.js, "Far shadows hold still") */
+    o.rest = it.rest !== undefined && !(it.M && it.M.bob) ? it.rest * (L.sway ?? 1) : undefined;
+    o.sh = L.shadow ? (it.M && it.M.shadow ? it.M.shadow : 1) * s : 0;
+    /* a layer's day: how much it glows by day too (1: lit at every hour, the sky portal's layers) */
+    o.glow = L.glow
+      ? L.glow * (typeof lampLit === 'function' ? lampLit(it.x, it.z, 0) * (1 - (L.day || 0)) + (L.day || 0) : 1)
+      : 0;
+    o.noRecv = L.recv === 0;
+    /* phase 09 batch 10: metres toward the eye (along the camera's line of sight), so a conifer's tiers, centred on
+       its modelled mast, stay in front of it from every side (walk/sprites.js uDZ) */
+    o.eyeward = L.front && L.face !== 'fixed' ? L.front * s : 0;
+    o.fixed = L.face === 'fixed';
+    o.plane = L.face === 'fixed';
+    o.yaw = d.yaw; /* phase 09 batch 9: a decal turns with its model */
+    o.mat = it.mat;
+    o.layer = L;
+    o.still = it.still;
+    o.voxImg = 1;
+    out.push(o);
   }
 }
 /* phase 09 batch 1: a tree's leaves are one picture, its crown as drawn (paint it in the Studio like any prop picture).
@@ -1853,21 +2235,46 @@ function drawVoxItems(p, L) {
     propModelState.drawn++;
   }
 }
-export function drawPropModels(C, items, X, hits, labels, PPU) {
-  propModelState.drawn = 0;
-  propModelState.lowPoly = 0;
+/* FL-5a (quality.drawOrder): part 'solid' draws only the items the discard-free programs can draw (modelSolidItem),
+   nearest first; part 'cut' draws the rest, as before. No part: every item, as before */
+export function drawPropModels(C, items, X, hits, labels, PPU, part) {
+  if (part !== 'cut') {
+    propModelState.drawn = 0;
+    propModelState.lowPoly = 0;
+  }
   if (!propModelsOn()) return;
   /* R1 measure: every draw a model makes counted apart, in whichever pass draws it (engine/gpu-counters.js) */
   gpuTag('model');
   propModelGuard(() => {
     const gl = gpuState.gl;
     ensurePrograms(propModelShaders());
-    const VL = [],
+    const SD = part ? propModelSolidShaders() : null;
+    if (SD) ensurePrograms(SD);
+    const solidOn = !!SD && !rockCircleOn(C);
+    let VL = [],
       ML = [];
     for (const it of items) {
       if (!it.vox || it.vis === false) continue;
       const m = propModelMesh(it.voxPath, it.vox);
-      if (m) (m.model ? ML : VL).push([it, m]);
+      if (!m) continue;
+      if (part && (solidOn && modelSolidItem(it, m, SD)) !== (part === 'solid')) continue;
+      (m.model ? ML : VL).push([it, m]);
+    }
+    if (part === 'solid') {
+      VL = modelsNearestFirst(VL, C);
+      ML = modelsNearestFirst(ML, C);
+      if (VL.length) {
+        const p = useWalkProgram('voxIS', C, X);
+        gl.enable(gl.DEPTH_TEST);
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
+        gl.disable(gl.CULL_FACE);
+        drawModelInstances(p, 'vox', VL);
+      }
+      gl.bindVertexArray(null);
+      drawLowPolyModels(C, X, ML, true, true);
+      walkRenderer.solidModels = VL.length + ML.length;
+      return;
     }
     if (VL.length) {
       const p = useWalkProgram('voxI', C, X);
@@ -1919,12 +2326,15 @@ function propModelInstanceValues(it, kind, v) {
     v.spinC[j] = S ? S.c[j] : 0;
   }
   v.spin[3] = S ? S.an : 0;
-  const W = kind === 'mdl' && it.wins ? it.winL || (it.winL = modelWindowLight(it, walkRenderer.dark || 0)) : null,
+  const W =
+      kind === 'mdl' && (it.wins || it.glows)
+        ? it.winL || (it.winL = modelWindowLight(it, walkRenderer.dark || 0))
+        : null,
     L = (kind === 'mdl' && it.lk) || NEUTRAL_MODEL_LOOK;
   v.k = kind === 'vox' ? (it.glow ? it.glow : 0) : it.vox && it.vox.cel != null ? it.vox.cel : 0.75;
   v.winK = W ? W.k : 0;
   v.winOn = W ? W.on : 0;
-  v.seed = W ? (Math.abs(Math.sin(it.x * 12.9898 + it.z * 78.233)) * 43.7585) % 1 : 0;
+  v.seed = W ? W.seed : 0;
   for (let j = 0; j < 4; j++) {
     v.wear[j] = L.wear[j];
     v.hsv[j] = L.hsv[j];
@@ -2018,22 +2428,48 @@ void main(){vec3 P=qPos*uQ,N=qNrm;${INSTANCE_PLACE_GLSL}vW=w;vN=n;vC=qCol;gl_Pos
     asFlatInputs(PROP_MODEL_SHADERS.vox[1], VOX_FLAT),
   ];
 }
+/* FL-5a (quality.drawOrder): the instanced pair without their cuts (engine/shader-precision.js solidFragment), for an
+   item that is whole (no fade), not stretched, without its own texture, on a frame with no rock circle; drawn first,
+   nearest first. {} when an edit no longer fits (everything keeps the programs with cuts) */
+const VOX_SOLID_EDITS = [['if(uFade<.99&&bay(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;', '']],
+  MDL_SOLID_EDITS = [
+    ['if(uFade<.99&&bayer4(gl_FragCoord.xy)>uFade)discard;if(rockHides(vW))discard;', ''],
+    ['if(tx.a<.5)discard;', ''],
+  ];
+let modelSolidDefs = null;
+function propModelSolidShaders() {
+  if (modelSolidDefs) return modelSolidDefs;
+  const P = propModelShaders(),
+    D = {};
+  if (P.voxI) {
+    const f = solidFragment(P.voxI[1], VOX_SOLID_EDITS);
+    if (f) D.voxIS = [P.voxI[0], f];
+  }
+  if (P.mdlI) {
+    const f = solidFragment(P.mdlI[1], MDL_SOLID_EDITS);
+    if (f) D.mdlIS = [P.mdlI[0], f];
+  }
+  /* the low-poly pair needs the buildings' shaders; kept once both are made */
+  if (P.mdlI) modelSolidDefs = D;
+  return D;
+}
 function lowPolyInstancedShaders() {
   return [
     `#version 300 es
-precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec3 mTex;layout(location=4) in vec3 mCol;${INSTANCE_IN_GLSL}
+precision highp float;layout(location=0) in vec3 mPos;layout(location=1) in vec3 mNrm;layout(location=2) in vec2 mUV;layout(location=3) in vec4 mTex;layout(location=4) in vec4 mCol;${INSTANCE_IN_GLSL}
 layout(location=10) in vec4 iWear;layout(location=11) in vec4 iHsv;layout(location=12) in vec4 iTint;layout(location=13) in vec4 iMask;layout(location=14) in uint iWin;
-uniform mat4 uVP;out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;flat out float uFade,uBaseY,uCel,uWinK,uWinSeed;flat out vec4 uWear,uHsv,uLkTint;flat out vec2 uMaskH;flat out vec3 uBP;flat out int uWinOn;${COMMON_GLSL}${SPIN_BY_GLSL}
-void main(){vec3 P=mPos/256.,N=mNrm;${INSTANCE_PLACE_GLSL}vW=w;vN=n;vUV=mUV/64.;vTex=mTex;vCol=mCol;gl_Position=uVP*vec4(w,1.);
+uniform mat4 uVP;out vec3 vGl;${GLOW_RGB_GLSL}out vec3 vW;out vec3 vN;out vec2 vUV;out vec3 vTex;out vec3 vCol;flat out float uFade,uBaseY,uCel,uWinK,uWinSeed;flat out vec4 uWear,uHsv,uLkTint;flat out vec2 uMaskH;flat out vec3 uBP;flat out int uWinOn;${COMMON_GLSL}${SPIN_BY_GLSL}
+void main(){vec3 P=mPos/256.,N=mNrm;${INSTANCE_PLACE_GLSL}vW=w;vN=n;vUV=mUV/64.;vTex=mTex.xyz;vCol=mCol.rgb;vGl=glowRgb(mTex.w,mCol.a);gl_Position=uVP*vec4(w,1.);
  uFade=iTf.z;uCel=iTf.w;uBP=iBase.xyz;uBaseY=iBase.y;uWinSeed=iBase.w;uWear=iWear;uHsv=iHsv;uLkTint=iTint;uMaskH=iMask.xy;uWinK=iMask.z;uWinOn=int(iWin);}`,
     asFlatInputs(PROP_MODEL_SHADERS.mdl[1], MDL_FLAT),
   ];
 }
-function drawPropModelShadows(SH, items) {
+/* part (FL-2b, the far map's cache): 0 every part, 1 no turning parts (the cached copy), 2 the turning parts alone */
+function drawPropModelShadows(SH, items, part = 0) {
   if (!propModelsOn()) return;
   gpuTag('model');
   propModelGuard(() => {
-    if (modelShadowInstancesReady()) drawPropModelShadowsInstanced(SH, items);
+    if (modelShadowInstancesReady()) drawPropModelShadowsInstanced(SH, items, part);
   });
   gpuTag(0);
 }
@@ -2068,7 +2504,7 @@ function modelShadowInstancesReady() {
     }
   return true;
 }
-function drawPropModelShadowsInstanced(SH, items) {
+function drawPropModelShadowsInstanced(SH, items, part = 0) {
   const gl = gpuState.gl,
     L = modelShadowState.list,
     S = MODEL_SHADOW_INSTANCES,
@@ -2108,9 +2544,11 @@ function drawPropModelShadowsInstanced(SH, items) {
       A = m.model ? MDL_ATTRIBS : VOX_ATTRIBS,
       n = b.list.length;
     gl.uniform1f(p.U.uQ, m.q || 1);
-    drawModelShadowPart(m, A, I, S.buf, b.at, n);
-    for (const q of m.more || []) drawModelShadowPart(q, A, I, S.buf, b.at, n);
-    if (m.spins && m.spins.length) {
+    if (part !== 2) {
+      drawModelShadowPart(m, A, I, S.buf, b.at, n);
+      for (const q of m.more || []) drawModelShadowPart(q, A, I, S.buf, b.at, n);
+    }
+    if (part !== 1 && m.spins && m.spins.length) {
       gl.uniform1f(p.U.uPart, 1);
       for (const s of m.spins) {
         gl.uniform4f(p.U.uSpin, s.a[0], s.a[1], s.a[2], spinPartAngle(s, t));
@@ -2154,5 +2592,6 @@ function propModelArtPaths(sc, C) {
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */
   if (any) L.push((C.buildArt && C.buildArt.detail) || 'scene/build/detail.png');
+  if (any && C.buildArt && C.buildArt.normal) L.push(C.buildArt.normal);
   return L;
 }

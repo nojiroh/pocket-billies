@@ -10,7 +10,7 @@ tools/check-quick.py); the full check walks the place's paths from the data.
 Code: `game/js/graphics-bench-test.js`. Place: `test_graphics` ("Test: graphics bench"), built by
 `python3 tools/build-test-scenes.py --only=test_graphics`.
 
-## The place: Graphics bench (`test_graphics`, 60 × 46 m)
+## The place: Graphics bench (`test_graphics`, 60 × 58 m)
 
 Three rows of three stations along a central path, plus two cross paths. Each station is built so one group of
 settings has something to work on, and has a fixed spot to stand on, a camera turn and a zoom (`bench` in the map
@@ -29,6 +29,13 @@ one at its low settings.
 | Depth corridor | 30, 35.5 · zoom 1.3 | An avenue of trees from close by to the hills past the edge | Depth of field, Far trees and hills (rebuilds) |
 | Open sky | 50, 33 · zoom 1.7 | A wide, empty plain (the walk camera looks down, so no sky is in the picture: the clouds show as their light and shadows on the plain) | Clouds, Cloud shadows |
 | Meadow in the rain | the Meadow's spot | The meadow with the weather forced to rain (phase 20 R2) | Nothing of its own: against the Meadow it shows what the rain costs |
+
+TD-2 (docs/phases/test-data-track.md) added a strip at the north edge (z 46-58) for the per-setting Graphics test's
+benchmark path (`game/js/logic/bench-path.js`, segments `shore`, `shoreNight`, `slope`): a road at z 47.6, a stream along
+z 51.5 with two street lamps on its south shore, a cool spring and a fountain on a small plaza across it, a deep pond
+(fish) at its end (39, 53), and to the east a 50% slope up to 3 m (x 44-51) beside a 2.5 m cliff (x 52.5-59). The
+stations above are unchanged. The per-setting test walks routes through all of the place (and test_light_room for a
+room); the segments and what each dial needs are in bench-path.js, the run in docs/TESTING.md.
 
 The map's own light is a mid sun (angle 35, height 40). A station that needs another light sets it for its steps:
 the shadow court a side sun (angle 30, height 30), the sun gap a low sun ahead (angle -90, height 18), the lamp

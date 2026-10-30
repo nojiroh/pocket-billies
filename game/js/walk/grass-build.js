@@ -5,7 +5,7 @@
 import { expose } from '../test-globals.js';
 import { provide } from '../hooks.js';
 import { clamp } from '../util.js';
-import { hash2d, isWalkable, navGrid, stepRaiseAt, valueNoise2d, walkData, walkView } from '../walk-view.js';
+import { hash2d, navGrid, stepRaiseAt, valueNoise2d, walkData, walkView } from '../walk-view.js';
 import { engineSetting } from '../engine/settings.js';
 import { gpuBuffer, gpuFree, gpuState, gpuVao } from '../engine/webgl.js';
 import { walkRenderer } from './walk-state.js';
@@ -13,9 +13,12 @@ import { rawHeightAt } from './heights.js';
 /* eslint-disable no-func-assign */
 expose({
   GRASS_KINDS: [() => GRASS_KINDS],
+  GRASS_STRIP: [() => GRASS_STRIP],
   NEAR_DIRS: [() => NEAR_DIRS],
   buildFarProps: [() => buildFarProps, v => (buildFarProps = v)],
   buildGrass: [() => buildGrass, v => setBuildGrass(v)],
+  grassJob: [() => grassJob, v => (grassJob = v)],
+  grassStep: [() => grassStep, v => (grassStep = v)],
   grassWork: [() => grassWork, v => setGrassWork(v)],
 });
 /* eslint-enable no-func-assign */
@@ -77,8 +80,7 @@ const NEAR_DIRS = [0, 4, 2, 6, 1, 3, 7, 5];
 /* v39: planting is spread over frames: each frame plants rows for a few milliseconds (grassWork), and the blades
    appear when the last row is in, so a big meadow no longer costs one long frame when the scene opens */
 export function buildGrass() {
-  const gl = gpuState.gl,
-    sc = walkView.sc;
+  const sc = walkView.sc;
   walkRenderer.grassDrawn = 0;
   /* v46: a room has none (the count used to carry over from the last place) */ if (walkRenderer.grass) {
     gpuFree(walkRenderer.grass.vao);
@@ -86,16 +88,29 @@ export function buildGrass() {
     gpuFree(walkRenderer.grass.vb);
   }
   walkRenderer.grass = null;
+  if (walkRenderer.grassJob) walkRenderer.grassJob.abort();
   walkRenderer.grassJob = null;
   walkRenderer.grassKey = engineSetting('grass', 'density');
   if (sc.indoor && !sc.grass) return;
+  walkRenderer.grassJob = grassJob(sc, navGrid(), walkRenderer);
+  /* FL-4 (quality.grassAhead): the first slice as long as the others (it was 12 ms) */
+  grassWork(engineSetting('quality', 'grassAhead') ? 4 : 12);
+}
+/* FL-4: the planting of view sc's grass, on its own walking grid G, into target (walkRenderer, or a view's entry
+   prepared ahead: walk/map-cache.js grassAheadWork); grassStep runs it */
+export function grassJob(sc, G, target) {
   /* alpha 0.4: the blades go straight into a growing Float32Array (8 numbers each) instead of a plain array of numbers:
     planting a big place made several MB of garbage, and a phone's clean-up of it was the worst hitch on arrival */
   const dk = engineSetting('grass', 'density'),
     rnd = (a, b) => hash2d(a * 7 + 3, b * 13 + 5),
     dens = { t: 30, g: 4, G: 7, f: 5, l: 3, y: 2, C: 5, H: 6, R: 9, M: 1, L: 1, B: 6, E: 7, F: 1 };
-  navGrid();
-  const J = { sc, j: 0, k: 0, I: new Float32Array(8 * 4096), n: 0 };
+  const J = { sc, dk, j: 0, k: 0, I: new Float32Array(8 * 4096), n: 0, target, fin: null, gpu: null };
+  /* isWalkable on G (the same cells walk-view.js navCellAt reads), so a view not on screen yet can be planted */
+  const walkableOn = (x, z) => {
+    const i = Math.floor(x * G.N),
+      j = Math.floor(z * G.N);
+    return !(i < 0 || j < 0 || i >= G.gw || j >= G.gh) && !G.blk[j * G.gw + i];
+  };
   const C0 = walkData().sc,
     rows = sc.tiles || [];
   const W2 = sc.w * 2,
@@ -169,7 +184,7 @@ export function buildGrass() {
               z = z0 + rnd(J.k, 2);
             const dir = nearDir(x, z, 0.35, 'gGflt');
             if (dir < 0) continue;
-            if (!isWalkable(x, z) || occ[Math.floor(z * 2) * W2 + Math.floor(x * 2)]) continue;
+            if (!walkableOn(x, z) || occ[Math.floor(z * 2) * W2 + Math.floor(x * 2)]) continue;
             /* 0.1.0 alpha: the tuft takes its colour from the grass beside it (kind + 8 x (direction + 1)) */
             add(x, z, 0.08 + rnd(J.k, 4) * 0.1, 8 * (dir + 1), (valueNoise2d(x * 0.18, z * 0.18) - 0.5) * 1.2);
           }
@@ -180,7 +195,7 @@ export function buildGrass() {
         J.k++;
         const x = i + rnd(J.k, 1),
           z = z0 + rnd(J.k, 2);
-        if (!isWalkable(x, z) && ch !== 't') continue;
+        if (!walkableOn(x, z) && ch !== 't') continue;
         const q = Math.floor(z * 2) * W2 + Math.floor(x * 2);
         if (occ[q]) continue;
         const kind = pick(ch, rnd(J.k, 7));
@@ -194,8 +209,10 @@ export function buildGrass() {
       }
     }
   };
-  J.done = () => {
-    const N = J.n,
+  /* the blades sorted and sent to the card; strips (quality.grassAhead): the sort, then about 1 MB a slice */
+  J.finish = function* (strips) {
+    const gl = gpuState.gl,
+      N = J.n,
       A = J.I;
     if (!N) return;
     /* v32: blades sorted into 8 m squares, so only the squares in view are drawn (alpha 0.4: a counting sort into one
@@ -247,6 +264,7 @@ export function buildGrass() {
       start[k]++;
     }
     J.I = null;
+    if (strips) yield;
     const vao = gpuVao('ground');
     gl.bindVertexArray(vao);
     const vb = gpuBuffer('ground', 48);
@@ -255,8 +273,10 @@ export function buildGrass() {
     gl.enableVertexAttribArray(0);
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 8, 0);
     const ib = gpuBuffer('ground', I.byteLength);
+    J.gpu = { vao, vb, ib };
     gl.bindBuffer(gl.ARRAY_BUFFER, ib);
-    gl.bufferData(gl.ARRAY_BUFFER, I, gl.STATIC_DRAW);
+    if (strips) gl.bufferData(gl.ARRAY_BUFFER, I.byteLength, gl.STATIC_DRAW);
+    else gl.bufferData(gl.ARRAY_BUFFER, I, gl.STATIC_DRAW);
     gl.enableVertexAttribArray(1);
     gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, 0);
     gl.vertexAttribDivisor(1, 1);
@@ -264,10 +284,43 @@ export function buildGrass() {
     gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, 16);
     gl.vertexAttribDivisor(2, 1);
     gl.bindVertexArray(null);
-    walkRenderer.grass = { vao, vb, ib, n: I.length / 8, chunks };
+    if (strips)
+      for (let o = 0; o < I.length; o += GRASS_STRIP) {
+        yield;
+        gl.bindBuffer(gl.ARRAY_BUFFER, ib);
+        gl.bufferSubData(gl.ARRAY_BUFFER, o * 4, I, o, Math.min(GRASS_STRIP, I.length - o));
+        walkRenderer.grassStrips = (walkRenderer.grassStrips || 0) + 1;
+      }
+    J.gpu = null;
+    J.target.grass = { vao, vb, ib, n: I.length / 8, chunks };
   };
-  walkRenderer.grassJob = J;
-  grassWork(12);
+  /* a job let go before it was done gives back what it had on the card */
+  J.abort = () => {
+    if (!J.gpu) return;
+    gpuFree(J.gpu.vao);
+    gpuFree(J.gpu.ib);
+    gpuFree(J.gpu.vb);
+    J.gpu = null;
+  };
+  return J;
+}
+/* FL-4: 256k numbers (1 MB) a strip */
+const GRASS_STRIP = 262144;
+/* a slice of job J, ms long; true when it is done. Without strips its end (the sort and the upload) runs at once */
+export function grassStep(J, ms) {
+  const t0 = performance.now(),
+    sc = J.sc;
+  while (!J.fin && J.j < sc.h && performance.now() - t0 < ms) {
+    J.row(J.j);
+    J.j++;
+  }
+  if (J.j < sc.h) return false;
+  const strips = !!engineSetting('quality', 'grassAhead');
+  if (!J.fin) J.fin = J.finish(strips);
+  for (;;) {
+    if (J.fin.next().done) return true;
+    if (performance.now() - t0 >= ms) return false;
+  }
 }
 export function grassWork(ms = 4) {
   const J = walkRenderer.grassJob;
@@ -277,18 +330,10 @@ export function grassWork(ms = 4) {
        set, so the place kept no grass at all, also when it came back from the scene cache: the iPad's log) */
     walkRenderer.grassJob = null;
     walkRenderer.grassKey = null;
+    J.abort();
     return;
   }
-  const t0 = performance.now(),
-    sc = J.sc;
-  while (J.j < sc.h && performance.now() - t0 < ms) {
-    J.row(J.j);
-    J.j++;
-  }
-  if (J.j >= sc.h) {
-    walkRenderer.grassJob = null;
-    J.done();
-  }
+  if (grassStep(J, ms)) walkRenderer.grassJob = null;
 }
 
 /* distant trees, rocks or cacti scattered on the land around the scene (taken from the scene's own props) */

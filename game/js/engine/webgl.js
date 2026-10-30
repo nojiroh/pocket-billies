@@ -5,13 +5,21 @@
    One engine state object, gpuState, is shared by every view. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { artCacheVersion, onGlContextRestored, provide, walkRenderer, worldBowlContextRestored } from '../hooks.js';
+import {
+  artCacheVersion,
+  environment,
+  onGlContextRestored,
+  provide,
+  walkRenderer,
+  worldBowlContextRestored,
+} from '../hooks.js';
 import { clamp } from '../util.js';
 import { blueNoiseTable } from '../logic/blue-noise.js';
+import { drawErrorWatch } from './gpu-counters.js';
 import { mediumpFragment } from './shader-precision.js';
 import { FRAME_BLOCK_BYTES, FRAME_BLOCK_GLSL, FRAME_BLOCK_LAYOUT } from './frame-block.js';
 import { makeCanvas } from '../art.js';
-import { imageReady } from '../walk-view.js';
+import { imageReady, walkView } from '../walk-view.js';
 import { engineSetting } from './settings.js';
 /* eslint-disable no-func-assign */
 expose({
@@ -125,6 +133,8 @@ export const gpuState = {
   flatN: null,
   quad: null,
   fb: {},
+  /* FL-3b: render targets made again at another size, in all and by name (renderTarget) */
+  fbRe: { n: 0, by: /** @type {Record<string, number>} */ ({}) },
   hdr: false,
   samp: {},
   normQ: [],
@@ -453,12 +463,23 @@ function beginProgramCompile(def, name, plain) {
       gl.bindAttribLocation(p, l, n);
   });
   gl.linkProgram(p);
-  return { p, a, b, name, gl, gen: gpuState.gen, def, mp };
+  /* TD-1: a refused draw names its program (gpu-counters.js drawErrorWatch) */
+  if (p) p.pbName = name;
+  return { p, a, b, name, gl, gen: gpuState.gen, def, mp, t0: performance.now() };
 }
 export function finishProgramCompile(j) {
   const gl = gpuState.gl,
-    p = j.p;
-  if (!gl.getProgramParameter(p, gl.LINK_STATUS)) {
+    p = j.p,
+    tw = performance.now(),
+    ok = gl.getProgramParameter(p, gl.LINK_STATUS);
+  /* FL-5a: each program's link, by name: [ms the page waited on the status read, ms from its start to here] (the
+     debug log's gpuMemory.linkMs; the draw order's variants beside their originals, for iOS) */
+  const now = performance.now();
+  (gpuState.linkMs || (gpuState.linkMs = {}))[j.name] = [
+    Math.round((now - tw) * 10) / 10,
+    Math.round(now - (j.t0 || tw)),
+  ];
+  if (!ok) {
     const e =
       (gl.getShaderParameter(j.a, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.a)) +
         (gl.getShaderParameter(j.b, gl.COMPILE_STATUS) ? '' : gl.getShaderInfoLog(j.b)) || gl.getProgramInfoLog(p);
@@ -714,6 +735,19 @@ export function initWebgl(cv) {
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.samplerParameteri(gpuState.samp.raw, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     watchContextLoss(cv);
+    /* TD-1: ?glerr checks every draw for a refusal and logs each kind once, with the place, hour, pass, program and
+       target (slow: the GPU waits after each draw; for finding a refused draw, as the light lab's on Firefox) */
+    if (typeof location !== 'undefined' && /[?&]glerr\b/.test(location.search)) {
+      const seen = new Set();
+      drawErrorWatch(gl, r => {
+        const at = typeof walkView !== 'undefined' ? walkView.id : '?',
+          hour = typeof environment !== 'undefined' ? +environment.tod.toFixed(1) : '?',
+          k = `${r.call} ${r.code} in ${r.pass} (${r.program} -> ${r.target}${r.size ? ', ' + r.size : ''}) at ${at}`;
+        if (seen.has(k)) return;
+        seen.add(k);
+        console.error(`WebGL refused a draw: ${k}, ${hour} h`);
+      });
+    }
     if (typeof debugLog !== 'undefined') debugLog.add('webgl', `ready${gpuState.hdr ? ' (HDR)' : ''}`);
     return true;
   } catch (e) {
@@ -1330,6 +1364,11 @@ export function renderTarget(name, w, h, o = {}) {
     F = gpuState.fb[name];
   if (F && F.w === w && F.h === h) return F;
   if (F) {
+    /* FL-3b: a target made again at another size (the screen-sized ones follow the canvas): counted by name for the
+       gates (tools/check-resolution.py) and the debug log */
+    const re = gpuState.fbRe;
+    re.n++;
+    re.by[name] = (re.by[name] || 0) + 1;
     gpuFree(F.f);
     gpuFree(F.c);
     gpuFree(F.d);
@@ -1382,6 +1421,8 @@ export function renderTarget(name, w, h, o = {}) {
     gl.drawBuffers([gl.NONE]);
     gl.readBuffer(gl.NONE);
   }
+  /* TD-1: a refused draw names the target it drew to (gpu-counters.js drawErrorWatch) */
+  if (f) f.pbName = name;
   return (gpuState.fb[name] = { f, c, d, w, h, cs });
 }
 /* v43: a quad split into a grid (for cloth that waves); the same aC attribute as the quad */

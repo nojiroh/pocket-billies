@@ -23,19 +23,21 @@
  * @typedef {{ give: ReturnType<typeof runGive>, unlocks: string[], mods: string[],
  *   data: { nodeTypes: Record<string, NodeType>, biomes: Record<string, { climate?: string }>, rules: any },
  *   map: RunMap, forecast: string[][], region: RunRegion | null, board: RunBoard | null,
- *   ghost: RunGhost | null }} RunStartPlan
+ *   ghost: RunGhost | null, first?: boolean }} RunStartPlan
  * ON-2: board, a daily's or weekly's day or week (logic/daily.js); ghost, the friend's ghost team on the map's ghost
- * node (logic/run-record.js ghostPick; null when none, or no place fits it)
+ * node (logic/run-record.js ghostPick; null when none, or no place fits it); IN-1: first, the prepared first run's
+ * (logic/first-run.js firstRunPlan)
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { RELATIONS, RESIDENTS, RULES, UNLOCK_DATA, wishTakeoff } from '../hooks.js';
+import { FIRST_RUN, RELATIONS, RESIDENTS, RULES, UNLOCK_DATA, wishTakeoff } from '../hooks.js';
 import { relTakeoff } from './relations.js';
 import { resTakeoff } from './residents.js';
 import { copyOf, newRun, runBegin } from './run-state.js';
 import { runRegionMake } from './run-region.js';
 import { runSideForce } from './run-side.js';
 import { runMapLength, runMapStart } from './run-map.js';
+import { firstRunEvents, firstRunPlan, firstRunRows } from './first-run.js';
 import { MAPGEN_VERSION } from './mapgen.js';
 import { unlockOpen } from './unlocks.js';
 /* eslint-disable no-func-assign */
@@ -45,6 +47,8 @@ expose({
   runStartOn: [() => runStartOn, v => (runStartOn = v)],
   // @ts-expect-error -- replaced on purpose
   runStartPlan: [() => runStartPlan, v => (runStartPlan = v)],
+  // @ts-expect-error -- replaced on purpose
+  runStartPrepared: [() => runStartPrepared, v => (runStartPrepared = v)],
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
@@ -138,6 +142,12 @@ export function runStartOn(s, plan, pick = {}) {
   run.forecast = copyOf(plan.forecast);
   if (plan.region) run.region = copyOf(plan.region);
   if (plan.ghost) run.ghost = copyOf(plan.ghost);
+  /* IN-1: the prepared first run is the same for everyone: no hub person's bonus or gift rides along (there is no
+     hub yet on a new game) */
+  if (plan.first) {
+    run.first = true;
+    return run;
+  }
   /* ON-2: a daily or weekly is the same for everyone: Blake meets you for the first time, and no hub person's
      bonus or gift rides along */
   if (plan.board) {
@@ -151,5 +161,27 @@ export function runStartOn(s, plan, pick = {}) {
   if (RESIDENTS && UNLOCK_DATA) resTakeoff(s, RESIDENTS, UNLOCK_DATA.unlocks);
   /* HB-10d: a boon or curse from the square's fountain joins this run, an item from it goes into the bag */
   if (RULES && RULES.square && RULES.square.wish) wishTakeoff(s, RULES.square.wish);
+  return run;
+}
+
+/** IN-1: the prepared first run (game/data/firstRun.json; logic/first-run.js) put on a save: planned from the file's
+ * seed with the file's rows (runStartPlan, no unlocks, no mods), its map, region zones and leaders the file's
+ * (firstRunPlan), the gift rules.json run.first (5 Pyramids and a Potion, no money: data.rules.first), its waystations'
+ * events pinned, and run.first set. Only the save's lead travels (on a new game, the starter); nothing is packed.
+ * There is no train ride: you are already on the landing (the page arrives there itself). Returns the run
+ * @param {SaveData} s @param {RunStartData} data @param {import('../../types/game-data').FirstRunData | null} [F]
+ * @returns {Run} */
+export function runStartPrepared(s, data, F = FIRST_RUN) {
+  if (!F) throw new Error('runStartPrepared: no firstRun.json');
+  if (!s.team.length) throw new Error('runStartPrepared: nobody to travel');
+  const expedition = F.expedition || 1,
+    plan = firstRunPlan(
+      runStartPlan(F.seed, { ...data, fieldMoves: undefined }, { map: firstRunRows(F), expedition }),
+      F,
+      data
+    );
+  plan.give = runGive(F.seed, expedition, MAPGEN_VERSION, data.rules.first || data.rules.start);
+  const run = runStartOn(s, plan, { home: [s.team[0].uid] });
+  firstRunEvents(run, F);
   return run;
 }

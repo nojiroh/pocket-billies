@@ -53,6 +53,7 @@ import {
   dataModifiers,
   dataFactions,
   dataBosses,
+  dataFirstRun,
   dataHeldItems,
   dataGenes,
   dataQuests,
@@ -64,6 +65,7 @@ import {
   dataEvents,
   dataBanter,
   dataTalkSkins,
+  dataKappiTips,
   dataEmotes,
   dataRelations,
   dataShowcase,
@@ -194,7 +196,14 @@ const parkedMaps = (() => {
 })();
 // cutscenes: the map each is filmed on, the spots its paths join (their scripts: the story checks below)
 for (const [id, C] of Object.entries(D.cutscenes || {})) {
-  if (!(D.maps || {})[C.map] && !parkedMaps.has(C.map))
+  /* IN-5: one filmed on the prepared run's landing has no map of its own; its spots are the crash site's */
+  if (C.landing) {
+    const S = (D.firstRun && D.firstRun.crash && D.firstRun.crash.spots) || {};
+    if (C.map !== 'first_run') problem(`cutscenes/${id}.json`, `filmed on the landing: its map is first_run`);
+    for (const k of new Set([...Object.keys(S), ...Object.keys(C.spots)]))
+      if (JSON.stringify(S[k]) !== JSON.stringify(C.spots[k]))
+        problem(`cutscenes/${id}.json`, `spot ${k} isn't the crash site's (firstRun.json crash.spots)`);
+  } else if (!(D.maps || {})[C.map] && !parkedMaps.has(C.map))
     problem(`cutscenes/${id}.json`, `filmed on map ${C.map}, no such map`);
   for (const [a, b] of (C.clear && C.clear.paths) || [])
     for (const s of [a, b])
@@ -338,6 +347,7 @@ for (const family of [
   dataModifiers,
   dataFactions,
   dataBosses,
+  dataFirstRun,
   dataHeldItems,
   dataGenes,
   dataQuests,
@@ -350,6 +360,7 @@ for (const family of [
   dataEvents,
   dataBanter,
   dataTalkSkins,
+  dataKappiTips,
   dataEmotes,
   dataRelations,
   dataShowcase,
@@ -695,6 +706,8 @@ route.forEach((p, n) => {
   }
   need(scenery.wallArt || 'scene/build/walls.png', 'the walls');
   for (const k of ['detail', 'rooms']) need((scenery.buildArt || {})[k], `buildArt.${k}`);
+  /* BD-2b: the normal sheet beside the building sheet (optional: without it the buildings draw flat) */
+  if ((scenery.buildArt || {}).normal) need(scenery.buildArt.normal, 'buildArt.normal');
 }
 
 // Studio plan Phase 5 (T5.3): the rigs (game/art/next/rigs-next.js and art/rigs.js) hold together: boxes inside their

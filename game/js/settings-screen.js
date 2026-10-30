@@ -4,6 +4,8 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import {
+  BENCH_BUDGET_MB,
+  BENCH_SEGMENTS,
   BUILDING_SHADERS,
   ENGINE_DEFAULTS,
   ENGINE_PRESETS,
@@ -21,6 +23,15 @@ import {
   applyVolumes,
   attributeClashes,
   battleStageStop,
+  benchConditions,
+  benchMemory,
+  benchMemoryGuess,
+  benchMinutes,
+  benchOpen,
+  benchPlan,
+  benchStateLoad,
+  benchWalk,
+  benchWalkEnd,
   closeModal,
   compileProgram,
   engineSetting,
@@ -50,6 +61,7 @@ import { metresToKm, today } from './logic/rules.js';
 import { motionLevelOf } from './logic/motion.js';
 import { uiPalettes } from './logic/ui-theme.js';
 import { setUiPalette } from './theme-sheet.js';
+import { pbPatch } from './ui-motion.js';
 import { SAVE_NEW_MSG, SAVE_OLD_MSG, newSaveKeepingPreferences, saveAge, saveFill, validSave } from './logic/saves.js';
 import { onlinePlayOn } from './logic/online.js';
 import {
@@ -186,6 +198,10 @@ async function startGraphicsTest() {
     ENGINE_PRESETS,
     FIXTURE_NAMES,
     version: PB_VERSION,
+    /* TD-2: the benchmark path (logic/bench-path.js) and its walker (bench-walk.js) */
+    bench: { BENCH_BUDGET_MB, BENCH_SEGMENTS, benchPlan, benchMinutes, benchMemoryGuess, benchStateLoad },
+    walk: { benchOpen, benchWalk, benchWalkEnd, benchMemory, benchConditions },
+    rebuildFromSettings,
   });
 }
 export async function exportSave() {
@@ -415,6 +431,12 @@ function settingsHTML() {
         'Buddy walks with you',
         'Your buddy follows you around the world. Tap it to see how it’s doing.',
         switchHTML('buddyWalk', p.buddyWalk !== 'off', 'on', 'off')
+      ) +
+      /* IN-2: Kappi's word on a run when you seem stuck (kappi.js) */
+      settingsRowHTML(
+        'Kappi’s tips',
+        'On a run, Kappi says a word now and then when you seem stuck. Each tip comes once.',
+        switchHTML('kappiTips', p.kappiTips !== 'off', 'on', 'off')
       ) +
       settingsRowHTML(
         'Language',
@@ -692,6 +714,12 @@ export function settingsRefresh() {
   const b = document.querySelector('.sheet .body'),
     y = b ? b.scrollTop : 0;
   uiState.modal.html = settingsHTML();
+  /* FL-6: the open sheet changes in place (ui-motion.js pbPatch: the switch, segment or tab that changed and what
+     follows from it), not the whole window again; its scroll and focus stay */
+  if (b && b.closest('.set-sheet') && uiState._lastM === uiState.modal) {
+    pbPatch(b, uiState.modal.html);
+    return;
+  }
   renderOverlay();
   const b2 = document.querySelector('.sheet .body');
   if (b2) b2.scrollTop = y;

@@ -7,10 +7,12 @@ import * as espree from 'espree';
 import * as eslintScope from 'eslint-scope';
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
-import { basename, dirname, join, normalize } from 'node:path';
+import { join, posix } from 'node:path';
 import { HOOKS, LOG_NAMES, PAGES, SCRIPT_TAG, stripped } from './to-module.mjs';
 
 const ROOT = join(import.meta.dirname, '..');
+// the files' names are the repo's, with forward slashes, on Windows too (to-module.mjs's names)
+const { basename, dirname, normalize } = posix;
 const read = f => readFileSync(join(ROOT, f), 'utf8');
 const GENERATED = new Set(['game/data/gamedata.js', HOOKS, LOG_NAMES]);
 
@@ -27,7 +29,7 @@ function units() {
         out.set(`${page}#inline${n++}`, { text, sourceType: 'script' });
         continue;
       }
-      const file = normalize(join(dirname(page), src[1]));
+      const file = normalize(posix.join(dirname(page), src[1]));
       if (src[1].includes('://') || out.has(file) || GENERATED.has(file)) continue;
       const module = /\btype="module"/.test(attrs);
       out.set(file, { text: module ? stripped(read(file)) : read(file), sourceType: 'script' });

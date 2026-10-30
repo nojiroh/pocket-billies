@@ -9,6 +9,7 @@
 import { expose } from './test-globals.js';
 import { soundEffect, toast } from './hooks.js';
 import { clamp, random } from './util.js';
+import { everyFree } from './free-tick.js';
 import { COATS, RULES, SPECIES, gameData } from './game-data.js';
 import { coatPrefix, encounterPoolHere, newUid, pickWeighted } from './logic/rules.js';
 import { coatRoll } from './logic/coats.js';
@@ -137,7 +138,7 @@ function fishPoll() {
   const ok = !fishing.on && uiState.tab === 'walk' && !uiState.bench && !!fishSpot();
   if (b.hidden === ok) b.hidden = !ok;
 }
-setInterval(() => {
+everyFree(() => {
   try {
     fishPoll();
   } catch (e) {}

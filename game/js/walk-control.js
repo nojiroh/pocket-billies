@@ -3,8 +3,9 @@
 /* UI-5: the walk scene behind the Walk tab (rooms and their doors, what a tap on the scene does, crossing a seam, the map's look-ahead), moved from ui.js as it was; not a screen, so it keeps its shape */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
-import { provide, render } from './hooks.js';
+import { provide, render, selfTest } from './hooks.js';
 import { $, clamp } from './util.js';
+import { everyFree } from './free-tick.js';
 import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, trainersAt } from './game-data.js';
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
@@ -90,10 +91,12 @@ expose({
   roomState: [() => roomState, v => ((roomState = v), provide({ roomState }))],
   roomStepIn: [() => roomStepIn, v => (roomStepIn = v)],
   runSeenSum: [() => runSeenSum, v => (runSeenSum = v)],
+  safeBand: [() => safeBand],
   walkCross: [() => walkCross, v => (walkCross = v)],
   walkMapSync: [() => walkMapSync, v => (walkMapSync = v)],
   walkPick: [() => walkPick, v => ((walkPick = v), provide({ walkPick }))],
   walkState: [() => walkState, v => (walkState = v)],
+  worldMoving: [() => worldMoving, v => (worldMoving = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ leaveRoom, mapIdAt, mapOffsetInView, roomState, walkPick });
@@ -756,7 +759,7 @@ function exitPrompt(e) {
     l = Math.hypot(dx, dz) || 1;
   walkTo(walkablePointNear(pt[0] + (dx / l) * 3.5, pt[1] + (dz / l) * 3.5));
 }
-setInterval(() => {
+everyFree(() => {
   try {
     if (typeof storyResumeCheck === 'function') storyResumeCheck();
     if (typeof storyPendingCheck === 'function') storyPendingCheck();
@@ -864,7 +867,7 @@ function runSeenSum() {
 }
 /* alpha 0.4.1: a view that was held until it was ready (seamless-world.js seamlessGate) takes over as soon as it is: walking yourself,
    nothing else would ask for it (a trip did, with each batch of steps) */
-setInterval(() => {
+everyFree(() => {
   try {
     if (
       !saveData.started ||
@@ -880,6 +883,21 @@ setInterval(() => {
     if (v && v.id && v.id !== walkView.id && !v.held) walkMapSync();
   } catch (e) {}
 }, 400);
+/* FL-1b: the walk screen's free band (between its top card and its foot), kept for one frame */
+const safeBand = { t: -1, v: null };
+/* FL-6: the windows (and moments) that keep the world moving behind them instead of freezing it: a window that asks
+   for it (modal({world: true})), the debug menu (its live numbers), Settings' Display tab (the graphics dials show a
+   change at once), a picture the debug log is waiting for, a scene being played (cutscene/director.js) and the
+   in-game tests (their steps wait on frames). Asked of the owner (docs/HANDOFF.md FL-6) */
+function worldMoving() {
+  const M = uiState.modal;
+  return !!(
+    (M && (M.world || M.dbg || (M.settings && uiState.setTab === 'graphics'))) ||
+    walkRenderer.snapReq ||
+    walkView.director ||
+    (typeof selfTest !== 'undefined' && selfTest.on)
+  );
+}
 export function walkMapSync() {
   if (typeof cutscene !== 'undefined' && cutscene.on) return;
   /* in a battle the scene keeps running inside the battle stage (battle-3d.js) when it can; otherwise it stops */
@@ -979,35 +997,46 @@ export function walkMapSync() {
       },
       keys: () => !uiState.modal && uiState.tab === 'walk' && !uiState.walkSheet,
       active: () => uiState.tab === 'walk' && !uiState.modal && !routeSight.busy,
+      /* FL-1b: read once a frame (walkView.t moves every frame), not for each exit label: two layout reads each */
       safe: () => {
+        if (safeBand.t === walkView.t && safeBand.v) return safeBand.v;
         const a = $('.wh-card'),
           b = $('.wh-foot'),
           H = innerHeight;
-        return [
+        safeBand.t = walkView.t;
+        safeBand.v = [
           a ? clamp(a.getBoundingClientRect().bottom / H, 0, 0.5) : 0.1,
           b ? clamp(b.getBoundingClientRect().top / H, 0.5, 1) : 0.88,
         ];
+        return safeBand.v;
       },
       /* behind a menu the world runs at 20 a second: a frame stays under the 60 ms a frame may count
          (walk-view-gl.js drawWalkFrame), so it keeps its speed (at 10 it ran at 60% of it) */
       cap: () => {
+        /* FL-1b: a window over a screen counts as the screen (it stays at the screen's rate, not back to 20) */
         const w = document.hidden
           ? 'hidden'
           : walkView.battle
             ? ''
-            : uiState.modal
-              ? 'window'
-              : uiState.tab !== 'walk' || (typeof dressingRoom !== 'undefined' && dressingRoom.on)
-                ? 'screen'
+            : uiState.tab !== 'walk' || (typeof dressingRoom !== 'undefined' && dressingRoom.on)
+              ? 'screen'
+              : uiState.modal
+                ? 'window'
                 : '';
         /* 0.1.0 alpha: behind a full screen (Team, Guide, Bag...; CH-7: the dressing room, which covers it whole and
-           bakes its figures meanwhile) the world settles for 0.8 s, then nearly stops (1 a
-           second): a still canvas lets the browser keep its blurred backdrop instead of blurring it again every frame,
-           which made a phone's menus crawl */
+           bakes its figures in its own loop) the world nearly stops (1 a second): a still canvas lets the browser keep
+           its blurred backdrop instead of blurring it again every frame, which made a phone's menus crawl. FL-1b: at
+           once (it drew 0.8 s more at 24, each frame at full cost, while the tab opened) */
         if (w !== walkView.held) walkView.heldT = performance.now();
         walkView.held = w;
-        if (w === 'screen') return performance.now() - (walkView.heldT || 0) > 800 ? 1 : 24;
-        return w === 'hidden' ? 1 : w === 'window' ? 20 : userFps();
+        if (w === 'hidden') return 1;
+        /* FL-6 (the owner's answer): behind a full screen or a window the world is frozen: a change of rate draws
+           one frame at once (logic/frame-pace.js paceDue), then none (FL-3b: a cap of 0; it was the scheduler's floor,
+           0.1, one frame in 10 s).
+           The world's clock runs inside the draw, so the game pauses there. Some windows keep the world moving
+           (worldMoving below), at the rates they had: 1 behind a screen, 20 behind a window */
+        if (w === 'screen' || w === 'window') return worldMoving() ? (w === 'screen' ? 1 : 20) : 0;
+        return userFps();
       },
     }).then(() => cv.classList.add('in'));
   }

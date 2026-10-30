@@ -27,6 +27,7 @@ import {
   runOver,
   runStartable,
   runTakeOff,
+  runTakeOffPrepared,
   showModHTML,
   soundTestAction,
   soundTestHTML,
@@ -89,7 +90,7 @@ import { rewardDataGame, rewardOfferMake } from './logic/rewards.js';
 import { allSnapshots, battleSay, checkFaints, fighter, startTrainer, startWild } from './logic/battle-engine.js';
 import { buildingLevel, unlockGrant } from './logic/unlocks.js';
 import { activeBattle, escapeHtml, save, saveData, saveNow, uiState } from './game-state.js';
-import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
+import { frameScheduler, userFps } from './frame-scheduler.js';
 import { uiIconHTML } from './art.js';
 import { applyPreferences, exportSave, settingsReset } from './settings-screen.js';
 import { battleStage, battleStageResize } from './battle-stage.js';
@@ -98,13 +99,15 @@ import { engineSetting } from './engine/settings.js';
 import { forceContextLoss, gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { rebuildFromSettings } from './walk/map-cache.js';
+import { spriteInstanceState } from './walk/sprites.js';
+import { precompileDrawOrder } from './walk-view-gl.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
-import { worldMap } from './world-bowl.js';
 /* eslint-disable no-func-assign */
 expose({
   DEBUG_LOOK: [() => DEBUG_LOOK],
   DEBUG_OPEN_KEY: [() => DEBUG_OPEN_KEY],
   FIGURE_SWITCHES: [() => FIGURE_SWITCHES],
+  PICTURE_PATH_SWITCHES: [() => PICTURE_PATH_SWITCHES],
   TERRAIN_LOOK_SWITCHES: [() => TERRAIN_LOOK_SWITCHES],
   debugAction: [() => debugAction, v => (debugAction = v)],
   debugButtonHTML: [() => debugButtonHTML],
@@ -124,6 +127,7 @@ expose({
   debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
   figureSwitchLabel: [() => figureSwitchLabel, v => (figureSwitchLabel = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
+  picturePathLabel: [() => picturePathLabel, v => (picturePathLabel = v)],
   refreshDebugMenu: [() => refreshDebugMenu, v => (refreshDebugMenu = v)],
 });
 /* eslint-enable no-func-assign */
@@ -208,6 +212,33 @@ const TERRAIN_LOOK_SWITCHES = [
   ['tr4snow', 'snowLine', 'Snow line'],
   ['tr4edges', 'cliffEdges', 'Scree and turf edges'],
 ];
+/* fluid track FL-2a: the old drawing paths, kept one release (players have no Settings switch): [action, Quality
+   switch, label] */
+const PICTURE_PATH_SWITCHES = [
+  ['fl2batch', 'spriteInstances', 'Pictures in batches'],
+  ['fl2sky', 'skyLast', 'Sky last'],
+  /* FL-3a: the automatic quality's controller, off until the owner's phone run */
+  ['fl3ctl', 'controller', 'Frame controller'],
+  /* FL-3b: the resolution levels, resized only out of sight, off until the owner's phone run */
+  ['fl3res', 'resSteps', 'Resolution steps'],
+  /* FL-4: even frames, each off until the owner's phone run */
+  ['fl4cells', 'shadowCells', 'Shadow cache by squares'],
+  ['fl4hold', 'shadowHold', 'Hold still far shadows'],
+  ['fl4grass', 'grassAhead', 'Grass planted ahead'],
+  ['fl4ticks', 'freeTicks', 'Jobs in free time'],
+  /* FL-5a: the draw order for tile GPUs, off until the owner's phone run */
+  ['fl5order', 'drawOrder', 'Solid first'],
+  ['fl5ground', 'groundSlice', 'Ground built in slices'],
+];
+/** a picture path switch's label: on, off, or off by itself after a GL error (walk/sprites.js firstInBatches) */
+function picturePathLabel([, k, l]) {
+  const fell =
+    k === 'spriteInstances' &&
+    typeof spriteInstanceState !== 'undefined' &&
+    !!spriteInstanceState.bad &&
+    spriteInstanceState.bad === gpuState.gl;
+  return (fell ? 'Off (GL error): ' : engineSetting('quality', k) ? 'On: ' : 'Off: ') + l;
+}
 /* characters track CH-3: the figure spike's dials (Engine > People), stepped through for this session (the game
    data's engine defaults, as the Studio's engine editor sets them), to try on the phone: [action, dial, label,
    [value, its name]...] */
@@ -302,10 +333,11 @@ function debugHTML() {
     node = saveData.trip.node,
     p = saveData.preferences || {},
     inTest = !!(uiState.bench && uiState.bench.test);
-  const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (6-8 min on a phone) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
+  const tests = `<div class="dbg-row"><button class="pb small" data-a="quicktest">Full test</button><button class="pb small" data-a="diagtest">Diagnostics test</button><button class="pb small" data-a="gfxtest">Graphics test</button><button class="pb small" data-a="gfxbench">Graphics cost test</button>${debugButtonHTML('bowltest', 'Bowl map test')}<button class="pb small" data-a="dbglog">Export debug log</button><button class="pb small" data-a="killpage">Pretend the page was killed</button></div><p class="note">The full test (a few minutes) walks through every place and room, plays battles, the map and the opening, checks each for errors, then piles on more until the device can’t keep up. The diagnostics test (6-8 min on a phone) is a shorter run of the same. The graphics test tries each graphics setting on its own and saves a short report; the graphics cost test (10 min) measures what each one costs here. None of them changes the save. Pretend the page was killed reloads the page as a crash would; the next debug log should report it.</p><p class="note">The bowl map test opens the bowl world map and checks its shaders, that every place is on it and opens its card when tapped, that the camera keeps above the rim, Home, and the frame rate on this device.</p>
   <div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span></div>
   <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}${debugButtonHTML('glloss', 'Lose the GPU context')}${debugButtonHTML('foggrid', walkRenderer.dbg && walkRenderer.dbg.fogGrid ? 'Hide the fog grid' : 'Show the fog grid')}</div>
   <div class="dbg-row">${TERRAIN_LOOK_SWITCHES.map(([a, k, l]) => debugButtonHTML(a, (engineSetting('world', k) ? 'On: ' : 'Off: ') + l)).join('')}</div>
+  <div class="dbg-row">${PICTURE_PATH_SWITCHES.map(f => debugButtonHTML(f[0], picturePathLabel(f))).join('')}</div>
   <div class="dbg-row">${FIGURE_SWITCHES.map(f => debugButtonHTML(f[0], figureSwitchLabel(f))).join('')}</div><p class="note">Figures (the characters track's spike), for this session only: you as a small 3D figure baked into pixel art; with Townsfolk on, the townsfolk and your rival in battle too. Style plain 3D is the same figure without the pixel pass. Tap a button to step its value.</p><p class="note">Terrain look, off in the game: a run place's cliffs in its biome's rock and strata, snow above its snow line, scree and turf edges. For this session only; a mountains run (Runs above) shows them best.</p>
   ${
     DATA_WARN.length
@@ -324,7 +356,7 @@ function debugHTML() {
   const battle = `<div class="dbg-row">${debugButtonHTML('win', 'Win now', 'gold')}${debugButtonHTML('lose', 'Lose now')}${debugButtonHTML('foe1', 'Foe to 1 HP')}${debugButtonHTML('catch', uiState.dbgCatch ? 'Catching works as normal' : 'Every throw catches')}</div>
   <div class="dbg-row">${[1, 2, 4].map(x => debugButtonHTML('speed' + x, `${x}× speed`, battleStage.speed === x ? 'dark' : '')).join('')}</div>`;
   const run = saveData.run
-    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugSelectHTML(
+    ? `<p class="note">On a run: seed ${escapeHtml(saveData.run.seed)}, day ${saveData.run.clock}, ${saveData.run.at.phase}. “Go there” under Places and test scenes walks it a place at a time.</p><div class="dbg-row">${debugButtonHTML('runwin', 'Win the run', 'gold')}${debugButtonHTML('runlose', 'Lose the run', 'red')}</div><div class="dbg-row">${debugButtonHTML('pickupwin', 'Jump to the pickup (win)')}${debugButtonHTML('pickuplose', 'Jump to the pickup (loss)')}</div><div class="dbg-row">${debugSelectHTML(
         'dbgRelic',
         Object.keys(PERKS).map(k => [k, PERKS[k].name]),
         uiState.dbgRelic || Object.keys(PERKS)[0] || ''
@@ -333,7 +365,7 @@ function debugHTML() {
         Object.keys(EVENTS.events).map(k => [k, EVENTS.events[k].title]),
         uiState.dbgEvent || Object.keys(EVENTS.events)[0] || ''
       )}${debugButtonHTML('eventplay', 'Play this event', 'gold')}${debugButtonHTML('rewardpick', 'A trainer’s reward pick')}${debugButtonHTML('routetrainer', 'Walk into a route trainer’s sight')}${debugButtonHTML('heldpick', 'A held item’s pick')}${debugButtonHTML('heldall', 'Every held item into the bag')}</div><p class="note">An event here, as a waystation would hold it (played events: ${escapeHtml(((saveData.run.enc && saveData.run.enc.seen) || []).join(', ') || 'none')}). The reward pick is a route trainer’s.</p>`
-    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (6 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugSelectHTML(
+    : `<div class="dbg-row"><input id="dbgRunSeed" maxlength="20" placeholder="Seed (empty: a new one)" aria-label="Run seed" value="${escapeHtml(uiState.dbgRunSeed || '')}"><label><input id="dbgRunShort" type="checkbox"${uiState.dbgRunShort ? ' checked' : ''}> Short (6 rows)</label><label><input id="dbgRunMountains" type="checkbox"${uiState.dbgRunMountains ? ' checked' : ''}> Mountains and ledges</label>${debugButtonHTML('runstart', 'Start a run')}</div><div class="dbg-row">${debugButtonHTML('runprep', 'Prepared run', 'gold')}</div><p class="note">The first run, written by hand (firstRun.json): your lead alone, 5 Pyramids and a Potion, the crash site on the landing. It keeps every Billie, won or lost. New game doesn’t start it yet (IN-5).</p><div class="dbg-row">${debugSelectHTML(
         'dbgRunSide',
         [['', 'Side area: as the seed rolls'], ...debugSideOptions()],
         uiState.dbgRunSide || ''
@@ -484,7 +516,8 @@ function debugFps() {
     document.body.appendChild(el);
   }
   const m = frameScheduler.meter;
-  el.textContent = `${m.fps} fps · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${frameScheduler.hz} Hz`;
+  /* FL-1a: the main drawing task's own frames (frame-scheduler.js frameMeter), and the steady half rate when it is on */
+  el.textContent = `${m.fps} fps${frameScheduler.half ? ' (half rate)' : ''} · ${m.workAvg.toFixed(1)} ms${typeof gpuState !== 'undefined' && gpuState.gpuMs ? ' · GPU ' + gpuState.gpuMs.toFixed(1) + ' ms' : ''} · Q${battleStage.q.lvl} · ${frameScheduler.hz} Hz`;
 }
 /* SP-1: a random graft for a species (one slot, a random donor with a part that fits it), '' when none fits; RO-3c:
    a sketch Billie takes a slot from any sketch Billie of another line, whatever its body plan */
@@ -534,13 +567,12 @@ function debugAction(x) {
   switch (x) {
     case 'fps':
       debugMenu.fps = !debugMenu.fps;
+      /* FL-1a: the scheduler meters the walk view, the battle or the world map itself; no task of the overlay's own
+         (it counted its own ticks, at the set rate, and kept running after the overlay closed) */
       if (!debugMenu.fps) {
         const e = $('#fpsMeter');
         if (e) e.remove();
-      } else {
-        if (!battleStage.on && !worldMap.on) frameTask('meter', () => frameCount(0));
-        debugFps();
-      }
+      } else debugFps();
       return refreshDebugMenu();
     case 'foggrid':
       /* air track AIR-2: the fog grid's cells as see-through blocks in the walk view (not saved) */
@@ -697,6 +729,30 @@ function debugAction(x) {
       if (typeof rebuildFromSettings === 'function') rebuildFromSettings();
       return refreshDebugMenu(`${l} ${on ? 'on' : 'off'}.`);
     }
+    /* FL-2a: an old drawing path back on for this session (the game data's engine defaults, as above) */
+    case 'fl2batch':
+    case 'fl2sky':
+    case 'fl3ctl':
+    case 'fl3res':
+    case 'fl4cells':
+    case 'fl4hold':
+    case 'fl4grass':
+    case 'fl4ticks':
+    case 'fl5order':
+    case 'fl5ground': {
+      const f = PICTURE_PATH_SWITCHES.find(t => t[0] === x),
+        [, k, l] = f,
+        E = (gameData.engine = gameData.engine || {}),
+        D = (E.defaults = E.defaults || {}),
+        on = !engineSetting('quality', k);
+      D.quality = { ...(D.quality || {}), [k]: on };
+      /* FL-5a: its programs start compiling now, not on the next frame */
+      if (k === 'drawOrder' && on && typeof precompileDrawOrder === 'function') precompileDrawOrder();
+      return refreshDebugMenu(`${l} ${on ? 'on' : 'off'}.`);
+    }
+    case 'killpage':
+      debugLog.pretendKilled();
+      return;
     case 'bowltest':
       closeModal();
       runBowlMapTest();
@@ -829,6 +885,13 @@ function debugAction(x) {
       );
       return;
     }
+    /* IN-1: the prepared first run on this save (run.js runTakeOffPrepared) */
+    case 'runprep':
+      if (!runStartable() || !saveData.team.length)
+        return refreshDebugMenu('A run can’t start now (on a run, in a battle, or nobody in the team).');
+      uiState.modal = null;
+      runTakeOffPrepared();
+      return;
     /* RL-13: every Expedition open, to try the harder ones */
     case 'expopen':
       saveData.meta.expedition = MODIFIERS.expeditions.length;
@@ -929,6 +992,15 @@ function debugAction(x) {
       if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
       uiState.modal = null;
       runOver(x === 'runwin');
+      return;
+    /* IN-4: this run ends the first run's way: the Bureau's pickup here, the fall, the lab (cutscene/return-scene.js) */
+    case 'pickupwin':
+    case 'pickuplose':
+      if (!saveData.run || activeBattle) return refreshDebugMenu('No run, or a battle is on.');
+      uiState.modal = null;
+      render();
+      uiState.pickupTest = true;
+      runOver(x === 'pickupwin');
       return;
     case 'fillq': {
       /* a town without wild Billies gets a route's worth, so there is always something to test with */

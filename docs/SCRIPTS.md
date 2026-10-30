@@ -63,7 +63,7 @@ under Markup). A bubble style goes at the start, before or after the expression;
 | `[p]`, `[p=0.8]` | a pause (0.4 s, or the seconds given, up to 3) |
 | `[face=angry]` | changes the face here (any expression) |
 | `[emote=sweat]` | pops an emote: ! ? sweat anger sparkle note heart |
-| `[stamp=denied]` | the Bureau's stamp: denied, approved, pending, filed, void |
+| `[stamp=denied]` | the Bureau's stamp: denied, approved, pending, filed, void; IN-4: returned ("Returned to sender") and recovered ("Recovered property"), stamped smaller |
 | `[cut]` | the line breaks off here; a line ending in `—` does too |
 | `[shout]`, `[whisper]`, `[think]`, `[wait]` | the bubble's style (only at the start of the line) |
 
@@ -203,12 +203,14 @@ Combine with `and`, `or`, `not` / `!` and parentheses; `and` binds tighter than 
 | `chapter n` | moves the story on to chapter n (RL-S2), never back |
 | `end` | stops the script |
 | `camera run-up` | someone runs up to you: the walk scene you stand in becomes a scene, with you and the one who talks (out of sight beyond you) on it; a battle, or the script's end, ends it |
-| `walk who beside me` | the one who ran up comes over to stand beside you |
+| `walk who beside me` | the one who ran up comes over to stand beside you; IN-4: a second one (not in the scene yet) comes from where the first started and stands on your other side |
 | `face who me`, `face who dir` | the two of you turn to each other; or up, down, side, sideR |
 | `fade [in/out] [#colour]` | the scene fades out (to a colour), or back in |
 | `go place [entrance]` | a checkpoint; from S2 |
 | `actor`, `act`, `caption`, `blink`, `screen`, `effect`, `hide`, `sound`, `walk who spot`, `camera shot`, `wait who` | a cutscene's: docs/CUTSCENES.md (only in a cutscene) |
 | `dressing-room`, `throw-coins`, `pick-starter`, `staged-fight`, `rival-battle`, `fall` | the opening's: docs/CUTSCENES.md |
+| `payout` | IN-4, the lab scene's (cutscenes/return.json): the payout sheet over the scene; docs/CUTSCENES.md, "The way back" |
+| `portal` | IN-4, the Bureau's pickup (story.json pickup-won, pickup-lost): its square portal opens under you and you drop through it (after `camera run-up`) |
 | `perk [rarity or id]`, `money n`, `hurt share`, `heal [share]`, `status id`, `fx n kind key=value...`, `boon id`, `curse id`, `wager percent`, `loot table [n]`, `level n`, `recall [up]`, `revive species [up]`, `foe class [up]`, `wild [up]`, `reward [kind] [n]`, `invite`, `dna n`, `gene [n]`, `splice how`, `unsplice [n]` | an event's (events.json, on a run; RL-12b, SP-6): below |
 
 ### Event commands (RL-12b)

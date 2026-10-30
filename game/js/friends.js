@@ -25,6 +25,7 @@ import {
   tradeSheet,
   tradeStart,
 } from './hooks.js';
+import { everyFree } from './free-tick.js';
 import { COATS, LOCATIONS, SPECIES } from './game-data.js';
 import { billyName, cleanName, plural } from './logic/rules.js';
 import { seenToward } from './logic/person-view.js';
@@ -372,7 +373,7 @@ function publishToFriends(now) {
   friends.pubT = t;
   friendsDb().collection('users').doc(friends.uid).set(doc, { merge: true }).catch(friendsError);
 }
-setInterval(() => {
+everyFree(() => {
   try {
     publishToFriends(false);
   } catch (e) {}

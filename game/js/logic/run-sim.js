@@ -14,7 +14,8 @@
  *   logic: any, beforeRun?: (o: SimOptions) => void }} SimEnv
  * @typedef {{ random?: number, fights?: number, team?: number, pack?: number, unlocks?: 'none' | 'all', residents?: 'none' | 'all',
  *   policy?: string, scenes?: 'make' | 'skip', expedition?: number, mods?: string[], lvl?: number,
- *   badges?: 'none' | 'all', perks?: string[], boons?: string[], held?: string }} SimOptions
+ *   badges?: 'none' | 'all', perks?: string[], boons?: string[], held?: string, prepared?: boolean }} SimOptions
+ * IN-1: prepared, the prepared first run (game/data/firstRun.json) instead of one from the seed: see runSim
  */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
@@ -149,7 +150,7 @@ export function runSimOn(env) {
     { runArriveFx, runBuyFx, runFoes, runBattleExtra, runClinic, runItemPrice, runKept, runShopOpen, runStallStock } =
       modules['run-loop'],
     { fxOfRun, fxPayoutRates, fxRunPrice } = modules.effects,
-    { runStartOn, runStartPlan } = modules['run-start'],
+    { runStartOn, runStartPlan, runStartPrepared } = modules['run-start'],
     { runRegionData } = modules['run-region'],
     { runUnlocks } = modules.unlocks,
     { routeTrainerTally, runRouteTrainers } = modules['route-trainers'],
@@ -246,11 +247,16 @@ export function runSimOn(env) {
    * @param {string} seed @param {SimOptions} [o]
    */
   function runSim(seed, o = {}) {
-    if (env.beforeRun) env.beforeRun(o);
+    /* IN-1: the prepared first run is one map for every seed, so the seed stands in for the player instead: it
+       picks the starter, and salts the battles' luck and util.js random (catches) */
+    const salt = o.prepared ? modules.rng.rngFrom(seed, 'sim|prepared').int(1, 2e9) : 0;
+    if (env.beforeRun) env.beforeRun(o.prepared ? { ...o, random: salt } : o);
     const P = simPolicy(o);
     const s = fn('newSave')();
     s.started = true;
-    s.starter = RULES.start.starters[0];
+    s.starter = o.prepared
+      ? RULES.start.starters[modules.rng.rngFrom(seed, 'sim|starter').int(0, RULES.start.starters.length - 1)]
+      : RULES.start.starters[0];
     hooks.provide({ saveData: s, activeBattle: null });
     /* RL-13: `lvl` is the level the ranch has trained them to (it costs starter points); the starter's own level
        by default */
@@ -283,21 +289,31 @@ export function runSimOn(env) {
     /* RL-R2b: the badges kept: none (a fresh save, the default: the side area stays shut) or every field move's
        (badges: 'all') */
     if (o.badges === 'all') for (const M of Object.values(MOVES)) s.meta.badges[fieldBadgeKey(M.type)] = 1;
-    const run = runStartOn(
-      s,
-      runStartPlan(
-        seed,
-        { ...MAP_DATA, unlockData: UNLOCK_DATA },
-        { unlocks: runUnlocks(s, UNLOCK_DATA), expedition, mods: o.mods || [] }
-      ),
-      { home, pack }
-    );
+    /* IN-1: the prepared first run starts as New game starts it (logic/run-start.js runStartPrepared): the starter
+       alone, the file's gift, no packing */
+    const run = o.prepared
+      ? runStartPrepared(s, { ...MAP_DATA, unlockData: UNLOCK_DATA })
+      : runStartOn(
+          s,
+          runStartPlan(
+            seed,
+            { ...MAP_DATA, unlockData: UNLOCK_DATA },
+            { unlocks: runUnlocks(s, UNLOCK_DATA), expedition, mods: o.mods || [] }
+          ),
+          { home, pack }
+        );
     /* PK-12, the balance pass: a run that starts holding these Perks (past the cap), with these boons and curses on for
        the whole run, and this held item on each Billie (the policy `never-pick` keeps it to them) */
     for (const id of o.perks || []) if (data.PERKS[id] && !run.perks.includes(id)) run.perks.push(id);
     for (const id of o.boons || [])
       if (data.BOONS[id]) modules['run-enc'].encOf(run).boons.push({ id, left: SIM_BOON_PLACES, src: 'sim' });
     if (o.held && data.ITEMS[o.held] && data.ITEMS[o.held].hold) for (const m of s.team) m.held = o.held;
+    /** a run battle's start (run-loop.js runBattleExtra); IN-1: on the prepared run its seed salted by the sim's
+     * @param {number} i @param {number} k */
+    const simExtra = (i, k) => {
+      const x = runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS));
+      return o.prepared ? { ...x, seed: `${x.seed}|${salt}` } : x;
+    };
     const balance = o.scenes === 'skip',
       scenes = balance ? null : runScenesMake(run, worldData()),
       W = runWorldTables(run, data.LOCATIONS[0], worldData()),
@@ -464,7 +480,7 @@ export function runSimOn(env) {
           const k = run.battleN;
           fn('startTrainer')(T.id, {
             host: SIM_HOST,
-            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
+            extra: simExtra(i, k),
           });
           if (!hooks.activeBattle) continue;
           run.battleN = k + 1;
@@ -513,7 +529,7 @@ export function runSimOn(env) {
           const k = run.battleN;
           fn('startWild')(q, {
             host: SIM_HOST,
-            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
+            extra: simExtra(i, k),
           });
           if (!hooks.activeBattle) break;
           run.battleN = k + 1;
@@ -574,7 +590,7 @@ export function runSimOn(env) {
           const k = run.battleN;
           fn('startTrainer')(T.id, {
             host: SIM_HOST,
-            extra: runBattleExtra(run, i, k, RULES.env, fxOfRun(run, data.PERKS)),
+            extra: simExtra(i, k),
           });
           run.battleN = k + 1;
           const team = hooks.activeBattle.sides[1].team;
@@ -601,13 +617,19 @@ export function runSimOn(env) {
           stats.moneyIn.reward += pay.reward;
           /* the pick it made, answered as the policy says (perk-screen.js perkPickDone: perks.js perkChoose) */
           if (run.offer) {
-            const c = simPerkChoice(
-              run.offer,
-              run.perks,
-              data.PERKS,
-              { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
-              P
-            );
+            /* IN-1: on the prepared run the planted Perk is the one to take (the aha), so the bot takes it as a player
+               would when it is offered (and the policy takes Perks at all) */
+            const plant = o.prepared && P.perks !== 'never' && GAME_DATA.firstRun ? GAME_DATA.firstRun.plant : '',
+              c =
+                plant && run.offer.includes(plant) && run.perks.length < perkCap(run, R.perks, data.PERKS)
+                  ? /** @type {{ id: string, drop?: string }} */ ({ id: plant })
+                  : simPerkChoice(
+                      run.offer,
+                      run.perks,
+                      data.PERKS,
+                      { ...R.perks, cap: perkCap(run, R.perks, data.PERKS) },
+                      P
+                    );
             at.pick = { offer: run.offer.slice(), took: c ? c.id : null, ...(c && c.drop ? { drop: c.drop } : {}) };
             const se0 = s.se;
             perkChoose(run, c ? c.id : null, data.PERKS, R.perks, c ? c.drop : undefined, s);
@@ -671,6 +693,8 @@ export function runSimOn(env) {
         party,
         top: top ? top.lvl : 0,
         perks: run.perks.slice(),
+        /* IN-1: the prepared run's starter (the seed picks it) */
+        ...(o.prepared ? { starter: s.starter } : {}),
         /* RS-2: the run's resident, and whether the walk went through their town */
         resident: log.resident ? log.resident.id : null,
         metResident: log.places.some((/** @type {any} */ p) => p.resident) ? 1 : 0,

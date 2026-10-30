@@ -6,7 +6,8 @@ named spots and shots, and its script. Maps stay pure level data, and a cutscene
 whole. The story layer's scripts (docs/SCRIPTS.md) are the language; this page covers what a cutscene adds.
 
 Today: `city` (the city at night, before the fall; not played since RL-8, and its map `city_opening` is parked in
-`game/data/legacy` since the test cleanup, kept for the story to bring back) and `opening` (Copperleaf, after the fall). The
+`game/data/legacy` since the test cleanup, kept for the story to bring back), `opening` (Copperleaf, after the fall) and
+`return` (intro track IN-4: the lab scene after the first run, on the opening's set; below, "The way back"). The
 Studio's cutscene tools (save the free camera as a shot, drop spots as pins, a step list with Preview) are the plan's
 session 2, not built yet (docs/HANDOFF.md).
 
@@ -55,7 +56,7 @@ a spot, turns them for real in the scene, and each shot then shows the side of t
 | `walk Blake blake 1.5` | walks someone to a place; no time given: 1.6 m a second | yes, till they arrive |
 | `walk Blake blake 1.5 nowait` | the same, while the script goes on | no |
 | `face Kappi sideR` / `face Kappi Blake` | turns someone, or towards someone or a spot | no |
-| `act Kappi throw 0.9` | a pose for a while: throw, cheer, react, reach (an arm held out the way they face) | no |
+| `act Kappi throw 0.9` | a pose for a while: throw, cheer, react, reach (an arm held out the way they face), stamp (a Bureau clerk bot raises its stamp arm and slams it down, then holds; IN-3) | no |
 | `wait 1.5` / `wait Blake` | pauses for seconds, or till Blake stops walking | yes |
 | `caption 3.4 The Hollow Earth \| {place}` | a caption for seconds: the small line, then the big one | no |
 | `blink` | the letterbox closes and opens like eyelids | yes |
@@ -73,9 +74,22 @@ should hold.
 
 Slots work in commands too (`{place}`, `{name}`, `{starter}` ...: docs/SCRIPTS.md).
 
-### How New game begins (cutscenes track B)
+### How New game begins (intro track IN-5)
 
-The fall ends in a dive straight down onto Copperleaf's island, onto the opening's own landing spot (`me`): the
+New game (`cutscene/crash-scene.js` `newGameStart`) is the cold open: a new save with a stand-in starter, the prepared
+first run started at once (`run.js` `runTakeOffPrepared({ crash })`, no train), and `crash.json` played on its landing
+while the run waits at phase `crash` (a reload plays it again). `crash.json` has `"landing": true` and `"map":
+"first_run"`: it has no map of its own, its spots are the crash site's (`firstRun.json` `crash.spots`, checked equal
+by check-data), and its spots, its shots' eye and target and its clear areas are metres from the landing's mast,
+turned with it (`logic/first-run.js` `firstRunCutscene`; a turned area clears the square round its corners). Its own
+commands are the opening's `throw-coins` and `pick-starter`; the picked starter takes the stand-in's place on the run
+(`firstRunStarter`, then `run-world.js` `runWorldRepool`). The run ends through the way back below.
+
+Once a first run has ended at the lab on this device (localStorage `pb-intro-done`), New game asks: **Skip the
+crash** plays the opening below (the fall from the Bureau's portal with no captions, the lab, the dressing room, the
+pick, Skyline Station), or play it again.
+
+The opening's fall ends in a dive straight down onto Copperleaf's island, onto the opening's own landing spot (`me`): the
 world map films it (opening-fall.js `fallFloatCamera`), clouds and streaks of air over it. Its last picture is held
 (dazed) behind the impact's flash while Copperleaf's walk view is made, and the opening's first shot, `drop`, looks
 down on the same spot before `wake` brings the camera down to the ground. `tools/look-opening.py` takes pictures of
@@ -83,10 +97,31 @@ it and of the starter pick, which looks across the three starters from the side 
 
 ### The opening's own
 
-`dressing-room` (you make yourself up), `throw-coins` (the professor's coins pop open on the spots star1 to star3),
+`dressing-room` (you make yourself up; the lab scene's too), `payout` (the lab scene's: the payout sheet), `throw-coins` (the professor's coins pop open on the spots star1 to star3),
 `pick-starter` (the pick card; afterwards `{starter}`, `{counter}` and the place `starter` are known), `staged-fight`
 (the Chosen against Blake, staged; Project Story S6 makes it a real battle; `{foe}` after it), `rival-battle` (Blake's
 battle follows the opening), `fall`. Skipping stops at the dressing room and the pick.
+
+### The way back (intro track IN-4)
+
+The first run (the intro's prepared run, `run.first`; the debug menu's "Jump to the pickup (win / loss)" on any run)
+ends another way than a run's payout and train (run.js `runOver`; the run's phase is `return` at once, so a reload in
+the pickup or the fall opens the lab):
+1. **The pickup**, where the run ended: story.json `pickup-lost` or `pickup-won` on the story stage (`camera run-up`,
+   two Bureau clerks walk over beside you, `[stamp=returned]` "Returned to sender" or `[stamp=recovered]` "Recovered
+   property" on the Bureau's bubble, then `portal`: the square portal opens under you and you drop through it; its
+   light stays on screen as a white veil, `#backVeil`).
+2. **The fall**, `fallPlay(run, { from: 'portal' })` (opening-fall.js): the portal's light as its first picture
+   (`fallPortal`), then the world map's dive with no captions, onto the opening's spot `me`. The street and the crust
+   stay for the story.
+3. **The lab**, cutscenes/return.json (cutscene/return-scene.js): wake, Chosen and Kappi, `dressing-room` (look and
+   name are made here now), `payout` (the payout sheet over the scene: Kappi tallies the run, everyone comes home, its
+   Done goes back to the scene; skipping stops here), the expeditions. Its end finishes the run (run.js `runEndLab`:
+   the same `runEnd`, no train) and you stand outside the lab door. It can't run (no 3D view) or breaks: the run still
+   ends the same way.
+
+Its set is the opening's: `tools/build-copperleaf.mjs` gives return.json the opening's spots, shots and clear whenever
+it moves them with the lab door (return-script.test.mjs checks they are the same).
 
 ## Skipping
 
@@ -107,7 +142,8 @@ are a problem: they play only in a cutscene. Tests: `tools/test/opening-script.t
 | `game/js/logic/cutscene-set.js` | reads what a cutscene command says (one reading for the stage, the checks and the Studio); the set in the view: the map's corner, a shot's heights on the ground, what is cleared. Logic only, tested in Node. |
 | `game/js/cutscene/director.js` | the state, timing that resolves while skipping, the camera, the people, what the engine draws each frame (plus each cutscene's own layers), the overlay, the dialogue, the teardown |
 | `game/js/cutscene/stage.js` | plays a cutscene's script on the director: every command above; `cutscenePlayScript(id, { extra, slots })` |
-| `game/js/cutscene/opening.js` | the opening: mounts Copperleaf after the fall, clears the set, plays `opening` with its own commands, starts the game |
+| `game/js/cutscene/opening.js` | the opening: mounts Copperleaf after the fall, clears the set, plays `opening` with its own commands, starts the game; `cutsceneBegin` and `cutsceneMount`, shared with the way back |
+| `game/js/cutscene/return-scene.js` | IN-4, the way back: the fall from the portal, the lab scene (`return`) with the dressing room and the payout, the run finished at the lab door |
 | `game/js/cutscene/starter-pick.js` | the three starters drawn with their rigs and the pick card |
 | `game/js/cutscene/staged-fight.js` | the professor's staged fight (until S6) |
 

@@ -743,7 +743,7 @@ function personAnimation(P, view) {
    personFrame's. The rig's front view faces left (a 3/4 side): walking down or left shows it, walking right shows it
    mirrored, walking up shows the back view. The face holds still unless asked (a blink baked into a walk frame would
    stay); 'blink' and 'talk' are the head's own frames (bodyPlans.json talk) */
-const CREATURE_ACTS = { walk: 'walk', throw: 'attack', cheer: 'cheer', react: 'hurt' };
+const CREATURE_ACTS = { walk: 'walk', throw: 'attack', cheer: 'cheer', react: 'hurt', stamp: 'stamp' };
 function creatureFrame(Cr, view, act, ph, t, mirror, expr) {
   const back = view === 'back',
     R = rigParts(Cr.rig, back ? 2 : 1),
@@ -754,8 +754,16 @@ function creatureFrame(Cr, view, act, ph, t, mirror, expr) {
     Object.assign(c, { ax: 0, ay: 1, ppm: 42, noNormal: true });
     return c;
   }
+  /* IN-3: a bot rig whose part pictures are still loading draws stand-ins: not kept, so it is drawn again with them */
+  if (R.wait) personArtMissing = true;
   const a = CREATURE_ACTS[act] || 'idle',
-    P = rigPose(a, a === 'walk' ? (ph || 0) * 560 : a === 'idle' ? 0 : 120 + (ph || 0) * 400, t || 0, 0);
+    /* IN-3: the stamp's whole move over its progress (ph 0-1: raised, slammed, held) */
+    P = rigPose(
+      a,
+      a === 'walk' ? (ph || 0) * 560 : a === 'idle' ? 0 : a === 'stamp' ? (ph || 0) * 600 : 120 + (ph || 0) * 400,
+      t || 0,
+      0
+    );
   P.face = creatureFace(expr);
   const c = makeCanvas(R.BW, R.BH),
     x = c.getContext('2d');
@@ -920,10 +928,12 @@ export function personBattleFrames(who, view) {
 }
 export function personBattlePose(who, view, act, ph, t) {
   const L = lookOf(who);
-  if (act === 'throw') {
-    const k = Math.round(clamp(ph, 0, 1) * 6) / 6;
-    return cachedPersonArt('pose|' + view + '|throw|' + k + '|' + lookKey(L) + '|' + personArtVersion(), () =>
-      personFrame(L, view, 'throw', k, 0)
+  if (act === 'throw' || act === 'stamp') {
+    /* IN-3: a stamp, like a throw, is drawn at its progress (12 steps: its slam is quick) */
+    const n = act === 'stamp' ? 12 : 6,
+      k = Math.round(clamp(ph, 0, 1) * n) / n;
+    return cachedPersonArt('pose|' + view + '|' + act + '|' + k + '|' + lookKey(L) + '|' + personArtVersion(), () =>
+      personFrame(L, view, act, k, 0)
     );
   }
   const k = Math.floor((t || 0) / 90) % 4;

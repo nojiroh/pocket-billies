@@ -22,6 +22,7 @@ import {
   arenaGenParams,
   arenaGenProps,
   arenaGenPublish,
+  provide,
   waterGenCarve,
   waterGenClimbs,
   waterGenFalls,
@@ -316,6 +317,7 @@ expose({
   mapgenStageWater: [() => mapgenStageWater, v => (mapgenStageWater = v)],
   // @ts-expect-error -- replaced on purpose
   mapgenStairsUp: [() => mapgenStairsUp, v => (mapgenStairsUp = v)],
+  mapgenStandSpot: [() => mapgenStandSpot],
   // @ts-expect-error -- replaced on purpose
   mapgenSteepAt: [() => mapgenSteepAt, v => (mapgenSteepAt = v)],
   // @ts-expect-error -- replaced on purpose
@@ -362,7 +364,11 @@ expose({
 });
 /* eslint-enable no-func-assign */
 /* to-module: end */
-export const MAPGEN_VERSION = 27; /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`) and animals by plan and set piece (`extra` life), RT-4b; 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b); 24: a town's streets grown from its through road (a dogleg, the square at its main junction, side streets, lots along every street), three town sizes (the `town` dial), a market stall and a second quest giver's spot (WM-5); 25: a town's districts, a park with its landmark and a farm edge, and an exit's signpost names its exit (`exit`, WM-6); 26: the Bureau checkpoint's own sign with the emblem and loose forms blowing about the Bureau's places (SY-7, merged after WM-6 took 25); 27: terraces along the land's contours (the old bands on the `lean` dial), their fronts cliffs, grassy banks, half steps or stone walls (`edges`), and stairs up to ground you couldn't reach or leave (TR-5) */
+export const MAPGEN_VERSION = 27;
+provide({ MAPGEN_VERSION }); /* to-module */
+provide({
+  MAPGEN_VERSION,
+}); /* to-module */ /* 2: MG-2's terraces at ground level by exits; 3: pictures are never scaled, plants get a drawn variant (v) instead; 4: a bridge only where the road crosses a stream (RL-8); 5: a run's scenes go east to west (logic/run-scenes.js); 6: tall grass in patches, one across the way west (TR-2c); 7: a town kind, a street, a square and houses (TW-1); 8: run routes laid out by a plan (RT-1, the routes track); 9: a town's townsfolk, animals, chat and named locals' spots (TW-2); 10: a town's notice board and its quest giver's spot (TW-3); 11: no room kept for the straight-line route trainers (RT-2); 12: an exit's signpost reads the place's name, set pieces (RT-3); 13: habitat points for wild Billies (RT-4a); 14: kept for RT-4b; 15: rivers run downhill (WA-3a, logic/water-gen.js); 16: waterfalls, a river steps with the land (WA-2b); 17: the new water kinds placed (rapids, hot springs, the bog, oases, cave water) and reeds' finds (WA-5a); 18: more props in the set pieces and two new pieces, a wayside shrine and a solar garden (route props track); 19: a run's scenes go west to east, the way on a dial of its own (`ahead`, WM-1); 20: a run's places at their footprint's size with exits on any side, an L's corner walled off (`cut`), seams north and south (WM-3); 21: a leader's arena on a mini-boss's place and the boss's (the `arena` dial, logic/arena-gen.js, WM-7); 22: a pocket's or dead end's mouth for Cut brambles (`mouth`) and animals by plan and set piece (`extra` life), RT-4b; 23: no route spot faces a bush put in front of it (mapgenSpotsFaceOpen, WM-3b); 24: a town's streets grown from its through road (a dogleg, the square at its main junction, side streets, lots along every street), three town sizes (the `town` dial), a market stall and a second quest giver's spot (WM-5); 25: a town's districts, a park with its landmark and a farm edge, and an exit's signpost names its exit (`exit`, WM-6); 26: the Bureau checkpoint's own sign with the emblem and loose forms blowing about the Bureau's places (SY-7, merged after WM-6 took 25); 27: terraces along the land's contours (the old bands on the `lean` dial), their fronts cliffs, grassy banks, half steps or stone walls (`edges`), and stairs up to ground you couldn't reach or leave (TR-5) */
 export const MAPGEN_STAGES = [
   'heights',
   'relief',
@@ -3310,16 +3316,21 @@ export function mapgenStageEdgeGround(G) {
 
 /* ---------- MG-2: the hub's buildings (a first take on MG-3's lots) ---------- */
 /* what the props dials put at the hub: [dial, prop, what it does, label] (the act opens the clinic's or the shop's
-   room, data-files.js ROOM_BY_USE; 'fly' is the airship's mast, airship.js; RL-12b: a waystation's stand opens its
-   event and a stall its shop where you stand, walk-control.js walkPick) */
+   room, data-files.js ROOM_BY_USE; 'fly' is the landing's sky train halt, airship.js (AS-2: was the airship's mast);
+   RL-12b: a waystation's stand opens its event and a stall its shop where you stand, walk-control.js walkPick) */
 /** @type {[string, string, string, string | null][]} */
 export const MAPGEN_HUB_BUILDINGS = [
   ['clinic', 'clinic', 'clinic', null],
   ['shop', 'shop', 'shop', null],
-  ['mast', 'airship_station', 'fly', 'Airship station'],
+  ['mast', 'train_halt', 'fly', 'Sky train halt'],
   ['stand', 'tent', 'event', 'Waystation'],
   ['stall', 'stall', 'stall', 'Stall'],
 ];
+/** where you stand by a landing's building at (x, z), unturned (mapgen's lots face the camera): its catalogue's stand
+ * (metres from its base point), else beside its right-hand side, a step in front (airship.js standByMast)
+ * @param {any} C its catalogue entry @param {number} x @param {number} z @param {number} bw its width */
+export const mapgenStandSpot = (C, x, z, bw) =>
+  Array.isArray(C.stand) ? [x + C.stand[0], z + C.stand[1]] : [x + bw / 2 + 0.9, z - 0.9];
 /** is (x, z) on a building's lot, or within m metres of one */
 export const mapgenInLot = (G, x, z, m = 0) =>
   G.lots.some(L => x > L[0] - m && x < L[2] + m && z > L[1] - m && z < L[3] + m);
@@ -3348,7 +3359,7 @@ export function mapgenLotFree(G, x0, z0, x1, z1, hub = true) {
   }
   return true;
 }
-/** the props dials' clinic, shop and airship mast beside the main road near the hub, facing the camera (south) like
+/** the props dials' clinic, shop and sky train halt beside the main road near the hub, facing the camera (south) like
  * every town building: north of the road, the front 2.5-5 m from its edge, on a level pad, with a path from the door
  * to the road. A lot keeps 12 m from the exits and joined edges, clear of the road, water, banks, bridges and
  * anything placed, its z on a half metre (so the door step isn't inside the building's walk block), and its door 7 m
@@ -3410,23 +3421,34 @@ export function mapgenStageLots(G) {
           if (p.k !== 0 || step[1] < p.z - 1.5 || Math.hypot(step[0] - p.x, step[1] - p.z) > p.r + (wide ? 14 : 5.5))
             continue;
           if (!free(x - bw / 2 - 0.5, z - 1, x + bw / 2 + 0.5, z + bd + 0.5)) continue;
-          /* a spot for the mast's landing (airship.js flyLand: beside it, a step in front) */
-          if (act === 'fly' && !free(x + bw / 2 + 0.4, z - 1.4, x + bw / 2 + 1.4, z - 0.4)) continue;
+          /* where you stand by it (airship.js standByMast: its catalogue's stand, metres from its base point; AS-2:
+             the halt's is at the foot of its steps), else beside it, a step in front */
+          const sp = mapgenStandSpot(C, x, z, bw);
+          if (act === 'fly' && !free(sp[0] - 0.5, sp[1] - 0.5, sp[0] + 0.5, sp[1] + 0.5)) continue;
           done = { x, z, step, road: p, bw, bd };
           break;
         }
         if (done) break;
       }
     if (!done) {
-      G.notes.push(`no room for the ${dial === 'mast' ? "airship's mast" : dial} beside the road near the hub`);
+      G.notes.push(`no room for the ${dial === 'mast' ? 'sky train halt' : dial} beside the road near the hub`);
       continue;
     }
     mapgenLevelLot(G, done);
     const extra = label ? { act, label } : { act };
     mapgenPutProp(G, k, done.x, done.z, { force: true, extra });
     G.lots.push([done.x - bw / 2, done.z - 0.1, done.x + bw / 2, done.z + bd]);
-    mapgenOccAdd(G, done.x, done.z + bd / 2, Math.hypot(bw, bd) / 2 + 0.4);
-    if (act === 'fly') G.keep.push([done.x + bw / 2 + 0.9, done.z - 0.9, 1]);
+    /* AS-2: a big lot (the halt's) as small circles over it: mapgenOccFree looks only a few metres round a spot */
+    const rr = Math.hypot(bw, bd) / 2 + 0.4;
+    if (rr <= 4) mapgenOccAdd(G, done.x, done.z + bd / 2, rr);
+    else {
+      const ni = Math.ceil(bw / 2),
+        nj = Math.ceil(bd / 2);
+      for (let j = 0; j < nj; j++)
+        for (let i = 0; i < ni; i++)
+          mapgenOccAdd(G, done.x - bw / 2 + ((i + 0.5) * bw) / ni, done.z + ((j + 0.5) * bd) / nj, 1.6);
+    }
+    if (act === 'fly') G.keep.push([...mapgenStandSpot(C, done.x, done.z, bw), 1]);
   }
 }
 /** a lot made ready: its ground (the building, a metre round it and the door's path) level at the road's height
@@ -4772,7 +4794,7 @@ export const MAPGEN_LAYOUTS = {
 };
 /** the layout dial when not given (not in MAPGEN_DEFAULTS, so scenes made without it keep the dials they stored) */
 export const MAPGEN_LAYOUT_DIALS = { layout: 'none' };
-/** a forest mass's props (measured on the phone-sized headless page, tools/route-perf.py): canopy pieces `step`
+/** a forest mass's props (measured on the phone-sized headless page, tools/check-perf.py --routes, was route-perf.py): canopy pieces `step`
  * metres apart at a scale in `size`, the biome's trees along its edge `wall` metres apart (a model tree is a draw
  * per leaf clump, the wall is most of a forest's cost) */
 export const MAPGEN_FOREST = { step: 5.2, size: [1.0, 1.35], wall: 5 };

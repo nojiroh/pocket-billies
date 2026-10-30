@@ -36,6 +36,8 @@ import {
   runSpot,
   runTownSize,
 } from './run-map.js';
+import { firstRunCrash, firstRunNode, firstRunPool, firstRunStock } from './first-run.js';
+import { haltTrainKey, haltTrainPark } from './halt.js';
 import { MAPGEN_LAYOUTS, MAPGEN_SIDE_NAME, MAPGEN_SIZES, mapgenEdgeStrip, mapgenScene } from './mapgen.js';
 import { arenaGenGates } from './arena-gen.js';
 import { wildPoolList } from './wild-pool.js';
@@ -569,6 +571,10 @@ export function runSceneMake(run, i, scenes, data) {
   });
   runFieldProps(map, i, scene, data);
   runSignposts(map, i, scene, data);
+  /* IN-1: the prepared first run's landing is the crash site: the wreck by the halt (logic/first-run.js); AS-2: any
+     other run's landing has the run's train parked at its halt (logic/halt.js) */
+  if (i === 0 && firstRunNode(run, 0)) firstRunCrash(scene);
+  else if (i === 0) haltTrainPark(scene, haltTrainKey(run, data), data.scenery.props);
   /* WM-7: a leader's gate, shut until it is beaten (its foe's id: run-loop.js runFoeId) */
   arenaGenGates(scene, data.scenery, `beat:${runPlaceId(i)}_foe`);
   if (scene.kind === 'town') {
@@ -731,10 +737,16 @@ export function runWorldTables(run, hub, data) {
       source = data.pools[B.pool] || data.pools[Object.keys(data.pools)[0]];
     /* RL-R2: a side area's places meet its own species (lines the region left out), when it has them */
     const own = node.side && map.side && map.side.dex ? map.side.dex : null;
-    pools[id] = {
-      lv: runWildLevels(map, i, data, up),
-      list: own ? wildPoolList(source.list, own, null) : wildPoolList(source.list, dex, region ? region.swap : null),
-    };
+    /* IN-1: the prepared first run's file pins a place's wild Billies (the level rows still move them) */
+    const pin = firstRunPool(run, i);
+    pools[id] = pin
+      ? { lv: /** @type {[number, number]} */ (pin.lv.map(v => Math.max(1, Math.min(100, v + up)))), list: pin.list }
+      : {
+          lv: runWildLevels(map, i, data, up),
+          list: own
+            ? wildPoolList(source.list, own, null)
+            : wildPoolList(source.list, dex, region ? region.swap : null),
+        };
     /** @type {LocationData} */
     const row = {
       id,
@@ -759,6 +771,9 @@ export function runWorldTables(run, hub, data) {
     /* RL-12b: a waystation (an event's or a stall's place) has fewer wild Billies (rules.js encounterStock) */
     if (node.type === 'event' || node.type === 'stall') row.waystation = 1;
     if (town) row.town = 1;
+    /* IN-1: how many wild Billies the prepared first run's file gives it (rules.js encounterStock) */
+    const stock = firstRunStock(run, i);
+    if (stock != null) row.stock = stock;
     /* WM-6: its route number (its signs and the world map read it) */
     if (nos[i]) row.routeNo = nos[i];
     if (sells) {

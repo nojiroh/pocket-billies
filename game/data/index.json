@@ -38,6 +38,7 @@
   "modifiers",
   "factions",
   "bosses",
+  "firstRun",
   "quests",
   "residents",
   "festivals",
@@ -62,6 +63,7 @@
   "story",
   "banter",
   "talkSkins",
+  "kappiTips",
   "emotes",
   "relations",
   "showcase",
@@ -139,7 +141,9 @@
     "hayden",
     "rosa",
     "seamus",
-    "helix"
+    "helix",
+    "bureau_clerk_a",
+    "bureau_clerk_b"
    ]
   },
   "trainers": {"ids":["crude","markdown","alta","marina","blake0","blake","poppy","vault","morel","carat","tinker"]},
@@ -187,9 +191,14 @@
     "int_workshop",
     "int_gene_bank",
     "test_props_routes",
-    "test_people"
+    "test_people",
+    "test_intro_art",
+    "test_shapes",
+    "test_look_sketches",
+    "test_house_kit",
+    "test_halt"
    ]
   },
-  "cutscenes": {"ids":["opening","city"]}
+  "cutscenes": {"ids":["opening","city","return","crash"]}
  }
 }

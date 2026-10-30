@@ -25,6 +25,7 @@ import {
   soundscapeWade,
 } from './hooks.js';
 import { clamp } from './util.js';
+import { everyFree } from './free-tick.js';
 import { LOCATIONS, MUSIC, RESIDENTS, ROBOTS, RULES, SOUNDSCAPE, SPECIES } from './game-data.js';
 import { isRobotSp } from './logic/fighters.js';
 import { maxHp } from './logic/rules.js';
@@ -596,7 +597,7 @@ function musicParts(name) {
 export function musicVariant(name, night) {
   return songVariant(name, { night }, SONGS, null);
 }
-setInterval(() => {
+everyFree(() => {
   try {
     musicSync();
     soundChainSample();
@@ -1540,7 +1541,7 @@ setInterval(() => {
 }, 200);
 /* SND-8a: the sources started in the last minute (the music's voices and the world's), for the debug log */
 const soundStarts = [];
-setInterval(() => {
+everyFree(() => {
   if (!soundEngine.ctx) return;
   soundStarts.push((soundEngine.tracker ? soundEngine.tracker.started : 0) + ambience.started);
   if (soundStarts.length > 7) soundStarts.shift();

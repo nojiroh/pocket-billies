@@ -2,6 +2,1721 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Buildings track BD-4a - The house kit: 24 houses from modules, kind `house_kit` - 2026-10-30
+Branch `track/buildings` (wave 4, the main line; pulled 39 commits from its remote, then merged main twice: nothing
+new at the start, the water fixes #352 at the end, only HANDOFF.md conflicting, both entries kept). Plan written in
+Plan Mode's shape and built at once (the owner's advance approval, track section 1). Tools, recipes, one catalogue
+kind and a test map: nothing placed on Copperleaf, no game code changed. No per-session tag (CLAUDE.md).
+- Changed:
+  - Track file section 1: the owner's look pick "B base + C showpieces" (2026-10-30), with the lean in degrees
+    converted by each model's height (`lean = tan(degrees) x top`, the warp frame's top: the still parts' highest
+    point, antennas and chimneys included). The kit draws 3.5-4.5 degrees, sag 0.08-0.16 m, bulge 0.03-0.06.
+  - New tools/build-house-kit.py (reuses BD-3's parts from build-look-sketches.py: windows, lamp, ivy, finial,
+    antenna). A seed (`SEED = 7`) picks, per house: one of 9 bodies (narrow tall, wide low, L-shape, round
+    tower-house, jettied, A-frame, half-dome cob, brick townhouse with cornice and stoop, saucer pod on legs with a
+    fold-down stair and an underglow), one of the roofs that suit that body (`BODY_ROOFS`; 10 in all: steep gable,
+    low slab, butterfly, gambrel, saltbox, upswept, bulb dome, mushroom thatch, mansard, roof garden), 2-3 of 18
+    add-ons, a chimney (crooked brick, stovepipe, copper rocket), a door (round, arched, porthole, Dutch) and windows
+    (porthole, round-top, crossed, ribbon; the bay is an add-on), and one of 9 palettes.
+    - Style rules: at most one round body part (no turret on round bodies), add-ons only on free walls (slots), at
+      least one retro-future add-on (the first pick), one rooftop ornament at most (look B's glowing-tip antenna
+      when none was picked), neon under the eaves on about two thirds of houses.
+    - The add-ons are spread over the kit by least use.
+    - The nature pass on every house: flower boxes, ivy on about 60% of tall bodies, hanging baskets, roof moss
+      (`roof: 2`) and shrubs.
+    - `garden` hints per variant: tree and bush kinds from the existing props, with sides (back, back_left/right,
+      left/right, front) for BD-7's town tools.
+    - Showpieces: the first jettied and the first narrow house get C's set (onion-domed turret, rocket chimney,
+      bubble greenhouse behind the turret, glowing tube, dish, wind spinner, baskets, moss, flared eaves).
+    - Roofs are shells drawn out over the body (`shell_roof`: a top line, a thickness, the gable ends filled to the
+      wall's width), so one function covers gable, saltbox, gambrel, slab, butterfly and upswept, both ridge ways.
+    - Each house is centred on its own footprint (the box is read as x +-w/2), so a lean-to on one side doesn't widen
+      both. Side add-ons are only taken while the box stays within 4.6 m, and the tool fails if a box outgrows
+      4.6 x 3.44 m.
+  - Output: game/art/scene/next/models/house_kit_01..24.json (1,206 to 3,478 triangles; recipe `kit` says body, roof,
+    palette, add-ons, chimney, door, windows, lean in degrees, nature) and one catalogue kind `house_kit`. Its 23
+    `variants` swap `model`, `box`, `door`, `fx`, `name`, `garden` and `kit` (body, roof, palette, size). `--list`
+    prints the houses without writing.
+  - Glass ids (unique, at most 8 a house) and roof marks (`roof: 1` on every roof part, so a placement's `roof`
+    style still restyles it) are the kit's own. Doors and fx are written at the catalogue's ppu 34, the scale the
+    game reads (not the old builders' 32: see Found). fx follow the lean at their height.
+  - Test map `test_house_kit` (debug menu, Test scenes): the 24 in four rows of six.
+  - New tools/look-house-kit.py: close-ups through look-hub-buildings.py (`--scene=test_house_kit --only=house_kit
+    --angle=35`), tiled into validation/look-house-kit/contact-noon.png with each house's number, body, roof, palette
+    and box. look-hub-buildings.py has a camera distance for `house_kit`.
+  - New tools/test/house-kit.test.mjs (6 tests): the counts (9 bodies, 10 roofs, 8-10 palettes, 2 showpieces, a
+    model each); no two share body + roof + palette; under 6,000 triangles and 3-5 degrees of lean by the mesher's
+    own height; glass and roof marked, window fx; a retro-future part, nature, one ornament at most, garden kinds
+    that exist; boxes within 4.6 x 3.44 with the door inside, all three sizes present. check-data's snapshot remade
+    (one more data file).
+- Checked against the track file: the BD-4a section on main at the session's start had 9 bodies, 10 roofs and 18
+  add-ons (the saucer pod, the butterfly roof and the starburst wall lamp came in after the 4th sketches), not the
+  8, 9 and 17 of the older copy: built to the newer one. `plainPropVariant` replaces any field, as claimed. Loose:
+  "small, medium and large footprints so plots can take them": today's house plots are 3.8-4.6 x 2.8-3.44, so the
+  kit's sizes are small (at most 3.6 x 2.8: 1 house), medium (4.1 x 3.1: 8) and large (up to 4.6 x 3.44: 15);
+  every house fits the largest plot, but only one fits the smallest (3.8 x 2.8). Most of today's plots are too small
+  for most kit houses: BD-7 widens the house plots (the owner's answer: footprints may change, BD-7 carries it) or
+  BD-4b picks by plot.
+- Found, not changed:
+  - The door px/m mismatch (track section 3) stands for the old builders; the kit writes at ppu 34. If BD-7 changes
+    the reader to 32 instead of the builders, rerun this tool with `PPU = 32`.
+  - The kit's picture (`img`) is a stand-in (cottage_moss.png) until BD-7 bakes pictures from the models; the room
+    check and clear-windows read pictures.
+  - Software drawing here is about 2.5 minutes a close-up: the contact run reached 20 of 24 houses before the
+    session's 1-hour background limit, so the sheet has 4 blank tiles (21-24). Rerun `tools/look-house-kit.py` to
+    fill them.
+- Risky: little for the game (a new kind and a test map; nothing places the kind yet). The houses haven't been seen
+  at night or on the phone. The glow parts (neon, antenna tips, tube, underglow) follow BD-1's glow rules. The kit
+  adds up to 24 meshes when placed (one draw per part a mesh), far under the 400-draw phone budget.
+- Verified: lint, typecheck, format:check, check:modules (421 modules), check:data (193 files, all fine) and build
+  clean. `npm test` (main merged): 2,427 of 2,428. The one failure is "the game's rules: 1,000 maps hold every
+  check, in under 1.5 seconds", a timing budget that failed under load; its file passed alone, 5 of 5 (BD-F met
+  the same one). The new test passes 6 of 6. Smoke 7 of 7 (461 s). The full quick check was not run: no game code
+  changed, and it takes over an hour here (BD-2b's entry).
+  Pictures: 20 of 24 close-ups at noon from 35 degrees round (scratchpad and validation/, not committed). Every one
+  reads as its own silhouette, and the showpieces carry their turrets, domes and greenhouses. White walls and glass
+  read pale at noon, as BD-3 found.
+- Next: wave 5 (BD-7 the town re-laid, with BD-4b placing the kit's houses by a neighbour rule) on
+  `track/buildings`, once BD-5 (`claude/bd-5-civic`) and BD-6 (`claude/bd-6-landmarks`) have their HANDOFF entries;
+  the last of the three to finish starts it. Neither had one when this session ended.
+- For the owner on the phone: debug menu, Test scenes, "Test: the house kit": walk the four rows by day and at night.
+
+### Buildings track BD-3 - Look sketches: three directions on one house and the shop - 2026-10-30
+Branch `track/buildings` (wave 3, the main line; pulled 29 commits from its remote, main had nothing new). Plan written
+in Plan Mode's shape and built at once (the owner's advance approval, track section 1). Tools, test models and a
+test map only: no hub building, catalogue kind (other than the test kind) or game code changed. No per-session tag
+(CLAUDE.md). **Waits for the owner's look pick; wave 4 starts after it, from this session.**
+- Changed:
+  - New tools/build-look-sketches.py: six recipes (game/art/scene/next/models/look_house_a/b/c, look_shop_a/b/c), one
+    test kind `look_sketch` (variants swap the model) and the test map `test_look_sketches` (debug menu, Test scenes).
+    Built only from BD-1's shapes, BD-2a's surfaces (cob, halftimber, standingseam, fishscale, riveted, glassblock,
+    barreltile, tilewall) and BD-2b's normal sheet.
+    - The house: a cob ground floor, a jettied half-timber upper floor, a gable-front verdigris gambrel over thick dark
+      eaves, an oversized round door. A: lean 0.15 m at the top (about 1.5 degrees), sparse (one flower box, an atomic
+      finial, a straight brick chimney); 1,038 triangles. B: lean 0.5 m (about 4 degrees), sag and bulge, medium (gable
+      porthole, crooked flared chimney, ivy, lamp, rain barrel, shrubs, antenna with a glowing tip); 2,332. C: lean
+      0.9 m (about 7 degrees) with twist, dense (onion-domed turret, copper rocket chimney with fins, bubble
+      greenhouse, glowing pneumatic tube, satellite dish, wind spinner, hanging baskets, roof moss, flared eaves);
+      3,952.
+    - The shop (a Streamline corner store, door where today's catalogue has it, x +0.94 m): a rounded corner, a thick
+      slab roof with a dark underside, a big window, a striped awning, a round sign with a leaf emblem. The lean is
+      turned down at every level (section 5, tidy civic). A: plumb; 808 triangles. B: a soft swell, speed lines, a
+      starburst, planters, a lamp; 1,462. C: lean 0.15 m, a Googie canopy, a rooftop water tower, string lights, a
+      blossom street tree, ivy; 2,351.
+  - tools/look-hub-buildings.py: `--times=dusk` (20.3 h) and `--angle=` (degrees round from the front: the high
+    three-quarter view).
+  - New tools/test/look-sketches.test.mjs (3 tests): every sketch under 6,000 triangles, detail and lean grow from A
+    to C, the kind names all six. check-data's snapshot remade for the new map (pushed by another push to this branch).
+- Checked against the track file: right that the shapes, surfaces and normal sheet are all in place (no gap met).
+  Loose: the warp's `lean` is metres at the model's top, antennas and chimneys included, so "3-6 degrees" depends
+  on the tallest part: the kit (BD-4a) should give its lean in degrees and convert by the model's height.
+- Found, not changed:
+  - Window glass reads pale (nearly white) at noon from the three-quarter view on these models; the existing houses
+    show the same. A BD-4a/BD-8 tuning point, not a sketch problem.
+  - At 20.3 h the glows are still off (they follow the window-light hour); the neon shows only at night.
+- Risky: none for the game (test content only). The sketches are a look, not the kit's modules: BD-4a rebuilds
+  them as slots.
+- Verified: lint, typecheck, format:check, check:modules, check:data and build clean; `npm test` 2,416 of 2,416; smoke 7 of
+  7 (453 s). The full quick check was not run: no game code changed, and it takes over an hour here (BD-2b's entry).
+  Pictures (look-hub-buildings.py, noon and dusk, 35 degrees round, scratchpad, not committed): no page errors.
+- Next: the owner picks A, B, C or a mix; then wave 4 (BD-4a the house kit on `track/buildings`, BD-5 civic on
+  `claude/bd-5-civic`, BD-6 landmarks on `claude/bd-6-landmarks`), started from this session with the pick written
+  into the track file.
+- For the owner on the phone: debug menu, Test scenes, "Test: the look sketches A, B, C": walk round the six by day
+  and at night.
+
+### Buildings track BD-2b - Normal maps: the normal sheet in the buildings' and models' shader, on above Off - 2026-10-30
+Branch `track/buildings` (wave 2, the main line). First merged the wave-1 side branches `claude/bd-2a-surfaces` and
+`claude/bd-f-window-check` (merges, no rebase; HANDOFF entries kept, newest on top; studio/art-code-refs.json
+regenerated; BRANCHES and ROADMAP rows joined by hand); main had nothing new. Plan written in Plan Mode's shape and
+built at once (the owner's advance approval, track section 1). No per-session tag (CLAUDE.md).
+- Changed:
+  - tools/build-surfaces.py also writes game/art/scene/build/detail-a04b-normal.png (512x256 RGB, `normal_sheet` of
+    the height map: x across the cell, y up the face, z out, 0.5-centred); `--check` covers it. The sheet and the
+    height map are byte for byte as BD-2a left them.
+  - game/data/scenery.json `buildArt.normal` names it; tools/check-data.mjs checks the file when it is named.
+  - buildings.js `BUILDING_BUMP_GLSL`: `bldBump` reads the normal sheet (`uNrm`) once a pixel at the texel's centre
+    (nearest: the light steps texel by texel), wrapping in the 2 m cell, a smaller mip level where a texel is under a
+    pixel, faded out at a sixth of a pixel (as before). The frame is the face's UV axes from the screen's derivatives
+    (the same cotangent frame the old bump used), so boxes, prisms, caps and round shapes each get theirs, mirrored
+    models included; no vertex data. It replaces the three height reads of the old bump (`bldH` is gone).
+  - New `bindBuildingNormals(p, A)` (buildings.js): the sheet on texture unit 3 (free while buildings draw: the
+    ground and the world map bind their own there), its sampler cleared, back to unit 0, and `uBStr` from the setting,
+    or 0 (flat) while the sheet is loading or a scene names none. Called by the buildings, the low-poly models (plain
+    and instanced: one program each) and structures.js. The sheet is preloaded with the building sheet
+    (prop-models.js, walk-view.js).
+  - Setting: the existing dial `world.buildingBumps` ("Building bumpiness", no rename) now defaults to 1, and the
+    graphics preset Off sets it to 0 (`OFF_LOOK`): on in Balanced and Beautiful, the owner's "on above Low" (the game
+    has no Low preset: Balanced, Beautiful, Off). The graphics bench already lists the dial (the Depth corridor
+    station; bench-path's houses group), so the in-game graphics test shows its cost on the phone.
+  - New tools/test/building-normals.test.mjs (5 tests): the sheet's size and unit normals facing out, one read in the
+    shader, the models' shaders, the binding (own unit, back to 0, flat without a sheet), the defaults.
+- Checked against the track file: right that the sheet is 8x4 of 64 px and that `bldBump` was derived from the tone
+  sheet. Wrong or loose: "a graphics setting" already existed (`world.buildingBumps`, off by default since it was
+  added); "the presets" have no Low (see above); "round shapes use the arc direction" needs nothing extra, the
+  derivative frame follows the UVs on any face.
+- Found, not changed:
+  - structures.js drew with the buildings' program but never set `uAtl` or `uBStr`: it inherited whatever the last
+    building draw left. Now set there (a fix, needed because the sheet's unit must be bound).
+- Risky:
+  - Every building and low-poly model now bumps by default. Fine on the hub at noon in the pictures; not yet seen at
+    night or on the phone.
+  - The cost on a real phone is not measured. Software drawing can't resolve it: on the emulated phone (390x844,
+    test_hub_buildings, auto quality off, 5 repeats of 8 frames, medians) the new build drew 4.16 s a frame flat and
+    4.82 s with the bumps, the old build 4.69 s flat and 4.40 s with its old bump; repeats spread from 1.8 to 6.6 s, so
+    those differences are noise. Per pixel the new bump is one texture read (the old one was three) and a few dozen
+    arithmetic operations, on building and model pixels only. Memory: one 512x256 RGBA texture with mips, about
+    0.7 MB (TD's phone budget is 300 MB).
+  - A strong sheet: `normal_sheet(strength=2.0)`; deep seams tilt a lot. The dial (0-3) scales it; BD-3 judges it.
+- Verified: lint, typecheck, check:modules, format:check, check:data, build and `build-surfaces.py --check` clean; `npm test` 2,413 of 2,413; smoke 7 of 7 (432 s); full quick check: 36 steps ok and 4 problems in 3,500 s, then cut off (my cap) while "Song fingerprints"
+  hung. "RL-8" (node 8 has no exit north) and "Walking left and right" (room light at night) are the two BD-2a found
+  failing on `track/buildings` before this work. "Ground tiles, building plans..." (the lab's room didn't open in place) and
+  "Postcards" (no stamp on the way back) passed when run on their own (146 s, no problems), so they were load flakes
+  in the full run. "Song fingerprints" hangs on its own too (over 10 minutes against its 180 s budget), on this code
+  and on the code before BD-2b's changes alike: a sound-side problem, not this session's (BD-2a's "hang on Safety" was
+  probably this step: Safety finished at 2,532 s here). Steps that bear on this change all passed: "Props made of
+  shapes", "Windows and lamps by night", "Off-screen culling ... prop wear", "The airship moored in Copperleaf", the
+  in-game test's Shaders step (39 shaders built), the phone run Pictures (look-hub-buildings.py, noon, the Workshop and the windmill, before and after;
+  scratchpad, not committed): brick, the dome's ribs, the corrugated roof and the stone tower catch the light texel by
+  texel; the door planks and glass unchanged; no page errors.
+- Next: wave 3, BD-3 (look sketches) on `track/buildings`: three directions on one house and the shop, the owner
+  picks.
+- For the owner on the phone: walk round Copperleaf by day and at night (Graphics Off shows it flat, as before). Run
+  the graphics test (its Depth corridor turns the dial on and off and times it) and send its debug log. The dial is in
+  the Studio's engine editor (World → Building bumpiness), not in the player's Expert list.
+
+### Buildings track BD-F - the window check reads a building's turn - 2026-10-30
+Branch `claude/bd-f-window-check` (made from `track/buildings`; wave 1 side session). Plan written in Plan Mode's shape
+and built at once (the owner's advance approval, track section 1). Tools only: no building, map or game code changed.
+- Changed: tools/clear-windows.py. The claim held: `windows_of`, `hides`/`occluders` and `blocked` never read `rot`, and
+  16 of Copperleaf's 21 window-bearing buildings are at rot 90 (front facing +x, east of the orbit middle). Each window
+  now carries its building's base point and turn; props are judged in that frame (`in_frame`, with `turned_point` and
+  `point_in_prop` ported from game/js/logic/prop-turn.js); footprints and doorways turn in `blocked`; `--fix` steps
+  sideways and toward the camera along the front of the window the prop hides; a room window slides along its own wall.
+  The functions' arguments and returns are unchanged (check-quick and build-solarpunk.py call them as before).
+- Added: tools/test/clear-windows.test.mjs (4 tests on a made-up scene: a rot-90 hut's window found on its turned
+  front, a tree out of that front hides it and one where an unturned front would be doesn't; rot 0 judged as before;
+  the turned footprint and doorway; `--fix` slides the tree along the east front, clear of the hut).
+- Copperleaf with the fix: 40 windows (26 on turned buildings), 9 props within 6 m in front of a turned window, none
+  hides any of it: 0 hidden, so no `--fix` was run and nothing moved. All 44 scenes: 61 windows, 0 hidden.
+- check-quick's windows step needed no change (it calls the same functions; it passes).
+- Found, not changed: none new. The other "Found, to fix in BD-7" items in the track file stand.
+- Risky: little. The judgement assumes the camera looks straight at a turned front, which matches Copperleaf's orbit
+  camera (from 4 m out of each front its forward is within 32 degrees of head-on, most within 15); a building turned
+  away from the orbit camera would be judged from its front all the same.
+- Verified: lint ok; typecheck ok; check:modules, format:check, check:data ok; unit tests 2,395 of 2,396 with the
+  full quick check running beside them (run-map-checks' 1.5 s budget took 2.65 s), that file 5 of 5 run alone; the
+  new test 4 of 4 (it fails on the old tool); full quick check: 36 of 42 steps ok, 0 failed, stopped at the session's
+  1-hour background limit with 6 steps still running (with the unit tests sharing the machine); the windows step ok
+  (61 windows in 44 scenes).
+- Next: wave 1 ends when BD-1 (`track/buildings`) and BD-2a (`claude/bd-2a-surfaces`) have their entries; the last of
+  them starts BD-2b. This session's draft PR into `track/buildings` is merged by wave 2's session.
+### Buildings track BD-2a - surfaces painted: the building sheet 8x4 and its height map - 2026-10-30
+Branch `claude/bd-2a-surfaces` (a side session of wave 1, made from `track/buildings` at 5ad61530, main already in).
+Plan written in Plan Mode's shape and built at once (the owner's standing approval, the track file section 1). Art
+and data tables only: no shader or renderer change.
+- Changed: new tools/build-surfaces.py. It keeps the sheet's cells 0-23 byte for byte and paints row four of
+  game/art/scene/build/detail-a04b.png (now 512x256): 24 fishscale, 25 standingseam, 26 barreltile, 27 cob,
+  28 halftimber, 29 riveted, 30 glassblock, 31 mosaic. They use the same five levels (0/63/126/189/252, R=G=B), are
+  mostly level 2 with thin seams and a lit edge (the trim-sheet rule), and each is seamless. New
+  game/art/scene/build/detail-a04b-height.png (512x256 grey, 255 the highest, each cell seamless). The new cells'
+  heights are built with them: every scale, tile, block and plate has its own height and bevel. The old cells are
+  bevelled from their joints where the joint's shade level is known (`OLD_GAPS`: siding, brick, stone, panels, tile
+  wall, roof tiles, shingles, slate, metal, planks, rivets), with each element raised by its own small amount. The
+  rest (plaster, battens, corrugated, thatch...) get a smoothed shade level, as `bldBump` does today. The tool has
+  `normal_sheet()` (the normals from the heights, sampled within each cell, +y up the face) for BD-2b, and `--check`
+  (fails when the files differ from what it paints). Contact picture: validation/build-surfaces/contact.png (each
+  cell coloured through rampC, its heights, and lit by `normal_sheet`).
+- Names (data only): prop-models.js `LOW_POLY_TEXTURE_CELLS` (the eight keys above, cells 24-31) and
+  buildings.js `BUILDING_TEXTURE_NAMES`. That list stopped at 'Rings' (cell 21), so 'Bark' and 'Rock' are added
+  before the eight new names. Also wall-ramp.js `BUILD_CELL_NAMES` (its test pins it to the sheet's 32 cells),
+  build-intro-art.py's copy of the cell table, art-search.js `ART_BUILDERS` (and its test), and studio/art-keep.json
+  (the height map, until BD-2b reads it). studio/art-code-refs.json and hooks.js were regenerated.
+- Checked against the track file: the figures were right (8x3 cells of 64 px, 32 px/m, five levels in red). The
+  renderer needs nothing for a fourth row: buildings.js `buildingTextureGrid` reads the rows from the picture's
+  height, and the vertex stores the cell as `tx % 8`, `tx / 8`. In the game the sheet loads as 512x256, the grid
+  reads [8, 4], and a recipe with `mosaic`, `fishscale` and `brick` lands on cells 31, 24 and 2 (a headless page
+  check, no page errors).
+- Found, not changed: tools/build-airship.py `--force` rebuilds detail-a04b.png from detail-a04.png (three rows). That
+  already wiped batch 1's bark and rock, and now also row four. The order after it is build-props-batch1.py, then
+  build-surfaces.py (in the tool's notes). The full quick check is slow here (it hung for 30 minutes on "Safety:
+  hostile names"; run on its own, that step passes in 264 s).
+- Risky: no recipe uses the new cells yet, so they haven't been seen on a model in the game's light. Fish-scale at 25
+  cm a scale reads as rows of scallops more than single scales; BD-3 judges it on a roof. The old cells' heights are a
+  first cut from their joints, and BD-2b may repaint any of them in this tool.
+- Verified: lint, typecheck, check:modules, format:check, check:data and build all clean; `npm test` 2392 of 2392;
+  the unused-art check (0 unused, 17 kept); `build-surfaces.py --check` matches. Smoke 6 of 7: "Actions bar" failed
+  once with "Esc did not close the bar" and passed when run alone (70 s). The full quick check ran 38 steps ok, then
+  hung on "Safety" (passed alone). Its two problems, "Walking left and right ..." (room light at night, and on a
+  rerun the settings tabs) and "RL-8" (the route's view, and on a rerun "the town's shop has no Perk"), fail the same
+  way on `track/buildings` without this change, so they are not this session's.
+- Next: BD-2b (normal maps) on `track/buildings`, once BD-1 and BD-F have their entries. It merges this branch, makes
+  the normal sheet from detail-a04b-height.png (`normal_sheet` in tools/build-surfaces.py) and wires it into the
+  model shader in place of `bldBump`.
+### Buildings track BD-1 - New shapes: rot/tilt, prism, lathe, box taper/lean/bevel, warp, glow - 2026-10-30
+Branch `track/buildings` (main merged in, up to date; BD-0's docs update from `ccr-d224d90d-qlnty6` merged at its
+session's request). Plans approved in advance by the owner (2026-10-29). Engine and tools: the low-poly mesher, the
+world map's copy, the Studio's model editor (shows only), a showcase map. No placed building changed. No per-session
+tag (CLAUDE.md); the track's `buildings-done` tag comes at its end.
+- Changed: game/js/prop-models.js `lowPolyFromRecipe`. Each layer is built by its own function, then turned:
+  - `rot` (yaw) on box, limb and prism. Round shapes and lathes already turned themselves.
+  - `tilt: [about across, about depth]` on every solid, about its base point. Normals turn too; UVs are made
+    before the turn, so they follow the faces.
+  - `prism`: `pts` [[across, up]] drawn out `d` deep. Concave caps (ear-clipped), `bend` with `segs`; normals soft
+    under 25° (`smooth`: all).
+  - `lathe`: `pts` [[radius, up]] from the bottom up, `sides`, `ry` (depth over width). Sharp rims over 35°, caps
+    where an end has a radius. A profile that ends where it starts is a ring with no caps.
+  - Box `taper` [top w, top d], `lean` [dx, dy] and `bevel` (vertical and top edges), built as rings. A plain box keeps
+    its old path.
+  - Recipe `warp: {lean, bulge, sag, twist}`, by height against the still parts' bounds. Normals go through the
+    warp's Jacobian; glass bounds follow it. A spinning part is moved by the warp at its pivot, not bent
+    (`rec.move`).
+  - `glow` on solid layers (`'#hex'`, `true` = its colour, `{col, day}` or `glowDay`): flag byte 33 or 34, the colour
+    as 5-6-5 bits in the vertex's two spare bytes (19 and the colour's alpha, 23). `MDL_ATTRIBS` 3 and 4 now read
+    four components and the vertex shaders decode `vGl`. `glassLit` lays the glow over the lit colour at the window
+    strength `uWinK` (a day glow never under 1). A glow-only model is flagged `it.glows`, so walk/lighting.js
+    computes its strength.
+  - The maths is in a new module, game/js/logic/model-shapes.js (`earClip`, `profileNormals`, `layerTurn`,
+    `warpFrame`/`warpPoint`/`warpNormal`, `glowCode`), on both pages and in studio/js/logic-worker-modules.js.
+- Changed, elsewhere:
+  - game/js/world-bowl.js `worldBowlModelShape`: prisms keep at most 3 bend steps, lathes at most 6 sides, boxes lose
+    bevels. A profile's size counts against the 0.35 m cut. The warp is measured on the whole model, as the walk
+    view does.
+  - studio/js/model-editor.js: Prism and Lathe in the shape list. The new fields and the recipe's warp are shown as
+    notes; editing them waits.
+  - Showcase: tools/build-shape-showcase.py writes 7 recipes (game/art/scene/next/models/shape_*.json), one
+    catalogue kind `shape_showcase` (its `variants` swap the model) and the test map `test_shapes`.
+  - tools/look-hub-buildings.py takes `--scene=`. Its night pass now lifts a test map's `plain` flag (see Found).
+- Facts checked (the track's section 2, against main at this branch): seven solid kinds, no box rotation, round `rot`
+  only, the 24-byte vertex, world-metre planar UVs, and the world map's cuts (no img or limbs, under 0.35 m dropped,
+  at most 8 sides; also rings at most 4 and no lumps) were all right. Wrong or loose:
+  - `PROP_MODEL_SHAPES` is not what the Studio reads. It is unused; the editor has its own `MODEL_LAYER_KINDS`
+    (both updated).
+  - "Check where a flag fits in the 24-byte vertex": bytes 19 and 23 were free (padding and an unread alpha), and
+    the flag byte 18 had room after glass (2-32).
+  - "Through the window-light hour rules": windows are lit one by one by the hour (`windowLit`). A glow takes the
+    building's strength `uWinK` only, so all of a building's glows come on together.
+- Found, not changed:
+  - Test maps are `plain: 1`, which turns the hour off (walk-view-gl.js `engineContext.env`). So
+    look-hub-buildings.py's night pictures of `test_hub_buildings` (HB-5) were daylight. Fixed in the tool, not in
+    the maps.
+  - BD-2a (`claude/bd-2a-surfaces`) adds 8 cells to `LOW_POLY_TEXTURE_CELLS` in prop-models.js. It is away from
+    BD-1's lines and should merge cleanly.
+- Risky:
+  - Every low-poly model's attributes 3 and 4 now read four components. All 264 catalogue recipes build
+    byte-identical meshes and windows (hashed before and after), but the shaders changed. On the phone, check that
+    models still draw.
+  - The thin pink neon reads nearly white under bloom; the hue shows on thicker parts. Tune in BD-8 on the phone.
+  - A tilted part may dip below the ground (by design).
+  - Phone cost of the new shapes is not measured: the showcase models are 38-300 triangles.
+- Verified:
+  - Lint, typecheck, format:check, check:modules, check:data and build all passed.
+  - `npm test`: 2,403 of 2,403 before the ring fix. New tools/test/lowpoly-shapes.test.mjs: 12 tests (bounds,
+    normals facing out, triangle counts, stable hashes, the arch's cap area, the ring, warp, glow bytes, the world
+    map's copy).
+  - check-data's snapshot remade (one more data file: the new map).
+  - Quick check: two full runs, each cut off by my 50- and 58-minute timeouts. This container's software drawing is
+    slow, and the first run shared the CPU with the picture runs. The second run passed 36 steps, 5 had problems:
+    - RL-8, "Walking left and right" (settings tabs) and "Ground tiles" (the lab's room didn't open in place) fail the
+      same way on the commit before BD-1 (5ad61530, rerun with `--steps=`). Not BD-1's.
+    - Postcards failed inside the full runs but passed alone, twice on head and once on base: timing under load.
+    - Phone passed alone on both (its full-run complaint, "dialogue 23 pieces, at most 20", did not come back).
+    - "Props made of shapes", "Windows and lamps by night", "Test scenes" and Copperleaf passed.
+  - Pictures with look-hub-buildings.py (noon and night, the hour on): turns, prisms (gambrel, saltbox, arch, swoop),
+    lathes (onion, oval bulb, flared chimney, finned rocket, mushroom, tank), taper/lean/bevel, glows (neon tube,
+    ring by day too, lamp globe beside lit glass), two warped houses. Not committed (scratchpad).
+- Next: wave 2, BD-2b (normal maps) on `track/buildings`, once BD-2a and BD-F have their HANDOFF entries; the last of
+  the three to finish starts it. BD-2b merges `claude/bd-2a-surfaces` and `claude/bd-f-window-check` first.
+- For the owner on the phone: the debug menu's Test scenes, "Test: the new model shapes": walk round the seven models
+  by day and at night. Send a debug log if anything draws wrong or slowly.
+
+### Buildings track BD-0 - the plan: Copperleaf's buildings redone, a modular house kit - 2026-10-29
+Branch `ccr-d224d90d-qlnty6` (the cloud session's own, main at 73b2f8b1). Plan approved in Plan Mode. Docs only: a
+new track, docs/phases/buildings-track.md, from the owner's brief ("redo the 3D buildings of the main hub island ...
+cozy whimsical retro futuristic", then "all houses look way too similar now, add a lot of modular variety").
+- Changed: docs/phases/buildings-track.md (the owner's answers, two code audits with file references, the research
+  with sources, the look vocabulary, sessions BD-1 to BD-8, Ask me before, risks); ROADMAP.md and BRANCHES.md rows. A
+  suggestion page (private Artifact, linked in the track file): 2D sketches of every building, a house roller showing
+  the kit's variety with a neighbour rule, the new surfaces and palette, day and night.
+- The owner's answers: all 15 building kinds; the cozy mix (storybook homes with copper, portholes and glowing tubes,
+  Googie on the civic buildings); storybook wonk; footprints may change; houses with a lot of modular variety; hub
+  first (run towns keep today's houses); palette copper, cream, verdigris, terracotta, neon only at night. After the
+  first sketches: "a little more Pokémon generation 5" (the track file's section 5; the sketch page redrawn with the
+  high 3/4 view, thick eaves, white walls with bold roofs, a brick townhouse body, fire escapes, water towers,
+  awnings, a big shop sign). BD-2 split into BD-2a (painting) and BD-2b (the shader); sessions grouped in five waves
+  that can run side by side (section 6). Then: "a little more nature, bit more on the retro futuristic" (the sketch
+  page's fourth version: gardens on every plot, an atomic, dish, antenna or tube touch on every house, bubble cars);
+  the three Ask me before items answered (normal maps on above Low, pixel-font signs, 6,000 triangles a house); and
+  "more windmill variety and variants, more retro futuristic" (a windmill kit of nine designs and three colourways,
+  a saucer pod body, a butterfly roof, starburst wall lamps; the sketch page's fifth version); the sessions chained
+  (the owner: "All plans approved. Automatically start next steps in new session ... Run
+  simultaneously when you can"): this session made `track/buildings` and started wave 1 (BD-1, BD-2a, BD-F).
+- Found, not changed (for BD-7; details in the track file, section 3): doors are written at 32 px/m but read at ppu 34
+  (about 6% short of the model's door); tools/clear-windows.py ignores `rot` (most hub buildings are at rot 90); the
+  lighthouse and station have no `door`, so lowpoly-props.test.mjs gives them the 4k prop budget; cottage_juniper gets
+  a random size (no `vary.size`, "cottage" not in prop-look.js's building pattern); only workshop, gene_bank and
+  train_station have pictures baked from their models.
+- Risky: nothing in the game changed. For the track: the normal sheet's and the extra meshes' phone cost (BD-2,
+  BD-8 measure); footprints ripple through the town tools and ~8 checks (held in BD-7).
+- Verified: lint, format:check, `npm test` 2392 of 2392 (docs only). Pictures of today's cottages and houses
+  (tools/look-hub-buildings.py --times=rows, scratchpad, not committed). The suggestion page looked at once at phone
+  width, light and dark: no sideways scroll, no script errors.
+- Next: wave 1, started by this session: BD-1 (new recipe shapes) on `track/buildings`, BD-2a (surfaces painted) on
+  `claude/bd-2a-surfaces`, BD-F (the window check reads `rot`) on `claude/bd-f-window-check`.
+
+### Fluid track FL-4 - even frames: arrivals and crossings (with the load track) - 2026-10-30
+Branch `track/fluid` (round 3 lane, beside FL-3b; its commits merged in). Plan approved by the owner's standing answer
+(fluid-track.md section 1). Code: four new paths, each behind its own switch, **off** until the owner's phone run;
+`mapCacheKey` the same key without a new string a frame (no switch: the same value). No tag (the track's tag comes at
+FL-7). The items that overlap the load track's LD-5 are not built: asked below.
+- Facts checked against the code (73b2f8b1 + rounds 1-2): section 5 item 6 holds for this lane: the grass's first slice
+  is 12 ms (grass-build.js `grassWork(12)`) and its end (a counting sort and one `bufferData` of every blade) runs in
+  one call; a view prepared ahead plants nothing until it is swapped in (map-cache.js resets its grass); a cache miss
+  runs `buildGroundMesh` in one go; the one-off budget is `FRAME_WORK_MS` 8 ms on phones, 10 elsewhere
+  (walk/quality-cull.js), whatever the rate; picture age is counted in frames (engine/webgl.js trimTextures, 600).
+  Differs / found: the far cache's key misses because the frame's items come only from the 6 m prop-grid cells in view
+  (walk/frame-items.js), and the key held a signature of every still caster in the list, so any cell coming into view
+  or leaving it drew the 4096² map again; `mapCacheKey` concatenated the ground key (the whole tile map as JSON) into a
+  new string each frame and compared it in full; the grass reads the walking grid of the view on screen
+  (`isWalkable`), so a view not on screen couldn't be planted; about 30 timers, not 15 (13 moved, below).
+- Changed:
+  - game/js/walk/shadows.js (`quality.shadowCells`): the key keeps what doesn't follow the view (fit, sun, map size,
+    place, item generation, buildings, ...); each prop-grid cell in view keeps one number for its still casters
+    (`farShadowCellHashes`). The cache holds while every cell in view (the same frustum test as frame-items.js, on
+    `walkRenderer.frustum`) has the casters it had when the map was drawn, the grid and the far props unchanged
+    (`farShadowCellsHold`). A cell that left the view isn't asked; a prop hidden by the hour or a story flag, a model
+    that finished loading, a cell come in with new casters draw it again.
+    `quality.shadowHold`: when the cache holds and the moving casters are as last frame (every field of each moving
+    picture, in order; none a model, a solid prop, a building or a turning part, which move inside their own draws),
+    last frame's far map is returned before `beginSunShadow` (no clear, no 4096² copy, no draws). `walkRenderer.shHeld`.
+  - game/js/walk/map-cache.js: `mapCacheKey` gives back its last key while the id, the scene, the ground key string
+    and one number for the rest (props and heights counts, the waters' contents, water kind, flags) are the same.
+    `quality.grassAhead`: a view prepared ahead (`prepareMapGround`) plants its grass while it waits in the cache, in
+    what is left of the ground's budget (`grassAheadWork`, in `groundPrepWork` when no ground is being prepared), on
+    its own walking grid (asked for once with `navPrepare`; the crossing needs it anyway) and under the place's own
+    look (its grass density). Swapped in planted, the grass is kept (the last view's unfinished planting let go: it
+    marked the new view unplanted); still being planted, the job goes on for the view on screen. Views prepared before
+    the switch was on are picked up too (the cache's newest without grass).
+  - game/js/walk/grass-build.js: `grassJob(sc, G, target)` / `grassStep(J, ms)` (the old buildGrass/grassWork on top,
+    unchanged with the switch off); with `grassAhead` the first slice is 4 ms (was 12), the end is the sort in one
+    slice and then the blades in 1 MB strips (`bufferSubData`), the grass drawn once the last strip is in; a job let go
+    gives its buffers back (`J.abort`).
+  - game/js/free-tick.js (new; `quality.freeTicks`): `everyFree(fn, ms)`: the timer only asks; the work runs in free
+    time (`requestIdleCallback` with the period as its deadline; without it, Safari, just after the next frame, at the
+    latest one period later), never queued twice. Moved: the story checks (1.5 s), the held crossing's take-over
+    (0.4 s), trainers in sight (150 ms), the music's choice (1 s), the sound starts' tally (10 s), the idle scan, Kappi's
+    look, fishing's button, the painted battle's weather, the D-pad, the maps ahead, friends' publish, play time. Kept on
+    their timers: the music's 25 ms clock, the footsteps (50 ms), ambience and the low-HP beep (200 ms), loading
+    screens, tests. tools/to-module.mjs knows `everyFree` runs its callback later (one word).
+  - engine/settings.js (additions): the four switches with Engine rows; the debug menu's switches (beside FL-2a's and
+    FL-3a's); bench-path.js's needs. debug-log.js (additions): `shh`, `gst`, `gah` in each sample.
+  - tools/test/even-frames.test.mjs (8 tests), tools/check-even-frames.py (headless counts, off then on).
+- Not done, for other lanes (their files):
+  - **The cache-miss ground build sliced**: the frame that sees a new key (walk-view-gl.js's swap block, FL-3b's file
+    this round) clears the walking grid and needs ground that frame; sliced, it would keep the old ground and key until
+    `prepareMapGround(urgent)` is done, then swap (map-cache.js has the pieces). A miss happens on a new run day's water
+    (`runWaterWeatherSync` changes `sc.waters`), Studio edits and the 30 s fallback. Round 4 (walk-view-gl.js's scene
+    pass is FL-5a's) or FL-7.
+  - The far cache gathered by fit: frame-items.js could gather the cells under the far map's fit circle too (only on a
+    miss), so turning the camera wouldn't miss at all; the fit itself follows the view footprint (it moves when the
+    camera turns): FL-5b's 2048 map could take a steadier fit.
+  - `ensureGround` (walk-view.js, no lane) runs `groundKey(sc)`, a JSON of the whole tile map and every terrain, every
+    frame to compare it: the same kind of per-frame string as `mapCacheKey` was. Not measured; a memo like this one.
+  - Ground painting on `scheduler.postTask` (background): not done. The painting runs on the helper thread by default
+    (`quality.paintWorker`); only its upload is on the page, inside the frame budget.
+- Measured headless (counts only; `check-even-frames.py`, the run fixture, a walk to the next place's seam with its
+  preparation pushed along from the page as check-fast does, the crossing, 8 s standing): with the switches on the next
+  place's grass was planted ahead (314 ms of work over 1.7 s, software) and kept at the crossing (planted again 0;
+  off: 1, at the first frame there); the longest single grass call 7-10 ms on, 13-20 ms off (a note); 244-300 free-time
+  runs asked in the walk. The far map: off 26 drawn again of 85 passes, on 17 of 49 (headless frames come about once a
+  second, so each frame moves the fit: no gain shows here); **held 0 times** in either (a walker and townsfolk are in
+  every frame; the hold pays only where nothing moves, a room or a still route: the phone log's `shh` will say).
+- Risky: all four switches are off, so nothing changes for players until the owner's phone run. With `shadowCells` a
+  prop hidden while its cell is out of view keeps its far shadow until the cell comes back or the sun moves on (the old
+  key never drew casters out of view at all). With `freeTicks` a busy page runs those jobs up to one period late
+  (trainers in sight 150 → at most 300 ms). `mapCacheKey`'s memo is on for everyone: the same key by construction (a
+  test compares it with the old one, also after waters changed in place).
+- Verified: lint, types, format, modules, data clean; unit tests 2,457 of 2,457 after merging FL-3b; smoke no problems
+  (289 s); `check-perf.py --only=copperleaf` no problems (303-336 draws as shipped, effects 4-7). Full quick check
+  (2,599 s, 42 steps, 38 passed) against a baseline made at the round's start (8678e3f7, in a worktree, 45 pictures,
+  2,711 s, 38 passed): three problems fail on both (RL-8's Thicket Route crossing, room light, walking out of the lab);
+  battle music's drums passed this time; "Place views ..." failed once ("w:copperleaf* drew fewer than 2 frames in 90
+  s", early in the run beside the first boot's shader compiles) and passed alone (65 s). 3 pictures over the threshold:
+  the failed RL-8 step's, phone-battle and phone-run-sheet (other moments); alone, lamps-night differed only by the
+  baseline run's leftover test-results window. `check-even-frames.py`: grass planted ahead and kept (above).
+- Ask me before (section 7 "FL-4's items to the load track (LD-5) or here" and FL-4's "Ask first"; not settled by
+  section 1): **the items that overlap LD-5's leftovers**: the one-off budget sized from the slot, picture age by time,
+  and LD-5's model meshes in a worker, `createImageBitmap` and an upload queue, the next place's warm-up. Options:
+  (a) here, in the fluid track (round 4 or 5), with LD-5's owner told (recommended, section 7: the budget must follow
+  the set rate, e.g. a quarter of the paced slot: 4 ms at 60, 8 at 30, 2 at 120); (b) left to the load track's LD-5;
+  (c) split: the budget and picture age here, the worker, `createImageBitmap` and warm-up in LD-5.
+- Next: round 4 (FL-5a), started by this lane (round 3's last).
+- For the owner on the phone: open the debug menu, turn on "Shadow cache by squares", "Hold still far shadows", "Grass
+  planted ahead" and "Jobs in free time", close it, walk Copperleaf for a minute, cross into a run's next place twice
+  and stand in a room for 30 s; send the debug log (its `shc`, `shh`, `gah`, `gst` and the hitch list), and one with the
+  four off for comparison. If anything looks wrong (a shadow left behind, grass missing after a crossing), the same
+  switches turn each off.
+
+### Fluid track FL-3b - resolution without hitches (behind a switch) - 2026-10-30
+Branch `track/fluid` (round 3 lane, beside FL-4; FL-4's commits merged in). Plan approved by the owner's standing
+answer (fluid-track.md section 1). Code: the resolution's levels and when the canvas may change size, behind its own
+switch, **off**; FL-6's true freeze (a cap of 0) on for everyone. No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + rounds 1-2): section 5 item 6 holds: each 0.1 step of either ladder
+  (logic/quality-step.js, FL-3a's frame-control.js) changed `#dio` and `#dioui` at once and every screen-sized target
+  followed (headless, the old path: 11 canvas size changes in 8 frames of a walk with a ladder stepping; each made
+  `scene`, `refl`, `dof`, `vol0`, `volz`, `vol1` again). Differs: `walkView.warm` (read by adaptQuality and the
+  normal-map jobs) is never set anywhere: dead. FL-6's note holds: the scheduler floored every cap at 0.1 (a frame in
+  10 s behind a frozen screen). The 4096/1024 sun shadow map is chosen by `walkView.R < 0.8 || q >= 2`
+  (walk/shadows.js fittedShadowPass), so the ladder's q crossing 2 (and R crossing 0.8 on the old path) makes the shadow
+  maps again mid-walk: not in this lane (below).
+- Changed:
+  - game/js/logic/frame-control.js (additions): `RES_LEVELS` (1, 0.8, 0.6, 0.5: a phone's floor 0.6), `resStepDown`,
+    `resStepUp`, `resDrawLevel` (the old ladder's 0.1 asks as a level, with hysteresis: down to the lowest level at or
+    above the ask, up to the highest at or below it; 1 → 0.6 → 1 changes the size 4 times, not 8), `resApply` (a
+    waiting level is taken behind a screen, a window or a hidden page, while the view fades (`#dio` without `in`),
+    behind a loading screen, or when the canvas changes size anyway: its CSS size, the Settings resolution, the
+    pixel budget). The controller's R lever steps level to level with `resSteps` (`controlRestore(kept, steps)` keeps
+    one R on the stack a level).
+  - game/js/walk-view-gl.js: the canvas's size from the level drawn (`resolutionDrawn`); `walkRenderer.resD` (drawn),
+    `resWait` (waiting, 0 none), `resWhy`, `resizes` (every canvas size change). With the switch a phone starts at
+    0.8 (the level below full) instead of 0.9. `walkView.R` stays the ladder's ask, so its cheap uses (lighting's
+    lite mode, the weather's halving) still follow it at once.
+  - game/js/walk/quality-cull.js: the controller gets the levels with the switch on (and starts afresh when it flips).
+  - game/js/engine/webgl.js renderTarget: `gpuState.fbRe` counts targets made again at another size, by name.
+  - FL-6's ask: game/js/frame-scheduler.js passes an explicit 0 through; logic/frame-pace.js paceDue runs the change to
+    0 once (the last frame) and then never until the cap changes (the first gap after is one slot);
+    walk-control.js cap() returns 0 where it returned 0.1. A waiting level is taken on that last frame.
+  - engine/settings.js `quality.resSteps: false` with its Engine row; debug menu "Resolution steps" (On / Off for the
+    session); debug-log.js (additions): `rd`, `rwait`, `rwhy`, `rsz`, `fbre` in each sample; tools/read-debug-log.py
+    prints a "Resolution steps" line; bench-path.js: resSteps among the dials the test holds.
+  - tools/check-resolution.py (new, this session's gates); tools/test/res-steps.test.mjs (6 tests); check-fluid-ui.py's
+    freeze wording (0 or 0.1).
+- Not done, for other lanes: the shadow maps' size choice (walk/shadows.js, FL-5b's "shadow map size"): with the switch
+  on it should read the drawn level (`walkRenderer.resD ?? walkView.R`) instead of `walkView.R`, and the q >= 2
+  smaller map should change at the same moments (latch it when `walkRenderer.resWhy` changes), or the ladder's q step
+  still makes both shadow maps again during a walk. In a battle `walkView.held` is always '' (walk-control.js), so a
+  waiting level there waits for the battle's end (its canvas changes size then anyway).
+- Found, not changed: tools/check-stalls.py's "ticks wrapped by the GPU counters in 5 s behind a screen" fails on the
+  round's start commit too (7 there, 7-8 here; the gate says at most 6): FL-1a's 250 ms retry after a counted tick
+  that drew nothing, now that nothing draws behind a screen (engine/gpu-counters.js, FL-7).
+- Risky: the true freeze is on for everyone: a window or screen that needs frames and isn't on FL-6's `worldMoving`
+  list got one every 10 s before and now gets none (the full quick check and smoke pass; the in-game tests keep the
+  world moving). With the switch on, a GPU-bound phone on the old ladder keeps its size until the next menu, fade or
+  load (the ladder's cheaper levers act at once; the controller goes on to the half rate instead); a level kept from
+  0.1 steps comes back on the level at or above it.
+- Verified: lint, types, format, modules clean; unit tests 2,456 of 2,457 after merging FL-4 (the 1,000-maps timing
+  test, run beside a browser, which passes alone); smoke 7 of 7 (351 s). check-resolution all 12 (switch on: 0 canvas
+  size changes and 0 targets made again in a 16-frame walk with a ladder stepping 1 → 0.6 → 1; the level waits; behind
+  Team it is taken on the last frame (1 change, `held`), then 0 frames in 5 s (a cap of 0); back on the walk 0 more;
+  a fade takes it (`fade`); switch off: 11 changes in 8 frames; the real ladder: 0). check-fluid-ui: no gate failed
+  (0 frames in 5 s behind a screen, 1 behind a window). check-stalls: all but the wrapped-ticks gate (above).
+  Full quick check 37 of 42 (2,493 s, 2 workers) against a baseline made at the round's start (8678e3f7, 37 of 42, 44
+  pictures): RL-8's crossing, room light, "walking out didn't bring the hamlet back" and Battle music's drums fail as
+  there (the start's fifth, Song fingerprints, passed here); "Place views" drew 8 frames, then none in 90 s (`go_scene`)
+  and passed alone 3 times (56-62 s, once beside its worker's other steps): likely a window that came up during the jump
+  and now freezes the world for good, so tools/browser_check.py go_scene now clears a window that holds the world
+  after a jump (with a note naming it, as the fixtures' set-up does) and names the hold when it fails. 5 pictures
+  differed (battle-rain, the two failed steps', phone-crash-pick, phone-run-sheet); the phone step rerun alone: none.
+  check:modules, check:data, build clean.
+- Next: round 4 (FL-5a draw order) once FL-4 is done (the round's last lane starts it).
+- For the owner on the phone: open the debug menu, turn "Resolution steps" On (with "Frame controller" On too, if you
+  like), close it and walk a busy place with automatic quality on: the picture should never pop sharper or softer
+  while you walk, only behind Team, a window or a door's fade. Send the debug log: its "Resolution steps" line shows
+  the level drawn, any waiting and when it was taken.
+
+### Fluid track FL-2b - effects, spins, grass and same-look GPU cuts - 2026-10-30
+Branch `track/fluid` (round 2's last lane, beside FL-3a and FL-6; their commits merged in). Plan approved by the
+owner's standing answer (fluid-track.md section 1). Code: fewer draws and less garbage, the same pictures; no switch
+(each change draws what the old path drew, checked below). No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + round 1): every effect quad was its own `drawArrays` (5 uniforms and a
+  texture bind), only the weather used `weatherBatch`; glows a draw each; the grass a draw per visible 8 m square
+  (its squares are laid out row by row in one buffer); every spin layer its own mesh. Section 3's spin counts hold
+  (windmill 37 layers, gene_bank 30, workshop 10, clinic and cottage_solar 6, lighthouse 4, giant swing and the
+  Greenbelt train 3), and every spinning model turns one way only (one pivot, axis, speed and swing), so one mesh
+  each. The 4096² far map's "skip when nothing moved" and the reflection's skip are in files of other lanes
+  (walk/shadows.js's far cache key is FL-4's in round 3; water.js, walk-view-gl.js and the canvas context's
+  `depth: false` are not this lane's): not done here, below.
+- Changed:
+  - game/js/walk/effects.js: the effects pass's `quad()` puts every quad in the instanced batch (`weatherBatch`,
+    now 19 floats: a right axis per instance too, `quad.ax(right, up)` for the footprints and the stream leaves);
+    one draw per run of the same picture, in call order (so the blending is the same), flushed before anything else
+    draws in the pass (the room's windows, the battle's scars and particles, the glows). The glows are one more
+    instanced draw (fxW's `uGlow`: the fx program's additive disc). After the room's window draws the quads keep
+    uLitFx 0, as they did. Light shafts stay plain draws (at most 6). The 11 fx strips into one atlas: not done (the
+    strips are mipmapped; an atlas changes their small mip levels, a look change for a few draws).
+  - game/js/walk/fountains-weather.js: the footprints set their axes through `quad.ax` (no uniform calls).
+  - game/js/walk/ground-draw.js drawGrass: visible squares next to each other in the buffer drawn as one run (the
+    same blades in the same order); `walkRenderer.grassRuns` counts the runs.
+  - game/js/logic/spin-merge.js (new; both pages and the logic worker): `spinGroups` (layers by pivot, axis, rps,
+    swing), `joinMeshes` (meshes end to end, 32-bit indices past 65,535 vertices). game/js/prop-models.js
+    propModelMesh: low-poly and voxel spin layers built one by one as before, then joined: one spin mesh per model.
+    (Prebuilt `kind: mesh` models, the airship, keep a mesh per spin: not in Copperleaf.)
+  - game/js/walk/shadows.js + prop-models.js drawPropModelShadows(SH, items, part): a model that holds still but for
+    its turning parts (`shadowSpinsOnly`) has its body in the far map's cache (part 1) and only the turning parts
+    drawn each frame (part 2, `SHADOW_LISTS.spin`); a depth map, so the same map.
+  - prop-models.js propModelImageItems: a placement's leaf items are kept (a WeakMap by placement, one per picture
+    layer) and filled in again each frame with every key in one order; what other passes write on an item (vis,
+    fade, cut, slope, tilt, winL, texKey) is cleared first.
+  - tools/check-perf.py (additions): the effects pass at Copperleaf's square at most 20 draws (`EFFECTS_CEILING`), at
+    low and as shipped; the 400-draw budget now blocks as shipped too (it was a note until FL-2b).
+  - Tests: spin-merge.test.mjs (one group per real spinning model, joined meshes byte for byte, 32-bit indices,
+    propModelMesh one spin mesh per model), model-shadows (the cached copy and the turning parts make up every part),
+    shadow-cache (the mill's body cached, its sails each frame; leaf items kept and filled in as new ones).
+- Measured headless (counts only; `check-perf.py --only=copperleaf`, Copperleaf by day on the phone page): as shipped
+  **273-335 draws** a frame (were 402-531), grass 12-13 (were 104-113), effects 4-7 at the square (were 73-86), 596-1,287
+  uniform calls; at low graphics 238-271 draws, 473-480 uniform calls. Leaf items' garbage (Node, 650 clumps): 240 →
+  111 KB a frame. The page's own heap reading (performance.memory each frame) is 1.4-3.3 MB a frame on both trees
+  headless, too noisy to show it: the log's `alloc` is for the phone.
+- Not done, for other lanes: the far map's copy skipped when nothing in it moved (FL-4 owns its key; dyn is never
+  empty in a town with townsfolk); the reflection skipped with no water on screen (water.js, walk-view-gl.js); the
+  canvas context's `depth: false`; `mapCacheKey` without a string (walk/map-cache.js, FL-4); the main prop items
+  pooled like the leaf items (frame-items.js: tagPropModel, hugSlope and `spin` add fields conditionally, so each
+  needs clearing; a careful session's work), and `decalPlace`'s object per clump (logic/prop-turn.js). FL-3a's CPU
+  level (`walkRenderer.qc`) on shadow-caster distance and grass: new look trades, left for FL-5b/FL-7.
+- Risky: effects now draw through fxW (instanced) on every device; if it fails to build, no effects draw (the weather
+  had the same dependency since R4). Spin layers that overlap exactly now draw in one call (the same triangles in
+  layer order). A leaf item is now the same object from frame to frame: code that keeps an item across frames sees
+  it change (none found: lights key on the placement).
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,443 of 2,443 after merging FL-3a and FL-6
+  (before: 2,424 of 2,426, the logic worker's order and art-code-refs, both fixed); smoke 7 of 7 (321 s); `check-perf.py
+  --only=copperleaf` no problems (183 s). Full quick check (2,094 s, 42 steps, 37 passed) against a baseline made at
+  the round's start (c6576b10, in a worktree, 47 pictures, 2,259 s): the same 5 problems fail on both (RL-8's shop
+  Perk, RT-2's double, Granny Juniper, room light, battle music's drums). 11 pictures over the threshold, all other
+  moments: prints-snow and the battle pictures (another spot, a thrown pyramid mid-flight), life-copperleaf,
+  world-buddy, the room pictures and the two failed steps' pictures. A same-spot pair (the start commit and this
+  tree, reduced motion so the particles hold still, Copperleaf's square at noon and at night): 5% of pixels apart,
+  all townsfolk, their speech bubbles and labels; the fountain spray, chimney smoke and every lamp glow match.
+- Next: round 3 (FL-3b, FL-4): this lane was round 2's last, so it started them (each its own session).
+- For the owner on the phone: Copperleaf's square by day and at night with the Diagnostics open: the draws should be
+  about 270-340 (were 400-530); fountain spray, smoke, lamp glows, footprints in snow and rain should look as before.
+  A debug log of a walk there (its `alloc` against an older log's).
+
+### Fluid track FL-6 - fluid UI - 2026-10-30
+Branch `track/fluid` (round 2 lane, beside FL-2b and FL-3a; FL-3a's and FL-2b's commits merged in). Plan approved by
+the owner's standing answer (fluid-track.md section 1). Code: the page's side (menus, bars, battle cards, minimap, Bag
+and Settings taps, the debug log's tap timing). No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + round 1). What differs from section 5 item 7 and section 6 FL-6:
+  - Item 8 is wrong: the voice font is Jersey 15 and prose is Oxanium (uiTheme.json `type`, written by the theme
+    sheet over tokens.css's Pixelify Sans), so the jersey preload is used; Chakra Petch and Tiny5 are the loader's.
+    No preload change.
+  - The scheduler floors every cap at 0.1 (frame-scheduler.js `Math.max(0.1, ...)`, not this lane's file): "frozen"
+    from walk-control.js is one frame at once, then one each 10 s. A true zero needs that line (FL-3b or FL-7).
+  - body.on-scene::before (the screen's gradient) paints under #dio (an earlier box at the same level), so it never
+    showed over the opaque canvas; left as it was.
+  - The bottom bar's blur is in the kit's shadow DOM (ui-run-kit.js `.glass`), reachable only with a `part`.
+  - talk.js (talk text on its own timer) is not in this lane: left for track/ui or FL-7.
+  - The battle's extra style pass came from battle-stage.js camApply writing the camera's transform in the frame
+    task, then the plates reading layout after it.
+- Changed:
+  - game/js/walk-control.js `cap()`: behind a full screen or a window the world is frozen (0.1: the rate change draws
+    the last frame at once). `worldMoving()` keeps today's rates (1 behind a screen, 20 behind a window) for: a window
+    with `modal({world: true})`, the debug menu, Settings' Display tab (the graphics dials show a change at once), a
+    picture the debug log waits for (`walkRenderer.snapReq`), a scene being played (`walkView.director`) and the
+    in-game tests (`selfTest.on`: their steps wait on frames). These are asked below.
+  - game/css/base.css: no filter transition on `#dio`; behind a screen the dim is `body::after`, black at 0.18 faded by
+    opacity (the same pixels as brightness(0.82): the Team screen's mean brightness 143.8 vs 144.1 before), the 0.8 px
+    blur a still filter on the frozen canvas.
+  - game/css/shell.css, game/js/ui-run-kit.js (`part="glass"` on the bar's glass, an addition for track/ui): on a phone
+    (the base.css phone query) while walking, the top bar and the bottom bar have no backdrop blur and a thicker fill
+    (`--hud-tint`: the surface colour at 88%).
+  - game/js/battle.js: the cards and plates are placed in a microtask after the battle frame (outside FL-3a's
+    `workOwn`, now near 0) and read no layout in it: their sizes, the strip's place and the dock's zoom come from a
+    ResizeObserver. The HP fill, its ghost and the XP fill are moved by `transform` (`--p`, battle-screen.css) inside
+    their frames; the two forced layouts in paintPlates (a new fighter's bar, the hit shake) wait two animation frames
+    instead. Battle text is typed on the frame loop ('type' task, the same 2 letters each 16 ms).
+  - game/js/ui-motion.js: `pbEnterRows` reads every row first and animates only the ones that start on screen;
+    `pbPatch(el, html)` changes a part in place (text, attributes, changed nodes; a kit element that differs is
+    replaced whole). game/js/bag.js (pocket and row taps) and game/js/settings-screen.js (`settingsRefresh`) use it
+    instead of a whole `#app` or sheet rebuild. game/css/guide.css: `content-visibility: auto` on the ledger's rows.
+  - game/js/minimap.js, shell.css: the picture is the tile and 24 px more each side, drawn 5 times a second and moved
+    under you by `transform` every frame (`minimapPan`, the 'minimapPan' task); you and north on a still canvas
+    (`.minimap-you`) drawn again only when you turn.
+  - game/js/debug-log.js (additions; with TD-4), tools/read-debug-log.py: the log's `ui`: `taps` (Event Timing, over
+    16 ms: touch to paint split into wait, handlers and paint, with the screen and what was tapped: a control's data-a,
+    never save data), `paint` (every tap's click to paint) and `longFrames` (rendering and style and layout time).
+  - tools/check-fluid-ui.py (new): this session's gates. tools/check-stalls.py: its window part opens a
+    `world: true` window (frames must come there) and the cap gates read "at most 1".
+- Not done: the bottom bar's shrink on transforms and the HUD glass beyond the tinted bars (asked below, section 7);
+  `.pbar` and `.u-hp` (Team, Bag, units) still animate `width` (their markup is written by files outside this lane;
+  the world is frozen behind them now); talk text; the font preloads (nothing to do).
+- For other lanes: frame-scheduler.js (FL-3b/FL-7): let a cap of 0 mean "not due" for a true freeze. FL-2b:
+  tools/test/model-shadows.test.mjs and spin-merge.test.mjs failed `format:check` here (411ba70b on the branch fixes
+  them). track/ui: `.pbar` and `.u-hp` to transforms; `part="glass"` on pb-nav-bar.
+- Risky: a window or screen that needs the world moving and isn't on the list now stands still (the game pauses
+  there); a check that waits for frames behind a window must open it with `world: true`. pbPatch keeps nodes, so a
+  row's running entrance stops if tapped mid-way, and a reflected attribute on a kit element makes it be replaced
+  each time (as before). content-visibility skips the ledger rows' paint off screen (their focus ring is clipped to
+  the row). The minimap's margin (24 px) holds about 5 m of walking between pictures at the default span.
+- Verified: lint, types, format (mine), modules, data, build clean; unit tests 2,442 of 2,443 (art-code-refs,
+  regenerated after; an earlier run's figures and 1,000-maps timing failures, run beside a browser, pass alone).
+  check-stalls: all 11 gates. check-fluid-ui: all 21 gates (frozen: 0 frames in 5 s behind a screen, 0 behind a
+  window; a battle's choosing phase: 0 layouts and 29 style passes in 28 frames, the camera's own transform write;
+  click to paint, software drawing: Bag pocket 126 ms, Settings tab 16 ms). Smoke 6 of 7 in 302 s beside another
+  browser check: the phone flow's walk "stopped drawing" (3 frames missed a 30 s wait); alone it passes (104 s).
+  check:ui: 73 pictures differ from the committed baseline on this tree and the same 73 on track/fluid without FL-6
+  (a stale baseline); the battle plates differed only by the gallery's XP fill, fixed (its inline width kept).
+  Full quick check: 39 of 42 (1,967 s); RL-8's Thicket Route crossing and room light fail as on the track's start
+  (round 1's entries), Battle music (drums timing) passes alone (44 s). Pictures: the walk on a phone (tinted bars,
+  the minimap gliding, the arrow centred), Team behind the dim (mean brightness 143.8 against 144.1 before), a
+  battle's plates (HP at 82/137) against the commit before FL-6 (the empty move menu headless is the same there).
+- Ask me before (section 7 and FL-6 item 1, not settled by section 1):
+  1. **Windows that keep the world moving.** Today (this session) these keep their old rates; every other window and
+     screen freezes. Options: (a) keep the list as it is; (b) freeze Settings' Display tab too (the dials' change
+     shows when you close it); (c) let these run at the set rate instead of 20. Recommendation: (a), and (b) once
+     FL-5b decides the phone's look trades.
+  2. **The bottom bar's shrink on transforms.** Recommendation (section 7): measure its style and layout time first;
+     the new `ui.longFrames.styleMs` in a phone log shows it.
+  3. **HUD glass beyond the tinted bars** (the 12 → 9 px phone blur fix, `prefers-reduced-transparency` clearing
+     every blur, an engine-made glass). Recommendation (section 7): the two fixes now, the engine glass later if the
+     tinted bars read flat on your phone.
+- Next: FL-2b finishes round 2; then round 3 (FL-3b, FL-4).
+- For the owner on the phone: open Team or a window from a walk: the world stops (one frame, then still) and the menu
+  scrolls smoothly; walking, the bars are tinted, not blurred; the minimap glides instead of stepping; tap around Bag
+  and Settings, then export the debug log: `ui.taps` and `ui.paint` give the tap-to-paint times.
+
+### Fluid track FL-3a - the controller: aim at the set fps - 2026-10-30
+Branch `track/fluid` (round 2 lane, beside FL-2b and FL-6). Plan approved by the owner's standing answer
+(fluid-track.md section 1). Code: a new automatic-quality controller behind its own switch, **off** (section 6: a new
+path ships off until the owner's phone run); the world clock and the half rate's ownership are on for everyone. No tag
+(the track's tag comes at FL-7).
+- Facts checked against the code (main 73b2f8b1 + round 1): section 5 item 3 holds after FL-1a (the old ladder's 85% /
+  130% slow line and 60% / 110% room line, 0.9-1.2 s decisions, the 30 s hold, the phone's "graphics steps once q >= 2"
+  rule). Item 5's clamps hold: 60 ms a walk frame, 50 ms a battle frame. battle-stage.js's ladder aimed at
+  `min(userFps(), hz)` (FL-1a's note: 45 on a 90 Hz screen read as slow) and its `work` held the plates' page time.
+  Differs from section 6 FL-3a: the effects level `q` also cuts townsfolk (logic/square-day.js folkCap: 60% at q >= 2)
+  and far grass (walk/ground-draw.js, q >= 3), so `q` is not a pure GPU lever; and the battle is always drawn by the
+  3D walk view, so its frames already reach adaptQuality (as place kind `battle`): "the battle's ladder joins it" is
+  done by making the battle stage's detail level (0-3: particle budgets, smears, its canvas size) the controller's
+  CPU level in a battle.
+- Changed:
+  - game/js/logic/frame-control.js (new, pure; both pages and the Studio's logic worker): `frameControl`,
+    `controlFrame` (one frame in, a step out: `down`, `up`, `revert` or `floor`), `controlBottleneck`,
+    `controlSaved`/`controlRestore` (levels per place kind), `worldSteps`. Ring buffers of 120 frames (interval, work,
+    fence lag, missed). Target: the slot ladderTake gives (paceSlot of the set rate, the half rate included). Down:
+    2 missed in a row, > 5% missed in the last second, or work p90 > 90% of the slot; 0.4 s settle after a step. Up:
+    4 s with no miss and no step, work p95 < 70% of the slot (of the faster slot to leave the half rate), fence lag
+    p90 < 1.5 for a graphics lever; it undoes the last step taken (a stack). A raise that comes down within 5 s is
+    reverted and held 30 s, doubling to 8 min. GPU-bound (lag >= 2, or work p90 < 60% of the slot): q 1-4, then the
+    resolution to 0.6 (phone) / 0.5. CPU-bound (work p90 > 80%, lag < 1.5; with no fence, a phone counts as unclear):
+    the CPU level 1-3, then q to 2. Unclear: q to 2, CPU level, q to 4, resolution. Then the steady half rate. Thermal
+    hold: two step-downs, each after 30 s without one, within 2 minutes freeze climbing for 3 minutes. Frames with
+    one-off jobs over a quarter of the slot, counted ticks and the frame after either are left out.
+  - game/js/walk/quality-cull.js: `adaptQuality(dtm, work, oneOff)` runs the controller when `quality.controller` is
+    on (the old qualityStep path otherwise, unchanged); a fence after each frame, read on later frames (never waits;
+    up to 6 in flight) gives `walkRenderer.fenceLag`; levels kept per place kind (battle, room, town, route) in
+    localStorage `pb-frame-levels` (device-local, never the save; the half rate is never kept); the CPU level
+    (`walkRenderer.qc`) in cullItems on phones: small props fade from 0.8 / 0.65 / 0.5 of the set distance (from 90 m
+    when none is set), tiny props under 3 / 5 / 8 px go, townsfolk (not residents) past 45 / 30 m go at levels 2 / 3.
+    Off a phone the CPU level is only taken in a battle. The half rate is let go behind windows and screens.
+  - game/js/battle-stage.js: the plates' page time is timed apart and left out (`battleStage.workOwn` is added to the
+    3D frame's work for the controller); with the controller on, the detail level follows `walkRenderer.qc` in a
+    battle; the old ladder aims at the paced slot (paceSlot, the half rate included).
+  - game/js/walk-view-gl.js (the world clock): the world keeps real time down to 10 fps (was 60 ms a frame: 12.5 fps
+    ran the world at 75%); the walker, the townsfolk and the wildlife move in even steps of at most 50 ms (the old
+    longest); a longer gap is a hitch the world waits out. `adaptQuality` gets the frame's one-off time.
+  - game/js/frame-scheduler.js (an addition): `frameHalf(on, owner)`; `frameStop(owner)` lets the half rate go.
+  - engine/settings.js `quality.controller: false` with its Engine row; debug menu "Frame controller" (On / Off for the
+    session, beside FL-2a's picture switches); bench-path.js pins it with automatic quality.
+  - debug-log.js (additions): `qc`, `half`, `lag` and `ctl` (the last step: t, act, lever, why) in each sample while
+    the controller runs; tools/read-debug-log.py prints a "Frame controller" line.
+  - Lint's records after round 1's merges (ui-lint's colour ceiling 618 -> 612, art-code-refs): their own commit.
+- Not done, for other lanes (their files): the CPU levers section 6 also lists, shadow-caster distance, grass and
+  lamps, should read `walkRenderer.qc` (FL-2b: walk/shadows.js, walk/ground-draw.js; walk/lighting.js has no lane);
+  one-picture far trees and the 2048 far map join the levers when FL-5b has them; an upload burst isn't flagged to
+  the controller (texture uploads happen inside the sprite pass: a counter there could set a skip). The battle
+  clock's 50 ms clamp is unchanged (battle-stage.js outside the ladder). FL-3b's resolution steps should replace the
+  controller's 0.1 steps (`R` lever) when its switch is on.
+- Risky: the controller is new and only Node-tested on made-up traces; headless frames come about once a second, so
+  in the page nearly every tick is a counted one and it took no step there (checked: it runs with no errors, kind
+  `route`, the half rate let go behind Team, switching it off restores the old ladder and the half rate). The world
+  clock change is on for everyone: at 10-16 fps the walker now moves at full speed in two steps a frame (doors and
+  step counting are one-shot or time-throttled, checked). The fence lag needs `fenceSync` (WebGL2: everywhere the game
+  runs); on a phone with no fence high work reads as unclear, not CPU.
+- Verified: the gates (tools/test/frame-control.test.mjs, 16 tests: one-off spikes no step in 60 s; a sustained miss
+  (CPU, GPU, both) a step within 1 s; at most 1 revert in any 30 s over 3 minutes, the holds doubling; a GPU-bound
+  trace moves only q and the resolution; a CPU-bound trace (desktop and phone) leaves the resolution at 1; off a phone
+  q then the half rate; the half rate at the floor and back; climbing back to the top 4 s apart at least; the thermal
+  hold; levels kept and restored; the world clock's steps). Lint, types, modules, data, build clean; format clean on
+  this lane's files (FL-2b's model-shadows and spin-merge tests, merged in mid-lane, are theirs to format); unit
+  tests 2,443 of 2,443 (166 s) after merging FL-2b's commits; smoke 7 of 7 (428 s) before the merge; a headless page
+  with the controller on (Copperleaf, phone size): no errors. Full quick check 38 of 42 (3,252 s, 2 workers): the
+  four problems are the four FL-1a met on the track's start (913720db): RL-8's crossing "view never showed", room
+  light, "walking out didn't bring the hamlet back", and Battle music's drums, which passed alone on rerun (54 s).
+- Ask me before (section 7, not settled by section 1; both kept as they are until you answer):
+  - **Balanced vs Beautiful.** Today Beautiful aims at 60 at most (paceSlot of min(set, 60)) and Balanced at the set
+    rate. Options: (a) one target for both, the set rate; the preset only orders the levers, Beautiful lowering the
+    resolution last (recommended, section 7); (b) keep as now. With (a) a 120 setting on Beautiful starts aiming at 120.
+  - **A setting between divisors** (60 on a 90 Hz screen: 45 or 90; today 45). Options: (a) 90 while the controller
+    holds it, else 45 (recommended, section 7: the half-rate lever generalised); (b) always 45; (c) always 90.
+- Next: round 3 (FL-3b, FL-4) once FL-2b and FL-6 are done (the round's last lane starts them).
+- For the owner on the phone (the FL-3a phone gate): open the debug menu, turn "Frame controller" On, close it, then
+  run the Graphics cost test (TD-2's path) with automatic quality on, then walk Copperleaf by day for 2 minutes and a
+  run route for 2 minutes, and send the debug log. The gate: each holds the set rate or a steady half rate with under
+  2% missed frames (`hitches.missed`), and the "Frame controller" line shows which levers moved and why. If it looks
+  worse than with it off, say so and send the log: it switches off in the same menu.
+
+### Fluid track FL-2a - pictures: the draw budget - 2026-10-30
+Branch `track/fluid` (round 1's last lane, beside FL-1a and FL-1b; their commits merged in before the checks). Plan
+approved by the owner's standing answer (fluid-track.md section 1). Code: the picture pass's three fixes, its sort, the
+contact shade on the CPU, Pictures in batches and Sky last on by default, a Copperleaf gate. No tag (the track's tag
+comes at FL-7).
+- Facts checked against the code (73b2f8b1): the three review bugs are real (each has a test that fails on the old
+  code: (a) after a model with blades the pass thought the sprite program was bound while the instanced one was, so a
+  flashing picture right after it drew on the wrong program; (b) a flashing or rising crossing tree lost its crossing
+  picture in batches; (c) the reflection's batched record had no `fig` and its plain loop ignored `it.im.uv`, so a
+  figure's reflection drew the whole atlas). The sprite fragment shader ran `contactAO(uBaseP)` (64 steps, a uniform
+  point) in every pixel. Re-measured headless (counts only): Copperleaf at low graphics, settled, by day, 860 draws and
+  18,166 uniform calls a frame on the old paths, 335 and 830 with both switches on (R4 had 853 → 274); the model leaf
+  pictures 566 → 95 draws (R4: 643 → 94). As shipped on the phone page: 402-531 draws with the switches on (grass 104-113
+  and effects 73-86 of them, FL-2b's), 1,000-1,700 uniform calls.
+- Changed:
+  - game/js/walk/sprites.js: (a) the sprite program is put in use before a picture's blades or hands, whether or not
+    any are drawn; (b) the crossing picture drawn after a flashing or rising tree's plain draw; (c) reflectionRecord
+    sets `fig`. Sorted by texture (`textureKey`, the key kept on the texture's entry, so a figure atlas's cells sort
+    together; worked out once per item before the sort; models and pictures with no texture yet are 0) instead of
+    `imageId` (removed). The contact shade per picture (`r.cao`, uCAO). `firstInBatches`: each pass's first draw in
+    batches on a context (sprites, reflection) is wrapped in getError; an error turns batches off for the page and
+    logs `pictures in batches off: GL error N on the first <pass> in batches` (an error from before it is logged
+    apart). Two to four getErrors once per context, beside FL-1b's rule that getError is asked only in tests.
+  - game/js/walk/water.js: the plain reflection sends the picture's atlas rect (spriteGeometry) and uFig.
+  - game/js/logic/contact-shade.js (new): `contactShade`, the CPU twin of webgl.js contactAO. In both pages and the
+    Studio's logic worker list.
+  - game/js/walk/walk-shaders.js: the sprite shader reads `uCAO`; the instanced one carries it as the fraction of the
+    flags varying (still 15 varying rows; uFlipN reads the whole part). engine/sprite-instances.js packs it in the
+    flags' two spare bytes (16 bits); unpack reads it.
+  - game/js/engine/settings.js: `quality.skyLast` and `quality.spriteInstances` true (the owner's answer).
+  - game/js/debug-menu.js: a row "Pictures in batches" (On / Off / Off (GL error)) and "Sky last", for the session
+    (the game data's engine defaults, as the terrain switches).
+  - tools/check-perf.py (an addition to TD-3's check): `--only=copperleaf` (also in the full run): Copperleaf at noon
+    on the phone page, the hub and three spots, each counted until two counts agree. Gates: at most 400 draws at low
+    graphics; at most 2,500 uniform calls at low and as shipped. As shipped the draws are a note until FL-2b.
+  - Tests: sprite-records (the fixes, the contact shade sent and packed, the fallback; snapshots remade for the added
+    useProgram, uFig, uCAO and getError calls and the new order; its plain path pins the switch off),
+    contact-shade.test.mjs (the GLSL pinned, the twin against the shader's steps in float32, the flags' decoding),
+    debug-menu-switches (the new switches handled and on by default).
+- Not done, for other lanes: Sky last has no automatic fallback (it raises no GL error to catch); the debug switch is
+  its way back. As shipped Copperleaf stays over 400 until FL-2b merges grass chunk runs and draws fountains as one
+  batch; the leaf-clump runs (95-145 sprite draws) need the atlas (section 7, Ask me before).
+- Risky: everything a phone draws now goes through the instanced picture program and the sky after the opaque things
+  by default; the look was checked headless only (SwiftShader). The contact shade in the batched path is 16-bit (a
+  65535th) and in the plain path exact; on `quality.mediump` the old per-pixel loop ran at medium precision, the CPU
+  value is exact.
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,418 of 2,418 after merging FL-1a and FL-1b;
+  smoke 7 of 7 (298 s); `check-perf.py --only=copperleaf` no problems (431 s); a same-page pair of pictures (old paths
+  then new, Copperleaf by day) differs only where townsfolk moved. Full quick check (2,228 s, 42 steps, 39 passed)
+  against a baseline from 913720db (its own full run, 43 pictures; that run was cut off at 50 minutes before writing
+  the baseline, so its pictures were copied in by hand): the three problems are not this lane's: RL-8 (a run's
+  seam view) and room light failed the same way on 913720db; Battle music (drums timing) passes alone. 11 pictures
+  over the comparison's threshold, each traced: phone-crash-pick is taken during a fade (913720db's own smoke and full
+  runs differ by 83: brightness 50 against 133); phone-mast, props-lowpoly and env-day are other moments or spots
+  (the player elsewhere, 913720db's env-day differs by 19.3 from itself); the battle, room and night pictures sit at
+  15-20 with the same scenes. A same-page check (the same spot, old paths then new): by day under 1% of pixels apart
+  in the every-prop scene and Copperleaf; at night the new paths differ from themselves as much as from the old (the
+  camera still moving: every edge, the page's labels too, shifted a pixel). A new baseline is worth making on
+  `track/fluid` (`--baseline`) once round 2 starts.
+- Next: round 2 (FL-2b, FL-3a, FL-6): FL-1a and FL-1b were done, so this lane started them (each its own session).
+- For the owner on the phone: Copperleaf by day with the Diagnostics open: sprite draws should be about 100-150 (were
+  about 700). If anything looks wrong (missing trees, black pictures), the debug menu's "Pictures in batches" and
+  "Sky last" switch the old ways back on for the session; send the debug log either way (it says if batches fell back
+  by themselves).
+
+### Fluid track FL-1b - stalls and page quick wins (no look change) - 2026-10-30
+Branch `track/fluid` (round 1 lane, beside FL-1a and FL-2a; their commits merged in before the last checks). Plan
+approved by the owner's standing answer (fluid-track.md section 1). Code: what the page does while nothing needs it.
+No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1): section 5's items 6 and 7 that FL-1b touches all hold (24 fps for 0.8 s
+  behind a screen, then 1; a window over a screen back to 20; `getError` once a second; the Actions button's
+  `.glass` behind its gold fill; shadows and reflection both on even frames; `safe()` with two layout reads per exit
+  label and once more for the walk marker; `cv.clientWidth`/`clientHeight` every frame; a full clear of `#dioui` every
+  frame; the 36 ms hitch line). Nothing differed.
+- Changed:
+  - game/js/debug-log.js (additions; agreed with TD): `getError` is timed (`glErr`, ms, in each sample that asks) and
+    asked only during a test (`debugLog.bench.step`: the full test, the Graphics cost test), with `?glerr` and while
+    the debug menu is open (`debugLog.askGlError`). Measured first: headless it held the main thread 0.66-1.0 s per
+    call on average (2 s at worst), because it waits for the frame the GPU is still drawing; software drawing
+    exaggerates it, but it is a full sync point on a phone too. Every log field is kept. The hitch report gains
+    `missed` and `missedOverMs`: frames over the set rate's slot plus half a refresh (FL-1a's `paceSlot`, so 60 on a
+    90 Hz screen is two refreshes), beside the 36 ms list, which can't see a missed 60 fps frame.
+    tools/read-debug-log.py prints both.
+  - game/js/walk-control.js: behind a screen the 3D's cap is 1 at once (no 0.8 s at 24); a window over a screen counts
+    as the screen. A window over the walk stays at 20 (section 9's risk: a window that shows the world must be found
+    before freezing windows; FL-6). `safe()` is read once a frame (`safeBand`, keyed on `walkView.t`).
+  - game/js/pixel-sky.js: the `bg` task is stopped (frameStop) while a body class hides `#bgfx` (on-walk, on-scene,
+    on-map, in-cs; a MutationObserver) and started again when it shows.
+  - game/js/walk-tab.js, game/css/walk-tab.css: `.glass` off the Actions button; high contrast keeps the look
+    `.glass` gave it there.
+  - game/js/walk-view-gl.js: the canvas's CSS size from a ResizeObserver (clientWidth read in its callback, so the
+    numbers are the same); the label layer's drawing calls counted on its context (`_ink`), so `#dioui` is cleared
+    only after something was drawn on it (`walkRenderer.uiClears` counts clears); the reflection on odd frames, the
+    shadow map on even ones, when either skips.
+  - tools/check-stalls.py (new): this session's headless gates.
+  - studio/art-code-refs.json regenerated (line numbers moved; regenerate it after merges: `node
+    tools/art-code-refs.mjs`).
+- Not done: the hitch line itself is unchanged (LD's 36 ms list and its size buckets are log fields); the slot count
+  is the addition. The 3D still draws one full frame a second behind a screen (the owner's "one last frame, then
+  nothing" needs the frame clock and the waits on frames checked first; FL-6).
+- Risky: an error raised in play is now found only by the next test step's own check (self-test.js reads stale
+  errors before each step and names them as "from before this step"); `?glerr` still names the call. A screen that
+  needs the world to move behind it within 1 s would now look still. FL-1a's counted-tick retry (250 ms after a tick
+  that drew nothing) wraps about 4 ticks a second behind a screen on a phone (headless 4 in 5 s, the frames being slow).
+- Verified: lint, types, format, modules, data, build clean; unit tests 2,392 of 2,392 (133 s); check-stalls all 11
+  gates (after merging FL-1a and FL-2a): 5 s behind a screen 4 frames and 4 wrapped ticks, `bg` off on the walk and
+  behind screens, 2 blurred surfaces with the bars (0 without), 0 label clears over 4 frames with no labels, 1 after a
+  drawing, 0 samples asking getError in play; smoke 7 of 7 (287 s) after the merge. Full quick check before and after (same machine, 4 cores): before 38 of
+  42 (2679 s), after 40 of 42 (2403 s); the two still failing failed before too (RL-8's run crossing "view never
+  showed", room light). 7 pictures differ from the before-baseline: 4 from the "Time, weather and rooms" step that
+  broke in the baseline run (room-day, room-night, room-in-place, windows-night), battle-rain (redone side by side at
+  0, 4 and 10 s: an entrance animation caught at another moment; the same once settled), life-copperleaf and the
+  failed step's picture (camera and timing).
+- Next: round 2 (FL-2b, FL-3a, FL-6), started by the round's last lane.
+- For the owner on the phone: open Team or Bag from a walk and back: the world should stop at once and the menu
+  scroll smoothly. The debug log of a walk now has `hitches.missed`; run the Graphics cost test once to get `glErr`
+  (the phone's cost of getError).
+
+### Fluid track FL-1a - pacer and ladder bugs (no look change) - 2026-10-30
+Branch `track/fluid` (round 1 lane, beside FL-1b and FL-2a; FL-1b's commits merged in). Plan approved by the owner's
+standing answer (fluid-track.md section 1). Code: the frame scheduler's pacing, the automatic quality's feed; no
+look change. No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + FL-1b): all of section 5's items 3-5 hold. Two more found: the walk
+  view never fed the fps overlay (`walkView.opt.meter` is never set), so the overlay counted its own `meter` task's
+  ticks at the set rate, not the world's frames, and that task never stopped; the old refresh estimate needed a
+  tick with under 3 ms of work, so a page drawing every tick never read its screen. Simulated, the old pacer at 120 Hz
+  and cap 60 gives 16.7 / 25 / 8.3 after one miss.
+- Changed:
+  - game/js/logic/frame-pace.js (new, pure, in both pages and the Studio's logic worker): `refreshTick` /
+    `refreshPeriod` (the period from every tick: a delta counts when the tick before had under half of it as work or
+    when it is quicker than the period so far; the lower quarter of the last 0.5 s, near ones averaged, every 0.1 s,
+    no list), `paceSlot` (a rate as whole refreshes, nearest; the half rate doubles it), `paceDue` (locked to the
+    beat: `next = max(next + T, ts + T - V/2)`, due from `next`, a cap change starts the beat at once; each task's
+    `shown` interval in refreshes, `missed` (over a slot plus half a refresh), `misses`, `frames`), `ladderFeed` /
+    `ladderTake` (the automatic quality's feed), `phoneAgent` (one phone test: Android, iPhone, iPad, a touch Mac).
+  - game/js/frame-scheduler.js: uses them; `frameScheduler.period` (ms) beside `hz` (now whole, from the period);
+    `frameScheduler.half` and `frameHalf(on)` for FL-3a's controller (the tasks whose cap is the set rate take it);
+    the GPU counters wrap only a tick with a task due, and `frameScheduler.counted` marks it; a task is dropped on
+    its third throw in a row; the scheduler meters the main task itself (dio, else scene, else map: fps from its runs,
+    ms from its time); `frameCount` is kept for its callers and does nothing.
+  - game/js/engine/gpu-counters.js: after a counted tick that drew nothing, the next count waits 250 ms.
+  - game/js/walk/quality-cull.js adaptQuality: fed through `ladderTake`: below 30 a second nothing; a cap change
+    resets the averages and waits 1.5 s (the menu ratchet); the counted tick left out; the target is the paced slot
+    of min(cap, 60 or 999 with Balanced), so 60 on a 90 Hz screen (every second refresh) isn't read as slow. Its two
+    phone tests and FRAME_WORK_MS use `phoneAgent`.
+  - game/js/walk-view-gl.js: the ladder's work leaves out the one-off jobs (normal maps, program polls, ground and
+    walking-grid preparation, ensureGround and the map-cache swap, grass, far props, the near ring); `walkView.slow`
+    skips the counted tick. The histogram and the full frame time are unchanged.
+  - game/js/debug-menu.js: the overlay adds no task; it says "(half rate)" when the half rate is on.
+- Not done, for other lanes (their files): the other phone tests still disagree: walk/walk-state.js PREP_BUDGET_MS,
+  walk/lighting.js PHONE_LAMPS, battle-3d.js PHONE_BATTLE, walk-view-gl.js PHONE, engine/webgl.js:1555,
+  person-art.js, walk-view.js GROUND_CACHE_SIZE (all can call `phoneAgent(navigator.userAgent,
+  navigator.maxTouchPoints)`). battle-stage.js's ladder (FL-3a) still aims at `min(userFps(), hz)`: on a 90 Hz
+  screen it reads 45 as slow; it should aim at `paceSlot(...) * frameScheduler.period`. FL-1b's
+  `debugLog.slotMs` uses min(fps, hz) too: on 90 Hz every 22.2 ms frame sits on its line; the scheduler's
+  `tasks.get('dio').missed`/`.shown` are the paced numbers (TD-4).
+- Risky: an iPad (it reports a Mac) is now a phone in the automatic quality (graphics waits read as main-thread
+  work, the resolution not below 0.6) and gets the phone's 8 ms one-off budget. The refresh can read low if the GPU
+  holds back every frame with light main-thread work (a GPU-bound phone): then the slot follows what the page gets.
+  The battle's quality now reads the dio task's frames in a 3D battle (before: the scene task's). Frame times only
+  on the phone.
+- Verified: the gates (tools/test/frame-pace.test.mjs, 13 tests, Node vsync simulation with the real qualityStep):
+  120 Hz cap 60 one miss → 16.7 / 25 / 16.7, no 8.3; 61 Hz → 0 drops in 10 s; 120 → 60 re-read within 1 s; every
+  frame 40 ms → a steady 50 ms; 8 window/screen cycles at 11 ms → q and R unchanged (phone and desktop); 90 Hz at
+  5 ms → no step in 60 s; plus a slow frame still steps. gpu-counters test for the back-off. Lint, types, format,
+  modules, data, build clean; unit tests 2405 of 2406 with smoke running beside them (the 1,000-maps timing test,
+  which passes alone); smoke 7 of 7 (350 s) before and after merging FL-1b. Full quick check: 38 of 42 steps (2650 s, 2 workers); the four problems were rerun on this tree and on the track's start (913720db): RL-8's Thicket Route crossing, room light and "walking out didn't bring the hamlet back" fail there too; the battle music step passed on the rerun (timing); with room light passed, the same step now reaches the settings tabs, which overflow 7 px on five tabs on both trees (already broken before the track; for the UI side, FL-6).
+- Ask me before (not settled by section 1): **a setting between divisors** (60 on a 90 Hz screen: 45 or 90). Today
+  it stays 45 (the nearest whole slot, as before) and the ladder aims at 45 there. Recommendation as in section 7:
+  the higher one while the controller holds it, else the lower, decided in FL-3a.
+- Next: round 2 (FL-2b, FL-3a, FL-6) once FL-1b and FL-2a are done; FL-3a uses `frameHalf` and `paceSlot`.
+- For the owner on the phone: the fps overlay now counts the world's own frames; open and close Team a few times
+  and check Q and the resolution stay put in the debug log.
+
+### Fluid track FL-0 - the plan: hold the frame rate you set, batching, render layering, a fluid UI - 2026-10-29
+Branch `ccr-36d73c36-2xv56p` (the cloud session's own, at main 73b2f8b1). Plan approved in Plan Mode with the owner's
+answers. Docs only: the plan, web research and read-only code studies (nine studies, seven verifiers that tried to
+refute the key claims, a plan critic); no code changed.
+- Changed: docs/phases/fluid-track.md (new: the owner's answers, the numbers, "are assets batched correctly?" as a
+  table, render layering from the research against this game's frame, why the set fps isn't held, sessions
+  FL-0b..FL-7 with gates, Ask me before, sources); ROADMAP's "Fluid track" row (top of "Tracks alongside") and a
+  pointer on phase 20's row; BRANCHES rows for `track/fluid` and this branch.
+- The owner's answers: a steady half rate when the set rate can't be held; on phones automatic quality may thin far
+  props and folk, use a 2048 far shadow map, tint the HUD glass while walking and draw far trees as one picture;
+  Pictures in batches and Sky last on by default (after three small fixes); the world frozen behind menus and windows.
+- Found, not changed (all in the track file with file:line):
+  - Batching: pictures are not batched by default (`quality.spriteInstances` off): one draw and about 30 GL calls
+    each; leaf clumps are 260 separate textures; each fountain is 151-247 draws; spin layers 96 where 7 would do; the
+    ground (316k triangles) is never culled and drawn in up to 5 passes. Models, shadow pictures, grass, rain:
+    batched.
+  - Every depth-writing scene shader contains `discard`, so the Adreno's LRZ never gets a write; the sky is drawn
+    first; cut-outs come before the opaque models.
+  - Chrome and Opera on Android give a page every other refresh above about 108 Hz (120 → 60): the 120 option gives
+    60 there. iOS about 60, 30 in Low Power Mode. Firefox adds no cap.
+  - Automatic quality aims at 60 at most (not the setting) except on Balanced, counts background jobs as frame cost,
+    and steps down each time a menu closes (a Node simulation reaches the floor in 8 cycles).
+  - The scheduler catches up after a late frame (25 then 8 ms); 60 on a 90 Hz screen runs at 45; `gl.getError` and a
+    fully wrapped counted frame once a second for every player; a 4096² far shadow map plus a copy a frame on phones.
+  - UI: the world draws behind menus (20 fps behind windows; a window over a screen back to 20); the theme sheet's
+    12 px blur beats the phone's 9 px; the Actions button blurs behind an opaque fill; battle plates force layout
+    every frame and that time lowers the battle's quality.
+- Risky: nothing changed in code. Counts quoted from R2/R4 are headless and from an older commit; FL-2a re-measures.
+- Verified: docs only; the key claims re-checked by the verifiers at 73b2f8b1 (corrections are in the track file).
+- Next: FL-0b, the owner's phone run below; then FL-1a on `track/fluid` (the owner makes it from this branch).
+- For the owner on the phone: run the Graphics cost test and the Diagnostics on the Android phone, then send the
+  debug log of a Copperleaf walk by day. Note the browser and whether battery saver is on. Then make `track/fluid`
+  from `ccr-36d73c36-2xv56p` and start FL-1a there.
+
+### Fix - water on the Adreno phone, Copperleaf's spring stream and bridge - 2026-10-30
+Branch `ccr-8236e72e-tie1ht` (the session's branch, from main 73b2f8b1), PR into main. The owner: water doesn't show on
+the phone (desktop and iPad fine); then "water above the pond for no reason" and "the bridge under the waterfall is too
+close". From the owner's phone log (deploy 73b2f8b1, Android, Adreno 750, 2026-10-29 22:44): the water drew every frame
+(1 draw, no GL error), and its picture showed Copperleaf's river as a dark, see-through strip.
+- **Found**: the water's kinds texture (WA-5b, 2026-10-26: RGBA16F, uploaded as FLOAT from a Float32Array) reads as
+  zeros on the Adreno: no colour, clarity or foam. Headless, zeroing that texture gives the log's picture exactly; no
+  phone-only code path (Android UA, q4, phone pixels) drops the water.
+- Changed (one cause a commit):
+  - New `logic/half-float.js` (`halfFloatBits`, `halfFloats`, half-float.test.mjs); the kinds texture and the flow map
+    upload as HALF_FLOAT made in JS (same RGBA16F formats; desktop pictures unchanged).
+  - water-data.js `setFlowUniforms`: the flow map on texture unit 4 (was 7, the soft shadows' raw depth `uShadowD`:
+    the water's shadow blocker search read the flow map, on every device).
+  - `tools/patch-copperleaf-water.mjs --bridge`: the bridge below the pond's fall moved 5 m down the river (its middle
+    6.9 m from the lip, was 2 m, over the plunge pool), square across and centred on the water, a path to each end
+    (9 tiles).
+  - `--unfeed`: the spring stream into the pond (patch-copperleaf-terrain.mjs FEED) is gone. It started 1 m below the
+    pond's water across a 2.3-2.8 m dip between the mountain's foot and the terrace, so its level floated up to 2.3 m
+    over the ground; nothing uphill can feed the terrace (the owner chose removal over a ridge or a rim spring). Its 16
+    channel tiles take the commonest dry tile round them, 11 bed corners filled. The dressing is laid again in full
+    (island-dress.test wants the generator's own), so some dressing props moved elsewhere on the island.
+  - water-flow.js: a river cell's level is cut to the highest dry ground within 2 m plus 5 cm (`F.levCapped`). 0 cells
+    on Copperleaf, test_water, test_bridges; 2 on legacy test_graphics (0.13 and 0.47 m over their banks).
+- Risky: the Adreno cause is shown headless, not on the phone: the owner's next log and a look at Copperleaf's river
+  confirm it. The bank cap could cut a generated river that runs in a channel narrower than the dry ground's 2 m look
+  only if its level stands over every bank, which is a float anyway. Both patch steps are rerunnable (a second run
+  changes nothing).
+- Verified: lint, typecheck, check:modules, format:check, check:data, `npm test` 2,398 pass; the new tests fail
+  before their fixes; check:smoke 7 of 7 (440 s; the in-game
+  full test's shader step: 39 shaders built). Pictures (scratchpad, not committed): the river normal, zeroed (the
+  phone's look) and after; the pond and the old channel after; the bridge after.
+- For the owner, on the phone: Copperleaf's river and pond (clear blue, white water at the fall and the outflow), the
+  bridge's new place, and the hillside behind the pond (no stream).
+
+### AS-1 - the sky train's ride: steady windows, plume jet fire, decals that tip - 2026-10-29
+Branch `ccr-594e8978-1wbink` (this cloud session's branch, cut from `track/assets` f835b311 in place of
+`claude/as-1-<words>`: the session pushes only there), draft PR into `track/assets`. A wave-1 lane: planned and
+built without waiting (assets-track.md section 1).
+- Changed, windows: new `logic/window-seed.js` (unit tests `window-seed.test.mjs`): a moving model (placement
+  `moving` or `trainRide`) seeds its windows' colour by its key and rolls "lit" by each window's place on the model,
+  worked out once while it moves (`walk/lighting.js modelWindowLight`, kept on the placement); buildings keep the old
+  hash of where they stand (the same numbers). The glass shader (`prop-models.js GLASS_GLSL`) reads the seed from
+  `modelWindowLight` (both draw paths); a moving model's seed comes 2 higher (fract drops it from the colour) and its
+  sun glint is a soft sheen (`pow(.,10)*.18`) instead of the sharp `pow(.,80)` flash.
+- Changed, jet fire: new `walk/plume.js` (drawn in `walk-view-gl.js` after the effects when the director frame has
+  `plume`): per nozzle a cone and two crossed quads plus a ragged hot disc, placed by the train's whole pose (turn,
+  size, bob, tilt: `modelPointAt`), bent down while it holds the train up; scrolling noise through a stepped ramp
+  quantised to 48 px/m and dithered in the plume's pixels; premultiplied (its light over a little cover), so it reads
+  on a bright sky by day and glows by night (no `lampLit`); shock diamonds at full thrust. Smoke at lift-off and
+  touch-down, sparks at lift-off, from the ride's clock alone (a held moment is always the same). Heat shimmer on
+  Beautiful only (`aim` sharp, automatic quality not stepped down): a half-size copy of the scene read with a wobble,
+  freed at the ride's end (`plumeDone`). Beats: `logic/train-path.js trainPlume` (unit test in
+  `train-path.test.mjs`): long and down in the lift and the way down, short gliding in, a burst and a puff settling
+  to board, idle at the platform, off once home. `tools/build-station-trains.py`: the flame cards and
+  `train_rocket_flame.png` are gone; each train's recipe has `nozzles` ([x, back, up, radius]); the five trains
+  rebuilt.
+- Changed, decals: `logic/prop-turn.js decalPlace` takes the model's spin (`spinPoint`, the shaders' voxSpin), so a
+  climbing train's headlamp and name boards stay on it (`prop-models.js propModelImageItems` passes `it.spin`); the
+  pictures themselves stay upright. Unit test in `prop-turn.test.mjs`.
+- Changed, tools: `tools/look-train-ride.py` takes `--hours=`, `--only=` and `--windows` (steps both rides every
+  200 ms at night and fails when the train's windows change within a ride; `modelWindowLight` keeps `[lit bits,
+  seed]` on a moving placement for it), and makes the train's model before a ride starts.
+- Differs from the plan's audit: all of section 2.6 checks out (the seed from `it.x`/`it.z`, `windowLit` each frame,
+  the 64x20 `flame()` cards, `lampLit` on their glow, no tilt in `decalPlace`). Smoke and sparks are drawn in
+  `plume.js` from the ride's clock, not through `walk/effects.js`'s prop fx (those follow a prop's fx list, not a
+  moment of the ride). Files outside section 6's AS-1 list, each a small hunk: `walk-view-gl.js` (the one
+  `plumePass` call), `game/index.html` and `studio/index.html` (the two new modules), `logic-worker-modules.js`,
+  `prop-models.js` (`mooredBob` now provided through hooks.js for `plume.js`).
+- Found, not changed: on `track/assets` (f835b311) the full quick check's settings-tabs check and RL-8's shop Perk
+  check fail (above). The walk shaders' `uEye` lives in the light uniform block, so a new vertex shader can't declare
+  its own (`plume.js` uses `uCamP`). Software drawing makes one new model a frame, so a held moment can show a moving
+  model as its picture: tools that hold moments should make the model first (`look-train-ride.py WARM`). The parked
+  trains in `test_station_trains` and the hub no longer show fire (the cards burned all the time, even parked).
+- Risky: frame time on the phone isn't measured (software drawing): the plume is about 3 draws a nozzle (two nozzles)
+  plus one for smoke and sparks, only during the ride; Beautiful adds a half-size scene copy (a blit) a frame during
+  the ride. The plume's look (colours, length by beat) is a draft for the owner to judge on the phone.
+- Verified: unit tests 2409 of 2409 (`npm test`; the "1,000 maps in under 1.5 s" timing test failed once with two
+  software browsers running and passed alone); new tests: window-seed 5, train-path +1 (trainPlume), prop-turn +1
+  (decals tip). Lint, typecheck, check:modules, format:check, check:data (190 files) and build clean.
+  `check:smoke` 7 of 7 (568 s, with a browser tool running beside it). The window test (`look-train-ride.py
+  --windows --step=600`, night): one window state through the departure (18 moments) and the way home (13); the old
+  rule would have given 10 and 6 different seeds. `look-windows.py` before and after: the building and its windows
+  identical (the only differences: a walking animal, the surf, a button's animation). Full quick check: 40 of 42
+  steps pass (37 in the first run, cut at 1759 s by a worker restart; the other 5 run again with `--steps=`: tap
+  targets and song fingerprints ok). Two fail the same way on `track/assets` f835b311 without this lane (run there
+  with `--steps=RL-8,Walking left and right --workers=1`), so they are not AS-1's:
+  "settings tabs ...: [[7, 7], [5, 7], [6, 7], [7, 7], [5, 7], [1, 2], [1, 2]]" (check-quick.py: a tab's overflow
+  over 4) and RL-8 "the town's shop has no Perk (RL-12)" (with two browsers busy it stopped earlier, at a seam's
+  view).
+- Pictures: `validation/as-1-before/` (from `track/assets`, the same tool) and `validation/as-1-after/` (not in git):
+  `ride/` the departure and the way home after a win at 12.5 h (every beat), 19.6 and 22.5 h (the key beats; the
+  before set's night ones in `ride-night/`: after a way home after a win the fixture opens an evolution window over
+  later pictures, which the tool now closes), `windows/` (look-windows.py: buildings unchanged) and the window test's
+  `windows/windows.json`. By night the old fire was a flat white card; now an orange plume bends down from the
+  nozzles.
+- Next: the other wave-1 lanes; AS-8 merges. For AS-2: the halt's arrival can play the ride's "down" and "off"
+  frames with the same plume (`trainPlume(..., 'home', t)`).
+- For the owner on the phone: start a run from Skyline Station and come home: the windows should hold their colour
+  through the whole ride, the fire should sit on the nozzles (bent down as it lifts, straight back into the portal),
+  smoke at lift-off. Settings > Graphics Beautiful adds a heat shimmer. Send the debug log if anything stutters.
+
+### AS-2 - a sky train halt at every run's start - 2026-10-29
+Branch `ccr-15aa5647-90bz3r` (this session's branch, made from `track/assets` f835b311; the plan's name was
+`claude/as-2-<words>`), draft PR #344 into `track/assets`. Lane AS-2 of docs/phases/assets-track.md, built on its own
+(the owner's "Sessions run on their own"). Model, mapgen, a cutscene beat, words.
+- Changed: the halt (new `tools/build-halt.py`, catalogue `train_halt`, `ppm` 48, showcase map `test_halt`): a brick
+  platform with a pale coping and the yellow line, steps in the middle, a green timber canopy with a verdigris roof and
+  a fretted valance, a ticket kiosk with a solar panel and a stovepipe, a lamp post, the name board, two benches facing
+  the track, flower boxes, railings, the track with a buffer stop, curving away into the grass past its right end. Its
+  pictures (name board, TICKETS, lamp glass) are painted at 48 px/m with lit edges and hue-shifted ramps; the
+  low-poly parts use the shared texture cells (AS-4 repaints those). The platform is laid out as Skyline Station's
+  (logic/train-path.js TRAIN_RIDE, TRAIN_PLATFORM), so the train's path code works at it unchanged.
+- Changed: the landing (mapgen.js's landing block): the mast dial places `train_halt` ("Sky train halt") where the
+  `airship_station` stood; where you stand by it is its catalogue's `stand` (the foot of its steps), in mapgen (kept
+  clear, `mapgenStandSpot`) and in airship.js `standByMast`. A lot wider than about 8 m is kept clear as small circles
+  over it: `mapgenOccFree` looks only about 4 m round a spot, so one big circle let plants grow on the halt's ends
+  (clinic and shop lots unchanged). Studio's Generate dial and its "At the hub" line say the halt.
+- Changed: new `logic/halt.js` (which prop is the halt, the run's train by its region theme, where it stands parked);
+  run-scenes.js parks the run's train at the halt on every landing but the first run's (one line beside IN-1's crash
+  hook: AS-6's file). New `halt-arrival.js`: as the landing's loading screen lifts, the parked train hangs over the
+  track, comes straight down onto the rails and you step off down the steps (the ride home's "down" and "off" beats,
+  4.1 s), through the walk view's director; a tap skips, a battle/room/other place ends it, reduced motion has none;
+  a 'scene' line `train arrival <key> <ms> ms` in the debug log. run.js `runTakeOffGo` starts it.
+- Changed: the crash site (firstRun.json, cutscenes/crash.json) keeps off the halt: `kappi_from` at the foot of its
+  steps (was on the platform), a crate moved off the platform (-5.5, 3 -> -7.6, 3.2), the second filming clear area
+  stops at x -0.4 (it hid the halt, whose base point is 0, 0). Everything else stands where it stood relative to the
+  old mast: the scene plays in front of the halt's west end with the wreck to its north-west.
+- Changed (drafts, the owner may change them): "Sky train halt"; "The sky train waits here for the end of the run.
+  Riding home now gives the run up."; "Ride home"; lore "Sky train timetable" by "Skyline Rail & Portal Co." (its
+  first two pages reworded for trains); the shop's "We restock every time a sky train comes in. Roughly."; Chosen's
+  "Face-down on the platform." (was "by the mast": you come home at Skyline Station since HB-8); the run rules page;
+  VISION's run line.
+- Internal names stay for AS-8 (`airship.js`, `flyMenu`, act `fly`, `firstRunMast`, the `mast` dial).
+- Checks moved: `rl8_run_from_mast` (check-quick.py) and the in-game full test now check the landing's halt and parked
+  train and skip the arrival; `airship_moored` is the hub's airship and stays. Tests: new halt.test.mjs (7);
+  mapgen-lots, first-run on the halt; snapshots remade: first-run-places (only the landing moved), the data check's
+  file count (191).
+- CI (check-fast.py): the arrival's tap-to-skip swallowed the payout card's tap in "Packing for a run" (the payout
+  opens right after landing); fixed: a sheet, a battle or the run's end ends the arrival and the tap goes through.
+- Found, not changed: on `track/assets` f835b311 CI's smoke job hits its 30-minute limit and fails "A run town's life",
+  "A run town's quest" (the named locals' talk box) and later "Packing for a run" (the ride home never ended);
+  "Kappi's tips" is timing-sensitive (each throw about 20 s in software drawing against a 30 s wait: passes alone,
+  fails beside a second browser). check-quick.py's RL-8 step fails at its town shop ("no Perk", line 1952) on `track/assets`
+  before this lane too; `ui-lint` reports the colour count in game js at 618 -> 612 on `track/assets` already (a ratchet
+  waiting for `--save`); the crash scene's haze hides most of the wreck past about 15 m (AS-7's "fog too much").
+- Facts checked against `track/assets` (section 2.5): all held. One addition: the hub's lost-run line said "by the
+  mast" though the ride home leaves you at Skyline Station.
+- Risky: mapgen output changes on every run's landing (`MAPGEN_VERSION` not bumped: a run in progress keeps its saved
+  world; AS-8 settles the version with AS-6's change); the halt lot is 12.6 x 7.6 m, so on a tight landing it may not
+  fit (mapgen-lots: at least 87 of 90 test places fit; a landing without room gets a note and no halt, as before);
+  the arrival's camera and the parked train on a real phone; `prop-models.js` untouched.
+- Verified: lint, typecheck, format:check, check:modules (422 modules), check:data (191 files), build clean; unit
+  tests quick 2408 of 2409 (the one, run-map-checks' "1,000 maps in under 1.5 s", took 1.65 s with a browser drawing
+  beside it and passes alone), slow 110 of 110 after the first-run-places snapshot was remade; `check-quick.py --smoke`
+  7 of 7 in 382 s (the in-game full test and the crash scene included); `--steps=RL-8` passes the new halt checks and
+  then stops at "the town's shop has no Perk (RL-12)", which fails the same way on `track/assets` f835b311 (not this
+  lane's); the full quick check not run (AS-8 runs it).
+- Pictures (validation/look-halt/, validation/look-crash/, not in git): the halt from five sides on test_halt; the
+  arrival held at 0-4000 ms and after; the crash site from above, the south and the scene's cameras.
+- Next: the other wave-1 lanes; AS-8 merges them and does the renames.
+- For the owner on the phone: start a run at Skyline Station: after the loading screen the sky train sets down at the
+  landing's halt and you step off; tap the halt for "Ride home". New game: the crash scene should show the halt's west
+  end behind the group. Send the debug log (the `train arrival` line).
+
+### AS-0 - the assets track: plan, scatter module, flora layers - 2026-10-29
+Branch `track/assets` from main 73b2f8b1, draft PR into main. The owner's brief: raise every asset (props, a natural
+island and routes, varied vegetation with better leaf art, a train station instead of the airship station at the
+start of runs, the sky train's ride without flickering windows and odd jet fire), using the Godot port's coordinator
+session as inspiration, in lanes that run at once. Plan Mode answers: painted blob crowns (never round), a full
+Copperleaf regenerate, the phone a bit slower is fine (the floor: Balanced at most about 15% slower on the bench).
+- New: docs/phases/assets-track.md (audits, research, sources, seven wave-1 lanes AS-1..AS-7 with file ownership,
+  AS-8 together, AS-9 the owner's phone play, "Ask me before", risks, how each lane checks itself); ROADMAP and
+  BRANCHES rows.
+- New: `game/js/logic/scatter.js`: seeded Poisson-disc points (changing spacing, masks, earlier layers kept clear of
+  by their own footprint), seed-spread clumps (parents thinned after spreading), layers with kinds by weight, and
+  `scatterFlora(biome, area)` with a density per layer and spot. Not used by the game yet (AS-5, AS-6).
+- New: `flora` layers on all 12 biomes (biomes.json, schema, `BiomeFloraLayer`, `dataBiomes` checks): each layer
+  names one of the biome's own species lists, so AS-3 adds species there and AS-5/AS-6 read the layers.
+- Found while auditing (the lanes fix them): the sky train's windows re-roll colour and lit state every frame because
+  `uWinSeed` and `modelWindowLight` hash the train's live world position (prop-models.js, walk/lighting.js); the jet
+  fire is two flat hard-alpha cards that don't tip with the train and are dark by day (`lampLit`).
+- Verified: scatter.test.mjs 9 of 9, scatter-real.test.mjs 1 of 1; lint, types, check:data clean; the quick unit
+  tier passes except check-data-snapshot (symlinks), data-rigs and faces, which fail on main too on this Windows PC
+  (paths); `check-quick.py --smoke` 6 of 7, the seventh ("Unused": `art-unused.mjs --json` prints nothing on Windows)
+  fails on main too.
+- Baselines: 30 route pictures in `validation/assets-baseline/routes/` (not in git). The hub, ride and station sets
+  timed out with four software-drawn browsers at once; each lane makes its own before set (track file section 10).
+- On this PC `python3` is the Windows Store stub: run the tools with `python`.
+- Next: wave 1, AS-1 to AS-7 at once, each in its own session and worktree on `claude/as-<n>-<words>`, a draft PR
+  into `track/assets`.
+
+### Fix - Kappi's stall clock counts only free walking - 2026-10-29
+Branch `fix/kappi-stall-clock` from main 7f661239, PR into main. From the owner's first phone log of the new intro
+(deploy 7f661239, Android, Adreno 750): New game -> the crash scene at 15.6 s -> Cartotter picked at 42.8 s (27 s into
+the scene) -> the run at 49 s -> Meadow Route -> a wild battle won; no errors. But "Kappi's cue: stall" fired 3.6 s
+after the crash scene ended, and again 0.2 s after the battle: the place's stall clock (logic/kappi-tips.js) started
+when the run's first look saw the place and ran on through the scene and the battle.
+- Changed: `tipHold(st, free, t)` holds the clock while you aren't free to walk (kappi.js calls it every look with
+  `kappiWalking()`: no scene, story, battle, sheet or room); a new place while held starts when you are free again.
+- Tests: kappi-tips.test.mjs, one more (the log's two cases and a place reached while held); 16 of 16. check-fast
+  "Kappi's tips" passes; lint, types, format.
+- Also in the log, not fixed here: the run's walk at 23-31 fps with quality stepped down to q4 and resolution 0.6
+  within 29 s (planting the grass and drawing sprites lead the slow frames, on the route more than on the landing);
+  the graphics estimate 307 MB, the landing's peak 322 MB (TD's phone budget is 300). For the load and test tracks.
+
+### Intro track IN-5 - New game: the crash scene, wired end to end - 2026-10-29
+Branch `claude/in-5-new-game` from `track/intro` 17de7135 (wave 1 merged), built in the planning session at the
+owner's word ("Dew it": sessions couldn't be started over Remote Control). Merged into `track/intro`, then main, at
+the owner's word ("When done merge with main").
+- What differs from the plan (section 5, IN-5):
+  - **The picked starter replaces a stand-in.** The crash is filmed on the prepared landing, which exists only once
+    the run's world is made, and the run's counter lane follows the starter. So New game starts the run with the first
+    starter as a stand-in; the pick swaps it in (`firstRunStarter`: same uid, the hub's snapshot, the run's lead, the
+    dex) and the pools are made again (`runWorldRepool`). Nothing else of the world depends on the starter.
+  - **Skip the crash is the old opening**, not "the pick card, then the lab scene without a payout": the opening
+    (`opening.json`) already is the fall, the lab door, the dressing room, the pick and the station; it now falls from
+    the Bureau's portal with no captions, its "through the crust" and "airship at the mast" lines are changed (below),
+    and `cutsceneStartName`'s fallback is Copperleaf. So `opening.json` stays (the plan said replace it).
+  - **Dead code not removed** (`staged-fight.js`, Blake's HOT TIP tutor, `blake-first-battle`, `cutscene.test`,
+    `uiState.intro`): the cut was optional and every one of them is outside the new path; left for a clean-up.
+  - **No debug jumps to each beat:** the debug menu's "Prepared run" and "Jump to the pickup" (wave 1) cover the run
+    and the way back; New game is the crash.
+- Changed:
+  - New `game/data/cutscenes/crash.json` (`landing: true`, `map: first_run`; schema `landing`; check-data: its spots
+    must equal `firstRun.json` `crash.spots`), played by new `game/js/cutscene/crash-scene.js` (`newGameStart`,
+    `crashStart`, `crashFilm`, `crashPick`, `crashFinish`). Under 60 s to the pick at reading speed (about 35 s of lines
+    and moves); skipping stops at the pick.
+  - `logic/first-run.js`: `firstRunCutscene` (the file laid on the landing: spots, shots and clear areas turned with
+    the mast), `firstRunStarter`. Run phase `crash` (`RUN_PHASES`); `runResume` plays the crash again.
+  - `run.js` `runTakeOffPrepared({ crash })` and `runCrashLand`; `run-world.js` `runWorldRepool`; `stage.js`
+    `cutscenePlayScript(id, { set })` and `opening.js` `cutsceneMount(..., set)` take a laid-out cutscene;
+    `cutsceneMapId(node)`; `openingThrowCoins`, `openingPickStarter`, `openingLayer` exported.
+  - New game: `ui.js` `intro`, `title.js` `titleNew` (both places) call `newGameStart`. Settings' erase reaches it
+    through the intro screen's Start. `return-scene.js` marks the device (`introMark`) when the way back ends.
+  - The crash site: IN-3's `train_wreck` replaces the stand-in train (at -14, 6.5 from the mast, rot 8, clear 12),
+    spots `chosen_from` and `kappi_from` added, the ring cleared round each spot 2.5 -> 6 m (the cameras stood in
+    trees: a crash makes a clearing), and the scene hides two more areas while filming (camera side and stage).
+  - The boss: `retrieval_scout`'s fighter is IN-3's look (intake, seizer, franker, conveyor). The sim: **won 68 of
+    300 (23%)**, lost on a route 20, at the mini-boss 69, at the boss 143 (as before).
+  - The clerks: IN-4's stand-ins (`people/intake.json`, `outtake.json`) gone; the pickup's `Intake` and `Outtake` are
+    IN-3's bots (`bureau_clerk_a` "Intake Clerk", `bureau_clerk_b` "Outtake Clerk"), Bureau bubbles.
+  - Tests: new `tools/test/crash-script.test.mjs` + `crash-said.json`; two in `first-run.test.mjs` (the scene laid
+    on the landing, the starter swap); `first-run-places` snapshot remade (the landing only: the wreck, the spots, 39
+    fewer props); `check-quick.py` `phone_flow` now plays New game -> the crash -> pick -> the run -> a loss -> the
+    pickup -> the fall -> the lab's dressing room ("Checker") and payout -> Copperleaf -> the station's run sheet, and
+    asserts the gift (0 Moneys, 5 Pyramids, 1 Potion) and the device's Skip note; its map ceiling 25 -> 29 (the map's
+    header shows Research and Scrap once a run has ended, which every new player now has). Return tests and check-fast
+    follow the clerk swap. `tools/story-ids.mjs` runs on Windows (own commit).
+- **The lines, for the owner** (drafts; `#l:` ids):
+  - The crash (cutscenes/crash.json):
+    - `#l:3dc6` [surprised] Chosen: You’re awake! Good. I was going to carry you, but I’m more of a [i]leader[/i] than a lifter.
+    - `#l:4976` Kappi: Don’t sit up too fast. The train came down, and everyone walked away from it.[p] Even the train, nearly.
+    - `#l:70df` Chosen: Do you remember your name? No? Don’t worry. Mine came to me in a dream.[p] It was “Chosen”.
+    - `#l:9009` Kappi: Just before we hit, there was a square of light on the rails ahead. [i]Square.[/i][p] Nobody else saw it.
+    - `#l:3ea3` [happy] Chosen: I saw it. I see everything. Right now I see that we need a plan.
+    - `#l:4ee2` Chosen: The cargo held three Billies. Every hero needs a companion.[p] Not me, obviously. [b]You.[/b]
+    - `#l:fb3f` Chosen: Three Billies, three types. Each one beats one of the others. Choose wisely.[p] Like I would.
+    - (the pick) `#l:1b2d` [happy] Chosen: {starter}! Bold. I’d have picked that one too.[p] I didn’t. But I [i]would[/i] have.
+    - `#l:d273` Kappi: The cargo had five pyramids and a potion too. Take them. A tired wild Billie is easier to keep.
+    - (caption "From the cargo | 5 Pyramids and a Potion")
+    - `#l:4f1c` Kappi: The station’s rescue beacon is at the far end of this valley. The arrows at the edge point the way.
+    - `#l:b089` [happy] Chosen: We’ll guard the wreck. Bravely.[p] From here.
+  - The opening (Skip the crash), changed: `#l:b29c` "Stuff falls out of the sky round here sometimes. Mostly
+    furniture." (was "comes down through the crust"); `#l:9e1c` "One more thing. Skyline Station, just up the hill. Its
+    trains go out past the island, to wild places nobody’s mapped yet." (was the airship at the mast).
+- Risky:
+  - The crash site's cameras are placed by numbers, checked in headless pictures only (the wreck behind you, the
+    three starters in front); the owner's phone is the judge. A mapgen change can move trees back in front of a camera
+    (the places snapshot shows it).
+  - The pick swaps the run's lead after its world is made: only the pools are made again. If a later change makes
+    something else of the world follow the starter, it must be remade there too.
+  - A save made in the crash scene and killed before the pick resumes into the crash with the stand-in; the pick then
+    swaps it as usual.
+- Verified (Windows; CI on Linux is the reference): lint 0 errors, type-check, check:modules (591 names), check:data
+  (190 files), format; unit tests: the same 24 Windows-only failures as `track/intro` (the data snapshot needs
+  symlinks, `D:\D:\` paths, CSS lists), no others; first-run (13), crash-script (4), return-script, opening-script,
+  figure golden, first-run-places (remade); `check-quick.py --smoke`: 6 of 7, the phone flow above passing, the one
+  failure "Unused" the known Windows tool guard; `check-fast.py` "way back", "Kappi", the lab and the lab room: 5 of 5.
+  The crash scene watched headless at reading speed: the loading screen lifts, the dark fades in, every line plays.
+- Next: IN-6, the owner plays it on the phone and sends a debug log; the lines, the cameras and the boss tuned from it.
+
+### Intro track IN-1 - the prepared first run (logic and data) - 2026-10-29
+Branch `claude/in-1-prepared-run-29643a` (wave 1, from `track/intro` at 61d90751), draft PR into `track/intro`.
+Planned and built at once (intro-track.md section 1: the owner's standing answer). No section 6 item came up: nothing
+changes a later run (the usual gift, loss rule and balance are untouched; every new rule reads `run.first`). New game
+still plays today's opening: the prepared run starts from the debug menu only, until IN-5.
+- Facts checked (intro-track.md 3.2, against 61d90751), and where they differ:
+  - **The boss name clashes:** Expedition I's Voltron already has the id `retrieval` and the name "The Retrieval
+    Unit". The first run's bot is **`retrieval_scout`, "The Retrieval Scout"** (name provisional).
+  - **The mini-boss's "reward pick" is a Perk pick** (rules.json run.perks.leader: three "fine" Perks), not an item
+    pick, so the planted aha is a Perk: **Heavy Crown** (your lead hits 40% harder and takes 20% less), the natural
+    find for a starter that mostly fights alone.
+  - **Every place rolls wild Billies** (a landing, a town with tall grass, a waystation, a mini-boss's place), Expedition
+    I's routes stand 4-6 route trainers (one a Bureau agent with a bot), and a mini-boss's place a line of arena
+    trainers. One idea per place needs all of that pinned, so the file pins each place's stock and trainers.
+  - **Each leader's type punishes one starter** (Rocco's Ground beats Fire, Morel's Flying/Psychic Grass); the file
+    names the mini-boss's two Billies instead (Morel's ring, two pure Psychic Billies, even against all three).
+  - A bot's types are its torso's and legs' (logic/robot-math.js), not its gem's. A prop's `rot` is in degrees.
+  - The short-run row rule (runMapRows: a free row before the boss) doesn't fit the plan's map (a town right before
+    the boss); the hand-written map doesn't go through runMapRows, so it keeps the plan's shape.
+  - The rest held: a fixed seed works everywhere, a fixed map didn't exist, `plan.map` can be replaced between
+    runStartPlan and runStartOn, places are made by mapgen from the node seeds (MAPGEN_VERSION 27), the gift is
+    rules.json run.start ($600, 5 Pyramids, 2 Potions), the bot parts are RL-14's.
+- Changed:
+  - New `game/data/firstRun.json` + schema, `FIRST_RUN` in game-data.js, a `dataFirstRun` check. The map (lane 0 the
+    southern): 0 landing (the crash site, nothing wild) -> 1 route, the catch lane (3 Goslings, level 3, no trainers) or
+    2 route, the counter lane (one level-2 wild of the starter's counter type: Pupfin for Emberox, Cliplet for
+    Cartotter, Pilotbat for Kidling; no trainers) -> 3 a hamlet (clinic, shop) or 4 a waystation (Abandoned Pyramid
+    Cart) -> 5 the mini-boss (Mother Morel's ring, Kontourlet and Festival Kontourlet, levels 2-3, doubles; Heavy Crown
+    planted in its pick) -> 6 a hamlet -> 7 the boss (the Retrieval Scout, level 4, HP x2.4). Biomes: meadow, then
+    thicket. Lane 1 also leads to the hamlet (one diagonal).
+  - New `game/js/logic/first-run.js`: the file's map laid on the region grid (runMapGrid, so its places are made like
+    any run's), the plan (region zones and leaders, forecast, no rival, ghost or side area), the pinned pools, stock,
+    trainers, foe levels, team, boss and plant, the crash site and its spots, the file's problems.
+  - `runStartPrepared(s, data)` in logic/run-start.js: runStartPlan on the file's seed and rows, the map replaced,
+    runStartOn with rules.json **run.first** `{se: 0, pyramids: {pyramid: 5}, items: {potion: 1}}`, only the lead
+    travels, no hub bonus or gift rides along, the event pinned, `run.first = true` (validRun checks it).
+  - **The keep rule:** `runEnd` keeps the whole party when `run.first`, won or lost (`keep` isn't read).
+  - Small hooks, each reading `run.first`: runFoes (the file's boss, foe levels, mini-boss team), runWorldTables (the
+    pinned pools and stock), rules.js encounterStock (`L.stock`), runRouteTrainers (the count), perkOfferMake (the
+    plant, first pick only), runSceneMake (the crash site on the landing).
+  - bosses.json `retrieval_scout`: Bulwark torso, Clamp and Piston arms, Crawler Treads, Volt gem (Steel/Ground),
+    `expeditions: []` (never a later run's boss), one shield phase at half HP. Expedition I's Voltron is unchanged.
+  - **The crash site:** firstRun.json `crash`, offsets in metres from the landing's mast, turned with it. Props: the
+    wreck (a **stand-in, `train_greenbelt`**, until IN-3's wreck prop: change `crash.props[0].k`) and two
+    `bureau_crate`s, put down with `crash: 1` after clearing the ground round them and the spots. **Spots** (IN-5):
+    `wreck`, `me`, `chosen`, `kappi`, `star1`, `star2`, `star3`; `firstRunSpots(scene)` gives them in the landing's
+    metres. West of the mast, clear of the road (east of it) and the pond (south-east).
+  - The page: `runTakeOffPrepared()` in run.js (no train ride: the loading screen, then the landing, as a take-off
+    ends); the debug menu's Run section has **"Prepared run"** (on the current save: a run sets the hub aside and puts
+    it back at its end, plus every Billie it kept).
+  - Run sim `--prepared` (logic/run-sim.js): the file's run on every seed; the seed picks the starter and salts the
+    battles' and catches' luck (one map for everyone), and the bot takes the planted Perk (a player would; the greedy
+    bot otherwise takes the first "fine" Perk in file order).
+  - Tests: tools/test/first-run.test.mjs (11: the file and its check, the run is valid and the file's, the pinned
+    places, foes, boss and plant, the keep rule both ways, the crash props and spots); first-run-places.test.mjs
+    (slow tier: every place's fingerprint, the mast, spots and crash props, and a picture of the crash site in its
+    ground letters, so a mapgen change shows what moved; remake with --test-update-snapshots on purpose only).
+  - Windows tooling (own commits): load-logic imports by file URL (every Node test and the sim failed on Windows),
+    build-data and to-module run as scripts (`npm run data` and `npm run modules` did nothing), to-module and
+    check-names keep page paths with forward slashes.
+- **Balance** (`node tools/test/sim/run-sim.mjs --prepared --balance --runs=300`): **won 69 of 300, 23%**
+  (Cartotter 45%, Emberox 18%, Kidling 8%). Lost on a route 20 (7%), at the mini-boss 69 (23%), at the boss 142 (47%):
+  the boss is the wall. The bot's top level ends near 6; the sim clock says about 7 minutes (its guess, not a play).
+  The full mode (with scenes) gives the same outcomes. Levers in the file: the counter lane's level, the mini-boss's
+  and boss's `up`, bosses.json `retrieval_scout.boss.hp`.
+- Risky:
+  - **The starters' spread is the type chart's:** the bot is Steel/Ground, so Water hits it double and Cartotter wins
+    every boss it reaches (it dies more on the counter lane and at the mini-boss); Kidling hits it neutral and takes
+    neutral Steel hits twice a turn. No pair of RL-14 parts is neutral to all three (swept: every arm pair, other
+    frames). IN-3 may give the bot its own parts; IN-6 tunes from the owner's debug log.
+  - The sim's bot fights at most two wild Billies a place and catches little, so a player levels more: the real win
+    rate is likely above the sim's.
+  - Small edits in shared logic (run-loop, run-scenes, perks, route-trainers, rules, run-state, run-sim) and
+    hooks.js regenerated; IN-4 owns runOver/runEndHome. studio/art-code-refs.json regenerated (line numbers).
+  - The crash site's ground: checked in the tiles (not water, not road); heights and slopes only by eye (below).
+- Lines (drafts in bosses.json, for the owner): call "{name} has found you. It acts twice a turn. Your team steps up
+  together." join "A Bureau bot rolls out of the smoke. It is holding a clipboard with your name on it." phase "{name}
+  files an emergency extension! A golden shield flickers up." win "Retrieval postponed. Please wait to be collected."
+- Verified (on Windows, so CI's Linux run is the reference): lint, typecheck, check:modules (586 names),
+  check:data (184 files), check-data-text, first-run.test.mjs 11 of 11, first-run-places.test.mjs, logic-worker.
+  `npm test` here: the only failures are Windows ones (a `D:\D:\` path, CSS file lists, timing budgets) and
+  check-data-snapshot, which can't run here (its file count was raised to 184 by hand; CI checks it). On the page
+  (town fixture, headless): the debug menu's path starts it, the loading screen shows the region with the file's
+  leaders, and you land on the prepared landing with `run.first` true, 0 Moneys, 5 Pyramids, 1 Potion and the three
+  crash props down. No 3D picture of the crash site: software drawing at phone size timed out twice on this machine;
+  the snapshot's picture (ground letters) is the record until IN-3/IN-5 look at it. Note: the walk view's composed
+  scene is offset from the landing's own scene, so call `firstRunSpots` on the scene the cutscene stands in.
+- Next: IN-3 swaps its wreck prop into `crash.props[0].k` (and may restyle `retrieval_scout`); IN-4 needs no keep
+  picker on the first run (`run.first`); IN-5 starts it from New game with `runStartPrepared` and stands the crash
+  cutscene on `firstRunSpots`; IN-6 tunes the numbers above from a phone run.
+### Intro track IN-3 - The art: the wreck, the square portal, the clerks, the boss - 2026-10-29
+Branch `claude/in-3-intro-art-a49f03` (from `track/intro` 61d90751), draft PR into `track/intro`. Wave 1, built straight
+in (section 1: sessions run on their own; art is judged on the phone). Not placed in any scene or cutscene: IN-1, IN-4
+and IN-5 do that. Hand-over note for the other wave 1 sessions: the shared notes folder's `in-3-art-ids.md`.
+- Facts checked (plan section 5 and the brief, against 61d90751):
+  - A recipe's boxes always stand upright (prop-models.js lowPolyFromRecipe: no turn but a round shape's `rot`), so
+    a tipped carriage can't be a recipe. The wreck is a prebuilt mesh in the airship's format (kind `mesh`, v 1: the
+    buildings' 32 px texture cells), tessellated from the trains' own recipes the way lowPolyFromRecipe draws them.
+  - bosses.json already has a boss called "The Retrieval Unit" (`retrieval`, the Voltron of Expedition I, built from
+    the boss parts intake, seizer, franker, conveyor). IN-1 had no commits when this was built; it pushed
+    later: its boss is `retrieval_scout` ("The Retrieval Scout"), fighter
+    bulwark/clamp/piston/treads as a stand-in for IN-3's look; the look below goes in its row (IN-1's file).
+  - RL-14's boss parts had no pictures (drawn as stand-ins from a colour and a shape); bots are drawn only in battle
+    (robot-art.js robotRig), and in the world only as a creature person on a `bot:` rig (person-art.js creatureFrame:
+    skeleton-rig.js rigParts takes `bot:` sp). With figures on, every creature person was drawn as Kappi's capybara
+    (figures.js figureFromLook).
+  - The VFX track's particles (VFX-20's ladder) are the battle's; the walk view's prop fx (walk/effects.js) and its
+    quality step (`walkRenderer.qe`) are the world's equivalent, so the smoke is a walk fx on that step.
+  - No prop picture could lie on the ground lit as light: flat props (walk/sprites.js drawFlatItem) were always lit
+    and tinted by the scene.
+- Changed:
+  - New tools/build-intro-art.py (rerunnable) builds everything below; new tools/look-intro-art.py takes the pictures.
+  - **`train_wreck`** (scenery.json, tags intro/station/train): the crashed sky train, one prop, about 22 x 10 m, its
+    footprint behind its base point. The train's recipe with its battered colours (HB-8's swap; windows dark), cut in
+    two at its middle: the front carriage pitched 21 degrees nose down, 0.7 m into a dirt heap; the second rolled 82
+    degrees onto its side; a broken piece of sky rail behind; five `bureau_crate`s spilled in front; two torn panels.
+    Smoke: fx `plume` at the front's tail and two on the tipped carriage. One look per Skyline Station train (its
+    `form` its region theme): base lakeland (4,254 triangles), v 1 greenbelt, v 2 wildwood, v 3 highland, v 4 harvest
+    (2,370-3,714; the Zephyr's gasbag comes down deflated beside it). Files: game/art/scene/next/models/train_wreck*.json (1.4 MB for all five; a run loads one),
+    pictures in game/art/scene/next/intro/.
+  - **`sky_rail_broken`**: the broken rail piece alone (448 triangles).
+  - **`bureau_portal`**: the Bureau's square portal, flat on the ground (flat on purpose), 2.5 m, its middle at its
+    base point. Light only: a white and cyan rim, the drawer's walls going down in rings to a bright eye, specks, a bar
+    of light under its front edge (the drawer's handle), sparks; drawn unlit (`emit`), a cyan glow light. Its `opens`:
+    six frames from a line to the square over 700 ms. A placement's `open = walkView.t` plays them; `shut =
+    walkView.t` plays them back and then hides it (Kappi's "like someone shutting a drawer"). New
+    game/js/logic/prop-open.js `openingFrame` (tested), walk/frame-items.js picks the frame, walk/sprites.js draws an
+    `emit` flat picture unlit.
+  - **The plume** (walk/effects.js fx `plume`): a thick, dark column, 9 puffs at quality step 0, 7, 5, 3 at step 3 (a
+    struggling phone).
+  - **The clerks**: game/data/people/bureau_clerk_a.json (`bot:volt.intake.seizer.franker.striders`, walks) and
+    bureau_clerk_b.json (`bot:tide.intake.franker.seizer.hover`, hovers): creature people on a bot rig, so `actor`,
+    `walk`, `face` and the story stage use them as anyone. figures.js gives a bot person no figure (it keeps its bot
+    picture, never a capybara); figure-kit-golden skips them (snapshot unchanged).
+  - **The stamp pose**: `act <who> stamp [s]` (logic/cutscene-set.js CUTSCENE_POSES, script-parse's help,
+    docs/CUTSCENES.md): skeleton-rig.js rigPose `stamp` (the right arm, a clerk's Franking Cannon, raised over 350 ms,
+    slammed down with a squash at 350-450, held), person-art.js draws it at its progress (12 steps), director.js plays it
+    over 0.9 s. A person (not a bot) throws instead.
+  - **The boss's look**: pictures for RL-14's four boss parts in the placeholder sheet's look
+    (game/art/robots/intake, intake_head, seizer, franker, conveyor and their backs; robots.json `art`): the Intake
+    Frame a filing cabinet (two drawers, label holders, mustard handles, red tape, the gem's socket), its head a slate box
+    with two red lamps, the Seizure Arm a claw holding a manila folder, the Franking Cannon a rubber stamp, the
+    Conveyor Treads a belt with parcels. **For IN-1's bosses.json row:** `fighter
+    {"gem":"volt","torso":"intake","armL":"seizer","armR":"franker","legs":"conveyor"}`, a single bot (no `bots`,
+    no `join`). The Voltron uses the same parts, so Expedition I's boss gains the same pictures (art only).
+  - New showcase map test_intro_art (`?test=1&scene=test_intro_art`): the five wrecks, the broken rail, the portal,
+    the clerks.
+  - Windows, each its own commit: tools/test/load-logic.mjs imports logic modules by file URL (the same line IN-1
+    committed); tools/browser_check.py's test server listens with a queue of 256 (Python's 5 refused a page's module
+    loads). Also: a bot person drawn while its pictures load isn't cached (person-art.js), so it is drawn again with
+    them; the new module is listed in game/index.html, studio/index.html and the Studio's logic worker.
+- Shots (tools/look-intro-art.py, copies in docs/samples/intro-art/):
+  - The wrecks, each train (a phone held sideways): docs/samples/intro-art/wreck-lakeland.webp, wreck-greenbelt,
+    wreck-wildwood (its gasbag torn off and deflated on the ground), wreck-highland, wreck-harvest; nearer on a phone:
+    wreck-close.webp (22 m is wider than the phone's view: you see the gap, the rail and the crates).
+  - The portal opening (phone sized, the two clerks either side): portal-1.webp (a line), portal-3, portal-5,
+    portal-7.webp (open).
+  - The clerks, drawn by the game at 3x: clerk-stamp.png (both clerks' stamp, 13 steps: raised, slammed, held),
+    clerk-walk.png (walk cycles, down and up). The boss bot: boss.png (front, back, stamp raised, slammed).
+- Risky:
+  - The wreck is big (22 m) and its footprint a rectangle: on the landing, IN-1 must leave room in front of it. Its
+    triangle count (3-4k) is over the import checks' 2,000 warning; it is one model a run.
+  - A wreck mesh doesn't take colour swaps (a mesh, not a recipe): each train is its own file.
+  - The Voltron's look changes (stand-ins to pictures); its fight is unchanged.
+  - The portal's frames load on demand the first time it opens (a frame or two of nothing): IN-4 can ask for them
+    ahead (`artImg` on `opens.frames[].img`).
+- Verified: lint (0 errors), type-check, `check:data`, `art-code-refs --check`, unused art (none, none missing), the
+  new unit test (prop-open.test.mjs), figure-kit-golden and logic-worker; `python tools/check-quick.py --smoke --workers=1`: 5 of 7 steps pass (the phone flow: Start-Game, the opening, the
+  dressing room, the starter, the station's run sheet, five screens, a battle, the debug log; the in-game full test's
+  first step; palettes; windows; ground). Two can't pass on this Windows machine: "Unused" (tools/art-unused.mjs's
+  `file://` + argv guard prints nothing; its report run directly: 0 unused, 0 missing) and "Actions bar" (its page
+  load passes 90 s here: the in-game full test, on the same town fixture, booted in 88 s). Shots: the look tool,
+  no page errors.
+  On this Windows machine several tools don't run as written (they compare paths with `/` or `file://` + argv):
+  `npm run data` and `npm run modules` write nothing, and 20 unit tests fail on paths (`D:\D:\...`) or symlinks
+  without admin rights; they pass on Linux CI. to-module was run with node:path swapped for its POSIX version.
+- Decided for the owner, to review: the wreck's train is the Lakeland Clipper by default (any of the five by `v`);
+  the portal is cyan and violet like the sky portal, a drawer's handle of light at its front; the clerks walk on
+  Striders and hover; the boss parts' pictures replace the Voltron's stand-ins too.
+- Next: IN-1 puts `train_wreck` on the prepared landing (firstRun.json `crash`) and sets `retrieval_scout`'s fighter; IN-4 uses the portal (`open`,
+  `shut`) and the clerks (`act ... stamp`); the owner judges the art on the phone.
+### Intro track IN-4 - the way back: the Bureau's pickup, the fall from its portal, the lab - 2026-10-29
+Branch `claude/in-4-way-back-74f4bd` (made from `track/intro` 61d90751), draft PR into `track/intro`. Wave 1, run
+alongside IN-1 to IN-3 under the owner's standing answer (intro-track.md section 1: plan and build, no approval stop).
+No "Ask me before" item came up. New game is unchanged (IN-5 wires it).
+- Facts checked against the code (plan sections 3.1 and 3.2, main bb658f52): all held. Two notes: `fallPlay`'s
+  fallback with no 3D map (reduced motion, no WebGL) draws the Inner Sun (`fallSky`) with its caption, so the portal
+  fall has a fallback of its own (the portal's light held, no sky); and `runEndHomeGo` leaves `story.pending =
+  'back-lost'` after a loss, which the lab scene replaces on the first run (cleared there).
+- Changed:
+  - **The pickup.** `runOver` (run.js): when `run.first` (IN-1) or the debug jump, the run's phase is `return` at once
+    (a new RUN_PHASES value, saved before anything plays), then `runPickup`: once the battle and its windows are gone,
+    story.json `pickup-lost` / `pickup-won` on the story stage: `camera run-up`, two Bureau clerks walk over (the story
+    stage's `walk X beside me` now takes a second person, on your other side), the stamp, then the new command
+    `portal` (story-stage.js `storyPortal`): the square portal opens under you (IN-3's `bureau_portal` prop with its
+    `open` time once the scenery has it; until then a stand-in square of sparkle light), you drop, and a white veil
+    (`#backVeil`, the portal's light) covers the screen until the way back takes it.
+  - **The stamps.** Markup `[stamp=returned]` and `[stamp=recovered]` (line-markup.js MARKUP_STAMPS), stamped as
+    "RETURNED TO SENDER" / "RECOVERED PROPERTY" in the small size (talk.js STAMP_WORDS), on the Bureau's bubble.
+  - **The clerks (stand-ins).** people/intake.json and outtake.json ("Intake Clerk", "Outtake Clerk", in the clerk's
+    look), speakers `Intake` / `Outtake` in story.json, the Bureau's bubble in talkSkins.json.
+  - **The fall.** `fallPlay(run, { from: 'portal' })` (opening-fall.js): `fallPortal` draws the first picture, the
+    portal's light filling the screen, then the square shrinking overhead as you drop under it (1.4 s), then
+    `fallOverWorldMap` with the new `{ captions: false }` onto `me`. The street and crust legs are untouched.
+  - **The lab.** game/data/cutscenes/return.json (the opening's set: map, spots, shots, clear; tools/build-copperleaf.mjs
+    now gives it the opening's whenever it moves them) played by the new game/js/cutscene/return-scene.js
+    (`returnStart`). opening.js's start is split into `cutsceneBegin` and `cutsceneMount` (shared; the opening plays
+    as before). The scene's `dressing-room` saves your look and name at once; the new cutscene command `payout` opens
+    the payout sheet over the scene in a lab mode (run-payout.js: "What you brought back", Kappi's words, no keep-one
+    cards since everyone comes home on the first run, "Done" goes back to the scene; skipping stops there). The scene's
+    end: `runEndLab` (run.js), which is `runEndHomeGo` with everyone kept, no train, standing at return.json's `me`
+    outside the lab door (`standByLab`), then what the run brought home is told. If the 3D view can't run or the scene
+    breaks, the run still ends the same way.
+  - **Resume.** A run at phase `return` reopens at the lab (`runResume`), with no fall. `runEnded` (logic/run-state.js)
+    treats `return` like `payout`: no run battle, no encounter, no giving up, no second ending. ui.js `render` leaves
+    the screen to the way back while it plays (`cutscene.back`); the director doesn't skip past the open payout.
+  - **Debug menu:** on a run, "Jump to the pickup (win)" / "(loss)" ends this run the first run's way.
+  - Docs: CUTSCENES.md ("The way back"), SCRIPTS.md (`payout`, `portal`, the second walker, the two stamps).
+- **The lines, for the owner** (drafts in the cast's voice; `#l:` line ids; change freely):
+  - The lab scene (cutscenes/return.json), after you wake:
+    - `#l:0135` [surprised] Chosen: You came out of the sky.[p] [b]Again.[/b] Once is an accident. Twice is a [i]brand[/i].
+    - `#l:88e1` Chosen: I took the next train home, by the way. First class. They gave me a blanket for the shock.[p] I wasn’t in shock. I kept the blanket.
+    - `#l:2a5d` Kappi: You’re outside the lab, in Copperleaf. Nothing’s broken. I checked.[p] Twice.
+    - `#l:f85b` Chosen: Before anything else: who [i]are[/i] you? Still nothing? Fine. We’ll build you from scratch.[p] Like a legend.
+    - (the dressing room)
+    - `#l:b9d5` [happy] Chosen: {name}. Strong name.[p] Second-strongest on this porch.
+    - `#l:04bf` Kappi: Now, what you brought back. Empty your pockets. I’ll count.
+    - (the payout sheet, "What you brought back": "Kappi counts it up. It turns into Research, for the Lab, and your
+      bag goes into Copperleaf’s." after a win; "... and everyone you caught comes home with you." after a loss)
+    - `#l:0084` Kappi: That square of light in front of the train? You came down through one just now. It’s the Bureau’s.
+    - `#l:dd9c` [surprised] Chosen: The Bureau? Paperwork people. Don’t sign [b]anything[/b].[p] I signed one thing once. I still get letters.
+    - `#l:c0d7` Chosen: Here’s the plan. Skyline Station, just up the hill. Its trains go out past the island, to wild places nobody’s mapped.
+    - `#l:d777` Kappi: Every trip is a new region. New Billies, new leaders. You never get the same one twice.
+    - `#l:1c6e` Kappi: What you catch can come home with you. What you learn turns into Research, for the lab. That stays, whatever happens out there.
+    - `#l:14c0` [happy] Chosen: And every trip, you come back stronger. Like a training montage.[p] I [i]love[/i] a montage.
+    - `#l:20d9` Kappi: Rest first. The station isn’t going anywhere.[p] Neither are we.
+  - The pickup after a loss (story.json `pickup-lost`):
+    - `#l:ad1f` Intake: Don’t get up. You’re [i]exactly[/i] where the form says you’d be.
+    - `#l:5af2` Outtake: One person, unregistered. Fell off a train. No ticket.[p] Also lost a fight.
+    - `#l:ca6b` Intake: Several fights. It’s all on the form. We have a form for that.
+    - `#l:65eb` Outtake: Sender, unclear. Address, unclear. So it goes back to the default address.
+    - `#l:b5f8` [shout] Intake: Returned to sender.[stamp=returned]
+  - The pickup after a win (story.json `pickup-won`; IN-1's boss is "The Retrieval Scout"):
+    - `#l:ad5e` Intake: Hold still. You beat our retrieval scout.[p] That scout was [i]on loan[/i].
+    - `#l:66e8` Outtake: One person, unregistered. One scout, dented. Both found at the scene.
+    - `#l:c180` Intake: Good work, technically. We don’t do good work here. We do [b]paperwork[/b].
+    - `#l:ec95` [shout] Intake: Recovered property.[stamp=recovered]
+- Risky:
+  - **Stand-ins until IN-3 merges.** The clerks are people in the clerk's apron (people/intake.json, outtake.json).
+    IN-3's bots are `bureau_clerk_a` / `bureau_clerk_b` (creature people, no portraits). The swap: story.json
+    `speakers` (`Intake` to `bureau_clerk_a`, `Outtake` to `bureau_clerk_b`), talkSkins.json `speakers` (both to
+    `bureau`), delete the two stand-in people files and their rows in the figure golden snapshot. IN-3's `act <clerk>
+    stamp` pose is a cutscene command; the story stage has no `act`, so the stamp stays the bubble's. The portal takes
+    IN-3's prop by itself once `bureau_portal` is in the scenery (not seen running: IN-3 hasn't committed it yet).
+  - The pickup waits for the battle's windows to close (at most 8 s), then plays even if one is still open.
+  - A reload with the payout sheet open at the lab starts the lab scene again from the top (the plan allows beat 8).
+  - Windows: the repo's Node tools run their main block only on POSIX paths (`import.meta.url === file://argv[1]`)
+    and `to-module.mjs` compares POSIX paths; IN-1 fixed both on its branch. This session ran them through a local
+    wrapper (not committed). 24 unit tests fail on Windows on `track/intro` itself; the same 24 fail here, no others.
+- Verified: lint (eslint 0 errors; the names, ui-lint, unused-css, art-refs and modules checks), type-check, the data
+  check, the unit tests (new tools/test/return-script.test.mjs with return-said.json: the lab scene's and both
+  pickups' lines and commands in order, the stamps, the Bureau's bubble, no Hollow Earth, the set equal to the
+  opening's, `payout` a cutscene's; run-state.test.mjs: `return` loads, `runEnded`), and a new check-fast step,
+  "The first run's way back" (`?fixture=run`): the pickup with both clerks, the phase stored at once, a reload plays
+  the lab, skipping stops at the dressing room and at the payout (no cards), Done, the end: no run, one more run
+  ended, standing on the lab door's spot. The smoke check: its four browser steps pass (the phone flow plays the real
+  opening through the split `cutsceneStart`; palettes; the actions bar; the in-game test's step). Its data step
+  "Unused: art, props and songs" fails on Windows on clean `track/intro` too (a Node tool's POSIX main guard).
+- Next: IN-5 wires New game to the crash and `runStartPrepared`; then the way back plays for real. Swap the clerks
+  for IN-3's bots when it merges (above). IN-6: the owner reads the lines on the phone.
+### Intro track IN-2 - Kappi's tips - 2026-10-29
+Branch `claude/in-2-kappi-tips-8cada0` (from `track/intro` 61d90751), a draft PR into `track/intro` (wave 1, beside
+IN-1, IN-3 and IN-4). Built at once: the owner's standing answer (intro-track.md section 1) is the approval. No "Ask me
+before" item came up.
+- Facts checked (intro-track.md 3.2, against 61d90751): `RUN_HINTS`/`runHint` are as described (toasts once a run while
+  `meta.runs` is 0; 10 hints). Today a later run shows **none** of them, so "the second run on keeps them as toasts
+  while `meta.tipsSeen` lacks them" (section 5) is a change for later runs: it is what the plan says, so it is built,
+  but see Risky. `#btip`/`battleTip` (opening-fall.js) is dormant as said; its card's CSS is in opening-old.css. There
+  was no `meta.tipsSeen`, no `run.first` yet (IN-1 adds `run.first === true`), and no pulse flag for a road's arrows.
+- Changed:
+  - New game/js/logic/kappi-tips.js (pure, Node-tested): the run's counters and the decision. Triggers: two failed
+    catches in a row; the run's first faint; one of yours under a third of its HP with a heal in the bag and none used
+    by the battle's end; no pyramids with a wild one within 10 m; 20 s on a choice sheet (reward pick, Perk pick, event,
+    shop) without a real choice (the clock restarts only when the sheet closes or its pick, money, Perks, heals or
+    pyramids change); 60 s in a place without getting 2 m nearer a road on; the first fight against a foe whose type is
+    strong against your lead. Caps: nothing in a run's first battle (not said, not cued, not kept for later), one tip a
+    place, five a run, each tip once ever (`meta.tipsSeen`), never while busy (a battle not at its menu, a throw, a talk,
+    a card or bubble already up, a sheet still opening, any other sheet). A fired tip waits up to 30 s for a quiet
+    moment, then is dropped. Cues first: the Catch button glows after one miss when the foe is under half HP; the Bag
+    button glows when one of yours is low with a heal in the bag; a sheet's picks and its main button glow at 12 s; the
+    arrows of the roads on glow gold and bolder at 40 s. Kappi speaks only when the trigger still fires after its cue.
+  - New game/data/kappiTips.json + schema (triggers, cues, seconds, caps, the lines with line ids); data-checks.js
+    `dataKappiTips` (one tip per trigger, known cues, a cue before its line, line ids, markup), in check-data and the
+    Studio's Check. tools/story-ids.mjs gives the tips' lines their ids.
+  - New game/js/kappi.js: watches the game twice a second (and right after each throw: battle.js finishThrow calls
+    `kappiCatch`), shows the cues and Kappi's voice. Out of battle: a bubble at the top of the screen, under the top
+    bar, in Kappi's skin (talk-skins.css kappi, dialogue.css's bubble) with Kappi's face; a tap closes it, else it goes
+    after 4 s (50 ms a letter for a longer line). In battle: the dormant `#btip` card in Kappi's leaf green
+    (opening-fall.js `battleTip` now knows `kappi` and is exported; only that block changed). Kappi doesn't walk with
+    you. The debug log gets a `scene` line per cue and tip (its id only). New game/css/kappi-tip.css; motion.css `m-cue`.
+  - walk-view.js: `walkView.exitPulse`; `drawExitMarks` draws those exits gold and bolder while it lasts.
+  - run.js `runHint` (the RUN_HINTS block only): on the first run (`run.first`, else `meta.runs === 0`) every hint is
+    dropped and counted as met (`meta.tipsSeen['hint:<id>']`); Kappi's struggle tips and cues take their place. From
+    the second run on a hint is a toast once ever, while not met. The landing hint is dropped on the first run: IN-5's
+    crash scene ends with the way; until then the 60 s stall cue and tip cover a lost player.
+  - Settings, Game tab: "Kappi's tips" (on by default; `preferences.kappiTips` 'on'/'off'). Off also stops the cues.
+    The later runs' hint toasts are not Kappi's and stay on either way.
+  - `meta.tipsSeen` (meta-state.js: in `newMeta`, checked by `validMeta`, a broken one dropped alone by `metaFill`).
+  - tools/check-fast.py "Kappi's tips" (run fixture, a page of its own): past the run's first battle, two throws miss
+    (the roll is made to miss): one tip in Kappi's card, `tipsSeen.catch` set, nothing after a third miss.
+  - tools/test/kappi-tips.test.mjs (15 tests), meta-state.test.mjs; tools/test/load-logic.mjs imports by file URL (the
+    same one-line Windows fix IN-1 made; identical lines merge cleanly); the Studio's logic worker lists the new module.
+- Kappi's lines (drafts for the owner, kappiTips.json):
+  - catch (2 misses in a row): "Two misses. From my notes: a fresh Billie jumps right out. A tired one stays in.[p] Tire
+    it first." `#l:4da8`
+  - faint (the run's first): "Fainted, not gone. They nap it off.[p] Send in someone rested. A town’s clinic does the
+    rest." `#l:d2c9`
+  - potion (low, a heal unused all battle; said after it): "You carried a potion through that whole fight. I watched it
+    [i]not[/i] get used.[p] It’s in the Bag." `#l:c01a`
+  - pyramids (none left, a wild one near): "No pyramids left. Wild ones still fight, and fights pay.[p] Shops sell
+    more." `#l:bcf2`
+  - sheet (20 s on a choice sheet): "There’s no wrong choice here. Only a slow one.[p] Leaving counts as a choice."
+    `#l:2643`
+  - stall (60 s in a place): "Lovely spot. The arrows at the edge point the way on.[p] No hurry. I’m only noting it."
+    `#l:2611`
+  - counter (a foe whose type beats your lead): "Its type beats yours. Brave.[p] Switching is brave too. Just less
+    dramatic." `#l:d1c5`
+- Risky:
+  - **Later runs' hint toasts** now show on the second and later runs until each is met (before: never after the first
+    run). That is section 5's wording; if the owner reads "Ask me before" item 2 as covering it, `hintPlan` returning
+    `skip` for a run that isn't the first restores the old behaviour in one line.
+  - The counters live in memory: a reload mid-run starts them over (the once-ever list is saved). After a reload the
+    next battle counts as the run's first, so nothing fires in it.
+  - The road cue relies on `walkView.st.exits` and the map's `to` links; the gold arrows were not seen in a screenshot
+    (the headless low-graphics page drew no exit arrows where I looked). The stall clock runs only when such an exit is
+    known.
+  - kappi.js runs a 500 ms timer on every page (it returns at once without a run).
+  - Merge spots: run.js (the RUN_HINTS block only), opening-fall.js (`battleTip` only), battle.js (two lines in
+    `finishThrow`), hooks.js (re-run `npm run modules`), studio/art-code-refs.json (regenerate), meta-state.js.
+- Windows note: the repo's tools (`npm run modules`, `data`, `story:ids`, the art refs) compare `import.meta.url` with
+  `file://${argv[1]}` and do nothing on Windows; to-module also needs forward-slash paths, and the check scripts' local
+  server (listen backlog 5) refuses connections there. I ran them through a scratch wrapper (forward-slash `node:path`,
+  a bigger backlog); nothing in the repo changed for it except load-logic.mjs.
+- Verified: lint (eslint 0 errors; check-names, unused-css, to-module --check; ui-lint counted by hand on Windows:
+  every rule under its ceiling), typecheck, format:check, check:data (184 files), line ids. `npm test`: kappi-tips
+  15/15, meta-state; the quick tier's other local failures are Windows-only (the same on the base commit; a 1,000-map
+  timing test failed once under load), except check-data's 18 snapshots, which CI showed need the file count 184 (fixed
+  in tools/test/check-data-snapshot.test.mjs.snapshot; they can't run on Windows: they make a symlink). check-fast "Kappi's tips" passed.
+  check:smoke: **2 of 7 here, the same 2 of 7 with the same five failures on the base
+  commit 61d90751** on this Windows machine (page loads past the 90 s limit: Phone, Actions bar, the full test, and
+  Palettes on the page that didn't load; Unused: a node tool that prints nothing on Windows). So smoke is not shown
+  passing: CI or a Linux run should confirm it.
+  Screenshots (phone size, headless): the world bubble with Kappi's face under the top bar; the battle card with the
+  Catch button glowing.
+- Next: IN-5 calls nothing new (the tips run on any run; the prepared run is `run.first`). IN-6 tunes the seconds
+  from the owner's debug log (each cue and tip is a `scene` line). The owner reads the lines.
+
+### Test data track TD-2 - the graphics test walks a benchmark path - 2026-10-29
+Branch `track/test-data` (TD-1's pushes and main, 4b64e3d6, merged in at the start; four conflicts kept both sides:
+HANDOFF, webgl.js's target record, the reader's helpers, art-code-refs regenerated). Plan written, then built at once:
+the owner's standing answer (track file section 1) is the approval. Test, debug and test-scene work; nothing a player
+sees changes. No "Ask me before" item came up: the scene grew only by section 5's list. Track-end tags only.
+- Facts checked (track file 3.1): ENGINE_SPEC has 383 rows (not about 392). Only `grass.density` and `world.farProps`
+  need a rebuild on the Settings screen; every other dial is read live each frame (engine/settings.js engineSetting),
+  so the old test's full rebuild per step was most of its memory churn. Balanced and Beautiful differ only in what
+  automatic quality aims for (walk/quality-cull.js), so with quality pinned they are the same: they are walked with
+  automatic quality on. The time-of-day looks' `at` is hours from sunrise or sunset, not an hour. Townsfolk spawn
+  round the arrival spot from `sc.folk`, read live. The build deletes game/js/logic, so graphics-test.js (loaded by URL)
+  gets the path through settings-screen.js's object. There was no fence-lag figure anywhere; the walker adds one.
+- Changed:
+  - New game/js/logic/bench-path.js: 24 segments (open ground, standing still, the shadow court, behind the houses,
+    the pond, the stream's shore by day and with lamps at night, tall grass, townsfolk and townsfolk as figures, the
+    slope by the cliff, the lamp square at 22:00, dawn fog, rain, the avenue, into the low sun, open sky, a run with
+    turns, a room in test_light_room, the five time-of-day looks at their own hours). Every ENGINE_SPEC row has a need
+    (NEEDS); 48 rows can't be measured on a walk and say why (world map, island, battle, talks and bosses, touch, the
+    tilt sensor, places the bench lacks, the clock, what the test pins). Each dial's one other value (a quarter of its
+    range toward the middle), the plan (a drift check on the open ground every 20 steps, the presets last), frame
+    stats, the memory guess, the saved state. Unit tests: tools/test/bench-path.test.mjs (a new row without a need
+    fails).
+  - New game/js/bench-walk.js: walks a segment point by point (stuck is no progress for 3 s and 10 frames, so a slow
+    phone keeps walking) and measures frame gaps (p50/p90/p99, worst, jank), CPU ms, fence lag (a fence a frame, read
+    without waiting), draws, graphics memory and its peak (stops at the budget), slow causes, with
+    `performance.mark/measure` (`bench:<segment>`); `benchConditions` (browser name and major version, refresh rate as
+    set and as measured, fps cap, DPR, resolution, crossOriginIsolated, timer step, timer queries, LoAF);
+    `benchPathChecks` (every route planned on its place's grid). TD-3's headless check can use all of it.
+  - game/js/graphics-test.js reworked: shaders, a warm-up lap, then each segment as shipped (first and last), each dial
+    at its other value where it shows, the presets. Automatic quality off and resolution pinned (lowered by a quarter
+    while the place as shipped passes 300 MB). A step whose memory guess passes the budget is skipped as "over budget";
+    a walk that passes it stops and the place is built back. Every step is saved in localStorage `pb-gtest`; the next
+    tap after a reload offers Resume (the step, or warm-up walk, that was running is marked "the page reloaded" and
+    skipped), Save the partial report, or Start again. Groups picked before the start with their minutes (the whole
+    path is about 52 min). Report format 3: per step the numbers above, quality and resolution; per dial its cost over
+    its segment with the segment's spread; drift; conditions at start and end. graphics-test.test.mjs updated.
+  - tools/build-test-scenes.py t_graphics: 60x46 → 60x58. A strip at z 46-58: a road, a stream with two lamps on its
+    shore, a spring and a fountain across it, a deep pond, a 50% slope up to 3 m beside a 2.5 m cliff; two new walking
+    checks. Everything south of z 46 compared equal (tiles and props). docs/graphics-bench.md says so.
+  - tools/check-quick.py "Test scenes: walking rules" also plans every bench segment (24 walk). game/index.html loads
+    the two new modules; the Studio's logic worker lists bench-path.js. docs/TESTING.md, README.md.
+- Found, not changed:
+  - The Graphics cost test (graphics-bench-test.js) still stands at its stations. The new test's per-dial cost covers
+    most of what it measures (two values, not five); retiring or folding it in fits TD-5's tidy-up.
+  - Real rooms open only in seamless places (walk-control.js enterRoom needs `sc.parts` and a trip node), so the room
+    segment opens test_light_room as its own place instead of walking through a door.
+  - From the shore segment the player stands behind the "everything" corner's trees (the picture shows the stream,
+    lamps and fountain; the player only as a silhouette).
+- Risky: the runner itself has never run (CLAUDE.md and docs/TESTING.md: the Graphics test is run only by a person on
+  their own device). Its walker and path were run headless, segment by segment (shore, plaza, standing, turn, room,
+  slope: each reached its last point, counted draws and memory, folk came on and went back), so the first phone run
+  is the runner's first. The memory guess is rough (resolution and shadow map only; others the place as it is plus
+  the biggest rebuild so far); the walk's own stop at 300 MB is the backstop. The saved state grows to about 150 KB
+  for a whole run. A reload in a build step leaves the place as shipped on the next tap (the scene is rebuilt).
+- Verified: lint, typecheck, check:modules (582 names), format:check, check:data (183 files), build. `npm test` 2,347
+  pass (one failed first: the Studio worker's module list, fixed). Smoke 7 of 7 in 493 s. The walking-rules step:
+  33 test scenes, 89 checks, 24 bench segments walk. Full quick check: 38 of 42 in 4,355 s; the four failing are main's, recorded in earlier entries: RL-8's seam, room light, the lab's room at its door, Battle music (the timing flake).
+- Next: TD-3 (the same path headless, and the gates) on `track/test-data`, started automatically in a new session.
+- For the owner on the phone: debug menu → Graphics test. Untick groups to about 15 minutes (the time-of-day looks
+  are about 4 min each) and run it on Firefox with Beautiful. If the page reloads, tap Graphics test again: it should
+  offer Resume, and the report marks the step that reloaded. Send the report (pocket-billies-graphics-*.json) and the
+  debug log.
+
+### Test data track TD-1 - quick fixes: the log reader, a crash breadcrumb, loading apart, refused calls located - 2026-10-29
+Branch `track/test-data` (main merged in at the start: already up to date). Plan written, then built at once: the
+owner's standing answer (track file section 1) is the approval. Debug-log, full-test and reader code; nothing a
+player sees changes. No "Ask me before" item came up. Track-end tags only (CLAUDE.md), none for this session.
+- Facts checked (track file sections 3.3, 3.4): all held, except that `?glerr` didn't exist (TD-1 adds it).
+- Changed:
+  - tools/read-debug-log.py reads the full test from `bench` (`bench.result` kept for old logs) and prints failed
+    steps' why and ctx, graphics memory by kind with its peak per screen, the q/res changes, the visibility and
+    context-lost events, loading seconds, the slow-frame share and the previous page. The debug-log skill's jq line
+    is fixed. New unit test: tools/test/read-debug-log.test.mjs.
+  - debug-log.js: the "drawing items" label is now "gathering frame items" (its own commit). Slow frames count towards
+    every overlapping cause, by share (`slowFramesBy` gains `share`). Samples carry `ld: 1` while a place loads, and
+    `summary()` keeps `loadingSeconds` apart.
+  - Crash breadcrumb (`debugLog.crumb`, localStorage `pb-crumb`, numbers and ids only). It is written every 2 s, at each
+    full-test and graphics-test step, and on hide; `pagehide` marks it clean. On the next boot the log gets
+    `previousPage.endedUnexpectedly` (or `endedInBackground`), and `boot.navigation` says how the page was opened.
+    New debug-menu button: "Pretend the page was killed".
+  - The graphics cost test no longer wipes the full test's result. Both graphics tests write `debugLog.bench.step`.
+  - Refused calls: `drawErrorWatch` (engine/gpu-counters.js) is one watcher on the draws, uploads and blits. It
+    reports the call, code, pass, program and target; programs and render targets carry `pbName`. An error held before
+    a call reads "before <call>". The light lab uses it, takes its context at the failure, and reads an error left
+    from an earlier step apart (a note, not a failure). `?glerr` turns the watcher on for the whole page. The debug
+    log now reads WebGL's error once a second: a `webgl` event `WebGL error N in the last second at <place> (<step>)`,
+    added to that step's note. It was an error at first; CI's Voltron step then failed on a 1281 the check found (it
+    passes alone), so it no longer fails the step, since it can't say which call raised the error.
+  - tools/check-quick.py: the full test's no-save step allows `pb-crumb`. docs/TESTING.md: a TD-1 bullet.
+- Found, not changed:
+  - The owner's refused draw didn't reproduce in headless Chromium. Firefox can't be downloaded here (the network
+    policy blocks Playwright's download hosts). A likely cause: WebGL keeps an error until someone reads it, and play
+    never did, so an error from any of the 44 earlier steps could surface as the light lab's single "drawArrays 1282".
+    The next phone log will say which: the once-a-second check names the place and step, and the lab names the call.
+  - One run of all five light-lab stops, while the unit tests loaded the CPU, saw 1281 then 1282 in test_light_air's
+    sprites pass (program `sprite`, before the watcher could tell "before" errors apart). Six more runs (two with
+    6x CPU throttling) and an upload-call wrapper saw none. A picture uploaded on first use in that pass is the
+    suspect (texImage2D refused, then generateMipmap). No PNG over 4096 px exists; a canvas made in code still could.
+  - A background audit of every `drawArrays` in the light scenes found no Firefox-only refusal. Two defensive ideas
+    from it, not done: engine/light.js gives `uLampSh1` its sampler only when `uLampSh0` is active, and
+    post-effects.js leaves colour targets on units 12-13.
+- Risky: the once-a-second `getError` is a sync call on some browsers (one per second; not measured on a phone). An
+  occasional real WebGL error (1281, in CI's Voltron step at Copperleaf, not reproduced alone) now shows in that
+  step's note; ?glerr would name its call. With two tabs open, each overwrites the other's breadcrumb.
+- Verified: lint, typecheck, check:modules (562 names), format:check, check:data (182 files), build. `npm test`
+  2,171 pass. Smoke: 6 of 7 steps ok; its no-save step flagged `pb-crumb`, which is fixed and passed on the rerun.
+  The full quick check was stopped at the owner's word after 19 steps: 18 ok, and 1 problem (RL-8's run from the
+  mast) that the clean-up entry below already records on main. Headless checks: a pretend kill reads as unexpected
+  on the next boot, a normal reload as clean. A refused draw planted in test_light_props is named there with its
+  hour, pass and program. One planted in Copperleaf before the lab goes to Copperleaf's second, not to the lab.
+- Next: TD-2 (the graphics test walks) on `track/test-data`, started automatically in a new session.
+- For the owner on the phone: run the full test on Firefox and send the log. The light lab now names the refused call
+  and where it happened, and an error from an earlier step shows under that step. Optionally, debug menu → "Pretend
+  the page was killed", then export the log: it should begin with "PREVIOUS PAGE ENDED UNEXPECTEDLY". If the
+  Graphics test reloads the page again, the next log names the step it died on.
+
 ### Characters track CH-7 - The dressing room on the figure - 2026-10-29
 Branch `ccr-a3988157-1jxde7` (the session's assigned branch: main with #332 in, so `track/characters` plus the merge;
 the owner's choice: work here, PR into `track/characters`). Plan approved in Plan Mode. Figure, game, tool and test

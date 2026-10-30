@@ -28,6 +28,7 @@ expose({
   FOLK_NAMES: [() => FOLK_NAMES],
   FOLK_TALK: [() => FOLK_TALK],
   SPEAKER_NAMES: [() => SPEAKER_NAMES],
+  STAMP_WORDS: [() => STAMP_WORDS],
   TALK_FX: [() => TALK_FX],
   TALK_PORTRAIT_SCALE: [() => TALK_PORTRAIT_SCALE],
   drawTalkPortrait: [() => drawTalkPortrait, v => (drawTalkPortrait = v)],
@@ -259,11 +260,15 @@ function talkDress(box, who, text, style, o) {
 /* DL-3: a line's [stamp=word] lands on a bubble whose skin takes stamps (the Bureau's): the style track's pb-stamp
    (it slams and thunks by itself, ui-run-kit.js), a little crooked by the line's seed, and the bubble gives a small
    thump as it lands */
+/* IN-4: a stamp whose word is longer than its tag (the Bureau's pickup); a long one is stamped smaller, to fit */
+const STAMP_WORDS = { returned: 'returned to sender', recovered: 'recovered property' };
 function talkStamp(box, word, seed) {
   const at = document.createElement('span');
   at.className = 'talk-stamp';
-  const st = document.createElement('pb-stamp');
-  st.setAttribute('word', String(word).toUpperCase());
+  const st = document.createElement('pb-stamp'),
+    said = STAMP_WORDS[word] || String(word);
+  st.setAttribute('word', said.toUpperCase());
+  if (said.length > 10) st.setAttribute('size', 'sm');
   st.setAttribute('tilt', String((seed % 2 ? 1 : -1) * (6 + (seed % 7))));
   at.append(st);
   at.addEventListener(

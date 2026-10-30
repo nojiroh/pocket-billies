@@ -21,6 +21,7 @@ expose({
   META_GENES: [() => META_GENES],
   META_IDS: [() => META_IDS],
   META_MAX: [() => META_MAX],
+  META_TIPS: [() => META_TIPS],
   SHOW_NAME_MOST: [() => SHOW_NAME_MOST],
   SHOW_NICK_MOST: [() => SHOW_NICK_MOST],
   SHOW_PAGE: [() => SHOW_PAGE],
@@ -80,6 +81,7 @@ export function newMeta() {
     trades: [],
     bosses: {},
     fest: null,
+    tipsSeen: {},
   };
 }
 /** the currencies kept between runs (currencies.json's `kept: meta` rows; RL-S2: Beans, the gift currency; SP-3: DNA) */
@@ -87,7 +89,9 @@ export const META_CURRENCIES = /** @type {const} */ (['research', 'scrap', 'cres
 export const META_GENES = 1000,
   META_MAX = 1e12,
   META_IDS = 200,
-  META_EXPEDITIONS = 9;
+  META_EXPEDITIONS = 9,
+  /** IN-2: the most tips and hints meta.tipsSeen keeps */
+  META_TIPS = 64;
 provide({ META_GENES }); /* to-module */
 /** a whole number from min to max */
 export const wholeIn = (v, min, max) => Number.isInteger(v) && v >= min && v <= max;
@@ -205,6 +209,8 @@ export function validMeta(o) {
     validTrades(o.trades) &&
     /* RL-14b: the bosses.json bosses beaten, by id: how many times (logic/battle-rewards.js bossWin) */
     recordOf(o.bosses, 32, v => wholeIn(v, 1, META_MAX)) &&
+    /* IN-2: Kappi's tips and the run hints met (logic/kappi-tips.js) */
+    recordOf(o.tipsSeen, META_TIPS, v => v === 1) &&
     Array.isArray(o.genes) &&
     o.genes.length <= META_GENES &&
     o.genes.every((/** @type {unknown} */ g) => typeof g === 'string' && /^[a-z0-9_]{1,64}@[a-z0-9_]{1,64}$/.test(g)) &&
@@ -254,5 +260,7 @@ export function metaFill(o) {
   if (!validShowMeta(filled.show)) filled.show = newShowMeta();
   /* ON-4: and a broken trade history */
   if (!validTrades(filled.trades)) filled.trades = [];
+  /* IN-2: and the tips seen */
+  if (!recordOf(filled.tipsSeen, META_TIPS, v => v === 1)) filled.tipsSeen = {};
   return validMeta(filled) ? filled : newMeta();
 }

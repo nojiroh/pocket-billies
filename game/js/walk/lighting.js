@@ -6,6 +6,7 @@
 import { expose } from '../test-globals.js';
 import { buildingState, frontWindowLight, litWindowFraction } from '../hooks.js';
 import { placedTurn, propTurn, turnedPoint } from '../logic/prop-turn.js';
+import { movingWindowSpot, windowSeed, windowsMove } from '../logic/window-seed.js';
 import { nearestFirst, pooledQuad } from '../engine/frame-lists.js';
 import { hexToRgb } from '../art.js';
 import { hash2d, walkView } from '../walk-view.js';
@@ -109,7 +110,10 @@ function windowLit(x, z) {
 }
 /* a low-poly building's windows (its recipe's glass numbers, it.wins from prop-models.js): where each is in the place
    and which way it looks out, which are lit at this hour (each by where it is, as an old house's window) as a bit
-   each (on), and how strongly the lit ones shine (k: 1 after dark, the daytime dial by day, none from inside a room) */
+   each (on), and how strongly the lit ones shine (k: 1 after dark, the daytime dial by day, none from inside a room).
+   AS-1: a moving model (the sky train's ride) rolls its windows by its own key and each window's place on the model
+   (logic/window-seed.js), worked out once while it moves (kept on its placement), so they never strobe; seed is the
+   colour seed the glass shader takes (uWinSeed) */
 export function modelWindowLight(it, dark0) {
   const sc = walkView.sc,
     RR = sc.roomRect,
@@ -123,19 +127,26 @@ export function modelWindowLight(it, dark0) {
     ro = propTurn(it),
     cr = Math.cos(ro),
     sr = Math.sin(ro),
-    P = [];
+    P = [],
+    seed = windowSeed(it),
+    mv = windowsMove(it.p),
+    kept = mv && it.p.moving && it.p._winOn != null ? it.p._winOn : null;
   let on = 0;
-  for (const w of it.wins) {
+  for (const w of it.wins || []) {
     const x = w.p[0] * f * s,
       z = w.p[2] * s,
       nx = w.n[0] * f,
       nz = w.n[2],
       p = [it.x + x * cr - z * sr, it.y + w.p[1] * s, it.z + x * sr + z * cr],
-      lit = windowLit(p[0], p[2]);
+      lit =
+        kept != null ? !!(kept & (1 << w.id)) : mv ? windowLit(...movingWindowSpot(seed, w.p)) : windowLit(p[0], p[2]);
     if (lit) on |= 1 << w.id;
     P.push({ p, n: [nx * cr - nz * sr, nx * sr + nz * cr], lit });
   }
-  return { k, on, P, dark };
+  if (mv && it.p.moving && kept == null) it.p._winOn = on;
+  /* what look-train-ride.py --windows reads back each moment (none of it is drawn from here) */
+  if (mv) it.p._win = [on, seed];
+  return { k, on, P, dark, seed: mv ? seed + 2 : seed };
 }
 /* phase 20 C5: the lit lights out of the frame's, with quality.stableLights on kept from frame to frame
    (engine/light-pick.js; the walk and the battle stage each have their own), else the nearest each frame */
@@ -221,7 +232,7 @@ export function walkLightContext(C, sun, dark, items, shadow, BT) {
       WN = null,
       fi = 0;
     /* a low-poly building's lit ground-floor windows, each pushed out its own way (its glass, not the picture's) */
-    if (it.wins) {
+    if (it.wins || it.glows) {
       it.winL = modelWindowLight(it, dark0L);
       if (!inRoom)
         for (const q of it.winL.P)

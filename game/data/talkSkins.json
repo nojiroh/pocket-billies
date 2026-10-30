@@ -18,6 +18,6 @@
   "you": {"name":"You (no lines yet)","family":"bubble","entrance":"pop","blip":"voice","deco":["neon"]},
   "narration": {"name":"Narration (field moves, prompts)","family":"bubbleNote","tilt":0,"entrance":"still","blip":"voice","deco":[]}
  },
- "speakers": {"chosen":"chosen","kappi":"kappi","chad":"blake","me":"narration"},
+ "speakers": {"chosen":"chosen","kappi":"kappi","chad":"blake","me":"narration","bureau_clerk_a":"bureau","bureau_clerk_b":"bureau"},
  "classes": {"bureau_clerk":"bureau","bureau_reclaimer":"bureau"}
 }

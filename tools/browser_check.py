@@ -3,7 +3,7 @@ every check page gets (the clock, no accounts, the test globals, the low graphic
 the console text and the log line.
 
 Used by check-fast.py, check-quick.py, check-ui-gallery.py, check-sound.py and check-studio-github.py, and by the look
-tools (style-diff.py, look-blur.py, island-perf.py, island-shots.py; look-tall-ground.py through check-fast.py).
+tools (style-diff.py, look-blur.py, check-perf.py, island-shots.py; look-tall-ground.py through check-fast.py).
 Nothing here waits a fixed time: `until` asks the page every 100 ms."""
 import os, socket, threading, time
 from functools import partial
@@ -57,9 +57,14 @@ class Quiet(SimpleHTTPRequestHandler):
     def log_message(self, *a): pass
 
 
+class Server(ThreadingHTTPServer):
+    """a page asks for hundreds of modules at once: Python's listen queue of 5 refused some of them on Windows"""
+    request_queue_size = 256
+
+
 def serve(directory):
     """a quiet web server for the folder on a free port, in a thread of its own: (server, its base URL)"""
-    srv = ThreadingHTTPServer(('127.0.0.1', free_port()), partial(Quiet, directory=str(directory)))
+    srv = Server(('127.0.0.1', free_port()), partial(Quiet, directory=str(directory)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv, f'http://127.0.0.1:{srv.server_address[1]}'
 
@@ -150,6 +155,13 @@ def go_scene(pg, node, sec=40, slow=None):
     f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
     t0 = pg.evaluate("typeof debugLog!=='undefined'?debugLog.now():0")
     if f0 < 0 or until(pg, f'walkRenderer.frames>={f0 + 2}', 30): return
+    # FL-3b: behind a window or a screen the world is frozen (a cap of 0: no frame at all, FL-6's answer); a window that
+    # came up on the way (a message on arrival) is cleared as the fixtures' set-up does, and said so
+    held = pg.evaluate("typeof walkView!=='undefined'&&walkView.held?[walkView.held,String((uiState.modal&&(uiState.modal.title||uiState.modal.id))||'')]:null")
+    if held:
+        (slow or log)(f'{pg.evaluate("walkView.id")}: the world was frozen behind a {held[0]} ({held[1][:60]}) after the jump; cleared')
+        pg.evaluate("uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];uiState.tab='walk';renderOverlay();render();0")
+        if until(pg, f'walkRenderer.frames>={f0 + 2}', 30): return
     # one frame can hold the page for 20 s or more in software: the debug log's picture once a minute (screenSnapshot)
     # waits for the drawing to finish, and that grows over a long run. While the draw loop is still running, wait
     # longer and say so (slow: where the note goes, the check's notes; the log otherwise)
@@ -157,5 +169,5 @@ def go_scene(pg, node, sec=40, slow=None):
     if pg.evaluate(alive) and until(pg, f'walkRenderer.frames>={f0 + 2}||!{alive}', 60) and pg.evaluate(alive):
         why = pg.evaluate(f"(debugLog.slow.filter(s=>s.t>={t0}).sort((a,b)=>b.ms-a.ms)[0]||{{why:'?'}}).why")   # the slowest frame meanwhile
         (slow or log)(f'{pg.evaluate("walkView.id")}: 2 frames took over 30 s (slowest frame: {why[:80]})'); return
-    kind = 'stopped drawing: its draw loop is gone (black screen)' if not pg.evaluate(alive) else 'drew fewer than 2 frames in 90 s'
+    kind = 'stopped drawing: its draw loop is gone (black screen)' if not pg.evaluate(alive) else 'drew fewer than 2 frames in 90 s' + (f" (held: {pg.evaluate('walkView.held')})" if pg.evaluate("!!walkView.held") else '')
     raise Exception(f'{pg.evaluate("walkView.id")} {kind}')

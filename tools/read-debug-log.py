@@ -56,6 +56,23 @@ def audio(a):
               f"under way {m.get('ducking')}; session {m.get('session')}, play when silenced {m.get('playSilenced')}")
 
 
+def screen_of(s):
+    """the summary's name for a sample's screen (debug-log.js summary())"""
+    v = s.get('view')
+    return f"walk:{s.get('scene') or '?'}" if v == 'walk' else ('battle' if v == 'battle' else str(v or '-'))
+
+
+def ctx_lines(c):
+    """a failed step's context (debug-log.js diag()), a few short lines"""
+    if not isinstance(c, dict): return []
+    out = [f"ctx: {c.get('view')} | scene {c.get('scene')} | {c.get('renderer')}"
+           + (f" | at {c['at']}" if c.get('at') else '')]
+    for k in ('refused', 'errors', 'slow', 'long', 'events'):
+        v = c.get(k)
+        if v: out.append(f"{k}: {json.dumps(v)[:220]}")
+    return out
+
+
 def main():
     if not ARGS: print(__doc__); sys.exit(2)
     src = sys.stdin.read() if ARGS[0] == '-' else Path(ARGS[0]).read_text(encoding='utf-8')
@@ -107,34 +124,69 @@ def main():
 
     audio(((d.get('more') or {}).get('audio')))
 
+    pp = d.get('previousPage') or {}
+    if pp.get('endedUnexpectedly') or pp.get('endedInBackground'):
+        L = pp.get('last') or {}
+        print(f"PREVIOUS PAGE ENDED {'UNEXPECTEDLY' if pp.get('endedUnexpectedly') else 'in the background'} "
+              f"(this page: {(d.get('boot') or {}).get('navigation') or '?'}): after {num(L.get('up'))} s, scene {L.get('scene')}, "
+              f"test step {L.get('test')!r}, graphics {num(L.get('gmb'))} MB {json.dumps(L.get('kinds') or {})}, "
+              f"{num(L.get('fps'))} fps, q{L.get('q')} res {L.get('res')}, {num(L.get('hz'))} Hz")
+
     ld = d.get('load') or {}
     if ld: print(f"Load: {num(ld.get('ms'))} ms, {ld.get('files')} files" + (f", FAILED: {ld.get('failed')}" if ld.get('failed') else ''))
 
     rows = [(k, v) for k, v in (d.get('summary') or {}).items() if isinstance(v, dict) and 'fpsAvg' in v]
     if rows:
-        print('Frame rates by screen (fps avg / 10th percentile / worst; CPU ms avg / 90th; slow frames):')
+        # TD-1: seconds of play, and (+N) seconds spent loading the place, which the averages leave out
+        print('Frame rates by screen (seconds of play +loading; fps avg / 10th percentile / worst; CPU ms avg / 90th; slow frames):')
         for k, v in sorted(rows, key=lambda r: -(r[1].get('seconds') or 0)):
-            print(f"  {k[:38]:38s} {num(v.get('seconds')):>4s} s  {num(v.get('fpsAvg'), 1):>5s} / {num(v.get('fpsP10')):>3s} / "
+            ld = f"+{num(v.get('loadingSeconds'))}" if v.get('loadingSeconds') else ''
+            print(f"  {k[:38]:38s} {num(v.get('seconds')):>4s}{ld:>5s} s  {num(v.get('fpsAvg'), 1):>5s} / {num(v.get('fpsP10')):>3s} / "
                   f"{num(v.get('fpsWorst')):>3s}  CPU {num(v.get('cpuMsAvg'), 1):>6s} / {num(v.get('cpuMsP90'), 1):>6s}  "
                   f"slow {num(v.get('slowFrames'))}  {v.get('renderer')} res {v.get('resolution')}")
     by = (d.get('more') or {}).get('slowFramesBy') or {}
     if by:
-        print('Slow frames by cause (frames, total ms, worst ms):')
+        # TD-1: each slow frame counts towards every cause it overlapped (share: its part of those frames, in frames)
+        print('Slow frames by cause (frames it took part in, share in frames, its ms, its most in one frame):')
         for cause, v in sorted(by.items(), key=lambda kv: -(kv[1].get('totalMs') or 0))[:8]:
-            print(f"  {cause[:44]:44s} {num(v.get('frames')):>5s} {num(v.get('totalMs')):>8s} {num(v.get('worstMs')):>6s}")
+            print(f"  {cause[:44]:44s} {num(v.get('frames')):>5s} {num(v.get('share'), 1) if 'share' in v else '-':>6s} "
+                  f"{num(v.get('totalMs')):>8s} {num(v.get('worstMs')):>6s}")
     h = d.get('hitches') or {}
     if h: print(f"Hitches over {h.get('overMs')} ms: {h.get('count')} in {h.get('frames')} frames, {num(h.get('totalMs'))} ms in all, "
                 f"worst {num(h.get('maxMs'))} ms; by size {h.get('by')}")
+    # FL-1b: frames over the set rate's slot (plus half a refresh), which the 36 ms line can't see at 60 fps
+    if h and 'missed' in h: print(f"Frames over the set rate's slot ({h.get('missedOverMs')} ms): {h.get('missed')}")
+    # FL-1b: the once-a-second getError's time (ms), from the samples that have it
+    ge = [s.get('glErr') for s in (d.get('samples') or []) if isinstance(s, dict) and isinstance(s.get('glErr'), (int, float))]
+    if ge: print(f"getError once a second: {len(ge)} samples, mean {sum(ge) / len(ge):.2f} ms, worst {max(ge):.2f} ms")
+    # FL-6: taps from touch to paint (Event Timing) and the long frames' rendering and style and layout time
+    ui = d.get('ui') or {}
+    tp, lf = ui.get('taps') or {}, ui.get('longFrames') or {}
+    if tp.get('count'):
+        print(f"Taps (touch to paint, over 16 ms): {tp.get('count')}, worst {num(tp.get('maxMs'))} ms, over 100 ms: {tp.get('over100')}")
+        for r in (tp.get('last') or [])[-6:]:
+            if isinstance(r, list) and len(r) >= 8:
+                print(f"  {num(r[1]):>4s} ms {str(r[3])[:12]:12s} {str(r[4])[:16]:16s} wait {r[5]}, handlers {r[6]}, paint {r[7]}")
+    pt = ui.get('paint') or {}
+    if pt.get('count'):
+        print(f"Taps, click to paint (every tap): {pt.get('count')}, mean {pt.get('meanMs')} ms, worst {pt.get('maxMs')} ms")
+        for r in (pt.get('last') or [])[-6:]:
+            if isinstance(r, list) and len(r) >= 4: print(f"  {num(r[1]):>4s} ms {str(r[2])[:12]:12s} {str(r[3])[:16]}")
+    if lf.get('count'): print(f"Long frames: {lf.get('count')}, rendering {lf.get('renderMs')} ms and style and layout {lf.get('styleMs')} ms on average, "
+                             f"style and layout at most {lf.get('maxStyleMs')} ms")
 
+    # the full test's result: build() stores it as `bench` itself (TD-1); `bench.result` is kept for older logs
     bench = d.get('bench')
-    res = bench.get('result') if isinstance(bench, dict) else None
+    res = (bench if 'phases' in bench else bench.get('result')) if isinstance(bench, dict) else None
     if res:
         phases = res.get('phases') or []
         bad = [p for p in phases if not p.get('ok')]
         print(f"Full test ({res.get('kind')}): {'passed' if res.get('passed') else 'PROBLEMS'}"
               f"{', stopped' if res.get('stopped') else ''}, {num(res.get('seconds'))} s, {len(phases)} steps, {len(bad)} not ok")
         for p in bad[:12]:
-            print(f"  x {p.get('name')}: {(p.get('note') or p.get('why') or p.get('detail') or '')[:150]}")
+            print(f"  x {p.get('name')}: {(p.get('note') or '')[:150]}")
+            if p.get('why') and p.get('why') != p.get('note'): print(f"      why: {str(p.get('why'))[:200]}")
+            for line in ctx_lines(p.get('ctx')): print('      ' + line)
         slow = sorted((p for p in phases if p.get('worstFrameMs')), key=lambda p: -p['worstFrameMs'])[:5]
         if slow: print('  worst frames: ' + '; '.join(f"{p.get('name')} {num(p.get('worstFrameMs'))} ms" for p in slow))
         if res.get('stress'): print(f"  stress: {json.dumps(res.get('stress'))[:200]}")
@@ -142,6 +194,66 @@ def main():
         print(f"Full test: no result ({json.dumps(bench)[:120]})")
     else:
         print('Full test: not run in this page')
+
+    gm = (d.get('more') or {}).get('gpuMemory') or {}
+    kinds = gm.get('kinds') if isinstance(gm, dict) else None
+    if isinstance(kinds, dict) and kinds:
+        tot = sum((v or {}).get('mb') or 0 for v in kinds.values() if isinstance(v, dict))
+        parts = sorted(((k, v) for k, v in kinds.items() if isinstance(v, dict)), key=lambda kv: -((kv[1].get('mb')) or 0))
+        print(f"Graphics memory (estimate) {num(tot)} MB: " + ', '.join(
+            f"{k} {num(v.get('mb'))}" + (f" ({v.get('dropped')} dropped)" if v.get('dropped') else '') for k, v in parts))
+        if gm.get('lateCompiles'): print(f"  late compiles: {', '.join(map(str, gm['lateCompiles']))[:200]}")
+        # FL-5a: the draw order's variants' links beside their originals ([waited ms, ms from start])
+        lk = gm.get('linkMs') or {}
+        pairs = [f"{k} {lk[k]}" for k in ('ground', 'groundS', 'voxI', 'voxIS', 'mdlI', 'mdlIS') if k in lk]
+        if pairs: print(f"  program links (waited, from start, ms): {'; '.join(pairs)}")
+
+    samples = d.get('samples') or []
+    peak = {}
+    for s in samples:
+        if isinstance(s.get('gmb'), (int, float)):
+            k = screen_of(s)
+            peak[k] = max(peak.get(k, 0), s['gmb'])
+    if peak:
+        print('Graphics memory peak by screen (MB): ' + ', '.join(f"{k} {v}" for k, v in sorted(peak.items(), key=lambda kv: -kv[1])[:8]))
+    tl, prev = [], None
+    for s in samples:
+        cur = (s.get('q'), s.get('res'))
+        if cur != prev and (cur[0] is not None or cur[1] is not None):
+            tl.append(f"{num((s.get('t') or 0) / 1000)} s q{cur[0] if cur[0] is not None else '?'} res {cur[1] if cur[1] is not None else '?'}")
+            prev = cur
+    if tl: print(f"Quality and resolution ({len(tl)} changes): " + '; '.join(tl[:10] + (['...'] + tl[-3:] if len(tl) > 13 else tl[10:])))
+    # FL-3a: the frame controller's steps (quality.controller on): CPU level, half rate, fence lag, its last step
+    ct, prevc = [], None
+    for s in samples:
+        if 'qc' not in s: continue
+        c = s.get('ctl') or {}
+        cur = (s.get('qc'), s.get('half'), c.get('t'))
+        if cur != prevc:
+            ct.append(f"{num((s.get('t') or 0) / 1000)} s cpu {s.get('qc')}{' half rate' if s.get('half') else ''} lag {s.get('lag')}" + (f" ({c.get('act')} {c.get('lever')}: {c.get('why')})" if c else ''))
+            prevc = cur
+    if ct: print(f"Frame controller ({len(ct)} changes): " + '; '.join(ct[:10] + (['...'] + ct[-3:] if len(ct) > 13 else ct[10:])))
+    # FL-3b: the resolution levels (quality.resSteps on): the level drawn, a level waiting, why it changed, the
+    # canvas's size changes and the render targets made again (counts since the page opened)
+    rl, prevr = [], None
+    for s in samples:
+        if 'rd' not in s: continue
+        cur = (s.get('rd'), s.get('rwait'), s.get('rsz'), s.get('fbre'))
+        if cur != prevr:
+            rl.append(f"{num((s.get('t') or 0) / 1000)} s drawn {s.get('rd')}" + (f" waiting {s.get('rwait')}" if s.get('rwait') else '') + (f" ({s.get('rwhy')})" if s.get('rwhy') else '') + f" resizes {s.get('rsz') or 0} targets {s.get('fbre') or 0}")
+            prevr = cur
+    if rl: print(f"Resolution steps ({len(rl)} changes): " + '; '.join(rl[:10] + (['...'] + rl[-3:] if len(rl) > 13 else rl[10:])))
+    # FL-5a: the draw order for tile GPUs (quality.drawOrder): samples drawn with it, the models drawn first by
+    # discard-free programs (median), and the passes' times beside the samples without it
+    do = [s for s in samples if s.get('dord')]
+    if do:
+        sm = sorted((s['dord'][1] if isinstance(s.get('dord'), list) and len(s['dord']) > 1 else 0) for s in do)
+        print(f"Solid first (draw order): {len(do)} of {len(samples)} samples, models drawn first median {sm[len(sm) // 2]}")
+
+    ev = [e for e in (d.get('events') or []) if e.get('kind') in ('visibility', 'webgl')]
+    if ev:
+        print(f"Visibility and graphics-context events ({len(ev)}): " + '; '.join(
+            f"{num((e.get('t') or 0) / 1000)} s {e.get('kind')} {e.get('msg')}" for e in ev[-12:]))
 
     errs = d.get('errors') or []
     warn = [e for e in errs if str(e.get('kind', '')).endswith('warn')]

@@ -23,10 +23,12 @@
 import * as espree from 'espree';
 import * as eslintScope from 'eslint-scope';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, normalize, relative } from 'node:path';
+import { join, posix } from 'node:path';
 import * as prettier from 'prettier';
 
 const ROOT = join(import.meta.dirname, '..');
+// the files' names are the repo's, with forward slashes, on Windows too (they are compared with names like HOOKS)
+const { dirname, normalize, relative } = posix;
 export const PAGES = ['game/index.html', 'studio/index.html'];
 export const BRIDGE = 'game/js/test-globals.js';
 export const START = '/* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */';
@@ -53,7 +55,7 @@ export function scriptsOf(page) {
     const m = attrs.match(/\bsrc="([^"?]+\.js)(?:\?[^"]*)?"/);
     if (!m) out.push({ file: `${page}#inline${n++}`, inline: true, text });
     else if (!m[1].includes('://'))
-      out.push({ file: normalize(join(dirname(page), m[1])), module: /\btype="module"/.test(attrs) });
+      out.push({ file: normalize(posix.join(dirname(page), m[1])), module: /\btype="module"/.test(attrs) });
   }
   return out;
 }
@@ -113,11 +115,11 @@ function analyse(text) {
 
 // Phase 04d: what a file reads WHILE it loads, and what each of its named functions reads when it is called. Counted:
 // the code that runs then (not the functions it only defines), the functions it calls at once or hands to a call
-// that runs them now (forEach, map), but not callbacks for later (addEventListener, setTimeout, then) or functions
+// that runs them now (forEach, map), but not callbacks for later (addEventListener, setTimeout, FL-4's everyFree, then) or functions
 // handed to a setter (setWorldMapMount). `typeof x` can't fail, so it doesn't count. Of the names read, only the called ones are followed into their functions.
 // A function stored in an object or returned is not followed: the check is a safety net, not a proof.
 const LATER =
-  /^(set[A-Z_$]\w*|addEventListener|setTimeout|setInterval|requestAnimationFrame|requestIdleCallback|queueMicrotask|then|catch|finally|on|once|observe)$/;
+  /^(set[A-Z_$]\w*|addEventListener|setTimeout|setInterval|everyFree|requestAnimationFrame|requestIdleCallback|queueMicrotask|then|catch|finally|on|once|observe)$/;
 function loadTime(ast, g) {
   const parent = new Map();
   (function walk(n, p) {
@@ -503,7 +505,7 @@ export async function run(args) {
   return { modules: [...modules], changed: stale, hooks: slots.length };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (process.argv[1] && import.meta.filename === process.argv[1]) {
   run(process.argv.slice(2)).then(
     r => {
       console.log(`${r.modules.length} modules, ${r.changed.length} changed`);

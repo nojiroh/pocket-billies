@@ -234,8 +234,13 @@ export const ART_BUILDERS = [
   [/^scene\/build\/walls\.png$/, 'tools/build-walls.py'],
   [/^scene\/build\/(detail|rooms)\.png$/, 'tools/build-buildings.py'],
   [/^scene\/build\/detail-a04\.png$/, 'tools/build-props-a04.py'],
-  /* SA-2b: the live building sheet: the airship's textures, then bark and rock, written into it */
-  [/^scene\/build\/detail-a04b\.png$/, 'tools/build-airship.py and tools/build-props-batch1.py'],
+  /* SA-2b: the live building sheet: the airship's textures, then bark and rock, written into it; BD-2a its fourth row */
+  [
+    /^scene\/build\/detail-a04b\.png$/,
+    'tools/build-airship.py and tools/build-props-batch1.py and tools/build-surfaces.py',
+  ],
+  /* BD-2a: the sheet's height map, for the normal sheet */
+  [/^scene\/build\/detail-a04b-height\.png$/, 'tools/build-surfaces.py'],
   [/^scene\/flags\/[\w-]+\.png$/, 'tools/build-flags.py'],
 ];
 /** the builder that draws a picture, or '' (a path under art/, with or without art/ in front)

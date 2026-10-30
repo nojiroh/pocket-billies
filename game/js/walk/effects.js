@@ -81,16 +81,19 @@ export function setEffectsPass(v) {
 /* to-module: end */
 /* phase 20 R2 (pixels): the weather's quads (rain, snow, ash and their splashes, one picture) in one draw
    (phase 20 R4: the only path): the fx program's maths, with each quad's place, size, frame, colour and up axis per instance,
-   drawn in the same order */
+   drawn in the same order. FL-2b: every effect quad goes this way (a right axis per instance too; one draw per run of
+   the same picture, cut wherever something else draws in between), and the glows as one draw (uGlow: the fx
+   program's additive disc) */
 export const WEATHER_FX_SHADERS = {
   fxW: [
     `#version 300 es
-precision highp float;in vec2 aC;layout(location=1) in vec3 iP;layout(location=2) in vec2 iS;layout(location=3) in vec4 iUV;layout(location=4) in vec4 iCol;layout(location=5) in vec3 iUp;
-uniform mat4 uVP;uniform vec3 uRight;out vec2 vUV;out vec3 vW;out vec4 vCol;
-void main(){vec2 c=aC-.5;vec3 p=iP+uRight*c.x*iS.x+iUp*(-c.y)*iS.y;vW=p;vUV=vec2(iUV.x+aC.x*iUV.z,iUV.y+aC.y*iUV.w);vCol=iCol;gl_Position=uVP*vec4(p,1.);}`,
+precision highp float;in vec2 aC;layout(location=1) in vec3 iP;layout(location=2) in vec2 iS;layout(location=3) in vec4 iUV;layout(location=4) in vec4 iCol;layout(location=5) in vec3 iUp;layout(location=6) in vec3 iRight;
+uniform mat4 uVP;out vec2 vUV;out vec3 vW;out vec4 vCol;
+void main(){vec2 c=aC-.5;vec3 p=iP+iRight*c.x*iS.x+iUp*(-c.y)*iS.y;vW=p;vUV=vec2(iUV.x+aC.x*iUV.z,iUV.y+aC.y*iUV.w);vCol=iCol;gl_Position=uVP*vec4(p,1.);}`,
     `#version 300 es
-precision highp float;in vec2 vUV;in vec3 vW;in vec4 vCol;out vec4 o;uniform sampler2D uTex;uniform float uLitFx;${LIGHT_GLSL}
-void main(){vec4 c=texture(uTex,vUV)*vCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);o=c;}`,
+precision highp float;in vec2 vUV;in vec3 vW;in vec4 vCol;out vec4 o;uniform sampler2D uTex;uniform float uLitFx,uGlow;${LIGHT_GLSL}
+void main(){if(uGlow>.5){vec2 q=vUV*2.-1.;float d=dot(q,q);if(d>1.)discard;float f=(1.-d);o=vec4(vCol.rgb*f*f*f*vCol.a,1.);return;}
+vec4 c=texture(uTex,vUV)*vCol;if(c.a<.02)discard;if(uLitFx>.5)c.rgb*=mix(uAmbTop,vec3(1.),.5)+uSunCol*.4;c.rgb=fogit(c.rgb,vW);o=c;}`,
   ],
 };
 /* VFX-2: a thrown pyramid's motion lines (battle-3d.js battle3dFrame's ribbon): one strip, flat and unlit, hard
@@ -153,7 +156,8 @@ export function ribbonPass(C, R, X) {
   gl.enable(gl.BLEND);
   bindQuad();
 }
-const WEATHER_FLOATS = 16;
+const WEATHER_FLOATS = 19;
+/* FL-2b: the effects pass's draws (weatherBatch.draws, for tests and the Diagnostics) */
 const weatherBatch = {
   n: 0,
   d: new Float32Array(WEATHER_FLOATS * 256),
@@ -162,8 +166,16 @@ const weatherBatch = {
   C: null,
   X: null,
   R: null,
-  /* one quad, as the effects pass's quad() takes it, and the up axis it would have set */
-  put(fr, x, y, z, sw, sh, a, col, up) {
+  /* uLitFx and uGlow for the next flush (the fx program's values these quads had) */
+  lit: 1,
+  g: 0,
+  draws: 0,
+  /* one quad, as the effects pass's quad() takes it, and the up (and right) axis it would have set */
+  put(fr, x, y, z, sw, sh, a, col, up, right) {
+    const m = this.m;
+    this.raw(x, y, z, sw, sh, ((fr % m[2]) * m[0]) / this.T.w, m[0] / this.T.w, a, col, up, right);
+  },
+  raw(x, y, z, sw, sh, u0, uw, a, col, up, right) {
     if ((this.n + 1) * WEATHER_FLOATS > this.d.length) {
       const d = new Float32Array(this.d.length * 2);
       d.set(this.d);
@@ -171,16 +183,15 @@ const weatherBatch = {
     }
     const d = this.d,
       o = this.n++ * WEATHER_FLOATS,
-      m = this.m,
-      w = this.T.w;
+      r = right || this.R;
     d[o] = x;
     d[o + 1] = y + worldCurveDrop(x, z);
     d[o + 2] = z;
     d[o + 3] = sw;
     d[o + 4] = sh;
-    d[o + 5] = ((fr % m[2]) * m[0]) / w;
+    d[o + 5] = u0;
     d[o + 6] = 0;
-    d[o + 7] = m[0] / w;
+    d[o + 7] = uw;
     d[o + 8] = 1;
     d[o + 9] = col ? col[0] : 1;
     d[o + 10] = col ? col[1] : 1;
@@ -189,6 +200,9 @@ const weatherBatch = {
     d[o + 13] = up[0];
     d[o + 14] = up[1];
     d[o + 15] = up[2];
+    d[o + 16] = r[0];
+    d[o + 17] = r[1];
+    d[o + 18] = r[2];
   },
   /* the quads put so far in one instanced draw; the fx program is in use again after */
   flush() {
@@ -214,6 +228,7 @@ const weatherBatch = {
         [3, 4, 5],
         [4, 4, 9],
         [5, 3, 13],
+        [6, 3, 16],
       ].forEach(([l, k, o]) => {
         gl.enableVertexAttribArray(l);
         gl.vertexAttribPointer(l, k, gl.FLOAT, false, S, o * 4);
@@ -222,18 +237,28 @@ const weatherBatch = {
       gl.bindVertexArray(null);
       p.wx = { vao, buf };
     }
-    gl.uniform3fv(p.U.uRight, this.R);
     gl.uniform1i(p.U.uTex, 0);
-    gl.uniform1f(p.U.uLitFx, 1);
+    gl.uniform1f(p.U.uLitFx, this.lit);
+    gl.uniform1f(p.U.uGlow, this.g);
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, this.T.t);
+    if (this.T) gl.bindTexture(gl.TEXTURE_2D, this.T.t);
     gl.bindBuffer(gl.ARRAY_BUFFER, p.wx.buf);
     gl.bufferData(gl.ARRAY_BUFFER, this.d.subarray(0, n * WEATHER_FLOATS), gl.DYNAMIC_DRAW);
     gpuSized(p.wx.buf, n * WEATHER_FLOATS * 4);
     gl.bindVertexArray(p.wx.vao);
     gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, n);
+    this.draws++;
     gl.useProgram(gpuState.P.fx.p);
     bindQuad();
+  },
+  /* picture T (its frames m) for the quads put next: what was put with another picture is drawn first */
+  use(T, m) {
+    if (this.T !== T || this.g) {
+      this.flush();
+      this.T = T;
+      this.m = m;
+      this.g = 0;
+    }
   },
 };
 export function effectsPass(C, items, X, dark, t, dt) {
@@ -260,29 +285,35 @@ export function effectsPass(C, items, X, dark, t, dt) {
   gl.depthMask(false);
   gl.enable(gl.DEPTH_TEST);
   const fxT = k => imageTexture(artImage(`scene/fx/${k}.png`), { noNormal: true }),
-    quad = (k, fr, x, y, z, sw, sh, a, col) => {
-      const T = fxT(k);
-      if (!T) return;
-      const m = EFFECT_FRAMES[k];
-      gl.bindTexture(gl.TEXTURE_2D, T.t);
-      gl.uniform3f(U.uP, x, y + worldCurveDrop(x, z), z);
-      gl.uniform2f(U.uS, sw, sh);
-      gl.uniform4f(U.uUV, ((fr % m[2]) * m[0]) / T.w, 0, m[0] / T.w, 1);
-      gl.uniform4f(U.uCol, col ? col[0] : 1, col ? col[1] : 1, col ? col[2] : 1, a);
-      gl.uniform1f(U.uGlow, 0);
-      gl.drawArrays(gl.TRIANGLES, 0, 6);
-    };
+    B = weatherBatch;
+  /* FL-2b: quads go into the batch in call order with the axes quad.ax set (the camera's by default); the batch draws
+     each run of one picture at once, and before anything else draws in this pass */
+  B.n = 0;
+  B.T = null;
+  B.g = 0;
+  B.lit = 1;
+  B.C = C;
+  B.X = X;
+  B.R = R;
+  B.draws = 0;
+  let qR = R,
+    qU = Up;
+  const quad = (k, fr, x, y, z, sw, sh, a, col) => {
+    const T = fxT(k);
+    if (!T) return;
+    B.use(T, EFFECT_FRAMES[k]);
+    B.put(fr, x, y, z, sw, sh, a, col, qU, qR);
+  };
+  /* the right and up axes for the quads put next (none: the camera's) */
+  quad.ax = (r, u) => {
+    qR = r || R;
+    qU = u || Up;
+  };
   /* phase 20 R2: the weather's batch of picture k (null until its picture is loaded) */
   quad.batch = k => {
     const T = fxT(k);
     if (!T) return null;
-    const B = weatherBatch;
-    B.n = 0;
-    B.T = T;
-    B.m = EFFECT_FRAMES[k];
-    B.C = C;
-    B.X = X;
-    B.R = R;
+    B.use(T, EFFECT_FRAMES[k]);
     return B;
   };
   const glows = [];
@@ -326,7 +357,28 @@ export function effectsPass(C, items, X, dark, t, dt) {
             0.55 * (1 - ph) * Math.min(1, ph * 6)
           );
         }
-      else if (e.k === 'spray') {
+      else if (e.k === 'plume') {
+        /* intro track IN-3: a wreck's smoke, a thick dark column rising and leaning with the wind; fewer puffs at the
+           walk view's lower quality steps (walkRenderer.qe: 0 best, 3 a struggling phone), so weak phones draw less */
+        const qe = walkRenderer.qe || 0,
+          np = qe >= 3 ? 3 : qe >= 2 ? 5 : qe >= 1 ? 7 : 9;
+        for (let n = 0; n < np; n++) {
+          const ph = ((t * rm) / 5200 + n / np + sd * 0.13) % 1,
+            sz = 0.7 + 1.9 * ph,
+            g = 0.42 + 0.3 * ph;
+          quad(
+            'smoke',
+            Math.floor(ph * 4),
+            x + (ph * 1.6 + 0.25 * Math.sin(ph * 5 + n + sd)) * (sc.wind || 1),
+            y + ph * 5.5,
+            z + ph * 0.5,
+            sz,
+            sz,
+            0.75 * (1 - ph) * Math.min(1, ph * 8),
+            [g, g * 0.97, g * 0.94]
+          );
+        }
+      } else if (e.k === 'spray') {
         if (walkRenderer.basinP && walkRenderer.basinP.has(it.p)) return;
         for (let n = 0; n < 14; n++) {
           const ph = ((t * rm) / 1100 + n / 14) % 1,
@@ -694,7 +746,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
       n = Math.min(10, Math.ceil(S.length / 12));
     if (!walkRenderer.leaves || walkRenderer.leaves.length !== n)
       walkRenderer.leaves = Array.from({ length: n }, (_, i) => ({ age: 99, i }));
-    gl.uniform3f(U.uUp, 0, 0, 1);
+    const lu = [0, 0, 1];
     for (const L of walkRenderer.leaves) {
       if (L.age > 16 || !L.ok) {
         const c = S[Math.floor(Math.random() * S.length)];
@@ -719,11 +771,10 @@ export function effectsPass(C, items, X, dark, t, dt) {
         continue;
       }
       const a = Math.min(1, L.age * 2) * Math.min(1, (16 - L.age) / 2);
-      gl.uniform3f(U.uRight, Math.cos(L.age * 0.4 + L.i), 0, Math.sin(L.age * 0.4 + L.i) * 0.6);
+      quad.ax([Math.cos(L.age * 0.4 + L.i), 0, Math.sin(L.age * 0.4 + L.i) * 0.6], lu);
       quad('leaf', L.fr, L.x, g.y + 0.04, L.z, 0.17, 0.17, a);
     }
-    gl.uniform3fv(U.uRight, R);
-    gl.uniform3fv(U.uUp, Up);
+    quad.ax();
   }
   if (walkRenderer.springCells && walkRenderer.springCells.length && engineSetting('water', 'steam')) {
     walkRenderer.springCells.forEach(([x, z, dp, st], k) => {
@@ -754,7 +805,12 @@ export function effectsPass(C, items, X, dark, t, dt) {
   if (walkRenderer.bt) drawBattleSand(quad, R, dt, rm);
   if (!walkRenderer.bt) drawFootprints(quad, U, R, Up, dt);
   drawFountainEffects(quad, t, rm, dt);
-  drawRoomEffects(C, U, items, glows, t, rm);
+  /* the room's windows draw on the fx program themselves, and leave its uLitFx at 0 for the quads after them */
+  if (sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false) {
+    B.flush();
+    drawRoomEffects(C, U, items, glows, t, rm);
+    B.lit = 0;
+  }
   gl.uniform3fv(U.uRight, R);
   gl.uniform3fv(U.uUp, Up);
   if (typeof clueDraw === 'function') clueDraw(quad, glows, t);
@@ -839,6 +895,7 @@ export function effectsPass(C, items, X, dark, t, dt) {
   /* bright cores, added in HDR: the bloom spreads them into soft glows */
   /* VFX-9: the battle's particles in one pool, two draws (walk/battle-fx.js); the fx program in use again after */
   const BT = walkRenderer.bt;
+  B.flush();
   /* VFX-15: the battle's scars (walk/battle-scars.js, one draw; they fade a moment after it ends); state put back */
   if (battleScars.list.length && battleScarPass(C, X)) {
     gl.useProgram(p.p);
@@ -868,13 +925,14 @@ export function effectsPass(C, items, X, dark, t, dt) {
     1,
     1
   );
+  /* FL-2b: the glows in one draw (additive, so their order doesn't change the sum) */
+  B.g = 1;
   for (const [x, y, z, r, c, a] of glows) {
     if (a <= 0.01) continue;
-    gl.uniform3f(U.uP, x, y + worldCurveDrop(x, z), z);
-    gl.uniform2f(U.uS, r * 2, r * 2);
-    gl.uniform4f(U.uCol, c[0], c[1], c[2], a);
-    gl.drawArrays(gl.TRIANGLES, 0, 6);
+    B.raw(x, y, z, r * 2, r * 2, 0, 1, a, c, Up, R);
   }
+  B.flush();
+  B.g = 0;
   /* phase 20 R2 (D7): cheap light shafts while the light in the air (the vol pass) is off */
   /* VFX-15: the sun in battle brightens them (battle-stage-look.js, its sunny weather) */
   const sk =

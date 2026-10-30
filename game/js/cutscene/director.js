@@ -103,7 +103,8 @@ export function cutsceneFlush() {
   if (talkBox.cur && cutscene.on) talkBox.cur.done();
 }
 function skipCutscene() {
-  if (!cutscene.on || cutscene.choosing || cutscene.dressing) return;
+  /* IN-4: nor while the lab scene's payout sheet is open */
+  if (!cutscene.on || cutscene.choosing || cutscene.dressing || cutscene.paying) return;
   cutscene.skip = true;
   cutsceneFlush();
 }
@@ -162,6 +163,8 @@ function cutscenePersonItem(a, t, C0, yaw = 0) {
     const set = personWalkFrames(a.who)[seen] || personWalkFrames(a.who).down;
     im = set.cyc ? set.cyc[Math.floor(t / 110) % 6] : set[1 + (Math.floor(t / 150) % 2)];
   } else if (a.act === 'throw') im = personBattlePose(a.who, 'front', 'throw', clamp((now - a.actT) / 700, 0, 1));
+  /* IN-3: a Bureau clerk's stamp: raised, slammed down, held (skeleton-rig.js rigPose 'stamp'); a person throws */
+  else if (a.act === 'stamp') im = personBattlePose(a.who, 'front', 'stamp', clamp((now - a.actT) / 900, 0, 1));
   else if (a.act === 'cheer' || a.act === 'react') im = personBattlePose(a.who, 'front', a.act, 0, now - a.actT);
   else if (a.act === 'reach') {
     /* an arm held out the way they face: the throw's wind-up, held */
@@ -175,7 +178,7 @@ function cutscenePersonItem(a, t, C0, yaw = 0) {
   if (typeof figuresOn === 'function' && figuresOn() && figureFolk() && typeof a.who === 'string') {
     const act = a.walk
         ? 'walk'
-        : a.act === 'throw'
+        : a.act === 'throw' || a.act === 'stamp'
           ? 'throw'
           : a.act === 'cheer' || a.act === 'react'
             ? 'cheer'

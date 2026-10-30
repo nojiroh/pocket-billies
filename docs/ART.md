@@ -2,6 +2,14 @@
 
 Art rules for the fresh base; the legacy build's art log is ART-NOTES.md on the `legacy` branch.
 
+## The style (the owner, 2026-10-29)
+Professional, high-resolution, painterly pixel art. Models, props, vegetation and vehicles are painted at **48 px/m**
+(was 32; the terrain tiles stay at 32 px/m). The full rule is docs/phases/assets-track.md section 1.1: crisp nearest
+pixels, one density per object; forms painted by light (lit plane, mid, shadow, bounce) in pixel clusters, never
+noise or flat fills; hue-shifted ramps of 4-6 tones per material family (shadows cooler, lights warmer); selective,
+coloured outlines; read at phone size from silhouette and big light planes; organic shapes in nature (no cubes,
+spheres or straight rows); the solarpunk palette.
+
 ## Robots (phase 17, placeholder)
 
 `game/art/robots/` holds one picture per robot part and view (`<part>.png`, `<part>_back.png`; a torso's head as

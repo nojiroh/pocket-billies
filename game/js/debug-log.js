@@ -95,7 +95,9 @@ debugLog.mark = (label, t0, t1) => {
   M.push([t0, t1, label]);
   if (M.length > 600) M.splice(0, M.length - 600);
 };
-debugLog.blame = (t0, t1) => {
+/* TD-1: how long each marked job overlapped the span t0..t1 (ms by label; the uncovered rest as "outside the marked
+   steps" when it is most of it) */
+debugLog.blameBy = (t0, t1) => {
   const by = {},
     iv = [];
   for (const [a, b, l] of debugLog.marks) {
@@ -121,7 +123,11 @@ debugLog.blame = (t0, t1) => {
   if (ce > cs) cov += ce - cs;
   const rest = t1 - t0 - cov;
   if (rest > 150 && rest > (t1 - t0) * 0.5) by['outside the marked steps'] = rest;
-  const k = Object.keys(by).sort((x, y) => by[y] - by[x]);
+  return by;
+};
+debugLog.blame = (t0, t1) => {
+  const by = debugLog.blameBy(t0, t1),
+    k = Object.keys(by).sort((x, y) => by[y] - by[x]);
   return k.length
     ? k
         .slice(0, 2)
@@ -129,11 +135,14 @@ debugLog.blame = (t0, t1) => {
         .join(', ')
     : null;
 };
-debugLog.cause = (label, ms) => {
-  const c = debugLog.causes[label] || (debugLog.causes[label] = { n: 0, ms: 0, max: 0 });
+/* TD-1: a slow frame counts towards every cause it overlapped, by its share of the frame (share 0-1; ms: that share of
+   the frame's time; most: the cause's own time in that frame), not only towards the biggest one */
+debugLog.cause = (label, ms, share = 1, most = ms) => {
+  const c = debugLog.causes[label] || (debugLog.causes[label] = { n: 0, share: 0, ms: 0, max: 0 });
   c.n++;
+  c.share += share;
   c.ms += ms;
-  c.max = Math.max(c.max, ms);
+  c.max = Math.max(c.max, most);
 };
 /* section timings inside a frame (CPU side), averaged per second into the samples */
 debugLog.time = (sec, ms) => {
@@ -155,8 +164,11 @@ debugLog.task = (name, work, ts) => {
   if (work > 33) {
     a.long++;
     const t1 = performance.now(),
+      by = debugLog.blameBy(t1 - work - 2, t1 + 1),
+      sum = Object.values(by).reduce((x, y) => x + y, 0),
       why = debugLog.blame(t1 - work - 2, t1 + 1) || 'drawing';
-    debugLog.cause(why.replace(/ \d+ ms.*$/, ''), work);
+    if (!sum) debugLog.cause('drawing', work);
+    for (const l in by) debugLog.cause(l, (work * by[l]) / sum, by[l] / sum, Math.min(work, by[l]));
     const L = debugLog.slow;
     L.push({
       t: debugLog.now(),
@@ -210,11 +222,49 @@ debugLog.ctx = () => {
     if (typeof GAME.walkView !== 'undefined' && GAME.walkView.held) c.held = GAME.walkView.held;
     if (typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.on) {
       c.q = GAME.walkRenderer.qe || 0;
+      /* FL-3a: the frame controller (quality.controller): its CPU level, the half rate, the fence lag in frames and its
+         last step ({ t, act, lever, why }) */
+      if (GAME.walkRenderer.ctl) {
+        c.qc = GAME.walkRenderer.qc || 0;
+        c.half = GAME.frameScheduler && GAME.frameScheduler.half ? 1 : 0;
+        c.lag = GAME.walkRenderer.fenceLag ?? null;
+        if (GAME.walkRenderer.ctlLast) c.ctl = GAME.walkRenderer.ctlLast;
+      }
+      /* FL-3b: the resolution levels (quality.resSteps): the level drawn, the level waiting for a moment out of
+         sight (0: none), why the last change was taken, the canvas's size changes and the targets made again */
+      if (GAME.walkRenderer.resD != null) {
+        c.rd = GAME.walkRenderer.resD;
+        if (GAME.walkRenderer.resWait) c.rwait = GAME.walkRenderer.resWait;
+        if (GAME.walkRenderer.resWhy) c.rwhy = GAME.walkRenderer.resWhy;
+      }
+      if (GAME.walkRenderer.resizes) c.rsz = GAME.walkRenderer.resizes;
+      if (typeof GAME.gpuState !== 'undefined' && GAME.gpuState.fbRe && GAME.gpuState.fbRe.n)
+        c.fbre = GAME.gpuState.fbRe.n;
       if (GAME.walkRenderer.cullOf) c.cull = [GAME.walkRenderer.culled, GAME.walkRenderer.cullOf];
       if (GAME.walkRenderer.gridSkip) c.grid = GAME.walkRenderer.gridSkip;
       if (GAME.walkRenderer.shHit !== undefined || GAME.walkRenderer.shMiss !== undefined) {
         c.shc = [GAME.walkRenderer.shHit || 0, GAME.walkRenderer.shMiss || 0];
         GAME.walkRenderer.shHit = GAME.walkRenderer.shMiss = 0;
+      }
+      /* FL-4: far shadow maps used again unchanged (quality.shadowHold), grass strips sent and views planted ahead */
+      if (GAME.walkRenderer.shHeld) {
+        c.shh = GAME.walkRenderer.shHeld;
+        GAME.walkRenderer.shHeld = 0;
+      }
+      if (GAME.walkRenderer.grassStrips) {
+        c.gst = GAME.walkRenderer.grassStrips;
+        GAME.walkRenderer.grassStrips = 0;
+      }
+      if (GAME.walkRenderer.grassAheadDone) {
+        c.gah = GAME.walkRenderer.grassAheadDone;
+        GAME.walkRenderer.grassAheadDone = 0;
+      }
+      /* FL-5a: the draw order for tile GPUs (quality.drawOrder) on this frame, and the models it drew first */
+      if (GAME.walkRenderer.dOrder) c.dord = [1, GAME.walkRenderer.solidModels || 0];
+      /* FL-5a: frames that kept the old ground while the new one was built in slices (quality.groundSlice) */
+      if (GAME.walkRenderer.groundWaited) {
+        c.gwt = GAME.walkRenderer.groundWaited;
+        GAME.walkRenderer.groundWaited = 0;
       }
       /* phase 20: the point lights in the frame, and how many of them cast a shadow map */
       const X = GAME.walkRenderer.X;
@@ -251,9 +301,29 @@ debugLog.ctx = () => {
       if (b) c.gmb = Math.round(b / 1048576);
     }
     if (debugLog.bench && debugLog.bench.step) c.bench = debugLog.bench.step;
+    if (debugLog.loading()) c.ld = 1;
   } catch (e) {}
   return c;
 };
+/* TD-1: the page is loading rather than playing: a loading screen, a place not ready yet, or the place's grass, its
+   preparation or the ground painter's helper still at work (graphics-bench-test.js graphicsTestSettle waits for the
+   same). Its seconds are kept apart from play in summary() */
+debugLog.loading = () =>
+  !!(
+    document.getElementById('loader') ||
+    document.getElementById('runload') ||
+    (typeof GAME.walkView !== 'undefined' && GAME.walkView.id && !GAME.walkView.ready) ||
+    (typeof GAME.walkRenderer !== 'undefined' && (GAME.walkRenderer.prep || GAME.walkRenderer.grassJob)) ||
+    (typeof GAME.paintWorkerState !== 'undefined' && GAME.paintWorkerState && GAME.paintWorkerState.jobs.size)
+  );
+/* FL-1b (agreed with the test-data track, TD-1's check): getError is asked only during a test (the full test, the
+   Graphics cost test), with ?glerr and while the debug menu is open. Measured headless (software drawing) on 2026-10-29 it held the main
+   thread 0.66 s a second on average (2 s at worst): it waits for the frame the GPU is still drawing, and play never
+   needed the answer */
+debugLog.askGlError = () =>
+  !!(debugLog.bench && debugLog.bench.step) ||
+  /[?&]glerr\b/.test(location.search) ||
+  !!(typeof GAME.uiState !== 'undefined' && GAME.uiState.modal && GAME.uiState.modal.dbg);
 debugLog.flush = ts => {
   const dt = debugLog.secT ? ts - debugLog.secT : 1000;
   debugLog.secT = ts;
@@ -283,7 +353,29 @@ debugLog.flush = ts => {
     s.alloc = [debugLog.gc.n, Math.round(debugLog.gc.freed / 1048576)];
     debugLog.gc.n = debugLog.gc.freed = 0;
   }
+  /* TD-1: WebGL keeps its first error until someone asks, and play never asks: an error from any time before showed
+     up only when a test's check read it, blamed on that test. Asked once a second, an error is put to the second,
+     place and test step it happened in (a 'webgl' event) */
+  const gl = typeof GAME.gpuState !== 'undefined' ? GAME.gpuState.gl : null;
+  if (gl && !GAME.gpuState.lost && debugLog.askGlError()) {
+    /* FL-1b: what the once-a-second getError costs (it waits until the GPU's queue is worked through): `glErr` in
+       each sample that asked, ms */
+    const ge0 = performance.now();
+    const e = gl.getError();
+    s.glErr = Math.round((performance.now() - ge0) * 100) / 100;
+    /* an event, not an error: it can't say which call raised it, so it would fail whichever test step was running
+       (a CI run's Voltron step, 2026-10-29); a step notes it instead, and ?glerr names the call */
+    if (e)
+      debugLog.add(
+        'webgl',
+        `WebGL error ${e} in the last second at ${c.scene || c.view}${c.bench ? ' (' + c.bench + ')' : ''}`
+      );
+  }
   debugLog.samples.push(s);
+  if (ts - debugLog.crumbT >= 2000) {
+    debugLog.crumbT = ts;
+    debugLog.crumb();
+  }
   if (debugLog.samples.length > debugLog.max.samples)
     debugLog.samples.splice(0, debugLog.samples.length - debugLog.max.samples);
   /* LD-1 (the owner, 2026-10-27): no timed picture. Reading the picture back stalls the GPU and the JPEG is made on
@@ -343,7 +435,12 @@ debugLog.summary = (from = 0) => {
           : k === 'scene'
             ? 'battle'
             : 'map';
-      const e = g[key] || (g[key] = { sec: 0, fps: [], ms: [], long: 0, gl: s.gl, res: [] });
+      const e = g[key] || (g[key] = { sec: 0, load: 0, fps: [], ms: [], long: 0, gl: s.gl, res: [] });
+      /* TD-1: a second spent loading the place is counted apart, not averaged in with play */
+      if (k === 'dio' && s.ld) {
+        e.load++;
+        continue;
+      }
       e.sec++;
       e.fps.push(v.fps);
       e.ms.push(v.ms);
@@ -358,6 +455,7 @@ debugLog.summary = (from = 0) => {
       avg = a => (a.length ? Math.round((a.reduce((x, y) => x + y, 0) / a.length) * 10) / 10 : null);
     out[k] = {
       seconds: e.sec,
+      loadingSeconds: e.load,
       fpsAvg: avg(f),
       fpsWorst: f[0],
       fpsP10: f[Math.floor(f.length * 0.1)],
@@ -659,6 +757,80 @@ debugLog.state = () => {
   }
   return s;
 };
+/* TD-1: a crash breadcrumb. A page the browser kills (out of memory, a crashed graphics driver) leaves nothing in the
+   log, so every 2 s and at each test step a tiny numbers-only record is kept in localStorage: uptime, the place's id,
+   the test step, graphics memory (MB in all and by kind), the last second's frame rate, quality, resolution and the
+   refresh rate; never the save or a name. pagehide marks it clean. On the next boot a record without the clean mark,
+   written while the page was in view, is reported as previousPage (with how the page was opened: reload, navigate) */
+const CRUMB_KEY = 'pb-crumb';
+debugLog.crumbT = 0;
+debugLog.crumb = clean => {
+  /* the page is going: pagehide's (or the pretend kill's) record is the last; the "hidden" that follows writes none */
+  if (debugLog.crumbEnd) return;
+  try {
+    const W = typeof GAME.walkView !== 'undefined' ? GAME.walkView : null,
+      R = typeof GAME.walkRenderer !== 'undefined' ? GAME.walkRenderer : null,
+      L = debugLog.samples[debugLog.samples.length - 1],
+      kinds = {};
+    let gmb = 0;
+    if (typeof GAME.gpuMemory === 'function') {
+      for (const [k, v] of Object.entries(GAME.gpuMemory())) {
+        kinds[k] = Math.round(v.mb);
+        gmb += v.mb;
+      }
+    }
+    const c = {
+      up: Math.round(debugLog.now() / 1000),
+      at: Date.now(),
+      vis: document.hidden ? 0 : 1,
+      scene: (W && W.id) || null,
+      test: (debugLog.bench && debugLog.bench.step) || null,
+      gmb: Math.round(gmb),
+      kinds,
+      fps: L && L.tasks ? (L.tasks.dio || L.tasks.scene || L.tasks.map || {}).fps || null : null,
+      q: R && R.on ? R.qe || 0 : null,
+      res: W ? Math.round((W.R || 1) * 100) / 100 : null,
+      hz: typeof GAME.frameScheduler !== 'undefined' ? GAME.frameScheduler.hz || null : null,
+    };
+    if (clean) c.clean = 1;
+    localStorage.setItem(CRUMB_KEY, JSON.stringify(c));
+  } catch (e) {}
+};
+debugLog.previousPage = null;
+try {
+  const n = performance.getEntriesByType('navigation')[0],
+    p = JSON.parse(localStorage.getItem(CRUMB_KEY) || 'null');
+  debugLog.navigation = (n && n.type) || null;
+  if (p && typeof p === 'object') {
+    debugLog.previousPage = {
+      endedUnexpectedly: !p.clean && !!p.vis,
+      /* no clean mark, but last seen in the background: the phone may have closed it to free memory (that's normal) */
+      endedInBackground: !p.clean && !p.vis,
+      last: p,
+    };
+    if (debugLog.previousPage.endedUnexpectedly)
+      debugLog.add(
+        'page',
+        `the last page ended unexpectedly after ${p.up} s${p.test ? ' during ' + p.test : ''} (${debugLog.navigation || 'opened'})`
+      );
+  }
+} catch (e) {}
+debugLog.crumb();
+/* "pretend the page was killed" (the debug menu): reload without the clean mark, as a crash would */
+debugLog.pretendKilled = () => {
+  debugLog.crumb();
+  debugLog.crumbEnd = true;
+  location.reload();
+};
+addEventListener('pagehide', () => {
+  debugLog.crumb(true);
+  debugLog.crumbEnd = true;
+});
+/* back from the browser's page cache: the same page goes on */
+addEventListener('pageshow', e => {
+  if (e.persisted) debugLog.crumbEnd = false;
+});
+document.addEventListener('visibilitychange', () => debugLog.crumb());
 /* v30: more to go on: the hour and weather, every setting, the scene's contents, caches, memory, long tasks,
    how long frames take, and the GPU's extensions */
 debugLog.long = { n: 0, total: 0, max: 0, last: [] };
@@ -692,6 +864,20 @@ debugLog.stage = name => {
 addEventListener('DOMContentLoaded', () => debugLog.stage('page parsed'));
 addEventListener('load', () => debugLog.stage('page loaded'));
 debugLog.hitch = { frames: 0, n: 0, ms: 0, max: 0, by: { '36-50': 0, '50-100': 0, '100-250': 0, '250+': 0 }, list: [] };
+/* FL-1b: frames over the set rate's slot (the tick below) */
+debugLog.hitch.missed = 0;
+/* FL-1b: a frame missed at the set rate (a gap over the slot plus half a refresh: 25 ms at 60 on a 60 Hz screen, 21 on a
+   120 Hz one) is counted beside the hitches, whose 36 ms can't see a missed 60 fps frame; the slot is the set rate's
+   (frame-scheduler.js userFps) held to the screen's refresh */
+debugLog.slotMs = () => {
+  const S = typeof GAME.frameScheduler !== 'undefined' ? GAME.frameScheduler : null,
+    hz = (S && S.hz) || 60,
+    fps = typeof GAME.userFps === 'function' ? GAME.userFps() : 60;
+  /* with FL-1a's pacing: the slot as whole refreshes (60 on a 90 Hz screen: 2, 22.2 ms) and the half rate */
+  if (S && S.period && typeof GAME.paceSlot === 'function')
+    return GAME.paceSlot(fps, S.period, !!S.half) * S.period + S.period / 2;
+  return 1000 / Math.min(fps, hz) + 500 / hz;
+};
 /* Chrome's long animation frames name the scripts that held a frame (file and character position: the source map
    finds the function in the built bundle); matched to the hitches when the log is built */
 debugLog.loaf = [];
@@ -710,9 +896,127 @@ try {
         ]);
       debugLog.loaf.push([Math.round(e.startTime), Math.round(e.duration), Math.round(e.blockingDuration || 0), s]);
       if (debugLog.loaf.length > 80) debugLog.loaf.shift();
+      debugLog.uiFrame(e);
     }
   }).observe({ type: 'long-animation-frame', buffered: true });
 } catch (e) {}
+/* FL-6 (with TD-4): how the page answers a tap, and what the long frames spent on style, layout and painting.
+   Event Timing: each tap (one interaction: its pointerdown, pointerup and click) from the touch to the next paint
+   (rounded to 8 ms by the browser), split into the wait before its handlers, the handlers and the paint after them,
+   with the screen and what was tapped (its data-a, data-pref-set or data-p: names of controls, never save data).
+   Long animation frames (over 50 ms): the frame's rendering (from renderStart) and its style and layout (from
+   styleAndLayoutStart), which is where a whole-screen rebuild or a forced layout shows */
+debugLog.ui = {
+  taps: { n: 0, maxMs: 0, over100: 0, last: [] },
+  frames: { n: 0, renderMs: 0, styleMs: 0, maxStyleMs: 0 },
+};
+debugLog.tapWhat = '';
+document.addEventListener(
+  'pointerdown',
+  ev => {
+    const t = /** @type {any} */ (ev.target),
+      el = t && t.closest ? t.closest('[data-a],[data-pref-set],[data-p],[data-t]') : null,
+      d = el ? el.dataset : null;
+    debugLog.tapWhat = d ? String(d.a || (d.prefSet ? 'pref:' + d.prefSet : '') || d.p || d.t || '').slice(0, 24) : '';
+  },
+  { capture: true, passive: true }
+);
+/* every tap's own touch-to-paint (Event Timing reports only those over 16 ms): from the click to the first task
+   after the next frame's painting (an animation frame, then a task), with where it was and what */
+debugLog.ui.paint = { n: 0, maxMs: 0, sumMs: 0, last: [] };
+document.addEventListener(
+  'click',
+  ev => {
+    const t0 = ev.timeStamp,
+      where = debugLog.tapWhere(),
+      what = debugLog.tapWhat;
+    requestAnimationFrame(() =>
+      setTimeout(() => {
+        const P = debugLog.ui.paint,
+          ms = Math.round(performance.now() - t0);
+        P.n++;
+        P.sumMs += ms;
+        P.maxMs = Math.max(P.maxMs, ms);
+        P.last.push([Math.round(t0 - debugLog.t0), ms, where, what]);
+        if (P.last.length > 40) P.last.shift();
+      }, 0)
+    );
+  },
+  { capture: true, passive: true }
+);
+debugLog.tapWhere = () => {
+  const U = typeof GAME.uiState !== 'undefined' ? GAME.uiState : null,
+    M = U && U.modal;
+  if (typeof GAME.activeBattle !== 'undefined' && GAME.activeBattle) return 'battle';
+  if (M) return M.settings ? 'settings' : M.dbg ? 'debug menu' : 'window';
+  return U ? String(U.tab || '') : '';
+};
+debugLog.uiFrame = e => {
+  const F = debugLog.ui.frames,
+    end = e.startTime + e.duration,
+    r = e.renderStart ? end - e.renderStart : 0,
+    st = e.styleAndLayoutStart ? end - e.styleAndLayoutStart : 0;
+  F.n++;
+  F.renderMs += r;
+  F.styleMs += st;
+  F.maxStyleMs = Math.max(F.maxStyleMs, st);
+};
+try {
+  let lastId = 0;
+  new PerformanceObserver(l => {
+    const T = debugLog.ui.taps;
+    for (const e of /** @type {any[]} */ (l.getEntries())) {
+      if (!e.interactionId) continue;
+      const row = [
+        Math.round(e.startTime - debugLog.t0),
+        Math.round(e.duration),
+        e.name,
+        debugLog.tapWhere(),
+        debugLog.tapWhat,
+        Math.round(e.processingStart - e.startTime),
+        Math.round(e.processingEnd - e.processingStart),
+        Math.round(e.startTime + e.duration - e.processingEnd),
+      ];
+      /* one row per tap: its slowest event */
+      if (e.interactionId === lastId && T.last.length) {
+        if (row[1] > T.last[T.last.length - 1][1]) T.last[T.last.length - 1] = row;
+      } else {
+        lastId = e.interactionId;
+        T.n++;
+        T.last.push(row);
+        if (T.last.length > 40) T.last.shift();
+      }
+      T.maxMs = Math.max(T.maxMs, row[1]);
+      if (row[1] > 100) T.over100++;
+    }
+  }).observe(/** @type {any} */ ({ type: 'event', durationThreshold: 16, buffered: true }));
+} catch (e) {}
+debugLog.uiReport = () => {
+  const T = debugLog.ui.taps,
+    F = debugLog.ui.frames;
+  return {
+    taps: {
+      count: T.n,
+      maxMs: T.maxMs,
+      over100: T.over100,
+      /* [ms since the page started, touch to paint, event, screen, what, wait, handlers, paint after] */
+      last: T.last,
+    },
+    /* every tap: [ms since the page started, click to paint, screen, what] */
+    paint: {
+      count: debugLog.ui.paint.n,
+      meanMs: debugLog.ui.paint.n ? Math.round(debugLog.ui.paint.sumMs / debugLog.ui.paint.n) : 0,
+      maxMs: debugLog.ui.paint.maxMs,
+      last: debugLog.ui.paint.last,
+    },
+    longFrames: {
+      count: F.n,
+      renderMs: F.n ? Math.round(F.renderMs / F.n) : 0,
+      styleMs: F.n ? Math.round(F.styleMs / F.n) : 0,
+      maxStyleMs: Math.round(F.maxStyleMs),
+    },
+  };
+};
 (() => {
   const H = debugLog.hitch;
   let last = 0,
@@ -735,6 +1039,7 @@ try {
     requestAnimationFrame(tick);
     if (document.hidden) return void (last = 0);
     H.frames++;
+    if (last && ts - last > debugLog.slotMs()) H.missed++;
     if (!walkSeen && typeof GAME.walkRenderer !== 'undefined' && GAME.walkRenderer.frames > 0) {
       walkSeen = true;
       debugLog.stage('first walk frame');
@@ -766,7 +1071,7 @@ try {
 })();
 /* the boot's timeline for the log: the stages, the page's own timings and the network's (sizes only, no addresses) */
 debugLog.bootReport = () => {
-  const o = { stages: debugLog.boot };
+  const o = { stages: debugLog.boot, navigation: debugLog.navigation || null };
   try {
     const n = performance.getEntriesByType('navigation')[0];
     if (n)
@@ -800,6 +1105,9 @@ debugLog.hitchReport = () => {
     overMs: HITCH_MS,
     frames: H.frames,
     count: H.n,
+    /* FL-1b: frames over the set rate's slot plus half a refresh, and that line now */
+    missed: H.missed,
+    missedOverMs: Math.round(debugLog.slotMs() * 10) / 10,
     totalMs: Math.round(H.ms),
     maxMs: Math.round(H.max),
     by: H.by,
@@ -956,6 +1264,9 @@ debugLog.more = () => {
           contexts: GAME.gpuState.made || 0,
           /* H5: the programs compiled after a place had settled (pcl's names): each one a warm-up missed */
           lateCompiles: (GAME.gpuState.pclNames || []).slice(),
+          /* FL-5a: the programs' links, [waited ms, ms from start], by name (all of them: the draw order's variants
+             groundS, voxIS, mdlIS beside ground, voxI, mdlI) */
+          linkMs: GAME.gpuState.linkMs || {},
         }
       : null
   );
@@ -992,7 +1303,11 @@ debugLog.more = () => {
       Object.entries(debugLog.causes)
         .sort((a, b) => b[1].ms - a[1].ms)
         .slice(0, 16)
-        .map(([k, v]) => [k, { frames: v.n, totalMs: Math.round(v.ms), worstMs: Math.round(v.max) }])
+        .map(([k, v]) => [
+          k,
+          /* TD-1: frames it took part in, its share of them in frames, its share of their time, its most in one frame */
+          { frames: v.n, share: Math.round(v.share * 10) / 10, totalMs: Math.round(v.ms), worstMs: Math.round(v.max) },
+        ])
     )
   );
   t('slowFrames', () => debugLog.slow.slice(-30));
@@ -1034,6 +1349,10 @@ debugLog.build = () => ({
   /* LD-0: the boot's timeline and every frame held over 33 ms */
   boot: debugLog.bootReport(),
   hitches: debugLog.hitchReport(),
+  /* FL-6: taps (touch to paint) and the long frames' style and layout time */
+  ui: debugLog.uiReport(),
+  /* TD-1: the page before this one ended without its clean mark (see debugLog.crumb) */
+  previousPage: debugLog.previousPage,
   summary: debugLog.summary(),
   bench: (debugLog.bench && debugLog.bench.result) || null,
   errors: debugLog.err,
@@ -1196,7 +1515,8 @@ debugLog.hook = () => {
     timed(n, l);
   /* the renderer's own sections, timed every frame */
   for (const [n, l, m] of [
-    ['gatherFrameItems', 'items'],
+    /* TD-1: gathering and sorting the frame's items on the CPU, not drawing them */
+    ['gatherFrameItems', 'items', 'gathering frame items'],
     ['shadowPass', 'shadows'],
     ['drawSprites', 'sprites'],
     ['drawGrass', 'grass'],

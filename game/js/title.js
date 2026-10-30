@@ -20,11 +20,13 @@ import {
   closeModal,
   mapIdAt,
   modal,
+  newGameStart,
   render,
   showPendingWindows,
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { TEST_BOOT } from './test-boot.js';
+import { everyFree } from './free-tick.js';
 import { LOCATIONS, START_NODE, gameData } from './game-data.js';
 import { encountersHere } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
@@ -48,7 +50,7 @@ import { walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
 import { mountWalkView } from './walk-view-gl.js';
 import { music, musicFor } from './sound.js';
-import { cutsceneMapId, cutsceneStart, cutsceneStartName, cutsceneWanted } from './cutscene/opening.js';
+import { cutsceneMapId, cutsceneStartName, cutsceneWanted } from './cutscene/opening.js';
 /* eslint-disable no-func-assign */
 expose({
   TITLE_AUTO_MS: [() => TITLE_AUTO_MS],
@@ -295,11 +297,8 @@ function titleEnd() {
 function titleNew() {
   if (!saveData.started) {
     titleEnd();
-    if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
-    else {
-      uiState.openingFailed = 'cant';
-      render();
-    }
+    /* IN-5: the crash (cutscene/crash-scene.js), or the choice to skip it */
+    newGameStart();
     return;
   }
   modal({
@@ -322,11 +321,7 @@ function titleNew() {
           applyPreferences();
           closeModal();
           titleEnd();
-          if (typeof cutsceneWanted === 'function' && cutsceneWanted()) cutsceneStart();
-          else {
-            uiState.openingFailed = 'cant';
-            render();
-          }
+          newGameStart();
         },
       },
       { l: 'Keep playing this one', c: 'quiet', f: closeModal },
@@ -336,7 +331,7 @@ function titleNew() {
 /* play time: counted while the game is open and in view, and saved every minute (phase 08: walking saved it before) */
 let playTicks = 0,
   playSeenEncounters = 0;
-setInterval(() => {
+everyFree(() => {
   if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !uiState.title) {
     saveData.playMs = (saveData.playMs || 0) + 15000;
     if (++playTicks % 4 === 0) save();

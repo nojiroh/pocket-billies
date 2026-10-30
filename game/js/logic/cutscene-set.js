@@ -37,7 +37,7 @@ expose({
 export const CUTSCENE_YOU = 'you';
 export const CUTSCENE_DIRECTIONS = ['up', 'down', 'side', 'sideR'];
 /** the poses `act` plays (person-art.js battle poses) */
-export const CUTSCENE_POSES = ['throw', 'cheer', 'react', 'reach'];
+export const CUTSCENE_POSES = ['throw', 'cheer', 'react', 'reach', 'stamp'];
 /** `screen`: the look of the whole picture (css/cutscene.css): coming round after the fall, then clear */
 export const CUTSCENE_SCREENS = ['dazed', 'waking', 'clear'];
 /** `effect`: little things in the scene */

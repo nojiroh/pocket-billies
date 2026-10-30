@@ -165,3 +165,22 @@ test('HB-6: a tilt leans the top its own way by its own degrees', () => {
   near(Math.acos(b[1]), (2.5 * Math.PI) / 180, 'the two together: 2.5 degrees');
   near(Math.atan2(b[2], b[0]), Math.atan2(2, 1.5), 'toward their sum');
 });
+
+test("AS-1: a tipped model's picture layers tip with it (a climbing train's headlamp stays on its nose)", () => {
+  const at = { x: 10, y: 2, z: 30 },
+    nose = { x: 5, y: 1.3, z: 1.3 },
+    spin = fn('tiltSpin')([-20, 0]),
+    flat = fn('decalPlace')(at, nose, { s: 1, turn: 0 }),
+    up = fn('decalPlace')(at, nose, { s: 1, turn: 0, spin });
+  /* nose up 20 degrees (its top leans back): the nose rises and comes back a little along x; the depth stays */
+  near(up.y - at.y, 5 * Math.sin((20 * Math.PI) / 180) + 1.3 * Math.cos((20 * Math.PI) / 180));
+  near(up.x - at.x, 5 * Math.cos((20 * Math.PI) / 180) - 1.3 * Math.sin((20 * Math.PI) / 180));
+  near(up.z, flat.z);
+  /* no spin, or a zero one: as before */
+  assert.deepEqual(fn('decalPlace')(at, nose, { s: 1, turn: 0, spin: null }), flat);
+  assert.deepEqual(fn('spinPoint')(null, [1, 2, 3]), [1, 2, 3]);
+  /* the same turn as the shaders' voxSpin: up about -z goes toward +x */
+  const p = fn('spinPoint')({ a: [0, 0, -1], an: Math.PI / 2, c: [0, 0, 0] }, [0, 1, 0]);
+  near(p[0], 1);
+  near(p[1], 0);
+});

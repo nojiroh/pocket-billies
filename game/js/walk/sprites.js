@@ -7,6 +7,7 @@ import { expose } from '../test-globals.js';
 import { gameData, loadingScreen, provide, questMarked, reducedMotion, talkBox } from '../hooks.js';
 import { clamp } from '../util.js';
 import { pictureFacing, pictureRight } from '../logic/prop-turn.js';
+import { contactShade } from '../logic/contact-shade.js';
 import { hiddenEase, outlineColour } from '../logic/occlude.js';
 import { personPicture } from '../logic/person-view.js';
 import { pixelLightness } from '../logic/pixel-facts.js';
@@ -59,7 +60,6 @@ import { foliageAmount, setPropLookUniforms } from './prop-look.js';
 expose({
   BOX_INFO_CACHE: [() => BOX_INFO_CACHE],
   DOOR_INTEREST: [() => DOOR_INTEREST],
-  IMAGE_IDS: [() => IMAGE_IDS],
   OUTLINE_COLOURS: [() => OUTLINE_COLOURS],
   PICTURE_LIGHTNESS: [() => PICTURE_LIGHTNESS],
   REFLECTION_MATERIALS: [() => REFLECTION_MATERIALS],
@@ -73,7 +73,7 @@ expose({
   SPRITE_RUN: [() => SPRITE_RUN],
   addHitTarget: [() => addHitTarget, v => (addHitTarget = v)],
   boxInfo: [() => boxInfo, v => (boxInfo = v)],
-  byImageId: [() => byImageId],
+  byTexture: [() => byTexture],
   clearSpriteHit: [() => clearSpriteHit, v => (clearSpriteHit = v)],
   copySpriteLook: [() => copySpriteLook, v => (copySpriteLook = v)],
   drawBoxFaces: [() => drawBoxFaces, v => setDrawBoxFaces(v)],
@@ -82,17 +82,17 @@ expose({
   drawFoilRecord: [() => drawFoilRecord, v => (drawFoilRecord = v)],
   drawPlayerSilhouette: [() => drawPlayerSilhouette, v => setDrawPlayerSilhouette(v)],
   drawReflectionRuns: [() => drawReflectionRuns, v => ((drawReflectionRuns = v), provide({ drawReflectionRuns }))],
+  drawReflectionRunsIn: [() => drawReflectionRunsIn, v => (drawReflectionRunsIn = v)],
   drawRotatingBlades: [() => drawRotatingBlades, v => (drawRotatingBlades = v)],
   drawSpriteRuns: [() => drawSpriteRuns, v => (drawSpriteRuns = v)],
   drawSpriteWave: [() => drawSpriteWave, v => (drawSpriteWave = v)],
   drawSprites: [() => drawSprites, v => setDrawSprites(v)],
   easeHidden: [() => easeHidden, v => (easeHidden = v)],
+  firstInBatches: [() => firstInBatches, v => (firstInBatches = v)],
   flushSpriteRun: [() => flushSpriteRun, v => (flushSpriteRun = v)],
   groundTintOf: [() => groundTintOf, v => (groundTintOf = v)],
   hideQueriesLost: [() => hideQueriesLost, v => (hideQueriesLost = v)],
   hideQuery: [() => hideQuery],
-  imageId: [() => imageId, v => (imageId = v)],
-  imageIdCount: [() => imageIdCount, v => (imageIdCount = v)],
   interestPoints: [() => interestPoints, v => (interestPoints = v)],
   landmarkTilt: [() => landmarkTilt, v => (landmarkTilt = v)],
   newSpriteRecord: [() => newSpriteRecord, v => (newSpriteRecord = v)],
@@ -121,6 +121,8 @@ expose({
   spriteSideEffects: [() => spriteSideEffects, v => (spriteSideEffects = v)],
   startTownRise: [() => startTownRise, v => (startTownRise = v)],
   talkPartner: [() => talkPartner, v => (talkPartner = v)],
+  textureKey: [() => textureKey, v => (textureKey = v)],
+  textureKeyCount: [() => textureKeyCount, v => (textureKeyCount = v)],
   townRiseAmount: [() => townRiseAmount, v => (townRiseAmount = v)],
   useFxProgram: [() => useFxProgram, v => (useFxProgram = v)],
 });
@@ -139,15 +141,13 @@ export function setDrawSprites(v) {
   provide({ drawSprites });
 }
 /* to-module: end */
-const IMAGE_IDS = new WeakMap();
-let imageIdCount = 0;
-function imageId(im) {
-  let n = IMAGE_IDS.get(im);
-  if (n === undefined) {
-    n = ++imageIdCount;
-    IMAGE_IDS.set(im, n);
-  }
-  return n;
+/* FL-2a: a texture's place in the sort, given the first time it is sorted and kept on the texture's entry
+   (engine/webgl.js imageTexture), so pictures that share a texture (figures' cells of the live atlas) sort together */
+let textureKeyCount = 0;
+function textureKey(it) {
+  if (it.vox) return 0; /* a model draws no picture here: its picture is never uploaded for the sort */
+  const T = imageTexture(it.im);
+  return T ? T.sortKey || (T.sortKey = ++textureKeyCount) : 0;
 }
 /* alpha 0.4.1: the title's town springs up out of the loading screen (startTownRise from js/boot.js) */
 export function startTownRise(load) {
@@ -191,20 +191,24 @@ function townRiseAmount(it) {
 /* phase 20 C2: the sprite pass's list, kept from frame to frame (engine/frame-lists.js) */
 const SPRITE_LIST = [],
   spriteDrawn = it => !(it.flat || it.vol || it.vis === false),
-  byImageId = (a, b) => imageId(a.im) - imageId(b.im);
+  byTexture = (a, b) => a.texKey - b.texKey;
 /* phase 20 E1: the pictures the sprite pass draws, grouped by picture (v32: fewer texture switches; depth decides what
-   is in front, so order matters only where two pictures share a plane): imageId's first-seen order, then item order */
+   is in front, so order matters only where two pictures share a plane). FL-2a: by texture (textureKey's first-seen
+   order, then item order: the sort is stable), each item's key worked out once before the sort */
 function spriteDrawList(items) {
-  return filterInto(items, spriteDrawn, SPRITE_LIST).sort(byImageId);
+  return sortByPicture(filterInto(items, spriteDrawn, SPRITE_LIST));
 }
 /* a list of pictures in the same order (the reflection's) */
 function sortByPicture(L) {
-  return L.sort(byImageId);
+  for (let i = 0; i < L.length; i++) L[i].texKey = textureKey(L[i]);
+  return L.sort(byTexture);
 }
 /* phase 20 E1: what the pass works out once a frame: the camera, how much a crown shades itself and toward where (the
    sun across the picture), and how much a tree's crossing picture shows (by the camera's turn) */
-const SPRITE_FRAME = { C: null, selfK: 0, selfD: [0, 0], crossK: 0 };
-function spriteFrame(C, sun) {
+/* FL-2a: and the frame's contact-shadow patches and their dial (X.ao, X.contact: the shade at each picture's base,
+   logic/contact-shade.js; none without X) */
+const SPRITE_FRAME = { C: null, selfK: 0, selfD: [0, 0], crossK: 0, ao: null, contact: 0 };
+function spriteFrame(C, sun, X) {
   const F = SPRITE_FRAME,
     sd = sun.dir,
     sl = Math.hypot(sd[0] * C.right[0] + sd[2] * C.right[2], sd[1]) || 1,
@@ -214,6 +218,8 @@ function spriteFrame(C, sun) {
   F.selfD[1] = -sd[1] / sl;
   F.selfK = sd[1] > 0.05 && ss > 0 ? ss * engineSetting('shadows', 'strength') * Math.min(1, sd[1] * 4) : 0;
   F.crossK = Math.abs(Math.sin(C.yaw || 0));
+  F.ao = (X && X.ao) || null;
+  F.contact = (X && X.contact) || 0;
   return F;
 }
 /* alpha 0.4.1: how much a tree's crown shades itself (props over 1.2 m that are leaves, facing the camera, not far) */
@@ -223,13 +229,14 @@ function spriteSelfShade(it, F) {
     : 0;
 }
 /* phase 20 E3: the season on leaves, a crown's self-shade and noRecv for a picture drawn outside the pass (the
-   reflection's) */
+   reflection's); FL-2a: and its contact shade */
 function setSpriteShadeUniforms(U, it, F) {
   const gl = gpuState.gl,
     f = foliageAmount(it);
   if (U.uFol) gl.uniform2f(U.uFol, f[0], f[1]);
   if (U.uSelf) gl.uniform3f(U.uSelf, spriteSelfShade(it, F), F.selfD[0] * (it.flip || 1), F.selfD[1]);
   if (U.uNoRecv) gl.uniform1f(U.uNoRecv, it.noRecv ? 1 : 0);
+  if (U.uCAO) gl.uniform1f(U.uCAO, F.contact > 0 ? contactShade(F.ao, F.contact, it.x, it.z) : 1);
 }
 /* phase 20 E1: one picture's draw as values, the uniforms it is drawn with, in a record kept from frame to frame. mode:
    'model' (a model: no picture; its hit target and clock hands), 'front' (a 3D building's front, drawn with its walls),
@@ -275,6 +282,7 @@ function newSpriteRecord(cross) {
     inst: 0,
     cam: false,
     fig: 0,
+    cao: 1,
   };
 }
 const SPRITE_RECORDS = [];
@@ -328,6 +336,8 @@ function spriteRecord(it, F, r) {
   r.self[1] = F.selfD[0] * (it.flip || 1);
   r.self[2] = F.selfD[1];
   r.emit = it.glow ? it.glow * 1.6 : 0;
+  /* FL-2a: the contact shade at the base (was contactAO(uBaseP) in every pixel) */
+  r.cao = F.contact > 0 ? contactShade(F.ao, F.contact, it.x, it.z) : 1;
   /* VFX-9: a battle rig's hit flash ([r, g, b, amount], battle-3d.js), drawn on this program alone */
   r.hit = it.hit && it.hit[3] > 0.001 ? it.hit : null;
   /* CH-4: a figure's cell of the live atlas, lit where it stands (figure-atlas.js) */
@@ -377,6 +387,7 @@ function copySpriteLook(c, r) {
   c.self[1] = r.self[1];
   c.self[2] = r.self[2];
   c.emit = r.emit;
+  c.cao = r.cao;
   c.rim = r.rim;
   c.lit = r.lit;
   c.shade = r.shade;
@@ -404,6 +415,7 @@ function setSpriteRecord(p, r) {
   gl.uniform1f(U.uLit, r.lit);
   gl.uniform1f(U.uShade, r.shade);
   if (U.uFig) gl.uniform1f(U.uFig, r.fig);
+  if (U.uCAO) gl.uniform1f(U.uCAO, r.cao);
   gl.uniform3f(U.uBaseP, it.x, it.y, it.z);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, r.T.t);
@@ -482,7 +494,7 @@ function drawSpriteWave(p, r) {
    its tree, so the pictures are drawn in the order they always were. A flag (the sprite program's grid quad) and a
    picture with turning blades or clock hands (drawn right after it) end a run. If the program does not build on this
    device the pass keeps one draw a picture (the debug log says so). */
-const spriteInstanceState = { bad: null };
+export const spriteInstanceState = { bad: null, checked: null, gen: -1, passes: {} };
 /* is the instanced program on and built (built on first use if the precompile list did not start it) */
 function spriteInstancesReady() {
   if (!engineSetting('quality', 'spriteInstances')) return false;
@@ -498,6 +510,30 @@ function spriteInstancesReady() {
       return false;
     }
   return true;
+}
+/* FL-2a: the automatic fallback (the old path kept one release). Each pass's first draw in batches on a context (the
+   sprites, the reflection) is wrapped in getError: an error raised before it is logged apart, not blamed on it; one
+   raised by it turns batches off for this page (the debug log says so), and the next frame draws the old way */
+function firstInBatches(gl, pass, draw) {
+  const S = spriteInstanceState;
+  if (S.gen !== gpuState.gen || S.checked !== gl) {
+    S.checked = gl;
+    S.gen = gpuState.gen;
+    S.passes = {};
+  }
+  if (S.passes[pass]) return draw();
+  S.passes[pass] = true;
+  const before = gl.getError() || 0,
+    out = draw(),
+    e = gl.getError() || 0;
+  const log = typeof debugLog !== 'undefined' ? debugLog : null;
+  if (before && log) log.add('webgl', 'GL error ' + before + ' before the first ' + pass + ' in batches');
+  if (e) {
+    S.bad = gl;
+    console.error('pictures in batches (' + pass + '): GL error ' + e);
+    if (log) log.add('webgl', 'pictures in batches off: GL error ' + e + ' on the first ' + pass + ' in batches');
+  }
+  return out;
 }
 function spriteInstanceProgram(C, X, sh) {
   if (!spriteInstancesReady()) return null;
@@ -582,6 +618,11 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         if (r.dz) gl.uniform1f(p.U.uDZ, 0);
         clearSpriteHit(p, r);
+        /* FL-2a: a crossing tree keeps its crossing picture while it flashes or dithers, as on the plain path */
+        if (r.crossOn) {
+          setSpriteCrossRecord(p, r.cr);
+          gl.drawArrays(gl.TRIANGLES, 0, 6);
+        }
       }
     } else if (r.mode === 'quad') {
       if (R.n && R.T !== r.T) flushSpriteRun(ip);
@@ -600,8 +641,13 @@ function drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc) {
       drawSpriteWave(p, r);
     } else if (r.mode === 'model' && spriteHasParts(it)) flushSpriteRun(ip);
     gpuTag(tag);
-    /* blades and hands leave the sprite program in use */
-    if (spriteHasParts(it) && r.mode !== 'none' && r.mode !== 'front' && r.mode !== 'wave') R.on = false;
+    /* blades and hands are drawn on the fx program and leave the sprite program in use. FL-2a: the sprite program is
+       put in use before them, so the pass knows which program is bound even when none is drawn (no blade picture
+       yet, a model's blades, far hands) */
+    if (spriteHasParts(it) && (r.mode === 'quad' || r.mode === 'model')) {
+      if (R.on) gl.useProgram(p.p);
+      R.on = false;
+    }
     spriteSideEffects(p, r, C, X, hits, labels, PPU, sc);
   }
   flushSpriteRun(ip);
@@ -636,10 +682,10 @@ export function drawSprites(C, items, X, hits, labels, PPU) {
   gl.enable(gl.DEPTH_TEST);
   gl.depthMask(true);
   gl.disable(gl.BLEND);
-  const F = spriteFrame(C, sun),
+  const F = spriteFrame(C, sun, X),
     L = spriteDrawList(items),
     ip = spriteInstanceProgram(C, X, sh);
-  if (ip) drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc);
+  if (ip) firstInBatches(gl, 'sprites', () => drawSpriteRuns(p, ip, F, L, C, X, hits, labels, PPU, sc));
   else
     for (let i = 0; i < L.length; i++) {
       const it = L[i],
@@ -1167,8 +1213,9 @@ function drawFlatItem(fp, it, T) {
   gl.uniform4f(U.uUV, 0, 0, 1, 1);
   gl.uniform4f(U.uCol, 1, 1, 1, 1);
   gl.uniform1f(U.uGlow, 0);
-  gl.uniform1f(U.uLitFx, 1);
-  const gt = groundTintOf(it);
+  /* IN-3: a picture of light (emit: the Bureau's portal) keeps its own colours, unlit by the scene, day or night */
+  gl.uniform1f(U.uLitFx, it.emit ? 0 : 1);
+  const gt = it.emit ? 0 : groundTintOf(it);
   gl.uniform4f(U.uGTint, cx, cz, gt ? 1 : 0, gt);
   if (gt) {
     const sc = walkView.sc,
@@ -1293,6 +1340,9 @@ function reflectionRecord(it, F, C, r) {
   r.rim = 0;
   r.lit = 1;
   r.shade = 0.3;
+  /* FL-2a: a figure's cell of the live atlas is lit as one, as in the main pass */
+  r.fig = it.im && it.im.figAtlas ? 1 : 0;
+  r.cao = F.contact > 0 ? contactShade(F.ao, F.contact, it.x, it.z) : 1;
   spriteGeometry(r, it);
   r.dz = 0;
   r.wave = null;
@@ -1301,6 +1351,9 @@ function reflectionRecord(it, F, C, r) {
 /* the reflection's pictures (already in the main pass's order) on the mirrored camera RC; C is the frame's camera */
 function drawReflectionRuns(RC, C, X, pics, F) {
   if (!spriteInstancesReady()) return false;
+  return firstInBatches(gpuState.gl, 'reflection', () => drawReflectionRunsIn(RC, C, X, pics, F));
+}
+function drawReflectionRunsIn(RC, C, X, pics, F) {
   const gl = gpuState.gl,
     ip = useWalkProgram('spriteI', RC, X),
     U = ip.U,
