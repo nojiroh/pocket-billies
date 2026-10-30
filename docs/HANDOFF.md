@@ -72,7 +72,15 @@ No per-session tag (CLAUDE.md).
 - Risky:
   - Phone frame times not measured (software drawing here can't); the draw saving is counted, not timed.
   - The windmill kit and the bubble car are not on Copperleaf yet: only `test_landmarks` shows them.
-- Verified: VERIFIED_LINE
+- Verified: lint, typecheck, format:check, check:modules, check:data (195 files) and build clean; `npm test` 2,525 of
+  2,525 (after the merge; FL-2b's spin-merge test loosened to allow up to three ways of turning a model, BD-6's
+  Workshop and barn have two or three); smoke 7 of 7 (268 s); the unused-art check 0 unused (the three old flat
+  pictures deleted). The full quick check was not run (over an hour here, BD-2b's entry; no check-quick step reads
+  these models beyond those that ran). Pictures with look-hub-buildings.py on `test_landmarks` (noon, night, rows;
+  scratchpad, not committed): every model draws, no page errors; GENE BANK and WORKSHOP lettering show; the gears
+  turn between frames; at night the neon arch, helix beads, exhaust rings, silo porthole, canopy neon and the cars'
+  hover glow light up. Triangles (the game's mesher): Workshop 2.4k still + 0.8k turning, Gene Bank 4.7k + 1.7k,
+  lighthouse 2.4k, barn 2.3k, station 2.7k, windmills 0.6-1.5k + 0.1-0.6k, car 1.2k.
 - Next: wave 4 is done (BD-4a on `track/buildings`, BD-5 on `claude/bd-5-civic`, this). Wave 5: BD-7 (the town re-laid,
   with BD-4b) on `track/buildings`, started from this session; it merges this branch and `claude/bd-5-civic` first
   (scenery.json: rerun the builders, then `npm run data`; studio/art-code-refs.json: regenerate; check-data's
