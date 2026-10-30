@@ -121,7 +121,8 @@ Sessions act on these without asking again.
 - **Found, to fix in BD-7:**
   - Doors are written at 32 px/m (`round(m * 32)`) but read at ppu 34: about 6% short (the lab's door 1.94 m in the
     model, 1.82 m in the game; the shop 0.94 -> 0.88).
-  - tools/clear-windows.py ignores `rot`: most hub buildings are at rot 90, so it measures the wrong faces.
+  - tools/clear-windows.py ignores `rot`: most hub buildings are at rot 90, so it measures the wrong faces. Fixed by
+    BD-F (2026-10-29): windows, the cover test and the footprint test turn with the building; Copperleaf still clear.
   - The lighthouse and the station have no `door`: hub-doors skips them and the triangle test gives them 4k.
   - cottage_juniper has no `vary.size` and "cottage" is not in prop-look.js's building pattern: it gets a random
     +-6% size while its footprint stays fixed.
