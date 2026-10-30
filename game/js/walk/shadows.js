@@ -36,11 +36,14 @@ import {
 import { FIXED_RIGHT, walkRenderer } from './walk-state.js';
 import { standingHeightAt } from './heights.js';
 import { WALK_SHADERS } from './walk-shaders.js';
-import { spriteGeometry, worldCurveArgs } from './draw-common.js';
+import { spriteGeometry, worldCurveArgs, worldCurveDrop } from './draw-common.js';
+import { inFrustum } from './quality-cull.js';
 import { screenRay } from './camera.js';
 /* eslint-disable no-func-assign */
 expose({
   LAMP_SHADOWED: [() => LAMP_SHADOWED],
+  SHADOW_CELLS_NOW: [() => SHADOW_CELLS_NOW],
+  SHADOW_CELL_M: [() => SHADOW_CELL_M],
   SHADOW_INSTANCE_DECLS: [() => SHADOW_INSTANCE_DECLS],
   SHADOW_INSTANCE_IN: [() => SHADOW_INSTANCE_IN],
   SHADOW_INSTANCE_SHADERS: [() => SHADOW_INSTANCE_SHADERS],
@@ -48,7 +51,14 @@ expose({
   SHADOW_QUADS: [() => SHADOW_QUADS],
   drawShadowSprites: [() => drawShadowSprites, v => (drawShadowSprites = v)],
   drawShadowSpritesInstanced: [() => drawShadowSpritesInstanced, v => (drawShadowSpritesInstanced = v)],
+  farShadowCellHashes: [() => farShadowCellHashes, v => (farShadowCellHashes = v)],
+  farShadowCellOf: [() => farShadowCellOf],
+  farShadowCellsHold: [() => farShadowCellsHold, v => (farShadowCellsHold = v)],
+  farShadowHoldSignature: [() => farShadowHoldSignature, v => (farShadowHoldSignature = v)],
   fittedShadowPass: [() => fittedShadowPass, v => (fittedShadowPass = v)],
+  holdIdN: [() => holdIdN, v => (holdIdN = v)],
+  holdIds: [() => holdIds],
+  holdMix: [() => holdMix, v => (holdMix = v)],
   lampShadowMaps: [() => lampShadowMaps, v => (lampShadowMaps = v)],
   pickShadowLamps: [() => pickShadowLamps, v => (pickShadowLamps = v)],
   shadowCasterSignature: [() => shadowCasterSignature, v => (shadowCasterSignature = v)],
@@ -231,7 +241,6 @@ function fittedShadowPass(items0, sun, C) {
     it => Math.hypot(it.x - fit[0], it.z - fit[1]) < fit[2] + (it.w || 32) * (it.mpp || 0.03) + 4,
     SHADOW_LISTS.far
   );
-  const SH = beginSunShadow(fit[0], fit[1], fit[2], sun, res);
   const ca = worldCurveArgs(),
     curve = P => {
       gl.uniform3f(P.U.uCurve, ca[0], ca[1], ca[2]);
@@ -257,7 +266,10 @@ function fittedShadowPass(items0, sun, C) {
     spin = cache
       ? filterInto(stat, shadowSpinsOnly, SHADOW_LISTS.spin)
       : ((SHADOW_LISTS.spin.length = 0), SHADOW_LISTS.spin);
-  const q = v => Math.round(v * 500);
+  const q = v => Math.round(v * 500),
+    /* FL-4 (quality.shadowCells): the key holds what doesn't follow the view; which casters the map holds is checked
+       per grid cell below (farShadowCellsHold), so a cell leaving the view no longer draws the map again */
+    cells = cache && !!engineSetting('quality', 'shadowCells');
   const key = cache
     ? [
         fit.join(','),
@@ -266,8 +278,8 @@ function fittedShadowPass(items0, sun, C) {
         q(tr[2]),
         res,
         walkView.id,
-        stat.length,
-        stat.length ? stat[0].x + stat[stat.length - 1].z : 0,
+        cells ? 0 : stat.length,
+        cells || !stat.length ? 0 : stat[0].x + stat[stat.length - 1].z,
         walkRenderer.itemGen || 0,
         solid ? 1 : 0,
         walkRenderer.mesh && walkRenderer.mesh.n,
@@ -275,12 +287,34 @@ function fittedShadowPass(items0, sun, C) {
         sc.heights ? sc.heights.length : 0,
         typeof buildingsOn === 'function' && buildingsOn() ? 1 : 0,
         typeof buildingState !== 'undefined' ? buildingState.made || 0 : 0,
-        shadowCasterSignature(stat),
+        cells ? 'cells' : shadowCasterSignature(stat),
       ].join('|')
     : '';
+  const now = cells ? farShadowCellHashes(stat, SHADOW_CELLS_NOW) : null,
+    same =
+      cache &&
+      walkRenderer.shKey === key &&
+      !!gpuState.fb.shadowS &&
+      gpuState.fb.shadowS.w === res &&
+      (!cells || farShadowCellsHold(walkRenderer.shCells, now, sc));
+  /* FL-4 (quality.shadowHold): nothing in the map changed since the last frame drew it (the cache holds, and the same
+     casters, none of them a model or a turning part, stand as they stood): last frame's map is used again, no copy */
+  const hold = same && engineSetting('quality', 'shadowHold') ? farShadowHoldSignature(stat, dyn, spin, ca) : null;
+  if (
+    hold !== null &&
+    walkRenderer.shHold &&
+    walkRenderer.shHold.sig === hold &&
+    walkRenderer.shHold.SF === gpuState.fb.shadow
+  ) {
+    walkRenderer.shHeld = (walkRenderer.shHeld || 0) + 1;
+    return walkRenderer.shHold.SH;
+  }
+  const SH = beginSunShadow(fit[0], fit[1], fit[2], sun, res);
   const SF = gpuState.fb.shadow;
+  if (hold !== null) Object.assign(walkRenderer.shHold || (walkRenderer.shHold = {}), { sig: hold, SF, SH });
+  else walkRenderer.shHold = null;
   let hit = false;
-  if (cache && walkRenderer.shKey === key && gpuState.fb.shadowS && gpuState.fb.shadowS.w === res) {
+  if (same) {
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, gpuState.fb.shadowS.f);
     gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, SF.f);
     gl.blitFramebuffer(0, 0, res, res, 0, 0, res, res, gl.DEPTH_BUFFER_BIT, gl.NEAREST);
@@ -311,6 +345,8 @@ function fittedShadowPass(items0, sun, C) {
       gl.bindFramebuffer(gl.FRAMEBUFFER, SF.f);
       gl.viewport(0, 0, res, res);
       walkRenderer.shKey = miss ? '' : key;
+      walkRenderer.shCells = now ? Object.assign(new Map(now), { grid: now.grid, far: now.far }) : null;
+      if (miss) walkRenderer.shHold = null;
       walkRenderer.shMiss = (walkRenderer.shMiss || 0) + 1;
     }
   }
@@ -323,8 +359,83 @@ function fittedShadowPass(items0, sun, C) {
     }
   }
   if (typeof drawSolidPropShadows === 'function') drawSolidPropShadows(SH, items);
+  /* (a picture not loaded yet: the next frame draws again) */
+  if (miss) walkRenderer.shHold = null;
   endShadow();
   return SH;
+}
+/* ---------- FL-4: the far map's cache keyed by grid cells (quality.shadowCells) and held (quality.shadowHold) ----------
+   The frame's items come from the prop grid's 6 m cells in view (walk/frame-items.js), so the old key, a signature of
+   every still caster, changed whenever a cell came into view or left it. Now each cell in view keeps the signature of
+   its still casters: the cached map holds while every cell in view has the casters it had when the map was drawn (a
+   cell that left the view isn't asked; one that came in with still casters it didn't have, or a prop hidden by the hour
+   or a story flag, draws it again). The grid itself (props added, moved or gone) and the far props are in the check. */
+const SHADOW_CELL_M = 6; /* walk/prop-look.js propGrid's square */
+const SHADOW_CELLS_NOW = new Map();
+const farShadowCellOf = (x, z) =>
+  (Math.floor(x / SHADOW_CELL_M) + 2048) * 4096 + (Math.floor(z / SHADOW_CELL_M) + 2048);
+/* each cell's still casters this frame, as one number a cell (by the placement's square, as the grid sorts them) */
+function farShadowCellHashes(stat, out) {
+  out.clear();
+  for (const it of stat) {
+    const p = it.p || it,
+      c = farShadowCellOf(p.x, p.z);
+    let h = out.get(c) ?? 0x811c9dc5 | 0;
+    h = Math.imul(h ^ Math.round(it.x * 64), 0x01000193) | 0;
+    h = Math.imul(h ^ Math.round(it.z * 64), 0x01000193) | 0;
+    h = Math.imul(h ^ (it.vox ? 7 : 3), 0x01000193) | 0;
+    out.set(c, h);
+  }
+  out.grid = walkRenderer.pgrid || null;
+  out.far = walkRenderer.farProps || null;
+  return out;
+}
+/* every cell gathered this frame (the same test as walk/frame-items.js) has the casters it had when the map was drawn */
+function farShadowCellsHold(B, now, sc) {
+  if (!B || B.grid !== now.grid || B.far !== now.far || !now.grid || now.grid.sc !== sc) return false;
+  const F = (engineSetting('quality', 'cull') ?? true) ? walkRenderer.frustum : null;
+  for (const c of now.grid.cells) {
+    if (!c.list.length) continue;
+    if (F && !inFrustum(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r + 8)) continue;
+    const k = farShadowCellOf(c.list[0].x, c.list[0].z);
+    if ((B.get(k) ?? 0) !== (now.get(k) ?? 0)) return false;
+  }
+  return true;
+}
+/* the far map's whole picture this frame, as a number, or null when it can't be told (a model, a turning part,
+   a solid prop or a building moves or finishes inside its own draw): the still casters in order, and every field of each moving picture */
+const holdIds = new WeakMap();
+let holdIdN = 0;
+function holdMix(h, v) {
+  if (typeof v === 'number') return Math.imul(h ^ (Math.round(v * 1024) | 0), 0x01000193) | 0;
+  if (typeof v === 'boolean') return Math.imul(h ^ (v ? 1 : 2), 0x01000193) | 0;
+  if (typeof v === 'string') {
+    for (let i = 0; i < v.length; i++) h = Math.imul(h ^ v.charCodeAt(i), 0x01000193) | 0;
+    return h;
+  }
+  if (Array.isArray(v)) {
+    for (const x of v) h = typeof x === 'number' ? holdMix(h, x) : h;
+    return Math.imul(h ^ v.length, 0x01000193) | 0;
+  }
+  if (v && typeof v === 'object') {
+    let id = holdIds.get(v);
+    if (!id) holdIds.set(v, (id = ++holdIdN));
+    return Math.imul(h ^ id, 0x01000193) | 0;
+  }
+  return Math.imul(h ^ 3, 0x01000193) | 0;
+}
+function farShadowHoldSignature(stat, dyn, spin, ca) {
+  if (spin.length) return null;
+  let h = holdMix(0x811c9dc5 | 0, shadowCasterSignature(stat));
+  for (const v of ca) h = holdMix(h, v);
+  for (const it of dyn) {
+    if (it.vox || it.vol || (it.M && it.M.build)) return null;
+    for (const k in it) {
+      h = holdMix(h, k);
+      h = holdMix(h, it[k]);
+    }
+  }
+  return h;
 }
 /* ---------- phase 20 R3 (E9): the shadow pictures as instances (the only path since R4) ----------
    A shadow map keeps depth only (no colour, no blending, one depth offset for all, LEQUAL), so the order its pictures
