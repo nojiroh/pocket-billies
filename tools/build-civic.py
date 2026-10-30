@@ -62,7 +62,8 @@ DEG = math.pi / 180
 PPM = 32
 MODELS = 'scene/next/models'
 PICS = B1.ART / 'scene' / 'next' / 'hub'
-px = lambda m: round(m * PPM)
+px = lambda m: round(m * PPM)  # fx: the model's own pixels (walk/frame-items.js `mpp`)
+PPU = 34  # doors: the catalogue's pixels a metre (prop-turn.js propDoor; BD-7's fix of track section 3)
 
 # the old footprints and doors, kept (door x in picture pixels at 32 px/m, as batch 7 and batch 3 wrote them)
 KEEP = {'shop': ([3.8, 2.4], 0.94), 'inn': ([5.6, 3.4], 0.0), 'library': ([5.4, 3.4], 0.0), 'lab': ([6, 3], 1.94)}
@@ -622,7 +623,7 @@ def main():
         P = C[key]
         img, ox, oy = bake(key, T[key])
         P.update({'model': path, 'img': img, 'ox': ox, 'oy': oy, 'ppm': PPM, 'fx': M.fx(),
-                  'box': KEEP[key][0], 'door': {'x': px(KEEP[key][1]), 'y': 0},
+                  'box': KEEP[key][0], 'door': {'x': round(KEEP[key][1] * PPU), 'y': 0},
                   'vary': {'rot': 0, 'lean': 0, 'size': 0}})
         for f in ('build', 'layers', 'vol', 'volDepth', 'variants'):
             P.pop(f, None)

@@ -247,9 +247,11 @@ def cottage_solar_fx():
 # Professor Hazel's lab moved to tools/build-civic.py (buildings track BD-5); the showcase row still shows it.
 
 
+# doors in the catalogue's pixels (ppu 34, prop-turn.js propDoor; BD-7: they were the model's 32, 6% short): the moss
+# cottage's door 0.69 m left of the middle, the solar's 0.75 m right
 BUILDINGS = {
-    'cottage_moss': (cottage_moss_recipe, cottage_moss_fx, {'x': -22, 'y': 0}),
-    'cottage_solar': (cottage_solar_recipe, cottage_solar_fx, {'x': 24, 'y': 0}),
+    'cottage_moss': (cottage_moss_recipe, cottage_moss_fx, {'x': -23, 'y': 0}),
+    'cottage_solar': (cottage_solar_recipe, cottage_solar_fx, {'x': 26, 'y': 0}),
 }
 
 

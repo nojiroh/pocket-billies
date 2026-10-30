@@ -15,7 +15,7 @@ const S = JSON.parse(fs.readFileSync(new URL('../../game/data/scenery.json', imp
 const CIVIC = {
   shop: {
     box: [3.8, 2.4],
-    door: 30,
+    door: 32,
     parts: [
       'round corner',
       'speed line',
@@ -38,7 +38,7 @@ const CIVIC = {
   },
   lab: {
     box: [6, 3],
-    door: 62,
+    door: 66,
     parts: [
       'observatory dome',
       'dome slit',

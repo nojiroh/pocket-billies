@@ -189,8 +189,8 @@ def workshop():
           LP.neon((-1.65, 0.25, 1.75), (-1.2, 0.25, 2.3), LP.NEON_T, 0.05, 'pneumatic tube')]
     # no bulge: a bulge moves the walls out from under the name board's decal (picture layers don't follow the warp)
     rec = LP.recipe(L, LP.lean_warp(L, 3.5, sag=0.06), about='BD-6: the Workshop, a quonset hut')
-    fx = [{'k': 'window', 'x': LP.px(1.3), 'y': -LP.px(1.62)}, {'k': 'glow', 'x': LP.px(0.42), 'y': -LP.px(1.9)},
-          {'k': 'smoke', 'x': LP.px(px_ + 0.2), 'y': -LP.px(4.05)}]
+    fx = [{'k': 'window', 'x': LP.fxpx(1.3), 'y': -LP.fxpx(1.62)}, {'k': 'glow', 'x': LP.fxpx(0.42), 'y': -LP.fxpx(1.9)},
+          {'k': 'smoke', 'x': LP.fxpx(px_ + 0.2), 'y': -LP.fxpx(4.05)}]
     return rec, fx, [W, D], dx
 
 
@@ -279,8 +279,8 @@ def gene_bank():
         potted(L, x, -0.3, MINT_D)
     # no bulge (the vault is round already): it would move the marquee out over its lettering's decal
     rec = LP.recipe(L, LP.lean_warp(L, 2.0, side=(1, 0.05)), about='BD-6: the Gene Bank, rounder')
-    fx = [{'k': 'window', 'x': LP.px(2.13 * math.cos(a * DEG)), 'y': -LP.px(2.2)} for a in (-20, 200)]
-    fx += [{'k': 'glow', 'x': LP.px(x), 'y': -LP.px(1.9)} for x in (-0.78, 0.78)]
+    fx = [{'k': 'window', 'x': LP.fxpx(2.13 * math.cos(a * DEG)), 'y': -LP.fxpx(2.2)} for a in (-20, 200)]
+    fx += [{'k': 'glow', 'x': LP.fxpx(x), 'y': -LP.fxpx(1.9)} for x in (-0.78, 0.78)]
     return rec, fx, [W, D], 0
 
 
@@ -341,7 +341,7 @@ def lighthouse():
           LP.sphere(0, cy, cz + 1.4, 0.12, LP.BRASS, 'metal', sides=8, rings=4, name='nose tip')]
     L += LP.antenna(0, cy, cz + 1.6, 0.8)
     rec = LP.recipe(L, LP.lean_warp(L, 1.5, bulge=0.02, side=(-1, 0.1)), about='BD-6: the lighthouse, a finned rocket')
-    fx = [{'k': 'glow', 'x': 0, 'y': -LP.px(lz + 0.95)}]
+    fx = [{'k': 'glow', 'x': 0, 'y': -LP.fxpx(lz + 0.95)}]
     return rec, fx, [3.6, 3.6], 0
 
 

@@ -174,8 +174,8 @@ def barn():
     L += LPm.flower_box(bx + 1.75, fy - 0.12, 0.0, 0.9, ['#E85A6A', '#F4E04A'])
     B3.path_stones(L, bx, fy, 3)
     rec = LPm.recipe(L, LPm.lean_warp(L, 4.0, sag=0.1, bulge=0.04, side=(-1, 0.12)), about='BD-6: the barn')
-    fx = [{'k': 'window', 'x': LPm.px(sx_ + 0.15), 'y': -LPm.px(4.9)}, {'k': 'window', 'x': LPm.px(bx), 'y': -LPm.px(lz + 0.4)},
-          {'k': 'glow', 'x': LPm.px(bx + dw / 2 + 0.3), 'y': -LPm.px(2.25)}]
+    fx = [{'k': 'window', 'x': LPm.fxpx(sx_ + 0.15), 'y': -LPm.fxpx(4.9)}, {'k': 'window', 'x': LPm.fxpx(bx), 'y': -LPm.fxpx(lz + 0.4)},
+          {'k': 'glow', 'x': LPm.fxpx(bx + dw / 2 + 0.3), 'y': -LPm.fxpx(2.25)}]
     return rec, fx, bx
 
 

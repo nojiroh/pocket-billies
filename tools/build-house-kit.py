@@ -127,7 +127,13 @@ BUSHES = ['bush_round', 'bush_flower', 'bush_roses', 'bush_box', 'flowers_mixed'
 
 
 def px(m):
+    """a door's x in the catalogue's pixels (ppu 34, prop-turn.js propDoor)"""
     return round(m * PPU)
+
+
+def fxpx(m):
+    """an fx point in the model's own pixels: fx are read at the kind's ppm, 32 (walk/frame-items.js `mpp`)"""
+    return round(m * 32)
 
 
 def ccw(pts):
@@ -1174,10 +1180,10 @@ class House:
     def fx(s):
         """night effects in picture pixels at the catalogue's ppu, moved by the lean at their height"""
         sh = lambda x, z: x + s.lean[0] * min(1.0, z / s.top)
-        out = [{'k': 'window', 'x': px(sh(x, z)), 'y': -px(z)} for x, z in s.wins[:6]]
-        out += [{'k': 'glow', 'x': px(sh(x, z)), 'y': -px(z)} for x, z in s.glows]
+        out = [{'k': 'window', 'x': fxpx(sh(x, z)), 'y': -fxpx(z)} for x, z in s.wins[:6]]
+        out += [{'k': 'glow', 'x': fxpx(sh(x, z)), 'y': -fxpx(z)} for x, z in s.glows]
         if s.smoke:
-            out.append({'k': 'smoke', 'x': px(sh(*s.smoke)), 'y': -px(s.smoke[1])})
+            out.append({'k': 'smoke', 'x': fxpx(sh(*s.smoke)), 'y': -fxpx(s.smoke[1])})
         return out
 
     def garden(s):

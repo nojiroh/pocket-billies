@@ -30,11 +30,18 @@ GLASS, STONE, LEAF, LEAF2, MOSS = SK.GLASS, SK.STONE, SK.LEAF, SK.LEAF2, SK.MOSS
 NEON_T, NEON_P, NEON_A = SK.NEON_T, SK.NEON_P, SK.NEON_A
 IRON, STEEL, CHROME, MINT = '#3E3E4A', '#8C8C98', '#DCE2EC', '#9AD8C0'
 DEG = math.pi / 180
-PPU = 34  # the catalogue's picture pixels a metre (scenery.json ppu): doors and fx are read at it (track section 3)
+PPU = 34  # the catalogue's picture pixels a metre (scenery.json ppu): doors are read at it (prop-turn.js propDoor)
+FX_PPM = 32  # fx (windows, glows, smoke) are read at the kind's own ppm (walk/frame-items.js `mpp`), 32 for models
 
 
 def px(m):
+    """a door's x in the catalogue's pixels"""
     return round(m * PPU)
+
+
+def fxpx(m):
+    """an fx point in the model's own pixels (BD-7: not the catalogue's, see FX_PPM)"""
+    return round(m * FX_PPM)
 
 
 def top_of(L):

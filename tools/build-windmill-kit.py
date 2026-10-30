@@ -376,7 +376,7 @@ def fx_of(rec):
     G = [l for l in rec['layers'] if l.get('glass')]
     if not G: return []
     g = min(G, key=lambda l: l.get('z', 0))
-    return [{'k': 'window', 'x': LP.px(g.get('x', 0)), 'y': -LP.px(g.get('z', 0) + 0.2)}]
+    return [{'k': 'window', 'x': LP.fxpx(g.get('x', 0)), 'y': -LP.fxpx(g.get('z', 0) + 0.2)}]
 
 
 def catalogue(C, ISL, B1):
