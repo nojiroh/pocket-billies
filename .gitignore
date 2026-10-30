@@ -75,3 +75,4 @@ validation/terrain-look/
 validation/load/
 validation/perf/
 validation/look-talk*/
+validation/check-draw-order/
