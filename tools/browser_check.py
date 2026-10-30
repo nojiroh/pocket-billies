@@ -155,6 +155,13 @@ def go_scene(pg, node, sec=40, slow=None):
     f0 = pg.evaluate("typeof walkRenderer!=='undefined'&&walkRenderer.on?walkRenderer.frames:-1")
     t0 = pg.evaluate("typeof debugLog!=='undefined'?debugLog.now():0")
     if f0 < 0 or until(pg, f'walkRenderer.frames>={f0 + 2}', 30): return
+    # FL-3b: behind a window or a screen the world is frozen (a cap of 0: no frame at all, FL-6's answer); a window that
+    # came up on the way (a message on arrival) is cleared as the fixtures' set-up does, and said so
+    held = pg.evaluate("typeof walkView!=='undefined'&&walkView.held?[walkView.held,String((uiState.modal&&(uiState.modal.title||uiState.modal.id))||'')]:null")
+    if held:
+        (slow or log)(f'{pg.evaluate("walkView.id")}: the world was frozen behind a {held[0]} ({held[1][:60]}) after the jump; cleared')
+        pg.evaluate("uiState.toastQ=[];uiState.toastOn=false;uiState.modal=null;uiState.mq=[];uiState.tab='walk';renderOverlay();render();0")
+        if until(pg, f'walkRenderer.frames>={f0 + 2}', 30): return
     # one frame can hold the page for 20 s or more in software: the debug log's picture once a minute (screenSnapshot)
     # waits for the drawing to finish, and that grows over a long run. While the draw loop is still running, wait
     # longer and say so (slow: where the note goes, the check's notes; the log otherwise)
@@ -162,5 +169,5 @@ def go_scene(pg, node, sec=40, slow=None):
     if pg.evaluate(alive) and until(pg, f'walkRenderer.frames>={f0 + 2}||!{alive}', 60) and pg.evaluate(alive):
         why = pg.evaluate(f"(debugLog.slow.filter(s=>s.t>={t0}).sort((a,b)=>b.ms-a.ms)[0]||{{why:'?'}}).why")   # the slowest frame meanwhile
         (slow or log)(f'{pg.evaluate("walkView.id")}: 2 frames took over 30 s (slowest frame: {why[:80]})'); return
-    kind = 'stopped drawing: its draw loop is gone (black screen)' if not pg.evaluate(alive) else 'drew fewer than 2 frames in 90 s'
+    kind = 'stopped drawing: its draw loop is gone (black screen)' if not pg.evaluate(alive) else 'drew fewer than 2 frames in 90 s' + (f" (held: {pg.evaluate('walkView.held')})" if pg.evaluate("!!walkView.held") else '')
     raise Exception(f'{pg.evaluate("walkView.id")} {kind}')

@@ -194,7 +194,9 @@
     "test_people",
     "test_intro_art",
     "test_shapes",
-    "test_look_sketches"
+    "test_look_sketches",
+    "test_house_kit",
+    "test_halt"
    ]
   },
   "cutscenes": {"ids":["opening","city","return","crash"]}

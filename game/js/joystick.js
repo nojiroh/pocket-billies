@@ -12,6 +12,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { routeSight } from './hooks.js';
+import { everyFree } from './free-tick.js';
 import { activeBattle, saveData, uiState } from './game-state.js';
 import { walkView } from './walk-view.js';
 import { walkRenderer } from './walk/walk-state.js';
@@ -224,7 +225,7 @@ function joystickDpad() {
     });
   return e;
 }
-setInterval(() => {
+everyFree(() => {
   const show = joystickPreference() === 'dpad' && joystickAllowed();
   if (show || joystick.pad) {
     const e = joystickDpad();

@@ -1,6 +1,6 @@
 // Phase 20 R3 (shadows lane, F8): models in the shadow cache (the only path since R4): the far sun map's cache holds
 // the models whose mesh holds still (a tree whose leaves sway among them), never one that bobs, tumbles, turns a part
-// or moves; pictures as before; the cache key changes with which items it holds. No graphics.
+// or moves (FL-2b: a model that only turns a part has its body cached, the part drawn each frame); pictures as before; the cache key changes with which items it holds. No graphics.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { shadowSetup, withOldShadowSprites } from './shadow-fixture.mjs';
@@ -53,13 +53,16 @@ function lists() {
   return {
     stat: G.SHADOW_LISTS.stat.map(it => it.id),
     dyn: G.SHADOW_LISTS.dyn.map(it => it.id),
+    spin: G.SHADOW_LISTS.spin.map(it => it.id),
     key: walkRenderer.shKey,
   };
 }
 test('still meshes cached (swaying leaves or not), moving models drawn each frame, pictures as before', () => {
   const L = lists();
-  assert.deepEqual(L.stat, ['oak', 'swayingOak', 'rock']);
-  assert.deepEqual(L.dyn, ['mill', 'airship', 'boat', 'pyramid', 'cart', 'loading', 'grass', 'cloud', 'man']);
+  /* FL-2b: the mill holds still but for its sails: its body in the cache, the sails drawn each frame */
+  assert.deepEqual(L.stat, ['oak', 'swayingOak', 'mill', 'rock']);
+  assert.deepEqual(L.dyn, ['airship', 'boat', 'pyramid', 'cart', 'loading', 'grass', 'cloud', 'man']);
+  assert.deepEqual(L.spin, ['mill']);
 });
 test('the casters’ signature: the same items the same, a model loaded, an item moved, added or gone a new one', () => {
   const sig = G.shadowCasterSignature,
@@ -128,6 +131,7 @@ function farLists(on) {
   return {
     stat: G.SHADOW_LISTS.stat.map(it => it.id),
     dyn: G.SHADOW_LISTS.dyn.map(it => it.id),
+    spin: G.SHADOW_LISTS.spin.map(it => it.id),
     key: walkRenderer.shKey,
   };
 }
@@ -191,4 +195,38 @@ test('a model’s leaf pictures at rest when the model stands still, none when i
       [0.03, undefined],
     ]
   );
+});
+test('FL-2b: a placement’s leaf items are kept from frame to frame and filled in as new ones would be', () => {
+  G.artImage = () => ({ width: 16, height: 16 });
+  const p = { s: 1, x: 1, z: 1 },
+    rec = {
+      layers: [
+        { k: 'img', img: 'leaf.png', x: 0, y: 2, z: 0, sway: 0.5, shadow: 1 },
+        { k: 'box', w: 1, d: 1, h: 1 },
+        { k: 'img', img: 'leaf2.png', x: 1, y: 3, z: 0, glow: 0.4, front: 0.2 },
+      ],
+    },
+    model = o => ({ k: 'prop', x: 1, y: 0, z: 1, p, M: {}, flip: 1, shear: 0.06, vox: rec, ...o }),
+    fresh = o => {
+      const out = [];
+      G.propModelImageItems(model(o), out);
+      return out;
+    };
+  const a = fresh({ rest: 0.01 });
+  assert.equal(a.length, 2);
+  const shape = Object.keys(a[0]).join();
+  /* what other passes write on an item this frame */
+  Object.assign(a[0], { vis: false, fade: 0.3, cut: 2, slope: 0.1, tilt: 0.2, winL: [1], texKey: 9 });
+  const snap = JSON.stringify(fresh({ shear: -0.04, y: 2 }));
+  const b = fresh({ shear: -0.04, y: 2 });
+  assert.equal(b[0], a[0], 'the same object again');
+  assert.equal(b[1], a[1]);
+  assert.equal(b[0].shear, -0.02);
+  for (const k of ['vis', 'fade', 'cut', 'slope', 'tilt', 'winL', 'texKey']) assert.equal(b[0][k], undefined, k);
+  assert.equal(JSON.stringify(b), snap);
+  /* as a new placement's would be (the same keys, the same values) */
+  const c = [];
+  G.propModelImageItems({ ...model({ shear: -0.04, y: 2 }), p: { ...p } }, c);
+  assert.equal(JSON.stringify(c), snap);
+  assert.equal(Object.keys(c[0]).join(), shape);
 });

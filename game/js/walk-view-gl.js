@@ -24,6 +24,7 @@ import {
   lifeStep,
   noWebGL,
   propModelShaders,
+  propModelSolidShaders,
   propModelState,
   provide,
   runWaterWeatherSync,
@@ -38,8 +39,9 @@ import {
 import { personPicture } from './logic/person-view.js';
 import { focusAim, focusPlane, leanStep } from './logic/lens-focus.js';
 import { FOG_MARCH_STEPS, fogGridBox, fogMarchOn } from './logic/fog-grid.js';
+import { RES_LEVELS, resApply, resDrawLevel, worldSteps } from './logic/frame-control.js';
 import { gpuCountSummary, gpuPass } from './engine/gpu-counters.js';
-import { frameCount, frameTask, userFps } from './frame-scheduler.js';
+import { frameCount, frameScheduler, frameTask, userFps } from './frame-scheduler.js';
 import {
   drawBubble,
   drawExitLabels,
@@ -98,7 +100,7 @@ import { POST_EFFECT_SHADERS, drawPostEffects, screenSnapshot, sunScreenPosition
 import { environment, environmentFrame } from './environment.js';
 import { PREP_BUDGET_MS, walkRenderer } from './walk/walk-state.js';
 import { standingHeightAt } from './walk/heights.js';
-import { SPRITE_INSTANCE_SHADERS, WALK_SHADERS } from './walk/walk-shaders.js';
+import { SPRITE_INSTANCE_SHADERS, WALK_SHADERS, groundSolidShaders } from './walk/walk-shaders.js';
 import { worldCurveDrop } from './walk/draw-common.js';
 import { groundOcclusionWork } from './walk/ground-textures.js';
 import { buildFarProps, buildGrass, grassWork } from './walk/grass-build.js';
@@ -133,6 +135,7 @@ import { SHADOW_INSTANCE_SHADERS, lampShadowMaps, shadowPass } from './walk/shad
 import { drawGrass, drawGround } from './walk/ground-draw.js';
 import { gatherFountainBasins } from './walk/fountains-weather.js';
 import { RIBBON_SHADERS, WEATHER_FX_SHADERS, effectsPass, ribbonPass } from './walk/effects.js';
+import { plumePass } from './walk/plume.js';
 import { BATTLE_FX_SHADERS } from './walk/battle-fx.js';
 import { BATTLE_SCAR_SHADERS } from './walk/battle-scars.js';
 import { drawFogGridBlocks, fogGridFrame, fogGridState, fogMarchNote } from './walk/fog-grid.js';
@@ -140,21 +143,30 @@ import { bindGestures, handleCanvasClick } from './walk/input.js';
 /* eslint-disable no-func-assign */
 expose({
   GROUND_SLICE_MS: [() => GROUND_SLICE_MS],
+  GROUND_WAIT_MS: [() => GROUND_WAIT_MS],
+  INK_CALLS: [() => INK_CALLS],
   PHONE: [() => PHONE],
   baseStopWalkView: [() => baseStopWalkView],
+  canvasBox: [() => canvasBox],
+  canvasCssSize: [() => canvasCssSize, v => (canvasCssSize = v)],
   canvasForContext: [() => canvasForContext, v => (canvasForContext = v)],
+  countInk: [() => countInk, v => (countInk = v)],
   drawWalkFrame: [() => drawWalkFrame, v => (drawWalkFrame = v)],
   drawWalkFrameInner: [() => drawWalkFrameInner, v => (drawWalkFrameInner = v)],
   dropWalkGpuCaches: [() => dropWalkGpuCaches, v => (dropWalkGpuCaches = v)],
   ensureWalkGl: [() => ensureWalkGl, v => (ensureWalkGl = v)],
   groundBuiltBeforeShow: [() => groundBuiltBeforeShow, v => (groundBuiltBeforeShow = v)],
+  groundWaits: [() => groundWaits, v => (groundWaits = v)],
   impactOnScreen: [() => impactOnScreen, v => (impactOnScreen = v)],
   labelLayer: [() => labelLayer, v => (labelLayer = v)],
   litSunScreenPosition: [() => litSunScreenPosition, v => (litSunScreenPosition = v)],
   mountWalkView: [() => mountWalkView, v => setMountWalkView(v)],
   onGlContextRestored: [() => onGlContextRestored, v => ((onGlContextRestored = v), provide({ onGlContextRestored }))],
+  oneOffMs: [() => oneOffMs, v => (oneOffMs = v)],
   peopleReport: [() => peopleReport, v => (peopleReport = v)],
   phoneStarted: [() => phoneStarted, v => (phoneStarted = v)],
+  precompileDrawOrder: [() => precompileDrawOrder, v => (precompileDrawOrder = v)],
+  resolutionDrawn: [() => resolutionDrawn, v => (resolutionDrawn = v)],
   screenToGround2d: [() => screenToGround2d],
   setMountWalkView: [() => setMountWalkView, v => (setMountWalkView = v)],
   walkViewGpuLost: [() => walkViewGpuLost, v => (walkViewGpuLost = v)],
@@ -191,6 +203,43 @@ function labelLayer(cv) {
   if (u.previousElementSibling !== cv) cv.after(u);
   u.hidden = false;
   return u;
+}
+/* FL-1b: the label layer's drawing calls counted on its context, so a frame that drew nothing there (and whose last
+   frame drew nothing) skips the full-screen clear */
+const INK_CALLS = ['fill', 'stroke', 'fillRect', 'strokeRect', 'fillText', 'strokeText', 'drawImage', 'putImageData'];
+function countInk(x) {
+  if (x._ink !== undefined) return;
+  x._ink = 0;
+  for (const k of INK_CALLS) {
+    const f = x[k];
+    if (typeof f !== 'function') continue;
+    x[k] = (...a) => {
+      x._ink++;
+      return f.apply(x, a);
+    };
+  }
+}
+/* FL-1b: the canvas's CSS size from a ResizeObserver (read in its callback, where layout is already done), not
+   cv.clientWidth in every frame; before its first answer, and without one, the old read */
+const canvasBox = { cv: null, ro: null, w: 0, h: 0 };
+function canvasCssSize(cv) {
+  if (typeof ResizeObserver === 'undefined') return [cv.clientWidth, cv.clientHeight];
+  if (canvasBox.cv !== cv) {
+    if (!canvasBox.ro)
+      canvasBox.ro = new ResizeObserver(es => {
+        for (const e of es)
+          if (e.target === canvasBox.cv) {
+            canvasBox.w = canvasBox.cv.clientWidth;
+            canvasBox.h = canvasBox.cv.clientHeight;
+          }
+      });
+    else canvasBox.ro.disconnect();
+    canvasBox.cv = cv;
+    canvasBox.w = cv.clientWidth;
+    canvasBox.h = cv.clientHeight;
+    canvasBox.ro.observe(cv);
+  }
+  return [canvasBox.w, canvasBox.h];
 }
 const baseStopWalkView = stopWalkView,
   worldToScreen2d = worldToScreen,
@@ -239,6 +288,7 @@ export function mountWalkView(cv, id, opt = {}) {
   if (!ensureWalkGl(cv)) return mountWalkView(cv, id, opt);
   const ui = labelLayer(cv);
   walkView.x = ui.getContext('2d');
+  countInk(walkView.x);
   walkRenderer.on = true;
   if (!cv._dioBound) {
     cv._dioBound = 1;
@@ -383,6 +433,8 @@ export function ensureWalkGl(cv) {
         precompilePrograms(
           d
         ); /* alpha 0.4: the low-poly props' too (they were built on first use, in the first place with props) */
+    /* FL-5a: the discard-free variants, while Engine > Quality "Solid first" is on */
+    if (engineSetting('quality', 'drawOrder')) precompileDrawOrder();
     ensurePrograms(WALK_SHADERS);
     ensurePrograms(POST_EFFECT_SHADERS);
   } catch (e) {
@@ -397,6 +449,37 @@ export function ensureWalkGl(cv) {
   walkRenderer.roomFloors = null;
   walkRenderer.wtex = null;
   for (const k of MAP_CACHE_FIELDS) walkRenderer[k] = null;
+  return true;
+}
+/* FL-5a: the draw order's discard-free programs (the ground's, the instanced models') start compiling in the
+   background: at the 3D view's start while the switch is on, or when the debug menu turns it on */
+export function precompileDrawOrder() {
+  precompilePrograms(groundSolidShaders());
+  if (typeof propModelSolidShaders === 'function') precompilePrograms(propModelSolidShaders());
+}
+/* FL-5a, FL-4's leftover (quality.groundSlice): the same view's ground changed (a run day's water, a Studio edit) and
+   nothing is ready for it: the old ground and its key stay on screen while the new one is built a slice a frame
+   (prepareMapGround, urgent; the frame's groundPrepWork), then it is swapped in, instead of buildGroundMesh in one
+   frame. Not for a new view (shown only once its ground is built, groundBuiltBeforeShow), a room, a borrowed ground or
+   a battle; at most 5 s, then built on the spot as before */
+const GROUND_WAIT_MS = 5000;
+function groundWaits(hk) {
+  const sc = walkView.sc,
+    id = walkView.id;
+  if (!engineSetting('quality', 'groundSlice') || !walkRenderer.mesh || walkRenderer.hid !== id) return false;
+  if (!walkView.ground || sc.groundOf || sc.roomScene || walkView.battle || gpuState.lost) return false;
+  const M = walkRenderer.sceneCache,
+    hit = M && M.get(hk);
+  if ((hit && hit.prepared) || isGroundPrepared(id, sc, walkView.gkey)) return false;
+  const now = performance.now();
+  if (!walkRenderer.groundWaitT) walkRenderer.groundWaitT = now;
+  if (now - walkRenderer.groundWaitT > GROUND_WAIT_MS) {
+    if (typeof debugLog !== 'undefined')
+      debugLog.add('scene', `${id}: its new ground wasn't ready in 5 s; built on the spot`);
+    return false;
+  }
+  prepareMapGround(id, sc, walkView.ground, true);
+  walkRenderer.groundWaited = (walkRenderer.groundWaited || 0) + 1;
   return true;
 }
 /* phase 20 H: a restored context is the same object with nothing on it, so every cache that keeps a buffer or a
@@ -518,6 +601,8 @@ setScreenToGround(function (sx, sy) {
   return null;
 });
 /* ---------- frame ---------- */
+/* FL-1a: this frame's one-off jobs so far (ms) */
+let oneOffMs = 0;
 function drawWalkFrame(ts, dtm) {
   const cv = walkView.cv;
   if (!cv || !cv.isConnected) {
@@ -541,36 +626,52 @@ function drawWalkFrame(ts, dtm) {
   walkRenderer.budT = performance.now();
   runNormalMapJobs(walkView.warm ? 40 : 3);
   /* LD-2: behind a loading screen (the boot's, a run's) as many as fit in 12 ms a frame, so none is left for play */
-  pollPendingPrograms(1, document.body.classList.contains('ld-on') || document.getElementById('runload') ? 12 : 0);
+  const loading = document.body.classList.contains('ld-on') || !!document.getElementById('runload');
+  pollPendingPrograms(1, loading ? 12 : 0);
   groundOcclusionWork();
   groundPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
   /* the crossing hitch (2026-10-28): the next view's walking grid, built ahead in what is left (walk-view.js) */
   navPrepWork(walkRenderer.bt ? 0 : Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
-  const cssW = cv.clientWidth,
-    cssH = cv.clientHeight;
+  /* FL-1a: the one-off jobs' time (above, and the ground's, the grass's and the near ring's below) is left out of
+     the work the automatic quality reads: lowering the quality doesn't make them quicker */
+  oneOffMs = performance.now() - w0;
+  const [cssW, cssH] = canvasCssSize(cv);
   if (!cssW || !cssH) return;
   /* phase 20 R2 (D4): with quality.phonePixels a phone (Android, iPhone) draws at most 1.2 million pixels (1.6
      elsewhere), and its automatic resolution starts a step lower (0.9; it climbs back when frames have room) */
-  const phoneK = PHONE && !!engineSetting('quality', 'phonePixels');
+  const phoneK = PHONE && !!engineSetting('quality', 'phonePixels'),
+    steps = !!engineSetting('quality', 'resSteps');
   if (phoneK && !phoneStarted) {
     phoneStarted = true;
-    if (walkView.R >= 1) walkView.R = 0.9;
+    /* FL-3b: with the resolution levels a step lower is the level below full (0.8) */
+    if (walkView.R >= 1) walkView.R = steps ? RES_LEVELS[1] : 0.9;
   }
   const R0 = Math.min(devicePixelRatio || 1, 1.75) * engineSetting('quality', 'resolution'),
-    R = R0 * Math.min(1, Math.sqrt((phoneK ? 1.2e6 : 1.6e6) / (cssW * cssH * R0 * R0))) * walkView.R,
-    rw = Math.max(64, Math.min(2400, Math.round(cssW * R))),
-    rh = Math.max(64, Math.round((cssH * rw) / cssW));
+    RB = R0 * Math.min(1, Math.sqrt((phoneK ? 1.2e6 : 1.6e6) / (cssW * cssH * R0 * R0))),
+    /** the canvas's size at a resolution */
+    sizeAt = Rk => {
+      const w = Math.max(64, Math.min(2400, Math.round(cssW * RB * Rk)));
+      return [w, Math.max(64, Math.round((cssH * w) / cssW))];
+    };
+  const [rw, rh] = sizeAt(steps ? resolutionDrawn(cv, sizeAt, loading) : walkView.R);
+  if (!steps) walkRenderer.resD = null;
   if (cv.width !== rw || cv.height !== rh) {
     cv.width = rw;
     cv.height = rh;
+    /* FL-3b: every change of the canvas's size reallocates the screen-sized targets (the gates count them) */
+    walkRenderer.resizes = (walkRenderer.resizes || 0) + 1;
   }
   const ui = walkRenderer.ui;
   if (ui.width !== rw || ui.height !== rh) {
     ui.width = rw;
     ui.height = rh;
   }
-  const dms = Math.min(dtm, 60);
+  /* FL-3a: the world clock keeps real time down to 10 frames a second (logic/frame-control.js worldSteps); the walker,
+     the townsfolk and the wildlife move in even steps of at most 50 ms */
+  const WS = worldSteps(dtm),
+    dms = WS.ms;
   walkView.t += dms;
+  walkRenderer.worldSteps = WS;
   const dt = dms / 1000,
     t = walkView.t,
     C0 = walkData().sc,
@@ -589,7 +690,30 @@ function drawWalkFrame(ts, dtm) {
     endGpuTimer(gq);
   }
 }
+/* FL-3b (quality.resSteps): the resolution drawn this frame. The ladder's ask (walkView.R) is taken as its level
+   (logic/frame-control.js resDrawLevel: fewer, larger steps with hysteresis); a new level waits until the change can't be
+   seen (resApply: behind a screen or a window, the view fading in or out, a loading screen, or the canvas changing size
+   anyway), so a walk never reallocates the screen-sized targets for the ladder. walkRenderer.resD: the level drawn;
+   resWait: the level waiting (0: none); resWhy: why the last change was taken */
+function resolutionDrawn(cv, sizeAt, loading) {
+  const drawn = walkRenderer.resD ?? null,
+    want = resDrawLevel(walkView.R, drawn ?? 1),
+    [w, h] = sizeAt(drawn ?? want),
+    r = resApply({
+      drawn,
+      want,
+      held: !!walkView.held,
+      fading: !cv.classList.contains('in'),
+      loading,
+      resizing: cv.width !== w || cv.height !== h,
+    });
+  if (r.why) walkRenderer.resWhy = r.why;
+  walkRenderer.resD = r.R;
+  walkRenderer.resWait = Math.abs(want - r.R) < 0.001 ? 0 : want;
+  return r.R;
+}
 function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
+  const WS = walkRenderer.worldSteps || worldSteps(dtm);
   if (typeof seamlessLookTick === 'function') seamlessLookTick();
   if (typeof seamlessPrepareAhead === 'function') seamlessPrepareAhead(performance.now());
   /* phase 20 C1: every dial looked up once for this frame (settings.js) */
@@ -597,9 +721,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const gl = gpuState.gl,
     sc = walkView.sc,
     cv = walkView.cv;
+  let o0 = performance.now();
   ensureGround();
   const hk = mapCacheKey(walkView.id, sc, walkView.gkey);
-  if (walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) {
+  if ((walkRenderer.gkey !== walkView.gkey || walkRenderer.hkey !== hk) && !groundWaits(hk)) {
+    walkRenderer.hid = walkView.id;
+    walkRenderer.groundWaitT = 0;
     const old = walkRenderer.hkey;
     walkRenderer.gkey = walkView.gkey;
     walkRenderer.hkey = hk;
@@ -613,6 +740,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (walkRenderer.grassKey !== engineSetting('grass', 'density')) buildGrass();
   else grassWork(4);
   if (walkRenderer.farKey !== walkView.id + '|' + Math.round(engineSetting('world', 'farProps'))) buildFarProps();
+  oneOffMs += performance.now() - o0;
   /* a battle (battle-3d.js) borrows the scene: its own camera, the fighters as lit sprites, props in the way hidden */
   const BT =
     (walkView.battle && walkView.battle.frame ? walkView.battle.frame() : null) ||
@@ -621,15 +749,15 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   const st = BT ? { who: null, npcs: [], enc: [], battle: 1 } : walkView.opt.state ? walkView.opt.state() : { t: 0 };
   if (!BT) {
     walkView.st = st;
-    updatePlayer(st, dt);
+    for (let k = 0; k < WS.n; k++) updatePlayer(st, WS.h);
   }
   const P = walkView.pl;
-  if (!BT && sc.folk && st.mode && st.mode !== 'line') updateFolk(sc.folk, dt);
+  if (!BT && sc.folk && st.mode && st.mode !== 'line') for (let k = 0; k < WS.n; k++) updateFolk(sc.folk, WS.h);
   else if (!BT) {
     walkView.folk = [];
     walkView.folkAll = [];
   }
-  if (!BT && typeof lifeStep === 'function') lifeStep(dt);
+  if (!BT && typeof lifeStep === 'function') for (let k = 0; k < WS.n; k++) lifeStep(WS.h);
   /* the Studio's free camera (studio/js/free-camera.js): a view's own eye and target instead of following the walker */
   const look = !BT && walkView.opt.look ? walkView.opt.look(dt) : null;
   const C = BT
@@ -649,7 +777,9 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
       T = walkRenderer.camT;
     const fx = bc ? bc[0] : T ? T[0] : walkView.pl.x,
       fz = bc ? bc[1] : T ? T[1] : walkView.pl.z;
+    o0 = performance.now();
     updateNearRing(sc.groundOf || sc, fx, fz, Math.min(PREP_BUDGET_MS, Math.max(1, frameBudgetRemaining())));
+    oneOffMs += performance.now() - o0;
   }
   /* phase 20: the GPU counters (engine/gpu-counters.js) put each call that follows in the pass named last */
   gpuPass('other');
@@ -702,7 +832,8 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   walkRenderer.X = X;
   if (dark > 0.3 && !BT && shadow) lampShadowMaps(items, X, dark);
   gpuPass('reflection');
-  if (walkRenderer.water && !(QE >= 2 && walkRenderer.frames % 2 && gpuState.fb.refl))
+  /* FL-1b: on the frames the shadow map skips (opposite parities), so a struggling frame carries one of the two */
+  if (walkRenderer.water && !(QE >= 2 && !(walkRenderer.frames % 2) && gpuState.fb.refl))
     reflectionPass(items, C, rw, rh, X);
   gpuPass('sky');
   const S = renderTarget('scene', rw, rh, { depth: true, hdr: true });
@@ -714,12 +845,26 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   /* phase 20 R2 (D1): with quality.skyLast the sky fills only what the opaque things left at the cleared depth (1.0),
      drawn after them and before anything blended (building fronts, water, effects); a room's front is blended over
      the ground, so a frame that shows one keeps the sky first */
-  const skyLast =
-      !!engineSetting('quality', 'skyLast') && !(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
+  const roomLit = !!(sc.room && (engineSetting('lights', 'roomLight') ?? true) !== false),
+    /* FL-5a (quality.drawOrder): for tile GPUs (an Adreno's LRZ, a Mali's early depth), the opaque ground and models
+       first with programs that hold no discard, nearest models first; then everything cut out (walls that thin, grass,
+       pictures, solid props, fading models, box faces, buildings, structures); the sky at the far plane; the blended
+       things; your outline (depth GREATER and its query) last. A lit room's frame keeps the old order (its front is
+       blended over the ground) */
+    order = !!engineSetting('quality', 'drawOrder') && !roomLit,
+    skyLast = order || (!!engineSetting('quality', 'skyLast') && !roomLit),
     bpart = skyLast ? 'solid' : undefined;
+  walkRenderer.dOrder = order ? 1 : 0;
+  walkRenderer.solidModels = 0;
   if (!skyLast) drawSky(C, sun);
   gpuPass('ground');
-  drawGround(C, X);
+  drawGround(C, X, order ? 'solid' : undefined);
+  if (order) {
+    gpuPass('models');
+    if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU, 'solid');
+    gpuPass('ground');
+    drawGround(C, X, 'walls');
+  }
   drawRoomFront(C, X);
   gpuPass('grass');
   if (walkRenderer.grass && !D.noGrass) drawGrass(C, X);
@@ -728,7 +873,7 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   gpuPass('solid');
   if (typeof drawSolidProps === 'function') drawSolidProps(C, items, X, hits, labels, PPU);
   gpuPass('models');
-  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU);
+  if (typeof drawPropModels === 'function') drawPropModels(C, items, X, null, null, PPU, order ? 'cut' : undefined);
   gpuPass('box');
   drawBoxFaces(C, items, X);
   gpuPass('buildings');
@@ -743,8 +888,10 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
     gpuPass('buildings');
     drawBuildings(C, X, items, walkRenderer.bfade, 'fronts');
   }
-  gpuPass('silhouette');
-  drawPlayerSilhouette(C, items, X);
+  if (!order) {
+    gpuPass('silhouette');
+    drawPlayerSilhouette(C, items, X);
+  }
   gpuPass('water');
   gatherFountainBasins(items);
   if (walkRenderer.water || walkRenderer.basin) drawWater(C, X, rw, rh);
@@ -759,6 +906,12 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   if (BT && BT.ribbon) ribbonPass(C, BT.ribbon, X);
   /* VFX-5: a dashing Billie's (battle-3d.js) */
   if (BT && BT.rigRibbons) for (const R of BT.rigRibbons) ribbonPass(C, R, X);
+  /* AS-1: the sky train's rocket fire on its ride (train-ride.js) */
+  if (BT && BT.plume) plumePass(C, items, X, BT.plume);
+  if (order) {
+    gpuPass('silhouette');
+    drawPlayerSilhouette(C, items, X);
+  }
   gpuPass('post');
   /* focus: on you, or on what you tapped for a moment */
   let fx = BT ? BT.center[0] : P.x,
@@ -861,7 +1014,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   /* labels and markers stay sharp on the layer above */
   const x = walkView.x;
   x.setTransform(1, 0, 0, 1, 0, 0);
-  x.clearRect(0, 0, rw, rh);
+  if (x._ink !== 0) {
+    x.clearRect(0, 0, rw, rh);
+    x._ink = 0;
+    walkRenderer.uiClears = (walkRenderer.uiClears || 0) + 1;
+  }
   /* phase 13: the debug log's picture is taken from this layer, and speech can name a Billie (the buddy says its
      nickname): in that frame speech is drawn after the picture */
   const snapping = walkRenderer.snapReq && typeof debugLog !== 'undefined',
@@ -916,9 +1073,11 @@ function drawWalkFrameInner(ts, dt, dtm, t, C0, PPU, rw, rh, w0) {
   }
   for (const l of sayLater) drawSpeech(x, l.x, l.y, l.t, l.a);
   walkRenderer.frames++;
-  const work = performance.now() - w0;
-  walkView.slow = walkView.slow * 0.9 + work * 0.1;
-  adaptQuality(dtm, work);
+  const work = performance.now() - w0,
+    /* FL-1a: the automatic quality reads the frame's own work, not the one-off jobs' nor the counted tick's */
+    own = Math.max(0, work - oneOffMs);
+  if (!frameScheduler.counted) walkView.slow = walkView.slow * 0.9 + own * 0.1;
+  adaptQuality(dtm, own, oneOffMs);
   /* v30: how long frames take, for the debug log */ {
     const H = walkRenderer.hist || (walkRenderer.hist = [0, 0, 0, 0, 0, 0]);
     H[work < 8 ? 0 : work < 16 ? 1 : work < 33 ? 2 : work < 66 ? 3 : work < 133 ? 4 : 5]++;

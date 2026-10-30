@@ -26,6 +26,7 @@ import {
 } from './hooks.js';
 import { $, clamp } from './util.js';
 import { TEST_BOOT } from './test-boot.js';
+import { everyFree } from './free-tick.js';
 import { LOCATIONS, START_NODE, gameData } from './game-data.js';
 import { encountersHere } from './logic/rules.js';
 import { newSaveKeepingPreferences } from './logic/saves.js';
@@ -330,7 +331,7 @@ function titleNew() {
 /* play time: counted while the game is open and in view, and saved every minute (phase 08: walking saved it before) */
 let playTicks = 0,
   playSeenEncounters = 0;
-setInterval(() => {
+everyFree(() => {
   if (typeof saveData !== 'undefined' && saveData && saveData.started && !document.hidden && !uiState.title) {
     saveData.playMs = (saveData.playMs || 0) + 15000;
     if (++playTicks % 4 === 0) save();

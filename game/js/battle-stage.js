@@ -40,6 +40,7 @@ import {
   battleScarAt,
   battleStageLookReset,
   cleanBuild,
+  engineSetting,
   fighter,
   figureBattlePicture,
   figureFolk,
@@ -58,6 +59,7 @@ import {
   saveData,
   soundEffect,
   styleNote,
+  walkRenderer,
 } from './hooks.js';
 import { $, clamp, random } from './util.js';
 import { hashString, rngFn } from './logic/rng.js';
@@ -86,6 +88,7 @@ import {
 } from './logic/smear.js';
 import { battlePathAt, hitLook, hurtKoAhead, lineAfterMove } from './logic/battle-anims.js';
 import { FLOW_CELL_MS, lvlSlot, pyramidRamp, riseShare } from './logic/battle-flow.js';
+import { paceSlot } from './logic/frame-pace.js';
 import { frameCount, frameScheduler, frameStop, frameTask, userFps } from './frame-scheduler.js';
 import { artImg, iconCanvas, makeCanvas, pyramidCanvas, whiteCopy } from './art.js';
 import { ROBOT_PART_BONES, robotArmCanvas, robotLegsCanvas, robotTorsoCanvas } from './robot-art.js';
@@ -167,6 +170,7 @@ expose({
   battleStageJoin3d: [() => battleStageJoin3d, v => (battleStageJoin3d = v)],
   battleStageKit: [() => battleStageKit],
   battleStageLayout: [() => battleStageLayout, v => (battleStageLayout = v)],
+  battleStageLevel: [() => battleStageLevel, v => (battleStageLevel = v)],
   battleStageOutcome: [() => battleStageOutcome, v => (battleStageOutcome = v)],
   battleStagePlay: [() => battleStagePlay, v => (battleStagePlay = v)],
   battleStagePrepare: [() => battleStagePrepare, v => (battleStagePrepare = v)],
@@ -845,18 +849,22 @@ function battleStageFrame(ts, rawDt) {
   if (typeof battleLooksTick === 'function') battleLooksTick();
   battleStage.shk = Math.max(0, battleStage.shk - dt * 0.02);
   if (!battleStage.gl && battleStage.waitT) battleStageJoin3d();
+  let dom = 0;
   if (battleStage.cv && battleStage.cv.isConnected) {
     camUpdate(dt);
     battleStageDraw();
     camApply();
+    /* FL-3a: the plates are page (DOM) work: timed apart and left out of what the quality reads */
+    const d0 = performance.now();
     if (typeof platesTick === 'function') platesTick();
+    dom = performance.now() - d0;
   } else {
     battleStageStop();
     return;
   }
   const work = performance.now() - w0;
   frameCount(work);
-  adaptBattleStageQuality(work);
+  adaptBattleStageQuality(work, dom);
 }
 /* ambient life: motes, drips, falling leaves, glints */
 const LEAF_COLORS = ['#6FAE3F', '#9CC850', '#D7B447', '#4E8A3A'];
@@ -1087,15 +1095,26 @@ function drawRibbon2d(c, R, E, col) {
   }
 }
 /* adaptive quality: drop render detail if frames run long, restore when there's headroom */
-function adaptBattleStageQuality(work) {
+/* FL-3a: with the frame controller on (quality.controller), a battle's detail level is the controller's CPU level for
+   the battle (walk/quality-cull.js: the 3D battle's frames go through it as the place kind 'battle'), and this frame's
+   own work, the plates' page work left out, is added to the 3D frame's (battleStage.workOwn). Off: the old ladder,
+   aiming at the paced slot (logic/frame-pace.js: 60 on a 90 Hz screen is 45 a second, not read as slow) */
+function adaptBattleStageQuality(work, dom = 0) {
   const Q = battleStage.q,
     now = performance.now(),
-    target = Math.min(userFps(), frameScheduler.hz || 60),
-    budget = 1000 / target,
+    own = Math.max(0, work - dom);
+  battleStage.workOwn = own;
+  if (engineSetting('quality', 'controller') && walkRenderer.ctl && walkRenderer.ctlKind === 'battle') {
+    battleStageLevel(walkRenderer.qc || 0, now);
+    return;
+  }
+  const V = frameScheduler.period || 1000 / 60,
+    budget = paceSlot(userFps(), V, frameScheduler.half) * V,
+    target = 1000 / budget,
     fps = frameScheduler.meter.fps;
   if (now - Q.since < 1500 || !fps || battleStage.lockQ) return;
-  const slow = fps < target * 0.82 || work > budget * 0.85,
-    fast = fps >= target * 0.95 && work < budget * 0.32;
+  const slow = fps < target * 0.82 || own > budget * 0.85,
+    fast = fps >= target * 0.95 && own < budget * 0.32;
   Q.lowT = slow ? Q.lowT + 1 : 0;
   Q.highT = fast ? Q.highT + 1 : 0;
   if (Q.lowT > Math.max(20, target * 0.6) && Q.lvl < 3) {
@@ -1112,6 +1131,17 @@ function adaptBattleStageQuality(work) {
     if (Q.lvl === 1) battleStageResize();
     battleStage.floorKey = '';
   }
+}
+/* FL-3a: the battle's detail level set from the controller (0-3); the stage's size follows across level 2 */
+function battleStageLevel(lvl, now) {
+  const Q = battleStage.q,
+    to = clamp(lvl | 0, 0, 3);
+  if (battleStage.lockQ || to === Q.lvl) return;
+  const was = Q.lvl;
+  Q.lvl = to;
+  Q.since = now;
+  if (was < 2 !== to < 2) battleStageResize();
+  battleStage.floorKey = '';
 }
 /* the 2D part of the camera: zoom punches, roll, shake and a handheld wobble, applied as CSS transforms (no re-render needed).
    The near foreground layer moves a little more than the world, which reads as parallax. */

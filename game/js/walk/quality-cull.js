@@ -7,24 +7,39 @@ import { expose } from '../test-globals.js';
 import { gameData, provide, saveData } from '../hooks.js';
 import { coverTarget, fadeEase, pictureCovers } from '../logic/occlude.js';
 import { propDrawFade, qualityStep } from '../logic/quality-step.js';
-import { frameScheduler } from '../frame-scheduler.js';
+import { ladderFeed, ladderTake, phoneAgent } from '../logic/frame-pace.js';
+import { RES_LEVELS, controlFrame, controlRestore, controlSaved } from '../logic/frame-control.js';
+import { frameHalf, frameScheduler } from '../frame-scheduler.js';
+import { battleStage } from '../battle-stage.js';
 import { mapMoodName, walkView, worldToScreen } from '../walk-view.js';
 import { engineContext, engineSetting } from '../engine/settings.js';
+import { gpuState } from '../engine/webgl.js';
 import { environment } from '../environment.js';
 import { walkRenderer } from './walk-state.js';
 import { worldCurveDrop } from './draw-common.js';
 /* eslint-disable no-func-assign */
 expose({
+  CONTROL_STORE: [() => CONTROL_STORE],
   COVER_FADES: [() => COVER_FADES],
+  CPU_LEVERS: [() => CPU_LEVERS],
   FRAME_WORK_MS: [() => FRAME_WORK_MS],
   FRUSTUM_PLANES: [() => FRUSTUM_PLANES],
   NEUTRAL_MOOD: [() => NEUTRAL_MOOD],
+  PHONE_AGENT: [() => PHONE_AGENT],
   adaptQuality: [() => adaptQuality, v => setAdaptQuality(v)],
   computeFrustum: [() => computeFrustum, v => (computeFrustum = v)],
+  controlHalf: [() => controlHalf, v => (controlHalf = v)],
+  controlKind: [() => controlKind, v => (controlKind = v)],
+  controlLeave: [() => controlLeave, v => (controlLeave = v)],
+  controlQuality: [() => controlQuality, v => (controlQuality = v)],
+  controlStoreRead: [() => controlStoreRead, v => (controlStoreRead = v)],
+  controlStoreWrite: [() => controlStoreWrite, v => (controlStoreWrite = v)],
   coverFrame: [() => coverFrame, v => (coverFrame = v)],
   coverItems: [() => coverItems, v => (coverItems = v)],
+  cpuLevers: [() => cpuLevers, v => (cpuLevers = v)],
   cullItems: [() => cullItems, v => (cullItems = v)],
   easedMood: [() => easedMood, v => (easedMood = v)],
+  fenceLag: [() => fenceLag, v => (fenceLag = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
   frameBudgetRemaining: [() => frameBudgetRemaining, v => (frameBudgetRemaining = v)],
   heatHaze: [() => heatHaze, v => (heatHaze = v)],
@@ -35,6 +50,8 @@ expose({
 /* eslint-enable no-func-assign */
 provide({ frameBudgetLeft });
 /* to-module: end */
+/* FL-1a: one phone test (logic/frame-pace.js phoneAgent: an iPad that says it is a Mac counts) */
+const PHONE_AGENT = typeof navigator !== 'undefined' && phoneAgent(navigator.userAgent, navigator.maxTouchPoints);
 /* v32: only what the camera can see is drawn. The six sides of the view are taken from the camera matrix once a
    frame; each thing is a ball round its middle (lifted by the horizon curve the shaders apply) tested against them.
    Things just outside still cast shadows in (the shadow pass keeps everything near the shadow map's square). */
@@ -76,12 +93,23 @@ export function cullItems(items, C) {
   /* 0.1.0 alpha: things too small to see, and on a phone small things past the draw distance (logic/quality-step.js) */
   const m = C.vp,
     H = (walkView.cv && walkView.cv.height) || 800,
+    cpu = cpuLevers(PHONE_AGENT ? walkRenderer.qc || 0 : 0),
     fo = {
-      minPx: engineSetting('quality', 'minPropPx') ?? 0,
-      phoneDistance: engineSetting('quality', 'phonePropDistance') ?? 0,
-      phone: typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent),
+      minPx: Math.max(engineSetting('quality', 'minPropPx') ?? 0, cpu.minPx),
+      phoneDistance: cpu.distance(engineSetting('quality', 'phonePropDistance') ?? 0),
+      phone: PHONE_AGENT,
     };
   for (const it of items) {
+    /* FL-3a: on a phone held back by its main thread, townsfolk (not residents) past the CPU level's distance */
+    if (on && cpu.folk && it.k === 'folk' && !(it.f && it.f.res)) {
+      const W = m[3] * it.x + m[7] * (it.y || 0) + m[11] * it.z + m[15];
+      if (W > cpu.folk) {
+        it.vis = false;
+        k++;
+        n++;
+        continue;
+      }
+    }
     if (!on || it.person || it.k === 'enc' || it.k === 'enc2') {
       it.vis = true;
       continue;
@@ -108,6 +136,24 @@ export function cullItems(items, C) {
   }
   walkRenderer.culled = n;
   walkRenderer.cullOf = k;
+}
+/* FL-3a: the controller's CPU level (walkRenderer.qc, 0-3) as look trades the owner allowed on phones (2026-10-29): small
+   props fade out nearer and tiny ones go, then far townsfolk go. Nothing off a phone (the controller doesn't take
+   the CPU level there but in a battle, where it is the battle stage's detail level: battle-stage.js) */
+const CPU_LEVERS = [
+  { k: 1, minPx: 0, folk: 0 },
+  { k: 0.8, minPx: 3, folk: 0 },
+  { k: 0.65, minPx: 5, folk: 45 },
+  { k: 0.5, minPx: 8, folk: 30 },
+];
+function cpuLevers(qc) {
+  const L = CPU_LEVERS[Math.max(0, Math.min(3, qc | 0))];
+  return {
+    minPx: L.minPx,
+    folk: L.folk,
+    /* the set distance (0: none) brought in; with none set, from 90 m */
+    distance: d => (L.k >= 1 ? d : (d > 0 ? d : 90) * L.k),
+  };
 }
 /* player visibility: a tall picture standing nearer the camera that covers your feet, middle or head thins out
    (logic/occlude.js: to Engine > Camera > coverFade, milder while the see-through circle is on), eased in and out per
@@ -155,7 +201,7 @@ export function coverItems(items, C, dt) {
    for a frame or two instead of freezing the scene while they are worked out. LD-5: one budget for all of it, from the
    frame's start (walk-view-gl.js): the ground's preparing, the near ring, solid props, model meshes and buildings,
    FRAME_WORK_MS between them (they added up to about 35 ms); each still makes its first of a frame */
-const FRAME_WORK_MS = /Android|iPhone|iPad/.test(navigator.userAgent) ? 8 : 10;
+const FRAME_WORK_MS = PHONE_AGENT ? 8 : 10;
 export function frameBudgetLeft() {
   return frameBudgetRemaining() > 0;
 }
@@ -222,22 +268,43 @@ export function heatHaze(sc) {
    no ambient occlusion; 2: smaller shadow map, shadows and reflections every other frame; 3: fewer bloom levels, no
    light shafts, no grass far away; 4: no depth of field); only then the resolution drops. With room to spare it climbs
    back: resolution first, then the extras. Frames held back on purpose (a window open, another screen) don't count. */
-export function adaptQuality(dtm, work) {
+export function adaptQuality(dtm, work, oneOff = 0) {
   if (!engineSetting('quality', 'auto')) {
     walkView.R = 1;
     walkRenderer.q = 0;
+    walkRenderer.qc = 0;
+    controlHalf(false);
     return;
   }
   const cap = walkView.opt.cap ? walkView.opt.cap() : 60;
-  if (cap < 30 || walkView.warm) {
+  if (walkView.warm) {
     walkRenderer.int = 0;
     return;
   }
   /* alpha 0.1: the picture stays sharp at 60 frames a second; only Smoothest (preferences.aim) trades sharpness for more */
   const smooth =
-      typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.aim === 'smooth',
-    target = 1000 / Math.min(cap, frameScheduler.hz || 60, smooth ? 999 : 60);
-  walkRenderer.int = walkRenderer.int ? walkRenderer.int * 0.92 + dtm * 0.08 : dtm;
+    typeof saveData !== 'undefined' && saveData && saveData.preferences && saveData.preferences.aim === 'smooth';
+  /* FL-1a: what the step is fed (logic/frame-pace.js ladderTake): nothing below 30 a second or for a moment after the
+     rate changes (a window or a screen closing took a step down), nothing from the tick whose graphics calls were
+     counted, and the target is the frame's own slot of refreshes (60 on a 90 Hz screen is every second refresh) */
+  const feed = walkRenderer.feed || (walkRenderer.feed = ladderFeed()),
+    now = performance.now(),
+    ctlOn = !!engineSetting('quality', 'controller'),
+    took = ladderTake(feed, {
+      cap,
+      aim: smooth ? 999 : 60,
+      V: frameScheduler.period || 1000 / 60,
+      half: frameScheduler.half,
+      now,
+      dtm,
+      work,
+      counted: frameScheduler.counted,
+    });
+  walkRenderer.int = feed.int;
+  /* FL-3a: the controller (logic/frame-control.js), behind quality.controller until the owner's phone run */
+  if (ctlOn) return controlQuality(dtm, work, oneOff, took, now);
+  if (walkRenderer.ctl) controlLeave();
+  if (!took) return;
   /* the step itself: logic/quality-step.js */
   const st = qualityStep(
     {
@@ -249,13 +316,7 @@ export function adaptQuality(dtm, work) {
       holdT: walkRenderer.holdT,
       roomN: walkRenderer.roomN,
     },
-    {
-      int: walkRenderer.int,
-      slow: walkView.slow,
-      target,
-      now: performance.now(),
-      phone: typeof navigator !== 'undefined' && /Android|iPhone/.test(navigator.userAgent),
-    }
+    { int: took.int, slow: took.slow, target: took.target, now, phone: PHONE_AGENT }
   );
   walkRenderer.q = st.q;
   walkView.R = st.R;
@@ -263,6 +324,113 @@ export function adaptQuality(dtm, work) {
   walkRenderer.raiseT = st.raiseT;
   walkRenderer.holdT = st.holdT;
   walkRenderer.roomN = st.roomN;
+}
+/* FL-3a: the levels kept per place kind on this device (never the save) */
+const CONTROL_STORE = 'pb-frame-levels';
+function controlStoreRead() {
+  try {
+    return JSON.parse(localStorage.getItem(CONTROL_STORE) || '{}') || {};
+  } catch {
+    return {};
+  }
+}
+function controlStoreWrite(kind, s) {
+  try {
+    const all = controlStoreRead();
+    all[kind] = controlSaved(s);
+    localStorage.setItem(CONTROL_STORE, JSON.stringify(all));
+  } catch {
+    /* storage blocked: it starts from the top next time */
+  }
+}
+/** the place kind the levels are kept for: a battle, a room, a town, else a route */
+function controlKind() {
+  const sc = walkView.sc || {};
+  return walkRenderer.bt ? 'battle' : sc.indoor ? 'room' : sc.kind === 'town' ? 'town' : 'route';
+}
+/* the half rate is the controller's to set and to take back (frame-scheduler.js frameHalf) */
+function controlHalf(on) {
+  if (frameScheduler.half === !!on) return;
+  frameHalf(on, 'dio');
+}
+function controlLeave() {
+  if (walkRenderer.ctl && walkRenderer.ctlKind) controlStoreWrite(walkRenderer.ctlKind, walkRenderer.ctl);
+  walkRenderer.ctl = null;
+  walkRenderer.ctlKind = '';
+  walkRenderer.qc = 0;
+  controlHalf(false);
+}
+/* how many frames the graphics chip is behind: a fence after each frame, read on the frames after (never waits);
+   -1 when fences aren't there */
+function fenceLag() {
+  const gl = gpuState.gl;
+  if (!gl || gpuState.lost || !gl.fenceSync) return -1;
+  const F = walkRenderer.fences || (walkRenderer.fences = []),
+    frame = walkRenderer.frames || 0;
+  let lag = walkRenderer.fenceLag ?? -1;
+  try {
+    while (F.length && gl.getSyncParameter(F[0][0], gl.SYNC_STATUS) === gl.SIGNALED) {
+      const [f, at] = F.shift();
+      lag = frame - at;
+      gl.deleteSync(f);
+    }
+    /* a backlog counts as far behind as it is */
+    if (F.length) lag = Math.max(lag, frame - F[0][1]);
+    if (F.length < 6) F.push([gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0), frame]);
+  } catch {
+    return -1;
+  }
+  walkRenderer.fenceLag = lag;
+  return lag;
+}
+function controlQuality(dtm, work, oneOff, took, now) {
+  const kind = controlKind(),
+    /* FL-3b: with quality.resSteps the resolution lever steps between the levels (logic/frame-control.js RES_LEVELS) */
+    steps = engineSetting('quality', 'resSteps') ? RES_LEVELS : undefined;
+  if (!walkRenderer.ctl || walkRenderer.ctlKind !== kind || walkRenderer.ctlSteps !== !!steps) {
+    if (walkRenderer.ctl) controlLeave();
+    const kept = controlStoreRead()[kind];
+    walkRenderer.ctl = kept
+      ? controlRestore(kept, steps)
+      : controlRestore({ q: walkRenderer.q || 0, R: walkView.R || 1, taken: walkView.R < 1 ? ['R'] : [] }, steps);
+    walkRenderer.ctlSteps = !!steps;
+    walkRenderer.ctlKind = kind;
+  }
+  const s = walkRenderer.ctl,
+    lag = fenceLag();
+  if (!took) {
+    /* not measured (behind a window, just after one, a counted tick): nor is the next frame's gap. Behind a window
+       or a screen the half rate is let go (it would hold the screen's own tasks back) */
+    s.skipNext = true;
+    if ((walkRenderer.feed && walkRenderer.feed.cap) < 30) {
+      controlHalf(false);
+      return;
+    }
+  } else {
+    const V = frameScheduler.period || 1000 / 60,
+      r = controlFrame(s, {
+        now,
+        dt: dtm,
+        /* a battle: the stage's own frame work (its plates' page work left out) beside the 3D frame's */
+        work: kind === 'battle' && typeof battleStage !== 'undefined' ? work + (battleStage.workOwn || 0) : work,
+        lag,
+        slot: took.target,
+        V,
+        skip: oneOff > took.target * 0.25,
+        phone: PHONE_AGENT,
+        floorR: PHONE_AGENT ? 0.6 : 0.5,
+        cpu: PHONE_AGENT || kind === 'battle',
+        resSteps: steps,
+      });
+    if (r) {
+      walkRenderer.ctlLast = { t: Math.round(now), act: r.act, lever: r.lever, why: r.why };
+      if (r.act !== 'floor') controlStoreWrite(kind, s);
+    }
+  }
+  walkRenderer.q = s.lv.q;
+  walkRenderer.qc = s.lv.c;
+  walkView.R = s.lv.R;
+  controlHalf(s.lv.half);
 }
 /* phase 04d: the Studio swaps in its own (studio/js/engine-editor.js and viewport.js) */
 export function setAdaptQuality(v) {

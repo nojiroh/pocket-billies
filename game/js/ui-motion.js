@@ -21,10 +21,13 @@ expose({
   gainTarget: [() => gainTarget, v => (gainTarget = v)],
   isDisabled: [() => isDisabled, v => (isDisabled = v)],
   lastPress: [() => lastPress],
+  patchKids: [() => patchKids, v => (patchKids = v)],
+  patchNode: [() => patchNode, v => (patchNode = v)],
   pbEnterRows: [() => pbEnterRows, v => (pbEnterRows = v)],
   pbFlipFresh: [() => pbFlipFresh, v => (pbFlipFresh = v)],
   pbFlipIn: [() => pbFlipIn, v => (pbFlipIn = v)],
   pbGainFly: [() => pbGainFly, v => (pbGainFly = v)],
+  pbPatch: [() => pbPatch, v => (pbPatch = v)],
   pressMs: [() => pressMs],
   pressRelease: [() => pressRelease, v => (pressRelease = v)],
   pressScale: [() => pressScale, v => (pressScale = v)],
@@ -160,16 +163,90 @@ const ENTER_ROWS =
  * rest. Each row's --i is its place among the rows beside it @param {ParentNode | null} root */
 export function pbEnterRows(root) {
   if (!root) return;
-  const seen = new Map();
-  for (const el of /** @type {NodeListOf<HTMLElement>} */ (root.querySelectorAll(ENTER_ROWS))) {
-    if (el.closest('.m-enter') || el.getAnimations().length) continue;
+  const seen = new Map(),
+    H = innerHeight;
+  /* FL-6: only the rows that start on screen come in (one off screen has nobody to see it, and each animation costs
+     the frames while the screen opens); every read (one layout) before the first write */
+  const rows = /** @type {HTMLElement[]} */ ([...root.querySelectorAll(ENTER_ROWS)]).filter(
+      el => !el.closest('.m-enter') && !el.getAnimations().length
+    ),
+    on = rows.map(el => {
+      const r = el.getBoundingClientRect();
+      return r.bottom > 0 && r.top < H && r.height > 0;
+    });
+  rows.forEach((el, n) => {
+    if (!on[n]) return;
     const p = el.parentElement,
       i = seen.get(p) || 0;
     seen.set(p, i + 1);
     el.style.setProperty('--i', String(i));
     el.classList.add('m-enter');
     el.addEventListener('animationend', () => el.classList.remove('m-enter'), { once: true });
+  });
+}
+
+/* ---------- FL-6: a part of a screen or sheet drawn again in place ---------- */
+/** puts html into el by changing only what differs (text, attributes, the nodes that changed), instead of a whole
+ * innerHTML: a tap repaints its row and what it changed, focus, scroll and running animations stay. A kit element
+ * (a name with a dash) that differs is replaced whole (its own attributes may have been set by itself). Returns how
+ * many nodes were written @param {Element} el @param {string} html */
+export function pbPatch(el, html) {
+  /* parsed inert (no kit element is made until it is put in the page) */
+  return patchKids(el, new DOMParser().parseFromString(`<body>${html}`, 'text/html').body);
+}
+/** @param {ParentNode & Node} a the live parent @param {ParentNode & Node} b the new one */
+function patchKids(a, b) {
+  const A = [...a.childNodes],
+    B = [...b.childNodes];
+  if (A.length !== B.length) {
+    /** @type {Element} */ (/** @type {unknown} */ (a)).replaceChildren(...B);
+    return 1;
   }
+  let n = 0;
+  for (let i = 0; i < A.length; i++) n += patchNode(A[i], B[i]);
+  return n;
+}
+/** @param {ChildNode} x live @param {ChildNode} y new */
+function patchNode(x, y) {
+  if (x.nodeType !== y.nodeType || x.nodeName !== y.nodeName) {
+    x.replaceWith(y);
+    return 1;
+  }
+  if (x.nodeType !== 1) {
+    if (x.nodeValue === y.nodeValue) return 0;
+    x.nodeValue = y.nodeValue;
+    return 1;
+  }
+  const X = /** @type {Element} */ (x),
+    Y = /** @type {Element} */ (y);
+  if (X.localName.includes('-')) {
+    const same = [...Y.attributes].every(at => X.getAttribute(at.name) === at.value) && X.innerHTML === Y.innerHTML;
+    if (same) return 0;
+    X.replaceWith(Y);
+    return 1;
+  }
+  let n = 0;
+  for (const at of [...X.attributes])
+    if (!Y.hasAttribute(at.name)) {
+      X.removeAttribute(at.name);
+      n++;
+    }
+  for (const at of [...Y.attributes])
+    if (X.getAttribute(at.name) !== at.value) {
+      X.setAttribute(at.name, at.value);
+      n++;
+    }
+  n += patchKids(X, Y);
+  /* a control's live value follows its new markup (the attribute alone doesn't once it was touched) */
+  if (X instanceof HTMLInputElement && Y instanceof HTMLInputElement) {
+    if (X.value !== Y.value) X.value = Y.value;
+    if (X.checked !== Y.checked) X.checked = Y.checked;
+  } else if (X instanceof HTMLSelectElement && Y instanceof HTMLSelectElement) {
+    const v = Y.querySelector('option[selected]');
+    if (v && X.value !== /** @type {HTMLOptionElement} */ (v).value)
+      X.value = /** @type {HTMLOptionElement} */ (v).value;
+  }
+  return n;
 }
 
 /* ---------- pick cards come face down and turn over, one after another, the first time an offer shows ---------- */

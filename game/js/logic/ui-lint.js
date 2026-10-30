@@ -81,7 +81,8 @@ export const UI_LINT_RULES = [
    them). A rise fails `npm run lint` and the Studio's Check; a fall is kept by `node tools/ui-lint.mjs --save`, which
    rewrites this block. Totals, not per file: moving a rule from one sheet to another changes nothing here.
    jsColour rose by 47 in SA-2b, on purpose: the UI icons' palette (logic/icon-block.js), art colours that moved in
-   from tools/build-ui-icons.py when the SVG files became the source. */
+   from tools/build-ui-icons.py when the SVG files became the source. jsColour 612 -> 613 when track/buildings met
+   main (2026-10-30): BD-1's glow default (logic/model-shapes.js '#ffcc66') on main's lowered count. */
 // ceiling: start
 export const UI_LINT_CEILING = {
   radius: 0,
@@ -94,7 +95,7 @@ export const UI_LINT_CEILING = {
   important: 152,
   zindex: 58,
   blur: 24,
-  jsColour: 618,
+  jsColour: 613,
   innerHtml: 54,
   styleAttr: 41,
 };

@@ -33,9 +33,11 @@ validation/look-windows/
 validation/look-water*/
 validation/look-decals/
 validation/look-train-ride/
+validation/as-1-*/
 validation/look-grafts/
 validation/look-station/
 validation/look-hub-buildings/
+validation/look-house-kit/
 validation/look-pasture/
 validation/look-people/
 validation/look-places/
@@ -76,3 +78,8 @@ validation/terrain-look/
 validation/load/
 validation/perf/
 validation/look-talk*/
+validation/check-draw-order/
+validation/assets-baseline/
+validation/look-halt/
+validation/as-2-*/
+validation/look-crash/
