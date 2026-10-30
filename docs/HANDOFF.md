@@ -2,6 +2,74 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-2b - effects, spins, grass and same-look GPU cuts - 2026-10-30
+Branch `track/fluid` (round 2's last lane, beside FL-3a and FL-6; their commits merged in). Plan approved by the
+owner's standing answer (fluid-track.md section 1). Code: fewer draws and less garbage, the same pictures; no switch
+(each change draws what the old path drew, checked below). No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + round 1): every effect quad was its own `drawArrays` (5 uniforms and a
+  texture bind), only the weather used `weatherBatch`; glows a draw each; the grass a draw per visible 8 m square
+  (its squares are laid out row by row in one buffer); every spin layer its own mesh. Section 3's spin counts hold
+  (windmill 37 layers, gene_bank 30, workshop 10, clinic and cottage_solar 6, lighthouse 4, giant swing and the
+  Greenbelt train 3), and every spinning model turns one way only (one pivot, axis, speed and swing), so one mesh
+  each. The 4096² far map's "skip when nothing moved" and the reflection's skip are in files of other lanes
+  (walk/shadows.js's far cache key is FL-4's in round 3; water.js, walk-view-gl.js and the canvas context's
+  `depth: false` are not this lane's): not done here, below.
+- Changed:
+  - game/js/walk/effects.js: the effects pass's `quad()` puts every quad in the instanced batch (`weatherBatch`,
+    now 19 floats: a right axis per instance too, `quad.ax(right, up)` for the footprints and the stream leaves);
+    one draw per run of the same picture, in call order (so the blending is the same), flushed before anything else
+    draws in the pass (the room's windows, the battle's scars and particles, the glows). The glows are one more
+    instanced draw (fxW's `uGlow`: the fx program's additive disc). After the room's window draws the quads keep
+    uLitFx 0, as they did. Light shafts stay plain draws (at most 6). The 11 fx strips into one atlas: not done (the
+    strips are mipmapped; an atlas changes their small mip levels, a look change for a few draws).
+  - game/js/walk/fountains-weather.js: the footprints set their axes through `quad.ax` (no uniform calls).
+  - game/js/walk/ground-draw.js drawGrass: visible squares next to each other in the buffer drawn as one run (the
+    same blades in the same order); `walkRenderer.grassRuns` counts the runs.
+  - game/js/logic/spin-merge.js (new; both pages and the logic worker): `spinGroups` (layers by pivot, axis, rps,
+    swing), `joinMeshes` (meshes end to end, 32-bit indices past 65,535 vertices). game/js/prop-models.js
+    propModelMesh: low-poly and voxel spin layers built one by one as before, then joined: one spin mesh per model.
+    (Prebuilt `kind: mesh` models, the airship, keep a mesh per spin: not in Copperleaf.)
+  - game/js/walk/shadows.js + prop-models.js drawPropModelShadows(SH, items, part): a model that holds still but for
+    its turning parts (`shadowSpinsOnly`) has its body in the far map's cache (part 1) and only the turning parts
+    drawn each frame (part 2, `SHADOW_LISTS.spin`); a depth map, so the same map.
+  - prop-models.js propModelImageItems: a placement's leaf items are kept (a WeakMap by placement, one per picture
+    layer) and filled in again each frame with every key in one order; what other passes write on an item (vis,
+    fade, cut, slope, tilt, winL, texKey) is cleared first.
+  - tools/check-perf.py (additions): the effects pass at Copperleaf's square at most 20 draws (`EFFECTS_CEILING`), at
+    low and as shipped; the 400-draw budget now blocks as shipped too (it was a note until FL-2b).
+  - Tests: spin-merge.test.mjs (one group per real spinning model, joined meshes byte for byte, 32-bit indices,
+    propModelMesh one spin mesh per model), model-shadows (the cached copy and the turning parts make up every part),
+    shadow-cache (the mill's body cached, its sails each frame; leaf items kept and filled in as new ones).
+- Measured headless (counts only; `check-perf.py --only=copperleaf`, Copperleaf by day on the phone page): as shipped
+  **273-335 draws** a frame (were 402-531), grass 12-13 (were 104-113), effects 4-7 at the square (were 73-86), 596-1,287
+  uniform calls; at low graphics 238-271 draws, 473-480 uniform calls. Leaf items' garbage (Node, 650 clumps): 240 →
+  111 KB a frame. The page's own heap reading (performance.memory each frame) is 1.4-3.3 MB a frame on both trees
+  headless, too noisy to show it: the log's `alloc` is for the phone.
+- Not done, for other lanes: the far map's copy skipped when nothing in it moved (FL-4 owns its key; dyn is never
+  empty in a town with townsfolk); the reflection skipped with no water on screen (water.js, walk-view-gl.js); the
+  canvas context's `depth: false`; `mapCacheKey` without a string (walk/map-cache.js, FL-4); the main prop items
+  pooled like the leaf items (frame-items.js: tagPropModel, hugSlope and `spin` add fields conditionally, so each
+  needs clearing; a careful session's work), and `decalPlace`'s object per clump (logic/prop-turn.js). FL-3a's CPU
+  level (`walkRenderer.qc`) on shadow-caster distance and grass: new look trades, left for FL-5b/FL-7.
+- Risky: effects now draw through fxW (instanced) on every device; if it fails to build, no effects draw (the weather
+  had the same dependency since R4). Spin layers that overlap exactly now draw in one call (the same triangles in
+  layer order). A leaf item is now the same object from frame to frame: code that keeps an item across frames sees
+  it change (none found: lights key on the placement).
+- Verified: lint (ui-lint's colour ceiling 618 → 612 and art-code-refs were already failing on the branch at its
+  start; art-code-refs regenerated here), types, format, modules, data, build clean; unit tests 2,424 of 2,426 before
+  the logic worker's order and art-code-refs fixes (both then pass); smoke 7 of 7 (321 s); `check-perf.py
+  --only=copperleaf` no problems (183 s). Full quick check (2,094 s, 42 steps, 37 passed) against a baseline made at
+  the round's start (c6576b10, in a worktree, 47 pictures, 2,259 s): the same 5 problems fail on both (RL-8's shop
+  Perk, RT-2's double, Granny Juniper, room light, battle music's drums). 11 pictures over the threshold, all other
+  moments: prints-snow and the battle pictures (another spot, a thrown pyramid mid-flight), life-copperleaf,
+  world-buddy, the room pictures and the two failed steps' pictures. A same-spot pair (the start commit and this
+  tree, reduced motion so the particles hold still, Copperleaf's square at noon and at night): 5% of pixels apart,
+  all townsfolk, their speech bubbles and labels; the fountain spray, chimney smoke and every lamp glow match.
+- Next: round 3 (FL-3b, FL-4): this lane was round 2's last, so it started them (each its own session).
+- For the owner on the phone: Copperleaf's square by day and at night with the Diagnostics open: the draws should be
+  about 270-340 (were 400-530); fountain spray, smoke, lamp glows, footprints in snow and rain should look as before.
+  A debug log of a walk there (its `alloc` against an older log's).
+
 ### Fluid track FL-6 - fluid UI - 2026-10-30
 Branch `track/fluid` (round 2 lane, beside FL-2b and FL-3a; FL-3a's and FL-2b's commits merged in). Plan approved by
 the owner's standing answer (fluid-track.md section 1). Code: the page's side (menus, bars, battle cards, minimap, Bag
