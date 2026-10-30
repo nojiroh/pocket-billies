@@ -176,7 +176,10 @@ const pairs = [
     .map(([L, k, label, act]) => [{ k, x: 0, z: 0, ...(label ? { act: act || 'enter', label } : {}) }, plotOf(L)]),
   ...oldCottages.map((B, i) => [B, townHouses[i]]),
   /* the new houses on the plots left (BD-7: of the house kit, picked below) */
-  ...[...townHouses.slice(oldCottages.length), ...otherHouses].map(L => [{ k: 'house_kit_01', x: 0, z: 0, act: 'house' }, L]),
+  ...[...townHouses.slice(oldCottages.length), ...otherHouses].map(L => [
+    { k: 'house_kit_01', x: 0, z: 0, act: 'house' },
+    L,
+  ]),
 ];
 /* BD-7 (BD-4b's placing): every house plot a house of the kit, each a different look, picked by tools/hub-houses.mjs
    (fits its plot; neighbours share no body or roof; the showpieces nearest the square). The old cottages' gardens stay
@@ -239,6 +242,34 @@ function place(B, L) {
 for (const [B, L] of pairs) {
   const N = place(asPlaced.get(B) || B, L);
   props.push(N);
+  /* BD-7: a kit house's garden hints (tools/build-house-kit.py `garden`): its trees behind, its bushes beside and
+     before it, in its own metres; skipped where the old garden already has something, and then held to the same rules
+     as the gardens (streets, water, other plots, doors) */
+  const GH = C[N.k] && C[N.k].garden;
+  if (GH) {
+    const [w, d] = boxOf(N.k),
+      door = C[N.k].door ? C[N.k].door.x / PPU : 0,
+      at = {
+        back: [0, d + 1.5],
+        back_left: [-(w / 2 + 0.9), d + 1],
+        back_right: [w / 2 + 0.9, d + 1],
+        left: [-(w / 2 + 0.6), d * 0.45],
+        right: [w / 2 + 0.6, d * 0.45],
+        front: [door > 0 ? -(w / 2 - 0.35) : w / 2 - 0.35, -0.55],
+      },
+      old = (garden.get(B) || []).map(p => world(N, ...own(B, p.x, p.z)));
+    for (const [list, room] of [
+      [GH.trees || [], 2.2],
+      [GH.bushes || [], 0.9],
+    ])
+      for (const { k, side } of list) {
+        const o = at[side];
+        if (!o || !C[k]) continue;
+        const [x, z] = world(N, o[0], o[1]);
+        if (old.some(q => Math.hypot(q[0] - x, q[1] - z) < room)) continue;
+        props.push({ k, x: r2(x), z: r2(z), _from: L.i, _garden: 1 });
+      }
+  }
   if (B.act === 'fly') {
     const ship = OLD.find(p => p.k === 'airship');
     props.push({ ...ship, x: N.x, z: N.z, ...(N.rot ? { rot: N.rot } : {}) });
@@ -396,7 +427,10 @@ const kept = props.filter(p => {
   }
   return true;
 });
-for (const p of kept) delete p._from;
+for (const p of kept) {
+  delete p._from;
+  delete p._garden;
+}
 
 /* ---------- the dock: a walkable pier from the landing out along the deep channel ---------- */
 const dock = (G.spots || []).find(s => s.kind === 'dock'),
@@ -606,6 +640,107 @@ pastureGround(sc, fenced.gap);
 sc.props = squareEdgeProps(sc);
 /* HB-10d: the fountain's looks per chapter on its spot (tools/square-props.mjs) */
 sc.props = fountainLooks(sc);
+/* BD-7: the windmill kit on the farm and bubble cars by the shop and the station (tools/build-windmill-kit.py,
+   build-props-hub.py; BD-6's notes). Each on a spot found by the rules below, before the dressing (which keeps clear of
+   them) */
+{
+  const cornerH = (i, j) =>
+      +(sc.heights[sc.h - Math.max(0, Math.min(sc.h, j))] || [])[Math.max(0, Math.min(sc.w, i))] || 0,
+    zoneOf = k => G.zones.find(Z => Z.k === k),
+    inZone = (k, x, z) => !!zoneOf(k) && islandPointIn(zoneOf(k).poly, x, z),
+    solidNear = (x, z, r) =>
+      sc.props.some(p => {
+        const M = C[p.k];
+        if (!M || M.flat) return false;
+        if (M.box) return footDist(p, x, z) < r;
+        return (M.solid || 0) > 0.05 && Math.hypot(p.x - x, p.z - z) < r + M.solid * (p.s || 1);
+      }),
+    streetNear = (x, z, r) => {
+      for (let d = 0; d <= r; d += 0.5)
+        for (let a = 0; a < 12; a++) {
+          const t = tileAt(x + Math.cos((a * Math.PI) / 6) * d, z + Math.sin((a * Math.PI) / 6) * d);
+          if (STREET.includes(t) || WATER.includes(t)) return true;
+        }
+      return false;
+    },
+    beforeDoor = (x, z) =>
+      sc.props.some(p => {
+        const M = C[p.k];
+        if (!M || !M.door || !M.box) return false;
+        const [lx, lz] = own(p, x, z),
+          dx = (M.door.x / PPU) * (p.s || 1) * (p.f ? -1 : 1);
+        return lz < 0.5 && lz > -3.5 && Math.abs(lx - dx) < 1.8;
+      });
+  /* four more windmills on open, nearly level farmland round the windmill plot, 14 m apart: a solar-sail post mill, a
+     farm windpump, a sky kite turbine and a helix turbine (windmill v = design x 3 + colourway) */
+  const mill = plotOf('windmill'),
+    mills = sc.props.filter(p => p.k === 'windmill').map(p => [p.x, p.z]),
+    MILL_LOOKS = [9, 16, 23, 7],
+    cands = [];
+  for (let dz = -40; dz <= 40; dz += 1)
+    for (let dx = -40; dx <= 40; dx += 1) cands.push([mill.x + dx, mill.z + dz, Math.hypot(dx, dz)]);
+  cands.sort((a, b) => a[2] - b[2]);
+  for (const [x, z] of cands) {
+    if (mills.length > MILL_LOOKS.length) break;
+    if (!'gGE'.includes(tileAt(x, z))) continue;
+    if (['town', 'barn', 'pasture', 'forest'].some(k => inZone(k, x, z))) continue;
+    if (mills.some(m => Math.hypot(m[0] - x, m[1] - z) < 14)) continue;
+    if (plots.some(L => inPlot(L, x, z, 7)) || byStation(x, z, 6) || streetNear(x, z, 4) || solidNear(x, z, 4))
+      continue;
+    const i = Math.floor(x),
+      j = Math.floor(z),
+      hs = [];
+    for (let a = -2; a <= 3; a++) for (let b = -2; b <= 3; b++) hs.push(cornerH(i + a, j + b));
+    if (Math.max(...hs) - Math.min(...hs) > 0.6 || Math.min(...hs) < 0.3) continue;
+    /* facing the orbit's middle, on a quarter turn like the town */
+    const pv = G.cam.orbit.c,
+      rot = norm(Math.round(Math.atan2(z - pv[1], x - pv[0]) / (Math.PI / 2)) * 90 + 90);
+    sc.props.push({ k: 'windmill', x: r2(x), z: r2(z), v: MILL_LOOKS[mills.length - 1], ...(rot ? { rot } : {}) });
+    mills.push([x, z]);
+  }
+  /* bubble cars: two by the General store, two by Skyline Station, parked beside the front (parallel to it, off the
+     streets, clear of doors and of anything solid), each a different look */
+  let look = 0;
+  for (const [k, n] of [
+    ['shop', 2],
+    ['train_station', 2],
+  ]) {
+    const B = sc.props.find(p => p.k === k),
+      bx = boxOf(k);
+    if (!B || !bx) continue;
+    let put = 0;
+    /* beside the front first (out from each end), then before the front's corners (the station: its ends are the
+       inn's and the library's plots) */
+    const tries = [];
+    for (const side of [1, -1]) {
+      const T = [];
+      for (let out = 0.9; out <= 4; out += 0.3)
+        for (const lz of [-1.2, -0.4, 0.4, -2]) T.push([side * (bx[0] / 2 + out), lz]);
+      for (const lz of [-3.2, -4, -4.8]) for (const inx of [1.2, 2.4]) T.push([side * (bx[0] / 2 - inx), lz]);
+      tries.push([side, T]);
+    }
+    for (const [side, T] of tries)
+      for (let t = 0; t < 1 && put < n; t++) {
+        const spot = T.map(([lx, lz]) => world(B, lx, lz)).find(([x, z]) => {
+          if (STREET.includes(tileAt(x, z)) || WATER.includes(tileAt(x, z)) || onBridge(x, z)) return false;
+          if (plots.some(L => L.k !== (k === 'shop' ? 'shop' : 'station') && inPlot(L, x, z, 0.5))) return false;
+          return !solidNear(x, z, 1.5) && !beforeDoor(x, z);
+        });
+        if (!spot) continue;
+        const rot = norm((B.rot || 0) + (side > 0 ? 180 : 0));
+        sc.props.push({
+          k: 'bubble_car',
+          x: r2(spot[0]),
+          z: r2(spot[1]),
+          ...(look % 3 ? { v: look % 3 } : {}),
+          ...(rot ? { rot } : {}),
+        });
+        look++;
+        put++;
+        break;
+      }
+  }
+}
 /* the walking checks are the island's (build-island.mjs: from the square to each plot's front, the barn, the summit,
    the dock); the in-game full test walks from the hub to every door besides (self-test.js stGeometry). One that ends
    where a building now stands (the barn's zone's middle) ends at its door instead */
