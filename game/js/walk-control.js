@@ -5,6 +5,7 @@
 import { expose } from './test-globals.js';
 import { provide, render, selfTest } from './hooks.js';
 import { $, clamp } from './util.js';
+import { everyFree } from './free-tick.js';
 import { LOCATIONS, PEOPLE, ROADS, ROADS_BY_NODE, RULES, SHOPS, gameData, trainersAt } from './game-data.js';
 import { blockerAt, canEnter, encounterBuild, encountersHere, gateText, healAll } from './logic/rules.js';
 import { roomTurnOf } from './logic/room-turn.js';
@@ -757,7 +758,7 @@ function exitPrompt(e) {
     l = Math.hypot(dx, dz) || 1;
   walkTo(walkablePointNear(pt[0] + (dx / l) * 3.5, pt[1] + (dz / l) * 3.5));
 }
-setInterval(() => {
+everyFree(() => {
   try {
     if (typeof storyResumeCheck === 'function') storyResumeCheck();
     if (typeof storyPendingCheck === 'function') storyPendingCheck();
@@ -865,7 +866,7 @@ function runSeenSum() {
 }
 /* alpha 0.4.1: a view that was held until it was ready (seamless-world.js seamlessGate) takes over as soon as it is: walking yourself,
    nothing else would ask for it (a trip did, with each batch of steps) */
-setInterval(() => {
+everyFree(() => {
   try {
     if (
       !saveData.started ||

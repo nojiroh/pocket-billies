@@ -6,6 +6,7 @@
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from './test-globals.js';
 import { provide } from './hooks.js';
+import { everyFree } from './free-tick.js';
 import { RULES } from './game-data.js';
 import { battleWeatherOf } from './logic/weather.js';
 import { battleSay } from './logic/battle-engine.js';
@@ -67,7 +68,7 @@ function battleWeatherMultiplier(t) {
   }
 })();
 /* the painted battle stage gets rain, snow, ash or the night drawn over it (the 3D stage has the real thing) */
-setInterval(() => {
+everyFree(() => {
   const el = document.getElementById('camWorld');
   if (!el) return;
   const w =

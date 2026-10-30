@@ -398,6 +398,14 @@ export const ENGINE_DEFAULTS = {
        and its screen-sized targets resized only where it can't be seen (behind a screen or a window, a fade, a loading
        screen); during a walk a step waits. Off until the owner's phone run; the debug menu's switch */
     resSteps: false,
+    /* FL-4 (even frames), each off until the owner's phone run; the debug menu's switches: the far shadow map's cache
+       keyed per prop-grid cell in view (shadowCells); last frame's far map used again when nothing in it moved
+       (shadowHold); grass planted with a view prepared ahead and sent to the card in strips (grassAhead); the page's
+       periodic jobs run in free time (freeTicks) */
+    shadowCells: false,
+    shadowHold: false,
+    grassAhead: false,
+    freeTicks: false,
     /* phase 20 R3 (context, H5): a place is shown once two frames have drawn behind its fade (at most 1.5 s), so its
        first draws compile and upload out of sight; a restored context fades back in the same way */
     warmUp: true,
@@ -1667,6 +1675,30 @@ export const ENGINE_SPEC = [
         'Resolution steps',
         'bool',
         'The automatic resolution moves in a few larger steps (full, 80%, 60%, 50%), and the picture changes size only where you can’t see it: behind a menu or a window, while a place fades in or out, behind a loading screen. While you walk a step waits, so walking never hitches on a resize. Off: steps of 10% at any moment.',
+      ],
+      [
+        'shadowCells',
+        'Shadow cache by squares',
+        'bool',
+        'The kept far shadows are drawn again only when the still things in a square in view change, not each time a square comes into view or leaves it. The same shadows.',
+      ],
+      [
+        'shadowHold',
+        'Hold still far shadows',
+        'bool',
+        'When nothing in the far shadow map moved since the last frame, that map is used again instead of copied and drawn on. The same shadows.',
+      ],
+      [
+        'grassAhead',
+        'Grass planted ahead',
+        'bool',
+        'A place prepared before you reach it plants its grass then too, and big grass goes to the graphics card in strips over a few frames instead of in one.',
+      ],
+      [
+        'freeTicks',
+        'Jobs in free time',
+        'bool',
+        'The game’s regular background checks (story, sounds, trainers in sight and others) run when a frame leaves time free instead of at fixed moments that can land in a frame. The music keeps its own clock.',
       ],
       [
         'warmUp',

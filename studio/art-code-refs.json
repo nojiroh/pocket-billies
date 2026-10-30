@@ -1224,8 +1224,8 @@
    "game/js/shop.js:182",
    "game/js/shop.js:192",
    "game/js/shop.js:267",
-   "game/js/sound.js:738",
-   "game/js/sound.js:2113",
+   "game/js/sound.js:739",
+   "game/js/sound.js:2114",
    "game/js/town-square.js:159",
    "game/js/ui-kit.js:679",
    "game/js/ui-run-kit.js:100",
@@ -1256,8 +1256,8 @@
    "game/js/engine/post-effects.js:476",
    "game/js/engine/post-effects.js:480",
    "game/js/engine/post-effects.js:576",
-   "game/js/fishing.js:171",
-   "game/js/friends.js:636",
+   "game/js/fishing.js:172",
+   "game/js/friends.js:637",
    "game/js/logic/cutscene-set.js:38",
    "game/js/logic/frame-control.js:85",
    "game/js/logic/frame-control.js:280",
@@ -1281,10 +1281,10 @@
    "game/js/story-stage.js:280",
    "game/js/train-ride.js:315",
    "game/js/train-ride.js:322",
-   "game/js/walk-control.js:418",
-   "game/js/walk-control.js:426",
-   "game/js/walk-control.js:538",
-   "game/js/walk-control.js:556",
+   "game/js/walk-control.js:419",
+   "game/js/walk-control.js:427",
+   "game/js/walk-control.js:539",
+   "game/js/walk-control.js:557",
    "game/js/walk-view.js:350",
    "game/js/walk-view.js:3892",
    "game/js/walk-view.js:4003",
@@ -1481,8 +1481,8 @@
   "ring": [
    "game/js/battle-anim-run.js:185",
    "game/js/engine/webgl.js:810",
-   "game/js/walk/map-cache.js:78",
-   "game/js/walk/map-cache.js:415"
+   "game/js/walk/map-cache.js:88",
+   "game/js/walk/map-cache.js:531"
   ],
   "sat": [
    "game/js/walk/quality-cull.js:224",
@@ -1493,7 +1493,7 @@
    "game/js/logic/ui-dials.js:223"
   ],
   "sheet": [
-   "game/js/kappi.js:318",
+   "game/js/kappi.js:319",
    "game/js/logic/kappi-tips.js:92",
    "game/js/logic/kappi-tips.js:246",
    "game/js/logic/soundscape.js:111",
@@ -1566,7 +1566,7 @@
    "game/js/cutscene/director.js:171",
    "game/js/engine/post-effects.js:484",
    "game/js/engine/post-effects.js:586",
-   "game/js/fishing.js:171",
+   "game/js/fishing.js:172",
    "game/js/logic/bowl.js:133",
    "game/js/logic/cutscene-set.js:38",
    "game/js/logic/data-checks.js:773",
@@ -1596,10 +1596,10 @@
    "game/js/workshop.js:102"
   ],
   "window": [
-   "game/js/debug-log.js:931",
+   "game/js/debug-log.js:944",
    "game/js/seamless-world.js:1196",
-   "game/js/walk-control.js:1022",
-   "game/js/walk-control.js:1035",
+   "game/js/walk-control.js:1023",
+   "game/js/walk-control.js:1036",
    "game/js/walk/effects.js:444",
    "game/js/walk/lighting.js:243"
   ]
