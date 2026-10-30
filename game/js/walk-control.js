@@ -999,13 +999,20 @@ export function walkMapSync() {
       /* FL-1b: read once a frame (walkView.t moves every frame), not for each exit label: two layout reads each */
       safe: () => {
         if (safeBand.t === walkView.t && safeBand.v) return safeBand.v;
-        const a = $('.wh-card'),
-          b = $('.wh-foot'),
-          H = innerHeight;
+        /* the band between what covers the world: the top bar and the place card above, the foot's buttons (Actions)
+           and the bottom bar below; only what shows (a folded card or an empty foot row has no height). With none,
+           10% and 88% as before */
+        const H = innerHeight,
+          shown = (/** @type {string} */ sel) =>
+            [...document.querySelectorAll(sel)]
+              .map(e => e.getBoundingClientRect())
+              .filter(r => r.height > 0 && r.width > 0 && r.bottom > 0 && r.top < H),
+          up = shown('#app .topbar, .wh-card'),
+          down = shown('.wh-foot > *, pb-nav-bar#nav:not([hidden])');
         safeBand.t = walkView.t;
         safeBand.v = [
-          a ? clamp(a.getBoundingClientRect().bottom / H, 0, 0.5) : 0.1,
-          b ? clamp(b.getBoundingClientRect().top / H, 0.5, 1) : 0.88,
+          up.length ? clamp(Math.max(...up.map(r => r.bottom)) / H, 0, 0.5) : 0.1,
+          down.length ? clamp(Math.min(...down.map(r => r.top)) / H, 0.5, 1) : 0.88,
         ];
         return safeBand.v;
       },
