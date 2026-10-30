@@ -9,7 +9,7 @@ placing"). Counted from the page's own boxes, not pictures.
 One page (Copperleaf, ?fixture=town) is resized from size to size without reloading, so the layout must follow a
 resize (a phone turned, a window dragged). At each size, for the walk, Team, Bag, Guide, Trainer, Settings and a
 battle:
-- nothing runs off the screen sideways (the page's scroll width is the screen's) and the bars are inside the screen;
+- the page can't slide sideways (a scroll to the side stays at 0) and the bars are inside the screen;
 - on a wide screen (the owner's answer) the top bar, the bottom bar, the Actions button, the side panel, a window and
   the battle's cards sit inside the centred 16:9 area (--hud-w, --hud-x in base.css), with 2 px of slack;
 - the side panel and the bottom bar don't overlap; the battle's cards don't cover the fighters' frame;
@@ -31,7 +31,8 @@ OUT = ROOT / 'validation' / 'placing'
 # every box the gates read, in CSS pixels, and the 16:9 area
 BOXES = """(()=>{const r=e=>{if(!e)return null;const b=e.getBoundingClientRect();return b.width&&b.height?[b.left,b.top,b.right,b.bottom]:null};
 const cs=getComputedStyle(document.documentElement),W=innerWidth,H=innerHeight,hw=Math.min(W,H*16/9);
-return {W,H,sw:document.scrollingElement.scrollWidth,area:[(W-hw)/2,0,(W+hw)/2,H],
+const se=document.scrollingElement;se.scrollLeft=40;const sx=se.scrollLeft;se.scrollLeft=0;
+return {W,H,sx,area:[(W-hw)/2,0,(W+hw)/2,H],
 top:r(document.querySelector('#app .topbar')),nav:r(document.querySelector('pb-nav-bar#nav:not([hidden])')),
 acts:r(document.querySelector('.wh-foot > *')),app:r(document.getElementById('app')),
 sheet:r(document.querySelector('#ov .sheet')),cards:[r(document.getElementById('acts')),r(document.getElementById('msg'))].filter(Boolean),
@@ -84,14 +85,14 @@ def main():
 
             B = look('walk', "uiState.tab='walk';render()")
             A = B['area']
-            gate(B['sw'] <= B['W'] + 1, f'{label} walk: nothing runs off the screen sideways ({B["sw"]} of {B["W"]})')
+            gate(B['sx'] == 0, f'{label} walk: the page doesn\'t slide sideways (scrolled {B["sx"]} px of 40)')
             gate(inside(B['top'], A) and inside(B['nav'], A) and inside(B['acts'], A), f'{label} walk: top bar, bottom bar and Actions inside the centred 16:9 area {[round(x) for x in A[::2]]}: {B["top"] and [round(x) for x in B["top"][::2]]}, {B["nav"] and [round(x) for x in B["nav"][::2]]}')
             if B['band'] and B['top'] and B['nav']:
                 t, n = B['band'][0] * B['H'], B['band'][1] * B['H']
                 gate(t >= B['top'][3] - 2 and n <= B['nav'][1] + 2, f'{label} walk: the label band {round(t)}-{round(n)} px lies between the top bar ({round(B["top"][3])}) and the bottom bar ({round(B["nav"][1])})')
             for scr in ['team', 'bag', 'guide', 'profile']:
                 B = look(scr, f"uiState.tab='{scr}';render()")
-                gate(B['sw'] <= B['W'] + 1, f'{label} {scr}: nothing runs off the screen sideways ({B["sw"]} of {B["W"]})')
+                gate(B['sx'] == 0, f'{label} {scr}: the page doesn\'t slide sideways (scrolled {B["sx"]} px of 40)')
                 if B['wide']:
                     gate(inside(B['app'], A), f'{label} {scr}: the side panel inside the centred 16:9 area ({[round(x) for x in B["app"][::2]]} in {[round(x) for x in A[::2]]})')
                     gate(not overlap(B['app'], B['nav']), f'{label} {scr}: the side panel and the bottom bar apart ({B["app"] and round(B["app"][0])} vs {B["nav"] and round(B["nav"][2])})')
@@ -104,7 +105,7 @@ def main():
             settle(); time.sleep(1)
             B = pg.evaluate(BOXES)
             if SHOTS: pg.screenshot(path=str(OUT / f'{tag}-battle.png'))
-            gate(B['sw'] <= B['W'] + 1 and all(c[0] >= -1 and c[2] <= B['W'] + 1 and c[3] <= B['H'] + 1 for c in B['cards']), f'{label} battle: the cards on screen ({[[round(x) for x in c] for c in B["cards"]]})')
+            gate(B['sx'] == 0 and all(c[0] >= -1 and c[2] <= B['W'] + 1 and c[3] <= B['H'] + 1 for c in B['cards']), f'{label} battle: the cards on screen ({[[round(x) for x in c] for c in B["cards"]]})')
             if B['wide']:
                 gate(all(inside(c, A) for c in B['cards']), f'{label} battle: the cards inside the centred 16:9 area')
                 gate(not any(overlap(c, B['frame']) for c in B['cards']), f'{label} battle: the cards beside the fighters, not over them (frame {B["frame"] and [round(x) for x in B["frame"]]})')
