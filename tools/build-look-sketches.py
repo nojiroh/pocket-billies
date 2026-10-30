@@ -143,12 +143,13 @@ def antenna(x, y, z, tall):
 
 
 # ---------------------------------------------------------------------------------------------------- the house
+# The lean is metres at the model's top (about 6.8 m with the antenna): 0.5 m there is about 4 degrees.
 # One body for all three: a cob ground floor, a jettied half-timber upper floor, a gable-front gambrel roof in
 # verdigris standing seam over thick dark eaves. Front face at y=0 (the camera's side), up is z.
 HOUSE_WARP = [
     {'lean': [0.15, 0.0], 'sag': 0.04, 'bulge': 0.02},                    # A: about 1.5 degrees
-    {'lean': [0.4, 0.08], 'sag': 0.14, 'bulge': 0.05},                    # B: about 4 degrees, the track's default
-    {'lean': [0.7, 0.12], 'sag': 0.26, 'bulge': 0.09, 'twist': 0.14},     # C: about 7 degrees, turned at the top
+    {'lean': [0.5, 0.08], 'sag': 0.14, 'bulge': 0.05},                    # B: about 4 degrees, the track's default
+    {'lean': [0.9, 0.12], 'sag': 0.26, 'bulge': 0.09, 'twist': 0.14},     # C: about 7 degrees, turned at the top
 ]
 
 
@@ -294,7 +295,10 @@ def shop(lv):
     L += [box(0, D, z_roof, W + 0.6, Dp + 0.6, 0.12, DARK, 'wood', name='eaves'),
           box(0, D, z_roof + 0.12, W + 0.6, Dp + 0.6, 0.22, NAVY if lv != 1 else RED, 'barreltile', bevel=0.06,
               name='slab roof', roof=1),
-          box(0, D, z_roof + 0.34, W + 0.1, Dp + 0.1, 0.06, WHITE, 'metal', name='roof band', roof=1)]
+          box(0, -0.27, z_roof + 0.34, W + 0.6, 0.06, 0.06, WHITE, 'metal', name='roof rim', roof=1),
+          box(0, Dp + 0.27, z_roof + 0.34, W + 0.6, 0.06, 0.06, WHITE, 'metal', name='roof rim', roof=1),
+          box(-(W + 0.6) / 2 + 0.03, D, z_roof + 0.34, 0.06, Dp + 0.6, 0.06, WHITE, 'metal', name='roof rim', roof=1),
+          box((W + 0.6) / 2 - 0.03, D, z_roof + 0.34, 0.06, Dp + 0.6, 0.06, WHITE, 'metal', name='roof rim', roof=1)]
     # the big front window with goods, the glass door on the right
     L += [box(-0.55, -0.02, 0.55, 2.0, 0.04, 1.3, GLASS, glass=1, name='shop window'),
           box(-0.55, 0.0, 0.5, 2.15, 0.06, 0.08, BRASS, 'metal', name='window frame'),
