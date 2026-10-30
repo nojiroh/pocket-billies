@@ -14,9 +14,9 @@ per-session tag (CLAUDE.md).
     - `shop` (1,880 triangles): a Streamline corner store with a round corner and speed lines, a big window of goods,
       a striped awning, a slab roof over dark eaves, the round leaf emblem board with a neon ring, a starburst, the
       SHOP board and a neon under the eaves. C's showpieces: a Googie canopy over the door and string lights.
-    - `inn` (3,805): three floors stacked, the first turned +3 degrees and the top -4 (a `turned()` helper turns a
+    - `inn` (3,825): three floors stacked, the first turned +3 degrees and the top -4 (a `turned()` helper turns a
       group of parts), jettied, with two balconies, a teacup sign, the INN board, an upswept verdigris roof, an atomic
-      finial and a chimney with smoke. C's showpieces: string lights and a blossom street tree.
+      finial and a chimney with smoke; the INN board stands on posts beside the steps. C's showpieces: string lights and a blossom street tree.
     - `library` (3,510): the Bureau's archive. A cream rotunda with the arched door, the LIBRARY board and a clock;
       brick wings fronted with filing drawers under arched windows; an upswept fan of books round a copper drum; ivy.
       C's showpiece: glowing tubes under the cornice.
@@ -42,9 +42,10 @@ per-session tag (CLAUDE.md).
   so it can't draw BD-1's shapes. That is why the bake now goes through the game's mesher.
 - Found, not changed:
   - A `face: 'fixed'` decal needs about 4 cm in front of the surface behind it. At 1 cm the lab's window view didn't
-    draw on Copperleaf. And a board hung a metre out under the turned balcony drew without its lettering, though it had
-    the same clearance. Builders should keep decals 4 cm out, on a wall, not under an overhang. BD-4a's kit may meet
-    this too.
+    draw on Copperleaf (at 5 cm it does). A board hung out on the inn's balcony rail drew without its lettering, cause
+    not found. Builders should keep decals 4 cm out, on a wall or on their own posts; BD-4a's kit may meet this too.
+  - From the high orbit camera, a deep balcony hides the wall about half a metre below it. The INN board went there
+    twice and was hidden, so it now stands on two posts beside the steps.
   - Fronts read dark at noon from the orbit camera on Copperleaf (rot 90, the sun behind); every building there does
     the same. A BD-8 lighting point.
 - Risky:
@@ -56,7 +57,12 @@ per-session tag (CLAUDE.md).
     art-code-refs.json). On merge, rerun `python3 tools/build-civic.py`, then `npm run data` and
     `node tools/art-code-refs.mjs`.
   - Phone cost isn't measured: 300-1,000 more triangles each, about 12k for the four.
-- Verified: (being run; filled in before the PR)
+- Verified: lint, typecheck, format:check, check:modules, check:data and build clean; `npm test` 2,421 of 2,421 (the
+  new test 5 of 5); the unused-art check 0 unused; tools/clear-windows.py on Copperleaf: 0 props hide a window; smoke
+  7 of 7 (421 s) on the final models. The full quick check was not run: it takes over an hour here (BD-2b's entry), and
+  no game code changed. Pictures (look-hub-buildings.py, scratchpad, not committed), all without page errors: the
+  shop, inn and library on test_hub_buildings at noon and night (35 degrees round), and the four on Copperleaf (rot 90)
+  at noon and night. Rooms were not opened in the pictures; doors, boxes and rooms are unchanged in the catalogue.
 - Next: wave 4 ends when BD-4a (`track/buildings`) and BD-6 (`claude/bd-6-landmarks`) have their entries; neither had
   one when this session ended, so the last of them starts BD-7 on `track/buildings`. BD-7 merges this branch's draft
   PR.
