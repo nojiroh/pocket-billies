@@ -140,3 +140,63 @@ test('meshWorker: asked once while it is built, taken once, built again for a ne
     propMeshes.done.clear();
   }
 });
+
+// quality.uploadQueue: a picture's first upload waits for its bitmap (createImageBitmap, off the page); then the first
+// of a tick always goes, the rest only while the frame's one-off budget lasts; a bitmap that can't be made falls back
+// to the picture itself.
+test('uploadQueue: bitmap first, the first upload of a tick always, the rest within the budget', async () => {
+  const G = /** @type {any} */ (globalThis),
+    saved = {
+      img: G.HTMLImageElement,
+      cib: G.createImageBitmap,
+      body: G.document.body,
+      gl: G.gpuState.gl,
+      left: G.frameBudgetLeft,
+    };
+  class Img {
+    constructor(bad) {
+      this.naturalWidth = this.naturalHeight = this.width = this.height = 4;
+      this.bad = bad;
+    }
+  }
+  G.HTMLImageElement = Img;
+  G.createImageBitmap = async im => {
+    if (im.bad) throw new Error('no');
+    return { of: im, close() {} };
+  };
+  G.document.body = { classList: { contains: () => false } };
+  G.gpuState.gl = {};
+  const Q = G.uploadQueue,
+    src = G.queuedUploadSource;
+  try {
+    const a = new Img(),
+      b = new Img(),
+      c = new Img(true);
+    assert.equal(src(a), null, 'waits for its bitmap');
+    assert.equal(src(b), null);
+    assert.equal(src(c), null);
+    await new Promise(r => setTimeout(r, 0));
+    Q.n = 0;
+    G.frameBudgetLeft = () => false;
+    assert.equal(src(a).of, a, 'the first of a tick goes, whatever the budget');
+    Q.n = 1;
+    const held = Q.held;
+    assert.equal(src(b), null, 'the second waits for a frame with budget left');
+    assert.equal(Q.held, held + 1);
+    G.frameBudgetLeft = () => true;
+    assert.equal(src(b).of, b);
+    assert.equal(src(c), c, 'no bitmap: the picture itself');
+    assert.ok(Q.failed >= 1);
+    // not an <img> (a canvas): as before, at once
+    const cv = { width: 4, height: 4 };
+    assert.equal(src(cv), cv);
+  } finally {
+    G.HTMLImageElement = saved.img;
+    G.createImageBitmap = saved.cib;
+    G.document.body = saved.body;
+    G.gpuState.gl = saved.gl;
+    G.frameBudgetLeft = saved.left;
+    Q.wait.clear();
+    Q.n = 0;
+  }
+});
