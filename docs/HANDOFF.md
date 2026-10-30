@@ -61,6 +61,9 @@ track's tag comes at FL-7).
   of the lab, the phone crash step ("w:copperleaf* stopped drawing"), battle music's drums). Here the same 5 fail, plus Starters ("battle rig buffers nearly empty") and Postcards ("coming
   back showed no stamp"), both passing alone (154 s). 6 pictures over the threshold: battle-alpha, starter-battle,
   windows-night, world-buddy and the two failed steps' (other moments; the switches are off there).
+- After merging main (the buildings and characters tracks, whose building shader the low-poly variants are made from):
+  unit tests 2,529 of 2,529; check-draw-order every gate (11 solid draws first, pictures on/off 0.39-0.62% against
+  0.52% on/on); smoke as before (the phone crash step only).
 - Next: round 5 (FL-5b phone GPU look trades, FL-4b the load overlap), started by this lane in new sessions. FL-5b
   could add `bldS` and, with its one-picture far trees, an opaque crown core. FL-6b (round 4's other lane) finished
   first, so this lane starts round 5.
