@@ -15,3 +15,20 @@ test('every figure switch the debug menu draws is handled', () => {
   assert.ok(ids.length >= 8, `found ${ids.length} switches`);
   for (const id of ids) assert.match(src, new RegExp(`case '${id}':`), `${id} has no case`);
 });
+
+// fluid track FL-2a: the old drawing paths' switches (Pictures in batches, Sky last) are drawn and handled, and each
+// names a Quality dial the engine has
+test('every picture path switch the debug menu draws is handled and names a Quality dial', async () => {
+  const list = src.slice(
+    src.indexOf('const PICTURE_PATH_SWITCHES = ['),
+    src.indexOf('];', src.indexOf('const PICTURE_PATH_SWITCHES'))
+  );
+  const rows = [...list.matchAll(/\[\s*'(fl2[a-z]+)',\s*'(\w+)'/g)].map(m => [m[1], m[2]]);
+  assert.equal(rows.length, 2);
+  const settings = readFileSync(new URL('../../game/js/engine/settings.js', import.meta.url), 'utf8');
+  for (const [id, k] of rows) {
+    assert.match(src, new RegExp(`case '${id}':`), `${id} has no case`);
+    assert.match(settings, new RegExp(`\\n    ${k}: true,`), `${k} is on by default`);
+  }
+  assert.match(src, /PICTURE_PATH_SWITCHES\.map\(/, 'drawn in the menu');
+});

@@ -99,12 +99,14 @@ import { engineSetting } from './engine/settings.js';
 import { forceContextLoss, gpuState } from './engine/webgl.js';
 import { walkRenderer } from './walk/walk-state.js';
 import { rebuildFromSettings } from './walk/map-cache.js';
+import { spriteInstanceState } from './walk/sprites.js';
 import { paintBoxes, playTurnEvents } from './battle.js';
 /* eslint-disable no-func-assign */
 expose({
   DEBUG_LOOK: [() => DEBUG_LOOK],
   DEBUG_OPEN_KEY: [() => DEBUG_OPEN_KEY],
   FIGURE_SWITCHES: [() => FIGURE_SWITCHES],
+  PICTURE_PATH_SWITCHES: [() => PICTURE_PATH_SWITCHES],
   TERRAIN_LOOK_SWITCHES: [() => TERRAIN_LOOK_SWITCHES],
   debugAction: [() => debugAction, v => (debugAction = v)],
   debugButtonHTML: [() => debugButtonHTML],
@@ -124,6 +126,7 @@ expose({
   debugSpeciesOptions: [() => debugSpeciesOptions, v => (debugSpeciesOptions = v)],
   figureSwitchLabel: [() => figureSwitchLabel, v => (figureSwitchLabel = v)],
   openDebug: [() => openDebug, v => (openDebug = v)],
+  picturePathLabel: [() => picturePathLabel, v => (picturePathLabel = v)],
   refreshDebugMenu: [() => refreshDebugMenu, v => (refreshDebugMenu = v)],
 });
 /* eslint-enable no-func-assign */
@@ -208,6 +211,21 @@ const TERRAIN_LOOK_SWITCHES = [
   ['tr4snow', 'snowLine', 'Snow line'],
   ['tr4edges', 'cliffEdges', 'Scree and turf edges'],
 ];
+/* fluid track FL-2a: the old drawing paths, kept one release (players have no Settings switch): [action, Quality
+   switch, label] */
+const PICTURE_PATH_SWITCHES = [
+  ['fl2batch', 'spriteInstances', 'Pictures in batches'],
+  ['fl2sky', 'skyLast', 'Sky last'],
+];
+/** a picture path switch's label: on, off, or off by itself after a GL error (walk/sprites.js firstInBatches) */
+function picturePathLabel([, k, l]) {
+  const fell =
+    k === 'spriteInstances' &&
+    typeof spriteInstanceState !== 'undefined' &&
+    !!spriteInstanceState.bad &&
+    spriteInstanceState.bad === gpuState.gl;
+  return (fell ? 'Off (GL error): ' : engineSetting('quality', k) ? 'On: ' : 'Off: ') + l;
+}
 /* characters track CH-3: the figure spike's dials (Engine > People), stepped through for this session (the game
    data's engine defaults, as the Studio's engine editor sets them), to try on the phone: [action, dial, label,
    [value, its name]...] */
@@ -306,6 +324,7 @@ function debugHTML() {
   <div class="dbg-row">${debugButtonHTML('fps', debugMenu.fps ? 'Hide FPS meter' : 'Show FPS meter')}<span class="note">Screen ≈ ${frameScheduler.hz} Hz · cap ${userFps()} FPS · battle quality level ${battleStage.q.lvl} (0 is best)</span></div>
   <div class="dbg-row">${debugButtonHTML('q0', 'Force best quality')}${debugButtonHTML('qauto', 'Automatic quality')}${debugButtonHTML('glloss', 'Lose the GPU context')}${debugButtonHTML('foggrid', walkRenderer.dbg && walkRenderer.dbg.fogGrid ? 'Hide the fog grid' : 'Show the fog grid')}</div>
   <div class="dbg-row">${TERRAIN_LOOK_SWITCHES.map(([a, k, l]) => debugButtonHTML(a, (engineSetting('world', k) ? 'On: ' : 'Off: ') + l)).join('')}</div>
+  <div class="dbg-row">${PICTURE_PATH_SWITCHES.map(f => debugButtonHTML(f[0], picturePathLabel(f))).join('')}</div>
   <div class="dbg-row">${FIGURE_SWITCHES.map(f => debugButtonHTML(f[0], figureSwitchLabel(f))).join('')}</div><p class="note">Figures (the characters track's spike), for this session only: you as a small 3D figure baked into pixel art; with Townsfolk on, the townsfolk and your rival in battle too. Style plain 3D is the same figure without the pixel pass. Tap a button to step its value.</p><p class="note">Terrain look, off in the game: a run place's cliffs in its biome's rock and strata, snow above its snow line, scree and turf edges. For this session only; a mountains run (Runs above) shows them best.</p>
   ${
     DATA_WARN.length
@@ -695,6 +714,17 @@ function debugAction(x) {
         on = !engineSetting('world', k);
       D.world = { ...(D.world || {}), [k]: on };
       if (typeof rebuildFromSettings === 'function') rebuildFromSettings();
+      return refreshDebugMenu(`${l} ${on ? 'on' : 'off'}.`);
+    }
+    /* FL-2a: an old drawing path back on for this session (the game data's engine defaults, as above) */
+    case 'fl2batch':
+    case 'fl2sky': {
+      const f = PICTURE_PATH_SWITCHES.find(t => t[0] === x),
+        [, k, l] = f,
+        E = (gameData.engine = gameData.engine || {}),
+        D = (E.defaults = E.defaults || {}),
+        on = !engineSetting('quality', k);
+      D.quality = { ...(D.quality || {}), [k]: on };
       return refreshDebugMenu(`${l} ${on ? 'on' : 'off'}.`);
     }
     case 'killpage':

@@ -142,7 +142,7 @@ function setup() {
     color: { outlines: 1 },
     shadows: { selfShade: 0.7, strength: 0.6 },
     grass: { wind: 1 },
-    quality: { cull: true },
+    quality: { cull: true, spriteInstances: false },
     world: { curve: 0 },
   };
   stubs(gl);
@@ -325,6 +325,7 @@ test('the instanced fragment shader: every per-picture uniform read from a varyi
     'uFlipN',
     'uFixed',
     'uNoRecv',
+    'uCAO',
   ])
     assert.match(fs, new RegExp(`#define ${u} `), u);
   for (const f of ['lookOn(', 'seasonal(', 'snowOn(']) assert.ok(main.includes(f), f);
@@ -472,4 +473,143 @@ for (const inst of [false, true])
         [out[0][0], 1],
       ]);
     }
+  });
+
+// ---------- fluid track FL-2a: the three fixes found in review ----------
+// (a) the pass always knows which program is bound: a picture with blades or hands puts the sprite program in use before
+// them, even when none is drawn (a model's blades: no blades drawn for a model), so a picture after it that leaves the
+// run (a hit flash) is drawn on the sprite program, not the instanced one
+test('FL-2a (a): after a model with blades, a flashing picture is drawn on the sprite program', () => {
+  const gl = setupInstanced(),
+    sign = fixture().find(it => it.id === 'sign'),
+    L = [
+      { ...sign, id: 'bladed', vox: true, M: M({ blades: { img: 'blade', x: 0, y: 0, w: 8 } }) },
+      { ...sign, id: 'flash', x: 20, hit: [1, 1, 1, 0.5] },
+    ];
+  G.drawSprites(camera(), L, X, [], [], 32);
+  let prog = null;
+  const at = [];
+  for (const c of gl.calls) {
+    if (c[0] === 'useProgram') prog = c[1];
+    else if (c[0] === 'drawArrays') at.push(prog);
+  }
+  assert.ok(at.length > 0);
+  assert.deepEqual([...new Set(at)], ['sprite']);
+  assert.equal(prog, 'sprite', 'the pass ends on the sprite program');
+});
+// (b) a crossing tree that flashes or dithers in keeps its crossing picture, as on the plain path
+for (const what of ['hit', 'rise'])
+  test(`FL-2a (b): a crossing tree with ${what === 'hit' ? 'a hit flash' : 'its rise dither'} keeps its crossing picture`, () => {
+    const one = inst => {
+      const gl = inst ? setupInstanced() : setup(),
+        L = fixture().filter(it => it.id === 'oak');
+      L[0][what] = what === 'hit' ? [1, 1, 1, 0.5] : [0.4, 0, 1];
+      G.drawSprites(camera(), L, X, [], [], 32);
+      return draws(gl.calls).out;
+    };
+    assert.deepEqual(one(false), [
+      ['tex1', 1],
+      ['tex1', 1],
+    ]);
+    assert.deepEqual(one(true), one(false));
+  });
+// (c) the reflection of a figure's cell of the live atlas: its rect (im.uv) and the figure flag, plain and batched
+test("FL-2a (c): a figure's reflection draws its cell of the atlas, lit as a figure, in both paths", () => {
+  const cell = [0.25, 0.5, 0.125, 0.25],
+    L = () => {
+      const man = fixture().find(it => it.id === 'man');
+      return [{ ...man, cut: 0, im: { ...man.im, uv: cell, figAtlas: true } }];
+    };
+  let gl = setup();
+  G.reflectionPass(L(), camera(), 400, 300, X);
+  const c = gl.calls.map(q => q.map(round).join(' '));
+  assert.ok(c.includes('uniform4fv uUV ' + cell.join(',')), 'the plain reflection sends the cell');
+  assert.ok(c.includes('uniform1f uFig 1'), 'and the figure flag');
+  gl = setupInstanced();
+  G.reflectionPass(L(), camera(), 400, 300, X);
+  const u = G.unpackSpriteInstance(0);
+  assert.equal(u.fig, 1);
+  assert.deepEqual(
+    u.cell.map(v => Math.round(v * 1e4) / 1e4),
+    cell
+  );
+});
+
+// FL-2a: the contact shade at a picture's base, once per picture: the plain pass sends it as uCAO, the batched one
+// packs the same value (to a 65535th), a crossing picture the same as its tree; no patches or the dial at 0 give 1
+test("FL-2a: each picture's contact shade, as uCAO and in its instance", () => {
+  const XA = {
+      ...X,
+      ao: [
+        [1, 2, 1.5, 1.2],
+        [5, 5, 0.5, 0.5],
+      ],
+      contact: 0.6,
+    },
+    want = it => G.contactShade(XA.ao, XA.contact, it.x, it.z);
+  let gl = setup();
+  const items = fixture();
+  G.drawSprites(camera(), items, XA, [], [], 32);
+  const sent = gl.calls.filter(c => c[0] === 'uniform1f' && c[1] === 'uCAO').map(c => c[2]);
+  const L = G.spriteDrawList(items);
+  assert.ok(sent.length > 5);
+  assert.ok(
+    sent.some(v => v < 0.99),
+    'the oak stands in a patch'
+  );
+  assert.deepEqual(
+    sent.map(round),
+    L.filter((it, i) => ['quad', 'wave'].includes(G.spriteRecordAt(i).mode)).map(it => round(want(it)))
+  );
+  gl = setupInstanced();
+  G.drawSprites(camera(), fixture(), XA, [], [], 32);
+  const F = G.spriteFrame(camera(), XA.sun, XA);
+  let k = 0;
+  G.spriteDrawList(fixture()).forEach((it, i) => {
+    const r = G.spriteRecordAt(i);
+    G.spriteRecord(it, F, r);
+    if (r.mode !== 'quad') return;
+    for (let n = r.crossOn ? 2 : 1; n > 0; n--)
+      assert.ok(Math.abs(G.unpackSpriteInstance(k++).cao - want(it)) <= 1 / 65535, it.id);
+  });
+  setup();
+  G.drawSprites(camera(), fixture(), { ...XA, contact: 0 }, [], [], 32);
+  assert.ok(gpuState.gl.calls.filter(c => c[1] === 'uCAO').every(c => c[2] === 1));
+});
+
+// FL-2a: the automatic fallback. The first frame in batches on a context ends with a getError; an error there turns
+// batches off for the page (the next frame draws one picture a draw), an error raised before it is not blamed on it
+for (const when of ['during', 'before'])
+  test(`FL-2a: a GL error ${when} the first frame in batches ${when === 'during' ? 'turns batches off' : 'leaves them on'}`, () => {
+    const gl = setupInstanced(),
+      errs = when === 'during' ? [0, 1282] : [1282, 0];
+    G.spriteInstanceState.bad = null;
+    gl.getError = () => errs.shift() ?? 0;
+    const logged = [];
+    const wasLog = G.debugLog;
+    G.debugLog = { add: (k, m) => logged.push(k + ': ' + m) };
+    const was = console.error;
+    console.error = () => {};
+    G.drawSprites(camera(), fixture(), X, [], [], 32);
+    console.error = was;
+    const n = gl.calls.filter(c => c[0] === 'drawArraysInstanced').length;
+    assert.ok(n > 0, 'the first frame drew in batches');
+    gl.calls.length = 0;
+    G.drawSprites(camera(), fixture(), X, [], [], 32);
+    const again = gl.calls.filter(c => c[0] === 'drawArraysInstanced').length;
+    if (when === 'during') {
+      assert.equal(again, 0, 'the old path after the error');
+      assert.ok(
+        logged.some(m => /pictures in batches off: GL error 1282/.test(m)),
+        logged.join('; ')
+      );
+    } else {
+      assert.equal(again, n, 'still in batches');
+      assert.ok(
+        logged.some(m => /GL error 1282 before the first sprites in batches/.test(m)),
+        logged.join('; ')
+      );
+    }
+    G.spriteInstanceState.bad = null;
+    G.debugLog = wasLog;
   });
