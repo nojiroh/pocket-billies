@@ -9,7 +9,7 @@ houses look way too similar now, add a lot of modular variety." BD-0 (this file 
 written on `ccr-d224d90d-qlnty6`; `track/buildings` was made from it by BD-0's session at the owner's word
 (2026-10-29), and every later session works there or on a side branch of it (section 6, "How the sessions run").
 
-**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once. BD-1, BD-2a and BD-F done 2026-10-30 (wave 1). Wave 2: BD-2b (normal maps) done 2026-10-30. Wave 3: BD-3's sketches built 2026-10-30 (`test_look_sketches`); the owner's pick "B base + C showpieces" (2026-10-30, section 1). Wave 4: BD-4a (the house kit) done 2026-10-30; BD-5 and BD-6 on their side branches.
+**Status:** BD-0 done (2026-10-29). Wave 1 started 2026-10-29: BD-1, BD-2a and BD-F at once. BD-1, BD-2a and BD-F done 2026-10-30 (wave 1). Wave 2: BD-2b (normal maps) done 2026-10-30. Wave 3: BD-3's sketches built 2026-10-30 (`test_look_sketches`); the owner's pick "B base + C showpieces" (2026-10-30, section 1). Wave 4: BD-4a (the house kit), BD-5 and BD-6 done 2026-10-30. Wave 5: BD-7 (the town re-laid, with BD-4b's placing) done 2026-10-30; BD-8 (the phone pass) done 2026-10-30: the track is done; the owner's phone play and debug log remain (section 10).
 
 The suggestion page (sketches of every building, a house roller, the new surfaces; private to the owner):
 https://claude.ai/artifact/3NF2Qp28uncV7fiCH5yP5b . Its sketches are 2D drawings of shapes and details, not the
@@ -308,6 +308,9 @@ tools/build-house-kit.py, beside batch 7's `House` (reuse its windows, doors, la
 - It writes ~24 house recipes and one catalogue kind (name per docs/NAMING.md, e.g. `house_kit`) whose `variants`
   swap `model`, `box`, `door` and `fx` (walk-view.js `plainPropVariant` already lets a variant replace any field), in
   small, medium and large footprints so plots can take them. Glass and roof marks written by the kit itself.
+  **BD-7 found this wrong:** a variant's model and picture follow it, but its `box` and `door` don't. The game reads
+  those from the kind's row (walk-view.js `doorOf`, the walking grid, the pads, about 60 readers of `box`). So the kit is
+  now 24 kinds, `house_kit_01`..`24` in group `house_kit`, one per house.
 - A contact sheet of all houses (a picture tool), and a test that no two variants share body + roof + palette.
 - Triangle budget per house: 6,000 (the owner's answer). Each variant is its own mesh (about 11 more draws than today's 2 shared meshes;
   far under 400).

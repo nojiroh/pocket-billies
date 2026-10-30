@@ -196,7 +196,8 @@
     "test_shapes",
     "test_look_sketches",
     "test_house_kit",
-    "test_halt"
+    "test_halt",
+    "test_landmarks"
    ]
   },
   "cutscenes": {"ids":["opening","city","return","crash"]}

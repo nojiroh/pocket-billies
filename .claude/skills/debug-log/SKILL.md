@@ -11,6 +11,10 @@ description: Read a Pocket Billies debug log the owner exported from the phone (
    keep failing (lines with `!`), memory, load, frame rates per screen, slow frames by cause, hitches, the full test's
    steps that weren't ok (note, why and the context at the failure), the estimated graphics memory by kind and its
    peak per screen, the quality and resolution changes, visibility and context-lost events, errors and warnings grouped, and saves the log's picture; look at that picture.
+   A Graphics test report (`pocket-billies-graphics-*.json`, `kind: graphics`) or a diagnostics report
+   (`kind: diagnostics`) gets its own short summary instead: steps not ok, the slowest steps, the dials' costs and the
+   heat drift (from the mean frame since format 4; format 3's costs came from the median and read 0 on a phone held
+   to its refresh rate), or the places' fps.
 3. **Read it in this order**:
    - Which phone and GPU, its DPR and the build (`build`, `deploy`): is it the build being discussed?
    - Frame rates per screen: the 10th percentile matters more than the average.

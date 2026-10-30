@@ -29,7 +29,9 @@ const D = readGameData(),
   /* a recipe of picture layers alone is drawn as cut-out cards (prop-models.js propModelImageItems), on purpose: a
      bush reads better flat. Only the shapes become a model */
   SHAPED = RECIPES.filter(({ rec }) => (rec.layers || []).some(l => l.k !== 'img' && !l.hide)),
-  isBuilding = M => !!(M.build || M.door);
+  /* BD-7: the doorless landmarks (the lighthouse, Skyline Station: scenery you can't walk into) count as buildings by
+     their landmark mark or their size, not only by a door */
+  isBuilding = M => !!(M.build || M.door || M.landmark || (M.box && M.box[0] * M.box[1] >= 12));
 
 test('every recipe of shapes builds a low-poly model', () => {
   assert.ok(SHAPED.length > 100, `${SHAPED.length} recipes of shapes`);

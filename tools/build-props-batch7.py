@@ -4,8 +4,8 @@ clinic and the market (Unova-style town crossed with retro-futuristic solarpunk)
 hip and gable roofs with thick eaves, square windows with crossed frames, sills, shutters and flower boxes, portholes,
 round plank doors and panelled doors under little canopies, lamps, chimneys, copper gutters and plants.
 
-  house_cottage house_blue house_green house_red house_large townhouse_red townhouse_yellow bakery greenhouse inn
-  library shop
+  house_cottage house_blue house_green house_red house_large townhouse_red townhouse_yellow bakery greenhouse
+  (the shop, the inn and the library moved to tools/build-civic.py, buildings track BD-5; the showcase still shows them)
 
 Each keeps its town looks (the old colour variants, as colour swaps of the model) and takes a placement's solarpunk
 roof (moss, solar): its roof parts are marked roof: 1.
@@ -354,116 +354,6 @@ def bakery():
     return H
 
 
-def shop():
-    """The general store: blue-roofed and peach-sided, a big window of goods under a coral-striped awning, the word
-    SHOP, sliding glass doors in a mint frame."""
-    H = House(3.8, 2.4, 1, 2.3, '#F8D6B2', 'siding', '#7ED4AC', '#4E9AD6', 'rooftiles', 'hip', 34)
-    dx = 0.94
-    H.L += [box(dx, H.fy - 0.03, 0.24, 1.15, 0.06, 1.95, '#7ED4AC', 'metal', 'door frame')]
-    for sx in (-1, 1):
-        H.L += [box(dx + sx * 0.27, H.fy - 0.06, 0.24, 0.5, 0.02, 1.85, '#A8DCE8', 'plain', 'sliding door'),
-                box(dx + sx * 0.03, H.fy - 0.08, 0.24, 0.05, 0.03, 1.85, '#3EB489', 'metal', 'door edge')]
-    H.L += [box(dx, H.fy - 0.4, 0, 1.6, 0.55, 0.12, A['stone'], 'stone', 'door step'),
-            box(dx, H.fy - 0.35, 0.12, 1.0, 0.4, 0.02, '#3EB489', 'cloth', 'mat')]
-    wx, ww = -0.7, 1.8
-    H.L += [box(wx, H.fy - 0.02, 0.65, ww, 0.04, 1.15, GLASS, 'plain', 'shop window'),
-            box(wx, H.fy - 0.1, 0.55, ww + 0.2, 0.2, 0.1, H.trim, 'wood', 'shop sill')]
-    B3.frame_box(H.L, wx, H.fy - 0.03, 0.65, ww, 1.15, WHITE, 0.07, 0.06, 'shop frame')
-    rng = np.random.default_rng(5)
-    for row, z in enumerate((0.7, 1.15)):  # shelves of goods
-        H.L.append(box(wx, H.fy - 0.06, z - 0.03, ww - 0.1, 0.04, 0.03, WHITE, 'plain', 'shelf'))
-        for i in range(8):
-            H.L.append(box(wx - 0.75 + i * 0.21, H.fy - 0.07, z, 0.14, 0.03, 0.18 + rng.random() * 0.1,
-                           B5.FRUIT[int(rng.random() * 6)], 'plain', 'goods'))
-    H.wins.append((wx, 1.2))
-    B5.scallop_awning(H.L, wx, H.fy, 2.1, ww + 0.3, 0.6, 0.36, (B5.CORAL, '#FAF0DC'), 0.28, both=False)
-    name_board(H, 'SHOP', dx, 2.2, '#2E6A9A', '#FFFFFF', '#1E3A5A')
-    H.chimney(-1.2, 0.4)
-    H.smoke = None
-    H.side_windows()
-    potted(H.L, 1.75, H.fy - 0.4, '#3EB489')
-    return H
-
-
-def inn():
-    """The inn: a stone ground floor and a half-timbered upper floor under a slate hip roof, an arched double door
-    between two lamps, the inn's hanging sign, windows with flower boxes, a tall chimney."""
-    H = House(5.6, 3.4, 2, 2.2, '#E8DEC8', 'plaster', '#60402C', '#545C70', 'slate', 'hip', 38)
-    fy = H.fy
-    H.L.append(box(0, 0, 0.24, H.w + 0.02, H.d + 0.02, H.fh, '#B4B0C2', 'stone', 'stone floor'))
-    # the timber frame of the upper floor
-    z0, z1 = H.z(1, 0), H.top - 0.08
-    for x in (-2.7, -1.35, 0.0, 1.35, 2.7):
-        H.L.append(box(x, fy - 0.02, z0, 0.12, 0.05, z1 - z0, H.trim, 'wood', 'timber'))
-    for x0, x1 in ((-2.7, -1.35), (1.35, 2.7)):
-        H.L.append(limb((x0, fy - 0.03, z0 + 0.1), (x1, fy - 0.03, z1 - 0.1), 0.04, 0.04, H.trim, 'wood', 'brace', 4))
-    H.L.append(box(0, fy - 0.02, H.z(1, 0.5), H.w, 0.05, 0.1, H.trim, 'wood', 'rail'))
-    H.round_door(0.0, '#7A4E34', '#6A4430', 0.68, surround='#9C98AC')
-    for x in (-0.95, 0.95):
-        H.lamp(x, 1.55)
-    for x in (-1.95, 1.95):
-        H.window(x, 0.9, 0.8, 0.7, seed=50 + int(x))
-    for i, x in enumerate((-2.0, 0.0, 2.0)):
-        H.window(x, H.z(1, 0.25), 1.1 if x == 0 else 0.75, 0.8, seed=55 + i, frame='#F4EEDC')
-    # the hanging sign: INN on a board on an iron bracket
-    sx_, sz = 1.35, H.z(1, 0.05)
-    H.L += [limb((sx_, fy, sz), (sx_, fy - 0.8, sz), 0.025, 0.025, A['iron'], 'metal', 'sign bracket', 5),
-            limb((sx_, fy, sz - 0.35), (sx_, fy - 0.5, sz), 0.015, 0.015, A['iron'], 'metal', 'sign brace', 4)]
-    p, lw, lh = B5.letters('INN', '#F8E8B0', 'inn_word', '#3A2418')
-    H.L += [box(sx_, fy - 0.55, sz - 0.55, 0.05, 0.6, 0.45, '#7A4E34', 'wood', 'inn sign'),
-            box(sx_, fy - 0.55, sz - 0.58, 0.06, 0.66, 0.51, A['brass'], 'metal', 'inn sign rim'),
-            img(p, sx_ - 0.04, fy - 0.55, sz - 0.42, face='fixed', recv=0, shadow=0, sway=0.3, name='lettering')]
-    H.chimney(-1.85, 0.6, '#9C98AC', 'stone')
-    H.side_windows(port=False)
-    for x in (-0.95, 0.95):
-        potted(H.L, x + (0.35 if x > 0 else -0.35), fy - 0.45)
-    return H
-
-
-def library():
-    """The library: red brick with white trim under a slate hip roof, four tall arched windows, a big arched door in
-    a stone surround between two stone columns under a little pediment, steps, the word LIBRARY, and a glass lantern
-    with a verdigris dome on the roof."""
-    H = House(5.4, 3.4, 2, 2.0, '#C46C54', 'brick', '#EAEEEC', '#545C70', 'slate', 'hip', 32)
-    fy = H.fy
-    for x in (-1.85, -0.95, 0.95, 1.85):
-        H.L += [box(x, fy - 0.02, 0.85, 0.5, 0.04, 2.3, GLASS, 'plain', 'tall window'),
-                disc(x, fy, 3.15, (0, -1, 0), 0.25, 0.04, GLASS, 'plain', 'window top', 12),
-                B5.arc(x, fy - 0.04, 3.15, 0.3, 0, math.pi, 0.05, H.trim, 'stone', 'window arch', 8),
-                box(x, fy - 0.06, 0.78, 0.66, 0.12, 0.07, H.trim, 'stone', 'window sill'),
-                box(x, fy - 0.05, 0.85, 0.04, 0.04, 2.3, H.trim, 'wood', 'mullion')]
-        for z in (1.5, 2.3):
-            H.L.append(box(x, fy - 0.05, z, 0.5, 0.04, 0.04, H.trim, 'wood', 'transom'))
-        H.wins.append((x, 2.0))
-    # the door, its surround, columns and pediment, the steps
-    H.L += [box(0, fy - 0.02, 0.24, 1.1, 0.06, 1.6, '#7A4E34', 'wood', 'door'),
-            disc(0, fy, 1.84, (0, -1, 0), 0.55, 0.08, '#7A4E34', 'wood', 'door top', 16),
-            box(0, fy - 0.1, 0.24, 0.04, 0.02, 2.1, '#5A3A28', 'wood', 'door split'),
-            B5.arc(0, fy - 0.08, 1.84, 0.66, 0, math.pi, 0.1, '#DCD2BE', 'stone', 'door arch', 12),
-            sphere(0.15, fy - 0.12, 1.15, 0.04, A['brass'], 'metal', 'door ring', 6, 3),
-            sphere(-0.15, fy - 0.12, 1.15, 0.04, A['brass'], 'metal', 'door ring', 6, 3)]
-    for sx in (-1, 1):
-        H.L += [cyl(sx * 0.92, fy - 0.35, 0.36, 0.14, 2.4, '#ECE6DA', 'stone', 'column', 10),
-                box(sx * 0.92, fy - 0.35, 0.24, 0.36, 0.36, 0.12, '#DCD2BE', 'stone', 'column base'),
-                box(sx * 0.92, fy - 0.35, 2.76, 0.36, 0.36, 0.1, '#DCD2BE', 'stone', 'column top')]
-    H.L += [box(0, fy - 0.3, 2.86, 2.3, 0.6, 0.12, '#ECE6DA', 'stone', 'entablature'),
-            cyl(0, fy - 0.3, 2.98, 1.15 * S2, 0.5, '#ECE6DA', 'stone', 'pediment', 4, k='cone', ry=r2(0.3 * S2), r1=0.02, ry1=r2(0.3 * S2), rot=r2(math.pi / 4))]
-    for i, (w_, d_) in enumerate(((2.6, 1.0), (2.2, 0.75), (1.8, 0.5))):
-        H.L.append(box(0, fy - d_ / 2, i * 0.08, w_, d_, 0.08, '#BDB9C6', 'stone', 'step'))
-    name_board(H, 'LIBRARY', 0, 3.25, '#2E4A44', '#F8E8B0', '#1A2A26')
-    # the roof lantern
-    H.L += [box(0, 0, H.ridge - 0.3, 1.2, 0.9, 0.6, '#A8DCE8', 'plain', 'lantern glass'),
-            {'k': 'dome', 'x': 0, 'y': 0, 'z': r2(H.ridge + 0.3), 'r': 0.62, 'ry': 0.5, 'h': 0.45, 'sides': 14, 'rings': 4,
-             'col': A['verd'], 'tex': 'metal', 'name': 'lantern dome'},
-            sphere(0, 0, H.ridge + 0.72, 0.06, A['brass'], 'metal', 'lantern finial', 6, 3)]
-    for sx in (-1, 1):
-        H.L.append(box(sx * 0.6, 0, H.ridge - 0.3, 0.05, 0.92, 0.6, WHITE, 'metal', 'lantern frame'))
-    H.side_windows(port=False)
-    for x in (-2.4, 2.4):
-        potted(H.L, x, fy - 0.4)
-    return H
-
-
 def greenhouse():
     """The greenhouse: a low brick base, glass walls and a glass gable roof in a slim white frame, glass doors, roof
     vents propped open, planters and climbing plants along the front."""
@@ -513,8 +403,8 @@ def greenhouse():
 BUILDINGS = {
     'house_cottage': house_cottage, 'house_blue': house_blue, 'house_green': house_green, 'house_red': house_red,
     'house_large': house_large, 'townhouse_red': townhouse_red, 'townhouse_yellow': townhouse_yellow,
-    'bakery': bakery, 'shop': shop, 'inn': inn, 'library': library, 'greenhouse': greenhouse,
-}
+    'bakery': bakery, 'greenhouse': greenhouse,
+}  # the shop, the inn and the library are built by tools/build-civic.py (buildings track BD-5)
 ROWS = [('marigold-houses', ['house_cottage', 'house_blue', 'house_green', 'house_red'], 5.0),
         ('marigold-big-houses', ['house_large', 'townhouse_red', 'townhouse_yellow'], 7.0),
         ('marigold-town', ['bakery', 'shop', 'greenhouse'], 7.0),

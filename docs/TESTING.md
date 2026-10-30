@@ -311,13 +311,16 @@ same phase:
   place as shipped passes the budget); graphics memory stays under 300 MB (`BENCH_BUDGET_MB`: a step whose guess passes
   it is skipped, a walk that passes it stops); every step is saved in localStorage `pb-gtest` (numbers and ids), so after
   a reload the next tap offers to resume (the step that was running is marked "the page reloaded" and skipped) or to save
-  the partial report. You pick the groups (the whole path is about 50 minutes). The report (format 3) has per step
+  the partial report. You pick the groups (the whole path is about 50 minutes). The report (format 4) has per step
   fps, p50/p90/p99, worst, jank, CPU ms, fence lag, draws, `gmb` and its peak, slow causes, quality and resolution; per
-  dial its cost over its segment with the segment's spread; the run's conditions (browser name and version, refresh
+  dial its cost over its segment with the segment's spread, and the heat drift, both from the mean frame (1000 / fps,
+  `costFrom`; format 3 used the median, which stays 16.7 ms on a phone held to 60 Hz, so every cost read 0); the run's conditions (browser name and version, refresh
   rate measured, fps cap, DPR, timers, timer queries, LoAF) at the start and end. A new ENGINE_SPEC row needs a need
   in bench-path.js's NEEDS (`tools/test/bench-path.test.mjs` fails without one); a dial nothing on the path shows is
   listed with its reason. The quick check's "Test scenes: walking rules" step checks every segment can be walked
   (planned from the data, not run). The report's rules are unit tests in `tools/test/graphics-test.test.mjs`.
+  `python3 tools/read-debug-log.py <report.json>` prints a short summary of a Graphics test report (and of a
+  diagnostics report).
 - **(TD-3)** `tools/check-perf.py` walks the same benchmark path headless, with blocking gates. It does not run the
   Graphics test: it uses `bench-walk.js` and `bench-path.js` directly. On an Android phone page (390 x 844, so the
   game's phone limits hold), with automatic quality off and the resolution at 0.5 (the same counts as at 1, at a

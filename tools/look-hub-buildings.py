@@ -15,6 +15,8 @@ the moment. Software drawing is slow: about a minute a picture.
     python3 tools/look-hub-buildings.py --scene=test_shapes --only=shape_showcase --times=noon,night   # BD-1's shapes
     python3 tools/look-hub-buildings.py --scene=test_look_sketches --only=look_sketch --times=noon,dusk --angle=35
                                                             # BD-3's sketches, from the high three-quarter view
+    python3 tools/look-hub-buildings.py --scene=test_landmarks --only=workshop,gene_bank,lighthouse,barn,train_station,bubble_car
+                                                            # BD-6's landmarks (--max=N: the first N close-ups only)
 
 Uses the browser checks' page set-up (tools/browser_check.py: the clock, no accounts, the test globals), without the
 low graphics. The numbers go to notes.json there (not kept in git)."""
@@ -32,8 +34,10 @@ OUT = Path(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--out=')), RO
 ANGLE = float(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--angle=')), 0))  # degrees round from the front
 HOURS = {'noon': 12.5, 'dusk': 20.3, 'night': 22.5}
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'test_hub_buildings')
-TURNING = {'workshop', 'gene_bank', 'lighthouse', 'windmill'}
-TALL = {'lighthouse': (14, 5.5), 'windmill': (12, 4.5), 'gene_bank': (10, 3), 'shape_showcase': (13, 1.4), 'look_sketch': (11, 2.4), 'house_kit': (10, 2.2)}  # camera distance, aim height
+TURNING = {'workshop', 'gene_bank', 'lighthouse', 'windmill', 'barn'}
+MAX = int(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--max=')), 0))  # at most this many close-ups
+TALL = {'lighthouse': (14, 5.5), 'windmill': (12, 4.5), 'gene_bank': (10, 3), 'shape_showcase': (13, 1.4), 'look_sketch': (11, 2.4), 'house_kit': (10, 2.2),
+        'train_station': (17, 2.5), 'barn': (12, 3), 'bubble_car': (5, 0.6)}  # camera distance, aim height
 
 HIDE_HUD = """(()=>{const cv=walkView.cv;for(const el of document.body.querySelectorAll('*'))
  if(el!==cv&&!el.contains(cv))el.style.setProperty('visibility','hidden','important');
@@ -44,6 +48,16 @@ SHOW_HUD = """(()=>{for(const el of document.body.querySelectorAll('*'))el.style
 def settle(pg, frames=8):
     f0 = pg.evaluate('walkRenderer.frames')
     if not CF.until(pg, f'walkRenderer.frames>={f0 + frames}', 240): raise Exception('stopped drawing')
+
+
+def kind_in(k, names):
+    """k named, or one of a numbered family named by its stem (BD-7: --only=house_kit takes house_kit_01..24)"""
+    return k in names or any(k.startswith(n + '_') and k[len(n) + 1:].isdigit() for n in names)
+
+
+def stem(k):
+    head, _, tail = k.rpartition('_')
+    return head if head and tail.isdigit() else k
 
 
 def name_of(p):
@@ -79,7 +93,8 @@ def main():
                 pg.screenshot(path=str(OUT / f"row-{sh['label']}.png"))
                 print('row', sh['label'], flush=True)
             pg.set_viewport_size({'width': 390, 'height': 640})
-        close = [s for s in props if s['k'] in (ONLY or CLOSE)]
+        close = [s for s in props if kind_in(s['k'], ONLY or CLOSE)]
+        close = close[:MAX] if MAX else close
         for time in [t for t in HOURS if t in TIMES]:
             pg.evaluate(f"environment.force={{time:{HOURS[time]},weather:'clear'}};0")
             # BD-1: a test map is plain (walk-view-gl.js: no hours, no weather), so its night was daylight; the night
@@ -88,7 +103,7 @@ def main():
             if time != 'noon':
                 settle(pg, 30)
             for s in close:
-                dist, aim = TALL.get(s['k'], (8, 2))
+                dist, aim = TALL.get(s['k']) or TALL.get(stem(s['k']), (8, 2))
                 pg.evaluate(f"(()=>{{const r=({s['rot']}+{ANGLE})*Math.PI/180,f=[Math.sin(r),-Math.cos(r)],x={s['x']},z={s['z']},y=groundHeightAt(x,z);walkView.opt.look=()=>({{eye:[x+f[0]*{dist},y+{aim}+4,z+f[1]*{dist}],tgt:[x,y+{aim},z],fov:58}});return 0}})()")
                 settle(pg)
                 pg.screenshot(path=str(OUT / f"{name_of(s)}-{time}.png"))
@@ -104,7 +119,7 @@ def main():
             CF.drawing(pg)
             pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();environment.force={time:12.5,weather:'clear'};0")
             for s in props:
-                if not s['act'] or (ONLY and s['k'] not in ONLY): continue
+                if not s['act'] or (ONLY and not kind_in(s['k'], ONLY)): continue
                 # the door 6 m ahead of you (a turned one to the side or further on, so its door faces you)
                 pg.evaluate(f"""(()=>{{const P=walkView.pl,r={s['rot']},p={{k:'{s['k']}',act:'{s['act']}',x:+P.x.toFixed(1),z:+(P.z+6).toFixed(1),rot:r}};
                   if(r===90)p.x-=6;if(r===180)p.z+=4;walkView.sc.props.push(p);walkRenderer.itemGen=(walkRenderer.itemGen||0)+1;window.__door=p;return 0}})()""")

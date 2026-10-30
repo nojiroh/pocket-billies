@@ -429,6 +429,25 @@ SECTIONS.scenes = () => {
     const P0 = sceneryCatalog().props[sel.k];
     return `<div class="fld sc-var"><span>Colours</span><div class="sc-var-row">${[{ img: P0.img, wallCol: P0.build.wallCol, roofCol: P0.build.roofCol }, ...V].map((v, i) => `<button class="sc-var-b ${(sel.v | 0) === i ? 'on' : ''}" data-act="scVar" data-v="${i}" title="${i ? 'Variant ' + i : 'As drawn'}"><span class="sc-thumb" data-img="${escapeHtml(v.img)}"></span><i style="background:${escapeHtml(v.roofCol || '#888')}"></i><i style="background:${escapeHtml(v.wallCol || '#ccc')}"></i></button>`).join('')}</div><small class="help">The same building in other colours. It keeps its shape, roof and rooms.</small></div>`;
   })()}
+  ${(() => {
+    /* BD-7: a modelled kind's looks (variants by name: the windmill kit's 27, the bubble cars' colours), and the house
+       kit's houses (one kind each, group house_kit: picking one swaps the kind) */
+    const C = sceneryCatalog().props,
+      P0 = C[sel.k];
+    if (!P0) return '';
+    const btn = (on, act, data, title, img) =>
+      `<button class="sc-var-b ${on ? 'on' : ''}" data-act="${act}" ${data} title="${escapeHtml(title)}"><span class="sc-thumb" data-img="${escapeHtml(img || '')}"></span></button>`;
+    let out = '';
+    if (!P0.build && P0.variants && P0.variants.length)
+      out += `<div class="fld sc-var"><span>Looks</span><div class="sc-var-row">${[P0, ...P0.variants].map((v, i) => btn((sel.v | 0) === i, 'scVar', `data-v="${i}"`, v.name || P0.name || sel.k, v.img || P0.img)).join('')}</div><small class="help">The same kind in another look. Its footprint and door stay the kind's.</small></div>`;
+    if (P0.group === 'house_kit') {
+      const K = Object.keys(C)
+        .filter(k => C[k].group === 'house_kit')
+        .sort();
+      out += `<div class="fld sc-var"><span>Kit house</span><div class="sc-var-row">${K.map(k => btn(k === sel.k, 'scKitHouse', `data-k="${escapeHtml(k)}"`, C[k].name || k, C[k].img)).join('')}</div><small class="help">Another house of the kit on the same spot: each has its own footprint and door.</small></div>`;
+    }
+    return out;
+  })()}
   <div class="seg-row">${checkboxField('Mirrored', `${p}.props.${mapEditor.sel}.f`, { num: 1 })}<button class="btn sm" data-act="scDupProp">Duplicate</button><button class="btn sm danger subtle" data-act="scDelProp">Remove</button><button class="btn sm subtle" data-act="scEditProp" data-k="${escapeHtml(sel.k)}">Edit this prop’s pixels</button></div></div>`
     : mapEditor.multi && mapEditor.multi.size > 1 && typeof multiSelectCardHTML === 'function'
       ? multiSelectCardHTML()
@@ -1937,6 +1956,18 @@ ACTIONS.scOwnRoom = () => {
   commit(true);
   studioState.sel.scene = k;
   mapEditor.sel = null;
+  render();
+};
+/* BD-7: swap a placed kit house for another of the kit (same spot, turn and use) */
+ACTIONS.scKitHouse = d => {
+  const sc = currentMap(),
+    p = sc.props[mapEditor.sel],
+    C = sceneryCatalog().props;
+  if (!p || !C[d.k] || C[d.k].group !== 'house_kit') return;
+  p.k = d.k;
+  delete p.v;
+  changed();
+  commit(true);
   render();
 };
 ACTIONS.scVar = d => {

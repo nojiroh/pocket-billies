@@ -24,8 +24,8 @@ COLS, TILE = 6, (260, 360)
 
 
 def rows():
-    K = json.loads((ROOT / 'game/data/scenery.json').read_text())['props']['house_kit']
-    return [K] + K['variants']
+    C = json.loads((ROOT / 'game/data/scenery.json').read_text())['props']
+    return [(k, C[k]) for k in sorted(C) if C[k].get('group') == 'house_kit' and k[len('house_kit_'):].isdigit()]
 
 
 def sheet(time):
@@ -33,8 +33,8 @@ def sheet(time):
     W, H = COLS * TILE[0], ((len(R) + COLS - 1) // COLS) * (TILE[1] + 34)
     img = Image.new('RGB', (W, H), (246, 240, 228))
     d = ImageDraw.Draw(img)
-    for i, row in enumerate(R):
-        f = SHOTS / (f'house_kit-v{i}-{time}.png' if i else f'house_kit-{time}.png')
+    for i, (kind, row) in enumerate(R):
+        f = SHOTS / f'{kind}-{time}.png'
         x, y = (i % COLS) * TILE[0], (i // COLS) * (TILE[1] + 34)
         if f.exists():
             im = Image.open(f).convert('RGB')

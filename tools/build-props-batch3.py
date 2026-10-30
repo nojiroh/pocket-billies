@@ -7,8 +7,7 @@ desk, plant and machines behind the glass). Swapped straight in under their own 
 
   cottage_moss    the moss-roof cottage: a smaller cousin of Juniper's, green round door, porthole, roof window
   cottage_solar   the solar-shingle cottage: a hip roof of solar panels, a coral round door, a little wind turbine
-  lab             Professor Hazel's research lab: white panels, teal trim, a big window, a dish, an antenna, solar
-                  panels and planters on the roof
+  (Professor Hazel's lab moved to tools/build-civic.py, buildings track BD-5)
 
     python3 tools/build-props-batch3.py
 """
@@ -245,103 +244,14 @@ def cottage_solar_fx():
             {'k': 'glow', 'x': px(-0.2), 'y': -px(1.55)}, {'k': 'smoke', 'x': px(-1.0), 'y': -px(4.9)}]
 
 
-# ---------------------------------------------------------------- Professor Hazel's lab
-def lab_recipe():
-    """White wall panels with a teal band and trim on a lavender plinth, a big window onto the lab (kept drawn: the
-    desk, the plant and the machines inside), teal double glass doors under a lamp, and on the flat roof a cooling
-    unit, an antenna with a red beacon, a satellite dish, a row of solar panels and planters along the edge."""
-    w, d, wall_top = 6.25, 3.0, 3.6
-    fy = -d / 2
-    TEAL, LAV, WHITE = '#2EA4A0', '#A698CC', '#EAEEEC'
-    L = [box(0, 0, 0, w + 0.24, d + 0.24, 0.26, '#9A8CC0', 'brick', 'plinth'),
-         box(0, 0, 0.26, w, d, wall_top - 0.26, WHITE, 'panels', 'walls'),
-         box(0, 0, 1.2, w + 0.06, d + 0.06, 0.12, TEAL, 'metal', 'teal band')]
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            L.append(box(sx * (w / 2 - 0.02), sy * (d / 2 - 0.02), 0.26, 0.1, 0.1, wall_top - 0.26, '#D6DADC', 'metal', 'corner trim'))
-    # the roof: teal trim, then a lavender checkered edge round the flat roof
-    L += [box(0, 0, wall_top, w + 0.3, d + 0.3, 0.16, TEAL, 'metal', 'roof trim'),
-          box(0, 0, wall_top + 0.16, w + 0.22, d + 0.22, 0.14, LAV, 'tilewall', 'roof edge'),
-          box(0, 0, wall_top + 0.16, w - 0.1, d - 0.1, 0.16, '#C8C2D8', 'plain', 'roof')]
-    rt = wall_top + 0.32
-    # the cooling unit with its fins
-    ux, uy = -1.9, 0.2
-    L.append(box(ux, uy, rt, 1.2, 0.8, 0.62, '#E2E2E6', 'metal', 'cooling unit'))
-    L.append(box(ux + 0.35, uy - 0.41, rt + 0.06, 0.4, 0.02, 0.5, '#5E6474', 'metal', 'unit grille'))
-    for i in range(6):
-        L.append(box(ux - 0.45 + i * 0.1, uy - 0.41, rt + 0.1, 0.03, 0.03, 0.42, '#8A90A0', 'metal', 'unit fin'))
-    # the antenna and its red beacon (it glows when the lamps are on: a picture of the lantern's glass, tinted)
-    ax_ = -0.1
-    L += [limb((ax_, 0.4, rt), (ax_, 0.4, rt + 1.7), 0.05, 0.03, '#5E6474', 'metal', 'antenna', 8)]
-    for z in (rt + 0.6, rt + 1.0, rt + 1.35):
-        L.append(cyl(ax_, 0.4, z, 0.09, 0.04, '#8A90A0', 'metal', 'antenna ring', 10))
-    L.append(sphere(ax_, 0.4, rt + 1.7, 0.08, '#E86A5A', 'plain', 'beacon', 10, 5))
-    # the satellite dish, tipped up toward the sky, with its feed arm
-    dxp, dyp = 1.9, 0.4
-    n = (-0.35, -0.55, 0.75)
-    L += [box(dxp, dyp, rt, 0.3, 0.3, 0.08, '#8A90A0', 'metal', 'dish foot'),
-          limb((dxp, dyp, rt + 0.08), (dxp, dyp, rt + 0.6), 0.05, 0.05, '#8A90A0', 'metal', 'dish post', 8),
-          disc(dxp, dyp, rt + 0.85, n, 0.75, 0.06, '#F4F0E8', 'plain', 'dish', 20),
-          disc(dxp, dyp, rt + 0.85, n, 0.5, 0.08, '#E2E2E6', 'plain', 'dish centre', 20)]
-    nl = math.sqrt(sum(v * v for v in n))
-    tip = (dxp + n[0] / nl * 0.55, dyp + n[1] / nl * 0.55, rt + 0.85 + n[2] / nl * 0.55)
-    L += [limb((dxp, dyp, rt + 0.85), tip, 0.02, 0.02, '#5E6474', 'metal', 'feed arm', 5),
-          sphere(*tip, 0.07, A['lamp'], 'plain', 'feed', 8, 4)]
-    # solar panels along the back, raised on little legs, and planters along the front edge
-    for i in range(4):
-        px_ = -2.4 + i * 1.0
-        L.append(box(px_, d / 2 - 0.55, rt + 0.18, 0.9, 0.7, 0.05, '#3A4C7E', 'solar', 'solar panel'))
-        for sx in (-0.38, 0.38):
-            L.append(box(px_ + sx, d / 2 - 0.55, rt, 0.05, 0.05, 0.18, '#8A90A0', 'metal', 'panel leg'))
-    for i, x in enumerate((-2.6, -1.0, 0.7, 2.6)):
-        L.append(box(x, fy + 0.35, rt, 0.7, 0.36, 0.26, '#7A5A3C', 'wood', 'roof planter'))
-        for j in range(3):
-            L.append(sphere(x - 0.22 + j * 0.22, fy + 0.35, rt + 0.3, 0.14, '#5E9A48' if (i + j) % 2 else '#6EAE52', 'leaves', 'roof plant', 8, 4, 0.3))
-        if i % 2 == 0:
-            L.append(sphere(x + 0.1, fy + 0.25, rt + 0.45, 0.05, ('#E87EA8', A['lamp'])[i // 2], 'plain', 'roof flower', 6, 3))
-    # the big window: the drawn view inside, behind a slim white frame with mullions and a sill
-    P = 'lab'
-    wx0, wy0, wx1, wy1 = 21, 58, 129, 99
-    wx, ww = B1.at(P, (wx0 + wx1) / 2, wy1)[0], (wx1 - wx0) / PPM
-    wz0, wh = B1.at(P, 0, wy1 - 1)[1], (wy1 - wy0) / PPM
-    L.append(img(B1.decal(P, (wx0, wy0, wx1, wy1), 'lab_window'), wx, fy - 0.01, wz0, face='fixed', recv=0, name='window view'))
-    frame_box(L, wx, fy - 0.05, wz0, ww, wh, '#F4F4F6', 0.08, 0.08, 'window frame')
-    for i in (1, 2, 3):
-        L.append(box(wx - ww / 2 + ww * i / 4, fy - 0.08, wz0, 0.05, 0.05, wh, '#F4F4F6', 'metal', 'mullion'))
-    L.append(box(wx, fy - 0.08, wz0 + wh * 0.62, ww, 0.05, 0.05, '#F4F4F6', 'metal', 'transom'))
-    L.append(box(wx, fy - 0.14, wz0 - 0.1, ww + 0.25, 0.22, 0.08, '#D6DADC', 'metal', 'window sill'))
-    # the doors: teal frame, two glass leaves with handles, a lamp above, a step with a mat
-    ddx, dw, dh = 1.94, 1.22, 1.75
-    L += [box(ddx, fy - 0.06, 0.26, dw + 0.2, 0.1, dh + 0.12, TEAL, 'metal', 'door frame'),
-          box(ddx, fy - 0.1, 0.26, dw, 0.04, dh, '#9BD2DA', 'plain', 'door glass'),
-          box(ddx, fy - 0.12, 0.26, 0.06, 0.04, dh, TEAL, 'metal', 'door middle')]
-    for sx in (-1, 1):
-        L += [box(ddx + sx * (dw / 2 - 0.03), fy - 0.12, 0.26, 0.06, 0.04, dh, TEAL, 'metal', 'door edge'),
-              box(ddx + sx * 0.1, fy - 0.14, 0.26 + dh * 0.45, 0.03, 0.03, 0.3, '#D6DADC', 'metal', 'door handle')]
-    L += [box(ddx, fy - 0.12, 0.26 + dh - 0.04, dw, 0.04, 0.06, TEAL, 'metal', 'door top'),
-          box(ddx, fy - 0.12, 2.25, 0.45, 0.12, 0.14, A['lamp'], 'plain', 'door lamp'),
-          box(ddx, fy - 0.35, 0, dw + 0.5, 0.7, 0.12, '#BDB9C6', 'stone', 'door step'),
-          box(ddx, fy - 0.35, 0.12, dw - 0.1, 0.5, 0.02, '#5E6474', 'cloth', 'door mat')]
-    potted_plant(L, ddx - dw / 2 - 0.45, fy - 0.35, TEAL, '#4F8E44', 0.7)
-    potted_plant(L, ddx + dw / 2 + 0.45, fy - 0.35, TEAL, '#4F8E44', 0.7)
-    # side and back windows: slim white frames with blue glass
-    for sx in (-1, 1):
-        L.append(box(sx * (w / 2 + 0.01), 0, 1.65, 0.04, 1.2, 0.9, A['glass'], 'plain', 'side window'))
-        L.append(box(sx * (w / 2 + 0.02), 0, 1.6, 0.05, 1.3, 0.06, '#F4F4F6', 'metal', 'side sill'))
-    for x in (-1.6, 1.6):
-        L.append(box(x, d / 2 + 0.01, 1.65, 1.3, 0.04, 0.9, A['glass'], 'plain', 'back window'))
-    return {'ppm': PPM, 'cel': 0.6, 'layers': sorted(B1.shift_y(L, d / 2), key=lambda l: l['k'] == 'img')}
+# Professor Hazel's lab moved to tools/build-civic.py (buildings track BD-5); the showcase row still shows it.
 
 
-def lab_fx():
-    px = lambda m: round(m * PPM)
-    return [{'k': 'window', 'x': -32, 'y': -px(2.5)}, {'k': 'glow', 'x': 62, 'y': -px(2.3)}]
-
-
+# doors in the catalogue's pixels (ppu 34, prop-turn.js propDoor; BD-7: they were the model's 32, 6% short): the moss
+# cottage's door 0.69 m left of the middle, the solar's 0.75 m right
 BUILDINGS = {
-    'cottage_moss': (cottage_moss_recipe, cottage_moss_fx, {'x': -22, 'y': 0}),
-    'cottage_solar': (cottage_solar_recipe, cottage_solar_fx, {'x': 24, 'y': 0}),
-    'lab': (lab_recipe, lab_fx, {'x': 62, 'y': 0}),
+    'cottage_moss': (cottage_moss_recipe, cottage_moss_fx, {'x': -23, 'y': 0}),
+    'cottage_solar': (cottage_solar_recipe, cottage_solar_fx, {'x': 26, 'y': 0}),
 }
 
 
