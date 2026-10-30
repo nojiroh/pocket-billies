@@ -529,6 +529,20 @@ button.tb-where .uico:first-child {
   clip-path: var(--edge-panel);
   background: var(--edge);
 }
+/* FL-6 (the owner's answer): on a phone, while walking, the two bars are tinted glass with no live blur: a backdrop
+   blur over the moving 3D is redone by the phone's GPU every frame. The fill is thicker so the bars read the same
+   (--hud-tint: the surface colour, 88%). Behind a screen the world is frozen, so the blur stays there */
+:root {
+  --hud-tint: color-mix(in srgb, var(--c-surface) 88%, transparent);
+}
+@media (hover: none) and (pointer: coarse) and (max-width: 959px) {
+  body.on-walk .topbar.glass::before,
+  body.on-walk pb-nav-bar#nav::part(glass) {
+    background: var(--hud-tint);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
 
 /* ---------- UI-5: the bottom bar is the kit's <pb-nav-bar id="nav"> (ui.js updateNav) ---------- */
 pb-nav-bar#nav {
