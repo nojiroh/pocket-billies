@@ -2,6 +2,85 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-3a - the controller: aim at the set fps - 2026-10-30
+Branch `track/fluid` (round 2 lane, beside FL-2b and FL-6). Plan approved by the owner's standing answer
+(fluid-track.md section 1). Code: a new automatic-quality controller behind its own switch, **off** (section 6: a new
+path ships off until the owner's phone run); the world clock and the half rate's ownership are on for everyone. No tag
+(the track's tag comes at FL-7).
+- Facts checked against the code (main 73b2f8b1 + round 1): section 5 item 3 holds after FL-1a (the old ladder's 85% /
+  130% slow line and 60% / 110% room line, 0.9-1.2 s decisions, the 30 s hold, the phone's "graphics steps once q >= 2"
+  rule). Item 5's clamps hold: 60 ms a walk frame, 50 ms a battle frame. battle-stage.js's ladder aimed at
+  `min(userFps(), hz)` (FL-1a's note: 45 on a 90 Hz screen read as slow) and its `work` held the plates' page time.
+  Differs from section 6 FL-3a: the effects level `q` also cuts townsfolk (logic/square-day.js folkCap: 60% at q >= 2)
+  and far grass (walk/ground-draw.js, q >= 3), so `q` is not a pure GPU lever; and the battle is always drawn by the
+  3D walk view, so its frames already reach adaptQuality (as place kind `battle`): "the battle's ladder joins it" is
+  done by making the battle stage's detail level (0-3: particle budgets, smears, its canvas size) the controller's
+  CPU level in a battle.
+- Changed:
+  - game/js/logic/frame-control.js (new, pure; both pages and the Studio's logic worker): `frameControl`,
+    `controlFrame` (one frame in, a step out: `down`, `up`, `revert` or `floor`), `controlBottleneck`,
+    `controlSaved`/`controlRestore` (levels per place kind), `worldSteps`. Ring buffers of 120 frames (interval, work,
+    fence lag, missed). Target: the slot ladderTake gives (paceSlot of the set rate, the half rate included). Down:
+    2 missed in a row, > 5% missed in the last second, or work p90 > 90% of the slot; 0.4 s settle after a step. Up:
+    4 s with no miss and no step, work p95 < 70% of the slot (of the faster slot to leave the half rate), fence lag
+    p90 < 1.5 for a graphics lever; it undoes the last step taken (a stack). A raise that comes down within 5 s is
+    reverted and held 30 s, doubling to 8 min. GPU-bound (lag >= 2, or work p90 < 60% of the slot): q 1-4, then the
+    resolution to 0.6 (phone) / 0.5. CPU-bound (work p90 > 80%, lag < 1.5; with no fence, a phone counts as unclear):
+    the CPU level 1-3, then q to 2. Unclear: q to 2, CPU level, q to 4, resolution. Then the steady half rate. Thermal
+    hold: two step-downs, each after 30 s without one, within 2 minutes freeze climbing for 3 minutes. Frames with
+    one-off jobs over a quarter of the slot, counted ticks and the frame after either are left out.
+  - game/js/walk/quality-cull.js: `adaptQuality(dtm, work, oneOff)` runs the controller when `quality.controller` is
+    on (the old qualityStep path otherwise, unchanged); a fence after each frame, read on later frames (never waits;
+    up to 6 in flight) gives `walkRenderer.fenceLag`; levels kept per place kind (battle, room, town, route) in
+    localStorage `pb-frame-levels` (device-local, never the save; the half rate is never kept); the CPU level
+    (`walkRenderer.qc`) in cullItems on phones: small props fade from 0.8 / 0.65 / 0.5 of the set distance (from 90 m
+    when none is set), tiny props under 3 / 5 / 8 px go, townsfolk (not residents) past 45 / 30 m go at levels 2 / 3.
+    Off a phone the CPU level is only taken in a battle. The half rate is let go behind windows and screens.
+  - game/js/battle-stage.js: the plates' page time is timed apart and left out (`battleStage.workOwn` is added to the
+    3D frame's work for the controller); with the controller on, the detail level follows `walkRenderer.qc` in a
+    battle; the old ladder aims at the paced slot (paceSlot, the half rate included).
+  - game/js/walk-view-gl.js (the world clock): the world keeps real time down to 10 fps (was 60 ms a frame: 12.5 fps
+    ran the world at 75%); the walker, the townsfolk and the wildlife move in even steps of at most 50 ms (the old
+    longest); a longer gap is a hitch the world waits out. `adaptQuality` gets the frame's one-off time.
+  - game/js/frame-scheduler.js (an addition): `frameHalf(on, owner)`; `frameStop(owner)` lets the half rate go.
+  - engine/settings.js `quality.controller: false` with its Engine row; debug menu "Frame controller" (On / Off for the
+    session, beside FL-2a's picture switches); bench-path.js pins it with automatic quality.
+  - debug-log.js (additions): `qc`, `half`, `lag` and `ctl` (the last step: t, act, lever, why) in each sample while
+    the controller runs; tools/read-debug-log.py prints a "Frame controller" line.
+  - Lint's records after round 1's merges (ui-lint's colour ceiling 618 -> 612, art-code-refs): their own commit.
+- Not done, for other lanes (their files): the CPU levers section 6 also lists, shadow-caster distance, grass and
+  lamps, should read `walkRenderer.qc` (FL-2b: walk/shadows.js, walk/ground-draw.js; walk/lighting.js has no lane);
+  one-picture far trees and the 2048 far map join the levers when FL-5b has them; an upload burst isn't flagged to
+  the controller (texture uploads happen inside the sprite pass: a counter there could set a skip). The battle
+  clock's 50 ms clamp is unchanged (battle-stage.js outside the ladder). FL-3b's resolution steps should replace the
+  controller's 0.1 steps (`R` lever) when its switch is on.
+- Risky: the controller is new and only Node-tested on made-up traces; headless frames come about once a second, so
+  in the page nearly every tick is a counted one and it took no step there (checked: it runs with no errors, kind
+  `route`, the half rate let go behind Team, switching it off restores the old ladder and the half rate). The world
+  clock change is on for everyone: at 10-16 fps the walker now moves at full speed in two steps a frame (doors and
+  step counting are one-shot or time-throttled, checked). The fence lag needs `fenceSync` (WebGL2: everywhere the game
+  runs); on a phone with no fence high work reads as unclear, not CPU.
+- Verified: the gates (tools/test/frame-control.test.mjs, 16 tests: one-off spikes no step in 60 s; a sustained miss
+  (CPU, GPU, both) a step within 1 s; at most 1 revert in any 30 s over 3 minutes, the holds doubling; a GPU-bound
+  trace moves only q and the resolution; a CPU-bound trace (desktop and phone) leaves the resolution at 1; off a phone
+  q then the half rate; the half rate at the floor and back; climbing back to the top 4 s apart at least; the thermal
+  hold; levels kept and restored; the world clock's steps). Lint, types, modules, data, build clean; format clean on
+  this lane's files (FL-2b's model-shadows and spin-merge tests, merged in mid-lane, are theirs to format); unit
+  tests 2,443 of 2,443 (166 s) after merging FL-2b's commits; smoke 7 of 7 (428 s) before the merge; a headless page
+  with the controller on (Copperleaf, phone size): no errors. The full quick check's result follows below.
+- Ask me before (section 7, not settled by section 1; both kept as they are until you answer):
+  - **Balanced vs Beautiful.** Today Beautiful aims at 60 at most (paceSlot of min(set, 60)) and Balanced at the set
+    rate. Options: (a) one target for both, the set rate; the preset only orders the levers, Beautiful lowering the
+    resolution last (recommended, section 7); (b) keep as now. With (a) a 120 setting on Beautiful starts aiming at 120.
+  - **A setting between divisors** (60 on a 90 Hz screen: 45 or 90; today 45). Options: (a) 90 while the controller
+    holds it, else 45 (recommended, section 7: the half-rate lever generalised); (b) always 45; (c) always 90.
+- Next: round 3 (FL-3b, FL-4) once FL-2b and FL-6 are done (the round's last lane starts them).
+- For the owner on the phone (the FL-3a phone gate): open the debug menu, turn "Frame controller" On, close it, then
+  run the Graphics cost test (TD-2's path) with automatic quality on, then walk Copperleaf by day for 2 minutes and a
+  run route for 2 minutes, and send the debug log. The gate: each holds the set rate or a steady half rate with under
+  2% missed frames (`hitches.missed`), and the "Frame controller" line shows which levers moved and why. If it looks
+  worse than with it off, say so and send the log: it switches off in the same menu.
+
 ### Fluid track FL-2a - pictures: the draw budget - 2026-10-30
 Branch `track/fluid` (round 1's last lane, beside FL-1a and FL-1b; their commits merged in before the checks). Plan
 approved by the owner's standing answer (fluid-track.md section 1). Code: the picture pass's three fixes, its sort, the
