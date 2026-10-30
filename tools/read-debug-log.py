@@ -73,12 +73,73 @@ def ctx_lines(c):
     return out
 
 
+def graphics_report(d, name):
+    """the Graphics test's report (game/js/graphics-test.js graphicsReport, pocket-billies-graphics-*.json)"""
+    dv, steps = d.get('device') or {}, [s for s in (d.get('steps') or []) if isinstance(s, dict)]
+    print(f"{name}: Graphics test, {d.get('game')} {d.get('build')} (format {d.get('format')}), made {d.get('created')}, "
+          f"{num(d.get('seconds'))} s, {'stopped, ' if d.get('stopped') else ''}{'passed' if d.get('passed') else 'PROBLEMS'}"
+          f"{', resumed ' + str(d.get('resumed')) + 'x' if d.get('resumed') else ''}")
+    print(f"Graphics: {dv.get('renderer')} | DPR {dv.get('dpr')}, {dv.get('cores')} cores, budget {d.get('budgetMb')} MB, "
+          f"resolution {d.get('res')}")
+    for when in ('start', 'end'):
+        c = (d.get('conditions') or {}).get(when) if isinstance(d.get('conditions'), dict) else None
+        if isinstance(c, dict):
+            print(f"  conditions at the {when}: " + flat(c, ['browser', 'mobile', 'hz', 'measuredHz', 'fpsCap', 'dpr', 'res',
+                                                             'crossOriginIsolated', 'timerMs', 'timerQuery', 'loaf'], 11))
+    walked = [s for s in steps if s.get('kind') not in ('notHere', None) or s.get('fps') is not None]
+    bad = [s for s in steps if not s.get('ok') and not s.get('overBudget') and not s.get('notMeasured')]
+    print(f"Steps: {len(steps)} ({sum(1 for s in steps if s.get('kind') == 'notHere')} can't be measured on a walk, "
+          f"{sum(1 for s in steps if s.get('overBudget'))} over budget, {len(bad)} not ok)")
+    for s in bad[:10]: print(f"  x {s.get('step')}: {s.get('why') or s.get('invalid') or ''}")
+    fps = sorted((s for s in walked if isinstance(s.get('fps'), (int, float))), key=lambda s: s['fps'])
+    if fps:
+        print('Slowest steps (fps, p50/p90 ms, draws, peak MB): ' + '; '.join(
+            f"{s.get('step')} {num(s['fps'], 1)} fps {num(s.get('p50'), 1)}/{num(s.get('p90'), 1)} {s.get('draws')} {num(s.get('peakMb'))}"
+            for s in fps[:6]))
+    costs = [c for c in (d.get('costs') or []) if isinstance(c, dict)]
+    print(f"Costs ({d.get('costFrom') or 'median frame ms (format 3 and older: 0 on a phone held to its refresh rate)'}): "
+          f"{len(costs)} dials, {sum(1 for c in costs if c.get('unsure'))} unsure")
+    for c in [c for c in costs if not c.get('unsure')][:8]:
+        print(f"  {c.get('dial')} on {c.get('seg')} ({c.get('shipped')} -> {c.get('value')}): {c.get('cost'):+} ms a frame (noise {c.get('noise')})")
+    dr = d.get('drift')
+    if isinstance(dr, dict):
+        print(f"Drift (open ground, {dr.get('runs')} runs): {dr.get('first')} -> {dr.get('last')} ms"
+              + (f" ({dr.get('fpsFirst')} -> {dr.get('fpsLast')} fps)" if dr.get('fpsFirst') is not None else '')
+              + f", {dr.get('change')}%{' DRIFTING' if dr.get('drifting') else ''}")
+    else: print('Drift: not measured (fewer than two open-ground runs)')
+    for e in (d.get('errors') or [])[:8]: print(f"  error: {str(e).splitlines()[0][:160]}")
+
+
+def diagnostics_report(d, name):
+    """the diagnostics test's report (game/js/self-test.js diagnosticsSummary, kind 'diagnostics')"""
+    dv = d.get('device') or {}
+    print(f"{name}: Diagnostics, {d.get('game')} {d.get('build')} (format {d.get('format')}), made {d.get('created')}, "
+          f"{num(d.get('seconds'))} s, {'passed' if d.get('passed') else 'PROBLEMS'}")
+    if dv: print('Device: ' + flat(dv, ['renderer', 'mobile', 'screen', 'dpr', 'cores', 'memoryGB', 'userAgent'], 7)[:240])
+    for p in [p for p in (d.get('places') or []) if isinstance(p, dict)]:
+        print(f"  {'ok' if p.get('ok') else 'x '} {p.get('place')}: {num(p.get('fps'), 1)} fps (worst {num(p.get('worstFps'), 1)}, "
+              f"worst frame {num(p.get('worstFrameMs'))} ms), opened {p.get('opened')}"
+              + (f", opening hitch {num(p.get('openHitchMs'))} ms ({p.get('openHitchCause')})" if p.get('openHitchMs') else '')
+              + (f", slow {json.dumps(p.get('slow'))}" if p.get('slow') else '') + (f" - {p.get('why')}" if not p.get('ok') and p.get('why') else ''))
+    for key, label in (('battle', 'Battle'), ('worldMap', 'World map'), ('memory', 'Memory')):
+        o = d.get(key)
+        if isinstance(o, dict):
+            print(f"{label}: {'ok' if o.get('ok') else 'NOT OK'}, {num(o.get('fps'), 1)} fps (worst {num(o.get('worstFps'), 1)})"
+                  + (f", {o.get('note')}" if o.get('note') else '') + (f" - {o.get('why')}" if not o.get('ok') and o.get('why') else ''))
+    for key, label in (('frame', 'Render passes'), ('rainAndNight', 'Rain and night'), ('baseline', 'Baseline tour')):
+        if d.get(key) is not None: print(f"{label}: {json.dumps(d.get(key))[:300]}")
+    for e in (d.get('errors') or [])[:8]: print(f"  error: {str(e).splitlines()[0][:160]}")
+
+
 def main():
     if not ARGS: print(__doc__); sys.exit(2)
     src = sys.stdin.read() if ARGS[0] == '-' else Path(ARGS[0]).read_text(encoding='utf-8')
     d = json.loads(src)
-    if d.get('kind') != 'debug-log': print(f"warning: kind is {d.get('kind')!r}, not 'debug-log'")
     name = 'stdin' if ARGS[0] == '-' else Path(ARGS[0]).name
+    # the two test reports the owner also sends: a short summary each, not the debug log's
+    if d.get('kind') == 'graphics': return graphics_report(d, name)
+    if d.get('kind') == 'diagnostics': return diagnostics_report(d, name)
+    if d.get('kind') != 'debug-log': print(f"warning: kind is {d.get('kind')!r}, not 'debug-log'")
     print(f"{name}: {d.get('game')} {d.get('build')} (deploy {d.get('deploy') or '-'}, data {d.get('dataVersion')}, "
           f"art {d.get('artVersion')}, format {d.get('format')}), made {d.get('created')}, page up {num(d.get('uptimeSec'))} s")
 

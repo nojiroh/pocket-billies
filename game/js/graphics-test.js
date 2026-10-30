@@ -40,20 +40,30 @@ export function graphicsNamesIn(text, names) {
   const t = String(text).toLowerCase();
   return names.filter(n => t.includes(n.toLowerCase()));
 }
-/* per dial, what its other value cost over its segment as shipped (ms a frame, from the median frame), with the
+/* a step's mean frame in ms (1000 / fps: fps is frames over their summed gaps, bench-path.js benchFrameStats). Costs
+   and drift are worked from it, not the median (p50): on a phone held to the screen's rate, frames come in whole
+   refresh intervals (16.7 / 33.3 / 50 ms at 60 Hz), so the median stays 16.7 while fps falls, and every cost, its
+   noise and the drift read 0. The mean moves with the share of frames that miss. */
+export const GRAPHICS_COST_FROM = 'mean frame ms (1000 / fps)';
+export function graphicsFrameMs(s) {
+  return s && typeof s.fps === 'number' && s.fps > 0 ? Math.round((1000 / s.fps) * 100) / 100 : null;
+}
+/* per dial, what its other value cost over its segment as shipped (ms a frame, from the mean frame), with the
    segment's own wandering (its shipped runs, first and last) so a cost inside it reads as unsure */
 export function graphicsCosts(steps) {
   const base = {};
-  for (const s of steps)
-    if (s.kind === 'base' && s.p50 != null && !s.drift) (base[s.seg] = base[s.seg] || []).push(s.p50);
+  for (const s of steps) {
+    const ms = graphicsFrameMs(s);
+    if (s.kind === 'base' && ms != null && !s.drift) (base[s.seg] = base[s.seg] || []).push(ms);
+  }
   const r2 = v => Math.round(v * 100) / 100;
   return steps
-    .filter(s => s.kind === 'dial' && s.p50 != null && base[s.seg])
+    .filter(s => s.kind === 'dial' && graphicsFrameMs(s) != null && base[s.seg])
     .map(s => {
       const B = base[s.seg],
         mid = B.reduce((a, b) => a + b, 0) / B.length,
         noise = B.length > 1 ? r2(Math.max(...B) - Math.min(...B)) : null,
-        cost = r2(s.p50 - mid);
+        cost = r2(graphicsFrameMs(s) - mid);
       return {
         dial: s.dial,
         seg: s.seg,
@@ -66,14 +76,17 @@ export function graphicsCosts(steps) {
     })
     .sort((a, b) => b.cost - a.cost);
 }
-/* the heat drift: the open ground's shipped look, each time it was walked again (ms a frame, the median) */
+/* the heat drift: the open ground's shipped look, each time it was walked again (ms a frame, the mean; its fps too) */
 export function graphicsDrift(steps) {
-  const D = steps.filter(s => s.kind === 'base' && s.seg === 'open' && s.p50 != null).map(s => s.p50);
+  const R = steps.filter(s => s.kind === 'base' && s.seg === 'open' && graphicsFrameMs(s) != null),
+    D = R.map(graphicsFrameMs);
   if (D.length < 2) return null;
   const ch = D[0] ? (D[D.length - 1] - D[0]) / D[0] : 0;
   return {
     first: D[0],
     last: D[D.length - 1],
+    fpsFirst: R[0].fps,
+    fpsLast: R[R.length - 1].fps,
     runs: D.length,
     change: Math.round(ch * 100),
     drifting: Math.abs(ch) > 0.15,
@@ -120,7 +133,9 @@ export function graphicsReport(r, names) {
   const report = {
     game: 'Pocket Billies',
     kind: 'graphics',
-    format: 3,
+    /* format 4: costs and drift are worked from the mean frame (costFrom), not the median (format 3) */
+    format: 4,
+    costFrom: GRAPHICS_COST_FROM,
     build: r.build ?? null,
     created: r.created,
     seconds: r.seconds,
@@ -685,7 +700,7 @@ function showGraphicsResults(G, R) {
   <table class="nb-table"><thead><tr><th>What</th><th>FPS</th><th>p90 ms</th><th>Draws</th><th>MB</th><th>Result</th></tr></thead><tbody>${rows || '<tr><td colspan="6">Nothing was measured.</td></tr>'}</tbody></table>
   ${top.length ? `<h3>Costliest here</h3><ul class="nb-errs">${top.map(c => `<li>${esc(c.dial)}: +${c.cost} ms a frame</li>`).join('')}</ul>` : ''}
   ${notHere.length ? `<p class="note">${notHere.length} settings can’t be measured on a walk (each with its reason in the report).</p>` : ''}
-  ${R.drift && R.drift.drifting ? `<p class="note">The device measured ${R.drift.change}% differently at the end than at the start (it may have warmed up).</p>` : ''}
+  ${R.drift && R.drift.drifting ? `<p class="note">The open ground ran at ${f(R.drift.fpsFirst)} FPS at the start and ${f(R.drift.fpsLast)} at the end: frames ${Math.abs(R.drift.change)}% ${R.drift.change > 0 ? 'slower' : 'faster'} (the device may have warmed up).</p>` : ''}
   ${R.errors.length ? `<h3>Errors</h3><ul class="nb-errs">${R.errors.map(e => `<li>${esc(e)}</li>`).join('')}</ul>` : ''}<p class="note">Your save and your graphics settings weren't changed. The report holds no save data or names.</p>`,
     btns: [
       {

@@ -68,3 +68,55 @@ test('an older log with `bench.result` still reads', { skip: !python }, () => {
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /Full test \(full\): PROBLEMS/);
 });
+
+/* the two test reports the owner also sends: made up, numbers only (the 2026-10-30 phone report stays out of git) */
+test('a Graphics test report reads as a summary: steps, costs and drift', { skip: !python }, () => {
+  const r = read({
+    game: 'Pocket Billies',
+    kind: 'graphics',
+    format: 4,
+    costFrom: 'mean frame ms (1000 / fps)',
+    build: '0.1.0',
+    seconds: 1440,
+    passed: true,
+    device: { renderer: 'Adreno (TM) 750', dpr: 3 },
+    conditions: { start: { browser: 'Chrome 155', hz: 60, measuredHz: 60 }, end: null },
+    steps: [
+      { step: 'Open ground', kind: 'base', seg: 'open', ok: true, fps: 49.9, p50: 16.7, p90: 33.3, draws: 120 },
+      { step: 'Open ground: Shadows', kind: 'dial', seg: 'open', ok: true, fps: 40.1, p50: 16.7, p90: 33.3 },
+      { step: 'Lagoon (worldMap.lagoon)', kind: 'notHere', ok: true },
+    ],
+    costs: [{ dial: 'shadows.mapSize', seg: 'open', shipped: 2048, value: 1536, cost: 4.9, noise: 0.4, unsure: false }],
+    drift: { first: 20.04, last: 24.21, fpsFirst: 49.9, fpsLast: 41.3, runs: 4, change: 21, drifting: true },
+    errors: [],
+  });
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stdout, /not 'debug-log'/);
+  assert.match(r.stdout, /Graphics test, Pocket Billies 0\.1\.0 \(format 4\)/);
+  assert.match(r.stdout, /browser Chrome 155, hz 60, measuredHz 60/);
+  assert.match(r.stdout, /Steps: 3 \(1 can't be measured on a walk, 0 over budget, 0 not ok\)/);
+  assert.match(r.stdout, /Costs \(mean frame ms/);
+  assert.match(r.stdout, /shadows\.mapSize on open \(2048 -> 1536\): \+4\.9 ms a frame/);
+  assert.match(r.stdout, /Drift \(open ground, 4 runs\): 20\.04 -> 24\.21 ms \(49\.9 -> 41\.3 fps\), 21% DRIFTING/);
+});
+
+test('a diagnostics report reads as a summary: places, battle and errors', { skip: !python }, () => {
+  const r = read({
+    game: 'Pocket Billies',
+    kind: 'diagnostics',
+    format: 2,
+    build: '0.1.0',
+    seconds: 200,
+    passed: false,
+    places: [
+      { place: 'Copperleaf', opened: 'in 3 s', fps: 42.5, worstFps: 20, worstFrameMs: 90, ok: false, why: 'slow' },
+    ],
+    battle: { ok: true, fps: 58, worstFps: 50 },
+    errors: ['TypeError: x is undefined'],
+  });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /Diagnostics, Pocket Billies 0\.1\.0 \(format 2\), .*PROBLEMS/);
+  assert.match(r.stdout, /x {2}Copperleaf: 42\.5 fps \(worst 20\.0, worst frame 90 ms\).* - slow/);
+  assert.match(r.stdout, /Battle: ok, 58\.0 fps/);
+  assert.match(r.stdout, /error: TypeError/);
+});
