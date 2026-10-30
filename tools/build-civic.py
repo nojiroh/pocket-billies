@@ -331,9 +331,11 @@ def inn():
           box(1.9, Dp - 0.6, z3 + 0.6, 0.6, 0.6, 0.08, STONE, 'stone', name='chimney cap'),
           cyl(1.9, Dp - 0.6, z3 + 0.68, 0.1, 0.2, COPPER, 'metal', sides=8, name='chimney pot')]
     M.smoke = (1.9, z3 + 1.2)
-    # the teacup sign by the door; the INN board on the wall over the right window, clear of the balcony
+    # the teacup sign by the door; the INN board on two posts beside the steps (low: the balcony hides the wall under
+    # it from the orbit camera)
     L += teacup_sign(-1.25, -0.02, z1 - 0.7)
-    L += word_board(2.0, -0.04, 1.9, 'INN', '#7A4E34', '#F8E8B0', '#3A2418')
+    L += word_board(1.6, -0.5, 0.42, 'INN', '#7A4E34', '#F8E8B0', '#3A2418')
+    L += [box(1.6 + sx * 0.3, -0.45, 0, 0.06, 0.06, 0.45, '#60402C', 'wood', name='board post') for sx in (-1, 1)]
     # C's showpieces: string lights from the balcony to a post by the tree; the blossom street tree
     L += string_lights((-1.6, -0.93, z1 + 0.7), (-2.75, -1.1, 2.4), 6, 0.22)
     L += string_lights((1.6, -0.93, z1 + 0.7), (2.75, -0.1, 2.0), 6, 0.2)
