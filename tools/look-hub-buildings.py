@@ -33,7 +33,7 @@ ANGLE = float(next((a.split('=', 1)[1] for a in ARGS if a.startswith('--angle=')
 HOURS = {'noon': 12.5, 'dusk': 20.3, 'night': 22.5}
 SCENE = next((a.split('=', 1)[1] for a in ARGS if a.startswith('--scene=')), 'test_hub_buildings')
 TURNING = {'workshop', 'gene_bank', 'lighthouse', 'windmill'}
-TALL = {'lighthouse': (14, 5.5), 'windmill': (12, 4.5), 'gene_bank': (10, 3), 'shape_showcase': (13, 1.4), 'look_sketch': (11, 2.4)}  # camera distance, aim height
+TALL = {'lighthouse': (14, 5.5), 'windmill': (12, 4.5), 'gene_bank': (10, 3), 'shape_showcase': (13, 1.4), 'look_sketch': (11, 2.4), 'house_kit': (10, 2.2)}  # camera distance, aim height
 
 HIDE_HUD = """(()=>{const cv=walkView.cv;for(const el of document.body.querySelectorAll('*'))
  if(el!==cv&&!el.contains(cv))el.style.setProperty('visibility','hidden','important');
