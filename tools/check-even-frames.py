@@ -8,7 +8,7 @@ browser draws in software, so milliseconds are notes only.
 On the run fixture (phone sized, the game's own graphics): the walk to the next place's seam and across it, then 8 s
 standing. Per arm:
 - the far shadow map: drawn again (miss), laid down from its cache (hit), held (FL-4's hold);
-- the grass: whether the next place was planted ahead (on: before the crossing), the longest single
+- the grass: whether the next place was planted ahead (on: before the crossing) and kept at the crossing, the longest single
   grass call on the page (a note);
 - the free ticks asked for (on) and the page's errors.
 Gates (exit status 1): no page errors in either arm; with the switches on the next place's grass planted ahead, the far
@@ -57,7 +57,14 @@ def arm(b, base, on, cf):
     n1 = pg.evaluate("runWorldNode(runNext(saveData.run.map, 0)[0])")
     # the next place is prepared as you near its seam (seamlessPrepareAhead): walk there, wait for its ground
     cf.walk_over(pg, n1, -3)
-    pg.wait_for_timeout(15000)
+    # headless frames come about once a second: the next view's preparation pushed along from the page (as check-fast's
+    # SEAM_PREP), 150 ms of work every 0.3 s, until its grass is planted ahead (on) or 40 s
+    nid = pg.evaluate(f"'w:'+mapIdAt({n1})+'*'")
+    for _ in range(130):
+        pg.evaluate(f"seamlessGetReady('{nid}', false);groundPrepWork(150);navPrepWork(150);0")
+        pg.wait_for_timeout(300)
+        if pg.evaluate("debugLog.ev.some(e=>/planted .* grass ahead/.test(e.msg))"): break
+    pg.evaluate("window.__builds=0;const f=window.buildGrass;window.buildGrass=function(...a){window.__builds++;return f.apply(this,a)};0")
     ahead_before = pg.evaluate("debugLog.ev.filter(e=>/planted .* grass ahead/.test(e.msg)).length")
     cf.walk_over(pg, n1, pg.evaluate('RULES.run.seamIn') + 6)
     until(pg, f"walkView.ready&&walkView.id==='w:'+LOCATIONS[{n1}].mapId+'*'", 240)
@@ -65,6 +72,7 @@ def arm(b, base, on, cf):
     W = pg.evaluate("window.__even")
     W['ahead'] = ahead_before
     W['grassNow'] = pg.evaluate("!!walkRenderer.grass")
+    W['builds'] = pg.evaluate("window.__builds")
     W['ticks'] = pg.evaluate("(typeof freeTicks!=='undefined' ? freeTicks.asked : 0) - window.__ticks0")
     W['events'] = pg.evaluate("debugLog.ev.filter(e=>/planted|prepared/.test(e.msg)).map(e=>e.msg).slice(-6)")
     ctx.close()
@@ -85,10 +93,11 @@ def main():
             name = 'on' if on else 'off'
             log(f"switches {name}: far map drawn again {W['miss']}, from its cache {W['hit']}, held {W['held']} "
                 f"({W['frames']} far passes); grass planted ahead before the crossing: {W['ahead']}, "
-                f"the longest grass call {W['grassMax']:.1f} ms (a note), grass on screen: {W['grassNow']}; free ticks asked {W['ticks']}")
+                f"the longest grass call {W['grassMax']:.1f} ms (a note), grass on screen: {W['grassNow']}, planted again after the crossing {W['builds']}; free ticks asked {W['ticks']}")
             for e in W['events']: print('     ' + e[:140], flush=True)
             if errs: fails.append(f'{name}: page errors: {errs[:3]}')
     if R[True]['ahead'] < 1: fails.append('on: the next place was not planted ahead before the crossing')
+    elif R[True]['builds'] > 0: fails.append('on: the grass planted ahead was planted again after the crossing')
     if R[True]['miss'] * R[False]['frames'] > R[False]['miss'] * max(1, R[True]['frames']) * 1.1 + R[False]['frames']:
         fails.append('on: the far map was drawn again more often than off')
     if R[True]['ticks'] < 1: fails.append('on: no free tick asked for')

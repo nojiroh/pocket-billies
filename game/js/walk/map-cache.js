@@ -19,6 +19,7 @@ import {
   bigTilesOn,
   groundKey,
   navKept,
+  navPrepare,
   paintGroundSteps,
   walkView,
 } from '../walk-view.js';
@@ -37,6 +38,7 @@ expose({
   abortGroundPrep: [() => abortGroundPrep, v => (abortGroundPrep = v)],
   freeMapCacheEntry: [() => freeMapCacheEntry, v => (freeMapCacheEntry = v)],
   freeNearRing: [() => freeNearRing, v => ((freeNearRing = v), provide({ freeNearRing }))],
+  grassAheadPick: [() => grassAheadPick, v => (grassAheadPick = v)],
   grassAheadStart: [() => grassAheadStart, v => (grassAheadStart = v)],
   grassAheadWork: [() => grassAheadWork, v => (grassAheadWork = v)],
   groundOcclusionTexture: [
@@ -393,6 +395,8 @@ export function prepareMapGround(id, sc, G, urgent, focus) {
     prepared: 1,
     grass: null,
     grassKey: null,
+    /* FL-4: what grassAheadWork needs to plant it later */
+    of: { hk, sc, gkey },
   };
   walkRenderer.prep = {
     hk,
@@ -433,6 +437,16 @@ function stopGrassAhead() {
   walkRenderer.grassAhead = null;
   if (A && A.J) A.J.abort();
 }
+/* a view prepared ahead and waiting in the cache with no grass yet (prepared before the switch was on, or its job let
+   go): the newest first */
+function grassAheadPick() {
+  const M = walkRenderer.sceneCache;
+  if (!M) return;
+  let N = null;
+  for (const T of M.values())
+    if (T.prepared && T.of && !T.grass && T.grassKey == null && !(T.of.sc.indoor && !T.of.sc.grass)) N = T;
+  if (N) grassAheadStart({ hk: N.of.hk, T: N, sc: N.of.sc, gkey: N.of.gkey });
+}
 /* view sc's walking grid for ground key G, if it is ready (on screen, kept from before or built ahead) */
 function navGridOf(sc, G) {
   if (!navKept(sc, G) && !(walkView.nav && walkView.navSc === sc && walkView.navG === G)) return null;
@@ -443,8 +457,10 @@ function navGridOf(sc, G) {
   return (K && K.nav) || (A && A.nav) || null;
 }
 function grassAheadWork(budget) {
+  if (!(budget > 0)) return;
+  if (!walkRenderer.grassAhead && engineSetting('quality', 'grassAhead')) grassAheadPick();
   const A = walkRenderer.grassAhead;
-  if (!A || !(budget > 0)) return;
+  if (!A) return;
   const M = walkRenderer.sceneCache;
   if (!M || M.get(A.hk) !== A.T) {
     stopGrassAhead();
@@ -453,7 +469,14 @@ function grassAheadWork(budget) {
   const t0 = performance.now();
   if (!A.J) {
     const G = navGridOf(A.sc, A.gkey);
-    if (!G) return;
+    if (!G) {
+      /* its walking grid built ahead too (the crossing needs it anyway; walk-view.js navPrepWork), asked for once */
+      if (!A.navAsked) {
+        A.navAsked = true;
+        navPrepare(A.sc, false);
+      }
+      return;
+    }
     A.J = grassJob(A.sc, G, A.T);
   }
   const done = grassStep(A.J, budget);
