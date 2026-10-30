@@ -218,6 +218,11 @@ const PICTURE_PATH_SWITCHES = [
   ['fl2sky', 'skyLast', 'Sky last'],
   /* FL-3a: the automatic quality's controller, off until the owner's phone run */
   ['fl3ctl', 'controller', 'Frame controller'],
+  /* FL-4: even frames, each off until the owner's phone run */
+  ['fl4cells', 'shadowCells', 'Shadow cache by squares'],
+  ['fl4hold', 'shadowHold', 'Hold still far shadows'],
+  ['fl4grass', 'grassAhead', 'Grass planted ahead'],
+  ['fl4ticks', 'freeTicks', 'Jobs in free time'],
 ];
 /** a picture path switch's label: on, off, or off by itself after a GL error (walk/sprites.js firstInBatches) */
 function picturePathLabel([, k, l]) {
@@ -721,7 +726,11 @@ function debugAction(x) {
     /* FL-2a: an old drawing path back on for this session (the game data's engine defaults, as above) */
     case 'fl2batch':
     case 'fl2sky':
-    case 'fl3ctl': {
+    case 'fl3ctl':
+    case 'fl4cells':
+    case 'fl4hold':
+    case 'fl4grass':
+    case 'fl4ticks': {
       const f = PICTURE_PATH_SWITCHES.find(t => t[0] === x),
         [, k, l] = f,
         E = (gameData.engine = gameData.engine || {}),
