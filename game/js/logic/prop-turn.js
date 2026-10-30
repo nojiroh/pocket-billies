@@ -177,14 +177,16 @@ export function decalPlace(at, L, m) {
     ro = m.turn + (m.bob ? m.bob[1] : 0),
     c = Math.cos(ro),
     n = Math.sin(ro),
-    q = spinPoint(m.spin, [L.x || 0, L.z || 0, L.y || 0]),
-    lx = q[0] * s * f,
-    lz = q[2] * s,
+    /* only a tipped model's layers are turned (every layer of every model passes here each frame: no array for the
+       upright ones) */
+    q = m.spin && m.spin.an ? spinPoint(m.spin, [L.x || 0, L.z || 0, L.y || 0]) : null,
+    lx = (q ? q[0] : L.x || 0) * s * f,
+    lz = (q ? q[2] : L.y || 0) * s,
     fixed = L.face === 'fixed';
   return {
     x: at.x + lx * c - lz * n,
     z: at.z + lx * n + lz * c,
-    y: at.y + (m.bob ? m.bob[0] : 0) + q[1] * s,
+    y: at.y + (m.bob ? m.bob[0] : 0) + (q ? q[1] : L.z || 0) * s,
     s,
     yaw: fixed ? (+(L.yaw || 0) || 0) * f + ro : 0,
     flip: fixed ? (L.flip ? -1 : 1) : L.flip ? -f : f,
