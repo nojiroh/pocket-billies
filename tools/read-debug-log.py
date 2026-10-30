@@ -154,6 +154,21 @@ def main():
     # FL-1b: the once-a-second getError's time (ms), from the samples that have it
     ge = [s.get('glErr') for s in (d.get('samples') or []) if isinstance(s, dict) and isinstance(s.get('glErr'), (int, float))]
     if ge: print(f"getError once a second: {len(ge)} samples, mean {sum(ge) / len(ge):.2f} ms, worst {max(ge):.2f} ms")
+    # FL-6: taps from touch to paint (Event Timing) and the long frames' rendering and style and layout time
+    ui = d.get('ui') or {}
+    tp, lf = ui.get('taps') or {}, ui.get('longFrames') or {}
+    if tp.get('count'):
+        print(f"Taps (touch to paint, over 16 ms): {tp.get('count')}, worst {num(tp.get('maxMs'))} ms, over 100 ms: {tp.get('over100')}")
+        for r in (tp.get('last') or [])[-6:]:
+            if isinstance(r, list) and len(r) >= 8:
+                print(f"  {num(r[1]):>4s} ms {str(r[3])[:12]:12s} {str(r[4])[:16]:16s} wait {r[5]}, handlers {r[6]}, paint {r[7]}")
+    pt = ui.get('paint') or {}
+    if pt.get('count'):
+        print(f"Taps, click to paint (every tap): {pt.get('count')}, mean {pt.get('meanMs')} ms, worst {pt.get('maxMs')} ms")
+        for r in (pt.get('last') or [])[-6:]:
+            if isinstance(r, list) and len(r) >= 4: print(f"  {num(r[1]):>4s} ms {str(r[2])[:12]:12s} {str(r[3])[:16]}")
+    if lf.get('count'): print(f"Long frames: {lf.get('count')}, rendering {lf.get('renderMs')} ms and style and layout {lf.get('styleMs')} ms on average, "
+                             f"style and layout at most {lf.get('maxStyleMs')} ms")
 
     # the full test's result: build() stores it as `bench` itself (TD-1); `bench.result` is kept for older logs
     bench = d.get('bench')
