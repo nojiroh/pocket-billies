@@ -13,7 +13,8 @@ import { test } from 'node:test';
 import { ROOT } from './load-logic.mjs';
 
 await import('./walk-renderer.mjs');
-const { lowPolyFromRecipe, propModelState } = await import('../../game/js/prop-models.js');
+const { propModelState } = await import('../../game/js/prop-models.js');
+const { lowPolyFromRecipe } = await import('../../game/js/logic/low-poly.js');
 const { readGameData } = await import('../data-files.mjs');
 const { ENGINE_DEFAULTS } = await import('../../game/js/engine/settings.js');
 /* not exported: the test globals (walk-renderer.mjs asks for them) */

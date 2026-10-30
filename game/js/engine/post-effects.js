@@ -7,7 +7,7 @@
    and a light sharpen. Also takes a small screenshot for the debug log when asked. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { environment, provide, reducedMotion } from '../hooks.js';
+import { PHONE, environment, provide, reducedMotion } from '../hooks.js';
 import { clamp } from '../util.js';
 import { makeCanvas } from '../art.js';
 import { walkView } from '../walk-view.js';
@@ -404,6 +404,13 @@ const POST_MEDIUMP = {
     ['float e=abs(volZ(uVolZ,q,uFar)-z);', 'highp float e=abs(volZ(uVolZ,q,uFar)-z);'],
   ],
 };
+/* FL-5b (quality.postMerge, phones): the bright pass straight to quarter size, its nine taps two screen pixels apart
+   (each a bilinear read of four), so the glow starts a level smaller and its first step down goes; the same edits */
+POST_EFFECT_SHADERS.brightq = [
+  POST_EFFECT_SHADERS.bright[0],
+  POST_EFFECT_SHADERS.bright[1].replace('vUV+vec2(i,j)*uPx', 'vUV+vec2(i,j)*uPx*2.'),
+];
+POST_MEDIUMP.brightq = POST_MEDIUMP.bright;
 for (const [k, e] of Object.entries(POST_MEDIUMP)) POST_EFFECT_SHADERS[k].mp = e;
 /* Medium precision switched (the Studio, the graphics test): the passes with a list are made again in the new
    precision (once, on the spot), and any of them still compiling in the background is dropped */
@@ -555,8 +562,16 @@ export function drawPostRest(S, C, rw, rh, o, F, focusDist = 0) {
   let src = S.c,
     w = hw,
     h = hh;
+  /* FL-5b (quality.postMerge): on a phone the glow starts at quarter size (brightq), the same number of levels, each a
+     step smaller (the owner's ask "fewer bloom levels on phones": 3 levels from quarter size at the slow steps) */
+  const merged = bk > 0.01 && PHONE && !!engineSetting('quality', 'postMerge');
+  gpuState.postMerged = merged ? 1 : 0;
+  if (merged) {
+    w = Math.max(4, hw >> 1);
+    h = Math.max(4, hh >> 1);
+  }
   if (bk > 0.01) {
-    let U = use('bright', renderTarget('b0', w, h, { hdr: true }), w, h);
+    let U = use(merged ? 'brightq' : 'bright', renderTarget('b0', w, h, { hdr: true }), w, h);
     tex(U, 'uCol', 0, S.c);
     gl.uniform2f(U.uPx, 1 / rw, 1 / rh);
     /* Even bloom (color.bloomEven): the threshold as it reads after the exposure */

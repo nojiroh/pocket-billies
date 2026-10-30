@@ -1,4 +1,4 @@
-// Buildings track BD-1: the new recipe shapes of the low-poly models (game/js/prop-models.js lowPolyFromRecipe, the
+// Buildings track BD-1: the new recipe shapes of the low-poly models (game/js/logic/low-poly.js lowPolyFromRecipe, the
 // maths in game/js/logic/model-shapes.js): rot and tilt on every solid kind, the prism, the lathe, a box's taper, lean
 // and bevel, the recipe's warp, glowing layers, and the world map's simpler copy (world-bowl.js
 // worldBowlModelShape). Each: its bounds, its normals facing out, its triangle count and a stable vertex hash (a
@@ -8,7 +8,8 @@ import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 
 await import('./walk-renderer.mjs');
-const { lowPolyFromRecipe, propModelState } = await import('../../game/js/prop-models.js');
+const { propModelState } = await import('../../game/js/prop-models.js');
+const { lowPolyFromRecipe } = await import('../../game/js/logic/low-poly.js');
 /* the world map's module reads the game data when it loads (game-data.js), put together as the Node tools do */
 globalThis.GAMEDATA ??= (await import('../data-files.mjs')).readGameData();
 globalThis.PB_VERSION ??= 'test';

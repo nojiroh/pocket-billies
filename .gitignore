@@ -23,6 +23,7 @@ validation/quick-baseline/
 validation/fast/
 validation/build-surfaces/
 validation/ch5/
+validation/placing/
 validation/tall-ground/
 validation/behind/
 validation/look-blur/
@@ -79,6 +80,7 @@ validation/load/
 validation/perf/
 validation/look-talk*/
 validation/check-draw-order/
+validation/check-look-trades/
 validation/assets-baseline/
 validation/look-halt/
 validation/as-2-*/

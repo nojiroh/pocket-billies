@@ -132,6 +132,9 @@ export const UI_DIALS = [
     dials: [
       { k: 'blur', label: 'Blur', kind: 'range', min: 0, max: 40, step: 1, unit: 'px' },
       { k: 'saturate', label: 'Saturation behind', kind: 'range', min: 0, max: 3, step: 0.05, unit: '×' },
+      // FL-6b: a phone's lighter glass (left out: three quarters of the blur, the same saturation)
+      { k: 'phoneBlur', label: 'Blur on a phone', kind: 'range', min: 0, max: 40, step: 1, unit: 'px' },
+      { k: 'phoneSaturate', label: 'Saturation behind, phone', kind: 'range', min: 0, max: 3, step: 0.05, unit: '×' },
     ],
     sideDials: [
       dialShare('glass', 'Glass opacity'),

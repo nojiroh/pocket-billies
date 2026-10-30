@@ -10,7 +10,8 @@ import { ROOT } from './load-logic.mjs';
 const { recordingGL } = await import('./walk-renderer.mjs');
 const G = globalThis;
 const { spinGroups, spinOf, joinMeshes } = await import('../../game/js/logic/spin-merge.js');
-const { lowPolyFromRecipe } = await import('../../game/js/prop-models.js');
+await import('../../game/js/prop-models.js');
+const { lowPolyFromRecipe } = await import('../../game/js/logic/low-poly.js');
 const { readGameData } = await import('../data-files.mjs');
 const { voxelise, greedyVoxelMesh } = /** @type {any} */ (G);
 

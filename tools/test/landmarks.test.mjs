@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import { ROOT } from './load-logic.mjs';
 
 await import('./walk-renderer.mjs');
-const { lowPolyFromRecipe } = await import('../../game/js/prop-models.js');
+const { lowPolyFromRecipe } = await import('../../game/js/logic/low-poly.js');
 const { readGameData } = await import('../data-files.mjs');
 const { spinGroups } = await import('../../game/js/logic/spin-merge.js');
 

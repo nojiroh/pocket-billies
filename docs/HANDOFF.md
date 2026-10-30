@@ -2,6 +2,381 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-4b - the load overlap: budget by the slot, pictures by time and in turn, meshes on a helper, the next place warmed - 2026-10-30
+Branch `track/fluid` (round 5 lane, beside FL-5b: separate containers, each with its own baseline; FL-5b finished
+first, so this is round 5's last lane). Plan approved by the owner's standing answer (fluid-track.md section 1); the
+overlap with LD-5 is the owner's answer (a) of 2026-10-30 ("all here, in the fluid track ... the budget follows the
+set rate, about a quarter of the paced slot"), confirmed again by the "Open PRs merge" session. Code: five new paths,
+each behind its own switch, **off** until the owner's phone run. No tag (the track's tag comes at FL-7).
+- **For the load track (LD-5):** the one-off budget sized from the slot, picture age by time, model meshes in a
+  worker, `createImageBitmap` and an upload queue, and the next place's warm-up moved here and are built (below);
+  docs/phases/load-track.md's LD-5 item says so (an addition). The world map's terrain in a worker stays LD-5's (done).
+- Facts checked against the code (ee9c4be8 = rounds 1-4): `FRAME_WORK_MS` 8 ms on phones, 10 elsewhere, whatever the
+  rate (walk/quality-cull.js), stamped at the frame's start; `walkRenderer.budMs` is read but never set. Picture age
+  is 600 frames (engine/webgl.js trimTextures, every 120 walk frames: never in a battle) and every picture counted
+  twice (a bump map assumed). First uploads (`texImage2D` of an `<img>`, `generateMipmap`) run inside the passes with
+  no budget. Differs: model meshes are mostly **low-poly** now (`world.voxelLowPoly` on by default: prop-models.js
+  lowPolyFromRecipe), not LD-5's voxelise/greedy mesh, which only recipes with imported voxels still use (left on the
+  page). `createImageBitmap` was already used, for the bump maps' helper only.
+- Changed:
+  - `quality.slotBudget`: walk/quality-cull.js `frameBudgetStart` (walk-view-gl.js calls it where `budT` was stamped):
+    a quarter of the walk's paced slot (its task's refreshes a frame, the half rate included, times the period;
+    logic/load-budget.js `slotWorkMs`, 2-12 ms: 4.2 at 60, 8.3 at 30 or the half rate, 2.1 at 120).
+  - `quality.texAge`: a picture's last use stamped with the tick's time (`gpuState.now`, set in `gpuFrame`); over the
+    cap, those unused 10 s go, the longest unused first (logic/load-budget.js `textureTrimOrder`), checked every 2 s
+    from `gpuFrame` on any screen; a picture without a bump map counted once.
+  - `quality.uploadQueue`: an `<img>`'s first upload waits for its bitmap (`createImageBitmap`, premultiplyAlpha
+    none, the browser's colour space: as the `<img>` upload), then uploads from it; the first of a tick always, then
+    about 1 ms, the rest while the one-off budget lasts (all behind a loading screen); canvases and redrawn pictures
+    as before; a bitmap that can't be made falls back to the picture. At most 192 bitmaps wait.
+  - `quality.meshWorker`: lowPolyFromRecipe and its helpers **moved** to logic/low-poly.js (a move, its own commit);
+    `lowPolyMeshData` (the still mesh and the turning groups, as the page laid them) is used by the page and by
+    game/js/prop-mesh-worker.js (+ -modules.js, bundled by vite.config.js); game/js/prop-meshes.js asks once per path
+    and recipe, the picture stands in until the mesh is in; no thread or a failed one: built on the page.
+  - `quality.placeWarm`: game/js/walk/place-warm.js. When the view ahead is ready (seamless-world.js, its ground and
+    walking grid), its props' pictures are unpacked ahead (webgl.js `uploadAhead`: a bitmap with the queue on, else
+    `img.decode()`; nothing goes to the card until drawn, so each bump map's material is set at its first draw as
+    before) and their meshes asked for on the helper (prop-models.js `propModelWarm`, with meshWorker), in what is
+    left of the frame's budget.
+  - Settings rows and debug-menu switches (additions), bench-path's perf group; debug-log.js (additions): the
+    sample's `bud`, gpuMemory `uploads`, `meshes`, `warm`; tools/read-debug-log.py prints them.
+  - tools/test/load-overlap.test.mjs (6 tests: the budget's numbers, the trim order, the helper's meshes byte for
+    byte against the page's for every low-poly prop in the data, the job flow, the upload queue's order);
+    tools/check-load-overlap.py (headless counts, off then on).
+  - FL-5b's four debug-menu switches had rows but no `case` labels (their buttons did nothing): added at the merge.
+- Measured headless (counts only; `check-load-overlap.py`, the run fixture phone sized, a walk to the next seam and
+  across): off, the budget 10 ms whatever the slot, no bitmaps, every mesh on the page; on, the budget 4.2 ms of a
+  16.7 ms slot, 53 of 83 pictures from bitmaps (0 failed; the rest still waiting at the moment counted), every picture
+  on the card stamped with a time, 43 meshes on the helper (170-195 ms there in all), 0 on the page, the next place
+  warmed before the crossing (36 pictures, 29-33 meshes). Models after the crossing come in a few a frame (the slot's
+  budget; headless frames about 1 a second): 25 at 8 s, the off arm's count later. Copperleaf's open (the town
+  fixture, phone sized, game's own graphics, a scratch probe): "drawing sprites" (first uploads) 3,060 ms off, 1,261
+  ms on; "warming up a scene" 5.9 s off, 4.1 s on. The phone's "setting up the ground" (4.5-5.3 s) does not show in
+  the fixture's open headless (the phone opens from Start-Game): not reproduced here, not fixed.
+- Not done: the voxel path (recipes with imported voxels: `voxelise`, `greedyVoxelMesh`) stays on the page (few props;
+  the same worker could take it). Copperleaf's open hitch on the phone ("setting up the ground", 4.5-5.3 s:
+  walk/map-cache.js swapMapCache, buildGroundMesh in one go although walk-view-gl.js builds the ground before the
+  place shows): not reproduced headless from the town fixture; the phone's debug log with the hitch list (Start-Game
+  into Copperleaf) would say whether its prepared ground misses its key at the first frame. Next for FL-7 or the
+  load track. Warmed pictures are unpacked, not uploaded (an upload ahead would set the bump map's material before
+  the first draw sets it).
+- Risky: all five switches off, so nothing changes for players until the owner's phone run. Always on: the move of
+  lowPolyFromRecipe (byte-equal meshes, tested), the tick's time stamp (`gpuState.now`, one `performance.now()` a
+  tick), `frameBudgetStart` (the same 8/10 ms with the switch off). On: with slotBudget a frame takes in fewer new
+  meshes and ground slices (4.2 ms at 60 instead of 8 on a phone), so a place fills in over more frames; with
+  uploadQueue a picture shows a frame or more after first wanted (pop-in), and with meshWorker a model's picture
+  stands in until its mesh is back (tens of ms on a phone); bitmaps waiting hold memory (at most 192); with texAge
+  the cap holds more pictures (counted once), so a phone keeps more on the card before trimming.
+- Verified: lint, types, format, modules, data clean; the build bundles the worker; unit tests 2,542 of 2,542; smoke: only the phone crash step ("w:copperleaf*
+  stopped drawing"), which passed alone; `check-perf.py --only=copperleaf` no problems (279-314 draws as shipped,
+  effects 5-7); `check-even-frames.py` every gate; `check-draw-order.py` every gate (pictures with the world stopped:
+  on/on 5.79%, on/off 0.41%, off/on 0.31%); `check-load-overlap.py` every gate. Full quick check 36 of 42 (3,844 s)
+  against a baseline made at the round's start (ee9c4be8, a worktree, 39 pictures, 4,694 s, 34 of 42; my unit tests
+  ran beside it for a while): the six that failed are the start commit's known ones (Starters, passing alone in
+  93 s; RL-8's run; room light; walking out of the lab; the phone crash step's "dialogue 23"; battle music's drums);
+  9 pictures over the threshold, the failed steps' and the known moving ones (battle-alpha, battle-rain, lamps-night,
+  phone-lab-payout, phone-run-sheet, room-lab), with every new switch off.
+- Next: round 5 is done (FL-5b finished first). Round 6 (FL-7, the close-out) waits for the owner's phone run: the
+  Diagnostics and the graphics test have been relayed (12:40), the debug logs with the round 4-5 switches on and off
+  have not, so it is not started here.
+- For the owner on the phone: open the debug menu, turn on "Jobs follow the frame rate", "Pictures kept by time",
+  "Pictures uploaded in turn", "Models built on a helper" and "Next place warmed up", close it; start in Copperleaf,
+  walk the square for a minute, then take a run and cross into its next place twice; send the debug log (its `bud`,
+  gpuMemory's uploads, meshes and warm, and the hitch list), and one with the five off for comparison. Things to look
+  for: pictures or models popping in late when you arrive, a picture missing for good (it should never be), a hitch
+  at a crossing. Each switch turns its part off alone.
+
+### Fluid track - placing on phones, 16:9 and ultrawide; the frozen world's stall - 2026-10-30
+Branch `track/fluid` (FL-6's session, the owner's follow-up: "make sure the interface is reactive and looks correct on
+portrait phone, widescreen and ultrawide, especially the placing"; FL-5a, FL-5b and FL-6b merged in). The owner's
+answers (2026-10-30): sizes portrait phones, 16:9 and 21:9 (not 32:9); on ultrawide the HUD in a centred 16:9 area;
+menus in the side panel as now; battle cards right of the fighters. Code: CSS placing, the walk's labels, the freeze.
+- Found (pictures of 8 screens at 8 sizes, then counted):
+  - On a wide screen the bottom bar sat over the side panel (Team, Bag, Guide, Trainer at 1366x768: the panel's foot
+    under Bag and Lab), and on an ultrawide the panel was pinned to the screen's far right edge.
+  - The walk's label band (walk-control.js `safe`) read the place card and the foot row, often hidden, so it fell back
+    to 10% / 88%: on a desktop labels slid under the top bar and the minimap tile; building labels (walk-view-gl.js)
+    were never kept on screen ("Skyline Station - Lv 1" cut at a phone's edge) and piled on each other.
+  - The Guide's filter chips ran past the side panel in a strip a mouse can't scroll.
+  - On a 360 px phone the page was 4 px wider than the screen (the canvas's 1.5% zoom behind a screen) and could
+    slide under a finger.
+  - A new battle's cards eased in from the last battle's place (their position was never reset).
+  - **The frozen world stalled the page** (FL-3b's true freeze, a cap of 0): after a window or screen kept the 3D
+    canvas without a new frame for 10 s or more, the page's frames stalled for about as long once it closed (8 s
+    frozen: 13 s stalled; 16 s: 20-27 s), the main thread and GPU idle (a Chrome trace: 2 main frames in 18 s). It
+    made smoke's phone flow fail ("w:copperleaf* stopped drawing"). Not the frame loop, the GPU's queue or the page
+    (a GPU heartbeat, a compositor animation and stopping the loop changed nothing); a redraw every 3 s or less, none.
+    Headless (SwiftShader); unknown on a phone.
+- Changed:
+  - game/css/base.css: `--hud-w` (min(100vw, 100vh x 16/9)), `--hud-x`, `--side-w`; the side panel at the right of the
+    16:9 area; behind it the bottom bar centred in what the panel leaves; `html { overflow-x: clip }`.
+  - game/js/walk-control.js `safe()`: the band from what shows: the top bar and place card above, the foot's buttons
+    and the bottom bar below. The freeze: the same still picture drawn again every 2 s (`walkView.still`, cap 0.5),
+    the world's clock taking no step (walk-view-gl.js `worldSteps(walkView.still ? 0 : dtm)`).
+  - game/js/walk-view.js `drawActLabel` (walk-view-gl.js calls it for building labels): kept whole on screen, drawn
+    only inside the band, moved up a row (at most three) off a label already drawn, else skipped.
+  - game/css/guide.css: the chips wrap on wide screens. game/js/battle.js: a new battle's cards start in place.
+  - game/js/debug-log.js: a tap's screen as the tap found it (the Event Timing rows named the screen after it).
+  - tools/check-placing.py (new): one page resized through 8 sizes (so the layout must follow a resize); gates: the
+    page never slides sideways, bars, panel, window and battle cards inside the screen and the 16:9 area, panel and
+    bar apart, cards beside the fighters, the label band between the bars. tools/check-fluid-ui.py: the freeze gates
+    for the still picture and the frames after a 16 s window. tools/check-quick.py: a view that stops drawing says
+    why (its cap, window, task state, the loop's last tick). validation/placing/ ignored.
+- Not done: the battle flash's forced style pass (battle-stage.js battleStageFlash `void f.offsetWidth`) stays:
+  deferring it hid every flash from tools/flash-audit.py (43 flashes on 43 films before, 0 after), so check-fluid-ui
+  allows one pass for it. post-effects.js reads `cv.clientWidth` in the grade pass (once in 10 s here; FL-5b's file).
+  32:9 screens not tuned (the owner left them out).
+- Risky: frozen now redraws the still world every 2 s (about one frame's cost each 2 s on a phone; water and sky
+  shaders keyed on real time may shift a little in it). Labels slid in from an edge stand a little off their building.
+  On a phone page the 4 px is clipped, not removed (a script could still scroll it; a finger can't).
+- Verified: lint, types, format, modules clean. check-placing at all 8 sizes: 133 of 134 gates (the 360 px Guide's
+  sideways slide, then fixed and passing alone at 360); after the merge 70 of 70 at 390x844, 1366x768, 2560x1080 and
+  3440x1440. check-fluid-ui all gates (after a 16 s window 12 frames in 15 s, the longest gap
+  1.4 s; was 2 frames and a 21 s gap). check-stalls passed before the merge. Smoke 7 of 7 (459 s). Pictures: each
+  screen at 360, 390, 430, 1366x768, 1920x1080, 2560x1080 and 3440x1440 (half device pixels on the big screens).
+- Next: FL-7's close-out (the owner's phone run).
+- For the owner on the phone and a desktop: walk in Copperleaf on the phone (labels whole and apart, none under the
+  bars); open Team, wait 20 s, close it: the world should move again at once. On a wide or ultrawide screen: open
+  Team, Bag, Guide: the panel at the right of the middle area, the bottom bar beside it; a battle's cards beside the
+  fighters.
+
+### Fluid track FL-5b - phone GPU look trades (behind switches) - 2026-10-30
+Branch `track/fluid` (round 5 lane, beside FL-4b, the load overlap: separate containers and files, each with its own
+baseline). Plan approved by the owner's standing answer (fluid-track.md section 1). Code: four new paths, each behind
+its own switch, **off** until the owner's phone run. No tag (the track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + rounds 1-4): the far map's size is `walkView.R < 0.8 || q >= 2` in
+  walk/shadows.js fittedShadowPass, chosen every frame (4096 from engine.json, 2048 the settings default); a battle
+  reads `walkRenderer.q`, not its effective step (QE, 2 with the lite look), and draws into the walk's own `shadow`
+  target, so a battle re-made the walk's map whenever the sizes differed. The ground is indexed (not non-indexed as
+  section 3 says): floors, then walls (FL-5a's `mesh.walls`), then the far land; drawn whole by the scene and the far,
+  near and lamp maps (not the reflection). The post chain: AO, rays and the light in the air are off at q ≥ 1 / q ≥ 3
+  (walk-view-gl.js `noAO: QE >= 1`, `noRays`, `noVol`), so at the phone's usual q4 only the cheap blur (3 passes), the
+  glow (5 passes from half size) and the grade run; AO's blur is 5 taps inside the grade (there is no separate AO blur
+  pass). **Differs:** "linear depth once" and "AO's blur inside AO" would gain nothing on a phone at q ≥ 1 (AO and rays
+  off, the march's depth already its own quarter-size pass): not built. The leaf clumps are cut from each tree's
+  crown picture and placed to rebuild it (all 38 trees and bushes with clumps have a "crown core" layer, the same
+  picture darkened), so **the one-picture far tree needs no new bake**: it is the crown picture as painted
+  (tools/bake-pixel-facts.mjs unchanged).
+- Changed:
+  - `quality.phoneShadow` (walk/shadows.js `farShadowSize`): a phone's far map 2048 at most from the first frame; the
+    smaller map (1024) chosen only when the canvas changes size (`walkRenderer.resizes`: with FL-3b's resSteps only out
+    of sight) or the place changes, from the level drawn (`walkRenderer.resD ?? walkView.R`) and the step; a battle
+    reads its effective step (lite: 1024) and draws into a target of its own (`shadowB`), so the walk's map and its
+    cache copy live through the battle. `walkRenderer.farRes`.
+  - `quality.groundTiles`: game/js/logic/ground-tiles.js (new, pure): `groundTileOrder` puts the ground's quads in 16
+    m tiles, each group (floors, walls, far land) still one range in that order, so `mesh.walls` holds;
+    `groundTileRuns` keeps the tiles a view matrix can see (`groundBoxSeen`, the eight corners against the clip
+    planes; the box widened by the world's curve, `groundCurveLift`) and merges neighbouring ranges. walk/ground-mesh.js
+    orders a mesh built with the switch on (`mesh.tiles`); walk/ground-draw.js `groundTileDraw` in drawGround (whole,
+    'solid' = floors + far land, 'walls') and drawGroundDepth (now given the map's matrix: far, near, lamp maps).
+    `walkRenderer.gtl`. Same triangles, same vertices; a mesh built before the switch was on draws whole.
+  - `quality.postMerge` (engine/post-effects.js): on a phone the glow's bright pass writes straight at quarter size
+    (`brightq`: the bright pass with its taps two screen pixels apart, the same medium-precision edits), then the
+    same number of levels, each a step smaller (section 7's recommendation for "Fewer bloom levels on phones": 3
+    levels from quarter size at the slow steps). In POST_EFFECT_SHADERS, so precompiled with the post passes.
+  - `quality.farTrees` (prop-models.js `farTreeLook` in propModelImageItems): a model with a crown core past 42 m
+    from you draws its core as the crown picture (uncut, not darkened, pulled toward the eye by the clumps' widest
+    reach) and no clumps; over the 6 m before that the crown fades in (dithered, `fade`) in front of the core and
+    clumps, with no shadow of its own. The crown picture is loaded only for far trees (LD-1's cuts never need it).
+  - engine/settings.js (additions): the four switches and their Engine rows; debug menu "Phone shadow map", "Ground
+    in tiles", "Phone effects merged", "One-picture far trees"; bench-path.js needs; debug-log.js (additions): `fsm`
+    (far map size), `gtl` (ground tiles: scene draws, tiles drawn, asked; shadow maps the same), `pmg`;
+    tools/read-debug-log.py prints them. studio/js/logic-worker-modules.js loads ground-tiles.js.
+  - tools/check-look-trades.py (new; the gates below), tools/test/ground-tiles.test.mjs (5),
+    tools/test/look-trades.test.mjs (2: the latch and the battle's target; the far-tree band).
+- Not done: FL-4's steadier fit for the far map and gathering cells under the fit circle (frame-items.js); `bldS`
+  (FL-5a's variant file); an opaque crown core with a discard-free program (the crown is a cut-out picture; needs
+  FL-5a's sprite variant); linear depth and AO's blur (above). For FL-4b: nothing needed from its files.
+- Risky: all four off, nothing changes for players. On: the ground in tiles costs draws (Copperleaf phone sized: the
+  scene's ground 1 → 20 draws, the shadow maps about 14), well under the 400 budget (shipped 290-314) but against a
+  tile GPU's per-draw cost; gaps between visible tiles are not merged (a later trade). A tree crossing the far-tree
+  band changes the far map's casters, so the far cache draws again once (only while walking, when its 3 m fit moves
+  anyway). Far crowns no longer turn their clumps as the camera goes round. The merged glow is softer and wider (its
+  last level reads a quarter-size picture). With phoneShadow a battle keeps a small extra target (1024², 4 MB).
+- Measured headless (counts only; `check-look-trades.py`, Copperleaf phone sized with an Android user agent, the
+  game's own graphics): off: far map 4096, the ground 1 draw, the glow from 263 × 570; on: far map 2048, the scene
+  drew 96 of 517 ground tiles in 20 draws and the shadow maps 57 of 1,034 in 14, the glow from 131 × 285 (merged),
+  pictures drawn 301 → 295 (few trees past 42 m from the square), 0 late compiles. Pictures with the world's clock
+  stopped: ground in tiles on/on 5.14% of pixels apart (stall awnings and townsfolk change on their own), on/off
+  4.10%, off/on 2.85%: the same ground, no holes (looked at); far trees off/on 0.15%, merged glow 0.26%.
+- Verified: lint, types, format, modules clean; unit tests 2,542 of 2,542 after merging FL-4b (before: the two this
+  change broke, the Studio worker's module list and the medium-precision list, fixed; the 1,000-maps timing test
+  failed once beside a browser, as in FL-5a); smoke 7 of 7 (288 s, after the merge); `check-perf.py --only=copperleaf`
+  no problems (290-314 draws as shipped, effects 5-8); `check-draw-order.py` every gate (pictures on/off 0.34%, on/on
+  0.10%); `check-look-trades.py` every gate. Full quick check 37 of 42 (2,509 s) against a baseline made at the
+  round's start (ee9c4be8, in a worktree, 45 pictures, 2,903 s, 38 of 42: RL-8's crossing, room light, walking out of
+  the lab, battle music's drums). Here the same three fail but the drums (which passed), plus RT-2's route trainers
+  ("the pair talked but no battle started") and Granny Juniper ("didn't say anything"), both passing alone (131 s). 6
+  pictures over the threshold (battle-rain, phone-crash-pick, phone-mast, phone-run-sheet, props-lowpoly, room-lab;
+  every switch here off): props-lowpoly differs at the round's start commit against its own baseline too (another
+  spot of the scene), and alone room-lab matched. FL-4b found my four debug-menu buttons had no `case` labels and
+  added them in its merge (1f9a2c84): checked.
+- Next: round 5's other lane, FL-4b, was still running when this entry was written, so it is round 5's last lane and
+  starts round 6 (FL-7, the close-out) only once the owner's phone run with the round 4-5 switches has reported.
+- The owner's phone results relayed during this session (the "Open PRs merge" session, 2026-10-30 about 12:40, main at
+  about e3cf601 with FL-4's and FL-5a's switches, all off; Adreno 750, Chrome 155, 60 Hz): Copperleaf by day 27.7 fps
+  at resolution 0.6 and 11 at the phone's own (DPR 3.5), a 0.6 frame about 36 ms with 19.9 ms of processor time; by
+  night 18 / 15.5; jungle 29.5 / 11.5; run town 35 / 15.5; battle 54 / 28. Draws 308 by day, 346 at night; the
+  jungle's reflection 74 (56 leaf pictures). Opening Copperleaf hitched 4.6 s ("setting up the ground"). The graphics
+  test's per-dial costs all read 0 (the median frame is quantised at 60/30 on a vsynced phone: passed to the test-data
+  track), so compare its steps' fps instead. Reading for this lane: the phone is fill-bound at its own pixels and
+  still about 20 ms of processor time at 0.6, so the look trades here (fewer far-map pixels, fewer ground triangles in
+  every pass, the glow at quarter size, fewer leaf pictures) are the GPU half; the processor half (props 2.65 ms, the
+  final pass 2.43 ms) is FL-4b's and FL-7's.
+- For the owner on the phone: in the debug menu turn on "Phone shadow map", "Ground in tiles" (then walk into
+  another place and back so the ground is built in tiles), "Phone effects merged" and "One-picture far trees", walk
+  Copperleaf's square and a run route for a minute each, then turn them off for a minute (ABAB, twice); send the debug
+  log (its "Far shadow map", "Ground in tiles" and "Phone effects merged" lines sit beside the frame times). Look for
+  far trees popping and the glow; the ground should look the same. Ask me before: "Fewer bloom levels on phones"
+  (section 7) is what "Phone effects merged" builds: on after your run (recommended, if the log shows the glow's
+  passes cheaper and it reads right), or kept off; "The leaf-clump atlas" was not reached (the far crowns already cut
+  far pictures to one per tree kind).
+
+### Fluid track FL-5a - draw order and discard (behind a switch) - 2026-10-30
+Branch `track/fluid` (round 4's last lane; FL-6b, added by the owner's answers at c13050b0, ran beside it in CSS and
+UI files only; its commits merged in). Plan approved by the owner's standing answer (fluid-track.md section 1). Code: two new paths, each behind
+its own switch, **off** until the owner's phone run; the program link times in the debug log for everyone. No tag (the
+track's tag comes at FL-7).
+- Facts checked against the code (73b2f8b1 + rounds 1-3): section 4 holds: every depth-writing scene program holds
+  `discard` (ground: room hole, wall thinning, rock circle; pictures; grass; models: fade and rock, low-poly own
+  texture; solid props; box faces; buildings and structures, `bld`); nothing is depth sorted; pictures come before
+  models. Differs: the sky is already drawn after the opaque things for everyone (`quality.skyLast` on since FL-2a);
+  the ground's walls are **already one contiguous index range** (walk/ground-mesh.js pushes every floor cell, then
+  every wall, then the far land), so no mesh change was needed, only the range recorded; models with their own
+  texture are already drawn apart from the batches (ST-7); WALK_SHADERS carry no mediump edits (only the post passes
+  do), so the variants need none; the headless frame of Copperleaf has 106-118 scene draws, 95-107 of them with a
+  discard program and 0 without.
+- Changed:
+  - game/js/engine/shader-precision.js `solidFragment(fs, edits)`: exact-once edits that take every cut out; null when
+    an edit no longer fits or a `discard` is left (then the old program draws everything).
+  - The variants: `groundS` (walk-shaders.js `groundSolidShaders`, GROUND_SOLID_EDITS: hole, wall thinning, rock);
+    `voxIS`, `mdlIS` (prop-models.js `propModelSolidShaders`: fade, rock, own-texture cut). Same vertex shaders.
+  - `quality.drawOrder` (Engine row "Solid first", debug menu switch): walk-view-gl.js's scene pass draws the floors and
+    far land with `groundS` (walk/ground-draw.js `drawGround(C, X, 'solid')`, the walls' range `mesh.walls` left), the
+    models that are whole (fade ≥ 0.99), not stretched and without their own texture with `voxIS`/`mdlIS`, nearest
+    first (so their batches come nearest first too); then the walls with the ground program, the room front, grass,
+    pictures, solid props, the other models (`drawPropModels(..., 'cut')`), box faces, buildings, structures; the sky;
+    building fronts, water, effects, ribbons; your outline (depth GREATER, its occlusion query) last. A frame with the
+    rock circle on (walk/draw-common.js `rockCircleOn`), a room's hole or floor, or a lit room keeps the programs with
+    cuts (the lit room keeps the old order whole). The reflection's models keep the old path.
+  - The variants are precompiled at the 3D view's start while the switch is on, and when the debug menu turns it on
+    (`precompileDrawOrder`).
+  - `quality.groundSlice` (FL-4's leftover; Engine row "Ground built in slices", debug switch): when the same view's
+    ground changes (a run day's water, a Studio edit) and nothing is ready, walk-view-gl.js keeps the old ground and
+    key on screen and asks `prepareMapGround(urgent)`; the frame's `groundPrepWork` builds it, then the swap takes the
+    prepared one. Not for a new view, a room, a borrowed ground or a battle; at most 5 s, then built on the spot.
+  - engine/webgl.js finishProgramCompile: `gpuState.linkMs[name]` = [ms waited on the link status, ms from the compile's
+    start]; the debug log's gpuMemory.linkMs; tools/read-debug-log.py prints ground/groundS, voxI/voxIS, mdlI/mdlIS.
+    debug-log.js samples (additions): `dord` [on, models drawn first], `gwt` (frames the old ground was kept).
+  - tools/check-draw-order.py (headless gates), tools/test/draw-order.test.mjs (5 tests).
+- Measured headless (counts only; `check-draw-order.py`, Copperleaf phone sized, the game's own graphics): off, 0
+  depth-writing draws with a discard-free program; on, 11-12 (2 ground, 9-10 models) and all before the first cut draw,
+  0 depth-writing draws after the sky, 0 draws after the outline, 0 late compiles (0 compiled on the spot, 0 started
+  after load). Scene draws 106-118 off, 117-121 on (the ground split: +2). Pictures in one page with the world's clock
+  stopped: on/on 0.45% of pixels apart, on/off 0.57%, off/on 0.34% (dither and the Actions button's pulse): the same
+  look; the coplanar question (pictures now after the solid models, so a picture on a model's face wins a tie at
+  LEQUAL where the model won before) shows nothing at the square.
+- Not done: buildings and structures (`bld`, 3 bridges in Copperleaf) keep their cuts (a `bldS` variant is the same
+  two edits); solid props, box faces, grass and pictures are cut-outs by nature (an opaque core split from a cut rim
+  is FL-5b/phase 21's atlas work). Front to back only for the models (the ground is one draw). The ABAB phone run (3+
+  runs per arm, per-pass timings) and iOS link times: the owner's phone (below). The far map and shadow passes keep
+  their programs (depth-only, cut where needed).
+- Risky: both switches off, nothing changes for players. On: an item fading in or out moves from the solid draw to the
+  cut draw (a program change); the outline now draws over effects and water in front of a hidden you; a variant that
+  fails to compile throws like any program (the full test's Shaders step compiles them only while the switch is on).
+  groundSlice shows the old water/ground for up to 5 s after a change.
+- Verified: lint, types, format, modules clean; unit tests 2,461 of 2,462 (the 1,000-maps timing test, beside a browser: 3.5 s; alone it passes); smoke no problems but the phone crash step ("w:copperleaf* stopped drawing", as at the start commit); alone it passed twice (once "dialogue 23 pieces", also flaky; the start commit passed it alone); `check-perf.py
+  --only=copperleaf` no problems (301-336 draws as shipped, effects 5-7); check-draw-order every gate. Full quick check 35 of 42 (4,220 s, 2 workers) against a baseline made at
+  the round's start (a909d44c, in a worktree, 38 pictures, 4,337 s, 37 of 42: RL-8's crossing, room light, walking out
+  of the lab, the phone crash step ("w:copperleaf* stopped drawing"), battle music's drums). Here the same 5 fail, plus Starters ("battle rig buffers nearly empty") and Postcards ("coming
+  back showed no stamp"), both passing alone (154 s). 6 pictures over the threshold: battle-alpha, starter-battle,
+  windows-night, world-buddy and the two failed steps' (other moments; the switches are off there).
+- After merging main (the buildings and characters tracks, whose building shader the low-poly variants are made from):
+  unit tests 2,529 of 2,529; check-draw-order every gate (11 solid draws first, pictures on/off 0.39-0.62% against
+  0.52% on/on); smoke as before (the phone crash step only).
+- Next: round 5 (FL-5b phone GPU look trades, FL-4b the load overlap), started by this lane in new sessions. FL-5b
+  could add `bldS` and, with its one-picture far trees, an opaque crown core. FL-6b (round 4's other lane) finished
+  first, so this lane starts round 5.
+- The owner's phone Diagnostics (relayed by the FL-0 coordinating session, 2026-10-30 09:55, main 3923881a = rounds 1-3;
+  Adreno 750, Chrome 155, 60 Hz; old ladder at q4, res 0.6), for FL-7 and round 5 (passed into both briefs): draws are
+  solved (Copperleaf by day 304-309, sprites 127, uniforms 640); the phone is pixel and GPU bound at the game's own
+  values (Copperleaf day r1 48 fps against own 12.7, phone pixels 20, all on 22.7; night r1 17.3, own 14.7; jungle r1
+  45, own 18.5; battle r1 56.7, own 28.7); in play the automatic quality held a steady 30 (Copperleaf 32, worst 28; CPU
+  16-17 ms); jungle's reflection 74 draws (56 leaf pictures); night's lamp maps 45 draws; Copperleaf's open 5.3 s
+  "setting up the ground" in one hitch; JS heap 788 MB, 118 MB of pictures on the card. So the GPU work (this
+  session's order, FL-5b's trades, the post chain, the phone pixel budget) is where the remaining fps is.
+- For the owner on the phone: open the debug menu, turn "Solid first" on, close it, walk Copperleaf's square for a
+  minute, then off for a minute, twice each (ABAB), and send the debug log (its `dord` samples and the frame times per
+  pass sit side by side; on iOS its "program links" line has the variants' link times). The look should not change.
+  "Ground built in slices": on a run day whose weather floods the water, the new water should arrive without a hitch.
+
+### Fluid track FL-6b - glass fixes and the bottom bar's shrink on transforms - 2026-10-30
+Branch `track/fluid` (round 4 lane, beside FL-5a). Plan approved by the owner's standing answer (fluid-track.md section
+1, and the answers to FL-6's questions of 2026-10-30). Code: the page's CSS, the theme sheet, the bottom bar. No tag
+(the track's tag comes at FL-7).
+- Facts checked against the code (track/fluid at c13050b0). What differs from FL-6's entry and section 7:
+  - The phone blur bug is as FL-6 said: the theme sheet's `:root { --g-blur: blur(12px) saturate(1.4) }` (written
+    after every stylesheet) beat base.css's phone `:root` block (9 px) at equal specificity, so phones blurred at 12.
+  - Reduced transparency cleared only `--g-blur` and `--g-bg`; besides the tokens the brief names, the page also
+    blurs through `--blur-glass*`, `--blur-button`, the bottom bar's own `blur(calc(var(--blur) * 0.75))` and six
+    fixed blurs written as plain values (base.css, battle-screen.css x3, title.css, opening.css).
+  - The shrink's cost: not style passes (the old glide added only 1.6 to an idle 300 ms window, because Chrome folds
+    its per-frame recalculation into the pass the Actions button's bob already runs each frame) but style time (74.7
+    ms against 6.7 idle) and a layout every frame (15.2 layouts a change; `--nav-h` moved every fixed element over
+    the bar).
+- Changed:
+  - game/js/logic/ui-theme.js, uiTheme.json (+ schema): `surface.phoneBlur` 9 and `phoneSaturate` 1.35, written by
+    the sheet in base.css's phone query after its shared block (`uiPhoneBlur`; left out: three quarters of the blur).
+    `UI_CLEAR_GLASS` clears every blur token and makes the glass solid under `prefers-reduced-transparency: reduce`,
+    `prefers-contrast: more` and `forced-colors: active`; base.css has the same block for pages without the sheet.
+  - game/css (base, battle-screen, title, opening): the fixed backdrop blurs read `var(--blur-own, <their value>)`
+    (the same look; cleared with the rest). ui-run-kit.js: the bar's glass reads `--nav-blur` first (cleared too).
+    tools/test/ui-theme.test.mjs: every `backdrop-filter` in game/css and the two kits is `none` or a cleared token.
+  - The shrink (ui-run-kit.js PbNavBar, shell.css, tokens.css, walk-tab.css, controls.css): `--nav-k`, `--nav-kr`
+    and `--tray-k` are no longer registered or transitioned; the layout changes once. The bar glides by FLIP
+    (`willUpdate` reads where the glass, its edge, the tile and the tabs are, `glide` moves each from there with a
+    transform animation on --m-base and --ease-out; reads all, then animates). The tile's picture has its own layer
+    (`.pic`) scaled against the tile so it keeps one shape. Over the bar, the walk's foot (the hint and Actions), the
+    Actions bar and the d-pad sit on the full bar's top (`--nav-hl`) and move by `translate: 0 var(--nav-dy)` with a
+    transition (`--tray-dy` -68 px for the open Actions bar, as `--tray-lift` did; not in the short-screen layout,
+    where it never lifted). Other things over the bar (talk, dialogue, sheets' sticky rows, map cards) follow
+    `--nav-h` in one step now; they're rarely on screen while the bar changes.
+  - game/js/logic/ui-dials.js (an addition): the Studio's UI section has dials for the phone's blur and saturation
+    (ui-dials.test.mjs asks for a dial for every value the schema allows).
+  - tools/check-nav-glide.py (new): this session's gates.
+- Measured (tools/check-nav-glide.py: Copperleaf on a 390 x 844 touch page, every frame task stopped, CDP counters
+  from a change to 300 ms after, against the same window idle; 6 changes): before, 19.8 style passes (74.7 ms) and
+  15.2 layouts (6.2 ms) against idle 18.2 (6.7 ms) and 0; after, 22.2 (24.0 ms) and 3.0 (0.8 ms) against idle 18.8
+  (6.9 ms) and 0.2. So style time over idle 68 → 17 ms and layouts 15 → 3 a change, whatever the frame rate. The
+  first build added 9 style passes (a read after each animate); reading first fixed it.
+- Risky: the glide is an approximation of UI-8b's: the glass and edge scale (their 45° cuts and the 1 px edge stretch
+  for 240 ms), the tabs' words scale from the old size, and the tile's picture is shown cropped to cover while the
+  tile changes shape (pictures at 0, 60, 120, 180 and 400 ms beside the old glide looked alike). A change mid-glide
+  starts from where the parts are on screen. `translate` on the foot, the Actions bar and the d-pad makes each a
+  containing block for fixed children (none have any). High contrast now also drops every blur (the brief asked).
+- Verified: lint, types, modules, format, data, build clean; npm test 2,462 of 2,464 beside the smoke run: the missing
+  Studio dials (fixed: ui-dials and ui-theme tests 35 of 35 after) and one more that passed alone on the next run.
+  check-nav-glide: all 8 gates (layouts 2.8 a change, style passes 3.4 over idle; the phone's --g-blur 9 px; high
+  contrast and reduced transparency: 0 blurred surfaces on Team, 5 before). Smoke 7 of 7 in 357 s (blurred surfaces
+  besides the bars as before: walk 0, map 0, team 3, guide 3, profile 2, shop 2, battle 0; the UI lint at its
+  ceilings). check:ui: the same 73 of 145 pictures differ from the committed baseline as in FL-6's entry (a stale
+  baseline; the bottom bar's pictures not among them). Full quick check: 39 of 42 (2,575 s; the
+  tree under it took the main merge mid-run): RL-8's Lakeside Route crossing, room light and Battle music (drums) fail
+  as in FL-6's entry. CI's fast check on the PR: Kappi's tips (IN-2, failed already on the merge before this
+  session's push) and Tall ground; both pass alone here (148 s, 127 s). The re-run failed them again, and the world
+  map's look-around group over its card by 16 px. Kappi's tips reproduced here in a full fast check (44 of 45:
+  `[2,2,[],"choose"]`): a raised tip waits at most keepS (30 s) of real time, and on a loaded machine the throw took
+  longer, so it was dropped; tools/check-fast.py now lifts keepS for that step and waits 90 s (3 copies at once
+  pass). Tall ground (the GPU's hidden query never said hidden in 92 frames) and the map card (`--mapcard-h`,
+  world-bowl.js, measured before the card grew; both boxes sit on `--nav-h`) passed in that full run: left to the
+  test-data track.
+- For other lanes: none needed. track/ui: `--nav-hl`, `--nav-dy` and `--tray-dy` are the new names for what sits over
+  the bar (shell.css); anything new over the bar that's on screen while walking should use them.
+- Next: FL-5a finishes round 4 and starts round 5 (FL-4b, FL-5b).
+- For the owner on the phone: walk until the bar shrinks, stop until it grows: the glide should look as before. With
+  Settings' Reduce transparency (iOS: Accessibility, Display, Reduce Transparency) or Increase Contrast on, every
+  glass is solid. A debug log's `ui.longFrames.styleMs` shows the shrink's style time.
+
 ### Buildings track BD-8 - The phone pass: Copperleaf's draws against main, pictures day, dusk and night; the track is done - 2026-10-30
 Branch `track/buildings` (wave 5, the main line; started by BD-7; main (#355) already in, the branch even with its
 remote). Plan written in Plan Mode's shape and built at once (track section 1). Measuring and pictures; one debug-only

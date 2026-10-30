@@ -140,6 +140,7 @@ expose({
   WALK_FRAME_M: [() => WALK_FRAME_M],
   WALK_KEYS: [() => WALK_KEYS],
   WALK_SPEED: [() => WALK_SPEED],
+  actLabelsDrawn: [() => actLabelsDrawn],
   actionLabel: [() => actionLabel, v => (actionLabel = v)],
   actionSpot: [() => actionSpot, v => (actionSpot = v)],
   alwaysRun: [() => alwaysRun, v => (alwaysRun = v)],
@@ -168,6 +169,7 @@ expose({
   directionOf: [() => directionOf, v => (directionOf = v)],
   doorLinkOf: [() => doorLinkOf, v => (doorLinkOf = v)],
   doorOf: [() => doorOf, v => (doorOf = v)],
+  drawActLabel: [() => drawActLabel, v => (drawActLabel = v)],
   drawBubble: [() => drawBubble, v => (drawBubble = v)],
   drawExitLabels: [() => drawExitLabels, v => (drawExitLabels = v)],
   drawExitMarks: [() => drawExitMarks, v => (drawExitMarks = v)],
@@ -4877,7 +4879,39 @@ function labelPillSize(x, txt, ico) {
     tw = Math.ceil(x.measureText(t).width / u) * u;
   return { u, t, tw, ar, w: tw + u * (ar ? 17 : 10), h: u * 11 };
 }
-export function drawLabelPill(x, cx, cy, txt, col, ico) {
+/** a building's label over it: kept whole on the screen (slid in from an edge) and drawn only between the bars
+ * (walk-control.js safe: the top bar and place card above, the Actions row and the bottom bar below), so no bar cuts
+ * it on a phone, a 16:9 or an ultrawide screen @param {CanvasRenderingContext2D} x
+ * @param {{rw: number, rh: number}} C @param {{x: number, y: number, t: string}} l @param {string} col */
+export function drawActLabel(x, C, l, col) {
+  const S = labelPillSize(x, l.t, null),
+    m = S.u * 2,
+    sf = walkView.opt.safe ? walkView.opt.safe() : [0.1, 0.88],
+    top = sf[0] * C.rh + S.h,
+    bot = sf[1] * C.rh - S.u,
+    cx = clamp(l.x, m + S.w / 2, C.rw - m - S.w / 2);
+  /* labels drawn this frame: one that would cover another moves up a row (at most three), else it waits (the
+     buildings bunch up on a narrow phone, and a label slid in from the edge can land on a neighbour's) */
+  if (actLabelsDrawn.t !== walkView.t) {
+    actLabelsDrawn.t = walkView.t;
+    actLabelsDrawn.list.length = 0;
+  }
+  let cy = l.y;
+  for (let i = 0; i < 4; i++) {
+    const hit = actLabelsDrawn.list.find(
+      r => Math.abs(r[0] - cx) < (r[2] + S.w) / 2 + S.u && Math.abs(r[1] - cy) < S.h + S.u
+    );
+    if (!hit) break;
+    cy = hit[1] - S.h - S.u;
+    if (i === 3) return null;
+  }
+  if (cy < top || cy > bot) return null;
+  actLabelsDrawn.list.push([cx, cy, S.w]);
+  return drawLabelPill(x, cx, cy, l.t, col);
+}
+/** the building labels drawn in this frame (centre x, bottom y, width; drawActLabel) */
+const actLabelsDrawn = { t: -1, list: /** @type {number[][]} */ ([]) };
+function drawLabelPill(x, cx, cy, txt, col, ico) {
   x.save();
   x.setTransform(1, 0, 0, 1, 0, 0);
   const S = labelPillSize(x, txt, ico),

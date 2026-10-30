@@ -4,7 +4,7 @@
    and the automatic quality, moved from walk-view-gl.js as they were. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { gameData, provide, saveData } from '../hooks.js';
+import { gameData, provide, saveData, slotWorkMs } from '../hooks.js';
 import { coverTarget, fadeEase, pictureCovers } from '../logic/occlude.js';
 import { propDrawFade, qualityStep } from '../logic/quality-step.js';
 import { ladderFeed, ladderTake, phoneAgent } from '../logic/frame-pace.js';
@@ -42,10 +42,12 @@ expose({
   fenceLag: [() => fenceLag, v => (fenceLag = v)],
   frameBudgetLeft: [() => frameBudgetLeft, v => ((frameBudgetLeft = v), provide({ frameBudgetLeft }))],
   frameBudgetRemaining: [() => frameBudgetRemaining, v => (frameBudgetRemaining = v)],
+  frameBudgetStart: [() => frameBudgetStart, v => (frameBudgetStart = v)],
   heatHaze: [() => heatHaze, v => (heatHaze = v)],
   heatSources: [() => heatSources, v => (heatSources = v)],
   inFrustum: [() => inFrustum, v => (inFrustum = v)],
   setAdaptQuality: [() => setAdaptQuality, v => (setAdaptQuality = v)],
+  walkSlotMs: [() => walkSlotMs, v => (walkSlotMs = v)],
 });
 /* eslint-enable no-func-assign */
 provide({ frameBudgetLeft });
@@ -207,7 +209,22 @@ export function frameBudgetLeft() {
 }
 /** LD-5: the frame's one-off work budget left, ms */
 export function frameBudgetRemaining() {
-  return (walkRenderer.budMs ?? FRAME_WORK_MS) - (performance.now() - (walkRenderer.budT || 0));
+  return (
+    (walkRenderer.budMs ?? (walkRenderer.budSlot || FRAME_WORK_MS)) - (performance.now() - (walkRenderer.budT || 0))
+  );
+}
+/** FL-4b: the one-off work's budget starts at the frame's start (walk-view-gl.js); with quality.slotBudget it is a
+ * quarter of the walk's paced slot (logic/load-budget.js slotWorkMs: 4.2 ms at 60, 8.3 at 30 or the half rate, 2.1
+ * at 120), else FRAME_WORK_MS as LD-5 left it */
+export function frameBudgetStart() {
+  walkRenderer.budT = performance.now();
+  walkRenderer.budSlot = engineSetting('quality', 'slotBudget') ? slotWorkMs(walkSlotMs()) : 0;
+}
+/** FL-4b: the walk's paced slot now, ms (its task's refreshes a frame, the half rate included, times the period) */
+function walkSlotMs() {
+  const t = frameScheduler.tasks.get('dio'),
+    k = t && t.k > 0 ? t.k : 1;
+  return k * frameScheduler.period;
 }
 /* v32: how much heat shimmer: over lava always, over desert sand and canyons in the heat of the day */
 /* v47: a mood per place (warm late afternoon in Sundown, cool and misty in the Thicket, hazy heat in the canyon...):

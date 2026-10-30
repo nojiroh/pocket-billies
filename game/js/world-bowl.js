@@ -27,6 +27,7 @@ import {
 import { canEnter, distanceText, tripTo } from './logic/rules.js';
 import { RUN_MARK_ART, runMarkDraw, runMarkLook, runMarkPixels } from './logic/run-marks.js';
 import { warpOn } from './logic/model-shapes.js';
+import { lowPolyFromRecipe } from './logic/low-poly.js';
 import { RUN_GRID, runSpotBoxes, runSpotOutline } from './logic/run-map.js';
 import { mapgenExitPoint } from './logic/mapgen.js';
 import {
@@ -141,7 +142,7 @@ import { walkRenderer } from './walk/walk-state.js';
 import { PIXEL_WATER_GLSL } from './walk/walk-shaders.js';
 import { setPixelWaterUniform } from './walk/water-data.js';
 import { clampZoom } from './walk/camera.js';
-import { loadPropModelRecipe, lowPolyFromRecipe } from './prop-models.js';
+import { loadPropModelRecipe } from './prop-models.js';
 /* eslint-disable no-func-assign */
 expose({
   BOWL_FAMILIES: [() => BOWL_FAMILIES],
@@ -1604,7 +1605,7 @@ function worldBowlTreeModelShape(pk) {
   /* one with no limbs or leaves (a mushroom: domes and spheres) is drawn as any model is */
   return T && !T.length ? worldBowlModelShape(art.model) : T;
 }
-/* a building's low-poly model from its recipe (prop-models.js lowPolyFromRecipe), kept simple for the map: small
+/* a building's low-poly model from its recipe (logic/low-poly.js lowPolyFromRecipe), kept simple for the map: small
    parts left out, round parts with few sides; unpacked to floats [x, y up, z, normal, colour] */
 function worldBowlModelShape(path) {
   const rec = loadPropModelRecipe(path);

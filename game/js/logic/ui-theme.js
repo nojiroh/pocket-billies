@@ -27,10 +27,13 @@ import { styleVarsCss } from './style-dials.js';
 expose({
   BUBBLE_MOTION: [() => BUBBLE_MOTION],
   RING: [() => RING],
+  UI_CLEAR_GLASS: [() => UI_CLEAR_GLASS],
+  UI_CLEAR_GLASS_MEDIA: [() => UI_CLEAR_GLASS_MEDIA],
   UI_CONTRAST: [() => UI_CONTRAST],
   UI_DERIVED: [() => UI_DERIVED],
   UI_FONTS: [() => UI_FONTS],
   UI_FROM_SIGNALS: [() => UI_FROM_SIGNALS],
+  UI_PHONE_MEDIA: [() => UI_PHONE_MEDIA],
   UI_ROLES: [() => UI_ROLES],
   UI_SCREENS: [() => UI_SCREENS],
   UI_SHAPE_DEFAULTS: [() => UI_SHAPE_DEFAULTS],
@@ -77,6 +80,8 @@ expose({
   solidOver: [() => solidOver, v => (solidOver = v)],
   // @ts-expect-error -- replaced on purpose
   uiPalettes: [() => uiPalettes, v => (uiPalettes = v)],
+  // @ts-expect-error -- replaced on purpose
+  uiPhoneBlur: [() => uiPhoneBlur, v => (uiPhoneBlur = v)],
   uiPlayerLook: [() => uiPlayerLook],
   uiRatio: [() => uiRatio],
   // @ts-expect-error -- replaced on purpose
@@ -775,6 +780,35 @@ export function uiSignalProblems(theme, types = []) {
   return out;
 }
 
+/** FL-6b: base.css's phone query (a touch screen under 960 px wide) */
+export const UI_PHONE_MEDIA = '(hover: none) and (pointer: coarse) and (max-width: 959px)';
+/** FL-6b: when the glass goes solid: less see-through asked for, more contrast asked for, or forced colours */
+export const UI_CLEAR_GLASS_MEDIA =
+  '(prefers-reduced-transparency: reduce), (prefers-contrast: more), (forced-colors: active)';
+/** FL-6b: every blur token the page's backdrop filters read (base.css, shell.css, the kits), cleared, and the glass
+ * solid (--blur-own: the stylesheets' fixed blurs); tools/test/ui-theme.test.mjs checks they use no other */
+export const UI_CLEAR_GLASS = [
+  '--g-blur: none;',
+  '--g-bg: var(--g-solid);',
+  '--blur: 0px;',
+  '--blur-glass: none;',
+  '--blur-glass-strong: none;',
+  '--blur-panel: none;',
+  '--blur-scrim: none;',
+  '--blur-scrim-strong: none;',
+  '--blur-chip: none;',
+  '--blur-button: none;',
+  '--nav-blur: none;',
+  '--blur-own: none;',
+];
+/** FL-6b: the phone's backdrop filter (surface.phoneBlur, else three quarters of the blur; phoneSaturate, else the
+ * saturation), or '' with no blur set @param {any} s uiTheme.json surface */
+export function uiPhoneBlur(s) {
+  if (!s || s.blur == null) return '';
+  const px = s.phoneBlur ?? Math.round(s.blur * 0.75);
+  return `blur(${px}px) saturate(${s.phoneSaturate ?? s.saturate ?? 1})`;
+}
+
 /** the theme as a style sheet
  * @param {any} theme uiTheme.json @param {{preset?: string, fonts?: string}} [o] fonts: the URL of game/fonts/, ending in / */
 export function uiThemeCss(theme, o = {}) {
@@ -791,17 +825,16 @@ export function uiThemeCss(theme, o = {}) {
     css +=
       `@media (prefers-color-scheme: dark) {\n${block(":root:not([data-theme='light'])", dark, '  ')}}\n` +
       block(":root[data-theme='dark']", dark);
+  // FL-6b: a phone's lighter glass (base.css's phone block asks for it too, but this sheet comes later and won)
+  const ph = uiPhoneBlur(look.surface);
+  if (ph) css += `@media ${UI_PHONE_MEDIA} {\n${block(':root', [`--g-blur: ${ph};`], '  ')}}\n`;
   // UI-3: each screen's own colours and shapes
   for (const [id, ov] of Object.entries(theme.overrides || {})) css += overrideCss(id, look, ov, block);
   // UI-12: the phone asks for less see-through: the glass goes solid and stops blurring (after the palettes and as
-  // specific as their dark blocks, so it wins on either side)
+  // specific as their dark blocks, so it wins on either side). FL-6b: every blur token, and high contrast too
   css +=
-    `@media (prefers-reduced-transparency: reduce) {\n` +
-    block(
-      ":root:not([data-theme='light']),\n  :root[data-theme='light']",
-      ['--g-blur: none;', '--g-bg: var(--g-solid);'],
-      '  '
-    ) +
+    `@media ${UI_CLEAR_GLASS_MEDIA} {\n` +
+    block(":root:not([data-theme='light']),\n  :root[data-theme='light']", UI_CLEAR_GLASS, '  ') +
     '}\n';
   // the voice font has one weight: never fake a bold (the CSS still asks for 600 and 700 in places)
   const ty = look.type || {};

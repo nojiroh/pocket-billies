@@ -1,7 +1,7 @@
 // @ts-check
 'use strict';
 /* ================= MODEL SHAPES (buildings track BD-1) =================
-   The maths behind the low-poly models' new recipe shapes (prop-models.js lowPolyFromRecipe): a 2D profile's
+   The maths behind the low-poly models' new recipe shapes (logic/low-poly.js lowPolyFromRecipe): a 2D profile's
    corners cut into triangles (a prism's caps), a profile's normals with soft and sharp joints (prisms and lathes),
    a part turned and leaned (rot, tilt), and the recipe's warp (the storybook wonk: lean, bulge, sag, twist) with its
    normals. Points here are the mesh's: [across, up, depth] in metres (a recipe's x, z, y). Plain numbers, no

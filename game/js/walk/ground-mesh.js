@@ -3,7 +3,7 @@
    Phase 20 (stage B): building the ground mesh and uploading its textures, moved from walk-view-gl.js as it was. */
 /* to-module: start (phase 04c: imports, exports and the window bridge, made by tools/to-module.mjs) */
 import { expose } from '../test-globals.js';
-import { freeNearRing, groundOcclusionTexture, provide } from '../hooks.js';
+import { freeNearRing, groundOcclusionTexture, groundTileOrder, provide } from '../hooks.js';
 import { clamp } from '../util.js';
 import { waterWeatherDry } from '../logic/water-weather.js';
 import { SEA_RAMP, seaCalmAt, seaSkirt, seaSmooth } from '../logic/sea.js';
@@ -448,10 +448,14 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
       I.push(a, c, b, b, c, d);
     }
   yield;
+  /* FL-5b (quality.groundTiles): the same triangles in 16 m tiles (logic/ground-tiles.js), the floors, the walls and the
+     far land each in tile order, so each pass draws only the tiles it sees (walk/ground-draw.js groundTileDraw) */
+  const tiled = engineSetting('quality', 'groundTiles') ? groundTileOrder(V, I, [wall0, wall1, I.length]) : null;
+  if (tiled) yield;
   freeMesh(T.mesh);
   T.mesh = uploadMesh(
     new Float32Array(V),
-    new Uint32Array(I),
+    tiled ? tiled.I : new Uint32Array(I),
     [
       ['aPos', 3, 0],
       ['aNrm', 3, 12],
@@ -462,6 +466,7 @@ export function* buildGroundMeshSteps(sc, G, T, bare) {
   );
   /* FL-5a: the walls' indices [first, end): the floors before them and the far land after them never thin out */
   if (T.mesh) T.mesh.walls = [wall0, wall1];
+  if (T.mesh) T.mesh.tiles = tiled ? { tiles: tiled.tiles, box: tiled.box } : null;
   /* v23: a gorge or valley floor well below where you walk gathers mist (Engine: Air, Mist in low ground) */
   T.valley = null;
   if (E && !sc.indoor) {

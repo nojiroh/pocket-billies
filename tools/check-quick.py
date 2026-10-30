@@ -326,7 +326,10 @@ def ui(pg, sec=5):
 
 def drawn(pg, n=3, sec=30):
     """TC-4, instead of a sleep before reading or picturing the walk view: n more frames of it drawn"""
-    if not BC.frames(pg, n, sec): raise Exception(f'{pg.evaluate("walkView.id")} stopped drawing')
+    if not BC.frames(pg, n, sec):
+        # what held the frames back (FL-6: the world is frozen behind a screen or a window)
+        why = pg.evaluate("(()=>{const t=frameScheduler.tasks.get('dio');return {cap:walkView.opt.cap?walkView.opt.cap():null,held:walkView.held,tab:uiState.tab,modal:uiState.modal?(uiState.modal.title||uiState.modal.cls||'?'):null,dio:!!t,rate:t&&t.rate,ran:t&&t.frames,errs:t&&t.errs,next:t&&Math.round(t.next-performance.now()),frames:walkRenderer.frames,on:walkRenderer.on,ready:walkView.ready,lost:gpuState.lost,css:[walkView.cv&&walkView.cv.clientWidth,walkView.cv&&walkView.cv.clientHeight],hidden:document.hidden,director:!!walkView.director,loopAgo:Math.round(performance.now()-frameScheduler.last),on:frameScheduler.on,period:frameScheduler.period,frozen:t&&t.frozen,k:t&&t.k,last:t&&Math.round(performance.now()-t.last),tasks:[...frameScheduler.tasks.keys()].join(' ')}})()")
+        raise Exception(f'{pg.evaluate("walkView.id")} stopped drawing ({json.dumps(why)[:900]})')
 
 
 def look_at_me(pg, n=4):

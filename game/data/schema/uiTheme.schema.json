@@ -40,6 +40,8 @@
    "properties": {
     "blur": {"type": "number", "minimum": 0, "maximum": 40, "description": "backdrop blur in px"},
     "saturate": {"type": "number", "minimum": 0, "maximum": 3, "description": "the backdrop's saturation"},
+    "phoneBlur": {"type": "number", "minimum": 0, "maximum": 40, "description": "FL-6b: backdrop blur in px on a phone (left out: three quarters of blur)"},
+    "phoneSaturate": {"type": "number", "minimum": 0, "maximum": 3, "description": "FL-6b: the backdrop's saturation on a phone (left out: saturate)"},
     "light": {"$ref": "#/$defs/surfaceSide"},
     "dark": {"$ref": "#/$defs/surfaceSide"}
    }

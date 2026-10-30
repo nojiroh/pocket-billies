@@ -315,13 +315,16 @@ export const NEEDS = {
     air.mist air.mistHeight air.particles
     world.moods world.groundBumps world.groundShine
     camera.pixelGrid camera.pitch camera.pitchAdd camera.height camera.distance camera.fov
-    quality.resolution quality.cull quality.sharpTex quality.hdrHalf quality.mediump quality.freeTicks quality.drawOrder quality.groundSlice`,
+    quality.resolution quality.cull quality.sharpTex quality.hdrHalf quality.mediump quality.freeTicks quality.drawOrder quality.groundSlice quality.groundTiles
+    quality.postMerge quality.farTrees
+    quality.slotBudget quality.texAge quality.uploadQueue quality.meshWorker quality.placeWarm`,
   idle: 'camera.idleOn camera.idleDelay camera.idleZoom camera.idleBlend',
   shadows: `sun.angle sun.height sun.color sun.strength sun.ambientSky sun.ambientGround sun.ambient sun.shAmbient
     shadows.strength shadows.selfShade shadows.softness shadows.tint shadows.hue shadows.pixel shadows.pixelSize
     shadows.pixelSteps shadows.fit shadows.cascades shadows.nearRadius shadows.steadyEdges shadows.aoKind
     shadows.contact shadows.buildings shadows.ao shadows.aoRadius shadows.groundAO shadows.groundAOSky shadows.aoPlane
-    air.hazeShade quality.shadowMap quality.shadowCache quality.shadowCells quality.shadowHold`,
+    air.hazeShade quality.shadowMap quality.shadowCache quality.shadowCells quality.shadowHold
+    quality.phoneShadow`,
   houses: `lights.windowsDay lights.windowFacing world.buildingBumps world.frontMaterial world.buildings3d`,
   behind: `camera.silhouette camera.outline camera.outlineFill camera.hideFade camera.hideSize camera.hideAmount
     camera.coverFade`,
