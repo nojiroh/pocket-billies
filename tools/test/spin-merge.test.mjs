@@ -100,12 +100,10 @@ test('propModelMesh builds one spin mesh per spinning model, drawn as one part',
         .filter(l => l.spin && !l.hide)
         .reduce((a, l) => a + ((lowPolyFromRecipe({ layers: [{ ...l, spin: undefined }] }) || { n: 0 }).n || 0), 0);
     assert.equal(s.n, n, `${k}: every layer's triangles`);
-    assert.deepEqual(Object.keys(spinOf(rec.layers.find(l => l.spin).spin)).map(q => typeof s[q]), [
-      'object',
-      'object',
-      'number',
-      'number',
-    ]);
+    assert.deepEqual(
+      Object.keys(spinOf(rec.layers.find(l => l.spin).spin)).map(q => typeof s[q]),
+      ['object', 'object', 'number', 'number']
+    );
     G.invalidatePropModel(path, true);
   }
 });

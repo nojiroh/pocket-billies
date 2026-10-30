@@ -212,7 +212,7 @@ test('every item’s every part drawn once, with the old uniforms’ values; one
   assert.ok(draws < O.size);
 });
 
-test('FL-2b: the far cache\'s copy without turning parts and the turning parts alone make up every part', () => {
+test("FL-2b: the far cache's copy without turning parts and the turning parts alone make up every part", () => {
   const { out: A } = newDraws(items()),
     { out: body } = newDraws(items(), 1),
     { out: spins } = newDraws(items(), 2),
@@ -220,7 +220,10 @@ test('FL-2b: the far cache\'s copy without turning parts and the turning parts a
     isSpin = k => spinVao.has(k.split('|')[0]);
   assert.ok(spinVao.size === 4);
   assert.deepEqual([...body.keys()].filter(isSpin), []);
-  assert.deepEqual([...spins.keys()].filter(k => !isSpin(k)), []);
+  assert.deepEqual(
+    [...spins.keys()].filter(k => !isSpin(k)),
+    []
+  );
   assert.deepEqual([...body.keys(), ...spins.keys()].sort(), [...A.keys()].sort());
   for (const [k, v] of [...body, ...spins]) assert.deepEqual(v, A.get(k), k);
 });
