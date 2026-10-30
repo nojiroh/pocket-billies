@@ -12765,7 +12765,7 @@
   "crow": {"name":"Crow","img":"scene/life/crow.png","w":24,"h":22,"frames":5,"where":"junk"},
   "form": {"name":"Loose form","img":"scene/life/form.png","w":20,"h":14,"frames":4,"where":"bureau"}
  },
- "buildArt": {"detail":"scene/build/detail-a04b.png","rooms":"scene/build/rooms.png"},
+ "buildArt": {"detail":"scene/build/detail-a04b.png","rooms":"scene/build/rooms.png","normal":"scene/build/detail-a04b-normal.png"},
  "wallArt": "scene/build/walls.png",
  "flags": ["marigold","pepperpot","lanternhall","verdigris","palmhaven","frostcrown"],
  "tileSet": "tiles47"

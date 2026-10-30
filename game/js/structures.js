@@ -16,7 +16,7 @@ import { artImage, mapBridges, walkView } from './walk-view.js';
 import { ensurePrograms, gpuBuffer, gpuFree, gpuState, gpuVao, imageTexture } from './engine/webgl.js';
 import { WALL_COLORS, defaultWallMaterial, groundHeightAt, standingHeightAt } from './walk/heights.js';
 import { useWalkProgram, worldCurveArgs } from './walk/draw-common.js';
-import { BUILDING_SHADERS, buildingArt, buildingGuard } from './buildings.js';
+import { BUILDING_SHADERS, bindBuildingNormals, buildingArt, buildingGuard, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
   STRUCTURE_MATERIALS: [() => STRUCTURE_MATERIALS],
@@ -793,6 +793,9 @@ export function drawStructures(C, X) {
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, det.t);
     gl.uniform1i(p.U.uDet, 0);
+    /* BD-2b: the sheet's grid and its normal sheet (the program is the buildings': set them, don't inherit them) */
+    gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
+    bindBuildingNormals(p, A);
     gl.uniform1f(p.U.uBaseY, -99);
     gl.enable(gl.DEPTH_TEST);
     gl.depthMask(true);

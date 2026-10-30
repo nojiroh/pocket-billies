@@ -706,6 +706,8 @@ route.forEach((p, n) => {
   }
   need(scenery.wallArt || 'scene/build/walls.png', 'the walls');
   for (const k of ['detail', 'rooms']) need((scenery.buildArt || {})[k], `buildArt.${k}`);
+  /* BD-2b: the normal sheet beside the building sheet (optional: without it the buildings draw flat) */
+  if ((scenery.buildArt || {}).normal) need(scenery.buildArt.normal, 'buildArt.normal');
 }
 
 // Studio plan Phase 5 (T5.3): the rigs (game/art/next/rigs-next.js and art/rigs.js) hold together: boxes inside their

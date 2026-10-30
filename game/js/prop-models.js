@@ -56,7 +56,7 @@ import { frameBudgetLeft } from './walk/quality-cull.js';
 import { setPropLookUniforms, windLeanAt } from './walk/prop-look.js';
 import { addHitTarget } from './walk/sprites.js';
 import { lampLit, modelWindowLight } from './walk/lighting.js';
-import { BUILDING_SHADERS, buildingArt, buildingTextureGrid } from './buildings.js';
+import { BUILDING_SHADERS, bindBuildingNormals, buildingArt, buildingTextureGrid } from './buildings.js';
 /* eslint-disable no-func-assign */
 expose({
   GLASS_GLSL: [() => GLASS_GLSL],
@@ -1802,8 +1802,8 @@ function drawLowPolyModels(C, X, L, inst = true) {
   gl.uniform1i(p.U.uDet, 0);
   gl.uniform2fv(p.U.uAtl, buildingTextureGrid(A));
   if (p.U.uScroll) gl.uniform2f(p.U.uScroll, 0, 0);
-  /* Building bumpiness: the models wear the buildings' sheet, and bump as the buildings do */
-  if (p.U.uBStr) gl.uniform1f(p.U.uBStr, engineSetting('world', 'buildingBumps') || 0);
+  /* Building bumpiness: the models wear the buildings' sheet, and bump from its normal sheet as the buildings do */
+  bindBuildingNormals(p, A);
   if (!inst) drawLowPolyItems(p, L);
   else {
     /* VFX-3: as the voxel props: a stretched one one at a time, with the plain program and the same textures */
@@ -2479,5 +2479,6 @@ function propModelArtPaths(sc, C) {
   }
   /* alpha 0.4: the low-poly props and models are painted from the building sheet */
   if (any) L.push((C.buildArt && C.buildArt.detail) || 'scene/build/detail.png');
+  if (any && C.buildArt && C.buildArt.normal) L.push(C.buildArt.normal);
   return L;
 }
