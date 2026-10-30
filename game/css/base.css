@@ -102,6 +102,9 @@
 }
 html {
   height: 100%;
+  /* nothing widens the page sideways (the world's canvas is scaled 1.5% behind a screen, which made a 360 px phone's
+     page 364 px wide and let it slide under a finger); clip makes no scroll box, so sticky bars keep working */
+  overflow-x: clip;
 }
 body {
   margin: 0;
