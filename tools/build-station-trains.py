@@ -267,7 +267,7 @@ def station():
     # BD-6: a Googie boomerang canopy: a verdigris slab swept up into a wide V along the platform, a dark underside,
     # copper fascia and a neon line along its front edge at night, on splayed V columns of iron with brass feet
     rz, hl, hd = top + 2.95, 6.7, 2.25  # the canopy's lowest point (the middle), its half length and half depth
-    up = 0.85  # how far its tips sweep up
+    up = 1.35  # how far its tips sweep up
     cyc = y0 + pd / 2
     lo = lambda x: rz + up * abs(x) / hl  # the canopy's underside at x
     V = [(-hl - 0.2, up + 0.02), (0, 0), (hl + 0.2, up + 0.02), (hl + 0.35, up + 0.3), (0, 0.24), (-hl - 0.35, up + 0.3)]
