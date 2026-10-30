@@ -453,16 +453,33 @@ export function drawGrass(C, X) {
       far = (walkRenderer.q || 0) >= 3 ? 38 : 1e9,
       Pp = walkView.pl;
     gl.bindBuffer(gl.ARRAY_BUFFER, G.ib);
-    let drawn = 0;
+    /* FL-2b: squares in view that sit next to each other in the buffer drawn as one run (the same blades in the same
+       order, so the same picture), a draw a run instead of one a square */
+    let drawn = 0,
+      off = 0,
+      n = 0,
+      runs = 0;
+    const run = () => {
+      if (!n) return;
+      gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, off * 32);
+      gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, off * 32 + 16);
+      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, n);
+      runs++;
+    };
     for (const c of G.chunks) {
       if (!inFrustum(F, c.x, c.y + worldCurveDrop(c.x, c.z), c.z, c.r)) continue;
       if (far < 1e9 && Math.hypot(c.x - Pp.x, c.z - Pp.z) > far) continue;
-      gl.vertexAttribPointer(1, 4, gl.FLOAT, false, 32, c.off * 32);
-      gl.vertexAttribPointer(2, 4, gl.FLOAT, false, 32, c.off * 32 + 16);
-      gl.drawArraysInstanced(gl.TRIANGLES, 0, 6, c.n);
+      if (n && c.off === off + n) n += c.n;
+      else {
+        run();
+        off = c.off;
+        n = c.n;
+      }
       drawn += c.n;
     }
+    run();
     walkRenderer.grassDrawn = drawn;
+    walkRenderer.grassRuns = runs;
   }
   gl.bindVertexArray(null);
 }
