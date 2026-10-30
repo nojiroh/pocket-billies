@@ -192,7 +192,8 @@
     "int_gene_bank",
     "test_props_routes",
     "test_people",
-    "test_intro_art"
+    "test_intro_art",
+    "test_shapes"
    ]
   },
   "cutscenes": {"ids":["opening","city","return","crash"]}
