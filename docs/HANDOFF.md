@@ -35,7 +35,6 @@ built at once (the owner's advance approval, track section 1). No per-session ta
 - Found, not changed:
   - structures.js drew with the buildings' program but never set `uAtl` or `uBStr`: it inherited whatever the last
     building draw left. Now set there (a fix, needed because the sheet's unit must be bound).
-  - BD-1's HANDOFF entry still says "Quick check: QUICK_RESULT" (a placeholder it never filled in).
 - Risky:
   - Every building and low-poly model now bumps by default. Fine on the hub at noon in the pictures; not yet seen at
     night or on the phone.
