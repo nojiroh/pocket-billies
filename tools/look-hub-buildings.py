@@ -78,6 +78,11 @@ def main():
         close = [s for s in props if s['k'] in (ONLY or CLOSE)]
         for time in [t for t in ('noon', 'night') if t in TIMES]:
             pg.evaluate(f"environment.force={{time:{12.5 if time == 'noon' else 22.5},weather:'clear'}};0")
+            # BD-1: a test map is plain (walk-view-gl.js: no hours, no weather), so its night was daylight; the night
+            # pass lifts that for the moment
+            pg.evaluate(f"(()=>{{const sc=walkView.sc;if(sc.__plain===undefined)sc.__plain=sc.plain;sc.plain={'0' if time == 'night' else 'sc.__plain'};return 0}})()")
+            if time == 'night':
+                settle(pg, 30)
             for s in close:
                 dist, aim = TALL.get(s['k'], (8, 2))
                 pg.evaluate(f"(()=>{{const r={s['rot']}*Math.PI/180,f=[Math.sin(r),-Math.cos(r)],x={s['x']},z={s['z']},y=groundHeightAt(x,z);walkView.opt.look=()=>({{eye:[x+f[0]*{dist},y+{aim}+4,z+f[1]*{dist}],tgt:[x,y+{aim},z],fov:58}});return 0}})()")
