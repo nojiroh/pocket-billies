@@ -180,6 +180,7 @@ test('uploadQueue: bitmap first, the first upload of a tick always, the rest wit
     G.frameBudgetLeft = () => false;
     assert.equal(src(a).of, a, 'the first of a tick goes, whatever the budget');
     Q.n = 1;
+    Q.ms = 5;
     const held = Q.held;
     assert.equal(src(b), null, 'the second waits for a frame with budget left');
     assert.equal(Q.held, held + 1);
@@ -198,5 +199,6 @@ test('uploadQueue: bitmap first, the first upload of a tick always, the rest wit
     G.frameBudgetLeft = saved.left;
     Q.wait.clear();
     Q.n = 0;
+    Q.ms = 0;
   }
 });

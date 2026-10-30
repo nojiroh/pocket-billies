@@ -5,7 +5,8 @@ software, so milliseconds are notes only).
     python3 tools/check-fluid-ui.py
 
 Opens Copperleaf (?fixture=town) on a phone-sized touch page (so the phone rules apply) and checks:
-- the world frozen behind a full screen and a window: the 3D's cap is the scheduler's floor (0.1) and at most 2 frames
+- the world frozen behind a full screen and a window: its clock doesn't move, and its still picture is drawn again
+  every 2 s (walkView.still, cap 0.5: a canvas left idle stalled the page's frames once it closed); at most 3 frames
   come in 5 s; a window that asks for the world (modal({world: true})) keeps 20;
 - no filter transition on the 3D canvas (#dio), the dim a layer (body::after) behind a screen;
 - while walking on a phone the two bars have no backdrop blur (uiBlurCount with and without them is the same);
@@ -61,23 +62,32 @@ def main():
         # behind a full screen: frozen
         pg.evaluate("uiState.tab='team';render();0")
         cap = pg.evaluate('walkView.opt.cap()')
-        gate(cap <= 0.1, f'the 3D cap behind a screen: {cap} (0 or 0.1: frozen)')
+        gate(cap <= 0.5 and pg.evaluate('!!walkView.still'), f'the 3D cap behind a screen: {cap} (0.5, a still picture)')
         tr = pg.evaluate("getComputedStyle(document.getElementById('dio')).transitionProperty")
         gate('filter' not in tr, f'no filter transition on the 3D canvas: {tr}')
         CF.until(pg, "getComputedStyle(document.body,'::after').opacity==='0.18'", 5)
         dim = pg.evaluate("getComputedStyle(document.body,'::after').opacity")
         gate(abs(float(dim) - 0.18) < 0.01, f'the dim layer behind a screen: opacity {dim} (0.18 once faded)')
+        t0 = pg.evaluate('walkView.t')
         n = frames_in(pg, 5)
-        gate(n <= 2, f'frames drawn in 5 s behind a screen: {n} (at most 2)')
+        gate(n <= 3 and pg.evaluate('walkView.t') - t0 < 1, f'frames drawn in 5 s behind a screen: {n} (at most 3), the world clock {pg.evaluate("walkView.t") - t0:.0f} ms on (0)')
         pg.evaluate("uiState.tab='walk';render();0")
         CF.frames(pg, 2)
 
         # behind a window: frozen; a window that asks for the world keeps 20
         pg.evaluate("modal({title:'check',html:'<p>check</p>'});0")
         cap = pg.evaluate('walkView.opt.cap()')
-        gate(cap <= 0.1, f'the 3D cap behind a window: {cap} (0 or 0.1: frozen)')
+        gate(cap <= 0.5 and pg.evaluate('!!walkView.still'), f'the 3D cap behind a window: {cap} (0.5, a still picture)')
+        t0 = pg.evaluate('walkView.t')
         n = frames_in(pg, 5)
-        gate(n <= 2, f'frames drawn in 5 s behind a window: {n} (at most 2)')
+        gate(n <= 3 and pg.evaluate('walkView.t') - t0 < 1, f'frames drawn in 5 s behind a window: {n} (at most 3), the world clock {pg.evaluate("walkView.t") - t0:.0f} ms on (0)')
+        # after 16 s frozen, the page's frames come back at once (a canvas left idle stalled them about as long)
+        time.sleep(11)
+        pg.evaluate("window.__g=[];let p=performance.now();const f=()=>{const n=performance.now();window.__g.push(n-p);p=n;if(window.__g.length<12)requestAnimationFrame(f)};requestAnimationFrame(f);uiState.modal=null;uiState.mq=[];renderOverlay();0")
+        time.sleep(15)
+        g = pg.evaluate('window.__g')
+        gate(len(g) >= 8 and max(g) < 5000, f'frames after a 16 s window: {len(g)} in 15 s, the longest gap {max(g) if g else 0:.0f} ms (under 5 s; software drawing)')
+        pg.evaluate("modal({title:'check',html:'<p>check</p>'});0")
         pg.evaluate("uiState.modal=null;uiState.mq=[];renderOverlay();modal({title:'check',world:true,html:'<p>check</p>'});0")
         cap = pg.evaluate('walkView.opt.cap()')
         gate(cap == 20, f'a window that asks for the world: cap {cap} (20)')
@@ -137,7 +147,9 @@ def main():
         gate(ph == 'choose', f'the battle stayed in its choosing phase while measured: {ph}')
         # one more than the frames: the two readings fall mid-frame
         gate((l1 - l0) <= nf + 1, f'layouts a battle frame: {(l1 - l0) / nf:.2f} ({l1 - l0} in {nf} frames; at most 1)')
-        gate((s1 - s0) <= nf + 1, f'style recalculations a battle frame: {(s1 - s0) / nf:.2f} ({s1 - s0} in {nf} frames; at most 1)')
+        # and one more: a hit's or an idle step's full-screen flash forces one pass (battle-stage.js battleStageFlash's
+        # void offsetWidth, kept: tools/flash-audit.py reads the flash from those style changes)
+        gate((s1 - s0) <= nf + 2, f'style recalculations a battle frame: {(s1 - s0) / nf:.2f} ({s1 - s0} in {nf} frames; at most 1)')
         pl = pg.evaluate("[...document.querySelectorAll('#plates .bplate:not(.off)')].map(e=>e.style.transform).filter(Boolean).length")
         gate(pl >= 1, f'plates placed (after the frame task): {pl}')
         fill = pg.evaluate("(()=>{const f=document.querySelector('#plates .pl-hp .fill');return f?[f.style.getPropertyValue('--p'),getComputedStyle(f).transform]:null})()")

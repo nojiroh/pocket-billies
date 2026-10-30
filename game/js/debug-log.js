@@ -929,6 +929,8 @@ document.addEventListener(
       el = t && t.closest ? t.closest('[data-a],[data-pref-set],[data-p],[data-t]') : null,
       d = el ? el.dataset : null;
     debugLog.tapWhat = d ? String(d.a || (d.prefSet ? 'pref:' + d.prefSet : '') || d.p || d.t || '').slice(0, 24) : '';
+    /* the screen as the tap found it (the observer reads entries later, after the tap may have changed it) */
+    debugLog.tapAt = debugLog.tapWhere();
   },
   { capture: true, passive: true }
 );
@@ -982,7 +984,7 @@ try {
         Math.round(e.startTime - debugLog.t0),
         Math.round(e.duration),
         e.name,
-        debugLog.tapWhere(),
+        debugLog.tapAt || debugLog.tapWhere(),
         debugLog.tapWhat,
         Math.round(e.processingStart - e.startTime),
         Math.round(e.processingEnd - e.processingStart),
