@@ -2,6 +2,99 @@
 
 Newest entry on top. Every phase session ends by adding an entry here and tagging the commit `phase-NN-done`.
 
+### Fluid track FL-4 - even frames: arrivals and crossings (with the load track) - 2026-10-30
+Branch `track/fluid` (round 3 lane, beside FL-3b; its commits merged in). Plan approved by the owner's standing answer
+(fluid-track.md section 1). Code: four new paths, each behind its own switch, **off** until the owner's phone run;
+`mapCacheKey` the same key without a new string a frame (no switch: the same value). No tag (the track's tag comes at
+FL-7). The items that overlap the load track's LD-5 are not built: asked below.
+- Facts checked against the code (73b2f8b1 + rounds 1-2): section 5 item 6 holds for this lane: the grass's first slice
+  is 12 ms (grass-build.js `grassWork(12)`) and its end (a counting sort and one `bufferData` of every blade) runs in
+  one call; a view prepared ahead plants nothing until it is swapped in (map-cache.js resets its grass); a cache miss
+  runs `buildGroundMesh` in one go; the one-off budget is `FRAME_WORK_MS` 8 ms on phones, 10 elsewhere
+  (walk/quality-cull.js), whatever the rate; picture age is counted in frames (engine/webgl.js trimTextures, 600).
+  Differs / found: the far cache's key misses because the frame's items come only from the 6 m prop-grid cells in view
+  (walk/frame-items.js), and the key held a signature of every still caster in the list, so any cell coming into view
+  or leaving it drew the 4096² map again; `mapCacheKey` concatenated the ground key (the whole tile map as JSON) into a
+  new string each frame and compared it in full; the grass reads the walking grid of the view on screen
+  (`isWalkable`), so a view not on screen couldn't be planted; about 30 timers, not 15 (13 moved, below).
+- Changed:
+  - game/js/walk/shadows.js (`quality.shadowCells`): the key keeps what doesn't follow the view (fit, sun, map size,
+    place, item generation, buildings, ...); each prop-grid cell in view keeps one number for its still casters
+    (`farShadowCellHashes`). The cache holds while every cell in view (the same frustum test as frame-items.js, on
+    `walkRenderer.frustum`) has the casters it had when the map was drawn, the grid and the far props unchanged
+    (`farShadowCellsHold`). A cell that left the view isn't asked; a prop hidden by the hour or a story flag, a model
+    that finished loading, a cell come in with new casters draw it again.
+    `quality.shadowHold`: when the cache holds and the moving casters are as last frame (every field of each moving
+    picture, in order; none a model, a solid prop, a building or a turning part, which move inside their own draws),
+    last frame's far map is returned before `beginSunShadow` (no clear, no 4096² copy, no draws). `walkRenderer.shHeld`.
+  - game/js/walk/map-cache.js: `mapCacheKey` gives back its last key while the id, the scene, the ground key string
+    and one number for the rest (props and heights counts, the waters' contents, water kind, flags) are the same.
+    `quality.grassAhead`: a view prepared ahead (`prepareMapGround`) plants its grass while it waits in the cache, in
+    what is left of the ground's budget (`grassAheadWork`, in `groundPrepWork` when no ground is being prepared), on
+    its own walking grid (asked for once with `navPrepare`; the crossing needs it anyway) and under the place's own
+    look (its grass density). Swapped in planted, the grass is kept (the last view's unfinished planting let go: it
+    marked the new view unplanted); still being planted, the job goes on for the view on screen. Views prepared before
+    the switch was on are picked up too (the cache's newest without grass).
+  - game/js/walk/grass-build.js: `grassJob(sc, G, target)` / `grassStep(J, ms)` (the old buildGrass/grassWork on top,
+    unchanged with the switch off); with `grassAhead` the first slice is 4 ms (was 12), the end is the sort in one
+    slice and then the blades in 1 MB strips (`bufferSubData`), the grass drawn once the last strip is in; a job let go
+    gives its buffers back (`J.abort`).
+  - game/js/free-tick.js (new; `quality.freeTicks`): `everyFree(fn, ms)`: the timer only asks; the work runs in free
+    time (`requestIdleCallback` with the period as its deadline; without it, Safari, just after the next frame, at the
+    latest one period later), never queued twice. Moved: the story checks (1.5 s), the held crossing's take-over
+    (0.4 s), trainers in sight (150 ms), the music's choice (1 s), the sound starts' tally (10 s), the idle scan, Kappi's
+    look, fishing's button, the painted battle's weather, the D-pad, the maps ahead, friends' publish, play time. Kept on
+    their timers: the music's 25 ms clock, the footsteps (50 ms), ambience and the low-HP beep (200 ms), loading
+    screens, tests. tools/to-module.mjs knows `everyFree` runs its callback later (one word).
+  - engine/settings.js (additions): the four switches with Engine rows; the debug menu's switches (beside FL-2a's and
+    FL-3a's); bench-path.js's needs. debug-log.js (additions): `shh`, `gst`, `gah` in each sample.
+  - tools/test/even-frames.test.mjs (8 tests), tools/check-even-frames.py (headless counts, off then on).
+- Not done, for other lanes (their files):
+  - **The cache-miss ground build sliced**: the frame that sees a new key (walk-view-gl.js's swap block, FL-3b's file
+    this round) clears the walking grid and needs ground that frame; sliced, it would keep the old ground and key until
+    `prepareMapGround(urgent)` is done, then swap (map-cache.js has the pieces). A miss happens on a new run day's water
+    (`runWaterWeatherSync` changes `sc.waters`), Studio edits and the 30 s fallback. Round 4 (walk-view-gl.js's scene
+    pass is FL-5a's) or FL-7.
+  - The far cache gathered by fit: frame-items.js could gather the cells under the far map's fit circle too (only on a
+    miss), so turning the camera wouldn't miss at all; the fit itself follows the view footprint (it moves when the
+    camera turns): FL-5b's 2048 map could take a steadier fit.
+  - `ensureGround` (walk-view.js, no lane) runs `groundKey(sc)`, a JSON of the whole tile map and every terrain, every
+    frame to compare it: the same kind of per-frame string as `mapCacheKey` was. Not measured; a memo like this one.
+  - Ground painting on `scheduler.postTask` (background): not done. The painting runs on the helper thread by default
+    (`quality.paintWorker`); only its upload is on the page, inside the frame budget.
+- Measured headless (counts only; `check-even-frames.py`, the run fixture, a walk to the next place's seam with its
+  preparation pushed along from the page as check-fast does, the crossing, 8 s standing): with the switches on the next
+  place's grass was planted ahead (314 ms of work over 1.7 s, software) and kept at the crossing (planted again 0;
+  off: 1, at the first frame there); the longest single grass call 7-10 ms on, 13-20 ms off (a note); 244-300 free-time
+  runs asked in the walk. The far map: off 26 drawn again of 85 passes, on 17 of 49 (headless frames come about once a
+  second, so each frame moves the fit: no gain shows here); **held 0 times** in either (a walker and townsfolk are in
+  every frame; the hold pays only where nothing moves, a room or a still route: the phone log's `shh` will say).
+- Risky: all four switches are off, so nothing changes for players until the owner's phone run. With `shadowCells` a
+  prop hidden while its cell is out of view keeps its far shadow until the cell comes back or the sun moves on (the old
+  key never drew casters out of view at all). With `freeTicks` a busy page runs those jobs up to one period late
+  (trainers in sight 150 → at most 300 ms). `mapCacheKey`'s memo is on for everyone: the same key by construction (a
+  test compares it with the old one, also after waters changed in place).
+- Verified: lint, types, format, modules, data clean; unit tests 2,457 of 2,457 after merging FL-3b; smoke no problems
+  (289 s); `check-perf.py --only=copperleaf` no problems (303-336 draws as shipped, effects 4-7). Full quick check
+  (2,599 s, 42 steps, 38 passed) against a baseline made at the round's start (8678e3f7, in a worktree, 45 pictures,
+  2,711 s, 38 passed): three problems fail on both (RL-8's Thicket Route crossing, room light, walking out of the lab);
+  battle music's drums passed this time; "Place views ..." failed once ("w:copperleaf* drew fewer than 2 frames in 90
+  s", early in the run beside the first boot's shader compiles) and passed alone (65 s). 3 pictures over the threshold:
+  the failed RL-8 step's, phone-battle and phone-run-sheet (other moments); alone, lamps-night differed only by the
+  baseline run's leftover test-results window. `check-even-frames.py`: grass planted ahead and kept (above).
+- Ask me before (section 7 "FL-4's items to the load track (LD-5) or here" and FL-4's "Ask first"; not settled by
+  section 1): **the items that overlap LD-5's leftovers**: the one-off budget sized from the slot, picture age by time,
+  and LD-5's model meshes in a worker, `createImageBitmap` and an upload queue, the next place's warm-up. Options:
+  (a) here, in the fluid track (round 4 or 5), with LD-5's owner told (recommended, section 7: the budget must follow
+  the set rate, e.g. a quarter of the paced slot: 4 ms at 60, 8 at 30, 2 at 120); (b) left to the load track's LD-5;
+  (c) split: the budget and picture age here, the worker, `createImageBitmap` and warm-up in LD-5.
+- Next: round 4 (FL-5a), started by this lane (round 3's last).
+- For the owner on the phone: open the debug menu, turn on "Shadow cache by squares", "Hold still far shadows", "Grass
+  planted ahead" and "Jobs in free time", close it, walk Copperleaf for a minute, cross into a run's next place twice
+  and stand in a room for 30 s; send the debug log (its `shc`, `shh`, `gah`, `gst` and the hitch list), and one with the
+  four off for comparison. If anything looks wrong (a shadow left behind, grass missing after a crossing), the same
+  switches turn each off.
+
 ### Fluid track FL-3b - resolution without hitches (behind a switch) - 2026-10-30
 Branch `track/fluid` (round 3 lane, beside FL-4; FL-4's commits merged in). Plan approved by the owner's standing
 answer (fluid-track.md section 1). Code: the resolution's levels and when the canvas may change size, behind its own
