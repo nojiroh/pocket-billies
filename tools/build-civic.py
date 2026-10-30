@@ -536,7 +536,7 @@ def lab():
                             rings=4, name='roof plant'))
     # the big window: the drawn view inside, a slim white frame with mullions, a sill
     wx, ww, wz0, wh = -0.85, 108 / PPM, 1.5, 41 / PPM
-    L.append(B1.img(LAB_WINDOW, wx, -0.01, wz0, face='fixed', recv=0, name='window view'))
+    L.append(B1.img(LAB_WINDOW, wx, -0.05, wz0, face='fixed', recv=0, name='window view'))
     L += [box(wx, -0.03, wz0 - 0.08, ww + 0.16, 0.06, 0.08, '#F4F4F6', 'metal', name='window frame'),
           box(wx, -0.03, wz0 + wh, ww + 0.16, 0.06, 0.08, '#F4F4F6', 'metal', name='window frame'),
           box(wx - ww / 2 - 0.04, -0.03, wz0, 0.08, 0.06, wh, '#F4F4F6', 'metal', name='window frame'),
