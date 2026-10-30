@@ -2,10 +2,10 @@
  "about": "BD-1: a storybook house with the warp",
  "warp": {
   "lean": [
-   0.18,
+   0.3,
    0.05
   ],
-  "sag": 0.12,
+  "sag": 0.15,
   "bulge": 0.05
  },
  "layers": [

@@ -116,7 +116,7 @@ def boxes():
 
 def glows():
     """glowing layers: a neon tube under eaves (at night), a sign ring (by day too), lamp globes"""
-    ring = [(0.5, 0), (0.6, 0), (0.6, 0.08), (0.5, 0.08)]
+    ring = [(0.5, 0), (0.6, 0), (0.6, 0.08), (0.5, 0.08), (0.5, 0)]  # ends where it starts: a loop, no caps
     return [
         box(-1.2, 1.2, 0, 2.4, 2.0, 2.0, CREAM, 'plaster', name='walls'),
         prism(-1.2, 1.2, 2.0, [(-1.4, 0), (1.4, 0), (0, 0.9)], 2.4, NAVY, 'shingles', name='roof'),
@@ -153,7 +153,7 @@ def house(seed):
               smooth=1, name='onion finial'),
         box(0, 0.06, 2.06, 2.3, 0.06, 0.05, '#FFFFFF', glow='#FF5AB4' if seed == 0 else '#5AE0FF', name='neon under the eaves'),
     ]
-    warp = {'lean': [0.18, 0.05], 'sag': 0.12, 'bulge': 0.05} if seed == 0 else {'lean': [-0.12, 0], 'twist': 0.12,
+    warp = {'lean': [0.3, 0.05], 'sag': 0.15, 'bulge': 0.05} if seed == 0 else {'lean': [-0.12, 0], 'twist': 0.12,
                                                                                   'bulge': 0.07, 'sag': 0.08}
     return L, warp
 

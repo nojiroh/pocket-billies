@@ -230,6 +230,26 @@ test('a lathe turns a profile round: an onion dome, an oval, a flared chimney wi
   assert.equal(hash(M), '02f9478f70ac');
 });
 
+test('a lathe whose profile ends where it starts is a ring: turned all round, no caps', () => {
+  const ring = [
+      [0.5, 0],
+      [0.6, 0],
+      [0.6, 0.08],
+      [0.5, 0.08],
+      [0.5, 0],
+    ],
+    M = lowPolyFromRecipe({ layers: [{ k: 'lathe', pts: ring, sides: 16, z: 1 }] });
+  /* four sides of the loop, 16 round, nothing across the hole */
+  assert.equal(M.tris, 4 * 16 * 2);
+  assert.ok(verts(M).every(v => Math.hypot(v.p[0], v.p[2]) > 0.49));
+  /* the inner wall faces the hole, the outer one away from it */
+  const V = verts(M),
+    inner = V.filter(v => Math.hypot(v.p[0], v.p[2]) < 0.51 && Math.abs(v.n[1]) < 0.5),
+    outer = V.filter(v => Math.hypot(v.p[0], v.p[2]) > 0.59 && Math.abs(v.n[1]) < 0.5);
+  assert.ok(inner.length && inner.every(v => v.p[0] * v.n[0] + v.p[2] * v.n[2] < 0));
+  assert.ok(outer.length && outer.every(v => v.p[0] * v.n[0] + v.p[2] * v.n[2] > 0));
+});
+
 test('the profile maths: ear clipping and soft or sharp joints', () => {
   const U = [
     [0, 0],

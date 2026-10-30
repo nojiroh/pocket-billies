@@ -1159,8 +1159,11 @@ export function lowPolyFromRecipe(rec) {
      where an end has a radius (the bottom only off the ground) */
   const latheShape = (L, x0, y0, z0, tx, stave, c) => {
     let P = profilePoints(L.pts, false).map(q => [Math.max(0, q[0]), q[1]]);
+    /* a profile that ends where it starts is a loop (a ring, a tyre): turned all round, no caps */
+    const loop = P.length > 3 && Math.hypot(P[0][0] - P[P.length - 1][0], P[0][1] - P[P.length - 1][1]) < 1e-6;
+    if (loop) P.pop();
     if (P.length < 2) return;
-    if (profileArea([[0, P[0][1]], ...P, [0, P[P.length - 1][1]]]) < 0) P = P.reverse();
+    if ((loop ? profileArea(P) : profileArea([[0, P[0][1]], ...P, [0, P[P.length - 1][1]]])) < 0) P = P.reverse();
     const rmax = Math.max(0.01, ...P.map(q => q[0])),
       ryk = Math.max(0.05, +L.ry || 1),
       n = L.sides
@@ -1168,15 +1171,15 @@ export function lowPolyFromRecipe(rec) {
         : Math.max(6, Math.min(20, Math.round((2 * Math.PI * rmax * Math.max(1, ryk) * 32) / 5))),
       rot = +L.rot || 0,
       arc = (2 * Math.PI * rmax) / n,
-      NE = profileNormals(P, false, (35 * Math.PI) / 180, !!L.smooth),
+      NE = profileNormals(P, loop, (35 * Math.PI) / 180, !!L.smooth),
       an = j => (2 * Math.PI * (j % n)) / n + rot,
       at = (q, j) => [x0 + Math.cos(an(j)) * q[0], z0 + q[1], y0 + Math.sin(an(j)) * q[0] * ryk],
       nAt = (m, j) => [Math.cos(an(j)) * m[0], m[1], (Math.sin(an(j)) * m[0]) / ryk],
       uv = (j, v) => (stave ? [v, j * arc] : [j * arc, v]);
     let len = 0;
-    for (let i = 0; i < P.length - 1; i++) {
+    for (let i = 0; i < P.length - (loop ? 0 : 1); i++) {
       const a = P[i],
-        b = P[i + 1],
+        b = P[(i + 1) % P.length],
         el = Math.hypot(b[0] - a[0], b[1] - a[1]);
       if (a[0] < 1e-4 && b[0] < 1e-4) {
         len += el;
@@ -1209,6 +1212,7 @@ export function lowPolyFromRecipe(rec) {
     };
     const top = P[P.length - 1],
       bot = P[0];
+    if (loop) return;
     if (top[0] > 0.02) cap(top, 1);
     if (bot[0] > 0.02 && z0 + bot[1] > 0.01) cap(bot, -1);
   };
@@ -1723,10 +1727,11 @@ void main(){float cr=cos(uRot),sr=sin(uRot);vec3 q0=voxSpin(mPos/256.-uSpinC)+uS
    kitchen or now and then a TV's blue, each window its own (uWinSeed: the building's), rolled off softly so it glows
    and blooms the window's own shape */
 /* BD-1: a glowing layer (vTex.z 33: at night, 34: by day too; its colour vGl) shines as the windows do after dark
-   (uWinK: 1 after dark, the daytime dial by day, none from inside a room), rolled off above white so bloom takes it */
+   (uWinK: 1 after dark, the daytime dial by day, none from inside a room): its own colour over the lit one, and
+   brighter than white where it is strong, so bloom takes it and it keeps its hue */
 const GLASS_GLSL = `uniform int uWinOn;uniform float uWinK,uWinSeed;in vec3 vGl;
 vec3 glassLit(vec3 lit,vec3 n,vec3 v,float sh){if(vTex.z>32.5){float k=vTex.z>33.5?max(uWinK,1.):uWinK;if(k<.001)return lit;
- vec3 e=vGl*1.4*k;e=(1.-exp(-e*1.3))*1.7;return lit*(1.-.55*min(k,1.))+e;}
+ return mix(lit,vGl*1.2,.85*min(k,1.))+vGl*.3*k;}
  float id=floor(vTex.z+.5)-1.;if(id<.5)return lit;
  float ct=abs(dot(n,v)),fr=.15+.5*pow(1.-ct,3.);
  vec3 g=mix(lit,uAmbTop*(.6+.4*sh),fr)+uSunCol*pow(max(dot(reflect(-v,n),uSunDir),0.),80.)*sh;

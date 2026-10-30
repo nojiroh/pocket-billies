@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:171",
-    "game/js/prop-models.js:2464",
+    "game/js/prop-models.js:2472",
     "game/js/walk-view.js:793"
    ]
   },
@@ -1129,8 +1129,8 @@
   ],
   "barrel": [
    "game/js/prop-models.js:237",
-   "game/js/prop-models.js:435",
-   "game/js/prop-models.js:1411",
+   "game/js/prop-models.js:438",
+   "game/js/prop-models.js:1418",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1154,9 +1154,9 @@
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
    "game/js/prop-models.js:233",
-   "game/js/prop-models.js:362",
-   "game/js/prop-models.js:1220",
-   "game/js/prop-models.js:1582",
+   "game/js/prop-models.js:365",
+   "game/js/prop-models.js:1227",
+   "game/js/prop-models.js:1589",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
    "game/js/walk-view-gl.js:732"
