@@ -173,7 +173,7 @@
    "p": "scene/build/detail.png",
    "at": [
     "game/js/buildings.js:183",
-    "game/js/prop-models.js:2481",
+    "game/js/prop-models.js:2495",
     "game/js/walk-view.js:793"
    ]
   },
@@ -642,11 +642,9 @@
   {
    "p": "scene/next/decals/lantern_glass.png",
    "at": [
-    "game/art/scene/next/models/barn.json",
     "game/art/scene/next/models/cottage_juniper.json",
     "game/art/scene/next/models/cottage_moss.json",
     "game/art/scene/next/models/cottage_solar.json",
-    "game/art/scene/next/models/gene_bank.json",
     "game/art/scene/next/models/house_blue.json",
     "game/art/scene/next/models/house_large.json",
     "game/art/scene/next/models/house_red.json",
@@ -659,8 +657,7 @@
     "game/art/scene/next/models/train_highland.json",
     "game/art/scene/next/models/train_lakeland.json",
     "game/art/scene/next/models/train_station.json",
-    "game/art/scene/next/models/train_wildwood.json",
-    "game/art/scene/next/models/workshop.json"
+    "game/art/scene/next/models/train_wildwood.json"
    ]
   },
   {
@@ -1128,9 +1125,9 @@
    "game/js/ui.js:234"
   ],
   "barrel": [
-   "game/js/prop-models.js:237",
-   "game/js/prop-models.js:438",
-   "game/js/prop-models.js:1427",
+   "game/js/prop-models.js:238",
+   "game/js/prop-models.js:439",
+   "game/js/prop-models.js:1441",
    "game/js/robot-art.js:81"
   ],
   "bean": [
@@ -1153,10 +1150,10 @@
    "game/js/logic/cutscene-set.js:142",
    "game/js/logic/rules.js:950",
    "game/js/pending-windows.js:207",
-   "game/js/prop-models.js:233",
-   "game/js/prop-models.js:365",
-   "game/js/prop-models.js:1236",
-   "game/js/prop-models.js:1598",
+   "game/js/prop-models.js:234",
+   "game/js/prop-models.js:366",
+   "game/js/prop-models.js:1250",
+   "game/js/prop-models.js:1612",
    "game/js/ui-kit.js:988",
    "game/js/ui-run-kit.js:1862",
    "game/js/walk-view-gl.js:732"
@@ -1164,7 +1161,7 @@
   "brick": [
    "game/js/logic/wall-ramp.js:40",
    "game/js/logic/wall-ramp.js:58",
-   "game/js/prop-models.js:222",
+   "game/js/prop-models.js:223",
    "game/js/structures.js:7",
    "game/js/structures.js:250",
    "game/js/structures.js:251",
