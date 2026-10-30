@@ -383,8 +383,9 @@ export const ENGINE_DEFAULTS = {
     /* phase 20 R2 (pixels): the sky drawn after the opaque things (D1). FL-2a: on by default (the owner, 2026-10-29); the
        old order stays one release (the debug menu's switch) */
     skyLast: true,
-    /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4) */
-    phonePixels: false,
+    /* a phone's pixel budget 1.2 MP instead of 1.6, its automatic resolution starting at 0.9 (D4). Fluid track: on by
+       default (the owner, 2026-10-30, after the phone's Diagnostics: Copperleaf 12.7 -> 20 fps at the game's own values) */
+    phonePixels: true,
     /* phase 20 E7: the standing pictures drawn as instances, one draw per run of the same picture (off: one draw each).
        FL-2a: on by default (the owner, 2026-10-29); the old path stays one release, the automatic fallback when the
        instanced program doesn't build or the first frame in batches raises a GL error (walk/sprites.js), and the
